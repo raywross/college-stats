@@ -16,11 +16,12 @@ import { execFileSync } from "node:child_process";
 import { mkdtempSync, readFileSync, writeFileSync, existsSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import type { School, SchoolType, TestPolicy } from "../lib/types";
+import type { DatasetMeta, School, SchoolType, TestPolicy } from "../lib/types";
 
 const ROOT = join(import.meta.dirname, "..");
 const OUT = join(ROOT, "data", "schools.json");
 const OVERRIDES = join(ROOT, "data", "overrides.json");
+const META = join(ROOT, "data", "meta.json");
 const API = "https://api.data.gov/ed/collegescorecard/v1/schools";
 const IPEDS = "https://nces.ed.gov/ipeds/datacenter/data";
 const INCLUDE_ONLINE = process.argv.includes("--include-online");
@@ -121,6 +122,8 @@ const FIELDS = [
   "school.zip",
   "school.ownership",
   "school.online_only",
+  "school.school_url",
+  "school.price_calculator_url",
   "latest.student.size",
   "latest.aid.pell_grant_rate",
   "latest.student.share_firstgeneration",
@@ -180,24 +183,42 @@ async function fetchScorecard(key: string): Promise<ScorecardRow[]> {
 /* 2. IPEDS Admissions (ADM)                                           */
 /* ------------------------------------------------------------------ */
 
-async function fetchIpedsAdmissions(): Promise<{ year: number; rows: Map<string, Record<string, string>> }> {
-  const thisYear = new Date().getFullYear();
-  for (let year = thisYear; year >= thisYear - 5; year--) {
-    const res = await fetch(`${IPEDS}/ADM${year}.zip`);
+interface IpedsFile {
+  /** e.g. "ADM2023" or "SFA2223" */
+  name: string;
+  url: string;
+  rows: Map<string, Record<string, string>>;
+}
+
+/**
+ * Download the newest available IPEDS bulk file. `names` lists candidate file
+ * names newest-first; the first one NCES has published wins.
+ */
+async function fetchIpeds(names: string[]): Promise<IpedsFile> {
+  for (const name of names) {
+    const url = `${IPEDS}/${name}.zip`;
+    const res = await fetch(url);
     if (!res.ok) continue;
     const dir = mkdtempSync(join(tmpdir(), "ipeds-"));
-    const zip = join(dir, `ADM${year}.zip`);
+    const zip = join(dir, `${name}.zip`);
     writeFileSync(zip, Buffer.from(await res.arrayBuffer()));
     const files = execFileSync("unzip", ["-Z1", zip], { encoding: "utf8" }).split("\n").filter((f) => f.endsWith(".csv"));
     // "_rv" files are NCES's revised release; prefer them when present.
     const csv = files.find((f) => /_rv\.csv$/i.test(f)) ?? files[0];
-    const text = execFileSync("unzip", ["-p", zip, csv], { encoding: "latin1", maxBuffer: 256 * 1024 * 1024 });
+    const text = execFileSync("unzip", ["-p", zip, csv], { encoding: "latin1", maxBuffer: 512 * 1024 * 1024 });
     const rows = new Map(parseCsv(text).map((r) => [r.UNITID, r]));
-    console.log(`  IPEDS ADM${year}: ${rows.size} institutions (${csv})`);
-    return { year, rows };
+    console.log(`  IPEDS ${name}: ${rows.size} institutions (${csv})`);
+    return { name, url, rows };
   }
-  throw new Error("No IPEDS ADM file found in the last six years.");
+  throw new Error(`None of these IPEDS files are published yet: ${names.join(", ")}`);
 }
+
+const thisYear = new Date().getFullYear();
+const recentYears = Array.from({ length: 6 }, (_, i) => thisYear - i);
+/** Admissions: ADM2025, ADM2024, … */
+const ADM_NAMES = recentYears.map((y) => `ADM${y}`);
+/** Student Financial Aid: SFA2526, SFA2425, … (academic years) */
+const SFA_NAMES = recentYears.map((y) => `SFA${String(y - 1).slice(2)}${String(y).slice(2)}`);
 
 /* ------------------------------------------------------------------ */
 /* 3. Merge                                                            */
@@ -225,7 +246,12 @@ function netPriceByIncome(sc: ScorecardRow, type: SchoolType): (number | null)[]
   return values.some((v) => v !== null) ? values : null;
 }
 
-function toSchool(sc: ScorecardRow, adm: Record<string, string> | undefined, admYear: number): School | null {
+function toSchool(
+  sc: ScorecardRow,
+  adm: Record<string, string> | undefined,
+  admYear: number,
+  sfa: Record<string, string> | undefined
+): School | null {
   const size = numOrNull(sc["latest.student.size"]);
   const state = String(sc["school.state"] ?? "");
   const type = TYPE_BY_OWNERSHIP[Number(sc["school.ownership"])];
@@ -253,8 +279,9 @@ function toSchool(sc: ScorecardRow, adm: Record<string, string> | undefined, adm
   const satPct = ipedsNum(adm, "SATPCT");
   const actPct = ipedsNum(adm, "ACTPCT");
 
-  const sources = ["College Scorecard"];
-  if (adm) sources.push(`IPEDS Admissions ${admYear}`);
+  // Record topics that didn't come from their default source (see writeMeta).
+  const provenance: School["provenance"] = {};
+  if (!adm && acceptance !== null) provenance.admissions = "scorecard";
 
   return {
     unit_id: String(sc.id),
@@ -313,8 +340,96 @@ function toSchool(sc: ScorecardRow, adm: Record<string, string> | undefined, adm
         return v === null ? null : Math.round(v);
       })(),
     },
-    sources,
+    aid: toAid(sfa),
+    links: {
+      website: normalizeUrl(sc["school.school_url"]),
+      price_calculator: normalizeUrl(sc["school.price_calculator_url"]),
+    },
+    ...(Object.keys(provenance).length ? { provenance } : {}),
   };
+}
+
+function normalizeUrl(v: unknown): string | null {
+  if (typeof v !== "string" || !v.trim()) return null;
+  const url = v.trim();
+  return /^https?:\/\//i.test(url) ? url : `https://${url}`;
+}
+
+/** IPEDS SFA: percents are whole numbers; suffix "2" on GRN4 fields is the file's newest year. */
+function toAid(sfa: Record<string, string> | undefined): School["aid"] {
+  if (!sfa) return undefined;
+  const n = (k: string) => ipedsNum(sfa, k);
+  const p = (k: string) => {
+    const v = n(k);
+    return v === null ? null : v / 100;
+  };
+  const bands = [1, 2, 3, 4, 5];
+  const counts = bands.map((b) => n(`GRN4N${b}2`));
+  const aid = {
+    cohort: n("SCUGFFN"),
+    any_aid_pct: p("ANYAIDP"),
+    grant_pct: p("AGRNT_P"),
+    grant_avg: n("AGRNT_A"),
+    institutional_pct: p("IGRNT_P"),
+    institutional_avg: n("IGRNT_A"),
+    pell_pct: p("PGRNT_P"),
+    pell_avg: n("PGRNT_A"),
+    state_pct: p("SGRNT_P"),
+    loan_pct: p("LOAN_P"),
+    loan_avg: n("LOAN_A"),
+    by_income: counts.some((c) => c !== null) ? { counts, avg_grant: bands.map((b) => n(`GRN4A${b}2`)) } : null,
+  };
+  return aid.cohort === null && aid.grant_pct === null ? undefined : aid;
+}
+
+/** Citation details for every source, shown on profiles and the /sources page. */
+function writeMeta(adm: IpedsFile, sfa: IpedsFile, sfaYears: string) {
+  const meta: DatasetMeta = {
+    retrieved: new Date().toISOString().slice(0, 10),
+    sources: {
+      scorecard: {
+        label: "College Scorecard",
+        publisher: "U.S. Department of Education",
+        edition: "Most recent data (API)",
+        url: "https://collegescorecard.ed.gov/data/",
+        description:
+          "Federal data on every college receiving federal student aid: size, student demographics, Pell and first-generation shares, costs, net price by family income, earnings, graduation and retention, and student debt.",
+      },
+      "ipeds-adm": {
+        label: "IPEDS Admissions survey",
+        publisher: "National Center for Education Statistics (NCES)",
+        edition: `Fall ${adm.name.slice(3)} (${adm.name})`,
+        url: adm.url,
+        description:
+          "Annual survey every college must complete: applicants, admits, and enrollees; SAT/ACT score ranges and submission rates; and how test scores are used in admission.",
+      },
+      "ipeds-sfa": {
+        label: "IPEDS Student Financial Aid survey",
+        publisher: "National Center for Education Statistics (NCES)",
+        edition: `${sfaYears} (${sfa.name})`,
+        url: sfa.url,
+        description:
+          "Share of full-time first-year students receiving grants, Pell Grants, institutional aid, and loans, with average amounts, plus aid by family income for students receiving federal aid.",
+      },
+      cds: {
+        label: "Common Data Set",
+        publisher: "Each college (voluntary, standardized template)",
+        edition: "Varies by college",
+        url: "https://commondataset.org/",
+        description:
+          "A standardized report many colleges publish on their own sites, with more detail than federal surveys: admissions for the latest class and need-based vs. merit aid (section H).",
+      },
+    },
+    defaults: {
+      admissions: "ipeds-adm",
+      enrollment: "scorecard",
+      demographics: "scorecard",
+      cost: "scorecard",
+      outcomes: "scorecard",
+      aid: "ipeds-sfa",
+    },
+  };
+  writeFileSync(META, `${JSON.stringify(meta, null, 2)}\n`);
 }
 
 type Patch = { [key: string]: unknown };
@@ -344,7 +459,9 @@ async function main() {
   }
 
   console.log("Fetching sources…");
-  const [scorecard, ipeds] = await Promise.all([fetchScorecard(key), fetchIpedsAdmissions()]);
+  const [scorecard, adm, sfa] = await Promise.all([fetchScorecard(key), fetchIpeds(ADM_NAMES), fetchIpeds(SFA_NAMES)]);
+  const admYear = Number(adm.name.slice(3));
+  const sfaYears = `20${sfa.name.slice(3, 5)}–${sfa.name.slice(5, 7)}`;
 
   const stats = { online: 0, noSize: 0, withAdmissions: 0, withSat: 0, overridden: 0 };
   const overrides: Record<string, Patch> = existsSync(OVERRIDES) ? JSON.parse(readFileSync(OVERRIDES, "utf8")) : {};
@@ -355,7 +472,7 @@ async function main() {
       stats.online++;
       continue;
     }
-    let school = toSchool(row, ipeds.rows.get(String(row.id)), ipeds.year);
+    let school = toSchool(row, adm.rows.get(String(row.id)), admYear, sfa.rows.get(String(row.id)));
     if (!school) {
       stats.noSize++;
       continue;
@@ -371,6 +488,7 @@ async function main() {
   }
 
   schools.sort((a, b) => a.name.localeCompare(b.name));
+  writeMeta(adm, sfa, sfaYears);
   // One school per line keeps diffs readable between syncs.
   writeFileSync(OUT, `[\n${schools.map((s) => JSON.stringify(s)).join(",\n")}\n]\n`);
 
@@ -380,6 +498,8 @@ async function main() {
   console.log(`  with net price:       ${schools.filter((s) => s.cost?.avg_net_price != null).length}`);
   console.log(`  with earnings:        ${schools.filter((s) => s.outcomes?.median_earnings_10yr != null).length}`);
   console.log(`  with grad rate:       ${schools.filter((s) => s.outcomes?.graduation_rate != null).length}`);
+  console.log(`  with aid (IPEDS SFA): ${schools.filter((s) => s.aid?.grant_pct != null).length}`);
+  console.log(`  with CDS aid detail:  ${schools.filter((s) => s.aid?.cds).length}`);
   console.log(`  overrides applied:    ${stats.overridden}`);
   console.log(`  skipped online-only:  ${stats.online}${INCLUDE_ONLINE ? "" : " (use --include-online to keep)"}`);
   console.log(`  skipped (no undergrads reported): ${stats.noSize}`);

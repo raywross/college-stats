@@ -1,0 +1,358 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+import { ArrowRight, Swords } from "lucide-react";
+import { getSchoolsByIds, metricMedian, toIndexEntry } from "@/lib/data";
+import { DEMOGRAPHIC_CATEGORIES, DOMAINS, METRICS, TEST_POLICY_LABELS, satComposite, type Domain } from "@/lib/metrics";
+import { RADAR_AXES, keyDifferences, radarProfile, similarSchools } from "@/lib/insights";
+import { SLOT_COLORS, shortName } from "@/lib/brand";
+import { compact, num, pct, pctSmart } from "@/lib/format";
+import type { School } from "@/lib/types";
+import { CompareHeader } from "@/components/compare/CompareHeader";
+import { CompareMetric } from "@/components/compare/CompareMetric";
+import { Crest } from "@/components/school/Crest";
+import { RadarChart } from "@/components/charts/RadarChart";
+import { RangeBar } from "@/components/charts/RangeBar";
+import { StackedBar } from "@/components/charts/StackedBar";
+import { InfoTip, Term } from "@/components/ui/info-tip";
+
+export const metadata: Metadata = { title: "Compare" };
+
+const MATCHUPS = [
+  ["166027", "243744"],
+  ["110635", "110662"],
+  ["170976", "234076", "199120"],
+  ["168342", "121345"],
+  ["131520", "199120"],
+  ["145637", "204796", "236948"],
+];
+
+function Group({ domain, title, children }: { domain: Domain; title: string; children: React.ReactNode }) {
+  return (
+    <section className="space-y-4">
+      <h2 className="flex items-center gap-2 font-display text-2xl font-extrabold tracking-tight">
+        <span className="h-6 w-1.5 rounded-full" style={{ backgroundColor: DOMAINS[domain].color }} />
+        {title}
+      </h2>
+      {children}
+    </section>
+  );
+}
+
+export default async function ComparePage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const params = await searchParams;
+  const ids = (typeof params.ids === "string" ? params.ids : "").split(",").filter(Boolean).slice(0, 4);
+  const schools = getSchoolsByIds([...new Set(ids)]);
+
+  if (schools.length === 0) return <EmptyState />;
+
+  const diffs = keyDifferences(schools);
+
+  return (
+    <div className="mx-auto max-w-7xl px-4 pt-8 pb-12 sm:px-6 sm:pt-10">
+      <header className="mb-6">
+        <p className="mb-2 text-xs font-bold tracking-[0.18em] text-primary uppercase">Compare</p>
+        <h1 className="font-display text-4xl font-extrabold tracking-tight sm:text-5xl">
+          {schools.length === 1 ? (
+            <>Pick a <span className="highlight">rival</span></>
+          ) : (
+            <>
+              Head-to-<span className="highlight">head</span>
+            </>
+          )}
+        </h1>
+      </header>
+
+      <CompareHeader schools={schools.map(toIndexEntry)} />
+
+      {schools.length === 1 ? (
+        <SinglePrompt school={schools[0]} />
+      ) : (
+        <div className="space-y-14 pt-8">
+          {/* Key differences + radar */}
+          <div className="grid gap-4 lg:grid-cols-[1.2fr_1fr]">
+            <section className="rounded-3xl border bg-card p-5 sm:p-6">
+              <h2 className="font-display text-2xl font-extrabold tracking-tight">Key differences</h2>
+              <p className="mb-5 text-sm text-muted-foreground">The biggest gaps between these schools, largest first.</p>
+              <ol className="space-y-3">
+                {diffs.slice(0, 6).map((d, i) => (
+                  <li key={d.metric} className="flex animate-rise gap-3" style={{ animationDelay: `${i * 60}ms` }}>
+                    <span
+                      className="mt-0.5 inline-flex size-7 shrink-0 items-center justify-center rounded-full text-xs font-extrabold text-white"
+                      style={{ backgroundColor: DOMAINS[METRICS[d.metric].domain].color }}
+                    >
+                      {i + 1}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-semibold">{d.headline}</p>
+                      <div className="mt-1.5 flex items-center gap-2">
+                        <span className="h-1.5 flex-1 overflow-hidden rounded-full bg-muted">
+                          <span
+                            className="block h-full origin-left animate-grow-x rounded-full"
+                            style={{ width: `${Math.max(6, d.magnitude * 100)}%`, backgroundColor: DOMAINS[METRICS[d.metric].domain].color }}
+                          />
+                        </span>
+                        <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
+                          {METRICS[d.metric].label}
+                          <InfoTip term={METRICS[d.metric].term} />
+                        </span>
+                      </div>
+                    </div>
+                  </li>
+                ))}
+              </ol>
+            </section>
+            <section className="rounded-3xl border bg-card p-5 sm:p-6">
+              <h2 className="flex items-center gap-1 font-display text-2xl font-extrabold tracking-tight">
+                The shape of each school
+              </h2>
+              <p className="mb-2 flex items-center gap-1 text-sm text-muted-foreground">
+                Each axis is a national rank among 4-year colleges; further out = more of it.
+                <InfoTip term="percentile-rank" />
+              </p>
+              <RadarChart
+                axes={RADAR_AXES.map((a) => a.label)}
+                series={schools.map((s, i) => ({
+                  id: s.unit_id,
+                  label: shortName(s),
+                  color: SLOT_COLORS[i],
+                  values: radarProfile(s),
+                }))}
+              />
+            </section>
+          </div>
+
+          <Group domain="admissions" title="Admissions">
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+              <CompareMetric label="Acceptance rate" term="acceptance-rate" schools={schools} get={METRICS.acceptance.get} format={pctSmart} flag={{ which: "min", text: "Most selective" }} />
+              <CompareMetric label="Applicants" term="applicants" schools={schools} get={METRICS.applicants.get} format={compact} flag={{ which: "max", text: "Most" }} />
+              <CompareMetric label="Yield rate" term="yield" schools={schools} get={METRICS.yield.get} format={(v) => pct(v)} max={1} flag={{ which: "max", text: "Highest" }} />
+            </div>
+          </Group>
+
+          <Group domain="scores" title="Test scores">
+            <div className="grid gap-4 md:grid-cols-2">
+              <ScoreCompare schools={schools} test="sat" />
+              <ScoreCompare schools={schools} test="act" />
+            </div>
+            <div className="grid gap-4 md:grid-cols-2">
+              <CompareMetric label="Submitted SAT" term="test-submission" schools={schools} get={(s) => s.admissions.test_submission_rate_sat} format={(v) => pct(v)} max={1} />
+              <CompareMetric label="Submitted ACT" term="test-submission" schools={schools} get={(s) => s.admissions.test_submission_rate_act} format={(v) => pct(v)} max={1} />
+            </div>
+          </Group>
+
+          <Group domain="access" title="Students">
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+              <CompareMetric label="Undergrads" term="undergrad-enrollment" schools={schools} get={METRICS.enrollment.get} format={compact} flag={{ which: "max", text: "Largest" }} />
+              <CompareMetric label="Pell Grant share" term="pell-grant" schools={schools} get={METRICS.pell.get} format={(v) => pct(v)} max={1} flag={{ which: "max", text: "Highest" }} />
+              <CompareMetric label="First-gen share" term="first-gen" schools={schools} get={METRICS.firstGen.get} format={(v) => pct(v)} max={1} flag={{ which: "max", text: "Highest" }} />
+              <CompareMetric label="Diversity index" term="diversity-index" schools={schools} get={METRICS.diversity.get} format={(v) => v.toFixed(2)} max={1} flag={{ which: "max", text: "Most" }} />
+            </div>
+            <div className="rounded-3xl border bg-card p-5 sm:p-6">
+              <h3 className="mb-5 flex items-center gap-1 font-display text-base font-bold">
+                Race & ethnicity <InfoTip term="race-ethnicity" />
+              </h3>
+              <div className="space-y-5">
+                {schools.map((s, i) => (
+                  <div key={s.unit_id} className="grid gap-2 sm:grid-cols-[8rem_1fr] sm:items-center">
+                    <span className="flex items-center gap-1.5 text-sm font-semibold">
+                      <span className="size-2.5 rounded-full" style={{ backgroundColor: SLOT_COLORS[i] }} />
+                      {shortName(s)}
+                    </span>
+                    {s.demographics.racial_diversity ? (
+                      <StackedBar data={s.demographics.racial_diversity} height="h-6" showLegend={false} label={s.name} />
+                    ) : (
+                      <span className="text-sm text-muted-foreground">Not reported</span>
+                    )}
+                  </div>
+                ))}
+              </div>
+              <ul className="mt-5 flex flex-wrap gap-x-4 gap-y-1.5 border-t pt-4 text-xs">
+                {DEMOGRAPHIC_CATEGORIES.map((c) => (
+                  <li key={c.key} className="flex items-center gap-1.5 text-muted-foreground">
+                    <span className="size-2.5 rounded-full" style={{ backgroundColor: c.color }} />
+                    {c.label}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </Group>
+
+          {/* Data table: every value in one place (also the accessible view) */}
+          <section className="space-y-4">
+            <h2 className="font-display text-2xl font-extrabold tracking-tight">All the numbers</h2>
+            <div className="overflow-x-auto rounded-3xl border bg-card">
+              <table className="w-full min-w-[560px] text-sm">
+                <thead className="border-b bg-surface-2">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">Metric</th>
+                    {schools.map((s, i) => (
+                      <th key={s.unit_id} className="px-4 py-3 text-left text-xs font-bold">
+                        <span className="inline-flex items-center gap-1.5">
+                          <span className="size-2 rounded-full" style={{ backgroundColor: SLOT_COLORS[i] }} />
+                          {shortName(s)}
+                        </span>
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y tabular-nums">
+                  {(
+                    [
+                      ["Acceptance rate", "acceptance-rate", (s: School) => s.admissions.acceptance_rate === null ? null : pctSmart(s.admissions.acceptance_rate)],
+                      ["Applicants", "applicants", (s: School) => opt(s.admissions.applicants, num)],
+                      ["Admitted", "admitted", (s: School) => opt(s.admissions.admitted, num)],
+                      ["Enrolled", "enrolled", (s: School) => opt(s.admissions.enrolled, num)],
+                      ["Yield", "yield", (s: School) => opt(METRICS.yield.get(s), (v) => pct(v))],
+                      ["SAT middle 50%", "middle-50", (s: School) => satComposite(s)?.join("–") ?? null],
+                      ["ACT middle 50%", "act", (s: School) => s.admissions.act_composite_25_75?.join("–") ?? null],
+                      ["Test policy", "test-policy", (s: School) => (s.admissions.test_policy ? TEST_POLICY_LABELS[s.admissions.test_policy] : null)],
+                      ["Undergrads", "undergrad-enrollment", (s: School) => num(s.demographics.undergrad_enrollment)],
+                      ["Pell Grant", "pell-grant", (s: School) => opt(s.demographics.pell_grant_percent, (v) => pct(v))],
+                      ["First-gen", "first-gen", (s: School) => opt(s.demographics.first_gen_percent, (v) => pct(v))],
+                      ["Diversity index", "diversity-index", (s: School) => opt(METRICS.diversity.get(s), (v) => v.toFixed(2))],
+                    ] as const
+                  ).map(([label, term, fmt]) => (
+                    <tr key={label}>
+                      <td className="px-4 py-2.5 text-muted-foreground">
+                        <span className="inline-flex items-center gap-1">
+                          {label} <InfoTip term={term} />
+                        </span>
+                      </td>
+                      {schools.map((s) => (
+                        <td key={s.unit_id} className="px-4 py-2.5 font-semibold">
+                          {fmt(s) ?? <span className="font-normal text-muted-foreground">–</span>}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+
+function ScoreCompare({ schools, test }: { schools: School[]; test: "sat" | "act" }) {
+  const ranges = schools.map((s) => (test === "sat" ? satComposite(s) : s.admissions.act_composite_25_75));
+  const present = ranges.filter((r): r is [number, number] => r !== null);
+  const title = test === "sat" ? "SAT total" : "ACT composite";
+  if (present.length === 0) {
+    return (
+      <div className="rounded-3xl border border-dashed p-5 text-sm text-muted-foreground">
+        None of these colleges report {title} ranges.
+      </div>
+    );
+  }
+  const minLo = Math.min(...present.map((r) => r[0]));
+  const lo = test === "sat" ? Math.floor((minLo - 60) / 100) * 100 : Math.max(1, minLo - 4);
+  const hi = test === "sat" ? 1600 : 36;
+  const median = metricMedian(test === "sat" ? "sat" : "act");
+  return (
+    <div className="rounded-3xl border bg-card p-5">
+      <h3 className="mb-4 flex items-center gap-1 font-display text-base font-bold">
+        {title}, <Term term="middle-50">middle 50%</Term>
+      </h3>
+      <div className="space-y-3">
+        {schools.map((s, i) => {
+          const r = ranges[i];
+          return (
+            <div key={s.unit_id} className="grid grid-cols-[4.5rem_1fr_4.5rem] items-center gap-3 sm:grid-cols-[6rem_1fr_5rem]">
+              <span className="truncate text-xs font-semibold">{shortName(s)}</span>
+              {r ? (
+                <RangeBar low={r[0]} high={r[1]} scale={[lo, hi]} color={SLOT_COLORS[i]} medianMid={median ?? undefined} compact />
+              ) : (
+                <span className="text-xs text-muted-foreground">
+                  {s.admissions.test_policy === "not-considered" ? "Test-blind" : "Not reported"}
+                </span>
+              )}
+              <span className="text-right text-sm font-bold tabular-nums">{r ? `${r[0]}–${r[1]}` : "–"}</span>
+            </div>
+          );
+        })}
+      </div>
+      <p className="mt-3 text-[11px] text-muted-foreground">
+        Axis runs {lo}–{hi}. The dark tick marks the national median midpoint.
+      </p>
+    </div>
+  );
+}
+
+function opt<T>(v: T | null, f: (v: T) => string): string | null {
+  return v === null ? null : f(v);
+}
+
+function SinglePrompt({ school }: { school: School }) {
+  const similar = similarSchools(school, 4);
+  return (
+    <div className="pt-8">
+      <p className="mb-4 text-muted-foreground">
+        Add at least one more school to see the head-to-head. Here are a few that are a lot like {shortName(school)}:
+      </p>
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        {similar.map(({ school: s, reasons }) => (
+          <Link
+            key={s.unit_id}
+            href={`/compare?ids=${school.unit_id},${s.unit_id}`}
+            className="group rounded-3xl border bg-card p-5 transition-all hover:-translate-y-1 hover:shadow-xl hover:shadow-primary/10"
+          >
+            <Crest id={s.unit_id} name={s.name} size="md" />
+            <p className="mt-3 font-display font-bold group-hover:text-primary">{s.name}</p>
+            <p className="text-xs text-muted-foreground">{reasons.join(" · ")}</p>
+            <span className="mt-3 inline-flex items-center gap-1 text-xs font-bold text-primary">
+              Compare <ArrowRight className="size-3.5" />
+            </span>
+          </Link>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function EmptyState() {
+  return (
+    <div className="mx-auto max-w-4xl px-4 pt-16 pb-12 text-center sm:px-6">
+      <span className="mx-auto inline-flex size-16 animate-pop-in items-center justify-center rounded-3xl bg-pop text-pop-foreground shadow-lg">
+        <Swords className="size-8" />
+      </span>
+      <h1 className="mt-6 font-display text-4xl font-extrabold tracking-tight sm:text-5xl">
+        Pick your <span className="highlight">contenders</span>
+      </h1>
+      <p className="mx-auto mt-3 max-w-lg text-muted-foreground">
+        Add up to four schools with the <b className="text-foreground">+ Compare</b> button on any card or profile, or
+        start with a classic matchup.
+      </p>
+      <div className="mt-10 grid gap-3 text-left sm:grid-cols-2">
+        {MATCHUPS.map((ids) => {
+          const schools = getSchoolsByIds(ids);
+          return (
+            <Link
+              key={ids.join()}
+              href={`/compare?ids=${ids.join(",")}`}
+              className="group flex items-center gap-3 rounded-3xl border bg-card p-4 transition-all hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/10"
+            >
+              <div className="flex -space-x-2">
+                {schools.map((s) => (
+                  <Crest key={s.unit_id} id={s.unit_id} name={s.name} size="md" className="ring-2 ring-card" />
+                ))}
+              </div>
+              <span className="min-w-0 flex-1 font-semibold">{schools.map((s) => shortName(s)).join(" vs. ")}</span>
+              <ArrowRight className="size-4 text-muted-foreground transition-transform group-hover:translate-x-1 group-hover:text-primary" />
+            </Link>
+          );
+        })}
+      </div>
+      <Link href="/explore" className="mt-8 inline-flex items-center gap-1.5 rounded-full bg-foreground px-5 py-3 text-sm font-semibold text-background">
+        Browse all schools <ArrowRight className="size-4" />
+      </Link>
+    </div>
+  );
+}

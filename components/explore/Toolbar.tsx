@@ -65,6 +65,9 @@ const SORTS = [
   { value: "pell", label: "Pell share", dir: "desc" },
   { value: "first_gen", label: "First-gen share", dir: "desc" },
   { value: "diversity", label: "Diversity index", dir: "desc" },
+  { value: "net_price", label: "Net price (lowest)", dir: "asc" },
+  { value: "earnings", label: "Earnings (highest)", dir: "desc" },
+  { value: "grad_rate", label: "Graduation rate", dir: "desc" },
 ] as const;
 
 export function SortControl() {
@@ -80,7 +83,7 @@ export function SortControl() {
           value={sortBy}
           onChange={(e) => {
             const opt = SORTS.find((s) => s.value === e.target.value)!;
-            update({ sortBy: opt.value === "applicants" ? null : opt.value, sortDir: null });
+            update({ sortBy: opt.value === "applicants" ? null : opt.value, sortDir: opt.dir === "desc" && opt.value !== "applicants" ? "desc" : null });
           }}
           className="cursor-pointer bg-transparent py-1 pr-1 text-sm font-semibold text-foreground outline-none"
         >
@@ -161,6 +164,15 @@ export function ActiveFilters() {
       key: "sat",
       label: `SAT ${minSAT ?? "…"}–${maxSAT ?? "1600"}`,
       onRemove: () => update({ minSAT: null, maxSAT: null }),
+    });
+
+  const minNP = searchParams.get("minNP");
+  const maxNP = searchParams.get("maxNP");
+  if (minNP || maxNP)
+    chips.push({
+      key: "np",
+      label: `Net price $${Math.round(Number(minNP ?? 0) / 1000)}K–$${maxNP ? Math.round(Number(maxNP) / 1000) + "K" : "80K+"}`,
+      onRemove: () => update({ minNP: null, maxNP: null }),
     });
 
   const minEnroll = searchParams.get("minEnroll");

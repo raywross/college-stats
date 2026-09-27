@@ -11,9 +11,9 @@ Route: `/explore` (dynamic, URL-driven). The middle of the drill-down, where you
 ## Views (`?view=`)
 | View | Component | Notes |
 |---|---|---|
-| `grid` (default, 24/page) | `SchoolCard` | Crest, admit rate + "1 in N", selectivity tier, four percentile meters (selectivity, SAT, size, Pell), up to two "Known for" chips, compare toggle |
+| `grid` (default, 24/page) | `SchoolCard` | Crest, admit rate + "1 in N", selectivity tier, five percentile meters (selectivity, size, SAT, Pell, net price), up to two "Known for" chips, compare toggle |
 | `table` (50/page) | `SchoolTable` | Sortable headers with info tips, inline bars per metric, sticky first column, horizontal scroll on small screens |
-| `chart` | `LandscapeScatter` | Up to the 600 most-applied-to matches that report both admit rate and SAT |
+| `chart` | `ScatterPlot` | Up to the 600 most-applied-to matches. Tab `chart=admissions` (default: admit rate vs. SAT) or `chart=value` (net price vs. earnings) |
 
 ## Filters & URL params
 | Filter | Control | Params |
@@ -24,7 +24,8 @@ Route: `/explore` (dynamic, URL-driven). The middle of the drill-down, where you
 | Type | chips with counts | `types` (public, private-nonprofit, …) |
 | Size | 4 bucket tiles | `sizes` (small, medium, large, xl) |
 | Region / State | chips with counts | `regions`, `states` |
-| Sort | select + direction | `sortBy` (**applicants** = "Most applied-to", the default, descending; name, acceptance_rate, sat, enrollment, pell, first_gen, diversity), `sortDir` |
+| Net price | `HistogramSlider` $0–80K | `minNP`, `maxNP` |
+| Sort | select + direction | `sortBy` (**applicants** = "Most applied-to", the default, descending; name, acceptance_rate, sat, enrollment, pell, first_gen, diversity, net_price (lowest first), earnings, grad_rate), `sortDir` |
 | Page | `Pagination` | `page` (reset to 1 by any filter/sort/view change) |
 | Min/max undergrads | chip only (set by home lenses) | `minEnroll`, `maxEnroll` |
 

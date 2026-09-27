@@ -7,7 +7,9 @@ tokens and adapts to dark mode. Recharts is still installed but unused.
 
 | Component | Type | Client? | Used on | What it shows |
 |---|---|---|---|---|
-| `LandscapeScatter` | Scatter | yes | Home (400 most-applied-to), Explore chart view (up to 600 of the matches), Profile (300 + this school) | Acceptance rate (x) vs SAT midpoint (y), dot area = undergrads, color = public/private. Hover/focus shows a card; mouse click opens the profile; touch taps pin the card. `highlight` fades non-matches, `focusId` labels one school. |
+| `ScatterPlot` | Scatter | yes | Home, Explore chart view, Profile | Generic school scatter: dot area = undergrads, color = public/private. Axes, formats, and shaded zone come from serializable configs in `lib/chart-configs.ts`: `LANDSCAPE_*` (admit rate vs. SAT) and `VALUE_*` + `valueZone()` (net price vs. earnings). Hover/focus shows a card; mouse click opens the profile; touch taps pin the card. `highlight` fades non-matches; `focusId` labels one school, flipping the label left near the edge. Capped at 300–600 most-applied-to points. |
+| `NetPriceByIncome` | Column | no | Profile | Net price per income band, one series (value color), labels on caps, hairline for the overall average with its label in a right gutter. |
+| `NetPriceCompare` (compare/) | Grouped bars | no | Compare | Each income band, one bar per school in slot colors, shared scale. |
 | `DistributionStrip` | Histogram + pin | yes | Profile | Distribution of a metric across every reporting college (server-computed bins from `distribution()`, axis = 1st–99th percentile), this school pinned, "higher than X% of N" label. Hover a bar for its count. `format` is a serializable `FormatKind`. (Replaced a per-school beeswarm, which can't show ~1,900 dots.) |
 | `RangeBar` | Range bar | no | Profile, Compare | Middle-50% range on a fixed scale, dataset median tick, optional "You" marker. |
 | `BenchmarkBar` | Bar + marker | no | Profile | Value vs the national median, with "Above/Below/About typical". |

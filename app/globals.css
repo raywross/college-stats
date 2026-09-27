@@ -47,6 +47,7 @@
   --color-d-scores: var(--d-scores);
   --color-d-access: var(--d-access);
   --color-d-diversity: var(--d-diversity);
+  --color-d-value: var(--d-value);
 
   /* Status (reserved: always paired with icon + label) */
   --color-good: var(--good);
@@ -125,6 +126,7 @@
   --d-scores: #2a78d6;
   --d-access: #1baf7a;
   --d-diversity: #c2378f;
+  --d-value: #eda100;
 
   /* Compare slots: validated all-pairs (radar overlays) */
   --s1: #2a78d6;
@@ -198,6 +200,7 @@
   --d-scores: #3987e5;
   --d-access: #199e70;
   --d-diversity: #e05ab0;
+  --d-value: #c98500;
 
   --s1: #3987e5;
   --s2: #d95926;

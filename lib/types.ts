@@ -45,11 +45,29 @@ export interface School {
       other: number;
     } | null;
   };
-  /** Cost & outcomes from College Scorecard (not yet shown in the UI). */
-  outcomes?: {
+  /** What students pay, per year (College Scorecard; dollars). */
+  cost?: {
+    /** Average annual net price for students receiving grant aid. */
     avg_net_price: number | null;
+    /** Net price by family income: $0–30K, $30–48K, $48–75K, $75–110K, $110K+. */
+    net_price_by_income: (number | null)[] | null;
+    /** Full sticker cost of attendance (tuition, fees, housing, books). */
+    cost_of_attendance: number | null;
+    tuition_in_state: number | null;
+    tuition_out_of_state: number | null;
+  };
+  /** What happens after enrolling (College Scorecard). */
+  outcomes?: {
+    /** Median earnings of former students 10 / 6 years after entry (federal aid recipients). */
     median_earnings_10yr: number | null;
-    completion_rate: number | null;
+    median_earnings_6yr: number | null;
+    /** Share completing within 150% of normal time (6 years for a 4-year degree). */
+    graduation_rate: number | null;
+    /** Share of full-time first-years who return for a second year. */
+    retention_rate: number | null;
+    /** Median federal loan debt of graduates, and the implied 10-year monthly payment. */
+    median_debt: number | null;
+    monthly_loan_payment: number | null;
   };
   /** Where each part of the record came from, for the data note on profiles. */
   sources?: string[];
@@ -65,7 +83,10 @@ export type SortKey =
   | "sat"
   | "pell"
   | "first_gen"
-  | "diversity";
+  | "diversity"
+  | "net_price"
+  | "earnings"
+  | "grad_rate";
 
 export type ExploreView = "grid" | "table" | "chart";
 
@@ -83,6 +104,8 @@ export interface SearchFilters {
   maxACT?: number;
   minEnroll?: number;
   maxEnroll?: number;
+  minNP?: number;
+  maxNP?: number;
   sortBy?: SortKey;
   sortDir?: "asc" | "desc";
 }

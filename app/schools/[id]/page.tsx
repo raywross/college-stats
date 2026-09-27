@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowRight, ChevronRight, MapPin, TriangleAlert } from "lucide-react";
-import { distribution, getSchoolById, landscapePoints, metricMedian, rankOf, topBy } from "@/lib/data";
+import { distribution, getSchoolById, landscapePoints, metricMedian, rankOf, topBy, valuePoints } from "@/lib/data";
 import {
   DOMAINS,
   TEST_POLICY_LABELS,
@@ -11,6 +11,7 @@ import {
   hasAdmissionCounts,
   hasTestScores,
   admitRatio,
+  paybackYears,
   satComposite,
   satMid,
   selectivityTier,
@@ -20,13 +21,15 @@ import {
 } from "@/lib/metrics";
 import {
   admissionsTakeaway,
+  costTakeaway,
+  outcomesTakeaway,
   scoresTakeaway,
   similarSchools,
   standouts,
   studentsTakeaway,
   yieldTakeaway,
 } from "@/lib/insights";
-import { compact, num, pct, pctSmart, range, typeLabel } from "@/lib/format";
+import { compact, money, moneyCompact, num, pct, pctSmart, range, typeLabel } from "@/lib/format";
 import type { TermKey } from "@/lib/glossary";
 import { crestTint } from "@/lib/brand";
 import { Crest } from "@/components/school/Crest";
@@ -40,7 +43,9 @@ import { RangeBar } from "@/components/charts/RangeBar";
 import { BenchmarkBar } from "@/components/charts/BenchmarkBar";
 import { StackedBar } from "@/components/charts/StackedBar";
 import { DistributionStrip } from "@/components/charts/DistributionStrip";
-import { LandscapeScatter } from "@/components/charts/LandscapeScatter";
+import { ScatterPlot } from "@/components/charts/ScatterPlot";
+import { LANDSCAPE_X, LANDSCAPE_Y, LANDSCAPE_ZONE, VALUE_X, VALUE_Y, valueZone } from "@/lib/chart-configs";
+import { NetPriceByIncome } from "@/components/charts/NetPriceByIncome";
 import { InfoTip, MetricLabel, Term } from "@/components/ui/info-tip";
 
 type Props = { params: Promise<{ id: string }> };
@@ -139,12 +144,23 @@ export default async function SchoolPage({ params }: Props) {
   const lowSubmission = sub.sat !== null && sub.act !== null && sub.sat < 0.5 && sub.act < 0.5;
   const acceptanceRank = rankOf(school, "acceptance");
   const policy = a.test_policy ? TEST_POLICY_LABELS[a.test_policy] : null;
+  const c = school.cost;
+  const o = school.outcomes;
+  const netPrice = c?.avg_net_price ?? null;
+  const earnings = o?.median_earnings_10yr ?? null;
+  const grad = o?.graduation_rate ?? null;
+  const byIncome = c?.net_price_by_income ?? null;
+  const payback = paybackYears(school);
+  const hasValue = netPrice !== null || earnings !== null || grad !== null || byIncome !== null;
+  const onValueMap = netPrice !== null && earnings !== null;
+  const discount = netPrice !== null && c?.cost_of_attendance ? 1 - netPrice / c.cost_of_attendance : null;
 
   const sections = [
     { id: "overview", label: "Overview" },
     ...(rate !== null || counts ? [{ id: "admissions", label: "Admissions", color: DOMAINS.admissions.color }] : []),
     ...(scores ? [{ id: "scores", label: "Test scores", color: DOMAINS.scores.color }] : []),
     { id: "students", label: "Students", color: DOMAINS.access.color },
+    ...(hasValue ? [{ id: "cost", label: "Cost & outcomes", color: DOMAINS.value.color }] : []),
     { id: "ranks", label: "How it ranks" },
     { id: "similar", label: "Similar schools" },
   ];
@@ -205,7 +221,7 @@ export default async function SchoolPage({ params }: Props) {
           {/* ============================== OVERVIEW ============================== */}
           <section id="overview" className="scroll-mt-36" aria-label="At a glance">
             <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-              <Tile label="Acceptance rate" term="acceptance-rate" className="col-span-2 lg:col-span-1 lg:row-span-2">
+              <Tile label="Acceptance rate" term="acceptance-rate" className="col-span-2 lg:col-span-1 lg:row-span-3">
                 {rate !== null ? (
                   <div className="flex items-center gap-4 lg:flex-col lg:items-start">
                     <Ring value={rate} color={DOMAINS.admissions.color} size={112} stroke={12} label={`Acceptance rate ${pctSmart(rate)}`}>
@@ -279,6 +295,28 @@ export default async function SchoolPage({ params }: Props) {
                 <Tile label="Diversity index" term="diversity-index">
                   <p className="font-display text-3xl font-extrabold">{div.toFixed(2)}</p>
                   <StackedBar data={d.racial_diversity} height="h-2.5" showLegend={false} />
+                </Tile>
+              )}
+              {netPrice !== null && (
+                <Tile label="Average net price" term="net-price">
+                  <p className="font-display text-3xl font-extrabold">{moneyCompact(netPrice)}</p>
+                  <p className="text-xs text-muted-foreground">per year, after grants</p>
+                </Tile>
+              )}
+              {earnings !== null && (
+                <Tile label="Median earnings" term="median-earnings">
+                  <p className="font-display text-3xl font-extrabold">{moneyCompact(earnings)}</p>
+                  <p className="text-xs text-muted-foreground">10 years after enrolling</p>
+                </Tile>
+              )}
+              {grad !== null && (
+                <Tile label="Graduation rate" term="graduation-rate">
+                  <div className="flex items-center gap-3">
+                    <Ring value={grad} color={DOMAINS.value.color} size={56} stroke={7} label={`Graduation rate ${pct(grad)}`}>
+                      <span className="text-xs font-bold">{pct(grad)}</span>
+                    </Ring>
+                    <p className="text-xs text-muted-foreground">finish within six years</p>
+                  </div>
                 </Tile>
               )}
             </div>
@@ -503,6 +541,176 @@ export default async function SchoolPage({ params }: Props) {
             </div>
           </Panel>
 
+          {/* ============================== COST & OUTCOMES ============================== */}
+          {hasValue && (
+            <Panel id="cost" domain="value" eyebrow="Cost & outcomes" title="What it costs, what it pays" takeaway={costTakeaway(school)}>
+              <div className="grid gap-4 lg:grid-cols-[1.2fr_1fr]">
+                <div className="rounded-3xl border bg-card p-5 sm:p-6">
+                  <h3 className="mb-1 flex items-center gap-1 font-display text-lg font-bold">
+                    What families actually pay <InfoTip term="net-price-by-income" />
+                  </h3>
+                  <p className="mb-5 text-xs text-muted-foreground">Average net price per year by family income, for students receiving aid.</p>
+                  {byIncome ? (
+                    <NetPriceByIncome values={byIncome} average={netPrice} />
+                  ) : (
+                    <p className="text-sm text-muted-foreground">Net price by family income isn&apos;t reported.</p>
+                  )}
+                </div>
+                <div className="flex flex-col gap-4">
+                  {netPrice !== null && (
+                    <div className="space-y-5 rounded-3xl border bg-card p-5 sm:p-6">
+                      <BenchmarkBar
+                        label="Average net price"
+                        term="net-price"
+                        value={netPrice}
+                        median={metricMedian("netPrice") ?? undefined}
+                        scale={[0, 80000]}
+                        format={money}
+                        color={DOMAINS.value.color}
+                      />
+                      {c?.cost_of_attendance && discount !== null && (
+                        <div className="space-y-2">
+                          <div className="flex items-baseline justify-between gap-2 text-sm">
+                            <MetricLabel term="cost-of-attendance" className="font-medium">
+                              Sticker price vs. what students pay
+                            </MetricLabel>
+                            <span className="font-semibold">{money(c.cost_of_attendance)}</span>
+                          </div>
+                          <div className="relative h-3 overflow-hidden rounded-full bg-muted" role="img" aria-label={`Sticker price ${money(c.cost_of_attendance)}, average net price ${money(netPrice)}`}>
+                            <div
+                              className="absolute inset-y-0 left-0 origin-left animate-grow-x rounded-full"
+                              style={{ width: `${Math.min(100, (netPrice / c.cost_of_attendance) * 100)}%`, backgroundColor: DOMAINS.value.color }}
+                            />
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            {discount > 0.02 ? (
+                              <>
+                                Grants cover about <b className="text-foreground">{pct(discount)}</b> of the sticker price for the average aided student.
+                              </>
+                            ) : (
+                              <>Most aided students pay close to the full sticker price.</>
+                            )}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  {(o?.median_debt != null || payback !== null) && (
+                    <div className="grid grid-cols-2 gap-4 rounded-3xl border bg-card p-5 sm:p-6">
+                      {o?.median_debt != null && (
+                        <div>
+                          <MetricLabel term="median-debt" className="text-xs font-semibold text-muted-foreground">
+                            Median debt at graduation
+                          </MetricLabel>
+                          <p className="mt-2 font-display text-3xl font-extrabold">{moneyCompact(o.median_debt)}</p>
+                          {o.monthly_loan_payment != null && (
+                            <p className="text-xs text-muted-foreground">≈ {money(o.monthly_loan_payment)}/month for 10 years</p>
+                          )}
+                        </div>
+                      )}
+                      {payback !== null && (
+                        <div>
+                          <MetricLabel term="payback" className="text-xs font-semibold text-muted-foreground">
+                            Payback estimate
+                          </MetricLabel>
+                          <p className="mt-2 font-display text-3xl font-extrabold">{payback.toFixed(1)} yrs</p>
+                          <p className="text-xs text-muted-foreground">of median salary to cover 4 years of net price</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {(earnings !== null || grad !== null) && (
+                <>
+                  <p className="mt-10 mb-4 max-w-3xl text-lg text-muted-foreground">{outcomesTakeaway(school)}</p>
+                  <div className="grid gap-4 lg:grid-cols-2">
+                    <div className="space-y-6 rounded-3xl border bg-card p-5 sm:p-6">
+                      <h3 className="font-display text-lg font-bold">Earnings</h3>
+                      <DistributionStrip
+                        label="Median earnings vs. every college"
+                        term="median-earnings"
+                        dist={distribution("earnings")}
+                        value={earnings}
+                        rank={rankOf(school, "earnings")}
+                        format="moneyCompact"
+                        color={DOMAINS.value.color}
+                      />
+                      {earnings !== null && o?.median_earnings_6yr != null && (
+                        <div className="space-y-2">
+                          <p className="text-sm font-medium">Earnings climb with time</p>
+                          {[
+                            { label: "6 years after entry", v: o.median_earnings_6yr },
+                            { label: "10 years after entry", v: earnings },
+                          ].map((row, i) => (
+                            <div key={row.label} className="grid grid-cols-[8.5rem_1fr_auto] items-center gap-3 text-xs">
+                              <span className="text-muted-foreground">{row.label}</span>
+                              <span className="h-2.5 overflow-hidden rounded-full" style={{ backgroundColor: `color-mix(in oklch, ${DOMAINS.value.color} 16%, transparent)` }}>
+                                <span
+                                  className="block h-full origin-left animate-grow-x rounded-full"
+                                  style={{
+                                    width: `${(row.v / Math.max(earnings, o.median_earnings_6yr!)) * 100}%`,
+                                    backgroundColor: DOMAINS.value.color,
+                                    animationDelay: `${i * 100}ms`,
+                                  }}
+                                />
+                              </span>
+                              <span className="font-semibold tabular-nums">{moneyCompact(row.v)}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    <div className="rounded-3xl border bg-card p-5 sm:p-6">
+                      <h3 className="mb-5 font-display text-lg font-bold">Staying and finishing</h3>
+                      <div className="flex flex-wrap justify-around gap-6">
+                        {[
+                          { label: "come back for year two", v: o?.retention_rate ?? null, term: "retention-rate" as const, name: "Retention" },
+                          { label: "graduate within six years", v: grad, term: "graduation-rate" as const, name: "Graduation" },
+                        ]
+                          .filter((r): r is typeof r & { v: number } => r.v !== null)
+                          .map((r) => (
+                            <div key={r.name} className="text-center">
+                              <Ring value={r.v} color={DOMAINS.value.color} size={112} stroke={12} label={`${r.name} rate ${pct(r.v)}`}>
+                                <span className="font-display text-2xl font-extrabold">{pct(r.v)}</span>
+                              </Ring>
+                              <p className="mt-2 flex items-center justify-center gap-1 text-xs font-semibold">
+                                {r.name} <InfoTip term={r.term} />
+                              </p>
+                              <p className="text-[11px] text-muted-foreground">{r.label}</p>
+                            </div>
+                          ))}
+                      </div>
+                      {grad !== null && (
+                        <p className="mt-5 text-xs text-muted-foreground">
+                          National median graduation rate: <b className="text-foreground">{pct(metricMedian("gradRate") ?? 0)}</b>
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {onValueMap && (
+                <div className="mt-4 rounded-3xl border bg-card p-5 sm:p-6">
+                  <h3 className="mb-1 font-display text-lg font-bold">Cost vs. earnings</h3>
+                  <p className="mb-3 text-xs text-muted-foreground">
+                    The 300 most-applied-to colleges plus {school.name}. Top-left is lower cost and higher earnings.
+                  </p>
+                  <ScatterPlot
+                    focusId={school.unit_id}
+                    height={380}
+                    points={valuePoints(undefined, 300, [school.unit_id])}
+                    x={VALUE_X}
+                    y={VALUE_Y}
+                    zone={valueZone(metricMedian("netPrice"), metricMedian("earnings"))}
+                  />
+                </div>
+              )}
+            </Panel>
+          )}
+
           {/* ============================== RANKS ============================== */}
           <Panel id="ranks" eyebrow="Context" title="How it ranks nationally">
             <p className="-mt-3 mb-6 flex items-center gap-1 text-sm text-muted-foreground">
@@ -519,7 +727,14 @@ export default async function SchoolPage({ params }: Props) {
               <div className="rounded-3xl border bg-card p-5 sm:p-6">
                 <h3 className="mb-3 font-display text-lg font-bold">On the admissions map</h3>
                 {onMap ? (
-                  <LandscapeScatter focusId={school.unit_id} height={380} points={landscapePoints(undefined, 300, [school.unit_id])} />
+                  <ScatterPlot
+                    focusId={school.unit_id}
+                    height={380}
+                    points={landscapePoints(undefined, 300, [school.unit_id])}
+                    x={LANDSCAPE_X}
+                    y={LANDSCAPE_Y}
+                    zone={LANDSCAPE_ZONE}
+                  />
                 ) : (
                   <p className="text-sm text-muted-foreground">
                     The map plots acceptance rate against SAT scores. {school.name} doesn&apos;t report both, so it isn&apos;t shown.

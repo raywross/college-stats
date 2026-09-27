@@ -15,7 +15,7 @@
 ## Sources (merged by IPEDS unit ID)
 | Source | Access | Provides |
 |---|---|---|
-| **College Scorecard API** | `api.data.gov`, key required, 100 schools/page | The institution list, city/state/zip, ownership (type), undergrad size, race/ethnicity shares, Pell share, first-gen share, avg net price, median earnings 10 yrs after entry, completion rate |
+| **College Scorecard API** | `api.data.gov`, key required, 100 schools/page | The institution list, city/state/zip, ownership (type), undergrad size, race/ethnicity shares, Pell share, first-gen share, and cost & outcomes (net price overall and by income, sticker price, tuition, earnings at 6/10 yrs, graduation and retention rates, median debt). See [cost-outcomes.md](cost-outcomes.md) |
 | **IPEDS Admissions survey (ADM)** | Bulk CSV zip from `nces.ed.gov/ipeds/datacenter/data/ADM{year}.zip`, no key | Applicants, admitted, enrolled, SAT/ACT 25th–75th percentiles, SAT/ACT submission rates, test policy (ADMCON7) |
 | **`data/overrides.json`** | Hand-maintained | Verified patches (e.g. newer Common Data Set figures), deep-merged last |
 

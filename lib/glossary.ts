@@ -7,6 +7,7 @@ export type GlossaryCategory =
   | "Admissions"
   | "Test scores"
   | "Students & access"
+  | "Cost & outcomes"
   | "School types"
   | "How we measure"
   | "Data sources";
@@ -28,6 +29,7 @@ export const GLOSSARY_CATEGORIES: GlossaryCategory[] = [
   "Admissions",
   "Test scores",
   "Students & access",
+  "Cost & outcomes",
   "School types",
   "How we measure",
   "Data sources",
@@ -179,6 +181,61 @@ const entries = {
     long: "We use Simpson's diversity index: 1 − Σ(share²) over all reported categories. It rewards both more groups and more even balance between them.",
     category: "How we measure",
     related: ["race-ethnicity"],
+  },
+  "net-price": {
+    term: "Net price",
+    short: "What a student actually pays per year after grants and scholarships: tuition, fees, housing, and books minus gift aid. Loans are not subtracted.",
+    long: "The average net price shown is for first-time, full-time students who received grant or scholarship aid, as reported to the federal government.",
+    why: "It's usually far below the sticker price, especially at wealthy private colleges with generous aid. Every college has a net price calculator for your family's exact estimate.",
+    category: "Cost & outcomes",
+    related: ["cost-of-attendance", "net-price-by-income"],
+  },
+  "cost-of-attendance": {
+    term: "Cost of attendance (sticker price)",
+    short: "The full published price of a year: tuition, fees, housing, food, books, and other expenses, before any financial aid.",
+    why: "Few students pay this; compare it with net price to see how much aid typically covers.",
+    category: "Cost & outcomes",
+    related: ["net-price"],
+  },
+  "net-price-by-income": {
+    term: "Net price by family income",
+    short: "Average net price for aided students grouped by family income ($0–30K up to $110K+). Shows how much a college's aid depends on need.",
+    why: "At colleges with strong need-based aid, lower-income families can pay far less than the average net price.",
+    category: "Cost & outcomes",
+    related: ["net-price", "pell-grant"],
+  },
+  "median-earnings": {
+    term: "Median earnings",
+    short: "The middle salary of former students 10 years after they first enrolled, whether or not they graduated. Covers students who received federal financial aid.",
+    why: "Earnings reflect majors, location, and who enrolls as much as the college itself, so treat big gaps as clues rather than cause and effect.",
+    category: "Cost & outcomes",
+    related: ["payback", "graduation-rate"],
+  },
+  "graduation-rate": {
+    term: "Graduation rate",
+    short: "The share of full-time, first-time students who finish within 150% of normal time: six years for a four-year degree.",
+    category: "Cost & outcomes",
+    related: ["retention-rate"],
+  },
+  "retention-rate": {
+    term: "Retention rate",
+    short: "The share of full-time first-year students who come back for their second year. An early signal of student satisfaction and support.",
+    category: "Cost & outcomes",
+    related: ["graduation-rate"],
+  },
+  "median-debt": {
+    term: "Median debt",
+    short: "The middle amount of federal student loans owed by graduates when they finish. Private loans and parent PLUS loans aren't included.",
+    why: "The monthly payment shown assumes a standard 10-year repayment plan.",
+    category: "Cost & outcomes",
+    related: ["net-price", "payback"],
+  },
+  payback: {
+    term: "Payback estimate",
+    short: "Four years of average net price divided by median earnings 10 years after entry: roughly how many years of a typical salary the degree costs.",
+    why: "It's a rough comparison tool. It ignores taxes, living costs, interest, and time to graduate, and your own costs and earnings will differ.",
+    category: "How we measure",
+    related: ["net-price", "median-earnings"],
   },
   public: {
     term: "Public",

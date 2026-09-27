@@ -21,6 +21,7 @@ Route: `/compare?ids=a,b,c,d` (up to 4). The URL is the source of truth; the sav
      Pell share, first-gen, and diversity.
   4. Grouped metric cards (`CompareMetric`): Admissions, Test scores (range bars on a shared axis), Students,
      race/ethnicity stacked bars with a shared legend.
-  5. **All the numbers**: a full table (the accessible/data view), with info tips on every row.
+  5. **Cost & outcomes**: net price, earnings, graduation, median debt, plus `NetPriceCompare` by family income.
+  6. **All the numbers**: a full table (the accessible/data view), with info tips on every row.
 
 School colors come from the compare slots in pick order (`SLOT_COLORS`), validated all-pairs for overlap.

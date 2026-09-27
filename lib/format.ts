@@ -18,6 +18,16 @@ export function compact(value: number): string {
   }).format(value);
 }
 
+/** $12,548 */
+export function money(value: number): string {
+  return `$${Math.round(value).toLocaleString("en-US")}`;
+}
+
+/** $12.5K */
+export function moneyCompact(value: number): string {
+  return `$${compact(value)}`;
+}
+
 export function ordinal(n: number): string {
   const s = ["th", "st", "nd", "rd"];
   const v = n % 100;
@@ -46,7 +56,7 @@ export function typeShort(type: string): string {
 }
 
 /** Serializable formatter names, for passing formats into client components. */
-export type FormatKind = "pct" | "pctSmart" | "int" | "compact" | "fixed2";
+export type FormatKind = "pct" | "pctSmart" | "int" | "compact" | "fixed2" | "money" | "moneyCompact";
 
 export function formatBy(kind: FormatKind, value: number): string {
   switch (kind) {
@@ -58,6 +68,10 @@ export function formatBy(kind: FormatKind, value: number): string {
       return compact(value);
     case "fixed2":
       return value.toFixed(2);
+    case "money":
+      return money(value);
+    case "moneyCompact":
+      return moneyCompact(value);
     case "int":
     default:
       return String(Math.round(value));

@@ -3,7 +3,7 @@ import { ArrowDown, ArrowUp } from "lucide-react";
 import type { School, SortKey } from "@/lib/types";
 import type { TermKey } from "@/lib/glossary";
 import { DOMAINS, diversityIndex, satComposite } from "@/lib/metrics";
-import { compact, pct, pctSmart } from "@/lib/format";
+import { compact, moneyCompact, pct, pctSmart } from "@/lib/format";
 import { rankOf } from "@/lib/data";
 import { Crest } from "@/components/school/Crest";
 import { CompareButton } from "@/components/compare/CompareButton";
@@ -15,7 +15,7 @@ type Params = Record<string, string | string[] | undefined>;
 function sortHref(params: Params, key: SortKey, currentBy: string, currentDir: string) {
   const next = new URLSearchParams();
   for (const [k, v] of Object.entries(params)) if (typeof v === "string" && v) next.set(k, v);
-  const dir = currentBy === key ? (currentDir === "asc" ? "desc" : "asc") : key === "name" || key === "acceptance_rate" ? "asc" : "desc";
+  const dir = currentBy === key ? (currentDir === "asc" ? "desc" : "asc") : ["name", "acceptance_rate", "net_price"].includes(key) ? "asc" : "desc";
   next.delete("page");
   next.set("sortBy", key);
   next.set("sortDir", dir);
@@ -78,18 +78,22 @@ export function SchoolTable({ schools, params }: { schools: School[]; params: Pa
   const SAT: [number, number] = [800, 1600];
 
   const cols: { key: SortKey; label: string; term?: TermKey; className?: string }[] = [
+    // Column order keeps same-looking domain hues apart.
     { key: "acceptance_rate", label: "Admit rate", term: "acceptance-rate" },
-    { key: "sat", label: "SAT middle 50%", term: "middle-50", className: "min-w-36" },
     { key: "enrollment", label: "Undergrads", term: "undergrad-enrollment" },
+    { key: "sat", label: "SAT middle 50%", term: "middle-50", className: "min-w-36" },
     { key: "pell", label: "Pell", term: "pell-grant" },
     { key: "first_gen", label: "First-gen", term: "first-gen" },
     { key: "diversity", label: "Diversity", term: "diversity-index" },
+    { key: "net_price", label: "Net price", term: "net-price" },
+    { key: "earnings", label: "Earnings", term: "median-earnings" },
+    { key: "grad_rate", label: "Grad rate", term: "graduation-rate" },
   ];
 
   return (
     <div className="overflow-hidden rounded-3xl border bg-card">
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[820px] text-sm">
+        <table className="w-full min-w-[1120px] text-sm">
           <thead className="border-b bg-surface-2">
             <tr>
               <SortHeader k="name" label="School" className="sticky left-0 z-10 bg-surface-2 pl-4" params={params} sortBy={sortBy} sortDir={sortDir} />
@@ -124,6 +128,10 @@ export function SchoolTable({ schools, params }: { schools: School[]; params: Pa
                     <Value v={ar === null ? null : pctSmart(ar)} />
                     {ar !== null && <Bar value={ar} max={1} color={DOMAINS.admissions.color} />}
                   </td>
+                  <td className="w-28 px-3 tabular-nums">
+                    <Value v={compact(s.demographics.undergrad_enrollment)} />
+                    <Bar value={rankOf(s, "enrollment") ?? 0} max={1} color={DOMAINS.size.color} />
+                  </td>
                   <td className="px-3 tabular-nums">
                     <Value v={sat ? `${sat[0]}–${sat[1]}` : null} />
                     {sat && (
@@ -134,10 +142,6 @@ export function SchoolTable({ schools, params }: { schools: School[]; params: Pa
                         />
                       </span>
                     )}
-                  </td>
-                  <td className="w-28 px-3 tabular-nums">
-                    <Value v={compact(s.demographics.undergrad_enrollment)} />
-                    <Bar value={rankOf(s, "enrollment") ?? 0} max={1} color={DOMAINS.size.color} />
                   </td>
                   <td className="w-24 px-3 tabular-nums">
                     <Value v={pell === null ? null : pct(pell)} />
@@ -150,6 +154,20 @@ export function SchoolTable({ schools, params }: { schools: School[]; params: Pa
                   <td className="w-24 px-3 tabular-nums">
                     <Value v={div === null ? null : div.toFixed(2)} />
                     {div !== null && <Bar value={div} max={1} color={DOMAINS.diversity.color} />}
+                  </td>
+                  <td className="w-24 px-3 tabular-nums">
+                    <Value v={s.cost?.avg_net_price == null ? null : moneyCompact(s.cost.avg_net_price)} />
+                    {s.cost?.avg_net_price != null && <Bar value={s.cost.avg_net_price} max={80000} color={DOMAINS.value.color} />}
+                  </td>
+                  <td className="w-24 px-3 tabular-nums">
+                    <Value v={s.outcomes?.median_earnings_10yr == null ? null : moneyCompact(s.outcomes.median_earnings_10yr)} />
+                    {s.outcomes?.median_earnings_10yr != null && (
+                      <Bar value={s.outcomes.median_earnings_10yr} max={150000} color={DOMAINS.value.color} />
+                    )}
+                  </td>
+                  <td className="w-24 px-3 tabular-nums">
+                    <Value v={s.outcomes?.graduation_rate == null ? null : pct(s.outcomes.graduation_rate)} />
+                    {s.outcomes?.graduation_rate != null && <Bar value={s.outcomes.graduation_rate} max={1} color={DOMAINS.value.color} />}
                   </td>
                   <td className="px-3 pr-4 text-right">
                     <CompareButton id={s.unit_id} variant="icon" />

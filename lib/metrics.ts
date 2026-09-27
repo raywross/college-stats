@@ -1,6 +1,6 @@
 import type { School, SizeBucket } from "./types";
 import type { TermKey } from "./glossary";
-import { num, pct, pctSmart } from "./format";
+import { money, num, pct, pctSmart } from "./format";
 
 /* ------------------------------------------------------------------ */
 /* Derived values (null when the underlying data isn't reported)       */
@@ -99,7 +99,7 @@ export const TEST_POLICY_LABELS: Record<string, string> = {
 /* Metric registry: one place that knows how to read, format & explain */
 /* ------------------------------------------------------------------ */
 
-export type Domain = "admissions" | "size" | "scores" | "access" | "diversity";
+export type Domain = "admissions" | "size" | "scores" | "access" | "diversity" | "value";
 
 export const DOMAINS: Record<Domain, { label: string; color: string }> = {
   admissions: { label: "Admissions", color: "var(--d-admissions)" },
@@ -107,6 +107,7 @@ export const DOMAINS: Record<Domain, { label: string; color: string }> = {
   scores: { label: "Test scores", color: "var(--d-scores)" },
   access: { label: "Access", color: "var(--d-access)" },
   diversity: { label: "Diversity", color: "var(--d-diversity)" },
+  value: { label: "Cost & outcomes", color: "var(--d-value)" },
 };
 
 export type MetricKey =
@@ -118,7 +119,11 @@ export type MetricKey =
   | "enrollment"
   | "pell"
   | "firstGen"
-  | "diversity";
+  | "diversity"
+  | "netPrice"
+  | "earnings"
+  | "gradRate"
+  | "debt";
 
 export interface MetricDef {
   key: MetricKey;
@@ -242,7 +247,65 @@ export const METRICS: Record<MetricKey, MetricDef> = {
     more: "more diverse",
     less: "less diverse",
   },
+  netPrice: {
+    key: "netPrice",
+    label: "Average net price",
+    short: "Net price",
+    term: "net-price",
+    domain: "value",
+    get: (s) => s.cost?.avg_net_price ?? null,
+    format: money,
+    more: "more expensive",
+    less: "less expensive",
+  },
+  earnings: {
+    key: "earnings",
+    label: "Median earnings, 10 yrs",
+    short: "Earnings",
+    term: "median-earnings",
+    domain: "value",
+    get: (s) => s.outcomes?.median_earnings_10yr ?? null,
+    format: money,
+    more: "higher earnings",
+    less: "lower earnings",
+  },
+  gradRate: {
+    key: "gradRate",
+    label: "Graduation rate",
+    short: "Grad rate",
+    term: "graduation-rate",
+    domain: "value",
+    get: (s) => s.outcomes?.graduation_rate ?? null,
+    format: (v) => pct(v),
+    scale: [0, 1],
+    more: "higher graduation rate",
+    less: "lower graduation rate",
+  },
+  debt: {
+    key: "debt",
+    label: "Median debt at graduation",
+    short: "Median debt",
+    term: "median-debt",
+    domain: "value",
+    get: (s) => s.outcomes?.median_debt ?? null,
+    format: money,
+    more: "more debt",
+    less: "less debt",
+  },
 };
+
+/** Family-income bands used by net price by income, low to high. */
+export const INCOME_BANDS = ["$0–30K", "$30–48K", "$48–75K", "$75–110K", "$110K+"];
+
+/**
+ * Rough "payback": years of a typical graduate's salary that four years of
+ * average net price would take. A conversation starter, not a financial model.
+ */
+export function paybackYears(s: School): number | null {
+  const price = s.cost?.avg_net_price ?? null;
+  const earn = s.outcomes?.median_earnings_10yr ?? null;
+  return price !== null && earn ? (price * 4) / earn : null;
+}
 
 /** Format a possibly-missing value; missing shows as an en dash. */
 export function fmt(key: MetricKey, v: number | null): string {

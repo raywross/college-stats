@@ -16,8 +16,9 @@ Route: `/schools/[id]`. The 50 most-applied-to profiles are pre-rendered at buil
 6. **Students**: takeaway; race/ethnicity `StackedBar` with legend and diversity index; Pell and first-gen
    `BenchmarkBar`s against the median; campus size `DistributionStrip`.
 7. **How it ranks**: four `DistributionStrip`s (SAT, yield, Pell, diversity) against every reporting college, plus
-   `LandscapeScatter` (300 most-applied-to + this school, labeled). Every dot drills into that school.
-8. **Similar schools**: nearest neighbors (`similarSchools`) with "why similar" chips and one-click compare links.
+   `ScatterPlot` (300 most-applied-to + this school, labeled). Every dot drills into that school.
+8. **Cost & outcomes**: see [cost-outcomes.md](cost-outcomes.md).
+9. **Similar schools**: nearest neighbors (`similarSchools`) with "why similar" chips and one-click compare links.
 
 ## Insight helpers (`lib/insights.ts`)
 - `standouts(s)`: "Known for" chips from percentile thresholds (ultra-selective, high yield, big campus,
@@ -36,6 +37,3 @@ Sections render only when their data exists, and the section nav lists only rend
 - The "1 in N" phrasing switches to "N in 10" at 50%+ (`admitRatio`).
 - A sources line at the bottom lists where the record came from (Scorecard, IPEDS year, or an override such as a CDS).
 
-## Financial (future)
-When cost/outcomes data arrives, add a "Cost & outcomes" section with `BenchmarkBar`s (net price by income,
-median earnings, debt) and a new `--d-*` domain color (re-validate the domain set).

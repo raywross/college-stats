@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, BookOpen, Building2, Crown, Globe2, HeartHandshake, Sprout, Target, Swords } from "lucide-react";
+import { ArrowRight, BookOpen, Building2, Crown, HeartHandshake, PiggyBank, Sprout, Target, Swords } from "lucide-react";
 import {
   countByState,
   getAllSchools,
@@ -9,16 +9,20 @@ import {
   topBy,
   landscapePoints,
   landscapeEligibleCount,
+  metricMedian,
+  valueEligibleCount,
+  valuePoints,
 } from "@/lib/data";
 import { parseFilters } from "@/lib/params";
 import { DOMAINS, METRICS, admitRatio, median, oneIn, satMid, type Domain } from "@/lib/metrics";
 import { GLOSSARY, type TermKey } from "@/lib/glossary";
-import { compact, num, pct, pctSmart } from "@/lib/format";
+import { compact, moneyCompact, num, pct, pctSmart } from "@/lib/format";
 import { Ring } from "@/components/charts/Ring";
 import { shortName } from "@/lib/brand";
 import { SchoolSearch } from "@/components/search/SchoolSearch";
 import { Crest } from "@/components/school/Crest";
-import { LandscapeScatter } from "@/components/charts/LandscapeScatter";
+import { ScatterPlot } from "@/components/charts/ScatterPlot";
+import { LANDSCAPE_X, LANDSCAPE_Y, LANDSCAPE_ZONE, VALUE_X, VALUE_Y, valueZone } from "@/lib/chart-configs";
 import { StateTileMap } from "@/components/charts/StateTileMap";
 import { Leaderboard } from "@/components/charts/Leaderboard";
 import { InfoTip, Term } from "@/components/ui/info-tip";
@@ -29,7 +33,7 @@ const LENSES: { title: string; blurb: string; query: string; domain: Domain; ico
   { title: "Big public universities", blurb: "Large campuses, big energy", query: "types=public&sizes=large,xl&sortBy=enrollment&sortDir=desc", domain: "size", icon: Building2 },
   { title: "Small & close-knit", blurb: "Under 15K undergrads", query: "sizes=small,medium&sortBy=enrollment", domain: "size", icon: Sprout },
   { title: "Economic diversity", blurb: "Highest share of Pell Grant students", query: "sortBy=pell&sortDir=desc&view=table&minEnroll=1000", domain: "access", icon: HeartHandshake, ranked: true },
-  { title: "Most diverse campuses", blurb: "Highest diversity index", query: "sortBy=diversity&sortDir=desc&minEnroll=1000", domain: "diversity", icon: Globe2, ranked: true },
+  { title: "Low cost, high earnings", blurb: "Net price under $20K, ranked by earnings", query: "maxNP=20000&sortBy=earnings&sortDir=desc&minEnroll=1000", domain: "value", icon: PiggyBank },
 ];
 
 const MATCHUPS = [
@@ -50,6 +54,8 @@ export default function HomePage() {
   );
   const ultraSat = median(ultra.map(satMid));
   const LANDSCAPE_LIMIT = 400;
+  const medNP = metricMedian("netPrice");
+  const medEarn = metricMedian("earnings");
 
   const lenses = LENSES.map((l) => {
     const params = Object.fromEntries(new URLSearchParams(l.query));
@@ -230,7 +236,31 @@ export default function HomePage() {
             </Link>
           </div>
           <div className="rounded-3xl border bg-card p-4 sm:p-6">
-            <LandscapeScatter points={landscapePoints(all, LANDSCAPE_LIMIT)} />
+            <ScatterPlot points={landscapePoints(all, LANDSCAPE_LIMIT)} x={LANDSCAPE_X} y={LANDSCAPE_Y} zone={LANDSCAPE_ZONE} />
+          </div>
+        </section>
+
+        {/* ============================== VALUE ============================== */}
+        <section>
+          <SectionHeading eyebrow="Is it worth it?" title="Cost vs. earnings" className="mb-3" />
+          <p className="mb-6 max-w-3xl text-muted-foreground">
+            What students pay each year after grants, against what they earn ten years after enrolling. The shaded corner is
+            below the national median for <Term term="net-price">net price</Term> ({moneyCompact(medNP ?? 0)}) and above it for{" "}
+            <Term term="median-earnings">earnings</Term> ({moneyCompact(medEarn ?? 0)}). {LANDSCAPE_LIMIT} most-applied-to of{" "}
+            {num(valueEligibleCount())} colleges shown.
+          </p>
+          <div className="grid gap-4 lg:grid-cols-[2fr_1fr] lg:items-start">
+            <div className="min-w-0 rounded-3xl border bg-card p-4 sm:p-6">
+              <ScatterPlot points={valuePoints(all, LANDSCAPE_LIMIT)} x={VALUE_X} y={VALUE_Y} zone={valueZone(medNP, medEarn)} />
+            </div>
+            <div className="flex min-w-0 flex-col gap-4">
+              <BoardCard title="Highest earnings" term="median-earnings" domain="value" caption="Median, 10 yrs after entry · 1,000+ undergrads">
+                <Leaderboard schools={topBy("earnings", "desc", 5, { minUndergrads: 1000 })} get={METRICS.earnings.get} format={moneyCompact} color={DOMAINS.value.color} />
+              </BoardCard>
+              <BoardCard title="Lowest net price" term="net-price" domain="value" caption="Per year after grants · 5,000+ undergrads">
+                <Leaderboard schools={topBy("netPrice", "asc", 5, { minUndergrads: 5000 })} get={METRICS.netPrice.get} format={moneyCompact} color={DOMAINS.value.color} />
+              </BoardCard>
+            </div>
           </div>
         </section>
 

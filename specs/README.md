@@ -16,6 +16,7 @@ Structured documentation for the Higher Education Data Explorer ("Quad").
 | [school-profile.md](school-profile.md) | School profile sections and insight helpers |
 | [comparison.md](comparison.md) | Compare flow, tray, key differences, radar |
 | [data-layer.md](data-layer.md) | Types, data access, derived metrics |
+| [cost-outcomes.md](cost-outcomes.md) | Net price, earnings, graduation, debt: data, metrics, and where they appear |
 | [data-sync.md](data-sync.md) | Building `data/schools.json` from College Scorecard + IPEDS; API key setup; overrides |
 | [migration-plan.md](migration-plan.md) | Checklist for Vercel + Supabase + API migration |
 | [implementation-checklist.md](implementation-checklist.md) | Original MVP build order |

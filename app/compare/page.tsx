@@ -5,10 +5,11 @@ import { getSchoolsByIds, metricMedian, toIndexEntry } from "@/lib/data";
 import { DEMOGRAPHIC_CATEGORIES, DOMAINS, METRICS, TEST_POLICY_LABELS, satComposite, type Domain } from "@/lib/metrics";
 import { RADAR_AXES, keyDifferences, radarProfile, similarSchools } from "@/lib/insights";
 import { SLOT_COLORS, shortName } from "@/lib/brand";
-import { compact, num, pct, pctSmart } from "@/lib/format";
+import { compact, money, moneyCompact, num, pct, pctSmart } from "@/lib/format";
 import type { School } from "@/lib/types";
 import { CompareHeader } from "@/components/compare/CompareHeader";
 import { CompareMetric } from "@/components/compare/CompareMetric";
+import { NetPriceCompare } from "@/components/compare/NetPriceCompare";
 import { Crest } from "@/components/school/Crest";
 import { RadarChart } from "@/components/charts/RadarChart";
 import { RangeBar } from "@/components/charts/RangeBar";
@@ -181,6 +182,16 @@ export default async function ComparePage({
             </div>
           </Group>
 
+          <Group domain="value" title="Cost & outcomes">
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+              <CompareMetric label="Average net price" term="net-price" schools={schools} get={METRICS.netPrice.get} format={moneyCompact} max={80000} flag={{ which: "min", text: "Lowest" }} />
+              <CompareMetric label="Median earnings, 10 yrs" term="median-earnings" schools={schools} get={METRICS.earnings.get} format={moneyCompact} flag={{ which: "max", text: "Highest" }} />
+              <CompareMetric label="Graduation rate" term="graduation-rate" schools={schools} get={METRICS.gradRate.get} format={(v) => pct(v)} max={1} flag={{ which: "max", text: "Highest" }} />
+              <CompareMetric label="Median debt" term="median-debt" schools={schools} get={METRICS.debt.get} format={moneyCompact} flag={{ which: "min", text: "Lowest" }} />
+            </div>
+            <NetPriceCompare schools={schools} />
+          </Group>
+
           {/* Data table: every value in one place (also the accessible view) */}
           <section className="space-y-4">
             <h2 className="font-display text-2xl font-extrabold tracking-tight">All the numbers</h2>
@@ -214,6 +225,12 @@ export default async function ComparePage({
                       ["Pell Grant", "pell-grant", (s: School) => opt(s.demographics.pell_grant_percent, (v) => pct(v))],
                       ["First-gen", "first-gen", (s: School) => opt(s.demographics.first_gen_percent, (v) => pct(v))],
                       ["Diversity index", "diversity-index", (s: School) => opt(METRICS.diversity.get(s), (v) => v.toFixed(2))],
+                      ["Average net price", "net-price", (s: School) => opt(s.cost?.avg_net_price ?? null, money)],
+                      ["Sticker price", "cost-of-attendance", (s: School) => opt(s.cost?.cost_of_attendance ?? null, money)],
+                      ["Median earnings (10 yrs)", "median-earnings", (s: School) => opt(s.outcomes?.median_earnings_10yr ?? null, money)],
+                      ["Graduation rate", "graduation-rate", (s: School) => opt(s.outcomes?.graduation_rate ?? null, (v) => pct(v))],
+                      ["Retention rate", "retention-rate", (s: School) => opt(s.outcomes?.retention_rate ?? null, (v) => pct(v))],
+                      ["Median debt", "median-debt", (s: School) => opt(s.outcomes?.median_debt ?? null, money)],
                     ] as const
                   ).map(([label, term, fmt]) => (
                     <tr key={label}>

@@ -1,0 +1,23 @@
+{
+  "_readme": "Hand-verified patches applied after each sync (npm run sync-data). Keyed by IPEDS unit ID; any subset of School fields. Keys starting with _ are ignored.",
+  "221999": {
+    "_source": "Vanderbilt Common Data Set 2024-25, sections B1, B2, C1, C9: https://www.vanderbilt.edu/dsa/common-data-set/",
+    "admissions": {
+      "year": 2024,
+      "applicants": 45409,
+      "admitted": 2662,
+      "enrolled": 1630,
+      "acceptance_rate": 0.0586,
+      "sat_reading_25_75": [730, 770],
+      "sat_math_25_75": [770, 800],
+      "act_composite_25_75": [34, 35],
+      "test_submission_rate_sat": 0.274,
+      "test_submission_rate_act": 0.246
+    },
+    "demographics": {
+      "undergrad_enrollment": 7221,
+      "racial_diversity": { "asian": 0.1854, "black": 0.0921, "hispanic": 0.1136, "white": 0.39, "two_or_more": 0.0568, "international": 0.1118, "other": 0.0504 }
+    },
+    "sources": ["College Scorecard", "Vanderbilt Common Data Set 2024-25"]
+  }
+}

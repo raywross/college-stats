@@ -109,6 +109,10 @@ function parseCsv(text: string): Record<string, string>[] {
 /* ------------------------------------------------------------------ */
 
 const RACE = "latest.student.demographics.race_ethnicity";
+const NET = "latest.cost.net_price";
+const BY_INCOME = "by_income_level";
+/** Scorecard's family-income bands, low to high. */
+const INCOME_BANDS = ["0-30000", "30001-48000", "48001-75000", "75001-110000", "110001-plus"];
 const FIELDS = [
   "id",
   "school.name",
@@ -129,11 +133,22 @@ const FIELDS = [
   `${RACE}.two_or_more`,
   `${RACE}.non_resident_alien`,
   `${RACE}.unknown`,
-  // Admissions fallbacks, used only when a school is missing from IPEDS ADM.
+  // Admissions fallback, used only when a school is missing from IPEDS ADM.
   "latest.admissions.admission_rate.overall",
+  // Cost
   "latest.cost.avg_net_price.overall",
+  ...INCOME_BANDS.flatMap((b) => [`${NET}.public.${BY_INCOME}.${b}`, `${NET}.private.${BY_INCOME}.${b}`]),
+  "latest.cost.attendance.academic_year",
+  "latest.cost.tuition.in_state",
+  "latest.cost.tuition.out_of_state",
+  // Outcomes
   "latest.earnings.10_yrs_after_entry.median",
+  "latest.earnings.6_yrs_after_entry.median",
+  "latest.completion.consumer_rate",
   "latest.completion.completion_rate_4yr_150nt",
+  "latest.student.retention_rate.four_year.full_time",
+  "latest.aid.median_debt.completers.overall",
+  "latest.aid.median_debt.completers.monthly_payments",
 ];
 
 type ScorecardRow = Record<string, unknown>;
@@ -199,6 +214,15 @@ function pair(row: Record<string, string> | undefined, lo: string, hi: string): 
   const a = ipedsNum(row, lo);
   const b = ipedsNum(row, hi);
   return a !== null && b !== null ? [a, b] : null;
+}
+
+const roundOrNull = (v: number | null) => (v === null ? null : round(v));
+
+/** Scorecard reports public and private net price in separate fields; use whichever applies. */
+function netPriceByIncome(sc: ScorecardRow, type: SchoolType): (number | null)[] | null {
+  const sector = type === "public" ? "public" : "private";
+  const values = INCOME_BANDS.map((b) => numOrNull(sc[`${NET}.${sector}.${BY_INCOME}.${b}`]));
+  return values.some((v) => v !== null) ? values : null;
 }
 
 function toSchool(sc: ScorecardRow, adm: Record<string, string> | undefined, admYear: number): School | null {
@@ -268,10 +292,26 @@ function toSchool(sc: ScorecardRow, adm: Record<string, string> | undefined, adm
           >)
         : null,
     },
-    outcomes: {
+    cost: {
       avg_net_price: numOrNull(sc["latest.cost.avg_net_price.overall"]),
+      net_price_by_income: netPriceByIncome(sc, type),
+      cost_of_attendance: numOrNull(sc["latest.cost.attendance.academic_year"]),
+      tuition_in_state: numOrNull(sc["latest.cost.tuition.in_state"]),
+      tuition_out_of_state: numOrNull(sc["latest.cost.tuition.out_of_state"]),
+    },
+    outcomes: {
       median_earnings_10yr: numOrNull(sc["latest.earnings.10_yrs_after_entry.median"]),
-      completion_rate: numOrNull(sc["latest.completion.completion_rate_4yr_150nt"]),
+      median_earnings_6yr: numOrNull(sc["latest.earnings.6_yrs_after_entry.median"]),
+      // Scorecard's headline "graduation rate"; fall back to the 4-year 150% rate.
+      graduation_rate: roundOrNull(
+        numOrNull(sc["latest.completion.consumer_rate"]) ?? numOrNull(sc["latest.completion.completion_rate_4yr_150nt"])
+      ),
+      retention_rate: roundOrNull(numOrNull(sc["latest.student.retention_rate.four_year.full_time"])),
+      median_debt: numOrNull(sc["latest.aid.median_debt.completers.overall"]),
+      monthly_loan_payment: (() => {
+        const v = numOrNull(sc["latest.aid.median_debt.completers.monthly_payments"]);
+        return v === null ? null : Math.round(v);
+      })(),
     },
     sources,
   };
@@ -337,6 +377,9 @@ async function main() {
   console.log(`\nWrote ${schools.length} schools to data/schools.json`);
   console.log(`  with acceptance rate: ${stats.withAdmissions}`);
   console.log(`  with SAT ranges:      ${stats.withSat}`);
+  console.log(`  with net price:       ${schools.filter((s) => s.cost?.avg_net_price != null).length}`);
+  console.log(`  with earnings:        ${schools.filter((s) => s.outcomes?.median_earnings_10yr != null).length}`);
+  console.log(`  with grad rate:       ${schools.filter((s) => s.outcomes?.graduation_rate != null).length}`);
   console.log(`  overrides applied:    ${stats.overridden}`);
   console.log(`  skipped online-only:  ${stats.online}${INCLUDE_ONLINE ? "" : " (use --include-online to keep)"}`);
   console.log(`  skipped (no undergrads reported): ${stats.noSize}`);

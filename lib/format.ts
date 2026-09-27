@@ -1,0 +1,65 @@
+export function pct(value: number, digits = 0): string {
+  return `${(value * 100).toFixed(digits)}%`;
+}
+
+/** Percent with one decimal only when it matters (e.g. 3.4% but 52%). */
+export function pctSmart(value: number): string {
+  return value < 0.1 ? pct(value, 1) : pct(value, 0);
+}
+
+export function num(value: number): string {
+  return Math.round(value).toLocaleString("en-US");
+}
+
+export function compact(value: number): string {
+  return new Intl.NumberFormat("en-US", {
+    notation: "compact",
+    maximumFractionDigits: 1,
+  }).format(value);
+}
+
+export function ordinal(n: number): string {
+  const s = ["th", "st", "nd", "rd"];
+  const v = n % 100;
+  return `${n}${s[(v - 20) % 10] || s[v] || s[0]}`;
+}
+
+export function range([lo, hi]: [number, number]): string {
+  return `${lo}–${hi}`;
+}
+
+export function typeLabel(type: string): string {
+  switch (type) {
+    case "public":
+      return "Public";
+    case "private-nonprofit":
+      return "Private nonprofit";
+    case "private-forprofit":
+      return "Private for-profit";
+    default:
+      return type;
+  }
+}
+
+export function typeShort(type: string): string {
+  return type === "public" ? "Public" : "Private";
+}
+
+/** Serializable formatter names, for passing formats into client components. */
+export type FormatKind = "pct" | "pctSmart" | "int" | "compact" | "fixed2";
+
+export function formatBy(kind: FormatKind, value: number): string {
+  switch (kind) {
+    case "pct":
+      return pct(value);
+    case "pctSmart":
+      return pctSmart(value);
+    case "compact":
+      return compact(value);
+    case "fixed2":
+      return value.toFixed(2);
+    case "int":
+    default:
+      return String(Math.round(value));
+  }
+}

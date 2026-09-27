@@ -1,0 +1,141 @@
+"use client";
+
+import Link from "next/link";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { Popover } from "@base-ui/react/popover";
+import { Plus, Search, X } from "lucide-react";
+import { MAX_COMPARE, getCompareIds, setCompareIds } from "@/lib/compare";
+import type { SchoolIndexEntry } from "@/lib/data";
+import { searchSchoolsApi } from "@/lib/school-api";
+import { SLOT_COLORS, shortName } from "@/lib/brand";
+import { pctSmart } from "@/lib/format";
+import { Crest } from "@/components/school/Crest";
+
+/** Keeps the saved compare list in step with the URL being viewed. */
+function useSyncStorage(ids: string[]) {
+  const key = ids.join(",");
+  useEffect(() => {
+    if (getCompareIds().join(",") !== key) setCompareIds(key ? key.split(",") : []);
+  }, [key]);
+}
+
+function SchoolPicker({ exclude, onPick }: { exclude: string[]; onPick: (id: string) => void }) {
+  const [q, setQ] = useState("");
+  const [options, setOptions] = useState<SchoolIndexEntry[]>([]);
+  const excludeKey = exclude.join(",");
+
+  useEffect(() => {
+    const query = q.trim();
+    if (!query) return;
+    const controller = new AbortController();
+    const t = setTimeout(() => {
+      searchSchoolsApi(query, { limit: 10, exclude: excludeKey.split(","), signal: controller.signal })
+        .then(setOptions)
+        .catch(() => {});
+    }, 120);
+    return () => {
+      clearTimeout(t);
+      controller.abort();
+    };
+  }, [q, excludeKey]);
+
+  return (
+    <Popover.Root>
+      <Popover.Trigger className="flex h-full min-h-20 w-full flex-col items-center justify-center gap-1 rounded-2xl border-2 border-dashed text-sm font-semibold text-muted-foreground transition-colors hover:border-primary/50 hover:text-primary">
+        <Plus className="size-5" />
+        Add school
+      </Popover.Trigger>
+      <Popover.Portal>
+        <Popover.Positioner sideOffset={8} collisionPadding={12} className="z-[60]">
+          <Popover.Popup className="w-80 max-w-[calc(100vw-24px)] rounded-2xl border bg-popover p-2 shadow-2xl outline-none">
+            <label className="flex items-center gap-2 rounded-xl border px-3 py-2">
+              <Search className="size-4 text-muted-foreground" />
+              <input
+                autoFocus
+                value={q}
+                onChange={(e) => {
+                  setQ(e.target.value);
+                  if (!e.target.value.trim()) setOptions([]);
+                }}
+                placeholder="Find a school"
+                aria-label="Find a school to add"
+                className="flex-1 bg-transparent text-sm outline-none"
+              />
+            </label>
+            <div className="mt-1.5 max-h-72 overflow-y-auto">
+              {options.length === 0 && (
+                <p className="p-3 text-sm text-muted-foreground">
+                  {q.trim() ? "No matches yet. Keep typing." : "Type a college name, city, or state."}
+                </p>
+              )}
+              {options.map((s) => (
+                <Popover.Close
+                  key={s.id}
+                  onClick={() => onPick(s.id)}
+                  className="flex w-full items-center gap-2.5 rounded-xl px-2 py-1.5 text-left hover:bg-muted"
+                >
+                  <Crest id={s.id} name={s.name} size="sm" />
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-sm font-semibold">{s.name}</span>
+                    <span className="block text-xs text-muted-foreground">
+                      {s.city}, {s.state}
+                      {s.acceptance !== null && <> · {pctSmart(s.acceptance)} admit</>}
+                    </span>
+                  </span>
+                </Popover.Close>
+              ))}
+            </div>
+          </Popover.Popup>
+        </Popover.Positioner>
+      </Popover.Portal>
+    </Popover.Root>
+  );
+}
+
+export function CompareHeader({ schools }: { schools: SchoolIndexEntry[] }) {
+  const router = useRouter();
+  const ids = schools.map((s) => s.id);
+  useSyncStorage(ids);
+
+  const go = (next: string[]) => {
+    setCompareIds(next);
+    router.replace(next.length ? `/compare?ids=${next.join(",")}` : "/compare", { scroll: false });
+  };
+
+  return (
+    <div
+      className="sticky z-30 -mx-4 border-b bg-background/85 px-4 py-3 backdrop-blur-xl sm:-mx-6 sm:px-6"
+      style={{ top: "calc(env(safe-area-inset-top, 0px) + 4rem)" }}
+    >
+      <div className="grid grid-cols-2 gap-2 sm:gap-3 md:grid-cols-4">
+        {schools.map((s, i) => (
+          <div key={s.id} className="relative flex min-w-0 items-center gap-2.5 rounded-2xl border bg-card p-2.5 pr-8 sm:p-3 sm:pr-9">
+            <span className="absolute inset-x-3 top-0 h-1 rounded-b-full" style={{ backgroundColor: SLOT_COLORS[i] }} />
+            <Crest id={s.id} name={s.name} size="sm" />
+            <Link href={`/schools/${s.id}`} className="min-w-0 hover:text-primary">
+              <span className="flex items-center gap-1.5">
+                <span className="size-2.5 shrink-0 rounded-full" style={{ backgroundColor: SLOT_COLORS[i] }} />
+                <span className="truncate text-sm font-bold">{shortName({ unit_id: s.id, name: s.name })}</span>
+              </span>
+              <span className="block truncate text-[11px] text-muted-foreground">
+                {s.city}, {s.state}
+              </span>
+            </Link>
+            <button
+              type="button"
+              onClick={() => go(ids.filter((x) => x !== s.id))}
+              aria-label={`Remove ${s.name}`}
+              className="absolute top-2 right-2 inline-flex size-6 items-center justify-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground"
+            >
+              <X className="size-3.5" />
+            </button>
+          </div>
+        ))}
+        {schools.length < MAX_COMPARE && (
+          <SchoolPicker exclude={ids} onPick={(id) => go([...ids, id])} />
+        )}
+      </div>
+    </div>
+  );
+}

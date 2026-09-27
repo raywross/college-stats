@@ -1,0 +1,165 @@
+import Link from "next/link";
+import { ArrowDown, ArrowUp } from "lucide-react";
+import type { School, SortKey } from "@/lib/types";
+import type { TermKey } from "@/lib/glossary";
+import { DOMAINS, diversityIndex, satComposite } from "@/lib/metrics";
+import { compact, pct, pctSmart } from "@/lib/format";
+import { rankOf } from "@/lib/data";
+import { Crest } from "@/components/school/Crest";
+import { CompareButton } from "@/components/compare/CompareButton";
+import { InfoTip } from "@/components/ui/info-tip";
+import { cn } from "@/lib/utils";
+
+type Params = Record<string, string | string[] | undefined>;
+
+function sortHref(params: Params, key: SortKey, currentBy: string, currentDir: string) {
+  const next = new URLSearchParams();
+  for (const [k, v] of Object.entries(params)) if (typeof v === "string" && v) next.set(k, v);
+  const dir = currentBy === key ? (currentDir === "asc" ? "desc" : "asc") : key === "name" || key === "acceptance_rate" ? "asc" : "desc";
+  next.delete("page");
+  next.set("sortBy", key);
+  next.set("sortDir", dir);
+  return `/explore?${next}`;
+}
+
+function Value({ v }: { v: string | null }) {
+  return v === null ? (
+    <span className="text-muted-foreground" title="Not reported">–</span>
+  ) : (
+    <span className="font-semibold">{v}</span>
+  );
+}
+
+function Bar({ value, max, color }: { value: number; max: number; color: string }) {
+  return (
+    <span className="mt-1 block h-1.5 w-full overflow-hidden rounded-full" style={{ backgroundColor: `color-mix(in oklch, ${color} 14%, transparent)` }}>
+      <span className="block h-full rounded-full" style={{ width: `${Math.min(100, Math.max(4, (value / max) * 100))}%`, backgroundColor: color }} />
+    </span>
+  );
+}
+
+function SortHeader({
+  k,
+  label,
+  term,
+  className,
+  params,
+  sortBy,
+  sortDir,
+}: {
+  k: SortKey;
+  label: string;
+  term?: TermKey;
+  className?: string;
+  params: Params;
+  sortBy: string;
+  sortDir: string;
+}) {
+  return (
+    <th scope="col" className={cn("px-3 py-3 text-left align-bottom text-xs font-semibold whitespace-nowrap text-muted-foreground", className)}>
+      <span className="inline-flex items-center gap-1">
+        <Link
+          href={sortHref(params, k, sortBy, sortDir)}
+          scroll={false}
+          className={cn("inline-flex items-center gap-1 hover:text-foreground", sortBy === k && "text-foreground")}
+        >
+          {label}
+          {sortBy === k && (sortDir === "asc" ? <ArrowUp className="size-3" /> : <ArrowDown className="size-3" />)}
+        </Link>
+        {term && <InfoTip term={term} />}
+      </span>
+    </th>
+  );
+}
+
+export function SchoolTable({ schools, params }: { schools: School[]; params: Params }) {
+  const sortBy = typeof params.sortBy === "string" ? params.sortBy : "applicants";
+  const sortDir = typeof params.sortDir === "string" ? params.sortDir : sortBy === "applicants" ? "desc" : "asc";
+  const SAT: [number, number] = [800, 1600];
+
+  const cols: { key: SortKey; label: string; term?: TermKey; className?: string }[] = [
+    { key: "acceptance_rate", label: "Admit rate", term: "acceptance-rate" },
+    { key: "sat", label: "SAT middle 50%", term: "middle-50", className: "min-w-36" },
+    { key: "enrollment", label: "Undergrads", term: "undergrad-enrollment" },
+    { key: "pell", label: "Pell", term: "pell-grant" },
+    { key: "first_gen", label: "First-gen", term: "first-gen" },
+    { key: "diversity", label: "Diversity", term: "diversity-index" },
+  ];
+
+  return (
+    <div className="overflow-hidden rounded-3xl border bg-card">
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-[820px] text-sm">
+          <thead className="border-b bg-surface-2">
+            <tr>
+              <SortHeader k="name" label="School" className="sticky left-0 z-10 bg-surface-2 pl-4" params={params} sortBy={sortBy} sortDir={sortDir} />
+              {cols.map((c) => (
+                <SortHeader key={c.key} k={c.key} label={c.label} term={c.term} className={c.className} params={params} sortBy={sortBy} sortDir={sortDir} />
+              ))}
+              <th className="px-3 py-3" aria-label="Compare" />
+            </tr>
+          </thead>
+          <tbody className="divide-y">
+            {schools.map((s) => {
+              const sat = satComposite(s);
+              const left = sat ? ((sat[0] - SAT[0]) / (SAT[1] - SAT[0])) * 100 : 0;
+              const width = sat ? ((sat[1] - sat[0]) / (SAT[1] - SAT[0])) * 100 : 0;
+              const div = diversityIndex(s);
+              const { acceptance_rate: ar } = s.admissions;
+              const { pell_grant_percent: pell, first_gen_percent: fg } = s.demographics;
+              return (
+                <tr key={s.unit_id} className="group transition-colors hover:bg-muted/40">
+                  <td className="sticky left-0 z-10 bg-card py-2.5 pr-3 pl-4 transition-colors group-hover:bg-muted">
+                    <Link href={`/schools/${s.unit_id}`} className="flex items-center gap-2.5">
+                      <Crest id={s.unit_id} name={s.name} size="sm" />
+                      <span className="min-w-0">
+                        <span className="block max-w-44 truncate font-semibold group-hover:text-primary">{s.name}</span>
+                        <span className="block text-xs text-muted-foreground">
+                          {s.location.city}, {s.location.state}
+                        </span>
+                      </span>
+                    </Link>
+                  </td>
+                  <td className="w-28 px-3 tabular-nums">
+                    <Value v={ar === null ? null : pctSmart(ar)} />
+                    {ar !== null && <Bar value={ar} max={1} color={DOMAINS.admissions.color} />}
+                  </td>
+                  <td className="px-3 tabular-nums">
+                    <Value v={sat ? `${sat[0]}–${sat[1]}` : null} />
+                    {sat && (
+                      <span className="relative mt-1 block h-1.5 rounded-full bg-muted">
+                        <span
+                          className="absolute inset-y-0 rounded-full"
+                          style={{ left: `${Math.max(0, left)}%`, width: `${Math.max(2, width)}%`, backgroundColor: DOMAINS.scores.color }}
+                        />
+                      </span>
+                    )}
+                  </td>
+                  <td className="w-28 px-3 tabular-nums">
+                    <Value v={compact(s.demographics.undergrad_enrollment)} />
+                    <Bar value={rankOf(s, "enrollment") ?? 0} max={1} color={DOMAINS.size.color} />
+                  </td>
+                  <td className="w-24 px-3 tabular-nums">
+                    <Value v={pell === null ? null : pct(pell)} />
+                    {pell !== null && <Bar value={pell} max={1} color={DOMAINS.access.color} />}
+                  </td>
+                  <td className="w-24 px-3 tabular-nums">
+                    <Value v={fg === null ? null : pct(fg)} />
+                    {fg !== null && <Bar value={fg} max={1} color={DOMAINS.access.color} />}
+                  </td>
+                  <td className="w-24 px-3 tabular-nums">
+                    <Value v={div === null ? null : div.toFixed(2)} />
+                    {div !== null && <Bar value={div} max={1} color={DOMAINS.diversity.color} />}
+                  </td>
+                  <td className="px-3 pr-4 text-right">
+                    <CompareButton id={s.unit_id} variant="icon" />
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}

@@ -1,0 +1,328 @@
+import "server-only";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+import type { School, SearchFilters, SchoolType, SortKey } from "./types";
+import {
+  METRICS,
+  SIZE_BUCKETS,
+  diversityIndex,
+  median,
+  percentileRankSorted,
+  satComposite,
+  satMid,
+  type MetricKey,
+} from "./metrics";
+
+/**
+ * Data access layer. Reads data/schools.json (built by `npm run sync-data`)
+ * once per server process. Swap the loader for Supabase later; the query
+ * functions below keep the same signatures.
+ */
+
+const schools: School[] = JSON.parse(readFileSync(join(process.cwd(), "data", "schools.json"), "utf8"));
+const byId = new Map(schools.map((s) => [s.unit_id, s]));
+
+/* ------------------------------------------------------------------ */
+/* Queries                                                             */
+/* ------------------------------------------------------------------ */
+
+export function getAllSchools(): School[] {
+  return schools;
+}
+
+const SORTERS: Record<SortKey, (s: School) => number | string | null> = {
+  applicants: (s) => s.admissions.applicants,
+  name: (s) => s.name,
+  acceptance_rate: (s) => s.admissions.acceptance_rate,
+  enrollment: (s) => s.demographics.undergrad_enrollment,
+  sat: satMid,
+  pell: (s) => s.demographics.pell_grant_percent,
+  first_gen: (s) => s.demographics.first_gen_percent,
+  diversity: diversityIndex,
+};
+
+export function getSchools(filters: SearchFilters = {}): School[] {
+  let results = schools;
+
+  if (filters.q) {
+    const query = filters.q.toLowerCase();
+    results = results.filter(
+      (s) =>
+        s.name.toLowerCase().includes(query) ||
+        s.location.city.toLowerCase().includes(query) ||
+        s.location.state.toLowerCase() === query
+    );
+  }
+  if (filters.states?.length) results = results.filter((s) => filters.states!.includes(s.location.state));
+  if (filters.regions?.length) results = results.filter((s) => filters.regions!.includes(s.location.region));
+  if (filters.types?.length) results = results.filter((s) => filters.types!.includes(s.type));
+  if (filters.sizes?.length) {
+    const buckets = SIZE_BUCKETS.filter((b) => filters.sizes!.includes(b.key));
+    results = results.filter((s) =>
+      buckets.some((b) => s.demographics.undergrad_enrollment >= b.min && s.demographics.undergrad_enrollment <= b.max)
+    );
+  }
+
+  // Range filters exclude schools that don't report the metric.
+  const ar = (s: School) => s.admissions.acceptance_rate;
+  if (filters.minAR !== undefined) results = results.filter((s) => ar(s) !== null && ar(s)! >= filters.minAR! / 100);
+  if (filters.maxAR !== undefined) results = results.filter((s) => ar(s) !== null && ar(s)! <= filters.maxAR! / 100);
+
+  // SAT/ACT filters keep schools whose middle-50% range overlaps the chosen window.
+  if (filters.minSAT !== undefined) results = results.filter((s) => (satComposite(s)?.[1] ?? -1) >= filters.minSAT!);
+  if (filters.maxSAT !== undefined) results = results.filter((s) => (satComposite(s)?.[0] ?? Infinity) <= filters.maxSAT!);
+  const act = (s: School) => s.admissions.act_composite_25_75;
+  if (filters.minACT !== undefined) results = results.filter((s) => (act(s)?.[1] ?? -1) >= filters.minACT!);
+  if (filters.maxACT !== undefined) results = results.filter((s) => (act(s)?.[0] ?? Infinity) <= filters.maxACT!);
+
+  if (filters.minEnroll !== undefined) results = results.filter((s) => s.demographics.undergrad_enrollment >= filters.minEnroll!);
+  if (filters.maxEnroll !== undefined) results = results.filter((s) => s.demographics.undergrad_enrollment <= filters.maxEnroll!);
+
+  const sortBy: SortKey = filters.sortBy && filters.sortBy in SORTERS ? filters.sortBy : "applicants";
+  const multiplier = (filters.sortDir ?? (sortBy === "applicants" ? "desc" : "asc")) === "asc" ? 1 : -1;
+  const get = SORTERS[sortBy];
+
+  return [...results].sort((a, b) => {
+    const av = get(a);
+    const bv = get(b);
+    // Missing values always sink to the bottom, whichever direction.
+    if (av === null && bv === null) return a.name.localeCompare(b.name);
+    if (av === null) return 1;
+    if (bv === null) return -1;
+    if (typeof av === "string" && typeof bv === "string") return av.localeCompare(bv) * multiplier;
+    return ((av as number) - (bv as number)) * multiplier || a.name.localeCompare(b.name);
+  });
+}
+
+export function paginate<T>(items: T[], page: number, perPage: number) {
+  const pages = Math.max(1, Math.ceil(items.length / perPage));
+  const current = Math.min(Math.max(1, page), pages);
+  return { items: items.slice((current - 1) * perPage, current * perPage), page: current, pages, total: items.length };
+}
+
+export function getSchoolById(id: string): School | null {
+  return byId.get(id) ?? null;
+}
+
+export function getSchoolsByIds(ids: string[]): School[] {
+  return ids.map((id) => byId.get(id)).filter((s): s is School => !!s);
+}
+
+export function getStates(): string[] {
+  return [...new Set(schools.map((s) => s.location.state))].sort();
+}
+
+/* ------------------------------------------------------------------ */
+/* Search (typeahead + compare picker, served by /api/schools)         */
+/* ------------------------------------------------------------------ */
+
+/** Lightweight shape sent to the browser. */
+export interface SchoolIndexEntry {
+  id: string;
+  name: string;
+  city: string;
+  state: string;
+  type: SchoolType;
+  acceptance: number | null;
+}
+
+export function toIndexEntry(s: School): SchoolIndexEntry {
+  return {
+    id: s.unit_id,
+    name: s.name,
+    city: s.location.city,
+    state: s.location.state,
+    type: s.type,
+    acceptance: s.admissions.acceptance_rate,
+  };
+}
+
+/** Name-prefix matches first, then word-prefix, then anywhere; ties go to bigger applicant pools. */
+export function searchSchools(q: string, limit = 8, exclude: string[] = []): SchoolIndexEntry[] {
+  const query = q.trim().toLowerCase();
+  if (!query) return [];
+  const skip = new Set(exclude);
+  const scored: { s: School; score: number }[] = [];
+  for (const s of schools) {
+    if (skip.has(s.unit_id)) continue;
+    const name = s.name.toLowerCase();
+    let score = -1;
+    if (name.startsWith(query)) score = 3;
+    else if (name.includes(` ${query}`) || name.includes(`-${query}`)) score = 2;
+    else if (name.includes(query)) score = 1;
+    else if (s.location.city.toLowerCase().startsWith(query) || s.location.state.toLowerCase() === query) score = 0.5;
+    if (score >= 0) scored.push({ s, score });
+  }
+  return scored
+    .sort((a, b) => b.score - a.score || (b.s.admissions.applicants ?? 0) - (a.s.admissions.applicants ?? 0))
+    .slice(0, limit)
+    .map(({ s }) => toIndexEntry(s));
+}
+
+/* ------------------------------------------------------------------ */
+/* Dataset-level statistics (cached per metric)                        */
+/* ------------------------------------------------------------------ */
+
+const sortedCache = new Map<MetricKey, number[]>();
+
+/** All reported values for a metric, ascending. Missing values are excluded. */
+export function metricValues(key: MetricKey): number[] {
+  let sorted = sortedCache.get(key);
+  if (!sorted) {
+    sorted = schools
+      .map(METRICS[key].get)
+      .filter((v): v is number => v !== null)
+      .sort((a, b) => a - b);
+    sortedCache.set(key, sorted);
+  }
+  return sorted;
+}
+
+export function metricMedian(key: MetricKey): number | null {
+  return median(metricValues(key));
+}
+
+/** 0..1 share of other reporting schools below this value; null if not reported. */
+export function rankOf(school: School, key: MetricKey): number | null {
+  const v = METRICS[key].get(school);
+  return v === null ? null : percentileRankSorted(v, metricValues(key));
+}
+
+export function reportingCount(key: MetricKey): number {
+  return metricValues(key).length;
+}
+
+export function getDatasetSummary() {
+  const counted = schools.filter((s) => s.admissions.applicants && s.admissions.admitted !== null);
+  const totalApplicants = counted.reduce((a, s) => a + (s.admissions.applicants ?? 0), 0);
+  const totalAdmitted = counted.reduce((a, s) => a + (s.admissions.admitted ?? 0), 0);
+  const years = schools.map((s) => s.admissions.year).filter((y): y is number => y !== null);
+  return {
+    count: schools.length,
+    states: getStates().length,
+    totalApplicants,
+    totalAdmitted,
+    totalUndergrads: schools.reduce((a, s) => a + s.demographics.undergrad_enrollment, 0),
+    overallAdmitRate: totalApplicants ? totalAdmitted / totalApplicants : 0,
+    /** Most common admissions year across the dataset. */
+    year: mode(years),
+    medianAcceptance: metricMedian("acceptance"),
+    medianSat: metricMedian("sat"),
+  };
+}
+
+function mode(values: number[]): number | null {
+  const counts = new Map<number, number>();
+  for (const v of values) counts.set(v, (counts.get(v) ?? 0) + 1);
+  let best: number | null = null;
+  let bestCount = 0;
+  for (const [v, c] of counts) if (c > bestCount) [best, bestCount] = [v, c];
+  return best;
+}
+
+export function countByState(): Record<string, number> {
+  return schools.reduce<Record<string, number>>((acc, s) => {
+    acc[s.location.state] = (acc[s.location.state] || 0) + 1;
+    return acc;
+  }, {});
+}
+
+/**
+ * Top N on a metric. `minApplicants` / `minUndergrads` keep tiny programs
+ * (e.g. 12 applicants) from topping "most selective"-style lists.
+ */
+export function topBy(
+  key: MetricKey,
+  dir: "asc" | "desc",
+  n = 5,
+  opts: { minApplicants?: number; minUndergrads?: number } = {}
+): School[] {
+  const get = METRICS[key].get;
+  return schools
+    .filter(
+      (s) =>
+        get(s) !== null &&
+        (s.admissions.applicants ?? 0) >= (opts.minApplicants ?? 0) &&
+        s.demographics.undergrad_enrollment >= (opts.minUndergrads ?? 0)
+    )
+    .sort((a, b) => (dir === "asc" ? get(a)! - get(b)! : get(b)! - get(a)!))
+    .slice(0, n);
+}
+
+/** Histogram of a metric over a fixed range (missing values excluded). */
+export function histogram(key: MetricKey, bins: number, [lo, hi]: [number, number]): number[] {
+  const counts = new Array(bins).fill(0);
+  for (const v of metricValues(key)) {
+    const i = Math.min(bins - 1, Math.max(0, Math.floor(((v - lo) / (hi - lo)) * bins)));
+    counts[i]++;
+  }
+  return counts;
+}
+
+/* ------------------------------------------------------------------ */
+/* Chart helpers                                                       */
+/* ------------------------------------------------------------------ */
+
+export interface LandscapePointData {
+  id: string;
+  name: string;
+  acceptance: number;
+  sat: number;
+  enrollment: number;
+  type: SchoolType;
+  city: string;
+  state: string;
+}
+
+/**
+ * Points for the admissions landscape: schools reporting both acceptance
+ * rate and SAT, capped to the most-applied-to `limit` (plus any `ensure` ids)
+ * so the chart stays readable and the page payload small.
+ */
+export function landscapePoints(pool: School[] = schools, limit = 400, ensure: string[] = []): LandscapePointData[] {
+  const eligible = pool.filter((s) => s.admissions.acceptance_rate !== null && satMid(s) !== null);
+  const top = [...eligible].sort((a, b) => (b.admissions.applicants ?? 0) - (a.admissions.applicants ?? 0)).slice(0, limit);
+  const ids = new Set(top.map((s) => s.unit_id));
+  for (const id of ensure) {
+    const s = byId.get(id);
+    if (s && !ids.has(id) && s.admissions.acceptance_rate !== null && satMid(s) !== null) top.push(s);
+  }
+  return top.map((s) => ({
+    id: s.unit_id,
+    name: s.name,
+    acceptance: s.admissions.acceptance_rate!,
+    sat: satMid(s)!,
+    enrollment: s.demographics.undergrad_enrollment,
+    type: s.type,
+    city: s.location.city,
+    state: s.location.state,
+  }));
+}
+
+export function landscapeEligibleCount(pool: School[] = schools): number {
+  return pool.filter((s) => s.admissions.acceptance_rate !== null && satMid(s) !== null).length;
+}
+
+/**
+ * Distribution of a metric across all reporting schools, for the
+ * "where it sits" strips. Uses the 1st–99th percentile as the axis so a few
+ * outliers don't squash everyone else into one bin.
+ */
+export function distribution(key: MetricKey, bins = 40): { bins: number[]; min: number; max: number; n: number } {
+  const sorted = metricValues(key);
+  const scale = METRICS[key].scale;
+  const p = (q: number) => sorted[Math.min(sorted.length - 1, Math.max(0, Math.round(q * (sorted.length - 1))))];
+  let min = sorted.length ? p(0.01) : 0;
+  let max = sorted.length ? p(0.99) : 1;
+  if (scale && key !== "sat") {
+    min = Math.max(scale[0], min);
+    max = Math.min(scale[1], max);
+  }
+  if (max <= min) max = min + 1;
+  const counts = new Array(bins).fill(0);
+  for (const v of sorted) {
+    const i = Math.min(bins - 1, Math.max(0, Math.floor(((v - min) / (max - min)) * bins)));
+    counts[i]++;
+  }
+  return { bins: counts, min, max, n: sorted.length };
+}

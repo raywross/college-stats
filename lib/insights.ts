@@ -1,6 +1,6 @@
 import "server-only";
 import type { School } from "./types";
-import { getAllSchools, metricMedian, rankOf, reportingCount } from "./data";
+import { getAllSchools, getMeta, metricMedian, rankOf, reportingCount } from "./data";
 import {
   METRICS,
   admitRatio,
@@ -118,7 +118,11 @@ export function costTakeaway(s: School): string | undefined {
       : `${moneyCompact(Math.abs(diff))} ${diff < 0 ? "less" : "more"} than the national median`;
   const low = s.cost?.net_price_by_income?.[0] ?? null;
   const tail = low !== null ? ` Families earning under $30K paid about ${money(low)}.` : "";
-  return `Students receiving aid paid an average of ${money(price)} a year, ${cmp}.${tail}`;
+  // Grant share comes from a different (usually older) survey year than net price, so it gets its own sentence and year.
+  const share = s.aid?.grant_pct ?? null;
+  const sfaYear = getMeta().sources["ipeds-sfa"].edition.split(" ")[0];
+  const shareNote = share !== null ? ` In ${sfaYear}, ${pct(share)} of first-year students received grants.` : "";
+  return `Students who received grants paid an average of ${money(price)} a year, ${cmp}.${tail}${shareNote}`;
 }
 
 export function outcomesTakeaway(s: School): string | undefined {

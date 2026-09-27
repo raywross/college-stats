@@ -16,6 +16,7 @@ import { ScatterPlot } from "@/components/charts/ScatterPlot";
 import { LANDSCAPE_X, LANDSCAPE_Y, LANDSCAPE_ZONE, VALUE_X, VALUE_Y, valueZone } from "@/lib/chart-configs";
 import { cn } from "@/lib/utils";
 import { InfoTip } from "@/components/ui/info-tip";
+import { SourceNote } from "@/components/sources/SourceNote";
 
 export const metadata: Metadata = { title: "Explore colleges" };
 
@@ -209,6 +210,8 @@ export default async function ExplorePage({
           {view !== "chart" && (
             <Pagination params={params} page={paged.page} pages={paged.pages} total={paged.total} perPage={perPage} />
           )}
+
+          <SourceNote topics={["admissions", "enrollment", "demographics", "cost", "outcomes"]} prefix="Source" className="pt-2" />
 
           {schools.length > 0 && (
             <p className="pt-2 text-xs text-muted-foreground">

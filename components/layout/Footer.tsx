@@ -23,6 +23,7 @@ export function Footer() {
             <li><Link className="hover:text-foreground" href="/explore?view=chart">Admissions landscape</Link></li>
             <li><Link className="hover:text-foreground" href="/compare">Compare side-by-side</Link></li>
             <li><Link className="hover:text-foreground" href="/glossary">Glossary of terms</Link></li>
+            <li><Link className="hover:text-foreground" href="/sources">Data sources &amp; methods</Link></li>
           </ul>
         </div>
         <div>
@@ -30,7 +31,10 @@ export function Footer() {
           <p className="text-sm text-muted-foreground">
             Every operating 4-year U.S. college, from the <Term term="scorecard">College Scorecard</Term> and{" "}
             <Term term="ipeds">IPEDS</Term> admissions survey. Ranks and medians compare each college against all
-            others that report the same measure.
+            others that report the same measure.{" "}
+            <Link href="/sources" className="font-semibold text-foreground hover:text-primary">
+              See all sources
+            </Link>
           </p>
         </div>
       </div>

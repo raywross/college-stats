@@ -10,6 +10,7 @@ import type { School } from "@/lib/types";
 import { CompareHeader } from "@/components/compare/CompareHeader";
 import { CompareMetric } from "@/components/compare/CompareMetric";
 import { NetPriceCompare } from "@/components/compare/NetPriceCompare";
+import { MultiSourceNote } from "@/components/sources/MultiSourceNote";
 import { Crest } from "@/components/school/Crest";
 import { RadarChart } from "@/components/charts/RadarChart";
 import { RangeBar } from "@/components/charts/RangeBar";
@@ -189,7 +190,12 @@ export default async function ComparePage({
               <CompareMetric label="Graduation rate" term="graduation-rate" schools={schools} get={METRICS.gradRate.get} format={(v) => pct(v)} max={1} flag={{ which: "max", text: "Highest" }} />
               <CompareMetric label="Median debt" term="median-debt" schools={schools} get={METRICS.debt.get} format={moneyCompact} flag={{ which: "min", text: "Lowest" }} />
             </div>
+            <div className="grid gap-4 md:grid-cols-2">
+              <CompareMetric label="First-years receiving grants" term="grant-aid" schools={schools} get={(s) => s.aid?.grant_pct ?? null} format={(v) => pct(v)} max={1} flag={{ which: "max", text: "Most" }} />
+              <CompareMetric label="Average grant (recipients)" term="grant-aid" schools={schools} get={(s) => s.aid?.grant_avg ?? null} format={moneyCompact} flag={{ which: "max", text: "Largest" }} />
+            </div>
             <NetPriceCompare schools={schools} />
+            <MultiSourceNote schools={schools} topics={["cost", "aid", "outcomes"]} />
           </Group>
 
           {/* Data table: every value in one place (also the accessible view) */}
@@ -213,6 +219,8 @@ export default async function ComparePage({
                 <tbody className="divide-y tabular-nums">
                   {(
                     [
+                      // Sources differ by school (federal survey vs. a college's own CDS), so show which class each row describes.
+                      ["Admissions data", "cds", (s: School) => (s.admissions.year ? `Fall ${s.admissions.year}${s.provenance?.admissions === "cds" ? " (CDS)" : ""}` : null)],
                       ["Acceptance rate", "acceptance-rate", (s: School) => s.admissions.acceptance_rate === null ? null : pctSmart(s.admissions.acceptance_rate)],
                       ["Applicants", "applicants", (s: School) => opt(s.admissions.applicants, num)],
                       ["Admitted", "admitted", (s: School) => opt(s.admissions.admitted, num)],
@@ -231,6 +239,9 @@ export default async function ComparePage({
                       ["Graduation rate", "graduation-rate", (s: School) => opt(s.outcomes?.graduation_rate ?? null, (v) => pct(v))],
                       ["Retention rate", "retention-rate", (s: School) => opt(s.outcomes?.retention_rate ?? null, (v) => pct(v))],
                       ["Median debt", "median-debt", (s: School) => opt(s.outcomes?.median_debt ?? null, money)],
+                      ["First-years with grants", "grant-aid", (s: School) => opt(s.aid?.grant_pct ?? null, (v) => pct(v))],
+                      ["Average grant", "grant-aid", (s: School) => opt(s.aid?.grant_avg ?? null, money)],
+                      ["Aid from the college", "institutional-aid", (s: School) => opt(s.aid?.institutional_pct ?? null, (v) => pct(v))],
                     ] as const
                   ).map(([label, term, fmt]) => (
                     <tr key={label}>
@@ -249,6 +260,7 @@ export default async function ComparePage({
                 </tbody>
               </table>
             </div>
+            <MultiSourceNote schools={schools} topics={["admissions", "enrollment", "demographics", "cost", "aid", "outcomes"]} />
           </section>
         </div>
       )}

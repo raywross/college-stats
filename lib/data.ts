@@ -1,7 +1,7 @@
 import "server-only";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import type { School, SearchFilters, SchoolType, SortKey } from "./types";
+import type { DatasetMeta, School, SearchFilters, SchoolType, SortKey, SourceInfo, SourceKey, Topic } from "./types";
 import {
   METRICS,
   SIZE_BUCKETS,
@@ -21,6 +21,58 @@ import {
 
 const schools: School[] = JSON.parse(readFileSync(join(process.cwd(), "data", "schools.json"), "utf8"));
 const byId = new Map(schools.map((s) => [s.unit_id, s]));
+const meta: DatasetMeta = JSON.parse(readFileSync(join(process.cwd(), "data", "meta.json"), "utf8"));
+
+/* ------------------------------------------------------------------ */
+/* Sources & citations                                                 */
+/* ------------------------------------------------------------------ */
+
+export function getMeta(): DatasetMeta {
+  return meta;
+}
+
+export interface ResolvedSource extends SourceInfo {
+  key: SourceKey;
+}
+
+/**
+ * Where a topic's data came from, for one school or (without a school) the
+ * dataset default. A school's Common Data Set resolves to its own file.
+ */
+export function resolveSource(topic: Topic, school?: School): ResolvedSource {
+  const key = school?.provenance?.[topic] ?? meta.defaults[topic];
+  const info = meta.sources[key];
+  if (key === "cds" && school?.cds) {
+    return { ...info, key, label: `${school.name} Common Data Set`, publisher: school.name, edition: school.cds.edition, url: school.cds.url };
+  }
+  return { ...info, key };
+}
+
+/** Distinct sources behind a set of topics, in first-seen order. */
+export function sourcesFor(topics: Topic[], school?: School, opts: { includeCds?: boolean } = {}): ResolvedSource[] {
+  const seen = new Map<string, ResolvedSource>();
+  for (const t of topics) {
+    const s = resolveSource(t, school);
+    seen.set(`${s.key}:${s.url}`, s);
+  }
+  if (opts.includeCds && school?.cds) {
+    const info = meta.sources.cds;
+    seen.set(`cds:${school.cds.url}`, {
+      ...info,
+      key: "cds",
+      label: `${school.name} Common Data Set`,
+      publisher: school.name,
+      edition: school.cds.edition,
+      url: school.cds.url,
+    });
+  }
+  return [...seen.values()];
+}
+
+/** Schools whose data includes their own Common Data Set. */
+export function cdsSchools(): School[] {
+  return schools.filter((s) => s.cds).sort((a, b) => a.name.localeCompare(b.name));
+}
 
 /* ------------------------------------------------------------------ */
 /* Queries                                                             */

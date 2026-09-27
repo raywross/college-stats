@@ -20,7 +20,7 @@ Higher Education Data Explorer - an interactive web app for visualizing U.S. col
 - Next.js 14 (App Router) with TypeScript
 - Tailwind CSS + shadcn/ui
 - Custom SVG/CSS chart components in `components/charts/` (see `specs/charts.md`)
-- Data: `data/schools.json` (~1,900 4-year colleges) built by `npm run sync-data` from College Scorecard + IPEDS; see `specs/data-sync.md`. API key lives in `.env.local` (git-ignored)
+- Data: `data/schools.json` (~1,900 4-year colleges) built by `npm run sync-data` from College Scorecard + IPEDS; see `specs/data-sync.md`. API key lives in `.env.local` (git-ignored). Add a college's Common Data Set with `npm run import-cds` (see `specs/sources-and-citations.md`); cite any new data with `<SourceNote>`
 
 ### Future Migration
 - Will deploy to Vercel with Supabase database

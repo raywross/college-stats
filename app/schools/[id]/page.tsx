@@ -11,6 +11,8 @@ import {
   hasAdmissionCounts,
   hasTestScores,
   admitRatio,
+  aidGenerosity,
+  generosityTier,
   paybackYears,
   satComposite,
   satMid,
@@ -50,6 +52,7 @@ import { ScatterPlot } from "@/components/charts/ScatterPlot";
 import { LANDSCAPE_X, LANDSCAPE_Y, LANDSCAPE_ZONE, VALUE_X, VALUE_Y, valueZone } from "@/lib/chart-configs";
 import { NetPriceByIncome } from "@/components/charts/NetPriceByIncome";
 import { WhatStudentsPay } from "@/components/school/WhatStudentsPay";
+import { AidGenerosityCard } from "@/components/school/AidGenerosityCard";
 import { InfoTip, MetricLabel, Term } from "@/components/ui/info-tip";
 
 type Props = { params: Promise<{ id: string }> };
@@ -310,6 +313,18 @@ export default async function SchoolPage({ params }: Props) {
                 <Tile label="Average cost" term="average-cost">
                   <p className="font-display text-3xl font-extrabold">{moneyCompact(avgCost)}</p>
                   <p className="text-xs text-muted-foreground">total per year, all students, after grants (est.)</p>
+                </Tile>
+              )}
+              {aidGenerosity(school) !== null && (
+                <Tile label="Aid generosity" term="aid-generosity">
+                  <div className="flex items-center gap-3">
+                    <Ring value={aidGenerosity(school)!} color={DOMAINS.value.color} size={56} stroke={7} label={`Grants cover ${pct(aidGenerosity(school)!)} of the full price`}>
+                      <span className="text-xs font-bold">{pct(aidGenerosity(school)!)}</span>
+                    </Ring>
+                    <p className="text-xs text-muted-foreground">
+                      of full price covered by grants · <b className="text-foreground">{generosityTier(aidGenerosity(school)).label}</b>
+                    </p>
+                  </div>
                 </Tile>
               )}
               {earnings !== null && (
@@ -636,9 +651,13 @@ export default async function SchoolPage({ params }: Props) {
                 <div className="mt-10">
                   <h3 className="mb-1 font-display text-2xl font-extrabold tracking-tight">Who actually gets aid</h3>
                   <p className="mb-4 max-w-3xl text-muted-foreground">
-                    How many students get grants, where the money comes from, and how it varies with family income.
+                    Some colleges cover most of their price with grants; others cover little. Here&apos;s how generous this one is,
+                    how many students get grants, where the money comes from, and how it varies with family income.
                   </p>
-                  <AidBreakdown school={school} />
+                  <div className="space-y-4">
+                    <AidGenerosityCard school={school} />
+                    <AidBreakdown school={school} />
+                  </div>
                 </div>
               )}
 

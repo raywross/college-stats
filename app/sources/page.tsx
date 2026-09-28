@@ -150,6 +150,10 @@ export default function SourcesPage() {
               d: "Published net price figures only cover students who received aid. We estimate what the average first-year actually paid: the sticker price for each residency rate (tuition and fees plus books, on-campus room and board, and other expenses), weighted by how many students pay each rate, minus the share who got grants × their average grant. Students without grants count at full price. All inputs are from the same year (IPEDS). It assumes on-campus living, so it runs high at commuter-heavy schools.",
             },
             {
+              t: "Aid generosity",
+              d: "Total grant dollars ÷ number of first-years ÷ full price: the share of the full cost that grants cover for the average student, counting those who get none. Tiers: Very generous 55%+, Generous 40–55%, Moderate 25–40%, Limited under 25%.",
+            },
+            {
               t: "In-state vs. out-of-state",
               d: "Public universities show separate sticker prices for in-state and out-of-state students, and the share of first-years paying each rate. The all-student average weights them by that share.",
             },

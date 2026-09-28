@@ -53,3 +53,23 @@ export function valueZone(medianCost: number | null, medianEarnings: number | nu
   if (medianCost === null || medianEarnings === null) return undefined;
   return { x: [0, medianCost], y: [medianEarnings, 1e7], label: "Lower cost, higher earnings" };
 }
+
+export const STICKER_X: AxisSpec = {
+  label: "Full price per year (sticker)",
+  short: "Full price",
+  hint: "higher sticker price",
+  term: "cost-of-attendance",
+  format: "moneyCompact",
+  step: 10000,
+  min: 0,
+};
+
+export const STICKER_Y: AxisSpec = {
+  label: "Average total cost, all students (est.)",
+  short: "Avg cost",
+  hint: "what students actually pay",
+  term: "average-cost",
+  format: "moneyCompact",
+  step: 10000,
+  min: 0,
+};

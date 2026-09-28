@@ -184,8 +184,9 @@ export default async function ComparePage({
           </Group>
 
           <Group domain="value" title="Cost & outcomes">
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
               <CompareMetric label="Average cost, all students" term="average-cost" schools={schools} get={METRICS.avgCost.get} format={moneyCompact} max={80000} flag={{ which: "min", text: "Lowest" }} />
+              <CompareMetric label="Aid generosity" term="aid-generosity" schools={schools} get={METRICS.aidGenerosity.get} format={(v) => pct(v)} max={1} flag={{ which: "max", text: "Most" }} />
               <CompareMetric label="Net price, with grants" term="net-price" schools={schools} get={METRICS.netPrice.get} format={moneyCompact} max={80000} flag={{ which: "min", text: "Lowest" }} />
               <CompareMetric label="Median earnings, 10 yrs" term="median-earnings" schools={schools} get={METRICS.earnings.get} format={moneyCompact} flag={{ which: "max", text: "Highest" }} />
               <CompareMetric label="Graduation rate" term="graduation-rate" schools={schools} get={METRICS.gradRate.get} format={(v) => pct(v)} max={1} flag={{ which: "max", text: "Highest" }} />
@@ -235,6 +236,7 @@ export default async function ComparePage({
                       ["First-gen", "first-gen", (s: School) => opt(s.demographics.first_gen_percent, (v) => pct(v))],
                       ["Diversity index", "diversity-index", (s: School) => opt(METRICS.diversity.get(s), (v) => v.toFixed(2))],
                       ["Average cost, all students (est.)", "average-cost", (s: School) => opt(s.cost?.avg_paid_all ?? null, money)],
+                      ["Aid generosity (grants ÷ full price)", "aid-generosity", (s: School) => opt(METRICS.aidGenerosity.get(s), (v) => pct(v))],
                       ["Net price, students with grants", "net-price", (s: School) => opt(s.cost?.aided_net_price ?? null, money)],
                       ["Sticker price, in-state", "in-state-tuition", (s: School) => opt(s.cost?.sticker?.in_state ?? null, money)],
                       ["Sticker price, out-of-state", "in-state-tuition", (s: School) => opt(s.cost?.sticker?.out_of_state ?? null, money)],

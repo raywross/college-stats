@@ -71,6 +71,7 @@ export function ScatterPlot({
   x: xSpec,
   y: ySpec,
   zone,
+  diagonal,
   highlight,
   focusId,
   height: fixedHeight,
@@ -79,6 +80,8 @@ export function ScatterPlot({
   x: AxisSpec;
   y: AxisSpec;
   zone?: ScatterZone;
+  /** Draw the y = x line with this label (e.g. "No aid: pays full price"). */
+  diagonal?: string;
   /** When set, only these ids are emphasized; others fade back. */
   highlight?: string[];
   focusId?: string;
@@ -185,6 +188,26 @@ export function ScatterPlot({
             </g>
           ))}
           <line x1={m.left} x2={width - m.right} y1={m.top + ih} y2={m.top + ih} stroke="var(--axis)" />
+          {diagonal &&
+            (() => {
+              // Solid reference line where y = x, clipped to the shared part of both domains.
+              const lo = Math.max(xDom[0], yDom[0]);
+              const hi = Math.min(xDom[1], yDom[1]);
+              if (hi <= lo) return null;
+              return (
+                <g pointerEvents="none">
+                  <line x1={x(lo)} y1={y(lo)} x2={x(hi)} y2={y(hi)} stroke="var(--foreground)" strokeOpacity={0.45} strokeWidth={1.5} />
+                  <text
+                    x={x(hi) - 4}
+                    y={y(hi) + 14}
+                    textAnchor="end"
+                    className="fill-muted-foreground text-[10px] font-semibold tracking-wide uppercase"
+                  >
+                    {diagonal}
+                  </text>
+                </g>
+              );
+            })()}
 
           {ordered.map((p) => {
             const color = SERIES[seriesOf(p.type)].color;

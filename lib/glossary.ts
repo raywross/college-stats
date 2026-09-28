@@ -190,6 +190,14 @@ const entries = {
     category: "Cost & outcomes",
     related: ["net-price", "cost-of-attendance", "in-state-tuition", "grant-aid"],
   },
+  "aid-generosity": {
+    term: "Aid generosity",
+    short: "How much of the full price (tuition, housing, food, books and other costs) grants cover, averaged over every first-year, counting students who get no grants as 0%.",
+    long: "Calculated as total grant dollars ÷ number of first-years ÷ full price. Tiers: Very generous (55%+), Generous (40–55%), Moderate (25–40%), Limited (under 25%). It's similar to the \"tuition discount rate\" colleges track, but measured against the full cost of attendance.",
+    why: "Two colleges with the same sticker price can cost very different amounts. At generous colleges the sticker price overstates what most students pay; at colleges with limited aid, most students pay close to it.",
+    category: "Cost & outcomes",
+    related: ["average-cost", "grant-aid", "cost-of-attendance", "need-met"],
+  },
   "in-state-tuition": {
     term: "In-state vs. out-of-state tuition",
     short: "Public universities charge state residents a lower rate, often half or less of what out-of-state students pay. Some also have an in-district rate for local residents.",

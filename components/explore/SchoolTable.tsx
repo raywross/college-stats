@@ -2,7 +2,7 @@ import Link from "next/link";
 import { ArrowDown, ArrowUp } from "lucide-react";
 import type { School, SortKey } from "@/lib/types";
 import type { TermKey } from "@/lib/glossary";
-import { DOMAINS, diversityIndex, satComposite } from "@/lib/metrics";
+import { DOMAINS, aidGenerosity, diversityIndex, satComposite } from "@/lib/metrics";
 import { compact, moneyCompact, pct, pctSmart } from "@/lib/format";
 import { rankOf } from "@/lib/data";
 import { Crest } from "@/components/school/Crest";
@@ -86,6 +86,7 @@ export function SchoolTable({ schools, params }: { schools: School[]; params: Pa
     { key: "first_gen", label: "First-gen", term: "first-gen" },
     { key: "diversity", label: "Diversity", term: "diversity-index" },
     { key: "avg_cost", label: "Avg cost", term: "average-cost" },
+    { key: "aid_generosity", label: "Aid generosity", term: "aid-generosity" },
     { key: "earnings", label: "Earnings", term: "median-earnings" },
     { key: "grad_rate", label: "Grad rate", term: "graduation-rate" },
   ];
@@ -93,7 +94,7 @@ export function SchoolTable({ schools, params }: { schools: School[]; params: Pa
   return (
     <div className="overflow-hidden rounded-3xl border bg-card">
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[1120px] text-sm">
+        <table className="w-full min-w-[1220px] text-sm">
           <thead className="border-b bg-surface-2">
             <tr>
               <SortHeader k="name" label="School" className="sticky left-0 z-10 bg-surface-2 pl-4" params={params} sortBy={sortBy} sortDir={sortDir} />
@@ -158,6 +159,10 @@ export function SchoolTable({ schools, params }: { schools: School[]; params: Pa
                   <td className="w-24 px-3 tabular-nums">
                     <Value v={s.cost?.avg_paid_all == null ? null : moneyCompact(s.cost.avg_paid_all)} />
                     {s.cost?.avg_paid_all != null && <Bar value={s.cost.avg_paid_all} max={80000} color={DOMAINS.value.color} />}
+                  </td>
+                  <td className="w-24 px-3 tabular-nums">
+                    <Value v={aidGenerosity(s) === null ? null : pct(aidGenerosity(s)!)} />
+                    {aidGenerosity(s) !== null && <Bar value={aidGenerosity(s)!} max={1} color={DOMAINS.value.color} />}
                   </td>
                   <td className="w-24 px-3 tabular-nums">
                     <Value v={s.outcomes?.median_earnings_10yr == null ? null : moneyCompact(s.outcomes.median_earnings_10yr)} />

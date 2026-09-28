@@ -121,6 +121,7 @@ export type MetricKey =
   | "firstGen"
   | "diversity"
   | "avgCost"
+  | "aidGenerosity"
   | "netPrice"
   | "earnings"
   | "gradRate"
@@ -259,6 +260,18 @@ export const METRICS: Record<MetricKey, MetricDef> = {
     more: "more expensive",
     less: "less expensive",
   },
+  aidGenerosity: {
+    key: "aidGenerosity",
+    label: "Aid generosity",
+    short: "Aid generosity",
+    term: "aid-generosity",
+    domain: "value",
+    get: aidGenerosity,
+    format: (v) => pct(v),
+    scale: [0, 1],
+    more: "more generous aid",
+    less: "less generous aid",
+  },
   netPrice: {
     key: "netPrice",
     label: "Net price, students with grants",
@@ -305,6 +318,24 @@ export const METRICS: Record<MetricKey, MetricDef> = {
     less: "less debt",
   },
 };
+
+/**
+ * Aid generosity: the share of the full price that grants cover, averaged
+ * over every first-year (students without grants count as 0%). Same idea as a
+ * "discount rate", but against the full cost of attendance, not just tuition.
+ */
+export function aidGenerosity(s: School): number | null {
+  const b = s.cost?.breakdown;
+  return b && b.full_price > 0 ? b.grant_per_student / b.full_price : null;
+}
+
+export function generosityTier(v: number | null): { label: string; level: number } {
+  if (v === null) return { label: "Not reported", level: 0 };
+  if (v >= 0.55) return { label: "Very generous", level: 4 };
+  if (v >= 0.4) return { label: "Generous", level: 3 };
+  if (v >= 0.25) return { label: "Moderate", level: 2 };
+  return { label: "Limited", level: 1 };
+}
 
 /** Family-income bands used by net price by income, low to high. */
 export const INCOME_BANDS = ["$0–30K", "$30–48K", "$48–75K", "$75–110K", "$110K+"];

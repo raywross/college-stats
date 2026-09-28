@@ -59,8 +59,23 @@ Shown by `WhatStudentsPay` (profile): the headline estimate vs. the national med
 average net price vs. the full sticker price, with shares); and for publics, a **sticker price by residency** table
 (tuition & fees, full cost, share of first-years for each rate).
 
+## Aid generosity
+Some colleges cover most of their price with grants; others cover little, so the same sticker price can mean very
+different real costs. `aidGenerosity(s)` = `breakdown.grant_per_student ÷ breakdown.full_price`: the share of the full
+cost of attendance that grants cover, averaged over every first-year (students without grants count as 0%). It's like
+a "tuition discount rate", but against the full cost.
+
+- Tiers (`generosityTier`), set from the national spread (median 39%, p25 28%, p75 49%, p90 56%): **Very generous**
+  55%+, **Generous** 40–55%, **Moderate** 25–40%, **Limited** under 25%. Medians by type: public 28%, private
+  nonprofit 45%, for-profit 14%.
+- Shown as: the profile `AidGenerosityCard` (ring, tier, takeaway, national `DistributionStrip`) at the top of "Who
+  actually gets aid"; an overview tile; a "Generous aid" badge (top 15%); Explore sort `aid_generosity` and a table
+  column; the Explore chart tab **Sticker vs. actual** (`chart=sticker`: full price vs. average total cost with a
+  "no aid" y = x line, so generosity is distance below the line); Compare metric, table row, and key difference; a
+  Home "Most generous aid" leaderboard.
+
 ## Metrics (`lib/metrics.ts`)
-`avgCost` (all students; used for Explore sort/filter `avg_cost` + `minCost`/`maxCost`, card meter, table, the
+`aidGenerosity` (above), `avgCost` (all students; used for Explore sort/filter `avg_cost` + `minCost`/`maxCost`, card meter, table, the
 cost-vs-earnings chart, leaderboards, badges, and key differences), `netPrice` (grant recipients, same year),
 `earnings`, `gradRate`, `debt`, all in the **value** domain (`--d-value`, amber). `paybackYears(s)` = 4 × average
 cost ÷ median earnings: a deliberately rough comparison, explained by the `payback` glossary term.

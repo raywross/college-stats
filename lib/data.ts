@@ -5,6 +5,7 @@ import type { DatasetMeta, School, SearchFilters, SchoolType, SortKey, SourceInf
 import {
   METRICS,
   SIZE_BUCKETS,
+  aidGenerosity,
   diversityIndex,
   median,
   percentileRankSorted,
@@ -92,6 +93,7 @@ const SORTERS: Record<SortKey, (s: School) => number | string | null> = {
   first_gen: (s) => s.demographics.first_gen_percent,
   diversity: diversityIndex,
   avg_cost: (s) => s.cost?.avg_paid_all ?? null,
+  aid_generosity: aidGenerosity,
   net_price: (s) => s.cost?.aided_net_price ?? null,
   earnings: (s) => s.outcomes?.median_earnings_10yr ?? null,
   grad_rate: (s) => s.outcomes?.graduation_rate ?? null,
@@ -382,6 +384,31 @@ export function valuePoints(pool: School[] = schools, limit = 400, ensure: strin
     city: s.location.city,
     state: s.location.state,
   }));
+}
+
+/** Points for "sticker price vs. what students actually pay": x = full price, y = average total cost. */
+export function stickerPoints(pool: School[] = schools, limit = 400, ensure: string[] = []): ScatterPointData[] {
+  const ok = (s: School) => !!s.cost?.breakdown && s.cost.avg_paid_all != null;
+  const top = [...pool.filter(ok)].sort((a, b) => (b.admissions.applicants ?? 0) - (a.admissions.applicants ?? 0)).slice(0, limit);
+  const ids = new Set(top.map((s) => s.unit_id));
+  for (const id of ensure) {
+    const s = byId.get(id);
+    if (s && !ids.has(id) && ok(s)) top.push(s);
+  }
+  return top.map((s) => ({
+    id: s.unit_id,
+    name: s.name,
+    x: s.cost!.breakdown!.full_price,
+    y: s.cost!.avg_paid_all!,
+    enrollment: s.demographics.undergrad_enrollment,
+    type: s.type,
+    city: s.location.city,
+    state: s.location.state,
+  }));
+}
+
+export function stickerEligibleCount(pool: School[] = schools): number {
+  return pool.filter((s) => !!s.cost?.breakdown && s.cost.avg_paid_all != null).length;
 }
 
 export function valueEligibleCount(pool: School[] = schools): number {

@@ -201,6 +201,7 @@ export type SortKey =
   | "first_gen"
   | "diversity"
   | "avg_cost"
+  | "aid_generosity"
   | "net_price"
   | "earnings"
   | "grad_rate";

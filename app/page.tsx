@@ -261,6 +261,9 @@ export default function HomePage() {
               <BoardCard title="Highest earnings" term="median-earnings" domain="value" caption="Median, 10 yrs after entry · 1,000+ undergrads">
                 <Leaderboard schools={topBy("earnings", "desc", 5, { minUndergrads: 1000 })} get={METRICS.earnings.get} format={moneyCompact} color={DOMAINS.value.color} />
               </BoardCard>
+              <BoardCard title="Most generous aid" term="aid-generosity" domain="value" caption="Share of full price covered by grants · 1,000+ undergrads">
+                <Leaderboard schools={topBy("aidGenerosity", "desc", 5, { minUndergrads: 1000 })} get={METRICS.aidGenerosity.get} format={(v) => pct(v)} max={1} color={DOMAINS.value.color} />
+              </BoardCard>
               <BoardCard title="Lowest average cost" term="average-cost" domain="value" caption="All students, per year · 5,000+ undergrads">
                 <Leaderboard schools={topBy("avgCost", "asc", 5, { minUndergrads: 5000 })} get={METRICS.avgCost.get} format={moneyCompact} color={DOMAINS.value.color} />
               </BoardCard>

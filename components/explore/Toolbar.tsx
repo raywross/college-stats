@@ -66,6 +66,7 @@ const SORTS = [
   { value: "first_gen", label: "First-gen share", dir: "desc" },
   { value: "diversity", label: "Diversity index", dir: "desc" },
   { value: "avg_cost", label: "Average cost (lowest)", dir: "asc" },
+  { value: "aid_generosity", label: "Aid generosity (most)", dir: "desc" },
   { value: "net_price", label: "Net price with grants (lowest)", dir: "asc" },
   { value: "earnings", label: "Earnings (highest)", dir: "desc" },
   { value: "grad_rate", label: "Graduation rate", dir: "desc" },

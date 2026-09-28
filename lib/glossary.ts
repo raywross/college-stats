@@ -184,7 +184,7 @@ const entries = {
   },
   "average-cost": {
     term: "Average cost (all students)",
-    short: "Our estimate of what the average first-year actually paid in a year, counting everyone: students with grants pay the sticker price minus their grant, and students without grants pay the full sticker price.",
+    short: "Our estimate of what the average first-year actually paid in a year for everything: tuition and fees, housing, food, books, and other expenses, after grants. Students with grants pay the full price minus their grant; students without grants pay the full price.",
     long: "Calculated from same-year federal data: the sticker price (tuition and fees for each student's residency rate, plus books, on-campus room and board, and other expenses), weighted by the share of first-years paying each rate, minus the share who received grants times their average grant. Loans aren't subtracted, since they're still paid back.",
     why: "Published \"average net price\" figures only cover students who got aid, so they understate what a typical student pays, often by tens of thousands of dollars at colleges where many students pay full price. It assumes on-campus living, so it runs high at commuter-heavy schools.",
     category: "Cost & outcomes",

@@ -37,6 +37,16 @@ Students without grants count at the full sticker price. Private colleges have o
 Coverage: 1,511 colleges. Caveats (shown on the page): it assumes on-campus living, and loans aren't subtracted.
 Validated on Vanderbilt: sticker $84,412 − average grant $57,723 = $26,689, exactly IPEDS's aided net price.
 
+The sync also stores `cost.components` (books, room & board, other) and `cost.breakdown`: residency-averaged tuition
+& fees, each living-cost item, `full_price`, and `grant_per_student`, each rounded before computing
+`avg_paid_all = full_price − grant_per_student`, so the on-page breakdown adds up exactly.
+
+Headline wording: "Average total cost per year, all first-years (est.)", with "Tuition, housing, food, books & other
+expenses, after grants" beneath. `CostBreakdown` draws it as a small waterfall on one scale: full price stacked by
+tuition & fees / room & board / books & supplies / other expenses (`--cost-1..4`, the validated adjacent order), minus
+the average grant per student (hatched outline), equals the average total cost (neutral ink, so it isn't mistaken for
+a cost item). A legend lists each amount.
+
 Shown by `WhatStudentsPay` (profile): the headline estimate vs. the national median; who pays what (grant recipients'
 average net price vs. the full sticker price, with shares); and for publics, a **sticker price by residency** table
 (tuition & fees, full cost, share of first-years for each rate).

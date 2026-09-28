@@ -143,6 +143,12 @@
   --demo-6: #008300;
   --demo-7: #4a3aa7;
 
+  /* Cost components (tuition, room & board, books, other): same validated adjacent order as --demo-1..4 */
+  --cost-1: var(--demo-1);
+  --cost-2: var(--demo-2);
+  --cost-3: var(--demo-3);
+  --cost-4: var(--demo-4);
+
   /* Sequential (violet) for maps / heat */
   --seq-1: oklch(0.93 0.04 283);
   --seq-2: oklch(0.83 0.1 283);

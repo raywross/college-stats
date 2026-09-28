@@ -493,20 +493,30 @@ function addPrices(school: School, ic: Record<string, string> | undefined, sfa: 
   if (resTotal <= 0) residency = { in_district: 0, in_state: 1, out_of_state: 0 };
   const total = Object.values(residency).reduce<number>((a, b) => a + (b ?? 0), 0) || 1;
 
-  let weighted = 0;
+  // Tuition & fees averaged over the residency mix. Room & board, books, and other costs don't vary by residency.
+  let weightedTuition = 0;
   let covered = 0;
   for (const k of ["in_district", "in_state", "out_of_state"] as const) {
     const share = (residency[k] ?? 0) / total;
     if (share === 0) continue;
-    const price = sticker[k] ?? sticker.in_state;
+    const price = tf[k] ?? tf.in_state;
     if (price === null) continue;
-    weighted += share * price;
+    weightedTuition += share * price;
     covered += share;
   }
-  const avgSticker = covered >= 0.95 ? weighted / covered : null;
+  const [books, roomBoard, other] = extras;
   const grantPct = school.aid?.grant_pct ?? null;
   const grantAvg = school.aid?.grant_avg ?? null;
-  const avgPaid = avgSticker !== null && grantPct !== null && grantAvg !== null ? avgSticker - grantPct * grantAvg : null;
+  // Round each piece first so the displayed breakdown adds up exactly to the stored total.
+  const breakdown =
+    covered >= 0.95 && books !== null && roomBoard !== null && other !== null && grantPct !== null && grantAvg !== null
+      ? (() => {
+          const tuition = Math.round(weightedTuition / covered);
+          const fullPrice = tuition + books + roomBoard + other;
+          return { tuition_fees: tuition, books, room_board: roomBoard, other, full_price: fullPrice, grant_per_student: Math.round(grantPct * grantAvg) };
+        })()
+      : null;
+  const avgPaid = breakdown ? breakdown.full_price - breakdown.grant_per_student : null;
 
   const aided = school.type === "public" ? ipedsNum(sfa, "NPIST2") : ipedsNum(sfa, "NPGRN2");
   school.cost = {
@@ -519,9 +529,11 @@ function addPrices(school: School, ic: Record<string, string> | undefined, sfa: 
       in_state: residency.in_state === null ? null : round(residency.in_state / total),
       out_of_state: residency.out_of_state === null ? null : round(residency.out_of_state / total),
     },
+    components: { books, room_board: roomBoard, other },
     aided_net_price: aided,
     // Guard against inconsistent inputs (e.g. grants reported larger than the price).
-    avg_paid_all: avgPaid !== null && avgPaid > 0 ? Math.round(avgPaid) : null,
+    breakdown: avgPaid !== null && avgPaid > 0 ? breakdown : null,
+    avg_paid_all: avgPaid !== null && avgPaid > 0 ? avgPaid : null,
   };
 }
 

@@ -132,7 +132,7 @@ export function costTakeaway(s: School): string | undefined {
     share !== null && aided !== null && sticker
       ? ` The ${pct(share)} who received grants paid ${money(aided)} on average; the other ${pct(1 - share)} paid the full sticker price of ${sticker}.`
       : "";
-  return `In ${year}, the average first-year paid an estimated ${money(all)}, ${cmp}.${split}`;
+  return `In ${year}, the average first-year paid an estimated ${money(all)} in total (tuition, housing, food, books and other costs, after grants), ${cmp}.${split}`;
 }
 
 export function outcomesTakeaway(s: School): string | undefined {

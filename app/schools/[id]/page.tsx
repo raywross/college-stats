@@ -309,7 +309,7 @@ export default async function SchoolPage({ params }: Props) {
               {avgCost !== null && (
                 <Tile label="Average cost" term="average-cost">
                   <p className="font-display text-3xl font-extrabold">{moneyCompact(avgCost)}</p>
-                  <p className="text-xs text-muted-foreground">per year, all students (est.)</p>
+                  <p className="text-xs text-muted-foreground">total per year, all students, after grants (est.)</p>
                 </Tile>
               )}
               {earnings !== null && (

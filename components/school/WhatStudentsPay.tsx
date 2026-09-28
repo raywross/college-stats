@@ -4,6 +4,7 @@ import { stickerPhrase } from "@/lib/insights";
 import { DOMAINS } from "@/lib/metrics";
 import { money, moneyCompact, pct } from "@/lib/format";
 import { BenchmarkBar } from "@/components/charts/BenchmarkBar";
+import { CostBreakdown } from "@/components/charts/CostBreakdown";
 import { InfoTip, MetricLabel, Term } from "@/components/ui/info-tip";
 
 const COLOR = DOMAINS.value.color;
@@ -42,6 +43,28 @@ export function WhatStudentsPay({ school }: { school: School }) {
 
   if (all === null && !sticker) return null;
 
+  // National comparison + caveats: under the breakdown for publics; in the (otherwise short) right column for privates.
+  const comparison = (
+    <div className="space-y-5">
+          {all !== null && (
+          <BenchmarkBar
+            label="Compared to all colleges"
+            value={all}
+            median={metricMedian("avgCost") ?? undefined}
+            scale={[0, 80000]}
+            format={money}
+            color={COLOR}
+            size="sm"
+          />
+        )}
+        <p className="text-[11px] leading-relaxed text-muted-foreground">
+          Housing and food use the college&apos;s on-campus rates, so the estimate runs high where many students live at
+          home. &ldquo;Other expenses&rdquo; is the college&apos;s estimate of personal and transportation costs. Loans aren&apos;t
+          subtracted because they&apos;re repaid.
+        </p>
+    </div>
+  );
+
   return (
     <div className="rounded-3xl border bg-card p-5 sm:p-6">
       <div className="grid gap-6 lg:grid-cols-[1fr_1.25fr] lg:gap-10">
@@ -49,27 +72,15 @@ export function WhatStudentsPay({ school }: { school: School }) {
         <div className="space-y-5">
           <div>
             <MetricLabel term="average-cost" className="text-xs font-semibold text-muted-foreground">
-              Average paid per year, all first-years (est.)
+              Average total cost per year, all first-years (est.)
             </MetricLabel>
             <p className="mt-1 font-display text-5xl font-extrabold tracking-tight">{all !== null ? money(all) : "–"}</p>
-            <p className="text-xs text-muted-foreground">{year} · counts students with and without grants</p>
+            <p className="text-xs text-muted-foreground">
+              Tuition, housing, food, books & other expenses, after grants · {year}
+            </p>
           </div>
-          {all !== null && (
-            <BenchmarkBar
-              label="Compared to all colleges"
-              value={all}
-              median={metricMedian("avgCost") ?? undefined}
-              scale={[0, 80000]}
-              format={money}
-              color={COLOR}
-              size="sm"
-            />
-          )}
-          <p className="text-[11px] leading-relaxed text-muted-foreground">
-            Estimate = sticker price{isPublic ? " (weighted by how many students pay in-state vs. out-of-state rates)" : ""} − share
-            with grants × average grant. Assumes on-campus housing and meals, so it runs high where many students live at home.
-            Loans aren&apos;t subtracted.
-          </p>
+          <CostBreakdown school={school} />
+          {isPublic && comparison}
         </div>
 
         {/* Who pays what */}
@@ -147,7 +158,8 @@ export function WhatStudentsPay({ school }: { school: School }) {
               </p>
             </div>
           ) : (
-            inState !== null && (
+            inState !== null &&
+            !c?.breakdown && (
               <div>
                 <p className="mb-2 text-sm font-semibold">
                   <Term term="cost-of-attendance">Sticker price</Term>, {year}
@@ -169,6 +181,7 @@ export function WhatStudentsPay({ school }: { school: School }) {
             )
           )}
           {stickerText === null && share === null && <p className="text-sm text-muted-foreground">Price details aren&apos;t reported.</p>}
+          {!isPublic && comparison}
         </div>
       </div>
     </div>

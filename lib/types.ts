@@ -68,6 +68,20 @@ export interface School {
     tuition_fees?: ResidencyPrices;
     /** Share of first-years paying each residency rate. */
     residency?: ResidencyPrices;
+    /** Items that make up the sticker price beyond tuition (same year; on-campus rates). */
+    components?: { books: number | null; room_board: number | null; other: number | null };
+    /** Pieces of the all-student estimate, so the breakdown adds up exactly to avg_paid_all. */
+    breakdown?: {
+      /** Tuition & fees averaged over the residency mix (publics) or the single rate (privates). */
+      tuition_fees: number;
+      books: number;
+      room_board: number;
+      other: number;
+      /** tuition_fees + books + room_board + other */
+      full_price: number;
+      /** share with grants × average grant, i.e. grant dollars averaged over every first-year */
+      grant_per_student: number;
+    } | null;
     /** Average net price for first-years who received grants (publics: in-state students). */
     aided_net_price?: number | null;
     /**

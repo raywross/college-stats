@@ -133,7 +133,7 @@ None use the `NEXT_PUBLIC_` prefix: `lib/data.ts` is server-only, so the browser
 
 | Project | Used by | Data changes when |
 |---|---|---|
-| **dev** (`quad-dev`) | Local dev servers (every worktree); for now also Vercel Production ([interim](#current-state-production-reads-dev)) | Anyone runs `npm run publish-data` |
+| **dev** (`quad-dev`) | Local dev servers (every worktree); for now also Vercel Production ([current state](#current-state-pre-release-dev-only)) | Anyone runs `npm run publish-data` |
 | **prod** (`quad-prod`, not created yet) | Vercel Production | Only a merge to `main` that changes `data/**` ([GitHub Action](#production)), or a deliberate `publish-data:prod` |
 
 - **Two projects, not two schemas in one.** Supabase keys, RLS, backups and pausing are per project. Separate
@@ -153,7 +153,7 @@ None use the `NEXT_PUBLIC_` prefix: `lib/data.ts` is server-only, so the browser
 | 0. Code | `DATA_SOURCE` loader, `lib/dataset.ts` factory, schema, `publish-data`, tests | ✅ Done (`feature/supabase-migration`) |
 | 1. Dev project | Apply migration, add keys to `.env.local`, `npm run publish-data`, run locally with `DATA_SOURCE=supabase`, compare pages with `json` | ✅ Done 2026-09-28 (see below) |
 | 2. Default locally | Set `DATA_SOURCE=supabase` in `.env.local`; `json` stays for offline work and CI | After phase 1 checks out |
-| 3. Production | Create prod project, apply migration, `publish-data:prod`; Vercel env vars (Production → prod, Preview → JSON); GitHub Action publishes to prod on merges that change `data/**`; on-demand revalidation so static pages (`/`, top 50 profiles, `/data`) pick up a publish without a redeploy | Code done 2026-09-28 (`feature/supabase-prod`): `.env.prod.local`, Action, `/api/revalidate`, per-request version check, tested locally. Live on Vercel 2026-09-28, reading the dev project; the prod project is deferred ([Current state](#current-state-production-reads-dev)) |
+| 3. Production | Create prod project, apply migration, `publish-data:prod`; Vercel env vars (Production → prod, Preview → JSON); GitHub Action publishes to prod on merges that change `data/**`; on-demand revalidation so static pages (`/`, top 50 profiles, `/data`) pick up a publish without a redeploy | Code done 2026-09-28 (`feature/supabase-prod`): `.env.prod.local`, Action, `/api/revalidate`, per-request version check, tested locally. Deployed to Vercel 2026-09-28 as a pre-release site on the dev project; the prod project comes with the formal release ([Current state](#current-state-pre-release-dev-only)) |
 | 4. Later | Scheduled sync opens PRs ([backlog.md](backlog.md)); user tables (accounts, saved lists) as new migrations; decide whether `schools.json` leaves git | As needed |
 
 **Rollback at any phase:** set `DATA_SOURCE=json` (and restart). The files are always there.
@@ -178,22 +178,24 @@ None use the `NEXT_PUBLIC_` prefix: `lib/data.ts` is server-only, so the browser
 
 ## Production
 
-### Current state: Production reads dev
-Live since 2026-09-28 at **https://college-stats-nine.vercel.app**, reading the **dev** project
-(`gwusgmmionqxabifntgv`). The prod project is deferred until the site is ready for real traffic.
+### Current state: pre-release, dev only
+The site is still being built, so there is only the **dev** project (`gwusgmmionqxabifntgv`). Vercel's Production
+environment, at **https://college-stats-nine.vercel.app** since 2026-09-28, is a pre-release dev site that reads it.
+The prod project, the dev/prod split and the control procedures around publishing come with the formal release, once
+the planned features are in and the site is circulated more widely ([backlog.md](backlog.md#platform)).
 - Vercel Production has `DATA_SOURCE=supabase` and the dev project's `SUPABASE_URL` / `SUPABASE_PUBLISHABLE_KEY`.
   Preview has `DATA_SOURCE=json`. No `REVALIDATE_SECRET` and no GitHub `PROD_*` secrets yet, so the Action's jobs
   skip.
-- **`npm run publish-data` updates the live site.** Dynamic pages (`/explore`, `/compare`, `/api/schools`) show a
+- **`npm run publish-data` updates the deployed site.** Dynamic pages (`/explore`, `/compare`, `/api/schools`) show a
   publish on their next request; static ones (`/`, profiles, `/data`) at their daily regeneration or the next deploy.
-- When the prod project exists, follow [Setup](#setup-phase-3) (steps 1, 2, 4 and 5; in step 3 only point
+- At the formal release, follow [Setup](#setup-phase-3) (steps 1, 2, 4 and 5; in step 3 only point
   Production at prod) and update this section.
 
 Found while setting it up:
 - The Vercel–Supabase integration adds its own variables (`SUPABASE_ANON_KEY`, `NEXT_PUBLIC_SUPABASE_*`,
   `POSTGRES_*`, …). The app reads none of them; `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY` had to be added by
   hand. The build fails with "Supabase is not configured" without them.
-- A variable that exists but is empty counts as set: `DATA_SOURCE=""` fails the build with "DATA_SOURCE must be…".
+- A `DATA_SOURCE` that exists but is empty is treated as unset (`json`).
 - **Settings → Git → Production Branch** must be `main`. Per-deployment URLs and `*-<team>.vercel.app` aliases sit
   behind Vercel Deployment Protection (302 to a login); the production domain is public.
 - Vercel runs Node 24.x (`engines` in `package.json`), matching CI.

@@ -78,7 +78,7 @@ Each guard below was verified by breaking the rule on purpose and confirming the
 | `FieldPath` types on `SourceNote`, `MultiSourceNote`, `Panel.fields` (required), `Tile.field` (required), `MetricDef.field` (required), Compare `TABLE_ROWS` (`satisfies`) | Typos, unregistered fields, a tile/metric/section with no citation | `tsc` |
 | `validateLineage` (registry + every school) | Stored field not in the registry; lineage for a missing value or an unregistered/computed field; CDS lineage without a `cds` record, or a `cds` record nothing cites; `extracted` without quote/url/date/year; a release without a year; derived inputs that don't exist; circular derivations | Sync (before writing), `npm run check:lineage`, `npm test` |
 | `lineageForPatch` | Overrides with no source, the retired `provenance` key, unregistered fields | Sync, `npm test` |
-| `tests/citation-guards.test.mts` | Hard-coded data years in `app/` or `components/` ("Fall 2024", "2023–24"); reading `meta.sources` / `vintages` / `.edition` directly outside `app/sources/page.tsx`; any return of `provenance` / `topics=` | `npm test` |
+| `tests/citation-guards.test.mts` | Hard-coded data years in `app/` or `components/` ("Fall 2024", "2023–24"); reading `meta.sources` / `vintages` / `.edition` directly outside `app/data/page.tsx`; any return of `provenance` / `topics=` | `npm test` |
 | `tests/lineage.test.mts` | Resolution behavior: defaults, CDS vs federal fields at a CDS school, derived inputs and non-default propagation, de-duplication | `npm test` |
 | `npm run verify` | typecheck + lint + tests + lineage check | Locally before committing; CI (`.github/workflows/verify.yml`, also runs `next build`) |
 

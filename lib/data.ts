@@ -4,6 +4,7 @@ import { join } from "node:path";
 import type { DatasetMeta, School, SearchFilters, SchoolType, SortKey } from "./types";
 import type { FieldPath } from "./fields";
 import { lineageFor, sourcesForFields as sourcesForFieldsPure, type Cited, type CitedSource } from "./lineage";
+import type { ReleaseCalendar } from "./releases";
 import {
   METRICS,
   SIZE_BUCKETS,
@@ -25,6 +26,7 @@ import {
 const schools: School[] = JSON.parse(readFileSync(join(process.cwd(), "data", "schools.json"), "utf8"));
 const byId = new Map(schools.map((s) => [s.unit_id, s]));
 const meta: DatasetMeta = JSON.parse(readFileSync(join(process.cwd(), "data", "meta.json"), "utf8"));
+const releaseCalendar: ReleaseCalendar = JSON.parse(readFileSync(join(process.cwd(), "data", "release-calendar.json"), "utf8"));
 
 /* ------------------------------------------------------------------ */
 /* Sources & citations                                                 */
@@ -49,6 +51,11 @@ export function sourcesForSchools(paths: readonly FieldPath[], list: School[]): 
   const out = new Map<string, CitedSource>();
   for (const s of list) for (const src of sourcesForFieldsPure(paths, s, meta)) out.set(`${src.key}|${src.url}|${src.year ?? ""}`, src);
   return [...out.values()];
+}
+
+/** When each source is expected to publish newer data (data/release-calendar.json; see lib/releases.ts). */
+export function getReleaseCalendar(): ReleaseCalendar {
+  return releaseCalendar;
 }
 
 /** Schools whose data includes their own Common Data Set. */

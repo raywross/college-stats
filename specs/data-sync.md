@@ -54,6 +54,12 @@ that source, field by field. A patch with neither, or with the retired `provenan
 Keys starting with `_` are notes and are ignored (except `_imported`, used as the retrieval date, and `_lineage`).
 Arrays replace rather than merge.
 
+## Release calendar check
+Before anything else, the sync checks NCES (HEAD requests, both file locations below) for the files of each unpublished
+release in `data/release-calendar.json` and marks a release `published` once all of them exist (for revisions, once
+each file's `Last-Modified` is after the entry's `filesUpdatedAfter`). A network failure only warns. Run just this step
+with `npm run sync-data -- --releases-only` (no API key needed). See [data-page.md](data-page.md#release-calendar-schema-additions-to-the-plan).
+
 ## Where IPEDS files live (changed Dec 2025)
 NCES moved newer releases to `https://nces.ed.gov/ipeds/complete-data-files/`; older ones remain at
 `/ipeds/datacenter/data/`. The sync tries the new location first. Its own "Complete Data Files" listing page lags

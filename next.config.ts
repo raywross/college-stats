@@ -6,6 +6,10 @@ const nextConfig: NextConfig = {
   outputFileTracingIncludes: {
     "/*": ["./data/*.json"],
   },
+  // /sources grew into the Data tab (specs/data-page.md).
+  async redirects() {
+    return [{ source: "/sources", destination: "/data", permanent: true }];
+  },
 };
 
 export default nextConfig;

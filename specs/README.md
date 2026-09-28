@@ -17,10 +17,10 @@ Structured documentation for the Higher Education Data Explorer ("Quad").
 | [comparison.md](comparison.md) | Compare flow, tray, key differences, radar |
 | [data-layer.md](data-layer.md) | Types, data access, derived metrics |
 | [cost-outcomes.md](cost-outcomes.md) | Net price, earnings, graduation, debt: data, metrics, and where they appear |
-| [sources-and-citations.md](sources-and-citations.md) | How every number is attributed; `/sources` page; Common Data Set importer |
+| [sources-and-citations.md](sources-and-citations.md) | How every number is attributed; Common Data Set importer |
 | [data-lineage.md](data-lineage.md) | Per-value source/year tracking: field registry, lineage records, citation popovers and chips, guards (`npm run verify`) |
 | [college-reported-data.md](college-reported-data.md) | *Planned:* ingestion agent for newer college-published figures (CDS, class profiles) |
-| [data-page.md](data-page.md) | *Planned:* `/data` tab: data vintages, release calendar, baseline rule; research findings |
+| [data-page.md](data-page.md) | `/data` tab: data vintages and timeline, release calendar (auto-marked published by the sync), baseline rule, sources, methods |
 | [data-sync.md](data-sync.md) | Building `data/schools.json` from College Scorecard + IPEDS; API key setup; overrides |
 | [trends-data.md](trends-data.md) | *Planned:* year-by-year history: how far back each series goes, per-era file mapping, storage, validation |
 | [trends-design.md](trends-design.md) | *Planned:* how trends appear, from 3 Home facts to the profile's "Over time" charts |

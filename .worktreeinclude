@@ -1,0 +1,2 @@
+# Gitignored files copied into every new Claude worktree (see CLAUDE.md, "One worktree per session").
+.env.local

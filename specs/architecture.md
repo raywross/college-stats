@@ -58,6 +58,9 @@ college-stats/
 ├── scripts/check-lineage.mts   # npm run check:lineage
 ├── tests/                      # node:test (npm test): lineage behavior + citation guards
 ├── .github/workflows/verify.yml # CI: npm run verify + next build
+├── .claude/hooks/              # One worktree per Claude session (CLAUDE.md): require-worktree.mjs (PreToolUse guard),
+│                               #   sync-main.mjs (SessionStart: fast-forward the main checkout)
+├── .worktreeinclude            # Gitignored files (.env.local) copied into each new worktree
 └── specs/
 ```
 

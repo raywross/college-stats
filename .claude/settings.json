@@ -8,5 +8,30 @@
       "Bash(npx shadcn@latest init -d)",
       "Bash(npx shadcn@latest add card badge slider input table progress tooltip select separator)"
     ]
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$(git rev-parse --show-toplevel)/.claude/hooks/sync-main.mjs\"",
+            "timeout": 30
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write|NotebookEdit|Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$(git rev-parse --show-toplevel)/.claude/hooks/require-worktree.mjs\""
+          }
+        ]
+      }
+    ]
   }
 }

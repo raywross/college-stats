@@ -17,26 +17,29 @@ This document tracks everything that needs to change when moving from local deve
 
 ## 2. Supabase Database
 
+Design, environments, keys and the phased transition are in [supabase.md](supabase.md). In short, `data/*.json`
+stay in git as the reviewed source, `npm run publish-data` uploads them to Supabase, and `DATA_SOURCE=supabase`
+makes the app read from there.
+
 | Item | Current (Local) | Target (Supabase) | Files Affected |
 |---|---|---|---|
-| Data source | `data/sample-schools.json` | Supabase PostgreSQL | `lib/data.ts` |
-| Data access | Sync JSON read + in-memory filter | Async Supabase queries | `lib/data.ts`, all pages |
-| Auth | None | Supabase Auth (optional) | New files |
-| Env vars | None | `SUPABASE_URL`, `SUPABASE_ANON_KEY` | `.env.local` |
+| Data source | ✅ `DATA_SOURCE=json` (default) or `supabase` | `supabase` in Vercel | `lib/data.ts`, `lib/supabase.ts` |
+| Data access | ✅ Async `getData()`, in-memory queries on either source | Same | `lib/dataset.ts`, pages, components |
+| Auth | None | Supabase Auth (when accounts are built) | New files |
+| Env vars | ✅ `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY` (`.env.example`) | Vercel: URL + publishable key | `.env.local` |
 
-### Changes needed in `lib/data.ts`:
-- [ ] Install `@supabase/supabase-js`
-- [ ] Create Supabase client in `lib/supabase.ts`
-- [ ] Convert `getSchools()` to async Supabase query with filters
-- [ ] Convert `getSchoolById()` to async Supabase query
-- [ ] Convert `getSchoolsByIds()` to async Supabase query
-- [ ] Update all page components to `await` data functions
+### Code
+- [x] Install `@supabase/supabase-js`
+- [x] Supabase client and dataset reader in `lib/supabase.ts`
+- [x] Query functions in `lib/dataset.ts` (`createDataset`), loaded by `getData()` in `lib/data.ts`
+- [x] Pages and components `await getData()`; insight functions take the dataset as their first argument
+- [x] `npm run publish-data`: lineage check, shrink guard, one-transaction publish, exact read-back
 
-### Database schema:
-- [ ] Create `schools` table matching `School` TypeScript type
-- [ ] Create indexes on `state`, `acceptance_rate`, `name`
-- [ ] Write seed script to import sample data
-- [ ] Write import script for College Scorecard bulk data
+### Database schema
+- [x] `schools`, `dataset_files`, `dataset_publishes` with RLS, and `publish_dataset()`
+  (`supabase/migrations/20260928000000_dataset.sql`)
+- [ ] Apply to the dev project and publish (phase 1 in [supabase.md](supabase.md#transition-plan))
+- [ ] Prod project, publish on merge (GitHub Action), on-demand revalidation (phase 3)
 
 ---
 
@@ -44,7 +47,7 @@ This document tracks everything that needs to change when moving from local deve
 
 | Item | Current (Local) | Target (API) | Files Affected |
 |---|---|---|---|
-| Data source | ✅ `data/schools.json` from Scorecard + IPEDS | Supabase table, same sync | `scripts/sync-data.mts`, `lib/data.ts` |
+| Data source | ✅ `data/schools.json` from Scorecard + IPEDS | Same files, published to Supabase | `scripts/sync-data.mts`, `scripts/publish-data.mts` |
 | API key | ✅ `COLLEGE_SCORECARD_API_KEY` in `.env.local` | Same, in Vercel env vars | `.env.local` |
 | Data freshness | Manual `npm run sync-data` | Scheduled sync (weekly/monthly) | Vercel Cron or GitHub Action |
 
@@ -54,7 +57,7 @@ This document tracks everything that needs to change when moving from local deve
 - [x] Add IPEDS Admissions (ADM) bulk file as second source for counts, scores, submission rates
 - [x] Manual overrides layer (`data/overrides.json`)
 - [x] Write `data/schools.json` and log stats (with rate, with SAT, skipped)
-- [ ] Upsert into Supabase `schools` table instead of the JSON file
+- [x] Publish to Supabase from the JSON files (`npm run publish-data`); the sync keeps writing JSON for review
 - [ ] Set up Vercel Cron or GitHub Action for periodic sync
 
 ### Field mapping
@@ -77,10 +80,10 @@ source supplies each field.
 
 | File | Change Type | Priority |
 |---|---|---|
-| `lib/data.ts` | Major rewrite (JSON -> Supabase) | High |
-| `lib/supabase.ts` | New file | High |
-| `scripts/sync-data.mts` | ✅ Done (writes JSON; switch output to Supabase upsert) | High |
-| `app/page.tsx` | Add `await` to data calls | Medium |
-| `app/schools/[id]/page.tsx` | Add `await` to data calls | Medium |
-| `app/compare/page.tsx` | Add `await` to data calls | Medium |
-| `.env.local` | Add Supabase + API keys | High |
+| `lib/data.ts` | ✅ Loader: JSON or Supabase (`DATA_SOURCE`) | High |
+| `lib/dataset.ts`, `lib/supabase.ts` | ✅ New | High |
+| `scripts/publish-data.mts`, `supabase/migrations/` | ✅ New | High |
+| `scripts/sync-data.mts` | ✅ Unchanged: writes JSON, which is then published | High |
+| Pages and data-reading components | ✅ `await getData()` | Medium |
+| `.env.local` | Add Supabase keys ([supabase.md](supabase.md#keys)) | High |
+| `app/api/revalidate/route.ts` | New, with the Vercel move | Medium |

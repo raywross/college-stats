@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { ArrowRight, BookMarked, Calculator, CalendarClock, ExternalLink, Eye, Hourglass, RefreshCw, Scale, TriangleAlert } from "lucide-react";
-import { cdsSchools, citeField, getAllSchools, getMeta, getReleaseCalendar } from "@/lib/data";
+import { getData } from "@/lib/data";
 import type { SourceKey, Topic } from "@/lib/types";
 import { num } from "@/lib/format";
 import { FIELDS, type FieldDef, type FieldPath, type VintageKey } from "@/lib/fields";
@@ -97,7 +97,8 @@ const ExtLink = ({ href, children, className }: { href: string; children: ReactN
   </a>
 );
 
-export default function DataPage() {
+export default async function DataPage() {
+  const { cdsSchools, citeField, getAllSchools, getMeta, getReleaseCalendar } = await getData();
   const meta = getMeta();
   const all = getAllSchools();
   const cds = cdsSchools();

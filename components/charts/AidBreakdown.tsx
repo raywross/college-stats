@@ -3,7 +3,7 @@ import { INCOME_BANDS } from "@/lib/metrics";
 import { money, moneyCompact, num, pct } from "@/lib/format";
 import { InfoTip, MetricLabel } from "@/components/ui/info-tip";
 import { SourceNote } from "@/components/sources/SourceNote";
-import { citeField } from "@/lib/data";
+import { getData } from "@/lib/data";
 import { stickerPhrase } from "@/lib/insights";
 
 const COLOR = "var(--d-value)";
@@ -38,7 +38,8 @@ function ShareBar({ label, share, avg, term }: { label: string; share: number | 
  * recipients by family income, and Common Data Set need/merit detail when the
  * school publishes one.
  */
-export function AidBreakdown({ school }: { school: School }) {
+export async function AidBreakdown({ school }: { school: School }) {
+  const { citeField } = await getData();
   const aid = school.aid;
   const grant = aid?.grant_pct ?? null;
   const cds = aid?.cds;

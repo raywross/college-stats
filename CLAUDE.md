@@ -50,12 +50,14 @@ Several Claude chats work on this repo at once, so each works in its own git wor
 - Custom SVG/CSS chart components in `components/charts/` (see `specs/charts.md`)
 - Data: `data/schools.json` (~1,900 4-year colleges) built by `npm run sync-data` from College Scorecard + IPEDS; see `specs/data-sync.md`. API key lives in `.env.local` (git-ignored). Add a college's Common Data Set with `npm run import-cds` (see `specs/sources-and-citations.md`); cite any new data with `<SourceNote>`
 
-### Future Migration
-- Will deploy to Vercel with Supabase database
-- Will integrate College Scorecard API (needs API key from api.data.gov)
-- See `specs/migration-plan.md` for all changes needed
+### Supabase and deployment
+- `DATA_SOURCE=json|supabase` picks where the app reads the dataset; `data/*.json` in git stay the reviewed source and
+  `npm run publish-data` uploads them. Two Supabase projects: dev (local + Vercel previews) and prod. See `specs/supabase.md`
+- Schema changes are new files in `supabase/migrations/`, applied to dev before prod
+- Will deploy to Vercel; see `specs/migration-plan.md`
 
 ### Code Style
 - TypeScript strict mode
 - Functional React components
-- Data access abstracted through `lib/data.ts` for easy DB swap later
+- Data access: `const data = await getData()` from `lib/data.ts`, then destructure queries (`lib/dataset.ts`); never
+  read `data/*.json` directly in app code

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { School } from "@/lib/types";
-import { rankOf } from "@/lib/data";
+import { getData } from "@/lib/data";
 import { standouts } from "@/lib/insights";
 import { DOMAINS, admitRatio, satComposite, selectivityTier } from "@/lib/metrics";
 import { compact, moneyCompact, pct, pctSmart, range, typeShort } from "@/lib/format";
@@ -29,10 +29,12 @@ function Meter({ label, value, rank, color }: { label: string; value: string | n
   );
 }
 
-export function SchoolCard({ school, index = 0 }: { school: School; index?: number }) {
+export async function SchoolCard({ school, index = 0 }: { school: School; index?: number }) {
+  const data = await getData();
+  const { rankOf } = data;
   const rate = school.admissions.acceptance_rate;
   const tier = selectivityTier(rate);
-  const tags = standouts(school).slice(0, 2);
+  const tags = standouts(data, school).slice(0, 2);
   const sat = satComposite(school);
   const acceptanceRank = rankOf(school, "acceptance");
   const n = admitRatio(school);

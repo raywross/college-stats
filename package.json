@@ -9,6 +9,8 @@
     "lint": "eslint",
     "sync-data": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --env-file=.env.local scripts/sync-data.mts",
     "import-cds": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/import-cds.mts",
+    "publish-data": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --env-file=.env.local scripts/publish-data.mts",
+    "publish-data:prod": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --env-file=.env.production.local scripts/publish-data.mts",
     "check:lineage": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/check-lineage.mts",
     "test": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test \"tests/**/*.test.mts\"",
     "typecheck": "next typegen && tsc --noEmit",
@@ -16,6 +18,7 @@
   },
   "dependencies": {
     "@base-ui/react": "^1.8.0",
+    "@supabase/supabase-js": "^2.117.2",
     "class-variance-authority": "^0.7.1",
     "cn": "^0.4.0",
     "lucide-react": "^1.48.0",

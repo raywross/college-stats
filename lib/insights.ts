@@ -1,6 +1,6 @@
 import "server-only";
 import type { School } from "./types";
-import { getAllSchools, metricMedian, rankOf, reportingCount } from "./data";
+import type { Dataset } from "./dataset";
 import {
   METRICS,
   admitRatio,
@@ -27,7 +27,8 @@ export interface Standout {
   metric: MetricKey;
 }
 
-export function standouts(s: School): Standout[] {
+/** Functions below that compare a college with all others take the loaded dataset first (`await getData()`). */
+export function standouts({ rankOf }: Dataset, s: School): Standout[] {
   const out: Standout[] = [];
   const at = (k: MetricKey, test: (v: number) => boolean) => {
     const v = rankOf(s, k);
@@ -67,7 +68,7 @@ function share(rank: number): string {
   return `${Math.round(rank * 100)}%`;
 }
 
-export function admissionsTakeaway(s: School): string | undefined {
+export function admissionsTakeaway({ rankOf, reportingCount }: Dataset, s: School): string | undefined {
   const rate = s.admissions.acceptance_rate;
   const n = admitRatio(s);
   const rank = rankOf(s, "acceptance");
@@ -78,7 +79,7 @@ export function admissionsTakeaway(s: School): string | undefined {
   )} of the ${num(reportingCount("acceptance"))} colleges that report admissions.`;
 }
 
-export function yieldTakeaway(s: School): string | undefined {
+export function yieldTakeaway({ rankOf }: Dataset, s: School): string | undefined {
   const y = yieldRate(s);
   const r = rankOf(s, "yield");
   if (y === null || r === null) return undefined;
@@ -86,7 +87,7 @@ export function yieldTakeaway(s: School): string | undefined {
   return `${pct(y)} of admitted students enroll, ${tone} nationally.`;
 }
 
-export function scoresTakeaway(s: School): string | undefined {
+export function scoresTakeaway({ metricMedian }: Dataset, s: School): string | undefined {
   const mid = satMid(s);
   const med = metricMedian("sat");
   if (mid === null || med === null) return undefined;
@@ -100,7 +101,7 @@ export function scoresTakeaway(s: School): string | undefined {
   return `The typical admitted student scores around ${mid} on the SAT, ${cmp} for colleges that report scores.`;
 }
 
-export function studentsTakeaway(s: School): string {
+export function studentsTakeaway({ rankOf }: Dataset, s: School): string {
   const size = sizeBucket(s.demographics.undergrad_enrollment).label.toLowerCase();
   const base = `A ${size} campus of ${num(s.demographics.undergrad_enrollment)} undergrads`;
   const pell = s.demographics.pell_grant_percent;
@@ -120,7 +121,7 @@ export function stickerPhrase(s: School): string | null {
   return s.type === "public" && out !== null && out !== inState ? `${money(inState)} in-state / ${money(out)} out-of-state` : money(inState);
 }
 
-export function costTakeaway(s: School): string | undefined {
+export function costTakeaway({ metricMedian }: Dataset, s: School): string | undefined {
   const all = s.cost?.avg_paid_all ?? null;
   const med = metricMedian("avgCost");
   if (all === null || med === null) return undefined;
@@ -138,7 +139,7 @@ export function costTakeaway(s: School): string | undefined {
   return `In ${year}, the average first-year paid an estimated ${money(all)} in total (tuition, housing, food, books and other costs, after grants), ${cmp}.${split}`;
 }
 
-export function generosityTakeaway(s: School): string | undefined {
+export function generosityTakeaway({ rankOf }: Dataset, s: School): string | undefined {
   const g = aidGenerosity(s);
   const r = rankOf(s, "aidGenerosity");
   const b = s.cost?.breakdown;
@@ -154,7 +155,7 @@ export function generosityTakeaway(s: School): string | undefined {
   return lead + tail;
 }
 
-export function outcomesTakeaway(s: School): string | undefined {
+export function outcomesTakeaway({ rankOf }: Dataset, s: School): string | undefined {
   const earn = s.outcomes?.median_earnings_10yr ?? null;
   const grad = s.outcomes?.graduation_rate ?? null;
   const parts: string[] = [];
@@ -178,19 +179,25 @@ export function outcomesTakeaway(s: School): string | undefined {
 /* ------------------------------------------------------------------ */
 
 const FEATURES: MetricKey[] = ["acceptance", "sat", "enrollment", "pell", "diversity"];
-let vectors: Map<string, (number | null)[]> | null = null;
+/** Rank vectors per loaded dataset, so a reload never pairs new data with old ranks. */
+const vectorCache = new WeakMap<Dataset, Map<string, (number | null)[]>>();
 
-function vectorOf(s: School): (number | null)[] {
-  vectors ??= new Map(getAllSchools().map((x) => [x.unit_id, FEATURES.map((k) => rankOf(x, k))]));
+function vectorOf(data: Dataset, s: School): (number | null)[] {
+  const { getAllSchools, rankOf } = data;
+  let vectors = vectorCache.get(data);
+  if (!vectors) {
+    vectors = new Map(getAllSchools().map((x) => [x.unit_id, FEATURES.map((k) => rankOf(x, k))]));
+    vectorCache.set(data, vectors);
+  }
   return vectors.get(s.unit_id) ?? FEATURES.map((k) => rankOf(s, k));
 }
 
-export function similarSchools(s: School, n = 4): { school: School; reasons: string[] }[] {
-  const me = vectorOf(s);
+export function similarSchools(data: Dataset, s: School, n = 4): { school: School; reasons: string[] }[] {
+  const me = vectorOf(data, s);
   const results: { school: School; dist: number; v: (number | null)[] }[] = [];
-  for (const o of getAllSchools()) {
+  for (const o of data.getAllSchools()) {
     if (o.unit_id === s.unit_id) continue;
-    const v = vectorOf(o);
+    const v = vectorOf(data, o);
     let sum = 0;
     let shared = 0;
     for (let i = 0; i < FEATURES.length; i++) {
@@ -332,7 +339,7 @@ export const RADAR_AXES: { key: MetricKey; label: string; invert?: boolean }[] =
 ];
 
 /** Missing values are returned as null so the chart can mark them. */
-export function radarProfile(s: School): (number | null)[] {
+export function radarProfile({ rankOf }: Dataset, s: School): (number | null)[] {
   return RADAR_AXES.map(({ key, invert }) => {
     const r = rankOf(s, key);
     return r === null ? null : invert ? 1 - r : r;

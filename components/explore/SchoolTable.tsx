@@ -4,7 +4,7 @@ import type { School, SortKey } from "@/lib/types";
 import type { TermKey } from "@/lib/glossary";
 import { DOMAINS, aidGenerosity, diversityIndex, satComposite } from "@/lib/metrics";
 import { compact, moneyCompact, pct, pctSmart } from "@/lib/format";
-import { rankOf } from "@/lib/data";
+import { getData } from "@/lib/data";
 import { Crest } from "@/components/school/Crest";
 import { CompareButton } from "@/components/compare/CompareButton";
 import { InfoTip } from "@/components/ui/info-tip";
@@ -72,7 +72,8 @@ function SortHeader({
   );
 }
 
-export function SchoolTable({ schools, params }: { schools: School[]; params: Params }) {
+export async function SchoolTable({ schools, params }: { schools: School[]; params: Params }) {
+  const { rankOf } = await getData();
   const sortBy = typeof params.sortBy === "string" ? params.sortBy : "applicants";
   const sortDir = typeof params.sortDir === "string" ? params.sortDir : sortBy === "applicants" ? "desc" : "asc";
   const SAT: [number, number] = [800, 1600];

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { SearchX } from "lucide-react";
 import Link from "next/link";
-import { getAllSchools, getSchools, histogram, landscapeEligibleCount, landscapePoints, metricMedian, paginate, stickerEligibleCount, stickerPoints, valueEligibleCount, valuePoints } from "@/lib/data";
+import { getData, paginate, type Dataset } from "@/lib/data";
 import { parseFilters, parseView, countActiveFilters } from "@/lib/params";
 import { METRICS, SIZE_BUCKETS, median, satMid, sizeBucket } from "@/lib/metrics";
 import { pctSmart, compact, num, typeLabel } from "@/lib/format";
@@ -20,7 +20,7 @@ import { MultiSourceNote } from "@/components/sources/MultiSourceNote";
 
 export const metadata: Metadata = { title: "Explore colleges" };
 
-function buildFacets(): FilterFacets {
+function buildFacets({ getAllSchools, histogram }: Dataset): FilterFacets {
   const all = getAllSchools();
   const tally = (get: (s: (typeof all)[number]) => string) =>
     all.reduce<Record<string, number>>((acc, s) => ((acc[get(s)] = (acc[get(s)] ?? 0) + 1), acc), {});
@@ -49,6 +49,8 @@ export default async function ExplorePage({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const params = await searchParams;
+  const data = await getData();
+  const { getAllSchools, getSchools, landscapeEligibleCount, landscapePoints, metricMedian, stickerEligibleCount, stickerPoints, valueEligibleCount, valuePoints } = data;
   const filters = parseFilters(params);
   const view = parseView(params);
   const schools = getSchools(filters);
@@ -58,7 +60,7 @@ export default async function ExplorePage({
   const CHART_LIMIT = 600;
   const chart = typeof params.chart === "string" ? params.chart : "admissions";
   const all = getAllSchools();
-  const facets = buildFacets();
+  const facets = buildFacets(data);
   const activeCount = countActiveFilters(params);
 
   const medAR = median(schools.map((s) => s.admissions.acceptance_rate));

@@ -3,7 +3,8 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowRight, Calculator, ChevronRight, ExternalLink, MapPin, TriangleAlert } from "lucide-react";
-import { citeField, distribution, getSchoolById, landscapePoints, metricMedian, rankOf, topBy, valuePoints } from "@/lib/data";
+import { getData } from "@/lib/data";
+import type { Cited } from "@/lib/lineage";
 import {
   DOMAINS,
   TEST_POLICY_LABELS,
@@ -60,12 +61,13 @@ type Props = { params: Promise<{ id: string }> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params;
-  const school = getSchoolById(id);
+  const school = (await getData()).getSchoolById(id);
   return { title: school ? school.name : "School not found" };
 }
 
 /** Pre-render the most-applied-to profiles; the rest render on first visit and are cached. */
-export function generateStaticParams() {
+export async function generateStaticParams() {
+  const { topBy } = await getData();
   return topBy("applicants", "desc", 50).map((s) => ({ id: s.unit_id }));
 }
 
@@ -133,8 +135,9 @@ const SECTION_FIELDS = {
 const PROFILE_FIELDS: readonly FieldPath[] = [...new Set([...Object.values(SECTION_FIELDS).flat(), "aid.cds" as const, "location.city" as const])];
 
 /** "Figures marked CDS 2024-25 come from …": one line per non-default source among a section's values. */
-function SourceExceptions({ fields, school }: { fields: readonly FieldPath[]; school: School }) {
-  const seen = new Map<string, ReturnType<typeof citeField>>();
+async function SourceExceptions({ fields, school }: { fields: readonly FieldPath[]; school: School }) {
+  const { citeField } = await getData();
+  const seen = new Map<string, Cited>();
   for (const f of fields) {
     const c = citeField(f, school);
     if (!c.isDefault) seen.set(`${c.key}${c.url}${c.year}`, c);
@@ -194,7 +197,7 @@ function Panel({
   );
 }
 
-function Tile({
+async function Tile({
   label,
   term,
   field,
@@ -210,6 +213,7 @@ function Tile({
   children: ReactNode;
   className?: string;
 }) {
+  const { citeField } = await getData();
   return (
     <div className={`flex flex-col rounded-3xl border bg-card p-5 ${className ?? ""}`}>
       <MetricLabel term={term} cited={citeField(field, school)} className="flex-wrap text-xs font-semibold text-muted-foreground">
@@ -232,6 +236,8 @@ function NotReported({ what }: { what: string }) {
 
 export default async function SchoolPage({ params }: Props) {
   const { id } = await params;
+  const data = await getData();
+  const { citeField, distribution, getSchoolById, landscapePoints, metricMedian, rankOf, valuePoints } = data;
   const school = getSchoolById(id);
   if (!school) notFound();
 
@@ -239,8 +245,8 @@ export default async function SchoolPage({ params }: Props) {
   const rate = a.acceptance_rate;
   const tier = selectivityTier(rate);
   const size = sizeBucket(d.undergrad_enrollment);
-  const tags = standouts(school);
-  const similar = similarSchools(school, 4);
+  const tags = standouts(data, school);
+  const similar = similarSchools(data, school, 4);
   const sat = satComposite(school);
   const yld = yieldRate(school);
   const div = diversityIndex(school);
@@ -449,7 +455,7 @@ export default async function SchoolPage({ params }: Props) {
               domain="admissions"
               eyebrow="Admissions"
               title={a.year ? `Getting in, fall ${a.year}` : "Getting in"}
-              takeaway={admissionsTakeaway(school)}
+              takeaway={admissionsTakeaway(data, school)}
               school={school}
               fields={SECTION_FIELDS.admissions}
             >
@@ -505,7 +511,7 @@ export default async function SchoolPage({ params }: Props) {
                           Yield <InfoTip term="yield" cited={citeField("derived.yield", school)} />
                           <SourceChip cited={citeField("derived.yield", school)} />
                         </h3>
-                        <p className="text-sm text-muted-foreground">{yieldTakeaway(school)}</p>
+                        <p className="text-sm text-muted-foreground">{yieldTakeaway(data, school)}</p>
                       </div>
                     </div>
                   )}
@@ -532,7 +538,7 @@ export default async function SchoolPage({ params }: Props) {
 
           {/* ============================== TEST SCORES ============================== */}
           {scores && (
-            <Panel id="scores" domain="scores" eyebrow="Test scores" title="What admitted students scored" takeaway={scoresTakeaway(school)} school={school} fields={SECTION_FIELDS.scores}>
+            <Panel id="scores" domain="scores" eyebrow="Test scores" title="What admitted students scored" takeaway={scoresTakeaway(data, school)} school={school} fields={SECTION_FIELDS.scores}>
               <div className="grid gap-4 lg:grid-cols-[1.6fr_1fr]">
                 <div className="rounded-3xl border bg-card p-5 sm:p-6">
                   <ScoreChecker
@@ -598,7 +604,7 @@ export default async function SchoolPage({ params }: Props) {
           )}
 
           {/* ============================== STUDENTS ============================== */}
-          <Panel id="students" domain="access" eyebrow="Students" title="Who's on campus" takeaway={studentsTakeaway(school)} school={school} fields={SECTION_FIELDS.students}>
+          <Panel id="students" domain="access" eyebrow="Students" title="Who's on campus" takeaway={studentsTakeaway(data, school)} school={school} fields={SECTION_FIELDS.students}>
             <div className="grid gap-4 lg:grid-cols-2">
               <div className="rounded-3xl border bg-card p-5 sm:p-6 lg:col-span-2">
                 <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
@@ -680,7 +686,7 @@ export default async function SchoolPage({ params }: Props) {
               domain="value"
               eyebrow="Cost & outcomes"
               title="What it costs, what it pays"
-              takeaway={costTakeaway(school)}
+              takeaway={costTakeaway(data, school)}
               school={school}
               fields={SECTION_FIELDS.cost}
             >
@@ -764,7 +770,7 @@ export default async function SchoolPage({ params }: Props) {
 
               {(earnings !== null || grad !== null) && (
                 <>
-                  <p className="mt-10 mb-4 max-w-3xl text-lg text-muted-foreground">{outcomesTakeaway(school)}</p>
+                  <p className="mt-10 mb-4 max-w-3xl text-lg text-muted-foreground">{outcomesTakeaway(data, school)}</p>
                   <div className="grid gap-4 lg:grid-cols-2">
                     <div className="space-y-6 rounded-3xl border bg-card p-5 sm:p-6">
                       <h3 className="font-display text-lg font-bold">Earnings</h3>

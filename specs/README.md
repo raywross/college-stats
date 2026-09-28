@@ -19,6 +19,8 @@ Structured documentation for the Higher Education Data Explorer ("Quad").
 | [cost-outcomes.md](cost-outcomes.md) | Net price, earnings, graduation, debt: data, metrics, and where they appear |
 | [sources-and-citations.md](sources-and-citations.md) | How every number is attributed; `/sources` page; Common Data Set importer |
 | [data-sync.md](data-sync.md) | Building `data/schools.json` from College Scorecard + IPEDS; API key setup; overrides |
+| [trends-data.md](trends-data.md) | *Planned:* year-by-year history: how far back each series goes, per-era file mapping, storage, validation |
+| [trends-design.md](trends-design.md) | *Planned:* how trends appear, from 3 Home facts to the profile's "Over time" charts |
 | [backlog.md](backlog.md) | Planned work (CDS PDF import, scheduled sync, tests) |
 | [migration-plan.md](migration-plan.md) | Checklist for Vercel + Supabase + API migration |
 | [implementation-checklist.md](implementation-checklist.md) | Original MVP build order |

@@ -1,0 +1,14 @@
+{
+  "unit_id": "199883",
+  "series": {
+    "applicants": {"start":2001,"values":[23,117,50,60,118,134,null,35]},
+    "admitted": {"start":2001,"values":[23,50,32,29,31,31,42,35]},
+    "enrolled": {"start":2001,"values":[23,38,32,29,31,null,33,35]},
+    "acceptance_rate": {"start":2001,"values":[1,0.4274,0.64,0.4833,0.2627,0.2313,null,1]},
+    "yield": {"start":2001,"values":[1,0.76,1,1,1,null,0.7857,1]},
+    "tuition_in_state": {"start":2001,"values":[2972,null,7200,8537,8937,9525,9525,12200]},
+    "tuition_out_of_state": {"start":2001,"values":[2972,null,7200,8537,8937,9525,9525,12200]},
+    "grant_pct": {"start":2007,"values":[0.6]},
+    "grant_avg": {"start":2007,"values":[1500]}
+  }
+}

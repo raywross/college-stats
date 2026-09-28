@@ -1,0 +1,13 @@
+{
+  "unit_id": "490045",
+  "series": {
+    "tuition_in_state": {"start":2017,"values":[6860,6860,7820,7935,8289,8835,8839]},
+    "tuition_out_of_state": {"start":2017,"values":[6860,6860,7820,7935,8289,8835,8839]},
+    "aided_net_price": {"start":2020,"values":[8719,9589]},
+    "grant_pct": {"start":2016,"values":[0.6,0,null,null,1,1]},
+    "grant_avg": {"start":2016,"values":[4054,null,null,null,6116,5600]},
+    "net_price_income_1": {"start":2016,"values":[15970,null,null,null,4103,3207]},
+    "net_price_income_2": {"start":2016,"values":[16920]},
+    "net_price_income_3": {"start":2021,"values":[5947]}
+  }
+}

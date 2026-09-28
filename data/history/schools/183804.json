@@ -1,0 +1,13 @@
+{
+  "unit_id": "183804",
+  "series": {
+    "applicants": {"start":2002,"values":[0,null,0]},
+    "admitted": {"start":2002,"values":[0,null,0]},
+    "enrolled": {"start":2002,"values":[0,null,0]},
+    "tuition_in_state": {"start":2004,"values":[9496]},
+    "tuition_out_of_state": {"start":2004,"values":[9496]},
+    "sticker_in_state": {"start":2004,"values":[16450]},
+    "sticker_out_of_state": {"start":2004,"values":[16450]},
+    "full_price": {"start":2004,"values":[16450]}
+  }
+}

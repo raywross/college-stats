@@ -1,0 +1,8 @@
+{
+  "unit_id": "100812",
+  "series": {
+    "applicants": {"start":2002,"values":[0]},
+    "admitted": {"start":2002,"values":[0]},
+    "enrolled": {"start":2002,"values":[0]}
+  }
+}

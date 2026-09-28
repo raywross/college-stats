@@ -1,0 +1,10 @@
+{
+  "unit_id": "243203",
+  "series": {
+    "applicants": {"start":2002,"values":[0]},
+    "admitted": {"start":2002,"values":[0]},
+    "enrolled": {"start":2002,"values":[0]},
+    "tuition_in_state": {"start":2000,"values":[2040]},
+    "tuition_out_of_state": {"start":2000,"values":[3360]}
+  }
+}

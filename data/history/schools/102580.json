@@ -1,0 +1,25 @@
+{
+  "unit_id": "102580",
+  "series": {
+    "applicants": {"start":2001,"values":[13]},
+    "admitted": {"start":2001,"values":[10]},
+    "enrolled": {"start":2001,"values":[9]},
+    "acceptance_rate": {"start":2001,"values":[0.7692]},
+    "yield": {"start":2001,"values":[0.9]},
+    "tuition_in_state": {"start":2000,"values":[4750,4900,null,null,null,null,null,null,null,null,7130,7130,7130,9200,9300,9300,9300,9350,9600,9700,9700,10900,10900,10930]},
+    "tuition_out_of_state": {"start":2000,"values":[4750,4900,null,null,null,null,null,null,null,null,7130,7130,7130,9200,9300,9300,9300,9350,9600,9700,9700,10900,10900,10930]},
+    "sticker_in_state": {"start":2001,"values":[10050,null,null,null,null,null,null,null,null,10430,10730,11130,15900,16000,17300,19560,19654,19980,20278,19471,20856,22101,22131]},
+    "sticker_out_of_state": {"start":2001,"values":[10050,null,null,null,null,null,null,null,null,10430,10730,11130,15900,16000,17300,19560,19654,19980,20278,19471,20856,22101,22131]},
+    "full_price": {"start":2001,"values":[10050,null,null,null,null,null,null,null,null,10430,10730,11130,15900,16000,17300,19560,19654,19980,20278,19471,20856,22101,22131]},
+    "avg_paid_all": {"start":2010,"values":[8717,5229,8920,12713,12952,15780,18766,16615,18641,9263,11300,16066,14844,15433]},
+    "aided_net_price": {"start":2010,"values":[8227,4006,10388,12518,13687,13500,14177,19746,18816,15870,11480,17156,14844,16045]},
+    "grant_pct": {"start":2009,"values":[0.2609,0.7778,0.8182,0.9167,1,0.8571,0.4,0.3333,0.8,0.6667,1,1,1,1,1]},
+    "grant_avg": {"start":2009,"values":[708,2203,6724,2411,3187,3556,3800,2383,3799,2008,11015,8171,4790,7257,6698]},
+    "aid_generosity": {"start":2010,"values":[0.1642,0.5127,0.1986,0.2004,0.1905,0.0879,0.0406,0.1546,0.067,0.5432,0.4196,0.2297,0.3284,0.3027]},
+    "net_price_income_1": {"start":2010,"values":[7180,5697,9592,9152,null,null,null,20066,18217,15630,11552,14153,null,17508]},
+    "net_price_income_2": {"start":2013,"values":[12670,10869,10200,14995,null,null,null,6947]},
+    "net_price_income_3": {"start":2014,"values":[12824,null,null,null,null,null,11934,18159,8175]},
+    "net_price_income_4": {"start":2013,"values":[15990,null,16800,null,null,null,null,null,18319,20012]},
+    "net_price_income_5": {"start":2013,"values":[13612,null,17300]}
+  }
+}

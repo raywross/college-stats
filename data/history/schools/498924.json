@@ -1,0 +1,8 @@
+{
+  "unit_id": "498924",
+  "series": {
+    "tuition_in_state": {"start":2023,"values":[30550]},
+    "tuition_out_of_state": {"start":2023,"values":[30550]},
+    "grant_pct": {"start":2022,"values":[0,0]}
+  }
+}

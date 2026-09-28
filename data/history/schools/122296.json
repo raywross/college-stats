@@ -1,0 +1,15 @@
+{
+  "unit_id": "122296",
+  "series": {
+    "applicants": {"start":2001,"values":[28,56,86,120]},
+    "admitted": {"start":2001,"values":[19,33,54,67]},
+    "enrolled": {"start":2001,"values":[7,15,15,9]},
+    "acceptance_rate": {"start":2001,"values":[0.6786,0.5893,0.6279,0.5583]},
+    "yield": {"start":2001,"values":[0.3684,0.4545,0.2778,0.1343]},
+    "tuition_in_state": {"start":2001,"values":[18365,19814,21790,23768]},
+    "tuition_out_of_state": {"start":2001,"values":[18365,19814,21790,23768]},
+    "sticker_in_state": {"start":2001,"values":[30542,34262,37978,40471]},
+    "sticker_out_of_state": {"start":2001,"values":[30542,34262,37978,40471]},
+    "full_price": {"start":2001,"values":[30542,34262,37978,40471]}
+  }
+}

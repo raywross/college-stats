@@ -27,6 +27,8 @@ import { join } from "node:path";
 import type { DatasetMeta, School, SchoolType, TestPolicy } from "../lib/types";
 import { lineageForPatch, validateLineage } from "../lib/lineage.ts";
 import { applyProbes, filesToProbe, type FileProbe, type ReleaseCalendar } from "../lib/releases.ts";
+import { IPEDS_BASES, parseCsv } from "./lib/ipeds.mts";
+import { acceptanceRate, computePrices, ipedsNum, priceSuffix, toAid } from "../lib/derive.ts";
 
 const ROOT = join(import.meta.dirname, "..");
 const OUT = join(ROOT, "data", "schools.json");
@@ -34,12 +36,6 @@ const OVERRIDES = join(ROOT, "data", "overrides.json");
 const META = join(ROOT, "data", "meta.json");
 const CALENDAR = join(ROOT, "data", "release-calendar.json");
 const API = "https://api.data.gov/ed/collegescorecard/v1/schools";
-/**
- * NCES moved newer releases (from the Dec 2025 provisional release on) to
- * /ipeds/complete-data-files/; older files remain at /ipeds/datacenter/data/.
- * Check both, newest location first.
- */
-const IPEDS_BASES = ["https://nces.ed.gov/ipeds/complete-data-files", "https://nces.ed.gov/ipeds/datacenter/data"];
 const INCLUDE_ONLINE = process.argv.includes("--include-online");
 const RELEASES_ONLY = process.argv.includes("--releases-only");
 
@@ -88,38 +84,6 @@ async function getJson(url: string, attempt = 1): Promise<unknown> {
     return getJson(url, attempt + 1);
   }
   throw new Error(`HTTP ${res.status} for ${url.replace(/api_key=[^&]+/, "api_key=***")}`);
-}
-
-/** Minimal RFC-4180 CSV parser (IPEDS files quote some fields). */
-function parseCsv(text: string): Record<string, string>[] {
-  const rows: string[][] = [];
-  let row: string[] = [];
-  let field = "";
-  let quoted = false;
-  for (let i = 0; i < text.length; i++) {
-    const c = text[i];
-    if (quoted) {
-      if (c === '"' && text[i + 1] === '"') {
-        field += '"';
-        i++;
-      } else if (c === '"') quoted = false;
-      else field += c;
-    } else if (c === '"') quoted = true;
-    else if (c === ",") {
-      row.push(field);
-      field = "";
-    } else if (c === "\n" || c === "\r") {
-      if (c === "\r" && text[i + 1] === "\n") i++;
-      row.push(field);
-      rows.push(row);
-      row = [];
-      field = "";
-    } else field += c;
-  }
-  if (field || row.length) rows.push([...row, field]);
-  const [header, ...body] = rows;
-  const keys = header.map((h) => h.trim().toUpperCase());
-  return body.filter((r) => r.length > 1).map((r) => Object.fromEntries(keys.map((k, i) => [k, (r[i] ?? "").trim()])));
 }
 
 /* ------------------------------------------------------------------ */
@@ -249,13 +213,6 @@ const SFA_NAMES = recentYears.map((y) => `SFA${String(y - 1).slice(2)}${String(y
 /* 3. Merge                                                            */
 /* ------------------------------------------------------------------ */
 
-function ipedsNum(row: Record<string, string> | undefined, key: string): number | null {
-  const v = row?.[key];
-  if (!v || v === ".") return null;
-  const n = Number(v);
-  return Number.isFinite(n) ? n : null;
-}
-
 function pair(row: Record<string, string> | undefined, lo: string, hi: string): [number, number] | null {
   const a = ipedsNum(row, lo);
   const b = ipedsNum(row, hi);
@@ -298,7 +255,7 @@ function toSchool(
   const admitted = ipedsNum(adm, "ADMSSN");
   const enrolled = ipedsNum(adm, "ENRLT");
   // Fewer than 10 applicants makes a rate meaningless (e.g. 0 of 1 admitted).
-  const rateFromCounts = applicants && applicants >= 10 && admitted !== null ? admitted / applicants : null;
+  const rateFromCounts = acceptanceRate(applicants, admitted);
   const scorecardRate = numOrNull(sc["latest.admissions.admission_rate.overall"]);
   const acceptance = rateFromCounts ?? (applicants !== null && applicants < 10 ? null : scorecardRate);
   const satPct = ipedsNum(adm, "SATPCT");
@@ -378,45 +335,6 @@ function normalizeUrl(v: unknown): string | null {
   if (typeof v !== "string" || !v.trim()) return null;
   const url = v.trim();
   return /^https?:\/\//i.test(url) ? url : `https://${url}`;
-}
-
-/** IPEDS SFA: percents are whole numbers; suffix "2" on GRN4 fields is the file's newest year. */
-function toAid(sfa: Record<string, string> | undefined): School["aid"] {
-  if (!sfa) return undefined;
-  const n = (k: string) => ipedsNum(sfa, k);
-  const p = (k: string) => {
-    const v = n(k);
-    return v === null ? null : v / 100;
-  };
-  const bands = [1, 2, 3, 4, 5];
-  const counts = bands.map((b) => n(`GRN4N${b}2`));
-  const cohort = n("SCUGFFN");
-  const grantCount = n("AGRNT_N");
-  const aid = {
-    cohort,
-    any_aid_pct: p("ANYAIDP"),
-    // Exact share from counts; the published percent (AGRNT_P) is rounded to a whole number.
-    grant_pct: cohort && grantCount !== null ? round(grantCount / cohort) : p("AGRNT_P"),
-    grant_avg: n("AGRNT_A"),
-    grant_count: grantCount,
-    grant_total: n("AGRNT_T"),
-    institutional_pct: p("IGRNT_P"),
-    institutional_avg: n("IGRNT_A"),
-    pell_pct: p("PGRNT_P"),
-    pell_avg: n("PGRNT_A"),
-    state_pct: p("SGRNT_P"),
-    loan_pct: p("LOAN_P"),
-    loan_avg: n("LOAN_A"),
-    by_income: counts.some((c) => c !== null)
-      ? {
-          counts,
-          avg_grant: bands.map((b) => n(`GRN4A${b}2`)),
-          granted: bands.map((b) => n(`GRN4G${b}2`)),
-          total_grants: bands.map((b) => n(`GRN4T${b}2`)),
-        }
-      : null,
-  };
-  return aid.cohort === null && aid.grant_pct === null ? undefined : aid;
 }
 
 /**
@@ -508,85 +426,17 @@ function buildMeta(
   };
 }
 
-/**
- * Same-year sticker prices by residency and the estimated average paid by all
- * first-years (not just grant recipients):
- *
- *   avg paid ≈ Σ residency share × on-campus sticker price − share with grants × average grant
- *
- * Students without grants are counted at the full sticker price. Assumes
- * on-campus living costs (so it runs high at commuter-heavy schools).
- */
-function addPrices(school: School, ic: Record<string, string> | undefined, sfa: Record<string, string> | undefined, year: string) {
-  if (!ic) return;
-  // Detect the column convention: IC_AY files use "…AY3" for the file's year, COST1 files use "…AY2".
-  const sfx = "CHG2AY3" in ic || "CHG1AY3" in ic ? "3" : "2";
-  const n = (k: string) => ipedsNum(ic, `${k}${sfx}`);
-  const extras = [n("CHG4AY"), n("CHG5AY"), n("CHG6AY")];
-  const onCampusExtras = extras.every((v) => v !== null) ? extras.reduce((a, b) => a! + b!, 0)! : null;
-  const tf = { in_district: n("CHG1AY"), in_state: n("CHG2AY"), out_of_state: n("CHG3AY") };
-  const sticker = {
-    in_district: tf.in_district !== null && onCampusExtras !== null ? tf.in_district + onCampusExtras : null,
-    in_state: tf.in_state !== null && onCampusExtras !== null ? tf.in_state + onCampusExtras : null,
-    out_of_state: tf.out_of_state !== null && onCampusExtras !== null ? tf.out_of_state + onCampusExtras : null,
-  };
-  if (Object.values(tf).every((v) => v === null)) return;
-
-  const pctOf = (k: string) => {
-    const v = ipedsNum(sfa, k);
-    return v === null ? null : v / 100;
-  };
-  let residency = { in_district: pctOf("SCFA11P"), in_state: pctOf("SCFA12P"), out_of_state: pctOf("SCFA13P") };
-  const resTotal = Object.values(residency).reduce<number>((a, b) => a + (b ?? 0), 0);
-  // Private colleges charge everyone the same; treat missing residency as all in-state.
-  if (resTotal <= 0) residency = { in_district: 0, in_state: 1, out_of_state: 0 };
-  const total = Object.values(residency).reduce<number>((a, b) => a + (b ?? 0), 0) || 1;
-
-  // Tuition & fees averaged over the residency mix. Room & board, books, and other costs don't vary by residency.
-  let weightedTuition = 0;
-  let covered = 0;
-  for (const k of ["in_district", "in_state", "out_of_state"] as const) {
-    const share = (residency[k] ?? 0) / total;
-    if (share === 0) continue;
-    const price = tf[k] ?? tf.in_state;
-    if (price === null) continue;
-    weightedTuition += share * price;
-    covered += share;
-  }
-  const [books, roomBoard, other] = extras;
-  const grantPct = school.aid?.grant_pct ?? null;
-  const grantAvg = school.aid?.grant_avg ?? null;
-  // Round each piece first so the displayed breakdown adds up exactly to the stored total.
-  const breakdown =
-    covered >= 0.95 && books !== null && roomBoard !== null && other !== null && grantPct !== null && grantAvg !== null
-      ? (() => {
-          const tuition = Math.round(weightedTuition / covered);
-          const fullPrice = tuition + books + roomBoard + other;
-          // Total paid ÷ students: total grant dollars spread over every first-year (exact when counts are reported).
-          const total = school.aid?.grant_total ?? null;
-          const cohort = school.aid?.cohort ?? null;
-          const perStudent = total !== null && cohort ? total / cohort : grantPct * grantAvg;
-          return { tuition_fees: tuition, books, room_board: roomBoard, other, full_price: fullPrice, grant_per_student: Math.round(perStudent) };
-        })()
-      : null;
-  const avgPaid = breakdown ? breakdown.full_price - breakdown.grant_per_student : null;
-
-  const aided = school.type === "public" ? ipedsNum(sfa, "NPIST2") : ipedsNum(sfa, "NPGRN2");
+/** Same-year IPEDS prices and the all-student average cost (lib/derive.ts, shared with sync-history). */
+function addPrices(school: School, ic: IpedsFile, sfa: Record<string, string> | undefined, year: string) {
+  const prices = computePrices(school.type, ic.rows.get(school.unit_id), priceSuffix(ic.name), sfa, school.aid);
+  if (!prices) return;
+  // full_price and approx feed the history build; the snapshot keeps full_price inside the breakdown.
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { full_price, approx, ...cost } = prices;
   school.cost = {
     ...(school.cost ?? { avg_net_price: null, net_price_by_income: null, cost_of_attendance: null, tuition_in_state: null, tuition_out_of_state: null }),
     year,
-    sticker,
-    tuition_fees: tf,
-    residency: {
-      in_district: residency.in_district === null ? null : round(residency.in_district / total),
-      in_state: residency.in_state === null ? null : round(residency.in_state / total),
-      out_of_state: residency.out_of_state === null ? null : round(residency.out_of_state / total),
-    },
-    components: { books, room_board: roomBoard, other },
-    aided_net_price: aided,
-    // Guard against inconsistent inputs (e.g. grants reported larger than the price).
-    breakdown: avgPaid !== null && avgPaid > 0 ? breakdown : null,
-    avg_paid_all: avgPaid !== null && avgPaid > 0 ? avgPaid : null,
+    ...cost,
   };
 }
 
@@ -687,7 +537,7 @@ async function main() {
       continue;
     }
     let school = toSchool(row, adm.rows.get(String(row.id)), admYear, sfa.rows.get(String(row.id)));
-    if (school) addPrices(school, ic.rows.get(school.unit_id), sfa.rows.get(school.unit_id), sfaYears);
+    if (school) addPrices(school, ic, sfa.rows.get(school.unit_id), sfaYears);
     if (!school) {
       stats.noSize++;
       continue;

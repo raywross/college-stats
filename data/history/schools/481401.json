@@ -1,0 +1,11 @@
+{
+  "unit_id": "481401",
+  "series": {
+    "tuition_in_state": {"start":2013,"values":[4754,4754,4754,5280,5280,5280,6480,6480,6480,6760,6760]},
+    "tuition_out_of_state": {"start":2013,"values":[4754,4754,4754,5280,5280,5280,6480,6480,6480,6760,6760]},
+    "aided_net_price": {"start":2018,"values":[21011,null,12698,12292]},
+    "grant_pct": {"start":2018,"values":[1,null,0.6667,0.8,null,0]},
+    "grant_avg": {"start":2018,"values":[5945,null,3486,4418]},
+    "net_price_income_1": {"start":2018,"values":[21011,null,null,21692,null,11881]}
+  }
+}

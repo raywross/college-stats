@@ -1,0 +1,13 @@
+{
+  "unit_id": "500290",
+  "series": {
+    "applicants": {"start":2024,"values":[25]},
+    "admitted": {"start":2024,"values":[25]},
+    "enrolled": {"start":2024,"values":[10]},
+    "acceptance_rate": {"start":2024,"values":[1]},
+    "yield": {"start":2024,"values":[0.4]},
+    "grant_pct": {"start":2023,"values":[1]},
+    "grant_avg": {"start":2023,"values":[9077]},
+    "net_price_income_1": {"start":2023,"values":[33626]}
+  }
+}

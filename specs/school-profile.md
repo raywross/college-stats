@@ -18,12 +18,17 @@ Route: `/schools/[id]`. The 50 most-applied-to profiles are pre-rendered at buil
 7. **How it ranks**: four `DistributionStrip`s (SAT, yield, Pell, diversity) against every reporting college, plus
    `ScatterPlot` (300 most-applied-to + this school, labeled). Every dot drills into that school.
 8. **Cost & outcomes**: see [cost-outcomes.md](cost-outcomes.md).
+8a. **Over time** (`#history`, only when the college has a history shard): takeaway (`historyTakeaway`), controls,
+   and Cost, Aid, and Admissions chart groups; the Overview bento gains a "10 years" tile. See
+   [trends-design.md](trends-design.md#build-notes-phase-1).
 9. **Similar schools**: nearest neighbors (`similarSchools`) with "why similar" chips and one-click compare links.
 
 ## Insight helpers (`lib/insights.ts`)
 - `standouts(s)`: "Known for" chips from percentile thresholds (ultra-selective, high yield, big campus,
   economic diversity, test-optional heavy…).
 - `admissionsTakeaway`, `yieldTakeaway`, `scoresTakeaway`, `studentsTakeaway`: one-line plain-English summaries.
+- `historyTakeaway(history, files)`: the "Over time" summary (full price vs what students paid, after inflation;
+  applications and acceptance rate). `movedBy(change)` phrases a change ("rose 12%", "held about steady").
 - `similarSchools(s, n)`: Euclidean distance on percentile ranks (selectivity, SAT, size, Pell, diversity),
   with a small penalty when the school type differs.
 

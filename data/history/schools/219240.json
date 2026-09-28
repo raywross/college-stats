@@ -1,0 +1,13 @@
+{
+  "unit_id": "219240",
+  "series": {
+    "applicants": {"start":2002,"values":[0,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,22,29,5,35,39]},
+    "admitted": {"start":2002,"values":[0,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,21,18,5,26,33]},
+    "enrolled": {"start":2002,"values":[0,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,16,18,1,4,3]},
+    "acceptance_rate": {"start":2020,"values":[0.9545,0.6207,null,0.7429,0.8462]},
+    "yield": {"start":2020,"values":[0.7619,1,0.2,0.1538,0.0909]},
+    "tuition_in_state": {"start":2020,"values":[3600,3600,3600]},
+    "tuition_out_of_state": {"start":2020,"values":[3600,3600,3600]},
+    "grant_pct": {"start":2020,"values":[0,0,0]}
+  }
+}

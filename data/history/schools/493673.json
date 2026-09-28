@@ -1,0 +1,11 @@
+{
+  "unit_id": "493673",
+  "series": {
+    "applicants": {"start":2024,"values":[1]},
+    "admitted": {"start":2024,"values":[1]},
+    "enrolled": {"start":2024,"values":[1]},
+    "yield": {"start":2024,"values":[1]},
+    "tuition_in_state": {"start":2022,"values":[5760,5760]},
+    "tuition_out_of_state": {"start":2022,"values":[5760,5760]}
+  }
+}

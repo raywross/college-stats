@@ -2,6 +2,7 @@ import type { School, SizeBucket } from "./types";
 import type { TermKey } from "./glossary";
 import type { FieldPath } from "./fields";
 import { money, num, pct, pctSmart } from "./format";
+import { yieldOf } from "./derive";
 
 /* ------------------------------------------------------------------ */
 /* Derived values (null when the underlying data isn't reported)       */
@@ -26,8 +27,7 @@ export function actMid(s: School): number | null {
 
 /** Share of admitted students who enroll. */
 export function yieldRate(s: School): number | null {
-  const { admitted, enrolled } = s.admissions;
-  return admitted && enrolled !== null ? enrolled / admitted : null;
+  return yieldOf(s.admissions.admitted, s.admissions.enrolled);
 }
 
 /** "1 in N" applicants admitted. */

@@ -1,0 +1,15 @@
+{
+  "unit_id": "496803",
+  "series": {
+    "applicants": {"start":2022,"values":[824,2743]},
+    "admitted": {"start":2022,"values":[745,2716]},
+    "enrolled": {"start":2022,"values":[18,14]},
+    "acceptance_rate": {"start":2022,"values":[0.9041,0.9902]},
+    "yield": {"start":2022,"values":[0.0242,0.0052]},
+    "tuition_in_state": {"start":2021,"values":[16500,16500,16500]},
+    "tuition_out_of_state": {"start":2021,"values":[16500,16500,16500]},
+    "aided_net_price": {"start":2022,"values":[9390]},
+    "grant_pct": {"start":2022,"values":[0.9375]},
+    "grant_avg": {"start":2022,"values":[10810]}
+  }
+}

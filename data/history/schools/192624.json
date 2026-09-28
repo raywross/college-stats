@@ -1,0 +1,25 @@
+{
+  "unit_id": "192624",
+  "series": {
+    "applicants": {"start":2002,"values":[28,27,26,9,24,123,25,null,18,29,33,24,36,34,45,65,30,42,38,39,40,40,35]},
+    "admitted": {"start":2002,"values":[28,27,26,9,24,123,25,null,18,29,33,24,36,34,38,54,27,42,36,37,38,38,35]},
+    "enrolled": {"start":2001,"values":[26,28,27,26,9,24,123,25,null,18,29,33,24,36,34,27,44,27,38,36,30,33,25,25]},
+    "acceptance_rate": {"start":2002,"values":[1,1,1,null,1,1,1,null,1,1,1,1,1,1,0.8444,0.8308,0.9,1,0.9474,0.9487,0.95,0.95,1]},
+    "yield": {"start":2002,"values":[1,1,1,1,1,1,1,null,1,1,1,1,1,1,0.7105,0.8148,1,0.9048,1,0.8108,0.8684,0.6579,0.7143]},
+    "tuition_in_state": {"start":2001,"values":[5200,5300,5500,5850,6100,7000,7000,7000,7350,7700,8400,9100,9600,10400,11050,11200,11300,11500,11500,11650,12300,12300,13500]},
+    "tuition_out_of_state": {"start":2001,"values":[5200,5300,5500,5850,6100,7000,7000,7000,7350,7700,8400,9100,9600,10400,11050,11200,11300,11500,11500,11650,12300,12300,13500]},
+    "sticker_in_state": {"start":2002,"values":[10100,10300,10650,10900,null,null,null,10850,null,null,null,null,null,null,null,null,null,null,null,null,null,20800]},
+    "sticker_out_of_state": {"start":2002,"values":[10100,10300,10650,10900,null,null,null,10850,null,null,null,null,null,null,null,null,null,null,null,null,null,20800]},
+    "full_price": {"start":2002,"values":[10100,10300,10650,10900,null,null,null,10850,null,null,null,null,null,null,null,null,null,null,null,null,null,20800]},
+    "avg_paid_all": {"start":2009,"values":[3336,null,null,null,null,null,null,null,null,null,null,null,null,null,8177]},
+    "aided_net_price": {"start":2008,"values":[6901,5308,6616,8203,9115,12048,7852,10012,11615,10818,17654,5675,14656,11142,9182,16386]},
+    "grant_pct": {"start":2007,"values":[0.913,0.75,0.9444,0.8966,0.9394,0.875,0.8889,0.8889,0.8529,0.9259,0.9762,1,1,0.9722,0.9,0.9091,0.9565]},
+    "grant_avg": {"start":2007,"values":[6851,5613,7956,7680,6680,9410,9862,9850,11050,10845,10893,10614,12000,14170,11613,11876,13196]},
+    "aid_generosity": {"start":2009,"values":[0.6925,null,null,null,null,null,null,null,null,null,null,null,null,null,0.6069]},
+    "net_price_income_1": {"start":2008,"values":[6865,5142,7082,9219,8866,11538,6608,10242,11360,10854,6900,6187,14016,7937,8219,16464]},
+    "net_price_income_2": {"start":2008,"values":[7641,5380,7771,9221,9425,12776,7423,10242,11001,10854,6897,6187,14550,8934,7976,16553]},
+    "net_price_income_3": {"start":2010,"values":[8639,10746,null,12310,6840,10242,11001,10853,6897,16537,16926,11988,10488,16553]},
+    "net_price_income_4": {"start":2013,"values":[14819,null,null,11001,null,6897,null,null,20711]}
+  },
+  "repeated": [2009]
+}

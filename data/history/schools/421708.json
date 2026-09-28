@@ -1,0 +1,20 @@
+{
+  "unit_id": "421708",
+  "series": {
+    "applicants": {"start":2002,"values":[0,453,234,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,78,42,71,45]},
+    "admitted": {"start":2002,"values":[0,254,234,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,78,42,71,45]},
+    "enrolled": {"start":2002,"values":[0,254,182,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,32,23,39,24]},
+    "acceptance_rate": {"start":2003,"values":[0.5607,1,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,1,1,1,1]},
+    "yield": {"start":2003,"values":[1,0.7778,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,0.4103,0.5476,0.5493,0.5333]},
+    "tuition_in_state": {"start":2004,"values":[8595,9600,10500,11425,13625,13525,13525,14935,14935,15024,15223,15110,15524,15524,15685,15841,15841,23066,24000,24853]},
+    "tuition_out_of_state": {"start":2004,"values":[8595,9600,10500,11425,13625,13525,13525,14935,14935,15024,15223,15110,15524,15524,15685,15841,15841,23066,24000,24853]},
+    "aided_net_price": {"start":2008,"values":[19305,19406,18072,19345,19493,18915,22510,18865,21371,22723,21227,21910,27892,28726,30709,29819]},
+    "grant_pct": {"start":2007,"values":[0.7067,0.6508,0.6382,0.8495,0.8856,0.8511,0.8456,1,1,1,0.8147,0.8276,1,1,0.5385,0.5,0.6071]},
+    "grant_avg": {"start":2007,"values":[3184,3296,2842,3375,3383,4012,4683,3943,7287,5877,4824,5132,4743,4724,5917,6685,8375]},
+    "net_price_income_1": {"start":2008,"values":[19637,19104,18749,19956,20236,20135,21625,20791,21952,23128,21587,21835,24637,28575,26114,27061]},
+    "net_price_income_2": {"start":2008,"values":[20956,20631,20062,21248,21629,21621,23223,15440,22275,23415,20526,22493,28404,32806,30832,32566]},
+    "net_price_income_3": {"start":2008,"values":[22110,21188,20899,22040,22652,22686,26812,22264,24854,24427,24175,22502,28532,33007,35067,36830]},
+    "net_price_income_4": {"start":2008,"values":[22110,21378,21657,22829,23491,23573,26844,26181,27257,26701,26391,25074,null,35080,34344,35163]},
+    "net_price_income_5": {"start":2011,"values":[23432,24240,24341,null,null,null,27366,null,null,31949,35080,35067,38153]}
+  }
+}

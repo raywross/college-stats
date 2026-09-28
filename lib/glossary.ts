@@ -335,6 +335,26 @@ const entries = {
     category: "How we measure",
     related: ["percentile-rank"],
   },
+  "inflation-adjusted": {
+    term: "After inflation",
+    short: "Past dollars converted to the latest year's dollars with the Consumer Price Index, so a change shows what's really more or less expensive, not just rising prices everywhere.",
+    long: "We use CPI-U from the Bureau of Labor Statistics, averaged over each school year (July to June), the way the National Center for Education Statistics adjusts college prices.",
+    why: "If a college's price rose 20% while prices across the economy rose 30%, it got cheaper in real terms. Switch charts to \"As reported\" to see the original dollars.",
+    category: "How we measure",
+    related: ["provisional-data"],
+  },
+  "provisional-data": {
+    term: "Provisional data",
+    short: "The newest year of a federal survey, before colleges' corrections are folded in. NCES publishes a revised version about a year later; values usually change little.",
+    category: "How we measure",
+    related: ["ipeds"],
+  },
+  "fixed-panel": {
+    term: "Fixed panel",
+    short: "A national trend measured over the same colleges in every year: only those that report both the first and last year. Otherwise colleges opening, closing, or starting to report would look like change.",
+    category: "How we measure",
+    related: ["median"],
+  },
   ipeds: {
     term: "IPEDS",
     short: "The Integrated Postsecondary Education Data System: annual surveys every federally funded U.S. college must complete.",

@@ -1,0 +1,20 @@
+{
+  "unit_id": "245883",
+  "series": {
+    "applicants": {"start":2002,"values":[0,null,null,null,null,null,64,39,36,59,47,42]},
+    "admitted": {"start":2002,"values":[0,null,null,null,null,null,41,32,30,41,34,33]},
+    "enrolled": {"start":2002,"values":[0,null,null,null,null,null,40,32,30,32,24,30]},
+    "acceptance_rate": {"start":2008,"values":[0.6406,0.8205,0.8333,0.6949,0.7234,0.7857]},
+    "yield": {"start":2008,"values":[0.9756,1,1,0.7805,0.7059,0.9091]},
+    "tuition_in_state": {"start":2008,"values":[17223,18045,18405,19305,20055,20595,21315,21315]},
+    "tuition_out_of_state": {"start":2008,"values":[17223,18045,18405,19305,20055,20595,21315,21315]},
+    "aided_net_price": {"start":2008,"values":[27635,29622,29901,28542,26442,26991]},
+    "grant_pct": {"start":2008,"values":[0.2368,0.5,0.6452,0.4583,0.6923,0.6]},
+    "grant_avg": {"start":2008,"values":[5632,5192,4586,7545,9620,8794]},
+    "net_price_income_1": {"start":2008,"values":[26573,32114,24074,25145,19220,17660]},
+    "net_price_income_2": {"start":2008,"values":[24286,23839,28420,28154,23857,32385]},
+    "net_price_income_3": {"start":2008,"values":[33267,28489,28487,25899,24762]},
+    "net_price_income_4": {"start":2008,"values":[27162,33814,32820,null,29562]},
+    "net_price_income_5": {"start":2008,"values":[33267,34814,32987,35087,28348,33618]}
+  }
+}

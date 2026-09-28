@@ -1,0 +1,10 @@
+{
+  "unit_id": "147590",
+  "series": {
+    "applicants": {"start":2002,"values":[113,79]},
+    "admitted": {"start":2002,"values":[84,74]},
+    "enrolled": {"start":2002,"values":[84,74]},
+    "acceptance_rate": {"start":2002,"values":[0.7434,0.9367]},
+    "yield": {"start":2002,"values":[1,1]}
+  }
+}

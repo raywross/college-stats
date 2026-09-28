@@ -1,8 +1,10 @@
 # Trends: Data Ingestion & Storage
 
-> Status: **planned** (not built). Companion to [trends-design.md](trends-design.md), which covers how trends appear on
-> the site. Research done 2026-09-28 by probing NCES and the Scorecard API directly; findings below are verified unless
-> marked *unverified*.
+> Status: **Phase 1 built** (2026-09-28, `feature/trends`): admissions, prices, aid, and net price series; national
+> distributions; Home facts; CPI. Phases 2–3 (scores, size, diversity, outcomes; Explore and Compare) are still
+> planned. Companion to [trends-design.md](trends-design.md), which covers how trends appear on the site. Research done
+> 2026-09-28 by probing NCES and the Scorecard API directly; findings below are verified unless marked *unverified*.
+> What the build found and how it differs from this plan: [Build notes](#build-notes-phase-1).
 
 ## Goal
 Add a year-by-year history for each college so the site can show how cost, selectivity, size, and aid have changed.
@@ -121,7 +123,8 @@ data/
   "notes": []
 }
 ```
-*(Values illustrative except Vanderbilt tuition & fees, verified: 2000–01 $24,080 → 2013–14 $42,978 → 2023–24 $56,128.)*
+*(Values illustrative except Vanderbilt tuition & fees, verified: 2000–01 $24,080 → 2013–14 $42,978 → 2023–24 $63,946.
+An earlier draft said $56,128 for 2023–24, which matches no year in the files.)*
 
 **Why this shape**
 - The profile page reads one ~3 KB file (server-side, cached), so the list views and the 3.6 MB snapshot don't grow.
@@ -183,3 +186,77 @@ pick up revisions), append the new year. The monthly scheduled refresh ([backlog
 - Suffix handling: `IC_AY` `…AY3` vs `COST1` `…ay2`; SFA `…2/1/0`.
 - Derived-sum columns (IC2001 gender split).
 - Validation catches a missing column and a coverage drop.
+
+## Build notes (Phase 1)
+Built 2026-09-28. Code: `scripts/sync-history.mts` (fetch, check, write), `scripts/history/registry.mts` (eras),
+`scripts/history/build.mts` (pure build and checks), `scripts/history/cpi.mts`, `scripts/lib/ipeds.mts` (shared with
+sync-data), `lib/derive.ts` (shared derivations), `lib/history.ts` (types, inflation, changes, citations, validation).
+Tests: `tests/history.test.mts`.
+
+### Commands
+```
+npm run sync-history                          # everything: what a release runs (~80 zips cached in .cache/ipeds/)
+npm run sync-history -- --ids 221999,170976   # shards for these colleges only; national.json and facts.json still cover all
+npm run sync-history -- --offline             # cached files and saved CPI only (local iteration; never for a release)
+npm run sync-history -- --refresh             # re-download every NCES file
+npm run sync-history -- --no-crosscheck       # skip the Urban Institute spot-check
+```
+Recent files (the last three years) are re-downloaded when a week old, to pick up NCES revisions. When NCES can't be
+reached, a stale cached copy is used with a warning; a file never downloaded fails the run, because "unreachable" must
+never read as "not published".
+
+### What the files showed
+- **Prices:** `IC{Y}_AY` holds Y–Y+1 in `…AY3` (IC2000_AY has only `AY1`–`AY3`). `COST1_{Y+1}` holds Y–Y+1 in `…AY2`
+  and **Y+1–Y+2 in `…AY3`** (COST1_2024: Vanderbilt $63,946 in AY2, $67,498 in AY3). sync-data picked `AY3` whenever the
+  column existed, which would have labeled 2024–25 prices as 2023–24 the first year it fell back to COST1. Both syncs now
+  take the suffix from the file name (`priceSuffix()` in lib/derive.ts). IC2023_AY exists, so 2023–24 still comes from it.
+- **Admissions:** IC2002 already has totals (the plan had it *unverified*); only IC2001 is split by gender, and its
+  enrollees are summed from full-time and part-time, men and women. ADM2023 has an `_RV` file; ADM2024 doesn't yet, so
+  fall 2024 is marked provisional. The same holds for SFA2324 (aid, 2023–24).
+- **Carried-forward reports:** 1–3% of colleges a year in the IC era (2002–2013) report applicants, admits, and
+  enrollees identical to the year before (e.g. Vanderbilt fall 2003 = fall 2002), nearly none since ADM (0–3 a year).
+  NCES flags them as reported, and the Urban Institute has the same values. History treats an exact repeat of all three
+  as not reported and lists the years in the shard's `repeated`; the profile explains the gap.
+- **Impossible yields:** a few colleges reported more enrollees than admits in some past year. Yield is left out for
+  that year (counts kept as reported). The profile's yield uses the same rule (`yieldOf()` in lib/derive.ts); no
+  current value is affected.
+- **Negative net prices** are real (grants above the cost of attendance, e.g. Columbia's lowest income band): net
+  price series are `signed` and may go below zero; every other series can't.
+- **Net price by income:** IPEDS `NPIS4{band}2` (publics, in-state) and `NPT4{band}2` (privates) equal the Scorecard
+  values the profile shows, so history reads IPEDS for every year. The build compares the latest year with the snapshot
+  and fails if more than 1% differ.
+- **Year-over-year jumps over 3×:** ~770 across all colleges and series, almost all at small colleges (e.g. 221 → 1,130
+  → 153 applicants). Listed for review and kept as reported.
+- **CPI:** BLS never collected October 2025 (funding lapse); the 2025–26 average uses 11 months and the file lists
+  the gap. Stored at `data/history/cpi.json` (with the rest of history) rather than `data/cpi.json`.
+
+### Checks the build runs (nothing is written unless all pass)
+1. Every column an era maps exists in that year's file header (`missingColumns`).
+2. Years are consecutive per family; a missing year before the newest fails.
+3. Every shard validates (`validateShard`: registered series, trimmed arrays, possible values).
+4. Coverage per series never drops more than 20% from the year before, unless allow-listed with a reason
+   (`EXPECTED_DROPS` in sync-history.mts; empty today).
+5. **Rule 1:** every series' latest point equals data/schools.json for every college whose value is federal (CDS
+   overrides are skipped). The first full run matched all 1,893 colleges, which also shows the lib/derive.ts refactor
+   reproduces sync-data exactly.
+6. Urban Institute cross-check: applicants in four years spanning IC → ADM and in-state tuition & fees in three years,
+   for 12 colleges (72 values matched). Two things to know: the portal blocks Node's default user agent, and its
+   `tuition_fees_ft` is a different item (average full-time charges, `TUITION2 + FEE2`), so the check compares
+   `tuition_fees_published` (the published price, as ours), which it leaves out (−2) before about 2010.
+
+`npm run check:lineage` (in `npm run verify` and CI) re-validates the committed shards and meta, and the test suite
+re-runs rule 1 against the committed files, so a sync-data run that changes a same-year value without re-running
+sync-history fails CI.
+
+### Differences from the plan above
+- **`trends` summary in schools.json:** deferred to Phase 3 (Explore columns and sorts are its only reader). The
+  profile's tile, takeaway, and charts read the shard directly.
+- **Supabase:** one row per shard (`school_histories`, `json`) plus `history_files` (meta, national, facts, cpi), in
+  `supabase/migrations/20260928120000_history.sql`, rather than the long `metric_values` table: the shards convert 1:1
+  and read back exactly, like `schools`. `npm run publish-data` publishes history after the dataset, in one
+  transaction (`publish_history`), and reads it back. Whatever is in data/history/ is what's published, so a
+  subset build publishes a subset.
+- **Fail-soft reads:** if history can't load (e.g. the migration isn't applied yet), `getHistoryFiles()` and
+  `getHistory()` log and return null, and pages render without it. The snapshot still fails loudly.
+- **Revisions and gap-filling from prior-year columns** (`CHG*AY0`–`AY2`): not used yet. Each year comes from its own
+  file.

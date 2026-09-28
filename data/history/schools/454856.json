@@ -1,0 +1,19 @@
+{
+  "unit_id": "454856",
+  "series": {
+    "applicants": {"start":2009,"values":[8,26,10,0,0]},
+    "admitted": {"start":2009,"values":[6,9,7,0,0]},
+    "enrolled": {"start":2009,"values":[6,9,7,0,0]},
+    "acceptance_rate": {"start":2010,"values":[0.3462,0.7]},
+    "yield": {"start":2009,"values":[1,1,1]},
+    "tuition_in_state": {"start":2009,"values":[13416,15379,14831,15295,15889,18407]},
+    "tuition_out_of_state": {"start":2009,"values":[13416,15379,14831,15295,15889,18407]},
+    "aided_net_price": {"start":2009,"values":[20232,26257,30530]},
+    "grant_pct": {"start":2009,"values":[0.2,0.6,1]},
+    "grant_avg": {"start":2009,"values":[1842,3627,466]},
+    "net_price_income_1": {"start":2009,"values":[23598,26757]},
+    "net_price_income_2": {"start":2009,"values":[23240,30489]},
+    "net_price_income_3": {"start":2009,"values":[21348,29472,30530]},
+    "net_price_income_5": {"start":2010,"values":[30489]}
+  }
+}

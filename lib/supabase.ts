@@ -7,6 +7,15 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import type { DatasetMeta, School } from "./types";
 import type { ReleaseCalendar } from "./releases";
 import type { DatasetFiles } from "./dataset";
+import type { CpiTable, HistoryMeta, NationalHistory, SchoolHistory, TrendFacts } from "./history";
+
+/** data/history/{meta,national,facts,cpi}.json */
+export interface HistoryFiles {
+  meta: HistoryMeta;
+  national: NationalHistory;
+  facts: TrendFacts;
+  cpi: CpiTable;
+}
 
 /** PostgREST returns at most 1,000 rows per request by default. */
 const PAGE_SIZE = 1000;
@@ -76,4 +85,49 @@ async function readDataset(client: SupabaseClient): Promise<PublishedDataset> {
     throw new Error("Supabase has no published dataset yet. Run `npm run publish-data` (see specs/supabase.md).");
   }
   return { schools, meta, releaseCalendar, version: file("meta")!.published_at as string };
+}
+
+/* ------------------------------------------------------------------ */
+/* History (supabase/migrations/20260928120000_history.sql)            */
+/* ------------------------------------------------------------------ */
+
+/** Which history publish the project serves: `history_files.published_at` of 'meta'. Null before the first. */
+export async function fetchHistoryVersion(client: SupabaseClient): Promise<string | null> {
+  const { data, error } = await client.from("history_files").select("name, published_at").eq("name", "meta");
+  if (error) throw new Error(`Supabase: reading the history version failed: ${error.message}`);
+  return (data[0]?.published_at as string | undefined) ?? null;
+}
+
+/** The shared history files, or null when history hasn't been published. */
+export async function fetchHistoryFiles(client: SupabaseClient): Promise<(HistoryFiles & { version: string }) | null> {
+  const { data, error } = await client.from("history_files").select("name, data, published_at");
+  if (error) throw new Error(`Supabase: reading history_files failed: ${error.message}`);
+  const file = (name: string) => data.find((f) => f.name === name);
+  if (!file("meta")) return null;
+  return {
+    meta: file("meta")!.data as HistoryMeta,
+    national: file("national")!.data as NationalHistory,
+    facts: file("facts")!.data as TrendFacts,
+    cpi: file("cpi")!.data as CpiTable,
+    version: file("meta")!.published_at as string,
+  };
+}
+
+/** One college's history, or null when it has none. */
+export async function fetchSchoolHistory(client: SupabaseClient, unitId: string): Promise<SchoolHistory | null> {
+  const { data, error } = await client.from("school_histories").select("data").eq("unit_id", unitId).maybeSingle();
+  if (error) throw new Error(`Supabase: reading history for ${unitId} failed: ${error.message}`);
+  return (data?.data as SchoolHistory | undefined) ?? null;
+}
+
+/** Every published shard, for the publish script's read-back check. */
+export async function fetchAllSchoolHistories(client: SupabaseClient): Promise<SchoolHistory[]> {
+  const out: SchoolHistory[] = [];
+  for (let from = 0; ; from += PAGE_SIZE) {
+    const { data, error } = await client.from("school_histories").select("data").order("unit_id").range(from, from + PAGE_SIZE - 1);
+    if (error) throw new Error(`Supabase: reading school_histories failed: ${error.message}`);
+    for (const row of data) out.push(row.data as SchoolHistory);
+    if (data.length < PAGE_SIZE) break;
+  }
+  return out;
 }

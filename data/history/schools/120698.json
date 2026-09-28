@@ -1,0 +1,10 @@
+{
+  "unit_id": "120698",
+  "series": {
+    "applicants": {"start":2002,"values":[0]},
+    "admitted": {"start":2002,"values":[0]},
+    "enrolled": {"start":2002,"values":[0]},
+    "grant_pct": {"start":2007,"values":[0.3125]},
+    "grant_avg": {"start":2007,"values":[4669]}
+  }
+}

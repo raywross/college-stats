@@ -1,0 +1,25 @@
+{
+  "unit_id": "498562",
+  "series": {
+    "applicants": {"start":2022,"values":[9570,7733,8891]},
+    "admitted": {"start":2022,"values":[8992,7327,8277]},
+    "enrolled": {"start":2022,"values":[2190,2434,2414]},
+    "acceptance_rate": {"start":2022,"values":[0.9396,0.9475,0.9309]},
+    "yield": {"start":2022,"values":[0.2435,0.3322,0.2917]},
+    "tuition_in_state": {"start":2022,"values":[10848,11046]},
+    "tuition_out_of_state": {"start":2022,"values":[18919,22870]},
+    "sticker_in_state": {"start":2022,"values":[27098,26470]},
+    "sticker_out_of_state": {"start":2022,"values":[35169,38294]},
+    "full_price": {"start":2022,"values":[28147,27652]},
+    "avg_paid_all": {"start":2022,"values":[21842,18853]},
+    "aided_net_price": {"start":2022,"values":[18004,16111]},
+    "grant_pct": {"start":2021,"values":[0.9952,0.832,0.955]},
+    "grant_avg": {"start":2021,"values":[6510,7578,9214]},
+    "aid_generosity": {"start":2022,"values":[0.224,0.3182]},
+    "net_price_income_1": {"start":2021,"values":[13700,13799,11374]},
+    "net_price_income_2": {"start":2021,"values":[14445,14068,11370]},
+    "net_price_income_3": {"start":2021,"values":[18004,17711,13877]},
+    "net_price_income_4": {"start":2021,"values":[21478,21110,17989]},
+    "net_price_income_5": {"start":2021,"values":[22785,23167,20099]}
+  }
+}

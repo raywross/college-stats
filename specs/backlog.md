@@ -5,19 +5,20 @@ Planned work, roughly in priority order. Move items into a feature spec when the
 ## Data
 - [ ] **Trends over time.** Year-by-year history per college with `npm run sync-history`. Data:
   [trends-data.md](trends-data.md); UI: [trends-design.md](trends-design.md).
-  - [x] Phase 1 (2026-09-28): cost, aid, net price, and admissions history for 1,884 colleges (shards in git);
-    national distributions; CPI; profile "Over time" (Cost, Aid, Admissions), Overview "10 years" tile, Home facts
-    1–2; Supabase tables + publish.
-  - [ ] **Put history on the pre-release site:** apply `supabase/migrations/20260928120000_history.sql` to the dev
-    project (SQL Editor), then `npm run publish-data` (publishes the dataset and history, reads both back, revalidates).
-    Until then the site renders without history (merged ahead of the migration on purpose; pages fail soft).
-  - [ ] Review the ~765 year-over-year jumps over 3× that `sync-history` lists (mostly small colleges' reporting
+  - [x] Phase 1 (2026-09-28): cost, aid, net price, and admissions history (shards in git); national
+    distributions; CPI; profile "Over time" (Cost, Aid, Admissions), Overview "10 years" tile, Home facts 1–2;
+    Supabase tables + publish. History migration applied to the dev project and published 2026-09-28.
+  - [x] Phase 2 (2026-09-28): scores with the SAT break and test-optional shading, undergrads, race/ethnicity,
+    graduation by entering class, median debt; section-headline deltas; Home fact 3.
+  - [x] Phase 3 (2026-09-28): `trends` summary in schools.json; Explore change columns and sorts; Compare "Then & now";
+    trend standouts.
+  - [ ] Publish after each history change (`npm run publish-data`); pages that were prerendered pick it up at their
+    daily regeneration unless `REVALIDATE_URL`/`REVALIDATE_SECRET` are set locally.
+  - [ ] Explore test-policy filter (required / test-optional / test-blind), so Home fact 3 can link to it.
+  - [ ] Review the ~50 soft median-debt differences (Scorecard `latest` vs its year fields) that sync-history lists.
+  - [ ] Review the ~890 year-over-year jumps over 3× that `sync-history` lists (mostly small colleges' reporting
     errors, kept as reported). Decide whether to drop clear typos the way carried-forward repeats are dropped, or to
     exclude them from national figures only.
-  - [ ] Phase 2: scores (SAT break at fall 2017, test-optional shading), undergrads, diversity (Scorecard
-    year-prefixed fields), graduation by entering cohort, median debt; section-headline deltas; Home fact 3.
-  - [ ] Phase 3: Compare "Then & now", Explore change columns and sorts (`trends` summary in schools.json), trend
-    standouts.
   - [ ] Use each IC_AY file's prior-year columns (`CHG*AY0`–`AY2`) to fill gaps and cross-check revisions.
 - [x] **Per-value data lineage** ([data-lineage.md](data-lineage.md)): built 2026-09-28. Leftovers: Explore/Compare
   baseline banner and `school.reported` (with the agent below).
@@ -45,7 +46,8 @@ Planned work, roughly in priority order. Move items into a feature spec when the
   [data-page.md](data-page.md#watching-acts).
 - [ ] **Scheduled data refresh** (`chore/scheduled-data-sync`): monthly GitHub Action runs `npm run sync-all`
   (`sync-data` then `sync-history`, which must move together: CI checks that history ends on the snapshot's values) and
-  opens a PR with the diff; the API key goes in repository secrets. Cache `.cache/ipeds/` between runs (~80 zips), and
+  opens a PR with the diff; the API keys go in repository secrets (Scorecard, and a free `BLS_API_KEY`: keyless BLS
+  allows 25 requests a day). Cache `.cache/ipeds/` between runs (~80 zips), and
   expect NCES to drop connections now and then (the scripts retry; a file never downloaded fails the run). After each
   December IPEDS release, the provisional year gets its revised file and a new year is appended. Also updates `data/release-calendar.json` statuses:
   today the NCES release check only runs when someone runs the sync, so until this exists the Data page can list a

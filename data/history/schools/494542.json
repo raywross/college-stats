@@ -13,6 +13,20 @@
     "full_price": {"start":2023,"values":[22250]},
     "aided_net_price": {"start":2023,"values":[7450]},
     "grant_pct": {"start":2022,"values":[1,1]},
-    "grant_avg": {"start":2022,"values":[35293,27982]}
+    "grant_avg": {"start":2022,"values":[35293,27982]},
+    "sat_25": {"start":2024,"values":[1140]},
+    "sat_75": {"start":2024,"values":[1310]},
+    "sat_submit": {"start":2023,"values":[0.38,0.55]},
+    "act_submit": {"start":2023,"values":[0,0.15]},
+    "test_policy": {"start":2023,"values":[1,1]},
+    "undergrads": {"start":2023,"values":[55,57]},
+    "race_white": {"start":2023,"values":[0.7818,0.6316]},
+    "race_asian": {"start":2023,"values":[0,0.0351]},
+    "race_hispanic": {"start":2023,"values":[0,0.0351]},
+    "race_black": {"start":2023,"values":[0,0]},
+    "race_two_or_more": {"start":2023,"values":[0,0]},
+    "race_international": {"start":2023,"values":[0.2182,0.2982]},
+    "race_other": {"start":2023,"values":[0,0]},
+    "grad_rate": {"start":2018,"values":[0.8125]}
   }
 }

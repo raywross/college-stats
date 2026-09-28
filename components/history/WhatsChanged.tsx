@@ -39,11 +39,11 @@ function FactCard({
  * Home "What's changed": national trend facts over fixed panels, precomputed by `npm run sync-history` into
  * data/history/facts.json (specs/trends-design.md#home-whats-changed-3-facts). Renders nothing without history.
  */
-export async function WhatsChanged({ valueColor, admissionsColor }: { valueColor: string; admissionsColor: string }) {
+export async function WhatsChanged({ valueColor, admissionsColor, scoresColor }: { valueColor: string; admissionsColor: string; scoresColor: string }) {
   const files = await getHistoryFiles();
   const facts = files?.facts;
-  if (!files || !facts || (!facts.priceGap && !facts.harderToGetIn)) return null;
-  const { priceGap: pg, harderToGetIn: hi } = facts;
+  if (!files || !facts || (!facts.priceGap && !facts.harderToGetIn && !facts.testRequired)) return null;
+  const { priceGap: pg, harderToGetIn: hi, testRequired: tr } = facts;
 
   return (
     <section>
@@ -55,7 +55,7 @@ export async function WhatsChanged({ valueColor, admissionsColor }: { valueColor
           money <Term term="inflation-adjusted">after inflation</Term>.
         </p>
       </div>
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {pg && (
           <FactCard
             big={formatChange({ measure: "ratio", change: pg.avgPaidChange })}
@@ -118,6 +118,38 @@ export async function WhatsChanged({ valueColor, admissionsColor }: { valueColor
             <b className="text-foreground">Harder to get in.</b> Applications to today&apos;s {hi.n} most selective colleges{" "}
             {movedBy(hi.applicantsChange)} since {historyYearLabel(hi.from, "fall").toLowerCase()}; the number of first-years they enrolled{" "}
             {movedBy(hi.enrolledChange)}.
+          </FactCard>
+        )}
+        {tr && (
+          <FactCard
+            big={`${Math.round(tr.requiredTo * 100)}%`}
+            href="/glossary#test-optional"
+            cta="What test-optional means"
+            chart={
+              <div className="space-y-2.5" role="img" aria-label={`Share of colleges requiring the SAT or ACT: ${Math.round(tr.requiredFrom * 100)}% in ${historyYearLabel(tr.from, "fall").toLowerCase()}, ${Math.round(tr.requiredTo * 100)}% in ${historyYearLabel(tr.to, "fall").toLowerCase()}`}>
+                {[
+                  { label: historyYearLabel(tr.from, "fall"), v: tr.requiredFrom, muted: true },
+                  { label: historyYearLabel(tr.to, "fall"), v: tr.requiredTo, muted: false },
+                ].map((r) => (
+                  <div key={r.label} className="grid grid-cols-[4.5rem_1fr_2.5rem] items-center gap-2 text-xs">
+                    <span className="text-muted-foreground">{r.label}</span>
+                    <span className="h-3 overflow-hidden rounded-r bg-muted">
+                      <span
+                        className="block h-full rounded-r"
+                        style={{ width: `${Math.max(1, r.v * 100)}%`, backgroundColor: r.muted ? "var(--muted-foreground)" : scoresColor }}
+                      />
+                    </span>
+                    <span className="text-right font-semibold tabular-nums">{Math.round(r.v * 100)}%</span>
+                  </div>
+                ))}
+                <p className="text-[11px] text-muted-foreground">Share of colleges requiring the SAT or ACT</p>
+              </div>
+            }
+            footer={<HistorySourceNote keys={["test_policy"]} files={files} range={[tr.from, tr.to]} />}
+          >
+            <b className="text-foreground">Test-optional went mainstream.</b> In {historyYearLabel(tr.from, "fall").toLowerCase()}, {Math.round(tr.requiredFrom * 100)}% of
+            colleges required the SAT or ACT. In {historyYearLabel(tr.to, "fall").toLowerCase()}, {Math.round(tr.requiredTo * 100)}% did, across{" "}
+            {tr.n.toLocaleString("en-US")} colleges reporting both years. Score ranges now describe only the students who chose to send them.
           </FactCard>
         )}
       </div>

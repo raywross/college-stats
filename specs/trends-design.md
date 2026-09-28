@@ -1,6 +1,6 @@
 # Trends: Site Design
 
-> Status: **Phase 1 built** (2026-09-28); Phases 2–3 planned. Data, sources, and storage are in [trends-data.md](trends-data.md).
+> Status: **Built** (2026-09-28): Phase 1, then Phases 2–3. Data, sources, and storage are in [trends-data.md](trends-data.md).
 > What shipped and how it differs from this plan: [Build notes](#build-notes-phase-1).
 
 ## Principle: trends are facts at the top, charts at the bottom
@@ -183,3 +183,29 @@ Built 2026-09-28 (`feature/trends`). What shipped, and where it differs from the
 - **Glossary:** `inflation-adjusted`, `provisional-data`, `fixed-panel`. (`entering-cohort` and `trend-break` come
   with Phase 2's graduation and SAT charts.)
 - Not yet: section-headline deltas, trend standouts, Home fact 3, Compare, Explore (Phases 2–3).
+
+## Build notes (Phases 2–3)
+Built 2026-09-28 (`feature/trends-phase-2-3`).
+- **Profile "Over time"** gains three groups: **Test scores** (SAT and ACT middle 50% as range bands against the median
+  college's 25th–75th; a dotted "New SAT" rule at fall 2017 that splits the band; shaded runs of years when scores
+  weren't required, labeled when they fit and named in the legend and tooltip; submission rates in the tooltip),
+  **Students** (undergrads; race/ethnicity as `StackedArea100` from fall 2010), and **Outcomes** (graduation within six
+  years by entering class, with an "Entered fall …" axis; median debt ending 2020–21 with a note; earnings as text).
+  All groups are accordions on phones.
+- **Section headlines:** a muted line with a 60×16 sparkline (≥ sm) and an "Over time" link under the Admissions
+  (acceptance rate, "Fall 2014: 32%"), Students (undergrads, "+21% since fall 2014"), and Cost (average cost, "−2%
+  after inflation since 2013–14") takeaways (`HeadlineDelta`), rather than under the individual headline numbers.
+- **"10 years" tile:** undergrads joined the notable-change candidates (floor ±10%).
+- **Home fact 3** (test-optional went mainstream): a before/after bar pair, linking to the glossary's
+  `test-optional` entry. Explore has no test-policy filter yet (backlog).
+- **Explore:** instead of a column picker (none exists), a "Show 10-year changes" toggle (`?changes=1`) adds three
+  sortable columns: average cost change (after inflation), admit rate then → now (points), undergrads change. The
+  Sort menu gains the same three orders. Admit-rate change needs 200+ applicants at both ends and undergrad change
+  300+ students, so tiny colleges don't top the lists.
+- **Compare "Then & now":** `SlopeChart` for average total cost, acceptance rate, applicants, or undergrads (from
+  `school.trends`), with a note for colleges that start late or lack both endpoints.
+- **Trend standouts:** at most one, profile only (Explore cards unchanged): applications or enrollment in the
+  national top 5% of 10-year growth on a 1,000+ base ("Applications doubled since fall 2014"), or average cost in the
+  bottom 5% ("Average cost down 30% since 2013–14").
+- **Charts:** `TrendLine` gained `ranges`, `breaks`, `spans`, and tooltip-only `extras`; new `StackedArea100` and
+  `SlopeChart`. Glossary: `entering-cohort`, `trend-break`.

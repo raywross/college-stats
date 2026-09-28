@@ -6,6 +6,15 @@
     "enrolled": {"start":2024,"values":[1]},
     "yield": {"start":2024,"values":[1]},
     "tuition_in_state": {"start":2022,"values":[5760,5760]},
-    "tuition_out_of_state": {"start":2022,"values":[5760,5760]}
+    "tuition_out_of_state": {"start":2022,"values":[5760,5760]},
+    "test_policy": {"start":2024,"values":[3]},
+    "undergrads": {"start":2022,"values":[3,5,7]},
+    "race_white": {"start":2022,"values":[0,0,0]},
+    "race_asian": {"start":2022,"values":[0,0,0]},
+    "race_hispanic": {"start":2022,"values":[1,1,1]},
+    "race_black": {"start":2022,"values":[0,0,0]},
+    "race_two_or_more": {"start":2022,"values":[0,0,0]},
+    "race_international": {"start":2022,"values":[0,0,0]},
+    "race_other": {"start":2022,"values":[0,0,0]}
   }
 }

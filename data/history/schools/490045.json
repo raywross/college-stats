@@ -8,6 +8,15 @@
     "grant_avg": {"start":2016,"values":[4054,null,null,null,6116,5600]},
     "net_price_income_1": {"start":2016,"values":[15970,null,null,null,4103,3207]},
     "net_price_income_2": {"start":2016,"values":[16920]},
-    "net_price_income_3": {"start":2021,"values":[5947]}
+    "net_price_income_3": {"start":2021,"values":[5947]},
+    "undergrads": {"start":2017,"values":[41,48,46,42,41,36,38,55]},
+    "race_white": {"start":2017,"values":[0,0,0.0217,0,0,0,0,0]},
+    "race_asian": {"start":2017,"values":[0.5854,0.625,0.6957,0.6429,0.6098,0.5556,0.5789,0.6364]},
+    "race_hispanic": {"start":2017,"values":[0,0,0,0,0,0,0,0]},
+    "race_black": {"start":2017,"values":[0,0,0,0,0,0,0,0]},
+    "race_two_or_more": {"start":2017,"values":[0,0,0,0,0,0,0,0]},
+    "race_international": {"start":2017,"values":[0.4146,0.375,0.1739,0.3571,0.1707,0.2222,0.1842,0.1636]},
+    "race_other": {"start":2017,"values":[0,0,0.1087,0,0.2195,0.2222,0.2368,0.2]},
+    "grad_rate": {"start":2012,"values":[0.75,0.6,0.5,1,0.5,0.8]}
   }
 }

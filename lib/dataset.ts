@@ -80,6 +80,14 @@ const SORTERS: Record<SortKey, (s: School) => number | string | null> = {
   net_price: (s) => s.cost?.aided_net_price ?? null,
   earnings: (s) => s.outcomes?.median_earnings_10yr ?? null,
   grad_rate: (s) => s.outcomes?.graduation_rate ?? null,
+  avg_cost_change: METRICS.avgCostChange.get,
+  // Points, so a drop from 40% to 20% ranks with one from 25% to 5%. Only with 200+ applicants at both ends: a rate
+  // on a handful of applicants swings on a few decisions.
+  admit_rate_change: (s) => {
+    const a = s.trends?.applicants;
+    return a && Math.min(a.from, a.to) >= 200 ? (s.trends?.acceptance_rate?.change ?? null) : null;
+  },
+  size_change: METRICS.sizeChange.get,
 };
 
 function mode(values: number[]): number | null {

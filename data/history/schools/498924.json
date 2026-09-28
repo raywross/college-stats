@@ -3,6 +3,15 @@
   "series": {
     "tuition_in_state": {"start":2023,"values":[30550]},
     "tuition_out_of_state": {"start":2023,"values":[30550]},
-    "grant_pct": {"start":2022,"values":[0,0]}
+    "grant_pct": {"start":2022,"values":[0,0]},
+    "undergrads": {"start":2023,"values":[28,33]},
+    "race_white": {"start":2023,"values":[0,0]},
+    "race_asian": {"start":2023,"values":[0,0]},
+    "race_hispanic": {"start":2023,"values":[1,1]},
+    "race_black": {"start":2023,"values":[0,0]},
+    "race_two_or_more": {"start":2023,"values":[0,0]},
+    "race_international": {"start":2023,"values":[0,0]},
+    "race_other": {"start":2023,"values":[0,0]},
+    "grad_rate": {"start":2017,"values":[0.6111,0.8]}
   }
 }

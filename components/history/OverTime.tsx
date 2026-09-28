@@ -5,7 +5,12 @@ import { ChevronDown, Table2, LineChart } from "lucide-react";
 import { formatBy, type FormatKind } from "@/lib/format";
 import {
   NET_PRICE_BANDS,
+  RACE_SERIES,
+  SAT_BREAK,
   SERIES,
+  TEST_BLIND_FROM,
+  TEST_POLICY_CODES,
+  lastYear,
   changeOver,
   firstPointFrom,
   formatChange,
@@ -20,7 +25,9 @@ import {
   type YearKind,
 } from "@/lib/history";
 import type { TermKey } from "@/lib/glossary";
-import { TrendLine, type TrendBand, type TrendSeries } from "@/components/charts/TrendLine";
+import { TrendLine, type TrendBand, type TrendExtra, type TrendRange, type TrendSeries } from "@/components/charts/TrendLine";
+import { StackedArea100 } from "@/components/charts/StackedArea100";
+import { DEMOGRAPHIC_CATEGORIES } from "@/lib/metrics";
 import { Dumbbell } from "@/components/charts/Dumbbell";
 import { InfoTip } from "@/components/ui/info-tip";
 import { cn } from "@/lib/utils";
@@ -37,13 +44,36 @@ export interface OverTimeProps {
   latest: Record<YearKind, number>;
   provisional: Record<YearKind, number | null>;
   /** Server-rendered source lines per group (history editions and CPI). */
-  sources: { cost: ReactNode; aid: ReactNode; admissions: ReactNode };
-  colors: { value: string; admissions: string };
+  sources: { cost: ReactNode; aid: ReactNode; admissions: ReactNode; scores: ReactNode; students: ReactNode; outcomes: ReactNode };
+  colors: { value: string; admissions: string; scores: string; size: string; diversity: string };
 }
 
 const CONTEXT = "var(--muted-foreground)";
 const EVENTS = [{ year: 2020, label: "Pandemic" }];
 const INCOME_LABELS = ["$0–30K", "$30–48K", "$48–75K", "$75–110K", "$110K+"];
+
+/** How a year's test-policy code reads (codes shifted between eras; see TEST_POLICY_CODES). */
+function policyLabel(code: number, year: number): string | null {
+  if (code === TEST_POLICY_CODES.required) return null;
+  if (code === TEST_POLICY_CODES.considered) return "Test-optional";
+  if (code === TEST_POLICY_CODES.recommended) return "Scores recommended";
+  return year >= TEST_BLIND_FROM ? "Test-blind" : "Scores not required";
+}
+
+/** Runs of consecutive years when scores weren't required, labeled by policy. */
+function policySpans(s: Series | undefined): { from: number; to: number; label: string }[] {
+  if (!s) return [];
+  const out: { from: number; to: number; label: string }[] = [];
+  s.values.forEach((code, i) => {
+    const year = s.start + i;
+    const label = code === null ? null : policyLabel(code, year);
+    const last = out[out.length - 1];
+    if (!label) return;
+    if (last && last.label === label && last.to === year - 1) last.to = year;
+    else out.push({ from: year, to: year, label });
+  });
+  return out;
+}
 
 /** Read and write the controls in the URL (?range=all&dollars=nominal&median=off&rate=in) without re-rendering the page. */
 function useUrlState() {
@@ -110,6 +140,14 @@ interface PanelSeries {
   band?: boolean;
 }
 
+/** A 25th–75th percentile pair drawn as a band (SAT/ACT middle 50%). */
+interface PanelRange {
+  lo: SeriesKey;
+  hi: SeriesKey;
+  name: string;
+  color: string;
+}
+
 /** One chart panel: title, latest value and its change over the window, the chart, and a table view. */
 function ChartPanel({
   title,
@@ -126,10 +164,22 @@ function ChartPanel({
   provisionalYear,
   headline,
   dollarsOf,
+  ranges = [],
+  breaks = [],
+  spans = [],
+  extras = [],
+  note,
 }: {
   title: string;
   term?: TermKey;
   specs: PanelSeries[];
+  ranges?: PanelRange[];
+  breaks?: { year: number; label: string }[];
+  spans?: { from: number; to: number; label: string }[];
+  /** Tooltip-only rows. */
+  extras?: { key: SeriesKey; name: string }[];
+  /** A line under the chart (e.g. why a series stops). */
+  note?: ReactNode;
   history: SchoolHistory;
   national: NationalHistory["series"];
   window: [number, number];
@@ -139,8 +189,8 @@ function ChartPanel({
   cpi: CpiTable;
   showMedian: boolean;
   provisionalYear: number | null;
-  /** The series whose latest value and change head the panel. */
-  headline: SeriesKey;
+  /** The series whose latest value and change head the panel; a range panel shows its latest range instead. */
+  headline?: SeriesKey;
   /** Year whose dollars money is shown in (after inflation). */
   dollarsOf: number;
 }) {
@@ -152,10 +202,39 @@ function ChartPanel({
       const s = convert(p.key, history.series[p.key]!);
       return { key: p.key, name: p.name, color: p.color, dashed: p.dashed, start: s.start, values: s.values, approx: s.approx };
     });
+  const trendRanges: TrendRange[] = ranges
+    .filter((r) => history.series[r.lo] && history.series[r.hi])
+    .map((r) => {
+      const lo = history.series[r.lo]!;
+      const hi = history.series[r.hi]!;
+      const start = Math.min(lo.start, hi.start);
+      const end = Math.max(lastYear(lo), lastYear(hi));
+      const years = Array.from({ length: end - start + 1 }, (_, i) => start + i);
+      return { key: r.lo, name: r.name, color: r.color, start, lo: years.map((y) => valueAt(lo, y)), hi: years.map((y) => valueAt(hi, y)) };
+    });
+  const trendExtras: TrendExtra[] = extras
+    .filter((e) => history.series[e.key])
+    .map((e) => ({ name: e.name, start: history.series[e.key]!.start, values: history.series[e.key]!.values, format: SERIES[e.key].format }));
   const bandSpec = specs.find((p) => p.band);
   const nat = bandSpec ? national[bandSpec.key] : undefined;
-  const band: TrendBand | null =
-    showMedian && bandSpec && nat
+  // For a range, the band is the median college's 25th–75th percentiles, with their midpoint dotted.
+  const rangeBand = ((): TrendBand | null => {
+    const r = ranges[0];
+    const [nlo, nhi] = r ? [national[r.lo], national[r.hi]] : [undefined, undefined];
+    if (!showMedian || !nlo || !nhi) return null;
+    const start = Math.max(nlo.start, nhi.start);
+    const end = Math.min(nlo.start + nlo.stats.length, nhi.start + nhi.stats.length) - 1;
+    return {
+      label: "Median college",
+      start,
+      stats: Array.from({ length: end - start + 1 }, (_, i) => {
+        const [a, b] = [nlo.stats[start + i - nlo.start], nhi.stats[start + i - nhi.start]];
+        return a && b ? [a[1], (a[1] + b[1]) / 2, b[1]] : null;
+      }),
+    };
+  })();
+  const band: TrendBand | null = rangeBand ??
+    (showMedian && bandSpec && nat
       ? {
           label: "National median",
           start: nat.start,
@@ -165,12 +244,13 @@ function ChartPanel({
             return [k(st[0]), k(st[1]), k(st[2])];
           }),
         }
-      : null;
+      : null);
 
-  const head = history.series[headline];
-  const money = SERIES[headline].unit === "usd";
+  const head = headline ? history.series[headline] : undefined;
+  const money = headline ? SERIES[headline].unit === "usd" : false;
   // Money changes compare after inflation unless "As reported" is picked.
   const shown = (() => {
+    if (!headline) return null;
     // Under "All", measure from the headline's first year rather than the earliest year of any series.
     const cw: [number, number] = [Math.max(window[0], head?.start ?? window[0]), window[1]];
     const real = changeOver(headline, head, cw, cpi);
@@ -180,8 +260,9 @@ function ChartPanel({
   })();
   // The latest year is the base year for inflation, so its value reads the same either way.
   const latestShown = valueAt(head, window[1]);
+  const latestRange = trendRanges[0] ? [trendRanges[0].lo[window[1] - trendRanges[0].start] ?? null, trendRanges[0].hi[window[1] - trendRanges[0].start] ?? null] : null;
 
-  if (!series.length) return null;
+  if (!series.length && !trendRanges.length) return null;
   return (
     <div className="flex min-w-0 flex-col rounded-3xl border bg-card p-4 sm:p-5">
       <div className="mb-3 flex items-start justify-between gap-3">
@@ -191,7 +272,12 @@ function ChartPanel({
           </h4>
           <p className="mt-0.5 text-sm">
             {latestShown !== null && <b className="font-display text-xl font-extrabold tabular-nums">{formatBy(format, latestShown)}</b>}
-            {latestShown !== null && <span className="ml-1.5 text-xs text-muted-foreground">{historyYearLabel(window[1], kind)}</span>}
+            {latestShown === null && latestRange && latestRange[0] !== null && latestRange[1] !== null && (
+              <b className="font-display text-xl font-extrabold tabular-nums">
+                {formatBy(format, latestRange[0])}–{formatBy(format, latestRange[1])}
+              </b>
+            )}
+            {(latestShown !== null || (latestRange?.[0] ?? null) !== null) && <span className="ml-1.5 text-xs text-muted-foreground">{historyYearLabel(window[1], kind)}</span>}
           </p>
           {shown && (
             <p className="text-xs text-muted-foreground">
@@ -220,19 +306,35 @@ function ChartPanel({
               {s.name}
             </span>
           ))}
+          {trendRanges.map((r) => (
+            <span key={r.key} className="inline-flex items-center gap-1.5">
+              <span className="h-2.5 w-3.5 rounded-sm" style={{ backgroundColor: r.color, opacity: 0.45 }} aria-hidden />
+              {r.name}
+            </span>
+          ))}
+          {spans.some((sp) => sp.to >= window[0]) && (
+            <span className="inline-flex items-center gap-1.5">
+              <span className="h-2.5 w-3.5 rounded-sm border border-dashed border-foreground/20 bg-foreground/5" aria-hidden />
+              Shaded: scores not required
+            </span>
+          )}
           {band && (
             <span className="inline-flex items-center gap-1.5">
               <span className="h-2.5 w-3.5 rounded-sm bg-foreground/10" aria-hidden />
-              National middle 50% and median
+              {rangeBand ? "Median college's middle 50%" : "National middle 50% and median"}
             </span>
           )}
         </div>
       )}
       {table ? (
-        <HistoryTable series={series} band={band} from={window[0]} to={window[1]} kind={kind} format={format} provisionalYear={provisionalYear} />
+        <HistoryTable series={series} ranges={trendRanges} extras={trendExtras} band={band} from={window[0]} to={window[1]} kind={kind} format={format} provisionalYear={provisionalYear} />
       ) : (
         <TrendLine
           series={series}
+          ranges={trendRanges}
+          breaks={breaks}
+          spans={spans}
+          extras={trendExtras}
           band={band}
           from={window[0]}
           to={window[1]}
@@ -243,6 +345,7 @@ function ChartPanel({
           label={`${title}, ${historyYearLabel(window[0], kind)} to ${historyYearLabel(window[1], kind)}`}
         />
       )}
+      {note && <p className="mt-2 text-[11px] text-muted-foreground">{note}</p>}
     </div>
   );
 }
@@ -253,6 +356,8 @@ function cpiAt(cpi: CpiTable, year: number): number {
 
 function HistoryTable({
   series,
+  ranges = [],
+  extras = [],
   band,
   from,
   to,
@@ -261,6 +366,8 @@ function HistoryTable({
   provisionalYear,
 }: {
   series: TrendSeries[];
+  ranges?: TrendRange[];
+  extras?: TrendExtra[];
   band: TrendBand | null;
   from: number;
   to: number;
@@ -281,6 +388,16 @@ function HistoryTable({
                 {s.name}
               </th>
             ))}
+            {ranges.map((r) => (
+              <th key={r.key} className="px-2 py-1.5 text-right font-semibold">
+                {r.name}
+              </th>
+            ))}
+            {extras.map((e) => (
+              <th key={e.name} className="px-2 py-1.5 text-right font-semibold">
+                {e.name}
+              </th>
+            ))}
             {band && <th className="px-2 py-1.5 text-right font-semibold">National median</th>}
           </tr>
         </thead>
@@ -297,6 +414,22 @@ function HistoryTable({
                   <td key={s.key} className="px-2 py-1 text-right">
                     {v === null ? "—" : formatBy(format, v)}
                     {v !== null && s.approx?.includes(y) ? "*" : ""}
+                  </td>
+                );
+              })}
+              {ranges.map((r) => {
+                const [a, b] = [at(r.start, r.lo, y), at(r.start, r.hi, y)];
+                return (
+                  <td key={r.key} className="px-2 py-1 text-right">
+                    {a === null || b === null ? "—" : `${formatBy(format, a)}–${formatBy(format, b)}`}
+                  </td>
+                );
+              })}
+              {extras.map((e) => {
+                const v = at(e.start, e.values, y);
+                return (
+                  <td key={e.name} className="px-2 py-1 text-right">
+                    {v === null ? "—" : formatBy(e.format, v)}
                   </td>
                 );
               })}
@@ -337,11 +470,14 @@ function Group({ title, color, open, onToggle, children, footer }: { title: stri
 export function OverTime(props: OverTimeProps) {
   const { isPublic, history, national, cpi, latest, provisional, sources, colors } = props;
   const ui = useUrlState();
-  const [open, setOpen] = useState({ cost: true, aid: true, admissions: true });
+  const [open, setOpen] = useState({ cost: true, aid: true, admissions: true, scores: true, students: true, outcomes: true });
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- collapse secondary groups once on small screens
-    if (window.matchMedia("(max-width: 639px)").matches) setOpen({ cost: true, aid: false, admissions: false });
+    if (window.matchMedia("(max-width: 639px)").matches) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- collapse secondary groups once on small screens
+      setOpen({ cost: true, aid: false, admissions: false, scores: false, students: false, outcomes: false });
+    }
   }, []);
+  const toggle = (k: keyof typeof open) => () => setOpen((o) => ({ ...o, [k]: !o[k] }));
 
   const earliest = (keys: SeriesKey[]) => Math.min(...keys.map((k) => history.series[k]?.start ?? Infinity));
   const windowFor = (kind: YearKind, keys: SeriesKey[]): [number, number] => {
@@ -358,6 +494,16 @@ export function OverTime(props: OverTimeProps) {
   const costWindow = windowFor("academic", costKeys);
   const aidWindow = windowFor("academic", ["grant_pct", "aid_generosity"]);
   const admWindow = windowFor("fall", ["applicants", "acceptance_rate"]);
+  const scoreWindow = windowFor("fall", ["sat_25", "act_25"]);
+  const sizeWindow = windowFor("fall", ["undergrads"]);
+  const raceWindow = windowFor("fall", ["race_white"]);
+  const gradWindow = windowFor("cohort", ["grad_rate"]);
+  const debtWindow = windowFor("academic", ["median_debt"]);
+  const spans = policySpans(history.series.test_policy);
+  const hasScores = !!(history.series.sat_25 || history.series.act_25);
+  const hasStudents = !!(history.series.undergrads || history.series.race_white);
+  const hasOutcomes = !!(history.series.grad_rate || history.series.median_debt);
+  const debtEnd = history.series.median_debt ? lastYear(history.series.median_debt) : null;
 
   const incomeRows = useMemo(() => {
     const conv = (p: { year: number; value: number } | null) =>
@@ -400,7 +546,7 @@ export function OverTime(props: OverTimeProps) {
         )}
       </div>
 
-      <Group title="Cost" color={colors.value} open={open.cost} onToggle={() => setOpen((o) => ({ ...o, cost: !o.cost }))} footer={
+      <Group title="Cost" color={colors.value} open={open.cost} onToggle={toggle("cost")} footer={
         <div className="space-y-1.5 text-[11px] text-muted-foreground">
           {approxYears.length > 0 && (
             <p>
@@ -447,7 +593,7 @@ export function OverTime(props: OverTimeProps) {
         </div>
       </Group>
 
-      <Group title="Aid" color={colors.value} open={open.aid} onToggle={() => setOpen((o) => ({ ...o, aid: !o.aid }))} footer={sources.aid}>
+      <Group title="Aid" color={colors.value} open={open.aid} onToggle={toggle("aid")} footer={sources.aid}>
         <div className="grid gap-4 lg:grid-cols-2">
           <ChartPanel
             {...common}
@@ -477,7 +623,7 @@ export function OverTime(props: OverTimeProps) {
         </div>
       </Group>
 
-      <Group title="Admissions" color={colors.admissions} open={open.admissions} onToggle={() => setOpen((o) => ({ ...o, admissions: !o.admissions }))} footer={
+      <Group title="Admissions" color={colors.admissions} open={open.admissions} onToggle={toggle("admissions")} footer={
         <div className="space-y-1.5 text-[11px] text-muted-foreground">
           {repeated.length > 0 && (
             <p>
@@ -520,6 +666,115 @@ export function OverTime(props: OverTimeProps) {
           />
         </div>
       </Group>
+
+      {hasScores && (
+        <Group title="Test scores" color={colors.scores} open={open.scores} onToggle={toggle("scores")} footer={sources.scores}>
+          <div className="grid gap-4 lg:grid-cols-2">
+            <ChartPanel
+              {...common}
+              title="SAT, middle 50%"
+              term="sat"
+              kind="fall"
+              format="int"
+              window={scoreWindow}
+              provisionalYear={provisional.fall}
+              specs={[]}
+              ranges={[{ lo: "sat_25", hi: "sat_75", name: "SAT middle 50%", color: colors.scores }]}
+              breaks={SAT_BREAK.map((b) => ({ year: b.year, label: b.label }))}
+              spans={spans}
+              extras={[{ key: "sat_submit", name: "Submitted SAT" }]}
+              note={
+                scoreWindow[0] < SAT_BREAK[0].year
+                  ? `${SAT_BREAK[0].reason} Shaded years: scores weren't required, so ranges describe only students who sent them.`
+                  : "Shaded years: scores weren't required, so ranges describe only students who sent them."
+              }
+            />
+            <ChartPanel
+              {...common}
+              title="ACT, middle 50%"
+              term="act"
+              kind="fall"
+              format="int"
+              window={scoreWindow}
+              provisionalYear={provisional.fall}
+              specs={[]}
+              ranges={[{ lo: "act_25", hi: "act_75", name: "ACT middle 50%", color: colors.scores }]}
+              spans={spans}
+              extras={[{ key: "act_submit", name: "Submitted ACT" }]}
+            />
+          </div>
+        </Group>
+      )}
+
+      {hasStudents && (
+        <Group title="Students" color={colors.size} open={open.students} onToggle={toggle("students")} footer={sources.students}>
+          <div className="grid gap-4 lg:grid-cols-2">
+            <ChartPanel
+              {...common}
+              title="Undergraduates"
+              term="undergrad-enrollment"
+              kind="fall"
+              format="num"
+              window={sizeWindow}
+              headline="undergrads"
+              provisionalYear={null}
+              specs={[{ key: "undergrads", name: "Undergraduates", color: colors.size }]}
+            />
+            {history.series.race_white && (
+              <div className="flex min-w-0 flex-col rounded-3xl border bg-card p-4 sm:p-5">
+                <h4 className="mb-3 flex items-center gap-1 font-display text-base font-bold">
+                  Student body by race and ethnicity <InfoTip term="race-ethnicity" />
+                </h4>
+                <StackedArea100
+                  label="Share of undergraduates by race and ethnicity, by year"
+                  from={Math.max(raceWindow[0], history.series.race_white.start)}
+                  to={raceWindow[1]}
+                  kind="fall"
+                  categories={DEMOGRAPHIC_CATEGORIES.map((c) => {
+                    const sr = history.series[RACE_SERIES[c.key]];
+                    return { key: c.key, label: c.label, color: c.color, start: sr?.start ?? raceWindow[0], values: sr?.values ?? [] };
+                  })}
+                />
+              </div>
+            )}
+          </div>
+        </Group>
+      )}
+
+      {hasOutcomes && (
+        <Group title="Outcomes" color={colors.value} open={open.outcomes} onToggle={toggle("outcomes")} footer={sources.outcomes}>
+          <div className="grid gap-4 lg:grid-cols-2">
+            <ChartPanel
+              {...common}
+              title="Graduated within 6 years"
+              term="graduation-rate"
+              kind="cohort"
+              format="pct"
+              window={gradWindow}
+              headline="grad_rate"
+              provisionalYear={null}
+              specs={[{ key: "grad_rate", name: "Graduated in 6 years", color: colors.value, band: true }]}
+              note="By the year students entered. First-time, full-time students; the profile's headline rate is the Scorecard's broader measure, so it can differ slightly."
+            />
+            <ChartPanel
+              {...common}
+              title="Median debt at graduation"
+              term="median-debt"
+              kind="academic"
+              format="money"
+              window={debtEnd !== null ? [Math.min(debtWindow[0], debtEnd - 10), debtEnd] : debtWindow}
+              headline="median_debt"
+              provisionalYear={null}
+              specs={[{ key: "median_debt", name: "Median debt", color: colors.value, band: true }]}
+              note={debtEnd !== null ? `Ends ${historyYearLabel(debtEnd, "academic")}: newer years aren't published in this series.` : undefined}
+            />
+          </div>
+          <p className="mt-4 max-w-3xl text-sm text-muted-foreground">
+            <b className="text-foreground">Earnings</b> aren&apos;t shown over time: the College Scorecard changed how it measures them, so earlier
+            years aren&apos;t comparable with today&apos;s figure.
+          </p>
+        </Group>
+      )}
     </div>
   );
 }

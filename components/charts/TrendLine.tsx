@@ -17,6 +17,24 @@ export interface TrendSeries {
   approx?: number[];
 }
 
+/** A range drawn as a band with edge lines (SAT/ACT middle 50%). */
+export interface TrendRange {
+  key: string;
+  name: string;
+  color: string;
+  start: number;
+  lo: (number | null)[];
+  hi: (number | null)[];
+}
+
+/** Shown in the tooltip only (e.g. the share who submitted scores). */
+export interface TrendExtra {
+  name: string;
+  start: number;
+  values: (number | null)[];
+  format: FormatKind;
+}
+
 export interface TrendBand {
   label: string;
   start: number;
@@ -43,10 +61,15 @@ function niceTicks(lo: number, hi: number, count = 4): number[] {
  * Year-by-year line chart for the profile's "Over time" section (specs/trends-design.md): one y-axis, 2px lines,
  * gaps left as gaps, an optional national p25–p75 band with a dotted median, a faint band for events (the
  * pandemic year), a hollow point for the provisional latest year, and a crosshair tooltip that lists every series
- * at the hovered year (keyboard: focus the chart, then ← →).
+ * at the hovered year (keyboard: focus the chart, then ← →). Ranges draw as bands; breaks (a definition change)
+ * split every line and draw a dotted rule; spans shade labeled runs of years (e.g. scores not required).
  */
 export function TrendLine({
   series,
+  ranges = [],
+  breaks = [],
+  spans = [],
+  extras = [],
   band,
   from,
   to,
@@ -58,6 +81,10 @@ export function TrendLine({
   label,
 }: {
   series: TrendSeries[];
+  ranges?: TrendRange[];
+  breaks?: { year: number; label: string }[];
+  spans?: { from: number; to: number; label: string }[];
+  extras?: TrendExtra[];
   band?: TrendBand | null;
   from: number;
   to: number;
@@ -73,7 +100,7 @@ export function TrendLine({
   const [ref, width] = useWidth<HTMLDivElement>(560);
   const [hover, setHover] = useState<number | null>(null);
   const height = width < 480 ? 170 : 210;
-  const directLabels = width >= 480 && series.length <= 4;
+  const directLabels = width >= 480 && series.length + ranges.length <= 4;
   const m = { top: 14, right: directLabels ? 104 : 12, bottom: 24, left: 48 };
   const plotW = Math.max(40, width - m.left - m.right);
   const plotH = height - m.top - m.bottom;
@@ -86,6 +113,11 @@ export function TrendLine({
       for (const s of series) {
         const v = at(s.start, s.values, y);
         if (v !== null) vals.push(v);
+      }
+      for (const r of ranges) {
+        const [a, b] = [at(r.start, r.lo, y), at(r.start, r.hi, y)];
+        if (a !== null) vals.push(a);
+        if (b !== null) vals.push(b);
       }
       const b = band ? at(band.start, band.stats, y) : null;
       if (b) vals.push(b[0], b[2]);
@@ -100,17 +132,22 @@ export function TrendLine({
     if (min !== 0) min = min > 0 ? Math.max(0, min - pad) : min - pad;
     const t = niceTicks(min, max);
     return { lo: Math.min(min, t[0]), hi: Math.max(max, t[t.length - 1]), ticks: t };
-  }, [years, series, band]);
+  }, [years, series, ranges, band]);
 
   const x = (year: number) => m.left + (to === from ? plotW / 2 : ((year - from) / (to - from)) * plotW);
   const y = (v: number) => m.top + plotH - ((v - lo) / (hi - lo || 1)) * plotH;
 
-  /** Path pieces over consecutive reported years; isolated points become dots. */
+  const breakYears = new Set(breaks.map((b) => b.year));
+  /** Path pieces over consecutive reported years, split at breaks; isolated points become dots. */
   const pieces = (get: (year: number) => number | null) => {
     const runs: [number, number][][] = [];
     let cur: [number, number][] = [];
     for (const yr of years) {
       const v = get(yr);
+      if (breakYears.has(yr) && cur.length) {
+        runs.push(cur);
+        cur = [];
+      }
       if (v === null) {
         if (cur.length) runs.push(cur);
         cur = [];
@@ -124,6 +161,15 @@ export function TrendLine({
   const xTicks = years.filter((yr) => (to - yr) % xStep === 0);
 
   // Direct labels at each series' last point in view, nudged apart so they never overlap.
+  const rangeEnds = ranges
+    .map((r) => {
+      for (let yr = to; yr >= from; yr--) {
+        const [a, b] = [at(r.start, r.lo, yr), at(r.start, r.hi, yr)];
+        if (a !== null && b !== null) return { s: { key: r.key, name: r.name, color: r.color, dashed: false } as TrendSeries, yr, v: (a + b) / 2, ly: y((a + b) / 2) };
+      }
+      return null;
+    })
+    .filter((e): e is NonNullable<typeof e> => e !== null);
   const ends = series
     .map((s) => {
       for (let yr = to; yr >= from; yr--) {
@@ -132,9 +178,9 @@ export function TrendLine({
       }
       return null;
     })
-    .filter((e): e is NonNullable<typeof e> => e !== null)
-    .sort((a, b) => a.ly - b.ly);
-  for (let i = 1; i < ends.length; i++) ends[i].ly = Math.max(ends[i].ly, ends[i - 1].ly + 13);
+    .filter((e): e is NonNullable<typeof e> => e !== null);
+  const labels = [...ends, ...rangeEnds].sort((a, b) => a.ly - b.ly);
+  for (let i = 1; i < labels.length; i++) labels[i].ly = Math.max(labels[i].ly, labels[i - 1].ly + 13);
 
   const onMove = (e: PointerEvent<SVGRectElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
@@ -185,6 +231,73 @@ export function TrendLine({
               </g>
             );
           })}
+
+        {/* Shaded runs of years (e.g. scores not required) */}
+        {spans
+          .filter((sp) => sp.to >= from && sp.from <= to)
+          .map((sp) => {
+            const half = to === from ? 12 : plotW / (to - from) / 2;
+            const x0 = Math.max(m.left, x(Math.max(sp.from, from)) - half);
+            const x1 = Math.min(m.left + plotW, x(Math.min(sp.to, to)) + half);
+            return (
+              <g key={`${sp.from}${sp.label}`}>
+                <rect x={x0} y={m.top} width={x1 - x0} height={plotH} fill="var(--foreground)" opacity={0.04} />
+                {/* Label only when it fits (~5px a character at 9px); the tooltip names every span. */}
+                {x1 - x0 >= sp.label.length * 5 + 8 && (
+                  <text x={x0 + 4} y={m.top + plotH - 4} className="fill-muted-foreground text-[9px]">
+                    {sp.label}
+                  </text>
+                )}
+              </g>
+            );
+          })}
+
+        {/* Definition changes */}
+        {breaks
+          .filter((b) => b.year > from && b.year <= to)
+          .map((b) => {
+            const bx = (x(b.year - 1) + x(b.year)) / 2;
+            return (
+              <g key={b.year}>
+                <line x1={bx} x2={bx} y1={m.top} y2={m.top + plotH} stroke="var(--foreground)" strokeOpacity={0.5} strokeWidth={1} strokeDasharray="2 3" />
+                <text x={bx + 3} y={m.top + 8} className="fill-foreground text-[9px] font-semibold">
+                  {b.label}
+                </text>
+              </g>
+            );
+          })}
+
+        {/* Ranges */}
+        {ranges.map((r) => {
+          const runs: number[][] = [];
+          let cur: number[] = [];
+          for (const yr of years) {
+            const ok = at(r.start, r.lo, yr) !== null && at(r.start, r.hi, yr) !== null;
+            if ((breakYears.has(yr) || !ok) && cur.length) {
+              runs.push(cur);
+              cur = [];
+            }
+            if (ok) cur.push(yr);
+          }
+          if (cur.length) runs.push(cur);
+          return runs.map((run, i) => {
+            const top = run.map((yr) => `${x(yr)},${y(at(r.start, r.hi, yr)!)}`);
+            const bottom = [...run].reverse().map((yr) => `${x(yr)},${y(at(r.start, r.lo, yr)!)}`);
+            return (
+              <g key={`${r.key}${i}`}>
+                {run.length === 1 ? (
+                  <line x1={x(run[0])} x2={x(run[0])} y1={y(at(r.start, r.lo, run[0])!)} y2={y(at(r.start, r.hi, run[0])!)} stroke={r.color} strokeWidth={4} strokeLinecap="round" />
+                ) : (
+                  <>
+                    <path d={`M${top.join("L")}L${bottom.join("L")}Z`} fill={r.color} opacity={0.18} />
+                    <path d={`M${top.join("L")}`} fill="none" stroke={r.color} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
+                    <path d={`M${[...bottom].reverse().join("L")}`} fill="none" stroke={r.color} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
+                  </>
+                )}
+              </g>
+            );
+          });
+        })}
 
         {/* National middle 50% and median */}
         {band &&
@@ -252,7 +365,7 @@ export function TrendLine({
         ))}
 
         {directLabels &&
-          ends.map((e) => (
+          labels.map((e) => (
             <g key={e.s.key}>
               <line x1={m.left + plotW + 10} x2={m.left + plotW + 20} y1={e.ly} y2={e.ly} stroke={e.s.color} strokeWidth={2} strokeDasharray={e.s.dashed ? "3 2" : undefined} />
               <text x={m.left + plotW + 24} y={e.ly} dy="0.32em" className="fill-foreground text-[10px] font-medium">
@@ -312,6 +425,25 @@ export function TrendLine({
                 </li>
               );
             })}
+            {ranges.map((r) => {
+              const [a, b] = [at(r.start, r.lo, hover), at(r.start, r.hi, hover)];
+              return (
+                <li key={r.key} className="flex items-center gap-1.5">
+                  <span className="h-2 w-3 shrink-0 rounded-sm" style={{ backgroundColor: r.color, opacity: 0.6 }} aria-hidden />
+                  <span className="min-w-0 flex-1 truncate text-muted-foreground">{r.name}</span>
+                  <span className="font-semibold tabular-nums">{a === null || b === null ? "—" : `${formatBy(format, a)}–${formatBy(format, b)}`}</span>
+                </li>
+              );
+            })}
+            {extras.map((e) => {
+              const v = at(e.start, e.values, hover);
+              return (
+                <li key={e.name} className="flex items-center gap-1.5 pl-[18px]">
+                  <span className="min-w-0 flex-1 truncate text-muted-foreground">{e.name}</span>
+                  <span className="font-semibold tabular-nums">{v === null ? "—" : formatBy(e.format, v)}</span>
+                </li>
+              );
+            })}
             {band && (
               <li className="flex items-center gap-1.5">
                 <svg width={12} height={4} aria-hidden className="shrink-0">
@@ -324,6 +456,9 @@ export function TrendLine({
           </ul>
           {series.some((s) => s.approx?.includes(hover)) && <p className="mt-1.5 text-[10px] text-muted-foreground">* Estimated (see note below the charts)</p>}
           {hover === provisionalYear && <p className="mt-1.5 text-[10px] text-muted-foreground">Provisional: NCES revises this year next release.</p>}
+          {spans.filter((sp) => hover >= sp.from && hover <= sp.to).map((sp) => (
+            <p key={sp.label + sp.from} className="mt-1.5 text-[10px] text-muted-foreground">{sp.label}</p>
+          ))}
         </div>
       )}
     </div>

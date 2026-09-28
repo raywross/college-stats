@@ -20,6 +20,22 @@
     "net_price_income_2": {"start":2021,"values":[14469,15059,14171]},
     "net_price_income_3": {"start":2021,"values":[17695,18863,16517]},
     "net_price_income_4": {"start":2021,"values":[20957,23147,20633]},
-    "net_price_income_5": {"start":2021,"values":[22295,24265,23272]}
+    "net_price_income_5": {"start":2021,"values":[22295,24265,23272]},
+    "sat_25": {"start":2022,"values":[940,940,940]},
+    "sat_75": {"start":2022,"values":[1150,1170,1140]},
+    "act_25": {"start":2022,"values":[18,20,17]},
+    "act_75": {"start":2022,"values":[25,26,25]},
+    "sat_submit": {"start":2022,"values":[0.15,0.16,0.21]},
+    "act_submit": {"start":2022,"values":[0.03,0.02,0.03]},
+    "test_policy": {"start":2022,"values":[5,5,5]},
+    "undergrads": {"start":2022,"values":[9203,8134,7451]},
+    "race_white": {"start":2022,"values":[0.7759,0.7434,0.7139]},
+    "race_asian": {"start":2022,"values":[0.0112,0.0096,0.0089]},
+    "race_hispanic": {"start":2022,"values":[0.0393,0.0397,0.0447]},
+    "race_black": {"start":2022,"values":[0.0896,0.0805,0.0836]},
+    "race_two_or_more": {"start":2022,"values":[0.0343,0.0312,0.0323]},
+    "race_international": {"start":2022,"values":[0.0114,0.0119,0.0141]},
+    "race_other": {"start":2022,"values":[0.0381,0.0836,0.1025]},
+    "grad_rate": {"start":2016,"values":[0.4813,0.5103,0.5188]}
   }
 }

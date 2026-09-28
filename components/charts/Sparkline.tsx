@@ -23,6 +23,7 @@ export function Sparkline({
   kind,
   format,
   height = 64,
+  compact = false,
   label,
 }: {
   series: SparkSeries[];
@@ -30,15 +31,17 @@ export function Sparkline({
   kind: YearKind;
   format: FormatKind;
   height?: number;
+  /** Tiny inline size (60×16 beside a headline): thinner line, smaller dots. */
+  compact?: boolean;
   label: string;
 }) {
-  const [ref, width] = useWidth<HTMLDivElement>(240);
+  const [ref, width] = useWidth<HTMLDivElement>(compact ? 60 : 240);
   const [hover, setHover] = useState<number | null>(null);
   const n = Math.max(...series.map((s) => s.values.length));
   const all = series.flatMap((s) => s.values).filter((v): v is number => v !== null);
   const lo = Math.min(...all);
   const hi = Math.max(...all);
-  const pad = 6;
+  const pad = compact ? 3 : 6;
   const x = (i: number) => pad + (n <= 1 ? 0 : (i / (n - 1)) * (width - pad * 2));
   const y = (v: number) => pad + (height - pad * 2) * (1 - (v - lo) / (hi - lo || 1));
 
@@ -70,14 +73,14 @@ export function Sparkline({
                   d={`M${r.join("L")}`}
                   fill="none"
                   stroke={s.color}
-                  strokeWidth={2}
+                  strokeWidth={compact ? 1.5 : 2}
                   strokeDasharray={s.dashed ? "5 3" : undefined}
                   strokeLinecap="round"
                   strokeLinejoin="round"
                 />
               ))}
               {ends.map(([v, i]) => (
-                <circle key={i} cx={x(i)} cy={y(v!)} r={4} fill={s.color} stroke="var(--card)" strokeWidth={2} />
+                <circle key={i} cx={x(i)} cy={y(v!)} r={compact ? 2.5 : 4} fill={s.color} stroke="var(--card)" strokeWidth={compact ? 1 : 2} />
               ))}
             </g>
           );

@@ -14,6 +14,16 @@
     "net_price_income_1": {"start":2012,"values":[13887,14961,10915,12874,15036,15036,16914,15398,10921]},
     "net_price_income_2": {"start":2012,"values":[13683,null,null,null,15036]},
     "net_price_income_3": {"start":2018,"values":[11998]},
-    "net_price_income_4": {"start":2020,"values":[15448]}
+    "net_price_income_4": {"start":2020,"values":[15448]},
+    "test_policy": {"start":2016,"values":[3,3,3,3,3]},
+    "undergrads": {"start":2013,"values":[109,73,104,99,85,84,121,88,68,100,72,68]},
+    "race_white": {"start":2013,"values":[0,0,0,0,0,0,0,0,0,0,0,0]},
+    "race_asian": {"start":2013,"values":[0.7339,0.9452,0.5673,0.6465,0.6941,0.6548,0.5868,0.7045,0.9706,0.81,0.4583,0.4412]},
+    "race_hispanic": {"start":2013,"values":[0,0,0.0096,0.0101,0.0118,0.0119,0.0083,0,0.0294,0.19,0,0.2647]},
+    "race_black": {"start":2013,"values":[0,0,0,0,0,0,0,0,0,0,0,0]},
+    "race_two_or_more": {"start":2013,"values":[0,0.0137,0,0,0,0,0,0,0,0,0,0]},
+    "race_international": {"start":2013,"values":[0.2661,0,0.3846,0.3333,0.2706,0.3214,0.3967,0.2841,0,0,0.5417,0.2941]},
+    "race_other": {"start":2013,"values":[0,0.0411,0.0385,0.0101,0.0235,0.0119,0.0083,0.0114,0,0,0,0]},
+    "grad_rate": {"start":2007,"values":[1,0.4615,null,null,null,null,0.8108,0.5882,0.5556,0.8333,0,1]}
   }
 }

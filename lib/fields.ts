@@ -136,6 +136,19 @@ export const FIELDS = {
   "aid.by_income": sfa("Federal aid by family income"),
   "aid.cds": { label: "Need-based and merit aid (Common Data Set H2/H2A)", topic: "aid", source: "cds", vintage: null },
 
+  /* ---- History summary (data/history/, `npm run sync-history`) ---- */
+  trends: {
+    label: "10-year changes",
+    topic: "cost",
+    source: "ipeds-ic",
+    // Citations expand to the inputs' sources and years; this is only the fallback release.
+    vintage: "ipeds-ic",
+    derived: {
+      formula: "Change over the last 10 years of each college's history; money after inflation (CPI-U), shares in points",
+      inputs: ["cost.avg_paid_all", "cost.breakdown", "admissions.acceptance_rate", "admissions.applicants", "demographics.undergrad_enrollment", "aid.grant_pct"],
+    },
+  },
+
   /* ---- Computed at render time (lib/metrics.ts) ---- */
   "derived.sat_composite": {
     ...adm("SAT total, middle 50%"),

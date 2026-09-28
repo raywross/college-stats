@@ -15,6 +15,16 @@
     "aided_net_price": {"start":2014,"values":[887,15628,17108,null,null,null,null,15215,16556,13324]},
     "grant_pct": {"start":2014,"values":[1,0.963,0.7031,null,null,null,0.6749,0.6895,0.6357,0.7778]},
     "grant_avg": {"start":2014,"values":[23563,14322,12742,null,null,null,14518,17735,18394,22522]},
-    "aid_generosity": {"start":2015,"values":[0.4605,0.2991,null,null,null,null,0.3711,0.3346,0.4728]}
+    "aid_generosity": {"start":2015,"values":[0.4605,0.2991,null,null,null,null,0.3711,0.3346,0.4728]},
+    "test_policy": {"start":2015,"values":[3,3,3,null,null,null,3,3,3,3]},
+    "undergrads": {"start":2021,"values":[604,613,603,637]},
+    "race_white": {"start":2021,"values":[0.0795,0.0701,0.0464,0.044]},
+    "race_asian": {"start":2021,"values":[0.0348,0.0228,0.0199,0.0173]},
+    "race_hispanic": {"start":2021,"values":[0.0033,0.0065,0.0017,0.0031]},
+    "race_black": {"start":2021,"values":[0,0,0,0]},
+    "race_two_or_more": {"start":2021,"values":[0.0132,0.0098,0.0033,0.0047]},
+    "race_international": {"start":2021,"values":[0.8692,0.8891,0.9237,0.2088]},
+    "race_other": {"start":2021,"values":[0,0.0016,0.005,0.7221]},
+    "grad_rate": {"start":2015,"values":[0.8068,0.8313,0.8883]}
   }
 }

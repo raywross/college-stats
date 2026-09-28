@@ -10,6 +10,18 @@
     "tuition_out_of_state": {"start":2021,"values":[49793,52685,56501]},
     "aided_net_price": {"start":2021,"values":[68994,69431,72723]},
     "grant_pct": {"start":2020,"values":[0.4299,0.8857,0.8636,1]},
-    "grant_avg": {"start":2020,"values":[6223,7031,4954,8646]}
+    "grant_avg": {"start":2020,"values":[6223,7031,4954,8646]},
+    "sat_submit": {"start":2021,"values":[0,0]},
+    "act_submit": {"start":2021,"values":[0,0]},
+    "test_policy": {"start":2021,"values":[5,5,3,3]},
+    "undergrads": {"start":2021,"values":[191,147,69,37]},
+    "race_white": {"start":2021,"values":[0.1466,0.1361,0.1884,0.1892]},
+    "race_asian": {"start":2021,"values":[0.7016,0.6735,0.6232,0.5135]},
+    "race_hispanic": {"start":2021,"values":[0.0052,0.0068,0,0.027]},
+    "race_black": {"start":2021,"values":[0.0209,0.0408,0.058,0.0811]},
+    "race_two_or_more": {"start":2021,"values":[0.0785,0.0884,0.058,0.027]},
+    "race_international": {"start":2021,"values":[0,0.0068,0,0.027]},
+    "race_other": {"start":2021,"values":[0.0471,0.0476,0.0725,0.1351]},
+    "grad_rate": {"start":2015,"values":[1,0.76,0.8788,1]}
   }
 }

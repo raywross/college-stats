@@ -3,6 +3,14 @@
   "series": {
     "applicants": {"start":2002,"values":[0]},
     "admitted": {"start":2002,"values":[0]},
-    "enrolled": {"start":2002,"values":[0]}
+    "enrolled": {"start":2002,"values":[0]},
+    "undergrads": {"start":2017,"values":[5,14,29,30,37,40,36,39]},
+    "race_white": {"start":2017,"values":[0.6,0.5714,0.5172,0.2333,0.2162,0.5,0.5,0.4103]},
+    "race_asian": {"start":2017,"values":[0,0,0,0,0,0.025,0,0.0513]},
+    "race_hispanic": {"start":2017,"values":[0,0.1429,0.069,0.1333,0.1081,0.075,0.0833,0.2564]},
+    "race_black": {"start":2017,"values":[0.4,0.1429,0.4138,0.4,0.2703,0.375,0.2778,0.1795]},
+    "race_two_or_more": {"start":2017,"values":[0,0,0,0.1,0.0811,0,0.0278,0.0256]},
+    "race_international": {"start":2017,"values":[0,0,0,0,0,0,0,0]},
+    "race_other": {"start":2017,"values":[0,0.1428,0,0.1333,0.3243,0.025,0.1111,0.0769]}
   }
 }

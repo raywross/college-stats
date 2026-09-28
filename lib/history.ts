@@ -14,12 +14,20 @@ import type { DatasetMeta, SourceKey } from "./types";
 /* ------------------------------------------------------------------ */
 
 /**
- * How a series' `year` reads. `year` is always the calendar year the academic year starts (the fall term):
- * fall 2024 admissions and 2024–25 prices are both 2024.
+ * How a series' `year` reads. `year` is always a fall term: fall 2024 admissions and 2024–25 prices are both 2024,
+ * and a graduation rate is stored at the fall its students entered ("cohort": the class that entered fall 2018).
  */
-export type YearKind = "fall" | "academic";
+export type YearKind = "fall" | "academic" | "cohort";
 
-export type SeriesUnit = "usd" | "count" | "share";
+/** "score": SAT or ACT points. "code": a category stored as a number (test policy; see TEST_POLICY_CODES). */
+export type SeriesUnit = "usd" | "count" | "share" | "score" | "code";
+
+/** A definition change: never draw a line or measure a change across it. */
+export interface SeriesBreak {
+  year: number;
+  label: string;
+  reason: string;
+}
 
 export interface SeriesDef {
   label: string;
@@ -35,6 +43,7 @@ export interface SeriesDef {
   families: readonly HistoryFamily[];
   /** Can be negative: net price goes below zero when grants exceed the cost of attendance. */
   signed?: true;
+  breaks?: readonly SeriesBreak[];
 }
 
 /**
@@ -46,11 +55,32 @@ export const HISTORY_FAMILIES = {
   adm: { source: "ipeds-adm", kind: "fall", files: "ADM{year}" },
   prices: { source: "ipeds-ic", kind: "academic", files: "IC{year}_AY, then COST1_{year+1}" },
   sfa: { source: "ipeds-sfa", kind: "academic", files: "SFA{yy}{yy+1}, plus COST2_{year+1} since NCES moved residency and net price there" },
-} as const satisfies Record<string, { source: SourceKey; kind: YearKind; files: string }>;
+  // College Scorecard API, year-prefixed fields (not files): years can have gaps, so they aren't checked as consecutive.
+  "scorecard-enrollment": { source: "scorecard", kind: "fall", files: "API fields {year}.student.size and {year}.student.demographics.race_ethnicity.*", api: true, citeAs: "enrollment" },
+  "scorecard-completion": { source: "scorecard", kind: "cohort", files: "API field {year+6}.completion.completion_rate_4yr_150nt", api: true, citeAs: "graduation by entering class" },
+  "scorecard-debt": { source: "scorecard", kind: "academic", files: "API field {year}.aid.median_debt.completers.overall", api: true, citeAs: "median debt" },
+} as const satisfies Record<string, { source: SourceKey; kind: YearKind; files: string; api?: true; citeAs?: string }>;
 
 export type HistoryFamily = keyof typeof HISTORY_FAMILIES;
 
 const ADMISSIONS: readonly HistoryFamily[] = ["ic-admissions", "adm"];
+const ENROLLMENT: readonly HistoryFamily[] = ["scorecard-enrollment"];
+
+/**
+ * The redesigned SAT (first given March 2016) is on a different scale; colleges switched with the class entering fall
+ * 2017 (the same colleges' midpoints jumped a median of 65 points that year and were flat in every other year).
+ */
+export const SAT_BREAK: readonly SeriesBreak[] = [
+  { year: 2017, label: "New SAT", reason: "The SAT was redesigned in 2016; earlier scores are on the old scale and aren't comparable." },
+];
+
+/** Test policy (IPEDS ADMCON7) as stored: "required" means the same in every era; the others shifted (see trends-data.md). */
+export const TEST_POLICY_CODES = { required: 1, recommended: 2, "not-considered": 3, considered: 5 } as const;
+/**
+ * Code 3 meant "neither required nor recommended" until fall 2021; from fall 2022 (when "recommended" was dropped) it
+ * means test scores aren't considered at all.
+ */
+export const TEST_BLIND_FROM = 2022;
 
 export const SERIES = {
   applicants: { label: "Applicants", short: "Applied", field: "admissions.applicants", term: "applicants", unit: "count", kind: "fall", format: "compact", families: ADMISSIONS },
@@ -73,11 +103,40 @@ export const SERIES = {
   net_price_income_3: { label: "Net price, family income $48–75K", short: "$48–75K", field: "cost.net_price_by_income", term: "net-price-by-income", unit: "usd", kind: "academic", format: "money", families: ["sfa"], signed: true },
   net_price_income_4: { label: "Net price, family income $75–110K", short: "$75–110K", field: "cost.net_price_by_income", term: "net-price-by-income", unit: "usd", kind: "academic", format: "money", families: ["sfa"], signed: true },
   net_price_income_5: { label: "Net price, family income $110K+", short: "$110K+", field: "cost.net_price_by_income", term: "net-price-by-income", unit: "usd", kind: "academic", format: "money", families: ["sfa"], signed: true },
+  sat_25: { label: "SAT total, 25th percentile", short: "SAT 25th", field: "derived.sat_composite", term: "sat", unit: "score", kind: "fall", format: "int", families: ADMISSIONS, breaks: SAT_BREAK },
+  sat_75: { label: "SAT total, 75th percentile", short: "SAT 75th", field: "derived.sat_composite", term: "sat", unit: "score", kind: "fall", format: "int", families: ADMISSIONS, breaks: SAT_BREAK },
+  act_25: { label: "ACT composite, 25th percentile", short: "ACT 25th", field: "admissions.act_composite_25_75", term: "act", unit: "score", kind: "fall", format: "int", families: ADMISSIONS },
+  act_75: { label: "ACT composite, 75th percentile", short: "ACT 75th", field: "admissions.act_composite_25_75", term: "act", unit: "score", kind: "fall", format: "int", families: ADMISSIONS },
+  sat_submit: { label: "Share submitting SAT", short: "Submitted SAT", field: "admissions.test_submission_rate_sat", term: "test-submission", unit: "share", kind: "fall", format: "pct", families: ADMISSIONS },
+  act_submit: { label: "Share submitting ACT", short: "Submitted ACT", field: "admissions.test_submission_rate_act", term: "test-submission", unit: "share", kind: "fall", format: "pct", families: ADMISSIONS },
+  test_policy: { label: "Test policy", short: "Test policy", field: "admissions.test_policy", term: "test-policy", unit: "code", kind: "fall", format: "int", families: ADMISSIONS },
+  undergrads: { label: "Undergraduates", short: "Undergrads", field: "demographics.undergrad_enrollment", term: "undergrad-enrollment", unit: "count", kind: "fall", format: "compact", families: ENROLLMENT },
+  race_white: { label: "White", short: "White", field: "demographics.racial_diversity", term: "race-ethnicity", unit: "share", kind: "fall", format: "pct", families: ENROLLMENT },
+  race_asian: { label: "Asian", short: "Asian", field: "demographics.racial_diversity", term: "race-ethnicity", unit: "share", kind: "fall", format: "pct", families: ENROLLMENT },
+  race_hispanic: { label: "Hispanic/Latino", short: "Hispanic/Latino", field: "demographics.racial_diversity", term: "race-ethnicity", unit: "share", kind: "fall", format: "pct", families: ENROLLMENT },
+  race_black: { label: "Black", short: "Black", field: "demographics.racial_diversity", term: "race-ethnicity", unit: "share", kind: "fall", format: "pct", families: ENROLLMENT },
+  race_two_or_more: { label: "Two or more", short: "Two or more", field: "demographics.racial_diversity", term: "race-ethnicity", unit: "share", kind: "fall", format: "pct", families: ENROLLMENT },
+  race_international: { label: "International", short: "International", field: "demographics.racial_diversity", term: "race-ethnicity", unit: "share", kind: "fall", format: "pct", families: ENROLLMENT },
+  race_other: { label: "Other/unknown", short: "Other/unknown", field: "demographics.racial_diversity", term: "race-ethnicity", unit: "share", kind: "fall", format: "pct", families: ENROLLMENT },
+  grad_rate: { label: "Graduated within 6 years", short: "Graduated in 6 years", field: "outcomes.graduation_rate", term: "graduation-rate", unit: "share", kind: "cohort", format: "pct", families: ["scorecard-completion"] },
+  median_debt: { label: "Median debt at graduation", short: "Median debt", field: "outcomes.median_debt", term: "median-debt", unit: "usd", kind: "academic", format: "money", families: ["scorecard-debt"] },
 } as const satisfies Record<string, SeriesDef>;
 
 export type SeriesKey = keyof typeof SERIES;
 export const SERIES_KEYS = Object.keys(SERIES) as SeriesKey[];
 export const NET_PRICE_BANDS = ["net_price_income_1", "net_price_income_2", "net_price_income_3", "net_price_income_4", "net_price_income_5"] as const;
+/** Race/ethnicity series in the site's fixed category order (lib/metrics.ts DEMOGRAPHIC_CATEGORIES). */
+export const RACE_SERIES = {
+  white: "race_white",
+  asian: "race_asian",
+  hispanic: "race_hispanic",
+  black: "race_black",
+  two_or_more: "race_two_or_more",
+  international: "race_international",
+  other: "race_other",
+} as const satisfies Record<string, SeriesKey>;
+/** Race/ethnicity history starts with fall 2010, when the new federal categories became required. */
+export const RACE_FROM = 2010;
 
 export function isSeriesKey(k: string): k is SeriesKey {
   return Object.prototype.hasOwnProperty.call(SERIES, k);
@@ -188,20 +247,31 @@ export interface TrendFacts {
     /** Applications per enrolled first-year, per year, summed over the panel. */
     perSeat: (number | null)[];
   } | null;
+  /** Share of colleges requiring the SAT or ACT, the last fall before the pandemic vs the latest (fixed panel). */
+  testRequired: {
+    from: number;
+    to: number;
+    n: number;
+    requiredFrom: number;
+    requiredTo: number;
+    /** Per fall from `from` to `to`. */
+    byYear: (number | null)[];
+  } | null;
 }
 
 /* ------------------------------------------------------------------ */
 /* Years                                                               */
 /* ------------------------------------------------------------------ */
 
-/** "Fall 2024" or "2023–24". */
+/** "Fall 2024", "2023–24", or "Entered fall 2018". */
 export function historyYearLabel(year: number, kind: YearKind): string {
+  if (kind === "cohort") return `Entered fall ${year}`;
   return kind === "fall" ? `Fall ${year}` : `${year}–${String(year + 1).slice(2)}`;
 }
 
 /** Compact axis label: "2024" or "’23–24". */
 export function axisYearLabel(year: number, kind: YearKind): string {
-  return kind === "fall" ? String(year) : `’${String(year).slice(2)}–${String(year + 1).slice(2)}`;
+  return kind === "academic" ? `’${String(year).slice(2)}–${String(year + 1).slice(2)}` : String(year);
 }
 
 export function valueAt(s: Series | undefined, year: number): number | null {
@@ -283,6 +353,9 @@ export function changeOver(key: SeriesKey, s: Series | undefined, window: [numbe
   const end = valueAt(s, window[1]);
   const start = firstPointFrom(s, window[0]);
   if (end === null || !start || start.year > window[0] + 2 || start.year >= window[1]) return null;
+  // Never measure across a definition change (e.g. the SAT redesign).
+  if (((def as SeriesDef).breaks ?? []).some((b) => b.year > start.year && b.year <= window[1])) return null;
+  if (def.unit === "code") return null;
   const measure = def.unit === "share" ? "points" : "ratio";
   let from = start.value;
   if (def.unit === "usd") {
@@ -310,6 +383,7 @@ export const NOTABLE_FLOORS: Partial<Record<SeriesKey, number>> = {
   acceptance_rate: 0.03,
   applicants: 0.25,
   grant_pct: 0.05,
+  undergrads: 0.1,
 };
 
 /** Beyond the national 25th/75th percentile of the same change, and past the floor. */
@@ -322,7 +396,7 @@ export function isNotable(c: Change, national: NationalHistory): boolean {
 }
 
 /** Changes the Overview "10 years" tile may add after average cost, in priority order (specs/trends-design.md). */
-export const TILE_CANDIDATES: readonly SeriesKey[] = ["full_price", "acceptance_rate", "applicants", "grant_pct"];
+export const TILE_CANDIDATES: readonly SeriesKey[] = ["full_price", "acceptance_rate", "applicants", "undergrads", "grant_pct"];
 
 /**
  * The profile's "10 years" tile: average total cost over the default window (always shown when available), then up
@@ -339,6 +413,22 @@ export function tenYearSummary(
     .filter((c): c is Change => c !== null && isNotable(c, national))
     .slice(0, 2);
   return { avgCost: change("avg_paid_all"), notable };
+}
+
+/** The measures summarized into school.trends (data/schools.json). */
+export const TREND_KEYS = ["avg_paid_all", "full_price", "acceptance_rate", "applicants", "undergrads", "grant_pct"] as const satisfies readonly SeriesKey[];
+
+/** A college's 10-year changes for school.trends; empty when none can be measured. */
+export function trendSummary(h: SchoolHistory, cpi: CpiTable, meta: Pick<HistoryMeta, "latest">): Partial<Record<(typeof TREND_KEYS)[number], { since: number; from: number; to: number; change: number }>> {
+  const out: Partial<Record<(typeof TREND_KEYS)[number], { since: number; from: number; to: number; change: number }>> = {};
+  for (const k of TREND_KEYS) {
+    const c = changeOver(k, h.series[k], defaultWindow(meta, SERIES[k].kind), cpi);
+    if (!c) continue;
+    // `|| 0` turns -0 into 0, which is how JSON stores it.
+    const r = (v: number) => (SERIES[k].unit === "share" ? Math.round(v * 10_000) / 10_000 : Math.round(v)) || 0;
+    out[k] = { since: c.from.year, from: r(c.from.value), to: r(c.to.value), change: Math.round(c.change * 10_000) / 10_000 || 0 };
+  }
+  return out;
 }
 
 /** "+12%", "−3 pts": signed, with a true minus sign. */
@@ -370,21 +460,29 @@ export const IPEDS_DATA_FILES_URL = "https://nces.ed.gov/ipeds/datacenter/DataFi
  * The distinct sources behind a set of series, with the years each covered. Reads only data/history/meta.json.
  * `range` limits it to the years a view uses (e.g. a 10-year fact cites only the files in those years).
  */
-export function historySources(keys: readonly SeriesKey[], hmeta: HistoryMeta, meta: DatasetMeta, range?: [number, number]): HistorySource[] {
+/** Years to cite: one range for all, or one per year kind (a view mixing fall and academic windows). */
+export type HistoryRange = [number, number] | Partial<Record<YearKind, [number, number]>>;
+
+export function historySources(keys: readonly SeriesKey[], hmeta: HistoryMeta, meta: DatasetMeta, range?: HistoryRange): HistorySource[] {
   const families = [...new Set(keys.flatMap((k) => SERIES[k].families))];
   const out: HistorySource[] = [];
   for (const f of families) {
-    const files = hmeta.files[f]?.filter((x) => !range || (x.year >= range[0] && x.year <= range[1]));
+    const r = !range ? null : Array.isArray(range) ? range : range[HISTORY_FAMILIES[f].kind] ?? null;
+    const files = hmeta.files[f]?.filter((x) => !r || (x.year >= r[0] && x.year <= r[1]));
     if (!files?.length) continue;
     const fam = HISTORY_FAMILIES[f];
     const info = meta.sources[fam.source];
     const first = files[0].year;
     const last = files[files.length - 1].year;
+    const qualifier = f === "ic-admissions" ? "admissions section" : "citeAs" in fam ? fam.citeAs : null;
     out.push({
       key: fam.source,
-      label: f === "ic-admissions" ? `${info.label} (admissions section)` : info.label,
+      label: qualifier ? `${info.label} (${qualifier})` : info.label,
       publisher: info.publisher,
-      years: `${historyYearLabel(first, fam.kind)} to ${historyYearLabel(last, fam.kind)}`,
+      years:
+        fam.kind === "cohort"
+          ? `classes entering fall ${first} to fall ${last}`
+          : `${historyYearLabel(first, fam.kind)} to ${historyYearLabel(last, fam.kind)}`,
       url: IPEDS_DATA_FILES_URL,
       files: fam.files,
     });
@@ -412,9 +510,17 @@ export function validateShard(h: SchoolHistory, knownIds?: ReadonlySet<string>):
     }
     if (s.values[0] === null || s.values[s.values.length - 1] === null) errors.push(`${where}: ${k} isn't trimmed to reported years`);
     const def: SeriesDef = SERIES[k];
+    const codes: readonly number[] = Object.values(TEST_POLICY_CODES);
     for (const v of s.values) {
       if (v === null) continue;
-      if (typeof v !== "number" || !Number.isFinite(v) || (v < 0 && !def.signed) || (def.unit === "share" && v > 1)) {
+      if (
+        typeof v !== "number" ||
+        !Number.isFinite(v) ||
+        (v < 0 && !def.signed) ||
+        (def.unit === "share" && v > 1) ||
+        (def.unit === "code" && !codes.includes(v)) ||
+        (def.unit === "score" && v > 1600)
+      ) {
         errors.push(`${where}: ${k} has an impossible value ${v}`);
         break;
       }
@@ -429,8 +535,9 @@ export function validateHistoryMeta(hmeta: HistoryMeta, meta: DatasetMeta): stri
   for (const f of Object.keys(HISTORY_FAMILIES) as HistoryFamily[]) {
     if (!(HISTORY_FAMILIES[f].source in meta.sources)) errors.push(`history: family ${f} cites unknown source ${HISTORY_FAMILIES[f].source}`);
     const files = hmeta.files[f];
+    const api = "api" in HISTORY_FAMILIES[f];
     if (!files?.length) errors.push(`history meta: no files recorded for ${f}`);
-    else if (files.some((x, i) => i > 0 && x.year !== files[i - 1].year + 1)) errors.push(`history meta: ${f} years aren't consecutive`);
+    else if (!api && files.some((x, i) => i > 0 && x.year !== files[i - 1].year + 1)) errors.push(`history meta: ${f} years aren't consecutive`);
   }
   return errors;
 }

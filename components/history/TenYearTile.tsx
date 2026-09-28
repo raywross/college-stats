@@ -8,6 +8,7 @@ const LABELS: Partial<Record<Change["key"], string>> = {
   full_price: "Full price",
   acceptance_rate: "Acceptance rate",
   applicants: "Applications",
+  undergrads: "Undergrads",
   grant_pct: "Share with grants",
 };
 

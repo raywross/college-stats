@@ -43,6 +43,24 @@ const OPEN = 9999;
 
 export const ADMISSIONS_VALUES = ["applicants", "admitted", "enrolled"] as const;
 
+/**
+ * Scores, submission rates, and test policy: the same column names in IC2001–IC2013 and ADM2014 on (probed
+ * 2026-09-28). SATVR is Critical Reading before fall 2017 and Evidence-Based Reading & Writing after (see SAT_BREAK).
+ * ADMCON7: 1 required, 2 recommended, 3 neither (from fall 2022: not considered), 5 considered but not required
+ * (from fall 2016); 4 (don't know) and negatives are treated as not reported.
+ */
+const SCORES: Record<string, ColumnSpec> = {
+  satvr25: "SATVR25",
+  satvr75: "SATVR75",
+  satmt25: "SATMT25",
+  satmt75: "SATMT75",
+  act25: "ACTCM25",
+  act75: "ACTCM75",
+  satpct: "SATPCT",
+  actpct: "ACTPCT",
+  policy: "ADMCON7",
+};
+
 export const ERAS: readonly Era[] = [
   {
     family: "ic-admissions",
@@ -52,6 +70,7 @@ export const ERAS: readonly Era[] = [
       applicants: { sum: ["APPLCNM", "APPLCNW"] },
       admitted: { sum: ["ADMSSNM", "ADMSSNW"] },
       enrolled: { sum: ["ENRLFTM", "ENRLFTW", "ENRLPTM", "ENRLPTW"] },
+      ...SCORES,
     },
     required: () => [],
   },
@@ -59,14 +78,14 @@ export const ERAS: readonly Era[] = [
     family: "ic-admissions",
     years: [2002, 2013],
     files: (y) => [{ name: `IC${y}` }],
-    values: { applicants: "APPLCN", admitted: "ADMSSN", enrolled: "ENRLT" },
+    values: { applicants: "APPLCN", admitted: "ADMSSN", enrolled: "ENRLT", ...SCORES },
     required: () => [],
   },
   {
     family: "adm",
     years: [2014, OPEN],
     files: (y) => [{ name: `ADM${y}` }],
-    values: { applicants: "APPLCN", admitted: "ADMSSN", enrolled: "ENRLT" },
+    values: { applicants: "APPLCN", admitted: "ADMSSN", enrolled: "ENRLT", ...SCORES },
     required: () => [],
   },
   {

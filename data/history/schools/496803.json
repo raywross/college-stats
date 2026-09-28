@@ -10,6 +10,15 @@
     "tuition_out_of_state": {"start":2021,"values":[16500,16500,16500]},
     "aided_net_price": {"start":2022,"values":[9390]},
     "grant_pct": {"start":2022,"values":[0.9375]},
-    "grant_avg": {"start":2022,"values":[10810]}
+    "grant_avg": {"start":2022,"values":[10810]},
+    "test_policy": {"start":2022,"values":[3,3]},
+    "undergrads": {"start":2022,"values":[18,29,34]},
+    "race_white": {"start":2022,"values":[0,0,0.0294]},
+    "race_asian": {"start":2022,"values":[0,0.069,0.0294]},
+    "race_hispanic": {"start":2022,"values":[0.2778,0.2759,0.4118]},
+    "race_black": {"start":2022,"values":[0.6111,0.5517,0.3529]},
+    "race_two_or_more": {"start":2022,"values":[0.1111,0.1034,0.1765]},
+    "race_international": {"start":2022,"values":[0,0,0]},
+    "race_other": {"start":2022,"values":[0,0,0]}
   }
 }

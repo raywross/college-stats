@@ -4,11 +4,16 @@
  * fixture rows. `scripts/sync-history.mts` does the fetching and writing.
  */
 import type { School } from "../../lib/types.ts";
+import { FIELDS, isFieldPath, type FieldPath } from "../../lib/fields.ts";
 import type { IpedsRow } from "../../lib/derive.ts";
-import { acceptanceRate, computePrices, netPriceByIncome, toAid, yieldOf } from "../../lib/derive.ts";
+import { acceptanceRate, computePrices, netPriceByIncome, raceShares, toAid, yieldOf } from "../../lib/derive.ts";
 import {
   NET_PRICE_BANDS,
+  RACE_FROM,
+  RACE_SERIES,
   SERIES,
+  TEST_POLICY_CODES,
+  latestPoint,
   SERIES_KEYS,
   changeOver,
   historyYearLabel,
@@ -22,9 +27,11 @@ import {
   type Series,
   type SeriesKey,
   type TrendFacts,
+  type YearKind,
   type YearStats,
 } from "../../lib/history.ts";
 import { readSpec, type ColumnSpec, type Era, type FileChoice } from "./registry.mts";
+import { COHORT_LAG, type ScorecardRow } from "./scorecard.mts";
 
 /** One year of one family, read. */
 export interface YearTable {
@@ -41,7 +48,11 @@ export interface Inputs {
   admissions: readonly YearTable[];
   prices: readonly YearTable[];
   sfa: readonly YearTable[];
+  /** College Scorecard year-prefixed values by unit ID (scripts/history/scorecard.mts), and the years requested. */
+  scorecard?: { rows: ReadonlyMap<string, ScorecardRow>; first: number; last: number };
 }
+
+const VALID_POLICY = new Set<number>(Object.values(TEST_POLICY_CODES));
 
 const round4 = (v: number) => Math.round(v * 10_000) / 10_000;
 
@@ -97,6 +108,41 @@ export function buildCollege(school: Pick<School, "unit_id" | "type">, inputs: I
     // Same rule as the profile's yield (lib/metrics.ts yieldRate).
     const y = yieldOf(admitted, enrolled);
     put(raw, "yield", t.year, y === null ? null : round4(y));
+
+    // Scores as the profile computes them: SAT total = Reading/Writing + Math at each percentile, only when all four
+    // are reported (lib/metrics.ts satComposite); ACT when both percentiles are.
+    const v = (k: string) => (t.values![k] ? readSpec(row, t.values![k]) : null);
+    const [r25, r75, m25, m75] = [v("satvr25"), v("satvr75"), v("satmt25"), v("satmt75")];
+    if (r25 !== null && r75 !== null && m25 !== null && m75 !== null) {
+      put(raw, "sat_25", t.year, r25 + m25);
+      put(raw, "sat_75", t.year, r75 + m75);
+    }
+    const [a25, a75] = [v("act25"), v("act75")];
+    if (a25 !== null && a75 !== null) {
+      put(raw, "act_25", t.year, a25);
+      put(raw, "act_75", t.year, a75);
+    }
+    const satPct = v("satpct");
+    const actPct = v("actpct");
+    put(raw, "sat_submit", t.year, satPct === null ? null : satPct / 100);
+    put(raw, "act_submit", t.year, actPct === null ? null : actPct / 100);
+    const policy = v("policy");
+    if (policy !== null && VALID_POLICY.has(policy)) put(raw, "test_policy", t.year, policy);
+  }
+
+  const sc = inputs.scorecard?.rows.get(id);
+  if (sc && inputs.scorecard) {
+    for (let y = inputs.scorecard.first; y <= inputs.scorecard.last; y++) {
+      const size = sc[`${y}.student.size`];
+      if (size && size > 0) put(raw, "undergrads", y, size);
+      if (y >= RACE_FROM) {
+        const shares = raceShares((f) => sc[`${y}.student.demographics.race_ethnicity.${f}`] ?? null);
+        if (shares) for (const [k, key] of Object.entries(RACE_SERIES)) put(raw, key, y, shares[k as keyof typeof shares]);
+      }
+      const grad = sc[`${y}.completion.completion_rate_4yr_150nt`];
+      if (grad !== undefined && grad !== null) put(raw, "grad_rate", y - COHORT_LAG, round4(grad));
+      put(raw, "median_debt", y, sc[`${y}.aid.median_debt.completers.overall`]);
+    }
   }
 
   const sfaByYear = new Map(inputs.sfa.map((t) => [t.year, t]));
@@ -154,9 +200,11 @@ const roundStat = (key: SeriesKey, v: number) => (SERIES[key].unit === "share" ?
  * site converts at display time, which preserves percentiles). Plus each series' 10-year change distribution for
  * the "notable" rule.
  */
-export function buildNational(histories: readonly SchoolHistory[], window: Record<"fall" | "academic", [number, number]>, cpi: CpiTable): NationalHistory {
+export function buildNational(histories: readonly SchoolHistory[], window: Record<YearKind, [number, number]>, cpi: CpiTable): NationalHistory {
   const national: NationalHistory = { series: {}, changes: {} };
   for (const key of SERIES_KEYS) {
+    // A category code has no median; the share of colleges in each category is a Home fact instead.
+    if (SERIES[key].unit === "code") continue;
     const byYear = new Map<number, number[]>();
     const changes: number[] = [];
     let measure: ChangeStats["measure"] = "ratio";
@@ -221,8 +269,33 @@ function medianOf(vals: number[]): number | null {
  * National facts over fixed panels: only colleges that report both endpoint years, so colleges entering or leaving
  * the data don't masquerade as change (specs/trends-data.md#known-caveats-to-surface-in-the-ui).
  */
-export function buildFacts(histories: readonly SchoolHistory[], window: Record<"fall" | "academic", [number, number]>, cpi: CpiTable): TrendFacts {
-  return { priceGap: priceGap(histories, window.academic, cpi), harderToGetIn: harderToGetIn(histories, window.fall) };
+export function buildFacts(histories: readonly SchoolHistory[], window: Record<YearKind, [number, number]>, cpi: CpiTable): TrendFacts {
+  return {
+    priceGap: priceGap(histories, window.academic, cpi),
+    harderToGetIn: harderToGetIn(histories, window.fall),
+    testRequired: testRequired(histories, window.fall[1]),
+  };
+}
+
+/**
+ * Fact 3 compares the last fall before the pandemic, when test-optional policies spread, with the latest fall. A
+ * methodological constant (the baseline must predate the change), not a data vintage.
+ */
+export const PRE_PANDEMIC_FALL = 2019;
+
+/** Share of colleges requiring the SAT or ACT, over colleges reporting a policy in both years. */
+function testRequired(histories: readonly SchoolHistory[], to: number): TrendFacts["testRequired"] {
+  const from = PRE_PANDEMIC_FALL;
+  if (to <= from) return null;
+  const panel = histories.filter((h) => valueAt(h.series.test_policy, from) !== null && valueAt(h.series.test_policy, to) !== null);
+  if (panel.length < MIN_REPORTING) return null;
+  const share = (y: number) => {
+    const members = panel.filter((h) => valueAt(h.series.test_policy, y) !== null);
+    if (members.length < panel.length * 0.9) return null;
+    return round4(members.filter((h) => valueAt(h.series.test_policy, y) === TEST_POLICY_CODES.required).length / members.length);
+  };
+  const byYear = Array.from({ length: to - from + 1 }, (_, i) => share(from + i));
+  return { from, to, n: panel.length, requiredFrom: byYear[0]!, requiredTo: byYear[byYear.length - 1]!, byYear };
 }
 
 function priceGap(histories: readonly SchoolHistory[], [from, to]: [number, number], cpi: CpiTable): TrendFacts["priceGap"] {
@@ -333,6 +406,30 @@ export function coverageDrops(
   return problems;
 }
 
+/**
+ * Series whose snapshot value isn't always their newest year: Scorecard's "latest" median debt sometimes comes from
+ * a different release than the year-prefixed fields (~3% of colleges). A share of colleges up to this limit may
+ * differ; past it, the build fails. Every other series must match exactly.
+ */
+export const SOFT_LAST_POINT: Partial<Record<SeriesKey, number>> = { median_debt: 0.05 };
+
+/** Splits rule-1 mismatches into hard failures and soft ones within their allowance (see SOFT_LAST_POINT). */
+export function ruleOneProblems(mismatches: readonly string[], schools: readonly School[]): { hard: string[]; soft: string[] } {
+  const soft: string[] = [];
+  const hard: string[] = [];
+  const byKey = new Map<string, string[]>();
+  for (const m of mismatches) {
+    const key = m.split(" ")[1].replace(":", "");
+    if (key in SOFT_LAST_POINT) (byKey.get(key) ?? byKey.set(key, []).get(key)!).push(m);
+    else hard.push(m);
+  }
+  for (const [key, list] of byKey) {
+    if (list.length > schools.length * SOFT_LAST_POINT[key as SeriesKey]!) hard.push(...list);
+    else soft.push(...list);
+  }
+  return { hard, soft };
+}
+
 /** Tolerance for comparing stored shares (rounded to 4 places) and dollars. */
 const same = (a: number, b: number) => Math.abs(a - b) < 1e-4 + 1e-9 * Math.abs(b);
 
@@ -340,16 +437,22 @@ const same = (a: number, b: number) => Math.abs(a - b) < 1e-4 + 1e-9 * Math.abs(
  * Rule 1: each series' latest point equals what the profile shows today (data/schools.json), for colleges whose
  * value comes from the default federal source. Returns mismatches as "unit_id series: history X, snapshot Y".
  */
-export function lastPointMismatches(schools: readonly School[], histories: ReadonlyMap<string, SchoolHistory>, latest: Record<"fall" | "academic", number>): string[] {
+export function lastPointMismatches(schools: readonly School[], histories: ReadonlyMap<string, SchoolHistory>, latest: Pick<Record<YearKind, number>, "fall" | "academic">): string[] {
   const out: string[] = [];
   for (const s of schools) {
     const h = histories.get(s.unit_id);
     if (!h) continue;
-    const overridden = (field: string) => !!s.lineage?.[field as keyof NonNullable<School["lineage"]>];
-    const check = (key: SeriesKey, snapshot: number | null | undefined) => {
+    // A derived field (e.g. the SAT total) is overridden when any of its inputs is (lib/fields.ts).
+    const overridden = (field: string): boolean => {
+      if (s.lineage?.[field as FieldPath]) return true;
+      const def = isFieldPath(field) ? (FIELDS[field] as { derived?: { inputs: readonly string[] } }) : undefined;
+      return !!def?.derived?.inputs.some((i) => overridden(i));
+    };
+    /** `atLatest`: compare the series' own latest point (Scorecard fields, which don't share one year). */
+    const check = (key: SeriesKey, snapshot: number | null | undefined, atLatest = false) => {
       if (overridden(SERIES[key].field)) return;
-      const y = latest[SERIES[key].kind];
-      const hv = valueAt(h.series[key], y);
+      const kind = SERIES[key].kind;
+      const hv = atLatest ? (latestPoint(h.series[key])?.value ?? null) : kind === "cohort" ? null : valueAt(h.series[key], latest[kind]);
       const sv = snapshot ?? null;
       if (hv === null && sv === null) return;
       if (hv === null || sv === null || !same(hv, sv)) out.push(`${s.unit_id} ${key}: history ${hv ?? "none"}, snapshot ${sv ?? "none"}`);
@@ -365,7 +468,22 @@ export function lastPointMismatches(schools: readonly School[], histories: Reado
         const y = yieldOf(admitted, enrolled);
         check("yield", y === null ? null : round4(y));
       }
+      const r = s.admissions.sat_reading_25_75;
+      const m = s.admissions.sat_math_25_75;
+      check("sat_25", r && m ? r[0] + m[0] : null);
+      check("sat_75", r && m ? r[1] + m[1] : null);
+      check("act_25", s.admissions.act_composite_25_75?.[0]);
+      check("act_75", s.admissions.act_composite_25_75?.[1]);
+      check("sat_submit", s.admissions.test_submission_rate_sat);
+      check("act_submit", s.admissions.test_submission_rate_act);
+      check("test_policy", s.admissions.test_policy ? TEST_POLICY_CODES[s.admissions.test_policy] : null);
     }
+    // College Scorecard series end on the snapshot's "latest" values. (Graduation isn't compared: the profile shows
+    // Scorecard's consumer rate, which has no history; the chart is the 6-year rate and says so.)
+    if (h.series.undergrads) check("undergrads", s.demographics.undergrad_enrollment, true);
+    const race = s.demographics.racial_diversity;
+    if (race && h.series.race_white) for (const [k, key] of Object.entries(RACE_SERIES)) check(key, race[k as keyof typeof race], true);
+    if (h.series.median_debt || s.outcomes?.median_debt != null) check("median_debt", s.outcomes?.median_debt, true);
     const c = s.cost;
     // Only when the snapshot describes the same year (a newer sync-data run moves it ahead until history catches up).
     const sameYear = c?.year === historyYearLabel(latest.academic, "academic");
@@ -407,7 +525,7 @@ export function netPriceMismatches(schools: readonly School[], histories: Readon
 }
 
 /** Year-over-year jumps beyond 3× (or below ⅓): usually a typo in a college's report. Flagged for review, not fatal. */
-export function bigJumps(histories: readonly SchoolHistory[], keys: readonly SeriesKey[] = ["applicants", "admitted", "enrolled", "avg_paid_all", "full_price"]): string[] {
+export function bigJumps(histories: readonly SchoolHistory[], keys: readonly SeriesKey[] = ["applicants", "admitted", "enrolled", "avg_paid_all", "full_price", "undergrads"]): string[] {
   const out: string[] = [];
   for (const h of histories) {
     for (const k of keys) {

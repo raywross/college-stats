@@ -6,7 +6,8 @@
 import type { CpiTable } from "../../lib/history.ts";
 
 export const CPI_SERIES = "CUUR0000SA0";
-const API = "https://api.bls.gov/publicAPI/v1/timeseries/data/";
+/** v2 with a free registration key (BLS_API_KEY) allows 500 requests a day and 20 years per request; v1 needs no key. */
+const API = process.env.BLS_API_KEY ? "https://api.bls.gov/publicAPI/v2/timeseries/data/" : "https://api.bls.gov/publicAPI/v1/timeseries/data/";
 
 /** One month's index: year, month 1–12, value (null when BLS didn't collect it). */
 export type CpiMonth = [number, number, number | null];
@@ -38,7 +39,7 @@ export async function fetchCpiMonths(from: number, to: number): Promise<CpiMonth
     const res = await fetch(API, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ seriesid: [CPI_SERIES], startyear: String(start), endyear: String(end) }),
+      body: JSON.stringify({ seriesid: [CPI_SERIES], startyear: String(start), endyear: String(end), ...(process.env.BLS_API_KEY ? { registrationkey: process.env.BLS_API_KEY } : {}) }),
     });
     if (!res.ok) throw new Error(`BLS HTTP ${res.status}`);
     const body = (await res.json()) as {

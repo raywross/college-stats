@@ -5,6 +5,15 @@
     "admitted": {"start":2024,"values":[54]},
     "enrolled": {"start":2024,"values":[20]},
     "acceptance_rate": {"start":2024,"values":[1]},
-    "yield": {"start":2024,"values":[0.3704]}
+    "yield": {"start":2024,"values":[0.3704]},
+    "test_policy": {"start":2024,"values":[3]},
+    "undergrads": {"start":2024,"values":[131]},
+    "race_white": {"start":2024,"values":[0.1679]},
+    "race_asian": {"start":2024,"values":[0.0076]},
+    "race_hispanic": {"start":2024,"values":[0.0382]},
+    "race_black": {"start":2024,"values":[0.7252]},
+    "race_two_or_more": {"start":2024,"values":[0.0458]},
+    "race_international": {"start":2024,"values":[0]},
+    "race_other": {"start":2024,"values":[0.0152]}
   }
 }

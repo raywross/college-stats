@@ -9,9 +9,13 @@ Route: `/compare?ids=a,b,c,d` (up to 4). The URL is the source of truth; the sav
   "Compare N →". Hidden on `/compare`.
 - The header's Compare link shows a lime count badge and links to the current selection.
 
+## 10-year direction
+After Key differences and the radar: a table of the four trend indicators (cost, applications, diversity,
+selectivity) per college, each with its word, number, and start year. See [trend-indicators.md](trend-indicators.md).
+
 ## Then & now
 After Cost & outcomes: `ThenAndNow` (client) switches between average total cost (after inflation), acceptance rate,
-applicants, and undergrads, drawn as a `SlopeChart` over the default 10-year window from `school.trends`, with the
+applicants, undergrads, and the diversity index, drawn as a `SlopeChart` over the default 10-year window from `school.trends`, with the
 history source line (per-kind year ranges). See [trends-design.md](trends-design.md).
 
 ## Page states

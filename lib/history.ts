@@ -7,7 +7,8 @@
 import type { FieldPath } from "./fields";
 import type { FormatKind } from "./format";
 import type { TermKey } from "./glossary";
-import type { DatasetMeta, SourceKey } from "./types";
+import type { DatasetMeta, SchoolTrends, SourceKey } from "./types";
+import { simpsonIndex } from "./derive.ts";
 
 /* ------------------------------------------------------------------ */
 /* Series                                                              */
@@ -418,16 +419,54 @@ export function tenYearSummary(
 /** The measures summarized into school.trends (data/schools.json). */
 export const TREND_KEYS = ["avg_paid_all", "full_price", "acceptance_rate", "applicants", "undergrads", "grant_pct"] as const satisfies readonly SeriesKey[];
 
+/** Diversity index (Simpson's, as lib/metrics.ts `diversityIndex`) from the race/ethnicity shares in one fall. */
+export function diversityIndexAt(h: SchoolHistory, year: number): number | null {
+  const shares = Object.values(RACE_SERIES).map((k) => valueAt(h.series[k], year));
+  return shares.some((v) => v === null) ? null : simpsonIndex(shares as number[]);
+}
+
+/** Below this many undergrads at either end, a few students swing the shares (same floor as the size change). */
+export const DIVERSITY_MIN_UNDERGRADS = 300;
+/**
+ * "Other" folds unknown race in with American Indian/Alaska Native and Pacific Islander students. When it moves more
+ * than this, the change mostly reflects reporting (students whose race wasn't recorded), not who enrolls.
+ */
+export const DIVERSITY_MAX_OTHER_SHIFT = 0.1;
+
+/**
+ * Change in the diversity index over the default fall window, in index points. Same endpoint rule as changeOver: the
+ * window's last fall, and its first fall or up to 2 years later. Null for small colleges and when the other/unknown
+ * share shifts a lot (see the constants above; specs/trend-indicators.md).
+ */
+export function diversityChange(h: SchoolHistory, meta: Pick<HistoryMeta, "latest">): { since: number; from: number; to: number; change: number } | null {
+  const [start, end] = defaultWindow(meta, "fall");
+  const to = diversityIndexAt(h, end);
+  if (to === null) return null;
+  for (let y = Math.max(start, RACE_FROM); y <= start + 2; y++) {
+    const from = diversityIndexAt(h, y);
+    if (from === null) continue;
+    const size = [y, end].map((yr) => valueAt(h.series.undergrads, yr));
+    if (size.some((n) => n === null || n < DIVERSITY_MIN_UNDERGRADS)) return null;
+    const other = [y, end].map((yr) => valueAt(h.series[RACE_SERIES.other], yr)!);
+    if (Math.abs(other[1] - other[0]) > DIVERSITY_MAX_OTHER_SHIFT) return null;
+    return { since: y, from, to, change: to - from };
+  }
+  return null;
+}
+
 /** A college's 10-year changes for school.trends; empty when none can be measured. */
-export function trendSummary(h: SchoolHistory, cpi: CpiTable, meta: Pick<HistoryMeta, "latest">): Partial<Record<(typeof TREND_KEYS)[number], { since: number; from: number; to: number; change: number }>> {
-  const out: Partial<Record<(typeof TREND_KEYS)[number], { since: number; from: number; to: number; change: number }>> = {};
+export function trendSummary(h: SchoolHistory, cpi: CpiTable, meta: Pick<HistoryMeta, "latest">): SchoolTrends {
+  const out: SchoolTrends = {};
+  // `|| 0` turns -0 into 0, which is how JSON stores it.
+  const r4 = (v: number) => Math.round(v * 10_000) / 10_000 || 0;
   for (const k of TREND_KEYS) {
     const c = changeOver(k, h.series[k], defaultWindow(meta, SERIES[k].kind), cpi);
     if (!c) continue;
-    // `|| 0` turns -0 into 0, which is how JSON stores it.
-    const r = (v: number) => (SERIES[k].unit === "share" ? Math.round(v * 10_000) / 10_000 : Math.round(v)) || 0;
-    out[k] = { since: c.from.year, from: r(c.from.value), to: r(c.to.value), change: Math.round(c.change * 10_000) / 10_000 || 0 };
+    const r = (v: number) => (SERIES[k].unit === "share" ? r4(v) : Math.round(v) || 0);
+    out[k] = { since: c.from.year, from: r(c.from.value), to: r(c.to.value), change: r4(c.change) };
   }
+  const d = diversityChange(h, meta);
+  if (d) out.diversity = { since: d.since, from: r4(d.from), to: r4(d.to), change: r4(d.to - d.from) };
   return out;
 }
 

@@ -37,14 +37,14 @@ function changesHref(params: Params, on: boolean) {
   return `/explore?${next}`;
 }
 
-/** "+12%" / "−3 pts", with a muted "from → to" underneath. */
-function ChangeCell({ change, points, from, to }: { change: number | null; points?: boolean; from?: string; to?: string }) {
+/** "+12%" / "−3 pts" / "+0.06" (diversity index), with a muted "from → to" underneath. */
+function ChangeCell({ change, points, index, from, to }: { change: number | null; points?: boolean; index?: boolean; from?: string; to?: string }) {
   if (change === null) return <Value v={null} />;
   const sign = change > 0 ? "+" : change < 0 ? "−" : "";
   const abs = Math.round(Math.abs(change) * 100);
   return (
     <span className="block">
-      <span className="font-semibold">{`${sign}${abs}${points ? " pts" : "%"}`}</span>
+      <span className="font-semibold">{index ? `${sign}${Math.abs(change).toFixed(2)}` : `${sign}${abs}${points ? " pts" : "%"}`}</span>
       {from && to && <span className="block text-[11px] text-muted-foreground">{`${from} → ${to}`}</span>}
     </span>
   );
@@ -124,6 +124,8 @@ export async function SchoolTable({ schools, params }: { schools: School[]; para
           { key: "avg_cost_change" as const, label: "Avg cost, 10-yr change", term: "inflation-adjusted" as const },
           { key: "admit_rate_change" as const, label: "Admit rate, then → now", term: "acceptance-rate" as const },
           { key: "size_change" as const, label: "Undergrads, 10-yr change", term: "undergrad-enrollment" as const },
+          { key: "apps_change" as const, label: "Applications, 10-yr change", term: "applicants" as const },
+          { key: "diversity_change" as const, label: "Diversity, then → now", term: "diversity-index" as const },
         ]
       : []),
   ];
@@ -137,7 +139,7 @@ export async function SchoolTable({ schools, params }: { schools: School[]; para
     </p>
     <div className="overflow-hidden rounded-3xl border bg-card">
       <div className="overflow-x-auto">
-        <table className={cn("w-full text-sm", changes ? "min-w-[1580px]" : "min-w-[1220px]")}>
+        <table className={cn("w-full text-sm", changes ? "min-w-[1840px]" : "min-w-[1220px]")}>
           <thead className="border-b bg-surface-2">
             <tr>
               <SortHeader k="name" label="School" className="sticky left-0 z-10 bg-surface-2 pl-4" params={params} sortBy={sortBy} sortDir={sortDir} />
@@ -241,6 +243,21 @@ export async function SchoolTable({ schools, params }: { schools: School[]; para
                           to={s.trends?.undergrads ? compact(s.trends.undergrads.to) : undefined}
                         />
                       </td>
+                      <td className="w-32 px-3 tabular-nums">
+                        <ChangeCell
+                          change={METRICS.applicantsChange.get(s)}
+                          from={s.trends?.applicants ? compact(s.trends.applicants.from) : undefined}
+                          to={s.trends?.applicants ? compact(s.trends.applicants.to) : undefined}
+                        />
+                      </td>
+                      <td className="w-32 px-3 tabular-nums">
+                        <ChangeCell
+                          index
+                          change={METRICS.diversityChange.get(s)}
+                          from={s.trends?.diversity ? s.trends.diversity.from.toFixed(2) : undefined}
+                          to={s.trends?.diversity ? s.trends.diversity.to.toFixed(2) : undefined}
+                        />
+                      </td>
                     </>
                   )}
                   <td className="px-3 pr-4 text-right">
@@ -256,7 +273,8 @@ export async function SchoolTable({ schools, params }: { schools: School[]; para
     {changes && (
       <p className="mt-2 text-[11px] text-muted-foreground">
         Changes over each college&apos;s last 10 years of federal data: average cost after inflation; acceptance rate in percentage points;
-        undergraduate change left out for campuses under 300 students.
+        diversity index in index points; undergraduate change left out for campuses under 300 students, and applications under 200
+        applicants.
       </p>
     )}
     </div>

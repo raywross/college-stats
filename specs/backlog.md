@@ -12,6 +12,11 @@ Planned work, roughly in priority order. Move items into a feature spec when the
     graduation by entering class, median debt; section-headline deltas; Home fact 3.
   - [x] Phase 3 (2026-09-28): `trends` summary in schools.json; Explore change columns and sorts; Compare "Then & now";
     trend standouts.
+  - [x] Trend indicators (2026-09-28): cost, applications, diversity, selectivity as up/steady/down on the profile
+    hero, Explore filters/cards/table, and Compare ([trend-indicators.md](trend-indicators.md)); `trends.diversity`.
+  - [ ] Split unknown race out of "other" in history (a `race_unknown` series), so the diversity indicator can leave
+    unknowns out of the index instead of skipping colleges whose unknown share moved (see
+    [trend-indicators.md](trend-indicators.md#when-theres-no-indicator)).
   - [ ] Publish after each history change (`npm run publish-data`); pages that were prerendered pick it up at their
     daily regeneration unless `REVALIDATE_URL`/`REVALIDATE_SECRET` are set locally.
   - [ ] Explore test-policy filter (required / test-optional / test-blind), so Home fact 3 can link to it.

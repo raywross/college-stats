@@ -54,6 +54,16 @@ export function yieldOf(admitted: number | null, enrolled: number | null): numbe
 }
 
 /**
+ * Simpson's diversity index over group shares: the chance two randomly chosen students come from different groups
+ * (0 = one group, 1 = maximal). Shares are normalized first; null when they sum to 0.
+ */
+export function simpsonIndex(shares: number[]): number | null {
+  const total = shares.reduce((a, b) => a + b, 0);
+  if (total <= 0) return null;
+  return 1 - shares.reduce((acc, v) => acc + (v / total) ** 2, 0);
+}
+
+/**
  * Which price columns hold the file's own academic year. `IC{Y}_AY` files carry four years ending with Y–Y+1 in
  * `…AY3`; `COST1_{Y+1}` files (2023–24 on) carry Y–Y+1 in `…AY2` and the following year in `…AY3`.
  */

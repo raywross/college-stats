@@ -8,6 +8,7 @@ import { crestTint } from "@/lib/brand";
 import { Crest } from "@/components/school/Crest";
 import { CompareButton } from "@/components/compare/CompareButton";
 import { StandoutChip } from "@/components/school/StandoutChip";
+import { TrendIndicatorGrid } from "@/components/trends/TrendIndicators";
 
 /** Nomad List-style meter: fill = where this school ranks among all colleges. */
 function Meter({ label, value, rank, color }: { label: string; value: string | null; rank: number | null; color: string }) {
@@ -118,6 +119,8 @@ export async function SchoolCard({ school, index = 0 }: { school: School; index?
           color={DOMAINS.value.color}
         />
       </div>
+
+      <TrendIndicatorGrid school={school} className="relative mt-4 border-t pt-3" />
 
       {tags.length > 0 && (
         <div className="relative mt-4 flex flex-wrap gap-1.5">

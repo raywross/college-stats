@@ -15,6 +15,7 @@ import { ActiveFilters, ExploreSearchInput, SortControl, ViewToggle } from "@/co
 import { ScatterPlot } from "@/components/charts/ScatterPlot";
 import { LANDSCAPE_X, LANDSCAPE_Y, LANDSCAPE_ZONE, STICKER_X, STICKER_Y, VALUE_X, VALUE_Y, valueZone } from "@/lib/chart-configs";
 import { cn } from "@/lib/utils";
+import { INDICATOR_KEYS, indicatorOf, type Direction } from "@/lib/indicators";
 import { InfoTip } from "@/components/ui/info-tip";
 import { MultiSourceNote } from "@/components/sources/MultiSourceNote";
 
@@ -30,6 +31,17 @@ function buildFacets({ getAllSchools, histogram }: Dataset): FilterFacets {
   const types = tally((s) => s.type);
   const sizes = tally((s) => sizeBucket(s.demographics.undergrad_enrollment).key);
 
+  const trends = Object.fromEntries(
+    INDICATOR_KEYS.map((k) => {
+      const counts: Record<Direction, number> = { up: 0, steady: 0, down: 0 };
+      for (const s of all) {
+        const i = indicatorOf(s, k);
+        if (i) counts[i.direction]++;
+      }
+      return [k, counts];
+    })
+  ) as FilterFacets["trends"];
+
   const satRange: [number, number] = [800, 1600];
   return {
     states: Object.keys(states).sort().map((value) => ({ value, count: states[value] })),
@@ -40,6 +52,7 @@ function buildFacets({ getAllSchools, histogram }: Dataset): FilterFacets {
     satBins: histogram("sat", 32, satRange),
     costBins: histogram("avgCost", 32, [0, 80000]),
     satRange,
+    trends,
   };
 }
 

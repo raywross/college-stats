@@ -144,8 +144,8 @@ export const FIELDS = {
     // Citations expand to the inputs' sources and years; this is only the fallback release.
     vintage: "ipeds-ic",
     derived: {
-      formula: "Change over the last 10 years of each college's history; money after inflation (CPI-U), shares in points",
-      inputs: ["cost.avg_paid_all", "cost.breakdown", "admissions.acceptance_rate", "admissions.applicants", "demographics.undergrad_enrollment", "aid.grant_pct"],
+      formula: "Change over the last 10 years of each college's history; money after inflation (CPI-U), shares and the diversity index in points",
+      inputs: ["cost.avg_paid_all", "cost.breakdown", "admissions.acceptance_rate", "admissions.applicants", "demographics.undergrad_enrollment", "demographics.racial_diversity", "aid.grant_pct"],
     },
   },
 

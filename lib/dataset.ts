@@ -2,6 +2,7 @@ import type { DatasetMeta, School, SearchFilters, SchoolType, SortKey } from "./
 import type { FieldPath } from "./fields";
 import { lineageFor, sourcesForFields as sourcesForFieldsPure, type Cited, type CitedSource } from "./lineage";
 import type { ReleaseCalendar } from "./releases";
+import { matchesIndicators } from "./indicators";
 import {
   METRICS,
   SIZE_BUCKETS,
@@ -88,6 +89,8 @@ const SORTERS: Record<SortKey, (s: School) => number | string | null> = {
     return a && Math.min(a.from, a.to) >= 200 ? (s.trends?.acceptance_rate?.change ?? null) : null;
   },
   size_change: METRICS.sizeChange.get,
+  apps_change: METRICS.applicantsChange.get,
+  diversity_change: METRICS.diversityChange.get,
 };
 
 function mode(values: number[]): number | null {
@@ -191,6 +194,9 @@ export function createDataset({ schools, meta, releaseCalendar }: DatasetFiles) 
 
     if (filters.minEnroll !== undefined) results = results.filter((s) => s.demographics.undergrad_enrollment >= filters.minEnroll!);
     if (filters.maxEnroll !== undefined) results = results.filter((s) => s.demographics.undergrad_enrollment <= filters.maxEnroll!);
+
+    // Trend indicators drop colleges without enough history to say.
+    if (filters.trends) results = results.filter((s) => matchesIndicators(s, filters.trends!));
 
     const sortBy: SortKey = filters.sortBy && filters.sortBy in SORTERS ? filters.sortBy : "applicants";
     const multiplier = (filters.sortDir ?? (sortBy === "applicants" ? "desc" : "asc")) === "asc" ? 1 : -1;

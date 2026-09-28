@@ -4,7 +4,9 @@ Route: `/schools/[id]`. The 50 most-applied-to profiles are pre-rendered at buil
 
 ## Structure
 1. **Hero**: tinted with the school's crest color. Breadcrumb (Explore › State › School), large crest,
-   name, location, type and size (as glossary `Term`s), compare button, "Known for" standout chips.
+   name, location, type and size (as glossary `Term`s), compare button, "Known for" standout chips, and "Over 10 years":
+   four trend indicator cards (cost, applications, diversity, selectivity) linking to `#history`
+   ([trend-indicators.md](trend-indicators.md)).
 2. **Sticky section nav** (`SectionNav`) with scroll-spy: Overview · Admissions · Test scores · Students ·
    How it ranks · Similar schools. Domain color dots mark each section.
 3. **Overview bento**: acceptance ring + "1 in N" + tier; SAT and ACT middle-50% mini range bars (with

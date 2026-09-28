@@ -1,4 +1,5 @@
 import type { ExploreView, SchoolType, SearchFilters, SizeBucket, SortKey } from "./types";
+import { INDICATORS, INDICATOR_KEYS, isDirection, type Direction, type IndicatorKey } from "./indicators.ts";
 
 type Params = Record<string, string | string[] | undefined>;
 
@@ -13,9 +14,19 @@ const n = (v: Params[string]) => {
 
 const SORT_KEYS: SortKey[] = [
   "applicants", "name", "acceptance_rate", "enrollment", "sat", "pell", "first_gen", "diversity", "avg_cost", "aid_generosity", "net_price", "earnings", "grad_rate",
-  "avg_cost_change", "admit_rate_change", "size_change",
+  "avg_cost_change", "admit_rate_change", "size_change", "apps_change", "diversity_change",
 ];
 const VIEWS: ExploreView[] = ["grid", "table", "chart"];
+
+/** Trend indicator filters: `costTrend=down,steady` and so on (lib/indicators.ts); unknown directions are dropped. */
+function parseTrends(params: Params): SearchFilters["trends"] {
+  const out: Partial<Record<IndicatorKey, Direction[]>> = {};
+  for (const k of INDICATOR_KEYS) {
+    const dirs = list(params[INDICATORS[k].param])?.filter(isDirection);
+    if (dirs?.length) out[k] = [...new Set(dirs)];
+  }
+  return Object.keys(out).length ? out : undefined;
+}
 
 export function parseFilters(params: Params): SearchFilters {
   const sortBy = str(params.sortBy) as SortKey | undefined;
@@ -35,6 +46,7 @@ export function parseFilters(params: Params): SearchFilters {
     maxEnroll: n(params.maxEnroll),
     minCost: n(params.minCost),
     maxCost: n(params.maxCost),
+    trends: parseTrends(params),
     sortBy: sortBy && SORT_KEYS.includes(sortBy) ? sortBy : "applicants",
     // Default direction: most-applied-to first; everything else ascending.
     sortDir: params.sortDir === "desc" || params.sortDir === "asc" ? params.sortDir : sortBy && sortBy !== "applicants" ? "asc" : "desc",
@@ -63,6 +75,7 @@ export const FILTER_KEYS = [
   "maxEnroll",
   "minCost",
   "maxCost",
+  ...INDICATOR_KEYS.map((k) => INDICATORS[k].param),
 ] as const;
 
 export function countActiveFilters(params: Params): number {

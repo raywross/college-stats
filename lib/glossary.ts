@@ -356,6 +356,14 @@ const entries = {
     category: "How we measure",
     related: ["graduation-rate"],
   },
+  "trend-direction": {
+    term: "10-year direction",
+    short: "Whether a college's cost, applications, diversity, and selectivity went up, held steady, or went down over its last 10 years of federal data.",
+    long: "Cost is the average total cost after inflation; steady means within 5%. Applications count applicants; steady is within 10%. Diversity is the diversity index; steady is within 0.03. Selectivity follows the acceptance rate: a rate that fell by more than 3 percentage points means more selective. Applications and selectivity need at least 200 applicants at both ends. Diversity needs at least 300 undergrads at both ends, and is left out when the share of students whose race is unknown (counted with other groups) moved more than 10 points, since that is a change in reporting rather than in who enrolls.",
+    why: "Up isn't good and down isn't bad: a rising cost after inflation means students pay more, while growing applications usually mean a college is in demand. Each indicator shows its number so you can judge the size of the change.",
+    category: "How we measure",
+    related: ["inflation-adjusted", "diversity-index", "selectivity"],
+  },
   "trend-break": {
     term: "Break in a series",
     short: "A year when a measure's definition changed, so values before and after it aren't comparable. Charts stop the line there and don't report a change across it.",

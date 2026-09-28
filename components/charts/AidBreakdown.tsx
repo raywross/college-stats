@@ -3,7 +3,7 @@ import { INCOME_BANDS } from "@/lib/metrics";
 import { money, moneyCompact, num, pct } from "@/lib/format";
 import { InfoTip, MetricLabel } from "@/components/ui/info-tip";
 import { SourceNote } from "@/components/sources/SourceNote";
-import { getMeta } from "@/lib/data";
+import { citeField } from "@/lib/data";
 import { stickerPhrase } from "@/lib/insights";
 
 const COLOR = "var(--d-value)";
@@ -80,7 +80,7 @@ export function AidBreakdown({ school }: { school: School }) {
               Who gets grants <span className="sr-only">and scholarships</span>
             </h3>
             <p className="text-xs text-muted-foreground">
-              Full-time first-year students{aid?.cohort != null && <> ({num(aid.cohort)})</>}, {getMeta().sources["ipeds-sfa"].edition.split(" ")[0]}
+              Full-time first-year students{aid?.cohort != null && <> ({num(aid.cohort)})</>}, {citeField("aid.grant_pct", school).year}
             </p>
           </div>
           {grant !== null ? (
@@ -197,7 +197,7 @@ export function AidBreakdown({ school }: { school: School }) {
       {cds && school.cds && (
         <div className="rounded-3xl border bg-card p-5 sm:p-6">
           <h3 className="font-display text-lg font-bold">From {school.name}&apos;s Common Data Set</h3>
-          <p className="mb-4 text-xs text-muted-foreground">All full-time undergraduates, {school.cds.edition}. More detail than federal surveys collect.</p>
+          <p className="mb-4 text-xs text-muted-foreground">All full-time undergraduates, {citeField("aid.cds", school).year}. More detail than federal surveys collect.</p>
           <dl className="grid grid-cols-2 gap-3 lg:grid-cols-4">
             {[
               {
@@ -238,7 +238,7 @@ export function AidBreakdown({ school }: { school: School }) {
                 </div>
               ))}
           </dl>
-          <SourceNote topics={[]} school={school} includeCds className="mt-4" />
+          <SourceNote fields={["aid.cds"]} school={school} className="mt-4" />
         </div>
       )}
     </div>

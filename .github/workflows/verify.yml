@@ -1,0 +1,21 @@
+# Typecheck, lint, tests (including the lineage and citation guards), the dataset's
+# lineage check, and a production build. See specs/data-lineage.md#enforcement.
+name: Verify
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run verify
+      - run: npm run build

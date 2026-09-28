@@ -316,18 +316,13 @@ async function main() {
   note("H2/H2A aid", hasAid);
 
   /* ---- Write the patch ---- */
-  const provenance: Record<string, string> = {};
-  if (Object.keys(admissions).length > 1) provenance.admissions = "cds";
-  if ("undergrad_enrollment" in demographics) provenance.enrollment = "cds";
-  if ("racial_diversity" in demographics) provenance.demographics = "cds";
-
+  // The sync attributes every value in the patch to this CDS (field-level lineage; specs/data-lineage.md).
   const patch: Record<string, unknown> = {
     _source: `${school?.name ?? id} Common Data Set ${edition}: ${link}`,
     _imported: new Date().toISOString().slice(0, 10),
     cds: { edition, url: link },
-    provenance,
   };
-  if (provenance.admissions) patch.admissions = admissions;
+  if (Object.keys(admissions).length > 1) patch.admissions = admissions;
   if (Object.keys(demographics).length) patch.demographics = demographics;
   if (hasAid) patch.aid = { cds: cdsAid };
 

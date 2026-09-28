@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight, Swords } from "lucide-react";
-import { getMeta, getSchoolsByIds, metricMedian, toIndexEntry } from "@/lib/data";
+import { citeField, getSchoolsByIds, metricMedian, toIndexEntry } from "@/lib/data";
+import type { FieldPath } from "@/lib/fields";
+import type { TermKey } from "@/lib/glossary";
 import { DEMOGRAPHIC_CATEGORIES, DOMAINS, METRICS, TEST_POLICY_LABELS, satComposite, type Domain } from "@/lib/metrics";
 import { RADAR_AXES, keyDifferences, radarProfile, similarSchools } from "@/lib/insights";
 import { SLOT_COLORS, shortName } from "@/lib/brand";
@@ -15,7 +17,7 @@ import { Crest } from "@/components/school/Crest";
 import { RadarChart } from "@/components/charts/RadarChart";
 import { RangeBar } from "@/components/charts/RangeBar";
 import { StackedBar } from "@/components/charts/StackedBar";
-import { InfoTip, Term } from "@/components/ui/info-tip";
+import { InfoTip, SourceChip, Term } from "@/components/ui/info-tip";
 
 export const metadata: Metadata = { title: "Compare" };
 
@@ -39,6 +41,58 @@ function Group({ domain, title, children }: { domain: Domain; title: string; chi
     </section>
   );
 }
+
+/**
+ * "All the numbers" rows: label, glossary term, registered field (for its
+ * citation and per-school source chips), and formatter.
+ */
+const TABLE_ROWS = (
+  [
+    // Sources differ by school (federal survey vs. a college's own CDS), so show which class each row describes.
+    ["Admissions data", "cds", "admissions.year", (s: School) => (s.admissions.year ? `Fall ${s.admissions.year}` : null)],
+    ["Acceptance rate", "acceptance-rate", "admissions.acceptance_rate", (s: School) => s.admissions.acceptance_rate === null ? null : pctSmart(s.admissions.acceptance_rate)],
+    ["Applicants", "applicants", "admissions.applicants", (s: School) => opt(s.admissions.applicants, num)],
+    ["Admitted", "admitted", "admissions.admitted", (s: School) => opt(s.admissions.admitted, num)],
+    ["Enrolled", "enrolled", "admissions.enrolled", (s: School) => opt(s.admissions.enrolled, num)],
+    ["Yield", "yield", "derived.yield", (s: School) => opt(METRICS.yield.get(s), (v) => pct(v))],
+    ["SAT middle 50%", "middle-50", "derived.sat_composite", (s: School) => satComposite(s)?.join("–") ?? null],
+    ["ACT middle 50%", "act", "admissions.act_composite_25_75", (s: School) => s.admissions.act_composite_25_75?.join("–") ?? null],
+    ["Test policy", "test-policy", "admissions.test_policy", (s: School) => (s.admissions.test_policy ? TEST_POLICY_LABELS[s.admissions.test_policy] : null)],
+    ["Undergrads", "undergrad-enrollment", "demographics.undergrad_enrollment", (s: School) => num(s.demographics.undergrad_enrollment)],
+    ["Pell Grant", "pell-grant", "demographics.pell_grant_percent", (s: School) => opt(s.demographics.pell_grant_percent, (v) => pct(v))],
+    ["First-gen", "first-gen", "demographics.first_gen_percent", (s: School) => opt(s.demographics.first_gen_percent, (v) => pct(v))],
+    ["Diversity index", "diversity-index", "derived.diversity_index", (s: School) => opt(METRICS.diversity.get(s), (v) => v.toFixed(2))],
+    ["Average cost, all students (est.)", "average-cost", "cost.avg_paid_all", (s: School) => opt(s.cost?.avg_paid_all ?? null, money)],
+    ["Aid generosity (grants ÷ full price)", "aid-generosity", "derived.aid_generosity", (s: School) => opt(METRICS.aidGenerosity.get(s), (v) => pct(v))],
+    ["Net price, students with grants", "net-price", "cost.aided_net_price", (s: School) => opt(s.cost?.aided_net_price ?? null, money)],
+    ["Sticker price, in-state", "in-state-tuition", "cost.sticker", (s: School) => opt(s.cost?.sticker?.in_state ?? null, money)],
+    ["Sticker price, out-of-state", "in-state-tuition", "cost.sticker", (s: School) => opt(s.cost?.sticker?.out_of_state ?? null, money)],
+    ["Tuition & fees, in-state", "in-state-tuition", "cost.tuition_fees", (s: School) => opt(s.cost?.tuition_fees?.in_state ?? null, money)],
+    ["Tuition & fees, out-of-state", "in-state-tuition", "cost.tuition_fees", (s: School) => opt(s.cost?.tuition_fees?.out_of_state ?? null, money)],
+    ["First-years paying out-of-state rates", "in-state-tuition", "cost.residency", (s: School) => (s.type === "public" ? opt(s.cost?.residency?.out_of_state ?? null, (v) => pct(v)) : null)],
+    ["Median earnings (10 yrs)", "median-earnings", "outcomes.median_earnings_10yr", (s: School) => opt(s.outcomes?.median_earnings_10yr ?? null, money)],
+    ["Graduation rate", "graduation-rate", "outcomes.graduation_rate", (s: School) => opt(s.outcomes?.graduation_rate ?? null, (v) => pct(v))],
+    ["Retention rate", "retention-rate", "outcomes.retention_rate", (s: School) => opt(s.outcomes?.retention_rate ?? null, (v) => pct(v))],
+    ["Median debt", "median-debt", "outcomes.median_debt", (s: School) => opt(s.outcomes?.median_debt ?? null, money)],
+    ["First-years with grants", "grant-aid", "aid.grant_pct", (s: School) => opt(s.aid?.grant_pct ?? null, (v) => pct(v))],
+    ["Average grant", "grant-aid", "aid.grant_avg", (s: School) => opt(s.aid?.grant_avg ?? null, money)],
+    ["Aid from the college", "institutional-aid", "aid.institutional_pct", (s: School) => opt(s.aid?.institutional_pct ?? null, (v) => pct(v))],
+  ] as const
+) satisfies readonly (readonly [string, TermKey, FieldPath, (s: School) => string | null])[];
+
+const TABLE_FIELDS: readonly FieldPath[] = [...new Set(TABLE_ROWS.map((r) => r[2]))];
+
+const COST_FIELDS = [
+  "cost.avg_paid_all",
+  "derived.aid_generosity",
+  "cost.aided_net_price",
+  "outcomes.median_earnings_10yr",
+  "outcomes.graduation_rate",
+  "outcomes.median_debt",
+  "aid.grant_pct",
+  "aid.grant_avg",
+  "cost.net_price_by_income",
+] as const satisfies readonly FieldPath[];
 
 export default async function ComparePage({
   searchParams,
@@ -196,8 +250,8 @@ export default async function ComparePage({
               <CompareMetric label="First-years receiving grants" term="grant-aid" schools={schools} get={(s) => s.aid?.grant_pct ?? null} format={(v) => pct(v)} max={1} flag={{ which: "max", text: "Most" }} />
               <CompareMetric label="Average grant (recipients)" term="grant-aid" schools={schools} get={(s) => s.aid?.grant_avg ?? null} format={moneyCompact} flag={{ which: "max", text: "Largest" }} />
             </div>
-            <NetPriceCompare schools={schools} year={getMeta().scorecardCostYear} />
-            <MultiSourceNote schools={schools} topics={["prices", "aid", "cost", "outcomes"]} />
+            <NetPriceCompare schools={schools} year={citeField("cost.net_price_by_income").year} />
+            <MultiSourceNote schools={schools} fields={COST_FIELDS} />
           </Group>
 
           {/* Data table: every value in one place (also the accessible view) */}
@@ -219,48 +273,17 @@ export default async function ComparePage({
                   </tr>
                 </thead>
                 <tbody className="divide-y tabular-nums">
-                  {(
-                    [
-                      // Sources differ by school (federal survey vs. a college's own CDS), so show which class each row describes.
-                      ["Admissions data", "cds", (s: School) => (s.admissions.year ? `Fall ${s.admissions.year}${s.provenance?.admissions === "cds" ? " (CDS)" : ""}` : null)],
-                      ["Acceptance rate", "acceptance-rate", (s: School) => s.admissions.acceptance_rate === null ? null : pctSmart(s.admissions.acceptance_rate)],
-                      ["Applicants", "applicants", (s: School) => opt(s.admissions.applicants, num)],
-                      ["Admitted", "admitted", (s: School) => opt(s.admissions.admitted, num)],
-                      ["Enrolled", "enrolled", (s: School) => opt(s.admissions.enrolled, num)],
-                      ["Yield", "yield", (s: School) => opt(METRICS.yield.get(s), (v) => pct(v))],
-                      ["SAT middle 50%", "middle-50", (s: School) => satComposite(s)?.join("–") ?? null],
-                      ["ACT middle 50%", "act", (s: School) => s.admissions.act_composite_25_75?.join("–") ?? null],
-                      ["Test policy", "test-policy", (s: School) => (s.admissions.test_policy ? TEST_POLICY_LABELS[s.admissions.test_policy] : null)],
-                      ["Undergrads", "undergrad-enrollment", (s: School) => num(s.demographics.undergrad_enrollment)],
-                      ["Pell Grant", "pell-grant", (s: School) => opt(s.demographics.pell_grant_percent, (v) => pct(v))],
-                      ["First-gen", "first-gen", (s: School) => opt(s.demographics.first_gen_percent, (v) => pct(v))],
-                      ["Diversity index", "diversity-index", (s: School) => opt(METRICS.diversity.get(s), (v) => v.toFixed(2))],
-                      ["Average cost, all students (est.)", "average-cost", (s: School) => opt(s.cost?.avg_paid_all ?? null, money)],
-                      ["Aid generosity (grants ÷ full price)", "aid-generosity", (s: School) => opt(METRICS.aidGenerosity.get(s), (v) => pct(v))],
-                      ["Net price, students with grants", "net-price", (s: School) => opt(s.cost?.aided_net_price ?? null, money)],
-                      ["Sticker price, in-state", "in-state-tuition", (s: School) => opt(s.cost?.sticker?.in_state ?? null, money)],
-                      ["Sticker price, out-of-state", "in-state-tuition", (s: School) => opt(s.cost?.sticker?.out_of_state ?? null, money)],
-                      ["Tuition & fees, in-state", "in-state-tuition", (s: School) => opt(s.cost?.tuition_fees?.in_state ?? null, money)],
-                      ["Tuition & fees, out-of-state", "in-state-tuition", (s: School) => opt(s.cost?.tuition_fees?.out_of_state ?? null, money)],
-                      ["First-years paying out-of-state rates", "in-state-tuition", (s: School) => (s.type === "public" ? opt(s.cost?.residency?.out_of_state ?? null, (v) => pct(v)) : null)],
-                      ["Median earnings (10 yrs)", "median-earnings", (s: School) => opt(s.outcomes?.median_earnings_10yr ?? null, money)],
-                      ["Graduation rate", "graduation-rate", (s: School) => opt(s.outcomes?.graduation_rate ?? null, (v) => pct(v))],
-                      ["Retention rate", "retention-rate", (s: School) => opt(s.outcomes?.retention_rate ?? null, (v) => pct(v))],
-                      ["Median debt", "median-debt", (s: School) => opt(s.outcomes?.median_debt ?? null, money)],
-                      ["First-years with grants", "grant-aid", (s: School) => opt(s.aid?.grant_pct ?? null, (v) => pct(v))],
-                      ["Average grant", "grant-aid", (s: School) => opt(s.aid?.grant_avg ?? null, money)],
-                      ["Aid from the college", "institutional-aid", (s: School) => opt(s.aid?.institutional_pct ?? null, (v) => pct(v))],
-                    ] as const
-                  ).map(([label, term, fmt]) => (
+                  {TABLE_ROWS.map(([label, term, field, fmt]) => (
                     <tr key={label}>
                       <td className="px-4 py-2.5 text-muted-foreground">
                         <span className="inline-flex items-center gap-1">
-                          {label} <InfoTip term={term} />
+                          {label} <InfoTip term={term} cited={citeField(field)} />
                         </span>
                       </td>
                       {schools.map((s) => (
                         <td key={s.unit_id} className="px-4 py-2.5 font-semibold">
                           {fmt(s) ?? <span className="font-normal text-muted-foreground">–</span>}
+                          {fmt(s) !== null && <SourceChip cited={citeField(field, s)} className="ml-1.5 align-middle" />}
                         </td>
                       ))}
                     </tr>
@@ -268,7 +291,7 @@ export default async function ComparePage({
                 </tbody>
               </table>
             </div>
-            <MultiSourceNote schools={schools} topics={["admissions", "enrollment", "demographics", "prices", "aid", "cost", "outcomes"]} />
+            <MultiSourceNote schools={schools} fields={TABLE_FIELDS} />
           </section>
         </div>
       )}

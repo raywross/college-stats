@@ -1,3 +1,5 @@
+import type { FieldPath, VintageKey } from "./fields";
+
 export type SchoolType = "public" | "private-nonprofit" | "private-forprofit";
 
 /** IPEDS ADMCON7: how test scores are used in admissions. */
@@ -138,10 +140,32 @@ export interface School {
     /** The college's federally required net price calculator. */
     price_calculator: string | null;
   };
-  /** Topics whose data came from a source other than the dataset default (see data/meta.json). */
-  provenance?: Partial<Record<Topic, SourceKey>>;
-  /** The Common Data Set used for this school, when any topic came from it. */
+  /**
+   * Where values came from, only for fields whose source differs from the registry
+   * default (lib/fields.ts). Keys are registered field paths. See specs/data-lineage.md.
+   */
+  lineage?: Partial<Record<FieldPath, LineageRecord>>;
+  /** The Common Data Set used for this school, when any field came from it. */
   cds?: { edition: string; url: string };
+}
+
+/**
+ * Where one value came from. Omitted parts fall back to the source's defaults in
+ * data/meta.json (release year, dataset URL, retrieval date).
+ */
+export interface LineageRecord {
+  source: SourceKey;
+  /** Display year, e.g. "Fall 2024" or "2024–25". */
+  year?: string | null;
+  /** The specific document (a college's CDS file), or the dataset. */
+  url?: string;
+  /** ISO date the value was retrieved. */
+  retrieved?: string;
+  /** reported = as published; derived = calculated by us; extracted = read from a document by the ingestion agent and checked. */
+  method?: "reported" | "derived" | "extracted";
+  /** Extracted values: the verbatim text the number came from. */
+  quote?: string;
+  page?: number;
 }
 
 export interface ResidencyPrices {
@@ -166,7 +190,7 @@ export interface CdsAid {
   merit_avg: number | null;
 }
 
-export type Topic = "admissions" | "enrollment" | "demographics" | "cost" | "prices" | "outcomes" | "aid";
+export type Topic = "institution" | "admissions" | "enrollment" | "demographics" | "cost" | "prices" | "outcomes" | "aid";
 export type SourceKey = "scorecard" | "ipeds-adm" | "ipeds-sfa" | "ipeds-ic" | "cds";
 
 export interface SourceInfo {
@@ -182,11 +206,9 @@ export interface SourceInfo {
 /** Written by the sync script to data/meta.json. */
 export interface DatasetMeta {
   retrieved: string;
-  /** Academic year of Scorecard's "latest" cost fields, e.g. "2023–24". */
-  scorecardCostYear?: string | null;
   sources: Record<SourceKey, SourceInfo>;
-  /** Which source supplies each topic unless a school's `provenance` says otherwise. */
-  defaults: Record<Topic, SourceKey>;
+  /** Display year of each release, e.g. { "ipeds-adm": "Fall 2024", "scorecard-cost": "2023–24" }; null = no single year. */
+  vintages: Record<VintageKey, string | null>;
 }
 
 export type SizeBucket = "small" | "medium" | "large" | "xl";

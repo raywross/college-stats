@@ -1,7 +1,9 @@
 import "server-only";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import type { DatasetMeta, School, SearchFilters, SchoolType, SortKey, SourceInfo, SourceKey, Topic } from "./types";
+import type { DatasetMeta, School, SearchFilters, SchoolType, SortKey } from "./types";
+import type { FieldPath } from "./fields";
+import { lineageFor, sourcesForFields as sourcesForFieldsPure, type Cited, type CitedSource } from "./lineage";
 import {
   METRICS,
   SIZE_BUCKETS,
@@ -32,42 +34,21 @@ export function getMeta(): DatasetMeta {
   return meta;
 }
 
-export interface ResolvedSource extends SourceInfo {
-  key: SourceKey;
+/** Full citation for one value: source, year, method, formula and inputs. Default source without a school. */
+export function citeField(path: FieldPath, school?: School): Cited {
+  return lineageFor(path, school, meta);
 }
 
-/**
- * Where a topic's data came from, for one school or (without a school) the
- * dataset default. A school's Common Data Set resolves to its own file.
- */
-export function resolveSource(topic: Topic, school?: School): ResolvedSource {
-  const key = school?.provenance?.[topic] ?? meta.defaults[topic];
-  const info = meta.sources[key];
-  if (key === "cds" && school?.cds) {
-    return { ...info, key, label: `${school.name} Common Data Set`, publisher: school.name, edition: school.cds.edition, url: school.cds.url };
-  }
-  return { ...info, key };
+/** Distinct sources behind the values a section shows (derived values cite their inputs). */
+export function sourcesForFields(paths: readonly FieldPath[], school?: School): CitedSource[] {
+  return sourcesForFieldsPure(paths, school, meta);
 }
 
-/** Distinct sources behind a set of topics, in first-seen order. */
-export function sourcesFor(topics: Topic[], school?: School, opts: { includeCds?: boolean } = {}): ResolvedSource[] {
-  const seen = new Map<string, ResolvedSource>();
-  for (const t of topics) {
-    const s = resolveSource(t, school);
-    seen.set(`${s.key}:${s.url}`, s);
-  }
-  if (opts.includeCds && school?.cds) {
-    const info = meta.sources.cds;
-    seen.set(`cds:${school.cds.url}`, {
-      ...info,
-      key: "cds",
-      label: `${school.name} Common Data Set`,
-      publisher: school.name,
-      edition: school.cds.edition,
-      url: school.cds.url,
-    });
-  }
-  return [...seen.values()];
+/** Union of sources across several schools (Compare). */
+export function sourcesForSchools(paths: readonly FieldPath[], list: School[]): CitedSource[] {
+  const out = new Map<string, CitedSource>();
+  for (const s of list) for (const src of sourcesForFieldsPure(paths, s, meta)) out.set(`${src.key}|${src.url}|${src.year ?? ""}`, src);
+  return [...out.values()];
 }
 
 /** Schools whose data includes their own Common Data Set. */

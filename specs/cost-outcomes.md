@@ -6,7 +6,7 @@ What college costs and what it leads to, from the College Scorecard (synced by `
 | Field | Scorecard source | Notes |
 |---|---|---|
 | `cost.avg_net_price` | `latest.cost.avg_net_price.overall` | Students receiving **federal (Title IV)** aid, a lower-income-skewed group. Stored but not shown; see average cost below |
-| `cost.net_price_by_income` | `latest.cost.net_price.{public\|private}.by_income_level.*` | Federal-aid recipients, 5 bands: $0–30K, $30–48K, $48–75K, $75–110K, $110K+. The sector matching the school's type is used. Year detected at sync (`meta.scorecardCostYear`, e.g. 2023–24) |
+| `cost.net_price_by_income` | `latest.cost.net_price.{public\|private}.by_income_level.*` | Federal-aid recipients, 5 bands: $0–30K, $30–48K, $48–75K, $75–110K, $110K+. The sector matching the school's type is used. Year detected at sync (`meta.vintages["scorecard-cost"]`, e.g. 2023–24; cite with `citeField("cost.net_price_by_income")`) |
 | `cost.cost_of_attendance` | `latest.cost.attendance.academic_year` | Sticker price |
 | `cost.tuition_in_state` / `_out_of_state` | `latest.cost.tuition.*` | Stored, not yet shown |
 | `outcomes.median_earnings_10yr` / `_6yr` | `latest.earnings.{10,6}_yrs_after_entry.median` | Federal aid recipients, whether or not they graduated |

@@ -31,15 +31,31 @@ jobs:
   publish:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      # Until the prod project exists (specs/deployment.md#interim-production-reads-the-dev-project), skip instead of failing.
+      - name: Check prod secrets
+        id: config
+        env:
+          URL: ${{ secrets.PROD_SUPABASE_URL }}
+          KEY: ${{ secrets.PROD_SUPABASE_SECRET_KEY }}
+        run: |
+          if [ -n "$URL" ] && [ -n "$KEY" ]; then
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::PROD_SUPABASE_URL / PROD_SUPABASE_SECRET_KEY not set; nothing published. See specs/deployment.md."
+          fi
+      - if: steps.config.outputs.configured == 'true'
+        uses: actions/checkout@v4
+      - if: steps.config.outputs.configured == 'true'
+        uses: actions/setup-node@v4
         with:
           node-version: 24
           cache: npm
-      - run: npm ci
+      - if: steps.config.outputs.configured == 'true'
+        run: npm ci
 
       # Called directly rather than through `npm run publish-data`, which loads .env.local.
       - name: Publish to Supabase (prod)
+        if: steps.config.outputs.configured == 'true'
         env:
           SUPABASE_URL: ${{ secrets.PROD_SUPABASE_URL }}
           SUPABASE_SECRET_KEY: ${{ secrets.PROD_SUPABASE_SECRET_KEY }}
@@ -47,6 +63,7 @@ jobs:
         run: node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/publish-data.mts $ALLOW_SHRINK
 
       - name: Revalidate the site
+        if: steps.config.outputs.configured == 'true'
         env:
           SITE_URL: ${{ vars.SITE_URL }}
           REVALIDATE_SECRET: ${{ secrets.REVALIDATE_SECRET }}

@@ -7,7 +7,7 @@ Database side: [supabase.md](supabase.md).
 
 | Vercel environment | Deploys | `DATA_SOURCE` | Reads |
 |---|---|---|---|
-| **Production** | Every push to `main` | `supabase` | The **prod** Supabase project |
+| **Production** | Every push to `main` | `supabase` | The **prod** Supabase project (for now the dev one; see [Interim](#interim-production-reads-the-dev-project)) |
 | **Preview** | Every other branch / PR | `json` | That branch's own `data/*.json` |
 | Local (`npm run dev`) | — | `supabase` or `json` | The **dev** project, or the files |
 
@@ -63,17 +63,35 @@ merge to main touching data/** ──► .github/workflows/publish-data.yml
 - Merging code doesn't publish. A PR that needs a schema change: apply the migration to dev, then prod, then
   merge ([supabase.md](supabase.md#environments-two-projects)).
 
-## Setup checklist (one time)
+## Interim: Production reads the dev project
 
-1. **Prod Supabase project**: SQL Editor → run `supabase/migrations/20260928000000_dataset.sql`. Put its URL,
-   publishable and secret keys in `.env.production.local`, then `npm run publish-data:prod -- --dry-run` and
+Until there is a prod project (decided 2026-09-28), the Vercel project is linked through the Vercel–Supabase
+integration to the **dev** project (`gwusgmmionqxabifntgv`), and Production reads it.
+
+- **Publishing:** there's no automatic publish. `npm run publish-data` from a local checkout updates the live site.
+  Pages catch up within an hour, or right away with the curl call in
+  [Publishing data to production](#publishing-data-to-production) if `REVALIDATE_SECRET` is set in Vercel.
+- **The publish workflow skips** (with a warning) while `PROD_SUPABASE_URL` / `PROD_SUPABASE_SECRET_KEY` are unset,
+  so data merges don't fail.
+- **Careful:** anything published to dev, including experiments, is live on the site.
+
+### Setup now
+1. **Vercel → Settings → Environment Variables:** Production `DATA_SOURCE=supabase`, plus `SUPABASE_URL` and
+   `SUPABASE_PUBLISHABLE_KEY` for the dev project, unless the integration already provides them under those names.
+   Preview `DATA_SOURCE=json`. Optional: `REVALIDATE_SECRET` in Production.
+2. Merge, let Vercel deploy `main`, and check `/`, `/explore`, a profile, `/compare`, `/data`.
+
+## Later: prod project (takeaway)
+
+1. Create the prod project and run `supabase/migrations/20260928000000_dataset.sql` in its SQL Editor. Put its
+   URL, publishable and secret keys in `.env.production.local`, then `npm run publish-data:prod -- --dry-run` and
    `npm run publish-data:prod`.
-2. **Vercel → Settings → Environment Variables**: the table above. Production and Preview are set separately.
-3. **GitHub → Settings → Secrets and variables → Actions**: secrets `PROD_SUPABASE_URL`,
-   `PROD_SUPABASE_SECRET_KEY`, `REVALIDATE_SECRET`; variable `SITE_URL` (e.g. `https://<project>.vercel.app`, no
-   trailing slash).
-4. Merge, and let Vercel deploy `main`. Check `/`, `/explore`, a profile, `/compare`, `/data`.
-5. Actions → Publish data → Run workflow, to check the secrets and the revalidate call end to end.
+2. **Vercel:** point Production's `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY` at prod (re-link the integration
+   or set them by hand), set `REVALIDATE_SECRET` (`openssl rand -hex 32`), and redeploy.
+3. **GitHub → Settings → Secrets and variables → Actions:** secrets `PROD_SUPABASE_URL`,
+   `PROD_SUPABASE_SECRET_KEY`, `REVALIDATE_SECRET` (same value as Vercel); variable `SITE_URL` (no trailing slash).
+4. Actions → Publish data → Run workflow, to check the secrets and the revalidate call end to end.
+5. From then on, `npm run publish-data` only affects dev. Update this page and [supabase.md](supabase.md).
 
 ## Rollback
 

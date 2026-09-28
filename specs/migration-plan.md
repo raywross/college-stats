@@ -13,7 +13,8 @@ This document tracks everything that needs to change when moving from local deve
 | Domain | localhost:3000 | Custom domain or .vercel.app | Vercel dashboard |
 
 - [x] Code: revalidate route, hourly ISR on `/` and profiles, publish workflow, Node pin
-- [ ] Setup: prod project, Vercel and GitHub variables, first deploy ([deployment.md](deployment.md#setup-checklist-one-time))
+- [ ] Setup now: Vercel variables, first deploy; Production reads the dev project for now ([deployment.md](deployment.md#interim-production-reads-the-dev-project))
+- [ ] Later: prod project, GitHub secrets ([deployment.md](deployment.md#later-prod-project-takeaway))
 
 ---
 

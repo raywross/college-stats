@@ -91,7 +91,8 @@ const SORTERS: Record<SortKey, (s: School) => number | string | null> = {
   pell: (s) => s.demographics.pell_grant_percent,
   first_gen: (s) => s.demographics.first_gen_percent,
   diversity: diversityIndex,
-  net_price: (s) => s.cost?.avg_net_price ?? null,
+  avg_cost: (s) => s.cost?.avg_paid_all ?? null,
+  net_price: (s) => s.cost?.aided_net_price ?? null,
   earnings: (s) => s.outcomes?.median_earnings_10yr ?? null,
   grad_rate: (s) => s.outcomes?.graduation_rate ?? null,
 };
@@ -130,9 +131,9 @@ export function getSchools(filters: SearchFilters = {}): School[] {
   if (filters.minACT !== undefined) results = results.filter((s) => (act(s)?.[1] ?? -1) >= filters.minACT!);
   if (filters.maxACT !== undefined) results = results.filter((s) => (act(s)?.[0] ?? Infinity) <= filters.maxACT!);
 
-  const np = (s: School) => s.cost?.avg_net_price ?? null;
-  if (filters.minNP !== undefined) results = results.filter((s) => np(s) !== null && np(s)! >= filters.minNP!);
-  if (filters.maxNP !== undefined) results = results.filter((s) => np(s) !== null && np(s)! <= filters.maxNP!);
+  const cost = (s: School) => s.cost?.avg_paid_all ?? null;
+  if (filters.minCost !== undefined) results = results.filter((s) => cost(s) !== null && cost(s)! >= filters.minCost!);
+  if (filters.maxCost !== undefined) results = results.filter((s) => cost(s) !== null && cost(s)! <= filters.maxCost!);
 
   if (filters.minEnroll !== undefined) results = results.filter((s) => s.demographics.undergrad_enrollment >= filters.minEnroll!);
   if (filters.maxEnroll !== undefined) results = results.filter((s) => s.demographics.undergrad_enrollment <= filters.maxEnroll!);
@@ -360,11 +361,11 @@ export function landscapePoints(pool: School[] = schools, limit = 400, ensure: s
 }
 
 /**
- * Points for the "cost vs. earnings" chart: x = average net price,
+ * Points for the "cost vs. earnings" chart: x = estimated average cost for all students,
  * y = median earnings 10 years after entry.
  */
 export function valuePoints(pool: School[] = schools, limit = 400, ensure: string[] = []): ScatterPointData[] {
-  const ok = (s: School) => s.cost?.avg_net_price != null && s.outcomes?.median_earnings_10yr != null;
+  const ok = (s: School) => s.cost?.avg_paid_all != null && s.outcomes?.median_earnings_10yr != null;
   const top = [...pool.filter(ok)].sort((a, b) => (b.admissions.applicants ?? 0) - (a.admissions.applicants ?? 0)).slice(0, limit);
   const ids = new Set(top.map((s) => s.unit_id));
   for (const id of ensure) {
@@ -374,7 +375,7 @@ export function valuePoints(pool: School[] = schools, limit = 400, ensure: strin
   return top.map((s) => ({
     id: s.unit_id,
     name: s.name,
-    x: s.cost!.avg_net_price!,
+    x: s.cost!.avg_paid_all!,
     y: s.outcomes!.median_earnings_10yr!,
     enrollment: s.demographics.undergrad_enrollment,
     type: s.type,
@@ -384,7 +385,7 @@ export function valuePoints(pool: School[] = schools, limit = 400, ensure: strin
 }
 
 export function valueEligibleCount(pool: School[] = schools): number {
-  return pool.filter((s) => s.cost?.avg_net_price != null && s.outcomes?.median_earnings_10yr != null).length;
+  return pool.filter((s) => s.cost?.avg_paid_all != null && s.outcomes?.median_earnings_10yr != null).length;
 }
 
 export function landscapeEligibleCount(pool: School[] = schools): number {

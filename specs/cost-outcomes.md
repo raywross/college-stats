@@ -5,8 +5,8 @@ What college costs and what it leads to, from the College Scorecard (synced by `
 ## Data (`School.cost`, `School.outcomes`)
 | Field | Scorecard source | Notes |
 |---|---|---|
-| `cost.avg_net_price` | `latest.cost.avg_net_price.overall` | Per year, first-time full-time students receiving grant aid |
-| `cost.net_price_by_income` | `latest.cost.net_price.{public\|private}.by_income_level.*` | 5 bands: $0–30K, $30–48K, $48–75K, $75–110K, $110K+. The sector matching the school's type is used |
+| `cost.avg_net_price` | `latest.cost.avg_net_price.overall` | Students receiving **federal (Title IV)** aid, a lower-income-skewed group. Stored but not shown; see average cost below |
+| `cost.net_price_by_income` | `latest.cost.net_price.{public\|private}.by_income_level.*` | Federal-aid recipients, 5 bands: $0–30K, $30–48K, $48–75K, $75–110K, $110K+. The sector matching the school's type is used. Year detected at sync (`meta.scorecardCostYear`, e.g. 2023–24) |
 | `cost.cost_of_attendance` | `latest.cost.attendance.academic_year` | Sticker price |
 | `cost.tuition_in_state` / `_out_of_state` | `latest.cost.tuition.*` | Stored, not yet shown |
 | `outcomes.median_earnings_10yr` / `_6yr` | `latest.earnings.{10,6}_yrs_after_entry.median` | Federal aid recipients, whether or not they graduated |
@@ -22,9 +22,30 @@ loans; federal-aid recipients and average grant by the same five income bands. C
 percent of need met, average need-based grant and package, and merit aid for students without need. Shown in the
 profile's **Who actually gets aid** panel (`AidBreakdown`) and in Compare (grants metrics + table rows).
 
+## Average cost, all students (the headline)
+Published net prices only cover aided students, so they understate what a typical student pays. We estimate it from
+**same-year IPEDS data** (the SFA year, currently 2022–23, with the matching `IC{year}_AY` file):
+
+```
+sticker[rate]  = tuition & fees[rate] + books + on-campus room & board + other expenses   (IC: CHG1/2/3AY3, CHG4–6AY3)
+avg sticker    = Σ share of first-years paying each rate × sticker[rate]                    (SFA: SCFA11P/12P/13P)
+avg paid (all) = avg sticker − share with grants × average grant                           (SFA: AGRNT_P × AGRNT_A)
+```
+Students without grants count at the full sticker price. Private colleges have one rate. Stored as
+`cost.avg_paid_all` along with `sticker`, `tuition_fees`, and `residency` (in-district / in-state / out-of-state),
+`aided_net_price` (SFA `NPIST2` for publics, meaning in-state students, or `NPGRN2` for privates), and `year`.
+Coverage: 1,511 colleges. Caveats (shown on the page): it assumes on-campus living, and loans aren't subtracted.
+Validated on Vanderbilt: sticker $84,412 − average grant $57,723 = $26,689, exactly IPEDS's aided net price.
+
+Shown by `WhatStudentsPay` (profile): the headline estimate vs. the national median; who pays what (grant recipients'
+average net price vs. the full sticker price, with shares); and for publics, a **sticker price by residency** table
+(tuition & fees, full cost, share of first-years for each rate).
+
 ## Metrics (`lib/metrics.ts`)
-`netPrice`, `earnings`, `gradRate`, `debt` in the new **value** domain (`--d-value`, amber). `paybackYears(s)` =
-4 × net price ÷ median earnings: a deliberately rough comparison, explained by the `payback` glossary term.
+`avgCost` (all students; used for Explore sort/filter `avg_cost` + `minCost`/`maxCost`, card meter, table, the
+cost-vs-earnings chart, leaderboards, badges, and key differences), `netPrice` (grant recipients, same year),
+`earnings`, `gradRate`, `debt`, all in the **value** domain (`--d-value`, amber). `paybackYears(s)` = 4 × average
+cost ÷ median earnings: a deliberately rough comparison, explained by the `payback` glossary term.
 
 ## Where it appears
 - **Profile**: "Cost & outcomes" section. It covers net price by family income (`NetPriceByIncome`); net price vs.

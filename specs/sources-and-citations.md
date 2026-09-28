@@ -13,7 +13,9 @@ Every number on the site is attributed to a public source, at three levels:
 ## How attribution is resolved
 - `data/meta.json` (written by `npm run sync-data`) holds the retrieval date, a `SourceInfo` record per source
   (`scorecard`, `ipeds-adm`, `ipeds-sfa`, `cds`), and `defaults`: which source supplies each topic.
-- Topics: `admissions`, `enrollment`, `demographics`, `cost`, `outcomes`, `aid`.
+- Topics: `admissions`, `enrollment`, `demographics`, `cost` (Scorecard net price by income), `prices` (IPEDS IC
+  sticker prices by residency), `outcomes`, `aid`.
+- Sources: `scorecard`, `ipeds-adm`, `ipeds-sfa`, `ipeds-ic`, `cds`.
 - A school only stores `provenance` for topics that came from somewhere else: `admissions: "scorecard"` when a
   college is missing from IPEDS ADM, or `"cds"` after a Common Data Set import. `school.cds` holds that file's
   edition and URL, so a CDS citation links to the college's own file.
@@ -30,11 +32,11 @@ a label in `app/sources/page.tsx`), then cite it with `SourceNote` wherever it's
   submission rates), H2/H2A (need-based and merit aid for full-time undergraduates).
 - Writes a patch to `data/overrides.json` with `cds`, `provenance`, and the fields it found; anything it can't find
   is left out so federal data fills the gap. Re-running for the same school replaces its patch.
-- PDF-only Common Data Sets aren't supported.
+- PDF-only Common Data Sets aren't supported yet (planned: see [backlog.md](backlog.md)).
 - Verified on Vanderbilt: output matched the hand-entered figures exactly.
 
 ## Data-year honesty
-Sources have different vintages (IPEDS ADM fall 2023, IPEDS SFA 2022–23, Scorecard's latest release, a college's
-newest CDS). When a sentence combines figures from different sources, each figure carries its own year. For
+Sources have different vintages (IPEDS ADM fall 2023, IPEDS SFA and IC 2022–23, Scorecard cost data 2023–24, a
+college's newest CDS). The all-student average cost uses only same-year inputs (SFA + IC). When a sentence combines figures from different sources, each figure carries its own year. For
 example, a profile says the net price in one sentence and "In 2022–23, 66% of first-year students received grants"
 in the next.

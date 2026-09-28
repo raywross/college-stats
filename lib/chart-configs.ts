@@ -29,10 +29,10 @@ export const LANDSCAPE_Y: AxisSpec = {
 export const LANDSCAPE_ZONE: ScatterZone = { x: [0, 0.1], y: [0, 1600], label: "Most selective zone" };
 
 export const VALUE_X: AxisSpec = {
-  label: "Average net price per year",
-  short: "Net price",
+  label: "Average cost per year, all students (est.)",
+  short: "Avg cost",
   hint: "more expensive",
-  term: "net-price",
+  term: "average-cost",
   format: "moneyCompact",
   step: 10000,
   min: 0,
@@ -49,7 +49,7 @@ export const VALUE_Y: AxisSpec = {
 };
 
 /** Top-left quadrant: cheaper than the median, earning more than the median. */
-export function valueZone(medianNetPrice: number | null, medianEarnings: number | null): ScatterZone | undefined {
-  if (medianNetPrice === null || medianEarnings === null) return undefined;
-  return { x: [0, medianNetPrice], y: [medianEarnings, 1e7], label: "Lower cost, higher earnings" };
+export function valueZone(medianCost: number | null, medianEarnings: number | null): ScatterZone | undefined {
+  if (medianCost === null || medianEarnings === null) return undefined;
+  return { x: [0, medianCost], y: [medianEarnings, 1e7], label: "Lower cost, higher earnings" };
 }

@@ -15,7 +15,7 @@ type Params = Record<string, string | string[] | undefined>;
 function sortHref(params: Params, key: SortKey, currentBy: string, currentDir: string) {
   const next = new URLSearchParams();
   for (const [k, v] of Object.entries(params)) if (typeof v === "string" && v) next.set(k, v);
-  const dir = currentBy === key ? (currentDir === "asc" ? "desc" : "asc") : ["name", "acceptance_rate", "net_price"].includes(key) ? "asc" : "desc";
+  const dir = currentBy === key ? (currentDir === "asc" ? "desc" : "asc") : ["name", "acceptance_rate", "avg_cost", "net_price"].includes(key) ? "asc" : "desc";
   next.delete("page");
   next.set("sortBy", key);
   next.set("sortDir", dir);
@@ -85,7 +85,7 @@ export function SchoolTable({ schools, params }: { schools: School[]; params: Pa
     { key: "pell", label: "Pell", term: "pell-grant" },
     { key: "first_gen", label: "First-gen", term: "first-gen" },
     { key: "diversity", label: "Diversity", term: "diversity-index" },
-    { key: "net_price", label: "Net price", term: "net-price" },
+    { key: "avg_cost", label: "Avg cost", term: "average-cost" },
     { key: "earnings", label: "Earnings", term: "median-earnings" },
     { key: "grad_rate", label: "Grad rate", term: "graduation-rate" },
   ];
@@ -156,8 +156,8 @@ export function SchoolTable({ schools, params }: { schools: School[]; params: Pa
                     {div !== null && <Bar value={div} max={1} color={DOMAINS.diversity.color} />}
                   </td>
                   <td className="w-24 px-3 tabular-nums">
-                    <Value v={s.cost?.avg_net_price == null ? null : moneyCompact(s.cost.avg_net_price)} />
-                    {s.cost?.avg_net_price != null && <Bar value={s.cost.avg_net_price} max={80000} color={DOMAINS.value.color} />}
+                    <Value v={s.cost?.avg_paid_all == null ? null : moneyCompact(s.cost.avg_paid_all)} />
+                    {s.cost?.avg_paid_all != null && <Bar value={s.cost.avg_paid_all} max={80000} color={DOMAINS.value.color} />}
                   </td>
                   <td className="w-24 px-3 tabular-nums">
                     <Value v={s.outcomes?.median_earnings_10yr == null ? null : moneyCompact(s.outcomes.median_earnings_10yr)} />

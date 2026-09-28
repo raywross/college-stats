@@ -182,6 +182,20 @@ const entries = {
     category: "How we measure",
     related: ["race-ethnicity"],
   },
+  "average-cost": {
+    term: "Average cost (all students)",
+    short: "Our estimate of what the average first-year actually paid in a year, counting everyone: students with grants pay the sticker price minus their grant, and students without grants pay the full sticker price.",
+    long: "Calculated from same-year federal data: the sticker price (tuition and fees for each student's residency rate, plus books, on-campus room and board, and other expenses), weighted by the share of first-years paying each rate, minus the share who received grants times their average grant. Loans aren't subtracted, since they're still paid back.",
+    why: "Published \"average net price\" figures only cover students who got aid, so they understate what a typical student pays, often by tens of thousands of dollars at colleges where many students pay full price. It assumes on-campus living, so it runs high at commuter-heavy schools.",
+    category: "Cost & outcomes",
+    related: ["net-price", "cost-of-attendance", "in-state-tuition", "grant-aid"],
+  },
+  "in-state-tuition": {
+    term: "In-state vs. out-of-state tuition",
+    short: "Public universities charge state residents a lower rate, often half or less of what out-of-state students pay. Some also have an in-district rate for local residents.",
+    category: "Cost & outcomes",
+    related: ["average-cost", "cost-of-attendance"],
+  },
   "net-price": {
     term: "Net price",
     short: "What a student actually pays per year after grants and scholarships: tuition, fees, housing, and books minus gift aid. Loans are not subtracted. The average covers only students who received grants.",
@@ -199,7 +213,7 @@ const entries = {
   },
   "net-price-by-income": {
     term: "Net price by family income",
-    short: "Average net price for aided students grouped by family income ($0–30K up to $110K+). Shows how much a college's aid depends on need.",
+    short: "Average net price by family income ($0–30K up to $110K+) for students receiving federal (Title IV) aid, meaning those who filed the FAFSA and received federal grants or loans. Shows how much a college's aid depends on need.",
     why: "At colleges with strong need-based aid, lower-income families can pay far less than the average net price.",
     category: "Cost & outcomes",
     related: ["net-price", "pell-grant"],
@@ -277,7 +291,7 @@ const entries = {
   },
   payback: {
     term: "Payback estimate",
-    short: "Four years of average net price divided by median earnings 10 years after entry: roughly how many years of a typical salary the degree costs.",
+    short: "Four years of average cost (all students) divided by median earnings 10 years after entry: roughly how many years of a typical salary the degree costs.",
     why: "It's a rough comparison tool. It ignores taxes, living costs, interest, and time to graduate, and your own costs and earnings will differ.",
     category: "How we measure",
     related: ["net-price", "median-earnings"],

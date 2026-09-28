@@ -8,7 +8,7 @@ import { MetricLabel } from "@/components/ui/info-tip";
  * "What would a family like mine pay?" One row per income band, one bar per
  * school in its compare-slot color, all on a shared scale.
  */
-export function NetPriceCompare({ schools }: { schools: School[] }) {
+export function NetPriceCompare({ schools, year }: { schools: School[]; year?: string | null }) {
   const rows = schools.map((s) => s.cost?.net_price_by_income ?? null);
   const all = rows.flatMap((r) => r ?? []).filter((v): v is number => v !== null);
   if (all.length === 0) {
@@ -25,7 +25,9 @@ export function NetPriceCompare({ schools }: { schools: School[] }) {
       <MetricLabel term="net-price-by-income" className="mb-1 font-display text-base font-bold">
         What families at each income level pay
       </MetricLabel>
-      <p className="mb-4 text-xs text-muted-foreground">Average net price per year for students receiving aid.</p>
+      <p className="mb-4 text-xs text-muted-foreground">
+        Average net price per year for students receiving federal aid{year ? `, ${year}` : ""}. Families who didn&apos;t file the FAFSA aren&apos;t included.
+      </p>
       <div className="space-y-4">
         {INCOME_BANDS.map((band, b) => (
           <div key={band} className="grid grid-cols-[4.5rem_1fr] gap-3 sm:grid-cols-[5.5rem_1fr]">

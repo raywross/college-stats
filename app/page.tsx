@@ -34,7 +34,7 @@ const LENSES: { title: string; blurb: string; query: string; domain: Domain; ico
   { title: "Big public universities", blurb: "Large campuses, big energy", query: "types=public&sizes=large,xl&sortBy=enrollment&sortDir=desc", domain: "size", icon: Building2 },
   { title: "Small & close-knit", blurb: "Under 15K undergrads", query: "sizes=small,medium&sortBy=enrollment", domain: "size", icon: Sprout },
   { title: "Economic diversity", blurb: "Highest share of Pell Grant students", query: "sortBy=pell&sortDir=desc&view=table&minEnroll=1000", domain: "access", icon: HeartHandshake, ranked: true },
-  { title: "Low cost, high earnings", blurb: "Net price under $20K, ranked by earnings", query: "maxNP=20000&sortBy=earnings&sortDir=desc&minEnroll=1000", domain: "value", icon: PiggyBank },
+  { title: "Low cost, high earnings", blurb: "Average cost under $25K, ranked by earnings", query: "maxCost=25000&sortBy=earnings&sortDir=desc&minEnroll=1000", domain: "value", icon: PiggyBank },
 ];
 
 const MATCHUPS = [
@@ -55,7 +55,7 @@ export default function HomePage() {
   );
   const ultraSat = median(ultra.map(satMid));
   const LANDSCAPE_LIMIT = 400;
-  const medNP = metricMedian("netPrice");
+  const medNP = metricMedian("avgCost");
   const medEarn = metricMedian("earnings");
 
   const lenses = LENSES.map((l) => {
@@ -246,22 +246,23 @@ export default function HomePage() {
         <section>
           <SectionHeading eyebrow="Is it worth it?" title="Cost vs. earnings" className="mb-3" />
           <p className="mb-6 max-w-3xl text-muted-foreground">
-            What students pay each year after grants, against what they earn ten years after enrolling. The shaded corner is
-            below the national median for <Term term="net-price">net price</Term> ({moneyCompact(medNP ?? 0)}) and above it for{" "}
+            What the average student pays each year (counting those who get no grants), against what former students earn ten
+            years after enrolling. The shaded corner is below the national median for{" "}
+            <Term term="average-cost">average cost</Term> ({moneyCompact(medNP ?? 0)}) and above it for{" "}
             <Term term="median-earnings">earnings</Term> ({moneyCompact(medEarn ?? 0)}). {LANDSCAPE_LIMIT} most-applied-to of{" "}
             {num(valueEligibleCount())} colleges shown.
           </p>
           <div className="grid gap-4 lg:grid-cols-[2fr_1fr] lg:items-start">
             <div className="min-w-0 rounded-3xl border bg-card p-4 sm:p-6">
               <ScatterPlot points={valuePoints(all, LANDSCAPE_LIMIT)} x={VALUE_X} y={VALUE_Y} zone={valueZone(medNP, medEarn)} />
-              <SourceNote topics={["cost", "outcomes"]} className="mt-3" />
+              <SourceNote topics={["prices", "aid", "outcomes"]} className="mt-3" />
             </div>
             <div className="flex min-w-0 flex-col gap-4">
               <BoardCard title="Highest earnings" term="median-earnings" domain="value" caption="Median, 10 yrs after entry · 1,000+ undergrads">
                 <Leaderboard schools={topBy("earnings", "desc", 5, { minUndergrads: 1000 })} get={METRICS.earnings.get} format={moneyCompact} color={DOMAINS.value.color} />
               </BoardCard>
-              <BoardCard title="Lowest net price" term="net-price" domain="value" caption="Per year after grants · 5,000+ undergrads">
-                <Leaderboard schools={topBy("netPrice", "asc", 5, { minUndergrads: 5000 })} get={METRICS.netPrice.get} format={moneyCompact} color={DOMAINS.value.color} />
+              <BoardCard title="Lowest average cost" term="average-cost" domain="value" caption="All students, per year · 5,000+ undergrads">
+                <Leaderboard schools={topBy("avgCost", "asc", 5, { minUndergrads: 5000 })} get={METRICS.avgCost.get} format={moneyCompact} color={DOMAINS.value.color} />
               </BoardCard>
             </div>
           </div>

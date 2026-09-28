@@ -49,6 +49,7 @@ import { DistributionStrip } from "@/components/charts/DistributionStrip";
 import { ScatterPlot } from "@/components/charts/ScatterPlot";
 import { LANDSCAPE_X, LANDSCAPE_Y, LANDSCAPE_ZONE, VALUE_X, VALUE_Y, valueZone } from "@/lib/chart-configs";
 import { NetPriceByIncome } from "@/components/charts/NetPriceByIncome";
+import { WhatStudentsPay } from "@/components/school/WhatStudentsPay";
 import { InfoTip, MetricLabel, Term } from "@/components/ui/info-tip";
 
 type Props = { params: Promise<{ id: string }> };
@@ -155,15 +156,13 @@ export default async function SchoolPage({ params }: Props) {
   const policy = a.test_policy ? TEST_POLICY_LABELS[a.test_policy] : null;
   const c = school.cost;
   const o = school.outcomes;
-  const netPrice = c?.avg_net_price ?? null;
+  const avgCost = c?.avg_paid_all ?? null;
   const earnings = o?.median_earnings_10yr ?? null;
   const grad = o?.graduation_rate ?? null;
   const byIncome = c?.net_price_by_income ?? null;
   const payback = paybackYears(school);
-  const hasValue = netPrice !== null || earnings !== null || grad !== null || byIncome !== null;
-  const onValueMap = netPrice !== null && earnings !== null;
-  const discount = netPrice !== null && c?.cost_of_attendance ? 1 - netPrice / c.cost_of_attendance : null;
-  const sfaYear = getMeta().sources["ipeds-sfa"].edition.split(" ")[0];
+  const hasValue = avgCost !== null || !!c?.sticker || earnings !== null || grad !== null || byIncome !== null;
+  const onValueMap = avgCost !== null && earnings !== null;
 
   const sections = [
     { id: "overview", label: "Overview" },
@@ -307,10 +306,10 @@ export default async function SchoolPage({ params }: Props) {
                   <StackedBar data={d.racial_diversity} height="h-2.5" showLegend={false} />
                 </Tile>
               )}
-              {netPrice !== null && (
-                <Tile label="Average net price" term="net-price">
-                  <p className="font-display text-3xl font-extrabold">{moneyCompact(netPrice)}</p>
-                  <p className="text-xs text-muted-foreground">per year, for students with grants</p>
+              {avgCost !== null && (
+                <Tile label="Average cost" term="average-cost">
+                  <p className="font-display text-3xl font-extrabold">{moneyCompact(avgCost)}</p>
+                  <p className="text-xs text-muted-foreground">per year, all students (est.)</p>
                 </Tile>
               )}
               {earnings !== null && (
@@ -331,7 +330,7 @@ export default async function SchoolPage({ params }: Props) {
               )}
             </div>
             <SourceNote
-              topics={["admissions", "enrollment", "demographics", "cost", "outcomes"]}
+              topics={["admissions", "enrollment", "demographics", "prices", "aid", "outcomes"]}
               school={school}
               className="mt-4"
             />
@@ -567,7 +566,7 @@ export default async function SchoolPage({ params }: Props) {
               title="What it costs, what it pays"
               takeaway={costTakeaway(school)}
               school={school}
-              topics={["cost", "aid", "outcomes"]}
+              topics={["prices", "aid", "cost", "outcomes"]}
             >
               {school.links?.price_calculator && (
                 <a
@@ -588,67 +587,24 @@ export default async function SchoolPage({ params }: Props) {
                   <ExternalLink className="size-4 shrink-0 text-muted-foreground group-hover:text-primary" />
                 </a>
               )}
-              <div className="grid gap-4 lg:grid-cols-[1.2fr_1fr]">
+              <WhatStudentsPay school={school} />
+
+              <div className="mt-4 grid gap-4 lg:grid-cols-[1.2fr_1fr]">
                 <div className="rounded-3xl border bg-card p-5 sm:p-6">
                   <h3 className="mb-1 flex items-center gap-1 font-display text-lg font-bold">
-                    What families actually pay <InfoTip term="net-price-by-income" />
+                    What families at each income level pay <InfoTip term="net-price-by-income" />
                   </h3>
-                  <p className="mb-5 text-xs text-muted-foreground">Average net price per year by family income, for students receiving aid.</p>
+                  <p className="mb-5 text-xs text-muted-foreground">
+                    Average net price per year for students receiving federal aid
+                    {getMeta().scorecardCostYear ? `, ${getMeta().scorecardCostYear}` : ""}. Families who didn&apos;t file the FAFSA aren&apos;t included.
+                  </p>
                   {byIncome ? (
-                    <NetPriceByIncome values={byIncome} average={netPrice} />
+                    <NetPriceByIncome values={byIncome} average={null} />
                   ) : (
                     <p className="text-sm text-muted-foreground">Net price by family income isn&apos;t reported.</p>
                   )}
                 </div>
                 <div className="flex flex-col gap-4">
-                  {netPrice !== null && (
-                    <div className="space-y-5 rounded-3xl border bg-card p-5 sm:p-6">
-                      <BenchmarkBar
-                        label="Average net price (students with grants)"
-                        term="net-price"
-                        value={netPrice}
-                        median={metricMedian("netPrice") ?? undefined}
-                        scale={[0, 80000]}
-                        format={money}
-                        color={DOMAINS.value.color}
-                      />
-                      <p className="-mt-2 text-xs text-muted-foreground">
-                        Averaged over students who received grants
-                        {school.aid?.grant_pct != null && (
-                          <>
-                            {" "}(<b className="text-foreground">{pct(school.aid.grant_pct)}</b> of first-years did in {sfaYear})
-                          </>
-                        )}
-                        .{" "}
-                        {c?.cost_of_attendance ? <>Families who get no grants pay closer to the {money(c.cost_of_attendance)} sticker price.</> : null}
-                      </p>
-                      {c?.cost_of_attendance && discount !== null && (
-                        <div className="space-y-2">
-                          <div className="flex items-baseline justify-between gap-2 text-sm">
-                            <MetricLabel term="cost-of-attendance" className="font-medium">
-                              Sticker price vs. what students pay
-                            </MetricLabel>
-                            <span className="font-semibold">{money(c.cost_of_attendance)}</span>
-                          </div>
-                          <div className="relative h-3 overflow-hidden rounded-full bg-muted" role="img" aria-label={`Sticker price ${money(c.cost_of_attendance)}, average net price ${money(netPrice)}`}>
-                            <div
-                              className="absolute inset-y-0 left-0 origin-left animate-grow-x rounded-full"
-                              style={{ width: `${Math.min(100, (netPrice / c.cost_of_attendance) * 100)}%`, backgroundColor: DOMAINS.value.color }}
-                            />
-                          </div>
-                          <p className="text-xs text-muted-foreground">
-                            {discount > 0.02 ? (
-                              <>
-                                Grants cover about <b className="text-foreground">{pct(discount)}</b> of the sticker price for the average aided student.
-                              </>
-                            ) : (
-                              <>Most aided students pay close to the full sticker price.</>
-                            )}
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                  )}
                   {(o?.median_debt != null || payback !== null) && (
                     <div className="grid grid-cols-2 gap-4 rounded-3xl border bg-card p-5 sm:p-6">
                       {o?.median_debt != null && (
@@ -680,8 +636,7 @@ export default async function SchoolPage({ params }: Props) {
                 <div className="mt-10">
                   <h3 className="mb-1 font-display text-2xl font-extrabold tracking-tight">Who actually gets aid</h3>
                   <p className="mb-4 max-w-3xl text-muted-foreground">
-                    The average net price above only describes students who received grants. Here&apos;s how many do, where the
-                    money comes from, and how it varies with family income.
+                    How many students get grants, where the money comes from, and how it varies with family income.
                   </p>
                   <AidBreakdown school={school} />
                 </div>
@@ -769,7 +724,7 @@ export default async function SchoolPage({ params }: Props) {
                     points={valuePoints(undefined, 300, [school.unit_id])}
                     x={VALUE_X}
                     y={VALUE_Y}
-                    zone={valueZone(metricMedian("netPrice"), metricMedian("earnings"))}
+                    zone={valueZone(metricMedian("avgCost"), metricMedian("earnings"))}
                   />
                 </div>
               )}
@@ -846,7 +801,7 @@ export default async function SchoolPage({ params }: Props) {
               ))}
             </div>
             <div className="mt-12">
-              <SourceList school={school} topics={["admissions", "enrollment", "demographics", "cost", "aid", "outcomes"]} />
+              <SourceList school={school} topics={["admissions", "enrollment", "demographics", "prices", "aid", "cost", "outcomes"]} />
             </div>
           </Panel>
         </div>

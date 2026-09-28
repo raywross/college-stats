@@ -4,6 +4,7 @@ import { money, moneyCompact, num, pct } from "@/lib/format";
 import { InfoTip, MetricLabel } from "@/components/ui/info-tip";
 import { SourceNote } from "@/components/sources/SourceNote";
 import { getMeta } from "@/lib/data";
+import { stickerPhrase } from "@/lib/insights";
 
 const COLOR = "var(--d-value)";
 
@@ -80,8 +81,8 @@ export function AidBreakdown({ school }: { school: School }) {
               </div>
               {oneIn && (
                 <p className="text-sm">
-                  About <b>1 in {oneIn}</b> first-year students got no grant aid and paid close to the{" "}
-                  {school.cost?.cost_of_attendance ? <b>{money(school.cost.cost_of_attendance)}</b> : "full"} sticker price.
+                  About <b>1 in {oneIn}</b> first-year students got no grant aid and paid the full sticker price
+                  {stickerPhrase(school) ? <> of <b>{stickerPhrase(school)}</b></> : ""}.
                 </p>
               )}
             </div>

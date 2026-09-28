@@ -13,7 +13,8 @@ const TOPIC_LABELS: Record<Topic, string> = {
   admissions: "Admissions & test scores",
   enrollment: "Undergraduate enrollment",
   demographics: "Race/ethnicity, Pell & first-gen shares",
-  cost: "Cost & net price",
+  cost: "Net price by family income",
+  prices: "Sticker prices by residency",
   outcomes: "Earnings, graduation & debt",
   aid: "Financial aid",
 };
@@ -27,11 +28,12 @@ export default function SourcesPage() {
     scorecard: all.length,
     "ipeds-adm": all.filter((s) => s.admissions.year !== null && !s.provenance?.admissions).length,
     "ipeds-sfa": all.filter((s) => s.aid?.grant_pct != null).length,
+    "ipeds-ic": all.filter((s) => s.cost?.sticker).length,
     cds: cds.length,
   };
   const usedFor = (key: SourceKey) =>
     (Object.keys(meta.defaults) as Topic[]).filter((t) => meta.defaults[t] === key).map((t) => TOPIC_LABELS[t]);
-  const order: SourceKey[] = ["scorecard", "ipeds-adm", "ipeds-sfa", "cds"];
+  const order: SourceKey[] = ["scorecard", "ipeds-adm", "ipeds-sfa", "ipeds-ic", "cds"];
 
   return (
     <div className="mx-auto max-w-5xl px-4 pt-8 pb-12 sm:px-6 sm:pt-10">
@@ -144,8 +146,16 @@ export default function SourcesPage() {
               d: "Colleges report Reading & Writing and Math ranges separately; we add them to estimate a total range. It's an approximation, since students aren't at the same percentile on both sections.",
             },
             {
-              t: "Average net price",
-              d: "As reported: the average for first-year students who received grants. Families who get no grants pay more, which is why profiles also show who gets aid and aid by family income.",
+              t: "Average cost (all students)",
+              d: "Published net price figures only cover students who received aid. We estimate what the average first-year actually paid: the sticker price for each residency rate (tuition and fees plus books, on-campus room and board, and other expenses), weighted by how many students pay each rate, minus the share who got grants × their average grant. Students without grants count at full price. All inputs are from the same year (IPEDS). It assumes on-campus living, so it runs high at commuter-heavy schools.",
+            },
+            {
+              t: "In-state vs. out-of-state",
+              d: "Public universities show separate sticker prices for in-state and out-of-state students, and the share of first-years paying each rate. The all-student average weights them by that share.",
+            },
+            {
+              t: "Net price by family income",
+              d: "From the College Scorecard, for students receiving federal aid (who filed the FAFSA). Families who didn't file aren't included.",
             },
             {
               t: "Diversity index",

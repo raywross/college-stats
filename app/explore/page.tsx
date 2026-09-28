@@ -38,7 +38,7 @@ function buildFacets(): FilterFacets {
     sizes,
     arBins: histogram("acceptance", 20, [0, 1]),
     satBins: histogram("sat", 32, satRange),
-    npBins: histogram("netPrice", 32, [0, 80000]),
+    costBins: histogram("avgCost", 32, [0, 80000]),
     satRange,
   };
 }
@@ -176,7 +176,7 @@ export default async function ExplorePage({
                 <>
                   <p className="mb-4 text-sm text-muted-foreground">
                     {valueEligibleCount(schools) > CHART_LIMIT
-                      ? `Showing the ${CHART_LIMIT} most-applied-to of ${num(valueEligibleCount(schools))} matching colleges that report both net price and earnings.`
+                      ? `Showing the ${CHART_LIMIT} most-applied-to of ${num(valueEligibleCount(schools))} matching colleges with enough data for average cost and earnings.`
                       : `${num(valueEligibleCount(schools))} matching colleges report both net price and earnings.`}{" "}
                     Top-left means lower cost and higher earnings.
                   </p>
@@ -184,7 +184,7 @@ export default async function ExplorePage({
                     points={valuePoints(schools, CHART_LIMIT)}
                     x={VALUE_X}
                     y={VALUE_Y}
-                    zone={valueZone(metricMedian("netPrice"), metricMedian("earnings"))}
+                    zone={valueZone(metricMedian("avgCost"), metricMedian("earnings"))}
                   />
                 </>
               ) : (

@@ -120,6 +120,7 @@ export type MetricKey =
   | "pell"
   | "firstGen"
   | "diversity"
+  | "avgCost"
   | "netPrice"
   | "earnings"
   | "gradRate"
@@ -247,13 +248,24 @@ export const METRICS: Record<MetricKey, MetricDef> = {
     more: "more diverse",
     less: "less diverse",
   },
+  avgCost: {
+    key: "avgCost",
+    label: "Average cost, all students",
+    short: "Avg cost",
+    term: "average-cost",
+    domain: "value",
+    get: (s) => s.cost?.avg_paid_all ?? null,
+    format: money,
+    more: "more expensive",
+    less: "less expensive",
+  },
   netPrice: {
     key: "netPrice",
-    label: "Average net price",
-    short: "Net price",
+    label: "Net price, students with grants",
+    short: "Net price (grants)",
     term: "net-price",
     domain: "value",
-    get: (s) => s.cost?.avg_net_price ?? null,
+    get: (s) => s.cost?.aided_net_price ?? null,
     format: money,
     more: "more expensive",
     less: "less expensive",
@@ -299,10 +311,10 @@ export const INCOME_BANDS = ["$0–30K", "$30–48K", "$48–75K", "$75–110K",
 
 /**
  * Rough "payback": years of a typical graduate's salary that four years of
- * average net price would take. A conversation starter, not a financial model.
+ * the all-student average cost would take. A conversation starter, not a financial model.
  */
 export function paybackYears(s: School): number | null {
-  const price = s.cost?.avg_net_price ?? null;
+  const price = s.cost?.avg_paid_all ?? null;
   const earn = s.outcomes?.median_earnings_10yr ?? null;
   return price !== null && earn ? (price * 4) / earn : null;
 }

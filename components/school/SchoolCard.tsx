@@ -110,9 +110,9 @@ export function SchoolCard({ school, index = 0 }: { school: School; index?: numb
           color={DOMAINS.access.color}
         />
         <Meter
-          label="Net price"
-          value={school.cost?.avg_net_price == null ? null : moneyCompact(school.cost.avg_net_price)}
-          rank={rankOf(school, "netPrice")}
+          label="Avg cost"
+          value={school.cost?.avg_paid_all == null ? null : moneyCompact(school.cost.avg_paid_all)}
+          rank={rankOf(school, "avgCost")}
           color={DOMAINS.value.color}
         />
       </div>

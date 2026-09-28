@@ -11,7 +11,7 @@ const n = (v: Params[string]) => {
   return Number.isFinite(x) ? x : undefined;
 };
 
-const SORT_KEYS: SortKey[] = ["applicants", "name", "acceptance_rate", "enrollment", "sat", "pell", "first_gen", "diversity", "net_price", "earnings", "grad_rate"];
+const SORT_KEYS: SortKey[] = ["applicants", "name", "acceptance_rate", "enrollment", "sat", "pell", "first_gen", "diversity", "avg_cost", "net_price", "earnings", "grad_rate"];
 const VIEWS: ExploreView[] = ["grid", "table", "chart"];
 
 export function parseFilters(params: Params): SearchFilters {
@@ -30,8 +30,8 @@ export function parseFilters(params: Params): SearchFilters {
     maxACT: n(params.maxACT),
     minEnroll: n(params.minEnroll),
     maxEnroll: n(params.maxEnroll),
-    minNP: n(params.minNP),
-    maxNP: n(params.maxNP),
+    minCost: n(params.minCost),
+    maxCost: n(params.maxCost),
     sortBy: sortBy && SORT_KEYS.includes(sortBy) ? sortBy : "applicants",
     // Default direction: most-applied-to first; everything else ascending.
     sortDir: params.sortDir === "desc" || params.sortDir === "asc" ? params.sortDir : sortBy && sortBy !== "applicants" ? "asc" : "desc",
@@ -58,8 +58,8 @@ export const FILTER_KEYS = [
   "maxACT",
   "minEnroll",
   "maxEnroll",
-  "minNP",
-  "maxNP",
+  "minCost",
+  "maxCost",
 ] as const;
 
 export function countActiveFilters(params: Params): number {
@@ -68,6 +68,6 @@ export function countActiveFilters(params: Params): number {
   // Paired min/max count once.
   if (str(params.minAR) && str(params.maxAR)) count--;
   if (str(params.minSAT) && str(params.maxSAT)) count--;
-  if (str(params.minNP) && str(params.maxNP)) count--;
+  if (str(params.minCost) && str(params.maxCost)) count--;
   return count;
 }

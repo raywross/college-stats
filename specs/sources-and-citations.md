@@ -1,7 +1,7 @@
 # Sources & Citations
 
-> The `/sources` page will become the `/data` tab ([data-page.md](data-page.md)). How individual values are traced and
-> checked is in [data-lineage.md](data-lineage.md).
+> The former `/sources` page is now the `/data` tab ([data-page.md](data-page.md)); `/sources` redirects there. How
+> individual values are traced and checked is in [data-lineage.md](data-lineage.md).
 
 Every number on the site is attributed to a public source, at four levels:
 
@@ -10,11 +10,12 @@ Every number on the site is attributed to a public source, at four levels:
    chip such as `CDS 2024-25`.
 2. **Per section** (`<SourceNote fields={…} school?>`): "Sources: IPEDS Admissions survey, Fall 2024; …" under each
    profile section, built from the fields the section shows. Views with many schools (Explore, Home, Compare) use
-   `<MultiSourceNote schools fields>`. "About the data" links to `/sources`.
+   `<MultiSourceNote schools fields>`. "About the data" links to `/data`.
 3. **Per profile** (`<SourceList>`): numbered "Sources for this profile" at the bottom, one entry per dataset or
    document with every year used, publisher, and retrieval date.
-4. **`/sources` page**: each dataset's description, edition, link, and coverage count; the colleges enriched from
-   their own Common Data Set; "How we calculate"; update cadence; a suggested citation. Linked from the footer.
+4. **`/data` page** ([data-page.md](data-page.md)): which year each dataset describes and when the next is due, plus
+   each dataset's description, edition, link, and coverage count; the colleges enriched from their own Common Data
+   Set; "How we calculate"; a suggested citation. In the header nav and the footer.
 
 ## How attribution is resolved
 See [data-lineage.md](data-lineage.md). In short: `lib/fields.ts` registers every field with its default source and

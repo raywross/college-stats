@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { BookOpen, Compass, GitCompareArrows, Menu, Search, X } from "lucide-react";
+import { BookOpen, Compass, Database, GitCompareArrows, Menu, Search, X } from "lucide-react";
 import { ThemeSegmented, ThemeToggle } from "@/components/ThemeToggle";
 import { Logo } from "@/components/layout/Logo";
 import { SchoolSearch } from "@/components/search/SchoolSearch";
@@ -14,6 +14,7 @@ const NAV_ITEMS = [
   { label: "Explore", href: "/explore", icon: Compass },
   { label: "Compare", href: "/compare", icon: GitCompareArrows },
   { label: "Glossary", href: "/glossary", icon: BookOpen },
+  { label: "Data", href: "/data", icon: Database },
 ];
 
 export function Header() {

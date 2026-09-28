@@ -56,7 +56,7 @@ export function SourceLine({ sources, prefix = "Source", className, extra }: { s
       ))}
       {extra}
       <span aria-hidden>·</span>
-      <Link href="/sources" className="font-medium hover:text-primary hover:underline">
+      <Link href="/data" className="font-medium hover:text-primary hover:underline">
         About the data
       </Link>
       <span className="sr-only">(retrieved {getMeta().retrieved})</span>
@@ -99,7 +99,7 @@ export function SourceList({ school, fields }: { school: School; fields: readonl
         IPEDS unit ID {school.unit_id} · Data retrieved {meta.retrieved}. Tap any <span className="font-semibold">ⓘ</span> to see
         where that number came from; values marked with a highlighted tag come from a different source or year than the rest
         of their section. National ranks and medians include every 4-year college that reports the measure.{" "}
-        <Link href="/sources" className="font-semibold text-primary hover:underline">
+        <Link href="/data" className="font-semibold text-primary hover:underline">
           How we source and calculate everything
         </Link>
       </p>

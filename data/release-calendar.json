@@ -1,0 +1,129 @@
+{
+  "reviewed": "2026-09-28",
+  "releases": [
+    {
+      "id": "ipeds-2025-26-winter",
+      "source": "ipeds",
+      "label": "IPEDS winter release (provisional)",
+      "brings": [
+        "Admissions, fall 2025 (ADM2025)",
+        "Student Financial Aid 2024–25 (SFA2425)",
+        "Cost 2025–26 (COST1_2025, COST2_2025)",
+        "Graduation rates"
+      ],
+      "updates": ["ipeds-adm", "ipeds-sfa", "ipeds-ic"],
+      "expected": "2026-12",
+      "status": "estimated",
+      "basis": "Last year's winter release was Dec 9, 2025",
+      "url": "https://nces.ed.gov/ipeds/survey-components/data-release-schedule",
+      "files": ["ADM2025", "SFA2425", "COST1_2025", "COST2_2025"]
+    },
+    {
+      "id": "ipeds-2024-25-final",
+      "source": "ipeds",
+      "label": "IPEDS final data (revisions)",
+      "brings": ["Revised admissions, fall 2024 (ADM2024)", "Revised aid 2023–24 (SFA2324)", "Revised cost (COST1_2024, COST2_2024)"],
+      "updates": [],
+      "expected": "2026-12",
+      "status": "estimated",
+      "basis": "Final data follows provisional by about a year: last year's winter finals came Dec 9, 2025, and this collection's fall finals on Sep 8, 2026",
+      "url": "https://nces.ed.gov/ipeds/survey-components/data-release-schedule",
+      "files": ["ADM2024", "SFA2324", "COST1_2024"],
+      "filesUpdatedAfter": "2026-09-28",
+      "note": "Same years as the site shows now, with colleges' corrections"
+    },
+    {
+      "id": "ipeds-2025-26-spring",
+      "source": "ipeds",
+      "label": "IPEDS spring release (provisional)",
+      "brings": ["Fall enrollment 2025 (EF2025A)", "Finance 2024–25"],
+      "updates": [],
+      "expected": "2027-01",
+      "status": "estimated",
+      "basis": "Last year's spring release was Jan 6, 2026",
+      "url": "https://nces.ed.gov/ipeds/survey-components/data-release-schedule",
+      "files": ["EF2025A"],
+      "note": "Reaches the site through the next College Scorecard update"
+    },
+    {
+      "id": "scorecard-next",
+      "source": "scorecard",
+      "label": "College Scorecard update",
+      "brings": ["Refreshed IPEDS-derived enrollment and cost figures", "Federal Student Aid outcomes (earnings, debt)"],
+      "updates": ["scorecard-enrollment", "scorecard-cost", "scorecard-latest"],
+      "expected": null,
+      "status": "estimated",
+      "basis": "Irregular: the last updates were Jun 10, 2026 and Mar 23, 2026",
+      "url": "https://collegescorecard.ed.gov/data/changelog"
+    },
+    {
+      "id": "class-profiles-fall-2026",
+      "source": "colleges",
+      "label": "College class profiles, fall 2026",
+      "brings": ["Newest acceptance rates, from each college's website"],
+      "updates": [],
+      "expected": "2026-08",
+      "expectedEnd": "2026-11",
+      "status": "estimated",
+      "basis": "Colleges post them on their own websites, on a rolling basis each fall",
+      "note": "Not on the site yet: arrives with college-reported figures"
+    },
+    {
+      "id": "cds-2026-27",
+      "source": "colleges",
+      "label": "Common Data Set 2026–27",
+      "brings": ["Fall 2026 admissions", "2026–27 need-based and merit aid"],
+      "updates": [],
+      "expected": "2027-02",
+      "expectedEnd": "2027-08",
+      "status": "estimated",
+      "basis": "Colleges publish on a rolling basis",
+      "url": "https://commondataset.org/",
+      "note": "Imported for colleges that publish the spreadsheet version"
+    }
+  ],
+  "notUsedYet": [
+    {
+      "file": "IC2025",
+      "released": "2026-07-28",
+      "what": "Institutional characteristics 2025–26 (no prices; those come in the winter release)",
+      "url": "https://nces.ed.gov/ipeds/complete-data-files/IC2025.zip"
+    },
+    {
+      "file": "EFFY2025",
+      "released": "2026-07-28",
+      "what": "12-month enrollment, 2024–25",
+      "url": "https://nces.ed.gov/ipeds/complete-data-files/EFFY2025.zip"
+    },
+    {
+      "file": "C2025_A",
+      "released": "2026-07-28",
+      "what": "Degrees awarded (completions), 2024–25",
+      "url": "https://nces.ed.gov/ipeds/complete-data-files/C2025_A.zip"
+    }
+  ],
+  "watching": [
+    {
+      "id": "acts",
+      "name": "IPEDS Admissions and Consumer Transparency Supplement (ACTS)",
+      "status": "Not published",
+      "summary": "Detailed admissions data (by race, sex, family income, test scores and GPA) for 2019–20 through 2025–26, collected from colleges Dec 2025 to spring 2026. The Department of Education said it would publish in summer 2026.",
+      "latest": "No public file on NCES as of the date above. Part of the collection is blocked in court for 170+ colleges, and a new Federal Register notice (Sep 14, 2026) covers 2026–27.",
+      "why": "If published college by college, it could bring fall 2025 admissions for every four-year college before the regular winter release.",
+      "links": [
+        {
+          "label": "Federal Register notice",
+          "url": "https://www.federalregister.gov/documents/2026/09/14/2026-18735/integrated-postsecondary-education-data-system-ipeds-2025-26-through-2026-27-admissions-and-consumer"
+        },
+        {
+          "label": "FedScoop",
+          "url": "https://fedscoop.com/education-department-college-admissions-data-ipeds-nces-ies-statistics/"
+        },
+        {
+          "label": "Inside Higher Ed",
+          "url": "https://www.insidehighered.com/news/government/science-research-policy/2026/04/14/admissions-data-legal-fight-colleges-want"
+        }
+      ]
+    }
+  ]
+}

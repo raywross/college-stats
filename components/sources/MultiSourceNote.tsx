@@ -28,7 +28,7 @@ export function MultiSourceNote({ schools, fields, className }: { schools: Schoo
 function SourceItemSummary({ count }: { count: number }) {
   return (
     <span>
-      <Link href="/sources#cds-list" className="font-medium text-foreground/80 underline decoration-dotted underline-offset-2 hover:text-primary">
+      <Link href="/data#cds-list" className="font-medium text-foreground/80 underline decoration-dotted underline-offset-2 hover:text-primary">
         Common Data Sets from {count} colleges
       </Link>
     </span>

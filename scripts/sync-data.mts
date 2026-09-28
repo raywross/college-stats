@@ -3,6 +3,10 @@
  *
  *   npm run sync-data                 # uses COLLEGE_SCORECARD_API_KEY from .env.local
  *   npm run sync-data -- --include-online
+ *   npm run sync-data -- --releases-only  # only check NCES for upcoming releases (no API key needed)
+ *
+ * First, it checks NCES for the files of each upcoming release in
+ * data/release-calendar.json and marks the release published once they appear.
  *
  * Sources (merged by IPEDS unit ID):
  *   1. College Scorecard API: the institution list, location, type, undergrad size,
@@ -22,11 +26,13 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { DatasetMeta, School, SchoolType, TestPolicy } from "../lib/types";
 import { lineageForPatch, validateLineage } from "../lib/lineage.ts";
+import { applyProbes, filesToProbe, type FileProbe, type ReleaseCalendar } from "../lib/releases.ts";
 
 const ROOT = join(import.meta.dirname, "..");
 const OUT = join(ROOT, "data", "schools.json");
 const OVERRIDES = join(ROOT, "data", "overrides.json");
 const META = join(ROOT, "data", "meta.json");
+const CALENDAR = join(ROOT, "data", "release-calendar.json");
 const API = "https://api.data.gov/ed/collegescorecard/v1/schools";
 /**
  * NCES moved newer releases (from the Dec 2025 provisional release on) to
@@ -35,6 +41,7 @@ const API = "https://api.data.gov/ed/collegescorecard/v1/schools";
  */
 const IPEDS_BASES = ["https://nces.ed.gov/ipeds/complete-data-files", "https://nces.ed.gov/ipeds/datacenter/data"];
 const INCLUDE_ONLINE = process.argv.includes("--include-online");
+const RELEASES_ONLY = process.argv.includes("--releases-only");
 
 /* ------------------------------------------------------------------ */
 /* Helpers                                                             */
@@ -599,10 +606,53 @@ function deepMerge<T>(target: T, patch: Patch): T {
 }
 
 /* ------------------------------------------------------------------ */
+/* Release calendar                                                    */
+/* ------------------------------------------------------------------ */
+
+/** Whether an IPEDS file is on NCES (either location), and when it was last modified. */
+async function probeIpedsFile(name: string): Promise<FileProbe> {
+  for (const base of IPEDS_BASES) {
+    const res = await fetch(`${base}/${name}.zip`, { method: "HEAD" });
+    if (!res.ok) continue;
+    const modified = res.headers.get("last-modified");
+    return { exists: true, lastModified: modified ? new Date(modified).toISOString().slice(0, 10) : null };
+  }
+  return { exists: false, lastModified: null };
+}
+
+/**
+ * Mark releases in data/release-calendar.json published once NCES has their files,
+ * so the Data page never lists a release as upcoming after it ships. A network
+ * failure only warns: the calendar is left as it was.
+ */
+async function updateReleaseCalendar() {
+  const calendar = JSON.parse(readFileSync(CALENDAR, "utf8")) as ReleaseCalendar;
+  const files = filesToProbe(calendar);
+  if (!files.length) return;
+  console.log(`Checking NCES for upcoming releases (${files.join(", ")})…`);
+  let probes: Map<string, FileProbe>;
+  try {
+    probes = new Map(await Promise.all(files.map(async (f) => [f, await probeIpedsFile(f)] as const)));
+  } catch (err) {
+    console.warn(`  Couldn't reach NCES; release calendar unchanged (${err instanceof Error ? err.message : err})`);
+    return;
+  }
+  const today = new Date().toISOString().slice(0, 10);
+  const { calendar: next, published } = applyProbes(calendar, probes, today);
+  for (const [f, p] of probes) console.log(`  ${f}: ${p.exists ? `on NCES (modified ${p.lastModified ?? "?"})` : "not yet"}`);
+  if (!published.length) return;
+  writeFileSync(CALENDAR, `${JSON.stringify(next, null, 2)}\n`);
+  console.log(`  Marked published: ${published.join(", ")}. Review data/release-calendar.json and run the full sync to use them.`);
+}
+
+/* ------------------------------------------------------------------ */
 /* Main                                                                */
 /* ------------------------------------------------------------------ */
 
 async function main() {
+  await updateReleaseCalendar();
+  if (RELEASES_ONLY) return;
+
   const key = process.env.COLLEGE_SCORECARD_API_KEY;
   if (!key) {
     console.error("Missing COLLEGE_SCORECARD_API_KEY. Add it to .env.local (see .env.example).");

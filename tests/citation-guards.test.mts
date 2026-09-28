@@ -49,8 +49,8 @@ test("no hard-coded data years in app code (years come from lineage, so they upd
 });
 
 test("UI reads sources through the lineage API, not raw metadata", () => {
-  // Only the sources page lists datasets' editions directly; everything else uses citeField / sourcesForFields.
-  const allow = (f: string) => f === "app/sources/page.tsx";
+  // Only the Data page lists datasets' editions directly; everything else uses citeField / sourcesForFields.
+  const allow = (f: string) => f === "app/data/page.tsx";
   assert.deepEqual(offenders(/getMeta\(\)\.(sources|vintages)|\bmeta\.(sources|vintages)\b|\.edition\b/, allow), []);
 });
 

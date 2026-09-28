@@ -20,6 +20,7 @@ tokens and adapts to dark mode. Recharts is still installed but unused.
 | `StateTileMap` | Tile cartogram | no | Home | Colleges per state in 5 sequential steps (1–14, 15–29, 30–59, 60–99, 100+). Tiles link to `/explore?states=XX`. |
 | `Leaderboard` | Ranked bars | no | Home | Top 5 on a metric; one series, one color. |
 | `HistogramSlider` | Histogram + range slider | yes | Explore filters | The distribution behind a filter, with in-range bars highlighted. |
+| `DataAgeTimeline` | Timeline rows | no | Data | One row per federal release on the site: a bar from the start of the period it describes to today (single series, `--primary`, square start, 4px rounded end), a hollow ring at the next expected release (identity by shape, so no second hue), a solid hairline for today and at each New Year. CSS-positioned in %, so it scales to phone width without `useWidth`. Each row prints its year and next update, so the chart is its own table; the bar is focusable and shows its age on hover/focus. |
 | `CompareMetric` (compare/) | Grouped bars | no | Compare | One bar per school in slot colors, with a neutral flag on the extreme. |
 
 `useWidth` (ResizeObserver) lets SVG charts draw at real pixel width so text stays legible on phones.

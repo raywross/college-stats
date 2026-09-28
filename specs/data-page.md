@@ -1,7 +1,8 @@
 # Data Page (`/data`)
 
-> Status: **planned** (not built). Decided 2026-09-28. Expands today's `/sources` page
-> ([sources-and-citations.md](sources-and-citations.md)) into a main-nav **Data** tab.
+> Status: **built** 2026-09-28, except section 5 (waits for [college-reported-data.md](college-reported-data.md)).
+> Replaced the `/sources` page ([sources-and-citations.md](sources-and-citations.md)) with a main-nav **Data** tab.
+> What differed from the plan: [As built](#as-built).
 
 ## Goal
 Explain, in plain language, where every number comes from, how old it is and why, and when it will next update, with
@@ -83,6 +84,56 @@ Verified by downloading NCES files and querying the Scorecard API.
 
 Alternatives considered: College Transitions CDS repository (stops at 2022–23), Urban Institute portal (lags NCES).
 
-## Files (planned)
-- `app/data/page.tsx` (from `app/sources/page.tsx`), redirect in `next.config.ts`.
-- `data/release-calendar.json`; probe step in `scripts/sync-data.mts`.
+## As built
+
+### Files
+| File | What |
+|---|---|
+| `app/data/page.tsx` | The page (from the former `app/sources/page.tsx`). `revalidate = 86400`, so "today", overdue releases and the review warning move without a rebuild. The only UI file allowed to read `meta.sources` / `.edition` directly (`tests/citation-guards.test.mts`). |
+| `next.config.ts` | `/sources` → `/data` permanent redirect (308). |
+| `components/charts/DataAgeTimeline.tsx` | The timeline chart (see [charts.md](charts.md)). |
+| `data/release-calendar.json` | Releases, released-but-unused files, and watched sources. All year labels on the page that don't come from lineage live here. |
+| `lib/releases.ts` | Pure helpers: types, `expectedLabel`, `isOverdue`, `isStale` (`STALE_AFTER_DAYS` = 90), `nextReleaseFor`, `periodStart`, and the probe logic (`filesToProbe`, `isPublished`, `applyProbes`). |
+| `lib/data.ts` | `getReleaseCalendar()`. |
+| `scripts/sync-data.mts` | `updateReleaseCalendar()` runs first in every sync; `npm run sync-data -- --releases-only` runs only it (no API key needed). |
+| `tests/releases.test.mts` | Calendar file shape (ids, statuses, `YYYY-MM` dates, known vintage keys, links), every on-site release has a next release, and the helpers. |
+
+### Where each value comes from
+- **Years of data on the site**: `citeField(<first stored field of each vintage>)` → label and year; nothing hard-coded.
+  Rows are the vintages in `VINTAGE_KEYS` that have stored, non-CDS fields in `lib/fields.ts`.
+- **"Used for"**: the vintage's field labels when there are 3 or fewer, else their topics.
+- **Lag diagram**: follows the class after the admissions vintage (`periodStart` of `ipeds-adm` + 1), with the IPEDS
+  winter collection months (Dec–Feb) and the expected date of the next release that `updates` `ipeds-adm`.
+- **Next update per dataset**: `nextReleaseFor(vintage)`, the soonest unpublished release whose `updates` lists it.
+- **How we compare**: CDS college count and how many CDS editions are newer than the federal admissions year are
+  computed; the example chip is a real `SourceChip` from the first CDS college's lineage.
+
+### Release calendar schema (additions to the plan)
+- `updates: VintageKey[]`: which releases on the site the entry brings a newer year of (drives "next update" and the
+  timeline markers). Revisions and releases that reach the site only indirectly (IPEDS spring → Scorecard) have none.
+- `expected: "YYYY-MM" | null` (null = irregular) and optional `expectedEnd` for rolling windows.
+- `filesUpdatedAfter` (ISO date): for revisions. File existence can't detect NCES's final data, because the files
+  already exist; the probe instead requires each file's `Last-Modified` to be after this date. (Checked 2026-09-28:
+  IC2024's final release added an `_rv.csv`, but ADM2023's final didn't, so `_rv` isn't a reliable signal.)
+- `note`, optional `url` (class profiles have no single page), `notUsedYet[]`, and `watching[]` (ACTS lives here, so
+  its years and dates aren't in UI code).
+- Page states: `Estimated` / `Confirmed` / `Out now`; `No set date` when `expected` is null; `Later than expected`
+  (warning icon + label) once the last expected month has passed and the files haven't appeared.
+
+### Differences from the plan
+- **"What's on the site now" has one row per federal release (vintage), not per topic.** Topics mix releases (e.g.
+  "demographics" has Fall-year race data and most-recent-release Pell shares), so a per-topic row would show the wrong
+  year for part of it. Each row lists what the release is used for instead.
+- **Section 5 (newer figures from colleges) isn't built**: the ingestion agent doesn't exist yet. The page covers
+  today's CDS imports in "How we compare" and the CDS college list.
+- **The comparison text reflects today's data**, not the planned rule: CDS overrides still replace federal values, and
+  one of them (Cornell, CDS 2025–26) describes a newer class than the federal data. The page says so, with counts
+  computed from lineage.
+- **Probe runs whenever `sync-data` runs**; there's no schedule yet (backlog: scheduled data refresh).
+- **Dates re-checked 2026-09-28** against the [NCES release schedule](https://nces.ed.gov/ipeds/survey-components/data-release-schedule),
+  the [Scorecard changelog](https://collegescorecard.ed.gov/data/changelog) and NCES's file server: all initial entries
+  held. New facts: the 2024–25 collection's fall *final* release came out Sep 8, 2026 (IC, completions, 12-month
+  enrollment), which supports the ~Dec 2026 estimate for the winter finals; Scorecard's previous update was Mar 23, 2026
+  (a new IPEDS collection year), before Jun 10. ADM2025, SFA2425, COST1/COST2_2025 and EF2025A are not on NCES; no ACTS
+  file was found.
+- The 2024–25 sticker-price quick win is left for its own branch.

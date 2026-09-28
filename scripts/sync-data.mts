@@ -383,14 +383,34 @@ function toAid(sfa: Record<string, string> | undefined): School["aid"] {
 }
 
 /** Citation details for every source, shown on profiles and the /sources page. */
-function writeMeta(adm: IpedsFile, sfa: IpedsFile, sfaYears: string) {
+/**
+ * Scorecard's "latest" fields don't say which year they are. Find the
+ * year-keyed field that matches "latest" (key N = academic year N-1–N).
+ */
+async function detectScorecardCostYear(key: string, id: string): Promise<string | null> {
+  const years = Array.from({ length: 6 }, (_, i) => thisYear - i);
+  const fields = ["latest.cost.avg_net_price.overall", ...years.map((y) => `${y}.cost.avg_net_price.overall`)];
+  const params = new URLSearchParams({ id, fields: fields.join(","), api_key: key });
+  try {
+    const data = (await getJson(`${API}?${params}`)) as { results: Record<string, unknown>[] };
+    const row = data.results[0] ?? {};
+    const latest = row["latest.cost.avg_net_price.overall"];
+    const y = years.find((yr) => latest != null && row[`${yr}.cost.avg_net_price.overall`] === latest);
+    return y ? `${y - 1}–${String(y).slice(2)}` : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeMeta(adm: IpedsFile, sfa: IpedsFile, ic: IpedsFile, sfaYears: string, scorecardCostYear: string | null) {
   const meta: DatasetMeta = {
     retrieved: new Date().toISOString().slice(0, 10),
+    scorecardCostYear,
     sources: {
       scorecard: {
         label: "College Scorecard",
         publisher: "U.S. Department of Education",
-        edition: "Most recent data (API)",
+        edition: scorecardCostYear ? `Most recent release (cost data ${scorecardCostYear})` : "Most recent release",
         url: "https://collegescorecard.ed.gov/data/",
         description:
           "Federal data on every college receiving federal student aid: size, student demographics, Pell and first-generation shares, costs, net price by family income, earnings, graduation and retention, and student debt.",
@@ -411,6 +431,14 @@ function writeMeta(adm: IpedsFile, sfa: IpedsFile, sfaYears: string) {
         description:
           "Share of full-time first-year students receiving grants, Pell Grants, institutional aid, and loans, with average amounts, plus aid by family income for students receiving federal aid.",
       },
+      "ipeds-ic": {
+        label: "IPEDS Institutional Characteristics survey",
+        publisher: "National Center for Education Statistics (NCES)",
+        edition: `${sfaYears} (${ic.name})`,
+        url: ic.url,
+        description:
+          "Published prices for the year: tuition and fees for in-district, in-state, and out-of-state students, books and supplies, on-campus room and board, and other expenses.",
+      },
       cds: {
         label: "Common Data Set",
         publisher: "Each college (voluntary, standardized template)",
@@ -425,11 +453,76 @@ function writeMeta(adm: IpedsFile, sfa: IpedsFile, sfaYears: string) {
       enrollment: "scorecard",
       demographics: "scorecard",
       cost: "scorecard",
+      prices: "ipeds-ic",
       outcomes: "scorecard",
       aid: "ipeds-sfa",
     },
   };
   writeFileSync(META, `${JSON.stringify(meta, null, 2)}\n`);
+}
+
+/**
+ * Same-year sticker prices by residency and the estimated average paid by all
+ * first-years (not just grant recipients):
+ *
+ *   avg paid ≈ Σ residency share × on-campus sticker price − share with grants × average grant
+ *
+ * Students without grants are counted at the full sticker price. Assumes
+ * on-campus living costs (so it runs high at commuter-heavy schools).
+ */
+function addPrices(school: School, ic: Record<string, string> | undefined, sfa: Record<string, string> | undefined, year: string) {
+  if (!ic) return;
+  const n = (k: string) => ipedsNum(ic, k);
+  const extras = [n("CHG4AY3"), n("CHG5AY3"), n("CHG6AY3")];
+  const onCampusExtras = extras.every((v) => v !== null) ? extras.reduce((a, b) => a! + b!, 0)! : null;
+  const tf = { in_district: n("CHG1AY3"), in_state: n("CHG2AY3"), out_of_state: n("CHG3AY3") };
+  const sticker = {
+    in_district: tf.in_district !== null && onCampusExtras !== null ? tf.in_district + onCampusExtras : null,
+    in_state: tf.in_state !== null && onCampusExtras !== null ? tf.in_state + onCampusExtras : null,
+    out_of_state: tf.out_of_state !== null && onCampusExtras !== null ? tf.out_of_state + onCampusExtras : null,
+  };
+  if (Object.values(tf).every((v) => v === null)) return;
+
+  const pctOf = (k: string) => {
+    const v = ipedsNum(sfa, k);
+    return v === null ? null : v / 100;
+  };
+  let residency = { in_district: pctOf("SCFA11P"), in_state: pctOf("SCFA12P"), out_of_state: pctOf("SCFA13P") };
+  const resTotal = Object.values(residency).reduce<number>((a, b) => a + (b ?? 0), 0);
+  // Private colleges charge everyone the same; treat missing residency as all in-state.
+  if (resTotal <= 0) residency = { in_district: 0, in_state: 1, out_of_state: 0 };
+  const total = Object.values(residency).reduce<number>((a, b) => a + (b ?? 0), 0) || 1;
+
+  let weighted = 0;
+  let covered = 0;
+  for (const k of ["in_district", "in_state", "out_of_state"] as const) {
+    const share = (residency[k] ?? 0) / total;
+    if (share === 0) continue;
+    const price = sticker[k] ?? sticker.in_state;
+    if (price === null) continue;
+    weighted += share * price;
+    covered += share;
+  }
+  const avgSticker = covered >= 0.95 ? weighted / covered : null;
+  const grantPct = school.aid?.grant_pct ?? null;
+  const grantAvg = school.aid?.grant_avg ?? null;
+  const avgPaid = avgSticker !== null && grantPct !== null && grantAvg !== null ? avgSticker - grantPct * grantAvg : null;
+
+  const aided = school.type === "public" ? ipedsNum(sfa, "NPIST2") : ipedsNum(sfa, "NPGRN2");
+  school.cost = {
+    ...(school.cost ?? { avg_net_price: null, net_price_by_income: null, cost_of_attendance: null, tuition_in_state: null, tuition_out_of_state: null }),
+    year,
+    sticker,
+    tuition_fees: tf,
+    residency: {
+      in_district: residency.in_district === null ? null : round(residency.in_district / total),
+      in_state: residency.in_state === null ? null : round(residency.in_state / total),
+      out_of_state: residency.out_of_state === null ? null : round(residency.out_of_state / total),
+    },
+    aided_net_price: aided,
+    // Guard against inconsistent inputs (e.g. grants reported larger than the price).
+    avg_paid_all: avgPaid !== null && avgPaid > 0 ? Math.round(avgPaid) : null,
+  };
 }
 
 type Patch = { [key: string]: unknown };
@@ -462,6 +555,8 @@ async function main() {
   const [scorecard, adm, sfa] = await Promise.all([fetchScorecard(key), fetchIpeds(ADM_NAMES), fetchIpeds(SFA_NAMES)]);
   const admYear = Number(adm.name.slice(3));
   const sfaYears = `20${sfa.name.slice(3, 5)}–${sfa.name.slice(5, 7)}`;
+  // Prices must describe the same academic year as the aid data (SFA2223 ↔ IC2022_AY = 2022-23).
+  const ic = await fetchIpeds([`IC20${sfa.name.slice(3, 5)}_AY`]);
 
   const stats = { online: 0, noSize: 0, withAdmissions: 0, withSat: 0, overridden: 0 };
   const overrides: Record<string, Patch> = existsSync(OVERRIDES) ? JSON.parse(readFileSync(OVERRIDES, "utf8")) : {};
@@ -473,6 +568,7 @@ async function main() {
       continue;
     }
     let school = toSchool(row, adm.rows.get(String(row.id)), admYear, sfa.rows.get(String(row.id)));
+    if (school) addPrices(school, ic.rows.get(school.unit_id), sfa.rows.get(school.unit_id), sfaYears);
     if (!school) {
       stats.noSize++;
       continue;
@@ -488,7 +584,8 @@ async function main() {
   }
 
   schools.sort((a, b) => a.name.localeCompare(b.name));
-  writeMeta(adm, sfa, sfaYears);
+  const scorecardCostYear = await detectScorecardCostYear(key, String(scorecard[0]?.id ?? "221999"));
+  writeMeta(adm, sfa, ic, sfaYears, scorecardCostYear);
   // One school per line keeps diffs readable between syncs.
   writeFileSync(OUT, `[\n${schools.map((s) => JSON.stringify(s)).join(",\n")}\n]\n`);
 
@@ -500,6 +597,7 @@ async function main() {
   console.log(`  with grad rate:       ${schools.filter((s) => s.outcomes?.graduation_rate != null).length}`);
   console.log(`  with aid (IPEDS SFA): ${schools.filter((s) => s.aid?.grant_pct != null).length}`);
   console.log(`  with CDS aid detail:  ${schools.filter((s) => s.aid?.cds).length}`);
+  console.log(`  with avg paid (all):  ${schools.filter((s) => s.cost?.avg_paid_all != null).length}`);
   console.log(`  overrides applied:    ${stats.overridden}`);
   console.log(`  skipped online-only:  ${stats.online}${INCLUDE_ONLINE ? "" : " (use --include-online to keep)"}`);
   console.log(`  skipped (no undergrads reported): ${stats.noSize}`);

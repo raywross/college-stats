@@ -1,10 +1,11 @@
 {
-  "retrieved": "2026-09-27",
+  "retrieved": "2026-09-28",
+  "scorecardCostYear": "2023–24",
   "sources": {
     "scorecard": {
       "label": "College Scorecard",
       "publisher": "U.S. Department of Education",
-      "edition": "Most recent data (API)",
+      "edition": "Most recent release (cost data 2023–24)",
       "url": "https://collegescorecard.ed.gov/data/",
       "description": "Federal data on every college receiving federal student aid: size, student demographics, Pell and first-generation shares, costs, net price by family income, earnings, graduation and retention, and student debt."
     },
@@ -22,6 +23,13 @@
       "url": "https://nces.ed.gov/ipeds/datacenter/data/SFA2223.zip",
       "description": "Share of full-time first-year students receiving grants, Pell Grants, institutional aid, and loans, with average amounts, plus aid by family income for students receiving federal aid."
     },
+    "ipeds-ic": {
+      "label": "IPEDS Institutional Characteristics survey",
+      "publisher": "National Center for Education Statistics (NCES)",
+      "edition": "2022–23 (IC2022_AY)",
+      "url": "https://nces.ed.gov/ipeds/datacenter/data/IC2022_AY.zip",
+      "description": "Published prices for the year: tuition and fees for in-district, in-state, and out-of-state students, books and supplies, on-campus room and board, and other expenses."
+    },
     "cds": {
       "label": "Common Data Set",
       "publisher": "Each college (voluntary, standardized template)",
@@ -35,6 +43,7 @@
     "enrollment": "scorecard",
     "demographics": "scorecard",
     "cost": "scorecard",
+    "prices": "ipeds-ic",
     "outcomes": "scorecard",
     "aid": "ipeds-sfa"
   }

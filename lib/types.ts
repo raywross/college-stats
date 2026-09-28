@@ -47,14 +47,35 @@ export interface School {
   };
   /** What students pay, per year (College Scorecard; dollars). */
   cost?: {
-    /** Average annual net price for students receiving grant aid. */
+    /**
+     * Scorecard's average net price, which covers students receiving FEDERAL
+     * (Title IV) aid, a lower-income-skewed group. Not shown as a headline;
+     * see avg_paid_all and aided_net_price.
+     */
     avg_net_price: number | null;
-    /** Net price by family income: $0–30K, $30–48K, $48–75K, $75–110K, $110K+. */
+    /** Net price by family income for federal-aid recipients: $0–30K, $30–48K, $48–75K, $75–110K, $110K+. */
     net_price_by_income: (number | null)[] | null;
     /** Full sticker cost of attendance (tuition, fees, housing, books). */
     cost_of_attendance: number | null;
     tuition_in_state: number | null;
     tuition_out_of_state: number | null;
+    /**
+     * Same-year (IPEDS, e.g. 2022-23) prices and the all-student estimate.
+     * Sticker = tuition & fees + books + on-campus room & board + other expenses.
+     */
+    year?: string;
+    sticker?: ResidencyPrices;
+    tuition_fees?: ResidencyPrices;
+    /** Share of first-years paying each residency rate. */
+    residency?: ResidencyPrices;
+    /** Average net price for first-years who received grants (publics: in-state students). */
+    aided_net_price?: number | null;
+    /**
+     * Estimated average paid by ALL first-years: residency-weighted sticker
+     * price minus (share with grants × average grant). Students without
+     * grants are counted at full price.
+     */
+    avg_paid_all?: number | null;
   };
   /** What happens after enrolling (College Scorecard). */
   outcomes?: {
@@ -100,6 +121,12 @@ export interface School {
   cds?: { edition: string; url: string };
 }
 
+export interface ResidencyPrices {
+  in_district: number | null;
+  in_state: number | null;
+  out_of_state: number | null;
+}
+
 export interface CdsAid {
   /** Full-time degree-seeking undergrads (H2 line A). */
   undergrads: number | null;
@@ -116,8 +143,8 @@ export interface CdsAid {
   merit_avg: number | null;
 }
 
-export type Topic = "admissions" | "enrollment" | "demographics" | "cost" | "outcomes" | "aid";
-export type SourceKey = "scorecard" | "ipeds-adm" | "ipeds-sfa" | "cds";
+export type Topic = "admissions" | "enrollment" | "demographics" | "cost" | "prices" | "outcomes" | "aid";
+export type SourceKey = "scorecard" | "ipeds-adm" | "ipeds-sfa" | "ipeds-ic" | "cds";
 
 export interface SourceInfo {
   /** Full citation name, e.g. "College Scorecard". */
@@ -132,6 +159,8 @@ export interface SourceInfo {
 /** Written by the sync script to data/meta.json. */
 export interface DatasetMeta {
   retrieved: string;
+  /** Academic year of Scorecard's "latest" cost fields, e.g. "2023–24". */
+  scorecardCostYear?: string | null;
   sources: Record<SourceKey, SourceInfo>;
   /** Which source supplies each topic unless a school's `provenance` says otherwise. */
   defaults: Record<Topic, SourceKey>;
@@ -148,6 +177,7 @@ export type SortKey =
   | "pell"
   | "first_gen"
   | "diversity"
+  | "avg_cost"
   | "net_price"
   | "earnings"
   | "grad_rate";
@@ -168,8 +198,8 @@ export interface SearchFilters {
   maxACT?: number;
   minEnroll?: number;
   maxEnroll?: number;
-  minNP?: number;
-  maxNP?: number;
+  minCost?: number;
+  maxCost?: number;
   sortBy?: SortKey;
   sortDir?: "asc" | "desc";
 }

@@ -23,7 +23,12 @@ const OUT = join(ROOT, "data", "schools.json");
 const OVERRIDES = join(ROOT, "data", "overrides.json");
 const META = join(ROOT, "data", "meta.json");
 const API = "https://api.data.gov/ed/collegescorecard/v1/schools";
-const IPEDS = "https://nces.ed.gov/ipeds/datacenter/data";
+/**
+ * NCES moved newer releases (from the Dec 2025 provisional release on) to
+ * /ipeds/complete-data-files/; older files remain at /ipeds/datacenter/data/.
+ * Check both, newest location first.
+ */
+const IPEDS_BASES = ["https://nces.ed.gov/ipeds/complete-data-files", "https://nces.ed.gov/ipeds/datacenter/data"];
 const INCLUDE_ONLINE = process.argv.includes("--include-online");
 
 /* ------------------------------------------------------------------ */
@@ -196,9 +201,17 @@ interface IpedsFile {
  */
 async function fetchIpeds(names: string[]): Promise<IpedsFile> {
   for (const name of names) {
-    const url = `${IPEDS}/${name}.zip`;
-    const res = await fetch(url);
-    if (!res.ok) continue;
+    let url = "";
+    let res: Response | null = null;
+    for (const base of IPEDS_BASES) {
+      url = `${base}/${name}.zip`;
+      const r = await fetch(url);
+      if (r.ok) {
+        res = r;
+        break;
+      }
+    }
+    if (!res) continue;
     const dir = mkdtempSync(join(tmpdir(), "ipeds-"));
     const zip = join(dir, `${name}.zip`);
     writeFileSync(zip, Buffer.from(await res.arrayBuffer()));
@@ -414,7 +427,14 @@ async function detectScorecardCostYear(key: string, id: string): Promise<string 
   }
 }
 
-function writeMeta(adm: IpedsFile, sfa: IpedsFile, ic: IpedsFile, sfaYears: string, scorecardCostYear: string | null) {
+function writeMeta(
+  adm: IpedsFile,
+  sfa: IpedsFile,
+  ic: IpedsFile,
+  sfaYears: string,
+  scorecardCostYear: string | null,
+  cost2: IpedsFile | null
+) {
   const meta: DatasetMeta = {
     retrieved: new Date().toISOString().slice(0, 10),
     scorecardCostYear,
@@ -433,15 +453,15 @@ function writeMeta(adm: IpedsFile, sfa: IpedsFile, ic: IpedsFile, sfaYears: stri
         edition: `Fall ${adm.name.slice(3)} (${adm.name})`,
         url: adm.url,
         description:
-          "Annual survey every college must complete: applicants, admits, and enrollees; SAT/ACT score ranges and submission rates; and how test scores are used in admission.",
+          "Annual survey every college must complete: applicants, admits, and enrollees; SAT/ACT score ranges and submission rates; and how test scores are used in admission. The newest year may be a provisional release that NCES later revises.",
       },
       "ipeds-sfa": {
         label: "IPEDS Student Financial Aid survey",
         publisher: "National Center for Education Statistics (NCES)",
-        edition: `${sfaYears} (${sfa.name})`,
+        edition: `${sfaYears} (${sfa.name}${cost2 ? ` + ${cost2.name}` : ""})`,
         url: sfa.url,
         description:
-          "Share of full-time first-year students receiving grants, Pell Grants, institutional aid, and loans, with average amounts, plus aid by family income for students receiving federal aid.",
+          "Share of full-time first-year students receiving grants, Pell Grants, institutional aid, and loans, with average amounts, plus aid by family income for students receiving federal aid. The newest year may be a provisional release that NCES later revises.",
       },
       "ipeds-ic": {
         label: "IPEDS Institutional Characteristics survey",
@@ -484,10 +504,12 @@ function writeMeta(adm: IpedsFile, sfa: IpedsFile, ic: IpedsFile, sfaYears: stri
  */
 function addPrices(school: School, ic: Record<string, string> | undefined, sfa: Record<string, string> | undefined, year: string) {
   if (!ic) return;
-  const n = (k: string) => ipedsNum(ic, k);
-  const extras = [n("CHG4AY3"), n("CHG5AY3"), n("CHG6AY3")];
+  // Detect the column convention: IC_AY files use "…AY3" for the file's year, COST1 files use "…AY2".
+  const sfx = "CHG2AY3" in ic || "CHG1AY3" in ic ? "3" : "2";
+  const n = (k: string) => ipedsNum(ic, `${k}${sfx}`);
+  const extras = [n("CHG4AY"), n("CHG5AY"), n("CHG6AY")];
   const onCampusExtras = extras.every((v) => v !== null) ? extras.reduce((a, b) => a! + b!, 0)! : null;
-  const tf = { in_district: n("CHG1AY3"), in_state: n("CHG2AY3"), out_of_state: n("CHG3AY3") };
+  const tf = { in_district: n("CHG1AY"), in_state: n("CHG2AY"), out_of_state: n("CHG3AY") };
   const sticker = {
     in_district: tf.in_district !== null && onCampusExtras !== null ? tf.in_district + onCampusExtras : null,
     in_state: tf.in_state !== null && onCampusExtras !== null ? tf.in_state + onCampusExtras : null,
@@ -583,8 +605,19 @@ async function main() {
   const [scorecard, adm, sfa] = await Promise.all([fetchScorecard(key), fetchIpeds(ADM_NAMES), fetchIpeds(SFA_NAMES)]);
   const admYear = Number(adm.name.slice(3));
   const sfaYears = `20${sfa.name.slice(3, 5)}–${sfa.name.slice(5, 7)}`;
-  // Prices must describe the same academic year as the aid data (SFA2223 ↔ IC2022_AY = 2022-23).
-  const ic = await fetchIpeds([`IC20${sfa.name.slice(3, 5)}_AY`]);
+  const startYear = `20${sfa.name.slice(3, 5)}`;
+  const endYear = `20${sfa.name.slice(5, 7)}`;
+  // From the 2023-24 release on, NCES moved residency, income-band aid, and net price out of
+  // SFA into COST2_{endYear}. Merge it in when the SFA file no longer carries those columns.
+  const sfaHasIncome = [...sfa.rows.values()].some((r) => "GRN4N12" in r);
+  let cost2: IpedsFile | null = null;
+  if (!sfaHasIncome) {
+    cost2 = await fetchIpeds([`COST2_${endYear}`]);
+    for (const [id, extra] of cost2.rows) sfa.rows.set(id, { ...extra, ...(sfa.rows.get(id) ?? {}) });
+  }
+  // Prices must describe the same academic year as the aid data. Older layout: IC{start}_AY
+  // ("…AY3" columns = that year); newer: COST1_{end} ("…AY2" columns = that year).
+  const ic = await fetchIpeds([`IC${startYear}_AY`, `COST1_${endYear}`]);
 
   const stats = { online: 0, noSize: 0, withAdmissions: 0, withSat: 0, overridden: 0 };
   const overrides: Record<string, Patch> = existsSync(OVERRIDES) ? JSON.parse(readFileSync(OVERRIDES, "utf8")) : {};
@@ -613,7 +646,7 @@ async function main() {
 
   schools.sort((a, b) => a.name.localeCompare(b.name));
   const scorecardCostYear = await detectScorecardCostYear(key, String(scorecard[0]?.id ?? "221999"));
-  writeMeta(adm, sfa, ic, sfaYears, scorecardCostYear);
+  writeMeta(adm, sfa, ic, sfaYears, scorecardCostYear, cost2);
   // One school per line keeps diffs readable between syncs.
   writeFileSync(OUT, `[\n${schools.map((s) => JSON.stringify(s)).join(",\n")}\n]\n`);
 

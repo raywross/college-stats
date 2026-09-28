@@ -1,0 +1,29 @@
+{
+  "unit_id": "495031",
+  "series": {
+    "applicants": {"start":2020,"values":[20,12,15,13,13]},
+    "admitted": {"start":2020,"values":[10,9,15,12,9]},
+    "enrolled": {"start":2020,"values":[7,5,15,12,9]},
+    "acceptance_rate": {"start":2020,"values":[0.5,0.75,1,0.9231,0.6923]},
+    "yield": {"start":2020,"values":[0.7,0.5556,1,1,1]},
+    "tuition_in_state": {"start":2020,"values":[9600,9600,10000,11000]},
+    "tuition_out_of_state": {"start":2020,"values":[9600,9600,10000,11000]},
+    "aided_net_price": {"start":2020,"values":[22577,20841,25725,27900]},
+    "grant_pct": {"start":2019,"values":[0.45,0.2857,1,0.6667,0.75]},
+    "grant_avg": {"start":2019,"values":[4367,6009,5005,4865,8100]},
+    "net_price_income_1": {"start":2019,"values":[22448,19861,null,23754,27167]},
+    "net_price_income_2": {"start":2019,"values":[22728,null,20737,null,26833]},
+    "net_price_income_3": {"start":2019,"values":[23078,null,null,25668,28255]},
+    "net_price_income_4": {"start":2019,"values":[25412,25293,21050,null,28500]},
+    "test_policy": {"start":2020,"values":[3,3,3,3,3]},
+    "undergrads": {"start":2020,"values":[68,61,68,22,51]},
+    "race_white": {"start":2020,"values":[1,1,1,1,0.9804]},
+    "race_asian": {"start":2020,"values":[0,0,0,0,0]},
+    "race_hispanic": {"start":2020,"values":[0,0,0,0,0]},
+    "race_black": {"start":2020,"values":[0,0,0,0,0]},
+    "race_two_or_more": {"start":2020,"values":[0,0,0,0,0]},
+    "race_international": {"start":2020,"values":[0,0,0,0,0.0196]},
+    "race_other": {"start":2020,"values":[0,0,0,0,0]},
+    "grad_rate": {"start":2017,"values":[0.8571,0.7143]}
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "series": "CUUR0000SA0",
+  "label": "Consumer Price Index for All Urban Consumers (CPI-U), U.S. city average, all items",
+  "url": "https://data.bls.gov/timeseries/CUUR0000SA0",
+  "retrieved": "2026-09-28",
+  "basis": "School-year average, July through June, as in NCES's Digest of Education Statistics",
+  "start": 2000,
+  "values": [
+    175.092,
+    178.192,
+    182.108,
+    186.092,
+    191.692,
+    198.992,
+    204.138,
+    211.702,
+    214.658,
+    216.735,
+    221.087,
+    227.565,
+    231.352,
+    234.966,
+    236.677,
+    238.273,
+    242.656,
+    248.126,
+    253.268,
+    257.23,
+    263.151,
+    282.025,
+    299.685,
+    309.57,
+    317.731,
+    327.668
+  ],
+  "missing": [
+    "2025-10"
+  ]
+}

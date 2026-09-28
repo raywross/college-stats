@@ -1,0 +1,24 @@
+{
+  "unit_id": "483595",
+  "series": {
+    "tuition_in_state": {"start":2019,"values":[5960,6220,10384,12980,13575]},
+    "tuition_out_of_state": {"start":2019,"values":[11965,7996,10384,12980,13575]},
+    "aided_net_price": {"start":2019,"values":[14294,10876,17726,null,19775]},
+    "grant_pct": {"start":2019,"values":[0.9333,0.9753,0.9427,0,0.8651]},
+    "grant_avg": {"start":2019,"values":[5516,5896,5924,null,7412]},
+    "net_price_income_1": {"start":2019,"values":[14670,9258,17524,null,19643]},
+    "net_price_income_2": {"start":2019,"values":[11599,12899,18094,null,19420]},
+    "net_price_income_3": {"start":2019,"values":[11683,13444,19770,null,20983]},
+    "net_price_income_4": {"start":2019,"values":[14476,null,18952,null,23279]},
+    "net_price_income_5": {"start":2023,"values":[24342]},
+    "undergrads": {"start":2019,"values":[515,1257,2961,4662,4897,4763]},
+    "race_white": {"start":2019,"values":[0,0.0095,0.0054,0.0049,0.0243,0.0044]},
+    "race_asian": {"start":2019,"values":[0,0,0,0,0,0.0002]},
+    "race_hispanic": {"start":2019,"values":[1,0.9801,0.4836,0.6163,0.6769,0.8616]},
+    "race_black": {"start":2019,"values":[0,0.008,0.0003,0.0002,0.0012,0.0021]},
+    "race_two_or_more": {"start":2019,"values":[0,0.0024,0.0007,0.0009,0.0012,0.0025]},
+    "race_international": {"start":2019,"values":[0,0,0,0,0.0186,0.0071]},
+    "race_other": {"start":2019,"values":[0,0,0.51,0.3777,0.2777,0.122]},
+    "median_debt": {"start":2020,"values":[12188]}
+  }
+}

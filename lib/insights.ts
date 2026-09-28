@@ -16,6 +16,8 @@ import {
 } from "./metrics";
 import { money, moneyCompact, pct, pctSmart, num } from "./format";
 import { shortName } from "./brand";
+import { SERIES, changeOver, defaultWindow, historyYearLabel, isTinyBase, type SchoolHistory, type SeriesKey } from "./history";
+import type { HistoryFiles } from "./supabase";
 
 /* ------------------------------------------------------------------ */
 /* "Known for" badges: computed standouts vs. the dataset              */
@@ -28,7 +30,7 @@ export interface Standout {
 }
 
 /** Functions below that compare a college with all others take the loaded dataset first (`await getData()`). */
-export function standouts({ rankOf }: Dataset, s: School): Standout[] {
+export function standouts({ rankOf }: Dataset, s: School, { trends = false }: { trends?: boolean } = {}): Standout[] {
   const out: Standout[] = [];
   const at = (k: MetricKey, test: (v: number) => boolean) => {
     const v = rankOf(s, k);
@@ -57,7 +59,39 @@ export function standouts({ rankOf }: Dataset, s: School): Standout[] {
   if (sat !== null && act !== null && sat < 0.5 && act < 0.5) {
     out.push({ label: "Test-optional heavy", domain: "scores", metric: "sat" });
   }
+  // Trend chips only on the profile (specs/trends-design.md): Explore cards stay unchanged.
+  const trend = trends ? trendStandout({ rankOf }, s) : null;
+  if (trend) out.push(trend);
   return out;
+}
+
+/** "doubled", "tripled", "up 85%": how a relative change reads in a chip. */
+function grewBy(change: number): string {
+  const times = change + 1;
+  if (times >= 2.95 && times < 3.5) return "tripled";
+  if (times >= 1.95 && times < 2.5) return "doubled";
+  if (times >= 3.5) return `grew ${Math.round(times)}×`;
+  return `up ${Math.round(change * 100)}%`;
+}
+
+/**
+ * At most one trend standout (specs/trends-design.md): only the national top 5% of a 10-year change, and only on a
+ * real base (1,000+ applicants or undergrads), so a small college's swing doesn't read as a trend.
+ */
+export function trendStandout({ rankOf }: Pick<Dataset, "rankOf">, s: School): Standout | null {
+  const t = s.trends;
+  const top = (k: MetricKey) => (rankOf(s, k) ?? 0) >= 0.95;
+  if (t?.applicants && t.applicants.from >= 1000 && t.applicants.change > 0 && top("applicantsChange")) {
+    return { label: `Applications ${grewBy(t.applicants.change)} since fall ${t.applicants.since}`, domain: "admissions", metric: "applicantsChange" };
+  }
+  if (t?.undergrads && t.undergrads.from >= 1000 && t.undergrads.change > 0 && top("sizeChange")) {
+    return { label: `Enrollment ${grewBy(t.undergrads.change)} since fall ${t.undergrads.since}`, domain: "size", metric: "sizeChange" };
+  }
+  const cost = rankOf(s, "avgCostChange");
+  if (t?.avg_paid_all && t.avg_paid_all.change < 0 && cost !== null && cost <= 0.05) {
+    return { label: `Average cost down ${Math.round(-t.avg_paid_all.change * 100)}% since ${t.avg_paid_all.since}–${String(t.avg_paid_all.since + 1).slice(2)}`, domain: "value", metric: "avgCostChange" };
+  }
+  return null;
 }
 
 /* ------------------------------------------------------------------ */
@@ -344,4 +378,48 @@ export function radarProfile({ rankOf }: Dataset, s: School): (number | null)[] 
     const r = rankOf(s, key);
     return r === null ? null : invert ? 1 - r : r;
   });
+}
+
+/* ------------------------------------------------------------------ */
+/* Over time (specs/trends-design.md)                                  */
+/* ------------------------------------------------------------------ */
+
+/** "rose 12%", "fell 3%", "held about steady" for a relative change. */
+export function movedBy(change: number): string {
+  if (Math.abs(change) < 0.015) return "held about steady";
+  return `${change > 0 ? "rose" : "fell"} ${Math.round(Math.abs(change) * 100)}%`;
+}
+
+/**
+ * One or two sentences atop the profile's "Over time" section: how the full price and what students actually paid
+ * moved over the default window (after inflation), and why when grants explain the gap; then applications and the
+ * acceptance rate.
+ */
+export function historyTakeaway(h: SchoolHistory, files: Pick<HistoryFiles, "cpi" | "meta">): string | undefined {
+  const ch = (k: SeriesKey) => changeOver(k, h.series[k], defaultWindow(files.meta, SERIES[k].kind), files.cpi);
+  const sentences: string[] = [];
+
+  const full = ch("full_price");
+  const paid = ch("avg_paid_all");
+  const gen = ch("aid_generosity");
+  if (full && paid) {
+    const since = historyYearLabel(Math.max(full.from.year, paid.from.year), "academic");
+    const gap = paid.change - full.change;
+    if (Math.abs(gap) < 0.03) {
+      sentences.push(`Since ${since}, the full price ${movedBy(full.change)} after inflation, and what the average first-year paid moved with it.`);
+    } else {
+      const why = gap < 0 && gen && gen.change > 0.01 ? ", because grants grew faster" : gap > 0 && gen && gen.change < -0.01 ? ", as grants covered less of it" : "";
+      sentences.push(`Since ${since}, the full price ${movedBy(full.change)} after inflation, while what the average first-year paid ${movedBy(paid.change)}${why}.`);
+    }
+  } else if (full) {
+    sentences.push(`Since ${historyYearLabel(full.from.year, "academic")}, the full price ${movedBy(full.change)} after inflation.`);
+  }
+
+  const apps = ch("applicants");
+  const rate = ch("acceptance_rate");
+  if (apps && !isTinyBase(apps)) {
+    const r = rate ? `, and the acceptance rate went from ${pctSmart(rate.from.value)} to ${pctSmart(rate.to.value)}` : "";
+    sentences.push(`Applications ${movedBy(apps.change)} since ${historyYearLabel(apps.from.year, "fall").toLowerCase()}${r}.`);
+  }
+  return sentences.length ? sentences.join(" ") : undefined;
 }

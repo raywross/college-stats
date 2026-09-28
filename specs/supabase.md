@@ -41,6 +41,8 @@ back to JSON.
 | `schools` | `unit_id` (PK), `position` (order in schools.json), `name`, `state`, `data` (one `School`, verbatim) | Public read |
 | `dataset_files` | `meta` and `release_calendar` documents | Public read |
 | `dataset_publishes` | Log: time, college count, `retrieved`, git commit, who | Secret key only |
+| `school_histories` | `unit_id` (PK), `data` (one `SchoolHistory`, verbatim: data/history/schools/{id}.json) | Public read |
+| `history_files` | `meta`, `national`, `facts`, `cpi` from data/history/ | Public read |
 
 - Documents are **`json`, not `jsonb`**: jsonb reorders object keys (e.g. race/ethnicity shares come back as
   asian, black, other, white, …), and the UI iterates some objects in key order.
@@ -48,6 +50,15 @@ back to JSON.
 - **`publish_dataset(p_schools, p_meta, p_release_calendar, p_git_commit, p_published_by)`** replaces everything in
   one transaction, so readers never see half a publish and colleges dropped from the sync disappear. Only
   `service_role` (the secret key) may call it.
+- **History is published in batches** (migration `20260928180000_history_staging.sql`): once scores, students, and
+  outcomes were added (~13 MB), one call exceeded the API's statement timeout. `stage_history(p_schools, p_reset)`
+  takes 150 shards at a time into `history_staging` (secret key only), then `publish_history_staged(p_files,
+  p_expected)` checks every shard arrived and swaps them in with one transaction. The single-call `publish_history()`
+  below still exists but isn't used.
+- **`publish_history(p_schools, p_files)`** (migration `20260928120000_history.sql`) does the same for history
+  ([trends-data.md](trends-data.md)): `npm run publish-data` calls it after the dataset when data/history/ exists, then
+  reads every shard back. The app reads one shard per profile and the shared files once per publish; if the tables
+  are missing, pages render without history (so code can merge before the migration, but apply it before publishing).
 - Migrations follow the Supabase CLI layout (`<timestamp>_<name>.sql`), so they can later be applied with
   `supabase db push`. The first one is pasted into the SQL Editor. To switch to the CLI later, mark it applied with
   `supabase migration repair --status applied 20260928000000`.

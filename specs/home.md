@@ -13,6 +13,9 @@ profiles, Compare, and the glossary.
 4. **Admissions landscape**: `ScatterPlot` (admit rate vs. SAT) of the 400 most-applied-to colleges with a plain-English reading guide.
 5. **Is it worth it?**: cost-vs-earnings `ScatterPlot` (400 most-applied-to), with "Highest earnings" and
    "Lowest net price" leaderboards. See [cost-outcomes.md](cost-outcomes.md).
+5a. **What's changed**: national trend facts from `data/history/facts.json` (the price gap; harder to get in), each
+   with a sparkline, its years, a source line, and an Explore link. Hidden when history isn't built. See
+   [trends-design.md](trends-design.md#build-notes-phase-1).
 6. **Leaderboards**: hardest to get into (1 in N), biggest campuses, highest Pell share.
 7. **Schools by state**: `StateTileMap` (tiles filter Explore) plus a **head-to-head** CTA with preset matchups.
 8. **Learn the lingo**: four glossary cards and a link to the full glossary.

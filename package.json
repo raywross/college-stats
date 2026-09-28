@@ -11,6 +11,8 @@
     "start": "next start",
     "lint": "eslint",
     "sync-data": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --env-file=.env.local scripts/sync-data.mts",
+    "sync-history": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --env-file-if-exists=.env.local scripts/sync-history.mts",
+    "sync-all": "npm run sync-data && npm run sync-history",
     "import-cds": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/import-cds.mts",
     "publish-data": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --env-file-if-exists=.env.local scripts/publish-data.mts",
     "publish-data:prod": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --env-file=.env.prod.local scripts/publish-data.mts",

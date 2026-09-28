@@ -1,0 +1,21 @@
+{
+  "unit_id": "491190",
+  "series": {
+    "applicants": {"start":2021,"values":[6,1,1,0]},
+    "admitted": {"start":2021,"values":[0,0,1]},
+    "enrolled": {"start":2023,"values":[0]},
+    "yield": {"start":2023,"values":[0]},
+    "tuition_in_state": {"start":2021,"values":[12712,13224,20844]},
+    "tuition_out_of_state": {"start":2021,"values":[12712,13224,20844]},
+    "test_policy": {"start":2021,"values":[3,5,5,5]},
+    "undergrads": {"start":2021,"values":[2,4,5,2]},
+    "race_white": {"start":2021,"values":[0,0.5,0.2,0]},
+    "race_asian": {"start":2021,"values":[0.5,0.25,0,0]},
+    "race_hispanic": {"start":2021,"values":[0,0,0.4,0.5]},
+    "race_black": {"start":2021,"values":[0.5,0.25,0.2,0]},
+    "race_two_or_more": {"start":2021,"values":[0,0,0,0]},
+    "race_international": {"start":2021,"values":[0,0,0,0]},
+    "race_other": {"start":2021,"values":[0,0,0.2,0.5]},
+    "median_debt": {"start":2017,"values":[27714,27500,20000,20000]}
+  }
+}

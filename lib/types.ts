@@ -147,7 +147,26 @@ export interface School {
   lineage?: Partial<Record<FieldPath, LineageRecord>>;
   /** The Common Data Set used for this school, when any field came from it. */
   cds?: { edition: string; url: string };
+  /**
+   * 10-year changes from data/history/ (written by `npm run sync-history`, kept by sync-data), for Explore sorts,
+   * change columns, and trend standouts without loading history files. Money is after inflation.
+   */
+  trends?: SchoolTrends;
 }
+
+/** One measure's change over the default 10-year window. */
+export interface TrendSummary {
+  /** Start year (a fall term). */
+  since: number;
+  /** Start and end values; money in end-year dollars. */
+  from: number;
+  to: number;
+  /** Relative change, or the difference for shares (acceptance rate, grant share). */
+  change: number;
+}
+
+export type TrendKey = "avg_paid_all" | "full_price" | "acceptance_rate" | "applicants" | "undergrads" | "grant_pct";
+export type SchoolTrends = Partial<Record<TrendKey, TrendSummary>>;
 
 /**
  * Where one value came from. Omitted parts fall back to the source's defaults in
@@ -226,7 +245,10 @@ export type SortKey =
   | "aid_generosity"
   | "net_price"
   | "earnings"
-  | "grad_rate";
+  | "grad_rate"
+  | "avg_cost_change"
+  | "admit_rate_change"
+  | "size_change";
 
 export type ExploreView = "grid" | "table" | "chart";
 

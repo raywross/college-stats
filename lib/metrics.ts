@@ -2,6 +2,7 @@ import type { School, SizeBucket } from "./types";
 import type { TermKey } from "./glossary";
 import type { FieldPath } from "./fields";
 import { money, num, pct, pctSmart } from "./format";
+import { yieldOf } from "./derive";
 
 /* ------------------------------------------------------------------ */
 /* Derived values (null when the underlying data isn't reported)       */
@@ -26,8 +27,7 @@ export function actMid(s: School): number | null {
 
 /** Share of admitted students who enroll. */
 export function yieldRate(s: School): number | null {
-  const { admitted, enrolled } = s.admissions;
-  return admitted && enrolled !== null ? enrolled / admitted : null;
+  return yieldOf(s.admissions.admitted, s.admissions.enrolled);
 }
 
 /** "1 in N" applicants admitted. */
@@ -126,7 +126,10 @@ export type MetricKey =
   | "netPrice"
   | "earnings"
   | "gradRate"
-  | "debt";
+  | "debt"
+  | "applicantsChange"
+  | "sizeChange"
+  | "avgCostChange";
 
 export interface MetricDef {
   key: MetricKey;
@@ -144,6 +147,9 @@ export interface MetricDef {
   more: string;
   less: string;
 }
+
+/** "+12%", "−3%": a signed relative change with a true minus sign. */
+const SIGNED_PCT = (v: number) => `${v > 0 ? "+" : v < 0 ? "−" : ""}${Math.round(Math.abs(v) * 100)}%`;
 
 export const METRICS: Record<MetricKey, MetricDef> = {
   acceptance: {
@@ -334,6 +340,44 @@ export const METRICS: Record<MetricKey, MetricDef> = {
     format: money,
     more: "more debt",
     less: "less debt",
+  },
+  // 10-year changes (school.trends, from data/history/). Tiny bases are left out: a percent change on a handful of
+  // applicants or students says nothing.
+  applicantsChange: {
+    key: "applicantsChange",
+    field: "trends",
+    label: "Applications, 10-year change",
+    short: "Applications change",
+    term: "applicants",
+    domain: "admissions",
+    get: (s) => (s.trends?.applicants && Math.min(s.trends.applicants.from, s.trends.applicants.to) >= 200 ? s.trends.applicants.change : null),
+    format: SIGNED_PCT,
+    more: "faster-growing applications",
+    less: "slower-growing applications",
+  },
+  sizeChange: {
+    key: "sizeChange",
+    field: "trends",
+    label: "Undergrads, 10-year change",
+    short: "Size change",
+    term: "undergrad-enrollment",
+    domain: "size",
+    get: (s) => (s.trends?.undergrads && Math.min(s.trends.undergrads.from, s.trends.undergrads.to) >= 300 ? s.trends.undergrads.change : null),
+    format: SIGNED_PCT,
+    more: "faster growth",
+    less: "slower growth",
+  },
+  avgCostChange: {
+    key: "avgCostChange",
+    field: "trends",
+    label: "Average cost, 10-year change (after inflation)",
+    short: "Cost change",
+    term: "average-cost",
+    domain: "value",
+    get: (s) => s.trends?.avg_paid_all?.change ?? null,
+    format: SIGNED_PCT,
+    more: "bigger cost increases",
+    less: "smaller cost increases",
   },
 };
 

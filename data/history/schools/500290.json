@@ -1,0 +1,22 @@
+{
+  "unit_id": "500290",
+  "series": {
+    "applicants": {"start":2024,"values":[25]},
+    "admitted": {"start":2024,"values":[25]},
+    "enrolled": {"start":2024,"values":[10]},
+    "acceptance_rate": {"start":2024,"values":[1]},
+    "yield": {"start":2024,"values":[0.4]},
+    "grant_pct": {"start":2023,"values":[1]},
+    "grant_avg": {"start":2023,"values":[9077]},
+    "net_price_income_1": {"start":2023,"values":[33626]},
+    "test_policy": {"start":2024,"values":[3]},
+    "undergrads": {"start":2024,"values":[149]},
+    "race_white": {"start":2024,"values":[0.1477]},
+    "race_asian": {"start":2024,"values":[0.0268]},
+    "race_hispanic": {"start":2024,"values":[0.0671]},
+    "race_black": {"start":2024,"values":[0.7114]},
+    "race_two_or_more": {"start":2024,"values":[0.0403]},
+    "race_international": {"start":2024,"values":[0]},
+    "race_other": {"start":2024,"values":[0.0067]}
+  }
+}

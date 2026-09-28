@@ -1,0 +1,24 @@
+{
+  "unit_id": "176451",
+  "series": {
+    "applicants": {"start":2002,"values":[28,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,28,4,3,7]},
+    "admitted": {"start":2002,"values":[28,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,22,4,3,4]},
+    "enrolled": {"start":2001,"values":[33,21,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,11,3,2,1]},
+    "acceptance_rate": {"start":2002,"values":[1,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,0.7857]},
+    "yield": {"start":2002,"values":[0.75,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,0.5,0.75,0.6667,0.25]},
+    "tuition_in_state": {"start":2021,"values":[11000,9000,8000]},
+    "tuition_out_of_state": {"start":2021,"values":[11000,9000,8000]},
+    "grant_pct": {"start":2021,"values":[0]},
+    "sat_submit": {"start":2002,"values":[0]},
+    "act_submit": {"start":2002,"values":[0]},
+    "test_policy": {"start":2002,"values":[3,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,3,3,3,3]},
+    "undergrads": {"start":2021,"values":[20,19,27,24]},
+    "race_white": {"start":2021,"values":[0.4,0.5263,0.5185,0.5833]},
+    "race_asian": {"start":2021,"values":[0.05,0,0,0]},
+    "race_hispanic": {"start":2021,"values":[0,0,0.1481,0.0833]},
+    "race_black": {"start":2021,"values":[0.45,0.3158,0.2222,0.25]},
+    "race_two_or_more": {"start":2021,"values":[0,0,0,0]},
+    "race_international": {"start":2021,"values":[0,0,0,0]},
+    "race_other": {"start":2021,"values":[0.1,0.1579,0.1111,0.0833]}
+  }
+}

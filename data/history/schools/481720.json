@@ -1,0 +1,30 @@
+{
+  "unit_id": "481720",
+  "series": {
+    "applicants": {"start":2013,"values":[54]},
+    "admitted": {"start":2013,"values":[20]},
+    "enrolled": {"start":2013,"values":[18]},
+    "acceptance_rate": {"start":2013,"values":[0.3704]},
+    "yield": {"start":2013,"values":[0.9]},
+    "tuition_in_state": {"start":2013,"values":[16360,16360,16761,17393,17014,null,null,19354,19354,19354,20650]},
+    "tuition_out_of_state": {"start":2013,"values":[16360,16360,16761,17393,17014,null,null,19354,19354,19354,20650]},
+    "aided_net_price": {"start":2013,"values":[24763,23756,23168,25178,null,null,null,null,29474,27634]},
+    "grant_pct": {"start":2013,"values":[0.9375,0.8889,0.9167,0.9,1,null,null,null,1,1]},
+    "grant_avg": {"start":2013,"values":[4553,4279,5173,5525,5653,null,null,null,5954,8581]},
+    "net_price_income_1": {"start":2013,"values":[24447,23915,23707,26080,null,null,null,null,29474,27915]},
+    "net_price_income_2": {"start":2013,"values":[29316,23662,23316,23196]},
+    "net_price_income_3": {"start":2013,"values":[24452,27333]},
+    "net_price_income_4": {"start":2013,"values":[29316,null,null,30703,null,null,null,null,null,27073]},
+    "test_policy": {"start":2013,"values":[2]},
+    "undergrads": {"start":2013,"values":[203,296,369,343,308,35,null,20,38,47,70,67]},
+    "race_white": {"start":2013,"values":[0.3103,0.3615,0.3713,0.4402,0.4253,0.4,null,0.35,0.3421,0.2766,0.2143,0.2239]},
+    "race_asian": {"start":2013,"values":[0,0.0068,0.0163,0.0321,0.026,0,null,0,0.0263,0.0213,0.0143,0.0149]},
+    "race_hispanic": {"start":2013,"values":[0.069,0.0405,0.0515,0.07,0.0552,0.0857,null,0.15,0.0789,0.0213,0.0429,0.0597]},
+    "race_black": {"start":2013,"values":[0.5813,0.5608,0.523,0.4373,0.4643,0.4571,null,0.5,0.5526,0.5957,0.6429,0.5373]},
+    "race_two_or_more": {"start":2013,"values":[0,0,0,0,0,0,null,0,0,0.0638,0.0286,0.0149]},
+    "race_international": {"start":2013,"values":[0,0,0,0,0,0,null,0,0,0,0,0]},
+    "race_other": {"start":2013,"values":[0.0394,0.0304,0.0379,0.0203,0.0292,0.0572,null,0,0,0.0213,0.0572,0.1492]},
+    "grad_rate": {"start":2013,"values":[0.1154,0.125,0.1818,0.125,0]},
+    "median_debt": {"start":2013,"values":[25000,24667,24667,25000,25084,25166,25379,26123]}
+  }
+}

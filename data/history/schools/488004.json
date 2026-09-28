@@ -1,0 +1,18 @@
+{
+  "unit_id": "488004",
+  "series": {
+    "applicants": {"start":2016,"values":[0,0,null,null,0,2,null,null,0]},
+    "admitted": {"start":2021,"values":[0]},
+    "tuition_in_state": {"start":2016,"values":[11000,11000,null,null,11000,11000]},
+    "tuition_out_of_state": {"start":2016,"values":[11000,11000,null,null,11000,11000]},
+    "test_policy": {"start":2016,"values":[3,3,null,null,3,3,null,null,3]},
+    "undergrads": {"start":2016,"values":[43,40,20,21,23,20,28,22,15]},
+    "race_white": {"start":2016,"values":[0.9535,0.95,0.95,1,1,0.95,0.75,0.6818,0.6]},
+    "race_asian": {"start":2016,"values":[0,0,0,0,0,0,0,0,0]},
+    "race_hispanic": {"start":2016,"values":[0,0,0,0,0,0,0,0,0]},
+    "race_black": {"start":2016,"values":[0,0,0,0,0,0,0,0,0]},
+    "race_two_or_more": {"start":2016,"values":[0,0,0,0,0,0,0,0,0]},
+    "race_international": {"start":2016,"values":[0.0465,0.05,0.05,0,0,0.05,0.25,0.3182,0.4]},
+    "race_other": {"start":2016,"values":[0,0,0,0,0,0,0,0,0]}
+  }
+}

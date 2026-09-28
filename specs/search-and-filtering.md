@@ -12,7 +12,7 @@ Route: `/explore` (dynamic, URL-driven). The middle of the drill-down, where you
 | View | Component | Notes |
 |---|---|---|
 | `grid` (default, 24/page) | `SchoolCard` | Crest, admit rate + "1 in N", selectivity tier, five percentile meters (selectivity, size, SAT, Pell, net price), up to two "Known for" chips, compare toggle |
-| `table` (50/page) | `SchoolTable` | Sortable headers with info tips, inline bars per metric, sticky first column, horizontal scroll on small screens |
+| `table` (50/page) | `SchoolTable` | Sortable headers with info tips, inline bars per metric, sticky first column, horizontal scroll on small screens. `changes=1` adds 10-year change columns (avg cost after inflation, admit rate then → now, undergrads) from `school.trends`, sortable as `avg_cost_change`, `admit_rate_change`, `size_change` |
 | `chart` | `ScatterPlot` | Up to the 600 most-applied-to matches. Tab `chart=admissions` (default: admit rate vs. SAT) or `chart=value` (net price vs. earnings) |
 
 ## Filters & URL params

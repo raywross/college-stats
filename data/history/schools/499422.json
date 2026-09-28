@@ -1,0 +1,13 @@
+{
+  "unit_id": "499422",
+  "series": {
+    "undergrads": {"start":2023,"values":[70,135]},
+    "race_white": {"start":2023,"values":[0.1571,0.1407]},
+    "race_asian": {"start":2023,"values":[0.1571,0.1852]},
+    "race_hispanic": {"start":2023,"values":[0.1429,0.1481]},
+    "race_black": {"start":2023,"values":[0.5143,0.4815]},
+    "race_two_or_more": {"start":2023,"values":[0,0.0074]},
+    "race_international": {"start":2023,"values":[0,0]},
+    "race_other": {"start":2023,"values":[0.0286,0.037]}
+  }
+}

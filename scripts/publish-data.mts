@@ -1,5 +1,5 @@
 /**
- * Publish data/schools.json, data/meta.json and data/release-calendar.json to Supabase.
+ * Publish data/schools.json, data/meta.json, data/release-calendar.json and data/history/ to Supabase.
  *
  *   npm run publish-data              # the project in .env.local (development)
  *   npm run publish-data:prod         # the project in .env.prod.local
@@ -12,22 +12,28 @@
  *      unless --allow-shrink.
  *   3. publish_dataset() replaces everything in one transaction (supabase/migrations/).
  *   4. Read it all back and require an exact match with the local files.
- *   5. If REVALIDATE_URL and REVALIDATE_SECRET are set, ask the site to regenerate its static pages.
+ *   5. History (data/history/, from `npm run sync-history`), if built: the same shard checks as check:lineage, then
+ *      stage_history() takes the shards in batches, publish_history_staged() swaps them in with one transaction, and
+ *      it's read back and compared too.
+ *   6. If REVALIDATE_URL and REVALIDATE_SECRET are set, ask the site to regenerate its static pages.
  * Needs SUPABASE_URL and SUPABASE_SECRET_KEY (environment variables win over the env file, which is how the
  * GitHub Action points it at prod). See specs/supabase.md.
  */
 import { execFileSync } from "node:child_process";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { userInfo } from "node:os";
 import { join } from "node:path";
 import type { DatasetMeta, School } from "../lib/types";
 import type { ReleaseCalendar } from "../lib/releases";
 import { validateLineage } from "../lib/lineage.ts";
-import { fetchDatasetFiles, supabaseClient } from "../lib/supabase.ts";
+import { fetchAllSchoolHistories, fetchDatasetFiles, fetchHistoryFiles, supabaseClient } from "../lib/supabase.ts";
+import { validateHistoryMeta, validateShard, type SchoolHistory } from "../lib/history.ts";
 
 const ROOT = join(import.meta.dirname, "..");
 const DRY_RUN = process.argv.includes("--dry-run");
 const ALLOW_SHRINK = process.argv.includes("--allow-shrink");
+/** History shards per staging call (~1 MB), well under the API's statement timeout. */
+const HISTORY_BATCH = 150;
 
 const read = <T,>(name: string): T => JSON.parse(readFileSync(join(ROOT, "data", name), "utf8"));
 const schools = read<School[]>("schools.json");
@@ -56,6 +62,26 @@ if (problems.length) {
   fail(`${problems.length} lineage problem(s); run npm run check:lineage.`);
 }
 
+// History, when built: checked up front so a bad shard stops the publish before anything is written.
+const HISTORY = join(ROOT, "data", "history");
+const history = existsSync(join(HISTORY, "meta.json"))
+  ? {
+      files: Object.fromEntries(["meta", "national", "facts", "cpi"].map((n) => [n, JSON.parse(readFileSync(join(HISTORY, `${n}.json`), "utf8"))])),
+      shards: readdirSync(join(HISTORY, "schools"))
+        .filter((f) => f.endsWith(".json"))
+        .sort()
+        .map((f) => JSON.parse(readFileSync(join(HISTORY, "schools", f), "utf8")) as SchoolHistory),
+    }
+  : null;
+if (history) {
+  const ids = new Set(schools.map((s) => s.unit_id));
+  const hp = [...validateHistoryMeta(history.files.meta, meta), ...history.shards.flatMap((h) => validateShard(h, ids))];
+  if (hp.length) {
+    for (const p of hp.slice(0, 20)) console.error(`  ${p}`);
+    fail(`${hp.length} history problem(s); run npm run check:lineage.`);
+  }
+}
+
 const client = supabaseClient("publish");
 const host = new URL(process.env.SUPABASE_URL!).host;
 console.log(`Publishing ${schools.length} colleges (retrieved ${meta.retrieved}) to ${host}${DRY_RUN ? " [dry run]" : ""}`);
@@ -67,8 +93,16 @@ if (count && schools.length < count * 0.9 && !ALLOW_SHRINK) {
   fail(`would drop from ${count} to ${schools.length} colleges. Check the sync, or pass --allow-shrink.`);
 }
 
+if (history) {
+  const { error: historyError } = await client.from("history_files").select("name", { head: true });
+  if (historyError) fail(`${historyError.message}. Apply supabase/migrations/20260928120000_history.sql first.`);
+  const { error: stagingError } = await client.from("history_staging").select("unit_id", { head: true });
+  if (stagingError) fail(`${stagingError.message}. Apply supabase/migrations/20260928180000_history_staging.sql first.`);
+}
+
 if (DRY_RUN) {
-  console.log(`Checks passed. ${count ?? 0} colleges currently published; nothing written.`);
+  const ready = history ? `${history.shards.length} college histories ready; ` : "";
+  console.log(`Checks passed. ${count ?? 0} colleges currently published; ${ready}nothing written.`);
   process.exit(0);
 }
 
@@ -93,7 +127,35 @@ if (!same(back.meta, meta) || !same(back.releaseCalendar, releaseCalendar)) fail
 
 console.log(`Published ${written} colleges from ${commit ?? "an unknown commit"}; read back and verified.`);
 
-// 5. Revalidate the site's static pages.
+// 5. History
+if (history) {
+  // Stage the shards in batches (one call with all of them exceeds the statement timeout), then swap them in with one
+  // short transaction, so readers never see a half-published history.
+  for (let i = 0; i < history.shards.length; i += HISTORY_BATCH) {
+    const { error } = await client.rpc("stage_history", { p_schools: history.shards.slice(i, i + HISTORY_BATCH), p_reset: i === 0 });
+    if (error) fail(`history: staging shards ${i}–${i + HISTORY_BATCH}: ${error.message}. Has supabase/migrations/20260928180000_history_staging.sql been applied?`);
+    process.stdout.write(`\r  History: staged ${Math.min(i + HISTORY_BATCH, history.shards.length)}/${history.shards.length}`);
+  }
+  process.stdout.write("\n");
+  const { data: shardCount, error: hError } = await client.rpc("publish_history_staged", { p_files: history.files, p_expected: history.shards.length });
+  if (hError) fail(`history: ${hError.message}`);
+  const backFiles = await fetchHistoryFiles(client);
+  const backShards = await fetchAllSchoolHistories(client);
+  const byId = new Map(backShards.map((h) => [h.unit_id, h]));
+  const differ = history.shards.filter((h) => !same(h, byId.get(h.unit_id))).map((h) => h.unit_id);
+  if (!backFiles || backShards.length !== history.shards.length || differ.length) {
+    const eg = differ.length ? `; e.g. ${differ.slice(0, 5).join(", ")}` : "";
+    fail(`history differs after reading back (${backShards.length} shards, expected ${history.shards.length}${eg}).`);
+  }
+  const back = { meta: backFiles.meta, national: backFiles.national, facts: backFiles.facts, cpi: backFiles.cpi };
+  const local = { meta: history.files.meta, national: history.files.national, facts: history.files.facts, cpi: history.files.cpi };
+  if (!same(back, local)) fail("history files differ after reading back.");
+  console.log(`Published ${shardCount} college histories (built ${history.files.meta.built}); read back and verified.`);
+} else {
+  console.log("No data/history/ (run npm run sync-history); history not published.");
+}
+
+// 6. Revalidate the site's static pages.
 const { REVALIDATE_URL, REVALIDATE_SECRET } = process.env;
 if (!REVALIDATE_URL || !REVALIDATE_SECRET) {
   console.log("REVALIDATE_URL/REVALIDATE_SECRET not set: static pages update on their next rebuild or daily regeneration.");

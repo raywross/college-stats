@@ -1,0 +1,29 @@
+{
+  "unit_id": "498049",
+  "series": {
+    "applicants": {"start":2022,"values":[70,108,187]},
+    "admitted": {"start":2022,"values":[70,108,187]},
+    "enrolled": {"start":2022,"values":[36,44,108]},
+    "acceptance_rate": {"start":2022,"values":[1,1,1]},
+    "yield": {"start":2022,"values":[0.5143,0.4074,0.5775]},
+    "tuition_in_state": {"start":2022,"values":[22826,23760]},
+    "tuition_out_of_state": {"start":2022,"values":[22826,23760]},
+    "aided_net_price": {"start":2022,"values":[32991,35849]},
+    "grant_pct": {"start":2021,"values":[0.8571,0.8261,0.6071]},
+    "grant_avg": {"start":2021,"values":[6225,6535,5755]},
+    "net_price_income_1": {"start":2021,"values":[34597,33141,36842]},
+    "net_price_income_2": {"start":2021,"values":[35408,32926,40363]},
+    "net_price_income_3": {"start":2022,"values":[38951,38446]},
+    "net_price_income_4": {"start":2023,"values":[42280]},
+    "net_price_income_5": {"start":2022,"values":[38951,42280]},
+    "test_policy": {"start":2022,"values":[3,3,3]},
+    "undergrads": {"start":2022,"values":[297,415,594]},
+    "race_white": {"start":2022,"values":[0.2121,0.253,0.2593]},
+    "race_asian": {"start":2022,"values":[0.0236,0.0193,0.0236]},
+    "race_hispanic": {"start":2022,"values":[0.0808,0.0482,0.0539]},
+    "race_black": {"start":2022,"values":[0.6397,0.6241,0.6128]},
+    "race_two_or_more": {"start":2022,"values":[0.037,0.0458,0.0438]},
+    "race_international": {"start":2022,"values":[0,0,0]},
+    "race_other": {"start":2022,"values":[0.0068,0.0096,0.0068]}
+  }
+}

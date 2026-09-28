@@ -1,0 +1,936 @@
+{
+  "built": "2026-09-28",
+  "latest": {
+    "fall": 2024,
+    "academic": 2023,
+    "cohort": 2018
+  },
+  "files": {
+    "ic-admissions": [
+      {
+        "year": 2001,
+        "file": "IC2001",
+        "url": "https://nces.ed.gov/ipeds/datacenter/data/IC2001.zip",
+        "revised": false
+      },
+      {
+        "year": 2002,
+        "file": "IC2002",
+        "url": "https://nces.ed.gov/ipeds/datacenter/data/IC2002.zip",
+        "revised": false
+      },
+      {
+        "year": 2003,
+        "file": "IC2003",
+        "url": "https://nces.ed.gov/ipeds/datacenter/data/IC2003.zip",
+        "revised": false
+      },
+      {
+        "year": 2004,
+        "file": "IC2004",
+        "url": "https://nces.ed.gov/ipeds/datacenter/data/IC2004.zip",
+        "revised": false
+      },
+      {
+        "year": 2005,
+        "file": "IC2005",
+        "url": "https://nces.ed.gov/ipeds/datacenter/data/IC2005.zip",
+        "revised": false
+      },
+      {
+        "year": 2006,
+        "file": "IC2006",
+        "url": "https://nces.ed.gov/ipeds/datacenter/data/IC2006.zip",
+        "revised": false
+      },
+      {
+        "year": 2007,
+        "file": "IC2007",
+        "url": "https://nces.ed.gov/ipeds/datacenter/data/IC2007.zip",
+        "revised": false
+      },
+      {
+        "year": 2008,
+        "file": "IC2008",
+        "url": "https://nces.ed.gov/ipeds/datacenter/data/IC2008.zip",
+        "revised": true
+      },
+      {
+        "year": 2009,
+        "file": "IC2009",
+        "url": "https://nces.ed.gov/ipeds/datacenter/data/IC2009.zip",
+        "revised": true
+      },
+      {
+        "year": 2010,
+        "file": "IC2010",
+        "url": "https://nces.ed.gov/ipeds/datacenter/data/IC2010.zip",
+        "revised": true
+      },
+      {
+        "year": 2011,
+        "file": "IC2011",
+        "url": "https://nces.ed.gov/ipeds/datacenter/data/IC2011.zip",
+        "revised": true
+      },
+      {
+        "year": 2012,
+        "file": "IC2012",
+        "url": "https://nces.ed.gov/ipeds/datacenter/data/IC2012.zip",
+        "revised": true
+      },
+      {
+        "year": 2013,
+        "file": "IC2013",
+        "url": "https://nces.ed.gov/ipeds/datacenter/data/IC2013.zip",
+        "revised": true
+      }
+    ],
+    "adm": [
+      {
+        "year": 2014,
+        "file": "ADM2014",
+        "url": "https://nces.ed.gov/ipeds/datacenter/data/ADM2014.zip",
+        "revised": true
+      },
+      {
+        "year": 2015,
+        "file": "ADM2015",
+        "url": "https://nces.ed.gov/ipeds/datacenter/data/ADM2015.zip",
+        "revised": true
+      },
+      {
+        "year": 2016,
+        "file": "ADM2016",
+        "url": "https://nces.ed.gov/ipeds/datacenter/data/ADM2016.zip",
+        "revised": true
+      },
+      {
+        "year": 2017,
+        "file": "ADM2017",
+        "url": "https://nces.ed.gov/ipeds/datacenter/data/ADM2017.zip",
+        "revised": true
+      },
+      {
+        "year": 2018,
+        "file": "ADM2018",
+        "url": "https://nces.ed.gov/ipeds/datacenter/data/ADM2018.zip",
+        "revised": true
+      },
+      {
+        "year": 2019,
+        "file": "ADM2019",
+        "url": "https://nces.ed.gov/ipeds/datacenter/data/ADM2019.zip",
+        "revised": true
+      },
+      {
+        "year": 2020,
+        "file": "ADM2020",
+        "url": "https://nces.ed.gov/ipeds/datacenter/data/ADM2020.zip",
+        "revised": true
+      },
+      {
+        "year": 2021,
+        "file": "ADM2021",
+        "url": "https://nces.ed.gov/ipeds/datacenter/data/ADM2021.zip",
+        "revised": true
+      },
+      {
+        "year": 2022,
+        "file": "ADM2022",
+        "url": "https://nces.ed.gov/ipeds/datacenter/data/ADM2022.zip",
+        "revised": true
+      },
+      {
+        "year": 2023,
+        "file": "ADM2023",
+        "url": "https://nces.ed.gov/ipeds/complete-data-files/ADM2023.zip",
+        "revised": true
+      },
+      {
+        "year": 2024,
+        "file": "ADM2024",
+        "url": "https://nces.ed.gov/ipeds/complete-data-files/ADM2024.zip",
+        "revised": false
+      }
+    ],
+    "prices": [
+      {
+        "year": 2000,
+        "file": "IC2000_AY",
+        "url": "https://nces.ed.gov/ipeds/datacenter/data/IC2000_AY.zip",
+        "revised": false
+      },
+      {
+        "year": 2001,
+        "file": "IC2001_AY",
+        "url": "https://nces.ed.gov/ipeds/datacenter/data/IC2001_AY.zip",
+        "revised": false
+      },
+      {
+        "year": 2002,
+        "file": "IC2002_AY",
+        "url": "https://nces.ed.gov/ipeds/datacenter/data/IC2002_AY.zip",
+        "revised": false
+      },
+      {
+        "year": 2003,
+        "file": "IC2003_AY",
+        "url": "https://nces.ed.gov/ipeds/datacenter/data/IC2003_AY.zip",
+        "revised": false
+      },
+      {
+        "year": 2004,
+        "file": "IC2004_AY",
+        "url": "https://nces.ed.gov/ipeds/datacenter/data/IC2004_AY.zip",
+        "revised": false
+      },
+      {
+        "year": 2005,
+        "file": "IC2005_AY",
+        "url": "https://nces.ed.gov/ipeds/datacenter/data/IC2005_AY.zip",
+        "revised": false
+      },
+      {
+        "year": 2006,
+        "file": "IC2006_AY",
+        "url": "https://nces.ed.gov/ipeds/datacenter/data/IC2006_AY.zip",
+        "revised": false
+      },
+      {
+        "year": 2007,
+        "file": "IC2007_AY",
+        "url": "https://nces.ed.gov/ipeds/datacenter/data/IC2007_AY.zip",
+        "revised": false
+      },
+      {
+        "year": 2008,
+        "file": "IC2008_AY",
+        "url": "https://nces.ed.gov/ipeds/datacenter/data/IC2008_AY.zip",
+        "revised": false
+      },
+      {
+        "year": 2009,
+        "file": "IC2009_AY",
+        "url": "https://nces.ed.gov/ipeds/datacenter/data/IC2009_AY.zip",
+        "revised": true
+      },
+      {
+        "year": 2010,
+        "file": "IC2010_AY",
+        "url": "https://nces.ed.gov/ipeds/datacenter/data/IC2010_AY.zip",
+        "revised": true
+      },
+      {
+        "year": 2011,
+        "file": "IC2011_AY",
+        "url": "https://nces.ed.gov/ipeds/datacenter/data/IC2011_AY.zip",
+        "revised": true
+      },
+      {
+        "year": 2012,
+        "file": "IC2012_AY",
+        "url": "https://nces.ed.gov/ipeds/datacenter/data/IC2012_AY.zip",
+        "revised": false
+      },
+      {
+        "year": 2013,
+        "file": "IC2013_AY",
+        "url": "https://nces.ed.gov/ipeds/datacenter/data/IC2013_AY.zip",
+        "revised": false
+      },
+      {
+        "year": 2014,
+        "file": "IC2014_AY",
+        "url": "https://nces.ed.gov/ipeds/datacenter/data/IC2014_AY.zip",
+        "revised": false
+      },
+      {
+        "year": 2015,
+        "file": "IC2015_AY",
+        "url": "https://nces.ed.gov/ipeds/datacenter/data/IC2015_AY.zip",
+        "revised": false
+      },
+      {
+        "year": 2016,
+        "file": "IC2016_AY",
+        "url": "https://nces.ed.gov/ipeds/datacenter/data/IC2016_AY.zip",
+        "revised": false
+      },
+      {
+        "year": 2017,
+        "file": "IC2017_AY",
+        "url": "https://nces.ed.gov/ipeds/datacenter/data/IC2017_AY.zip",
+        "revised": false
+      },
+      {
+        "year": 2018,
+        "file": "IC2018_AY",
+        "url": "https://nces.ed.gov/ipeds/datacenter/data/IC2018_AY.zip",
+        "revised": false
+      },
+      {
+        "year": 2019,
+        "file": "IC2019_AY",
+        "url": "https://nces.ed.gov/ipeds/datacenter/data/IC2019_AY.zip",
+        "revised": false
+      },
+      {
+        "year": 2020,
+        "file": "IC2020_AY",
+        "url": "https://nces.ed.gov/ipeds/datacenter/data/IC2020_AY.zip",
+        "revised": false
+      },
+      {
+        "year": 2021,
+        "file": "IC2021_AY",
+        "url": "https://nces.ed.gov/ipeds/datacenter/data/IC2021_AY.zip",
+        "revised": false
+      },
+      {
+        "year": 2022,
+        "file": "IC2022_AY",
+        "url": "https://nces.ed.gov/ipeds/datacenter/data/IC2022_AY.zip",
+        "revised": false
+      },
+      {
+        "year": 2023,
+        "file": "IC2023_AY",
+        "url": "https://nces.ed.gov/ipeds/complete-data-files/IC2023_AY.zip",
+        "revised": false
+      }
+    ],
+    "sfa": [
+      {
+        "year": 2001,
+        "file": "SFA0102",
+        "url": "https://nces.ed.gov/ipeds/datacenter/data/SFA0102.zip",
+        "revised": false
+      },
+      {
+        "year": 2002,
+        "file": "SFA0203",
+        "url": "https://nces.ed.gov/ipeds/datacenter/data/SFA0203.zip",
+        "revised": false
+      },
+      {
+        "year": 2003,
+        "file": "SFA0304",
+        "url": "https://nces.ed.gov/ipeds/datacenter/data/SFA0304.zip",
+        "revised": true
+      },
+      {
+        "year": 2004,
+        "file": "SFA0405",
+        "url": "https://nces.ed.gov/ipeds/datacenter/data/SFA0405.zip",
+        "revised": true
+      },
+      {
+        "year": 2005,
+        "file": "SFA0506",
+        "url": "https://nces.ed.gov/ipeds/datacenter/data/SFA0506.zip",
+        "revised": true
+      },
+      {
+        "year": 2006,
+        "file": "SFA0607",
+        "url": "https://nces.ed.gov/ipeds/datacenter/data/SFA0607.zip",
+        "revised": true
+      },
+      {
+        "year": 2007,
+        "file": "SFA0708",
+        "url": "https://nces.ed.gov/ipeds/datacenter/data/SFA0708.zip",
+        "revised": true
+      },
+      {
+        "year": 2008,
+        "file": "SFA0809",
+        "url": "https://nces.ed.gov/ipeds/datacenter/data/SFA0809.zip",
+        "revised": true
+      },
+      {
+        "year": 2009,
+        "file": "SFA0910",
+        "url": "https://nces.ed.gov/ipeds/datacenter/data/SFA0910.zip",
+        "revised": true
+      },
+      {
+        "year": 2010,
+        "file": "SFA1011",
+        "url": "https://nces.ed.gov/ipeds/datacenter/data/SFA1011.zip",
+        "revised": true
+      },
+      {
+        "year": 2011,
+        "file": "SFA1112",
+        "url": "https://nces.ed.gov/ipeds/datacenter/data/SFA1112.zip",
+        "revised": true
+      },
+      {
+        "year": 2012,
+        "file": "SFA1213",
+        "url": "https://nces.ed.gov/ipeds/datacenter/data/SFA1213.zip",
+        "revised": true
+      },
+      {
+        "year": 2013,
+        "file": "SFA1314",
+        "url": "https://nces.ed.gov/ipeds/datacenter/data/SFA1314.zip",
+        "revised": true
+      },
+      {
+        "year": 2014,
+        "file": "SFA1415",
+        "url": "https://nces.ed.gov/ipeds/datacenter/data/SFA1415.zip",
+        "revised": true
+      },
+      {
+        "year": 2015,
+        "file": "SFA1516",
+        "url": "https://nces.ed.gov/ipeds/datacenter/data/SFA1516.zip",
+        "revised": true
+      },
+      {
+        "year": 2016,
+        "file": "SFA1617",
+        "url": "https://nces.ed.gov/ipeds/datacenter/data/SFA1617.zip",
+        "revised": true
+      },
+      {
+        "year": 2017,
+        "file": "SFA1718",
+        "url": "https://nces.ed.gov/ipeds/datacenter/data/SFA1718.zip",
+        "revised": true
+      },
+      {
+        "year": 2018,
+        "file": "SFA1819",
+        "url": "https://nces.ed.gov/ipeds/datacenter/data/SFA1819.zip",
+        "revised": true
+      },
+      {
+        "year": 2019,
+        "file": "SFA1920",
+        "url": "https://nces.ed.gov/ipeds/datacenter/data/SFA1920.zip",
+        "revised": true
+      },
+      {
+        "year": 2020,
+        "file": "SFA2021",
+        "url": "https://nces.ed.gov/ipeds/datacenter/data/SFA2021.zip",
+        "revised": true
+      },
+      {
+        "year": 2021,
+        "file": "SFA2122",
+        "url": "https://nces.ed.gov/ipeds/datacenter/data/SFA2122.zip",
+        "revised": true
+      },
+      {
+        "year": 2022,
+        "file": "SFA2223",
+        "url": "https://nces.ed.gov/ipeds/complete-data-files/SFA2223.zip",
+        "revised": true
+      },
+      {
+        "year": 2023,
+        "file": "SFA2324 + COST2_2024",
+        "url": "https://nces.ed.gov/ipeds/complete-data-files/SFA2324.zip",
+        "revised": false
+      }
+    ],
+    "scorecard-enrollment": [
+      {
+        "year": 1996,
+        "file": "College Scorecard API (undergrads)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 1997,
+        "file": "College Scorecard API (undergrads)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 1998,
+        "file": "College Scorecard API (undergrads)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 1999,
+        "file": "College Scorecard API (undergrads)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2001,
+        "file": "College Scorecard API (undergrads)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2002,
+        "file": "College Scorecard API (undergrads)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2003,
+        "file": "College Scorecard API (undergrads)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2004,
+        "file": "College Scorecard API (undergrads)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2005,
+        "file": "College Scorecard API (undergrads)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2006,
+        "file": "College Scorecard API (undergrads)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2007,
+        "file": "College Scorecard API (undergrads)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2008,
+        "file": "College Scorecard API (undergrads)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2009,
+        "file": "College Scorecard API (undergrads)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2010,
+        "file": "College Scorecard API (undergrads)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2011,
+        "file": "College Scorecard API (undergrads)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2012,
+        "file": "College Scorecard API (undergrads)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2013,
+        "file": "College Scorecard API (undergrads)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2014,
+        "file": "College Scorecard API (undergrads)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2015,
+        "file": "College Scorecard API (undergrads)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2016,
+        "file": "College Scorecard API (undergrads)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2017,
+        "file": "College Scorecard API (undergrads)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2018,
+        "file": "College Scorecard API (undergrads)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2019,
+        "file": "College Scorecard API (undergrads)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2020,
+        "file": "College Scorecard API (undergrads)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2021,
+        "file": "College Scorecard API (undergrads)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2022,
+        "file": "College Scorecard API (undergrads)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2023,
+        "file": "College Scorecard API (undergrads)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2024,
+        "file": "College Scorecard API (undergrads)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      }
+    ],
+    "scorecard-completion": [
+      {
+        "year": 1991,
+        "file": "College Scorecard API (grad_rate)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 1992,
+        "file": "College Scorecard API (grad_rate)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 1993,
+        "file": "College Scorecard API (grad_rate)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 1994,
+        "file": "College Scorecard API (grad_rate)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 1995,
+        "file": "College Scorecard API (grad_rate)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 1996,
+        "file": "College Scorecard API (grad_rate)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 1997,
+        "file": "College Scorecard API (grad_rate)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 1998,
+        "file": "College Scorecard API (grad_rate)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 1999,
+        "file": "College Scorecard API (grad_rate)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2000,
+        "file": "College Scorecard API (grad_rate)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2001,
+        "file": "College Scorecard API (grad_rate)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2002,
+        "file": "College Scorecard API (grad_rate)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2003,
+        "file": "College Scorecard API (grad_rate)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2004,
+        "file": "College Scorecard API (grad_rate)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2005,
+        "file": "College Scorecard API (grad_rate)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2006,
+        "file": "College Scorecard API (grad_rate)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2007,
+        "file": "College Scorecard API (grad_rate)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2008,
+        "file": "College Scorecard API (grad_rate)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2009,
+        "file": "College Scorecard API (grad_rate)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2010,
+        "file": "College Scorecard API (grad_rate)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2011,
+        "file": "College Scorecard API (grad_rate)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2012,
+        "file": "College Scorecard API (grad_rate)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2013,
+        "file": "College Scorecard API (grad_rate)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2014,
+        "file": "College Scorecard API (grad_rate)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2015,
+        "file": "College Scorecard API (grad_rate)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2016,
+        "file": "College Scorecard API (grad_rate)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2017,
+        "file": "College Scorecard API (grad_rate)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2018,
+        "file": "College Scorecard API (grad_rate)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      }
+    ],
+    "scorecard-debt": [
+      {
+        "year": 1997,
+        "file": "College Scorecard API (median_debt)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 1998,
+        "file": "College Scorecard API (median_debt)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 1999,
+        "file": "College Scorecard API (median_debt)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2000,
+        "file": "College Scorecard API (median_debt)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2001,
+        "file": "College Scorecard API (median_debt)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2002,
+        "file": "College Scorecard API (median_debt)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2003,
+        "file": "College Scorecard API (median_debt)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2004,
+        "file": "College Scorecard API (median_debt)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2005,
+        "file": "College Scorecard API (median_debt)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2006,
+        "file": "College Scorecard API (median_debt)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2007,
+        "file": "College Scorecard API (median_debt)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2008,
+        "file": "College Scorecard API (median_debt)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2009,
+        "file": "College Scorecard API (median_debt)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2010,
+        "file": "College Scorecard API (median_debt)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2011,
+        "file": "College Scorecard API (median_debt)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2012,
+        "file": "College Scorecard API (median_debt)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2013,
+        "file": "College Scorecard API (median_debt)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2014,
+        "file": "College Scorecard API (median_debt)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2015,
+        "file": "College Scorecard API (median_debt)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2016,
+        "file": "College Scorecard API (median_debt)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2017,
+        "file": "College Scorecard API (median_debt)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2018,
+        "file": "College Scorecard API (median_debt)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2019,
+        "file": "College Scorecard API (median_debt)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2020,
+        "file": "College Scorecard API (median_debt)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      }
+    ]
+  },
+  "provisional": {
+    "adm": 2024,
+    "sfa": 2023
+  },
+  "schools": 1893,
+  "universe": 1893
+}

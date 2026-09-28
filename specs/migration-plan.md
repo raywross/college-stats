@@ -38,7 +38,7 @@ makes the app read from there.
 ### Database schema
 - [x] `schools`, `dataset_files`, `dataset_publishes` with RLS, and `publish_dataset()`
   (`supabase/migrations/20260928000000_dataset.sql`)
-- [ ] Apply to the dev project and publish (phase 1 in [supabase.md](supabase.md#transition-plan))
+- [x] Apply to the dev project and publish (phase 1 in [supabase.md](supabase.md#transition-plan))
 - [ ] Prod project, publish on merge (GitHub Action), on-demand revalidation (phase 3)
 
 ---

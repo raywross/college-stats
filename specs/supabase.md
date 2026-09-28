@@ -97,7 +97,7 @@ None use the `NEXT_PUBLIC_` prefix: `lib/data.ts` is server-only, so the browser
 | Phase | What | Status |
 |---|---|---|
 | 0. Code | `DATA_SOURCE` loader, `lib/dataset.ts` factory, schema, `publish-data`, tests | ✅ Done (`feature/supabase-migration`) |
-| 1. Dev project | Apply migration, add keys to `.env.local`, `npm run publish-data`, run locally with `DATA_SOURCE=supabase`, compare pages with `json` | Next (manual steps below) |
+| 1. Dev project | Apply migration, add keys to `.env.local`, `npm run publish-data`, run locally with `DATA_SOURCE=supabase`, compare pages with `json` | ✅ Done 2026-09-28 (see below) |
 | 2. Default locally | Set `DATA_SOURCE=supabase` in `.env.local`; `json` stays for offline work and CI | After phase 1 checks out |
 | 3. Production | Create prod project, apply migration, `publish-data:prod`; Vercel env vars (Production → prod, Preview → dev); GitHub Action publishes to prod on merges that change `data/**`; on-demand revalidation so static pages (`/`, top 50 profiles, `/data`) pick up a publish without a redeploy | With the Vercel move |
 | 4. Later | Scheduled sync opens PRs ([backlog.md](backlog.md)); user tables (accounts, saved lists) as new migrations; decide whether `schools.json` leaves git | As needed |
@@ -111,6 +111,16 @@ None use the `NEXT_PUBLIC_` prefix: `lib/data.ts` is server-only, so the browser
 3. `npm run publish-data -- --dry-run`, then `npm run publish-data`. It should end with "read back and verified".
 4. Set `DATA_SOURCE=supabase`, restart the dev server, and check `/`, `/explore`, a profile, `/compare`, `/data`.
    Numbers must match the `json` run exactly.
+
+**Phase 1 result (dev project `gwusgmmionqxabifntgv`, 2026-09-28):**
+- Migration applied in the SQL Editor. Verified over a direct connection: RLS is on for all three tables; `anon`
+  can `select` `schools` and `dataset_files` only; `publish_dataset` is executable by `service_role` only.
+- Through the API, the publishable key can read, and its insert and RPC calls are refused.
+- `npm run publish-data` published 1,893 colleges in about 2.5 s, and the read-back matched exactly.
+- Built the app twice (`json` and `supabase`) and diffed 17 URLs (home, Explore views and filters, four profiles,
+  Compare, Data, `/api/schools`). 15 matched exactly, ignoring build hashes. `/explore` had byte-identical visible
+  HTML; only the order of React's streamed rows differed. `/data` differed only in the timeline's "today" marker,
+  which uses `new Date()` at build time.
 
 ### Phase 3 notes (production)
 - Static pages are built once. With Supabase they need a trigger after each publish: a secret-protected

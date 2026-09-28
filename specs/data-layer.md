@@ -78,7 +78,8 @@ export default async function Page() {
 ```
 
 - `lib/data.ts` (server-only): `getData()` loads from `data/*.json` or Supabase (`DATA_SOURCE`,
-  [supabase.md](supabase.md)) and caches the result. Also re-exports `paginate`, `toIndexEntry`, and the
+  [supabase.md](supabase.md)) and keeps it in memory through `lib/dataset-loader.ts`, which reloads when Supabase
+  serves a newer publish ([supabase.md](supabase.md#revalidation)). Also re-exports `paginate`, `toIndexEntry`, and the
   `Dataset`, `SchoolIndexEntry`, and `ScatterPointData` types.
 - `lib/dataset.ts` (pure): `createDataset({ schools, meta, releaseCalendar })` returns the query functions as
   closures, so they destructure safely. Per-metric sorted arrays are cached per dataset, so a reload never mixes
@@ -129,4 +130,5 @@ example. Recipe for finding the numbers:
 
 ## Supabase
 
-See [supabase.md](supabase.md): schema, publishing, keys, dev/prod projects, and the transition plan.
+See [supabase.md](supabase.md): schema, publishing, revalidation, keys, dev/prod projects, production setup, and
+the transition plan.

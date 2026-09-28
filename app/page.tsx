@@ -35,6 +35,9 @@ const MATCHUPS = [
 
 const LINGO: TermKey[] = ["middle-50", "yield", "pell-grant", "test-optional"];
 
+// Publishes regenerate this page on demand (/api/revalidate); this daily pass is a fallback if that call is missed.
+export const revalidate = 86400;
+
 export default async function HomePage() {
   const {
     countByState,

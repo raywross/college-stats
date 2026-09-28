@@ -6,12 +6,14 @@ This document tracks everything that needs to change when moving from local deve
 
 | Item | Current (Local) | Target (Vercel) | Files Affected |
 |---|---|---|---|
-| Hosting | `npm run dev` | Vercel auto-deploy from GitHub | `vercel.json` (if needed) |
-| Env vars | `.env.local` | Vercel dashboard env vars | No code changes |
+| Hosting | `npm run dev` | ✅ Repo imported into Vercel (auto-deploy from GitHub) | No `vercel.json` needed |
+| Env vars | `.env.local` | Vercel: Production → prod project, Preview → dev project, `REVALIDATE_SECRET` | [supabase.md](supabase.md#setup-phase-3) |
 | Build | `npm run build` | Vercel CI/CD | No code changes |
+| Fresh data | Rebuild | ✅ `/api/revalidate` after each publish and each production deploy | `app/api/revalidate/route.ts`, `.github/workflows/publish-data.yml` |
 | Domain | localhost:3000 | Custom domain or .vercel.app | Vercel dashboard |
 
-**Changes needed:** Minimal. Next.js deploys to Vercel with zero config.
+**Changes needed:** Minimal. Next.js deploys to Vercel with zero config. The settings to enter are in
+[supabase.md](supabase.md#setup-phase-3).
 
 ---
 
@@ -39,7 +41,11 @@ makes the app read from there.
 - [x] `schools`, `dataset_files`, `dataset_publishes` with RLS, and `publish_dataset()`
   (`supabase/migrations/20260928000000_dataset.sql`)
 - [x] Apply to the dev project and publish (phase 1 in [supabase.md](supabase.md#transition-plan))
-- [ ] Prod project, publish on merge (GitHub Action), on-demand revalidation (phase 3)
+- [x] Prod project created and migrated
+- [x] Publish on merge (`.github/workflows/publish-data.yml`), on-demand revalidation (`/api/revalidate`), and a
+  per-request version check so no instance renders an older publish (phase 3; [supabase.md](supabase.md#revalidation))
+- [ ] First prod publish (`npm run publish-data:prod`), Vercel env vars, GitHub secrets, verify the deployed site
+  ([setup](supabase.md#setup-phase-3))
 
 ---
 
@@ -86,4 +92,5 @@ source supplies each field.
 | `scripts/sync-data.mts` | ✅ Unchanged: writes JSON, which is then published | High |
 | Pages and data-reading components | ✅ `await getData()` | Medium |
 | `.env.local` | Add Supabase keys ([supabase.md](supabase.md#keys)) | High |
-| `app/api/revalidate/route.ts` | New, with the Vercel move | Medium |
+| `app/api/revalidate/route.ts`, `lib/revalidate.ts`, `lib/dataset-loader.ts` | ✅ New: revalidation and version check | Medium |
+| `.github/workflows/publish-data.yml` | ✅ New: publish to prod on merge, revalidate after deploys | Medium |

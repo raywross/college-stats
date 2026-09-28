@@ -41,5 +41,7 @@ Planned work, roughly in priority order. Move items into a feature spec when the
 
 ## Platform
 - [ ] Deploy to Vercel (see [migration-plan.md](migration-plan.md)).
-- [ ] Supabase only when needed (accounts, saved lists). Multi-year history fits in per-college JSON files first; the
-  table design for later is in [trends-data.md](trends-data.md#storage).
+- [ ] Supabase: the dataset can now be served from Supabase (`DATA_SOURCE`, `npm run publish-data`); remaining
+  phases (dev project, prod + publish on merge, revalidation) in [supabase.md](supabase.md#transition-plan). User
+  data (accounts, saved lists) goes there as new migrations. Multi-year history stays in per-college JSON files
+  first; the table design for later is in [trends-data.md](trends-data.md#storage).

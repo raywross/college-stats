@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight, Swords } from "lucide-react";
-import { citeField, getSchoolsByIds, metricMedian, toIndexEntry } from "@/lib/data";
+import { getData, toIndexEntry } from "@/lib/data";
 import type { FieldPath } from "@/lib/fields";
 import type { TermKey } from "@/lib/glossary";
 import { DEMOGRAPHIC_CATEGORIES, DOMAINS, METRICS, TEST_POLICY_LABELS, satComposite, type Domain } from "@/lib/metrics";
@@ -100,6 +100,8 @@ export default async function ComparePage({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const params = await searchParams;
+  const data = await getData();
+  const { citeField, getSchoolsByIds } = data;
   const ids = (typeof params.ids === "string" ? params.ids : "").split(",").filter(Boolean).slice(0, 4);
   const schools = getSchoolsByIds([...new Set(ids)]);
 
@@ -175,7 +177,7 @@ export default async function ComparePage({
                   id: s.unit_id,
                   label: shortName(s),
                   color: SLOT_COLORS[i],
-                  values: radarProfile(s),
+                  values: radarProfile(data, s),
                 }))}
               />
             </section>
@@ -301,7 +303,8 @@ export default async function ComparePage({
 
 /* ------------------------------------------------------------------ */
 
-function ScoreCompare({ schools, test }: { schools: School[]; test: "sat" | "act" }) {
+async function ScoreCompare({ schools, test }: { schools: School[]; test: "sat" | "act" }) {
+  const { metricMedian } = await getData();
   const ranges = schools.map((s) => (test === "sat" ? satComposite(s) : s.admissions.act_composite_25_75));
   const present = ranges.filter((r): r is [number, number] => r !== null);
   const title = test === "sat" ? "SAT total" : "ACT composite";
@@ -350,8 +353,9 @@ function opt<T>(v: T | null, f: (v: T) => string): string | null {
   return v === null ? null : f(v);
 }
 
-function SinglePrompt({ school }: { school: School }) {
-  const similar = similarSchools(school, 4);
+async function SinglePrompt({ school }: { school: School }) {
+  const data = await getData();
+  const similar = similarSchools(data, school, 4);
   return (
     <div className="pt-8">
       <p className="mb-4 text-muted-foreground">
@@ -377,7 +381,8 @@ function SinglePrompt({ school }: { school: School }) {
   );
 }
 
-function EmptyState() {
+async function EmptyState() {
+  const { getSchoolsByIds } = await getData();
   return (
     <div className="mx-auto max-w-4xl px-4 pt-16 pb-12 text-center sm:px-6">
       <span className="mx-auto inline-flex size-16 animate-pop-in items-center justify-center rounded-3xl bg-pop text-pop-foreground shadow-lg">

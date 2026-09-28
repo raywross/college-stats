@@ -9,9 +9,9 @@
 | Styling | Tailwind CSS v4 + shadcn/ui (base-ui) | Accessible, composable UI |
 | Theming | next-themes | System/light/dark mode switching |
 | Charts | Custom SVG/CSS components (`components/charts`) | Full design control, theme-token colors |
-| Data (local) | `data/schools.json` built from College Scorecard + IPEDS | ~1,900 4-year colleges |
-| Data (future) | Supabase (PostgreSQL) | Production database |
-| Data sync | `npm run sync-data` (Scorecard API + IPEDS bulk CSV) | Rebuilds the dataset |
+| Data (source) | `data/schools.json` built from College Scorecard + IPEDS, reviewed in git | ~1,900 4-year colleges |
+| Data (serving) | Supabase (PostgreSQL) when `DATA_SOURCE=supabase`; the JSON files otherwise | See [supabase.md](supabase.md) |
+| Data sync | `npm run sync-data` (Scorecard API + IPEDS bulk CSV), then `npm run publish-data` | Rebuilds and publishes the dataset |
 
 ## Project Structure
 
@@ -41,7 +41,9 @@ college-stats/
 │   ├── types.ts                # School, LineageRecord, SearchFilters, SortKey, SizeBucket, ExploreView
 │   ├── fields.ts               # Field registry: every value's source, release year, formula (specs/data-lineage.md)
 │   ├── lineage.ts              # Pure citation resolution + validation (used by app, sync, tests)
-│   ├── data.ts                 # server-only: loads data/schools.json, queries, cached ranks/medians
+│   ├── data.ts                 # server-only: getData() loads the dataset from JSON or Supabase (DATA_SOURCE)
+│   ├── dataset.ts              # createDataset(): all queries, cached ranks/medians (pure)
+│   ├── supabase.ts             # Supabase client + dataset reader (app and publish script)
 │   ├── school-api.ts           # Client fetch helpers for /api/schools
 │   ├── metrics.ts              # Derived metrics, tiers, METRICS registry, domains, stats helpers
 │   ├── insights.ts             # Standouts, takeaways, similar schools, key differences, radar
@@ -56,6 +58,8 @@ college-stats/
 │   └── overrides.json          # Hand-verified patches (e.g. CDS figures)
 ├── scripts/sync-data.mts       # College Scorecard + IPEDS → data/schools.json (see specs/data-sync.md)
 ├── scripts/check-lineage.mts   # npm run check:lineage
+├── scripts/publish-data.mts    # npm run publish-data: data/*.json → Supabase (see specs/supabase.md)
+├── supabase/migrations/        # Database schema (SQL, Supabase CLI layout)
 ├── tests/                      # node:test (npm test): lineage behavior + citation guards
 ├── .github/workflows/verify.yml # CI: npm run verify + next build
 ├── .claude/hooks/              # One worktree per Claude session (CLAUDE.md): require-worktree.mjs (PreToolUse guard),
@@ -67,12 +71,10 @@ college-stats/
 ## Key Architectural Decisions
 
 ### 1. Data Access Abstraction
-All data queries go through `lib/data.ts`. This module exposes functions like:
-- `getSchools(filters)` - search/filter
-- `getSchoolById(id)` - single school
-- `getSchoolsByIds(ids)` - comparison
-
-Today these read from `data/sample-schools.json`. When migrating to Supabase, only this file changes.
+All data goes through `const data = await getData()` from `lib/data.ts`, which returns the query functions
+(`getSchools(filters)`, `getSchoolById(id)`, `rankOf(school, metric)`, …) bound to one loaded copy of the dataset.
+Where that copy comes from (JSON files or Supabase) is decided only in `lib/data.ts`. See
+[data-layer.md](data-layer.md) and [supabase.md](supabase.md).
 
 ### 2. URL-Driven State
 Search filters are stored in URL search params (`?state=CA&minSAT=1200`). This makes:

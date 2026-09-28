@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { School } from "@/lib/types";
 import type { FieldPath } from "@/lib/fields";
-import { sourcesForSchools } from "@/lib/data";
+import { getData } from "@/lib/data";
 import { SourceLine } from "@/components/sources/SourceNote";
 
 /** Colleges' own documents beyond this many are summarized ("Common Data Sets from 8 colleges"). */
@@ -11,7 +11,8 @@ const MAX_LISTED = 3;
  * Citation for views that show several schools (Compare, Explore, Home): the
  * union of every shown school's sources for these fields.
  */
-export function MultiSourceNote({ schools, fields, className }: { schools: School[]; fields: readonly FieldPath[]; className?: string }) {
+export async function MultiSourceNote({ schools, fields, className }: { schools: School[]; fields: readonly FieldPath[]; className?: string }) {
+  const { sourcesForSchools } = await getData();
   const all = sourcesForSchools(fields, schools);
   const federal = all.filter((s) => s.key !== "cds");
   const cds = all.filter((s) => s.key === "cds");

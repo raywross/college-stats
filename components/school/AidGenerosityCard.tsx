@@ -1,5 +1,5 @@
 import type { School } from "@/lib/types";
-import { distribution, rankOf } from "@/lib/data";
+import { getData } from "@/lib/data";
 import { generosityTakeaway } from "@/lib/insights";
 import { DOMAINS, aidGenerosity, generosityTier } from "@/lib/metrics";
 import { money, pct } from "@/lib/format";
@@ -13,7 +13,9 @@ const COLOR = DOMAINS.value.color;
  * Aid generosity: how much of the full price grants cover, averaged over
  * every first-year. The concept that explains why sticker prices mislead.
  */
-export function AidGenerosityCard({ school }: { school: School }) {
+export async function AidGenerosityCard({ school }: { school: School }) {
+  const data = await getData();
+  const { distribution, rankOf } = data;
   const g = aidGenerosity(school);
   const b = school.cost?.breakdown;
   if (g === null || !b) return null;
@@ -36,7 +38,7 @@ export function AidGenerosityCard({ school }: { school: School }) {
           <span className="size-1.5 rounded-full" style={{ backgroundColor: COLOR }} />
           {tier.label}
         </span>
-        <p className="text-sm text-muted-foreground">{generosityTakeaway(school)}</p>
+        <p className="text-sm text-muted-foreground">{generosityTakeaway(data, school)}</p>
         <p className="text-[11px] text-muted-foreground">
           {money(b.grant_per_student)} in grants per first-year ÷ {money(b.full_price)} full price.
         </p>

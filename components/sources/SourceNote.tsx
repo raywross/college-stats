@@ -4,7 +4,7 @@ import { BookMarked, ExternalLink } from "lucide-react";
 import type { School } from "@/lib/types";
 import type { FieldPath } from "@/lib/fields";
 import { yearLabel, type CitedSource } from "@/lib/lineage";
-import { getMeta, sourcesForFields } from "@/lib/data";
+import { getData } from "@/lib/data";
 import { cn } from "@/lib/utils";
 
 /** One linked source: "IPEDS Admissions survey, Fall 2024". */
@@ -31,7 +31,7 @@ export function SourceItem({ s, last }: { s: CitedSource; last: boolean }) {
  * the year it describes. `fields` are registered paths (lib/fields.ts); derived
  * values cite their inputs. See specs/data-lineage.md.
  */
-export function SourceNote({
+export async function SourceNote({
   fields,
   school,
   className,
@@ -42,11 +42,13 @@ export function SourceNote({
   className?: string;
   prefix?: string;
 }) {
+  const { sourcesForFields } = await getData();
   const sources = sourcesForFields(fields, school);
   return <SourceLine sources={sources} prefix={prefix} className={className} />;
 }
 
-export function SourceLine({ sources, prefix = "Source", className, extra }: { sources: CitedSource[]; prefix?: string; className?: string; extra?: ReactNode }) {
+export async function SourceLine({ sources, prefix = "Source", className, extra }: { sources: CitedSource[]; prefix?: string; className?: string; extra?: ReactNode }) {
+  const { getMeta } = await getData();
   return (
     <p className={cn("flex flex-wrap items-center gap-x-1.5 gap-y-1 text-[11px] leading-relaxed text-muted-foreground", className)}>
       <BookMarked className="size-3.5 shrink-0" aria-hidden />
@@ -65,7 +67,8 @@ export function SourceLine({ sources, prefix = "Source", className, extra }: { s
 }
 
 /** Numbered list of every source behind a profile, for the bottom of the page (and print). */
-export function SourceList({ school, fields }: { school: School; fields: readonly FieldPath[] }) {
+export async function SourceList({ school, fields }: { school: School; fields: readonly FieldPath[] }) {
+  const { getMeta, sourcesForFields } = await getData();
   // One entry per dataset or document, listing every year used from it.
   const grouped = new Map<string, CitedSource & { years: string[] }>();
   for (const s of sourcesForFields(fields, school)) {

@@ -26,4 +26,5 @@ Structured documentation for the Higher Education Data Explorer ("Quad").
 | [trends-design.md](trends-design.md) | *Planned:* how trends appear, from 3 Home facts to the profile's "Over time" charts |
 | [backlog.md](backlog.md) | Planned work (CDS PDF import, scheduled sync, tests) |
 | [migration-plan.md](migration-plan.md) | Checklist for Vercel + Supabase + API migration |
+| [supabase.md](supabase.md) | Serving the dataset from Supabase: `DATA_SOURCE`, schema, `publish-data`, keys, dev/prod projects, transition plan |
 | [implementation-checklist.md](implementation-checklist.md) | Original MVP build order |

@@ -1,5 +1,5 @@
 import type { School } from "@/lib/types";
-import { metricMedian } from "@/lib/data";
+import { getData } from "@/lib/data";
 import { stickerPhrase } from "@/lib/insights";
 import { DOMAINS } from "@/lib/metrics";
 import { money, moneyCompact, pct } from "@/lib/format";
@@ -14,7 +14,8 @@ const COLOR = DOMAINS.value.color;
  * students with grants (average net price) and without (full sticker price),
  * plus sticker prices by residency for public universities. Same-year IPEDS data.
  */
-export function WhatStudentsPay({ school }: { school: School }) {
+export async function WhatStudentsPay({ school }: { school: School }) {
+  const { metricMedian } = await getData();
   const c = school.cost;
   const all = c?.avg_paid_all ?? null;
   const share = school.aid?.grant_pct ?? null;

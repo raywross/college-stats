@@ -1,5 +1,5 @@
 import type { NextRequest } from "next/server";
-import { getSchoolsByIds, searchSchools, toIndexEntry } from "@/lib/data";
+import { getData, toIndexEntry } from "@/lib/data";
 
 /**
  * Lightweight school lookup for client components (typeahead, compare tray,
@@ -8,7 +8,8 @@ import { getSchoolsByIds, searchSchools, toIndexEntry } from "@/lib/data";
  *   GET /api/schools?q=vand&limit=8&exclude=166027,243744
  *   GET /api/schools?ids=166027,221999
  */
-export function GET(request: NextRequest) {
+export async function GET(request: NextRequest) {
+  const { getSchoolsByIds, searchSchools } = await getData();
   const params = request.nextUrl.searchParams;
   const list = (key: string) => (params.get(key) ?? "").split(",").filter(Boolean).slice(0, 20);
 

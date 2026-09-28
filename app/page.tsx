@@ -1,18 +1,6 @@
 import Link from "next/link";
 import { ArrowRight, BookOpen, Building2, Crown, HeartHandshake, PiggyBank, Sprout, Target, Swords } from "lucide-react";
-import {
-  countByState,
-  getAllSchools,
-  getDatasetSummary,
-  getSchools,
-  getSchoolsByIds,
-  topBy,
-  landscapePoints,
-  landscapeEligibleCount,
-  metricMedian,
-  valueEligibleCount,
-  valuePoints,
-} from "@/lib/data";
+import { getData } from "@/lib/data";
 import { parseFilters } from "@/lib/params";
 import { DOMAINS, METRICS, admitRatio, median, oneIn, satMid, type Domain } from "@/lib/metrics";
 import { GLOSSARY, type TermKey } from "@/lib/glossary";
@@ -47,7 +35,20 @@ const MATCHUPS = [
 
 const LINGO: TermKey[] = ["middle-50", "yield", "pell-grant", "test-optional"];
 
-export default function HomePage() {
+export default async function HomePage() {
+  const {
+    countByState,
+    getAllSchools,
+    getDatasetSummary,
+    getSchools,
+    getSchoolsByIds,
+    topBy,
+    landscapePoints,
+    landscapeEligibleCount,
+    metricMedian,
+    valueEligibleCount,
+    valuePoints,
+  } = await getData();
   const all = getAllSchools();
   const summary = getDatasetSummary();
   const spotlight = getSchoolsByIds(["166027", "110662", "131520"]);

@@ -10,9 +10,11 @@ profiles, Compare, and the glossary.
 2. **Stat strip**: schools, applications, pooled admit rate, undergrads.
 3. **Start with a question**: six lens cards, each a preset Explore URL (most selective, within reach, big
    publics, small & close-knit, economic diversity, most diverse), showing match count and crests.
-4. **Admissions landscape**: `LandscapeScatter` of every school with a plain-English reading guide.
-5. **Leaderboards**: hardest to get into (1 in N), biggest campuses, highest Pell share.
-6. **Schools by state**: `StateTileMap` (tiles filter Explore) plus a **head-to-head** CTA with preset matchups.
-7. **Learn the lingo**: four glossary cards and a link to the full glossary.
+4. **Admissions landscape**: `ScatterPlot` (admit rate vs. SAT) of the 400 most-applied-to colleges with a plain-English reading guide.
+5. **Is it worth it?**: cost-vs-earnings `ScatterPlot` (400 most-applied-to), with "Highest earnings" and
+   "Lowest net price" leaderboards. See [cost-outcomes.md](cost-outcomes.md).
+6. **Leaderboards**: hardest to get into (1 in N), biggest campuses, highest Pell share.
+7. **Schools by state**: `StateTileMap` (tiles filter Explore) plus a **head-to-head** CTA with preset matchups.
+8. **Learn the lingo**: four glossary cards and a link to the full glossary.
 
 Lens presets and matchups are constants at the top of `app/page.tsx`.

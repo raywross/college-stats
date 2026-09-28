@@ -41,8 +41,12 @@ Each metric family has one color, used on bars, dots, and section markers (never
 | Test scores | `--d-scores` | `#2a78d6` / `#3987e5` |
 | Access (Pell, first-gen) | `--d-access` | `#1baf7a` / `#199e70` |
 | Diversity | `--d-diversity` | `#c2378f` / `#e05ab0` |
+| Cost & outcomes | `--d-value` | `#eda100` / `#c98500` |
 
 This order was validated as an adjacent set in both modes (violet↔blue failed, so they're never neighbors).
+Anywhere domain colors sit side by side, follow this order: card meters are Selectivity, Size, SAT, Pell, Net
+price, and table columns follow the same order. A separate outcomes green was rejected (green↔amber falls in the
+6–8 ΔE warn band in dark mode), so cost and outcomes share one amber.
 
 ### Chart palettes (validated with the dataviz palette validator)
 - **Compare slots** `--s1..--s4` (blue, orange, aqua, pink): pass **all-pairs** in both modes, so they're safe

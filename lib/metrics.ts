@@ -1,6 +1,6 @@
 import type { School, SizeBucket } from "./types";
 import type { TermKey } from "./glossary";
-import { num, pct, pctSmart } from "./format";
+import { money, num, pct, pctSmart } from "./format";
 
 /* ------------------------------------------------------------------ */
 /* Derived values (null when the underlying data isn't reported)       */
@@ -99,7 +99,7 @@ export const TEST_POLICY_LABELS: Record<string, string> = {
 /* Metric registry: one place that knows how to read, format & explain */
 /* ------------------------------------------------------------------ */
 
-export type Domain = "admissions" | "size" | "scores" | "access" | "diversity";
+export type Domain = "admissions" | "size" | "scores" | "access" | "diversity" | "value";
 
 export const DOMAINS: Record<Domain, { label: string; color: string }> = {
   admissions: { label: "Admissions", color: "var(--d-admissions)" },
@@ -107,6 +107,7 @@ export const DOMAINS: Record<Domain, { label: string; color: string }> = {
   scores: { label: "Test scores", color: "var(--d-scores)" },
   access: { label: "Access", color: "var(--d-access)" },
   diversity: { label: "Diversity", color: "var(--d-diversity)" },
+  value: { label: "Cost & outcomes", color: "var(--d-value)" },
 };
 
 export type MetricKey =
@@ -118,7 +119,13 @@ export type MetricKey =
   | "enrollment"
   | "pell"
   | "firstGen"
-  | "diversity";
+  | "diversity"
+  | "avgCost"
+  | "aidGenerosity"
+  | "netPrice"
+  | "earnings"
+  | "gradRate"
+  | "debt";
 
 export interface MetricDef {
   key: MetricKey;
@@ -242,7 +249,106 @@ export const METRICS: Record<MetricKey, MetricDef> = {
     more: "more diverse",
     less: "less diverse",
   },
+  avgCost: {
+    key: "avgCost",
+    label: "Average cost, all students",
+    short: "Avg cost",
+    term: "average-cost",
+    domain: "value",
+    get: (s) => s.cost?.avg_paid_all ?? null,
+    format: money,
+    more: "more expensive",
+    less: "less expensive",
+  },
+  aidGenerosity: {
+    key: "aidGenerosity",
+    label: "Aid generosity",
+    short: "Aid generosity",
+    term: "aid-generosity",
+    domain: "value",
+    get: aidGenerosity,
+    format: (v) => pct(v),
+    scale: [0, 1],
+    more: "more generous aid",
+    less: "less generous aid",
+  },
+  netPrice: {
+    key: "netPrice",
+    label: "Net price, students with grants",
+    short: "Net price (grants)",
+    term: "net-price",
+    domain: "value",
+    get: (s) => s.cost?.aided_net_price ?? null,
+    format: money,
+    more: "more expensive",
+    less: "less expensive",
+  },
+  earnings: {
+    key: "earnings",
+    label: "Median earnings, 10 yrs",
+    short: "Earnings",
+    term: "median-earnings",
+    domain: "value",
+    get: (s) => s.outcomes?.median_earnings_10yr ?? null,
+    format: money,
+    more: "higher earnings",
+    less: "lower earnings",
+  },
+  gradRate: {
+    key: "gradRate",
+    label: "Graduation rate",
+    short: "Grad rate",
+    term: "graduation-rate",
+    domain: "value",
+    get: (s) => s.outcomes?.graduation_rate ?? null,
+    format: (v) => pct(v),
+    scale: [0, 1],
+    more: "higher graduation rate",
+    less: "lower graduation rate",
+  },
+  debt: {
+    key: "debt",
+    label: "Median debt at graduation",
+    short: "Median debt",
+    term: "median-debt",
+    domain: "value",
+    get: (s) => s.outcomes?.median_debt ?? null,
+    format: money,
+    more: "more debt",
+    less: "less debt",
+  },
 };
+
+/**
+ * Aid generosity: the share of the full price that grants cover, averaged
+ * over every first-year (students without grants count as 0%). Same idea as a
+ * "discount rate", but against the full cost of attendance, not just tuition.
+ */
+export function aidGenerosity(s: School): number | null {
+  const b = s.cost?.breakdown;
+  return b && b.full_price > 0 ? b.grant_per_student / b.full_price : null;
+}
+
+export function generosityTier(v: number | null): { label: string; level: number } {
+  if (v === null) return { label: "Not reported", level: 0 };
+  if (v >= 0.55) return { label: "Very generous", level: 4 };
+  if (v >= 0.4) return { label: "Generous", level: 3 };
+  if (v >= 0.25) return { label: "Moderate", level: 2 };
+  return { label: "Limited", level: 1 };
+}
+
+/** Family-income bands used by net price by income, low to high. */
+export const INCOME_BANDS = ["$0–30K", "$30–48K", "$48–75K", "$75–110K", "$110K+"];
+
+/**
+ * Rough "payback": years of a typical graduate's salary that four years of
+ * the all-student average cost would take. A conversation starter, not a financial model.
+ */
+export function paybackYears(s: School): number | null {
+  const price = s.cost?.avg_paid_all ?? null;
+  const earn = s.outcomes?.median_earnings_10yr ?? null;
+  return price !== null && earn ? (price * 4) / earn : null;
+}
 
 /** Format a possibly-missing value; missing shows as an en dash. */
 export function fmt(key: MetricKey, v: number | null): string {

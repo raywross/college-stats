@@ -17,6 +17,7 @@ export interface FilterFacets {
   sizes: Record<string, number>;
   arBins: number[];
   satBins: number[];
+  costBins: number[];
   satRange: [number, number];
 }
 
@@ -74,12 +75,15 @@ export function FilterPanel({ facets, onDone }: { facets: FilterFacets; onDone?:
   const minSAT = Number(searchParams.get("minSAT") ?? satLo);
   const maxSAT = Number(searchParams.get("maxSAT") ?? satHi);
 
+  const NP_MAX = 80000;
+  const minCost = Number(searchParams.get("minCost") ?? 0);
+  const maxCost = Number(searchParams.get("maxCost") ?? NP_MAX);
   const activeTypes = getList("types");
   const activeSizes = getList("sizes");
   const activeRegions = getList("regions");
   const activeStates = getList("states");
 
-  const hasFilters = ["q", "types", "sizes", "regions", "states", "minAR", "maxAR", "minSAT", "maxSAT"].some((k) =>
+  const hasFilters = ["q", "types", "sizes", "regions", "states", "minAR", "maxAR", "minSAT", "maxSAT", "minCost", "maxCost", "minEnroll", "maxEnroll"].some((k) =>
     searchParams.get(k)
   );
 
@@ -136,6 +140,20 @@ export function FilterPanel({ facets, onDone }: { facets: FilterFacets; onDone?:
           }
         />
         <p className="text-[11px] text-muted-foreground">Shows schools whose middle-50% range overlaps yours.</p>
+      </Section>
+
+      <Section title="Average cost per year" term="average-cost">
+        <HistogramSlider
+          label="Average cost range"
+          bins={facets.costBins}
+          min={0}
+          max={NP_MAX}
+          step={1000}
+          value={[minCost, maxCost]}
+          format={(v) => (v >= NP_MAX ? "$80K+" : `$${Math.round(v / 1000)}K`)}
+          onCommit={([lo, hi]) => update({ minCost: lo > 0 ? String(lo) : null, maxCost: hi < NP_MAX ? String(hi) : null })}
+        />
+        <p className="text-[11px] text-muted-foreground">Estimated average paid by all first-years, including those without grants. Colleges without enough data are hidden while this is set.</p>
       </Section>
 
       <Section title="Type" term="private-nonprofit">

@@ -1,23 +1,470 @@
 {
-  "_readme": "Hand-verified patches applied after each sync (npm run sync-data). Keyed by IPEDS unit ID; any subset of School fields. Keys starting with _ are ignored.",
+  "110635": {
+    "_source": "University of California-Berkeley Common Data Set 2024-25: https://docs.google.com/spreadsheets/d/11BnFbit7JcrmFMi9iV_TMkzhUyCQ_dQHS0V8weuOHPM/export?format=xlsx",
+    "_imported": "2026-09-27",
+    "cds": {
+      "edition": "2024-25",
+      "url": "https://docs.google.com/spreadsheets/d/11BnFbit7JcrmFMi9iV_TMkzhUyCQ_dQHS0V8weuOHPM/export?format=xlsx"
+    },
+    "provenance": {
+      "admissions": "cds",
+      "enrollment": "cds",
+      "demographics": "cds"
+    },
+    "admissions": {
+      "year": 2024,
+      "applicants": 124245,
+      "admitted": 13714,
+      "enrolled": 6272,
+      "acceptance_rate": 0.1104
+    },
+    "demographics": {
+      "undergrad_enrollment": 33469,
+      "racial_diversity": {
+        "international": 0.0984,
+        "hispanic": 0.221,
+        "black": 0.0205,
+        "white": 0.1979,
+        "asian": 0.3545,
+        "two_or_more": 0.0678,
+        "other": 0.0399
+      }
+    },
+    "aid": {
+      "cds": {
+        "undergrads": 31572,
+        "applied_need": 19651,
+        "has_need": 14495,
+        "need_fully_met": 4624,
+        "pct_need_met": 0.882,
+        "avg_package": 34883,
+        "avg_need_grant": 31583,
+        "avg_need_loan": 7411,
+        "merit_no_need": 1827,
+        "merit_avg": 8894
+      }
+    }
+  },
+  "145637": {
+    "_source": "University of Illinois Urbana-Champaign Common Data Set 2024-25: https://uofi.box.com/shared/static/1m3p4sedkotywoec55zbnodc4oci5ctf.xlsx",
+    "_imported": "2026-09-27",
+    "cds": {
+      "edition": "2024-25",
+      "url": "https://uofi.box.com/shared/static/1m3p4sedkotywoec55zbnodc4oci5ctf.xlsx"
+    },
+    "provenance": {
+      "admissions": "cds",
+      "enrollment": "cds",
+      "demographics": "cds"
+    },
+    "admissions": {
+      "year": 2024,
+      "applicants": 73742,
+      "admitted": 31247,
+      "enrolled": 9008,
+      "acceptance_rate": 0.4237,
+      "sat_reading_25_75": [
+        680,
+        750
+      ],
+      "sat_math_25_75": [
+        700,
+        790
+      ],
+      "act_composite_25_75": [
+        30,
+        34
+      ],
+      "test_submission_rate_sat": 0.4128,
+      "test_submission_rate_act": 0.1433
+    },
+    "demographics": {
+      "undergrad_enrollment": 37140,
+      "racial_diversity": {
+        "international": 0.149,
+        "hispanic": 0.1418,
+        "black": 0.0523,
+        "white": 0.3722,
+        "asian": 0.2267,
+        "two_or_more": 0.0407,
+        "other": 0.0173
+      }
+    },
+    "aid": {
+      "cds": {
+        "undergrads": 33994,
+        "applied_need": 21534,
+        "has_need": 15331,
+        "need_fully_met": 2734,
+        "pct_need_met": 0.77,
+        "avg_package": 23217,
+        "avg_need_grant": 21943,
+        "avg_need_loan": 4272,
+        "merit_no_need": 4335,
+        "merit_avg": 6348
+      }
+    }
+  },
+  "163286": {
+    "_source": "University of Maryland-College Park Common Data Set 2024-25: https://www.irpa.umd.edu/InstitutionalData/CommonDataSet/CDS_2024-2025.xlsx",
+    "_imported": "2026-09-27",
+    "cds": {
+      "edition": "2024-25",
+      "url": "https://www.irpa.umd.edu/InstitutionalData/CommonDataSet/CDS_2024-2025.xlsx"
+    },
+    "provenance": {
+      "admissions": "cds",
+      "enrollment": "cds",
+      "demographics": "cds"
+    },
+    "admissions": {
+      "year": 2024,
+      "applicants": 60042,
+      "admitted": 26897,
+      "enrolled": 5818,
+      "acceptance_rate": 0.448,
+      "sat_reading_25_75": [
+        680,
+        750
+      ],
+      "sat_math_25_75": [
+        710,
+        780
+      ],
+      "act_composite_25_75": [
+        32,
+        35
+      ],
+      "test_submission_rate_sat": 0.37,
+      "test_submission_rate_act": 0.06
+    },
+    "demographics": {
+      "undergrad_enrollment": 31133,
+      "racial_diversity": {
+        "international": 0.0367,
+        "hispanic": 0.1108,
+        "black": 0.1291,
+        "white": 0.3849,
+        "asian": 0.2363,
+        "two_or_more": 0.0508,
+        "other": 0.0514
+      }
+    },
+    "aid": {
+      "cds": {
+        "undergrads": 28371,
+        "applied_need": 17068,
+        "has_need": 10920,
+        "need_fully_met": 2428,
+        "pct_need_met": 0.714,
+        "avg_package": 17032,
+        "avg_need_grant": 16152,
+        "avg_need_loan": 4141,
+        "merit_no_need": 4936,
+        "merit_avg": 7051
+      }
+    }
+  },
+  "190415": {
+    "_source": "Cornell University Common Data Set 2025-26: https://irp.cornell.edu/wp-content/uploads/2026/09/CDS-Cornell-2025-2026-v2.xlsx",
+    "_imported": "2026-09-27",
+    "cds": {
+      "edition": "2025-26",
+      "url": "https://irp.cornell.edu/wp-content/uploads/2026/09/CDS-Cornell-2025-2026-v2.xlsx"
+    },
+    "provenance": {
+      "admissions": "cds",
+      "enrollment": "cds",
+      "demographics": "cds"
+    },
+    "admissions": {
+      "year": 2025,
+      "applicants": 72523,
+      "admitted": 6077,
+      "enrolled": 3827,
+      "acceptance_rate": 0.0838,
+      "sat_reading_25_75": [
+        730,
+        770
+      ],
+      "sat_math_25_75": [
+        770,
+        800
+      ],
+      "act_composite_25_75": [
+        33,
+        35
+      ],
+      "test_submission_rate_sat": 0.43,
+      "test_submission_rate_act": 0.13
+    },
+    "demographics": {
+      "undergrad_enrollment": 16138,
+      "racial_diversity": {
+        "international": 0.1039,
+        "hispanic": 0.1219,
+        "black": 0.0579,
+        "white": 0.3028,
+        "asian": 0.2751,
+        "two_or_more": 0.0612,
+        "other": 0.0771
+      }
+    },
+    "aid": {
+      "cds": {
+        "undergrads": 15946,
+        "applied_need": 8498,
+        "has_need": 7489,
+        "need_fully_met": 7489,
+        "pct_need_met": 1,
+        "avg_package": 67602,
+        "avg_need_grant": 63827,
+        "avg_need_loan": 3512,
+        "merit_no_need": null,
+        "merit_avg": null
+      }
+    }
+  },
+  "193900": {
+    "_source": "New York University Common Data Set 2024-25: https://www.nyu.edu/content/dam/nyu/institutionalResearch/documents/cds-2024-2025/CDS_2024-2025.xlsx",
+    "_imported": "2026-09-27",
+    "cds": {
+      "edition": "2024-25",
+      "url": "https://www.nyu.edu/content/dam/nyu/institutionalResearch/documents/cds-2024-2025/CDS_2024-2025.xlsx"
+    },
+    "provenance": {
+      "admissions": "cds",
+      "enrollment": "cds",
+      "demographics": "cds"
+    },
+    "admissions": {
+      "year": 2024,
+      "applicants": 110807,
+      "admitted": 10232,
+      "enrolled": 5666,
+      "acceptance_rate": 0.0923,
+      "sat_reading_25_75": [
+        720,
+        760
+      ],
+      "sat_math_25_75": [
+        760,
+        800
+      ],
+      "act_composite_25_75": [
+        34,
+        35
+      ],
+      "test_submission_rate_sat": 0.28,
+      "test_submission_rate_act": 0.1
+    },
+    "demographics": {
+      "undergrad_enrollment": 29060,
+      "racial_diversity": {
+        "international": 0.2619,
+        "hispanic": 0.1433,
+        "black": 0.0684,
+        "white": 0.2201,
+        "asian": 0.2205,
+        "two_or_more": 0.0433,
+        "other": 0.0425
+      }
+    },
+    "aid": {
+      "cds": {
+        "undergrads": 27778,
+        "applied_need": 9695,
+        "has_need": 8156,
+        "need_fully_met": 3011,
+        "pct_need_met": 0.787,
+        "avg_package": 63035,
+        "avg_need_grant": 56694,
+        "avg_need_loan": 4512,
+        "merit_no_need": 65,
+        "merit_avg": 19728
+      }
+    }
+  },
   "221999": {
-    "_source": "Vanderbilt Common Data Set 2024-25, sections B1, B2, C1, C9: https://www.vanderbilt.edu/dsa/common-data-set/",
+    "_source": "Vanderbilt University Common Data Set 2024-25: https://cdn.vanderbilt.edu/vu-wpfsx/wp-content/uploads/sites/70/2025/11/CDS_2024-2025.xlsx",
+    "_imported": "2026-09-27",
+    "cds": {
+      "edition": "2024-25",
+      "url": "https://cdn.vanderbilt.edu/vu-wpfsx/wp-content/uploads/sites/70/2025/11/CDS_2024-2025.xlsx"
+    },
+    "provenance": {
+      "admissions": "cds",
+      "enrollment": "cds",
+      "demographics": "cds"
+    },
     "admissions": {
       "year": 2024,
       "applicants": 45409,
       "admitted": 2662,
       "enrolled": 1630,
       "acceptance_rate": 0.0586,
-      "sat_reading_25_75": [730, 770],
-      "sat_math_25_75": [770, 800],
-      "act_composite_25_75": [34, 35],
+      "sat_reading_25_75": [
+        730,
+        770
+      ],
+      "sat_math_25_75": [
+        770,
+        800
+      ],
+      "act_composite_25_75": [
+        34,
+        35
+      ],
       "test_submission_rate_sat": 0.274,
       "test_submission_rate_act": 0.246
     },
     "demographics": {
       "undergrad_enrollment": 7221,
-      "racial_diversity": { "asian": 0.1854, "black": 0.0921, "hispanic": 0.1136, "white": 0.39, "two_or_more": 0.0568, "international": 0.1118, "other": 0.0504 }
+      "racial_diversity": {
+        "international": 0.1118,
+        "hispanic": 0.1136,
+        "black": 0.0921,
+        "white": 0.39,
+        "asian": 0.1854,
+        "two_or_more": 0.0568,
+        "other": 0.0504
+      }
     },
-    "sources": ["College Scorecard", "Vanderbilt Common Data Set 2024-25"]
-  }
+    "aid": {
+      "cds": {
+        "undergrads": 7166,
+        "applied_need": 3850,
+        "has_need": 3553,
+        "need_fully_met": 3550,
+        "pct_need_met": 1,
+        "avg_package": 76750,
+        "avg_need_grant": 73698,
+        "avg_need_loan": 3828,
+        "merit_no_need": 740,
+        "merit_avg": 32009
+      }
+    }
+  },
+  "231624": {
+    "_source": "William & Mary Common Data Set 2024-25: https://www.wm.edu/offices/ir/university_data/cds/wm_cds_2024-20252.xlsx",
+    "_imported": "2026-09-27",
+    "cds": {
+      "edition": "2024-25",
+      "url": "https://www.wm.edu/offices/ir/university_data/cds/wm_cds_2024-20252.xlsx"
+    },
+    "provenance": {
+      "admissions": "cds",
+      "enrollment": "cds",
+      "demographics": "cds"
+    },
+    "admissions": {
+      "year": 2024,
+      "applicants": 17798,
+      "admitted": 6064,
+      "enrolled": 1614,
+      "acceptance_rate": 0.3407,
+      "sat_reading_25_75": [
+        710,
+        760
+      ],
+      "sat_math_25_75": [
+        690,
+        770
+      ],
+      "act_composite_25_75": [
+        32,
+        34
+      ],
+      "test_submission_rate_sat": 0.4299,
+      "test_submission_rate_act": 0.1557
+    },
+    "demographics": {
+      "undergrad_enrollment": 7063,
+      "racial_diversity": {
+        "international": 0.0333,
+        "hispanic": 0.0906,
+        "black": 0.0515,
+        "white": 0.6232,
+        "asian": 0.1147,
+        "two_or_more": 0.0723,
+        "other": 0.0143
+      }
+    },
+    "aid": {
+      "cds": {
+        "undergrads": 6882,
+        "applied_need": 3781,
+        "has_need": 2531,
+        "need_fully_met": 663,
+        "pct_need_met": 0.81,
+        "avg_package": 29365,
+        "avg_need_grant": 22474,
+        "avg_need_loan": 3198,
+        "merit_no_need": 620,
+        "merit_avg": 6067
+      }
+    }
+  },
+  "243780": {
+    "_source": "Purdue University-Main Campus Common Data Set 2024-25: https://www.purdue.edu/idata/wp-content/uploads/2026/04/CDS_2024-2025.xlsx",
+    "_imported": "2026-09-27",
+    "cds": {
+      "edition": "2024-25",
+      "url": "https://www.purdue.edu/idata/wp-content/uploads/2026/04/CDS_2024-2025.xlsx"
+    },
+    "provenance": {
+      "admissions": "cds",
+      "enrollment": "cds",
+      "demographics": "cds"
+    },
+    "admissions": {
+      "year": 2024,
+      "applicants": 78745,
+      "admitted": 39272,
+      "enrolled": 11467,
+      "acceptance_rate": 0.4987,
+      "sat_reading_25_75": [
+        600,
+        720
+      ],
+      "sat_math_25_75": [
+        600,
+        760
+      ],
+      "act_composite_25_75": [
+        27,
+        34
+      ]
+    },
+    "demographics": {
+      "undergrad_enrollment": 44819,
+      "racial_diversity": {
+        "international": 0,
+        "hispanic": 0.0827,
+        "black": 0.0303,
+        "white": 0.5964,
+        "asian": 0.1672,
+        "two_or_more": 0.0524,
+        "other": 0.0709
+      }
+    },
+    "aid": {
+      "cds": {
+        "undergrads": 37672,
+        "applied_need": 18288,
+        "has_need": 11390,
+        "need_fully_met": 1945,
+        "pct_need_met": 0.7213,
+        "avg_package": 13891,
+        "avg_need_grant": 13144,
+        "avg_need_loan": 3989,
+        "merit_no_need": 7214,
+        "merit_avg": 5349
+      }
+    },
+    "_warnings": [
+      "C1 \"were admitted\" total 30272 disagrees with its breakdowns (39272); using 39272."
+    ]
+  },
+  "_readme": "Hand-verified patches applied after each sync (npm run sync-data). Keyed by IPEDS unit ID; any subset of School fields. Keys starting with _ are ignored."
 }

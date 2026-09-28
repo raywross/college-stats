@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "sync-data": "node --env-file=.env.local scripts/sync-data.mts"
+    "sync-data": "node --env-file=.env.local scripts/sync-data.mts",
+    "import-cds": "node scripts/import-cds.mts"
   },
   "dependencies": {
     "@base-ui/react": "^1.8.0",

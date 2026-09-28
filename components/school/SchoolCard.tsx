@@ -3,7 +3,7 @@ import type { School } from "@/lib/types";
 import { rankOf } from "@/lib/data";
 import { standouts } from "@/lib/insights";
 import { DOMAINS, admitRatio, satComposite, selectivityTier } from "@/lib/metrics";
-import { compact, pct, pctSmart, range, typeShort } from "@/lib/format";
+import { compact, moneyCompact, pct, pctSmart, range, typeShort } from "@/lib/format";
 import { crestTint } from "@/lib/brand";
 import { Crest } from "@/components/school/Crest";
 import { CompareButton } from "@/components/compare/CompareButton";
@@ -88,6 +88,7 @@ export function SchoolCard({ school, index = 0 }: { school: School; index?: numb
         </span>
       </div>
 
+      {/* Meter order keeps same-looking hues apart (validated color-blind safe). */}
       <div className="relative mt-5 space-y-2">
         <Meter
           label="Selectivity"
@@ -95,18 +96,24 @@ export function SchoolCard({ school, index = 0 }: { school: School; index?: numb
           rank={acceptanceRank === null ? null : 1 - acceptanceRank}
           color={DOMAINS.admissions.color}
         />
-        <Meter label="SAT range" value={sat ? range(sat) : null} rank={rankOf(school, "sat")} color={DOMAINS.scores.color} />
         <Meter
           label="Size"
           value={compact(school.demographics.undergrad_enrollment)}
           rank={rankOf(school, "enrollment")}
           color={DOMAINS.size.color}
         />
+        <Meter label="SAT range" value={sat ? range(sat) : null} rank={rankOf(school, "sat")} color={DOMAINS.scores.color} />
         <Meter
           label="Pell share"
           value={school.demographics.pell_grant_percent === null ? null : pct(school.demographics.pell_grant_percent)}
           rank={rankOf(school, "pell")}
           color={DOMAINS.access.color}
+        />
+        <Meter
+          label="Avg cost"
+          value={school.cost?.avg_paid_all == null ? null : moneyCompact(school.cost.avg_paid_all)}
+          rank={rankOf(school, "avgCost")}
+          color={DOMAINS.value.color}
         />
       </div>
 

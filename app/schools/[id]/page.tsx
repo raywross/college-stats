@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowRight, ChevronRight, MapPin, TriangleAlert } from "lucide-react";
-import { distribution, getSchoolById, landscapePoints, metricMedian, rankOf, topBy } from "@/lib/data";
+import { ArrowRight, Calculator, ChevronRight, ExternalLink, MapPin, TriangleAlert } from "lucide-react";
+import { distribution, getMeta, getSchoolById, landscapePoints, metricMedian, rankOf, topBy, valuePoints } from "@/lib/data";
 import {
   DOMAINS,
   TEST_POLICY_LABELS,
@@ -11,6 +11,9 @@ import {
   hasAdmissionCounts,
   hasTestScores,
   admitRatio,
+  aidGenerosity,
+  generosityTier,
+  paybackYears,
   satComposite,
   satMid,
   selectivityTier,
@@ -20,14 +23,19 @@ import {
 } from "@/lib/metrics";
 import {
   admissionsTakeaway,
+  costTakeaway,
+  outcomesTakeaway,
   scoresTakeaway,
   similarSchools,
   standouts,
   studentsTakeaway,
   yieldTakeaway,
 } from "@/lib/insights";
-import { compact, num, pct, pctSmart, range, typeLabel } from "@/lib/format";
+import { compact, money, moneyCompact, num, pct, pctSmart, range, typeLabel } from "@/lib/format";
 import type { TermKey } from "@/lib/glossary";
+import type { School, Topic } from "@/lib/types";
+import { SourceList, SourceNote } from "@/components/sources/SourceNote";
+import { AidBreakdown } from "@/components/charts/AidBreakdown";
 import { crestTint } from "@/lib/brand";
 import { Crest } from "@/components/school/Crest";
 import { StandoutChip } from "@/components/school/StandoutChip";
@@ -40,7 +48,11 @@ import { RangeBar } from "@/components/charts/RangeBar";
 import { BenchmarkBar } from "@/components/charts/BenchmarkBar";
 import { StackedBar } from "@/components/charts/StackedBar";
 import { DistributionStrip } from "@/components/charts/DistributionStrip";
-import { LandscapeScatter } from "@/components/charts/LandscapeScatter";
+import { ScatterPlot } from "@/components/charts/ScatterPlot";
+import { LANDSCAPE_X, LANDSCAPE_Y, LANDSCAPE_ZONE, VALUE_X, VALUE_Y, valueZone } from "@/lib/chart-configs";
+import { NetPriceByIncome } from "@/components/charts/NetPriceByIncome";
+import { WhatStudentsPay } from "@/components/school/WhatStudentsPay";
+import { AidGenerosityCard } from "@/components/school/AidGenerosityCard";
 import { InfoTip, MetricLabel, Term } from "@/components/ui/info-tip";
 
 type Props = { params: Promise<{ id: string }> };
@@ -65,6 +77,8 @@ function Panel({
   title,
   takeaway,
   children,
+  school,
+  topics,
 }: {
   id: string;
   domain?: Domain;
@@ -72,6 +86,9 @@ function Panel({
   title: string;
   takeaway?: string;
   children: ReactNode;
+  /** When given, a citation line for these topics closes the section. */
+  school?: School;
+  topics?: Topic[];
 }) {
   const color = domain ? DOMAINS[domain].color : "var(--primary)";
   return (
@@ -83,6 +100,7 @@ function Panel({
       <h2 className="font-display text-3xl font-extrabold tracking-tight">{title}</h2>
       {takeaway && <p className="mt-2 max-w-3xl text-lg text-muted-foreground">{takeaway}</p>}
       <div className="mt-6">{children}</div>
+      {school && topics && topics.length > 0 && <SourceNote topics={topics} school={school} className="mt-4" />}
     </section>
   );
 }
@@ -139,12 +157,22 @@ export default async function SchoolPage({ params }: Props) {
   const lowSubmission = sub.sat !== null && sub.act !== null && sub.sat < 0.5 && sub.act < 0.5;
   const acceptanceRank = rankOf(school, "acceptance");
   const policy = a.test_policy ? TEST_POLICY_LABELS[a.test_policy] : null;
+  const c = school.cost;
+  const o = school.outcomes;
+  const avgCost = c?.avg_paid_all ?? null;
+  const earnings = o?.median_earnings_10yr ?? null;
+  const grad = o?.graduation_rate ?? null;
+  const byIncome = c?.net_price_by_income ?? null;
+  const payback = paybackYears(school);
+  const hasValue = avgCost !== null || !!c?.sticker || earnings !== null || grad !== null || byIncome !== null;
+  const onValueMap = avgCost !== null && earnings !== null;
 
   const sections = [
     { id: "overview", label: "Overview" },
     ...(rate !== null || counts ? [{ id: "admissions", label: "Admissions", color: DOMAINS.admissions.color }] : []),
     ...(scores ? [{ id: "scores", label: "Test scores", color: DOMAINS.scores.color }] : []),
     { id: "students", label: "Students", color: DOMAINS.access.color },
+    ...(hasValue ? [{ id: "cost", label: "Cost & outcomes", color: DOMAINS.value.color }] : []),
     { id: "ranks", label: "How it ranks" },
     { id: "similar", label: "Similar schools" },
   ];
@@ -205,7 +233,7 @@ export default async function SchoolPage({ params }: Props) {
           {/* ============================== OVERVIEW ============================== */}
           <section id="overview" className="scroll-mt-36" aria-label="At a glance">
             <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-              <Tile label="Acceptance rate" term="acceptance-rate" className="col-span-2 lg:col-span-1 lg:row-span-2">
+              <Tile label="Acceptance rate" term="acceptance-rate" className="col-span-2 lg:col-span-1 lg:row-span-3">
                 {rate !== null ? (
                   <div className="flex items-center gap-4 lg:flex-col lg:items-start">
                     <Ring value={rate} color={DOMAINS.admissions.color} size={112} stroke={12} label={`Acceptance rate ${pctSmart(rate)}`}>
@@ -281,7 +309,46 @@ export default async function SchoolPage({ params }: Props) {
                   <StackedBar data={d.racial_diversity} height="h-2.5" showLegend={false} />
                 </Tile>
               )}
+              {avgCost !== null && (
+                <Tile label="Average cost" term="average-cost">
+                  <p className="font-display text-3xl font-extrabold">{moneyCompact(avgCost)}</p>
+                  <p className="text-xs text-muted-foreground">total per year, all students, after grants (est.)</p>
+                </Tile>
+              )}
+              {aidGenerosity(school) !== null && (
+                <Tile label="Aid generosity" term="aid-generosity">
+                  <div className="flex items-center gap-3">
+                    <Ring value={aidGenerosity(school)!} color={DOMAINS.value.color} size={56} stroke={7} label={`Grants cover ${pct(aidGenerosity(school)!)} of the full price`}>
+                      <span className="text-xs font-bold">{pct(aidGenerosity(school)!)}</span>
+                    </Ring>
+                    <p className="text-xs text-muted-foreground">
+                      of full price covered by grants · <b className="text-foreground">{generosityTier(aidGenerosity(school)).label}</b>
+                    </p>
+                  </div>
+                </Tile>
+              )}
+              {earnings !== null && (
+                <Tile label="Median earnings" term="median-earnings">
+                  <p className="font-display text-3xl font-extrabold">{moneyCompact(earnings)}</p>
+                  <p className="text-xs text-muted-foreground">10 years after enrolling</p>
+                </Tile>
+              )}
+              {grad !== null && (
+                <Tile label="Graduation rate" term="graduation-rate">
+                  <div className="flex items-center gap-3">
+                    <Ring value={grad} color={DOMAINS.value.color} size={56} stroke={7} label={`Graduation rate ${pct(grad)}`}>
+                      <span className="text-xs font-bold">{pct(grad)}</span>
+                    </Ring>
+                    <p className="text-xs text-muted-foreground">finish within six years</p>
+                  </div>
+                </Tile>
+              )}
             </div>
+            <SourceNote
+              topics={["admissions", "enrollment", "demographics", "prices", "aid", "outcomes"]}
+              school={school}
+              className="mt-4"
+            />
           </section>
 
           {/* ============================== ADMISSIONS ============================== */}
@@ -292,6 +359,8 @@ export default async function SchoolPage({ params }: Props) {
               eyebrow="Admissions"
               title={a.year ? `Getting in, fall ${a.year}` : "Getting in"}
               takeaway={admissionsTakeaway(school)}
+              school={school}
+              topics={["admissions"]}
             >
               <div className="grid gap-4 lg:grid-cols-[1fr_1.2fr]">
                 {counts ? (
@@ -368,7 +437,7 @@ export default async function SchoolPage({ params }: Props) {
 
           {/* ============================== TEST SCORES ============================== */}
           {scores && (
-            <Panel id="scores" domain="scores" eyebrow="Test scores" title="What admitted students scored" takeaway={scoresTakeaway(school)}>
+            <Panel id="scores" domain="scores" eyebrow="Test scores" title="What admitted students scored" takeaway={scoresTakeaway(school)} school={school} topics={["admissions"]}>
               <div className="grid gap-4 lg:grid-cols-[1.6fr_1fr]">
                 <div className="rounded-3xl border bg-card p-5 sm:p-6">
                   <ScoreChecker
@@ -433,7 +502,7 @@ export default async function SchoolPage({ params }: Props) {
           )}
 
           {/* ============================== STUDENTS ============================== */}
-          <Panel id="students" domain="access" eyebrow="Students" title="Who's on campus" takeaway={studentsTakeaway(school)}>
+          <Panel id="students" domain="access" eyebrow="Students" title="Who's on campus" takeaway={studentsTakeaway(school)} school={school} topics={["enrollment", "demographics"]}>
             <div className="grid gap-4 lg:grid-cols-2">
               <div className="rounded-3xl border bg-card p-5 sm:p-6 lg:col-span-2">
                 <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
@@ -503,8 +572,186 @@ export default async function SchoolPage({ params }: Props) {
             </div>
           </Panel>
 
+          {/* ============================== COST & OUTCOMES ============================== */}
+          {hasValue && (
+            <Panel
+              id="cost"
+              domain="value"
+              eyebrow="Cost & outcomes"
+              title="What it costs, what it pays"
+              takeaway={costTakeaway(school)}
+              school={school}
+              topics={["prices", "aid", "cost", "outcomes"]}
+            >
+              {school.links?.price_calculator && (
+                <a
+                  href={school.links.price_calculator}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group mb-4 flex items-center gap-3 rounded-2xl border border-dashed p-4 transition-colors hover:border-primary/40"
+                >
+                  <span className="inline-flex size-10 shrink-0 items-center justify-center rounded-xl bg-pop text-pop-foreground">
+                    <Calculator className="size-5" />
+                  </span>
+                  <span className="min-w-0 flex-1 text-sm">
+                    <b>Your family&apos;s price will differ.</b>{" "}
+                    <span className="text-muted-foreground">
+                      Get a personal estimate from {school.name}&apos;s official <Term term="net-price-calculator">net price calculator</Term>.
+                    </span>
+                  </span>
+                  <ExternalLink className="size-4 shrink-0 text-muted-foreground group-hover:text-primary" />
+                </a>
+              )}
+              <WhatStudentsPay school={school} />
+
+              <div className="mt-4 grid gap-4 lg:grid-cols-[1.2fr_1fr]">
+                <div className="rounded-3xl border bg-card p-5 sm:p-6">
+                  <h3 className="mb-1 flex items-center gap-1 font-display text-lg font-bold">
+                    What families at each income level pay <InfoTip term="net-price-by-income" />
+                  </h3>
+                  <p className="mb-5 text-xs text-muted-foreground">
+                    Average net price per year for students receiving federal aid
+                    {getMeta().scorecardCostYear ? `, ${getMeta().scorecardCostYear}` : ""}. Families who didn&apos;t file the FAFSA aren&apos;t included.
+                  </p>
+                  {byIncome ? (
+                    <NetPriceByIncome values={byIncome} average={null} />
+                  ) : (
+                    <p className="text-sm text-muted-foreground">Net price by family income isn&apos;t reported.</p>
+                  )}
+                </div>
+                <div className="flex flex-col gap-4">
+                  {(o?.median_debt != null || payback !== null) && (
+                    <div className="grid grid-cols-2 gap-4 rounded-3xl border bg-card p-5 sm:p-6">
+                      {o?.median_debt != null && (
+                        <div>
+                          <MetricLabel term="median-debt" className="text-xs font-semibold text-muted-foreground">
+                            Median debt at graduation
+                          </MetricLabel>
+                          <p className="mt-2 font-display text-3xl font-extrabold">{moneyCompact(o.median_debt)}</p>
+                          {o.monthly_loan_payment != null && (
+                            <p className="text-xs text-muted-foreground">≈ {money(o.monthly_loan_payment)}/month for 10 years</p>
+                          )}
+                        </div>
+                      )}
+                      {payback !== null && (
+                        <div>
+                          <MetricLabel term="payback" className="text-xs font-semibold text-muted-foreground">
+                            Payback estimate
+                          </MetricLabel>
+                          <p className="mt-2 font-display text-3xl font-extrabold">{payback.toFixed(1)} yrs</p>
+                          <p className="text-xs text-muted-foreground">of median salary to cover 4 years of net price</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {school.aid && (
+                <div className="mt-10">
+                  <h3 className="mb-1 font-display text-2xl font-extrabold tracking-tight">Who actually gets aid</h3>
+                  <p className="mb-4 max-w-3xl text-muted-foreground">
+                    Some colleges cover most of their price with grants; others cover little. Here&apos;s how generous this one is,
+                    how many students get grants, where the money comes from, and how it varies with family income.
+                  </p>
+                  <div className="space-y-4">
+                    <AidGenerosityCard school={school} />
+                    <AidBreakdown school={school} />
+                  </div>
+                </div>
+              )}
+
+              {(earnings !== null || grad !== null) && (
+                <>
+                  <p className="mt-10 mb-4 max-w-3xl text-lg text-muted-foreground">{outcomesTakeaway(school)}</p>
+                  <div className="grid gap-4 lg:grid-cols-2">
+                    <div className="space-y-6 rounded-3xl border bg-card p-5 sm:p-6">
+                      <h3 className="font-display text-lg font-bold">Earnings</h3>
+                      <DistributionStrip
+                        label="Median earnings vs. every college"
+                        term="median-earnings"
+                        dist={distribution("earnings")}
+                        value={earnings}
+                        rank={rankOf(school, "earnings")}
+                        format="moneyCompact"
+                        color={DOMAINS.value.color}
+                      />
+                      {earnings !== null && o?.median_earnings_6yr != null && (
+                        <div className="space-y-2">
+                          <p className="text-sm font-medium">Earnings climb with time</p>
+                          {[
+                            { label: "6 years after entry", v: o.median_earnings_6yr },
+                            { label: "10 years after entry", v: earnings },
+                          ].map((row, i) => (
+                            <div key={row.label} className="grid grid-cols-[8.5rem_1fr_auto] items-center gap-3 text-xs">
+                              <span className="text-muted-foreground">{row.label}</span>
+                              <span className="h-2.5 overflow-hidden rounded-full" style={{ backgroundColor: `color-mix(in oklch, ${DOMAINS.value.color} 16%, transparent)` }}>
+                                <span
+                                  className="block h-full origin-left animate-grow-x rounded-full"
+                                  style={{
+                                    width: `${(row.v / Math.max(earnings, o.median_earnings_6yr!)) * 100}%`,
+                                    backgroundColor: DOMAINS.value.color,
+                                    animationDelay: `${i * 100}ms`,
+                                  }}
+                                />
+                              </span>
+                              <span className="font-semibold tabular-nums">{moneyCompact(row.v)}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    <div className="rounded-3xl border bg-card p-5 sm:p-6">
+                      <h3 className="mb-5 font-display text-lg font-bold">Staying and finishing</h3>
+                      <div className="flex flex-wrap justify-around gap-6">
+                        {[
+                          { label: "come back for year two", v: o?.retention_rate ?? null, term: "retention-rate" as const, name: "Retention" },
+                          { label: "graduate within six years", v: grad, term: "graduation-rate" as const, name: "Graduation" },
+                        ]
+                          .filter((r): r is typeof r & { v: number } => r.v !== null)
+                          .map((r) => (
+                            <div key={r.name} className="text-center">
+                              <Ring value={r.v} color={DOMAINS.value.color} size={112} stroke={12} label={`${r.name} rate ${pct(r.v)}`}>
+                                <span className="font-display text-2xl font-extrabold">{pct(r.v)}</span>
+                              </Ring>
+                              <p className="mt-2 flex items-center justify-center gap-1 text-xs font-semibold">
+                                {r.name} <InfoTip term={r.term} />
+                              </p>
+                              <p className="text-[11px] text-muted-foreground">{r.label}</p>
+                            </div>
+                          ))}
+                      </div>
+                      {grad !== null && (
+                        <p className="mt-5 text-xs text-muted-foreground">
+                          National median graduation rate: <b className="text-foreground">{pct(metricMedian("gradRate") ?? 0)}</b>
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {onValueMap && (
+                <div className="mt-4 rounded-3xl border bg-card p-5 sm:p-6">
+                  <h3 className="mb-1 font-display text-lg font-bold">Cost vs. earnings</h3>
+                  <p className="mb-3 text-xs text-muted-foreground">
+                    The 300 most-applied-to colleges plus {school.name}. Top-left is lower cost and higher earnings.
+                  </p>
+                  <ScatterPlot
+                    focusId={school.unit_id}
+                    height={380}
+                    points={valuePoints(undefined, 300, [school.unit_id])}
+                    x={VALUE_X}
+                    y={VALUE_Y}
+                    zone={valueZone(metricMedian("avgCost"), metricMedian("earnings"))}
+                  />
+                </div>
+              )}
+            </Panel>
+          )}
+
           {/* ============================== RANKS ============================== */}
-          <Panel id="ranks" eyebrow="Context" title="How it ranks nationally">
+          <Panel id="ranks" eyebrow="Context" title="How it ranks nationally" school={school} topics={["admissions", "demographics", "cost", "outcomes"]}>
             <p className="-mt-3 mb-6 flex items-center gap-1 text-sm text-muted-foreground">
               Each chart shows every college that reports the measure; the pin marks {school.name}.
               <InfoTip term="percentile-rank" />
@@ -519,7 +766,14 @@ export default async function SchoolPage({ params }: Props) {
               <div className="rounded-3xl border bg-card p-5 sm:p-6">
                 <h3 className="mb-3 font-display text-lg font-bold">On the admissions map</h3>
                 {onMap ? (
-                  <LandscapeScatter focusId={school.unit_id} height={380} points={landscapePoints(undefined, 300, [school.unit_id])} />
+                  <ScatterPlot
+                    focusId={school.unit_id}
+                    height={380}
+                    points={landscapePoints(undefined, 300, [school.unit_id])}
+                    x={LANDSCAPE_X}
+                    y={LANDSCAPE_Y}
+                    zone={LANDSCAPE_ZONE}
+                  />
                 ) : (
                   <p className="text-sm text-muted-foreground">
                     The map plots acceptance rate against SAT scores. {school.name} doesn&apos;t report both, so it isn&apos;t shown.
@@ -565,10 +819,9 @@ export default async function SchoolPage({ params }: Props) {
                 </div>
               ))}
             </div>
-            <p className="mt-10 text-center text-xs text-muted-foreground">
-              Sources: {(school.sources ?? ["College Scorecard"]).join(" · ")}. IPEDS unit ID {school.unit_id}. National
-              comparisons include every 4-year college that reports the measure.
-            </p>
+            <div className="mt-12">
+              <SourceList school={school} topics={["admissions", "enrollment", "demographics", "prices", "aid", "cost", "outcomes"]} />
+            </div>
           </Panel>
         </div>
       </div>

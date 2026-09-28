@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { SearchX } from "lucide-react";
 import Link from "next/link";
-import { getAllSchools, getSchools, histogram, landscapeEligibleCount, landscapePoints, paginate } from "@/lib/data";
+import { getAllSchools, getSchools, histogram, landscapeEligibleCount, landscapePoints, metricMedian, paginate, stickerEligibleCount, stickerPoints, valueEligibleCount, valuePoints } from "@/lib/data";
 import { parseFilters, parseView, countActiveFilters } from "@/lib/params";
 import { SIZE_BUCKETS, median, satMid, sizeBucket } from "@/lib/metrics";
 import { pctSmart, compact, num, typeLabel } from "@/lib/format";
@@ -12,8 +12,11 @@ import { SchoolTable } from "@/components/explore/SchoolTable";
 import { FilterPanel, type FilterFacets } from "@/components/explore/FilterPanel";
 import { MobileFilterSheet } from "@/components/explore/MobileFilterSheet";
 import { ActiveFilters, ExploreSearchInput, SortControl, ViewToggle } from "@/components/explore/Toolbar";
-import { LandscapeScatter } from "@/components/charts/LandscapeScatter";
+import { ScatterPlot } from "@/components/charts/ScatterPlot";
+import { LANDSCAPE_X, LANDSCAPE_Y, LANDSCAPE_ZONE, STICKER_X, STICKER_Y, VALUE_X, VALUE_Y, valueZone } from "@/lib/chart-configs";
+import { cn } from "@/lib/utils";
 import { InfoTip } from "@/components/ui/info-tip";
+import { SourceNote } from "@/components/sources/SourceNote";
 
 export const metadata: Metadata = { title: "Explore colleges" };
 
@@ -35,6 +38,7 @@ function buildFacets(): FilterFacets {
     sizes,
     arBins: histogram("acceptance", 20, [0, 1]),
     satBins: histogram("sat", 32, satRange),
+    costBins: histogram("avgCost", 32, [0, 80000]),
     satRange,
   };
 }
@@ -52,6 +56,7 @@ export default async function ExplorePage({
   const pageNum = Number(typeof params.page === "string" ? params.page : 1) || 1;
   const paged = paginate(schools, pageNum, perPage);
   const CHART_LIMIT = 600;
+  const chart = typeof params.chart === "string" ? params.chart : "admissions";
   const all = getAllSchools();
   const facets = buildFacets();
   const activeCount = countActiveFilters(params);
@@ -138,14 +143,76 @@ export default async function ExplorePage({
             <SchoolTable schools={paged.items} params={params} />
           ) : view === "chart" ? (
             <div className="rounded-3xl border bg-card p-4 sm:p-6">
-              <h2 className="font-display text-xl font-bold">The admissions landscape</h2>
-              <p className="mb-4 text-sm text-muted-foreground">
-                {landscapeEligibleCount(schools) > CHART_LIMIT
-                  ? `Showing the ${CHART_LIMIT} most-applied-to of ${num(landscapeEligibleCount(schools))} matching colleges that report both an admit rate and SAT scores.`
-                  : `${num(landscapeEligibleCount(schools))} matching colleges report both an admit rate and SAT scores.`}{" "}
-                Tap or hover a dot for details; click to open the profile.
-              </p>
-              <LandscapeScatter points={landscapePoints(schools, CHART_LIMIT)} />
+              <div className="mb-2 flex flex-wrap items-center justify-between gap-3">
+                <h2 className="font-display text-xl font-bold">
+                  {chart === "value" ? "Cost vs. earnings" : chart === "sticker" ? "Sticker price vs. what students pay" : "The admissions landscape"}
+                </h2>
+                <div role="tablist" aria-label="Chart" className="inline-flex rounded-full border bg-muted/60 p-1">
+                  {[
+                    { key: "admissions", label: "Admissions" },
+                    { key: "value", label: "Cost vs. earnings" },
+                    { key: "sticker", label: "Sticker vs. actual" },
+                  ].map((t) => {
+                    const next = new URLSearchParams();
+                    for (const [k, v] of Object.entries(params)) if (typeof v === "string" && v && k !== "chart") next.set(k, v);
+                    if (t.key !== "admissions") next.set("chart", t.key);
+                    const activeTab = (["value", "sticker"].includes(chart) ? chart : "admissions") === t.key;
+                    return (
+                      <Link
+                        key={t.key}
+                        role="tab"
+                        aria-selected={activeTab}
+                        scroll={false}
+                        href={`/explore?${next}`}
+                        className={cn(
+                          "rounded-full px-3 py-1.5 text-xs font-semibold transition-colors",
+                          activeTab ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                        )}
+                      >
+                        {t.label}
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+              {chart === "sticker" ? (
+                <>
+                  <p className="mb-4 text-sm text-muted-foreground">
+                    Each college&apos;s full sticker price against what the average first-year actually paid after grants. The
+                    line is &ldquo;no aid&rdquo;: the further a dot sits below it, the more generous the college&apos;s grants{" "}
+                    <InfoTip term="aid-generosity" />.{" "}
+                    {stickerEligibleCount(schools) > CHART_LIMIT
+                      ? `Showing the ${CHART_LIMIT} most-applied-to of ${num(stickerEligibleCount(schools))} matching colleges.`
+                      : `${num(stickerEligibleCount(schools))} matching colleges.`}
+                  </p>
+                  <ScatterPlot points={stickerPoints(schools, CHART_LIMIT)} x={STICKER_X} y={STICKER_Y} diagonal="No aid: pays full price" />
+                </>
+              ) : chart === "value" ? (
+                <>
+                  <p className="mb-4 text-sm text-muted-foreground">
+                    {valueEligibleCount(schools) > CHART_LIMIT
+                      ? `Showing the ${CHART_LIMIT} most-applied-to of ${num(valueEligibleCount(schools))} matching colleges with enough data for average cost and earnings.`
+                      : `${num(valueEligibleCount(schools))} matching colleges report both net price and earnings.`}{" "}
+                    Top-left means lower cost and higher earnings.
+                  </p>
+                  <ScatterPlot
+                    points={valuePoints(schools, CHART_LIMIT)}
+                    x={VALUE_X}
+                    y={VALUE_Y}
+                    zone={valueZone(metricMedian("avgCost"), metricMedian("earnings"))}
+                  />
+                </>
+              ) : (
+                <>
+                  <p className="mb-4 text-sm text-muted-foreground">
+                    {landscapeEligibleCount(schools) > CHART_LIMIT
+                      ? `Showing the ${CHART_LIMIT} most-applied-to of ${num(landscapeEligibleCount(schools))} matching colleges that report both an admit rate and SAT scores.`
+                      : `${num(landscapeEligibleCount(schools))} matching colleges report both an admit rate and SAT scores.`}{" "}
+                    Tap or hover a dot for details; click to open the profile.
+                  </p>
+                  <ScatterPlot points={landscapePoints(schools, CHART_LIMIT)} x={LANDSCAPE_X} y={LANDSCAPE_Y} zone={LANDSCAPE_ZONE} />
+                </>
+              )}
             </div>
           ) : (
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 2xl:grid-cols-3">
@@ -158,6 +225,8 @@ export default async function ExplorePage({
           {view !== "chart" && (
             <Pagination params={params} page={paged.page} pages={paged.pages} total={paged.total} perPage={perPage} />
           )}
+
+          <SourceNote topics={["admissions", "enrollment", "demographics", "cost", "outcomes"]} prefix="Source" className="pt-2" />
 
           {schools.length > 0 && (
             <p className="pt-2 text-xs text-muted-foreground">

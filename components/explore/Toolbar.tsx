@@ -65,6 +65,11 @@ const SORTS = [
   { value: "pell", label: "Pell share", dir: "desc" },
   { value: "first_gen", label: "First-gen share", dir: "desc" },
   { value: "diversity", label: "Diversity index", dir: "desc" },
+  { value: "avg_cost", label: "Average cost (lowest)", dir: "asc" },
+  { value: "aid_generosity", label: "Aid generosity (most)", dir: "desc" },
+  { value: "net_price", label: "Net price with grants (lowest)", dir: "asc" },
+  { value: "earnings", label: "Earnings (highest)", dir: "desc" },
+  { value: "grad_rate", label: "Graduation rate", dir: "desc" },
 ] as const;
 
 export function SortControl() {
@@ -80,7 +85,7 @@ export function SortControl() {
           value={sortBy}
           onChange={(e) => {
             const opt = SORTS.find((s) => s.value === e.target.value)!;
-            update({ sortBy: opt.value === "applicants" ? null : opt.value, sortDir: null });
+            update({ sortBy: opt.value === "applicants" ? null : opt.value, sortDir: opt.dir === "desc" && opt.value !== "applicants" ? "desc" : null });
           }}
           className="cursor-pointer bg-transparent py-1 pr-1 text-sm font-semibold text-foreground outline-none"
         >
@@ -161,6 +166,15 @@ export function ActiveFilters() {
       key: "sat",
       label: `SAT ${minSAT ?? "…"}–${maxSAT ?? "1600"}`,
       onRemove: () => update({ minSAT: null, maxSAT: null }),
+    });
+
+  const minCost = searchParams.get("minCost");
+  const maxCost = searchParams.get("maxCost");
+  if (minCost || maxCost)
+    chips.push({
+      key: "cost",
+      label: `Avg cost $${Math.round(Number(minCost ?? 0) / 1000)}K–$${maxCost ? Math.round(Number(maxCost) / 1000) + "K" : "80K+"}`,
+      onRemove: () => update({ minCost: null, maxCost: null }),
     });
 
   const minEnroll = searchParams.get("minEnroll");

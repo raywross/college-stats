@@ -4,6 +4,9 @@ import { getAllSchools, metricMedian, rankOf, reportingCount } from "./data";
 import {
   METRICS,
   admitRatio,
+  aidGenerosity,
+  generosityTier,
+  paybackYears,
   satMid,
   selectivityTier,
   sizeBucket,
@@ -11,7 +14,7 @@ import {
   type Domain,
   type MetricKey,
 } from "./metrics";
-import { pct, pctSmart, num } from "./format";
+import { money, moneyCompact, pct, pctSmart, num } from "./format";
 import { shortName } from "./brand";
 
 /* ------------------------------------------------------------------ */
@@ -41,6 +44,14 @@ export function standouts(s: School): Standout[] {
   if (at("pell", (v) => v >= 0.85)) out.push({ label: "Economic diversity", domain: "access", metric: "pell" });
   if (at("firstGen", (v) => v >= 0.85)) out.push({ label: "First-gen friendly", domain: "access", metric: "firstGen" });
   if (at("diversity", (v) => v >= 0.85)) out.push({ label: "Very diverse", domain: "diversity", metric: "diversity" });
+  const cheap = rankOf(s, "avgCost");
+  const earns = rankOf(s, "earnings");
+  if (cheap !== null && earns !== null && cheap <= 0.25 && earns >= 0.75)
+    out.push({ label: "Great value", domain: "value", metric: "earnings" });
+  else if (at("earnings", (v) => v >= 0.9)) out.push({ label: "High earners", domain: "value", metric: "earnings" });
+  if (at("aidGenerosity", (v) => v >= 0.85)) out.push({ label: "Generous aid", domain: "value", metric: "aidGenerosity" });
+  if (at("avgCost", (v) => v <= 0.1)) out.push({ label: "Low average cost", domain: "value", metric: "avgCost" });
+  if (at("gradRate", (v) => v >= 0.9)) out.push({ label: "High graduation rate", domain: "value", metric: "gradRate" });
   const { test_submission_rate_sat: sat, test_submission_rate_act: act } = s.admissions;
   if (sat !== null && act !== null && sat < 0.5 && act < 0.5) {
     out.push({ label: "Test-optional heavy", domain: "scores", metric: "sat" });
@@ -97,6 +108,69 @@ export function studentsTakeaway(s: School): string {
   if (pell === null || pellRank === null) return `${base}.`;
   const pellTone = pellRank >= 0.66 ? "a high share" : pellRank <= 0.33 ? "a low share" : "a typical share";
   return `${base}, where ${pct(pell)} receive Pell Grants, ${pellTone} compared to other colleges.`;
+}
+
+/** Sticker phrase for a year, e.g. "$84,412" or "$36,980 in-state / $67,052 out-of-state". */
+export function stickerPhrase(s: School): string | null {
+  const st = s.cost?.sticker;
+  if (!st) return null;
+  const inState = st.in_state ?? st.in_district;
+  if (inState === null) return null;
+  const out = st.out_of_state;
+  return s.type === "public" && out !== null && out !== inState ? `${money(inState)} in-state / ${money(out)} out-of-state` : money(inState);
+}
+
+export function costTakeaway(s: School): string | undefined {
+  const all = s.cost?.avg_paid_all ?? null;
+  const med = metricMedian("avgCost");
+  if (all === null || med === null) return undefined;
+  const year = s.cost?.year ?? "";
+  const diff = all - med;
+  const cmp =
+    Math.abs(diff) < 1000 ? "about the national median" : `${moneyCompact(Math.abs(diff))} ${diff < 0 ? "less" : "more"} than the national median`;
+  const share = s.aid?.grant_pct ?? null;
+  const aided = s.cost?.aided_net_price ?? null;
+  const sticker = stickerPhrase(s);
+  const split =
+    share !== null && aided !== null && sticker
+      ? ` The ${pct(share)} who received grants paid ${money(aided)} on average; the other ${pct(1 - share)} paid the full sticker price of ${sticker}.`
+      : "";
+  return `In ${year}, the average first-year paid an estimated ${money(all)} in total (tuition, housing, food, books and other costs, after grants), ${cmp}.${split}`;
+}
+
+export function generosityTakeaway(s: School): string | undefined {
+  const g = aidGenerosity(s);
+  const r = rankOf(s, "aidGenerosity");
+  const b = s.cost?.breakdown;
+  if (g === null || r === null || !b) return undefined;
+  const tier = generosityTier(g).label.toLowerCase();
+  const lead = `Grants cover ${pct(g)} of the ${money(b.full_price)} full price on average across all first-years (${tier}), more than at ${Math.round(r * 100)}% of colleges.`;
+  const tail =
+    g >= 0.4
+      ? " The sticker price overstates what most students here actually pay."
+      : g < 0.25
+        ? " Most students here pay close to the sticker price."
+        : "";
+  return lead + tail;
+}
+
+export function outcomesTakeaway(s: School): string | undefined {
+  const earn = s.outcomes?.median_earnings_10yr ?? null;
+  const grad = s.outcomes?.graduation_rate ?? null;
+  const parts: string[] = [];
+  if (earn !== null) {
+    const r = rankOf(s, "earnings");
+    parts.push(
+      `Former students earn a median ${money(earn)} ten years after enrolling${
+        r !== null ? `, more than at ${Math.round(r * 100)}% of colleges` : ""
+      }`
+    );
+  }
+  if (grad !== null) parts.push(`${pct(grad)} graduate within six years`);
+  if (parts.length === 0) return undefined;
+  const payback = paybackYears(s);
+  const pb = payback !== null ? ` Four years of net price is about ${payback.toFixed(1)} years of that salary.` : "";
+  return `${parts.join("; ")}.${pb}`;
 }
 
 /* ------------------------------------------------------------------ */
@@ -159,7 +233,19 @@ export interface Difference {
 
 export function keyDifferences(list: School[]): Difference[] {
   if (list.length < 2) return [];
-  const keys: MetricKey[] = ["acceptance", "enrollment", "sat", "pell", "firstGen", "diversity", "yield"];
+  const keys: MetricKey[] = [
+    "acceptance",
+    "avgCost",
+    "aidGenerosity",
+    "earnings",
+    "gradRate",
+    "enrollment",
+    "sat",
+    "pell",
+    "firstGen",
+    "diversity",
+    "yield",
+  ];
   const diffs: Difference[] = [];
 
   for (const key of keys) {
@@ -195,6 +281,23 @@ export function keyDifferences(list: School[]): Difference[] {
         magnitude = Math.min(1, Math.log(ratio) / Math.log(20));
         break;
       }
+      case "avgCost":
+        headline = `${shortName(lo)} costs about ${moneyCompact(hv - lv)} less per year on average than ${shortName(hi)} (${money(lv)} vs. ${money(hv)}, all students)`;
+        magnitude = Math.min(1, (hv - lv) / 30000);
+        diffs.push({ metric: key, headline, leader: lo, trailer: hi, magnitude });
+        continue;
+      case "aidGenerosity":
+        headline = `${shortName(hi)}'s grants cover ${pct(hv)} of its full price on average, vs. ${pct(lv)} at ${shortName(lo)}`;
+        magnitude = Math.min(1, (hv - lv) / 0.4);
+        break;
+      case "earnings":
+        headline = `${shortName(hi)} grads earn ${moneyCompact(hv - lv)} more ten years out than ${shortName(lo)}'s (${money(hv)} vs. ${money(lv)})`;
+        magnitude = Math.min(1, (hv - lv) / 40000);
+        break;
+      case "gradRate":
+        headline = `${shortName(hi)} graduates ${Math.round((hv - lv) * 100)} pts more of its students than ${shortName(lo)} (${pct(hv)} vs. ${pct(lv)})`;
+        magnitude = Math.min(1, (hv - lv) / 0.4);
+        break;
       case "sat":
         headline = `${shortName(hi)}'s SAT midpoint is ${Math.round(hv - lv)} points higher than ${shortName(lo)}'s`;
         magnitude = Math.min(1, (hv - lv) / 400);

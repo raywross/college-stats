@@ -1,10 +1,11 @@
 import "server-only";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import type { School, SearchFilters, SchoolType, SortKey } from "./types";
+import type { DatasetMeta, School, SearchFilters, SchoolType, SortKey, SourceInfo, SourceKey, Topic } from "./types";
 import {
   METRICS,
   SIZE_BUCKETS,
+  aidGenerosity,
   diversityIndex,
   median,
   percentileRankSorted,
@@ -21,6 +22,58 @@ import {
 
 const schools: School[] = JSON.parse(readFileSync(join(process.cwd(), "data", "schools.json"), "utf8"));
 const byId = new Map(schools.map((s) => [s.unit_id, s]));
+const meta: DatasetMeta = JSON.parse(readFileSync(join(process.cwd(), "data", "meta.json"), "utf8"));
+
+/* ------------------------------------------------------------------ */
+/* Sources & citations                                                 */
+/* ------------------------------------------------------------------ */
+
+export function getMeta(): DatasetMeta {
+  return meta;
+}
+
+export interface ResolvedSource extends SourceInfo {
+  key: SourceKey;
+}
+
+/**
+ * Where a topic's data came from, for one school or (without a school) the
+ * dataset default. A school's Common Data Set resolves to its own file.
+ */
+export function resolveSource(topic: Topic, school?: School): ResolvedSource {
+  const key = school?.provenance?.[topic] ?? meta.defaults[topic];
+  const info = meta.sources[key];
+  if (key === "cds" && school?.cds) {
+    return { ...info, key, label: `${school.name} Common Data Set`, publisher: school.name, edition: school.cds.edition, url: school.cds.url };
+  }
+  return { ...info, key };
+}
+
+/** Distinct sources behind a set of topics, in first-seen order. */
+export function sourcesFor(topics: Topic[], school?: School, opts: { includeCds?: boolean } = {}): ResolvedSource[] {
+  const seen = new Map<string, ResolvedSource>();
+  for (const t of topics) {
+    const s = resolveSource(t, school);
+    seen.set(`${s.key}:${s.url}`, s);
+  }
+  if (opts.includeCds && school?.cds) {
+    const info = meta.sources.cds;
+    seen.set(`cds:${school.cds.url}`, {
+      ...info,
+      key: "cds",
+      label: `${school.name} Common Data Set`,
+      publisher: school.name,
+      edition: school.cds.edition,
+      url: school.cds.url,
+    });
+  }
+  return [...seen.values()];
+}
+
+/** Schools whose data includes their own Common Data Set. */
+export function cdsSchools(): School[] {
+  return schools.filter((s) => s.cds).sort((a, b) => a.name.localeCompare(b.name));
+}
 
 /* ------------------------------------------------------------------ */
 /* Queries                                                             */
@@ -39,6 +92,11 @@ const SORTERS: Record<SortKey, (s: School) => number | string | null> = {
   pell: (s) => s.demographics.pell_grant_percent,
   first_gen: (s) => s.demographics.first_gen_percent,
   diversity: diversityIndex,
+  avg_cost: (s) => s.cost?.avg_paid_all ?? null,
+  aid_generosity: aidGenerosity,
+  net_price: (s) => s.cost?.aided_net_price ?? null,
+  earnings: (s) => s.outcomes?.median_earnings_10yr ?? null,
+  grad_rate: (s) => s.outcomes?.graduation_rate ?? null,
 };
 
 export function getSchools(filters: SearchFilters = {}): School[] {
@@ -74,6 +132,10 @@ export function getSchools(filters: SearchFilters = {}): School[] {
   const act = (s: School) => s.admissions.act_composite_25_75;
   if (filters.minACT !== undefined) results = results.filter((s) => (act(s)?.[1] ?? -1) >= filters.minACT!);
   if (filters.maxACT !== undefined) results = results.filter((s) => (act(s)?.[0] ?? Infinity) <= filters.maxACT!);
+
+  const cost = (s: School) => s.cost?.avg_paid_all ?? null;
+  if (filters.minCost !== undefined) results = results.filter((s) => cost(s) !== null && cost(s)! >= filters.minCost!);
+  if (filters.maxCost !== undefined) results = results.filter((s) => cost(s) !== null && cost(s)! <= filters.maxCost!);
 
   if (filters.minEnroll !== undefined) results = results.filter((s) => s.demographics.undergrad_enrollment >= filters.minEnroll!);
   if (filters.maxEnroll !== undefined) results = results.filter((s) => s.demographics.undergrad_enrollment <= filters.maxEnroll!);
@@ -263,11 +325,12 @@ export function histogram(key: MetricKey, bins: number, [lo, hi]: [number, numbe
 /* Chart helpers                                                       */
 /* ------------------------------------------------------------------ */
 
-export interface LandscapePointData {
+/** Generic scatter point: x/y meaning is set by the chart's axis config. */
+export interface ScatterPointData {
   id: string;
   name: string;
-  acceptance: number;
-  sat: number;
+  x: number;
+  y: number;
   enrollment: number;
   type: SchoolType;
   city: string;
@@ -279,7 +342,7 @@ export interface LandscapePointData {
  * rate and SAT, capped to the most-applied-to `limit` (plus any `ensure` ids)
  * so the chart stays readable and the page payload small.
  */
-export function landscapePoints(pool: School[] = schools, limit = 400, ensure: string[] = []): LandscapePointData[] {
+export function landscapePoints(pool: School[] = schools, limit = 400, ensure: string[] = []): ScatterPointData[] {
   const eligible = pool.filter((s) => s.admissions.acceptance_rate !== null && satMid(s) !== null);
   const top = [...eligible].sort((a, b) => (b.admissions.applicants ?? 0) - (a.admissions.applicants ?? 0)).slice(0, limit);
   const ids = new Set(top.map((s) => s.unit_id));
@@ -290,13 +353,66 @@ export function landscapePoints(pool: School[] = schools, limit = 400, ensure: s
   return top.map((s) => ({
     id: s.unit_id,
     name: s.name,
-    acceptance: s.admissions.acceptance_rate!,
-    sat: satMid(s)!,
+    x: s.admissions.acceptance_rate!,
+    y: satMid(s)!,
     enrollment: s.demographics.undergrad_enrollment,
     type: s.type,
     city: s.location.city,
     state: s.location.state,
   }));
+}
+
+/**
+ * Points for the "cost vs. earnings" chart: x = estimated average cost for all students,
+ * y = median earnings 10 years after entry.
+ */
+export function valuePoints(pool: School[] = schools, limit = 400, ensure: string[] = []): ScatterPointData[] {
+  const ok = (s: School) => s.cost?.avg_paid_all != null && s.outcomes?.median_earnings_10yr != null;
+  const top = [...pool.filter(ok)].sort((a, b) => (b.admissions.applicants ?? 0) - (a.admissions.applicants ?? 0)).slice(0, limit);
+  const ids = new Set(top.map((s) => s.unit_id));
+  for (const id of ensure) {
+    const s = byId.get(id);
+    if (s && !ids.has(id) && ok(s)) top.push(s);
+  }
+  return top.map((s) => ({
+    id: s.unit_id,
+    name: s.name,
+    x: s.cost!.avg_paid_all!,
+    y: s.outcomes!.median_earnings_10yr!,
+    enrollment: s.demographics.undergrad_enrollment,
+    type: s.type,
+    city: s.location.city,
+    state: s.location.state,
+  }));
+}
+
+/** Points for "sticker price vs. what students actually pay": x = full price, y = average total cost. */
+export function stickerPoints(pool: School[] = schools, limit = 400, ensure: string[] = []): ScatterPointData[] {
+  const ok = (s: School) => !!s.cost?.breakdown && s.cost.avg_paid_all != null;
+  const top = [...pool.filter(ok)].sort((a, b) => (b.admissions.applicants ?? 0) - (a.admissions.applicants ?? 0)).slice(0, limit);
+  const ids = new Set(top.map((s) => s.unit_id));
+  for (const id of ensure) {
+    const s = byId.get(id);
+    if (s && !ids.has(id) && ok(s)) top.push(s);
+  }
+  return top.map((s) => ({
+    id: s.unit_id,
+    name: s.name,
+    x: s.cost!.breakdown!.full_price,
+    y: s.cost!.avg_paid_all!,
+    enrollment: s.demographics.undergrad_enrollment,
+    type: s.type,
+    city: s.location.city,
+    state: s.location.state,
+  }));
+}
+
+export function stickerEligibleCount(pool: School[] = schools): number {
+  return pool.filter((s) => !!s.cost?.breakdown && s.cost.avg_paid_all != null).length;
+}
+
+export function valueEligibleCount(pool: School[] = schools): number {
+  return pool.filter((s) => s.cost?.avg_paid_all != null && s.outcomes?.median_earnings_10yr != null).length;
 }
 
 export function landscapeEligibleCount(pool: School[] = schools): number {

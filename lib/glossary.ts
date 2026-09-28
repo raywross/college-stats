@@ -7,6 +7,7 @@ export type GlossaryCategory =
   | "Admissions"
   | "Test scores"
   | "Students & access"
+  | "Cost & outcomes"
   | "School types"
   | "How we measure"
   | "Data sources";
@@ -28,6 +29,7 @@ export const GLOSSARY_CATEGORIES: GlossaryCategory[] = [
   "Admissions",
   "Test scores",
   "Students & access",
+  "Cost & outcomes",
   "School types",
   "How we measure",
   "Data sources",
@@ -179,6 +181,128 @@ const entries = {
     long: "We use Simpson's diversity index: 1 − Σ(share²) over all reported categories. It rewards both more groups and more even balance between them.",
     category: "How we measure",
     related: ["race-ethnicity"],
+  },
+  "average-cost": {
+    term: "Average cost (all students)",
+    short: "Our estimate of what the average first-year actually paid in a year for everything: tuition and fees, housing, food, books, and other expenses, after grants. Students with grants pay the full price minus their grant; students without grants pay the full price.",
+    long: "Calculated from same-year federal data: the sticker price (tuition and fees for each student's residency rate, plus books, on-campus room and board, and other expenses), weighted by the share of first-years paying each rate, minus the share who received grants times their average grant. Loans aren't subtracted, since they're still paid back.",
+    why: "Published \"average net price\" figures only cover students who got aid, so they understate what a typical student pays, often by tens of thousands of dollars at colleges where many students pay full price. It assumes on-campus living, so it runs high at commuter-heavy schools.",
+    category: "Cost & outcomes",
+    related: ["net-price", "cost-of-attendance", "in-state-tuition", "grant-aid"],
+  },
+  "aid-generosity": {
+    term: "Aid generosity",
+    short: "How much of the full price (tuition, housing, food, books and other costs) grants cover, averaged over every first-year, counting students who get no grants as 0%.",
+    long: "Calculated as total grant dollars ÷ number of first-years ÷ full price. Tiers: Very generous (55%+), Generous (40–55%), Moderate (25–40%), Limited (under 25%). It's similar to the \"tuition discount rate\" colleges track, but measured against the full cost of attendance.",
+    why: "Two colleges with the same sticker price can cost very different amounts. At generous colleges the sticker price overstates what most students pay; at colleges with limited aid, most students pay close to it.",
+    category: "Cost & outcomes",
+    related: ["average-cost", "grant-aid", "cost-of-attendance", "need-met"],
+  },
+  "in-state-tuition": {
+    term: "In-state vs. out-of-state tuition",
+    short: "Public universities charge state residents a lower rate, often half or less of what out-of-state students pay. Some also have an in-district rate for local residents.",
+    category: "Cost & outcomes",
+    related: ["average-cost", "cost-of-attendance"],
+  },
+  "net-price": {
+    term: "Net price",
+    short: "What a student actually pays per year after grants and scholarships: tuition, fees, housing, and books minus gift aid. Loans are not subtracted. The average covers only students who received grants.",
+    long: "The average net price shown is for first-time, full-time students who received grant or scholarship aid, as reported to the federal government. Students who got no grants aren't included, so full-paying families pay more than the average. At public colleges it covers in-state students only.",
+    why: "It's usually far below the sticker price, especially at wealthy private colleges with generous aid. Every college has a net price calculator for your family's exact estimate.",
+    category: "Cost & outcomes",
+    related: ["cost-of-attendance", "net-price-by-income"],
+  },
+  "cost-of-attendance": {
+    term: "Cost of attendance (sticker price)",
+    short: "The full published price of a year: tuition, fees, housing, food, books, and other expenses, before any financial aid.",
+    why: "Few students pay this; compare it with net price to see how much aid typically covers.",
+    category: "Cost & outcomes",
+    related: ["net-price"],
+  },
+  "net-price-by-income": {
+    term: "Net price by family income",
+    short: "Average net price by family income ($0–30K up to $110K+) for students receiving federal (Title IV) aid, meaning those who filed the FAFSA and received federal grants or loans. Shows how much a college's aid depends on need.",
+    why: "At colleges with strong need-based aid, lower-income families can pay far less than the average net price.",
+    category: "Cost & outcomes",
+    related: ["net-price", "pell-grant"],
+  },
+  "median-earnings": {
+    term: "Median earnings",
+    short: "The middle salary of former students 10 years after they first enrolled, whether or not they graduated. Covers students who received federal financial aid.",
+    why: "Earnings reflect majors, location, and who enrolls as much as the college itself, so treat big gaps as clues rather than cause and effect.",
+    category: "Cost & outcomes",
+    related: ["payback", "graduation-rate"],
+  },
+  "graduation-rate": {
+    term: "Graduation rate",
+    short: "The share of full-time, first-time students who finish within 150% of normal time: six years for a four-year degree.",
+    category: "Cost & outcomes",
+    related: ["retention-rate"],
+  },
+  "retention-rate": {
+    term: "Retention rate",
+    short: "The share of full-time first-year students who come back for their second year. An early signal of student satisfaction and support.",
+    category: "Cost & outcomes",
+    related: ["graduation-rate"],
+  },
+  "median-debt": {
+    term: "Median debt",
+    short: "The middle amount of federal student loans owed by graduates when they finish. Private loans and parent PLUS loans aren't included.",
+    why: "The monthly payment shown assumes a standard 10-year repayment plan.",
+    category: "Cost & outcomes",
+    related: ["net-price", "payback"],
+  },
+  "grant-aid": {
+    term: "Grant aid",
+    short: "Money for college that doesn't have to be repaid: federal, state, and local grants plus the college's own scholarships. Loans and work-study don't count.",
+    category: "Cost & outcomes",
+    related: ["net-price", "institutional-aid", "pell-grant"],
+  },
+  "institutional-aid": {
+    term: "Institutional aid",
+    short: "Grants and scholarships paid by the college itself, from its own budget or endowment. At wealthy private colleges this is usually the largest source of aid.",
+    category: "Cost & outcomes",
+    related: ["grant-aid", "need-based-aid", "merit-aid"],
+  },
+  "need-based-aid": {
+    term: "Need-based aid",
+    short: "Aid awarded because a family can't cover the full cost, based on financial information such as the FAFSA or CSS Profile.",
+    category: "Cost & outcomes",
+    related: ["need-met", "merit-aid"],
+  },
+  "merit-aid": {
+    term: "Merit aid",
+    short: "Scholarships awarded for academics, talent, or athletics regardless of financial need.",
+    why: "Many highly selective colleges offer little or no merit aid; others use it heavily to attract students.",
+    category: "Cost & outcomes",
+    related: ["need-based-aid", "institutional-aid"],
+  },
+  "need-met": {
+    term: "Percent of need met",
+    short: "How much of a student's demonstrated financial need the college covers with aid, on average. 100% means the college fills the whole gap (though sometimes partly with loans).",
+    category: "Cost & outcomes",
+    related: ["need-based-aid"],
+  },
+  "federal-aid": {
+    term: "Federal (Title IV) aid",
+    short: "Federal grants, loans, and work-study, which require filing the FAFSA. Income-level breakdowns cover only students who received this aid.",
+    why: "Families who don't file the FAFSA (often higher-income ones) aren't in those breakdowns.",
+    category: "Cost & outcomes",
+    related: ["pell-grant", "net-price-by-income"],
+  },
+  "net-price-calculator": {
+    term: "Net price calculator",
+    short: "A tool every college that takes federal aid must post on its website. Enter your family's finances to get a personalized estimate of what you'd pay.",
+    why: "It's far more accurate for your family than any average on this site.",
+    category: "Cost & outcomes",
+    related: ["net-price"],
+  },
+  payback: {
+    term: "Payback estimate",
+    short: "Four years of average cost (all students) divided by median earnings 10 years after entry: roughly how many years of a typical salary the degree costs.",
+    why: "It's a rough comparison tool. It ignores taxes, living costs, interest, and time to graduate, and your own costs and earnings will differ.",
+    category: "How we measure",
+    related: ["net-price", "median-earnings"],
   },
   public: {
     term: "Public",

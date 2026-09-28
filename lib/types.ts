@@ -45,14 +45,148 @@ export interface School {
       other: number;
     } | null;
   };
-  /** Cost & outcomes from College Scorecard (not yet shown in the UI). */
-  outcomes?: {
+  /** What students pay, per year (College Scorecard; dollars). */
+  cost?: {
+    /**
+     * Scorecard's average net price, which covers students receiving FEDERAL
+     * (Title IV) aid, a lower-income-skewed group. Not shown as a headline;
+     * see avg_paid_all and aided_net_price.
+     */
     avg_net_price: number | null;
-    median_earnings_10yr: number | null;
-    completion_rate: number | null;
+    /** Net price by family income for federal-aid recipients: $0–30K, $30–48K, $48–75K, $75–110K, $110K+. */
+    net_price_by_income: (number | null)[] | null;
+    /** Full sticker cost of attendance (tuition, fees, housing, books). */
+    cost_of_attendance: number | null;
+    tuition_in_state: number | null;
+    tuition_out_of_state: number | null;
+    /**
+     * Same-year (IPEDS, e.g. 2022-23) prices and the all-student estimate.
+     * Sticker = tuition & fees + books + on-campus room & board + other expenses.
+     */
+    year?: string;
+    sticker?: ResidencyPrices;
+    tuition_fees?: ResidencyPrices;
+    /** Share of first-years paying each residency rate. */
+    residency?: ResidencyPrices;
+    /** Items that make up the sticker price beyond tuition (same year; on-campus rates). */
+    components?: { books: number | null; room_board: number | null; other: number | null };
+    /** Pieces of the all-student estimate, so the breakdown adds up exactly to avg_paid_all. */
+    breakdown?: {
+      /** Tuition & fees averaged over the residency mix (publics) or the single rate (privates). */
+      tuition_fees: number;
+      books: number;
+      room_board: number;
+      other: number;
+      /** tuition_fees + books + room_board + other */
+      full_price: number;
+      /** share with grants × average grant, i.e. grant dollars averaged over every first-year */
+      grant_per_student: number;
+    } | null;
+    /** Average net price for first-years who received grants (publics: in-state students). */
+    aided_net_price?: number | null;
+    /**
+     * Estimated average paid by ALL first-years: residency-weighted sticker
+     * price minus (share with grants × average grant). Students without
+     * grants are counted at full price.
+     */
+    avg_paid_all?: number | null;
   };
-  /** Where each part of the record came from, for the data note on profiles. */
-  sources?: string[];
+  /** What happens after enrolling (College Scorecard). */
+  outcomes?: {
+    /** Median earnings of former students 10 / 6 years after entry (federal aid recipients). */
+    median_earnings_10yr: number | null;
+    median_earnings_6yr: number | null;
+    /** Share completing within 150% of normal time (6 years for a 4-year degree). */
+    graduation_rate: number | null;
+    /** Share of full-time first-years who return for a second year. */
+    retention_rate: number | null;
+    /** Median federal loan debt of graduates, and the implied 10-year monthly payment. */
+    median_debt: number | null;
+    monthly_loan_payment: number | null;
+  };
+  /** Financial aid for full-time first-time undergrads (IPEDS Student Financial Aid survey). */
+  aid?: {
+    /** Students in the financial-aid cohort. */
+    cohort: number | null;
+    any_aid_pct: number | null;
+    /** Any grant or scholarship (federal, state, local, institutional). Share = grant_count / cohort when both are reported. */
+    grant_pct: number | null;
+    grant_avg: number | null;
+    /** Number of first-years receiving grants, and total grant dollars (exact inputs for the average cost). */
+    grant_count?: number | null;
+    grant_total?: number | null;
+    institutional_pct: number | null;
+    institutional_avg: number | null;
+    pell_pct: number | null;
+    pell_avg: number | null;
+    state_pct: number | null;
+    loan_pct: number | null;
+    loan_avg: number | null;
+    /** Students receiving federal (Title IV) aid, by family income band (same 5 bands as net price). */
+    by_income: {
+      counts: (number | null)[];
+      avg_grant: (number | null)[];
+      /** How many in each band received grants, and total grant dollars per band. */
+      granted?: (number | null)[];
+      total_grants?: (number | null)[];
+    } | null;
+    /** Richer detail from the school's Common Data Set, section H (full-time undergraduates). */
+    cds?: CdsAid;
+  };
+  links?: {
+    website: string | null;
+    /** The college's federally required net price calculator. */
+    price_calculator: string | null;
+  };
+  /** Topics whose data came from a source other than the dataset default (see data/meta.json). */
+  provenance?: Partial<Record<Topic, SourceKey>>;
+  /** The Common Data Set used for this school, when any topic came from it. */
+  cds?: { edition: string; url: string };
+}
+
+export interface ResidencyPrices {
+  in_district: number | null;
+  in_state: number | null;
+  out_of_state: number | null;
+}
+
+export interface CdsAid {
+  /** Full-time degree-seeking undergrads (H2 line A). */
+  undergrads: number | null;
+  applied_need: number | null;
+  has_need: number | null;
+  need_fully_met: number | null;
+  /** Average share of need met, 0..1 (H2 line I). */
+  pct_need_met: number | null;
+  avg_package: number | null;
+  avg_need_grant: number | null;
+  avg_need_loan: number | null;
+  /** Students with no need who got merit (non-need) aid, and its average (H2A N, O). */
+  merit_no_need: number | null;
+  merit_avg: number | null;
+}
+
+export type Topic = "admissions" | "enrollment" | "demographics" | "cost" | "prices" | "outcomes" | "aid";
+export type SourceKey = "scorecard" | "ipeds-adm" | "ipeds-sfa" | "ipeds-ic" | "cds";
+
+export interface SourceInfo {
+  /** Full citation name, e.g. "College Scorecard". */
+  label: string;
+  publisher: string;
+  /** Which release/edition, e.g. "Fall 2023 (ADM2023)". */
+  edition: string;
+  url: string;
+  description: string;
+}
+
+/** Written by the sync script to data/meta.json. */
+export interface DatasetMeta {
+  retrieved: string;
+  /** Academic year of Scorecard's "latest" cost fields, e.g. "2023–24". */
+  scorecardCostYear?: string | null;
+  sources: Record<SourceKey, SourceInfo>;
+  /** Which source supplies each topic unless a school's `provenance` says otherwise. */
+  defaults: Record<Topic, SourceKey>;
 }
 
 export type SizeBucket = "small" | "medium" | "large" | "xl";
@@ -65,7 +199,12 @@ export type SortKey =
   | "sat"
   | "pell"
   | "first_gen"
-  | "diversity";
+  | "diversity"
+  | "avg_cost"
+  | "aid_generosity"
+  | "net_price"
+  | "earnings"
+  | "grad_rate";
 
 export type ExploreView = "grid" | "table" | "chart";
 
@@ -83,6 +222,8 @@ export interface SearchFilters {
   maxACT?: number;
   minEnroll?: number;
   maxEnroll?: number;
+  minCost?: number;
+  maxCost?: number;
   sortBy?: SortKey;
   sortDir?: "asc" | "desc";
 }

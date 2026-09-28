@@ -9,6 +9,7 @@ const CATEGORY_COLORS: Record<string, string> = {
   Admissions: "var(--d-admissions)",
   "Test scores": "var(--d-scores)",
   "Students & access": "var(--d-access)",
+  "Cost & outcomes": "var(--d-value)",
   "School types": "var(--d-size)",
   "How we measure": "var(--d-diversity)",
   "Data sources": "var(--muted-foreground)",

@@ -15,9 +15,11 @@
 ## Sources (merged by IPEDS unit ID)
 | Source | Access | Provides |
 |---|---|---|
-| **College Scorecard API** | `api.data.gov`, key required, 100 schools/page | The institution list, city/state/zip, ownership (type), undergrad size, race/ethnicity shares, Pell share, first-gen share, avg net price, median earnings 10 yrs after entry, completion rate |
+| **College Scorecard API** | `api.data.gov`, key required, 100 schools/page | The institution list, city/state/zip, ownership (type), undergrad size, race/ethnicity shares, Pell share, first-gen share, and cost & outcomes (net price overall and by income, sticker price, tuition, earnings at 6/10 yrs, graduation and retention rates, median debt). See [cost-outcomes.md](cost-outcomes.md) |
 | **IPEDS Admissions survey (ADM)** | Bulk CSV zip from `nces.ed.gov/ipeds/datacenter/data/ADM{year}.zip`, no key | Applicants, admitted, enrolled, SAT/ACT 25th–75th percentiles, SAT/ACT submission rates, test policy (ADMCON7) |
-| **`data/overrides.json`** | Hand-maintained | Verified patches (e.g. newer Common Data Set figures), deep-merged last |
+| **IPEDS Student Financial Aid survey (SFA)** | Bulk CSV zip `SFA{yy}{yy+1}.zip`, no key | Share of full-time first-years receiving any aid, grants, institutional grants, Pell, state grants, loans (with averages); federal-aid recipients and average grant by family income (the `GRN4*2` fields = the file's newest year) |
+| **IPEDS Institutional Characteristics (IC_AY)** | Bulk CSV `IC{year}_AY.zip`, the same academic year as the SFA file | Tuition & fees for in-district, in-state, and out-of-state students; books; on-campus room & board; other expenses. Used for sticker prices by residency and the all-student average cost ([cost-outcomes.md](cost-outcomes.md)) |
+| **`data/overrides.json`** | Written by `npm run import-cds` (or by hand) | A college's own Common Data Set figures, deep-merged last. See [sources-and-citations.md](sources-and-citations.md) |
 
 All admissions fields come from one IPEDS year so counts, rates, and scores describe the same class. The script
 tries the newest ADM file first (current year, then back up to 5 years), so it upgrades automatically when NCES
@@ -45,6 +47,11 @@ publishes a new one. It prefers the revised `_rv.csv` when the zip contains one.
 }
 ```
 Keys starting with `_` are notes and are ignored. Arrays replace rather than merge.
+
+## Citation metadata
+Each sync also writes `data/meta.json`: the retrieval date, each source's label, publisher, edition (e.g. "Fall 2023
+(ADM2023)", "2022–23 (SFA2223)"), and URL, plus the default source for each topic. Schools record `provenance` only
+where they differ (IPEDS ADM missing → Scorecard, or an imported CDS). The site's citations read from these.
 
 ## Output
 One school per line in `data/schools.json` (~1.5 MB) so diffs between syncs stay readable. Commit it: the app reads it

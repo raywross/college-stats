@@ -1,0 +1,25 @@
+{
+  "unit_id": "216366",
+  "series": {
+    "applicants": {"start":2002,"values":[0,null,null,564,1833,0,null,null,null,null,null,null,null,null,null,null,4522,4317,4469,5135,5723,6084,7087]},
+    "admitted": {"start":2002,"values":[0,null,null,105,500,0,null,null,null,null,null,null,null,null,null,null,2635,2844,3121,4010,5085,5241,5738]},
+    "enrolled": {"start":2002,"values":[0,null,null,105,null,0,null,null,null,null,null,null,null,null,null,null,594,627,643,684,756,783,697]},
+    "acceptance_rate": {"start":2005,"values":[0.1862,0.2728,null,null,null,null,null,null,null,null,null,null,null,0.5827,0.6588,0.6984,0.7809,0.8885,0.8614,0.8097]},
+    "yield": {"start":2005,"values":[1,null,null,null,null,null,null,null,null,null,null,null,null,0.2254,0.2205,0.206,0.1706,0.1487,0.1494,0.1215]},
+    "tuition_in_state": {"start":2005,"values":[15840,16340,17312,null,null,null,null,null,null,null,null,null,null,40651,41866,41866,43116,44350,45683]},
+    "tuition_out_of_state": {"start":2005,"values":[15840,16340,17312,null,null,null,null,null,null,null,null,null,null,40651,41866,41866,43116,44350,45683]},
+    "sticker_in_state": {"start":2005,"values":[26328,27115,28267,null,null,null,null,null,null,null,null,null,null,59762,61778,61778,64007,65819,68557]},
+    "sticker_out_of_state": {"start":2005,"values":[26328,27115,28267,null,null,null,null,null,null,null,null,null,null,59762,61778,61778,64007,65819,68557]},
+    "full_price": {"start":2005,"values":[26328,27115,28267,null,null,null,null,null,null,null,null,null,null,59762,61778,61778,64007,65819,68557]},
+    "avg_paid_all": {"start":2018,"values":[29082,31332,28796,31521,32756,33550]},
+    "aided_net_price": {"start":2018,"values":[27303,29255,24227,28110,29097,29325]},
+    "grant_pct": {"start":2017,"values":[0.9854,0.9893,0.9839,0.9984,1,1,1]},
+    "grant_avg": {"start":2017,"values":[29128,31010,30945,33035,32486,33063,35007]},
+    "aid_generosity": {"start":2018,"values":[0.5134,0.4928,0.5339,0.5075,0.5023,0.5106]},
+    "net_price_income_1": {"start":2017,"values":[19729,18118,21413,18511,22122,20809,22537]},
+    "net_price_income_2": {"start":2017,"values":[21107,20167,22926,17294,22768,20445,24407]},
+    "net_price_income_3": {"start":2017,"values":[23661,22312,23635,19863,21212,24652,24680]},
+    "net_price_income_4": {"start":2017,"values":[26739,27676,25709,22523,28092,29949,29734]},
+    "net_price_income_5": {"start":2017,"values":[32248,31092,32470,28312,31864,34317,34889]}
+  }
+}

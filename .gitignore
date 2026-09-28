@@ -43,3 +43,6 @@ next-env.d.ts
 
 # Claude Code worktrees, one per session (see CLAUDE.md)
 /.claude/worktrees/
+
+# Downloaded NCES files, reused between history builds (npm run sync-history)
+/.cache/

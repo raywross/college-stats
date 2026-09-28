@@ -16,6 +16,8 @@ import {
 } from "./metrics";
 import { money, moneyCompact, pct, pctSmart, num } from "./format";
 import { shortName } from "./brand";
+import { SERIES, changeOver, defaultWindow, historyYearLabel, isTinyBase, type SchoolHistory, type SeriesKey } from "./history";
+import type { HistoryFiles } from "./supabase";
 
 /* ------------------------------------------------------------------ */
 /* "Known for" badges: computed standouts vs. the dataset              */
@@ -344,4 +346,48 @@ export function radarProfile({ rankOf }: Dataset, s: School): (number | null)[] 
     const r = rankOf(s, key);
     return r === null ? null : invert ? 1 - r : r;
   });
+}
+
+/* ------------------------------------------------------------------ */
+/* Over time (specs/trends-design.md)                                  */
+/* ------------------------------------------------------------------ */
+
+/** "rose 12%", "fell 3%", "held about steady" for a relative change. */
+export function movedBy(change: number): string {
+  if (Math.abs(change) < 0.015) return "held about steady";
+  return `${change > 0 ? "rose" : "fell"} ${Math.round(Math.abs(change) * 100)}%`;
+}
+
+/**
+ * One or two sentences atop the profile's "Over time" section: how the full price and what students actually paid
+ * moved over the default window (after inflation), and why when grants explain the gap; then applications and the
+ * acceptance rate.
+ */
+export function historyTakeaway(h: SchoolHistory, files: Pick<HistoryFiles, "cpi" | "meta">): string | undefined {
+  const ch = (k: SeriesKey) => changeOver(k, h.series[k], defaultWindow(files.meta, SERIES[k].kind), files.cpi);
+  const sentences: string[] = [];
+
+  const full = ch("full_price");
+  const paid = ch("avg_paid_all");
+  const gen = ch("aid_generosity");
+  if (full && paid) {
+    const since = historyYearLabel(Math.max(full.from.year, paid.from.year), "academic");
+    const gap = paid.change - full.change;
+    if (Math.abs(gap) < 0.03) {
+      sentences.push(`Since ${since}, the full price ${movedBy(full.change)} after inflation, and what the average first-year paid moved with it.`);
+    } else {
+      const why = gap < 0 && gen && gen.change > 0.01 ? ", because grants grew faster" : gap > 0 && gen && gen.change < -0.01 ? ", as grants covered less of it" : "";
+      sentences.push(`Since ${since}, the full price ${movedBy(full.change)} after inflation, while what the average first-year paid ${movedBy(paid.change)}${why}.`);
+    }
+  } else if (full) {
+    sentences.push(`Since ${historyYearLabel(full.from.year, "academic")}, the full price ${movedBy(full.change)} after inflation.`);
+  }
+
+  const apps = ch("applicants");
+  const rate = ch("acceptance_rate");
+  if (apps && !isTinyBase(apps)) {
+    const r = rate ? `, and the acceptance rate went from ${pctSmart(rate.from.value)} to ${pctSmart(rate.to.value)}` : "";
+    sentences.push(`Applications ${movedBy(apps.change)} since ${historyYearLabel(apps.from.year, "fall").toLowerCase()}${r}.`);
+  }
+  return sentences.length ? sentences.join(" ") : undefined;
 }

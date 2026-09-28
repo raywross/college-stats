@@ -1,0 +1,8 @@
+{
+  "unit_id": "490328",
+  "series": {
+    "applicants": {"start":2017,"values":[0,0,null,null,null,0]},
+    "tuition_in_state": {"start":2017,"values":[8400,8500,null,null,null,11050,11800]},
+    "tuition_out_of_state": {"start":2017,"values":[8400,8500,null,null,null,11050,11800]}
+  }
+}

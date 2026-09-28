@@ -1,0 +1,20 @@
+{
+  "unit_id": "492069",
+  "series": {
+    "tuition_in_state": {"start":2018,"values":[5240,7640,7654,7654,7755,10870]},
+    "tuition_out_of_state": {"start":2018,"values":[5240,7640,7654,7654,7755,10870]},
+    "sticker_in_state": {"start":2018,"values":[13840,17140,17154,17154,17255,20970]},
+    "sticker_out_of_state": {"start":2018,"values":[13840,17140,17154,17154,17255,20970]},
+    "full_price": {"start":2018,"values":[13840,17140,17154,17154,17255,20970]},
+    "avg_paid_all": {"start":2018,"values":[10029,13210,11736,13868,12444,18075]},
+    "aided_net_price": {"start":2018,"values":[8126,10557,13164,16328,15392,16467]},
+    "grant_pct": {"start":2017,"values":[0,0.7568,0.8,1,1,0.9615,0.6429]},
+    "grant_avg": {"start":2018,"values":[5037,4912,5418,3286,5004,4503]},
+    "aid_generosity": {"start":2018,"values":[0.2754,0.2293,0.3158,0.1916,0.2788,0.1381]},
+    "net_price_income_1": {"start":2018,"values":[8064,9572,12533,11919,13384,14499]},
+    "net_price_income_2": {"start":2018,"values":[8342,11965,3465,16644,10831,18140]},
+    "net_price_income_3": {"start":2020,"values":[16046,11977,14750,14956]},
+    "net_price_income_4": {"start":2018,"values":[12467,15469,17025,null,16301,19770]},
+    "net_price_income_5": {"start":2019,"values":[14569,null,17151,18709,19762]}
+  }
+}

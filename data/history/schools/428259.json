@@ -1,0 +1,10 @@
+{
+  "unit_id": "428259",
+  "series": {
+    "applicants": {"start":2002,"values":[0]},
+    "admitted": {"start":2002,"values":[0]},
+    "enrolled": {"start":2002,"values":[0]},
+    "tuition_in_state": {"start":2009,"values":[9500,null,null,10480,null,11670]},
+    "tuition_out_of_state": {"start":2009,"values":[9500,null,null,10480,null,11670]}
+  }
+}

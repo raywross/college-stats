@@ -1,6 +1,7 @@
 # Trends: Site Design
 
-> Status: **planned** (not built). Data, sources, and storage are in [trends-data.md](trends-data.md).
+> Status: **Phase 1 built** (2026-09-28); Phases 2–3 planned. Data, sources, and storage are in [trends-data.md](trends-data.md).
+> What shipped and how it differs from this plan: [Build notes](#build-notes-phase-1).
 
 ## Principle: trends are facts at the top, charts at the bottom
 History follows the site's drill-down. The higher the level, the less history is shown:
@@ -146,3 +147,39 @@ one is added, run `validate_palette.js`.
 2. **The rest of the profile.** Scores (with breaks), size, diversity, outcomes panels; section-headline deltas;
    Home fact 3.
 3. **Cross-college views.** Compare "Then & now"; Explore change columns and sorts; trend standouts.
+
+## Build notes (Phase 1)
+Built 2026-09-28 (`feature/trends`). What shipped, and where it differs from the plan above:
+- **Profile "Over time"** (`components/history/OverTime.tsx`, client; `#history`, between Cost & outcomes and How it
+  ranks). Controls: *10 years / All*, *After inflation / As reported*, *National median*, and for publics *All students
+  / In-state / Out-of-state* full price; state in the URL (`?range=all&dollars=nominal&median=off&rate=out`), read
+  after hydration so the page stays static. Groups and panels:
+  - Cost: *What a year costs* (average total cost in the domain color with the national band; full price solid
+    neutral; net price with grants dashed neutral) and *Net price by family income* (dumbbell, window start → latest).
+  - Aid: *Grants for first-years* (share with grants + aid generosity) and *Average grant* (added: it's the other half
+    of the grant story and has a meaningful national band).
+  - Admissions: *Applicants, admits, and enrollees* (enrollees added: "the seats"; **no national band**, because the
+    national applicant range would flatten a large college's line) and *Acceptance rate and yield*.
+  - Every panel: latest value, change over the window, legend, direct end labels (≥ 480px), crosshair tooltip (keyboard
+    ← →), pandemic band, hollow provisional point, and a *Table* toggle. Group footers carry the history source line
+    (`HistorySourceNote`: each survey with its year range, plus BLS CPI-U for money), the 2007–08 estimate note, and the
+    carried-forward-years note.
+  - Colleges whose admissions headline comes from a Common Data Set get a note that the charts are federal and end a
+    year earlier (see backlog: CDS values newer than federal data).
+  - Mobile: groups are accordions (Cost open), charts 170px tall, direct labels drop to the legend.
+- **Overview "10 years" tile** (`TenYearTile`): average total cost from → to after inflation, then up to two notable
+  changes from full price, acceptance rate, applicants, grant share (undergrads join in Phase 2). It's a card with a
+  "See how it's changed" link rather than a whole-card link, because its info button can't nest inside a link.
+- **Takeaway** (`historyTakeaway()` in lib/insights.ts): full price vs what the average first-year paid, with "because
+  grants grew faster" only when aid generosity rose; then applications and the acceptance rate.
+- **Home "What's changed"** (`components/history/WhatsChanged.tsx`, after "Is it worth it?"): facts 1–2. The real
+  numbers (2013–14 → 2023–24, 1,432 colleges): what students paid fell 12% after inflation while full prices held
+  about steady; applications to today's 100 most selective colleges (1,000+ applicants) rose 74% since fall 2014 while
+  their enrollment rose 10% (11.9 → 18.7 applications per seat). Card text follows the direction of each change
+  (`movedBy()`), so it stays true after the next build. Links: `/explore?sortBy=avg_cost`, `/explore?sortBy=acceptance_rate`
+  (Explore has no `chart=sticker` view). Each card cites only the files in its years.
+- **Charts added:** `TrendLine`, `Sparkline`, `Dumbbell` ([charts.md](charts.md)). No new colors: domain colors,
+  `--muted-foreground` for context series, `--foreground` washes for bands.
+- **Glossary:** `inflation-adjusted`, `provisional-data`, `fixed-panel`. (`entering-cohort` and `trend-break` come
+  with Phase 2's graduation and SAT charts.)
+- Not yet: section-headline deltas, trend standouts, Home fact 3, Compare, Explore (Phases 2–3).

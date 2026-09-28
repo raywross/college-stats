@@ -3,9 +3,22 @@
 Planned work, roughly in priority order. Move items into a feature spec when they're picked up.
 
 ## Data
-- [ ] **Trends over time.** Year-by-year history per college (cost and aid from 2008–09, admissions from fall 2001)
-  with a separate `npm run sync-history`. Data plan: [trends-data.md](trends-data.md); UI plan:
-  [trends-design.md](trends-design.md). Built in three phases (cost + admissions first).
+- [ ] **Trends over time.** Year-by-year history per college with `npm run sync-history`. Data:
+  [trends-data.md](trends-data.md); UI: [trends-design.md](trends-design.md).
+  - [x] Phase 1 (2026-09-28): cost, aid, net price, and admissions history for 1,884 colleges (shards in git);
+    national distributions; CPI; profile "Over time" (Cost, Aid, Admissions), Overview "10 years" tile, Home facts
+    1–2; Supabase tables + publish.
+  - [ ] **Put history on the pre-release site:** apply `supabase/migrations/20260928120000_history.sql` to the dev
+    project (SQL Editor), then `npm run publish-data` (publishes the dataset and history, reads both back, revalidates).
+    Until then the site renders without history (merged ahead of the migration on purpose; pages fail soft).
+  - [ ] Review the ~765 year-over-year jumps over 3× that `sync-history` lists (mostly small colleges' reporting
+    errors, kept as reported). Decide whether to drop clear typos the way carried-forward repeats are dropped, or to
+    exclude them from national figures only.
+  - [ ] Phase 2: scores (SAT break at fall 2017, test-optional shading), undergrads, diversity (Scorecard
+    year-prefixed fields), graduation by entering cohort, median debt; section-headline deltas; Home fact 3.
+  - [ ] Phase 3: Compare "Then & now", Explore change columns and sorts (`trends` summary in schools.json), trend
+    standouts.
+  - [ ] Use each IC_AY file's prior-year columns (`CHG*AY0`–`AY2`) to fill gaps and cross-check revisions.
 - [x] **Per-value data lineage** ([data-lineage.md](data-lineage.md)): built 2026-09-28. Leftovers: Explore/Compare
   baseline banner and `school.reported` (with the agent below).
 - [x] **Data tab** ([data-page.md](data-page.md)): built 2026-09-28. Follow-ups are the items below.
@@ -13,6 +26,8 @@ Planned work, roughly in priority order. Move items into a feature spec when the
   (fall 2025 class) and currently replaces federal fall 2024 values in ranks, medians, Explore and Compare, against
   the federal-baseline rule. Options: use its 2024–25 edition for now, or wait for `school.reported` (agent below).
   The Data page states the current behavior (count computed from lineage); update that text when this changes.
+  History is federal throughout, so for these 8 colleges the "Over time" admissions charts end a year before the
+  headline (a note says so); the same fix should make charts and headlines agree.
 - [ ] **Data page section 5: newer figures from colleges** (what the agent collects, its checks, the accuracy report,
   count of colleges): build with the college-reported data agent ([data-page.md](data-page.md#sections)).
 - [ ] **Review the release calendar** (`data/release-calendar.json`) at least every 90 days (next by 2026-12-27; the
@@ -21,14 +36,18 @@ Planned work, roughly in priority order. Move items into a feature spec when the
 - [ ] **Use already-released IPEDS files?** `IC2025`, `EFFY2025`, `C2025_A` are out but unused (listed on the Data
   page). Decide whether any is worth adding (e.g. completions by field).
 - [ ] **2024–25 sticker prices** from `COST1_2024` (`…AY3`), keeping same-year inputs for the all-student average
-  ([data-page.md](data-page.md#research-findings-vintages-as-of-2026-09-28)).
+  ([data-page.md](data-page.md#research-findings-vintages-as-of-2026-09-28)). If the snapshot moves ahead, history's
+  price series (`scripts/history/registry.mts`) must follow, or CI's latest-point check fails.
 - [ ] **College-reported data agent** ([college-reported-data.md](college-reported-data.md)): newer admissions figures
   from colleges' CDS and class profiles, auto-published when checks pass. Pilot on ~50 colleges first. Replaces the
   former "Read CDS PDFs" and "Expand CDS coverage" items (the existing 8 CDS overrides stay until the agent covers them).
 - [ ] **Watch ACTS** (IPEDS admissions supplement): adopt if NCES publishes institution-level files. See
   [data-page.md](data-page.md#watching-acts).
-- [ ] **Scheduled data refresh** (`chore/scheduled-data-sync`): monthly GitHub Action runs `npm run sync-data` and
-  opens a PR with the diff; the API key goes in repository secrets. Also updates `data/release-calendar.json` statuses:
+- [ ] **Scheduled data refresh** (`chore/scheduled-data-sync`): monthly GitHub Action runs `npm run sync-all`
+  (`sync-data` then `sync-history`, which must move together: CI checks that history ends on the snapshot's values) and
+  opens a PR with the diff; the API key goes in repository secrets. Cache `.cache/ipeds/` between runs (~80 zips), and
+  expect NCES to drop connections now and then (the scripts retry; a file never downloaded fails the run). After each
+  December IPEDS release, the provisional year gets its revised file and a new year is appended. Also updates `data/release-calendar.json` statuses:
   today the NCES release check only runs when someone runs the sync, so until this exists the Data page can list a
   release as upcoming after it has shipped. Consider a weekly `--releases-only` run around expected release months.
 - [ ] Show which colleges have CDS detail in Explore (e.g. a filter or badge), so users know where richer aid data exists.
@@ -36,15 +55,18 @@ Planned work, roughly in priority order. Move items into a feature spec when the
   colleges where most students live at home.
 
 ## Quality
-- [ ] Tests for the sync mapping (`toSchool`, `toAid`, `addPrices`), the CDS importer (fixtures for classic and
-  flat layouts, including the Purdue typo case), and missing-data handling in `lib/metrics.ts`.
+- [ ] Tests for the sync mapping (`toSchool`), the CDS importer (fixtures for classic and flat layouts, including the
+  Purdue typo case), and missing-data handling in `lib/metrics.ts`. (Aid and price derivations moved to
+  `lib/derive.ts` and are covered by `tests/history.test.mts` plus the latest-point check on every college.)
 
 ## Platform
 - [x] Deploy to Vercel: pre-release dev site at https://college-stats-nine.vercel.app, reading the Supabase dev
   project (2026-09-28; [supabase.md](supabase.md#current-state-pre-release-dev-only)).
 - [ ] **Formal release** (after the planned feature set is in, before circulating the site more widely): create the
-  prod Supabase project and split dev/prod, point Vercel Production at prod, turn on publish-on-merge and
+  prod Supabase project and split dev/prod (apply both migrations: dataset and history), run `npm run sync-history` if
+  the committed history is stale, point Vercel Production at prod, turn on publish-on-merge and
   revalidation secrets ([setup](supabase.md#setup-phase-3)), and put control procedures in place (who may publish to
   prod, review before data merges, rollback). Optionally a custom domain.
-- [ ] Supabase user data (accounts, saved lists) goes in as new migrations. Multi-year history stays in per-college JSON files
-  first; the table design for later is in [trends-data.md](trends-data.md#storage).
+- [ ] Supabase user data (accounts, saved lists) goes in as new migrations. History stays in git as per-college JSON
+  (reviewable diffs when NCES revises past years, CI checks, JSON previews) and is published 1:1 to
+  `school_histories`; decided 2026-09-28 over build-and-publish-only.

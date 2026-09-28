@@ -1,0 +1,13 @@
+{
+  "unit_id": "212771",
+  "series": {
+    "applicants": {"start":2001,"values":[15,7,null,1,null,5]},
+    "admitted": {"start":2001,"values":[11,6,null,1,null,5]},
+    "enrolled": {"start":2001,"values":[10,5,null,1,null,5]},
+    "acceptance_rate": {"start":2001,"values":[0.7333]},
+    "yield": {"start":2001,"values":[0.9091,0.8333,null,1,null,1]},
+    "tuition_in_state": {"start":2000,"values":[7560,7950,8190,null,9500,null,10600,11570,12000,12300,22320,16050,null,null,null,null,19772]},
+    "tuition_out_of_state": {"start":2000,"values":[7560,7950,8190,null,9500,null,10600,11570,12000,12300,22320,16050,null,null,null,null,19772]}
+  },
+  "repeated": [2007]
+}

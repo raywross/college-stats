@@ -1,0 +1,24 @@
+{
+  "unit_id": "490319",
+  "series": {
+    "applicants": {"start":2017,"values":[23,13,12,16,13,5,8,11]},
+    "admitted": {"start":2017,"values":[18,9,9,14,13,3,6,9]},
+    "enrolled": {"start":2017,"values":[13,7,7,11,11,2,6,9]},
+    "acceptance_rate": {"start":2017,"values":[0.7826,0.6923,0.75,0.875,1,null,null,0.8182]},
+    "yield": {"start":2017,"values":[0.7222,0.7778,0.7778,0.7857,0.8462,0.6667,1,1]},
+    "tuition_in_state": {"start":2017,"values":[7430,9075,9075,9250,9580,9950,10350]},
+    "tuition_out_of_state": {"start":2017,"values":[7430,9075,9075,9250,9580,9950,10350]},
+    "sticker_in_state": {"start":2017,"values":[13530,15175,15375,15650,15980,16350,19290]},
+    "sticker_out_of_state": {"start":2017,"values":[13530,15175,15375,15650,15980,16350,19290]},
+    "full_price": {"start":2017,"values":[13530,15175,15375,15650,15980,16350,19290]},
+    "avg_paid_all": {"start":2017,"values":[10103,10448,8540,4967,1970,12235,12819]},
+    "aided_net_price": {"start":2017,"values":[8447,9383,6984,6015,6534,11935,11757]},
+    "grant_pct": {"start":2016,"values":[1,0.6923,0.8333,0.8571,1,1,1,0.8333]},
+    "grant_avg": {"start":2016,"values":[5277,4950,5672,7974,10683,14010,4115,7765]},
+    "aid_generosity": {"start":2017,"values":[0.2533,0.3115,0.4446,0.6826,0.8767,0.2517,0.3355]},
+    "net_price_income_1": {"start":2016,"values":[7410,7636,7611,8604,4998,6313,null,11187]},
+    "net_price_income_2": {"start":2016,"values":[4660,7636,8780,8570,1500]},
+    "net_price_income_3": {"start":2016,"values":[7362,7969,null,8625,4025,8749,null,11187]},
+    "net_price_income_4": {"start":2016,"values":[9162,10408,null,null,7580,null,null,14037]}
+  }
+}

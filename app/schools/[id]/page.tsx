@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowRight, Calculator, ChevronRight, ExternalLink, MapPin, TriangleAlert } from "lucide-react";
-import { getData } from "@/lib/data";
+import { getData, getHistory, getHistoryFiles } from "@/lib/data";
 import type { Cited } from "@/lib/lineage";
 import {
   DOMAINS,
@@ -25,6 +25,7 @@ import {
 import {
   admissionsTakeaway,
   costTakeaway,
+  historyTakeaway,
   outcomesTakeaway,
   scoresTakeaway,
   similarSchools,
@@ -56,6 +57,20 @@ import { NetPriceByIncome } from "@/components/charts/NetPriceByIncome";
 import { WhatStudentsPay } from "@/components/school/WhatStudentsPay";
 import { AidGenerosityCard } from "@/components/school/AidGenerosityCard";
 import { InfoTip, MetricLabel, SourceChip, Term } from "@/components/ui/info-tip";
+import { OverTime } from "@/components/history/OverTime";
+import { TenYearTile } from "@/components/history/TenYearTile";
+import { HistorySourceNote } from "@/components/sources/HistorySourceNote";
+import { historyYearLabel, type NationalHistory, type SeriesKey } from "@/lib/history";
+
+/** Series each "Over time" group shows; they drive the group's source footnote. */
+const HISTORY_GROUPS = {
+  cost: ["avg_paid_all", "full_price", "sticker_in_state", "sticker_out_of_state", "aided_net_price", "net_price_income_1"],
+  aid: ["grant_pct", "grant_avg", "aid_generosity"],
+  admissions: ["applicants", "admitted", "enrolled", "acceptance_rate", "yield"],
+} as const satisfies Record<string, readonly SeriesKey[]>;
+
+/** National series the charts draw as a band (keeps the page payload small). */
+const BANDED: readonly SeriesKey[] = ["avg_paid_all", "grant_pct", "grant_avg", "acceptance_rate"];
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -243,6 +258,8 @@ export default async function SchoolPage({ params }: Props) {
   const { citeField, distribution, getSchoolById, landscapePoints, metricMedian, rankOf, valuePoints } = data;
   const school = getSchoolById(id);
   if (!school) notFound();
+  const [history, historyFiles] = await Promise.all([getHistory(school.unit_id), getHistoryFiles()]);
+  const hasHistory = history !== null && historyFiles !== null && Object.keys(history.series).length > 0;
 
   const { admissions: a, demographics: d } = school;
   const rate = a.acceptance_rate;
@@ -276,6 +293,7 @@ export default async function SchoolPage({ params }: Props) {
     ...(scores ? [{ id: "scores", label: "Test scores", color: DOMAINS.scores.color }] : []),
     { id: "students", label: "Students", color: DOMAINS.access.color },
     ...(hasValue ? [{ id: "cost", label: "Cost & outcomes", color: DOMAINS.value.color }] : []),
+    ...(hasHistory ? [{ id: "history", label: "Over time" }] : []),
     { id: "ranks", label: "How it ranks" },
     { id: "similar", label: "Similar schools" },
   ];
@@ -418,6 +436,7 @@ export default async function SchoolPage({ params }: Props) {
                   <p className="text-xs text-muted-foreground">total per year, all students, after grants (est.)</p>
                 </Tile>
               )}
+              {hasHistory && <TenYearTile history={history} files={historyFiles} />}
               {aidGenerosity(school) !== null && (
                 <Tile label="Aid generosity" term="aid-generosity" field="derived.aid_generosity" school={school}>
                   <div className="flex items-center gap-3">
@@ -857,6 +876,40 @@ export default async function SchoolPage({ params }: Props) {
                   />
                 </div>
               )}
+            </Panel>
+          )}
+
+          {/* ============================== OVER TIME ============================== */}
+          {hasHistory && (
+            <Panel id="history" eyebrow="Over time" title="How it's changed" takeaway={historyTakeaway(history, historyFiles)} school={school} fields={[]}>
+              <OverTime
+                isPublic={school.type === "public"}
+                history={history}
+                national={Object.fromEntries(BANDED.flatMap((k) => (historyFiles.national.series[k] ? [[k, historyFiles.national.series[k]]] : []))) as NationalHistory["series"]}
+                cpi={historyFiles.cpi}
+                latest={historyFiles.meta.latest}
+                provisional={{
+                  fall: historyFiles.meta.provisional.adm ?? null,
+                  academic: historyFiles.meta.provisional.sfa ?? historyFiles.meta.provisional.prices ?? null,
+                }}
+                sources={{
+                  cost: <HistorySourceNote keys={HISTORY_GROUPS.cost} files={historyFiles} />,
+                  aid: <HistorySourceNote keys={HISTORY_GROUPS.aid} files={historyFiles} />,
+                  admissions: (
+                    <>
+                      {!citeField("admissions.applicants", school).isDefault && (
+                        <p className="mb-1.5">
+                          These charts use federal data every year, so they end at {historyYearLabel(historyFiles.meta.latest.fall, "fall").toLowerCase()}; the
+                          admissions figures above come from {citeField("admissions.applicants", school).label}
+                          {citeField("admissions.applicants", school).year ? `, ${citeField("admissions.applicants", school).year}` : ""}.
+                        </p>
+                      )}
+                      <HistorySourceNote keys={HISTORY_GROUPS.admissions} files={historyFiles} />
+                    </>
+                  ),
+                }}
+                colors={{ value: DOMAINS.value.color, admissions: DOMAINS.admissions.color }}
+              />
             </Panel>
           )}
 

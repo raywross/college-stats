@@ -1,0 +1,10 @@
+{
+  "unit_id": "475200",
+  "series": {
+    "applicants": {"start":2017,"values":[8,2,null,1,null,null,null,7]},
+    "admitted": {"start":2017,"values":[5,2,null,1,null,null,null,2]},
+    "enrolled": {"start":2017,"values":[3,2,null,0,null,null,null,2]},
+    "yield": {"start":2017,"values":[0.6,1,null,0,null,null,null,1]}
+  },
+  "repeated": [2019]
+}

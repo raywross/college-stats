@@ -1,0 +1,20 @@
+{
+  "unit_id": "499389",
+  "series": {
+    "applicants": {"start":2023,"values":[99,95]},
+    "admitted": {"start":2023,"values":[99,95]},
+    "enrolled": {"start":2023,"values":[32,51]},
+    "acceptance_rate": {"start":2023,"values":[1,1]},
+    "yield": {"start":2023,"values":[0.3232,0.5368]},
+    "tuition_in_state": {"start":2023,"values":[23760]},
+    "tuition_out_of_state": {"start":2023,"values":[23760]},
+    "aided_net_price": {"start":2023,"values":[35947]},
+    "grant_pct": {"start":2023,"values":[0.7826]},
+    "grant_avg": {"start":2023,"values":[7895]},
+    "net_price_income_1": {"start":2023,"values":[36913]},
+    "net_price_income_2": {"start":2023,"values":[34445]},
+    "net_price_income_3": {"start":2023,"values":[36040]},
+    "net_price_income_4": {"start":2023,"values":[43920]},
+    "net_price_income_5": {"start":2023,"values":[43920]}
+  }
+}

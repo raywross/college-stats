@@ -1,0 +1,15 @@
+{
+  "unit_id": "190576",
+  "series": {
+    "applicants": {"start":2002,"values":[0,null,null,null,null,null,null,null,null,18,0,null,null,null,null,null,null,null,null,null,147,158,146]},
+    "admitted": {"start":2002,"values":[0,null,null,null,null,null,null,null,null,18,0,null,null,null,null,null,null,null,null,null,35,61,100]},
+    "enrolled": {"start":2002,"values":[0,null,null,null,null,null,null,null,null,18,0,null,null,null,null,null,null,null,null,null,5,16,12]},
+    "acceptance_rate": {"start":2011,"values":[1,null,null,null,null,null,null,null,null,null,null,0.2381,0.3861,0.6849]},
+    "yield": {"start":2011,"values":[1,null,null,null,null,null,null,null,null,null,null,0.1429,0.2623,0.12]},
+    "tuition_in_state": {"start":2009,"values":[4830,4830,5360,5660,null,6460,null,null,null,null,null,null,7410,7410,7410]},
+    "tuition_out_of_state": {"start":2009,"values":[10190,10190,11270,11870,null,13270,null,null,null,null,null,null,15360,15360,15360]},
+    "sticker_in_state": {"start":2012,"values":[33178,null,38558,null,null,null,null,null,null,null,35570]},
+    "sticker_out_of_state": {"start":2012,"values":[39388,null,45368,null,null,null,null,null,null,null,43520]},
+    "full_price": {"start":2012,"values":[33178,null,38558,null,null,null,null,null,null,null,35570]}
+  }
+}

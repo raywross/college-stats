@@ -16,6 +16,7 @@ import { Leaderboard } from "@/components/charts/Leaderboard";
 import { InfoTip, Term } from "@/components/ui/info-tip";
 import { SourceNote } from "@/components/sources/SourceNote";
 import { MultiSourceNote } from "@/components/sources/MultiSourceNote";
+import { WhatsChanged } from "@/components/history/WhatsChanged";
 
 const LENSES: { title: string; blurb: string; query: string; domain: Domain; icon: typeof Crown; ranked?: boolean }[] = [
   { title: "The most selective", blurb: "Admit rates of 10% or less", query: "maxAR=10&sortBy=acceptance_rate", domain: "admissions", icon: Crown },
@@ -275,6 +276,9 @@ export default async function HomePage() {
             </div>
           </div>
         </section>
+
+        {/* ============================== WHAT'S CHANGED ============================== */}
+        <WhatsChanged valueColor={DOMAINS.value.color} admissionsColor={DOMAINS.admissions.color} />
 
         {/* ============================== MAP + LEADERBOARDS ============================== */}
         <section>

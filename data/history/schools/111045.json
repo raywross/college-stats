@@ -1,0 +1,8 @@
+{
+  "unit_id": "111045",
+  "series": {
+    "tuition_in_state": {"start":2019,"values":[7710,6860,6860,7010,7010]},
+    "tuition_out_of_state": {"start":2019,"values":[7710,6860,6860,7010,7010]},
+    "grant_pct": {"start":2019,"values":[0,0,0,0]}
+  }
+}

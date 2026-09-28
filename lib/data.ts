@@ -1,10 +1,19 @@
 import "server-only";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { cache } from "react";
 import { createDataset, type Dataset, type DatasetFiles } from "./dataset";
 import { createDatasetLoader } from "./dataset-loader";
-import { fetchDatasetFiles, fetchPublishedVersion, supabaseClient } from "./supabase";
+import {
+  fetchDatasetFiles,
+  fetchHistoryFiles,
+  fetchHistoryVersion,
+  fetchPublishedVersion,
+  fetchSchoolHistory,
+  supabaseClient,
+  type HistoryFiles,
+} from "./supabase";
+import type { SchoolHistory } from "./history";
 
 export { paginate, toIndexEntry, type Dataset, type SchoolIndexEntry, type ScatterPointData } from "./dataset";
 
@@ -63,4 +72,68 @@ let loader: (() => Promise<Dataset>) | null = null;
 export const getData = cache(async (): Promise<Dataset> => {
   loader ??= createLoader();
   return loader();
+});
+
+/* ------------------------------------------------------------------ */
+/* History (specs/trends-data.md)                                      */
+/* ------------------------------------------------------------------ */
+
+function readHistoryJson<T>(name: string): T | null {
+  const path = join(process.cwd(), "data", "history", name);
+  return existsSync(path) ? (JSON.parse(readFileSync(path, "utf8")) as T) : null;
+}
+
+function jsonHistoryFiles(): HistoryFiles | null {
+  const meta = readHistoryJson<HistoryFiles["meta"]>("meta.json");
+  if (!meta) return null;
+  return {
+    meta,
+    national: readHistoryJson("national.json")!,
+    facts: readHistoryJson("facts.json")!,
+    cpi: readHistoryJson("cpi.json")!,
+  };
+}
+
+let historyLoader: (() => Promise<HistoryFiles | null>) | null = null;
+
+function createHistoryLoader(): () => Promise<HistoryFiles | null> {
+  if (dataSource() === "json") return createDatasetLoader({ load: async () => ({ value: jsonHistoryFiles(), version: null }) });
+  const client = supabaseClient("read");
+  return createDatasetLoader({
+    load: async () => {
+      const files = await fetchHistoryFiles(client);
+      if (!files) return { value: null, version: null };
+      const { version, ...value } = files;
+      return { value, version };
+    },
+    currentVersion: () => fetchHistoryVersion(client),
+  });
+}
+
+/**
+ * History's shared files (build metadata, national distributions, Home facts, CPI), or null when no history has
+ * been built or published. Reloads after a new publish, like getData().
+ */
+export const getHistoryFiles = cache(async (): Promise<HistoryFiles | null> => {
+  historyLoader ??= createHistoryLoader();
+  try {
+    return await historyLoader();
+  } catch (err) {
+    // History is an extra layer: if it can't load (e.g. its migration isn't applied yet), pages render without it.
+    console.error("Loading history failed; pages render without it.", err);
+    historyLoader = null;
+    return null;
+  }
+});
+
+/** One college's year-by-year history (data/history/schools/{id}.json), or null when it has none. */
+export const getHistory = cache(async (unitId: string): Promise<SchoolHistory | null> => {
+  if (!/^\d+$/.test(unitId)) return null;
+  if (dataSource() === "json") return readHistoryJson<SchoolHistory>(join("schools", `${unitId}.json`));
+  try {
+    return await fetchSchoolHistory(supabaseClient("read"), unitId);
+  } catch (err) {
+    console.error(`Loading history for ${unitId} failed; the profile renders without it.`, err);
+    return null;
+  }
 });

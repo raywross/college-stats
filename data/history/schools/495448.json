@@ -1,0 +1,20 @@
+{
+  "unit_id": "495448",
+  "series": {
+    "applicants": {"start":2020,"values":[21,71,14,54,36]},
+    "admitted": {"start":2020,"values":[21,71,14,54,36]},
+    "enrolled": {"start":2020,"values":[11,25,4,17,13]},
+    "acceptance_rate": {"start":2020,"values":[1,1,1,1,1]},
+    "yield": {"start":2020,"values":[0.5238,0.3521,0.2857,0.3148,0.3611]},
+    "tuition_in_state": {"start":2020,"values":[20170,21946,22826,23760]},
+    "tuition_out_of_state": {"start":2020,"values":[20170,21946,22826,23760]},
+    "aided_net_price": {"start":2020,"values":[28971,29109,28338,33771]},
+    "grant_pct": {"start":2020,"values":[0.5714,0.6429,0.5,0.6667]},
+    "grant_avg": {"start":2020,"values":[6332,6096,7882,6595]},
+    "net_price_income_1": {"start":2020,"values":[25157,29485,22137,35127]},
+    "net_price_income_2": {"start":2020,"values":[28352,32223,27559,39080]},
+    "net_price_income_3": {"start":2020,"values":[29907,33138,null,36842]},
+    "net_price_income_4": {"start":2020,"values":[33089,35415]},
+    "net_price_income_5": {"start":2020,"values":[33089,35415,32730,41932]}
+  }
+}

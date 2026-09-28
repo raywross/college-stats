@@ -1,0 +1,16 @@
+{
+  "unit_id": "500306",
+  "series": {
+    "applicants": {"start":2024,"values":[82]},
+    "admitted": {"start":2024,"values":[82]},
+    "enrolled": {"start":2024,"values":[31]},
+    "acceptance_rate": {"start":2024,"values":[1]},
+    "yield": {"start":2024,"values":[0.378]},
+    "grant_pct": {"start":2023,"values":[0.7143]},
+    "grant_avg": {"start":2023,"values":[6458]},
+    "net_price_income_1": {"start":2023,"values":[38869]},
+    "net_price_income_2": {"start":2023,"values":[40717]},
+    "net_price_income_3": {"start":2023,"values":[42806]},
+    "net_price_income_4": {"start":2023,"values":[47130]}
+  }
+}

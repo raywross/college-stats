@@ -98,6 +98,8 @@ One school per line in `data/schools.json` (~1.5 MB) so diffs between syncs stay
 at runtime (`lib/data.ts`), and `next.config.ts` traces it into server deployments.
 
 ## Files
+- `lib/derive.ts`: acceptance rate, yield, aid, and price calculations, shared with `npm run sync-history` so history's
+  latest year always equals the snapshot ([trends-data.md](trends-data.md)). `scripts/lib/ipeds.mts`: NCES download and CSV parsing, shared too.
 - `scripts/sync-data.mts`: the whole pipeline (Node 24 runs TypeScript directly; no extra dependencies). Uses the
   system `unzip`.
 - `data/overrides.json`: manual patches.

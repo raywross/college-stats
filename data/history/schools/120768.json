@@ -1,0 +1,12 @@
+{
+  "unit_id": "120768",
+  "series": {
+    "applicants": {"start":2002,"values":[0,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,475,333,15,23,15,30,64]},
+    "admitted": {"start":2002,"values":[0,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,147,17,4,3,3,3,22]},
+    "enrolled": {"start":2002,"values":[0,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,24,0,3,1,3,2,5]},
+    "acceptance_rate": {"start":2018,"values":[0.3095,0.0511,0.2667,0.1304,0.2,0.1,0.3438]},
+    "yield": {"start":2018,"values":[0.1633,0,0.75,0.3333,1,0.6667,0.2273]},
+    "tuition_in_state": {"start":2018,"values":[13688,13688,11692,11692,11692,33360]},
+    "tuition_out_of_state": {"start":2018,"values":[13688,13688,11692,11692,11692,33360]}
+  }
+}

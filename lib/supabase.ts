@@ -25,8 +25,35 @@ export function supabaseClient(role: "read" | "publish"): SupabaseClient {
   return createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
 }
 
-/** One published dataset, read in full: every college plus meta.json and release-calendar.json. */
-export async function fetchDatasetFiles(client: SupabaseClient): Promise<DatasetFiles> {
+/**
+ * Which publish the project is serving: `dataset_files.published_at`, which publish_dataset() sets to the
+ * transaction time on every publish. One tiny query, so the app can check it on every render (lib/data.ts).
+ * Null if nothing has been published.
+ */
+export async function fetchPublishedVersion(client: SupabaseClient): Promise<string | null> {
+  const { data, error } = await client.from("dataset_files").select("name, published_at");
+  if (error) throw new Error(`Supabase: reading the published version failed: ${error.message}`);
+  return (data.find((f) => f.name === "meta")?.published_at as string | undefined) ?? null;
+}
+
+/** A full read of one publish, tagged with its version (fetchPublishedVersion). */
+export type PublishedDataset = DatasetFiles & { version: string };
+
+/**
+ * One published dataset, read in full: every college plus meta.json and release-calendar.json. The colleges
+ * come back in several requests, so the version is read before and after; if a publish landed in between, the
+ * read could mix two publishes, and it's repeated.
+ */
+export async function fetchDatasetFiles(client: SupabaseClient, attempts = 3): Promise<PublishedDataset> {
+  for (let attempt = 1; ; attempt++) {
+    const before = await fetchPublishedVersion(client);
+    const read = await readDataset(client);
+    if (read.version === before) return read;
+    if (attempt >= attempts) throw new Error("Supabase: the dataset kept changing while it was being read.");
+  }
+}
+
+async function readDataset(client: SupabaseClient): Promise<PublishedDataset> {
   const schools: School[] = [];
   for (let from = 0; ; from += PAGE_SIZE) {
     const { data, error } = await client
@@ -40,13 +67,13 @@ export async function fetchDatasetFiles(client: SupabaseClient): Promise<Dataset
     if (data.length < PAGE_SIZE) break;
   }
 
-  const { data: files, error } = await client.from("dataset_files").select("name, data");
+  const { data: files, error } = await client.from("dataset_files").select("name, data, published_at");
   if (error) throw new Error(`Supabase: reading dataset_files failed: ${error.message}`);
-  const file = (name: string) => files.find((f) => f.name === name)?.data;
-  const meta = file("meta") as DatasetMeta | undefined;
-  const releaseCalendar = file("release_calendar") as ReleaseCalendar | undefined;
+  const file = (name: string) => files.find((f) => f.name === name);
+  const meta = file("meta")?.data as DatasetMeta | undefined;
+  const releaseCalendar = file("release_calendar")?.data as ReleaseCalendar | undefined;
   if (!schools.length || !meta || !releaseCalendar) {
     throw new Error("Supabase has no published dataset yet. Run `npm run publish-data` (see specs/supabase.md).");
   }
-  return { schools, meta, releaseCalendar };
+  return { schools, meta, releaseCalendar, version: file("meta")!.published_at as string };
 }

@@ -3,7 +3,8 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { cache } from "react";
 import { createDataset, type Dataset, type DatasetFiles } from "./dataset";
-import { fetchDatasetFiles, supabaseClient } from "./supabase";
+import { createDatasetLoader } from "./dataset-loader";
+import { fetchDatasetFiles, fetchPublishedVersion, supabaseClient } from "./supabase";
 
 export { paginate, toIndexEntry, type Dataset, type SchoolIndexEntry, type ScatterPointData } from "./dataset";
 
@@ -24,15 +25,11 @@ export function dataSource(): DataSource {
   return v;
 }
 
-/** How long a Supabase copy is served before it's re-read in the background (seconds). */
-const TTL_MS = Number(process.env.DATA_TTL_SECONDS ?? 600) * 1000;
-
 function readJson<T>(name: string): T {
   return JSON.parse(readFileSync(join(process.cwd(), "data", name), "utf8"));
 }
 
-async function loadFiles(): Promise<DatasetFiles> {
-  if (dataSource() === "supabase") return fetchDatasetFiles(supabaseClient("read"));
+function jsonFiles(): DatasetFiles {
   return {
     schools: readJson("schools.json"),
     meta: readJson("meta.json"),
@@ -40,32 +37,29 @@ async function loadFiles(): Promise<DatasetFiles> {
   };
 }
 
-let loaded: Dataset | null = null;
-let loadedAt = 0;
-let inflight: Promise<Dataset> | null = null;
-
-function reload(): Promise<Dataset> {
-  inflight ??= loadFiles()
-    .then((files) => {
-      loaded = createDataset(files);
-      loadedAt = Date.now();
-      return loaded;
-    })
-    .finally(() => {
-      inflight = null;
-    });
-  return inflight;
+function createLoader(): () => Promise<Dataset> {
+  if (dataSource() === "json") {
+    return createDatasetLoader({ load: async () => ({ value: createDataset(jsonFiles()), version: null }) });
+  }
+  const client = supabaseClient("read");
+  return createDatasetLoader({
+    load: async () => {
+      const { version, ...files } = await fetchDatasetFiles(client);
+      return { value: createDataset(files), version };
+    },
+    currentVersion: () => fetchPublishedVersion(client),
+  });
 }
 
+let loader: (() => Promise<Dataset>) | null = null;
+
 /**
- * The current dataset, loaded once per server process. From Supabase, a copy older than DATA_TTL_SECONDS
- * is refreshed in the background while the old one keeps serving (and keeps serving if the refresh fails).
- * `cache` pins one copy per request, so a page never mixes two publishes.
+ * The current dataset, held in memory per server instance. From Supabase, every call first checks which publish
+ * the project serves (one small query) and reloads if it's newer, so a page regenerated after a publish
+ * (`/api/revalidate`) never bakes in an older copy this instance still holds (specs/supabase.md#revalidation).
+ * `cache` makes that one check and one copy per request, so a page never mixes two publishes.
  */
 export const getData = cache(async (): Promise<Dataset> => {
-  if (!loaded) return reload();
-  if (dataSource() === "supabase" && Date.now() - loadedAt > TTL_MS) {
-    reload().catch((err) => console.error("Dataset refresh from Supabase failed; serving the previous copy.", err));
-  }
-  return loaded;
+  loader ??= createLoader();
+  return loader();
 });

@@ -2,7 +2,7 @@
  * Publish data/schools.json, data/meta.json and data/release-calendar.json to Supabase.
  *
  *   npm run publish-data              # the project in .env.local (development)
- *   npm run publish-data:prod         # the project in .env.production.local
+ *   npm run publish-data:prod         # the project in .env.prod.local
  *   npm run publish-data -- --dry-run # run the checks, write nothing
  *   npm run publish-data -- --allow-shrink
  *
@@ -12,7 +12,9 @@
  *      unless --allow-shrink.
  *   3. publish_dataset() replaces everything in one transaction (supabase/migrations/).
  *   4. Read it all back and require an exact match with the local files.
- * Needs SUPABASE_URL and SUPABASE_SECRET_KEY. See specs/supabase.md.
+ *   5. If REVALIDATE_URL and REVALIDATE_SECRET are set, ask the site to regenerate its static pages.
+ * Needs SUPABASE_URL and SUPABASE_SECRET_KEY (environment variables win over the env file, which is how the
+ * GitHub Action points it at prod). See specs/supabase.md.
  */
 import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
@@ -90,3 +92,17 @@ if (mismatched.length) fail(`${mismatched.length} colleges differ after reading 
 if (!same(back.meta, meta) || !same(back.releaseCalendar, releaseCalendar)) fail("meta or release calendar differs after reading back.");
 
 console.log(`Published ${written} colleges from ${commit ?? "an unknown commit"}; read back and verified.`);
+
+// 5. Revalidate the site's static pages.
+const { REVALIDATE_URL, REVALIDATE_SECRET } = process.env;
+if (!REVALIDATE_URL || !REVALIDATE_SECRET) {
+  console.log("REVALIDATE_URL/REVALIDATE_SECRET not set: static pages update on their next rebuild or daily regeneration.");
+  process.exit(0);
+}
+const res = await fetch(REVALIDATE_URL, { method: "POST", headers: { Authorization: `Bearer ${REVALIDATE_SECRET}` } })
+  .catch((err: Error) => ({ ok: false, status: err.message }) as const);
+if (!res.ok) {
+  fail(`the data is published, but revalidating ${REVALIDATE_URL} failed (${res.status}). ` +
+    "Retry with curl (specs/supabase.md#revalidation).");
+}
+console.log(`Revalidated ${new URL(REVALIDATE_URL).host}: static pages regenerate on their next visit.`);

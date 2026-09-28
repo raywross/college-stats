@@ -65,6 +65,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return { title: school ? school.name : "School not found" };
 }
 
+// Publishes regenerate profiles on demand (/api/revalidate); this daily pass is a fallback if that call is missed.
+export const revalidate = 86400;
+
 /** Pre-render the most-applied-to profiles; the rest render on first visit and are cached. */
 export async function generateStaticParams() {
   const { topBy } = await getData();

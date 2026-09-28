@@ -28,10 +28,11 @@ npm run sync-data ──► data/*.json ──► PR (CI: lineage, tests, build)
 | `json` (default) | `data/schools.json`, `meta.json`, `release-calendar.json` | Offline work, CI builds, fallback |
 | `supabase` | The project in `SUPABASE_URL`, with `SUPABASE_PUBLISHABLE_KEY` | Local dev against the dev project; Vercel |
 
-`lib/data.ts` loads once per server process. From Supabase it re-reads in the background after
-`DATA_TTL_SECONDS` (default 600) and keeps serving the previous copy if a refresh fails. `getData()` is wrapped in
-React `cache()`, so one request always sees one publish. Missing keys or an empty project fail loudly, with a pointer
-to this page. The app never silently falls back to JSON.
+`lib/data.ts` keeps one copy in memory per server instance. From Supabase, each request first checks which publish
+the project serves and reloads if it's newer ([Revalidation](#revalidation)). If Supabase can't be reached, the copy
+in memory keeps serving. `getData()` is wrapped in React `cache()`, so one request always sees one publish. Missing
+keys or an empty project fail loudly on the first load, with a pointer to this page. The app never silently falls
+back to JSON.
 
 ## Schema (`supabase/migrations/`)
 
@@ -53,25 +54,78 @@ to this page. The app never silently falls back to JSON.
 
 ## Publishing (`npm run publish-data`)
 
-`scripts/publish-data.mts`, with `.env.local` (dev). `npm run publish-data:prod` uses `.env.production.local`.
+`scripts/publish-data.mts`. `npm run publish-data` uses `.env.local` (dev) if it exists; environment variables win
+over the file, which is how the GitHub Action points it at prod. `npm run publish-data:prod` uses `.env.prod.local`
+(prod; git-ignored, copied into worktrees by `.worktreeinclude`). It's deliberately not `.env.production.local`,
+which Next.js would load into every local `next build`/`next start` and point them at prod.
 
 1. Lineage check (same as `npm run check:lineage`). Any problem stops the publish.
 2. Shrink guard: refuses to drop more than 10% of the colleges already published unless `--allow-shrink`.
 3. `publish_dataset()` in one transaction, recording the git commit (`+uncommitted` if `data/` has local changes).
 4. Reads everything back through the same code the app uses and requires an exact match with the files.
+5. If `REVALIDATE_URL` and `REVALIDATE_SECRET` are set, POSTs to the site so static pages regenerate
+   ([Revalidation](#revalidation)). A failure here exits non-zero but says the data is already published.
 
 `--dry-run` runs steps 1–2 and writes nothing. Tested against real Postgres (PGlite): all 1,893 colleges read back
 byte for byte, republishing replaces instead of duplicating, an empty publish is rejected, and `anon` can read
 but can't write or call the function.
 
+## Revalidation
+
+`/`, `/data` and the 50 prerendered profiles (plus every other profile, once visited) are static pages. With
+Supabase they must be regenerated after a publish, without a redeploy.
+
+**Trigger:** `POST /api/revalidate` with `Authorization: Bearer $REVALIDATE_SECRET` calls
+`revalidatePath("/", "layout")`, which marks every page stale; each regenerates on its next visit. The route returns
+401 for a missing or wrong secret, and when `REVALIDATE_SECRET` isn't set at all. `lib/revalidate.ts` compares
+digests in constant time. Callers: `publish-data` (step 5) and the GitHub Action.
+
+```sh
+curl -X POST -H "Authorization: Bearer $REVALIDATE_SECRET" https://<site>/api/revalidate
+```
+
+**The stale-instance problem:** each server instance (a Vercel function instance, or `next start`) holds the
+dataset in memory. The regeneration runs on whichever instance takes the next visit, and that instance may have
+loaded its copy before the publish. With the old design (re-read in the background every `DATA_TTL_SECONDS`), it
+would render the old copy into the page, and that stale page would then be cached until the next publish.
+
+**Choice: check the version on every request.** `publish_dataset()` stamps `dataset_files.published_at` with the
+transaction time. `getData()` (via `lib/dataset-loader.ts`) reads that one timestamp per request and, if it differs
+from the copy in memory, waits for a full reload before rendering. A render can therefore never be older than the
+publish Supabase is serving, whichever instance runs it.
+- Cost: one small query (two rows, no documents) per request that calls `getData()`, plus a full reload (~1 s) only
+  after a publish. Static pages call it only when they regenerate. `/explore`, `/compare` and `/api/schools` call
+  it on every request, and in exchange they show a new publish at once instead of after 10 minutes.
+- Alternatives rejected: reloading inside `/api/revalidate` only refreshes the instance that handled that request.
+  A shorter TTL only narrows the window. Next's data cache with `revalidateTag` works but can't be tested faithfully
+  with `next start`, and it serves one stale read after the tag is invalidated.
+- Consistent reads: the full read takes three requests (colleges come in pages of 1,000). `fetchDatasetFiles`
+  compares the version before and after; if a publish landed in between, it reads again (up to 3 times).
+- If Supabase is unreachable, the copy in memory keeps serving (logged). A page regenerated at that moment could
+  keep an old copy, so `/` and profiles also have `revalidate = 86400` (like `/data`) as a daily fallback.
+
+**Deploy race:** a merge that changes `data/**` starts both a Vercel production build (which prerenders from
+Supabase) and the publish Action. If the build reads Supabase before the publish lands, the new deployment's static
+pages hold the old data. The Action therefore also revalidates after every successful Vercel production deploy
+(`deployment_status`). Whichever finishes last, publish or deploy, triggers a revalidation that sees the new data.
+
+**Tested locally** (2026-09-28, `next build && next start` against the dev project): warmed the server, then
+published a marked copy (a renamed UCLA and release label) with revalidation. `/`, `/schools/110662` and `/data`
+showed the marker on the first visit. Published the original without revalidating: static pages kept the marker
+(cached), `/explore` switched back at once (version check). A curl to `/api/revalidate` then brought the static
+pages back. Unit tests (`tests/supabase.test.mts`) cover the reload, a publish landing mid-read, an unreachable
+store, and the auth check. They fail if the version check is removed.
+
 ## Keys
 
 | Variable | Where | Notes |
 |---|---|---|
-| `SUPABASE_URL` | `.env.local`, Vercel | `https://<project-ref>.supabase.co` |
-| `SUPABASE_PUBLISHABLE_KEY` | `.env.local`, Vercel | `sb_publishable_…`. Read-only through RLS. Replaces the legacy `anon` key |
-| `SUPABASE_SECRET_KEY` | `.env.local`, GitHub Actions secrets | `sb_secret_…`. Bypasses RLS. Only the publish script uses it. Never in Vercel, never `NEXT_PUBLIC_` |
+| `SUPABASE_URL` | `.env.local`, `.env.prod.local`, Vercel, GitHub secret `PROD_SUPABASE_URL` | `https://<project-ref>.supabase.co` |
+| `SUPABASE_PUBLISHABLE_KEY` | `.env.local`, `.env.prod.local`, Vercel | `sb_publishable_…`. Read-only through RLS. Replaces the legacy `anon` key |
+| `SUPABASE_SECRET_KEY` | `.env.local`, `.env.prod.local`, GitHub secret `PROD_SUPABASE_SECRET_KEY` | `sb_secret_…`. Bypasses RLS. Only the publish script uses it. Never in Vercel, never `NEXT_PUBLIC_` |
 | `DATA_SOURCE` | `.env.local`, Vercel | `json` or `supabase` |
+| `REVALIDATE_SECRET` | Vercel (Production), `.env.prod.local`, GitHub secret `PROD_REVALIDATE_SECRET` | Random string; guards `/api/revalidate`. Unset = endpoint refuses everything |
+| `REVALIDATE_URL` | `.env.prod.local`, GitHub secret `PROD_REVALIDATE_URL` | `https://<production-domain>/api/revalidate` |
 
 None use the `NEXT_PUBLIC_` prefix: `lib/data.ts` is server-only, so the browser never talks to Supabase.
 
@@ -80,7 +134,7 @@ None use the `NEXT_PUBLIC_` prefix: `lib/data.ts` is server-only, so the browser
 | Project | Used by | Data changes when |
 |---|---|---|
 | **dev** (`quad-dev`) | Local dev servers (every worktree), Vercel Preview deploys | Anyone runs `npm run publish-data` |
-| **prod** (`quad-prod`) | Vercel Production | Only a merge to `main` (GitHub Action), or a deliberate `publish-data:prod` |
+| **prod** (`quad-prod`) | Vercel Production | Only a merge to `main` that changes `data/**` ([GitHub Action](#production)), or a deliberate `publish-data:prod` |
 
 - **Two projects, not two schemas in one.** Supabase keys, RLS, backups and pausing are per project. Separate
   projects mean a local experiment, a new migration, or a leaked dev key can't touch production.
@@ -99,7 +153,7 @@ None use the `NEXT_PUBLIC_` prefix: `lib/data.ts` is server-only, so the browser
 | 0. Code | `DATA_SOURCE` loader, `lib/dataset.ts` factory, schema, `publish-data`, tests | ✅ Done (`feature/supabase-migration`) |
 | 1. Dev project | Apply migration, add keys to `.env.local`, `npm run publish-data`, run locally with `DATA_SOURCE=supabase`, compare pages with `json` | ✅ Done 2026-09-28 (see below) |
 | 2. Default locally | Set `DATA_SOURCE=supabase` in `.env.local`; `json` stays for offline work and CI | After phase 1 checks out |
-| 3. Production | Create prod project, apply migration, `publish-data:prod`; Vercel env vars (Production → prod, Preview → dev); GitHub Action publishes to prod on merges that change `data/**`; on-demand revalidation so static pages (`/`, top 50 profiles, `/data`) pick up a publish without a redeploy | With the Vercel move |
+| 3. Production | Create prod project, apply migration, `publish-data:prod`; Vercel env vars (Production → prod, Preview → dev); GitHub Action publishes to prod on merges that change `data/**`; on-demand revalidation so static pages (`/`, top 50 profiles, `/data`) pick up a publish without a redeploy | Code done 2026-09-28 (`feature/supabase-prod`): `.env.prod.local`, Action, `/api/revalidate`, per-request version check, tested locally. Remaining: prod publish, Vercel and GitHub settings ([Setup](#setup-phase-3)) |
 | 4. Later | Scheduled sync opens PRs ([backlog.md](backlog.md)); user tables (accounts, saved lists) as new migrations; decide whether `schools.json` leaves git | As needed |
 
 **Rollback at any phase:** set `DATA_SOURCE=json` (and restart). The files are always there.
@@ -122,11 +176,64 @@ None use the `NEXT_PUBLIC_` prefix: `lib/data.ts` is server-only, so the browser
   HTML; only the order of React's streamed rows differed. `/data` differed only in the timeline's "today" marker,
   which uses `new Date()` at build time.
 
-### Phase 3 notes (production)
-- Static pages are built once. With Supabase they need a trigger after each publish: a secret-protected
-  `/api/revalidate` route that the publish step calls (`revalidatePath("/", "layout")`), or `revalidate` on
-  those routes. Not built yet, because nothing is deployed.
-- `next build` on Vercel reads the database to prerender pages, so Vercel needs the URL and publishable key at
-  build time as well as at runtime.
-- The GitHub Action needs `SUPABASE_URL` and `SUPABASE_SECRET_KEY` for **prod** as repository secrets.
-  CI's `verify` job keeps using JSON and needs no secrets.
+## Production
+
+### Publishing to prod: `.github/workflows/publish-data.yml`
+- **`publish`** runs `npm run publish-data` against prod when a push to `main` changes `data/**`, or when run by hand
+  (Actions → Publish data → Run workflow). It only ever publishes `main`, even when started from another branch.
+  Runs are serialized (a newer queued run replaces an older one). If `PROD_SUPABASE_URL` or
+  `PROD_SUPABASE_SECRET_KEY` isn't set, it logs a notice and skips, and the run stays green.
+- **`revalidate-after-deploy`** runs on each successful Vercel production deploy (`deployment_status`) and POSTs to
+  `/api/revalidate`, which closes the [deploy race](#revalidation). It skips when the `PROD_REVALIDATE_*` secrets
+  aren't set.
+- CI's `verify` job keeps using JSON and needs no secrets.
+- A deliberate publish from a laptop: `npm run publish-data:prod -- --dry-run`, then `npm run publish-data:prod`.
+
+### Setup (phase 3)
+
+**1. Publish to prod first,** so the first Vercel build has data. Put the prod project's values in
+`.env.prod.local` in the main checkout (same variable names as `.env.local`: `SUPABASE_URL`,
+`SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY`), then run `npm run publish-data:prod -- --dry-run` and
+`npm run publish-data:prod`. It should end with "read back and verified".
+
+**2. Create a revalidation secret:** `openssl rand -hex 32`. Keep it for steps 3 and 4.
+
+**3. Vercel environment variables** (Project → Settings → Environment Variables; for each, pick the environments
+it applies to; mark keys **Sensitive**):
+
+| Name | Production | Preview | Development |
+|---|---|---|---|
+| `DATA_SOURCE` | `supabase` | `supabase` | – |
+| `SUPABASE_URL` | prod project URL | dev project URL | – |
+| `SUPABASE_PUBLISHABLE_KEY` | prod publishable key | dev publishable key | – |
+| `REVALIDATE_SECRET` | the secret from step 2 | – | – |
+
+- **No `SUPABASE_SECRET_KEY` in Vercel.** The site only reads.
+- The build prerenders from Supabase, so these are needed at build time too. Vercel provides them to both.
+- Changing variables doesn't touch the running deployment: **Deployments → latest production → Redeploy**.
+- Development stays empty: local dev uses `.env.local`, not `vercel env pull`.
+- Preview deploys read the dev project. Their static pages are rebuilt by each push; dev publishes don't revalidate
+  them, but their dynamic pages pick up a dev publish at once.
+
+**4. GitHub repository secrets** (repo → Settings → Secrets and variables → Actions → New repository secret):
+
+| Secret | Value |
+|---|---|
+| `PROD_SUPABASE_URL` | prod project URL |
+| `PROD_SUPABASE_SECRET_KEY` | prod secret key (`sb_secret_…`) |
+| `PROD_REVALIDATE_URL` | `https://<production-domain>/api/revalidate` |
+| `PROD_REVALIDATE_SECRET` | the secret from step 2 |
+
+Optionally add `REVALIDATE_URL` and `REVALIDATE_SECRET` to `.env.prod.local` too, so `publish-data:prod` from a
+laptop also revalidates.
+
+**5. Verify the deployed site:**
+1. Open `/`, a profile such as `/schools/110662`, `/explore`, `/compare?ids=110662,243744`, and `/data`. They
+   should match the local JSON build. A 500 with "Supabase is not configured" or "no published dataset" means step
+   1 or 3 is incomplete.
+2. `curl -i -X POST https://<domain>/api/revalidate` returns 401. The same request with
+   `-H "Authorization: Bearer <secret>"` returns `{"revalidated":true,…}`.
+3. Actions → Publish data → Run workflow (on `main`). `publish` should end with "read back and verified" and
+   "Revalidated <domain>".
+4. After the next production deploy, Actions shows a `revalidate-after-deploy` run. If none appears, check the
+   environment name Vercel reports (repo → Environments) against the job's `if:` condition.

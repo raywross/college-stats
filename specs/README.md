@@ -24,6 +24,8 @@ Structured documentation for the Higher Education Data Explorer ("Quad").
 | [data-sync.md](data-sync.md) | Building `data/schools.json` from College Scorecard + IPEDS; API key setup; overrides |
 | [trends-data.md](trends-data.md) | Year-by-year history (`npm run sync-history`): how far back each series goes, per-era file mapping, storage, checks. Built (phases 1–3) |
 | [trends-design.md](trends-design.md) | How trends appear, from Home facts to the profile's "Over time" charts, Explore, and Compare. Built (phases 1–3) |
+| [religious-life.md](religious-life.md) | *Planned:* religious affiliation, faith intensity, faith communities on campus; source tiers and per-school crawl |
+| [greek-life.md](greek-life.md) | *Planned:* fraternity/sorority participation, councils, housing, recruitment; CDS F1 and FSL office reports |
 | [backlog.md](backlog.md) | Planned work (CDS PDF import, scheduled sync, tests) |
 | [migration-plan.md](migration-plan.md) | Checklist for Vercel + Supabase + API migration |
 | [supabase.md](supabase.md) | Serving the dataset from Supabase: `DATA_SOURCE`, schema, `publish-data`, keys, dev/prod projects, transition plan |

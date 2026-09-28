@@ -120,6 +120,22 @@ reported by the college" with the federal figure underneath and a lineage popove
 Measure: share with a findable newer source, pass rate of checks, accuracy against a hand-checked answer key, cost per
 college for each model. Decide whether Haiku 4.5 holds for extraction or extraction moves to Sonnet 5.
 
+## Campus-life sources
+[religious-life.md](religious-life.md) and [greek-life.md](greek-life.md) reuse this engine with more source kinds
+per college (planned, after the admissions pilot):
+- **Recipe `sources[].kind`** grows: `cds` (sections C7, F1, F2, F4, H14 added to the extraction schema), `ir-report`
+  (e.g. enrollment by religion), `fsl-reports` (fraternity & sorority life size/grade reports), `org-directory`
+  (Engage / CampusGroups / Presence), `faith-org` (a campus Hillel page, etc.). Discovery finds them in the same
+  visit as the admissions sources.
+- **Source tiers** (official statistic, official directory, organization estimate, national directory) are stored
+  on every value; see [religious-life.md](religious-life.md#source-tiers).
+- **National directories** are crawled once per organization, not per college, and matched to `unit_id`s
+  (`data/directories/`).
+- **Checkboxes** (CDS F2/F4/C7/H14) lose their labels in PDF text extraction (verified on UT's 2025–26 CDS), so these
+  items go to a layout-aware parser or a vision call.
+- **Access rules:** obey `robots.txt` and crawl delays, never get around bot protection, and ask organizations that
+  cover many campuses for data directly ([religious-life.md](religious-life.md#access-rules-apply-to-both-specs)).
+
 ## Files (planned)
 - `scripts/sync-college-reported.mts` (`npm run sync-college-reported`), `--pilot`, `--college <id>`, `--rediscover`.
 - `data/college-sources.json` (recipes, hashes), `data/college-reported.json` (published values),

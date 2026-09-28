@@ -3,6 +3,9 @@
 Planned work, roughly in priority order. Move items into a feature spec when they're picked up.
 
 ## Data
+- [ ] **Trends over time.** Year-by-year history per college (cost and aid from 2008–09, admissions from fall 2001)
+  with a separate `npm run sync-history`. Data plan: [trends-data.md](trends-data.md); UI plan:
+  [trends-design.md](trends-design.md). Built in three phases (cost + admissions first).
 - [ ] **Read Common Data Set PDFs.** Most well-known colleges (Stanford, Harvard, Yale, Duke, Michigan, UCLA, and
   others) publish their CDS only as PDF, so `npm run import-cds` can't use them. Plan: extract the text layer
   (e.g. `pdftotext -layout`), find sections B1/B2, C1, C9, and H2/H2A by their standard headings, and parse the
@@ -30,4 +33,5 @@ Planned work, roughly in priority order. Move items into a feature spec when the
 
 ## Platform
 - [ ] Deploy to Vercel (see [migration-plan.md](migration-plan.md)).
-- [ ] Supabase only when needed (accounts, saved lists, multi-year history).
+- [ ] Supabase only when needed (accounts, saved lists). Multi-year history fits in per-college JSON files first; the
+  table design for later is in [trends-data.md](trends-data.md#storage).

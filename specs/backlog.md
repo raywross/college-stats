@@ -40,8 +40,11 @@ Planned work, roughly in priority order. Move items into a feature spec when the
   flat layouts, including the Purdue typo case), and missing-data handling in `lib/metrics.ts`.
 
 ## Platform
-- [ ] Deploy to Vercel (see [migration-plan.md](migration-plan.md)).
-- [ ] Supabase: the dataset can now be served from Supabase (`DATA_SOURCE`, `npm run publish-data`); remaining
-  phases (dev project, prod + publish on merge, revalidation) in [supabase.md](supabase.md#transition-plan). User
-  data (accounts, saved lists) goes there as new migrations. Multi-year history stays in per-college JSON files
+- [x] Deploy to Vercel: pre-release dev site at https://college-stats-nine.vercel.app, reading the Supabase dev
+  project (2026-09-28; [supabase.md](supabase.md#current-state-pre-release-dev-only)).
+- [ ] **Formal release** (after the planned feature set is in, before circulating the site more widely): create the
+  prod Supabase project and split dev/prod, point Vercel Production at prod, turn on publish-on-merge and
+  revalidation secrets ([setup](supabase.md#setup-phase-3)), and put control procedures in place (who may publish to
+  prod, review before data merges, rollback). Optionally a custom domain.
+- [ ] Supabase user data (accounts, saved lists) goes in as new migrations. Multi-year history stays in per-college JSON files
   first; the table design for later is in [trends-data.md](trends-data.md#storage).

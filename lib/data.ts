@@ -20,7 +20,8 @@ export { paginate, toIndexEntry, type Dataset, type SchoolIndexEntry, type Scatt
 export type DataSource = "json" | "supabase";
 
 export function dataSource(): DataSource {
-  const v = (process.env.DATA_SOURCE ?? "json").trim().toLowerCase();
+  // Empty counts as unset, like a variable created in a dashboard without a value.
+  const v = (process.env.DATA_SOURCE || "json").trim().toLowerCase();
   if (v !== "json" && v !== "supabase") throw new Error(`DATA_SOURCE must be "json" or "supabase", got "${v}".`);
   return v;
 }

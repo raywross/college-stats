@@ -48,9 +48,29 @@ publishes a new one. It prefers the revised `_rv.csv` when the zip contains one.
 ```
 Keys starting with `_` are notes and are ignored. Arrays replace rather than merge.
 
+## Where IPEDS files live (changed Dec 2025)
+NCES moved newer releases to `https://nces.ed.gov/ipeds/complete-data-files/`; older ones remain at
+`/ipeds/datacenter/data/`. The sync tries the new location first. Its own "Complete Data Files" listing page lags
+behind what's downloadable, so don't use it to decide what's available.
+
+The newest year is usually a **provisional** release that NCES revises about a year later; re-running the sync
+picks up revisions (same file names).
+
+### Layout change from the 2023–24 release
+| Data | Up to 2022–23 | From 2023–24 |
+|---|---|---|
+| Aid totals (AGRNT, IGRNT, PGRNT, SGRNT, LOAN, SCUGFFN) | `SFA{yy}{yy}` | `SFA{yy}{yy}` |
+| Residency (SCFA11–13P), income-band aid (GRN4*), aided net price (NPIST/NPGRN) | `SFA{yy}{yy}` | **`COST2_{end year}`** |
+| Tuition & fees, books, room & board, other | `IC{start}_AY` (`CHG*AY3`) | `IC{start}_AY` or **`COST1_{end year}`** (`chg*ay2`) |
+
+The sync detects this: if the SFA file lacks `GRN4N12` it merges `COST2_{end}` by unit ID, and for prices it takes
+whichever of `IC{start}_AY` / `COST1_{end}` exists and detects the `…AY3` vs `…AY2` column convention.
+Verified on the 2023–24 files: Vanderbilt's income-weighted federal-aid net price rebuilt from COST2 = $15,846, the
+same as Scorecard's 2023–24 figure, and its full price ($89,590) matches Scorecard's cost of attendance.
+
 ## Citation metadata
 Each sync also writes `data/meta.json`: the retrieval date, each source's label, publisher, edition (e.g. "Fall 2023
-(ADM2023)", "2022–23 (SFA2223)"), and URL, plus the default source for each topic. Schools record `provenance` only
+(ADM2024)", "2023–24 (SFA2324 + COST2_2024)"), and URL, plus the default source for each topic. Schools record `provenance` only
 where they differ (IPEDS ADM missing → Scorecard, or an imported CDS). The site's citations read from these.
 
 ## Output

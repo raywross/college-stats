@@ -2,7 +2,7 @@
 
 Every number on the site is attributed to a public source, at three levels:
 
-1. **Inline** (`<SourceNote topics=[…] school?>`): a one-line "Source: IPEDS Admissions survey, Fall 2023 (ADM2023)"
+1. **Inline** (`<SourceNote topics=[…] school?>`): a one-line "Source: IPEDS Admissions survey, Fall 2024 (ADM2024)"
    under each profile section, the Explore results, the Home charts, and Compare (`<MultiSourceNote>` combines the
    compared schools' sources). Each source links to its dataset; "About the data" links to `/sources`.
 2. **Per profile** (`<SourceList>`): "Sources for this profile" at the bottom, listing every source used, with
@@ -36,7 +36,7 @@ a label in `app/sources/page.tsx`), then cite it with `SourceNote` wherever it's
 - Verified on Vanderbilt: output matched the hand-entered figures exactly.
 
 ## Data-year honesty
-Sources have different vintages (IPEDS ADM fall 2023, IPEDS SFA and IC 2022–23, Scorecard cost data 2023–24, a
+Sources have different vintages (IPEDS ADM fall 2024, IPEDS aid and prices 2023–24, Scorecard cost data 2023–24, a
 college's newest CDS). The all-student average cost uses only same-year inputs (SFA + IC). When a sentence combines figures from different sources, each figure carries its own year. For
-example, a profile says the net price in one sentence and "In 2022–23, 66% of first-year students received grants"
+example, a profile says the net price in one sentence and "In 2023–24, 66% of first-year students received grants"
 in the next.

@@ -5,7 +5,7 @@ import { getMeta, sourcesFor } from "@/lib/data";
 import { cn } from "@/lib/utils";
 
 /**
- * Inline citation: "Source: IPEDS Admissions survey, Fall 2023 (NCES)".
+ * Inline citation: "Source: IPEDS Admissions survey, Fall 2024 (ADM2024)".
  * Each source links to its dataset; "About the data" links to /sources.
  */
 export function SourceNote({

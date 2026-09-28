@@ -24,7 +24,8 @@ profile's **Who actually gets aid** panel (`AidBreakdown`) and in Compare (grant
 
 ## Average cost, all students (the headline)
 Published net prices only cover aided students, so they understate what a typical student pays. We estimate it from
-**same-year IPEDS data** (the SFA year, currently 2022–23, with the matching `IC{year}_AY` file):
+**same-year IPEDS data** (the SFA year, currently 2023–24, with the matching prices file; see
+[data-sync.md](data-sync.md) for the 2023–24 layout change):
 
 ```
 sticker[rate]  = tuition & fees[rate] + books + on-campus room & board + other expenses   (IC: CHG1/2/3AY3, CHG4–6AY3)
@@ -35,9 +36,9 @@ avg paid (all) = avg sticker − total grant dollars ÷ first-years             
 Students without grants count at the full sticker price. Private colleges have one rate. Stored as
 `cost.avg_paid_all` along with `sticker`, `tuition_fees`, and `residency` (in-district / in-state / out-of-state),
 `aided_net_price` (SFA `NPIST2` for publics, meaning in-state students, or `NPGRN2` for privates), and `year`.
-Coverage: 1,511 colleges. Caveats (shown on the page): it assumes on-campus living, and loans aren't subtracted.
-Validated on Vanderbilt: sticker $84,412 − average grant $57,723 = $26,689, exactly IPEDS's aided net price; and
-(1,617 × $84,412 − $61,417,367) ÷ 1,617 = $46,430. Falls back to share × average grant only when counts are missing.
+Coverage: 1,514 colleges. Caveats (shown on the page): it assumes on-campus living, and loans aren't subtracted.
+Validated on Vanderbilt (2022–23 data): sticker $84,412 − average grant $57,723 = $26,689, exactly IPEDS's aided
+net price; and (1,617 × $84,412 − $61,417,367) ÷ 1,617 = $46,430. With 2023–24 data it's $46,508 (full price $89,590). Falls back to share × average grant only when counts are missing.
 Uses exact counts (grant share = AGRNT_N ÷ SCUGFFN), not the published whole-number percent.
 
 **Don't reconstruct the average from the income table alone.** It covers only students who received federal aid

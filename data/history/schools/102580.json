@@ -20,6 +20,18 @@
     "net_price_income_2": {"start":2013,"values":[12670,10869,10200,14995,null,null,null,6947]},
     "net_price_income_3": {"start":2014,"values":[12824,null,null,null,null,null,11934,18159,8175]},
     "net_price_income_4": {"start":2013,"values":[15990,null,16800,null,null,null,null,null,18319,20012]},
-    "net_price_income_5": {"start":2013,"values":[13612,null,17300]}
+    "net_price_income_5": {"start":2013,"values":[13612,null,17300]},
+    "sat_submit": {"start":2001,"values":[0.5]},
+    "act_submit": {"start":2001,"values":[0.5]},
+    "test_policy": {"start":2001,"values":[1]},
+    "undergrads": {"start":1998,"values":[37,35,null,37,null,null,null,null,null,null,null,null,37,28,33,26,27,28,30,31,37,30,36,37,31,34,24]},
+    "race_white": {"start":2010,"values":[0.8919,0.8214,0.7879,0.8846,0.8519,0.75,0.7667,0.7742,0.8919,0.8,0.8889,0.8919,0.9032,0.8529,0.875]},
+    "race_asian": {"start":2010,"values":[0,0,0,0,0,0,0,0.0323,0.027,0.0333,0.0278,0.027,0,0,0]},
+    "race_hispanic": {"start":2010,"values":[0.027,0,0.0303,0.0385,0.037,0.0714,0.0667,0.0323,0.027,0.0333,0.0278,0,0,0.0294,0.0417]},
+    "race_black": {"start":2010,"values":[0,0.0357,0.0303,0,0,0.0357,0.0333,0,0.027,0.0333,0.0278,0.027,0.0323,0.0294,0]},
+    "race_two_or_more": {"start":2010,"values":[0,0,0,0.0385,0.037,0.0357,0.1,0.0645,0,0.0667,0,0.027,0.0645,0.0882,0.0833]},
+    "race_international": {"start":2010,"values":[0,0,0,0,0,0,0,0.0323,0,0,0,0,0,0,0]},
+    "race_other": {"start":2010,"values":[0.0811,0.1429,0.1515,0.0385,0.0741,0.1071,0.0333,0.0646,0.027,0.0333,0.0278,0.027,0,0,0]},
+    "grad_rate": {"start":1992,"values":[0.25,0.5,1,0.3333,null,null,null,null,null,null,null,null,0.375,0.5,0.5,null,null,null,0.2,0.5714,0.375,0.4,0.625,0.5,0.5,1,0.375]}
   }
 }

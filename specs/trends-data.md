@@ -1,8 +1,8 @@
 # Trends: Data Ingestion & Storage
 
-> Status: **Phase 1 built** (2026-09-28, `feature/trends`): admissions, prices, aid, and net price series; national
-> distributions; Home facts; CPI. Phases 2–3 (scores, size, diversity, outcomes; Explore and Compare) are still
-> planned. Companion to [trends-design.md](trends-design.md), which covers how trends appear on the site. Research done
+> Status: **Built** (2026-09-28): Phase 1 (`feature/trends`: admissions, prices, aid, net price; national
+> distributions; Home facts; CPI) and Phases 2–3 (`feature/trends-phase-2-3`: scores and test policy, undergrads,
+> race/ethnicity, graduation by entering class, median debt; the `trends` summary in schools.json). Companion to [trends-design.md](trends-design.md), which covers how trends appear on the site. Research done
 > 2026-09-28 by probing NCES and the Scorecard API directly; findings below are verified unless marked *unverified*.
 > What the build found and how it differs from this plan: [Build notes](#build-notes-phase-1).
 
@@ -260,3 +260,47 @@ sync-history fails CI.
   `getHistory()` log and return null, and pages render without it. The snapshot still fails loudly.
 - **Revisions and gap-filling from prior-year columns** (`CHG*AY0`–`AY2`): not used yet. Each year comes from its own
   file.
+
+## Build notes (Phases 2–3)
+Built 2026-09-28 (`feature/trends-phase-2-3`). New code: `scripts/history/scorecard.mts` (College Scorecard
+year-prefixed fields, cached in `.cache/scorecard/` for a week); scores and policy added to the admissions eras in
+`registry.mts`; `raceShares()` moved to lib/derive.ts (shared with sync-data).
+
+### What the data showed
+- **SAT redesign:** the break is at **fall 2017**, as planned: the same colleges' SAT midpoints jumped a median of 65
+  points that year and were flat in every other year (2013–2020). Charts split the line there and `changeOver()`
+  never measures across it (`SAT_BREAK`).
+- **Test policy (ADMCON7):** through fall 2015, 1 = required, 2 = recommended, 3 = neither; from fall 2016 a new 5 =
+  considered but not required (test-optional); from fall 2022 "recommended" disappears and 3 means not considered
+  (test-blind, `TEST_BLIND_FROM`). "Required" means the same in every era, so it's the national series: 66% of 1,511
+  colleges required the SAT or ACT in fall 2019, 5% in fall 2024 (Home fact 3, fixed panel, baseline fixed at the last
+  pre-pandemic fall). Code 4 ("don't know") and negatives are stored as not reported.
+- **Scorecard year keys:** `{Y}.student.size` and race = fall Y (key 2024 = the snapshot's fall 2024). Completion
+  `{Y}.completion.completion_rate_4yr_150nt` = the class that **entered fall Y − 6** (checked against exact IPEDS counts
+  at three colleges; Scorecard 2024 = entering 2018). The Urban Institute files the same rate under entering + 5, which
+  the cross-check now uses. Median debt `{Y}` = Y–Y+1 graduates and stops at 2020.
+- **Graduation:** the profile's headline is Scorecard's `consumer_rate`, which has no history; the chart is the 6-year
+  first-time full-time rate (93.2% vs 93.7% at Michigan) and says so. Not in the latest-point check.
+- **Median debt:** Scorecard's `latest` debt isn't always the newest year-prefixed value (~53 colleges: some have only
+  one or the other, a few differ). It's a **soft** latest-point check (`SOFT_LAST_POINT`): the build fails past 5% of
+  colleges, and lists the rest.
+- **Enrollment gap:** Scorecard has no fall 2000 enrollment for any college (allow-listed in `EXPECTED_DROPS`).
+- **Derived overrides:** the latest-point check now treats a derived field (the SAT total) as overridden when any input
+  is, which Illinois's and Maryland's CDS SAT figures needed.
+- Every college now has history (1,893; Scorecard enrollment covers the 9 without federal price or admissions data).
+
+### New flags and fallbacks
+- `--cached-nces`: NCES files from the cache only (NCES was unreachable for hours on 2026-09-28); Scorecard and CPI
+  online. `--offline` covers all three.
+- **CPI:** BLS allows 25 keyless requests a day. If BLS refuses, the build reuses the saved `cpi.json` when it reaches
+  the newest price year (past school years don't change), with a warning. Set `BLS_API_KEY` (free registration) to use
+  the v2 API's 500 a day, which the scheduled refresh should.
+- Scorecard needs `COLLEGE_SCORECARD_API_KEY` (sync-history now loads `.env.local`). The first fetch takes ~30 minutes
+  (about 60 requests of ~80 year-prefixed fields for 100 colleges each).
+
+### `school.trends` (Phase 3)
+`sync-history` writes a 10-year summary per college into data/schools.json (`TREND_KEYS`: average cost and full price
+after inflation, acceptance rate, applicants, undergrads, grant share; `{ since, from, to, change }`), and sync-data
+keeps it until the next history run. It's registered in lib/fields.ts as the derived field `trends`, so citations
+expand to its inputs. A test checks it equals `trendSummary()` of every committed shard. Explore sorts, change
+columns, Compare "Then & now", and trend standouts read it without loading history files.

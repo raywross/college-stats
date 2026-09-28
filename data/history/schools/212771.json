@@ -7,7 +7,17 @@
     "acceptance_rate": {"start":2001,"values":[0.7333]},
     "yield": {"start":2001,"values":[0.9091,0.8333,null,1,null,1]},
     "tuition_in_state": {"start":2000,"values":[7560,7950,8190,null,9500,null,10600,11570,12000,12300,22320,16050,null,null,null,null,19772]},
-    "tuition_out_of_state": {"start":2000,"values":[7560,7950,8190,null,9500,null,10600,11570,12000,12300,22320,16050,null,null,null,null,19772]}
+    "tuition_out_of_state": {"start":2000,"values":[7560,7950,8190,null,9500,null,10600,11570,12000,12300,22320,16050,null,null,null,null,19772]},
+    "test_policy": {"start":2001,"values":[2,2,null,3,null,3]},
+    "undergrads": {"start":1996,"values":[19,23,18,18,null,10,15,10,9,6,9,10,11,40,26,24,29,9,7,5,78,47,73,93,90,84,107,158,143]},
+    "race_white": {"start":2010,"values":[0.6923,0.7917,0.4483,1,1,1,0.8718,0.9787,0.9315,0.9355,0.9778,0.9643,0.8879,0.8797,0.9161]},
+    "race_asian": {"start":2010,"values":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},
+    "race_hispanic": {"start":2010,"values":[0,0,0.0345,0,0,0,0,0,0,0,0,0.0119,0,0,0.007]},
+    "race_black": {"start":2010,"values":[0.0385,0,0.0345,0,0,0,0,0,0,0,0,0,0,0,0]},
+    "race_two_or_more": {"start":2010,"values":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},
+    "race_international": {"start":2010,"values":[0,0,0,0,0,0,0,0,0,0,0,0,0,0.057,0.0629]},
+    "race_other": {"start":2010,"values":[0.2692,0.2083,0.4828,0,0,0,0.1282,0.0213,0.0685,0.0645,0.0222,0.0238,0.1121,0.0633,0.014]},
+    "grad_rate": {"start":1991,"values":[0.5833,null,null,null,null,1,0.5714,1,null,null,0.4,0,0.75,null,null,1]}
   },
   "repeated": [2007]
 }

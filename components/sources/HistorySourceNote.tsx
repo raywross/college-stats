@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { BookMarked, ExternalLink } from "lucide-react";
 import { getData } from "@/lib/data";
-import { SERIES, historySources, type SeriesKey } from "@/lib/history";
+import { SERIES, historySources, type HistoryRange, type SeriesKey } from "@/lib/history";
 import type { HistoryFiles } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 
@@ -19,7 +19,7 @@ export async function HistorySourceNote({
   keys: readonly SeriesKey[];
   files: HistoryFiles;
   /** Only the years shown (e.g. a 10-year fact); all years otherwise. */
-  range?: [number, number];
+  range?: HistoryRange;
   className?: string;
 }) {
   const { getMeta } = await getData();
@@ -30,7 +30,7 @@ export async function HistorySourceNote({
       <BookMarked className="size-3.5 shrink-0" aria-hidden />
       <span>{sources.length > 1 || money ? "Sources" : "Source"}:</span>
       {sources.map((s, i) => (
-        <span key={`${s.key}${s.label}`}>
+        <span key={`${s.label}${s.years}`}>
           <a
             href={s.url}
             target="_blank"

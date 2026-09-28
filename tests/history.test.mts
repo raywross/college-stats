@@ -17,6 +17,7 @@ import {
   historySources,
   isNotable,
   real,
+  trendSummary,
   validateHistoryMeta,
   validateShard,
   type CpiTable,
@@ -31,6 +32,7 @@ import {
   coverage,
   coverageDrops,
   lastPointMismatches,
+  ruleOneProblems,
   missingColumns,
   toSeries,
   type Inputs,
@@ -229,7 +231,7 @@ test("facts use fixed panels: colleges missing an endpoint are left out", () => 
   });
   const panel = Array.from({ length: 25 }, (_, i) => mk(String(i), 100, 110));
   const outsider: SchoolHistory = { unit_id: "x", series: { full_price: { start: 2023, values: [10_000] }, avg_paid_all: { start: 2023, values: [10_000] } } };
-  const f = buildFacts([...panel, outsider], { academic: [2013, 2023], fall: [2014, 2024] }, flatCpi);
+  const f = buildFacts([...panel, outsider], { academic: [2013, 2023], fall: [2014, 2024], cohort: [2008, 2018] }, flatCpi);
   assert.equal(f.priceGap!.n, 25);
   assert.equal(f.priceGap!.fullPriceChange, 0.1);
   assert.equal(f.harderToGetIn, null, "needs 100 selective colleges");
@@ -244,7 +246,8 @@ test("committed history: every shard is valid and ends on the snapshot's values"
   const shards = readdirSync(join(HISTORY, "schools")).map((f) => JSON.parse(readFileSync(join(HISTORY, "schools", f), "utf8")) as SchoolHistory);
   assert.equal(shards.length, hmeta.schools);
   for (const h of shards) assert.deepEqual(validateShard(h, ids), []);
-  assert.deepEqual(lastPointMismatches(schools, new Map(shards.map((h) => [h.unit_id, h])), hmeta.latest), []);
+  // Same rule as the build: exact, except within median debt's soft allowance (SOFT_LAST_POINT).
+  assert.deepEqual(ruleOneProblems(lastPointMismatches(schools, new Map(shards.map((h) => [h.unit_id, h])), hmeta.latest), schools).hard, []);
 });
 
 test("committed history: citations name each survey with the years used", { skip: !hasHistory }, () => {
@@ -253,4 +256,101 @@ test("committed history: citations name each survey with the years used", { skip
   assert.deepEqual(adm.map((s) => s.key), ["ipeds-ic", "ipeds-adm"]);
   assert.match(adm[1].years, /^Fall 2014 to Fall \d{4}$/);
   assert.deepEqual(historySources(["applicants"], hmeta, meta, [2014, hmeta.latest.fall]).map((s) => s.key), ["ipeds-adm"]);
+});
+
+/* ---- Phase 2: scores, policy, Scorecard series ---- */
+
+test("scores: SAT total only when all four percentiles exist; unknown policy codes are dropped", () => {
+  const inputs: Inputs = {
+    admissions: [
+      adm(2016, { APPLCN: "100", ADMSSN: "50", ENRLT: "20", SATVR25: "600", SATVR75: "700", SATMT25: "610", SATMT75: "720", ACTCM25: "27", ACTCM75: "32", SATPCT: "60", ACTPCT: "45", ADMCON7: "1" }),
+      adm(2017, { APPLCN: "110", ADMSSN: "50", ENRLT: "21", SATVR25: "650", SATVR75: "", SATMT25: "640", SATMT75: "740", ACTCM25: "28", ACTCM75: "33", SATPCT: "55", ACTPCT: "40", ADMCON7: "4" }),
+      adm(2018, { APPLCN: "120", ADMSSN: "50", ENRLT: "22", SATVR25: "660", SATVR75: "750", SATMT25: "650", SATMT75: "760", ACTCM25: "", ACTCM75: "34", SATPCT: "50", ACTPCT: "35", ADMCON7: "5" }),
+    ],
+    prices: [],
+    sfa: [],
+  };
+  const h = buildCollege({ unit_id: V, type: "private-nonprofit" }, inputs);
+  assert.deepEqual(h.series.sat_25, { start: 2016, values: [1210, null, 1310] });
+  assert.deepEqual(h.series.act_25, { start: 2016, values: [27, 28] }, "ACT needs both percentiles");
+  assert.deepEqual(h.series.test_policy, { start: 2016, values: [1, null, 5] }, "code 4 (don't know) isn't a policy");
+  assert.deepEqual(h.series.sat_submit!.values, [0.6, 0.55, 0.5]);
+  assert.deepEqual(validateShard(h), []);
+});
+
+test("Scorecard series: undergrads by fall, race from 2010, graduation at the entering class, debt by year", () => {
+  const sc = new Map([
+    [
+      V,
+      {
+        "2009.student.size": 6800,
+        "2009.student.demographics.race_ethnicity.white": 0.6,
+        "2009.student.demographics.race_ethnicity.asian": 0.1,
+        "2010.student.size": 6900,
+        "2010.student.demographics.race_ethnicity.white": 0.55,
+        "2010.student.demographics.race_ethnicity.asian": 0.12,
+        "2010.student.demographics.race_ethnicity.aian": 0.01,
+        "2024.completion.completion_rate_4yr_150nt": 0.9354,
+        "2020.aid.median_debt.completers.overall": 18000,
+      },
+    ],
+  ]);
+  const h = buildCollege({ unit_id: V, type: "private-nonprofit" }, { admissions: [], prices: [], sfa: [], scorecard: { rows: sc, first: 2009, last: 2024 } });
+  assert.deepEqual(h.series.undergrads, { start: 2009, values: [6800, 6900] });
+  assert.equal(h.series.race_white!.start, 2010, "race starts with the 2010 categories");
+  assert.equal(h.series.race_other!.values[0], 0.01);
+  assert.deepEqual(h.series.grad_rate, { start: 2018, values: [0.9354] }, "Scorecard 2024 = the class that entered fall 2018");
+  assert.deepEqual(h.series.median_debt, { start: 2020, values: [18000] });
+});
+
+test("no change is measured across the SAT redesign or for a category code; bad codes and scores fail validation", () => {
+  const sat = { start: 2014, values: [1100, 1110, 1120, 1190, 1200, 1210, 1215, 1220, 1225, 1230, 1240] };
+  assert.equal(changeOver("sat_25", sat, [2014, 2024], flatCpi), null);
+  assert.ok(changeOver("sat_25", { start: 2017, values: sat.values.slice(3) }, [2016, 2024], flatCpi), "after the break it's fine");
+  assert.equal(changeOver("test_policy", { start: 2014, values: Array(11).fill(1) }, [2014, 2024], flatCpi), null);
+  assert.match(validateShard({ unit_id: V, series: { test_policy: { start: 2020, values: [4] } } })[0], /impossible/);
+  assert.match(validateShard({ unit_id: V, series: { sat_75: { start: 2020, values: [1700] } } })[0], /impossible/);
+});
+
+test("fact 3 uses a fixed panel of colleges reporting a policy in both years", () => {
+  const mk = (id: string, codes: (number | null)[]): SchoolHistory => ({ unit_id: id, series: { test_policy: { start: 2019, values: codes } } });
+  const list = [
+    ...Array.from({ length: 30 }, (_, i) => mk(`r${i}`, [1, 1, 5, 5, 5, 5])),
+    ...Array.from({ length: 10 }, (_, i) => mk(`k${i}`, [1, 1, 1, 1, 1, 1])),
+    mk("late", [null, null, null, null, null, 5]),
+  ];
+  const f = buildFacts(list, { academic: [2013, 2023], fall: [2014, 2024], cohort: [2008, 2018] }, flatCpi);
+  assert.equal(f.testRequired!.n, 40);
+  assert.equal(f.testRequired!.requiredFrom, 1);
+  assert.equal(f.testRequired!.requiredTo, 0.25);
+});
+
+test("rule 1: a derived field counts as overridden when its inputs are; median debt has a soft allowance", () => {
+  const s = structuredClone(schools.find((x) => !x.lineage && x.admissions.year && x.admissions.sat_reading_25_75 && x.admissions.sat_math_25_75)!);
+  const latest = { fall: s.admissions.year!, academic: 2023 };
+  const h: SchoolHistory = { unit_id: s.unit_id, series: { sat_25: { start: latest.fall, values: [1] } } };
+  const only = (l: string[]) => l.filter((m) => m.includes(" sat_25:"));
+  assert.equal(only(lastPointMismatches([s], new Map([[s.unit_id, h]]), latest)).length, 1);
+  s.lineage = { "admissions.sat_reading_25_75": { source: "cds" } };
+  assert.deepEqual(only(lastPointMismatches([s], new Map([[s.unit_id, h]]), latest)), []);
+
+  const few = ["1 median_debt: history 1, snapshot 2"];
+  assert.deepEqual(ruleOneProblems(few, schools), { hard: [], soft: few });
+  const many = Array.from({ length: Math.ceil(schools.length * 0.06) }, (_, i) => `${i} median_debt: history 1, snapshot 2`);
+  assert.equal(ruleOneProblems(many, schools).hard.length, many.length, "past the allowance, every one fails");
+  assert.equal(ruleOneProblems(["1 applicants: history 1, snapshot 2"], schools).hard.length, 1);
+});
+
+test("committed schools.json trends match the committed shards", { skip: !hasHistory }, () => {
+  const hmeta: HistoryMeta = JSON.parse(readFileSync(join(HISTORY, "meta.json"), "utf8"));
+  const cpi: CpiTable = JSON.parse(readFileSync(join(HISTORY, "cpi.json"), "utf8"));
+  let checked = 0;
+  for (const f of readdirSync(join(HISTORY, "schools"))) {
+    const h: SchoolHistory = JSON.parse(readFileSync(join(HISTORY, "schools", f), "utf8"));
+    const s = schools.find((x) => x.unit_id === h.unit_id);
+    if (!s) continue;
+    assert.deepEqual(s.trends ?? {}, trendSummary(h, cpi, hmeta), `${h.unit_id}: run npm run sync-history`);
+    checked++;
+  }
+  assert.ok(checked > 0);
 });

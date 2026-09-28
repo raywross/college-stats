@@ -19,6 +19,16 @@
     "net_price_income_1": {"start":2018,"values":[10255,9750,null,null,10500]},
     "net_price_income_2": {"start":2017,"values":[7400]},
     "net_price_income_3": {"start":2017,"values":[12030]},
-    "net_price_income_5": {"start":2021,"values":[16005]}
+    "net_price_income_5": {"start":2021,"values":[16005]},
+    "test_policy": {"start":2015,"values":[3,3,3,3,3,3,3,3,3,3]},
+    "undergrads": {"start":2015,"values":[40,40,39,38,46,36,32,23,17,23]},
+    "race_white": {"start":2015,"values":[1,0.95,0.8974,0.9737,0.9565,0.9722,1,0.8696,0.9412,0.913]},
+    "race_asian": {"start":2015,"values":[0,0,0,0,0,0,0,0,0,0]},
+    "race_hispanic": {"start":2015,"values":[0,0,0,0,0,0,0,0,0,0]},
+    "race_black": {"start":2015,"values":[0,0,0,0,0,0,0,0,0,0]},
+    "race_two_or_more": {"start":2015,"values":[0,0,0,0,0,0,0,0,0,0]},
+    "race_international": {"start":2015,"values":[0,0.05,0.1026,0.0263,0.0435,0.0278,0,0.1304,0.0588,0.087]},
+    "race_other": {"start":2015,"values":[0,0,0,0,0,0,0,0,0,0]},
+    "grad_rate": {"start":2009,"values":[0.5,0.6667,0.5,0.2,0.25,0.3333,0,1,0.125,0.5714]}
   }
 }

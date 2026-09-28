@@ -28,7 +28,7 @@ import type { DatasetMeta, School, SchoolType, TestPolicy } from "../lib/types";
 import { lineageForPatch, validateLineage } from "../lib/lineage.ts";
 import { applyProbes, filesToProbe, type FileProbe, type ReleaseCalendar } from "../lib/releases.ts";
 import { IPEDS_BASES, parseCsv } from "./lib/ipeds.mts";
-import { acceptanceRate, computePrices, ipedsNum, priceSuffix, toAid } from "../lib/derive.ts";
+import { acceptanceRate, computePrices, ipedsNum, priceSuffix, raceShares, toAid } from "../lib/derive.ts";
 
 const ROOT = join(import.meta.dirname, "..");
 const OUT = join(ROOT, "data", "schools.json");
@@ -239,17 +239,7 @@ function toSchool(
   const type = TYPE_BY_OWNERSHIP[Number(sc["school.ownership"])];
   if (!size || size <= 0 || !type) return null;
 
-  const race = (k: string) => numOrNull(sc[`${RACE}.${k}`]);
-  const raceValues = {
-    asian: race("asian"),
-    black: race("black"),
-    hispanic: race("hispanic"),
-    white: race("white"),
-    two_or_more: race("two_or_more"),
-    international: race("non_resident_alien"),
-    other: (race("aian") ?? 0) + (race("nhpi") ?? 0) + (race("unknown") ?? 0),
-  };
-  const hasRace = raceValues.white !== null && raceValues.asian !== null;
+  const racialDiversity = raceShares((k) => numOrNull(sc[`${RACE}.${k}`]));
 
   const applicants = ipedsNum(adm, "APPLCN");
   const admitted = ipedsNum(adm, "ADMSSN");
@@ -295,11 +285,7 @@ function toSchool(
         const v = numOrNull(sc["latest.student.share_firstgeneration"]);
         return v === null ? null : round(v);
       })(),
-      racial_diversity: hasRace
-        ? (Object.fromEntries(Object.entries(raceValues).map(([k, v]) => [k, round(v ?? 0)])) as NonNullable<
-            School["demographics"]["racial_diversity"]
-          >)
-        : null,
+      racial_diversity: racialDiversity,
     },
     cost: {
       avg_net_price: numOrNull(sc["latest.cost.avg_net_price.overall"]),
@@ -556,6 +542,14 @@ async function main() {
   }
 
   schools.sort((a, b) => a.name.localeCompare(b.name));
+  // school.trends comes from `npm run sync-history`; keep it until that runs again (run both: npm run sync-all).
+  if (existsSync(OUT)) {
+    const previous = new Map((JSON.parse(readFileSync(OUT, "utf8")) as School[]).map((s) => [s.unit_id, s.trends]));
+    for (const s of schools) {
+      const t = previous.get(s.unit_id);
+      if (t) s.trends = t;
+    }
+  }
   const scorecardYears = await detectScorecardYears(key, String(scorecard[0]?.id ?? "221999"));
   const meta = buildMeta(adm, sfa, ic, sfaYears, scorecardYears, cost2);
 

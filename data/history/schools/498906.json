@@ -14,6 +14,15 @@
     "net_price_income_1": {"start":2022,"values":[10474,9765]},
     "net_price_income_2": {"start":2022,"values":[10511,9778]},
     "net_price_income_3": {"start":2022,"values":[11080,11442]},
-    "net_price_income_4": {"start":2022,"values":[10605,14055]}
+    "net_price_income_4": {"start":2022,"values":[10605,14055]},
+    "undergrads": {"start":2023,"values":[107,98]},
+    "race_white": {"start":2023,"values":[1,1]},
+    "race_asian": {"start":2023,"values":[0,0]},
+    "race_hispanic": {"start":2023,"values":[0,0]},
+    "race_black": {"start":2023,"values":[0,0]},
+    "race_two_or_more": {"start":2023,"values":[0,0]},
+    "race_international": {"start":2023,"values":[0,0]},
+    "race_other": {"start":2023,"values":[0,0]},
+    "grad_rate": {"start":2017,"values":[0.2727,0.3103]}
   }
 }

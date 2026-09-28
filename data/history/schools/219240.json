@@ -8,6 +8,17 @@
     "yield": {"start":2020,"values":[0.7619,1,0.2,0.1538,0.0909]},
     "tuition_in_state": {"start":2020,"values":[3600,3600,3600]},
     "tuition_out_of_state": {"start":2020,"values":[3600,3600,3600]},
-    "grant_pct": {"start":2020,"values":[0,0,0]}
+    "grant_pct": {"start":2020,"values":[0,0,0]},
+    "sat_submit": {"start":2020,"values":[0,0,0,0,0]},
+    "act_submit": {"start":2020,"values":[0,0,0,0,0]},
+    "test_policy": {"start":2020,"values":[5,5,5,5,5]},
+    "undergrads": {"start":2020,"values":[16,36,38,36,82]},
+    "race_white": {"start":2020,"values":[1,0.9167,0.8684,0.9167,0.8537]},
+    "race_asian": {"start":2020,"values":[0,0.0556,0.0526,0,0.0244]},
+    "race_hispanic": {"start":2020,"values":[0,0,0,0,0]},
+    "race_black": {"start":2020,"values":[0,0.0278,0.0263,0.0833,0.0732]},
+    "race_two_or_more": {"start":2020,"values":[0,0,0,0,0]},
+    "race_international": {"start":2020,"values":[0,0,0,0,0]},
+    "race_other": {"start":2020,"values":[0,0,0.0526,0,0.0488]}
   }
 }

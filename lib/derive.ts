@@ -18,6 +18,27 @@ export function ipedsNum(row: IpedsRow | undefined, key: string): number | null 
   return Number.isFinite(n) ? n : null;
 }
 
+/** College Scorecard's race/ethnicity fields (under `student.demographics.race_ethnicity`). */
+export const SCORECARD_RACE_FIELDS = ["white", "black", "hispanic", "asian", "aian", "nhpi", "two_or_more", "non_resident_alien", "unknown"] as const;
+
+/**
+ * The site's seven race/ethnicity shares from Scorecard's nine: American Indian/Alaska Native, Native
+ * Hawaiian/Pacific Islander, and unknown fold into "other". Null unless White and Asian are reported.
+ */
+export function raceShares(race: (field: (typeof SCORECARD_RACE_FIELDS)[number]) => number | null): School["demographics"]["racial_diversity"] {
+  const values = {
+    asian: race("asian"),
+    black: race("black"),
+    hispanic: race("hispanic"),
+    white: race("white"),
+    two_or_more: race("two_or_more"),
+    international: race("non_resident_alien"),
+    other: (race("aian") ?? 0) + (race("nhpi") ?? 0) + (race("unknown") ?? 0),
+  };
+  if (values.white === null || values.asian === null) return null;
+  return Object.fromEntries(Object.entries(values).map(([k, v]) => [k, round(v ?? 0)])) as NonNullable<School["demographics"]["racial_diversity"]>;
+}
+
 /** Admitted ÷ applicants, rounded to 4 places; null under 10 applicants, where a rate is meaningless (0 of 1). */
 export function acceptanceRate(applicants: number | null, admitted: number | null): number | null {
   return applicants && applicants >= 10 && admitted !== null ? round(Math.min(1, admitted / applicants)) : null;

@@ -70,6 +70,9 @@ const SORTS = [
   { value: "net_price", label: "Net price with grants (lowest)", dir: "asc" },
   { value: "earnings", label: "Earnings (highest)", dir: "desc" },
   { value: "grad_rate", label: "Graduation rate", dir: "desc" },
+  { value: "avg_cost_change", label: "Cost change, 10 yrs (biggest drop)", dir: "asc" },
+  { value: "admit_rate_change", label: "Admit rate change, 10 yrs (most selective)", dir: "asc" },
+  { value: "size_change", label: "Size change, 10 yrs (fastest growth)", dir: "desc" },
 ] as const;
 
 export function SortControl() {

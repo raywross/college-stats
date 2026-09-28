@@ -2,6 +2,14 @@
   "unit_id": "498623",
   "series": {
     "grant_pct": {"start":2023,"values":[1]},
-    "grant_avg": {"start":2023,"values":[1165]}
+    "grant_avg": {"start":2023,"values":[1165]},
+    "undergrads": {"start":2024,"values":[116]},
+    "race_white": {"start":2024,"values":[0.2586]},
+    "race_asian": {"start":2024,"values":[0.0086]},
+    "race_hispanic": {"start":2024,"values":[0.2759]},
+    "race_black": {"start":2024,"values":[0.3534]},
+    "race_two_or_more": {"start":2024,"values":[0.0603]},
+    "race_international": {"start":2024,"values":[0]},
+    "race_other": {"start":2024,"values":[0.0431]}
   }
 }

@@ -1,7 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight, Swords } from "lucide-react";
-import { getData, toIndexEntry } from "@/lib/data";
+import { getData, getHistoryFiles, toIndexEntry } from "@/lib/data";
+import { SERIES, defaultWindow, historyYearLabel } from "@/lib/history";
+import type { TrendKey } from "@/lib/types";
+import { ThenAndNow, type ThenAndNowMetric } from "@/components/compare/ThenAndNow";
+import { HistorySourceNote } from "@/components/sources/HistorySourceNote";
 import type { FieldPath } from "@/lib/fields";
 import type { TermKey } from "@/lib/glossary";
 import { DEMOGRAPHIC_CATEGORIES, DOMAINS, METRICS, TEST_POLICY_LABELS, satComposite, type Domain } from "@/lib/metrics";
@@ -108,6 +112,37 @@ export default async function ComparePage({
   if (schools.length === 0) return <EmptyState />;
 
   const diffs = keyDifferences(schools);
+  const historyFiles = await getHistoryFiles();
+  // "Then & now" from school.trends (10-year changes written by sync-history); money is after inflation.
+  const THEN_AND_NOW: { key: TrendKey; label: string; format: "money" | "pctSmart" | "num" }[] = [
+    { key: "avg_paid_all", label: "Avg total cost (after inflation)", format: "money" },
+    { key: "acceptance_rate", label: "Acceptance rate", format: "pctSmart" },
+    { key: "applicants", label: "Applicants", format: "num" },
+    { key: "undergrads", label: "Undergrads", format: "num" },
+  ];
+  const thenAndNow: ThenAndNowMetric[] = historyFiles
+    ? THEN_AND_NOW.map((m) => {
+        const kind = SERIES[m.key].kind;
+        const [from, to] = defaultWindow(historyFiles.meta, kind);
+        const withData = schools.map((sc, i) => ({ sc, i, t: sc.trends?.[m.key] })).filter((x) => x.t);
+        return {
+          key: m.key,
+          label: m.label,
+          format: m.format,
+          fromLabel: historyYearLabel(from, kind),
+          toLabel: historyYearLabel(to, kind),
+          rows: withData.map(({ sc, i, t }) => ({
+            id: sc.unit_id,
+            name: shortName(sc),
+            color: SLOT_COLORS[i],
+            from: t!.from,
+            to: t!.to,
+            ...(t!.since > from ? { lateStart: historyYearLabel(t!.since, kind) } : {}),
+          })),
+          missing: schools.filter((sc) => !sc.trends?.[m.key]).map(shortName),
+        };
+      })
+    : [];
 
   return (
     <div className="mx-auto max-w-7xl px-4 pt-8 pb-12 sm:px-6 sm:pt-10">
@@ -255,6 +290,22 @@ export default async function ComparePage({
             <NetPriceCompare schools={schools} year={citeField("cost.net_price_by_income").year} />
             <MultiSourceNote schools={schools} fields={COST_FIELDS} />
           </Group>
+
+          {historyFiles && thenAndNow.some((m) => m.rows.length > 0) && (
+            <section className="space-y-4">
+              <h2 className="flex items-center gap-2 font-display text-2xl font-extrabold tracking-tight">
+                <span className="h-6 w-1.5 rounded-full bg-primary" />
+                Then &amp; now
+              </h2>
+              <p className="max-w-3xl text-sm text-muted-foreground">
+                How each college changed over the last 10 years of federal data. Money is <Term term="inflation-adjusted">after inflation</Term>.
+              </p>
+              <div className="rounded-3xl border bg-card p-5 sm:p-6">
+                <ThenAndNow metrics={thenAndNow} />
+              </div>
+              <HistorySourceNote keys={["avg_paid_all", "acceptance_rate", "applicants", "undergrads"]} files={historyFiles} range={{ academic: defaultWindow(historyFiles.meta, "academic"), fall: defaultWindow(historyFiles.meta, "fall") }} />
+            </section>
+          )}
 
           {/* Data table: every value in one place (also the accessible view) */}
           <section className="space-y-4">

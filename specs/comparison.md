@@ -9,6 +9,11 @@ Route: `/compare?ids=a,b,c,d` (up to 4). The URL is the source of truth; the sav
   "Compare N →". Hidden on `/compare`.
 - The header's Compare link shows a lime count badge and links to the current selection.
 
+## Then & now
+After Cost & outcomes: `ThenAndNow` (client) switches between average total cost (after inflation), acceptance rate,
+applicants, and undergrads, drawn as a `SlopeChart` over the default 10-year window from `school.trends`, with the
+history source line (per-kind year ranges). See [trends-design.md](trends-design.md).
+
 ## Page states
 - **Empty**: "Pick your contenders" plus six preset matchups.
 - **One school**: "Pick a rival" with similar-school suggestions that link straight to a two-way compare.

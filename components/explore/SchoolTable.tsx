@@ -2,7 +2,7 @@ import Link from "next/link";
 import { ArrowDown, ArrowUp } from "lucide-react";
 import type { School, SortKey } from "@/lib/types";
 import type { TermKey } from "@/lib/glossary";
-import { DOMAINS, aidGenerosity, diversityIndex, satComposite } from "@/lib/metrics";
+import { DOMAINS, METRICS, aidGenerosity, diversityIndex, satComposite } from "@/lib/metrics";
 import { compact, moneyCompact, pct, pctSmart } from "@/lib/format";
 import { getData } from "@/lib/data";
 import { Crest } from "@/components/school/Crest";
@@ -15,11 +15,39 @@ type Params = Record<string, string | string[] | undefined>;
 function sortHref(params: Params, key: SortKey, currentBy: string, currentDir: string) {
   const next = new URLSearchParams();
   for (const [k, v] of Object.entries(params)) if (typeof v === "string" && v) next.set(k, v);
-  const dir = currentBy === key ? (currentDir === "asc" ? "desc" : "asc") : ["name", "acceptance_rate", "avg_cost", "net_price"].includes(key) ? "asc" : "desc";
+  const dir =
+    currentBy === key
+      ? currentDir === "asc"
+        ? "desc"
+        : "asc"
+      : ["name", "acceptance_rate", "avg_cost", "net_price", "avg_cost_change", "admit_rate_change"].includes(key)
+        ? "asc"
+        : "desc";
   next.delete("page");
   next.set("sortBy", key);
   next.set("sortDir", dir);
   return `/explore?${next}`;
+}
+
+/** The table with the 10-year change columns switched on or off (`?changes=1`), keeping every other parameter. */
+function changesHref(params: Params, on: boolean) {
+  const next = new URLSearchParams();
+  for (const [k, v] of Object.entries(params)) if (typeof v === "string" && v && k !== "changes") next.set(k, v);
+  if (on) next.set("changes", "1");
+  return `/explore?${next}`;
+}
+
+/** "+12%" / "−3 pts", with a muted "from → to" underneath. */
+function ChangeCell({ change, points, from, to }: { change: number | null; points?: boolean; from?: string; to?: string }) {
+  if (change === null) return <Value v={null} />;
+  const sign = change > 0 ? "+" : change < 0 ? "−" : "";
+  const abs = Math.round(Math.abs(change) * 100);
+  return (
+    <span className="block">
+      <span className="font-semibold">{`${sign}${abs}${points ? " pts" : "%"}`}</span>
+      {from && to && <span className="block text-[11px] text-muted-foreground">{`${from} → ${to}`}</span>}
+    </span>
+  );
 }
 
 function Value({ v }: { v: string | null }) {
@@ -77,6 +105,7 @@ export async function SchoolTable({ schools, params }: { schools: School[]; para
   const sortBy = typeof params.sortBy === "string" ? params.sortBy : "applicants";
   const sortDir = typeof params.sortDir === "string" ? params.sortDir : sortBy === "applicants" ? "desc" : "asc";
   const SAT: [number, number] = [800, 1600];
+  const changes = params.changes === "1";
 
   const cols: { key: SortKey; label: string; term?: TermKey; className?: string }[] = [
     // Column order keeps same-looking domain hues apart.
@@ -90,12 +119,25 @@ export async function SchoolTable({ schools, params }: { schools: School[]; para
     { key: "aid_generosity", label: "Aid generosity", term: "aid-generosity" },
     { key: "earnings", label: "Earnings", term: "median-earnings" },
     { key: "grad_rate", label: "Grad rate", term: "graduation-rate" },
+    ...(changes
+      ? [
+          { key: "avg_cost_change" as const, label: "Avg cost, 10-yr change", term: "inflation-adjusted" as const },
+          { key: "admit_rate_change" as const, label: "Admit rate, then → now", term: "acceptance-rate" as const },
+          { key: "size_change" as const, label: "Undergrads, 10-yr change", term: "undergrad-enrollment" as const },
+        ]
+      : []),
   ];
 
   return (
+    <div>
+    <p className="mb-2 flex justify-end text-xs">
+      <Link href={changesHref(params, !changes)} scroll={false} className="font-semibold text-primary hover:underline">
+        {changes ? "Hide 10-year changes" : "Show 10-year changes"}
+      </Link>
+    </p>
     <div className="overflow-hidden rounded-3xl border bg-card">
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[1220px] text-sm">
+        <table className={cn("w-full text-sm", changes ? "min-w-[1580px]" : "min-w-[1220px]")}>
           <thead className="border-b bg-surface-2">
             <tr>
               <SortHeader k="name" label="School" className="sticky left-0 z-10 bg-surface-2 pl-4" params={params} sortBy={sortBy} sortDir={sortDir} />
@@ -175,6 +217,32 @@ export async function SchoolTable({ schools, params }: { schools: School[]; para
                     <Value v={s.outcomes?.graduation_rate == null ? null : pct(s.outcomes.graduation_rate)} />
                     {s.outcomes?.graduation_rate != null && <Bar value={s.outcomes.graduation_rate} max={1} color={DOMAINS.value.color} />}
                   </td>
+                  {changes && (
+                    <>
+                      <td className="w-32 px-3 tabular-nums">
+                        <ChangeCell
+                          change={s.trends?.avg_paid_all?.change ?? null}
+                          from={s.trends?.avg_paid_all ? moneyCompact(s.trends.avg_paid_all.from) : undefined}
+                          to={s.trends?.avg_paid_all ? moneyCompact(s.trends.avg_paid_all.to) : undefined}
+                        />
+                      </td>
+                      <td className="w-32 px-3 tabular-nums">
+                        <ChangeCell
+                          points
+                          change={s.trends?.acceptance_rate?.change ?? null}
+                          from={s.trends?.acceptance_rate ? pctSmart(s.trends.acceptance_rate.from) : undefined}
+                          to={s.trends?.acceptance_rate ? pctSmart(s.trends.acceptance_rate.to) : undefined}
+                        />
+                      </td>
+                      <td className="w-32 px-3 tabular-nums">
+                        <ChangeCell
+                          change={METRICS.sizeChange.get(s)}
+                          from={s.trends?.undergrads ? compact(s.trends.undergrads.from) : undefined}
+                          to={s.trends?.undergrads ? compact(s.trends.undergrads.to) : undefined}
+                        />
+                      </td>
+                    </>
+                  )}
                   <td className="px-3 pr-4 text-right">
                     <CompareButton id={s.unit_id} variant="icon" />
                   </td>
@@ -184,6 +252,13 @@ export async function SchoolTable({ schools, params }: { schools: School[]; para
           </tbody>
         </table>
       </div>
+    </div>
+    {changes && (
+      <p className="mt-2 text-[11px] text-muted-foreground">
+        Changes over each college&apos;s last 10 years of federal data: average cost after inflation; acceptance rate in percentage points;
+        undergraduate change left out for campuses under 300 students.
+      </p>
+    )}
     </div>
   );
 }

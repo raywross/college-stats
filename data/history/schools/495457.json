@@ -15,6 +15,16 @@
     "net_price_income_2": {"start":2020,"values":[31307,33150,32925,35930]},
     "net_price_income_3": {"start":2021,"values":[33477,33924,33881]},
     "net_price_income_4": {"start":2023,"values":[39266]},
-    "net_price_income_5": {"start":2021,"values":[37481,38789,42097]}
+    "net_price_income_5": {"start":2021,"values":[37481,38789,42097]},
+    "test_policy": {"start":2020,"values":[3,3,3,3,3]},
+    "undergrads": {"start":2020,"values":[85,418,746,1062,1229]},
+    "race_white": {"start":2020,"values":[0.2588,0.3254,0.3257,0.306,0.2815]},
+    "race_asian": {"start":2020,"values":[0.0471,0.0287,0.0456,0.0424,0.0382]},
+    "race_hispanic": {"start":2020,"values":[0.3882,0.3636,0.4021,0.4143,0.4557]},
+    "race_black": {"start":2020,"values":[0.1882,0.1411,0.118,0.1111,0.1221]},
+    "race_two_or_more": {"start":2020,"values":[0.0588,0.1053,0.0885,0.1055,0.0854]},
+    "race_international": {"start":2020,"values":[0,0,0,0,0]},
+    "race_other": {"start":2020,"values":[0.0589,0.0359,0.02,0.0207,0.0171]},
+    "median_debt": {"start":2020,"values":[9500]}
   }
 }

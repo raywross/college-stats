@@ -15,6 +15,15 @@
     "net_price_income_2": {"start":2022,"values":[32377,39198]},
     "net_price_income_3": {"start":2023,"values":[36094]},
     "net_price_income_4": {"start":2023,"values":[40507]},
-    "net_price_income_5": {"start":2023,"values":[42280]}
+    "net_price_income_5": {"start":2023,"values":[42280]},
+    "test_policy": {"start":2022,"values":[3,3,3]},
+    "undergrads": {"start":2022,"values":[144,284,348]},
+    "race_white": {"start":2022,"values":[0.1597,0.1303,0.1322]},
+    "race_asian": {"start":2022,"values":[0.0556,0.0915,0.0805]},
+    "race_hispanic": {"start":2022,"values":[0.1528,0.1972,0.227]},
+    "race_black": {"start":2022,"values":[0.5694,0.5211,0.5172]},
+    "race_two_or_more": {"start":2022,"values":[0.0278,0.0458,0.0287]},
+    "race_international": {"start":2022,"values":[0,0,0]},
+    "race_other": {"start":2022,"values":[0.0347,0.0141,0.0144]}
   }
 }

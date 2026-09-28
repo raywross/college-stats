@@ -19,6 +19,16 @@
     "net_price_income_1": {"start":2016,"values":[7410,7636,7611,8604,4998,6313,null,11187]},
     "net_price_income_2": {"start":2016,"values":[4660,7636,8780,8570,1500]},
     "net_price_income_3": {"start":2016,"values":[7362,7969,null,8625,4025,8749,null,11187]},
-    "net_price_income_4": {"start":2016,"values":[9162,10408,null,null,7580,null,null,14037]}
+    "net_price_income_4": {"start":2016,"values":[9162,10408,null,null,7580,null,null,14037]},
+    "test_policy": {"start":2017,"values":[3,3,3,3,3,3,3,3]},
+    "undergrads": {"start":2017,"values":[44,41,31,24,18,12,13,25]},
+    "race_white": {"start":2017,"values":[1,1,1,1,1,1,1,1]},
+    "race_asian": {"start":2017,"values":[0,0,0,0,0,0,0,0]},
+    "race_hispanic": {"start":2017,"values":[0,0,0,0,0,0,0,0]},
+    "race_black": {"start":2017,"values":[0,0,0,0,0,0,0,0]},
+    "race_two_or_more": {"start":2017,"values":[0,0,0,0,0,0,0,0]},
+    "race_international": {"start":2017,"values":[0,0,0,0,0,0,0,0]},
+    "race_other": {"start":2017,"values":[0,0,0,0,0,0,0,0]},
+    "grad_rate": {"start":2013,"values":[0.0714,0.1111,0.0417,0.5714,0,0]}
   }
 }

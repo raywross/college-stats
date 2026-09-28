@@ -5,14 +5,16 @@
  *   npm run sync-history -- --ids 221999,170976   # write shards for just these colleges (national stats still cover all)
  *   npm run sync-history -- --refresh             # re-download every NCES file instead of using .cache/ipeds
  *   npm run sync-history -- --no-crosscheck       # skip the Urban Institute spot-check
- *   npm run sync-history -- --offline             # cached NCES files and CPI only (local iteration; never for a release)
+ *   npm run sync-history -- --offline             # cached NCES, Scorecard, and CPI only (local iteration; never for a release)
+ *   npm run sync-history -- --cached-nces         # cached NCES files only (when NCES is down); Scorecard and CPI online
  *
  * Steps: fetch NCES files per era (scripts/history/registry.mts), check every mapped column exists, build each
  * college's series with the same functions as sync-data (lib/derive.ts), then check before writing anything:
  *   - coverage per series and year doesn't drop more than 20% from the year before (unless allow-listed below),
  *   - each series' latest point equals today's value in data/schools.json (rule 1),
  *   - a sample matches the Urban Institute's independently harmonized copy of IPEDS.
- * Year-over-year jumps over 3× are listed for review. Needs no API key; downloads ~80 zips on the first run.
+ * Year-over-year jumps over 3× are listed for review. Downloads ~80 NCES zips and ~100 College Scorecard pages on the
+ * first run (needs COLLEGE_SCORECARD_API_KEY from .env.local); both are cached for a week.
  */
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
@@ -26,10 +28,13 @@ import {
   type HistoryFile,
   type CpiTable,
   type HistoryMeta,
+  trendSummary,
   type SchoolHistory,
+  type SeriesKey,
   type YearKind,
 } from "../lib/history.ts";
 import { fetchIpedsTable, type IpedsTable } from "./lib/ipeds.mts";
+import { validateLineage } from "../lib/lineage.ts";
 import { ERAS, requiredColumns, type Era, type FileChoice } from "./history/registry.mts";
 import {
   bigJumps,
@@ -39,6 +44,7 @@ import {
   coverage,
   coverageDrops,
   lastPointMismatches,
+  ruleOneProblems,
   missingColumns,
   netPriceMismatches,
   type CoverageException,
@@ -46,12 +52,16 @@ import {
   type YearTable,
 } from "./history/build.mts";
 import { buildCpi } from "./history/cpi.mts";
+import { COHORT_LAG, fetchScorecardHistory } from "./history/scorecard.mts";
 
 const ROOT = join(import.meta.dirname, "..");
 const DATA = join(ROOT, "data");
 const OUT = join(DATA, "history");
 const SHARDS = join(OUT, "schools");
 const CACHE = join(ROOT, ".cache", "ipeds");
+const SCORECARD_CACHE = join(ROOT, ".cache", "scorecard");
+/** First year Scorecard reports undergrads (fall 1996). */
+const SCORECARD_FIRST = 1996;
 
 const args = process.argv.slice(2);
 const flag = (name: string) => args.includes(name);
@@ -62,13 +72,17 @@ const option = (name: string) => {
 const IDS = option("--ids")?.split(",").map((s) => s.trim()).filter(Boolean);
 const REFRESH = flag("--refresh");
 const OFFLINE = flag("--offline");
+/** NCES drops connections for hours at a time; files downloaded within the last week are current enough. */
+const NCES_CACHED = OFFLINE || flag("--cached-nces");
 const CROSSCHECK = !flag("--no-crosscheck") && !OFFLINE;
 const THIS_YEAR = new Date().getFullYear();
 
 /**
  * Coverage drops that are real, not a broken mapping. Each needs a reason; review when the build flags a new one.
  */
-const EXPECTED_DROPS: CoverageException[] = [];
+const EXPECTED_DROPS: CoverageException[] = [
+  { series: "undergrads", year: 2001, reason: "College Scorecard has no fall 2000 enrollment for any college (checked 2026-09-28)." },
+];
 
 function fail(message: string, details: string[] = []): never {
   console.error(`\nsync-history failed: ${message}`);
@@ -110,12 +124,12 @@ const maxAgeFor = (year: number) => (REFRESH ? 0 : year >= THIS_YEAR - 3 ? 7 : I
 
 async function fetchYear(era: Era, year: number, keep: ReadonlySet<string>): Promise<Fetched | null> {
   for (const choice of era.files(year)) {
-    const table = await fetchIpedsTable(choice.name, { cacheDir: CACHE, maxAgeDays: maxAgeFor(year), keep, offline: OFFLINE });
+    const table = await fetchIpedsTable(choice.name, { cacheDir: CACHE, maxAgeDays: maxAgeFor(year), keep, offline: NCES_CACHED });
     if (!table) continue;
     let supplement: IpedsTable | undefined;
     if (era.supplement) {
       const name = era.supplement(year);
-      const t = await fetchIpedsTable(name, { cacheDir: CACHE, maxAgeDays: maxAgeFor(year), keep, offline: OFFLINE });
+      const t = await fetchIpedsTable(name, { cacheDir: CACHE, maxAgeDays: maxAgeFor(year), keep, offline: NCES_CACHED });
       if (!t) fail(`${choice.name} is published but its companion ${name} isn't.`);
       supplement = t;
     }
@@ -139,7 +153,7 @@ async function fetchAll(keep: ReadonlySet<string>): Promise<Fetched[]> {
 
   // Years must be consecutive: a gap before the newest year means a file moved or failed, not "not published yet".
   const fetched = results.filter((r): r is Fetched => r !== null);
-  for (const family of Object.keys(HISTORY_FAMILIES) as HistoryFamily[]) {
+  for (const family of (Object.keys(HISTORY_FAMILIES) as HistoryFamily[]).filter((f) => !("api" in HISTORY_FAMILIES[f]))) {
     const years = fetched.filter((f) => f.family === family).map((f) => f.year).sort((a, b) => a - b);
     if (!years.length) fail(`no files found for ${family}.`);
     const expected = jobs.filter((j) => j.era.family === family && j.year <= years[years.length - 1]).map((j) => j.year);
@@ -199,6 +213,9 @@ async function urbanJson(path: string): Promise<{ results: Record<string, number
  * admissions years spanning the IC → ADM move, and in-state tuition & fees in three price years. Differences fail
  * the build; an unreachable API only warns.
  */
+/** Urban files graduation rates under the entering class + 5 (IPEDS GR{year}); Scorecard's year key is + 6. */
+const URBAN_GRAD_LAG = COHORT_LAG - 1;
+
 async function crossCheck(schools: School[], histories: Map<string, SchoolHistory>): Promise<{ checked: number; problems: string[]; unreachable: number }> {
   const sample = [...schools]
     .filter((s) => histories.has(s.unit_id))
@@ -207,10 +224,13 @@ async function crossCheck(schools: School[], histories: Map<string, SchoolHistor
     .slice(0, 12);
   const problems: string[] = [];
   let checked = 0;
+  const byKind = { applicants: 0, tuition: 0, grad: 0 };
   let unreachable = 0;
   const jobs = sample.flatMap((s) => [
     ...[2001, 2008, 2013, 2019].map((y) => ({ s, y, kind: "applicants" as const })),
     ...[2004, 2012, 2020].map((y) => ({ s, y, kind: "tuition" as const })),
+    // Graduation by entering class: checks Scorecard's year key → cohort mapping (COHORT_LAG) against IPEDS counts.
+    ...[2008, 2015].map((y) => ({ s, y, kind: "grad" as const })),
   ]);
   await pool(jobs, 4, async ({ s, y, kind }) => {
     const h = histories.get(s.unit_id)!;
@@ -224,7 +244,20 @@ async function crossCheck(schools: School[], histories: Map<string, SchoolHistor
       const t = theirs !== null && theirs >= 0 ? theirs : null;
       if (ours === null && t === null) return;
       checked++;
+      byKind.applicants++;
       if (ours !== t) problems.push(`${s.name} (${s.unit_id}) applicants fall ${y}: ours ${ours ?? "none"}, Urban ${t ?? "none"}`);
+    } else if (kind === "grad") {
+      const ours = valueAt(h.series.grad_rate, y);
+      if (ours === null) return;
+      // Urban files a graduation rate under its entering class + 5 (IPEDS GR{year}), unlike Scorecard's + 6.
+      const body = await urbanJson(`grad-rates/${y + URBAN_GRAD_LAG}/?unitid=${s.unit_id}`);
+      if (!body) return unreachable++;
+      const row = body.results.find((r) => r.race === 99 && r.sex === 99 && r.subcohort === 99 && r.institution_level === 4 && r.cohort_year === y);
+      if (!row || !(row.cohort_adj_150pct > 0)) return;
+      const t = row.completers_150pct / row.cohort_adj_150pct;
+      checked++;
+      byKind.grad++;
+      if (Math.abs(ours - t) > 0.0006) problems.push(`${s.name} (${s.unit_id}) graduation, entered fall ${y}: ours ${ours}, Urban ${t.toFixed(4)}`);
     } else {
       const ours = valueAt(h.series.tuition_in_state, y);
       const body = await urbanJson(`academic-year-tuition/${y}/?unitid=${s.unit_id}`);
@@ -235,9 +268,13 @@ async function crossCheck(schools: School[], histories: Map<string, SchoolHistor
       const t = theirs !== null && theirs >= 0 ? theirs : null;
       if (t === null) return;
       checked++;
+      byKind.tuition++;
       if (ours !== t) problems.push(`${s.name} (${s.unit_id}) in-state tuition & fees ${y}–${String(y + 1).slice(2)}: ours ${ours ?? "none"}, Urban ${t ?? "none"}`);
     }
   });
+  // A kind that never matched means the check itself broke (e.g. a year offset), not that the data agrees.
+  const silent = Object.entries(byKind).filter(([, n]) => n === 0).map(([k]) => k);
+  if (unreachable === 0 && silent.length) problems.push(`cross-check found nothing to compare for: ${silent.join(", ")}`);
   return { checked, problems, unreachable };
 }
 
@@ -270,17 +307,48 @@ async function main() {
   console.log(`Building history for ${schools.length} colleges${IDS ? ` (writing shards for ${IDS.length})` : ""}…`);
   const fetched = await fetchAll(universe);
   const inputs = toInputs(fetched);
-  const latestOf = (fam: HistoryFamily[]) => Math.max(...fetched.filter((f) => fam.includes(f.family)).map((f) => f.year));
-  const latest: Record<YearKind, number> = { fall: latestOf(["ic-admissions", "adm"]), academic: latestOf(["prices"]) };
-  const window: Record<YearKind, [number, number]> = { fall: [latest.fall - 10, latest.fall], academic: [latest.academic - 10, latest.academic] };
+  console.log(OFFLINE ? "Using cached College Scorecard history (offline)…" : "Fetching College Scorecard history…");
+  const scorecard = await fetchScorecardHistory({
+    key: process.env.COLLEGE_SCORECARD_API_KEY,
+    cacheDir: SCORECARD_CACHE,
+    keep: universe,
+    first: SCORECARD_FIRST,
+    last: THIS_YEAR,
+    refresh: REFRESH,
+    offline: OFFLINE,
+  }).catch((err: Error) => fail(err.message));
+  inputs.scorecard = { rows: scorecard, first: SCORECARD_FIRST, last: THIS_YEAR };
 
   const histories = new Map(schools.map((s) => [s.unit_id, buildCollege(s, inputs)]));
   const all = [...histories.values()];
 
+  const latestOf = (fam: HistoryFamily[]) => Math.max(...fetched.filter((f) => fam.includes(f.family)).map((f) => f.year));
+  const lastOfSeries = (k: "grad_rate") => Math.max(...all.flatMap((h) => (h.series[k] ? [h.series[k]!.start + h.series[k]!.values.length - 1] : [])));
+  const latest: Record<YearKind, number> = {
+    fall: latestOf(["ic-admissions", "adm"]),
+    academic: latestOf(["prices"]),
+    cohort: lastOfSeries("grad_rate"),
+  };
+  const window: Record<YearKind, [number, number]> = {
+    fall: [latest.fall - 10, latest.fall],
+    academic: [latest.academic - 10, latest.academic],
+    cohort: [latest.cohort - 10, latest.cohort],
+  };
+
   console.log(OFFLINE ? "Using the saved CPI table (offline)…" : "Fetching CPI from BLS…");
   const firstMoneyYear = Math.min(...fetched.filter((f) => f.family === "prices").map((f) => f.year));
   const cpiPath = join(OUT, "cpi.json");
-  const cpi: CpiTable = OFFLINE && existsSync(cpiPath) ? JSON.parse(readFileSync(cpiPath, "utf8")) : await buildCpi(firstMoneyYear);
+  const saved: CpiTable | null = existsSync(cpiPath) ? JSON.parse(readFileSync(cpiPath, "utf8")) : null;
+  const cpi: CpiTable =
+    OFFLINE && saved
+      ? saved
+      : await buildCpi(firstMoneyYear).catch((err: Error) => {
+          // BLS allows 25 keyless requests a day (set BLS_API_KEY for 500). Past school years' CPI doesn't change,
+          // so the saved table is fine when it reaches the newest price year.
+          if (!saved || saved.start + saved.values.length - 1 < latest.academic) fail(`CPI: ${err.message}`);
+          console.warn(`  BLS unavailable (${err.message.slice(0, 80)}…); using the saved CPI table (retrieved ${saved.retrieved}).`);
+          return saved;
+        });
   const cpiLast = cpi.start + cpi.values.length - 1;
   if (cpiLast < latest.academic) fail(`CPI only reaches ${cpiLast}–${String(cpiLast + 1).slice(2)}; prices reach ${latest.academic}.`);
 
@@ -292,8 +360,9 @@ async function main() {
   const drops = coverageDrops(coverage(all), EXPECTED_DROPS);
   if (drops.length) fail("coverage dropped more than 20% from one year to the next (a moved column or layout change?). Allow-list real drops in EXPECTED_DROPS with a reason.", drops);
 
-  const mismatches = lastPointMismatches(schools, histories, latest);
-  if (mismatches.length) fail("latest history points differ from data/schools.json (rule 1). Re-run npm run sync-data, or fix lib/derive.ts.", mismatches);
+  const rule1 = ruleOneProblems(lastPointMismatches(schools, histories, latest), schools);
+  if (rule1.hard.length) fail("latest history points differ from data/schools.json (rule 1). Re-run npm run sync-data, or fix lib/derive.ts.", rule1.hard);
+  if (rule1.soft.length) console.warn(`  ${rule1.soft.length} soft rule-1 differences (within allowance; review):\n    ${rule1.soft.slice(0, 5).join("\n    ")}`);
 
   const npm = netPriceMismatches(schools, histories, latest.academic);
   const withNetPrice = schools.filter((s) => s.cost?.net_price_by_income).length;
@@ -323,6 +392,13 @@ async function main() {
         url: f.table.url,
         revised: f.table.revised,
       }));
+    if ("api" in HISTORY_FAMILIES[fam]) {
+      // Scorecard fields: one entry per year any college reported, cited as the Scorecard data page.
+      const keys = { "scorecard-enrollment": ["undergrads"], "scorecard-completion": ["grad_rate"], "scorecard-debt": ["median_debt"] }[fam as string] as SeriesKey[];
+      const years = [...new Set(all.flatMap((h) => keys.flatMap((k) => { const sr = h.series[k]; return sr ? sr.values.flatMap((v, i) => (v === null ? [] : [sr.start + i])) : []; })))].sort((a, b) => a - b);
+      files[fam] = years.map((year) => ({ year, file: `College Scorecard API (${keys.join(", ")})`, url: meta.sources.scorecard.url, revised: false }));
+      continue;
+    }
     const list = files[fam];
     const [prev, last] = [list[list.length - 2], list[list.length - 1]];
     // Provisional: this family's files get revised a year later, and the newest hasn't been yet.
@@ -362,9 +438,25 @@ async function main() {
   writeJson(join(OUT, "cpi.json"), cpi);
   writeJson(join(OUT, "meta.json"), hmeta);
 
+  // school.trends in data/schools.json: every college (like national.json), even when --ids limits the shards.
+  let withTrends = 0;
+  for (const s of schools) {
+    const t = trendSummary(histories.get(s.unit_id)!, cpi, hmeta);
+    if (Object.keys(t).length) {
+      s.trends = t;
+      withTrends++;
+    } else delete s.trends;
+  }
+  const lineageProblems = validateLineage(schools, meta);
+  if (lineageProblems.length) fail("trends summary fails the lineage check (register it in lib/fields.ts).", lineageProblems);
+  // Same layout as sync-data: one college per line.
+  writeFileSync(join(DATA, "schools.json"), `[\n${schools.map((s) => JSON.stringify(s)).join(",\n")}\n]\n`);
+
   const count = (fam: HistoryFamily) => `${files[fam][0].year}–${files[fam][files[fam].length - 1].year}`;
   console.log(`\nWrote ${written} college histories to data/history/schools/ (${hmeta.schools} in the folder), plus national, facts, cpi, meta.`);
+  console.log(`  10-year summaries (school.trends) in data/schools.json: ${withTrends} colleges.`);
   console.log(`  Admissions: IC ${count("ic-admissions")}, ADM ${count("adm")} · Prices ${count("prices")} · Aid ${count("sfa")}`);
+  console.log(`  Scorecard: undergrads ${count("scorecard-enrollment")} · graduation (entering class) ${count("scorecard-completion")} · debt ${count("scorecard-debt")}`);
   console.log(`  Latest: fall ${latest.fall}, ${latest.academic}–${String(latest.academic + 1).slice(2)}. Provisional: ${Object.entries(provisional).map(([f, y]) => `${f} ${y}`).join(", ") || "none"}.`);
 }
 

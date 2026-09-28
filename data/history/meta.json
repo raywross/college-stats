@@ -2,7 +2,8 @@
   "built": "2026-09-28",
   "latest": {
     "fall": 2024,
-    "academic": 2023
+    "academic": 2023,
+    "cohort": 2018
   },
   "files": {
     "ic-admissions": [
@@ -438,12 +439,498 @@
         "url": "https://nces.ed.gov/ipeds/complete-data-files/SFA2324.zip",
         "revised": false
       }
+    ],
+    "scorecard-enrollment": [
+      {
+        "year": 1996,
+        "file": "College Scorecard API (undergrads)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 1997,
+        "file": "College Scorecard API (undergrads)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 1998,
+        "file": "College Scorecard API (undergrads)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 1999,
+        "file": "College Scorecard API (undergrads)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2001,
+        "file": "College Scorecard API (undergrads)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2002,
+        "file": "College Scorecard API (undergrads)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2003,
+        "file": "College Scorecard API (undergrads)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2004,
+        "file": "College Scorecard API (undergrads)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2005,
+        "file": "College Scorecard API (undergrads)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2006,
+        "file": "College Scorecard API (undergrads)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2007,
+        "file": "College Scorecard API (undergrads)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2008,
+        "file": "College Scorecard API (undergrads)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2009,
+        "file": "College Scorecard API (undergrads)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2010,
+        "file": "College Scorecard API (undergrads)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2011,
+        "file": "College Scorecard API (undergrads)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2012,
+        "file": "College Scorecard API (undergrads)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2013,
+        "file": "College Scorecard API (undergrads)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2014,
+        "file": "College Scorecard API (undergrads)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2015,
+        "file": "College Scorecard API (undergrads)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2016,
+        "file": "College Scorecard API (undergrads)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2017,
+        "file": "College Scorecard API (undergrads)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2018,
+        "file": "College Scorecard API (undergrads)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2019,
+        "file": "College Scorecard API (undergrads)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2020,
+        "file": "College Scorecard API (undergrads)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2021,
+        "file": "College Scorecard API (undergrads)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2022,
+        "file": "College Scorecard API (undergrads)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2023,
+        "file": "College Scorecard API (undergrads)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2024,
+        "file": "College Scorecard API (undergrads)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      }
+    ],
+    "scorecard-completion": [
+      {
+        "year": 1991,
+        "file": "College Scorecard API (grad_rate)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 1992,
+        "file": "College Scorecard API (grad_rate)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 1993,
+        "file": "College Scorecard API (grad_rate)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 1994,
+        "file": "College Scorecard API (grad_rate)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 1995,
+        "file": "College Scorecard API (grad_rate)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 1996,
+        "file": "College Scorecard API (grad_rate)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 1997,
+        "file": "College Scorecard API (grad_rate)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 1998,
+        "file": "College Scorecard API (grad_rate)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 1999,
+        "file": "College Scorecard API (grad_rate)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2000,
+        "file": "College Scorecard API (grad_rate)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2001,
+        "file": "College Scorecard API (grad_rate)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2002,
+        "file": "College Scorecard API (grad_rate)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2003,
+        "file": "College Scorecard API (grad_rate)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2004,
+        "file": "College Scorecard API (grad_rate)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2005,
+        "file": "College Scorecard API (grad_rate)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2006,
+        "file": "College Scorecard API (grad_rate)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2007,
+        "file": "College Scorecard API (grad_rate)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2008,
+        "file": "College Scorecard API (grad_rate)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2009,
+        "file": "College Scorecard API (grad_rate)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2010,
+        "file": "College Scorecard API (grad_rate)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2011,
+        "file": "College Scorecard API (grad_rate)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2012,
+        "file": "College Scorecard API (grad_rate)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2013,
+        "file": "College Scorecard API (grad_rate)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2014,
+        "file": "College Scorecard API (grad_rate)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2015,
+        "file": "College Scorecard API (grad_rate)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2016,
+        "file": "College Scorecard API (grad_rate)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2017,
+        "file": "College Scorecard API (grad_rate)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2018,
+        "file": "College Scorecard API (grad_rate)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      }
+    ],
+    "scorecard-debt": [
+      {
+        "year": 1997,
+        "file": "College Scorecard API (median_debt)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 1998,
+        "file": "College Scorecard API (median_debt)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 1999,
+        "file": "College Scorecard API (median_debt)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2000,
+        "file": "College Scorecard API (median_debt)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2001,
+        "file": "College Scorecard API (median_debt)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2002,
+        "file": "College Scorecard API (median_debt)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2003,
+        "file": "College Scorecard API (median_debt)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2004,
+        "file": "College Scorecard API (median_debt)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2005,
+        "file": "College Scorecard API (median_debt)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2006,
+        "file": "College Scorecard API (median_debt)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2007,
+        "file": "College Scorecard API (median_debt)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2008,
+        "file": "College Scorecard API (median_debt)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2009,
+        "file": "College Scorecard API (median_debt)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2010,
+        "file": "College Scorecard API (median_debt)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2011,
+        "file": "College Scorecard API (median_debt)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2012,
+        "file": "College Scorecard API (median_debt)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2013,
+        "file": "College Scorecard API (median_debt)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2014,
+        "file": "College Scorecard API (median_debt)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2015,
+        "file": "College Scorecard API (median_debt)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2016,
+        "file": "College Scorecard API (median_debt)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2017,
+        "file": "College Scorecard API (median_debt)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2018,
+        "file": "College Scorecard API (median_debt)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2019,
+        "file": "College Scorecard API (median_debt)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2020,
+        "file": "College Scorecard API (median_debt)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      }
     ]
   },
   "provisional": {
     "adm": 2024,
     "sfa": 2023
   },
-  "schools": 1884,
+  "schools": 1893,
   "universe": 1893
 }

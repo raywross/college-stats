@@ -11,7 +11,10 @@ const n = (v: Params[string]) => {
   return Number.isFinite(x) ? x : undefined;
 };
 
-const SORT_KEYS: SortKey[] = ["applicants", "name", "acceptance_rate", "enrollment", "sat", "pell", "first_gen", "diversity", "avg_cost", "aid_generosity", "net_price", "earnings", "grad_rate"];
+const SORT_KEYS: SortKey[] = [
+  "applicants", "name", "acceptance_rate", "enrollment", "sat", "pell", "first_gen", "diversity", "avg_cost", "aid_generosity", "net_price", "earnings", "grad_rate",
+  "avg_cost_change", "admit_rate_change", "size_change",
+];
 const VIEWS: ExploreView[] = ["grid", "table", "chart"];
 
 export function parseFilters(params: Params): SearchFilters {

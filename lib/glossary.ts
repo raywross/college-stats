@@ -349,6 +349,20 @@ const entries = {
     category: "How we measure",
     related: ["ipeds"],
   },
+  "entering-cohort": {
+    term: "Entering class",
+    short: "Graduation rates follow the students who started in the same fall: \"entered fall\" years show the share of that class who finished within six years, measured six years later.",
+    why: "A graduation rate always describes students who arrived years ago, so it moves slowly and lags changes a college makes today.",
+    category: "How we measure",
+    related: ["graduation-rate"],
+  },
+  "trend-break": {
+    term: "Break in a series",
+    short: "A year when a measure's definition changed, so values before and after it aren't comparable. Charts stop the line there and don't report a change across it.",
+    long: "The clearest case is the SAT: it was redesigned with a new scoring scale, so scores reported before the switch aren't comparable with scores after it.",
+    category: "How we measure",
+    related: ["sat"],
+  },
   "fixed-panel": {
     term: "Fixed panel",
     short: "A national trend measured over the same colleges in every year: only those that report both the first and last year. Otherwise colleges opening, closing, or starting to report would look like change.",

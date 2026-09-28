@@ -59,6 +59,7 @@ import { AidGenerosityCard } from "@/components/school/AidGenerosityCard";
 import { InfoTip, MetricLabel, SourceChip, Term } from "@/components/ui/info-tip";
 import { OverTime } from "@/components/history/OverTime";
 import { TenYearTile } from "@/components/history/TenYearTile";
+import { HeadlineDelta } from "@/components/history/HeadlineDelta";
 import { HistorySourceNote } from "@/components/sources/HistorySourceNote";
 import { historyYearLabel, type NationalHistory, type SeriesKey } from "@/lib/history";
 
@@ -67,10 +68,13 @@ const HISTORY_GROUPS = {
   cost: ["avg_paid_all", "full_price", "sticker_in_state", "sticker_out_of_state", "aided_net_price", "net_price_income_1"],
   aid: ["grant_pct", "grant_avg", "aid_generosity"],
   admissions: ["applicants", "admitted", "enrolled", "acceptance_rate", "yield"],
+  scores: ["sat_25", "sat_75", "act_25", "act_75", "sat_submit", "test_policy"],
+  students: ["undergrads", "race_white"],
+  outcomes: ["grad_rate", "median_debt"],
 } as const satisfies Record<string, readonly SeriesKey[]>;
 
 /** National series the charts draw as a band (keeps the page payload small). */
-const BANDED: readonly SeriesKey[] = ["avg_paid_all", "grant_pct", "grant_avg", "acceptance_rate"];
+const BANDED: readonly SeriesKey[] = ["avg_paid_all", "grant_pct", "grant_avg", "acceptance_rate", "sat_25", "sat_75", "act_25", "act_75", "grad_rate", "median_debt"];
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -188,12 +192,15 @@ function Panel({
   children,
   school,
   fields,
+  delta,
 }: {
   id: string;
   domain?: Domain;
   eyebrow: string;
   title: string;
   takeaway?: string;
+  /** A "since" line under the takeaway (HeadlineDelta). */
+  delta?: ReactNode;
   children: ReactNode;
   school?: School;
   /** Values this section shows (registered paths); their sources close the section. Required so nothing goes uncited. */
@@ -208,6 +215,7 @@ function Panel({
       </p>
       <h2 className="font-display text-3xl font-extrabold tracking-tight">{title}</h2>
       {takeaway && <p className="mt-2 max-w-3xl text-lg text-muted-foreground">{takeaway}</p>}
+      {delta}
       {school && <SourceExceptions fields={fields} school={school} />}
       <div className="mt-6">{children}</div>
       {school && fields.length > 0 && <SourceNote fields={fields} school={school} className="mt-4" />}
@@ -265,7 +273,7 @@ export default async function SchoolPage({ params }: Props) {
   const rate = a.acceptance_rate;
   const tier = selectivityTier(rate);
   const size = sizeBucket(d.undergrad_enrollment);
-  const tags = standouts(data, school);
+  const tags = standouts(data, school, { trends: true });
   const similar = similarSchools(data, school, 4);
   const sat = satComposite(school);
   const yld = yieldRate(school);
@@ -478,6 +486,7 @@ export default async function SchoolPage({ params }: Props) {
               eyebrow="Admissions"
               title={a.year ? `Getting in, fall ${a.year}` : "Getting in"}
               takeaway={admissionsTakeaway(data, school)}
+              delta={hasHistory && <HeadlineDelta seriesKey="acceptance_rate" history={history} files={historyFiles} color={DOMAINS.admissions.color} />}
               school={school}
               fields={SECTION_FIELDS.admissions}
             >
@@ -626,7 +635,16 @@ export default async function SchoolPage({ params }: Props) {
           )}
 
           {/* ============================== STUDENTS ============================== */}
-          <Panel id="students" domain="access" eyebrow="Students" title="Who's on campus" takeaway={studentsTakeaway(data, school)} school={school} fields={SECTION_FIELDS.students}>
+          <Panel
+            id="students"
+            domain="access"
+            eyebrow="Students"
+            title="Who's on campus"
+            takeaway={studentsTakeaway(data, school)}
+            delta={hasHistory && <HeadlineDelta seriesKey="undergrads" history={history} files={historyFiles} color={DOMAINS.size.color} />}
+            school={school}
+            fields={SECTION_FIELDS.students}
+          >
             <div className="grid gap-4 lg:grid-cols-2">
               <div className="rounded-3xl border bg-card p-5 sm:p-6 lg:col-span-2">
                 <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
@@ -709,6 +727,7 @@ export default async function SchoolPage({ params }: Props) {
               eyebrow="Cost & outcomes"
               title="What it costs, what it pays"
               takeaway={costTakeaway(data, school)}
+              delta={hasHistory && <HeadlineDelta seriesKey="avg_paid_all" history={history} files={historyFiles} color={DOMAINS.value.color} />}
               school={school}
               fields={SECTION_FIELDS.cost}
             >
@@ -891,6 +910,7 @@ export default async function SchoolPage({ params }: Props) {
                 provisional={{
                   fall: historyFiles.meta.provisional.adm ?? null,
                   academic: historyFiles.meta.provisional.sfa ?? historyFiles.meta.provisional.prices ?? null,
+                  cohort: null,
                 }}
                 sources={{
                   cost: <HistorySourceNote keys={HISTORY_GROUPS.cost} files={historyFiles} />,
@@ -907,8 +927,17 @@ export default async function SchoolPage({ params }: Props) {
                       <HistorySourceNote keys={HISTORY_GROUPS.admissions} files={historyFiles} />
                     </>
                   ),
+                  scores: <HistorySourceNote keys={HISTORY_GROUPS.scores} files={historyFiles} />,
+                  students: <HistorySourceNote keys={HISTORY_GROUPS.students} files={historyFiles} />,
+                  outcomes: <HistorySourceNote keys={HISTORY_GROUPS.outcomes} files={historyFiles} />,
                 }}
-                colors={{ value: DOMAINS.value.color, admissions: DOMAINS.admissions.color }}
+                colors={{
+                  value: DOMAINS.value.color,
+                  admissions: DOMAINS.admissions.color,
+                  scores: DOMAINS.scores.color,
+                  size: DOMAINS.size.color,
+                  diversity: DOMAINS.diversity.color,
+                }}
               />
             </Panel>
           )}

@@ -22,8 +22,27 @@ Higher Education Data Explorer - an interactive web app for visualizing U.S. col
 - Run `npm run verify` (typecheck, lint, tests incl. lineage guards, dataset lineage check) before committing; CI runs
   it plus `next build`
 
+### One worktree per session
+Several Claude chats work on this repo at once, so each works in its own git worktree, never in the main checkout
+(where one chat could switch branches or edit files under another).
+- **Before changing anything** (editing files, creating a branch, committing), call `EnterWorktree` with a short name
+  for the task. It creates `.claude/worktrees/<name>/` on a new branch from `origin/main`. Rename the branch to the
+  repo's convention right away: `git branch -m feature/<name>` (or `docs/`, `data/`, `chore/`)
+- Reading, searching, and read-only git (`status`, `log`, `diff`, `fetch`) are fine from the main checkout
+- In a new worktree, run `npm ci` before building or testing. `.env.local` is copied in automatically (`.worktreeinclude`)
+- Keep shell commands simple (one git command per call): Claude Code refuses commands in a worktree session when it
+  can't verify they stay inside the worktree
+- Finish with a PR and merge as usual; the main checkout's branch never needs to change. A SessionStart hook
+  (`.claude/hooks/sync-main.mjs`) fetches and fast-forwards the main checkout when it's clean and on `main`, so each new
+  session starts from the latest merged code and rules; `git pull --ff-only` is also allowed there
+- Enforced by `.claude/hooks/require-worktree.mjs` (PreToolUse; tested in `tests/require-worktree.test.mts`): edits
+  and branch-changing git in the main checkout are blocked. To override for one session, start Claude Code with
+  `CLAUDE_ALLOW_MAIN_CHECKOUT=1`
+
 ### Commands
-- **"start the server"**: Kill any running dev server (`lsof -ti:3000 | xargs kill -9`), then run `npm run dev` in the background.
+- **"start the server"**: each worktree runs its own dev server on its own port; never kill another session's server.
+  Stop a dev server this worktree started earlier, then run `npm run dev -- -p <port>` in the background with the
+  first free port from 3000 up (`lsof -ti:<port>` prints nothing), and report the URL.
 
 ### Tech Stack
 - Next.js 14 (App Router) with TypeScript

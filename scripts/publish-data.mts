@@ -13,7 +13,8 @@
  *   3. publish_dataset() replaces everything in one transaction (supabase/migrations/).
  *   4. Read it all back and require an exact match with the local files.
  *   5. History (data/history/, from `npm run sync-history`), if built: the same shard checks as check:lineage, then
- *      publish_history() replaces it in one transaction, and it's read back and compared too.
+ *      stage_history() takes the shards in batches, publish_history_staged() swaps them in with one transaction, and
+ *      it's read back and compared too.
  *   6. If REVALIDATE_URL and REVALIDATE_SECRET are set, ask the site to regenerate its static pages.
  * Needs SUPABASE_URL and SUPABASE_SECRET_KEY (environment variables win over the env file, which is how the
  * GitHub Action points it at prod). See specs/supabase.md.
@@ -31,6 +32,8 @@ import { validateHistoryMeta, validateShard, type SchoolHistory } from "../lib/h
 const ROOT = join(import.meta.dirname, "..");
 const DRY_RUN = process.argv.includes("--dry-run");
 const ALLOW_SHRINK = process.argv.includes("--allow-shrink");
+/** History shards per staging call (~1 MB), well under the API's statement timeout. */
+const HISTORY_BATCH = 150;
 
 const read = <T,>(name: string): T => JSON.parse(readFileSync(join(ROOT, "data", name), "utf8"));
 const schools = read<School[]>("schools.json");
@@ -93,6 +96,8 @@ if (count && schools.length < count * 0.9 && !ALLOW_SHRINK) {
 if (history) {
   const { error: historyError } = await client.from("history_files").select("name", { head: true });
   if (historyError) fail(`${historyError.message}. Apply supabase/migrations/20260928120000_history.sql first.`);
+  const { error: stagingError } = await client.from("history_staging").select("unit_id", { head: true });
+  if (stagingError) fail(`${stagingError.message}. Apply supabase/migrations/20260928180000_history_staging.sql first.`);
 }
 
 if (DRY_RUN) {
@@ -124,7 +129,15 @@ console.log(`Published ${written} colleges from ${commit ?? "an unknown commit"}
 
 // 5. History
 if (history) {
-  const { data: shardCount, error: hError } = await client.rpc("publish_history", { p_schools: history.shards, p_files: history.files });
+  // Stage the shards in batches (one call with all of them exceeds the statement timeout), then swap them in with one
+  // short transaction, so readers never see a half-published history.
+  for (let i = 0; i < history.shards.length; i += HISTORY_BATCH) {
+    const { error } = await client.rpc("stage_history", { p_schools: history.shards.slice(i, i + HISTORY_BATCH), p_reset: i === 0 });
+    if (error) fail(`history: staging shards ${i}–${i + HISTORY_BATCH}: ${error.message}. Has supabase/migrations/20260928180000_history_staging.sql been applied?`);
+    process.stdout.write(`\r  History: staged ${Math.min(i + HISTORY_BATCH, history.shards.length)}/${history.shards.length}`);
+  }
+  process.stdout.write("\n");
+  const { data: shardCount, error: hError } = await client.rpc("publish_history_staged", { p_files: history.files, p_expected: history.shards.length });
   if (hError) fail(`history: ${hError.message}`);
   const backFiles = await fetchHistoryFiles(client);
   const backShards = await fetchAllSchoolHistories(client);

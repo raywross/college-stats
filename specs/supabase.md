@@ -50,6 +50,11 @@ back to JSON.
 - **`publish_dataset(p_schools, p_meta, p_release_calendar, p_git_commit, p_published_by)`** replaces everything in
   one transaction, so readers never see half a publish and colleges dropped from the sync disappear. Only
   `service_role` (the secret key) may call it.
+- **History is published in batches** (migration `20260928180000_history_staging.sql`): once scores, students, and
+  outcomes were added (~13 MB), one call exceeded the API's statement timeout. `stage_history(p_schools, p_reset)`
+  takes 150 shards at a time into `history_staging` (secret key only), then `publish_history_staged(p_files,
+  p_expected)` checks every shard arrived and swaps them in with one transaction. The single-call `publish_history()`
+  below still exists but isn't used.
 - **`publish_history(p_schools, p_files)`** (migration `20260928120000_history.sql`) does the same for history
   ([trends-data.md](trends-data.md)): `npm run publish-data` calls it after the dataset when data/history/ exists, then
   reads every shard back. The app reads one shard per profile and the shared files once per publish; if the tables

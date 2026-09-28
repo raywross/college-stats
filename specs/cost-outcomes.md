@@ -29,13 +29,21 @@ Published net prices only cover aided students, so they understate what a typica
 ```
 sticker[rate]  = tuition & fees[rate] + books + on-campus room & board + other expenses   (IC: CHG1/2/3AY3, CHG4–6AY3)
 avg sticker    = Σ share of first-years paying each rate × sticker[rate]                    (SFA: SCFA11P/12P/13P)
-avg paid (all) = avg sticker − share with grants × average grant                           (SFA: AGRNT_P × AGRNT_A)
+avg paid (all) = avg sticker − total grant dollars ÷ first-years                          (SFA: AGRNT_T ÷ SCUGFFN)
+               = (total full price paid by everyone − total grants) ÷ number of first-years
 ```
 Students without grants count at the full sticker price. Private colleges have one rate. Stored as
 `cost.avg_paid_all` along with `sticker`, `tuition_fees`, and `residency` (in-district / in-state / out-of-state),
 `aided_net_price` (SFA `NPIST2` for publics, meaning in-state students, or `NPGRN2` for privates), and `year`.
 Coverage: 1,511 colleges. Caveats (shown on the page): it assumes on-campus living, and loans aren't subtracted.
-Validated on Vanderbilt: sticker $84,412 − average grant $57,723 = $26,689, exactly IPEDS's aided net price.
+Validated on Vanderbilt: sticker $84,412 − average grant $57,723 = $26,689, exactly IPEDS's aided net price; and
+(1,617 × $84,412 − $61,417,367) ÷ 1,617 = $46,430. Falls back to share × average grant only when counts are missing.
+Uses exact counts (grant share = AGRNT_N ÷ SCUGFFN), not the published whole-number percent.
+
+**Don't reconstruct the average from the income table alone.** It covers only students who received federal aid
+(Vanderbilt: 583 of 1,617). Another 495 got grants without federal aid (college need-based or merit aid). The aid
+panel shows the whole class split three ways (federal aid + grants / grants without federal aid / no grants) above
+the income table, so the table isn't mistaken for everyone.
 
 The sync also stores `cost.components` (books, room & board, other) and `cost.breakdown`: residency-averaged tuition
 & fees, each living-cost item, `full_price`, and `grant_per_student`, each rounded before computing

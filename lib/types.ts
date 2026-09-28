@@ -109,9 +109,12 @@ export interface School {
     /** Students in the financial-aid cohort. */
     cohort: number | null;
     any_aid_pct: number | null;
-    /** Any grant or scholarship (federal, state, local, institutional). */
+    /** Any grant or scholarship (federal, state, local, institutional). Share = grant_count / cohort when both are reported. */
     grant_pct: number | null;
     grant_avg: number | null;
+    /** Number of first-years receiving grants, and total grant dollars (exact inputs for the average cost). */
+    grant_count?: number | null;
+    grant_total?: number | null;
     institutional_pct: number | null;
     institutional_avg: number | null;
     pell_pct: number | null;
@@ -120,7 +123,13 @@ export interface School {
     loan_pct: number | null;
     loan_avg: number | null;
     /** Students receiving federal (Title IV) aid, by family income band (same 5 bands as net price). */
-    by_income: { counts: (number | null)[]; avg_grant: (number | null)[] } | null;
+    by_income: {
+      counts: (number | null)[];
+      avg_grant: (number | null)[];
+      /** How many in each band received grants, and total grant dollars per band. */
+      granted?: (number | null)[];
+      total_grants?: (number | null)[];
+    } | null;
     /** Richer detail from the school's Common Data Set, section H (full-time undergraduates). */
     cds?: CdsAid;
   };

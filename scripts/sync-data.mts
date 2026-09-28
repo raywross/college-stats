@@ -365,11 +365,16 @@ function toAid(sfa: Record<string, string> | undefined): School["aid"] {
   };
   const bands = [1, 2, 3, 4, 5];
   const counts = bands.map((b) => n(`GRN4N${b}2`));
+  const cohort = n("SCUGFFN");
+  const grantCount = n("AGRNT_N");
   const aid = {
-    cohort: n("SCUGFFN"),
+    cohort,
     any_aid_pct: p("ANYAIDP"),
-    grant_pct: p("AGRNT_P"),
+    // Exact share from counts; the published percent (AGRNT_P) is rounded to a whole number.
+    grant_pct: cohort && grantCount !== null ? round(grantCount / cohort) : p("AGRNT_P"),
     grant_avg: n("AGRNT_A"),
+    grant_count: grantCount,
+    grant_total: n("AGRNT_T"),
     institutional_pct: p("IGRNT_P"),
     institutional_avg: n("IGRNT_A"),
     pell_pct: p("PGRNT_P"),
@@ -377,7 +382,14 @@ function toAid(sfa: Record<string, string> | undefined): School["aid"] {
     state_pct: p("SGRNT_P"),
     loan_pct: p("LOAN_P"),
     loan_avg: n("LOAN_A"),
-    by_income: counts.some((c) => c !== null) ? { counts, avg_grant: bands.map((b) => n(`GRN4A${b}2`)) } : null,
+    by_income: counts.some((c) => c !== null)
+      ? {
+          counts,
+          avg_grant: bands.map((b) => n(`GRN4A${b}2`)),
+          granted: bands.map((b) => n(`GRN4G${b}2`)),
+          total_grants: bands.map((b) => n(`GRN4T${b}2`)),
+        }
+      : null,
   };
   return aid.cohort === null && aid.grant_pct === null ? undefined : aid;
 }
@@ -513,7 +525,11 @@ function addPrices(school: School, ic: Record<string, string> | undefined, sfa: 
       ? (() => {
           const tuition = Math.round(weightedTuition / covered);
           const fullPrice = tuition + books + roomBoard + other;
-          return { tuition_fees: tuition, books, room_board: roomBoard, other, full_price: fullPrice, grant_per_student: Math.round(grantPct * grantAvg) };
+          // Total paid ÷ students: total grant dollars spread over every first-year (exact when counts are reported).
+          const total = school.aid?.grant_total ?? null;
+          const cohort = school.aid?.cohort ?? null;
+          const perStudent = total !== null && cohort ? total / cohort : grantPct * grantAvg;
+          return { tuition_fees: tuition, books, room_board: roomBoard, other, full_price: fullPrice, grant_per_student: Math.round(perStudent) };
         })()
       : null;
   const avgPaid = breakdown ? breakdown.full_price - breakdown.grant_per_student : null;

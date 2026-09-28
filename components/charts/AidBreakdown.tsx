@@ -47,6 +47,27 @@ export function AidBreakdown({ school }: { school: School }) {
   const federalTotal = counts.reduce<number>((a, b) => a + (b ?? 0), 0);
   const maxCount = Math.max(1, ...counts.map((c) => c ?? 0));
   const noGrant = grant === null ? null : 1 - grant;
+
+  // Partition the whole first-year class so the income table (federal-aid recipients only) isn't mistaken for everyone.
+  const cohort = aid?.cohort ?? null;
+  const grantCount = aid?.grant_count ?? null;
+  const fedGranted = byIncome?.granted?.reduce<number>((a, b) => a + (b ?? 0), 0) ?? null;
+  const fedGrantTotal = byIncome?.total_grants?.reduce<number>((a, b) => a + (b ?? 0), 0) ?? null;
+  const otherGranted = grantCount !== null && fedGranted !== null ? grantCount - fedGranted : null;
+  const otherAvg =
+    otherGranted && otherGranted > 0 && aid?.grant_total != null && fedGrantTotal !== null
+      ? (aid.grant_total - fedGrantTotal) / otherGranted
+      : null;
+  const noneCount = cohort !== null && grantCount !== null ? cohort - grantCount : null;
+  const fedAvg = fedGranted && fedGrantTotal !== null ? fedGrantTotal / fedGranted : null;
+  const classRows =
+    cohort && fedGranted !== null && otherGranted !== null && noneCount !== null && otherGranted >= 0
+      ? [
+          { label: "Federal aid + grants", n: fedGranted, note: fedAvg !== null ? `avg grant ${moneyCompact(fedAvg)}` : "", color: COLOR },
+          { label: "Grants, no federal aid", n: otherGranted, note: otherAvg !== null ? `avg grant ${moneyCompact(otherAvg)}` : "", color: `color-mix(in oklch, ${COLOR} 45%, var(--card))` },
+          { label: "No grants", n: noneCount, note: "pay full price", color: "color-mix(in oklch, var(--foreground) 30%, transparent)" },
+        ]
+      : null;
   const oneIn = noGrant && noGrant > 0.05 ? Math.round(1 / noGrant) : null;
 
   return (
@@ -105,14 +126,38 @@ export function AidBreakdown({ school }: { school: School }) {
           <h3 className="flex items-center gap-1 font-display text-lg font-bold">
             Aid by family income <InfoTip term="federal-aid" />
           </h3>
-          <p className="mb-5 text-xs text-muted-foreground">
-            First-year students who received federal aid
+          {classRows && cohort && (
+            <div className="mt-3 mb-6 space-y-2">
+              <p className="text-xs font-semibold">The whole first-year class ({num(cohort)})</p>
+              <div className="flex h-4 gap-[2px] overflow-hidden rounded-md" role="img" aria-label={classRows.map((r) => `${r.label}: ${r.n}`).join(", ")}>
+                {classRows.map((r) => (
+                  <div key={r.label} className="h-full origin-left animate-grow-x first:rounded-l-md last:rounded-r-md" style={{ width: `${(r.n / cohort) * 100}%`, backgroundColor: r.color }} />
+                ))}
+              </div>
+              <ul className="space-y-1 text-xs">
+                {classRows.map((r) => (
+                  <li key={r.label} className="flex items-center gap-2">
+                    <span className="size-2.5 shrink-0 rounded-sm" style={{ backgroundColor: r.color }} />
+                    <span className="text-muted-foreground">{r.label}</span>
+                    <span className="ml-auto font-semibold tabular-nums">{num(r.n)}</span>
+                    <span className="w-28 text-right text-muted-foreground">{r.note}</span>
+                  </li>
+                ))}
+              </ul>
+              <p className="text-[11px] text-muted-foreground">
+                Students with grants but no federal aid usually got the college&apos;s own need-based aid (without federal loans or
+                Pell) or merit aid.
+              </p>
+            </div>
+          )}
+          <p className="mb-4 text-xs text-muted-foreground">
+            <b className="text-foreground">By family income</b>: only students who received federal aid
             {federalTotal > 0 && aid?.cohort ? (
               <>
                 {" "}({num(federalTotal)} of {num(aid.cohort)})
               </>
             ) : null}
-            . Students without federal aid aren&apos;t included.
+            , because income is only reported for them.
           </p>
           {byIncome ? (
             <div className="space-y-3">

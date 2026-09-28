@@ -25,10 +25,11 @@ Planned work, roughly in priority order. Move items into a feature spec when the
 - [ ] **College-reported data agent** ([college-reported-data.md](college-reported-data.md)): newer admissions figures
   from colleges' CDS and class profiles, auto-published when checks pass. Pilot on ~50 colleges first. Replaces the
   former "Read CDS PDFs" and "Expand CDS coverage" items (the existing 8 CDS overrides stay until the agent covers them).
-- [ ] **Religious life & Greek life** ([religious-and-greek-life.md](religious-and-greek-life.md)). Phase 1: religious
-  affiliation for all colleges (IPEDS `RELAFFIL`; 685 of 1,893 affiliated) as an Explore filter and profile fact.
-  Phase 2: CDS F1 fraternity/sorority participation, F4 Greek housing, C7 religious commitment in admissions, H14 and
-  F2, via `import-cds` and the college-reported agent. Phase 3: CCCU membership. Open questions in the spec.
+- [ ] **Religious life** ([religious-life.md](religious-life.md)). Phase 1: IPEDS affiliation for all colleges (685 of
+  1,893). Then a 25-college pilot of per-school sources (CDS C7/H14, IR reports, org directories, Hillel), national
+  faith-org directories, and partnership requests (Hillel, Chabad, Anthology).
+- [ ] **Greek life** ([greek-life.md](greek-life.md)). Phase 1: CDS F1/F4. Then the same pilot for fraternity &
+  sorority life office reports (members by council, recruitment), checked against F1.
 - [ ] **Watch ACTS** (IPEDS admissions supplement): adopt if NCES publishes institution-level files. See
   [data-page.md](data-page.md#watching-acts).
 - [ ] **Scheduled data refresh** (`chore/scheduled-data-sync`): monthly GitHub Action runs `npm run sync-data` and

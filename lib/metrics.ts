@@ -1,5 +1,6 @@
 import type { School, SizeBucket } from "./types";
 import type { TermKey } from "./glossary";
+import type { FieldPath } from "./fields";
 import { money, num, pct, pctSmart } from "./format";
 
 /* ------------------------------------------------------------------ */
@@ -129,6 +130,8 @@ export type MetricKey =
 
 export interface MetricDef {
   key: MetricKey;
+  /** Registered field this metric reads (lib/fields.ts), used for its citation. */
+  field: FieldPath;
   label: string;
   short: string;
   term: TermKey;
@@ -145,6 +148,7 @@ export interface MetricDef {
 export const METRICS: Record<MetricKey, MetricDef> = {
   acceptance: {
     key: "acceptance",
+    field: "admissions.acceptance_rate",
     label: "Acceptance rate",
     short: "Admit rate",
     term: "acceptance-rate",
@@ -157,6 +161,7 @@ export const METRICS: Record<MetricKey, MetricDef> = {
   },
   applicants: {
     key: "applicants",
+    field: "admissions.applicants",
     label: "Applicants",
     short: "Applicants",
     term: "applicants",
@@ -168,6 +173,7 @@ export const METRICS: Record<MetricKey, MetricDef> = {
   },
   yield: {
     key: "yield",
+    field: "derived.yield",
     label: "Yield rate",
     short: "Yield",
     term: "yield",
@@ -180,6 +186,7 @@ export const METRICS: Record<MetricKey, MetricDef> = {
   },
   sat: {
     key: "sat",
+    field: "derived.sat_mid",
     label: "SAT midpoint",
     short: "SAT mid",
     term: "sat",
@@ -192,6 +199,7 @@ export const METRICS: Record<MetricKey, MetricDef> = {
   },
   act: {
     key: "act",
+    field: "derived.act_mid",
     label: "ACT midpoint",
     short: "ACT mid",
     term: "act",
@@ -204,6 +212,7 @@ export const METRICS: Record<MetricKey, MetricDef> = {
   },
   enrollment: {
     key: "enrollment",
+    field: "demographics.undergrad_enrollment",
     label: "Undergrads",
     short: "Undergrads",
     term: "undergrad-enrollment",
@@ -215,6 +224,7 @@ export const METRICS: Record<MetricKey, MetricDef> = {
   },
   pell: {
     key: "pell",
+    field: "demographics.pell_grant_percent",
     label: "Pell Grant recipients",
     short: "Pell %",
     term: "pell-grant",
@@ -227,6 +237,7 @@ export const METRICS: Record<MetricKey, MetricDef> = {
   },
   firstGen: {
     key: "firstGen",
+    field: "demographics.first_gen_percent",
     label: "First-generation students",
     short: "First-gen %",
     term: "first-gen",
@@ -239,6 +250,7 @@ export const METRICS: Record<MetricKey, MetricDef> = {
   },
   diversity: {
     key: "diversity",
+    field: "derived.diversity_index",
     label: "Diversity index",
     short: "Diversity",
     term: "diversity-index",
@@ -251,6 +263,7 @@ export const METRICS: Record<MetricKey, MetricDef> = {
   },
   avgCost: {
     key: "avgCost",
+    field: "cost.avg_paid_all",
     label: "Average cost, all students",
     short: "Avg cost",
     term: "average-cost",
@@ -262,6 +275,7 @@ export const METRICS: Record<MetricKey, MetricDef> = {
   },
   aidGenerosity: {
     key: "aidGenerosity",
+    field: "derived.aid_generosity",
     label: "Aid generosity",
     short: "Aid generosity",
     term: "aid-generosity",
@@ -274,6 +288,7 @@ export const METRICS: Record<MetricKey, MetricDef> = {
   },
   netPrice: {
     key: "netPrice",
+    field: "cost.aided_net_price",
     label: "Net price, students with grants",
     short: "Net price (grants)",
     term: "net-price",
@@ -285,6 +300,7 @@ export const METRICS: Record<MetricKey, MetricDef> = {
   },
   earnings: {
     key: "earnings",
+    field: "outcomes.median_earnings_10yr",
     label: "Median earnings, 10 yrs",
     short: "Earnings",
     term: "median-earnings",
@@ -296,6 +312,7 @@ export const METRICS: Record<MetricKey, MetricDef> = {
   },
   gradRate: {
     key: "gradRate",
+    field: "outcomes.graduation_rate",
     label: "Graduation rate",
     short: "Grad rate",
     term: "graduation-rate",
@@ -308,6 +325,7 @@ export const METRICS: Record<MetricKey, MetricDef> = {
   },
   debt: {
     key: "debt",
+    field: "outcomes.median_debt",
     label: "Median debt at graduation",
     short: "Median debt",
     term: "median-debt",

@@ -7,8 +7,12 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "sync-data": "node --env-file=.env.local scripts/sync-data.mts",
-    "import-cds": "node scripts/import-cds.mts"
+    "sync-data": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --env-file=.env.local scripts/sync-data.mts",
+    "import-cds": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/import-cds.mts",
+    "check:lineage": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/check-lineage.mts",
+    "test": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test \"tests/**/*.test.mts\"",
+    "typecheck": "next typegen && tsc --noEmit",
+    "verify": "npm run typecheck && npm run lint && npm test && npm run check:lineage"
   },
   "dependencies": {
     "@base-ui/react": "^1.8.0",

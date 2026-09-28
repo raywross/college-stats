@@ -4,12 +4,14 @@ import { BookMarked, Calculator, ExternalLink, RefreshCw } from "lucide-react";
 import { cdsSchools, getAllSchools, getMeta } from "@/lib/data";
 import type { SourceKey, Topic } from "@/lib/types";
 import { num } from "@/lib/format";
+import { FIELDS, type FieldDef } from "@/lib/fields";
 import { Crest } from "@/components/school/Crest";
 import { Term } from "@/components/ui/info-tip";
 
 export const metadata: Metadata = { title: "Data sources" };
 
 const TOPIC_LABELS: Record<Topic, string> = {
+  institution: "Name, location & type",
   admissions: "Admissions & test scores",
   enrollment: "Undergraduate enrollment",
   demographics: "Race/ethnicity, Pell & first-gen shares",
@@ -26,13 +28,17 @@ export default function SourcesPage() {
 
   const coverage: Record<SourceKey, number> = {
     scorecard: all.length,
-    "ipeds-adm": all.filter((s) => s.admissions.year !== null && !s.provenance?.admissions).length,
+    "ipeds-adm": all.filter((s) => s.admissions.year !== null && !s.lineage?.["admissions.applicants"]).length,
     "ipeds-sfa": all.filter((s) => s.aid?.grant_pct != null).length,
     "ipeds-ic": all.filter((s) => s.cost?.sticker).length,
     cds: cds.length,
   };
-  const usedFor = (key: SourceKey) =>
-    (Object.keys(meta.defaults) as Topic[]).filter((t) => meta.defaults[t] === key).map((t) => TOPIC_LABELS[t]);
+  // Topics where this source is the default for at least one stored field (lib/fields.ts).
+  const usedFor = (key: SourceKey) => {
+    const topics = new Set<Topic>();
+    for (const def of Object.values(FIELDS) as FieldDef[]) if (def.source === key && !def.computed) topics.add(def.topic);
+    return [...topics].map((t) => TOPIC_LABELS[t]);
+  };
   const order: SourceKey[] = ["scorecard", "ipeds-adm", "ipeds-sfa", "ipeds-ic", "cds"];
 
   return (

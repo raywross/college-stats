@@ -1,4 +1,5 @@
 import type { TermKey } from "@/lib/glossary";
+import type { Cited } from "@/lib/lineage";
 import { MetricLabel } from "@/components/ui/info-tip";
 import { cn } from "@/lib/utils";
 
@@ -9,6 +10,7 @@ import { cn } from "@/lib/utils";
 export function BenchmarkBar({
   label,
   term,
+  cited,
   value,
   median,
   scale = [0, 1],
@@ -19,6 +21,8 @@ export function BenchmarkBar({
 }: {
   label: string;
   term?: TermKey;
+  /** Where the value came from (citeField); shown in the (i) popover. */
+  cited?: Cited;
   value: number;
   median?: number;
   scale?: [number, number];
@@ -41,7 +45,7 @@ export function BenchmarkBar({
   return (
     <div className={cn("space-y-2", className)}>
       <div className="flex items-baseline justify-between gap-3">
-        <MetricLabel term={term} className={cn("font-medium", size === "sm" ? "text-xs" : "text-sm")}>
+        <MetricLabel term={term} cited={cited} className={cn("font-medium", size === "sm" ? "text-xs" : "text-sm")}>
           {label}
         </MetricLabel>
         <span className={cn("font-semibold", size === "sm" ? "text-sm" : "text-lg")}>{format(value)}</span>

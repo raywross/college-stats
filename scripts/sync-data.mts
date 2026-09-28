@@ -11,12 +11,17 @@
  *      SAT/ACT percentiles, test submission rates, test policy. Newest year wins.
  *   3. data/overrides.json: hand-verified patches (e.g. from a school's Common Data Set)
  *      applied last, so newer primary-source figures survive every sync.
+ *
+ * Every value's source is tracked (lib/fields.ts + school.lineage; specs/data-lineage.md).
+ * The output is validated before it's written: an unregistered field, an override
+ * without a source, or a release without a year stops the sync.
  */
 import { execFileSync } from "node:child_process";
 import { mkdtempSync, readFileSync, writeFileSync, existsSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { DatasetMeta, School, SchoolType, TestPolicy } from "../lib/types";
+import { lineageForPatch, validateLineage } from "../lib/lineage.ts";
 
 const ROOT = join(import.meta.dirname, "..");
 const OUT = join(ROOT, "data", "schools.json");
@@ -292,9 +297,9 @@ function toSchool(
   const satPct = ipedsNum(adm, "SATPCT");
   const actPct = ipedsNum(adm, "ACTPCT");
 
-  // Record topics that didn't come from their default source (see writeMeta).
-  const provenance: School["provenance"] = {};
-  if (!adm && acceptance !== null) provenance.admissions = "scorecard";
+  // Record values that didn't come from their field's default source (lib/fields.ts).
+  const lineage: School["lineage"] = {};
+  if (!adm && acceptance !== null) lineage["admissions.acceptance_rate"] = { source: "scorecard" };
 
   return {
     unit_id: String(sc.id),
@@ -358,7 +363,7 @@ function toSchool(
       website: normalizeUrl(sc["school.school_url"]),
       price_calculator: normalizeUrl(sc["school.price_calculator_url"]),
     },
-    ...(Object.keys(provenance).length ? { provenance } : {}),
+    ...(Object.keys(lineage).length ? { lineage } : {}),
   };
 }
 
@@ -407,37 +412,41 @@ function toAid(sfa: Record<string, string> | undefined): School["aid"] {
   return aid.cohort === null && aid.grant_pct === null ? undefined : aid;
 }
 
-/** Citation details for every source, shown on profiles and the /sources page. */
 /**
- * Scorecard's "latest" fields don't say which year they are. Find the
- * year-keyed field that matches "latest" (key N = academic year N-1–N).
+ * Scorecard's "latest" fields don't say which year they describe. Find the
+ * year-keyed field whose value matches "latest". The key's meaning varies by
+ * field (checked against IPEDS in Sept 2026): for enrollment, key N = fall N;
+ * for net price, key N = academic year N-1–N.
  */
-async function detectScorecardCostYear(key: string, id: string): Promise<string | null> {
+async function detectScorecardYears(key: string, id: string): Promise<{ enrollment: string | null; cost: string | null }> {
   const years = Array.from({ length: 6 }, (_, i) => thisYear - i);
-  const fields = ["latest.cost.avg_net_price.overall", ...years.map((y) => `${y}.cost.avg_net_price.overall`)];
+  const probes = { enrollment: "student.size", cost: "cost.avg_net_price.overall" } as const;
+  const fields = Object.values(probes).flatMap((f) => [`latest.${f}`, ...years.map((y) => `${y}.${f}`)]);
   const params = new URLSearchParams({ id, fields: fields.join(","), api_key: key });
   try {
     const data = (await getJson(`${API}?${params}`)) as { results: Record<string, unknown>[] };
     const row = data.results[0] ?? {};
-    const latest = row["latest.cost.avg_net_price.overall"];
-    const y = years.find((yr) => latest != null && row[`${yr}.cost.avg_net_price.overall`] === latest);
-    return y ? `${y - 1}–${String(y).slice(2)}` : null;
+    const find = (f: string) => years.find((y) => row[`latest.${f}`] != null && row[`${y}.${f}`] === row[`latest.${f}`]);
+    const e = find(probes.enrollment);
+    const c = find(probes.cost);
+    return { enrollment: e ? `Fall ${e}` : null, cost: c ? `${c - 1}–${String(c).slice(2)}` : null };
   } catch {
-    return null;
+    return { enrollment: null, cost: null };
   }
 }
 
-function writeMeta(
+/** Citation details for every source and the year each release describes. */
+function buildMeta(
   adm: IpedsFile,
   sfa: IpedsFile,
   ic: IpedsFile,
   sfaYears: string,
-  scorecardCostYear: string | null,
+  scorecardYears: { enrollment: string | null; cost: string | null },
   cost2: IpedsFile | null
-) {
-  const meta: DatasetMeta = {
+): DatasetMeta {
+  const scorecardCostYear = scorecardYears.cost;
+  return {
     retrieved: new Date().toISOString().slice(0, 10),
-    scorecardCostYear,
     sources: {
       scorecard: {
         label: "College Scorecard",
@@ -480,17 +489,16 @@ function writeMeta(
           "A standardized report many colleges publish on their own sites, with more detail than federal surveys: admissions for the latest class and need-based vs. merit aid (section H).",
       },
     },
-    defaults: {
-      admissions: "ipeds-adm",
-      enrollment: "scorecard",
-      demographics: "scorecard",
-      cost: "scorecard",
-      prices: "ipeds-ic",
-      outcomes: "scorecard",
-      aid: "ipeds-sfa",
+    vintages: {
+      "ipeds-adm": `Fall ${adm.name.slice(3)}`,
+      "ipeds-sfa": sfaYears,
+      "ipeds-ic": sfaYears,
+      "scorecard-enrollment": scorecardYears.enrollment,
+      "scorecard-cost": scorecardYears.cost,
+      // Outcomes and other Scorecard fields each describe different cohorts; no single year.
+      "scorecard-latest": null,
     },
   };
-  writeFileSync(META, `${JSON.stringify(meta, null, 2)}\n`);
 }
 
 /**
@@ -636,7 +644,10 @@ async function main() {
     }
     const patch = overrides[school.unit_id];
     if (patch) {
+      // Every value the patch sets is attributed to the patch's source (throws if it names none).
+      const patchLineage = lineageForPatch(school.unit_id, patch);
       school = deepMerge(school, patch);
+      school.lineage = { ...(school.lineage ?? {}), ...patchLineage };
       stats.overridden++;
     }
     if (school.admissions.acceptance_rate !== null) stats.withAdmissions++;
@@ -645,8 +656,18 @@ async function main() {
   }
 
   schools.sort((a, b) => a.name.localeCompare(b.name));
-  const scorecardCostYear = await detectScorecardCostYear(key, String(scorecard[0]?.id ?? "221999"));
-  writeMeta(adm, sfa, ic, sfaYears, scorecardCostYear, cost2);
+  const scorecardYears = await detectScorecardYears(key, String(scorecard[0]?.id ?? "221999"));
+  const meta = buildMeta(adm, sfa, ic, sfaYears, scorecardYears, cost2);
+
+  // Nothing is written unless every value's lineage checks out.
+  const problems = validateLineage(schools, meta);
+  if (problems.length) {
+    console.error(`\nLineage check failed (${problems.length}); nothing written:`);
+    for (const p of problems.slice(0, 30)) console.error(`  ${p}`);
+    if (problems.length > 30) console.error(`  …and ${problems.length - 30} more`);
+    process.exit(1);
+  }
+  writeFileSync(META, `${JSON.stringify(meta, null, 2)}\n`);
   // One school per line keeps diffs readable between syncs.
   writeFileSync(OUT, `[\n${schools.map((s) => JSON.stringify(s)).join(",\n")}\n]\n`);
 

@@ -13,6 +13,15 @@ Higher Education Data Explorer - an interactive web app for visualizing U.S. col
 - Keep files focused and manageable in size - split by feature area
 - Update specs when features change
 
+### Data lineage (see `specs/data-lineage.md`)
+- Every value must trace to its source and year. Register new stored or derived fields in `lib/fields.ts`; cite
+  displayed values with `citeField(path, school)` (`MetricLabel cited=…`) and list them in the section's `fields`
+- Never hard-code data years ("Fall 2024", "2023–24") or read `meta.sources`/`vintages` directly in UI code; years
+  come from lineage so they update with each release
+- Overrides in `data/overrides.json` must declare their source (`cds` or `_lineage`)
+- Run `npm run verify` (typecheck, lint, tests incl. lineage guards, dataset lineage check) before committing; CI runs
+  it plus `next build`
+
 ### Commands
 - **"start the server"**: Kill any running dev server (`lsof -ti:3000 | xargs kill -9`), then run `npm run dev` in the background.
 

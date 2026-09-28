@@ -1,6 +1,5 @@
 {
   "retrieved": "2026-09-28",
-  "scorecardCostYear": "2023–24",
   "sources": {
     "scorecard": {
       "label": "College Scorecard",
@@ -38,13 +37,12 @@
       "description": "A standardized report many colleges publish on their own sites, with more detail than federal surveys: admissions for the latest class and need-based vs. merit aid (section H)."
     }
   },
-  "defaults": {
-    "admissions": "ipeds-adm",
-    "enrollment": "scorecard",
-    "demographics": "scorecard",
-    "cost": "scorecard",
-    "prices": "ipeds-ic",
-    "outcomes": "scorecard",
-    "aid": "ipeds-sfa"
+  "vintages": {
+    "ipeds-adm": "Fall 2024",
+    "ipeds-sfa": "2023–24",
+    "ipeds-ic": "2023–24",
+    "scorecard-enrollment": "Fall 2024",
+    "scorecard-cost": "2023–24",
+    "scorecard-latest": null
   }
 }

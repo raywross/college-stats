@@ -4,7 +4,7 @@ import { SearchX } from "lucide-react";
 import Link from "next/link";
 import { getAllSchools, getSchools, histogram, landscapeEligibleCount, landscapePoints, metricMedian, paginate, stickerEligibleCount, stickerPoints, valueEligibleCount, valuePoints } from "@/lib/data";
 import { parseFilters, parseView, countActiveFilters } from "@/lib/params";
-import { SIZE_BUCKETS, median, satMid, sizeBucket } from "@/lib/metrics";
+import { METRICS, SIZE_BUCKETS, median, satMid, sizeBucket } from "@/lib/metrics";
 import { pctSmart, compact, num, typeLabel } from "@/lib/format";
 import { Pagination } from "@/components/explore/Pagination";
 import { SchoolCard } from "@/components/school/SchoolCard";
@@ -16,7 +16,7 @@ import { ScatterPlot } from "@/components/charts/ScatterPlot";
 import { LANDSCAPE_X, LANDSCAPE_Y, LANDSCAPE_ZONE, STICKER_X, STICKER_Y, VALUE_X, VALUE_Y, valueZone } from "@/lib/chart-configs";
 import { cn } from "@/lib/utils";
 import { InfoTip } from "@/components/ui/info-tip";
-import { SourceNote } from "@/components/sources/SourceNote";
+import { MultiSourceNote } from "@/components/sources/MultiSourceNote";
 
 export const metadata: Metadata = { title: "Explore colleges" };
 
@@ -226,7 +226,7 @@ export default async function ExplorePage({
             <Pagination params={params} page={paged.page} pages={paged.pages} total={paged.total} perPage={perPage} />
           )}
 
-          <SourceNote topics={["admissions", "enrollment", "demographics", "cost", "outcomes"]} prefix="Source" className="pt-2" />
+          <MultiSourceNote schools={schools} fields={Object.values(METRICS).map((m) => m.field)} className="pt-2" />
 
           {schools.length > 0 && (
             <p className="pt-2 text-xs text-muted-foreground">

@@ -37,16 +37,22 @@ publishes a new one. It prefers the revised `_rv.csv` when the zip contains one.
 - Missing values are `null` everywhere, never 0. The UI shows "–" / "Not reported" and leaves them out of medians and ranks.
 
 ## Overrides
+Each override must say where its values came from: a `cds` record (`{ edition, url }`, written by `import-cds`) or,
+for a hand patch, `"_lineage": { "source": …, "url": …, "year": … }`. Every value the patch sets is attributed to
+that source, field by field. A patch with neither, or with the retired `provenance` key, stops the sync.
+
 ```json
 {
   "221999": {
-    "_source": "Vanderbilt Common Data Set 2024-25 …",
-    "admissions": { "year": 2024, "applicants": 45409, … },
-    "sources": ["College Scorecard", "Vanderbilt Common Data Set 2024-25"]
+    "_source": "Vanderbilt University Common Data Set 2024-25: https://…",
+    "_imported": "2026-09-27",
+    "cds": { "edition": "2024-25", "url": "https://…" },
+    "admissions": { "year": 2024, "applicants": 45409, … }
   }
 }
 ```
-Keys starting with `_` are notes and are ignored. Arrays replace rather than merge.
+Keys starting with `_` are notes and are ignored (except `_imported`, used as the retrieval date, and `_lineage`).
+Arrays replace rather than merge.
 
 ## Where IPEDS files live (changed Dec 2025)
 NCES moved newer releases to `https://nces.ed.gov/ipeds/complete-data-files/`; older ones remain at
@@ -68,10 +74,18 @@ whichever of `IC{start}_AY` / `COST1_{end}` exists and detects the `…AY3` vs `
 Verified on the 2023–24 files: Vanderbilt's income-weighted federal-aid net price rebuilt from COST2 = $15,846, the
 same as Scorecard's 2023–24 figure, and its full price ($89,590) matches Scorecard's cost of attendance.
 
-## Citation metadata
-Each sync also writes `data/meta.json`: the retrieval date, each source's label, publisher, edition (e.g. "Fall 2023
-(ADM2024)", "2023–24 (SFA2324 + COST2_2024)"), and URL, plus the default source for each topic. Schools record `provenance` only
-where they differ (IPEDS ADM missing → Scorecard, or an imported CDS). The site's citations read from these.
+## Citation metadata and lineage
+Every stored value is traceable to its source; see [data-lineage.md](data-lineage.md).
+- `data/meta.json`: retrieval date; each source's label, publisher, edition (e.g. "Fall 2024 (ADM2024)", "2023–24
+  (SFA2324 + COST2_2024)") and URL; and `vintages`, the year each release describes
+  (`{ "ipeds-adm": "Fall 2024", "scorecard-enrollment": "Fall 2024", "scorecard-cost": "2023–24", … }`). Scorecard
+  years are detected by matching `latest.*` against year-keyed fields; `scorecard-latest` (outcomes etc.) is `null`
+  because those fields each describe different cohorts.
+- `school.lineage`: only for fields whose source differs from the default in `lib/fields.ts` (IPEDS ADM missing →
+  `admissions.acceptance_rate` from Scorecard; every field an override sets → that override's source).
+- **The sync validates before writing** (`validateLineage` in `lib/lineage.ts`): an unregistered field, an incomplete
+  lineage record, or a release without a year stops the sync with nothing written. Adding a field to the output means
+  registering it in `lib/fields.ts`.
 
 ## Output
 One school per line in `data/schools.json` (~1.5 MB) so diffs between syncs stay readable. Commit it: the app reads it

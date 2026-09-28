@@ -27,6 +27,7 @@ import { StateTileMap } from "@/components/charts/StateTileMap";
 import { Leaderboard } from "@/components/charts/Leaderboard";
 import { InfoTip, Term } from "@/components/ui/info-tip";
 import { SourceNote } from "@/components/sources/SourceNote";
+import { MultiSourceNote } from "@/components/sources/MultiSourceNote";
 
 const LENSES: { title: string; blurb: string; query: string; domain: Domain; icon: typeof Crown; ranked?: boolean }[] = [
   { title: "The most selective", blurb: "Admit rates of 10% or less", query: "maxAR=10&sortBy=acceptance_rate", domain: "admissions", icon: Crown },
@@ -238,7 +239,7 @@ export default function HomePage() {
           </div>
           <div className="rounded-3xl border bg-card p-4 sm:p-6">
             <ScatterPlot points={landscapePoints(all, LANDSCAPE_LIMIT)} x={LANDSCAPE_X} y={LANDSCAPE_Y} zone={LANDSCAPE_ZONE} />
-            <SourceNote topics={["admissions", "enrollment"]} className="mt-3" />
+            <MultiSourceNote schools={all} fields={["admissions.acceptance_rate", "derived.sat_mid", "demographics.undergrad_enrollment"]} className="mt-3" />
           </div>
         </section>
 
@@ -255,7 +256,7 @@ export default function HomePage() {
           <div className="grid gap-4 lg:grid-cols-[2fr_1fr] lg:items-start">
             <div className="min-w-0 rounded-3xl border bg-card p-4 sm:p-6">
               <ScatterPlot points={valuePoints(all, LANDSCAPE_LIMIT)} x={VALUE_X} y={VALUE_Y} zone={valueZone(medNP, medEarn)} />
-              <SourceNote topics={["prices", "aid", "outcomes"]} className="mt-3" />
+              <MultiSourceNote schools={all} fields={["cost.avg_paid_all", "outcomes.median_earnings_10yr", "derived.aid_generosity"]} className="mt-3" />
             </div>
             <div className="flex min-w-0 flex-col gap-4">
               <BoardCard title="Highest earnings" term="median-earnings" domain="value" caption="Median, 10 yrs after entry · 1,000+ undergrads">
@@ -291,7 +292,7 @@ export default function HomePage() {
           <div className="rounded-3xl border bg-card p-5 sm:p-8">
             <SectionHeading eyebrow="Where they are" title="Schools by state" className="mb-5" />
             <StateTileMap counts={countByState()} />
-            <SourceNote topics={["enrollment"]} className="mt-3" />
+            <SourceNote fields={["location.state"]} className="mt-3" />
             <p className="mt-4 text-xs text-muted-foreground">Tap a highlighted state to see its schools.</p>
           </div>
 

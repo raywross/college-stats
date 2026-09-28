@@ -1,31 +1,36 @@
 import Link from "next/link";
-import { BookMarked, ExternalLink } from "lucide-react";
-import type { School, Topic } from "@/lib/types";
-import { sourcesFor, type ResolvedSource } from "@/lib/data";
+import type { School } from "@/lib/types";
+import type { FieldPath } from "@/lib/fields";
+import { sourcesForSchools } from "@/lib/data";
+import { SourceLine } from "@/components/sources/SourceNote";
 
-/** Citation for views that show several schools (Compare): the union of their sources. */
-export function MultiSourceNote({ schools, topics }: { schools: School[]; topics: Topic[] }) {
-  const seen = new Map<string, ResolvedSource>();
-  for (const s of schools) for (const src of sourcesFor(topics, s, { includeCds: true })) seen.set(`${src.key}${src.url}`, src);
-  const sources = [...seen.values()];
+/** Colleges' own documents beyond this many are summarized ("Common Data Sets from 8 colleges"). */
+const MAX_LISTED = 3;
+
+/**
+ * Citation for views that show several schools (Compare, Explore, Home): the
+ * union of every shown school's sources for these fields.
+ */
+export function MultiSourceNote({ schools, fields, className }: { schools: School[]; fields: readonly FieldPath[]; className?: string }) {
+  const all = sourcesForSchools(fields, schools);
+  const federal = all.filter((s) => s.key !== "cds");
+  const cds = all.filter((s) => s.key === "cds");
+  if (cds.length <= MAX_LISTED) return <SourceLine sources={all} className={className} />;
   return (
-    <p className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-[11px] leading-relaxed text-muted-foreground">
-      <BookMarked className="size-3.5 shrink-0" aria-hidden />
-      <span>Sources:</span>
-      {sources.map((s, i) => (
-        <span key={`${s.key}${s.url}`}>
-          <a href={s.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-0.5 font-medium text-foreground/80 underline decoration-dotted underline-offset-2 hover:text-primary">
-            {s.label}
-            <ExternalLink className="size-2.5" aria-hidden />
-          </a>
-          , {s.edition}
-          {i < sources.length - 1 ? ";" : ""}
-        </span>
-      ))}
-      <span aria-hidden>·</span>
-      <Link href="/sources" className="font-medium hover:text-primary hover:underline">
-        About the data
+    <SourceLine
+      sources={federal}
+      className={className}
+      extra={<SourceItemSummary count={cds.length} />}
+    />
+  );
+}
+
+function SourceItemSummary({ count }: { count: number }) {
+  return (
+    <span>
+      <Link href="/sources#cds-list" className="font-medium text-foreground/80 underline decoration-dotted underline-offset-2 hover:text-primary">
+        Common Data Sets from {count} colleges
       </Link>
-    </p>
+    </span>
   );
 }

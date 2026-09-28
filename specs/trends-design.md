@@ -134,7 +134,8 @@ one is added, run `validate_palette.js`.
 - `getNationalHistory(): NationalHistory`, `getTrendFacts(): TrendFact[]`.
 - `real(value, year)` and `changeOver(series, window, { real })` in `lib/metrics.ts`.
 - `school.trends` (from `schools.json`) for Explore, the Overview tile, headlines, and badges, without reading shards.
-- New `Topic` isn't needed; history reuses existing topics with an edition range (`sourcesFor(topics, school, { range })`).
+- History cites through the field registry like everything else ([data-lineage.md](data-lineage.md)): each series maps to a
+  registered field, and its footnote gives the year range (e.g. an extended `sourcesForFields(fields, school, { range })`).
 
 ## Glossary additions (`lib/glossary.ts`)
 `inflation-adjusted` · `provisional-data` · `entering-cohort` · `trend-break` · `fixed-panel`.

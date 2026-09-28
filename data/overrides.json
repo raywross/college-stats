@@ -6,11 +6,6 @@
       "edition": "2024-25",
       "url": "https://docs.google.com/spreadsheets/d/11BnFbit7JcrmFMi9iV_TMkzhUyCQ_dQHS0V8weuOHPM/export?format=xlsx"
     },
-    "provenance": {
-      "admissions": "cds",
-      "enrollment": "cds",
-      "demographics": "cds"
-    },
     "admissions": {
       "year": 2024,
       "applicants": 124245,
@@ -51,11 +46,6 @@
     "cds": {
       "edition": "2024-25",
       "url": "https://uofi.box.com/shared/static/1m3p4sedkotywoec55zbnodc4oci5ctf.xlsx"
-    },
-    "provenance": {
-      "admissions": "cds",
-      "enrollment": "cds",
-      "demographics": "cds"
     },
     "admissions": {
       "year": 2024,
@@ -112,11 +102,6 @@
       "edition": "2024-25",
       "url": "https://www.irpa.umd.edu/InstitutionalData/CommonDataSet/CDS_2024-2025.xlsx"
     },
-    "provenance": {
-      "admissions": "cds",
-      "enrollment": "cds",
-      "demographics": "cds"
-    },
     "admissions": {
       "year": 2024,
       "applicants": 60042,
@@ -171,11 +156,6 @@
     "cds": {
       "edition": "2025-26",
       "url": "https://irp.cornell.edu/wp-content/uploads/2026/09/CDS-Cornell-2025-2026-v2.xlsx"
-    },
-    "provenance": {
-      "admissions": "cds",
-      "enrollment": "cds",
-      "demographics": "cds"
     },
     "admissions": {
       "year": 2025,
@@ -232,11 +212,6 @@
       "edition": "2024-25",
       "url": "https://www.nyu.edu/content/dam/nyu/institutionalResearch/documents/cds-2024-2025/CDS_2024-2025.xlsx"
     },
-    "provenance": {
-      "admissions": "cds",
-      "enrollment": "cds",
-      "demographics": "cds"
-    },
     "admissions": {
       "year": 2024,
       "applicants": 110807,
@@ -291,11 +266,6 @@
     "cds": {
       "edition": "2024-25",
       "url": "https://cdn.vanderbilt.edu/vu-wpfsx/wp-content/uploads/sites/70/2025/11/CDS_2024-2025.xlsx"
-    },
-    "provenance": {
-      "admissions": "cds",
-      "enrollment": "cds",
-      "demographics": "cds"
     },
     "admissions": {
       "year": 2024,
@@ -352,11 +322,6 @@
       "edition": "2024-25",
       "url": "https://www.wm.edu/offices/ir/university_data/cds/wm_cds_2024-20252.xlsx"
     },
-    "provenance": {
-      "admissions": "cds",
-      "enrollment": "cds",
-      "demographics": "cds"
-    },
     "admissions": {
       "year": 2024,
       "applicants": 17798,
@@ -411,11 +376,6 @@
     "cds": {
       "edition": "2024-25",
       "url": "https://www.purdue.edu/idata/wp-content/uploads/2026/04/CDS_2024-2025.xlsx"
-    },
-    "provenance": {
-      "admissions": "cds",
-      "enrollment": "cds",
-      "demographics": "cds"
     },
     "admissions": {
       "year": 2024,

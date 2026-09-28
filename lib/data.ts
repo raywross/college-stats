@@ -57,6 +57,11 @@ function reload(): Promise<Dataset> {
   return inflight;
 }
 
+/** Re-read the dataset now, e.g. after a publish (app/api/revalidate). Resolves to the fresh copy. */
+export function reloadData(): Promise<Dataset> {
+  return reload();
+}
+
 /**
  * The current dataset, loaded once per server process. From Supabase, a copy older than DATA_TTL_SECONDS
  * is refreshed in the background while the old one keeps serving (and keeps serving if the refresh fails).

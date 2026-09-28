@@ -6,12 +6,14 @@ This document tracks everything that needs to change when moving from local deve
 
 | Item | Current (Local) | Target (Vercel) | Files Affected |
 |---|---|---|---|
-| Hosting | `npm run dev` | Vercel auto-deploy from GitHub | `vercel.json` (if needed) |
-| Env vars | `.env.local` | Vercel dashboard env vars | No code changes |
+| Hosting | `npm run dev` | Vercel auto-deploy from GitHub | No `vercel.json` needed; Node 24.x via `engines` |
+| Env vars | `.env.local` | Vercel dashboard (Production → prod Supabase, Preview → JSON) | [deployment.md](deployment.md) |
 | Build | `npm run build` | Vercel CI/CD | No code changes |
+| Data refresh | Restart | Publish-on-merge Action + `/api/revalidate`, hourly backstop | `.github/workflows/publish-data.yml`, `app/api/revalidate/route.ts` |
 | Domain | localhost:3000 | Custom domain or .vercel.app | Vercel dashboard |
 
-**Changes needed:** Minimal. Next.js deploys to Vercel with zero config.
+- [x] Code: revalidate route, hourly ISR on `/` and profiles, publish workflow, Node pin
+- [ ] Setup: prod project, Vercel and GitHub variables, first deploy ([deployment.md](deployment.md#setup-checklist-one-time))
 
 ---
 
@@ -39,7 +41,8 @@ makes the app read from there.
 - [x] `schools`, `dataset_files`, `dataset_publishes` with RLS, and `publish_dataset()`
   (`supabase/migrations/20260928000000_dataset.sql`)
 - [x] Apply to the dev project and publish (phase 1 in [supabase.md](supabase.md#transition-plan))
-- [ ] Prod project, publish on merge (GitHub Action), on-demand revalidation (phase 3)
+- [x] Publish on merge (GitHub Action), on-demand revalidation (phase 3 code, [deployment.md](deployment.md))
+- [ ] Prod project created, migrated, and published
 
 ---
 
@@ -86,4 +89,4 @@ source supplies each field.
 | `scripts/sync-data.mts` | ✅ Unchanged: writes JSON, which is then published | High |
 | Pages and data-reading components | ✅ `await getData()` | Medium |
 | `.env.local` | Add Supabase keys ([supabase.md](supabase.md#keys)) | High |
-| `app/api/revalidate/route.ts` | New, with the Vercel move | Medium |
+| `app/api/revalidate/route.ts` | ✅ New (secret-protected) | Medium |

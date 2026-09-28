@@ -79,7 +79,7 @@ None use the `NEXT_PUBLIC_` prefix: `lib/data.ts` is server-only, so the browser
 
 | Project | Used by | Data changes when |
 |---|---|---|
-| **dev** (`quad-dev`) | Local dev servers (every worktree), Vercel Preview deploys | Anyone runs `npm run publish-data` |
+| **dev** (`quad-dev`) | Local dev servers (every worktree). Vercel Previews read their branch's JSON instead ([deployment.md](deployment.md)) | Anyone runs `npm run publish-data` |
 | **prod** (`quad-prod`) | Vercel Production | Only a merge to `main` (GitHub Action), or a deliberate `publish-data:prod` |
 
 - **Two projects, not two schemas in one.** Supabase keys, RLS, backups and pausing are per project. Separate
@@ -99,7 +99,7 @@ None use the `NEXT_PUBLIC_` prefix: `lib/data.ts` is server-only, so the browser
 | 0. Code | `DATA_SOURCE` loader, `lib/dataset.ts` factory, schema, `publish-data`, tests | ✅ Done (`feature/supabase-migration`) |
 | 1. Dev project | Apply migration, add keys to `.env.local`, `npm run publish-data`, run locally with `DATA_SOURCE=supabase`, compare pages with `json` | ✅ Done 2026-09-28 (see below) |
 | 2. Default locally | Set `DATA_SOURCE=supabase` in `.env.local`; `json` stays for offline work and CI | After phase 1 checks out |
-| 3. Production | Create prod project, apply migration, `publish-data:prod`; Vercel env vars (Production → prod, Preview → dev); GitHub Action publishes to prod on merges that change `data/**`; on-demand revalidation so static pages (`/`, top 50 profiles, `/data`) pick up a publish without a redeploy | With the Vercel move |
+| 3. Production | Create prod project, apply migration, `publish-data:prod`; Vercel env vars (Production → prod, Preview → JSON); GitHub Action publishes to prod on merges that change `data/**`; on-demand revalidation so static pages (`/`, top 50 profiles, `/data`) pick up a publish without a redeploy | Code done (`feature/vercel-deploy`): see [deployment.md](deployment.md). Project setup pending |
 | 4. Later | Scheduled sync opens PRs ([backlog.md](backlog.md)); user tables (accounts, saved lists) as new migrations; decide whether `schools.json` leaves git | As needed |
 
 **Rollback at any phase:** set `DATA_SOURCE=json` (and restart). The files are always there.
@@ -122,11 +122,7 @@ None use the `NEXT_PUBLIC_` prefix: `lib/data.ts` is server-only, so the browser
   HTML; only the order of React's streamed rows differed. `/data` differed only in the timeline's "today" marker,
   which uses `new Date()` at build time.
 
-### Phase 3 notes (production)
-- Static pages are built once. With Supabase they need a trigger after each publish: a secret-protected
-  `/api/revalidate` route that the publish step calls (`revalidatePath("/", "layout")`), or `revalidate` on
-  those routes. Not built yet, because nothing is deployed.
-- `next build` on Vercel reads the database to prerender pages, so Vercel needs the URL and publishable key at
-  build time as well as at runtime.
-- The GitHub Action needs `SUPABASE_URL` and `SUPABASE_SECRET_KEY` for **prod** as repository secrets.
-  CI's `verify` job keeps using JSON and needs no secrets.
+### Phase 3 (production)
+Built in `app/api/revalidate/route.ts` and `.github/workflows/publish-data.yml`; environments, variables, the
+publish flow and the setup checklist are in [deployment.md](deployment.md). CI's `verify` job keeps using JSON and
+needs no secrets.

@@ -1,0 +1,60 @@
+# Publish data/*.json to the PRODUCTION Supabase project when a merge to main changes them, then tell the
+# site to re-render its pages. See specs/deployment.md.
+#
+# Secrets (Settings > Secrets and variables > Actions):
+#   PROD_SUPABASE_URL, PROD_SUPABASE_SECRET_KEY  the prod project (the secret key is used only here)
+#   REVALIDATE_SECRET                            same value as in Vercel's Production environment
+# Variable:
+#   SITE_URL                                     e.g. https://quad.example.com (no trailing slash)
+name: Publish data
+
+on:
+  push:
+    branches: [main]
+    paths: ["data/**"]
+  workflow_dispatch:
+    inputs:
+      allow_shrink:
+        description: "Allow dropping more than 10% of published colleges"
+        type: boolean
+        default: false
+
+# One publish at a time, and never cancel one halfway (publish_dataset() is one transaction either way).
+concurrency:
+  group: publish-data
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+
+      # Called directly rather than through `npm run publish-data`, which loads .env.local.
+      - name: Publish to Supabase (prod)
+        env:
+          SUPABASE_URL: ${{ secrets.PROD_SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.PROD_SUPABASE_SECRET_KEY }}
+          ALLOW_SHRINK: ${{ inputs.allow_shrink && '--allow-shrink' || '' }}
+        run: node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/publish-data.mts $ALLOW_SHRINK
+
+      - name: Revalidate the site
+        env:
+          SITE_URL: ${{ vars.SITE_URL }}
+          REVALIDATE_SECRET: ${{ secrets.REVALIDATE_SECRET }}
+        run: |
+          if [ -z "$SITE_URL" ] || [ -z "$REVALIDATE_SECRET" ]; then
+            echo "::warning::SITE_URL or REVALIDATE_SECRET not set; pages will pick up the publish within an hour."
+            exit 0
+          fi
+          curl --fail-with-body --silent --show-error --retry 3 --retry-all-errors \
+            -X POST -H "Authorization: Bearer $REVALIDATE_SECRET" "$SITE_URL/api/revalidate"
+          echo

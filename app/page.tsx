@@ -17,6 +17,10 @@ import { InfoTip, Term } from "@/components/ui/info-tip";
 import { SourceNote } from "@/components/sources/SourceNote";
 import { MultiSourceNote } from "@/components/sources/MultiSourceNote";
 
+// Built from the dataset at deploy time. A publish refreshes it on demand (app/api/revalidate); the hourly
+// re-render is a backstop in case that call is missed or lands on an instance still holding the old copy.
+export const revalidate = 3600;
+
 const LENSES: { title: string; blurb: string; query: string; domain: Domain; icon: typeof Crown; ranked?: boolean }[] = [
   { title: "The most selective", blurb: "Admit rates of 10% or less", query: "maxAR=10&sortBy=acceptance_rate", domain: "admissions", icon: Crown },
   { title: "Within reach", blurb: "Strong schools admitting 25%+", query: "minAR=25&sortBy=sat&sortDir=desc", domain: "admissions", icon: Target },

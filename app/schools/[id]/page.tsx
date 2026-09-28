@@ -57,6 +57,10 @@ import { WhatStudentsPay } from "@/components/school/WhatStudentsPay";
 import { AidGenerosityCard } from "@/components/school/AidGenerosityCard";
 import { InfoTip, MetricLabel, SourceChip, Term } from "@/components/ui/info-tip";
 
+// Built from the dataset at deploy time. A publish refreshes it on demand (app/api/revalidate); the hourly
+// re-render is a backstop in case that call is missed or lands on an instance still holding the old copy.
+export const revalidate = 3600;
+
 type Props = { params: Promise<{ id: string }> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {

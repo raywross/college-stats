@@ -6,8 +6,8 @@ This document tracks everything that needs to change when moving from local deve
 
 | Item | Current (Local) | Target (Vercel) | Files Affected |
 |---|---|---|---|
-| Hosting | `npm run dev` | ✅ Repo imported into Vercel (auto-deploy from GitHub) | No `vercel.json` needed |
-| Env vars | `.env.local` | Vercel: Production → prod project, Preview → dev project, `REVALIDATE_SECRET` | [supabase.md](supabase.md#setup-phase-3) |
+| Hosting | `npm run dev` | ✅ Live at https://college-stats-nine.vercel.app (auto-deploy from GitHub) | No `vercel.json`; Node 24.x via `engines` |
+| Env vars | `.env.local` | ✅ For now Production → dev project, Preview → JSON. Later Production → prod, `REVALIDATE_SECRET` | [supabase.md](supabase.md#setup-phase-3) |
 | Build | `npm run build` | Vercel CI/CD | No code changes |
 | Fresh data | Rebuild | ✅ `/api/revalidate` after each publish and each production deploy | `app/api/revalidate/route.ts`, `.github/workflows/publish-data.yml` |
 | Domain | localhost:3000 | Custom domain or .vercel.app | Vercel dashboard |
@@ -41,10 +41,11 @@ makes the app read from there.
 - [x] `schools`, `dataset_files`, `dataset_publishes` with RLS, and `publish_dataset()`
   (`supabase/migrations/20260928000000_dataset.sql`)
 - [x] Apply to the dev project and publish (phase 1 in [supabase.md](supabase.md#transition-plan))
-- [x] Prod project created and migrated
+- [ ] Prod project created and migrated (deferred 2026-09-28; Production reads dev until then)
 - [x] Publish on merge (`.github/workflows/publish-data.yml`), on-demand revalidation (`/api/revalidate`), and a
   per-request version check so no instance renders an older publish (phase 3; [supabase.md](supabase.md#revalidation))
-- [ ] First prod publish (`npm run publish-data:prod`), Vercel env vars, GitHub secrets, verify the deployed site
+- [x] Vercel deployed and verified against the dev project ([current state](supabase.md#current-state-production-reads-dev))
+- [ ] First prod publish (`npm run publish-data:prod`), point Vercel Production at prod, GitHub secrets
   ([setup](supabase.md#setup-phase-3))
 
 ---

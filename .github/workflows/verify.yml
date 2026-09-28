@@ -6,6 +6,8 @@ on:
   push:
     branches: [main]
   pull_request:
+  # Re-run by hand when GitHub drops a push event (it happened for PR #16's merge).
+  workflow_dispatch:
 
 jobs:
   verify:

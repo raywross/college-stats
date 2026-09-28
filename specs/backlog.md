@@ -11,7 +11,16 @@ Planned work, roughly in priority order. Move items into a feature spec when the
   without a text layer are out of scope.
 - [ ] **Scheduled data refresh** (`chore/scheduled-data-sync`): monthly GitHub Action runs `npm run sync-data` and
   opens a PR with the diff; the API key goes in repository secrets.
-- [ ] Re-run CDS imports when colleges publish new editions (keep a list of source URLs per college).
+- [ ] **Expand Common Data Set coverage.** Only 8 of 1,893 colleges have CDS detail (need met, merit aid, newer
+  admissions year): Vanderbilt, NYU, William & Mary, UIUC, UC Berkeley, Maryland, Purdue (2024–25), and Cornell
+  (2025–26). Everything else on the site comes from federal data and covers nearly all colleges; this is the only
+  supplemental layer with thin coverage.
+  - Keep a registry of CDS source URLs (e.g. `data/cds-sources.json`: unit ID, edition, URL) and add
+    `npm run import-cds -- --all` so re-imports are one command, not retyped.
+  - Find Excel CDS files for more colleges, prioritizing the most-searched and most-applied-to. Most selective
+    colleges publish PDF only, so broad coverage depends on the PDF importer above.
+  - Re-import each fall when colleges publish new editions, and review any importer warnings (like Purdue's typo).
+- [ ] Show which colleges have CDS detail in Explore (e.g. a filter or badge), so users know where richer aid data exists.
 - [ ] Off-campus / commuter cost variant for the all-student average (IPEDS has off-campus room & board), for
   colleges where most students live at home.
 

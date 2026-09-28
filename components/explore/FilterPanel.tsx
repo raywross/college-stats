@@ -6,7 +6,8 @@ import { RotateCcw } from "lucide-react";
 import { HistogramSlider } from "@/components/charts/HistogramSlider";
 import { InfoTip } from "@/components/ui/info-tip";
 import type { TermKey } from "@/lib/glossary";
-import { SIZE_BUCKETS } from "@/lib/metrics";
+import { DOMAINS, SIZE_BUCKETS } from "@/lib/metrics";
+import { DIRECTIONS, INDICATORS, INDICATOR_KEYS, type Direction, type IndicatorKey } from "@/lib/indicators";
 import { useExploreParams } from "./useExploreParams";
 import { cn } from "@/lib/utils";
 
@@ -19,6 +20,8 @@ export interface FilterFacets {
   satBins: number[];
   costBins: number[];
   satRange: [number, number];
+  /** Colleges in each direction of each trend indicator (lib/indicators.ts). */
+  trends: Record<IndicatorKey, Record<Direction, number>>;
 }
 
 function Section({ title, term, children }: { title: string; term?: TermKey; children: ReactNode }) {
@@ -83,9 +86,10 @@ export function FilterPanel({ facets, onDone }: { facets: FilterFacets; onDone?:
   const activeRegions = getList("regions");
   const activeStates = getList("states");
 
-  const hasFilters = ["q", "types", "sizes", "regions", "states", "minAR", "maxAR", "minSAT", "maxSAT", "minCost", "maxCost", "minEnroll", "maxEnroll"].some((k) =>
-    searchParams.get(k)
-  );
+  const hasFilters = [
+    ...["q", "types", "sizes", "regions", "states", "minAR", "maxAR", "minSAT", "maxSAT", "minCost", "maxCost", "minEnroll", "maxEnroll"],
+    ...INDICATOR_KEYS.map((k) => INDICATORS[k].param),
+  ].some((k) => searchParams.get(k));
 
   const clearAll = () => {
     const keep = new URLSearchParams();
@@ -154,6 +158,34 @@ export function FilterPanel({ facets, onDone }: { facets: FilterFacets; onDone?:
           onCommit={([lo, hi]) => update({ minCost: lo > 0 ? String(lo) : null, maxCost: hi < NP_MAX ? String(hi) : null })}
         />
         <p className="text-[11px] text-muted-foreground">Estimated average paid by all first-years, including those without grants. Colleges without enough data are hidden while this is set.</p>
+      </Section>
+
+      <Section title="10-year direction" term="trend-direction">
+        <div className="space-y-3">
+          {INDICATOR_KEYS.map((k) => {
+            const def = INDICATORS[k];
+            const active = getList(def.param);
+            return (
+              <div key={k} role="group" aria-label={def.question}>
+                <p className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold">
+                  <span className="size-1.5 rounded-full" style={{ backgroundColor: DOMAINS[def.domain].color }} />
+                  {def.label}
+                </p>
+                <div className="flex flex-wrap gap-1.5">
+                  {DIRECTIONS.map((d) => (
+                    <Chip key={d} active={active.includes(d)} onClick={() => toggleInList(def.param, d)} count={facets.trends[k][d]}>
+                      {def.words[d]}
+                    </Chip>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        <p className="text-[11px] text-muted-foreground">
+          Over each college&apos;s last 10 years of federal data; cost after inflation. Colleges without enough history are hidden while a
+          direction is set.
+        </p>
       </Section>
 
       <Section title="Type" term="private-nonprofit">

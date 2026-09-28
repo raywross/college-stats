@@ -2,7 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight, Swords } from "lucide-react";
 import { getData, getHistoryFiles, toIndexEntry } from "@/lib/data";
-import { SERIES, defaultWindow, historyYearLabel } from "@/lib/history";
+import { RACE_SERIES, SERIES, defaultWindow, historyYearLabel } from "@/lib/history";
+import { INDICATORS, INDICATOR_KEYS, indicatorsOf } from "@/lib/indicators";
+import { TrendIndicatorCell } from "@/components/trends/TrendIndicators";
 import type { TrendKey } from "@/lib/types";
 import { ThenAndNow, type ThenAndNowMetric } from "@/components/compare/ThenAndNow";
 import { HistorySourceNote } from "@/components/sources/HistorySourceNote";
@@ -114,15 +116,17 @@ export default async function ComparePage({
   const diffs = keyDifferences(schools);
   const historyFiles = await getHistoryFiles();
   // "Then & now" from school.trends (10-year changes written by sync-history); money is after inflation.
-  const THEN_AND_NOW: { key: TrendKey; label: string; format: "money" | "pctSmart" | "num" }[] = [
+  const THEN_AND_NOW: { key: TrendKey; label: string; format: "money" | "pctSmart" | "num" | "fixed2" }[] = [
     { key: "avg_paid_all", label: "Avg total cost (after inflation)", format: "money" },
     { key: "acceptance_rate", label: "Acceptance rate", format: "pctSmart" },
     { key: "applicants", label: "Applicants", format: "num" },
     { key: "undergrads", label: "Undergrads", format: "num" },
+    { key: "diversity", label: "Diversity index", format: "fixed2" },
   ];
   const thenAndNow: ThenAndNowMetric[] = historyFiles
     ? THEN_AND_NOW.map((m) => {
-        const kind = SERIES[m.key].kind;
+        // The diversity index comes from the race/ethnicity shares, a fall series.
+        const kind = m.key === "diversity" ? "fall" : SERIES[m.key].kind;
         const [from, to] = defaultWindow(historyFiles.meta, kind);
         const withData = schools.map((sc, i) => ({ sc, i, t: sc.trends?.[m.key] })).filter((x) => x.t);
         return {
@@ -218,6 +222,56 @@ export default async function ComparePage({
             </section>
           </div>
 
+          {schools.some((s) => indicatorsOf(s).length > 0) && (
+            <section className="space-y-4">
+              <h2 className="flex items-center gap-1 font-display text-2xl font-extrabold tracking-tight">
+                10-year direction <InfoTip term="trend-direction" />
+              </h2>
+              <p className="max-w-3xl text-sm text-muted-foreground">
+                Four directions over each college&apos;s last 10 years of federal data. Cost is <Term term="inflation-adjusted">after inflation</Term>.
+              </p>
+              <div className="overflow-x-auto rounded-3xl border bg-card">
+                <table className="w-full min-w-[560px] text-sm">
+                  <thead className="border-b bg-surface-2">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">Over 10 years</th>
+                      {schools.map((s, i) => (
+                        <th key={s.unit_id} className="px-4 py-3 text-left text-xs font-bold">
+                          <span className="inline-flex items-center gap-1.5">
+                            <span className="size-2 rounded-full" style={{ backgroundColor: SLOT_COLORS[i] }} />
+                            {shortName(s)}
+                          </span>
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {INDICATOR_KEYS.map((k) => (
+                      <tr key={k} className="border-b last:border-0">
+                        <th scope="row" className="px-4 py-3 text-left align-top">
+                          <span className="block text-sm font-semibold">{INDICATORS[k].label}</span>
+                          <span className="block text-[11px] font-normal text-muted-foreground">{INDICATORS[k].question}</span>
+                        </th>
+                        {schools.map((s) => (
+                          <td key={s.unit_id} className="px-4 py-3 align-top">
+                            <TrendIndicatorCell school={s} indicator={k} />
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              {historyFiles && (
+                <HistorySourceNote
+                  keys={["avg_paid_all", "applicants", "acceptance_rate", ...Object.values(RACE_SERIES)]}
+                  files={historyFiles}
+                  range={{ academic: defaultWindow(historyFiles.meta, "academic"), fall: defaultWindow(historyFiles.meta, "fall") }}
+                />
+              )}
+            </section>
+          )}
+
           <Group domain="admissions" title="Admissions">
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               <CompareMetric label="Acceptance rate" term="acceptance-rate" schools={schools} get={METRICS.acceptance.get} format={pctSmart} flag={{ which: "min", text: "Most selective" }} />
@@ -303,7 +357,7 @@ export default async function ComparePage({
               <div className="rounded-3xl border bg-card p-5 sm:p-6">
                 <ThenAndNow metrics={thenAndNow} />
               </div>
-              <HistorySourceNote keys={["avg_paid_all", "acceptance_rate", "applicants", "undergrads"]} files={historyFiles} range={{ academic: defaultWindow(historyFiles.meta, "academic"), fall: defaultWindow(historyFiles.meta, "fall") }} />
+              <HistorySourceNote keys={["avg_paid_all", "acceptance_rate", "applicants", "undergrads", ...Object.values(RACE_SERIES)]} files={historyFiles} range={{ academic: defaultWindow(historyFiles.meta, "academic"), fall: defaultWindow(historyFiles.meta, "fall") }} />
             </section>
           )}
 

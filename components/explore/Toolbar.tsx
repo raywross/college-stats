@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { ArrowDownWideNarrow, ArrowUpNarrowWide, LayoutGrid, ScatterChart, Search, Table2, X } from "lucide-react";
 import { SIZE_BUCKETS } from "@/lib/metrics";
+import { INDICATORS, INDICATOR_KEYS, isDirection } from "@/lib/indicators";
 import { typeLabel } from "@/lib/format";
 import { useExploreParams } from "./useExploreParams";
 import { cn } from "@/lib/utils";
@@ -73,6 +74,8 @@ const SORTS = [
   { value: "avg_cost_change", label: "Cost change, 10 yrs (biggest drop)", dir: "asc" },
   { value: "admit_rate_change", label: "Admit rate change, 10 yrs (most selective)", dir: "asc" },
   { value: "size_change", label: "Size change, 10 yrs (fastest growth)", dir: "desc" },
+  { value: "apps_change", label: "Applications change, 10 yrs (fastest growth)", dir: "desc" },
+  { value: "diversity_change", label: "Diversity change, 10 yrs (most diversified)", dir: "desc" },
 ] as const;
 
 export function SortControl() {
@@ -198,6 +201,17 @@ export function ActiveFilters() {
     });
   for (const r of getList("regions")) chips.push({ key: `r-${r}`, label: r, onRemove: () => toggleInList("regions", r) });
   for (const s of getList("states")) chips.push({ key: `st-${s}`, label: s, onRemove: () => toggleInList("states", s) });
+
+  for (const k of INDICATOR_KEYS) {
+    const def = INDICATORS[k];
+    for (const d of getList(def.param).filter(isDirection))
+      chips.push({
+        key: `${def.param}-${d}`,
+        // "Cost: Falling", but "More selective" already names the measure.
+        label: d !== "steady" && (k === "diversity" || k === "selectivity") ? def.words[d] : `${def.label}: ${def.words[d].toLowerCase()}`,
+        onRemove: () => toggleInList(def.param, d),
+      });
+  }
 
   if (chips.length === 0) return null;
 

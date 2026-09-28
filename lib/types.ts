@@ -1,4 +1,5 @@
 import type { FieldPath, VintageKey } from "./fields";
+import type { Direction, IndicatorKey } from "./indicators";
 
 export type SchoolType = "public" | "private-nonprofit" | "private-forprofit";
 
@@ -161,11 +162,12 @@ export interface TrendSummary {
   /** Start and end values; money in end-year dollars. */
   from: number;
   to: number;
-  /** Relative change, or the difference for shares (acceptance rate, grant share). */
+  /** Relative change, or the difference for shares (acceptance rate, grant share) and the diversity index. */
   change: number;
 }
 
-export type TrendKey = "avg_paid_all" | "full_price" | "acceptance_rate" | "applicants" | "undergrads" | "grant_pct";
+/** History series summaries, plus `diversity`: the diversity index computed from the race/ethnicity shares. */
+export type TrendKey = "avg_paid_all" | "full_price" | "acceptance_rate" | "applicants" | "undergrads" | "grant_pct" | "diversity";
 export type SchoolTrends = Partial<Record<TrendKey, TrendSummary>>;
 
 /**
@@ -248,7 +250,9 @@ export type SortKey =
   | "grad_rate"
   | "avg_cost_change"
   | "admit_rate_change"
-  | "size_change";
+  | "size_change"
+  | "apps_change"
+  | "diversity_change";
 
 export type ExploreView = "grid" | "table" | "chart";
 
@@ -268,6 +272,8 @@ export interface SearchFilters {
   maxEnroll?: number;
   minCost?: number;
   maxCost?: number;
+  /** Trend indicator directions to keep (lib/indicators.ts), e.g. { cost: ["down", "steady"] }. */
+  trends?: Partial<Record<IndicatorKey, Direction[]>>;
   sortBy?: SortKey;
   sortDir?: "asc" | "desc";
 }

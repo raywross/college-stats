@@ -300,7 +300,9 @@ year-prefixed fields, cached in `.cache/scorecard/` for a week); scores and poli
 
 ### `school.trends` (Phase 3)
 `sync-history` writes a 10-year summary per college into data/schools.json (`TREND_KEYS`: average cost and full price
-after inflation, acceptance rate, applicants, undergrads, grant share; `{ since, from, to, change }`), and sync-data
+after inflation, acceptance rate, applicants, undergrads, grant share; plus `diversity`, the diversity index from the
+race/ethnicity shares via `diversityChange`, with its own floors (see [trend-indicators.md](trend-indicators.md#when-theres-no-indicator));
+`{ since, from, to, change }`), and sync-data
 keeps it until the next history run. It's registered in lib/fields.ts as the derived field `trends`, so citations
 expand to its inputs. A test checks it equals `trendSummary()` of every committed shard. Explore sorts, change
-columns, Compare "Then & now", and trend standouts read it without loading history files.
+columns, Compare "Then & now", trend standouts, and the trend indicators read it without loading history files.

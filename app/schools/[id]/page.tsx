@@ -60,6 +60,7 @@ import { InfoTip, MetricLabel, SourceChip, Term } from "@/components/ui/info-tip
 import { OverTime } from "@/components/history/OverTime";
 import { TenYearTile } from "@/components/history/TenYearTile";
 import { HeadlineDelta } from "@/components/history/HeadlineDelta";
+import { TrendIndicatorStrip } from "@/components/trends/TrendIndicators";
 import { HistorySourceNote } from "@/components/sources/HistorySourceNote";
 import { historyYearLabel, type NationalHistory, type SeriesKey } from "@/lib/history";
 
@@ -112,6 +113,7 @@ const SECTION_FIELDS = {
     "derived.aid_generosity",
     "outcomes.median_earnings_10yr",
     "outcomes.graduation_rate",
+    "trends",
   ],
   admissions: ["admissions.applicants", "admissions.admitted", "admissions.enrolled", "admissions.acceptance_rate", "derived.yield"],
   scores: [
@@ -352,6 +354,8 @@ export default async function SchoolPage({ params }: Props) {
               ))}
             </div>
           )}
+
+          <TrendIndicatorStrip school={school} className="mt-6" />
         </div>
       </section>
 

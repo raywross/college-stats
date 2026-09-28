@@ -48,7 +48,7 @@ export function ThenAndNow({ metrics }: { metrics: ThenAndNowMetric[] }) {
       {m.rows.some((r) => r.lateStart) && (
         <p className="mt-2 text-[11px] text-muted-foreground">Years in parentheses: that college&apos;s first reported year in the window.</p>
       )}
-      {m.missing.length > 0 && <p className="mt-1 text-[11px] text-muted-foreground">Not enough years reported: {m.missing.join(", ")}.</p>}
+      {m.missing.length > 0 && <p className="mt-1 text-[11px] text-muted-foreground">Not enough data over 10 years: {m.missing.join(", ")}.</p>}
     </div>
   );
 }

@@ -2,7 +2,7 @@ import type { School, SizeBucket } from "./types";
 import type { TermKey } from "./glossary";
 import type { FieldPath } from "./fields";
 import { money, num, pct, pctSmart } from "./format";
-import { yieldOf } from "./derive";
+import { simpsonIndex, yieldOf } from "./derive";
 
 /* ------------------------------------------------------------------ */
 /* Derived values (null when the underlying data isn't reported)       */
@@ -49,11 +49,7 @@ export function admitRatio(s: School): string | null {
  */
 export function diversityIndex(s: School): number | null {
   const race = s.demographics.racial_diversity;
-  if (!race) return null;
-  const values = Object.values(race);
-  const total = values.reduce((a, b) => a + b, 0);
-  if (total <= 0) return null;
-  return 1 - values.reduce((acc, v) => acc + (v / total) ** 2, 0);
+  return race ? simpsonIndex(Object.values(race)) : null;
 }
 
 /** Admissions counts are complete enough for the waffle, funnel and yield. */
@@ -129,6 +125,7 @@ export type MetricKey =
   | "debt"
   | "applicantsChange"
   | "sizeChange"
+  | "diversityChange"
   | "avgCostChange";
 
 export interface MetricDef {
@@ -366,6 +363,18 @@ export const METRICS: Record<MetricKey, MetricDef> = {
     format: SIGNED_PCT,
     more: "faster growth",
     less: "slower growth",
+  },
+  diversityChange: {
+    key: "diversityChange",
+    field: "trends",
+    label: "Diversity index, 10-year change",
+    short: "Diversity change",
+    term: "diversity-index",
+    domain: "diversity",
+    get: (s) => s.trends?.diversity?.change ?? null,
+    format: (v) => `${v > 0 ? "+" : v < 0 ? "−" : ""}${Math.abs(v).toFixed(2)}`,
+    more: "faster-diversifying",
+    less: "slower-diversifying",
   },
   avgCostChange: {
     key: "avgCostChange",

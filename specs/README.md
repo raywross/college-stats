@@ -30,6 +30,7 @@ Structured documentation for the Higher Education Data Explorer ("Quad").
 | [greek-life.md](greek-life.md) | *Planned:* fraternity/sorority participation, councils, housing, recruitment; CDS F1 and FSL office reports |
 | [data-expansion/](data-expansion/README.md) | *Planned:* public data not yet on the site, one spec per source (admission factors incl. GPA, housing, setting, residence, student-faculty ratio, 8-year outcomes, Pell graduation, finances, faculty, majors, earnings by major, and CDS GPA/class sizes/transfer/next-year price after the college-reported agent); each decides history and top-level trends |
 | [backlog.md](backlog.md) | Planned work (CDS PDF import, scheduled sync, tests) |
+| [roadmap.md](roadmap.md) | `/roadmap`: the planned specs with complexity ratings, each readable at `/roadmap/{slug}`; registry in `lib/roadmap.ts` must list every planned spec |
 | [migration-plan.md](migration-plan.md) | Checklist for Vercel + Supabase + API migration |
 | [supabase.md](supabase.md) | Serving the dataset from Supabase: `DATA_SOURCE`, schema, `publish-data`, keys, dev/prod projects, transition plan |
 | [implementation-checklist.md](implementation-checklist.md) | Original MVP build order |

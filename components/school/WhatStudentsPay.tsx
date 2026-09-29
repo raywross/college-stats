@@ -67,7 +67,7 @@ export async function WhatStudentsPay({ school }: { school: School }) {
   );
 
   return (
-    <div className="rounded-3xl border bg-card p-5 sm:p-6">
+    <div className="rounded-3xl border bg-card p-4 sm:p-6">
       <div className="grid gap-6 lg:grid-cols-[1fr_1.25fr] lg:gap-10">
         {/* Headline estimate */}
         <div className="space-y-5">

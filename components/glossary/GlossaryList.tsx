@@ -31,8 +31,9 @@ export function GlossaryList() {
 
   return (
     <div className="grid gap-8 lg:grid-cols-[14rem_1fr] lg:gap-12">
-      <aside className="lg:sticky lg:top-24 lg:self-start">
-        <label className="flex h-11 items-center gap-2 rounded-full border bg-card px-4 focus-within:border-primary/50 focus-within:ring-4 focus-within:ring-primary/15">
+      {/* Below lg: search + category chips stick under the header as a compact bar. */}
+      <aside className="sticky top-[calc(env(safe-area-inset-top,0px)+var(--header-h))] z-20 -mx-4 border-b bg-background/85 px-4 py-2 backdrop-blur-xl sm:-mx-6 sm:px-6 lg:top-24 lg:mx-0 lg:self-start lg:border-0 lg:bg-transparent lg:p-0 lg:backdrop-blur-none">
+        <label className="flex h-10 items-center lg:h-11 gap-2 rounded-full border bg-card px-4 focus-within:border-primary/50 focus-within:ring-4 focus-within:ring-primary/15">
           <Search className="size-4 text-muted-foreground" />
           <input
             type="search"
@@ -43,7 +44,7 @@ export function GlossaryList() {
             className="min-w-0 flex-1 bg-transparent text-sm outline-none"
           />
         </label>
-        <nav className="no-scrollbar mt-4 flex gap-1.5 overflow-x-auto lg:flex-col" aria-label="Categories">
+        <nav className="no-scrollbar -mx-4 mt-2 flex gap-1.5 overflow-x-auto px-4 lg:mx-0 lg:mt-4 lg:flex-col lg:px-0" aria-label="Categories">
           {groups.map((g) => (
             <a
               key={g.category}
@@ -61,14 +62,14 @@ export function GlossaryList() {
       <div className="space-y-12">
         {groups.length === 0 && <p className="text-muted-foreground">No terms match “{q}”.</p>}
         {groups.map((g) => (
-          <section key={g.category} id={`cat-${g.category.replace(/\W+/g, "-").toLowerCase()}`} className="scroll-mt-24">
-            <h2 className="mb-4 flex items-center gap-2 font-display text-2xl font-extrabold tracking-tight">
+          <section key={g.category} id={`cat-${g.category.replace(/\W+/g, "-").toLowerCase()}`} className="scroll-mt-44 lg:scroll-mt-24">
+            <h2 className="mb-4 flex items-center gap-2 font-display text-xl font-extrabold tracking-tight sm:text-2xl">
               <span className="h-6 w-1.5 rounded-full" style={{ backgroundColor: CATEGORY_COLORS[g.category] }} />
               {g.category}
             </h2>
             <div className="grid items-start gap-3 md:grid-cols-2">
               {g.terms.map(([key, e]) => (
-                <article key={key} id={key} className="term-target scroll-mt-24 rounded-3xl border bg-card p-5">
+                <article key={key} id={key} className="term-target scroll-mt-44 lg:scroll-mt-24 rounded-3xl border bg-card p-4 sm:p-5">
                   <h3 className="font-display text-lg font-bold">{e.term}</h3>
                   <p className="mt-1.5 text-sm leading-relaxed">{e.short}</p>
                   {e.long && <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{e.long}</p>}

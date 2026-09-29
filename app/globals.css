@@ -233,15 +233,47 @@
 }
 
 @layer base {
+  :root {
+    /* Sticky header height; sticky sub-navs sit below it (see specs/mobile.md). */
+    --header-h: 3.5rem;
+    /* Bottom tab bar height on phones (0 from md, where it's hidden). */
+    --tabbar-h: 4rem;
+  }
+  @media (min-width: 48rem) {
+    :root {
+      --header-h: 4rem;
+      --tabbar-h: 0rem;
+    }
+  }
   * {
     @apply border-border outline-ring/50;
   }
   html {
     @apply font-sans;
-    scroll-padding-top: 8rem;
+    scroll-padding-top: calc(var(--header-h) + 4rem);
+  }
+  html,
+  body {
+    /* Backstop: nothing may scroll the page sideways. `clip` (unlike `hidden`) keeps position: sticky working. */
+    overflow-x: clip;
   }
   body {
     @apply bg-background text-foreground;
+  }
+  /*
+   * A grid with no column template gets one `auto` track, which grows to its widest unwrappable content (a
+   * truncated school name, a chart) and pushes the page wider than a phone. Default every grid to one shrinkable
+   * column; any grid-cols-* utility still overrides this because utilities outrank base styles.
+   */
+  .grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  /*
+   * A horizontal scroller must be the containing block for its absolutely positioned descendants (.sr-only text,
+   * tooltips); otherwise ones scrolled off-screen escape it and widen the page on phones.
+   */
+  [class*="overflow-x-auto"] {
+    position: relative;
   }
   h1, h2, h3, h4 {
     @apply font-display;
@@ -286,6 +318,33 @@
   }
   .no-scrollbar::-webkit-scrollbar {
     display: none;
+  }
+}
+
+/*
+ * Swipe rail: a horizontal, snapping row whose next card peeks in. Use with a breakpoint so it becomes a grid on
+ * wider screens, e.g. `grid gap-3 sm:grid-cols-2 max-sm:rail`. Bleeds to the screen edge (pages use px-4 on phones).
+ */
+@utility rail {
+  display: flex;
+  /* Contain absolutely positioned descendants (e.g. .sr-only text in off-screen cards); otherwise they escape
+     the scroller and widen the whole page. */
+  position: relative;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  overscroll-behavior-x: contain;
+  margin-inline: -1rem;
+  padding-inline: 1rem;
+  scroll-padding-inline: 1rem;
+  padding-bottom: 0.25rem;
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+  & > * {
+    flex: 0 0 var(--rail-item, 82%);
+    min-width: 0;
+    scroll-snap-align: start;
   }
 }
 

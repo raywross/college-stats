@@ -21,7 +21,7 @@ export function NetPriceCompare({ schools, year }: { schools: School[]; year?: s
   const top = Math.max(...all);
 
   return (
-    <div className="rounded-3xl border bg-card p-5">
+    <div className="rounded-3xl border bg-card p-4 sm:p-5">
       <MetricLabel term="net-price-by-income" className="mb-1 font-display text-base font-bold">
         What families at each income level pay
       </MetricLabel>

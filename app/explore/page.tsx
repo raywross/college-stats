@@ -8,6 +8,7 @@ import { METRICS, SIZE_BUCKETS, median, satMid, sizeBucket } from "@/lib/metrics
 import { pctSmart, compact, num, typeLabel } from "@/lib/format";
 import { Pagination } from "@/components/explore/Pagination";
 import { SchoolCard } from "@/components/school/SchoolCard";
+import { SchoolRow } from "@/components/school/SchoolRow";
 import { SchoolTable } from "@/components/explore/SchoolTable";
 import { FilterPanel, type FilterFacets } from "@/components/explore/FilterPanel";
 import { MobileFilterSheet } from "@/components/explore/MobileFilterSheet";
@@ -88,28 +89,28 @@ export default async function ExplorePage({
       : [];
 
   return (
-    <div className="mx-auto max-w-7xl px-4 pt-8 pb-12 sm:px-6 sm:pt-10">
+    <div className="mx-auto max-w-7xl px-4 pt-5 pb-12 sm:px-6 sm:pt-10">
       {/* Page header */}
-      <header className="mb-6 flex flex-col gap-4 sm:mb-8 md:flex-row md:items-end md:justify-between">
+      <header className="mb-4 flex flex-col gap-3 sm:mb-8 sm:gap-4 md:flex-row md:items-end md:justify-between">
         <div>
-          <p className="mb-2 text-xs font-bold tracking-[0.18em] text-primary uppercase">Explore</p>
-          <h1 className="font-display text-4xl font-extrabold tracking-tight sm:text-5xl">
+          <p className="mb-2 hidden text-xs font-bold tracking-[0.18em] text-primary uppercase sm:block">Explore</p>
+          <h1 className="font-display text-3xl font-extrabold tracking-tight sm:text-5xl">
             Find your <span className="highlight">fit</span>
           </h1>
-          <p className="mt-2 max-w-xl text-muted-foreground">
+          <p className="mt-2 hidden max-w-xl text-muted-foreground sm:block">
             Filter by selectivity, scores, and size, then switch between cards, a sortable table, or the admissions map.
           </p>
         </div>
         {summary.length > 0 && (
           <dl className="grid grid-cols-3 gap-2 sm:gap-3" aria-label="Median admit rate and SAT midpoint, and total undergrads, for matching schools">
             {summary.map((s) => (
-              <div key={s.label} className="rounded-2xl border bg-card px-3 py-2.5 sm:px-4">
+              <div key={s.label} className="rounded-2xl border bg-card px-3 py-2 sm:px-4 sm:py-2.5">
                 <dt className="flex items-center gap-1 text-[10px] font-semibold text-muted-foreground sm:text-[11px]">
                   <span className="size-1.5 rounded-full" style={{ backgroundColor: s.color }} />
                   <span className="truncate">{s.label}</span>
                   <InfoTip term={s.term} className="hidden sm:inline-flex" />
                 </dt>
-                <dd className="font-display text-xl font-extrabold sm:text-2xl">{s.value}</dd>
+                <dd className="font-display text-lg font-extrabold sm:text-2xl">{s.value}</dd>
               </div>
             ))}
           </dl>
@@ -125,9 +126,10 @@ export default async function ExplorePage({
           </div>
         </aside>
 
-        <div className="min-w-0 flex-1 space-y-4">
+        <div className="min-w-0 flex-1 space-y-3 sm:space-y-4">
           <Suspense>
-            <div className="flex flex-wrap items-center gap-2">
+            {/* Phones: two rows that always fit: Search · Filters, then Sort · View. */}
+            <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 sm:flex sm:flex-wrap">
               <ExploreSearchInput />
               <MobileFilterSheet facets={facets} activeCount={activeCount} resultCount={schools.length} />
               <SortControl />
@@ -157,12 +159,13 @@ export default async function ExplorePage({
           ) : view === "table" ? (
             <SchoolTable schools={paged.items} params={params} />
           ) : view === "chart" ? (
-            <div className="rounded-3xl border bg-card p-4 sm:p-6">
-              <div className="mb-2 flex flex-wrap items-center justify-between gap-3">
-                <h2 className="font-display text-xl font-bold">
+            <div className="rounded-3xl border bg-card p-3 sm:p-6">
+              <div className="mb-2 flex
+ flex-wrap items-center justify-between gap-3">
+                <h2 className="font-display text-lg font-bold sm:text-xl">
                   {chart === "value" ? "Cost vs. earnings" : chart === "sticker" ? "Sticker price vs. what students pay" : "The admissions landscape"}
                 </h2>
-                <div role="tablist" aria-label="Chart" className="inline-flex rounded-full border bg-muted/60 p-1">
+                <div role="tablist" aria-label="Chart" className="no-scrollbar inline-flex max-w-full overflow-x-auto rounded-full border bg-muted/60 p-1">
                   {[
                     { key: "admissions", label: "Admissions" },
                     { key: "value", label: "Cost vs. earnings" },
@@ -180,7 +183,7 @@ export default async function ExplorePage({
                         scroll={false}
                         href={`/explore?${next}`}
                         className={cn(
-                          "rounded-full px-3 py-1.5 text-xs font-semibold transition-colors",
+                          "shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold whitespace-nowrap transition-colors",
                           activeTab ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
                         )}
                       >
@@ -230,11 +233,20 @@ export default async function ExplorePage({
               )}
             </div>
           ) : (
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 2xl:grid-cols-3">
-              {paged.items.map((s, i) => (
-                <SchoolCard key={s.unit_id} school={s} index={i} />
-              ))}
-            </div>
+            <>
+              <ul className="space-y-2 sm:hidden">
+                {paged.items.map((s) => (
+                  <li key={s.unit_id}>
+                    <SchoolRow school={s} />
+                  </li>
+                ))}
+              </ul>
+              <div className="hidden gap-4 sm:grid sm:grid-cols-2 2xl:grid-cols-3">
+                {paged.items.map((s, i) => (
+                  <SchoolCard key={s.unit_id} school={s} index={i} />
+                ))}
+              </div>
+            </>
           )}
 
           {view !== "chart" && (
@@ -244,7 +256,7 @@ export default async function ExplorePage({
           <MultiSourceNote schools={schools} fields={Object.values(METRICS).map((m) => m.field)} className="pt-2" />
 
           {schools.length > 0 && (
-            <p className="pt-2 text-xs text-muted-foreground">
+            <p className={cn("pt-2 text-xs text-muted-foreground", view === "grid" && "hidden sm:block")}>
               Card meters show where each college ranks among all {num(all.length)} that report that measure. A dash means not reported.{" "}
               <InfoTip term="percentile-rank" />
               {" "}Size buckets: {SIZE_BUCKETS.map((b) => `${b.label} ${b.hint}`).join(", ")}.

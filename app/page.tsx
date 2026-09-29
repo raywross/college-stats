@@ -86,27 +86,27 @@ export default async function HomePage() {
         <div className="absolute top-10 right-[-10rem] -z-10 size-[30rem] animate-[drift_22s_ease-in-out_infinite_reverse] rounded-full blur-3xl" style={{ background: "var(--hero-glow-2)" }} />
         <div className="absolute bottom-[-12rem] left-1/3 -z-10 size-[26rem] animate-[drift_26s_ease-in-out_infinite] rounded-full blur-3xl" style={{ background: "var(--hero-glow-3)" }} />
 
-        <div className="mx-auto grid max-w-7xl items-center gap-12 px-4 pt-14 pb-16 sm:px-6 sm:pt-20 sm:pb-24 lg:grid-cols-[1.15fr_1fr]">
+        <div className="mx-auto grid max-w-7xl items-center gap-12 px-4 pt-8 pb-10 sm:px-6 sm:pt-20 sm:pb-24 lg:grid-cols-[1.15fr_1fr]">
           <div>
             <span className="inline-flex animate-rise items-center gap-2 rounded-full border bg-card/70 px-3 py-1 text-xs font-semibold backdrop-blur">
               <span className="size-2 rounded-full bg-good" />
               {num(summary.count)} colleges · IPEDS & College Scorecard data
             </span>
-            <h1 className="mt-5 animate-rise font-display text-5xl leading-[0.95] font-extrabold tracking-tight [animation-delay:60ms] sm:text-7xl">
+            <h1 className="mt-4 animate-rise font-display text-[2.75rem] leading-[0.95] font-extrabold tracking-tight [animation-delay:60ms] sm:mt-5 sm:text-7xl">
               College data,
               <br />
               <span className="highlight">decoded.</span>
             </h1>
-            <p className="mt-5 max-w-xl animate-rise text-lg text-muted-foreground [animation-delay:120ms]">
+            <p className="mt-4 max-w-xl animate-rise text-base text-muted-foreground [animation-delay:120ms] sm:mt-5 sm:text-lg">
               See how hard it is to get in, what scores admitted students have, and who&apos;s on campus, in charts instead
-              of spreadsheets. Every term is explained in plain English.
+              of spreadsheets.<span className="hidden sm:inline"> Every term is explained in plain English.</span>
             </p>
-            <div className="mt-8 max-w-xl animate-rise [animation-delay:180ms]">
+            <div className="mt-6 max-w-xl animate-rise [animation-delay:180ms] sm:mt-8">
               <SchoolSearch />
-              <div className="mt-3 flex flex-wrap items-center gap-1.5 text-xs">
+              <div className="no-scrollbar mt-3 flex items-center gap-1.5 text-xs max-sm:-mx-4 max-sm:overflow-x-auto max-sm:px-4 sm:flex-wrap">
                 <span className="text-muted-foreground">Try:</span>
                 {getSchoolsByIds(["166027", "110662", "170976", "131520", "221999"]).map((s) => (
-                  <Link key={s.unit_id} href={`/schools/${s.unit_id}`} className="rounded-full border bg-card/70 px-2.5 py-1 font-medium backdrop-blur hover:border-primary/40 hover:text-primary">
+                  <Link key={s.unit_id} href={`/schools/${s.unit_id}`} className="shrink-0 rounded-full border bg-card/70 px-2.5 py-1 font-medium backdrop-blur hover:border-primary/40 hover:text-primary">
                     {shortName(s)}
                   </Link>
                 ))}
@@ -153,12 +153,12 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <div className="mx-auto max-w-7xl space-y-20 px-4 pt-12 sm:space-y-28 sm:px-6">
+      <div className="mx-auto max-w-7xl space-y-14 px-4 pt-8 sm:space-y-28 sm:px-6 sm:pt-12">
         {/* ============================== STATS ============================== */}
         <section aria-label="Dataset at a glance" className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
           {stats.map((s, i) => (
-            <div key={s.label} className="animate-rise rounded-3xl border bg-card p-5 sm:p-6" style={{ animationDelay: `${i * 70}ms` }}>
-              <p className="font-display text-4xl font-extrabold tracking-tight sm:text-5xl">{s.value}</p>
+            <div key={s.label} className="animate-rise rounded-3xl border bg-card p-4 sm:p-6" style={{ animationDelay: `${i * 70}ms` }}>
+              <p className="font-display text-3xl font-extrabold tracking-tight sm:text-5xl">{s.value}</p>
               <p className="mt-1 flex items-center gap-1 text-sm font-semibold">
                 {s.label}
                 {s.term && <InfoTip term={s.term} />}
@@ -171,7 +171,7 @@ export default async function HomePage() {
         {/* ============================== LENSES ============================== */}
         <section>
           <SectionHeading eyebrow="Start with a question" title="What kind of school are you after?" />
-          <div className="grid gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3">
+          <div className="grid gap-3 max-sm:rail sm:grid-cols-2 sm:gap-4 lg:grid-cols-3">
             {lenses.map((l) => {
               const color = DOMAINS[l.domain].color;
               const Icon = l.icon;
@@ -221,7 +221,7 @@ export default async function HomePage() {
               rate and SAT scores) on one chart. Further <b className="text-foreground">left</b> means harder to get in; higher
               up means admitted students have higher <Term term="sat">SAT scores</Term>. Bigger dots are bigger campuses.
             </p>
-            <ul className="mt-6 space-y-3 text-sm">
+            <ul className="mt-5 space-y-3 text-sm sm:mt-6">
               <li className="flex gap-3">
                 <span className="mt-1 size-2 shrink-0 rounded-full" style={{ backgroundColor: DOMAINS.admissions.color }} />
                 <span>
@@ -233,7 +233,7 @@ export default async function HomePage() {
                 <span className="mt-1 size-2 shrink-0 rounded-full" style={{ backgroundColor: "var(--s1)" }} />
                 <span>Big public universities spread across the right, admitting more students at every score level.</span>
               </li>
-              <li className="flex gap-3">
+              <li className="hidden gap-3 sm:flex">
                 <span className="mt-1 size-2 shrink-0 rounded-full bg-pop" />
                 <span>Hover or tap any dot to meet the school. Click through to its full profile.</span>
               </li>
@@ -242,7 +242,7 @@ export default async function HomePage() {
               Filter this chart in Explore <ArrowRight className="size-4" />
             </Link>
           </div>
-          <div className="rounded-3xl border bg-card p-4 sm:p-6">
+          <div className="rounded-3xl border bg-card p-3 sm:p-6">
             <ScatterPlot points={landscapePoints(all, LANDSCAPE_LIMIT)} x={LANDSCAPE_X} y={LANDSCAPE_Y} zone={LANDSCAPE_ZONE} />
             <MultiSourceNote schools={all} fields={["admissions.acceptance_rate", "derived.sat_mid", "demographics.undergrad_enrollment"]} className="mt-3" />
           </div>
@@ -251,7 +251,7 @@ export default async function HomePage() {
         {/* ============================== VALUE ============================== */}
         <section>
           <SectionHeading eyebrow="Is it worth it?" title="Cost vs. earnings" className="mb-3" />
-          <p className="mb-6 max-w-3xl text-muted-foreground">
+          <p className="mb-5 max-w-3xl text-sm text-muted-foreground sm:mb-6 sm:text-base">
             What the average student pays each year (counting those who get no grants), against what former students earn ten
             years after enrolling. The shaded corner is below the national median for{" "}
             <Term term="average-cost">average cost</Term> ({moneyCompact(medNP ?? 0)}) and above it for{" "}
@@ -259,11 +259,11 @@ export default async function HomePage() {
             {num(valueEligibleCount())} colleges shown.
           </p>
           <div className="grid gap-4 lg:grid-cols-[2fr_1fr] lg:items-start">
-            <div className="min-w-0 rounded-3xl border bg-card p-4 sm:p-6">
+            <div className="min-w-0 rounded-3xl border bg-card p-3 sm:p-6">
               <ScatterPlot points={valuePoints(all, LANDSCAPE_LIMIT)} x={VALUE_X} y={VALUE_Y} zone={valueZone(medNP, medEarn)} />
               <MultiSourceNote schools={all} fields={["cost.avg_paid_all", "outcomes.median_earnings_10yr", "derived.aid_generosity"]} className="mt-3" />
             </div>
-            <div className="flex min-w-0 flex-col gap-4">
+            <div className="flex min-w-0 flex-col gap-4 max-sm:flex-row max-sm:gap-3 max-sm:rail">
               <BoardCard title="Highest earnings" term="median-earnings" domain="value" caption="Median, 10 yrs after entry · 1,000+ undergrads">
                 <Leaderboard schools={topBy("earnings", "desc", 5, { minUndergrads: 1000 })} get={METRICS.earnings.get} format={moneyCompact} color={DOMAINS.value.color} />
               </BoardCard>
@@ -283,7 +283,7 @@ export default async function HomePage() {
         {/* ============================== MAP + LEADERBOARDS ============================== */}
         <section>
           <SectionHeading eyebrow="Leaderboards" title="Who stands out" />
-          <div className="grid gap-4 lg:grid-cols-3">
+          <div className="grid gap-4 max-sm:gap-3 max-sm:rail lg:grid-cols-3">
             <BoardCard title="Hardest to get into" term="acceptance-rate" domain="admissions" caption="Applicants per admit, 1,000+ applicants">
               <Leaderboard schools={topBy("acceptance", "asc", 5, { minApplicants: 1000 })} get={oneIn} format={(v) => `1 in ${v}`} color={DOMAINS.admissions.color} />
             </BoardCard>
@@ -297,7 +297,7 @@ export default async function HomePage() {
         </section>
 
         <section className="grid gap-6 lg:grid-cols-[1.3fr_1fr] lg:gap-10">
-          <div className="rounded-3xl border bg-card p-5 sm:p-8">
+          <div className="rounded-3xl border bg-card p-4 sm:p-8">
             <SectionHeading eyebrow="Where they are" title="Schools by state" className="mb-5" />
             <StateTileMap counts={countByState()} />
             <SourceNote fields={["location.state"]} className="mt-3" />
@@ -305,7 +305,7 @@ export default async function HomePage() {
           </div>
 
           {/* Compare CTA */}
-          <div className="relative overflow-hidden rounded-3xl bg-foreground p-6 text-background sm:p-8">
+          <div className="relative overflow-hidden rounded-3xl bg-foreground p-5 text-background sm:p-8">
             <div className="absolute -top-20 -right-20 size-64 rounded-full blur-3xl" style={{ background: "var(--hero-glow-1)" }} />
             <div className="relative">
               <span className="inline-flex size-11 items-center justify-center rounded-2xl bg-pop text-pop-foreground">
@@ -349,14 +349,14 @@ export default async function HomePage() {
               <BookOpen className="size-4" /> Full glossary
             </Link>
           </div>
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-3 max-sm:rail max-sm:[--rail-item:70%] sm:grid-cols-2 lg:grid-cols-4">
             {LINGO.map((key, i) => (
               <Link
                 key={key}
                 href={`/glossary#${key}`}
                 className="group rounded-3xl border bg-card p-5 transition-all hover:-translate-y-1 hover:border-primary/30"
               >
-                <span className="font-display text-5xl font-extrabold text-muted-foreground/25 transition-colors group-hover:text-primary/40">
+                <span className="font-display text-4xl font-extrabold text-muted-foreground/25 sm:text-5xl transition-colors group-hover:text-primary/40">
                   0{i + 1}
                 </span>
                 <h3 className="mt-2 font-display text-lg font-bold">{GLOSSARY[key].term}</h3>
@@ -374,7 +374,7 @@ function SectionHeading({ eyebrow, title, className = "mb-6" }: { eyebrow: strin
   return (
     <div className={className}>
       <p className="mb-1.5 text-xs font-bold tracking-[0.18em] text-primary uppercase">{eyebrow}</p>
-      <h2 className="font-display text-3xl font-extrabold tracking-tight sm:text-4xl">{title}</h2>
+      <h2 className="font-display text-2xl font-extrabold tracking-tight sm:text-4xl">{title}</h2>
     </div>
   );
 }

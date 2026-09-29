@@ -1,0 +1,171 @@
+"use client";
+
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useEffect, useState, type ReactNode } from "react";
+import { BookOpen, Compass, Database, Ellipsis, GitCompareArrows, Home, Search, X } from "lucide-react";
+import { ThemeSegmented } from "@/components/ThemeToggle";
+import { SchoolSearch } from "@/components/search/SchoolSearch";
+import { useCompareIds } from "@/lib/compare";
+import { cn } from "@/lib/utils";
+
+type Sheet = "search" | "more" | null;
+
+/**
+ * Phone navigation (below md): a thumb-reach tab bar with the four main jobs always visible, replacing the
+ * hamburger menu and the floating compare pill. Search opens a full-screen sheet; secondary pages live under More.
+ * See specs/mobile.md.
+ */
+export function BottomNav() {
+  const pathname = usePathname();
+  const compareIds = useCompareIds();
+  const [sheet, setSheet] = useState<Sheet>(null);
+
+  // Close sheets on navigation.
+  const [lastPath, setLastPath] = useState(pathname);
+  if (pathname !== lastPath) {
+    setLastPath(pathname);
+    setSheet(null);
+  }
+
+  useEffect(() => {
+    document.body.style.overflow = sheet ? "hidden" : "";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [sheet]);
+
+  const isActive = (href: string) => (href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(`${href}/`));
+  const compareHref = compareIds.length ? `/compare?ids=${compareIds.join(",")}` : "/compare";
+  const moreActive = isActive("/glossary") || isActive("/data") || isActive("/sources");
+
+  return (
+    <>
+      <nav
+        aria-label="Main"
+        className="fixed inset-x-0 bottom-0 z-50 border-t border-border/70 bg-background/85 backdrop-blur-xl md:hidden"
+        style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
+      >
+        <ul className="mx-auto grid h-16 max-w-md grid-cols-5">
+          <Tab href="/" label="Home" icon={<Home />} active={isActive("/") && !sheet} />
+          <Tab href="/explore" label="Explore" icon={<Compass />} active={isActive("/explore") && !sheet} />
+          <Tab label="Search" icon={<Search />} active={sheet === "search"} onClick={() => setSheet(sheet === "search" ? null : "search")} />
+          <Tab
+            href={compareHref}
+            label="Compare"
+            icon={<GitCompareArrows />}
+            active={isActive("/compare") && !sheet}
+            badge={compareIds.length || undefined}
+          />
+          <Tab label="More" icon={<Ellipsis />} active={sheet === "more" || (moreActive && !sheet)} onClick={() => setSheet(sheet === "more" ? null : "more")} />
+        </ul>
+      </nav>
+
+      {sheet === "search" && (
+        <div className="fixed inset-0 z-[45] flex flex-col bg-background md:hidden" role="dialog" aria-modal="true" aria-label="Search schools">
+          <div className="flex items-center gap-2 border-b px-4 py-3" style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 0.75rem)" }}>
+            <SchoolSearch size="compact" autoFocus className="flex-1" onNavigate={() => setSheet(null)} />
+            <button type="button" onClick={() => setSheet(null)} className="shrink-0 px-2 text-sm font-semibold text-primary">
+              Cancel
+            </button>
+          </div>
+          <div className="flex-1 overflow-y-auto px-4 py-5 text-sm text-muted-foreground">
+            <p>Search by college name, city, or state.</p>
+            <Link href="/explore" className="mt-4 inline-flex items-center gap-2 font-semibold text-primary">
+              <Compass className="size-4" /> Or browse and filter all schools
+            </Link>
+          </div>
+        </div>
+      )}
+
+      {sheet === "more" && (
+        <div className="fixed inset-0 z-[45] md:hidden" role="dialog" aria-modal="true" aria-label="More">
+          <div className="absolute inset-0 animate-in bg-black/40 backdrop-blur-sm fade-in-0" onClick={() => setSheet(null)} />
+          <div
+            className="absolute inset-x-0 animate-in rounded-t-3xl border-t bg-background p-4 shadow-2xl slide-in-from-bottom-4 fade-in-0"
+            style={{ bottom: "calc(var(--tabbar-h) + env(safe-area-inset-bottom, 0px))" }}
+          >
+            <div className="flex items-center justify-between">
+              <p className="font-display text-lg font-bold">More</p>
+              <button type="button" onClick={() => setSheet(null)} aria-label="Close" className="inline-flex size-9 items-center justify-center rounded-full hover:bg-muted">
+                <X className="size-5" />
+              </button>
+            </div>
+            <div className="mt-3 grid gap-2">
+              <MoreLink href="/glossary" icon={<BookOpen className="size-5" />} title="Glossary" sub="Every term in plain English" active={isActive("/glossary")} />
+              <MoreLink href="/data" icon={<Database className="size-5" />} title="Data" sub="Sources, years & updates" active={isActive("/data")} />
+            </div>
+            <div className="mt-4 flex items-center justify-between border-t pt-4">
+              <span className="text-sm font-medium text-muted-foreground">Appearance</span>
+              <ThemeSegmented />
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
+function Tab({
+  href,
+  label,
+  icon,
+  active,
+  badge,
+  onClick,
+}: {
+  href?: string;
+  label: string;
+  icon: ReactNode;
+  active: boolean;
+  badge?: number;
+  onClick?: () => void;
+}) {
+  const inner = (
+    <>
+      <span
+        className={cn(
+          "relative inline-flex h-7 w-12 items-center justify-center rounded-full transition-colors [&>svg]:size-5",
+          active && "bg-foreground text-background"
+        )}
+      >
+        {icon}
+        {badge !== undefined && (
+          <span className="absolute -top-1 -right-0.5 inline-flex size-4 animate-pop-in items-center justify-center rounded-full bg-pop text-[10px] font-bold text-pop-foreground ring-2 ring-background">
+            {badge}
+          </span>
+        )}
+      </span>
+      <span className={cn("text-[11px] font-semibold", active ? "text-foreground" : "text-muted-foreground")}>{label}</span>
+    </>
+  );
+  const cls = "flex h-full w-full flex-col items-center justify-center gap-0.5 text-muted-foreground active:scale-95 transition-transform";
+  return (
+    <li>
+      {href ? (
+        <Link href={href} aria-current={active ? "page" : undefined} className={cls}>
+          {inner}
+        </Link>
+      ) : (
+        <button type="button" onClick={onClick} aria-expanded={active} className={cls}>
+          {inner}
+        </button>
+      )}
+    </li>
+  );
+}
+
+function MoreLink({ href, icon, title, sub, active }: { href: string; icon: ReactNode; title: string; sub: string; active: boolean }) {
+  return (
+    <Link
+      href={href}
+      className={cn("flex items-center gap-3 rounded-2xl px-4 py-3 transition-colors", active ? "bg-foreground text-background" : "bg-muted/60 hover:bg-muted")}
+    >
+      {icon}
+      <span>
+        <span className="block text-base font-semibold">{title}</span>
+        <span className={cn("block text-xs", active ? "text-background/70" : "text-muted-foreground")}>{sub}</span>
+      </span>
+    </Link>
+  );
+}

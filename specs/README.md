@@ -9,6 +9,7 @@ Structured documentation for the Higher Education Data Explorer ("Quad").
 | [architecture.md](architecture.md) | Tech stack, project structure, key decisions |
 | [design-system.md](design-system.md) | Brand, type, color tokens, palettes, motion, responsive rules |
 | [design-research.md](design-research.md) | Comparable-site research and which patterns we adopted |
+| [mobile.md](mobile.md) | Phone layout: bottom tab bar, swipe rails, result rows, no-sideways-scroll rules and their guards |
 | [charts.md](charts.md) | Chart component catalog, dataviz rules, palette validation |
 | [glossary-and-tooltips.md](glossary-and-tooltips.md) | Term definitions, InfoTip/Term components, glossary page |
 | [home.md](home.md) | Home page sections |

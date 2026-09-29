@@ -22,7 +22,7 @@ export async function AidGenerosityCard({ school }: { school: School }) {
   const tier = generosityTier(g);
 
   return (
-    <div className="grid gap-6 rounded-3xl border bg-card p-5 sm:p-6 lg:grid-cols-[auto_1fr_1.1fr] lg:items-center lg:gap-8">
+    <div className="grid gap-6 rounded-3xl border bg-card p-4 sm:p-6 lg:grid-cols-[auto_1fr_1.1fr] lg:items-center lg:gap-8">
       <Ring value={g} color={COLOR} size={120} stroke={13} label={`Grants cover ${pct(g)} of the full price`}>
         <span className="font-display text-3xl font-extrabold">{pct(g)}</span>
         <span className="text-[10px] font-semibold text-muted-foreground">of full price</span>

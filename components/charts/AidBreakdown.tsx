@@ -75,7 +75,7 @@ export async function AidBreakdown({ school }: { school: School }) {
     <div className="space-y-4">
       <div className="grid gap-4 lg:grid-cols-2">
         {/* Grants split + by source */}
-        <div className="space-y-6 rounded-3xl border bg-card p-5 sm:p-6">
+        <div className="space-y-6 rounded-3xl border bg-card p-4 sm:p-6">
           <div>
             <h3 className="flex items-center gap-1 font-display text-lg font-bold">
               Who gets grants <span className="sr-only">and scholarships</span>
@@ -123,7 +123,7 @@ export async function AidBreakdown({ school }: { school: School }) {
         </div>
 
         {/* By family income */}
-        <div className="rounded-3xl border bg-card p-5 sm:p-6">
+        <div className="rounded-3xl border bg-card p-4 sm:p-6">
           <h3 className="flex items-center gap-1 font-display text-lg font-bold">
             Aid by family income <InfoTip term="federal-aid" />
           </h3>
@@ -196,7 +196,7 @@ export async function AidBreakdown({ school }: { school: School }) {
       </div>
 
       {cds && school.cds && (
-        <div className="rounded-3xl border bg-card p-5 sm:p-6">
+        <div className="rounded-3xl border bg-card p-4 sm:p-6">
           <h3 className="font-display text-lg font-bold">From {school.name}&apos;s Common Data Set</h3>
           <p className="mb-4 text-xs text-muted-foreground">All full-time undergraduates, {citeField("aid.cds", school).year}. More detail than federal surveys collect.</p>
           <dl className="grid grid-cols-2 gap-3 lg:grid-cols-4">

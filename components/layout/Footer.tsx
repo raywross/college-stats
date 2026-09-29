@@ -6,17 +6,18 @@ import { SITE_TAGLINE } from "@/lib/brand";
 
 export function Footer() {
   return (
-    <footer className="mt-24 border-t bg-surface-2 pb-28">
-      <div className="mx-auto grid max-w-7xl gap-10 px-4 py-12 sm:px-6 md:grid-cols-[1.4fr_1fr_1fr]">
+    <footer className="mt-16 border-t bg-surface-2 pb-[calc(var(--tabbar-h)+env(safe-area-inset-bottom,0px)+1rem)] sm:mt-24 md:pb-28">
+      <div className="mx-auto grid max-w-7xl gap-8 px-4 py-8 sm:gap-10 sm:px-6 sm:py-12 md:grid-cols-[1.4fr_1fr_1fr]">
         <div className="space-y-3">
           <Logo />
           <p className="max-w-sm text-sm text-muted-foreground">
             {SITE_TAGLINE} Explore admissions, test scores, and who actually goes to college, with charts
             first and jargon explained.
           </p>
-          <ThemeSegmented className="mt-2" />
+          <ThemeSegmented className="mt-2 hidden md:inline-flex" />
         </div>
-        <div>
+        {/* Phones reach these pages from the tab bar, so only "About the data" stays. */}
+        <div className="hidden md:block">
           <h3 className="mb-3 text-sm font-bold">Explore</h3>
           <ul className="space-y-2 text-sm text-muted-foreground">
             <li><Link className="hover:text-foreground" href="/explore">All schools</Link></li>

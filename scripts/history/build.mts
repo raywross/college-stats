@@ -6,7 +6,7 @@
 import type { School } from "../../lib/types.ts";
 import { FIELDS, isFieldPath, type FieldPath } from "../../lib/fields.ts";
 import type { IpedsRow } from "../../lib/derive.ts";
-import { acceptanceRate, computePrices, netPriceByIncome, raceShares, toAid, yieldOf } from "../../lib/derive.ts";
+import { acceptanceRate, admitRatesBySex, computePrices, netPriceByIncome, raceShares, satMedian, toAid, yieldOf } from "../../lib/derive.ts";
 import {
   NET_PRICE_BANDS,
   RACE_FROM,
@@ -128,6 +128,13 @@ export function buildCollege(school: Pick<School, "unit_id" | "type">, inputs: I
     put(raw, "act_submit", t.year, actPct === null ? null : actPct / 100);
     const policy = v("policy");
     if (policy !== null && VALID_POLICY.has(policy)) put(raw, "test_policy", t.year, policy);
+
+    // By sex, with the overall rate's rule (lib/metrics.ts admitRatesBySex); medians from fall 2022 (lib/metrics.ts satMedian).
+    put(raw, "admit_rate_men", t.year, acceptanceRate(v("applicants_men"), v("admitted_men")));
+    put(raw, "admit_rate_women", t.year, acceptanceRate(v("applicants_women"), v("admitted_women")));
+    const [sr50, sm50] = [v("satvr50"), v("satmt50")];
+    if (sr50 !== null && sm50 !== null) put(raw, "sat_50", t.year, sr50 + sm50);
+    put(raw, "act_50", t.year, v("act50"));
   }
 
   const sc = inputs.scorecard?.rows.get(id);
@@ -444,6 +451,8 @@ const same = (a: number, b: number) => Math.abs(a - b) < 1e-4 + 1e-9 * Math.abs(
  */
 export function lastPointMismatches(schools: readonly School[], histories: ReadonlyMap<string, SchoolHistory>, latest: Pick<Record<YearKind, number>, "fall" | "academic">): string[] {
   const out: string[] = [];
+  // The federal admissions fall the snapshot was built from: every college without a CDS override shares it.
+  const federalFall = schools.find((s) => s.admissions.year !== null && !s.lineage?.["admissions.year"])?.admissions.year ?? null;
   for (const s of schools) {
     const h = histories.get(s.unit_id);
     if (!h) continue;
@@ -482,6 +491,14 @@ export function lastPointMismatches(schools: readonly School[], histories: Reado
       check("sat_submit", s.admissions.test_submission_rate_sat);
       check("act_submit", s.admissions.test_submission_rate_act);
       check("test_policy", s.admissions.test_policy ? TEST_POLICY_CODES[s.admissions.test_policy] : null);
+    }
+    // By sex and medians are always federal (no CDS override sets them), so they're checked against the ADM file's fall.
+    if (federalFall === latest.fall) {
+      const rates = admitRatesBySex(s);
+      check("admit_rate_men", rates.men);
+      check("admit_rate_women", rates.women);
+      check("sat_50", satMedian(s));
+      check("act_50", s.admissions.act_composite_median);
     }
     // College Scorecard series end on the snapshot's "latest" values. (Graduation isn't compared: the profile shows
     // Scorecard's consumer rate, which has no history; the chart is the 6-year rate and says so.)

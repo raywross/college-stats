@@ -61,6 +61,17 @@ const SCORES: Record<string, ColumnSpec> = {
   policy: "ADMCON7",
 };
 
+/** Men's and women's applicants and admits: the same columns from IC2001 on (probed 2026-09-29). */
+const BY_SEX: Record<string, ColumnSpec> = {
+  applicants_men: "APPLCNM",
+  applicants_women: "APPLCNW",
+  admitted_men: "ADMSSNM",
+  admitted_women: "ADMSSNW",
+};
+
+/** True medians: ADM2022 on only (absent through ADM2021, probed 2026-09-29). */
+const MEDIANS: Record<string, ColumnSpec> = { satvr50: "SATVR50", satmt50: "SATMT50", act50: "ACTCM50" };
+
 export const ERAS: readonly Era[] = [
   {
     family: "ic-admissions",
@@ -71,6 +82,7 @@ export const ERAS: readonly Era[] = [
       admitted: { sum: ["ADMSSNM", "ADMSSNW"] },
       enrolled: { sum: ["ENRLFTM", "ENRLFTW", "ENRLPTM", "ENRLPTW"] },
       ...SCORES,
+      ...BY_SEX,
     },
     required: () => [],
   },
@@ -78,14 +90,21 @@ export const ERAS: readonly Era[] = [
     family: "ic-admissions",
     years: [2002, 2013],
     files: (y) => [{ name: `IC${y}` }],
-    values: { applicants: "APPLCN", admitted: "ADMSSN", enrolled: "ENRLT", ...SCORES },
+    values: { applicants: "APPLCN", admitted: "ADMSSN", enrolled: "ENRLT", ...SCORES, ...BY_SEX },
     required: () => [],
   },
   {
     family: "adm",
-    years: [2014, OPEN],
+    years: [2014, 2021],
     files: (y) => [{ name: `ADM${y}` }],
-    values: { applicants: "APPLCN", admitted: "ADMSSN", enrolled: "ENRLT", ...SCORES },
+    values: { applicants: "APPLCN", admitted: "ADMSSN", enrolled: "ENRLT", ...SCORES, ...BY_SEX },
+    required: () => [],
+  },
+  {
+    family: "adm",
+    years: [2022, OPEN],
+    files: (y) => [{ name: `ADM${y}` }],
+    values: { applicants: "APPLCN", admitted: "ADMSSN", enrolled: "ENRLT", ...SCORES, ...BY_SEX, ...MEDIANS },
     required: () => [],
   },
   {

@@ -95,6 +95,7 @@ const SORTERS: Record<SortKey, (s: School) => number | string | null> = {
   men_share: METRICS.menShare.get,
   part_time: METRICS.partTime.get,
   men_share_change: METRICS.menShareChange.get,
+  admit_gap: METRICS.admitGap.get,
 };
 
 function mode(values: number[]): number | null {

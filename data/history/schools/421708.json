@@ -6,6 +6,8 @@
     "enrolled": {"start":2002,"values":[0,254,182,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,32,23,39,24]},
     "acceptance_rate": {"start":2003,"values":[0.5607,1,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,1,1,1,1]},
     "yield": {"start":2003,"values":[1,0.7778,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,0.4103,0.5476,0.5493,0.5333]},
+    "admit_rate_men": {"start":2003,"values":[0.3571,1,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,1]},
+    "admit_rate_women": {"start":2003,"values":[0.5979,1,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,1,1,1,1]},
     "tuition_in_state": {"start":2004,"values":[8595,9600,10500,11425,13625,13525,13525,14935,14935,15024,15223,15110,15524,15524,15685,15841,15841,23066,24000,24853]},
     "tuition_out_of_state": {"start":2004,"values":[8595,9600,10500,11425,13625,13525,13525,14935,14935,15024,15223,15110,15524,15524,15685,15841,15841,23066,24000,24853]},
     "aided_net_price": {"start":2008,"values":[19305,19406,18072,19345,19493,18915,22510,18865,21371,22723,21227,21910,27892,28726,30709,29819]},

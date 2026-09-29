@@ -17,6 +17,7 @@ import {
   paybackYears,
   satComposite,
   satMid,
+  satMedian,
   selectivityTier,
   sizeBucket,
   yieldRate,
@@ -32,6 +33,7 @@ import {
   standouts,
   studentsTakeaway,
   studentBodyNotes,
+  admissionsBySex,
   yieldTakeaway,
 } from "@/lib/insights";
 import { compact, money, moneyCompact, num, pct, pctSmart, range, typeLabel } from "@/lib/format";
@@ -70,7 +72,7 @@ import { historyYearLabel, type NationalHistory, type SeriesKey } from "@/lib/hi
 const HISTORY_GROUPS = {
   cost: ["avg_paid_all", "full_price", "sticker_in_state", "sticker_out_of_state", "aided_net_price", "net_price_income_1"],
   aid: ["grant_pct", "grant_avg", "aid_generosity"],
-  admissions: ["applicants", "admitted", "enrolled", "acceptance_rate", "yield"],
+  admissions: ["applicants", "admitted", "enrolled", "acceptance_rate", "yield", "admit_rate_men", "admit_rate_women"],
   scores: ["sat_25", "sat_75", "act_25", "act_75", "sat_submit", "test_policy"],
   students: ["undergrads", "race_white", "men_share", "part_time_share"],
   outcomes: ["grad_rate", "median_debt"],
@@ -117,7 +119,7 @@ const SECTION_FIELDS = {
     "outcomes.graduation_rate",
     "trends",
   ],
-  admissions: ["admissions.applicants", "admissions.admitted", "admissions.enrolled", "admissions.acceptance_rate", "derived.yield"],
+  admissions: ["admissions.applicants", "admissions.admitted", "admissions.enrolled", "admissions.acceptance_rate", "derived.yield", "admissions.by_sex", "derived.admit_rate_men", "derived.admit_rate_women"],
   scores: [
     "admissions.sat_reading_25_75",
     "admissions.sat_math_25_75",
@@ -125,6 +127,12 @@ const SECTION_FIELDS = {
     "admissions.test_submission_rate_sat",
     "admissions.test_submission_rate_act",
     "admissions.test_policy",
+    "admissions.sat_reading_median",
+    "admissions.sat_math_median",
+    "admissions.act_composite_median",
+    "admissions.act_english_25_75",
+    "admissions.act_math_25_75",
+    "derived.sat_median",
   ],
   students: [
     "demographics.racial_diversity",
@@ -287,6 +295,9 @@ export default async function SchoolPage({ params }: Props) {
   const yld = yieldRate(school);
   const div = diversityIndex(school);
   const body = studentBodyNotes(data, school);
+  const bySex = admissionsBySex(school);
+  const federalSat = citeField("admissions.sat_reading_25_75", school).isDefault && citeField("admissions.sat_math_25_75", school).isDefault;
+  const federalAct = citeField("admissions.act_composite_25_75", school).isDefault;
   const counts = hasAdmissionCounts(school);
   const scores = hasTestScores(school);
   const onMap = rate !== null && satMid(school) !== null;
@@ -551,6 +562,37 @@ export default async function SchoolPage({ params }: Props) {
                           </div>
                         ))}
                       </div>
+                      {bySex && !bySex.notable && (
+                        <p className="mt-4 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-sm text-muted-foreground">
+                          {bySex.sentence} <SourceChip cited={citeField("admissions.by_sex", school)} />
+                        </p>
+                      )}
+                    </div>
+                  )}
+                  {bySex?.notable && (
+                    <div className="rounded-3xl border bg-card p-4 sm:p-6">
+                      <h3 className="mb-1 flex items-center gap-1 font-display text-lg font-bold">
+                        Men and women <InfoTip term="admit-rate-by-sex" cited={citeField("admissions.by_sex", school)} />
+                        <SourceChip cited={citeField("admissions.by_sex", school)} />
+                      </h3>
+                      <p className="mb-4 text-sm text-muted-foreground">{bySex.sentence}</p>
+                      <div className="space-y-3">
+                        {[
+                          { label: "Women", v: bySex.women, field: "derived.admit_rate_women" as const },
+                          { label: "Men", v: bySex.men, field: "derived.admit_rate_men" as const },
+                        ].map((r) => (
+                          <BenchmarkBar
+                            key={r.label}
+                            label={`${r.label} admitted`}
+                            cited={citeField(r.field, school)}
+                            value={r.v}
+                            scale={[0, 1]}
+                            format={pctSmart}
+                            color={DOMAINS.admissions.color}
+                            size="sm"
+                          />
+                        ))}
+                      </div>
                     </div>
                   )}
                   {yld !== null && (
@@ -602,6 +644,15 @@ export default async function SchoolPage({ params }: Props) {
                       act: a.act_composite_25_75,
                       medianSatMid: metricMedian("sat"),
                       medianActMid: metricMedian("act"),
+                      // Federal-only detail: shown only when the ranges are federal too (not a college's CDS).
+                      actEnglish: federalAct ? a.act_english_25_75 : null,
+                      actMath: federalAct ? a.act_math_25_75 : null,
+                    }}
+                    medians={{
+                      satTotal: federalSat ? satMedian(school) : null,
+                      satReading: federalSat ? (a.sat_reading_median ?? null) : null,
+                      satMath: federalSat ? (a.sat_math_median ?? null) : null,
+                      act: federalAct ? (a.act_composite_median ?? null) : null,
                     }}
                   />
                 </div>

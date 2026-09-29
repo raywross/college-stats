@@ -6,6 +6,8 @@
     "enrolled": {"start":2016,"values":[8,2,2,72,2]},
     "acceptance_rate": {"start":2016,"values":[0.7273,0.2,0.9048,0.8224]},
     "yield": {"start":2016,"values":[1,1,0.0211,0.8182,1]},
+    "admit_rate_men": {"start":2018,"values":[0.9184,0.8163]},
+    "admit_rate_women": {"start":2018,"values":[0.8929,0.8276]},
     "tuition_in_state": {"start":2013,"values":[2690,2690,2690,2840,2840,2840,3120,3120,3120,3480,3480]},
     "tuition_out_of_state": {"start":2013,"values":[2690,2690,2690,2840,2840,2840,3120,3120,3120,3480,3480]},
     "aided_net_price": {"start":2013,"values":[12933,10915,12874,14986,14936,14229,15743,11827]},

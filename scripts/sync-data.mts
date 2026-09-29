@@ -226,6 +226,15 @@ function pair(row: Record<string, string> | undefined, lo: string, hi: string): 
 
 const roundOrNull = (v: number | null) => (v === null ? null : round(v));
 
+/** Men's and women's applicants, admits, and enrollees; null when the college reports neither. */
+function bySex(row: Record<string, string> | undefined): NonNullable<School["admissions"]["by_sex"]> | null {
+  const side = (s: "M" | "W") => ({ applicants: ipedsNum(row, `APPLCN${s}`), admitted: ipedsNum(row, `ADMSSN${s}`), enrolled: ipedsNum(row, `ENRL${s}`) });
+  const men = side("M");
+  const women = side("W");
+  const any = (c: typeof men) => c.applicants !== null || c.admitted !== null || c.enrolled !== null;
+  return any(men) || any(women) ? { men, women } : null;
+}
+
 /** Scorecard reports public and private net price in separate fields; use whichever applies. */
 function netPriceByIncome(sc: ScorecardRow, type: SchoolType): (number | null)[] | null {
   const sector = type === "public" ? "public" : "private";
@@ -282,6 +291,13 @@ function toSchool(
       test_submission_rate_sat: satPct === null ? null : satPct / 100,
       test_submission_rate_act: actPct === null ? null : actPct / 100,
       test_policy: POLICY_BY_ADMCON7[adm?.ADMCON7 ?? ""] ?? null,
+      // Admissions detail (specs/data-expansion/admissions-detail.md). Medians exist from fall 2022.
+      by_sex: bySex(adm),
+      sat_reading_median: ipedsNum(adm, "SATVR50"),
+      sat_math_median: ipedsNum(adm, "SATMT50"),
+      act_composite_median: ipedsNum(adm, "ACTCM50"),
+      act_english_25_75: pair(adm, "ACTEN25", "ACTEN75"),
+      act_math_25_75: pair(adm, "ACTMT25", "ACTMT75"),
     },
     demographics: {
       undergrad_enrollment: size,

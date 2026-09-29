@@ -6,6 +6,7 @@
     "enrolled": {"start":2001,"values":[23,38,32,29,31,null,33,35]},
     "acceptance_rate": {"start":2001,"values":[1,0.4274,0.64,0.4833,0.2627,0.2313,null,1]},
     "yield": {"start":2001,"values":[1,0.76,1,1,1,null,0.7857,1]},
+    "admit_rate_women": {"start":2001,"values":[1,0.4174,0.6327,0.451,0.2818,null,null,1]},
     "tuition_in_state": {"start":2001,"values":[2972,null,7200,8537,8937,9525,9525,12200]},
     "tuition_out_of_state": {"start":2001,"values":[2972,null,7200,8537,8937,9525,9525,12200]},
     "grant_pct": {"start":2007,"values":[0.6]},

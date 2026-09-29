@@ -6,6 +6,7 @@
     "enrolled": {"start":2024,"values":[31]},
     "acceptance_rate": {"start":2024,"values":[1]},
     "yield": {"start":2024,"values":[0.378]},
+    "admit_rate_women": {"start":2024,"values":[1]},
     "grant_pct": {"start":2023,"values":[0.7143]},
     "grant_avg": {"start":2023,"values":[6458]},
     "net_price_income_1": {"start":2023,"values":[38869]},

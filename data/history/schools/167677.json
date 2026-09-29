@@ -6,6 +6,7 @@
     "enrolled": {"start":2002,"values":[12,61,null,null,null,null,null,1,13,5,1]},
     "acceptance_rate": {"start":2002,"values":[0.9231,1,null,null,null,null,null,null,1]},
     "yield": {"start":2002,"values":[1,1,null,null,null,null,null,1,1,0.8333,1]},
+    "admit_rate_men": {"start":2002,"values":[0.9231,1]},
     "tuition_in_state": {"start":2002,"values":[8000,9000,null,null,null,null,null,13750,13750,13750,16750,17750,21650,22650,22650,null,24915]},
     "tuition_out_of_state": {"start":2002,"values":[8000,9000,null,null,null,null,null,13750,13750,13750,16750,17750,21650,22650,22650,null,24915]},
     "sticker_in_state": {"start":2002,"values":[14500,15500,null,null,null,null,null,22675,22650,22700,25700,28700,32700,33750,35275,null,37215]},

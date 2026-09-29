@@ -2,7 +2,10 @@ import "server-only";
 import type { School } from "./types";
 import type { Dataset } from "./dataset";
 import {
+  BY_SEX_MIN_APPLICANTS,
   METRICS,
+  admitRateGap,
+  admitRatesBySex,
   admitRatio,
   aidGenerosity,
   generosityTier,
@@ -41,6 +44,10 @@ export function standouts({ rankOf }: Dataset, s: School, { trends = false }: { 
 
   if (pool && at("acceptance", (v) => v <= 0.03)) out.push({ label: "Ultra-selective", domain: "admissions", metric: "acceptance" });
   if (pool && at("yield", (v) => v >= 0.9)) out.push({ label: "High yield", domain: "admissions", metric: "yield" });
+  // Neutral wording: a fact about who gets in, not a verdict (specs/data-expansion/admissions-detail.md).
+  const gap = admitRateGap(s);
+  if (gap !== null && at("admitGapSize", (v) => v >= 0.95))
+    out.push({ label: `Admits ${gap > 0 ? "men" : "women"} at a higher rate`, domain: "admissions", metric: "admitGap" });
   if (at("sat", (v) => v >= 0.9)) out.push({ label: "Top test scores", domain: "scores", metric: "sat" });
   if (at("enrollment", (v) => v >= 0.95)) out.push({ label: "Big campus", domain: "size", metric: "enrollment" });
   if (at("enrollment", (v) => v <= 0.1)) out.push({ label: "Intimate campus", domain: "size", metric: "enrollment" });
@@ -143,6 +150,27 @@ export function studentsTakeaway({ rankOf }: Dataset, s: School): string {
   if (pell === null || pellRank === null) return `${base}.`;
   const pellTone = pellRank >= 0.66 ? "a high share" : pellRank <= 0.33 ? "a low share" : "a typical share";
   return `${base}, where ${pct(pell)} receive Pell Grants, ${pellTone} compared to other colleges.`;
+}
+
+/** A gap between men's and women's acceptance rates this large (in points) gets its own card on the profile. */
+export const BY_SEX_NOTABLE_GAP = 0.03;
+
+/**
+ * Men's and women's acceptance rates for the Admissions section (specs/data-expansion/admissions-detail.md): `notable`
+ * when the gap is at least 3 points and both have 200+ applicants, otherwise a plain line. Null without both rates.
+ */
+export function admissionsBySex(s: School): { men: number; women: number; notable: boolean; sentence: string } | null {
+  const { men, women } = admitRatesBySex(s);
+  if (men === null || women === null) return null;
+  const gap = admitRateGap(s);
+  const notable = gap !== null && Math.abs(gap) >= BY_SEX_NOTABLE_GAP;
+  const [lower, higher] = men < women ? [["Men", men], ["women", women]] as const : [["Women", women], ["men", men]] as const;
+  const sentence = notable
+    ? `${lower[0]} were admitted at ${pctSmart(lower[1])}, ${higher[0]} at ${pctSmart(higher[1])}.`
+    : gap !== null
+      ? `Men and women were admitted at similar rates (${pctSmart(men)} and ${pctSmart(women)}).`
+      : `Men were admitted at ${pctSmart(men)}, women at ${pctSmart(women)}; with under ${BY_SEX_MIN_APPLICANTS} applicants of one sex, the difference says little.`;
+  return { men, women, notable, sentence };
 }
 
 /** Above this percentile of colleges, the share of students 25 and older earns a "Many adult students" chip. */

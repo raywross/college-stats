@@ -14,6 +14,7 @@ export function RangeBar({
   scale,
   color,
   medianMid,
+  median,
   you,
   ticks,
   compact,
@@ -25,6 +26,8 @@ export function RangeBar({
   scale: [number, number];
   color: string;
   medianMid?: number;
+  /** This college's own median (a true median, not the range's midpoint), drawn as a dot on the bar. */
+  median?: number | null;
   you?: number | null;
   ticks?: number[];
   compact?: boolean;
@@ -48,6 +51,7 @@ export function RangeBar({
             {low}
             <span className="mx-0.5 text-muted-foreground">–</span>
             {high}
+            {median != null && <span className="ml-1.5 font-normal text-muted-foreground">median {median}</span>}
           </span>
         </div>
       )}
@@ -67,6 +71,16 @@ export function RangeBar({
             className="absolute -inset-y-1 w-0.5 -translate-x-1/2 rounded-full bg-foreground/70"
             style={{ left: `${pos(medianMid)}%` }}
             title={`National median: ${Math.round(medianMid)}`}
+          />
+        )}
+        {/* This college's median */}
+        {median != null && (
+          <div
+            className="absolute top-1/2 size-3 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 bg-card"
+            style={{ left: `${pos(median)}%`, borderColor: color }}
+            role="img"
+            aria-label={`Median ${median}`}
+            title={`Median: ${median}`}
           />
         )}
         {/* You */}

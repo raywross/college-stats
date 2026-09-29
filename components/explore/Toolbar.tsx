@@ -85,6 +85,7 @@ const SORTS = [
   { value: "men_share", label: "Share of men (most)", dir: "desc" },
   { value: "part_time", label: "Part-time share (lowest)", dir: "asc" },
   { value: "men_share_change", label: "Men's share change, 10 yrs (biggest drop)", dir: "asc" },
+  { value: "admit_gap", label: "Admit rate gap (men higher first)", dir: "desc" },
 ] as const;
 
 export function SortControl() {

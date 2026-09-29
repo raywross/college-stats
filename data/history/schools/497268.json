@@ -6,6 +6,7 @@
     "enrolled": {"start":2021,"values":[20,22,28,5]},
     "acceptance_rate": {"start":2021,"values":[1,1,1,1]},
     "yield": {"start":2021,"values":[0.3922,0.4231,0.3256,0.1852]},
+    "admit_rate_women": {"start":2021,"values":[1,1,1,1]},
     "tuition_in_state": {"start":2021,"values":[20826,21946,22586]},
     "tuition_out_of_state": {"start":2021,"values":[20826,21946,22586]},
     "aided_net_price": {"start":2021,"values":[29312,30774,36100]},

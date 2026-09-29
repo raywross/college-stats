@@ -6,6 +6,8 @@
     "enrolled": {"start":2003,"values":[10,9,5,3,1,4,3,4,3,1,2,6,2,4,7,0,3,3,2,4,3,4]},
     "acceptance_rate": {"start":2003,"values":[0.9091,0.9,null,null,null,null,null,null,null,null,null,0.3478,null,null,0.8,null,null,0.3125,null,null,null,0.76]},
     "yield": {"start":2003,"values":[1,1,1,1,1,1,1,0.8,0.75,1,1,0.75,0.6667,0.8,0.875,0,1,0.6,0.6667,0.8,0.75,0.1053]},
+    "admit_rate_men": {"start":2014,"values":[0.2,null,null,null,null,null,null,null,null,null,0.8947]},
+    "admit_rate_women": {"start":2014,"values":[0.4615,null,null,null,null,null,0.3333,null,null,null,0.6774]},
     "tuition_in_state": {"start":2003,"values":[3580,4460,4710,4460,5110,5110,5110,5310,5460,5610,5970,6120,6070,6220,6570,6570,6870,7920,8040,8160,8220]},
     "tuition_out_of_state": {"start":2003,"values":[3580,4460,4710,4460,5110,5110,5110,5310,5460,5610,5970,6120,6070,6220,6570,6570,6870,7920,8040,8160,8220]},
     "sticker_in_state": {"start":2003,"values":[10030,12670,13710,14658,15308,15308,15308,17091,17802,19734,20094,22305,22255,22405,22914,22914,23214,24400,25272,26242,34797]},

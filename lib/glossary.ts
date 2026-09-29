@@ -44,6 +44,14 @@ const entries = {
     category: "Admissions",
     related: ["applicants", "admitted", "selectivity"],
   },
+  "admit-rate-by-sex": {
+    term: "Acceptance rate by sex",
+    short: "The share of men who applied who were admitted, and the same for women, as colleges report them to the federal government.",
+    long: "Applicants who reported another gender or none count in the overall rate but aren't shown as a separate rate: the numbers are too small. A gap is compared only when both men and women number at least 200 applicants.",
+    why: "At some colleges one sex applies in much larger numbers than the other. A gap can reflect who applies as much as how the college chooses; the numbers alone don't say which.",
+    category: "Admissions",
+    related: ["acceptance-rate", "gender-balance"],
+  },
   applicants: {
     term: "Applicants",
     short: "The number of first-year students who submitted a completed application.",
@@ -81,6 +89,14 @@ const entries = {
     short: "Our plain-English label for acceptance rate: Most selective (<10%), Highly selective (10–25%), Selective (25–50%), Broadly accessible (50%+).",
     category: "How we measure",
     related: ["acceptance-rate"],
+  },
+  "median-vs-midpoint": {
+    term: "Median vs. midpoint",
+    short: "The median is the score in the middle of all enrolled students who submitted one. The midpoint is halfway between the 25th and 75th percentiles.",
+    long: "Colleges only recently began reporting true medians to the federal government, so older years have the midpoint alone. When scores bunch up near the top of the range, the median sits above the midpoint. The SAT total median here adds the two section medians, an approximation like the SAT total range.",
+    why: "The median says where the typical student actually scored; the midpoint is only the center of the range.",
+    category: "Test scores",
+    related: ["middle-50", "percentile"],
   },
   "middle-50": {
     term: "Middle 50%",

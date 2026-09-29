@@ -44,6 +44,21 @@ export function acceptanceRate(applicants: number | null, admitted: number | nul
   return applicants && applicants >= 10 && admitted !== null ? round(Math.min(1, admitted / applicants)) : null;
 }
 
+/** Acceptance rates for men and women, with the overall rate's rule (none under 10 applicants). */
+export function admitRatesBySex(s: Pick<School, "admissions">): { men: number | null; women: number | null } {
+  const b = s.admissions.by_sex;
+  return {
+    men: b ? acceptanceRate(b.men.applicants, b.men.admitted) : null,
+    women: b ? acceptanceRate(b.women.applicants, b.women.admitted) : null,
+  };
+}
+
+/** SAT total median: the section medians added, an approximation like the total range (fall 2022 on). */
+export function satMedian(s: Pick<School, "admissions">): number | null {
+  const { sat_reading_median: r, sat_math_median: m } = s.admissions;
+  return r != null && m != null ? r + m : null;
+}
+
 /**
  * Enrolled ÷ admitted. Null when nobody was admitted, or when a college reports more enrollees than admits (a
  * reporting error in a few past years; an impossible yield would distort charts and national medians).

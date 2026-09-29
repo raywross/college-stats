@@ -6,6 +6,7 @@
     "enrolled": {"start":2018,"values":[2,3,41,52,51,47,46]},
     "acceptance_rate": {"start":2020,"values":[0.8077,0.8852,1,0.9615,0.9796]},
     "yield": {"start":2018,"values":[0.6667,0.6,0.9762,0.963,0.9273,0.94,0.9583]},
+    "admit_rate_women": {"start":2020,"values":[0.8077,0.8852,1,0.9615,0.9796]},
     "tuition_in_state": {"start":2018,"values":[9850,10066,10366,10699,9010,9300]},
     "tuition_out_of_state": {"start":2018,"values":[9850,10066,10366,10699,9010,9300]},
     "aided_net_price": {"start":2019,"values":[18886,18143,20687,13844,17703]},

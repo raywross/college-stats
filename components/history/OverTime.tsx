@@ -664,6 +664,22 @@ export function OverTime(props: OverTimeProps) {
               { key: "yield", name: "Yield", color: CONTEXT, dashed: true },
             ]}
           />
+          {history.series.admit_rate_men && history.series.admit_rate_women && (
+            // One hue for both, told apart by dash and direct labels: neither line is the "main" one.
+            <ChartPanel
+              {...common}
+              title="Acceptance rate, men and women"
+              term="admit-rate-by-sex"
+              kind="fall"
+              format="pctSmart"
+              window={admWindow}
+              provisionalYear={provisional.fall}
+              specs={[
+                { key: "admit_rate_women", name: "Women", color: colors.admissions },
+                { key: "admit_rate_men", name: "Men", color: colors.admissions, dashed: true },
+              ]}
+            />
+          )}
         </div>
       </Group>
 

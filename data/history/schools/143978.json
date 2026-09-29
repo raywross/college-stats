@@ -6,6 +6,8 @@
     "enrolled": {"start":2002,"values":[0,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,0,1,4]},
     "acceptance_rate": {"start":2020,"values":[0,0,0.0698,0.3333,0.3448]},
     "yield": {"start":2022,"values":[0,0.1111,0.4]},
+    "admit_rate_men": {"start":2020,"values":[0,null,0,null,0.2]},
+    "admit_rate_women": {"start":2020,"values":[0,0,0.0968,0.3889,0.4211]},
     "tuition_in_state": {"start":2020,"values":[12524,12712,13224,20844]},
     "tuition_out_of_state": {"start":2020,"values":[12524,12712,13224,20844]},
     "sat_submit": {"start":2023,"values":[0,0]},

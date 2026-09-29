@@ -73,6 +73,12 @@ export const FIELDS = {
   "admissions.test_submission_rate_sat": adm("Share submitting SAT"),
   "admissions.test_submission_rate_act": adm("Share submitting ACT"),
   "admissions.test_policy": adm("Test policy"),
+  "admissions.by_sex": adm("Applicants, admits, and enrollees by sex"),
+  "admissions.sat_reading_median": adm("SAT Reading & Writing, median"),
+  "admissions.sat_math_median": adm("SAT Math, median"),
+  "admissions.act_composite_median": adm("ACT composite, median"),
+  "admissions.act_english_25_75": adm("ACT English, middle 50%"),
+  "admissions.act_math_25_75": adm("ACT Math, middle 50%"),
 
   /* ---- Students (Scorecard, from IPEDS fall enrollment) ---- */
   "demographics.undergrad_enrollment": scorecard("Undergraduates", "enrollment", "scorecard-enrollment"),
@@ -170,6 +176,21 @@ export const FIELDS = {
     ...adm("ACT midpoint"),
     computed: true,
     derived: { formula: "Midpoint of the ACT middle 50%", inputs: ["admissions.act_composite_25_75"] },
+  },
+  "derived.admit_rate_men": {
+    ...adm("Acceptance rate, men"),
+    computed: true,
+    derived: { formula: "Men admitted ÷ men who applied (not calculated under 10 applicants)", inputs: ["admissions.by_sex"] },
+  },
+  "derived.admit_rate_women": {
+    ...adm("Acceptance rate, women"),
+    computed: true,
+    derived: { formula: "Women admitted ÷ women who applied (not calculated under 10 applicants)", inputs: ["admissions.by_sex"] },
+  },
+  "derived.sat_median": {
+    ...adm("SAT total, median"),
+    computed: true,
+    derived: { formula: "Reading & Writing median + Math median (an approximation, like the SAT total range)", inputs: ["admissions.sat_reading_median", "admissions.sat_math_median"] },
   },
   "derived.yield": {
     ...adm("Yield rate"),

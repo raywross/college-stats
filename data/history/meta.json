@@ -1,5 +1,5 @@
 {
-  "built": "2026-09-28",
+  "built": "2026-09-29",
   "latest": {
     "fall": 2024,
     "academic": 2023,
@@ -443,169 +443,169 @@
     "scorecard-enrollment": [
       {
         "year": 1996,
-        "file": "College Scorecard API (undergrads)",
+        "file": "College Scorecard API (undergrads, men_share, part_time_share)",
         "url": "https://collegescorecard.ed.gov/data/",
         "revised": false
       },
       {
         "year": 1997,
-        "file": "College Scorecard API (undergrads)",
+        "file": "College Scorecard API (undergrads, men_share, part_time_share)",
         "url": "https://collegescorecard.ed.gov/data/",
         "revised": false
       },
       {
         "year": 1998,
-        "file": "College Scorecard API (undergrads)",
+        "file": "College Scorecard API (undergrads, men_share, part_time_share)",
         "url": "https://collegescorecard.ed.gov/data/",
         "revised": false
       },
       {
         "year": 1999,
-        "file": "College Scorecard API (undergrads)",
+        "file": "College Scorecard API (undergrads, men_share, part_time_share)",
         "url": "https://collegescorecard.ed.gov/data/",
         "revised": false
       },
       {
         "year": 2001,
-        "file": "College Scorecard API (undergrads)",
+        "file": "College Scorecard API (undergrads, men_share, part_time_share)",
         "url": "https://collegescorecard.ed.gov/data/",
         "revised": false
       },
       {
         "year": 2002,
-        "file": "College Scorecard API (undergrads)",
+        "file": "College Scorecard API (undergrads, men_share, part_time_share)",
         "url": "https://collegescorecard.ed.gov/data/",
         "revised": false
       },
       {
         "year": 2003,
-        "file": "College Scorecard API (undergrads)",
+        "file": "College Scorecard API (undergrads, men_share, part_time_share)",
         "url": "https://collegescorecard.ed.gov/data/",
         "revised": false
       },
       {
         "year": 2004,
-        "file": "College Scorecard API (undergrads)",
+        "file": "College Scorecard API (undergrads, men_share, part_time_share)",
         "url": "https://collegescorecard.ed.gov/data/",
         "revised": false
       },
       {
         "year": 2005,
-        "file": "College Scorecard API (undergrads)",
+        "file": "College Scorecard API (undergrads, men_share, part_time_share)",
         "url": "https://collegescorecard.ed.gov/data/",
         "revised": false
       },
       {
         "year": 2006,
-        "file": "College Scorecard API (undergrads)",
+        "file": "College Scorecard API (undergrads, men_share, part_time_share)",
         "url": "https://collegescorecard.ed.gov/data/",
         "revised": false
       },
       {
         "year": 2007,
-        "file": "College Scorecard API (undergrads)",
+        "file": "College Scorecard API (undergrads, men_share, part_time_share)",
         "url": "https://collegescorecard.ed.gov/data/",
         "revised": false
       },
       {
         "year": 2008,
-        "file": "College Scorecard API (undergrads)",
+        "file": "College Scorecard API (undergrads, men_share, part_time_share)",
         "url": "https://collegescorecard.ed.gov/data/",
         "revised": false
       },
       {
         "year": 2009,
-        "file": "College Scorecard API (undergrads)",
+        "file": "College Scorecard API (undergrads, men_share, part_time_share)",
         "url": "https://collegescorecard.ed.gov/data/",
         "revised": false
       },
       {
         "year": 2010,
-        "file": "College Scorecard API (undergrads)",
+        "file": "College Scorecard API (undergrads, men_share, part_time_share)",
         "url": "https://collegescorecard.ed.gov/data/",
         "revised": false
       },
       {
         "year": 2011,
-        "file": "College Scorecard API (undergrads)",
+        "file": "College Scorecard API (undergrads, men_share, part_time_share)",
         "url": "https://collegescorecard.ed.gov/data/",
         "revised": false
       },
       {
         "year": 2012,
-        "file": "College Scorecard API (undergrads)",
+        "file": "College Scorecard API (undergrads, men_share, part_time_share)",
         "url": "https://collegescorecard.ed.gov/data/",
         "revised": false
       },
       {
         "year": 2013,
-        "file": "College Scorecard API (undergrads)",
+        "file": "College Scorecard API (undergrads, men_share, part_time_share)",
         "url": "https://collegescorecard.ed.gov/data/",
         "revised": false
       },
       {
         "year": 2014,
-        "file": "College Scorecard API (undergrads)",
+        "file": "College Scorecard API (undergrads, men_share, part_time_share)",
         "url": "https://collegescorecard.ed.gov/data/",
         "revised": false
       },
       {
         "year": 2015,
-        "file": "College Scorecard API (undergrads)",
+        "file": "College Scorecard API (undergrads, men_share, part_time_share)",
         "url": "https://collegescorecard.ed.gov/data/",
         "revised": false
       },
       {
         "year": 2016,
-        "file": "College Scorecard API (undergrads)",
+        "file": "College Scorecard API (undergrads, men_share, part_time_share)",
         "url": "https://collegescorecard.ed.gov/data/",
         "revised": false
       },
       {
         "year": 2017,
-        "file": "College Scorecard API (undergrads)",
+        "file": "College Scorecard API (undergrads, men_share, part_time_share)",
         "url": "https://collegescorecard.ed.gov/data/",
         "revised": false
       },
       {
         "year": 2018,
-        "file": "College Scorecard API (undergrads)",
+        "file": "College Scorecard API (undergrads, men_share, part_time_share)",
         "url": "https://collegescorecard.ed.gov/data/",
         "revised": false
       },
       {
         "year": 2019,
-        "file": "College Scorecard API (undergrads)",
+        "file": "College Scorecard API (undergrads, men_share, part_time_share)",
         "url": "https://collegescorecard.ed.gov/data/",
         "revised": false
       },
       {
         "year": 2020,
-        "file": "College Scorecard API (undergrads)",
+        "file": "College Scorecard API (undergrads, men_share, part_time_share)",
         "url": "https://collegescorecard.ed.gov/data/",
         "revised": false
       },
       {
         "year": 2021,
-        "file": "College Scorecard API (undergrads)",
+        "file": "College Scorecard API (undergrads, men_share, part_time_share)",
         "url": "https://collegescorecard.ed.gov/data/",
         "revised": false
       },
       {
         "year": 2022,
-        "file": "College Scorecard API (undergrads)",
+        "file": "College Scorecard API (undergrads, men_share, part_time_share)",
         "url": "https://collegescorecard.ed.gov/data/",
         "revised": false
       },
       {
         "year": 2023,
-        "file": "College Scorecard API (undergrads)",
+        "file": "College Scorecard API (undergrads, men_share, part_time_share)",
         "url": "https://collegescorecard.ed.gov/data/",
         "revised": false
       },
       {
         "year": 2024,
-        "file": "College Scorecard API (undergrads)",
+        "file": "College Scorecard API (undergrads, men_share, part_time_share)",
         "url": "https://collegescorecard.ed.gov/data/",
         "revised": false
       }

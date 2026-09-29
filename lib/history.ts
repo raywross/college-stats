@@ -57,7 +57,7 @@ export const HISTORY_FAMILIES = {
   prices: { source: "ipeds-ic", kind: "academic", files: "IC{year}_AY, then COST1_{year+1}" },
   sfa: { source: "ipeds-sfa", kind: "academic", files: "SFA{yy}{yy+1}, plus COST2_{year+1} since NCES moved residency and net price there" },
   // College Scorecard API, year-prefixed fields (not files): years can have gaps, so they aren't checked as consecutive.
-  "scorecard-enrollment": { source: "scorecard", kind: "fall", files: "API fields {year}.student.size and {year}.student.demographics.race_ethnicity.*", api: true, citeAs: "enrollment" },
+  "scorecard-enrollment": { source: "scorecard", kind: "fall", files: "API fields {year}.student.size, {year}.student.demographics.race_ethnicity.*, .men, and {year}.student.part_time_share", api: true, citeAs: "enrollment" },
   "scorecard-completion": { source: "scorecard", kind: "cohort", files: "API field {year+6}.completion.completion_rate_4yr_150nt", api: true, citeAs: "graduation by entering class" },
   "scorecard-debt": { source: "scorecard", kind: "academic", files: "API field {year}.aid.median_debt.completers.overall", api: true, citeAs: "median debt" },
 } as const satisfies Record<string, { source: SourceKey; kind: YearKind; files: string; api?: true; citeAs?: string }>;
@@ -119,6 +119,8 @@ export const SERIES = {
   race_two_or_more: { label: "Two or more", short: "Two or more", field: "demographics.racial_diversity", term: "race-ethnicity", unit: "share", kind: "fall", format: "pct", families: ENROLLMENT },
   race_international: { label: "International", short: "International", field: "demographics.racial_diversity", term: "race-ethnicity", unit: "share", kind: "fall", format: "pct", families: ENROLLMENT },
   race_other: { label: "Other/unknown", short: "Other/unknown", field: "demographics.racial_diversity", term: "race-ethnicity", unit: "share", kind: "fall", format: "pct", families: ENROLLMENT },
+  men_share: { label: "Men (share of undergraduates)", short: "Men", field: "demographics.men_share", term: "gender-balance", unit: "share", kind: "fall", format: "pct", families: ENROLLMENT },
+  part_time_share: { label: "Part-time students", short: "Part-time", field: "demographics.part_time_share", term: "part-time-student", unit: "share", kind: "fall", format: "pct", families: ENROLLMENT },
   grad_rate: { label: "Graduated within 6 years", short: "Graduated in 6 years", field: "outcomes.graduation_rate", term: "graduation-rate", unit: "share", kind: "cohort", format: "pct", families: ["scorecard-completion"] },
   median_debt: { label: "Median debt at graduation", short: "Median debt", field: "outcomes.median_debt", term: "median-debt", unit: "usd", kind: "academic", format: "money", families: ["scorecard-debt"] },
 } as const satisfies Record<string, SeriesDef>;
@@ -138,7 +140,6 @@ export const RACE_SERIES = {
 } as const satisfies Record<string, SeriesKey>;
 /** Race/ethnicity history starts with fall 2010, when the new federal categories became required. */
 export const RACE_FROM = 2010;
-
 export function isSeriesKey(k: string): k is SeriesKey {
   return Object.prototype.hasOwnProperty.call(SERIES, k);
 }
@@ -417,7 +418,7 @@ export function tenYearSummary(
 }
 
 /** The measures summarized into school.trends (data/schools.json). */
-export const TREND_KEYS = ["avg_paid_all", "full_price", "acceptance_rate", "applicants", "undergrads", "grant_pct"] as const satisfies readonly SeriesKey[];
+export const TREND_KEYS = ["avg_paid_all", "full_price", "acceptance_rate", "applicants", "undergrads", "grant_pct", "men_share"] as const satisfies readonly SeriesKey[];
 
 /** Diversity index (Simpson's, as lib/metrics.ts `diversityIndex`) from the race/ethnicity shares in one fall. */
 export function diversityIndexAt(h: SchoolHistory, year: number): number | null {

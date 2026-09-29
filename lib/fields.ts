@@ -15,6 +15,8 @@ export type VintageKey =
   | "ipeds-sfa"
   | "ipeds-ic"
   | "scorecard-enrollment"
+  /** Student age: IPEDS collects it in odd-numbered falls only, so it trails enrollment by a year every other year. */
+  | "scorecard-age"
   | "scorecard-cost"
   | "scorecard-latest";
 
@@ -77,6 +79,10 @@ export const FIELDS = {
   "demographics.racial_diversity": scorecard("Race & ethnicity", "demographics", "scorecard-enrollment"),
   "demographics.pell_grant_percent": scorecard("Pell Grant recipients", "demographics"),
   "demographics.first_gen_percent": scorecard("First-generation students", "demographics"),
+  "demographics.men_share": scorecard("Men (share of undergraduates)", "demographics", "scorecard-enrollment"),
+  "demographics.women_share": scorecard("Women (share of undergraduates)", "demographics", "scorecard-enrollment"),
+  "demographics.part_time_share": scorecard("Part-time students", "enrollment", "scorecard-enrollment"),
+  "demographics.age_25_plus_share": scorecard("Students 25 and older", "demographics", "scorecard-age"),
 
   /* ---- Cost (Scorecard) ---- */
   "cost.avg_net_price": scorecard("Average net price (federal aid recipients)", "cost", "scorecard-cost"),
@@ -145,7 +151,7 @@ export const FIELDS = {
     vintage: "ipeds-ic",
     derived: {
       formula: "Change over the last 10 years of each college's history; money after inflation (CPI-U), shares and the diversity index in points",
-      inputs: ["cost.avg_paid_all", "cost.breakdown", "admissions.acceptance_rate", "admissions.applicants", "demographics.undergrad_enrollment", "demographics.racial_diversity", "aid.grant_pct"],
+      inputs: ["cost.avg_paid_all", "cost.breakdown", "admissions.acceptance_rate", "admissions.applicants", "demographics.undergrad_enrollment", "demographics.racial_diversity", "demographics.men_share", "aid.grant_pct"],
     },
   },
 

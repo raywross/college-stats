@@ -145,6 +145,20 @@ export function studentsTakeaway({ rankOf }: Dataset, s: School): string {
   return `${base}, where ${pct(pell)} receive Pell Grants, ${pellTone} compared to other colleges.`;
 }
 
+/** Above this percentile of colleges, the share of students 25 and older earns a "Many adult students" chip. */
+export const ADULT_STUDENTS_RANK = 0.75;
+
+/**
+ * Plain-language notes for the profile's student-body card (specs/data-expansion/student-body.md): how many study
+ * part-time, and whether adult students are unusually common. Neutral wording; none of these is better or worse.
+ */
+export function studentBodyNotes({ rankOf }: Dataset, s: School): { study: string | null; manyAdults: boolean } {
+  const p = s.demographics.part_time_share;
+  const study = p == null ? null : p < 0.03 ? "Almost everyone studies full-time." : `${pctSmart(p)} of undergrads study part-time.`;
+  const adultRank = rankOf(s, "adults");
+  return { study, manyAdults: adultRank !== null && adultRank >= ADULT_STUDENTS_RANK };
+}
+
 /** Sticker phrase for a year, e.g. "$84,412" or "$36,980 in-state / $67,052 out-of-state". */
 export function stickerPhrase(s: School): string | null {
   const st = s.cost?.sticker;

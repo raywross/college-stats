@@ -123,9 +123,13 @@ export type MetricKey =
   | "earnings"
   | "gradRate"
   | "debt"
+  | "menShare"
+  | "partTime"
+  | "adults"
   | "applicantsChange"
   | "sizeChange"
   | "diversityChange"
+  | "menShareChange"
   | "avgCostChange";
 
 export interface MetricDef {
@@ -338,6 +342,45 @@ export const METRICS: Record<MetricKey, MetricDef> = {
     more: "more debt",
     less: "less debt",
   },
+  menShare: {
+    key: "menShare",
+    field: "demographics.men_share",
+    label: "Men",
+    short: "Men %",
+    term: "gender-balance",
+    domain: "access",
+    get: (s) => s.demographics.men_share ?? null,
+    format: (v) => pct(v),
+    scale: [0, 1],
+    more: "more men",
+    less: "fewer men",
+  },
+  partTime: {
+    key: "partTime",
+    field: "demographics.part_time_share",
+    label: "Part-time students",
+    short: "Part-time %",
+    term: "part-time-student",
+    domain: "access",
+    get: (s) => s.demographics.part_time_share ?? null,
+    format: (v) => pct(v),
+    scale: [0, 1],
+    more: "more part-time students",
+    less: "fewer part-time students",
+  },
+  adults: {
+    key: "adults",
+    field: "demographics.age_25_plus_share",
+    label: "Students 25 and older",
+    short: "25+ %",
+    term: "adult-students",
+    domain: "access",
+    get: (s) => s.demographics.age_25_plus_share ?? null,
+    format: (v) => pct(v),
+    scale: [0, 1],
+    more: "more adult students",
+    less: "fewer adult students",
+  },
   // 10-year changes (school.trends, from data/history/). Tiny bases are left out: a percent change on a handful of
   // applicants or students says nothing.
   applicantsChange: {
@@ -375,6 +418,19 @@ export const METRICS: Record<MetricKey, MetricDef> = {
     format: (v) => `${v > 0 ? "+" : v < 0 ? "−" : ""}${Math.abs(v).toFixed(2)}`,
     more: "faster-diversifying",
     less: "slower-diversifying",
+  },
+  menShareChange: {
+    key: "menShareChange",
+    field: "trends",
+    label: "Men's share, 10-year change",
+    short: "Men % change",
+    term: "gender-balance",
+    domain: "access",
+    // Points; same small-college floor as the size change, since a few students swing a small college's shares.
+    get: (s) => (s.trends?.men_share && s.trends.undergrads && Math.min(s.trends.undergrads.from, s.trends.undergrads.to) >= 300 ? s.trends.men_share.change : null),
+    format: (v) => `${v > 0 ? "+" : v < 0 ? "−" : ""}${Math.round(Math.abs(v) * 100)} pts`,
+    more: "shifting toward men",
+    less: "shifting toward women",
   },
   avgCostChange: {
     key: "avgCostChange",

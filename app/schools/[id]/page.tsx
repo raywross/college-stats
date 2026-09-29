@@ -31,6 +31,7 @@ import {
   similarSchools,
   standouts,
   studentsTakeaway,
+  studentBodyNotes,
   yieldTakeaway,
 } from "@/lib/insights";
 import { compact, money, moneyCompact, num, pct, pctSmart, range, typeLabel } from "@/lib/format";
@@ -71,12 +72,12 @@ const HISTORY_GROUPS = {
   aid: ["grant_pct", "grant_avg", "aid_generosity"],
   admissions: ["applicants", "admitted", "enrolled", "acceptance_rate", "yield"],
   scores: ["sat_25", "sat_75", "act_25", "act_75", "sat_submit", "test_policy"],
-  students: ["undergrads", "race_white"],
+  students: ["undergrads", "race_white", "men_share", "part_time_share"],
   outcomes: ["grad_rate", "median_debt"],
 } as const satisfies Record<string, readonly SeriesKey[]>;
 
 /** National series the charts draw as a band (keeps the page payload small). */
-const BANDED: readonly SeriesKey[] = ["avg_paid_all", "grant_pct", "grant_avg", "acceptance_rate", "sat_25", "sat_75", "act_25", "act_75", "grad_rate", "median_debt"];
+const BANDED: readonly SeriesKey[] = ["avg_paid_all", "grant_pct", "grant_avg", "acceptance_rate", "sat_25", "sat_75", "act_25", "act_75", "grad_rate", "median_debt", "men_share", "part_time_share"];
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -131,6 +132,10 @@ const SECTION_FIELDS = {
     "demographics.pell_grant_percent",
     "demographics.first_gen_percent",
     "demographics.undergrad_enrollment",
+    "demographics.men_share",
+    "demographics.women_share",
+    "demographics.part_time_share",
+    "demographics.age_25_plus_share",
   ],
   cost: [
     "cost.avg_paid_all",
@@ -281,6 +286,7 @@ export default async function SchoolPage({ params }: Props) {
   const sat = satComposite(school);
   const yld = yieldRate(school);
   const div = diversityIndex(school);
+  const body = studentBodyNotes(data, school);
   const counts = hasAdmissionCounts(school);
   const scores = hasTestScores(school);
   const onMap = rate !== null && satMid(school) !== null;
@@ -731,6 +737,61 @@ export default async function SchoolPage({ params }: Props) {
                   color={DOMAINS.size.color}
                 />
               </div>
+              {(d.men_share != null || d.part_time_share != null || d.age_25_plus_share != null) && (
+                <ShowMore label="Show men, women, part-time, and age" hint="How the student body compares with the median college" className="lg:col-span-2">
+                  <div className="rounded-3xl border bg-card p-4 sm:p-6">
+                    <div className="mb-5 flex flex-wrap items-center gap-x-3 gap-y-2">
+                      <h3 className="font-display text-lg font-bold">Who they are</h3>
+                      {body.manyAdults && (
+                        <StandoutChip standout={{ label: "Many adult students", domain: "access", metric: "adults" }} />
+                      )}
+                      {body.study && <p className="w-full text-sm text-muted-foreground sm:ml-auto sm:w-auto">{body.study}</p>}
+                    </div>
+                    <div className="grid gap-6 sm:grid-cols-3">
+                      {d.men_share != null && (
+                        <div>
+                          <BenchmarkBar
+                            label="Men"
+                            term="gender-balance"
+                            cited={citeField("demographics.men_share", school)}
+                            value={d.men_share}
+                            median={metricMedian("menShare") ?? undefined}
+                            scale={[0, 1]}
+                            format={(v) => pct(v)}
+                            color={DOMAINS.access.color}
+                          />
+                          {d.women_share != null && <p className="mt-1.5 text-xs text-muted-foreground">{pct(d.women_share)} women</p>}
+                        </div>
+                      )}
+                      {d.part_time_share != null && (
+                        <BenchmarkBar
+                          label="Part-time students"
+                          term="part-time-student"
+                          cited={citeField("demographics.part_time_share", school)}
+                          value={d.part_time_share}
+                          median={metricMedian("partTime") ?? undefined}
+                          scale={[0, 1]}
+                          format={pctSmart}
+                          color={DOMAINS.access.color}
+                        />
+                      )}
+                      {d.age_25_plus_share != null && (
+                        <BenchmarkBar
+                          label="Students 25 and older"
+                          term="adult-students"
+                          cited={citeField("demographics.age_25_plus_share", school)}
+                          value={d.age_25_plus_share}
+                          median={metricMedian("adults") ?? undefined}
+                          scale={[0, 1]}
+                          format={pctSmart}
+                          color={DOMAINS.access.color}
+                        />
+                      )}
+                    </div>
+                    <p className="mt-4 text-xs text-muted-foreground">Degree-seeking undergraduates.</p>
+                  </div>
+                </ShowMore>
+              )}
             </div>
           </Panel>
 

@@ -36,6 +36,8 @@
     "race_two_or_more": {"start":2022,"values":[0.0343,0.0312,0.0323]},
     "race_international": {"start":2022,"values":[0.0114,0.0119,0.0141]},
     "race_other": {"start":2022,"values":[0.0381,0.0836,0.1025]},
+    "men_share": {"start":2022,"values":[0.3899,0.3892,0.3932]},
+    "part_time_share": {"start":2022,"values":[0.1466,0.1413,0.1326]},
     "grad_rate": {"start":2016,"values":[0.4813,0.5103,0.5188]}
   }
 }

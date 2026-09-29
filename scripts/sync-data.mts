@@ -108,6 +108,11 @@ const FIELDS = [
   "latest.student.size",
   "latest.aid.pell_grant_rate",
   "latest.student.share_firstgeneration",
+  // Student body (specs/data-expansion/student-body.md). Average age at entry is left out: its newest year is 2015.
+  "latest.student.demographics.men",
+  "latest.student.demographics.women",
+  "latest.student.part_time_share",
+  "latest.student.share_25_older",
   `${RACE}.white`,
   `${RACE}.black`,
   `${RACE}.hispanic`,
@@ -285,6 +290,10 @@ function toSchool(
         const v = numOrNull(sc["latest.student.share_firstgeneration"]);
         return v === null ? null : round(v);
       })(),
+      men_share: roundOrNull(numOrNull(sc["latest.student.demographics.men"])),
+      women_share: roundOrNull(numOrNull(sc["latest.student.demographics.women"])),
+      part_time_share: roundOrNull(numOrNull(sc["latest.student.part_time_share"])),
+      age_25_plus_share: roundOrNull(numOrNull(sc["latest.student.share_25_older"])),
       racial_diversity: racialDiversity,
     },
     cost: {
@@ -326,12 +335,12 @@ function normalizeUrl(v: unknown): string | null {
 /**
  * Scorecard's "latest" fields don't say which year they describe. Find the
  * year-keyed field whose value matches "latest". The key's meaning varies by
- * field (checked against IPEDS in Sept 2026): for enrollment, key N = fall N;
- * for net price, key N = academic year N-1–N.
+ * field (checked against IPEDS in Sept 2026): for enrollment and age, key N = fall N;
+ * for net price, key N = academic year N-1–N. Age is collected in odd-numbered falls only.
  */
-async function detectScorecardYears(key: string, id: string): Promise<{ enrollment: string | null; cost: string | null }> {
+async function detectScorecardYears(key: string, id: string): Promise<ScorecardYears> {
   const years = Array.from({ length: 6 }, (_, i) => thisYear - i);
-  const probes = { enrollment: "student.size", cost: "cost.avg_net_price.overall" } as const;
+  const probes = { enrollment: "student.size", age: "student.share_25_older", cost: "cost.avg_net_price.overall" } as const;
   const fields = Object.values(probes).flatMap((f) => [`latest.${f}`, ...years.map((y) => `${y}.${f}`)]);
   const params = new URLSearchParams({ id, fields: fields.join(","), api_key: key });
   try {
@@ -339,12 +348,15 @@ async function detectScorecardYears(key: string, id: string): Promise<{ enrollme
     const row = data.results[0] ?? {};
     const find = (f: string) => years.find((y) => row[`latest.${f}`] != null && row[`${y}.${f}`] === row[`latest.${f}`]);
     const e = find(probes.enrollment);
+    const a = find(probes.age);
     const c = find(probes.cost);
-    return { enrollment: e ? `Fall ${e}` : null, cost: c ? `${c - 1}–${String(c).slice(2)}` : null };
+    return { enrollment: e ? `Fall ${e}` : null, age: a ? `Fall ${a}` : null, cost: c ? `${c - 1}–${String(c).slice(2)}` : null };
   } catch {
-    return { enrollment: null, cost: null };
+    return { enrollment: null, age: null, cost: null };
   }
 }
+
+type ScorecardYears = { enrollment: string | null; age: string | null; cost: string | null };
 
 /** Citation details for every source and the year each release describes. */
 function buildMeta(
@@ -352,7 +364,7 @@ function buildMeta(
   sfa: IpedsFile,
   ic: IpedsFile,
   sfaYears: string,
-  scorecardYears: { enrollment: string | null; cost: string | null },
+  scorecardYears: ScorecardYears,
   cost2: IpedsFile | null
 ): DatasetMeta {
   const scorecardCostYear = scorecardYears.cost;
@@ -405,6 +417,7 @@ function buildMeta(
       "ipeds-sfa": sfaYears,
       "ipeds-ic": sfaYears,
       "scorecard-enrollment": scorecardYears.enrollment,
+      "scorecard-age": scorecardYears.age,
       "scorecard-cost": scorecardYears.cost,
       // Outcomes and other Scorecard fields each describe different cohorts; no single year.
       "scorecard-latest": null,

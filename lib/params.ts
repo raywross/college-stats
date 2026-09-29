@@ -1,5 +1,6 @@
 import type { ExploreView, SchoolType, SearchFilters, SizeBucket, SortKey } from "./types";
 import { INDICATORS, INDICATOR_KEYS, isDirection, type Direction, type IndicatorKey } from "./indicators.ts";
+import { isGenderBalance } from "./student-body.ts";
 
 type Params = Record<string, string | string[] | undefined>;
 
@@ -15,6 +16,7 @@ const n = (v: Params[string]) => {
 const SORT_KEYS: SortKey[] = [
   "applicants", "name", "acceptance_rate", "enrollment", "sat", "pell", "first_gen", "diversity", "avg_cost", "aid_generosity", "net_price", "earnings", "grad_rate",
   "avg_cost_change", "admit_rate_change", "size_change", "apps_change", "diversity_change",
+  "men_share", "part_time", "men_share_change",
 ];
 const VIEWS: ExploreView[] = ["grid", "table", "chart"];
 
@@ -47,6 +49,11 @@ export function parseFilters(params: Params): SearchFilters {
     minCost: n(params.minCost),
     maxCost: n(params.maxCost),
     trends: parseTrends(params),
+    balance: (() => {
+      const b = list(params.balance)?.filter(isGenderBalance);
+      return b?.length ? [...new Set(b)] : undefined;
+    })(),
+    fullTime: str(params.fullTime) === "1" || undefined,
     sortBy: sortBy && SORT_KEYS.includes(sortBy) ? sortBy : "applicants",
     // Default direction: most-applied-to first; everything else ascending.
     sortDir: params.sortDir === "desc" || params.sortDir === "asc" ? params.sortDir : sortBy && sortBy !== "applicants" ? "asc" : "desc",
@@ -75,6 +82,8 @@ export const FILTER_KEYS = [
   "maxEnroll",
   "minCost",
   "maxCost",
+  "balance",
+  "fullTime",
   ...INDICATOR_KEYS.map((k) => INDICATORS[k].param),
 ] as const;
 

@@ -1,5 +1,5 @@
 {
-  "retrieved": "2026-09-28",
+  "retrieved": "2026-09-29",
   "sources": {
     "scorecard": {
       "label": "College Scorecard",
@@ -42,6 +42,7 @@
     "ipeds-sfa": "2023–24",
     "ipeds-ic": "2023–24",
     "scorecard-enrollment": "Fall 2024",
+    "scorecard-age": "Fall 2023",
     "scorecard-cost": "2023–24",
     "scorecard-latest": null
   }

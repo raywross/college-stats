@@ -30,6 +30,8 @@
     "race_two_or_more": {"start":2010,"values":[0,0,0,0,null,null,null,null,null,null,0,0,0,0,0]},
     "race_international": {"start":2010,"values":[0.02,0,0.0313,0,null,null,null,null,null,null,0,0,0,0,0]},
     "race_other": {"start":2010,"values":[0,0,0,0,null,null,null,null,null,null,0,0,0,0,0]},
+    "men_share": {"start":1996,"values":[1,null,1,1,null,1,1,1,1,1,1,1,1,1,1,1,1,1,null,null,null,null,null,null,1,1,1,1,1]},
+    "part_time_share": {"start":1996,"values":[0,null,0,0,null,0,0,0,0,0,0,0,0,0,0,0,0,0,null,null,null,null,null,null,0,0,0,0,0]},
     "grad_rate": {"start":1992,"values":[0.5385,null,null,null,0.2222,0.1429,0.1429,0.2857,0.4,0.1111,0.1111,0.125,0,0.0833,0.0588,0.0625,null,null,null,null,null,null,0,0,0,0.25,0]}
   },
   "repeated": [2013]

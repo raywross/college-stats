@@ -15,6 +15,7 @@
     "race_black": {"start":2022,"values":[0,0,0]},
     "race_two_or_more": {"start":2022,"values":[0,0,0]},
     "race_international": {"start":2022,"values":[0,0,0]},
-    "race_other": {"start":2022,"values":[0,0,0]}
+    "race_other": {"start":2022,"values":[0,0,0]},
+    "men_share": {"start":2022,"values":[0.3333,0.6,0.5714]}
   }
 }

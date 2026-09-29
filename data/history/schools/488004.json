@@ -13,6 +13,8 @@
     "race_black": {"start":2016,"values":[0,0,0,0,0,0,0,0,0]},
     "race_two_or_more": {"start":2016,"values":[0,0,0,0,0,0,0,0,0]},
     "race_international": {"start":2016,"values":[0.0465,0.05,0.05,0,0,0.05,0.25,0.3182,0.4]},
-    "race_other": {"start":2016,"values":[0,0,0,0,0,0,0,0,0]}
+    "race_other": {"start":2016,"values":[0,0,0,0,0,0,0,0,0]},
+    "men_share": {"start":2016,"values":[1,1,1,1,1,1,1,1,1]},
+    "part_time_share": {"start":2016,"values":[0,0,0,0,0,0,0,0,0]}
   }
 }

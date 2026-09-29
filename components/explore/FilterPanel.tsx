@@ -8,6 +8,7 @@ import { InfoTip } from "@/components/ui/info-tip";
 import type { TermKey } from "@/lib/glossary";
 import { DOMAINS, SIZE_BUCKETS } from "@/lib/metrics";
 import { DIRECTIONS, INDICATORS, INDICATOR_KEYS, type Direction, type IndicatorKey } from "@/lib/indicators";
+import { FULL_TIME_MAX_PART_TIME, GENDER_BALANCE, type GenderBalance } from "@/lib/student-body";
 import { useExploreParams } from "./useExploreParams";
 import { cn } from "@/lib/utils";
 
@@ -22,6 +23,9 @@ export interface FilterFacets {
   satRange: [number, number];
   /** Colleges in each direction of each trend indicator (lib/indicators.ts). */
   trends: Record<IndicatorKey, Record<Direction, number>>;
+  /** Colleges in each gender-balance bucket, and mostly full-time colleges (lib/student-body.ts). */
+  balance: Record<GenderBalance, number>;
+  fullTime: number;
 }
 
 function Section({ title, term, children }: { title: string; term?: TermKey; children: ReactNode }) {
@@ -85,9 +89,11 @@ export function FilterPanel({ facets, onDone }: { facets: FilterFacets; onDone?:
   const activeSizes = getList("sizes");
   const activeRegions = getList("regions");
   const activeStates = getList("states");
+  const activeBalance = getList("balance");
+  const fullTime = searchParams.get("fullTime") === "1";
 
   const hasFilters = [
-    ...["q", "types", "sizes", "regions", "states", "minAR", "maxAR", "minSAT", "maxSAT", "minCost", "maxCost", "minEnroll", "maxEnroll"],
+    ...["q", "types", "sizes", "regions", "states", "minAR", "maxAR", "minSAT", "maxSAT", "minCost", "maxCost", "minEnroll", "maxEnroll", "balance", "fullTime"],
     ...INDICATOR_KEYS.map((k) => INDICATORS[k].param),
   ].some((k) => searchParams.get(k));
 
@@ -223,6 +229,25 @@ export function FilterPanel({ facets, onDone }: { facets: FilterFacets; onDone?:
             );
           })}
         </div>
+      </Section>
+
+      <Section title="Student body" term="gender-balance">
+        <div role="group" aria-label="Men and women" className="flex flex-wrap gap-1.5">
+          {GENDER_BALANCE.map((b) => (
+            <Chip key={b.key} active={activeBalance.includes(b.key)} onClick={() => toggleInList("balance", b.key)} count={facets.balance[b.key]}>
+              {b.label}
+            </Chip>
+          ))}
+        </div>
+        <div className="flex flex-wrap gap-1.5">
+          <Chip active={fullTime} onClick={() => update({ fullTime: fullTime ? null : "1" })} count={facets.fullTime}>
+            Mostly full-time
+          </Chip>
+        </div>
+        <p className="text-[11px] text-muted-foreground">
+          Mostly women or men: over 60% one or the other. Mostly full-time: {Math.round(FULL_TIME_MAX_PART_TIME * 100)}% or fewer of undergrads
+          study part-time.
+        </p>
       </Section>
 
       <Section title="Region" term="region">

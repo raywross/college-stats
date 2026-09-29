@@ -163,7 +163,7 @@ export const FIELDS = {
     vintage: "ipeds-ic",
     derived: {
       formula: "Change over the last 10 years of each college's history; money after inflation (CPI-U), shares and the diversity index in points",
-      inputs: ["cost.avg_paid_all", "cost.breakdown", "admissions.acceptance_rate", "admissions.applicants", "demographics.undergrad_enrollment", "demographics.racial_diversity", "demographics.men_share", "aid.grant_pct"],
+      inputs: ["cost.avg_paid_all", "cost.breakdown", "admissions.acceptance_rate", "admissions.applicants", "demographics.undergrad_enrollment", "demographics.racial_diversity", "demographics.men_share", "outcomes.federal_loan_rate", "aid.grant_pct"],
     },
   },
 

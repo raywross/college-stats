@@ -45,21 +45,26 @@ file and can be missing when Scorecard has the rate).
   only when all eight categories are published and their midpoints add to within 10 points of 100%
   (`repaymentGroups()` in `lib/repayment.ts`): 1,680 of the 1,735 colleges with repayment data at the 2026-09-29 sync.
 - **Explore:** "Borrow" column and "Share who borrow" sort; a "Few students borrow" chip (at most 20% with a federal
-  loan, `FEW_LOANS_MAX`; 271 colleges). "Borrow, then → now" in the 10-year changes view comes with the history (below).
+  loan, `FEW_LOANS_MAX`; 271 colleges); "Borrow, then → now" in the 10-year changes view, with a "Borrowing change" sort.
 - **Compare:** "Undergrads with a federal loan" and "Median debt, Pell Grant recipients" rows.
 - **Glossary:** `federal-loan-rate`, `repayment-status`, `in-default`.
 
 ## Keep history?
-- **Federal loan rate: series `federal_loan_rate`** (*in a follow-up PR*: the Scorecard API was too slow on 2026-09-29 to
-  rebuild history in time for the first PR). Key 2009 on, stored at its school year (key Y → Y−1–Y), so it lines up
-  with the aid series; history family `scorecard-loans`; the build checks it ends on the snapshot's value. Charted in
-  "Over time" → Aid next to grant share, with the national band, and summarized in `school.trends.federal_loan_rate`.
+- **Federal loan rate: series `federal_loan_rate`** (a follow-up PR on 2026-09-29: the Scorecard API was too slow that
+  day to rebuild history in time for the first). Key 2009 on, stored at its school year (key Y → Y−1–Y), so it lines up
+  with the aid series; history family `scorecard-loans`. Charted in "Over time" → Aid next to grant share, with the
+  national band, and summarized in `school.trends.federal_loan_rate`. The median college's share fell about 12 points
+  over 10 years (2013–14 to 2023–24).
+- **End-point check:** every college is compared at the newest loan-rate year any college reports, not at its own last
+  point. Six colleges (the four service academies, Montana Bible College, NewU University) reported 0% in some past
+  years and have no current rate; their series simply end earlier, which is correct, and a college that does report the
+  newest year must still match the snapshot exactly.
 - **Debt by Pell/income: none.** Year-prefixed values exist but stop at 2020, like `median_debt`.
 - **Repayment: none** (one cohort).
 
 ## Top-level trend?
 - **Hero: no.** Borrowing depends on aid policy and family income; direction isn't a clean question.
-- **Explore change column (with the history follow-up):** loan rate change in points (`school.trends.federal_loan_rate`), because "fewer students need
+- **Explore change column:** loan rate change in points (`school.trends.federal_loan_rate`), because "fewer students need
   loans" is a real selling point of no-loan aid policies. Left out under 300 undergrads at either end.
 - **"Known for":** "Few students borrow" for the lowest 5% of loan rates among colleges with 1,000+ undergrads (metric
   `loanRateLarge`). About 5% of all colleges report 0%: mostly colleges outside the federal loan program; the profile

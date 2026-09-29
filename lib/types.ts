@@ -191,7 +191,7 @@ export interface TrendSummary {
 }
 
 /** History series summaries, plus `diversity`: the diversity index computed from the race/ethnicity shares. */
-export type TrendKey = "avg_paid_all" | "full_price" | "acceptance_rate" | "applicants" | "undergrads" | "grant_pct" | "men_share" | "diversity";
+export type TrendKey = "avg_paid_all" | "full_price" | "acceptance_rate" | "applicants" | "undergrads" | "grant_pct" | "men_share" | "federal_loan_rate" | "diversity";
 export type SchoolTrends = Partial<Record<TrendKey, TrendSummary>>;
 
 /**
@@ -304,7 +304,8 @@ export type SortKey =
   | "part_time"
   | "men_share_change"
   | "admit_gap"
-  | "loan_rate";
+  | "loan_rate"
+  | "loan_rate_change";
 
 export type ExploreView = "grid" | "table" | "chart";
 

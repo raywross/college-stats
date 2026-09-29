@@ -13,6 +13,7 @@ import {
   RACE_SERIES,
   SERIES,
   TEST_POLICY_CODES,
+  lastYear,
   latestPoint,
   SERIES_KEYS,
   changeOver,
@@ -154,6 +155,9 @@ export function buildCollege(school: Pick<School, "unit_id" | "type">, inputs: I
       const grad = sc[`${y}.completion.completion_rate_4yr_150nt`];
       if (grad !== undefined && grad !== null) put(raw, "grad_rate", y - COHORT_LAG, round4(grad));
       put(raw, "median_debt", y, sc[`${y}.aid.median_debt.completers.overall`]);
+      // Key Y is the Y−1–Y school year, stored at its fall (Y−1); rounded like the snapshot.
+      const loans = sc[`${y}.aid.federal_loan_rate`];
+      if (loans !== undefined && loans !== null) put(raw, "federal_loan_rate", y - 1, round4(loans));
     }
   }
 
@@ -453,6 +457,9 @@ export function lastPointMismatches(schools: readonly School[], histories: Reado
   const out: string[] = [];
   // The federal admissions fall the snapshot was built from: every college without a CDS override shares it.
   const federalFall = schools.find((s) => s.admissions.year !== null && !s.lineage?.["admissions.year"])?.admissions.year ?? null;
+  // The school year Scorecard's current loan rate describes: the newest year any college's series reaches.
+  const loanYears = [...histories.values()].flatMap((h) => (h.series.federal_loan_rate ? [lastYear(h.series.federal_loan_rate)] : []));
+  const loanYear = loanYears.length ? Math.max(...loanYears) : null;
   for (const s of schools) {
     const h = histories.get(s.unit_id);
     if (!h) continue;
@@ -504,6 +511,15 @@ export function lastPointMismatches(schools: readonly School[], histories: Reado
     // Scorecard's consumer rate, which has no history; the chart is the 6-year rate and says so.)
     if (h.series.undergrads) check("undergrads", s.demographics.undergrad_enrollment, true);
     if (h.series.men_share || s.demographics.men_share != null) check("men_share", s.demographics.men_share, true);
+    // At the newest loan-rate year any college reports, not each series' own last point: some colleges (the service
+    // academies, a few small ones) reported 0% years ago and nothing since, and Scorecard's "latest" is empty for them.
+    if (loanYear !== null && (h.series.federal_loan_rate || s.outcomes?.federal_loan_rate != null)) {
+      const hv = valueAt(h.series.federal_loan_rate, loanYear);
+      const sv = s.outcomes?.federal_loan_rate ?? null;
+      if (hv !== null || sv !== null) {
+        if (hv === null || sv === null || !same(hv, sv)) out.push(`${s.unit_id} federal_loan_rate: history ${hv ?? "none"}, snapshot ${sv ?? "none"}`);
+      }
+    }
     if (h.series.part_time_share || s.demographics.part_time_share != null) check("part_time_share", s.demographics.part_time_share, true);
     const race = s.demographics.racial_diversity;
     if (race && h.series.race_white) for (const [k, key] of Object.entries(RACE_SERIES)) check(key, race[k as keyof typeof race], true);

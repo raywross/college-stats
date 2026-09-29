@@ -620,6 +620,20 @@ export function OverTime(props: OverTimeProps) {
             provisionalYear={provisional.academic}
             specs={[{ key: "grant_avg", name: "Average grant", color: colors.value, band: true }]}
           />
+          {history.series.federal_loan_rate && (
+            <ChartPanel
+              {...common}
+              title="Undergrads with a federal loan"
+              term="federal-loan-rate"
+              kind="academic"
+              format="pct"
+              window={windowFor("academic", ["federal_loan_rate"])}
+              headline="federal_loan_rate"
+              provisionalYear={null}
+              specs={[{ key: "federal_loan_rate", name: "Federal loan", color: colors.value, band: true }]}
+              note="All undergraduates, not only first-years."
+            />
+          )}
         </div>
       </Group>
 

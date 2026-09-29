@@ -31,6 +31,7 @@
     "race_other": {"start":2019,"values":[0,0,0,0,0.0233,0.0313]},
     "men_share": {"start":2019,"values":[0.4222,0.5238,0.5455,0.5532,0.5349,0.5]},
     "part_time_share": {"start":2019,"values":[0.3778,0.2619,0.1591,0.0851,0.0698,0.125]},
-    "grad_rate": {"start":2015,"values":[0.4,0.4375,0,0.5]}
+    "grad_rate": {"start":2015,"values":[0.4,0.4375,0,0.5]},
+    "federal_loan_rate": {"start":2018,"values":[0,0,0,0,0,0]}
   }
 }

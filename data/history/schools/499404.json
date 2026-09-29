@@ -23,6 +23,7 @@
     "race_international": {"start":2023,"values":[0,0]},
     "race_other": {"start":2023,"values":[0,0]},
     "men_share": {"start":2023,"values":[0.0833,0.0305]},
-    "part_time_share": {"start":2023,"values":[0.6548,0.3598]}
+    "part_time_share": {"start":2023,"values":[0.6548,0.3598]},
+    "federal_loan_rate": {"start":2023,"values":[0.8902]}
   }
 }

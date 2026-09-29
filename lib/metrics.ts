@@ -139,6 +139,7 @@ export type MetricKey =
   | "debt"
   | "loanRate"
   | "loanRateLarge"
+  | "loanRateChange"
   | "admitGap"
   | "admitGapSize"
   | "menShare"
@@ -384,6 +385,19 @@ export const METRICS: Record<MetricKey, MetricDef> = {
     get: (s) => (s.demographics.undergrad_enrollment >= 1000 ? (s.outcomes?.federal_loan_rate ?? null) : null),
     format: (v) => pct(v),
     scale: [0, 1],
+    more: "more students borrowing",
+    less: "fewer students borrowing",
+  },
+  loanRateChange: {
+    key: "loanRateChange",
+    field: "trends",
+    label: "Undergrads with a federal loan, 10-year change",
+    short: "Borrowing change",
+    term: "federal-loan-rate",
+    domain: "value",
+    // Points; same small-college floor as the size change.
+    get: (s) => (s.trends?.federal_loan_rate && s.trends.undergrads && Math.min(s.trends.undergrads.from, s.trends.undergrads.to) >= 300 ? s.trends.federal_loan_rate.change : null),
+    format: (v) => `${v > 0 ? "+" : v < 0 ? "−" : ""}${Math.round(Math.abs(v) * 100)} pts`,
     more: "more students borrowing",
     less: "fewer students borrowing",
   },

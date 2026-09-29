@@ -925,6 +925,104 @@
         "url": "https://collegescorecard.ed.gov/data/",
         "revised": false
       }
+    ],
+    "scorecard-loans": [
+      {
+        "year": 2008,
+        "file": "College Scorecard API (federal_loan_rate)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2009,
+        "file": "College Scorecard API (federal_loan_rate)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2010,
+        "file": "College Scorecard API (federal_loan_rate)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2011,
+        "file": "College Scorecard API (federal_loan_rate)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2012,
+        "file": "College Scorecard API (federal_loan_rate)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2013,
+        "file": "College Scorecard API (federal_loan_rate)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2014,
+        "file": "College Scorecard API (federal_loan_rate)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2015,
+        "file": "College Scorecard API (federal_loan_rate)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2016,
+        "file": "College Scorecard API (federal_loan_rate)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2017,
+        "file": "College Scorecard API (federal_loan_rate)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2018,
+        "file": "College Scorecard API (federal_loan_rate)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2019,
+        "file": "College Scorecard API (federal_loan_rate)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2020,
+        "file": "College Scorecard API (federal_loan_rate)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2021,
+        "file": "College Scorecard API (federal_loan_rate)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2022,
+        "file": "College Scorecard API (federal_loan_rate)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2023,
+        "file": "College Scorecard API (federal_loan_rate)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      }
     ]
   },
   "provisional": {

@@ -37,6 +37,7 @@
     "race_other": {"start":2015,"values":[1,1,1,1,1,1,1,1,1,1]},
     "men_share": {"start":1996,"values":[0.4936,0.4925,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,0.4862,0.5051,0.5089,0.5187,0.5152,0.5246,0.5077,0.5,0.4997,0.4908]},
     "part_time_share": {"start":1996,"values":[0.0275,0.0268,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,0.0229,0.029,0.0324,0.0083,0.0152,0.0159,0.0167,0.0154,0.0205,0.0203]},
-    "grad_rate": {"start":1991,"values":[0.6141,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,0.7744,0.8293,0.8478,0.8689,0.8551,0.8781,0.8757,0.8681,0.8482,0.8971]}
+    "grad_rate": {"start":1991,"values":[0.6141,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,0.7744,0.8293,0.8478,0.8689,0.8551,0.8781,0.8757,0.8681,0.8482,0.8971]},
+    "federal_loan_rate": {"start":2014,"values":[0,0,0,0,0,0,0,0,0,0]}
   }
 }

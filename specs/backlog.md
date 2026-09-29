@@ -39,8 +39,22 @@ Planned work, roughly in priority order. Move items into a feature spec when the
 - [ ] **Review the release calendar** (`data/release-calendar.json`) at least every 90 days (next by 2026-12-27; the
   page warns after that), and right after the IPEDS winter release (~Dec 2026): mark confirmed dates, add the 2026–27
   cycle's entries, and set a new `filesUpdatedAfter` for revision entries.
-- [ ] **Use already-released IPEDS files?** `IC2025`, `EFFY2025`, `C2025_A` are out but unused (listed on the Data
-  page). Decide whether any is worth adding (e.g. completions by field).
+- [ ] **Data expansion** ([data-expansion/](data-expansion/README.md)): public data not yet on the site, one spec
+  per source, in four waves. Answers the "already-released IPEDS files" question: `IC2025` →
+  [campus-services.md](data-expansion/campus-services.md), `C2025_A` → [majors.md](data-expansion/majors.md),
+  `EFFY2025` left out.
+  - [ ] Wave 1 (files already downloaded, or fields on the Scorecard call): admission factors (GPA used? legacy?),
+    admissions by sex and true medians, housing and policies, student body, loans and repayment.
+  - [ ] Wave 2 (one new NCES file each): campus profile (HD), campus services and athletics (IC), student-faculty
+    ratio (EF-D), residence (EF-C), 8-year outcomes (OM), Pell/race graduation (GR), finances (DRVF), faculty (SAL).
+  - [ ] **Per-college detail file** `data/detail/schools/{unitid}.json` (decided 2026-09-28: a new file, not the
+    history shard) for large snapshot tables: majors, home states, earnings by major. Validation, lineage check,
+    Supabase `school_details` table + publish, fail-soft `getDetail()`. Built with whichever of majors or residence
+    ships first ([majors.md](data-expansion/majors.md#store-and-the-detail-file)).
+  - [ ] Wave 3: majors (completions); earnings by major (Scorecard Field of Study). Both use the detail file.
+  - [ ] Wave 4, after the college-reported data agent: CDS high school GPA and admissions profile, class sizes,
+    transfer admissions, next-year price and graduates' total debt.
+  - [ ] Graduation as a fifth trend indicator ([outcome-measures.md](data-expansion/outcome-measures.md#top-level-trend)).
 - [ ] **2024–25 sticker prices** from `COST1_2024` (`…AY3`), keeping same-year inputs for the all-student average
   ([data-page.md](data-page.md#research-findings-vintages-as-of-2026-09-28)). If the snapshot moves ahead, history's
   price series (`scripts/history/registry.mts`) must follow, or CI's latest-point check fails.

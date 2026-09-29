@@ -13,6 +13,7 @@
     "aided_net_price": {"start":2008,"values":[13819,20725,null,null,9170,9983]},
     "grant_pct": {"start":2007,"values":[1,1,1,null,null,1,0.5,0,0,0,0]},
     "grant_avg": {"start":2007,"values":[5895,6966,1250,null,null,18070,18527]},
+    "application_fee": {"start":2001,"values":[35,35,35,35,35,50,50,50,50,50,50,50,50,50,50,50,50,0,0,0,0,0,0]},
     "net_price_income_2": {"start":2013,"values":[37455]},
     "net_price_income_3": {"start":2008,"values":[15854,null,null,null,null,null,29680]},
     "net_price_income_5": {"start":2008,"values":[11785,20725]},

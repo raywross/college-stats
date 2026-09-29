@@ -34,6 +34,7 @@ import {
   studentsTakeaway,
   studentBodyNotes,
   admissionsBySex,
+  campusTakeaway,
   yieldTakeaway,
 } from "@/lib/insights";
 import { compact, money, moneyCompact, num, pct, pctSmart, range, typeLabel } from "@/lib/format";
@@ -59,7 +60,9 @@ import { LANDSCAPE_X, LANDSCAPE_Y, LANDSCAPE_ZONE, VALUE_X, VALUE_Y, valueZone }
 import { NetPriceByIncome } from "@/components/charts/NetPriceByIncome";
 import { WhatStudentsPay } from "@/components/school/WhatStudentsPay";
 import { LoansCard } from "@/components/school/LoansCard";
+import { CampusLife } from "@/components/school/CampusLife";
 import { hasLoanData } from "@/lib/repayment";
+import { hasTuitionGuarantee } from "@/lib/housing";
 import { AidGenerosityCard } from "@/components/school/AidGenerosityCard";
 import { InfoTip, MetricLabel, SourceChip, Term } from "@/components/ui/info-tip";
 import { ShowMore } from "@/components/ui/show-more";
@@ -74,9 +77,9 @@ import { historyYearLabel, type NationalHistory, type SeriesKey } from "@/lib/hi
 const HISTORY_GROUPS = {
   cost: ["avg_paid_all", "full_price", "sticker_in_state", "sticker_out_of_state", "aided_net_price", "net_price_income_1"],
   aid: ["grant_pct", "grant_avg", "aid_generosity", "federal_loan_rate"],
-  admissions: ["applicants", "admitted", "enrolled", "acceptance_rate", "yield", "admit_rate_men", "admit_rate_women"],
+  admissions: ["applicants", "admitted", "enrolled", "acceptance_rate", "yield", "admit_rate_men", "admit_rate_women", "application_fee"],
   scores: ["sat_25", "sat_75", "act_25", "act_75", "sat_submit", "test_policy"],
-  students: ["undergrads", "race_white", "men_share", "part_time_share"],
+  students: ["undergrads", "race_white", "men_share", "part_time_share", "housing_capacity"],
   outcomes: ["grad_rate", "median_debt"],
 } as const satisfies Record<string, readonly SeriesKey[]>;
 
@@ -121,7 +124,7 @@ const SECTION_FIELDS = {
     "outcomes.graduation_rate",
     "trends",
   ],
-  admissions: ["admissions.applicants", "admissions.admitted", "admissions.enrolled", "admissions.acceptance_rate", "derived.yield", "admissions.by_sex", "derived.admit_rate_men", "derived.admit_rate_women"],
+  admissions: ["admissions.applicants", "admissions.admitted", "admissions.enrolled", "admissions.acceptance_rate", "derived.yield", "admissions.by_sex", "derived.admit_rate_men", "derived.admit_rate_women", "admissions.application_fee"],
   scores: [
     "admissions.sat_reading_25_75",
     "admissions.sat_math_25_75",
@@ -168,12 +171,15 @@ const SECTION_FIELDS = {
     "outcomes.median_debt_no_pell",
     "outcomes.median_debt_by_income",
     "outcomes.repayment_3yr",
+    "cost.tuition_plans",
+    "cost.promise_program",
     "derived.payback_years",
     "outcomes.median_earnings_10yr",
     "outcomes.median_earnings_6yr",
     "outcomes.retention_rate",
     "outcomes.graduation_rate",
   ],
+  campus: ["campus.housing"],
   ranks: ["derived.sat_mid", "derived.yield", "demographics.pell_grant_percent", "derived.diversity_index", "admissions.acceptance_rate"],
 } as const satisfies Record<string, readonly FieldPath[]>;
 
@@ -327,6 +333,7 @@ export default async function SchoolPage({ params }: Props) {
     ...(rate !== null || counts ? [{ id: "admissions", label: "Admissions", color: DOMAINS.admissions.color }] : []),
     ...(scores ? [{ id: "scores", label: "Test scores", color: DOMAINS.scores.color }] : []),
     { id: "students", label: "Students", color: DOMAINS.access.color },
+    ...(school.campus?.housing ? [{ id: "campus", label: "Campus life", color: DOMAINS.size.color }] : []),
     ...(hasValue ? [{ id: "cost", label: "Cost & outcomes", color: DOMAINS.value.color }] : []),
     ...(hasHistory ? [{ id: "history", label: "Over time" }] : []),
     { id: "ranks", label: "How it ranks" },
@@ -572,6 +579,14 @@ export default async function SchoolPage({ params }: Props) {
                       {bySex && !bySex.notable && (
                         <p className="mt-4 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-sm text-muted-foreground">
                           {bySex.sentence} <SourceChip cited={citeField("admissions.by_sex", school)} />
+                        </p>
+                      )}
+                      {a.application_fee != null && (
+                        <p className="mt-2 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-sm text-muted-foreground">
+                          <MetricLabel term="application-fee" cited={citeField("admissions.application_fee", school)} chip={false}>
+                            {a.application_fee === 0 ? "No application fee" : `${money(a.application_fee)} to apply`}
+                          </MetricLabel>
+                          <SourceChip cited={citeField("admissions.application_fee", school)} />
                         </p>
                       )}
                     </div>
@@ -853,6 +868,21 @@ export default async function SchoolPage({ params }: Props) {
             </div>
           </Panel>
 
+          {/* ============================== CAMPUS LIFE ============================== */}
+          {school.campus?.housing && (
+            <Panel
+              id="campus"
+              domain="size"
+              eyebrow="Campus life"
+              title="Living there"
+              takeaway={campusTakeaway(school)}
+              school={school}
+              fields={SECTION_FIELDS.campus}
+            >
+              <CampusLife school={school} />
+            </Panel>
+          )}
+
           {/* ============================== COST & OUTCOMES ============================== */}
           {hasValue && (
             <Panel
@@ -885,6 +915,20 @@ export default async function SchoolPage({ params }: Props) {
                 </a>
               )}
               <WhatStudentsPay school={school} />
+              {(hasTuitionGuarantee(school) || school.cost?.promise_program) && (
+                <div className="mt-4 flex flex-wrap gap-2 text-sm">
+                  {hasTuitionGuarantee(school) && (
+                    <span className="inline-flex items-center gap-1.5 rounded-full border bg-card px-3 py-1.5 font-semibold">
+                      Tuition guarantee <InfoTip term="tuition-guarantee" cited={citeField("cost.tuition_plans", school)} />
+                    </span>
+                  )}
+                  {school.cost?.promise_program && (
+                    <span className="inline-flex items-center gap-1.5 rounded-full border bg-card px-3 py-1.5 font-semibold">
+                      Part of a Promise program <InfoTip term="promise-program" cited={citeField("cost.promise_program", school)} />
+                    </span>
+                  )}
+                </div>
+              )}
 
               <div className="mt-4 grid gap-4 lg:grid-cols-[1.2fr_1fr]">
                 <div className="rounded-3xl border bg-card p-4 sm:p-6">

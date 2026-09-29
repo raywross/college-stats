@@ -25,9 +25,9 @@
     "ipeds-ic": {
       "label": "IPEDS Institutional Characteristics survey",
       "publisher": "National Center for Education Statistics (NCES)",
-      "edition": "2023–24 (IC2023_AY)",
+      "edition": "2023–24 (IC2023_AY + IC2023)",
       "url": "https://nces.ed.gov/ipeds/complete-data-files/IC2023_AY.zip",
-      "description": "Published prices for the year: tuition and fees for in-district, in-state, and out-of-state students, books and supplies, on-campus room and board, and other expenses."
+      "description": "Published prices for the year: tuition and fees for in-district, in-state, and out-of-state students, books and supplies, on-campus room and board, and other expenses. Also housing capacity and rules, meal plans, the application fee, tuition plans, and Promise programs."
     },
     "cds": {
       "label": "Common Data Set",

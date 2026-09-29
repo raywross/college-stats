@@ -6,7 +6,7 @@
 import type { School } from "../../lib/types.ts";
 import { FIELDS, isFieldPath, type FieldPath } from "../../lib/fields.ts";
 import type { IpedsRow } from "../../lib/derive.ts";
-import { acceptanceRate, admitRatesBySex, computePrices, netPriceByIncome, raceShares, satMedian, toAid, yieldOf } from "../../lib/derive.ts";
+import { acceptanceRate, admitRatesBySex, applicationFeeFrom, computePrices, housingFrom, netPriceByIncome, raceShares, satMedian, toAid, yieldOf } from "../../lib/derive.ts";
 import {
   NET_PRICE_BANDS,
   RACE_FROM,
@@ -49,6 +49,8 @@ export interface Inputs {
   admissions: readonly YearTable[];
   prices: readonly YearTable[];
   sfa: readonly YearTable[];
+  /** Housing and policy columns (IC{Y}, then COST1_{Y+1}), one table per academic year. */
+  characteristics?: readonly YearTable[];
   /** College Scorecard year-prefixed values by unit ID (scripts/history/scorecard.mts), and the years requested. */
   scorecard?: { rows: ReadonlyMap<string, ScorecardRow>; first: number; last: number };
 }
@@ -159,6 +161,13 @@ export function buildCollege(school: Pick<School, "unit_id" | "type">, inputs: I
       const loans = sc[`${y}.aid.federal_loan_rate`];
       if (loans !== undefined && loans !== null) put(raw, "federal_loan_rate", y - 1, round4(loans));
     }
+  }
+
+  // Housing capacity and application fee, as sync-data reads them (lib/derive.ts).
+  for (const t of inputs.characteristics ?? []) {
+    const row = t.rows.get(id);
+    put(raw, "housing_capacity", t.year, housingFrom(row)?.capacity);
+    put(raw, "application_fee", t.year, applicationFeeFrom(row));
   }
 
   const sfaByYear = new Map(inputs.sfa.map((t) => [t.year, t]));
@@ -537,6 +546,9 @@ export function lastPointMismatches(schools: readonly School[], histories: Reado
       if (c.breakdown) check("full_price", c.breakdown.full_price);
       const b = c.breakdown;
       check("aid_generosity", b && b.full_price > 0 ? round4(b.grant_per_student / b.full_price) : null);
+      // Housing and the fee come from the same academic year's characteristics file as the prices.
+      check("housing_capacity", s.campus?.housing?.capacity);
+      check("application_fee", s.admissions.application_fee);
     }
     if (s.aid && sameYear) {
       check("grant_pct", s.aid.grant_pct);

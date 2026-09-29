@@ -28,7 +28,7 @@ import type { DatasetMeta, RepaymentStatus, School, SchoolType, TestPolicy } fro
 import { lineageForPatch, validateLineage } from "../lib/lineage.ts";
 import { applyProbes, filesToProbe, type FileProbe, type ReleaseCalendar } from "../lib/releases.ts";
 import { IPEDS_BASES, parseCsv } from "./lib/ipeds.mts";
-import { acceptanceRate, computePrices, ipedsNum, parseShareBand, priceSuffix, raceShares, toAid } from "../lib/derive.ts";
+import { acceptanceRate, applicationFeeFrom, computePrices, housingFrom, ipedsNum, parseShareBand, priceSuffix, promiseProgramFrom, raceShares, toAid, tuitionPlansFrom } from "../lib/derive.ts";
 
 const ROOT = join(import.meta.dirname, "..");
 const OUT = join(ROOT, "data", "schools.json");
@@ -420,7 +420,8 @@ function buildMeta(
   ic: IpedsFile,
   sfaYears: string,
   scorecardYears: ScorecardYears,
-  cost2: IpedsFile | null
+  cost2: IpedsFile | null,
+  chars: IpedsFile
 ): DatasetMeta {
   const scorecardCostYear = scorecardYears.cost;
   return {
@@ -453,10 +454,10 @@ function buildMeta(
       "ipeds-ic": {
         label: "IPEDS Institutional Characteristics survey",
         publisher: "National Center for Education Statistics (NCES)",
-        edition: `${sfaYears} (${ic.name})`,
+        edition: `${sfaYears} (${ic.name} + ${chars.name})`,
         url: ic.url,
         description:
-          "Published prices for the year: tuition and fees for in-district, in-state, and out-of-state students, books and supplies, on-campus room and board, and other expenses.",
+          "Published prices for the year: tuition and fees for in-district, in-state, and out-of-state students, books and supplies, on-campus room and board, and other expenses. Also housing capacity and rules, meal plans, the application fee, tuition plans, and Promise programs.",
       },
       cds: {
         label: "Common Data Set",
@@ -478,6 +479,26 @@ function buildMeta(
       "scorecard-latest": null,
     },
   };
+}
+
+/** The first candidate file NCES has published that carries the housing and policy columns. */
+async function fetchCharacteristics(names: string[]): Promise<IpedsFile> {
+  for (const name of names) {
+    const file = await fetchIpeds([name]).catch(() => null);
+    if (file && [...file.rows.values()].some((r) => "ROOMCAP" in r && "APPLFEEU" in r)) return file;
+  }
+  throw new Error(`No housing and policy columns in any of: ${names.join(", ")}`);
+}
+
+/** Housing, application fee, tuition plans, and Promise program (lib/derive.ts, shared with sync-history). */
+function addCharacteristics(school: School, row: Record<string, string> | undefined) {
+  if (!row) return;
+  school.campus = { housing: housingFrom(row) };
+  school.admissions.application_fee = applicationFeeFrom(row);
+  if (school.cost) {
+    school.cost.tuition_plans = tuitionPlansFrom(row);
+    school.cost.promise_program = promiseProgramFrom(row);
+  }
 }
 
 /** Same-year IPEDS prices and the all-student average cost (lib/derive.ts, shared with sync-history). */
@@ -580,6 +601,9 @@ async function main() {
   // Prices must describe the same academic year as the aid data. Older layout: IC{start}_AY
   // ("…AY3" columns = that year); newer: COST1_{end} ("…AY2" columns = that year).
   const ic = await fetchIpeds([`IC${startYear}_AY`, `COST1_${endYear}`]);
+  // Housing and policies for the same academic year (specs/data-expansion/housing-and-policies.md): IC{start} until
+  // NCES moved them into COST1_{end}. A file only counts if it has them (IC2024 exists as a one-row stub).
+  const chars = await fetchCharacteristics([`IC${startYear}`, `COST1_${endYear}`]);
 
   const stats = { online: 0, noSize: 0, withAdmissions: 0, withSat: 0, overridden: 0 };
   const overrides: Record<string, Patch> = existsSync(OVERRIDES) ? JSON.parse(readFileSync(OVERRIDES, "utf8")) : {};
@@ -592,6 +616,7 @@ async function main() {
     }
     let school = toSchool(row, adm.rows.get(String(row.id)), admYear, sfa.rows.get(String(row.id)));
     if (school) addPrices(school, ic, sfa.rows.get(school.unit_id), sfaYears);
+    if (school) addCharacteristics(school, chars.rows.get(school.unit_id));
     if (!school) {
       stats.noSize++;
       continue;
@@ -619,7 +644,7 @@ async function main() {
     }
   }
   const scorecardYears = await detectScorecardYears(key, String(scorecard[0]?.id ?? "221999"));
-  const meta = buildMeta(adm, sfa, ic, sfaYears, scorecardYears, cost2);
+  const meta = buildMeta(adm, sfa, ic, sfaYears, scorecardYears, cost2, chars);
 
   // Nothing is written unless every value's lineage checks out.
   const problems = validateLineage(schools, meta);

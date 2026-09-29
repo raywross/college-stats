@@ -12,6 +12,7 @@
     "aided_net_price": {"start":2022,"values":[32991,35849]},
     "grant_pct": {"start":2021,"values":[0.8571,0.8261,0.6071]},
     "grant_avg": {"start":2021,"values":[6225,6535,5755]},
+    "application_fee": {"start":2022,"values":[49,49]},
     "net_price_income_1": {"start":2021,"values":[34597,33141,36842]},
     "net_price_income_2": {"start":2021,"values":[35408,32926,40363]},
     "net_price_income_3": {"start":2022,"values":[38951,38446]},

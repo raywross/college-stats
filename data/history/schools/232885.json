@@ -12,6 +12,7 @@
     "tuition_out_of_state": {"start":2001,"values":[9033,null,10238,9930]},
     "grant_pct": {"start":2007,"values":[0.4276,0.3901,0.3966,0]},
     "grant_avg": {"start":2007,"values":[2954,3600,4246]},
+    "application_fee": {"start":2001,"values":[35,null,35,35,35,50,50,50,50,50,50,85,85,85,85,85,85,85,85,85,85,85,85]},
     "net_price_income_1": {"start":2008,"values":[11198,19050]},
     "net_price_income_2": {"start":2008,"values":[14234,22500]},
     "net_price_income_3": {"start":2008,"values":[14278,22620]},

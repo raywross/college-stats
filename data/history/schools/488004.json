@@ -5,6 +5,7 @@
     "admitted": {"start":2021,"values":[0]},
     "tuition_in_state": {"start":2016,"values":[11000,11000,null,null,11000,11000]},
     "tuition_out_of_state": {"start":2016,"values":[11000,11000,null,null,11000,11000]},
+    "application_fee": {"start":2017,"values":[0,0,0,0,0,0,0]},
     "test_policy": {"start":2016,"values":[3,3,null,null,3,3,null,null,3]},
     "undergrads": {"start":2016,"values":[43,40,20,21,23,20,28,22,15]},
     "race_white": {"start":2016,"values":[0.9535,0.95,0.95,1,1,0.95,0.75,0.6818,0.6]},

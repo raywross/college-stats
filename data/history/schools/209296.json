@@ -4,6 +4,7 @@
     "applicants": {"start":2002,"values":[0]},
     "admitted": {"start":2002,"values":[0]},
     "enrolled": {"start":2002,"values":[0]},
+    "application_fee": {"start":2016,"values":[50,50,50,50,50,50,50,75]},
     "undergrads": {"start":2016,"values":[29,38,32,35,38,32,11,28,41]},
     "race_white": {"start":2016,"values":[0.7241,0.8158,0.75,0.6857,0.7105,0.625,0.4545,0.4643,0.3902]},
     "race_asian": {"start":2016,"values":[0,0,0,0,0.0263,0.0313,0,0,0.0244]},

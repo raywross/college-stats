@@ -4,6 +4,7 @@
     "applicants": {"start":2017,"values":[0,0,null,null,null,0]},
     "tuition_in_state": {"start":2017,"values":[8400,8500,null,null,null,11050,11800]},
     "tuition_out_of_state": {"start":2017,"values":[8400,8500,null,null,null,11050,11800]},
+    "application_fee": {"start":2017,"values":[0,0,0,0,0,0,0]},
     "test_policy": {"start":2017,"values":[3,3,null,null,null,3]},
     "undergrads": {"start":2017,"values":[40,45,55,57,67,94,124,122]},
     "race_white": {"start":2017,"values":[1,1,1,1,1,1,1,1]},

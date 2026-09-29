@@ -11,6 +11,8 @@
     "tuition_in_state": {"start":2021,"values":[11000,9000,8000]},
     "tuition_out_of_state": {"start":2021,"values":[11000,9000,8000]},
     "grant_pct": {"start":2021,"values":[0]},
+    "housing_capacity": {"start":2001,"values":[30,22,45,45,45,45,45,45,48,45,7]},
+    "application_fee": {"start":2021,"values":[0,0,0]},
     "sat_submit": {"start":2002,"values":[0]},
     "act_submit": {"start":2002,"values":[0]},
     "test_policy": {"start":2002,"values":[3,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,3,3,3,3]},

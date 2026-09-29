@@ -10,6 +10,7 @@
     "admit_rate_women": {"start":2018,"values":[0.3054,0.0544,0.2857,0.1364,0.25,0.0833,0.3095]},
     "tuition_in_state": {"start":2018,"values":[13688,13688,11692,11692,11692,33360]},
     "tuition_out_of_state": {"start":2018,"values":[13688,13688,11692,11692,11692,33360]},
+    "application_fee": {"start":2001,"values":[55,55,55,55,55,55,55,55,55,55,55,55,55,55,55,55,55,55,55,55,55,55,55]},
     "sat_submit": {"start":2022,"values":[0,0,0]},
     "act_submit": {"start":2022,"values":[0,0,0]},
     "test_policy": {"start":2018,"values":[3,3,3,3,5,5,5]},

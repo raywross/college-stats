@@ -19,6 +19,7 @@ import { cn } from "@/lib/utils";
 import { INDICATOR_KEYS, indicatorOf, type Direction } from "@/lib/indicators";
 import { genderBalanceOf, isMostlyFullTime } from "@/lib/student-body";
 import { hasFewLoans } from "@/lib/repayment";
+import { HOUSING_FILTERS } from "@/lib/housing";
 import { InfoTip } from "@/components/ui/info-tip";
 import { MultiSourceNote } from "@/components/sources/MultiSourceNote";
 
@@ -56,6 +57,7 @@ function buildFacets({ getAllSchools, histogram }: Dataset): FilterFacets {
     balance,
     fullTime: all.filter(isMostlyFullTime).length,
     fewLoans: all.filter(hasFewLoans).length,
+    housing: Object.fromEntries(HOUSING_FILTERS.map((f) => [f.param, all.filter(f.test).length])) as FilterFacets["housing"],
     states: Object.keys(states).sort().map((value) => ({ value, count: states[value] })),
     regions: Object.keys(regions).sort().map((value) => ({ value, count: regions[value] })),
     types: Object.keys(types).map((value) => ({ value, label: typeLabel(value), count: types[value] })),

@@ -501,7 +501,7 @@ export function OverTime(props: OverTimeProps) {
   const debtWindow = windowFor("academic", ["median_debt"]);
   const spans = policySpans(history.series.test_policy);
   const hasScores = !!(history.series.sat_25 || history.series.act_25);
-  const hasStudents = !!(history.series.undergrads || history.series.race_white || history.series.men_share || history.series.part_time_share);
+  const hasStudents = !!(history.series.undergrads || history.series.race_white || history.series.men_share || history.series.part_time_share || history.series.housing_capacity);
   const hasOutcomes = !!(history.series.grad_rate || history.series.median_debt);
   const debtEnd = history.series.median_debt ? lastYear(history.series.median_debt) : null;
 
@@ -678,6 +678,19 @@ export function OverTime(props: OverTimeProps) {
               { key: "yield", name: "Yield", color: CONTEXT, dashed: true },
             ]}
           />
+          {history.series.application_fee && (
+            <ChartPanel
+              {...common}
+              title="Application fee"
+              term="application-fee"
+              kind="academic"
+              format="money"
+              window={windowFor("academic", ["application_fee"])}
+              headline="application_fee"
+              provisionalYear={null}
+              specs={[{ key: "application_fee", name: "Application fee", color: colors.admissions }]}
+            />
+          )}
           {history.series.admit_rate_men && history.series.admit_rate_women && (
             // One hue for both, told apart by dash and direct labels: neither line is the "main" one.
             <ChartPanel
@@ -778,6 +791,20 @@ export function OverTime(props: OverTimeProps) {
                 headline="men_share"
                 provisionalYear={null}
                 specs={[{ key: "men_share", name: "Men", color: colors.size, band: true }]}
+              />
+            )}
+            {history.series.housing_capacity && (
+              <ChartPanel
+                {...common}
+                title="Housing capacity"
+                term="housing-capacity"
+                kind="academic"
+                format="num"
+                window={windowFor("academic", ["housing_capacity"])}
+                headline="housing_capacity"
+                provisionalYear={null}
+                specs={[{ key: "housing_capacity", name: "Beds", color: colors.size }]}
+                note="Beds in college housing; can include graduate housing."
               />
             )}
             {history.series.part_time_share && (

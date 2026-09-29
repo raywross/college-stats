@@ -39,6 +39,7 @@ const TOPIC_LABELS: Record<Topic, string> = {
   prices: "Sticker prices",
   outcomes: "Earnings, graduation & debt",
   aid: "Financial aid",
+  campus: "Housing & campus life",
 };
 
 const STORED = (Object.entries(FIELDS) as [FieldPath, FieldDef][]).filter(([, def]) => !def.computed);

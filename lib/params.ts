@@ -55,6 +55,9 @@ export function parseFilters(params: Params): SearchFilters {
     })(),
     fullTime: str(params.fullTime) === "1" || undefined,
     fewLoans: str(params.fewLoans) === "1" || undefined,
+    liveOn: str(params.liveOn) === "1" || undefined,
+    noFee: str(params.noFee) === "1" || undefined,
+    guarantee: str(params.guarantee) === "1" || undefined,
     sortBy: sortBy && SORT_KEYS.includes(sortBy) ? sortBy : "applicants",
     // Default direction: most-applied-to first; everything else ascending.
     sortDir: params.sortDir === "desc" || params.sortDir === "asc" ? params.sortDir : sortBy && sortBy !== "applicants" ? "asc" : "desc",
@@ -86,6 +89,9 @@ export const FILTER_KEYS = [
   "balance",
   "fullTime",
   "fewLoans",
+  "liveOn",
+  "noFee",
+  "guarantee",
   ...INDICATOR_KEYS.map((k) => INDICATORS[k].param),
 ] as const;
 

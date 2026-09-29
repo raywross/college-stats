@@ -116,6 +116,20 @@ export const ERAS: readonly Era[] = [
     ],
     required: (c) => ["CHG1AY", "CHG2AY", "CHG3AY", "CHG4AY", "CHG5AY", "CHG6AY"].map((k) => `${k}${c.suffix}`),
   },
+  // Housing and application fee (specs/data-expansion/housing-and-policies.md; probed 2026-09-29): IC{Y} holds Y–Y+1
+  // through IC2023; NCES then moved them into COST1_{Y+1} (IC2024 is a one-row stub).
+  {
+    family: "characteristics",
+    years: [2001, 2023],
+    files: (y) => [{ name: `IC${y}` }],
+    required: () => ["ROOM", "ROOMCAP", "APPLFEEU"],
+  },
+  {
+    family: "characteristics",
+    years: [2024, OPEN],
+    files: (y) => [{ name: `COST1_${y + 1}` }],
+    required: () => ["ROOM", "ROOMCAP", "APPLFEEU"],
+  },
   {
     family: "sfa",
     years: [2001, 2006],
@@ -152,7 +166,7 @@ export function eraFor(family: HistoryFamily, year: number): Era | null {
 }
 
 /** Families by the kind of year they describe, and the first year each can start. */
-export const FAMILY_ORDER: readonly HistoryFamily[] = ["ic-admissions", "adm", "prices", "sfa"];
+export const FAMILY_ORDER: readonly HistoryFamily[] = ["ic-admissions", "adm", "prices", "sfa", "characteristics"];
 
 /** Columns a value spec reads. */
 export function specColumns(spec: ColumnSpec): readonly string[] {

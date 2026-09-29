@@ -11,6 +11,7 @@
     "aided_net_price": {"start":2017,"values":[12444,null,null,null,null,null,24383]},
     "grant_pct": {"start":2014,"values":[0,null,0,0.8,0,0,null,0,null,1]},
     "grant_avg": {"start":2017,"values":[2506,null,null,null,null,null,3697]},
+    "application_fee": {"start":2015,"values":[50,50,50,50,50,50,60,60,75]},
     "net_price_income_1": {"start":2017,"values":[12444,null,null,null,null,null,24383]},
     "test_policy": {"start":2023,"values":[3,3]},
     "undergrads": {"start":2017,"values":[34,36,38,47,42,45,44,22]},

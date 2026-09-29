@@ -4,6 +4,7 @@
     "tuition_in_state": {"start":2019,"values":[7710,6860,6860,7010,7010]},
     "tuition_out_of_state": {"start":2019,"values":[7710,6860,6860,7010,7010]},
     "grant_pct": {"start":2019,"values":[0,0,0,0]},
+    "application_fee": {"start":2019,"values":[100,100,100,100,100]},
     "undergrads": {"start":2019,"values":[18,19,22,26,22,28]},
     "race_white": {"start":2019,"values":[0,0,0,0,0,0]},
     "race_asian": {"start":2019,"values":[0,0.2105,0.1364,0.0769,0.1364,0.0357]},

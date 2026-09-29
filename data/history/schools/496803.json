@@ -13,6 +13,7 @@
     "aided_net_price": {"start":2022,"values":[9390]},
     "grant_pct": {"start":2022,"values":[0.9375]},
     "grant_avg": {"start":2022,"values":[10810]},
+    "application_fee": {"start":2021,"values":[150,0,0]},
     "test_policy": {"start":2022,"values":[3,3]},
     "undergrads": {"start":2022,"values":[18,29,34]},
     "race_white": {"start":2022,"values":[0,0,0.0294]},

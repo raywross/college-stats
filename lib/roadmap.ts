@@ -86,15 +86,6 @@ export const ROADMAP: RoadmapSpec[] = [
     status: "planned",
   },
   {
-    slug: "housing-and-policies",
-    file: "specs/data-expansion/housing-and-policies.md",
-    group: "wave-1",
-    summary: "Campus housing capacity, live-on rules, meal plans, application fees, and tuition guarantees.",
-    complexity: 2,
-    complexityNote: "Columns moved between files over the years, and it starts the new Campus life section.",
-    status: "planned",
-  },
-  {
     slug: "campus-profile",
     file: "specs/data-expansion/campus-profile.md",
     group: "wave-2",

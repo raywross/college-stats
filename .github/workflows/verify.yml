@@ -21,3 +21,19 @@ jobs:
       - run: npm ci
       - run: npm run verify
       - run: npm run build
+
+  # Every PR adds a note to release-notes/ with its own number (specs/release-notes.md).
+  release-note:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/check-release-note.mts
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}

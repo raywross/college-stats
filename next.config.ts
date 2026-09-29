@@ -7,6 +7,9 @@ const nextConfig: NextConfig = {
     "/*": ["./data/*.json", "./data/history/**/*.json"],
     // /roadmap pages are prerendered from specs/*.md; ship the specs too in case a page is ever rendered on demand.
     "/roadmap/*": ["./specs/**/*.md"],
+    // Same for /release-notes, prerendered from release-notes/*.md.
+    "/release-notes": ["./release-notes/*.md"],
+    "/release-notes/*": ["./release-notes/*.md"],
   },
   // /sources grew into the Data tab (specs/data-page.md).
   async redirects() {

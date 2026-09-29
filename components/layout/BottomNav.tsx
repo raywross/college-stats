@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
-import { BookOpen, Compass, Database, Ellipsis, GitCompareArrows, Home, Map as MapIcon, Search, X } from "lucide-react";
+import { BookOpen, Compass, Database, Ellipsis, GitCompareArrows, Home, Map as MapIcon, Search, Sparkles, X } from "lucide-react";
 import { ThemeSegmented } from "@/components/ThemeToggle";
 import { SchoolSearch } from "@/components/search/SchoolSearch";
 import { useCompareIds } from "@/lib/compare";
@@ -37,7 +37,7 @@ export function BottomNav() {
 
   const isActive = (href: string) => (href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(`${href}/`));
   const compareHref = compareIds.length ? `/compare?ids=${compareIds.join(",")}` : "/compare";
-  const moreActive = isActive("/glossary") || isActive("/data") || isActive("/sources") || isActive("/roadmap");
+  const moreActive = isActive("/glossary") || isActive("/data") || isActive("/sources") || isActive("/roadmap") || isActive("/release-notes");
 
   return (
     <>
@@ -95,6 +95,7 @@ export function BottomNav() {
               <MoreLink href="/glossary" icon={<BookOpen className="size-5" />} title="Glossary" sub="Every term in plain English" active={isActive("/glossary")} />
               <MoreLink href="/data" icon={<Database className="size-5" />} title="Data" sub="Sources, years & updates" active={isActive("/data")} />
               <MoreLink href="/roadmap" icon={<MapIcon className="size-5" />} title="Roadmap" sub="What's coming next" active={isActive("/roadmap")} />
+              <MoreLink href="/release-notes" icon={<Sparkles className="size-5" />} title="Release notes" sub="What's new" active={isActive("/release-notes")} />
             </div>
             <div className="mt-4 flex items-center justify-between border-t pt-4">
               <span className="text-sm font-medium text-muted-foreground">Appearance</span>

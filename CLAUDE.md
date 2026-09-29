@@ -39,6 +39,14 @@ Several Claude chats work on this repo at once, so each works in its own git wor
   and branch-changing git in the main checkout are blocked. To override for one session, start Claude Code with
   `CLAUDE_ALLOW_MAIN_CHECKOUT=1`
 
+### Release notes (see `specs/release-notes.md`)
+- **Every PR into `main` adds a release note**: `release-notes/<branch-name-without-prefix>.md`, with frontmatter
+  `title`, `pr`, `date` (merge day), `kind` (`feature`, `improvement`, `data`, `fix`, `plans`, `infra`), and a
+  one-sentence `summary`. It appears on `/release-notes` with no other registration
+- Write it for readers of the site, not reviewers: plain-language "What's new" first, then "Behind the scenes"
+- Open the PR first to get its number, then commit the note and push. CI's `release-note` job fails a PR without a
+  note naming its own number
+
 ### Commands
 - **"start the server"**: each worktree runs its own dev server on its own port; never kill another session's server.
   Stop a dev server this worktree started earlier, then run `npm run dev -- -p <port>` in the background with the

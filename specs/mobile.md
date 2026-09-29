@@ -58,7 +58,7 @@ page, and wider screens are unchanged.
 | Overview | All tiles (`grid-flow-row-dense` fills holes left by the full-width 10-year tile) | |
 | Admissions | Funnel, yield, acceptance-rate strip | 100-square waffle (repeats the funnel), moved after it |
 | Students | Race and ethnicity, economic access, campus size | "Who they are" (men/women, part-time, 25 and older; [student-body.md](data-expansion/student-body.md)) |
-| Cost & outcomes | What students pay, price by income, debt/payback, earnings, retention/graduation | "Who actually gets aid" (generosity card + breakdown; the overview has the generosity tile), cost vs. earnings map |
+| Cost & outcomes | What students pay, price by income, debt/payback, earnings, retention/graduation | "Borrowing and repayment" (loan rate, debt by background, repayment status); "Who actually gets aid" (generosity card + breakdown; the overview has the generosity tile), cost vs. earnings map |
 | Over time | Takeaway and controls; six topic headers | Every group (was: all but Cost, collapsed after hydration, which made the page jump) |
 | How it ranks | Four distribution strips | Admissions map |
 | Similar | Swipe rail | Full sources list |

@@ -4,6 +4,7 @@ import { lineageFor, sourcesForFields as sourcesForFieldsPure, type Cited, type 
 import type { ReleaseCalendar } from "./releases";
 import { matchesIndicators } from "./indicators";
 import { genderBalanceOf, isMostlyFullTime } from "./student-body";
+import { hasFewLoans } from "./repayment";
 import {
   METRICS,
   SIZE_BUCKETS,
@@ -96,6 +97,7 @@ const SORTERS: Record<SortKey, (s: School) => number | string | null> = {
   part_time: METRICS.partTime.get,
   men_share_change: METRICS.menShareChange.get,
   admit_gap: METRICS.admitGap.get,
+  loan_rate: METRICS.loanRate.get,
 };
 
 function mode(values: number[]): number | null {
@@ -206,6 +208,7 @@ export function createDataset({ schools, meta, releaseCalendar }: DatasetFiles) 
     // Student body (lib/student-body.ts); colleges that don't report the share are left out while set.
     if (filters.balance?.length) results = results.filter((s) => filters.balance!.includes(genderBalanceOf(s)!));
     if (filters.fullTime) results = results.filter(isMostlyFullTime);
+    if (filters.fewLoans) results = results.filter(hasFewLoans);
 
     const sortBy: SortKey = filters.sortBy && filters.sortBy in SORTERS ? filters.sortBy : "applicants";
     const multiplier = (filters.sortDir ?? (sortBy === "applicants" ? "desc" : "asc")) === "asc" ? 1 : -1;

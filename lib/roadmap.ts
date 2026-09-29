@@ -95,15 +95,6 @@ export const ROADMAP: RoadmapSpec[] = [
     status: "planned",
   },
   {
-    slug: "loans-and-repayment",
-    file: "specs/data-expansion/loans-and-repayment.md",
-    group: "wave-1",
-    summary: "How many students borrow, debt for lower-income students, and how graduates repay.",
-    complexity: 2,
-    complexityNote: "Scorecard fields, but repayment arrives as ranges that need their own parsing and chart.",
-    status: "planned",
-  },
-  {
     slug: "campus-profile",
     file: "specs/data-expansion/campus-profile.md",
     group: "wave-2",

@@ -61,6 +61,7 @@ export function standouts({ rankOf }: Dataset, s: School, { trends = false }: { 
   else if (at("earnings", (v) => v >= 0.9)) out.push({ label: "High earners", domain: "value", metric: "earnings" });
   if (at("aidGenerosity", (v) => v >= 0.85)) out.push({ label: "Generous aid", domain: "value", metric: "aidGenerosity" });
   if (at("avgCost", (v) => v <= 0.1)) out.push({ label: "Low average cost", domain: "value", metric: "avgCost" });
+  if (at("loanRateLarge", (v) => v <= 0.05)) out.push({ label: "Few students borrow", domain: "value", metric: "loanRate" });
   if (at("gradRate", (v) => v >= 0.9)) out.push({ label: "High graduation rate", domain: "value", metric: "gradRate" });
   const { test_submission_rate_sat: sat, test_submission_rate_act: act } = s.admissions;
   if (sat !== null && act !== null && sat < 0.5 && act < 0.5) {

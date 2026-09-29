@@ -3,7 +3,7 @@
  * `npm run sync-history` (every past year), so a trend line always ends on the number the profile shows
  * (specs/trends-data.md, rule 1). Pure: plain objects in, plain objects out; no I/O.
  */
-import type { ResidencyPrices, School, SchoolType } from "./types";
+import type { ResidencyPrices, School, SchoolType, ShareRange } from "./types";
 
 /** One institution's row from an IPEDS CSV, keyed by upper-case column name. */
 export type IpedsRow = Record<string, string>;
@@ -42,6 +42,23 @@ export function raceShares(race: (field: (typeof SCORECARD_RACE_FIELDS)[number])
 /** Admitted ÷ applicants, rounded to 4 places; null under 10 applicants, where a rate is meaningless (0 of 1). */
 export function acceptanceRate(applicants: number | null, admitted: number | null): number | null {
   return applicants && applicants >= 10 && admitted !== null ? round(Math.min(1, admitted / applicants)) : null;
+}
+
+/**
+ * A share College Scorecard publishes as a number, an exact string ("0.31"), a band ("0.27-0.28"), or a bound
+ * ("<=0.02", ">=0.98"). Anything else ("PrivacySuppressed", empty, out of 0–1) is null.
+ */
+export function parseShareBand(v: unknown): ShareRange | null {
+  const ok = (n: number) => Number.isFinite(n) && n >= 0 && n <= 1;
+  if (typeof v === "number") return ok(v) ? { low: v, high: v } : null;
+  if (typeof v !== "string") return null;
+  const s = v.trim();
+  let m: RegExpMatchArray | null;
+  if ((m = s.match(/^<=\s*([\d.]+)$/))) return ok(+m[1]) ? { low: 0, high: +m[1] } : null;
+  if ((m = s.match(/^>=\s*([\d.]+)$/))) return ok(+m[1]) ? { low: +m[1], high: 1 } : null;
+  if ((m = s.match(/^([\d.]+)\s*-\s*([\d.]+)$/))) return ok(+m[1]) && ok(+m[2]) && +m[1] <= +m[2] ? { low: +m[1], high: +m[2] } : null;
+  if (/^[\d.]+$/.test(s)) return ok(+s) ? { low: +s, high: +s } : null;
+  return null;
 }
 
 /** Acceptance rates for men and women, with the overall rate's rule (none under 10 applicants). */

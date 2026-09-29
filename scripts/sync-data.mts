@@ -24,11 +24,11 @@ import { execFileSync } from "node:child_process";
 import { mkdtempSync, readFileSync, writeFileSync, existsSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import type { DatasetMeta, School, SchoolType, TestPolicy } from "../lib/types";
+import type { DatasetMeta, RepaymentStatus, School, SchoolType, TestPolicy } from "../lib/types";
 import { lineageForPatch, validateLineage } from "../lib/lineage.ts";
 import { applyProbes, filesToProbe, type FileProbe, type ReleaseCalendar } from "../lib/releases.ts";
 import { IPEDS_BASES, parseCsv } from "./lib/ipeds.mts";
-import { acceptanceRate, computePrices, ipedsNum, priceSuffix, raceShares, toAid } from "../lib/derive.ts";
+import { acceptanceRate, computePrices, ipedsNum, parseShareBand, priceSuffix, raceShares, toAid } from "../lib/derive.ts";
 
 const ROOT = join(import.meta.dirname, "..");
 const OUT = join(ROOT, "data", "schools.json");
@@ -91,6 +91,18 @@ async function getJson(url: string, attempt = 1): Promise<unknown> {
 /* ------------------------------------------------------------------ */
 
 const RACE = "latest.student.demographics.race_ethnicity";
+const REPAYMENT = "latest.repayment.3_yr_bb_fed_repayment.ug";
+/** Scorecard's repayment categories (they sum to 100%), by the site's names. */
+const REPAYMENT_FIELDS: Record<RepaymentStatus, string> = {
+  paid_in_full: "fullypaid",
+  making_progress: "makingprogress",
+  not_making_progress: "noprogress",
+  deferment: "deferment",
+  forbearance: "forbearance",
+  delinquent: "delinquent",
+  default: "default",
+  discharged: "discharge",
+};
 const NET = "latest.cost.net_price";
 const BY_INCOME = "by_income_level";
 /** Scorecard's family-income bands, low to high. */
@@ -138,6 +150,14 @@ const FIELDS = [
   "latest.student.retention_rate.four_year.full_time",
   "latest.aid.median_debt.completers.overall",
   "latest.aid.median_debt.completers.monthly_payments",
+  // Loans and repayment (specs/data-expansion/loans-and-repayment.md).
+  "latest.aid.federal_loan_rate",
+  "latest.aid.median_debt.pell_grant",
+  "latest.aid.median_debt.no_pell_grant",
+  "latest.aid.median_debt.income.0_30000",
+  "latest.aid.median_debt.income.30001_75000",
+  "latest.aid.median_debt.income.greater_than_75000",
+  ...Object.values(REPAYMENT_FIELDS).map((f) => `${REPAYMENT}.${f}`),
 ];
 
 type ScorecardRow = Record<string, unknown>;
@@ -331,6 +351,25 @@ function toSchool(
       monthly_loan_payment: (() => {
         const v = numOrNull(sc["latest.aid.median_debt.completers.monthly_payments"]);
         return v === null ? null : Math.round(v);
+      })(),
+      federal_loan_rate: roundOrNull(numOrNull(sc["latest.aid.federal_loan_rate"])),
+      median_debt_pell: numOrNull(sc["latest.aid.median_debt.pell_grant"]),
+      median_debt_no_pell: numOrNull(sc["latest.aid.median_debt.no_pell_grant"]),
+      median_debt_by_income: (() => {
+        const v = {
+          low: numOrNull(sc["latest.aid.median_debt.income.0_30000"]),
+          mid: numOrNull(sc["latest.aid.median_debt.income.30001_75000"]),
+          high: numOrNull(sc["latest.aid.median_debt.income.greater_than_75000"]),
+        };
+        return v.low === null && v.mid === null && v.high === null ? null : v;
+      })(),
+      repayment_3yr: (() => {
+        const out: Partial<Record<RepaymentStatus, { low: number; high: number }>> = {};
+        for (const [k, f] of Object.entries(REPAYMENT_FIELDS)) {
+          const r = parseShareBand(sc[`${REPAYMENT}.${f}`]);
+          if (r) out[k as RepaymentStatus] = r;
+        }
+        return Object.keys(out).length ? out : null;
       })(),
     },
     aid: toAid(sfa),

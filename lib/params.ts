@@ -16,7 +16,7 @@ const n = (v: Params[string]) => {
 const SORT_KEYS: SortKey[] = [
   "applicants", "name", "acceptance_rate", "enrollment", "sat", "pell", "first_gen", "diversity", "avg_cost", "aid_generosity", "net_price", "earnings", "grad_rate",
   "avg_cost_change", "admit_rate_change", "size_change", "apps_change", "diversity_change",
-  "men_share", "part_time", "men_share_change", "admit_gap",
+  "men_share", "part_time", "men_share_change", "admit_gap", "loan_rate",
 ];
 const VIEWS: ExploreView[] = ["grid", "table", "chart"];
 
@@ -54,6 +54,7 @@ export function parseFilters(params: Params): SearchFilters {
       return b?.length ? [...new Set(b)] : undefined;
     })(),
     fullTime: str(params.fullTime) === "1" || undefined,
+    fewLoans: str(params.fewLoans) === "1" || undefined,
     sortBy: sortBy && SORT_KEYS.includes(sortBy) ? sortBy : "applicants",
     // Default direction: most-applied-to first; everything else ascending.
     sortDir: params.sortDir === "desc" || params.sortDir === "asc" ? params.sortDir : sortBy && sortBy !== "applicants" ? "asc" : "desc",
@@ -84,6 +85,7 @@ export const FILTER_KEYS = [
   "maxCost",
   "balance",
   "fullTime",
+  "fewLoans",
   ...INDICATOR_KEYS.map((k) => INDICATORS[k].param),
 ] as const;
 

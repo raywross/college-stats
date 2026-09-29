@@ -21,7 +21,7 @@ Each spec here is a separate unit of work, so pieces can ship when they're usefu
 | [admissions-detail.md](admissions-detail.md) | **Built.** Admit rates by sex, true SAT/ACT medians, ACT English/Math | IPEDS ADM (downloaded) |
 | [housing-and-policies.md](housing-and-policies.md) | Housing capacity, live-on requirement, meal plan, application fee, tuition guarantee, promise program | IPEDS COST1 (downloaded) |
 | [student-body.md](student-body.md) | **Built.** Men/women split, part-time share, share 25 and older | Scorecard API |
-| [loans-and-repayment.md](loans-and-repayment.md) | Share who borrow, debt for Pell and lower-income students, repayment progress | Scorecard API |
+| [loans-and-repayment.md](loans-and-repayment.md) | **Built.** Share who borrow, debt for Pell and lower-income students, repayment progress | Scorecard API |
 
 ### Wave 2: one new NCES file each
 | Spec | Adds | Source |

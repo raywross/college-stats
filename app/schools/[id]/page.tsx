@@ -58,6 +58,8 @@ import { ScatterPlot } from "@/components/charts/ScatterPlot";
 import { LANDSCAPE_X, LANDSCAPE_Y, LANDSCAPE_ZONE, VALUE_X, VALUE_Y, valueZone } from "@/lib/chart-configs";
 import { NetPriceByIncome } from "@/components/charts/NetPriceByIncome";
 import { WhatStudentsPay } from "@/components/school/WhatStudentsPay";
+import { LoansCard } from "@/components/school/LoansCard";
+import { hasLoanData } from "@/lib/repayment";
 import { AidGenerosityCard } from "@/components/school/AidGenerosityCard";
 import { InfoTip, MetricLabel, SourceChip, Term } from "@/components/ui/info-tip";
 import { ShowMore } from "@/components/ui/show-more";
@@ -161,6 +163,11 @@ const SECTION_FIELDS = {
     "aid.by_income",
     "outcomes.median_debt",
     "outcomes.monthly_loan_payment",
+    "outcomes.federal_loan_rate",
+    "outcomes.median_debt_pell",
+    "outcomes.median_debt_no_pell",
+    "outcomes.median_debt_by_income",
+    "outcomes.repayment_3yr",
     "derived.payback_years",
     "outcomes.median_earnings_10yr",
     "outcomes.median_earnings_6yr",
@@ -921,6 +928,12 @@ export default async function SchoolPage({ params }: Props) {
                   )}
                 </div>
               </div>
+
+              {hasLoanData(school) && (
+                <ShowMore label="Show borrowing and repayment" hint="Who takes federal loans, debt by background, and how repayment is going" className="mt-4">
+                  <LoansCard school={school} />
+                </ShowMore>
+              )}
 
               {school.aid && (
                 <div className="mt-10">

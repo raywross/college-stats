@@ -121,6 +121,7 @@ export async function SchoolTable({ schools, params }: { schools: School[]; para
     { key: "aid_generosity", label: "Aid generosity", term: "aid-generosity" },
     { key: "earnings", label: "Earnings", term: "median-earnings" },
     { key: "grad_rate", label: "Grad rate", term: "graduation-rate" },
+    { key: "loan_rate", label: "Borrow", term: "federal-loan-rate" },
     ...(changes
       ? [
           { key: "avg_cost_change" as const, label: "Avg cost, 10-yr change", term: "inflation-adjusted" as const },
@@ -128,8 +129,7 @@ export async function SchoolTable({ schools, params }: { schools: School[]; para
           { key: "size_change" as const, label: "Undergrads, 10-yr change", term: "undergrad-enrollment" as const },
           { key: "apps_change" as const, label: "Applications, 10-yr change", term: "applicants" as const },
           { key: "diversity_change" as const, label: "Diversity, then → now", term: "diversity-index" as const },
-          { key: "men_share_change" as const, label: "Men, then → now", term: "gender-balance" as const },
-        ]
+          { key: "men_share_change" as const, label: "Men, then → now", term: "gender-balance" as const },        ]
       : []),
   ];
 
@@ -142,7 +142,7 @@ export async function SchoolTable({ schools, params }: { schools: School[]; para
     </p>
     <div className="overflow-hidden rounded-3xl border bg-card">
       <div className="overflow-x-auto">
-        <table className={cn("w-full text-sm", changes ? "min-w-[2190px]" : "min-w-[1450px]")}>
+        <table className={cn("w-full text-sm", changes ? "min-w-[2290px]" : "min-w-[1550px]")}>
           <thead className="border-b bg-surface-2">
             <tr>
               <SortHeader k="name" label="School" className="sticky left-0 z-10 bg-surface-2 pl-4" params={params} sortBy={sortBy} sortDir={sortDir} />
@@ -234,6 +234,10 @@ export async function SchoolTable({ schools, params }: { schools: School[]; para
                     <Value v={s.outcomes?.graduation_rate == null ? null : pct(s.outcomes.graduation_rate)} />
                     {s.outcomes?.graduation_rate != null && <Bar value={s.outcomes.graduation_rate} max={1} color={DOMAINS.value.color} />}
                   </td>
+                  <td className="w-24 px-3 tabular-nums">
+                    <Value v={s.outcomes?.federal_loan_rate == null ? null : pct(s.outcomes.federal_loan_rate)} />
+                    {s.outcomes?.federal_loan_rate != null && <Bar value={s.outcomes.federal_loan_rate} max={1} color={DOMAINS.value.color} />}
+                  </td>
                   {changes && (
                     <>
                       <td className="w-32 px-3 tabular-nums">
@@ -280,8 +284,7 @@ export async function SchoolTable({ schools, params }: { schools: School[]; para
                           from={s.trends?.men_share ? pct(s.trends.men_share.from) : undefined}
                           to={s.trends?.men_share ? pct(s.trends.men_share.to) : undefined}
                         />
-                      </td>
-                    </>
+                      </td>                    </>
                   )}
                   <td className="px-3 pr-4 text-right">
                     <CompareButton id={s.unit_id} variant="icon" />

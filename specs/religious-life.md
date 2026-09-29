@@ -1,8 +1,8 @@
 # Religious Life
 
 > Status: **planned** (not built). Research 2026-09-28: Scorecard API probe, 2025–26 Common Data Sets, and a
-> per-school deep dive on UT Austin. Findings are verified unless marked *unverified*. Companion:
-> [greek-life.md](greek-life.md). Per-school collection shares the engine in
+> per-school deep dive on UT Austin. Findings are verified unless marked *unverified*. Companions:
+> [greek-life.md](greek-life.md), [lgbtq-life.md](lgbtq-life.md). Per-school collection shares the engine in
 > [college-reported-data.md](college-reported-data.md#campus-life-sources).
 
 ## Goal

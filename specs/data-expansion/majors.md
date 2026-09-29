@@ -1,7 +1,7 @@
 # Majors: Degrees Awarded by Field (IPEDS Completions)
 
 > Status: **planned**. Wave 3. New file: `C{Y}_A`. Research 2026-09-28. Part of [data-expansion](README.md).
-> Pairs with [field-of-study.md](field-of-study.md). **Decides the per-college detail shard** (see below).
+> Pairs with [field-of-study.md](field-of-study.md). **Builds the per-college detail file** (see below).
 
 ## Question it answers
 *What do students here actually study? Is my major big here or a niche? Which programs are growing?*
@@ -41,14 +41,19 @@ Scorecard has `academics.program_percentage.*` (share of degrees by 2-digit fiel
 - A checked-in CIP title table (`data/reference/cip2020.json`) for readable names and 2-digit families.
 - Validate: sum of first-major bachelor's ≈ the institution total row (99).
 
-## Store (and the detail-shard decision)
+## Store (and the detail file)
 - **Snapshot:** `academics.majors_top: { cip, title, share }[]` (top 5 by first-major bachelor's) and
   `academics.bachelors_awarded` (total). Enough for cards and filters.
-- **Per-college shard:** the full list (~50–150 programs per college, ~4 KB). **Recommendation: add
-  `data/detail/schools/{unitid}.json`** for large per-college *snapshot* tables (majors, home states, field-of-study
-  earnings), separate from the history shard, because history has a strict last-point-equals-snapshot contract and
-  columnar year arrays. Same publishing path as history (a Supabase `school_details` table, one row per college,
-  `json`), fail-soft reads like `getHistory()`.
+- **Detail file (decided 2026-09-28):** the full list (~50–150 programs per college, ~4 KB) goes in
+  `data/detail/schools/{unitid}.json`, a new per-college file for large *snapshot* tables (majors, home states,
+  field-of-study earnings). It's separate from the history shard, because history has a strict
+  last-point-equals-snapshot contract and columnar year arrays. This spec builds it:
+  - Shape: `{ unit_id, built, tables: { majors?, home_states?, programs? } }`, each table with its own source and
+    vintage for lineage; a `validateDetail()` beside `validateShard()`.
+  - Committed to git like history shards, and published 1:1 (a Supabase `school_details` table, one row per college,
+    `json`, in a new migration applied to dev first; `publish-data` publishes it in the same transaction).
+  - Read with `getDetail(unitId)` in `lib/data.ts`, fail-soft like `getHistory()` (log and return null).
+  - `outputFileTracingIncludes` gains `./data/detail/**`; `npm run check:lineage` validates every file.
 - `SourceKey` `ipeds-c`, `VintageKey` `ipeds-c` ("2024–25 graduates").
 
 ## Display

@@ -1,6 +1,6 @@
 # Earnings and Debt by Major (Scorecard Field of Study)
 
-> Status: **planned**. Wave 3. After [majors.md](majors.md) (uses its detail shard and CIP table). Research 2026-09-28.
+> Status: **planned**. Wave 3. After [majors.md](majors.md) (uses the detail file and CIP table). Research 2026-09-28.
 > Part of [data-expansion](README.md).
 
 ## Question it answers

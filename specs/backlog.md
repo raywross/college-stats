@@ -47,7 +47,11 @@ Planned work, roughly in priority order. Move items into a feature spec when the
     admissions by sex and true medians, housing and policies, student body, loans and repayment.
   - [ ] Wave 2 (one new NCES file each): campus profile (HD), campus services and athletics (IC), student-faculty
     ratio (EF-D), residence (EF-C), 8-year outcomes (OM), Pell/race graduation (GR), finances (DRVF), faculty (SAL).
-  - [ ] Wave 3: majors (completions) with the per-college detail shard; earnings by major (Scorecard Field of Study).
+  - [ ] **Per-college detail file** `data/detail/schools/{unitid}.json` (decided 2026-09-28: a new file, not the
+    history shard) for large snapshot tables: majors, home states, earnings by major. Validation, lineage check,
+    Supabase `school_details` table + publish, fail-soft `getDetail()`. Built with whichever of majors or residence
+    ships first ([majors.md](data-expansion/majors.md#store-and-the-detail-file)).
+  - [ ] Wave 3: majors (completions); earnings by major (Scorecard Field of Study). Both use the detail file.
   - [ ] Wave 4, after the college-reported data agent: CDS high school GPA and admissions profile, class sizes,
     transfer admissions, next-year price and graduates' total debt.
   - [ ] Graduation as a fifth trend indicator ([outcome-measures.md](data-expansion/outcome-measures.md#top-level-trend)).

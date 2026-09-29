@@ -30,8 +30,8 @@ the federal number.
 
 ## Store
 - **Snapshot:** `demographics.residence: { in_state, out_of_state, international, year }` as shares of first-years.
-- **Per-college shard:** `home_states: { [fips]: count }` (only states with ≥1 student; ~30 entries average). Too big for
-  the snapshot × 1,893 colleges; goes in the per-college detail shard ([README](README.md#shared-build-rules)).
+- **Detail file:** `home_states: { [fips]: count }` (only states with ≥1 student; ~30 entries average). Too big for
+  the snapshot × 1,893 colleges; goes in the per-college detail file ([majors.md](majors.md#store-and-the-detail-file)); if this spec ships before majors, it builds that file.
 - `SourceKey` `ipeds-ef`, `VintageKey` `ipeds-ef-residence` (even year, e.g. "Fall 2024").
 
 ## Display

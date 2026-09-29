@@ -96,8 +96,11 @@ Recommendations across all specs:
 - **Normalize codes.** Older files zero-pad codes and newer ones don't (verified: completions `AWLEVEL` is `"05"` in
   C2020_A and `"5"` in C2025_A). Parse codes as numbers.
 - **Snapshot size.** `data/schools.json` is ~3.6 MB. Scalars and small objects go in the snapshot. Tables that are big
-  per college (majors, home states, field of study) go in per-college shards. Open question: extend the history shard
-  or add a `data/detail/schools/{unitid}.json` shard. Decide in [majors.md](majors.md), the first spec that needs one.
+  per college (majors, home states, field of study) go in a **new per-college detail file**,
+  `data/detail/schools/{unitid}.json` (decided 2026-09-28), not the history shard. History keeps its
+  latest-point-equals-snapshot contract and year arrays; the detail file holds current snapshot tables only. Specified
+  in [majors.md](majors.md#store-and-the-detail-file) and built by whichever of [majors.md](majors.md) or
+  [residence.md](residence.md) ships first; [field-of-study.md](field-of-study.md) reuses it.
 - **Missing is `null`.** IPEDS uses `-1` (not reported), `-2` (not applicable), and `-3` (not available). All become
   `null`, never 0.
 - **Glossary.** Every new term gets an entry in `lib/glossary.ts` and a `<Term>`/`<InfoTip>`.

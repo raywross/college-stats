@@ -1,8 +1,9 @@
 # Greek Life
 
 > Status: **planned** (not built). Research 2026-09-28: 2025–26 Common Data Sets and a per-school deep dive on UT
-> Austin. Findings are verified unless marked *unverified*. Companion: [religious-life.md](religious-life.md) (its
-> source tiers, crawl strategy, and access rules apply here too). Per-school collection shares the engine in
+> Austin. Findings are verified unless marked *unverified*. Companions: [religious-life.md](religious-life.md) (its
+> source tiers, crawl strategy, and access rules apply here too) and [lgbtq-life.md](lgbtq-life.md) (LGBTQ+ Greek
+> chapters). Per-school collection shares the engine in
 > [college-reported-data.md](college-reported-data.md#campus-life-sources).
 
 ## Goal

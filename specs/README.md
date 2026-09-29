@@ -28,6 +28,7 @@ Structured documentation for the Higher Education Data Explorer ("Quad").
 | [trends-design.md](trends-design.md) | How trends appear, from Home facts to the profile's "Over time" charts, Explore, and Compare. Built (phases 1–3) |
 | [religious-life.md](religious-life.md) | *Planned:* religious affiliation, faith intensity, faith communities on campus; source tiers and per-school crawl |
 | [greek-life.md](greek-life.md) | *Planned:* fraternity/sorority participation, councils, housing, recruitment; CDS F1 and FSL office reports |
+| [lgbtq-life.md](lgbtq-life.md) | *Planned:* LGBTQ+ centers and groups, inclusive policies, conduct rules, state laws, IPEDS "another gender" counts; rules for sensitive facts |
 | [data-expansion/](data-expansion/README.md) | *Planned:* public data not yet on the site, one spec per source (admission factors incl. GPA, housing, setting, residence, student-faculty ratio, 8-year outcomes, Pell graduation, finances, faculty, majors, earnings by major, and CDS GPA/class sizes/transfer/next-year price after the college-reported agent); each decides history and top-level trends |
 | [backlog.md](backlog.md) | Planned work (CDS PDF import, scheduled sync, tests) |
 | [roadmap.md](roadmap.md) | `/roadmap`: the planned specs with complexity ratings, each readable at `/roadmap/{slug}`; registry in `lib/roadmap.ts` must list every planned spec |

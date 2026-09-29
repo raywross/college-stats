@@ -40,7 +40,8 @@ export const ROADMAP_GROUPS: { key: RoadmapGroupKey; title: string; description:
   {
     key: "campus-life",
     title: "Campus life",
-    description: "Faith communities and Greek life, from federal data, Common Data Sets, and campus offices.",
+    description:
+      "Faith communities, Greek life, and LGBTQ+ life, from federal data, Common Data Sets, campus offices, and colleges' own policies.",
   },
 ];
 
@@ -261,6 +262,17 @@ export const ROADMAP: RoadmapSpec[] = [
     summary: "How big Greek life is, which kinds of chapters there are, housing, and when students can join.",
     complexity: 3,
     complexityNote: "Common Data Set share first, then fraternity and sorority office reports at pilot colleges.",
+    status: "planned",
+  },
+  {
+    slug: "lgbtq-life",
+    file: "specs/lgbtq-life.md",
+    group: "campus-life",
+    summary:
+      "LGBTQ+ centers and student groups, gender-inclusive housing and other policies, conduct rules, and gender identity counts, each dated.",
+    complexity: 3,
+    complexityNote:
+      "Federal counts are quick; policies need a check of each college's own pages, and sensitive findings a person's review.",
     status: "planned",
   },
 ];

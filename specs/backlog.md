@@ -68,6 +68,11 @@ published at `/roadmap` ([roadmap.md](roadmap.md)): add each new one to `lib/roa
   faith-org directories, and partnership requests (Hillel, Chabad, Anthology).
 - [ ] **Greek life** ([greek-life.md](greek-life.md)). Phase 1: CDS F1/F4. Then the same pilot for fraternity &
   sorority life office reports (members by council, recruitment), checked against F1.
+- [ ] **LGBTQ+ life** ([lgbtq-life.md](lgbtq-life.md)). Phase 1: IPEDS "another gender" counts (add `EF{Y}A` to the
+  sync; blank means not collected, never ranked). Then a state-law table for public colleges (Texas SB 17 first),
+  Trans Policy Clearinghouse and campus-center leads matched to colleges, permission requests (Beemyn, Consortium,
+  oSTEM), and a 25-college pilot verifying policies on each college's own pages, with human review of conduct-code
+  findings.
 - [ ] **Watch ACTS** (IPEDS admissions supplement): adopt if NCES publishes institution-level files. See
   [data-page.md](data-page.md#watching-acts).
 - [ ] **Scheduled data refresh** (`chore/scheduled-data-sync`): monthly GitHub Action runs `npm run sync-all`

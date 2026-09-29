@@ -121,8 +121,10 @@ Measure: share with a findable newer source, pass rate of checks, accuracy again
 college for each model. Decide whether Haiku 4.5 holds for extraction or extraction moves to Sonnet 5.
 
 ## Campus-life sources
-[religious-life.md](religious-life.md) and [greek-life.md](greek-life.md) reuse this engine with more source kinds
-per college (planned, after the admissions pilot):
+[religious-life.md](religious-life.md), [greek-life.md](greek-life.md), and [lgbtq-life.md](lgbtq-life.md) reuse this
+engine with more source kinds per college (planned, after the admissions pilot). LGBTQ+ life adds `policy-page`
+(nondiscrimination, housing, records, health plan, conduct code), extracted against a yes/no schema with the
+supporting quote, and a human-review queue for conduct-code findings:
 - **Recipe `sources[].kind`** grows: `cds` (sections C7, F1, F2, F4, H14 added to the extraction schema), `ir-report`
   (e.g. enrollment by religion), `fsl-reports` (fraternity & sorority life size/grade reports), `org-directory`
   (Engage / CampusGroups / Presence), `faith-org` (a campus Hillel page, etc.). Discovery finds them in the same

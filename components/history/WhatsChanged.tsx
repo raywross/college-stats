@@ -23,8 +23,8 @@ function FactCard({
   cta: string;
 }) {
   return (
-    <div className="flex min-w-0 flex-col rounded-3xl border bg-card p-5 sm:p-6">
-      <p className="font-display text-5xl font-extrabold tracking-tight tabular-nums">{big}</p>
+    <div className="flex min-w-0 flex-col rounded-3xl border bg-card p-4 sm:p-6">
+      <p className="font-display text-4xl font-extrabold tracking-tight tabular-nums sm:text-5xl">{big}</p>
       <p className="mt-2 text-muted-foreground">{children}</p>
       <div className="mt-5">{chart}</div>
       <div className="mt-4 flex-1">{footer}</div>
@@ -49,13 +49,13 @@ export async function WhatsChanged({ valueColor, admissionsColor, scoresColor }:
     <section>
       <div className="mb-6">
         <p className="mb-1.5 text-xs font-bold tracking-[0.18em] text-primary uppercase">Over time</p>
-        <h2 className="font-display text-3xl font-extrabold tracking-tight sm:text-4xl">What&apos;s changed</h2>
+        <h2 className="font-display text-2xl font-extrabold tracking-tight sm:text-4xl">What&apos;s changed</h2>
         <p className="mt-2 max-w-3xl text-muted-foreground">
           Ten years of federal data, measured over a <Term term="fixed-panel">fixed panel</Term> of the same colleges at both ends, with
           money <Term term="inflation-adjusted">after inflation</Term>.
         </p>
       </div>
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+      <div className="grid gap-4 max-sm:gap-3 max-sm:rail md:grid-cols-2 xl:grid-cols-3">
         {pg && (
           <FactCard
             big={formatChange({ measure: "ratio", change: pg.avgPaidChange })}

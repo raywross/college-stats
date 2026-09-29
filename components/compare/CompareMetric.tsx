@@ -32,7 +32,7 @@ export function CompareMetric({
     flag && present.length > 1 ? (flag.which === "max" ? Math.max(...present) : Math.min(...present)) : null;
 
   return (
-    <div className="rounded-3xl border bg-card p-5">
+    <div className="rounded-3xl border bg-card p-4 sm:p-5">
       <MetricLabel term={term} className="mb-4 font-display text-base font-bold">
         {label}
       </MetricLabel>

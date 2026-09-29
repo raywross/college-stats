@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
 
 /* ---------------------------------------------------------------- */
 
-export function ExploreSearchInput() {
+export function ExploreSearchInput({ className }: { className?: string }) {
   const { searchParams, update } = useExploreParams();
   const urlQ = searchParams.get("q") ?? "";
   const [q, setQ] = useState(urlQ);
@@ -36,7 +36,12 @@ export function ExploreSearchInput() {
   }, [q, pushed, update]);
 
   return (
-    <label className="flex h-10 min-w-0 flex-1 items-center gap-2 rounded-full border bg-card px-4 focus-within:border-primary/50 focus-within:ring-4 focus-within:ring-primary/15">
+    <label
+      className={cn(
+        "flex h-10 min-w-0 flex-1 items-center gap-2 rounded-full border bg-card px-4 focus-within:border-primary/50 focus-within:ring-4 focus-within:ring-primary/15",
+        className
+      )}
+    >
       <Search className="size-4 shrink-0 text-muted-foreground" />
       <span className="sr-only">Search schools</span>
       <input
@@ -84,16 +89,17 @@ export function SortControl() {
   const sortDir = searchParams.get("sortDir") ?? (sortBy === "applicants" ? "desc" : "asc");
 
   return (
-    <div className="flex h-10 items-center rounded-full border bg-card pr-1 pl-3.5">
-      <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
-        Sort
+    <div className="flex h-10 min-w-0 items-center rounded-full border bg-card pr-1 pl-3.5">
+      <label className="flex min-w-0 flex-1 items-center gap-1.5 text-xs text-muted-foreground">
+        <span className="hidden sm:inline">Sort</span>
         <select
+          aria-label="Sort by"
           value={sortBy}
           onChange={(e) => {
             const opt = SORTS.find((s) => s.value === e.target.value)!;
             update({ sortBy: opt.value === "applicants" ? null : opt.value, sortDir: opt.dir === "desc" && opt.value !== "applicants" ? "desc" : null });
           }}
-          className="cursor-pointer bg-transparent py-1 pr-1 text-sm font-semibold text-foreground outline-none"
+          className="w-full min-w-0 cursor-pointer truncate bg-transparent py-1 pr-1 text-sm font-semibold text-foreground outline-none sm:w-auto"
         >
           {SORTS.map((s) => (
             <option key={s.value} value={s.value}>
@@ -106,7 +112,7 @@ export function SortControl() {
         type="button"
         onClick={() => update({ sortDir: sortDir === "asc" ? "desc" : "asc" })}
         aria-label={sortDir === "asc" ? "Sorted ascending; switch to descending" : "Sorted descending; switch to ascending"}
-        className="inline-flex size-8 items-center justify-center rounded-full hover:bg-muted"
+        className="inline-flex size-8 shrink-0 items-center justify-center rounded-full hover:bg-muted"
       >
         {sortDir === "asc" ? <ArrowUpNarrowWide className="size-4" /> : <ArrowDownWideNarrow className="size-4" />}
       </button>

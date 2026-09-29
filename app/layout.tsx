@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
+import { BottomNav } from "@/components/layout/BottomNav";
 import { CompareTray } from "@/components/compare/CompareTray";
 import { SITE_NAME, SITE_TAGLINE } from "@/lib/brand";
 import "./globals.css";
@@ -55,6 +56,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             <main className="flex-1">{children}</main>
             <Footer />
             <CompareTray />
+            <BottomNav />
           </TooltipProvider>
         </ThemeProvider>
       </body>

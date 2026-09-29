@@ -39,7 +39,7 @@ const MATCHUPS = [
 function Group({ domain, title, children }: { domain: Domain; title: string; children: React.ReactNode }) {
   return (
     <section className="space-y-4">
-      <h2 className="flex items-center gap-2 font-display text-2xl font-extrabold tracking-tight">
+      <h2 className="flex items-center gap-2 font-display text-xl font-extrabold tracking-tight sm:text-2xl">
         <span className="h-6 w-1.5 rounded-full" style={{ backgroundColor: DOMAINS[domain].color }} />
         {title}
       </h2>
@@ -149,10 +149,10 @@ export default async function ComparePage({
     : [];
 
   return (
-    <div className="mx-auto max-w-7xl px-4 pt-8 pb-12 sm:px-6 sm:pt-10">
-      <header className="mb-6">
-        <p className="mb-2 text-xs font-bold tracking-[0.18em] text-primary uppercase">Compare</p>
-        <h1 className="font-display text-4xl font-extrabold tracking-tight sm:text-5xl">
+    <div className="mx-auto max-w-7xl px-4 pt-5 pb-12 sm:px-6 sm:pt-10">
+      <header className="mb-3 sm:mb-6">
+        <p className="mb-2 hidden text-xs font-bold tracking-[0.18em] text-primary uppercase sm:block">Compare</p>
+        <h1 className="font-display text-3xl font-extrabold tracking-tight sm:text-5xl">
           {schools.length === 1 ? (
             <>Pick a <span className="highlight">rival</span></>
           ) : (
@@ -168,11 +168,11 @@ export default async function ComparePage({
       {schools.length === 1 ? (
         <SinglePrompt school={schools[0]} />
       ) : (
-        <div className="space-y-14 pt-8">
+        <div className="space-y-10 pt-5 sm:space-y-14 sm:pt-8">
           {/* Key differences + radar */}
           <div className="grid gap-4 lg:grid-cols-[1.2fr_1fr]">
-            <section className="rounded-3xl border bg-card p-5 sm:p-6">
-              <h2 className="font-display text-2xl font-extrabold tracking-tight">Key differences</h2>
+            <section className="rounded-3xl border bg-card p-4 sm:p-6">
+              <h2 className="font-display text-xl font-extrabold tracking-tight sm:text-2xl">Key differences</h2>
               <p className="mb-5 text-sm text-muted-foreground">The biggest gaps between these schools, largest first.</p>
               <ol className="space-y-3">
                 {diffs.slice(0, 6).map((d, i) => (
@@ -202,8 +202,8 @@ export default async function ComparePage({
                 ))}
               </ol>
             </section>
-            <section className="rounded-3xl border bg-card p-5 sm:p-6">
-              <h2 className="flex items-center gap-1 font-display text-2xl font-extrabold tracking-tight">
+            <section className="rounded-3xl border bg-card p-4 sm:p-6">
+              <h2 className="flex items-center gap-1 font-display text-xl font-extrabold tracking-tight sm:text-2xl">
                 The shape of each school
               </h2>
               <p className="mb-2 flex items-center gap-1 text-sm text-muted-foreground">
@@ -224,17 +224,17 @@ export default async function ComparePage({
 
           {schools.some((s) => indicatorsOf(s).length > 0) && (
             <section className="space-y-4">
-              <h2 className="flex items-center gap-1 font-display text-2xl font-extrabold tracking-tight">
+              <h2 className="flex items-center gap-1 font-display text-xl font-extrabold tracking-tight sm:text-2xl">
                 10-year direction <InfoTip term="trend-direction" />
               </h2>
               <p className="max-w-3xl text-sm text-muted-foreground">
                 Four directions over each college&apos;s last 10 years of federal data. Cost is <Term term="inflation-adjusted">after inflation</Term>.
               </p>
               <div className="overflow-x-auto rounded-3xl border bg-card">
-                <table className="w-full min-w-[560px] text-sm">
+                <table className="w-full min-w-[480px] text-sm sm:min-w-[560px]">
                   <thead className="border-b bg-surface-2">
                     <tr>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">Over 10 years</th>
+                      <th className="sticky left-0 z-10 bg-surface-2 px-3 py-3 text-left text-xs font-semibold text-muted-foreground sm:px-4">Over 10 years</th>
                       {schools.map((s, i) => (
                         <th key={s.unit_id} className="px-4 py-3 text-left text-xs font-bold">
                           <span className="inline-flex items-center gap-1.5">
@@ -248,7 +248,7 @@ export default async function ComparePage({
                   <tbody>
                     {INDICATOR_KEYS.map((k) => (
                       <tr key={k} className="border-b last:border-0">
-                        <th scope="row" className="px-4 py-3 text-left align-top">
+                        <th scope="row" className="sticky left-0 z-10 w-32 bg-card px-3 py-3 text-left align-top shadow-[1px_0_0_var(--border)] sm:w-auto sm:px-4 sm:shadow-none">
                           <span className="block text-sm font-semibold">{INDICATORS[k].label}</span>
                           <span className="block text-[11px] font-normal text-muted-foreground">{INDICATORS[k].question}</span>
                         </th>
@@ -298,7 +298,7 @@ export default async function ComparePage({
               <CompareMetric label="First-gen share" term="first-gen" schools={schools} get={METRICS.firstGen.get} format={(v) => pct(v)} max={1} flag={{ which: "max", text: "Highest" }} />
               <CompareMetric label="Diversity index" term="diversity-index" schools={schools} get={METRICS.diversity.get} format={(v) => v.toFixed(2)} max={1} flag={{ which: "max", text: "Most" }} />
             </div>
-            <div className="rounded-3xl border bg-card p-5 sm:p-6">
+            <div className="rounded-3xl border bg-card p-4 sm:p-6">
               <h3 className="mb-5 flex items-center gap-1 font-display text-base font-bold">
                 Race & ethnicity <InfoTip term="race-ethnicity" />
               </h3>
@@ -347,14 +347,14 @@ export default async function ComparePage({
 
           {historyFiles && thenAndNow.some((m) => m.rows.length > 0) && (
             <section className="space-y-4">
-              <h2 className="flex items-center gap-2 font-display text-2xl font-extrabold tracking-tight">
+              <h2 className="flex items-center gap-2 font-display text-xl font-extrabold tracking-tight sm:text-2xl">
                 <span className="h-6 w-1.5 rounded-full bg-primary" />
                 Then &amp; now
               </h2>
               <p className="max-w-3xl text-sm text-muted-foreground">
                 How each college changed over the last 10 years of federal data. Money is <Term term="inflation-adjusted">after inflation</Term>.
               </p>
-              <div className="rounded-3xl border bg-card p-5 sm:p-6">
+              <div className="rounded-3xl border bg-card p-4 sm:p-6">
                 <ThenAndNow metrics={thenAndNow} />
               </div>
               <HistorySourceNote keys={["avg_paid_all", "acceptance_rate", "applicants", "undergrads", ...Object.values(RACE_SERIES)]} files={historyFiles} range={{ academic: defaultWindow(historyFiles.meta, "academic"), fall: defaultWindow(historyFiles.meta, "fall") }} />
@@ -363,12 +363,12 @@ export default async function ComparePage({
 
           {/* Data table: every value in one place (also the accessible view) */}
           <section className="space-y-4">
-            <h2 className="font-display text-2xl font-extrabold tracking-tight">All the numbers</h2>
+            <h2 className="font-display text-xl font-extrabold tracking-tight sm:text-2xl">All the numbers</h2>
             <div className="overflow-x-auto rounded-3xl border bg-card">
-              <table className="w-full min-w-[560px] text-sm">
+              <table className="w-full min-w-[480px] text-sm sm:min-w-[560px]">
                 <thead className="border-b bg-surface-2">
                   <tr>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">Metric</th>
+                    <th className="sticky left-0 z-10 bg-surface-2 px-3 py-3 text-left text-xs font-semibold text-muted-foreground sm:px-4">Metric</th>
                     {schools.map((s, i) => (
                       <th key={s.unit_id} className="px-4 py-3 text-left text-xs font-bold">
                         <span className="inline-flex items-center gap-1.5">
@@ -382,7 +382,7 @@ export default async function ComparePage({
                 <tbody className="divide-y tabular-nums">
                   {TABLE_ROWS.map(([label, term, field, fmt]) => (
                     <tr key={label}>
-                      <td className="px-4 py-2.5 text-muted-foreground">
+                      <td className="sticky left-0 z-10 max-w-36 bg-card px-3 py-2.5 text-muted-foreground shadow-[1px_0_0_var(--border)] sm:max-w-none sm:px-4 sm:shadow-none">
                         <span className="inline-flex items-center gap-1">
                           {label} <InfoTip term={term} cited={citeField(field)} />
                         </span>
@@ -433,7 +433,7 @@ async function ScoreCompare({ schools, test }: { schools: School[]; test: "sat" 
         {schools.map((s, i) => {
           const r = ranges[i];
           return (
-            <div key={s.unit_id} className="grid grid-cols-[4.5rem_1fr_4.5rem] items-center gap-3 sm:grid-cols-[6rem_1fr_5rem]">
+            <div key={s.unit_id} className="grid grid-cols-[4.5rem_1fr_auto] items-center gap-3 sm:grid-cols-[6rem_1fr_5rem]">
               <span className="truncate text-xs font-semibold">{shortName(s)}</span>
               {r ? (
                 <RangeBar low={r[0]} high={r[1]} scale={[lo, hi]} color={SLOT_COLORS[i]} medianMid={median ?? undefined} compact />
@@ -442,7 +442,7 @@ async function ScoreCompare({ schools, test }: { schools: School[]; test: "sat" 
                   {s.admissions.test_policy === "not-considered" ? "Test-blind" : "Not reported"}
                 </span>
               )}
-              <span className="text-right text-sm font-bold tabular-nums">{r ? `${r[0]}–${r[1]}` : "–"}</span>
+              <span className="text-right text-sm font-bold whitespace-nowrap tabular-nums">{r ? `${r[0]}–${r[1]}` : "–"}</span>
             </div>
           );
         })}
@@ -466,7 +466,7 @@ async function SinglePrompt({ school }: { school: School }) {
       <p className="mb-4 text-muted-foreground">
         Add at least one more school to see the head-to-head. Here are a few that are a lot like {shortName(school)}:
       </p>
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-3 max-sm:rail max-sm:[--rail-item:72%] sm:grid-cols-2 lg:grid-cols-4">
         {similar.map(({ school: s, reasons }) => (
           <Link
             key={s.unit_id}

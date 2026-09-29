@@ -68,11 +68,12 @@ Re-run the validator whenever a chart color changes (see [charts.md](charts.md))
 ## Responsive
 | Width | Behavior |
 |---|---|
-| < 640 | Single column, hamburger menu sheet, search toggle row, bottom-sheet filters, stacked tiles |
-| 640–1024 | 2-col grids, nav links visible from `md` |
+| < 640 | Single column, bottom tab bar (below `md`), swipe rails instead of stacked cards, compact result rows, bottom-sheet filters. See [mobile.md](mobile.md) |
+| 640–1024 | 2-col grids, nav links visible from `md` (tab bar below `md`) |
 | 1024+ | Filter sidebar, header search, spotlight cards in hero |
 
-Safe-area insets are respected on the header, sticky sub-navs, bottom sheets, and the compare tray.
+Safe-area insets are respected on the header, sticky sub-navs, bottom sheets, the tab bar, and the compare tray.
+Sticky sub-navs offset by `--header-h`; content clears the tab bar with `--tabbar-h`.
 
 ## Dark mode
 `next-themes`, class strategy, `system` default. Header has a quick toggle; the mobile menu and footer

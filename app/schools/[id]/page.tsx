@@ -210,16 +210,16 @@ function Panel({
 }) {
   const color = domain ? DOMAINS[domain].color : "var(--primary)";
   return (
-    <section id={id} className="scroll-mt-36">
+    <section id={id} className="scroll-mt-28 sm:scroll-mt-36">
       <p className="mb-1.5 flex items-center gap-2 text-xs font-bold tracking-[0.18em] uppercase" style={{ color }}>
         <span className="h-1.5 w-5 rounded-full" style={{ backgroundColor: color }} />
         <span className="text-foreground/70">{eyebrow}</span>
       </p>
-      <h2 className="font-display text-3xl font-extrabold tracking-tight">{title}</h2>
-      {takeaway && <p className="mt-2 max-w-3xl text-lg text-muted-foreground">{takeaway}</p>}
+      <h2 className="font-display text-2xl font-extrabold tracking-tight sm:text-3xl">{title}</h2>
+      {takeaway && <p className="mt-2 max-w-3xl text-base text-muted-foreground sm:text-lg">{takeaway}</p>}
       {delta}
       {school && <SourceExceptions fields={fields} school={school} />}
-      <div className="mt-6">{children}</div>
+      <div className="mt-5 sm:mt-6">{children}</div>
       {school && fields.length > 0 && <SourceNote fields={fields} school={school} className="mt-4" />}
     </section>
   );
@@ -243,7 +243,7 @@ async function Tile({
 }) {
   const { citeField } = await getData();
   return (
-    <div className={`flex flex-col rounded-3xl border bg-card p-5 ${className ?? ""}`}>
+    <div className={`flex flex-col rounded-3xl border bg-card p-4 sm:p-5 ${className ?? ""}`}>
       <MetricLabel term={term} cited={citeField(field, school)} className="flex-wrap text-xs font-semibold text-muted-foreground">
         {label}
       </MetricLabel>
@@ -317,8 +317,8 @@ export default async function SchoolPage({ params }: Props) {
           style={{ background: `radial-gradient(ellipse 80% 90% at 15% 0%, ${crestTint(school.unit_id, 0.35)}, transparent 70%)` }}
         />
         <div className="absolute inset-0 -z-10 bg-dots opacity-40 [mask-image:linear-gradient(to_bottom,black,transparent)]" />
-        <div className="mx-auto max-w-6xl px-4 pt-6 pb-10 sm:px-6 sm:pt-8">
-          <nav aria-label="Breadcrumb" className="mb-6 flex items-center gap-1 text-sm text-muted-foreground">
+        <div className="mx-auto max-w-6xl px-4 pt-5 pb-6 sm:px-6 sm:pt-8 sm:pb-10">
+          <nav aria-label="Breadcrumb" className="mb-6 hidden items-center gap-1 text-sm text-muted-foreground sm:flex">
             <Link href="/explore" className="hover:text-foreground">Explore</Link>
             <ChevronRight className="size-3.5 shrink-0" />
             <Link href={`/explore?states=${school.location.state}`} className="hover:text-foreground">
@@ -328,26 +328,33 @@ export default async function SchoolPage({ params }: Props) {
             <span className="truncate font-medium text-foreground">{school.name}</span>
           </nav>
 
-          <div className="flex flex-col gap-6 sm:flex-row sm:items-end">
-            <Crest id={school.unit_id} name={school.name} size="xl" className="animate-pop-in shadow-xl" />
+          {/* Phones: crest beside the name, then facts, then a full-width Compare. */}
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-4 sm:flex-nowrap sm:items-end sm:gap-6">
+            <Crest
+              id={school.unit_id}
+              name={school.name}
+              size="xl"
+              className="size-14 animate-pop-in rounded-2xl text-lg shadow-xl sm:size-24 sm:rounded-3xl sm:text-2xl"
+            />
             <div className="min-w-0 flex-1">
-              <h1 className="animate-rise font-display text-4xl leading-[1.02] font-extrabold tracking-tight sm:text-5xl lg:text-6xl">
+              <h1 className="animate-rise font-display text-[1.75rem] leading-[1.05] font-extrabold tracking-tight sm:text-5xl lg:text-6xl">
                 {school.name}
               </h1>
-              <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-muted-foreground">
+              <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px] text-muted-foreground sm:mt-3 sm:gap-x-4 sm:gap-y-2 sm:text-sm">
                 <span className="inline-flex items-center gap-1">
-                  <MapPin className="size-4" /> {school.location.city}, {school.location.state} · {school.location.region}
+                  <MapPin className="size-3.5 sm:size-4" /> {school.location.city}, {school.location.state}
+                  <span className="hidden sm:inline"> · {school.location.region}</span>
                 </span>
                 <Term term={school.type}>{typeLabel(school.type)}</Term>
                 <Term term="size-tier">{size.label} campus</Term>
                 {policy && <Term term="test-policy">{policy}</Term>}
               </div>
             </div>
-            <CompareButton id={school.unit_id} variant="large" className="self-start sm:self-end" />
+            <CompareButton id={school.unit_id} variant="large" className="w-full sm:w-auto sm:self-end" />
           </div>
 
           {tags.length > 0 && (
-            <div className="mt-6 flex flex-wrap items-center gap-2">
+            <div className="no-scrollbar mt-5 flex items-center gap-2 max-sm:-mx-4 max-sm:overflow-x-auto max-sm:px-4 sm:mt-6 sm:flex-wrap [&>*]:shrink-0">
               <span className="text-xs font-semibold text-muted-foreground">Known for</span>
               {tags.map((t) => (
                 <StandoutChip key={t.label} standout={t} size="md" />
@@ -355,16 +362,16 @@ export default async function SchoolPage({ params }: Props) {
             </div>
           )}
 
-          <TrendIndicatorStrip school={school} className="mt-6" />
+          <TrendIndicatorStrip school={school} className="mt-5 sm:mt-6" />
         </div>
       </section>
 
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
         <SectionNav sections={sections} />
 
-        <div className="space-y-20 pt-10 sm:space-y-24">
+        <div className="space-y-14 pt-6 sm:space-y-24 sm:pt-10">
           {/* ============================== OVERVIEW ============================== */}
-          <section id="overview" className="scroll-mt-36" aria-label="At a glance">
+          <section id="overview" className="scroll-mt-28 sm:scroll-mt-36" aria-label="At a glance">
             <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
               <Tile label="Acceptance rate" term="acceptance-rate" field="admissions.acceptance_rate" school={school} className="col-span-2 lg:col-span-1 lg:row-span-3">
                 {rate !== null ? (
@@ -496,7 +503,7 @@ export default async function SchoolPage({ params }: Props) {
             >
               <div className="grid gap-4 lg:grid-cols-[1fr_1.2fr]">
                 {counts ? (
-                  <div className="rounded-3xl border bg-card p-5 sm:p-6">
+                  <div className="rounded-3xl border bg-card p-4 sm:p-6">
                     <h3 className="mb-4 font-display text-lg font-bold">Out of every 100 applicants…</h3>
                     <Waffle applicants={a.applicants!} admitted={a.admitted!} enrolled={a.enrolled!} />
                   </div>
@@ -505,7 +512,7 @@ export default async function SchoolPage({ params }: Props) {
                 )}
                 <div className="flex flex-col gap-4">
                   {counts && (
-                    <div className="rounded-3xl border bg-card p-5 sm:p-6">
+                    <div className="rounded-3xl border bg-card p-4 sm:p-6">
                       {/* Applied, admitted, and enrolled always come from the same report, so the heading carries the chip. */}
                       <h3 className="mb-4 flex items-center gap-1.5 font-display text-lg font-bold">
                         The funnel <SourceChip cited={citeField("admissions.applicants", school)} />
@@ -537,7 +544,7 @@ export default async function SchoolPage({ params }: Props) {
                     </div>
                   )}
                   {yld !== null && (
-                    <div className="flex items-center gap-4 rounded-3xl border bg-card p-5 sm:p-6">
+                    <div className="flex items-center gap-4 rounded-3xl border bg-card p-4 sm:p-6">
                       <Ring value={yld} color={DOMAINS.admissions.color} size={88} stroke={10} label={`Yield ${pct(yld)}`}>
                         <span className="font-display text-lg font-extrabold">{pct(yld)}</span>
                       </Ring>
@@ -551,7 +558,7 @@ export default async function SchoolPage({ params }: Props) {
                     </div>
                   )}
                   {rate !== null && (
-                    <div className="rounded-3xl border bg-card p-5 sm:p-6">
+                    <div className="rounded-3xl border bg-card p-4 sm:p-6">
                       <DistributionStrip
                         label="Acceptance rate vs. every college"
                         term="acceptance-rate"
@@ -575,7 +582,7 @@ export default async function SchoolPage({ params }: Props) {
           {scores && (
             <Panel id="scores" domain="scores" eyebrow="Test scores" title="What admitted students scored" takeaway={scoresTakeaway(data, school)} school={school} fields={SECTION_FIELDS.scores}>
               <div className="grid gap-4 lg:grid-cols-[1.6fr_1fr]">
-                <div className="rounded-3xl border bg-card p-5 sm:p-6">
+                <div className="rounded-3xl border bg-card p-4 sm:p-6">
                   <ScoreChecker
                     color={DOMAINS.scores.color}
                     ranges={{
@@ -588,7 +595,7 @@ export default async function SchoolPage({ params }: Props) {
                     }}
                   />
                 </div>
-                <div className="rounded-3xl border bg-card p-5 sm:p-6">
+                <div className="rounded-3xl border bg-card p-4 sm:p-6">
                   <h3 className="flex items-center gap-1 font-display text-lg font-bold">
                     Who submitted scores? <InfoTip term="test-submission" cited={citeField("admissions.test_submission_rate_sat", school)} />
                     <SourceChip cited={citeField("admissions.test_submission_rate_sat", school)} />
@@ -650,7 +657,7 @@ export default async function SchoolPage({ params }: Props) {
             fields={SECTION_FIELDS.students}
           >
             <div className="grid gap-4 lg:grid-cols-2">
-              <div className="rounded-3xl border bg-card p-5 sm:p-6 lg:col-span-2">
+              <div className="rounded-3xl border bg-card p-4 sm:p-6 lg:col-span-2">
                 <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
                   <h3 className="flex items-center gap-1 font-display text-lg font-bold">
                     Race & ethnicity <InfoTip term="race-ethnicity" cited={citeField("demographics.racial_diversity", school)} />
@@ -670,7 +677,7 @@ export default async function SchoolPage({ params }: Props) {
                   <p className="text-sm text-muted-foreground">Not reported.</p>
                 )}
               </div>
-              <div className="space-y-6 rounded-3xl border bg-card p-5 sm:p-6">
+              <div className="space-y-6 rounded-3xl border bg-card p-4 sm:p-6">
                 <h3 className="font-display text-lg font-bold">Economic access</h3>
                 {d.pell_grant_percent !== null ? (
                   <BenchmarkBar
@@ -701,7 +708,7 @@ export default async function SchoolPage({ params }: Props) {
                   <p className="text-sm text-muted-foreground">First-generation share not reported.</p>
                 )}
               </div>
-              <div className="space-y-6 rounded-3xl border bg-card p-5 sm:p-6">
+              <div className="space-y-6 rounded-3xl border bg-card p-4 sm:p-6">
                 <h3 className="flex items-center gap-1.5 font-display text-lg font-bold">
                   Campus size <SourceChip cited={citeField("demographics.undergrad_enrollment", school)} />
                 </h3>
@@ -757,7 +764,7 @@ export default async function SchoolPage({ params }: Props) {
               <WhatStudentsPay school={school} />
 
               <div className="mt-4 grid gap-4 lg:grid-cols-[1.2fr_1fr]">
-                <div className="rounded-3xl border bg-card p-5 sm:p-6">
+                <div className="rounded-3xl border bg-card p-4 sm:p-6">
                   <h3 className="mb-1 flex items-center gap-1 font-display text-lg font-bold">
                     What families at each income level pay <InfoTip term="net-price-by-income" cited={citeField("cost.net_price_by_income", school)} />
                   </h3>
@@ -773,7 +780,7 @@ export default async function SchoolPage({ params }: Props) {
                 </div>
                 <div className="flex flex-col gap-4">
                   {(o?.median_debt != null || payback !== null) && (
-                    <div className="grid grid-cols-2 gap-4 rounded-3xl border bg-card p-5 sm:p-6">
+                    <div className="grid grid-cols-2 gap-4 rounded-3xl border bg-card p-4 sm:p-6">
                       {o?.median_debt != null && (
                         <div>
                           <MetricLabel term="median-debt" cited={citeField("outcomes.median_debt", school)} className="text-xs font-semibold text-muted-foreground">
@@ -801,7 +808,7 @@ export default async function SchoolPage({ params }: Props) {
 
               {school.aid && (
                 <div className="mt-10">
-                  <h3 className="mb-1 font-display text-2xl font-extrabold tracking-tight">Who actually gets aid</h3>
+                  <h3 className="mb-1 font-display text-xl font-extrabold tracking-tight sm:text-2xl">Who actually gets aid</h3>
                   <p className="mb-4 max-w-3xl text-muted-foreground">
                     Some colleges cover most of their price with grants; others cover little. Here&apos;s how generous this one is,
                     how many students get grants, where the money comes from, and how it varies with family income.
@@ -815,9 +822,9 @@ export default async function SchoolPage({ params }: Props) {
 
               {(earnings !== null || grad !== null) && (
                 <>
-                  <p className="mt-10 mb-4 max-w-3xl text-lg text-muted-foreground">{outcomesTakeaway(data, school)}</p>
+                  <p className="mt-10 mb-4 max-w-3xl text-base text-muted-foreground sm:text-lg">{outcomesTakeaway(data, school)}</p>
                   <div className="grid gap-4 lg:grid-cols-2">
-                    <div className="space-y-6 rounded-3xl border bg-card p-5 sm:p-6">
+                    <div className="space-y-6 rounded-3xl border bg-card p-4 sm:p-6">
                       <h3 className="font-display text-lg font-bold">Earnings</h3>
                       <DistributionStrip
                         label="Median earnings vs. every college"
@@ -853,7 +860,7 @@ export default async function SchoolPage({ params }: Props) {
                         </div>
                       )}
                     </div>
-                    <div className="rounded-3xl border bg-card p-5 sm:p-6">
+                    <div className="rounded-3xl border bg-card p-4 sm:p-6">
                       <h3 className="mb-5 font-display text-lg font-bold">Staying and finishing</h3>
                       <div className="flex flex-wrap justify-around gap-6">
                         {[
@@ -884,7 +891,7 @@ export default async function SchoolPage({ params }: Props) {
               )}
 
               {onValueMap && (
-                <div className="mt-4 rounded-3xl border bg-card p-5 sm:p-6">
+                <div className="mt-4 rounded-3xl border bg-card p-4 sm:p-6">
                   <h3 className="mb-1 font-display text-lg font-bold">Cost vs. earnings</h3>
                   <p className="mb-3 text-xs text-muted-foreground">
                     The 300 most-applied-to colleges plus {school.name}. Top-left is lower cost and higher earnings.
@@ -953,13 +960,13 @@ export default async function SchoolPage({ params }: Props) {
               <InfoTip term="percentile-rank" />
             </p>
             <div className="grid gap-4 lg:grid-cols-2">
-              <div className="space-y-8 rounded-3xl border bg-card p-5 sm:p-6">
+              <div className="space-y-8 rounded-3xl border bg-card p-4 sm:p-6">
                 <DistributionStrip label="SAT midpoint" term="sat" dist={distribution("sat")} value={satMid(school)} rank={rankOf(school, "sat")} format="int" color={DOMAINS.scores.color} />
                 <DistributionStrip label="Yield rate" term="yield" dist={distribution("yield")} value={yld} rank={rankOf(school, "yield")} format="pct" color={DOMAINS.admissions.color} />
                 <DistributionStrip label="Pell Grant share" term="pell-grant" dist={distribution("pell")} value={d.pell_grant_percent} rank={rankOf(school, "pell")} format="pct" color={DOMAINS.access.color} />
                 <DistributionStrip label="Diversity index" term="diversity-index" dist={distribution("diversity")} value={div} rank={rankOf(school, "diversity")} format="fixed2" color={DOMAINS.diversity.color} />
               </div>
-              <div className="rounded-3xl border bg-card p-5 sm:p-6">
+              <div className="rounded-3xl border bg-card p-4 sm:p-6">
                 <h3 className="mb-3 font-display text-lg font-bold">On the admissions map</h3>
                 {onMap ? (
                   <ScatterPlot
@@ -981,7 +988,7 @@ export default async function SchoolPage({ params }: Props) {
 
           {/* ============================== SIMILAR ============================== */}
           <Panel id="similar" eyebrow="Keep exploring" title="Schools like this one" fields={[]}>
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-3 max-sm:rail max-sm:[--rail-item:72%] sm:grid-cols-2 lg:grid-cols-4">
               {similar.map(({ school: s, reasons }) => (
                 <div key={s.unit_id} className="group relative flex flex-col rounded-3xl border bg-card p-5 transition-all hover:-translate-y-1 hover:shadow-xl hover:shadow-primary/10">
                   <Link href={`/schools/${s.unit_id}`} className="absolute inset-0 z-10 rounded-3xl" aria-label={s.name} />

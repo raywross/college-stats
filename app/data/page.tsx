@@ -192,10 +192,10 @@ export default async function DataPage() {
   ] as const;
 
   return (
-    <div className="mx-auto max-w-5xl px-4 pt-8 pb-12 sm:px-6 sm:pt-10">
+    <div className="mx-auto max-w-5xl px-4 pt-5 pb-12 sm:px-6 sm:pt-10">
       <header className="mb-10">
-        <p className="mb-2 text-xs font-bold tracking-[0.18em] text-primary uppercase">Data</p>
-        <h1 className="font-display text-4xl font-extrabold tracking-tight sm:text-5xl">
+        <p className="mb-2 hidden text-xs font-bold tracking-[0.18em] text-primary uppercase sm:block">Data</p>
+        <h1 className="font-display text-3xl font-extrabold tracking-tight sm:text-5xl">
           Where the <span className="highlight">numbers</span> come from, and how new they are
         </h1>
         <p className="mt-3 max-w-2xl text-muted-foreground">

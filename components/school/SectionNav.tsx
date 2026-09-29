@@ -33,16 +33,16 @@ export function SectionNav({ sections }: { sections: { id: string; label: string
     <nav
       aria-label="On this page"
       className="sticky z-30 -mx-4 border-y bg-background/80 px-4 backdrop-blur-xl sm:-mx-6 sm:px-6"
-      style={{ top: "calc(env(safe-area-inset-top, 0px) + 4rem)" }}
+      style={{ top: "calc(env(safe-area-inset-top, 0px) + var(--header-h))" }}
     >
-      <div ref={listRef} className="no-scrollbar flex gap-1 overflow-x-auto py-2">
+      <div ref={listRef} className="no-scrollbar flex gap-1 overflow-x-auto py-1.5 sm:py-2">
         {sections.map((s) => (
           <a
             key={s.id}
             data-id={s.id}
             href={`#${s.id}`}
             className={cn(
-              "inline-flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-1.5 text-sm font-semibold transition-colors",
+              "inline-flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-[13px] font-semibold transition-colors sm:px-3.5 sm:text-sm",
               active === s.id ? "bg-foreground text-background" : "text-muted-foreground hover:bg-muted hover:text-foreground"
             )}
           >

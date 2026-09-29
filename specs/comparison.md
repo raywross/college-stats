@@ -6,8 +6,8 @@ Route: `/compare?ids=a,b,c,d` (up to 4). The URL is the source of truth; the sav
 - `CompareButton` (cards, table rows, profile hero, similar schools) toggles an id in the saved list
   (`lib/compare.ts`: localStorage + `compare-updated` event + `useCompareIds` via `useSyncExternalStore`).
 - `CompareTray`: a floating pill at the bottom with stacked crests (tap to remove), empty slots, Clear, and
-  "Compare N →". Hidden on `/compare`.
-- The header's Compare link shows a lime count badge and links to the current selection.
+  "Compare N →". Hidden on `/compare` and on phones, where the tab bar's Compare badge replaces it ([mobile.md](mobile.md)).
+- The header's Compare link (tab bar on phones) shows a lime count badge and links to the current selection.
 
 ## 10-year direction
 After Key differences and the radar: a table of the four trend indicators (cost, applications, diversity,

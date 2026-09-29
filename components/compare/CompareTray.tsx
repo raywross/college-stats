@@ -7,7 +7,7 @@ import { MAX_COMPARE, clearCompare, toggleCompare, useCompareIds } from "@/lib/c
 import { useSchoolEntries } from "@/lib/school-api";
 import { Crest } from "@/components/school/Crest";
 
-/** Floating pill that follows you around while you build a comparison. */
+/** Floating pill that follows you around while you build a comparison. Phones use the tab bar's Compare badge instead. */
 export function CompareTray() {
   const ids = useCompareIds();
   const pathname = usePathname();
@@ -16,7 +16,7 @@ export function CompareTray() {
 
   return (
     <div
-      className="pointer-events-none fixed inset-x-0 bottom-0 z-50 flex justify-center px-3"
+      className="pointer-events-none fixed inset-x-0 bottom-0 z-50 hidden justify-center px-3 md:flex"
       style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 12px)" }}
     >
       <div className="pointer-events-auto flex w-full max-w-xl animate-rise items-center gap-3 rounded-full border bg-popover/95 p-1.5 pl-3 shadow-2xl shadow-primary/20 backdrop-blur-xl">

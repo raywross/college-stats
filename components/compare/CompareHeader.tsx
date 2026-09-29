@@ -42,9 +42,9 @@ function SchoolPicker({ exclude, onPick }: { exclude: string[]; onPick: (id: str
 
   return (
     <Popover.Root>
-      <Popover.Trigger className="flex h-full min-h-20 w-full flex-col items-center justify-center gap-1 rounded-2xl border-2 border-dashed text-sm font-semibold text-muted-foreground transition-colors hover:border-primary/50 hover:text-primary">
-        <Plus className="size-5" />
-        Add school
+      <Popover.Trigger className="flex h-10 shrink-0 items-center justify-center gap-1 rounded-full border-2 border-dashed px-4 text-sm font-semibold text-muted-foreground transition-colors hover:border-primary/50 hover:text-primary md:h-full md:min-h-20 md:w-full md:flex-col md:rounded-2xl md:px-0">
+        <Plus className="size-4 md:size-5" />
+        Add<span className="hidden md:inline"> school</span>
       </Popover.Trigger>
       <Popover.Portal>
         <Popover.Positioner sideOffset={8} collisionPadding={12} className="z-[60]">
@@ -105,20 +105,24 @@ export function CompareHeader({ schools }: { schools: SchoolIndexEntry[] }) {
 
   return (
     <div
-      className="sticky z-30 -mx-4 border-b bg-background/85 px-4 py-3 backdrop-blur-xl sm:-mx-6 sm:px-6"
-      style={{ top: "calc(env(safe-area-inset-top, 0px) + 4rem)" }}
+      className="sticky z-30 -mx-4 border-b bg-background/85 px-4 py-2 backdrop-blur-xl sm:-mx-6 sm:px-6 md:py-3"
+      style={{ top: "calc(env(safe-area-inset-top, 0px) + var(--header-h))" }}
     >
-      <div className="grid grid-cols-2 gap-2 sm:gap-3 md:grid-cols-4">
+      {/* Phones: one swipeable row of slim pills so the sticky bar stays ~56px tall. md+: a card per school. */}
+      <div className="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4 md:mx-0 md:grid md:grid-cols-4 md:gap-3 md:overflow-visible md:px-0">
         {schools.map((s, i) => (
-          <div key={s.id} className="relative flex min-w-0 items-center gap-2.5 rounded-2xl border bg-card p-2.5 pr-8 sm:p-3 sm:pr-9">
-            <span className="absolute inset-x-3 top-0 h-1 rounded-b-full" style={{ backgroundColor: SLOT_COLORS[i] }} />
-            <Crest id={s.id} name={s.name} size="sm" />
+          <div
+            key={s.id}
+            className="relative flex min-w-0 shrink-0 items-center gap-2 rounded-full border bg-card py-1 pr-8 pl-1 md:shrink md:gap-2.5 md:rounded-2xl md:p-3 md:pr-9"
+          >
+            <span className="absolute inset-x-3 top-0 hidden h-1 rounded-b-full md:block" style={{ backgroundColor: SLOT_COLORS[i] }} />
+            <Crest id={s.id} name={s.name} size="sm" className="size-8 rounded-full text-[10px] md:size-9 md:rounded-lg md:text-[11px]" />
             <Link href={`/schools/${s.id}`} className="min-w-0 hover:text-primary">
               <span className="flex items-center gap-1.5">
                 <span className="size-2.5 shrink-0 rounded-full" style={{ backgroundColor: SLOT_COLORS[i] }} />
                 <span className="truncate text-sm font-bold">{shortName({ unit_id: s.id, name: s.name })}</span>
               </span>
-              <span className="block truncate text-[11px] text-muted-foreground">
+              <span className="hidden truncate text-[11px] text-muted-foreground md:block">
                 {s.city}, {s.state}
               </span>
             </Link>
@@ -126,7 +130,7 @@ export function CompareHeader({ schools }: { schools: SchoolIndexEntry[] }) {
               type="button"
               onClick={() => go(ids.filter((x) => x !== s.id))}
               aria-label={`Remove ${s.name}`}
-              className="absolute top-2 right-2 inline-flex size-6 items-center justify-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground"
+              className="absolute top-1/2 right-1.5 inline-flex size-6 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground md:top-2 md:right-2 md:translate-y-0"
             >
               <X className="size-3.5" />
             </button>

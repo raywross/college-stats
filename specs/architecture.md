@@ -18,7 +18,7 @@
 ```
 college-stats/
 ├── app/
-│   ├── layout.tsx              # Fonts, ThemeProvider, Header, Footer, CompareTray
+│   ├── layout.tsx              # Fonts, ThemeProvider, Header, Footer, CompareTray, BottomNav
 │   ├── globals.css             # Tokens (light + dark), domain/chart palettes, keyframes
 │   ├── page.tsx                # Home: hero search, lenses, landscape, leaderboards, map
 │   ├── explore/page.tsx        # Search + filters; grid / table / chart views
@@ -30,7 +30,7 @@ college-stats/
 ├── components/
 │   ├── ui/                     # shadcn/base-ui primitives + info-tip.tsx (InfoTip, Term, MetricLabel)
 │   ├── ThemeProvider.tsx, ThemeToggle.tsx (toggle + Light/Dark/System segmented)
-│   ├── layout/                 # Header (nav, search, mobile sheet), Footer, Logo
+│   ├── layout/                 # Header (nav, search), BottomNav (phone tab bar), Footer, Logo
 │   ├── search/SchoolSearch.tsx # Typeahead combobox (hero + header)
 │   ├── explore/                # FilterPanel, MobileFilterSheet, Toolbar, SchoolTable, Pagination, useExploreParams
 │   ├── school/                 # Crest, SchoolCard, StandoutChip, SectionNav, ScoreChecker

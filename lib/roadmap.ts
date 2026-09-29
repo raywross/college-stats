@@ -13,7 +13,7 @@ export const COMPLEXITY: Record<Complexity, { label: string; description: string
   4: { label: "Extra large", description: "A new system with its own pipeline, checks, and a pilot before launch." },
 };
 
-export type RoadmapGroupKey = "wave-1" | "wave-2" | "wave-3" | "college-reported" | "campus-life";
+export type RoadmapGroupKey = "wave-1" | "wave-2" | "wave-3" | "college-reported" | "campus-life" | "national-trends";
 
 export const ROADMAP_GROUPS: { key: RoadmapGroupKey; title: string; description: string }[] = [
   {
@@ -42,6 +42,12 @@ export const ROADMAP_GROUPS: { key: RoadmapGroupKey; title: string; description:
     title: "Campus life",
     description:
       "Faith communities, Greek life, and LGBTQ+ life, from federal data, Common Data Sets, campus offices, and colleges' own policies.",
+  },
+  {
+    key: "national-trends",
+    title: "National trends",
+    description:
+      "How college is changing across the country, not at one college: nationally, and by region, public or private, size, and selectivity.",
   },
 ];
 
@@ -264,6 +270,16 @@ export const ROADMAP: RoadmapSpec[] = [
     complexity: 3,
     complexityNote:
       "Federal counts are quick; policies need a check of each college's own pages, and sensitive findings a person's review.",
+    status: "planned",
+  },
+  {
+    slug: "national-trends",
+    file: "specs/national-trends.md",
+    group: "national-trends",
+    summary:
+      "Studies of how college is changing nationally, with where it's happening. First: men and women in admissions, by region, type, size, and selectivity.",
+    complexity: 3,
+    complexityNote: "A new Trends page and a shared way to compute and chart breakdowns; each later study reuses it.",
     status: "planned",
   },
 ];

@@ -31,7 +31,7 @@ overflowing content, so root causes must be fixed. `clip` (unlike `hidden`) keep
   - Search opens a full-screen sheet with `SchoolSearch` autofocused.
   - Compare shows a lime count badge of picked schools. It replaces the floating `CompareTray` on phones (the
     tray still shows from `md`).
-  - More is a sheet with Glossary, Data, and the Light/Dark/System control.
+  - More is a sheet with Glossary, Data, Roadmap, and the Light/Dark/System control.
 - **Header** on phones is just the logo, 56px tall (`--header-h: 3.5rem`, 4rem from `md`). Navigation, search,
   and theme moved to the tab bar.
 - **Footer** drops its link column on phones and pads for the tab bar (`--tabbar-h`).

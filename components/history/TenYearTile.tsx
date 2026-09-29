@@ -35,7 +35,7 @@ export function TenYearTile({ history, files }: { history: SchoolHistory; files:
   const { avgCost, notable } = tenYearSummary(history, files.national, files.cpi, files.meta);
   if (!avgCost && !notable.length) return null;
   return (
-    <div className="col-span-2 flex flex-col rounded-3xl border bg-card p-5">
+    <div className="col-span-2 flex flex-col rounded-3xl border bg-card p-4 sm:p-5">
       <p className="flex items-center gap-1 text-xs font-semibold text-muted-foreground">
         10 years <InfoTip term="inflation-adjusted" />
       </p>

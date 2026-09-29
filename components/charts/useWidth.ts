@@ -9,7 +9,11 @@ export function useWidth<T extends HTMLElement>(fallback = 640) {
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
-    const ro = new ResizeObserver(([entry]) => setWidth(Math.round(entry.contentRect.width)));
+    // A hidden chart (e.g. inside a collapsed ShowMore) measures 0; keep the last real width until it's shown.
+    const ro = new ResizeObserver(([entry]) => {
+      const w = Math.round(entry.contentRect.width);
+      if (w > 0) setWidth(w);
+    });
     ro.observe(el);
     return () => ro.disconnect();
   }, []);

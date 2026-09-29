@@ -470,13 +470,9 @@ function Group({ title, color, open, onToggle, children, footer }: { title: stri
 export function OverTime(props: OverTimeProps) {
   const { isPublic, history, national, cpi, latest, provisional, sources, colors } = props;
   const ui = useUrlState();
-  const [open, setOpen] = useState({ cost: true, aid: true, admissions: true, scores: true, students: true, outcomes: true });
-  useEffect(() => {
-    if (window.matchMedia("(max-width: 639px)").matches) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- collapse secondary groups once on small screens
-      setOpen({ cost: true, aid: false, admissions: false, scores: false, students: false, outcomes: false });
-    }
-  }, []);
+  // Phone collapse state only: a closed group is `hidden sm:block`, so wider screens always show every group. Starting
+  // collapsed in the server HTML (rather than collapsing after hydration) keeps the page from jumping on load.
+  const [open, setOpen] = useState({ cost: false, aid: false, admissions: false, scores: false, students: false, outcomes: false });
   const toggle = (k: keyof typeof open) => () => setOpen((o) => ({ ...o, [k]: !o[k] }));
 
   const earliest = (keys: SeriesKey[]) => Math.min(...keys.map((k) => history.series[k]?.start ?? Infinity));

@@ -47,6 +47,24 @@ overflowing content, so root causes must be fixed. `clip` (unlike `hidden`) keep
 | Pill bar | `CompareHeader` becomes one swipeable row of slim pills (~56px) instead of a 2×2 card grid | Compare |
 | Sticky first column | `sticky left-0 bg-card` on the label cell | Compare tables |
 
+## Profile on phones
+Every section keeps its headline answer visible (takeaway, key numbers, one chart). Deep dives fold behind
+`ShowMore` (`components/ui/show-more.tsx`): a dashed "Show …" button with a one-line hint, below `sm` only. Content
+stays in the server HTML and is hidden with CSS (not unmounted), so nothing shifts on load, citations stay in the
+page, and wider screens are unchanged.
+
+| Section | Visible | Folded |
+|---|---|---|
+| Overview | All tiles (`grid-flow-row-dense` fills holes left by the full-width 10-year tile) | |
+| Admissions | Funnel, yield, acceptance-rate strip | 100-square waffle (repeats the funnel), moved after it |
+| Cost & outcomes | What students pay, price by income, debt/payback, earnings, retention/graduation | "Who actually gets aid" (generosity card + breakdown; the overview has the generosity tile), cost vs. earnings map |
+| Over time | Takeaway and controls; six topic headers | Every group (was: all but Cost, collapsed after hydration, which made the page jump) |
+| How it ranks | Four distribution strips | Admissions map |
+| Similar | Swipe rail | Full sources list |
+
+Harvard: 14,730 → ~10,500px. Charts inside folded content keep their last real width (`useWidth` ignores 0) and
+re-measure when shown.
+
 ## Type and spacing on phones
 - Page h1 `text-3xl` (home hero `text-[2.75rem]`), section h2 `text-2xl`; eyebrows hidden on page headers.
 - Section gaps `space-y-14` (was 20), card padding `p-4` (was 5), takeaways `text-base`.

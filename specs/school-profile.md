@@ -25,6 +25,9 @@ Route: `/schools/[id]`. The 50 most-applied-to profiles are pre-rendered at buil
    [trends-design.md](trends-design.md#build-notes-phase-1).
 9. **Similar schools**: nearest neighbors (`similarSchools`) with "why similar" chips and one-click compare links.
 
+On phones, deep-dive blocks (waffle, aid breakdown, both scatter maps, the sources list, Over time groups) fold
+behind "Show …" buttons; see [mobile.md](mobile.md#profile-on-phones).
+
 ## Insight helpers (`lib/insights.ts`)
 - `standouts(s)`: "Known for" chips from percentile thresholds (ultra-selective, high yield, big campus,
   economic diversity, test-optional heavy…).

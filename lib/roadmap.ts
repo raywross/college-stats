@@ -97,15 +97,6 @@ export const ROADMAP: RoadmapSpec[] = [
     status: "planned",
   },
   {
-    slug: "student-body",
-    file: "specs/data-expansion/student-body.md",
-    group: "wave-1",
-    summary: "The men/women balance, the part-time share, and how many students are 25 or older.",
-    complexity: 1,
-    complexityNote: "Four fields on the existing College Scorecard call.",
-    status: "planned",
-  },
-  {
     slug: "loans-and-repayment",
     file: "specs/data-expansion/loans-and-repayment.md",
     group: "wave-1",

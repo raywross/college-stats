@@ -50,7 +50,7 @@
       "source": "scorecard",
       "label": "College Scorecard update",
       "brings": ["Refreshed IPEDS-derived enrollment and cost figures", "Federal Student Aid outcomes (earnings, debt)"],
-      "updates": ["scorecard-enrollment", "scorecard-cost", "scorecard-latest"],
+      "updates": ["scorecard-enrollment", "scorecard-age", "scorecard-cost", "scorecard-latest"],
       "expected": null,
       "status": "estimated",
       "basis": "Irregular: the last updates were Jun 10, 2026 and Mar 23, 2026",

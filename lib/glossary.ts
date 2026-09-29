@@ -169,6 +169,33 @@ const entries = {
     category: "Students & access",
     related: ["pell-grant"],
   },
+  "gender-balance": {
+    term: "Men and women",
+    short: "The share of degree-seeking undergraduates who are men and who are women, as colleges report them to the federal government.",
+    why: "Nationally, more women than men attend four-year colleges, so a campus near 50/50 is less common than it sounds.",
+    category: "Students & access",
+    related: ["degree-seeking", "undergrad-enrollment"],
+  },
+  "part-time-student": {
+    term: "Part-time student",
+    short: "An undergraduate taking fewer credits than a full course load, usually under 12 credit hours a term.",
+    why: "Where many students study part-time, often while working, campus life and class schedules look different from a mostly full-time college.",
+    category: "Students & access",
+    related: ["degree-seeking", "adult-students"],
+  },
+  "adult-students": {
+    term: "Students 25 and older",
+    short: "The share of undergraduates aged 25 or older. The federal survey asks about age every other fall, so this figure is a year older than enrollment.",
+    why: "A high share usually means many students are returning to college or working while they study, so classes and services are built around them.",
+    category: "Students & access",
+    related: ["part-time-student"],
+  },
+  "degree-seeking": {
+    term: "Degree-seeking undergraduate",
+    short: "A student enrolled toward a bachelor's or associate degree, as opposed to someone taking classes without pursuing a degree. The site's undergraduate counts and shares include only degree-seeking students.",
+    category: "Students & access",
+    related: ["undergrad-enrollment"],
+  },
   "race-ethnicity": {
     term: "Race/ethnicity breakdown",
     short: "The share of undergraduates in each federal reporting category. International students are counted separately regardless of race.",

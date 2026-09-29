@@ -17,6 +17,7 @@ import { ScatterPlot } from "@/components/charts/ScatterPlot";
 import { LANDSCAPE_X, LANDSCAPE_Y, LANDSCAPE_ZONE, STICKER_X, STICKER_Y, VALUE_X, VALUE_Y, valueZone } from "@/lib/chart-configs";
 import { cn } from "@/lib/utils";
 import { INDICATOR_KEYS, indicatorOf, type Direction } from "@/lib/indicators";
+import { genderBalanceOf, isMostlyFullTime } from "@/lib/student-body";
 import { InfoTip } from "@/components/ui/info-tip";
 import { MultiSourceNote } from "@/components/sources/MultiSourceNote";
 
@@ -43,8 +44,16 @@ function buildFacets({ getAllSchools, histogram }: Dataset): FilterFacets {
     })
   ) as FilterFacets["trends"];
 
+  const balance: FilterFacets["balance"] = { women: 0, balanced: 0, men: 0 };
+  for (const s of all) {
+    const b = genderBalanceOf(s);
+    if (b) balance[b]++;
+  }
+
   const satRange: [number, number] = [800, 1600];
   return {
+    balance,
+    fullTime: all.filter(isMostlyFullTime).length,
     states: Object.keys(states).sort().map((value) => ({ value, count: states[value] })),
     regions: Object.keys(regions).sort().map((value) => ({ value, count: regions[value] })),
     types: Object.keys(types).map((value) => ({ value, label: typeLabel(value), count: types[value] })),

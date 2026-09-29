@@ -20,7 +20,7 @@ Each spec here is a separate unit of work, so pieces can ship when they're usefu
 | [admission-factors.md](admission-factors.md) | How GPA, class rank, essays, recommendations, **legacy status**, and more are used in admission | IPEDS ADM (downloaded) |
 | [admissions-detail.md](admissions-detail.md) | Admit rates by sex, true SAT/ACT medians, ACT English/Math | IPEDS ADM (downloaded) |
 | [housing-and-policies.md](housing-and-policies.md) | Housing capacity, live-on requirement, meal plan, application fee, tuition guarantee, promise program | IPEDS COST1 (downloaded) |
-| [student-body.md](student-body.md) | Men/women split, part-time share, share 25 and older | Scorecard API |
+| [student-body.md](student-body.md) | **Built.** Men/women split, part-time share, share 25 and older | Scorecard API |
 | [loans-and-repayment.md](loans-and-repayment.md) | Share who borrow, debt for Pell and lower-income students, repayment progress | Scorecard API |
 
 ### Wave 2: one new NCES file each

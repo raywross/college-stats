@@ -22,6 +22,8 @@
     "race_two_or_more": {"start":2010,"values":[0,0,0,0,0.0042,0,0,0,0,0,null,null,0,0,0]},
     "race_international": {"start":2010,"values":[0,0,0,0,0,0,0.0424,0,0,0,null,null,0,0,0]},
     "race_other": {"start":2010,"values":[0,0,0,0,0.0148,0.0064,0.1212,0,0,0,null,null,0,0,0]},
+    "men_share": {"start":1996,"values":[0.7121,null,null,null,null,null,null,null,null,null,null,null,0.3894,0.4737,0.4127,0.5424,0.5677,0.5705,0.4131,0.5096,0.2788,0.4341,0.4342,0.4323,null,null,0.4333,0.5882,0.5]},
+    "part_time_share": {"start":1996,"values":[0.2727,null,null,null,null,null,null,null,null,null,null,null,0.0627,0.4211,0.2358,0.2485,0.2667,0.2841,0.25,0.2436,0.0242,0.2605,0.2533,0.2581,null,null,0.6333,0.5588,0.3125]},
     "grad_rate": {"start":2002,"values":[0.5404,null,null,0.5566,0.4492,0.2133,0.2147,1,0.9821,0.0179,0.0222,0.0179,null,null,null,0.24,0.06]},
     "median_debt": {"start":2013,"values":[15600,21050,25115,26200,30452,34300]}
   }

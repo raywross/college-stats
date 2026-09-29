@@ -31,6 +31,8 @@
     "race_two_or_more": {"start":2012,"values":[0,0,0,0,0,0,0,0,0,0,0,0.0222,0.0417]},
     "race_international": {"start":2012,"values":[0.0396,0,0.039,0,0,0,0,0,0,0,0,0.0222,0]},
     "race_other": {"start":2012,"values":[0,0,0.026,0,0,0,0,0,0,0,0,0.0444,0]},
+    "men_share": {"start":2012,"values":[0.6436,0,0.5325,0,0,0,0,0,0,0,0,0.5556,0.5417]},
+    "part_time_share": {"start":2012,"values":[0.3663,null,0.3636,null,null,null,null,null,null,null,null,0.3111,0.5]},
     "grad_rate": {"start":2006,"values":[0.3824,null,0.25,1,null,null,null,0.1111,0.4286,null,null,0.5714]}
   }
 }

@@ -114,6 +114,7 @@ export async function SchoolTable({ schools, params }: { schools: School[]; para
     { key: "sat", label: "SAT middle 50%", term: "middle-50", className: "min-w-36" },
     { key: "pell", label: "Pell", term: "pell-grant" },
     { key: "first_gen", label: "First-gen", term: "first-gen" },
+    { key: "men_share", label: "Men", term: "gender-balance" },
     { key: "diversity", label: "Diversity", term: "diversity-index" },
     { key: "avg_cost", label: "Avg cost", term: "average-cost" },
     { key: "aid_generosity", label: "Aid generosity", term: "aid-generosity" },
@@ -126,6 +127,7 @@ export async function SchoolTable({ schools, params }: { schools: School[]; para
           { key: "size_change" as const, label: "Undergrads, 10-yr change", term: "undergrad-enrollment" as const },
           { key: "apps_change" as const, label: "Applications, 10-yr change", term: "applicants" as const },
           { key: "diversity_change" as const, label: "Diversity, then → now", term: "diversity-index" as const },
+          { key: "men_share_change" as const, label: "Men, then → now", term: "gender-balance" as const },
         ]
       : []),
   ];
@@ -139,7 +141,7 @@ export async function SchoolTable({ schools, params }: { schools: School[]; para
     </p>
     <div className="overflow-hidden rounded-3xl border bg-card">
       <div className="overflow-x-auto">
-        <table className={cn("w-full text-sm", changes ? "min-w-[1840px]" : "min-w-[1220px]")}>
+        <table className={cn("w-full text-sm", changes ? "min-w-[2060px]" : "min-w-[1320px]")}>
           <thead className="border-b bg-surface-2">
             <tr>
               <SortHeader k="name" label="School" className="sticky left-0 z-10 bg-surface-2 pl-4" params={params} sortBy={sortBy} sortDir={sortDir} />
@@ -156,7 +158,7 @@ export async function SchoolTable({ schools, params }: { schools: School[]; para
               const width = sat ? ((sat[1] - sat[0]) / (SAT[1] - SAT[0])) * 100 : 0;
               const div = diversityIndex(s);
               const { acceptance_rate: ar } = s.admissions;
-              const { pell_grant_percent: pell, first_gen_percent: fg } = s.demographics;
+              const { pell_grant_percent: pell, first_gen_percent: fg, men_share: men } = s.demographics;
               return (
                 <tr key={s.unit_id} className="group transition-colors hover:bg-muted/40">
                   <td className="sticky left-0 z-10 bg-card py-2.5 pr-3 pl-4 transition-colors group-hover:bg-muted">
@@ -196,6 +198,10 @@ export async function SchoolTable({ schools, params }: { schools: School[]; para
                   <td className="w-24 px-3 tabular-nums">
                     <Value v={fg === null ? null : pct(fg)} />
                     {fg !== null && <Bar value={fg} max={1} color={DOMAINS.access.color} />}
+                  </td>
+                  <td className="w-24 px-3 tabular-nums">
+                    <Value v={men == null ? null : pct(men)} />
+                    {men != null && <Bar value={men} max={1} color={DOMAINS.access.color} />}
                   </td>
                   <td className="w-24 px-3 tabular-nums">
                     <Value v={div === null ? null : div.toFixed(2)} />
@@ -258,6 +264,14 @@ export async function SchoolTable({ schools, params }: { schools: School[]; para
                           to={s.trends?.diversity ? s.trends.diversity.to.toFixed(2) : undefined}
                         />
                       </td>
+                      <td className="w-32 px-3 tabular-nums">
+                        <ChangeCell
+                          points
+                          change={METRICS.menShareChange.get(s)}
+                          from={s.trends?.men_share ? pct(s.trends.men_share.from) : undefined}
+                          to={s.trends?.men_share ? pct(s.trends.men_share.to) : undefined}
+                        />
+                      </td>
                     </>
                   )}
                   <td className="px-3 pr-4 text-right">
@@ -273,7 +287,7 @@ export async function SchoolTable({ schools, params }: { schools: School[]; para
     {changes && (
       <p className="mt-2 text-[11px] text-muted-foreground">
         Changes over each college&apos;s last 10 years of federal data: average cost after inflation; acceptance rate in percentage points;
-        diversity index in index points; undergraduate change left out for campuses under 300 students, and applications under 200
+        diversity index and men&apos;s share in points; undergraduate and men&apos;s share changes left out for campuses under 300 students, and applications under 200
         applicants.
       </p>
     )}

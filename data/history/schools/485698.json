@@ -31,6 +31,8 @@
     "race_two_or_more": {"start":2019,"values":[0,0,0,0,0.0071,0.0129]},
     "race_international": {"start":2019,"values":[0,0,0,0,0,0]},
     "race_other": {"start":2019,"values":[0.0106,0.0108,0.0248,0.0284,0.0214,0.0129]},
+    "men_share": {"start":2019,"values":[0.883,0.8925,0.876,0.8582,0.8143,0.8258]},
+    "part_time_share": {"start":2019,"values":[0.0213,0.0215,0.0248,0.0142,0.0071,0.0065]},
     "grad_rate": {"start":2013,"values":[0.6667,0.6667,0.5517,0.5333,0.64,0.6207]},
     "median_debt": {"start":2020,"values":[12500]}
   }

@@ -3,6 +3,7 @@ import type { FieldPath } from "./fields";
 import { lineageFor, sourcesForFields as sourcesForFieldsPure, type Cited, type CitedSource } from "./lineage";
 import type { ReleaseCalendar } from "./releases";
 import { matchesIndicators } from "./indicators";
+import { genderBalanceOf, isMostlyFullTime } from "./student-body";
 import {
   METRICS,
   SIZE_BUCKETS,
@@ -91,6 +92,9 @@ const SORTERS: Record<SortKey, (s: School) => number | string | null> = {
   size_change: METRICS.sizeChange.get,
   apps_change: METRICS.applicantsChange.get,
   diversity_change: METRICS.diversityChange.get,
+  men_share: METRICS.menShare.get,
+  part_time: METRICS.partTime.get,
+  men_share_change: METRICS.menShareChange.get,
 };
 
 function mode(values: number[]): number | null {
@@ -197,6 +201,10 @@ export function createDataset({ schools, meta, releaseCalendar }: DatasetFiles) 
 
     // Trend indicators drop colleges without enough history to say.
     if (filters.trends) results = results.filter((s) => matchesIndicators(s, filters.trends!));
+
+    // Student body (lib/student-body.ts); colleges that don't report the share are left out while set.
+    if (filters.balance?.length) results = results.filter((s) => filters.balance!.includes(genderBalanceOf(s)!));
+    if (filters.fullTime) results = results.filter(isMostlyFullTime);
 
     const sortBy: SortKey = filters.sortBy && filters.sortBy in SORTERS ? filters.sortBy : "applicants";
     const multiplier = (filters.sortDir ?? (sortBy === "applicants" ? "desc" : "asc")) === "asc" ? 1 : -1;

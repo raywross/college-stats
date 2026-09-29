@@ -29,6 +29,8 @@
     "race_two_or_more": {"start":2016,"values":[0,0,0,0,0,0,0,0,0]},
     "race_international": {"start":2016,"values":[0.1591,0.0426,0.0517,0.1077,0.08,0.1296,0.1458,0.156,0.1129]},
     "race_other": {"start":2016,"values":[0,0,0,0,0,0,0,0,0]},
+    "men_share": {"start":2016,"values":[1,1,1,1,1,1,1,1,1]},
+    "part_time_share": {"start":2016,"values":[0,0,0,0,0,0,0,0,0]},
     "grad_rate": {"start":2014,"values":[0.25,0,0,0,0.1]}
   }
 }

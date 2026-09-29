@@ -135,6 +135,11 @@ export function buildCollege(school: Pick<School, "unit_id" | "type">, inputs: I
     for (let y = inputs.scorecard.first; y <= inputs.scorecard.last; y++) {
       const size = sc[`${y}.student.size`];
       if (size && size > 0) put(raw, "undergrads", y, size);
+      // Shares round like the snapshot (sync-data), so the last point matches it exactly.
+      const men = sc[`${y}.student.demographics.men`];
+      if (men !== undefined && men !== null) put(raw, "men_share", y, round4(men));
+      const partTime = sc[`${y}.student.part_time_share`];
+      if (partTime !== undefined && partTime !== null) put(raw, "part_time_share", y, round4(partTime));
       if (y >= RACE_FROM) {
         const shares = raceShares((f) => sc[`${y}.student.demographics.race_ethnicity.${f}`] ?? null);
         if (shares) for (const [k, key] of Object.entries(RACE_SERIES)) put(raw, key, y, shares[k as keyof typeof shares]);
@@ -481,6 +486,8 @@ export function lastPointMismatches(schools: readonly School[], histories: Reado
     // College Scorecard series end on the snapshot's "latest" values. (Graduation isn't compared: the profile shows
     // Scorecard's consumer rate, which has no history; the chart is the 6-year rate and says so.)
     if (h.series.undergrads) check("undergrads", s.demographics.undergrad_enrollment, true);
+    if (h.series.men_share || s.demographics.men_share != null) check("men_share", s.demographics.men_share, true);
+    if (h.series.part_time_share || s.demographics.part_time_share != null) check("part_time_share", s.demographics.part_time_share, true);
     const race = s.demographics.racial_diversity;
     if (race && h.series.race_white) for (const [k, key] of Object.entries(RACE_SERIES)) check(key, race[k as keyof typeof race], true);
     if (h.series.median_debt || s.outcomes?.median_debt != null) check("median_debt", s.outcomes?.median_debt, true);

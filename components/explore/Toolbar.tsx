@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { ArrowDownWideNarrow, ArrowUpNarrowWide, LayoutGrid, ScatterChart, Search, Table2, X } from "lucide-react";
 import { SIZE_BUCKETS } from "@/lib/metrics";
 import { INDICATORS, INDICATOR_KEYS, isDirection } from "@/lib/indicators";
+import { GENDER_BALANCE } from "@/lib/student-body";
 import { typeLabel } from "@/lib/format";
 import { useExploreParams } from "./useExploreParams";
 import { cn } from "@/lib/utils";
@@ -81,6 +82,9 @@ const SORTS = [
   { value: "size_change", label: "Size change, 10 yrs (fastest growth)", dir: "desc" },
   { value: "apps_change", label: "Applications change, 10 yrs (fastest growth)", dir: "desc" },
   { value: "diversity_change", label: "Diversity change, 10 yrs (most diversified)", dir: "desc" },
+  { value: "men_share", label: "Share of men (most)", dir: "desc" },
+  { value: "part_time", label: "Part-time share (lowest)", dir: "asc" },
+  { value: "men_share_change", label: "Men's share change, 10 yrs (biggest drop)", dir: "asc" },
 ] as const;
 
 export function SortControl() {
@@ -207,6 +211,10 @@ export function ActiveFilters() {
     });
   for (const r of getList("regions")) chips.push({ key: `r-${r}`, label: r, onRemove: () => toggleInList("regions", r) });
   for (const s of getList("states")) chips.push({ key: `st-${s}`, label: s, onRemove: () => toggleInList("states", s) });
+
+  for (const b of getList("balance"))
+    chips.push({ key: `b-${b}`, label: GENDER_BALANCE.find((g) => g.key === b)?.label ?? b, onRemove: () => toggleInList("balance", b) });
+  if (searchParams.get("fullTime") === "1") chips.push({ key: "fullTime", label: "Mostly full-time", onRemove: () => update({ fullTime: null }) });
 
   for (const k of INDICATOR_KEYS) {
     const def = INDICATORS[k];

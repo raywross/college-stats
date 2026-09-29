@@ -44,6 +44,7 @@ Probed 2026-09-28. "Years" = academic year starting in the fall (see *Year conve
 | SAT/ACT 25th–75th | same as above | Fall 2001 | **Break at fall 2017:** the redesigned SAT (Mar 2016) isn't on the old scale. **Fall 2020+:** test-optional; submission rates drop, so percentiles describe a smaller, self-selected group. |
 | Test policy (`ADMCON7`) | same | Fall 2001 | Code meanings shift between eras; map per era. |
 | Undergrad size | Scorecard `{year}.student.size` | 1996 | Verified back to 1997. Same field as today's headline. |
+| Men's share, part-time share | Scorecard `{year}.student.demographics.men`, `{year}.student.part_time_share` | 1996 | Added 2026-09-29 ([student-body.md](data-expansion/student-body.md)). Same years and fall 2000 gap as undergrad size. |
 | Race/ethnicity shares | Scorecard `{year}.student.demographics.race_ethnicity.*` (IPEDS `EF{year}A`) | 2010 | New federal categories required from fall 2010; 2008–09 were transition years (both sets present). Earlier years aren't comparable, so the series starts in 2010. |
 | Tuition & fees by residency, books, room & board, other | `IC{year}_AY` (2000–2022), `COST1_{year+1}` (2023+) | 2000–01 | Each `IC_AY` file also carries the three prior years (`CHG*AY0`–`AY2`), e.g. `IC2000_AY` reaches 1997–98. Use them to fill gaps and to cross-check revisions. |
 | Full price (sticker) | derived from prices | 2000–01 | Weighted by residency share for publics, so needs SFA → starts 2001–02 for publics. |
@@ -300,7 +301,7 @@ year-prefixed fields, cached in `.cache/scorecard/` for a week); scores and poli
 
 ### `school.trends` (Phase 3)
 `sync-history` writes a 10-year summary per college into data/schools.json (`TREND_KEYS`: average cost and full price
-after inflation, acceptance rate, applicants, undergrads, grant share; plus `diversity`, the diversity index from the
+after inflation, acceptance rate, applicants, undergrads, grant share, men's share; plus `diversity`, the diversity index from the
 race/ethnicity shares via `diversityChange`, with its own floors (see [trend-indicators.md](trend-indicators.md#when-theres-no-indicator));
 `{ since, from, to, change }`), and sync-data
 keeps it until the next history run. It's registered in lib/fields.ts as the derived field `trends`, so citations

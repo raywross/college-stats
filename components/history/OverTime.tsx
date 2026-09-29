@@ -493,11 +493,12 @@ export function OverTime(props: OverTimeProps) {
   const scoreWindow = windowFor("fall", ["sat_25", "act_25"]);
   const sizeWindow = windowFor("fall", ["undergrads"]);
   const raceWindow = windowFor("fall", ["race_white"]);
+  const bodyWindow = windowFor("fall", ["men_share", "part_time_share"]);
   const gradWindow = windowFor("cohort", ["grad_rate"]);
   const debtWindow = windowFor("academic", ["median_debt"]);
   const spans = policySpans(history.series.test_policy);
   const hasScores = !!(history.series.sat_25 || history.series.act_25);
-  const hasStudents = !!(history.series.undergrads || history.series.race_white);
+  const hasStudents = !!(history.series.undergrads || history.series.race_white || history.series.men_share || history.series.part_time_share);
   const hasOutcomes = !!(history.series.grad_rate || history.series.median_debt);
   const debtEnd = history.series.median_debt ? lastYear(history.series.median_debt) : null;
 
@@ -732,6 +733,32 @@ export function OverTime(props: OverTimeProps) {
                   })}
                 />
               </div>
+            )}
+            {history.series.men_share && (
+              <ChartPanel
+                {...common}
+                title="Men (share of undergraduates)"
+                term="gender-balance"
+                kind="fall"
+                format="pct"
+                window={bodyWindow}
+                headline="men_share"
+                provisionalYear={null}
+                specs={[{ key: "men_share", name: "Men", color: colors.size, band: true }]}
+              />
+            )}
+            {history.series.part_time_share && (
+              <ChartPanel
+                {...common}
+                title="Part-time students"
+                term="part-time-student"
+                kind="fall"
+                format="pct"
+                window={bodyWindow}
+                headline="part_time_share"
+                provisionalYear={null}
+                specs={[{ key: "part_time_share", name: "Part-time", color: colors.size, band: true }]}
+              />
             )}
           </div>
         </Group>

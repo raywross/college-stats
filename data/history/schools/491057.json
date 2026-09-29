@@ -30,6 +30,8 @@
     "race_two_or_more": {"start":2017,"values":[0,0,0,0,0,0,0,0]},
     "race_international": {"start":2017,"values":[0,0,0,0,0,0,0,0]},
     "race_other": {"start":2017,"values":[0,0,0,0,0,0,0,0]},
+    "men_share": {"start":2017,"values":[1,1,1,1,1,1,1,1]},
+    "part_time_share": {"start":2017,"values":[0,0,0,0,0,0,0,0]},
     "grad_rate": {"start":2014,"values":[0.5,0.0714,0.1667,0.8571,0.8]}
   }
 }

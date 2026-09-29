@@ -20,6 +20,8 @@
     "race_black": {"start":2023,"values":[0.7619,0.7378]},
     "race_two_or_more": {"start":2023,"values":[0.0357,0.0671]},
     "race_international": {"start":2023,"values":[0,0]},
-    "race_other": {"start":2023,"values":[0,0]}
+    "race_other": {"start":2023,"values":[0,0]},
+    "men_share": {"start":2023,"values":[0.0833,0.0305]},
+    "part_time_share": {"start":2023,"values":[0.6548,0.3598]}
   }
 }

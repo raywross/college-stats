@@ -82,6 +82,8 @@ const THIS_YEAR = new Date().getFullYear();
  */
 const EXPECTED_DROPS: CoverageException[] = [
   { series: "undergrads", year: 2001, reason: "College Scorecard has no fall 2000 enrollment for any college (checked 2026-09-28)." },
+  { series: "men_share", year: 2001, reason: "Same fall 2000 gap as undergrads: no Scorecard enrollment fields that year (checked 2026-09-29)." },
+  { series: "part_time_share", year: 2001, reason: "Same fall 2000 gap as undergrads: no Scorecard enrollment fields that year (checked 2026-09-29)." },
 ];
 
 function fail(message: string, details: string[] = []): never {
@@ -394,7 +396,7 @@ async function main() {
       }));
     if ("api" in HISTORY_FAMILIES[fam]) {
       // Scorecard fields: one entry per year any college reported, cited as the Scorecard data page.
-      const keys = { "scorecard-enrollment": ["undergrads"], "scorecard-completion": ["grad_rate"], "scorecard-debt": ["median_debt"] }[fam as string] as SeriesKey[];
+      const keys = { "scorecard-enrollment": ["undergrads", "men_share", "part_time_share"], "scorecard-completion": ["grad_rate"], "scorecard-debt": ["median_debt"] }[fam as string] as SeriesKey[];
       const years = [...new Set(all.flatMap((h) => keys.flatMap((k) => { const sr = h.series[k]; return sr ? sr.values.flatMap((v, i) => (v === null ? [] : [sr.start + i])) : []; })))].sort((a, b) => a - b);
       files[fam] = years.map((year) => ({ year, file: `College Scorecard API (${keys.join(", ")})`, url: meta.sources.scorecard.url, revised: false }));
       continue;

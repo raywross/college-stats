@@ -23,6 +23,8 @@
     "race_two_or_more": {"start":2023,"values":[0,0]},
     "race_international": {"start":2023,"values":[0,0]},
     "race_other": {"start":2023,"values":[0,0]},
+    "men_share": {"start":2023,"values":[1,1]},
+    "part_time_share": {"start":2023,"values":[0,0]},
     "grad_rate": {"start":2017,"values":[0.2727,0.3103]}
   }
 }

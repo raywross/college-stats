@@ -25,6 +25,8 @@
     "race_two_or_more": {"start":2020,"values":[0.0769,0.0578,0.0844,0.0564,0.0388]},
     "race_international": {"start":2020,"values":[0,0,0,0.003,0]},
     "race_other": {"start":2020,"values":[0.007,0.0044,0.0063,0.0089,0.003]},
+    "men_share": {"start":2020,"values":[0.0629,0.0933,0.1219,0.1217,0.1134]},
+    "part_time_share": {"start":2020,"values":[0.5524,0.4933,0.4,0.3383,0.3164]},
     "median_debt": {"start":2020,"values":[9500]}
   }
 }

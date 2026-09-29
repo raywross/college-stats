@@ -5,6 +5,7 @@
  *
  * Year keys, checked 2026-09-28 against the snapshot and the Urban Institute's IPEDS copy:
  *   {Y}.student.size, {Y}.student.demographics.race_ethnicity.*  → fall Y (key 2024 = the snapshot's fall 2024)
+ *   {Y}.student.demographics.men, {Y}.student.part_time_share      → fall Y (checked 2026-09-29, same as size)
  *   {Y}.completion.completion_rate_4yr_150nt                      → students who entered fall Y − 6
  *   {Y}.aid.median_debt.completers.overall                         → Y–Y+1 graduates (null after 2020)
  */
@@ -26,6 +27,7 @@ export function scorecardFields(first: number, last: number): string[] {
   const out: string[] = [];
   for (let y = first; y <= last; y++) {
     out.push(`${y}.student.size`, `${y}.completion.completion_rate_4yr_150nt`, `${y}.aid.median_debt.completers.overall`);
+    out.push(`${y}.student.demographics.men`, `${y}.student.part_time_share`);
     if (y >= RACE_FROM) out.push(...SCORECARD_RACE_FIELDS.map((f) => `${y}.${RACE}.${f}`));
   }
   return out;

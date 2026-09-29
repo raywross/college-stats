@@ -67,6 +67,10 @@ const TABLE_ROWS = (
     ["Undergrads", "undergrad-enrollment", "demographics.undergrad_enrollment", (s: School) => num(s.demographics.undergrad_enrollment)],
     ["Pell Grant", "pell-grant", "demographics.pell_grant_percent", (s: School) => opt(s.demographics.pell_grant_percent, (v) => pct(v))],
     ["First-gen", "first-gen", "demographics.first_gen_percent", (s: School) => opt(s.demographics.first_gen_percent, (v) => pct(v))],
+    ["Men / women", "gender-balance", "demographics.men_share", (s: School) =>
+      s.demographics.men_share == null || s.demographics.women_share == null ? null : `${pct(s.demographics.men_share)} / ${pct(s.demographics.women_share)}`],
+    ["Part-time students", "part-time-student", "demographics.part_time_share", (s: School) => opt(s.demographics.part_time_share ?? null, (v) => pct(v))],
+    ["Students 25 and older", "adult-students", "demographics.age_25_plus_share", (s: School) => opt(s.demographics.age_25_plus_share ?? null, (v) => pct(v))],
     ["Diversity index", "diversity-index", "derived.diversity_index", (s: School) => opt(METRICS.diversity.get(s), (v) => v.toFixed(2))],
     ["Average cost, all students (est.)", "average-cost", "cost.avg_paid_all", (s: School) => opt(s.cost?.avg_paid_all ?? null, money)],
     ["Aid generosity (grants ÷ full price)", "aid-generosity", "derived.aid_generosity", (s: School) => opt(METRICS.aidGenerosity.get(s), (v) => pct(v))],
@@ -297,6 +301,12 @@ export default async function ComparePage({
               <CompareMetric label="Pell Grant share" term="pell-grant" schools={schools} get={METRICS.pell.get} format={(v) => pct(v)} max={1} flag={{ which: "max", text: "Highest" }} />
               <CompareMetric label="First-gen share" term="first-gen" schools={schools} get={METRICS.firstGen.get} format={(v) => pct(v)} max={1} flag={{ which: "max", text: "Highest" }} />
               <CompareMetric label="Diversity index" term="diversity-index" schools={schools} get={METRICS.diversity.get} format={(v) => v.toFixed(2)} max={1} flag={{ which: "max", text: "Most" }} />
+            </div>
+            {/* Descriptive, not better or worse, so no "Highest" flags. */}
+            <div className="grid gap-4 md:grid-cols-3">
+              <CompareMetric label="Men" term="gender-balance" schools={schools} get={METRICS.menShare.get} format={(v) => pct(v)} max={1} />
+              <CompareMetric label="Part-time students" term="part-time-student" schools={schools} get={METRICS.partTime.get} format={(v) => pct(v)} max={1} />
+              <CompareMetric label="Students 25 and older" term="adult-students" schools={schools} get={METRICS.adults.get} format={(v) => pct(v)} max={1} />
             </div>
             <div className="rounded-3xl border bg-card p-4 sm:p-6">
               <h3 className="mb-5 flex items-center gap-1 font-display text-base font-bold">

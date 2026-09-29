@@ -1,5 +1,6 @@
 import type { FieldPath, VintageKey } from "./fields";
 import type { Direction, IndicatorKey } from "./indicators";
+import type { GenderBalance } from "./student-body";
 
 export type SchoolType = "public" | "private-nonprofit" | "private-forprofit";
 
@@ -38,6 +39,13 @@ export interface School {
     undergrad_enrollment: number;
     pell_grant_percent: number | null;
     first_gen_percent: number | null;
+    /** Shares of degree-seeking undergraduates who are men / women (College Scorecard, from IPEDS fall enrollment). */
+    men_share?: number | null;
+    women_share?: number | null;
+    /** Share of degree-seeking undergraduates studying part-time. */
+    part_time_share?: number | null;
+    /** Share of undergraduates aged 25 or older (IPEDS collects age every other fall, so it's a year older). */
+    age_25_plus_share?: number | null;
     racial_diversity: {
       asian: number;
       black: number;
@@ -167,7 +175,7 @@ export interface TrendSummary {
 }
 
 /** History series summaries, plus `diversity`: the diversity index computed from the race/ethnicity shares. */
-export type TrendKey = "avg_paid_all" | "full_price" | "acceptance_rate" | "applicants" | "undergrads" | "grant_pct" | "diversity";
+export type TrendKey = "avg_paid_all" | "full_price" | "acceptance_rate" | "applicants" | "undergrads" | "grant_pct" | "men_share" | "diversity";
 export type SchoolTrends = Partial<Record<TrendKey, TrendSummary>>;
 
 /**
@@ -252,7 +260,10 @@ export type SortKey =
   | "admit_rate_change"
   | "size_change"
   | "apps_change"
-  | "diversity_change";
+  | "diversity_change"
+  | "men_share"
+  | "part_time"
+  | "men_share_change";
 
 export type ExploreView = "grid" | "table" | "chart";
 
@@ -274,6 +285,10 @@ export interface SearchFilters {
   maxCost?: number;
   /** Trend indicator directions to keep (lib/indicators.ts), e.g. { cost: ["down", "steady"] }. */
   trends?: Partial<Record<IndicatorKey, Direction[]>>;
+  /** Gender-balance buckets to keep (lib/student-body.ts). */
+  balance?: GenderBalance[];
+  /** Only colleges where at most 10% of undergraduates study part-time. */
+  fullTime?: boolean;
   sortBy?: SortKey;
   sortDir?: "asc" | "desc";
 }

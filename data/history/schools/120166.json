@@ -27,6 +27,8 @@
     "race_two_or_more": {"start":2020,"values":[0,0,0,0,0]},
     "race_international": {"start":2020,"values":[0.3333,1,0.875,0.129,0.6984]},
     "race_other": {"start":2020,"values":[0,0,0,0.1129,0.1269]},
+    "men_share": {"start":2020,"values":[0.6667,0.5,0.6667,0.5968,0.5873]},
+    "part_time_share": {"start":2020,"values":[0.1667,0.1667,0,0,0.0238]},
     "grad_rate": {"start":2014,"values":[0.3333,0.2667]}
   }
 }

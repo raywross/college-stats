@@ -122,6 +122,14 @@ export interface School {
     /** Median federal loan debt of graduates, and the implied 10-year monthly payment. */
     median_debt: number | null;
     monthly_loan_payment: number | null;
+    /** Share of all undergraduates with a federal student loan that year (College Scorecard; same year as aid). */
+    federal_loan_rate?: number | null;
+    /** Median federal debt of students who left (graduates and not), for Pell recipients and by family income. */
+    median_debt_pell?: number | null;
+    median_debt_no_pell?: number | null;
+    median_debt_by_income?: { low: number | null; mid: number | null; high: number | null } | null;
+    /** Where undergraduate borrowers stand 3 years into repayment, as ranges (Scorecard publishes some as bands). */
+    repayment_3yr?: Partial<Record<RepaymentStatus, ShareRange>> | null;
   };
   /** Financial aid for full-time first-time undergrads (IPEDS Student Financial Aid survey). */
   aid?: {
@@ -205,6 +213,23 @@ export interface LineageRecord {
   page?: number;
 }
 
+/** Borrower status 3 years into repayment (College Scorecard `repayment.3_yr_bb_fed_repayment.ug.*`); they sum to 100%. */
+export type RepaymentStatus =
+  | "paid_in_full"
+  | "making_progress"
+  | "not_making_progress"
+  | "deferment"
+  | "forbearance"
+  | "delinquent"
+  | "default"
+  | "discharged";
+
+/** A share published either exactly (low = high) or as a band ("0.27-0.28", "<=0.02"). */
+export interface ShareRange {
+  low: number;
+  high: number;
+}
+
 export interface SexCounts {
   applicants: number | null;
   admitted: number | null;
@@ -278,7 +303,8 @@ export type SortKey =
   | "men_share"
   | "part_time"
   | "men_share_change"
-  | "admit_gap";
+  | "admit_gap"
+  | "loan_rate";
 
 export type ExploreView = "grid" | "table" | "chart";
 
@@ -302,6 +328,8 @@ export interface SearchFilters {
   trends?: Partial<Record<IndicatorKey, Direction[]>>;
   /** Gender-balance buckets to keep (lib/student-body.ts). */
   balance?: GenderBalance[];
+  /** Only colleges where at most 20% of undergraduates have a federal loan (lib/repayment.ts). */
+  fewLoans?: boolean;
   /** Only colleges where at most 10% of undergraduates study part-time. */
   fullTime?: boolean;
   sortBy?: SortKey;

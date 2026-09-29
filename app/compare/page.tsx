@@ -88,6 +88,8 @@ const TABLE_ROWS = (
     ["Graduation rate", "graduation-rate", "outcomes.graduation_rate", (s: School) => opt(s.outcomes?.graduation_rate ?? null, (v) => pct(v))],
     ["Retention rate", "retention-rate", "outcomes.retention_rate", (s: School) => opt(s.outcomes?.retention_rate ?? null, (v) => pct(v))],
     ["Median debt", "median-debt", "outcomes.median_debt", (s: School) => opt(s.outcomes?.median_debt ?? null, money)],
+    ["Undergrads with a federal loan", "federal-loan-rate", "outcomes.federal_loan_rate", (s: School) => opt(s.outcomes?.federal_loan_rate ?? null, (v) => pct(v))],
+    ["Median debt, Pell Grant recipients", "median-debt", "outcomes.median_debt_pell", (s: School) => opt(s.outcomes?.median_debt_pell ?? null, money)],
     ["First-years with grants", "grant-aid", "aid.grant_pct", (s: School) => opt(s.aid?.grant_pct ?? null, (v) => pct(v))],
     ["Average grant", "grant-aid", "aid.grant_avg", (s: School) => opt(s.aid?.grant_avg ?? null, money)],
     ["Aid from the college", "institutional-aid", "aid.institutional_pct", (s: School) => opt(s.aid?.institutional_pct ?? null, (v) => pct(v))],

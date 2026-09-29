@@ -86,6 +86,7 @@ const SORTS = [
   { value: "part_time", label: "Part-time share (lowest)", dir: "asc" },
   { value: "men_share_change", label: "Men's share change, 10 yrs (biggest drop)", dir: "asc" },
   { value: "admit_gap", label: "Admit rate gap (men higher first)", dir: "desc" },
+  { value: "loan_rate", label: "Share who borrow (fewest)", dir: "asc" },
 ] as const;
 
 export function SortControl() {
@@ -216,6 +217,7 @@ export function ActiveFilters() {
   for (const b of getList("balance"))
     chips.push({ key: `b-${b}`, label: GENDER_BALANCE.find((g) => g.key === b)?.label ?? b, onRemove: () => toggleInList("balance", b) });
   if (searchParams.get("fullTime") === "1") chips.push({ key: "fullTime", label: "Mostly full-time", onRemove: () => update({ fullTime: null }) });
+  if (searchParams.get("fewLoans") === "1") chips.push({ key: "fewLoans", label: "Few students borrow", onRemove: () => update({ fewLoans: null }) });
 
   for (const k of INDICATOR_KEYS) {
     const def = INDICATORS[k];

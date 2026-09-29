@@ -137,6 +137,8 @@ export type MetricKey =
   | "earnings"
   | "gradRate"
   | "debt"
+  | "loanRate"
+  | "loanRateLarge"
   | "admitGap"
   | "admitGapSize"
   | "menShare"
@@ -357,6 +359,33 @@ export const METRICS: Record<MetricKey, MetricDef> = {
     format: money,
     more: "more debt",
     less: "less debt",
+  },
+  loanRate: {
+    key: "loanRate",
+    field: "outcomes.federal_loan_rate",
+    label: "Undergrads with a federal loan",
+    short: "Borrow %",
+    term: "federal-loan-rate",
+    domain: "value",
+    get: (s) => s.outcomes?.federal_loan_rate ?? null,
+    format: (v) => pct(v),
+    scale: [0, 1],
+    more: "more students borrowing",
+    less: "fewer students borrowing",
+  },
+  // Only colleges with 1,000+ undergrads, for the "Few students borrow" chip (a tiny college's rate says little).
+  loanRateLarge: {
+    key: "loanRateLarge",
+    field: "outcomes.federal_loan_rate",
+    label: "Undergrads with a federal loan (1,000+ undergrads)",
+    short: "Borrow %",
+    term: "federal-loan-rate",
+    domain: "value",
+    get: (s) => (s.demographics.undergrad_enrollment >= 1000 ? (s.outcomes?.federal_loan_rate ?? null) : null),
+    format: (v) => pct(v),
+    scale: [0, 1],
+    more: "more students borrowing",
+    less: "fewer students borrowing",
   },
   admitGap: {
     key: "admitGap",

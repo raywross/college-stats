@@ -9,6 +9,7 @@ import type { TermKey } from "@/lib/glossary";
 import { DOMAINS, SIZE_BUCKETS } from "@/lib/metrics";
 import { DIRECTIONS, INDICATORS, INDICATOR_KEYS, type Direction, type IndicatorKey } from "@/lib/indicators";
 import { FULL_TIME_MAX_PART_TIME, GENDER_BALANCE, type GenderBalance } from "@/lib/student-body";
+import { FEW_LOANS_MAX } from "@/lib/repayment";
 import { useExploreParams } from "./useExploreParams";
 import { cn } from "@/lib/utils";
 
@@ -26,6 +27,8 @@ export interface FilterFacets {
   /** Colleges in each gender-balance bucket, and mostly full-time colleges (lib/student-body.ts). */
   balance: Record<GenderBalance, number>;
   fullTime: number;
+  /** Colleges where few undergrads take federal loans (lib/repayment.ts). */
+  fewLoans: number;
 }
 
 function Section({ title, term, children }: { title: string; term?: TermKey; children: ReactNode }) {
@@ -91,9 +94,10 @@ export function FilterPanel({ facets, onDone }: { facets: FilterFacets; onDone?:
   const activeStates = getList("states");
   const activeBalance = getList("balance");
   const fullTime = searchParams.get("fullTime") === "1";
+  const fewLoans = searchParams.get("fewLoans") === "1";
 
   const hasFilters = [
-    ...["q", "types", "sizes", "regions", "states", "minAR", "maxAR", "minSAT", "maxSAT", "minCost", "maxCost", "minEnroll", "maxEnroll", "balance", "fullTime"],
+    ...["q", "types", "sizes", "regions", "states", "minAR", "maxAR", "minSAT", "maxSAT", "minCost", "maxCost", "minEnroll", "maxEnroll", "balance", "fullTime", "fewLoans"],
     ...INDICATOR_KEYS.map((k) => INDICATORS[k].param),
   ].some((k) => searchParams.get(k));
 
@@ -164,6 +168,14 @@ export function FilterPanel({ facets, onDone }: { facets: FilterFacets; onDone?:
           onCommit={([lo, hi]) => update({ minCost: lo > 0 ? String(lo) : null, maxCost: hi < NP_MAX ? String(hi) : null })}
         />
         <p className="text-[11px] text-muted-foreground">Estimated average paid by all first-years, including those without grants. Colleges without enough data are hidden while this is set.</p>
+        <div className="flex flex-wrap gap-1.5">
+          <Chip active={fewLoans} onClick={() => update({ fewLoans: fewLoans ? null : "1" })} count={facets.fewLoans}>
+            Few students borrow
+          </Chip>
+        </div>
+        <p className="text-[11px] text-muted-foreground">
+          {Math.round(FEW_LOANS_MAX * 100)}% or fewer of undergrads take a federal loan.
+        </p>
       </Section>
 
       <Section title="10-year direction" term="trend-direction">

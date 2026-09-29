@@ -127,6 +127,12 @@ export const FIELDS = {
   "outcomes.retention_rate": scorecard("Retention rate", "outcomes"),
   "outcomes.median_debt": scorecard("Median debt at graduation", "outcomes"),
   "outcomes.monthly_loan_payment": scorecard("Monthly loan payment", "outcomes"),
+  // Key N = the N-1–N academic year (matches IPEDS SFA UFLOANP; checked 2026-09-29), like net price.
+  "outcomes.federal_loan_rate": scorecard("Undergraduates with a federal loan", "aid", "scorecard-cost"),
+  "outcomes.median_debt_pell": scorecard("Median debt, Pell Grant recipients", "outcomes"),
+  "outcomes.median_debt_no_pell": scorecard("Median debt, students without a Pell Grant", "outcomes"),
+  "outcomes.median_debt_by_income": scorecard("Median debt by family income", "outcomes"),
+  "outcomes.repayment_3yr": scorecard("Borrowers' repayment status 3 years after leaving", "outcomes"),
 
   /* ---- Aid (IPEDS SFA / COST2) ---- */
   "aid.cohort": sfa("First-years in the aid cohort"),

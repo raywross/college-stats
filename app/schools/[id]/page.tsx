@@ -57,6 +57,7 @@ import { NetPriceByIncome } from "@/components/charts/NetPriceByIncome";
 import { WhatStudentsPay } from "@/components/school/WhatStudentsPay";
 import { AidGenerosityCard } from "@/components/school/AidGenerosityCard";
 import { InfoTip, MetricLabel, SourceChip, Term } from "@/components/ui/info-tip";
+import { ShowMore } from "@/components/ui/show-more";
 import { OverTime } from "@/components/history/OverTime";
 import { TenYearTile } from "@/components/history/TenYearTile";
 import { HeadlineDelta } from "@/components/history/HeadlineDelta";
@@ -372,7 +373,7 @@ export default async function SchoolPage({ params }: Props) {
         <div className="space-y-14 pt-6 sm:space-y-24 sm:pt-10">
           {/* ============================== OVERVIEW ============================== */}
           <section id="overview" className="scroll-mt-28 sm:scroll-mt-36" aria-label="At a glance">
-            <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+            <div className="grid grid-flow-row-dense grid-cols-2 gap-3 sm:gap-4 lg:grid-flow-row lg:grid-cols-4">
               <Tile label="Acceptance rate" term="acceptance-rate" field="admissions.acceptance_rate" school={school} className="col-span-2 lg:col-span-1 lg:row-span-3">
                 {rate !== null ? (
                   <div className="flex items-center gap-4 lg:flex-col lg:items-start">
@@ -503,10 +504,13 @@ export default async function SchoolPage({ params }: Props) {
             >
               <div className="grid gap-4 lg:grid-cols-[1fr_1.2fr]">
                 {counts ? (
-                  <div className="rounded-3xl border bg-card p-4 sm:p-6">
-                    <h3 className="mb-4 font-display text-lg font-bold">Out of every 100 applicants…</h3>
-                    <Waffle applicants={a.applicants!} admitted={a.admitted!} enrolled={a.enrolled!} />
-                  </div>
+                  // Phones: the funnel says the same thing in a fifth of the height, so the waffle follows it, folded.
+                  <ShowMore label="Show out of every 100 applicants" hint="The funnel as 100 squares" className="max-lg:order-last">
+                    <div className="h-full rounded-3xl border bg-card p-4 sm:p-6">
+                      <h3 className="mb-4 font-display text-lg font-bold">Out of every 100 applicants…</h3>
+                      <Waffle applicants={a.applicants!} admitted={a.admitted!} enrolled={a.enrolled!} />
+                    </div>
+                  </ShowMore>
                 ) : (
                   <NotReported what="An applicant/admit/enroll breakdown" />
                 )}
@@ -808,15 +812,17 @@ export default async function SchoolPage({ params }: Props) {
 
               {school.aid && (
                 <div className="mt-10">
-                  <h3 className="mb-1 font-display text-xl font-extrabold tracking-tight sm:text-2xl">Who actually gets aid</h3>
-                  <p className="mb-4 max-w-3xl text-muted-foreground">
+                  <h3 className="mb-3 font-display text-xl font-extrabold tracking-tight sm:mb-1 sm:text-2xl">Who actually gets aid</h3>
+                  <p className="mb-4 hidden max-w-3xl text-muted-foreground sm:block">
                     Some colleges cover most of their price with grants; others cover little. Here&apos;s how generous this one is,
                     how many students get grants, where the money comes from, and how it varies with family income.
                   </p>
-                  <div className="space-y-4">
-                    <AidGenerosityCard school={school} />
-                    <AidBreakdown school={school} />
-                  </div>
+                  <ShowMore label="Show who gets aid" hint="How generous grants are, who gets them, where aid comes from, and aid by family income">
+                    <div className="space-y-4">
+                      <AidGenerosityCard school={school} />
+                      <AidBreakdown school={school} />
+                    </div>
+                  </ShowMore>
                 </div>
               )}
 
@@ -891,7 +897,8 @@ export default async function SchoolPage({ params }: Props) {
               )}
 
               {onValueMap && (
-                <div className="mt-4 rounded-3xl border bg-card p-4 sm:p-6">
+                <ShowMore label="Show the cost vs. earnings map" hint={`Where ${school.name} sits among 300 colleges`} className="mt-4">
+                <div className="rounded-3xl border bg-card p-4 sm:p-6">
                   <h3 className="mb-1 font-display text-lg font-bold">Cost vs. earnings</h3>
                   <p className="mb-3 text-xs text-muted-foreground">
                     The 300 most-applied-to colleges plus {school.name}. Top-left is lower cost and higher earnings.
@@ -905,6 +912,7 @@ export default async function SchoolPage({ params }: Props) {
                     zone={valueZone(metricMedian("avgCost"), metricMedian("earnings"))}
                   />
                 </div>
+                </ShowMore>
               )}
             </Panel>
           )}
@@ -966,7 +974,8 @@ export default async function SchoolPage({ params }: Props) {
                 <DistributionStrip label="Pell Grant share" term="pell-grant" dist={distribution("pell")} value={d.pell_grant_percent} rank={rankOf(school, "pell")} format="pct" color={DOMAINS.access.color} />
                 <DistributionStrip label="Diversity index" term="diversity-index" dist={distribution("diversity")} value={div} rank={rankOf(school, "diversity")} format="fixed2" color={DOMAINS.diversity.color} />
               </div>
-              <div className="rounded-3xl border bg-card p-4 sm:p-6">
+              <ShowMore label="Show the admissions map" hint="Acceptance rate vs. SAT for 300 colleges">
+              <div className="h-full rounded-3xl border bg-card p-4 sm:p-6">
                 <h3 className="mb-3 font-display text-lg font-bold">On the admissions map</h3>
                 {onMap ? (
                   <ScatterPlot
@@ -983,6 +992,7 @@ export default async function SchoolPage({ params }: Props) {
                   </p>
                 )}
               </div>
+              </ShowMore>
             </div>
           </Panel>
 
@@ -1022,9 +1032,9 @@ export default async function SchoolPage({ params }: Props) {
                 </div>
               ))}
             </div>
-            <div className="mt-12">
+            <ShowMore label="Show all sources for this profile" hint="Every dataset and year behind the numbers above" className="mt-10 sm:mt-12">
               <SourceList school={school} fields={PROFILE_FIELDS} />
-            </div>
+            </ShowMore>
           </Panel>
         </div>
       </div>

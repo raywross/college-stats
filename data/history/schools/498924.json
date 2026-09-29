@@ -14,6 +14,7 @@
     "race_other": {"start":2023,"values":[0,0]},
     "men_share": {"start":2023,"values":[0.4286,0.3636]},
     "part_time_share": {"start":2023,"values":[0.6429,0.1818]},
-    "grad_rate": {"start":2017,"values":[0.6111,0.8]}
+    "grad_rate": {"start":2017,"values":[0.6111,0.8]},
+    "federal_loan_rate": {"start":2022,"values":[0,0]}
   }
 }

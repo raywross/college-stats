@@ -57,6 +57,7 @@ Probed 2026-09-28. "Years" = academic year starting in the fall (see *Year conve
 | Aid generosity | derived | 2008–09 | |
 | Net price by family income | `SFA` `NPT4*` (`COST2` from 2023–24) | 2008–09 | Each file carries 3 years (`…2`, `…1`, `…0`). Scorecard `{year}.cost.avg_net_price.*` agrees (verified: Michigan 2009 = $15,038). |
 | Graduation rate (6-yr) | Scorecard `{year}.completion.completion_rate_4yr_150nt` | ~1997 | The value for year *Y* describes students who **entered about 6 years earlier**; label by entering cohort. |
+| Undergrads with a federal loan | Scorecard `{year}.aid.federal_loan_rate` | 2008–09 | Added 2026-09-29 ([loans-and-repayment.md](data-expansion/loans-and-repayment.md)). Key Y is the Y−1–Y school year (matches IPEDS SFA `UFLOANP`), stored at Y−1. |
 | Median debt | Scorecard `{year}.aid.median_debt.completers.overall` | ~1997 | Verified to 2020; the year-prefixed field is null from 2021 (today's value comes from `latest`). Chart stops at 2020, with a note. |
 | **Earnings** | Scorecard | **Not trended** | Only sporadic years (Michigan: 2007, 2009, 2011–14, 2020), and the cohort definition changed in 2020 ($63k → $84k is mostly method, not change). Show the latest value only. |
 

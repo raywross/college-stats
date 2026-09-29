@@ -8,12 +8,13 @@
  *   {Y}.student.demographics.men, {Y}.student.part_time_share      → fall Y (checked 2026-09-29, same as size)
  *   {Y}.completion.completion_rate_4yr_150nt                      → students who entered fall Y − 6
  *   {Y}.aid.median_debt.completers.overall                         → Y–Y+1 graduates (null after 2020)
+ *   {Y}.aid.federal_loan_rate                                      → the Y−1–Y school year (matches IPEDS SFA UFLOANP)
  */
 import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { SCORECARD_RACE_FIELDS } from "../../lib/derive.ts";
-import { RACE_FROM } from "../../lib/history.ts";
+import { LOAN_RATE_FROM, RACE_FROM } from "../../lib/history.ts";
 
 const API = "https://api.data.gov/ed/collegescorecard/v1/schools";
 const RACE = "student.demographics.race_ethnicity";
@@ -28,6 +29,7 @@ export function scorecardFields(first: number, last: number): string[] {
   for (let y = first; y <= last; y++) {
     out.push(`${y}.student.size`, `${y}.completion.completion_rate_4yr_150nt`, `${y}.aid.median_debt.completers.overall`);
     out.push(`${y}.student.demographics.men`, `${y}.student.part_time_share`);
+    if (y >= LOAN_RATE_FROM) out.push(`${y}.aid.federal_loan_rate`);
     if (y >= RACE_FROM) out.push(...SCORECARD_RACE_FIELDS.map((f) => `${y}.${RACE}.${f}`));
   }
   return out;

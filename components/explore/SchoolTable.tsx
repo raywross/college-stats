@@ -129,7 +129,8 @@ export async function SchoolTable({ schools, params }: { schools: School[]; para
           { key: "size_change" as const, label: "Undergrads, 10-yr change", term: "undergrad-enrollment" as const },
           { key: "apps_change" as const, label: "Applications, 10-yr change", term: "applicants" as const },
           { key: "diversity_change" as const, label: "Diversity, then → now", term: "diversity-index" as const },
-          { key: "men_share_change" as const, label: "Men, then → now", term: "gender-balance" as const },        ]
+          { key: "men_share_change" as const, label: "Men, then → now", term: "gender-balance" as const },
+          { key: "loan_rate_change" as const, label: "Borrow, then → now", term: "federal-loan-rate" as const },        ]
       : []),
   ];
 
@@ -142,7 +143,7 @@ export async function SchoolTable({ schools, params }: { schools: School[]; para
     </p>
     <div className="overflow-hidden rounded-3xl border bg-card">
       <div className="overflow-x-auto">
-        <table className={cn("w-full text-sm", changes ? "min-w-[2290px]" : "min-w-[1550px]")}>
+        <table className={cn("w-full text-sm", changes ? "min-w-[2420px]" : "min-w-[1550px]")}>
           <thead className="border-b bg-surface-2">
             <tr>
               <SortHeader k="name" label="School" className="sticky left-0 z-10 bg-surface-2 pl-4" params={params} sortBy={sortBy} sortDir={sortDir} />
@@ -284,7 +285,16 @@ export async function SchoolTable({ schools, params }: { schools: School[]; para
                           from={s.trends?.men_share ? pct(s.trends.men_share.from) : undefined}
                           to={s.trends?.men_share ? pct(s.trends.men_share.to) : undefined}
                         />
-                      </td>                    </>
+                      </td>
+                      <td className="w-32 px-3 tabular-nums">
+                        <ChangeCell
+                          points
+                          change={METRICS.loanRateChange.get(s)}
+                          from={s.trends?.federal_loan_rate ? pct(s.trends.federal_loan_rate.from) : undefined}
+                          to={s.trends?.federal_loan_rate ? pct(s.trends.federal_loan_rate.to) : undefined}
+                        />
+                      </td>
+                    </>
                   )}
                   <td className="px-3 pr-4 text-right">
                     <CompareButton id={s.unit_id} variant="icon" />
@@ -299,7 +309,7 @@ export async function SchoolTable({ schools, params }: { schools: School[]; para
     {changes && (
       <p className="mt-2 text-[11px] text-muted-foreground">
         Changes over each college&apos;s last 10 years of federal data: average cost after inflation; acceptance rate in percentage points;
-        diversity index and men&apos;s share in points; undergraduate and men&apos;s share changes left out for campuses under 300 students, and applications under 200
+        diversity index, men&apos;s share, and borrowing in points; undergraduate, men&apos;s share, and borrowing changes left out for campuses under 300 students, and applications under 200
         applicants.
       </p>
     )}

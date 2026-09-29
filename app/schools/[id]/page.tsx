@@ -73,7 +73,7 @@ import { historyYearLabel, type NationalHistory, type SeriesKey } from "@/lib/hi
 /** Series each "Over time" group shows; they drive the group's source footnote. */
 const HISTORY_GROUPS = {
   cost: ["avg_paid_all", "full_price", "sticker_in_state", "sticker_out_of_state", "aided_net_price", "net_price_income_1"],
-  aid: ["grant_pct", "grant_avg", "aid_generosity"],
+  aid: ["grant_pct", "grant_avg", "aid_generosity", "federal_loan_rate"],
   admissions: ["applicants", "admitted", "enrolled", "acceptance_rate", "yield", "admit_rate_men", "admit_rate_women"],
   scores: ["sat_25", "sat_75", "act_25", "act_75", "sat_submit", "test_policy"],
   students: ["undergrads", "race_white", "men_share", "part_time_share"],
@@ -81,7 +81,7 @@ const HISTORY_GROUPS = {
 } as const satisfies Record<string, readonly SeriesKey[]>;
 
 /** National series the charts draw as a band (keeps the page payload small). */
-const BANDED: readonly SeriesKey[] = ["avg_paid_all", "grant_pct", "grant_avg", "acceptance_rate", "sat_25", "sat_75", "act_25", "act_75", "grad_rate", "median_debt", "men_share", "part_time_share"];
+const BANDED: readonly SeriesKey[] = ["avg_paid_all", "grant_pct", "grant_avg", "acceptance_rate", "sat_25", "sat_75", "act_25", "act_75", "grad_rate", "median_debt", "men_share", "part_time_share", "federal_loan_rate"];
 
 type Props = { params: Promise<{ id: string }> };
 

@@ -25,6 +25,7 @@
     "race_other": {"start":2020,"values":[0.0081,0.0084,0.0031,0.0049,0.0139]},
     "men_share": {"start":2020,"values":[0.0645,0.0759,0.0685,0.0825,0.0748]},
     "part_time_share": {"start":2020,"values":[0.5323,0.5274,0.3427,0.3107,0.3084]},
-    "median_debt": {"start":2020,"values":[9500]}
+    "median_debt": {"start":2020,"values":[9500]},
+    "federal_loan_rate": {"start":2020,"values":[0.9355,0.75,0.8723,0.8442]}
   }
 }

@@ -14,6 +14,7 @@
     "race_other": {"start":2022,"values":[0,0,0]},
     "men_share": {"start":1997,"values":[0.2727,0.2222,0.2326,null,0.1875,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,0.6,0.2941,0.2439]},
     "part_time_share": {"start":2001,"values":[0,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,0.0244]},
-    "grad_rate": {"start":1997,"values":[1]}
+    "grad_rate": {"start":1997,"values":[1]},
+    "federal_loan_rate": {"start":2023,"values":[0.5294]}
   }
 }

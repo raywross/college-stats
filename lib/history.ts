@@ -60,6 +60,7 @@ export const HISTORY_FAMILIES = {
   "scorecard-enrollment": { source: "scorecard", kind: "fall", files: "API fields {year}.student.size, {year}.student.demographics.race_ethnicity.*, .men, and {year}.student.part_time_share", api: true, citeAs: "enrollment" },
   "scorecard-completion": { source: "scorecard", kind: "cohort", files: "API field {year+6}.completion.completion_rate_4yr_150nt", api: true, citeAs: "graduation by entering class" },
   "scorecard-debt": { source: "scorecard", kind: "academic", files: "API field {year}.aid.median_debt.completers.overall", api: true, citeAs: "median debt" },
+  "scorecard-loans": { source: "scorecard", kind: "academic", files: "API field {year+1}.aid.federal_loan_rate", api: true, citeAs: "federal loan rate" },
 } as const satisfies Record<string, { source: SourceKey; kind: YearKind; files: string; api?: true; citeAs?: string }>;
 
 export type HistoryFamily = keyof typeof HISTORY_FAMILIES;
@@ -128,6 +129,7 @@ export const SERIES = {
   part_time_share: { label: "Part-time students", short: "Part-time", field: "demographics.part_time_share", term: "part-time-student", unit: "share", kind: "fall", format: "pct", families: ENROLLMENT },
   grad_rate: { label: "Graduated within 6 years", short: "Graduated in 6 years", field: "outcomes.graduation_rate", term: "graduation-rate", unit: "share", kind: "cohort", format: "pct", families: ["scorecard-completion"] },
   median_debt: { label: "Median debt at graduation", short: "Median debt", field: "outcomes.median_debt", term: "median-debt", unit: "usd", kind: "academic", format: "money", families: ["scorecard-debt"] },
+  federal_loan_rate: { label: "Undergraduates with a federal loan", short: "Federal loan", field: "outcomes.federal_loan_rate", term: "federal-loan-rate", unit: "share", kind: "academic", format: "pct", families: ["scorecard-loans"] },
 } as const satisfies Record<string, SeriesDef>;
 
 export type SeriesKey = keyof typeof SERIES;
@@ -145,6 +147,8 @@ export const RACE_SERIES = {
 } as const satisfies Record<string, SeriesKey>;
 /** Race/ethnicity history starts with fall 2010, when the new federal categories became required. */
 export const RACE_FROM = 2010;
+/** Federal loan rate: Scorecard year-prefixed values from key 2009 (the 2008–09 school year; checked 2026-09-29). */
+export const LOAN_RATE_FROM = 2009;
 export function isSeriesKey(k: string): k is SeriesKey {
   return Object.prototype.hasOwnProperty.call(SERIES, k);
 }
@@ -423,7 +427,7 @@ export function tenYearSummary(
 }
 
 /** The measures summarized into school.trends (data/schools.json). */
-export const TREND_KEYS = ["avg_paid_all", "full_price", "acceptance_rate", "applicants", "undergrads", "grant_pct", "men_share"] as const satisfies readonly SeriesKey[];
+export const TREND_KEYS = ["avg_paid_all", "full_price", "acceptance_rate", "applicants", "undergrads", "grant_pct", "men_share", "federal_loan_rate"] as const satisfies readonly SeriesKey[];
 
 /** Diversity index (Simpson's, as lib/metrics.ts `diversityIndex`) from the race/ethnicity shares in one fall. */
 export function diversityIndexAt(h: SchoolHistory, year: number): number | null {

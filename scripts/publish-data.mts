@@ -93,11 +93,22 @@ if (count && schools.length < count * 0.9 && !ALLOW_SHRINK) {
   fail(`would drop from ${count} to ${schools.length} colleges. Check the sync, or pass --allow-shrink.`);
 }
 
+/**
+ * Only a missing table (Postgres 42P01, or PostgREST's PGRST205) means a migration isn't applied. Anything else (an empty
+ * error from a dropped connection, or another publish running at the same moment) is reported as it is.
+ */
+function tableCheck(error: { message?: string; code?: string; details?: string } | null, migration: string) {
+  if (!error) return;
+  const what = [error.message, error.code, error.details].filter(Boolean).join(" · ") || "no error message (a dropped connection, or another publish running?)";
+  if (error.code === "42P01" || error.code === "PGRST205") fail(`${what}. Apply ${migration} first.`);
+  fail(`checking the database failed: ${what}. Retry; if it keeps failing, check the project.`);
+}
+
 if (history) {
   const { error: historyError } = await client.from("history_files").select("name", { head: true });
-  if (historyError) fail(`${historyError.message}. Apply supabase/migrations/20260928120000_history.sql first.`);
+  tableCheck(historyError, "supabase/migrations/20260928120000_history.sql");
   const { error: stagingError } = await client.from("history_staging").select("unit_id", { head: true });
-  if (stagingError) fail(`${stagingError.message}. Apply supabase/migrations/20260928180000_history_staging.sql first.`);
+  tableCheck(stagingError, "supabase/migrations/20260928180000_history_staging.sql");
 }
 
 if (DRY_RUN) {

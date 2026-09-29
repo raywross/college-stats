@@ -1,6 +1,7 @@
 # Backlog
 
-Planned work, roughly in priority order. Move items into a feature spec when they're picked up.
+Planned work, roughly in priority order. Move items into a feature spec when they're picked up. Planned specs are
+published at `/roadmap` ([roadmap.md](roadmap.md)): add each new one to `lib/roadmap.ts` (a test enforces it).
 
 ## Data
 - [ ] **Trends over time.** Year-by-year history per college with `npm run sync-history`. Data:

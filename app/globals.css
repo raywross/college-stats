@@ -284,6 +284,148 @@
   .no-scrollbar {
     scrollbar-width: none;
   }
+
+  /* Rendered spec markdown on /roadmap/{slug} (specs/roadmap.md) */
+  .spec-prose {
+    font-size: 1rem;
+    line-height: 1.7;
+    max-width: 46rem;
+    overflow-wrap: break-word;
+  }
+  .spec-prose > :first-child {
+    margin-top: 0;
+  }
+  .spec-prose h2 {
+    margin: 2.75rem 0 0.9rem;
+    padding-top: 1.75rem;
+    border-top: 1px solid var(--border);
+    font-size: 1.5rem;
+    font-weight: 700;
+    line-height: 1.25;
+    letter-spacing: -0.01em;
+  }
+  .spec-prose h3 {
+    margin: 2rem 0 0.6rem;
+    font-size: 1.15rem;
+    font-weight: 700;
+    line-height: 1.35;
+  }
+  .spec-prose h4 {
+    margin: 1.5rem 0 0.5rem;
+    font-weight: 700;
+  }
+  .spec-prose p,
+  .spec-prose ul,
+  .spec-prose ol,
+  .spec-prose pre,
+  .spec-prose blockquote,
+  .spec-prose .spec-table {
+    margin: 0 0 1.1rem;
+  }
+  .spec-prose ul,
+  .spec-prose ol {
+    padding-left: 1.4rem;
+  }
+  .spec-prose ul {
+    list-style: disc;
+  }
+  .spec-prose ol {
+    list-style: decimal;
+  }
+  .spec-prose li {
+    margin: 0.35rem 0;
+    padding-left: 0.2rem;
+  }
+  .spec-prose li::marker {
+    color: var(--muted-foreground);
+  }
+  .spec-prose li > ul,
+  .spec-prose li > ol {
+    margin: 0.35rem 0 0;
+  }
+  .spec-prose strong {
+    font-weight: 650;
+  }
+  .spec-prose a {
+    color: var(--primary);
+    font-weight: 500;
+    text-decoration: underline;
+    text-decoration-color: color-mix(in oklch, var(--primary) 35%, transparent);
+    text-underline-offset: 3px;
+  }
+  .spec-prose a:hover {
+    text-decoration-color: currentColor;
+  }
+  .spec-prose code {
+    font-family: var(--font-mono);
+    font-size: 0.85em;
+    padding: 0.12em 0.36em;
+    border-radius: 0.35rem;
+    background: var(--muted);
+    border: 1px solid var(--border);
+  }
+  .spec-prose pre {
+    padding: 1rem 1.1rem;
+    overflow-x: auto;
+    border-radius: 1rem;
+    border: 1px solid var(--border);
+    background: var(--surface-2);
+    font-size: 0.85rem;
+    line-height: 1.6;
+  }
+  .spec-prose pre code {
+    padding: 0;
+    border: 0;
+    background: none;
+    font-size: inherit;
+  }
+  .spec-prose blockquote {
+    padding: 0.85rem 1.1rem;
+    border-left: 3px solid var(--primary);
+    border-radius: 0 0.9rem 0.9rem 0;
+    background: color-mix(in oklch, var(--secondary) 70%, transparent);
+    color: var(--secondary-foreground);
+    font-size: 0.925rem;
+  }
+  .spec-prose blockquote p:last-child {
+    margin-bottom: 0;
+  }
+  .spec-prose hr {
+    margin: 2.5rem 0;
+    border-top: 1px solid var(--border);
+  }
+  /* Wide tables scroll inside their box on phones rather than widening the page. */
+  .spec-prose .spec-table {
+    overflow-x: auto;
+    border: 1px solid var(--border);
+    border-radius: 1rem;
+    background: var(--card);
+  }
+  .spec-prose table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+    line-height: 1.5;
+  }
+  .spec-prose th,
+  .spec-prose td {
+    padding: 0.6rem 0.85rem;
+    text-align: left;
+    vertical-align: top;
+    min-width: 7rem;
+  }
+  .spec-prose th {
+    background: var(--surface-2);
+    font-weight: 650;
+    white-space: nowrap;
+  }
+  .spec-prose tr + tr td,
+  .spec-prose thead + tbody tr td {
+    border-top: 1px solid var(--border);
+  }
+  .spec-prose td code {
+    white-space: nowrap;
+  }
   .no-scrollbar::-webkit-scrollbar {
     display: none;
   }

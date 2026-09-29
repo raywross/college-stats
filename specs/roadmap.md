@@ -39,4 +39,4 @@ the single source: the pages read them at build time, so editing a spec updates 
 Ratings are judgment calls made from each spec's ingest, store, and display sections; revisit them when a spec changes.
 
 ## Where it's linked
-Footer ("Roadmap: what's coming"). Not in the header nav, which stays for the four main tasks.
+Desktop: footer ("Roadmap: what's coming"); not in the header nav, which stays for the four main tasks. Phones: the tab bar's More sheet (the footer's link column is hidden below `md`; see [mobile.md](mobile.md)).

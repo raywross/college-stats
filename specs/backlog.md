@@ -44,9 +44,8 @@ published at `/roadmap` ([roadmap.md](roadmap.md)): add each new one to `lib/roa
   per source, in four waves. Answers the "already-released IPEDS files" question: `IC2025` →
   [campus-services.md](data-expansion/campus-services.md), `C2025_A` → [majors.md](data-expansion/majors.md),
   `EFFY2025` left out.
-  - [ ] Wave 1 (files already downloaded, or fields on the Scorecard call; one PR per spec): student body (built
-    2026-09-29), admission factors (GPA used? legacy?),
-    admissions by sex and true medians, housing and policies, loans and repayment.
+  - [ ] Wave 1 (files already downloaded, or fields on the Scorecard call; one PR per spec): student body and admissions
+    detail (built 2026-09-29); admission factors (GPA used? legacy?), housing and policies, loans and repayment.
   - [ ] Wave 2 (one new NCES file each): campus profile (HD), campus services and athletics (IC), student-faculty
     ratio (EF-D), residence (EF-C), 8-year outcomes (OM), Pell/race graduation (GR), finances (DRVF), faculty (SAL).
   - [ ] **Per-college detail file** `data/detail/schools/{unitid}.json` (decided 2026-09-28: a new file, not the

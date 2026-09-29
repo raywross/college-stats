@@ -6,6 +6,7 @@
     "enrolled": {"start":2018,"values":[17]},
     "acceptance_rate": {"start":2018,"values":[0.9667]},
     "yield": {"start":2018,"values":[0.5862]},
+    "admit_rate_women": {"start":2018,"values":[0.9565]},
     "tuition_in_state": {"start":2009,"values":[10040,null,null,11020,null,11670,null,null,null,null,12316]},
     "tuition_out_of_state": {"start":2009,"values":[10040,null,null,11020,null,11670,null,null,null,null,12316]},
     "test_policy": {"start":2018,"values":[3]},

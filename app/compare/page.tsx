@@ -10,7 +10,7 @@ import { ThenAndNow, type ThenAndNowMetric } from "@/components/compare/ThenAndN
 import { HistorySourceNote } from "@/components/sources/HistorySourceNote";
 import type { FieldPath } from "@/lib/fields";
 import type { TermKey } from "@/lib/glossary";
-import { DEMOGRAPHIC_CATEGORIES, DOMAINS, METRICS, TEST_POLICY_LABELS, satComposite, type Domain } from "@/lib/metrics";
+import { DEMOGRAPHIC_CATEGORIES, DOMAINS, METRICS, TEST_POLICY_LABELS, admitRatesBySex, satComposite, type Domain } from "@/lib/metrics";
 import { RADAR_AXES, keyDifferences, radarProfile, similarSchools } from "@/lib/insights";
 import { SLOT_COLORS, shortName } from "@/lib/brand";
 import { compact, money, moneyCompact, num, pct, pctSmart } from "@/lib/format";
@@ -57,6 +57,10 @@ const TABLE_ROWS = (
     // Sources differ by school (federal survey vs. a college's own CDS), so show which class each row describes.
     ["Admissions data", "cds", "admissions.year", (s: School) => (s.admissions.year ? `Fall ${s.admissions.year}` : null)],
     ["Acceptance rate", "acceptance-rate", "admissions.acceptance_rate", (s: School) => s.admissions.acceptance_rate === null ? null : pctSmart(s.admissions.acceptance_rate)],
+    ["Acceptance rate, men / women", "admit-rate-by-sex", "admissions.by_sex", (s: School) => {
+      const r = admitRatesBySex(s);
+      return r.men === null || r.women === null ? null : `${pctSmart(r.men)} / ${pctSmart(r.women)}`;
+    }],
     ["Applicants", "applicants", "admissions.applicants", (s: School) => opt(s.admissions.applicants, num)],
     ["Admitted", "admitted", "admissions.admitted", (s: School) => opt(s.admissions.admitted, num)],
     ["Enrolled", "enrolled", "admissions.enrolled", (s: School) => opt(s.admissions.enrolled, num)],

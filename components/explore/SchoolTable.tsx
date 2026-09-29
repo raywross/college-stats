@@ -2,7 +2,7 @@ import Link from "next/link";
 import { ArrowDown, ArrowUp } from "lucide-react";
 import type { School, SortKey } from "@/lib/types";
 import type { TermKey } from "@/lib/glossary";
-import { DOMAINS, METRICS, aidGenerosity, diversityIndex, satComposite } from "@/lib/metrics";
+import { DOMAINS, METRICS, admitRateGap, admitRatesBySex, aidGenerosity, diversityIndex, satComposite } from "@/lib/metrics";
 import { compact, moneyCompact, pct, pctSmart } from "@/lib/format";
 import { getData } from "@/lib/data";
 import { Crest } from "@/components/school/Crest";
@@ -110,6 +110,7 @@ export async function SchoolTable({ schools, params }: { schools: School[]; para
   const cols: { key: SortKey; label: string; term?: TermKey; className?: string }[] = [
     // Column order keeps same-looking domain hues apart.
     { key: "acceptance_rate", label: "Admit rate", term: "acceptance-rate" },
+    { key: "admit_gap", label: "Admit rate, men / women", term: "admit-rate-by-sex", className: "min-w-32" },
     { key: "enrollment", label: "Undergrads", term: "undergrad-enrollment" },
     { key: "sat", label: "SAT middle 50%", term: "middle-50", className: "min-w-36" },
     { key: "pell", label: "Pell", term: "pell-grant" },
@@ -141,7 +142,7 @@ export async function SchoolTable({ schools, params }: { schools: School[]; para
     </p>
     <div className="overflow-hidden rounded-3xl border bg-card">
       <div className="overflow-x-auto">
-        <table className={cn("w-full text-sm", changes ? "min-w-[2060px]" : "min-w-[1320px]")}>
+        <table className={cn("w-full text-sm", changes ? "min-w-[2190px]" : "min-w-[1450px]")}>
           <thead className="border-b bg-surface-2">
             <tr>
               <SortHeader k="name" label="School" className="sticky left-0 z-10 bg-surface-2 pl-4" params={params} sortBy={sortBy} sortDir={sortDir} />
@@ -158,6 +159,8 @@ export async function SchoolTable({ schools, params }: { schools: School[]; para
               const width = sat ? ((sat[1] - sat[0]) / (SAT[1] - SAT[0])) * 100 : 0;
               const div = diversityIndex(s);
               const { acceptance_rate: ar } = s.admissions;
+              const bySex = admitRatesBySex(s);
+              const gap = admitRateGap(s);
               const { pell_grant_percent: pell, first_gen_percent: fg, men_share: men } = s.demographics;
               return (
                 <tr key={s.unit_id} className="group transition-colors hover:bg-muted/40">
@@ -175,6 +178,12 @@ export async function SchoolTable({ schools, params }: { schools: School[]; para
                   <td className="w-28 px-3 tabular-nums">
                     <Value v={ar === null ? null : pctSmart(ar)} />
                     {ar !== null && <Bar value={ar} max={1} color={DOMAINS.admissions.color} />}
+                  </td>
+                  <td className="w-32 px-3 tabular-nums">
+                    <Value v={bySex.men === null || bySex.women === null ? null : `${pctSmart(bySex.men)} / ${pctSmart(bySex.women)}`} />
+                    {gap !== null && Math.abs(gap) >= 0.03 && (
+                      <span className="block text-[11px] text-muted-foreground">{METRICS.admitGap.format(gap)}</span>
+                    )}
                   </td>
                   <td className="w-28 px-3 tabular-nums">
                     <Value v={compact(s.demographics.undergrad_enrollment)} />

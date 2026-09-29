@@ -6,6 +6,7 @@
     "enrolled": {"start":2017,"values":[13,7,7,11,11,2,6,9]},
     "acceptance_rate": {"start":2017,"values":[0.7826,0.6923,0.75,0.875,1,null,null,0.8182]},
     "yield": {"start":2017,"values":[0.7222,0.7778,0.7778,0.7857,0.8462,0.6667,1,1]},
+    "admit_rate_men": {"start":2017,"values":[0.7826,0.6923,0.75,0.875,1,null,null,0.8182]},
     "tuition_in_state": {"start":2017,"values":[7430,9075,9075,9250,9580,9950,10350]},
     "tuition_out_of_state": {"start":2017,"values":[7430,9075,9075,9250,9580,9950,10350]},
     "sticker_in_state": {"start":2017,"values":[13530,15175,15375,15650,15980,16350,19290]},

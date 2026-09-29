@@ -6,6 +6,8 @@
     "enrolled": {"start":2012,"values":[15,9,32,18,null,null,null,9,19,null,null,9]},
     "acceptance_rate": {"start":2012,"values":[0.8333,1,1,1,null,null,null,0.4737,0.7857,null,null,0.8462]},
     "yield": {"start":2012,"values":[1,0.6,0.7442,0.5143,null,null,null,1,0.8636,null,null,0.8182]},
+    "admit_rate_men": {"start":2014,"values":[1,1,null,null,null,null,0.7692,null,null,0.9]},
+    "admit_rate_women": {"start":2012,"values":[0.9,1,1,1,null,null,null,0.4,0.8]},
     "tuition_in_state": {"start":2012,"values":[6690,6690,7220,7220,7540,7640,null,8586,9040,9425,10090,13600]},
     "tuition_out_of_state": {"start":2012,"values":[6690,6690,7220,7220,7540,7640,null,8586,9040,9425,10090,13600]},
     "sticker_in_state": {"start":2012,"values":[11960,12040,13070,13170,13490,13790,null,14786,15240,15925,17090,24600]},

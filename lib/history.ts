@@ -89,6 +89,8 @@ export const SERIES = {
   enrolled: { label: "Enrolled first-years", short: "Enrolled", field: "admissions.enrolled", term: "enrolled", unit: "count", kind: "fall", format: "compact", families: ADMISSIONS },
   acceptance_rate: { label: "Acceptance rate", short: "Acceptance rate", field: "admissions.acceptance_rate", term: "acceptance-rate", unit: "share", kind: "fall", format: "pctSmart", families: ADMISSIONS },
   yield: { label: "Yield", short: "Yield", field: "derived.yield", term: "yield", unit: "share", kind: "fall", format: "pct", families: ADMISSIONS },
+  admit_rate_men: { label: "Acceptance rate, men", short: "Men", field: "derived.admit_rate_men", term: "admit-rate-by-sex", unit: "share", kind: "fall", format: "pctSmart", families: ADMISSIONS },
+  admit_rate_women: { label: "Acceptance rate, women", short: "Women", field: "derived.admit_rate_women", term: "admit-rate-by-sex", unit: "share", kind: "fall", format: "pctSmart", families: ADMISSIONS },
   tuition_in_state: { label: "Tuition & fees, in-state", short: "Tuition, in-state", field: "cost.tuition_fees", term: "in-state-tuition", unit: "usd", kind: "academic", format: "money", families: ["prices"] },
   tuition_out_of_state: { label: "Tuition & fees, out-of-state", short: "Tuition, out-of-state", field: "cost.tuition_fees", term: "in-state-tuition", unit: "usd", kind: "academic", format: "money", families: ["prices"] },
   sticker_in_state: { label: "Full price, in-state", short: "Full price, in-state", field: "cost.sticker", term: "cost-of-attendance", unit: "usd", kind: "academic", format: "money", families: ["prices"] },
@@ -108,6 +110,9 @@ export const SERIES = {
   sat_75: { label: "SAT total, 75th percentile", short: "SAT 75th", field: "derived.sat_composite", term: "sat", unit: "score", kind: "fall", format: "int", families: ADMISSIONS, breaks: SAT_BREAK },
   act_25: { label: "ACT composite, 25th percentile", short: "ACT 25th", field: "admissions.act_composite_25_75", term: "act", unit: "score", kind: "fall", format: "int", families: ADMISSIONS },
   act_75: { label: "ACT composite, 75th percentile", short: "ACT 75th", field: "admissions.act_composite_25_75", term: "act", unit: "score", kind: "fall", format: "int", families: ADMISSIONS },
+  // True medians exist from fall 2022 only: kept, but not charted until about 5 years exist (admissions-detail.md).
+  sat_50: { label: "SAT total, median", short: "SAT median", field: "derived.sat_median", term: "median-vs-midpoint", unit: "score", kind: "fall", format: "int", families: ADMISSIONS, breaks: SAT_BREAK },
+  act_50: { label: "ACT composite, median", short: "ACT median", field: "admissions.act_composite_median", term: "median-vs-midpoint", unit: "score", kind: "fall", format: "int", families: ADMISSIONS },
   sat_submit: { label: "Share submitting SAT", short: "Submitted SAT", field: "admissions.test_submission_rate_sat", term: "test-submission", unit: "share", kind: "fall", format: "pct", families: ADMISSIONS },
   act_submit: { label: "Share submitting ACT", short: "Submitted ACT", field: "admissions.test_submission_rate_act", term: "test-submission", unit: "share", kind: "fall", format: "pct", families: ADMISSIONS },
   test_policy: { label: "Test policy", short: "Test policy", field: "admissions.test_policy", term: "test-policy", unit: "code", kind: "fall", format: "int", families: ADMISSIONS },

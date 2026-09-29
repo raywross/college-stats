@@ -34,6 +34,14 @@ export interface School {
     test_submission_rate_sat: number | null;
     test_submission_rate_act: number | null;
     test_policy?: TestPolicy;
+    /** Applicants, admits, and enrollees who are men / women (IPEDS ADM; "another gender" and unknown count only in the totals). */
+    by_sex?: { men: SexCounts; women: SexCounts } | null;
+    /** True medians (IPEDS ADM, fall 2022 on), not the midpoint of the middle 50%. */
+    sat_reading_median?: number | null;
+    sat_math_median?: number | null;
+    act_composite_median?: number | null;
+    act_english_25_75?: [number, number] | null;
+    act_math_25_75?: [number, number] | null;
   };
   demographics: {
     undergrad_enrollment: number;
@@ -197,6 +205,12 @@ export interface LineageRecord {
   page?: number;
 }
 
+export interface SexCounts {
+  applicants: number | null;
+  admitted: number | null;
+  enrolled: number | null;
+}
+
 export interface ResidencyPrices {
   in_district: number | null;
   in_state: number | null;
@@ -263,7 +277,8 @@ export type SortKey =
   | "diversity_change"
   | "men_share"
   | "part_time"
-  | "men_share_change";
+  | "men_share_change"
+  | "admit_gap";
 
 export type ExploreView = "grid" | "table" | "chart";
 

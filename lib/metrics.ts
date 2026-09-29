@@ -2,7 +2,7 @@ import type { School, SizeBucket } from "./types";
 import type { TermKey } from "./glossary";
 import type { FieldPath } from "./fields";
 import { money, num, pct, pctSmart } from "./format";
-import { simpsonIndex, yieldOf } from "./derive";
+import { admitRatesBySex, satMedian, simpsonIndex, yieldOf } from "./derive";
 
 /* ------------------------------------------------------------------ */
 /* Derived values (null when the underlying data isn't reported)       */
@@ -18,6 +18,20 @@ export function satComposite(s: School): [number, number] | null {
 export function satMid(s: School): number | null {
   const c = satComposite(s);
   return c ? Math.round((c[0] + c[1]) / 2) : null;
+}
+
+// Shared with the history build (lib/derive.ts), so a trend line ends on the profile's number.
+export { admitRatesBySex, satMedian };
+
+/** Both sexes need this many applicants before their admit rates are compared (a gap on a handful is noise). */
+export const BY_SEX_MIN_APPLICANTS = 200;
+
+/** Men's minus women's acceptance rate, in points; null unless both have BY_SEX_MIN_APPLICANTS applicants. */
+export function admitRateGap(s: School): number | null {
+  const b = s.admissions.by_sex;
+  if (!b || (b.men.applicants ?? 0) < BY_SEX_MIN_APPLICANTS || (b.women.applicants ?? 0) < BY_SEX_MIN_APPLICANTS) return null;
+  const { men, women } = admitRatesBySex(s);
+  return men !== null && women !== null ? Math.round((men - women) * 10_000) / 10_000 : null;
 }
 
 export function actMid(s: School): number | null {
@@ -123,6 +137,8 @@ export type MetricKey =
   | "earnings"
   | "gradRate"
   | "debt"
+  | "admitGap"
+  | "admitGapSize"
   | "menShare"
   | "partTime"
   | "adults"
@@ -341,6 +357,35 @@ export const METRICS: Record<MetricKey, MetricDef> = {
     format: money,
     more: "more debt",
     less: "less debt",
+  },
+  admitGap: {
+    key: "admitGap",
+    field: "derived.admit_rate_men",
+    label: "Acceptance rate, men minus women",
+    short: "Admit gap (M − W)",
+    term: "admit-rate-by-sex",
+    domain: "admissions",
+    get: admitRateGap,
+    format: (v) => `${v > 0 ? "+" : v < 0 ? "−" : ""}${Math.round(Math.abs(v) * 100)} pts`,
+    more: "admits men at a higher rate",
+    less: "admits women at a higher rate",
+  },
+  // The gap's size, only on large pools (1,000+ applicants of each sex), for the "Known for" chip.
+  admitGapSize: {
+    key: "admitGapSize",
+    field: "derived.admit_rate_men",
+    label: "Gap between men's and women's acceptance rates",
+    short: "Admit gap",
+    term: "admit-rate-by-sex",
+    domain: "admissions",
+    get: (s) => {
+      const b = s.admissions.by_sex;
+      const gap = admitRateGap(s);
+      return gap !== null && b && Math.min(b.men.applicants ?? 0, b.women.applicants ?? 0) >= 1000 ? Math.abs(gap) : null;
+    },
+    format: (v) => `${Math.round(v * 100)} pts`,
+    more: "a wider gap",
+    less: "a narrower gap",
   },
   menShare: {
     key: "menShare",

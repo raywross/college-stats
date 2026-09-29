@@ -6,6 +6,8 @@
     "enrolled": {"start":2022,"values":[187,0,2]},
     "acceptance_rate": {"start":2022,"values":[0.959,0.9231]},
     "yield": {"start":2022,"values":[1,0,1]},
+    "admit_rate_men": {"start":2022,"values":[0.9765]},
+    "admit_rate_women": {"start":2022,"values":[0.9455]},
     "tuition_in_state": {"start":2022,"values":[6800,6800]},
     "tuition_out_of_state": {"start":2022,"values":[6800,6800]},
     "grant_pct": {"start":2021,"values":[0,0]},

@@ -6,6 +6,8 @@
     "enrolled": {"start":2002,"values":[0,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,15,36,42]},
     "acceptance_rate": {"start":2022,"values":[0.1705,1,0.6963]},
     "yield": {"start":2022,"values":[1,1,0.3158]},
+    "admit_rate_men": {"start":2024,"values":[0.5429]},
+    "admit_rate_women": {"start":2022,"values":[0.1772,1,0.7308]},
     "tuition_in_state": {"start":2000,"values":[8825,9300,8825,9492,null,null,null,null,null,null,null,null,null,null,21225,21225,21225,21225,21225,21225,16442,18046,18046,18947]},
     "tuition_out_of_state": {"start":2000,"values":[8825,9300,8825,9492,null,null,null,null,null,null,null,null,null,null,21225,21225,21225,21225,21225,21225,16442,18046,18046,18947]},
     "aided_net_price": {"start":2014,"values":[19075,19289,18932,19982,19603,18964,17682,25810,23532,20136]},

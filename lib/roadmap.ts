@@ -79,15 +79,6 @@ export const ROADMAP: RoadmapSpec[] = [
     status: "planned",
   },
   {
-    slug: "admissions-detail",
-    file: "specs/data-expansion/admissions-detail.md",
-    group: "wave-1",
-    summary: "Admit rates for men and women, true SAT/ACT medians, and ACT English and Math ranges.",
-    complexity: 1,
-    complexityNote: "Extra columns from a file the sync already loads.",
-    status: "planned",
-  },
-  {
     slug: "housing-and-policies",
     file: "specs/data-expansion/housing-and-policies.md",
     group: "wave-1",

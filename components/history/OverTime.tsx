@@ -16,6 +16,7 @@ import {
   formatChange,
   historyYearLabel,
   inDollarsOf,
+  real as toRealDollars,
   valueAt,
   type CpiTable,
   type NationalHistory,
@@ -195,7 +196,10 @@ function ChartPanel({
   dollarsOf: number;
 }) {
   const [table, setTable] = useState(false);
-  const convert = (key: SeriesKey, s: Series) => (dollars === "real" ? inDollarsOf(s, SERIES[key].unit, cpi, dollarsOf) : s);
+  // A chart that ends early (median debt stops in 2020–21) is shown in its own last year's dollars, so its last point
+  // matches the headline and the change (changeOver uses the window's end as the base too).
+  const base = Math.min(dollarsOf, window[1]);
+  const convert = (key: SeriesKey, s: Series) => (dollars === "real" ? inDollarsOf(s, SERIES[key].unit, cpi, base) : s);
   const series: TrendSeries[] = specs
     .filter((p) => history.series[p.key])
     .map((p) => {
@@ -240,8 +244,11 @@ function ChartPanel({
           start: nat.start,
           stats: nat.stats.map((st, i) => {
             if (!st) return null;
-            const k = (v: number) => (dollars === "real" && SERIES[bandSpec.key].unit === "usd" ? (v * cpiAt(cpi, dollarsOf)) / cpiAt(cpi, nat.start + i) : v);
-            return [k(st[0]), k(st[1]), k(st[2])];
+            if (dollars !== "real" || SERIES[bandSpec.key].unit !== "usd") return [st[0], st[1], st[2]];
+            // Years before the CPI table (median debt reaches back to 1997) can't be converted: leave them out of the
+            // band, as the college's own line does, rather than drawing NaN.
+            const k = st.slice(0, 3).map((v) => toRealDollars(v, nat.start + i, cpi, base));
+            return k.every((v) => v !== null) ? (k as [number, number, number]) : null;
           }),
         }
       : null);
@@ -348,10 +355,6 @@ function ChartPanel({
       {note && <p className="mt-2 text-[11px] text-muted-foreground">{note}</p>}
     </div>
   );
-}
-
-function cpiAt(cpi: CpiTable, year: number): number {
-  return cpi.values[year - cpi.start] ?? NaN;
 }
 
 function HistoryTable({
@@ -503,7 +506,7 @@ export function OverTime(props: OverTimeProps) {
 
   const incomeRows = useMemo(() => {
     const conv = (p: { year: number; value: number } | null) =>
-      p === null ? null : ui.dollars === "real" ? (p.value * cpiAt(cpi, latest.academic)) / cpiAt(cpi, p.year) : p.value;
+      p === null ? null : ui.dollars === "real" ? toRealDollars(p.value, p.year, cpi, latest.academic) : p.value;
     return NET_PRICE_BANDS.map((k, i) => {
       const s = history.series[k];
       const start = firstPointFrom(s, costWindow[0]);
@@ -762,7 +765,11 @@ export function OverTime(props: OverTimeProps) {
               headline="median_debt"
               provisionalYear={null}
               specs={[{ key: "median_debt", name: "Median debt", color: colors.value, band: true }]}
-              note={debtEnd !== null ? `Ends ${historyYearLabel(debtEnd, "academic")}: newer years aren't published in this series.` : undefined}
+              note={
+                debtEnd !== null
+                  ? `Ends ${historyYearLabel(debtEnd, "academic")}: newer years aren't published in this series.${ui.dollars === "real" ? ` After inflation, in ${historyYearLabel(debtEnd, "academic")} dollars.` : ""}`
+                  : undefined
+              }
             />
           </div>
           <p className="mt-4 max-w-3xl text-sm text-muted-foreground">

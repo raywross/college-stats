@@ -86,6 +86,16 @@ published at `/roadmap` ([roadmap.md](roadmap.md)): add each new one to `lib/roa
 - [ ] Off-campus / commuter cost variant for the all-student average (IPEDS has off-campus room & board), for
   colleges where most students live at home.
 
+## National trends
+How college is changing across the country, not at one college: nationally, and by region, public or private, size,
+and selectivity ([national-trends.md](national-trends.md)). Each idea is a study in that spec; add new ones there and
+list them here.
+- [ ] **Trends page and shared breakdowns:** `/trends` with a card per study, `/trends/{study}` pages, the standard
+  breakdowns (region, type, size, selectivity) computed by `sync-history`, and a test that recomputes each study.
+- [ ] **Study 1: Men and women in admissions.** Share of colleges admitting men vs women at a notably higher rate, 2001 to
+  now, and where the change is concentrated (first look: the Northeast and moderately selective colleges drive it; the
+  West moved the other way). Needs `applicants_men`/`applicants_women` history series first.
+
 ## Quality
 - [ ] Tests for the sync mapping (`toSchool`), the CDS importer (fixtures for classic and flat layouts, including the
   Purdue typo case), and missing-data handling in `lib/metrics.ts`. (Aid and price derivations moved to

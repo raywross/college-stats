@@ -43,11 +43,11 @@ export interface ScatterZone {
   label: string;
 }
 
-const SERIES: Record<"public" | "private", { label: string; color: string }> = {
+export const SERIES: Record<"public" | "private", { label: string; color: string }> = {
   public: { label: "Public", color: "var(--s1)" },
   private: { label: "Private", color: "var(--s2)" },
 };
-const seriesOf = (t: SchoolType) => (t === "public" ? "public" : "private");
+export const seriesOf = (t: SchoolType) => (t === "public" ? "public" : "private");
 
 function domainOf(values: number[], spec: AxisSpec): [number, number] {
   const lo = spec.min ?? Math.floor(Math.min(...values) / spec.step) * spec.step;
@@ -128,22 +128,7 @@ export function ScatterPlot({
 
   return (
     <div className="space-y-3">
-      {/* Legend */}
-      <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-xs">
-        {(Object.keys(SERIES) as ("public" | "private")[]).map((k) => (
-          <span key={k} className="inline-flex items-center gap-1.5">
-            <span className="size-3 rounded-full" style={{ backgroundColor: SERIES[k].color }} />
-            <span className="font-medium">{SERIES[k].label}</span>
-          </span>
-        ))}
-        <span className="inline-flex items-center gap-1.5 text-muted-foreground">
-          <span className="inline-flex items-end gap-0.5">
-            <span className="size-2 rounded-full border border-muted-foreground" />
-            <span className="size-3.5 rounded-full border border-muted-foreground" />
-          </span>
-          Dot size = undergrads
-        </span>
-      </div>
+      <DotLegend />
 
       <p className="flex items-center gap-1 text-[11px] font-semibold text-muted-foreground">
         ↑ {ySpec.label}
@@ -277,6 +262,52 @@ export function ScatterPlot({
             }}
             onMouseEnter={() => setHover(active.id)}
           >
+            <DotCard
+              school={active}
+              stats={[
+                { k: xSpec.short, v: fx(active.x) },
+                { k: ySpec.short, v: fy(active.y) },
+                { k: "Undergrads", v: compact(active.enrollment) },
+              ]}
+            />
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/** Public/private swatches and the dot-size key, shared by the scatter plot and the map. */
+export function DotLegend() {
+  return (
+      <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-xs">
+        {(Object.keys(SERIES) as ("public" | "private")[]).map((k) => (
+          <span key={k} className="inline-flex items-center gap-1.5">
+            <span className="size-3 rounded-full" style={{ backgroundColor: SERIES[k].color }} />
+            <span className="font-medium">{SERIES[k].label}</span>
+          </span>
+        ))}
+        <span className="inline-flex items-center gap-1.5 text-muted-foreground">
+          <span className="inline-flex items-end gap-0.5">
+            <span className="size-2 rounded-full border border-muted-foreground" />
+            <span className="size-3.5 rounded-full border border-muted-foreground" />
+          </span>
+          Dot size = undergrads
+        </span>
+      </div>
+  );
+}
+
+/** The hover card's contents: crest, name, place, three stats, and a profile link. */
+export function DotCard({
+  school: active,
+  stats,
+}: {
+  school: Pick<ScatterPoint, "id" | "name" | "city" | "state" | "type">;
+  stats: { k: string; v: string }[];
+}) {
+  return (
+    <>
             <div className="flex items-center gap-2.5">
               <Crest id={active.id} name={active.name} size="sm" />
               <div className="min-w-0">
@@ -287,11 +318,7 @@ export function ScatterPlot({
               </div>
             </div>
             <dl className="mt-3 grid grid-cols-3 gap-2 text-center">
-              {[
-                { k: xSpec.short, v: fx(active.x) },
-                { k: ySpec.short, v: fy(active.y) },
-                { k: "Undergrads", v: compact(active.enrollment) },
-              ].map((d) => (
+              {stats.map((d) => (
                 <div key={d.k} className="rounded-lg bg-muted/70 px-1 py-1.5">
                   <dt className="truncate text-[10px] text-muted-foreground">{d.k}</dt>
                   <dd className="text-sm font-bold">{d.v}</dd>
@@ -304,9 +331,6 @@ export function ScatterPlot({
             >
               View profile <ArrowRight className="size-3.5" />
             </Link>
-          </div>
-        )}
-      </div>
-    </div>
+    </>
   );
 }

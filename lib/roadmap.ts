@@ -73,15 +73,6 @@ export interface RoadmapSpec {
 /** In build order within each group (the backlog's order, specs/backlog.md). */
 export const ROADMAP: RoadmapSpec[] = [
   {
-    slug: "campus-profile",
-    file: "specs/data-expansion/campus-profile.md",
-    group: "wave-2",
-    summary: "City, suburb, town, or rural setting; research and Carnegie classes; HBCU and other designations; a map view.",
-    complexity: 3,
-    complexityNote: "A new directory file plus a new map view in Explore.",
-    status: "planned",
-  },
-  {
     slug: "campus-services",
     file: "specs/data-expansion/campus-services.md",
     group: "wave-2",

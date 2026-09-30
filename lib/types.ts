@@ -19,6 +19,9 @@ export interface School {
     state: string;
     zip: string;
     region: string;
+    /** Campus coordinates (IPEDS HD), for the map. */
+    lat?: number | null;
+    lng?: number | null;
   };
   type: SchoolType;
   admissions: {
@@ -168,9 +171,24 @@ export interface School {
     /** Richer detail from the school's Common Data Set, section H (full-time undergraduates). */
     cds?: CdsAid;
   };
-  /** Housing and campus services (IPEDS Institutional Characteristics, same year as the prices). */
+  /** Housing and campus services (IPEDS Institutional Characteristics, same year as the prices), and the campus profile. */
   campus?: {
-    housing: {
+    /** NCES locale (IPEDS HD `LOCALE`): e.g. 11 "City: Large"; `group` is its first word. */
+    setting?: { locale: number; label: string; group: SettingGroup } | null;
+    /** Carnegie Classification 2025 (IPEDS HD). */
+    carnegie?: {
+      /** Institutional class, e.g. "Mixed Undergraduate/Graduate-Doctorate Medium". */
+      ic: string | null;
+      research: ResearchTier | null;
+      /** Student Access and Earnings class, Carnegie's label. */
+      access_earnings: string | null;
+      size: string | null;
+    } | null;
+    /** HBCU, tribal college, land-grant (IPEDS HD). */
+    designations?: HdDesignation[];
+    /** Minority-serving and single-sex designations (College Scorecard flags). */
+    msi?: MsiDesignation[];
+    housing?: {
       /** Offers institutionally controlled housing (on or off campus). */
       offered: boolean;
       /** Beds, including any graduate housing. */
@@ -258,6 +276,23 @@ export interface SexCounts {
   enrolled: number | null;
 }
 
+export type SettingGroup = "city" | "suburb" | "town" | "rural";
+
+/** Carnegie 2025 research designation: R1, R2, or Research Colleges and Universities. */
+export type ResearchTier = "R1" | "R2" | "RCU";
+
+/** From the IPEDS directory (HD). */
+export type HdDesignation = "hbcu" | "tribal" | "land_grant";
+
+/**
+ * From College Scorecard: hsi (Hispanic-Serving), pbi (Predominantly Black), aanapisi (Asian American and Native
+ * American Pacific Islander-Serving), annh (Alaska Native and Native Hawaiian-Serving), nasnti (Native American-Serving
+ * Nontribal), and women's or men's colleges.
+ */
+export type MsiDesignation = "hsi" | "pbi" | "aanapisi" | "annh" | "nasnti" | "women" | "men";
+
+export type Designation = HdDesignation | MsiDesignation;
+
 /** Admission factors (IPEDS ADMCON1–6, 8–12). Work experience, essay, and legacy exist from fall 2022. */
 export type AdmissionFactor =
   | "gpa"
@@ -301,7 +336,7 @@ export interface CdsAid {
 }
 
 export type Topic = "institution" | "admissions" | "enrollment" | "demographics" | "cost" | "prices" | "outcomes" | "aid" | "campus";
-export type SourceKey = "scorecard" | "ipeds-adm" | "ipeds-sfa" | "ipeds-ic" | "cds";
+export type SourceKey = "scorecard" | "ipeds-adm" | "ipeds-sfa" | "ipeds-ic" | "ipeds-hd" | "cds";
 
 export interface SourceInfo {
   /** Full citation name, e.g. "College Scorecard". */
@@ -349,7 +384,7 @@ export type SortKey =
   | "loan_rate"
   | "loan_rate_change";
 
-export type ExploreView = "grid" | "table" | "chart";
+export type ExploreView = "grid" | "table" | "chart" | "map";
 
 export interface SearchFilters {
   q?: string;
@@ -371,6 +406,10 @@ export interface SearchFilters {
   trends?: Partial<Record<IndicatorKey, Direction[]>>;
   /** Gender-balance buckets to keep (lib/student-body.ts). */
   balance?: GenderBalance[];
+  /** Campus profile (lib/campus-profile.ts): any of these settings, research tiers, or designations. */
+  setting?: SettingGroup[];
+  research?: ResearchTier[];
+  designation?: Designation[];
   /** Admission factors (lib/factors.ts): legacy not considered, essay not required, GPA required. */
   noLegacy?: boolean;
   noEssay?: boolean;

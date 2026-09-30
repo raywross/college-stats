@@ -1,6 +1,7 @@
 # Campus Profile (IPEDS HD)
 
-> Status: **planned**. Wave 2. New file: IPEDS Institutional Characteristics directory, `HD{Y}`. Research 2026-09-28.
+> Status: **built** 2026-09-30. Wave 2. New file: IPEDS Institutional Characteristics directory, `HD{Y}`. Research
+> 2026-09-28; codes checked 2026-09-30 against the HD2025 data dictionary. See [As built](#as-built).
 > Part of [data-expansion](README.md).
 
 ## Question it answers
@@ -19,7 +20,7 @@ Where is it on a map?*
 | `CARNEGIESIZE`, `CARNEGIEAPM` | Size and undergraduate program mix | |
 | `C21BASIC` | Carnegie 2021 basic (the old scheme; what Scorecard `school.carnegie_basic` has) | 15 |
 | `HBCU`, `TRIBAL`, `LANDGRNT` | Flags (1 yes, 2 no) | no, no, no |
-| `LATITUDE`, `LONGITUDE` | Coordinates | 36.1466, −86.8034 |
+| `LATITUDE`, `LONGITUD` (sic) | Coordinates | 36.1466, −86.8034 |
 | `CBSA`, `CBSATYPE`, `COUNTYNM` | Metro area | Nashville metro |
 | `NPRICURL`, `APPLURL`, `ATHURL`, `DISAURL` | Links | |
 
@@ -68,3 +69,37 @@ possible later from Scorecard year-prefixed flags (*unverified* whether the flag
    Recommendation: SVG US map with dots, no external tiles.
 2. Carnegie SAEC measures access and earnings, which overlaps our own cost/outcomes story. Show it as Carnegie's
    label, cited, not as our judgment.
+
+## As built
+- **Ingest.** `sync-data` loads `HD{next year}`, then `HD{Y}` newest-first, keeps the site's ids, and fails if the file
+  has no `LOCALE`/`CARNEGIEIC` columns. `HD2025.csv` starts with a byte-order mark, which hid the `UNITID` column;
+  `parseCsv` now strips it (tested). Code rules and labels live in `lib/campus-profile.ts` (pure, shared with the UI
+  and tests).
+- **Store** (as planned, with two changes):
+  - Designations are split by source so each cites one: `campus.designations` (HD: `hbcu`, `tribal`, `land_grant`)
+    and `campus.msi` (Scorecard: `hsi`, `pbi`, `aanapisi`, `annh`, `nasnti`, `women`, `men`). `designationsOf()`
+    joins them.
+  - `campus.carnegie` is null outside the Carnegie universe (`CARNEGIEIC` ≤ 0); `research` is null for "none" (0).
+  - Not built: `location.metro` (CBSA), the HD/Scorecard name cross-check, the Home "Opportunity colleges" entry,
+    and designation events. The events log ([admission-factors.md](admission-factors.md)) has no designation
+    history yet; start it once two syncs have stored these fields.
+- **Coverage** (1,893 colleges): setting and coordinates for all 1,893 (city 973, suburb 456, town 316, rural 148);
+  Carnegie for 1,863; R1 183, R2 129, research colleges 191. Designations: HSI 281, AANAPISI 110, HBCU 84 (Scorecard's
+  flag agrees), land-grant 82, men's 45, women's 30, PBI 18, NASNTI 11, ANNH 7, tribal 1.
+- **Lineage.** `SourceKey`/`VintageKey` `ipeds-hd` ("2025–26", edition HD2025), with a release-calendar entry for HD2026
+  (expected 2027-07). Fields: `campus.setting`, `campus.carnegie`, `campus.designations`, `location.lat`,
+  `location.lng` (HD) and `campus.msi` (Scorecard).
+- **Display.**
+  - Profile hero: setting ("Large city"), research tier (R1, R2, "Research college"), and designation chips, each a
+    glossary term.
+  - Explore: a **Campus** filter section (setting group, research tier, designation; URL `setting=`, `research=`,
+    `designation=`; any chosen value matches, and colleges that don't report never match), active-filter chips, and a
+    **Map** view (`view=map`, [charts.md](../charts.md) `DotMap`). The map draws the 50 states and DC; the caption
+    counts colleges in territories it leaves out.
+  - Compare "All the numbers": setting, Carnegie class, research activity, student access & earnings, and both
+    designation groups.
+  - Glossary (School types): `locale`, `carnegie-classification`, `r1`, `student-access-and-earnings`, `hbcu`,
+    `hsi` (covers the other minority-serving designations), `single-sex`, `tribal-college`, `land-grant`.
+- **Open questions, resolved.** (1) An SVG outline with no tiles. (2) SAEC is shown as Carnegie's label, cited, in
+  Compare only.
+- Tests: `tests/campus-profile.test.mts`.

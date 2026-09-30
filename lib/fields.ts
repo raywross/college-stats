@@ -14,6 +14,8 @@ export type VintageKey =
   | "ipeds-adm"
   | "ipeds-sfa"
   | "ipeds-ic"
+  /** The IPEDS directory (HD): setting, Carnegie classes, designations, coordinates. Its own year, ahead of admissions. */
+  | "ipeds-hd"
   | "scorecard-enrollment"
   /** Student age: IPEDS collects it in odd-numbered falls only, so it trails enrollment by a year every other year. */
   | "scorecard-age"
@@ -42,6 +44,7 @@ const scorecard = (label: string, topic: Topic, vintage: VintageKey = "scorecard
 const adm = (label: string): FieldDef => ({ label, topic: "admissions", source: "ipeds-adm", vintage: "ipeds-adm" });
 const sfa = (label: string): FieldDef => ({ label, topic: "aid", source: "ipeds-sfa", vintage: "ipeds-sfa" });
 const ic = (label: string): FieldDef => ({ label, topic: "prices", source: "ipeds-ic", vintage: "ipeds-ic" });
+const hd = (label: string): FieldDef => ({ label, topic: "campus", source: "ipeds-hd", vintage: "ipeds-hd" });
 
 export const FIELDS = {
   /* ---- Institution ---- */
@@ -119,6 +122,12 @@ export const FIELDS = {
   "cost.promise_program": ic("Promise program"),
   "admissions.application_fee": { ...ic("Application fee"), topic: "admissions" },
   "campus.housing": { ...ic("Campus housing and meal plans"), topic: "campus" },
+  "campus.setting": hd("Setting (city, suburb, town, or rural)"),
+  "campus.carnegie": hd("Carnegie Classification"),
+  "campus.designations": hd("HBCU, tribal college, and land-grant designations"),
+  "campus.msi": scorecard("Minority-serving and single-sex designations", "campus"),
+  "location.lat": { ...hd("Latitude"), topic: "institution" },
+  "location.lng": { ...hd("Longitude"), topic: "institution" },
   "cost.avg_paid_all": {
     ...ic("Average cost, all students"),
     topic: "cost",

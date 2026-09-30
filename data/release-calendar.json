@@ -19,6 +19,18 @@
       "files": ["ADM2025", "SFA2425", "COST1_2025", "COST2_2025"]
     },
     {
+      "id": "ipeds-2026-27-directory",
+      "source": "ipeds",
+      "label": "IPEDS directory and institutional characteristics (provisional)",
+      "brings": ["Directory 2026–27 (HD2026): setting, Carnegie classes, designations, locations"],
+      "updates": ["ipeds-hd"],
+      "expected": "2027-07",
+      "status": "estimated",
+      "basis": "HD2025 was published Jul 21, 2026",
+      "url": "https://nces.ed.gov/ipeds/survey-components/data-release-schedule",
+      "files": ["HD2026"]
+    },
+    {
       "id": "ipeds-2024-25-final",
       "source": "ipeds",
       "label": "IPEDS final data (revisions)",

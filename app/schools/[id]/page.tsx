@@ -61,6 +61,7 @@ import { NetPriceByIncome } from "@/components/charts/NetPriceByIncome";
 import { WhatStudentsPay } from "@/components/school/WhatStudentsPay";
 import { LoansCard } from "@/components/school/LoansCard";
 import { CampusLife } from "@/components/school/CampusLife";
+import { DESIGNATION_LABELS, DESIGNATION_TERMS, SETTING_SHORT, designationsOf } from "@/lib/campus-profile";
 import { AdmissionFactors } from "@/components/school/AdmissionFactors";
 import { eventYear, historyEvents } from "@/lib/events";
 import { FACTOR_ERA } from "@/lib/derive";
@@ -126,6 +127,10 @@ const SECTION_FIELDS = {
     "outcomes.median_earnings_10yr",
     "outcomes.graduation_rate",
     "trends",
+    "campus.setting",
+    "campus.carnegie",
+    "campus.designations",
+    "campus.msi",
   ],
   admissions: ["admissions.applicants", "admissions.admitted", "admissions.enrolled", "admissions.acceptance_rate", "derived.yield", "admissions.by_sex", "derived.admit_rate_men", "derived.admit_rate_women", "admissions.application_fee", "admissions.factors"],
   scores: [
@@ -311,6 +316,7 @@ export default async function SchoolPage({ params }: Props) {
   const yld = yieldRate(school);
   const div = diversityIndex(school);
   const body = studentBodyNotes(data, school);
+  const designations = designationsOf(school);
   const bySex = admissionsBySex(school);
   // Admission factor changes since the fall 2022 redesign, when both years use the same codes (lib/events.ts).
   const recentAdmissionChanges = history ? historyEvents(history).filter((e) => e.area === "admissions" && e.kind === "fall" && e.year > FACTOR_ERA) : [];
@@ -385,6 +391,15 @@ export default async function SchoolPage({ params }: Props) {
                 <Term term={school.type}>{typeLabel(school.type)}</Term>
                 <Term term="size-tier">{size.label} campus</Term>
                 {policy && <Term term="test-policy">{policy}</Term>}
+                {school.campus?.setting && <Term term="locale">{SETTING_SHORT[school.campus.setting.locale]}</Term>}
+                {school.campus?.carnegie?.research && (
+                  <Term term="r1">{school.campus.carnegie.research === "RCU" ? "Research college" : school.campus.carnegie.research}</Term>
+                )}
+                {designations.map((d) => (
+                  <Term key={d} term={DESIGNATION_TERMS[d]}>
+                    {DESIGNATION_LABELS[d]}
+                  </Term>
+                ))}
               </div>
             </div>
             <CompareButton id={school.unit_id} variant="large" className="w-full sm:w-auto sm:self-end" />

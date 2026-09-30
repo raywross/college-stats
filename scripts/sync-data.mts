@@ -28,6 +28,7 @@ import type { DatasetMeta, RepaymentStatus, School, SchoolType, TestPolicy } fro
 import { lineageForPatch, validateLineage } from "../lib/lineage.ts";
 import { applyProbes, filesToProbe, type FileProbe, type ReleaseCalendar } from "../lib/releases.ts";
 import { IPEDS_BASES, parseCsv } from "./lib/ipeds.mts";
+import { MSI_FIELDS, campusProfileFrom, msiFrom } from "../lib/campus-profile.ts";
 import { acceptanceRate, applicationFeeFrom, computePrices, factorsFrom, housingFrom, ipedsNum, parseShareBand, priceSuffix, promiseProgramFrom, raceShares, toAid, tuitionPlansFrom } from "../lib/derive.ts";
 
 const ROOT = join(import.meta.dirname, "..");
@@ -125,6 +126,8 @@ const FIELDS = [
   "latest.student.demographics.women",
   "latest.student.part_time_share",
   "latest.student.share_25_older",
+  // Campus profile: minority-serving and single-sex flags (lib/campus-profile.ts).
+  ...Object.values(MSI_FIELDS),
   `${RACE}.white`,
   `${RACE}.black`,
   `${RACE}.hispanic`,
@@ -233,6 +236,8 @@ const recentYears = Array.from({ length: 6 }, (_, i) => thisYear - i);
 const ADM_NAMES = recentYears.map((y) => `ADM${y}`);
 /** Student Financial Aid: SFA2526, SFA2425, … (academic years) */
 const SFA_NAMES = recentYears.map((y) => `SFA${String(y - 1).slice(2)}${String(y).slice(2)}`);
+/** The directory: HD2026, HD2025, … (HD{Y} describes Y–Y+1). */
+const HD_NAMES = [thisYear + 1, ...recentYears].map((y) => `HD${y}`);
 
 /* ------------------------------------------------------------------ */
 /* 3. Merge                                                            */
@@ -422,7 +427,8 @@ function buildMeta(
   sfaYears: string,
   scorecardYears: ScorecardYears,
   cost2: IpedsFile | null,
-  chars: IpedsFile
+  chars: IpedsFile,
+  hd: IpedsFile
 ): DatasetMeta {
   const scorecardCostYear = scorecardYears.cost;
   return {
@@ -460,6 +466,14 @@ function buildMeta(
         description:
           "Published prices for the year: tuition and fees for in-district, in-state, and out-of-state students, books and supplies, on-campus room and board, and other expenses. Also housing capacity and rules, meal plans, the application fee, tuition plans, and Promise programs.",
       },
+      "ipeds-hd": {
+        label: "IPEDS directory (Institutional Characteristics: HD)",
+        publisher: "National Center for Education Statistics (NCES)",
+        edition: `${hd.name.slice(2)}–${String(Number(hd.name.slice(2)) + 1).slice(2)} (${hd.name})`,
+        url: hd.url,
+        description:
+          "Every college's directory entry: its city, suburb, town, or rural setting, Carnegie Classification, federal designations such as HBCU and land-grant, and its location on the map.",
+      },
       cds: {
         label: "Common Data Set",
         publisher: "Each college (voluntary, standardized template)",
@@ -473,6 +487,7 @@ function buildMeta(
       "ipeds-adm": `Fall ${adm.name.slice(3)}`,
       "ipeds-sfa": sfaYears,
       "ipeds-ic": sfaYears,
+      "ipeds-hd": `${hd.name.slice(2)}–${String(Number(hd.name.slice(2)) + 1).slice(2)}`,
       "scorecard-enrollment": scorecardYears.enrollment,
       "scorecard-age": scorecardYears.age,
       "scorecard-cost": scorecardYears.cost,
@@ -480,6 +495,14 @@ function buildMeta(
       "scorecard-latest": null,
     },
   };
+}
+
+/** Setting, Carnegie classes, designations, and coordinates (lib/campus-profile.ts). */
+function addProfile(school: School, row: Record<string, string> | undefined, sc: ScorecardRow) {
+  const p = campusProfileFrom(row);
+  school.location.lat = p.lat;
+  school.location.lng = p.lng;
+  school.campus = { ...(school.campus ?? {}), setting: p.setting, carnegie: p.carnegie, designations: p.designations, msi: msiFrom(sc) };
 }
 
 /** The first candidate file NCES has published that carries the housing and policy columns. */
@@ -494,7 +517,7 @@ async function fetchCharacteristics(names: string[]): Promise<IpedsFile> {
 /** Housing, application fee, tuition plans, and Promise program (lib/derive.ts, shared with sync-history). */
 function addCharacteristics(school: School, row: Record<string, string> | undefined) {
   if (!row) return;
-  school.campus = { housing: housingFrom(row) };
+  school.campus = { ...(school.campus ?? {}), housing: housingFrom(row) };
   school.admissions.application_fee = applicationFeeFrom(row);
   if (school.cost) {
     school.cost.tuition_plans = tuitionPlansFrom(row);
@@ -605,6 +628,9 @@ async function main() {
   // Housing and policies for the same academic year (specs/data-expansion/housing-and-policies.md): IC{start} until
   // NCES moved them into COST1_{end}. A file only counts if it has them (IC2024 exists as a one-row stub).
   const chars = await fetchCharacteristics([`IC${startYear}`, `COST1_${endYear}`]);
+  // Campus profile (specs/data-expansion/campus-profile.md): the newest directory, HD{Y} = Y–Y+1, usually a year ahead.
+  const hd = await fetchIpeds(HD_NAMES);
+  if (![...hd.rows.values()].some((r) => "LOCALE" in r && "CARNEGIEIC" in r)) throw new Error(`${hd.name} has no LOCALE/CARNEGIEIC columns`);
 
   const stats = { online: 0, noSize: 0, withAdmissions: 0, withSat: 0, overridden: 0 };
   const overrides: Record<string, Patch> = existsSync(OVERRIDES) ? JSON.parse(readFileSync(OVERRIDES, "utf8")) : {};
@@ -618,6 +644,7 @@ async function main() {
     let school = toSchool(row, adm.rows.get(String(row.id)), admYear, sfa.rows.get(String(row.id)));
     if (school) addPrices(school, ic, sfa.rows.get(school.unit_id), sfaYears);
     if (school) addCharacteristics(school, chars.rows.get(school.unit_id));
+    if (school) addProfile(school, hd.rows.get(school.unit_id), row);
     if (!school) {
       stats.noSize++;
       continue;
@@ -645,7 +672,7 @@ async function main() {
     }
   }
   const scorecardYears = await detectScorecardYears(key, String(scorecard[0]?.id ?? "221999"));
-  const meta = buildMeta(adm, sfa, ic, sfaYears, scorecardYears, cost2, chars);
+  const meta = buildMeta(adm, sfa, ic, sfaYears, scorecardYears, cost2, chars, hd);
 
   // Nothing is written unless every value's lineage checks out.
   const problems = validateLineage(schools, meta);

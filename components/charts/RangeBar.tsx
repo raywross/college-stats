@@ -3,7 +3,8 @@ import { MetricLabel } from "@/components/ui/info-tip";
 import { cn } from "@/lib/utils";
 
 /**
- * Middle-50% range on a fixed scale. Optional markers for the dataset
+ * Middle-50% range on a given scale (score bars pick one with scoreScale),
+ * with the 25th/75th percentile values labeled. Optional markers for the dataset
  * median midpoint and for the student's own score.
  */
 export function RangeBar({
@@ -18,6 +19,7 @@ export function RangeBar({
   you,
   ticks,
   compact,
+  showScale,
 }: {
   label?: string;
   term?: TermKey;
@@ -31,6 +33,8 @@ export function RangeBar({
   you?: number | null;
   ticks?: number[];
   compact?: boolean;
+  /** Compact bars only: label the axis ends, for a tile whose scale isn't the full test range. */
+  showScale?: boolean;
 }) {
   const [min, max] = scale;
   const pos = (v: number) => Math.max(0, Math.min(100, ((v - min) / (max - min)) * 100));
@@ -93,8 +97,15 @@ export function RangeBar({
           </div>
         )}
       </div>
+      {compact && showScale && (
+        <div className="flex justify-between text-[10px] leading-none text-muted-foreground tabular-nums">
+          <span>{min}</span>
+          <span>{max}</span>
+        </div>
+      )}
+      {!compact && <PercentileLabels left={left} right={left + width} low={low} high={high} />}
       {!compact && (
-        <div className="relative h-4 text-[10px] text-muted-foreground tabular-nums">
+        <div className="relative h-4 text-[10px] text-muted-foreground/80 tabular-nums">
           {(ticks ?? [min, max]).map((t) => (
             <span
               key={t}
@@ -113,6 +124,45 @@ export function RangeBar({
           {youStatus === "below" && "Your score is below the 25th percentile; about a quarter of admitted students are here too."}
         </p>
       )}
+    </div>
+  );
+}
+
+/**
+ * "25th 1500" under the bar's left end and "75th 1570" under its right end,
+ * each hanging outward so they never collide. When the bar is too narrow or
+ * too close to an edge for that, the two merge into one label under the bar.
+ */
+function PercentileLabels({ left, right, low, high }: { left: number; right: number; low: number; high: number }) {
+  const pct = (p: string, v: number) => (
+    <>
+      <span className="font-normal text-muted-foreground">{p}</span> {v}
+    </>
+  );
+  const split = left >= 16 && right <= 84;
+  if (!split) {
+    const mid = (left + right) / 2;
+    const align = mid < 25 ? "translate-x-0" : mid > 75 ? "-translate-x-full" : "-translate-x-1/2";
+    const at = mid < 25 ? left : mid > 75 ? right : mid;
+    return (
+      <div className="relative h-4 text-[11px] font-semibold tabular-nums" aria-hidden>
+        <span className={cn("absolute whitespace-nowrap", align)} style={{ left: `${at}%` }}>
+          {pct("25th", low)} <span className="text-muted-foreground">·</span> {pct("75th", high)}
+        </span>
+      </div>
+    );
+  }
+  return (
+    <div className="relative h-4 text-[11px] font-semibold tabular-nums" aria-hidden>
+      <span className="absolute -translate-x-full pr-1 whitespace-nowrap" style={{ left: `${left}%` }}>
+        {pct("25th", low)}
+      </span>
+      <span className="absolute pl-1 whitespace-nowrap" style={{ left: `${right}%` }}>
+        {pct("75th", high)}
+      </span>
+      {/* Hairlines tying each label to its end of the bar. */}
+      <span className="absolute -top-1.5 h-2.5 w-px bg-foreground/40" style={{ left: `${left}%` }} />
+      <span className="absolute -top-1.5 h-2.5 w-px -translate-x-full bg-foreground/40" style={{ left: `${right}%` }} />
     </div>
   );
 }

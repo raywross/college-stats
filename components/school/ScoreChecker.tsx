@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { RangeBar } from "@/components/charts/RangeBar";
 import { InfoTip } from "@/components/ui/info-tip";
+import { scoreScale } from "@/lib/score-scale";
 import { cn } from "@/lib/utils";
 
 interface Ranges {
@@ -33,6 +34,10 @@ export function ScoreChecker({ ranges, medians, color }: { ranges: Ranges; media
   const valid =
     raw !== "" && Number.isFinite(value) && (test === "sat" ? value >= 400 && value <= 1600 : value >= 1 && value <= 36);
   const you = valid ? Math.round(value) : null;
+  const satAxis = scoreScale("sat", ranges.satTotal?.[0], test === "sat" ? you : null);
+  const sectionAxis = scoreScale("sat-section", ranges.satReading?.[0], ranges.satMath?.[0]);
+  const actAxis = scoreScale("act", ranges.act?.[0], test === "act" ? you : null);
+  const actPartAxis = scoreScale("act", ranges.actEnglish?.[0], ranges.actMath?.[0]);
   const hasMedian = test === "sat" ? medians?.satTotal != null || medians?.satReading != null : medians?.act != null;
 
   return (
@@ -78,8 +83,8 @@ export function ScoreChecker({ ranges, medians, color }: { ranges: Ranges; media
             term="sat"
             low={ranges.satTotal[0]}
             high={ranges.satTotal[1]}
-            scale={[400, 1600]}
-            ticks={[400, 800, 1000, 1200, 1400, 1600]}
+            scale={satAxis.scale}
+            ticks={satAxis.ticks}
             color={color}
             medianMid={ranges.medianSatMid ?? undefined}
             median={medians?.satTotal}
@@ -87,8 +92,8 @@ export function ScoreChecker({ ranges, medians, color }: { ranges: Ranges; media
           />
           {ranges.satReading && ranges.satMath && (
             <div className="grid gap-6 sm:grid-cols-2">
-              <RangeBar label="Reading & Writing" term="sat-ebrw" low={ranges.satReading[0]} high={ranges.satReading[1]} scale={[200, 800]} color={color} median={medians?.satReading} />
-              <RangeBar label="Math" term="sat-math" low={ranges.satMath[0]} high={ranges.satMath[1]} scale={[200, 800]} color={color} median={medians?.satMath} />
+              <RangeBar label="Reading & Writing" term="sat-ebrw" low={ranges.satReading[0]} high={ranges.satReading[1]} scale={sectionAxis.scale} ticks={sectionAxis.ticks} color={color} median={medians?.satReading} />
+              <RangeBar label="Math" term="sat-math" low={ranges.satMath[0]} high={ranges.satMath[1]} scale={sectionAxis.scale} ticks={sectionAxis.ticks} color={color} median={medians?.satMath} />
             </div>
           )}
         </>
@@ -99,8 +104,8 @@ export function ScoreChecker({ ranges, medians, color }: { ranges: Ranges; media
             term="act"
             low={ranges.act[0]}
             high={ranges.act[1]}
-            scale={[1, 36]}
-            ticks={[1, 12, 18, 24, 30, 36]}
+            scale={actAxis.scale}
+            ticks={actAxis.ticks}
             color={color}
             medianMid={ranges.medianActMid ?? undefined}
             median={medians?.act}
@@ -108,8 +113,8 @@ export function ScoreChecker({ ranges, medians, color }: { ranges: Ranges; media
           />
           {ranges.actEnglish && ranges.actMath && (
             <div className="grid gap-6 sm:grid-cols-2">
-              <RangeBar label="English" term="act" low={ranges.actEnglish[0]} high={ranges.actEnglish[1]} scale={[1, 36]} color={color} />
-              <RangeBar label="Math" term="act" low={ranges.actMath[0]} high={ranges.actMath[1]} scale={[1, 36]} color={color} />
+              <RangeBar label="English" term="act" low={ranges.actEnglish[0]} high={ranges.actEnglish[1]} scale={actPartAxis.scale} ticks={actPartAxis.ticks} color={color} />
+              <RangeBar label="Math" term="act" low={ranges.actMath[0]} high={ranges.actMath[1]} scale={actPartAxis.scale} ticks={actPartAxis.ticks} color={color} />
             </div>
           )}
         </>

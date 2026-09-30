@@ -52,6 +52,7 @@ import { CompareButton } from "@/components/compare/CompareButton";
 import { Ring } from "@/components/charts/Ring";
 import { Waffle } from "@/components/charts/Waffle";
 import { RangeBar } from "@/components/charts/RangeBar";
+import { scoreScale } from "@/lib/score-scale";
 import { BenchmarkBar } from "@/components/charts/BenchmarkBar";
 import { StackedBar } from "@/components/charts/StackedBar";
 import { DistributionStrip } from "@/components/charts/DistributionStrip";
@@ -335,6 +336,11 @@ export default async function SchoolPage({ params }: Props) {
   const earnings = o?.median_earnings_10yr ?? null;
   const grad = o?.graduation_rate ?? null;
   const byIncome = c?.net_price_by_income ?? null;
+  const byIncomeYear = citeField("cost.net_price_by_income", school).year;
+  // Net price by income covers in-state students at publics, so the full-price column uses the in-state sticker.
+  const stickerFull = c?.sticker?.in_state ?? c?.sticker?.in_district ?? null;
+  const stickerCited = citeField("cost.sticker", school);
+  const stickerYear = stickerCited.year ?? stickerCited.inputs?.[0]?.year ?? null;
   const payback = paybackYears(school);
   const hasValue = avgCost !== null || !!c?.sticker || earnings !== null || grad !== null || byIncome !== null;
   const onValueMap = avgCost !== null && earnings !== null;
@@ -453,7 +459,7 @@ export default async function SchoolPage({ params }: Props) {
               {sat && (
                 <Tile label="SAT middle 50%" term="middle-50" field="derived.sat_composite" school={school}>
                   <p className="font-display text-2xl font-extrabold whitespace-nowrap sm:text-3xl">{range(sat)}</p>
-                  <RangeBar low={sat[0]} high={sat[1]} scale={[400, 1600]} color={DOMAINS.scores.color} medianMid={metricMedian("sat") ?? undefined} compact />
+                  <RangeBar low={sat[0]} high={sat[1]} scale={scoreScale("sat", sat[0]).scale} color={DOMAINS.scores.color} medianMid={metricMedian("sat") ?? undefined} compact showScale />
                 </Tile>
               )}
               {a.act_composite_25_75 && (
@@ -462,10 +468,11 @@ export default async function SchoolPage({ params }: Props) {
                   <RangeBar
                     low={a.act_composite_25_75[0]}
                     high={a.act_composite_25_75[1]}
-                    scale={[1, 36]}
+                    scale={scoreScale("act", a.act_composite_25_75[0]).scale}
                     color={DOMAINS.scores.color}
                     medianMid={metricMedian("act") ?? undefined}
                     compact
+                    showScale
                   />
                 </Tile>
               )}
@@ -967,11 +974,17 @@ export default async function SchoolPage({ params }: Props) {
                     What families at each income level pay <InfoTip term="net-price-by-income" cited={citeField("cost.net_price_by_income", school)} />
                   </h3>
                   <p className="mb-5 text-xs text-muted-foreground">
-                    Average net price per year for students receiving federal aid
-                    {citeField("cost.net_price_by_income", school).year ? `, ${citeField("cost.net_price_by_income", school).year}` : ""}. Families who didn&apos;t file the FAFSA aren&apos;t included.
+                    Average price after grants per year for students receiving federal aid
+                    {byIncomeYear ? `, ${byIncomeYear}` : ""}.
+                    {stickerFull !== null && (
+                      <>
+                        {" "}
+                        Students with no grants pay the full {school.type === "public" ? "in-state " : ""}sticker price.
+                      </>
+                    )}
                   </p>
                   {byIncome ? (
-                    <NetPriceByIncome values={byIncome} average={null} />
+                    <NetPriceByIncome values={byIncome} sticker={stickerFull} years={{ netPrice: byIncomeYear, sticker: stickerYear }} />
                   ) : (
                     <p className="text-sm text-muted-foreground">Net price by family income isn&apos;t reported.</p>
                   )}

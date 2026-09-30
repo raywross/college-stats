@@ -11,6 +11,8 @@
     "tuition_out_of_state": {"start":2009,"values":[10040,null,null,11020,null,11670,null,null,null,null,12316]},
     "application_fee": {"start":2008,"values":[50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,50]},
     "tuition_guarantee": {"start":2008,"values":[2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2]},
+    "athletic_association": {"start":2014,"values":[3,3,3,3,3,3,3,3,3,3,3,3]},
+    "rotc": {"start":2014,"values":[2,2,2,2,2,2,2,2,2,2,2,2]},
     "promise": {"start":2022,"values":[2,2]},
     "test_policy": {"start":2018,"values":[3]},
     "factor_gpa": {"start":2018,"values":[1]},

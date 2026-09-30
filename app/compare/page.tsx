@@ -14,6 +14,7 @@ import { DEMOGRAPHIC_CATEGORIES, DOMAINS, METRICS, TEST_POLICY_LABELS, admitRate
 import { RADAR_AXES, keyDifferences, radarProfile, similarSchools } from "@/lib/insights";
 import { SLOT_COLORS, shortName } from "@/lib/brand";
 import { DESIGNATION_LABELS, RESEARCH_LABELS } from "@/lib/campus-profile";
+import { CALENDAR_LABELS, DIVISION_LABELS, ROTC_LABELS, divisionFilterOf } from "@/lib/campus-services";
 import { compact, money, moneyCompact, num, pct, pctSmart } from "@/lib/format";
 import type { School } from "@/lib/types";
 import { CompareHeader } from "@/components/compare/CompareHeader";
@@ -110,6 +111,24 @@ const TABLE_ROWS = (
       !s.campus?.designations ? null : s.campus.designations.map((d) => DESIGNATION_LABELS[d]).join(", ") || "None"],
     ["Minority-serving, single-sex", "hsi", "campus.msi", (s: School) =>
       !s.campus?.msi ? null : s.campus.msi.map((d) => DESIGNATION_LABELS[d]).join(", ") || "None"],
+    ["Athletics", "ncaa-division", "campus.athletics", (s: School) => {
+      const d = divisionFilterOf(s);
+      return !s.campus?.athletics ? null : d ? DIVISION_LABELS[d] : "No NCAA or NAIA division";
+    }],
+    ["Conference", "athletic-conference", "campus.athletics", (s: School) => {
+      const a = s.campus?.athletics;
+      if (!a) return null;
+      if (!a.conference) return "None";
+      return a.football_conference ? `${a.conference.name}; football: ${a.football_conference.name}` : a.conference.name;
+    }],
+    ["ROTC", "rotc", "campus.programs", (s: School) =>
+      !s.campus?.programs ? null : s.campus.programs.rotc.map((b) => ROTC_LABELS[b]).join(", ") || "Not listed"],
+    ["Study abroad", "study-abroad", "campus.programs", (s: School) => (!s.campus?.programs ? null : s.campus.programs.study_abroad ? "Offered" : "Not listed")],
+    ["Undergraduate research program", "undergrad-research", "campus.programs", (s: School) =>
+      s.campus?.programs?.undergrad_research == null ? null : s.campus.programs.undergrad_research ? "Yes" : "Not listed"],
+    ["Calendar", "academic-calendar", "campus.calendar", (s: School) => (s.campus?.calendar ? CALENDAR_LABELS[s.campus.calendar] : null)],
+    ["Credit for AP exams", "ap-credit", "admissions.accepts_ap_credit", (s: School) =>
+      s.admissions.accepts_ap_credit == null ? null : s.admissions.accepts_ap_credit ? "Yes" : "Not listed"],
     ["Undergrads", "undergrad-enrollment", "demographics.undergrad_enrollment", (s: School) => num(s.demographics.undergrad_enrollment)],
     ["Beds in college housing", "housing-capacity", "campus.housing", (s: School) => {
       const h = s.campus?.housing;

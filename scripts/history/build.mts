@@ -20,6 +20,7 @@ import {
   historyYearLabel,
   real,
   valueAt,
+  isCategorical,
   type ChangeStats,
   type CpiTable,
   type HistoryFamily,
@@ -32,6 +33,7 @@ import {
   type YearStats,
 } from "../../lib/history.ts";
 import { readSpec, type ColumnSpec, type Era, type FileChoice } from "./registry.mts";
+import { associationCode, footballConferenceCode, mainConferenceCode, rotcCode } from "../../lib/campus-services.ts";
 import { COHORT_LAG, type ScorecardRow } from "./scorecard.mts";
 
 /** One year of one family, read. */
@@ -51,6 +53,8 @@ export interface Inputs {
   sfa: readonly YearTable[];
   /** Housing and policy columns (IC{Y}, then COST1_{Y+1}), one table per academic year. */
   characteristics?: readonly YearTable[];
+  /** Athletics and ROTC columns (IC{Y}), one table per academic year. */
+  services?: readonly YearTable[];
   /** College Scorecard year-prefixed values by unit ID (scripts/history/scorecard.mts), and the years requested. */
   scorecard?: { rows: ReadonlyMap<string, ScorecardRow>; first: number; last: number };
 }
@@ -185,6 +189,16 @@ export function buildCollege(school: Pick<School, "unit_id" | "type">, inputs: I
     put(raw, "promise", t.year, promise === null ? null : promise ? 1 : 2);
   }
 
+  // Athletics and ROTC as codes for events: the same readers as the snapshot (lib/campus-services.ts).
+  for (const t of inputs.services ?? []) {
+    const row = t.rows.get(id);
+    if (!row) continue;
+    put(raw, "athletic_association", t.year, associationCode(row));
+    put(raw, "conference", t.year, mainConferenceCode(row));
+    put(raw, "football_conference", t.year, footballConferenceCode(row));
+    put(raw, "rotc", t.year, rotcCode(row));
+  }
+
   const sfaByYear = new Map(inputs.sfa.map((t) => [t.year, t]));
   const years = new Set([...inputs.prices.map((t) => t.year), ...inputs.sfa.map((t) => t.year)]);
   const pricesByYear = new Map(inputs.prices.map((t) => [t.year, t]));
@@ -244,7 +258,7 @@ export function buildNational(histories: readonly SchoolHistory[], window: Recor
   const national: NationalHistory = { series: {}, changes: {} };
   for (const key of SERIES_KEYS) {
     // A category code has no median; the share of colleges in each category is a Home fact instead.
-    if (SERIES[key].unit === "code") continue;
+    if (isCategorical(SERIES[key].unit)) continue;
     const byYear = new Map<number, number[]>();
     const changes: number[] = [];
     let measure: ChangeStats["measure"] = "ratio";
@@ -511,6 +525,9 @@ export function lastPointMismatches(schools: readonly School[], histories: Reado
   // The school year Scorecard's current loan rate describes: the newest year any college's series reaches.
   const loanYears = [...histories.values()].flatMap((h) => (h.series.federal_loan_rate ? [lastYear(h.series.federal_loan_rate)] : []));
   const loanYear = loanYears.length ? Math.max(...loanYears) : null;
+  // The newest IC year history read for athletics and ROTC: what the snapshot's IC file describes.
+  const servicesYears = [...histories.values()].flatMap((h) => (["athletic_association", "rotc"] as const).flatMap((k) => (h.series[k] ? [lastYear(h.series[k]!)] : [])));
+  const servicesYear = servicesYears.length ? Math.max(...servicesYears) : null;
   for (const s of schools) {
     const h = histories.get(s.unit_id);
     if (!h) continue;
@@ -521,10 +538,11 @@ export function lastPointMismatches(schools: readonly School[], histories: Reado
       return !!def?.derived?.inputs.some((i) => overridden(i));
     };
     /** `atLatest`: compare the series' own latest point (Scorecard fields, which don't share one year). */
-    const check = (key: SeriesKey, snapshot: number | null | undefined, atLatest = false) => {
+    /** `at`: compare at this year instead of the kind's latest (athletics: the newest IC year). */
+    const check = (key: SeriesKey, snapshot: number | null | undefined, atLatest = false, at?: number) => {
       if (overridden(SERIES[key].field)) return;
       const kind = SERIES[key].kind;
-      const hv = atLatest ? (latestPoint(h.series[key])?.value ?? null) : kind === "cohort" ? null : valueAt(h.series[key], latest[kind]);
+      const hv = at !== undefined ? valueAt(h.series[key], at) : atLatest ? (latestPoint(h.series[key])?.value ?? null) : kind === "cohort" ? null : valueAt(h.series[key], latest[kind]);
       const sv = snapshot ?? null;
       if (hv === null && sv === null) return;
       if (hv === null || sv === null || !same(hv, sv)) out.push(`${s.unit_id} ${key}: history ${hv ?? "none"}, snapshot ${sv ?? "none"}`);
@@ -600,6 +618,16 @@ export function lastPointMismatches(schools: readonly School[], histories: Reado
       const plans = c.tuition_plans;
       check("tuition_guarantee", plans == null ? null : plans.includes("guarantee") ? 1 : 2);
       check("promise", c.promise_program == null ? null : c.promise_program ? 1 : 2);
+    }
+    // Athletics and ROTC: the snapshot reads the newest IC file, which is the services series' newest year.
+    const a = s.campus?.athletics;
+    if (servicesYear !== null && (a !== undefined || h.series.athletic_association)) {
+      const at = servicesYear;
+      check("athletic_association", a == null ? null : a.associations.includes("ncaa") ? 1 : a.associations.includes("naia") ? 2 : 3, false, at);
+      check("conference", a?.conference?.code, false, at);
+      check("football_conference", a ? (a.football_conference?.code ?? (a.sports.includes("football") ? a.conference?.code : null)) : null, false, at);
+      const p = s.campus?.programs;
+      check("rotc", p == null ? null : p.rotc.length ? 1 : 2, false, at);
     }
     if (s.aid && sameYear) {
       check("grant_pct", s.aid.grant_pct);

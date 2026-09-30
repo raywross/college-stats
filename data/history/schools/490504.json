@@ -20,6 +20,8 @@
     "application_fee": {"start":2017,"values":[100,100,100,100,100,100,100]},
     "live_on": {"start":2017,"values":[1,1,1,1,1,1,1]},
     "tuition_guarantee": {"start":2017,"values":[2,2,2,2,2,2,2]},
+    "athletic_association": {"start":2017,"values":[3,3,3,3,3,3,3,3,3]},
+    "rotc": {"start":2017,"values":[2,2,2,2,2,2,2,2,2]},
     "promise": {"start":2022,"values":[2,2]},
     "aid_generosity": {"start":2017,"values":[0.3835,0.3585,0.1583,0.6013,0.3459,0.285,0.1681]},
     "net_price_income_1": {"start":2018,"values":[9888,null,5759,6537,null,12394]},

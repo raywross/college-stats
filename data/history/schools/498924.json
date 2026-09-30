@@ -6,6 +6,8 @@
     "grant_pct": {"start":2022,"values":[0,0]},
     "application_fee": {"start":2023,"values":[100]},
     "tuition_guarantee": {"start":2023,"values":[1]},
+    "athletic_association": {"start":2023,"values":[3,3,3]},
+    "rotc": {"start":2023,"values":[2,2,2]},
     "promise": {"start":2023,"values":[2]},
     "undergrads": {"start":2023,"values":[28,33]},
     "race_white": {"start":2023,"values":[0,0]},

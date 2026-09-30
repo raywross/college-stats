@@ -2,6 +2,8 @@ import type { ExploreView, SchoolType, SearchFilters, SizeBucket, SortKey } from
 import { INDICATORS, INDICATOR_KEYS, isDirection, type Direction, type IndicatorKey } from "./indicators.ts";
 import { isGenderBalance } from "./student-body.ts";
 import { isDesignation, isResearchTier, isSettingGroup } from "./campus-profile.ts";
+import { isDivisionFilter, isRotcBranch } from "./campus-services.ts";
+import { conferenceName } from "./conferences.ts";
 
 /** Unique values, or undefined when none remain. */
 const uniq = <T,>(v: T[] | undefined): T[] | undefined => (v?.length ? [...new Set(v)] : undefined);
@@ -67,6 +69,13 @@ export function parseFilters(params: Params): SearchFilters {
     research: uniq(list(params.research)?.filter(isResearchTier)),
     designation: uniq(list(params.designation)?.filter(isDesignation)),
     opportunity: str(params.opportunity) === "1" || undefined,
+    division: uniq(list(params.division)?.filter(isDivisionFilter)),
+    // Only a current or retired IPEDS code: anything else is ignored rather than matching nothing.
+    conference: ((c) => (c !== undefined && Number.isInteger(c) && conferenceName(c) !== null ? c : undefined))(n(params.conference)),
+    football: str(params.football) === "1" || undefined,
+    rotc: uniq(list(params.rotc)?.filter(isRotcBranch)),
+    ugResearch: str(params.ugResearch) === "1" || undefined,
+    studyAbroad: str(params.studyAbroad) === "1" || undefined,
     noEssay: str(params.noEssay) === "1" || undefined,
     gpaRequired: str(params.gpaRequired) === "1" || undefined,
     sortBy: sortBy && SORT_KEYS.includes(sortBy) ? sortBy : "applicants",
@@ -108,6 +117,12 @@ export const FILTER_KEYS = [
   "research",
   "designation",
   "opportunity",
+  "division",
+  "conference",
+  "football",
+  "rotc",
+  "ugResearch",
+  "studyAbroad",
   "noEssay",
   "gpaRequired",
   ...INDICATOR_KEYS.map((k) => INDICATORS[k].param),

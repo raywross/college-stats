@@ -13,7 +13,8 @@ import { FEW_LOANS_MAX } from "@/lib/repayment";
 import { HOUSING_FILTERS, type HousingFilterParam } from "@/lib/housing";
 import { FACTOR_FILTERS, type FactorFilterParam } from "@/lib/factors";
 import { DESIGNATION_KEYS, DESIGNATION_LABELS, RESEARCH_TIERS, SETTING_GROUPS } from "@/lib/campus-profile";
-import type { Designation, ResearchTier, SettingGroup } from "@/lib/types";
+import { DIVISION_FILTERS, DIVISION_SHORT, ROTC_BRANCHES, ROTC_LABELS } from "@/lib/campus-services";
+import type { Designation, DivisionFilter, ResearchTier, RotcBranch, SettingGroup } from "@/lib/types";
 import { useExploreParams } from "./useExploreParams";
 import { cn } from "@/lib/utils";
 
@@ -37,6 +38,8 @@ export interface FilterFacets {
   factors: Record<FactorFilterParam, number>;
   /** Colleges per setting group, research tier, and designation (lib/campus-profile.ts). */
   campus: { setting: Record<SettingGroup, number>; research: Record<ResearchTier, number>; designation: Record<Designation, number>; opportunity: number };
+  /** Colleges per division, and with football, each ROTC branch, undergrad research, study abroad (lib/campus-services.ts). */
+  services: { division: Record<DivisionFilter, number>; football: number; rotc: Record<RotcBranch, number>; ugResearch: number; studyAbroad: number };
   /** Colleges where few undergrads take federal loans (lib/repayment.ts). */
   fewLoans: number;
 }
@@ -107,7 +110,7 @@ export function FilterPanel({ facets, onDone }: { facets: FilterFacets; onDone?:
   const fewLoans = searchParams.get("fewLoans") === "1";
 
   const hasFilters = [
-    ...["q", "types", "sizes", "regions", "states", "minAR", "maxAR", "minSAT", "maxSAT", "minCost", "maxCost", "minEnroll", "maxEnroll", "balance", "fullTime", "fewLoans", "liveOn", "noFee", "guarantee", "noLegacy", "noEssay", "gpaRequired", "setting", "research", "designation", "opportunity"],
+    ...["q", "types", "sizes", "regions", "states", "minAR", "maxAR", "minSAT", "maxSAT", "minCost", "maxCost", "minEnroll", "maxEnroll", "balance", "fullTime", "fewLoans", "liveOn", "noFee", "guarantee", "noLegacy", "noEssay", "gpaRequired", "setting", "research", "designation", "opportunity", "division", "conference", "football", "rotc", "ugResearch", "studyAbroad"],
     ...INDICATOR_KEYS.map((k) => INDICATORS[k].param),
   ].some((k) => searchParams.get(k));
 
@@ -306,6 +309,48 @@ export function FilterPanel({ facets, onDone }: { facets: FilterFacets; onDone?:
             <p className="mt-1.5 flex items-center gap-1 text-[11px] text-muted-foreground">
               Carnegie&apos;s higher access, higher earnings class. <InfoTip term="student-access-and-earnings" />
             </p>
+          </div>
+        </div>
+      </Section>
+
+      <Section title="Sports & programs" term="ncaa-division">
+        <div className="space-y-3">
+          <div role="group" aria-label="Athletics">
+            <p className="mb-1.5 text-xs font-semibold">Athletics</p>
+            <div className="flex flex-wrap gap-1.5">
+              {DIVISION_FILTERS.map((d) => (
+                <Chip key={d} active={getList("division").includes(d)} onClick={() => toggleInList("division", d)} count={facets.services.division[d]}>
+                  {DIVISION_SHORT[d]}
+                </Chip>
+              ))}
+              <Chip active={searchParams.get("football") === "1"} onClick={() => update({ football: searchParams.get("football") === "1" ? null : "1" })} count={facets.services.football}>
+                Has football
+              </Chip>
+            </div>
+            <p className="mt-1.5 text-[11px] text-muted-foreground">D-I without football is plain D-I. Tap a conference on a profile to see its members.</p>
+          </div>
+          <div role="group" aria-label="ROTC">
+            <p className="mb-1.5 flex items-center gap-1 text-xs font-semibold">
+              ROTC <InfoTip term="rotc" />
+            </p>
+            <div className="flex flex-wrap gap-1.5">
+              {ROTC_BRANCHES.map((b) => (
+                <Chip key={b} active={getList("rotc").includes(b)} onClick={() => toggleInList("rotc", b)} count={facets.services.rotc[b]}>
+                  {ROTC_LABELS[b]}
+                </Chip>
+              ))}
+            </div>
+          </div>
+          <div role="group" aria-label="Programs">
+            <p className="mb-1.5 text-xs font-semibold">Programs</p>
+            <div className="flex flex-wrap gap-1.5">
+              <Chip active={searchParams.get("ugResearch") === "1"} onClick={() => update({ ugResearch: searchParams.get("ugResearch") === "1" ? null : "1" })} count={facets.services.ugResearch}>
+                Undergraduate research
+              </Chip>
+              <Chip active={searchParams.get("studyAbroad") === "1"} onClick={() => update({ studyAbroad: searchParams.get("studyAbroad") === "1" ? null : "1" })} count={facets.services.studyAbroad}>
+                Study abroad
+              </Chip>
+            </div>
           </div>
         </div>
       </Section>

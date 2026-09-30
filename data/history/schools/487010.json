@@ -3,6 +3,8 @@
   "series": {
     "application_fee": {"start":2015,"values":[75,75,75,75,75,75,75,75,75]},
     "tuition_guarantee": {"start":2015,"values":[2,2,2,2,2,2,2,2,2]},
+    "athletic_association": {"start":2015,"values":[3,3,3,3,3,3,3,3,3,3,3]},
+    "rotc": {"start":2015,"values":[2,2,2,2,2,2,2,2,2,2,2]},
     "promise": {"start":2022,"values":[2,2]},
     "undergrads": {"start":2015,"values":[265,287,339,359,296,218,264,295,376,394]},
     "race_white": {"start":2015,"values":[0.6792,0.669,0.6814,0.6713,0.6791,0.7064,0.4394,0.4068,0.5691,0.5355]},

@@ -4,6 +4,7 @@
  * "notable" rule, citations). No I/O and no runtime imports beyond other pure modules, so Node scripts, tests,
  * and client components can all use it.
  */
+import { conferenceName } from "./conferences.ts";
 import type { FieldPath } from "./fields";
 import type { FormatKind } from "./format";
 import type { TermKey } from "./glossary";
@@ -20,8 +21,14 @@ import { simpsonIndex } from "./derive.ts";
  */
 export type YearKind = "fall" | "academic" | "cohort";
 
-/** "score": SAT or ACT points. "code": a category stored as a number (test policy; see TEST_POLICY_CODES). */
-export type SeriesUnit = "usd" | "count" | "share" | "score" | "code";
+/**
+ * "score": SAT or ACT points. "code": a category stored as a number (test policy; see TEST_POLICY_CODES).
+ * "conference": an IPEDS athletic conference code (lib/conferences.ts).
+ */
+export type SeriesUnit = "usd" | "count" | "share" | "score" | "code" | "conference";
+
+/** Categories stored as numbers: no change, percentiles, or national stats (events read them instead). */
+export const isCategorical = (unit: SeriesUnit): boolean => unit === "code" || unit === "conference";
 
 /** A definition change: never draw a line or measure a change across it. */
 export interface SeriesBreak {
@@ -57,6 +64,7 @@ export const HISTORY_FAMILIES = {
   prices: { source: "ipeds-ic", kind: "academic", files: "IC{year}_AY, then COST1_{year+1}" },
   sfa: { source: "ipeds-sfa", kind: "academic", files: "SFA{yy}{yy+1}, plus COST2_{year+1} since NCES moved residency and net price there" },
   characteristics: { source: "ipeds-ic", kind: "academic", files: "IC{year} (housing and application fee), then COST1_{year+1}" },
+  services: { source: "ipeds-ic-char", kind: "academic", files: "IC{year} (athletics and ROTC)" },
   // College Scorecard API, year-prefixed fields (not files): years can have gaps, so they aren't checked as consecutive.
   "scorecard-enrollment": { source: "scorecard", kind: "fall", files: "API fields {year}.student.size, {year}.student.demographics.race_ethnicity.*, .men, and {year}.student.part_time_share", api: true, citeAs: "enrollment" },
   "scorecard-completion": { source: "scorecard", kind: "cohort", files: "API field {year+6}.completion.completion_rate_4yr_150nt", api: true, citeAs: "graduation by entering class" },
@@ -107,6 +115,11 @@ export const SERIES = {
   // Housing policies as codes (1 yes, 2 no), for events (lib/events.ts).
   live_on: { label: "First-years must live on campus", short: "Live-on rule", field: "campus.housing", term: "live-on-requirement", unit: "code", kind: "academic", format: "int", families: ["characteristics"] },
   tuition_guarantee: { label: "Tuition guarantee", short: "Tuition guarantee", field: "cost.tuition_plans", term: "tuition-guarantee", unit: "code", kind: "academic", format: "int", families: ["characteristics"] },
+  // Athletics and ROTC as codes, for events (lib/events.ts; lib/campus-services.ts reads them).
+  conference: { label: "Athletic conference", short: "Conference", field: "campus.athletics", term: "athletic-conference", unit: "conference", kind: "academic", format: "int", families: ["services"] },
+  football_conference: { label: "Football conference", short: "Football conference", field: "campus.athletics", term: "athletic-conference", unit: "conference", kind: "academic", format: "int", families: ["services"] },
+  athletic_association: { label: "Athletic association", short: "Association", field: "campus.athletics", term: "ncaa-division", unit: "code", kind: "academic", format: "int", families: ["services"] },
+  rotc: { label: "ROTC", short: "ROTC", field: "campus.programs", term: "rotc", unit: "code", kind: "academic", format: "int", families: ["services"] },
   promise: { label: "Promise program", short: "Promise program", field: "cost.promise_program", term: "promise-program", unit: "code", kind: "academic", format: "int", families: ["characteristics"] },
   aid_generosity: { label: "Aid generosity", short: "Aid generosity", field: "derived.aid_generosity", term: "aid-generosity", unit: "share", kind: "academic", format: "pct", families: ["prices", "sfa"] },
   net_price_income_1: { label: "Net price, family income $0–30K", short: "$0–30K", field: "cost.net_price_by_income", term: "net-price-by-income", unit: "usd", kind: "academic", format: "money", families: ["sfa"], signed: true },
@@ -401,7 +414,7 @@ export function changeOver(key: SeriesKey, s: Series | undefined, window: [numbe
   if (end === null || !start || start.year > window[0] + 2 || start.year >= window[1]) return null;
   // Never measure across a definition change (e.g. the SAT redesign).
   if (((def as SeriesDef).breaks ?? []).some((b) => b.year > start.year && b.year <= window[1])) return null;
-  if (def.unit === "code") return null;
+  if (isCategorical(def.unit)) return null;
   const measure = def.unit === "share" ? "points" : "ratio";
   let from = start.value;
   if (def.unit === "usd") {
@@ -603,6 +616,7 @@ export function validateShard(h: SchoolHistory, knownIds?: ReadonlySet<string>):
         (v < 0 && !def.signed) ||
         (def.unit === "share" && v > 1) ||
         (def.unit === "code" && !codes.includes(v)) ||
+        (def.unit === "conference" && conferenceName(v) === null) ||
         (def.unit === "score" && v > 1600)
       ) {
         errors.push(`${where}: ${k} has an impossible value ${v}`);

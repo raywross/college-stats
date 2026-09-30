@@ -7,6 +7,8 @@
     "acceptance_rate": {"start":2024,"values":[1]},
     "yield": {"start":2024,"values":[0.3704]},
     "admit_rate_women": {"start":2024,"values":[1]},
+    "athletic_association": {"start":2024,"values":[3,3]},
+    "rotc": {"start":2024,"values":[2,2]},
     "test_policy": {"start":2024,"values":[3]},
     "factor_gpa": {"start":2024,"values":[1]},
     "factor_class_rank": {"start":2024,"values":[3]},

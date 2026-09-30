@@ -22,13 +22,16 @@
       "id": "ipeds-2026-27-directory",
       "source": "ipeds",
       "label": "IPEDS directory and institutional characteristics (provisional)",
-      "brings": ["Directory 2026–27 (HD2026): setting, Carnegie classes, designations, locations"],
-      "updates": ["ipeds-hd"],
+      "brings": [
+        "Directory 2026–27 (HD2026): setting, Carnegie classes, designations, locations",
+        "Institutional characteristics 2026–27 (IC2026): athletics, ROTC, study abroad, services, calendar"
+      ],
+      "updates": ["ipeds-hd", "ipeds-ic-char"],
       "expected": "2027-07",
       "status": "estimated",
-      "basis": "HD2025 was published Jul 21, 2026",
+      "basis": "HD2025 was published Jul 21, 2026, and IC2025 Jul 28, 2026",
       "url": "https://nces.ed.gov/ipeds/survey-components/data-release-schedule",
-      "files": ["HD2026"]
+      "files": ["HD2026", "IC2026"]
     },
     {
       "id": "ipeds-2024-25-final",
@@ -95,12 +98,6 @@
     }
   ],
   "notUsedYet": [
-    {
-      "file": "IC2025",
-      "released": "2026-07-28",
-      "what": "Institutional characteristics 2025–26 (no prices; those come in the winter release)",
-      "url": "https://nces.ed.gov/ipeds/complete-data-files/IC2025.zip"
-    },
     {
       "file": "EFFY2025",
       "released": "2026-07-28",

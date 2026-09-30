@@ -8,6 +8,7 @@
  * a reporting slip.
  */
 import { FACTOR_ERA } from "./derive.ts";
+import { conferenceName } from "./conferences.ts";
 import { historyYearLabel, type SchoolHistory, type SeriesKey, type YearKind } from "./history.ts";
 import type { AdmissionFactor } from "./types";
 
@@ -90,11 +91,66 @@ function policyChanges(h: SchoolHistory, key: keyof typeof POLICY_TEXT): PolicyE
   return changes(points(h, key), () => true).map(({ year, to }) => ({ key, year, kind: "academic" as const, text: to === 1 ? t.on : t.off, area: t.area }));
 }
 
+/** A conference as it reads in a sentence; null for independents and "Other", which aren't leagues. */
+function league(code: number): string | null {
+  const name = conferenceName(code);
+  return name && !/independent|^other$/i.test(name) ? `the ${name.replace(/^The /, "")}` : null;
+}
+
+function moveText(from: number, to: number, prefix = ""): string {
+  const [a, b] = [league(from), league(to)];
+  // 113 "Division I-A Independents" is FBS; 112 and 114 are the other Division I independents.
+  if (!a && to === 113 && (from === 112 || from === 114)) return prefix ? `${prefix} moved up to FBS as an independent` : "Moved up to FBS as an independent";
+  const t = a && b ? `moved from ${a} to ${b}` : b ? `joined ${b}` : a ? `left ${a} to play as an independent` : "changed conference";
+  return prefix ? `${prefix} ${t}` : t.charAt(0).toUpperCase() + t.slice(1);
+}
+
+/**
+ * Conference moves (specs/data-expansion/campus-services.md). A football move gets its own line only when the rest of
+ * the college didn't make the same move that year.
+ */
+function conferenceEvents(h: SchoolHistory): PolicyEvent[] {
+  const main = changes(points(h, "conference"), () => true);
+  const events: PolicyEvent[] = main.map(({ year, from, to }) => ({ key: "conference", year, kind: "academic", text: moveText(from, to), area: "campus" }));
+  const mainByYear = new Map(points(h, "conference"));
+  for (const c of changes(points(h, "football_conference"), () => true)) {
+    if (main.some((m) => m.year === c.year && m.to === c.to)) continue;
+    // A reporting fix, not a move: an independent (UConn, Notre Dame) first listed its home conference for football.
+    const prevMain = mainByYear.get(c.year - 1);
+    if (league(c.to) === null && prevMain === c.from) continue;
+    events.push({ key: "football_conference", year: c.year, kind: "academic", text: moveText(c.from, c.to, "Football"), area: "campus" });
+  }
+  return events;
+}
+
+/** athletic_association: 1 NCAA, 2 NAIA only, 3 neither (lib/campus-services.ts associationCode). */
+const ASSOCIATION_NAMES: Record<number, string> = { 1: "the NCAA", 2: "the NAIA" };
+
+function associationEvents(h: SchoolHistory): PolicyEvent[] {
+  return changes(points(h, "athletic_association"), () => true).map(({ year, from, to }) => {
+    const [a, b] = [ASSOCIATION_NAMES[from], ASSOCIATION_NAMES[to]];
+    const text = a && b ? `Moved from ${a} to ${b}` : b ? `Joined ${b}` : `Left ${a}`;
+    return { key: "athletic_association" as const, year, kind: "academic" as const, text, area: "campus" as const };
+  });
+}
+
+/** ROTC: 1 offered, 2 not listed. "Not listed" is an unticked box, so the drop is worded softly. */
+function rotcEvents(h: SchoolHistory): PolicyEvent[] {
+  return changes(points(h, "rotc"), () => true).map(({ year, to }) => ({
+    key: "rotc" as const,
+    year,
+    kind: "academic" as const,
+    text: to === 1 ? "Began offering ROTC" : "No longer lists ROTC",
+    area: "campus" as const,
+  }));
+}
+
 /** Every event for a college, newest first. */
 export function historyEvents(h: SchoolHistory): PolicyEvent[] {
   const factors = (Object.keys(FACTOR_PHRASES) as AdmissionFactor[]).flatMap((f) => factorEvents(h, f));
   const policies = (Object.keys(POLICY_TEXT) as (keyof typeof POLICY_TEXT)[]).flatMap((k) => policyChanges(h, k));
-  return [...factors, ...policies].sort((a, b) => b.year - a.year || a.text.localeCompare(b.text));
+  const athletics = [...conferenceEvents(h), ...associationEvents(h), ...rotcEvents(h)];
+  return [...factors, ...policies, ...athletics].sort((a, b) => b.year - a.year || a.text.localeCompare(b.text));
 }
 
 

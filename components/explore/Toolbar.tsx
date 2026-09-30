@@ -8,6 +8,8 @@ import { GENDER_BALANCE } from "@/lib/student-body";
 import { HOUSING_FILTERS } from "@/lib/housing";
 import { FACTOR_FILTERS } from "@/lib/factors";
 import { DESIGNATION_LABELS, RESEARCH_LABELS, SETTING_GROUPS, isDesignation, isResearchTier, isSettingGroup } from "@/lib/campus-profile";
+import { DIVISION_LABELS, ROTC_LABELS, isDivisionFilter, isRotcBranch } from "@/lib/campus-services";
+import { conferenceName } from "@/lib/conferences";
 import { typeLabel } from "@/lib/format";
 import { useExploreParams } from "./useExploreParams";
 import { cn } from "@/lib/utils";
@@ -232,6 +234,16 @@ export function ActiveFilters() {
   for (const d of getList("designation").filter(isDesignation))
     chips.push({ key: `des-${d}`, label: DESIGNATION_LABELS[d], onRemove: () => toggleInList("designation", d) });
 
+  for (const d of getList("division").filter(isDivisionFilter))
+    chips.push({ key: `div-${d}`, label: DIVISION_LABELS[d], onRemove: () => toggleInList("division", d) });
+  const conf = Number(searchParams.get("conference"));
+  if (searchParams.get("conference") && conferenceName(conf))
+    chips.push({ key: "conference", label: conferenceName(conf)!, onRemove: () => update({ conference: null }) });
+  if (searchParams.get("football") === "1") chips.push({ key: "football", label: "Has football", onRemove: () => update({ football: null }) });
+  for (const b of getList("rotc").filter(isRotcBranch))
+    chips.push({ key: `rotc-${b}`, label: `${ROTC_LABELS[b]} ROTC`, onRemove: () => toggleInList("rotc", b) });
+  if (searchParams.get("ugResearch") === "1") chips.push({ key: "ugResearch", label: "Undergraduate research", onRemove: () => update({ ugResearch: null }) });
+  if (searchParams.get("studyAbroad") === "1") chips.push({ key: "studyAbroad", label: "Study abroad", onRemove: () => update({ studyAbroad: null }) });
   if (searchParams.get("opportunity") === "1") chips.push({ key: "opportunity", label: "Opportunity colleges", onRemove: () => update({ opportunity: null }) });
 
   for (const k of INDICATOR_KEYS) {

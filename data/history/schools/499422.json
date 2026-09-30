@@ -3,6 +3,8 @@
   "series": {
     "application_fee": {"start":2023,"values":[100]},
     "tuition_guarantee": {"start":2023,"values":[2]},
+    "athletic_association": {"start":2023,"values":[3,3,3]},
+    "rotc": {"start":2023,"values":[2,2,2]},
     "promise": {"start":2023,"values":[2]},
     "undergrads": {"start":2023,"values":[70,135]},
     "race_white": {"start":2023,"values":[0.1571,0.1407]},

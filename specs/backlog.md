@@ -46,7 +46,7 @@ published at `/roadmap` ([roadmap.md](roadmap.md)): add each new one to `lib/roa
   `EFFY2025` left out.
   - [x] Wave 1 (files already downloaded, or fields on the Scorecard call; one PR per spec), built 2026-09-29: student
     body, admissions detail, loans and repayment, housing and policies, and admission factors (with the events log).
-  - [ ] Wave 2 (one new NCES file each): campus profile (HD, built 2026-09-30), campus services and athletics (IC), student-faculty
+  - [ ] Wave 2 (one new NCES file each): campus profile (HD, built 2026-09-30), campus services and athletics (IC, built 2026-09-30), student-faculty
     ratio (EF-D), residence (EF-C), 8-year outcomes (OM), Pell/race graduation (GR), finances (DRVF), faculty (SAL).
   - [ ] **Per-college detail file** `data/detail/schools/{unitid}.json` (decided 2026-09-28: a new file, not the
     history shard) for large snapshot tables: majors, home states, earnings by major. Validation, lineage check,

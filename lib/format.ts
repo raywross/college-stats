@@ -56,7 +56,7 @@ export function typeShort(type: string): string {
 }
 
 /** Serializable formatter names, for passing formats into client components. */
-export type FormatKind = "pct" | "pctSmart" | "int" | "num" | "compact" | "fixed2" | "money" | "moneyCompact";
+export type FormatKind = "pct" | "pctSmart" | "int" | "num" | "compact" | "fixed2" | "money" | "moneyCompact" | "ratio";
 
 export function formatBy(kind: FormatKind, value: number): string {
   switch (kind) {
@@ -74,6 +74,9 @@ export function formatBy(kind: FormatKind, value: number): string {
       return money(value);
     case "moneyCompact":
       return moneyCompact(value);
+    case "ratio":
+      // Student-to-faculty ratio: "8 to 1".
+      return `${Math.round(value)} to 1`;
     case "int":
     default:
       return String(Math.round(value));

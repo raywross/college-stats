@@ -65,6 +65,7 @@ export const HISTORY_FAMILIES = {
   sfa: { source: "ipeds-sfa", kind: "academic", files: "SFA{yy}{yy+1}, plus COST2_{year+1} since NCES moved residency and net price there" },
   characteristics: { source: "ipeds-ic", kind: "academic", files: "IC{year} (housing and application fee), then COST1_{year+1}" },
   services: { source: "ipeds-ic-char", kind: "academic", files: "IC{year} (athletics and ROTC)" },
+  "ef-d": { source: "ipeds-ef", kind: "fall", files: "EF{year}D (student-to-faculty ratio)" },
   // College Scorecard API, year-prefixed fields (not files): years can have gaps, so they aren't checked as consecutive.
   "scorecard-enrollment": { source: "scorecard", kind: "fall", files: "API fields {year}.student.size, {year}.student.demographics.race_ethnicity.*, .men, and {year}.student.part_time_share", api: true, citeAs: "enrollment" },
   "scorecard-completion": { source: "scorecard", kind: "cohort", files: "API field {year+6}.completion.completion_rate_4yr_150nt", api: true, citeAs: "graduation by entering class" },
@@ -115,6 +116,7 @@ export const SERIES = {
   // Housing policies as codes (1 yes, 2 no), for events (lib/events.ts).
   live_on: { label: "First-years must live on campus", short: "Live-on rule", field: "campus.housing", term: "live-on-requirement", unit: "code", kind: "academic", format: "int", families: ["characteristics"] },
   tuition_guarantee: { label: "Tuition guarantee", short: "Tuition guarantee", field: "cost.tuition_plans", term: "tuition-guarantee", unit: "code", kind: "academic", format: "int", families: ["characteristics"] },
+  student_faculty_ratio: { label: "Students per faculty member", short: "Students/faculty", field: "academics.student_faculty_ratio", term: "student-faculty-ratio", unit: "count", kind: "fall", format: "int", families: ["ef-d"] },
   // Athletics and ROTC as codes, for events (lib/events.ts; lib/campus-services.ts reads them).
   conference: { label: "Athletic conference", short: "Conference", field: "campus.athletics", term: "athletic-conference", unit: "conference", kind: "academic", format: "int", families: ["services"] },
   football_conference: { label: "Football conference", short: "Football conference", field: "campus.athletics", term: "athletic-conference", unit: "conference", kind: "academic", format: "int", families: ["services"] },
@@ -401,7 +403,13 @@ export interface Change {
 }
 
 /** Below these bases a percent change misleads; show "from → to" instead (specs/trends-design.md). */
-const TINY_BASE: Partial<Record<SeriesKey, number>> = { applicants: 200, admitted: 100, enrolled: 50 };
+const TINY_BASE: Partial<Record<SeriesKey, number>> = {
+  applicants: 200,
+  admitted: 100,
+  enrolled: 50,
+  // A ratio like 9 to 1 is always small: "9 → 8" reads right where "−11%" overstates it.
+  student_faculty_ratio: Infinity,
+};
 
 /**
  * Change from the window's start (or the first year after it the college reports) to its end. Money compares in

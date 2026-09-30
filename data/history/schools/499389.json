@@ -15,6 +15,7 @@
     "grant_avg": {"start":2023,"values":[7895]},
     "application_fee": {"start":2023,"values":[49]},
     "tuition_guarantee": {"start":2023,"values":[2]},
+    "student_faculty_ratio": {"start":2023,"values":[20,20]},
     "athletic_association": {"start":2023,"values":[3,3,3]},
     "rotc": {"start":2023,"values":[2,2,2]},
     "promise": {"start":2023,"values":[2]},

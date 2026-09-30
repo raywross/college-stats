@@ -92,6 +92,7 @@ const SORTS = [
   { value: "men_share_change", label: "Men's share change, 10 yrs (biggest drop)", dir: "asc" },
   { value: "admit_gap", label: "Admit rate gap (men higher first)", dir: "desc" },
   { value: "loan_rate", label: "Share who borrow (fewest)", dir: "asc" },
+  { value: "student_faculty", label: "Students per faculty (fewest)", dir: "asc" },
   { value: "loan_rate_change", label: "Borrowing change, 10 yrs (biggest drop)", dir: "asc" },
 ] as const;
 
@@ -242,6 +243,8 @@ export function ActiveFilters() {
   if (searchParams.get("football") === "1") chips.push({ key: "football", label: "Has football", onRemove: () => update({ football: null }) });
   for (const b of getList("rotc").filter(isRotcBranch))
     chips.push({ key: `rotc-${b}`, label: `${ROTC_LABELS[b]} ROTC`, onRemove: () => toggleInList("rotc", b) });
+  const maxRatio = Number(searchParams.get("maxRatio"));
+  if (maxRatio > 0) chips.push({ key: "maxRatio", label: `${maxRatio} or fewer students per faculty`, onRemove: () => update({ maxRatio: null }) });
   if (searchParams.get("ugResearch") === "1") chips.push({ key: "ugResearch", label: "Undergraduate research", onRemove: () => update({ ugResearch: null }) });
   if (searchParams.get("studyAbroad") === "1") chips.push({ key: "studyAbroad", label: "Study abroad", onRemove: () => update({ studyAbroad: null }) });
   if (searchParams.get("opportunity") === "1") chips.push({ key: "opportunity", label: "Opportunity colleges", onRemove: () => update({ opportunity: null }) });

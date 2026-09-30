@@ -176,6 +176,11 @@ export interface School {
     cds?: CdsAid;
   };
   /** Housing and campus services (IPEDS Institutional Characteristics, same year as the prices), and the campus profile. */
+  /** Academics (specs/data-expansion/student-faculty-ratio.md; later majors, faculty, class sizes). */
+  academics?: {
+    /** Students per instructional faculty member, "N to 1" (IPEDS EF part D `STUFACR`, fall). */
+    student_faculty_ratio: number | null;
+  };
   campus?: {
     /** Athletics (IPEDS IC; lib/campus-services.ts). Null when the college didn't answer. */
     athletics?: Athletics | null;
@@ -347,7 +352,7 @@ export interface CdsAid {
   merit_avg: number | null;
 }
 
-export type Topic = "institution" | "admissions" | "enrollment" | "demographics" | "cost" | "prices" | "outcomes" | "aid" | "campus";
+export type Topic = "institution" | "admissions" | "enrollment" | "demographics" | "cost" | "prices" | "outcomes" | "aid" | "campus" | "academics";
 /** NCAA division with the football subdivision, or null (NAIA and non-members have none). */
 export type NcaaDivision = "I-FBS" | "I-FCS" | "I" | "II" | "III";
 export type AthleticAssociation = "ncaa" | "naia" | "njcaa" | "nscaa" | "nccaa" | "other";
@@ -377,7 +382,7 @@ export interface CampusPrograms {
   intellectual_disability_program: boolean;
 }
 
-export type SourceKey = "scorecard" | "ipeds-adm" | "ipeds-sfa" | "ipeds-ic" | "ipeds-ic-char" | "ipeds-hd" | "cds";
+export type SourceKey = "scorecard" | "ipeds-adm" | "ipeds-sfa" | "ipeds-ic" | "ipeds-ic-char" | "ipeds-hd" | "ipeds-ef" | "cds";
 
 export interface SourceInfo {
   /** Full citation name, e.g. "College Scorecard". */
@@ -402,6 +407,7 @@ export type SizeBucket = "small" | "medium" | "large" | "xl";
 
 export type SortKey =
   | "applicants"
+  | "student_faculty"
   | "name"
   | "acceptance_rate"
   | "enrollment"
@@ -442,6 +448,8 @@ export interface SearchFilters {
   maxACT?: number;
   minEnroll?: number;
   maxEnroll?: number;
+  /** At most this many students per faculty member. */
+  maxRatio?: number;
   minCost?: number;
   maxCost?: number;
   /** Trend indicator directions to keep (lib/indicators.ts), e.g. { cost: ["down", "steady"] }. */

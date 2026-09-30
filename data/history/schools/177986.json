@@ -15,6 +15,7 @@
     "grant_avg": {"start":2017,"values":[5743,7126,7684,8065,10177,9892,8435]},
     "application_fee": {"start":2001,"values":[40,40,40,40,40,40,40,40,50,50,50,50,50,50,50,25,25,25,25,25,25,25,25]},
     "tuition_guarantee": {"start":2008,"values":[2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2]},
+    "student_faculty_ratio": {"start":2009,"values":[11,12,9,9,9,9,12,9,12,13,15,12,12,9,9,9]},
     "athletic_association": {"start":2014,"values":[3,3,3,3,3,3,3,3,3,3,3,3]},
     "rotc": {"start":2014,"values":[2,2,2,2,2,2,2,2,2,2,2,2]},
     "promise": {"start":2022,"values":[2,2]},

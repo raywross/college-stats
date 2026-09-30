@@ -6,6 +6,7 @@
     "tuition_out_of_state": {"start":2017,"values":[8400,8500,null,null,null,11050,11800]},
     "application_fee": {"start":2017,"values":[0,0,0,0,0,0,0]},
     "tuition_guarantee": {"start":2017,"values":[2,2,2,2,2,2,2]},
+    "student_faculty_ratio": {"start":2017,"values":[8,12,15,8,11,16,21,17]},
     "athletic_association": {"start":2017,"values":[3,3,3,3,3,3,3,3,3]},
     "rotc": {"start":2017,"values":[2,2,2,2,2,2,2,2,2]},
     "promise": {"start":2022,"values":[2,2]},

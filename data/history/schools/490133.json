@@ -21,6 +21,7 @@
     "application_fee": {"start":2017,"values":[30,30,30,30,30,50,50]},
     "live_on": {"start":2018,"values":[2,2,2]},
     "tuition_guarantee": {"start":2017,"values":[2,2,1,1,1,2,2]},
+    "student_faculty_ratio": {"start":2017,"values":[9,10,11,9,10,10,10,11]},
     "conference": {"start":2020,"values":[301,301,301,301,301,301]},
     "athletic_association": {"start":2017,"values":[3,3,3,2,2,2,2,2,2]},
     "rotc": {"start":2017,"values":[2,2,2,2,2,2,2,2,2]},

@@ -51,6 +51,8 @@ export function standouts({ rankOf }: Dataset, s: School, { trends = false }: { 
   if (at("sat", (v) => v >= 0.9)) out.push({ label: "Top test scores", domain: "scores", metric: "sat" });
   if (at("enrollment", (v) => v >= 0.95)) out.push({ label: "Big campus", domain: "size", metric: "enrollment" });
   if (at("enrollment", (v) => v <= 0.1)) out.push({ label: "Intimate campus", domain: "size", metric: "enrollment" });
+  // The national bottom 5% of students per faculty member (specs/data-expansion/student-faculty-ratio.md): a snapshot standout.
+  if (at("studentFaculty", (v) => v <= 0.05)) out.push({ label: "Very small student-faculty ratio", domain: "size", metric: "studentFaculty" });
   if (at("pell", (v) => v >= 0.85)) out.push({ label: "Economic diversity", domain: "access", metric: "pell" });
   if (at("firstGen", (v) => v >= 0.85)) out.push({ label: "First-gen friendly", domain: "access", metric: "firstGen" });
   if (at("diversity", (v) => v >= 0.85)) out.push({ label: "Very diverse", domain: "diversity", metric: "diversity" });

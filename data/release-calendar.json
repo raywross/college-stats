@@ -9,14 +9,15 @@
         "Admissions, fall 2025 (ADM2025)",
         "Student Financial Aid 2024–25 (SFA2425)",
         "Cost 2025–26 (COST1_2025, COST2_2025)",
+        "Student-to-faculty ratio, fall 2025 (EF2025D)",
         "Graduation rates"
       ],
-      "updates": ["ipeds-adm", "ipeds-sfa", "ipeds-ic"],
+      "updates": ["ipeds-adm", "ipeds-sfa", "ipeds-ic", "ipeds-ef"],
       "expected": "2026-12",
       "status": "estimated",
       "basis": "Last year's winter release was Dec 9, 2025",
       "url": "https://nces.ed.gov/ipeds/survey-components/data-release-schedule",
-      "files": ["ADM2025", "SFA2425", "COST1_2025", "COST2_2025"]
+      "files": ["ADM2025", "SFA2425", "COST1_2025", "COST2_2025", "EF2025D"]
     },
     {
       "id": "ipeds-2026-27-directory",

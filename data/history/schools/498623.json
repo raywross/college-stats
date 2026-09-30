@@ -3,6 +3,7 @@
   "series": {
     "grant_pct": {"start":2023,"values":[1]},
     "grant_avg": {"start":2023,"values":[1165]},
+    "student_faculty_ratio": {"start":2024,"values":[9]},
     "athletic_association": {"start":2024,"values":[3,3]},
     "rotc": {"start":2024,"values":[2,2]},
     "undergrads": {"start":2024,"values":[116]},

@@ -18,6 +18,8 @@ export type VintageKey =
   | "ipeds-hd"
   /** IPEDS Institutional Characteristics (IC{Y}, not the price files): athletics, programs, services. Its own year. */
   | "ipeds-ic-char"
+  /** IPEDS Fall Enrollment part D (EF{Y}D): the student-to-faculty ratio. Fall, like admissions. */
+  | "ipeds-ef"
   | "scorecard-enrollment"
   /** Student age: IPEDS collects it in odd-numbered falls only, so it trails enrollment by a year every other year. */
   | "scorecard-age"
@@ -125,6 +127,7 @@ export const FIELDS = {
   "cost.promise_program": ic("Promise program"),
   "admissions.application_fee": { ...ic("Application fee"), topic: "admissions" },
   "campus.housing": { ...ic("Campus housing and meal plans"), topic: "campus" },
+  "academics.student_faculty_ratio": { label: "Students per faculty member", topic: "academics", source: "ipeds-ef", vintage: "ipeds-ef" },
   "campus.athletics": icChar("Athletics: association, division, conference, sports"),
   "campus.programs": icChar("ROTC, study abroad, undergraduate research, and other programs"),
   "campus.services": icChar("Student services"),

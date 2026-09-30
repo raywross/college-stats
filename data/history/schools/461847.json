@@ -20,6 +20,7 @@
     "application_fee": {"start":2013,"values":[0,null,null,null,null,null,0,0,0,0,0]},
     "live_on": {"start":2019,"values":[1,1,2,2,2]},
     "tuition_guarantee": {"start":2011,"values":[2,2,2,2,2,null,null,null,2,2,2,2,2]},
+    "student_faculty_ratio": {"start":2011,"values":[8,8,5,9,8,null,null,null,22,15,9,18,19,18]},
     "athletic_association": {"start":2014,"values":[3,3,null,null,null,3,3,3,3,3,3,3]},
     "rotc": {"start":2014,"values":[2,2,null,null,null,2,2,2,2,2,2,2]},
     "promise": {"start":2022,"values":[2,2]},

@@ -6,6 +6,7 @@ import { matchesIndicators } from "./indicators";
 import { genderBalanceOf, isMostlyFullTime } from "./student-body";
 import { hasFewLoans } from "./repayment";
 import { hasTuitionGuarantee, noApplicationFee, requiresLiveOn } from "./housing";
+import { FACTOR_FILTERS } from "./factors";
 import {
   METRICS,
   SIZE_BUCKETS,
@@ -214,6 +215,7 @@ export function createDataset({ schools, meta, releaseCalendar }: DatasetFiles) 
     if (filters.liveOn) results = results.filter(requiresLiveOn);
     if (filters.noFee) results = results.filter(noApplicationFee);
     if (filters.guarantee) results = results.filter(hasTuitionGuarantee);
+    for (const f of FACTOR_FILTERS) if (filters[f.param]) results = results.filter(f.test);
 
     const sortBy: SortKey = filters.sortBy && filters.sortBy in SORTERS ? filters.sortBy : "applicants";
     const multiplier = (filters.sortDir ?? (sortBy === "applicants" ? "desc" : "asc")) === "asc" ? 1 : -1;

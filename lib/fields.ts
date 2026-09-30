@@ -74,6 +74,7 @@ export const FIELDS = {
   "admissions.test_submission_rate_act": adm("Share submitting ACT"),
   "admissions.test_policy": adm("Test policy"),
   "admissions.by_sex": adm("Applicants, admits, and enrollees by sex"),
+  "admissions.factors": adm("What's considered in admission (GPA, essay, legacy, and more)"),
   "admissions.sat_reading_median": adm("SAT Reading & Writing, median"),
   "admissions.sat_math_median": adm("SAT Math, median"),
   "admissions.act_composite_median": adm("ACT composite, median"),

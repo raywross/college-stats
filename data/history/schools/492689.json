@@ -2,6 +2,8 @@
   "unit_id": "492689",
   "series": {
     "application_fee": {"start":2018,"values":[75,75,75,75,75,75]},
+    "tuition_guarantee": {"start":2018,"values":[2,2,2,2,2,2]},
+    "promise": {"start":2022,"values":[2,2]},
     "undergrads": {"start":2018,"values":[247,278,288,266,257,235,242]},
     "race_white": {"start":2018,"values":[0.1336,0.1978,0.1215,0.1015,0.0817,0.0298,0.0289]},
     "race_asian": {"start":2018,"values":[0.0121,0.0288,0.0243,0.0301,0.0039,0,0.0041]},

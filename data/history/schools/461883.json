@@ -7,6 +7,8 @@
     "grant_pct": {"start":2010,"values":[0,0.0769,0,0,0.1,0.5556,0,0,1,0.4444,0.5,1,0,0.3111]},
     "grant_avg": {"start":2011,"values":[5550,null,null,2242,4250,null,null,5235,1945,3406,2693,null,3259]},
     "application_fee": {"start":2011,"values":[50,50,50,50,50,50,50,50,50,50,50,50,50]},
+    "tuition_guarantee": {"start":2011,"values":[2,2,2,2,2,2,2,2,2,2,2,2,2]},
+    "promise": {"start":2022,"values":[2,2]},
     "net_price_income_1": {"start":2011,"values":[27536,null,null,9782,19241,null,null,null,null,null,null,null,26669]},
     "net_price_income_2": {"start":2011,"values":[24761,null,null,null,null,null,null,null,null,null,null,null,27090]},
     "undergrads": {"start":2011,"values":[45,55,60,95,91,99,95,105,105,82,57,42,104,184]},

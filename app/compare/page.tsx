@@ -48,6 +48,35 @@ function Group({ domain, title, children }: { domain: Domain; title: string; chi
   );
 }
 
+/** One "All the numbers" row per admission factor (specs/data-expansion/admission-factors.md). */
+const FACTOR_USE_LABELS = { required: "Required", considered: "Considered", not_considered: "Not considered" } as const;
+const FACTOR_ROWS = (
+  [
+    ["gpa", "High school GPA"],
+    ["hs_record", "High school record"],
+    ["class_rank", "Class rank"],
+    ["college_prep", "College-prep program"],
+    ["recommendations", "Recommendations"],
+    ["essay", "Essay"],
+    ["legacy", "Legacy status"],
+    ["work_experience", "Work experience"],
+    ["competencies", "Demonstration of competencies"],
+    ["english_test", "English proficiency test"],
+    ["other_test", "Other tests"],
+  ] as const
+).map(
+  ([k, label]) =>
+    [
+      `Admission: ${label}`,
+      k === "legacy" ? "legacy-status" : "admission-factor",
+      "admissions.factors",
+      (s: School) => {
+        const use = s.admissions.factors?.[k];
+        return use ? FACTOR_USE_LABELS[use] : null;
+      },
+    ] as const
+) satisfies readonly (readonly [string, TermKey, FieldPath, (s: School) => string | null])[];
+
 /**
  * "All the numbers" rows: label, glossary term, registered field (for its
  * citation and per-school source chips), and formatter.
@@ -67,6 +96,7 @@ const TABLE_ROWS = (
     ["Yield", "yield", "derived.yield", (s: School) => opt(METRICS.yield.get(s), (v) => pct(v))],
     ["SAT middle 50%", "middle-50", "derived.sat_composite", (s: School) => satComposite(s)?.join("–") ?? null],
     ["ACT middle 50%", "act", "admissions.act_composite_25_75", (s: School) => s.admissions.act_composite_25_75?.join("–") ?? null],
+    ...FACTOR_ROWS,
     ["Test policy", "test-policy", "admissions.test_policy", (s: School) => (s.admissions.test_policy ? TEST_POLICY_LABELS[s.admissions.test_policy] : null)],
     ["Application fee", "application-fee", "admissions.application_fee", (s: School) =>
       s.admissions.application_fee == null ? null : s.admissions.application_fee === 0 ? "None" : money(s.admissions.application_fee)],

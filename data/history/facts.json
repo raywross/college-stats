@@ -66,5 +66,19 @@
       0.057,
       0.0516
     ]
+  },
+  "legacy": {
+    "from": 2022,
+    "to": 2024,
+    "n": 1559,
+    "consideredFrom": 502,
+    "consideredTo": 431,
+    "stopped": 88,
+    "started": 17,
+    "byYear": [
+      0.322,
+      0.2937,
+      0.2765
+    ]
   }
 }

@@ -6,6 +6,7 @@ import { movedBy } from "@/lib/insights";
 import { Sparkline } from "@/components/charts/Sparkline";
 import { HistorySourceNote } from "@/components/sources/HistorySourceNote";
 import { Term } from "@/components/ui/info-tip";
+import { cn } from "@/lib/utils";
 
 function FactCard({
   big,
@@ -44,6 +45,8 @@ export async function WhatsChanged({ valueColor, admissionsColor, scoresColor }:
   const facts = files?.facts;
   if (!files || !facts || (!facts.priceGap && !facts.harderToGetIn && !facts.testRequired)) return null;
   const { priceGap: pg, harderToGetIn: hi, testRequired: tr } = facts;
+  const lg = facts.legacy ?? null;
+  const count = [pg, hi, tr, lg].filter(Boolean).length;
 
   return (
     <section>
@@ -55,7 +58,8 @@ export async function WhatsChanged({ valueColor, admissionsColor, scoresColor }:
           money <Term term="inflation-adjusted">after inflation</Term>.
         </p>
       </div>
-      <div className="grid gap-4 max-sm:gap-3 max-sm:rail md:grid-cols-2 xl:grid-cols-3">
+      {/* Four facts sit 2 × 2 rather than three and an orphan. */}
+      <div className={cn("grid gap-4 max-sm:gap-3 max-sm:rail md:grid-cols-2", count === 3 && "xl:grid-cols-3")}>
         {pg && (
           <FactCard
             big={formatChange({ measure: "ratio", change: pg.avgPaidChange })}
@@ -150,6 +154,40 @@ export async function WhatsChanged({ valueColor, admissionsColor, scoresColor }:
             <b className="text-foreground">Test-optional went mainstream.</b> In {historyYearLabel(tr.from, "fall").toLowerCase()}, {Math.round(tr.requiredFrom * 100)}% of
             colleges required the SAT or ACT. In {historyYearLabel(tr.to, "fall").toLowerCase()}, {Math.round(tr.requiredTo * 100)}% did, across{" "}
             {tr.n.toLocaleString("en-US")} colleges reporting both years. Score ranges now describe only the students who chose to send them.
+          </FactCard>
+        )}
+        {lg && (
+          <FactCard
+            big={`${lg.stopped}`}
+            href="/explore?noLegacy=1"
+            cta="See colleges that don't consider legacy"
+            chart={
+              <div
+                className="space-y-2.5"
+                role="img"
+                aria-label={`Share of colleges considering legacy status: ${Math.round((lg.consideredFrom / lg.n) * 100)}% in ${historyYearLabel(lg.from, "fall").toLowerCase()}, ${Math.round((lg.consideredTo / lg.n) * 100)}% in ${historyYearLabel(lg.to, "fall").toLowerCase()}`}
+              >
+                {[
+                  { label: historyYearLabel(lg.from, "fall"), v: lg.consideredFrom / lg.n, muted: true },
+                  { label: historyYearLabel(lg.to, "fall"), v: lg.consideredTo / lg.n, muted: false },
+                ].map((r) => (
+                  <div key={r.label} className="grid grid-cols-[4.5rem_1fr_2.5rem] items-center gap-2 text-xs">
+                    <span className="text-muted-foreground">{r.label}</span>
+                    <span className="h-3 overflow-hidden rounded-r bg-muted">
+                      <span className="block h-full rounded-r" style={{ width: `${Math.max(1, r.v * 100)}%`, backgroundColor: r.muted ? "var(--muted-foreground)" : admissionsColor }} />
+                    </span>
+                    <span className="text-right font-semibold tabular-nums">{Math.round(r.v * 100)}%</span>
+                  </div>
+                ))}
+                <p className="text-[11px] text-muted-foreground">Share of colleges considering legacy status</p>
+              </div>
+            }
+            footer={<HistorySourceNote keys={["factor_legacy"]} files={files} range={[lg.from, lg.to]} />}
+          >
+            <b className="text-foreground">Fewer colleges weigh legacy.</b> {lg.stopped} colleges stopped considering whether an applicant&apos;s
+            parent attended between {historyYearLabel(lg.from, "fall").toLowerCase()} and {historyYearLabel(lg.to, "fall").toLowerCase()}, and{" "}
+            {lg.started} started, across {lg.n.toLocaleString("en-US")} colleges reporting both years. <Term term="legacy-status">Legacy status</Term>{" "}
+            has been reported to the federal government only since {historyYearLabel(lg.from, "fall").toLowerCase()}.
           </FactCard>
         )}
       </div>

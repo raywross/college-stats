@@ -7,6 +7,8 @@
     "grant_pct": {"start":2019,"values":[1,0.875,0.9286,0.8571,0.9286]},
     "grant_avg": {"start":2019,"values":[6153,5540,5829,8127,6493]},
     "application_fee": {"start":2019,"values":[25,0,0,0,0]},
+    "tuition_guarantee": {"start":2019,"values":[2,2,2,2,2]},
+    "promise": {"start":2022,"values":[2,2]},
     "net_price_income_1": {"start":2019,"values":[9822,14175,19797,19116,20682]},
     "net_price_income_2": {"start":2021,"values":[20225,null,20586]},
     "net_price_income_3": {"start":2019,"values":[18561,null,null,null,21991]},

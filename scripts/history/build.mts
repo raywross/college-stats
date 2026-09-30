@@ -3,10 +3,10 @@
  * that stop a bad build (specs/trends-data.md#pipeline-npm-run-sync-history). No I/O, so tests drive it with
  * fixture rows. `scripts/sync-history.mts` does the fetching and writing.
  */
-import type { School } from "../../lib/types.ts";
+import type { AdmissionFactor, School } from "../../lib/types.ts";
 import { FIELDS, isFieldPath, type FieldPath } from "../../lib/fields.ts";
 import type { IpedsRow } from "../../lib/derive.ts";
-import { acceptanceRate, admitRatesBySex, applicationFeeFrom, computePrices, housingFrom, netPriceByIncome, raceShares, satMedian, toAid, yieldOf } from "../../lib/derive.ts";
+import { FACTOR_CODE, FACTOR_COLUMNS, FACTOR_ERA, acceptanceRate, admitRatesBySex, applicationFeeFrom, computePrices, housingFrom, netPriceByIncome, promiseProgramFrom, raceShares, satMedian, toAid, tuitionPlansFrom, yieldOf } from "../../lib/derive.ts";
 import {
   NET_PRICE_BANDS,
   RACE_FROM,
@@ -56,6 +56,8 @@ export interface Inputs {
 }
 
 const VALID_POLICY = new Set<number>(Object.values(TEST_POLICY_CODES));
+/** Factor codes kept in history: 1 required, 2 recommended (to fall 2021), 3 neither / not considered, 5 considered. */
+const VALID_FACTOR = new Set([1, 2, 3, 5]);
 
 const round4 = (v: number) => Math.round(v * 10_000) / 10_000;
 
@@ -132,6 +134,12 @@ export function buildCollege(school: Pick<School, "unit_id" | "type">, inputs: I
     const policy = v("policy");
     if (policy !== null && VALID_POLICY.has(policy)) put(raw, "test_policy", t.year, policy);
 
+    // Admission factors as raw codes (1, 2, 3, 5); what they mean depends on the era (lib/events.ts).
+    for (const k of Object.keys(FACTOR_COLUMNS) as AdmissionFactor[]) {
+      const code = v(`factor_${k}`);
+      if (code !== null && VALID_FACTOR.has(code)) put(raw, `factor_${k}` as SeriesKey, t.year, code);
+    }
+
     // By sex, with the overall rate's rule (lib/metrics.ts admitRatesBySex); medians from fall 2022 (lib/metrics.ts satMedian).
     put(raw, "admit_rate_men", t.year, acceptanceRate(v("applicants_men"), v("admitted_men")));
     put(raw, "admit_rate_women", t.year, acceptanceRate(v("applicants_women"), v("admitted_women")));
@@ -168,6 +176,13 @@ export function buildCollege(school: Pick<School, "unit_id" | "type">, inputs: I
     const row = t.rows.get(id);
     put(raw, "housing_capacity", t.year, housingFrom(row)?.capacity);
     put(raw, "application_fee", t.year, applicationFeeFrom(row));
+    // Policies as codes for events: the same readers as the snapshot, so the last point matches it.
+    const live = housingFrom(row)?.first_years_required;
+    put(raw, "live_on", t.year, live == null ? null : live ? 1 : 2);
+    const plans = tuitionPlansFrom(row);
+    put(raw, "tuition_guarantee", t.year, plans === null ? null : plans.includes("guarantee") ? 1 : 2);
+    const promise = promiseProgramFrom(row);
+    put(raw, "promise", t.year, promise === null ? null : promise ? 1 : 2);
   }
 
   const sfaByYear = new Map(inputs.sfa.map((t) => [t.year, t]));
@@ -299,6 +314,33 @@ export function buildFacts(histories: readonly SchoolHistory[], window: Record<Y
     priceGap: priceGap(histories, window.academic, cpi),
     harderToGetIn: harderToGetIn(histories, window.fall),
     testRequired: testRequired(histories, window.fall[1]),
+    legacy: legacy(histories, window.fall[1]),
+  };
+}
+
+/** Legacy status considered (required or considered), over colleges reporting it in fall 2022 and the newest fall. */
+function legacy(histories: readonly SchoolHistory[], to: number): TrendFacts["legacy"] {
+  const from = FACTOR_ERA;
+  if (to <= from) return null;
+  const at = (h: SchoolHistory, y: number) => valueAt(h.series.factor_legacy, y);
+  const panel = histories.filter((h) => at(h, from) !== null && at(h, to) !== null);
+  if (panel.length < MIN_REPORTING) return null;
+  const considers = (code: number | null) => code === 1 || code === 5;
+  const share = (y: number) => {
+    const members = panel.filter((h) => at(h, y) !== null);
+    if (members.length < panel.length * 0.9) return null;
+    return round4(members.filter((h) => considers(at(h, y))).length / members.length);
+  };
+  const byYear = Array.from({ length: to - from + 1 }, (_, i) => share(from + i));
+  return {
+    from,
+    to,
+    n: panel.length,
+    consideredFrom: panel.filter((h) => considers(at(h, from))).length,
+    consideredTo: panel.filter((h) => considers(at(h, to))).length,
+    stopped: panel.filter((h) => considers(at(h, from)) && !considers(at(h, to))).length,
+    started: panel.filter((h) => !considers(at(h, from)) && considers(at(h, to))).length,
+    byYear,
   };
 }
 
@@ -515,6 +557,10 @@ export function lastPointMismatches(schools: readonly School[], histories: Reado
       check("admit_rate_women", rates.women);
       check("sat_50", satMedian(s));
       check("act_50", s.admissions.act_composite_median);
+      for (const k of Object.keys(FACTOR_COLUMNS) as AdmissionFactor[]) {
+        const use = s.admissions.factors?.[k];
+        check(`factor_${k}` as SeriesKey, use ? FACTOR_CODE[use] : null);
+      }
     }
     // College Scorecard series end on the snapshot's "latest" values. (Graduation isn't compared: the profile shows
     // Scorecard's consumer rate, which has no history; the chart is the 6-year rate and says so.)
@@ -549,6 +595,11 @@ export function lastPointMismatches(schools: readonly School[], histories: Reado
       // Housing and the fee come from the same academic year's characteristics file as the prices.
       check("housing_capacity", s.campus?.housing?.capacity);
       check("application_fee", s.admissions.application_fee);
+      const h = s.campus?.housing;
+      check("live_on", h?.first_years_required == null ? null : h.first_years_required ? 1 : 2);
+      const plans = c.tuition_plans;
+      check("tuition_guarantee", plans == null ? null : plans.includes("guarantee") ? 1 : 2);
+      check("promise", c.promise_program == null ? null : c.promise_program ? 1 : 2);
     }
     if (s.aid && sameYear) {
       check("grant_pct", s.aid.grant_pct);

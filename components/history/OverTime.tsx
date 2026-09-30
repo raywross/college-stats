@@ -15,6 +15,7 @@ import {
   firstPointFrom,
   formatChange,
   historyYearLabel,
+  WINDOW_YEARS,
   inDollarsOf,
   real as toRealDollars,
   valueAt,
@@ -32,6 +33,7 @@ import { DEMOGRAPHIC_CATEGORIES } from "@/lib/metrics";
 import { Dumbbell } from "@/components/charts/Dumbbell";
 import { InfoTip } from "@/components/ui/info-tip";
 import { cn } from "@/lib/utils";
+import { historyEvents } from "@/lib/events";
 
 type Range = "10" | "all";
 type Dollars = "real" | "nominal";
@@ -475,7 +477,9 @@ export function OverTime(props: OverTimeProps) {
   const ui = useUrlState();
   // Phone collapse state only: a closed group is `hidden sm:block`, so wider screens always show every group. Starting
   // collapsed in the server HTML (rather than collapsing after hydration) keeps the page from jumping on load.
-  const [open, setOpen] = useState({ cost: false, aid: false, admissions: false, scores: false, students: false, outcomes: false });
+  const [open, setOpen] = useState({ cost: false, aid: false, admissions: false, scores: false, students: false, outcomes: false, changes: false });
+  // Policy changes (lib/events.ts) within the default 10-year window.
+  const changes = useMemo(() => historyEvents(history).filter((e) => e.year >= latest[e.kind] - WINDOW_YEARS), [history, latest]);
   const toggle = (k: keyof typeof open) => () => setOpen((o) => ({ ...o, [k]: !o[k] }));
 
   const earliest = (keys: SeriesKey[]) => Math.min(...keys.map((k) => history.series[k]?.start ?? Infinity));
@@ -860,6 +864,30 @@ export function OverTime(props: OverTimeProps) {
             <b className="text-foreground">Earnings</b> aren&apos;t shown over time: the College Scorecard changed how it measures them, so earlier
             years aren&apos;t comparable with today&apos;s figure.
           </p>
+        </Group>
+      )}
+
+      {changes.length > 0 && (
+        <Group
+          title="Changes"
+          color={colors.admissions}
+          open={open.changes}
+          onToggle={toggle("changes")}
+          footer={
+            <p className="max-w-3xl text-[11px] text-muted-foreground">
+              From the college&apos;s yearly reports to the federal government over the last 10 years. A change can reflect how a college
+              answered the survey as well as a new policy; changes undone within two years are left out.
+            </p>
+          }
+        >
+          <ol className="max-w-3xl divide-y rounded-3xl border bg-card">
+            {changes.map((e) => (
+              <li key={`${e.key}-${e.year}`} className="flex items-baseline gap-4 px-4 py-3 sm:px-5">
+                <span className="w-20 shrink-0 text-xs font-semibold text-muted-foreground tabular-nums">{historyYearLabel(e.year, e.kind)}</span>
+                <span className="text-sm">{e.text}</span>
+              </li>
+            ))}
+          </ol>
         </Group>
       )}
     </div>

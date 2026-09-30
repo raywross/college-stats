@@ -36,7 +36,7 @@ export interface FilterFacets {
   /** Colleges matching each admission-factor filter (lib/factors.ts). */
   factors: Record<FactorFilterParam, number>;
   /** Colleges per setting group, research tier, and designation (lib/campus-profile.ts). */
-  campus: { setting: Record<SettingGroup, number>; research: Record<ResearchTier, number>; designation: Record<Designation, number> };
+  campus: { setting: Record<SettingGroup, number>; research: Record<ResearchTier, number>; designation: Record<Designation, number>; opportunity: number };
   /** Colleges where few undergrads take federal loans (lib/repayment.ts). */
   fewLoans: number;
 }
@@ -107,7 +107,7 @@ export function FilterPanel({ facets, onDone }: { facets: FilterFacets; onDone?:
   const fewLoans = searchParams.get("fewLoans") === "1";
 
   const hasFilters = [
-    ...["q", "types", "sizes", "regions", "states", "minAR", "maxAR", "minSAT", "maxSAT", "minCost", "maxCost", "minEnroll", "maxEnroll", "balance", "fullTime", "fewLoans", "liveOn", "noFee", "guarantee", "noLegacy", "noEssay", "gpaRequired", "setting", "research", "designation"],
+    ...["q", "types", "sizes", "regions", "states", "minAR", "maxAR", "minSAT", "maxSAT", "minCost", "maxCost", "minEnroll", "maxEnroll", "balance", "fullTime", "fewLoans", "liveOn", "noFee", "guarantee", "noLegacy", "noEssay", "gpaRequired", "setting", "research", "designation", "opportunity"],
     ...INDICATOR_KEYS.map((k) => INDICATORS[k].param),
   ].some((k) => searchParams.get(k));
 
@@ -295,6 +295,18 @@ export function FilterPanel({ facets, onDone }: { facets: FilterFacets; onDone?:
               </div>
             );
           })}
+          <div>
+            <Chip
+              active={searchParams.get("opportunity") === "1"}
+              onClick={() => update({ opportunity: searchParams.get("opportunity") === "1" ? null : "1" })}
+              count={facets.campus.opportunity}
+            >
+              Opportunity colleges
+            </Chip>
+            <p className="mt-1.5 flex items-center gap-1 text-[11px] text-muted-foreground">
+              Carnegie&apos;s higher access, higher earnings class. <InfoTip term="student-access-and-earnings" />
+            </p>
+          </div>
         </div>
       </Section>
 

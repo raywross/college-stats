@@ -19,9 +19,12 @@ the single source: the pages read them at build time, so editing a spec updates 
 | `app/globals.css` `.spec-prose` | Typography for rendered specs (headings, lists, code, callouts, tables) |
 
 ## Rules
-- **Every planned spec is listed.** A spec whose status line starts `> Status: **planned**` or `**skeleton**` must have
-  an entry in `ROADMAP`, and every entry must be such a spec (`tests/roadmap.test.mts`). When a spec is built, change
+- **Every planned spec is listed.** A spec whose status line starts `> Status: **planned**`, `**skeleton**`, or
+  `**deferred**` must have an entry in `ROADMAP`, and every entry must be such a spec (`tests/roadmap.test.mts`). When a spec is built, change
   its status and remove its entry; when a new one is written, add one.
+- **Later.** A spec set aside until another feature needs it gets status `**deferred**` and the `later` group, the last
+  section on `/roadmap`, with its "Deferred" badge. Say in the spec why it waits and what it gets built with; move it
+  to a wave when that feature is scheduled. The backlog's "Later" section lists the same specs.
 - **Links.** A link to another roadmap page stays on the site (`/roadmap/{slug}#anchor`); any other repo link opens the
   file on GitHub (the repo is public). The test checks that every in-site anchor exists on its target page.
 - **Static.** `generateStaticParams` + `dynamicParams = false`: every page is prerendered, and unknown slugs 404.

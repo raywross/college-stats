@@ -7,7 +7,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import type { School } from "../lib/types";
-import { campusProfileFrom, designationsOf, matchesCampus, msiFrom } from "../lib/campus-profile.ts";
+import { CARNEGIE_SAEC, campusProfileFrom, designationsOf, directoryIssues, isOpportunityCollege, matchesCampus, msiFrom } from "../lib/campus-profile.ts";
 import { countActiveFilters, parseFilters } from "../lib/params.ts";
 import { parseCsv } from "../scripts/lib/ipeds.mts";
 
@@ -61,6 +61,30 @@ test("campus filters parse from the URL and match any chosen value", () => {
   assert.ok(matchesCampus(s, { designation: ["hbcu", "hsi"] }));
   assert.ok(!matchesCampus({ campus: undefined }, { setting: ["city"] }), "unreported never matches");
   assert.ok(matchesCampus({ campus: undefined }, {}), "no filters match everything");
+});
+
+test("the Opportunity colleges filter keeps only Carnegie's class 6", () => {
+  assert.equal(parseFilters({ opportunity: "1" }).opportunity, true);
+  assert.equal(parseFilters({ opportunity: "yes" }).opportunity, undefined);
+  const withClass = (access_earnings: string | null) => ({ campus: { carnegie: { ic: null, research: null, access_earnings, size: null } } }) as Pick<School, "campus">;
+  assert.ok(isOpportunityCollege(withClass(CARNEGIE_SAEC[6])));
+  assert.ok(!isOpportunityCollege(withClass(CARNEGIE_SAEC[5])));
+  assert.ok(!matchesCampus({ campus: undefined }, { opportunity: true }));
+  const n = schools.filter(isOpportunityCollege).length;
+  assert.ok(n > 150 && n < 400, `a few hundred Opportunity colleges, got ${n}`);
+});
+
+test("the directory cross-check flags a different college behind the same id", () => {
+  const s = { unit_id: "221999", name: "Vanderbilt University", location: { state: "TN" } };
+  const row = { INSTNM: "Vanderbilt University", STABBR: "TN", CLOSEDAT: "-2", NEWID: "-2" };
+  assert.deepEqual(directoryIssues(row, s), []);
+  assert.deepEqual(directoryIssues({ ...row, INSTNM: "The vanderbilt  university" }, s), [], "case, spacing, and a leading The don't count");
+  assert.deepEqual(directoryIssues({ ...row, INSTNM: "Texas A & M University" }, { ...s, name: "Texas A&M University" }), [], "& vs and");
+  assert.equal(directoryIssues({ ...row, STABBR: "KY" }, s).length, 1);
+  assert.match(directoryIssues({ ...row, INSTNM: "Belmont University" }, s)[0], /named "Belmont University"/);
+  assert.match(directoryIssues({ ...row, CLOSEDAT: "6/30/2025" }, s)[0], /closed/);
+  assert.match(directoryIssues({ ...row, NEWID: "221740" }, s)[0], /merged into 221740/);
+  assert.match(directoryIssues(undefined, s)[0], /not in the directory/);
 });
 
 test("stored campus profiles are consistent", () => {

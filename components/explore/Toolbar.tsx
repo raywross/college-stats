@@ -232,6 +232,8 @@ export function ActiveFilters() {
   for (const d of getList("designation").filter(isDesignation))
     chips.push({ key: `des-${d}`, label: DESIGNATION_LABELS[d], onRemove: () => toggleInList("designation", d) });
 
+  if (searchParams.get("opportunity") === "1") chips.push({ key: "opportunity", label: "Opportunity colleges", onRemove: () => update({ opportunity: null }) });
+
   for (const k of INDICATOR_KEYS) {
     const def = INDICATORS[k];
     for (const d of getList(def.param).filter(isDirection))

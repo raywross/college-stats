@@ -96,6 +96,13 @@ list them here.
   now, and where the change is concentrated (first look: the Northeast and moderately selective colleges drive it; the
   West moved the other way). Needs `applicants_men`/`applicants_women` history series first.
 
+## Later
+Worked out, then set aside until another feature needs them; each spec says what it gets built with. Also the last
+section on `/roadmap`.
+- [ ] **Metro area** ([metro-area.md](data-expansion/metro-area.md)): each college's metro and county from the directory
+  file, for a "nearby colleges" list, a metro filter, or metro-level national trends. Deferred from campus profile
+  (2026-09-30).
+
 ## Quality
 - [ ] Tests for the sync mapping (`toSchool`), the CDS importer (fixtures for classic and flat layouts, including the
   Purdue typo case), and missing-data handling in `lib/metrics.ts`. (Aid and price derivations moved to

@@ -28,7 +28,7 @@ import type { DatasetMeta, RepaymentStatus, School, SchoolType, TestPolicy } fro
 import { lineageForPatch, validateLineage } from "../lib/lineage.ts";
 import { applyProbes, filesToProbe, type FileProbe, type ReleaseCalendar } from "../lib/releases.ts";
 import { IPEDS_BASES, parseCsv } from "./lib/ipeds.mts";
-import { MSI_FIELDS, campusProfileFrom, msiFrom } from "../lib/campus-profile.ts";
+import { MSI_FIELDS, campusProfileFrom, directoryIssues, msiFrom } from "../lib/campus-profile.ts";
 import { acceptanceRate, applicationFeeFrom, computePrices, factorsFrom, housingFrom, ipedsNum, parseShareBand, priceSuffix, promiseProgramFrom, raceShares, toAid, tuitionPlansFrom } from "../lib/derive.ts";
 
 const ROOT = join(import.meta.dirname, "..");
@@ -636,6 +636,8 @@ async function main() {
   const overrides: Record<string, Patch> = existsSync(OVERRIDES) ? JSON.parse(readFileSync(OVERRIDES, "utf8")) : {};
 
   const schools: School[] = [];
+  // Scorecard and the directory should describe the same college under each id (campus-profile.md, "As built").
+  const directoryWarnings: string[] = [];
   for (const row of scorecard) {
     if (!INCLUDE_ONLINE && row["school.online_only"] === 1) {
       stats.online++;
@@ -645,6 +647,7 @@ async function main() {
     if (school) addPrices(school, ic, sfa.rows.get(school.unit_id), sfaYears);
     if (school) addCharacteristics(school, chars.rows.get(school.unit_id));
     if (school) addProfile(school, hd.rows.get(school.unit_id), row);
+    if (school) directoryWarnings.push(...directoryIssues(hd.rows.get(school.unit_id), school));
     if (!school) {
       stats.noSize++;
       continue;
@@ -696,6 +699,11 @@ async function main() {
   console.log(`  with CDS aid detail:  ${schools.filter((s) => s.aid?.cds).length}`);
   console.log(`  with avg paid (all):  ${schools.filter((s) => s.cost?.avg_paid_all != null).length}`);
   console.log(`  overrides applied:    ${stats.overridden}`);
+  if (directoryWarnings.length) {
+    console.warn(`  directory mismatches: ${directoryWarnings.length} (check the id still means the same college)`);
+    for (const w of directoryWarnings.slice(0, 20)) console.warn(`    ${w}`);
+    if (directoryWarnings.length > 20) console.warn(`    …and ${directoryWarnings.length - 20} more`);
+  } else console.log(`  directory mismatches: 0`);
   console.log(`  skipped online-only:  ${stats.online}${INCLUDE_ONLINE ? "" : " (use --include-online to keep)"}`);
   console.log(`  skipped (no undergrads reported): ${stats.noSize}`);
 }

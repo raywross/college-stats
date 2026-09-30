@@ -410,6 +410,8 @@ export interface SearchFilters {
   setting?: SettingGroup[];
   research?: ResearchTier[];
   designation?: Designation[];
+  /** Carnegie "Opportunity Colleges and Universities" (higher access, higher earnings) only. */
+  opportunity?: boolean;
   /** Admission factors (lib/factors.ts): legacy not considered, essay not required, GPA required. */
   noLegacy?: boolean;
   noEssay?: boolean;

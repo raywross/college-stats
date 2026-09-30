@@ -47,12 +47,15 @@ export const CARNEGIE_IC: Record<number, string> = {
   30: "Special Focus: Technology, Engineering, and Sciences", 31: "Special Focus: Theological Studies",
 };
 
-/** Student Access and Earnings (CARNEGIESAEC); 0 is "not classified". */
+/** Student Access and Earnings (CARNEGIESAEC); 0 is "not classified". Class 6 is Carnegie's "Opportunity Colleges". */
 export const CARNEGIE_SAEC: Record<number, string> = {
   1: "Lower Access, Lower Earnings", 2: "Higher Access, Lower Earnings", 3: "Lower Access, Medium Earnings",
   4: "Higher Access, Medium Earnings", 5: "Lower Access, Higher Earnings",
   6: "Opportunity Colleges and Universities: Higher Access, Higher Earnings",
 };
+
+/** Higher access (many Pell and underrepresented students) and higher earnings, in Carnegie's own words. */
+export const isOpportunityCollege = (s: Pick<School, "campus">): boolean => s.campus?.carnegie?.access_earnings === CARNEGIE_SAEC[6];
 
 export const CARNEGIE_SIZE: Record<number, string> = { 1: "Very Small", 2: "Small", 3: "Medium", 4: "Large", 5: "Very Large" };
 
@@ -90,11 +93,12 @@ export const isDesignation = (v: string): v is HdDesignation | MsiDesignation =>
 /** Any of the chosen values matches; a college that doesn't report the field never does. */
 export function matchesCampus(
   s: Pick<School, "campus">,
-  f: { setting?: SettingGroup[]; research?: ResearchTier[]; designation?: (HdDesignation | MsiDesignation)[] }
+  f: { setting?: SettingGroup[]; research?: ResearchTier[]; designation?: (HdDesignation | MsiDesignation)[]; opportunity?: boolean }
 ): boolean {
   if (f.setting?.length && !(s.campus?.setting && f.setting.includes(s.campus.setting.group))) return false;
   if (f.research?.length && !(s.campus?.carnegie?.research && f.research.includes(s.campus.carnegie.research))) return false;
   if (f.designation?.length && !designationsOf(s).some((d) => f.designation!.includes(d))) return false;
+  if (f.opportunity && !isOpportunityCollege(s)) return false;
   return true;
 }
 
@@ -171,4 +175,24 @@ export const MSI_FIELDS: Record<MsiDesignation, string> = {
 
 export function msiFrom(sc: Record<string, unknown>): MsiDesignation[] {
   return (Object.entries(MSI_FIELDS) as [MsiDesignation, string][]).filter(([, f]) => sc[f] === 1).map(([k]) => k);
+}
+
+/** Names compared loosely: case, accents, punctuation, "&" vs "and", and a leading "The" don't count. */
+export const normalizeName = (s: string) =>
+  s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/&/g, " and ").replace(/[^a-z0-9]+/g, " ").trim().replace(/^the /, "");
+
+/**
+ * Directory cross-check: does the HD row describe the same college as Scorecard? A different state, a closure date, or
+ * a NEWID (merged into another id) means the id may now point at a different or defunct institution; a different name
+ * is usually a rename one source hasn't caught up with. Returns readable problems, empty when they agree.
+ */
+export function directoryIssues(row: Row, s: { unit_id: string; name: string; location: { state: string } }): string[] {
+  if (!row) return [`${s.name} (${s.unit_id}): not in the directory`];
+  const out: string[] = [];
+  const at = `${s.name} (${s.unit_id})`;
+  if (row.STABBR && row.STABBR !== s.location.state) out.push(`${at}: state ${s.location.state} in Scorecard, ${row.STABBR} in the directory`);
+  if (row.INSTNM && normalizeName(row.INSTNM) !== normalizeName(s.name)) out.push(`${at}: named "${row.INSTNM}" in the directory`);
+  if (row.CLOSEDAT && row.CLOSEDAT !== "-2") out.push(`${at}: closed ${row.CLOSEDAT}`);
+  if (row.NEWID && row.NEWID !== "-2") out.push(`${at}: merged into ${row.NEWID}`);
+  return out;
 }

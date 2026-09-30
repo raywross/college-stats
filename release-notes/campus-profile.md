@@ -3,7 +3,7 @@ title: "Campus profile: setting, research tier, designations, and a map"
 pr: 34
 date: 2026-09-30
 kind: data
-summary: Profiles show whether a college is in a city, suburb, town, or rural area, its research tier, and designations like HBCU or Hispanic-Serving; Explore gets matching filters and a map view.
+summary: Profiles show whether a college is in a city, suburb, town, or rural area, its research tier, and designations like HBCU or Hispanic-Serving; Explore gets matching filters and a map view, and Home three new starting points.
 ---
 
 ## What's new
@@ -14,7 +14,11 @@ summary: Profiles show whether a college is in a city, suburb, town, or rural ar
   colored public or private and sized by undergrads, as in the chart view. Hover or tap a dot for details; click to
   open the profile.
 - **Explore → Campus filters**: filter by setting (city, suburb, town, rural), research tier, and designation. Combine
-  them with the map to see, say, every HBCU or every rural Hispanic-Serving college.
+  them with the map to see, say, every HBCU or every rural Hispanic-Serving college. An **Opportunity colleges** toggle
+  shows the 260 colleges the Carnegie Classification rates as higher access and higher earnings: they enroll many
+  lower-income students, and their graduates earn well.
+- **Home**: three new starting points under "What kind of school are you after?": Opportunity colleges, HBCUs, and
+  research universities.
 - **Compare**: rows for setting, Carnegie class, research activity, Carnegie's student access and earnings class, and
   designations.
 - **Glossary**: setting (locale), Carnegie classification, R1, student access and earnings, HBCU, Hispanic-Serving,
@@ -25,5 +29,9 @@ summary: Profiles show whether a college is in a city, suburb, town, or rural ar
 - A new federal source: the IPEDS directory, which lists every college's location, setting, and Carnegie
   classification. Minority-serving and single-sex designations come from College Scorecard. No existing value changed.
 - The map shows the 50 states and DC. Colleges in U.S. territories are counted under the map rather than drawn.
+- Each data update now checks that the directory and College Scorecard describe the same college under each ID (same
+  state and name, not closed or merged), and flags any that don't. None did.
+- The [roadmap](/roadmap) has a new **Later** section for ideas that are worked out but wait until a feature needs
+  them. First in it: each college's metro area.
 - First of the eight wave 2 specs on the [roadmap](/roadmap):
   [campus-profile.md](../specs/data-expansion/campus-profile.md).

@@ -23,7 +23,7 @@ import { genderBalanceOf, isMostlyFullTime } from "@/lib/student-body";
 import { hasFewLoans } from "@/lib/repayment";
 import { HOUSING_FILTERS } from "@/lib/housing";
 import { FACTOR_FILTERS } from "@/lib/factors";
-import { DESIGNATION_KEYS, RESEARCH_TIERS, SETTING_GROUPS, designationsOf } from "@/lib/campus-profile";
+import { DESIGNATION_KEYS, RESEARCH_TIERS, SETTING_GROUPS, designationsOf, isOpportunityCollege } from "@/lib/campus-profile";
 import { InfoTip } from "@/components/ui/info-tip";
 import { MultiSourceNote } from "@/components/sources/MultiSourceNote";
 
@@ -60,6 +60,7 @@ function buildFacets({ getAllSchools, histogram }: Dataset): FilterFacets {
     setting: Object.fromEntries(SETTING_GROUPS.map((g) => [g.key, 0])) as FilterFacets["campus"]["setting"],
     research: Object.fromEntries(RESEARCH_TIERS.map((r) => [r, 0])) as FilterFacets["campus"]["research"],
     designation: Object.fromEntries(DESIGNATION_KEYS.map((d) => [d, 0])) as FilterFacets["campus"]["designation"],
+    opportunity: all.filter(isOpportunityCollege).length,
   };
   for (const s of all) {
     if (s.campus?.setting) campus.setting[s.campus.setting.group]++;

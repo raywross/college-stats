@@ -14,7 +14,7 @@ export const COMPLEXITY: Record<Complexity, { label: string; description: string
 };
 
 // Wave 1 (data the site already downloads) was built on 2026-09-29; see /release-notes.
-export type RoadmapGroupKey = "wave-2" | "wave-3" | "college-reported" | "campus-life" | "national-trends";
+export type RoadmapGroupKey = "wave-2" | "wave-3" | "college-reported" | "campus-life" | "national-trends" | "later";
 
 export const ROADMAP_GROUPS: { key: RoadmapGroupKey; title: string; description: string }[] = [
   {
@@ -45,13 +45,20 @@ export const ROADMAP_GROUPS: { key: RoadmapGroupKey; title: string; description:
     description:
       "How college is changing across the country, not at one college: nationally, and by region, public or private, size, and selectivity.",
   },
+  {
+    key: "later",
+    title: "Later",
+    description:
+      "Worked out, then set aside: each is parked until another feature needs it, and gets built alongside that feature.",
+  },
 ];
 
-export type RoadmapStatus = "planned" | "draft";
+export type RoadmapStatus = "planned" | "draft" | "deferred";
 
 export const STATUS_LABELS: Record<RoadmapStatus, string> = {
   planned: "Planned",
   draft: "Early draft",
+  deferred: "Deferred",
 };
 
 export interface RoadmapSpec {
@@ -241,6 +248,15 @@ export const ROADMAP: RoadmapSpec[] = [
     complexity: 3,
     complexityNote: "A new Trends page and a shared way to compute and chart breakdowns; each later study reuses it.",
     status: "planned",
+  },
+  {
+    slug: "metro-area",
+    file: "specs/data-expansion/metro-area.md",
+    group: "later",
+    summary: "Each college's metro area and county, for a \"nearby colleges\" list, a metro filter, and metro-level trends.",
+    complexity: 1,
+    complexityNote: "Columns from a file the site already reads, plus a table of metro names.",
+    status: "deferred",
   },
 ];
 

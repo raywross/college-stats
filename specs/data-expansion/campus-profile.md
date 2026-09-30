@@ -80,9 +80,12 @@ possible later from Scorecard year-prefixed flags (*unverified* whether the flag
     and `campus.msi` (Scorecard: `hsi`, `pbi`, `aanapisi`, `annh`, `nasnti`, `women`, `men`). `designationsOf()`
     joins them.
   - `campus.carnegie` is null outside the Carnegie universe (`CARNEGIEIC` ≤ 0); `research` is null for "none" (0).
-  - Not built: `location.metro` (CBSA), the HD/Scorecard name cross-check, the Home "Opportunity colleges" entry,
-    and designation events. The events log ([admission-factors.md](admission-factors.md)) has no designation
+  - The metro area moved to its own spec, [metro-area.md](metro-area.md), deferred until a feature uses it.
+  - Not built: designation events. The events log ([admission-factors.md](admission-factors.md)) has no designation
     history yet; start it once two syncs have stored these fields.
+- **Cross-check.** `directoryIssues()` compares each HD row with Scorecard: state, name (loosely: case, accents,
+  punctuation, "&", a leading "The"), `CLOSEDAT`, and `NEWID` (merged). `sync-data` prints any mismatches as
+  warnings; the first run found none among 1,893 colleges.
 - **Coverage** (1,893 colleges): setting and coordinates for all 1,893 (city 973, suburb 456, town 316, rural 148);
   Carnegie for 1,863; R1 183, R2 129, research colleges 191. Designations: HSI 281, AANAPISI 110, HBCU 84 (Scorecard's
   flag agrees), land-grant 82, men's 45, women's 30, PBI 18, NASNTI 11, ANNH 7, tribal 1.
@@ -93,13 +96,16 @@ possible later from Scorecard year-prefixed flags (*unverified* whether the flag
   - Profile hero: setting ("Large city"), research tier (R1, R2, "Research college"), and designation chips, each a
     glossary term.
   - Explore: a **Campus** filter section (setting group, research tier, designation; URL `setting=`, `research=`,
-    `designation=`; any chosen value matches, and colleges that don't report never match), active-filter chips, and a
+    `designation=`; any chosen value matches, and colleges that don't report never match), an **Opportunity colleges**
+    toggle (`opportunity=1`, Carnegie SAEC class 6: 260 colleges), active-filter chips, and a
     **Map** view (`view=map`, [charts.md](../charts.md) `DotMap`). The map draws the 50 states and DC; the caption
     counts colleges in territories it leaves out.
+  - Home "What kind of school are you after?": three new cards, Opportunity colleges, HBCUs, and Research
+    universities (R1), linking to those filters (nine cards fill the three-column grid).
   - Compare "All the numbers": setting, Carnegie class, research activity, student access & earnings, and both
     designation groups.
   - Glossary (School types): `locale`, `carnegie-classification`, `r1`, `student-access-and-earnings`, `hbcu`,
     `hsi` (covers the other minority-serving designations), `single-sex`, `tribal-college`, `land-grant`.
 - **Open questions, resolved.** (1) An SVG outline with no tiles. (2) SAEC is shown as Carnegie's label, cited, in
-  Compare only.
+  Compare, and class 6 by Carnegie's own name ("Opportunity colleges") as a filter and Home card.
 - Tests: `tests/campus-profile.test.mts`.

@@ -398,7 +398,7 @@ async function main() {
       // Scorecard fields: one entry per year any college reported, cited as the Scorecard data page.
       const keys = { "scorecard-enrollment": ["undergrads", "men_share", "part_time_share"], "scorecard-completion": ["grad_rate"], "scorecard-debt": ["median_debt"], "scorecard-loans": ["federal_loan_rate"] }[fam as string] as SeriesKey[];
       const years = [...new Set(all.flatMap((h) => keys.flatMap((k) => { const sr = h.series[k]; return sr ? sr.values.flatMap((v, i) => (v === null ? [] : [sr.start + i])) : []; })))].sort((a, b) => a - b);
-      files[fam] = years.map((year) => ({ year, file: `College Scorecard API (${keys.join(", ")})`, url: meta.sources.scorecard.url, revised: false }));
+      files[fam] = years.map((year) => ({ year, file: `College Scorecard API (${keys.join(", ")})`, url: meta.sources.scorecard?.url ?? "https://collegescorecard.ed.gov/data/", revised: false }));
       continue;
     }
     const list = files[fam];

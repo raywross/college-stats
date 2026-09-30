@@ -392,7 +392,8 @@ export interface SourceInfo {
 /** Written by the sync script to data/meta.json. */
 export interface DatasetMeta {
   retrieved: string;
-  sources: Record<SourceKey, SourceInfo>;
+  /** Partial: new code can deploy before the publish that adds its source lands (specs/data-lineage.md). */
+  sources: Partial<Record<SourceKey, SourceInfo>>;
   /** Display year of each release, e.g. { "ipeds-adm": "Fall 2024", "scorecard-cost": "2023–24" }; null = no single year. */
   vintages: Record<VintageKey, string | null>;
 }

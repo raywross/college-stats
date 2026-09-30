@@ -402,6 +402,8 @@ export default async function DataPage() {
         <div className="grid gap-4 md:grid-cols-2">
           {order.map((key) => {
             const s = meta.sources[key];
+            // A source the code knows but the published data doesn't have yet (mid-publish): skip its card.
+            if (!s) return null;
             const uses = sourceUses(key);
             return (
               <article key={key} className="flex flex-col rounded-3xl border bg-card p-5 sm:p-6">

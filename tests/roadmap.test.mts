@@ -19,9 +19,9 @@ function specFiles(dir: string): string[] {
   });
 }
 
-/** A spec is planned when its status line says so (not built, not a backlog or index file). */
+/** A spec is planned when its status line says so (not built, not a backlog or index file); deferred ones count. */
 const isPlanned = (file: string) =>
-  !file.endsWith("README.md") && /^> Status: \*\*(planned|skeleton)\*\*/m.test(readFileSync(join(ROOT, file), "utf8"));
+  !file.endsWith("README.md") && /^> Status: \*\*(planned|skeleton|deferred)\*\*/m.test(readFileSync(join(ROOT, file), "utf8"));
 
 test("every planned spec is on the roadmap, and every roadmap entry is a planned spec", () => {
   const planned = specFiles(join(ROOT, "specs")).filter(isPlanned).sort();

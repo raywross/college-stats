@@ -29,6 +29,13 @@
       "url": "https://nces.ed.gov/ipeds/complete-data-files/IC2023_AY.zip",
       "description": "Published prices for the year: tuition and fees for in-district, in-state, and out-of-state students, books and supplies, on-campus room and board, and other expenses. Also housing capacity and rules, meal plans, the application fee, tuition plans, and Promise programs."
     },
+    "ipeds-hd": {
+      "label": "IPEDS directory (Institutional Characteristics: HD)",
+      "publisher": "National Center for Education Statistics (NCES)",
+      "edition": "2025–26 (HD2025)",
+      "url": "https://nces.ed.gov/ipeds/complete-data-files/HD2025.zip",
+      "description": "Every college's directory entry: its city, suburb, town, or rural setting, Carnegie Classification, federal designations such as HBCU and land-grant, and its location on the map."
+    },
     "cds": {
       "label": "Common Data Set",
       "publisher": "Each college (voluntary, standardized template)",
@@ -41,6 +48,7 @@
     "ipeds-adm": "Fall 2024",
     "ipeds-sfa": "2023–24",
     "ipeds-ic": "2023–24",
+    "ipeds-hd": "2025–26",
     "scorecard-enrollment": "Fall 2024",
     "scorecard-age": "Fall 2023",
     "scorecard-cost": "2023–24",

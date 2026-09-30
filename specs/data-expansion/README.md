@@ -26,7 +26,8 @@ Each spec here is a separate unit of work, so pieces can ship when they're usefu
 ### Wave 2: one new NCES file each
 | Spec | Adds | Source |
 |---|---|---|
-| [campus-profile.md](campus-profile.md) | City/suburb/town/rural setting, Carnegie 2025 classes, HBCU/tribal/land-grant, map coordinates, MSI flags | IPEDS HD (+ Scorecard flags) |
+| [campus-profile.md](campus-profile.md) | **Built.** City/suburb/town/rural setting, Carnegie 2025 classes, HBCU/tribal/land-grant, map coordinates, MSI flags | IPEDS HD (+ Scorecard flags) |
+| [metro-area.md](metro-area.md) | **Deferred.** Metro area and county, for nearby colleges and a metro filter | IPEDS HD |
 | [campus-services.md](campus-services.md) | Athletics (NCAA/NAIA, conference), ROTC, study abroad, undergraduate research, AP credit, disability services share | IPEDS IC |
 | [student-faculty-ratio.md](student-faculty-ratio.md) | Students per faculty member | IPEDS EF part D |
 | [residence.md](residence.md) | Where first-years come from: in-state, out-of-state, international; top home states | IPEDS EF part C |

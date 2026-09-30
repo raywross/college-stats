@@ -11,8 +11,12 @@ import { join } from "node:path";
  */
 export const IPEDS_BASES = ["https://nces.ed.gov/ipeds/complete-data-files", "https://nces.ed.gov/ipeds/datacenter/data"];
 
-/** Minimal RFC-4180 CSV parser (IPEDS files quote some fields). Headers are upper-cased (newer files are lower case). */
-export function parseCsv(text: string): Record<string, string>[] {
+/**
+ * Minimal RFC-4180 CSV parser (IPEDS files quote some fields). Headers are upper-cased (newer files are lower case).
+ * A leading byte-order mark is dropped (HD2025 has one; left in, it hides the UNITID column).
+ */
+export function parseCsv(input: string): Record<string, string>[] {
+  const text = input.replace(/^(﻿|ï»¿)/, "");
   const rows: string[][] = [];
   let row: string[] = [];
   let field = "";

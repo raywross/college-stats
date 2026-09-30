@@ -46,7 +46,7 @@ published at `/roadmap` ([roadmap.md](roadmap.md)): add each new one to `lib/roa
   `EFFY2025` left out.
   - [x] Wave 1 (files already downloaded, or fields on the Scorecard call; one PR per spec), built 2026-09-29: student
     body, admissions detail, loans and repayment, housing and policies, and admission factors (with the events log).
-  - [ ] Wave 2 (one new NCES file each): campus profile (HD), campus services and athletics (IC), student-faculty
+  - [ ] Wave 2 (one new NCES file each): campus profile (HD, built 2026-09-30), campus services and athletics (IC), student-faculty
     ratio (EF-D), residence (EF-C), 8-year outcomes (OM), Pell/race graduation (GR), finances (DRVF), faculty (SAL).
   - [ ] **Per-college detail file** `data/detail/schools/{unitid}.json` (decided 2026-09-28: a new file, not the
     history shard) for large snapshot tables: majors, home states, earnings by major. Validation, lineage check,
@@ -95,6 +95,13 @@ list them here.
 - [ ] **Study 1: Men and women in admissions.** Share of colleges admitting men vs women at a notably higher rate, 2001 to
   now, and where the change is concentrated (first look: the Northeast and moderately selective colleges drive it; the
   West moved the other way). Needs `applicants_men`/`applicants_women` history series first.
+
+## Later
+Worked out, then set aside until another feature needs them; each spec says what it gets built with. Also the last
+section on `/roadmap`.
+- [ ] **Metro area** ([metro-area.md](data-expansion/metro-area.md)): each college's metro and county from the directory
+  file, for a "nearby colleges" list, a metro filter, or metro-level national trends. Deferred from campus profile
+  (2026-09-30).
 
 ## Quality
 - [ ] Tests for the sync mapping (`toSchool`), the CDS importer (fixtures for classic and flat layouts, including the

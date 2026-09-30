@@ -1,6 +1,10 @@
 import type { ExploreView, SchoolType, SearchFilters, SizeBucket, SortKey } from "./types";
 import { INDICATORS, INDICATOR_KEYS, isDirection, type Direction, type IndicatorKey } from "./indicators.ts";
 import { isGenderBalance } from "./student-body.ts";
+import { isDesignation, isResearchTier, isSettingGroup } from "./campus-profile.ts";
+
+/** Unique values, or undefined when none remain. */
+const uniq = <T,>(v: T[] | undefined): T[] | undefined => (v?.length ? [...new Set(v)] : undefined);
 
 type Params = Record<string, string | string[] | undefined>;
 
@@ -18,7 +22,7 @@ const SORT_KEYS: SortKey[] = [
   "avg_cost_change", "admit_rate_change", "size_change", "apps_change", "diversity_change",
   "men_share", "part_time", "men_share_change", "admit_gap", "loan_rate", "loan_rate_change",
 ];
-const VIEWS: ExploreView[] = ["grid", "table", "chart"];
+const VIEWS: ExploreView[] = ["grid", "table", "chart", "map"];
 
 /** Trend indicator filters: `costTrend=down,steady` and so on (lib/indicators.ts); unknown directions are dropped. */
 function parseTrends(params: Params): SearchFilters["trends"] {
@@ -59,6 +63,10 @@ export function parseFilters(params: Params): SearchFilters {
     noFee: str(params.noFee) === "1" || undefined,
     guarantee: str(params.guarantee) === "1" || undefined,
     noLegacy: str(params.noLegacy) === "1" || undefined,
+    setting: uniq(list(params.setting)?.filter(isSettingGroup)),
+    research: uniq(list(params.research)?.filter(isResearchTier)),
+    designation: uniq(list(params.designation)?.filter(isDesignation)),
+    opportunity: str(params.opportunity) === "1" || undefined,
     noEssay: str(params.noEssay) === "1" || undefined,
     gpaRequired: str(params.gpaRequired) === "1" || undefined,
     sortBy: sortBy && SORT_KEYS.includes(sortBy) ? sortBy : "applicants",
@@ -96,6 +104,10 @@ export const FILTER_KEYS = [
   "noFee",
   "guarantee",
   "noLegacy",
+  "setting",
+  "research",
+  "designation",
+  "opportunity",
   "noEssay",
   "gpaRequired",
   ...INDICATOR_KEYS.map((k) => INDICATORS[k].param),

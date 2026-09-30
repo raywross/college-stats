@@ -13,6 +13,7 @@ import type { TermKey } from "@/lib/glossary";
 import { DEMOGRAPHIC_CATEGORIES, DOMAINS, METRICS, TEST_POLICY_LABELS, admitRatesBySex, satComposite, type Domain } from "@/lib/metrics";
 import { RADAR_AXES, keyDifferences, radarProfile, similarSchools } from "@/lib/insights";
 import { SLOT_COLORS, shortName } from "@/lib/brand";
+import { DESIGNATION_LABELS, RESEARCH_LABELS } from "@/lib/campus-profile";
 import { compact, money, moneyCompact, num, pct, pctSmart } from "@/lib/format";
 import type { School } from "@/lib/types";
 import { CompareHeader } from "@/components/compare/CompareHeader";
@@ -100,6 +101,15 @@ const TABLE_ROWS = (
     ["Test policy", "test-policy", "admissions.test_policy", (s: School) => (s.admissions.test_policy ? TEST_POLICY_LABELS[s.admissions.test_policy] : null)],
     ["Application fee", "application-fee", "admissions.application_fee", (s: School) =>
       s.admissions.application_fee == null ? null : s.admissions.application_fee === 0 ? "None" : money(s.admissions.application_fee)],
+    ["Setting", "locale", "campus.setting", (s: School) => s.campus?.setting?.label ?? null],
+    ["Carnegie class", "carnegie-classification", "campus.carnegie", (s: School) => s.campus?.carnegie?.ic ?? null],
+    ["Research activity", "r1", "campus.carnegie", (s: School) =>
+      !s.campus?.carnegie ? null : s.campus.carnegie.research ? RESEARCH_LABELS[s.campus.carnegie.research] : "Not a research tier"],
+    ["Student access & earnings", "student-access-and-earnings", "campus.carnegie", (s: School) => s.campus?.carnegie?.access_earnings ?? null],
+    ["HBCU, tribal, land-grant", "hbcu", "campus.designations", (s: School) =>
+      !s.campus?.designations ? null : s.campus.designations.map((d) => DESIGNATION_LABELS[d]).join(", ") || "None"],
+    ["Minority-serving, single-sex", "hsi", "campus.msi", (s: School) =>
+      !s.campus?.msi ? null : s.campus.msi.map((d) => DESIGNATION_LABELS[d]).join(", ") || "None"],
     ["Undergrads", "undergrad-enrollment", "demographics.undergrad_enrollment", (s: School) => num(s.demographics.undergrad_enrollment)],
     ["Beds in college housing", "housing-capacity", "campus.housing", (s: School) => {
       const h = s.campus?.housing;

@@ -1,12 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ArrowDownWideNarrow, ArrowUpNarrowWide, LayoutGrid, ScatterChart, Search, Table2, X } from "lucide-react";
+import { ArrowDownWideNarrow, ArrowUpNarrowWide, LayoutGrid, Map as MapIcon, ScatterChart, Search, Table2, X } from "lucide-react";
 import { SIZE_BUCKETS } from "@/lib/metrics";
 import { INDICATORS, INDICATOR_KEYS, isDirection } from "@/lib/indicators";
 import { GENDER_BALANCE } from "@/lib/student-body";
 import { HOUSING_FILTERS } from "@/lib/housing";
 import { FACTOR_FILTERS } from "@/lib/factors";
+import { DESIGNATION_LABELS, RESEARCH_LABELS, SETTING_GROUPS, isDesignation, isResearchTier, isSettingGroup } from "@/lib/campus-profile";
 import { typeLabel } from "@/lib/format";
 import { useExploreParams } from "./useExploreParams";
 import { cn } from "@/lib/utils";
@@ -135,6 +136,7 @@ const VIEWS = [
   { value: "grid", label: "Cards", icon: LayoutGrid },
   { value: "table", label: "Table", icon: Table2 },
   { value: "chart", label: "Chart", icon: ScatterChart },
+  { value: "map", label: "Map", icon: MapIcon },
 ] as const;
 
 export function ViewToggle() {
@@ -222,6 +224,15 @@ export function ActiveFilters() {
   if (searchParams.get("fullTime") === "1") chips.push({ key: "fullTime", label: "Mostly full-time", onRemove: () => update({ fullTime: null }) });
   if (searchParams.get("fewLoans") === "1") chips.push({ key: "fewLoans", label: "Few students borrow", onRemove: () => update({ fewLoans: null }) });
   for (const f of [...FACTOR_FILTERS, ...HOUSING_FILTERS]) if (searchParams.get(f.param) === "1") chips.push({ key: f.param, label: f.label, onRemove: () => update({ [f.param]: null }) });
+
+  for (const g of getList("setting").filter(isSettingGroup))
+    chips.push({ key: `set-${g}`, label: SETTING_GROUPS.find((x) => x.key === g)!.label, onRemove: () => toggleInList("setting", g) });
+  for (const r of getList("research").filter(isResearchTier))
+    chips.push({ key: `rs-${r}`, label: RESEARCH_LABELS[r], onRemove: () => toggleInList("research", r) });
+  for (const d of getList("designation").filter(isDesignation))
+    chips.push({ key: `des-${d}`, label: DESIGNATION_LABELS[d], onRemove: () => toggleInList("designation", d) });
+
+  if (searchParams.get("opportunity") === "1") chips.push({ key: "opportunity", label: "Opportunity colleges", onRemove: () => update({ opportunity: null }) });
 
   for (const k of INDICATOR_KEYS) {
     const def = INDICATORS[k];

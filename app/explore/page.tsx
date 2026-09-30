@@ -14,6 +14,8 @@ import { FilterPanel, type FilterFacets } from "@/components/explore/FilterPanel
 import { MobileFilterSheet } from "@/components/explore/MobileFilterSheet";
 import { ActiveFilters, ExploreSearchInput, SortControl, ViewToggle } from "@/components/explore/Toolbar";
 import { ScatterPlot } from "@/components/charts/ScatterPlot";
+import { DotMap } from "@/components/charts/DotMap";
+import { MAP_HEIGHT, MAP_WIDTH, mapPoints, usOutline } from "@/lib/us-map";
 import { LANDSCAPE_X, LANDSCAPE_Y, LANDSCAPE_ZONE, STICKER_X, STICKER_Y, VALUE_X, VALUE_Y, valueZone } from "@/lib/chart-configs";
 import { cn } from "@/lib/utils";
 import { INDICATOR_KEYS, indicatorOf, type Direction } from "@/lib/indicators";
@@ -21,6 +23,7 @@ import { genderBalanceOf, isMostlyFullTime } from "@/lib/student-body";
 import { hasFewLoans } from "@/lib/repayment";
 import { HOUSING_FILTERS } from "@/lib/housing";
 import { FACTOR_FILTERS } from "@/lib/factors";
+import { DESIGNATION_KEYS, RESEARCH_TIERS, SETTING_GROUPS, designationsOf, isOpportunityCollege } from "@/lib/campus-profile";
 import { InfoTip } from "@/components/ui/info-tip";
 import { MultiSourceNote } from "@/components/sources/MultiSourceNote";
 
@@ -53,6 +56,18 @@ function buildFacets({ getAllSchools, histogram }: Dataset): FilterFacets {
     if (b) balance[b]++;
   }
 
+  const campus: FilterFacets["campus"] = {
+    setting: Object.fromEntries(SETTING_GROUPS.map((g) => [g.key, 0])) as FilterFacets["campus"]["setting"],
+    research: Object.fromEntries(RESEARCH_TIERS.map((r) => [r, 0])) as FilterFacets["campus"]["research"],
+    designation: Object.fromEntries(DESIGNATION_KEYS.map((d) => [d, 0])) as FilterFacets["campus"]["designation"],
+    opportunity: all.filter(isOpportunityCollege).length,
+  };
+  for (const s of all) {
+    if (s.campus?.setting) campus.setting[s.campus.setting.group]++;
+    if (s.campus?.carnegie?.research) campus.research[s.campus.carnegie.research]++;
+    for (const d of designationsOf(s)) campus.designation[d]++;
+  }
+
   const satRange: [number, number] = [800, 1600];
   return {
     balance,
@@ -60,6 +75,7 @@ function buildFacets({ getAllSchools, histogram }: Dataset): FilterFacets {
     fewLoans: all.filter(hasFewLoans).length,
     housing: Object.fromEntries(HOUSING_FILTERS.map((f) => [f.param, all.filter(f.test).length])) as FilterFacets["housing"],
     factors: Object.fromEntries(FACTOR_FILTERS.map((f) => [f.param, all.filter(f.test).length])) as FilterFacets["factors"],
+    campus,
     states: Object.keys(states).sort().map((value) => ({ value, count: states[value] })),
     regions: Object.keys(regions).sort().map((value) => ({ value, count: regions[value] })),
     types: Object.keys(types).map((value) => ({ value, label: typeLabel(value), count: types[value] })),
@@ -113,7 +129,7 @@ export default async function ExplorePage({
             Find your <span className="highlight">fit</span>
           </h1>
           <p className="mt-2 hidden max-w-xl text-muted-foreground sm:block">
-            Filter by selectivity, scores, and size, then switch between cards, a sortable table, or the admissions map.
+            Filter by selectivity, scores, and size, then switch between cards, a sortable table, charts, or a map.
           </p>
         </div>
         {summary.length > 0 && (
@@ -155,7 +171,7 @@ export default async function ExplorePage({
 
           <p className="text-sm text-muted-foreground" aria-live="polite">
             <span className="font-bold text-foreground">{num(schools.length)}</span> of {num(all.length)} colleges match
-            {paged.pages > 1 && view !== "chart" && <> · page {paged.page} of {paged.pages}</>}
+            {paged.pages > 1 && view !== "chart" && view !== "map" && <> · page {paged.page} of {paged.pages}</>}
           </p>
 
           {schools.length === 0 ? (
@@ -173,6 +189,23 @@ export default async function ExplorePage({
             </div>
           ) : view === "table" ? (
             <SchoolTable schools={paged.items} params={params} />
+          ) : view === "map" ? (
+            (() => {
+              const map = mapPoints(schools);
+              return (
+                <div className="rounded-3xl border bg-card p-3 sm:p-6">
+                  <h2 className="mb-2 font-display text-lg font-bold sm:text-xl">Where they are</h2>
+                  <p className="mb-4 text-sm text-muted-foreground">
+                    {num(map.points.length)} matching colleges.{" "}
+                    {map.outside > 0 && <>{num(map.outside)} in U.S. territories {map.outside === 1 ? "isn't" : "aren't"} drawn. </>}
+                    {map.missing > 0 && <>{num(map.missing)} without a reported location {map.missing === 1 ? "isn't" : "aren't"} either. </>}
+                    Hover or tap a dot for details; click to open the profile. Filter by setting{" "}
+                    <InfoTip term="locale" /> under Campus.
+                  </p>
+                  <DotMap points={map.points} outline={usOutline()} box={{ width: MAP_WIDTH, height: MAP_HEIGHT }} />
+                </div>
+              );
+            })()
           ) : view === "chart" ? (
             <div className="rounded-3xl border bg-card p-3 sm:p-6">
               <div className="mb-2 flex
@@ -264,11 +297,11 @@ export default async function ExplorePage({
             </>
           )}
 
-          {view !== "chart" && (
+          {view !== "chart" && view !== "map" && (
             <Pagination params={params} page={paged.page} pages={paged.pages} total={paged.total} perPage={perPage} />
           )}
 
-          <MultiSourceNote schools={schools} fields={Object.values(METRICS).map((m) => m.field)} className="pt-2" />
+          <MultiSourceNote schools={schools} fields={[...Object.values(METRICS).map((m) => m.field), ...(view === "map" ? (["location.lat", "campus.setting"] as const) : [])]} className="pt-2" />
 
           {schools.length > 0 && (
             <p className={cn("pt-2 text-xs text-muted-foreground", view === "grid" && "hidden sm:block")}>

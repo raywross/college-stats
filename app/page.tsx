@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, BookOpen, Building2, Crown, HeartHandshake, PiggyBank, Sprout, Target, Swords } from "lucide-react";
+import { ArrowRight, BookOpen, Building2, Crown, FlaskConical, HeartHandshake, Landmark, PiggyBank, Sprout, Target, Swords, TrendingUp } from "lucide-react";
 import { getData } from "@/lib/data";
 import { parseFilters } from "@/lib/params";
 import { DOMAINS, METRICS, admitRatio, median, oneIn, satMid, type Domain } from "@/lib/metrics";
@@ -25,6 +25,9 @@ const LENSES: { title: string; blurb: string; query: string; domain: Domain; ico
   { title: "Small & close-knit", blurb: "Under 15K undergrads", query: "sizes=small,medium&sortBy=enrollment", domain: "size", icon: Sprout },
   { title: "Economic diversity", blurb: "Highest share of Pell Grant students", query: "sortBy=pell&sortDir=desc&view=table&minEnroll=1000", domain: "access", icon: HeartHandshake, ranked: true },
   { title: "Low cost, high earnings", blurb: "Average cost under $25K, ranked by earnings", query: "maxCost=25000&sortBy=earnings&sortDir=desc&minEnroll=1000", domain: "value", icon: PiggyBank },
+  { title: "Opportunity colleges", blurb: "Carnegie's higher access, higher earnings class", query: "opportunity=1&sortBy=earnings&sortDir=desc", domain: "access", icon: TrendingUp },
+  { title: "HBCUs", blurb: "Historically Black colleges and universities", query: "designation=hbcu&sortBy=enrollment&sortDir=desc", domain: "diversity", icon: Landmark },
+  { title: "Research universities", blurb: "R1: very high research activity", query: "research=R1&sortBy=enrollment&sortDir=desc", domain: "scores", icon: FlaskConical },
 ];
 
 const MATCHUPS = [

@@ -12,6 +12,8 @@ import { FULL_TIME_MAX_PART_TIME, GENDER_BALANCE, type GenderBalance } from "@/l
 import { FEW_LOANS_MAX } from "@/lib/repayment";
 import { HOUSING_FILTERS, type HousingFilterParam } from "@/lib/housing";
 import { FACTOR_FILTERS, type FactorFilterParam } from "@/lib/factors";
+import { DESIGNATION_KEYS, DESIGNATION_LABELS, RESEARCH_TIERS, SETTING_GROUPS } from "@/lib/campus-profile";
+import type { Designation, ResearchTier, SettingGroup } from "@/lib/types";
 import { useExploreParams } from "./useExploreParams";
 import { cn } from "@/lib/utils";
 
@@ -33,6 +35,8 @@ export interface FilterFacets {
   housing: Record<HousingFilterParam, number>;
   /** Colleges matching each admission-factor filter (lib/factors.ts). */
   factors: Record<FactorFilterParam, number>;
+  /** Colleges per setting group, research tier, and designation (lib/campus-profile.ts). */
+  campus: { setting: Record<SettingGroup, number>; research: Record<ResearchTier, number>; designation: Record<Designation, number>; opportunity: number };
   /** Colleges where few undergrads take federal loans (lib/repayment.ts). */
   fewLoans: number;
 }
@@ -103,7 +107,7 @@ export function FilterPanel({ facets, onDone }: { facets: FilterFacets; onDone?:
   const fewLoans = searchParams.get("fewLoans") === "1";
 
   const hasFilters = [
-    ...["q", "types", "sizes", "regions", "states", "minAR", "maxAR", "minSAT", "maxSAT", "minCost", "maxCost", "minEnroll", "maxEnroll", "balance", "fullTime", "fewLoans", "liveOn", "noFee", "guarantee", "noLegacy", "noEssay", "gpaRequired"],
+    ...["q", "types", "sizes", "regions", "states", "minAR", "maxAR", "minSAT", "maxSAT", "minCost", "maxCost", "minEnroll", "maxEnroll", "balance", "fullTime", "fewLoans", "liveOn", "noFee", "guarantee", "noLegacy", "noEssay", "gpaRequired", "setting", "research", "designation", "opportunity"],
     ...INDICATOR_KEYS.map((k) => INDICATORS[k].param),
   ].some((k) => searchParams.get(k));
 
@@ -266,6 +270,44 @@ export function FilterPanel({ facets, onDone }: { facets: FilterFacets; onDone?:
           Mostly women or men: over 60% one or the other. Mostly full-time: {Math.round(FULL_TIME_MAX_PART_TIME * 100)}% or fewer of undergrads
           study part-time.
         </p>
+      </Section>
+
+      <Section title="Campus" term="locale">
+        <div className="space-y-3">
+          {(
+            [
+              { param: "setting", label: "Setting", options: SETTING_GROUPS.map((g) => ({ value: g.key, label: g.label })), counts: facets.campus.setting },
+              { param: "research", label: "Research", options: RESEARCH_TIERS.map((r) => ({ value: r, label: r === "RCU" ? "Research college" : r })), counts: facets.campus.research },
+              { param: "designation", label: "Designation", options: DESIGNATION_KEYS.map((d) => ({ value: d, label: DESIGNATION_LABELS[d] })), counts: facets.campus.designation },
+            ] as const
+          ).map((g) => {
+            const active = getList(g.param);
+            return (
+              <div key={g.param} role="group" aria-label={g.label}>
+                <p className="mb-1.5 text-xs font-semibold">{g.label}</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {g.options.map((o) => (
+                    <Chip key={o.value} active={active.includes(o.value)} onClick={() => toggleInList(g.param, o.value)} count={(g.counts as Record<string, number>)[o.value]}>
+                      {o.label}
+                    </Chip>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+          <div>
+            <Chip
+              active={searchParams.get("opportunity") === "1"}
+              onClick={() => update({ opportunity: searchParams.get("opportunity") === "1" ? null : "1" })}
+              count={facets.campus.opportunity}
+            >
+              Opportunity colleges
+            </Chip>
+            <p className="mt-1.5 flex items-center gap-1 text-[11px] text-muted-foreground">
+              Carnegie&apos;s higher access, higher earnings class. <InfoTip term="student-access-and-earnings" />
+            </p>
+          </div>
+        </div>
       </Section>
 
       <Section title="What they look at" term="admission-factor">

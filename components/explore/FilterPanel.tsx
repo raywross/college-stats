@@ -11,6 +11,7 @@ import { DIRECTIONS, INDICATORS, INDICATOR_KEYS, type Direction, type IndicatorK
 import { FULL_TIME_MAX_PART_TIME, GENDER_BALANCE, type GenderBalance } from "@/lib/student-body";
 import { FEW_LOANS_MAX } from "@/lib/repayment";
 import { HOUSING_FILTERS, type HousingFilterParam } from "@/lib/housing";
+import { FACTOR_FILTERS, type FactorFilterParam } from "@/lib/factors";
 import { useExploreParams } from "./useExploreParams";
 import { cn } from "@/lib/utils";
 
@@ -30,6 +31,8 @@ export interface FilterFacets {
   fullTime: number;
   /** Colleges matching each housing and policy filter (lib/housing.ts). */
   housing: Record<HousingFilterParam, number>;
+  /** Colleges matching each admission-factor filter (lib/factors.ts). */
+  factors: Record<FactorFilterParam, number>;
   /** Colleges where few undergrads take federal loans (lib/repayment.ts). */
   fewLoans: number;
 }
@@ -100,7 +103,7 @@ export function FilterPanel({ facets, onDone }: { facets: FilterFacets; onDone?:
   const fewLoans = searchParams.get("fewLoans") === "1";
 
   const hasFilters = [
-    ...["q", "types", "sizes", "regions", "states", "minAR", "maxAR", "minSAT", "maxSAT", "minCost", "maxCost", "minEnroll", "maxEnroll", "balance", "fullTime", "fewLoans", "liveOn", "noFee", "guarantee"],
+    ...["q", "types", "sizes", "regions", "states", "minAR", "maxAR", "minSAT", "maxSAT", "minCost", "maxCost", "minEnroll", "maxEnroll", "balance", "fullTime", "fewLoans", "liveOn", "noFee", "guarantee", "noLegacy", "noEssay", "gpaRequired"],
     ...INDICATOR_KEYS.map((k) => INDICATORS[k].param),
   ].some((k) => searchParams.get(k));
 
@@ -263,6 +266,19 @@ export function FilterPanel({ facets, onDone }: { facets: FilterFacets; onDone?:
           Mostly women or men: over 60% one or the other. Mostly full-time: {Math.round(FULL_TIME_MAX_PART_TIME * 100)}% or fewer of undergrads
           study part-time.
         </p>
+      </Section>
+
+      <Section title="What they look at" term="admission-factor">
+        <div className="flex flex-wrap gap-1.5">
+          {FACTOR_FILTERS.map((f) => {
+            const active = searchParams.get(f.param) === "1";
+            return (
+              <Chip key={f.param} active={active} onClick={() => update({ [f.param]: active ? null : "1" })} count={facets.factors[f.param]}>
+                {f.label}
+              </Chip>
+            );
+          })}
+        </div>
       </Section>
 
       <Section title="Housing & policies" term="housing-capacity">

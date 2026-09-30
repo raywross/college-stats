@@ -13,14 +13,10 @@ export const COMPLEXITY: Record<Complexity, { label: string; description: string
   4: { label: "Extra large", description: "A new system with its own pipeline, checks, and a pilot before launch." },
 };
 
-export type RoadmapGroupKey = "wave-1" | "wave-2" | "wave-3" | "college-reported" | "campus-life" | "national-trends";
+// Wave 1 (data the site already downloads) was built on 2026-09-29; see /release-notes.
+export type RoadmapGroupKey = "wave-2" | "wave-3" | "college-reported" | "campus-life" | "national-trends";
 
 export const ROADMAP_GROUPS: { key: RoadmapGroupKey; title: string; description: string }[] = [
-  {
-    key: "wave-1",
-    title: "Wave 1: data we already download",
-    description: "Columns in federal files the site already reads, or fields on the existing College Scorecard call.",
-  },
   {
     key: "wave-2",
     title: "Wave 2: one new federal file each",
@@ -76,15 +72,6 @@ export interface RoadmapSpec {
 
 /** In build order within each group (the backlog's order, specs/backlog.md). */
 export const ROADMAP: RoadmapSpec[] = [
-  {
-    slug: "admission-factors",
-    file: "specs/data-expansion/admission-factors.md",
-    group: "wave-1",
-    summary: "What each college weighs in admission: GPA, class rank, essays, recommendations, and legacy status.",
-    complexity: 2,
-    complexityNote: "Data is already downloaded, but it builds the \"events\" history (policy changes over time) that later specs reuse.",
-    status: "planned",
-  },
   {
     slug: "campus-profile",
     file: "specs/data-expansion/campus-profile.md",

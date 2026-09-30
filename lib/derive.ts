@@ -3,7 +3,7 @@
  * `npm run sync-history` (every past year), so a trend line always ends on the number the profile shows
  * (specs/trends-data.md, rule 1). Pure: plain objects in, plain objects out; no I/O.
  */
-import type { ResidencyPrices, School, SchoolType, ShareRange, TuitionPlan } from "./types";
+import type { AdmissionFactor, FactorUse, ResidencyPrices, School, SchoolType, ShareRange, TuitionPlan } from "./types";
 
 /** One institution's row from an IPEDS CSV, keyed by upper-case column name. */
 export type IpedsRow = Record<string, string>;
@@ -42,6 +42,49 @@ export function raceShares(race: (field: (typeof SCORECARD_RACE_FIELDS)[number])
 /** Admitted ÷ applicants, rounded to 4 places; null under 10 applicants, where a rate is meaningless (0 of 1). */
 export function acceptanceRate(applicants: number | null, admitted: number | null): number | null {
   return applicants && applicants >= 10 && admitted !== null ? round(Math.min(1, admitted / applicants)) : null;
+}
+
+/* ---- Admission factors (IPEDS ADMCON1–12; specs/data-expansion/admission-factors.md) ---- */
+
+/** Each factor's column. ADMCON7 is test scores (`test_policy`). ADMCON9 from IC2005, ADMCON10–12 from ADM2022. */
+export const FACTOR_COLUMNS: Record<AdmissionFactor, string> = {
+  gpa: "ADMCON1",
+  class_rank: "ADMCON2",
+  hs_record: "ADMCON3",
+  college_prep: "ADMCON4",
+  recommendations: "ADMCON5",
+  competencies: "ADMCON6",
+  english_test: "ADMCON8",
+  other_test: "ADMCON9",
+  work_experience: "ADMCON10",
+  essay: "ADMCON11",
+  legacy: "ADMCON12",
+};
+
+/** The fall from which 3 means "not considered, even if submitted" and "recommended" (2) no longer exists. */
+export const FACTOR_ERA = 2022;
+
+/** A stored factor code (1 required, 2 recommended, 3 neither / not considered, 5 considered); else null. */
+export function factorCode(v: string | undefined): number | null {
+  return v === "1" || v === "2" || v === "3" || v === "5" ? Number(v) : null;
+}
+
+/** How a factor is used, for falls from FACTOR_ERA on (the snapshot); earlier codes mean different things. */
+export function factorUse(code: number | null): FactorUse | null {
+  return code === 1 ? "required" : code === 5 ? "considered" : code === 3 ? "not_considered" : null;
+}
+
+export const FACTOR_CODE: Record<FactorUse, number> = { required: 1, considered: 5, not_considered: 3 };
+
+/** Every factor the row reports, as used in admission; null when it reports none. */
+export function factorsFrom(row: IpedsRow | undefined): Partial<Record<AdmissionFactor, FactorUse | null>> | null {
+  if (!row) return null;
+  const out: Partial<Record<AdmissionFactor, FactorUse | null>> = {};
+  for (const [k, col] of Object.entries(FACTOR_COLUMNS) as [AdmissionFactor, string][]) {
+    const use = factorUse(factorCode(row[col]));
+    if (use) out[k] = use;
+  }
+  return Object.keys(out).length ? out : null;
 }
 
 /* ---- Institutional characteristics: housing and policies (IPEDS IC{Y}, then COST1_{Y+1}; codes from the

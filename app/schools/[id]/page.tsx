@@ -61,6 +61,9 @@ import { NetPriceByIncome } from "@/components/charts/NetPriceByIncome";
 import { WhatStudentsPay } from "@/components/school/WhatStudentsPay";
 import { LoansCard } from "@/components/school/LoansCard";
 import { CampusLife } from "@/components/school/CampusLife";
+import { AdmissionFactors } from "@/components/school/AdmissionFactors";
+import { eventYear, historyEvents } from "@/lib/events";
+import { FACTOR_ERA } from "@/lib/derive";
 import { hasLoanData } from "@/lib/repayment";
 import { hasTuitionGuarantee } from "@/lib/housing";
 import { AidGenerosityCard } from "@/components/school/AidGenerosityCard";
@@ -124,7 +127,7 @@ const SECTION_FIELDS = {
     "outcomes.graduation_rate",
     "trends",
   ],
-  admissions: ["admissions.applicants", "admissions.admitted", "admissions.enrolled", "admissions.acceptance_rate", "derived.yield", "admissions.by_sex", "derived.admit_rate_men", "derived.admit_rate_women", "admissions.application_fee"],
+  admissions: ["admissions.applicants", "admissions.admitted", "admissions.enrolled", "admissions.acceptance_rate", "derived.yield", "admissions.by_sex", "derived.admit_rate_men", "derived.admit_rate_women", "admissions.application_fee", "admissions.factors"],
   scores: [
     "admissions.sat_reading_25_75",
     "admissions.sat_math_25_75",
@@ -309,6 +312,8 @@ export default async function SchoolPage({ params }: Props) {
   const div = diversityIndex(school);
   const body = studentBodyNotes(data, school);
   const bySex = admissionsBySex(school);
+  // Admission factor changes since the fall 2022 redesign, when both years use the same codes (lib/events.ts).
+  const recentAdmissionChanges = history ? historyEvents(history).filter((e) => e.area === "admissions" && e.kind === "fall" && e.year > FACTOR_ERA) : [];
   const federalSat = citeField("admissions.sat_reading_25_75", school).isDefault && citeField("admissions.sat_math_25_75", school).isDefault;
   const federalAct = citeField("admissions.act_composite_25_75", school).isDefault;
   const counts = hasAdmissionCounts(school);
@@ -649,6 +654,17 @@ export default async function SchoolPage({ params }: Props) {
                   )}
                 </div>
               </div>
+              {a.factors && (
+                <div className="mt-4">
+                  <AdmissionFactors school={school} />
+                </div>
+              )}
+              {recentAdmissionChanges.length > 0 && (
+                <p className="mt-3 max-w-3xl text-sm text-muted-foreground">
+                  <b className="text-foreground">Recent change:</b>{" "}
+                  {recentAdmissionChanges.map((e) => `${e.text} in ${eventYear(e)}`).join("; ")}.
+                </p>
+              )}
             </Panel>
           )}
 

@@ -2,6 +2,8 @@
   "unit_id": "499422",
   "series": {
     "application_fee": {"start":2023,"values":[100]},
+    "tuition_guarantee": {"start":2023,"values":[2]},
+    "promise": {"start":2023,"values":[2]},
     "undergrads": {"start":2023,"values":[70,135]},
     "race_white": {"start":2023,"values":[0.1571,0.1407]},
     "race_asian": {"start":2023,"values":[0.1571,0.1852]},

@@ -43,6 +43,7 @@ Probed 2026-09-28. "Years" = academic year starting in the fall (see *Year conve
 | Admit rate, yield | derived | Fall 2001 | Same rules as today (applicants ≥ 10). |
 | SAT/ACT 25th–75th | same as above | Fall 2001 | **Break at fall 2017:** the redesigned SAT (Mar 2016) isn't on the old scale. **Fall 2020+:** test-optional; submission rates drop, so percentiles describe a smaller, self-selected group. |
 | Test policy (`ADMCON7`) | same | Fall 2001 | Code meanings shift between eras; map per era. |
+| Admission factors (`ADMCON1`–`6`, `8`–`12`) | same | Fall 2001 (9 from 2005; 10–12 from 2022) | Added 2026-09-29 ([admission-factors.md](data-expansion/admission-factors.md)): raw codes, `factor_{name}`; events derived in `lib/events.ts`. |
 | Acceptance rate, men / women | `APPLCNM`/`W`, `ADMSSNM`/`W` in the same files | Fall 2001 | Added 2026-09-29 ([admissions-detail.md](data-expansion/admissions-detail.md)). Same 10-applicant rule as the overall rate. |
 | SAT total / ACT composite medians | `SATVR50`+`SATMT50`, `ACTCM50` | Fall 2022 | Added 2026-09-29. Absent through ADM2021, so the ADM era splits at 2022. Stored, not charted yet. |
 | Undergrad size | Scorecard `{year}.student.size` | 1996 | Verified back to 1997. Same field as today's headline. |

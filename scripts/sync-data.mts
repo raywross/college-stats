@@ -28,7 +28,7 @@ import type { DatasetMeta, RepaymentStatus, School, SchoolType, TestPolicy } fro
 import { lineageForPatch, validateLineage } from "../lib/lineage.ts";
 import { applyProbes, filesToProbe, type FileProbe, type ReleaseCalendar } from "../lib/releases.ts";
 import { IPEDS_BASES, parseCsv } from "./lib/ipeds.mts";
-import { acceptanceRate, applicationFeeFrom, computePrices, housingFrom, ipedsNum, parseShareBand, priceSuffix, promiseProgramFrom, raceShares, toAid, tuitionPlansFrom } from "../lib/derive.ts";
+import { acceptanceRate, applicationFeeFrom, computePrices, factorsFrom, housingFrom, ipedsNum, parseShareBand, priceSuffix, promiseProgramFrom, raceShares, toAid, tuitionPlansFrom } from "../lib/derive.ts";
 
 const ROOT = join(import.meta.dirname, "..");
 const OUT = join(ROOT, "data", "schools.json");
@@ -313,6 +313,7 @@ function toSchool(
       test_policy: POLICY_BY_ADMCON7[adm?.ADMCON7 ?? ""] ?? null,
       // Admissions detail (specs/data-expansion/admissions-detail.md). Medians exist from fall 2022.
       by_sex: bySex(adm),
+      factors: factorsFrom(adm),
       sat_reading_median: ipedsNum(adm, "SATVR50"),
       sat_math_median: ipedsNum(adm, "SATMT50"),
       act_composite_median: ipedsNum(adm, "ACTCM50"),

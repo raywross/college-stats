@@ -104,6 +104,10 @@ export const SERIES = {
   grant_avg: { label: "Average grant", short: "Average grant", field: "aid.grant_avg", term: "grant-aid", unit: "usd", kind: "academic", format: "money", families: ["sfa"] },
   housing_capacity: { label: "Housing capacity (beds)", short: "Beds", field: "campus.housing", term: "housing-capacity", unit: "count", kind: "academic", format: "compact", families: ["characteristics"] },
   application_fee: { label: "Application fee", short: "Application fee", field: "admissions.application_fee", term: "application-fee", unit: "usd", kind: "academic", format: "money", families: ["characteristics"] },
+  // Housing policies as codes (1 yes, 2 no), for events (lib/events.ts).
+  live_on: { label: "First-years must live on campus", short: "Live-on rule", field: "campus.housing", term: "live-on-requirement", unit: "code", kind: "academic", format: "int", families: ["characteristics"] },
+  tuition_guarantee: { label: "Tuition guarantee", short: "Tuition guarantee", field: "cost.tuition_plans", term: "tuition-guarantee", unit: "code", kind: "academic", format: "int", families: ["characteristics"] },
+  promise: { label: "Promise program", short: "Promise program", field: "cost.promise_program", term: "promise-program", unit: "code", kind: "academic", format: "int", families: ["characteristics"] },
   aid_generosity: { label: "Aid generosity", short: "Aid generosity", field: "derived.aid_generosity", term: "aid-generosity", unit: "share", kind: "academic", format: "pct", families: ["prices", "sfa"] },
   net_price_income_1: { label: "Net price, family income $0–30K", short: "$0–30K", field: "cost.net_price_by_income", term: "net-price-by-income", unit: "usd", kind: "academic", format: "money", families: ["sfa"], signed: true },
   net_price_income_2: { label: "Net price, family income $30–48K", short: "$30–48K", field: "cost.net_price_by_income", term: "net-price-by-income", unit: "usd", kind: "academic", format: "money", families: ["sfa"], signed: true },
@@ -120,6 +124,18 @@ export const SERIES = {
   sat_submit: { label: "Share submitting SAT", short: "Submitted SAT", field: "admissions.test_submission_rate_sat", term: "test-submission", unit: "share", kind: "fall", format: "pct", families: ADMISSIONS },
   act_submit: { label: "Share submitting ACT", short: "Submitted ACT", field: "admissions.test_submission_rate_act", term: "test-submission", unit: "share", kind: "fall", format: "pct", families: ADMISSIONS },
   test_policy: { label: "Test policy", short: "Test policy", field: "admissions.test_policy", term: "test-policy", unit: "code", kind: "fall", format: "int", families: ADMISSIONS },
+  // Admission factors as raw codes (lib/derive.ts factorCode); events are derived from them (lib/events.ts).
+  factor_gpa: { label: "High school GPA", short: "GPA", field: "admissions.factors", term: "admission-factor", unit: "code", kind: "fall", format: "int", families: ADMISSIONS },
+  factor_class_rank: { label: "Class rank", short: "Class rank", field: "admissions.factors", term: "admission-factor", unit: "code", kind: "fall", format: "int", families: ADMISSIONS },
+  factor_hs_record: { label: "High school record", short: "School record", field: "admissions.factors", term: "admission-factor", unit: "code", kind: "fall", format: "int", families: ADMISSIONS },
+  factor_college_prep: { label: "College-prep program", short: "College prep", field: "admissions.factors", term: "admission-factor", unit: "code", kind: "fall", format: "int", families: ADMISSIONS },
+  factor_recommendations: { label: "Recommendations", short: "Recommendations", field: "admissions.factors", term: "admission-factor", unit: "code", kind: "fall", format: "int", families: ADMISSIONS },
+  factor_competencies: { label: "Demonstration of competencies", short: "Competencies", field: "admissions.factors", term: "admission-factor", unit: "code", kind: "fall", format: "int", families: ADMISSIONS },
+  factor_english_test: { label: "English proficiency test", short: "English test", field: "admissions.factors", term: "admission-factor", unit: "code", kind: "fall", format: "int", families: ADMISSIONS },
+  factor_other_test: { label: "Other tests", short: "Other tests", field: "admissions.factors", term: "admission-factor", unit: "code", kind: "fall", format: "int", families: ADMISSIONS },
+  factor_work_experience: { label: "Work experience", short: "Work experience", field: "admissions.factors", term: "admission-factor", unit: "code", kind: "fall", format: "int", families: ADMISSIONS },
+  factor_essay: { label: "Essay", short: "Essay", field: "admissions.factors", term: "admission-factor", unit: "code", kind: "fall", format: "int", families: ADMISSIONS },
+  factor_legacy: { label: "Legacy status", short: "Legacy", field: "admissions.factors", term: "legacy-status", unit: "code", kind: "fall", format: "int", families: ADMISSIONS },
   undergrads: { label: "Undergraduates", short: "Undergrads", field: "demographics.undergrad_enrollment", term: "undergrad-enrollment", unit: "count", kind: "fall", format: "compact", families: ENROLLMENT },
   race_white: { label: "White", short: "White", field: "demographics.racial_diversity", term: "race-ethnicity", unit: "share", kind: "fall", format: "pct", families: ENROLLMENT },
   race_asian: { label: "Asian", short: "Asian", field: "demographics.racial_diversity", term: "race-ethnicity", unit: "share", kind: "fall", format: "pct", families: ENROLLMENT },
@@ -269,6 +285,22 @@ export interface TrendFacts {
     requiredFrom: number;
     requiredTo: number;
     /** Per fall from `from` to `to`. */
+    byYear: (number | null)[];
+  } | null;
+  /**
+   * Colleges considering legacy status, fall 2022 (when IPEDS began asking) to the newest fall, on a fixed panel
+   * (specs/data-expansion/admission-factors.md). Optional: histories built before it have none.
+   */
+  legacy?: {
+    from: number;
+    to: number;
+    n: number;
+    consideredFrom: number;
+    consideredTo: number;
+    /** Colleges that considered it at `from` and not at `to`, and the reverse. */
+    stopped: number;
+    started: number;
+    /** Share considering it, per fall from `from` to `to`. */
     byYear: (number | null)[];
   } | null;
 }

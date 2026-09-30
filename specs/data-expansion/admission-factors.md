@@ -1,7 +1,35 @@
 # Admission Factors (IPEDS ADM)
 
-> Status: **planned**. Wave 1. Source file already downloaded by `sync-data` and `sync-history`. Research 2026-09-28.
-> Part of [data-expansion](README.md).
+> Status: **built** 2026-09-29 (the last wave 1 spec). Source file already downloaded by `sync-data` and `sync-history`.
+> Research 2026-09-28; every admissions file probed 2026-09-29. Part of [data-expansion](README.md).
+
+## As built (2026-09-29)
+- **Snapshot:** `admissions.factors` for 1,586 colleges, read by `factorsFrom()` in `lib/derive.ts` (fall 2024 counts match
+  the table below exactly). Values `"required" | "considered" | "not_considered"`; the snapshot is always fall 2022 or
+  later, so "recommended" never appears in it. `test_policy` keeps its own reader.
+- **Columns by year (probed):** ADMCON1–6 and 8 in IC2001–IC2004, ADMCON9 from IC2005, ADMCON10–12 from ADM2022. Codes:
+  1, 2, 3, 4 (don't know) through fall 2015; 5 appears from fall 2016; only 1, 3, 5 from fall 2022. 4, 9, and
+  negatives are dropped.
+- **Profile:** "What they look at" at the end of the Admissions section (`components/school/AdmissionFactors.tsx`): each
+  factor's use, GPA first, and "Considers whether an applicant's parent attended (legacy status)" when it does. A "Recent
+  change" line appears for factor changes from fall 2023 on (both years in the modern codes).
+- **Explore:** "What they look at" filter: "Doesn't consider legacy", "Essay not required", "GPA required"
+  (`lib/factors.ts`). **Compare:** one row per factor. **Glossary:** `admission-factor`, `legacy-status`,
+  `secondary-school-record`, `college-prep-program`.
+- **History:** one code series per factor (`factor_{name}`), stored raw like `test_policy` (so meanings stay era-aware),
+  plus `live_on`, `tuition_guarantee`, and `promise` (1 yes, 2 no) for the housing policies. The ADM/IC eras split at
+  2005 and 2022 where the columns change; the build checks each series ends on the snapshot's value.
+- **Events** (`lib/events.ts`), derived from those series, never hand-kept: required ↔ not required in any era; any
+  change once both years are fall 2022+; **not** a change out of "recommended" across the 2021 → 2022 redesign (a
+  re-coding: Vanderbilt's recommendations went from recommended to required that year); and not a change undone within
+  two years. Shown in **Over time → Changes** for the last 10 years only, with a note that a change can reflect how a
+  college answered the survey.
+- **Why only 10 years:** older events cluster in single years, which points to survey changes rather than decisions
+  (e.g. 433 "stopped requiring first-years to live on campus" in 2010–2012 after 111 went the other way in 2005–2007; 55
+  "stopped offering a tuition guarantee" in 2009 alone). Across all years the rules give 5,468 events at 1,544 colleges;
+  2,627 in the last 10.
+- **Home fact:** "Fewer colleges weigh legacy" (`facts.legacy`): of 1,559 colleges reporting legacy in fall 2022 and
+  fall 2024, those considering it fell from 502 (32%) to 431 (28%): 88 stopped, 17 started. Four facts sit 2 × 2.
 
 ## Question it answers
 *What does this college look at?* Is high school GPA required? Do essays, recommendations, or **legacy status** count?

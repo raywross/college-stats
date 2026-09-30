@@ -44,6 +44,32 @@ const entries = {
     category: "Admissions",
     related: ["applicants", "admitted", "selectivity"],
   },
+  "admission-factor": {
+    term: "Admission factors",
+    short: "What a college looks at when deciding: whether each item, like GPA or an essay, is required, considered, or not considered at all.",
+    long: "Colleges report these to the federal government each year. \"Considered\" means it can help but isn't required. \"Not considered\" means the college doesn't use it, even if you send it.",
+    why: "It tells you where to spend your effort: a required essay matters; a factor that isn't considered won't change the decision.",
+    category: "Admissions",
+    related: ["legacy-status", "secondary-school-record", "test-policy"],
+  },
+  "legacy-status": {
+    term: "Legacy status",
+    short: "Whether an applicant's parent (or other relative) attended the college. Some colleges consider it in admission; many have stopped.",
+    category: "Admissions",
+    related: ["admission-factor"],
+  },
+  "secondary-school-record": {
+    term: "High school record",
+    short: "The courses a student took in high school and how challenging they were, as shown on the transcript, beyond the GPA alone.",
+    category: "Admissions",
+    related: ["admission-factor", "college-prep-program"],
+  },
+  "college-prep-program": {
+    term: "College-prep program",
+    short: "Finishing a set of high school courses that prepare students for college, such as several years of math, science, English, and a language.",
+    category: "Admissions",
+    related: ["secondary-school-record"],
+  },
   "admit-rate-by-sex": {
     term: "Acceptance rate by sex",
     short: "The share of men who applied who were admitted, and the same for women, as colleges report them to the federal government.",

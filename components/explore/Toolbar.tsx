@@ -6,6 +6,7 @@ import { SIZE_BUCKETS } from "@/lib/metrics";
 import { INDICATORS, INDICATOR_KEYS, isDirection } from "@/lib/indicators";
 import { GENDER_BALANCE } from "@/lib/student-body";
 import { HOUSING_FILTERS } from "@/lib/housing";
+import { FACTOR_FILTERS } from "@/lib/factors";
 import { typeLabel } from "@/lib/format";
 import { useExploreParams } from "./useExploreParams";
 import { cn } from "@/lib/utils";
@@ -220,7 +221,7 @@ export function ActiveFilters() {
     chips.push({ key: `b-${b}`, label: GENDER_BALANCE.find((g) => g.key === b)?.label ?? b, onRemove: () => toggleInList("balance", b) });
   if (searchParams.get("fullTime") === "1") chips.push({ key: "fullTime", label: "Mostly full-time", onRemove: () => update({ fullTime: null }) });
   if (searchParams.get("fewLoans") === "1") chips.push({ key: "fewLoans", label: "Few students borrow", onRemove: () => update({ fewLoans: null }) });
-  for (const f of HOUSING_FILTERS) if (searchParams.get(f.param) === "1") chips.push({ key: f.param, label: f.label, onRemove: () => update({ [f.param]: null }) });
+  for (const f of [...FACTOR_FILTERS, ...HOUSING_FILTERS]) if (searchParams.get(f.param) === "1") chips.push({ key: f.param, label: f.label, onRemove: () => update({ [f.param]: null }) });
 
   for (const k of INDICATOR_KEYS) {
     const def = INDICATORS[k];

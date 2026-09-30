@@ -12,6 +12,7 @@
  *     net price from 2008–09. From 2023–24, residency and net price moved to COST2_{Y+1}.
  */
 import type { HistoryFamily } from "../../lib/history.ts";
+import { FACTOR_COLUMNS } from "../../lib/derive.ts";
 
 /** A value read from one row: a column, or the sum of parts (IC2001 splits admissions by gender). */
 export type ColumnSpec = string | { sum: readonly string[] };
@@ -72,6 +73,18 @@ const BY_SEX: Record<string, ColumnSpec> = {
 /** True medians: ADM2022 on only (absent through ADM2021, probed 2026-09-29). */
 const MEDIANS: Record<string, ColumnSpec> = { satvr50: "SATVR50", satmt50: "SATMT50", act50: "ACTCM50" };
 
+/**
+ * Admission factors (specs/data-expansion/admission-factors.md), keyed `factor_{name}` as in lib/derive.ts
+ * FACTOR_COLUMNS. Probed 2026-09-29: ADMCON1–6 and 8 in every file, ADMCON9 from IC2005, ADMCON10–12 from ADM2022.
+ */
+const factorValues = (cols: readonly number[]): Record<string, ColumnSpec> =>
+  Object.fromEntries(
+    (Object.entries(FACTOR_COLUMNS) as [string, string][]).filter(([, c]) => cols.includes(Number(c.replace("ADMCON", "")))).map(([k, c]) => [`factor_${k}`, c])
+  );
+const FACTORS_2001 = factorValues([1, 2, 3, 4, 5, 6, 8]);
+const FACTORS_2005 = factorValues([1, 2, 3, 4, 5, 6, 8, 9]);
+const FACTORS_2022 = factorValues([1, 2, 3, 4, 5, 6, 8, 9, 10, 11, 12]);
+
 export const ERAS: readonly Era[] = [
   {
     family: "ic-admissions",
@@ -83,28 +96,36 @@ export const ERAS: readonly Era[] = [
       enrolled: { sum: ["ENRLFTM", "ENRLFTW", "ENRLPTM", "ENRLPTW"] },
       ...SCORES,
       ...BY_SEX,
+      ...FACTORS_2001,
     },
     required: () => [],
   },
   {
     family: "ic-admissions",
-    years: [2002, 2013],
+    years: [2002, 2004],
     files: (y) => [{ name: `IC${y}` }],
-    values: { applicants: "APPLCN", admitted: "ADMSSN", enrolled: "ENRLT", ...SCORES, ...BY_SEX },
+    values: { applicants: "APPLCN", admitted: "ADMSSN", enrolled: "ENRLT", ...SCORES, ...BY_SEX, ...FACTORS_2001 },
+    required: () => [],
+  },
+  {
+    family: "ic-admissions",
+    years: [2005, 2013],
+    files: (y) => [{ name: `IC${y}` }],
+    values: { applicants: "APPLCN", admitted: "ADMSSN", enrolled: "ENRLT", ...SCORES, ...BY_SEX, ...FACTORS_2005 },
     required: () => [],
   },
   {
     family: "adm",
     years: [2014, 2021],
     files: (y) => [{ name: `ADM${y}` }],
-    values: { applicants: "APPLCN", admitted: "ADMSSN", enrolled: "ENRLT", ...SCORES, ...BY_SEX },
+    values: { applicants: "APPLCN", admitted: "ADMSSN", enrolled: "ENRLT", ...SCORES, ...BY_SEX, ...FACTORS_2005 },
     required: () => [],
   },
   {
     family: "adm",
     years: [2022, OPEN],
     files: (y) => [{ name: `ADM${y}` }],
-    values: { applicants: "APPLCN", admitted: "ADMSSN", enrolled: "ENRLT", ...SCORES, ...BY_SEX, ...MEDIANS },
+    values: { applicants: "APPLCN", admitted: "ADMSSN", enrolled: "ENRLT", ...SCORES, ...BY_SEX, ...MEDIANS, ...FACTORS_2022 },
     required: () => [],
   },
   {

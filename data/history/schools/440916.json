@@ -4,6 +4,8 @@
     "applicants": {"start":2002,"values":[0]},
     "admitted": {"start":2002,"values":[0]},
     "enrolled": {"start":2002,"values":[0]},
+    "tuition_guarantee": {"start":2008,"values":[2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2]},
+    "promise": {"start":2022,"values":[2,2]},
     "undergrads": {"start":2021,"values":[631,629,648,607]},
     "race_white": {"start":2021,"values":[0.0111,0.0064,0.0062,0.0049]},
     "race_asian": {"start":2021,"values":[0,0,0,0]},

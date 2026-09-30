@@ -44,6 +44,8 @@ export interface School {
     act_math_25_75?: [number, number] | null;
     /** Undergraduate application fee in dollars; 0 means no fee (IPEDS IC). */
     application_fee?: number | null;
+    /** How each factor is used in admission (IPEDS ADMCON1–12, except test scores, which are `test_policy`). */
+    factors?: Partial<Record<AdmissionFactor, FactorUse | null>> | null;
   };
   demographics: {
     undergrad_enrollment: number;
@@ -256,6 +258,23 @@ export interface SexCounts {
   enrolled: number | null;
 }
 
+/** Admission factors (IPEDS ADMCON1–6, 8–12). Work experience, essay, and legacy exist from fall 2022. */
+export type AdmissionFactor =
+  | "gpa"
+  | "class_rank"
+  | "hs_record"
+  | "college_prep"
+  | "recommendations"
+  | "competencies"
+  | "english_test"
+  | "other_test"
+  | "work_experience"
+  | "essay"
+  | "legacy";
+
+/** As of fall 2022: required, considered but not required, or not considered even if submitted. */
+export type FactorUse = "required" | "considered" | "not_considered";
+
 /** IPEDS TUITPL1–4: a tuition guarantee (locked-in rate), prepaid plan, payment plan, or other plan. */
 export type TuitionPlan = "guarantee" | "prepaid" | "payment_plan" | "other";
 
@@ -352,6 +371,10 @@ export interface SearchFilters {
   trends?: Partial<Record<IndicatorKey, Direction[]>>;
   /** Gender-balance buckets to keep (lib/student-body.ts). */
   balance?: GenderBalance[];
+  /** Admission factors (lib/factors.ts): legacy not considered, essay not required, GPA required. */
+  noLegacy?: boolean;
+  noEssay?: boolean;
+  gpaRequired?: boolean;
   /** Housing and policies (lib/housing.ts): first-years must live on campus, no application fee, tuition guarantee. */
   liveOn?: boolean;
   noFee?: boolean;

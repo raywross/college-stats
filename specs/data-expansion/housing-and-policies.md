@@ -65,7 +65,7 @@ spec's own open question was to check that against CDS F1 first.
 - **Series `housing_capacity`** (beds) and **`application_fee`** (charted after inflation, like other money), 2001–02 on,
   from a new history family `characteristics` (`IC{Y}` through 2023, then `COST1_{Y+1}`). Charted in Over time →
   Students (beds) and → Admissions (fee). The build checks both end on the snapshot's values.
-- **Live-on requirement, tuition plans, Promise program: events**, added with the events log that
+- **Live-on requirement, tuition plans, Promise program: events** (series `live_on`, `tuition_guarantee`, `promise`), shown by the events log that
   [admission-factors.md](admission-factors.md) builds.
 
 ## Top-level trend?

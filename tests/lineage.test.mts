@@ -27,6 +27,21 @@ test("the committed dataset passes the lineage check", () => {
   assert.deepEqual(validateLineage(schools, meta), []);
 });
 
+test("citations survive a dataset published before the code's newest source (deploy racing the publish)", () => {
+  // PR #36's production build prerendered /data against the previous publish, which had no ipeds-ic-char source,
+  // and crashed on info.label. Drop each source in turn: every field still cites, with a placeholder, and the check
+  // that guards what the sync writes still refuses such a dataset.
+  const vu = byId.get(VANDERBILT)!;
+  for (const key of Object.keys(meta.sources) as (keyof DatasetMeta["sources"])[]) {
+    const older: DatasetMeta = { ...meta, sources: { ...meta.sources, [key]: undefined } };
+    for (const path of Object.keys(FIELDS) as (keyof typeof FIELDS)[]) {
+      assert.doesNotThrow(() => lineageFor(path, vu, older), `${path} without ${key}`);
+      assert.doesNotThrow(() => sourcesForFields([path], undefined, older), `${path} without ${key}`);
+    }
+    assert.ok(validateRegistry(older).includes(`meta.json: sources.${key} is missing`), `the check still requires ${key}`);
+  }
+});
+
 test("the registry is internally consistent with meta.json", () => {
   assert.deepEqual(validateRegistry(meta), []);
 });

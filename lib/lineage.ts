@@ -3,7 +3,7 @@
  * sync script, the checker, tests, and the app all resolve citations the same way.
  * See specs/data-lineage.md.
  */
-import type { DatasetMeta, LineageRecord, School, SourceKey } from "./types";
+import type { DatasetMeta, LineageRecord, School, SourceInfo, SourceKey } from "./types";
 import { FIELDS, METADATA_KEYS, isFieldPath, registeredPathFor, type FieldPath, type VintageKey } from "./fields.ts";
 
 /** A source as cited for one value: plain data, safe to pass to client components. */
@@ -42,11 +42,28 @@ const SOURCE_VINTAGE: Record<SourceKey, VintageKey | null> = {
   cds: null,
 };
 
+/**
+ * A source's entry in meta, or a neutral placeholder. Production can build new code before the publish that adds the
+ * code's new source finishes (Vercel and "Publish data" run at once); pages then render with the placeholder, and the
+ * workflow's revalidation after the publish and after the deploy replaces them. Never throws.
+ */
+export function sourceInfo(meta: DatasetMeta, key: SourceKey): SourceInfo {
+  return (
+    meta.sources[key] ?? {
+      label: "Source being published",
+      publisher: "Updating now",
+      edition: "Publishing",
+      url: "/data#sources",
+      description: "This source's details are being published and will appear shortly.",
+    }
+  );
+}
+
 function sourceFor(path: FieldPath, school: School | undefined, meta: DatasetMeta): CitedSource {
   const def = FIELDS[path];
   const rec = school?.lineage?.[path];
   const key = rec?.source ?? def.source;
-  const info = meta.sources[key];
+  const info = sourceInfo(meta, key);
   if (key === "cds" && school?.cds) {
     return {
       key,
@@ -167,6 +184,12 @@ function valueAt(school: School, path: string): unknown {
 /** Problems with the registry itself or its fit with meta.json. */
 export function validateRegistry(meta: DatasetMeta): string[] {
   const errors: string[] = [];
+  // The app tolerates a missing source mid-publish (sourceInfo); a written dataset must have every one.
+  for (const k of Object.keys(SOURCE_VINTAGE) as SourceKey[]) {
+    const s = meta.sources?.[k];
+    if (!s) errors.push(`meta.json: sources.${k} is missing`);
+    else if (!s.label || !s.url) errors.push(`meta.json: sources.${k} has no label or url`);
+  }
   for (const k of VINTAGE_KEYS) {
     if (!(k in (meta.vintages ?? {}))) errors.push(`meta.json: vintages.${k} is missing`);
     else if (YEAR_REQUIRED.includes(k) && !meta.vintages[k]) errors.push(`meta.json: vintages.${k} has no year`);

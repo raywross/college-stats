@@ -569,6 +569,8 @@ export function historySources(keys: readonly SeriesKey[], hmeta: HistoryMeta, m
     if (!files?.length) continue;
     const fam = HISTORY_FAMILIES[f];
     const info = meta.sources[fam.source];
+    // Not published yet (code deployed ahead of its data): leave it out until the publish lands.
+    if (!info) continue;
     const first = files[0].year;
     const last = files[files.length - 1].year;
     const qualifier = f === "ic-admissions" ? "admissions section" : "citeAs" in fam ? fam.citeAs : null;

@@ -77,9 +77,11 @@ Each guard below was verified by breaking the rule on purpose and confirming the
 |---|---|---|
 | `FieldPath` types on `SourceNote`, `MultiSourceNote`, `Panel.fields` (required), `Tile.field` (required), `MetricDef.field` (required), Compare `TABLE_ROWS` (`satisfies`) | Typos, unregistered fields, a tile/metric/section with no citation | `tsc` |
 | `validateLineage` (registry + every school) | Stored field not in the registry; lineage for a missing value or an unregistered/computed field; CDS lineage without a `cds` record, or a `cds` record nothing cites; `extracted` without quote/url/date/year; a release without a year; derived inputs that don't exist; circular derivations | Sync (before writing), `npm run check:lineage`, `npm test` |
+| `validateRegistry` source check | A dataset missing any `SourceKey` in `meta.sources` (the type is `Partial`, so this check is what requires them) | Sync, `npm run check:lineage`, `npm test` |
+| `DatasetMeta.sources` is `Partial` | Code that reads a source without handling "not published yet" (use `sourceInfo()`) | `tsc` |
 | `lineageForPatch` | Overrides with no source, the retired `provenance` key, unregistered fields | Sync, `npm test` |
 | `tests/citation-guards.test.mts` | Hard-coded data years in `app/` or `components/` ("Fall 2024", "2023–24"); reading `meta.sources` / `vintages` / `.edition` directly outside `app/data/page.tsx`; any return of `provenance` / `topics=` | `npm test` |
-| `tests/lineage.test.mts` | Resolution behavior: defaults, CDS vs federal fields at a CDS school, derived inputs and non-default propagation, de-duplication | `npm test` |
+| `tests/lineage.test.mts` | Resolution behavior: defaults, CDS vs federal fields at a CDS school, derived inputs and non-default propagation, de-duplication; every field still cites when any one source is missing from meta | `npm test` |
 | `npm run verify` | typecheck + lint + tests + lineage check | Locally before committing; CI (`.github/workflows/verify.yml`, also runs `next build`) |
 
 ### When you change things
@@ -89,6 +91,14 @@ Each guard below was verified by breaking the rule on purpose and confirming the
 - **New source** (e.g. `college-site`): add to `SourceKey`, `meta.sources` (sync), `SOURCE_VINTAGE` in `lib/lineage.ts`,
   and `shortSource`.
 - **New release year:** nothing in UI code; the sync updates `vintages`.
+
+### Code ahead of data
+On a merge that changes both code and `data/**`, Vercel builds production while "Publish data" is still writing
+Supabase, so the new code can prerender against the previous publish. A new source then isn't in `meta.sources` yet:
+PR #36's production build crashed on `/data` that way (2026-09-30). So the app treats a missing source as
+"being published": `sourceInfo()` returns a placeholder citation, history leaves the family out, and the Data page skips
+the card. The workflow's revalidation, after the publish and again after the deploy, replaces those pages. Only the
+app is lenient: the sync and `check:lineage` still refuse a dataset missing any source.
 
 ## Not built yet
 - **Explore/Compare baseline banner** ("Comparisons use federal data…") and a separate `school.reported` block: arrive

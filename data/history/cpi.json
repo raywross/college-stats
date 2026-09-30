@@ -2,7 +2,7 @@
   "series": "CUUR0000SA0",
   "label": "Consumer Price Index for All Urban Consumers (CPI-U), U.S. city average, all items",
   "url": "https://data.bls.gov/timeseries/CUUR0000SA0",
-  "retrieved": "2026-09-28",
+  "retrieved": "2026-09-29",
   "basis": "School-year average, July through June, as in NCES's Digest of Education Statistics",
   "start": 2000,
   "values": [

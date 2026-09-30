@@ -56,6 +56,7 @@ export const HISTORY_FAMILIES = {
   adm: { source: "ipeds-adm", kind: "fall", files: "ADM{year}" },
   prices: { source: "ipeds-ic", kind: "academic", files: "IC{year}_AY, then COST1_{year+1}" },
   sfa: { source: "ipeds-sfa", kind: "academic", files: "SFA{yy}{yy+1}, plus COST2_{year+1} since NCES moved residency and net price there" },
+  characteristics: { source: "ipeds-ic", kind: "academic", files: "IC{year} (housing and application fee), then COST1_{year+1}" },
   // College Scorecard API, year-prefixed fields (not files): years can have gaps, so they aren't checked as consecutive.
   "scorecard-enrollment": { source: "scorecard", kind: "fall", files: "API fields {year}.student.size, {year}.student.demographics.race_ethnicity.*, .men, and {year}.student.part_time_share", api: true, citeAs: "enrollment" },
   "scorecard-completion": { source: "scorecard", kind: "cohort", files: "API field {year+6}.completion.completion_rate_4yr_150nt", api: true, citeAs: "graduation by entering class" },
@@ -101,6 +102,8 @@ export const SERIES = {
   aided_net_price: { label: "Net price, students with grants", short: "Net price with grants", field: "cost.aided_net_price", term: "net-price", unit: "usd", kind: "academic", format: "money", families: ["sfa"], signed: true },
   grant_pct: { label: "Share receiving grants", short: "Get grants", field: "aid.grant_pct", term: "grant-aid", unit: "share", kind: "academic", format: "pct", families: ["sfa"] },
   grant_avg: { label: "Average grant", short: "Average grant", field: "aid.grant_avg", term: "grant-aid", unit: "usd", kind: "academic", format: "money", families: ["sfa"] },
+  housing_capacity: { label: "Housing capacity (beds)", short: "Beds", field: "campus.housing", term: "housing-capacity", unit: "count", kind: "academic", format: "compact", families: ["characteristics"] },
+  application_fee: { label: "Application fee", short: "Application fee", field: "admissions.application_fee", term: "application-fee", unit: "usd", kind: "academic", format: "money", families: ["characteristics"] },
   aid_generosity: { label: "Aid generosity", short: "Aid generosity", field: "derived.aid_generosity", term: "aid-generosity", unit: "share", kind: "academic", format: "pct", families: ["prices", "sfa"] },
   net_price_income_1: { label: "Net price, family income $0–30K", short: "$0–30K", field: "cost.net_price_by_income", term: "net-price-by-income", unit: "usd", kind: "academic", format: "money", families: ["sfa"], signed: true },
   net_price_income_2: { label: "Net price, family income $30–48K", short: "$30–48K", field: "cost.net_price_by_income", term: "net-price-by-income", unit: "usd", kind: "academic", format: "money", families: ["sfa"], signed: true },

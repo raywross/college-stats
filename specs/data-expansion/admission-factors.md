@@ -71,7 +71,9 @@ Registered as one field `admissions.factors` (source `ipeds-adm`, vintage `ipeds
 - **Glossary:** `admission-factor`, `legacy-status`, `secondary-school-record`, `college-prep-program`.
 
 ## Keep history?
-**Events, plus a national series.**
+**Events, plus a national series.** The events log built here also takes the policy events that
+[housing-and-policies.md](housing-and-policies.md) deferred to it: first-years' live-on requirement, tuition plans, and
+Promise program participation (history family `characteristics`).
 - Per college, factor changes are **events** (e.g. "Stopped considering legacy status, fall 2023"). Only compare within
   an era: a 2021 → 2022 change from "neither" (3) to "not considered" (3) is the same code but a new meaning, and
   "recommended" → anything in 2022 is a re-coding, not a decision. Record events only for: required ↔ not

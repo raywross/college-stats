@@ -5,6 +5,7 @@ import type { ReleaseCalendar } from "./releases";
 import { matchesIndicators } from "./indicators";
 import { genderBalanceOf, isMostlyFullTime } from "./student-body";
 import { hasFewLoans } from "./repayment";
+import { hasTuitionGuarantee, noApplicationFee, requiresLiveOn } from "./housing";
 import {
   METRICS,
   SIZE_BUCKETS,
@@ -210,6 +211,9 @@ export function createDataset({ schools, meta, releaseCalendar }: DatasetFiles) 
     if (filters.balance?.length) results = results.filter((s) => filters.balance!.includes(genderBalanceOf(s)!));
     if (filters.fullTime) results = results.filter(isMostlyFullTime);
     if (filters.fewLoans) results = results.filter(hasFewLoans);
+    if (filters.liveOn) results = results.filter(requiresLiveOn);
+    if (filters.noFee) results = results.filter(noApplicationFee);
+    if (filters.guarantee) results = results.filter(hasTuitionGuarantee);
 
     const sortBy: SortKey = filters.sortBy && filters.sortBy in SORTERS ? filters.sortBy : "applicants";
     const multiplier = (filters.sortDir ?? (sortBy === "applicants" ? "desc" : "asc")) === "asc" ? 1 : -1;

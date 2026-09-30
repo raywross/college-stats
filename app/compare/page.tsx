@@ -68,7 +68,17 @@ const TABLE_ROWS = (
     ["SAT middle 50%", "middle-50", "derived.sat_composite", (s: School) => satComposite(s)?.join("–") ?? null],
     ["ACT middle 50%", "act", "admissions.act_composite_25_75", (s: School) => s.admissions.act_composite_25_75?.join("–") ?? null],
     ["Test policy", "test-policy", "admissions.test_policy", (s: School) => (s.admissions.test_policy ? TEST_POLICY_LABELS[s.admissions.test_policy] : null)],
+    ["Application fee", "application-fee", "admissions.application_fee", (s: School) =>
+      s.admissions.application_fee == null ? null : s.admissions.application_fee === 0 ? "None" : money(s.admissions.application_fee)],
     ["Undergrads", "undergrad-enrollment", "demographics.undergrad_enrollment", (s: School) => num(s.demographics.undergrad_enrollment)],
+    ["Beds in college housing", "housing-capacity", "campus.housing", (s: School) => {
+      const h = s.campus?.housing;
+      return !h ? null : !h.offered ? "No housing" : h.capacity == null ? null : num(h.capacity);
+    }],
+    ["First-years must live on campus", "live-on-requirement", "campus.housing", (s: School) => {
+      const r = s.campus?.housing?.first_years_required;
+      return r == null ? null : r ? "Yes" : "No";
+    }],
     ["Pell Grant", "pell-grant", "demographics.pell_grant_percent", (s: School) => opt(s.demographics.pell_grant_percent, (v) => pct(v))],
     ["First-gen", "first-gen", "demographics.first_gen_percent", (s: School) => opt(s.demographics.first_gen_percent, (v) => pct(v))],
     ["Men / women", "gender-balance", "demographics.men_share", (s: School) =>
@@ -81,6 +91,10 @@ const TABLE_ROWS = (
     ["Net price, students with grants", "net-price", "cost.aided_net_price", (s: School) => opt(s.cost?.aided_net_price ?? null, money)],
     ["Sticker price, in-state", "in-state-tuition", "cost.sticker", (s: School) => opt(s.cost?.sticker?.in_state ?? null, money)],
     ["Sticker price, out-of-state", "in-state-tuition", "cost.sticker", (s: School) => opt(s.cost?.sticker?.out_of_state ?? null, money)],
+    ["Tuition guarantee", "tuition-guarantee", "cost.tuition_plans", (s: School) =>
+      s.cost?.tuition_plans == null ? null : s.cost.tuition_plans.includes("guarantee") ? "Yes" : "No"],
+    ["Promise program", "promise-program", "cost.promise_program", (s: School) =>
+      s.cost?.promise_program == null ? null : s.cost.promise_program ? "Yes" : "No"],
     ["Tuition & fees, in-state", "in-state-tuition", "cost.tuition_fees", (s: School) => opt(s.cost?.tuition_fees?.in_state ?? null, money)],
     ["Tuition & fees, out-of-state", "in-state-tuition", "cost.tuition_fees", (s: School) => opt(s.cost?.tuition_fees?.out_of_state ?? null, money)],
     ["First-years paying out-of-state rates", "in-state-tuition", "cost.residency", (s: School) => (s.type === "public" ? opt(s.cost?.residency?.out_of_state ?? null, (v) => pct(v)) : null)],

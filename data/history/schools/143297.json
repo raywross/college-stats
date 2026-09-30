@@ -13,6 +13,8 @@
     "sticker_in_state": {"start":2001,"values":[18075,18895,19495,23580,25601,27170,29015]},
     "sticker_out_of_state": {"start":2001,"values":[18075,18895,19495,23580,25601,27170,29015]},
     "full_price": {"start":2001,"values":[18075,18895,19495,23580,25601,27170,29015]},
+    "housing_capacity": {"start":2001,"values":[26,26,26,26,24,24,20,16,14,14,14,14,14,14]},
+    "application_fee": {"start":2007,"values":[0,0,0,0,0,0,null,null,null,0,0,0,0,0,0,0,0]},
     "act_25": {"start":2003,"values":[21,20,22,21,22]},
     "act_75": {"start":2003,"values":[25,25,28,28,28]},
     "sat_submit": {"start":2001,"values":[0,0,0.04,0,0,null,0]},

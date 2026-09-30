@@ -17,6 +17,8 @@
     "aided_net_price": {"start":2019,"values":[7558,9537,9467,12398,14207]},
     "grant_pct": {"start":2018,"values":[0.1875,0.9153,0.8824,0.56,0.5098,0.5645]},
     "grant_avg": {"start":2018,"values":[1083,3727,3113,4142,3691,2968]},
+    "housing_capacity": {"start":2019,"values":[320,322,318,312,438]},
+    "application_fee": {"start":2019,"values":[50,50,50,50,50]},
     "aid_generosity": {"start":2019,"values":[0.3023,0.2127,0.1693,0.117,0.0975]},
     "net_price_income_1": {"start":2019,"values":[6787,9803,7117,11658,13314]},
     "net_price_income_2": {"start":2019,"values":[6849,10478,9182,14934,14405]},

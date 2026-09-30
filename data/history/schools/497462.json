@@ -11,6 +11,7 @@
     "tuition_in_state": {"start":2022,"values":[6800,6800]},
     "tuition_out_of_state": {"start":2022,"values":[6800,6800]},
     "grant_pct": {"start":2021,"values":[0,0]},
+    "application_fee": {"start":2022,"values":[50,50]},
     "net_price_income_1": {"start":2021,"values":[10300]},
     "test_policy": {"start":2022,"values":[5,5,3]},
     "undergrads": {"start":2022,"values":[36,6,6]},

@@ -16,6 +16,8 @@
     "aided_net_price": {"start":2008,"values":[1876,2035,3276,3206,null,null,null,null,3535]},
     "grant_pct": {"start":2007,"values":[1,0.7143,1,1,0.75,null,null,null,0,1]},
     "grant_avg": {"start":2007,"values":[4000,5298,4065,1624,4017,null,null,null,null,4365]},
+    "housing_capacity": {"start":2001,"values":[33,21,21,27,25,30,26,25,25,30,30,25,30,27,30,30,25,25,24,24,21,24,24]},
+    "application_fee": {"start":2001,"values":[20,20,20,20,35,35,35,35,35,35,35,35,35,35,35,35,35,35,35,35,35,35,35]},
     "aid_generosity": {"start":2007,"values":[0.545,0.4796,0.5152,0.1911,0.3013,null,null,null,null,0.2969],"approx":[2007]},
     "net_price_income_1": {"start":2009,"values":[2035,3766,1673]},
     "net_price_income_2": {"start":2011,"values":[2123]},

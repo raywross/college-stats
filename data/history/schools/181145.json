@@ -12,6 +12,7 @@
     "tuition_out_of_state": {"start":2000,"values":[3100,3300,3500,2000,2200,2200,2200]},
     "grant_pct": {"start":2007,"values":[0.1364]},
     "grant_avg": {"start":2007,"values":[2500]},
+    "application_fee": {"start":2001,"values":[20,25,25,25,25,25,25,25,25,25,25,25,25,25,25,25,25,25,25,25,0,0,0]},
     "act_25": {"start":2001,"values":[22,16,null,null,10,19]},
     "act_75": {"start":2001,"values":[23,25,null,null,30,23]},
     "sat_submit": {"start":2002,"values":[0,null,null,0]},

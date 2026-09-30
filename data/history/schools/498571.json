@@ -17,6 +17,8 @@
     "aided_net_price": {"start":2022,"values":[19579,18094]},
     "grant_pct": {"start":2021,"values":[0.9494,0.9159,0.9312]},
     "grant_avg": {"start":2021,"values":[6944,7907,8649]},
+    "housing_capacity": {"start":2022,"values":[5119,4565]},
+    "application_fee": {"start":2022,"values":[35,35]},
     "aid_generosity": {"start":2022,"values":[0.2424,0.2701]},
     "net_price_income_1": {"start":2021,"values":[14597,14651,13944]},
     "net_price_income_2": {"start":2021,"values":[14469,15059,14171]},

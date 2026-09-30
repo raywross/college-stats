@@ -8,6 +8,8 @@
     "yield": {"start":2002,"values":[1,1]},
     "admit_rate_men": {"start":2002,"values":[0.8421,1]},
     "admit_rate_women": {"start":2002,"values":[0.7234,0.9242]},
+    "housing_capacity": {"start":2001,"values":[170,170,170,170,195,130,140,125,125,150,150,150,150,136,136,136,145,145,124,124,145,145,145]},
+    "application_fee": {"start":2001,"values":[55,55,55,55,55,55,55,55,55,55,55,55,55,55,55,55,55,55,55,55,55,55,55]},
     "sat_submit": {"start":2002,"values":[0]},
     "act_submit": {"start":2002,"values":[0]},
     "test_policy": {"start":2002,"values":[3,3]},

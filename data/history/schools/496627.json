@@ -13,6 +13,7 @@
     "aided_net_price": {"start":2021,"values":[68994,69431,72723]},
     "grant_pct": {"start":2020,"values":[0.4299,0.8857,0.8636,1]},
     "grant_avg": {"start":2020,"values":[6223,7031,4954,8646]},
+    "application_fee": {"start":2021,"values":[100,100,100]},
     "sat_submit": {"start":2021,"values":[0,0]},
     "act_submit": {"start":2021,"values":[0,0]},
     "test_policy": {"start":2021,"values":[5,5,3,3]},

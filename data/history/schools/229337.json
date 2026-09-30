@@ -9,6 +9,7 @@
     "admit_rate_women": {"start":2001,"values":[0.3898,0.3]},
     "tuition_in_state": {"start":2000,"values":[3352]},
     "tuition_out_of_state": {"start":2000,"values":[9802]},
+    "application_fee": {"start":2001,"values":[40,40,40,40,40,40,40,40,40,40,40,40,40,40,40,40,40,75,75,75,75,75,75]},
     "sat_submit": {"start":2002,"values":[0]},
     "act_submit": {"start":2002,"values":[0]},
     "test_policy": {"start":2001,"values":[2,2]},

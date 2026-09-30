@@ -153,6 +153,15 @@ export function studentsTakeaway({ rankOf }: Dataset, s: School): string {
   return `${base}, where ${pct(pell)} receive Pell Grants, ${pellTone} compared to other colleges.`;
 }
 
+/** Campus life headline (specs/data-expansion/housing-and-policies.md): housing in one sentence. */
+export function campusTakeaway(s: School): string | undefined {
+  const h = s.campus?.housing;
+  if (!h) return undefined;
+  if (!h.offered) return "No college housing: students find their own place to live.";
+  const beds = h.capacity != null ? `Housing for ${num(h.capacity)} students` : "College housing";
+  return h.first_years_required ? `${beds}, and every first-year lives on campus.` : `${beds}.`;
+}
+
 /** A gap between men's and women's acceptance rates this large (in points) gets its own card on the profile. */
 export const BY_SEX_NOTABLE_GAP = 0.03;
 

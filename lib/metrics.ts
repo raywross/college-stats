@@ -3,6 +3,7 @@ import type { TermKey } from "./glossary";
 import type { FieldPath } from "./fields";
 import { money, num, pct, pctSmart } from "./format";
 import { admitRatesBySex, satMedian, simpsonIndex, yieldOf } from "./derive";
+import { bedsPer100 } from "./housing";
 
 /* ------------------------------------------------------------------ */
 /* Derived values (null when the underlying data isn't reported)       */
@@ -137,6 +138,7 @@ export type MetricKey =
   | "earnings"
   | "gradRate"
   | "debt"
+  | "bedsPer100"
   | "loanRate"
   | "loanRateLarge"
   | "loanRateChange"
@@ -360,6 +362,18 @@ export const METRICS: Record<MetricKey, MetricDef> = {
     format: money,
     more: "more debt",
     less: "less debt",
+  },
+  bedsPer100: {
+    key: "bedsPer100",
+    field: "campus.housing",
+    label: "Beds per 100 undergrads",
+    short: "Beds/100",
+    term: "housing-capacity",
+    domain: "size",
+    get: bedsPer100,
+    format: (v) => String(Math.round(v)),
+    more: "more housing",
+    less: "less housing",
   },
   loanRate: {
     key: "loanRate",

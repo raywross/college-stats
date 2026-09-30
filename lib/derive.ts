@@ -3,7 +3,7 @@
  * `npm run sync-history` (every past year), so a trend line always ends on the number the profile shows
  * (specs/trends-data.md, rule 1). Pure: plain objects in, plain objects out; no I/O.
  */
-import type { ResidencyPrices, School, SchoolType, ShareRange } from "./types";
+import type { ResidencyPrices, School, SchoolType, ShareRange, TuitionPlan } from "./types";
 
 /** One institution's row from an IPEDS CSV, keyed by upper-case column name. */
 export type IpedsRow = Record<string, string>;
@@ -42,6 +42,49 @@ export function raceShares(race: (field: (typeof SCORECARD_RACE_FIELDS)[number])
 /** Admitted ÷ applicants, rounded to 4 places; null under 10 applicants, where a rate is meaningless (0 of 1). */
 export function acceptanceRate(applicants: number | null, admitted: number | null): number | null {
   return applicants && applicants >= 10 && admitted !== null ? round(Math.min(1, admitted / applicants)) : null;
+}
+
+/* ---- Institutional characteristics: housing and policies (IPEDS IC{Y}, then COST1_{Y+1}; codes from the
+   COST1_2024 dictionary, checked 2026-09-29) ---- */
+
+/** Yes/no codes: 1 yes, 2 no; anything else (−1 not reported, −2 not applicable) is null. */
+const yesNo = (v: string | undefined): boolean | null => (v === "1" ? true : v === "2" ? false : null);
+
+/** Housing and meal plans; null when the row is missing or doesn't say whether housing is offered. */
+export function housingFrom(row: IpedsRow | undefined): NonNullable<School["campus"]>["housing"] {
+  const offered = yesNo(row?.ROOM);
+  if (offered === null) return null;
+  const capacity = ipedsNum(row, "ROOMCAP");
+  // BOARD: 1 yes (MEALSWK is the largest plan), 2 yes (meals vary), 3 no.
+  const board = row?.BOARD;
+  const meals = ipedsNum(row, "MEALSWK");
+  return {
+    offered,
+    capacity: offered && capacity !== null && capacity > 0 ? capacity : null,
+    first_years_required: offered ? yesNo(row?.ALLONCAM) : null,
+    meal_plan: board === "1" || board === "2" ? true : board === "3" ? false : null,
+    // 99 (and other large entries) isn't a count of meals; the dictionary doesn't define it, so it's left out.
+    meals_per_week: board === "1" && meals !== null && meals >= 1 && meals <= 28 ? meals : null,
+  };
+}
+
+/** Undergraduate application fee; 0 is "no fee". */
+export function applicationFeeFrom(row: IpedsRow | undefined): number | null {
+  const v = ipedsNum(row, "APPLFEEU");
+  return v !== null && v >= 0 ? v : null;
+}
+
+const TUITION_PLAN_COLUMNS: Record<TuitionPlan, string> = { guarantee: "TUITPL1", prepaid: "TUITPL2", payment_plan: "TUITPL3", other: "TUITPL4" };
+
+/** Alternative tuition plans: TUITPL 1 means some plan (then TUITPL1–4 are 1 yes, 0 no), 2 none; null if unreported. */
+export function tuitionPlansFrom(row: IpedsRow | undefined): TuitionPlan[] | null {
+  if (row?.TUITPL === "2") return [];
+  if (row?.TUITPL !== "1") return null;
+  return (Object.entries(TUITION_PLAN_COLUMNS) as [TuitionPlan, string][]).filter(([, c]) => row[c] === "1").map(([k]) => k);
+}
+
+export function promiseProgramFrom(row: IpedsRow | undefined): boolean | null {
+  return yesNo(row?.PRMPGM);
 }
 
 /**

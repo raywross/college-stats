@@ -10,6 +10,7 @@ import { DOMAINS, SIZE_BUCKETS } from "@/lib/metrics";
 import { DIRECTIONS, INDICATORS, INDICATOR_KEYS, type Direction, type IndicatorKey } from "@/lib/indicators";
 import { FULL_TIME_MAX_PART_TIME, GENDER_BALANCE, type GenderBalance } from "@/lib/student-body";
 import { FEW_LOANS_MAX } from "@/lib/repayment";
+import { HOUSING_FILTERS, type HousingFilterParam } from "@/lib/housing";
 import { useExploreParams } from "./useExploreParams";
 import { cn } from "@/lib/utils";
 
@@ -27,6 +28,8 @@ export interface FilterFacets {
   /** Colleges in each gender-balance bucket, and mostly full-time colleges (lib/student-body.ts). */
   balance: Record<GenderBalance, number>;
   fullTime: number;
+  /** Colleges matching each housing and policy filter (lib/housing.ts). */
+  housing: Record<HousingFilterParam, number>;
   /** Colleges where few undergrads take federal loans (lib/repayment.ts). */
   fewLoans: number;
 }
@@ -97,7 +100,7 @@ export function FilterPanel({ facets, onDone }: { facets: FilterFacets; onDone?:
   const fewLoans = searchParams.get("fewLoans") === "1";
 
   const hasFilters = [
-    ...["q", "types", "sizes", "regions", "states", "minAR", "maxAR", "minSAT", "maxSAT", "minCost", "maxCost", "minEnroll", "maxEnroll", "balance", "fullTime", "fewLoans"],
+    ...["q", "types", "sizes", "regions", "states", "minAR", "maxAR", "minSAT", "maxSAT", "minCost", "maxCost", "minEnroll", "maxEnroll", "balance", "fullTime", "fewLoans", "liveOn", "noFee", "guarantee"],
     ...INDICATOR_KEYS.map((k) => INDICATORS[k].param),
   ].some((k) => searchParams.get(k));
 
@@ -259,6 +262,23 @@ export function FilterPanel({ facets, onDone }: { facets: FilterFacets; onDone?:
         <p className="text-[11px] text-muted-foreground">
           Mostly women or men: over 60% one or the other. Mostly full-time: {Math.round(FULL_TIME_MAX_PART_TIME * 100)}% or fewer of undergrads
           study part-time.
+        </p>
+      </Section>
+
+      <Section title="Housing & policies" term="housing-capacity">
+        <div className="flex flex-wrap gap-1.5">
+          {HOUSING_FILTERS.map((f) => {
+            const active = searchParams.get(f.param) === "1";
+            return (
+              <Chip key={f.param} active={active} onClick={() => update({ [f.param]: active ? null : "1" })} count={facets.housing[f.param]}>
+                {f.label}
+              </Chip>
+            );
+          })}
+        </div>
+        <p className="text-[11px] text-muted-foreground">
+          &quot;Live on campus&quot; is the strict rule: every full-time first-year, no exceptions. Many more colleges expect it with
+          exceptions.
         </p>
       </Section>
 

@@ -17,6 +17,8 @@
     "aided_net_price": {"start":2008,"values":[10990,11469,10660,11904,11820,null,null,null,null,null,null,null,17043,12510,13221,10294]},
     "grant_pct": {"start":2007,"values":[0,0.0758,0.1507,0.2222,0.2,0.0213,null,null,null,null,null,0,null,1,1,1,1]},
     "grant_avg": {"start":2008,"values":[1000,1000,2000,2000,1000,null,null,null,null,null,null,null,2970,9570,9718,11841]},
+    "housing_capacity": {"start":2005,"values":[50,null,null,null,null,null,null,null,null,94,null,null,null,null,80,80,80,136,96]},
+    "application_fee": {"start":2002,"values":[50,75,75,60,null,60,60,60,60,60,60,60,60,null,null,null,null,100,100,100,100,100]},
     "aid_generosity": {"start":2020,"values":[0.1345,0.4334,0.4401,0.5349]},
     "sat_submit": {"start":2020,"values":[1,0,0,0]},
     "act_submit": {"start":2020,"values":[0,0,0,0]},

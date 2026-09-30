@@ -114,6 +114,10 @@ export const FIELDS = {
       inputs: ["cost.tuition_fees", "cost.residency", "cost.components", "aid.grant_total", "aid.cohort"],
     },
   },
+  "cost.tuition_plans": ic("Tuition plans offered"),
+  "cost.promise_program": ic("Promise program"),
+  "admissions.application_fee": { ...ic("Application fee"), topic: "admissions" },
+  "campus.housing": { ...ic("Campus housing and meal plans"), topic: "campus" },
   "cost.avg_paid_all": {
     ...ic("Average cost, all students"),
     topic: "cost",

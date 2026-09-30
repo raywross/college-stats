@@ -42,6 +42,8 @@ export interface School {
     act_composite_median?: number | null;
     act_english_25_75?: [number, number] | null;
     act_math_25_75?: [number, number] | null;
+    /** Undergraduate application fee in dollars; 0 means no fee (IPEDS IC). */
+    application_fee?: number | null;
   };
   demographics: {
     undergrad_enrollment: number;
@@ -109,6 +111,10 @@ export interface School {
      * grants are counted at full price.
      */
     avg_paid_all?: number | null;
+    /** Alternative tuition plans the college offers (IPEDS IC). */
+    tuition_plans?: TuitionPlan[] | null;
+    /** Takes part in a state or local Promise (residency-based free-tuition) program. */
+    promise_program?: boolean | null;
   };
   /** What happens after enrolling (College Scorecard). */
   outcomes?: {
@@ -159,6 +165,20 @@ export interface School {
     } | null;
     /** Richer detail from the school's Common Data Set, section H (full-time undergraduates). */
     cds?: CdsAid;
+  };
+  /** Housing and campus services (IPEDS Institutional Characteristics, same year as the prices). */
+  campus?: {
+    housing: {
+      /** Offers institutionally controlled housing (on or off campus). */
+      offered: boolean;
+      /** Beds, including any graduate housing. */
+      capacity: number | null;
+      /** All full-time first-time students must live in college housing (strict: no exceptions). */
+      first_years_required: boolean | null;
+      meal_plan: boolean | null;
+      /** Meals a week in the largest plan; null when it varies or isn't a plain number (IPEDS 99). */
+      meals_per_week: number | null;
+    } | null;
   };
   links?: {
     website: string | null;
@@ -236,6 +256,9 @@ export interface SexCounts {
   enrolled: number | null;
 }
 
+/** IPEDS TUITPL1–4: a tuition guarantee (locked-in rate), prepaid plan, payment plan, or other plan. */
+export type TuitionPlan = "guarantee" | "prepaid" | "payment_plan" | "other";
+
 export interface ResidencyPrices {
   in_district: number | null;
   in_state: number | null;
@@ -258,7 +281,7 @@ export interface CdsAid {
   merit_avg: number | null;
 }
 
-export type Topic = "institution" | "admissions" | "enrollment" | "demographics" | "cost" | "prices" | "outcomes" | "aid";
+export type Topic = "institution" | "admissions" | "enrollment" | "demographics" | "cost" | "prices" | "outcomes" | "aid" | "campus";
 export type SourceKey = "scorecard" | "ipeds-adm" | "ipeds-sfa" | "ipeds-ic" | "cds";
 
 export interface SourceInfo {
@@ -329,6 +352,10 @@ export interface SearchFilters {
   trends?: Partial<Record<IndicatorKey, Direction[]>>;
   /** Gender-balance buckets to keep (lib/student-body.ts). */
   balance?: GenderBalance[];
+  /** Housing and policies (lib/housing.ts): first-years must live on campus, no application fee, tuition guarantee. */
+  liveOn?: boolean;
+  noFee?: boolean;
+  guarantee?: boolean;
   /** Only colleges where at most 20% of undergraduates have a federal loan (lib/repayment.ts). */
   fewLoans?: boolean;
   /** Only colleges where at most 10% of undergraduates study part-time. */

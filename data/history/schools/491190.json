@@ -7,6 +7,7 @@
     "yield": {"start":2023,"values":[0]},
     "tuition_in_state": {"start":2021,"values":[12712,13224,20844]},
     "tuition_out_of_state": {"start":2021,"values":[12712,13224,20844]},
+    "application_fee": {"start":2021,"values":[50,50,50]},
     "test_policy": {"start":2021,"values":[3,5,5,5]},
     "undergrads": {"start":2021,"values":[2,4,5,2]},
     "race_white": {"start":2021,"values":[0,0.5,0.2,0]},

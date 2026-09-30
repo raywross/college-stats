@@ -14,6 +14,8 @@
     "aided_net_price": {"start":2015,"values":[11450,8325,null,null,null,null,9233,8750,1125]},
     "grant_pct": {"start":2014,"values":[1,1,1,null,null,null,null,1,1,1]},
     "grant_avg": {"start":2014,"values":[6313,3750,3625,null,null,null,null,3250,3250,7625]},
+    "housing_capacity": {"start":2001,"values":[65,60,60,null,null,null,null,null,null,null,null,null,null,null,120,120,120,120,118,120,120,60]},
+    "application_fee": {"start":2001,"values":[25,25,25,null,null,null,null,null,null,null,null,null,null,null,25,25,25,25,25,25,35,35,35]},
     "aid_generosity": {"start":2015,"values":[0.2408,0.2327,null,null,null,null,0.2416,0.2416]},
     "sat_25": {"start":2015,"values":[710]},
     "sat_75": {"start":2015,"values":[850]},

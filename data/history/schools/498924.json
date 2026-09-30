@@ -4,6 +4,7 @@
     "tuition_in_state": {"start":2023,"values":[30550]},
     "tuition_out_of_state": {"start":2023,"values":[30550]},
     "grant_pct": {"start":2022,"values":[0,0]},
+    "application_fee": {"start":2023,"values":[100]},
     "undergrads": {"start":2023,"values":[28,33]},
     "race_white": {"start":2023,"values":[0,0]},
     "race_asian": {"start":2023,"values":[0,0]},

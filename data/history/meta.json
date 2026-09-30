@@ -440,6 +440,146 @@
         "revised": false
       }
     ],
+    "characteristics": [
+      {
+        "year": 2001,
+        "file": "IC2001",
+        "url": "https://nces.ed.gov/ipeds/datacenter/data/IC2001.zip",
+        "revised": false
+      },
+      {
+        "year": 2002,
+        "file": "IC2002",
+        "url": "https://nces.ed.gov/ipeds/datacenter/data/IC2002.zip",
+        "revised": false
+      },
+      {
+        "year": 2003,
+        "file": "IC2003",
+        "url": "https://nces.ed.gov/ipeds/datacenter/data/IC2003.zip",
+        "revised": false
+      },
+      {
+        "year": 2004,
+        "file": "IC2004",
+        "url": "https://nces.ed.gov/ipeds/datacenter/data/IC2004.zip",
+        "revised": false
+      },
+      {
+        "year": 2005,
+        "file": "IC2005",
+        "url": "https://nces.ed.gov/ipeds/datacenter/data/IC2005.zip",
+        "revised": false
+      },
+      {
+        "year": 2006,
+        "file": "IC2006",
+        "url": "https://nces.ed.gov/ipeds/datacenter/data/IC2006.zip",
+        "revised": false
+      },
+      {
+        "year": 2007,
+        "file": "IC2007",
+        "url": "https://nces.ed.gov/ipeds/datacenter/data/IC2007.zip",
+        "revised": false
+      },
+      {
+        "year": 2008,
+        "file": "IC2008",
+        "url": "https://nces.ed.gov/ipeds/datacenter/data/IC2008.zip",
+        "revised": true
+      },
+      {
+        "year": 2009,
+        "file": "IC2009",
+        "url": "https://nces.ed.gov/ipeds/datacenter/data/IC2009.zip",
+        "revised": true
+      },
+      {
+        "year": 2010,
+        "file": "IC2010",
+        "url": "https://nces.ed.gov/ipeds/datacenter/data/IC2010.zip",
+        "revised": true
+      },
+      {
+        "year": 2011,
+        "file": "IC2011",
+        "url": "https://nces.ed.gov/ipeds/datacenter/data/IC2011.zip",
+        "revised": true
+      },
+      {
+        "year": 2012,
+        "file": "IC2012",
+        "url": "https://nces.ed.gov/ipeds/datacenter/data/IC2012.zip",
+        "revised": true
+      },
+      {
+        "year": 2013,
+        "file": "IC2013",
+        "url": "https://nces.ed.gov/ipeds/datacenter/data/IC2013.zip",
+        "revised": true
+      },
+      {
+        "year": 2014,
+        "file": "IC2014",
+        "url": "https://nces.ed.gov/ipeds/datacenter/data/IC2014.zip",
+        "revised": true
+      },
+      {
+        "year": 2015,
+        "file": "IC2015",
+        "url": "https://nces.ed.gov/ipeds/datacenter/data/IC2015.zip",
+        "revised": true
+      },
+      {
+        "year": 2016,
+        "file": "IC2016",
+        "url": "https://nces.ed.gov/ipeds/datacenter/data/IC2016.zip",
+        "revised": true
+      },
+      {
+        "year": 2017,
+        "file": "IC2017",
+        "url": "https://nces.ed.gov/ipeds/datacenter/data/IC2017.zip",
+        "revised": true
+      },
+      {
+        "year": 2018,
+        "file": "IC2018",
+        "url": "https://nces.ed.gov/ipeds/datacenter/data/IC2018.zip",
+        "revised": true
+      },
+      {
+        "year": 2019,
+        "file": "IC2019",
+        "url": "https://nces.ed.gov/ipeds/datacenter/data/IC2019.zip",
+        "revised": true
+      },
+      {
+        "year": 2020,
+        "file": "IC2020",
+        "url": "https://nces.ed.gov/ipeds/datacenter/data/IC2020.zip",
+        "revised": true
+      },
+      {
+        "year": 2021,
+        "file": "IC2021",
+        "url": "https://nces.ed.gov/ipeds/datacenter/data/IC2021.zip",
+        "revised": true
+      },
+      {
+        "year": 2022,
+        "file": "IC2022",
+        "url": "https://nces.ed.gov/ipeds/datacenter/data/IC2022.zip",
+        "revised": true
+      },
+      {
+        "year": 2023,
+        "file": "IC2023",
+        "url": "https://nces.ed.gov/ipeds/complete-data-files/IC2023.zip",
+        "revised": true
+      }
+    ],
     "scorecard-enrollment": [
       {
         "year": 1996,

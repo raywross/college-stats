@@ -80,15 +80,6 @@ export interface RoadmapSpec {
 /** In build order within each group (the backlog's order, specs/backlog.md). */
 export const ROADMAP: RoadmapSpec[] = [
   {
-    slug: "campus-services",
-    file: "specs/data-expansion/campus-services.md",
-    group: "wave-2",
-    summary: "Athletics division and conference, ROTC, study abroad, undergraduate research, and AP credit.",
-    complexity: 2,
-    complexityNote: "A new file and a hand-kept conference-to-division table, reviewed yearly.",
-    status: "planned",
-  },
-  {
     slug: "student-faculty-ratio",
     file: "specs/data-expansion/student-faculty-ratio.md",
     group: "wave-2",

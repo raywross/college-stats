@@ -580,6 +580,80 @@
         "revised": true
       }
     ],
+    "services": [
+      {
+        "year": 2014,
+        "file": "IC2014",
+        "url": "https://nces.ed.gov/ipeds/datacenter/data/IC2014.zip",
+        "revised": true
+      },
+      {
+        "year": 2015,
+        "file": "IC2015",
+        "url": "https://nces.ed.gov/ipeds/datacenter/data/IC2015.zip",
+        "revised": true
+      },
+      {
+        "year": 2016,
+        "file": "IC2016",
+        "url": "https://nces.ed.gov/ipeds/datacenter/data/IC2016.zip",
+        "revised": true
+      },
+      {
+        "year": 2017,
+        "file": "IC2017",
+        "url": "https://nces.ed.gov/ipeds/datacenter/data/IC2017.zip",
+        "revised": true
+      },
+      {
+        "year": 2018,
+        "file": "IC2018",
+        "url": "https://nces.ed.gov/ipeds/datacenter/data/IC2018.zip",
+        "revised": true
+      },
+      {
+        "year": 2019,
+        "file": "IC2019",
+        "url": "https://nces.ed.gov/ipeds/datacenter/data/IC2019.zip",
+        "revised": true
+      },
+      {
+        "year": 2020,
+        "file": "IC2020",
+        "url": "https://nces.ed.gov/ipeds/datacenter/data/IC2020.zip",
+        "revised": true
+      },
+      {
+        "year": 2021,
+        "file": "IC2021",
+        "url": "https://nces.ed.gov/ipeds/datacenter/data/IC2021.zip",
+        "revised": true
+      },
+      {
+        "year": 2022,
+        "file": "IC2022",
+        "url": "https://nces.ed.gov/ipeds/datacenter/data/IC2022.zip",
+        "revised": true
+      },
+      {
+        "year": 2023,
+        "file": "IC2023",
+        "url": "https://nces.ed.gov/ipeds/complete-data-files/IC2023.zip",
+        "revised": true
+      },
+      {
+        "year": 2024,
+        "file": "IC2024",
+        "url": "https://nces.ed.gov/ipeds/complete-data-files/IC2024.zip",
+        "revised": true
+      },
+      {
+        "year": 2025,
+        "file": "IC2025",
+        "url": "https://nces.ed.gov/ipeds/complete-data-files/IC2025.zip",
+        "revised": false
+      }
+    ],
     "scorecard-enrollment": [
       {
         "year": 1996,
@@ -1167,7 +1241,8 @@
   },
   "provisional": {
     "adm": 2024,
-    "sfa": 2023
+    "sfa": 2023,
+    "services": 2025
   },
   "schools": 1893,
   "universe": 1893

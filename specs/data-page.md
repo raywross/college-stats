@@ -58,8 +58,8 @@ Hand-maintained, with automatic status updates:
 | College class profiles, fall 2026 | Newest admit rates | Aug–Nov 2026 (rolling) | College websites |
 | Common Data Set 2026–27 | Fall 2026 admissions, 2026–27 aid | ~Feb–Aug 2027 (rolling) | College websites |
 
-Already released, not used yet: `IC2025` (Jul 28, 2026: institutional characteristics 2025–26, no prices),
-`EFFY2025` (12-month enrollment 2024–25), `C2025_A` (completions 2024–25).
+Already released, not used yet: `EFFY2025` (12-month enrollment 2024–25), `C2025_A` (completions 2024–25). (`IC2025` is
+used since 2026-09-30: [campus-services.md](data-expansion/campus-services.md).)
 
 ### Watching: ACTS
 IPEDS **Admissions and Consumer Transparency Supplement**: detailed admissions data (by race, sex, income, test scores,

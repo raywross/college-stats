@@ -8,6 +8,8 @@
     "tuition_out_of_state": {"start":2000,"values":[3360]},
     "application_fee": {"start":2001,"values":[15,15,15,15,20,20,20,20,20,20,20,20,null,20,0,0,20,30,30,30,30,30,30]},
     "tuition_guarantee": {"start":2008,"values":[1,1,1,1,2,2,2,2,2,2,2,2,2,2,2,2]},
+    "athletic_association": {"start":2014,"values":[3,3,3,3,3,3,3,3,3,3,3,3]},
+    "rotc": {"start":2014,"values":[2,2,2,2,2,2,2,2,2,2,2,2]},
     "promise": {"start":2022,"values":[2,2]},
     "test_policy": {"start":2001,"values":[1]},
     "factor_gpa": {"start":2001,"values":[3]},

@@ -62,6 +62,7 @@ import { NetPriceByIncome } from "@/components/charts/NetPriceByIncome";
 import { WhatStudentsPay } from "@/components/school/WhatStudentsPay";
 import { LoansCard } from "@/components/school/LoansCard";
 import { CampusLife } from "@/components/school/CampusLife";
+import { CampusServices } from "@/components/school/CampusServices";
 import { DESIGNATION_LABELS, DESIGNATION_TERMS, SETTING_SHORT, designationsOf } from "@/lib/campus-profile";
 import { AdmissionFactors } from "@/components/school/AdmissionFactors";
 import { eventYear, historyEvents } from "@/lib/events";
@@ -76,7 +77,7 @@ import { TenYearTile } from "@/components/history/TenYearTile";
 import { HeadlineDelta } from "@/components/history/HeadlineDelta";
 import { TrendIndicatorStrip } from "@/components/trends/TrendIndicators";
 import { HistorySourceNote } from "@/components/sources/HistorySourceNote";
-import { historyYearLabel, type NationalHistory, type SeriesKey } from "@/lib/history";
+import { historyYearLabel, lastYear, type NationalHistory, type SeriesKey } from "@/lib/history";
 
 /** Series each "Over time" group shows; they drive the group's source footnote. */
 const HISTORY_GROUPS = {
@@ -133,7 +134,7 @@ const SECTION_FIELDS = {
     "campus.designations",
     "campus.msi",
   ],
-  admissions: ["admissions.applicants", "admissions.admitted", "admissions.enrolled", "admissions.acceptance_rate", "derived.yield", "admissions.by_sex", "derived.admit_rate_men", "derived.admit_rate_women", "admissions.application_fee", "admissions.factors"],
+  admissions: ["admissions.applicants", "admissions.admitted", "admissions.enrolled", "admissions.acceptance_rate", "derived.yield", "admissions.by_sex", "derived.admit_rate_men", "derived.admit_rate_women", "admissions.application_fee", "admissions.accepts_ap_credit", "admissions.factors"],
   scores: [
     "admissions.sat_reading_25_75",
     "admissions.sat_math_25_75",
@@ -188,7 +189,7 @@ const SECTION_FIELDS = {
     "outcomes.retention_rate",
     "outcomes.graduation_rate",
   ],
-  campus: ["campus.housing"],
+  campus: ["campus.housing", "campus.athletics", "campus.programs", "campus.services", "campus.calendar", "demographics.disability_services"],
   ranks: ["derived.sat_mid", "derived.yield", "demographics.pell_grant_percent", "derived.diversity_index", "admissions.acceptance_rate"],
 } as const satisfies Record<string, readonly FieldPath[]>;
 
@@ -320,6 +321,12 @@ export default async function SchoolPage({ params }: Props) {
   const designations = designationsOf(school);
   const bySex = admissionsBySex(school);
   // Admission factor changes since the fall 2022 redesign, when both years use the same codes (lib/events.ts).
+  // Conference and association moves in the last three IC years, under the athletics line (campus-services.md).
+  const servicesYear = history?.series.athletic_association ? lastYear(history.series.athletic_association) : null;
+  const recentMoves =
+    history && servicesYear !== null
+      ? historyEvents(history).filter((e) => ["conference", "football_conference", "athletic_association"].includes(e.key) && e.year > servicesYear - 3)
+      : [];
   const recentAdmissionChanges = history ? historyEvents(history).filter((e) => e.area === "admissions" && e.kind === "fall" && e.year > FACTOR_ERA) : [];
   const federalSat = citeField("admissions.sat_reading_25_75", school).isDefault && citeField("admissions.sat_math_25_75", school).isDefault;
   const federalAct = citeField("admissions.act_composite_25_75", school).isDefault;
@@ -616,6 +623,14 @@ export default async function SchoolPage({ params }: Props) {
                           <SourceChip cited={citeField("admissions.application_fee", school)} />
                         </p>
                       )}
+                      {a.accepts_ap_credit != null && (
+                        <p className="mt-2 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-sm text-muted-foreground">
+                          <MetricLabel term="ap-credit" cited={citeField("admissions.accepts_ap_credit", school)} chip={false}>
+                            {a.accepts_ap_credit ? "Grants credit for AP exams" : "Doesn't list credit for AP exams"}
+                          </MetricLabel>
+                          <SourceChip cited={citeField("admissions.accepts_ap_credit", school)} />
+                        </p>
+                      )}
                     </div>
                   )}
                   {bySex?.notable && (
@@ -907,17 +922,18 @@ export default async function SchoolPage({ params }: Props) {
           </Panel>
 
           {/* ============================== CAMPUS LIFE ============================== */}
-          {school.campus?.housing && (
+          {(school.campus?.housing || school.campus?.athletics || school.campus?.programs) && (
             <Panel
               id="campus"
               domain="size"
               eyebrow="Campus life"
-              title="Living there"
+              title="Housing, sports, and programs"
               takeaway={campusTakeaway(school)}
               school={school}
               fields={SECTION_FIELDS.campus}
             >
               <CampusLife school={school} />
+              <CampusServices school={school} recentMoves={recentMoves} />
             </Panel>
           )}
 

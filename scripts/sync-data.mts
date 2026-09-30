@@ -29,6 +29,7 @@ import { lineageForPatch, validateLineage } from "../lib/lineage.ts";
 import { applyProbes, filesToProbe, type FileProbe, type ReleaseCalendar } from "../lib/releases.ts";
 import { IPEDS_BASES, parseCsv } from "./lib/ipeds.mts";
 import { MSI_FIELDS, campusProfileFrom, directoryIssues, msiFrom } from "../lib/campus-profile.ts";
+import { apCreditFrom, athleticsFrom, calendarFrom, disabilityFrom, programsFrom, servicesFrom } from "../lib/campus-services.ts";
 import { acceptanceRate, applicationFeeFrom, computePrices, factorsFrom, housingFrom, ipedsNum, parseShareBand, priceSuffix, promiseProgramFrom, raceShares, toAid, tuitionPlansFrom } from "../lib/derive.ts";
 
 const ROOT = join(import.meta.dirname, "..");
@@ -238,6 +239,8 @@ const ADM_NAMES = recentYears.map((y) => `ADM${y}`);
 const SFA_NAMES = recentYears.map((y) => `SFA${String(y - 1).slice(2)}${String(y).slice(2)}`);
 /** The directory: HD2026, HD2025, … (HD{Y} describes Y–Y+1). */
 const HD_NAMES = [thisYear + 1, ...recentYears].map((y) => `HD${y}`);
+// Institutional characteristics (not prices): IC{Y} = Y–Y+1, released each July, like HD.
+const IC_CHAR_NAMES = [thisYear + 1, ...recentYears].map((y) => `IC${y}`);
 
 /* ------------------------------------------------------------------ */
 /* 3. Merge                                                            */
@@ -428,7 +431,8 @@ function buildMeta(
   scorecardYears: ScorecardYears,
   cost2: IpedsFile | null,
   chars: IpedsFile,
-  hd: IpedsFile
+  hd: IpedsFile,
+  icChar: IpedsFile
 ): DatasetMeta {
   const scorecardCostYear = scorecardYears.cost;
   return {
@@ -474,6 +478,14 @@ function buildMeta(
         description:
           "Every college's directory entry: its city, suburb, town, or rural setting, Carnegie Classification, federal designations such as HBCU and land-grant, and its location on the map.",
       },
+      "ipeds-ic-char": {
+        label: "IPEDS Institutional Characteristics survey (athletics, programs, services)",
+        publisher: "National Center for Education Statistics (NCES)",
+        edition: `${academicYear(icChar.name.slice(2))} (${icChar.name})`,
+        url: icChar.url,
+        description:
+          "What each college offers: its athletic association, conference, and sports; ROTC, study abroad, and undergraduate research; AP credit; student services; the academic calendar; and the share of undergrads registered with disability services.",
+      },
       cds: {
         label: "Common Data Set",
         publisher: "Each college (voluntary, standardized template)",
@@ -488,6 +500,7 @@ function buildMeta(
       "ipeds-sfa": sfaYears,
       "ipeds-ic": sfaYears,
       "ipeds-hd": `${hd.name.slice(2)}–${String(Number(hd.name.slice(2)) + 1).slice(2)}`,
+      "ipeds-ic-char": academicYear(icChar.name.slice(2)),
       "scorecard-enrollment": scorecardYears.enrollment,
       "scorecard-age": scorecardYears.age,
       "scorecard-cost": scorecardYears.cost,
@@ -495,6 +508,22 @@ function buildMeta(
       "scorecard-latest": null,
     },
   };
+}
+
+/** "2025" → "2025–26". */
+const academicYear = (y: string) => `${y}–${String(Number(y) + 1).slice(2)}`;
+
+/** Athletics, programs, services, AP credit, calendar, and disability services (lib/campus-services.ts). */
+function addServices(school: School, row: Record<string, string> | undefined) {
+  school.campus = {
+    ...(school.campus ?? {}),
+    athletics: athleticsFrom(row),
+    programs: programsFrom(row),
+    services: servicesFrom(row),
+    calendar: calendarFrom(row),
+  };
+  school.admissions.accepts_ap_credit = apCreditFrom(row);
+  school.demographics.disability_services = disabilityFrom(row);
 }
 
 /** Setting, Carnegie classes, designations, and coordinates (lib/campus-profile.ts). */
@@ -631,6 +660,10 @@ async function main() {
   // Campus profile (specs/data-expansion/campus-profile.md): the newest directory, HD{Y} = Y–Y+1, usually a year ahead.
   const hd = await fetchIpeds(HD_NAMES);
   if (![...hd.rows.values()].some((r) => "LOCALE" in r && "CARNEGIEIC" in r)) throw new Error(`${hd.name} has no LOCALE/CARNEGIEIC columns`);
+  // Campus services (specs/data-expansion/campus-services.md): the newest IC{Y}, a year ahead of the price files.
+  const icChar = await fetchIpeds(IC_CHAR_NAMES);
+  if (![...icChar.rows.values()].some((r) => "ATHASSOC" in r && "CONFNO2" in r && "SLO5" in r && "CALSYS" in r))
+    throw new Error(`${icChar.name} has no athletics/program columns`);
 
   const stats = { online: 0, noSize: 0, withAdmissions: 0, withSat: 0, overridden: 0 };
   const overrides: Record<string, Patch> = existsSync(OVERRIDES) ? JSON.parse(readFileSync(OVERRIDES, "utf8")) : {};
@@ -648,6 +681,7 @@ async function main() {
     if (school) addCharacteristics(school, chars.rows.get(school.unit_id));
     if (school) addProfile(school, hd.rows.get(school.unit_id), row);
     if (school) directoryWarnings.push(...directoryIssues(hd.rows.get(school.unit_id), school));
+    if (school) addServices(school, icChar.rows.get(school.unit_id));
     if (!school) {
       stats.noSize++;
       continue;
@@ -675,7 +709,7 @@ async function main() {
     }
   }
   const scorecardYears = await detectScorecardYears(key, String(scorecard[0]?.id ?? "221999"));
-  const meta = buildMeta(adm, sfa, ic, sfaYears, scorecardYears, cost2, chars, hd);
+  const meta = buildMeta(adm, sfa, ic, sfaYears, scorecardYears, cost2, chars, hd, icChar);
 
   // Nothing is written unless every value's lineage checks out.
   const problems = validateLineage(schools, meta);

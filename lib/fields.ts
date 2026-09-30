@@ -16,6 +16,8 @@ export type VintageKey =
   | "ipeds-ic"
   /** The IPEDS directory (HD): setting, Carnegie classes, designations, coordinates. Its own year, ahead of admissions. */
   | "ipeds-hd"
+  /** IPEDS Institutional Characteristics (IC{Y}, not the price files): athletics, programs, services. Its own year. */
+  | "ipeds-ic-char"
   | "scorecard-enrollment"
   /** Student age: IPEDS collects it in odd-numbered falls only, so it trails enrollment by a year every other year. */
   | "scorecard-age"
@@ -45,6 +47,7 @@ const adm = (label: string): FieldDef => ({ label, topic: "admissions", source: 
 const sfa = (label: string): FieldDef => ({ label, topic: "aid", source: "ipeds-sfa", vintage: "ipeds-sfa" });
 const ic = (label: string): FieldDef => ({ label, topic: "prices", source: "ipeds-ic", vintage: "ipeds-ic" });
 const hd = (label: string): FieldDef => ({ label, topic: "campus", source: "ipeds-hd", vintage: "ipeds-hd" });
+const icChar = (label: string, topic: Topic = "campus"): FieldDef => ({ label, topic, source: "ipeds-ic-char", vintage: "ipeds-ic-char" });
 
 export const FIELDS = {
   /* ---- Institution ---- */
@@ -122,6 +125,12 @@ export const FIELDS = {
   "cost.promise_program": ic("Promise program"),
   "admissions.application_fee": { ...ic("Application fee"), topic: "admissions" },
   "campus.housing": { ...ic("Campus housing and meal plans"), topic: "campus" },
+  "campus.athletics": icChar("Athletics: association, division, conference, sports"),
+  "campus.programs": icChar("ROTC, study abroad, undergraduate research, and other programs"),
+  "campus.services": icChar("Student services"),
+  "campus.calendar": icChar("Academic calendar"),
+  "admissions.accepts_ap_credit": icChar("Credit for AP exams", "admissions"),
+  "demographics.disability_services": icChar("Undergrads registered with disability services", "demographics"),
   "campus.setting": hd("Setting (city, suburb, town, or rural)"),
   "campus.carnegie": hd("Carnegie Classification"),
   "campus.designations": hd("HBCU, tribal college, and land-grant designations"),

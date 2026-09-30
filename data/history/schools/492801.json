@@ -12,6 +12,8 @@
     "grant_avg": {"start":2017,"values":[4941,5448,5993,5655,5087,6662,7309]},
     "application_fee": {"start":2018,"values":[0,0,0,0,0,0]},
     "tuition_guarantee": {"start":2018,"values":[2,2,2,2,2,2]},
+    "athletic_association": {"start":2018,"values":[3,3,3,3,3,3,3,3]},
+    "rotc": {"start":2018,"values":[2,2,2,2,2,2,2,2]},
     "promise": {"start":2022,"values":[2,2]},
     "aid_generosity": {"start":2018,"values":[0.2,0.2236,0.2216,0.1954,0.2338,0.3252]},
     "net_price_income_1": {"start":2017,"values":[14504,12351,13901,11541,13253,11262,9291]},

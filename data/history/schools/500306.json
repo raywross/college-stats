@@ -9,6 +9,8 @@
     "admit_rate_women": {"start":2024,"values":[1]},
     "grant_pct": {"start":2023,"values":[0.7143]},
     "grant_avg": {"start":2023,"values":[6458]},
+    "athletic_association": {"start":2024,"values":[3,3]},
+    "rotc": {"start":2024,"values":[2,2]},
     "net_price_income_1": {"start":2023,"values":[38869]},
     "net_price_income_2": {"start":2023,"values":[40717]},
     "net_price_income_3": {"start":2023,"values":[42806]},

@@ -47,11 +47,15 @@ export interface School {
     act_math_25_75?: [number, number] | null;
     /** Undergraduate application fee in dollars; 0 means no fee (IPEDS IC). */
     application_fee?: number | null;
+    /** Grants credit for Advanced Placement exams (IPEDS IC `CREDITS3`); false = not listed. */
+    accepts_ap_credit?: boolean | null;
     /** How each factor is used in admission (IPEDS ADMCON1–12, except test scores, which are `test_policy`). */
     factors?: Partial<Record<AdmissionFactor, FactorUse | null>> | null;
   };
   demographics: {
     undergrad_enrollment: number;
+    /** Undergrads registered with disability services (IPEDS IC): the share when over 3%, else "3% or less". */
+    disability_services?: { share: number } | { three_or_less: true } | null;
     pell_grant_percent: number | null;
     first_gen_percent: number | null;
     /** Shares of degree-seeking undergraduates who are men / women (College Scorecard, from IPEDS fall enrollment). */
@@ -173,6 +177,14 @@ export interface School {
   };
   /** Housing and campus services (IPEDS Institutional Characteristics, same year as the prices), and the campus profile. */
   campus?: {
+    /** Athletics (IPEDS IC; lib/campus-services.ts). Null when the college didn't answer. */
+    athletics?: Athletics | null;
+    /** ROTC, study abroad, undergraduate research, a program for students with intellectual disabilities (IPEDS IC). */
+    programs?: CampusPrograms | null;
+    /** Student services (IPEDS IC); false = not listed. */
+    services?: { counseling: boolean; employment: boolean; placement: boolean; child_care: boolean } | null;
+    /** Academic calendar (IPEDS IC `CALSYS`). */
+    calendar?: CalendarSystem | null;
     /** NCES locale (IPEDS HD `LOCALE`): e.g. 11 "City: Large"; `group` is its first word. */
     setting?: { locale: number; label: string; group: SettingGroup } | null;
     /** Carnegie Classification 2025 (IPEDS HD). */
@@ -336,7 +348,36 @@ export interface CdsAid {
 }
 
 export type Topic = "institution" | "admissions" | "enrollment" | "demographics" | "cost" | "prices" | "outcomes" | "aid" | "campus";
-export type SourceKey = "scorecard" | "ipeds-adm" | "ipeds-sfa" | "ipeds-ic" | "ipeds-hd" | "cds";
+/** NCAA division with the football subdivision, or null (NAIA and non-members have none). */
+export type NcaaDivision = "I-FBS" | "I-FCS" | "I" | "II" | "III";
+export type AthleticAssociation = "ncaa" | "naia" | "njcaa" | "nscaa" | "nccaa" | "other";
+export type Sport = "football" | "basketball" | "baseball" | "track";
+export type RotcBranch = "army" | "navy" | "air_force";
+export type CalendarSystem = "semester" | "quarter" | "trimester" | "4-1-4" | "other" | "varies" | "continuous";
+/** Explore's division filter: an NCAA division, or NAIA. */
+export type DivisionFilter = NcaaDivision | "naia";
+
+export interface Athletics {
+  associations: AthleticAssociation[];
+  division: NcaaDivision | null;
+  /** The main conference (basketball's, else track's, baseball's, or football's), as IPEDS codes it. */
+  conference: { code: number; name: string } | null;
+  /** Football's conference when it differs from `conference` (e.g. Georgetown: Big East, Patriot League football). */
+  football_conference: { code: number; name: string } | null;
+  /** Sports the college reports NCAA/NAIA membership in (IPEDS asks about these four only). */
+  sports: Sport[];
+}
+
+export interface CampusPrograms {
+  rotc: RotcBranch[];
+  study_abroad: boolean;
+  /** Asked from IC2022 on. */
+  undergrad_research: boolean | null;
+  /** Comprehensive transition and postsecondary program for students with intellectual disabilities. */
+  intellectual_disability_program: boolean;
+}
+
+export type SourceKey = "scorecard" | "ipeds-adm" | "ipeds-sfa" | "ipeds-ic" | "ipeds-ic-char" | "ipeds-hd" | "cds";
 
 export interface SourceInfo {
   /** Full citation name, e.g. "College Scorecard". */
@@ -412,6 +453,13 @@ export interface SearchFilters {
   designation?: Designation[];
   /** Carnegie "Opportunity Colleges and Universities" (higher access, higher earnings) only. */
   opportunity?: boolean;
+  /** Campus services (lib/campus-services.ts): any of these divisions; one conference; ROTC branches; flags. */
+  division?: DivisionFilter[];
+  conference?: number;
+  football?: boolean;
+  rotc?: RotcBranch[];
+  ugResearch?: boolean;
+  studyAbroad?: boolean;
   /** Admission factors (lib/factors.ts): legacy not considered, essay not required, GPA required. */
   noLegacy?: boolean;
   noEssay?: boolean;

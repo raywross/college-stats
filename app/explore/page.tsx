@@ -24,6 +24,7 @@ import { hasFewLoans } from "@/lib/repayment";
 import { HOUSING_FILTERS } from "@/lib/housing";
 import { FACTOR_FILTERS } from "@/lib/factors";
 import { DESIGNATION_KEYS, RESEARCH_TIERS, SETTING_GROUPS, designationsOf, isOpportunityCollege } from "@/lib/campus-profile";
+import { DIVISION_FILTERS, ROTC_BRANCHES, divisionFilterOf } from "@/lib/campus-services";
 import { InfoTip } from "@/components/ui/info-tip";
 import { MultiSourceNote } from "@/components/sources/MultiSourceNote";
 
@@ -68,8 +69,21 @@ function buildFacets({ getAllSchools, histogram }: Dataset): FilterFacets {
     for (const d of designationsOf(s)) campus.designation[d]++;
   }
 
+  const services: FilterFacets["services"] = {
+    division: Object.fromEntries(DIVISION_FILTERS.map((d) => [d, 0])) as FilterFacets["services"]["division"],
+    football: all.filter((s) => s.campus?.athletics?.sports.includes("football")).length,
+    rotc: Object.fromEntries(ROTC_BRANCHES.map((b) => [b, all.filter((s) => s.campus?.programs?.rotc.includes(b)).length])) as FilterFacets["services"]["rotc"],
+    ugResearch: all.filter((s) => s.campus?.programs?.undergrad_research).length,
+    studyAbroad: all.filter((s) => s.campus?.programs?.study_abroad).length,
+  };
+  for (const s of all) {
+    const d = divisionFilterOf(s);
+    if (d) services.division[d]++;
+  }
+
   const satRange: [number, number] = [800, 1600];
   return {
+    services,
     balance,
     fullTime: all.filter(isMostlyFullTime).length,
     fewLoans: all.filter(hasFewLoans).length,

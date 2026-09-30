@@ -36,6 +36,13 @@
       "url": "https://nces.ed.gov/ipeds/complete-data-files/HD2025.zip",
       "description": "Every college's directory entry: its city, suburb, town, or rural setting, Carnegie Classification, federal designations such as HBCU and land-grant, and its location on the map."
     },
+    "ipeds-ic-char": {
+      "label": "IPEDS Institutional Characteristics survey (athletics, programs, services)",
+      "publisher": "National Center for Education Statistics (NCES)",
+      "edition": "2025–26 (IC2025)",
+      "url": "https://nces.ed.gov/ipeds/complete-data-files/IC2025.zip",
+      "description": "What each college offers: its athletic association, conference, and sports; ROTC, study abroad, and undergraduate research; AP credit; student services; the academic calendar; and the share of undergrads registered with disability services."
+    },
     "cds": {
       "label": "Common Data Set",
       "publisher": "Each college (voluntary, standardized template)",
@@ -49,6 +56,7 @@
     "ipeds-sfa": "2023–24",
     "ipeds-ic": "2023–24",
     "ipeds-hd": "2025–26",
+    "ipeds-ic-char": "2025–26",
     "scorecard-enrollment": "Fall 2024",
     "scorecard-age": "Fall 2023",
     "scorecard-cost": "2023–24",

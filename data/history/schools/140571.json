@@ -19,6 +19,8 @@
     "housing_capacity": {"start":2002,"values":[893]},
     "application_fee": {"start":2001,"values":[30,30,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,30,30]},
     "tuition_guarantee": {"start":2022,"values":[2,2]},
+    "athletic_association": {"start":2022,"values":[3,3,3,3]},
+    "rotc": {"start":2022,"values":[2,2,2,2]},
     "promise": {"start":2022,"values":[2,2]},
     "net_price_income_1": {"start":2021,"values":[11676,17824,23264]},
     "net_price_income_2": {"start":2021,"values":[10120,19728,21593]},

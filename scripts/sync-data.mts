@@ -29,6 +29,7 @@ import { lineageForPatch, validateLineage } from "../lib/lineage.ts";
 import { applyProbes, filesToProbe, type FileProbe, type ReleaseCalendar } from "../lib/releases.ts";
 import { IPEDS_BASES, parseCsv } from "./lib/ipeds.mts";
 import { MSI_FIELDS, campusProfileFrom, directoryIssues, msiFrom } from "../lib/campus-profile.ts";
+import { studentFacultyRatioFrom } from "../lib/academics.ts";
 import { apCreditFrom, athleticsFrom, calendarFrom, disabilityFrom, programsFrom, servicesFrom } from "../lib/campus-services.ts";
 import { acceptanceRate, applicationFeeFrom, computePrices, factorsFrom, housingFrom, ipedsNum, parseShareBand, priceSuffix, promiseProgramFrom, raceShares, toAid, tuitionPlansFrom } from "../lib/derive.ts";
 
@@ -241,6 +242,8 @@ const SFA_NAMES = recentYears.map((y) => `SFA${String(y - 1).slice(2)}${String(y
 const HD_NAMES = [thisYear + 1, ...recentYears].map((y) => `HD${y}`);
 // Institutional characteristics (not prices): IC{Y} = Y–Y+1, released each July, like HD.
 const IC_CHAR_NAMES = [thisYear + 1, ...recentYears].map((y) => `IC${y}`);
+// Fall enrollment part D (student-faculty ratio): EF{Y}D = fall Y, with the winter release.
+const EF_D_NAMES = recentYears.map((y) => `EF${y}D`);
 
 /* ------------------------------------------------------------------ */
 /* 3. Merge                                                            */
@@ -432,7 +435,8 @@ function buildMeta(
   cost2: IpedsFile | null,
   chars: IpedsFile,
   hd: IpedsFile,
-  icChar: IpedsFile
+  icChar: IpedsFile,
+  efd: IpedsFile
 ): DatasetMeta {
   const scorecardCostYear = scorecardYears.cost;
   return {
@@ -478,6 +482,14 @@ function buildMeta(
         description:
           "Every college's directory entry: its city, suburb, town, or rural setting, Carnegie Classification, federal designations such as HBCU and land-grant, and its location on the map.",
       },
+      "ipeds-ef": {
+        label: "IPEDS Fall Enrollment survey (part D)",
+        publisher: "National Center for Education Statistics (NCES)",
+        edition: `Fall ${efd.name.slice(2, 6)} (${efd.name})`,
+        url: efd.url,
+        description:
+          "Each college's student-to-faculty ratio: full-time-equivalent students per full-time-equivalent instructional faculty member, not counting faculty who teach only graduate or professional students.",
+      },
       "ipeds-ic-char": {
         label: "IPEDS Institutional Characteristics survey (athletics, programs, services)",
         publisher: "National Center for Education Statistics (NCES)",
@@ -501,6 +513,7 @@ function buildMeta(
       "ipeds-ic": sfaYears,
       "ipeds-hd": `${hd.name.slice(2)}–${String(Number(hd.name.slice(2)) + 1).slice(2)}`,
       "ipeds-ic-char": academicYear(icChar.name.slice(2)),
+      "ipeds-ef": `Fall ${efd.name.slice(2, 6)}`,
       "scorecard-enrollment": scorecardYears.enrollment,
       "scorecard-age": scorecardYears.age,
       "scorecard-cost": scorecardYears.cost,
@@ -659,6 +672,9 @@ async function main() {
   const chars = await fetchCharacteristics([`IC${startYear}`, `COST1_${endYear}`]);
   // Campus profile (specs/data-expansion/campus-profile.md): the newest directory, HD{Y} = Y–Y+1, usually a year ahead.
   const hd = await fetchIpeds(HD_NAMES);
+  // Student-faculty ratio (specs/data-expansion/student-faculty-ratio.md).
+  const efd = await fetchIpeds(EF_D_NAMES);
+  if (![...efd.rows.values()].some((r) => "STUFACR" in r)) throw new Error(`${efd.name} has no STUFACR column`);
   if (![...hd.rows.values()].some((r) => "LOCALE" in r && "CARNEGIEIC" in r)) throw new Error(`${hd.name} has no LOCALE/CARNEGIEIC columns`);
   // Campus services (specs/data-expansion/campus-services.md): the newest IC{Y}, a year ahead of the price files.
   const icChar = await fetchIpeds(IC_CHAR_NAMES);
@@ -682,6 +698,7 @@ async function main() {
     if (school) addProfile(school, hd.rows.get(school.unit_id), row);
     if (school) directoryWarnings.push(...directoryIssues(hd.rows.get(school.unit_id), school));
     if (school) addServices(school, icChar.rows.get(school.unit_id));
+    if (school) school.academics = { student_faculty_ratio: studentFacultyRatioFrom(efd.rows.get(school.unit_id)) };
     if (!school) {
       stats.noSize++;
       continue;
@@ -709,7 +726,7 @@ async function main() {
     }
   }
   const scorecardYears = await detectScorecardYears(key, String(scorecard[0]?.id ?? "221999"));
-  const meta = buildMeta(adm, sfa, ic, sfaYears, scorecardYears, cost2, chars, hd, icChar);
+  const meta = buildMeta(adm, sfa, ic, sfaYears, scorecardYears, cost2, chars, hd, icChar, efd);
 
   // Nothing is written unless every value's lineage checks out.
   const problems = validateLineage(schools, meta);

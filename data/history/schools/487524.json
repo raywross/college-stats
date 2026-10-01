@@ -21,6 +21,7 @@
     "application_fee": {"start":2015,"values":[40,40,40,40,40,40,40,40,40]},
     "live_on": {"start":2015,"values":[2,2,2,2,2,2,2,2,2]},
     "tuition_guarantee": {"start":2015,"values":[2,2,2,2,2,2,2,2,2]},
+    "student_faculty_ratio": {"start":2015,"values":[15,14,15,15,13,12,14,16,17,15]},
     "conference": {"start":2015,"values":[215,215,215,215,215,215,215,215,215,215,215]},
     "football_conference": {"start":2015,"values":[366,366,366,366,366,366,366,366,366,366,168]},
     "athletic_association": {"start":2015,"values":[1,1,1,1,1,1,1,1,1,1,1]},

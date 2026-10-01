@@ -56,7 +56,7 @@ export function DistributionStrip({
         <MetricLabel term={term} className="text-sm font-medium">
           {label}
         </MetricLabel>
-        <span className="text-sm font-semibold">{value === null ? "Not reported" : f(value)}</span>
+        <span className="shrink-0 text-sm font-semibold whitespace-nowrap">{value === null ? "Not reported" : f(value)}</span>
       </div>
 
       <div className="relative pt-7">

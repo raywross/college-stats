@@ -3,6 +3,7 @@
   "series": {
     "application_fee": {"start":2016,"values":[50,null,50,50,50,50,50,50]},
     "tuition_guarantee": {"start":2014,"values":[2,null,2,2,2,2,2,2,2,2]},
+    "student_faculty_ratio": {"start":2018,"values":[1,5,5,1,3,4,1]},
     "athletic_association": {"start":2014,"values":[3,null,3,3,3,3,3,3,3,3,3,3]},
     "rotc": {"start":2014,"values":[2,2,2,2,2,2,2,2,2,2,2,2]},
     "promise": {"start":2022,"values":[2,2]},

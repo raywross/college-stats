@@ -189,7 +189,7 @@ function toInputs(fetched: Fetched[]): Inputs {
     return { year: f.year, family: f.family, rows, suffix: f.choice.suffix, values: f.era.values };
   };
   const of = (...fams: HistoryFamily[]) => fetched.filter((f) => fams.includes(f.family)).sort((a, b) => a.year - b.year).map(table);
-  return { admissions: of("ic-admissions", "adm"), prices: of("prices"), sfa: of("sfa"), characteristics: of("characteristics"), services: of("services") };
+  return { admissions: of("ic-admissions", "adm"), prices: of("prices"), sfa: of("sfa"), characteristics: of("characteristics"), services: of("services"), efd: of("ef-d") };
 }
 
 /* ------------------------------------------------------------------ */

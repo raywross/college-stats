@@ -11,6 +11,7 @@
     "tuition_out_of_state": {"start":2000,"values":[7560,7950,8190,null,9500,null,10600,11570,12000,12300,22320,16050,null,null,null,null,19772]},
     "application_fee": {"start":2001,"values":[50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,50]},
     "tuition_guarantee": {"start":2008,"values":[2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2]},
+    "student_faculty_ratio": {"start":2009,"values":[11,7,7,6,5,5,5,5,17,9,12,12,12,12,12,10]},
     "athletic_association": {"start":2014,"values":[3,3,3,3,3,3,3,3,3,3,3,3]},
     "rotc": {"start":2014,"values":[2,2,2,2,2,2,2,2,2,2,2,2]},
     "promise": {"start":2022,"values":[2,2]},

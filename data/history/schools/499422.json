@@ -3,6 +3,7 @@
   "series": {
     "application_fee": {"start":2023,"values":[100]},
     "tuition_guarantee": {"start":2023,"values":[2]},
+    "student_faculty_ratio": {"start":2023,"values":[9,10]},
     "athletic_association": {"start":2023,"values":[3,3,3]},
     "rotc": {"start":2023,"values":[2,2,2]},
     "promise": {"start":2023,"values":[2]},

@@ -14,6 +14,7 @@
     "application_fee": {"start":2004,"values":[25,25,25,25,25,25,25,25,25,25,25,25,25,25,25,25,25,25,25,25]},
     "live_on": {"start":2004,"values":[2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2]},
     "tuition_guarantee": {"start":2008,"values":[2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2]},
+    "student_faculty_ratio": {"start":2009,"values":[18,12,12,10,9,9,9,11,8,10,10,10,10,10,12,12]},
     "athletic_association": {"start":2014,"values":[3,3,3,3,3,3,3,3,3,3,3,3]},
     "rotc": {"start":2014,"values":[2,2,2,2,2,2,2,2,2,2,2,2]},
     "promise": {"start":2022,"values":[2,2]},

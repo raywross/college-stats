@@ -1,6 +1,7 @@
 # Student-to-Faculty Ratio (IPEDS EF part D)
 
-> Status: **planned**. Wave 2. New file: `EF{Y}D`. Research 2026-09-28. Part of [data-expansion](README.md).
+> Status: **built** 2026-09-30. Wave 2. New file: `EF{Y}D`. Research 2026-09-28; files probed 2026-09-30. See
+> [As built](#as-built). Part of [data-expansion](README.md).
 
 ## Question it answers
 *How many students per faculty member?* One of the most-asked-for numbers on college sites.
@@ -45,3 +46,29 @@ New `SourceKey` `ipeds-ef`, `VintageKey` `ipeds-ef` ("Fall 2024"). New topic `ac
 - **Hero: no.** The national median moved 1 point in 10 years; most colleges will read "Steady", which wastes a card.
 - **"Known for":** "Very small student-faculty ratio" at the national bottom 5% (a snapshot standout, not a trend).
 - **Explore change column: no.**
+
+## As built
+- **Source.** `SourceKey`/`VintageKey` `ipeds-ef` ("Fall 2024", edition EF2024D). `sync-data` loads `EF{Y}D`
+  newest-first and fails if the file has no `STUFACR`. The winter release entry on the release calendar now brings
+  EF2025D. The probe confirmed the research: `STUFACR` from EF2009D (EF2008D has none), 1,892 of 1,893 colleges in
+  fall 2024, median 13 (10–16), no zero or negative codes in any year.
+- **Store.** `academics.student_faculty_ratio` (whole number; `lib/academics.ts` `studentFacultyRatioFrom`, shared with
+  history), new topic `academics` ("Academics" on the Data page).
+- **Metric.** `METRICS.studentFaculty` (domain `size`: no new palette color; ratios read as "8 to 1", format kind
+  `ratio`). Comparisons flip at the median: "fewer students per faculty member than at 96% of colleges" below it,
+  "more … than at 90%" above it, never "fewer than at 10%".
+- **Display.**
+  - Profile: an Overview tile ("8 to 1") and a new **Academics** section (nav included) with the national distribution
+    strip and a note that it isn't class size. The section is where class sizes, faculty, and majors will go.
+  - "Known for": "Very small student-faculty ratio" at the national bottom 5%, which works out to 5 to 1 or lower
+    (83 colleges, e.g. Yale, Duke, Princeton).
+  - Explore: sort "Students per faculty (fewest)" and a **Students per faculty** filter (8, 10, 12, or 15 or fewer;
+    `maxRatio=`); unreported ratios never match.
+  - Compare: a row in "All the numbers".
+  - Glossary: `student-faculty-ratio` (says it isn't class size).
+- **History.** Family `ef-d` (EF2009D on, fall), series `student_faculty_ratio`, with a national band; the end-point
+  check compares it at the newest EF year. Over time has a new **Academics** group. The change reads "9 → 8", not a
+  percent (`TINY_BASE`); the chart panel now honors `TINY_BASE` too, which also fixes small applicant pools there.
+- **Also fixed:** the profile's section nav hid "Campus life" for colleges with athletics or programs but no housing
+  data (from #36).
+- Tests: `tests/student-faculty-ratio.test.mts`.

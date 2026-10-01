@@ -21,6 +21,7 @@
     "application_fee": {"start":2003,"values":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},
     "live_on": {"start":2020,"values":[2,2,2,2]},
     "tuition_guarantee": {"start":2008,"values":[2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2]},
+    "student_faculty_ratio": {"start":2009,"values":[12,11,11,15,15,11,15,15,10,8,12,12,12,11,13,11]},
     "conference": {"start":2014,"values":[304,304,304,304,304,304,304,304,304,304,304,304]},
     "football_conference": {"start":2023,"values":[342,342,342]},
     "athletic_association": {"start":2014,"values":[2,2,2,2,2,2,2,2,2,2,2,2]},

@@ -379,6 +379,13 @@ const entries = {
     category: "School types",
     related: ["carnegie-classification"],
   },
+  "student-faculty-ratio": {
+    term: "Student-to-faculty ratio",
+    short: "Full-time-equivalent undergraduates and graduate students for each full-time-equivalent instructional faculty member, not counting faculty who teach only graduate or professional students. Written \"8 to 1\".",
+    long: "It is not the average class size: a college with a low ratio can still have large lecture courses, and faculty time also goes to research and advising. Colleges compute it themselves, so definitions vary, for example in whether research faculty count.",
+    why: "A rough signal of how much faculty attention there is to go around. For class sizes, look at a college's Common Data Set (section I).",
+    category: "Students & access",
+  },
   "ncaa-division": {
     term: "NCAA division",
     short: "The NCAA's three levels of college sports. Division I has the biggest athletic budgets and most athletic scholarships; Division II offers partial scholarships; Division III offers none, and athletes' aid comes the same way as other students'.",

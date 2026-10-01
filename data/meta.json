@@ -36,6 +36,13 @@
       "url": "https://nces.ed.gov/ipeds/complete-data-files/HD2025.zip",
       "description": "Every college's directory entry: its city, suburb, town, or rural setting, Carnegie Classification, federal designations such as HBCU and land-grant, and its location on the map."
     },
+    "ipeds-ef": {
+      "label": "IPEDS Fall Enrollment survey (part D)",
+      "publisher": "National Center for Education Statistics (NCES)",
+      "edition": "Fall 2024 (EF2024D)",
+      "url": "https://nces.ed.gov/ipeds/complete-data-files/EF2024D.zip",
+      "description": "Each college's student-to-faculty ratio: full-time-equivalent students per full-time-equivalent instructional faculty member, not counting faculty who teach only graduate or professional students."
+    },
     "ipeds-ic-char": {
       "label": "IPEDS Institutional Characteristics survey (athletics, programs, services)",
       "publisher": "National Center for Education Statistics (NCES)",
@@ -57,6 +64,7 @@
     "ipeds-ic": "2023–24",
     "ipeds-hd": "2025–26",
     "ipeds-ic-char": "2025–26",
+    "ipeds-ef": "Fall 2024",
     "scorecard-enrollment": "Fall 2024",
     "scorecard-age": "Fall 2023",
     "scorecard-cost": "2023–24",

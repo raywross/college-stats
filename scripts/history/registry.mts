@@ -153,6 +153,13 @@ export const ERAS: readonly Era[] = [
   },
   // Athletics and ROTC (specs/data-expansion/campus-services.md): IC{Y} every year, including IC2024 on (unlike housing).
   // From 2014: every conference code site colleges used since then has a name (lib/conferences.ts).
+  // Student-to-faculty ratio (specs/data-expansion/student-faculty-ratio.md): EF{Y}D, fall Y; STUFACR from EF2009D.
+  {
+    family: "ef-d",
+    years: [2009, OPEN],
+    files: (y) => [{ name: `EF${y}D` }],
+    required: () => ["STUFACR"],
+  },
   {
     family: "services",
     years: [2014, OPEN],
@@ -195,7 +202,7 @@ export function eraFor(family: HistoryFamily, year: number): Era | null {
 }
 
 /** Families by the kind of year they describe, and the first year each can start. */
-export const FAMILY_ORDER: readonly HistoryFamily[] = ["ic-admissions", "adm", "prices", "sfa", "characteristics", "services"];
+export const FAMILY_ORDER: readonly HistoryFamily[] = ["ic-admissions", "adm", "prices", "sfa", "characteristics", "services", "ef-d"];
 
 /** Columns a value spec reads. */
 export function specColumns(spec: ColumnSpec): readonly string[] {

@@ -7,6 +7,7 @@
     "housing_capacity": {"start":2016,"values":[19]},
     "application_fee": {"start":2001,"values":[65,65,65,65,65,65,65,65,65,65,65,65,65,65,65,65,65,65,65,65,65,65,65]},
     "tuition_guarantee": {"start":2008,"values":[2,2,2,1,1,2,2,2,2,2,1,1,1,1,1,2]},
+    "student_faculty_ratio": {"start":2009,"values":[19,14,16,12,15,11,11,10,11,12,11,12,12,13,17,15]},
     "athletic_association": {"start":2014,"values":[3,3,3,3,3,3,3,3,3,3,3,3]},
     "rotc": {"start":2014,"values":[2,2,2,2,2,2,2,2,2,2,2,2]},
     "promise": {"start":2022,"values":[2,2]},

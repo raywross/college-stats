@@ -21,6 +21,7 @@
     "application_fee": {"start":2018,"values":[50,50,50,50,25,25]},
     "live_on": {"start":2018,"values":[1,2,2,2,2,2]},
     "tuition_guarantee": {"start":2018,"values":[2,2,2,2,2,2]},
+    "student_faculty_ratio": {"start":2018,"values":[11,10,10,12,16,12,11]},
     "conference": {"start":2018,"values":[302,302,302,302,302,302,302,302]},
     "football_conference": {"start":2018,"values":[302,302,302,302,302,302,302,302]},
     "athletic_association": {"start":2018,"values":[2,2,2,2,2,2,2,2]},

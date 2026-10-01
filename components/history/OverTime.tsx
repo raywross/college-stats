@@ -14,6 +14,7 @@ import {
   changeOver,
   firstPointFrom,
   formatChange,
+  isTinyBase,
   historyYearLabel,
   WINDOW_YEARS,
   inDollarsOf,
@@ -47,7 +48,7 @@ export interface OverTimeProps {
   latest: Record<YearKind, number>;
   provisional: Record<YearKind, number | null>;
   /** Server-rendered source lines per group (history editions and CPI). */
-  sources: { cost: ReactNode; aid: ReactNode; admissions: ReactNode; scores: ReactNode; students: ReactNode; outcomes: ReactNode };
+  sources: { cost: ReactNode; aid: ReactNode; admissions: ReactNode; scores: ReactNode; students: ReactNode; outcomes: ReactNode; academics: ReactNode };
   colors: { value: string; admissions: string; scores: string; size: string; diversity: string };
 }
 
@@ -290,7 +291,8 @@ function ChartPanel({
           </p>
           {shown && (
             <p className="text-xs text-muted-foreground">
-              <b className="text-foreground">{formatChange(shown)}</b>
+              {/* Below a tiny base (a ratio like 9 to 1, a small applicant pool) a percent misleads: show from → to. */}
+              <b className="text-foreground">{"to" in shown && isTinyBase(shown) ? `${formatBy(format, shown.from.value)} → ${formatBy(format, shown.to.value)}` : formatChange(shown)}</b>
               {money ? (dollars === "real" ? " after inflation" : " as reported") : ""} since {historyYearLabel(shown.from.year, kind).toLowerCase()}
             </p>
           )}
@@ -477,7 +479,7 @@ export function OverTime(props: OverTimeProps) {
   const ui = useUrlState();
   // Phone collapse state only: a closed group is `hidden sm:block`, so wider screens always show every group. Starting
   // collapsed in the server HTML (rather than collapsing after hydration) keeps the page from jumping on load.
-  const [open, setOpen] = useState({ cost: false, aid: false, admissions: false, scores: false, students: false, outcomes: false, changes: false });
+  const [open, setOpen] = useState({ cost: false, aid: false, admissions: false, scores: false, students: false, outcomes: false, academics: false, changes: false });
   // Policy changes (lib/events.ts) within the default 10-year window.
   const changes = useMemo(() => historyEvents(history).filter((e) => e.year >= latest[e.kind] - WINDOW_YEARS), [history, latest]);
   const toggle = (k: keyof typeof open) => () => setOpen((o) => ({ ...o, [k]: !o[k] }));
@@ -824,6 +826,25 @@ export function OverTime(props: OverTimeProps) {
                 specs={[{ key: "part_time_share", name: "Part-time", color: colors.size, band: true }]}
               />
             )}
+          </div>
+        </Group>
+      )}
+
+      {history.series.student_faculty_ratio && (
+        <Group title="Academics" color={colors.size} open={open.academics} onToggle={toggle("academics")} footer={sources.academics}>
+          <div className="grid gap-4 lg:grid-cols-2">
+            <ChartPanel
+              {...common}
+              title="Students per faculty member"
+              term="student-faculty-ratio"
+              kind="fall"
+              format="num"
+              window={windowFor("fall", ["student_faculty_ratio"])}
+              headline="student_faculty_ratio"
+              provisionalYear={null}
+              specs={[{ key: "student_faculty_ratio", name: "Students per faculty", color: colors.size, band: true }]}
+              note="Lower means fewer students for each faculty member. Colleges compute it themselves, so small moves can be a change in counting."
+            />
           </div>
         </Group>
       )}

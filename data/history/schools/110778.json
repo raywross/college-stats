@@ -6,6 +6,7 @@
     "enrolled": {"start":2002,"values":[0]},
     "application_fee": {"start":2013,"values":[55,55,55,55,55,55,55,50,50,50,50]},
     "tuition_guarantee": {"start":2008,"values":[2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2]},
+    "student_faculty_ratio": {"start":2013,"values":[17,12,12,10,11,9,5,9,11,11,11,11]},
     "athletic_association": {"start":2014,"values":[3,3,3,3,3,3,3,3,3,3,3,3]},
     "rotc": {"start":2014,"values":[2,2,2,2,2,2,2,2,2,2,2,2]},
     "promise": {"start":2022,"values":[2,2]},

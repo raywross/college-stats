@@ -130,6 +130,8 @@ const TABLE_ROWS = (
     ["Credit for AP exams", "ap-credit", "admissions.accepts_ap_credit", (s: School) =>
       s.admissions.accepts_ap_credit == null ? null : s.admissions.accepts_ap_credit ? "Yes" : "Not listed"],
     ["Undergrads", "undergrad-enrollment", "demographics.undergrad_enrollment", (s: School) => num(s.demographics.undergrad_enrollment)],
+    ["Students per faculty member", "student-faculty-ratio", "academics.student_faculty_ratio", (s: School) =>
+      s.academics?.student_faculty_ratio == null ? null : `${s.academics.student_faculty_ratio} to 1`],
     ["Beds in college housing", "housing-capacity", "campus.housing", (s: School) => {
       const h = s.campus?.housing;
       return !h ? null : !h.offered ? "No housing" : h.capacity == null ? null : num(h.capacity);

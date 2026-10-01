@@ -34,6 +34,7 @@ import {
 } from "../../lib/history.ts";
 import { readSpec, type ColumnSpec, type Era, type FileChoice } from "./registry.mts";
 import { associationCode, footballConferenceCode, mainConferenceCode, rotcCode } from "../../lib/campus-services.ts";
+import { studentFacultyRatioFrom } from "../../lib/academics.ts";
 import { COHORT_LAG, type ScorecardRow } from "./scorecard.mts";
 
 /** One year of one family, read. */
@@ -55,6 +56,8 @@ export interface Inputs {
   characteristics?: readonly YearTable[];
   /** Athletics and ROTC columns (IC{Y}), one table per academic year. */
   services?: readonly YearTable[];
+  /** Student-to-faculty ratio (EF{Y}D), one table per fall. */
+  efd?: readonly YearTable[];
   /** College Scorecard year-prefixed values by unit ID (scripts/history/scorecard.mts), and the years requested. */
   scorecard?: { rows: ReadonlyMap<string, ScorecardRow>; first: number; last: number };
 }
@@ -188,6 +191,9 @@ export function buildCollege(school: Pick<School, "unit_id" | "type">, inputs: I
     const promise = promiseProgramFrom(row);
     put(raw, "promise", t.year, promise === null ? null : promise ? 1 : 2);
   }
+
+  // Student-to-faculty ratio, with the snapshot's reader (lib/academics.ts).
+  for (const t of inputs.efd ?? []) put(raw, "student_faculty_ratio", t.year, studentFacultyRatioFrom(t.rows.get(id)));
 
   // Athletics and ROTC as codes for events: the same readers as the snapshot (lib/campus-services.ts).
   for (const t of inputs.services ?? []) {
@@ -528,6 +534,9 @@ export function lastPointMismatches(schools: readonly School[], histories: Reado
   // The newest IC year history read for athletics and ROTC: what the snapshot's IC file describes.
   const servicesYears = [...histories.values()].flatMap((h) => (["athletic_association", "rotc"] as const).flatMap((k) => (h.series[k] ? [lastYear(h.series[k]!)] : [])));
   const servicesYear = servicesYears.length ? Math.max(...servicesYears) : null;
+  // The newest EF part D fall history read: what the snapshot's EF{Y}D describes (its own year, not admissions').
+  const efdYears = [...histories.values()].flatMap((h) => (h.series.student_faculty_ratio ? [lastYear(h.series.student_faculty_ratio)] : []));
+  const efdYear = efdYears.length ? Math.max(...efdYears) : null;
   for (const s of schools) {
     const h = histories.get(s.unit_id);
     if (!h) continue;
@@ -619,6 +628,7 @@ export function lastPointMismatches(schools: readonly School[], histories: Reado
       check("tuition_guarantee", plans == null ? null : plans.includes("guarantee") ? 1 : 2);
       check("promise", c.promise_program == null ? null : c.promise_program ? 1 : 2);
     }
+    if (efdYear !== null) check("student_faculty_ratio", s.academics?.student_faculty_ratio, false, efdYear);
     // Athletics and ROTC: the snapshot reads the newest IC file, which is the services series' newest year.
     const a = s.campus?.athletics;
     if (servicesYear !== null && (a !== undefined || h.series.athletic_association)) {

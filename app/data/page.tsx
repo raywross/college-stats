@@ -40,6 +40,7 @@ const TOPIC_LABELS: Record<Topic, string> = {
   outcomes: "Earnings, graduation & debt",
   aid: "Financial aid",
   campus: "Housing & campus life",
+  academics: "Academics",
 };
 
 const STORED = (Object.entries(FIELDS) as [FieldPath, FieldDef][]).filter(([, def]) => !def.computed);
@@ -175,6 +176,7 @@ export default async function DataPage() {
     "ipeds-ic": all.filter((s) => s.cost?.sticker).length,
     "ipeds-hd": all.filter((s) => s.campus?.setting).length,
     "ipeds-ic-char": all.filter((s) => s.campus?.calendar !== undefined && s.campus?.programs).length,
+    "ipeds-ef": all.filter((s) => s.academics?.student_faculty_ratio != null).length,
     cds: cds.length,
   };
   const sourceUses = (key: SourceKey) => {
@@ -182,7 +184,7 @@ export default async function DataPage() {
     for (const [, def] of STORED) if (def.source === key) topics.add(def.topic);
     return [...topics].map((t) => TOPIC_LABELS[t]);
   };
-  const order: SourceKey[] = ["scorecard", "ipeds-adm", "ipeds-sfa", "ipeds-ic", "ipeds-ic-char", "ipeds-hd", "cds"];
+  const order: SourceKey[] = ["scorecard", "ipeds-adm", "ipeds-sfa", "ipeds-ic", "ipeds-ic-char", "ipeds-hd", "ipeds-ef", "cds"];
 
   const toc = [
     ["why", "Why it lags"],

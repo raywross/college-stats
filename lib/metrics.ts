@@ -1,5 +1,6 @@
 import type { School, SizeBucket } from "./types";
 import type { TermKey } from "./glossary";
+import { ratioLabel } from "./academics";
 import type { FieldPath } from "./fields";
 import { money, num, pct, pctSmart } from "./format";
 import { admitRatesBySex, satMedian, simpsonIndex, yieldOf } from "./derive";
@@ -146,6 +147,7 @@ export type MetricKey =
   | "admitGapSize"
   | "menShare"
   | "partTime"
+  | "studentFaculty"
   | "adults"
   | "applicantsChange"
   | "sizeChange"
@@ -456,6 +458,19 @@ export const METRICS: Record<MetricKey, MetricDef> = {
     scale: [0, 1],
     more: "more men",
     less: "fewer men",
+  },
+  // Lower is the sought-after end; "more"/"less" wording follows the number (specs/data-expansion/student-faculty-ratio.md).
+  studentFaculty: {
+    key: "studentFaculty",
+    field: "academics.student_faculty_ratio",
+    label: "Student-to-faculty ratio",
+    short: "Students/faculty",
+    term: "student-faculty-ratio",
+    domain: "size",
+    get: (s) => s.academics?.student_faculty_ratio ?? null,
+    format: ratioLabel,
+    more: "more students per faculty member",
+    less: "fewer students per faculty member",
   },
   partTime: {
     key: "partTime",

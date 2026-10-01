@@ -654,6 +654,104 @@
         "revised": false
       }
     ],
+    "ef-d": [
+      {
+        "year": 2009,
+        "file": "EF2009D",
+        "url": "https://nces.ed.gov/ipeds/datacenter/data/EF2009D.zip",
+        "revised": true
+      },
+      {
+        "year": 2010,
+        "file": "EF2010D",
+        "url": "https://nces.ed.gov/ipeds/datacenter/data/EF2010D.zip",
+        "revised": true
+      },
+      {
+        "year": 2011,
+        "file": "EF2011D",
+        "url": "https://nces.ed.gov/ipeds/datacenter/data/EF2011D.zip",
+        "revised": true
+      },
+      {
+        "year": 2012,
+        "file": "EF2012D",
+        "url": "https://nces.ed.gov/ipeds/datacenter/data/EF2012D.zip",
+        "revised": true
+      },
+      {
+        "year": 2013,
+        "file": "EF2013D",
+        "url": "https://nces.ed.gov/ipeds/datacenter/data/EF2013D.zip",
+        "revised": true
+      },
+      {
+        "year": 2014,
+        "file": "EF2014D",
+        "url": "https://nces.ed.gov/ipeds/datacenter/data/EF2014D.zip",
+        "revised": true
+      },
+      {
+        "year": 2015,
+        "file": "EF2015D",
+        "url": "https://nces.ed.gov/ipeds/datacenter/data/EF2015D.zip",
+        "revised": true
+      },
+      {
+        "year": 2016,
+        "file": "EF2016D",
+        "url": "https://nces.ed.gov/ipeds/datacenter/data/EF2016D.zip",
+        "revised": true
+      },
+      {
+        "year": 2017,
+        "file": "EF2017D",
+        "url": "https://nces.ed.gov/ipeds/datacenter/data/EF2017D.zip",
+        "revised": true
+      },
+      {
+        "year": 2018,
+        "file": "EF2018D",
+        "url": "https://nces.ed.gov/ipeds/datacenter/data/EF2018D.zip",
+        "revised": true
+      },
+      {
+        "year": 2019,
+        "file": "EF2019D",
+        "url": "https://nces.ed.gov/ipeds/datacenter/data/EF2019D.zip",
+        "revised": true
+      },
+      {
+        "year": 2020,
+        "file": "EF2020D",
+        "url": "https://nces.ed.gov/ipeds/datacenter/data/EF2020D.zip",
+        "revised": true
+      },
+      {
+        "year": 2021,
+        "file": "EF2021D",
+        "url": "https://nces.ed.gov/ipeds/datacenter/data/EF2021D.zip",
+        "revised": true
+      },
+      {
+        "year": 2022,
+        "file": "EF2022D",
+        "url": "https://nces.ed.gov/ipeds/datacenter/data/EF2022D.zip",
+        "revised": true
+      },
+      {
+        "year": 2023,
+        "file": "EF2023D",
+        "url": "https://nces.ed.gov/ipeds/complete-data-files/EF2023D.zip",
+        "revised": true
+      },
+      {
+        "year": 2024,
+        "file": "EF2024D",
+        "url": "https://nces.ed.gov/ipeds/complete-data-files/EF2024D.zip",
+        "revised": false
+      }
+    ],
     "scorecard-enrollment": [
       {
         "year": 1996,
@@ -1242,7 +1340,8 @@
   "provisional": {
     "adm": 2024,
     "sfa": 2023,
-    "services": 2025
+    "services": 2025,
+    "ef-d": 2024
   },
   "schools": 1893,
   "universe": 1893

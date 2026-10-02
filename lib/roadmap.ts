@@ -89,15 +89,6 @@ export const ROADMAP: RoadmapSpec[] = [
     status: "planned",
   },
   {
-    slug: "outcome-measures",
-    file: "specs/data-expansion/outcome-measures.md",
-    group: "wave-2",
-    summary: "Eight-year results for every student who starts, including transfers and part-timers.",
-    complexity: 3,
-    complexityNote: "A new file, and graduation becomes a fifth trend indicator across the site.",
-    status: "planned",
-  },
-  {
     slug: "graduation-by-group",
     file: "specs/data-expansion/graduation-by-group.md",
     group: "wave-2",

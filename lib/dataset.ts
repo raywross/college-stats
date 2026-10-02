@@ -105,6 +105,7 @@ const SORTERS: Record<SortKey, (s: School) => number | string | null> = {
   loan_rate: METRICS.loanRate.get,
   loan_rate_change: METRICS.loanRateChange.get,
   student_faculty: METRICS.studentFaculty.get,
+  completion_8yr: METRICS.completion8.get,
 };
 
 function mode(values: number[]): number | null {

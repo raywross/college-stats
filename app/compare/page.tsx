@@ -162,6 +162,8 @@ const TABLE_ROWS = (
     ["Median earnings (10 yrs)", "median-earnings", "outcomes.median_earnings_10yr", (s: School) => opt(s.outcomes?.median_earnings_10yr ?? null, money)],
     ["Graduation rate", "graduation-rate", "outcomes.graduation_rate", (s: School) => opt(s.outcomes?.graduation_rate ?? null, (v) => pct(v))],
     ["Retention rate", "retention-rate", "outcomes.retention_rate", (s: School) => opt(s.outcomes?.retention_rate ?? null, (v) => pct(v))],
+    ["Credential within 8 years, all students", "outcome-measures", "outcomes.eight_year", (s: School) => opt(METRICS.completion8.get(s), (v) => pct(v))],
+    ["Enrolled at another college, 8 years on", "transfer-out", "outcomes.eight_year", (s: School) => opt(METRICS.transferOut.get(s), (v) => pct(v))],
     ["Median debt", "median-debt", "outcomes.median_debt", (s: School) => opt(s.outcomes?.median_debt ?? null, money)],
     ["Undergrads with a federal loan", "federal-loan-rate", "outcomes.federal_loan_rate", (s: School) => opt(s.outcomes?.federal_loan_rate ?? null, (v) => pct(v))],
     ["Median debt, Pell Grant recipients", "median-debt", "outcomes.median_debt_pell", (s: School) => opt(s.outcomes?.median_debt_pell ?? null, money)],

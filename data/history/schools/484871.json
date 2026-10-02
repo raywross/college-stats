@@ -34,6 +34,9 @@
     "men_share": {"start":2014,"values":[1,1,1,1,1,1,1,1,1,1,1]},
     "part_time_share": {"start":2014,"values":[0,0,0,0,0,0,0,0,0,0,0]},
     "grad_rate": {"start":2013,"values":[0.6818,0.4118,0.4815,0.3947,0.5152,0.3636]},
-    "federal_loan_rate": {"start":2013,"values":[0,0,0,0,0,0,0,0,0,0,0]}
+    "federal_loan_rate": {"start":2013,"values":[0,0,0,0,0,0,0,0,0,0,0]},
+    "om_award": {"start":2014,"values":[0.25,0.4516,0.3488]},
+    "om_transfer": {"start":2014,"values":[0.25,0.3226,0.3488]},
+    "om_award_pell": {"start":2014,"values":[0.2727,null,0.3529]}
   }
 }

@@ -113,7 +113,8 @@ export function nextReleaseFor(vintage: VintageKey, calendar: ReleaseCalendar): 
  */
 export function periodStart(year: string | null): Date | null {
   if (!year) return null;
-  const fall = /^fall (\d{4})$/i.exec(year.trim());
+  // "Students entering fall 2016" (Outcome Measures) describes that entering class, like "Fall 2016".
+  const fall = /^(?:students entering )?fall (\d{4})$/i.exec(year.trim());
   if (fall) return new Date(Date.UTC(Number(fall[1]), 8, 1));
   const academic = /^(\d{4})\s*[–-]\s*(\d{2}|\d{4})$/.exec(year.trim());
   if (academic) return new Date(Date.UTC(Number(academic[1]), 6, 1));

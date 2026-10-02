@@ -35,6 +35,7 @@ import {
 import { readSpec, type ColumnSpec, type Era, type FileChoice } from "./registry.mts";
 import { associationCode, footballConferenceCode, mainConferenceCode, rotcCode } from "../../lib/campus-services.ts";
 import { studentFacultyRatioFrom } from "../../lib/academics.ts";
+import { eightYearFrom } from "../../lib/outcome-measures.ts";
 import { COHORT_LAG, type ScorecardRow } from "./scorecard.mts";
 
 /** One year of one family, read. */
@@ -58,6 +59,8 @@ export interface Inputs {
   services?: readonly YearTable[];
   /** Student-to-faculty ratio (EF{Y}D), one table per fall. */
   efd?: readonly YearTable[];
+  /** 8-year outcomes (OM{Y+8}, pivoted by cohort), one table per entering fall. */
+  om?: readonly YearTable[];
   /** College Scorecard year-prefixed values by unit ID (scripts/history/scorecard.mts), and the years requested. */
   scorecard?: { rows: ReadonlyMap<string, ScorecardRow>; first: number; last: number };
 }
@@ -194,6 +197,15 @@ export function buildCollege(school: Pick<School, "unit_id" | "type">, inputs: I
 
   // Student-to-faculty ratio, with the snapshot's reader (lib/academics.ts).
   for (const t of inputs.efd ?? []) put(raw, "student_faculty_ratio", t.year, studentFacultyRatioFrom(t.rows.get(id)));
+
+  // 8-year outcomes by entering fall, with the snapshot's reader (lib/outcome-measures.ts); suppressed cohorts stay gaps.
+  for (const t of inputs.om ?? []) {
+    const o = eightYearFrom(t.rows.get(id), t.year);
+    put(raw, "om_award", t.year, o?.all.award);
+    put(raw, "om_transfer", t.year, o?.all.transferred);
+    put(raw, "om_award_pell", t.year, o?.pell?.award);
+    put(raw, "om_award_non_pell", t.year, o?.non_pell?.award);
+  }
 
   // Athletics and ROTC as codes for events: the same readers as the snapshot (lib/campus-services.ts).
   for (const t of inputs.services ?? []) {
@@ -537,6 +549,9 @@ export function lastPointMismatches(schools: readonly School[], histories: Reado
   // The newest EF part D fall history read: what the snapshot's EF{Y}D describes (its own year, not admissions').
   const efdYears = [...histories.values()].flatMap((h) => (h.series.student_faculty_ratio ? [lastYear(h.series.student_faculty_ratio)] : []));
   const efdYear = efdYears.length ? Math.max(...efdYears) : null;
+  // The newest entering fall history read from OM: what the snapshot's OM file describes.
+  const omYears = [...histories.values()].flatMap((h) => (h.series.om_award ? [lastYear(h.series.om_award)] : []));
+  const omYear = omYears.length ? Math.max(...omYears) : null;
   for (const s of schools) {
     const h = histories.get(s.unit_id);
     if (!h) continue;
@@ -629,6 +644,13 @@ export function lastPointMismatches(schools: readonly School[], histories: Reado
       check("promise", c.promise_program == null ? null : c.promise_program ? 1 : 2);
     }
     if (efdYear !== null) check("student_faculty_ratio", s.academics?.student_faculty_ratio, false, efdYear);
+    const om = s.outcomes?.eight_year;
+    if (omYear !== null && (!om || om.entering_year === omYear)) {
+      check("om_award", om?.all.award, false, omYear);
+      check("om_transfer", om?.all.transferred, false, omYear);
+      check("om_award_pell", om?.pell?.award, false, omYear);
+      check("om_award_non_pell", om?.non_pell?.award, false, omYear);
+    }
     // Athletics and ROTC: the snapshot reads the newest IC file, which is the services series' newest year.
     const a = s.campus?.athletics;
     if (servicesYear !== null && (a !== undefined || h.series.athletic_association)) {

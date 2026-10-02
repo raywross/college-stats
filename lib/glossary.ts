@@ -308,6 +308,29 @@ const entries = {
     category: "Cost & outcomes",
     related: ["retention-rate"],
   },
+  // Outcome Measures (specs/data-expansion/outcome-measures.md).
+  "outcome-measures": {
+    term: "8-year outcomes (Outcome Measures)",
+    short: "What happened to everyone who started at a college, 8 years later: earned a degree or certificate there, still enrolled, enrolled at another college, or no record. Counts transfer students and part-timers, not just first-time, full-time students.",
+    long: "From the federal Outcome Measures survey. Unlike the graduation rate, which follows only first-time, full-time students and counts a transfer out as not finishing, it follows every entering student, says how many went on to another college, and gives 8 years to finish. The newest group entered about 8 years before the data's release.",
+    why: "Fairer to colleges with many transfer, part-time, or adult students, and it shows whether students who leave keep going somewhere else.",
+    category: "Cost & outcomes",
+    related: ["graduation-rate", "transfer-out", "adjusted-cohort"],
+  },
+  "transfer-out": {
+    term: "Transfer-out (enrolled elsewhere)",
+    short: "Students who left without a degree or certificate and enrolled at another college. Outcome Measures counts them 8 years after entry, using enrollment records from the National Student Clearinghouse.",
+    long: "It says where students enrolled, not whether they finished there. Some colleges are a planned first stop (students start, then transfer to finish), so a high share isn't always a bad sign.",
+    category: "Cost & outcomes",
+    related: ["outcome-measures", "graduation-rate"],
+  },
+  "adjusted-cohort": {
+    term: "Adjusted cohort",
+    short: "The students a graduation or outcome rate follows, minus those who died, became permanently disabled, or left for military service, a religious mission, or foreign aid service. Rates are shares of it.",
+    long: "We don't show rates for a group under 30 students, where a few students swing the percentages (the rule the College Scorecard uses).",
+    category: "How we measure",
+    related: ["outcome-measures", "graduation-rate"],
+  },
   "retention-rate": {
     term: "Retention rate",
     short: "The share of full-time first-year students who come back for their second year. An early signal of student satisfaction and support.",

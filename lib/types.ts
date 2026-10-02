@@ -145,6 +145,8 @@ export interface School {
     median_debt_by_income?: { low: number | null; mid: number | null; high: number | null } | null;
     /** Where undergraduate borrowers stand 3 years into repayment, as ranges (Scorecard publishes some as bands). */
     repayment_3yr?: Partial<Record<RepaymentStatus, ShareRange>> | null;
+    /** 8-year outcomes for every entering student (IPEDS Outcome Measures; lib/outcome-measures.ts). */
+    eight_year?: EightYearOutcomes | null;
   };
   /** Financial aid for full-time first-time undergrads (IPEDS Student Financial Aid survey). */
   aid?: {
@@ -336,6 +338,38 @@ export interface ResidencyPrices {
   out_of_state: number | null;
 }
 
+/**
+ * One entering group's status 8 years after starting (IPEDS Outcome Measures): shares of its adjusted cohort, summing to
+ * 1. Rates are null when the cohort is under 30 students (lib/outcome-measures.ts MIN_COHORT).
+ */
+export interface EightYearGroup {
+  /** Adjusted cohort: entering students, less those who died, joined the military, a church mission, or foreign aid service. */
+  cohort: number;
+  /** Earned a certificate or degree at this college within 8 years. */
+  award: number | null;
+  /** No award, still enrolled at this college. */
+  still_enrolled: number | null;
+  /** No award here, enrolled at another college (transferred out). */
+  transferred: number | null;
+  /** No award, and no record of enrolling anywhere. */
+  unknown: number | null;
+}
+
+/** 8-year outcomes by entering group (specs/data-expansion/outcome-measures.md). Groups are null when no one is in them. */
+export interface EightYearOutcomes {
+  /** The fall these students entered (OM{Y} follows fall Y − 8). */
+  entering_year: number;
+  /** Everyone who entered: first-time and transfer-in, full-time and part-time. */
+  all: EightYearGroup;
+  /** First-time students (full-time and part-time). */
+  first_time: EightYearGroup | null;
+  /** Students who transferred in (full-time and part-time). */
+  transfer_in: EightYearGroup | null;
+  /** Pell Grant recipients and everyone else, all entering students. */
+  pell: Pick<EightYearGroup, "cohort" | "award"> | null;
+  non_pell: Pick<EightYearGroup, "cohort" | "award"> | null;
+}
+
 export interface CdsAid {
   /** Full-time degree-seeking undergrads (H2 line A). */
   undergrads: number | null;
@@ -382,7 +416,7 @@ export interface CampusPrograms {
   intellectual_disability_program: boolean;
 }
 
-export type SourceKey = "scorecard" | "ipeds-adm" | "ipeds-sfa" | "ipeds-ic" | "ipeds-ic-char" | "ipeds-hd" | "ipeds-ef" | "cds";
+export type SourceKey = "scorecard" | "ipeds-adm" | "ipeds-sfa" | "ipeds-ic" | "ipeds-ic-char" | "ipeds-hd" | "ipeds-ef" | "ipeds-om" | "cds";
 
 export interface SourceInfo {
   /** Full citation name, e.g. "College Scorecard". */
@@ -407,6 +441,7 @@ export type SizeBucket = "small" | "medium" | "large" | "xl";
 
 export type SortKey =
   | "applicants"
+  | "completion_8yr"
   | "student_faculty"
   | "name"
   | "acceptance_rate"

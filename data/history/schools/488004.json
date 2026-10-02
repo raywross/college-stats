@@ -33,6 +33,9 @@
     "race_other": {"start":2016,"values":[0,0,0,0,0,0,0,0,0]},
     "men_share": {"start":2016,"values":[1,1,1,1,1,1,1,1,1]},
     "part_time_share": {"start":2016,"values":[0,0,0,0,0,0,0,0,0]},
-    "federal_loan_rate": {"start":2015,"values":[0,0,0,0,0,0,0,0,0]}
+    "federal_loan_rate": {"start":2015,"values":[0,0,0,0,0,0,0,0,0]},
+    "om_award": {"start":2012,"values":[0.6471,0.7143,0.3333,null,0.3]},
+    "om_transfer": {"start":2012,"values":[0.1765,0.0952,0.5667,null,0.5]},
+    "om_award_non_pell": {"start":2012,"values":[0.6471,0.7143,0.3333]}
   }
 }

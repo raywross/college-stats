@@ -34,6 +34,9 @@
     "men_share": {"start":2019,"values":[1,1,1,1,1,1]},
     "part_time_share": {"start":2019,"values":[0,0,0,0,0,0]},
     "grad_rate": {"start":2014,"values":[0.1136,null,0.14,0.1228,0.2593]},
-    "federal_loan_rate": {"start":2018,"values":[0,0,0,0,0,0]}
+    "federal_loan_rate": {"start":2018,"values":[0,0,0,0,0,0]},
+    "om_award": {"start":2012,"values":[0.5,0.4884,0.1111,0.3725,0.2182]},
+    "om_transfer": {"start":2012,"values":[0.2143,0.4419,0.4444,0.3922,0.5455]},
+    "om_award_non_pell": {"start":2012,"values":[0.5,0.4884,0.1111,0.3725,0.2182]}
   }
 }

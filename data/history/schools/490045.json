@@ -26,6 +26,9 @@
     "men_share": {"start":2017,"values":[0.3171,0.3542,0.3913,0.3571,0.3171,0.3611,0.3684,0.3455]},
     "part_time_share": {"start":2017,"values":[0.4634,0.7708,0.5217,0.6667,0.4878,0.5556,0.5526,0.6364]},
     "grad_rate": {"start":2012,"values":[0.75,0.6,0.5,1,0.5,0.8]},
-    "federal_loan_rate": {"start":2016,"values":[0,0,0,0,0,0.0244,0.0278,0.0789]}
+    "federal_loan_rate": {"start":2016,"values":[0,0,0,0,0,0.0244,0.0278,0.0789]},
+    "om_award": {"start":2009,"values":[0.5957]},
+    "om_transfer": {"start":2009,"values":[0.2766]},
+    "om_award_non_pell": {"start":2009,"values":[0.5957]}
   }
 }

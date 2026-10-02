@@ -121,6 +121,7 @@ export async function SchoolTable({ schools, params }: { schools: School[]; para
     { key: "aid_generosity", label: "Aid generosity", term: "aid-generosity" },
     { key: "earnings", label: "Earnings", term: "median-earnings" },
     { key: "grad_rate", label: "Grad rate", term: "graduation-rate" },
+    { key: "completion_8yr", label: "8-yr completion, all", term: "outcome-measures" },
     { key: "loan_rate", label: "Borrow", term: "federal-loan-rate" },
     ...(changes
       ? [
@@ -143,7 +144,7 @@ export async function SchoolTable({ schools, params }: { schools: School[]; para
     </p>
     <div className="overflow-hidden rounded-3xl border bg-card">
       <div className="overflow-x-auto">
-        <table className={cn("w-full text-sm", changes ? "min-w-[2420px]" : "min-w-[1550px]")}>
+        <table className={cn("w-full text-sm", changes ? "min-w-[2520px]" : "min-w-[1650px]")}>
           <thead className="border-b bg-surface-2">
             <tr>
               <SortHeader k="name" label="School" className="sticky left-0 z-10 bg-surface-2 pl-4" params={params} sortBy={sortBy} sortDir={sortDir} />
@@ -234,6 +235,10 @@ export async function SchoolTable({ schools, params }: { schools: School[]; para
                   <td className="w-24 px-3 tabular-nums">
                     <Value v={s.outcomes?.graduation_rate == null ? null : pct(s.outcomes.graduation_rate)} />
                     {s.outcomes?.graduation_rate != null && <Bar value={s.outcomes.graduation_rate} max={1} color={DOMAINS.value.color} />}
+                  </td>
+                  <td className="w-24 px-3 tabular-nums">
+                    <Value v={s.outcomes?.eight_year?.all.award == null ? null : pct(s.outcomes.eight_year.all.award)} />
+                    {s.outcomes?.eight_year?.all.award != null && <Bar value={s.outcomes.eight_year.all.award} max={1} color={DOMAINS.value.color} />}
                   </td>
                   <td className="w-24 px-3 tabular-nums">
                     <Value v={s.outcomes?.federal_loan_rate == null ? null : pct(s.outcomes.federal_loan_rate)} />

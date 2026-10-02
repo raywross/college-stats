@@ -56,6 +56,10 @@
     "part_time_share": {"start":2012,"values":[0.6988,0.705,0.6968,0.6817,0.6985,0.6825,0.686,null,null,null,0.5757,0.5581,0.5591]},
     "grad_rate": {"start":2006,"values":[0.25,null,0.25,0.4,0.25,0.2754,0.2927,null,null,null,0.3628,0.3363,0.3415]},
     "median_debt": {"start":2012,"values":[26000,26750,26933,26687,26120,26000,25928,25000]},
-    "federal_loan_rate": {"start":2011,"values":[0.5819,0.5769,0.5641,0.5585,0.5475,0.5092,0.479,null,null,null,0.3927,0.4118,0.4121]}
+    "federal_loan_rate": {"start":2011,"values":[0.5819,0.5769,0.5641,0.5585,0.5475,0.5092,0.479,null,null,null,0.3927,0.4118,0.4121]},
+    "om_award": {"start":2009,"values":[0.4067,0.3746,null,null,null,0.3821,0.397,0.3778]},
+    "om_transfer": {"start":2009,"values":[0.2989,0.3162,null,null,null,0.2564,0.272,0.2971]},
+    "om_award_pell": {"start":2009,"values":[0.3808,0.3669,null,null,null,0.3582,0.3972,0.3759]},
+    "om_award_non_pell": {"start":2009,"values":[0.4211,0.3799,null,null,null,0.3984,0.3968,0.379]}
   }
 }

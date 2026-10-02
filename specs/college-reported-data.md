@@ -178,3 +178,43 @@ depend on them without pulling in the rest of the app:
   and a computed acceptance rate, three tests proving the lineage guard rejects a reported value with no record, a
   non-`"extracted"` method, and a year not newer than federal, and one proving `lineageFor` cites `"college-site"`
   with the quote, year, and URL. Fixtures use Princeton (186131), a plain federal-only school with no CDS override.
+
+### Workflow and setup
+Built 2026-10-02. `.github/workflows/college-reported.yml` runs the pipeline and, when it changes `data/**`, opens a
+pull request with a generated body and its own release note, merging itself only when asked and only when the
+circuit breaker didn't trip. Full repo-owner setup (API key, GitHub secrets, enabling auto-merge, branch protection,
+running locally, the first pilot, resolving a review-queue item, reading cost, when to turn scheduled auto-merge
+on) is its own doc: [college-reported-setup.md](college-reported-setup.md).
+
+- **Triggers:** `workflow_dispatch` (`mode`: pilot/all/college, `college`, `rediscover`, `auto_merge`,
+  `max_discoveries`) and two `schedule` crons implementing the spec's calendar above — a plain weekly-Monday cron
+  and a plain monthly-1st cron, each gated at runtime by a step that checks the current UTC month, since one cron
+  expression can't mix a weekly Aug–Nov cadence with a monthly Dec–Jul one. Scheduled runs use `mode: all` and
+  `auto_merge: true`.
+- **Run id:** `<UTC timestamp>-<github.run_number>`, passed to the script as `--run` and used to name the branch
+  (`data/college-reported-<run>`), the run summary file the script writes
+  (`data/reports/college-reported-run-<run>.json`), and the release note
+  (`release-notes/college-reported-<run>.md`).
+- **Document cache:** `.cache/college-docs/` is restored and saved with `actions/cache`, keyed per run id with a
+  `college-docs-` restore-keys prefix, so a run starts from the newest prior cache without two runs ever racing to
+  write the same cache entry.
+- **Token:** every git/`gh` step uses `secrets.COLLEGE_REPORTED_TOKEN || github.token`. The default token can
+  commit and open a PR, but a PR opened with it doesn't trigger `pull_request` workflows — so `Verify` would never
+  run and `--auto-merge` would wait forever. `COLLEGE_REPORTED_TOKEN` is a fine-grained PAT (Contents + pull
+  requests, read/write; no Workflows permission needed since this workflow never touches `.github/workflows/*`).
+- **PR body and release note:** generated from the run summary and `data/review-queue.json` by
+  `scripts/college-reported-pr-body.mts` (`prBody`, `releaseNote`; unit-tested against fixtures in
+  `tests/college-reported-pr-body.test.mts`): counts, cost, circuit-breaker status, and a table of *this run's*
+  review-queue items (college, term, failed checks, URL) with a note on how to resolve one. The release note needs
+  the PR number, so it's written and pushed as a second commit once the PR exists.
+- **Merge logic:** auto-merges (`gh pr merge --auto --squash`) only when `auto_merge` was on for this run **and**
+  the script exited 0 (the circuit breaker didn't trip). Otherwise a comment on the PR explains why it's waiting
+  for a person — a tripped breaker, or auto-merge simply being off (the pilot default).
+- **Permissions and concurrency:** `contents: write`, `pull-requests: write`; concurrency group `college-reported`
+  (not cancelled, just serialized) so two runs never push over each other.
+- **Not yet buildable/verifiable:** this workflow was written in parallel with
+  `scripts/sync-college-reported.mts` itself (another agent's task) — the flags, exit codes (0/1/2), and the run
+  summary/review-queue file shapes it depends on come from `lib/reported.ts`'s contract, but the workflow has not
+  been exercised against the real script in GitHub Actions (that needs the secrets from
+  [college-reported-setup.md](college-reported-setup.md) and a merged script). The YAML was validated by parsing
+  it with `js-yaml` and syntax-checking every `run:` block with `bash -n`.

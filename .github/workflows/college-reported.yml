@@ -1,0 +1,244 @@
+# Runs the college-reported ingestion agent (specs/college-reported-data.md) and, when it changes data/**, opens a
+# pull request with a generated body (counts, cost, circuit-breaker status, review-queue table) and its own release
+# note, auto-merging only when asked and the circuit breaker didn't trip. See specs/college-reported-setup.md for
+# the one-time repository setup (secrets, auto-merge, branch protection) this workflow depends on.
+#
+# Checkout and all git/gh steps use `secrets.COLLEGE_REPORTED_TOKEN` when it's set, falling back to the default
+# `github.token`. The default token works for commits and comments, but a PR opened with it does NOT trigger
+# `pull_request` workflows (so Verify, and therefore auto-merge, would never run) — set COLLEGE_REPORTED_TOKEN to a
+# fine-grained PAT (Contents: read/write, Pull requests: read/write) to get CI on these PRs and real auto-merge.
+name: College-reported data
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: Which colleges to run
+        type: choice
+        options: [pilot, all, college]
+        default: pilot
+      college:
+        description: Unit id (only used when mode = college)
+        type: string
+        default: ""
+      rediscover:
+        description: Re-run discovery even for colleges with a recipe
+        type: boolean
+        default: false
+      auto_merge:
+        description: Auto-merge the resulting PR once CI passes (off by default during the pilot)
+        type: boolean
+        default: false
+      max_discoveries:
+        description: Cap on discovery calls this run
+        type: string
+        default: "100"
+  schedule:
+    # Two entries because one cron line can't mix a weekly Aug–Nov cadence with a monthly Dec–Jul one (and GitHub's
+    # schedule parser doesn't reliably support month ranges combined with a weekday filter); each fires on a plain,
+    # widely-supported schedule and the "Check schedule window" step below decides from the current UTC month
+    # whether this particular firing should actually run (specs/college-reported-data.md#schedule).
+    - cron: "0 13 * * 1" # every Monday 13:00 UTC — proceeds only Aug–Nov (fall class-profile season)
+    - cron: "0 13 1 * *" # the 1st of every month, 13:00 UTC — proceeds only Dec–Jul (CDS edition season)
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: college-reported
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.COLLEGE_REPORTED_TOKEN || github.token }}
+
+      - name: Check schedule window
+        id: window
+        if: github.event_name == 'schedule'
+        run: |
+          month=$(date -u +%-m)
+          event="${{ github.event.schedule }}"
+          proceed=false
+          if [ "$event" = "0 13 * * 1" ]; then
+            # Weekly-Monday cron: only Aug (8) through Nov (11).
+            if [ "$month" -ge 8 ] && [ "$month" -le 11 ]; then proceed=true; fi
+          elif [ "$event" = "0 13 1 * *" ]; then
+            # Monthly-1st cron: only Dec (12) through Jul (7).
+            if [ "$month" -eq 12 ] || [ "$month" -le 7 ]; then proceed=true; fi
+          fi
+          echo "This firing: $event, month $month, proceed=$proceed"
+          echo "proceed=$proceed" >> "$GITHUB_OUTPUT"
+
+      - name: Resolve run parameters
+        id: params
+        if: github.event_name != 'schedule' || steps.window.outputs.proceed == 'true'
+        run: |
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            echo "mode=all" >> "$GITHUB_OUTPUT"
+            echo "auto_merge=true" >> "$GITHUB_OUTPUT"
+            echo "college=" >> "$GITHUB_OUTPUT"
+            echo "rediscover=false" >> "$GITHUB_OUTPUT"
+            echo "max_discoveries=100" >> "$GITHUB_OUTPUT"
+          else
+            mode="${{ inputs.mode }}"
+            college="${{ inputs.college }}"
+            if [ "$mode" = "college" ] && [ -z "$college" ]; then
+              echo "::error::mode=college requires the college input (a unit id)."
+              exit 1
+            fi
+            echo "mode=$mode" >> "$GITHUB_OUTPUT"
+            echo "auto_merge=${{ inputs.auto_merge }}" >> "$GITHUB_OUTPUT"
+            echo "college=$college" >> "$GITHUB_OUTPUT"
+            echo "rediscover=${{ inputs.rediscover }}" >> "$GITHUB_OUTPUT"
+            echo "max_discoveries=${{ inputs.max_discoveries }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Compute run id
+        id: run_id
+        if: github.event_name != 'schedule' || steps.window.outputs.proceed == 'true'
+        run: echo "id=$(date -u +%Y%m%d-%H%M%S)-${{ github.run_number }}" >> "$GITHUB_OUTPUT"
+
+      - name: Check for the Anthropic API key
+        id: secret
+        if: github.event_name != 'schedule' || steps.window.outputs.proceed == 'true'
+        run: |
+          if [ -z "${{ secrets.ANTHROPIC_API_KEY }}" ]; then
+            echo "::notice::ANTHROPIC_API_KEY is not set; skipping this run. See specs/college-reported-setup.md."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Build script flags
+        id: flags
+        if: steps.secret.outputs.ready == 'true'
+        run: |
+          flags="--run ${{ steps.run_id.outputs.id }}"
+          case "${{ steps.params.outputs.mode }}" in
+            pilot) flags="$flags --pilot" ;;
+            all) flags="$flags --all" ;;
+            college) flags="$flags --college ${{ steps.params.outputs.college }}" ;;
+          esac
+          if [ "${{ steps.params.outputs.rediscover }}" = "true" ]; then
+            flags="$flags --rediscover"
+          fi
+          flags="$flags --max-discoveries ${{ steps.params.outputs.max_discoveries }}"
+          echo "flags=$flags" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/setup-node@v4
+        if: steps.secret.outputs.ready == 'true'
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+        if: steps.secret.outputs.ready == 'true'
+
+      # Discovery's cached documents (.cache/college-docs/, git-ignored): keyed per run so a run always starts from
+      # the newest prior cache, and never writes over another run's in-flight cache.
+      - name: Restore document cache
+        if: steps.secret.outputs.ready == 'true'
+        uses: actions/cache@v4
+        with:
+          path: .cache/college-docs
+          key: college-docs-${{ steps.run_id.outputs.id }}
+          restore-keys: |
+            college-docs-
+
+      - name: Run the ingestion pipeline
+        id: sync
+        if: steps.secret.outputs.ready == 'true'
+        continue-on-error: true
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          set +e
+          npm run sync-college-reported -- ${{ steps.flags.outputs.flags }}
+          code=$?
+          set -e
+          echo "exit_code=$code" >> "$GITHUB_OUTPUT"
+          # 0 = normal, 2 = circuit breaker tripped (files still written), 1 = error. Only 1 fails the job outright.
+          if [ "$code" = "1" ]; then
+            echo "::error::sync-college-reported exited 1 (error); see the job log above."
+            exit 1
+          fi
+
+      - name: Check for data changes
+        id: diff
+        if: steps.secret.outputs.ready == 'true'
+        run: |
+          if git status --porcelain -- data | grep -q .; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "No changes under data/ this run; nothing to open a PR for."
+          fi
+
+      - name: Open a pull request
+        id: pr
+        if: steps.secret.outputs.ready == 'true' && steps.diff.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.COLLEGE_REPORTED_TOKEN || github.token }}
+          RUN_ID: ${{ steps.run_id.outputs.id }}
+        run: |
+          branch="data/college-reported-${RUN_ID}"
+          git checkout -b "$branch"
+          git add data
+          printf 'College-reported data: run %s\n\nCo-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>\n' "$RUN_ID" > /tmp/college-reported-commit-msg.txt
+          git -c user.name="college-reported-bot" -c user.email="noreply@anthropic.com" commit -F /tmp/college-reported-commit-msg.txt
+          git push -u origin "$branch"
+          node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/college-reported-pr-body.mts body \
+            --summary "data/reports/college-reported-run-${RUN_ID}.json" \
+            --queue data/review-queue.json > /tmp/college-reported-pr-body.md
+          gh pr create --base main --head "$branch" \
+            --title "College-reported data: run ${RUN_ID}" \
+            --body-file /tmp/college-reported-pr-body.md
+          number=$(gh pr view "$branch" --json number -q .number)
+          echo "number=$number" >> "$GITHUB_OUTPUT"
+          echo "branch=$branch" >> "$GITHUB_OUTPUT"
+
+      # The PR number is only known once the PR exists, so the release note (specs/release-notes.md) is written and
+      # pushed as a second commit onto the same branch, naming it.
+      - name: Add the release note
+        if: steps.secret.outputs.ready == 'true' && steps.diff.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.COLLEGE_REPORTED_TOKEN || github.token }}
+          RUN_ID: ${{ steps.run_id.outputs.id }}
+          PR_NUMBER: ${{ steps.pr.outputs.number }}
+        run: |
+          date=$(date -u +%Y-%m-%d)
+          note="release-notes/college-reported-${RUN_ID}.md"
+          node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/college-reported-pr-body.mts note \
+            --summary "data/reports/college-reported-run-${RUN_ID}.json" \
+            --queue data/review-queue.json \
+            --pr "$PR_NUMBER" --date "$date" --out "$note"
+          git add "$note"
+          printf 'Release note for #%s\n\nCo-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>\n' "$PR_NUMBER" > /tmp/college-reported-note-commit-msg.txt
+          git -c user.name="college-reported-bot" -c user.email="noreply@anthropic.com" commit -F /tmp/college-reported-note-commit-msg.txt
+          git push
+
+      - name: Auto-merge, or explain why this PR waits for a person
+        if: steps.secret.outputs.ready == 'true' && steps.diff.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.COLLEGE_REPORTED_TOKEN || github.token }}
+          PR_NUMBER: ${{ steps.pr.outputs.number }}
+          EXIT_CODE: ${{ steps.sync.outputs.exit_code }}
+          AUTO_MERGE: ${{ steps.params.outputs.auto_merge }}
+        run: |
+          if [ "$AUTO_MERGE" = "true" ] && [ "$EXIT_CODE" = "0" ]; then
+            gh pr merge "$PR_NUMBER" --auto --squash
+          else
+            if [ "$EXIT_CODE" = "2" ]; then
+              reason="the circuit breaker tripped (more than 10% of attempted colleges failed checks, or more than 25% of published values changed) — review the PR body and the review queue before merging by hand"
+            elif [ "$AUTO_MERGE" != "true" ]; then
+              reason="auto-merge is off for this run (default during the pilot; turn it on from Actions → Run workflow, or let the schedule do it) — review and merge by hand once CI is green"
+            else
+              reason="the run exited with an unexpected code ($EXIT_CODE) — review before merging"
+            fi
+            gh pr comment "$PR_NUMBER" --body "Waiting for a person: ${reason}."
+          fi

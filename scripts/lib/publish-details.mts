@@ -37,7 +37,7 @@ export function detailFileProblems(details: readonly SchoolDetail[], schools: re
 /** Null when the tables exist; otherwise what's wrong (most likely the migration isn't applied). */
 export async function detailTablesProblem(client: SupabaseClient): Promise<string | null> {
   for (const table of ["school_details", "detail_staging"]) {
-    const { error } = await client.from(table).select("unit_id", { head: true });
+    const { error } = await client.from(table).select("unit_id").limit(1);
     if (!error) continue;
     const what = [error.message, error.code].filter(Boolean).join(" · ") || "no error message";
     return error.code === "42P01" || error.code === "PGRST205" ? `${what}. Apply ${MIGRATION} first.` : `checking ${table} failed: ${what}.`;

@@ -4,6 +4,7 @@ import { isGenderBalance } from "./student-body.ts";
 import { isDesignation, isResearchTier, isSettingGroup } from "./campus-profile.ts";
 import { isDivisionFilter, isRotcBranch } from "./campus-services.ts";
 import { conferenceName } from "./conferences.ts";
+import { isMajorFamily } from "./majors.ts";
 
 /** Unique values, or undefined when none remain. */
 const uniq = <T,>(v: T[] | undefined): T[] | undefined => (v?.length ? [...new Set(v)] : undefined);
@@ -23,7 +24,7 @@ const SORT_KEYS: SortKey[] = [
   "applicants", "name", "acceptance_rate", "enrollment", "sat", "pell", "first_gen", "diversity", "avg_cost", "aid_generosity", "net_price", "earnings", "grad_rate",
   "avg_cost_change", "admit_rate_change", "size_change", "apps_change", "diversity_change",
   "men_share", "part_time", "men_share_change", "admit_gap", "loan_rate", "loan_rate_change", "student_faculty", "completion_8yr", "completion_4yr",
-  "pell_gap", "pell_gap_change", "full_time_faculty", "out_of_state", "transfer_share", "instruction_spending", "endowment_per_student",
+  "pell_gap", "pell_gap_change", "full_time_faculty", "out_of_state", "transfer_share", "instruction_spending", "endowment_per_student", "bachelors",
 ];
 const VIEWS: ExploreView[] = ["grid", "table", "chart", "map"];
 
@@ -67,6 +68,9 @@ export function parseFilters(params: Params): SearchFilters {
     fewLoans: str(params.fewLoans) === "1" || undefined,
     pellGap: str(params.pellGap) === "1" || undefined,
     national: str(params.national) === "1" || undefined,
+    // Only a bachelor's field the site knows (lib/majors.ts): anything else is ignored rather than matching nothing.
+    field: ((f) => (f && isMajorFamily(f) ? f : undefined))(str(params.field)),
+    fieldMin: ((v) => (v !== undefined && Number.isInteger(v) && v > 1 ? v : undefined))(n(params.fieldMin)),
     liveOn: str(params.liveOn) === "1" || undefined,
     noFee: str(params.noFee) === "1" || undefined,
     guarantee: str(params.guarantee) === "1" || undefined,
@@ -119,6 +123,7 @@ export const FILTER_KEYS = [
   "fewLoans",
   "pellGap",
   "national",
+  "field",
   "liveOn",
   "noFee",
   "guarantee",

@@ -6,6 +6,8 @@ import { ArrowRight, Calculator, ChevronRight, ExternalLink, MapPin, TriangleAle
 import { getData, getDetail, getHistory, getHistoryFiles } from "@/lib/data";
 import { Residence } from "@/components/school/Residence";
 import { Transfers } from "@/components/school/Transfers";
+import { Majors } from "@/components/school/Majors";
+import { fastestGrowingField } from "@/lib/majors";
 import type { Cited } from "@/lib/lineage";
 import {
   DOMAINS,
@@ -81,7 +83,7 @@ import { TenYearTile } from "@/components/history/TenYearTile";
 import { HeadlineDelta } from "@/components/history/HeadlineDelta";
 import { TrendIndicatorStrip } from "@/components/trends/TrendIndicators";
 import { HistorySourceNote } from "@/components/sources/HistorySourceNote";
-import { historyYearLabel, lastYear, type NationalHistory, type SeriesKey } from "@/lib/history";
+import { WINDOW_YEARS, historyYearLabel, lastYear, majorSeriesKey, type NationalHistory, type SeriesKey } from "@/lib/history";
 import { FORM_LABELS, INSTRUCTION_METRIC, endowmentMetricFor } from "@/lib/finances";
 
 /** Series each "Over time" group shows; they drive the group's source footnote. */
@@ -208,7 +210,7 @@ const SECTION_FIELDS = {
     "outcomes.grad_rate_by_race",
     "outcomes.grad_cohorts_by_race",
   ],
-  academics: ["academics.student_faculty_ratio", "academics.faculty", "academics.faculty.full_time_share", "finances"],
+  academics: ["academics.bachelors_awarded", "academics.majors_top", "detail.majors", "academics.student_faculty_ratio", "academics.faculty", "academics.faculty.full_time_share", "finances"],
   campus: ["campus.housing", "campus.athletics", "campus.programs", "campus.services", "campus.calendar", "demographics.disability_services"],
   ranks: ["derived.sat_mid", "derived.yield", "demographics.pell_grant_percent", "derived.diversity_index", "admissions.acceptance_rate"],
 } as const satisfies Record<string, readonly FieldPath[]>;
@@ -363,7 +365,12 @@ export default async function SchoolPage({ params }: Props) {
   const faculty = school.academics?.faculty ?? null;
   const fullTimeShare = faculty?.full_time_share ?? null;
   const facultySalaryValue = faculty?.avg_salary_9mo ?? null;
-  const hasAcademics = ratio !== null || fullTimeShare !== null || facultySalaryValue !== null || finances !== null;
+  // Majors (specs/data-expansion/majors.md): the fastest-growing field over the 10 years ending with the newest C{Y}_A.
+  const majorsTop = school.academics?.majors_top ?? null;
+  const caFiles = historyFiles?.meta.files["c-a"];
+  const caEnd = caFiles?.length ? caFiles[caFiles.length - 1].year : null;
+  const majorGrowth = history && caEnd !== null ? fastestGrowingField(history.series, [caEnd - WINDOW_YEARS, caEnd]) : null;
+  const hasAcademics = !!majorsTop?.length || ratio !== null || fullTimeShare !== null || facultySalaryValue !== null || finances !== null;
   const recentAdmissionChanges = history ? historyEvents(history).filter((e) => e.area === "admissions" && e.kind === "fall" && e.year > FACTOR_ERA) : [];
   const federalSat = citeField("admissions.sat_reading_25_75", school).isDefault && citeField("admissions.sat_math_25_75", school).isDefault;
   const federalAct = citeField("admissions.act_composite_25_75", school).isDefault;
@@ -1004,9 +1011,10 @@ export default async function SchoolPage({ params }: Props) {
               id="academics"
               domain="size"
               eyebrow="Academics"
-              title="Faculty and students"
+              title="Majors and faculty"
               takeaway={
                 [
+                  majorsTop?.length ? `The most popular major is ${majorsTop[0].title} (${pct(majorsTop[0].share)} of graduates).` : null,
                   ratio !== null ? `${ratio} students for every faculty member${ratioVs ? `, ${ratioVs.word} than at ${pct(ratioVs.share)} of colleges` : ""}.` : null,
                   fullTimeShare !== null ? `${pct(fullTimeShare)} of faculty are full-time.` : null,
                   finances?.instruction_per_student != null ? `Spends ${money(finances.instruction_per_student)} a year on instruction per student.` : null,
@@ -1018,6 +1026,19 @@ export default async function SchoolPage({ params }: Props) {
               fields={SECTION_FIELDS.academics}
             >
               <div className="grid gap-4 lg:grid-cols-2">
+                <Majors
+                  school={school}
+                  detail={detail}
+                  cited={citeField("academics.majors_top", school)}
+                  citedPrograms={citeField("detail.majors", school)}
+                  growth={majorGrowth}
+                  growthNote={
+                    majorGrowth && historyFiles ? (
+                      <HistorySourceNote keys={["bachelors", majorSeriesKey(majorGrowth.family)]} files={historyFiles} range={[majorGrowth.from.year, majorGrowth.to.year]} />
+                    ) : null
+                  }
+                  color={DOMAINS.size.color}
+                />
                 {ratio !== null && (
                   <div className="rounded-3xl border bg-card p-4 sm:p-6">
                     <DistributionStrip

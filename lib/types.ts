@@ -222,6 +222,15 @@ export interface School {
       /** Instructional staff counted in the salary figure, when available; not published in SAL_IS itself today. */
       count: number | null;
     } | null;
+    /**
+     * Majors (specs/data-expansion/majors.md; IPEDS Completions C{Y}_A, lib/majors.ts): bachelor's degrees awarded as a
+     * first major in the year. 0 when the college reported none; null/absent when it isn't in the file.
+     */
+    bachelors_awarded?: number | null;
+    /** The 5 programs (6-digit CIP) with the most first-major bachelor's, with each one's share of them. */
+    majors_top?: MajorShare[] | null;
+    /** First-major bachelor's by 2-digit CIP family (only families with any), for filters and history. */
+    bachelors_by_family?: Record<string, number> | null;
   };
   /**
    * College finances (specs/data-expansion/finances.md): IPEDS Finance survey, derived per-student figures
@@ -449,6 +458,13 @@ export interface CdsAid {
   merit_avg: number | null;
 }
 
+/** One program in academics.majors_top: CIP 2020 code ("11.0701"), NCES title, share of first-major bachelor's. */
+export interface MajorShare {
+  cip: string;
+  title: string;
+  share: number;
+}
+
 export type Topic = "institution" | "admissions" | "enrollment" | "demographics" | "cost" | "prices" | "outcomes" | "aid" | "campus" | "academics";
 /** NCAA division with the football subdivision, or null (NAIA and non-members have none). */
 export type NcaaDivision = "I-FBS" | "I-FCS" | "I" | "II" | "III";
@@ -479,7 +495,7 @@ export interface CampusPrograms {
   intellectual_disability_program: boolean;
 }
 
-export type SourceKey = "scorecard" | "ipeds-adm" | "ipeds-sfa" | "ipeds-ic" | "ipeds-ic-char" | "ipeds-hd" | "ipeds-ef" | "ipeds-ef-c" | "ipeds-ef-a" | "ipeds-om" | "ipeds-sal" | "ipeds-f" | "cds"
+export type SourceKey = "scorecard" | "ipeds-adm" | "ipeds-sfa" | "ipeds-ic" | "ipeds-ic-char" | "ipeds-hd" | "ipeds-ef" | "ipeds-ef-c" | "ipeds-ef-a" | "ipeds-c" | "ipeds-om" | "ipeds-sal" | "ipeds-f" | "cds"
   /** IPEDS Graduation Rates, Pell and subsidized-loan file (GR{Y}_PELL_SSL; specs/data-expansion/graduation-by-group.md). */
   | "ipeds-gr";
 /** Race/ethnicity groups for graduation rates (lib/graduation-groups.ts RACE_GROUPS). */
@@ -529,6 +545,7 @@ export type SizeBucket = "small" | "medium" | "large" | "xl";
 
 export type SortKey =
   | "applicants"
+  | "bachelors"
   | "completion_8yr"
   | "completion_4yr"
   | "student_faculty"
@@ -619,6 +636,9 @@ export interface SearchFilters {
   fullTime?: boolean;
   /** Only colleges where at least half of first-years come from other states (lib/residence.ts). */
   national?: boolean;
+  /** Majors (lib/majors.ts): a 2-digit CIP family, and at least this many first-major bachelor's a year in it (default 1). */
+  field?: string;
+  fieldMin?: number;
   sortBy?: SortKey;
   sortDir?: "asc" | "desc";
 }

@@ -29,8 +29,8 @@ export type RoadmapGroupKey =
 export const ROADMAP_GROUPS: { key: RoadmapGroupKey; title: string; description: string }[] = [
   {
     key: "wave-3",
-    title: "Wave 3: majors and earnings by major",
-    description: "Large per-college tables that need a new detail file alongside the main dataset.",
+    title: "Wave 3: earnings by major",
+    description: "A large per-college table in the detail file, joined to the majors already on the site.",
   },
   {
     key: "college-reported",
@@ -109,15 +109,6 @@ export interface RoadmapSpec {
 /** In build order within each group (the backlog's order, specs/backlog.md). */
 export const ROADMAP: RoadmapSpec[] = [
   {
-    slug: "majors",
-    file: "specs/data-expansion/majors.md",
-    group: "wave-3",
-    summary: "What students actually study: top majors, how big each program is, and which are growing.",
-    complexity: 4,
-    complexityNote: "Builds the per-college detail file, its database table, and the field-of-study taxonomy.",
-    status: "planned",
-  },
-  {
     slug: "field-of-study",
     file: "specs/data-expansion/field-of-study.md",
     group: "wave-3",
@@ -125,7 +116,6 @@ export const ROADMAP: RoadmapSpec[] = [
     complexity: 3,
     complexityNote: "A large Scorecard dataset joined to the majors table.",
     status: "planned",
-    after: ["majors"],
   },
   {
     slug: "college-reported-data",

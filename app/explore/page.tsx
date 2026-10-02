@@ -28,6 +28,7 @@ import { DESIGNATION_KEYS, RESEARCH_TIERS, SETTING_GROUPS, designationsOf, isOpp
 import { DIVISION_FILTERS, ROTC_BRANCHES, divisionFilterOf } from "@/lib/campus-services";
 import { MAX_RATIO_OPTIONS, MIN_FULL_TIME_FACULTY_OPTIONS } from "@/lib/academics";
 import { drawsNationally } from "@/lib/residence";
+import { fieldFacets } from "@/lib/majors";
 import { InfoTip } from "@/components/ui/info-tip";
 import { MultiSourceNote } from "@/components/sources/MultiSourceNote";
 
@@ -102,6 +103,7 @@ function buildFacets({ getAllSchools, histogram }: Dataset): FilterFacets {
     fewLoans: all.filter(hasFewLoans).length,
     pellGap: all.filter(hasSmallPellGap).length,
     national: all.filter(drawsNationally).length,
+    fields: fieldFacets(all),
     housing: Object.fromEntries(HOUSING_FILTERS.map((f) => [f.param, all.filter(f.test).length])) as FilterFacets["housing"],
     factors: Object.fromEntries(FACTOR_FILTERS.map((f) => [f.param, all.filter(f.test).length])) as FilterFacets["factors"],
     campus,
@@ -330,7 +332,7 @@ export default async function ExplorePage({
             <Pagination params={params} page={paged.page} pages={paged.pages} total={paged.total} perPage={perPage} />
           )}
 
-          <MultiSourceNote schools={schools} fields={[...Object.values(METRICS).map((m) => m.field), ...(view === "map" ? (["location.lat", "campus.setting"] as const) : [])]} className="pt-2" />
+          <MultiSourceNote schools={schools} fields={[...Object.values(METRICS).map((m) => m.field), "academics.majors_top", ...(view === "map" ? (["location.lat", "campus.setting"] as const) : [])]} className="pt-2" />
 
           {schools.length > 0 && (
             <p className={cn("pt-2 text-xs text-muted-foreground", view === "grid" && "hidden sm:block")}>

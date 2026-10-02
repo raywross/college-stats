@@ -138,6 +138,10 @@ const TABLE_ROWS = (
       s.academics?.faculty?.full_time_share == null ? null : pct(s.academics.faculty.full_time_share)],
     ["Average faculty salary", "nine-month-equated-salary", "academics.faculty", (s: School) =>
       s.academics?.faculty?.avg_salary_9mo == null ? null : money(s.academics.faculty.avg_salary_9mo)],
+    // Majors (specs/data-expansion/majors.md): first-major bachelor's, and the 3 largest programs by share of them.
+    ["Bachelor's degrees awarded", "first-major", "academics.bachelors_awarded", (s: School) => opt(s.academics?.bachelors_awarded ?? null, num)],
+    ["Most popular majors", "cip-code", "academics.majors_top", (s: School) =>
+      s.academics?.majors_top?.length ? s.academics.majors_top.slice(0, 3).map((m) => `${m.title} ${pct(m.share)}`).join(" · ") : null],
     // Compared only within the same accounting form; the form is shown since figures otherwise look directly comparable.
     ["Instruction spending per student", "instruction-expenses", "finances", (s: School) =>
       s.finances?.instruction_per_student == null ? null : `${money(s.finances.instruction_per_student)} (${FORM_SHORT[s.finances.form]})`],

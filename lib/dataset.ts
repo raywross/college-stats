@@ -12,6 +12,7 @@ import { matchesServices } from "./campus-services.ts";
 import { withinMaxRatio, withinMinFullTimeFaculty } from "./academics.ts";
 import { hasSmallPellGap } from "./graduation-groups.ts";
 import { drawsNationally } from "./residence.ts";
+import { matchesField } from "./majors.ts";
 import {
   METRICS,
   SIZE_BUCKETS,
@@ -117,6 +118,7 @@ const SORTERS: Record<SortKey, (s: School) => number | string | null> = {
   // Endowment reuses the FASB-only getter: Explore's endowment sort defaults to private nonprofits (specs/data-expansion/finances.md).
   instruction_spending: METRICS.financesInstruction.get,
   endowment_per_student: METRICS.endowmentFasb.get,
+  bachelors: (s) => s.academics?.bachelors_awarded ?? null,
 };
 
 function mode(values: number[]): number | null {
@@ -234,6 +236,8 @@ export function createDataset({ schools, meta, releaseCalendar }: DatasetFiles) 
     // Graduation by group: colleges without both Pell and "neither" rates are left out while set.
     if (filters.pellGap) results = results.filter(hasSmallPellGap);
     if (filters.national) results = results.filter(drawsNationally);
+    // Majors: colleges that don't report degrees by field are left out while set.
+    if (filters.field) results = results.filter((s) => matchesField(s, filters.field!, filters.fieldMin));
     if (filters.liveOn) results = results.filter(requiresLiveOn);
     if (filters.noFee) results = results.filter(noApplicationFee);
     if (filters.guarantee) results = results.filter(hasTuitionGuarantee);

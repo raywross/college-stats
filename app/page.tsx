@@ -281,7 +281,7 @@ export default async function HomePage() {
         </section>
 
         {/* ============================== WHAT'S CHANGED ============================== */}
-        <WhatsChanged valueColor={DOMAINS.value.color} admissionsColor={DOMAINS.admissions.color} scoresColor={DOMAINS.scores.color} />
+        <WhatsChanged valueColor={DOMAINS.value.color} admissionsColor={DOMAINS.admissions.color} scoresColor={DOMAINS.scores.color} academicsColor={DOMAINS.size.color} />
 
         {/* ============================== MAP + LEADERBOARDS ============================== */}
         <section>

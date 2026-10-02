@@ -16,6 +16,9 @@ import { FACTOR_COLUMNS } from "../../lib/derive.ts";
 import { OM_COLUMNS, OM_FIRST_FILE, OM_LAG, OM_PIVOT } from "../../lib/outcome-measures.ts";
 import { EFA_COLUMNS, EFA_FIRST_YEAR, EFA_WIDE } from "../../lib/transfers.ts";
 import { GR_PELL_COHORT_TYPE, GR_PELL_COLUMNS } from "../../lib/graduation-groups.ts";
+import { C_COLUMNS } from "../../lib/majors.ts";
+import { fromCip2010 } from "../../lib/cip.ts";
+import { familyKey } from "../lib/majors-sync.mts";
 
 /** A value read from one row: a column, or the sum of parts (IC2001 splits admissions by gender). */
 export type ColumnSpec = string | { sum: readonly string[] };
@@ -50,6 +53,8 @@ export interface Era {
   step?: number;
   /** Several rows per college, pivoted into one (scripts/lib/ipeds.mts `wide`). */
   wide?: { key: string; values: readonly string[] };
+  /** Many rows per college, summed into one (scripts/lib/ipeds.mts `sum`; completions). */
+  sum?: { key: (row: Record<string, string>) => string | null; value: string };
 }
 
 const yy = (y: number) => String(y % 100).padStart(2, "0");
@@ -221,6 +226,26 @@ export const ERAS: readonly Era[] = [
     required: () => [...EFA_COLUMNS],
     wide: EFA_WIDE,
   },
+  // Majors (specs/data-expansion/majors.md): C{Y+1}_A holds degrees awarded July Y to June Y+1, one row per college ×
+  // program × award level × major, summed here to first-major bachelor's by 2-digit family. Probed 2026-10-02: the same
+  // columns in C2014_A–C2025_A; CIP 2020 codes from C2020_A (30.70 Data Science first appears), CIP 2010 before, read
+  // through NCES's crosswalk (lib/cip.ts fromCip2010; every pre-2020 code site colleges used maps to a CIP 2020 code).
+  {
+    family: "c-a",
+    years: [2013, 2018],
+    files: (y) => [{ name: `C${y + 1}_A` }],
+    required: () => [...C_COLUMNS],
+    sum: { key: (r) => familyKey(r, fromCip2010), value: "CTOTALT" },
+    lag: 1,
+  },
+  {
+    family: "c-a",
+    years: [2019, OPEN],
+    files: (y) => [{ name: `C${y + 1}_A` }],
+    required: () => [...C_COLUMNS],
+    sum: { key: (r) => familyKey(r), value: "CTOTALT" },
+    lag: 1,
+  },
   {
     family: "services",
     years: [2014, OPEN],
@@ -263,7 +288,7 @@ export function eraFor(family: HistoryFamily, year: number): Era | null {
 }
 
 /** Families by the kind of year they describe, and the first year each can start. */
-export const FAMILY_ORDER: readonly HistoryFamily[] = ["ic-admissions", "adm", "prices", "sfa", "characteristics", "services", "ef-d", "ef-c", "ef-a", "om", "gr-pell", "ipeds-sal"];
+export const FAMILY_ORDER: readonly HistoryFamily[] = ["ic-admissions", "adm", "prices", "sfa", "characteristics", "services", "ef-d", "ef-c", "ef-a", "c-a", "om", "gr-pell", "ipeds-sal"];
 
 /** Columns a value spec reads. */
 export function specColumns(spec: ColumnSpec): readonly string[] {

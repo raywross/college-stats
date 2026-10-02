@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { getHistoryFiles } from "@/lib/data";
-import { formatChange, historyYearLabel } from "@/lib/history";
+import { formatChange, historyYearLabel, majorSeriesKey } from "@/lib/history";
+import { majorFamilyName, type MajorFamily } from "@/lib/majors";
+import { pctSmart } from "@/lib/format";
 import { movedBy } from "@/lib/insights";
 import { Sparkline } from "@/components/charts/Sparkline";
 import { HistorySourceNote } from "@/components/sources/HistorySourceNote";
@@ -15,6 +17,7 @@ function FactCard({
   footer,
   href,
   cta,
+  className,
 }: {
   big: string;
   children: React.ReactNode;
@@ -22,9 +25,10 @@ function FactCard({
   footer: React.ReactNode;
   href: string;
   cta: string;
+  className?: string;
 }) {
   return (
-    <div className="flex min-w-0 flex-col rounded-3xl border bg-card p-4 sm:p-6">
+    <div className={cn("flex min-w-0 flex-col rounded-3xl border bg-card p-4 sm:p-6", className)}>
       <p className="font-display text-4xl font-extrabold tracking-tight tabular-nums sm:text-5xl">{big}</p>
       <p className="mt-2 text-muted-foreground">{children}</p>
       <div className="mt-5">{chart}</div>
@@ -40,13 +44,29 @@ function FactCard({
  * Home "What's changed": national trend facts over fixed panels, precomputed by `npm run sync-history` into
  * data/history/facts.json (specs/trends-design.md#home-whats-changed-3-facts). Renders nothing without history.
  */
-export async function WhatsChanged({ valueColor, admissionsColor, scoresColor }: { valueColor: string; admissionsColor: string; scoresColor: string }) {
+export async function WhatsChanged({
+  valueColor,
+  admissionsColor,
+  scoresColor,
+  academicsColor,
+}: {
+  valueColor: string;
+  admissionsColor: string;
+  scoresColor: string;
+  academicsColor: string;
+}) {
   const files = await getHistoryFiles();
   const facts = files?.facts;
   if (!files || !facts || (!facts.priceGap && !facts.harderToGetIn && !facts.testRequired)) return null;
   const { priceGap: pg, harderToGetIn: hi, testRequired: tr } = facts;
   const lg = facts.legacy ?? null;
-  const count = [pg, hi, tr, lg].filter(Boolean).length;
+  // What graduates study (specs/data-expansion/majors.md): the biggest gainer, plus the 3 biggest gains and losses.
+  const mj = facts.majors?.families.length ? facts.majors : null;
+  const count = [pg, hi, tr, lg, mj].filter(Boolean).length;
+  const mjTop = mj?.families[0] ?? null;
+  const mjRows = mj ? [...mj.families.slice(0, 3), ...mj.families.slice(-3).reverse()].filter((r, i, all) => all.findIndex((x) => x.family === r.family) === i) : [];
+  const mjMax = Math.max(0.001, ...mjRows.map((r) => Math.abs(r.to - r.from)));
+  const fieldName = (f: string) => majorFamilyName(f) ?? f;
 
   return (
     <section>
@@ -188,6 +208,47 @@ export async function WhatsChanged({ valueColor, admissionsColor, scoresColor }:
             parent attended between {historyYearLabel(lg.from, "fall").toLowerCase()} and {historyYearLabel(lg.to, "fall").toLowerCase()}, and{" "}
             {lg.started} started, across {lg.n.toLocaleString("en-US")} colleges reporting both years. <Term term="legacy-status">Legacy status</Term>{" "}
             has been reported to the federal government only since {historyYearLabel(lg.from, "fall").toLowerCase()}.
+          </FactCard>
+        )}
+        {mj && mjTop && (
+          <FactCard
+            className={count % 2 === 1 && count !== 3 ? "md:col-span-2" : undefined}
+            big={formatChange({ measure: "ratio", change: mjTop.from > 0 ? mjTop.to / mjTop.from - 1 : 0 })}
+            href={`/explore?field=${mjTop.family}`}
+            cta={`See colleges with ${fieldName(mjTop.family).toLowerCase()} majors`}
+            chart={
+              <div className="space-y-2" role="img" aria-label={`Change in each field's share of bachelor's degrees, ${historyYearLabel(mj.from, "academic")} to ${historyYearLabel(mj.to, "academic")}: ${mjRows.map((r) => `${fieldName(r.family)} ${pctSmart(r.from)} to ${pctSmart(r.to)}`).join("; ")}`}>
+                {mjRows.map((r) => {
+                  const d = r.to - r.from;
+                  return (
+                    <div key={r.family} className="grid grid-cols-[minmax(0,12rem)_1fr_3.5rem] items-center gap-2 text-xs">
+                      <span className="truncate text-muted-foreground" title={fieldName(r.family)}>
+                        {fieldName(r.family)}
+                      </span>
+                      <span className="grid grid-cols-2">
+                        <span className="flex justify-end">
+                          {d < 0 && <span className="block h-3 rounded-l bg-muted-foreground/70" style={{ width: `${(Math.abs(d) / mjMax) * 100}%` }} />}
+                        </span>
+                        <span className="border-l border-border">
+                          {d > 0 && <span className="block h-3 rounded-r" style={{ width: `${(d / mjMax) * 100}%`, backgroundColor: academicsColor }} />}
+                        </span>
+                      </span>
+                      <span className="text-right font-semibold tabular-nums">
+                        {d > 0 ? "+" : d < 0 ? "−" : ""}
+                        {Math.abs(d * 100).toFixed(1)} pts
+                      </span>
+                    </div>
+                  );
+                })}
+                <p className="text-[11px] text-muted-foreground">Change in share of bachelor&apos;s degrees (first majors), in points</p>
+              </div>
+            }
+            footer={<HistorySourceNote keys={["bachelors", ...mjRows.map((r) => majorSeriesKey(r.family as MajorFamily))]} files={files} range={[mj.from, mj.to]} />}
+          >
+            <b className="text-foreground">What students study is shifting.</b> {fieldName(mjTop.family)} went from {pctSmart(mjTop.from)} of bachelor&apos;s
+            degrees in {historyYearLabel(mj.from, "academic")} to {pctSmart(mjTop.to)} in {historyYearLabel(mj.to, "academic")}, across{" "}
+            {mj.n.toLocaleString("en-US")} colleges awarding them in both years. Fields are grouped by <Term term="cip-code">CIP code</Term>, counting{" "}
+            <Term term="first-major">first majors</Term>.
           </FactCard>
         )}
       </div>

@@ -20,6 +20,7 @@ import {
 import { money, moneyCompact, pct, pctSmart, num } from "./format";
 import { leaversElsewhere } from "./outcome-measures";
 import { shortName } from "./brand";
+import { pellGraduateAtSameRate } from "./graduation-groups";
 import { SERIES, changeOver, defaultWindow, historyYearLabel, isTinyBase, type SchoolHistory, type SeriesKey } from "./history";
 import type { HistoryFiles } from "./supabase";
 
@@ -70,6 +71,8 @@ export function standouts({ rankOf }: Dataset, s: School, { trends = false }: { 
   // (specs/data-expansion/outcome-measures.md). "Enroll", not "finish": the data doesn't say they graduated there.
   if (at("transferOut", (v) => v >= 0.95) && (leaversElsewhere(s.outcomes?.eight_year?.all) ?? 0) > 0.5)
     out.push({ label: "Most who leave go on to another college", domain: "value", metric: "transferOut" });
+  // An absolute rule, not a percentile (specs/data-expansion/graduation-by-group.md; lib/graduation-groups.ts SAME_RATE).
+  if (pellGraduateAtSameRate(s)) out.push({ label: "Pell students graduate at the same rate", domain: "access", metric: "pellGap" });
   const { test_submission_rate_sat: sat, test_submission_rate_act: act } = s.admissions;
   if (sat !== null && act !== null && sat < 0.5 && act < 0.5) {
     out.push({ label: "Test-optional heavy", domain: "scores", metric: "sat" });

@@ -10,6 +10,7 @@ import type { FormatKind } from "./format";
 import type { TermKey } from "./glossary";
 import type { DatasetMeta, SchoolTrends, SourceKey } from "./types";
 import { simpsonIndex } from "./derive.ts";
+import { MAX_PLAUSIBLE_GAP } from "./graduation-groups.ts";
 
 /* ------------------------------------------------------------------ */
 /* Series                                                              */
@@ -67,11 +68,13 @@ export const HISTORY_FAMILIES = {
   services: { source: "ipeds-ic-char", kind: "academic", files: "IC{year} (athletics and ROTC)" },
   "ef-d": { source: "ipeds-ef", kind: "fall", files: "EF{year}D (student-to-faculty ratio)" },
   om: { source: "ipeds-om", kind: "cohort", files: "OM{year+8} (Outcome Measures, 8 years after entry)" },
+  "gr-pell": { source: "ipeds-gr", kind: "cohort", files: "GR{year+6}_PELL_SSL (graduation by Pell Grant and subsidized loan status)" },
   // College Scorecard API, year-prefixed fields (not files): years can have gaps, so they aren't checked as consecutive.
   "scorecard-enrollment": { source: "scorecard", kind: "fall", files: "API fields {year}.student.size, {year}.student.demographics.race_ethnicity.*, .men, and {year}.student.part_time_share", api: true, citeAs: "enrollment" },
   "scorecard-completion": { source: "scorecard", kind: "cohort", files: "API field {year+6}.completion.completion_rate_4yr_150nt", api: true, citeAs: "graduation by entering class" },
   "scorecard-debt": { source: "scorecard", kind: "academic", files: "API field {year}.aid.median_debt.completers.overall", api: true, citeAs: "median debt" },
   "scorecard-loans": { source: "scorecard", kind: "academic", files: "API field {year+1}.aid.federal_loan_rate", api: true, citeAs: "federal loan rate" },
+  "scorecard-completion-race": { source: "scorecard", kind: "cohort", files: "API fields {year+6}.completion.completion_rate_4yr_150_* and completion_cohort_4yr_150_* (by race and ethnicity)", api: true, citeAs: "graduation by race and ethnicity" },
 } as const satisfies Record<string, { source: SourceKey; kind: YearKind; files: string; api?: true; citeAs?: string }>;
 
 export type HistoryFamily = keyof typeof HISTORY_FAMILIES;
@@ -170,6 +173,23 @@ export const SERIES = {
   om_transfer: { label: "Enrolled at another college 8 years on, all entering students", short: "Enrolled elsewhere", field: "outcomes.eight_year", term: "transfer-out", unit: "share", kind: "cohort", format: "pct", families: ["om"] },
   om_award_pell: { label: "Earned a credential within 8 years, Pell Grant recipients", short: "Pell recipients", field: "outcomes.eight_year", term: "outcome-measures", unit: "share", kind: "cohort", format: "pct", families: ["om"] },
   om_award_non_pell: { label: "Earned a credential within 8 years, students without a Pell Grant", short: "No Pell Grant", field: "outcomes.eight_year", term: "outcome-measures", unit: "share", kind: "cohort", format: "pct", families: ["om"] },
+  // Graduation by group (specs/data-expansion/graduation-by-group.md): rates null under 30 students; cohorts always kept.
+  grad_rate_pell: { label: "Graduated within 6 years, Pell Grant recipients", short: "Pell recipients", field: "outcomes.grad_rate_pell", term: "pell-graduation-gap", unit: "share", kind: "cohort", format: "pct", families: ["gr-pell"] },
+  grad_rate_no_pell_no_loan: { label: "Graduated within 6 years, neither Pell nor subsidized loan", short: "No Pell or subsidized loan", field: "outcomes.grad_rate_no_pell_no_loan", term: "pell-graduation-gap", unit: "share", kind: "cohort", format: "pct", families: ["gr-pell"] },
+  grad_cohort_pell: { label: "Pell Grant recipients in the entering class", short: "Pell students", field: "outcomes.grad_cohorts", term: "adjusted-cohort", unit: "count", kind: "cohort", format: "num", families: ["gr-pell"] },
+  grad_cohort_no_pell_no_loan: { label: "Students with neither in the entering class", short: "Students with neither", field: "outcomes.grad_cohorts", term: "adjusted-cohort", unit: "count", kind: "cohort", format: "num", families: ["gr-pell"] },
+  grad_rate_white: { label: "Graduated within 6 years, White students", short: "White", field: "outcomes.grad_rate_by_race", term: "graduation-rate", unit: "share", kind: "cohort", format: "pct", families: ["scorecard-completion-race"] },
+  grad_rate_asian: { label: "Graduated within 6 years, Asian students", short: "Asian", field: "outcomes.grad_rate_by_race", term: "graduation-rate", unit: "share", kind: "cohort", format: "pct", families: ["scorecard-completion-race"] },
+  grad_rate_hispanic: { label: "Graduated within 6 years, Hispanic/Latino students", short: "Hispanic/Latino", field: "outcomes.grad_rate_by_race", term: "graduation-rate", unit: "share", kind: "cohort", format: "pct", families: ["scorecard-completion-race"] },
+  grad_rate_black: { label: "Graduated within 6 years, Black students", short: "Black", field: "outcomes.grad_rate_by_race", term: "graduation-rate", unit: "share", kind: "cohort", format: "pct", families: ["scorecard-completion-race"] },
+  grad_rate_two_or_more: { label: "Graduated within 6 years, students of two or more races", short: "Two or more", field: "outcomes.grad_rate_by_race", term: "graduation-rate", unit: "share", kind: "cohort", format: "pct", families: ["scorecard-completion-race"] },
+  grad_rate_international: { label: "Graduated within 6 years, international students", short: "International", field: "outcomes.grad_rate_by_race", term: "graduation-rate", unit: "share", kind: "cohort", format: "pct", families: ["scorecard-completion-race"] },
+  grad_cohort_white: { label: "White students in the entering class", short: "White students", field: "outcomes.grad_cohorts_by_race", term: "adjusted-cohort", unit: "count", kind: "cohort", format: "num", families: ["scorecard-completion-race"] },
+  grad_cohort_asian: { label: "Asian students in the entering class", short: "Asian students", field: "outcomes.grad_cohorts_by_race", term: "adjusted-cohort", unit: "count", kind: "cohort", format: "num", families: ["scorecard-completion-race"] },
+  grad_cohort_hispanic: { label: "Hispanic/Latino students in the entering class", short: "Hispanic/Latino students", field: "outcomes.grad_cohorts_by_race", term: "adjusted-cohort", unit: "count", kind: "cohort", format: "num", families: ["scorecard-completion-race"] },
+  grad_cohort_black: { label: "Black students in the entering class", short: "Black students", field: "outcomes.grad_cohorts_by_race", term: "adjusted-cohort", unit: "count", kind: "cohort", format: "num", families: ["scorecard-completion-race"] },
+  grad_cohort_two_or_more: { label: "Students of two or more races in the entering class", short: "Two-or-more students", field: "outcomes.grad_cohorts_by_race", term: "adjusted-cohort", unit: "count", kind: "cohort", format: "num", families: ["scorecard-completion-race"] },
+  grad_cohort_international: { label: "International students in the entering class", short: "International students", field: "outcomes.grad_cohorts_by_race", term: "adjusted-cohort", unit: "count", kind: "cohort", format: "num", families: ["scorecard-completion-race"] },
 } as const satisfies Record<string, SeriesDef>;
 
 export type SeriesKey = keyof typeof SERIES;
@@ -185,6 +205,18 @@ export const RACE_SERIES = {
   international: "race_international",
   other: "race_other",
 } as const satisfies Record<string, SeriesKey>;
+/**
+ * Graduation by race/ethnicity series (rate, cohort) per group, in the site's category order. American Indian/Alaska
+ * Native and Pacific Islander groups are in the snapshot only: they rarely reach 30 students in an entering class.
+ */
+export const GRAD_RACE_SERIES = {
+  white: ["grad_rate_white", "grad_cohort_white"],
+  asian: ["grad_rate_asian", "grad_cohort_asian"],
+  hispanic: ["grad_rate_hispanic", "grad_cohort_hispanic"],
+  black: ["grad_rate_black", "grad_cohort_black"],
+  two_or_more: ["grad_rate_two_or_more", "grad_cohort_two_or_more"],
+  international: ["grad_rate_international", "grad_cohort_international"],
+} as const satisfies Record<string, readonly [SeriesKey, SeriesKey]>;
 /** Race/ethnicity history starts with fall 2010, when the new federal categories became required. */
 export const RACE_FROM = 2010;
 /** Federal loan rate: Scorecard year-prefixed values from key 2009 (the 2008–09 school year; checked 2026-09-29). */
@@ -526,6 +558,39 @@ export function diversityChange(h: SchoolHistory, meta: Pick<HistoryMeta, "lates
   return null;
 }
 
+/**
+ * Pell graduation gap (neither minus Pell, points) for an entering class; null unless both rates are reported (each
+ * already needs 30+ students).
+ */
+export function pellGapAt(h: SchoolHistory, year: number): number | null {
+  const pell = valueAt(h.series.grad_rate_pell, year);
+  const neither = valueAt(h.series.grad_rate_no_pell_no_loan, year);
+  if (pell === null || neither === null) return null;
+  // Implausibly far apart: groups sorted inconsistently (lib/graduation-groups.ts MAX_PLAUSIBLE_GAP).
+  return Math.abs(neither - pell) > MAX_PLAUSIBLE_GAP ? null : neither - pell;
+}
+
+/** Below this many Pell recipients in either entering class, the gap swings too much to compare over time. */
+export const PELL_GAP_MIN_COHORT = 100;
+
+/**
+ * Change in the Pell graduation gap over the default cohort window, in points (specs/data-expansion/graduation-by-group.md).
+ * Same endpoint rule as changeOver: the window's last entering class, and its first or up to 2 classes later (GR2016,
+ * the first file, follows the class of 2010). Null when either class had under PELL_GAP_MIN_COHORT Pell recipients.
+ */
+export function pellGapChange(h: SchoolHistory, meta: Pick<HistoryMeta, "latest">): { since: number; from: number; to: number; change: number } | null {
+  const [start, end] = defaultWindow(meta, "cohort");
+  const big = (y: number) => (valueAt(h.series.grad_cohort_pell, y) ?? 0) >= PELL_GAP_MIN_COHORT;
+  const to = pellGapAt(h, end);
+  if (to === null || !big(end)) return null;
+  for (let y = start; y <= start + 2; y++) {
+    const from = pellGapAt(h, y);
+    if (from === null) continue;
+    return big(y) ? { since: y, from, to, change: to - from } : null;
+  }
+  return null;
+}
+
 /** A college's 10-year changes for school.trends; empty when none can be measured. */
 export function trendSummary(h: SchoolHistory, cpi: CpiTable, meta: Pick<HistoryMeta, "latest">): SchoolTrends {
   const out: SchoolTrends = {};
@@ -539,6 +604,8 @@ export function trendSummary(h: SchoolHistory, cpi: CpiTable, meta: Pick<History
   }
   const d = diversityChange(h, meta);
   if (d) out.diversity = { since: d.since, from: r4(d.from), to: r4(d.to), change: r4(d.to - d.from) };
+  const g = pellGapChange(h, meta);
+  if (g) out.pell_gap = { since: g.since, from: r4(g.from), to: r4(g.to), change: r4(g.to - g.from) };
   return out;
 }
 

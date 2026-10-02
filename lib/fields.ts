@@ -22,6 +22,8 @@ export type VintageKey =
   | "ipeds-ef"
   /** IPEDS Outcome Measures (OM{Y}): students who entered in fall Y − 8, followed for 8 years. */
   | "ipeds-om"
+  /** IPEDS Graduation Rates, Pell/subsidized-loan file (GR{Y}_PELL_SSL): the class that entered fall Y − 6. */
+  | "ipeds-gr"
   | "scorecard-enrollment"
   /** Student age: IPEDS collects it in odd-numbered falls only, so it trails enrollment by a year every other year. */
   | "scorecard-age"
@@ -51,6 +53,13 @@ const adm = (label: string): FieldDef => ({ label, topic: "admissions", source: 
 const sfa = (label: string): FieldDef => ({ label, topic: "aid", source: "ipeds-sfa", vintage: "ipeds-sfa" });
 const ic = (label: string): FieldDef => ({ label, topic: "prices", source: "ipeds-ic", vintage: "ipeds-ic" });
 const hd = (label: string): FieldDef => ({ label, topic: "campus", source: "ipeds-hd", vintage: "ipeds-hd" });
+const gr = (label: string): FieldDef => ({
+  label,
+  topic: "outcomes",
+  source: "ipeds-gr",
+  vintage: "ipeds-gr",
+  derived: { formula: "Finished any degree or certificate within 150% of normal time ÷ adjusted cohort (not shown under 30 students)", inputs: ["outcomes.grad_cohorts"] },
+});
 const icChar = (label: string, topic: Topic = "campus"): FieldDef => ({ label, topic, source: "ipeds-ic-char", vintage: "ipeds-ic-char" });
 
 export const FIELDS = {
@@ -163,6 +172,14 @@ export const FIELDS = {
   "outcomes.repayment_3yr": scorecard("Borrowers' repayment status 3 years after leaving", "outcomes"),
   // IPEDS Outcome Measures (specs/data-expansion/outcome-measures.md).
   "outcomes.eight_year": { label: "8-year outcomes, all entering students", topic: "outcomes", source: "ipeds-om", vintage: "ipeds-om" },
+  // Graduation by group (specs/data-expansion/graduation-by-group.md): IPEDS GR{Y}_PELL_SSL and Scorecard by race.
+  "outcomes.grad_cohorts": { label: "Students in the graduation cohort, by Pell and loan status", topic: "outcomes", source: "ipeds-gr", vintage: "ipeds-gr" },
+  "outcomes.grad_rate_pell": gr("Graduated within 6 years, Pell Grant recipients"),
+  "outcomes.grad_rate_loan_no_pell": gr("Graduated within 6 years, subsidized loan without a Pell Grant"),
+  "outcomes.grad_rate_no_pell_no_loan": gr("Graduated within 6 years, neither Pell Grant nor subsidized loan"),
+  "outcomes.grad_rate_ftft": gr("Graduated within 6 years, all first-time full-time students"),
+  "outcomes.grad_cohorts_by_race": scorecard("Students in the graduation cohort, by race and ethnicity", "outcomes"),
+  "outcomes.grad_rate_by_race": scorecard("Graduated within 6 years, by race and ethnicity", "outcomes"),
 
   /* ---- Aid (IPEDS SFA / COST2) ---- */
   "aid.cohort": sfa("First-years in the aid cohort"),
@@ -193,7 +210,7 @@ export const FIELDS = {
     vintage: "ipeds-ic",
     derived: {
       formula: "Change over the last 10 years of each college's history; money after inflation (CPI-U), shares and the diversity index in points",
-      inputs: ["cost.avg_paid_all", "cost.breakdown", "admissions.acceptance_rate", "admissions.applicants", "demographics.undergrad_enrollment", "demographics.racial_diversity", "demographics.men_share", "outcomes.federal_loan_rate", "aid.grant_pct"],
+      inputs: ["cost.avg_paid_all", "cost.breakdown", "admissions.acceptance_rate", "admissions.applicants", "demographics.undergrad_enrollment", "demographics.racial_diversity", "demographics.men_share", "outcomes.federal_loan_rate", "aid.grant_pct", "outcomes.grad_rate_pell", "outcomes.grad_rate_no_pell_no_loan"],
     },
   },
 
@@ -243,6 +260,11 @@ export const FIELDS = {
     topic: "aid",
     computed: true,
     derived: { formula: "Grant dollars per first-year ÷ full price", inputs: ["cost.breakdown"] },
+  },
+  "derived.pell_grad_gap": {
+    ...gr("Pell graduation gap"),
+    computed: true,
+    derived: { formula: "Graduation rate of students with neither a Pell Grant nor a subsidized loan − Pell Grant recipients' rate (points)", inputs: ["outcomes.grad_rate_no_pell_no_loan", "outcomes.grad_rate_pell"] },
   },
   "derived.payback_years": {
     ...scorecard("Payback estimate", "outcomes"),

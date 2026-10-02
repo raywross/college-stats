@@ -32,6 +32,7 @@ import { MSI_FIELDS, campusProfileFrom, directoryIssues, msiFrom } from "../lib/
 import { studentFacultyRatioFrom } from "../lib/academics.ts";
 import { OM_COLUMNS, OM_LAG, OM_PIVOT, eightYearFrom } from "../lib/outcome-measures.ts";
 import { fetchPivotedTable } from "./lib/om.mts";
+import { GR_PELL_COHORT_TYPE, GR_PELL_COLUMNS, RACE_GROUPS, aidGroupGradFrom, raceGradFrom, scorecardRaceCohortField, scorecardRaceRateField } from "../lib/graduation-groups.ts";
 import { apCreditFrom, athleticsFrom, calendarFrom, disabilityFrom, programsFrom, servicesFrom } from "../lib/campus-services.ts";
 import { acceptanceRate, applicationFeeFrom, computePrices, factorsFrom, housingFrom, ipedsNum, parseShareBand, priceSuffix, promiseProgramFrom, raceShares, toAid, tuitionPlansFrom } from "../lib/derive.ts";
 
@@ -165,6 +166,8 @@ const FIELDS = [
   "latest.aid.median_debt.income.30001_75000",
   "latest.aid.median_debt.income.greater_than_75000",
   ...Object.values(REPAYMENT_FIELDS).map((f) => `${REPAYMENT}.${f}`),
+  // Graduation by race/ethnicity (specs/data-expansion/graduation-by-group.md): rates and cohort sizes.
+  ...RACE_GROUPS.flatMap((g) => [`latest.${scorecardRaceRateField(g)}`, `latest.${scorecardRaceCohortField(g)}`]),
 ];
 
 type ScorecardRow = Record<string, unknown>;
@@ -207,7 +210,7 @@ interface IpedsFile {
  * Download the newest available IPEDS bulk file. `names` lists candidate file
  * names newest-first; the first one NCES has published wins.
  */
-async function fetchIpeds(names: string[]): Promise<IpedsFile> {
+async function fetchIpeds(names: string[], keepRow?: (row: Record<string, string>) => boolean): Promise<IpedsFile> {
   for (const name of names) {
     let url = "";
     let res: Response | null = null;
@@ -227,7 +230,8 @@ async function fetchIpeds(names: string[]): Promise<IpedsFile> {
     // "_rv" files are NCES's revised release; prefer them when present.
     const csv = files.find((f) => /_rv\.csv$/i.test(f)) ?? files[0];
     const text = execFileSync("unzip", ["-p", zip, csv], { encoding: "latin1", maxBuffer: 512 * 1024 * 1024 });
-    const rows = new Map(parseCsv(text).map((r) => [r.UNITID, r]));
+    // Files with several rows per college (GR{Y}_PELL_SSL: one per cohort type) say which row to keep.
+    const rows = new Map(parseCsv(text).filter((r) => !keepRow || keepRow(r)).map((r) => [r.UNITID, r]));
     console.log(`  IPEDS ${name}: ${rows.size} institutions (${csv})`);
     return { name, url, rows };
   }
@@ -261,6 +265,10 @@ async function fetchOutcomeMeasures(): Promise<IpedsFile> {
   }
   throw new Error(`None of these IPEDS files are published yet: ${OM_NAMES.join(", ")}`);
 }
+// Graduation by Pell and loan status: GR{Y}_PELL_SSL = students who entered fall Y − 6 (GR2016 is the first).
+const GR_PELL_NAMES = recentYears.map((y) => `GR${y}_PELL_SSL`);
+/** "GR2024_PELL_SSL" → 2018, the entering class it follows. */
+const grCohortYear = (name: string) => Number(name.slice(2, 6)) - 6;
 
 /* ------------------------------------------------------------------ */
 /* 3. Merge                                                            */
@@ -454,7 +462,8 @@ function buildMeta(
   hd: IpedsFile,
   icChar: IpedsFile,
   efd: IpedsFile,
-  om: IpedsFile
+  om: IpedsFile,
+  grPell: IpedsFile
 ): DatasetMeta {
   const scorecardCostYear = scorecardYears.cost;
   return {
@@ -516,6 +525,14 @@ function buildMeta(
         description:
           "What happened to every student who started at each college, 8 years later: earned a degree or certificate there, still enrolled, enrolled at another college, or no record. Covers first-time and transfer students, full-time and part-time, with Pell Grant recipients separately.",
       },
+      "ipeds-gr": {
+        label: "IPEDS Graduation Rates survey (Pell Grant and subsidized loan recipients)",
+        publisher: "National Center for Education Statistics (NCES)",
+        edition: `Entered fall ${grCohortYear(grPell.name)} (${grPell.name})`,
+        url: grPell.url,
+        description:
+          "How many first-time, full-time students finished a degree or certificate within six years (150% of normal time), for Pell Grant recipients, students with a subsidized federal loan but no Pell Grant, and students with neither.",
+      },
       "ipeds-ic-char": {
         label: "IPEDS Institutional Characteristics survey (athletics, programs, services)",
         publisher: "National Center for Education Statistics (NCES)",
@@ -541,6 +558,7 @@ function buildMeta(
       "ipeds-ic-char": academicYear(icChar.name.slice(2)),
       "ipeds-ef": `Fall ${efd.name.slice(2, 6)}`,
       "ipeds-om": `Students entering fall ${Number(om.name.slice(2)) - OM_LAG}`,
+      "ipeds-gr": `Entered fall ${grCohortYear(grPell.name)}`,
       "scorecard-enrollment": scorecardYears.enrollment,
       "scorecard-age": scorecardYears.age,
       "scorecard-cost": scorecardYears.cost,
@@ -564,6 +582,20 @@ function addServices(school: School, row: Record<string, string> | undefined) {
   };
   school.admissions.accepts_ap_credit = apCreditFrom(row);
   school.demographics.disability_services = disabilityFrom(row);
+}
+
+/** Graduation by Pell/loan status (IPEDS GR{Y}_PELL_SSL) and by race/ethnicity (Scorecard); lib/graduation-groups.ts. */
+function addGradByGroup(school: School, row: Record<string, string> | undefined, sc: ScorecardRow) {
+  if (!school.outcomes) return;
+  const aid = aidGroupGradFrom(row);
+  school.outcomes.grad_rate_pell = aid?.rates.pell ?? null;
+  school.outcomes.grad_rate_loan_no_pell = aid?.rates.loan_no_pell ?? null;
+  school.outcomes.grad_rate_no_pell_no_loan = aid?.rates.no_pell_no_loan ?? null;
+  school.outcomes.grad_rate_ftft = aid?.rates.total ?? null;
+  school.outcomes.grad_cohorts = aid?.cohorts ?? null;
+  const race = raceGradFrom((f) => numOrNull(sc[`latest.${f}`]));
+  school.outcomes.grad_rate_by_race = race?.rates ?? null;
+  school.outcomes.grad_cohorts_by_race = race?.cohorts ?? null;
 }
 
 /** Setting, Carnegie classes, designations, and coordinates (lib/campus-profile.ts). */
@@ -705,6 +737,10 @@ async function main() {
   // 8-year outcomes (specs/data-expansion/outcome-measures.md).
   const om = await fetchOutcomeMeasures();
   const omEntering = Number(om.name.slice(2)) - OM_LAG;
+  // Graduation by Pell and loan status (specs/data-expansion/graduation-by-group.md): the total cohort row only.
+  const grPell = await fetchIpeds(GR_PELL_NAMES, (r) => r.PSGRTYPE === GR_PELL_COHORT_TYPE);
+  const grMissing = GR_PELL_COLUMNS.filter((c) => ![...grPell.rows.values()].some((r) => c in r));
+  if (grMissing.length || grPell.rows.size < 1000) throw new Error(`${grPell.name}: missing ${grMissing.join(", ") || "rows"} (cohort type ${GR_PELL_COHORT_TYPE})`);
   if (![...hd.rows.values()].some((r) => "LOCALE" in r && "CARNEGIEIC" in r)) throw new Error(`${hd.name} has no LOCALE/CARNEGIEIC columns`);
   // Campus services (specs/data-expansion/campus-services.md): the newest IC{Y}, a year ahead of the price files.
   const icChar = await fetchIpeds(IC_CHAR_NAMES);
@@ -730,6 +766,7 @@ async function main() {
     if (school) addServices(school, icChar.rows.get(school.unit_id));
     if (school) school.academics = { student_faculty_ratio: studentFacultyRatioFrom(efd.rows.get(school.unit_id)) };
     if (school?.outcomes) school.outcomes.eight_year = eightYearFrom(om.rows.get(school.unit_id), omEntering);
+    if (school) addGradByGroup(school, grPell.rows.get(school.unit_id), row);
     if (!school) {
       stats.noSize++;
       continue;
@@ -757,7 +794,7 @@ async function main() {
     }
   }
   const scorecardYears = await detectScorecardYears(key, String(scorecard[0]?.id ?? "221999"));
-  const meta = buildMeta(adm, sfa, ic, sfaYears, scorecardYears, cost2, chars, hd, icChar, efd, om);
+  const meta = buildMeta(adm, sfa, ic, sfaYears, scorecardYears, cost2, chars, hd, icChar, efd, om, grPell);
 
   // Nothing is written unless every value's lineage checks out.
   const problems = validateLineage(schools, meta);
@@ -778,6 +815,8 @@ async function main() {
   console.log(`  with earnings:        ${schools.filter((s) => s.outcomes?.median_earnings_10yr != null).length}`);
   console.log(`  with grad rate:       ${schools.filter((s) => s.outcomes?.graduation_rate != null).length}`);
   console.log(`  with 8-year outcomes: ${schools.filter((s) => s.outcomes?.eight_year?.all.award != null).length}`);
+  console.log(`  with Pell grad rate:  ${schools.filter((s) => s.outcomes?.grad_rate_pell != null).length} (${grPell.name})`);
+  console.log(`  with Black grad rate: ${schools.filter((s) => s.outcomes?.grad_rate_by_race?.black != null).length}`);
   console.log(`  with aid (IPEDS SFA): ${schools.filter((s) => s.aid?.grant_pct != null).length}`);
   console.log(`  with CDS aid detail:  ${schools.filter((s) => s.aid?.cds).length}`);
   console.log(`  with avg paid (all):  ${schools.filter((s) => s.cost?.avg_paid_all != null).length}`);

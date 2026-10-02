@@ -6,6 +6,7 @@ import type { FieldPath } from "./fields";
 import { money, num, pct, pctSmart } from "./format";
 import { admitRatesBySex, satMedian, simpsonIndex, yieldOf } from "./derive";
 import { bedsPer100 } from "./housing";
+import { pellGap } from "./graduation-groups";
 
 /* ------------------------------------------------------------------ */
 /* Derived values (null when the underlying data isn't reported)       */
@@ -151,6 +152,8 @@ export type MetricKey =
   | "studentFaculty"
   | "completion8"
   | "transferOut"
+  | "pellGap"
+  | "pellGapChange"
   | "adults"
   | "applicantsChange"
   | "sizeChange"
@@ -501,6 +504,32 @@ export const METRICS: Record<MetricKey, MetricDef> = {
     scale: [0, 1],
     more: "more students transferring out",
     less: "fewer students transferring out",
+  },
+  // Graduation by group (specs/data-expansion/graduation-by-group.md): points, positive = Pell recipients finish less often.
+  pellGap: {
+    key: "pellGap",
+    field: "derived.pell_grad_gap",
+    label: "Pell graduation gap",
+    short: "Pell gap",
+    term: "pell-graduation-gap",
+    domain: "access",
+    get: pellGap,
+    format: (v) => (Math.round(v * 100) === 0 ? "No gap" : `${Math.round(Math.abs(v) * 100)} pts ${v > 0 ? "lower" : "higher"}`),
+    more: "a bigger gap for Pell recipients",
+    less: "a smaller gap for Pell recipients",
+  },
+  pellGapChange: {
+    key: "pellGapChange",
+    field: "trends",
+    label: "Pell graduation gap, 10-year change",
+    short: "Pell gap change",
+    term: "pell-graduation-gap",
+    domain: "access",
+    // Points over the cohort window; only with 100+ Pell recipients at both ends (lib/history.ts pellGapChange).
+    get: (s) => s.trends?.pell_gap?.change ?? null,
+    format: (v) => `${v > 0 ? "+" : v < 0 ? "−" : ""}${Math.round(Math.abs(v) * 100)} pts`,
+    more: "a widening gap",
+    less: "a narrowing gap",
   },
   partTime: {
     key: "partTime",

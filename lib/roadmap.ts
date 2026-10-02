@@ -89,15 +89,6 @@ export const ROADMAP: RoadmapSpec[] = [
     status: "planned",
   },
   {
-    slug: "graduation-by-group",
-    file: "specs/data-expansion/graduation-by-group.md",
-    group: "wave-2",
-    summary: "Graduation rates for Pell Grant recipients and by race and ethnicity.",
-    complexity: 2,
-    complexityNote: "Two sources, and gaps need care at small colleges.",
-    status: "planned",
-  },
-  {
     slug: "finances",
     file: "specs/data-expansion/finances.md",
     group: "wave-2",

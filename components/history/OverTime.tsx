@@ -508,7 +508,11 @@ export function OverTime(props: OverTimeProps) {
   const spans = policySpans(history.series.test_policy);
   const hasScores = !!(history.series.sat_25 || history.series.act_25);
   const hasStudents = !!(history.series.undergrads || history.series.race_white || history.series.men_share || history.series.part_time_share || history.series.housing_capacity);
-  const hasOutcomes = !!(history.series.grad_rate || history.series.median_debt);
+  const hasOutcomes = !!(history.series.grad_rate || history.series.median_debt || history.series.om_award);
+  // 8-year outcomes end 8 years behind the newest entering class of grad_rate: window on their own last class.
+  const omEnd = history.series.om_award ? lastYear(history.series.om_award) : null;
+  const omWindow: [number, number] | null =
+    omEnd === null ? null : ui.range === "10" ? [omEnd - 10, omEnd] : [Math.min(history.series.om_award!.start, omEnd - 10), omEnd];
   const debtEnd = history.series.median_debt ? lastYear(history.series.median_debt) : null;
 
   const incomeRows = useMemo(() => {
@@ -881,6 +885,40 @@ export function OverTime(props: OverTimeProps) {
               }
             />
           </div>
+          {omWindow && (
+            <div className="mt-4 grid gap-4 lg:grid-cols-2">
+              <ChartPanel
+                {...common}
+                title="Earned a credential within 8 years, all students"
+                term="outcome-measures"
+                kind="cohort"
+                format="pct"
+                window={omWindow}
+                headline="om_award"
+                provisionalYear={null}
+                specs={[
+                  { key: "om_award", name: "All entering students", color: colors.value, band: true },
+                  { key: "om_award_pell", name: "Pell Grant recipients", color: colors.value, dashed: true },
+                  { key: "om_award_non_pell", name: "No Pell Grant", color: CONTEXT },
+                ]}
+                note="By the year students entered, including transfer and part-time students. Groups under 30 students are left out."
+              />
+              {history.series.om_transfer && (
+                <ChartPanel
+                  {...common}
+                  title="Enrolled at another college, 8 years on"
+                  term="transfer-out"
+                  kind="cohort"
+                  format="pct"
+                  window={omWindow}
+                  headline="om_transfer"
+                  provisionalYear={null}
+                  specs={[{ key: "om_transfer", name: "Enrolled elsewhere", color: colors.value, band: true }]}
+                  note="Students who left without a credential and enrolled at another college, by the year they entered here."
+                />
+              )}
+            </div>
+          )}
           <p className="mt-4 max-w-3xl text-sm text-muted-foreground">
             <b className="text-foreground">Earnings</b> aren&apos;t shown over time: the College Scorecard changed how it measures them, so earlier
             years aren&apos;t comparable with today&apos;s figure.

@@ -61,6 +61,7 @@ import { LANDSCAPE_X, LANDSCAPE_Y, LANDSCAPE_ZONE, VALUE_X, VALUE_Y, valueZone }
 import { NetPriceByIncome } from "@/components/charts/NetPriceByIncome";
 import { WhatStudentsPay } from "@/components/school/WhatStudentsPay";
 import { LoansCard } from "@/components/school/LoansCard";
+import { OutcomeMeasures } from "@/components/school/OutcomeMeasures";
 import { CampusLife } from "@/components/school/CampusLife";
 import { CampusServices } from "@/components/school/CampusServices";
 import { DESIGNATION_LABELS, DESIGNATION_TERMS, SETTING_SHORT, designationsOf } from "@/lib/campus-profile";
@@ -86,12 +87,12 @@ const HISTORY_GROUPS = {
   admissions: ["applicants", "admitted", "enrolled", "acceptance_rate", "yield", "admit_rate_men", "admit_rate_women", "application_fee"],
   scores: ["sat_25", "sat_75", "act_25", "act_75", "sat_submit", "test_policy"],
   students: ["undergrads", "race_white", "men_share", "part_time_share", "housing_capacity"],
-  outcomes: ["grad_rate", "median_debt"],
+  outcomes: ["grad_rate", "median_debt", "om_award", "om_transfer", "om_award_pell", "om_award_non_pell"],
   academics: ["student_faculty_ratio"],
 } as const satisfies Record<string, readonly SeriesKey[]>;
 
 /** National series the charts draw as a band (keeps the page payload small). */
-const BANDED: readonly SeriesKey[] = ["avg_paid_all", "grant_pct", "grant_avg", "acceptance_rate", "sat_25", "sat_75", "act_25", "act_75", "grad_rate", "median_debt", "men_share", "part_time_share", "federal_loan_rate", "student_faculty_ratio"];
+const BANDED: readonly SeriesKey[] = ["avg_paid_all", "grant_pct", "grant_avg", "acceptance_rate", "sat_25", "sat_75", "act_25", "act_75", "grad_rate", "median_debt", "men_share", "part_time_share", "federal_loan_rate", "student_faculty_ratio", "om_award", "om_transfer"];
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -190,6 +191,7 @@ const SECTION_FIELDS = {
     "outcomes.median_earnings_6yr",
     "outcomes.retention_rate",
     "outcomes.graduation_rate",
+    "outcomes.eight_year",
   ],
   academics: ["academics.student_faculty_ratio"],
   campus: ["campus.housing", "campus.athletics", "campus.programs", "campus.services", "campus.calendar", "demographics.disability_services"],
@@ -1175,6 +1177,8 @@ export default async function SchoolPage({ params }: Props) {
                   </div>
                 </>
               )}
+
+              <OutcomeMeasures school={school} />
 
               {onValueMap && (
                 <ShowMore label="Show the cost vs. earnings map" hint={`Where ${school.name} sits among 300 colleges`} className="mt-4">

@@ -1,6 +1,7 @@
 import type { School, SizeBucket } from "./types";
 import type { TermKey } from "./glossary";
 import { ratioLabel } from "./academics";
+import { completion8, transferOut8 } from "./outcome-measures";
 import type { FieldPath } from "./fields";
 import { money, num, pct, pctSmart } from "./format";
 import { admitRatesBySex, satMedian, simpsonIndex, yieldOf } from "./derive";
@@ -148,6 +149,8 @@ export type MetricKey =
   | "menShare"
   | "partTime"
   | "studentFaculty"
+  | "completion8"
+  | "transferOut"
   | "adults"
   | "applicantsChange"
   | "sizeChange"
@@ -471,6 +474,33 @@ export const METRICS: Record<MetricKey, MetricDef> = {
     format: ratioLabel,
     more: "more students per faculty member",
     less: "fewer students per faculty member",
+  },
+  // 8-year outcomes, all entering students (specs/data-expansion/outcome-measures.md).
+  completion8: {
+    key: "completion8",
+    field: "outcomes.eight_year",
+    label: "Earned a credential within 8 years (all students)",
+    short: "8-yr completion",
+    term: "outcome-measures",
+    domain: "value",
+    get: completion8,
+    format: (v) => pct(v),
+    scale: [0, 1],
+    more: "more students finishing",
+    less: "fewer students finishing",
+  },
+  transferOut: {
+    key: "transferOut",
+    field: "outcomes.eight_year",
+    label: "Enrolled at another college within 8 years",
+    short: "Transferred out",
+    term: "transfer-out",
+    domain: "value",
+    get: transferOut8,
+    format: (v) => pct(v),
+    scale: [0, 1],
+    more: "more students transferring out",
+    less: "fewer students transferring out",
   },
   partTime: {
     key: "partTime",

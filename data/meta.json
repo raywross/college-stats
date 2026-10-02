@@ -1,5 +1,5 @@
 {
-  "retrieved": "2026-09-30",
+  "retrieved": "2026-10-02",
   "sources": {
     "scorecard": {
       "label": "College Scorecard",
@@ -43,6 +43,13 @@
       "url": "https://nces.ed.gov/ipeds/complete-data-files/EF2024D.zip",
       "description": "Each college's student-to-faculty ratio: full-time-equivalent students per full-time-equivalent instructional faculty member, not counting faculty who teach only graduate or professional students."
     },
+    "ipeds-om": {
+      "label": "IPEDS Outcome Measures survey",
+      "publisher": "National Center for Education Statistics (NCES)",
+      "edition": "Students entering fall 2016 (OM2024)",
+      "url": "https://nces.ed.gov/ipeds/complete-data-files/OM2024.zip",
+      "description": "What happened to every student who started at each college, 8 years later: earned a degree or certificate there, still enrolled, enrolled at another college, or no record. Covers first-time and transfer students, full-time and part-time, with Pell Grant recipients separately."
+    },
     "ipeds-ic-char": {
       "label": "IPEDS Institutional Characteristics survey (athletics, programs, services)",
       "publisher": "National Center for Education Statistics (NCES)",
@@ -65,6 +72,7 @@
     "ipeds-hd": "2025–26",
     "ipeds-ic-char": "2025–26",
     "ipeds-ef": "Fall 2024",
+    "ipeds-om": "Students entering fall 2016",
     "scorecard-enrollment": "Fall 2024",
     "scorecard-age": "Fall 2023",
     "scorecard-cost": "2023–24",

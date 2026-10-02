@@ -50,6 +50,8 @@
     "men_share": {"start":2008,"values":[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]},
     "part_time_share": {"start":2008,"values":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0.0192,0]},
     "grad_rate": {"start":2012,"values":[0.3333,0.625,0.2,0.1111,0.2,0.1429,0.1429]},
-    "federal_loan_rate": {"start":2008,"values":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]}
+    "federal_loan_rate": {"start":2008,"values":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},
+    "om_award": {"start":2010,"values":[0.5,null,0.3243,null,null,0.3143]},
+    "om_transfer": {"start":2010,"values":[0.4333,null,0.4054,null,null,0.5714]}
   }
 }

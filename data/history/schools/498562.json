@@ -64,6 +64,10 @@
     "men_share": {"start":2022,"values":[0.3914,0.3962,0.4031]},
     "part_time_share": {"start":2022,"values":[0.0748,0.0635,0.0546]},
     "grad_rate": {"start":2016,"values":[0.5356,0.5302,0.5448]},
-    "federal_loan_rate": {"start":2021,"values":[0.6159,0.5842,0.5394]}
+    "federal_loan_rate": {"start":2021,"values":[0.6159,0.5842,0.5394]},
+    "om_award": {"start":2014,"values":[0.5614,0.5767,0.548]},
+    "om_transfer": {"start":2014,"values":[0.2782,0.2564,0.284]},
+    "om_award_pell": {"start":2014,"values":[0.4823,0.491,0.487]},
+    "om_award_non_pell": {"start":2014,"values":[0.6151,0.6295,0.5887]}
   }
 }

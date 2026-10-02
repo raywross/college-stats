@@ -48,6 +48,10 @@
     "part_time_share": {"start":2016,"values":[0.4985,0.3416,0.472,0.325,0.4893,0.3561,0.3021,0.3232,0.302]},
     "grad_rate": {"start":2016,"values":[0.75,0.75,0.8182]},
     "median_debt": {"start":2015,"values":[9500,9500,9500,9500,9500,9500]},
-    "federal_loan_rate": {"start":2015,"values":[0.8583,0.7676,1,0.828,0.8425,0.866,0.7209,0.7655,0.792]}
+    "federal_loan_rate": {"start":2015,"values":[0.8583,0.7676,1,0.828,0.8425,0.866,0.7209,0.7655,0.792]},
+    "om_award": {"start":2015,"values":[0.2093,0.3077]},
+    "om_transfer": {"start":2015,"values":[0,0.3744]},
+    "om_award_pell": {"start":2015,"values":[0.2462,0.275]},
+    "om_award_non_pell": {"start":2015,"values":[0.1719,0.36]}
   }
 }

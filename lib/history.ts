@@ -66,6 +66,7 @@ export const HISTORY_FAMILIES = {
   characteristics: { source: "ipeds-ic", kind: "academic", files: "IC{year} (housing and application fee), then COST1_{year+1}" },
   services: { source: "ipeds-ic-char", kind: "academic", files: "IC{year} (athletics and ROTC)" },
   "ef-d": { source: "ipeds-ef", kind: "fall", files: "EF{year}D (student-to-faculty ratio)" },
+  om: { source: "ipeds-om", kind: "cohort", files: "OM{year+8} (Outcome Measures, 8 years after entry)" },
   // College Scorecard API, year-prefixed fields (not files): years can have gaps, so they aren't checked as consecutive.
   "scorecard-enrollment": { source: "scorecard", kind: "fall", files: "API fields {year}.student.size, {year}.student.demographics.race_ethnicity.*, .men, and {year}.student.part_time_share", api: true, citeAs: "enrollment" },
   "scorecard-completion": { source: "scorecard", kind: "cohort", files: "API field {year+6}.completion.completion_rate_4yr_150nt", api: true, citeAs: "graduation by entering class" },
@@ -164,6 +165,11 @@ export const SERIES = {
   grad_rate: { label: "Graduated within 6 years", short: "Graduated in 6 years", field: "outcomes.graduation_rate", term: "graduation-rate", unit: "share", kind: "cohort", format: "pct", families: ["scorecard-completion"] },
   median_debt: { label: "Median debt at graduation", short: "Median debt", field: "outcomes.median_debt", term: "median-debt", unit: "usd", kind: "academic", format: "money", families: ["scorecard-debt"] },
   federal_loan_rate: { label: "Undergraduates with a federal loan", short: "Federal loan", field: "outcomes.federal_loan_rate", term: "federal-loan-rate", unit: "share", kind: "academic", format: "pct", families: ["scorecard-loans"] },
+  // 8-year outcomes for every entering student (specs/data-expansion/outcome-measures.md), by entering class.
+  om_award: { label: "Earned a credential within 8 years, all entering students", short: "Credential in 8 years", field: "outcomes.eight_year", term: "outcome-measures", unit: "share", kind: "cohort", format: "pct", families: ["om"] },
+  om_transfer: { label: "Enrolled at another college 8 years on, all entering students", short: "Enrolled elsewhere", field: "outcomes.eight_year", term: "transfer-out", unit: "share", kind: "cohort", format: "pct", families: ["om"] },
+  om_award_pell: { label: "Earned a credential within 8 years, Pell Grant recipients", short: "Pell recipients", field: "outcomes.eight_year", term: "outcome-measures", unit: "share", kind: "cohort", format: "pct", families: ["om"] },
+  om_award_non_pell: { label: "Earned a credential within 8 years, students without a Pell Grant", short: "No Pell Grant", field: "outcomes.eight_year", term: "outcome-measures", unit: "share", kind: "cohort", format: "pct", families: ["om"] },
 } as const satisfies Record<string, SeriesDef>;
 
 export type SeriesKey = keyof typeof SERIES;

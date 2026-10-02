@@ -34,6 +34,7 @@ import {
   type YearKind,
 } from "../lib/history.ts";
 import { fetchIpedsTable, type IpedsTable } from "./lib/ipeds.mts";
+import { fetchPivotedTable } from "./lib/om.mts";
 import { validateLineage } from "../lib/lineage.ts";
 import { ERAS, requiredColumns, type Era, type FileChoice } from "./history/registry.mts";
 import {
@@ -126,7 +127,8 @@ const maxAgeFor = (year: number) => (REFRESH ? 0 : year >= THIS_YEAR - 3 ? 7 : I
 
 async function fetchYear(era: Era, year: number, keep: ReadonlySet<string>): Promise<Fetched | null> {
   for (const choice of era.files(year)) {
-    const table = await fetchIpedsTable(choice.name, { cacheDir: CACHE, maxAgeDays: maxAgeFor(year), keep, offline: NCES_CACHED });
+    const opts = { cacheDir: CACHE, maxAgeDays: maxAgeFor(year), keep, offline: NCES_CACHED };
+    const table = era.pivot ? await fetchPivotedTable(choice.name, era.pivot, opts) : await fetchIpedsTable(choice.name, opts);
     if (!table) continue;
     let supplement: IpedsTable | undefined;
     if (era.supplement) {
@@ -189,7 +191,7 @@ function toInputs(fetched: Fetched[]): Inputs {
     return { year: f.year, family: f.family, rows, suffix: f.choice.suffix, values: f.era.values };
   };
   const of = (...fams: HistoryFamily[]) => fetched.filter((f) => fams.includes(f.family)).sort((a, b) => a.year - b.year).map(table);
-  return { admissions: of("ic-admissions", "adm"), prices: of("prices"), sfa: of("sfa"), characteristics: of("characteristics"), services: of("services"), efd: of("ef-d") };
+  return { admissions: of("ic-admissions", "adm"), prices: of("prices"), sfa: of("sfa"), characteristics: of("characteristics"), services: of("services"), efd: of("ef-d"), om: of("om") };
 }
 
 /* ------------------------------------------------------------------ */

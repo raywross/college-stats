@@ -30,6 +30,8 @@ import { applyProbes, filesToProbe, type FileProbe, type ReleaseCalendar } from 
 import { IPEDS_BASES, parseCsv } from "./lib/ipeds.mts";
 import { MSI_FIELDS, campusProfileFrom, directoryIssues, msiFrom } from "../lib/campus-profile.ts";
 import { studentFacultyRatioFrom } from "../lib/academics.ts";
+import { OM_COLUMNS, OM_LAG, OM_PIVOT, eightYearFrom } from "../lib/outcome-measures.ts";
+import { fetchPivotedTable } from "./lib/om.mts";
 import { apCreditFrom, athleticsFrom, calendarFrom, disabilityFrom, programsFrom, servicesFrom } from "../lib/campus-services.ts";
 import { acceptanceRate, applicationFeeFrom, computePrices, factorsFrom, housingFrom, ipedsNum, parseShareBand, priceSuffix, promiseProgramFrom, raceShares, toAid, tuitionPlansFrom } from "../lib/derive.ts";
 
@@ -244,6 +246,21 @@ const HD_NAMES = [thisYear + 1, ...recentYears].map((y) => `HD${y}`);
 const IC_CHAR_NAMES = [thisYear + 1, ...recentYears].map((y) => `IC${y}`);
 // Fall enrollment part D (student-faculty ratio): EF{Y}D = fall Y, with the winter release.
 const EF_D_NAMES = recentYears.map((y) => `EF${y}D`);
+// Outcome Measures (8-year outcomes): OM{Y} follows students who entered in fall Y − 8, with the winter release.
+const OM_NAMES = recentYears.map((y) => `OM${y}`);
+
+/** The newest published OM file, one row per college (pivoted by cohort; scripts/lib/om.mts), cached like history. */
+async function fetchOutcomeMeasures(): Promise<IpedsFile> {
+  for (const name of OM_NAMES) {
+    const t = await fetchPivotedTable(name, OM_PIVOT, { cacheDir: join(ROOT, ".cache", "ipeds"), maxAgeDays: 7 });
+    if (!t) continue;
+    const missing = OM_COLUMNS.filter((c) => !t.columns.has(c));
+    if (missing.length) throw new Error(`${name} has no ${missing.join(", ")} column`);
+    console.log(`  IPEDS ${name}: ${t.rows.size} institutions (${t.csv}, pivoted by ${OM_PIVOT})`);
+    return { name, url: t.url, rows: t.rows };
+  }
+  throw new Error(`None of these IPEDS files are published yet: ${OM_NAMES.join(", ")}`);
+}
 
 /* ------------------------------------------------------------------ */
 /* 3. Merge                                                            */
@@ -436,7 +453,8 @@ function buildMeta(
   chars: IpedsFile,
   hd: IpedsFile,
   icChar: IpedsFile,
-  efd: IpedsFile
+  efd: IpedsFile,
+  om: IpedsFile
 ): DatasetMeta {
   const scorecardCostYear = scorecardYears.cost;
   return {
@@ -490,6 +508,14 @@ function buildMeta(
         description:
           "Each college's student-to-faculty ratio: full-time-equivalent students per full-time-equivalent instructional faculty member, not counting faculty who teach only graduate or professional students.",
       },
+      "ipeds-om": {
+        label: "IPEDS Outcome Measures survey",
+        publisher: "National Center for Education Statistics (NCES)",
+        edition: `Students entering fall ${Number(om.name.slice(2)) - OM_LAG} (${om.name})`,
+        url: om.url,
+        description:
+          "What happened to every student who started at each college, 8 years later: earned a degree or certificate there, still enrolled, enrolled at another college, or no record. Covers first-time and transfer students, full-time and part-time, with Pell Grant recipients separately.",
+      },
       "ipeds-ic-char": {
         label: "IPEDS Institutional Characteristics survey (athletics, programs, services)",
         publisher: "National Center for Education Statistics (NCES)",
@@ -514,6 +540,7 @@ function buildMeta(
       "ipeds-hd": `${hd.name.slice(2)}–${String(Number(hd.name.slice(2)) + 1).slice(2)}`,
       "ipeds-ic-char": academicYear(icChar.name.slice(2)),
       "ipeds-ef": `Fall ${efd.name.slice(2, 6)}`,
+      "ipeds-om": `Students entering fall ${Number(om.name.slice(2)) - OM_LAG}`,
       "scorecard-enrollment": scorecardYears.enrollment,
       "scorecard-age": scorecardYears.age,
       "scorecard-cost": scorecardYears.cost,
@@ -675,6 +702,9 @@ async function main() {
   // Student-faculty ratio (specs/data-expansion/student-faculty-ratio.md).
   const efd = await fetchIpeds(EF_D_NAMES);
   if (![...efd.rows.values()].some((r) => "STUFACR" in r)) throw new Error(`${efd.name} has no STUFACR column`);
+  // 8-year outcomes (specs/data-expansion/outcome-measures.md).
+  const om = await fetchOutcomeMeasures();
+  const omEntering = Number(om.name.slice(2)) - OM_LAG;
   if (![...hd.rows.values()].some((r) => "LOCALE" in r && "CARNEGIEIC" in r)) throw new Error(`${hd.name} has no LOCALE/CARNEGIEIC columns`);
   // Campus services (specs/data-expansion/campus-services.md): the newest IC{Y}, a year ahead of the price files.
   const icChar = await fetchIpeds(IC_CHAR_NAMES);
@@ -699,6 +729,7 @@ async function main() {
     if (school) directoryWarnings.push(...directoryIssues(hd.rows.get(school.unit_id), school));
     if (school) addServices(school, icChar.rows.get(school.unit_id));
     if (school) school.academics = { student_faculty_ratio: studentFacultyRatioFrom(efd.rows.get(school.unit_id)) };
+    if (school?.outcomes) school.outcomes.eight_year = eightYearFrom(om.rows.get(school.unit_id), omEntering);
     if (!school) {
       stats.noSize++;
       continue;
@@ -726,7 +757,7 @@ async function main() {
     }
   }
   const scorecardYears = await detectScorecardYears(key, String(scorecard[0]?.id ?? "221999"));
-  const meta = buildMeta(adm, sfa, ic, sfaYears, scorecardYears, cost2, chars, hd, icChar, efd);
+  const meta = buildMeta(adm, sfa, ic, sfaYears, scorecardYears, cost2, chars, hd, icChar, efd, om);
 
   // Nothing is written unless every value's lineage checks out.
   const problems = validateLineage(schools, meta);
@@ -746,6 +777,7 @@ async function main() {
   console.log(`  with net price:       ${schools.filter((s) => s.cost?.avg_net_price != null).length}`);
   console.log(`  with earnings:        ${schools.filter((s) => s.outcomes?.median_earnings_10yr != null).length}`);
   console.log(`  with grad rate:       ${schools.filter((s) => s.outcomes?.graduation_rate != null).length}`);
+  console.log(`  with 8-year outcomes: ${schools.filter((s) => s.outcomes?.eight_year?.all.award != null).length}`);
   console.log(`  with aid (IPEDS SFA): ${schools.filter((s) => s.aid?.grant_pct != null).length}`);
   console.log(`  with CDS aid detail:  ${schools.filter((s) => s.aid?.cds).length}`);
   console.log(`  with avg paid (all):  ${schools.filter((s) => s.cost?.avg_paid_all != null).length}`);

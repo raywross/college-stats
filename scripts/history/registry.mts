@@ -13,6 +13,7 @@
  */
 import type { HistoryFamily } from "../../lib/history.ts";
 import { FACTOR_COLUMNS } from "../../lib/derive.ts";
+import { OM_COLUMNS, OM_FIRST_FILE, OM_LAG, OM_PIVOT } from "../../lib/outcome-measures.ts";
 
 /** A value read from one row: a column, or the sum of parts (IC2001 splits admissions by gender). */
 export type ColumnSpec = string | { sum: readonly string[] };
@@ -37,6 +38,8 @@ export interface Era {
   supplement?: (year: number) => string;
   /** Columns that must exist in the supplement. */
   supplementRequired?: readonly string[];
+  /** Several rows per college: merge them into one, suffixing each column with this column's code (scripts/lib/om.mts). */
+  pivot?: string;
 }
 
 const yy = (y: number) => String(y % 100).padStart(2, "0");
@@ -160,6 +163,15 @@ export const ERAS: readonly Era[] = [
     files: (y) => [{ name: `EF${y}D` }],
     required: () => ["STUFACR"],
   },
+  // 8-year outcomes (specs/data-expansion/outcome-measures.md): OM{Y} follows the class entering fall Y - 8, one row per
+  // cohort. OM2017 (fall 2009) is the first with Pell cohorts and the 8-year status split; OM2015-16 used other codes.
+  {
+    family: "om",
+    years: [OM_FIRST_FILE - OM_LAG, OPEN],
+    files: (y) => [{ name: `OM${y + OM_LAG}` }],
+    required: () => [OM_PIVOT, ...OM_COLUMNS],
+    pivot: OM_PIVOT,
+  },
   {
     family: "services",
     years: [2014, OPEN],
@@ -202,7 +214,7 @@ export function eraFor(family: HistoryFamily, year: number): Era | null {
 }
 
 /** Families by the kind of year they describe, and the first year each can start. */
-export const FAMILY_ORDER: readonly HistoryFamily[] = ["ic-admissions", "adm", "prices", "sfa", "characteristics", "services", "ef-d"];
+export const FAMILY_ORDER: readonly HistoryFamily[] = ["ic-admissions", "adm", "prices", "sfa", "characteristics", "services", "ef-d", "om"];
 
 /** Columns a value spec reads. */
 export function specColumns(spec: ColumnSpec): readonly string[] {

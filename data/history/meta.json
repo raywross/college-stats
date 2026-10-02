@@ -1,5 +1,5 @@
 {
-  "built": "2026-09-30",
+  "built": "2026-10-02",
   "latest": {
     "fall": 2024,
     "academic": 2023,
@@ -749,6 +749,56 @@
         "year": 2024,
         "file": "EF2024D",
         "url": "https://nces.ed.gov/ipeds/complete-data-files/EF2024D.zip",
+        "revised": false
+      }
+    ],
+    "om": [
+      {
+        "year": 2009,
+        "file": "OM2017",
+        "url": "https://nces.ed.gov/ipeds/datacenter/data/OM2017.zip",
+        "revised": true
+      },
+      {
+        "year": 2010,
+        "file": "OM2018",
+        "url": "https://nces.ed.gov/ipeds/datacenter/data/OM2018.zip",
+        "revised": true
+      },
+      {
+        "year": 2011,
+        "file": "OM2019",
+        "url": "https://nces.ed.gov/ipeds/datacenter/data/OM2019.zip",
+        "revised": true
+      },
+      {
+        "year": 2012,
+        "file": "OM2020",
+        "url": "https://nces.ed.gov/ipeds/datacenter/data/OM2020.zip",
+        "revised": true
+      },
+      {
+        "year": 2013,
+        "file": "OM2021",
+        "url": "https://nces.ed.gov/ipeds/datacenter/data/OM2021.zip",
+        "revised": true
+      },
+      {
+        "year": 2014,
+        "file": "OM2022",
+        "url": "https://nces.ed.gov/ipeds/datacenter/data/OM2022.zip",
+        "revised": true
+      },
+      {
+        "year": 2015,
+        "file": "OM2023",
+        "url": "https://nces.ed.gov/ipeds/datacenter/data/OM2023.zip",
+        "revised": false
+      },
+      {
+        "year": 2016,
+        "file": "OM2024",
+        "url": "https://nces.ed.gov/ipeds/complete-data-files/OM2024.zip",
         "revised": false
       }
     ],

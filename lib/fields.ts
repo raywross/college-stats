@@ -20,6 +20,8 @@ export type VintageKey =
   | "ipeds-ic-char"
   /** IPEDS Fall Enrollment part D (EF{Y}D): the student-to-faculty ratio. Fall, like admissions. */
   | "ipeds-ef"
+  /** IPEDS Outcome Measures (OM{Y}): students who entered in fall Y − 8, followed for 8 years. */
+  | "ipeds-om"
   | "scorecard-enrollment"
   /** Student age: IPEDS collects it in odd-numbered falls only, so it trails enrollment by a year every other year. */
   | "scorecard-age"
@@ -159,6 +161,8 @@ export const FIELDS = {
   "outcomes.median_debt_no_pell": scorecard("Median debt, students without a Pell Grant", "outcomes"),
   "outcomes.median_debt_by_income": scorecard("Median debt by family income", "outcomes"),
   "outcomes.repayment_3yr": scorecard("Borrowers' repayment status 3 years after leaving", "outcomes"),
+  // IPEDS Outcome Measures (specs/data-expansion/outcome-measures.md).
+  "outcomes.eight_year": { label: "8-year outcomes, all entering students", topic: "outcomes", source: "ipeds-om", vintage: "ipeds-om" },
 
   /* ---- Aid (IPEDS SFA / COST2) ---- */
   "aid.cohort": sfa("First-years in the aid cohort"),

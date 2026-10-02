@@ -28,6 +28,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 // Rendered on first visit and kept for a day (specs/profile-redesign.md#routes); publishes revalidate sooner.
 export const revalidate = 86400;
+// An empty list makes Next render each college's page on first visit and keep it (ISR); without it the route is
+// dynamic on every request (node_modules/next/dist/docs: generateStaticParams, "All paths at runtime").
+export async function generateStaticParams() {
+  return [];
+}
 
 const TOPIC = "students";
 

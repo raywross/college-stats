@@ -92,7 +92,11 @@ async function measure(ctx: PwContext, v: ProfileViewport, id: string, page: Pro
     // Let fonts, ResizeObservers, and the pills' scroll effect settle.
     await tab.waitForTimeout(400);
     const r = await tab.evaluate(() => ({
-      height: document.documentElement.scrollHeight,
+      // Content height: to the end of <main>, so the site footer (~500px) doesn't count against the budget.
+      height: (() => {
+        const main = document.querySelector("main");
+        return main ? Math.round(main.getBoundingClientRect().bottom + window.scrollY) : document.documentElement.scrollHeight;
+      })(),
       innerWidthAtDcl: (window as unknown as { __dclInnerWidth?: number }).__dclInnerWidth ?? -1,
       innerWidth: window.innerWidth,
       scrollWidth: document.documentElement.scrollWidth,

@@ -4,9 +4,8 @@ Routes: `/schools/[id]` (the overview) and six topic pages under it. The 50 most
 pre-rendered at build; the rest, and every topic page, render on first visit and are cached for a day. The bottom of
 the drill-down.
 
-> Phase 1 of the redesign ([profile-redesign.md](profile-redesign.md)) is built: the single long page is split into
-> an overview plus topic pages, with the content moved as-is. Phase 2 (topic cards replacing the bento) and phase 3
-> (tablet folding, the Over time segmented control) are still to come.
+> Built 2026-10-02 from [profile-redesign.md](profile-redesign.md): the single long page became an overview of topic
+> cards plus a page per topic, with every block, chart, and citation kept.
 
 ## Routes
 | Route | Content |
@@ -44,8 +43,18 @@ routes in `ANCHOR_TOPICS` (`lib/profile-topics.ts`); `#overview`, `#ranks`, and 
   header, list, content, `SourceNote` for `TOPIC_FIELDS[topic]`, `TopicNav` previous/next), `TopicCards` and the six
   `*Card` components with `TopicCard`, `TenYearLine` (the overview), `AnchorRedirect`, `OverTimeSection` (everything
   `OverTime` is passed).
-- Each topic page is a short server component with `generateMetadata` ("{School} · {Topic label}") and
-  `revalidate = 86400`; no `generateStaticParams`.
+- Each topic page is a short server component with `generateMetadata` ("{School} · {Topic label}"),
+  `revalidate = 86400`, and an empty `generateStaticParams` (without it Next treats the route as dynamic on every
+  request; with it each college's page renders on first visit and is kept for a day, like the overview beyond its
+  prerendered 50). The history page reads `?group=` from `searchParams` and passes it to `OverTime` as
+  `initialGroup`, so its HTML shows the requested group; that makes it render per request (about 100ms in
+  production, the data being in memory).
+- Tablets (640–1023): small blocks pair up from `md` (the students page's economic access and campus size, the
+  outcomes page's earnings and staying-and-finishing, the admissions page's submitted-scores and SAT strip);
+  `ShowMore until="lg"` folds the tall secondary blocks ([mobile.md](mobile.md#profile-on-phones)).
+- `scripts/measure-profile.mts` (`npm run measure-profile`, Playwright from `PLAYWRIGHT_DIR`): heights, viewport
+  checks, pill and previous/next links for the overview and every topic page at three widths, against the budgets
+  in [profile-redesign.md](profile-redesign.md#overview-page).
 
 ## Overview
 1. **Hero**, slim: tinted with the school's crest color. Breadcrumb (Explore › State › School), crest, name,

@@ -55,7 +55,9 @@ for a folded block scrolls to its "Show …" button.
 
 Every page keeps its headline answer visible (takeaway, key numbers, one chart). Deep dives fold behind
 `ShowMore` (`components/ui/show-more.tsx`): a dashed "Show …" button with a one-line hint, below `sm` by default
-(`until="lg"` folds tablets too; the redesign's phase 3 uses it on the Over time and Outcomes pages). Content
+(`until="lg"` folds tablets, 640–1023px, too: the admissions page's waffle and admissions map, the cost page's
+borrowing and repayment and who gets aid, and the outcomes page's cost vs. earnings map; "Who they are" on the
+students page folds only on phones because it is short). Content
 stays in the server HTML and is hidden with CSS (not unmounted), so nothing shifts on load, citations stay in the
 page, and wider screens are unchanged.
 
@@ -68,7 +70,9 @@ page, and wider screens are unchanged.
 | Outcomes | Earnings, retention/graduation, 8-year outcomes, graduation by group | Cost vs. earnings map |
 | Over time | Takeaway, controls, the group pills, and the one selected group (Cost by default) | Nothing folds: the other groups aren't rendered ([trends-design.md](trends-design.md#profile-over-time-page-schoolsidhistory)) |
 
-Harvard (2026-10-02, phase 1): overview 4,150px; topic pages 2,100–5,000px each, where the single page was ~19,000px.
+Harvard (2026-10-02, as built, content height to the end of `<main>`): overview 4,252px on a phone (2,475 desktop,
+2,899 tablet); topic pages 2,564–4,981px on a phone and 1,755–3,847px on desktop, where the single page was
+19,061px / 23,285px. `npm run measure-profile` prints the table.
 Charts inside folded content keep their last real width (`useWidth` ignores 0) and re-measure when shown.
 
 ## Type and spacing on phones
@@ -78,6 +82,10 @@ Charts inside folded content keep their last real width (`useWidth` ignores 0) a
 
 ## Checking a change
 `tests/mobile-layout.test.mts` (`npm test`) guards the CSS rules above and the `--header-h` offsets. For visual QA,
-install Playwright in the session scratchpad and load each route at 390×844 with `isMobile: true`. Check that
+run `PLAYWRIGHT_DIR=<a scratchpad with Playwright installed> npm run measure-profile` against a dev server: it loads
+the overview and every topic page at 1440, 810, and 390 (`isMobile: true`) and fails on sideways scroll, a widened
+viewport, a broken pill or previous/next link, or a page over its height budget (`scripts/measure-profile.mts`,
+helpers in `scripts/lib/profile-measure.mts`). For other routes, install Playwright in the session scratchpad and
+load each at 390×844 with `isMobile: true`. Check that
 `window.innerWidth === 390` at DOMContentLoaded (server HTML) as well as after hydration, since mobile Chrome locks
 in a widened viewport at load.

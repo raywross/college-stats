@@ -52,7 +52,7 @@ export interface Measurement {
   viewport: ViewportName;
   width: number;
   status: number;
-  /** document.documentElement.scrollHeight after load. */
+  /** Content height after load: the bottom of <main> (the site footer excluded), or scrollHeight without a main. */
   height: number;
   /** window.innerWidth when DOMContentLoaded fired (the server HTML, before hydration). */
   innerWidthAtDcl: number;

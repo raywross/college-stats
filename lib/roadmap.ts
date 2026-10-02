@@ -20,6 +20,7 @@ export type RoadmapGroupKey =
   | "college-reported"
   | "campus-life"
   | "national-trends"
+  | "design"
   | "accounts"
   | "planning"
   | "high-school"
@@ -49,6 +50,12 @@ export const ROADMAP_GROUPS: { key: RoadmapGroupKey; title: string; description:
     title: "National trends",
     description:
       "How college is changing across the country, not at one college: nationally, and by region, public or private, size, and selectivity.",
+  },
+  {
+    key: "design",
+    title: "Design and usability",
+    description:
+      "Making what's already on the site easier to use: shorter pages, clearer paths to detail, and layouts that fit each device.",
   },
   {
     key: "accounts",
@@ -213,6 +220,17 @@ export const ROADMAP: RoadmapSpec[] = [
       "Studies of how college is changing nationally, with where it's happening. First: men and women in admissions, by region, type, size, and selectivity.",
     complexity: 3,
     complexityNote: "A new Trends page and a shared way to compute and chart breakdowns; each later study reuses it.",
+    status: "planned",
+  },
+  {
+    slug: "profile-redesign",
+    file: "specs/profile-redesign.md",
+    group: "design",
+    summary:
+      "A short overview of each college with one card per topic, and a page per topic for the detail, instead of one 25-screen page.",
+    complexity: 3,
+    complexityNote:
+      "Seven new routes, a card system, a different layout per device, and a pilot that measures page heights at three widths.",
     status: "planned",
   },
   {

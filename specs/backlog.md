@@ -98,6 +98,14 @@ list them here.
   now, and where the change is concentrated (first look: the Northeast and moderately selective colleges drive it; the
   West moved the other way). Needs `applicants_men`/`applicants_women` history series first.
 
+## Design and usability
+- [ ] **Profile redesign** ([profile-redesign.md](profile-redesign.md)): the profile is 22,000px on desktop and
+  32,000px on a tablet (2026-10-02 review). Replace it with an overview of seven topic cards (headline figure,
+  supporting numbers, ten-year line, takeaway) and a page per topic (`/schools/{id}/admissions` … `/history`);
+  tablets fold like phones; Over time becomes a segmented control; "How it ranks" dissolves into the topics. Chosen
+  over tabs, a re-chunked single page, and detail panels by the scoring in the spec. Pilot with Playwright height
+  measurements at three widths.
+
 ## Later
 Worked out, then set aside until another feature needs them; each spec says what it gets built with. Also the last
 section on `/roadmap`.

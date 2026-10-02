@@ -2,6 +2,9 @@
 
 Route: `/schools/[id]`. The 50 most-applied-to profiles are pre-rendered at build; the rest render on first visit. The bottom of the drill-down.
 
+> A redesign is planned ([profile-redesign.md](profile-redesign.md), 2026-10-02): a short overview of topic cards
+> with one page per topic. This file describes the page as built today.
+
 ## Structure
 1. **Hero**: tinted with the school's crest color. Breadcrumb (Explore › State › School), large crest,
    name, location, type and size (as glossary `Term`s), compare button, "Known for" standout chips, and "Over 10 years":

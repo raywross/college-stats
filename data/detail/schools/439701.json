@@ -1,6 +1,8 @@
 {
   "unit_id": "439701",
   "tables": {
-    "home_states": {"source":"ipeds-ef-c","vintage":"ipeds-ef-c","year":"Fall 2024","rows":{"TX":7,"GA":1,"LA":1,"MI":1,"WA":1}}
+    "home_states": {"source":"ipeds-ef-c","vintage":"ipeds-ef-c","year":"Fall 2024","rows":{"TX":7,"GA":1,"LA":1,"MI":1,"WA":1}},
+    "majors": {"source":"ipeds-c","vintage":"ipeds-c","year":"2024–25 graduates","rows":{"39.9999":[11,0],"39.0701":[9,0],"39.0502":[8,0],"39.0601":[4,0],"39.0602":[3,0],"50.0401":[2,0]}},
+    "programs": {"source":"scorecard-fos","vintage":"scorecard-fos","year":null,"rows":{"39.03":{"title":"Missions/Missionary Studies and Missiology","graduates":3,"earnings":{"y1":null,"y4":null,"y4_national":40103,"y4_pell":null,"y4_non_pell":null},"debt_median":null},"39.05":{"title":"Religious Music and Worship","graduates":9,"earnings":{"y1":null,"y4":null,"y4_national":41456,"y4_pell":null,"y4_non_pell":null},"debt_median":null},"39.06":{"title":"Theological and Ministerial Studies","graduates":26,"earnings":{"y1":29593,"y4":54618,"y4_national":44535,"y4_pell":null,"y4_non_pell":null},"debt_median":43423},"39.07":{"title":"Pastoral Counseling and Specialized Ministries","graduates":20,"earnings":{"y1":null,"y4":null,"y4_national":42915,"y4_pell":null,"y4_non_pell":null},"debt_median":null},"39.99":{"title":"Theology and Religious Vocations, Other","graduates":20,"earnings":{"y1":null,"y4":36278,"y4_national":43566,"y4_pell":null,"y4_non_pell":null},"debt_median":null},"50.04":{"title":"Design and Applied Arts","graduates":3,"earnings":{"y1":null,"y4":null,"y4_national":null,"y4_pell":null,"y4_non_pell":null},"debt_median":null}}}
   }
 }

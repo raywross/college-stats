@@ -50,6 +50,8 @@
     "grad_cohort_black": {"start":2008,"values":[0,null,0,0,null,null,1,0,5,1,6]},
     "grad_cohort_two_or_more": {"start":2008,"values":[0,null,0,0,null,null,0,0,0,0,0]},
     "grad_cohort_international": {"start":2008,"values":[0,null,0,0,null,null,0,0,0,0,0]},
-    "instruction_per_student": {"start":2004,"values":[841,2457,36000,1242,1334,3456,null,43607,31836,7757,5554,6563,8556,7165,4603,4942,4057,6357,3329,2888]}
+    "instruction_per_student": {"start":2004,"values":[841,2457,36000,1242,1334,3456,null,43607,31836,7757,5554,6563,8556,7165,4603,4942,4057,6357,3329,2888]},
+    "bachelors": {"start":2015,"values":[2,null,5,8,14,156,295,534,896,1240]},
+    "major_51": {"start":2015,"values":[1,null,1,1,1,1,1,1,1,1]}
   }
 }

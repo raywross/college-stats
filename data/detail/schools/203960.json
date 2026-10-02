@@ -1,6 +1,8 @@
 {
   "unit_id": "203960",
   "tables": {
-    "home_states": {"source":"ipeds-ef-c","vintage":"ipeds-ef-c","year":"Fall 2024","rows":{"OH":80,"MI":22}}
+    "home_states": {"source":"ipeds-ef-c","vintage":"ipeds-ef-c","year":"Fall 2024","rows":{"OH":80,"MI":22}},
+    "majors": {"source":"ipeds-c","vintage":"ipeds-c","year":"2024–25 graduates","rows":{"51.3801":[97,0],"51.0000":[23,0],"51.0701":[21,0],"26.0101":[4,0]}},
+    "programs": {"source":"scorecard-fos","vintage":"scorecard-fos","year":null,"rows":{"26.01":{"title":"Biology, General","graduates":5,"earnings":{"y1":null,"y4":null,"y4_national":57214,"y4_pell":null,"y4_non_pell":null},"debt_median":null},"51.00":{"title":"Health Services/Allied Health/Health Sciences, General","graduates":85,"earnings":{"y1":65046,"y4":80420,"y4_national":61296,"y4_pell":null,"y4_non_pell":null},"debt_median":26559},"51.07":{"title":"Health and Medical Administrative Services","graduates":39,"earnings":{"y1":53429,"y4":66015,"y4_national":58716,"y4_pell":null,"y4_non_pell":null},"debt_median":25000},"51.38":{"title":"Registered Nursing, Nursing Administration, Nursing Research and Clinical Nursing","graduates":202,"earnings":{"y1":73010,"y4":75648,"y4_national":88910,"y4_pell":67535,"y4_non_pell":64067},"debt_median":23500}}}
   }
 }

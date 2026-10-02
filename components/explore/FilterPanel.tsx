@@ -17,6 +17,7 @@ import { DIVISION_FILTERS, DIVISION_SHORT, ROTC_BRANCHES, ROTC_LABELS } from "@/
 import { MAX_RATIO_OPTIONS, MIN_FULL_TIME_FACULTY_OPTIONS } from "@/lib/academics";
 import { SMALL_PELL_GAP } from "@/lib/graduation-groups";
 import { DRAWS_NATIONALLY } from "@/lib/residence";
+import { FIELD_MIN_OPTIONS, MAJOR_FAMILIES, MAJOR_FAMILY_CODES } from "@/lib/majors";
 import type { Designation, DivisionFilter, ResearchTier, RotcBranch, SettingGroup } from "@/lib/types";
 import { useExploreParams } from "./useExploreParams";
 import { cn } from "@/lib/utils";
@@ -55,6 +56,8 @@ export interface FilterFacets {
   pellGap: number;
   /** Colleges where at least half of first-years come from other states (lib/residence.ts). */
   national: number;
+  /** Colleges per bachelor's field at each graduates-a-year threshold (lib/majors.ts fieldFacets). */
+  fields: Record<string, number[]>;
 }
 
 function Section({ title, term, children }: { title: string; term?: TermKey; children: ReactNode }) {
@@ -123,9 +126,12 @@ export function FilterPanel({ facets, onDone }: { facets: FilterFacets; onDone?:
   const fewLoans = searchParams.get("fewLoans") === "1";
   const pellGap = searchParams.get("pellGap") === "1";
   const national = searchParams.get("national") === "1";
+  const field = searchParams.get("field") ?? "";
+  const fieldMin = Number(searchParams.get("fieldMin") ?? 1) || 1;
+  const fieldOptions = MAJOR_FAMILY_CODES.filter((f) => (facets.fields[f]?.[0] ?? 0) > 0).sort((a, b) => MAJOR_FAMILIES[a].localeCompare(MAJOR_FAMILIES[b]));
 
   const hasFilters = [
-    ...["q", "types", "sizes", "regions", "states", "minAR", "maxAR", "minSAT", "maxSAT", "minCost", "maxCost", "minEnroll", "maxEnroll", "balance", "fullTime", "fewLoans", "liveOn", "noFee", "guarantee", "noLegacy", "noEssay", "gpaRequired", "setting", "research", "designation", "opportunity", "division", "conference", "football", "rotc", "ugResearch", "studyAbroad", "maxRatio", "pellGap", "minFullTimeFaculty", "national"],
+    ...["q", "types", "sizes", "regions", "states", "minAR", "maxAR", "minSAT", "maxSAT", "minCost", "maxCost", "minEnroll", "maxEnroll", "balance", "fullTime", "fewLoans", "liveOn", "noFee", "guarantee", "noLegacy", "noEssay", "gpaRequired", "setting", "research", "designation", "opportunity", "division", "conference", "football", "rotc", "ugResearch", "studyAbroad", "maxRatio", "pellGap", "minFullTimeFaculty", "national", "field"],
     ...INDICATOR_KEYS.map((k) => INDICATORS[k].param),
   ].some((k) => searchParams.get(k));
 
@@ -310,6 +316,40 @@ export function FilterPanel({ facets, onDone }: { facets: FilterFacets; onDone?:
         </div>
         <p className="text-[11px] text-muted-foreground">
           At least {Math.round(DRAWS_NATIONALLY * 100)}% of first-years come from other states. Colleges that don&apos;t report it are hidden while this is set.
+        </p>
+      </Section>
+
+      <Section title="Majors" term="cip-code">
+        <label className="block">
+          <span className="sr-only">Field of study</span>
+          <select
+            value={field}
+            onChange={(e) => update({ field: e.target.value || null, fieldMin: null })}
+            className="h-9 w-full cursor-pointer rounded-xl border bg-card px-3 text-sm font-semibold outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            <option value="">Any field</option>
+            {fieldOptions.map((f) => (
+              <option key={f} value={f}>
+                {MAJOR_FAMILIES[f]} ({facets.fields[f][0]})
+              </option>
+            ))}
+          </select>
+        </label>
+        {field && facets.fields[field] && (
+          <div className="flex flex-wrap gap-1.5" role="group" aria-label="Graduates a year in this field">
+            {FIELD_MIN_OPTIONS.map((min, i) => {
+              const active = fieldMin === min;
+              return (
+                <Chip key={min} active={active} onClick={() => update({ fieldMin: min === 1 ? null : String(min) })} count={facets.fields[field][i]}>
+                  {min === 1 ? "Any graduates" : `${min}+ a year`}
+                </Chip>
+              );
+            })}
+          </div>
+        )}
+        <p className="text-[11px] text-muted-foreground">
+          Colleges awarding bachelor&apos;s degrees in the field, counting first majors. Colleges that don&apos;t report degrees by field are hidden
+          while this is set.
         </p>
       </Section>
 

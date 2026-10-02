@@ -1,6 +1,8 @@
 {
   "unit_id": "455664",
   "tables": {
-    "home_states": {"source":"ipeds-ef-c","vintage":"ipeds-ef-c","year":"Fall 2024","rows":{"IL":11,"CA":4,"TX":3,"IN":2,"CT":1,"GA":1,"MD":1,"NJ":1,"TN":1}}
+    "home_states": {"source":"ipeds-ef-c","vintage":"ipeds-ef-c","year":"Fall 2024","rows":{"IL":11,"CA":4,"TX":3,"IN":2,"CT":1,"GA":1,"MD":1,"NJ":1,"TN":1}},
+    "majors": {"source":"ipeds-c","vintage":"ipeds-c","year":"2024–25 graduates","rows":{"42.0101":[72,0],"52.0201":[8,0],"45.0401":[7,0],"31.0504":[3,0],"51.0701":[2,0],"51.3801":[1,0]}},
+    "programs": {"source":"scorecard-fos","vintage":"scorecard-fos","year":null,"rows":{"42.01":{"title":"Psychology, General","graduates":75,"earnings":{"y1":39596,"y4":53952,"y4_national":50706,"y4_pell":null,"y4_non_pell":null},"debt_median":28125},"51.38":{"title":"Registered Nursing, Nursing Administration, Nursing Research and Clinical Nursing","graduates":2,"earnings":{"y1":null,"y4":null,"y4_national":88910,"y4_pell":null,"y4_non_pell":null},"debt_median":null}}}
   }
 }

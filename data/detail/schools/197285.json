@@ -1,6 +1,8 @@
 {
   "unit_id": "197285",
   "tables": {
-    "home_states": {"source":"ipeds-ef-c","vintage":"ipeds-ef-c","year":"Fall 2024","rows":{"NY":90}}
+    "home_states": {"source":"ipeds-ef-c","vintage":"ipeds-ef-c","year":"Fall 2024","rows":{"NY":90}},
+    "majors": {"source":"ipeds-c","vintage":"ipeds-c","year":"2024–25 graduates","rows":{"51.0701":[37,0],"52.0201":[34,0],"11.0103":[18,0],"52.0301":[13,0],"50.0102":[6,0],"44.0000":[5,0]}},
+    "programs": {"source":"scorecard-fos","vintage":"scorecard-fos","year":null,"rows":{"11.01":{"title":"Computer and Information Sciences, General","graduates":17,"earnings":{"y1":null,"y4":null,"y4_national":null,"y4_pell":null,"y4_non_pell":null},"debt_median":null},"44.00":{"title":"Human Services, General","graduates":0,"earnings":{"y1":null,"y4":null,"y4_national":null,"y4_pell":null,"y4_non_pell":null},"debt_median":null},"50.01":{"title":"Visual and Performing Arts, General","graduates":24,"earnings":{"y1":20163,"y4":null,"y4_national":41688,"y4_pell":null,"y4_non_pell":null},"debt_median":null},"50.04":{"title":"Design and Applied Arts","graduates":null,"earnings":{"y1":null,"y4":null,"y4_national":51490,"y4_pell":null,"y4_non_pell":null},"debt_median":null},"51.07":{"title":"Health and Medical Administrative Services","graduates":69,"earnings":{"y1":49755,"y4":48472,"y4_national":58716,"y4_pell":null,"y4_non_pell":null},"debt_median":37592},"52.02":{"title":"Business Administration, Management and Operations","graduates":68,"earnings":{"y1":38391,"y4":53826,"y4_national":68257,"y4_pell":39045,"y4_non_pell":null},"debt_median":37225},"52.03":{"title":"Accounting and Related Services","graduates":23,"earnings":{"y1":45798,"y4":59123,"y4_national":76194,"y4_pell":56561,"y4_non_pell":null},"debt_median":32823}}}
   }
 }

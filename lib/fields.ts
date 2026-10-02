@@ -30,13 +30,17 @@ export type VintageKey =
   | "ipeds-ef-c"
   /** IPEDS Fall Enrollment part A (EF{Y}A): enrollment by level, incl. new transfer-ins. Fall Y. */
   | "ipeds-ef-a"
+  /** IPEDS Completions (C{Y}_A): degrees awarded by field, July Y−1 to June Y ("2024–25 graduates"). */
+  | "ipeds-c"
   /** IPEDS Finance survey, derived per-student figures (DRVF{Y}): endowment and spending per student. Fiscal year. */
   | "ipeds-f"
   | "scorecard-enrollment"
   /** Student age: IPEDS collects it in odd-numbered falls only, so it trails enrollment by a year every other year. */
   | "scorecard-age"
   | "scorecard-cost"
-  | "scorecard-latest";
+  | "scorecard-latest"
+  /** College Scorecard Field of Study bulk CSV: each metric pools a different, independently-refreshed cohort, so like scorecard-latest this has no single year. */
+  | "scorecard-fos";
 
 export interface FieldDef {
   label: string;
@@ -156,6 +160,22 @@ export const FIELDS = {
   // Transfers in (specs/data-expansion/transfers.md).
   "demographics.transfer_in": { label: "New transfer-in undergraduates this fall", topic: "demographics", source: "ipeds-ef-a", vintage: "ipeds-ef-a" },
   "detail.home_states": { label: "First-years by home state", topic: "demographics", source: "ipeds-ef-c", vintage: "ipeds-ef-c" },
+  // Majors (specs/data-expansion/majors.md): IPEDS Completions, bachelor's degrees by field (lib/majors.ts).
+  "academics.bachelors_awarded": { label: "Bachelor's degrees awarded (first majors)", topic: "academics", source: "ipeds-c", vintage: "ipeds-c" },
+  "academics.majors_top": {
+    label: "Most popular majors",
+    topic: "academics",
+    source: "ipeds-c",
+    vintage: "ipeds-c",
+    derived: { formula: "First-major bachelor's in each program (6-digit CIP) ÷ all first-major bachelor's; the top 5", inputs: ["academics.bachelors_awarded"] },
+  },
+  "academics.bachelors_by_family": { label: "Bachelor's degrees by field (2-digit CIP family, first majors)", topic: "academics", source: "ipeds-c", vintage: "ipeds-c" },
+  // Stored in the per-college detail file (lib/detail.ts): every program's first- and second-major bachelor's.
+  "detail.majors": { label: "Bachelor's degrees by program (first and second majors)", topic: "academics", source: "ipeds-c", vintage: "ipeds-c" },
+  // Field of study earnings and debt (specs/data-expansion/field-of-study.md): per-college detail table only, plus
+  // a snapshot count for Explore/cards.
+  "detail.programs": { label: "Earnings and debt by major, bachelor's programs (College Scorecard Field of Study)", topic: "academics", source: "scorecard-fos", vintage: "scorecard-fos" },
+  "academics.programs_with_earnings": { label: "Bachelor's programs with 4-year earnings reported", topic: "academics", source: "scorecard-fos", vintage: "scorecard-fos" },
   finances: { label: "Endowment, spending, and revenue (IPEDS Finance survey)", topic: "academics", source: "ipeds-f", vintage: "ipeds-f" },
   "campus.athletics": icChar("Athletics: association, division, conference, sports"),
   "campus.programs": icChar("ROTC, study abroad, undergraduate research, and other programs"),

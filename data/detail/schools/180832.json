@@ -1,6 +1,8 @@
 {
   "unit_id": "180832",
   "tables": {
-    "home_states": {"source":"ipeds-ef-c","vintage":"ipeds-ef-c","year":"Fall 2024","rows":{"NE":24,"IA":8,"SD":1,"TX":1}}
+    "home_states": {"source":"ipeds-ef-c","vintage":"ipeds-ef-c","year":"Fall 2024","rows":{"NE":24,"IA":8,"SD":1,"TX":1}},
+    "majors": {"source":"ipeds-c","vintage":"ipeds-c","year":"2024–25 graduates","rows":{"51.3801":[120,0],"51.0907":[20,20],"51.0000":[5,0],"51.0806":[5,0],"52.0101":[4,0],"51.0706":[3,0]}},
+    "programs": {"source":"scorecard-fos","vintage":"scorecard-fos","year":null,"rows":{"51.00":{"title":"Health Services/Allied Health/Health Sciences, General","graduates":8,"earnings":{"y1":null,"y4":null,"y4_national":61296,"y4_pell":null,"y4_non_pell":null},"debt_median":null},"51.07":{"title":"Health and Medical Administrative Services","graduates":6,"earnings":{"y1":null,"y4":null,"y4_national":58716,"y4_pell":null,"y4_non_pell":null},"debt_median":null},"51.08":{"title":"Allied Health and Medical Assisting Services","graduates":11,"earnings":{"y1":null,"y4":null,"y4_national":null,"y4_pell":null,"y4_non_pell":null},"debt_median":null},"51.09":{"title":"Allied Health Diagnostic, Intervention, and Treatment Professions","graduates":47,"earnings":{"y1":61222,"y4":76592,"y4_national":70786,"y4_pell":57426,"y4_non_pell":null},"debt_median":25000},"51.38":{"title":"Registered Nursing, Nursing Administration, Nursing Research and Clinical Nursing","graduates":232,"earnings":{"y1":73835,"y4":81508,"y4_national":88910,"y4_pell":70565,"y4_non_pell":66217},"debt_median":27125},"52.01":{"title":"Business/Commerce, General","graduates":8,"earnings":{"y1":null,"y4":null,"y4_national":68407,"y4_pell":null,"y4_non_pell":null},"debt_median":null}}}
   }
 }

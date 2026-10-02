@@ -1,6 +1,8 @@
 {
   "unit_id": "180878",
   "tables": {
-    "home_states": {"source":"ipeds-ef-c","vintage":"ipeds-ef-c","year":"Fall 2024","rows":{"NE":83}}
+    "home_states": {"source":"ipeds-ef-c","vintage":"ipeds-ef-c","year":"Fall 2024","rows":{"NE":83}},
+    "majors": {"source":"ipeds-c","vintage":"ipeds-c","year":"2024–25 graduates","rows":{"51.3801":[91,0],"51.0910":[10,0],"26.0102":[7,0],"51.0901":[6,0],"51.9999":[5,0],"51.0908":[1,0]}},
+    "programs": {"source":"scorecard-fos","vintage":"scorecard-fos","year":null,"rows":{"26.01":{"title":"Biology, General","graduates":14,"earnings":{"y1":null,"y4":null,"y4_national":57214,"y4_pell":null,"y4_non_pell":null},"debt_median":null},"51.00":{"title":"Health Services/Allied Health/Health Sciences, General","graduates":0,"earnings":{"y1":null,"y4":null,"y4_national":null,"y4_pell":null,"y4_non_pell":null},"debt_median":null},"51.09":{"title":"Allied Health Diagnostic, Intervention, and Treatment Professions","graduates":34,"earnings":{"y1":60447,"y4":73221,"y4_national":70786,"y4_pell":null,"y4_non_pell":null},"debt_median":25809},"51.38":{"title":"Registered Nursing, Nursing Administration, Nursing Research and Clinical Nursing","graduates":204,"earnings":{"y1":73124,"y4":75490,"y4_national":88910,"y4_pell":63262,"y4_non_pell":63375},"debt_median":26270},"51.99":{"title":"Health Professions and Related Clinical Sciences, Other","graduates":4,"earnings":{"y1":null,"y4":null,"y4_national":68245,"y4_pell":null,"y4_non_pell":null},"debt_median":null}}}
   }
 }

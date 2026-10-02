@@ -1,6 +1,8 @@
 {
   "unit_id": "143048",
   "tables": {
-    "home_states": {"source":"ipeds-ef-c","vintage":"ipeds-ef-c","year":"Fall 2024","rows":{"IL":100,"CA":58,"TX":35,"MI":18,"NY":18,"WI":18,"CO":15,"FL":13,"IN":13,"MA":13,"MO":12,"PA":12,"OH":11,"MD":10,"NJ":10,"TN":10,"GA":8,"VA":8,"WA":7,"AR":6,"UT":6,"AL":5,"IA":5,"KS":5,"DC":4,"KY":4,"LA":4,"MN":4,"NC":4,"NV":4,"OR":4,"AZ":3,"NE":2,"NM":2,"VT":2,"AK":1,"ME":1,"ND":1,"OK":1,"SD":1}}
+    "home_states": {"source":"ipeds-ef-c","vintage":"ipeds-ef-c","year":"Fall 2024","rows":{"IL":100,"CA":58,"TX":35,"MI":18,"NY":18,"WI":18,"CO":15,"FL":13,"IN":13,"MA":13,"MO":12,"PA":12,"OH":11,"MD":10,"NJ":10,"TN":10,"GA":8,"VA":8,"WA":7,"AR":6,"UT":6,"AL":5,"IA":5,"KS":5,"DC":4,"KY":4,"LA":4,"MN":4,"NC":4,"NV":4,"OR":4,"AZ":3,"NE":2,"NM":2,"VT":2,"AK":1,"ME":1,"ND":1,"OK":1,"SD":1}},
+    "majors": {"source":"ipeds-c","vintage":"ipeds-c","year":"2024–25 graduates","rows":{"50.0702":[625,0],"23.1302":[11,0],"50.0101":[3,0]}},
+    "programs": {"source":"scorecard-fos","vintage":"scorecard-fos","year":null,"rows":{"04.05":{"title":"Interior Architecture","graduates":0,"earnings":{"y1":null,"y4":null,"y4_national":60369,"y4_pell":null,"y4_non_pell":null},"debt_median":null},"23.13":{"title":"Rhetoric and Composition/Writing Studies","graduates":24,"earnings":{"y1":null,"y4":null,"y4_national":48471,"y4_pell":null,"y4_non_pell":null},"debt_median":null},"50.01":{"title":"Visual and Performing Arts, General","graduates":14,"earnings":{"y1":null,"y4":null,"y4_national":41688,"y4_pell":null,"y4_non_pell":null},"debt_median":null},"50.07":{"title":"Fine and Studio Arts","graduates":1170,"earnings":{"y1":23984,"y4":45602,"y4_national":41367,"y4_pell":38285,"y4_non_pell":28415},"debt_median":27000}}}
   }
 }

@@ -1,6 +1,8 @@
 {
   "unit_id": "440396",
   "tables": {
-    "home_states": {"source":"ipeds-ef-c","vintage":"ipeds-ef-c","year":"Fall 2024","rows":{"ID":24,"TX":12,"WA":9,"CA":4,"FL":4,"OR":4,"AK":3,"NC":3,"LA":2,"MN":2,"NE":2,"NY":2,"OH":2,"OK":2,"TN":2,"AL":1,"AZ":1,"CO":1,"GA":1,"KS":1,"KY":1,"MD":1,"MT":1,"VA":1,"WV":1}}
+    "home_states": {"source":"ipeds-ef-c","vintage":"ipeds-ef-c","year":"Fall 2024","rows":{"ID":24,"TX":12,"WA":9,"CA":4,"FL":4,"OR":4,"AK":3,"NC":3,"LA":2,"MN":2,"NE":2,"NY":2,"OH":2,"OK":2,"TN":2,"AL":1,"AZ":1,"CO":1,"GA":1,"KS":1,"KY":1,"MD":1,"MT":1,"VA":1,"WV":1}},
+    "majors": {"source":"ipeds-c","vintage":"ipeds-c","year":"2024–25 graduates","rows":{"24.0101":[58,0]}},
+    "programs": {"source":"scorecard-fos","vintage":"scorecard-fos","year":null,"rows":{"24.01":{"title":"Liberal Arts and Sciences, General Studies and Humanities","graduates":48,"earnings":{"y1":null,"y4":null,"y4_national":null,"y4_pell":null,"y4_non_pell":null},"debt_median":null}}}
   }
 }

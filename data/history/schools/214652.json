@@ -79,6 +79,23 @@
     "grad_cohort_black": {"start":2005,"values":[3,6,4,1,2,6,6,10,null,null,null,6,14,6]},
     "grad_cohort_two_or_more": {"start":2005,"values":[0,0,0,0,8,7,9,2,null,null,null,9,11,3]},
     "grad_cohort_international": {"start":2005,"values":[2,1,0,1,0,1,0,1,null,null,null,4,2,1]},
-    "instruction_per_student": {"start":2004,"values":[9375,null,null,null,null,null,null,6190,5694,5600,3634,4189,4576,4287,4245,null,null,3489,3533,3561]}
+    "instruction_per_student": {"start":2004,"values":[9375,null,null,null,null,null,null,6190,5694,5600,3634,4189,4576,4287,4245,null,null,3489,3533,3561]},
+    "bachelors": {"start":2013,"values":[137,180,144,138,135,153,null,null,155,155,125,126]},
+    "major_03": {"start":2013,"values":[0,0,0,0,0,0.0065,null,null,0,0,0,0]},
+    "major_05": {"start":2013,"values":[0.0146,0.0056,0,0,0,0,null,null,0,0,0,0]},
+    "major_11": {"start":2013,"values":[0.1387,0.1444,0.1528,0.1014,0.0963,0.0915,null,null,0.1161,0.0903,0.12,0.0873]},
+    "major_13": {"start":2013,"values":[0,0,0,0,0,0,null,null,0,0,0.008,0]},
+    "major_14": {"start":2013,"values":[0,0,0,0,0,0,null,null,0,0.0516,0.064,0.1587]},
+    "major_19": {"start":2013,"values":[0.2117,0.2389,0.2292,0.2029,0.1259,0.1176,null,null,0.0516,0.0968,0.096,0.0714]},
+    "major_23": {"start":2013,"values":[0.0657,0.0778,0.0694,0.058,0.037,0.0588,null,null,0.0323,0.0258,0.024,0.0556]},
+    "major_24": {"start":2013,"values":[0.0438,0.0333,0.0208,0.0435,0.0074,0.0196,null,null,0.0065,0.0194,0,0.0159]},
+    "major_26": {"start":2013,"values":[0,0,0,0.0072,0.0074,0.0261,null,null,0.0581,0.071,0.04,0.0714]},
+    "major_30": {"start":2013,"values":[0.0146,0.0389,0.0278,0.0217,0.0444,0.0131,null,null,0,0.0194,0.016,0]},
+    "major_31": {"start":2013,"values":[0,0,0,0,0,0,null,null,0,0.0065,0,0]},
+    "major_42": {"start":2013,"values":[0,0,0.0069,0.0145,0.0519,0.085,null,null,0.1419,0.1161,0.144,0.1429]},
+    "major_45": {"start":2013,"values":[0,0,0,0,0,0.0065,null,null,0,0,0,0]},
+    "major_51": {"start":2013,"values":[0.2701,0.1889,0.2153,0.2319,0.3111,0.2026,null,null,0.2903,0.2129,0.232,0.1825]},
+    "major_52": {"start":2013,"values":[0.2409,0.2722,0.2778,0.3188,0.3111,0.3725,null,null,0.3032,0.2903,0.256,0.2143]},
+    "major_54": {"start":2013,"values":[0,0,0,0,0.0074,0,null,null,0,0,0,0]}
   }
 }

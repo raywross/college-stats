@@ -1,6 +1,8 @@
 {
   "unit_id": "404338",
   "tables": {
-    "home_states": {"source":"ipeds-ef-c","vintage":"ipeds-ef-c","year":"Fall 2024","rows":{"FL":1}}
+    "home_states": {"source":"ipeds-ef-c","vintage":"ipeds-ef-c","year":"Fall 2024","rows":{"FL":1}},
+    "majors": {"source":"ipeds-c","vintage":"ipeds-c","year":"2024–25 graduates","rows":{"52.1101":[14,0],"45.0901":[2,0]}},
+    "programs": {"source":"scorecard-fos","vintage":"scorecard-fos","year":null,"rows":{"45.06":{"title":"Economics","graduates":null,"earnings":{"y1":null,"y4":null,"y4_national":82686,"y4_pell":null,"y4_non_pell":null},"debt_median":null},"45.09":{"title":"International Relations and National Security Studies","graduates":null,"earnings":{"y1":null,"y4":null,"y4_national":66596,"y4_pell":null,"y4_non_pell":null},"debt_median":null},"52.09":{"title":"Hospitality Administration/Management","graduates":null,"earnings":{"y1":null,"y4":null,"y4_national":56726,"y4_pell":null,"y4_non_pell":null},"debt_median":null},"52.11":{"title":"International Business","graduates":5,"earnings":{"y1":null,"y4":null,"y4_national":73201,"y4_pell":null,"y4_non_pell":null},"debt_median":null}}}
   }
 }

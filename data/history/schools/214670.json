@@ -82,6 +82,21 @@
     "grad_cohort_black": {"start":2005,"values":[6,7,11,10,6,9,14,11,null,null,null,10,12,11]},
     "grad_cohort_two_or_more": {"start":2005,"values":[0,0,0,0,3,7,8,1,null,null,null,11,12,3]},
     "grad_cohort_international": {"start":2005,"values":[2,1,2,1,1,0,2,1,null,null,null,6,15,7]},
-    "instruction_per_student": {"start":2004,"values":[10373,null,null,null,null,null,null,5267,4653,4578,4631,4905,4888,4786,4540,null,null,3173,2995,2942]}
+    "instruction_per_student": {"start":2004,"values":[10373,null,null,null,null,null,null,5267,4653,4578,4631,4905,4888,4786,4540,null,null,3173,2995,2942]},
+    "bachelors": {"start":2013,"values":[88,88,111,102,106,91,null,null,122,117,118,114]},
+    "major_01": {"start":2013,"values":[0,0,0,0,0.0189,0,null,null,0,0.0085,0,0]},
+    "major_03": {"start":2013,"values":[0,0,0,0,0.0094,0,null,null,0,0,0,0]},
+    "major_09": {"start":2013,"values":[0,0,0,0,0.0094,0,null,null,0,0,0,0]},
+    "major_11": {"start":2013,"values":[0.0682,0.0455,0.0811,0.1176,0.1132,0.0769,null,null,0.0984,0.188,0.0847,0.1667]},
+    "major_13": {"start":2013,"values":[0.1818,0.0455,0.036,0.0686,0.0283,0,null,null,0,0,0,0]},
+    "major_14": {"start":2013,"values":[0,0,0,0,0.0189,0,null,null,0.0082,0,0,0]},
+    "major_26": {"start":2013,"values":[0,0,0,0.0098,0.0094,0.011,null,null,0.1311,0.0427,0.1356,0.0877]},
+    "major_30": {"start":2013,"values":[0,0,0,0,0,0,null,null,0,0,0.0085,0]},
+    "major_42": {"start":2013,"values":[0.3182,0.3068,0.1171,0.2157,0.1415,0.1429,null,null,0.1557,0.1709,0.2203,0.2105]},
+    "major_43": {"start":2013,"values":[0,0,0,0,0,0,null,null,0,0,0.0169,0.0263]},
+    "major_45": {"start":2013,"values":[0.0114,0,0,0.0098,0,0.011,null,null,0,0.0085,0,0]},
+    "major_50": {"start":2013,"values":[0,0,0,0.0098,0.0283,0.033,null,null,0,0.0256,0.0085,0]},
+    "major_51": {"start":2013,"values":[0,0.1705,0.3423,0.1863,0.2453,0.3077,null,null,0.1639,0.1368,0.1017,0.0789]},
+    "major_52": {"start":2013,"values":[0.4205,0.4318,0.4234,0.3824,0.3774,0.4176,null,null,0.4426,0.4188,0.4237,0.4298]}
   }
 }

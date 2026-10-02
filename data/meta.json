@@ -98,6 +98,20 @@
       "edition": "Fall 2024 (EF2024A)",
       "url": "https://nces.ed.gov/ipeds/complete-data-files/EF2024A.zip",
       "description": "Each college's fall enrollment by level of student, including new transfer-in undergraduates (full-time and part-time) and first-time degree-seeking undergraduates."
+    },
+    "scorecard-fos": {
+      "label": "College Scorecard Field of Study data",
+      "publisher": "U.S. Department of Education",
+      "edition": "Most recent release",
+      "url": "https://ed-public-download.scorecard.network/downloads/Most-Recent-Cohorts-Field-of-Study_06102026.zip",
+      "description": "Earnings and federal loan debt by detailed field of study (4-digit CIP) and credential level, bachelor's programs only, among each college's federal financial aid recipients. Each column is Scorecard's latest calculation for that one metric, and different columns pool different completion cohorts a few years apart, so a program's figures aren't all one snapshot (see the Field of Study spec for the exact years)."
+    },
+    "ipeds-c": {
+      "label": "IPEDS Completions survey (degrees awarded by field)",
+      "publisher": "National Center for Education Statistics (NCES)",
+      "edition": "2024–25 graduates (C2025_A)",
+      "url": "https://nces.ed.gov/ipeds/complete-data-files/C2025_A.zip",
+      "description": "Every degree and certificate each college awarded from July through June, by field of study (Classification of Instructional Programs, CIP 2020) and award level. The site counts bachelor's degrees, first and second majors separately."
     }
   },
   "vintages": {
@@ -112,10 +126,12 @@
     "ipeds-sal": "Fall 2024",
     "ipeds-ef-c": "Fall 2024",
     "ipeds-ef-a": "Fall 2024",
+    "ipeds-c": "2024–25 graduates",
     "ipeds-f": "2023–24",
     "scorecard-enrollment": "Fall 2024",
     "scorecard-age": "Fall 2023",
     "scorecard-cost": "2023–24",
-    "scorecard-latest": null
+    "scorecard-latest": null,
+    "scorecard-fos": null
   }
 }

@@ -41,8 +41,8 @@ Each spec here is a separate unit of work, so pieces can ship when they're usefu
 ### Wave 3: large per-college tables
 | Spec | Adds | Source |
 |---|---|---|
-| [majors.md](majors.md) | Degrees awarded by field: top majors, fastest-growing | IPEDS Completions (C_A) |
-| [field-of-study.md](field-of-study.md) | Earnings and debt by major at each college | Scorecard Field of Study |
+| [majors.md](majors.md) | **Built.** Degrees awarded by field: top majors (searchable list of every program), fastest-growing field, field filter, Home fact | IPEDS Completions (C_A) |
+| [field-of-study.md](field-of-study.md) | **Built.** Earnings and debt by major at each college: "Top-earning majors here", Compare's "your major" | Scorecard Field of Study |
 
 ### Wave 4: college-specific, after the college-reported data agent
 | Spec | Adds | CDS items |

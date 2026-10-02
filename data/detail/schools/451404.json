@@ -1,6 +1,8 @@
 {
   "unit_id": "451404",
   "tables": {
-    "home_states": {"source":"ipeds-ef-c","vintage":"ipeds-ef-c","year":"Fall 2024","rows":{"NY":195,"NJ":10}}
+    "home_states": {"source":"ipeds-ef-c","vintage":"ipeds-ef-c","year":"Fall 2024","rows":{"NY":195,"NJ":10}},
+    "majors": {"source":"ipeds-c","vintage":"ipeds-c","year":"2024–25 graduates","rows":{"38.0207":[97,0]}},
+    "programs": {"source":"scorecard-fos","vintage":"scorecard-fos","year":null,"rows":{"38.02":{"title":"Religion/Religious Studies","graduates":195,"earnings":{"y1":17618,"y4":20163,"y4_national":41390,"y4_pell":16663,"y4_non_pell":null},"debt_median":null}}}
   }
 }

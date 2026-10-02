@@ -1,0 +1,7 @@
+{
+  "unit_id": "416801",
+  "tables": {
+    "majors": {"source":"ipeds-c","vintage":"ipeds-c","year":"2024–25 graduates","rows":{"51.0907":[42,0],"51.1010":[24,0],"51.1005":[15,0],"51.2205":[15,0],"51.0910":[13,0],"51.1007":[12,0],"51.0911":[11,0],"51.1504":[11,0],"51.1002":[5,0]}},
+    "programs": {"source":"scorecard-fos","vintage":"scorecard-fos","year":null,"rows":{"51.09":{"title":"Allied Health Diagnostic, Intervention, and Treatment Professions","graduates":142,"earnings":{"y1":76438,"y4":85326,"y4_national":70786,"y4_pell":null,"y4_non_pell":null},"debt_median":12500},"51.10":{"title":"Clinical/Medical Laboratory Science/Research and Allied Professions","graduates":137,"earnings":{"y1":62861,"y4":77114,"y4_national":75975,"y4_pell":null,"y4_non_pell":null},"debt_median":11000},"51.15":{"title":"Mental and Social Health Services and Allied Professions","graduates":7,"earnings":{"y1":null,"y4":null,"y4_national":52119,"y4_pell":null,"y4_non_pell":null},"debt_median":null},"51.22":{"title":"Public Health","graduates":30,"earnings":{"y1":99671,"y4":null,"y4_national":58808,"y4_pell":null,"y4_non_pell":null},"debt_median":null}}}
+  }
+}

@@ -1,6 +1,7 @@
 {
   "unit_id": "453163",
   "tables": {
-    "home_states": {"source":"ipeds-ef-c","vintage":"ipeds-ef-c","year":"Fall 2024","rows":{"NC":105,"SC":2,"VA":1}}
+    "home_states": {"source":"ipeds-ef-c","vintage":"ipeds-ef-c","year":"Fall 2024","rows":{"NC":105,"SC":2,"VA":1}},
+    "majors": {"source":"ipeds-c","vintage":"ipeds-c","year":"2024–25 graduates","rows":{"52.0101":[251,0],"43.0103":[42,0],"11.0103":[27,0],"52.0305":[18,0],"11.0401":[2,0],"52.0201":[2,0]}}
   }
 }

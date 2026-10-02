@@ -1,6 +1,8 @@
 {
   "unit_id": "492069",
   "tables": {
-    "home_states": {"source":"ipeds-ef-c","vintage":"ipeds-ef-c","year":"Fall 2024","rows":{"TX":17,"AR":10,"LA":4,"MS":3,"AL":1,"MO":1}}
+    "home_states": {"source":"ipeds-ef-c","vintage":"ipeds-ef-c","year":"Fall 2024","rows":{"TX":17,"AR":10,"LA":4,"MS":3,"AL":1,"MO":1}},
+    "majors": {"source":"ipeds-c","vintage":"ipeds-c","year":"2024–25 graduates","rows":{"30.9999":[25,0],"38.0203":[3,0]}},
+    "programs": {"source":"scorecard-fos","vintage":"scorecard-fos","year":null,"rows":{"24.01":{"title":"Liberal Arts and Sciences, General Studies and Humanities","graduates":10,"earnings":{"y1":null,"y4":null,"y4_national":null,"y4_pell":null,"y4_non_pell":null},"debt_median":null},"30.99":{"title":"Multi/Interdisciplinary Studies, Other","graduates":10,"earnings":{"y1":null,"y4":null,"y4_national":55693,"y4_pell":null,"y4_non_pell":null},"debt_median":null},"38.02":{"title":"Religion/Religious Studies","graduates":5,"earnings":{"y1":null,"y4":null,"y4_national":null,"y4_pell":null,"y4_non_pell":null},"debt_median":null}}}
   }
 }

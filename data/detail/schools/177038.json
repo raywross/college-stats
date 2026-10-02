@@ -1,6 +1,8 @@
 {
   "unit_id": "177038",
   "tables": {
-    "home_states": {"source":"ipeds-ef-c","vintage":"ipeds-ef-c","year":"Fall 2024","rows":{"KS":5,"MO":2}}
+    "home_states": {"source":"ipeds-ef-c","vintage":"ipeds-ef-c","year":"Fall 2024","rows":{"KS":5,"MO":2}},
+    "majors": {"source":"ipeds-c","vintage":"ipeds-c","year":"2024–25 graduates","rows":{"26.0101":[30,0]}},
+    "programs": {"source":"scorecard-fos","vintage":"scorecard-fos","year":null,"rows":{"26.01":{"title":"Biology, General","graduates":54,"earnings":{"y1":39724,"y4":54153,"y4_national":57214,"y4_pell":40477,"y4_non_pell":39006},"debt_median":10250},"31.05":{"title":"Sports, Kinesiology, and Physical Education/Fitness","graduates":4,"earnings":{"y1":null,"y4":null,"y4_national":null,"y4_pell":null,"y4_non_pell":null},"debt_median":null}}}
   }
 }

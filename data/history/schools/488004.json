@@ -42,6 +42,8 @@
     "om_award_4": {"start":2012,"values":[0.6176,0.6429,0.3333,null,0.2667]},
     "om_award_6": {"start":2012,"values":[0.6471,0.6905,0.3333,null,0.3]},
     "om_award_non_pell": {"start":2012,"values":[0.6471,0.7143,0.3333]},
-    "instruction_per_student": {"start":2015,"values":[5062,6327,9046,15383,20040,9137,13560,12721,17447]}
+    "instruction_per_student": {"start":2015,"values":[5062,6327,9046,15383,20040,9137,13560,12721,17447]},
+    "bachelors": {"start":2015,"values":[26,9,11,6,4,8,7,5,3,6]},
+    "major_38": {"start":2015,"values":[1,1,1,1,1,1,1,1,1,1]}
   }
 }

@@ -1,6 +1,8 @@
 {
   "unit_id": "209603",
   "tables": {
-    "home_states": {"source":"ipeds-ef-c","vintage":"ipeds-ef-c","year":"Fall 2024","rows":{"OR":38,"WA":23,"CA":12,"TX":6,"CO":5,"AZ":2,"ID":2,"NV":2,"UT":2,"AR":1,"FL":1,"HI":1,"IA":1,"IN":1,"MI":1,"MN":1,"MO":1,"NM":1,"WY":1}}
+    "home_states": {"source":"ipeds-ef-c","vintage":"ipeds-ef-c","year":"Fall 2024","rows":{"OR":38,"WA":23,"CA":12,"TX":6,"CO":5,"AZ":2,"ID":2,"NV":2,"UT":2,"AR":1,"FL":1,"HI":1,"IA":1,"IN":1,"MI":1,"MN":1,"MO":1,"NM":1,"WY":1}},
+    "majors": {"source":"ipeds-c","vintage":"ipeds-c","year":"2024–25 graduates","rows":{"50.0410":[27,0],"50.0102":[20,0],"50.0409":[7,0],"50.0702":[7,0],"50.0706":[4,0],"50.0708":[3,0],"50.0710":[3,0],"50.0605":[2,0],"50.0709":[1,0]}},
+    "programs": {"source":"scorecard-fos","vintage":"scorecard-fos","year":null,"rows":{"23.13":{"title":"Rhetoric and Composition/Writing Studies","graduates":1,"earnings":{"y1":null,"y4":null,"y4_national":null,"y4_pell":null,"y4_non_pell":null},"debt_median":null},"50.01":{"title":"Visual and Performing Arts, General","graduates":29,"earnings":{"y1":13895,"y4":null,"y4_national":null,"y4_pell":null,"y4_non_pell":null},"debt_median":null},"50.02":{"title":"Crafts/Craft Design, Folk Art and Artisanry","graduates":0,"earnings":{"y1":null,"y4":null,"y4_national":null,"y4_pell":null,"y4_non_pell":null},"debt_median":null},"50.04":{"title":"Design and Applied Arts","graduates":75,"earnings":{"y1":19501,"y4":null,"y4_national":null,"y4_pell":32683,"y4_non_pell":null},"debt_median":26000},"50.06":{"title":"Film/Video and Photographic Arts","graduates":7,"earnings":{"y1":null,"y4":null,"y4_national":null,"y4_pell":null,"y4_non_pell":null},"debt_median":null},"50.07":{"title":"Fine and Studio Arts","graduates":55,"earnings":{"y1":25906,"y4":null,"y4_national":null,"y4_pell":null,"y4_non_pell":null},"debt_median":25000}}}
   }
 }

@@ -1,6 +1,7 @@
 {
   "unit_id": "459994",
   "tables": {
-    "home_states": {"source":"ipeds-ef-c","vintage":"ipeds-ef-c","year":"Fall 2024","rows":{"OH":47,"CA":29,"IN":25,"KY":25,"LA":25,"NY":25,"OK":25,"TX":25,"FL":24,"MI":23,"MO":19,"IL":14,"GA":11,"WI":11,"NJ":10,"NC":9,"PA":9,"UT":9,"WA":9,"AZ":8,"OR":8,"TN":8,"CO":7,"IA":7,"KS":7,"MD":7,"SC":7,"MN":6,"NM":5,"CT":4,"MT":4,"VA":4,"WY":4,"AL":3,"ID":3,"ND":3,"NE":3,"DE":2,"HI":2,"MS":2,"NH":2,"NV":2,"DC":1,"MA":1,"ME":1,"WV":1}}
+    "home_states": {"source":"ipeds-ef-c","vintage":"ipeds-ef-c","year":"Fall 2024","rows":{"OH":47,"CA":29,"IN":25,"KY":25,"LA":25,"NY":25,"OK":25,"TX":25,"FL":24,"MI":23,"MO":19,"IL":14,"GA":11,"WI":11,"NJ":10,"NC":9,"PA":9,"UT":9,"WA":9,"AZ":8,"OR":8,"TN":8,"CO":7,"IA":7,"KS":7,"MD":7,"SC":7,"MN":6,"NM":5,"CT":4,"MT":4,"VA":4,"WY":4,"AL":3,"ID":3,"ND":3,"NE":3,"DE":2,"HI":2,"MS":2,"NH":2,"NV":2,"DC":1,"MA":1,"ME":1,"WV":1}},
+    "majors": {"source":"ipeds-c","vintage":"ipeds-c","year":"2024–25 graduates","rows":{"52.0101":[660,0],"11.0103":[144,0],"43.0103":[69,0],"52.0305":[44,0],"52.0201":[9,0],"11.0401":[1,0]}}
   }
 }

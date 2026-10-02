@@ -47,6 +47,10 @@
     "men_share": {"start":2022,"values":[0.5,0.5862,0.5588]},
     "part_time_share": {"start":2022,"values":[0,0,0]},
     "federal_loan_rate": {"start":2022,"values":[0]},
-    "instruction_per_student": {"start":2022,"values":[11239,13836]}
+    "instruction_per_student": {"start":2022,"values":[11239,13836]},
+    "bachelors": {"start":2024,"values":[10]},
+    "major_30": {"start":2024,"values":[0.3]},
+    "major_42": {"start":2024,"values":[0.3]},
+    "major_52": {"start":2024,"values":[0.4]}
   }
 }

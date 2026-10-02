@@ -11,6 +11,7 @@ import type { TermKey } from "./glossary";
 import type { DatasetMeta, SchoolTrends, SourceKey } from "./types";
 import { simpsonIndex } from "./derive.ts";
 import { MAX_PLAUSIBLE_GAP } from "./graduation-groups.ts";
+import { MAJOR_FAMILIES, MAJOR_FAMILY_CODES, type MajorFamily } from "./majors.ts";
 
 /* ------------------------------------------------------------------ */
 /* Series                                                              */
@@ -75,6 +76,8 @@ export const HISTORY_FAMILIES = {
   // Residence is required in even-numbered falls only (odd years cover about half the colleges): every other year.
   "ef-c": { source: "ipeds-ef-c", kind: "fall", files: "EF{year}C (residence of first-time students), even-numbered falls", step: 2 },
   "ef-a": { source: "ipeds-ef-a", kind: "fall", files: "EF{year}A (fall enrollment by level: new transfer-ins and first-time students)" },
+  // Completions (specs/data-expansion/majors.md): C{year+1}_A covers degrees awarded July {year} to June {year+1}.
+  "c-a": { source: "ipeds-c", kind: "academic", files: "C{year+1}_A (bachelor's degrees by field; CIP 2010 codes before C2020_A read through NCES's crosswalk)" },
   // College Scorecard API, year-prefixed fields (not files): years can have gaps, so they aren't checked as consecutive.
   "scorecard-enrollment": { source: "scorecard", kind: "fall", files: "API fields {year}.student.size, {year}.student.demographics.race_ethnicity.*, .men, and {year}.student.part_time_share", api: true, citeAs: "enrollment" },
   "scorecard-completion": { source: "scorecard", kind: "cohort", files: "API field {year+6}.completion.completion_rate_4yr_150nt", api: true, citeAs: "graduation by entering class" },
@@ -130,7 +133,7 @@ export const TEST_POLICY_CODES = { required: 1, recommended: 2, "not-considered"
  */
 export const TEST_BLIND_FROM = 2022;
 
-export const SERIES = {
+const BASE_SERIES = {
   applicants: { label: "Applicants", short: "Applied", field: "admissions.applicants", term: "applicants", unit: "count", kind: "fall", format: "compact", families: ADMISSIONS },
   admitted: { label: "Admitted", short: "Admitted", field: "admissions.admitted", term: "admitted", unit: "count", kind: "fall", format: "compact", families: ADMISSIONS },
   enrolled: { label: "Enrolled first-years", short: "Enrolled", field: "admissions.enrolled", term: "enrolled", unit: "count", kind: "fall", format: "compact", families: ADMISSIONS },
@@ -238,7 +241,29 @@ export const SERIES = {
   // endowment total has no FTE-consistent historical denominator (dividing by undergrad headcount alone would overstate
   // it at research universities with large graduate populations), so it's a snapshot-only fact.
   instruction_per_student: { label: "Instruction spending per student", short: "Instruction spending", field: "finances", term: "instruction-expenses", unit: "usd", kind: "academic", format: "money", families: ["scorecard-finances"], breaks: FINANCE_BREAK },
+  // Majors (specs/data-expansion/majors.md): first-major bachelor's degrees awarded in the school year (C{year+1}_A).
+  bachelors: { label: "Bachelor's degrees awarded (first majors)", short: "Bachelor's degrees", field: "academics.bachelors_awarded", term: "first-major", unit: "count", kind: "academic", format: "num", families: ["c-a"] },
 } as const satisfies Record<string, SeriesDef>;
+
+/** A field's history series: its share of first-major bachelor's, e.g. `major_11` (computer science). */
+export type MajorSeriesKey = `major_${MajorFamily}`;
+export const majorSeriesKey = (family: MajorFamily): MajorSeriesKey => `major_${family}`;
+type MajorSeriesDef = SeriesDef & { unit: "share"; kind: "academic"; format: "pct"; families: readonly ["c-a"] };
+
+/**
+ * One share series per 2-digit CIP family (lib/majors.ts MAJOR_FAMILIES): the family's share of the year's first-major
+ * bachelor's. Stored for every year the college awarded bachelor's once it has the family in any year (0 when it awarded
+ * none in that field). Families, not 6-digit programs: CIP 2010 codes are read through NCES's crosswalk, and every
+ * pre-2020 code site colleges used maps cleanly (probed 2026-10-02), so no break at the CIP 2020 switch.
+ */
+const MAJOR_SERIES = Object.fromEntries(
+  MAJOR_FAMILY_CODES.map((f) => [
+    majorSeriesKey(f),
+    { label: `${MAJOR_FAMILIES[f]} (share of bachelor's degrees)`, short: MAJOR_FAMILIES[f], field: "academics.bachelors_by_family", term: "cip-code", unit: "share", kind: "academic", format: "pct", families: ["c-a"] } satisfies MajorSeriesDef,
+  ])
+) as unknown as Record<MajorSeriesKey, MajorSeriesDef>;
+
+export const SERIES = { ...BASE_SERIES, ...MAJOR_SERIES };
 
 export type SeriesKey = keyof typeof SERIES;
 export const SERIES_KEYS = Object.keys(SERIES) as SeriesKey[];
@@ -409,6 +434,23 @@ export interface TrendFacts {
     stopped: number;
     started: number;
     /** Share considering it, per fall from `from` to `to`. */
+    byYear: (number | null)[];
+  } | null;
+  /**
+   * What graduates studied (specs/data-expansion/majors.md): each field's share of first-major bachelor's, over the
+   * colleges awarding bachelor's in both school years (`from`, `to`: school years by their fall, like other academic
+   * years). Optional: histories built before it have none.
+   */
+  majors?: {
+    from: number;
+    to: number;
+    n: number;
+    /** First-major bachelor's across the panel in each year. */
+    gradsFrom: number;
+    gradsTo: number;
+    /** Every field with graduates in either year, largest gain (points) first. */
+    families: { family: string; from: number; to: number }[];
+    /** The largest gainer's share per school year from `from` to `to` (same panel). */
     byYear: (number | null)[];
   } | null;
 }

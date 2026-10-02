@@ -3,7 +3,7 @@ import { ArrowDown, ArrowUp } from "lucide-react";
 import type { School, SortKey } from "@/lib/types";
 import type { TermKey } from "@/lib/glossary";
 import { DOMAINS, METRICS, admitRateGap, admitRatesBySex, aidGenerosity, diversityIndex, satComposite } from "@/lib/metrics";
-import { compact, moneyCompact, pct, pctSmart } from "@/lib/format";
+import { compact, moneyCompact, num, pct, pctSmart } from "@/lib/format";
 import { getData } from "@/lib/data";
 import { Crest } from "@/components/school/Crest";
 import { CompareButton } from "@/components/compare/CompareButton";
@@ -117,6 +117,7 @@ export async function SchoolTable({ schools, params }: { schools: School[]; para
     { key: "first_gen", label: "First-gen", term: "first-gen" },
     { key: "out_of_state", label: "Out of state", term: "in-state-student" },
     { key: "transfer_share", label: "Transfers, share of new", term: "transfer-in" },
+    { key: "bachelors", label: "Bachelor's degrees, top major", term: "first-major", className: "min-w-52" },
     { key: "men_share", label: "Men", term: "gender-balance" },
     { key: "diversity", label: "Diversity", term: "diversity-index" },
     { key: "avg_cost", label: "Avg cost", term: "average-cost" },
@@ -149,7 +150,7 @@ export async function SchoolTable({ schools, params }: { schools: School[]; para
     </p>
     <div className="overflow-hidden rounded-3xl border bg-card">
       <div className="overflow-x-auto">
-        <table className={cn("w-full text-sm", changes ? "min-w-[2900px]" : "min-w-[1880px]")}>
+        <table className={cn("w-full text-sm", changes ? "min-w-[3200px]" : "min-w-[2180px]")}>
           <thead className="border-b bg-surface-2">
             <tr>
               <SortHeader k="name" label="School" className="sticky left-0 z-10 bg-surface-2 pl-4" params={params} sortBy={sortBy} sortDir={sortDir} />
@@ -169,6 +170,9 @@ export async function SchoolTable({ schools, params }: { schools: School[]; para
               const bySex = admitRatesBySex(s);
               const gap = admitRateGap(s);
               const { pell_grant_percent: pell, first_gen_percent: fg, men_share: men } = s.demographics;
+              const transfer = METRICS.transferShare.get(s);
+              const bachelors = s.academics?.bachelors_awarded ?? null;
+              const topMajor = s.academics?.majors_top?.[0] ?? null;
               return (
                 <tr key={s.unit_id} className="group transition-colors hover:bg-muted/40">
                   <td className="sticky left-0 z-10 bg-card py-2.5 pr-3 pl-4 transition-colors group-hover:bg-muted">
@@ -218,6 +222,18 @@ export async function SchoolTable({ schools, params }: { schools: School[]; para
                   <td className="w-24 px-3 tabular-nums">
                     <Value v={s.demographics.residence ? pct(s.demographics.residence.out_of_state) : null} />
                     {s.demographics.residence && <Bar value={s.demographics.residence.out_of_state} max={1} color={DOMAINS.diversity.color} />}
+                  </td>
+                  <td className="w-24 px-3 tabular-nums">
+                    <Value v={transfer === null ? null : pct(transfer)} />
+                    {transfer !== null && <Bar value={transfer} max={1} color={DOMAINS.access.color} />}
+                  </td>
+                  <td className="w-52 px-3">
+                    <Value v={bachelors == null ? null : num(bachelors)} />
+                    {topMajor && (
+                      <span className="block max-w-48 truncate text-[11px] text-muted-foreground" title={`${topMajor.title}: ${pct(topMajor.share)} of graduates`}>
+                        {topMajor.title} · {pct(topMajor.share)}
+                      </span>
+                    )}
                   </td>
                   <td className="w-24 px-3 tabular-nums">
                     <Value v={men == null ? null : pct(men)} />

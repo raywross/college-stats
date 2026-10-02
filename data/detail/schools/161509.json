@@ -1,6 +1,8 @@
 {
   "unit_id": "161509",
   "tables": {
-    "home_states": {"source":"ipeds-ef-c","vintage":"ipeds-ef-c","year":"Fall 2024","rows":{"MA":23,"ME":22,"NH":14,"NY":10,"VT":10,"CT":9,"NJ":6,"FL":4,"PA":4,"MN":3,"RI":3,"DE":2,"IL":2,"NC":2,"VA":2,"CA":1,"KS":1,"MD":1,"NM":1,"OH":1,"TX":1}}
+    "home_states": {"source":"ipeds-ef-c","vintage":"ipeds-ef-c","year":"Fall 2024","rows":{"MA":23,"ME":22,"NH":14,"NY":10,"VT":10,"CT":9,"NJ":6,"FL":4,"PA":4,"MN":3,"RI":3,"DE":2,"IL":2,"NC":2,"VA":2,"CA":1,"KS":1,"MD":1,"NM":1,"OH":1,"TX":1}},
+    "majors": {"source":"ipeds-c","vintage":"ipeds-c","year":"2024–25 graduates","rows":{"10.0304":[19,0],"50.0410":[16,0],"50.0708":[14,0],"50.0409":[7,0],"50.0709":[7,0],"50.0710":[7,0],"50.0711":[7,0],"50.0407":[2,0],"50.0605":[2,0],"50.0713":[2,0],"50.0201":[1,0],"50.0706":[1,0]}},
+    "programs": {"source":"scorecard-fos","vintage":"scorecard-fos","year":null,"rows":{"10.03":{"title":"Graphic Communications","graduates":28,"earnings":{"y1":null,"y4":null,"y4_national":null,"y4_pell":null,"y4_non_pell":null},"debt_median":null},"50.02":{"title":"Crafts/Craft Design, Folk Art and Artisanry","graduates":8,"earnings":{"y1":null,"y4":null,"y4_national":38992,"y4_pell":null,"y4_non_pell":null},"debt_median":null},"50.04":{"title":"Design and Applied Arts","graduates":62,"earnings":{"y1":29001,"y4":39443,"y4_national":51490,"y4_pell":36554,"y4_non_pell":37780},"debt_median":27000},"50.06":{"title":"Film/Video and Photographic Arts","graduates":12,"earnings":{"y1":null,"y4":41600,"y4_national":43765,"y4_pell":null,"y4_non_pell":null},"debt_median":null},"50.07":{"title":"Fine and Studio Arts","graduates":46,"earnings":{"y1":24555,"y4":34720,"y4_national":41367,"y4_pell":25267,"y4_non_pell":27147},"debt_median":27000}}}
   }
 }

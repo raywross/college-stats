@@ -65,6 +65,14 @@
     "grad_cohort_black": {"start":2018,"values":[0]},
     "grad_cohort_two_or_more": {"start":2018,"values":[0]},
     "grad_cohort_international": {"start":2018,"values":[0]},
-    "instruction_per_student": {"start":2020,"values":[20734,34202,18943,16553]}
+    "instruction_per_student": {"start":2020,"values":[20734,34202,18943,16553]},
+    "bachelors": {"start":2020,"values":[8,5,7,6,4]},
+    "major_09": {"start":2020,"values":[0.25,0,0.1429,0.1667,0]},
+    "major_13": {"start":2020,"values":[0.25,0.2,0.2857,0.1667,0.25]},
+    "major_16": {"start":2020,"values":[0.25,0.2,0,0,0]},
+    "major_30": {"start":2020,"values":[0,0.2,0.1429,0,0]},
+    "major_39": {"start":2020,"values":[0.125,0.4,0.1429,0.5,0]},
+    "major_42": {"start":2020,"values":[0,0,0.1429,0.1667,0.75]},
+    "major_52": {"start":2020,"values":[0.125,0,0.1429,0,0]}
   }
 }

@@ -1,6 +1,8 @@
 {
   "unit_id": "135364",
   "tables": {
-    "home_states": {"source":"ipeds-ef-c","vintage":"ipeds-ef-c","year":"Fall 2024","rows":{"GA":5,"FL":1,"LA":1,"PA":1}}
+    "home_states": {"source":"ipeds-ef-c","vintage":"ipeds-ef-c","year":"Fall 2024","rows":{"GA":5,"FL":1,"LA":1,"PA":1}},
+    "majors": {"source":"ipeds-c","vintage":"ipeds-c","year":"2024–25 graduates","rows":{"39.0201":[16,0],"42.0101":[3,0]}},
+    "programs": {"source":"scorecard-fos","vintage":"scorecard-fos","year":null,"rows":{"39.02":{"title":"Bible/Biblical Studies","graduates":56,"earnings":{"y1":37863,"y4":null,"y4_national":44533,"y4_pell":38339,"y4_non_pell":null},"debt_median":30955}}}
   }
 }

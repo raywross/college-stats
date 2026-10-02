@@ -3,6 +3,8 @@ import Link from "next/link";
 import { ArrowRight, Swords } from "lucide-react";
 import { getData, getDetail, getHistoryFiles, toIndexEntry } from "@/lib/data";
 import { isPlausibleCip4, programsWithEarnings } from "@/lib/field-of-study";
+import { firstMajorsByGroup } from "@/lib/majors";
+import { cip4Title } from "@/lib/cip";
 import { MajorPicker, YourMajorBars, type MajorRow } from "@/components/compare/YourMajor";
 import { RACE_SERIES, SERIES, defaultWindow, historyYearLabel } from "@/lib/history";
 import { INDICATORS, INDICATOR_KEYS, indicatorsOf } from "@/lib/indicators";
@@ -246,16 +248,24 @@ export default async function ComparePage({
   const diffs = keyDifferences(schools);
   const historyFiles = await getHistoryFiles();
 
-  // "Your major" (specs/data-expansion/field-of-study.md): union of 4-digit fields with earnings data across the
-  // compared colleges, picked via a plain GET form so the choice stays in the URL.
+  // "Your major" (specs/data-expansion/field-of-study.md, majors.md): every 4-digit field any compared college awards
+  // bachelor's in (IPEDS completions) or reports earnings for (Scorecard Field of Study), titled from CIP 2020 so both
+  // sources name a field the same way. Picked via a plain GET form so the choice stays in the URL.
   const details = await Promise.all(schools.map((s) => getDetail(s.unit_id)));
+  const majorGroups = details.map((d) => (d?.tables.majors ? firstMajorsByGroup(d.tables.majors.rows) : null));
   const majorTitles = new Map<string, string>();
-  details.forEach((d) => programsWithEarnings(d?.tables.programs?.rows).forEach((p) => majorTitles.set(p.cip4, p.title)));
+  majorGroups.forEach((g) => g?.forEach((_, c) => majorTitles.set(c, cip4Title(c) ?? c)));
+  details.forEach((d) => programsWithEarnings(d?.tables.programs?.rows).forEach((p) => majorTitles.set(p.cip4, cip4Title(p.cip4) ?? p.title)));
   const majorOptions = [...majorTitles.entries()].map(([cip4, title]) => ({ cip4, title })).sort((a, b) => a.title.localeCompare(b.title));
   const rawMajor = typeof params.major === "string" ? params.major : "";
   const selectedMajor = isPlausibleCip4(rawMajor) && majorTitles.has(rawMajor) ? rawMajor : null;
   const majorRows: MajorRow[] = selectedMajor
-    ? schools.map((s, i) => ({ school: s, slot: i, program: details[i]?.tables.programs?.rows[selectedMajor] ?? null }))
+    ? schools.map((s, i) => ({
+        school: s,
+        slot: i,
+        program: details[i]?.tables.programs?.rows[selectedMajor] ?? null,
+        graduates: majorGroups[i] ? (majorGroups[i]!.get(selectedMajor) ?? 0) : null,
+      }))
     : [];
   // "Then & now" from school.trends (10-year changes written by sync-history); money is after inflation.
   const THEN_AND_NOW: { key: TrendKey; label: string; format: "money" | "pctSmart" | "num" | "fixed2" }[] = [
@@ -496,11 +506,12 @@ export default async function ComparePage({
           {majorOptions.length > 0 && (
             <Group domain="value" title="Your major">
               <p className="max-w-3xl text-sm text-muted-foreground">
-                Pick a field of study bachelor&apos;s program to compare earnings <Term term="earnings-after-completion">after completion</Term> across these colleges.
+                Pick a field of study to see which of these colleges award bachelor&apos;s degrees in it, how many, and what graduates earn{" "}
+                <Term term="earnings-after-completion">after completion</Term>.
               </p>
               <MajorPicker ids={ids.join(",")} options={majorOptions} selected={selectedMajor} />
               {selectedMajor && <YourMajorBars title={majorTitles.get(selectedMajor)!} rows={majorRows} />}
-              <MultiSourceNote schools={schools} fields={["detail.programs"]} />
+              <MultiSourceNote schools={schools} fields={["detail.majors", "detail.programs"]} />
             </Group>
           )}
 

@@ -108,13 +108,15 @@ are unavailable, so a program missing one year's count still shows the other.
 [majors.md](majors.md)'s 6-digit convention (`"11.0701"`) truncated to a family. `toCip4()`/`isPlausibleCip4()` live
 in `lib/field-of-study.ts`.
 
-**CIP integration.** The majors agent owns `data/reference/cip2020.json` and `lib/cip.ts`; this spec doesn't create
-them. `isPlausibleCip4()` is a shape check only (`/^\d{2}\.\d{2}$/`), marked
-`// INTEGRATION: validate against lib/cip.ts after majors merges` at its definition (`lib/field-of-study.ts`) and at
-its one call site inside `DETAIL_TABLES.programs.checkRows` (`lib/detail.ts`). To wire it in: swap the regex check for
-a lookup in majors' CIP table (`cip2020.json` has a code → title map; look up `isPlausibleCip4`'s argument there
-instead of pattern-matching), which also lets `checkRows` catch a code that's shaped right but doesn't exist. No
-other file needs to change.
+**CIP integration (wired at the wave 3 merge).** [majors.md](majors.md) owns `data/reference/cip2020.json` and
+`lib/cip.ts`. `isPlausibleCip4()` stays a shape check (`/^\d{2}\.\d{2}$/`) because `lib/field-of-study.ts` is pure
+and client components import it; the existence check (`hasCip4`) runs where the CIP table is already loaded:
+- `programEarningsFrom` (sync) leaves out a code CIP 2020 doesn't have and reports it; sync-data warns with the list
+  and stops only past 25 (a sign CIP itself changed). The October 2026 file has 3 such codes, all retired CIP 2000
+  groups (42.02 Clinical Psychology, 51.16 Nursing, 23.05 Creative Writing), and just one row at a college on the
+  site: a fully suppressed 42.02 at a college that also reports the current 42.28.
+- `DETAIL_TABLES.programs.checkRows` (`lib/detail.ts`, server and scripts only) rejects any stored code that isn't a
+  4-digit CIP 2020 group, so `check:lineage` and publish catch one too.
 
 **Store.** `programs` added to `DetailTables`/`DETAIL_TABLES` (`lib/detail.ts`), keyed by `Cip4`:
 `{ title, graduates, earnings: { y1, y4, y4_national, y4_pell, y4_non_pell }, debt_median }` (`lib/field-of-study.ts`
@@ -145,16 +147,16 @@ null earnings/debt value as "Too few graduates to report" instead of a blank das
   programs with the highest post-completion earnings among those with any earnings data (`topEarningPrograms`),
   each a native `<details>` row (no client JS) expanding to 1- and 4-year earnings (`BenchmarkBar` with the national
   median as the tick, reusing the existing chart component rather than a new one), the Pell/non-Pell split with a
-  note about its older cohort, median debt, and graduate count. Deliberately a **separate, self-contained
-  component** from the majors agent's "Most popular majors" list (ranked by graduate count, not earnings) so the
-  merger can place them side by side in the Academics section, or fold majors' rows into expandable rows that show
-  this earnings detail — either works without touching this component's props.
+  note about its older cohort, median debt, and graduate count. A separate component from "Most popular majors"
+  (ranked by graduate count); at the wave 3 merge it went directly under that list in Academics, and each row of the
+  list shows its 4-digit group's 4-year earnings ("Graduates in this field earn $X 4 years out", joined by `cip4`).
 - **Compare → "Your major"** (`components/compare/YourMajor.tsx`, wired into `app/compare/page.tsx`): a plain GET
-  `<form>` (`?ids=...&major=11.07`) listing the union of fields with earnings data across the compared colleges
-  (`programsWithEarnings`), so the pick survives a reload and is shareable like the rest of Compare's state — no
-  client component needed. Bars distinguish "doesn't offer this major" (no row for that CIP at that college) from
-  "too few graduates to report" (a row exists but the earnings value is null), which a generic `CompareMetric` reuse
-  couldn't: that component's "Not reported" doesn't know the difference. Not added to the "All the numbers" table,
+  `<form>` (`?ids=...&major=11.07`), so the pick survives a reload and is shareable like the rest of Compare's state —
+  no client component needed. Since the wave 3 merge it lists every 4-digit field any compared college awards
+  bachelor's in (majors' completions, `firstMajorsByGroup`) or has earnings for, titled from CIP 2020 (`cip4Title`),
+  and each college's bar shows its first-major graduates in the field next to the earnings. Bars distinguish
+  "doesn't offer this major" (no graduates and no Scorecard row), "no earnings reported" (graduates but no Scorecard
+  row), and "too few graduates to report" (a row with null earnings), which a generic `CompareMetric` reuse couldn't. Not added to the "All the numbers" table,
   since it's a value that depends on a pick rather than a plain per-school field.
 - **Explore "major mode"** (listing colleges by earnings for one field, needs `data/detail/by-cip/{cip4}.json`):
   **deferred**, as the spec says ("later"). No index was built.
@@ -189,5 +191,5 @@ publishes a new Field of Study release:
   file, matching the prose in their own documentation). `num()` in `field-of-study-sync.mts` treats anything that
   doesn't parse as a finite number as `null`, so this wouldn't break ingestion — but it's worth a quick check after
   any release that a whole college's earnings aren't unexpectedly all-null (a sign the marker, not the data, changed).
-- **Once [majors.md](majors.md) merges:** wire the `// INTEGRATION` hook in `lib/field-of-study.ts`/`lib/detail.ts`
-  (see "CIP integration" above) and consider whether the two Academics cards should visually merge.
+- **Retired CIP codes:** if sync-data warns about more codes missing from CIP 2020, check whether NCES published a new
+  CIP edition (re-run `npm run build-cip`) before raising the limit of 25.

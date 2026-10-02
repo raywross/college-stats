@@ -12,6 +12,7 @@ import { hasEarnings, isPlausibleCip4, programsWithEarnings, toCip4, topEarningP
 import { programEarningsFrom } from "../scripts/lib/field-of-study-sync.mts";
 import { DETAIL_TABLES, detailMismatches, validateDetail, type SchoolDetail } from "../lib/detail.ts";
 import { FIELDS } from "../lib/fields.ts";
+import { hasCip4 } from "../lib/cip.ts";
 import { readDetails } from "../scripts/lib/publish-details.mts";
 
 const ROOT = join(import.meta.dirname, "..");
@@ -79,6 +80,15 @@ test("the trailing period on CIPDESC is stripped; blank earnings columns are nul
   assert.equal(blank.earnings.y4, null);
 });
 
+test("codes CIP 2020 doesn't have (retired CIP 2000 groups) are left out and reported, not stored", () => {
+  const unknown: string[] = [];
+  const programs = programEarningsFrom([row(), row({ CIPCODE: "4202", CIPDESC: "Clinical Psychology." }), row({ CIPCODE: "5116", CIPDESC: "Nursing." })], unknown);
+  assert.deepEqual(Object.keys(programs), ["11.07"]);
+  assert.deepEqual(unknown, ["221999 42.02 Clinical Psychology", "221999 51.16 Nursing"]);
+  // Without a list to report to, they're still left out.
+  assert.deepEqual(Object.keys(programEarningsFrom([row({ CIPCODE: "2305" })])), []);
+});
+
 /* ---- Display helpers ---- */
 
 const prog = (y1: number | null, y4: number | null): ProgramEarnings => ({
@@ -122,6 +132,8 @@ test("validateDetail accepts a good programs table and rejects each kind of mist
   assert.equal(FIELDS[DETAIL_TABLES.programs.field].source, "scorecard-fos");
   const broken: [string, (d: SchoolDetail) => unknown][] = [
     ["not a 4-digit CIP", (d) => (d.tables.programs!.rows = { "1107": prog(1, 1) })],
+    ["shaped like a CIP group but not in CIP 2020", (d) => (d.tables.programs!.rows = { "51.16": prog(1, 1) })],
+    ["the institution-total code", (d) => (d.tables.programs!.rows = { "99.00": prog(1, 1) })],
     ["no title", (d) => (d.tables.programs!.rows = { "11.07": { ...prog(1, 1), title: "" } })],
     ["negative graduates", (d) => (d.tables.programs!.rows = { "11.07": { ...prog(1, 1), graduates: -5 } })],
     ["fractional graduates", (d) => (d.tables.programs!.rows = { "11.07": { ...prog(1, 1), graduates: 2.5 } })],
@@ -167,7 +179,7 @@ test("stored field-of-study data: Vanderbilt matches the probed Computer Science
     if (!programs) continue;
     checked++;
     for (const [cip, p] of Object.entries(programs.rows)) {
-      assert.ok(isPlausibleCip4(cip), `${d.unit_id} ${cip}`);
+      assert.ok(isPlausibleCip4(cip) && hasCip4(cip), `${d.unit_id} ${cip} is a CIP 2020 group`);
       for (const v of Object.values(p.earnings)) assert.ok(v === null || v > 0, `${d.unit_id} ${cip}: earnings must be null or positive, never 0`);
       if (p.debt_median !== null) assert.ok(p.debt_median >= 0);
       if (p.graduates !== null) assert.ok(Number.isInteger(p.graduates) && p.graduates >= 0);

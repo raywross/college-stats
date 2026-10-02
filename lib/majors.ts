@@ -119,6 +119,16 @@ export function programsFromRows(rows: MajorRows | undefined | null): Program[] 
 }
 
 /**
+ * First-major bachelor's by 4-digit CIP group ("11.07"), the level College Scorecard reports earnings at
+ * (field-of-study.md), for joining the two. Only groups with any first majors. Rows hold canonical codes ("11.0701").
+ */
+export function firstMajorsByGroup(rows: MajorRows | undefined | null): Map<string, number> {
+  const out = new Map<string, number>();
+  for (const p of programsFromRows(rows)) if (p.first > 0) out.set(p.cip.slice(0, 5), (out.get(p.cip.slice(0, 5)) ?? 0) + p.first);
+  return out;
+}
+
+/**
  * History reads C{Y}_A summed by family instead of by program (smaller: ~15 columns per college a year): `F|{family}`
  * holds the family's first-major bachelor's (scripts/lib/majors-sync.mts familyKey).
  */

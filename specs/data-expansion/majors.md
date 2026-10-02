@@ -129,8 +129,8 @@ for any 6-digit use.
   - Profile, Academics (now "Majors and faculty"): `components/school/Majors.tsx` (server: resolves titles) +
     `MajorsList.tsx` (client): top 5 bars with share and count, "Show all N programs and search" (search matches word
     starts in titles and field names, or a CIP prefix; second majors shown in the full list), a "Fastest-growing field"
-    line with its history footnote, and the takeaway names the most popular major. The list is keyed by CIP code so a
-    row can later expand into field-of-study earnings.
+    line with its history footnote, and the takeaway names the most popular major. Each row shows its 4-digit group's
+    earnings from [field-of-study.md](field-of-study.md) when reported, and "Top-earning majors here" follows the list.
   - **Fastest-growing is by family, not program** (deviation): history has families only, so "largest share gain
     among programs with 25+ graduates" became the family with the largest share gain over the 10 years ending with the
     newest C year (start up to 2 years late), with 25+ graduates in it now, 100+ bachelor's at both ends, and a gain of
@@ -154,7 +154,8 @@ for any 6-digit use.
 - Explore filter **by specific program** ("has a nursing program", "50+ nursing graduates"): needs 4- or 6-digit counts
   for every college, which live in the detail file, not the snapshot. Options: a small per-program index, or search
   served from the detail table.
-- Compare's **"your major" row** (waits for a picked major, with student profiles).
+- Compare's "your major" row was built with [field-of-study.md](field-of-study.md) (a picker, graduates and earnings
+  per college); remembering the pick in a student profile waits for accounts.
 - An "Over time" chart of field shares (the series exist; only the fastest-growing line uses them today).
 - Associate's, master's, and doctoral degrees (other `AWLEVEL`s) and race/sex splits are read past, not stored.
 

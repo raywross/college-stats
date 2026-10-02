@@ -29,6 +29,7 @@ import {
   matchesProgram,
   programsFrom,
   programsFromRows,
+  firstMajorsByGroup,
   totalRowFrom,
 } from "../lib/majors.ts";
 import { cipTitle, fromCip2010, hasCip } from "../lib/cip.ts";
@@ -377,4 +378,10 @@ test("committed history: field shares end on the snapshot, and the Home fact is 
   const facts = JSON.parse(readFileSync(join(ROOT, "data", "history", "facts.json"), "utf8"));
   assert.ok(facts.majors && facts.majors.n > 1000, "fixed panel");
   assert.equal(facts.majors.to - facts.majors.from, 10);
+});
+
+test("firstMajorsByGroup sums first majors into the 4-digit groups Scorecard reports earnings for", () => {
+  const groups = firstMajorsByGroup({ "11.0701": [100, 5], "11.0101": [10, 0], "11.0103": [0, 4], "52.0201": [30, 1] });
+  assert.deepEqual([...groups.entries()], [["11.07", 100], ["11.01", 10], ["52.02", 30]]);
+  assert.equal(firstMajorsByGroup(null).size, 0);
 });

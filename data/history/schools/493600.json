@@ -56,6 +56,8 @@
     "grad_cohort_black": {"start":2014,"values":[0,null,0,0,0]},
     "grad_cohort_two_or_more": {"start":2014,"values":[0,null,0,0,0]},
     "grad_cohort_international": {"start":2014,"values":[0,null,0,0,0]},
-    "instruction_per_student": {"start":2018,"values":[9241,9453,8342,6428,11514,18205]}
+    "instruction_per_student": {"start":2018,"values":[9241,9453,8342,6428,11514,18205]},
+    "bachelors": {"start":2018,"values":[17,21,8,8,24,7,7]},
+    "major_38": {"start":2018,"values":[1,1,1,1,1,1,1]}
   }
 }

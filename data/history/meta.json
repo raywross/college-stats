@@ -1086,6 +1086,80 @@
         "revised": false
       }
     ],
+    "c-a": [
+      {
+        "year": 2013,
+        "file": "C2014_A",
+        "url": "https://nces.ed.gov/ipeds/datacenter/data/C2014_A.zip",
+        "revised": true
+      },
+      {
+        "year": 2014,
+        "file": "C2015_A",
+        "url": "https://nces.ed.gov/ipeds/datacenter/data/C2015_A.zip",
+        "revised": true
+      },
+      {
+        "year": 2015,
+        "file": "C2016_A",
+        "url": "https://nces.ed.gov/ipeds/datacenter/data/C2016_A.zip",
+        "revised": true
+      },
+      {
+        "year": 2016,
+        "file": "C2017_A",
+        "url": "https://nces.ed.gov/ipeds/datacenter/data/C2017_A.zip",
+        "revised": true
+      },
+      {
+        "year": 2017,
+        "file": "C2018_A",
+        "url": "https://nces.ed.gov/ipeds/datacenter/data/C2018_A.zip",
+        "revised": true
+      },
+      {
+        "year": 2018,
+        "file": "C2019_A",
+        "url": "https://nces.ed.gov/ipeds/datacenter/data/C2019_A.zip",
+        "revised": true
+      },
+      {
+        "year": 2019,
+        "file": "C2020_A",
+        "url": "https://nces.ed.gov/ipeds/datacenter/data/C2020_A.zip",
+        "revised": true
+      },
+      {
+        "year": 2020,
+        "file": "C2021_A",
+        "url": "https://nces.ed.gov/ipeds/datacenter/data/C2021_A.zip",
+        "revised": true
+      },
+      {
+        "year": 2021,
+        "file": "C2022_A",
+        "url": "https://nces.ed.gov/ipeds/datacenter/data/C2022_A.zip",
+        "revised": true
+      },
+      {
+        "year": 2022,
+        "file": "C2023_A",
+        "url": "https://nces.ed.gov/ipeds/complete-data-files/C2023_A.zip",
+        "revised": true
+      },
+      {
+        "year": 2023,
+        "file": "C2024_A",
+        "url": "https://nces.ed.gov/ipeds/complete-data-files/C2024_A.zip",
+        "revised": true
+      },
+      {
+        "year": 2024,
+        "file": "C2025_A",
+        "url": "https://nces.ed.gov/ipeds/complete-data-files/C2025_A.zip",
+        "revised": false
+      }
+    ],
     "scorecard-enrollment": [
       {
         "year": 1996,
@@ -2009,7 +2083,8 @@
     "gr-pell": 2018,
     "ipeds-sal": 2024,
     "ef-c": 2024,
-    "ef-a": 2024
+    "ef-a": 2024,
+    "c-a": 2024
   },
   "schools": 1893,
   "universe": 1893

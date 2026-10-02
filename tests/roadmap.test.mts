@@ -48,7 +48,9 @@ test("roadmap entries are well formed", () => {
 
 test("links between roadmap specs stay on the site; other repo links go to GitHub", () => {
   const from = "specs/data-expansion/residence.md";
-  assert.equal(resolveHref("majors.md#store-and-the-detail-file", from), "/roadmap/majors#store-and-the-detail-file");
+  assert.equal(resolveHref("cds-transfer.md#store", from), "/roadmap/cds-transfer#store");
+  // Built specs leave the roadmap, so links to them go to GitHub.
+  assert.equal(resolveHref("majors.md", from), "https://github.com/raywross/college-stats/blob/main/specs/data-expansion/majors.md");
   assert.equal(resolveHref("README.md", from), "/roadmap/data-expansion");
   assert.equal(resolveHref("../religious-life.md", from), "/roadmap/religious-life");
   assert.equal(

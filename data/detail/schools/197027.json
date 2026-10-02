@@ -1,6 +1,8 @@
 {
   "unit_id": "197027",
   "tables": {
-    "home_states": {"source":"ipeds-ef-c","vintage":"ipeds-ef-c","year":"Fall 2024","rows":{"TX":34,"CA":19,"NY":19,"FL":18,"CO":17,"VA":14,"AZ":13,"MD":13,"PA":13,"GA":8,"NC":8,"NJ":8,"NV":7,"MI":6,"SC":6,"CT":5,"NH":5,"DE":4,"IL":4,"IN":4,"LA":4,"MA":4,"MN":4,"OH":4,"OR":4,"UT":4,"MO":3,"MS":3,"NE":3,"WA":3,"AR":2,"HI":2,"ME":2,"RI":2,"AL":1,"ID":1,"KS":1,"KY":1,"MH":1,"MT":1,"NM":1,"OK":1,"TN":1,"WI":1,"WY":1}}
+    "home_states": {"source":"ipeds-ef-c","vintage":"ipeds-ef-c","year":"Fall 2024","rows":{"TX":34,"CA":19,"NY":19,"FL":18,"CO":17,"VA":14,"AZ":13,"MD":13,"PA":13,"GA":8,"NC":8,"NJ":8,"NV":7,"MI":6,"SC":6,"CT":5,"NH":5,"DE":4,"IL":4,"IN":4,"LA":4,"MA":4,"MN":4,"OH":4,"OR":4,"UT":4,"MO":3,"MS":3,"NE":3,"WA":3,"AR":2,"HI":2,"ME":2,"RI":2,"AL":1,"ID":1,"KS":1,"KY":1,"MH":1,"MT":1,"NM":1,"OK":1,"TN":1,"WI":1,"WY":1}},
+    "majors": {"source":"ipeds-c","vintage":"ipeds-c","year":"2024–25 graduates","rows":{"49.0309":[88,0],"14.2201":[86,0],"14.2701":[27,0]}},
+    "programs": {"source":"scorecard-fos","vintage":"scorecard-fos","year":null,"rows":{"14.22":{"title":"Naval Architecture and Marine Engineering","graduates":178,"earnings":{"y1":null,"y4":null,"y4_national":null,"y4_pell":null,"y4_non_pell":null},"debt_median":null},"14.27":{"title":"Systems Engineering","graduates":69,"earnings":{"y1":null,"y4":null,"y4_national":null,"y4_pell":null,"y4_non_pell":null},"debt_median":null},"49.03":{"title":"Marine Transportation","graduates":218,"earnings":{"y1":69847,"y4":107654,"y4_national":117011,"y4_pell":null,"y4_non_pell":null},"debt_median":null}}}
   }
 }

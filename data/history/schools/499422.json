@@ -22,6 +22,8 @@
     "men_share": {"start":2023,"values":[0.1,0.1037]},
     "part_time_share": {"start":2023,"values":[0,0]},
     "federal_loan_rate": {"start":2023,"values":[0.7714]},
-    "instruction_per_student": {"start":2022,"values":[7188,11332]}
+    "instruction_per_student": {"start":2022,"values":[7188,11332]},
+    "bachelors": {"start":2024,"values":[44]},
+    "major_51": {"start":2024,"values":[1]}
   }
 }

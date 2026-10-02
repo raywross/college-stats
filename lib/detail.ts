@@ -1,6 +1,6 @@
 /**
  * The per-college detail file, data/detail/schools/{unit_id}.json (specs/data-expansion/majors.md#store-and-the-detail-file):
- * tables too big for data/schools.json (home states now; majors and field-of-study earnings later). It holds current
+ * tables too big for data/schools.json (home states, majors, and field-of-study earnings). It holds current
  * snapshot tables only; year-by-year values belong in the history shard (lib/history.ts).
  *
  * Each table carries its own source, release ("vintage"), and year, and maps to a registered field in lib/fields.ts
@@ -8,23 +8,37 @@
  * tables); `npm run check:lineage` and `npm run publish-data` validate every file with validateDetail().
  *
  * Adding a table: add it to DetailTables and DETAIL_TABLES (a field and a row check), register the field in
- * lib/fields.ts, and have the sync fill it. Pure module: Node scripts, tests, and the app all load it.
+ * lib/fields.ts, and have the sync fill it. Node scripts, tests, and server code load it; it reads the CIP 2020 table
+ * (lib/cip.ts), so client components import its types only.
  */
 import type { DatasetMeta, School, SourceKey } from "./types";
 import { FIELDS, type FieldPath, type VintageKey } from "./fields.ts";
 import { stateByPostal } from "./states.ts";
+import { hasCip4, isCipField } from "./cip.ts";
+import { majorsSnapshot, programsFromRows, type MajorRows } from "./majors.ts";
+import { hasEarnings, isPlausibleCip4, type ProgramEarnings } from "./field-of-study.ts";
 
 export interface DetailTable<T> {
   source: SourceKey;
   vintage: VintageKey;
-  /** The release's display year when built (equals meta.vintages[vintage]), e.g. "Fall 2024". */
-  year: string;
+  /**
+   * The release's display year when built (equals meta.vintages[vintage]), e.g. "Fall 2024"; null for a table
+   * whose vintage has no single year (e.g. `scorecard-fos`), shown as "most recent release".
+   */
+  year: string | null;
   rows: T;
 }
 
 export interface DetailTables {
   /** First-time undergraduates by home state or territory, USPS code → count, largest first (lib/residence.ts). */
   home_states?: DetailTable<Record<string, number>>;
+  /**
+   * Bachelor's degrees by program (specs/data-expansion/majors.md): CIP 2020 code ("11.0701") → [first majors, second
+   * majors], most first majors first (lib/majors.ts). Programs with neither are left out.
+   */
+  majors?: DetailTable<MajorRows>;
+  /** Earnings and debt by bachelor's program, 4-digit CIP → record (lib/field-of-study.ts). */
+  programs?: DetailTable<Record<string, ProgramEarnings>>;
 }
 
 export type DetailTableKey = keyof DetailTables;
@@ -52,6 +66,44 @@ export const DETAIL_TABLES: Record<DetailTableKey, { field: FieldPath; checkRows
       return null;
     },
   },
+  majors: {
+    field: "detail.majors",
+    checkRows: (rows) => {
+      if (!rows || typeof rows !== "object" || Array.isArray(rows)) return "rows must be an object";
+      const entries = Object.entries(rows);
+      if (!entries.length) return "no rows (leave the table out instead)";
+      for (const [k, v] of entries) {
+        if (!/^\d{2}\.\d{4}$/.test(k) || !isCipField(k)) return `"${k}" isn't a 6-digit CIP 2020 code`;
+        const ok = Array.isArray(v) && v.length === 2 && v.every((n) => Number.isInteger(n) && n >= 0) && v[0] + v[1] > 0;
+        if (!ok) return `${k} has impossible counts ${JSON.stringify(v)}`;
+      }
+      return null;
+    },
+  },
+  programs: {
+    field: "detail.programs",
+    checkRows: (rows) => {
+      if (!rows || typeof rows !== "object" || Array.isArray(rows)) return "rows must be an object";
+      const entries = Object.entries(rows as Record<string, ProgramEarnings>);
+      if (!entries.length) return "no rows (leave the table out instead)";
+      for (const [cip, p] of entries) {
+        // Shape first, then existence: the sync drops the few Scorecard codes CIP 2020 doesn't have (retired CIP 2000
+        // groups), so every stored code must be a real 4-digit group (scripts/lib/field-of-study-sync.mts).
+        if (!isPlausibleCip4(cip)) return `"${cip}" doesn't look like a 4-digit CIP code ("12.34")`;
+        if (!hasCip4(cip)) return `"${cip}" isn't a 4-digit CIP 2020 group`;
+        if (!p || typeof p.title !== "string" || !p.title) return `${cip} has no title`;
+        if (p.graduates !== null && !(Number.isInteger(p.graduates) && p.graduates >= 0)) return `${cip} has an impossible graduate count ${p.graduates}`;
+        const e = p.earnings;
+        if (!e || typeof e !== "object") return `${cip} has no earnings`;
+        for (const k of ["y1", "y4", "y4_national", "y4_pell", "y4_non_pell"] as const) {
+          const v = e[k];
+          if (v !== null && !(typeof v === "number" && v > 0)) return `${cip} earnings.${k} is invalid (${v})`;
+        }
+        if (p.debt_median !== null && !(typeof p.debt_median === "number" && p.debt_median >= 0)) return `${cip} has an invalid debt_median`;
+      }
+      return null;
+    },
+  },
 };
 
 const isTableKey = (k: string): k is DetailTableKey => Object.prototype.hasOwnProperty.call(DETAIL_TABLES, k);
@@ -75,9 +127,10 @@ export function validateDetail(d: SchoolDetail, meta: DatasetMeta, knownIds?: Re
     if (table.source !== def.source) errors.push(`${where}: ${key} cites ${table.source}, but ${field} is from ${def.source}`);
     if (table.vintage !== def.vintage) errors.push(`${where}: ${key} has vintage ${table.vintage}, but ${field} uses ${def.vintage}`);
     if (!(table.source in (meta.sources ?? {}))) errors.push(`${where}: ${key} cites unknown source ${table.source}`);
-    const year = meta.vintages?.[table.vintage];
-    if (!table.year) errors.push(`${where}: ${key} has no year`);
-    else if (year !== table.year) errors.push(`${where}: ${key} is ${table.year}, but meta.json says ${table.vintage} is ${year ?? "unset"} (re-run npm run sync-data)`);
+    // null is a legitimate year (a vintage with no single year, e.g. scorecard-fos — "most recent release");
+    // it must still match meta.json, not just be present.
+    const year = meta.vintages?.[table.vintage] ?? null;
+    if (table.year !== year) errors.push(`${where}: ${key} is ${table.year ?? "no year"}, but meta.json says ${table.vintage} is ${year ?? "unset"} (re-run npm run sync-data)`);
     const rowProblem = checkRows(table.rows);
     if (rowProblem) errors.push(`${where}: ${key} ${rowProblem}`);
   }
@@ -86,7 +139,7 @@ export function validateDetail(d: SchoolDetail, meta: DatasetMeta, knownIds?: Re
 
 /**
  * Detail tables that disagree with data/schools.json: home states without a stored residence, more students by state
- * than first-years, or a different top state.
+ * than first-years, or a different top state; majors whose total, top 5, or field counts differ from the snapshot's.
  */
 export function detailMismatches(school: School, d: SchoolDetail): string[] {
   const out: string[] = [];
@@ -102,7 +155,46 @@ export function detailMismatches(school: School, d: SchoolDetail): string[] {
         out.push(`detail ${d.unit_id}: top home state ${top} doesn't match the snapshot's ${r.top_state?.state ?? "none"}`);
     }
   }
+  const mj = d.tables.majors;
+  if (mj) {
+    const ac = school.academics;
+    // Titles don't matter here (the snapshot's come from the same CIP table): compare codes, shares, and counts.
+    const snap = majorsSnapshot(programsFromRows(mj.rows), (cip) => cip);
+    if ((ac?.bachelors_awarded ?? null) !== snap.bachelors_awarded)
+      out.push(`detail ${d.unit_id}: ${snap.bachelors_awarded} first-major bachelor's by program, but the snapshot says ${ac?.bachelors_awarded ?? "none"}`);
+    const key = (top: readonly { cip: string; share: number }[] | null | undefined) => (top ?? []).map((m) => `${m.cip}:${m.share}`).join(",");
+    if (key(ac?.majors_top) !== key(snap.majors_top)) out.push(`detail ${d.unit_id}: top majors don't match the snapshot's`);
+    const fams = (f: Record<string, number> | null | undefined) => (f ? JSON.stringify(Object.entries(f).sort((a, b) => a[0].localeCompare(b[0]))) : "none");
+    if (fams(ac?.bachelors_by_family) !== fams(snap.bachelors_by_family)) out.push(`detail ${d.unit_id}: bachelor's by field don't match the snapshot's`);
+  }
+  const programs = d.tables.programs;
+  if (programs) {
+    const withEarnings = Object.values(programs.rows).filter(hasEarnings).length;
+    if ((school.academics?.programs_with_earnings ?? null) !== withEarnings)
+      out.push(`detail ${d.unit_id}: academics.programs_with_earnings is ${school.academics?.programs_with_earnings ?? "null"}, but the detail file has ${withEarnings}`);
+  }
   return out;
+}
+
+/**
+ * One file per college from several builders' files (each sync step builds its own tables: home states, majors, …).
+ * Tables keep DETAIL_TABLES' order so a file's lines don't move between syncs; a table built twice is an error.
+ */
+export function mergeDetails(...lists: readonly (readonly SchoolDetail[])[]): SchoolDetail[] {
+  const byId = new Map<string, DetailTables>();
+  for (const list of lists) {
+    for (const d of list) {
+      const tables = byId.get(d.unit_id) ?? byId.set(d.unit_id, {}).get(d.unit_id)!;
+      for (const k of Object.keys(d.tables) as DetailTableKey[]) {
+        if (tables[k]) throw new Error(`detail ${d.unit_id}: table ${k} built twice`);
+        (tables as Record<string, unknown>)[k] = d.tables[k];
+      }
+    }
+  }
+  const order = Object.keys(DETAIL_TABLES) as DetailTableKey[];
+  return [...byId.entries()]
+    .sort((a, b) => a[0].localeCompare(b[0]))
+    .map(([unit_id, t]) => ({ unit_id, tables: Object.fromEntries(order.filter((k) => t[k]).map((k) => [k, t[k]])) as DetailTables }));
 }
 
 /** One table per line, so a yearly refresh reads as a small diff (like history shards). */

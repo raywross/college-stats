@@ -1,0 +1,7 @@
+{
+  "unit_id": "143297",
+  "tables": {
+    "majors": {"source":"ipeds-c","vintage":"ipeds-c","year":"2024–25 graduates","rows":{"51.3801":[58,0],"51.0911":[9,0],"51.0908":[5,0]}},
+    "programs": {"source":"scorecard-fos","vintage":"scorecard-fos","year":null,"rows":{"51.09":{"title":"Allied Health Diagnostic, Intervention, and Treatment Professions","graduates":0,"earnings":{"y1":null,"y4":null,"y4_national":null,"y4_pell":null,"y4_non_pell":null},"debt_median":null},"51.38":{"title":"Registered Nursing, Nursing Administration, Nursing Research and Clinical Nursing","graduates":101,"earnings":{"y1":63335,"y4":79303,"y4_national":88910,"y4_pell":67948,"y4_non_pell":null},"debt_median":15000}}}
+  }
+}

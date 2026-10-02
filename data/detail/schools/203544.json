@@ -1,6 +1,8 @@
 {
   "unit_id": "203544",
   "tables": {
-    "home_states": {"source":"ipeds-ef-c","vintage":"ipeds-ef-c","year":"Fall 2024","rows":{"OH":81,"CA":1,"CO":1,"IN":1,"LA":1,"MI":1,"TN":1,"WV":1}}
+    "home_states": {"source":"ipeds-ef-c","vintage":"ipeds-ef-c","year":"Fall 2024","rows":{"OH":81,"CA":1,"CO":1,"IN":1,"LA":1,"MI":1,"TN":1,"WV":1}},
+    "majors": {"source":"ipeds-c","vintage":"ipeds-c","year":"2024–25 graduates","rows":{"51.3801":[105,0],"51.0910":[20,0],"51.9999":[11,0],"51.0812":[7,0],"51.0701":[3,0],"51.1111":[2,0]}},
+    "programs": {"source":"scorecard-fos","vintage":"scorecard-fos","year":null,"rows":{"51.07":{"title":"Health and Medical Administrative Services","graduates":0,"earnings":{"y1":null,"y4":null,"y4_national":null,"y4_pell":null,"y4_non_pell":null},"debt_median":null},"51.08":{"title":"Allied Health and Medical Assisting Services","graduates":15,"earnings":{"y1":null,"y4":null,"y4_national":null,"y4_pell":null,"y4_non_pell":null},"debt_median":null},"51.09":{"title":"Allied Health Diagnostic, Intervention, and Treatment Professions","graduates":38,"earnings":{"y1":65690,"y4":75481,"y4_national":70786,"y4_pell":62824,"y4_non_pell":null},"debt_median":32026},"51.11":{"title":"Health/Medical Preparatory Programs","graduates":13,"earnings":{"y1":null,"y4":null,"y4_national":61911,"y4_pell":null,"y4_non_pell":null},"debt_median":null},"51.38":{"title":"Registered Nursing, Nursing Administration, Nursing Research and Clinical Nursing","graduates":208,"earnings":{"y1":79505,"y4":83539,"y4_national":88910,"y4_pell":61476,"y4_non_pell":61340},"debt_median":29050},"51.99":{"title":"Health Professions and Related Clinical Sciences, Other","graduates":24,"earnings":{"y1":70890,"y4":83293,"y4_national":68245,"y4_pell":57018,"y4_non_pell":null},"debt_median":26752}}}
   }
 }

@@ -22,6 +22,8 @@
     "men_share": {"start":2016,"values":[0,null,0,0.6,0.6667,0,0,0.3333,0.2857]},
     "part_time_share": {"start":2019,"values":[1,null,1,null,0.3333,0.2857]},
     "federal_loan_rate": {"start":2018,"values":[0,null,0,null,0.1429,0.1667]},
-    "instruction_per_student": {"start":2015,"values":[7748,null,11208,10293,11216,10846,10733,10869,7407]}
+    "instruction_per_student": {"start":2015,"values":[7748,null,11208,10293,11216,10846,10733,10869,7407]},
+    "bachelors": {"start":2018,"values":[2,null,4,null,1,2,2]},
+    "major_52": {"start":2018,"values":[1,null,1,null,1,1,1]}
   }
 }

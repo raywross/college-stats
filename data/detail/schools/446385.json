@@ -1,6 +1,8 @@
 {
   "unit_id": "446385",
   "tables": {
-    "home_states": {"source":"ipeds-ef-c","vintage":"ipeds-ef-c","year":"Fall 2024","rows":{"CA":16,"CO":2,"NV":2,"GA":1,"MA":1,"MD":1,"MN":1,"MS":1,"OR":1,"TX":1,"WA":1}}
+    "home_states": {"source":"ipeds-ef-c","vintage":"ipeds-ef-c","year":"Fall 2024","rows":{"CA":16,"CO":2,"NV":2,"GA":1,"MA":1,"MD":1,"MN":1,"MS":1,"OR":1,"TX":1,"WA":1}},
+    "majors": {"source":"ipeds-c","vintage":"ipeds-c","year":"2024–25 graduates","rows":{"50.0908":[14,0],"50.0904":[10,0],"50.0911":[8,0],"50.0913":[7,0],"50.1003":[5,0],"50.0907":[2,0],"50.0916":[2,0],"50.0915":[1,0]}},
+    "programs": {"source":"scorecard-fos","vintage":"scorecard-fos","year":null,"rows":{"50.09":{"title":"Music","graduates":61,"earnings":{"y1":24059,"y4":null,"y4_national":42892,"y4_pell":null,"y4_non_pell":null},"debt_median":36325},"50.10":{"title":"Arts, Entertainment, and Media Management","graduates":5,"earnings":{"y1":null,"y4":null,"y4_national":null,"y4_pell":null,"y4_non_pell":null},"debt_median":null}}}
   }
 }

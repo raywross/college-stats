@@ -54,7 +54,9 @@ published at `/roadmap` ([roadmap.md](roadmap.md)): add each new one to `lib/roa
     Supabase `school_details` table + publish, fail-soft `getDetail()`. Built 2026-10-02 with residence (home states;
     `lib/detail.ts`, [residence.md](data-expansion/residence.md#as-built)); majors and field of study add tables.
     The migration `20261002120000_school_details.sql` must be applied before the next publish.
-  - [ ] Wave 3: majors (completions); earnings by major (Scorecard Field of Study). Both use the detail file.
+  - [x] Wave 3, built 2026-10-02: majors (completions, C{Y}_A, [majors.md](data-expansion/majors.md#as-built)) and
+    earnings by major ([field-of-study.md](data-expansion/field-of-study.md): the `detail.programs` table, "Top-earning
+    majors here" and Compare's "your major"). Both use the detail file; Field of Study codes are checked against CIP 2020.
   - [ ] Wave 4, after the college-reported data agent: CDS high school GPA and admissions profile, class sizes,
     transfer admissions, next-year price and graduates' total debt.
   - [ ] Graduation as a fifth trend indicator ([outcome-measures.md](data-expansion/outcome-measures.md#top-level-trend)).

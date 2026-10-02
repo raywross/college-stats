@@ -1,6 +1,8 @@
 {
   "unit_id": "178767",
   "tables": {
-    "home_states": {"source":"ipeds-ef-c","vintage":"ipeds-ef-c","year":"Fall 2024","rows":{"MO":3,"IL":1}}
+    "home_states": {"source":"ipeds-ef-c","vintage":"ipeds-ef-c","year":"Fall 2024","rows":{"MO":3,"IL":1}},
+    "majors": {"source":"ipeds-c","vintage":"ipeds-c","year":"2024–25 graduates","rows":{"50.0408":[9,0],"52.0201":[3,0],"50.0409":[2,0],"52.1803":[2,0]}},
+    "programs": {"source":"scorecard-fos","vintage":"scorecard-fos","year":null,"rows":{"22.03":{"title":"Legal Support Services","graduates":null,"earnings":{"y1":null,"y4":null,"y4_national":53266,"y4_pell":null,"y4_non_pell":null},"debt_median":null},"50.04":{"title":"Design and Applied Arts","graduates":13,"earnings":{"y1":null,"y4":40288,"y4_national":51490,"y4_pell":null,"y4_non_pell":null},"debt_median":null},"52.02":{"title":"Business Administration, Management and Operations","graduates":4,"earnings":{"y1":null,"y4":null,"y4_national":68257,"y4_pell":null,"y4_non_pell":null},"debt_median":null},"52.18":{"title":"General Sales, Merchandising and Related Marketing Operations","graduates":12,"earnings":{"y1":null,"y4":37244,"y4_national":75399,"y4_pell":null,"y4_non_pell":null},"debt_median":null}}}
   }
 }

@@ -1,6 +1,8 @@
 {
   "unit_id": "188526",
   "tables": {
-    "home_states": {"source":"ipeds-ef-c","vintage":"ipeds-ef-c","year":"Fall 2024","rows":{"NY":63,"NJ":8,"MA":3,"MD":3,"TX":3,"CA":2,"IL":2,"OH":2,"PA":2,"CT":1,"DE":1,"KY":1,"NC":1,"NH":1,"SC":1,"UT":1,"VT":1}}
+    "home_states": {"source":"ipeds-ef-c","vintage":"ipeds-ef-c","year":"Fall 2024","rows":{"NY":63,"NJ":8,"MA":3,"MD":3,"TX":3,"CA":2,"IL":2,"OH":2,"PA":2,"CT":1,"DE":1,"KY":1,"NC":1,"NH":1,"SC":1,"UT":1,"VT":1}},
+    "majors": {"source":"ipeds-c","vintage":"ipeds-c","year":"2024–25 graduates","rows":{"51.2010":[93,0],"42.2812":[10,0],"26.0508":[9,0],"51.2201":[9,0],"26.9999":[7,0],"51.1005":[5,0],"51.0000":[2,0],"26.0101":[1,0],"42.0101":[1,0]}},
+    "programs": {"source":"scorecard-fos","vintage":"scorecard-fos","year":null,"rows":{"26.05":{"title":"Microbiological Sciences and Immunology","graduates":19,"earnings":{"y1":null,"y4":null,"y4_national":62582,"y4_pell":null,"y4_non_pell":null},"debt_median":null},"26.99":{"title":"Biological and Biomedical Sciences, Other","graduates":10,"earnings":{"y1":null,"y4":null,"y4_national":null,"y4_pell":null,"y4_non_pell":null},"debt_median":null},"51.00":{"title":"Health Services/Allied Health/Health Sciences, General","graduates":0,"earnings":{"y1":null,"y4":null,"y4_national":61296,"y4_pell":null,"y4_non_pell":null},"debt_median":null},"51.10":{"title":"Clinical/Medical Laboratory Science/Research and Allied Professions","graduates":23,"earnings":{"y1":null,"y4":null,"y4_national":75975,"y4_pell":null,"y4_non_pell":null},"debt_median":null},"51.20":{"title":"Pharmacy, Pharmaceutical Sciences, and Administration","graduates":79,"earnings":{"y1":40169,"y4":84423,"y4_national":116539,"y4_pell":null,"y4_non_pell":null},"debt_median":27000},"51.22":{"title":"Public Health","graduates":28,"earnings":{"y1":null,"y4":null,"y4_national":58808,"y4_pell":null,"y4_non_pell":null},"debt_median":null}}}
   }
 }

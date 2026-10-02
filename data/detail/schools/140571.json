@@ -1,6 +1,8 @@
 {
   "unit_id": "140571",
   "tables": {
-    "home_states": {"source":"ipeds-ef-c","vintage":"ipeds-ef-c","year":"Fall 2024","rows":{"GA":53,"CA":10,"TX":5,"AL":2,"IL":2,"NY":2,"FL":1,"MA":1,"MN":1,"SC":1}}
+    "home_states": {"source":"ipeds-ef-c","vintage":"ipeds-ef-c","year":"Fall 2024","rows":{"GA":53,"CA":10,"TX":5,"AL":2,"IL":2,"NY":2,"FL":1,"MA":1,"MN":1,"SC":1}},
+    "majors": {"source":"ipeds-c","vintage":"ipeds-c","year":"2024–25 graduates","rows":{"52.0201":[25,0],"42.0101":[14,0],"24.0102":[13,0],"50.0901":[3,0]}},
+    "programs": {"source":"scorecard-fos","vintage":"scorecard-fos","year":null,"rows":{"24.01":{"title":"Liberal Arts and Sciences, General Studies and Humanities","graduates":6,"earnings":{"y1":null,"y4":null,"y4_national":null,"y4_pell":null,"y4_non_pell":null},"debt_median":null},"42.01":{"title":"Psychology, General","graduates":5,"earnings":{"y1":null,"y4":null,"y4_national":null,"y4_pell":null,"y4_non_pell":null},"debt_median":null},"50.09":{"title":"Music","graduates":2,"earnings":{"y1":null,"y4":null,"y4_national":null,"y4_pell":null,"y4_non_pell":null},"debt_median":null},"52.02":{"title":"Business Administration, Management and Operations","graduates":9,"earnings":{"y1":null,"y4":null,"y4_national":null,"y4_pell":null,"y4_non_pell":null},"debt_median":null}}}
   }
 }

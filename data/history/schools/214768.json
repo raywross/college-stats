@@ -89,6 +89,18 @@
     "grad_cohort_black": {"start":2005,"values":[43,57,47,66,77,78,73,97,null,null,null,39,12,22]},
     "grad_cohort_two_or_more": {"start":2005,"values":[0,0,0,0,10,16,14,13,null,null,null,8,8,8]},
     "grad_cohort_international": {"start":2005,"values":[0,0,0,1,4,3,5,3,null,null,null,0,2,3]},
-    "instruction_per_student": {"start":2004,"values":[9886,null,null,null,null,null,null,5461,5190,5676,6193,7045,6355,6349,6792,null,null,5977,5092,4953]}
+    "instruction_per_student": {"start":2004,"values":[9886,null,null,null,null,null,null,5461,5190,5676,6193,7045,6355,6349,6792,null,null,5977,5092,4953]},
+    "bachelors": {"start":2013,"values":[43,46,58,54,56,69,null,null,86,47,62,61]},
+    "major_11": {"start":2013,"values":[0.1395,0.1739,0.1207,0.1111,0.1071,0.1159,null,null,0.1047,0.0426,0.129,0.0984]},
+    "major_13": {"start":2013,"values":[0,0,0,0,0,0,null,null,0,0.0213,0.0161,0]},
+    "major_14": {"start":2013,"values":[0.1163,0.1087,0.1724,0.0556,0.125,0.1159,null,null,0.0465,0.0851,0.0161,0.0492]},
+    "major_24": {"start":2013,"values":[0.3023,0.0652,0.0345,0.0185,0.0536,0.0145,null,null,0.0116,0,0.0161,0.0328]},
+    "major_26": {"start":2013,"values":[0,0,0,0,0,0,null,null,0,0.0213,0,0]},
+    "major_30": {"start":2013,"values":[0,0,0,0,0.0179,0.0145,null,null,0,0,0,0]},
+    "major_42": {"start":2013,"values":[0.2558,0.2609,0.2241,0.1667,0.1607,0.1884,null,null,0.1279,0.1064,0.1774,0.2951]},
+    "major_43": {"start":2013,"values":[0,0.0217,0.1207,0.1296,0.0893,0.2609,null,null,0.1628,0.0851,0.1129,0.1639]},
+    "major_50": {"start":2013,"values":[0,0,0,0,0,0,null,null,0,0,0.0161,0]},
+    "major_51": {"start":2013,"values":[0,0,0.0517,0.2407,0.25,0.1449,null,null,0.1977,0.1702,0.1452,0.1967]},
+    "major_52": {"start":2013,"values":[0.186,0.3696,0.2759,0.2778,0.1964,0.1449,null,null,0.3488,0.4681,0.371,0.1639]}
   }
 }

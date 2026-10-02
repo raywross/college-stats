@@ -129,7 +129,7 @@ const maxAgeFor = (year: number) => (REFRESH ? 0 : year >= THIS_YEAR - 3 ? 7 : I
 
 async function fetchYear(era: Era, year: number, keep: ReadonlySet<string>): Promise<Fetched | null> {
   for (const choice of era.files(year)) {
-    const opts = { cacheDir: CACHE, maxAgeDays: maxAgeFor(year + (era.lag ?? 0)), keep, offline: NCES_CACHED, keepRow: era.keepRow, wide: era.wide };
+    const opts = { cacheDir: CACHE, maxAgeDays: maxAgeFor(year + (era.lag ?? 0)), keep, offline: NCES_CACHED, keepRow: era.keepRow, wide: era.wide, sum: era.sum };
     const table = era.pivot ? await fetchPivotedTable(choice.name, era.pivot, opts) : await fetchIpedsTable(choice.name, opts);
     if (!table) continue;
     let supplement: IpedsTable | undefined;
@@ -194,7 +194,7 @@ function toInputs(fetched: Fetched[]): Inputs {
     return { year: f.year, family: f.family, rows, suffix: f.choice.suffix, values: f.era.values };
   };
   const of = (...fams: HistoryFamily[]) => fetched.filter((f) => fams.includes(f.family)).sort((a, b) => a.year - b.year).map(table);
-  return { admissions: of("ic-admissions", "adm"), prices: of("prices"), sfa: of("sfa"), characteristics: of("characteristics"), services: of("services"), efd: of("ef-d"), efc: of("ef-c"), efa: of("ef-a"), om: of("om"), grPell: of("gr-pell"), sal: of("ipeds-sal") };
+  return { admissions: of("ic-admissions", "adm"), prices: of("prices"), sfa: of("sfa"), characteristics: of("characteristics"), services: of("services"), efd: of("ef-d"), efc: of("ef-c"), efa: of("ef-a"), ca: of("c-a"), om: of("om"), grPell: of("gr-pell"), sal: of("ipeds-sal") };
 }
 
 /* ------------------------------------------------------------------ */

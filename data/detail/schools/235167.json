@@ -1,6 +1,8 @@
 {
   "unit_id": "235167",
   "tables": {
-    "home_states": {"source":"ipeds-ef-c","vintage":"ipeds-ef-c","year":"Fall 2024","rows":{"WA":234,"OR":20,"CA":10,"TX":7,"CO":5,"NM":5,"ID":4,"MN":3,"MT":3,"UT":3,"AZ":2,"HI":2,"IL":2,"VA":2,"AK":1,"IA":1,"KY":1,"ME":1,"MO":1,"NY":1,"PR":1,"TN":1,"WI":1}}
+    "home_states": {"source":"ipeds-ef-c","vintage":"ipeds-ef-c","year":"Fall 2024","rows":{"WA":234,"OR":20,"CA":10,"TX":7,"CO":5,"NM":5,"ID":4,"MN":3,"MT":3,"UT":3,"AZ":2,"HI":2,"IL":2,"VA":2,"AK":1,"IA":1,"KY":1,"ME":1,"MO":1,"NY":1,"PR":1,"TN":1,"WI":1}},
+    "majors": {"source":"ipeds-c","vintage":"ipeds-c","year":"2024–25 graduates","rows":{"24.0101":[381,0],"30.0101":[70,0]}},
+    "programs": {"source":"scorecard-fos","vintage":"scorecard-fos","year":null,"rows":{"24.01":{"title":"Liberal Arts and Sciences, General Studies and Humanities","graduates":785,"earnings":{"y1":26328,"y4":42219,"y4_national":53072,"y4_pell":34058,"y4_non_pell":35005},"debt_median":18458},"30.01":{"title":"Biological and Physical Sciences","graduates":207,"earnings":{"y1":27555,"y4":48623,"y4_national":58891,"y4_pell":37479,"y4_non_pell":37781},"debt_median":20982}}}
   }
 }

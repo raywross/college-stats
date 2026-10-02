@@ -1,6 +1,8 @@
 {
   "unit_id": "156471",
   "tables": {
-    "home_states": {"source":"ipeds-ef-c","vintage":"ipeds-ef-c","year":"Fall 2024","rows":{"KY":441,"IN":66,"CA":2,"GA":2,"IL":1,"PA":1}}
+    "home_states": {"source":"ipeds-ef-c","vintage":"ipeds-ef-c","year":"Fall 2024","rows":{"KY":441,"IN":66,"CA":2,"GA":2,"IL":1,"PA":1}},
+    "majors": {"source":"ipeds-c","vintage":"ipeds-c","year":"2024–25 graduates","rows":{"51.3801":[1317,0]}},
+    "programs": {"source":"scorecard-fos","vintage":"scorecard-fos","year":null,"rows":{"51.38":{"title":"Registered Nursing, Nursing Administration, Nursing Research and Clinical Nursing","graduates":1832,"earnings":{"y1":76234,"y4":91862,"y4_national":88910,"y4_pell":80362,"y4_non_pell":null},"debt_median":36303}}}
   }
 }

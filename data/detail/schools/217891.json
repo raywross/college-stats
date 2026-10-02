@@ -1,6 +1,8 @@
 {
   "unit_id": "217891",
   "tables": {
-    "home_states": {"source":"ipeds-ef-c","vintage":"ipeds-ef-c","year":"Fall 2024","rows":{"SC":46,"NC":12,"FL":3,"GA":3,"MD":2,"OH":2,"AL":1,"CA":1,"NY":1,"OK":1,"PA":1}}
+    "home_states": {"source":"ipeds-ef-c","vintage":"ipeds-ef-c","year":"Fall 2024","rows":{"SC":46,"NC":12,"FL":3,"GA":3,"MD":2,"OH":2,"AL":1,"CA":1,"NY":1,"OK":1,"PA":1}},
+    "majors": {"source":"ipeds-c","vintage":"ipeds-c","year":"2024–25 graduates","rows":{"52.0201":[10,0],"30.0101":[3,0],"38.0201":[2,0]}},
+    "programs": {"source":"scorecard-fos","vintage":"scorecard-fos","year":null,"rows":{"30.01":{"title":"Biological and Physical Sciences","graduates":0,"earnings":{"y1":null,"y4":null,"y4_national":null,"y4_pell":null,"y4_non_pell":null},"debt_median":null},"38.02":{"title":"Religion/Religious Studies","graduates":6,"earnings":{"y1":null,"y4":null,"y4_national":41390,"y4_pell":null,"y4_non_pell":null},"debt_median":null},"52.02":{"title":"Business Administration, Management and Operations","graduates":10,"earnings":{"y1":null,"y4":null,"y4_national":68257,"y4_pell":null,"y4_non_pell":null},"debt_median":null}}}
   }
 }

@@ -1,6 +1,8 @@
 {
   "unit_id": "241766",
   "tables": {
-    "home_states": {"source":"ipeds-ef-c","vintage":"ipeds-ef-c","year":"Fall 2024","rows":{"PR":66}}
+    "home_states": {"source":"ipeds-ef-c","vintage":"ipeds-ef-c","year":"Fall 2024","rows":{"PR":66}},
+    "majors": {"source":"ipeds-c","vintage":"ipeds-c","year":"2024–25 graduates","rows":{"50.0910":[10,0],"50.0911":[6,0],"13.1312":[4,0],"50.0915":[3,0],"50.0907":[2,0],"50.0908":[2,0],"50.0914":[2,0],"50.0904":[1,0],"50.0916":[1,0]}},
+    "programs": {"source":"scorecard-fos","vintage":"scorecard-fos","year":null,"rows":{"13.13":{"title":"Teacher Education and Professional Development, Specific Subject Areas","graduates":16,"earnings":{"y1":null,"y4":null,"y4_national":51389,"y4_pell":null,"y4_non_pell":null},"debt_median":null},"50.09":{"title":"Music","graduates":100,"earnings":{"y1":5005,"y4":29940,"y4_national":42892,"y4_pell":18895,"y4_non_pell":null},"debt_median":12250}}}
   }
 }

@@ -1,0 +1,6 @@
+{
+  "unit_id": "482635",
+  "tables": {
+    "majors": {"source":"ipeds-c","vintage":"ipeds-c","year":"2024–25 graduates","rows":{"11.0501":[3,0],"52.0299":[2,0],"11.0901":[1,0],"52.0201":[1,0]}}
+  }
+}

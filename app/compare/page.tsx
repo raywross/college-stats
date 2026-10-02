@@ -1,8 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight, Swords } from "lucide-react";
-import { getData, getHistoryFiles, toIndexEntry } from "@/lib/data";
-import { RACE_SERIES, SERIES, defaultWindow, historyYearLabel } from "@/lib/history";
+import { getData, getDetail, getHistory, getHistoryFiles, toIndexEntry } from "@/lib/data";
+import { familiesOffered, fieldStat, type FieldStat } from "@/lib/field-compare";
+import { majorFamilyName } from "@/lib/majors";
+import { cipFamilyTitle, cipTitle } from "@/lib/cip";
+import { YourMajor } from "@/components/compare/YourMajor";
+import { RACE_SERIES, SERIES, WINDOW_YEARS, defaultWindow, historyYearLabel } from "@/lib/history";
 import { INDICATORS, INDICATOR_KEYS, indicatorsOf } from "@/lib/indicators";
 import { TrendIndicatorCell } from "@/components/trends/TrendIndicators";
 import type { TrendKey } from "@/lib/types";
@@ -138,6 +142,10 @@ const TABLE_ROWS = (
       s.academics?.faculty?.full_time_share == null ? null : pct(s.academics.faculty.full_time_share)],
     ["Average faculty salary", "nine-month-equated-salary", "academics.faculty", (s: School) =>
       s.academics?.faculty?.avg_salary_9mo == null ? null : money(s.academics.faculty.avg_salary_9mo)],
+    // Majors (specs/data-expansion/majors.md): first-major bachelor's, and the 3 largest programs by share of them.
+    ["Bachelor's degrees awarded", "first-major", "academics.bachelors_awarded", (s: School) => opt(s.academics?.bachelors_awarded ?? null, num)],
+    ["Most popular majors", "cip-code", "academics.majors_top", (s: School) =>
+      s.academics?.majors_top?.length ? s.academics.majors_top.slice(0, 3).map((m) => `${m.title} ${pct(m.share)}`).join(" · ") : null],
     // Compared only within the same accounting form; the form is shown since figures otherwise look directly comparable.
     ["Instruction spending per student", "instruction-expenses", "finances", (s: School) =>
       s.finances?.instruction_per_student == null ? null : `${money(s.finances.instruction_per_student)} (${FORM_SHORT[s.finances.form]})`],
@@ -239,6 +247,28 @@ export default async function ComparePage({
 
   const diffs = keyDifferences(schools);
   const historyFiles = await getHistoryFiles();
+
+  // "Your major" (specs/data-expansion/majors.md, field-of-study.md): broad fields (2-digit CIP families) that at
+  // least one compared college awards bachelor's in. Every offered field is computed here (lib/field-compare.ts), so
+  // the client section swaps fields in place; `?major=` picks the first one shown (an older 4-digit `11.07` link maps to
+  // its family).
+  const [details, histories] = await Promise.all([Promise.all(schools.map((s) => getDetail(s.unit_id))), Promise.all(schools.map((s) => getHistory(s.unit_id)))]);
+  const caFiles = historyFiles?.meta.files["c-a"];
+  const caEnd = caFiles?.length ? caFiles[caFiles.length - 1].year : null;
+  const caWindow: [number, number] | null = caEnd !== null ? [caEnd - WINDOW_YEARS, caEnd] : null;
+  const majorOptions = familiesOffered(schools)
+    .map((family) => ({ family, title: majorFamilyName(family) ?? cipFamilyTitle(family) ?? family }))
+    .sort((a, b) => a.title.localeCompare(b.title));
+  const majorStats: Record<string, FieldStat[]> = Object.fromEntries(
+    majorOptions.map(({ family }) => [
+      family,
+      schools.map((s, i) =>
+        fieldStat(family, s, details[i]?.tables.majors?.rows, details[i]?.tables.programs?.rows, histories[i]?.series ?? null, caWindow, cipTitle, (y) => historyYearLabel(y, "academic")),
+      ),
+    ]),
+  );
+  const rawMajor = (typeof params.major === "string" ? params.major : "").slice(0, 2);
+  const selectedMajor = majorStats[rawMajor] ? rawMajor : null;
   // "Then & now" from school.trends (10-year changes written by sync-history); money is after inflation.
   const THEN_AND_NOW: { key: TrendKey; label: string; format: "money" | "pctSmart" | "num" | "fixed2" }[] = [
     { key: "avg_paid_all", label: "Avg total cost (after inflation)", format: "money" },
@@ -474,6 +504,24 @@ export default async function ComparePage({
             <NetPriceCompare schools={schools} year={citeField("cost.net_price_by_income").year} />
             <MultiSourceNote schools={schools} fields={COST_FIELDS} />
           </Group>
+
+          {majorOptions.length > 0 && (
+            <Group domain="value" title="Your major">
+              <p className="max-w-3xl text-sm text-muted-foreground">
+                Pick a field of study to see which of these colleges award bachelor&apos;s degrees in it, how many, and what graduates earn{" "}
+                <Term term="earnings-after-completion">after completion</Term>.
+              </p>
+              <YourMajor
+                ids={ids.join(",")}
+                schools={schools.map((s, i) => ({ id: s.unit_id, name: shortName(s), slot: i }))}
+                options={majorOptions}
+                stats={majorStats}
+                initial={selectedMajor}
+              />
+              <MultiSourceNote schools={schools} fields={["academics.bachelors_by_family", "detail.majors", "detail.programs"]} />
+              {historyFiles && caWindow && <HistorySourceNote keys={["bachelors"]} files={historyFiles} range={caWindow} />}
+            </Group>
+          )}
 
           {historyFiles && thenAndNow.some((m) => m.rows.length > 0) && (
             <section className="space-y-4">

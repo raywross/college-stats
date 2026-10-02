@@ -12,15 +12,30 @@ import { join } from "node:path";
 export const IPEDS_BASES = ["https://nces.ed.gov/ipeds/complete-data-files", "https://nces.ed.gov/ipeds/datacenter/data"];
 
 /**
- * Minimal RFC-4180 CSV parser (IPEDS files quote some fields). Headers are upper-cased (newer files are lower case).
- * A leading byte-order mark is dropped (HD2025 has one; left in, it hides the UNITID column).
+ * Minimal RFC-4180 CSV reader (IPEDS files quote some fields), calling `onRow` for each record instead of building
+ * them all (a completions file has 300,000 rows). Headers are upper-cased (newer files are lower case). A leading
+ * byte-order mark is dropped (HD2025 has one; left in, it hides the UNITID column). Returns the header. `keepIds` skips
+ * other colleges' rows before building them (most of a file's rows aren't site colleges).
  */
-export function parseCsv(input: string): Record<string, string>[] {
-  const text = input.replace(/^(﻿|ï»¿)/, "");
-  const rows: string[][] = [];
+export function forEachCsvRow(input: string, onRow: (row: Record<string, string>) => void, keepIds?: ReadonlySet<string>): string[] {
+  const text = input.replace(/^(\uFEFF|ï»¿)/, "");
+  let keys: string[] | null = null;
+  let idAt = -1;
   let row: string[] = [];
   let field = "";
   let quoted = false;
+  const emit = () => {
+    if (!keys) {
+      keys = row.map((h) => h.trim().toUpperCase());
+      idAt = keys.indexOf("UNITID");
+    } else if (row.length > 1 && !(keepIds && idAt >= 0 && !keepIds.has(row[idAt].trim()))) {
+      // Object.fromEntries, not one property at a time: wide files (SFA, ~400 columns) would turn every row into a
+      // dictionary-mode object, about three times the memory (history keeps ~200 such files' rows).
+      const cells = row;
+      onRow(Object.fromEntries(keys.map((k, i) => [k, (cells[i] ?? "").trim()])));
+    }
+    row = [];
+  };
   for (let i = 0; i < text.length; i++) {
     const c = text[i];
     if (quoted) {
@@ -36,15 +51,22 @@ export function parseCsv(input: string): Record<string, string>[] {
     } else if (c === "\n" || c === "\r") {
       if (c === "\r" && text[i + 1] === "\n") i++;
       row.push(field);
-      rows.push(row);
-      row = [];
       field = "";
+      emit();
     } else field += c;
   }
-  if (field || row.length) rows.push([...row, field]);
-  const [header, ...body] = rows;
-  const keys = header.map((h) => h.trim().toUpperCase());
-  return body.filter((r) => r.length > 1).map((r) => Object.fromEntries(keys.map((k, i) => [k, (r[i] ?? "").trim()])));
+  if (field || row.length) {
+    row.push(field);
+    emit();
+  }
+  return keys ?? [];
+}
+
+/** Every record of a CSV (see forEachCsvRow). */
+export function parseCsv(input: string): Record<string, string>[] {
+  const rows: Record<string, string>[] = [];
+  forEachCsvRow(input, (r) => rows.push(r));
+  return rows;
 }
 
 /** One IPEDS file, read. */
@@ -77,6 +99,13 @@ export interface FetchOptions {
    * `values` column becoming `{column}_{row's key value}` (e.g. EFRES01_47). `columns` keeps the file's own header.
    */
   wide?: { key: string; values: readonly string[] };
+  /**
+   * Files with many rows per college (C{Y}_A completions: one per program, award level, and major): sum them into one
+   * row per college, each kept row adding its `value` column into the column `key(row)` names (null skips the row).
+   * Sums are stored as strings like every other value; blank, non-numeric, and negative (IPEDS missing) values add
+   * nothing.
+   */
+  sum?: { key: (row: Record<string, string>) => string | null; value: string };
 }
 
 /** fetch with retries on network errors and 5xx (NCES drops connections under load). */
@@ -144,19 +173,27 @@ export async function fetchIpedsTable(name: string, opts: FetchOptions): Promise
   if (!csv) throw new Error(`${name}.zip has no CSV (${files.join(", ")})`);
   // Older files are latin-1; decoding everything as latin-1 is safe because only names use non-ASCII.
   const text = execFileSync("unzip", ["-p", zip, csv], { encoding: "latin1", maxBuffer: 1024 * 1024 * 1024 });
-  const parsed = parseCsv(text);
-  const columns = new Set(Object.keys(parsed[0] ?? {}));
   const rows = new Map<string, Record<string, string>>();
-  for (const r of parsed) {
-    if (opts.keep && !opts.keep.has(r.UNITID)) continue;
-    if (opts.keepRow && !opts.keepRow(r)) continue;
+  const header = forEachCsvRow(text, (r) => {
+    if (opts.keep && !opts.keep.has(r.UNITID)) return;
+    if (opts.keepRow && !opts.keepRow(r)) return;
+    if (opts.sum) {
+      const key = opts.sum.key(r);
+      const n = Number(r[opts.sum.value]);
+      // IPEDS codes missing values as -1, -2, -3: never added in as numbers.
+      if (key === null || r[opts.sum.value] === "" || !Number.isFinite(n) || n < 0) return;
+      const row = rows.get(r.UNITID) ?? rows.set(r.UNITID, { UNITID: r.UNITID }).get(r.UNITID)!;
+      row[key] = String((Number(row[key]) || 0) + n);
+      return;
+    }
     if (!opts.wide) {
       rows.set(r.UNITID, r);
-      continue;
+      return;
     }
     const row = rows.get(r.UNITID) ?? rows.set(r.UNITID, { UNITID: r.UNITID }).get(r.UNITID)!;
     const k = String(Number(r[opts.wide.key]));
     for (const v of opts.wide.values) row[`${v}_${k}`] = r[v] ?? "";
-  }
+  }, opts.keep);
+  const columns = new Set(header);
   return { name, url, csv, revised: !!rv, columns, rows };
 }

@@ -10,6 +10,7 @@ import { FACTOR_FILTERS } from "@/lib/factors";
 import { DESIGNATION_LABELS, RESEARCH_LABELS, SETTING_GROUPS, isDesignation, isResearchTier, isSettingGroup } from "@/lib/campus-profile";
 import { DIVISION_LABELS, ROTC_LABELS, isDivisionFilter, isRotcBranch } from "@/lib/campus-services";
 import { conferenceName } from "@/lib/conferences";
+import { isMajorFamily, majorFamilyName } from "@/lib/majors";
 import { typeLabel } from "@/lib/format";
 import { useExploreParams } from "./useExploreParams";
 import { cn } from "@/lib/utils";
@@ -98,6 +99,7 @@ const SORTS = [
   { value: "full_time_faculty", label: "Full-time faculty share (most)", dir: "desc" },
   { value: "out_of_state", label: "First-years from other states (most)", dir: "desc" },
   { value: "transfer_share", label: "Transfer students (largest share of new students)", dir: "desc" },
+  { value: "bachelors", label: "Bachelor's degrees awarded (most)", dir: "desc" },
   { value: "instruction_spending", label: "Instruction spending per student (most)", dir: "desc" },
   { value: "endowment_per_student", label: "Endowment per student (most, private nonprofits)", dir: "desc" },
   { value: "loan_rate_change", label: "Borrowing change, 10 yrs (biggest drop)", dir: "asc" },
@@ -237,6 +239,11 @@ export function ActiveFilters() {
   if (searchParams.get("fewLoans") === "1") chips.push({ key: "fewLoans", label: "Few students borrow", onRemove: () => update({ fewLoans: null }) });
   if (searchParams.get("pellGap") === "1") chips.push({ key: "pellGap", label: "Pell gap under 5 points", onRemove: () => update({ pellGap: null }) });
   if (searchParams.get("national") === "1") chips.push({ key: "national", label: "Draws nationally", onRemove: () => update({ national: null }) });
+  const field = searchParams.get("field");
+  if (field && isMajorFamily(field)) {
+    const min = Number(searchParams.get("fieldMin")) || 1;
+    chips.push({ key: "field", label: `${majorFamilyName(field)} majors${min > 1 ? `, ${min}+ a year` : ""}`, onRemove: () => update({ field: null, fieldMin: null }) });
+  }
   for (const f of [...FACTOR_FILTERS, ...HOUSING_FILTERS]) if (searchParams.get(f.param) === "1") chips.push({ key: f.param, label: f.label, onRemove: () => update({ [f.param]: null }) });
 
   for (const g of getList("setting").filter(isSettingGroup))

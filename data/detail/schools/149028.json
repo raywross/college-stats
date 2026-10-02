@@ -1,0 +1,7 @@
+{
+  "unit_id": "149028",
+  "tables": {
+    "majors": {"source":"ipeds-c","vintage":"ipeds-c","year":"2024–25 graduates","rows":{"51.3801":[57,0]}},
+    "programs": {"source":"scorecard-fos","vintage":"scorecard-fos","year":null,"rows":{"51.38":{"title":"Registered Nursing, Nursing Administration, Nursing Research and Clinical Nursing","graduates":151,"earnings":{"y1":71970,"y4":79997,"y4_national":88910,"y4_pell":67515,"y4_non_pell":67727},"debt_median":20000}}}
+  }
+}

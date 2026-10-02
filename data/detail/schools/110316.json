@@ -1,0 +1,7 @@
+{
+  "unit_id": "110316",
+  "tables": {
+    "majors": {"source":"ipeds-c","vintage":"ipeds-c","year":"2024–25 graduates","rows":{"42.0101":[22,0],"30.9999":[13,0]}},
+    "programs": {"source":"scorecard-fos","vintage":"scorecard-fos","year":null,"rows":{"30.99":{"title":"Multi/Interdisciplinary Studies, Other","graduates":30,"earnings":{"y1":null,"y4":59036,"y4_national":55693,"y4_pell":46139,"y4_non_pell":null},"debt_median":18750},"42.01":{"title":"Psychology, General","graduates":69,"earnings":{"y1":null,"y4":null,"y4_national":null,"y4_pell":null,"y4_non_pell":null},"debt_median":null}}}
+  }
+}

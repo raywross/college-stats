@@ -1,0 +1,7 @@
+{
+  "unit_id": "229337",
+  "tables": {
+    "majors": {"source":"ipeds-c","vintage":"ipeds-c","year":"2024–25 graduates","rows":{"51.3801":[933,0],"51.0201":[58,0],"51.1005":[44,0],"51.0701":[42,0]}},
+    "programs": {"source":"scorecard-fos","vintage":"scorecard-fos","year":null,"rows":{"51.02":{"title":"Communication Disorders Sciences and Services","graduates":177,"earnings":{"y1":27008,"y4":63026,"y4_national":58928,"y4_pell":46298,"y4_non_pell":56170},"debt_median":12794},"51.07":{"title":"Health and Medical Administrative Services","graduates":121,"earnings":{"y1":56615,"y4":80639,"y4_national":58716,"y4_pell":null,"y4_non_pell":null},"debt_median":18000},"51.10":{"title":"Clinical/Medical Laboratory Science/Research and Allied Professions","graduates":80,"earnings":{"y1":62373,"y4":75237,"y4_national":75975,"y4_pell":61149,"y4_non_pell":null},"debt_median":13625},"51.38":{"title":"Registered Nursing, Nursing Administration, Nursing Research and Clinical Nursing","graduates":1852,"earnings":{"y1":77083,"y4":89234,"y4_national":88910,"y4_pell":77524,"y4_non_pell":74802},"debt_median":12500}}}
+  }
+}

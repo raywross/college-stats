@@ -1,6 +1,7 @@
 {
   "unit_id": "118888",
   "tables": {
-    "home_states": {"source":"ipeds-ef-c","vintage":"ipeds-ef-c","year":"Fall 2024","rows":{"NY":74,"CA":73,"MA":59,"NJ":41,"CT":19,"TX":14,"PA":13,"RI":8,"WA":8,"FL":6,"NH":6,"IL":5,"NC":5,"CO":4,"MD":4,"ME":4,"VA":4,"DE":3,"IA":3,"MO":3,"VT":3,"HI":2,"MN":2,"OR":2,"SD":2,"DC":1,"GA":1,"KS":1,"KY":1,"LA":1,"NM":1,"NV":1,"PR":1}}
+    "home_states": {"source":"ipeds-ef-c","vintage":"ipeds-ef-c","year":"Fall 2024","rows":{"NY":74,"CA":73,"MA":59,"NJ":41,"CT":19,"TX":14,"PA":13,"RI":8,"WA":8,"FL":6,"NH":6,"IL":5,"NC":5,"CO":4,"MD":4,"ME":4,"VA":4,"DE":3,"IA":3,"MO":3,"VT":3,"HI":2,"MN":2,"OR":2,"SD":2,"DC":1,"GA":1,"KS":1,"KY":1,"LA":1,"NM":1,"NV":1,"PR":1}},
+    "majors": {"source":"ipeds-c","vintage":"ipeds-c","year":"2024–25 graduates","rows":{"50.0702":[3,0],"22.0000":[2,0],"44.0000":[2,0],"45.1001":[2,0],"50.0102":[2,0],"03.0104":[1,0],"51.2201":[1,0],"54.0101":[1,0]}}
   }
 }

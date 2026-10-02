@@ -1,6 +1,8 @@
 {
   "unit_id": "380438",
   "tables": {
-    "home_states": {"source":"ipeds-ef-c","vintage":"ipeds-ef-c","year":"Fall 2024","rows":{"UT":21}}
+    "home_states": {"source":"ipeds-ef-c","vintage":"ipeds-ef-c","year":"Fall 2024","rows":{"UT":21}},
+    "majors": {"source":"ipeds-c","vintage":"ipeds-c","year":"2024–25 graduates","rows":{"51.3801":[157,0]}},
+    "programs": {"source":"scorecard-fos","vintage":"scorecard-fos","year":null,"rows":{"43.01":{"title":"Criminal Justice and Corrections","graduates":null,"earnings":{"y1":null,"y4":null,"y4_national":55378,"y4_pell":null,"y4_non_pell":null},"debt_median":null},"51.07":{"title":"Health and Medical Administrative Services","graduates":null,"earnings":{"y1":null,"y4":null,"y4_national":58716,"y4_pell":null,"y4_non_pell":null},"debt_median":null},"51.38":{"title":"Registered Nursing, Nursing Administration, Nursing Research and Clinical Nursing","graduates":283,"earnings":{"y1":63317,"y4":79485,"y4_national":88910,"y4_pell":null,"y4_non_pell":null},"debt_median":42951},"52.02":{"title":"Business Administration, Management and Operations","graduates":null,"earnings":{"y1":null,"y4":null,"y4_national":68257,"y4_pell":null,"y4_non_pell":null},"debt_median":null}}}
   }
 }

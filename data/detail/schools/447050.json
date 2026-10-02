@@ -1,0 +1,7 @@
+{
+  "unit_id": "447050",
+  "tables": {
+    "majors": {"source":"ipeds-c","vintage":"ipeds-c","year":"2024–25 graduates","rows":{"51.3801":[35,0],"52.0201":[3,0],"11.0103":[1,0],"24.0101":[1,0],"51.0000":[1,0]}},
+    "programs": {"source":"scorecard-fos","vintage":"scorecard-fos","year":null,"rows":{"11.01":{"title":"Computer and Information Sciences, General","graduates":2,"earnings":{"y1":null,"y4":null,"y4_national":null,"y4_pell":null,"y4_non_pell":null},"debt_median":null},"13.12":{"title":"Teacher Education and Professional Development, Specific Levels and Methods","graduates":1,"earnings":{"y1":null,"y4":null,"y4_national":null,"y4_pell":null,"y4_non_pell":null},"debt_median":null},"24.01":{"title":"Liberal Arts and Sciences, General Studies and Humanities","graduates":1,"earnings":{"y1":null,"y4":null,"y4_national":null,"y4_pell":null,"y4_non_pell":null},"debt_median":null},"51.00":{"title":"Health Services/Allied Health/Health Sciences, General","graduates":4,"earnings":{"y1":null,"y4":null,"y4_national":61296,"y4_pell":52267,"y4_non_pell":null},"debt_median":null},"51.38":{"title":"Registered Nursing, Nursing Administration, Nursing Research and Clinical Nursing","graduates":84,"earnings":{"y1":null,"y4":null,"y4_national":88910,"y4_pell":107264,"y4_non_pell":null},"debt_median":null},"52.02":{"title":"Business Administration, Management and Operations","graduates":4,"earnings":{"y1":null,"y4":null,"y4_national":68257,"y4_pell":null,"y4_non_pell":null},"debt_median":null}}}
+  }
+}

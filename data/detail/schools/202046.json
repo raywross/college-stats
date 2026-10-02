@@ -1,6 +1,8 @@
 {
   "unit_id": "202046",
   "tables": {
-    "home_states": {"source":"ipeds-ef-c","vintage":"ipeds-ef-c","year":"Fall 2024","rows":{"OH":70,"PA":9,"NY":6,"MD":5,"MI":4,"IN":3,"VA":3,"CA":2,"KY":2,"LA":2,"TX":2,"WV":2,"AL":1,"IL":1,"ME":1,"MO":1,"SC":1,"VT":1}}
+    "home_states": {"source":"ipeds-ef-c","vintage":"ipeds-ef-c","year":"Fall 2024","rows":{"OH":70,"PA":9,"NY":6,"MD":5,"MI":4,"IN":3,"VA":3,"CA":2,"KY":2,"LA":2,"TX":2,"WV":2,"AL":1,"IL":1,"ME":1,"MO":1,"SC":1,"VT":1}},
+    "majors": {"source":"ipeds-c","vintage":"ipeds-c","year":"2024–25 graduates","rows":{"50.0410":[33,0],"10.0304":[20,0],"50.0411":[9,1],"50.0409":[9,0],"50.0404":[6,0],"51.2703":[6,0],"50.0708":[4,1],"50.0705":[4,0],"50.0710":[2,2],"50.0605":[2,0],"50.0408":[1,0],"50.0709":[1,0],"50.0799":[1,0]}},
+    "programs": {"source":"scorecard-fos","vintage":"scorecard-fos","year":null,"rows":{"10.03":{"title":"Graphic Communications","graduates":35,"earnings":{"y1":19409,"y4":null,"y4_national":43283,"y4_pell":null,"y4_non_pell":null},"debt_median":27000},"50.04":{"title":"Design and Applied Arts","graduates":120,"earnings":{"y1":23358,"y4":47147,"y4_national":51490,"y4_pell":null,"y4_non_pell":null},"debt_median":27000},"50.06":{"title":"Film/Video and Photographic Arts","graduates":15,"earnings":{"y1":null,"y4":null,"y4_national":43765,"y4_pell":null,"y4_non_pell":null},"debt_median":null},"50.07":{"title":"Fine and Studio Arts","graduates":59,"earnings":{"y1":18839,"y4":33253,"y4_national":41367,"y4_pell":null,"y4_non_pell":null},"debt_median":27000},"51.27":{"title":"Medical Illustration and Informatics","graduates":15,"earnings":{"y1":null,"y4":null,"y4_national":73739,"y4_pell":null,"y4_non_pell":null},"debt_median":null}}}
   }
 }

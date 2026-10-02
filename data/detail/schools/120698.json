@@ -1,0 +1,7 @@
+{
+  "unit_id": "120698",
+  "tables": {
+    "majors": {"source":"ipeds-c","vintage":"ipeds-c","year":"2024–25 graduates","rows":{"42.0101":[9,0]}},
+    "programs": {"source":"scorecard-fos","vintage":"scorecard-fos","year":null,"rows":{"42.01":{"title":"Psychology, General","graduates":32,"earnings":{"y1":29432,"y4":null,"y4_national":50706,"y4_pell":null,"y4_non_pell":null},"debt_median":16470},"42.27":{"title":"Research and Experimental Psychology","graduates":null,"earnings":{"y1":null,"y4":null,"y4_national":55695,"y4_pell":60272,"y4_non_pell":null},"debt_median":null},"42.28":{"title":"Clinical, Counseling and Applied Psychology","graduates":15,"earnings":{"y1":null,"y4":null,"y4_national":50523,"y4_pell":null,"y4_non_pell":null},"debt_median":null}}}
+  }
+}

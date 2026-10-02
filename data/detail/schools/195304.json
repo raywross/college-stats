@@ -1,6 +1,8 @@
 {
   "unit_id": "195304",
   "tables": {
-    "home_states": {"source":"ipeds-ef-c","vintage":"ipeds-ef-c","year":"Fall 2024","rows":{"CA":66,"NY":64,"MA":25,"NJ":24,"PA":19,"TX":18,"CT":17,"ME":12,"OR":10,"VA":10,"FL":9,"OH":9,"IL":8,"NC":7,"WA":7,"CO":6,"NH":6,"VT":6,"IN":5,"MD":5,"NM":5,"AZ":4,"LA":4,"MI":4,"MN":4,"AL":3,"GA":3,"ID":3,"RI":3,"SC":3,"TN":3,"DC":2,"HI":2,"UT":2,"WI":2,"AK":1,"AR":1,"IA":1,"KY":1,"MO":1,"MS":1,"ND":1,"NV":1,"OK":1}}
+    "home_states": {"source":"ipeds-ef-c","vintage":"ipeds-ef-c","year":"Fall 2024","rows":{"CA":66,"NY":64,"MA":25,"NJ":24,"PA":19,"TX":18,"CT":17,"ME":12,"OR":10,"VA":10,"FL":9,"OH":9,"IL":8,"NC":7,"WA":7,"CO":6,"NH":6,"VT":6,"IN":5,"MD":5,"NM":5,"AZ":4,"LA":4,"MI":4,"MN":4,"AL":3,"GA":3,"ID":3,"RI":3,"SC":3,"TN":3,"DC":2,"HI":2,"UT":2,"WI":2,"AK":1,"AR":1,"IA":1,"KY":1,"MO":1,"MS":1,"ND":1,"NV":1,"OK":1}},
+    "majors": {"source":"ipeds-c","vintage":"ipeds-c","year":"2024–25 graduates","rows":{"24.0101":[354,0]}},
+    "programs": {"source":"scorecard-fos","vintage":"scorecard-fos","year":null,"rows":{"24.01":{"title":"Liberal Arts and Sciences, General Studies and Humanities","graduates":630,"earnings":{"y1":25846,"y4":48225,"y4_national":53072,"y4_pell":36731,"y4_non_pell":35758},"debt_median":23500}}}
   }
 }

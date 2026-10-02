@@ -48,7 +48,7 @@ export default async function OutcomesPage({ params }: Props) {
     <TopicPage profile={p} topic={TOPIC} items={items}>
       <Panel level={1} domain="value" eyebrow="Outcomes" title="What it pays" takeaway={outcomesTakeaway(data, school)} school={school} fields={TOPIC_FIELDS[TOPIC]}>
         {(earnings !== null || grad !== null) && (
-          <div className="grid gap-4 lg:grid-cols-2">
+          <div className="grid gap-4 md:grid-cols-2">
             <Block id="earnings" className="space-y-6">
               <h3 className="font-display text-lg font-bold">Earnings</h3>
               <DistributionStrip label="Median earnings vs. every college" term="median-earnings" dist={distribution("earnings")} value={earnings} rank={rankOf(school, "earnings")} format="moneyCompact" color={DOMAINS.value.color} />
@@ -118,7 +118,7 @@ export default async function OutcomesPage({ params }: Props) {
         )}
 
         {onValueMap && (
-          <ShowMore id="map" label="Show the cost vs. earnings map" hint={`Where ${school.name} sits among 300 colleges`} className="mt-4">
+          <ShowMore id="map" until="lg" label="Show the cost vs. earnings map" hint={`Where ${school.name} sits among 300 colleges`} className="mt-4">
             <Block>
               <h3 className="mb-1 font-display text-lg font-bold">Cost vs. earnings</h3>
               <p className="mb-3 text-xs text-muted-foreground">The 300 most-applied-to colleges plus {school.name}. Top-left is lower cost and higher earnings.</p>

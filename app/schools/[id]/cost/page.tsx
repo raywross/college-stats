@@ -145,19 +145,19 @@ export default async function CostPage({ params }: Props) {
         </div>
 
         {hasLoanData(school) && (
-          <ShowMore id="loans" label="Show borrowing and repayment" hint="Who takes federal loans, debt by background, and how repayment is going" className="mt-4">
+          <ShowMore id="loans" until="lg" label="Show borrowing and repayment" hint="Who takes federal loans, debt by background, and how repayment is going" className="mt-4">
             <LoansCard school={school} />
           </ShowMore>
         )}
 
         {school.aid && (
           <div id="aid" className={`mt-10 ${BLOCK_SCROLL}`}>
-            <h3 className="mb-3 font-display text-xl font-extrabold tracking-tight sm:mb-1 sm:text-2xl">Who actually gets aid</h3>
-            <p className="mb-4 hidden max-w-3xl text-muted-foreground sm:block">
+            <h3 className="mb-3 font-display text-xl font-extrabold tracking-tight sm:text-2xl lg:mb-1">Who actually gets aid</h3>
+            <p className="mb-4 hidden max-w-3xl text-muted-foreground lg:block">
               Some colleges cover most of their price with grants; others cover little. Here&apos;s how generous this one is, how many students get grants, where the money
               comes from, and how it varies with family income.
             </p>
-            <ShowMore label="Show who gets aid" hint="How generous grants are, who gets them, where aid comes from, and aid by family income">
+            <ShowMore until="lg" label="Show who gets aid" hint="How generous grants are, who gets them, where aid comes from, and aid by family income">
               <div className="space-y-4">
                 <AidGenerosityCard school={school} />
                 <AidBreakdown school={school} />

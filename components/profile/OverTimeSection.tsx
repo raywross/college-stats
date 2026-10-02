@@ -3,19 +3,30 @@ import { DOMAINS } from "@/lib/metrics";
 import { historyYearLabel, type NationalHistory } from "@/lib/history";
 import { BANDED, HISTORY_GROUPS } from "@/lib/profile-history";
 import type { ProfileHistory } from "@/lib/profile-data";
+import type { HistoryGroupKey } from "@/lib/history-groups";
 import type { School } from "@/lib/types";
 import { OverTime } from "@/components/history/OverTime";
 import { HistorySourceNote } from "@/components/sources/HistorySourceNote";
 
 /**
  * The "Over time" charts with everything they need from the server: the college's history, the national bands,
- * CPI, the latest and provisional years, a source line per chart group, and the domain colors.
+ * CPI, the latest and provisional years, a source line per chart group, and the domain colors. `initialGroup` is the
+ * page's `?group=`, so the server HTML shows that group.
  */
-export async function OverTimeSection({ school, history: { history, files } }: { school: School; history: ProfileHistory }) {
+export async function OverTimeSection({
+  school,
+  history: { history, files },
+  initialGroup,
+}: {
+  school: School;
+  history: ProfileHistory;
+  initialGroup?: HistoryGroupKey;
+}) {
   const { citeField } = await getData();
   const applicants = citeField("admissions.applicants", school);
   return (
     <OverTime
+      initialGroup={initialGroup}
       isPublic={school.type === "public"}
       history={history}
       national={Object.fromEntries(BANDED.flatMap((k) => (files.national.series[k] ? [[k, files.national.series[k]]] : []))) as NationalHistory["series"]}

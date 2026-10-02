@@ -31,7 +31,7 @@ export const ROADMAP_GROUPS: { key: RoadmapGroupKey; title: string; description:
     key: "college-reported",
     title: "Newer figures from colleges",
     description:
-      "An agent that reads colleges' own Common Data Sets and class profiles, then the data only those documents have.",
+      "The data only colleges' own Common Data Sets have, read by the agent that now collects their newer admissions figures.",
   },
   {
     key: "campus-life",
@@ -104,15 +104,6 @@ export interface RoadmapSpec {
 /** In build order within each group (the backlog's order, specs/backlog.md). */
 export const ROADMAP: RoadmapSpec[] = [
   {
-    slug: "college-reported-data",
-    file: "specs/college-reported-data.md",
-    group: "college-reported",
-    summary: "Newer admissions figures from colleges' own reports, checked automatically before they're published.",
-    complexity: 4,
-    complexityNote: "An AI extraction pipeline with automated checks, an accuracy report, and a 50-college pilot.",
-    status: "planned",
-  },
-  {
     slug: "cds-admissions",
     file: "specs/data-expansion/cds-admissions.md",
     group: "college-reported",
@@ -120,7 +111,6 @@ export const ROADMAP: RoadmapSpec[] = [
     complexity: 2,
     complexityNote: "Straightforward once the agent reads Common Data Sets at scale.",
     status: "draft",
-    after: ["college-reported-data"],
   },
   {
     slug: "cds-academics",
@@ -130,7 +120,6 @@ export const ROADMAP: RoadmapSpec[] = [
     complexity: 1,
     complexityNote: "A handful of Common Data Set cells.",
     status: "draft",
-    after: ["college-reported-data"],
   },
   {
     slug: "cds-transfer",
@@ -140,7 +129,6 @@ export const ROADMAP: RoadmapSpec[] = [
     complexity: 1,
     complexityNote: "One Common Data Set section.",
     status: "draft",
-    after: ["college-reported-data"],
   },
   {
     slug: "cds-cost-and-debt",
@@ -150,7 +138,6 @@ export const ROADMAP: RoadmapSpec[] = [
     complexity: 2,
     complexityNote: "Newer prices must stay apart from federal figures in ranks and comparisons.",
     status: "draft",
-    after: ["college-reported-data"],
   },
   {
     slug: "religious-life",

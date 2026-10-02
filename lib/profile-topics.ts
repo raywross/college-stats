@@ -88,6 +88,8 @@ export const OVERVIEW_FIELDS: readonly FieldPath[] = [
   "derived.yield",
   "derived.sat_composite",
   "admissions.act_composite_25_75",
+  // Newer admit rate the college published itself (ReportedRateLine; specs/college-reported-data.md).
+  "reported.admissions.acceptance_rate",
   // Students & campus card.
   "demographics.undergrad_enrollment",
   "derived.diversity_index",
@@ -149,6 +151,11 @@ export const TOPIC_FIELDS: Readonly<Record<TopicKey, readonly FieldPath[]>> = {
     "admissions.act_english_25_75",
     "admissions.act_math_25_75",
     "derived.sat_median",
+    // Newer figures the college published itself (specs/college-reported-data.md), shown next to the baseline.
+    "reported.admissions.applicants",
+    "reported.admissions.admitted",
+    "reported.admissions.enrolled",
+    "reported.admissions.acceptance_rate",
   ],
   students: [
     "demographics.racial_diversity",

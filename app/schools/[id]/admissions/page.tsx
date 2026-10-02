@@ -9,6 +9,7 @@ import { eventYear, historyEvents } from "@/lib/events";
 import { FACTOR_ERA } from "@/lib/derive";
 import { LANDSCAPE_X, LANDSCAPE_Y, LANDSCAPE_ZONE } from "@/lib/chart-configs";
 import { BLOCK_SCROLL, Panel, Block, NotReported } from "@/components/profile/Panel";
+import { ReportedAdmissionsBlock } from "@/components/profile/ReportedAdmissions";
 import { TopicPage, topicMetadata } from "@/components/profile/TopicPage";
 import { HeadlineDelta } from "@/components/history/HeadlineDelta";
 import { ShowMore } from "@/components/ui/show-more";
@@ -75,6 +76,7 @@ export default async function AdmissionsPage({ params }: Props) {
         school={school}
         fields={TOPIC_FIELDS[TOPIC]}
       >
+        {school.reported?.admissions && <ReportedAdmissionsBlock school={school} citeField={citeField} className="mb-4" />}
         <div className="grid gap-4 lg:grid-cols-[1fr_1.2fr]">
           {counts ? (
             // Below lg: the funnel says the same thing in a fifth of the height, so the waffle follows it, folded (it sits beside the funnel from lg).

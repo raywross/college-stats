@@ -13,10 +13,10 @@ export const COMPLEXITY: Record<Complexity, { label: string; description: string
   4: { label: "Extra large", description: "A new system with its own pipeline, checks, and a pilot before launch." },
 };
 
-// Wave 1 (data the site already downloads) was built on 2026-09-29, and wave 2 (one new federal file each) on
-// 2026-10-02; see /release-notes. Metro area, deferred from wave 2, is under "later".
+// Wave 1 (data the site already downloads) was built on 2026-09-29, wave 2 (one new federal file each) on
+// 2026-10-02, and wave 3 (majors and earnings by major, in the per-college detail file) on 2026-10-02; see
+// /release-notes. Metro area, deferred from wave 2, is under "later".
 export type RoadmapGroupKey =
-  | "wave-3"
   | "college-reported"
   | "campus-life"
   | "national-trends"
@@ -27,11 +27,6 @@ export type RoadmapGroupKey =
   | "later";
 
 export const ROADMAP_GROUPS: { key: RoadmapGroupKey; title: string; description: string }[] = [
-  {
-    key: "wave-3",
-    title: "Wave 3: earnings by major",
-    description: "A large per-college table in the detail file, joined to the majors already on the site.",
-  },
   {
     key: "college-reported",
     title: "Newer figures from colleges",
@@ -108,15 +103,6 @@ export interface RoadmapSpec {
 
 /** In build order within each group (the backlog's order, specs/backlog.md). */
 export const ROADMAP: RoadmapSpec[] = [
-  {
-    slug: "field-of-study",
-    file: "specs/data-expansion/field-of-study.md",
-    group: "wave-3",
-    summary: "What graduates in each major earn and owe, at each college.",
-    complexity: 3,
-    complexityNote: "A large Scorecard dataset joined to the majors table.",
-    status: "planned",
-  },
   {
     slug: "college-reported-data",
     file: "specs/college-reported-data.md",

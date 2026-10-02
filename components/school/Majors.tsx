@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import type { School } from "@/lib/types";
 import type { Cited } from "@/lib/lineage";
 import type { SchoolDetail } from "@/lib/detail";
-import { cipTitle } from "@/lib/cip";
+import { cip4, cipTitle } from "@/lib/cip";
 import { MAJOR_FAMILIES, majorFamilyName, programsFromRows, type FieldGrowth } from "@/lib/majors";
 import { historyYearLabel } from "@/lib/history";
 import { num, pct, pctSmart } from "@/lib/format";
@@ -19,6 +19,7 @@ export function Majors({
   detail,
   cited,
   citedPrograms,
+  citedEarnings,
   growth,
   growthNote,
   color,
@@ -29,6 +30,8 @@ export function Majors({
   cited: Cited;
   /** citeField("detail.majors", school) */
   citedPrograms: Cited;
+  /** citeField("detail.programs", school): Field of Study earnings shown on rows. */
+  citedEarnings?: Cited;
   /** lib/majors.ts fastestGrowingField over the history window, or null. */
   growth: FieldGrowth | null;
   /** The growth line's history footnote (HistorySourceNote). */
@@ -41,10 +44,17 @@ export function Majors({
   if (!top?.length || !total) return null;
 
   const programs = programsFromRows(detail?.tables.majors?.rows);
+  // Earnings by major (field-of-study.md) are per 4-digit group, so every program in a group shows the group's figure.
+  const earningsRows = detail?.tables.programs?.rows;
+  const earnings4 = (cip: string) => {
+    const c = cip4(cip);
+    return c ? (earningsRows?.[c]?.earnings.y4 ?? null) : null;
+  };
   const rows: MajorRow[] = programs.length
-    ? programs.map((p) => ({ cip: p.cip, title: cipTitle(p.cip) ?? p.cip, family: majorFamilyName(p.cip), first: p.first, second: p.second }))
+    ? programs.map((p) => ({ cip: p.cip, title: cipTitle(p.cip) ?? p.cip, family: majorFamilyName(p.cip), first: p.first, second: p.second, earnings4: earnings4(p.cip) }))
     : // Detail file unavailable (fail-soft): the snapshot's top 5 only. Counts from 4-place shares are exact under 10,000 graduates.
-      top.map((m) => ({ cip: m.cip, title: m.title, family: majorFamilyName(m.cip), first: Math.round(m.share * total), second: 0 }));
+      top.map((m) => ({ cip: m.cip, title: m.title, family: majorFamilyName(m.cip), first: Math.round(m.share * total), second: 0, earnings4: earnings4(m.cip) }));
+  const anyEarnings = rows.some((r) => r.earnings4 != null);
   const topShare = top.reduce((s, m) => s + m.share, 0);
   const fields = new Set(rows.filter((r) => r.first > 0).map((r) => r.cip.slice(0, 2))).size;
 
@@ -90,8 +100,16 @@ export function Majors({
           Bachelor&apos;s degrees awarded July through June, by federal program name (<Term term="cip-code">CIP code</Term>), which can differ from
           what the college calls a major. A double major counts once, under the <Term term="first-major">first major</Term>; its other field is a{" "}
           <Term term="second-major">second major</Term>.
+          {anyEarnings && (
+            <>
+              {" "}
+              Earnings are College Scorecard&apos;s median for graduates of the program&apos;s broader field (
+              <Term term="field-of-study">4-digit CIP group</Term>), 4 years after completion; see Top-earning majors below.
+            </>
+          )}
         </span>
         {programs.length > 0 && <SourceChip cited={citedPrograms} />}
+        {anyEarnings && citedEarnings && <SourceChip cited={citedEarnings} />}
       </p>
     </div>
   );

@@ -1,7 +1,8 @@
 # Earnings and Debt by Major (Scorecard Field of Study)
 
-> Status: **planned**. Wave 3. After [majors.md](majors.md) (uses the detail file and CIP table). Research 2026-09-28.
-> Part of [data-expansion](README.md).
+> Status: **built** 2026-10-02. Wave 3. Built before [majors.md](majors.md) (majors owns the CIP table;
+> see [As built](#as-built) for how the two wire together once it merges). Research 2026-09-28; bulk CSV probed and
+> live 2026-10-02. Part of [data-expansion](README.md).
 
 ## Question it answers
 *What do graduates in my major from this college earn? Is it more than the same major elsewhere?*
@@ -51,3 +52,142 @@ in [trends-data.md](../trends-data.md), which aren't trended either). Show the l
 
 ## Top-level trend?
 **None.** A snapshot comparison, not a trend.
+
+## As built
+
+**Source.** The bulk CSV, not the API: `Most-Recent-Cohorts-Field-of-Study.csv`, inside a zip at
+`https://ed-public-download.scorecard.network/downloads/Most-Recent-Cohorts-Field-of-Study_{date}.zip` — the date in
+the filename changes every release (no stable name), so `sync-data` reads it off
+`https://collegescorecard.ed.gov/data/`'s own markup each run (`scripts/lib/field-of-study-sync.mts
+discoverFieldOfStudyUrl`) rather than hard-coding a URL. Cached at `.cache/scorecard/field-of-study.zip` (a `.url`
+file alongside it, like `scripts/lib/ipeds.mts`'s IPEDS caches), refreshed after 7 days. `SourceKey`/`VintageKey`
+**`scorecard-fos`**. At build time: 153 MB CSV, 227,980 rows across every credential level; 68,181 bachelor's
+(`CREDLEV` 3) rows, 3,483 of them non-main-campus (`MAIN` 0, dropped).
+
+**Probe (2026-10-02).** Vanderbilt (221999) has 181 Field of Study rows, 53 bachelor's, confirming the spec's
+numbers. Computer Science bachelor's (`CIPCODE` `"1107"`, 4 digits always, no dot) matches exactly: graduates 205 +
+198, `EARN_MDN_1YR` 122244, `EARN_MDN_4YR` 160021, `EARN_MDN_4YR_NAT` 107009, `EARN_PELL_WNE_MDN_4YR` 126718,
+`EARN_NOPELL_WNE_MDN_4YR` 189399. Of Vanderbilt's 53 bachelor's rows, 19 have a non-suppressed `EARN_MDN_4YR`,
+matching the spec's "19 have 4-year median earnings." **Suppression marker: the literal string `"PS"`**, not
+`"PrivacySuppressed"` as the data dictionary's prose describes (that's the raw per-release file's convention; this
+"most recent" rollup abbreviates it). A second marker, `"NA"` ("not available" — the column wasn't calculated for
+that row, a different reason than privacy), also appears on `IPEDSCOUNT1`/`2` and the earnings/debt columns; both
+become `null`, never 0 or dropped (data-lineage.md's "missing is null" rule covers the data-doesn't-exist case as a
+whole, not just the privacy case, so no separate suppression flag is stored — see "Suppression" below).
+
+**Cohort years differ by column, read from `CollegeScorecardDataDictionary.xlsx`'s `FieldOfStudy_Cohort_Map` sheet
+(Most Recent column), checked 2026-10-02:**
+
+| Field | What it's based on |
+|---|---|
+| `IPEDSCOUNT1` | Award year 2021–22 |
+| `IPEDSCOUNT2` | Award year 2022–23 |
+| `EARN_MDN_1YR` | Treasury-matched AY2018–19/2019–20 completers, earnings measured CY2020–21 |
+| `EARN_MDN_4YR`, `EARN_MDN_4YR_NAT` | AY2017–18/2018–19 completers, earnings measured CY2022–23 |
+| `EARN_PELL_WNE_MDN_4YR`, `EARN_NOPELL_WNE_MDN_4YR` | AY2014–15/2015–16 completers, earnings measured CY2019–20 — **3 years older** than the overall 4-year figure above |
+| `DEBT_ALL_STGP_EVAL_MDN` | NSLDS pooled AY2018–19/2019–20 cohort |
+
+This is Scorecard's own design (the "most recent" file pulls each metric's latest independent calculation; see
+`FieldOfStudyDataDocumentation.pdf`, "Data files available"), not a site-side inconsistency, but it means a single
+program row isn't one snapshot: `graduates` describes two different years than `debt_median`, which describes two
+different years than `y4`, which describes different years than `y4_pell`/`y4_non_pell`. Like `scorecard-latest`
+(outcomes and other Scorecard fields with the same problem), **`vintages["scorecard-fos"]` is left `null`** ("most
+recent release"); the citation's `description` in `meta.json` spells out the cohort mismatch in prose instead of a
+single year, and the profile's earnings detail flags the Pell/non-Pell split specifically since it's the most
+different (3 years, not ~1).
+
+**Debt column chosen:** `DEBT_ALL_STGP_EVAL_MDN` — median federal debt (Direct/Stafford loans plus Grad PLUS,
+excluding Parent PLUS and Perkins) among borrowers evaluated at the institution where they completed. Scorecard
+documents five other debt variants (`PP` for Parent PLUS, `ANY` for debt from every institution attended, plus
+race/sex splits); this is the one comparable to the site's existing `outcomes.median_debt`.
+
+**Graduates:** `IPEDSCOUNT1 + IPEDSCOUNT2` summed (two different award years, per above); `null` only when *both*
+are unavailable, so a program missing one year's count still shows the other.
+
+**CIP format:** stored as the dotted 4-digit form `"11.07"` (two digits, a dot, two digits), matching
+[majors.md](majors.md)'s 6-digit convention (`"11.0701"`) truncated to a family. `toCip4()`/`isPlausibleCip4()` live
+in `lib/field-of-study.ts`.
+
+**CIP integration.** The majors agent owns `data/reference/cip2020.json` and `lib/cip.ts`; this spec doesn't create
+them. `isPlausibleCip4()` is a shape check only (`/^\d{2}\.\d{2}$/`), marked
+`// INTEGRATION: validate against lib/cip.ts after majors merges` at its definition (`lib/field-of-study.ts`) and at
+its one call site inside `DETAIL_TABLES.programs.checkRows` (`lib/detail.ts`). To wire it in: swap the regex check for
+a lookup in majors' CIP table (`cip2020.json` has a code → title map; look up `isPlausibleCip4`'s argument there
+instead of pattern-matching), which also lets `checkRows` catch a code that's shaped right but doesn't exist. No
+other file needs to change.
+
+**Store.** `programs` added to `DetailTables`/`DETAIL_TABLES` (`lib/detail.ts`), keyed by `Cip4`:
+`{ title, graduates, earnings: { y1, y4, y4_national, y4_pell, y4_non_pell }, debt_median }` (`lib/field-of-study.ts`
+`ProgramEarnings`). `DetailTable.year` was widened to `string | null` (previously always a string, since
+`home_states`' vintage always has one) so a table whose vintage has no single year — `scorecard-fos`, like
+`scorecard-latest` — can validate correctly instead of failing a "has no year" check that assumed every table's
+vintage resolves to a year; `validateDetail`'s year check now compares against `meta.vintages[vintage] ?? null`
+directly rather than special-casing falsy. Snapshot: `academics.programs_with_earnings` (count of programs with a
+y1 or y4 figure), cross-checked against the detail file in `detailMismatches`. Fields registered: `detail.programs`,
+`academics.programs_with_earnings`. `sync-data` fetches Field of Study after residence, builds `programs` tables with
+`addProgramDetails` (creating a new detail file for a school residence didn't already give one), and sets
+`academics.programs_with_earnings` from the same pass (`scripts/sync-data.mts`).
+
+**Memory.** The bulk CSV (153 MB, ~190 columns × 227,980 rows) OOM'd Node's default heap when read with the
+generic `parseCsv` (`scripts/lib/ipeds.mts`), which keeps every column of every row — fine for the much smaller IPEDS
+files, not for this one. `field-of-study-sync.mts` has its own narrow tokenizer (`readNeededColumns`) that keeps only
+the 13 columns this spec uses and discards non-bachelor's/non-main rows before ever allocating a per-row object,
+instead of filtering after the fact.
+
+**Suppression.** Every `null` in a `programs` table row means the source said `"PS"` or `"NA"` for that one
+value — by construction, since a program only gets an entry here because NCES/NSLDS recognized the CIP+credential
+combination at all. So no separate suppression flag is stored; the display layer (not the data model) renders a
+null earnings/debt value as "Too few graduates to report" instead of a blank dash, satisfying data-lineage.md's
+"never as missing or 0" without a redundant field.
+
+**Display.**
+- **Profile, Academics → "Top-earning majors here"** (`components/school/FieldOfStudy.tsx`): the 5 bachelor's
+  programs with the highest post-completion earnings among those with any earnings data (`topEarningPrograms`),
+  each a native `<details>` row (no client JS) expanding to 1- and 4-year earnings (`BenchmarkBar` with the national
+  median as the tick, reusing the existing chart component rather than a new one), the Pell/non-Pell split with a
+  note about its older cohort, median debt, and graduate count. Deliberately a **separate, self-contained
+  component** from the majors agent's "Most popular majors" list (ranked by graduate count, not earnings) so the
+  merger can place them side by side in the Academics section, or fold majors' rows into expandable rows that show
+  this earnings detail — either works without touching this component's props.
+- **Compare → "Your major"** (`components/compare/YourMajor.tsx`, wired into `app/compare/page.tsx`): a plain GET
+  `<form>` (`?ids=...&major=11.07`) listing the union of fields with earnings data across the compared colleges
+  (`programsWithEarnings`), so the pick survives a reload and is shareable like the rest of Compare's state — no
+  client component needed. Bars distinguish "doesn't offer this major" (no row for that CIP at that college) from
+  "too few graduates to report" (a row exists but the earnings value is null), which a generic `CompareMetric` reuse
+  couldn't: that component's "Not reported" doesn't know the difference. Not added to the "All the numbers" table,
+  since it's a value that depends on a pick rather than a plain per-school field.
+- **Explore "major mode"** (listing colleges by earnings for one field, needs `data/detail/by-cip/{cip4}.json`):
+  **deferred**, as the spec says ("later"). No index was built.
+- **Glossary:** `field-of-study` and `earnings-after-completion` (says plainly it's measured from completion, unlike
+  the site's institution-level `median-earnings`, which is from entry).
+
+## Refresh and maintenance
+
+**Nothing needs to change in code for an ordinary Scorecard refresh.** The next time `sync-data` runs after Scorecard
+publishes a new Field of Study release:
+1. `discoverFieldOfStudyUrl()` reads the current zip link straight off the data page — it isn't hard-coded, so a new
+   date in the filename (the June 2026 → next release pattern) is picked up automatically.
+2. The 7-day cache (`.cache/scorecard/field-of-study.zip`) just expires and re-downloads; delete it manually to force
+   a refresh sooner.
+3. `vintages["scorecard-fos"]` stays `null` either way ("most recent release"), so there's no year to bump anywhere
+   in code — unlike `ipeds-ef-c` or `ipeds-adm`, which have an explicit year that has to change. The citation's
+   `url` in `meta.json` updates to the new zip automatically.
+4. `validateDetail`/`detailMismatches`/the lineage check all re-verify the new numbers the same way; a college losing
+   or gaining programs just changes which detail files exist and `academics.programs_with_earnings`.
+
+**What *would* need a human:**
+- **Scorecard renames a column.** `readNeededColumns` throws a specific "Field of Study CSV has no X column" error
+  rather than silently reading blanks — the same guard `fetchResidence`/`fetchTransfers` use for their IPEDS files.
+  If that happens, re-probe the new CSV's header (as this spec's research did) and update `NEEDED_COLUMNS` and the
+  readers in `field-of-study-sync.mts`.
+- **Scorecard changes which cohort years a metric uses**, or stops calculating one (the data dictionary already
+  documents this churn — `EARN_MDN_HI_1YR` was renamed `EARN_MDN_1YR` in an earlier release, per
+  `FieldOfStudyDataDocumentation.pdf`). Since the site doesn't display a year for these fields, most such changes are
+  invisible to the UI; re-check the `FieldOfStudy_Cohort_Map` sheet in `CollegeScorecardDataDictionary.xlsx` if the
+  Pell/non-Pell-vs-overall gap (currently 3 years) matters enough to call out again.
+- **The suppression marker changes spelling** (e.g. Scorecard starts writing `"PrivacySuppressed"` in full in this
+  file, matching the prose in their own documentation). `num()` in `field-of-study-sync.mts` treats anything that
+  doesn't parse as a finite number as `null`, so this wouldn't break ingestion — but it's worth a quick check after
+  any release that a whole college's earnings aren't unexpectedly all-null (a sign the marker, not the data, changed).
+- **Once [majors.md](majors.md) merges:** wire the `// INTEGRATION` hook in `lib/field-of-study.ts`/`lib/detail.ts`
+  (see "CIP integration" above) and consider whether the two Academics cards should visually merge.

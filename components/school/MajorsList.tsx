@@ -2,7 +2,7 @@
 
 import { useId, useMemo, useState } from "react";
 import { ChevronDown, Search, X } from "lucide-react";
-import { num, pctSmart } from "@/lib/format";
+import { money, num, pctSmart } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { matchesProgram } from "@/lib/majors";
 
@@ -17,12 +17,17 @@ export interface MajorRow {
   first: number;
   /** Second-major bachelor's (counted separately). */
   second: number;
+  /**
+   * Median earnings 4 years after completion for the program's 4-digit CIP group at this college (College Scorecard
+   * Field of Study, field-of-study.md), when reported; Scorecard doesn't break groups down to 6-digit programs.
+   */
+  earnings4?: number | null;
 }
 
 /**
  * "Most popular majors" (specs/data-expansion/majors.md): the top programs as bars (share of first-major graduates),
- * expandable to every program with a search box ("Do they have nursing?"). Rows are keyed by CIP code, so a later
- * version can expand a row into that program's earnings (field-of-study.md). Self-contained: the profile passes rows.
+ * expandable to every program with a search box ("Do they have nursing?"). A row whose 4-digit group has Scorecard
+ * earnings shows them (field-of-study.md). Self-contained: the profile passes rows.
  */
 export function MajorsList({ rows, total, color, top = 5 }: { rows: readonly MajorRow[]; total: number; color: string; top?: number }) {
   const [open, setOpen] = useState(false);
@@ -83,9 +88,15 @@ export function MajorsList({ rows, total, color, top = 5 }: { rows: readonly Maj
                   <span className="block h-full rounded-full" style={{ width: `${Math.max(2, (r.first / max) * 100)}%`, backgroundColor: color }} />
                 </span>
               )}
-              {open && r.second > 0 && (
+              {((open && r.second > 0) || r.earnings4 != null) && (
                 <span className="mt-0.5 block text-[11px] text-muted-foreground">
-                  +{num(r.second)} as a second major
+                  {open && r.second > 0 && <>+{num(r.second)} as a second major</>}
+                  {open && r.second > 0 && r.earnings4 != null && " · "}
+                  {r.earnings4 != null && (
+                    <>
+                      Graduates in this field earn <b className="text-foreground tabular-nums">{money(r.earnings4)}</b> 4 years out
+                    </>
+                  )}
                 </span>
               )}
             </li>

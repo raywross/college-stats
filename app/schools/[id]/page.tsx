@@ -8,6 +8,7 @@ import { Residence } from "@/components/school/Residence";
 import { Transfers } from "@/components/school/Transfers";
 import { Majors } from "@/components/school/Majors";
 import { fastestGrowingField } from "@/lib/majors";
+import { FieldOfStudy } from "@/components/school/FieldOfStudy";
 import type { Cited } from "@/lib/lineage";
 import {
   DOMAINS,
@@ -210,7 +211,17 @@ const SECTION_FIELDS = {
     "outcomes.grad_rate_by_race",
     "outcomes.grad_cohorts_by_race",
   ],
-  academics: ["academics.bachelors_awarded", "academics.majors_top", "detail.majors", "academics.student_faculty_ratio", "academics.faculty", "academics.faculty.full_time_share", "finances"],
+  academics: [
+    "academics.bachelors_awarded",
+    "academics.majors_top",
+    "detail.majors",
+    "detail.programs",
+    "academics.programs_with_earnings",
+    "academics.student_faculty_ratio",
+    "academics.faculty",
+    "academics.faculty.full_time_share",
+    "finances",
+  ],
   campus: ["campus.housing", "campus.athletics", "campus.programs", "campus.services", "campus.calendar", "demographics.disability_services"],
   ranks: ["derived.sat_mid", "derived.yield", "demographics.pell_grant_percent", "derived.diversity_index", "admissions.acceptance_rate"],
 } as const satisfies Record<string, readonly FieldPath[]>;
@@ -370,7 +381,9 @@ export default async function SchoolPage({ params }: Props) {
   const caFiles = historyFiles?.meta.files["c-a"];
   const caEnd = caFiles?.length ? caFiles[caFiles.length - 1].year : null;
   const majorGrowth = history && caEnd !== null ? fastestGrowingField(history.series, [caEnd - WINDOW_YEARS, caEnd]) : null;
-  const hasAcademics = !!majorsTop?.length || ratio !== null || fullTimeShare !== null || facultySalaryValue !== null || finances !== null;
+  // Earnings by major (specs/data-expansion/field-of-study.md): shown from the detail file, after the majors list.
+  const hasTopPrograms = (school.academics?.programs_with_earnings ?? 0) > 0;
+  const hasAcademics = !!majorsTop?.length || hasTopPrograms || ratio !== null || fullTimeShare !== null || facultySalaryValue !== null || finances !== null;
   const recentAdmissionChanges = history ? historyEvents(history).filter((e) => e.area === "admissions" && e.kind === "fall" && e.year > FACTOR_ERA) : [];
   const federalSat = citeField("admissions.sat_reading_25_75", school).isDefault && citeField("admissions.sat_math_25_75", school).isDefault;
   const federalAct = citeField("admissions.act_composite_25_75", school).isDefault;
@@ -1031,6 +1044,7 @@ export default async function SchoolPage({ params }: Props) {
                   detail={detail}
                   cited={citeField("academics.majors_top", school)}
                   citedPrograms={citeField("detail.majors", school)}
+                  citedEarnings={citeField("detail.programs", school)}
                   growth={majorGrowth}
                   growthNote={
                     majorGrowth && historyFiles ? (
@@ -1039,6 +1053,7 @@ export default async function SchoolPage({ params }: Props) {
                   }
                   color={DOMAINS.size.color}
                 />
+                {hasTopPrograms && <FieldOfStudy detail={detail} cited={citeField("detail.programs", school)} />}
                 {ratio !== null && (
                   <div className="rounded-3xl border bg-card p-4 sm:p-6">
                     <DistributionStrip

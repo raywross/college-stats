@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight, Swords } from "lucide-react";
-import { getData, getHistoryFiles, toIndexEntry } from "@/lib/data";
+import { getData, getDetail, getHistoryFiles, toIndexEntry } from "@/lib/data";
+import { isPlausibleCip4, programsWithEarnings } from "@/lib/field-of-study";
+import { MajorPicker, YourMajorBars, type MajorRow } from "@/components/compare/YourMajor";
 import { RACE_SERIES, SERIES, defaultWindow, historyYearLabel } from "@/lib/history";
 import { INDICATORS, INDICATOR_KEYS, indicatorsOf } from "@/lib/indicators";
 import { TrendIndicatorCell } from "@/components/trends/TrendIndicators";
@@ -243,6 +245,18 @@ export default async function ComparePage({
 
   const diffs = keyDifferences(schools);
   const historyFiles = await getHistoryFiles();
+
+  // "Your major" (specs/data-expansion/field-of-study.md): union of 4-digit fields with earnings data across the
+  // compared colleges, picked via a plain GET form so the choice stays in the URL.
+  const details = await Promise.all(schools.map((s) => getDetail(s.unit_id)));
+  const majorTitles = new Map<string, string>();
+  details.forEach((d) => programsWithEarnings(d?.tables.programs?.rows).forEach((p) => majorTitles.set(p.cip4, p.title)));
+  const majorOptions = [...majorTitles.entries()].map(([cip4, title]) => ({ cip4, title })).sort((a, b) => a.title.localeCompare(b.title));
+  const rawMajor = typeof params.major === "string" ? params.major : "";
+  const selectedMajor = isPlausibleCip4(rawMajor) && majorTitles.has(rawMajor) ? rawMajor : null;
+  const majorRows: MajorRow[] = selectedMajor
+    ? schools.map((s, i) => ({ school: s, slot: i, program: details[i]?.tables.programs?.rows[selectedMajor] ?? null }))
+    : [];
   // "Then & now" from school.trends (10-year changes written by sync-history); money is after inflation.
   const THEN_AND_NOW: { key: TrendKey; label: string; format: "money" | "pctSmart" | "num" | "fixed2" }[] = [
     { key: "avg_paid_all", label: "Avg total cost (after inflation)", format: "money" },
@@ -478,6 +492,17 @@ export default async function ComparePage({
             <NetPriceCompare schools={schools} year={citeField("cost.net_price_by_income").year} />
             <MultiSourceNote schools={schools} fields={COST_FIELDS} />
           </Group>
+
+          {majorOptions.length > 0 && (
+            <Group domain="value" title="Your major">
+              <p className="max-w-3xl text-sm text-muted-foreground">
+                Pick a field of study bachelor&apos;s program to compare earnings <Term term="earnings-after-completion">after completion</Term> across these colleges.
+              </p>
+              <MajorPicker ids={ids.join(",")} options={majorOptions} selected={selectedMajor} />
+              {selectedMajor && <YourMajorBars title={majorTitles.get(selectedMajor)!} rows={majorRows} />}
+              <MultiSourceNote schools={schools} fields={["detail.programs"]} />
+            </Group>
+          )}
 
           {historyFiles && thenAndNow.some((m) => m.rows.length > 0) && (
             <section className="space-y-4">

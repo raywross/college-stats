@@ -41,6 +41,7 @@ import { mergeDetails } from "../lib/detail.ts";
 import { transferInFrom } from "../lib/transfers.ts";
 import { financesFrom } from "../lib/finances.ts";
 import { apCreditFrom, athleticsFrom, calendarFrom, disabilityFrom, programsFrom, servicesFrom } from "../lib/campus-services.ts";
+import { addFieldOfStudyMeta, buildProgramDetails, fetchFieldOfStudy } from "./lib/field-of-study-sync.mts";
 import { acceptanceRate, applicationFeeFrom, computePrices, factorsFrom, housingFrom, ipedsNum, parseShareBand, priceSuffix, promiseProgramFrom, raceShares, toAid, tuitionPlansFrom } from "../lib/derive.ts";
 
 const ROOT = join(import.meta.dirname, "..");
@@ -604,6 +605,8 @@ function buildMeta(
       "scorecard-cost": scorecardYears.cost,
       // Outcomes and other Scorecard fields each describe different cohorts; no single year.
       "scorecard-latest": null,
+      // Set with its source by addFieldOfStudyMeta; also no single year (every metric pools a different cohort).
+      "scorecard-fos": null,
     },
   };
 }
@@ -804,6 +807,9 @@ async function main() {
   const icChar = await fetchIpeds(IC_CHAR_NAMES);
   if (![...icChar.rows.values()].some((r) => "ATHASSOC" in r && "CONFNO2" in r && "SLO5" in r && "CALSYS" in r))
     throw new Error(`${icChar.name} has no athletics/program columns`);
+  // Earnings and debt by major (specs/data-expansion/field-of-study.md): College Scorecard's bulk CSV, cached under
+  // .cache/scorecard (dated URL, discovered from the data page every refresh).
+  const fos = await fetchFieldOfStudy(join(ROOT, ".cache", "scorecard"), { maxAgeDays: 7 });
 
   const stats = { online: 0, noSize: 0, withAdmissions: 0, withSat: 0, overridden: 0 };
   const overrides: Record<string, Patch> = existsSync(OVERRIDES) ? JSON.parse(readFileSync(OVERRIDES, "utf8")) : {};
@@ -866,6 +872,7 @@ async function main() {
   const meta = buildMeta(adm, sfa, ic, sfaYears, scorecardYears, cost2, chars, hd, icChar, efd, om, grPell, sal, drvf, drvfFiscalYear);
   addResidenceMeta(meta, efc.table, efc.year);
   addTransferMeta(meta, efa.table, efa.year);
+  addFieldOfStudyMeta(meta, fos);
   // Transfers in: the level codes must still mean transfer-ins and first-time students (lib/transfers.ts).
   const transfersChecked = await checkTransfers(efa.table, efa.year, schools.map((s) => s.unit_id), join(ROOT, ".cache", "ipeds"));
 
@@ -876,7 +883,13 @@ async function main() {
   addMajorsMeta(meta, completions.table, completions.year);
   const totals = checkTotals(schools, completions.table);
   if (totals.differ.length > totals.checked * 0.01) throw new Error(`C${completions.year}_A programs don't add up to the total row for ${totals.differ.length} of ${totals.checked} colleges:\n  ${totals.differ.slice(0, 10).join("\n  ")}`);
-  const details = mergeDetails(buildDetails(schools, efc.table, meta), buildMajorDetails(schools, completions.table, meta));
+  // Field of study: a `programs` table per college (new or existing detail file) and the snapshot count.
+  const programs = buildProgramDetails(schools, fos, meta);
+  // A handful of retired CIP codes is expected (see programEarningsFrom); many means CIP changed under us.
+  if (programs.unknown.length > 25) throw new Error(`Field of Study uses ${programs.unknown.length} codes that aren't in CIP 2020:\n  ${programs.unknown.slice(0, 10).join("\n  ")}`);
+  if (programs.unknown.length) console.warn(`  ⚠ Field of Study: left out ${programs.unknown.length} program(s) whose code isn't in CIP 2020: ${programs.unknown.join("; ")}`);
+  for (const s of schools) s.academics!.programs_with_earnings = programs.counts.get(s.unit_id) ?? null;
+  const details = mergeDetails(buildDetails(schools, efc.table, meta), buildMajorDetails(schools, completions.table, meta), programs.details);
   const detailIssues = detailProblems(schools, details, meta);
   if (detailIssues.length) throw new Error(`Detail files failed their checks:\n  ${detailIssues.slice(0, 20).join("\n  ")}`);
 
@@ -899,6 +912,7 @@ async function main() {
   writeFileSync(OUT, `[\n${schools.map((s) => JSON.stringify(s)).join(",\n")}\n]\n`);
   writeDetails(join(ROOT, "data", "detail", "schools"), details);
   console.log(`  residence (EF${efc.year}C): ${schools.filter((s) => s.demographics.residence).length} colleges, ${details.length} detail files; DRVEF${efc.year} agrees for ${derived.checked - derived.differ.length} of ${derived.checked}`);
+  console.log(`  field of study: ${programs.counts.size} colleges with bachelor's programs, ${schools.filter((s) => (s.academics?.programs_with_earnings ?? 0) > 0).length} with at least one earnings figure (${fos.url})`);
 
   console.log(`\nWrote ${schools.length} schools to data/schools.json`);
   console.log(`  with acceptance rate: ${stats.withAdmissions}`);

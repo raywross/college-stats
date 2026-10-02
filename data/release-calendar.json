@@ -39,6 +39,18 @@
       "files": ["HD2026", "IC2026"]
     },
     {
+      "id": "ipeds-2026-27-completions",
+      "source": "ipeds",
+      "label": "IPEDS completions (provisional)",
+      "brings": ["Degrees awarded by field, 2025–26 graduates (C2026_A): most popular majors"],
+      "updates": ["ipeds-c"],
+      "expected": "2027-07",
+      "status": "estimated",
+      "basis": "C2025_A (2024–25 graduates) was published Jul 28, 2026, with the directory files",
+      "url": "https://nces.ed.gov/ipeds/survey-components/data-release-schedule",
+      "files": ["C2026_A"]
+    },
+    {
       "id": "ipeds-2024-25-final",
       "source": "ipeds",
       "label": "IPEDS final data (revisions)",
@@ -121,12 +133,6 @@
       "released": "2026-07-28",
       "what": "12-month enrollment, 2024–25",
       "url": "https://nces.ed.gov/ipeds/complete-data-files/EFFY2025.zip"
-    },
-    {
-      "file": "C2025_A",
-      "released": "2026-07-28",
-      "what": "Degrees awarded (completions), 2024–25",
-      "url": "https://nces.ed.gov/ipeds/complete-data-files/C2025_A.zip"
     }
   ],
   "watching": [

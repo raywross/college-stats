@@ -43,6 +43,8 @@ import { eightYearFrom } from "../../lib/outcome-measures.ts";
 import { aidGroupGradFrom, raceGradFrom } from "../../lib/graduation-groups.ts";
 import { residenceFrom } from "../../lib/residence.ts";
 import { transferInFrom } from "../../lib/transfers.ts";
+import { MAJOR_FAMILY_CODES, familiesFromRow, isMajorFamily, type MajorFamily } from "../../lib/majors.ts";
+import { majorSeriesKey } from "../../lib/history.ts";
 import { seriesStep } from "../../lib/history.ts";
 import { COHORT_LAG, type ScorecardRow } from "./scorecard.mts";
 
@@ -75,6 +77,8 @@ export interface Inputs {
   efc?: readonly YearTable[];
   /** Transfers in (EF{Y}A pivoted to one wide row per college by level), one table per fall. */
   efa?: readonly YearTable[];
+  /** Completions (C{Y+1}_A summed to first-major bachelor's by family, lib/majors.ts familyColumn), one per school year. */
+  ca?: readonly YearTable[];
   /** College Scorecard year-prefixed values by unit ID (scripts/history/scorecard.mts), and the years requested. */
   scorecard?: { rows: ReadonlyMap<string, ScorecardRow>; first: number; last: number };
   /** Graduation by Pell and loan status (GR{Y+6}_PELL_SSL), one table per entering class. */
@@ -270,6 +274,21 @@ export function buildCollege(school: Pick<School, "unit_id" | "type"> & { locati
     }
   }
 
+  // Majors (specs/data-expansion/majors.md): each family's share of the year's first-major bachelor's. Every family the
+  // college had in any year gets a value in every year it awarded bachelor's (0 when none in that field).
+  const byYear = new Map<number, { total: number; fams: Record<string, number> }>();
+  for (const t of inputs.ca ?? []) {
+    const fams = familiesFromRow(t.rows.get(id));
+    const total = Object.values(fams).reduce((a, b) => a + b, 0);
+    if (total > 0) byYear.set(t.year, { total, fams });
+  }
+  const seen = new Set([...byYear.values()].flatMap((y) => Object.keys(y.fams)));
+  for (const f of seen) if (!isMajorFamily(f)) throw new Error(`${id}: bachelor's degrees in CIP family ${f}, which lib/majors.ts MAJOR_FAMILIES doesn't list (add it with a name)`);
+  for (const [year, { total, fams }] of byYear) {
+    put(raw, "bachelors", year, total);
+    for (const f of seen) put(raw, majorSeriesKey(f as MajorFamily), year, round4((fams[f] ?? 0) / total));
+  }
+
   // Athletics and ROTC as codes for events: the same readers as the snapshot (lib/campus-services.ts).
   for (const t of inputs.services ?? []) {
     const row = t.rows.get(id);
@@ -410,7 +429,43 @@ export function buildFacts(histories: readonly SchoolHistory[], window: Record<Y
     harderToGetIn: harderToGetIn(histories, window.fall),
     testRequired: testRequired(histories, window.fall[1]),
     legacy: legacy(histories, window.fall[1]),
+    majors: majorsShift(histories),
   };
+}
+
+/**
+ * What graduates study (specs/data-expansion/majors.md): each family's national share of first-major bachelor's, the
+ * newest completions year vs. 10 years earlier, over colleges awarding bachelor's in both (shares weighted by each
+ * college's graduates, so it's the share of all graduates, not the median college). Its own window: completions
+ * (C{Y}_A) run a year ahead of the price files that set the academic window.
+ */
+export function majorsShift(histories: readonly SchoolHistory[]): TrendFacts["majors"] {
+  const ends = histories.flatMap((h) => (h.series.bachelors ? [lastYear(h.series.bachelors)] : []));
+  if (!ends.length) return null;
+  const to = Math.max(...ends);
+  const from = to - 10;
+  const panel = histories.filter((h) => (valueAt(h.series.bachelors, from) ?? 0) > 0 && (valueAt(h.series.bachelors, to) ?? 0) > 0);
+  if (panel.length < MIN_REPORTING) return null;
+  const grads = (y: number) => panel.reduce((a, h) => a + valueAt(h.series.bachelors, y)!, 0);
+  /** A family's share of the panel's graduates in year `y`, over the panel colleges that awarded bachelor's that year. */
+  const shareAt = (f: MajorFamily, y: number): number | null => {
+    let num = 0;
+    let den = 0;
+    for (const h of panel) {
+      const total = valueAt(h.series.bachelors, y);
+      if (!total) continue;
+      num += (valueAt(h.series[majorSeriesKey(f)], y) ?? 0) * total;
+      den += total;
+    }
+    return den ? round4(num / den) : null;
+  };
+  const families = MAJOR_FAMILY_CODES.map((f) => ({ family: f, from: shareAt(f, from)!, to: shareAt(f, to)! }))
+    .filter((r) => r.from > 0 || r.to > 0)
+    .sort((a, b) => b.to - b.from - (a.to - a.from) || a.family.localeCompare(b.family));
+  if (!families.length) return null;
+  const top = families[0].family as MajorFamily;
+  const byYear = Array.from({ length: to - from + 1 }, (_, i) => shareAt(top, from + i));
+  return { from, to, n: panel.length, gradsFrom: grads(from), gradsTo: grads(to), families, byYear };
 }
 
 /** Legacy status considered (required or considered), over colleges reporting it in fall 2022 and the newest fall. */
@@ -628,6 +683,9 @@ export function lastPointMismatches(schools: readonly School[], histories: Reado
   // The newest EF part A fall history read: what the snapshot's EF{Y}A describes.
   const efaYears = [...histories.values()].flatMap((h) => (h.series.transfer_in_count ? [lastYear(h.series.transfer_in_count)] : []));
   const efaYear = efaYears.length ? Math.max(...efaYears) : null;
+  // The newest school year history read from C{Y}_A: what the snapshot's completions file describes.
+  const caYears = [...histories.values()].flatMap((h) => (h.series.bachelors ? [lastYear(h.series.bachelors)] : []));
+  const caYear = caYears.length ? Math.max(...caYears) : null;
   // The newest fiscal year history's instruction-spending series reaches: what the snapshot's DRVF{Y} describes.
   const financeYears = [...histories.values()].flatMap((h) => (h.series.instruction_per_student ? [lastYear(h.series.instruction_per_student)] : []));
   const financeYear = financeYears.length ? Math.max(...financeYears) : null;
@@ -744,6 +802,17 @@ export function lastPointMismatches(schools: readonly School[], histories: Reado
     if (efcYear !== null) {
       check("out_of_state_share", s.demographics.residence?.out_of_state, false, efcYear);
       check("international_share", s.demographics.residence?.international, false, efcYear);
+    }
+    // Majors: bachelor's and each family's share at the newest C{Y}_A year (a family the snapshot lacks is 0%).
+    if (caYear !== null) {
+      const ac = s.academics;
+      const total = ac?.bachelors_awarded ?? null;
+      check("bachelors", total ? total : null, false, caYear);
+      for (const f of MAJOR_FAMILY_CODES) {
+        const key = majorSeriesKey(f);
+        const snap = total ? round4((ac?.bachelors_by_family?.[f] ?? 0) / total) : null;
+        if (h.series[key] || (snap !== null && snap > 0)) check(key, snap, false, caYear);
+      }
     }
     if (financeYear !== null) check("instruction_per_student", s.finances?.instruction_per_student, false, financeYear);
     // Athletics and ROTC: the snapshot reads the newest IC file, which is the services series' newest year.

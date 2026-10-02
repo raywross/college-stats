@@ -36,6 +36,8 @@ import { GR_PELL_COHORT_TYPE, GR_PELL_COLUMNS, RACE_GROUPS, aidGroupGradFrom, ra
 import { residenceFrom } from "../lib/residence.ts";
 import { addResidenceMeta, buildDetails, crossCheckDerived, detailProblems, fetchResidence, writeDetails } from "./lib/residence-sync.mts";
 import { addTransferMeta, checkTransfers, fetchTransfers } from "./lib/transfers-sync.mts";
+import { addMajorsMeta, buildMajorDetails, checkTotals, fetchCompletions, majorsFor, unknownCodes } from "./lib/majors-sync.mts";
+import { mergeDetails } from "../lib/detail.ts";
 import { transferInFrom } from "../lib/transfers.ts";
 import { financesFrom } from "../lib/finances.ts";
 import { apCreditFrom, athleticsFrom, calendarFrom, disabilityFrom, programsFrom, servicesFrom } from "../lib/campus-services.ts";
@@ -594,6 +596,8 @@ function buildMeta(
       "ipeds-ef-c": null,
       // Set with its source by addTransferMeta (scripts/lib/transfers-sync.mts).
       "ipeds-ef-a": null,
+      // Set with its source by addMajorsMeta (scripts/lib/majors-sync.mts).
+      "ipeds-c": null,
       "ipeds-f": academicYear(String(drvfFiscalYear)),
       "scorecard-enrollment": scorecardYears.enrollment,
       "scorecard-age": scorecardYears.age,
@@ -792,6 +796,10 @@ async function main() {
   const efc = await fetchResidence(join(ROOT, ".cache", "ipeds"), thisYear);
   // Transfers in (specs/data-expansion/transfers.md): the newest EF{Y}A, every fall.
   const efa = await fetchTransfers(join(ROOT, ".cache", "ipeds"), thisYear);
+  // Majors (specs/data-expansion/majors.md): the newest C{Y}_A, bachelor's degrees by program.
+  const completions = await fetchCompletions(join(ROOT, ".cache", "ipeds"), thisYear);
+  const strayCodes = unknownCodes(completions.table);
+  if (strayCodes.length) throw new Error(`C${completions.year}_A uses codes that aren't in CIP 2020 (data/reference/cip2020.json): ${strayCodes.slice(0, 10).join(", ")}`);
   // Campus services (specs/data-expansion/campus-services.md): the newest IC{Y}, a year ahead of the price files.
   const icChar = await fetchIpeds(IC_CHAR_NAMES);
   if (![...icChar.rows.values()].some((r) => "ATHASSOC" in r && "CONFNO2" in r && "SLO5" in r && "CALSYS" in r))
@@ -820,6 +828,7 @@ async function main() {
       school.academics = {
         student_faculty_ratio: studentFacultyRatioFrom(efd.rows.get(school.unit_id)),
         faculty: salary === null && fullTimeShare === null ? null : { avg_salary_9mo: salary, full_time_share: fullTimeShare, count: null },
+        ...majorsFor(completions.table, school.unit_id),
       };
     }
     if (school?.outcomes) school.outcomes.eight_year = eightYearFrom(om.rows.get(school.unit_id), omEntering);
@@ -863,7 +872,11 @@ async function main() {
   // Residence: the per-state rows must add up to NCES's own derived counts, and the detail files must check out.
   const derived = await crossCheckDerived(schools, efc.table, efc.year, join(ROOT, ".cache", "ipeds"));
   if (derived.differ.length > derived.checked * 0.01) throw new Error(`EF${efc.year}C differs from DRVEF${efc.year} for ${derived.differ.length} of ${derived.checked} colleges:\n  ${derived.differ.slice(0, 10).join("\n  ")}`);
-  const details = buildDetails(schools, efc.table, meta);
+  // Majors: programs must add up to IPEDS's own total row (lib/majors.ts), then join residence in the detail files.
+  addMajorsMeta(meta, completions.table, completions.year);
+  const totals = checkTotals(schools, completions.table);
+  if (totals.differ.length > totals.checked * 0.01) throw new Error(`C${completions.year}_A programs don't add up to the total row for ${totals.differ.length} of ${totals.checked} colleges:\n  ${totals.differ.slice(0, 10).join("\n  ")}`);
+  const details = mergeDetails(buildDetails(schools, efc.table, meta), buildMajorDetails(schools, completions.table, meta));
   const detailIssues = detailProblems(schools, details, meta);
   if (detailIssues.length) throw new Error(`Detail files failed their checks:\n  ${detailIssues.slice(0, 20).join("\n  ")}`);
 
@@ -904,6 +917,7 @@ async function main() {
   console.log(`  with avg paid (all):  ${schools.filter((s) => s.cost?.avg_paid_all != null).length}`);
   console.log(`  with faculty salary:  ${schools.filter((s) => s.academics?.faculty?.avg_salary_9mo != null).length}`);
   console.log(`  with full-time share: ${schools.filter((s) => s.academics?.faculty?.full_time_share != null).length}`);
+  console.log(`  with majors:          ${schools.filter((s) => s.academics?.majors_top != null).length} (C${completions.year}_A; programs match the total row for ${totals.checked - totals.differ.length} of ${totals.checked})`);
   console.log(`  overrides applied:    ${stats.overridden}`);
   if (directoryWarnings.length) {
     console.warn(`  directory mismatches: ${directoryWarnings.length} (check the id still means the same college)`);

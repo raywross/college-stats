@@ -162,6 +162,7 @@ export type MetricKey =
   | "facultySalary"
   | "outOfState"
   | "transferShare"
+  | "bachelors"
   | "outOfStateLarge"
   | "financesInstruction"
   | "instructionGasb"
@@ -599,6 +600,19 @@ export const METRICS: Record<MetricKey, MetricDef> = {
     scale: [0, 1],
     more: "more of the new students transferring in",
     less: "fewer of the new students transferring in",
+  },
+  // Majors (specs/data-expansion/majors.md): first-major bachelor's degrees awarded in the school year.
+  bachelors: {
+    key: "bachelors",
+    field: "academics.bachelors_awarded",
+    label: "Bachelor's degrees awarded",
+    short: "Bachelor's degrees",
+    term: "first-major",
+    domain: "size",
+    get: (s) => s.academics?.bachelors_awarded ?? null,
+    format: num,
+    more: "more bachelor's degrees",
+    less: "fewer bachelor's degrees",
   },
   outOfState: {
     key: "outOfState",

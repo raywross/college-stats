@@ -111,8 +111,8 @@ test("validateDetail accepts a good file and rejects each kind of mistake", () =
     breakIt(d);
     assert.ok(validateDetail(d, meta, ids).length > 0, name);
   }
-  // Every table names a registered field with the same source and vintage.
-  for (const { field } of Object.values(DETAIL_TABLES)) assert.equal(FIELDS[field].source, "ipeds-ef-c");
+  // Home states cite EF part C (tests/majors.test.mts checks the majors table).
+  assert.equal(FIELDS[DETAIL_TABLES.home_states.field].source, "ipeds-ef-c");
 });
 
 test("detail files must agree with the snapshot", () => {

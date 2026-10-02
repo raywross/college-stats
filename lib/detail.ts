@@ -13,6 +13,8 @@
 import type { DatasetMeta, School, SourceKey } from "./types";
 import { FIELDS, type FieldPath, type VintageKey } from "./fields.ts";
 import { stateByPostal } from "./states.ts";
+import { isCipField } from "./cip.ts";
+import { majorsSnapshot, programsFromRows, type MajorRows } from "./majors.ts";
 
 export interface DetailTable<T> {
   source: SourceKey;
@@ -25,6 +27,11 @@ export interface DetailTable<T> {
 export interface DetailTables {
   /** First-time undergraduates by home state or territory, USPS code → count, largest first (lib/residence.ts). */
   home_states?: DetailTable<Record<string, number>>;
+  /**
+   * Bachelor's degrees by program (specs/data-expansion/majors.md): CIP 2020 code ("11.0701") → [first majors, second
+   * majors], most first majors first (lib/majors.ts). Programs with neither are left out.
+   */
+  majors?: DetailTable<MajorRows>;
 }
 
 export type DetailTableKey = keyof DetailTables;
@@ -48,6 +55,20 @@ export const DETAIL_TABLES: Record<DetailTableKey, { field: FieldPath; checkRows
       for (const [k, v] of entries) {
         if (!stateByPostal(k)) return `unknown state "${k}"`;
         if (!isCount(v)) return `${k} has an impossible count ${v}`;
+      }
+      return null;
+    },
+  },
+  majors: {
+    field: "detail.majors",
+    checkRows: (rows) => {
+      if (!rows || typeof rows !== "object" || Array.isArray(rows)) return "rows must be an object";
+      const entries = Object.entries(rows);
+      if (!entries.length) return "no rows (leave the table out instead)";
+      for (const [k, v] of entries) {
+        if (!/^\d{2}\.\d{4}$/.test(k) || !isCipField(k)) return `"${k}" isn't a 6-digit CIP 2020 code`;
+        const ok = Array.isArray(v) && v.length === 2 && v.every((n) => Number.isInteger(n) && n >= 0) && v[0] + v[1] > 0;
+        if (!ok) return `${k} has impossible counts ${JSON.stringify(v)}`;
       }
       return null;
     },
@@ -86,7 +107,7 @@ export function validateDetail(d: SchoolDetail, meta: DatasetMeta, knownIds?: Re
 
 /**
  * Detail tables that disagree with data/schools.json: home states without a stored residence, more students by state
- * than first-years, or a different top state.
+ * than first-years, or a different top state; majors whose total, top 5, or field counts differ from the snapshot's.
  */
 export function detailMismatches(school: School, d: SchoolDetail): string[] {
   const out: string[] = [];
@@ -102,7 +123,40 @@ export function detailMismatches(school: School, d: SchoolDetail): string[] {
         out.push(`detail ${d.unit_id}: top home state ${top} doesn't match the snapshot's ${r.top_state?.state ?? "none"}`);
     }
   }
+  const mj = d.tables.majors;
+  if (mj) {
+    const ac = school.academics;
+    // Titles don't matter here (the snapshot's come from the same CIP table): compare codes, shares, and counts.
+    const snap = majorsSnapshot(programsFromRows(mj.rows), (cip) => cip);
+    if ((ac?.bachelors_awarded ?? null) !== snap.bachelors_awarded)
+      out.push(`detail ${d.unit_id}: ${snap.bachelors_awarded} first-major bachelor's by program, but the snapshot says ${ac?.bachelors_awarded ?? "none"}`);
+    const key = (top: readonly { cip: string; share: number }[] | null | undefined) => (top ?? []).map((m) => `${m.cip}:${m.share}`).join(",");
+    if (key(ac?.majors_top) !== key(snap.majors_top)) out.push(`detail ${d.unit_id}: top majors don't match the snapshot's`);
+    const fams = (f: Record<string, number> | null | undefined) => (f ? JSON.stringify(Object.entries(f).sort((a, b) => a[0].localeCompare(b[0]))) : "none");
+    if (fams(ac?.bachelors_by_family) !== fams(snap.bachelors_by_family)) out.push(`detail ${d.unit_id}: bachelor's by field don't match the snapshot's`);
+  }
   return out;
+}
+
+/**
+ * One file per college from several builders' files (each sync step builds its own tables: home states, majors, …).
+ * Tables keep DETAIL_TABLES' order so a file's lines don't move between syncs; a table built twice is an error.
+ */
+export function mergeDetails(...lists: readonly (readonly SchoolDetail[])[]): SchoolDetail[] {
+  const byId = new Map<string, DetailTables>();
+  for (const list of lists) {
+    for (const d of list) {
+      const tables = byId.get(d.unit_id) ?? byId.set(d.unit_id, {}).get(d.unit_id)!;
+      for (const k of Object.keys(d.tables) as DetailTableKey[]) {
+        if (tables[k]) throw new Error(`detail ${d.unit_id}: table ${k} built twice`);
+        (tables as Record<string, unknown>)[k] = d.tables[k];
+      }
+    }
+  }
+  const order = Object.keys(DETAIL_TABLES) as DetailTableKey[];
+  return [...byId.entries()]
+    .sort((a, b) => a[0].localeCompare(b[0]))
+    .map(([unit_id, t]) => ({ unit_id, tables: Object.fromEntries(order.filter((k) => t[k]).map((k) => [k, t[k]])) as DetailTables }));
 }
 
 /** One table per line, so a yearly refresh reads as a small diff (like history shards). */

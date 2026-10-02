@@ -1,31 +1,23 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowRight, ChevronRight, MapPin } from "lucide-react";
+import { ArrowRight, ChevronDown, ChevronRight, MapPin } from "lucide-react";
 import { getData } from "@/lib/data";
 import { loadProfile } from "@/lib/profile-data";
-import { OVERVIEW_FIELDS, PROFILE_FIELDS, topicHref } from "@/lib/profile-topics";
-import { DOMAINS, TEST_POLICY_LABELS, admitRatio, aidGenerosity, generosityTier, satMid, selectivityTier, sizeBucket } from "@/lib/metrics";
+import { OVERVIEW_FIELDS, PROFILE_FIELDS } from "@/lib/profile-topics";
+import { TEST_POLICY_LABELS, satMid, sizeBucket } from "@/lib/metrics";
 import { similarSchools, standouts } from "@/lib/insights";
-import { compact, moneyCompact, pct, pctSmart, range, typeLabel } from "@/lib/format";
-import { SourceList, SourceNote } from "@/components/sources/SourceNote";
+import { compact, pctSmart, typeLabel } from "@/lib/format";
+import { SourceList } from "@/components/sources/SourceNote";
 import { crestTint } from "@/lib/brand";
 import { Crest } from "@/components/school/Crest";
 import { StandoutChip } from "@/components/school/StandoutChip";
 import { CompareButton } from "@/components/compare/CompareButton";
-import { Ring } from "@/components/charts/Ring";
-import { RangeBar } from "@/components/charts/RangeBar";
-import { scoreScale } from "@/lib/score-scale";
-import { StackedBar } from "@/components/charts/StackedBar";
 import { DESIGNATION_LABELS, DESIGNATION_TERMS, SETTING_SHORT, designationsOf } from "@/lib/campus-profile";
-import { InfoTip, Term } from "@/components/ui/info-tip";
-import { ShowMore } from "@/components/ui/show-more";
-import { TenYearTile } from "@/components/history/TenYearTile";
-import { TrendIndicatorStrip } from "@/components/trends/TrendIndicators";
+import { Term } from "@/components/ui/info-tip";
 import { Panel } from "@/components/profile/Panel";
-import { Tile } from "@/components/profile/Tile";
 import { SourceExceptions } from "@/components/profile/SourceExceptions";
-import { TopicLinks } from "@/components/profile/TopicLinks";
+import { TopicCards } from "@/components/profile/TopicCards";
 import { AnchorRedirect } from "@/components/profile/AnchorRedirect";
 
 type Props = { params: Promise<{ id: string }> };
@@ -48,23 +40,20 @@ export async function generateStaticParams() {
 /* ------------------------------------------------------------------ */
 
 /**
- * The profile overview (specs/profile-redesign.md): hero, the at-a-glance tiles, links to the topic pages, and
- * similar schools. The detail lives on the six topic pages under this route.
+ * The profile overview (specs/profile-redesign.md#overview-page): a slim hero, one card per topic page the college
+ * has, similar schools, and one collapsed source list. The detail lives on the six topic pages under this route.
  */
 export default async function SchoolPage({ params }: Props) {
   const { id } = await params;
   const p = await loadProfile(id);
   if (!p) notFound();
-  const { data, school, history, rate, sat, yld, div, avgCost, earnings, grad, ratio, ratioVs } = p;
-  const { metricMedian, rankOf } = data;
+  const { data, school } = p;
   const { admissions: a, demographics: d } = school;
-  const tier = selectivityTier(rate);
   const size = sizeBucket(d.undergrad_enrollment);
   const tags = standouts(data, school, { trends: true });
   const similar = similarSchools(data, school, 4);
   const designations = designationsOf(school);
   const policy = a.test_policy ? TEST_POLICY_LABELS[a.test_policy] : null;
-  const historyHref = topicHref(school.unit_id, "history");
 
   return (
     <div>
@@ -124,145 +113,16 @@ export default async function SchoolPage({ params }: Props) {
               ))}
             </div>
           )}
-
-          <TrendIndicatorStrip school={school} href={historyHref} className="mt-5 sm:mt-6" />
         </div>
       </section>
 
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
-        <div className="space-y-14 pt-2 sm:space-y-24 sm:pt-4">
-          {/* ============================== OVERVIEW ============================== */}
+        <div className="space-y-14 pt-2 sm:space-y-16 sm:pt-4">
+          {/* ============================== TOPIC CARDS ============================== */}
           <section id="overview" className="scroll-mt-28 sm:scroll-mt-36" aria-label="At a glance">
-            <div className="grid grid-flow-row-dense grid-cols-2 gap-3 sm:gap-4 lg:grid-flow-row lg:grid-cols-4">
-              <Tile label="Acceptance rate" term="acceptance-rate" field="admissions.acceptance_rate" school={school} className="col-span-2 lg:col-span-1 lg:row-span-3">
-                {rate !== null ? (
-                  <div className="flex items-center gap-4 lg:flex-col lg:items-start">
-                    <Ring value={rate} color={DOMAINS.admissions.color} size={112} stroke={12} label={`Acceptance rate ${pctSmart(rate)}`}>
-                      <span className="font-display text-2xl font-extrabold">{pctSmart(rate)}</span>
-                    </Ring>
-                    <div>
-                      <p className="font-display text-3xl font-extrabold">{admitRatio(school)}</p>
-                      <p className="text-sm text-muted-foreground">applicants admitted</p>
-                      <p className="mt-2 inline-flex items-center gap-1 rounded-full bg-muted px-2.5 py-1 text-xs font-bold">
-                        <span className="size-1.5 rounded-full" style={{ backgroundColor: DOMAINS.admissions.color }} />
-                        {tier.label}
-                        <InfoTip term="selectivity" />
-                      </p>
-                    </div>
-                  </div>
-                ) : (
-                  <div>
-                    <p className="font-display text-2xl font-extrabold text-muted-foreground">Not reported</p>
-                    <p className="mt-1 text-sm text-muted-foreground">
-                      Usually means <Term term="open-admission">open admission</Term>: most applicants are accepted.
-                    </p>
-                  </div>
-                )}
-              </Tile>
-              {sat && (
-                <Tile label="SAT middle 50%" term="middle-50" field="derived.sat_composite" school={school}>
-                  <p className="font-display text-2xl font-extrabold whitespace-nowrap sm:text-3xl">{range(sat)}</p>
-                  <RangeBar low={sat[0]} high={sat[1]} scale={scoreScale("sat", sat[0]).scale} color={DOMAINS.scores.color} medianMid={metricMedian("sat") ?? undefined} compact showScale />
-                </Tile>
-              )}
-              {a.act_composite_25_75 && (
-                <Tile label="ACT middle 50%" term="act" field="admissions.act_composite_25_75" school={school}>
-                  <p className="font-display text-2xl font-extrabold whitespace-nowrap sm:text-3xl">{range(a.act_composite_25_75)}</p>
-                  <RangeBar
-                    low={a.act_composite_25_75[0]}
-                    high={a.act_composite_25_75[1]}
-                    scale={scoreScale("act", a.act_composite_25_75[0]).scale}
-                    color={DOMAINS.scores.color}
-                    medianMid={metricMedian("act") ?? undefined}
-                    compact
-                    showScale
-                  />
-                </Tile>
-              )}
-              <Tile label="Undergrads" term="undergrad-enrollment" field="demographics.undergrad_enrollment" school={school}>
-                <p className="font-display text-3xl font-extrabold">{compact(d.undergrad_enrollment)}</p>
-                <p className="text-xs text-muted-foreground">
-                  Larger than <b className="text-foreground">{pct(rankOf(school, "enrollment") ?? 0)}</b> of colleges
-                </p>
-              </Tile>
-              {ratio !== null && (
-                <Tile label="Student-to-faculty ratio" term="student-faculty-ratio" field="academics.student_faculty_ratio" school={school}>
-                  <p className="font-display text-3xl font-extrabold whitespace-nowrap">{ratio} to 1</p>
-                  {ratioVs && (
-                    <p className="text-xs text-muted-foreground">
-                      {ratioVs.word === "fewer" ? "Fewer" : "More"} students per faculty member than at <b className="text-foreground">{pct(ratioVs.share)}</b> of colleges
-                    </p>
-                  )}
-                </Tile>
-              )}
-              {yld !== null && (
-                <Tile label="Yield rate" term="yield" field="derived.yield" school={school}>
-                  <div className="flex items-center gap-3">
-                    <Ring value={yld} color={DOMAINS.admissions.color} size={56} stroke={7} label={`Yield ${pct(yld)}`}>
-                      <span className="text-xs font-bold">{pct(yld)}</span>
-                    </Ring>
-                    <p className="text-xs text-muted-foreground">of admitted students enroll</p>
-                  </div>
-                </Tile>
-              )}
-              {d.pell_grant_percent !== null && (
-                <Tile label="Pell Grant recipients" term="pell-grant" field="demographics.pell_grant_percent" school={school}>
-                  <div className="flex items-center gap-3">
-                    <Ring value={d.pell_grant_percent} color={DOMAINS.access.color} size={56} stroke={7} label={`Pell ${pct(d.pell_grant_percent)}`}>
-                      <span className="text-xs font-bold">{pct(d.pell_grant_percent)}</span>
-                    </Ring>
-                    <p className="text-xs text-muted-foreground">receive need-based federal grants</p>
-                  </div>
-                </Tile>
-              )}
-              {div !== null && d.racial_diversity && (
-                <Tile label="Diversity index" term="diversity-index" field="derived.diversity_index" school={school}>
-                  <p className="font-display text-3xl font-extrabold">{div.toFixed(2)}</p>
-                  <StackedBar data={d.racial_diversity} height="h-2.5" showLegend={false} />
-                </Tile>
-              )}
-              {avgCost !== null && (
-                <Tile label="Average cost" term="average-cost" field="cost.avg_paid_all" school={school}>
-                  <p className="font-display text-3xl font-extrabold">{moneyCompact(avgCost)}</p>
-                  <p className="text-xs text-muted-foreground">total per year, all students, after grants (est.)</p>
-                </Tile>
-              )}
-              {history && <TenYearTile history={history.history} files={history.files} href={historyHref} />}
-              {aidGenerosity(school) !== null && (
-                <Tile label="Aid generosity" term="aid-generosity" field="derived.aid_generosity" school={school}>
-                  <div className="flex items-center gap-3">
-                    <Ring value={aidGenerosity(school)!} color={DOMAINS.value.color} size={56} stroke={7} label={`Grants cover ${pct(aidGenerosity(school)!)} of the full price`}>
-                      <span className="text-xs font-bold">{pct(aidGenerosity(school)!)}</span>
-                    </Ring>
-                    <p className="text-xs text-muted-foreground">
-                      of full price covered by grants · <b className="text-foreground">{generosityTier(aidGenerosity(school)).label}</b>
-                    </p>
-                  </div>
-                </Tile>
-              )}
-              {earnings !== null && (
-                <Tile label="Median earnings" term="median-earnings" field="outcomes.median_earnings_10yr" school={school}>
-                  <p className="font-display text-3xl font-extrabold">{moneyCompact(earnings)}</p>
-                  <p className="text-xs text-muted-foreground">10 years after enrolling</p>
-                </Tile>
-              )}
-              {grad !== null && (
-                <Tile label="Graduation rate" term="graduation-rate" field="outcomes.graduation_rate" school={school}>
-                  <div className="flex items-center gap-3">
-                    <Ring value={grad} color={DOMAINS.value.color} size={56} stroke={7} label={`Graduation rate ${pct(grad)}`}>
-                      <span className="text-xs font-bold">{pct(grad)}</span>
-                    </Ring>
-                    <p className="text-xs text-muted-foreground">finish within six years</p>
-                  </div>
-                </Tile>
-              )}
-            </div>
             <SourceExceptions fields={OVERVIEW_FIELDS} school={school} />
-            <SourceNote fields={OVERVIEW_FIELDS} school={school} className="mt-4" />
+            <TopicCards profile={p} />
           </section>
-
-          {/* ============================== TOPIC PAGES ============================== */}
-          <TopicLinks unitId={school.unit_id} available={p.topics} />
 
           {/* ============================== SIMILAR ============================== */}
           <Panel id="similar" eyebrow="Keep exploring" title="Schools like this one" fields={[]}>
@@ -297,9 +157,20 @@ export default async function SchoolPage({ params }: Props) {
                 </div>
               ))}
             </div>
-            <ShowMore label="Show all sources for this profile" hint="Every dataset and year behind the numbers on this profile" className="mt-10 sm:mt-12">
-              <SourceList school={school} fields={PROFILE_FIELDS} />
-            </ShowMore>
+
+            {/* One sources block for the overview: every number's own source is in its (i) popover. */}
+            <details className="group mt-10 rounded-2xl border border-dashed bg-card/50 open:border-solid sm:mt-12">
+              <summary className="flex cursor-pointer list-none items-center gap-3 px-4 py-3 [&::-webkit-details-marker]:hidden">
+                <span className="min-w-0 flex-1">
+                  <span className="block text-sm font-semibold text-primary">Sources for this overview</span>
+                  <span className="block text-xs text-muted-foreground">Every dataset and year behind the numbers on this profile; tap any ⓘ for one number&apos;s source</span>
+                </span>
+                <ChevronDown className="size-5 shrink-0 text-muted-foreground transition-transform group-open:rotate-180" />
+              </summary>
+              <div className="p-2 sm:p-3">
+                <SourceList school={school} fields={PROFILE_FIELDS} />
+              </div>
+            </details>
           </Panel>
         </div>
       </div>

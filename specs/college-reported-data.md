@@ -143,3 +143,38 @@ supporting quote, and a human-review queue for conduct-code findings:
 - `data/college-sources.json` (recipes, hashes), `data/college-reported.json` (published values),
   `data/review-queue.json`, `data/reports/`.
 - `.github/workflows/college-reported.yml`. Secret: `ANTHROPIC_API_KEY`.
+
+## As built
+
+### Checks and merge
+`lib/reported-checks.ts` implements the seven automated checks and the conversion from a passing extraction to a
+published entry, as pure functions so the pipeline (built separately, importing by name) and the sync can both
+depend on them without pulling in the rest of the app:
+- `runChecks(x, school, others?)` returns every `CheckFailure` (empty = publishable), numbered 1–7 as in "Automated
+  checks" above. Check 2 (quote-present) tolerates thousands separators in counts and "4.0%"/"4 percent" forms for
+  rates. Check 4 (rate-matches) and check 6 (plausible-change) use the stated rate when given, else
+  admitted ÷ applicants. Check 5 fails a null `entering_term` outright. Check 6 skips a comparison when the
+  matching federal value is null; under a 10% federal rate the tolerance is ±50% relative instead of ±15 pts. Check
+  7 only compares `others` extractions that share the same `entering_term`.
+- `toReportedEntry(x, school, src, run)` builds the `ReportedAdmissions` block (`year` from `fallYear`, rate computed
+  when not stated) and an `extracted` `LineageRecord` for **every** registered `reported.admissions.*` path, not
+  just the four numbers: the lineage guard (`validateSchool` in `lib/lineage.ts`) requires one for `entering_term`,
+  `year`, and `source_kind` too, since each is independently registered in `lib/fields.ts`. Those three cite the
+  same document, reusing whichever number's quote is available (they aren't themselves a quoted figure). A computed
+  acceptance rate's record quotes the admitted and applicants quotes joined with `" / "` — the evidence is those two
+  numbers, since the rate itself was never stated. `lib/reported.ts`'s `ReportedValuePath` type lists all seven
+  paths, not only the four figures, to match what the guard actually checks.
+- `reportedToPatch(entry)` turns a `ReportedEntry` into `{ reported, lineage }`, ready to merge into a `School`.
+- The sync (`scripts/sync-data.mts`) reads `data/college-reported.json` after overrides are applied and before
+  `validateLineage` runs: for each entry whose `unit_id` matches a school, it sets `school.reported.admissions` and
+  spreads the entry's lineage into `school.lineage`. It never touches a federal field — `reported` and
+  `reported.admissions.*` lineage are the only things it writes. Missing file = skipped (silent, since the pipeline
+  hasn't published yet). Printed as `  college-reported:     N colleges`, alongside the other sync counts.
+- Initial empty files committed so the sync and `npm run check:lineage` have something to read before the pipeline
+  exists: `data/college-reported.json` (`{"updated": null, "entries": []}`; `ReportedFile.updated` is `string | null`
+  for this reason), `data/college-sources.json`, `data/review-queue.json`, `data/reports/.gitkeep`.
+- Tests: `tests/reported-checks.test.mts`, one per check (good fixture passes, a broken variant fails that check
+  specifically), plus `toReportedEntry` → `reportedToPatch` → `validateSchool` round-trips clean for both a stated
+  and a computed acceptance rate, three tests proving the lineage guard rejects a reported value with no record, a
+  non-`"extracted"` method, and a year not newer than federal, and one proving `lineageFor` cites `"college-site"`
+  with the quote, year, and URL. Fixtures use Princeton (186131), a plain federal-only school with no CDS override.

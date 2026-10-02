@@ -13,6 +13,9 @@
  */
 import type { HistoryFamily } from "../../lib/history.ts";
 import { FACTOR_COLUMNS } from "../../lib/derive.ts";
+import { OM_COLUMNS, OM_FIRST_FILE, OM_LAG, OM_PIVOT } from "../../lib/outcome-measures.ts";
+import { EFA_COLUMNS, EFA_FIRST_YEAR, EFA_WIDE } from "../../lib/transfers.ts";
+import { GR_PELL_COHORT_TYPE, GR_PELL_COLUMNS } from "../../lib/graduation-groups.ts";
 
 /** A value read from one row: a column, or the sum of parts (IC2001 splits admissions by gender). */
 export type ColumnSpec = string | { sum: readonly string[] };
@@ -37,6 +40,16 @@ export interface Era {
   supplement?: (year: number) => string;
   /** Columns that must exist in the supplement. */
   supplementRequired?: readonly string[];
+  /** Several rows per college: merge them into one, suffixing each column with this column's code (scripts/lib/om.mts). */
+  pivot?: string;
+  /** Files with several rows per college: the row to keep (GR{Y}_PELL_SSL keeps the total cohort). */
+  keepRow?: (row: Record<string, string>) => boolean;
+  /** The file for year Y is published as year Y + lag (graduation files follow a class 6 years on), for the refresh age. */
+  lag?: number;
+  /** Read every `step` years from `years[0]` (residence: even-numbered falls only). Default 1. */
+  step?: number;
+  /** Several rows per college, pivoted into one (scripts/lib/ipeds.mts `wide`). */
+  wide?: { key: string; values: readonly string[] };
 }
 
 const yy = (y: number) => String(y % 100).padStart(2, "0");
@@ -160,6 +173,54 @@ export const ERAS: readonly Era[] = [
     files: (y) => [{ name: `EF${y}D` }],
     required: () => ["STUFACR"],
   },
+  // 8-year outcomes (specs/data-expansion/outcome-measures.md): OM{Y} follows the class entering fall Y - 8, one row per
+  // cohort. OM2017 (fall 2009) is the first with Pell cohorts and the 8-year status split; OM2015-16 used other codes.
+  {
+    family: "om",
+    years: [OM_FIRST_FILE - OM_LAG, OPEN],
+    files: (y) => [{ name: `OM${y + OM_LAG}` }],
+    required: () => [OM_PIVOT, ...OM_COLUMNS],
+    pivot: OM_PIVOT,
+  },
+  // Graduation by Pell and loan status (specs/data-expansion/graduation-by-group.md): GR{Y+6}_PELL_SSL follows the class
+  // that entered fall Y. GR2016 is the first file (probed 2026-10-02: GR2015_PELL_SSL doesn't exist); same columns since.
+  {
+    family: "gr-pell",
+    years: [2010, OPEN],
+    files: (y) => [{ name: `GR${y + 6}_PELL_SSL` }],
+    required: () => GR_PELL_COLUMNS,
+    keepRow: (r) => r.PSGRTYPE === GR_PELL_COHORT_TYPE,
+    lag: 6,
+  },
+  // Faculty salary (specs/data-expansion/faculty.md): SAL{Y}_IS, all-ranks row (ARANK 7). Starts 2016, the first year
+  // with the equated 9-month column (SAEQ9AT); lib/academics.ts facultySalaryFrom asserts ARANK 7 itself.
+  {
+    family: "ipeds-sal",
+    years: [2016, OPEN],
+    files: (y) => [{ name: `SAL${y}_IS` }],
+    required: () => ["ARANK", "SAEQ9AT"],
+    keepRow: (r) => r.ARANK === "7",
+  },
+  // Residence (specs/data-expansion/residence.md): EF{Y}C, fall Y, one row per college per home state. Probed
+  // 2026-10-02: EFCSTATE/EFRES01 in every file EF2002C–EF2024C with the same codes; even years (required) cover ~1,800
+  // site colleges, odd years ~1,000, so only even years. From fall 2004, as the spec says.
+  {
+    family: "ef-c",
+    years: [2004, OPEN],
+    step: 2,
+    files: (y) => [{ name: `EF${y}C` }],
+    required: () => ["EFCSTATE", "EFRES01"],
+    wide: { key: "EFCSTATE", values: ["EFRES01"] },
+  },
+  // Transfers in (specs/data-expansion/transfers.md): EF{Y}A, fall Y, one row per college per level (EFALEVEL), read
+  // with lib/transfers.ts like the snapshot. Transfer-in levels start with EF2008A (EF2006A has none).
+  {
+    family: "ef-a",
+    years: [EFA_FIRST_YEAR, OPEN],
+    files: (y) => [{ name: `EF${y}A` }],
+    required: () => [...EFA_COLUMNS],
+    wide: EFA_WIDE,
+  },
   {
     family: "services",
     years: [2014, OPEN],
@@ -202,7 +263,7 @@ export function eraFor(family: HistoryFamily, year: number): Era | null {
 }
 
 /** Families by the kind of year they describe, and the first year each can start. */
-export const FAMILY_ORDER: readonly HistoryFamily[] = ["ic-admissions", "adm", "prices", "sfa", "characteristics", "services", "ef-d"];
+export const FAMILY_ORDER: readonly HistoryFamily[] = ["ic-admissions", "adm", "prices", "sfa", "characteristics", "services", "ef-d", "ef-c", "ef-a", "om", "gr-pell", "ipeds-sal"];
 
 /** Columns a value spec reads. */
 export function specColumns(spec: ColumnSpec): readonly string[] {

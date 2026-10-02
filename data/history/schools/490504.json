@@ -21,6 +21,11 @@
     "live_on": {"start":2017,"values":[1,1,1,1,1,1,1]},
     "tuition_guarantee": {"start":2017,"values":[2,2,2,2,2,2,2]},
     "student_faculty_ratio": {"start":2017,"values":[3,7,13,12,15,13,14,16]},
+    "faculty_salary": {"start":2017,"values":[31357,52317,37464,52332,52332,56287,69121,69530]},
+    "out_of_state_share": {"start":2018,"values":[0.5,null,0.8235,null,0.6667,null,0.75]},
+    "transfer_in_count": {"start":2017,"values":[1,1,2,0,0,0,1,0]},
+    "transfer_in_share": {"start":2017,"values":[0.0833,0.1111,0.25,0,0,0,0.0385,0]},
+    "international_share": {"start":2018,"values":[0,null,0,null,0.1667,null,0.0833]},
     "athletic_association": {"start":2017,"values":[3,3,3,3,3,3,3,3,3]},
     "rotc": {"start":2017,"values":[2,2,2,2,2,2,2,2,2]},
     "promise": {"start":2022,"values":[2,2]},
@@ -52,6 +57,15 @@
     "men_share": {"start":2017,"values":[1,1,1,1,1,1,1,1]},
     "part_time_share": {"start":2017,"values":[0,0,0,0,0,0,0,0]},
     "grad_rate": {"start":2016,"values":[1,0.2727,0.625]},
-    "federal_loan_rate": {"start":2016,"values":[0,0,0,0,0,0,0,0]}
+    "federal_loan_rate": {"start":2016,"values":[0,0,0,0,0,0,0,0]},
+    "grad_cohort_pell": {"start":2016,"values":[2,5,4]},
+    "grad_cohort_no_pell_no_loan": {"start":2016,"values":[1,6,4]},
+    "grad_cohort_white": {"start":2016,"values":[3,11,8]},
+    "grad_cohort_asian": {"start":2016,"values":[0,0,0]},
+    "grad_cohort_hispanic": {"start":2016,"values":[0,0,0]},
+    "grad_cohort_black": {"start":2016,"values":[0,0,0]},
+    "grad_cohort_two_or_more": {"start":2016,"values":[0,0,0]},
+    "grad_cohort_international": {"start":2016,"values":[0,0,0]},
+    "instruction_per_student": {"start":2016,"values":[23194,28570,29708,32980,30831,35058,38445,40558]}
   }
 }

@@ -9,12 +9,15 @@
  *   {Y}.completion.completion_rate_4yr_150nt                      → students who entered fall Y − 6
  *   {Y}.aid.median_debt.completers.overall                         → Y–Y+1 graduates (null after 2020)
  *   {Y}.aid.federal_loan_rate                                      → the Y−1–Y school year (matches IPEDS SFA UFLOANP)
+ *   {Y}.school.ft_faculty_rate                                     → fall Y (checked 2026-10-02, same as size)
+ *   {Y}.school.instructional_expenditure_per_fte                   → fiscal (Y−1)–Y, same as IPEDS DRVF{Y} (checked 2026-10-02)
  */
 import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { SCORECARD_RACE_FIELDS } from "../../lib/derive.ts";
-import { LOAN_RATE_FROM, RACE_FROM } from "../../lib/history.ts";
+import { FINANCE_FROM, FULL_TIME_FACULTY_FROM, LOAN_RATE_FROM, RACE_FROM } from "../../lib/history.ts";
+import { RACE_SCORECARD_SUFFIX } from "../../lib/graduation-groups.ts";
 
 const API = "https://api.data.gov/ed/collegescorecard/v1/schools";
 const RACE = "student.demographics.race_ethnicity";
@@ -31,6 +34,8 @@ export function scorecardFields(first: number, last: number): string[] {
     out.push(`${y}.student.demographics.men`, `${y}.student.part_time_share`);
     if (y >= LOAN_RATE_FROM) out.push(`${y}.aid.federal_loan_rate`);
     if (y >= RACE_FROM) out.push(...SCORECARD_RACE_FIELDS.map((f) => `${y}.${RACE}.${f}`));
+    if (y >= FULL_TIME_FACULTY_FROM) out.push(`${y}.school.ft_faculty_rate`);
+    if (y >= FINANCE_FROM) out.push(`${y}.school.instructional_expenditure_per_fte`);
   }
   return out;
 }
@@ -56,11 +61,13 @@ export interface ScorecardOptions {
   last: number;
   refresh?: boolean;
   offline?: boolean;
+  /** Fields to fetch instead of `scorecardFields(first, last)`; each list has its own cache file. */
+  fields?: string[];
 }
 
 /** Year-prefixed values for every college in `keep`, keyed by unit ID. */
 export async function fetchScorecardHistory(opts: ScorecardOptions): Promise<Map<string, ScorecardRow>> {
-  const fields = scorecardFields(opts.first, opts.last);
+  const fields = opts.fields ?? scorecardFields(opts.first, opts.last);
   const hash = createHash("sha256").update(fields.join(",")).digest("hex").slice(0, 12);
   mkdirSync(opts.cacheDir, { recursive: true });
   const cache = join(opts.cacheDir, `history-${hash}.json`);
@@ -107,4 +114,22 @@ export async function fetchScorecardHistory(opts: ScorecardOptions): Promise<Map
     writeFileSync(cache, JSON.stringify(rows));
   }
   return new Map(Object.entries(rows));
+}
+
+/* Graduation by race/ethnicity (specs/data-expansion/graduation-by-group.md) -------------------------------------- */
+
+/**
+ * First year key with the 2010 federal race/ethnicity categories in completion: key 2011 = students who entered fall
+ * 2005. Earlier keys use the old categories (`*_pre2010`, Asian and Pacific Islander combined), a break, so not loaded.
+ */
+export const GRAD_RACE_FROM = 2011;
+/** Year-prefixed rate and cohort fields for graduation by race/ethnicity, fetched (and cached) separately. */
+export function gradByRaceFields(first: number, last: number): string[] {
+  const out: string[] = [];
+  for (let y = Math.max(first, GRAD_RACE_FROM); y <= last; y++) {
+    for (const suffix of Object.values(RACE_SCORECARD_SUFFIX)) {
+      out.push(`${y}.completion.completion_rate_4yr_150_${suffix}`, `${y}.completion.completion_cohort_4yr_150_${suffix}`);
+    }
+  }
+  return out;
 }

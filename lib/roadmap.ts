@@ -13,9 +13,9 @@ export const COMPLEXITY: Record<Complexity, { label: string; description: string
   4: { label: "Extra large", description: "A new system with its own pipeline, checks, and a pilot before launch." },
 };
 
-// Wave 1 (data the site already downloads) was built on 2026-09-29; see /release-notes.
+// Wave 1 (data the site already downloads) was built on 2026-09-29, and wave 2 (one new federal file each) on
+// 2026-10-02; see /release-notes. Metro area, deferred from wave 2, is under "later".
 export type RoadmapGroupKey =
-  | "wave-2"
   | "wave-3"
   | "college-reported"
   | "campus-life"
@@ -27,11 +27,6 @@ export type RoadmapGroupKey =
   | "later";
 
 export const ROADMAP_GROUPS: { key: RoadmapGroupKey; title: string; description: string }[] = [
-  {
-    key: "wave-2",
-    title: "Wave 2: one new federal file each",
-    description: "Each adds one NCES file to the data sync and a focused set of new facts on every college.",
-  },
   {
     key: "wave-3",
     title: "Wave 3: majors and earnings by major",
@@ -113,51 +108,6 @@ export interface RoadmapSpec {
 
 /** In build order within each group (the backlog's order, specs/backlog.md). */
 export const ROADMAP: RoadmapSpec[] = [
-  {
-    slug: "residence",
-    file: "specs/data-expansion/residence.md",
-    group: "wave-2",
-    summary: "Where first-years come from: in-state, out-of-state, international, and the top home states.",
-    complexity: 3,
-    complexityNote: "Home-state tables are too big for the main dataset, so it may build the per-college detail file.",
-    status: "planned",
-  },
-  {
-    slug: "outcome-measures",
-    file: "specs/data-expansion/outcome-measures.md",
-    group: "wave-2",
-    summary: "Eight-year results for every student who starts, including transfers and part-timers.",
-    complexity: 3,
-    complexityNote: "A new file, and graduation becomes a fifth trend indicator across the site.",
-    status: "planned",
-  },
-  {
-    slug: "graduation-by-group",
-    file: "specs/data-expansion/graduation-by-group.md",
-    group: "wave-2",
-    summary: "Graduation rates for Pell Grant recipients and by race and ethnicity.",
-    complexity: 2,
-    complexityNote: "Two sources, and gaps need care at small colleges.",
-    status: "planned",
-  },
-  {
-    slug: "finances",
-    file: "specs/data-expansion/finances.md",
-    group: "wave-2",
-    summary: "Endowment per student and spending on instruction per student.",
-    complexity: 2,
-    complexityNote: "A new file; public and private colleges report finances on different forms, so they are never ranked together.",
-    status: "planned",
-  },
-  {
-    slug: "faculty",
-    file: "specs/data-expansion/faculty.md",
-    group: "wave-2",
-    summary: "Average faculty salary and the share of faculty who are full-time.",
-    complexity: 1,
-    complexityNote: "One new file plus one Scorecard field.",
-    status: "planned",
-  },
   {
     slug: "majors",
     file: "specs/data-expansion/majors.md",

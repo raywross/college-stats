@@ -20,6 +20,7 @@ import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync
 import { join } from "node:path";
 import type { DatasetMeta, School } from "../lib/types.ts";
 import {
+  GRAD_RACE_SERIES,
   HISTORY_FAMILIES,
   validateHistoryMeta,
   validateShard,
@@ -34,6 +35,7 @@ import {
   type YearKind,
 } from "../lib/history.ts";
 import { fetchIpedsTable, type IpedsTable } from "./lib/ipeds.mts";
+import { fetchPivotedTable } from "./lib/om.mts";
 import { validateLineage } from "../lib/lineage.ts";
 import { ERAS, requiredColumns, type Era, type FileChoice } from "./history/registry.mts";
 import {
@@ -52,7 +54,8 @@ import {
   type YearTable,
 } from "./history/build.mts";
 import { buildCpi } from "./history/cpi.mts";
-import { COHORT_LAG, fetchScorecardHistory } from "./history/scorecard.mts";
+import { COHORT_LAG, GRAD_RACE_FROM, fetchScorecardHistory, gradByRaceFields } from "./history/scorecard.mts";
+import { gradByGroupMismatches } from "./history/graduation-groups.mts";
 
 const ROOT = join(import.meta.dirname, "..");
 const DATA = join(ROOT, "data");
@@ -126,7 +129,8 @@ const maxAgeFor = (year: number) => (REFRESH ? 0 : year >= THIS_YEAR - 3 ? 7 : I
 
 async function fetchYear(era: Era, year: number, keep: ReadonlySet<string>): Promise<Fetched | null> {
   for (const choice of era.files(year)) {
-    const table = await fetchIpedsTable(choice.name, { cacheDir: CACHE, maxAgeDays: maxAgeFor(year), keep, offline: NCES_CACHED });
+    const opts = { cacheDir: CACHE, maxAgeDays: maxAgeFor(year + (era.lag ?? 0)), keep, offline: NCES_CACHED, keepRow: era.keepRow, wide: era.wide };
+    const table = era.pivot ? await fetchPivotedTable(choice.name, era.pivot, opts) : await fetchIpedsTable(choice.name, opts);
     if (!table) continue;
     let supplement: IpedsTable | undefined;
     if (era.supplement) {
@@ -143,7 +147,8 @@ async function fetchYear(era: Era, year: number, keep: ReadonlySet<string>): Pro
 async function fetchAll(keep: ReadonlySet<string>): Promise<Fetched[]> {
   const jobs = ERAS.flatMap((era) => {
     const to = Math.min(era.years[1], THIS_YEAR);
-    return Array.from({ length: to - era.years[0] + 1 }, (_, i) => ({ era, year: era.years[0] + i }));
+    const step = era.step ?? 1;
+    return Array.from({ length: Math.floor((to - era.years[0]) / step) + 1 }, (_, i) => ({ era, year: era.years[0] + i * step }));
   });
   let done = 0;
   const results = await pool(jobs, 6, async ({ era, year }) => {
@@ -189,7 +194,7 @@ function toInputs(fetched: Fetched[]): Inputs {
     return { year: f.year, family: f.family, rows, suffix: f.choice.suffix, values: f.era.values };
   };
   const of = (...fams: HistoryFamily[]) => fetched.filter((f) => fams.includes(f.family)).sort((a, b) => a.year - b.year).map(table);
-  return { admissions: of("ic-admissions", "adm"), prices: of("prices"), sfa: of("sfa"), characteristics: of("characteristics"), services: of("services"), efd: of("ef-d") };
+  return { admissions: of("ic-admissions", "adm"), prices: of("prices"), sfa: of("sfa"), characteristics: of("characteristics"), services: of("services"), efd: of("ef-d"), efc: of("ef-c"), efa: of("ef-a"), om: of("om"), grPell: of("gr-pell"), sal: of("ipeds-sal") };
 }
 
 /* ------------------------------------------------------------------ */
@@ -320,6 +325,18 @@ async function main() {
     offline: OFFLINE,
   }).catch((err: Error) => fail(err.message));
   inputs.scorecard = { rows: scorecard, first: SCORECARD_FIRST, last: THIS_YEAR };
+  // Graduation by race/ethnicity (specs/data-expansion/graduation-by-group.md): its own field list and cache file.
+  const gradRace = await fetchScorecardHistory({
+    key: process.env.COLLEGE_SCORECARD_API_KEY,
+    cacheDir: SCORECARD_CACHE,
+    keep: universe,
+    first: GRAD_RACE_FROM,
+    last: THIS_YEAR,
+    refresh: REFRESH,
+    offline: OFFLINE,
+    fields: gradByRaceFields(GRAD_RACE_FROM, THIS_YEAR),
+  }).catch((err: Error) => fail(err.message));
+  inputs.scorecardGradRace = { rows: gradRace, first: GRAD_RACE_FROM, last: THIS_YEAR };
 
   const histories = new Map(schools.map((s) => [s.unit_id, buildCollege(s, inputs)]));
   const all = [...histories.values()];
@@ -362,7 +379,7 @@ async function main() {
   const drops = coverageDrops(coverage(all), EXPECTED_DROPS);
   if (drops.length) fail("coverage dropped more than 20% from one year to the next (a moved column or layout change?). Allow-list real drops in EXPECTED_DROPS with a reason.", drops);
 
-  const rule1 = ruleOneProblems(lastPointMismatches(schools, histories, latest), schools);
+  const rule1 = ruleOneProblems([...lastPointMismatches(schools, histories, latest), ...gradByGroupMismatches(schools, histories)], schools);
   if (rule1.hard.length) fail("latest history points differ from data/schools.json (rule 1). Re-run npm run sync-data, or fix lib/derive.ts.", rule1.hard);
   if (rule1.soft.length) console.warn(`  ${rule1.soft.length} soft rule-1 differences (within allowance; review):\n    ${rule1.soft.slice(0, 5).join("\n    ")}`);
 
@@ -396,7 +413,7 @@ async function main() {
       }));
     if ("api" in HISTORY_FAMILIES[fam]) {
       // Scorecard fields: one entry per year any college reported, cited as the Scorecard data page.
-      const keys = { "scorecard-enrollment": ["undergrads", "men_share", "part_time_share"], "scorecard-completion": ["grad_rate"], "scorecard-debt": ["median_debt"], "scorecard-loans": ["federal_loan_rate"] }[fam as string] as SeriesKey[];
+      const keys = { "scorecard-enrollment": ["undergrads", "men_share", "part_time_share"], "scorecard-completion": ["grad_rate"], "scorecard-debt": ["median_debt"], "scorecard-loans": ["federal_loan_rate"], "scorecard-completion-race": Object.values(GRAD_RACE_SERIES).map(([rate]) => rate), "scorecard-faculty": ["faculty_full_time_share"], "scorecard-finances": ["instruction_per_student"] }[fam as string] as SeriesKey[];
       const years = [...new Set(all.flatMap((h) => keys.flatMap((k) => { const sr = h.series[k]; return sr ? sr.values.flatMap((v, i) => (v === null ? [] : [sr.start + i])) : []; })))].sort((a, b) => a - b);
       files[fam] = years.map((year) => ({ year, file: `College Scorecard API (${keys.join(", ")})`, url: meta.sources.scorecard?.url ?? "https://collegescorecard.ed.gov/data/", revised: false }));
       continue;

@@ -115,12 +115,16 @@ export async function SchoolTable({ schools, params }: { schools: School[]; para
     { key: "sat", label: "SAT middle 50%", term: "middle-50", className: "min-w-36" },
     { key: "pell", label: "Pell", term: "pell-grant" },
     { key: "first_gen", label: "First-gen", term: "first-gen" },
+    { key: "out_of_state", label: "Out of state", term: "in-state-student" },
+    { key: "transfer_share", label: "Transfers, share of new", term: "transfer-in" },
     { key: "men_share", label: "Men", term: "gender-balance" },
     { key: "diversity", label: "Diversity", term: "diversity-index" },
     { key: "avg_cost", label: "Avg cost", term: "average-cost" },
     { key: "aid_generosity", label: "Aid generosity", term: "aid-generosity" },
     { key: "earnings", label: "Earnings", term: "median-earnings" },
     { key: "grad_rate", label: "Grad rate", term: "graduation-rate" },
+    { key: "completion_8yr", label: "8-yr completion, all", term: "outcome-measures" },
+    { key: "pell_gap", label: "Grad rate, Pell / neither", term: "pell-graduation-gap", className: "min-w-32" },
     { key: "loan_rate", label: "Borrow", term: "federal-loan-rate" },
     ...(changes
       ? [
@@ -130,7 +134,9 @@ export async function SchoolTable({ schools, params }: { schools: School[]; para
           { key: "apps_change" as const, label: "Applications, 10-yr change", term: "applicants" as const },
           { key: "diversity_change" as const, label: "Diversity, then → now", term: "diversity-index" as const },
           { key: "men_share_change" as const, label: "Men, then → now", term: "gender-balance" as const },
-          { key: "loan_rate_change" as const, label: "Borrow, then → now", term: "federal-loan-rate" as const },        ]
+          { key: "loan_rate_change" as const, label: "Borrow, then → now", term: "federal-loan-rate" as const },
+          { key: "pell_gap_change" as const, label: "Pell gap, then → now", term: "pell-graduation-gap" as const },
+        ]
       : []),
   ];
 
@@ -143,7 +149,7 @@ export async function SchoolTable({ schools, params }: { schools: School[]; para
     </p>
     <div className="overflow-hidden rounded-3xl border bg-card">
       <div className="overflow-x-auto">
-        <table className={cn("w-full text-sm", changes ? "min-w-[2420px]" : "min-w-[1550px]")}>
+        <table className={cn("w-full text-sm", changes ? "min-w-[2900px]" : "min-w-[1880px]")}>
           <thead className="border-b bg-surface-2">
             <tr>
               <SortHeader k="name" label="School" className="sticky left-0 z-10 bg-surface-2 pl-4" params={params} sortBy={sortBy} sortDir={sortDir} />
@@ -210,6 +216,10 @@ export async function SchoolTable({ schools, params }: { schools: School[]; para
                     {fg !== null && <Bar value={fg} max={1} color={DOMAINS.access.color} />}
                   </td>
                   <td className="w-24 px-3 tabular-nums">
+                    <Value v={s.demographics.residence ? pct(s.demographics.residence.out_of_state) : null} />
+                    {s.demographics.residence && <Bar value={s.demographics.residence.out_of_state} max={1} color={DOMAINS.diversity.color} />}
+                  </td>
+                  <td className="w-24 px-3 tabular-nums">
                     <Value v={men == null ? null : pct(men)} />
                     {men != null && <Bar value={men} max={1} color={DOMAINS.access.color} />}
                   </td>
@@ -234,6 +244,16 @@ export async function SchoolTable({ schools, params }: { schools: School[]; para
                   <td className="w-24 px-3 tabular-nums">
                     <Value v={s.outcomes?.graduation_rate == null ? null : pct(s.outcomes.graduation_rate)} />
                     {s.outcomes?.graduation_rate != null && <Bar value={s.outcomes.graduation_rate} max={1} color={DOMAINS.value.color} />}
+                  </td>
+                  <td className="w-32 px-3 tabular-nums">
+                    <Value
+                      v={s.outcomes?.grad_rate_pell == null || s.outcomes.grad_rate_no_pell_no_loan == null ? null : `${pct(s.outcomes.grad_rate_pell)} / ${pct(s.outcomes.grad_rate_no_pell_no_loan)}`}
+                    />
+                    {METRICS.pellGap.get(s) !== null && <span className="block text-[11px] text-muted-foreground">{METRICS.pellGap.format(METRICS.pellGap.get(s)!)}</span>}
+                  </td>
+                  <td className="w-24 px-3 tabular-nums">
+                    <Value v={s.outcomes?.eight_year?.all.award == null ? null : pct(s.outcomes.eight_year.all.award)} />
+                    {s.outcomes?.eight_year?.all.award != null && <Bar value={s.outcomes.eight_year.all.award} max={1} color={DOMAINS.value.color} />}
                   </td>
                   <td className="w-24 px-3 tabular-nums">
                     <Value v={s.outcomes?.federal_loan_rate == null ? null : pct(s.outcomes.federal_loan_rate)} />
@@ -294,6 +314,14 @@ export async function SchoolTable({ schools, params }: { schools: School[]; para
                           to={s.trends?.federal_loan_rate ? pct(s.trends.federal_loan_rate.to) : undefined}
                         />
                       </td>
+                      <td className="w-32 px-3 tabular-nums">
+                        <ChangeCell
+                          points
+                          change={METRICS.pellGapChange.get(s)}
+                          from={s.trends?.pell_gap ? `${Math.round(s.trends.pell_gap.from * 100)} pts` : undefined}
+                          to={s.trends?.pell_gap ? `${Math.round(s.trends.pell_gap.to * 100)} pts` : undefined}
+                        />
+                      </td>
                     </>
                   )}
                   <td className="px-3 pr-4 text-right">
@@ -309,7 +337,7 @@ export async function SchoolTable({ schools, params }: { schools: School[]; para
     {changes && (
       <p className="mt-2 text-[11px] text-muted-foreground">
         Changes over each college&apos;s last 10 years of federal data: average cost after inflation; acceptance rate in percentage points;
-        diversity index, men&apos;s share, and borrowing in points; undergraduate, men&apos;s share, and borrowing changes left out for campuses under 300 students, and applications under 200
+        diversity index, men&apos;s share, borrowing, and the Pell graduation gap (by entering class, 100+ Pell students) in points; undergraduate, men&apos;s share, and borrowing changes left out for campuses under 300 students, and applications under 200
         applicants.
       </p>
     )}

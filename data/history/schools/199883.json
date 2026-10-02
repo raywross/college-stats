@@ -14,6 +14,12 @@
     "application_fee": {"start":2001,"values":[15,25,25,25,25,25,25,25,25,25,25,25,0,0,0,0,100,100,100,100,100,100,100]},
     "tuition_guarantee": {"start":2008,"values":[1,1,1,1,1,1,1,1,1,1,2,2,2,2,2,2]},
     "student_faculty_ratio": {"start":2009,"values":[10,11,8,11,10,10,10,10,8,8,11,11,10,11,11,8]},
+    "faculty_full_time_share": {"start":2005,"values":[0.625,0.7857,null,null,null,null,null,null,null,null,null,null,null,null,null,null,1,1,1,1]},
+    "faculty_salary": {"start":2021,"values":[41252,63357,64975,57000]},
+    "out_of_state_share": {"start":2004,"values":[0]},
+    "transfer_in_count": {"start":2008,"values":[50,57,0,0,0,0,0,0,0,0,0,0,0,0,40,40,41]},
+    "transfer_in_share": {"start":2008,"values":[1,1,null,null,null,null,null,null,null,null,null,null,null,null,1,1,1]},
+    "international_share": {"start":2004,"values":[0]},
     "athletic_association": {"start":2021,"values":[3,3,3,3,3]},
     "rotc": {"start":2014,"values":[2,2,2,2,2,2,2,2,2,2,2,2]},
     "promise": {"start":2022,"values":[2,2]},
@@ -41,6 +47,13 @@
     "men_share": {"start":1996,"values":[0.0734,0.0874,0.12,0.0682,null,0,0.0288,0.0388,0.1182,0.0826,0.0648,0.0769,0.1489,0.1923,0.1519,0.1447,0.1226,0.0942,0.0942,0.0833,0.0833,0.0759,0.0855,0.0625,0.0867,0.0903,0.1166,0.1866,0.1935]},
     "part_time_share": {"start":1996,"values":[0,0,0.1867,0,null,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},
     "median_debt": {"start":2002,"values":[5500]},
-    "federal_loan_rate": {"start":2008,"values":[0.7388,0.8205,0.2848,0.5355,0.6822,0.7609,0.8148,0.7847,0.9416,0.8207,0.7532,0.869,0.84,0.9514,0.7853,1]}
+    "federal_loan_rate": {"start":2008,"values":[0.7388,0.8205,0.2848,0.5355,0.6822,0.7609,0.8148,0.7847,0.9416,0.8207,0.7532,0.869,0.84,0.9514,0.7853,1]},
+    "om_award": {"start":2013,"values":[0.8961,0.9296,0.8625,0.8553]},
+    "om_transfer": {"start":2013,"values":[0,0,0,0]},
+    "om_award_pell": {"start":2013,"values":[0.9333,0.9355,0.8889,0.875]},
+    "om_award_4": {"start":2013,"values":[0.8961,0.9296,0.8625,0.8553]},
+    "om_award_6": {"start":2013,"values":[0.8961,0.9296,0.8625,0.8553]},
+    "om_award_non_pell": {"start":2013,"values":[0.8723,0.925,0.8409,0.8409]},
+    "instruction_per_student": {"start":2004,"values":[9683,12591,19997,25604,19803,12133,11327,11910,10361,13998,10610,9044,11400,12550,15688,19413,18839,19570,13546,13077]}
   }
 }

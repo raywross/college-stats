@@ -16,6 +16,11 @@
     "application_fee": {"start":2021,"values":[150,0,0]},
     "tuition_guarantee": {"start":2021,"values":[1,1,1]},
     "student_faculty_ratio": {"start":2022,"values":[4,4,4]},
+    "faculty_salary": {"start":2021,"values":[45000,45000,45000,54000]},
+    "out_of_state_share": {"start":2022,"values":[0.625,null,0.3333]},
+    "transfer_in_count": {"start":2022,"values":[0,1,0]},
+    "transfer_in_share": {"start":2022,"values":[0,0.0667,0]},
+    "international_share": {"start":2022,"values":[0,null,0]},
     "athletic_association": {"start":2021,"values":[3,3,3,3,3]},
     "rotc": {"start":2021,"values":[2,2,2,2,2]},
     "promise": {"start":2022,"values":[2,2]},
@@ -41,6 +46,7 @@
     "race_other": {"start":2022,"values":[0,0,0]},
     "men_share": {"start":2022,"values":[0.5,0.5862,0.5588]},
     "part_time_share": {"start":2022,"values":[0,0,0]},
-    "federal_loan_rate": {"start":2022,"values":[0]}
+    "federal_loan_rate": {"start":2022,"values":[0]},
+    "instruction_per_student": {"start":2022,"values":[11239,13836]}
   }
 }

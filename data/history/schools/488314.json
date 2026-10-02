@@ -21,6 +21,11 @@
     "live_on": {"start":2016,"values":[2,2,2,2,2,2,2,1]},
     "tuition_guarantee": {"start":2016,"values":[2,2,2,2,2,2,2,2]},
     "student_faculty_ratio": {"start":2016,"values":[11,16,19,17,13,9,14,22,14]},
+    "faculty_salary": {"start":2016,"values":[28800,24750,53950,38280,40629,57188,39231,61469,47077]},
+    "out_of_state_share": {"start":2016,"values":[0.3333,null,0.1818,null,0.5,null,0.5217,null,0.4762]},
+    "transfer_in_count": {"start":2016,"values":[17,18,8,17,4,1,24,12,20]},
+    "transfer_in_share": {"start":2016,"values":[0.85,0.439,0.2667,0.425,0.2857,0.0833,0.5106,0.4,0.4878]},
+    "international_share": {"start":2016,"values":[0.3333,null,0.0909,null,0.1,null,0.3478,null,0.1905]},
     "athletic_association": {"start":2016,"values":[3,3,3,3,3,3,3,3,3,3]},
     "rotc": {"start":2016,"values":[2,2,2,2,2,2,2,2,2,2]},
     "promise": {"start":2022,"values":[2,2]},
@@ -52,6 +57,20 @@
     "men_share": {"start":2016,"values":[1,1,1,1,1,1,1,1,1]},
     "part_time_share": {"start":2016,"values":[0,0,0,0,0,0,0,0,0]},
     "grad_rate": {"start":2014,"values":[0.25,0,0,0,0.1]},
-    "federal_loan_rate": {"start":2015,"values":[0,0,0,0,0,0,0,0,0]}
+    "federal_loan_rate": {"start":2015,"values":[0,0,0,0,0,0,0,0,0]},
+    "om_award": {"start":2010,"values":[0.1053,null,null,null,0.6]},
+    "om_transfer": {"start":2010,"values":[0.8421,null,null,null,0.3]},
+    "om_award_4": {"start":2010,"values":[0,null,null,null,0.4333]},
+    "om_award_6": {"start":2010,"values":[0.1053,null,null,null,0.5]},
+    "om_award_non_pell": {"start":2010,"values":[0.1053,null,null,null,0.6]},
+    "grad_cohort_pell": {"start":2014,"values":[0,0,1,10,7]},
+    "grad_cohort_no_pell_no_loan": {"start":2014,"values":[4,8,3,13,13]},
+    "grad_cohort_white": {"start":2014,"values":[4,7,2,23,20]},
+    "grad_cohort_asian": {"start":2014,"values":[0,0,0,0,0]},
+    "grad_cohort_hispanic": {"start":2014,"values":[0,0,0,0,0]},
+    "grad_cohort_black": {"start":2014,"values":[0,0,0,0,0]},
+    "grad_cohort_two_or_more": {"start":2014,"values":[0,0,0,0,0]},
+    "grad_cohort_international": {"start":2014,"values":[0,1,2,0,0]},
+    "instruction_per_student": {"start":2015,"values":[5745,5080,3412,4553,3562,4714,7012,4281,5539]}
   }
 }

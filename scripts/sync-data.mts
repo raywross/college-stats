@@ -29,7 +29,15 @@ import { lineageForPatch, validateLineage } from "../lib/lineage.ts";
 import { applyProbes, filesToProbe, type FileProbe, type ReleaseCalendar } from "../lib/releases.ts";
 import { IPEDS_BASES, parseCsv } from "./lib/ipeds.mts";
 import { MSI_FIELDS, campusProfileFrom, directoryIssues, msiFrom } from "../lib/campus-profile.ts";
-import { studentFacultyRatioFrom } from "../lib/academics.ts";
+import { facultySalaryFrom, fullTimeFacultyShareFrom, studentFacultyRatioFrom } from "../lib/academics.ts";
+import { OM_COLUMNS, OM_LAG, OM_PIVOT, eightYearFrom, timeToDegreeCoverage } from "../lib/outcome-measures.ts";
+import { fetchPivotedTable } from "./lib/om.mts";
+import { GR_PELL_COHORT_TYPE, GR_PELL_COLUMNS, RACE_GROUPS, aidGroupGradFrom, raceGradFrom, scorecardRaceCohortField, scorecardRaceRateField } from "../lib/graduation-groups.ts";
+import { residenceFrom } from "../lib/residence.ts";
+import { addResidenceMeta, buildDetails, crossCheckDerived, detailProblems, fetchResidence, writeDetails } from "./lib/residence-sync.mts";
+import { addTransferMeta, checkTransfers, fetchTransfers } from "./lib/transfers-sync.mts";
+import { transferInFrom } from "../lib/transfers.ts";
+import { financesFrom } from "../lib/finances.ts";
 import { apCreditFrom, athleticsFrom, calendarFrom, disabilityFrom, programsFrom, servicesFrom } from "../lib/campus-services.ts";
 import { acceptanceRate, applicationFeeFrom, computePrices, factorsFrom, housingFrom, ipedsNum, parseShareBand, priceSuffix, promiseProgramFrom, raceShares, toAid, tuitionPlansFrom } from "../lib/derive.ts";
 
@@ -128,6 +136,8 @@ const FIELDS = [
   "latest.student.demographics.women",
   "latest.student.part_time_share",
   "latest.student.share_25_older",
+  // Faculty (specs/data-expansion/faculty.md): full-time share, from IPEDS HR. Don't mix with the IPEDS SAL salary.
+  "school.ft_faculty_rate",
   // Campus profile: minority-serving and single-sex flags (lib/campus-profile.ts).
   ...Object.values(MSI_FIELDS),
   `${RACE}.white`,
@@ -163,6 +173,8 @@ const FIELDS = [
   "latest.aid.median_debt.income.30001_75000",
   "latest.aid.median_debt.income.greater_than_75000",
   ...Object.values(REPAYMENT_FIELDS).map((f) => `${REPAYMENT}.${f}`),
+  // Graduation by race/ethnicity (specs/data-expansion/graduation-by-group.md): rates and cohort sizes.
+  ...RACE_GROUPS.flatMap((g) => [`latest.${scorecardRaceRateField(g)}`, `latest.${scorecardRaceCohortField(g)}`]),
 ];
 
 type ScorecardRow = Record<string, unknown>;
@@ -205,7 +217,7 @@ interface IpedsFile {
  * Download the newest available IPEDS bulk file. `names` lists candidate file
  * names newest-first; the first one NCES has published wins.
  */
-async function fetchIpeds(names: string[]): Promise<IpedsFile> {
+async function fetchIpeds(names: string[], keepRow?: (row: Record<string, string>) => boolean): Promise<IpedsFile> {
   for (const name of names) {
     let url = "";
     let res: Response | null = null;
@@ -225,7 +237,8 @@ async function fetchIpeds(names: string[]): Promise<IpedsFile> {
     // "_rv" files are NCES's revised release; prefer them when present.
     const csv = files.find((f) => /_rv\.csv$/i.test(f)) ?? files[0];
     const text = execFileSync("unzip", ["-p", zip, csv], { encoding: "latin1", maxBuffer: 512 * 1024 * 1024 });
-    const rows = new Map(parseCsv(text).map((r) => [r.UNITID, r]));
+    // Files with several rows per college (GR{Y}_PELL_SSL: one per cohort type) say which row to keep.
+    const rows = new Map(parseCsv(text).filter((r) => !keepRow || keepRow(r)).map((r) => [r.UNITID, r]));
     console.log(`  IPEDS ${name}: ${rows.size} institutions (${csv})`);
     return { name, url, rows };
   }
@@ -244,6 +257,29 @@ const HD_NAMES = [thisYear + 1, ...recentYears].map((y) => `HD${y}`);
 const IC_CHAR_NAMES = [thisYear + 1, ...recentYears].map((y) => `IC${y}`);
 // Fall enrollment part D (student-faculty ratio): EF{Y}D = fall Y, with the winter release.
 const EF_D_NAMES = recentYears.map((y) => `EF${y}D`);
+// Outcome Measures (8-year outcomes): OM{Y} follows students who entered in fall Y − 8, with the winter release.
+const OM_NAMES = recentYears.map((y) => `OM${y}`);
+
+/** The newest published OM file, one row per college (pivoted by cohort; scripts/lib/om.mts), cached like history. */
+async function fetchOutcomeMeasures(): Promise<IpedsFile> {
+  for (const name of OM_NAMES) {
+    const t = await fetchPivotedTable(name, OM_PIVOT, { cacheDir: join(ROOT, ".cache", "ipeds"), maxAgeDays: 7 });
+    if (!t) continue;
+    const missing = OM_COLUMNS.filter((c) => !t.columns.has(c));
+    if (missing.length) throw new Error(`${name} has no ${missing.join(", ")} column`);
+    console.log(`  IPEDS ${name}: ${t.rows.size} institutions (${t.csv}, pivoted by ${OM_PIVOT})`);
+    return { name, url: t.url, rows: t.rows };
+  }
+  throw new Error(`None of these IPEDS files are published yet: ${OM_NAMES.join(", ")}`);
+}
+// Graduation by Pell and loan status: GR{Y}_PELL_SSL = students who entered fall Y − 6 (GR2016 is the first).
+const GR_PELL_NAMES = recentYears.map((y) => `GR${y}_PELL_SSL`);
+/** "GR2024_PELL_SSL" → 2018, the entering class it follows. */
+const grCohortYear = (name: string) => Number(name.slice(2, 6)) - 6;
+// Faculty salary (specs/data-expansion/faculty.md): SAL{Y}_IS, all-ranks row. Fall Y, like EF.
+const SAL_NAMES = recentYears.map((y) => `SAL${y}_IS`);
+// Finance derived variables (endowment, instruction spending per student): DRVF{Y} = fiscal year Y-1–Y.
+const DRVF_NAMES = recentYears.map((y) => `DRVF${y}`);
 
 /* ------------------------------------------------------------------ */
 /* 3. Merge                                                            */
@@ -436,7 +472,12 @@ function buildMeta(
   chars: IpedsFile,
   hd: IpedsFile,
   icChar: IpedsFile,
-  efd: IpedsFile
+  efd: IpedsFile,
+  om: IpedsFile,
+  grPell: IpedsFile,
+  sal: IpedsFile,
+  drvf: IpedsFile,
+  drvfFiscalYear: number
 ): DatasetMeta {
   const scorecardCostYear = scorecardYears.cost;
   return {
@@ -490,6 +531,30 @@ function buildMeta(
         description:
           "Each college's student-to-faculty ratio: full-time-equivalent students per full-time-equivalent instructional faculty member, not counting faculty who teach only graduate or professional students.",
       },
+      "ipeds-om": {
+        label: "IPEDS Outcome Measures survey",
+        publisher: "National Center for Education Statistics (NCES)",
+        edition: `Students entering fall ${Number(om.name.slice(2)) - OM_LAG} (${om.name})`,
+        url: om.url,
+        description:
+          "What happened to every student who started at each college, 8 years later: earned a degree or certificate there, still enrolled, enrolled at another college, or no record. Covers first-time and transfer students, full-time and part-time, with Pell Grant recipients separately.",
+      },
+      "ipeds-gr": {
+        label: "IPEDS Graduation Rates survey (Pell Grant and subsidized loan recipients)",
+        publisher: "National Center for Education Statistics (NCES)",
+        edition: `Entered fall ${grCohortYear(grPell.name)} (${grPell.name})`,
+        url: grPell.url,
+        description:
+          "How many first-time, full-time students finished a degree or certificate within six years (150% of normal time), for Pell Grant recipients, students with a subsidized federal loan but no Pell Grant, and students with neither.",
+      },
+      "ipeds-sal": {
+        label: "IPEDS Salaries survey (SAL, instructional staff, all ranks)",
+        publisher: "National Center for Education Statistics (NCES)",
+        edition: `Fall ${sal.name.slice(3, 7)} (${sal.name})`,
+        url: sal.url,
+        description:
+          "Average salary of a college's full-time instructional staff (all academic ranks combined), equated to a 9-month contract so colleges with different contract lengths can be compared.",
+      },
       "ipeds-ic-char": {
         label: "IPEDS Institutional Characteristics survey (athletics, programs, services)",
         publisher: "National Center for Education Statistics (NCES)",
@@ -497,6 +562,14 @@ function buildMeta(
         url: icChar.url,
         description:
           "What each college offers: its athletic association, conference, and sports; ROTC, study abroad, and undergraduate research; AP credit; student services; the academic calendar; and the share of undergrads registered with disability services.",
+      },
+      "ipeds-f": {
+        label: "IPEDS Finance survey, derived per-student figures",
+        publisher: "National Center for Education Statistics (NCES)",
+        edition: `${academicYear(String(drvfFiscalYear))} (${drvf.name})`,
+        url: drvf.url,
+        description:
+          "Each college's endowment and spending per full-time-equivalent student, from its own finance report: endowment assets, instruction expenses, academic support, student services, and tuition's share of core revenue. Reported on one of three accounting forms by sector (public, private nonprofit, for-profit), which aren't comparable to each other.",
       },
       cds: {
         label: "Common Data Set",
@@ -514,6 +587,14 @@ function buildMeta(
       "ipeds-hd": `${hd.name.slice(2)}–${String(Number(hd.name.slice(2)) + 1).slice(2)}`,
       "ipeds-ic-char": academicYear(icChar.name.slice(2)),
       "ipeds-ef": `Fall ${efd.name.slice(2, 6)}`,
+      "ipeds-om": `Students entering fall ${Number(om.name.slice(2)) - OM_LAG}`,
+      "ipeds-gr": `Entered fall ${grCohortYear(grPell.name)}`,
+      "ipeds-sal": `Fall ${sal.name.slice(3, 7)}`,
+      // Set with its source by addResidenceMeta (scripts/lib/residence-sync.mts).
+      "ipeds-ef-c": null,
+      // Set with its source by addTransferMeta (scripts/lib/transfers-sync.mts).
+      "ipeds-ef-a": null,
+      "ipeds-f": academicYear(String(drvfFiscalYear)),
       "scorecard-enrollment": scorecardYears.enrollment,
       "scorecard-age": scorecardYears.age,
       "scorecard-cost": scorecardYears.cost,
@@ -537,6 +618,20 @@ function addServices(school: School, row: Record<string, string> | undefined) {
   };
   school.admissions.accepts_ap_credit = apCreditFrom(row);
   school.demographics.disability_services = disabilityFrom(row);
+}
+
+/** Graduation by Pell/loan status (IPEDS GR{Y}_PELL_SSL) and by race/ethnicity (Scorecard); lib/graduation-groups.ts. */
+function addGradByGroup(school: School, row: Record<string, string> | undefined, sc: ScorecardRow) {
+  if (!school.outcomes) return;
+  const aid = aidGroupGradFrom(row);
+  school.outcomes.grad_rate_pell = aid?.rates.pell ?? null;
+  school.outcomes.grad_rate_loan_no_pell = aid?.rates.loan_no_pell ?? null;
+  school.outcomes.grad_rate_no_pell_no_loan = aid?.rates.no_pell_no_loan ?? null;
+  school.outcomes.grad_rate_ftft = aid?.rates.total ?? null;
+  school.outcomes.grad_cohorts = aid?.cohorts ?? null;
+  const race = raceGradFrom((f) => numOrNull(sc[`latest.${f}`]));
+  school.outcomes.grad_rate_by_race = race?.rates ?? null;
+  school.outcomes.grad_cohorts_by_race = race?.cohorts ?? null;
 }
 
 /** Setting, Carnegie classes, designations, and coordinates (lib/campus-profile.ts). */
@@ -675,7 +770,28 @@ async function main() {
   // Student-faculty ratio (specs/data-expansion/student-faculty-ratio.md).
   const efd = await fetchIpeds(EF_D_NAMES);
   if (![...efd.rows.values()].some((r) => "STUFACR" in r)) throw new Error(`${efd.name} has no STUFACR column`);
+  // 8-year outcomes (specs/data-expansion/outcome-measures.md).
+  const om = await fetchOutcomeMeasures();
+  const omEntering = Number(om.name.slice(2)) - OM_LAG;
+  // Graduation by Pell and loan status (specs/data-expansion/graduation-by-group.md): the total cohort row only.
+  const grPell = await fetchIpeds(GR_PELL_NAMES, (r) => r.PSGRTYPE === GR_PELL_COHORT_TYPE);
+  const grMissing = GR_PELL_COLUMNS.filter((c) => ![...grPell.rows.values()].some((r) => c in r));
+  if (grMissing.length || grPell.rows.size < 1000) throw new Error(`${grPell.name}: missing ${grMissing.join(", ") || "rows"} (cohort type ${GR_PELL_COHORT_TYPE})`);
+  // Faculty salary (specs/data-expansion/faculty.md): only the all-ranks row (ARANK 7); facultySalaryFrom asserts it.
+  const sal = await fetchIpeds(SAL_NAMES, (r) => r.ARANK === "7");
+  if (![...sal.rows.values()].some((r) => "ARANK" in r && "SAEQ9AT" in r)) throw new Error(`${sal.name} has no ARANK/SAEQ9AT columns`);
+  if (sal.rows.size < 1000) throw new Error(`${sal.name}: only ${sal.rows.size} colleges with an all-ranks (ARANK 7) row`);
+  // Finances (specs/data-expansion/finances.md): DRVF{Y}, picked newest-first like the others.
+  const drvf = await fetchIpeds(DRVF_NAMES);
+  if (![...drvf.rows.values()].some((r) => "F1INSTFT" in r || "F2INSTFT" in r || "F3INSTFT" in r))
+    throw new Error(`${drvf.name} has no F1INSTFT/F2INSTFT/F3INSTFT column`);
+  // DRVF{Y} describes fiscal year (Y-1)–Y; stored by its start year, like other academic-year fields.
+  const drvfFiscalYear = Number(drvf.name.slice(4)) - 1;
   if (![...hd.rows.values()].some((r) => "LOCALE" in r && "CARNEGIEIC" in r)) throw new Error(`${hd.name} has no LOCALE/CARNEGIEIC columns`);
+  // Where first-years come from (specs/data-expansion/residence.md): the newest even-year EF{Y}C.
+  const efc = await fetchResidence(join(ROOT, ".cache", "ipeds"), thisYear);
+  // Transfers in (specs/data-expansion/transfers.md): the newest EF{Y}A, every fall.
+  const efa = await fetchTransfers(join(ROOT, ".cache", "ipeds"), thisYear);
   // Campus services (specs/data-expansion/campus-services.md): the newest IC{Y}, a year ahead of the price files.
   const icChar = await fetchIpeds(IC_CHAR_NAMES);
   if (![...icChar.rows.values()].some((r) => "ATHASSOC" in r && "CONFNO2" in r && "SLO5" in r && "CALSYS" in r))
@@ -698,7 +814,19 @@ async function main() {
     if (school) addProfile(school, hd.rows.get(school.unit_id), row);
     if (school) directoryWarnings.push(...directoryIssues(hd.rows.get(school.unit_id), school));
     if (school) addServices(school, icChar.rows.get(school.unit_id));
-    if (school) school.academics = { student_faculty_ratio: studentFacultyRatioFrom(efd.rows.get(school.unit_id)) };
+    if (school) {
+      const salary = facultySalaryFrom(sal.rows.get(school.unit_id));
+      const fullTimeShare = fullTimeFacultyShareFrom(row["school.ft_faculty_rate"]);
+      school.academics = {
+        student_faculty_ratio: studentFacultyRatioFrom(efd.rows.get(school.unit_id)),
+        faculty: salary === null && fullTimeShare === null ? null : { avg_salary_9mo: salary, full_time_share: fullTimeShare, count: null },
+      };
+    }
+    if (school?.outcomes) school.outcomes.eight_year = eightYearFrom(om.rows.get(school.unit_id), omEntering);
+    if (school) addGradByGroup(school, grPell.rows.get(school.unit_id), row);
+    if (school) school.demographics.residence = residenceFrom(efc.table.rows.get(school.unit_id), school.location.state);
+    if (school) school.demographics.transfer_in = transferInFrom(efa.table.rows.get(school.unit_id));
+    if (school) school.finances = financesFrom(drvf.rows.get(school.unit_id), drvfFiscalYear);
     if (!school) {
       stats.noSize++;
       continue;
@@ -726,7 +854,24 @@ async function main() {
     }
   }
   const scorecardYears = await detectScorecardYears(key, String(scorecard[0]?.id ?? "221999"));
-  const meta = buildMeta(adm, sfa, ic, sfaYears, scorecardYears, cost2, chars, hd, icChar, efd);
+  const meta = buildMeta(adm, sfa, ic, sfaYears, scorecardYears, cost2, chars, hd, icChar, efd, om, grPell, sal, drvf, drvfFiscalYear);
+  addResidenceMeta(meta, efc.table, efc.year);
+  addTransferMeta(meta, efa.table, efa.year);
+  // Transfers in: the level codes must still mean transfer-ins and first-time students (lib/transfers.ts).
+  const transfersChecked = await checkTransfers(efa.table, efa.year, schools.map((s) => s.unit_id), join(ROOT, ".cache", "ipeds"));
+
+  // Residence: the per-state rows must add up to NCES's own derived counts, and the detail files must check out.
+  const derived = await crossCheckDerived(schools, efc.table, efc.year, join(ROOT, ".cache", "ipeds"));
+  if (derived.differ.length > derived.checked * 0.01) throw new Error(`EF${efc.year}C differs from DRVEF${efc.year} for ${derived.differ.length} of ${derived.checked} colleges:\n  ${derived.differ.slice(0, 10).join("\n  ")}`);
+  const details = buildDetails(schools, efc.table, meta);
+  const detailIssues = detailProblems(schools, details, meta);
+  if (detailIssues.length) throw new Error(`Detail files failed their checks:\n  ${detailIssues.slice(0, 20).join("\n  ")}`);
+
+  // Time to degree (specs/data-expansion/time-to-degree.md): a few colleges' 4/6-year counts may be blank or not
+  // cumulative, but if many are, NCES changed the file and the 4/6/8 steps can't be trusted.
+  const timeToDegree = timeToDegreeCoverage(schools);
+  if (timeToDegree.missing > timeToDegree.shown * 0.01)
+    throw new Error(`${om.name}: ${timeToDegree.missing} of ${timeToDegree.shown} shown 8-year groups have no 4/6-year shares (blank or not cumulative)`);
 
   // Nothing is written unless every value's lineage checks out.
   const problems = validateLineage(schools, meta);
@@ -739,6 +884,8 @@ async function main() {
   writeFileSync(META, `${JSON.stringify(meta, null, 2)}\n`);
   // One school per line keeps diffs readable between syncs.
   writeFileSync(OUT, `[\n${schools.map((s) => JSON.stringify(s)).join(",\n")}\n]\n`);
+  writeDetails(join(ROOT, "data", "detail", "schools"), details);
+  console.log(`  residence (EF${efc.year}C): ${schools.filter((s) => s.demographics.residence).length} colleges, ${details.length} detail files; DRVEF${efc.year} agrees for ${derived.checked - derived.differ.length} of ${derived.checked}`);
 
   console.log(`\nWrote ${schools.length} schools to data/schools.json`);
   console.log(`  with acceptance rate: ${stats.withAdmissions}`);
@@ -746,9 +893,17 @@ async function main() {
   console.log(`  with net price:       ${schools.filter((s) => s.cost?.avg_net_price != null).length}`);
   console.log(`  with earnings:        ${schools.filter((s) => s.outcomes?.median_earnings_10yr != null).length}`);
   console.log(`  with grad rate:       ${schools.filter((s) => s.outcomes?.graduation_rate != null).length}`);
+  console.log(`  with 8-year outcomes: ${schools.filter((s) => s.outcomes?.eight_year?.all.award != null).length}`);
+  console.log(`  with transfer-ins:    ${schools.filter((s) => s.demographics.transfer_in != null).length} (EF${efa.year}A; level codes checked for ${transfersChecked} colleges)`);
+  console.log(`  with 4-year finish:   ${schools.filter((s) => s.outcomes?.eight_year?.all.award_4 != null).length} (${timeToDegree.missing} shown groups without 4/6-year shares)`);
+  console.log(`  with Pell grad rate:  ${schools.filter((s) => s.outcomes?.grad_rate_pell != null).length} (${grPell.name})`);
+  console.log(`  with Black grad rate: ${schools.filter((s) => s.outcomes?.grad_rate_by_race?.black != null).length}`);
   console.log(`  with aid (IPEDS SFA): ${schools.filter((s) => s.aid?.grant_pct != null).length}`);
+  console.log(`  with finances (DRVF): ${schools.filter((s) => s.finances != null).length}`);
   console.log(`  with CDS aid detail:  ${schools.filter((s) => s.aid?.cds).length}`);
   console.log(`  with avg paid (all):  ${schools.filter((s) => s.cost?.avg_paid_all != null).length}`);
+  console.log(`  with faculty salary:  ${schools.filter((s) => s.academics?.faculty?.avg_salary_9mo != null).length}`);
+  console.log(`  with full-time share: ${schools.filter((s) => s.academics?.faculty?.full_time_share != null).length}`);
   console.log(`  overrides applied:    ${stats.overridden}`);
   if (directoryWarnings.length) {
     console.warn(`  directory mismatches: ${directoryWarnings.length} (check the id still means the same college)`);

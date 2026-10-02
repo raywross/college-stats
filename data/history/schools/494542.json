@@ -21,6 +21,12 @@
     "live_on": {"start":2023,"values":[2]},
     "tuition_guarantee": {"start":2023,"values":[2]},
     "student_faculty_ratio": {"start":2023,"values":[2,2]},
+    "faculty_full_time_share": {"start":2024,"values":[0.7]},
+    "faculty_salary": {"start":2024,"values":[77379]},
+    "out_of_state_share": {"start":2024,"values":[0.4667]},
+    "transfer_in_count": {"start":2023,"values":[0,2]},
+    "transfer_in_share": {"start":2023,"values":[0,0.1176]},
+    "international_share": {"start":2024,"values":[0.3333]},
     "athletic_association": {"start":2023,"values":[3,3,3]},
     "rotc": {"start":2023,"values":[2,2,2]},
     "promise": {"start":2023,"values":[2]},
@@ -52,6 +58,15 @@
     "men_share": {"start":2023,"values":[0.7273,0.6842]},
     "part_time_share": {"start":2023,"values":[0.1091,0.1228]},
     "grad_rate": {"start":2018,"values":[0.8125]},
-    "federal_loan_rate": {"start":2022,"values":[0,0]}
+    "federal_loan_rate": {"start":2022,"values":[0,0]},
+    "grad_cohort_pell": {"start":2018,"values":[0]},
+    "grad_cohort_no_pell_no_loan": {"start":2018,"values":[16]},
+    "grad_cohort_white": {"start":2018,"values":[15]},
+    "grad_cohort_asian": {"start":2018,"values":[0]},
+    "grad_cohort_hispanic": {"start":2018,"values":[1]},
+    "grad_cohort_black": {"start":2018,"values":[0]},
+    "grad_cohort_two_or_more": {"start":2018,"values":[0]},
+    "grad_cohort_international": {"start":2018,"values":[0]},
+    "instruction_per_student": {"start":2023,"values":[30442]}
   }
 }

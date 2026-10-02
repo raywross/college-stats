@@ -21,6 +21,12 @@
     "live_on": {"start":2004,"values":[2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2]},
     "tuition_guarantee": {"start":2008,"values":[2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2]},
     "student_faculty_ratio": {"start":2009,"values":[10,11,9,5,7,7,3,4,5,4,3,2,3,4,3,4]},
+    "faculty_full_time_share": {"start":2005,"values":[0.625,0.8333,1,0.5,0.4615,0.5455,null,null,0.6875,0.8333,0.6667]},
+    "faculty_salary": {"start":2016,"values":[33978,32881,34453,34271,38335,32788,40139,36112,42454]},
+    "out_of_state_share": {"start":2004,"values":[0,null,0.1429,null,0.1667,null,0.5,null,0,null,0.4,null,0.1154,null,0.6667,null,0.25,null,0.5714,null,1]},
+    "transfer_in_count": {"start":2008,"values":[11,7,7,13,9,12,8,10,10,9,14,8,4,4,3,3,1]},
+    "transfer_in_share": {"start":2008,"values":[0.6471,0.4375,0.6364,0.325,0.36,0.7059,0.6154,0.5,0.2778,0.6923,0.8235,0.381,0.5,0.2105,0.1765,0.5,0.5]},
+    "international_share": {"start":2004,"values":[0,null,0.2857,null,0,null,0,null,0,null,0,null,0.6538,null,0,null,0.5,null,0,null,0]},
     "athletic_association": {"start":2014,"values":[3,3,3,3,3,3,3,3,3,3,3,3]},
     "rotc": {"start":2014,"values":[2,2,2,2,2,2,2,2,2,2,2,2]},
     "promise": {"start":2022,"values":[2,2]},
@@ -54,6 +60,19 @@
     "men_share": {"start":1996,"values":[0.8519,1,1,0.9231,null,0.9412,0.9091,0.9348,0.9189,0.8871,0.8333,0.8033,0.803,0.7419,0.8,0.7971,0.8182,0.7818,0.8704,0.8,0.8125,0.8806,0.931,0.8916,0.8298,0.7843,0.7925,0.7755,0.8718]},
     "part_time_share": {"start":1996,"values":[0.8519,0.75,0.9,0.7308,null,0.7059,0.6818,0.7826,0.7568,0.629,0.5303,0.6066,0.7273,0.5484,0.74,0.5797,0.5818,0.6545,0.7407,0.7385,0.8375,0.806,0.7931,0.8554,0.9362,0.9608,0.9057,0.9592,0.8974]},
     "grad_rate": {"start":1991,"values":[0.25,0.2,null,null,0.8,0.4444,1,0,0,0.6667,1,null,0.3333,0.5,0.3333,0.5,1,null,0.5,null,0.4,null,null,null,1,0]},
-    "federal_loan_rate": {"start":2008,"values":[0.013,0.0423,0.1481,0.1594,0.2,0.2545,0.2241,0.2154,0.1446,0.1343,0.0833,0.0789,0.102,0.098,0.0339,0.0385]}
+    "federal_loan_rate": {"start":2008,"values":[0.013,0.0423,0.1481,0.1594,0.2,0.2545,0.2241,0.2154,0.1446,0.1343,0.0833,0.0789,0.102,0.098,0.0339,0.0385]},
+    "om_award": {"start":2011,"values":[0.3939,0.2813,null,null,null,0.1389]},
+    "om_transfer": {"start":2011,"values":[0.0606,0.0938,null,null,null,0.0833]},
+    "om_award_4": {"start":2011,"values":[0.2424,0.125,null,null,null,0.0833]},
+    "om_award_6": {"start":2011,"values":[0.303,0.2188,null,null,null,0.1389]},
+    "grad_cohort_pell": {"start":2011,"values":[3,null,null,null,0,1]},
+    "grad_cohort_no_pell_no_loan": {"start":2011,"values":[0,null,null,null,1,0]},
+    "grad_cohort_white": {"start":2005,"values":[0,1,0,null,2,null,3,null,null,null,0,1]},
+    "grad_cohort_asian": {"start":2005,"values":[0,0,0,null,0,null,0,null,null,null,0,0]},
+    "grad_cohort_hispanic": {"start":2005,"values":[0,0,0,null,0,null,0,null,null,null,0,0]},
+    "grad_cohort_black": {"start":2005,"values":[2,0,0,null,0,null,1,null,null,null,0,0]},
+    "grad_cohort_two_or_more": {"start":2005,"values":[0,0,0,null,0,null,0,null,null,null,0,0]},
+    "grad_cohort_international": {"start":2005,"values":[1,1,1,null,0,null,0,null,null,null,1,0]},
+    "instruction_per_student": {"start":2004,"values":[4118,3015,2875,3109,2974,4501,5432,5314,5304,6075,7559,5444,4693,4909,4835,5119,6813,7232,8028,6695]}
   }
 }

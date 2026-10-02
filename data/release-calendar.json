@@ -10,14 +10,18 @@
         "Student Financial Aid 2024–25 (SFA2425)",
         "Cost 2025–26 (COST1_2025, COST2_2025)",
         "Student-to-faculty ratio, fall 2025 (EF2025D)",
-        "Graduation rates"
+        "8-year outcomes, students entering fall 2017 (OM2025)",
+        "Faculty salaries, fall 2025 (SAL2025_IS)",
+        "Finances, fiscal 2024–25 (DRVF2025)",
+        "Graduation rates",
+        "Graduation by Pell and loan status, entering class of fall 2019 (GR2025_PELL_SSL)"
       ],
-      "updates": ["ipeds-adm", "ipeds-sfa", "ipeds-ic", "ipeds-ef"],
+      "updates": ["ipeds-adm", "ipeds-sfa", "ipeds-ic", "ipeds-ef", "ipeds-om", "ipeds-gr", "ipeds-sal", "ipeds-f"],
       "expected": "2026-12",
       "status": "estimated",
-      "basis": "Last year's winter release was Dec 9, 2025",
+      "basis": "Last year's winter release was Dec 9, 2025; SAL2024_IS and DRVF2024 followed on Dec 30, 2025",
       "url": "https://nces.ed.gov/ipeds/survey-components/data-release-schedule",
-      "files": ["ADM2025", "SFA2425", "COST1_2025", "COST2_2025", "EF2025D"]
+      "files": ["ADM2025", "SFA2425", "COST1_2025", "COST2_2025", "EF2025D", "OM2025", "GR2025_PELL_SSL", "SAL2025_IS", "DRVF2025"]
     },
     {
       "id": "ipeds-2026-27-directory",
@@ -52,14 +56,27 @@
       "id": "ipeds-2025-26-spring",
       "source": "ipeds",
       "label": "IPEDS spring release (provisional)",
-      "brings": ["Fall enrollment 2025 (EF2025A)", "Finance 2024–25"],
-      "updates": [],
+      "brings": ["Fall enrollment 2025 (EF2025A): new transfer students", "Finance 2024–25"],
+      "updates": ["ipeds-ef-a"],
       "expected": "2027-01",
       "status": "estimated",
       "basis": "Last year's spring release was Jan 6, 2026",
       "url": "https://nces.ed.gov/ipeds/survey-components/data-release-schedule",
       "files": ["EF2025A"],
-      "note": "Reaches the site through the next College Scorecard update"
+      "note": "Transfer students update directly; other enrollment figures reach the site through the next College Scorecard update"
+    },
+    {
+      "id": "ipeds-2026-27-winter-residence",
+      "source": "ipeds",
+      "label": "IPEDS winter release (provisional), residence year",
+      "brings": ["Where first-years come from, fall 2026 (EF2026C)"],
+      "updates": ["ipeds-ef-c"],
+      "expected": "2027-12",
+      "status": "estimated",
+      "basis": "Colleges report residence in even-numbered falls; fall 2024's (EF2024C) came with the winter release in December 2025 (file dated Dec 30, 2025)",
+      "url": "https://nces.ed.gov/ipeds/survey-components/data-release-schedule",
+      "files": ["EF2026C"],
+      "note": "Fall 2025's residence (EF2025C, winter 2026) is optional for colleges, so the site skips it"
     },
     {
       "id": "scorecard-next",

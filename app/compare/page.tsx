@@ -15,7 +15,9 @@ import { RADAR_AXES, keyDifferences, radarProfile, similarSchools } from "@/lib/
 import { SLOT_COLORS, shortName } from "@/lib/brand";
 import { DESIGNATION_LABELS, RESEARCH_LABELS } from "@/lib/campus-profile";
 import { CALENDAR_LABELS, DIVISION_LABELS, ROTC_LABELS, divisionFilterOf } from "@/lib/campus-services";
+import { FORM_SHORT } from "@/lib/finances";
 import { compact, money, moneyCompact, num, pct, pctSmart } from "@/lib/format";
+import { gradRateCell } from "@/lib/graduation-groups";
 import type { School } from "@/lib/types";
 import { CompareHeader } from "@/components/compare/CompareHeader";
 import { CompareMetric } from "@/components/compare/CompareMetric";
@@ -132,6 +134,17 @@ const TABLE_ROWS = (
     ["Undergrads", "undergrad-enrollment", "demographics.undergrad_enrollment", (s: School) => num(s.demographics.undergrad_enrollment)],
     ["Students per faculty member", "student-faculty-ratio", "academics.student_faculty_ratio", (s: School) =>
       s.academics?.student_faculty_ratio == null ? null : `${s.academics.student_faculty_ratio} to 1`],
+    ["Full-time faculty share", "full-time-faculty", "academics.faculty.full_time_share", (s: School) =>
+      s.academics?.faculty?.full_time_share == null ? null : pct(s.academics.faculty.full_time_share)],
+    ["Average faculty salary", "nine-month-equated-salary", "academics.faculty", (s: School) =>
+      s.academics?.faculty?.avg_salary_9mo == null ? null : money(s.academics.faculty.avg_salary_9mo)],
+    // Compared only within the same accounting form; the form is shown since figures otherwise look directly comparable.
+    ["Instruction spending per student", "instruction-expenses", "finances", (s: School) =>
+      s.finances?.instruction_per_student == null ? null : `${money(s.finances.instruction_per_student)} (${FORM_SHORT[s.finances.form]})`],
+    ["Endowment per student", "endowment", "finances", (s: School) =>
+      s.finances?.endowment_per_student == null ? null : `${money(s.finances.endowment_per_student)} (${FORM_SHORT[s.finances.form]})`],
+    ["Tuition share of core revenue", "gasb-fasb", "finances", (s: School) =>
+      s.finances?.tuition_share_of_revenue == null ? null : pct(s.finances.tuition_share_of_revenue)],
     ["Beds in college housing", "housing-capacity", "campus.housing", (s: School) => {
       const h = s.campus?.housing;
       return !h ? null : !h.offered ? "No housing" : h.capacity == null ? null : num(h.capacity);
@@ -146,6 +159,11 @@ const TABLE_ROWS = (
       s.demographics.men_share == null || s.demographics.women_share == null ? null : `${pct(s.demographics.men_share)} / ${pct(s.demographics.women_share)}`],
     ["Part-time students", "part-time-student", "demographics.part_time_share", (s: School) => opt(s.demographics.part_time_share ?? null, (v) => pct(v))],
     ["Students 25 and older", "adult-students", "demographics.age_25_plus_share", (s: School) => opt(s.demographics.age_25_plus_share ?? null, (v) => pct(v))],
+    ["First-years from in state", "in-state-student", "demographics.residence", (s: School) => opt(s.demographics.residence?.in_state ?? null, (v) => pct(v))],
+    ["First-years from other states", "in-state-student", "demographics.residence", (s: School) => opt(s.demographics.residence?.out_of_state ?? null, (v) => pct(v))],
+    ["First-years from abroad", "in-state-student", "demographics.residence", (s: School) => opt(s.demographics.residence?.international ?? null, (v) => pct(v))],
+    ["New transfer students this fall", "transfer-in", "demographics.transfer_in", (s: School) => opt(s.demographics.transfer_in?.count ?? null, (v) => v.toLocaleString("en-US"))],
+    ["Transfers, share of new undergraduates", "transfer-in", "demographics.transfer_in", (s: School) => opt(s.demographics.transfer_in?.share_of_new ?? null, (v) => pct(v))],
     ["Diversity index", "diversity-index", "derived.diversity_index", (s: School) => opt(METRICS.diversity.get(s), (v) => v.toFixed(2))],
     ["Average cost, all students (est.)", "average-cost", "cost.avg_paid_all", (s: School) => opt(s.cost?.avg_paid_all ?? null, money)],
     ["Aid generosity (grants ÷ full price)", "aid-generosity", "derived.aid_generosity", (s: School) => opt(METRICS.aidGenerosity.get(s), (v) => pct(v))],
@@ -161,7 +179,28 @@ const TABLE_ROWS = (
     ["First-years paying out-of-state rates", "in-state-tuition", "cost.residency", (s: School) => (s.type === "public" ? opt(s.cost?.residency?.out_of_state ?? null, (v) => pct(v)) : null)],
     ["Median earnings (10 yrs)", "median-earnings", "outcomes.median_earnings_10yr", (s: School) => opt(s.outcomes?.median_earnings_10yr ?? null, money)],
     ["Graduation rate", "graduation-rate", "outcomes.graduation_rate", (s: School) => opt(s.outcomes?.graduation_rate ?? null, (v) => pct(v))],
+    // Graduation by group (specs/data-expansion/graduation-by-group.md): blank under 30 students, with the class size.
+    ["Graduated in 6 years, Pell Grant recipients", "pell-graduation-gap", "outcomes.grad_rate_pell", (s: School) =>
+      gradRateCell(s.outcomes?.grad_rate_pell, s.outcomes?.grad_cohorts?.pell)],
+    ["Graduated in 6 years, neither Pell nor subsidized loan", "pell-graduation-gap", "outcomes.grad_rate_no_pell_no_loan", (s: School) =>
+      gradRateCell(s.outcomes?.grad_rate_no_pell_no_loan, s.outcomes?.grad_cohorts?.no_pell_no_loan)],
+    ["Pell graduation gap", "pell-graduation-gap", "derived.pell_grad_gap", (s: School) => opt(METRICS.pellGap.get(s), METRICS.pellGap.format)],
+    ["Graduated in 6 years, White students", "graduation-rate", "outcomes.grad_rate_by_race", (s: School) =>
+      gradRateCell(s.outcomes?.grad_rate_by_race?.white, s.outcomes?.grad_cohorts_by_race?.white)],
+    ["Graduated in 6 years, Asian students", "graduation-rate", "outcomes.grad_rate_by_race", (s: School) =>
+      gradRateCell(s.outcomes?.grad_rate_by_race?.asian, s.outcomes?.grad_cohorts_by_race?.asian)],
+    ["Graduated in 6 years, Hispanic/Latino students", "graduation-rate", "outcomes.grad_rate_by_race", (s: School) =>
+      gradRateCell(s.outcomes?.grad_rate_by_race?.hispanic, s.outcomes?.grad_cohorts_by_race?.hispanic)],
+    ["Graduated in 6 years, Black students", "graduation-rate", "outcomes.grad_rate_by_race", (s: School) =>
+      gradRateCell(s.outcomes?.grad_rate_by_race?.black, s.outcomes?.grad_cohorts_by_race?.black)],
+    ["Graduated in 6 years, students of two or more races", "graduation-rate", "outcomes.grad_rate_by_race", (s: School) =>
+      gradRateCell(s.outcomes?.grad_rate_by_race?.two_or_more, s.outcomes?.grad_cohorts_by_race?.two_or_more)],
+    ["Graduated in 6 years, international students", "graduation-rate", "outcomes.grad_rate_by_race", (s: School) =>
+      gradRateCell(s.outcomes?.grad_rate_by_race?.international, s.outcomes?.grad_cohorts_by_race?.international)],
     ["Retention rate", "retention-rate", "outcomes.retention_rate", (s: School) => opt(s.outcomes?.retention_rate ?? null, (v) => pct(v))],
+    ["Credential within 4 years, all students", "time-to-degree", "outcomes.eight_year", (s: School) => opt(METRICS.completion4.get(s), (v) => pct(v))],
+    ["Credential within 8 years, all students", "outcome-measures", "outcomes.eight_year", (s: School) => opt(METRICS.completion8.get(s), (v) => pct(v))],
+    ["Enrolled at another college, 8 years on", "transfer-out", "outcomes.eight_year", (s: School) => opt(METRICS.transferOut.get(s), (v) => pct(v))],
     ["Median debt", "median-debt", "outcomes.median_debt", (s: School) => opt(s.outcomes?.median_debt ?? null, money)],
     ["Undergrads with a federal loan", "federal-loan-rate", "outcomes.federal_loan_rate", (s: School) => opt(s.outcomes?.federal_loan_rate ?? null, (v) => pct(v))],
     ["Median debt, Pell Grant recipients", "median-debt", "outcomes.median_debt_pell", (s: School) => opt(s.outcomes?.median_debt_pell ?? null, money)],
@@ -211,7 +250,7 @@ export default async function ComparePage({
   const thenAndNow: ThenAndNowMetric[] = historyFiles
     ? THEN_AND_NOW.map((m) => {
         // The diversity index comes from the race/ethnicity shares, a fall series.
-        const kind = m.key === "diversity" ? "fall" : SERIES[m.key].kind;
+        const kind = m.key === "diversity" ? "fall" : m.key === "pell_gap" ? "cohort" : SERIES[m.key].kind;
         const [from, to] = defaultWindow(historyFiles.meta, kind);
         const withData = schools.map((sc, i) => ({ sc, i, t: sc.trends?.[m.key] })).filter((x) => x.t);
         return {

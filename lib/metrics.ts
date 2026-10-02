@@ -1,10 +1,15 @@
 import type { School, SizeBucket } from "./types";
 import type { TermKey } from "./glossary";
 import { ratioLabel } from "./academics";
+import { completion4, completion8, transferOut8 } from "./outcome-measures";
+import { NATIONAL_MIN_FIRST_YEARS } from "./residence";
+import { transferShare } from "./transfers";
 import type { FieldPath } from "./fields";
 import { money, num, pct, pctSmart } from "./format";
 import { admitRatesBySex, satMedian, simpsonIndex, yieldOf } from "./derive";
 import { bedsPer100 } from "./housing";
+import { pellGap } from "./graduation-groups";
+import { endowmentOnForm, instructionOnForm } from "./finances";
 
 /* ------------------------------------------------------------------ */
 /* Derived values (null when the underlying data isn't reported)       */
@@ -148,6 +153,22 @@ export type MetricKey =
   | "menShare"
   | "partTime"
   | "studentFaculty"
+  | "completion8"
+  | "completion4"
+  | "transferOut"
+  | "pellGap"
+  | "pellGapChange"
+  | "facultyFullTime"
+  | "facultySalary"
+  | "outOfState"
+  | "transferShare"
+  | "outOfStateLarge"
+  | "financesInstruction"
+  | "instructionGasb"
+  | "instructionFasb"
+  | "instructionForprofit"
+  | "endowmentGasb"
+  | "endowmentFasb"
   | "adults"
   | "applicantsChange"
   | "sizeChange"
@@ -471,6 +492,220 @@ export const METRICS: Record<MetricKey, MetricDef> = {
     format: ratioLabel,
     more: "more students per faculty member",
     less: "fewer students per faculty member",
+  },
+  // 8-year outcomes, all entering students (specs/data-expansion/outcome-measures.md).
+  // Time to degree (specs/data-expansion/time-to-degree.md): all entering students, within 4 years.
+  completion4: {
+    key: "completion4",
+    field: "outcomes.eight_year",
+    label: "Earned a credential within 4 years (all students)",
+    short: "4-yr completion",
+    term: "time-to-degree",
+    domain: "value",
+    get: completion4,
+    format: (v) => pct(v),
+    scale: [0, 1],
+    more: "more students finishing in 4 years",
+    less: "fewer students finishing in 4 years",
+  },
+  completion8: {
+    key: "completion8",
+    field: "outcomes.eight_year",
+    label: "Earned a credential within 8 years (all students)",
+    short: "8-yr completion",
+    term: "outcome-measures",
+    domain: "value",
+    get: completion8,
+    format: (v) => pct(v),
+    scale: [0, 1],
+    more: "more students finishing",
+    less: "fewer students finishing",
+  },
+  transferOut: {
+    key: "transferOut",
+    field: "outcomes.eight_year",
+    label: "Enrolled at another college within 8 years",
+    short: "Transferred out",
+    term: "transfer-out",
+    domain: "value",
+    get: transferOut8,
+    format: (v) => pct(v),
+    scale: [0, 1],
+    more: "more students transferring out",
+    less: "fewer students transferring out",
+  },
+  // Graduation by group (specs/data-expansion/graduation-by-group.md): points, positive = Pell recipients finish less often.
+  pellGap: {
+    key: "pellGap",
+    field: "derived.pell_grad_gap",
+    label: "Pell graduation gap",
+    short: "Pell gap",
+    term: "pell-graduation-gap",
+    domain: "access",
+    get: pellGap,
+    format: (v) => (Math.round(v * 100) === 0 ? "No gap" : `${Math.round(Math.abs(v) * 100)} pts ${v > 0 ? "lower" : "higher"}`),
+    more: "a bigger gap for Pell recipients",
+    less: "a smaller gap for Pell recipients",
+  },
+  pellGapChange: {
+    key: "pellGapChange",
+    field: "trends",
+    label: "Pell graduation gap, 10-year change",
+    short: "Pell gap change",
+    term: "pell-graduation-gap",
+    domain: "access",
+    // Points over the cohort window; only with 100+ Pell recipients at both ends (lib/history.ts pellGapChange).
+    get: (s) => s.trends?.pell_gap?.change ?? null,
+    format: (v) => `${v > 0 ? "+" : v < 0 ? "−" : ""}${Math.round(Math.abs(v) * 100)} pts`,
+    more: "a widening gap",
+    less: "a narrowing gap",
+  },
+  // Faculty (specs/data-expansion/faculty.md).
+  facultyFullTime: {
+    key: "facultyFullTime",
+    field: "academics.faculty.full_time_share",
+    label: "Full-time faculty share",
+    short: "Full-time faculty",
+    term: "full-time-faculty",
+    domain: "size",
+    get: (s) => s.academics?.faculty?.full_time_share ?? null,
+    format: (v) => pct(v),
+    more: "more full-time faculty",
+    less: "less full-time faculty",
+  },
+  facultySalary: {
+    key: "facultySalary",
+    field: "academics.faculty",
+    label: "Average faculty salary",
+    short: "Faculty salary",
+    term: "nine-month-equated-salary",
+    domain: "size",
+    get: (s) => s.academics?.faculty?.avg_salary_9mo ?? null,
+    format: money,
+    more: "higher-paid faculty",
+    less: "lower-paid faculty",
+  },
+  // Where first-years come from (specs/data-expansion/residence.md): share of every first-year from other states.
+  // Transfers in (specs/data-expansion/transfers.md): share of this fall's new undergraduates who transferred in.
+  transferShare: {
+    key: "transferShare",
+    field: "demographics.transfer_in",
+    label: "Transfer students, share of new undergraduates",
+    short: "Transfer share",
+    term: "transfer-in",
+    domain: "access",
+    get: transferShare,
+    format: (v) => pct(v),
+    scale: [0, 1],
+    more: "more of the new students transferring in",
+    less: "fewer of the new students transferring in",
+  },
+  outOfState: {
+    key: "outOfState",
+    field: "demographics.residence",
+    label: "First-years from other states",
+    short: "Out of state",
+    term: "in-state-student",
+    domain: "diversity",
+    get: (s) => s.demographics.residence?.out_of_state ?? null,
+    format: (v) => pct(v),
+    scale: [0, 1],
+    more: "more first-years from other states",
+    less: "fewer first-years from other states",
+  },
+  // Only classes of 500+ first-years, for the "Draws students nationally" chip (a few students swing a small class).
+  outOfStateLarge: {
+    key: "outOfStateLarge",
+    field: "demographics.residence",
+    label: "First-years from other states (500+ first-years)",
+    short: "Out of state",
+    term: "in-state-student",
+    domain: "diversity",
+    get: (s) => {
+      const r = s.demographics.residence;
+      return r && r.first_years >= NATIONAL_MIN_FIRST_YEARS ? r.out_of_state : null;
+    },
+    format: (v) => pct(v),
+    scale: [0, 1],
+    more: "more first-years from other states",
+    less: "fewer first-years from other states",
+  },
+  // Finances (specs/data-expansion/finances.md). Instruction spending per student, global (for Explore's sort, which
+  // isn't sector-restricted) and one key per accounting form (for the profile's within-sector benchmark; a public
+  // college is never ranked against private nonprofits, and vice versa).
+  financesInstruction: {
+    key: "financesInstruction",
+    field: "finances",
+    label: "Instruction spending per student",
+    short: "Instruction spending",
+    term: "instruction-expenses",
+    domain: "value",
+    get: (s) => s.finances?.instruction_per_student ?? null,
+    format: money,
+    more: "more on instruction per student",
+    less: "less on instruction per student",
+  },
+  instructionGasb: {
+    key: "instructionGasb",
+    field: "finances",
+    label: "Instruction spending per student",
+    short: "Instruction spending",
+    term: "instruction-expenses",
+    domain: "value",
+    get: (s) => instructionOnForm(s, "gasb"),
+    format: money,
+    more: "more on instruction per student",
+    less: "less on instruction per student",
+  },
+  instructionFasb: {
+    key: "instructionFasb",
+    field: "finances",
+    label: "Instruction spending per student",
+    short: "Instruction spending",
+    term: "instruction-expenses",
+    domain: "value",
+    get: (s) => instructionOnForm(s, "fasb"),
+    format: money,
+    more: "more on instruction per student",
+    less: "less on instruction per student",
+  },
+  instructionForprofit: {
+    key: "instructionForprofit",
+    field: "finances",
+    label: "Instruction spending per student",
+    short: "Instruction spending",
+    term: "instruction-expenses",
+    domain: "value",
+    get: (s) => instructionOnForm(s, "forprofit"),
+    format: money,
+    more: "more on instruction per student",
+    less: "less on instruction per student",
+  },
+  // Endowment per student: only GASB (public) and FASB (private nonprofit) report one; never compare the two.
+  // endowmentFasb doubles as Explore's endowment sort, which defaults to private nonprofits only (specs/data-expansion/finances.md).
+  endowmentGasb: {
+    key: "endowmentGasb",
+    field: "finances",
+    label: "Endowment per student",
+    short: "Endowment/student",
+    term: "endowment",
+    domain: "value",
+    get: (s) => endowmentOnForm(s, "gasb"),
+    format: money,
+    more: "more endowment per student",
+    less: "less endowment per student",
+  },
+  endowmentFasb: {
+    key: "endowmentFasb",
+    field: "finances",
+    label: "Endowment per student",
+    short: "Endowment/student",
+    term: "endowment",
+    domain: "value",
+    get: (s) => endowmentOnForm(s, "fasb"),
+    format: money,
+    more: "more endowment per student",
+    less: "less endowment per student",
   },
   partTime: {
     key: "partTime",

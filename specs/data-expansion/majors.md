@@ -1,7 +1,7 @@
 # Majors: Degrees Awarded by Field (IPEDS Completions)
 
 > Status: **planned**. Wave 3. New file: `C{Y}_A`. Research 2026-09-28. Part of [data-expansion](README.md).
-> Pairs with [field-of-study.md](field-of-study.md). **Builds the per-college detail file** (see below).
+> Pairs with [field-of-study.md](field-of-study.md). Uses the per-college detail file, which [residence.md](residence.md) built (see below).
 
 ## Question it answers
 *What do students here actually study? Is my major big here or a niche? Which programs are growing?*
@@ -55,6 +55,15 @@ Scorecard has `academics.program_percentage.*` (share of degrees by 2-digit fiel
   - Read with `getDetail(unitId)` in `lib/data.ts`, fail-soft like `getHistory()` (log and return null).
   - `outputFileTracingIncludes` gains `./data/detail/**`; `npm run check:lineage` validates every file.
 - `SourceKey` `ipeds-c`, `VintageKey` `ipeds-c` ("2024–25 graduates").
+
+> **Detail file: built 2026-10-02 by [residence.md](residence.md#as-built)** (home states). As built: `lib/detail.ts`
+> holds the shape `{ unit_id, tables: { home_states?: { source, vintage, year, rows } } }` (no per-file `built` date,
+> so a re-sync only diffs files whose data changed), `DETAIL_TABLES` (each table → a registered field, e.g.
+> `detail.home_states`, plus a row check), `validateDetail()`, `detailMismatches()` (table vs. snapshot), and
+> `formatDetail()`. sync-data writes every file whole (scripts/lib/residence-sync.mts `writeDetails`), so majors adds
+> its table to the same build step. Supabase `school_details` is published like history (staged in batches, swapped in
+> one transaction), not inside `publish_dataset()`: majors would make one call too big. To add majors: a `majors`
+> entry in `DetailTables` and `DETAIL_TABLES`, a `detail.majors` field, and fill it in sync-data.
 
 ## Display
 - **Profile, Academics:** "Most popular majors" bar list (share of graduates), expandable to all programs; search

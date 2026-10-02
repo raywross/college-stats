@@ -9,7 +9,9 @@ import { hasTuitionGuarantee, noApplicationFee, requiresLiveOn } from "./housing
 import { FACTOR_FILTERS } from "./factors";
 import { matchesCampus } from "./campus-profile";
 import { matchesServices } from "./campus-services.ts";
-import { withinMaxRatio } from "./academics.ts";
+import { withinMaxRatio, withinMinFullTimeFaculty } from "./academics.ts";
+import { hasSmallPellGap } from "./graduation-groups.ts";
+import { drawsNationally } from "./residence.ts";
 import {
   METRICS,
   SIZE_BUCKETS,
@@ -105,6 +107,16 @@ const SORTERS: Record<SortKey, (s: School) => number | string | null> = {
   loan_rate: METRICS.loanRate.get,
   loan_rate_change: METRICS.loanRateChange.get,
   student_faculty: METRICS.studentFaculty.get,
+  completion_8yr: METRICS.completion8.get,
+  completion_4yr: METRICS.completion4.get,
+  pell_gap: METRICS.pellGap.get,
+  pell_gap_change: METRICS.pellGapChange.get,
+  full_time_faculty: METRICS.facultyFullTime.get,
+  out_of_state: METRICS.outOfState.get,
+  transfer_share: METRICS.transferShare.get,
+  // Endowment reuses the FASB-only getter: Explore's endowment sort defaults to private nonprofits (specs/data-expansion/finances.md).
+  instruction_spending: METRICS.financesInstruction.get,
+  endowment_per_student: METRICS.endowmentFasb.get,
 };
 
 function mode(values: number[]): number | null {
@@ -210,6 +222,7 @@ export function createDataset({ schools, meta, releaseCalendar }: DatasetFiles) 
     if (filters.maxEnroll !== undefined) results = results.filter((s) => s.demographics.undergrad_enrollment <= filters.maxEnroll!);
     // Unreported ratios never match (a missing value isn't a small one).
     if (filters.maxRatio !== undefined) results = results.filter((s) => withinMaxRatio(s, filters.maxRatio!));
+    if (filters.minFullTimeFaculty !== undefined) results = results.filter((s) => withinMinFullTimeFaculty(s, filters.minFullTimeFaculty!));
 
     // Trend indicators drop colleges without enough history to say.
     if (filters.trends) results = results.filter((s) => matchesIndicators(s, filters.trends!));
@@ -218,6 +231,9 @@ export function createDataset({ schools, meta, releaseCalendar }: DatasetFiles) 
     if (filters.balance?.length) results = results.filter((s) => filters.balance!.includes(genderBalanceOf(s)!));
     if (filters.fullTime) results = results.filter(isMostlyFullTime);
     if (filters.fewLoans) results = results.filter(hasFewLoans);
+    // Graduation by group: colleges without both Pell and "neither" rates are left out while set.
+    if (filters.pellGap) results = results.filter(hasSmallPellGap);
+    if (filters.national) results = results.filter(drawsNationally);
     if (filters.liveOn) results = results.filter(requiresLiveOn);
     if (filters.noFee) results = results.filter(noApplicationFee);
     if (filters.guarantee) results = results.filter(hasTuitionGuarantee);

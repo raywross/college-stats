@@ -35,6 +35,8 @@ import { Dumbbell } from "@/components/charts/Dumbbell";
 import { InfoTip } from "@/components/ui/info-tip";
 import { cn } from "@/lib/utils";
 import { historyEvents } from "@/lib/events";
+import { GRAD_RACE_SERIES } from "@/lib/history";
+import { rollingRate } from "@/lib/graduation-groups";
 
 type Range = "10" | "all";
 type Dollars = "real" | "nominal";
@@ -173,7 +175,10 @@ function ChartPanel({
   spans = [],
   extras = [],
   note,
+  cadence = 1,
 }: {
+  /** Years between reported points (residence: every other fall; TrendLine `cadence`). */
+  cadence?: number;
   title: string;
   term?: TermKey;
   specs: PanelSeries[];
@@ -338,7 +343,7 @@ function ChartPanel({
         </div>
       )}
       {table ? (
-        <HistoryTable series={series} ranges={trendRanges} extras={trendExtras} band={band} from={window[0]} to={window[1]} kind={kind} format={format} provisionalYear={provisionalYear} />
+        <HistoryTable series={series} ranges={trendRanges} extras={trendExtras} band={band} from={window[0]} to={window[1]} kind={kind} format={format} provisionalYear={provisionalYear} cadence={cadence} />
       ) : (
         <TrendLine
           series={series}
@@ -354,6 +359,7 @@ function ChartPanel({
           provisionalYear={provisionalYear}
           events={EVENTS}
           label={`${title}, ${historyYearLabel(window[0], kind)} to ${historyYearLabel(window[1], kind)}`}
+          cadence={cadence}
         />
       )}
       {note && <p className="mt-2 text-[11px] text-muted-foreground">{note}</p>}
@@ -371,6 +377,7 @@ function HistoryTable({
   kind,
   format,
   provisionalYear,
+  cadence = 1,
 }: {
   series: TrendSeries[];
   ranges?: TrendRange[];
@@ -381,8 +388,10 @@ function HistoryTable({
   kind: YearKind;
   format: FormatKind;
   provisionalYear: number | null;
+  /** Only every `cadence`-th year has data (residence): list just those. */
+  cadence?: number;
 }) {
-  const years = Array.from({ length: to - from + 1 }, (_, i) => to - i);
+  const years = Array.from({ length: to - from + 1 }, (_, i) => to - i).filter((y) => y % cadence === 0);
   const at = (start: number, arr: readonly (number | null)[], y: number) => arr[y - start] ?? null;
   return (
     <div className="max-h-72 overflow-auto rounded-xl border">
@@ -507,8 +516,34 @@ export function OverTime(props: OverTimeProps) {
   const debtWindow = windowFor("academic", ["median_debt"]);
   const spans = policySpans(history.series.test_policy);
   const hasScores = !!(history.series.sat_25 || history.series.act_25);
-  const hasStudents = !!(history.series.undergrads || history.series.race_white || history.series.men_share || history.series.part_time_share || history.series.housing_capacity);
-  const hasOutcomes = !!(history.series.grad_rate || history.series.median_debt);
+  const hasStudents = !!(history.series.undergrads || history.series.race_white || history.series.men_share || history.series.part_time_share || history.series.housing_capacity || history.series.out_of_state_share || history.series.transfer_in_share);
+  const hasOutcomes = !!(history.series.grad_rate || history.series.median_debt || history.series.om_award || history.series.grad_rate_pell || history.series.grad_rate_white);
+  // 8-year outcomes end 8 years behind the newest entering class of grad_rate: window on their own last class.
+  const omEnd = history.series.om_award ? lastYear(history.series.om_award) : null;
+  const omWindow: [number, number] | null =
+    omEnd === null ? null : ui.range === "10" ? [omEnd - 10, omEnd] : [Math.min(history.series.om_award!.start, omEnd - 10), omEnd];
+  // Graduation by group (specs/data-expansion/graduation-by-group.md): small groups swing year to year, so the charts
+  // offer a 3-class rolling average (weighted by class size) and always show class sizes in the tooltip and table.
+  const [smoothGrad, setSmoothGrad] = useState(false);
+  const gradRaceGroups = DEMOGRAPHIC_CATEGORIES.filter((c) => c.key in GRAD_RACE_SERIES).map((c) => ({ ...c, keys: GRAD_RACE_SERIES[c.key as keyof typeof GRAD_RACE_SERIES] }));
+  const gradHistory = useMemo((): SchoolHistory => {
+    if (!smoothGrad) return history;
+    const series = { ...history.series };
+    const pairs: [SeriesKey, SeriesKey | null][] = [
+      ["grad_rate", null],
+      ["grad_rate_pell", "grad_cohort_pell"],
+      ["grad_rate_no_pell_no_loan", "grad_cohort_no_pell_no_loan"],
+      ...Object.values(GRAD_RACE_SERIES).map(([r, c]) => [r, c] as [SeriesKey, SeriesKey]),
+    ];
+    for (const [rate, cohort] of pairs) {
+      const s = history.series[rate];
+      if (s) series[rate] = rollingRate(s, cohort ? history.series[cohort] : undefined);
+    }
+    return { ...history, series };
+  }, [history, smoothGrad]);
+  const pellWindow = windowFor("cohort", ["grad_rate_pell"]);
+  const latestPell = valueAt(history.series.grad_cohort_pell, latest.cohort);
+  const latestNeither = valueAt(history.series.grad_cohort_no_pell_no_loan, latest.cohort);
   const debtEnd = history.series.median_debt ? lastYear(history.series.median_debt) : null;
 
   const incomeRows = useMemo(() => {
@@ -826,25 +861,109 @@ export function OverTime(props: OverTimeProps) {
                 specs={[{ key: "part_time_share", name: "Part-time", color: colors.size, band: true }]}
               />
             )}
+            {history.series.out_of_state_share && (() => {
+              // Residence is collected every other fall (specs/data-expansion/residence.md): the chart ends at its own
+              // newest fall, which can trail the admissions fall by a year.
+              const keys: SeriesKey[] = ["out_of_state_share", "international_share"];
+              const end = Math.min(latest.fall, lastYear(history.series.out_of_state_share));
+              const resWindow: [number, number] = [ui.range === "10" ? end - 10 : Math.min(earliest(keys), end - 10), end];
+              return (
+                <ChartPanel
+                  {...common}
+                  title="Where first-years come from"
+                  term="in-state-student"
+                  kind="fall"
+                  format="pct"
+                  window={resWindow}
+                  headline="out_of_state_share"
+                  provisionalYear={null}
+                  cadence={2}
+                  specs={[
+                    { key: "out_of_state_share", name: "Other states", color: colors.size, band: true },
+                    { key: "international_share", name: "Abroad", color: CONTEXT, dashed: true },
+                  ]}
+                  note="Shares of every first-year. Colleges must report where first-years come from every other fall, so points are two years apart. Shaded: the pandemic year, when fewer students came from abroad."
+                />
+              );
+            })()}
+            {history.series.transfer_in_share && (
+              <ChartPanel
+                {...common}
+                title="New transfer students each fall"
+                term="transfer-in"
+                kind="fall"
+                format="pct"
+                window={windowFor("fall", ["transfer_in_share"])}
+                headline="transfer_in_share"
+                provisionalYear={null}
+                specs={[{ key: "transfer_in_share", name: "Share of new undergraduates", color: colors.size, band: true }]}
+                extras={[{ key: "transfer_in_count", name: "Transfer students" }]}
+                note="Transfer-ins as a share of all new undergraduates (transfer-ins plus first-time students). The count is in the tooltip and table."
+              />
+            )}
           </div>
         </Group>
       )}
 
-      {history.series.student_faculty_ratio && (
+      {(history.series.student_faculty_ratio || history.series.faculty_full_time_share || history.series.faculty_salary || history.series.instruction_per_student) && (
         <Group title="Academics" color={colors.size} open={open.academics} onToggle={toggle("academics")} footer={sources.academics}>
           <div className="grid gap-4 lg:grid-cols-2">
-            <ChartPanel
-              {...common}
-              title="Students per faculty member"
-              term="student-faculty-ratio"
-              kind="fall"
-              format="num"
-              window={windowFor("fall", ["student_faculty_ratio"])}
-              headline="student_faculty_ratio"
-              provisionalYear={null}
-              specs={[{ key: "student_faculty_ratio", name: "Students per faculty", color: colors.size, band: true }]}
-              note="Lower means fewer students for each faculty member. Colleges compute it themselves, so small moves can be a change in counting."
-            />
+            {history.series.student_faculty_ratio && (
+              <ChartPanel
+                {...common}
+                title="Students per faculty member"
+                term="student-faculty-ratio"
+                kind="fall"
+                format="num"
+                window={windowFor("fall", ["student_faculty_ratio"])}
+                headline="student_faculty_ratio"
+                provisionalYear={null}
+                specs={[{ key: "student_faculty_ratio", name: "Students per faculty", color: colors.size, band: true }]}
+                note="Lower means fewer students for each faculty member. Colleges compute it themselves, so small moves can be a change in counting."
+              />
+            )}
+            {history.series.faculty_full_time_share && (
+              <ChartPanel
+                {...common}
+                title="Full-time faculty share"
+                term="full-time-faculty"
+                kind="fall"
+                format="pct"
+                window={windowFor("fall", ["faculty_full_time_share"])}
+                headline="faculty_full_time_share"
+                provisionalYear={null}
+                specs={[{ key: "faculty_full_time_share", name: "Full-time faculty", color: colors.size, band: true }]}
+                note="Nationally the full-time share has drifted down for years as colleges rely more on part-time and adjunct instructors."
+              />
+            )}
+            {history.series.faculty_salary && (
+              <ChartPanel
+                {...common}
+                title="Average faculty salary"
+                term="nine-month-equated-salary"
+                kind="fall"
+                format="money"
+                window={windowFor("fall", ["faculty_salary"])}
+                headline="faculty_salary"
+                provisionalYear={null}
+                specs={[{ key: "faculty_salary", name: "Faculty salary", color: colors.size, band: true }]}
+                note="9-month equated, all ranks combined. Pay tracks local cost of living as much as a college's generosity, so compare with care."
+              />
+            )}
+            {history.series.instruction_per_student && (
+              <ChartPanel
+                {...common}
+                title="Instruction spending per student"
+                term="instruction-expenses"
+                kind="academic"
+                format="money"
+                window={windowFor("academic", ["instruction_per_student"])}
+                headline="instruction_per_student"
+                provisionalYear={null}
+                specs={[{ key: "instruction_per_student", name: "Instruction spending", color: colors.value }]}
+                note="No national comparison band: public and private nonprofit colleges report finances on different accounting forms that aren't comparable, so this chart shows only this college's own trend."
+              />
+            )}
           </div>
         </Group>
       )}
@@ -881,6 +1000,113 @@ export function OverTime(props: OverTimeProps) {
               }
             />
           </div>
+          {omWindow && (
+            <div className="mt-4 grid gap-4 lg:grid-cols-2">
+              <ChartPanel
+                {...common}
+                title="Earned a credential within 8 years, all students"
+                term="outcome-measures"
+                kind="cohort"
+                format="pct"
+                window={omWindow}
+                headline="om_award"
+                provisionalYear={null}
+                specs={[
+                  { key: "om_award", name: "All entering students", color: colors.value, band: true },
+                  { key: "om_award_pell", name: "Pell Grant recipients", color: colors.value, dashed: true },
+                  { key: "om_award_non_pell", name: "No Pell Grant", color: CONTEXT },
+                ]}
+                note="By the year students entered, including transfer and part-time students. Groups under 30 students are left out."
+              />
+              {history.series.om_transfer && (
+                <ChartPanel
+                  {...common}
+                  title="Enrolled at another college, 8 years on"
+                  term="transfer-out"
+                  kind="cohort"
+                  format="pct"
+                  window={omWindow}
+                  headline="om_transfer"
+                  provisionalYear={null}
+                  specs={[{ key: "om_transfer", name: "Enrolled elsewhere", color: colors.value, band: true }]}
+                  note="Students who left without a credential and enrolled at another college, by the year they entered here."
+                />
+              )}
+              {history.series.om_award_4 && (
+                <ChartPanel
+                  {...common}
+                  title="How long it takes: a credential within 4, 6, and 8 years"
+                  term="time-to-degree"
+                  kind="cohort"
+                  format="pct"
+                  window={omWindow}
+                  headline="om_award_4"
+                  provisionalYear={null}
+                  specs={[
+                    { key: "om_award_4", name: "Within 4 years", color: colors.value },
+                    { key: "om_award_6", name: "Within 6 years", color: colors.value, dashed: true },
+                    { key: "om_award", name: "Within 8 years", color: CONTEXT },
+                  ]}
+                  note="All entering students, by the year they entered. The counts are cumulative: a student who finished in 4 years is counted at 6 and 8 too."
+                />
+              )}
+            </div>
+          )}
+          {(history.series.grad_rate_pell || history.series.grad_rate_white) && (
+            <div className="mt-6">
+              <div className="mb-3 flex flex-wrap items-center gap-2">
+                <h4 className="font-display text-base font-bold">Graduation by group</h4>
+                <Segmented
+                  label="Graduation rates by group"
+                  value={smoothGrad ? "avg" : "each"}
+                  onChange={(v) => setSmoothGrad(v === "avg")}
+                  options={[{ value: "each", label: "Each class" }, { value: "avg", label: "3-class average" }]}
+                />
+              </div>
+              <div className="grid gap-4 lg:grid-cols-2">
+                {history.series.grad_rate_pell && (
+                  <ChartPanel
+                    {...common}
+                    history={gradHistory}
+                    title="Pell Grant recipients vs. everyone"
+                    term="pell-graduation-gap"
+                    kind="cohort"
+                    format="pct"
+                    window={pellWindow}
+                    headline="grad_rate_pell"
+                    provisionalYear={null}
+                    specs={[
+                      { key: "grad_rate_pell", name: "Pell recipients", color: colors.value },
+                      { key: "grad_rate_no_pell_no_loan", name: "Neither", color: CONTEXT },
+                      { key: "grad_rate", name: "All students", color: CONTEXT, dashed: true },
+                    ]}
+                    extras={[
+                      { key: "grad_cohort_pell", name: "Pell students" },
+                      { key: "grad_cohort_no_pell_no_loan", name: "Students with neither" },
+                    ]}
+                    note={`${smoothGrad ? "Each point averages that entering class and the two before it, weighted by class size. " : ""}${
+                      latestPell !== null ? `Newest class: ${latestPell.toLocaleString("en-US")} Pell recipients${latestNeither !== null ? `, ${latestNeither.toLocaleString("en-US")} with neither` : ""}. ` : ""
+                    }"Neither": no Pell Grant or subsidized loan. Groups under 30 students aren't shown. The federal Pell split starts with the class that entered fall ${history.series.grad_rate_pell.start}.`}
+                  />
+                )}
+                {history.series.grad_rate_white && (
+                  <ChartPanel
+                    {...common}
+                    history={gradHistory}
+                    title="By race and ethnicity"
+                    term="graduation-rate"
+                    kind="cohort"
+                    format="pct"
+                    window={windowFor("cohort", ["grad_rate_white"])}
+                    provisionalYear={null}
+                    specs={gradRaceGroups.map((g) => ({ key: g.keys[0], name: g.label, color: g.color }))}
+                    extras={gradRaceGroups.map((g) => ({ key: g.keys[1], name: `${g.label} students` }))}
+                    note={`${smoothGrad ? "3-class averages, weighted by class size. " : ""}Class sizes are in the tooltip and table. Groups under 30 students aren't shown.`}
+                  />
+                )}
+              </div>
+            </div>
+          )}
           <p className="mt-4 max-w-3xl text-sm text-muted-foreground">
             <b className="text-foreground">Earnings</b> aren&apos;t shown over time: the College Scorecard changed how it measures them, so earlier
             years aren&apos;t comparable with today&apos;s figure.

@@ -10,6 +10,7 @@ import type { FormatKind } from "./format";
 import type { TermKey } from "./glossary";
 import type { DatasetMeta, SchoolTrends, SourceKey } from "./types";
 import { simpsonIndex } from "./derive.ts";
+import { MAX_PLAUSIBLE_GAP } from "./graduation-groups.ts";
 
 /* ------------------------------------------------------------------ */
 /* Series                                                              */
@@ -66,14 +67,37 @@ export const HISTORY_FAMILIES = {
   characteristics: { source: "ipeds-ic", kind: "academic", files: "IC{year} (housing and application fee), then COST1_{year+1}" },
   services: { source: "ipeds-ic-char", kind: "academic", files: "IC{year} (athletics and ROTC)" },
   "ef-d": { source: "ipeds-ef", kind: "fall", files: "EF{year}D (student-to-faculty ratio)" },
+  om: { source: "ipeds-om", kind: "cohort", files: "OM{year+8} (Outcome Measures, 8 years after entry)" },
+  "gr-pell": { source: "ipeds-gr", kind: "cohort", files: "GR{year+6}_PELL_SSL (graduation by Pell Grant and subsidized loan status)" },
+  // Faculty salary (specs/data-expansion/faculty.md): SAL{year}_IS, all-ranks row (ARANK 7). Starts 2016, the first
+  // year with the equated 9-month figure (SAEQ9AT); earlier files used different, non-equated columns.
+  "ipeds-sal": { source: "ipeds-sal", kind: "fall", files: "SAL{year}_IS (instructional staff salaries, all ranks)" },
+  // Residence is required in even-numbered falls only (odd years cover about half the colleges): every other year.
+  "ef-c": { source: "ipeds-ef-c", kind: "fall", files: "EF{year}C (residence of first-time students), even-numbered falls", step: 2 },
+  "ef-a": { source: "ipeds-ef-a", kind: "fall", files: "EF{year}A (fall enrollment by level: new transfer-ins and first-time students)" },
   // College Scorecard API, year-prefixed fields (not files): years can have gaps, so they aren't checked as consecutive.
   "scorecard-enrollment": { source: "scorecard", kind: "fall", files: "API fields {year}.student.size, {year}.student.demographics.race_ethnicity.*, .men, and {year}.student.part_time_share", api: true, citeAs: "enrollment" },
   "scorecard-completion": { source: "scorecard", kind: "cohort", files: "API field {year+6}.completion.completion_rate_4yr_150nt", api: true, citeAs: "graduation by entering class" },
   "scorecard-debt": { source: "scorecard", kind: "academic", files: "API field {year}.aid.median_debt.completers.overall", api: true, citeAs: "median debt" },
   "scorecard-loans": { source: "scorecard", kind: "academic", files: "API field {year+1}.aid.federal_loan_rate", api: true, citeAs: "federal loan rate" },
-} as const satisfies Record<string, { source: SourceKey; kind: YearKind; files: string; api?: true; citeAs?: string }>;
+  "scorecard-completion-race": { source: "scorecard", kind: "cohort", files: "API fields {year+6}.completion.completion_rate_4yr_150_* and completion_cohort_4yr_150_* (by race and ethnicity)", api: true, citeAs: "graduation by race and ethnicity" },
+  // Faculty (specs/data-expansion/faculty.md): full-time share, from IPEDS HR via Scorecard.
+  "scorecard-faculty": { source: "scorecard", kind: "fall", files: "API field {year}.school.ft_faculty_rate", api: true, citeAs: "full-time faculty share" },
+  "scorecard-finances": { source: "scorecard", kind: "academic", files: "API field {year}.school.instructional_expenditure_per_fte", api: true, citeAs: "instruction spending" },
+} as const satisfies Record<string, { source: SourceKey; kind: YearKind; files: string; api?: true; citeAs?: string; step?: number }>;
 
 export type HistoryFamily = keyof typeof HISTORY_FAMILIES;
+
+/** Years between a family's files: 1, or 2 for a survey part collected every other year (residence). */
+export function familyStep(f: HistoryFamily): number {
+  const fam = HISTORY_FAMILIES[f];
+  return "step" in fam ? fam.step : 1;
+}
+
+/** Years between a series' points: its families' step (residence: every other fall). */
+export function seriesStep(k: SeriesKey): number {
+  return Math.max(...SERIES[k].families.map(familyStep));
+}
 
 const ADMISSIONS: readonly HistoryFamily[] = ["ic-admissions", "adm"];
 const ENROLLMENT: readonly HistoryFamily[] = ["scorecard-enrollment"];
@@ -85,6 +109,18 @@ const ENROLLMENT: readonly HistoryFamily[] = ["scorecard-enrollment"];
 export const SAT_BREAK: readonly SeriesBreak[] = [
   { year: 2017, label: "New SAT", reason: "The SAT was redesigned in 2016; earlier scores are on the old scale and aren't comparable." },
 ];
+
+/**
+ * Instruction spending per student (specs/data-expansion/finances.md): Vanderbilt's reported figure jumped from
+ * $80,096 (fiscal 2014–15) to $30,205 (fiscal 2015–16) and was flat on either side — NCES redefined what counts as
+ * "instruction" expense around the 2015–16 Finance survey. Fiscal years are stored at their start, so the break
+ * falls at 2015.
+ */
+export const FINANCE_BREAK: readonly SeriesBreak[] = [
+  { year: 2015, label: "Finance survey redefinition", reason: "NCES redefined what counts as an instruction expense that fiscal year; earlier years aren't comparable." },
+];
+/** Scorecard's instructional_expenditure_per_fte: year-prefixed values from key 2005 (checked 2026-10-02). */
+export const FINANCE_FROM = 2005;
 
 /** Test policy (IPEDS ADMCON7) as stored: "required" means the same in every era; the others shifted (see trends-data.md). */
 export const TEST_POLICY_CODES = { required: 1, recommended: 2, "not-considered": 3, considered: 5 } as const;
@@ -117,6 +153,15 @@ export const SERIES = {
   live_on: { label: "First-years must live on campus", short: "Live-on rule", field: "campus.housing", term: "live-on-requirement", unit: "code", kind: "academic", format: "int", families: ["characteristics"] },
   tuition_guarantee: { label: "Tuition guarantee", short: "Tuition guarantee", field: "cost.tuition_plans", term: "tuition-guarantee", unit: "code", kind: "academic", format: "int", families: ["characteristics"] },
   student_faculty_ratio: { label: "Students per faculty member", short: "Students/faculty", field: "academics.student_faculty_ratio", term: "student-faculty-ratio", unit: "count", kind: "fall", format: "int", families: ["ef-d"] },
+  // Faculty (specs/data-expansion/faculty.md).
+  faculty_full_time_share: { label: "Full-time faculty share", short: "Full-time faculty", field: "academics.faculty.full_time_share", term: "full-time-faculty", unit: "share", kind: "fall", format: "pct", families: ["scorecard-faculty"] },
+  faculty_salary: { label: "Average faculty salary (9-month equated)", short: "Faculty salary", field: "academics.faculty", term: "nine-month-equated-salary", unit: "usd", kind: "fall", format: "money", families: ["ipeds-sal"] },
+  // Where first-years come from (specs/data-expansion/residence.md): even-numbered falls only, shares of all first-years.
+  out_of_state_share: { label: "First-years from other states", short: "Other states", field: "demographics.residence", term: "in-state-student", unit: "share", kind: "fall", format: "pct", families: ["ef-c"] },
+  // Transfers in (specs/data-expansion/transfers.md): every fall from 2008.
+  transfer_in_count: { label: "New transfer-in undergraduates", short: "Transfer-ins", field: "demographics.transfer_in", term: "transfer-in", unit: "count", kind: "fall", format: "num", families: ["ef-a"] },
+  transfer_in_share: { label: "Transfer-ins, share of new undergraduates", short: "Share of new students", field: "demographics.transfer_in", term: "transfer-in", unit: "share", kind: "fall", format: "pct", families: ["ef-a"] },
+  international_share: { label: "First-years from abroad", short: "From abroad", field: "demographics.residence", term: "in-state-student", unit: "share", kind: "fall", format: "pct", families: ["ef-c"] },
   // Athletics and ROTC as codes, for events (lib/events.ts; lib/campus-services.ts reads them).
   conference: { label: "Athletic conference", short: "Conference", field: "campus.athletics", term: "athletic-conference", unit: "conference", kind: "academic", format: "int", families: ["services"] },
   football_conference: { label: "Football conference", short: "Football conference", field: "campus.athletics", term: "athletic-conference", unit: "conference", kind: "academic", format: "int", families: ["services"] },
@@ -164,6 +209,35 @@ export const SERIES = {
   grad_rate: { label: "Graduated within 6 years", short: "Graduated in 6 years", field: "outcomes.graduation_rate", term: "graduation-rate", unit: "share", kind: "cohort", format: "pct", families: ["scorecard-completion"] },
   median_debt: { label: "Median debt at graduation", short: "Median debt", field: "outcomes.median_debt", term: "median-debt", unit: "usd", kind: "academic", format: "money", families: ["scorecard-debt"] },
   federal_loan_rate: { label: "Undergraduates with a federal loan", short: "Federal loan", field: "outcomes.federal_loan_rate", term: "federal-loan-rate", unit: "share", kind: "academic", format: "pct", families: ["scorecard-loans"] },
+  // 8-year outcomes for every entering student (specs/data-expansion/outcome-measures.md), by entering class.
+  om_award: { label: "Earned a credential within 8 years, all entering students", short: "Credential in 8 years", field: "outcomes.eight_year", term: "outcome-measures", unit: "share", kind: "cohort", format: "pct", families: ["om"] },
+  om_transfer: { label: "Enrolled at another college 8 years on, all entering students", short: "Enrolled elsewhere", field: "outcomes.eight_year", term: "transfer-out", unit: "share", kind: "cohort", format: "pct", families: ["om"] },
+  om_award_pell: { label: "Earned a credential within 8 years, Pell Grant recipients", short: "Pell recipients", field: "outcomes.eight_year", term: "outcome-measures", unit: "share", kind: "cohort", format: "pct", families: ["om"] },
+  // Time to degree (specs/data-expansion/time-to-degree.md): the same entering classes, within 4 and 6 years.
+  om_award_4: { label: "Earned a credential within 4 years, all entering students", short: "Within 4 years", field: "outcomes.eight_year", term: "time-to-degree", unit: "share", kind: "cohort", format: "pct", families: ["om"] },
+  om_award_6: { label: "Earned a credential within 6 years, all entering students", short: "Within 6 years", field: "outcomes.eight_year", term: "time-to-degree", unit: "share", kind: "cohort", format: "pct", families: ["om"] },
+  om_award_non_pell: { label: "Earned a credential within 8 years, students without a Pell Grant", short: "No Pell Grant", field: "outcomes.eight_year", term: "outcome-measures", unit: "share", kind: "cohort", format: "pct", families: ["om"] },
+  // Graduation by group (specs/data-expansion/graduation-by-group.md): rates null under 30 students; cohorts always kept.
+  grad_rate_pell: { label: "Graduated within 6 years, Pell Grant recipients", short: "Pell recipients", field: "outcomes.grad_rate_pell", term: "pell-graduation-gap", unit: "share", kind: "cohort", format: "pct", families: ["gr-pell"] },
+  grad_rate_no_pell_no_loan: { label: "Graduated within 6 years, neither Pell nor subsidized loan", short: "No Pell or subsidized loan", field: "outcomes.grad_rate_no_pell_no_loan", term: "pell-graduation-gap", unit: "share", kind: "cohort", format: "pct", families: ["gr-pell"] },
+  grad_cohort_pell: { label: "Pell Grant recipients in the entering class", short: "Pell students", field: "outcomes.grad_cohorts", term: "adjusted-cohort", unit: "count", kind: "cohort", format: "num", families: ["gr-pell"] },
+  grad_cohort_no_pell_no_loan: { label: "Students with neither in the entering class", short: "Students with neither", field: "outcomes.grad_cohorts", term: "adjusted-cohort", unit: "count", kind: "cohort", format: "num", families: ["gr-pell"] },
+  grad_rate_white: { label: "Graduated within 6 years, White students", short: "White", field: "outcomes.grad_rate_by_race", term: "graduation-rate", unit: "share", kind: "cohort", format: "pct", families: ["scorecard-completion-race"] },
+  grad_rate_asian: { label: "Graduated within 6 years, Asian students", short: "Asian", field: "outcomes.grad_rate_by_race", term: "graduation-rate", unit: "share", kind: "cohort", format: "pct", families: ["scorecard-completion-race"] },
+  grad_rate_hispanic: { label: "Graduated within 6 years, Hispanic/Latino students", short: "Hispanic/Latino", field: "outcomes.grad_rate_by_race", term: "graduation-rate", unit: "share", kind: "cohort", format: "pct", families: ["scorecard-completion-race"] },
+  grad_rate_black: { label: "Graduated within 6 years, Black students", short: "Black", field: "outcomes.grad_rate_by_race", term: "graduation-rate", unit: "share", kind: "cohort", format: "pct", families: ["scorecard-completion-race"] },
+  grad_rate_two_or_more: { label: "Graduated within 6 years, students of two or more races", short: "Two or more", field: "outcomes.grad_rate_by_race", term: "graduation-rate", unit: "share", kind: "cohort", format: "pct", families: ["scorecard-completion-race"] },
+  grad_rate_international: { label: "Graduated within 6 years, international students", short: "International", field: "outcomes.grad_rate_by_race", term: "graduation-rate", unit: "share", kind: "cohort", format: "pct", families: ["scorecard-completion-race"] },
+  grad_cohort_white: { label: "White students in the entering class", short: "White students", field: "outcomes.grad_cohorts_by_race", term: "adjusted-cohort", unit: "count", kind: "cohort", format: "num", families: ["scorecard-completion-race"] },
+  grad_cohort_asian: { label: "Asian students in the entering class", short: "Asian students", field: "outcomes.grad_cohorts_by_race", term: "adjusted-cohort", unit: "count", kind: "cohort", format: "num", families: ["scorecard-completion-race"] },
+  grad_cohort_hispanic: { label: "Hispanic/Latino students in the entering class", short: "Hispanic/Latino students", field: "outcomes.grad_cohorts_by_race", term: "adjusted-cohort", unit: "count", kind: "cohort", format: "num", families: ["scorecard-completion-race"] },
+  grad_cohort_black: { label: "Black students in the entering class", short: "Black students", field: "outcomes.grad_cohorts_by_race", term: "adjusted-cohort", unit: "count", kind: "cohort", format: "num", families: ["scorecard-completion-race"] },
+  grad_cohort_two_or_more: { label: "Students of two or more races in the entering class", short: "Two-or-more students", field: "outcomes.grad_cohorts_by_race", term: "adjusted-cohort", unit: "count", kind: "cohort", format: "num", families: ["scorecard-completion-race"] },
+  grad_cohort_international: { label: "International students in the entering class", short: "International students", field: "outcomes.grad_cohorts_by_race", term: "adjusted-cohort", unit: "count", kind: "cohort", format: "num", families: ["scorecard-completion-race"] },
+  // Instruction spending per student (specs/data-expansion/finances.md). Endowment per student has no history: Scorecard's
+  // endowment total has no FTE-consistent historical denominator (dividing by undergrad headcount alone would overstate
+  // it at research universities with large graduate populations), so it's a snapshot-only fact.
+  instruction_per_student: { label: "Instruction spending per student", short: "Instruction spending", field: "finances", term: "instruction-expenses", unit: "usd", kind: "academic", format: "money", families: ["scorecard-finances"], breaks: FINANCE_BREAK },
 } as const satisfies Record<string, SeriesDef>;
 
 export type SeriesKey = keyof typeof SERIES;
@@ -179,10 +253,29 @@ export const RACE_SERIES = {
   international: "race_international",
   other: "race_other",
 } as const satisfies Record<string, SeriesKey>;
+/**
+ * Graduation by race/ethnicity series (rate, cohort) per group, in the site's category order. American Indian/Alaska
+ * Native and Pacific Islander groups are in the snapshot only: they rarely reach 30 students in an entering class.
+ */
+export const GRAD_RACE_SERIES = {
+  white: ["grad_rate_white", "grad_cohort_white"],
+  asian: ["grad_rate_asian", "grad_cohort_asian"],
+  hispanic: ["grad_rate_hispanic", "grad_cohort_hispanic"],
+  black: ["grad_rate_black", "grad_cohort_black"],
+  two_or_more: ["grad_rate_two_or_more", "grad_cohort_two_or_more"],
+  international: ["grad_rate_international", "grad_cohort_international"],
+} as const satisfies Record<string, readonly [SeriesKey, SeriesKey]>;
 /** Race/ethnicity history starts with fall 2010, when the new federal categories became required. */
 export const RACE_FROM = 2010;
 /** Federal loan rate: Scorecard year-prefixed values from key 2009 (the 2008–09 school year; checked 2026-09-29). */
 export const LOAN_RATE_FROM = 2009;
+/** Full-time faculty share: Scorecard year-prefixed `ft_faculty_rate` verified back to key 2005 (2026-10-02). */
+export const FULL_TIME_FACULTY_FROM = 2005;
+/**
+ * Faculty salary: SAL{year}_IS from 2016, the first year with the equated 9-month column (`SAEQ9AT`); 2012–2015
+ * files exist but use different, non-equated columns (checked 2026-10-02), so they're left out rather than mixed in.
+ */
+export const SALARY_FROM = 2016;
 export function isSeriesKey(k: string): k is SeriesKey {
   return Object.prototype.hasOwnProperty.call(SERIES, k);
 }
@@ -520,6 +613,39 @@ export function diversityChange(h: SchoolHistory, meta: Pick<HistoryMeta, "lates
   return null;
 }
 
+/**
+ * Pell graduation gap (neither minus Pell, points) for an entering class; null unless both rates are reported (each
+ * already needs 30+ students).
+ */
+export function pellGapAt(h: SchoolHistory, year: number): number | null {
+  const pell = valueAt(h.series.grad_rate_pell, year);
+  const neither = valueAt(h.series.grad_rate_no_pell_no_loan, year);
+  if (pell === null || neither === null) return null;
+  // Implausibly far apart: groups sorted inconsistently (lib/graduation-groups.ts MAX_PLAUSIBLE_GAP).
+  return Math.abs(neither - pell) > MAX_PLAUSIBLE_GAP ? null : neither - pell;
+}
+
+/** Below this many Pell recipients in either entering class, the gap swings too much to compare over time. */
+export const PELL_GAP_MIN_COHORT = 100;
+
+/**
+ * Change in the Pell graduation gap over the default cohort window, in points (specs/data-expansion/graduation-by-group.md).
+ * Same endpoint rule as changeOver: the window's last entering class, and its first or up to 2 classes later (GR2016,
+ * the first file, follows the class of 2010). Null when either class had under PELL_GAP_MIN_COHORT Pell recipients.
+ */
+export function pellGapChange(h: SchoolHistory, meta: Pick<HistoryMeta, "latest">): { since: number; from: number; to: number; change: number } | null {
+  const [start, end] = defaultWindow(meta, "cohort");
+  const big = (y: number) => (valueAt(h.series.grad_cohort_pell, y) ?? 0) >= PELL_GAP_MIN_COHORT;
+  const to = pellGapAt(h, end);
+  if (to === null || !big(end)) return null;
+  for (let y = start; y <= start + 2; y++) {
+    const from = pellGapAt(h, y);
+    if (from === null) continue;
+    return big(y) ? { since: y, from, to, change: to - from } : null;
+  }
+  return null;
+}
+
 /** A college's 10-year changes for school.trends; empty when none can be measured. */
 export function trendSummary(h: SchoolHistory, cpi: CpiTable, meta: Pick<HistoryMeta, "latest">): SchoolTrends {
   const out: SchoolTrends = {};
@@ -533,6 +659,8 @@ export function trendSummary(h: SchoolHistory, cpi: CpiTable, meta: Pick<History
   }
   const d = diversityChange(h, meta);
   if (d) out.diversity = { since: d.since, from: r4(d.from), to: r4(d.to), change: r4(d.to - d.from) };
+  const g = pellGapChange(h, meta);
+  if (g) out.pell_gap = { since: g.since, from: r4(g.from), to: r4(g.to), change: r4(g.to - g.from) };
   return out;
 }
 
@@ -645,7 +773,7 @@ export function validateHistoryMeta(hmeta: HistoryMeta, meta: DatasetMeta): stri
     const files = hmeta.files[f];
     const api = "api" in HISTORY_FAMILIES[f];
     if (!files?.length) errors.push(`history meta: no files recorded for ${f}`);
-    else if (!api && files.some((x, i) => i > 0 && x.year !== files[i - 1].year + 1)) errors.push(`history meta: ${f} years aren't consecutive`);
+    else if (!api && files.some((x, i) => i > 0 && x.year !== files[i - 1].year + familyStep(f))) errors.push(`history meta: ${f} years aren't consecutive`);
   }
   return errors;
 }

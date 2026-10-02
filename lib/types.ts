@@ -65,6 +65,23 @@ export interface School {
     part_time_share?: number | null;
     /** Share of undergraduates aged 25 or older (IPEDS collects age every other fall, so it's a year older). */
     age_25_plus_share?: number | null;
+    /**
+     * Where first-time undergraduates come from (IPEDS Fall Enrollment part C, even-year falls; lib/residence.ts):
+     * shares of every first-year, so with residence unknown they add up to less than 1. The full home-state table is in
+     * the per-college detail file (lib/detail.ts).
+     */
+    residence?: {
+      in_state: number;
+      /** Other states, DC, and U.S. territories. */
+      out_of_state: number;
+      international: number;
+      /** First-time undergraduates counted (the shares' denominator). */
+      first_years: number;
+      /** The state or territory sending the most first-years (USPS code) and its share. */
+      top_state: { state: string; share: number } | null;
+    } | null;
+    /** New transfer-in undergraduates this fall (specs/data-expansion/transfers.md; lib/transfers.ts), IPEDS EF{Y}A. */
+    transfer_in?: TransferIn | null;
     racial_diversity: {
       asian: number;
       black: number;
@@ -145,6 +162,22 @@ export interface School {
     median_debt_by_income?: { low: number | null; mid: number | null; high: number | null } | null;
     /** Where undergraduate borrowers stand 3 years into repayment, as ranges (Scorecard publishes some as bands). */
     repayment_3yr?: Partial<Record<RepaymentStatus, ShareRange>> | null;
+    /** 8-year outcomes for every entering student (IPEDS Outcome Measures; lib/outcome-measures.ts). */
+    eight_year?: EightYearOutcomes | null;
+    /**
+     * Graduation by group (specs/data-expansion/graduation-by-group.md; lib/graduation-groups.ts): first-time
+     * full-time students finishing within 6 years (150% of normal time), IPEDS GR{Y}_PELL_SSL. Null under 30 students.
+     */
+    grad_rate_pell?: number | null;
+    grad_rate_loan_no_pell?: number | null;
+    grad_rate_no_pell_no_loan?: number | null;
+    /** All students in the same file (equals Scorecard's 4-year 150% rate, not the headline consumer rate). */
+    grad_rate_ftft?: number | null;
+    /** Adjusted cohort sizes behind those rates. */
+    grad_cohorts?: Record<"pell" | "loan_no_pell" | "no_pell_no_loan" | "total", number | null> | null;
+    /** By race/ethnicity (College Scorecard `completion_rate_4yr_150_*`), null under 30 students; and the cohorts. */
+    grad_rate_by_race?: Record<GradRaceGroup, number | null> | null;
+    grad_cohorts_by_race?: Record<GradRaceGroup, number | null> | null;
   };
   /** Financial aid for full-time first-time undergrads (IPEDS Student Financial Aid survey). */
   aid?: {
@@ -180,7 +213,22 @@ export interface School {
   academics?: {
     /** Students per instructional faculty member, "N to 1" (IPEDS EF part D `STUFACR`, fall). */
     student_faculty_ratio: number | null;
+    /** Faculty (specs/data-expansion/faculty.md): salary (IPEDS SAL, all ranks) and full-time share (Scorecard). */
+    faculty?: {
+      /** All-ranks average salary equated to a 9-month contract, nominal dollars (IPEDS SAL{Y}_IS, ARANK 7, `SAEQ9AT`). */
+      avg_salary_9mo: number | null;
+      /** Share of faculty who are full-time (College Scorecard `school.ft_faculty_rate`, from IPEDS HR). */
+      full_time_share: number | null;
+      /** Instructional staff counted in the salary figure, when available; not published in SAL_IS itself today. */
+      count: number | null;
+    } | null;
   };
+  /**
+   * College finances (specs/data-expansion/finances.md): IPEDS Finance survey, derived per-student figures
+   * (`DRVF{Y}`). Reported on three different accounting forms by sector, never comparable across forms: GASB
+   * (public), FASB (private nonprofit), or for-profit. Null when the college's finance survey isn't in the file yet.
+   */
+  finances?: SchoolFinances | null;
   campus?: {
     /** Athletics (IPEDS IC; lib/campus-services.ts). Null when the college didn't answer. */
     athletics?: Athletics | null;
@@ -248,7 +296,9 @@ export interface TrendSummary {
 }
 
 /** History series summaries, plus `diversity`: the diversity index computed from the race/ethnicity shares. */
-export type TrendKey = "avg_paid_all" | "full_price" | "acceptance_rate" | "applicants" | "undergrads" | "grant_pct" | "men_share" | "federal_loan_rate" | "diversity";
+export type TrendKey = "avg_paid_all" | "full_price" | "acceptance_rate" | "applicants" | "undergrads" | "grant_pct" | "men_share" | "federal_loan_rate" | "diversity"
+  /** Pell graduation gap (neither minus Pell, points) by entering class (lib/history.ts pellGapChange). */
+  | "pell_gap";
 export type SchoolTrends = Partial<Record<TrendKey, TrendSummary>>;
 
 /**
@@ -336,6 +386,53 @@ export interface ResidencyPrices {
   out_of_state: number | null;
 }
 
+/**
+ * One entering group's status 8 years after starting (IPEDS Outcome Measures): shares of its adjusted cohort, summing to
+ * 1. Rates are null when the cohort is under 30 students (lib/outcome-measures.ts MIN_COHORT).
+ */
+/** New transfer-in undergraduates in one fall (IPEDS EF{Y}A levels 19, 39, 59; lib/transfers.ts). */
+export interface TransferIn {
+  count: number;
+  full_time: number;
+  part_time: number;
+  /** Transfer-ins ÷ (transfer-ins + first-time degree-seeking undergraduates); null when both are 0. */
+  share_of_new: number | null;
+}
+
+export interface EightYearGroup {
+  /** Adjusted cohort: entering students, less those who died, joined the military, a church mission, or foreign aid service. */
+  cohort: number;
+  /** Earned a certificate or degree at this college within 8 years. */
+  award: number | null;
+  /**
+   * Within 4 and 6 years (specs/data-expansion/time-to-degree.md): cumulative, so award_4 ≤ award_6 ≤ award. Null with
+   * the rest under 30 students, and on their own when NCES's counts aren't cumulative or are blank.
+   */
+  award_4?: number | null;
+  award_6?: number | null;
+  /** No award, still enrolled at this college. */
+  still_enrolled: number | null;
+  /** No award here, enrolled at another college (transferred out). */
+  transferred: number | null;
+  /** No award, and no record of enrolling anywhere. */
+  unknown: number | null;
+}
+
+/** 8-year outcomes by entering group (specs/data-expansion/outcome-measures.md). Groups are null when no one is in them. */
+export interface EightYearOutcomes {
+  /** The fall these students entered (OM{Y} follows fall Y − 8). */
+  entering_year: number;
+  /** Everyone who entered: first-time and transfer-in, full-time and part-time. */
+  all: EightYearGroup;
+  /** First-time students (full-time and part-time). */
+  first_time: EightYearGroup | null;
+  /** Students who transferred in (full-time and part-time). */
+  transfer_in: EightYearGroup | null;
+  /** Pell Grant recipients and everyone else, all entering students. */
+  pell: Pick<EightYearGroup, "cohort" | "award" | "award_4" | "award_6"> | null;
+  non_pell: Pick<EightYearGroup, "cohort" | "award" | "award_4" | "award_6"> | null;
+}
+
 export interface CdsAid {
   /** Full-time degree-seeking undergrads (H2 line A). */
   undergrads: number | null;
@@ -382,7 +479,32 @@ export interface CampusPrograms {
   intellectual_disability_program: boolean;
 }
 
-export type SourceKey = "scorecard" | "ipeds-adm" | "ipeds-sfa" | "ipeds-ic" | "ipeds-ic-char" | "ipeds-hd" | "ipeds-ef" | "cds";
+export type SourceKey = "scorecard" | "ipeds-adm" | "ipeds-sfa" | "ipeds-ic" | "ipeds-ic-char" | "ipeds-hd" | "ipeds-ef" | "ipeds-ef-c" | "ipeds-ef-a" | "ipeds-om" | "ipeds-sal" | "ipeds-f" | "cds"
+  /** IPEDS Graduation Rates, Pell and subsidized-loan file (GR{Y}_PELL_SSL; specs/data-expansion/graduation-by-group.md). */
+  | "ipeds-gr";
+/** Race/ethnicity groups for graduation rates (lib/graduation-groups.ts RACE_GROUPS). */
+export type GradRaceGroup = "white" | "asian" | "hispanic" | "black" | "two_or_more" | "international" | "aian" | "nhpi";
+
+/**
+ * College finances (specs/data-expansion/finances.md): which IPEDS Finance accounting form a college reports under,
+ * by sector. Never compare values across forms.
+ */
+export type FinanceForm = "gasb" | "fasb" | "forprofit";
+
+/** IPEDS Finance survey, derived per-student figures (`DRVF{Y}`), fiscal year stored as its start year. */
+export interface SchoolFinances {
+  /** Start year of the fiscal year the figures describe (e.g. 2023 for fiscal 2023–24). */
+  fiscal_year: number | null;
+  /** Which accounting form reported values: GASB (public), FASB (private nonprofit), or for-profit. */
+  form: FinanceForm;
+  /** Endowment assets at year end per FTE student; null for for-profits (no endowment column). */
+  endowment_per_student: number | null;
+  instruction_per_student: number | null;
+  student_services_per_student: number | null;
+  academic_support_per_student: number | null;
+  /** Tuition & fee revenue as a share of core revenue, 0–1. */
+  tuition_share_of_revenue: number | null;
+}
 
 export interface SourceInfo {
   /** Full citation name, e.g. "College Scorecard". */
@@ -407,7 +529,11 @@ export type SizeBucket = "small" | "medium" | "large" | "xl";
 
 export type SortKey =
   | "applicants"
+  | "completion_8yr"
+  | "completion_4yr"
   | "student_faculty"
+  | "instruction_spending"
+  | "endowment_per_student"
   | "name"
   | "acceptance_rate"
   | "enrollment"
@@ -430,7 +556,13 @@ export type SortKey =
   | "men_share_change"
   | "admit_gap"
   | "loan_rate"
-  | "loan_rate_change";
+  | "loan_rate_change"
+  /** Graduation by group: the Pell graduation gap, and its 10-year change. */
+  | "pell_gap"
+  | "pell_gap_change"
+  | "full_time_faculty"
+  | "out_of_state"
+  | "transfer_share";
 
 export type ExploreView = "grid" | "table" | "chart" | "map";
 
@@ -450,6 +582,8 @@ export interface SearchFilters {
   maxEnroll?: number;
   /** At most this many students per faculty member. */
   maxRatio?: number;
+  /** At least this share of faculty are full-time (0–1; specs/data-expansion/faculty.md). */
+  minFullTimeFaculty?: number;
   minCost?: number;
   maxCost?: number;
   /** Trend indicator directions to keep (lib/indicators.ts), e.g. { cost: ["down", "steady"] }. */
@@ -479,8 +613,12 @@ export interface SearchFilters {
   guarantee?: boolean;
   /** Only colleges where at most 20% of undergraduates have a federal loan (lib/repayment.ts). */
   fewLoans?: boolean;
+  /** Only colleges whose Pell graduation gap is under 5 points (lib/graduation-groups.ts). */
+  pellGap?: boolean;
   /** Only colleges where at most 10% of undergraduates study part-time. */
   fullTime?: boolean;
+  /** Only colleges where at least half of first-years come from other states (lib/residence.ts). */
+  national?: boolean;
   sortBy?: SortKey;
   sortDir?: "asc" | "desc";
 }

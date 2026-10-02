@@ -21,6 +21,12 @@
     "live_on": {"start":2009,"values":[1,1,2,2,2,2,2,2,null,2]},
     "tuition_guarantee": {"start":2008,"values":[2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2]},
     "student_faculty_ratio": {"start":2009,"values":[9,4,6,7,7,5,7,6,6,6,5,4,4,6,6,4]},
+    "faculty_full_time_share": {"start":2005,"values":[0.6316,0.5263,0.4211,0.3448,0.4074,0.4545,0.5,0.8571,0.4255,0.4419,0.3902,0.4722,0.3947,0.8824,1,1,1,1,1,0.6875]},
+    "faculty_salary": {"start":2016,"values":[37493,36496,33886,32927,27494,36309,37132,46666,56521]},
+    "out_of_state_share": {"start":2010,"values":[0]},
+    "transfer_in_count": {"start":2008,"values":[13,13,0,18,23,17,14,16,13,11,12,10,6,6,11,0,5]},
+    "transfer_in_share": {"start":2008,"values":[1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,null,1]},
+    "international_share": {"start":2010,"values":[0.25]},
     "athletic_association": {"start":2014,"values":[3,3,3,3,3,3,3,3,3,3,3,3]},
     "rotc": {"start":2014,"values":[2,2,2,2,2,2,2,2,2,2,2,2]},
     "promise": {"start":2022,"values":[2,2]},
@@ -45,7 +51,8 @@
     "men_share": {"start":1996,"values":[1,1,0.4286,1,null,1,1,0,null,null,null,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]},
     "part_time_share": {"start":1997,"values":[0,0.0476,0,null,0.2,0.1154,null,null,null,null,0.25,0,0.1034,0.1852,0,0,0,0.0357,0,0,0,0,0,0,0,0.1176,0,0]},
     "grad_rate": {"start":1992,"values":[0.75,0,null,0.5,0.7619,0,null,0,0,0.3636,0]},
-    "federal_loan_rate": {"start":2008,"values":[0,0.0278,0,0,0,0,0,0,0,0,0,0,0,0,0,0]}
+    "federal_loan_rate": {"start":2008,"values":[0,0.0278,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},
+    "instruction_per_student": {"start":2004,"values":[34176,19648,21594,17961,37929,31049,52117,25068,28432,25201,25583,24344,28735,31363,30347,30184,28817,30751,29450,32269]}
   },
   "repeated": [2013]
 }

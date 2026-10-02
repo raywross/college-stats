@@ -14,6 +14,10 @@
     "application_fee": {"start":2015,"values":[50,50,50,50,50,50,60,60,75]},
     "tuition_guarantee": {"start":2015,"values":[2,2,2,2,2,2,2,2,2]},
     "student_faculty_ratio": {"start":2015,"values":[2,2,2,5,3,3,4,4,4,3]},
+    "out_of_state_share": {"start":2016,"values":[0,null,0,null,0,null,0.1111,null,0]},
+    "transfer_in_count": {"start":2015,"values":[0,1,0,1,5,0,2,6,10,1]},
+    "transfer_in_share": {"start":2015,"values":[0,0.25,0,0.0833,0.3846,0,0.2857,0.4,0.7692,0.3333]},
+    "international_share": {"start":2016,"values":[0,null,0,null,0,null,0,null,0]},
     "athletic_association": {"start":2015,"values":[3,3,3,3,3,3,3,3,3,3,3]},
     "rotc": {"start":2015,"values":[2,2,2,2,2,2,2,2,2,2,2]},
     "promise": {"start":2022,"values":[2,2]},
@@ -41,6 +45,20 @@
     "men_share": {"start":2017,"values":[0.6176,0.5,0.4737,0.5319,0.4524,0.7333,0.5455,0.5455]},
     "part_time_share": {"start":2017,"values":[0.7059,0.75,0.7368,0.8723,0.8333,0.9556,0.8636,0.8182]},
     "grad_rate": {"start":2015,"values":[1,0,0.4,0]},
-    "federal_loan_rate": {"start":2016,"values":[0,0,0,0,0,0,0,0]}
+    "federal_loan_rate": {"start":2016,"values":[0,0,0,0,0,0,0,0]},
+    "om_award": {"start":2011,"values":[0.1143,0.3333]},
+    "om_transfer": {"start":2011,"values":[0.0571,0.0769]},
+    "om_award_4": {"start":2011,"values":[0.1143,0.2821]},
+    "om_award_6": {"start":2011,"values":[0.1143,0.2821]},
+    "om_award_non_pell": {"start":2011,"values":[0.1143,0.3333]},
+    "grad_cohort_pell": {"start":2015,"values":[0,0,2,0]},
+    "grad_cohort_no_pell_no_loan": {"start":2015,"values":[1,1,3,1]},
+    "grad_cohort_white": {"start":2015,"values":[1,1,4,1]},
+    "grad_cohort_asian": {"start":2015,"values":[0,0,0,0]},
+    "grad_cohort_hispanic": {"start":2015,"values":[0,0,1,0]},
+    "grad_cohort_black": {"start":2015,"values":[0,0,0,0]},
+    "grad_cohort_two_or_more": {"start":2015,"values":[0,0,0,0]},
+    "grad_cohort_international": {"start":2015,"values":[0,0,0,0]},
+    "instruction_per_student": {"start":2016,"values":[2352,2177,2249,3016,9631,10178,15522,12827]}
   }
 }

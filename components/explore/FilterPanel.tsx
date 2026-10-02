@@ -14,7 +14,9 @@ import { HOUSING_FILTERS, type HousingFilterParam } from "@/lib/housing";
 import { FACTOR_FILTERS, type FactorFilterParam } from "@/lib/factors";
 import { DESIGNATION_KEYS, DESIGNATION_LABELS, RESEARCH_TIERS, SETTING_GROUPS } from "@/lib/campus-profile";
 import { DIVISION_FILTERS, DIVISION_SHORT, ROTC_BRANCHES, ROTC_LABELS } from "@/lib/campus-services";
-import { MAX_RATIO_OPTIONS } from "@/lib/academics";
+import { MAX_RATIO_OPTIONS, MIN_FULL_TIME_FACULTY_OPTIONS } from "@/lib/academics";
+import { SMALL_PELL_GAP } from "@/lib/graduation-groups";
+import { DRAWS_NATIONALLY } from "@/lib/residence";
 import type { Designation, DivisionFilter, ResearchTier, RotcBranch, SettingGroup } from "@/lib/types";
 import { useExploreParams } from "./useExploreParams";
 import { cn } from "@/lib/utils";
@@ -44,8 +46,15 @@ export interface FilterFacets {
   /** Colleges with at most N students per faculty member, for each option (lib/academics.ts MAX_RATIO_OPTIONS). */
   maxRatio: Record<number, number>;
   medianRatio: number | null;
+  /** Colleges with at least this share of full-time faculty, for each option (lib/academics.ts MIN_FULL_TIME_FACULTY_OPTIONS). */
+  minFullTimeFaculty: Record<number, number>;
+  medianFullTimeFaculty: number | null;
   /** Colleges where few undergrads take federal loans (lib/repayment.ts). */
   fewLoans: number;
+  /** Colleges whose Pell graduation gap is under 5 points (lib/graduation-groups.ts). */
+  pellGap: number;
+  /** Colleges where at least half of first-years come from other states (lib/residence.ts). */
+  national: number;
 }
 
 function Section({ title, term, children }: { title: string; term?: TermKey; children: ReactNode }) {
@@ -112,9 +121,11 @@ export function FilterPanel({ facets, onDone }: { facets: FilterFacets; onDone?:
   const activeBalance = getList("balance");
   const fullTime = searchParams.get("fullTime") === "1";
   const fewLoans = searchParams.get("fewLoans") === "1";
+  const pellGap = searchParams.get("pellGap") === "1";
+  const national = searchParams.get("national") === "1";
 
   const hasFilters = [
-    ...["q", "types", "sizes", "regions", "states", "minAR", "maxAR", "minSAT", "maxSAT", "minCost", "maxCost", "minEnroll", "maxEnroll", "balance", "fullTime", "fewLoans", "liveOn", "noFee", "guarantee", "noLegacy", "noEssay", "gpaRequired", "setting", "research", "designation", "opportunity", "division", "conference", "football", "rotc", "ugResearch", "studyAbroad", "maxRatio"],
+    ...["q", "types", "sizes", "regions", "states", "minAR", "maxAR", "minSAT", "maxSAT", "minCost", "maxCost", "minEnroll", "maxEnroll", "balance", "fullTime", "fewLoans", "liveOn", "noFee", "guarantee", "noLegacy", "noEssay", "gpaRequired", "setting", "research", "designation", "opportunity", "division", "conference", "football", "rotc", "ugResearch", "studyAbroad", "maxRatio", "pellGap", "minFullTimeFaculty", "national"],
     ...INDICATOR_KEYS.map((k) => INDICATORS[k].param),
   ].some((k) => searchParams.get(k));
 
@@ -192,6 +203,18 @@ export function FilterPanel({ facets, onDone }: { facets: FilterFacets; onDone?:
         </div>
         <p className="text-[11px] text-muted-foreground">
           {Math.round(FEW_LOANS_MAX * 100)}% or fewer of undergrads take a federal loan.
+        </p>
+      </Section>
+
+      <Section title="Graduation" term="pell-graduation-gap">
+        <div className="flex flex-wrap gap-1.5">
+          <Chip active={pellGap} onClick={() => update({ pellGap: pellGap ? null : "1" })} count={facets.pellGap}>
+            Pell gap under {Math.round(SMALL_PELL_GAP * 100)} points
+          </Chip>
+        </div>
+        <p className="text-[11px] text-muted-foreground">
+          Pell Grant recipients graduate within {Math.round(SMALL_PELL_GAP * 100)} points of students with no need-based federal aid (or more often).
+          Colleges with under 30 students in either group are hidden while this is set.
         </p>
       </Section>
 
@@ -279,6 +302,17 @@ export function FilterPanel({ facets, onDone }: { facets: FilterFacets; onDone?:
         </p>
       </Section>
 
+      <Section title="Where first-years come from" term="in-state-student">
+        <div className="flex flex-wrap gap-1.5">
+          <Chip active={national} onClick={() => update({ national: national ? null : "1" })} count={facets.national}>
+            Draws nationally
+          </Chip>
+        </div>
+        <p className="text-[11px] text-muted-foreground">
+          At least {Math.round(DRAWS_NATIONALLY * 100)}% of first-years come from other states. Colleges that don&apos;t report it are hidden while this is set.
+        </p>
+      </Section>
+
       <Section title="Campus" term="locale">
         <div className="space-y-3">
           {(
@@ -329,6 +363,23 @@ export function FilterPanel({ facets, onDone }: { facets: FilterFacets; onDone?:
           })}
         </div>
         <p className="mt-1.5 text-[11px] text-muted-foreground">The national median is {facets.medianRatio ?? "–"}. Colleges that don&apos;t report it are hidden while this is set.</p>
+      </Section>
+
+      <Section title="Full-time faculty" term="full-time-faculty">
+        <div className="flex flex-wrap gap-1.5" role="group" aria-label="At least this share of faculty are full-time">
+          {MIN_FULL_TIME_FACULTY_OPTIONS.map((n) => {
+            const active = searchParams.get("minFullTimeFaculty") === String(Math.round(n * 100));
+            return (
+              <Chip key={n} active={active} onClick={() => update({ minFullTimeFaculty: active ? null : String(Math.round(n * 100)) })} count={facets.minFullTimeFaculty[n]}>
+                {Math.round(n * 100)}% or more
+              </Chip>
+            );
+          })}
+        </div>
+        <p className="mt-1.5 text-[11px] text-muted-foreground">
+          The national median is {facets.medianFullTimeFaculty === null ? "–" : `${Math.round(facets.medianFullTimeFaculty * 100)}%`}. Colleges that don&apos;t report it are hidden while this
+          is set.
+        </p>
       </Section>
 
       <Section title="Sports & programs" term="ncaa-division">

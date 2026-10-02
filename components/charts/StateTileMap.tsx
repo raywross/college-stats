@@ -2,7 +2,7 @@ import Link from "next/link";
 import { cn } from "@/lib/utils";
 
 /** NPR-style tile grid: [col, row] for each state + DC. */
-const TILES: Record<string, [number, number]> = {
+export const TILES: Record<string, [number, number]> = {
   AK: [0, 0], ME: [10, 0],
   VT: [9, 1], NH: [10, 1],
   WA: [0, 2], ID: [1, 2], MT: [2, 2], ND: [3, 2], MN: [4, 2], IL: [5, 2], WI: [6, 2], MI: [7, 2], NY: [8, 2], RI: [9, 2], MA: [10, 2],

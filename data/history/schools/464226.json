@@ -22,6 +22,12 @@
     "live_on": {"start":2018,"values":[1,2,2,2,2,2]},
     "tuition_guarantee": {"start":2018,"values":[2,2,2,2,2,2]},
     "student_faculty_ratio": {"start":2018,"values":[11,10,10,12,16,12,11]},
+    "faculty_full_time_share": {"start":2018,"values":[1,1,1,1,0.9333,0.9412,1]},
+    "faculty_salary": {"start":2018,"values":[49250,54350,54917,55797,56798,59785,60279]},
+    "out_of_state_share": {"start":2018,"values":[0.2946,null,0.4077,null,0.3943,null,0.3656]},
+    "transfer_in_count": {"start":2018,"values":[81,115,77,102,108,125,136]},
+    "transfer_in_share": {"start":2018,"values":[0.2656,0.371,0.2285,0.2802,0.3051,0.372,0.3277]},
+    "international_share": {"start":2018,"values":[0.0045,null,0.0077,null,0.0041,null,0.043]},
     "conference": {"start":2018,"values":[302,302,302,302,302,302,302,302]},
     "football_conference": {"start":2018,"values":[302,302,302,302,302,302,302,302]},
     "athletic_association": {"start":2018,"values":[2,2,2,2,2,2,2,2]},
@@ -65,6 +71,18 @@
     "part_time_share": {"start":2018,"values":[0.0753,0.1139,0.1064,0.1024,0.0627,0.0586,0.0706]},
     "grad_rate": {"start":2017,"values":[0.2252,0.1818]},
     "median_debt": {"start":2018,"values":[22371,21813,21500]},
-    "federal_loan_rate": {"start":2017,"values":[0.8066,0.8043,0.7712,0.8085,0.8128,0.7797,0.7331]}
+    "federal_loan_rate": {"start":2017,"values":[0.8066,0.8043,0.7712,0.8085,0.8128,0.7797,0.7331]},
+    "grad_rate_pell": {"start":2017,"values":[0.2073,0.1613]},
+    "grad_rate_no_pell_no_loan": {"start":2017,"values":[0.3333]},
+    "grad_cohort_pell": {"start":2017,"values":[82,31]},
+    "grad_cohort_no_pell_no_loan": {"start":2017,"values":[36,18]},
+    "grad_rate_white": {"start":2017,"values":[0.197]},
+    "grad_cohort_white": {"start":2017,"values":[66,29]},
+    "grad_cohort_asian": {"start":2017,"values":[4,3]},
+    "grad_cohort_hispanic": {"start":2017,"values":[26,12]},
+    "grad_cohort_black": {"start":2017,"values":[26,14]},
+    "grad_cohort_two_or_more": {"start":2017,"values":[11,0]},
+    "grad_cohort_international": {"start":2017,"values":[14,4]},
+    "instruction_per_student": {"start":2017,"values":[3588,2814,3129,3308,3864,4681,4030]}
   }
 }

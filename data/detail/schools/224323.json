@@ -1,0 +1,6 @@
+{
+  "unit_id": "224323",
+  "tables": {
+    "home_states": {"source":"ipeds-ef-c","vintage":"ipeds-ef-c","year":"Fall 2024","rows":{"TX":199,"CA":24,"VA":17,"IL":12,"LA":11,"NY":11,"CO":9,"MD":8,"MN":8,"NC":7,"PA":7,"AZ":6,"KS":5,"NH":5,"WI":5,"FL":4,"IN":4,"CT":3,"GA":3,"MA":3,"MI":3,"NE":3,"OH":3,"WA":3,"AR":2,"ID":2,"MS":2,"NJ":2,"NM":2,"OK":2,"AL":1,"IA":1,"ME":1,"MO":1,"MT":1,"NV":1,"SD":1,"TN":1,"UT":1,"VT":1}}
+  }
+}

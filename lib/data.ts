@@ -14,6 +14,8 @@ import {
   type HistoryFiles,
 } from "./supabase";
 import type { SchoolHistory } from "./history";
+import type { SchoolDetail } from "./detail";
+import { fetchSchoolDetail } from "./supabase-detail";
 
 export { paginate, toIndexEntry, type Dataset, type SchoolIndexEntry, type ScatterPointData } from "./dataset";
 
@@ -134,6 +136,28 @@ export const getHistory = cache(async (unitId: string): Promise<SchoolHistory | 
     return await fetchSchoolHistory(supabaseClient("read"), unitId);
   } catch (err) {
     console.error(`Loading history for ${unitId} failed; the profile renders without it.`, err);
+    return null;
+  }
+});
+
+/* ------------------------------------------------------------------ */
+/* Per-college detail tables (lib/detail.ts)                           */
+/* ------------------------------------------------------------------ */
+
+/**
+ * One college's detail file (data/detail/schools/{id}.json: home states, later majors), or null when it has none.
+ * Fail-soft like getHistory(): a missing table or file renders the profile without it.
+ */
+export const getDetail = cache(async (unitId: string): Promise<SchoolDetail | null> => {
+  if (!/^\d+$/.test(unitId)) return null;
+  try {
+    if (dataSource() === "json") {
+      const path = join(process.cwd(), "data", "detail", "schools", `${unitId}.json`);
+      return existsSync(path) ? (JSON.parse(readFileSync(path, "utf8")) as SchoolDetail) : null;
+    }
+    return await fetchSchoolDetail(supabaseClient("read"), unitId);
+  } catch (err) {
+    console.error(`Loading details for ${unitId} failed; the profile renders without them.`, err);
     return null;
   }
 });

@@ -1,7 +1,7 @@
 # Profile Redesign: Overview Cards and Topic Pages
 
-> Status: **phase 1 built** (routes and moves, 2026-10-02; see [school-profile.md](school-profile.md) for the
-> as-built pages); phases 2–4 planned. Decided 2026-10-02 after a review of the profile at three widths and research
+> Status: **planned**, in progress: phase 1 (routes and moves) built 2026-10-02, see [school-profile.md](school-profile.md)
+> for the as-built pages; phases 2–4 under way. Decided 2026-10-02 after a review of the profile at three widths and research
 > into comparable sites. Replaces the single long page with a short overview of topic cards and one page per topic.
 
 ## Why

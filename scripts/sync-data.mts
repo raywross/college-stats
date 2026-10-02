@@ -26,6 +26,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { DatasetMeta, RepaymentStatus, School, SchoolType, TestPolicy } from "../lib/types";
 import { lineageForPatch, validateLineage } from "../lib/lineage.ts";
+import { COLLEGE_SITE_SOURCE } from "../lib/reported.ts";
 import { applyProbes, filesToProbe, type FileProbe, type ReleaseCalendar } from "../lib/releases.ts";
 import { IPEDS_BASES, parseCsv } from "./lib/ipeds.mts";
 import { MSI_FIELDS, campusProfileFrom, directoryIssues, msiFrom } from "../lib/campus-profile.ts";
@@ -582,6 +583,7 @@ function buildMeta(
         description:
           "A standardized report many colleges publish on their own sites, with more detail than federal surveys: admissions for the latest class and need-based vs. merit aid (section H).",
       },
+      "college-site": COLLEGE_SITE_SOURCE,
     },
     vintages: {
       "ipeds-adm": `Fall ${adm.name.slice(3)}`,

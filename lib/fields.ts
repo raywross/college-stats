@@ -73,6 +73,8 @@ const gr = (label: string): FieldDef => ({
   derived: { formula: "Finished any degree or certificate within 150% of normal time ÷ adjusted cohort (not shown under 30 students)", inputs: ["outcomes.grad_cohorts"] },
 });
 const icChar = (label: string, topic: Topic = "campus"): FieldDef => ({ label, topic, source: "ipeds-ic-char", vintage: "ipeds-ic-char" });
+/** A value the college published itself; the year lives in each value's lineage record, like `cds`. */
+const reported = (label: string, topic: Topic = "admissions"): FieldDef => ({ label, topic, source: "college-site", vintage: null });
 
 export const FIELDS = {
   /* ---- Institution ---- */
@@ -239,6 +241,17 @@ export const FIELDS = {
   "aid.by_income": sfa("Federal aid by family income"),
   "aid.cds": { label: "Need-based and merit aid (Common Data Set H2/H2A)", topic: "aid", source: "cds", vintage: null },
 
+  /* ---- College-reported figures (data/college-reported.json → school.reported; specs/college-reported-data.md) ---- */
+  // Default source is the college's site; every stored value carries an `extracted` lineage record with the document,
+  // quote, year, and retrieval date (validateSchool requires it), so the year never comes from a vintage.
+  "reported.admissions.entering_term": reported("Entering term (college-reported)"),
+  "reported.admissions.year": reported("Admissions year (college-reported)"),
+  "reported.admissions.applicants": reported("Applicants (college-reported)"),
+  "reported.admissions.admitted": reported("Admitted (college-reported)"),
+  "reported.admissions.enrolled": reported("Enrolled (college-reported)"),
+  "reported.admissions.acceptance_rate": reported("Acceptance rate (college-reported)"),
+  "reported.admissions.source_kind": reported("Kind of document (college-reported)"),
+
   /* ---- History summary (data/history/, `npm run sync-history`) ---- */
   trends: {
     label: "10-year changes",
@@ -339,3 +352,9 @@ export function registeredPathFor(path: string): FieldPath | null {
 
 /** School keys that hold citation metadata rather than data values. */
 export const METADATA_KEYS = new Set(["lineage", "cds"]);
+
+/** Sources whose values each carry their own document and year in lineage, so their fields have no vintage. */
+export const PER_DOCUMENT_SOURCES: ReadonlySet<SourceKey> = new Set<SourceKey>(["cds", "college-site"]);
+
+/** Every registered `reported.*` path: each stored one must have an `extracted` lineage record (lib/lineage.ts). */
+export const REPORTED_PATHS = (Object.keys(FIELDS) as FieldPath[]).filter((p) => p.startsWith("reported."));

@@ -7,7 +7,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import type { DatasetMeta, School } from "../lib/types";
-import { FIELDS, registeredPathFor } from "../lib/fields.ts";
+import { FIELDS, PER_DOCUMENT_SOURCES, registeredPathFor } from "../lib/fields.ts";
 import { lineageFor, lineageForPatch, sourcesForFields, validateLineage, validateRegistry, validateSchool } from "../lib/lineage.ts";
 
 const ROOT = join(import.meta.dirname, "..");
@@ -148,10 +148,10 @@ test("a release without a year fails the registry check", () => {
   assert.match(validateRegistry(broken).join("\n"), /vintages\.ipeds-adm has no year/);
 });
 
-test("registry: every derived input is registered and every non-CDS field has a release year", () => {
+test("registry: every derived input is registered and every field not from a per-document source has a release year", () => {
   for (const [path, def] of Object.entries(FIELDS)) {
     if ("derived" in def && def.derived) for (const i of def.derived.inputs) assert.ok(i in FIELDS, `${path} → ${i}`);
-    if (def.source !== "cds") assert.ok(def.vintage, `${path} has no vintage`);
+    if (!PER_DOCUMENT_SOURCES.has(def.source)) assert.ok(def.vintage, `${path} has no vintage`);
   }
 });
 

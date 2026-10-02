@@ -297,7 +297,36 @@ export interface School {
    * change columns, and trend standouts without loading history files. Money is after inflation.
    */
   trends?: SchoolTrends;
+  /**
+   * Newer figures the college itself published (class profiles, Common Data Sets), read from its website by the
+   * ingestion agent and checked (specs/college-reported-data.md). Shown on profiles next to the federal baseline,
+   * never used in Explore, Compare, ranks, medians, or Home. Every value here has an `extracted` lineage record with
+   * its quote, URL, retrieval date, and year.
+   */
+  reported?: ReportedData;
 }
+
+/** `school.reported`: one block per topic; phase 1 is admissions only. */
+export interface ReportedData {
+  admissions?: ReportedAdmissions;
+}
+
+/** The newest first-year, all-rounds admissions figures a college has published, newer than its federal year. */
+export interface ReportedAdmissions {
+  /** Fall term the class entered, e.g. "Fall 2026". */
+  entering_term: string;
+  /** The fall year as a number (2026), always greater than `admissions.year`. */
+  year: number;
+  applicants: number | null;
+  admitted: number | null;
+  enrolled: number | null;
+  /** As stated by the college when it stated one; otherwise admitted ÷ applicants. */
+  acceptance_rate: number | null;
+  /** Which kind of document supplied the figures. */
+  source_kind: ReportedSourceKind;
+}
+
+export type ReportedSourceKind = "cds" | "class-profile";
 
 /** One measure's change over the default 10-year window. */
 export interface TrendSummary {
@@ -502,6 +531,8 @@ export interface CampusPrograms {
 }
 
 export type SourceKey = "scorecard" | "ipeds-adm" | "ipeds-sfa" | "ipeds-ic" | "ipeds-ic-char" | "ipeds-hd" | "ipeds-ef" | "ipeds-ef-c" | "ipeds-ef-a" | "ipeds-c" | "ipeds-om" | "ipeds-sal" | "ipeds-f" | "cds"
+  /** A college's own website (class profile or CDS), read by the ingestion agent (specs/college-reported-data.md). Per-value lineage carries the document. */
+  | "college-site"
   /** IPEDS Graduation Rates, Pell and subsidized-loan file (GR{Y}_PELL_SSL; specs/data-expansion/graduation-by-group.md). */
   | "ipeds-gr"
   /** College Scorecard Field of Study bulk CSV: earnings and debt by 4-digit CIP (specs/data-expansion/field-of-study.md). */

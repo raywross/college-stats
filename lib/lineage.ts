@@ -4,7 +4,7 @@
  * See specs/data-lineage.md.
  */
 import type { DatasetMeta, LineageRecord, School, SourceInfo, SourceKey } from "./types";
-import { FIELDS, METADATA_KEYS, isFieldPath, registeredPathFor, type FieldPath, type VintageKey } from "./fields.ts";
+import { FIELDS, METADATA_KEYS, PER_DOCUMENT_SOURCES, REPORTED_PATHS, isFieldPath, registeredPathFor, type FieldPath, type VintageKey } from "./fields.ts";
 
 /** A source as cited for one value: plain data, safe to pass to client components. */
 export interface CitedSource {
@@ -49,6 +49,7 @@ const SOURCE_VINTAGE: Record<SourceKey, VintageKey | null> = {
   "ipeds-f": "ipeds-f",
   "scorecard-fos": "scorecard-fos",
   cds: null,
+  "college-site": null,
 };
 
 /**
@@ -83,6 +84,17 @@ function sourceFor(path: FieldPath, school: School | undefined, meta: DatasetMet
       retrieved: rec?.retrieved ?? meta.retrieved,
     };
   }
+  if (key === "college-site" && school) {
+    // The college's own page or file; the record names the document (validateSchool requires url, year, quote).
+    return {
+      key,
+      label: `${school.name} (${rec?.year ?? "college-reported"})`,
+      publisher: school.name,
+      year: rec?.year ?? null,
+      url: rec?.url ?? info.url,
+      retrieved: rec?.retrieved ?? meta.retrieved,
+    };
+  }
   const vintage = rec ? SOURCE_VINTAGE[key] : def.vintage;
   return {
     key,
@@ -101,7 +113,7 @@ export function yearLabel(s: Pick<CitedSource, "year">): string {
 
 /** Compact name for a chip: "CDS 2024-25", "IPEDS Fall 2024", "Scorecard". */
 export function shortSource(s: CitedSource): string {
-  const name = s.key === "cds" ? "CDS" : s.key === "scorecard" || s.key === "scorecard-fos" ? "Scorecard" : "IPEDS";
+  const name = s.key === "cds" ? "CDS" : s.key === "college-site" ? "College" : s.key === "scorecard" || s.key === "scorecard-fos" ? "Scorecard" : "IPEDS";
   return s.year ? `${name} ${s.year}` : name;
 }
 
@@ -229,7 +241,7 @@ export function validateRegistry(meta: DatasetMeta): string[] {
   for (const [path, def] of Object.entries(FIELDS) as [FieldPath, (typeof FIELDS)[FieldPath]][]) {
     if (!(def.source in meta.sources)) errors.push(`fields.ts: ${path} uses unknown source "${def.source}"`);
     if (def.vintage && !VINTAGE_KEYS.includes(def.vintage)) errors.push(`fields.ts: ${path} uses unknown vintage "${def.vintage}"`);
-    if (def.source !== "cds" && !def.vintage && !("derived" in def)) errors.push(`fields.ts: ${path} has no vintage`);
+    if (!PER_DOCUMENT_SOURCES.has(def.source) && !def.vintage && !("derived" in def)) errors.push(`fields.ts: ${path} has no vintage`);
     if ("derived" in def && def.derived) {
       if (!def.derived.inputs.length) errors.push(`fields.ts: ${path} is derived but lists no inputs`);
       for (const i of def.derived.inputs) if (!isFieldPath(i)) errors.push(`fields.ts: ${path} input "${i}" isn't a registered field`);
@@ -269,6 +281,20 @@ export function validateSchool(school: School, meta: DatasetMeta): string[] {
   }
   if (school.cds && !Object.values(school.lineage ?? {}).some((r) => r?.source === "cds")) {
     errors.push(`${where}: has a "cds" record but no field cites it`);
+  }
+  // College-reported values (specs/college-reported-data.md): every stored one names its document, with a quote,
+  // and describes a year newer than the federal admissions year. Null is "not published", and has no lineage.
+  for (const path of REPORTED_PATHS) {
+    const value = valueAt(school, path);
+    if (value === undefined || value === null) continue;
+    const rec = school.lineage?.[path];
+    if (!rec) errors.push(`${where}: ${path} is stored without a lineage record`);
+    else if (rec.source !== "college-site") errors.push(`${where}: ${path} must cite source "college-site", not "${rec.source}"`);
+    else if (rec.method !== "extracted") errors.push(`${where}: ${path} must have method "extracted"`);
+  }
+  const reportedYear = school.reported?.admissions?.year;
+  if (reportedYear !== undefined && school.admissions.year !== null && reportedYear <= school.admissions.year) {
+    errors.push(`${where}: reported.admissions.year ${reportedYear} isn't newer than the federal year ${school.admissions.year}`);
   }
   return errors;
 }

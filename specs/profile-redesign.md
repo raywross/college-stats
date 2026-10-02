@@ -110,6 +110,29 @@ Notes behind the scores:
   topic pages are the current `Panel`s moved into routes), and phones get the simplest model: a card, a tap, a page,
   back.
 
+## Before and after
+The "before" images are the live site on 2026-10-02. The "after" images are a static mockup built with the site's
+type, colors, and Harvard's real figures to show the shape of the design; the built version will differ in detail.
+
+![Harvard's profile today and the overview mockup, whole pages at the same scale](/roadmap/profile-redesign/desktop-length.jpg)
+*Whole pages at the same scale, desktop: 22,238px today against about 2,300px for the overview. The detail moves to
+topic pages rather than disappearing.*
+
+![First screen on desktop, today and in the mockup](/roadmap/profile-redesign/desktop-fold.jpg)
+*The first screen on a desktop. Today: hero, trend cards, section nav, and the start of thirteen tiles. After: a
+slimmer hero and the first two topic cards, each with its headline figure, supporting numbers, and takeaway.*
+
+![The overview mockup on desktop](/roadmap/profile-redesign/after-overview-desktop.png)
+*The overview mockup at full size. Six cards, one per topic page, then similar schools and one sources line.*
+
+![A topic page mockup: Getting in](/roadmap/profile-redesign/after-topic-page-desktop.png)
+*A topic page ("Getting in"): a compact sticky header with the topic pills replaces the hero, an "On this page"
+list replaces the ten-item section nav, and today's admissions and test-score blocks follow in full.*
+
+![The overview on a phone, today and in the mockup](/roadmap/profile-redesign/phone.jpg)
+*On a phone: today's first screen and 17,690px page; the mockup's first screen; and the whole mockup overview, about
+3,800px, where each card is a tap to its topic page.*
+
 ## Design: overview cards and topic pages
 
 ### Routes
@@ -123,7 +146,7 @@ Notes behind the scores:
 | `/schools/{id}/outcomes` | Earnings, staying and finishing, 8-year outcomes, graduation by group, cost vs earnings map | same |
 | `/schools/{id}/history` | Over time: every chart group, with the controls | same |
 
-Seven topics, not ten: Test scores joins Admissions; Campus life joins Students; "How it ranks" dissolves (its four
+Six topic pages plus the overview, not ten sections: Test scores joins Admissions; Campus life joins Students; "How it ranks" dissolves (its four
 strips move into the cards and pages they describe; the two scatter maps go to Admissions and Outcomes); Cost &
 outcomes splits in two. Old anchors keep working: a small client script on the overview maps `#scores`, `#campus`,
 `#cost`, `#history`, `#ranks` to the new routes, and the sticky section nav is retired from the overview.
@@ -132,7 +155,7 @@ outcomes splits in two. Old anchors keep working: a small client script on the o
 1. **Hero**, slimmer: crest, name, location, the glossary terms, Compare (and later Add to list and Follow:
    [saved-lists.md](product/saved-lists.md), [follow-colleges.md](product/follow-colleges.md)), "Known for" chips.
    The four trend cards leave the hero; each topic card carries its own ten-year line instead.
-2. **Topic cards**, one per route above, in a 2-column grid on desktop and tablet, stacked on phones. A card is:
+2. **Topic cards**, one per topic page above, in a 2-column grid on desktop and tablet, stacked on phones. A card is:
    - eyebrow with the domain color dot and the topic name, the takeaway sentence from `lib/insights.ts`;
    - a **headline figure** (the one number people quote: acceptance rate ring, SAT range bar, undergrads, student
      to faculty ratio, average cost, graduation rate) with its percentile line ("larger than 85% of colleges");
@@ -188,9 +211,9 @@ route, in the typed registry ([telemetry.md](product/telemetry.md#event-registry
 first card click, more topic pages per visit than sections scrolled today, and no drop in Compare use from profiles.
 
 ## Build order
-1. **Routes and moves** (no visual change yet): the seven topic pages built from the existing `Panel`s; the overview
+1. **Routes and moves** (no visual change yet): the six topic pages built from the existing `Panel`s; the overview
    keeps the current bento while cards are built; old anchors redirected; `measure-profile` script.
-2. **Cards**: the seven topic cards, the slimmer hero, the overview source list; remove the bento and section nav.
+2. **Cards**: the six topic cards, the slimmer hero, the overview source list; remove the bento and section nav.
 3. **Tablet and Over time**: `ShowMore` at `lg`, the Over time segmented control, chart grids per width.
 4. **Pilot**: Harvard, Ohio State, UCLA, a small test-blind college, and an open-admission college at three widths;
    compare heights against the budget; check every field in the old `SECTION_FIELDS` is still shown on some page
@@ -201,7 +224,7 @@ first card click, more topic pages per visit than sections scrolled today, and n
   `admissions/page.tsx`, `students/page.tsx`, `academics/page.tsx`, `cost/page.tsx`, `outcomes/page.tsx`,
   `history/page.tsx`.
 - `components/profile/TopicCard.tsx`, `AdmissionsCard.tsx` … `HistoryCard.tsx`, `TopicPills.tsx`,
-  `CompactHeader.tsx`, `OnThisPage.tsx`; `lib/profile-topics.ts` (the seven topics, their routes, labels, domain
+  `CompactHeader.tsx`, `OnThisPage.tsx`; `lib/profile-topics.ts` (the six topics, their routes, labels, domain
   colors, and the fields each shows, for the nav, the cards, and the coverage test).
 - `scripts/measure-profile.mts` (Playwright heights at three widths), `tests/profile-topics.test.mts` (every topic
   has a route and a card, field coverage equals the old page, anchors map to routes).

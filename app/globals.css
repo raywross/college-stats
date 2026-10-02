@@ -327,6 +327,20 @@
   .spec-prose > :first-child {
     margin-top: 0;
   }
+  /* Screenshots and mockups in a spec: full width of the prose column, framed, never wider than the page. */
+  .spec-prose img {
+    display: block;
+    max-width: 100%;
+    height: auto;
+    margin: 1.25rem 0 0.5rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+  }
+  .spec-prose img + em {
+    display: block;
+    font-size: 0.875rem;
+    color: var(--muted-foreground);
+  }
   .spec-prose h2 {
     margin: 2.75rem 0 0.9rem;
     padding-top: 1.75rem;

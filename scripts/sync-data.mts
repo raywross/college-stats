@@ -35,6 +35,7 @@ import { fetchPivotedTable } from "./lib/om.mts";
 import { GR_PELL_COHORT_TYPE, GR_PELL_COLUMNS, RACE_GROUPS, aidGroupGradFrom, raceGradFrom, scorecardRaceCohortField, scorecardRaceRateField } from "../lib/graduation-groups.ts";
 import { residenceFrom } from "../lib/residence.ts";
 import { addResidenceMeta, buildDetails, crossCheckDerived, detailProblems, fetchResidence, writeDetails } from "./lib/residence-sync.mts";
+import { financesFrom } from "../lib/finances.ts";
 import { apCreditFrom, athleticsFrom, calendarFrom, disabilityFrom, programsFrom, servicesFrom } from "../lib/campus-services.ts";
 import { acceptanceRate, applicationFeeFrom, computePrices, factorsFrom, housingFrom, ipedsNum, parseShareBand, priceSuffix, promiseProgramFrom, raceShares, toAid, tuitionPlansFrom } from "../lib/derive.ts";
 
@@ -275,6 +276,8 @@ const GR_PELL_NAMES = recentYears.map((y) => `GR${y}_PELL_SSL`);
 const grCohortYear = (name: string) => Number(name.slice(2, 6)) - 6;
 // Faculty salary (specs/data-expansion/faculty.md): SAL{Y}_IS, all-ranks row. Fall Y, like EF.
 const SAL_NAMES = recentYears.map((y) => `SAL${y}_IS`);
+// Finance derived variables (endowment, instruction spending per student): DRVF{Y} = fiscal year Y-1–Y.
+const DRVF_NAMES = recentYears.map((y) => `DRVF${y}`);
 
 /* ------------------------------------------------------------------ */
 /* 3. Merge                                                            */
@@ -470,7 +473,9 @@ function buildMeta(
   efd: IpedsFile,
   om: IpedsFile,
   grPell: IpedsFile,
-  sal: IpedsFile
+  sal: IpedsFile,
+  drvf: IpedsFile,
+  drvfFiscalYear: number
 ): DatasetMeta {
   const scorecardCostYear = scorecardYears.cost;
   return {
@@ -556,6 +561,14 @@ function buildMeta(
         description:
           "What each college offers: its athletic association, conference, and sports; ROTC, study abroad, and undergraduate research; AP credit; student services; the academic calendar; and the share of undergrads registered with disability services.",
       },
+      "ipeds-f": {
+        label: "IPEDS Finance survey, derived per-student figures",
+        publisher: "National Center for Education Statistics (NCES)",
+        edition: `${academicYear(String(drvfFiscalYear))} (${drvf.name})`,
+        url: drvf.url,
+        description:
+          "Each college's endowment and spending per full-time-equivalent student, from its own finance report: endowment assets, instruction expenses, academic support, student services, and tuition's share of core revenue. Reported on one of three accounting forms by sector (public, private nonprofit, for-profit), which aren't comparable to each other.",
+      },
       cds: {
         label: "Common Data Set",
         publisher: "Each college (voluntary, standardized template)",
@@ -577,6 +590,7 @@ function buildMeta(
       "ipeds-sal": `Fall ${sal.name.slice(3, 7)}`,
       // Set with its source by addResidenceMeta (scripts/lib/residence-sync.mts).
       "ipeds-ef-c": null,
+      "ipeds-f": academicYear(String(drvfFiscalYear)),
       "scorecard-enrollment": scorecardYears.enrollment,
       "scorecard-age": scorecardYears.age,
       "scorecard-cost": scorecardYears.cost,
@@ -763,6 +777,12 @@ async function main() {
   const sal = await fetchIpeds(SAL_NAMES, (r) => r.ARANK === "7");
   if (![...sal.rows.values()].some((r) => "ARANK" in r && "SAEQ9AT" in r)) throw new Error(`${sal.name} has no ARANK/SAEQ9AT columns`);
   if (sal.rows.size < 1000) throw new Error(`${sal.name}: only ${sal.rows.size} colleges with an all-ranks (ARANK 7) row`);
+  // Finances (specs/data-expansion/finances.md): DRVF{Y}, picked newest-first like the others.
+  const drvf = await fetchIpeds(DRVF_NAMES);
+  if (![...drvf.rows.values()].some((r) => "F1INSTFT" in r || "F2INSTFT" in r || "F3INSTFT" in r))
+    throw new Error(`${drvf.name} has no F1INSTFT/F2INSTFT/F3INSTFT column`);
+  // DRVF{Y} describes fiscal year (Y-1)–Y; stored by its start year, like other academic-year fields.
+  const drvfFiscalYear = Number(drvf.name.slice(4)) - 1;
   if (![...hd.rows.values()].some((r) => "LOCALE" in r && "CARNEGIEIC" in r)) throw new Error(`${hd.name} has no LOCALE/CARNEGIEIC columns`);
   // Where first-years come from (specs/data-expansion/residence.md): the newest even-year EF{Y}C.
   const efc = await fetchResidence(join(ROOT, ".cache", "ipeds"), thisYear);
@@ -799,6 +819,7 @@ async function main() {
     if (school?.outcomes) school.outcomes.eight_year = eightYearFrom(om.rows.get(school.unit_id), omEntering);
     if (school) addGradByGroup(school, grPell.rows.get(school.unit_id), row);
     if (school) school.demographics.residence = residenceFrom(efc.table.rows.get(school.unit_id), school.location.state);
+    if (school) school.finances = financesFrom(drvf.rows.get(school.unit_id), drvfFiscalYear);
     if (!school) {
       stats.noSize++;
       continue;
@@ -826,7 +847,7 @@ async function main() {
     }
   }
   const scorecardYears = await detectScorecardYears(key, String(scorecard[0]?.id ?? "221999"));
-  const meta = buildMeta(adm, sfa, ic, sfaYears, scorecardYears, cost2, chars, hd, icChar, efd, om, grPell, sal);
+  const meta = buildMeta(adm, sfa, ic, sfaYears, scorecardYears, cost2, chars, hd, icChar, efd, om, grPell, sal, drvf, drvfFiscalYear);
   addResidenceMeta(meta, efc.table, efc.year);
 
   // Residence: the per-state rows must add up to NCES's own derived counts, and the detail files must check out.
@@ -860,6 +881,7 @@ async function main() {
   console.log(`  with Pell grad rate:  ${schools.filter((s) => s.outcomes?.grad_rate_pell != null).length} (${grPell.name})`);
   console.log(`  with Black grad rate: ${schools.filter((s) => s.outcomes?.grad_rate_by_race?.black != null).length}`);
   console.log(`  with aid (IPEDS SFA): ${schools.filter((s) => s.aid?.grant_pct != null).length}`);
+  console.log(`  with finances (DRVF): ${schools.filter((s) => s.finances != null).length}`);
   console.log(`  with CDS aid detail:  ${schools.filter((s) => s.aid?.cds).length}`);
   console.log(`  with avg paid (all):  ${schools.filter((s) => s.cost?.avg_paid_all != null).length}`);
   console.log(`  with faculty salary:  ${schools.filter((s) => s.academics?.faculty?.avg_salary_9mo != null).length}`);

@@ -33,7 +33,7 @@ Each spec here is a separate unit of work, so pieces can ship when they're usefu
 | [residence.md](residence.md) | **Built.** Where first-years come from: in-state, out-of-state, international; top home states | IPEDS EF part C |
 | [outcome-measures.md](outcome-measures.md) | **Built.** 8-year outcomes for **all** entering students (incl. transfers in and part-time), with transfer-out and Pell splits | IPEDS OM |
 | [graduation-by-group.md](graduation-by-group.md) | **Built.** Graduation rates for Pell recipients and by race/ethnicity | IPEDS GR (Pell/SSL file) + Scorecard |
-| [finances.md](finances.md) | Endowment per student, instruction spending per student | IPEDS F / DRVF (+ Scorecard) |
+| [finances.md](finances.md) | **Built.** Endowment per student, instruction spending per student | IPEDS F / DRVF (+ Scorecard) |
 | [faculty.md](faculty.md) | **Built.** Average faculty salary, share of full-time faculty | IPEDS SAL (+ Scorecard) |
 
 ### Wave 3: large per-college tables

@@ -10,12 +10,13 @@
  *   {Y}.aid.median_debt.completers.overall                         → Y–Y+1 graduates (null after 2020)
  *   {Y}.aid.federal_loan_rate                                      → the Y−1–Y school year (matches IPEDS SFA UFLOANP)
  *   {Y}.school.ft_faculty_rate                                     → fall Y (checked 2026-10-02, same as size)
+ *   {Y}.school.instructional_expenditure_per_fte                   → fiscal (Y−1)–Y, same as IPEDS DRVF{Y} (checked 2026-10-02)
  */
 import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { SCORECARD_RACE_FIELDS } from "../../lib/derive.ts";
-import { FULL_TIME_FACULTY_FROM, LOAN_RATE_FROM, RACE_FROM } from "../../lib/history.ts";
+import { FINANCE_FROM, FULL_TIME_FACULTY_FROM, LOAN_RATE_FROM, RACE_FROM } from "../../lib/history.ts";
 import { RACE_SCORECARD_SUFFIX } from "../../lib/graduation-groups.ts";
 
 const API = "https://api.data.gov/ed/collegescorecard/v1/schools";
@@ -34,6 +35,7 @@ export function scorecardFields(first: number, last: number): string[] {
     if (y >= LOAN_RATE_FROM) out.push(`${y}.aid.federal_loan_rate`);
     if (y >= RACE_FROM) out.push(...SCORECARD_RACE_FIELDS.map((f) => `${y}.${RACE}.${f}`));
     if (y >= FULL_TIME_FACULTY_FROM) out.push(`${y}.school.ft_faculty_rate`);
+    if (y >= FINANCE_FROM) out.push(`${y}.school.instructional_expenditure_per_fte`);
   }
   return out;
 }

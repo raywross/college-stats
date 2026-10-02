@@ -112,6 +112,9 @@ const SORTERS: Record<SortKey, (s: School) => number | string | null> = {
   pell_gap_change: METRICS.pellGapChange.get,
   full_time_faculty: METRICS.facultyFullTime.get,
   out_of_state: METRICS.outOfState.get,
+  // Endowment reuses the FASB-only getter: Explore's endowment sort defaults to private nonprofits (specs/data-expansion/finances.md).
+  instruction_spending: METRICS.financesInstruction.get,
+  endowment_per_student: METRICS.endowmentFasb.get,
 };
 
 function mode(values: number[]): number | null {

@@ -96,6 +96,8 @@ const SORTS = [
   { value: "completion_8yr", label: "8-year completion, all students", dir: "desc" },
   { value: "full_time_faculty", label: "Full-time faculty share (most)", dir: "desc" },
   { value: "out_of_state", label: "First-years from other states (most)", dir: "desc" },
+  { value: "instruction_spending", label: "Instruction spending per student (most)", dir: "desc" },
+  { value: "endowment_per_student", label: "Endowment per student (most, private nonprofits)", dir: "desc" },
   { value: "loan_rate_change", label: "Borrowing change, 10 yrs (biggest drop)", dir: "asc" },
   { value: "pell_gap", label: "Pell graduation gap (lowest)", dir: "asc" },
   { value: "pell_gap_change", label: "Pell gap change, 10 yrs (most narrowed)", dir: "asc" },

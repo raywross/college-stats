@@ -82,6 +82,7 @@ export const HISTORY_FAMILIES = {
   "scorecard-completion-race": { source: "scorecard", kind: "cohort", files: "API fields {year+6}.completion.completion_rate_4yr_150_* and completion_cohort_4yr_150_* (by race and ethnicity)", api: true, citeAs: "graduation by race and ethnicity" },
   // Faculty (specs/data-expansion/faculty.md): full-time share, from IPEDS HR via Scorecard.
   "scorecard-faculty": { source: "scorecard", kind: "fall", files: "API field {year}.school.ft_faculty_rate", api: true, citeAs: "full-time faculty share" },
+  "scorecard-finances": { source: "scorecard", kind: "academic", files: "API field {year}.school.instructional_expenditure_per_fte", api: true, citeAs: "instruction spending" },
 } as const satisfies Record<string, { source: SourceKey; kind: YearKind; files: string; api?: true; citeAs?: string; step?: number }>;
 
 export type HistoryFamily = keyof typeof HISTORY_FAMILIES;
@@ -107,6 +108,18 @@ const ENROLLMENT: readonly HistoryFamily[] = ["scorecard-enrollment"];
 export const SAT_BREAK: readonly SeriesBreak[] = [
   { year: 2017, label: "New SAT", reason: "The SAT was redesigned in 2016; earlier scores are on the old scale and aren't comparable." },
 ];
+
+/**
+ * Instruction spending per student (specs/data-expansion/finances.md): Vanderbilt's reported figure jumped from
+ * $80,096 (fiscal 2014–15) to $30,205 (fiscal 2015–16) and was flat on either side — NCES redefined what counts as
+ * "instruction" expense around the 2015–16 Finance survey. Fiscal years are stored at their start, so the break
+ * falls at 2015.
+ */
+export const FINANCE_BREAK: readonly SeriesBreak[] = [
+  { year: 2015, label: "Finance survey redefinition", reason: "NCES redefined what counts as an instruction expense that fiscal year; earlier years aren't comparable." },
+];
+/** Scorecard's instructional_expenditure_per_fte: year-prefixed values from key 2005 (checked 2026-10-02). */
+export const FINANCE_FROM = 2005;
 
 /** Test policy (IPEDS ADMCON7) as stored: "required" means the same in every era; the others shifted (see trends-data.md). */
 export const TEST_POLICY_CODES = { required: 1, recommended: 2, "not-considered": 3, considered: 5 } as const;
@@ -214,6 +227,10 @@ export const SERIES = {
   grad_cohort_black: { label: "Black students in the entering class", short: "Black students", field: "outcomes.grad_cohorts_by_race", term: "adjusted-cohort", unit: "count", kind: "cohort", format: "num", families: ["scorecard-completion-race"] },
   grad_cohort_two_or_more: { label: "Students of two or more races in the entering class", short: "Two-or-more students", field: "outcomes.grad_cohorts_by_race", term: "adjusted-cohort", unit: "count", kind: "cohort", format: "num", families: ["scorecard-completion-race"] },
   grad_cohort_international: { label: "International students in the entering class", short: "International students", field: "outcomes.grad_cohorts_by_race", term: "adjusted-cohort", unit: "count", kind: "cohort", format: "num", families: ["scorecard-completion-race"] },
+  // Instruction spending per student (specs/data-expansion/finances.md). Endowment per student has no history: Scorecard's
+  // endowment total has no FTE-consistent historical denominator (dividing by undergrad headcount alone would overstate
+  // it at research universities with large graduate populations), so it's a snapshot-only fact.
+  instruction_per_student: { label: "Instruction spending per student", short: "Instruction spending", field: "finances", term: "instruction-expenses", unit: "usd", kind: "academic", format: "money", families: ["scorecard-finances"], breaks: FINANCE_BREAK },
 } as const satisfies Record<string, SeriesDef>;
 
 export type SeriesKey = keyof typeof SERIES;

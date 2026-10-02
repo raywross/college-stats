@@ -890,7 +890,7 @@ export function OverTime(props: OverTimeProps) {
         </Group>
       )}
 
-      {(history.series.student_faculty_ratio || history.series.faculty_full_time_share || history.series.faculty_salary) && (
+      {(history.series.student_faculty_ratio || history.series.faculty_full_time_share || history.series.faculty_salary || history.series.instruction_per_student) && (
         <Group title="Academics" color={colors.size} open={open.academics} onToggle={toggle("academics")} footer={sources.academics}>
           <div className="grid gap-4 lg:grid-cols-2">
             {history.series.student_faculty_ratio && (
@@ -933,6 +933,20 @@ export function OverTime(props: OverTimeProps) {
                 provisionalYear={null}
                 specs={[{ key: "faculty_salary", name: "Faculty salary", color: colors.size, band: true }]}
                 note="9-month equated, all ranks combined. Pay tracks local cost of living as much as a college's generosity, so compare with care."
+              />
+            )}
+            {history.series.instruction_per_student && (
+              <ChartPanel
+                {...common}
+                title="Instruction spending per student"
+                term="instruction-expenses"
+                kind="academic"
+                format="money"
+                window={windowFor("academic", ["instruction_per_student"])}
+                headline="instruction_per_student"
+                provisionalYear={null}
+                specs={[{ key: "instruction_per_student", name: "Instruction spending", color: colors.value }]}
+                note="No national comparison band: public and private nonprofit colleges report finances on different accounting forms that aren't comparable, so this chart shows only this college's own trend."
               />
             )}
           </div>

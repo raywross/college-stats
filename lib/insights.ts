@@ -62,6 +62,11 @@ export function standouts({ rankOf }: Dataset, s: School, { trends = false }: { 
   if (at("outOfStateLarge", (v) => v >= 0.95)) out.push({ label: "Draws students nationally", domain: "diversity", metric: "outOfState" });
   const homeState = mostFromOtherState(s);
   if (homeState) out.push({ label: `Most students are from ${stateName(homeState)}`, domain: "diversity", metric: "outOfState" });
+  // Top 5% of endowment per student, within the same accounting form only — a public college is never compared with
+  // private nonprofits (specs/data-expansion/finances.md). endowmentGasb/Fasb already return null off-sector, so
+  // `at()` ranks each college only against its own sector's reporters.
+  const endowmentKey = s.finances?.form === "gasb" ? "endowmentGasb" : s.finances?.form === "fasb" ? "endowmentFasb" : null;
+  if (endowmentKey && at(endowmentKey, (v) => v >= 0.95)) out.push({ label: "Big endowment per student", domain: "value", metric: endowmentKey });
   if (at("pell", (v) => v >= 0.85)) out.push({ label: "Economic diversity", domain: "access", metric: "pell" });
   if (at("firstGen", (v) => v >= 0.85)) out.push({ label: "First-gen friendly", domain: "access", metric: "firstGen" });
   if (at("diversity", (v) => v >= 0.85)) out.push({ label: "Very diverse", domain: "diversity", metric: "diversity" });

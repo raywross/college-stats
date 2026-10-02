@@ -37,4 +37,5 @@ Structured documentation for the Higher Education Data Explorer ("Quad").
 | [release-notes.md](release-notes.md) | `/release-notes`: one note per merged PR in `release-notes/`, how to write one, and the CI check that every PR adds its note |
 | [migration-plan.md](migration-plan.md) | Checklist for Vercel + Supabase + API migration |
 | [supabase.md](supabase.md) | Serving the dataset from Supabase: `DATA_SOURCE`, schema, `publish-data`, keys, dev/prod projects, transition plan |
+| [database-architecture.md](database-architecture.md) | *Guide:* published JSON-document collections vs typed application tables; when the in-memory pattern stops fitting; the generic publish shape; rules for user-data tables; the open decision on serving the dataset from the build or Supabase |
 | [implementation-checklist.md](implementation-checklist.md) | Original MVP build order |

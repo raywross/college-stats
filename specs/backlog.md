@@ -154,6 +154,14 @@ shared rules for user data are in that README. All user data lives only in Supab
   the committed history is stale, point Vercel Production at prod, turn on publish-on-merge and
   revalidation secrets ([setup](supabase.md#setup-phase-3)), and put control procedures in place (who may publish to
   prod, review before data merges, rollback). Optionally a custom domain.
+- [ ] **Generic document collections** ([database-architecture.md](database-architecture.md#generalize-the-document-tables-do-this-before-the-detail-file)):
+  replace the per-table publish functions (`publish_dataset`, `stage_history`, `publish_history_staged`) with
+  `published_documents` / `publishes` / `stage_documents()` / `publish_collection()`, migrating `schools` and
+  `school_histories` in. Do it before the per-college detail file or the high school dataset adds a third copy.
+- [ ] **Decide how production serves the public dataset** before the formal release: bundle the JSON into the build
+  (every data change deploys anyway) or keep Supabase and read one gzipped object per collection
+  ([database-architecture.md](database-architecture.md#serving-the-public-dataset-an-open-decision)). Measure
+  cold-start counts with telemetry first.
 - [ ] Supabase user data (accounts, saved lists; specified in [product/accounts.md](product/accounts.md) and
   [product/saved-lists.md](product/saved-lists.md)) goes in as new migrations. History stays in git as per-college JSON
   (reviewable diffs when NCES revises past years, CI checks, JSON previews) and is published 1:1 to

@@ -103,6 +103,44 @@ section on `/roadmap`.
   file, for a "nearby colleges" list, a metro filter, or metro-level national trends. Deferred from campus profile
   (2026-09-30).
 
+## Product: accounts, planning tools, high schools, business
+Specified 2026-10-02 in [product/](product/README.md) from three idea documents plus research; build order and
+shared rules for user data are in that README. All user data lives only in Supabase (new migrations, dev first).
+- [ ] **Telemetry** ([product/telemetry.md](product/telemetry.md)): PostHog (cookieless, no replay, typed event
+  registry with a guard test) + Vercel Speed Insights; dashboards for traffic, engagement, funnels, retention,
+  performance, errors. Build first so later features ship measured.
+- [ ] **Accounts and households** ([product/accounts.md](product/accounts.md)): Supabase Auth (magic link, Google),
+  server-side sessions, households (guardians and students, invitations), RLS privacy model where a guardian's
+  finances are never readable by a student, export and delete, 13+ only.
+- [ ] **Student profile** ([product/student-profile.md](product/student-profile.md)): GPA (unweighted, with scale
+  conversion), scores, majors, state, preferences; prefilled ScoreChecker; Explore "fits my scores / preferences".
+- [ ] **Saved lists** ([product/saved-lists.md](product/saved-lists.md)): Reach / Target / Likely, status and
+  outcomes (Scoir vocabulary), notes, deadlines, guardian view, share link, CSV/PDF export.
+- [ ] **Chances and fit** ([product/chances-and-fit.md](product/chances-and-fit.md)): rules-based standing with
+  reasons (never a probability), fit against preferences, a pilot against real outcomes before the chip ships.
+- [ ] **Net price estimator** ([product/net-price-estimator.md](product/net-price-estimator.md)): 2026–27 Student
+  Aid Index and Pell as versioned reference data; per-college range from income-band net price, CDS need met, and
+  H2A merit; 4-year projection from history; pilot of 20 colleges × 5 scenarios against their own calculators.
+- [ ] **Award letter analyzer** ([product/award-letter-analyzer.md](product/award-letter-analyzer.md)): College
+  Financing Plan layout, form first and upload later, loans separated, renewability flags, 4-year totals, questions
+  to ask, appeal summary; pooled anonymized offers as a later decision.
+- [ ] **Early decision strategy** ([product/early-decision-strategy.md](product/early-decision-strategy.md)): ED
+  vs non-ED admit rates and share of class filled early from CDS C21/C22 (after
+  [cds-admissions.md](data-expansion/cds-admissions.md)); a three-question checklist for signed-in students.
+- [ ] **High school data** ([product/high-school-data.md](product/high-school-data.md)): NCES CCD + EDFacts + CRDC
+  for all public high schools (phase 1), state report cards (phase 2), school profile PDFs through the
+  college-reported engine (pilot of 100 schools, phase 3), private schools (phase 4); `/high-schools/{ncessch}`.
+- [ ] **Scattergrams** ([product/scattergrams.md](product/scattergrams.md)): counselor CSV upload (Scoir/Naviance
+  columns) scrubbed in the browser, binned, 10-point threshold; shown to that school's verified students over the
+  national ranges; opt-in pooled self-reported outcomes.
+- [ ] **Commercialization** ([product/commercialization.md](product/commercialization.md)): Free / Plus ($1.99 or
+  $15.99/yr) / Pro ($49 pass); the feature map as one entitlement object; Stripe Checkout, Billing, webhooks;
+  pricing page; legal setup; public data stays free.
+- [ ] **Counselor portal** ([product/counselor-portal.md](product/counselor-portal.md)): organizations (IECs first,
+  schools with a data agreement), caseload dashboard, co-branded PDF dossiers, scattergram uploads, seats.
+- [ ] **Data API** ([product/data-api.md](product/data-api.md)): `/api/v1` with keys, limits, lineage and history
+  endpoints, bulk downloads, `/developers` docs; free and paid tiers.
+
 ## Quality
 - [ ] Tests for the sync mapping (`toSchool`), the CDS importer (fixtures for classic and flat layouts, including the
   Purdue typo case), and missing-data handling in `lib/metrics.ts`. (Aid and price derivations moved to
@@ -116,6 +154,7 @@ section on `/roadmap`.
   the committed history is stale, point Vercel Production at prod, turn on publish-on-merge and
   revalidation secrets ([setup](supabase.md#setup-phase-3)), and put control procedures in place (who may publish to
   prod, review before data merges, rollback). Optionally a custom domain.
-- [ ] Supabase user data (accounts, saved lists) goes in as new migrations. History stays in git as per-college JSON
+- [ ] Supabase user data (accounts, saved lists; specified in [product/accounts.md](product/accounts.md) and
+  [product/saved-lists.md](product/saved-lists.md)) goes in as new migrations. History stays in git as per-college JSON
   (reviewable diffs when NCES revises past years, CI checks, JSON previews) and is published 1:1 to
   `school_histories`; decided 2026-09-28 over build-and-publish-only.

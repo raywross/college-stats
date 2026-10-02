@@ -136,8 +136,19 @@ export const EXTRACTION_SCHEMA = {
 /* Published values: data/college-reported.json                        */
 /* ------------------------------------------------------------------ */
 
-/** The paths the pipeline publishes, keyed as in `school.lineage`. */
-export type ReportedValuePath = "reported.admissions.applicants" | "reported.admissions.admitted" | "reported.admissions.enrolled" | "reported.admissions.acceptance_rate";
+/**
+ * Every path the pipeline publishes, keyed as in `school.lineage`: the four figures plus the block's own metadata
+ * (entering_term, year, source_kind), each registered in lib/fields.ts and each needing its own `extracted` record
+ * (lib/lineage.ts validateSchool).
+ */
+export type ReportedValuePath =
+  | "reported.admissions.entering_term"
+  | "reported.admissions.year"
+  | "reported.admissions.applicants"
+  | "reported.admissions.admitted"
+  | "reported.admissions.enrolled"
+  | "reported.admissions.acceptance_rate"
+  | "reported.admissions.source_kind";
 
 /** One college's published values, ready for the sync to merge: the block plus a lineage record per value. */
 export interface ReportedEntry {
@@ -150,7 +161,8 @@ export interface ReportedEntry {
 }
 
 export interface ReportedFile {
-  updated: string;
+  /** ISO date of the last run that published anything; null before the pipeline has ever run. */
+  updated: string | null;
   entries: ReportedEntry[];
 }
 

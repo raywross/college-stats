@@ -32,7 +32,7 @@ import {
 } from "../../../lib/reported.ts";
 import type { School } from "../../../lib/types";
 import { readC1, readWorkbook, sheetText, workbookEdition } from "../cds-xlsx.mts";
-import { runChecks, toReportedEntry } from "./checks.mts";
+import { runChecks, toReportedEntry } from "../../../lib/reported-checks.ts";
 import { SCANNED_TEXT_CHARS, detectFormat, entryYearOf, htmlToText, newSourcesFromIndex, pagesText, pdfPages, selectPages, windowAround } from "./documents.mts";
 import { PoliteHttp, cacheDocument, isBlocked, sha256, type FetchFn } from "./http.mts";
 import { discover, extract, type DocumentInput, type LlmContext } from "./llm.mts";
@@ -412,7 +412,8 @@ export function createPipeline(deps: PipelineDeps) {
     };
     return {
       sources: { updated: today, recipes: [...recipes.values()] },
-      reported: { updated: today, entries: [...entries.values()] },
+      // `updated` on the published file moves only when something published, so a quiet run leaves it untouched.
+      reported: { updated: counts.published ? today : input.reported.updated, entries: [...entries.values()] },
       queue: { updated: today, items },
       summary,
     };

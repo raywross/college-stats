@@ -27,11 +27,11 @@ function readJson<T>(file: string, empty: T): T {
 }
 
 export const readSources = (file: string) => readJson<SourcesFile>(file, { updated: "", recipes: [] });
-export const readReported = (file: string) => readJson<ReportedFile>(file, { updated: "", entries: [] });
+export const readReported = (file: string) => readJson<ReportedFile>(file, { updated: null, entries: [] });
 export const readQueue = (file: string) => readJson<ReviewQueueFile>(file, { updated: "", items: [] });
 
 /** `{ "updated": …, "<key>": [\n  {one item per line},\n  …\n] }` */
-export function linesJson(updated: string, key: string, items: unknown[]): string {
+export function linesJson(updated: string | null, key: string, items: unknown[]): string {
   const body = items.map((it) => `    ${JSON.stringify(it)}`).join(",\n");
   return `{\n  "updated": ${JSON.stringify(updated)},\n  "${key}": [${items.length ? `\n${body}\n  ` : ""}]\n}\n`;
 }

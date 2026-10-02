@@ -9,7 +9,9 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type Anthropic from "@anthropic-ai/sdk";
 import type { Extraction, Recipe, ReportedEntry, ReportedFile, SourcesFile } from "../lib/reported.ts";
-import type { School } from "../lib/types";
+import type { DatasetMeta, School } from "../lib/types";
+import { validateSchool } from "../lib/lineage.ts";
+import { reportedToPatch } from "../lib/reported-checks.ts";
 import { readC1, readWorkbook, workbookEdition } from "../scripts/lib/cds-xlsx.mts";
 import { circuitBreaker, createPipeline } from "../scripts/lib/college-reported/pipeline.mts";
 import { entryYearOf, htmlToText, newSourcesFromIndex } from "../scripts/lib/college-reported/documents.mts";
@@ -18,6 +20,8 @@ import { linesJson } from "../scripts/lib/college-reported/files.mts";
 import { pickPilot } from "../scripts/lib/college-reported/pilot.mts";
 import type { ModelClient } from "../scripts/lib/college-reported/models.mts";
 
+const ROOT = join(import.meta.dirname, "..");
+const META: DatasetMeta = JSON.parse(readFileSync(join(ROOT, "data", "meta.json"), "utf8"));
 const FIXTURES = join(import.meta.dirname, "fixtures");
 const XLSX = readFileSync(join(FIXTURES, "cds-c1.xlsx"));
 const PDF = readFileSync(join(FIXTURES, "cds-c1.pdf"));
@@ -105,15 +109,23 @@ test("an Excel CDS is read deterministically: C1 totals, edition, and quotes, wi
   assert.deepEqual(readC1(book), { applicants: 45409, admitted: 2045, enrolled: 1690, warnings: [] });
   assert.equal(workbookEdition(book), "2025-26");
 
+  // The real Harvard record (federal fall 2024), so the published entry can be run through the lineage guard.
+  const harvard = (JSON.parse(readFileSync(join(ROOT, "data", "schools.json"), "utf8")) as School[]).find((s) => s.unit_id === "166027")!;
+  assert.equal(harvard.admissions.year, 2024);
   const url = "https://c166027.edu/ir/CDS_2025-26.xlsx";
   const { client, calls } = fakeClient({});
   const { fn } = fakeFetch({ [url]: XLSX });
-  const out = await pipeline(client, fn).run({ ...empty(), schools: [school()], sources: { updated: "", recipes: [recipe("166027", [{ kind: "cds", url, format: "xlsx" }])] }, run: "r1" });
+  const out = await pipeline(client, fn).run({ ...empty(), schools: [structuredClone(harvard)], sources: { updated: "", recipes: [recipe("166027", [{ kind: "cds", url, format: "xlsx" }])] }, run: "r1" });
   assert.equal(calls.length, 0);
   const entry = out.reported.entries[0];
-  assert.deepEqual(entry.admissions, { entering_term: "Fall 2025", year: 2025, applicants: 45409, admitted: 2045, enrolled: 1690, acceptance_rate: 0.045, source_kind: "cds" });
+  assert.deepEqual(entry.admissions, { entering_term: "Fall 2025", year: 2025, applicants: 45409, admitted: 2045, enrolled: 1690, acceptance_rate: 2045 / 45409, source_kind: "cds" });
   assert.equal(entry.lineage["reported.admissions.applicants"]?.quote, "C1 Total first-time, first-year students who applied: 45,409");
   assert.equal(entry.lineage["reported.admissions.applicants"]?.url, url);
+  const merged = structuredClone(harvard);
+  const { reported, lineage } = reportedToPatch(entry);
+  merged.reported = reported;
+  merged.lineage = { ...(merged.lineage ?? {}), ...lineage };
+  assert.deepEqual(validateSchool(merged, META), [], "what the pipeline publishes passes the lineage guard once merged");
   const src = out.sources.recipes[0].sources[0];
   assert.equal(src.sha256, sha256(XLSX));
   assert.equal(src.processed, "2026-10-02");

@@ -29,7 +29,7 @@ import { lineageForPatch, validateLineage } from "../lib/lineage.ts";
 import { applyProbes, filesToProbe, type FileProbe, type ReleaseCalendar } from "../lib/releases.ts";
 import { IPEDS_BASES, parseCsv } from "./lib/ipeds.mts";
 import { MSI_FIELDS, campusProfileFrom, directoryIssues, msiFrom } from "../lib/campus-profile.ts";
-import { studentFacultyRatioFrom } from "../lib/academics.ts";
+import { facultySalaryFrom, fullTimeFacultyShareFrom, studentFacultyRatioFrom } from "../lib/academics.ts";
 import { OM_COLUMNS, OM_LAG, OM_PIVOT, eightYearFrom } from "../lib/outcome-measures.ts";
 import { fetchPivotedTable } from "./lib/om.mts";
 import { GR_PELL_COHORT_TYPE, GR_PELL_COLUMNS, RACE_GROUPS, aidGroupGradFrom, raceGradFrom, scorecardRaceCohortField, scorecardRaceRateField } from "../lib/graduation-groups.ts";
@@ -131,6 +131,8 @@ const FIELDS = [
   "latest.student.demographics.women",
   "latest.student.part_time_share",
   "latest.student.share_25_older",
+  // Faculty (specs/data-expansion/faculty.md): full-time share, from IPEDS HR. Don't mix with the IPEDS SAL salary.
+  "school.ft_faculty_rate",
   // Campus profile: minority-serving and single-sex flags (lib/campus-profile.ts).
   ...Object.values(MSI_FIELDS),
   `${RACE}.white`,
@@ -269,6 +271,8 @@ async function fetchOutcomeMeasures(): Promise<IpedsFile> {
 const GR_PELL_NAMES = recentYears.map((y) => `GR${y}_PELL_SSL`);
 /** "GR2024_PELL_SSL" → 2018, the entering class it follows. */
 const grCohortYear = (name: string) => Number(name.slice(2, 6)) - 6;
+// Faculty salary (specs/data-expansion/faculty.md): SAL{Y}_IS, all-ranks row. Fall Y, like EF.
+const SAL_NAMES = recentYears.map((y) => `SAL${y}_IS`);
 
 /* ------------------------------------------------------------------ */
 /* 3. Merge                                                            */
@@ -463,7 +467,8 @@ function buildMeta(
   icChar: IpedsFile,
   efd: IpedsFile,
   om: IpedsFile,
-  grPell: IpedsFile
+  grPell: IpedsFile,
+  sal: IpedsFile
 ): DatasetMeta {
   const scorecardCostYear = scorecardYears.cost;
   return {
@@ -533,6 +538,14 @@ function buildMeta(
         description:
           "How many first-time, full-time students finished a degree or certificate within six years (150% of normal time), for Pell Grant recipients, students with a subsidized federal loan but no Pell Grant, and students with neither.",
       },
+      "ipeds-sal": {
+        label: "IPEDS Salaries survey (SAL, instructional staff, all ranks)",
+        publisher: "National Center for Education Statistics (NCES)",
+        edition: `Fall ${sal.name.slice(3, 7)} (${sal.name})`,
+        url: sal.url,
+        description:
+          "Average salary of a college's full-time instructional staff (all academic ranks combined), equated to a 9-month contract so colleges with different contract lengths can be compared.",
+      },
       "ipeds-ic-char": {
         label: "IPEDS Institutional Characteristics survey (athletics, programs, services)",
         publisher: "National Center for Education Statistics (NCES)",
@@ -559,6 +572,7 @@ function buildMeta(
       "ipeds-ef": `Fall ${efd.name.slice(2, 6)}`,
       "ipeds-om": `Students entering fall ${Number(om.name.slice(2)) - OM_LAG}`,
       "ipeds-gr": `Entered fall ${grCohortYear(grPell.name)}`,
+      "ipeds-sal": `Fall ${sal.name.slice(3, 7)}`,
       "scorecard-enrollment": scorecardYears.enrollment,
       "scorecard-age": scorecardYears.age,
       "scorecard-cost": scorecardYears.cost,
@@ -741,6 +755,10 @@ async function main() {
   const grPell = await fetchIpeds(GR_PELL_NAMES, (r) => r.PSGRTYPE === GR_PELL_COHORT_TYPE);
   const grMissing = GR_PELL_COLUMNS.filter((c) => ![...grPell.rows.values()].some((r) => c in r));
   if (grMissing.length || grPell.rows.size < 1000) throw new Error(`${grPell.name}: missing ${grMissing.join(", ") || "rows"} (cohort type ${GR_PELL_COHORT_TYPE})`);
+  // Faculty salary (specs/data-expansion/faculty.md): only the all-ranks row (ARANK 7); facultySalaryFrom asserts it.
+  const sal = await fetchIpeds(SAL_NAMES, (r) => r.ARANK === "7");
+  if (![...sal.rows.values()].some((r) => "ARANK" in r && "SAEQ9AT" in r)) throw new Error(`${sal.name} has no ARANK/SAEQ9AT columns`);
+  if (sal.rows.size < 1000) throw new Error(`${sal.name}: only ${sal.rows.size} colleges with an all-ranks (ARANK 7) row`);
   if (![...hd.rows.values()].some((r) => "LOCALE" in r && "CARNEGIEIC" in r)) throw new Error(`${hd.name} has no LOCALE/CARNEGIEIC columns`);
   // Campus services (specs/data-expansion/campus-services.md): the newest IC{Y}, a year ahead of the price files.
   const icChar = await fetchIpeds(IC_CHAR_NAMES);
@@ -764,7 +782,14 @@ async function main() {
     if (school) addProfile(school, hd.rows.get(school.unit_id), row);
     if (school) directoryWarnings.push(...directoryIssues(hd.rows.get(school.unit_id), school));
     if (school) addServices(school, icChar.rows.get(school.unit_id));
-    if (school) school.academics = { student_faculty_ratio: studentFacultyRatioFrom(efd.rows.get(school.unit_id)) };
+    if (school) {
+      const salary = facultySalaryFrom(sal.rows.get(school.unit_id));
+      const fullTimeShare = fullTimeFacultyShareFrom(row["school.ft_faculty_rate"]);
+      school.academics = {
+        student_faculty_ratio: studentFacultyRatioFrom(efd.rows.get(school.unit_id)),
+        faculty: salary === null && fullTimeShare === null ? null : { avg_salary_9mo: salary, full_time_share: fullTimeShare, count: null },
+      };
+    }
     if (school?.outcomes) school.outcomes.eight_year = eightYearFrom(om.rows.get(school.unit_id), omEntering);
     if (school) addGradByGroup(school, grPell.rows.get(school.unit_id), row);
     if (!school) {
@@ -794,7 +819,7 @@ async function main() {
     }
   }
   const scorecardYears = await detectScorecardYears(key, String(scorecard[0]?.id ?? "221999"));
-  const meta = buildMeta(adm, sfa, ic, sfaYears, scorecardYears, cost2, chars, hd, icChar, efd, om, grPell);
+  const meta = buildMeta(adm, sfa, ic, sfaYears, scorecardYears, cost2, chars, hd, icChar, efd, om, grPell, sal);
 
   // Nothing is written unless every value's lineage checks out.
   const problems = validateLineage(schools, meta);
@@ -820,6 +845,8 @@ async function main() {
   console.log(`  with aid (IPEDS SFA): ${schools.filter((s) => s.aid?.grant_pct != null).length}`);
   console.log(`  with CDS aid detail:  ${schools.filter((s) => s.aid?.cds).length}`);
   console.log(`  with avg paid (all):  ${schools.filter((s) => s.cost?.avg_paid_all != null).length}`);
+  console.log(`  with faculty salary:  ${schools.filter((s) => s.academics?.faculty?.avg_salary_9mo != null).length}`);
+  console.log(`  with full-time share: ${schools.filter((s) => s.academics?.faculty?.full_time_share != null).length}`);
   console.log(`  overrides applied:    ${stats.overridden}`);
   if (directoryWarnings.length) {
     console.warn(`  directory mismatches: ${directoryWarnings.length} (check the id still means the same college)`);

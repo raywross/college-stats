@@ -11,15 +11,16 @@
         "Cost 2025–26 (COST1_2025, COST2_2025)",
         "Student-to-faculty ratio, fall 2025 (EF2025D)",
         "8-year outcomes, students entering fall 2017 (OM2025)",
+        "Faculty salaries, fall 2025 (SAL2025_IS)",
         "Graduation rates",
         "Graduation by Pell and loan status, entering class of fall 2019 (GR2025_PELL_SSL)"
       ],
-      "updates": ["ipeds-adm", "ipeds-sfa", "ipeds-ic", "ipeds-ef", "ipeds-om", "ipeds-gr"],
+      "updates": ["ipeds-adm", "ipeds-sfa", "ipeds-ic", "ipeds-ef", "ipeds-om", "ipeds-gr", "ipeds-sal"],
       "expected": "2026-12",
       "status": "estimated",
-      "basis": "Last year's winter release was Dec 9, 2025",
+      "basis": "Last year's winter release was Dec 9, 2025; SAL2024_IS followed on Dec 30, 2025",
       "url": "https://nces.ed.gov/ipeds/survey-components/data-release-schedule",
-      "files": ["ADM2025", "SFA2425", "COST1_2025", "COST2_2025", "EF2025D", "OM2025", "GR2025_PELL_SSL"]
+      "files": ["ADM2025", "SFA2425", "COST1_2025", "COST2_2025", "EF2025D", "OM2025", "GR2025_PELL_SSL", "SAL2025_IS"]
     },
     {
       "id": "ipeds-2026-27-directory",

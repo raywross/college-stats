@@ -26,7 +26,7 @@ import { HOUSING_FILTERS } from "@/lib/housing";
 import { FACTOR_FILTERS } from "@/lib/factors";
 import { DESIGNATION_KEYS, RESEARCH_TIERS, SETTING_GROUPS, designationsOf, isOpportunityCollege } from "@/lib/campus-profile";
 import { DIVISION_FILTERS, ROTC_BRANCHES, divisionFilterOf } from "@/lib/campus-services";
-import { MAX_RATIO_OPTIONS } from "@/lib/academics";
+import { MAX_RATIO_OPTIONS, MIN_FULL_TIME_FACULTY_OPTIONS } from "@/lib/academics";
 import { InfoTip } from "@/components/ui/info-tip";
 import { MultiSourceNote } from "@/components/sources/MultiSourceNote";
 
@@ -74,6 +74,9 @@ function buildFacets({ getAllSchools, histogram }: Dataset): FilterFacets {
   const ratios = all.map((s) => s.academics?.student_faculty_ratio).filter((v): v is number => v != null);
   const maxRatio = Object.fromEntries(MAX_RATIO_OPTIONS.map((n) => [n, ratios.filter((v) => v <= n).length]));
 
+  const ftShares = all.map((s) => s.academics?.faculty?.full_time_share).filter((v): v is number => v != null);
+  const minFullTimeFaculty = Object.fromEntries(MIN_FULL_TIME_FACULTY_OPTIONS.map((n) => [n, ftShares.filter((v) => v >= n).length]));
+
   const services: FilterFacets["services"] = {
     division: Object.fromEntries(DIVISION_FILTERS.map((d) => [d, 0])) as FilterFacets["services"]["division"],
     football: all.filter((s) => s.campus?.athletics?.sports.includes("football")).length,
@@ -90,6 +93,8 @@ function buildFacets({ getAllSchools, histogram }: Dataset): FilterFacets {
   return {
     maxRatio,
     medianRatio: median(ratios),
+    minFullTimeFaculty,
+    medianFullTimeFaculty: median(ftShares),
     services,
     balance,
     fullTime: all.filter(isMostlyFullTime).length,

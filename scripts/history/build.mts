@@ -9,6 +9,7 @@ import type { IpedsRow } from "../../lib/derive.ts";
 import { FACTOR_CODE, FACTOR_COLUMNS, FACTOR_ERA, acceptanceRate, admitRatesBySex, applicationFeeFrom, computePrices, housingFrom, netPriceByIncome, promiseProgramFrom, raceShares, satMedian, toAid, tuitionPlansFrom, yieldOf } from "../../lib/derive.ts";
 import {
   GRAD_RACE_SERIES,
+  FULL_TIME_FACULTY_FROM,
   NET_PRICE_BANDS,
   RACE_FROM,
   RACE_SERIES,
@@ -35,7 +36,7 @@ import {
 } from "../../lib/history.ts";
 import { readSpec, type ColumnSpec, type Era, type FileChoice } from "./registry.mts";
 import { associationCode, footballConferenceCode, mainConferenceCode, rotcCode } from "../../lib/campus-services.ts";
-import { studentFacultyRatioFrom } from "../../lib/academics.ts";
+import { facultySalaryFrom, studentFacultyRatioFrom } from "../../lib/academics.ts";
 import { eightYearFrom } from "../../lib/outcome-measures.ts";
 import { aidGroupGradFrom, raceGradFrom } from "../../lib/graduation-groups.ts";
 import { COHORT_LAG, type ScorecardRow } from "./scorecard.mts";
@@ -63,6 +64,8 @@ export interface Inputs {
   efd?: readonly YearTable[];
   /** 8-year outcomes (OM{Y+8}, pivoted by cohort), one table per entering fall. */
   om?: readonly YearTable[];
+  /** Faculty salary, all-ranks row (SAL{Y}_IS), one table per fall. */
+  sal?: readonly YearTable[];
   /** College Scorecard year-prefixed values by unit ID (scripts/history/scorecard.mts), and the years requested. */
   scorecard?: { rows: ReadonlyMap<string, ScorecardRow>; first: number; last: number };
   /** Graduation by Pell and loan status (GR{Y+6}_PELL_SSL), one table per entering class. */
@@ -174,6 +177,10 @@ export function buildCollege(school: Pick<School, "unit_id" | "type">, inputs: I
       if (men !== undefined && men !== null) put(raw, "men_share", y, round4(men));
       const partTime = sc[`${y}.student.part_time_share`];
       if (partTime !== undefined && partTime !== null) put(raw, "part_time_share", y, round4(partTime));
+      if (y >= FULL_TIME_FACULTY_FROM) {
+        const ft = sc[`${y}.school.ft_faculty_rate`];
+        if (ft !== undefined && ft !== null) put(raw, "faculty_full_time_share", y, round4(ft));
+      }
       if (y >= RACE_FROM) {
         const shares = raceShares((f) => sc[`${y}.student.demographics.race_ethnicity.${f}`] ?? null);
         if (shares) for (const [k, key] of Object.entries(RACE_SERIES)) put(raw, key, y, shares[k as keyof typeof shares]);
@@ -232,6 +239,8 @@ export function buildCollege(school: Pick<School, "unit_id" | "type">, inputs: I
       }
     }
   }
+  // Faculty salary, with the snapshot's reader (lib/academics.ts): asserts the row is really ARANK 7.
+  for (const t of inputs.sal ?? []) put(raw, "faculty_salary", t.year, facultySalaryFrom(t.rows.get(id)));
 
   // Athletics and ROTC as codes for events: the same readers as the snapshot (lib/campus-services.ts).
   for (const t of inputs.services ?? []) {
@@ -578,6 +587,9 @@ export function lastPointMismatches(schools: readonly School[], histories: Reado
   // The newest entering fall history read from OM: what the snapshot's OM file describes.
   const omYears = [...histories.values()].flatMap((h) => (h.series.om_award ? [lastYear(h.series.om_award)] : []));
   const omYear = omYears.length ? Math.max(...omYears) : null;
+  // The newest SAL{Y}_IS fall history read: what the snapshot's salary figure describes.
+  const salYears = [...histories.values()].flatMap((h) => (h.series.faculty_salary ? [lastYear(h.series.faculty_salary)] : []));
+  const salYear = salYears.length ? Math.max(...salYears) : null;
   for (const s of schools) {
     const h = histories.get(s.unit_id);
     if (!h) continue;
@@ -677,6 +689,8 @@ export function lastPointMismatches(schools: readonly School[], histories: Reado
       check("om_award_pell", om?.pell?.award, false, omYear);
       check("om_award_non_pell", om?.non_pell?.award, false, omYear);
     }
+    if (salYear !== null) check("faculty_salary", s.academics?.faculty?.avg_salary_9mo, false, salYear);
+    if (h.series.faculty_full_time_share || s.academics?.faculty?.full_time_share != null) check("faculty_full_time_share", s.academics?.faculty?.full_time_share, true);
     // Athletics and ROTC: the snapshot reads the newest IC file, which is the services series' newest year.
     const a = s.campus?.athletics;
     if (servicesYear !== null && (a !== undefined || h.series.athletic_association)) {

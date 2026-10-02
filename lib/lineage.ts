@@ -42,6 +42,7 @@ const SOURCE_VINTAGE: Record<SourceKey, VintageKey | null> = {
   "ipeds-ef": "ipeds-ef",
   "ipeds-om": "ipeds-om",
   "ipeds-gr": "ipeds-gr",
+  "ipeds-sal": "ipeds-sal",
   cds: null,
 };
 
@@ -163,13 +164,14 @@ export const VINTAGE_KEYS: readonly VintageKey[] = [
   "ipeds-ef",
   "ipeds-om",
   "ipeds-gr",
+  "ipeds-sal",
   "scorecard-enrollment",
   "scorecard-age",
   "scorecard-cost",
   "scorecard-latest",
 ];
 /** Releases that must resolve to a year (the rest may be null). */
-const YEAR_REQUIRED: readonly VintageKey[] = ["ipeds-adm", "ipeds-sfa", "ipeds-ic", "ipeds-hd", "ipeds-ic-char", "ipeds-ef", "ipeds-gr", "scorecard-enrollment", "scorecard-age", "scorecard-cost", "ipeds-om"];
+const YEAR_REQUIRED: readonly VintageKey[] = ["ipeds-adm", "ipeds-sfa", "ipeds-ic", "ipeds-hd", "ipeds-ic-char", "ipeds-ef", "ipeds-gr", "ipeds-sal", "scorecard-enrollment", "scorecard-age", "scorecard-cost", "ipeds-om"];
 const METHODS = new Set(["reported", "derived", "extracted"]);
 
 /** Every stored leaf path of a school, e.g. "demographics.racial_diversity.asian". Arrays and null are leaves; undefined isn't stored. */

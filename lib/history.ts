@@ -69,12 +69,17 @@ export const HISTORY_FAMILIES = {
   "ef-d": { source: "ipeds-ef", kind: "fall", files: "EF{year}D (student-to-faculty ratio)" },
   om: { source: "ipeds-om", kind: "cohort", files: "OM{year+8} (Outcome Measures, 8 years after entry)" },
   "gr-pell": { source: "ipeds-gr", kind: "cohort", files: "GR{year+6}_PELL_SSL (graduation by Pell Grant and subsidized loan status)" },
+  // Faculty salary (specs/data-expansion/faculty.md): SAL{year}_IS, all-ranks row (ARANK 7). Starts 2016, the first
+  // year with the equated 9-month figure (SAEQ9AT); earlier files used different, non-equated columns.
+  "ipeds-sal": { source: "ipeds-sal", kind: "fall", files: "SAL{year}_IS (instructional staff salaries, all ranks)" },
   // College Scorecard API, year-prefixed fields (not files): years can have gaps, so they aren't checked as consecutive.
   "scorecard-enrollment": { source: "scorecard", kind: "fall", files: "API fields {year}.student.size, {year}.student.demographics.race_ethnicity.*, .men, and {year}.student.part_time_share", api: true, citeAs: "enrollment" },
   "scorecard-completion": { source: "scorecard", kind: "cohort", files: "API field {year+6}.completion.completion_rate_4yr_150nt", api: true, citeAs: "graduation by entering class" },
   "scorecard-debt": { source: "scorecard", kind: "academic", files: "API field {year}.aid.median_debt.completers.overall", api: true, citeAs: "median debt" },
   "scorecard-loans": { source: "scorecard", kind: "academic", files: "API field {year+1}.aid.federal_loan_rate", api: true, citeAs: "federal loan rate" },
   "scorecard-completion-race": { source: "scorecard", kind: "cohort", files: "API fields {year+6}.completion.completion_rate_4yr_150_* and completion_cohort_4yr_150_* (by race and ethnicity)", api: true, citeAs: "graduation by race and ethnicity" },
+  // Faculty (specs/data-expansion/faculty.md): full-time share, from IPEDS HR via Scorecard.
+  "scorecard-faculty": { source: "scorecard", kind: "fall", files: "API field {year}.school.ft_faculty_rate", api: true, citeAs: "full-time faculty share" },
 } as const satisfies Record<string, { source: SourceKey; kind: YearKind; files: string; api?: true; citeAs?: string }>;
 
 export type HistoryFamily = keyof typeof HISTORY_FAMILIES;
@@ -121,6 +126,9 @@ export const SERIES = {
   live_on: { label: "First-years must live on campus", short: "Live-on rule", field: "campus.housing", term: "live-on-requirement", unit: "code", kind: "academic", format: "int", families: ["characteristics"] },
   tuition_guarantee: { label: "Tuition guarantee", short: "Tuition guarantee", field: "cost.tuition_plans", term: "tuition-guarantee", unit: "code", kind: "academic", format: "int", families: ["characteristics"] },
   student_faculty_ratio: { label: "Students per faculty member", short: "Students/faculty", field: "academics.student_faculty_ratio", term: "student-faculty-ratio", unit: "count", kind: "fall", format: "int", families: ["ef-d"] },
+  // Faculty (specs/data-expansion/faculty.md).
+  faculty_full_time_share: { label: "Full-time faculty share", short: "Full-time faculty", field: "academics.faculty.full_time_share", term: "full-time-faculty", unit: "share", kind: "fall", format: "pct", families: ["scorecard-faculty"] },
+  faculty_salary: { label: "Average faculty salary (9-month equated)", short: "Faculty salary", field: "academics.faculty", term: "nine-month-equated-salary", unit: "usd", kind: "fall", format: "money", families: ["ipeds-sal"] },
   // Athletics and ROTC as codes, for events (lib/events.ts; lib/campus-services.ts reads them).
   conference: { label: "Athletic conference", short: "Conference", field: "campus.athletics", term: "athletic-conference", unit: "conference", kind: "academic", format: "int", families: ["services"] },
   football_conference: { label: "Football conference", short: "Football conference", field: "campus.athletics", term: "athletic-conference", unit: "conference", kind: "academic", format: "int", families: ["services"] },
@@ -221,6 +229,13 @@ export const GRAD_RACE_SERIES = {
 export const RACE_FROM = 2010;
 /** Federal loan rate: Scorecard year-prefixed values from key 2009 (the 2008–09 school year; checked 2026-09-29). */
 export const LOAN_RATE_FROM = 2009;
+/** Full-time faculty share: Scorecard year-prefixed `ft_faculty_rate` verified back to key 2005 (2026-10-02). */
+export const FULL_TIME_FACULTY_FROM = 2005;
+/**
+ * Faculty salary: SAL{year}_IS from 2016, the first year with the equated 9-month column (`SAEQ9AT`); 2012–2015
+ * files exist but use different, non-equated columns (checked 2026-10-02), so they're left out rather than mixed in.
+ */
+export const SALARY_FROM = 2016;
 export function isSeriesKey(k: string): k is SeriesKey {
   return Object.prototype.hasOwnProperty.call(SERIES, k);
 }

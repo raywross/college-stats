@@ -98,15 +98,6 @@ export const ROADMAP: RoadmapSpec[] = [
     status: "planned",
   },
   {
-    slug: "faculty",
-    file: "specs/data-expansion/faculty.md",
-    group: "wave-2",
-    summary: "Average faculty salary and the share of faculty who are full-time.",
-    complexity: 1,
-    complexityNote: "One new file plus one Scorecard field.",
-    status: "planned",
-  },
-  {
     slug: "majors",
     file: "specs/data-expansion/majors.md",
     group: "wave-3",

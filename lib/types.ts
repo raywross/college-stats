@@ -196,6 +196,15 @@ export interface School {
   academics?: {
     /** Students per instructional faculty member, "N to 1" (IPEDS EF part D `STUFACR`, fall). */
     student_faculty_ratio: number | null;
+    /** Faculty (specs/data-expansion/faculty.md): salary (IPEDS SAL, all ranks) and full-time share (Scorecard). */
+    faculty?: {
+      /** All-ranks average salary equated to a 9-month contract, nominal dollars (IPEDS SAL{Y}_IS, ARANK 7, `SAEQ9AT`). */
+      avg_salary_9mo: number | null;
+      /** Share of faculty who are full-time (College Scorecard `school.ft_faculty_rate`, from IPEDS HR). */
+      full_time_share: number | null;
+      /** Instructional staff counted in the salary figure, when available; not published in SAL_IS itself today. */
+      count: number | null;
+    } | null;
   };
   campus?: {
     /** Athletics (IPEDS IC; lib/campus-services.ts). Null when the college didn't answer. */
@@ -432,7 +441,7 @@ export interface CampusPrograms {
   intellectual_disability_program: boolean;
 }
 
-export type SourceKey = "scorecard" | "ipeds-adm" | "ipeds-sfa" | "ipeds-ic" | "ipeds-ic-char" | "ipeds-hd" | "ipeds-ef" | "ipeds-om" | "cds"
+export type SourceKey = "scorecard" | "ipeds-adm" | "ipeds-sfa" | "ipeds-ic" | "ipeds-ic-char" | "ipeds-hd" | "ipeds-ef" | "ipeds-om" | "ipeds-sal" | "cds"
   /** IPEDS Graduation Rates, Pell and subsidized-loan file (GR{Y}_PELL_SSL; specs/data-expansion/graduation-by-group.md). */
   | "ipeds-gr";
 /** Race/ethnicity groups for graduation rates (lib/graduation-groups.ts RACE_GROUPS). */
@@ -488,7 +497,8 @@ export type SortKey =
   | "loan_rate_change"
   /** Graduation by group: the Pell graduation gap, and its 10-year change. */
   | "pell_gap"
-  | "pell_gap_change";
+  | "pell_gap_change"
+  | "full_time_faculty";
 
 export type ExploreView = "grid" | "table" | "chart" | "map";
 
@@ -508,6 +518,8 @@ export interface SearchFilters {
   maxEnroll?: number;
   /** At most this many students per faculty member. */
   maxRatio?: number;
+  /** At least this share of faculty are full-time (0–1; specs/data-expansion/faculty.md). */
+  minFullTimeFaculty?: number;
   minCost?: number;
   maxCost?: number;
   /** Trend indicator directions to keep (lib/indicators.ts), e.g. { cost: ["down", "steady"] }. */

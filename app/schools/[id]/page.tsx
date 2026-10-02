@@ -89,11 +89,11 @@ const HISTORY_GROUPS = {
   scores: ["sat_25", "sat_75", "act_25", "act_75", "sat_submit", "test_policy"],
   students: ["undergrads", "race_white", "men_share", "part_time_share", "housing_capacity"],
   outcomes: ["grad_rate", "median_debt", "om_award", "om_transfer", "om_award_pell", "om_award_non_pell", "grad_rate_pell", "grad_rate_white"],
-  academics: ["student_faculty_ratio"],
+  academics: ["student_faculty_ratio", "faculty_full_time_share", "faculty_salary"],
 } as const satisfies Record<string, readonly SeriesKey[]>;
 
 /** National series the charts draw as a band (keeps the page payload small). */
-const BANDED: readonly SeriesKey[] = ["avg_paid_all", "grant_pct", "grant_avg", "acceptance_rate", "sat_25", "sat_75", "act_25", "act_75", "grad_rate", "median_debt", "men_share", "part_time_share", "federal_loan_rate", "student_faculty_ratio", "om_award", "om_transfer"];
+const BANDED: readonly SeriesKey[] = ["avg_paid_all", "grant_pct", "grant_avg", "acceptance_rate", "sat_25", "sat_75", "act_25", "act_75", "grad_rate", "median_debt", "men_share", "part_time_share", "federal_loan_rate", "student_faculty_ratio", "om_award", "om_transfer", "faculty_full_time_share", "faculty_salary"];
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -202,7 +202,7 @@ const SECTION_FIELDS = {
     "outcomes.grad_rate_by_race",
     "outcomes.grad_cohorts_by_race",
   ],
-  academics: ["academics.student_faculty_ratio"],
+  academics: ["academics.student_faculty_ratio", "academics.faculty", "academics.faculty.full_time_share"],
   campus: ["campus.housing", "campus.athletics", "campus.programs", "campus.services", "campus.calendar", "demographics.disability_services"],
   ranks: ["derived.sat_mid", "derived.yield", "demographics.pell_grant_percent", "derived.diversity_index", "admissions.acceptance_rate"],
 } as const satisfies Record<string, readonly FieldPath[]>;
@@ -346,6 +346,10 @@ export default async function SchoolPage({ params }: Props) {
   // Say "fewer than at 96%" below the median and "more than at 88%" above it, never "fewer than at 10%".
   const ratioVs =
     ratioRank === null ? null : ratioRank <= 0.5 ? { share: 1 - ratioRank, word: "fewer" as const } : { share: ratioRank, word: "more" as const };
+  const faculty = school.academics?.faculty ?? null;
+  const fullTimeShare = faculty?.full_time_share ?? null;
+  const facultySalaryValue = faculty?.avg_salary_9mo ?? null;
+  const hasFaculty = ratio !== null || fullTimeShare !== null || facultySalaryValue !== null;
   const recentAdmissionChanges = history ? historyEvents(history).filter((e) => e.area === "admissions" && e.kind === "fall" && e.year > FACTOR_ERA) : [];
   const federalSat = citeField("admissions.sat_reading_25_75", school).isDefault && citeField("admissions.sat_math_25_75", school).isDefault;
   const federalAct = citeField("admissions.act_composite_25_75", school).isDefault;
@@ -377,7 +381,7 @@ export default async function SchoolPage({ params }: Props) {
     ...(scores ? [{ id: "scores", label: "Test scores", color: DOMAINS.scores.color }] : []),
     { id: "students", label: "Students", color: DOMAINS.access.color },
     ...(school.campus?.housing || school.campus?.athletics || school.campus?.programs ? [{ id: "campus", label: "Campus life", color: DOMAINS.size.color }] : []),
-    ...(ratio !== null ? [{ id: "academics", label: "Academics", color: DOMAINS.size.color }] : []),
+    ...(hasFaculty ? [{ id: "academics", label: "Academics", color: DOMAINS.size.color }] : []),
     ...(hasValue ? [{ id: "cost", label: "Cost & outcomes", color: DOMAINS.value.color }] : []),
     ...(hasHistory ? [{ id: "history", label: "Over time" }] : []),
     { id: "ranks", label: "How it ranks" },
@@ -968,33 +972,65 @@ export default async function SchoolPage({ params }: Props) {
           )}
 
           {/* ============================== ACADEMICS ============================== */}
-          {ratio !== null && (
+          {hasFaculty && (
             <Panel
               id="academics"
               domain="size"
               eyebrow="Academics"
               title="Faculty and students"
-              takeaway={`${ratio} students for every faculty member${ratioVs ? `, ${ratioVs.word} than at ${pct(ratioVs.share)} of colleges` : ""}.`}
+              takeaway={[
+                ratio !== null ? `${ratio} students for every faculty member${ratioVs ? `, ${ratioVs.word} than at ${pct(ratioVs.share)} of colleges` : ""}.` : null,
+                fullTimeShare !== null ? `${pct(fullTimeShare)} of faculty are full-time.` : null,
+              ]
+                .filter(Boolean)
+                .join(" ")}
               school={school}
               fields={SECTION_FIELDS.academics}
             >
-              <div className="rounded-3xl border bg-card p-4 sm:p-6">
-                <DistributionStrip
-                  label="Students per faculty member vs. every college"
-                  term="student-faculty-ratio"
-                  dist={distribution("studentFaculty")}
-                  value={ratio}
-                  rank={ratioVs?.share ?? null}
-                  rankPhrase={`${ratioVs?.word ?? "fewer"} students per faculty member than`}
-                  format="ratio"
-                  color={DOMAINS.size.color}
-                  lowLabel="Fewer students per faculty"
-                  highLabel="More students per faculty"
-                />
-                <p className="mt-4 text-xs text-muted-foreground">
-                  Not the average class size: faculty also teach graduate students and do research, and large lectures can sit alongside small seminars.
-                  <InfoTip term="student-faculty-ratio" className="ml-1" />
-                </p>
+              <div className="grid gap-4 lg:grid-cols-2">
+                {ratio !== null && (
+                  <div className="rounded-3xl border bg-card p-4 sm:p-6">
+                    <DistributionStrip
+                      label="Students per faculty member vs. every college"
+                      term="student-faculty-ratio"
+                      dist={distribution("studentFaculty")}
+                      value={ratio}
+                      rank={ratioVs?.share ?? null}
+                      rankPhrase={`${ratioVs?.word ?? "fewer"} students per faculty member than`}
+                      format="ratio"
+                      color={DOMAINS.size.color}
+                      lowLabel="Fewer students per faculty"
+                      highLabel="More students per faculty"
+                    />
+                    <p className="mt-4 text-xs text-muted-foreground">
+                      Not the average class size: faculty also teach graduate students and do research, and large lectures can sit alongside small seminars.
+                      <InfoTip term="student-faculty-ratio" className="ml-1" />
+                    </p>
+                  </div>
+                )}
+                {fullTimeShare !== null && (
+                  <div className="rounded-3xl border bg-card p-4 sm:p-6">
+                    <BenchmarkBar
+                      label="Full-time faculty"
+                      term="full-time-faculty"
+                      cited={citeField("academics.faculty.full_time_share", school)}
+                      value={fullTimeShare}
+                      median={metricMedian("facultyFullTime") ?? undefined}
+                      scale={[0, 1]}
+                      format={(v) => pct(v)}
+                      color={DOMAINS.size.color}
+                    />
+                  </div>
+                )}
+                {facultySalaryValue !== null && (
+                  <div className="rounded-3xl border bg-card p-4 sm:p-6">
+                    <MetricLabel term="nine-month-equated-salary" cited={citeField("academics.faculty", school)} className="text-sm font-medium">
+                      Average faculty salary
+                    </MetricLabel>
+                    <p className="mt-2 font-display text-3xl font-extrabold">{money(facultySalaryValue)}</p>
+                    <p className="mt-1 text-xs text-muted-foreground">9-month equated, all ranks combined. Pay tracks local cost of living as much as a college&apos;s generosity.</p>
+                  </div>
+                )}
               </div>
             </Panel>
           )}

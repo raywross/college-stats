@@ -324,7 +324,23 @@ const entries = {
     short: "The middle salary of former students 10 years after they first enrolled, whether or not they graduated. Covers students who received federal financial aid.",
     why: "Earnings reflect majors, location, and who enrolls as much as the college itself, so treat big gaps as clues rather than cause and effect.",
     category: "Cost & outcomes",
-    related: ["payback", "graduation-rate"],
+    related: ["payback", "graduation-rate", "earnings-after-completion"],
+  },
+  // Field of study earnings and debt (specs/data-expansion/field-of-study.md).
+  "field-of-study": {
+    term: "Field of study",
+    short: "A specific major, grouped by its 4-digit CIP code (the federal classification of academic fields), at one credential level. The site shows bachelor's fields only.",
+    long: "Earnings and debt here are measured per field of study and credential level at each college, not per college overall, so a college's typical graduate and its computer science graduate can look very different.",
+    category: "Cost & outcomes",
+    related: ["earnings-after-completion"],
+  },
+  "earnings-after-completion": {
+    term: "Earnings after completion",
+    short: "Median pay for graduates of one field at one college, counted from when they completed that credential — not from when they started, the way the site's college-wide earnings figure is. One and four years after completion are shown, plus the national median in the same field for comparison.",
+    long: "Because it's measured from completion rather than entry, and only among graduates who worked and weren't still enrolled, it isn't directly comparable to the college-wide \"median earnings\" figure, which includes students who never finished. The 1-year, 4-year, and Pell/non-Pell figures can also come from different graduating classes a few years apart — each is the latest the Department of Education has calculated for it.",
+    why: "Two colleges' overall earnings can differ mainly because of what students major in; comparing the same field narrows that out.",
+    category: "Cost & outcomes",
+    related: ["median-earnings", "field-of-study"],
   },
   "graduation-rate": {
     term: "Graduation rate",

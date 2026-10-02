@@ -46,6 +46,7 @@ const SOURCE_VINTAGE: Record<SourceKey, VintageKey | null> = {
   "ipeds-ef-c": "ipeds-ef-c",
   "ipeds-ef-a": "ipeds-ef-a",
   "ipeds-f": "ipeds-f",
+  "scorecard-fos": "scorecard-fos",
   cds: null,
 };
 
@@ -99,7 +100,7 @@ export function yearLabel(s: Pick<CitedSource, "year">): string {
 
 /** Compact name for a chip: "CDS 2024-25", "IPEDS Fall 2024", "Scorecard". */
 export function shortSource(s: CitedSource): string {
-  const name = s.key === "cds" ? "CDS" : s.key === "scorecard" ? "Scorecard" : "IPEDS";
+  const name = s.key === "cds" ? "CDS" : s.key === "scorecard" || s.key === "scorecard-fos" ? "Scorecard" : "IPEDS";
   return s.year ? `${name} ${s.year}` : name;
 }
 
@@ -175,6 +176,7 @@ export const VINTAGE_KEYS: readonly VintageKey[] = [
   "scorecard-age",
   "scorecard-cost",
   "scorecard-latest",
+  "scorecard-fos",
 ];
 /** Releases that must resolve to a year (the rest may be null). */
 const YEAR_REQUIRED: readonly VintageKey[] = ["ipeds-adm", "ipeds-sfa", "ipeds-ic", "ipeds-hd", "ipeds-ic-char", "ipeds-ef", "ipeds-ef-c", "ipeds-ef-a", "ipeds-gr", "ipeds-sal", "ipeds-f", "scorecard-enrollment", "scorecard-age", "scorecard-cost", "ipeds-om"];

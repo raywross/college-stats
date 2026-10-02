@@ -222,6 +222,12 @@ export interface School {
       /** Instructional staff counted in the salary figure, when available; not published in SAL_IS itself today. */
       count: number | null;
     } | null;
+    /**
+     * Bachelor's programs with 4-year median earnings reported (specs/data-expansion/field-of-study.md). The full
+     * per-program table (earnings, debt, graduates by 4-digit CIP) lives in the detail file (`detail.programs`),
+     * not here; this count is small enough for the snapshot.
+     */
+    programs_with_earnings?: number | null;
   };
   /**
    * College finances (specs/data-expansion/finances.md): IPEDS Finance survey, derived per-student figures
@@ -481,7 +487,9 @@ export interface CampusPrograms {
 
 export type SourceKey = "scorecard" | "ipeds-adm" | "ipeds-sfa" | "ipeds-ic" | "ipeds-ic-char" | "ipeds-hd" | "ipeds-ef" | "ipeds-ef-c" | "ipeds-ef-a" | "ipeds-om" | "ipeds-sal" | "ipeds-f" | "cds"
   /** IPEDS Graduation Rates, Pell and subsidized-loan file (GR{Y}_PELL_SSL; specs/data-expansion/graduation-by-group.md). */
-  | "ipeds-gr";
+  | "ipeds-gr"
+  /** College Scorecard Field of Study bulk CSV: earnings and debt by 4-digit CIP (specs/data-expansion/field-of-study.md). */
+  | "scorecard-fos";
 /** Race/ethnicity groups for graduation rates (lib/graduation-groups.ts RACE_GROUPS). */
 export type GradRaceGroup = "white" | "asian" | "hispanic" | "black" | "two_or_more" | "international" | "aian" | "nhpi";
 

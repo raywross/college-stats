@@ -118,16 +118,6 @@ export const ROADMAP: RoadmapSpec[] = [
     status: "planned",
   },
   {
-    slug: "field-of-study",
-    file: "specs/data-expansion/field-of-study.md",
-    group: "wave-3",
-    summary: "What graduates in each major earn and owe, at each college.",
-    complexity: 3,
-    complexityNote: "A large Scorecard dataset joined to the majors table.",
-    status: "planned",
-    after: ["majors"],
-  },
-  {
     slug: "college-reported-data",
     file: "specs/college-reported-data.md",
     group: "college-reported",

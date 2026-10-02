@@ -6,6 +6,7 @@ import { ArrowRight, Calculator, ChevronRight, ExternalLink, MapPin, TriangleAle
 import { getData, getDetail, getHistory, getHistoryFiles } from "@/lib/data";
 import { Residence } from "@/components/school/Residence";
 import { Transfers } from "@/components/school/Transfers";
+import { FieldOfStudy } from "@/components/school/FieldOfStudy";
 import type { Cited } from "@/lib/lineage";
 import {
   DOMAINS,
@@ -208,7 +209,7 @@ const SECTION_FIELDS = {
     "outcomes.grad_rate_by_race",
     "outcomes.grad_cohorts_by_race",
   ],
-  academics: ["academics.student_faculty_ratio", "academics.faculty", "academics.faculty.full_time_share", "finances"],
+  academics: ["academics.student_faculty_ratio", "academics.faculty", "academics.faculty.full_time_share", "finances", "detail.programs", "academics.programs_with_earnings"],
   campus: ["campus.housing", "campus.athletics", "campus.programs", "campus.services", "campus.calendar", "demographics.disability_services"],
   ranks: ["derived.sat_mid", "derived.yield", "demographics.pell_grant_percent", "derived.diversity_index", "admissions.acceptance_rate"],
 } as const satisfies Record<string, readonly FieldPath[]>;
@@ -363,7 +364,8 @@ export default async function SchoolPage({ params }: Props) {
   const faculty = school.academics?.faculty ?? null;
   const fullTimeShare = faculty?.full_time_share ?? null;
   const facultySalaryValue = faculty?.avg_salary_9mo ?? null;
-  const hasAcademics = ratio !== null || fullTimeShare !== null || facultySalaryValue !== null || finances !== null;
+  const hasTopPrograms = (school.academics?.programs_with_earnings ?? 0) > 0;
+  const hasAcademics = ratio !== null || fullTimeShare !== null || facultySalaryValue !== null || finances !== null || hasTopPrograms;
   const recentAdmissionChanges = history ? historyEvents(history).filter((e) => e.area === "admissions" && e.kind === "fall" && e.year > FACTOR_ERA) : [];
   const federalSat = citeField("admissions.sat_reading_25_75", school).isDefault && citeField("admissions.sat_math_25_75", school).isDefault;
   const federalAct = citeField("admissions.act_composite_25_75", school).isDefault;
@@ -1103,6 +1105,11 @@ export default async function SchoolPage({ params }: Props) {
                       />
                     </div>
                   )}
+                </div>
+              )}
+              {hasTopPrograms && (
+                <div className="mt-4 grid gap-4 lg:grid-cols-2">
+                  <FieldOfStudy detail={detail} cited={citeField("detail.programs", school)} />
                 </div>
               )}
             </Panel>

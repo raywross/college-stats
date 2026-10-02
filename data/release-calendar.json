@@ -82,11 +82,11 @@
       "id": "scorecard-next",
       "source": "scorecard",
       "label": "College Scorecard update",
-      "brings": ["Refreshed IPEDS-derived enrollment and cost figures", "Federal Student Aid outcomes (earnings, debt)"],
-      "updates": ["scorecard-enrollment", "scorecard-age", "scorecard-cost", "scorecard-latest"],
+      "brings": ["Refreshed IPEDS-derived enrollment and cost figures", "Federal Student Aid outcomes (earnings, debt)", "Field of study earnings and debt by major"],
+      "updates": ["scorecard-enrollment", "scorecard-age", "scorecard-cost", "scorecard-latest", "scorecard-fos"],
       "expected": null,
       "status": "estimated",
-      "basis": "Irregular: the last updates were Jun 10, 2026 and Mar 23, 2026",
+      "basis": "Irregular: the last updates were Jun 10, 2026 and Mar 23, 2026 (the Field of Study bulk file ships the same day as the institution file)",
       "url": "https://collegescorecard.ed.gov/data/changelog"
     },
     {

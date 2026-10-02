@@ -830,21 +830,51 @@ export function OverTime(props: OverTimeProps) {
         </Group>
       )}
 
-      {history.series.student_faculty_ratio && (
+      {(history.series.student_faculty_ratio || history.series.faculty_full_time_share || history.series.faculty_salary) && (
         <Group title="Academics" color={colors.size} open={open.academics} onToggle={toggle("academics")} footer={sources.academics}>
           <div className="grid gap-4 lg:grid-cols-2">
-            <ChartPanel
-              {...common}
-              title="Students per faculty member"
-              term="student-faculty-ratio"
-              kind="fall"
-              format="num"
-              window={windowFor("fall", ["student_faculty_ratio"])}
-              headline="student_faculty_ratio"
-              provisionalYear={null}
-              specs={[{ key: "student_faculty_ratio", name: "Students per faculty", color: colors.size, band: true }]}
-              note="Lower means fewer students for each faculty member. Colleges compute it themselves, so small moves can be a change in counting."
-            />
+            {history.series.student_faculty_ratio && (
+              <ChartPanel
+                {...common}
+                title="Students per faculty member"
+                term="student-faculty-ratio"
+                kind="fall"
+                format="num"
+                window={windowFor("fall", ["student_faculty_ratio"])}
+                headline="student_faculty_ratio"
+                provisionalYear={null}
+                specs={[{ key: "student_faculty_ratio", name: "Students per faculty", color: colors.size, band: true }]}
+                note="Lower means fewer students for each faculty member. Colleges compute it themselves, so small moves can be a change in counting."
+              />
+            )}
+            {history.series.faculty_full_time_share && (
+              <ChartPanel
+                {...common}
+                title="Full-time faculty share"
+                term="full-time-faculty"
+                kind="fall"
+                format="pct"
+                window={windowFor("fall", ["faculty_full_time_share"])}
+                headline="faculty_full_time_share"
+                provisionalYear={null}
+                specs={[{ key: "faculty_full_time_share", name: "Full-time faculty", color: colors.size, band: true }]}
+                note="Nationally the full-time share has drifted down for years as colleges rely more on part-time and adjunct instructors."
+              />
+            )}
+            {history.series.faculty_salary && (
+              <ChartPanel
+                {...common}
+                title="Average faculty salary"
+                term="nine-month-equated-salary"
+                kind="fall"
+                format="money"
+                window={windowFor("fall", ["faculty_salary"])}
+                headline="faculty_salary"
+                provisionalYear={null}
+                specs={[{ key: "faculty_salary", name: "Faculty salary", color: colors.size, band: true }]}
+                note="9-month equated, all ranks combined. Pay tracks local cost of living as much as a college's generosity, so compare with care."
+              />
+            )}
           </div>
         </Group>
       )}

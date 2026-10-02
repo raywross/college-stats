@@ -29,7 +29,7 @@ import { lineageForPatch, validateLineage } from "../lib/lineage.ts";
 import { applyProbes, filesToProbe, type FileProbe, type ReleaseCalendar } from "../lib/releases.ts";
 import { IPEDS_BASES, parseCsv } from "./lib/ipeds.mts";
 import { MSI_FIELDS, campusProfileFrom, directoryIssues, msiFrom } from "../lib/campus-profile.ts";
-import { studentFacultyRatioFrom } from "../lib/academics.ts";
+import { facultySalaryFrom, fullTimeFacultyShareFrom, studentFacultyRatioFrom } from "../lib/academics.ts";
 import { apCreditFrom, athleticsFrom, calendarFrom, disabilityFrom, programsFrom, servicesFrom } from "../lib/campus-services.ts";
 import { acceptanceRate, applicationFeeFrom, computePrices, factorsFrom, housingFrom, ipedsNum, parseShareBand, priceSuffix, promiseProgramFrom, raceShares, toAid, tuitionPlansFrom } from "../lib/derive.ts";
 
@@ -128,6 +128,8 @@ const FIELDS = [
   "latest.student.demographics.women",
   "latest.student.part_time_share",
   "latest.student.share_25_older",
+  // Faculty (specs/data-expansion/faculty.md): full-time share, from IPEDS HR. Don't mix with the IPEDS SAL salary.
+  "school.ft_faculty_rate",
   // Campus profile: minority-serving and single-sex flags (lib/campus-profile.ts).
   ...Object.values(MSI_FIELDS),
   `${RACE}.white`,
@@ -244,6 +246,8 @@ const HD_NAMES = [thisYear + 1, ...recentYears].map((y) => `HD${y}`);
 const IC_CHAR_NAMES = [thisYear + 1, ...recentYears].map((y) => `IC${y}`);
 // Fall enrollment part D (student-faculty ratio): EF{Y}D = fall Y, with the winter release.
 const EF_D_NAMES = recentYears.map((y) => `EF${y}D`);
+// Faculty salary (specs/data-expansion/faculty.md): SAL{Y}_IS, all-ranks row. Fall Y, like EF.
+const SAL_NAMES = recentYears.map((y) => `SAL${y}_IS`);
 
 /* ------------------------------------------------------------------ */
 /* 3. Merge                                                            */
@@ -436,7 +440,8 @@ function buildMeta(
   chars: IpedsFile,
   hd: IpedsFile,
   icChar: IpedsFile,
-  efd: IpedsFile
+  efd: IpedsFile,
+  sal: IpedsFile
 ): DatasetMeta {
   const scorecardCostYear = scorecardYears.cost;
   return {
@@ -490,6 +495,14 @@ function buildMeta(
         description:
           "Each college's student-to-faculty ratio: full-time-equivalent students per full-time-equivalent instructional faculty member, not counting faculty who teach only graduate or professional students.",
       },
+      "ipeds-sal": {
+        label: "IPEDS Salaries survey (SAL, instructional staff, all ranks)",
+        publisher: "National Center for Education Statistics (NCES)",
+        edition: `Fall ${sal.name.slice(3, 7)} (${sal.name})`,
+        url: sal.url,
+        description:
+          "Average salary of a college's full-time instructional staff (all academic ranks combined), equated to a 9-month contract so colleges with different contract lengths can be compared.",
+      },
       "ipeds-ic-char": {
         label: "IPEDS Institutional Characteristics survey (athletics, programs, services)",
         publisher: "National Center for Education Statistics (NCES)",
@@ -514,6 +527,7 @@ function buildMeta(
       "ipeds-hd": `${hd.name.slice(2)}–${String(Number(hd.name.slice(2)) + 1).slice(2)}`,
       "ipeds-ic-char": academicYear(icChar.name.slice(2)),
       "ipeds-ef": `Fall ${efd.name.slice(2, 6)}`,
+      "ipeds-sal": `Fall ${sal.name.slice(3, 7)}`,
       "scorecard-enrollment": scorecardYears.enrollment,
       "scorecard-age": scorecardYears.age,
       "scorecard-cost": scorecardYears.cost,
@@ -675,6 +689,12 @@ async function main() {
   // Student-faculty ratio (specs/data-expansion/student-faculty-ratio.md).
   const efd = await fetchIpeds(EF_D_NAMES);
   if (![...efd.rows.values()].some((r) => "STUFACR" in r)) throw new Error(`${efd.name} has no STUFACR column`);
+  // Faculty salary (specs/data-expansion/faculty.md): the all-ranks row (ARANK 7) is the last row per college in
+  // every year checked (2016–2024), so the generic "last row wins" fetch lands on it; this still verifies it did.
+  const sal = await fetchIpeds(SAL_NAMES);
+  if (![...sal.rows.values()].some((r) => "ARANK" in r && "SAEQ9AT" in r)) throw new Error(`${sal.name} has no ARANK/SAEQ9AT columns`);
+  const salMismatches = [...sal.rows.values()].filter((r) => r.ARANK !== "7").length;
+  if (salMismatches > sal.rows.size * 0.01) throw new Error(`${sal.name}: ${salMismatches} colleges' last row isn't ARANK 7 (NCES may have changed the file's row order)`);
   if (![...hd.rows.values()].some((r) => "LOCALE" in r && "CARNEGIEIC" in r)) throw new Error(`${hd.name} has no LOCALE/CARNEGIEIC columns`);
   // Campus services (specs/data-expansion/campus-services.md): the newest IC{Y}, a year ahead of the price files.
   const icChar = await fetchIpeds(IC_CHAR_NAMES);
@@ -698,7 +718,14 @@ async function main() {
     if (school) addProfile(school, hd.rows.get(school.unit_id), row);
     if (school) directoryWarnings.push(...directoryIssues(hd.rows.get(school.unit_id), school));
     if (school) addServices(school, icChar.rows.get(school.unit_id));
-    if (school) school.academics = { student_faculty_ratio: studentFacultyRatioFrom(efd.rows.get(school.unit_id)) };
+    if (school) {
+      const salary = facultySalaryFrom(sal.rows.get(school.unit_id));
+      const fullTimeShare = fullTimeFacultyShareFrom(row["school.ft_faculty_rate"]);
+      school.academics = {
+        student_faculty_ratio: studentFacultyRatioFrom(efd.rows.get(school.unit_id)),
+        faculty: salary === null && fullTimeShare === null ? null : { avg_salary_9mo: salary, full_time_share: fullTimeShare, count: null },
+      };
+    }
     if (!school) {
       stats.noSize++;
       continue;
@@ -726,7 +753,7 @@ async function main() {
     }
   }
   const scorecardYears = await detectScorecardYears(key, String(scorecard[0]?.id ?? "221999"));
-  const meta = buildMeta(adm, sfa, ic, sfaYears, scorecardYears, cost2, chars, hd, icChar, efd);
+  const meta = buildMeta(adm, sfa, ic, sfaYears, scorecardYears, cost2, chars, hd, icChar, efd, sal);
 
   // Nothing is written unless every value's lineage checks out.
   const problems = validateLineage(schools, meta);
@@ -749,6 +776,8 @@ async function main() {
   console.log(`  with aid (IPEDS SFA): ${schools.filter((s) => s.aid?.grant_pct != null).length}`);
   console.log(`  with CDS aid detail:  ${schools.filter((s) => s.aid?.cds).length}`);
   console.log(`  with avg paid (all):  ${schools.filter((s) => s.cost?.avg_paid_all != null).length}`);
+  console.log(`  with faculty salary:  ${schools.filter((s) => s.academics?.faculty?.avg_salary_9mo != null).length}`);
+  console.log(`  with full-time share: ${schools.filter((s) => s.academics?.faculty?.full_time_share != null).length}`);
   console.log(`  overrides applied:    ${stats.overridden}`);
   if (directoryWarnings.length) {
     console.warn(`  directory mismatches: ${directoryWarnings.length} (check the id still means the same college)`);

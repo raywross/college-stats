@@ -148,6 +148,8 @@ export type MetricKey =
   | "menShare"
   | "partTime"
   | "studentFaculty"
+  | "facultyFullTime"
+  | "facultySalary"
   | "adults"
   | "applicantsChange"
   | "sizeChange"
@@ -471,6 +473,31 @@ export const METRICS: Record<MetricKey, MetricDef> = {
     format: ratioLabel,
     more: "more students per faculty member",
     less: "fewer students per faculty member",
+  },
+  // Faculty (specs/data-expansion/faculty.md).
+  facultyFullTime: {
+    key: "facultyFullTime",
+    field: "academics.faculty.full_time_share",
+    label: "Full-time faculty share",
+    short: "Full-time faculty",
+    term: "full-time-faculty",
+    domain: "size",
+    get: (s) => s.academics?.faculty?.full_time_share ?? null,
+    format: (v) => pct(v),
+    more: "more full-time faculty",
+    less: "less full-time faculty",
+  },
+  facultySalary: {
+    key: "facultySalary",
+    field: "academics.faculty",
+    label: "Average faculty salary",
+    short: "Faculty salary",
+    term: "nine-month-equated-salary",
+    domain: "size",
+    get: (s) => s.academics?.faculty?.avg_salary_9mo ?? null,
+    format: money,
+    more: "higher-paid faculty",
+    less: "lower-paid faculty",
   },
   partTime: {
     key: "partTime",

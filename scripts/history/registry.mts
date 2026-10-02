@@ -160,6 +160,14 @@ export const ERAS: readonly Era[] = [
     files: (y) => [{ name: `EF${y}D` }],
     required: () => ["STUFACR"],
   },
+  // Faculty salary (specs/data-expansion/faculty.md): SAL{Y}_IS, all-ranks row (ARANK 7). Starts 2016, the first year
+  // with the equated 9-month column (SAEQ9AT); lib/academics.ts facultySalaryFrom asserts ARANK 7 itself.
+  {
+    family: "ipeds-sal",
+    years: [2016, OPEN],
+    files: (y) => [{ name: `SAL${y}_IS` }],
+    required: () => ["ARANK", "SAEQ9AT"],
+  },
   {
     family: "services",
     years: [2014, OPEN],
@@ -202,7 +210,7 @@ export function eraFor(family: HistoryFamily, year: number): Era | null {
 }
 
 /** Families by the kind of year they describe, and the first year each can start. */
-export const FAMILY_ORDER: readonly HistoryFamily[] = ["ic-admissions", "adm", "prices", "sfa", "characteristics", "services", "ef-d"];
+export const FAMILY_ORDER: readonly HistoryFamily[] = ["ic-admissions", "adm", "prices", "sfa", "characteristics", "services", "ef-d", "ipeds-sal"];
 
 /** Columns a value spec reads. */
 export function specColumns(spec: ColumnSpec): readonly string[] {

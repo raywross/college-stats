@@ -20,6 +20,8 @@ export type VintageKey =
   | "ipeds-ic-char"
   /** IPEDS Fall Enrollment part D (EF{Y}D): the student-to-faculty ratio. Fall, like admissions. */
   | "ipeds-ef"
+  /** IPEDS Salaries survey (SAL{Y}_IS, all-ranks row): average faculty salary, 9-month equated. */
+  | "ipeds-sal"
   | "scorecard-enrollment"
   /** Student age: IPEDS collects it in odd-numbered falls only, so it trails enrollment by a year every other year. */
   | "scorecard-age"
@@ -128,6 +130,10 @@ export const FIELDS = {
   "admissions.application_fee": { ...ic("Application fee"), topic: "admissions" },
   "campus.housing": { ...ic("Campus housing and meal plans"), topic: "campus" },
   "academics.student_faculty_ratio": { label: "Students per faculty member", topic: "academics", source: "ipeds-ef", vintage: "ipeds-ef" },
+  // Faculty (specs/data-expansion/faculty.md): salary and headcount default to ipeds-sal; full-time share is
+  // Scorecard, registered separately since it overrides this ancestor for that one leaf.
+  "academics.faculty": { label: "Faculty salary (9-month equated, all ranks)", topic: "academics", source: "ipeds-sal", vintage: "ipeds-sal" },
+  "academics.faculty.full_time_share": scorecard("Full-time faculty share", "academics", "scorecard-enrollment"),
   "campus.athletics": icChar("Athletics: association, division, conference, sports"),
   "campus.programs": icChar("ROTC, study abroad, undergraduate research, and other programs"),
   "campus.services": icChar("Student services"),

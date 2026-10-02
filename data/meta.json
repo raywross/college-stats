@@ -1,5 +1,5 @@
 {
-  "retrieved": "2026-09-30",
+  "retrieved": "2026-10-02",
   "sources": {
     "scorecard": {
       "label": "College Scorecard",
@@ -43,6 +43,13 @@
       "url": "https://nces.ed.gov/ipeds/complete-data-files/EF2024D.zip",
       "description": "Each college's student-to-faculty ratio: full-time-equivalent students per full-time-equivalent instructional faculty member, not counting faculty who teach only graduate or professional students."
     },
+    "ipeds-sal": {
+      "label": "IPEDS Salaries survey (SAL, instructional staff, all ranks)",
+      "publisher": "National Center for Education Statistics (NCES)",
+      "edition": "Fall 2024 (SAL2024_IS)",
+      "url": "https://nces.ed.gov/ipeds/complete-data-files/SAL2024_IS.zip",
+      "description": "Average salary of a college's full-time instructional staff (all academic ranks combined), equated to a 9-month contract so colleges with different contract lengths can be compared."
+    },
     "ipeds-ic-char": {
       "label": "IPEDS Institutional Characteristics survey (athletics, programs, services)",
       "publisher": "National Center for Education Statistics (NCES)",
@@ -65,6 +72,7 @@
     "ipeds-hd": "2025–26",
     "ipeds-ic-char": "2025–26",
     "ipeds-ef": "Fall 2024",
+    "ipeds-sal": "Fall 2024",
     "scorecard-enrollment": "Fall 2024",
     "scorecard-age": "Fall 2023",
     "scorecard-cost": "2023–24",

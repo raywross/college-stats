@@ -132,6 +132,10 @@ const TABLE_ROWS = (
     ["Undergrads", "undergrad-enrollment", "demographics.undergrad_enrollment", (s: School) => num(s.demographics.undergrad_enrollment)],
     ["Students per faculty member", "student-faculty-ratio", "academics.student_faculty_ratio", (s: School) =>
       s.academics?.student_faculty_ratio == null ? null : `${s.academics.student_faculty_ratio} to 1`],
+    ["Full-time faculty share", "full-time-faculty", "academics.faculty.full_time_share", (s: School) =>
+      s.academics?.faculty?.full_time_share == null ? null : pct(s.academics.faculty.full_time_share)],
+    ["Average faculty salary", "nine-month-equated-salary", "academics.faculty", (s: School) =>
+      s.academics?.faculty?.avg_salary_9mo == null ? null : money(s.academics.faculty.avg_salary_9mo)],
     ["Beds in college housing", "housing-capacity", "campus.housing", (s: School) => {
       const h = s.campus?.housing;
       return !h ? null : !h.offered ? "No housing" : h.capacity == null ? null : num(h.capacity);

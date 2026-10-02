@@ -9,7 +9,7 @@ import { hasTuitionGuarantee, noApplicationFee, requiresLiveOn } from "./housing
 import { FACTOR_FILTERS } from "./factors";
 import { matchesCampus } from "./campus-profile";
 import { matchesServices } from "./campus-services.ts";
-import { withinMaxRatio } from "./academics.ts";
+import { withinMaxRatio, withinMinFullTimeFaculty } from "./academics.ts";
 import {
   METRICS,
   SIZE_BUCKETS,
@@ -105,6 +105,7 @@ const SORTERS: Record<SortKey, (s: School) => number | string | null> = {
   loan_rate: METRICS.loanRate.get,
   loan_rate_change: METRICS.loanRateChange.get,
   student_faculty: METRICS.studentFaculty.get,
+  full_time_faculty: METRICS.facultyFullTime.get,
 };
 
 function mode(values: number[]): number | null {
@@ -210,6 +211,7 @@ export function createDataset({ schools, meta, releaseCalendar }: DatasetFiles) 
     if (filters.maxEnroll !== undefined) results = results.filter((s) => s.demographics.undergrad_enrollment <= filters.maxEnroll!);
     // Unreported ratios never match (a missing value isn't a small one).
     if (filters.maxRatio !== undefined) results = results.filter((s) => withinMaxRatio(s, filters.maxRatio!));
+    if (filters.minFullTimeFaculty !== undefined) results = results.filter((s) => withinMinFullTimeFaculty(s, filters.minFullTimeFaculty!));
 
     // Trend indicators drop colleges without enough history to say.
     if (filters.trends) results = results.filter((s) => matchesIndicators(s, filters.trends!));

@@ -49,7 +49,9 @@ function SourceBlock({ cited }: { cited: Cited }) {
       {cited.quote && <blockquote className="border-l-2 pl-2 italic">“{cited.quote}”</blockquote>}
       {!cited.isDefault && (
         <p className="font-medium text-foreground">
-          This value comes from a different source than most of this page{cited.key === "cds" ? ": the college's own Common Data Set" : ""}.
+          {cited.key === "college-site"
+            ? "Reported by the college on its own site and checked automatically against its own figures and the federal baseline."
+            : `This value comes from a different source than most of this page${cited.key === "cds" ? ": the college's own Common Data Set" : ""}.`}
         </p>
       )}
       <p className="text-[11px]">Retrieved {cited.retrieved}</p>

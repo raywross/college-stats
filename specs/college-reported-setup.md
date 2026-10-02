@@ -80,10 +80,19 @@ document that `data/schools.json` already holds, and `npm run publish-data` (and
    npm run sync-data
    npm run verify
    ```
-5. **Review the diff** (`git diff data/`) college by college: does each new `school.reported.admissions` value look
+5. **Score it against the answer key**:
+   ```sh
+   npm run score-college-reported
+   ```
+   Prints, per selectivity tier, how many pilot colleges had a newer figure to find, how many the pipeline found,
+   how many match the hand-checked key (counts within 0.5%, rates within 0.1 pt), and any college it published where
+   the key found nothing newer (look at those first: a real find or a false positive). Writes the table to
+   `data/reports/college-reported-pilot-<date>.md`; commit that file with the run. A missed or wrong college means
+   fixing its recipe in `data/college-sources.json` and re-running with `--college <id>`.
+6. **Review the diff** (`git diff data/`) college by college: does each new `school.reported.admissions` value look
    right against the source quote? And **review the queue**
    (`data/review-queue.json`): does each failure reason make sense, or does it point to a recipe that needs fixing?
-6. If it looks right, commit and open a PR by hand the first few times, before trusting the workflow to do it
+7. If it looks right, commit and open a PR by hand the first few times, before trusting the workflow to do it
    unattended.
 
 ## 5. Run the first pilot from Actions

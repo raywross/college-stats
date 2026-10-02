@@ -95,7 +95,10 @@ other groups aren't rendered, so the page is one to four screens instead of 7,60
 tablet. The choice is in the URL (`?group=aid`; Cost is the default and leaves no parameter), written with
 `history.replaceState` like the other controls; a group the college lacks falls back to the first one it has. On
 phones the pill row scrolls sideways, edge to edge, with the selected pill centred, and there are no accordions at
-any width. Charts measure their width when a group mounts.
+any width. From `lg` the pill row gives way to a "Chart groups" list in the page's side column
+(`components/profile/HistoryGroupNav.tsx`), the same place the other topic pages keep "On this page"; the list and
+`OverTime` share the active group through `lib/history-group-store.ts`, and a pick writes `?group=` as a pill would.
+Charts measure their width when a group mounts.
 
 **Small multiples** within a group (2 columns on lg, 1 on mobile). All panels share the same x-axis years within a
 group.

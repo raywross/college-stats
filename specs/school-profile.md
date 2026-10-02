@@ -46,8 +46,9 @@ routes in `ANCHOR_TOPICS` (`lib/profile-topics.ts`); `#overview`, `#ranks`, and 
 - Each topic page is a short server component with `generateMetadata` ("{School} · {Topic label}"),
   `revalidate = 86400`, and an empty `generateStaticParams` (without it Next treats the route as dynamic on every
   request; with it each college's page renders on first visit and is kept for a day, like the overview beyond its
-  prerendered 50). The history page reads `?group=` from `searchParams` and passes it to `OverTime` as
-  `initialGroup`, so its HTML shows the requested group; that makes it render per request (about 100ms in
+  prerendered 50). The history page reads `?group=` from `searchParams`, picks the group (falling back to the first
+  the college has), and passes it to `OverTime` as `initialGroup`, so its HTML shows the requested group; its side
+  column lists the chart groups (`HistoryGroupNav`, a pick not a jump) where other pages list their blocks; that makes it render per request (about 100ms in
   production, the data being in memory).
 - Tablets (640–1023): small blocks pair up from `md` (the students page's economic access and campus size, the
   outcomes page's earnings and staying-and-finishing, the admissions page's submitted-scores and SAT strip);

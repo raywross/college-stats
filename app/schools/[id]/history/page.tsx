@@ -7,6 +7,11 @@ import { Panel } from "@/components/profile/Panel";
 import { TopicPage, topicMetadata } from "@/components/profile/TopicPage";
 import { OverTimeSection } from "@/components/profile/OverTimeSection";
 import { HistorySourceNote } from "@/components/sources/HistorySourceNote";
+import { HistoryGroupNav } from "@/components/profile/HistoryGroupNav";
+import { availableHistoryGroups, pickHistoryGroup, type HistoryGroupKey } from "@/lib/history-groups";
+import { historyEvents } from "@/lib/events";
+import { WINDOW_YEARS } from "@/lib/history";
+import { DOMAINS } from "@/lib/metrics";
 
 type Props = {
   params: Promise<{ id: string }>;
@@ -30,11 +35,33 @@ export default async function HistoryPage({ params, searchParams }: Props) {
   const { school, history } = p;
   if (!history) return null; // requireTopic already 404s; this narrows the type.
 
+  // The side column lists the chart groups (the other topic pages list their blocks there): the same "which groups
+  // have data" rule OverTime uses, and the same group it will show first.
+  const { latest } = history.files.meta;
+  const changes = historyEvents(history.history).filter((e) => e.year >= latest[e.kind] - WINDOW_YEARS);
+  const groups = availableHistoryGroups(history.history.series, changes.length);
+  const initialGroup = pickHistoryGroup(parseHistoryGroup(query.group), groups);
+  const colors: Record<HistoryGroupKey, string> = {
+    cost: DOMAINS.value.color,
+    aid: DOMAINS.value.color,
+    admissions: DOMAINS.admissions.color,
+    scores: DOMAINS.scores.color,
+    students: DOMAINS.size.color,
+    academics: DOMAINS.size.color,
+    outcomes: DOMAINS.value.color,
+    changes: "var(--primary)",
+  };
+
   return (
-    // The chart groups are a segmented control inside OverTime, so no "On this page" list.
-    <TopicPage profile={p} topic={TOPIC} items={[]} sources={<HistorySourceNote keys={HISTORY_SERIES} files={history.files} className="mt-6" />}>
+    <TopicPage
+      profile={p}
+      topic={TOPIC}
+      items={[]}
+      aside={<HistoryGroupNav groups={groups} colors={colors} initial={initialGroup} />}
+      sources={<HistorySourceNote keys={HISTORY_SERIES} files={history.files} className="mt-6" />}
+    >
       <Panel level={1} domain={null} eyebrow="Over time" title="How it's changed" takeaway={historyTakeaway(history.history, history.files)} school={school} fields={[]}>
-        <OverTimeSection school={school} history={history} initialGroup={parseHistoryGroup(query.group) ?? undefined} />
+        <OverTimeSection school={school} history={history} initialGroup={initialGroup} />
       </Panel>
     </TopicPage>
   );

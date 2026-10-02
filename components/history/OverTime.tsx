@@ -35,6 +35,7 @@ import { Dumbbell } from "@/components/charts/Dumbbell";
 import { InfoTip } from "@/components/ui/info-tip";
 import { cn } from "@/lib/utils";
 import { historyEvents } from "@/lib/events";
+import { publishHistoryGroup, readHistoryGroup, subscribeHistoryGroup } from "@/lib/history-group-store";
 import { GRAD_RACE_SERIES } from "@/lib/history";
 import { rollingRate } from "@/lib/graduation-groups";
 import {
@@ -543,7 +544,7 @@ function GroupPills({
     moved.current = true;
   }, [value]);
   return (
-    <div ref={rowRef} className="no-scrollbar overflow-x-auto max-sm:-mx-4 max-sm:px-4">
+    <div ref={rowRef} className="no-scrollbar overflow-x-auto max-sm:-mx-4 max-sm:px-4 lg:hidden">
       <Segmented
         label="Chart group"
         value={value}
@@ -563,6 +564,18 @@ export function OverTime(props: OverTimeProps) {
   // One group shows at a time; the others aren't rendered at all, which keeps the section one or two screens tall.
   const groups = useMemo(() => availableHistoryGroups(history.series, changes.length), [history, changes.length]);
   const active = pickHistoryGroup(ui.group, groups);
+  // The desktop side list (components/profile/HistoryGroupNav.tsx) is a sibling in the page grid: share the group
+  // through a tiny store. Publish what's shown; a pick there becomes a setGroup here, which also writes the URL.
+  const setGroup = ui.setGroup;
+  useEffect(() => publishHistoryGroup(active), [active]);
+  useEffect(
+    () =>
+      subscribeHistoryGroup(() => {
+        const g = readHistoryGroup();
+        if (g && g !== active && groups.includes(g)) setGroup(g);
+      }),
+    [active, groups, setGroup]
+  );
   const groupColors: Record<HistoryGroupKey, string> = {
     cost: colors.value,
     aid: colors.value,

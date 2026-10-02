@@ -175,7 +175,8 @@ test("nothing links to the retired #history anchor; history links take an href",
 test("Over time renders the ?group= it's linked to on the server, not after hydration", () => {
   const page = readFileSync(join(ROOT, "app/schools/[id]/history/page.tsx"), "utf8");
   assert.match(page, /searchParams/, "the history page reads searchParams");
-  assert.match(page, /initialGroup=\{parseHistoryGroup\(query\.group\)/, "and passes ?group= to OverTimeSection");
+  assert.match(page, /parseHistoryGroup\(query\.group\)/, "parses ?group=");
+  assert.match(page, /initialGroup=\{initialGroup\}/, "and passes it to OverTimeSection and the side list");
   // A segment-level revalidate would be misleading on a page that renders per request.
   assert.doesNotMatch(page, /export const revalidate/);
   const section = readFileSync(join(ROOT, "components/profile/OverTimeSection.tsx"), "utf8");

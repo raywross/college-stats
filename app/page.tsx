@@ -83,11 +83,15 @@ export default async function HomePage() {
   return (
     <div>
       {/* ============================== HERO ============================== */}
-      <section className="relative isolate overflow-hidden border-b">
-        <div className="absolute inset-0 -z-10 bg-dots opacity-60 [mask-image:radial-gradient(ellipse_at_top,black,transparent_70%)]" />
-        <div className="absolute -top-40 -left-32 -z-10 size-[36rem] animate-[drift_18s_ease-in-out_infinite] rounded-full blur-3xl" style={{ background: "var(--hero-glow-1)" }} />
-        <div className="absolute top-10 right-[-10rem] -z-10 size-[30rem] animate-[drift_22s_ease-in-out_infinite_reverse] rounded-full blur-3xl" style={{ background: "var(--hero-glow-2)" }} />
-        <div className="absolute bottom-[-12rem] left-1/3 -z-10 size-[26rem] animate-[drift_26s_ease-in-out_infinite] rounded-full blur-3xl" style={{ background: "var(--hero-glow-3)" }} />
+      {/* `z-10` so the search results (absolute, inside the hero's stacking context) paint over the stats tiles below;
+          the glow blobs are clipped by their own wrapper, because `overflow-hidden` on the section clipped the results. */}
+      <section className="relative isolate z-10 border-b">
+        <div className="absolute inset-0 -z-10 overflow-hidden" aria-hidden>
+          <div className="absolute inset-0 bg-dots opacity-60 [mask-image:radial-gradient(ellipse_at_top,black,transparent_70%)]" />
+          <div className="absolute -top-40 -left-32 size-[36rem] animate-[drift_18s_ease-in-out_infinite] rounded-full blur-3xl" style={{ background: "var(--hero-glow-1)" }} />
+          <div className="absolute top-10 right-[-10rem] size-[30rem] animate-[drift_22s_ease-in-out_infinite_reverse] rounded-full blur-3xl" style={{ background: "var(--hero-glow-2)" }} />
+          <div className="absolute bottom-[-12rem] left-1/3 size-[26rem] animate-[drift_26s_ease-in-out_infinite] rounded-full blur-3xl" style={{ background: "var(--hero-glow-3)" }} />
+        </div>
 
         <div className="mx-auto grid max-w-7xl items-center gap-12 px-4 pt-8 pb-10 sm:px-6 sm:pt-20 sm:pb-24 lg:grid-cols-[1.15fr_1fr]">
           <div>

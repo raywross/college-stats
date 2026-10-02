@@ -101,6 +101,11 @@ list them here.
   West moved the other way). Needs `applicants_men`/`applicants_women` history series first.
 
 ## Design and usability
+- [ ] **Compare redesign** ([compare-redesign.md](compare-redesign.md)): the compare page is 10,000px on desktop and
+  15,000px on a phone (2026-10-02), half of it the 91-row table. Mirror the profile: an overview with the school
+  chips, topic pills, Key differences, the radar, and six topic cards (two or three metrics as a bar per college,
+  a comparative takeaway), then `/compare/{topic}?ids=` pages and `/compare/table` with a differences-only switch.
+  Chosen over tabs, a re-chunked page, and side-by-side profiles by the scoring in the spec.
 - [x] **Profile redesign** ([profile-redesign.md](profile-redesign.md)), built 2026-10-02 (PR #47): the profile was 22,000px on desktop and
   32,000px on a tablet (2026-10-02 review). Replace it with an overview of seven topic cards (headline figure,
   supporting numbers, ten-year line, takeaway) and a page per topic (`/schools/{id}/admissions` … `/history`);

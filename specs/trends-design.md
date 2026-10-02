@@ -11,8 +11,8 @@ History follows the site's drill-down. The higher the level, the less history is
 | Home | Three national trend facts | 3 cards, no more |
 | Explore | Nothing by default; optional "10-yr change" table columns | 0 on screen by default |
 | Compare | One "Then & now" chart | 1 section |
-| Profile, top | A "10 years" tile in the Overview bento, plus a one-line "since" delta under three section headlines | 1 tile, 3 lines |
-| Profile, "Over time" section | The full year-by-year charts | Everything |
+| Profile, overview | A ten-year line on the admissions, students, cost, and outcomes cards, and the Over time card's four sparkline tiles; a "since" delta under the topic pages' headlines | 1 line per card, 4 tiles |
+| Profile, Over time page | The full year-by-year charts, one group at a time | Everything, one group per screen |
 
 **What we don't do** (noise control):
 - No sparklines on Explore cards or next to every number.
@@ -62,9 +62,11 @@ both ends) for one metric at a time, chosen from a segmented control:
 - Slopes read at a glance for 2–4 colleges; a full multi-line chart would be clutter here.
 
 ## Profile: top of page
-- **Overview bento: "10 years" tile.** Always shows average total cost (after inflation, from → to, arrow); then up to
-  two more *notable* changes from: full price, admit rate, applicants, undergrads, grant share. If nothing is notable,
-  it says "Steady over 10 years". Clicking the tile opens the history page (`/schools/{id}/history`; the `href` prop).
+- **Overview cards.** Each topic card ends with a ten-year line (`TenYearLine`: compact sparkline, the change, an
+  "Over time" link to the history page): applications on the admissions card, diversity on students, average total
+  cost after inflation on cost, graduation rate on outcomes. The Over time card shows the four trend indicators as
+  sparkline tiles. (The former "10 years" bento tile and the hero's trend cards are gone;
+  [school-profile.md](school-profile.md).)
 - **"Known for" chips:** at most one trend standout, and only for the national top 5% (e.g. "Applications tripled since
   2014"). Added to `standouts()`.
 - **Section headlines:** a muted one-liner under three existing headline numbers:

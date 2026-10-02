@@ -58,7 +58,7 @@ applications 991 / 163 / 196; diversity 969 / 311 / 147; selectivity 362 more / 
 ## Where they appear
 | Place | Component | Notes |
 |---|---|---|
-| Profile hero | `TrendIndicatorStrip` | Under "Known for": four cards (2×2 on phones) with icon, label, word, number, start year; each links to `#history`. Cited through `trends` in the Overview's source note |
+| Profile overview | `HistoryCard` (Over time card) | Four tiles (cost, applications, selectivity, diversity) with the word, the detail text, and a sparkline; the card links to the history page. The cost and students cards also use the indicator word on their ten-year lines. Cited through `trends` in the overview's sources (the former hero `TrendIndicatorStrip` is gone) |
 | Explore filters | `FilterPanel` "10-year direction" | Per indicator, three chips with counts; any mix. Params `costTrend`, `appsTrend`, `divTrend`, `selTrend` (comma lists of `up`, `steady`, `down`). Colleges without the indicator drop out while one is set. Active chips read "Cost: falling", "More selective" |
 | Explore cards | `TrendIndicatorGrid` | 2×2 under the meters: icon, label, short word ("Diversity Up"); full sentence for screen readers |
 | Explore table | `SchoolTable` `?changes=1` | Adds applications and diversity (then → now) to the change columns; sorts `apps_change`, `diversity_change` |

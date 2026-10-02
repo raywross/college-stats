@@ -61,7 +61,7 @@ page, and wider screens are unchanged.
 
 | Page | Visible | Folded |
 |---|---|---|
-| Overview | All tiles (`grid-flow-row-dense` fills holes left by the full-width 10-year tile), topic links | Full sources list |
+| Overview | Topic cards stacked, each under one screen; chip rows swipe; the whole card is a tap to its page | Sources for this overview (`<details>`) |
 | Admissions | Funnel, yield (+ strip), acceptance-rate strip, what they look at, test scores | 100-square waffle (repeats the funnel), moved after it; admissions map |
 | Students | Race and ethnicity, economic access, campus size, residence, transfers, campus life | "Who they are" (men/women, part-time, 25 and older; [student-body.md](data-expansion/student-body.md)) |
 | Cost | What students pay, price by income, debt/payback | "Borrowing and repayment" (loan rate, debt by background, repayment status); "Who actually gets aid" (generosity card + breakdown; the overview has the generosity tile) |

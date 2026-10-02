@@ -10,7 +10,7 @@
 - **Columns by year (probed):** ADMCON1–6 and 8 in IC2001–IC2004, ADMCON9 from IC2005, ADMCON10–12 from ADM2022. Codes:
   1, 2, 3, 4 (don't know) through fall 2015; 5 appears from fall 2016; only 1, 3, 5 from fall 2022. 4, 9, and
   negatives are dropped.
-- **Profile:** "What they look at" at the end of the Admissions section (`components/school/AdmissionFactors.tsx`): each
+- **Profile:** "What they look at" on the admissions page, after the funnel and yield (`components/school/AdmissionFactors.tsx`): each
   factor's use, GPA first, and "Considers whether an applicant's parent attended (legacy status)" when it does. A "Recent
   change" line appears for factor changes from fall 2023 on (both years in the modern codes).
 - **Explore:** "What they look at" filter: "Doesn't consider legacy", "Essay not required", "GPA required"
@@ -90,7 +90,7 @@ admissions.factors: {
 Registered as one field `admissions.factors` (source `ipeds-adm`, vintage `ipeds-adm`). ~200 bytes per college.
 
 ## Display
-- **Profile, Admissions section:** "What they look at": a compact grid of factors with Required / Considered /
+- **Profile, admissions page:** "What they look at": a compact grid of factors with Required / Considered /
   Not considered, GPA first. Legacy gets its own line when considered ("Considers whether a parent attended").
   When a college has a CDS C7 answer ([cds-admissions.md](cds-admissions.md)), that richer 4-level weighting replaces
   the grid, with the federal answer in the citation.
@@ -113,7 +113,7 @@ Promise program participation (history family `characteristics`).
 - **Home fact: yes, the strongest candidate from this wave.** "Fewer colleges consider legacy status": fixed panel,
   fall 2022 → newest year, with the count that stopped. Link to the Explore filter. Refresh each December.
 - **Hero indicator: no.** A policy, not a measure; most colleges never change.
-- **Profile:** events appear in "Over time" → Changes, and one line under the Admissions headline when a change
+- **Profile:** events appear on the Over time page's Policy changes group, and one line under the admissions page's headline when a change
   happened in the last 3 years.
 
 ## Open questions

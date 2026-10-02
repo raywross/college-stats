@@ -66,7 +66,7 @@ Every spec answers **"Keep history?"** with one of three answers:
 | **None** | The value is static, only one cohort exists, or year-to-year changes are method, not reality | Snapshot only |
 
 Events are new. They need a `events` array in `SchoolHistory` (lib/history.ts), validation, and a small "Changes"
-list in the profile's "Over time" section. The first spec that needs them ([admission-factors.md](admission-factors.md))
+list on the profile's Over time page. The first spec that needs them ([admission-factors.md](admission-factors.md))
 builds them.
 
 ## Deciding on top-level trends

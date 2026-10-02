@@ -91,7 +91,7 @@ school.greek = {
 ## Where it appears
 - **Explore:** "Greek life" filter (fraternity or sorority participation ≥ X%, where reported) and "has NPHC /
   Latino / Asian / multicultural chapters."
-- **Profile, "Campus life" section:** fraternity and sorority participation `BenchmarkBar`s against the median of
+- **Profile, the students page's "Campus life" section:** fraternity and sorority participation `BenchmarkBar`s against the median of
   reporting colleges; a council breakdown (members by council type) where FSL reports exist; housing and recruitment
   chips. Cited, with CDS edition or report term.
 - **Compare:** the two undergrad percentages.

@@ -123,7 +123,7 @@ Rules:
   colleges that didn't warrant an email (`disappeared`, history revisions). The link target when a digest is cut off.
 - **`/me/following`:** the followed colleges with the date each last changed, and a column that says "on your list"
   for automatic follows. Unfollow here or on the profile.
-- **What changed (public):** a panel on each profile, under the hero, listing the college's changes from the last
+- **What changed (public):** a panel on each profile's overview, between the hero and the topic cards, listing the college's changes from the last
   two publishes that touched it, with the publish date and release name. Reads `dataset_changes` anonymously, is
   prerendered like the rest of the profile, and shows nothing when the college hasn't changed in a year. Explore gains
   an "Updated recently" sort so new releases are visible site-wide.

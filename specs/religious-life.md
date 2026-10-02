@@ -161,7 +161,7 @@ source kinds so citations show the organization and date.
 ## Where it appears
 - **Explore:** affiliation filter (grouped into ~8 families for the filter, exact label on the profile) and "has a
   [tradition] community" filters (tier B/D).
-- **Profile, "Campus life" section:** affiliation; "Religious commitment is *very important* in admissions" (C7);
+- **Profile, the students page's "Campus life" section:** affiliation; "Religious commitment is *very important* in admissions" (C7);
   a faith-communities list with links; tier C estimates as labeled callouts. Hidden when empty.
 - **"Known for":** "Faith-centered" only from C7 = Very important or CCCU membership, never from affiliation alone.
 - **Glossary:** religious affiliation, CCCU, Hillel/Chabad/Newman Center, "organization estimate."

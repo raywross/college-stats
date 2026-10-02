@@ -33,7 +33,7 @@ New `SourceKey` `ipeds-ef`, `VintageKey` `ipeds-ef` ("Fall 2024"). New topic `ac
 [majors.md](majors.md), [faculty.md](faculty.md), [cds-academics.md](cds-academics.md)).
 
 ## Display
-- **Profile:** Overview bento gains "8 : 1 students per faculty" with rank. A new **Academics** section (section nav)
+- **Profile:** the overview's Academics card leads with "8 : 1 students per faculty" with rank. The **Academics** page
   holds it with class sizes ([cds-academics.md](cds-academics.md)), faculty ([faculty.md](faculty.md)), and majors.
 - **Explore:** sort and max-ratio filter.
 - **Compare:** row.
@@ -69,6 +69,6 @@ New `SourceKey` `ipeds-ef`, `VintageKey` `ipeds-ef` ("Fall 2024"). New topic `ac
 - **History.** Family `ef-d` (EF2009D on, fall), series `student_faculty_ratio`, with a national band; the end-point
   check compares it at the newest EF year. Over time has a new **Academics** group. The change reads "9 → 8", not a
   percent (`TINY_BASE`); the chart panel now honors `TINY_BASE` too, which also fixes small applicant pools there.
-- **Also fixed:** the profile's section nav hid "Campus life" for colleges with athletics or programs but no housing
+- **Also fixed (before the profile split):** the profile's section nav hid "Campus life" for colleges with athletics or programs but no housing
   data (from #36).
 - Tests: `tests/student-faculty-ratio.test.mts`.

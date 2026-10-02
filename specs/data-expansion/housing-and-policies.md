@@ -47,7 +47,7 @@ cost.promise_program: boolean | null
 New topic `campus` ("Housing & campus life"). All cite `ipeds-ic` with the prices' year.
 
 ## Display
-- **Profile, Campus life** (new section after Students; religious life, Greek life, and campus services join it later):
+- **Profile, Campus life** (the second half of the students page, `/schools/{id}/students#campus`; religious life, Greek life, and campus services join it later):
   beds, "about N for every 100 undergrads" against the median college (with "can include graduate housing"), whether
   first-years must live on campus, and meal plans. One-line headline via `campusTakeaway()`.
 - **Admissions:** "$50 to apply" or "No application fee" under the funnel.

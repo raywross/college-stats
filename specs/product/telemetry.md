@@ -53,7 +53,8 @@ component calls `posthog.capture` directly or if a property name matches a denie
 | `explore_filtered` | filter key, view, active_filter_count | Which filters matter |
 | `explore_view_changed` | view, chart | Grid vs table vs chart |
 | `school_viewed` | unit_id, from: `search` / `explore` / `compare` / `home` / `similar` / `direct` | Which colleges, which paths |
-| `profile_section_viewed` | unit_id, section | Which sections get read (IntersectionObserver, once per section per view) |
+| `profile_card_opened` | unit_id, topic, from: `card` / `pill` / `anchor` | Which topic pages get opened from the overview, pills, or old anchors |
+| `profile_block_viewed` | unit_id, topic, block | Which blocks of a topic page get read (IntersectionObserver, once per block per view) |
 | `score_checked` | test, in_range: bool (no score) | Does the checker get used |
 | `citation_opened` | field path | Does lineage get read |
 | `term_opened` | term | Glossary value |

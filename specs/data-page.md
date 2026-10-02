@@ -1,6 +1,7 @@
 # Data Page (`/data`)
 
-> Status: **built** 2026-09-28, except section 5 (waits for [college-reported-data.md](college-reported-data.md)).
+> Status: **built** 2026-09-28; section 5 ("Newer figures from colleges") built 2026-10-02 with
+> [college-reported-data.md](college-reported-data.md)'s display.
 > Replaced the `/sources` page ([sources-and-citations.md](sources-and-citations.md)) with a main-nav **Data** tab.
 > What differed from the plan: [As built](#as-built).
 
@@ -124,11 +125,20 @@ Alternatives considered: College Transitions CDS repository (stops at 2022–23)
 - **"What's on the site now" has one row per federal release (vintage), not per topic.** Topics mix releases (e.g.
   "demographics" has Fall-year race data and most-recent-release Pell shares), so a per-topic row would show the wrong
   year for part of it. Each row lists what the release is used for instead.
-- **Section 5 (newer figures from colleges) isn't built**: the ingestion agent doesn't exist yet. The page covers
-  today's CDS imports in "How we compare" and the CDS college list.
-- **The comparison text reflects today's data**, not the planned rule: CDS overrides still replace federal values, and
-  one of them (Cornell, CDS 2025–26) describes a newer class than the federal data. The page says so, with counts
-  computed from lineage.
+- **Section 5 (newer figures from colleges), built 2026-10-02.** Placed after "How we compare" (id `college-reported`,
+  matching `meta.sources["college-site"].url`): what the agent collects, the seven automated checks in plain language
+  (`lib/reported.ts` `CheckId`, kept in step by hand since the UI can't import the pipeline's comments), what happens
+  on a failed check (review queue, federal figure keeps showing), the live count (`all.filter(s =>
+  s.reported?.admissions).length`), and the schedule. No accuracy-report link yet: the self-measurement report
+  (`data/reports/college-reported-accuracy-*.md`) doesn't exist until the pipeline has run against a second federal
+  year; the section can link to it once `scripts/sync-college-reported.mts` exists.
+- **The comparison text (section 4) now states the rule plainly**: CDS overrides still replace federal values (today's
+  state, 8 colleges), while college-reported class profiles/CDS files read by the ingestion agent never do — they
+  show only on that college's profile. A new paragraph in "Where colleges' own figures appear" links to section 5.
+- **Sources card for `college-site`** (section 6) links in-page to `#college-reported` instead of opening a new tab:
+  its `meta.sources` url is the relative anchor `/data#college-reported`, and `ExtLink` always renders `target="_blank"`
+  with an external-link icon, which is wrong for an in-page anchor. The card instead renders a plain `<a href={s.url}>`
+  for that one source.
 - **Probe runs whenever `sync-data` runs**; there's no schedule yet (backlog: scheduled data refresh).
 - **Dates re-checked 2026-09-28** against the [NCES release schedule](https://nces.ed.gov/ipeds/survey-components/data-release-schedule),
   the [Scorecard changelog](https://collegescorecard.ed.gov/data/changelog) and NCES's file server: all initial entries

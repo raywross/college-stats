@@ -1,7 +1,9 @@
 # College-Reported Data (Ingestion Agent)
 
 > Status: **planned** (not built). Decided 2026-09-28. Depends on [data-lineage.md](data-lineage.md). Absorbs the
-> backlog items "Read Common Data Set PDFs" and "Expand Common Data Set coverage".
+> backlog items "Read Common Data Set PDFs" and "Expand Common Data Set coverage". The shared contract (`school.reported`,
+> `lib/fields.ts`, `lib/lineage.ts`, `lib/reported.ts`) and the UI that displays it are built ahead of the ingestion
+> pipeline itself; see [As built](#as-built).
 
 ## Why
 Federal data lags by design. As of 2026-09-28 the newest federal admissions data is **fall 2024** (IPEDS ADM2024, released
@@ -143,3 +145,52 @@ supporting quote, and a human-review queue for conduct-code findings:
 - `data/college-sources.json` (recipes, hashes), `data/college-reported.json` (published values),
   `data/review-queue.json`, `data/reports/`.
 - `.github/workflows/college-reported.yml`. Secret: `ANTHROPIC_API_KEY`.
+
+## As built
+
+### Display
+Built 2026-10-02, against the shared contract (`school.reported`, `lib/fields.ts` `reported.*` paths, `lib/lineage.ts`'s
+`college-site` handling, `lib/reported.ts`), ahead of the ingestion pipeline — there's no live college-reported data
+yet, so this was built and QA'd against a temporary local fixture (one school's `data/schools.json` entry, reverted
+before committing; never merged).
+
+- **Admissions topic page** (`app/schools/[id]/admissions/page.tsx`): when `school.reported?.admissions` exists,
+  `ReportedAdmissionsBlock` (`components/profile/ReportedAdmissions.tsx`) renders above the funnel: a headline built
+  from the lineage year, never a literal ("Admit rate, Fall 2026: 4.0% · reported by the college"), the federal rate
+  and its year underneath as the baseline, and applicants/admitted/enrolled when present — each cited with
+  `citeField("reported.admissions.…", school)` by name (not a shared path variable), so
+  `tests/reported-guards.test.mts` can check every displayed path is cited. Missing values are omitted, never shown
+  as 0 or null.
+- **Overview card** (`components/profile/AdmissionsCard.tsx`): `ReportedRateLine`, a compact one-line addition under
+  the existing stats row ("Newer: 4.0% admitted for Fall 2026, reported by the college"); the federal rate stays the
+  card's headline figure.
+- **`reported.*` fields** added to `TOPIC_FIELDS.admissions` (all four) and `OVERVIEW_FIELDS` (acceptance rate only,
+  matching what the card shows) in `lib/profile-topics.ts`, so `SourceNote`/`SourceList`/`SourceExceptions` cite the
+  college's page automatically; `tests/profile-topics.test.mts`'s `LEGACY_FIELDS` was updated to acknowledge the four
+  new fields deliberately (its own failure message says to).
+- **Popover copy** (`components/ui/info-tip.tsx`): the "different source" line now special-cases `cited.key ===
+  "college-site"`: "Reported by the college on its own site and checked automatically against its own figures and the
+  federal baseline," replacing the generic CDS-shaped sentence.
+- **Explore/Compare baseline banner**: `components/ui/BaselineNote.tsx`, a quiet one-line reminder ("Comparisons use
+  federal data, the newest year every college reports. Newer figures some colleges publish appear only on their
+  profiles.") linking to `/data#compare`. Placed next to each page's one `MultiSourceNote` call (Explore's results
+  footer; Compare's "All the numbers" table).
+- **Data page** (`app/data/page.tsx`): new section 5, id `college-reported` (matches
+  `meta.sources["college-site"].url`), between "How we compare" and "Watching": what the agent collects, the seven
+  checks (`lib/reported.ts` `CheckId`) in plain language, what happens on failure (review queue, federal figure keeps
+  showing), the live count (`all.filter(s => s.reported?.admissions).length`), and the schedule. Section 4's second
+  card gained a paragraph stating the rule explicitly (CDS overrides still replace federal values today; college-site
+  class profiles/CDS files never do) and a link to section 5. The sources list's `college-site` card links in-page to
+  `#college-reported` (its `meta.sources` url is the relative anchor `/data#college-reported`) instead of through
+  `ExtLink`, which always opens a new tab with an external-link icon — wrong for an in-page anchor.
+- **Guard**: `tests/reported-guards.test.mts` greps `lib/metrics.ts`, `lib/dataset.ts`, `lib/compare.ts`,
+  `lib/insights.ts`, `lib/indicators.ts`, `app/explore/**`, `app/compare/**`, `app/page.tsx`, and
+  `components/charts/**` for `reported.admissions`, `reported?.admissions`, or `school.reported`, and checks the
+  admissions page's three source files for a `citeField("reported.admissions.<field>` call per displayed path.
+  Verified to fail: a throwaway `s.reported?.admissions` reference was added to `lib/metrics.ts`, the guard test was
+  run and failed on that line, then the line was reverted (not committed).
+- **Not built with this PR**: the ingestion pipeline itself (`scripts/sync-college-reported.mts`, discovery/extraction,
+  `data/college-sources.json`, `data/college-reported.json`, `data/review-queue.json`, the GitHub Action, the
+  self-measurement accuracy report). Until it exists, `school.reported` is never set in the real dataset, and the Data
+  page's "Newer figures from colleges" section — built against live data, so it degrades correctly — shows a count of
+  0 and the "What we collect" / checks / schedule text with nothing to list yet.

@@ -77,23 +77,48 @@ export const ANCHOR_TOPICS: Readonly<Record<string, { topic: TopicKey; hash?: st
  * union still covers everything the single-page profile showed.
  */
 export const OVERVIEW_FIELDS: readonly FieldPath[] = [
-  "admissions.acceptance_rate",
-  "derived.sat_composite",
-  "admissions.act_composite_25_75",
-  "demographics.undergrad_enrollment",
-  "derived.yield",
-  "demographics.pell_grant_percent",
-  "derived.diversity_index",
-  "cost.avg_paid_all",
-  "derived.aid_generosity",
-  "outcomes.median_earnings_10yr",
-  "outcomes.graduation_rate",
-  "trends",
-  "campus.setting",
+  // Hero: the glossary terms under the name.
   "campus.carnegie",
   "campus.designations",
   "campus.msi",
+  // Getting in card.
+  "admissions.acceptance_rate",
+  "admissions.applicants",
+  "admissions.admitted",
+  "derived.yield",
+  "derived.sat_composite",
+  "admissions.act_composite_25_75",
+  // Students & campus card.
+  "demographics.undergrad_enrollment",
+  "derived.diversity_index",
+  "demographics.racial_diversity",
+  "demographics.pell_grant_percent",
+  "demographics.first_gen_percent",
+  "campus.setting",
+  "campus.housing",
+  "campus.athletics",
+  "campus.programs",
+  // Academics card.
   "academics.student_faculty_ratio",
+  "academics.majors_top",
+  "detail.programs",
+  "academics.faculty.full_time_share",
+  "finances",
+  // Cost & aid card.
+  "cost.avg_paid_all",
+  "derived.aid_generosity",
+  "cost.sticker",
+  "cost.aided_net_price",
+  "cost.net_price_by_income",
+  "outcomes.federal_loan_rate",
+  // Outcomes card.
+  "outcomes.graduation_rate",
+  "outcomes.median_earnings_10yr",
+  "outcomes.median_debt",
+  "outcomes.monthly_loan_payment",
+  "outcomes.retention_rate",
+  // The ten-year lines and the Over time card's direction words.
+  "trends",
 ];
 
 export const TOPIC_FIELDS: Readonly<Record<TopicKey, readonly FieldPath[]>> = {

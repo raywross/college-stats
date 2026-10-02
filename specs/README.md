@@ -14,8 +14,8 @@ Structured documentation for the Higher Education Data Explorer ("Quad").
 | [glossary-and-tooltips.md](glossary-and-tooltips.md) | Term definitions, InfoTip/Term components, glossary page |
 | [home.md](home.md) | Home page sections |
 | [search-and-filtering.md](search-and-filtering.md) | Explore page: filters, URL params, views |
-| [school-profile.md](school-profile.md) | School profile sections and insight helpers |
-| [profile-redesign.md](profile-redesign.md) | *Planned:* the profile as a short overview of topic cards plus a page per topic; the 2026-10-02 review, comparable sites, four scored proposals, and the chosen design per device |
+| [school-profile.md](school-profile.md) | School profile as built: the overview, the six topic pages and what each shows, shared code, insight helpers |
+| [profile-redesign.md](profile-redesign.md) | The profile as a short overview of topic cards plus a page per topic (phase 1, routes and moves, built); the 2026-10-02 review, comparable sites, four scored proposals, and the chosen design per device |
 | [comparison.md](comparison.md) | Compare flow, tray, key differences, radar |
 | [data-layer.md](data-layer.md) | Types, data access, derived metrics |
 | [cost-outcomes.md](cost-outcomes.md) | Net price, earnings, graduation, debt: data, metrics, and where they appear |

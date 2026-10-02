@@ -35,7 +35,7 @@ overflowing content, so root causes must be fixed. `clip` (unlike `hidden`) keep
 - **Header** on phones is just the logo, 56px tall (`--header-h: 3.5rem`, 4rem from `md`). Navigation, search,
   and theme moved to the tab bar.
 - **Footer** drops its link column on phones and pads for the tab bar (`--tabbar-h`).
-- **Sticky sub-navs** (profile `SectionNav`, `CompareHeader`, glossary search bar) sit at
+- **Sticky sub-navs** (the profile topic pages' `CompactHeader` with its pill row, `CompareHeader`, glossary search bar) sit at
   `calc(env(safe-area-inset-top, 0px) + var(--header-h))`. Never hard-code the header height.
 
 ## Patterns
@@ -48,23 +48,28 @@ overflowing content, so root causes must be fixed. `clip` (unlike `hidden`) keep
 | Sticky first column | `sticky left-0 bg-card` on the label cell | Compare tables |
 
 ## Profile on phones
-Every section keeps its headline answer visible (takeaway, key numbers, one chart). Deep dives fold behind
-`ShowMore` (`components/ui/show-more.tsx`): a dashed "Show …" button with a one-line hint, below `sm` only. Content
+The profile is an overview plus six topic pages ([school-profile.md](school-profile.md)). A topic page's sticky band
+(`CompactHeader`) has the crest, name, Compare, and a swipeable row of topic pills with the active one scrolled into
+view; "On this page" is a collapsible row above the content (a sticky side column from `lg`), and tapping an entry
+for a folded block scrolls to its "Show …" button.
+
+Every page keeps its headline answer visible (takeaway, key numbers, one chart). Deep dives fold behind
+`ShowMore` (`components/ui/show-more.tsx`): a dashed "Show …" button with a one-line hint, below `sm` by default
+(`until="lg"` folds tablets too; the redesign's phase 3 uses it on the Over time and Outcomes pages). Content
 stays in the server HTML and is hidden with CSS (not unmounted), so nothing shifts on load, citations stay in the
 page, and wider screens are unchanged.
 
-| Section | Visible | Folded |
+| Page | Visible | Folded |
 |---|---|---|
-| Overview | All tiles (`grid-flow-row-dense` fills holes left by the full-width 10-year tile) | |
-| Admissions | Funnel, yield, acceptance-rate strip | 100-square waffle (repeats the funnel), moved after it |
-| Students | Race and ethnicity, economic access, campus size | "Who they are" (men/women, part-time, 25 and older; [student-body.md](data-expansion/student-body.md)) |
-| Cost & outcomes | What students pay, price by income, debt/payback, earnings, retention/graduation | "Borrowing and repayment" (loan rate, debt by background, repayment status); "Who actually gets aid" (generosity card + breakdown; the overview has the generosity tile), cost vs. earnings map |
+| Overview | All tiles (`grid-flow-row-dense` fills holes left by the full-width 10-year tile), topic links | Full sources list |
+| Admissions | Funnel, yield (+ strip), acceptance-rate strip, what they look at, test scores | 100-square waffle (repeats the funnel), moved after it; admissions map |
+| Students | Race and ethnicity, economic access, campus size, residence, transfers, campus life | "Who they are" (men/women, part-time, 25 and older; [student-body.md](data-expansion/student-body.md)) |
+| Cost | What students pay, price by income, debt/payback | "Borrowing and repayment" (loan rate, debt by background, repayment status); "Who actually gets aid" (generosity card + breakdown; the overview has the generosity tile) |
+| Outcomes | Earnings, retention/graduation, 8-year outcomes, graduation by group | Cost vs. earnings map |
 | Over time | Takeaway and controls; six topic headers | Every group (was: all but Cost, collapsed after hydration, which made the page jump) |
-| How it ranks | Four distribution strips | Admissions map |
-| Similar | Swipe rail | Full sources list |
 
-Harvard: 14,730 → ~10,500px. Charts inside folded content keep their last real width (`useWidth` ignores 0) and
-re-measure when shown.
+Harvard (2026-10-02, phase 1): overview 4,150px; topic pages 2,100–5,000px each, where the single page was ~19,000px.
+Charts inside folded content keep their last real width (`useWidth` ignores 0) and re-measure when shown.
 
 ## Type and spacing on phones
 - Page h1 `text-3xl` (home hero `text-[2.75rem]`), section h2 `text-2xl`; eyebrows hidden on page headers.

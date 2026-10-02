@@ -1,8 +1,8 @@
 # Profile Redesign: Overview Cards and Topic Pages
 
-> Status: **planned** (not built). Decided 2026-10-02 after a review of the profile at three widths and research
-> into comparable sites. Replaces the single long page described in [school-profile.md](school-profile.md) with a
-> short overview of topic cards and one page per topic.
+> Status: **phase 1 built** (routes and moves, 2026-10-02; see [school-profile.md](school-profile.md) for the
+> as-built pages); phases 2–4 planned. Decided 2026-10-02 after a review of the profile at three widths and research
+> into comparable sites. Replaces the single long page with a short overview of topic cards and one page per topic.
 
 ## Why
 The profile has grown with every data wave. It began as six sections and is now ten, each with sub-blocks that
@@ -218,6 +218,14 @@ first card click, more topic pages per visit than sections scrolled today, and n
 ## Build order
 1. **Routes and moves** (no visual change yet): the six topic pages built from the existing `Panel`s; the overview
    keeps the current bento while cards are built; old anchors redirected; `measure-profile` script.
+   *Built 2026-10-02* (`feature/profile-routes`): `lib/profile-topics.ts`, `lib/profile-data.ts`,
+   `lib/profile-history.ts`, `components/profile/*`, the six route files, `tests/profile-topics.test.mts` (route and
+   field coverage against the old `SECTION_FIELDS`, anchors). Deviations: no `layout.tsx` (the `React.cache`d
+   `loadProfile` already shares one load between a page and its metadata, and the overview renders the hero while
+   topic pages render the compact header, so a layout had nothing to hold); the overview carries an interim "In
+   detail" link list until the cards land; "How it ranks" dissolved into the pages (SAT midpoint on the admissions
+   page's test scores, yield under the yield ring, Pell and diversity on the students page); `ShowMore` gained
+   `until="lg"` but phase 3 applies it; the `measure-profile` script is not written yet.
 2. **Cards**: the six topic cards, the slimmer hero, the overview source list; remove the bento and section nav.
 3. **Tablet and Over time**: `ShowMore` at `lg`, the Over time segmented control, chart grids per width.
 4. **Pilot**: Harvard, Ohio State, UCLA, a small test-blind college, and an open-admission college at three widths;

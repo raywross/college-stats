@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight, Swords } from "lucide-react";
-import { getData, getDetail, getHistoryFiles, toIndexEntry } from "@/lib/data";
-import { isPlausibleCip4, programsWithEarnings } from "@/lib/field-of-study";
-import { firstMajorsByGroup } from "@/lib/majors";
-import { cip4Title } from "@/lib/cip";
-import { MajorPicker, YourMajorBars, type MajorRow } from "@/components/compare/YourMajor";
-import { RACE_SERIES, SERIES, defaultWindow, historyYearLabel } from "@/lib/history";
+import { getData, getDetail, getHistory, getHistoryFiles, toIndexEntry } from "@/lib/data";
+import { familiesOffered, fieldStat, type FieldStat } from "@/lib/field-compare";
+import { majorFamilyName } from "@/lib/majors";
+import { cipFamilyTitle, cipTitle } from "@/lib/cip";
+import { YourMajor } from "@/components/compare/YourMajor";
+import { RACE_SERIES, SERIES, WINDOW_YEARS, defaultWindow, historyYearLabel } from "@/lib/history";
 import { INDICATORS, INDICATOR_KEYS, indicatorsOf } from "@/lib/indicators";
 import { TrendIndicatorCell } from "@/components/trends/TrendIndicators";
 import type { TrendKey } from "@/lib/types";
@@ -248,25 +248,27 @@ export default async function ComparePage({
   const diffs = keyDifferences(schools);
   const historyFiles = await getHistoryFiles();
 
-  // "Your major" (specs/data-expansion/field-of-study.md, majors.md): every 4-digit field any compared college awards
-  // bachelor's in (IPEDS completions) or reports earnings for (Scorecard Field of Study), titled from CIP 2020 so both
-  // sources name a field the same way. Picked via a plain GET form so the choice stays in the URL.
-  const details = await Promise.all(schools.map((s) => getDetail(s.unit_id)));
-  const majorGroups = details.map((d) => (d?.tables.majors ? firstMajorsByGroup(d.tables.majors.rows) : null));
-  const majorTitles = new Map<string, string>();
-  majorGroups.forEach((g) => g?.forEach((_, c) => majorTitles.set(c, cip4Title(c) ?? c)));
-  details.forEach((d) => programsWithEarnings(d?.tables.programs?.rows).forEach((p) => majorTitles.set(p.cip4, cip4Title(p.cip4) ?? p.title)));
-  const majorOptions = [...majorTitles.entries()].map(([cip4, title]) => ({ cip4, title })).sort((a, b) => a.title.localeCompare(b.title));
-  const rawMajor = typeof params.major === "string" ? params.major : "";
-  const selectedMajor = isPlausibleCip4(rawMajor) && majorTitles.has(rawMajor) ? rawMajor : null;
-  const majorRows: MajorRow[] = selectedMajor
-    ? schools.map((s, i) => ({
-        school: s,
-        slot: i,
-        program: details[i]?.tables.programs?.rows[selectedMajor] ?? null,
-        graduates: majorGroups[i] ? (majorGroups[i]!.get(selectedMajor) ?? 0) : null,
-      }))
-    : [];
+  // "Your major" (specs/data-expansion/majors.md, field-of-study.md): broad fields (2-digit CIP families) that at
+  // least one compared college awards bachelor's in. Every offered field is computed here (lib/field-compare.ts), so
+  // the client section swaps fields in place; `?major=` picks the first one shown (an older 4-digit `11.07` link maps to
+  // its family).
+  const [details, histories] = await Promise.all([Promise.all(schools.map((s) => getDetail(s.unit_id))), Promise.all(schools.map((s) => getHistory(s.unit_id)))]);
+  const caFiles = historyFiles?.meta.files["c-a"];
+  const caEnd = caFiles?.length ? caFiles[caFiles.length - 1].year : null;
+  const caWindow: [number, number] | null = caEnd !== null ? [caEnd - WINDOW_YEARS, caEnd] : null;
+  const majorOptions = familiesOffered(schools)
+    .map((family) => ({ family, title: majorFamilyName(family) ?? cipFamilyTitle(family) ?? family }))
+    .sort((a, b) => a.title.localeCompare(b.title));
+  const majorStats: Record<string, FieldStat[]> = Object.fromEntries(
+    majorOptions.map(({ family }) => [
+      family,
+      schools.map((s, i) =>
+        fieldStat(family, s, details[i]?.tables.majors?.rows, details[i]?.tables.programs?.rows, histories[i]?.series ?? null, caWindow, cipTitle, (y) => historyYearLabel(y, "academic")),
+      ),
+    ]),
+  );
+  const rawMajor = (typeof params.major === "string" ? params.major : "").slice(0, 2);
+  const selectedMajor = majorStats[rawMajor] ? rawMajor : null;
   // "Then & now" from school.trends (10-year changes written by sync-history); money is after inflation.
   const THEN_AND_NOW: { key: TrendKey; label: string; format: "money" | "pctSmart" | "num" | "fixed2" }[] = [
     { key: "avg_paid_all", label: "Avg total cost (after inflation)", format: "money" },
@@ -509,9 +511,15 @@ export default async function ComparePage({
                 Pick a field of study to see which of these colleges award bachelor&apos;s degrees in it, how many, and what graduates earn{" "}
                 <Term term="earnings-after-completion">after completion</Term>.
               </p>
-              <MajorPicker ids={ids.join(",")} options={majorOptions} selected={selectedMajor} />
-              {selectedMajor && <YourMajorBars title={majorTitles.get(selectedMajor)!} rows={majorRows} />}
-              <MultiSourceNote schools={schools} fields={["detail.majors", "detail.programs"]} />
+              <YourMajor
+                ids={ids.join(",")}
+                schools={schools.map((s, i) => ({ id: s.unit_id, name: shortName(s), slot: i }))}
+                options={majorOptions}
+                stats={majorStats}
+                initial={selectedMajor}
+              />
+              <MultiSourceNote schools={schools} fields={["academics.bachelors_by_family", "detail.majors", "detail.programs"]} />
+              {historyFiles && caWindow && <HistorySourceNote keys={["bachelors"]} files={historyFiles} range={caWindow} />}
             </Group>
           )}
 

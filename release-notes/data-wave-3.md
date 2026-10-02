@@ -14,8 +14,9 @@ summary: Every college now shows what its students major in and, where reported,
   years.
 - **What graduates earn, by major.** "Top-earning majors here" shows median earnings one and four years after
   graduating, next to the national median for the same major. Majors with too few graduates to report say so.
-- **Compare by your major.** On Compare, pick a major to see how many students graduate in it at each college and
-  what they earn.
+- **Compare by your major.** On Compare, pick a field of study (computer science, biology, business…) and the
+  section updates in place to show, for each college, how many students graduate in it, its share of graduates and
+  how that changed over ten years, what graduates earn, their debt, and the programs offered.
 - **Explore by field.** Filter and sort colleges by field of study and by bachelor's degrees awarded.
 - **What students study is shifting.** A new fact on the home page: computer science's share of bachelor's degrees has
   more than doubled in ten years.

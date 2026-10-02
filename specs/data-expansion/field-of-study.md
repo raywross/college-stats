@@ -40,7 +40,7 @@ Each program also has Parent PLUS and graduate debt, and repayment. Fields are p
 ## Display
 - **Profile, Academics → majors list:** each major row expands to earnings 1 and 4 years out, with the national
   median as a tick. "Top-earning majors here" list (top 5 with data).
-- **Compare:** a "your major" row: pick a 4-digit field, compare earnings across the colleges.
+- **Compare:** a "your major" row: pick a field, compare earnings across the colleges (as built: by broad 2-digit field; see As built).
 - **Explore:** later, a "major" mode that lists colleges by earnings for one field (needs an index across shards:
   build `data/detail/by-cip/{cip4}.json` at sync time).
 - **Glossary:** `field-of-study`, `earnings-after-completion` (measured from completion, unlike the institution-level
@@ -150,14 +150,24 @@ null earnings/debt value as "Too few graduates to report" instead of a blank das
   note about its older cohort, median debt, and graduate count. A separate component from "Most popular majors"
   (ranked by graduate count); at the wave 3 merge it went directly under that list in Academics, and each row of the
   list shows its 4-digit group's 4-year earnings ("Graduates in this field earn $X 4 years out", joined by `cip4`).
-- **Compare → "Your major"** (`components/compare/YourMajor.tsx`, wired into `app/compare/page.tsx`): a plain GET
-  `<form>` (`?ids=...&major=11.07`), so the pick survives a reload and is shareable like the rest of Compare's state —
-  no client component needed. Since the wave 3 merge it lists every 4-digit field any compared college awards
-  bachelor's in (majors' completions, `firstMajorsByGroup`) or has earnings for, titled from CIP 2020 (`cip4Title`),
-  and each college's bar shows its first-major graduates in the field next to the earnings. Bars distinguish
-  "doesn't offer this major" (no graduates and no Scorecard row), "no earnings reported" (graduates but no Scorecard
-  row), and "too few graduates to report" (a row with null earnings), which a generic `CompareMetric` reuse couldn't. Not added to the "All the numbers" table,
-  since it's a value that depends on a pick rather than a plain per-school field.
+- **Compare → "Your major"** (`components/compare/YourMajor.tsx`, a client component; numbers from
+  `lib/field-compare.ts`, wired into `app/compare/page.tsx`). Revised after the user's wave 3 review (2026-10-02):
+  - **Broad fields, not 4-digit programs.** The picker lists 2-digit CIP families ("Computer science", "Biology"),
+    because colleges name and split programs differently and the family compares like with like. Only families at
+    least one compared college awards first-major bachelor's in (`familiesOffered`, from
+    `academics.bachelors_by_family`).
+  - **Updates in place.** The server computes every offered field (`fieldStat`), so picking one and pressing Compare
+    swaps the section without navigation or a scroll jump. The pick still goes in the URL (`?major=11`, via
+    `history.replaceState`) and the form still works as a plain GET without JavaScript. Older `?major=11.07` links
+    map to their family.
+  - **What it compares, per college:** bachelor's in the field (first majors, plus second majors), share of the
+    college's graduates with its 10-year change (from the `major_{family}` history series), earnings 4 years after
+    completion with the 1-year figure and a national tick, median federal debt, and the programs in the field (count,
+    largest three, top earner). Earnings and debt are each 4-digit program's median weighted by its graduates (1 when
+    suppressed): a typical figure for the field, labeled as such, not a true median.
+  - Notes distinguish "Doesn't offer this field" (0 first majors), "No earnings reported" (no Scorecard rows in the
+    field), "Too few graduates to report" (rows, all suppressed), and "Not reported" (majors not reported).
+  Not added to the "All the numbers" table, since it depends on a pick rather than a plain per-school field.
 - **Explore "major mode"** (listing colleges by earnings for one field, needs `data/detail/by-cip/{cip4}.json`):
   **deferred**, as the spec says ("later"). No index was built.
 - **Glossary:** `field-of-study` and `earnings-after-completion` (says plainly it's measured from completion, unlike

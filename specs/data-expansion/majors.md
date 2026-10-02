@@ -154,8 +154,9 @@ for any 6-digit use.
 - Explore filter **by specific program** ("has a nursing program", "50+ nursing graduates"): needs 4- or 6-digit counts
   for every college, which live in the detail file, not the snapshot. Options: a small per-program index, or search
   served from the detail table.
-- Compare's "your major" row was built with [field-of-study.md](field-of-study.md) (a picker, graduates and earnings
-  per college); remembering the pick in a student profile waits for accounts.
+- Compare's "your major" section was built with [field-of-study.md](field-of-study.md#as-built): broad fields, updated
+  in place, with graduates, share and its 10-year change, earnings, debt, and programs per college. Remembering the
+  pick in a student profile waits for accounts.
 - An "Over time" chart of field shares (the series exist; only the fastest-growing line uses them today).
 - Associate's, master's, and doctoral degrees (other `AWLEVEL`s) and race/sex splits are read past, not stored.
 

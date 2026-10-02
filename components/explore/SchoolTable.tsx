@@ -116,6 +116,7 @@ export async function SchoolTable({ schools, params }: { schools: School[]; para
     { key: "pell", label: "Pell", term: "pell-grant" },
     { key: "first_gen", label: "First-gen", term: "first-gen" },
     { key: "out_of_state", label: "Out of state", term: "in-state-student" },
+    { key: "transfer_share", label: "Transfers, share of new", term: "transfer-in" },
     { key: "men_share", label: "Men", term: "gender-balance" },
     { key: "diversity", label: "Diversity", term: "diversity-index" },
     { key: "avg_cost", label: "Avg cost", term: "average-cost" },

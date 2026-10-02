@@ -74,6 +74,7 @@ export const HISTORY_FAMILIES = {
   "ipeds-sal": { source: "ipeds-sal", kind: "fall", files: "SAL{year}_IS (instructional staff salaries, all ranks)" },
   // Residence is required in even-numbered falls only (odd years cover about half the colleges): every other year.
   "ef-c": { source: "ipeds-ef-c", kind: "fall", files: "EF{year}C (residence of first-time students), even-numbered falls", step: 2 },
+  "ef-a": { source: "ipeds-ef-a", kind: "fall", files: "EF{year}A (fall enrollment by level: new transfer-ins and first-time students)" },
   // College Scorecard API, year-prefixed fields (not files): years can have gaps, so they aren't checked as consecutive.
   "scorecard-enrollment": { source: "scorecard", kind: "fall", files: "API fields {year}.student.size, {year}.student.demographics.race_ethnicity.*, .men, and {year}.student.part_time_share", api: true, citeAs: "enrollment" },
   "scorecard-completion": { source: "scorecard", kind: "cohort", files: "API field {year+6}.completion.completion_rate_4yr_150nt", api: true, citeAs: "graduation by entering class" },
@@ -157,6 +158,9 @@ export const SERIES = {
   faculty_salary: { label: "Average faculty salary (9-month equated)", short: "Faculty salary", field: "academics.faculty", term: "nine-month-equated-salary", unit: "usd", kind: "fall", format: "money", families: ["ipeds-sal"] },
   // Where first-years come from (specs/data-expansion/residence.md): even-numbered falls only, shares of all first-years.
   out_of_state_share: { label: "First-years from other states", short: "Other states", field: "demographics.residence", term: "in-state-student", unit: "share", kind: "fall", format: "pct", families: ["ef-c"] },
+  // Transfers in (specs/data-expansion/transfers.md): every fall from 2008.
+  transfer_in_count: { label: "New transfer-in undergraduates", short: "Transfer-ins", field: "demographics.transfer_in", term: "transfer-in", unit: "count", kind: "fall", format: "num", families: ["ef-a"] },
+  transfer_in_share: { label: "Transfer-ins, share of new undergraduates", short: "Share of new students", field: "demographics.transfer_in", term: "transfer-in", unit: "share", kind: "fall", format: "pct", families: ["ef-a"] },
   international_share: { label: "First-years from abroad", short: "From abroad", field: "demographics.residence", term: "in-state-student", unit: "share", kind: "fall", format: "pct", families: ["ef-c"] },
   // Athletics and ROTC as codes, for events (lib/events.ts; lib/campus-services.ts reads them).
   conference: { label: "Athletic conference", short: "Conference", field: "campus.athletics", term: "athletic-conference", unit: "conference", kind: "academic", format: "int", families: ["services"] },
@@ -209,6 +213,9 @@ export const SERIES = {
   om_award: { label: "Earned a credential within 8 years, all entering students", short: "Credential in 8 years", field: "outcomes.eight_year", term: "outcome-measures", unit: "share", kind: "cohort", format: "pct", families: ["om"] },
   om_transfer: { label: "Enrolled at another college 8 years on, all entering students", short: "Enrolled elsewhere", field: "outcomes.eight_year", term: "transfer-out", unit: "share", kind: "cohort", format: "pct", families: ["om"] },
   om_award_pell: { label: "Earned a credential within 8 years, Pell Grant recipients", short: "Pell recipients", field: "outcomes.eight_year", term: "outcome-measures", unit: "share", kind: "cohort", format: "pct", families: ["om"] },
+  // Time to degree (specs/data-expansion/time-to-degree.md): the same entering classes, within 4 and 6 years.
+  om_award_4: { label: "Earned a credential within 4 years, all entering students", short: "Within 4 years", field: "outcomes.eight_year", term: "time-to-degree", unit: "share", kind: "cohort", format: "pct", families: ["om"] },
+  om_award_6: { label: "Earned a credential within 6 years, all entering students", short: "Within 6 years", field: "outcomes.eight_year", term: "time-to-degree", unit: "share", kind: "cohort", format: "pct", families: ["om"] },
   om_award_non_pell: { label: "Earned a credential within 8 years, students without a Pell Grant", short: "No Pell Grant", field: "outcomes.eight_year", term: "outcome-measures", unit: "share", kind: "cohort", format: "pct", families: ["om"] },
   // Graduation by group (specs/data-expansion/graduation-by-group.md): rates null under 30 students; cohorts always kept.
   grad_rate_pell: { label: "Graduated within 6 years, Pell Grant recipients", short: "Pell recipients", field: "outcomes.grad_rate_pell", term: "pell-graduation-gap", unit: "share", kind: "cohort", format: "pct", families: ["gr-pell"] },

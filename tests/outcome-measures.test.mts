@@ -54,12 +54,13 @@ test("eightYearFrom: shares of the adjusted cohort, first-time and transfer-in g
   ).get("1");
   const o = eightYearFrom(row, 2016)!;
   assert.equal(o.entering_year, 2016);
-  assert.deepEqual(o.all, { cohort: 200, award: 0.75, still_enrolled: 0.02, transferred: 0.15, unknown: 0.08 });
-  assert.deepEqual(o.first_time, { cohort: 120, award: 0.7917, still_enrolled: 0.0167, transferred: 0.1167, unknown: 0.075 });
+  // These rows have no 4/6-year counts (tests/time-to-degree.test.mts covers them): those shares are null, the rest stand.
+  assert.deepEqual(o.all, { cohort: 200, award: 0.75, award_4: null, award_6: null, still_enrolled: 0.02, transferred: 0.15, unknown: 0.08 });
+  assert.deepEqual(o.first_time, { cohort: 120, award: 0.7917, award_4: null, award_6: null, still_enrolled: 0.0167, transferred: 0.1167, unknown: 0.075 });
   assert.equal(o.transfer_in!.cohort, 80);
   assert.equal(o.transfer_in!.award, 0.6875);
-  assert.deepEqual(o.pell, { cohort: 50, award: 0.6 });
-  assert.deepEqual(o.non_pell, { cohort: 150, award: 0.8 });
+  assert.deepEqual(o.pell, { cohort: 50, award: 0.6, award_4: null, award_6: null });
+  assert.deepEqual(o.non_pell, { cohort: 150, award: 0.8, award_4: null, award_6: null });
   assert.equal(outcomeHeadline(o.all), "75 of 100 students who start here earn a degree or certificate here within 8 years; 15 more are enrolled at another college.");
   assert.equal(completion8({ outcomes: { eight_year: o } as School["outcomes"] }), 0.75);
 });
@@ -67,7 +68,7 @@ test("eightYearFrom: shares of the adjusted cohort, first-time and transfer-in g
 test("cohorts under 30 keep their size but no rates; missing colleges and groups are null, never 0", () => {
   const row = pivotRows([omRow("1", "50", 40, 30, 0, 6, 4), omRow("1", "10", 29, 22, 0, 4, 3), omRow("1", "51", MIN_COHORT, 20, 0, 6, 4)], OM_PIVOT).get("1");
   const o = eightYearFrom(row, 2016)!;
-  assert.deepEqual(o.first_time, { cohort: 29, award: null, still_enrolled: null, transferred: null, unknown: null });
+  assert.deepEqual(o.first_time, { cohort: 29, award: null, award_4: null, award_6: null, still_enrolled: null, transferred: null, unknown: null });
   assert.ok(!isShown(o.first_time));
   assert.equal(o.pell!.award, 0.6667, "exactly 30 is shown");
   assert.equal(o.transfer_in, null, "no transfer rows: no group");

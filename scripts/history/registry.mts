@@ -14,6 +14,7 @@
 import type { HistoryFamily } from "../../lib/history.ts";
 import { FACTOR_COLUMNS } from "../../lib/derive.ts";
 import { OM_COLUMNS, OM_FIRST_FILE, OM_LAG, OM_PIVOT } from "../../lib/outcome-measures.ts";
+import { EFA_COLUMNS, EFA_FIRST_YEAR, EFA_WIDE } from "../../lib/transfers.ts";
 import { GR_PELL_COHORT_TYPE, GR_PELL_COLUMNS } from "../../lib/graduation-groups.ts";
 
 /** A value read from one row: a column, or the sum of parts (IC2001 splits admissions by gender). */
@@ -211,6 +212,15 @@ export const ERAS: readonly Era[] = [
     required: () => ["EFCSTATE", "EFRES01"],
     wide: { key: "EFCSTATE", values: ["EFRES01"] },
   },
+  // Transfers in (specs/data-expansion/transfers.md): EF{Y}A, fall Y, one row per college per level (EFALEVEL), read
+  // with lib/transfers.ts like the snapshot. Transfer-in levels start with EF2008A (EF2006A has none).
+  {
+    family: "ef-a",
+    years: [EFA_FIRST_YEAR, OPEN],
+    files: (y) => [{ name: `EF${y}A` }],
+    required: () => [...EFA_COLUMNS],
+    wide: EFA_WIDE,
+  },
   {
     family: "services",
     years: [2014, OPEN],
@@ -253,7 +263,7 @@ export function eraFor(family: HistoryFamily, year: number): Era | null {
 }
 
 /** Families by the kind of year they describe, and the first year each can start. */
-export const FAMILY_ORDER: readonly HistoryFamily[] = ["ic-admissions", "adm", "prices", "sfa", "characteristics", "services", "ef-d", "ef-c", "om", "gr-pell", "ipeds-sal"];
+export const FAMILY_ORDER: readonly HistoryFamily[] = ["ic-admissions", "adm", "prices", "sfa", "characteristics", "services", "ef-d", "ef-c", "ef-a", "om", "gr-pell", "ipeds-sal"];
 
 /** Columns a value spec reads. */
 export function specColumns(spec: ColumnSpec): readonly string[] {

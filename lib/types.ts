@@ -80,6 +80,8 @@ export interface School {
       /** The state or territory sending the most first-years (USPS code) and its share. */
       top_state: { state: string; share: number } | null;
     } | null;
+    /** New transfer-in undergraduates this fall (specs/data-expansion/transfers.md; lib/transfers.ts), IPEDS EF{Y}A. */
+    transfer_in?: TransferIn | null;
     racial_diversity: {
       asian: number;
       black: number;
@@ -388,11 +390,26 @@ export interface ResidencyPrices {
  * One entering group's status 8 years after starting (IPEDS Outcome Measures): shares of its adjusted cohort, summing to
  * 1. Rates are null when the cohort is under 30 students (lib/outcome-measures.ts MIN_COHORT).
  */
+/** New transfer-in undergraduates in one fall (IPEDS EF{Y}A levels 19, 39, 59; lib/transfers.ts). */
+export interface TransferIn {
+  count: number;
+  full_time: number;
+  part_time: number;
+  /** Transfer-ins ÷ (transfer-ins + first-time degree-seeking undergraduates); null when both are 0. */
+  share_of_new: number | null;
+}
+
 export interface EightYearGroup {
   /** Adjusted cohort: entering students, less those who died, joined the military, a church mission, or foreign aid service. */
   cohort: number;
   /** Earned a certificate or degree at this college within 8 years. */
   award: number | null;
+  /**
+   * Within 4 and 6 years (specs/data-expansion/time-to-degree.md): cumulative, so award_4 ≤ award_6 ≤ award. Null with
+   * the rest under 30 students, and on their own when NCES's counts aren't cumulative or are blank.
+   */
+  award_4?: number | null;
+  award_6?: number | null;
   /** No award, still enrolled at this college. */
   still_enrolled: number | null;
   /** No award here, enrolled at another college (transferred out). */
@@ -412,8 +429,8 @@ export interface EightYearOutcomes {
   /** Students who transferred in (full-time and part-time). */
   transfer_in: EightYearGroup | null;
   /** Pell Grant recipients and everyone else, all entering students. */
-  pell: Pick<EightYearGroup, "cohort" | "award"> | null;
-  non_pell: Pick<EightYearGroup, "cohort" | "award"> | null;
+  pell: Pick<EightYearGroup, "cohort" | "award" | "award_4" | "award_6"> | null;
+  non_pell: Pick<EightYearGroup, "cohort" | "award" | "award_4" | "award_6"> | null;
 }
 
 export interface CdsAid {
@@ -462,7 +479,7 @@ export interface CampusPrograms {
   intellectual_disability_program: boolean;
 }
 
-export type SourceKey = "scorecard" | "ipeds-adm" | "ipeds-sfa" | "ipeds-ic" | "ipeds-ic-char" | "ipeds-hd" | "ipeds-ef" | "ipeds-ef-c" | "ipeds-om" | "ipeds-sal" | "ipeds-f" | "cds"
+export type SourceKey = "scorecard" | "ipeds-adm" | "ipeds-sfa" | "ipeds-ic" | "ipeds-ic-char" | "ipeds-hd" | "ipeds-ef" | "ipeds-ef-c" | "ipeds-ef-a" | "ipeds-om" | "ipeds-sal" | "ipeds-f" | "cds"
   /** IPEDS Graduation Rates, Pell and subsidized-loan file (GR{Y}_PELL_SSL; specs/data-expansion/graduation-by-group.md). */
   | "ipeds-gr";
 /** Race/ethnicity groups for graduation rates (lib/graduation-groups.ts RACE_GROUPS). */
@@ -513,6 +530,7 @@ export type SizeBucket = "small" | "medium" | "large" | "xl";
 export type SortKey =
   | "applicants"
   | "completion_8yr"
+  | "completion_4yr"
   | "student_faculty"
   | "instruction_spending"
   | "endowment_per_student"
@@ -543,7 +561,8 @@ export type SortKey =
   | "pell_gap"
   | "pell_gap_change"
   | "full_time_faculty"
-  | "out_of_state";
+  | "out_of_state"
+  | "transfer_share";
 
 export type ExploreView = "grid" | "table" | "chart" | "map";
 

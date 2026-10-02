@@ -24,8 +24,11 @@ export const OM_COHORTS = {
   transfer_part_time: 40,
 } as const;
 
-/** Columns read from every cohort: adjusted cohort, awards by 8 years, and the 8-year status of those without one. */
-export const OM_COLUMNS = ["OMACHRT", "OMAWDN8", "OMENRYI", "OMENRAI", "OMENRUN"] as const;
+/**
+ * Columns read from every cohort: adjusted cohort, awards by 8 years, the 8-year status of those without one, and awards
+ * by 4 and 6 years (specs/data-expansion/time-to-degree.md). sync-data and history stop if any is missing.
+ */
+export const OM_COLUMNS = ["OMACHRT", "OMAWDN8", "OMENRYI", "OMENRAI", "OMENRUN", "OMAWDN4", "OMAWDN6"] as const;
 
 /** Under this many students in an adjusted cohort, its rates aren't shown (the rule College Scorecard uses). */
 export const MIN_COHORT = 30;
@@ -57,23 +60,45 @@ function counts(row: Row, cohorts: readonly number[]) {
     }
     return total;
   };
-  return { cohort: sum("OMACHRT"), award: sum("OMAWDN8"), still: sum("OMENRYI"), elsewhere: sum("OMENRAI"), unknown: sum("OMENRUN") };
+  return {
+    counts: { cohort: sum("OMACHRT"), award: sum("OMAWDN8"), still: sum("OMENRYI"), elsewhere: sum("OMENRAI"), unknown: sum("OMENRUN") },
+    // Kept apart: a blank here only loses time-to-degree, never the 8-year outcomes.
+    award4: sum("OMAWDN4"),
+    award6: sum("OMAWDN6"),
+  };
+}
+
+/**
+ * Awards by 4, 6, and 8 years are cumulative in OM (probed 2026-10-02: every site row of OM2017 and OM2024). If a
+ * refreshed file ever breaks that, the 4- and 6-year shares are dropped rather than showing an impossible step down.
+ */
+export function isCumulative(award4: number | null, award6: number | null, award8: number | null): boolean {
+  return award4 !== null && award6 !== null && award8 !== null && award4 <= award6 && award6 <= award8;
 }
 
 /** One group's 8-year outcome shares. Rates are null under MIN_COHORT; null when no one is in the group. */
 function groupFrom(row: Row, cohorts: readonly number[]): EightYearGroup | null {
-  const c = counts(row, cohorts);
+  const { counts: c, award4, award6 } = counts(row, cohorts);
   // An unreadable count (a blank in a present row) makes the whole group unreadable: shares wouldn't sum to 1.
   if (c.cohort === null || c.cohort <= 0 || Object.values(c).some((v) => v === null)) return null;
   const n = c.cohort;
   const share = (v: number | null) => (n < MIN_COHORT || v === null ? null : round4(v / n));
-  return { cohort: n, award: share(c.award), still_enrolled: share(c.still), transferred: share(c.elsewhere), unknown: share(c.unknown) };
+  const timely = isCumulative(award4, award6, c.award);
+  return {
+    cohort: n,
+    award: share(c.award),
+    award_4: timely ? share(award4) : null,
+    award_6: timely ? share(award6) : null,
+    still_enrolled: share(c.still),
+    transferred: share(c.elsewhere),
+    unknown: share(c.unknown),
+  };
 }
 
-/** Award rate only (Pell, non-Pell). */
-function awardFrom(row: Row, cohort: number): Pick<EightYearGroup, "cohort" | "award"> | null {
+/** Award rates only (Pell, non-Pell). */
+function awardFrom(row: Row, cohort: number): Pick<EightYearGroup, "cohort" | "award" | "award_4" | "award_6"> | null {
   const g = groupFrom(row, [cohort]);
-  return g && { cohort: g.cohort, award: g.award };
+  return g && { cohort: g.cohort, award: g.award, award_4: g.award_4, award_6: g.award_6 };
 }
 
 /** A college's 8-year outcomes from its pivoted OM row; null when the college isn't in the file. */
@@ -113,6 +138,33 @@ export function isShown(g: EightYearGroup | null | undefined): g is EightYearGro
 /** Share of all entering students with a degree or certificate within 8 years (Explore's column). */
 export function completion8(s: Pick<School, "outcomes">): number | null {
   return s.outcomes?.eight_year?.all.award ?? null;
+}
+
+/** Share of all entering students with a degree or certificate within 4 years (time-to-degree; Explore's sort). */
+export function completion4(s: Pick<School, "outcomes">): number | null {
+  return s.outcomes?.eight_year?.all.award_4 ?? null;
+}
+
+/** "62 of 100 finish within 4 years, 74 within 6, and 76 within 8." Null unless all three are shown. */
+export function timeToDegreeHeadline(g: EightYearGroup | null | undefined): string | null {
+  if (!g || g.award_4 == null || g.award_6 == null || g.award == null) return null;
+  const [a4, a6, a8] = [g.award_4, g.award_6, g.award].map((v) => Math.round(v * 100));
+  return `${a4} of 100 finish within 4 years, ${a6} within 6, and ${a8} within 8.`;
+}
+
+/** Shown 8-year groups (all, first-time, transfer-in) across colleges, and how many lack 4/6-year shares; sync-data's guard. */
+export function timeToDegreeCoverage(schools: readonly Pick<School, "outcomes">[]): { shown: number; missing: number } {
+  let shown = 0;
+  let missing = 0;
+  for (const s of schools) {
+    const o = s.outcomes?.eight_year;
+    for (const g of [o?.all, o?.first_time, o?.transfer_in]) {
+      if (!g || g.award == null) continue;
+      shown++;
+      if (g.award_4 == null || g.award_6 == null) missing++;
+    }
+  }
+  return { shown, missing };
 }
 
 /** Share of all entering students enrolled at another college 8 years on (transfer-out). */

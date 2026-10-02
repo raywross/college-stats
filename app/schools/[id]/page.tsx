@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { ArrowRight, Calculator, ChevronRight, ExternalLink, MapPin, TriangleAlert } from "lucide-react";
 import { getData, getDetail, getHistory, getHistoryFiles } from "@/lib/data";
 import { Residence } from "@/components/school/Residence";
+import { Transfers } from "@/components/school/Transfers";
 import type { Cited } from "@/lib/lineage";
 import {
   DOMAINS,
@@ -89,13 +90,13 @@ const HISTORY_GROUPS = {
   aid: ["grant_pct", "grant_avg", "aid_generosity", "federal_loan_rate"],
   admissions: ["applicants", "admitted", "enrolled", "acceptance_rate", "yield", "admit_rate_men", "admit_rate_women", "application_fee"],
   scores: ["sat_25", "sat_75", "act_25", "act_75", "sat_submit", "test_policy"],
-  students: ["undergrads", "race_white", "men_share", "part_time_share", "housing_capacity", "out_of_state_share", "international_share"],
-  outcomes: ["grad_rate", "median_debt", "om_award", "om_transfer", "om_award_pell", "om_award_non_pell", "grad_rate_pell", "grad_rate_white"],
+  students: ["undergrads", "race_white", "men_share", "part_time_share", "housing_capacity", "out_of_state_share", "international_share", "transfer_in_share", "transfer_in_count"],
+  outcomes: ["grad_rate", "median_debt", "om_award", "om_transfer", "om_award_pell", "om_award_non_pell", "om_award_4", "om_award_6", "grad_rate_pell", "grad_rate_white"],
   academics: ["student_faculty_ratio", "faculty_full_time_share", "faculty_salary", "instruction_per_student"],
 } as const satisfies Record<string, readonly SeriesKey[]>;
 
 /** National series the charts draw as a band (keeps the page payload small). */
-const BANDED: readonly SeriesKey[] = ["avg_paid_all", "grant_pct", "grant_avg", "acceptance_rate", "sat_25", "sat_75", "act_25", "act_75", "grad_rate", "median_debt", "men_share", "part_time_share", "federal_loan_rate", "student_faculty_ratio", "om_award", "om_transfer", "faculty_full_time_share", "faculty_salary", "out_of_state_share"];
+const BANDED: readonly SeriesKey[] = ["avg_paid_all", "grant_pct", "grant_avg", "acceptance_rate", "sat_25", "sat_75", "act_25", "act_75", "grad_rate", "median_debt", "men_share", "part_time_share", "federal_loan_rate", "student_faculty_ratio", "om_award", "om_transfer", "faculty_full_time_share", "faculty_salary", "out_of_state_share", "transfer_in_share"];
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -166,6 +167,7 @@ const SECTION_FIELDS = {
     "demographics.part_time_share",
     "demographics.age_25_plus_share",
     "demographics.residence",
+    "demographics.transfer_in",
     "detail.home_states",
   ],
   cost: [
@@ -915,6 +917,12 @@ export default async function SchoolPage({ params }: Props) {
                 cited={citeField("demographics.residence", school)}
                 citedStates={citeField("detail.home_states", school)}
                 rank={rankOf(school, "outOfState")}
+              />
+              <Transfers
+                school={school}
+                citedIn={citeField("demographics.transfer_in", school)}
+                citedOut={citeField("outcomes.eight_year", school)}
+                rank={rankOf(school, "transferShare")}
               />
               {(d.men_share != null || d.part_time_share != null || d.age_25_plus_share != null) && (
                 <ShowMore label="Show men, women, part-time, and age" hint="How the student body compares with the median college" className="lg:col-span-2">

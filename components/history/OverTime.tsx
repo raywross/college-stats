@@ -516,7 +516,7 @@ export function OverTime(props: OverTimeProps) {
   const debtWindow = windowFor("academic", ["median_debt"]);
   const spans = policySpans(history.series.test_policy);
   const hasScores = !!(history.series.sat_25 || history.series.act_25);
-  const hasStudents = !!(history.series.undergrads || history.series.race_white || history.series.men_share || history.series.part_time_share || history.series.housing_capacity || history.series.out_of_state_share);
+  const hasStudents = !!(history.series.undergrads || history.series.race_white || history.series.men_share || history.series.part_time_share || history.series.housing_capacity || history.series.out_of_state_share || history.series.transfer_in_share);
   const hasOutcomes = !!(history.series.grad_rate || history.series.median_debt || history.series.om_award || history.series.grad_rate_pell || history.series.grad_rate_white);
   // 8-year outcomes end 8 years behind the newest entering class of grad_rate: window on their own last class.
   const omEnd = history.series.om_award ? lastYear(history.series.om_award) : null;
@@ -886,6 +886,21 @@ export function OverTime(props: OverTimeProps) {
                 />
               );
             })()}
+            {history.series.transfer_in_share && (
+              <ChartPanel
+                {...common}
+                title="New transfer students each fall"
+                term="transfer-in"
+                kind="fall"
+                format="pct"
+                window={windowFor("fall", ["transfer_in_share"])}
+                headline="transfer_in_share"
+                provisionalYear={null}
+                specs={[{ key: "transfer_in_share", name: "Share of new undergraduates", color: colors.size, band: true }]}
+                extras={[{ key: "transfer_in_count", name: "Transfer students" }]}
+                note="Transfer-ins as a share of all new undergraduates (transfer-ins plus first-time students). The count is in the tooltip and table."
+              />
+            )}
           </div>
         </Group>
       )}
@@ -1015,6 +1030,24 @@ export function OverTime(props: OverTimeProps) {
                   provisionalYear={null}
                   specs={[{ key: "om_transfer", name: "Enrolled elsewhere", color: colors.value, band: true }]}
                   note="Students who left without a credential and enrolled at another college, by the year they entered here."
+                />
+              )}
+              {history.series.om_award_4 && (
+                <ChartPanel
+                  {...common}
+                  title="How long it takes: a credential within 4, 6, and 8 years"
+                  term="time-to-degree"
+                  kind="cohort"
+                  format="pct"
+                  window={omWindow}
+                  headline="om_award_4"
+                  provisionalYear={null}
+                  specs={[
+                    { key: "om_award_4", name: "Within 4 years", color: colors.value },
+                    { key: "om_award_6", name: "Within 6 years", color: colors.value, dashed: true },
+                    { key: "om_award", name: "Within 8 years", color: CONTEXT },
+                  ]}
+                  note="All entering students, by the year they entered. The counts are cumulative: a student who finished in 4 years is counted at 6 and 8 too."
                 />
               )}
             </div>

@@ -56,14 +56,14 @@
       "id": "ipeds-2025-26-spring",
       "source": "ipeds",
       "label": "IPEDS spring release (provisional)",
-      "brings": ["Fall enrollment 2025 (EF2025A)", "Finance 2024–25"],
-      "updates": [],
+      "brings": ["Fall enrollment 2025 (EF2025A): new transfer students", "Finance 2024–25"],
+      "updates": ["ipeds-ef-a"],
       "expected": "2027-01",
       "status": "estimated",
       "basis": "Last year's spring release was Jan 6, 2026",
       "url": "https://nces.ed.gov/ipeds/survey-components/data-release-schedule",
       "files": ["EF2025A"],
-      "note": "Reaches the site through the next College Scorecard update"
+      "note": "Transfer students update directly; other enrollment figures reach the site through the next College Scorecard update"
     },
     {
       "id": "ipeds-2026-27-winter-residence",

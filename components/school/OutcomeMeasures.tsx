@@ -1,7 +1,7 @@
 import { getData } from "@/lib/data";
 import { pct } from "@/lib/format";
 import { DOMAINS } from "@/lib/metrics";
-import { OUTCOME_GROUPS, isShown, type OutcomeGroupKey } from "@/lib/outcome-measures";
+import { OUTCOME_GROUPS, isShown, timeToDegreeHeadline, type OutcomeGroupKey } from "@/lib/outcome-measures";
 import type { EightYearGroup, School } from "@/lib/types";
 import { OutcomeBar } from "@/components/charts/OutcomeBar";
 import { InfoTip, MetricLabel, Term } from "@/components/ui/info-tip";
@@ -26,6 +26,12 @@ export async function OutcomeMeasures({ school }: { school: School }) {
     { label: "Students without a Pell Grant", v: o.non_pell?.award ?? null },
   ];
   const median = metricMedian("completion8");
+  // Time to degree (specs/data-expansion/time-to-degree.md): one row per shown group, cumulative 4/6/8-year shares.
+  const steps = OUTCOME_GROUPS.flatMap(({ key, label }) => {
+    const g = groups[key];
+    return g && g.award_4 != null && g.award_6 != null && g.award != null ? [{ key, label, values: [g.award_4, g.award_6, g.award] }] : [];
+  });
+  const stepsHeadline = timeToDegreeHeadline(groups.all);
 
   return (
     <div className="mt-4 grid gap-6 rounded-3xl border bg-card p-4 sm:p-6 lg:grid-cols-[1.4fr_1fr]">
@@ -61,6 +67,39 @@ export async function OutcomeMeasures({ school }: { school: School }) {
               <p className="mt-2 text-[11px] text-muted-foreground">
                 – Fewer than 30 students in the group <InfoTip term="adjusted-cohort" className="ml-0.5" />
               </p>
+            )}
+          </div>
+        )}
+        {steps.length > 0 && (
+          <div>
+            <MetricLabel term="time-to-degree" cited={cited} className="text-sm font-medium">
+              How long it takes
+            </MetricLabel>
+            {stepsHeadline && <p className="mb-3 text-xs text-muted-foreground">{stepsHeadline}</p>}
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="text-muted-foreground">
+                  <th className="pb-1 text-left font-normal">Earned a credential within</th>
+                  <th className="pb-1 text-right font-normal">4 yrs</th>
+                  <th className="pb-1 text-right font-normal">6 yrs</th>
+                  <th className="pb-1 text-right font-normal">8 yrs</th>
+                </tr>
+              </thead>
+              <tbody>
+                {steps.map((s) => (
+                  <tr key={s.key} className="border-t">
+                    <td className="py-1.5 pr-2">{s.label}</td>
+                    {s.values.map((v, i) => (
+                      <td key={i} className="py-1.5 text-right font-semibold tabular-nums">
+                        {pct(v)}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {steps.some((s) => s.key === "transfer_in") && (
+              <p className="mt-2 text-[11px] text-muted-foreground">Transfer students&apos; clock starts when they arrive here, not when they first started college.</p>
             )}
           </div>
         )}

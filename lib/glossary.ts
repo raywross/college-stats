@@ -233,6 +233,15 @@ const entries = {
     related: ["part-time-student"],
   },
   // Where first-years come from (specs/data-expansion/residence.md).
+  // Transfers in (specs/data-expansion/transfers.md).
+  "transfer-in": {
+    term: "Transfer student (transfer-in)",
+    short: "An undergraduate who enrolled this fall after attending another college. The share is transfer-ins divided by all new undergraduates: transfer-ins plus first-time students.",
+    long: "From the federal Fall Enrollment survey, which counts new transfer-ins every fall, full-time and part-time. Transfers out are a different measure: the 8-year outcomes show how many of an entering class left and enrolled at another college. No federal data counts students leaving in a given year.",
+    why: "A large transfer share means the college admits and plans for transfer students; a small one may mean few transfer seats.",
+    category: "Students & access",
+    related: ["transfer-out", "first-time-student", "outcome-measures"],
+  },
   "in-state-student": {
     term: "In-state, out-of-state, and international students",
     short: "Where a first-year lived when they applied: the college's own state, another U.S. state, DC, or territory (out-of-state), or another country (international). Shares here are of every first-year, including the few whose residence wasn't reported.",
@@ -324,6 +333,15 @@ const entries = {
     related: ["retention-rate"],
   },
   // Outcome Measures (specs/data-expansion/outcome-measures.md).
+  // Time to degree (specs/data-expansion/time-to-degree.md).
+  "time-to-degree": {
+    term: "Time to degree (within 4, 6, 8 years)",
+    short: "Of the students who started at a college, the share who earned a degree or certificate there within 4, 6, and 8 years. The shares add up over time: a student who finished in 4 years is counted at 6 and 8 too.",
+    long: "From the federal Outcome Measures survey, which follows every entering student, including part-time and transfer students. For a transfer student the clock starts when they arrive at this college, not when they first started college. The newest group entered about 8 years before the data's release, so all three numbers describe the same students.",
+    why: "Four years of tuition is the plan for most families; each extra year adds cost. The gap between the 4- and 6-year shares shows how many students need longer.",
+    category: "Cost & outcomes",
+    related: ["outcome-measures", "graduation-rate"],
+  },
   "outcome-measures": {
     term: "8-year outcomes (Outcome Measures)",
     short: "What happened to everyone who started at a college, 8 years later: earned a degree or certificate there, still enrolled, enrolled at another college, or no record. Counts transfer students and part-timers, not just first-time, full-time students.",

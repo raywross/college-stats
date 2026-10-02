@@ -28,6 +28,8 @@ export type VintageKey =
   | "ipeds-sal"
   /** IPEDS Fall Enrollment part C (EF{Y}C): where first-years come from. Required in even-numbered falls only. */
   | "ipeds-ef-c"
+  /** IPEDS Fall Enrollment part A (EF{Y}A): enrollment by level, incl. new transfer-ins. Fall Y. */
+  | "ipeds-ef-a"
   /** IPEDS Finance survey, derived per-student figures (DRVF{Y}): endowment and spending per student. Fiscal year. */
   | "ipeds-f"
   | "scorecard-enrollment"
@@ -151,6 +153,8 @@ export const FIELDS = {
   "academics.faculty.full_time_share": scorecard("Full-time faculty share", "academics", "scorecard-enrollment"),
   "demographics.residence": { label: "Where first-years come from: in-state, other states, abroad", topic: "demographics", source: "ipeds-ef-c", vintage: "ipeds-ef-c" },
   // Stored in the per-college detail file (lib/detail.ts), not data/schools.json.
+  // Transfers in (specs/data-expansion/transfers.md).
+  "demographics.transfer_in": { label: "New transfer-in undergraduates this fall", topic: "demographics", source: "ipeds-ef-a", vintage: "ipeds-ef-a" },
   "detail.home_states": { label: "First-years by home state", topic: "demographics", source: "ipeds-ef-c", vintage: "ipeds-ef-c" },
   finances: { label: "Endowment, spending, and revenue (IPEDS Finance survey)", topic: "academics", source: "ipeds-f", vintage: "ipeds-f" },
   "campus.athletics": icChar("Athletics: association, division, conference, sports"),

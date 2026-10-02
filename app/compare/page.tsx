@@ -162,6 +162,8 @@ const TABLE_ROWS = (
     ["First-years from in state", "in-state-student", "demographics.residence", (s: School) => opt(s.demographics.residence?.in_state ?? null, (v) => pct(v))],
     ["First-years from other states", "in-state-student", "demographics.residence", (s: School) => opt(s.demographics.residence?.out_of_state ?? null, (v) => pct(v))],
     ["First-years from abroad", "in-state-student", "demographics.residence", (s: School) => opt(s.demographics.residence?.international ?? null, (v) => pct(v))],
+    ["New transfer students this fall", "transfer-in", "demographics.transfer_in", (s: School) => opt(s.demographics.transfer_in?.count ?? null, (v) => v.toLocaleString("en-US"))],
+    ["Transfers, share of new undergraduates", "transfer-in", "demographics.transfer_in", (s: School) => opt(s.demographics.transfer_in?.share_of_new ?? null, (v) => pct(v))],
     ["Diversity index", "diversity-index", "derived.diversity_index", (s: School) => opt(METRICS.diversity.get(s), (v) => v.toFixed(2))],
     ["Average cost, all students (est.)", "average-cost", "cost.avg_paid_all", (s: School) => opt(s.cost?.avg_paid_all ?? null, money)],
     ["Aid generosity (grants ÷ full price)", "aid-generosity", "derived.aid_generosity", (s: School) => opt(METRICS.aidGenerosity.get(s), (v) => pct(v))],
@@ -196,6 +198,7 @@ const TABLE_ROWS = (
     ["Graduated in 6 years, international students", "graduation-rate", "outcomes.grad_rate_by_race", (s: School) =>
       gradRateCell(s.outcomes?.grad_rate_by_race?.international, s.outcomes?.grad_cohorts_by_race?.international)],
     ["Retention rate", "retention-rate", "outcomes.retention_rate", (s: School) => opt(s.outcomes?.retention_rate ?? null, (v) => pct(v))],
+    ["Credential within 4 years, all students", "time-to-degree", "outcomes.eight_year", (s: School) => opt(METRICS.completion4.get(s), (v) => pct(v))],
     ["Credential within 8 years, all students", "outcome-measures", "outcomes.eight_year", (s: School) => opt(METRICS.completion8.get(s), (v) => pct(v))],
     ["Enrolled at another college, 8 years on", "transfer-out", "outcomes.eight_year", (s: School) => opt(METRICS.transferOut.get(s), (v) => pct(v))],
     ["Median debt", "median-debt", "outcomes.median_debt", (s: School) => opt(s.outcomes?.median_debt ?? null, money)],

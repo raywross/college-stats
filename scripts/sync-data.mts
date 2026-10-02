@@ -30,11 +30,13 @@ import { applyProbes, filesToProbe, type FileProbe, type ReleaseCalendar } from 
 import { IPEDS_BASES, parseCsv } from "./lib/ipeds.mts";
 import { MSI_FIELDS, campusProfileFrom, directoryIssues, msiFrom } from "../lib/campus-profile.ts";
 import { facultySalaryFrom, fullTimeFacultyShareFrom, studentFacultyRatioFrom } from "../lib/academics.ts";
-import { OM_COLUMNS, OM_LAG, OM_PIVOT, eightYearFrom } from "../lib/outcome-measures.ts";
+import { OM_COLUMNS, OM_LAG, OM_PIVOT, eightYearFrom, timeToDegreeCoverage } from "../lib/outcome-measures.ts";
 import { fetchPivotedTable } from "./lib/om.mts";
 import { GR_PELL_COHORT_TYPE, GR_PELL_COLUMNS, RACE_GROUPS, aidGroupGradFrom, raceGradFrom, scorecardRaceCohortField, scorecardRaceRateField } from "../lib/graduation-groups.ts";
 import { residenceFrom } from "../lib/residence.ts";
 import { addResidenceMeta, buildDetails, crossCheckDerived, detailProblems, fetchResidence, writeDetails } from "./lib/residence-sync.mts";
+import { addTransferMeta, checkTransfers, fetchTransfers } from "./lib/transfers-sync.mts";
+import { transferInFrom } from "../lib/transfers.ts";
 import { financesFrom } from "../lib/finances.ts";
 import { apCreditFrom, athleticsFrom, calendarFrom, disabilityFrom, programsFrom, servicesFrom } from "../lib/campus-services.ts";
 import { acceptanceRate, applicationFeeFrom, computePrices, factorsFrom, housingFrom, ipedsNum, parseShareBand, priceSuffix, promiseProgramFrom, raceShares, toAid, tuitionPlansFrom } from "../lib/derive.ts";
@@ -590,6 +592,8 @@ function buildMeta(
       "ipeds-sal": `Fall ${sal.name.slice(3, 7)}`,
       // Set with its source by addResidenceMeta (scripts/lib/residence-sync.mts).
       "ipeds-ef-c": null,
+      // Set with its source by addTransferMeta (scripts/lib/transfers-sync.mts).
+      "ipeds-ef-a": null,
       "ipeds-f": academicYear(String(drvfFiscalYear)),
       "scorecard-enrollment": scorecardYears.enrollment,
       "scorecard-age": scorecardYears.age,
@@ -786,6 +790,8 @@ async function main() {
   if (![...hd.rows.values()].some((r) => "LOCALE" in r && "CARNEGIEIC" in r)) throw new Error(`${hd.name} has no LOCALE/CARNEGIEIC columns`);
   // Where first-years come from (specs/data-expansion/residence.md): the newest even-year EF{Y}C.
   const efc = await fetchResidence(join(ROOT, ".cache", "ipeds"), thisYear);
+  // Transfers in (specs/data-expansion/transfers.md): the newest EF{Y}A, every fall.
+  const efa = await fetchTransfers(join(ROOT, ".cache", "ipeds"), thisYear);
   // Campus services (specs/data-expansion/campus-services.md): the newest IC{Y}, a year ahead of the price files.
   const icChar = await fetchIpeds(IC_CHAR_NAMES);
   if (![...icChar.rows.values()].some((r) => "ATHASSOC" in r && "CONFNO2" in r && "SLO5" in r && "CALSYS" in r))
@@ -819,6 +825,7 @@ async function main() {
     if (school?.outcomes) school.outcomes.eight_year = eightYearFrom(om.rows.get(school.unit_id), omEntering);
     if (school) addGradByGroup(school, grPell.rows.get(school.unit_id), row);
     if (school) school.demographics.residence = residenceFrom(efc.table.rows.get(school.unit_id), school.location.state);
+    if (school) school.demographics.transfer_in = transferInFrom(efa.table.rows.get(school.unit_id));
     if (school) school.finances = financesFrom(drvf.rows.get(school.unit_id), drvfFiscalYear);
     if (!school) {
       stats.noSize++;
@@ -849,6 +856,9 @@ async function main() {
   const scorecardYears = await detectScorecardYears(key, String(scorecard[0]?.id ?? "221999"));
   const meta = buildMeta(adm, sfa, ic, sfaYears, scorecardYears, cost2, chars, hd, icChar, efd, om, grPell, sal, drvf, drvfFiscalYear);
   addResidenceMeta(meta, efc.table, efc.year);
+  addTransferMeta(meta, efa.table, efa.year);
+  // Transfers in: the level codes must still mean transfer-ins and first-time students (lib/transfers.ts).
+  const transfersChecked = await checkTransfers(efa.table, efa.year, schools.map((s) => s.unit_id), join(ROOT, ".cache", "ipeds"));
 
   // Residence: the per-state rows must add up to NCES's own derived counts, and the detail files must check out.
   const derived = await crossCheckDerived(schools, efc.table, efc.year, join(ROOT, ".cache", "ipeds"));
@@ -856,6 +866,12 @@ async function main() {
   const details = buildDetails(schools, efc.table, meta);
   const detailIssues = detailProblems(schools, details, meta);
   if (detailIssues.length) throw new Error(`Detail files failed their checks:\n  ${detailIssues.slice(0, 20).join("\n  ")}`);
+
+  // Time to degree (specs/data-expansion/time-to-degree.md): a few colleges' 4/6-year counts may be blank or not
+  // cumulative, but if many are, NCES changed the file and the 4/6/8 steps can't be trusted.
+  const timeToDegree = timeToDegreeCoverage(schools);
+  if (timeToDegree.missing > timeToDegree.shown * 0.01)
+    throw new Error(`${om.name}: ${timeToDegree.missing} of ${timeToDegree.shown} shown 8-year groups have no 4/6-year shares (blank or not cumulative)`);
 
   // Nothing is written unless every value's lineage checks out.
   const problems = validateLineage(schools, meta);
@@ -878,6 +894,8 @@ async function main() {
   console.log(`  with earnings:        ${schools.filter((s) => s.outcomes?.median_earnings_10yr != null).length}`);
   console.log(`  with grad rate:       ${schools.filter((s) => s.outcomes?.graduation_rate != null).length}`);
   console.log(`  with 8-year outcomes: ${schools.filter((s) => s.outcomes?.eight_year?.all.award != null).length}`);
+  console.log(`  with transfer-ins:    ${schools.filter((s) => s.demographics.transfer_in != null).length} (EF${efa.year}A; level codes checked for ${transfersChecked} colleges)`);
+  console.log(`  with 4-year finish:   ${schools.filter((s) => s.outcomes?.eight_year?.all.award_4 != null).length} (${timeToDegree.missing} shown groups without 4/6-year shares)`);
   console.log(`  with Pell grad rate:  ${schools.filter((s) => s.outcomes?.grad_rate_pell != null).length} (${grPell.name})`);
   console.log(`  with Black grad rate: ${schools.filter((s) => s.outcomes?.grad_rate_by_race?.black != null).length}`);
   console.log(`  with aid (IPEDS SFA): ${schools.filter((s) => s.aid?.grant_pct != null).length}`);

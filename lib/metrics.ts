@@ -1,8 +1,9 @@
 import type { School, SizeBucket } from "./types";
 import type { TermKey } from "./glossary";
 import { ratioLabel } from "./academics";
-import { completion8, transferOut8 } from "./outcome-measures";
+import { completion4, completion8, transferOut8 } from "./outcome-measures";
 import { NATIONAL_MIN_FIRST_YEARS } from "./residence";
+import { transferShare } from "./transfers";
 import type { FieldPath } from "./fields";
 import { money, num, pct, pctSmart } from "./format";
 import { admitRatesBySex, satMedian, simpsonIndex, yieldOf } from "./derive";
@@ -153,12 +154,14 @@ export type MetricKey =
   | "partTime"
   | "studentFaculty"
   | "completion8"
+  | "completion4"
   | "transferOut"
   | "pellGap"
   | "pellGapChange"
   | "facultyFullTime"
   | "facultySalary"
   | "outOfState"
+  | "transferShare"
   | "outOfStateLarge"
   | "financesInstruction"
   | "instructionGasb"
@@ -491,6 +494,20 @@ export const METRICS: Record<MetricKey, MetricDef> = {
     less: "fewer students per faculty member",
   },
   // 8-year outcomes, all entering students (specs/data-expansion/outcome-measures.md).
+  // Time to degree (specs/data-expansion/time-to-degree.md): all entering students, within 4 years.
+  completion4: {
+    key: "completion4",
+    field: "outcomes.eight_year",
+    label: "Earned a credential within 4 years (all students)",
+    short: "4-yr completion",
+    term: "time-to-degree",
+    domain: "value",
+    get: completion4,
+    format: (v) => pct(v),
+    scale: [0, 1],
+    more: "more students finishing in 4 years",
+    less: "fewer students finishing in 4 years",
+  },
   completion8: {
     key: "completion8",
     field: "outcomes.eight_year",
@@ -569,6 +586,20 @@ export const METRICS: Record<MetricKey, MetricDef> = {
     less: "lower-paid faculty",
   },
   // Where first-years come from (specs/data-expansion/residence.md): share of every first-year from other states.
+  // Transfers in (specs/data-expansion/transfers.md): share of this fall's new undergraduates who transferred in.
+  transferShare: {
+    key: "transferShare",
+    field: "demographics.transfer_in",
+    label: "Transfer students, share of new undergraduates",
+    short: "Transfer share",
+    term: "transfer-in",
+    domain: "access",
+    get: transferShare,
+    format: (v) => pct(v),
+    scale: [0, 1],
+    more: "more of the new students transferring in",
+    less: "fewer of the new students transferring in",
+  },
   outOfState: {
     key: "outOfState",
     field: "demographics.residence",

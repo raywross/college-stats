@@ -42,6 +42,7 @@ import { instructionSpending } from "../../lib/finances.ts";
 import { eightYearFrom } from "../../lib/outcome-measures.ts";
 import { aidGroupGradFrom, raceGradFrom } from "../../lib/graduation-groups.ts";
 import { residenceFrom } from "../../lib/residence.ts";
+import { transferInFrom } from "../../lib/transfers.ts";
 import { seriesStep } from "../../lib/history.ts";
 import { COHORT_LAG, type ScorecardRow } from "./scorecard.mts";
 
@@ -72,6 +73,8 @@ export interface Inputs {
   sal?: readonly YearTable[];
   /** Residence of first-years (EF{Y}C pivoted to one wide row per college), one table per even-numbered fall. */
   efc?: readonly YearTable[];
+  /** Transfers in (EF{Y}A pivoted to one wide row per college by level), one table per fall. */
+  efa?: readonly YearTable[];
   /** College Scorecard year-prefixed values by unit ID (scripts/history/scorecard.mts), and the years requested. */
   scorecard?: { rows: ReadonlyMap<string, ScorecardRow>; first: number; last: number };
   /** Graduation by Pell and loan status (GR{Y+6}_PELL_SSL), one table per entering class. */
@@ -227,6 +230,8 @@ export function buildCollege(school: Pick<School, "unit_id" | "type"> & { locati
     put(raw, "om_transfer", t.year, o?.all.transferred);
     put(raw, "om_award_pell", t.year, o?.pell?.award);
     put(raw, "om_award_non_pell", t.year, o?.non_pell?.award);
+    put(raw, "om_award_4", t.year, o?.all.award_4);
+    put(raw, "om_award_6", t.year, o?.all.award_6);
   }
   // Graduation by group (lib/graduation-groups.ts, the snapshot's readers), stored at the entering class.
   for (const t of inputs.grPell ?? []) {
@@ -250,6 +255,12 @@ export function buildCollege(school: Pick<School, "unit_id" | "type"> & { locati
   }
   // Faculty salary, with the snapshot's reader (lib/academics.ts): asserts the row is really ARANK 7.
   for (const t of inputs.sal ?? []) put(raw, "faculty_salary", t.year, facultySalaryFrom(t.rows.get(id)));
+  // Transfers in, with the snapshot's reader (lib/transfers.ts).
+  for (const t of inputs.efa ?? []) {
+    const tr = transferInFrom(t.rows.get(id));
+    put(raw, "transfer_in_count", t.year, tr?.count);
+    put(raw, "transfer_in_share", t.year, tr?.share_of_new);
+  }
   // Where first-years come from, with the snapshot's reader (lib/residence.ts); in-state is the college's state today.
   if (school.location?.state) {
     for (const t of inputs.efc ?? []) {
@@ -614,6 +625,9 @@ export function lastPointMismatches(schools: readonly School[], histories: Reado
   // The newest EF part C fall history read (an even year): what the snapshot's EF{Y}C describes.
   const efcYears = [...histories.values()].flatMap((h) => (h.series.out_of_state_share ? [lastYear(h.series.out_of_state_share)] : []));
   const efcYear = efcYears.length ? Math.max(...efcYears) : null;
+  // The newest EF part A fall history read: what the snapshot's EF{Y}A describes.
+  const efaYears = [...histories.values()].flatMap((h) => (h.series.transfer_in_count ? [lastYear(h.series.transfer_in_count)] : []));
+  const efaYear = efaYears.length ? Math.max(...efaYears) : null;
   // The newest fiscal year history's instruction-spending series reaches: what the snapshot's DRVF{Y} describes.
   const financeYears = [...histories.values()].flatMap((h) => (h.series.instruction_per_student ? [lastYear(h.series.instruction_per_student)] : []));
   const financeYear = financeYears.length ? Math.max(...financeYears) : null;
@@ -715,12 +729,18 @@ export function lastPointMismatches(schools: readonly School[], histories: Reado
       check("om_transfer", om?.all.transferred, false, omYear);
       check("om_award_pell", om?.pell?.award, false, omYear);
       check("om_award_non_pell", om?.non_pell?.award, false, omYear);
+      check("om_award_4", om?.all.award_4, false, omYear);
+      check("om_award_6", om?.all.award_6, false, omYear);
     }
     if (salYear !== null) check("faculty_salary", s.academics?.faculty?.avg_salary_9mo, false, salYear);
     // At the newest year any college reports, like the loan rate: ~80 colleges reported a full-time share years ago and
     // nothing since, so Scorecard's "latest" is empty for them while their history ends on an older year.
     if (ftFacultyYear !== null && (h.series.faculty_full_time_share || s.academics?.faculty?.full_time_share != null))
       check("faculty_full_time_share", s.academics?.faculty?.full_time_share, false, ftFacultyYear);
+    if (efaYear !== null) {
+      check("transfer_in_count", s.demographics.transfer_in?.count, false, efaYear);
+      check("transfer_in_share", s.demographics.transfer_in?.share_of_new, false, efaYear);
+    }
     if (efcYear !== null) {
       check("out_of_state_share", s.demographics.residence?.out_of_state, false, efcYear);
       check("international_share", s.demographics.residence?.international, false, efcYear);

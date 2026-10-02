@@ -64,7 +64,7 @@ both ends) for one metric at a time, chosen from a segmented control:
 ## Profile: top of page
 - **Overview bento: "10 years" tile.** Always shows average total cost (after inflation, from → to, arrow); then up to
   two more *notable* changes from: full price, admit rate, applicants, undergrads, grant share. If nothing is notable,
-  it says "Steady over 10 years". Clicking the tile jumps to `#history`.
+  it says "Steady over 10 years". Clicking the tile opens the history page (`/schools/{id}/history`; the `href` prop).
 - **"Known for" chips:** at most one trend standout, and only for the national top 5% (e.g. "Applications tripled since
   2014"). Added to `standouts()`.
 - **Section headlines:** a muted one-liner under three existing headline numbers:
@@ -73,9 +73,10 @@ both ends) for one metric at a time, chosen from a segmented control:
   - Cost, average total cost: "+3% after inflation since 2013–14"
   On ≥ sm screens, a 60 × 16 px sparkline sits beside it (hover shows the year and value).
 
-## Profile: "Over time" section (`#history`)
-Placed after Cost & outcomes and before Similar schools; added to `SectionNav` as **Over time**. It renders only when a
-history shard exists.
+## Profile: "Over time" page (`/schools/{id}/history`)
+Its own topic page since the profile split ([school-profile.md](school-profile.md); it was the `#history` section,
+and that anchor redirects there). The page exists only when a history shard does; the **Over time** pill, the
+overview's links, and the "Over time" links under section takeaways (`HeadlineDelta`'s `href`) point to it.
 
 **Controls** (one row above the charts, per the dataviz interaction rules): range *10 years / All*; money
 *After inflation / As reported*; *National median* on/off (on by default). The state lives in the URL
@@ -150,8 +151,8 @@ one is added, run `validate_palette.js`.
 
 ## Build notes (Phase 1)
 Built 2026-09-28 (`feature/trends`). What shipped, and where it differs from the plan above:
-- **Profile "Over time"** (`components/history/OverTime.tsx`, client; `#history`, between Cost & outcomes and How it
-  ranks). Controls: *10 years / All*, *After inflation / As reported*, *National median*, and for publics *All students
+- **Profile "Over time"** (`components/history/OverTime.tsx`, client; was the `#history` section, now the history
+  topic page, with `components/profile/OverTimeSection.tsx` passing it everything). Controls: *10 years / All*, *After inflation / As reported*, *National median*, and for publics *All students
   / In-state / Out-of-state* full price; state in the URL (`?range=all&dollars=nominal&median=off&rate=out`), read
   after hydration so the page stays static. Groups and panels:
   - Cost: *What a year costs* (average total cost in the domain color with the national band; full price solid

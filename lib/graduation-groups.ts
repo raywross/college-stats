@@ -121,6 +121,12 @@ export function raceGradFrom(get: (field: string) => number | null | undefined):
  * Positive = Pell recipients graduate less often. Null unless both rates are reported, and when they're implausibly
  * far apart (see MAX_PLAUSIBLE_GAP).
  */
+/** Whether the profile has anything to show in "Graduation by group". */
+export function hasGradByGroup(s: Pick<School, "outcomes">): boolean {
+  const o = s.outcomes;
+  return o?.grad_rate_pell != null || o?.grad_rate_no_pell_no_loan != null || RACE_GROUPS.some((g) => o?.grad_rate_by_race?.[g] != null);
+}
+
 export function pellGap(s: Pick<School, "outcomes">): number | null {
   const g = rawPellGap(s);
   return g === null || Math.abs(g) > MAX_PLAUSIBLE_GAP ? null : g;

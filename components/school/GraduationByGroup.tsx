@@ -2,15 +2,11 @@ import { getData } from "@/lib/data";
 import type { School } from "@/lib/types";
 import { DOMAINS } from "@/lib/metrics";
 import { pct } from "@/lib/format";
-import { AID_GROUP_LABELS, MIN_GROUP_COHORT, RACE_GROUPS, RACE_GROUP_LABELS, MAX_PLAUSIBLE_GAP, gapPhrase, pellGap, rawPellGap } from "@/lib/graduation-groups";
+import { AID_GROUP_LABELS, MIN_GROUP_COHORT, RACE_GROUPS, RACE_GROUP_LABELS, MAX_PLAUSIBLE_GAP, gapPhrase, hasGradByGroup, pellGap, rawPellGap } from "@/lib/graduation-groups";
 import { GroupDotPlot, type GroupDotRow } from "@/components/charts/GroupDotPlot";
 import { InfoTip, MetricLabel } from "@/components/ui/info-tip";
 
-/** Whether the profile has anything to show here. */
-export function hasGradByGroup(s: School): boolean {
-  const o = s.outcomes;
-  return o?.grad_rate_pell != null || o?.grad_rate_no_pell_no_loan != null || RACE_GROUPS.some((g) => o?.grad_rate_by_race?.[g] != null);
-}
+export { hasGradByGroup };
 
 /** One sentence: "Pell Grant recipients: 89%, 5 points below students with no need-based aid." */
 export function pellGapSentence(s: School): string | null {

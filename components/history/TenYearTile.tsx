@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { formatBy } from "@/lib/format";
 import { SERIES, formatChange, historyYearLabel, isTinyBase, tenYearSummary, type Change, type SchoolHistory } from "@/lib/history";
@@ -29,9 +30,10 @@ function ChangeLine({ c }: { c: Change }) {
 
 /**
  * Overview bento: how this college changed over the default 10-year window (specs/trends-design.md). Always average
- * total cost after inflation, then up to two notable changes; "Steady" when nothing stands out. Links to #history.
+ * total cost after inflation, then up to two notable changes; "Steady" when nothing stands out. Links to the
+ * college's history page (`href`).
  */
-export function TenYearTile({ history, files }: { history: SchoolHistory; files: HistoryFiles }) {
+export function TenYearTile({ history, files, href }: { history: SchoolHistory; files: HistoryFiles; href: string }) {
   const { avgCost, notable } = tenYearSummary(history, files.national, files.cpi, files.meta);
   if (!avgCost && !notable.length) return null;
   return (
@@ -58,9 +60,9 @@ export function TenYearTile({ history, files }: { history: SchoolHistory; files:
       ) : (
         <p className="mt-3 border-t pt-3 text-xs text-muted-foreground">{avgCost ? "Otherwise steady" : "Steady"} over 10 years compared with other colleges.</p>
       )}
-      <a href="#history" className="group mt-auto inline-flex items-center gap-1 self-start pt-3 text-xs font-bold text-primary hover:underline">
+      <Link href={href} className="group mt-auto inline-flex items-center gap-1 self-start pt-3 text-xs font-bold text-primary hover:underline">
         See how it&apos;s changed <ArrowRight className="size-3.5 transition-transform group-hover:translate-x-0.5" />
-      </a>
+      </Link>
     </div>
   );
 }

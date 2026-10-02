@@ -30,6 +30,7 @@ import { MAX_RATIO_OPTIONS, MIN_FULL_TIME_FACULTY_OPTIONS } from "@/lib/academic
 import { drawsNationally } from "@/lib/residence";
 import { fieldFacets } from "@/lib/majors";
 import { InfoTip } from "@/components/ui/info-tip";
+import { BaselineNote } from "@/components/ui/BaselineNote";
 import { MultiSourceNote } from "@/components/sources/MultiSourceNote";
 
 export const metadata: Metadata = { title: "Explore colleges" };
@@ -333,6 +334,7 @@ export default async function ExplorePage({
           )}
 
           <MultiSourceNote schools={schools} fields={[...Object.values(METRICS).map((m) => m.field), "academics.majors_top", ...(view === "map" ? (["location.lat", "campus.setting"] as const) : [])]} className="pt-2" />
+          <BaselineNote className="pt-1" />
 
           {schools.length > 0 && (
             <p className={cn("pt-2 text-xs text-muted-foreground", view === "grid" && "hidden sm:block")}>

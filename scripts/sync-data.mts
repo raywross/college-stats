@@ -26,7 +26,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { DatasetMeta, RepaymentStatus, School, SchoolType, TestPolicy } from "../lib/types";
 import { lineageForPatch, validateLineage } from "../lib/lineage.ts";
-import { COLLEGE_SITE_SOURCE } from "../lib/reported.ts";
+import { COLLEGE_SITE_SOURCE, type ReportedFile } from "../lib/reported.ts";
+import { reportedToPatch } from "../lib/reported-checks.ts";
 import { applyProbes, filesToProbe, type FileProbe, type ReleaseCalendar } from "../lib/releases.ts";
 import { IPEDS_BASES, parseCsv } from "./lib/ipeds.mts";
 import { MSI_FIELDS, campusProfileFrom, directoryIssues, msiFrom } from "../lib/campus-profile.ts";
@@ -48,6 +49,7 @@ import { acceptanceRate, applicationFeeFrom, computePrices, factorsFrom, housing
 const ROOT = join(import.meta.dirname, "..");
 const OUT = join(ROOT, "data", "schools.json");
 const OVERRIDES = join(ROOT, "data", "overrides.json");
+const REPORTED = join(ROOT, "data", "college-reported.json");
 const META = join(ROOT, "data", "meta.json");
 const CALENDAR = join(ROOT, "data", "release-calendar.json");
 const API = "https://api.data.gov/ed/collegescorecard/v1/schools";
@@ -870,6 +872,22 @@ async function main() {
       if (t) s.trends = t;
     }
   }
+  // College-reported data (specs/college-reported-data.md): the ingestion agent's published values, keyed by
+  // unit_id. Adds `school.reported` and lineage for `reported.*` paths only; never touches a federal field.
+  let reportedMerged = 0;
+  if (existsSync(REPORTED)) {
+    const reportedFile: ReportedFile = JSON.parse(readFileSync(REPORTED, "utf8"));
+    const byUnitId = new Map(schools.map((s) => [s.unit_id, s]));
+    for (const entry of reportedFile.entries) {
+      const school = byUnitId.get(entry.unit_id);
+      if (!school) continue;
+      const { reported, lineage } = reportedToPatch(entry);
+      school.reported = reported;
+      school.lineage = { ...(school.lineage ?? {}), ...lineage };
+      reportedMerged++;
+    }
+  }
+
   const scorecardYears = await detectScorecardYears(key, String(scorecard[0]?.id ?? "221999"));
   const meta = buildMeta(adm, sfa, ic, sfaYears, scorecardYears, cost2, chars, hd, icChar, efd, om, grPell, sal, drvf, drvfFiscalYear);
   addResidenceMeta(meta, efc.table, efc.year);
@@ -935,6 +953,7 @@ async function main() {
   console.log(`  with full-time share: ${schools.filter((s) => s.academics?.faculty?.full_time_share != null).length}`);
   console.log(`  with majors:          ${schools.filter((s) => s.academics?.majors_top != null).length} (C${completions.year}_A; programs match the total row for ${totals.checked - totals.differ.length} of ${totals.checked})`);
   console.log(`  overrides applied:    ${stats.overridden}`);
+  console.log(`  college-reported:     ${reportedMerged} colleges`);
   if (directoryWarnings.length) {
     console.warn(`  directory mismatches: ${directoryWarnings.length} (check the id still means the same college)`);
     for (const w of directoryWarnings.slice(0, 20)) console.warn(`    ${w}`);

@@ -23,6 +23,7 @@ public data stays free ([commercialization.md](commercialization.md#what-stays-f
 | [accounts.md](accounts.md) | Login, households (guardians and students), who can see what, account deletion | Large |
 | [student-profile.md](student-profile.md) | A student's own numbers (GPA, scores, major, state, preferences) that every tool reads | Medium |
 | [saved-lists.md](saved-lists.md) | Saved colleges with Reach / Target / Likely, status, notes, deadlines, sharing, export | Medium |
+| [follow-colleges.md](follow-colleges.md) | Follow colleges (lists follow automatically) and get one email per data release summarizing what changed, with years; a public "What changed" panel on profiles | Large |
 
 ### Planning tools
 | Spec | Adds | Complexity |
@@ -62,8 +63,9 @@ public data stays free ([commercialization.md](commercialization.md#what-stays-f
 
 Added here beyond the documents: households with parent-only finances ([accounts.md](accounts.md)), a student
 profile shared by every tool, Reach / Target / Likely classification with published rules
-([chances-and-fit.md](chances-and-fit.md)), telemetry, award-letter renewability and appeal support, and the
-privacy rules for minors' data that run through all of it.
+([chances-and-fit.md](chances-and-fit.md)), telemetry, award-letter renewability and appeal support, following
+colleges with update emails ([follow-colleges.md](follow-colleges.md), added 2026-10-02), and the privacy rules for
+minors' data that run through all of it.
 
 ## Build order
 ```
@@ -74,12 +76,16 @@ accounts ─► student-profile ─► saved-lists ─► chances-and-fit       
     │                             │
     ├─► net-price-estimator ─► award-letter-analyzer
     │
+    ├─► follow-colleges (lists follow automatically; pays off once the scheduled data refresh runs)
+    │
 high-school-data ─► scattergrams (also after saved-lists)
 cds-admissions (data expansion) ─► early-decision-strategy
 data-api (independent)
 ```
 Telemetry first: it is small, and every later feature's success is measured with it. Accounts next: the planning
-tools are only worth building once a family can keep their work. Within the planning tools, the net price
+tools are only worth building once a family can keep their work. Following colleges is the first thing to build on
+accounts: it needs no personal numbers, gives people a reason to sign up, and pays off as soon as the scheduled data
+refresh publishes releases on its own. Within the planning tools, the net price
 estimator comes before the award-letter analyzer because the analyzer reuses its cost-of-attendance, loan, and
 projection code. The high school dataset is the biggest item and can proceed in parallel; scattergrams need both it
 and accounts.

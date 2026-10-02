@@ -33,6 +33,7 @@ Each feature's own spec says what's free; this table is the single list the enti
 | Account, household, student profile ([student-profile.md](student-profile.md)) | ✓ | ✓ | ✓ |
 | Saved list ([saved-lists.md](saved-lists.md)) | 1 list, 12 colleges | lists, 30 colleges each | same |
 | Statuses, outcomes, notes, deadlines | ✓ | ✓ | ✓ |
+| Follow colleges and update emails ([follow-colleges.md](follow-colleges.md)) | ✓ | ✓ | ✓ |
 | Standing on a profile ([chances-and-fit.md](chances-and-fit.md)) | ✓ | ✓ | ✓ |
 | Standing across the list and in Explore; fit sort | | ✓ | ✓ |
 | Compare up to 10 (table view) | | ✓ | ✓ |

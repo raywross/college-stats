@@ -116,6 +116,12 @@ shared rules for user data are in that README. All user data lives only in Supab
   conversion), scores, majors, state, preferences; prefilled ScoreChecker; Explore "fits my scores / preferences".
 - [ ] **Saved lists** ([product/saved-lists.md](product/saved-lists.md)): Reach / Target / Likely, status and
   outcomes (Scoir vocabulary), notes, deadlines, guardian view, share link, CSV/PDF export.
+- [ ] **Follow colleges** ([product/follow-colleges.md](product/follow-colleges.md)): Follow button, list items
+  followed automatically; `publish-data` diffs the previous publish against the new one into a public
+  `dataset_changes` table (new year / revised / appeared / disappeared, years from lineage, tolerances per field); a
+  daily job emails one digest per user per publish (Resend, one-click unsubscribe, no tracking pixels);
+  `/me/updates`, `/me/following`, and a public "What changed" panel on profiles. Added 2026-10-02; worth building
+  as soon as accounts exist and the scheduled data refresh (above) is running.
 - [ ] **Chances and fit** ([product/chances-and-fit.md](product/chances-and-fit.md)): rules-based standing with
   reasons (never a probability), fit against preferences, a pilot against real outcomes before the chip ships.
 - [ ] **Net price estimator** ([product/net-price-estimator.md](product/net-price-estimator.md)): 2026–27 Student

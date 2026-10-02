@@ -295,6 +295,18 @@ export const ROADMAP: RoadmapSpec[] = [
     after: ["accounts", "student-profile"],
   },
   {
+    slug: "follow-colleges",
+    file: "specs/product/follow-colleges.md",
+    group: "accounts",
+    summary:
+      "Follow the colleges you care about and get one email when their numbers change, saying what moved and which years.",
+    complexity: 3,
+    complexityNote:
+      "Change detection at publish time, an email provider with unsubscribe handling, a daily send job, and a public What changed panel.",
+    status: "planned",
+    after: ["accounts"],
+  },
+  {
     slug: "chances-and-fit",
     file: "specs/product/chances-and-fit.md",
     group: "planning",

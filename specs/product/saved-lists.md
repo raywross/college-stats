@@ -33,6 +33,8 @@ list_notes (item_id, author_id, body, private bool, created)
 - One **default list** per student; more lists are a Plus feature (e.g. "Nursing programs", "Mom's suggestions").
 - Compare keeps working without a list; "Add to list" appears next to "Compare" on cards, rows, and profiles. The
   compare tray gains "Save these to my list".
+- Every college on a list is followed automatically, so the student gets an email when its data changes
+  ([follow-colleges.md](follow-colleges.md#model)).
 
 ## Display
 - `/me/list` (default) and `/me/lists/{id}`: a table grouped by category with a balance line ("3 Reach · 4 Target ·

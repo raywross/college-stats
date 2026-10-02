@@ -114,7 +114,8 @@ Every user-data table has an **owner column** and a **visibility rule**, enforce
 ## Open questions
 1. Should students under 18 need a guardian's consent to create an account at all? Recommendation: no (13+ with a
    birth year, as most consumer education sites do), but a guardian link is encouraged at sign-up.
-2. Email provider: Supabase's built-in SMTP is rate-limited (a few emails an hour); a transactional provider
-   (Resend, Postmark) is needed before launch for magic links and invitations.
+2. Email provider: Supabase's built-in SMTP is rate-limited (a few emails an hour); a transactional provider is
+   needed before launch for magic links and invitations. Decided 2026-10-02 in
+   [follow-colleges.md](follow-colleges.md#research-2026-10-02): Resend, shared with the update emails.
 3. Counselor sign-in reuses this spec; whether school counselors sign in with Google Workspace SSO (and whether
    that requires district approval) is settled in [counselor-portal.md](counselor-portal.md).

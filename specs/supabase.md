@@ -48,8 +48,9 @@ back to JSON.
 | `detail_staging` | Detail files mid-publish | Secret key only |
 
 - **Detail files** (migration `20261002120000_school_details.sql`, added 2026-10-02 with
-  [residence.md](data-expansion/residence.md)): published like history, `stage_details(p_details, p_reset)` in batches of
-  200, then `publish_details_staged(p_expected)` swaps them in with one transaction and they're read back.
+  [residence.md](data-expansion/residence.md)): published like history, written straight into `school_details` 200 at a
+  time (scripts/lib/publish-batches.mts), then read back. `stage_details()`/`publish_details_staged()` exist but aren't
+  used.
   `publish-data` stops if the tables are missing, so **apply the migration to dev (and prod) before the next publish**.
   The app's `getDetail()` is fail-soft: without the table, profiles render without home states.
 - **The dataset in batches** (migration `20261002140000_school_staging.sql`, added 2026-10-02): wave 2 took
@@ -65,11 +66,15 @@ back to JSON.
 - **`publish_dataset(p_schools, p_meta, p_release_calendar, p_git_commit, p_published_by)`** replaces everything in
   one transaction, so readers never see half a publish and colleges dropped from the sync disappear. Only
   `service_role` (the secret key) may call it.
-- **History is published in batches** (migration `20260928180000_history_staging.sql`): once scores, students, and
-  outcomes were added (~13 MB), one call exceeded the API's statement timeout. `stage_history(p_schools, p_reset)`
-  takes 150 shards at a time into `history_staging` (secret key only), then `publish_history_staged(p_files,
-  p_expected)` checks every shard arrived and swaps them in with one transaction. The single-call `publish_history()`
-  below still exists but isn't used.
+- **History is published in batches, not atomically** (2026-10-02): once scores, students, and outcomes were added
+  (~13 MB), one call exceeded the API's statement timeout, so shards were staged in batches and swapped in with one
+  transaction (`stage_history()`/`publish_history_staged()`, migration `20260928180000_history_staging.sql`). After wave
+  2 (20 MB) the swap itself timed out, so `publish-data` now upserts 150 shards per call straight into
+  `school_histories`, deletes colleges no longer in the data, then writes `history_files`
+  (scripts/lib/publish-batches.mts). **Trade-off, accepted 2026-10-02:** while a publish runs, readers can see a mix of
+  old and new shards. Each shard is a complete file either way, and everything is read back and compared at the end.
+  Detail files work the same way. The staging functions and the single-call `publish_history()` below still exist but
+  aren't used.
 - **`publish_history(p_schools, p_files)`** (migration `20260928120000_history.sql`) does the same for history
   ([trends-data.md](trends-data.md)): `npm run publish-data` calls it after the dataset when data/history/ exists, then
   reads every shard back. The app reads one shard per profile and the shared files once per publish; if the tables

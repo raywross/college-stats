@@ -8,6 +8,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { DatasetMeta, School } from "../../lib/types.ts";
 import { detailMismatches, validateDetail, type SchoolDetail } from "../../lib/detail.ts";
 import { fetchAllSchoolDetails } from "../../lib/supabase-detail.ts";
+import { replaceInBatches } from "./publish-batches.mts";
 
 /** Detail files per staging call: small today (home states), larger once majors arrive. */
 const BATCH = 200;
@@ -48,18 +49,12 @@ export async function detailTablesProblem(client: SupabaseClient): Promise<strin
 /** Stage, swap, and read back. Throws on any failure. Returns the number published. */
 export async function publishDetails(client: SupabaseClient, details: readonly SchoolDetail[]): Promise<number> {
   if (!details.length) throw new Error("no detail files to publish");
-  for (let i = 0; i < details.length; i += BATCH) {
-    const { error } = await client.rpc("stage_details", { p_details: details.slice(i, i + BATCH), p_reset: i === 0 });
-    if (error) throw new Error(`details: staging files ${i}–${i + BATCH}: ${error.message}. Has ${MIGRATION} been applied?`);
-    process.stdout.write(`\r  Details: staged ${Math.min(i + BATCH, details.length)}/${details.length}`);
-  }
-  process.stdout.write("\n");
-  const { data: n, error } = await client.rpc("publish_details_staged", { p_expected: details.length });
-  if (error) throw new Error(`details: ${error.message}`);
+  // In batches straight into the live table, like history (scripts/lib/publish-batches.mts): not atomic.
+  const n = await replaceInBatches(client, "school_details", details.map((d) => ({ unit_id: d.unit_id, data: d })), BATCH, "Details");
   const back = new Map((await fetchAllSchoolDetails(client)).map((d) => [d.unit_id, d]));
   const differ = details.filter((d) => JSON.stringify(d) !== JSON.stringify(back.get(d.unit_id))).map((d) => d.unit_id);
   if (back.size !== details.length || differ.length) {
     throw new Error(`details differ after reading back (${back.size} files, expected ${details.length}${differ.length ? `; e.g. ${differ.slice(0, 5).join(", ")}` : ""}).`);
   }
-  return n as number;
+  return n;
 }

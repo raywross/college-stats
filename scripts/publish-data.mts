@@ -13,11 +13,12 @@
  *   3. stage_schools() takes the colleges in batches (one call with all of them exceeds the statement timeout), then
  *      publish_schools_staged() swaps them in with meta and the release calendar in one transaction.
  *   4. Read it all back and require an exact match with the local files.
- *   5. History (data/history/, from `npm run sync-history`), if built: the same shard checks as check:lineage, then
- *      stage_history() takes the shards in batches, publish_history_staged() swaps them in with one transaction, and
- *      it's read back and compared too.
+ *   5. History (data/history/, from `npm run sync-history`), if built: the same shard checks as check:lineage, then the
+ *      shards are written straight into school_histories in batches (scripts/lib/publish-batches.mts; one swap of all
+ *      of them timed out after wave 2), colleges no longer in the data are removed, the shared files are written, and
+ *      it's all read back and compared. Not atomic: mid-publish, readers can see a mix of old and new shards.
  *   5b. Per-college detail files (data/detail/, lib/detail.ts), if built: the same checks as check:lineage up front, then
- *      stage_details() in batches, publish_details_staged() swaps them in with one transaction, and they're read back.
+ *      written into school_details the same way, and read back.
  *   6. If REVALIDATE_URL and REVALIDATE_SECRET are set, ask the site to regenerate its static pages.
  * Needs SUPABASE_URL and SUPABASE_SECRET_KEY (environment variables win over the env file, which is how the
  * GitHub Action points it at prod). See specs/supabase.md.
@@ -32,6 +33,7 @@ import { validateLineage } from "../lib/lineage.ts";
 import { fetchAllSchoolHistories, fetchDatasetFiles, fetchHistoryFiles, supabaseClient } from "../lib/supabase.ts";
 import { validateHistoryMeta, validateShard, type SchoolHistory } from "../lib/history.ts";
 import { detailFileProblems, detailTablesProblem, publishDetails, readDetails } from "./lib/publish-details.mts";
+import { replaceInBatches } from "./lib/publish-batches.mts";
 
 const ROOT = join(import.meta.dirname, "..");
 const DRY_RUN = process.argv.includes("--dry-run");
@@ -131,8 +133,8 @@ function tableCheck(error: { message?: string; code?: string; details?: string }
 if (history) {
   const { error: historyError } = await client.from("history_files").select("name").limit(1);
   tableCheck(historyError, "supabase/migrations/20260928120000_history.sql");
-  const { error: stagingError } = await client.from("history_staging").select("unit_id").limit(1);
-  tableCheck(stagingError, "supabase/migrations/20260928180000_history_staging.sql");
+  const { error: shardsError } = await client.from("school_histories").select("unit_id").limit(1);
+  tableCheck(shardsError, "supabase/migrations/20260928120000_history.sql");
 }
 
 if (details) {
@@ -173,16 +175,19 @@ console.log(`Published ${written} colleges from ${commit ?? "an unknown commit"}
 
 // 5. History
 if (history) {
-  // Stage the shards in batches (one call with all of them exceeds the statement timeout), then swap them in with one
-  // short transaction, so readers never see a half-published history.
-  for (let i = 0; i < history.shards.length; i += HISTORY_BATCH) {
-    const { error } = await client.rpc("stage_history", { p_schools: history.shards.slice(i, i + HISTORY_BATCH), p_reset: i === 0 });
-    if (error) fail(`history: staging shards ${i}–${i + HISTORY_BATCH}: ${error.message}. Has supabase/migrations/20260928180000_history_staging.sql been applied?`);
-    process.stdout.write(`\r  History: staged ${Math.min(i + HISTORY_BATCH, history.shards.length)}/${history.shards.length}`);
-  }
-  process.stdout.write("\n");
-  const { data: shardCount, error: hError } = await client.rpc("publish_history_staged", { p_files: history.files, p_expected: history.shards.length });
-  if (hError) fail(`history: ${hError.message}`);
+  // Shards in batches straight into the live table (one swap of all of them exceeded the statement timeout), then the
+  // shared files, which name the build, last.
+  const shardCount = await replaceInBatches(
+    client,
+    "school_histories",
+    history.shards.map((h) => ({ unit_id: h.unit_id, data: h })),
+    HISTORY_BATCH,
+    "History",
+  ).catch((err: Error) => fail(err.message));
+  const publishedAt = new Date().toISOString();
+  const fileRows = Object.entries(history.files).map(([name, data]) => ({ name, data, published_at: publishedAt }));
+  const { error: hError } = await client.from("history_files").upsert(fileRows, { onConflict: "name" });
+  if (hError) fail(`history files: ${hError.message}`);
   const backFiles = await fetchHistoryFiles(client);
   const backShards = await fetchAllSchoolHistories(client);
   const byId = new Map(backShards.map((h) => [h.unit_id, h]));

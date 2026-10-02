@@ -1,0 +1,305 @@
+{
+  "chosen": "2026-10-02",
+  "colleges": [
+    {
+      "unit_id": "186131",
+      "name": "Princeton University",
+      "tier": "very-selective",
+      "sector": "private-nonprofit"
+    },
+    {
+      "unit_id": "190150",
+      "name": "Columbia University in the City of New York",
+      "tier": "very-selective",
+      "sector": "private-nonprofit"
+    },
+    {
+      "unit_id": "123961",
+      "name": "University of Southern California",
+      "tier": "very-selective",
+      "sector": "private-nonprofit"
+    },
+    {
+      "unit_id": "110635",
+      "name": "University of California-Berkeley",
+      "tier": "very-selective",
+      "sector": "public"
+    },
+    {
+      "unit_id": "190415",
+      "name": "Cornell University",
+      "tier": "very-selective",
+      "sector": "private-nonprofit"
+    },
+    {
+      "unit_id": "221999",
+      "name": "Vanderbilt University",
+      "tier": "very-selective",
+      "sector": "private-nonprofit"
+    },
+    {
+      "unit_id": "193900",
+      "name": "New York University",
+      "tier": "very-selective",
+      "sector": "private-nonprofit"
+    },
+    {
+      "unit_id": "243744",
+      "name": "Stanford University",
+      "tier": "very-selective",
+      "sector": "private-nonprofit"
+    },
+    {
+      "unit_id": "166683",
+      "name": "Massachusetts Institute of Technology",
+      "tier": "very-selective",
+      "sector": "private-nonprofit"
+    },
+    {
+      "unit_id": "110662",
+      "name": "University of California-Los Angeles",
+      "tier": "very-selective",
+      "sector": "public"
+    },
+    {
+      "unit_id": "152080",
+      "name": "University of Notre Dame",
+      "tier": "very-selective",
+      "sector": "private-nonprofit"
+    },
+    {
+      "unit_id": "131496",
+      "name": "Georgetown University",
+      "tier": "very-selective",
+      "sector": "private-nonprofit"
+    },
+    {
+      "unit_id": "198419",
+      "name": "Duke University",
+      "tier": "very-selective",
+      "sector": "private-nonprofit"
+    },
+    {
+      "unit_id": "166027",
+      "name": "Harvard University",
+      "tier": "very-selective",
+      "sector": "private-nonprofit"
+    },
+    {
+      "unit_id": "139755",
+      "name": "Georgia Institute of Technology-Main Campus",
+      "tier": "very-selective",
+      "sector": "public"
+    },
+    {
+      "unit_id": "145637",
+      "name": "University of Illinois Urbana-Champaign",
+      "tier": "selective",
+      "sector": "public"
+    },
+    {
+      "unit_id": "163286",
+      "name": "University of Maryland-College Park",
+      "tier": "selective",
+      "sector": "public"
+    },
+    {
+      "unit_id": "231624",
+      "name": "William & Mary",
+      "tier": "selective",
+      "sector": "public"
+    },
+    {
+      "unit_id": "243780",
+      "name": "Purdue University-Main Campus",
+      "tier": "selective",
+      "sector": "public"
+    },
+    {
+      "unit_id": "170976",
+      "name": "University of Michigan-Ann Arbor",
+      "tier": "selective",
+      "sector": "public"
+    },
+    {
+      "unit_id": "234076",
+      "name": "University of Virginia-Main Campus",
+      "tier": "selective",
+      "sector": "public"
+    },
+    {
+      "unit_id": "134130",
+      "name": "University of Florida",
+      "tier": "selective",
+      "sector": "public"
+    },
+    {
+      "unit_id": "228778",
+      "name": "The University of Texas at Austin",
+      "tier": "selective",
+      "sector": "public"
+    },
+    {
+      "unit_id": "134097",
+      "name": "Florida State University",
+      "tier": "selective",
+      "sector": "public"
+    },
+    {
+      "unit_id": "216597",
+      "name": "Villanova University",
+      "tier": "selective",
+      "sector": "private-nonprofit"
+    },
+    {
+      "unit_id": "141060",
+      "name": "Spelman College",
+      "tier": "selective",
+      "sector": "private-nonprofit"
+    },
+    {
+      "unit_id": "140553",
+      "name": "Morehouse College",
+      "tier": "selective",
+      "sector": "private-nonprofit"
+    },
+    {
+      "unit_id": "131520",
+      "name": "Howard University",
+      "tier": "selective",
+      "sector": "private-nonprofit"
+    },
+    {
+      "unit_id": "240444",
+      "name": "University of Wisconsin-Madison",
+      "tier": "selective",
+      "sector": "public"
+    },
+    {
+      "unit_id": "228875",
+      "name": "Texas Christian University",
+      "tier": "selective",
+      "sector": "private-nonprofit"
+    },
+    {
+      "unit_id": "223232",
+      "name": "Baylor University",
+      "tier": "less-selective",
+      "sector": "private-nonprofit"
+    },
+    {
+      "unit_id": "197708",
+      "name": "Yeshiva University",
+      "tier": "less-selective",
+      "sector": "private-nonprofit"
+    },
+    {
+      "unit_id": "230038",
+      "name": "Brigham Young University",
+      "tier": "less-selective",
+      "sector": "private-nonprofit"
+    },
+    {
+      "unit_id": "186380",
+      "name": "Rutgers University-New Brunswick",
+      "tier": "less-selective",
+      "sector": "public"
+    },
+    {
+      "unit_id": "204796",
+      "name": "Ohio State University-Main Campus",
+      "tier": "less-selective",
+      "sector": "public"
+    },
+    {
+      "unit_id": "146719",
+      "name": "Loyola University Chicago",
+      "tier": "less-selective",
+      "sector": "private-nonprofit"
+    },
+    {
+      "unit_id": "163046",
+      "name": "Loyola University Maryland",
+      "tier": "less-selective",
+      "sector": "private-nonprofit"
+    },
+    {
+      "unit_id": "240268",
+      "name": "University of Wisconsin-Eau Claire",
+      "tier": "less-selective",
+      "sector": "public"
+    },
+    {
+      "unit_id": "121150",
+      "name": "Pepperdine University",
+      "tier": "less-selective",
+      "sector": "private-nonprofit"
+    },
+    {
+      "unit_id": "171137",
+      "name": "University of Michigan-Dearborn",
+      "tier": "less-selective",
+      "sector": "public"
+    },
+    {
+      "unit_id": "171146",
+      "name": "University of Michigan-Flint",
+      "tier": "less-selective",
+      "sector": "public"
+    },
+    {
+      "unit_id": "228723",
+      "name": "Texas A&M University-College Station",
+      "tier": "less-selective",
+      "sector": "public"
+    },
+    {
+      "unit_id": "228796",
+      "name": "The University of Texas at El Paso",
+      "tier": "open-admission",
+      "sector": "public"
+    },
+    {
+      "unit_id": "183026",
+      "name": "Southern New Hampshire University",
+      "tier": "open-admission",
+      "sector": "private-nonprofit"
+    },
+    {
+      "unit_id": "232982",
+      "name": "Old Dominion University",
+      "tier": "open-admission",
+      "sector": "public"
+    },
+    {
+      "unit_id": "206084",
+      "name": "University of Toledo",
+      "tier": "open-admission",
+      "sector": "public"
+    },
+    {
+      "unit_id": "229063",
+      "name": "Texas Southern University",
+      "tier": "open-admission",
+      "sector": "public"
+    },
+    {
+      "unit_id": "187985",
+      "name": "University of New Mexico-Main Campus",
+      "tier": "open-admission",
+      "sector": "public"
+    },
+    {
+      "unit_id": "175856",
+      "name": "Jackson State University",
+      "tier": "open-admission",
+      "sector": "public"
+    },
+    {
+      "unit_id": "232557",
+      "name": "Liberty University",
+      "tier": "open-admission",
+      "sector": "private-nonprofit"
+    }
+  ]
+}

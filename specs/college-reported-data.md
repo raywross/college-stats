@@ -263,3 +263,58 @@ Behaviour worth knowing:
   the Excel fixture (`tests/fixtures/cds-c1.xlsx`) is read deterministically and its entry passes `validateSchool`,
   a PDF fixture's page text reaches the model, failing checks escalate Haiku → Sonnet → Opus and land in the queue
   with nothing published, robots.txt is obeyed, the breaker trips just past its limits, and the summary counts.
+
+### Pilot set and answer key
+`data/reference/college-reported-pilot.json` (50 colleges) and `data/reference/college-reported-answer-key.json`
+(hand-checked figures), built and verified 2026-10-02 (`tests/college-reported-pilot.test.mts`).
+
+**How the 50 were chosen.** Every candidate was pulled from `data/schools.json` (never typed from memory — old
+sample data once had wrong IPEDS ids) and tiered by its *federal* acceptance rate: very-selective <15%, selective
+15–50%, less-selective 50–85%, open-admission >85%. The target split (15/15/12/8) came out exact. Sectors split
+25 public / 25 private-nonprofit, with 5 HBCUs (Howard, Spelman, Morehouse, Texas Southern, Jackson State), 8
+religious colleges across traditions (Notre Dame, Georgetown, Villanova — Catholic; Baylor — Baptist; Yeshiva
+University — Jewish; BYU — LDS; Pepperdine — Churches of Christ; Liberty — Evangelical), and large publics in both
+the selective and less-selective tiers (Michigan, UVA, UT Austin, Wisconsin-Madison, Ohio State, Texas A&M, UTEP,
+University of New Mexico, …). Princeton, Columbia, and USC (named in the spec's "Why") and all 8 colleges with a
+CDS override in `data/overrides.json` (Berkeley, UIUC, UMD, Cornell, NYU, Vanderbilt, William & Mary, Purdue) are
+included by construction, not by luck.
+
+**Answer-key hit rate by tier**, out of colleges actually checked (not all 50 were attempted — selective tiers
+were prioritized, per the task):
+
+| Tier | Checked | Found a newer figure | Hit rate |
+|---|---|---|---|
+| Very-selective | 15 | 15 | 100% |
+| Selective | 14 | 14 | 100% |
+| Less-selective | 6 | 2 | 33% |
+| Open-admission | 5 | 0 | 0% |
+
+This is itself the pilot's headline finding, not just a coverage gap: **selectivity predicts discoverability**.
+Every very-selective and selective college in the sample had a class-profile page, news article, or CDS citation
+with a genuine Fall 2025 or Fall 2026 figure. Below ~50% acceptance, the web thins out fast:
+- **Aggregator sites recirculate federal data under a fake "newer" label.** The University of New Mexico page we
+  could fetch stated outright that its numbers were "sourced from IPEDS/College Scorecard public data"; Liberty
+  University's most-repeated aggregator figure (24,942 / 24,687 / 98.98%) turned out to match our *existing*
+  Fall-2024 federal rate (0.9898) almost exactly, just relabeled with a different class year on the page. A
+  pipeline that trusts the first search hit without checking it against the federal baseline it already has would
+  happily "discover" the same number twice and call it new.
+  Check #5 (entering term newer than the federal admissions year) and #6 (plausible change vs. federal) exist for
+  exactly this failure mode — this is the concrete case that justifies them.
+- **Small or niche colleges have thin, inconsistent web coverage.** Yeshiva University, Brigham Young University,
+  Southern New Hampshire University, and Baylor each turned up two or three mutually inconsistent numbers across
+  low-quality SEO-aggregator mirrors with no way to tell which (if any) was right, and no official page we could
+  reach to settle it. These were recorded as `none_found` rather than guessed.
+- **A college's own page is the best source when it's reachable, but bot protection blocks many of them.**
+  Princeton, Columbia, Notre Dame, and Michigan's own domains all returned HTTP 403 to automated fetches; Harvard's
+  own Office of Institutional Research fact book and William & Mary's and Villanova's own admissions pages were
+  not protected and gave the cleanest, most reliable quotes in the whole set. The production pipeline will need a
+  real browser-like fetch path (or a documented allowlist of secondary sources) for the colleges that block plain
+  HTTP — this will hit discovery hardest, since discovery is model + web search, not a page we already know to
+  fetch.
+- **The newest "entering class" isn't always the one you'd guess.** Several colleges' own pages (Florida,
+  Villanova) already showed their *Fall 2026* class profile as of this check — i.e., discovery needs to re-check
+  a college's known pages even between scheduled runs, not just use whatever class year it learned first.
+- **Even official-looking secondary sources disagree with each other** for the same college and term (NYU: two
+  sources differ by several thousand applicants for the same "Class of 2029"; Texas A&M: 89,422 vs. 62,967
+  applicants for the same "Fall 2025"). Check #7 (sources agree within 1%) will matter in practice, not just in
+  theory.

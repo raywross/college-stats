@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { ArrowRight, BookMarked, Calculator, CalendarClock, ExternalLink, Eye, Hourglass, RefreshCw, Scale, TriangleAlert } from "lucide-react";
+import { ArrowRight, BookMarked, Calculator, CalendarClock, ClipboardCheck, ExternalLink, Eye, Hourglass, RefreshCw, Scale, TriangleAlert } from "lucide-react";
 import { getData } from "@/lib/data";
 import type { SourceKey, Topic } from "@/lib/types";
 import { num } from "@/lib/format";
@@ -164,6 +164,9 @@ export default async function DataPage() {
     : null;
   const exampleCited = example && exampleField ? citeField(exampleField, example) : null;
 
+  /* ---- Newer figures from colleges (specs/college-reported-data.md) ---- */
+  const reportedCount = all.filter((s) => s.reported?.admissions).length;
+
   /* ---- Upcoming releases ---- */
   const next = upcoming(calendar);
   const justOut = calendar.releases.filter((r) => r.status === "published");
@@ -200,6 +203,7 @@ export default async function DataPage() {
     ["now", "On the site now"],
     ["upcoming", "Upcoming releases"],
     ["compare", "How we compare"],
+    ["college-reported", "Newer figures from colleges"],
     ["watching", "Watching"],
     ["sources", "Sources"],
     ["method", "How we calculate"],
@@ -361,7 +365,8 @@ export default async function DataPage() {
             <h3 className="font-display text-lg font-bold">Where colleges&apos; own figures appear</h3>
             <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
               For {cds.length} {cds.length === 1 ? "college" : "colleges"}, we&apos;ve imported the college&apos;s own Common Data Set
-              for admissions counts, test scores and aid detail federal data lacks.
+              for admissions counts, test scores and aid detail federal data lacks, and those values replace the federal
+              ones they describe.
               {newerCds.length > 0
                 ? ` For ${newerCds.length} of them it describes a newer class than the federal data. `
                 : " They describe the same class as the federal data. "}
@@ -373,11 +378,83 @@ export default async function DataPage() {
               )}
               , and its ⓘ explains where it came from.
             </p>
+            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+              Newer class profiles and Common Data Sets we read automatically from a college&apos;s own site work
+              differently: they never replace the federal figures used here. They show up only on that college&apos;s own
+              profile, next to the federal baseline. See{" "}
+              <a href="#college-reported" className="font-semibold text-primary hover:underline">
+                newer figures from colleges
+              </a>
+              .
+            </p>
             {example && (
               <Link href={`/schools/${example.unit_id}`} className="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-primary hover:underline">
                 See an example: {example.name} <ArrowRight className="size-3.5" aria-hidden />
               </Link>
             )}
+          </div>
+        </div>
+      </Section>
+
+      {/* 5. Newer figures from colleges */}
+      <Section id="college-reported" eyebrow="Newer figures" title="Newer figures from colleges" icon={<ClipboardCheck className="size-4" aria-hidden />}>
+        <p className="max-w-3xl text-sm leading-relaxed text-muted-foreground">
+          For admissions, the newest year a college has published anywhere on its own site, we read it automatically and
+          check it before showing it. These figures never replace the federal baseline used for comparisons; they appear
+          only on that college&apos;s own profile, under the federal figure.
+        </p>
+        <div className="grid gap-4 md:grid-cols-2">
+          <div className="rounded-3xl border bg-card p-5 sm:p-6">
+            <h3 className="font-display text-lg font-bold">What we collect</h3>
+            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+              Applicants, admitted, enrolled, and the acceptance rate for the newest entering class a college has
+              published, whether in a class profile, admissions announcement, or Common Data Set. Only first-year,
+              all-rounds figures count; early-decision-only numbers or transfer figures are skipped.
+            </p>
+          </div>
+          <div className="rounded-3xl border bg-card p-5 sm:p-6">
+            <h3 className="font-display text-lg font-bold">When a check fails</h3>
+            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+              A value that fails any check below doesn&apos;t get published. It goes to a review queue for a person to
+              look at, and the federal figure keeps showing on the profile until it&apos;s resolved.
+            </p>
+          </div>
+        </div>
+        <div className="rounded-3xl border bg-card p-5 sm:p-6">
+          <h3 className="font-display text-lg font-bold">The automated checks</h3>
+          <p className="mt-2 text-sm text-muted-foreground">Every value must pass all seven before it&apos;s shown:</p>
+          <ol className="mt-3 grid gap-2 sm:grid-cols-2">
+            {[
+              "It describes first-year applicants, counting every admission round, not early decision alone.",
+              "Every number has a verbatim quote from the document, and the number actually appears in it.",
+              "The funnel adds up: admitted is at most applicants, and enrolled is at most admitted.",
+              "A stated acceptance rate matches admitted ÷ applicants closely; otherwise we calculate it ourselves.",
+              "The class is newer than the federal admissions year already on the college's profile.",
+              "The change from the federal figures is a plausible one, not an implausible swing.",
+              "When two documents describe the same class, they agree with each other.",
+            ].map((c, i) => (
+              <li key={c} className="flex items-start gap-2.5 rounded-2xl border bg-surface-2 p-3 text-sm">
+                <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-secondary text-[11px] font-bold text-secondary-foreground">{i + 1}</span>
+                <span className="text-muted-foreground">{c}</span>
+              </li>
+            ))}
+          </ol>
+        </div>
+        <div className="grid gap-4 md:grid-cols-2">
+          <div className="rounded-3xl border bg-card p-5 sm:p-6">
+            <h3 className="font-display text-lg font-bold">Coverage so far</h3>
+            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+              {num(reportedCount)} {reportedCount === 1 ? "college" : "colleges"} currently {reportedCount === 1 ? "has" : "have"} a newer, checked figure on its profile. Coverage
+              depends on what each college publishes: selective colleges tend to post class profiles; many others post
+              only a Common Data Set, and some publish neither.
+            </p>
+          </div>
+          <div className="rounded-3xl border bg-card p-5 sm:p-6">
+            <h3 className="font-display text-lg font-bold">Schedule</h3>
+            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+              Checked weekly from August through November, when colleges post their newest class profiles, and monthly
+              the rest of the year, when Common Data Set editions come out.
+            </p>
           </div>
         </div>
       </Section>
@@ -440,9 +517,15 @@ export default async function DataPage() {
                     </div>
                   )}
                 </dl>
-                <ExtLink href={s.url} className="mt-auto self-start pt-4 text-sm">
-                  {key === "cds" ? "About the Common Data Set" : "Get the data"}
-                </ExtLink>
+                {key === "college-site" ? (
+                  <a href={s.url} className="mt-auto inline-flex items-center gap-1 self-start pt-4 text-sm font-semibold text-primary hover:underline">
+                    How we read it
+                  </a>
+                ) : (
+                  <ExtLink href={s.url} className="mt-auto self-start pt-4 text-sm">
+                    {key === "cds" ? "About the Common Data Set" : "Get the data"}
+                  </ExtLink>
+                )}
               </article>
             );
           })}

@@ -82,7 +82,7 @@ cost-vs-earnings chart, leaderboards, badges, and key differences), `netPrice` (
 cost ÷ median earnings: a deliberately rough comparison, explained by the `payback` glossary term.
 
 ## Where it appears
-- **Profile**: "Cost & outcomes" section. It covers net price by family income (`NetPriceByIncome`); net price vs.
+- **Profile**: the cost page (`/schools/{id}/cost`) and the outcomes page (`/outcomes`), with a card for each on the overview ([school-profile.md](school-profile.md)). Together they cover net price by family income (`NetPriceByIncome`); net price vs.
   the national median; sticker price vs. what students pay ("grants cover X%"); median debt, monthly payment, and
   payback; earnings `DistributionStrip`; earnings at 6 vs. 10 years; retention and graduation rings; and a
   cost-vs-earnings `ScatterPlot` with the school highlighted. The overview bento gains net price, earnings, and

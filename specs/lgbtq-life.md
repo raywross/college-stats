@@ -164,7 +164,7 @@ Each field is registered in `lib/fields.ts` ([data-lineage.md](data-lineage.md))
 source kinds that show the page and the date checked.
 
 ## Where it appears
-- **Profile, "Campus life" section, "LGBTQ+ life" block:** support on campus (center, groups), the policy checklist
+- **Profile, the students page's "Campus life" section, "LGBTQ+ life" block:** support on campus (center, groups), the policy checklist
   (each item linked and dated), the gender counts with their caveat, the state-law line for public colleges, and,
   where present, "What the student conduct policy says." Hidden when there's nothing verified.
 - **Explore filters (policy facts only):** "Has an LGBTQ+ center," "Gender-inclusive housing," "Nondiscrimination

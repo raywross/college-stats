@@ -83,5 +83,5 @@ offer Light / Dark / System (`ThemeSegmented`). Dark values are chosen steps, no
 - **Filter chips**: ink-filled when active, show result counts, disabled at 0.
 - **Active filter chips**: lime pills with an ×, removable one by one.
 - **Segmented controls**: view toggle, theme, SAT/ACT switch.
-- **Sticky sub-navs**: profile section nav (scroll-spy) and compare header, pinned under the site header.
+- **Sticky sub-navs**: the profile topic pages' compact header with its topic pills, and the compare header, pinned under the site header.
 - **Empty states**: pop-colored icon tile, playful headline with `.highlight`, one clear action.

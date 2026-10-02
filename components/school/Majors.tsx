@@ -23,7 +23,9 @@ export function Majors({
   growth,
   growthNote,
   color,
+  id,
 }: {
+  id?: string;
   school: School;
   detail: SchoolDetail | null;
   /** citeField("academics.majors_top", school) */
@@ -59,7 +61,7 @@ export function Majors({
   const fields = new Set(rows.filter((r) => r.first > 0).map((r) => r.cip.slice(0, 2))).size;
 
   return (
-    <div className="rounded-3xl border bg-card p-4 sm:p-6 lg:col-span-2">
+    <div id={id} className="rounded-3xl border bg-card p-4 sm:p-6 lg:col-span-2">
       <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
         <h3 className="flex items-center gap-1 font-display text-lg font-bold">
           Most popular majors <InfoTip term="first-major" cited={cited} />

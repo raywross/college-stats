@@ -11,8 +11,8 @@ History follows the site's drill-down. The higher the level, the less history is
 | Home | Three national trend facts | 3 cards, no more |
 | Explore | Nothing by default; optional "10-yr change" table columns | 0 on screen by default |
 | Compare | One "Then & now" chart | 1 section |
-| Profile, top | A "10 years" tile in the Overview bento, plus a one-line "since" delta under three section headlines | 1 tile, 3 lines |
-| Profile, "Over time" section | The full year-by-year charts | Everything |
+| Profile, overview | A ten-year line on the admissions, students, cost, and outcomes cards, and the Over time card's four sparkline tiles; a "since" delta under the topic pages' headlines | 1 line per card, 4 tiles |
+| Profile, Over time page | The full year-by-year charts, one group at a time | Everything, one group per screen |
 
 **What we don't do** (noise control):
 - No sparklines on Explore cards or next to every number.
@@ -62,9 +62,11 @@ both ends) for one metric at a time, chosen from a segmented control:
 - Slopes read at a glance for 2–4 colleges; a full multi-line chart would be clutter here.
 
 ## Profile: top of page
-- **Overview bento: "10 years" tile.** Always shows average total cost (after inflation, from → to, arrow); then up to
-  two more *notable* changes from: full price, admit rate, applicants, undergrads, grant share. If nothing is notable,
-  it says "Steady over 10 years". Clicking the tile jumps to `#history`.
+- **Overview cards.** Each topic card ends with a ten-year line (`TenYearLine`: compact sparkline, the change, an
+  "Over time" link to the history page): applications on the admissions card, diversity on students, average total
+  cost after inflation on cost, graduation rate on outcomes. The Over time card shows the four trend indicators as
+  sparkline tiles. (The former "10 years" bento tile and the hero's trend cards are gone;
+  [school-profile.md](school-profile.md).)
 - **"Known for" chips:** at most one trend standout, and only for the national top 5% (e.g. "Applications tripled since
   2014"). Added to `standouts()`.
 - **Section headlines:** a muted one-liner under three existing headline numbers:
@@ -73,9 +75,10 @@ both ends) for one metric at a time, chosen from a segmented control:
   - Cost, average total cost: "+3% after inflation since 2013–14"
   On ≥ sm screens, a 60 × 16 px sparkline sits beside it (hover shows the year and value).
 
-## Profile: "Over time" section (`#history`)
-Placed after Cost & outcomes and before Similar schools; added to `SectionNav` as **Over time**. It renders only when a
-history shard exists.
+## Profile: "Over time" page (`/schools/{id}/history`)
+Its own topic page since the profile split ([school-profile.md](school-profile.md); it was the `#history` section,
+and that anchor redirects there). The page exists only when a history shard does; the **Over time** pill, the
+overview's links, and the "Over time" links under section takeaways (`HeadlineDelta`'s `href`) point to it.
 
 **Controls** (one row above the charts, per the dataviz interaction rules): range *10 years / All*; money
 *After inflation / As reported*; *National median* on/off (on by default). The state lives in the URL
@@ -85,8 +88,17 @@ history shard exists.
 full price rose 9% after inflation since 2013–14, but the average first-year paid 4% less, because grants grew
 faster."
 
-**Small multiples**, grouped by domain (domain color dot on each group heading, 2 columns on lg, 1 on mobile). All
-panels share the same x-axis years within a group.
+**One group at a time.** Under the controls, a row of pills (Cost · Aid · Admissions · Test scores · Students ·
+Academics · Outcomes · Policy changes, each with its domain dot) picks the group shown. Only groups with data get a
+pill (`availableHistoryGroups` in `lib/history-groups.ts`); Policy changes needs a change in the last 10 years. The
+other groups aren't rendered, so the page is one to four screens instead of 7,600px on desktop and 12,400px on a
+tablet. The choice is in the URL (`?group=aid`; Cost is the default and leaves no parameter), written with
+`history.replaceState` like the other controls; a group the college lacks falls back to the first one it has. On
+phones the pill row scrolls sideways, edge to edge, with the selected pill centred, and there are no accordions at
+any width. Charts measure their width when a group mounts.
+
+**Small multiples** within a group (2 columns on lg, 1 on mobile). All panels share the same x-axis years within a
+group.
 
 | Group | Panel | Form | Notes |
 |---|---|---|---|
@@ -113,8 +125,8 @@ panels share the same x-axis years within a group.
 - A `SourceNote` for the group listing the range of editions ("IPEDS Institutional Characteristics, 2000–01 to
   2023–24"); "approx." footnote where a year used the fallback formula (2007–08).
 
-**Mobile:** groups become accordions with Cost open by default; charts are 160 px tall; the range stays 10 years unless
-changed; direct labels drop to the legend when they'd collide.
+**Mobile:** the pill row scrolls sideways and one group shows, as on desktop; charts are 160 px tall; the range stays
+10 years unless changed; direct labels drop to the legend when they'd collide.
 
 ## Chart components (new, in `components/charts/`; add to [charts.md](charts.md))
 | Component | Used by | Key props |
@@ -150,8 +162,8 @@ one is added, run `validate_palette.js`.
 
 ## Build notes (Phase 1)
 Built 2026-09-28 (`feature/trends`). What shipped, and where it differs from the plan above:
-- **Profile "Over time"** (`components/history/OverTime.tsx`, client; `#history`, between Cost & outcomes and How it
-  ranks). Controls: *10 years / All*, *After inflation / As reported*, *National median*, and for publics *All students
+- **Profile "Over time"** (`components/history/OverTime.tsx`, client; was the `#history` section, now the history
+  topic page, with `components/profile/OverTimeSection.tsx` passing it everything). Controls: *10 years / All*, *After inflation / As reported*, *National median*, and for publics *All students
   / In-state / Out-of-state* full price; state in the URL (`?range=all&dollars=nominal&median=off&rate=out`), read
   after hydration so the page stays static. Groups and panels:
   - Cost: *What a year costs* (average total cost in the domain color with the national band; full price solid
@@ -166,10 +178,11 @@ Built 2026-09-28 (`feature/trends`). What shipped, and where it differs from the
     carried-forward-years note.
   - Colleges whose admissions headline comes from a Common Data Set get a note that the charts are federal and end a
     year earlier (see backlog: CDS values newer than federal data).
-  - Mobile: groups are accordions (Cost open), charts 170px tall, direct labels drop to the legend.
-- **Overview "10 years" tile** (`TenYearTile`): average total cost from → to after inflation, then up to two notable
-  changes from full price, acceptance rate, applicants, grant share (undergrads join in Phase 2). It's a card with a
-  "See how it's changed" link rather than a whole-card link, because its info button can't nest inside a link.
+  - Mobile (as first built): groups were accordions (Cost open), charts 170px tall, direct labels drop to the legend.
+    Since the profile split, one group shows at a time at every width (below).
+- **Overview "10 years" tile** (`TenYearTile`, since replaced by the cards' ten-year lines and the Over time card,
+  2026-10-02): average total cost from → to after inflation, then up to two notable changes from full price,
+  acceptance rate, applicants, grant share.
 - **Takeaway** (`historyTakeaway()` in lib/insights.ts): full price vs what the average first-year paid, with "because
   grants grew faster" only when aid generosity rose; then applications and the acceptance rate.
 - **Home "What's changed"** (`components/history/WhatsChanged.tsx`, after "Is it worth it?"): facts 1–2. The real
@@ -191,7 +204,7 @@ Built 2026-09-28 (`feature/trends-phase-2-3`).
   weren't required, labeled when they fit and named in the legend and tooltip; submission rates in the tooltip),
   **Students** (undergrads; race/ethnicity as `StackedArea100` from fall 2010), and **Outcomes** (graduation within six
   years by entering class, with an "Entered fall …" axis; median debt ending 2020–21 with a note; earnings as text).
-  All groups are accordions on phones.
+  (Groups were accordions on phones until the profile split; now one group shows at a time at every width.)
 - **Section headlines:** a muted line with a 60×16 sparkline (≥ sm) and an "Over time" link under the Admissions
   (acceptance rate, "Fall 2014: 32%"), Students (undergrads, "+21% since fall 2014"), and Cost (average cost, "−2%
   after inflation since 2013–14") takeaways (`HeadlineDelta`), rather than under the individual headline numbers.

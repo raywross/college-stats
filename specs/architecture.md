@@ -22,7 +22,7 @@ college-stats/
 │   ├── globals.css             # Tokens (light + dark), domain/chart palettes, keyframes
 │   ├── page.tsx                # Home: hero search, lenses, landscape, leaderboards, map
 │   ├── explore/page.tsx        # Search + filters; grid / table / chart / map views
-│   ├── schools/[id]/page.tsx   # Profile (SSG): bento overview → sections → ranks → similar
+│   ├── schools/[id]/           # Profile: page.tsx overview (SSG, topic cards) + six topic pages (admissions, students, academics, cost, outcomes, history)
 │   ├── compare/page.tsx        # Head-to-head for up to 4 schools
 │   ├── glossary/page.tsx       # Searchable glossary
 │   ├── api/schools/route.ts    # Search (?q=) and lookup (?ids=) for client components
@@ -101,5 +101,5 @@ Static charts are server components. Interactive charts are client components th
 formatting is passed as a `FormatKind` string, never as a function.
 
 ### 8. Drill-down navigation
-Home (all schools) → Explore (filtered set; grid/table/chart/map) → Profile (one school, sectioned) → any dot,
+Home (all schools) → Explore (filtered set; grid/table/chart/map) → Profile (one school: overview cards, then a page per topic) → any dot,
 similar school, or compare link leads sideways. Glossary pop-overs are available at every level.

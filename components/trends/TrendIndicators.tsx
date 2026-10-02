@@ -3,7 +3,6 @@ import type { School } from "@/lib/types";
 import { DOMAINS } from "@/lib/metrics";
 import { historyYearLabel } from "@/lib/history";
 import { detailText, indicatorOf, indicatorsOf, type Direction, type Indicator, type IndicatorKey } from "@/lib/indicators";
-import { InfoTip } from "@/components/ui/info-tip";
 import { cn } from "@/lib/utils";
 
 /*
@@ -36,39 +35,6 @@ export function DirectionIcon({ indicator: i, className }: { indicator: Indicato
     >
       <Icon className="size-[60%]" strokeWidth={2.5} />
     </span>
-  );
-}
-
-/** Profile hero: one card per indicator the college has history for. */
-export function TrendIndicatorStrip({ school, className }: { school: School; className?: string }) {
-  const list = indicatorsOf(school);
-  if (!list.length) return null;
-  return (
-    <div className={className}>
-      <p className="mb-2 flex items-center gap-1 text-xs font-semibold text-muted-foreground">
-        Over 10 years <InfoTip term="trend-direction" />
-      </p>
-      <ul className="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4">
-        {list.map((i) => (
-          <li key={i.def.key}>
-            <a
-              href="#history"
-              title={indicatorSentence(i)}
-              className="flex h-full items-start gap-2.5 rounded-2xl border bg-card/80 px-3 py-2.5 backdrop-blur transition-colors hover:border-foreground/30"
-            >
-              <DirectionIcon indicator={i} className="mt-0.5 size-7" />
-              <span className="min-w-0">
-                <span className="block text-[11px] font-semibold text-muted-foreground">{i.def.label}</span>
-                <span className="block font-display text-base leading-tight font-extrabold">{i.def.words[i.direction]}</span>
-                <span className="block text-[11px] text-muted-foreground tabular-nums">
-                  {detailText(i)} <span className="whitespace-nowrap">{since(i)}</span>
-                </span>
-              </span>
-            </a>
-          </li>
-        ))}
-      </ul>
-    </div>
   );
 }
 

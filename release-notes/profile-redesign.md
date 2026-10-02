@@ -16,7 +16,7 @@ groups folded.
 
 Nothing is removed: every chart and figure moves to its topic page, and every number keeps its citation. Read the
 plan, including the four layouts that were considered and how they were scored, on the
-[roadmap](/roadmap/profile-redesign).
+[profile-redesign.md](../specs/profile-redesign.md).
 
 ## Behind the scenes
 

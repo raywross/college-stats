@@ -1,8 +1,9 @@
 # Profile Redesign: Overview Cards and Topic Pages
 
-> Status: **planned** (not built). Decided 2026-10-02 after a review of the profile at three widths and research
-> into comparable sites. Replaces the single long page described in [school-profile.md](school-profile.md) with a
-> short overview of topic cards and one page per topic.
+> Status: **built** 2026-10-02 (PR #47; the as-built description is [school-profile.md](school-profile.md), phones and
+> tablets in [mobile.md](mobile.md#profile-on-phones), Over time in [trends-design.md](trends-design.md)). Decided the
+> same day after a review of the profile at three widths and research into comparable sites. Replaced the single long
+> page with a short overview of topic cards and one page per topic. [As built](#as-built) lists what differed.
 
 ## Why
 The profile has grown with every data wave. It began as six sections and is now ten, each with sub-blocks that
@@ -176,7 +177,8 @@ outcomes splits in two. Old anchors keep working: a small client script on the o
 4. **Sources** for the overview: one `SourceList` for every field the cards show, collapsed under "Sources for this
    overview", so every number stays cited (its (i) popover) without seven source lines on the page.
 
-Budget: the overview is at most **3 screens on desktop (~2,700px) and 6 on a phone (~5,000px)**. The pilot measures
+Budget (content height, to the end of `<main>`, excluding the site footer): the overview is at most **3 screens on
+desktop (~2,700px) and 6 on a phone (~5,000px)**. The pilot measures
 it; a Playwright script in `scripts/measure-profile.mts` prints the heights at 1440, 810, and 390 so a later PR can't
 quietly grow it back.
 
@@ -218,29 +220,67 @@ first card click, more topic pages per visit than sections scrolled today, and n
 ## Build order
 1. **Routes and moves** (no visual change yet): the six topic pages built from the existing `Panel`s; the overview
    keeps the current bento while cards are built; old anchors redirected; `measure-profile` script.
+   *Built 2026-10-02* (`feature/profile-routes`): `lib/profile-topics.ts`, `lib/profile-data.ts`,
+   `lib/profile-history.ts`, `components/profile/*`, the six route files, `tests/profile-topics.test.mts` (route and
+   field coverage against the old `SECTION_FIELDS`, anchors). Deviations: no `layout.tsx` (the `React.cache`d
+   `loadProfile` already shares one load between a page and its metadata, and the overview renders the hero while
+   topic pages render the compact header, so a layout had nothing to hold); the overview carries an interim "In
+   detail" link list until the cards land; "How it ranks" dissolved into the pages (SAT midpoint on the admissions
+   page's test scores, yield under the yield ring, Pell and diversity on the students page); `ShowMore` gained
+   `until="lg"` but phase 3 applies it; the `measure-profile` script is not written yet.
 2. **Cards**: the six topic cards, the slimmer hero, the overview source list; remove the bento and section nav.
+   *Built 2026-10-02* (`feature/profile-cards`): `components/profile/TopicCards.tsx`, `TopicCard.tsx`, the six
+   `*Card.tsx`, `TenYearLine.tsx`, `lib/profile-cards.ts` and its test; `TenYearTile`, `TrendIndicatorStrip`, `Tile`,
+   and `TopicLinks` deleted.
 3. **Tablet and Over time**: `ShowMore` at `lg`, the Over time segmented control, chart grids per width.
+   *Built 2026-10-02* (`feature/profile-history`, `feature/profile-tablet`): one history group at a time with pills
+   and `?group=` (`lib/history-groups.ts`); `until="lg"` on five secondary blocks; small blocks pair from `md`;
+   `scripts/measure-profile.mts`.
 4. **Pilot**: Harvard, Ohio State, UCLA, a small test-blind college, and an open-admission college at three widths;
    compare heights against the budget; check every field in the old `SECTION_FIELDS` is still shown on some page
    (a test diffs the two sets).
+   *Done 2026-10-02* on Harvard, Ohio State, UCLA, Academy College (no admissions page), and Adler University (three
+   topic pages): every page within budget, no sideways scroll or widened viewport, no broken pills or links, every
+   number's (i) cited; `tests/profile-topics.test.mts` proves the field union equals the old page's.
 
-## Files (planned)
-- `app/schools/[id]/layout.tsx` (loads the school once; hero or compact header by route), `page.tsx` (overview),
+## As built
+What differed from the design above, beyond the per-phase notes:
+- **No `layout.tsx`.** `loadProfile` is `React.cache`d, so a page and its metadata share one load, and the overview
+  renders the hero while topic pages render the compact header.
+- **"How it ranks" dissolved** as planned: SAT midpoint and yield strips on the admissions page, Pell and diversity
+  strips on the students page, the two maps on the admissions and outcomes pages.
+- **Over time** shows one group at a time at every width (not only a segmented control on desktop), with no
+  accordions anywhere; the history page renders per request so `?group=` is in the server HTML.
+- **Topic pages cache** only with an empty `generateStaticParams`; the design's "render on first visit and keep for
+  a day" needed that line, which the Next docs call "all paths at runtime".
+- **Ten-year lines**: admissions (applications), students (diversity), cost (average cost), outcomes (graduation);
+  none on academics. The Over time card repeats the four indicators as sparkline tiles.
+- **Sources** on the overview are one collapsed `<details>` at every width, and each number keeps its (i) citation.
+- **Heights** (content, Harvard): overview 2,475 / 2,899 / 4,252px at 1440 / 810 / 390; topic pages 1,755–3,847px
+  on desktop. The budgets measure content height to the end of `<main>`, excluding the site footer.
+- **Telemetry** events (`profile_card_opened`) wait for [telemetry.md](product/telemetry.md), which isn't built.
+
+## Files (as built)
+- `lib/profile-data.ts` (`loadProfile`, `requireTopic`; no layout), `app/schools/[id]/page.tsx` (overview),
   `admissions/page.tsx`, `students/page.tsx`, `academics/page.tsx`, `cost/page.tsx`, `outcomes/page.tsx`,
   `history/page.tsx`.
-- `components/profile/TopicCard.tsx`, `AdmissionsCard.tsx` … `HistoryCard.tsx`, `TopicPills.tsx`,
-  `CompactHeader.tsx`, `OnThisPage.tsx`; `lib/profile-topics.ts` (the six topics, their routes, labels, domain
-  colors, and the fields each shows, for the nav, the cards, and the coverage test).
-- `scripts/measure-profile.mts` (Playwright heights at three widths), `tests/profile-topics.test.mts` (every topic
-  has a route and a card, field coverage equals the old page, anchors map to routes).
-- Specs to update when built: [school-profile.md](school-profile.md) (becomes the as-built description),
-  [mobile.md](mobile.md#profile-on-phones), [trends-design.md](trends-design.md).
+- `components/profile/TopicCards.tsx`, `TopicCard.tsx`, `AdmissionsCard.tsx` … `HistoryCard.tsx`, `TenYearLine.tsx`,
+  `TopicPills.tsx`, `CompactHeader.tsx`, `OnThisPage.tsx`, `TopicPage.tsx`, `TopicNav.tsx`, `Panel.tsx`,
+  `AnchorRedirect.tsx`, `OverTimeSection.tsx`; `lib/profile-topics.ts` (the six topics, their routes, labels, domain
+  colors, and the fields each shows), `lib/profile-cards.ts`, `lib/profile-history.ts`, `lib/history-groups.ts`.
+- `scripts/measure-profile.mts` + `scripts/lib/profile-measure.mts` (Playwright heights and checks at three widths),
+  `tests/profile-topics.test.mts` (routes, field coverage equals the old page, anchors, the history page's `?group=`,
+  the tablet folds), `tests/profile-cards.test.mts`, `tests/history-groups.test.mts`, `tests/profile-measure.test.mts`.
+- Specs updated: [school-profile.md](school-profile.md), [mobile.md](mobile.md#profile-on-phones),
+  [trends-design.md](trends-design.md), [trend-indicators.md](trend-indicators.md), and the specs that named the
+  old sections.
 
 ## Open questions
 1. Should the overview keep a slim "key numbers" strip above the cards (six figures in one row) for people who
    only want the numbers? Recommendation: no at first; the headline figure on each card is that strip, laid out in
    a grid. Revisit with telemetry if people scroll past the cards.
-2. Should topic pages be prerendered for the top 50 colleges like the overview? Recommendation: only the overview;
-   topic pages render on first visit and stay cached a day, which keeps the build at its current size.
+2. Should topic pages be prerendered for the top 50 colleges like the overview? Decided: only the overview; topic
+   pages render on first visit and stay cached a day (the empty `generateStaticParams`), except the history page,
+   which renders per request for `?group=`.
 3. Detail panels (proposal D) as a later enhancement on desktop? Decide after the pilot, from how often people
    open more than two topics in a visit.

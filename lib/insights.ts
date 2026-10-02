@@ -23,6 +23,7 @@ import { shortName } from "./brand";
 import { pellGraduateAtSameRate } from "./graduation-groups";
 import { SERIES, changeOver, defaultWindow, historyYearLabel, isTinyBase, type SchoolHistory, type SeriesKey } from "./history";
 import type { HistoryFiles } from "./supabase";
+import type { Profile } from "./profile-data";
 import { mostFromOtherState } from "./residence";
 import { stateName } from "./states";
 import { endowmentMetricFor } from "./finances";
@@ -262,6 +263,24 @@ export function generosityTakeaway({ rankOf }: Dataset, s: School): string | und
         ? " Most students here pay close to the sticker price."
         : "";
   return lead + tail;
+}
+
+/**
+ * Academics (the overview card and the Academics page): the most popular major, students per faculty member and how
+ * that compares, the full-time faculty share, and instruction spending, whichever are reported.
+ */
+export function academicsTakeaway(p: Pick<Profile, "majorsTop" | "ratio" | "ratioVs" | "fullTimeShare" | "finances">): string {
+  const { majorsTop, ratio, ratioVs, fullTimeShare, finances } = p;
+  return (
+    [
+      majorsTop?.length ? `The most popular major is ${majorsTop[0].title} (${pct(majorsTop[0].share)} of graduates).` : null,
+      ratio !== null ? `${ratio} students for every faculty member${ratioVs ? `, ${ratioVs.word} than at ${pct(ratioVs.share)} of colleges` : ""}.` : null,
+      fullTimeShare !== null ? `${pct(fullTimeShare)} of faculty are full-time.` : null,
+      finances?.instruction_per_student != null ? `Spends ${money(finances.instruction_per_student)} a year on instruction per student.` : null,
+    ]
+      .filter(Boolean)
+      .join(" ") || "How this college invests in students."
+  );
 }
 
 export function outcomesTakeaway({ rankOf }: Dataset, s: School): string | undefined {

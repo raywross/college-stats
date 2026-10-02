@@ -59,7 +59,7 @@ list of matches and mismatches ("Matches: size, region, has nursing (210 graduat
 cost $38K vs your $25K limit"), never as a score out of 100.
 
 ## Display
-- **Profile hero**, signed in with numbers: a "Where you stand" chip (Reach / Target / Likely) linking to the
+- **Profile hero and the overview's admissions card**, signed in with numbers: a "Where you stand" chip (Reach / Target / Likely) linking to the
   Admissions section, where a `StandingCard` lists the reasons with the existing `ScoreChecker` bars and the
   `GpaChecker` under it. Signed out: the ScoreChecker as today, with "Save your scores to see this everywhere".
 - **Saved list:** the standing per row and the balance line ([saved-lists.md](saved-lists.md#display)).

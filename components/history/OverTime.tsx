@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { ChevronDown, Table2, LineChart } from "lucide-react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { Table2, LineChart } from "lucide-react";
 import { formatBy, type FormatKind } from "@/lib/format";
 import {
   NET_PRICE_BANDS,
@@ -37,6 +37,18 @@ import { cn } from "@/lib/utils";
 import { historyEvents } from "@/lib/events";
 import { GRAD_RACE_SERIES } from "@/lib/history";
 import { rollingRate } from "@/lib/graduation-groups";
+import {
+  DEFAULT_HISTORY_GROUP,
+  HISTORY_GROUP_LABELS,
+  availableHistoryGroups,
+  parseHistoryGroup,
+  pickHistoryGroup,
+  type HistoryGroupKey,
+} from "@/lib/history-groups";
+
+// Server pages import the keys and guard from lib/history-groups (not from this client module); the type is re-exported
+// here for convenience.
+export type { HistoryGroupKey };
 
 type Range = "10" | "all";
 type Dollars = "real" | "nominal";
@@ -52,6 +64,12 @@ export interface OverTimeProps {
   /** Server-rendered source lines per group (history editions and CPI). */
   sources: { cost: ReactNode; aid: ReactNode; admissions: ReactNode; scores: ReactNode; students: ReactNode; outcomes: ReactNode; academics: ReactNode };
   colors: { value: string; admissions: string; scores: string; size: string; diversity: string };
+  /**
+   * The group to show first, from the page's `?group=` (parseHistoryGroup), so the server HTML matches the URL. Without
+   * it the component starts on Cost and reads `?group=` after hydration. A group this college has no data for falls
+   * back to the first one it has.
+   */
+  initialGroup?: HistoryGroupKey;
 }
 
 const CONTEXT = "var(--muted-foreground)";
@@ -81,8 +99,12 @@ function policySpans(s: Series | undefined): { from: number; to: number; label: 
   return out;
 }
 
-/** Read and write the controls in the URL (?range=all&dollars=nominal&median=off&rate=in) without re-rendering the page. */
-function useUrlState() {
+/**
+ * Read and write the controls in the URL (?range=all&dollars=nominal&median=off&rate=in&group=aid) without re-rendering
+ * the page.
+ */
+function useUrlState(initialGroup: HistoryGroupKey | undefined) {
+  const [group, setGroup] = useState<HistoryGroupKey>(initialGroup ?? DEFAULT_HISTORY_GROUP);
   const [range, setRange] = useState<Range>("10");
   const [dollars, setDollars] = useState<Dollars>("real");
   const [median, setMedian] = useState(true);
@@ -95,6 +117,8 @@ function useUrlState() {
     if (p.get("median") === "off") setMedian(false);
     const r = p.get("rate");
     if (r === "in" || r === "out") setResidency(r);
+    const g = parseHistoryGroup(p.get("group"));
+    if (g) setGroup(g);
     /* eslint-enable react-hooks/set-state-in-effect */
   }, []);
   const write = (key: string, value: string | null) => {
@@ -104,10 +128,12 @@ function useUrlState() {
     window.history.replaceState(window.history.state, "", url);
   };
   return {
+    group,
     range,
     dollars,
     median,
     residency,
+    setGroup: (v: HistoryGroupKey) => (setGroup(v), write("group", v === DEFAULT_HISTORY_GROUP ? null : v)),
     setRange: (v: Range) => (setRange(v), write("range", v === "all" ? "all" : null)),
     setDollars: (v: Dollars) => (setDollars(v), write("dollars", v === "nominal" ? "nominal" : null)),
     setMedian: (v: boolean) => (setMedian(v), write("median", v ? null : "off")),
@@ -115,21 +141,36 @@ function useUrlState() {
   };
 }
 
-function Segmented<T extends string>({ value, options, onChange, label }: { value: T; options: { value: T; label: string }[]; onChange: (v: T) => void; label: string }) {
+function Segmented<T extends string>({
+  value,
+  options,
+  onChange,
+  label,
+  className,
+}: {
+  value: T;
+  /** `dot`: a color shown as a small dot before the label (the group pills' domain colors). */
+  options: { value: T; label: string; dot?: string }[];
+  onChange: (v: T) => void;
+  label: string;
+  className?: string;
+}) {
   return (
-    <div role="radiogroup" aria-label={label} className="inline-flex rounded-full border bg-card p-0.5 text-xs font-semibold">
+    <div role="radiogroup" aria-label={label} className={cn("inline-flex rounded-full border bg-card p-0.5 text-xs font-semibold", className)}>
       {options.map((o) => (
         <button
           key={o.value}
           type="button"
           role="radio"
           aria-checked={value === o.value}
+          data-value={o.value}
           onClick={() => onChange(o.value)}
           className={cn(
-            "rounded-full px-3 py-1.5 transition-colors focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:outline-none",
+            "inline-flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 whitespace-nowrap transition-colors focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:outline-none",
             value === o.value ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"
           )}
         >
+          {o.dot && <span className="size-2 rounded-full" style={{ backgroundColor: o.dot }} aria-hidden />}
           {o.label}
         </button>
       ))}
@@ -461,37 +502,77 @@ function HistoryTable({
   );
 }
 
-/** A collapsible group of panels (collapsed by default on phones, except Cost). */
-function Group({ title, color, open, onToggle, children, footer }: { title: string; color: string; open: boolean; onToggle: () => void; children: ReactNode; footer: ReactNode }) {
+/** The selected group of panels: heading, charts, and its footer (source notes). */
+function Group({ title, color, children, footer }: { title: string; color: string; children: ReactNode; footer: ReactNode }) {
   return (
-    <div>
-      <button
-        type="button"
-        onClick={onToggle}
-        aria-expanded={open}
-        className="mb-3 flex w-full items-center gap-2 text-left focus-visible:outline-none sm:pointer-events-none"
-      >
+    <section aria-label={title}>
+      <div className="mb-3 flex items-center gap-2">
         <span className="size-2.5 rounded-full" style={{ backgroundColor: color }} aria-hidden />
         <h3 className="font-display text-xl font-extrabold tracking-tight">{title}</h3>
-        <ChevronDown className={cn("ml-auto size-5 text-muted-foreground transition-transform sm:hidden", open && "rotate-180")} />
-      </button>
-      <div className={cn(!open && "hidden sm:block")}>
-        {children}
-        <div className="mt-3">{footer}</div>
       </div>
+      {children}
+      <div className="mt-3">{footer}</div>
+    </section>
+  );
+}
+
+/**
+ * One pill per group with data. The row scrolls sideways when it doesn't fit (phones), bleeding to the screen edge, and
+ * keeps the selected pill in view. It scrolls only the row (not scrollIntoView), so the page never jumps.
+ */
+function GroupPills({
+  groups,
+  value,
+  onChange,
+  colors,
+}: {
+  groups: HistoryGroupKey[];
+  value: HistoryGroupKey;
+  onChange: (g: HistoryGroupKey) => void;
+  colors: Record<HistoryGroupKey, string>;
+}) {
+  const rowRef = useRef<HTMLDivElement>(null);
+  const moved = useRef(false);
+  useEffect(() => {
+    const row = rowRef.current;
+    const pill = row?.querySelector<HTMLElement>(`[data-value="${value}"]`);
+    if (!row || !pill || row.scrollWidth <= row.clientWidth) return;
+    // The row is position: relative (globals.css, every overflow-x-auto), so it's the pill's offsetParent.
+    const left = pill.offsetLeft - (row.clientWidth - pill.offsetWidth) / 2;
+    row.scrollTo({ left: Math.max(0, left), behavior: moved.current ? "smooth" : "auto" });
+    moved.current = true;
+  }, [value]);
+  return (
+    <div ref={rowRef} className="no-scrollbar overflow-x-auto max-sm:-mx-4 max-sm:px-4">
+      <Segmented
+        label="Chart group"
+        value={value}
+        onChange={onChange}
+        className="w-max text-[13px] sm:text-sm"
+        options={groups.map((g) => ({ value: g, label: HISTORY_GROUP_LABELS[g], dot: colors[g] }))}
+      />
     </div>
   );
 }
 
 export function OverTime(props: OverTimeProps) {
-  const { isPublic, history, national, cpi, latest, provisional, sources, colors } = props;
-  const ui = useUrlState();
-  // Phone collapse state only: a closed group is `hidden sm:block`, so wider screens always show every group. Starting
-  // collapsed in the server HTML (rather than collapsing after hydration) keeps the page from jumping on load.
-  const [open, setOpen] = useState({ cost: false, aid: false, admissions: false, scores: false, students: false, outcomes: false, academics: false, changes: false });
+  const { isPublic, history, national, cpi, latest, provisional, sources, colors, initialGroup } = props;
+  const ui = useUrlState(initialGroup);
   // Policy changes (lib/events.ts) within the default 10-year window.
   const changes = useMemo(() => historyEvents(history).filter((e) => e.year >= latest[e.kind] - WINDOW_YEARS), [history, latest]);
-  const toggle = (k: keyof typeof open) => () => setOpen((o) => ({ ...o, [k]: !o[k] }));
+  // One group shows at a time; the others aren't rendered at all, which keeps the section one or two screens tall.
+  const groups = useMemo(() => availableHistoryGroups(history.series, changes.length), [history, changes.length]);
+  const active = pickHistoryGroup(ui.group, groups);
+  const groupColors: Record<HistoryGroupKey, string> = {
+    cost: colors.value,
+    aid: colors.value,
+    admissions: colors.admissions,
+    scores: colors.scores,
+    students: colors.size,
+    academics: colors.size,
+    outcomes: colors.value,
+    changes: colors.admissions,
+  };
 
   const earliest = (keys: SeriesKey[]) => Math.min(...keys.map((k) => history.series[k]?.start ?? Infinity));
   const windowFor = (kind: YearKind, keys: SeriesKey[]): [number, number] => {
@@ -515,9 +596,6 @@ export function OverTime(props: OverTimeProps) {
   const gradWindow = windowFor("cohort", ["grad_rate"]);
   const debtWindow = windowFor("academic", ["median_debt"]);
   const spans = policySpans(history.series.test_policy);
-  const hasScores = !!(history.series.sat_25 || history.series.act_25);
-  const hasStudents = !!(history.series.undergrads || history.series.race_white || history.series.men_share || history.series.part_time_share || history.series.housing_capacity || history.series.out_of_state_share || history.series.transfer_in_share);
-  const hasOutcomes = !!(history.series.grad_rate || history.series.median_debt || history.series.om_award || history.series.grad_rate_pell || history.series.grad_rate_white);
   // 8-year outcomes end 8 years behind the newest entering class of grad_rate: window on their own last class.
   const omEnd = history.series.om_award ? lastYear(history.series.om_award) : null;
   const omWindow: [number, number] | null =
@@ -564,195 +642,204 @@ export function OverTime(props: OverTimeProps) {
   const joinYears = (ys: number[], kind: YearKind) => ys.map((y) => historyYearLabel(y, kind)).join(", ");
 
   return (
-    <div className="space-y-10">
-      <div className="flex flex-wrap items-center gap-2">
-        <Segmented label="Years shown" value={ui.range} onChange={ui.setRange} options={[{ value: "10", label: "10 years" }, { value: "all", label: "All" }]} />
-        <Segmented label="Dollars" value={ui.dollars} onChange={ui.setDollars} options={[{ value: "real", label: "After inflation" }, { value: "nominal", label: "As reported" }]} />
-        {isPublic && (
-          <Segmented
-            label="Full price for"
-            value={ui.residency}
-            onChange={ui.setResidency}
-            options={[{ value: "blended", label: "All students" }, { value: "in", label: "In-state" }, { value: "out", label: "Out-of-state" }]}
-          />
-        )}
-        <label className="inline-flex cursor-pointer items-center gap-2 rounded-full border bg-card px-3 py-1.5 text-xs font-semibold text-muted-foreground has-[:checked]:text-foreground">
-          <input type="checkbox" checked={ui.median} onChange={(e) => ui.setMedian(e.target.checked)} className="size-3.5 accent-[var(--primary)]" />
-          National median
-        </label>
-        {ui.dollars === "real" && (
-          <span className="flex items-center gap-1 text-xs text-muted-foreground">
-            Money in {historyYearLabel(latest.academic, "academic")} dollars <InfoTip term="inflation-adjusted" />
-          </span>
-        )}
+    <div className="space-y-6">
+      <div className="space-y-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <Segmented label="Years shown" value={ui.range} onChange={ui.setRange} options={[{ value: "10", label: "10 years" }, { value: "all", label: "All" }]} />
+          <Segmented label="Dollars" value={ui.dollars} onChange={ui.setDollars} options={[{ value: "real", label: "After inflation" }, { value: "nominal", label: "As reported" }]} />
+          {isPublic && (
+            <Segmented
+              label="Full price for"
+              value={ui.residency}
+              onChange={ui.setResidency}
+              options={[{ value: "blended", label: "All students" }, { value: "in", label: "In-state" }, { value: "out", label: "Out-of-state" }]}
+            />
+          )}
+          <label className="inline-flex cursor-pointer items-center gap-2 rounded-full border bg-card px-3 py-1.5 text-xs font-semibold text-muted-foreground has-[:checked]:text-foreground">
+            <input type="checkbox" checked={ui.median} onChange={(e) => ui.setMedian(e.target.checked)} className="size-3.5 accent-[var(--primary)]" />
+            National median
+          </label>
+          {ui.dollars === "real" && (
+            <span className="flex items-center gap-1 text-xs text-muted-foreground">
+              Money in {historyYearLabel(latest.academic, "academic")} dollars <InfoTip term="inflation-adjusted" />
+            </span>
+          )}
+        </div>
+        <GroupPills groups={groups} value={active} onChange={ui.setGroup} colors={groupColors} />
       </div>
 
-      <Group title="Cost" color={colors.value} open={open.cost} onToggle={toggle("cost")} footer={
-        <div className="space-y-1.5 text-[11px] text-muted-foreground">
-          {approxYears.length > 0 && (
-            <p>
-              * {joinYears(approxYears, "academic")}: grant dollars per student estimated as share with grants × average grant; total grant dollars
-              weren&apos;t reported yet.
-            </p>
-          )}
-          {sources.cost}
-        </div>
-      }>
-        <div className="grid gap-4 lg:grid-cols-2">
-          <ChartPanel
-            {...common}
-            title="What a year costs"
-            term="average-cost"
-            kind="academic"
-            format="money"
-            window={costWindow}
-            headline="avg_paid_all"
-            provisionalYear={provisional.academic}
-            specs={[
-              { key: "avg_paid_all", name: "Average total cost", color: colors.value, band: true },
-              { key: fullPriceKey, name: fullPriceName, color: CONTEXT },
-              { key: "aided_net_price", name: isPublic ? "With grants (in-state)" : "With grants", color: CONTEXT, dashed: true },
-            ]}
-          />
-          {hasIncome && (
-            <div className="flex min-w-0 flex-col rounded-3xl border bg-card p-4 sm:p-5">
-              <h4 className="mb-1 flex items-center gap-1 font-display text-base font-bold">
-                Net price by family income <InfoTip term="net-price-by-income" />
-              </h4>
-              <p className="mb-4 text-xs text-muted-foreground">
-                Students receiving federal aid{isPublic ? ", in-state" : ""}. {ui.dollars === "real" ? `In ${historyYearLabel(latest.academic, "academic")} dollars.` : "As reported."}
+      {active === "cost" && (
+        <Group title="Cost" color={groupColors.cost} footer={
+          <div className="space-y-1.5 text-[11px] text-muted-foreground">
+            {approxYears.length > 0 && (
+              <p>
+                * {joinYears(approxYears, "academic")}: grant dollars per student estimated as share with grants × average grant; total grant dollars
+                weren&apos;t reported yet.
               </p>
-              <Dumbbell
-                rows={incomeRows}
-                fromLabel={incomeFromYear ? historyYearLabel(incomeFromYear, "academic") : "Start"}
-                toLabel={historyYearLabel(costWindow[1], "academic")}
-                format="money"
-                color={colors.value}
-              />
-            </div>
-          )}
-        </div>
-      </Group>
-
-      <Group title="Aid" color={colors.value} open={open.aid} onToggle={toggle("aid")} footer={sources.aid}>
-        <div className="grid gap-4 lg:grid-cols-2">
-          <ChartPanel
-            {...common}
-            title="Grants for first-years"
-            term="grant-aid"
-            kind="academic"
-            format="pct"
-            window={aidWindow}
-            headline="grant_pct"
-            provisionalYear={provisional.academic}
-            specs={[
-              { key: "grant_pct", name: "Share with grants", color: colors.value, band: true },
-              { key: "aid_generosity", name: "Aid generosity", color: CONTEXT, dashed: true },
-            ]}
-          />
-          <ChartPanel
-            {...common}
-            title="Average grant"
-            term="grant-aid"
-            kind="academic"
-            format="money"
-            window={aidWindow}
-            headline="grant_avg"
-            provisionalYear={provisional.academic}
-            specs={[{ key: "grant_avg", name: "Average grant", color: colors.value, band: true }]}
-          />
-          {history.series.federal_loan_rate && (
+            )}
+            {sources.cost}
+          </div>
+        }>
+          <div className="grid gap-4 lg:grid-cols-2">
             <ChartPanel
               {...common}
-              title="Undergrads with a federal loan"
-              term="federal-loan-rate"
-              kind="academic"
-              format="pct"
-              window={windowFor("academic", ["federal_loan_rate"])}
-              headline="federal_loan_rate"
-              provisionalYear={null}
-              specs={[{ key: "federal_loan_rate", name: "Federal loan", color: colors.value, band: true }]}
-              note="All undergraduates, not only first-years."
-            />
-          )}
-        </div>
-      </Group>
-
-      <Group title="Admissions" color={colors.admissions} open={open.admissions} onToggle={toggle("admissions")} footer={
-        <div className="space-y-1.5 text-[11px] text-muted-foreground">
-          {repeated.length > 0 && (
-            <p>
-              {joinYears(repeated, "fall")}: left out because the college&apos;s report repeated the previous year&apos;s applicants, admits, and
-              enrollees exactly (a carried-forward report, not a new count).
-            </p>
-          )}
-          {sources.admissions}
-        </div>
-      }>
-        <div className="grid gap-4 lg:grid-cols-2">
-          <ChartPanel
-            {...common}
-            title="Applicants, admits, and enrollees"
-            term="applicants"
-            kind="fall"
-            format="num"
-            window={admWindow}
-            headline="applicants"
-            provisionalYear={provisional.fall}
-            specs={[
-              { key: "applicants", name: "Applied", color: colors.admissions },
-              { key: "admitted", name: "Admitted", color: CONTEXT },
-              { key: "enrolled", name: "Enrolled", color: CONTEXT, dashed: true },
-            ]}
-          />
-          <ChartPanel
-            {...common}
-            title="Acceptance rate and yield"
-            term="acceptance-rate"
-            kind="fall"
-            format="pctSmart"
-            window={admWindow}
-            headline="acceptance_rate"
-            provisionalYear={provisional.fall}
-            specs={[
-              { key: "acceptance_rate", name: "Acceptance rate", color: colors.admissions, band: true },
-              { key: "yield", name: "Yield", color: CONTEXT, dashed: true },
-            ]}
-          />
-          {history.series.application_fee && (
-            <ChartPanel
-              {...common}
-              title="Application fee"
-              term="application-fee"
+              title="What a year costs"
+              term="average-cost"
               kind="academic"
               format="money"
-              window={windowFor("academic", ["application_fee"])}
-              headline="application_fee"
-              provisionalYear={null}
-              specs={[{ key: "application_fee", name: "Application fee", color: colors.admissions }]}
+              window={costWindow}
+              headline="avg_paid_all"
+              provisionalYear={provisional.academic}
+              specs={[
+                { key: "avg_paid_all", name: "Average total cost", color: colors.value, band: true },
+                { key: fullPriceKey, name: fullPriceName, color: CONTEXT },
+                { key: "aided_net_price", name: isPublic ? "With grants (in-state)" : "With grants", color: CONTEXT, dashed: true },
+              ]}
             />
-          )}
-          {history.series.admit_rate_men && history.series.admit_rate_women && (
-            // One hue for both, told apart by dash and direct labels: neither line is the "main" one.
+            {hasIncome && (
+              <div className="flex min-w-0 flex-col rounded-3xl border bg-card p-4 sm:p-5">
+                <h4 className="mb-1 flex items-center gap-1 font-display text-base font-bold">
+                  Net price by family income <InfoTip term="net-price-by-income" />
+                </h4>
+                <p className="mb-4 text-xs text-muted-foreground">
+                  Students receiving federal aid{isPublic ? ", in-state" : ""}. {ui.dollars === "real" ? `In ${historyYearLabel(latest.academic, "academic")} dollars.` : "As reported."}
+                </p>
+                <Dumbbell
+                  rows={incomeRows}
+                  fromLabel={incomeFromYear ? historyYearLabel(incomeFromYear, "academic") : "Start"}
+                  toLabel={historyYearLabel(costWindow[1], "academic")}
+                  format="money"
+                  color={colors.value}
+                />
+              </div>
+            )}
+          </div>
+        </Group>
+      )}
+
+      {active === "aid" && (
+        <Group title="Aid" color={groupColors.aid} footer={sources.aid}>
+          <div className="grid gap-4 lg:grid-cols-2">
             <ChartPanel
               {...common}
-              title="Acceptance rate, men and women"
-              term="admit-rate-by-sex"
+              title="Grants for first-years"
+              term="grant-aid"
+              kind="academic"
+              format="pct"
+              window={aidWindow}
+              headline="grant_pct"
+              provisionalYear={provisional.academic}
+              specs={[
+                { key: "grant_pct", name: "Share with grants", color: colors.value, band: true },
+                { key: "aid_generosity", name: "Aid generosity", color: CONTEXT, dashed: true },
+              ]}
+            />
+            <ChartPanel
+              {...common}
+              title="Average grant"
+              term="grant-aid"
+              kind="academic"
+              format="money"
+              window={aidWindow}
+              headline="grant_avg"
+              provisionalYear={provisional.academic}
+              specs={[{ key: "grant_avg", name: "Average grant", color: colors.value, band: true }]}
+            />
+            {history.series.federal_loan_rate && (
+              <ChartPanel
+                {...common}
+                title="Undergrads with a federal loan"
+                term="federal-loan-rate"
+                kind="academic"
+                format="pct"
+                window={windowFor("academic", ["federal_loan_rate"])}
+                headline="federal_loan_rate"
+                provisionalYear={null}
+                specs={[{ key: "federal_loan_rate", name: "Federal loan", color: colors.value, band: true }]}
+                note="All undergraduates, not only first-years."
+              />
+            )}
+          </div>
+        </Group>
+      )}
+
+      {active === "admissions" && (
+        <Group title="Admissions" color={groupColors.admissions} footer={
+          <div className="space-y-1.5 text-[11px] text-muted-foreground">
+            {repeated.length > 0 && (
+              <p>
+                {joinYears(repeated, "fall")}: left out because the college&apos;s report repeated the previous year&apos;s applicants, admits, and
+                enrollees exactly (a carried-forward report, not a new count).
+              </p>
+            )}
+            {sources.admissions}
+          </div>
+        }>
+          <div className="grid gap-4 lg:grid-cols-2">
+            <ChartPanel
+              {...common}
+              title="Applicants, admits, and enrollees"
+              term="applicants"
+              kind="fall"
+              format="num"
+              window={admWindow}
+              headline="applicants"
+              provisionalYear={provisional.fall}
+              specs={[
+                { key: "applicants", name: "Applied", color: colors.admissions },
+                { key: "admitted", name: "Admitted", color: CONTEXT },
+                { key: "enrolled", name: "Enrolled", color: CONTEXT, dashed: true },
+              ]}
+            />
+            <ChartPanel
+              {...common}
+              title="Acceptance rate and yield"
+              term="acceptance-rate"
               kind="fall"
               format="pctSmart"
               window={admWindow}
+              headline="acceptance_rate"
               provisionalYear={provisional.fall}
               specs={[
-                { key: "admit_rate_women", name: "Women", color: colors.admissions },
-                { key: "admit_rate_men", name: "Men", color: colors.admissions, dashed: true },
+                { key: "acceptance_rate", name: "Acceptance rate", color: colors.admissions, band: true },
+                { key: "yield", name: "Yield", color: CONTEXT, dashed: true },
               ]}
             />
-          )}
-        </div>
-      </Group>
+            {history.series.application_fee && (
+              <ChartPanel
+                {...common}
+                title="Application fee"
+                term="application-fee"
+                kind="academic"
+                format="money"
+                window={windowFor("academic", ["application_fee"])}
+                headline="application_fee"
+                provisionalYear={null}
+                specs={[{ key: "application_fee", name: "Application fee", color: colors.admissions }]}
+              />
+            )}
+            {history.series.admit_rate_men && history.series.admit_rate_women && (
+              // One hue for both, told apart by dash and direct labels: neither line is the "main" one.
+              <ChartPanel
+                {...common}
+                title="Acceptance rate, men and women"
+                term="admit-rate-by-sex"
+                kind="fall"
+                format="pctSmart"
+                window={admWindow}
+                provisionalYear={provisional.fall}
+                specs={[
+                  { key: "admit_rate_women", name: "Women", color: colors.admissions },
+                  { key: "admit_rate_men", name: "Men", color: colors.admissions, dashed: true },
+                ]}
+              />
+            )}
+          </div>
+        </Group>
+      )}
 
-      {hasScores && (
-        <Group title="Test scores" color={colors.scores} open={open.scores} onToggle={toggle("scores")} footer={sources.scores}>
+      {active === "scores" && (
+        <Group title="Test scores" color={groupColors.scores} footer={sources.scores}>
           <div className="grid gap-4 lg:grid-cols-2">
             <ChartPanel
               {...common}
@@ -790,8 +877,8 @@ export function OverTime(props: OverTimeProps) {
         </Group>
       )}
 
-      {hasStudents && (
-        <Group title="Students" color={colors.size} open={open.students} onToggle={toggle("students")} footer={sources.students}>
+      {active === "students" && (
+        <Group title="Students" color={groupColors.students} footer={sources.students}>
           <div className="grid gap-4 lg:grid-cols-2">
             <ChartPanel
               {...common}
@@ -905,8 +992,8 @@ export function OverTime(props: OverTimeProps) {
         </Group>
       )}
 
-      {(history.series.student_faculty_ratio || history.series.faculty_full_time_share || history.series.faculty_salary || history.series.instruction_per_student) && (
-        <Group title="Academics" color={colors.size} open={open.academics} onToggle={toggle("academics")} footer={sources.academics}>
+      {active === "academics" && (
+        <Group title="Academics" color={groupColors.academics} footer={sources.academics}>
           <div className="grid gap-4 lg:grid-cols-2">
             {history.series.student_faculty_ratio && (
               <ChartPanel
@@ -968,8 +1055,8 @@ export function OverTime(props: OverTimeProps) {
         </Group>
       )}
 
-      {hasOutcomes && (
-        <Group title="Outcomes" color={colors.value} open={open.outcomes} onToggle={toggle("outcomes")} footer={sources.outcomes}>
+      {active === "outcomes" && (
+        <Group title="Outcomes" color={groupColors.outcomes} footer={sources.outcomes}>
           <div className="grid gap-4 lg:grid-cols-2">
             <ChartPanel
               {...common}
@@ -1114,12 +1201,10 @@ export function OverTime(props: OverTimeProps) {
         </Group>
       )}
 
-      {changes.length > 0 && (
+      {active === "changes" && (
         <Group
-          title="Changes"
-          color={colors.admissions}
-          open={open.changes}
-          onToggle={toggle("changes")}
+          title={HISTORY_GROUP_LABELS.changes}
+          color={groupColors.changes}
           footer={
             <p className="max-w-3xl text-[11px] text-muted-foreground">
               From the college&apos;s yearly reports to the federal government over the last 10 years. A change can reflect how a college

@@ -2,6 +2,9 @@
 
 Route: `/compare?ids=a,b,c,d` (up to 4). The URL is the source of truth; the saved list follows it.
 
+> A redesign is planned ([compare-redesign.md](compare-redesign.md), 2026-10-02): an overview of topic cards plus a
+> page per topic, mirroring the profile. This file describes the page as built today.
+
 ## Building a comparison
 - `CompareButton` (cards, table rows, profile hero, similar schools) toggles an id in the saved list
   (`lib/compare.ts`: localStorage + `compare-updated` event + `useCompareIds` via `useSyncExternalStore`).

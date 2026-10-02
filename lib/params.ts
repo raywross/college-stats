@@ -23,7 +23,7 @@ const SORT_KEYS: SortKey[] = [
   "applicants", "name", "acceptance_rate", "enrollment", "sat", "pell", "first_gen", "diversity", "avg_cost", "aid_generosity", "net_price", "earnings", "grad_rate",
   "avg_cost_change", "admit_rate_change", "size_change", "apps_change", "diversity_change",
   "men_share", "part_time", "men_share_change", "admit_gap", "loan_rate", "loan_rate_change", "student_faculty", "completion_8yr",
-  "pell_gap", "pell_gap_change", "full_time_faculty",
+  "pell_gap", "pell_gap_change", "full_time_faculty", "out_of_state",
 ];
 const VIEWS: ExploreView[] = ["grid", "table", "chart", "map"];
 
@@ -66,6 +66,7 @@ export function parseFilters(params: Params): SearchFilters {
     fullTime: str(params.fullTime) === "1" || undefined,
     fewLoans: str(params.fewLoans) === "1" || undefined,
     pellGap: str(params.pellGap) === "1" || undefined,
+    national: str(params.national) === "1" || undefined,
     liveOn: str(params.liveOn) === "1" || undefined,
     noFee: str(params.noFee) === "1" || undefined,
     guarantee: str(params.guarantee) === "1" || undefined,
@@ -117,6 +118,7 @@ export const FILTER_KEYS = [
   "fullTime",
   "fewLoans",
   "pellGap",
+  "national",
   "liveOn",
   "noFee",
   "guarantee",

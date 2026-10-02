@@ -11,6 +11,7 @@ import { matchesCampus } from "./campus-profile";
 import { matchesServices } from "./campus-services.ts";
 import { withinMaxRatio, withinMinFullTimeFaculty } from "./academics.ts";
 import { hasSmallPellGap } from "./graduation-groups.ts";
+import { drawsNationally } from "./residence.ts";
 import {
   METRICS,
   SIZE_BUCKETS,
@@ -110,6 +111,7 @@ const SORTERS: Record<SortKey, (s: School) => number | string | null> = {
   pell_gap: METRICS.pellGap.get,
   pell_gap_change: METRICS.pellGapChange.get,
   full_time_faculty: METRICS.facultyFullTime.get,
+  out_of_state: METRICS.outOfState.get,
 };
 
 function mode(values: number[]): number | null {
@@ -226,6 +228,7 @@ export function createDataset({ schools, meta, releaseCalendar }: DatasetFiles) 
     if (filters.fewLoans) results = results.filter(hasFewLoans);
     // Graduation by group: colleges without both Pell and "neither" rates are left out while set.
     if (filters.pellGap) results = results.filter(hasSmallPellGap);
+    if (filters.national) results = results.filter(drawsNationally);
     if (filters.liveOn) results = results.filter(requiresLiveOn);
     if (filters.noFee) results = results.filter(noApplicationFee);
     if (filters.guarantee) results = results.filter(hasTuitionGuarantee);

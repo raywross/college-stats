@@ -232,6 +232,21 @@ const entries = {
     category: "Students & access",
     related: ["part-time-student"],
   },
+  // Where first-years come from (specs/data-expansion/residence.md).
+  "in-state-student": {
+    term: "In-state, out-of-state, and international students",
+    short: "Where a first-year lived when they applied: the college's own state, another U.S. state, DC, or territory (out-of-state), or another country (international). Shares here are of every first-year, including the few whose residence wasn't reported.",
+    long: "Colleges report each first-year's home state to the federal government every fall; reporting is required in even-numbered years and optional in odd ones, so the site uses even years. A Common Data Set's \"percent from out of state\" leaves international students out of both the count and the total, so it reads higher than the out-of-state share here.",
+    why: "A college that draws mostly from its own state feels different from one with students from across the country, and at a public university, out-of-state students usually pay a higher tuition.",
+    category: "Students & access",
+    related: ["first-time-student", "in-state-tuition"],
+  },
+  "first-time-student": {
+    term: "First-time student",
+    short: "A student starting college for the first time (usually right after high school), as opposed to a transfer student. The federal \"first-years\" counted for residence are first-time students seeking a degree or certificate.",
+    category: "Students & access",
+    related: ["in-state-student", "degree-seeking"],
+  },
   "degree-seeking": {
     term: "Degree-seeking undergraduate",
     short: "A student enrolled toward a bachelor's or associate degree, as opposed to someone taking classes without pursuing a degree. The site's undergraduate counts and shares include only degree-seeking students.",

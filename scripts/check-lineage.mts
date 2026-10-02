@@ -13,6 +13,7 @@ import { join } from "node:path";
 import type { DatasetMeta, School } from "../lib/types";
 import { validateLineage } from "../lib/lineage.ts";
 import { validateHistoryMeta, validateShard, type HistoryMeta, type SchoolHistory } from "../lib/history.ts";
+import { detailFileProblems, readDetails } from "./lib/publish-details.mts";
 
 const ROOT = join(import.meta.dirname, "..");
 const schools: School[] = JSON.parse(readFileSync(join(ROOT, "data", "schools.json"), "utf8"));
@@ -35,6 +36,10 @@ if (existsSync(join(HISTORY, "meta.json"))) {
   if (shards !== hmeta.schools) problems.push(`history meta says ${hmeta.schools} shards; the folder has ${shards}`);
 }
 
+// Per-college detail files (lib/detail.ts): valid tables, cited like the registry says, consistent with the snapshot.
+const details = readDetails(ROOT);
+if (details) problems.push(...detailFileProblems(details, schools, meta));
+
 if (problems.length) {
   console.error(`Lineage check failed: ${problems.length} problem${problems.length === 1 ? "" : "s"}`);
   for (const p of problems.slice(0, 50)) console.error(`  ${p}`);
@@ -44,5 +49,6 @@ if (problems.length) {
 const overridden = schools.filter((s) => s.lineage && Object.keys(s.lineage).length).length;
 console.log(
   `Lineage OK: ${schools.length} colleges, ${overridden} with values from a non-default source` +
-    (shards ? `; ${shards} college histories.` : ".")
+    (shards ? `; ${shards} college histories` : "") +
+    (details ? `; ${details.length} detail files.` : ".")
 );

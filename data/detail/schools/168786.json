@@ -1,0 +1,6 @@
+{
+  "unit_id": "168786",
+  "tables": {
+    "home_states": {"source":"ipeds-ef-c","vintage":"ipeds-ef-c","year":"Fall 2024","rows":{"MI":202,"IN":5,"TX":4,"IL":3,"OH":2,"CT":1,"FL":1,"GA":1,"ID":1,"KS":1,"NE":1,"SC":1,"WA":1,"WI":1}}
+  }
+}

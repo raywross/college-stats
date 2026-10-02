@@ -26,6 +26,8 @@ export type VintageKey =
   | "ipeds-gr"
   /** IPEDS Salaries survey (SAL{Y}_IS, all-ranks row): average faculty salary, 9-month equated. */
   | "ipeds-sal"
+  /** IPEDS Fall Enrollment part C (EF{Y}C): where first-years come from. Required in even-numbered falls only. */
+  | "ipeds-ef-c"
   | "scorecard-enrollment"
   /** Student age: IPEDS collects it in odd-numbered falls only, so it trails enrollment by a year every other year. */
   | "scorecard-age"
@@ -145,6 +147,9 @@ export const FIELDS = {
   // Scorecard, registered separately since it overrides this ancestor for that one leaf.
   "academics.faculty": { label: "Faculty salary (9-month equated, all ranks)", topic: "academics", source: "ipeds-sal", vintage: "ipeds-sal" },
   "academics.faculty.full_time_share": scorecard("Full-time faculty share", "academics", "scorecard-enrollment"),
+  "demographics.residence": { label: "Where first-years come from: in-state, other states, abroad", topic: "demographics", source: "ipeds-ef-c", vintage: "ipeds-ef-c" },
+  // Stored in the per-college detail file (lib/detail.ts), not data/schools.json.
+  "detail.home_states": { label: "First-years by home state", topic: "demographics", source: "ipeds-ef-c", vintage: "ipeds-ef-c" },
   "campus.athletics": icChar("Athletics: association, division, conference, sports"),
   "campus.programs": icChar("ROTC, study abroad, undergraduate research, and other programs"),
   "campus.services": icChar("Student services"),

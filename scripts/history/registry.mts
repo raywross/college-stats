@@ -45,6 +45,10 @@ export interface Era {
   keepRow?: (row: Record<string, string>) => boolean;
   /** The file for year Y is published as year Y + lag (graduation files follow a class 6 years on), for the refresh age. */
   lag?: number;
+  /** Read every `step` years from `years[0]` (residence: even-numbered falls only). Default 1. */
+  step?: number;
+  /** Several rows per college, pivoted into one (scripts/lib/ipeds.mts `wide`). */
+  wide?: { key: string; values: readonly string[] };
 }
 
 const yy = (y: number) => String(y % 100).padStart(2, "0");
@@ -196,6 +200,17 @@ export const ERAS: readonly Era[] = [
     required: () => ["ARANK", "SAEQ9AT"],
     keepRow: (r) => r.ARANK === "7",
   },
+  // Residence (specs/data-expansion/residence.md): EF{Y}C, fall Y, one row per college per home state. Probed
+  // 2026-10-02: EFCSTATE/EFRES01 in every file EF2002C–EF2024C with the same codes; even years (required) cover ~1,800
+  // site colleges, odd years ~1,000, so only even years. From fall 2004, as the spec says.
+  {
+    family: "ef-c",
+    years: [2004, OPEN],
+    step: 2,
+    files: (y) => [{ name: `EF${y}C` }],
+    required: () => ["EFCSTATE", "EFRES01"],
+    wide: { key: "EFCSTATE", values: ["EFRES01"] },
+  },
   {
     family: "services",
     years: [2014, OPEN],
@@ -238,7 +253,7 @@ export function eraFor(family: HistoryFamily, year: number): Era | null {
 }
 
 /** Families by the kind of year they describe, and the first year each can start. */
-export const FAMILY_ORDER: readonly HistoryFamily[] = ["ic-admissions", "adm", "prices", "sfa", "characteristics", "services", "ef-d", "om", "gr-pell", "ipeds-sal"];
+export const FAMILY_ORDER: readonly HistoryFamily[] = ["ic-admissions", "adm", "prices", "sfa", "characteristics", "services", "ef-d", "ef-c", "om", "gr-pell", "ipeds-sal"];
 
 /** Columns a value spec reads. */
 export function specColumns(spec: ColumnSpec): readonly string[] {

@@ -72,6 +72,8 @@ export const HISTORY_FAMILIES = {
   // Faculty salary (specs/data-expansion/faculty.md): SAL{year}_IS, all-ranks row (ARANK 7). Starts 2016, the first
   // year with the equated 9-month figure (SAEQ9AT); earlier files used different, non-equated columns.
   "ipeds-sal": { source: "ipeds-sal", kind: "fall", files: "SAL{year}_IS (instructional staff salaries, all ranks)" },
+  // Residence is required in even-numbered falls only (odd years cover about half the colleges): every other year.
+  "ef-c": { source: "ipeds-ef-c", kind: "fall", files: "EF{year}C (residence of first-time students), even-numbered falls", step: 2 },
   // College Scorecard API, year-prefixed fields (not files): years can have gaps, so they aren't checked as consecutive.
   "scorecard-enrollment": { source: "scorecard", kind: "fall", files: "API fields {year}.student.size, {year}.student.demographics.race_ethnicity.*, .men, and {year}.student.part_time_share", api: true, citeAs: "enrollment" },
   "scorecard-completion": { source: "scorecard", kind: "cohort", files: "API field {year+6}.completion.completion_rate_4yr_150nt", api: true, citeAs: "graduation by entering class" },
@@ -80,9 +82,20 @@ export const HISTORY_FAMILIES = {
   "scorecard-completion-race": { source: "scorecard", kind: "cohort", files: "API fields {year+6}.completion.completion_rate_4yr_150_* and completion_cohort_4yr_150_* (by race and ethnicity)", api: true, citeAs: "graduation by race and ethnicity" },
   // Faculty (specs/data-expansion/faculty.md): full-time share, from IPEDS HR via Scorecard.
   "scorecard-faculty": { source: "scorecard", kind: "fall", files: "API field {year}.school.ft_faculty_rate", api: true, citeAs: "full-time faculty share" },
-} as const satisfies Record<string, { source: SourceKey; kind: YearKind; files: string; api?: true; citeAs?: string }>;
+} as const satisfies Record<string, { source: SourceKey; kind: YearKind; files: string; api?: true; citeAs?: string; step?: number }>;
 
 export type HistoryFamily = keyof typeof HISTORY_FAMILIES;
+
+/** Years between a family's files: 1, or 2 for a survey part collected every other year (residence). */
+export function familyStep(f: HistoryFamily): number {
+  const fam = HISTORY_FAMILIES[f];
+  return "step" in fam ? fam.step : 1;
+}
+
+/** Years between a series' points: its families' step (residence: every other fall). */
+export function seriesStep(k: SeriesKey): number {
+  return Math.max(...SERIES[k].families.map(familyStep));
+}
 
 const ADMISSIONS: readonly HistoryFamily[] = ["ic-admissions", "adm"];
 const ENROLLMENT: readonly HistoryFamily[] = ["scorecard-enrollment"];
@@ -129,6 +142,9 @@ export const SERIES = {
   // Faculty (specs/data-expansion/faculty.md).
   faculty_full_time_share: { label: "Full-time faculty share", short: "Full-time faculty", field: "academics.faculty.full_time_share", term: "full-time-faculty", unit: "share", kind: "fall", format: "pct", families: ["scorecard-faculty"] },
   faculty_salary: { label: "Average faculty salary (9-month equated)", short: "Faculty salary", field: "academics.faculty", term: "nine-month-equated-salary", unit: "usd", kind: "fall", format: "money", families: ["ipeds-sal"] },
+  // Where first-years come from (specs/data-expansion/residence.md): even-numbered falls only, shares of all first-years.
+  out_of_state_share: { label: "First-years from other states", short: "Other states", field: "demographics.residence", term: "in-state-student", unit: "share", kind: "fall", format: "pct", families: ["ef-c"] },
+  international_share: { label: "First-years from abroad", short: "From abroad", field: "demographics.residence", term: "in-state-student", unit: "share", kind: "fall", format: "pct", families: ["ef-c"] },
   // Athletics and ROTC as codes, for events (lib/events.ts; lib/campus-services.ts reads them).
   conference: { label: "Athletic conference", short: "Conference", field: "campus.athletics", term: "athletic-conference", unit: "conference", kind: "academic", format: "int", families: ["services"] },
   football_conference: { label: "Football conference", short: "Football conference", field: "campus.athletics", term: "athletic-conference", unit: "conference", kind: "academic", format: "int", families: ["services"] },
@@ -733,7 +749,7 @@ export function validateHistoryMeta(hmeta: HistoryMeta, meta: DatasetMeta): stri
     const files = hmeta.files[f];
     const api = "api" in HISTORY_FAMILIES[f];
     if (!files?.length) errors.push(`history meta: no files recorded for ${f}`);
-    else if (!api && files.some((x, i) => i > 0 && x.year !== files[i - 1].year + 1)) errors.push(`history meta: ${f} years aren't consecutive`);
+    else if (!api && files.some((x, i) => i > 0 && x.year !== files[i - 1].year + familyStep(f))) errors.push(`history meta: ${f} years aren't consecutive`);
   }
   return errors;
 }

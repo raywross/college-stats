@@ -65,6 +65,21 @@ export interface School {
     part_time_share?: number | null;
     /** Share of undergraduates aged 25 or older (IPEDS collects age every other fall, so it's a year older). */
     age_25_plus_share?: number | null;
+    /**
+     * Where first-time undergraduates come from (IPEDS Fall Enrollment part C, even-year falls; lib/residence.ts):
+     * shares of every first-year, so with residence unknown they add up to less than 1. The full home-state table is in
+     * the per-college detail file (lib/detail.ts).
+     */
+    residence?: {
+      in_state: number;
+      /** Other states, DC, and U.S. territories. */
+      out_of_state: number;
+      international: number;
+      /** First-time undergraduates counted (the shares' denominator). */
+      first_years: number;
+      /** The state or territory sending the most first-years (USPS code) and its share. */
+      top_state: { state: string; share: number } | null;
+    } | null;
     racial_diversity: {
       asian: number;
       black: number;
@@ -441,7 +456,7 @@ export interface CampusPrograms {
   intellectual_disability_program: boolean;
 }
 
-export type SourceKey = "scorecard" | "ipeds-adm" | "ipeds-sfa" | "ipeds-ic" | "ipeds-ic-char" | "ipeds-hd" | "ipeds-ef" | "ipeds-om" | "ipeds-sal" | "cds"
+export type SourceKey = "scorecard" | "ipeds-adm" | "ipeds-sfa" | "ipeds-ic" | "ipeds-ic-char" | "ipeds-hd" | "ipeds-ef" | "ipeds-ef-c" | "ipeds-om" | "ipeds-sal" | "cds"
   /** IPEDS Graduation Rates, Pell and subsidized-loan file (GR{Y}_PELL_SSL; specs/data-expansion/graduation-by-group.md). */
   | "ipeds-gr";
 /** Race/ethnicity groups for graduation rates (lib/graduation-groups.ts RACE_GROUPS). */
@@ -498,7 +513,8 @@ export type SortKey =
   /** Graduation by group: the Pell graduation gap, and its 10-year change. */
   | "pell_gap"
   | "pell_gap_change"
-  | "full_time_faculty";
+  | "full_time_faculty"
+  | "out_of_state";
 
 export type ExploreView = "grid" | "table" | "chart" | "map";
 
@@ -553,6 +569,8 @@ export interface SearchFilters {
   pellGap?: boolean;
   /** Only colleges where at most 10% of undergraduates study part-time. */
   fullTime?: boolean;
+  /** Only colleges where at least half of first-years come from other states (lib/residence.ts). */
+  national?: boolean;
   sortBy?: SortKey;
   sortDir?: "asc" | "desc";
 }

@@ -9,6 +9,8 @@
     "application_fee": {"start":2020,"values":[0,0,0,0]},
     "tuition_guarantee": {"start":2020,"values":[2,2,2,1]},
     "student_faculty_ratio": {"start":2020,"values":[8,18,20,22,12]},
+    "out_of_state_share": {"start":2020,"values":[0,null,0.1111,null,0.0417]},
+    "international_share": {"start":2020,"values":[0,null,0,null,0]},
     "athletic_association": {"start":2020,"values":[3,3,3,3,3,3]},
     "rotc": {"start":2020,"values":[2,2,2,2,2,2]},
     "promise": {"start":2022,"values":[2,2]},

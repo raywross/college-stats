@@ -79,6 +79,7 @@ export function TrendLine({
   provisionalYear,
   events = [],
   label,
+  cadence = 1,
 }: {
   series: TrendSeries[];
   ranges?: TrendRange[];
@@ -96,6 +97,11 @@ export function TrendLine({
   events?: { year: number; label: string }[];
   /** Accessible description of the chart. */
   label: string;
+  /**
+   * Data collected every `cadence` years (residence: 2, even-numbered falls only). Lines connect across the off years
+   * instead of breaking there, and hover steps between reported years. Default 1.
+   */
+  cadence?: number;
 }) {
   const [ref, width] = useWidth<HTMLDivElement>(560);
   const [hover, setHover] = useState<number | null>(null);
@@ -138,6 +144,9 @@ export function TrendLine({
   const y = (v: number) => m.top + plotH - ((v - lo) / (hi - lo || 1)) * plotH;
 
   const breakYears = new Set(breaks.map((b) => b.year));
+  /** A year the data isn't collected in (an odd year of an every-other-year survey): skipped, not a gap. */
+  const offYear = (yr: number) => cadence > 1 && yr % cadence !== 0;
+  const snap = (yr: number) => (cadence > 1 ? Math.min(to, Math.max(from, Math.round(yr / cadence) * cadence)) : yr);
   /** Path pieces over consecutive reported years, split at breaks; isolated points become dots. */
   const pieces = (get: (year: number) => number | null) => {
     const runs: [number, number][][] = [];
@@ -149,6 +158,7 @@ export function TrendLine({
         cur = [];
       }
       if (v === null) {
+        if (offYear(yr)) continue;
         if (cur.length) runs.push(cur);
         cur = [];
       } else cur.push([x(yr), y(v)]);
@@ -185,13 +195,13 @@ export function TrendLine({
   const onMove = (e: PointerEvent<SVGRectElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
     const t = (e.clientX - rect.left) / rect.width;
-    setHover(Math.min(to, Math.max(from, Math.round(from + t * (to - from)))));
+    setHover(snap(Math.min(to, Math.max(from, Math.round(from + t * (to - from))))));
   };
   const onKey = (e: KeyboardEvent<SVGRectElement>) => {
     if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
     e.preventDefault();
-    const d = e.key === "ArrowLeft" ? -1 : 1;
-    setHover((h) => Math.min(to, Math.max(from, (h ?? to) + d)));
+    const d = (e.key === "ArrowLeft" ? -1 : 1) * cadence;
+    setHover((h) => snap(Math.min(to, Math.max(from, (h ?? to) + d))));
   };
 
   const hoverBand = hover !== null && band ? at(band.start, band.stats, hover) : null;
@@ -307,6 +317,7 @@ export function TrendLine({
             for (const yr of years) {
               const s = at(band.start, band.stats, yr);
               if (!s) {
+                if (offYear(yr)) continue;
                 if (cur.length) runs.push(cur);
                 cur = [];
               } else cur.push({ yr, s });

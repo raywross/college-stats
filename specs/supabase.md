@@ -43,6 +43,14 @@ back to JSON.
 | `dataset_publishes` | Log: time, college count, `retrieved`, git commit, who | Secret key only |
 | `school_histories` | `unit_id` (PK), `data` (one `SchoolHistory`, verbatim: data/history/schools/{id}.json) | Public read |
 | `history_files` | `meta`, `national`, `facts`, `cpi` from data/history/ | Public read |
+| `school_details` | `unit_id` (PK), `data` (one `SchoolDetail`, verbatim: data/detail/schools/{id}.json; lib/detail.ts) | Public read |
+| `detail_staging` | Detail files mid-publish | Secret key only |
+
+- **Detail files** (migration `20261002120000_school_details.sql`, added 2026-10-02 with
+  [residence.md](data-expansion/residence.md)): published like history, `stage_details(p_details, p_reset)` in batches of
+  200, then `publish_details_staged(p_expected)` swaps them in with one transaction and they're read back.
+  `publish-data` stops if the tables are missing, so **apply the migration to dev (and prod) before the next publish**.
+  The app's `getDetail()` is fail-soft: without the table, profiles render without home states.
 
 - Documents are **`json`, not `jsonb`**: jsonb reorders object keys (e.g. race/ethnicity shares come back as
   asian, black, other, white, …), and the UI iterates some objects in key order.

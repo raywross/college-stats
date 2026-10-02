@@ -47,12 +47,13 @@ published at `/roadmap` ([roadmap.md](roadmap.md)): add each new one to `lib/roa
   - [x] Wave 1 (files already downloaded, or fields on the Scorecard call; one PR per spec), built 2026-09-29: student
     body, admissions detail, loans and repayment, housing and policies, and admission factors (with the events log).
   - [ ] Wave 2 (one new NCES file each): campus profile (HD, built 2026-09-30), campus services and athletics (IC, built 2026-09-30), student-faculty
-    ratio (EF-D, built 2026-09-30), residence (EF-C), 8-year outcomes (OM, built 2026-10-02), Pell/race graduation (GR, built 2026-10-02), finances (DRVF), faculty (SAL,
+    ratio (EF-D, built 2026-09-30), residence (EF-C, built 2026-10-02), 8-year outcomes (OM, built 2026-10-02), Pell/race graduation (GR, built 2026-10-02), finances (DRVF), faculty (SAL,
     built 2026-10-02).
-  - [ ] **Per-college detail file** `data/detail/schools/{unitid}.json` (decided 2026-09-28: a new file, not the
+  - [x] **Per-college detail file** `data/detail/schools/{unitid}.json` (decided 2026-09-28: a new file, not the
     history shard) for large snapshot tables: majors, home states, earnings by major. Validation, lineage check,
-    Supabase `school_details` table + publish, fail-soft `getDetail()`. Built with whichever of majors or residence
-    ships first ([majors.md](data-expansion/majors.md#store-and-the-detail-file)).
+    Supabase `school_details` table + publish, fail-soft `getDetail()`. Built 2026-10-02 with residence (home states;
+    `lib/detail.ts`, [residence.md](data-expansion/residence.md#as-built)); majors and field of study add tables.
+    The migration `20261002120000_school_details.sql` must be applied before the next publish.
   - [ ] Wave 3: majors (completions); earnings by major (Scorecard Field of Study). Both use the detail file.
   - [ ] Wave 4, after the college-reported data agent: CDS high school GPA and admissions profile, class sizes,
     transfer admissions, next-year price and graduates' total debt.

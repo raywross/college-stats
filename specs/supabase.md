@@ -1,7 +1,8 @@
 # Supabase
 
 How the dataset moves from JSON files to a Supabase (PostgreSQL) database, and how development and production
-stay separate.
+stay separate. For whether this shape fits the whole roadmap, and the rules for user-data tables, see
+[database-architecture.md](database-architecture.md).
 
 ## Design: git is the source, Supabase serves it
 

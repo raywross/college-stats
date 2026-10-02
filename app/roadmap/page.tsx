@@ -74,7 +74,7 @@ export default function RoadmapPage() {
                   {group.title}
                 </h2>
                 <p className="mt-1 text-sm text-muted-foreground">{group.description}</p>
-                {group.key === "wave-2" && overview && (
+                {group.key === "wave-3" && overview && (
                   <Link
                     href={`/roadmap/${overview.slug}`}
                     className="mt-2 inline-flex items-center gap-1 text-sm font-semibold text-primary hover:underline"

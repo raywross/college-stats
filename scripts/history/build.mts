@@ -38,6 +38,7 @@ import {
 import { readSpec, type ColumnSpec, type Era, type FileChoice } from "./registry.mts";
 import { associationCode, footballConferenceCode, mainConferenceCode, rotcCode } from "../../lib/campus-services.ts";
 import { facultySalaryFrom, studentFacultyRatioFrom } from "../../lib/academics.ts";
+import { instructionSpending } from "../../lib/finances.ts";
 import { eightYearFrom } from "../../lib/outcome-measures.ts";
 import { aidGroupGradFrom, raceGradFrom } from "../../lib/graduation-groups.ts";
 import { residenceFrom } from "../../lib/residence.ts";
@@ -198,7 +199,7 @@ export function buildCollege(school: Pick<School, "unit_id" | "type"> & { locati
       if (loans !== undefined && loans !== null) put(raw, "federal_loan_rate", y - 1, round4(loans));
       // Instruction spending per student (specs/data-expansion/finances.md): key Y describes fiscal (Y-1)-Y, same
       // convention as the snapshot's DRVF{Y} fiscal_year (stored at its start, Y-1).
-      if (y >= FINANCE_FROM) put(raw, "instruction_per_student", y - 1, sc[`${y}.school.instructional_expenditure_per_fte`]);
+      if (y >= FINANCE_FROM) put(raw, "instruction_per_student", y - 1, instructionSpending(sc[`${y}.school.instructional_expenditure_per_fte`]));
     }
   }
 
@@ -595,6 +596,9 @@ export function lastPointMismatches(schools: readonly School[], histories: Reado
   // The school year Scorecard's current loan rate describes: the newest year any college's series reaches.
   const loanYears = [...histories.values()].flatMap((h) => (h.series.federal_loan_rate ? [lastYear(h.series.federal_loan_rate)] : []));
   const loanYear = loanYears.length ? Math.max(...loanYears) : null;
+  // The fall Scorecard's current full-time faculty share describes, for the same reason as loans.
+  const ftFacultyYears = [...histories.values()].flatMap((h) => (h.series.faculty_full_time_share ? [lastYear(h.series.faculty_full_time_share)] : []));
+  const ftFacultyYear = ftFacultyYears.length ? Math.max(...ftFacultyYears) : null;
   // The newest IC year history read for athletics and ROTC: what the snapshot's IC file describes.
   const servicesYears = [...histories.values()].flatMap((h) => (["athletic_association", "rotc"] as const).flatMap((k) => (h.series[k] ? [lastYear(h.series[k]!)] : [])));
   const servicesYear = servicesYears.length ? Math.max(...servicesYears) : null;
@@ -713,7 +717,10 @@ export function lastPointMismatches(schools: readonly School[], histories: Reado
       check("om_award_non_pell", om?.non_pell?.award, false, omYear);
     }
     if (salYear !== null) check("faculty_salary", s.academics?.faculty?.avg_salary_9mo, false, salYear);
-    if (h.series.faculty_full_time_share || s.academics?.faculty?.full_time_share != null) check("faculty_full_time_share", s.academics?.faculty?.full_time_share, true);
+    // At the newest year any college reports, like the loan rate: ~80 colleges reported a full-time share years ago and
+    // nothing since, so Scorecard's "latest" is empty for them while their history ends on an older year.
+    if (ftFacultyYear !== null && (h.series.faculty_full_time_share || s.academics?.faculty?.full_time_share != null))
+      check("faculty_full_time_share", s.academics?.faculty?.full_time_share, false, ftFacultyYear);
     if (efcYear !== null) {
       check("out_of_state_share", s.demographics.residence?.out_of_state, false, efcYear);
       check("international_share", s.demographics.residence?.international, false, efcYear);

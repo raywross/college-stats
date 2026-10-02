@@ -8,6 +8,7 @@ import { money, num, pct, pctSmart } from "./format";
 import { admitRatesBySex, satMedian, simpsonIndex, yieldOf } from "./derive";
 import { bedsPer100 } from "./housing";
 import { pellGap } from "./graduation-groups";
+import { endowmentOnForm, instructionOnForm } from "./finances";
 
 /* ------------------------------------------------------------------ */
 /* Derived values (null when the underlying data isn't reported)       */
@@ -620,7 +621,7 @@ export const METRICS: Record<MetricKey, MetricDef> = {
     short: "Instruction spending",
     term: "instruction-expenses",
     domain: "value",
-    get: (s) => (s.finances?.form === "gasb" ? s.finances.instruction_per_student : null),
+    get: (s) => instructionOnForm(s, "gasb"),
     format: money,
     more: "more on instruction per student",
     less: "less on instruction per student",
@@ -632,7 +633,7 @@ export const METRICS: Record<MetricKey, MetricDef> = {
     short: "Instruction spending",
     term: "instruction-expenses",
     domain: "value",
-    get: (s) => (s.finances?.form === "fasb" ? s.finances.instruction_per_student : null),
+    get: (s) => instructionOnForm(s, "fasb"),
     format: money,
     more: "more on instruction per student",
     less: "less on instruction per student",
@@ -644,7 +645,7 @@ export const METRICS: Record<MetricKey, MetricDef> = {
     short: "Instruction spending",
     term: "instruction-expenses",
     domain: "value",
-    get: (s) => (s.finances?.form === "forprofit" ? s.finances.instruction_per_student : null),
+    get: (s) => instructionOnForm(s, "forprofit"),
     format: money,
     more: "more on instruction per student",
     less: "less on instruction per student",
@@ -658,7 +659,7 @@ export const METRICS: Record<MetricKey, MetricDef> = {
     short: "Endowment/student",
     term: "endowment",
     domain: "value",
-    get: (s) => (s.finances?.form === "gasb" ? s.finances.endowment_per_student : null),
+    get: (s) => endowmentOnForm(s, "gasb"),
     format: money,
     more: "more endowment per student",
     less: "less endowment per student",
@@ -670,7 +671,7 @@ export const METRICS: Record<MetricKey, MetricDef> = {
     short: "Endowment/student",
     term: "endowment",
     domain: "value",
-    get: (s) => (s.finances?.form === "fasb" ? s.finances.endowment_per_student : null),
+    get: (s) => endowmentOnForm(s, "fasb"),
     format: money,
     more: "more endowment per student",
     less: "less endowment per student",

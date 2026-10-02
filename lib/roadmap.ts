@@ -13,15 +13,11 @@ export const COMPLEXITY: Record<Complexity, { label: string; description: string
   4: { label: "Extra large", description: "A new system with its own pipeline, checks, and a pilot before launch." },
 };
 
-// Wave 1 (data the site already downloads) was built on 2026-09-29; see /release-notes.
-export type RoadmapGroupKey = "wave-2" | "wave-3" | "college-reported" | "campus-life" | "national-trends" | "later";
+// Wave 1 (data the site already downloads) was built on 2026-09-29, and wave 2 (one new federal file each) on
+// 2026-10-02; see /release-notes. Metro area, deferred from wave 2, is under "later".
+export type RoadmapGroupKey = "wave-3" | "college-reported" | "campus-life" | "national-trends" | "later";
 
 export const ROADMAP_GROUPS: { key: RoadmapGroupKey; title: string; description: string }[] = [
-  {
-    key: "wave-2",
-    title: "Wave 2: one new federal file each",
-    description: "Each adds one NCES file to the data sync and a focused set of new facts on every college.",
-  },
   {
     key: "wave-3",
     title: "Wave 3: majors and earnings by major",

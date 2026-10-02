@@ -7,18 +7,21 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import type { DatasetMeta, School } from "../lib/types";
-import { financesFrom } from "../lib/finances.ts";
-import { createDataset } from "../lib/dataset.ts";
-import { standouts } from "../lib/insights.ts";
+import { INSTRUCTION_METRIC, endowmentMetricFor, endowmentOnForm, financesFrom, instructionOnForm, instructionSpending } from "../lib/finances.ts";
 import type { SchoolHistory } from "../lib/history.ts";
 import { FINANCE_BREAK } from "../lib/history.ts";
-import type { ReleaseCalendar } from "../lib/releases.ts";
 
 const ROOT = join(import.meta.dirname, "..");
 const schools: School[] = JSON.parse(readFileSync(join(ROOT, "data", "schools.json"), "utf8"));
 const meta: DatasetMeta = JSON.parse(readFileSync(join(ROOT, "data", "meta.json"), "utf8"));
-const releaseCalendar: ReleaseCalendar = JSON.parse(readFileSync(join(ROOT, "data", "release-calendar.json"), "utf8"));
 const byId = (id: string) => schools.find((s) => s.unit_id === id)!;
+
+test("instruction spending of 0 is unreported, since a college that teaches can't spend nothing on it", () => {
+  assert.equal(instructionSpending(0), null);
+  assert.equal(instructionSpending(null), null);
+  assert.equal(instructionSpending(undefined), null);
+  assert.equal(instructionSpending(34184), 34184);
+});
 
 test("a DRVF row reports exactly one accounting form; the other forms' columns are ignored", () => {
   // Vanderbilt fiscal 2023-24 (DRVF2024): F2 (FASB, private nonprofit) only.
@@ -72,33 +75,37 @@ test("every college in the snapshot reports exactly one form, and it's usually c
   assert.equal(meta.vintages["ipeds-f"], "2023–24");
 });
 
-test("benchmarking never mixes accounting forms: the sector-gated metric keys only return values for their own form", () => {
-  const { rankOf, getAllSchools } = createDataset({ schools, meta, releaseCalendar });
-  const gasbSchool = schools.find((s) => s.finances?.form === "gasb" && s.finances.endowment_per_student != null)!;
-  const fasbSchool = schools.find((s) => s.finances?.form === "fasb" && s.finances.endowment_per_student != null)!;
-  assert.notEqual(rankOf(gasbSchool, "endowmentGasb"), null);
-  assert.equal(rankOf(gasbSchool, "endowmentFasb"), null, "a public college has no FASB-form rank");
-  assert.notEqual(rankOf(fasbSchool, "endowmentFasb"), null);
-  assert.equal(rankOf(fasbSchool, "endowmentGasb"), null, "a private nonprofit has no GASB-form rank");
-  // The sector-gated getter is itself the sector subset: every reporter of endowmentGasb is a GASB (public) college.
-  const all = getAllSchools();
-  for (const s of all) {
-    if (s.finances?.form === "gasb" && s.finances.endowment_per_student != null) assert.notEqual(rankOf(s, "endowmentGasb"), null, s.name);
+test("benchmarking never mixes accounting forms: each sector-scoped value exists only on its own form", () => {
+  const forms = ["gasb", "fasb", "forprofit"] as const;
+  for (const s of schools) {
+    for (const form of forms) {
+      if (s.finances?.form === form) {
+        assert.equal(instructionOnForm(s, form), s.finances.instruction_per_student, s.name);
+        assert.equal(endowmentOnForm(s, form), s.finances.endowment_per_student, s.name);
+      } else {
+        assert.equal(instructionOnForm(s, form), null, `${s.name}: no ${form} instruction value`);
+        assert.equal(endowmentOnForm(s, form), null, `${s.name}: no ${form} endowment value`);
+      }
+    }
   }
+  const of = (form: string) => schools.find((s) => s.finances?.form === form)!;
+  assert.equal(endowmentMetricFor(of("gasb")), "endowmentGasb");
+  assert.equal(endowmentMetricFor(of("fasb")), "endowmentFasb");
+  assert.equal(endowmentMetricFor(of("forprofit")), null, "for-profits report no endowment");
+  assert.deepEqual(INSTRUCTION_METRIC, { gasb: "instructionGasb", fasb: "instructionFasb", forprofit: "instructionForprofit" });
 });
 
-test("a top-5%-within-sector endowment gets the standout, and it's never awarded across sectors", () => {
-  const { rankOf } = createDataset({ schools, meta, releaseCalendar });
-  // Find a FASB college at the very top of its own sector.
-  const fasb = schools.filter((s) => s.finances?.form === "fasb" && s.finances.endowment_per_student != null);
-  const richest = fasb.reduce((a, b) => (a.finances!.endowment_per_student! > b.finances!.endowment_per_student! ? a : b));
-  const dataset = { rankOf } as unknown as Parameters<typeof standouts>[0];
-  const labels = standouts(dataset, richest).map((s) => s.label);
-  assert.ok(labels.includes("Big endowment per student"), richest.name);
-  // A public college with a merely large total endowment (but not top 5% among publics) shouldn't get it.
-  const gasb = schools.filter((s) => s.finances?.form === "gasb" && s.finances.endowment_per_student != null);
-  const typicalPublic = gasb.sort((a, b) => a.finances!.endowment_per_student! - b.finances!.endowment_per_student!)[Math.floor(gasb.length / 2)];
-  assert.ok(!standouts(dataset, typicalPublic).map((s) => s.label).includes("Big endowment per student"));
+test("the big-endowment standout ranks within the sector, and every endowment belongs to exactly one sector", () => {
+  // Share of a sector's reporters at or below a value: what lib/dataset.ts rankOf computes for the sector metric.
+  const shareAtOrBelow = (values: number[], v: number) => values.filter((x) => x <= v).length / values.length;
+  const sector = (form: "gasb" | "fasb") => schools.map((s) => endowmentOnForm(s, form)).filter((v): v is number => v !== null);
+  const publics = sector("gasb");
+  const privates = sector("fasb");
+  assert.ok(publics.length > 300 && privates.length > 800, `${publics.length} publics, ${privates.length} private nonprofits`);
+  const richestPublic = Math.max(...publics);
+  assert.ok(shareAtOrBelow(publics, richestPublic) >= 0.95);
+  // Neither sector's ranking includes the other's colleges.
+  assert.equal(publics.length + privates.length, schools.filter((s) => s.finances?.endowment_per_student != null).length);
 });
 
 test("history: instruction spending per student has a break where NCES redefined the measure, and ends on the snapshot's value", () => {

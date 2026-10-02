@@ -81,7 +81,7 @@ import { HeadlineDelta } from "@/components/history/HeadlineDelta";
 import { TrendIndicatorStrip } from "@/components/trends/TrendIndicators";
 import { HistorySourceNote } from "@/components/sources/HistorySourceNote";
 import { historyYearLabel, lastYear, type NationalHistory, type SeriesKey } from "@/lib/history";
-import { FORM_LABELS } from "@/lib/finances";
+import { FORM_LABELS, INSTRUCTION_METRIC, endowmentMetricFor } from "@/lib/finances";
 
 /** Series each "Over time" group shows; they drive the group's source footnote. */
 const HISTORY_GROUPS = {
@@ -354,8 +354,8 @@ export default async function SchoolPage({ params }: Props) {
   // publics against private nonprofits. financesFasb === "fasb" ? endowmentFasb : endowmentGasb, same for instruction.
   const finances = school.finances ?? null;
   const financeForm = finances?.form ?? null;
-  const instructionKey = financeForm === "gasb" ? "instructionGasb" : financeForm === "fasb" ? "instructionFasb" : financeForm === "forprofit" ? "instructionForprofit" : null;
-  const endowmentKey = financeForm === "gasb" ? "endowmentGasb" : financeForm === "fasb" ? "endowmentFasb" : null;
+  const instructionKey = financeForm ? INSTRUCTION_METRIC[financeForm] : null;
+  const endowmentKey = endowmentMetricFor(school);
   const instructionRank = instructionKey ? rankOf(school, instructionKey) : null;
   const endowmentRank = endowmentKey && finances?.endowment_per_student != null ? rankOf(school, endowmentKey) : null;
   const faculty = school.academics?.faculty ?? null;

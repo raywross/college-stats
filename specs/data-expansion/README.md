@@ -35,6 +35,8 @@ Each spec here is a separate unit of work, so pieces can ship when they're usefu
 | [graduation-by-group.md](graduation-by-group.md) | **Built.** Graduation rates for Pell recipients and by race/ethnicity | IPEDS GR (Pell/SSL file) + Scorecard |
 | [finances.md](finances.md) | **Built.** Endowment per student, instruction spending per student | IPEDS F / DRVF (+ Scorecard) |
 | [faculty.md](faculty.md) | **Built.** Average faculty salary, share of full-time faculty | IPEDS SAL (+ Scorecard) |
+| [time-to-degree.md](time-to-degree.md) | **Built.** Share finishing within 4, 6, and 8 years, for every entering group | IPEDS OM (already read) |
+| [transfers.md](transfers.md) | **Built.** New transfer students every fall, and how many of an entering class went on to another college | IPEDS EF part A + OM |
 
 ### Wave 3: large per-college tables
 | Spec | Adds | Source |

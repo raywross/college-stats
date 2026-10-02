@@ -16,6 +16,8 @@
     "application_fee": {"start":2003,"values":[25,25,25,25,25,25,25,25,25,25,25,25,25,25,50,50,50,50,50,50,50]},
     "tuition_guarantee": {"start":2008,"values":[2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2]},
     "student_faculty_ratio": {"start":2009,"values":[6,6,7,7,7,7,7,7,7,7,7,7,7,7,7,6]},
+    "faculty_full_time_share": {"start":2005,"values":[0.1852,0.1905,0.3125,0.375,0.3077,0.25]},
+    "faculty_salary": {"start":2016,"values":[6600,4500,4500,4838,6675,12150,9000,10538,12210]},
     "out_of_state_share": {"start":2004,"values":[0,null,0,null,0,null,0,null,0,null,0,null,0,null,0,null,0,null,0,null,0]},
     "international_share": {"start":2004,"values":[0,null,0,null,0,null,0,null,0,null,0,null,0,null,0,null,0,null,0,null,0]},
     "athletic_association": {"start":2014,"values":[3,3,3,3,3,3,3,3,3,3,3,3]},
@@ -51,6 +53,15 @@
     "om_award": {"start":2009,"values":[0.0783,0.1068,0.4242,null,0.2692]},
     "om_transfer": {"start":2009,"values":[0.0964,0.0055,0,null,0.1538]},
     "om_award_pell": {"start":2009,"values":[0.0462,0.0942,null,null,0.1333]},
-    "om_award_non_pell": {"start":2009,"values":[0.099,0.1268,null,null,0.3542]}
+    "om_award_non_pell": {"start":2009,"values":[0.099,0.1268,null,null,0.3542]},
+    "grad_cohort_pell": {"start":2010,"values":[0,5,0,6,1,0,2,2,0]},
+    "grad_cohort_no_pell_no_loan": {"start":2010,"values":[5,7,4,1,1,1,0,3,3]},
+    "grad_cohort_white": {"start":2005,"values":[2,2,1,5,3,3,6,4,7,2,1,2,3,1]},
+    "grad_cohort_asian": {"start":2005,"values":[0,0,0,0,0,0,5,0,0,0,1,0,1,0]},
+    "grad_cohort_hispanic": {"start":2005,"values":[1,0,0,0,0,2,0,0,0,2,0,0,0,2]},
+    "grad_cohort_black": {"start":2005,"values":[0,0,0,1,0,0,0,0,2,0,0,1,1,0]},
+    "grad_cohort_two_or_more": {"start":2005,"values":[0,0,0,0,0,0,0,0,0,0,0,0,1,0]},
+    "grad_cohort_international": {"start":2005,"values":[0,0,0,0,0,0,0,0,0,0,0,0,0,0]},
+    "instruction_per_student": {"start":2004,"values":[2496,1822,1231,2108,2254,1367,1914,2574,2393,2406,3077,4035,4932,5664,6767,5739,5882,7509,5454,5685]}
   }
 }

@@ -31,6 +31,7 @@
     "grad_cohort_hispanic": {"start":2017,"values":[18,15]},
     "grad_cohort_black": {"start":2017,"values":[0,0]},
     "grad_cohort_two_or_more": {"start":2017,"values":[0,0]},
-    "grad_cohort_international": {"start":2017,"values":[0,0]}
+    "grad_cohort_international": {"start":2017,"values":[0,0]},
+    "instruction_per_student": {"start":2022,"values":[14182,6736]}
   }
 }

@@ -18,6 +18,8 @@
     "live_on": {"start":2004,"values":[2,2,2,2,null,null,null,null,null,null,null,null,null,null,2,2,2,2,2,2]},
     "tuition_guarantee": {"start":2008,"values":[2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2]},
     "student_faculty_ratio": {"start":2009,"values":[8,8,8,8,12,12,12,12,11,15,22,13,5,5,5,9]},
+    "faculty_full_time_share": {"start":2005,"values":[1,1,0.1364,0.1429,0.1429,1]},
+    "faculty_salary": {"start":2017,"values":[21000,23000,17250,11250,24500,21250,20625,22500]},
     "out_of_state_share": {"start":2004,"values":[0,null,0,null,null,null,0,null,0,null,0,null,0,null,0.3125,null,0.5294,null,0.1667,null,0.125]},
     "international_share": {"start":2004,"values":[0,null,0,null,null,null,0,null,0,null,0,null,0,null,0,null,0,null,0,null,0]},
     "athletic_association": {"start":2014,"values":[3,3,3,3,3,3,3,3,3,3,3,3]},
@@ -43,6 +45,15 @@
     "federal_loan_rate": {"start":2008,"values":[1,0.9048,0.9444,0.8462,1,0.8333,0.9444,0.871,0.875,1,0.9231,0.82,0.9688,1,0.8723,0.6296]},
     "om_award": {"start":2011,"values":[1,0.898]},
     "om_transfer": {"start":2011,"values":[0,0.0816]},
-    "om_award_pell": {"start":2011,"values":[1]}
+    "om_award_pell": {"start":2011,"values":[1]},
+    "grad_cohort_pell": {"start":2010,"values":[9,19,1,2,2,null,null,7,10]},
+    "grad_cohort_no_pell_no_loan": {"start":2010,"values":[0,0,2,0,0,null,null,0,1]},
+    "grad_cohort_white": {"start":2005,"values":[0,0,null,0,0,0,0,0,0,0,null,null,0,0]},
+    "grad_cohort_asian": {"start":2005,"values":[0,0,null,0,0,0,0,1,1,0,null,null,0,0]},
+    "grad_cohort_hispanic": {"start":2005,"values":[0,0,null,0,0,0,0,0,0,0,null,null,1,0]},
+    "grad_cohort_black": {"start":2005,"values":[0,5,null,1,4,9,19,2,1,2,null,null,6,13]},
+    "grad_cohort_two_or_more": {"start":2005,"values":[0,0,null,0,0,0,0,0,0,0,null,null,0,0]},
+    "grad_cohort_international": {"start":2005,"values":[1,0,null,0,0,0,0,0,0,0,null,null,0,0]},
+    "instruction_per_student": {"start":2004,"values":[9369,7110,9404,4793,3967,2945,2030,1897,2560,2234,1578,1266,1575,1414,1378,1395,1646,2848,2591,2937]}
   }
 }

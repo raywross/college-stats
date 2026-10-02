@@ -20,6 +20,7 @@
     "live_on": {"start":2021,"values":[2,2,2]},
     "tuition_guarantee": {"start":2021,"values":[2,2,2]},
     "student_faculty_ratio": {"start":2021,"values":[2,2,3,3]},
+    "faculty_salary": {"start":2021,"values":[30643,34250,32670,50400]},
     "out_of_state_share": {"start":2022,"values":[0,null,0]},
     "international_share": {"start":2022,"values":[0,null,0]},
     "athletic_association": {"start":2021,"values":[3,3,3,3,3]},
@@ -61,6 +62,7 @@
     "grad_cohort_hispanic": {"start":2018,"values":[0]},
     "grad_cohort_black": {"start":2018,"values":[0]},
     "grad_cohort_two_or_more": {"start":2018,"values":[0]},
-    "grad_cohort_international": {"start":2018,"values":[0]}
+    "grad_cohort_international": {"start":2018,"values":[0]},
+    "instruction_per_student": {"start":2020,"values":[20734,34202,18943,16553]}
   }
 }

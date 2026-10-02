@@ -9,6 +9,7 @@
     "application_fee": {"start":2003,"values":[15,15,15,15,15,15,50,25,0,0,null,0,0,0,130,100,100,100,100,100,100]},
     "tuition_guarantee": {"start":2008,"values":[2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2]},
     "student_faculty_ratio": {"start":2009,"values":[7,11,10,9,12,13,12,12,14,8,10,11,11,13,9,11]},
+    "faculty_full_time_share": {"start":2005,"values":[0.0833,1,0.1,0,null,null,0,0.25,1,1,1,null,null,null,null,null,null,null,1]},
     "out_of_state_share": {"start":2004,"values":[0,null,0,null,0,null,0,null,0,null,0.75,null,0.2222,null,0,null,0.3333,null,0.4051,null,0.8125]},
     "international_share": {"start":2004,"values":[0,null,0,null,0,null,0,null,0,null,0,null,0,null,0,null,0,null,0,null,0]},
     "athletic_association": {"start":2014,"values":[3,3,3,3,3,3,3,3,3,3,3,3]},
@@ -36,6 +37,7 @@
     "grad_cohort_hispanic": {"start":2005,"values":[1,0,null,2,0,0,0,1,0,0,0,4,0,0]},
     "grad_cohort_black": {"start":2005,"values":[8,4,null,7,3,0,1,3,1,0,1,2,0,0]},
     "grad_cohort_two_or_more": {"start":2005,"values":[0,0,null,0,0,0,0,1,1,0,0,0,0,0]},
-    "grad_cohort_international": {"start":2005,"values":[0,0,null,0,0,0,0,0,0,3,2,1,9,4]}
+    "grad_cohort_international": {"start":2005,"values":[0,0,null,0,0,0,0,0,0,3,2,1,9,4]},
+    "instruction_per_student": {"start":2004,"values":[3451,3089,3735,1577,5074,2258,4204,4476,16195,7202,13324,4565,7626,13052,4476,3690,2468,3464,2754,2823]}
   }
 }

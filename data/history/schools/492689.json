@@ -4,6 +4,8 @@
     "application_fee": {"start":2018,"values":[75,75,75,75,75,75]},
     "tuition_guarantee": {"start":2018,"values":[2,2,2,2,2,2]},
     "student_faculty_ratio": {"start":2018,"values":[13,12,9,8,13,9,12]},
+    "faculty_full_time_share": {"start":2018,"values":[0.926,0.8065,0.3585,0.6111,0.8654,0.7903,0.7794]},
+    "faculty_salary": {"start":2018,"values":[165539,93236,77815,102003,103557,107344,104180]},
     "athletic_association": {"start":2018,"values":[3,3,3,3,3,3,3,3]},
     "rotc": {"start":2018,"values":[2,2,2,2,2,2,2,2]},
     "promise": {"start":2022,"values":[2,2]},
@@ -22,6 +24,7 @@
     "om_award": {"start":2011,"values":[0.9857,0.9683,0.8833,0.8804,0.9043,0.898]},
     "om_transfer": {"start":2011,"values":[0,0,0,0,0,0]},
     "om_award_pell": {"start":2014,"values":[0.9556,0.9434,0.8906]},
-    "om_award_non_pell": {"start":2011,"values":[1,0.9767,0.9032,0.8085,0.871,0.9036]}
+    "om_award_non_pell": {"start":2011,"values":[1,0.9767,0.9032,0.8085,0.871,0.9036]},
+    "instruction_per_student": {"start":2017,"values":[153080,125963,125081,127711,136573,143347,136751]}
   }
 }

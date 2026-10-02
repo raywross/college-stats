@@ -15,6 +15,8 @@
     "live_on": {"start":2023,"values":[2]},
     "tuition_guarantee": {"start":2023,"values":[2]},
     "student_faculty_ratio": {"start":2023,"values":[4,5]},
+    "faculty_full_time_share": {"start":2023,"values":[0.6875,0.6667]},
+    "faculty_salary": {"start":2023,"values":[19835,25148]},
     "out_of_state_share": {"start":2024,"values":[0.0323]},
     "international_share": {"start":2024,"values":[0]},
     "athletic_association": {"start":2023,"values":[3,3,3]},
@@ -44,6 +46,7 @@
     "grad_cohort_hispanic": {"start":2017,"values":[0,0]},
     "grad_cohort_black": {"start":2017,"values":[0,0]},
     "grad_cohort_two_or_more": {"start":2017,"values":[0,0]},
-    "grad_cohort_international": {"start":2017,"values":[0,0]}
+    "grad_cohort_international": {"start":2017,"values":[0,0]},
+    "instruction_per_student": {"start":2022,"values":[12531,9429]}
   }
 }

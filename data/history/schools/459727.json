@@ -16,6 +16,8 @@
     "application_fee": {"start":2010,"values":[50,50,50,50,0,0,0,0,0,0,0,0,0,0]},
     "tuition_guarantee": {"start":2010,"values":[2,2,2,2,2,2,2,2,2,2,2,2,2,2]},
     "student_faculty_ratio": {"start":2010,"values":[8,12,8,3,8,13,11,11,9,11,10,9,8,11,10]},
+    "faculty_full_time_share": {"start":2010,"values":[0.25,0.3077,0.4063,0.2143,0.0909,0.0783,0.1111,0.1111,0.1062,0.0965,0.1032,0.0963,0.0733,0.0643,0.096]},
+    "faculty_salary": {"start":2016,"values":[57923,49119,52031,52340,53988,58870,58469,65769,62440]},
     "out_of_state_share": {"start":2010,"values":[0,null,0,null,0.7692,null,0.5588,null,0.4839,null,0.5405,null,0.2941,null,0.75]},
     "international_share": {"start":2010,"values":[0,null,0,null,0,null,0,null,0,null,0,null,0,null,0]},
     "athletic_association": {"start":2014,"values":[3,3,3,3,3,3,3,3,3,3,3,3]},
@@ -51,6 +53,15 @@
     "om_award": {"start":2010,"values":[0.5526,null,null,0.4107,0.4929,0.4587,0.5391]},
     "om_transfer": {"start":2010,"values":[0.0526,null,null,0.0298,0.019,0.017,0.0195]},
     "om_award_pell": {"start":2013,"values":[0.4898,0.3947,0.5811,0.5534]},
-    "om_award_non_pell": {"start":2013,"values":[0.3782,0.5481,0.3902,0.5294]}
+    "om_award_non_pell": {"start":2013,"values":[0.3782,0.5481,0.3902,0.5294]},
+    "grad_cohort_pell": {"start":2010,"values":[7,3,4,3,2,8,11,17,16]},
+    "grad_cohort_no_pell_no_loan": {"start":2010,"values":[2,2,1,1,1,6,5,6,4]},
+    "grad_cohort_white": {"start":2005,"values":[4,5,null,null,null,9,5,6,3,1,12,15,17,12]},
+    "grad_cohort_asian": {"start":2005,"values":[0,0,null,null,null,0,0,0,0,0,0,0,0,0]},
+    "grad_cohort_hispanic": {"start":2005,"values":[0,0,null,null,null,0,0,0,0,1,0,1,1,1]},
+    "grad_cohort_black": {"start":2005,"values":[0,0,null,null,null,0,0,0,0,0,1,0,1,5]},
+    "grad_cohort_two_or_more": {"start":2005,"values":[0,0,null,null,null,0,0,0,0,1,0,0,1,2]},
+    "grad_cohort_international": {"start":2005,"values":[0,0,null,null,null,0,0,0,1,0,1,0,0,0]},
+    "instruction_per_student": {"start":2009,"values":[7334,6697,6524,5384,4107,4178,2807,4322,4643,3551,3067,2808,2913,2938,2918]}
   }
 }

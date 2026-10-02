@@ -21,6 +21,7 @@
     "live_on": {"start":2019,"values":[1,1,1,1,1]},
     "tuition_guarantee": {"start":2019,"values":[2,2,2,2,2]},
     "student_faculty_ratio": {"start":2019,"values":[30,17,18,13,29,32]},
+    "faculty_salary": {"start":2019,"values":[68250,56700,null,null,58500,60000]},
     "out_of_state_share": {"start":2020,"values":[0.75,null,0.7778,null,0.8571]},
     "international_share": {"start":2020,"values":[0,null,0,null,0.1429]},
     "athletic_association": {"start":2019,"values":[3,3,3,3,3,3,3]},
@@ -62,6 +63,7 @@
     "grad_cohort_hispanic": {"start":2014,"values":[0,0,0,0,0]},
     "grad_cohort_black": {"start":2014,"values":[0,0,0,0,0]},
     "grad_cohort_two_or_more": {"start":2014,"values":[0,0,0,0,0]},
-    "grad_cohort_international": {"start":2014,"values":[0,0,0,0,0]}
+    "grad_cohort_international": {"start":2014,"values":[0,0,0,0,0]},
+    "instruction_per_student": {"start":2018,"values":[2218,4886,3611,4645,4427,3410]}
   }
 }

@@ -21,6 +21,8 @@
     "live_on": {"start":2004,"values":[2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2]},
     "tuition_guarantee": {"start":2008,"values":[2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2]},
     "student_faculty_ratio": {"start":2009,"values":[5,5,7,7,7,7,6,6,6,6,4,6,6,9,5,5]},
+    "faculty_full_time_share": {"start":2005,"values":[1,1,1,1,1,1]},
+    "faculty_salary": {"start":2016,"values":[33139,41243,34579,31813,34681,20388,19368,17973,43620]},
     "out_of_state_share": {"start":2004,"values":[0.5556,null,0.375,null,0.5769,null,0.4444,null,0.5556,null,0.4348,null,0.2105,null,0.4667,null,0.5714,null,0.6,null,0.9333]},
     "international_share": {"start":2004,"values":[0,null,0,null,0.0769,null,0.0556,null,0,null,0,null,0.0526,null,0.1333,null,0,null,0,null,0]},
     "athletic_association": {"start":2014,"values":[3,3,3,3,3,3,3,3,3,3,3,3]},
@@ -59,6 +61,15 @@
     "grad_rate": {"start":1994,"values":[0,null,0.15,0.15,0.2778,0.1667,0.2,1,0.1667,0.75,0.2778,0.75,0.125,0.5385,0.1923,0.2273,0.2222,0.2,0,0.5,0.087,0.1053,0.1053,0.1667,0.0667]},
     "federal_loan_rate": {"start":2008,"values":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},
     "om_award": {"start":2012,"values":[0.0962]},
-    "om_transfer": {"start":2012,"values":[0]}
+    "om_transfer": {"start":2012,"values":[0]},
+    "grad_cohort_pell": {"start":2010,"values":[12,9,10,8,12,10,10,5,8]},
+    "grad_cohort_no_pell_no_loan": {"start":2010,"values":[6,6,8,4,11,9,9,7,7]},
+    "grad_cohort_white": {"start":2005,"values":[10,24,13,25,21,18,15,18,12,23,19,19,12,14]},
+    "grad_cohort_asian": {"start":2005,"values":[0,0,0,0,0,0,0,0,0,0,0,0,0,0]},
+    "grad_cohort_hispanic": {"start":2005,"values":[0,0,0,0,0,0,0,0,0,0,0,0,0,0]},
+    "grad_cohort_black": {"start":2005,"values":[0,0,0,0,0,0,0,0,0,0,0,0,0,0]},
+    "grad_cohort_two_or_more": {"start":2005,"values":[0,0,0,0,0,0,0,0,0,0,0,0,0,0]},
+    "grad_cohort_international": {"start":2005,"values":[2,0,0,1,1,0,0,0,0,0,0,0,0,1]},
+    "instruction_per_student": {"start":2004,"values":[19838,17845,15680,18982,20035,25611,23917,24343,22217,25582,25780,30692,26925,32623,34631,38397,40320,35570,35228,39905]}
   }
 }

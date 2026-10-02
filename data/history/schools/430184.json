@@ -12,6 +12,8 @@
     "application_fee": {"start":2001,"values":[35,35,35,null,null,null,null,null,null,50,50,50,50,50,50,0,0,0,0,0,0,0,0]},
     "tuition_guarantee": {"start":2010,"values":[2,2,2,2,2,2,2,2,2,2,2,2,2,2]},
     "student_faculty_ratio": {"start":2010,"values":[30,26,20,19,24,27,34,34,40,56,28,27,41,51,47]},
+    "faculty_full_time_share": {"start":2010,"values":[1,0.125,0.0971,0.1183,0.1168,0.125,0.1442,0.1277,0.1176,0.0794,0.1163,0.16,0.2,0.1923,0.1481]},
+    "faculty_salary": {"start":2016,"values":[62309,63454,64712,71435]},
     "out_of_state_share": {"start":2010,"values":[0.0537,null,0.062,null,0.0283,null,0.05,null,0.1131,null,0.1138,null,0.15,null,0.037]},
     "international_share": {"start":2010,"values":[0,null,0,null,0.0035,null,0,null,0,null,0,null,0,null,0]},
     "athletic_association": {"start":2014,"values":[3,3,3,3,3,3,3,3,3,3,3,3]},
@@ -38,6 +40,15 @@
     "om_award": {"start":2009,"values":[0.1952,0.2095,0.1498,0.176,0.2424,0.2398,0.2714,0.225]},
     "om_transfer": {"start":2009,"values":[0.3101,0.2731,0.094,0.3363,0.3179,0.3226,0.2856,0.323]},
     "om_award_pell": {"start":2009,"values":[0.0217,0.1675,0.1493,0.1444,0.2039,0.2261,0.2804,0.2372]},
-    "om_award_non_pell": {"start":2009,"values":[0.2034,0.2441,0.1501,0.2142,0.2867,0.2541,0.2628,0.2129]}
+    "om_award_non_pell": {"start":2009,"values":[0.2034,0.2441,0.1501,0.2142,0.2867,0.2541,0.2628,0.2129]},
+    "grad_cohort_pell": {"start":2010,"values":[0,1,2,2,2,2,5,0,4]},
+    "grad_cohort_no_pell_no_loan": {"start":2010,"values":[8,17,5,8,2,8,4,3,4]},
+    "grad_cohort_white": {"start":2005,"values":[3,4,6,3,1,1,0,1,2,1,1,2,1,3]},
+    "grad_cohort_asian": {"start":2005,"values":[2,3,3,2,0,0,0,0,0,0,0,0,1,0]},
+    "grad_cohort_hispanic": {"start":2005,"values":[0,0,1,0,0,0,0,0,0,0,0,0,0,0]},
+    "grad_cohort_black": {"start":2005,"values":[18,13,10,6,9,5,12,7,6,2,6,8,1,4]},
+    "grad_cohort_two_or_more": {"start":2005,"values":[0,0,0,1,0,0,1,0,1,0,0,0,0,0]},
+    "grad_cohort_international": {"start":2005,"values":[0,0,5,5,7,2,6,0,1,1,2,3,0,0]},
+    "instruction_per_student": {"start":2009,"values":[945,1651,1642,2004,2466,2026,2035,1731,2134,2089,1669,1619,1864,1954,1997]}
   }
 }

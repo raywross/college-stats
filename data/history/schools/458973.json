@@ -9,6 +9,8 @@
     "application_fee": {"start":2010,"values":[50,50,50,50,50,50,0,0,0,0,0,0,0,0]},
     "tuition_guarantee": {"start":2010,"values":[2,2,2,2,2,2,2,2,2,2,2,2,2,2]},
     "student_faculty_ratio": {"start":2010,"values":[6,12,11,12,16,18,27,27,37,44,28,27,41,51,47]},
+    "faculty_full_time_share": {"start":2010,"values":[0.234,0.0824,0.048,0.0794,0.0873,0.0885,0.093,0.0737,0.0519,0.038,0.1167,0.1591,0.2115,0.1795,0.1463]},
+    "faculty_salary": {"start":2016,"values":[63447,65463,67655,64477]},
     "out_of_state_share": {"start":2010,"values":[0.0288,null,0.0118,null,0.0045,null,0.01,null,0.0102,null,0.0383,null,0.0192,null,0.0244]},
     "international_share": {"start":2010,"values":[0,null,0,null,0,null,0,null,0,null,0,null,0,null,0]},
     "athletic_association": {"start":2014,"values":[3,3,3,3,3,3,3,3,3,3,3,3]},
@@ -34,6 +36,15 @@
     "om_award": {"start":2010,"values":[0.1384,0.1134,0.1386,0.1834,0.1975,0.2013,0.1643]},
     "om_transfer": {"start":2010,"values":[0.3542,0.1054,0.3761,0.3637,0.3545,0.3337,0.3379]},
     "om_award_pell": {"start":2010,"values":[0.0978,0.0884,0.1123,0.1602,0.1827,0.189,0.1794]},
-    "om_award_non_pell": {"start":2010,"values":[0.2174,0.1567,0.2056,0.2235,0.2198,0.2169,0.1452]}
+    "om_award_non_pell": {"start":2010,"values":[0.2174,0.1567,0.2056,0.2235,0.2198,0.2169,0.1452]},
+    "grad_cohort_pell": {"start":2011,"values":[0,2,0,4,2,3,1,2]},
+    "grad_cohort_no_pell_no_loan": {"start":2011,"values":[1,0,2,2,7,6,3,2]},
+    "grad_cohort_white": {"start":2011,"values":[1,0,1,2,1,4,1,1]},
+    "grad_cohort_asian": {"start":2011,"values":[0,0,0,0,0,0,0,1]},
+    "grad_cohort_hispanic": {"start":2011,"values":[0,1,0,1,2,3,0,0]},
+    "grad_cohort_black": {"start":2011,"values":[0,1,2,3,5,0,2,1]},
+    "grad_cohort_two_or_more": {"start":2011,"values":[0,0,0,0,0,1,0,1]},
+    "grad_cohort_international": {"start":2011,"values":[0,0,0,0,1,1,1,0]},
+    "instruction_per_student": {"start":2010,"values":[669,1546,1739,2552,2523,2588,1859,2020,1724,1261,1731,2133,2000,1397]}
   }
 }

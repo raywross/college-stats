@@ -22,6 +22,8 @@
     "live_on": {"start":2013,"values":[2,2,2,2,2,2,2,2,2,2,2]},
     "tuition_guarantee": {"start":2013,"values":[2,2,2,2,2,2,1,1,1,1,2]},
     "student_faculty_ratio": {"start":2013,"values":[7,7,7,6,4,4,4,7,7,6,6,6]},
+    "faculty_full_time_share": {"start":2015,"values":[1,1,1,1,1,0.9524,0.8077,0.8889,1,0.9524]},
+    "faculty_salary": {"start":2016,"values":[42921,41891,56291,58609,58507,60069,61138,60712,57949]},
     "out_of_state_share": {"start":2014,"values":[0.7797,null,0.4194,null,0.6765,null,0.3864,null,0.4516,null,0.4706]},
     "international_share": {"start":2014,"values":[0,null,0,null,0,null,0,null,0,null,0]},
     "athletic_association": {"start":2014,"values":[3,3,3,3,3,3,3,3,3,3,3,3]},
@@ -66,6 +68,17 @@
     "federal_loan_rate": {"start":2014,"values":[0,0.3271,0.3687,0.4662,0.7353,0.8105,0.8103,0.7895,0.7165,0.6984]},
     "om_award": {"start":2011,"values":[0.5714,0.7083,0.7526,0.662,0.3333,0.2439]},
     "om_transfer": {"start":2011,"values":[0.2857,0.1528,0.1237,0.1972,0.3333,0]},
-    "om_award_non_pell": {"start":2011,"values":[0.5714,0.7083,0.7526,0.662,0.3415]}
+    "om_award_non_pell": {"start":2011,"values":[0.5714,0.7083,0.7526,0.662,0.3415]},
+    "grad_rate_no_pell_no_loan": {"start":2012,"values":[0.6604,0.7791,0.661]},
+    "grad_cohort_pell": {"start":2011,"values":[0,0,0,0,22,18,14,22]},
+    "grad_cohort_no_pell_no_loan": {"start":2011,"values":[18,53,86,59,21,7,3,6]},
+    "grad_rate_white": {"start":2012,"values":[0.7,0.7937,0.7188,0.2857]},
+    "grad_cohort_white": {"start":2011,"values":[14,30,63,32,35,16,11,18]},
+    "grad_cohort_asian": {"start":2011,"values":[0,4,2,3,2,3,0,0]},
+    "grad_cohort_hispanic": {"start":2011,"values":[0,2,5,8,13,4,2,8]},
+    "grad_cohort_black": {"start":2011,"values":[2,6,3,6,3,5,2,4]},
+    "grad_cohort_two_or_more": {"start":2011,"values":[1,4,5,7,2,3,3,1]},
+    "grad_cohort_international": {"start":2011,"values":[0,0,0,0,0,0,0,0]},
+    "instruction_per_student": {"start":2014,"values":[15687,10362,13636,19593,21339,20364,17149,16135,17276,11323]}
   }
 }

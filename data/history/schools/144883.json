@@ -22,6 +22,8 @@
     "live_on": {"start":2013,"values":[2,2,2]},
     "tuition_guarantee": {"start":2008,"values":[2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2]},
     "student_faculty_ratio": {"start":2009,"values":[28,24,20,21,21,20,16,16,16,16,16,16,20,33,29,20]},
+    "faculty_full_time_share": {"start":2005,"values":[0.1728,0.1628,0.1308,0.172,0.1647,0.1724,0.25,1,0.2769,0.2333,0.26,0.3889,0.2632,1,1,1,1,1,1,1]},
+    "faculty_salary": {"start":2016,"values":[60746,59793,62666,52675,62326,62826,64882,68163,70099]},
     "out_of_state_share": {"start":2004,"values":[0.0065,null,0,null,0,null,0.0075,null,0.0047,null,0,null,0.0497,null,0.0135,null,0.0333,null,0.083,null,0.0423]},
     "international_share": {"start":2004,"values":[0,null,0,null,0.0565,null,0.0522,null,0,null,0,null,0,null,0,null,0.02,null,0.0124,null,0.0352]},
     "athletic_association": {"start":2014,"values":[3,3,3,3,3,3,3,3,3,3,3,3]},
@@ -61,6 +63,20 @@
     "om_award": {"start":2009,"values":[0.3458,0.3794,0.1811,0.1261,0.1047,0.2,0.212,0.1725]},
     "om_transfer": {"start":2009,"values":[0,0.0016,0,0.3257,0.3655,0.3813,0.0323,0.0784]},
     "om_award_pell": {"start":2009,"values":[0.3176,0.3273,0.1579,0.1229,0.1087,0.1781,0.3026,0.1282]},
-    "om_award_non_pell": {"start":2009,"values":[0.4216,0.5975,0.2588,0.1315,0.0924,0.2475,0,0.3167]}
+    "om_award_non_pell": {"start":2009,"values":[0.4216,0.5975,0.2588,0.1315,0.0924,0.2475,0,0.3167]},
+    "grad_rate_pell": {"start":2010,"values":[0.0473,0.0649,0.1511,0.0412,0.1463,0.0916,0.1026,0.1753,0.1563]},
+    "grad_rate_no_pell_no_loan": {"start":2010,"values":[0.6667,0.2653,0.02,0.34,null,0.2432]},
+    "grad_cohort_pell": {"start":2010,"values":[317,185,139,170,123,131,156,97,64]},
+    "grad_cohort_no_pell_no_loan": {"start":2010,"values":[36,49,100,50,4,37,25,17,23]},
+    "grad_rate_hispanic": {"start":2005,"values":[0.2927,0.4118,0.5,0.1471,0.1569,0.2083,0.1714,null,0.1875,null,null,0.1765]},
+    "grad_rate_black": {"start":2005,"values":[0.2169,0.1423,0.2574,0.0901,0.0711,0.0579,0.0651,0.0562,0.0843,0.1772,0.068,0.0787,0.1429,0.0741]},
+    "grad_rate_international": {"start":2009,"values":[0.0513,null,null,null,null,null,0.2353]},
+    "grad_cohort_white": {"start":2005,"values":[13,6,7,5,9,16,10,5,4,4,3,4,4,5]},
+    "grad_cohort_asian": {"start":2005,"values":[8,8,3,5,4,13,17,5,5,3,1,3,5,4]},
+    "grad_cohort_hispanic": {"start":2005,"values":[41,34,34,34,51,72,35,29,32,28,26,34,20,9]},
+    "grad_cohort_black": {"start":2005,"values":[249,253,303,222,211,242,169,178,166,79,103,127,77,54]},
+    "grad_cohort_two_or_more": {"start":2005,"values":[0,0,0,0,4,4,0,0,0,5,3,0,2,0]},
+    "grad_cohort_international": {"start":2005,"values":[6,3,29,18,39,9,13,20,17,11,34,12,14,16]},
+    "instruction_per_student": {"start":2004,"values":[1894,2335,1790,2994,2916,2783,3831,4665,4121,5079,5972,6097,6050,7373,7954,7927,8805,7606,6672,6763]}
   }
 }

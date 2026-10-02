@@ -15,6 +15,8 @@
     "application_fee": {"start":2011,"values":[78,78,95,95,95,95,95,95,95,95,95,95,95]},
     "tuition_guarantee": {"start":2011,"values":[2,2,2,2,2,2,2,2,2,2,2,2,2]},
     "student_faculty_ratio": {"start":2011,"values":[31,12,9,12,12,7,9,8,10,9,9,9,8,10]},
+    "faculty_full_time_share": {"start":2011,"values":[0.1911,0.3443,0.2958,0.4,0.2769,0.2532,0.2113,0.2143,0.25,0.1111,0.1273,0.0984,0.1034,0.0968]},
+    "faculty_salary": {"start":2016,"values":[55129,56917,58694,59893]},
     "out_of_state_share": {"start":2012,"values":[0.2222,null,0,null,0.4,null,0,null,0,null,0.25,null,0]},
     "international_share": {"start":2012,"values":[0,null,0,null,0,null,0,null,0,null,0,null,0]},
     "athletic_association": {"start":2014,"values":[3,3,3,3,3,3,3,3,3,3,3,3]},
@@ -55,6 +57,15 @@
     "om_award": {"start":2009,"values":[0.6806,0.6738,0.7178,0.6935,0.7331,0.7171,0.6705,0.6651]},
     "om_transfer": {"start":2009,"values":[0.1309,0.1383,0.1123,0.2056,0.1912,0.2093,0.2171,0.2651]},
     "om_award_pell": {"start":2009,"values":[0.6528,0.6458,0.7171,0.6977,0.7111,0.7357,0.6475,0.6535]},
-    "om_award_non_pell": {"start":2009,"values":[0.6876,0.6825,0.7181,0.6891,0.7586,0.6949,0.6912,0.6754]}
+    "om_award_non_pell": {"start":2009,"values":[0.6876,0.6825,0.7181,0.6891,0.7586,0.6949,0.6912,0.6754]},
+    "grad_cohort_pell": {"start":2010,"values":[4,7,4,1,1,3,0,1,2]},
+    "grad_cohort_no_pell_no_loan": {"start":2010,"values":[2,0,2,0,0,0,2,0,0]},
+    "grad_cohort_white": {"start":2005,"values":[6,4,7,5,2,9,8,6,2,2,4,4,3,3]},
+    "grad_cohort_asian": {"start":2005,"values":[0,0,0,0,0,0,0,0,0,0,0,0,0,0]},
+    "grad_cohort_hispanic": {"start":2005,"values":[0,0,0,0,0,1,0,0,0,0,0,0,0,0]},
+    "grad_cohort_black": {"start":2005,"values":[2,2,1,1,2,2,2,1,0,0,0,0,0,1]},
+    "grad_cohort_two_or_more": {"start":2005,"values":[0,0,0,0,0,0,0,0,0,0,0,0,0,0]},
+    "grad_cohort_international": {"start":2005,"values":[0,0,0,0,0,0,0,0,0,0,0,0,0,0]},
+    "instruction_per_student": {"start":2010,"values":[1094,3164,5618,5854,7692,5979,6460,6174,5326,6267,8014,7621,6121,6411]}
   }
 }

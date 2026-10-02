@@ -21,6 +21,8 @@
     "live_on": {"start":2004,"values":[1,1,null,1,2,1,2,2,2,1,1,null,2,2,2,2,2,2,2]},
     "tuition_guarantee": {"start":2008,"values":[2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2]},
     "student_faculty_ratio": {"start":2009,"values":[5,3,3,8,11,16,24,22,20,21,31,23,22,24,19,10]},
+    "faculty_full_time_share": {"start":2005,"values":[1,1,1,1,1,1]},
+    "faculty_salary": {"start":2016,"values":[29008,28205,21146,21146,20242,22129,22129,25597,25241]},
     "out_of_state_share": {"start":2004,"values":[0.2,null,0,null,0.4,null,0,null,0,null,null,null,null,null,0.25,null,0.5,null,0.6667,null,0.375]},
     "international_share": {"start":2004,"values":[0.1,null,0,null,0.4,null,0,null,0,null,null,null,null,null,0,null,0,null,0,null,0]},
     "athletic_association": {"start":2014,"values":[3,3,3,3,3,3,3,3,3,3,3,3]},
@@ -57,7 +59,16 @@
     "federal_loan_rate": {"start":2008,"values":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},
     "om_award": {"start":2013,"values":[0.4571,0.1833,0.1429]},
     "om_transfer": {"start":2013,"values":[0.5429,0.8167,0.8286]},
-    "om_award_non_pell": {"start":2013,"values":[0.4571,0.1429,0.1613]}
+    "om_award_non_pell": {"start":2013,"values":[0.4571,0.1429,0.1613]},
+    "grad_cohort_pell": {"start":2010,"values":[0,0,0,null,null,null,null,null,0]},
+    "grad_cohort_no_pell_no_loan": {"start":2010,"values":[1,1,1,null,null,null,null,null,4]},
+    "grad_cohort_white": {"start":2005,"values":[2,1,4,4,2,1,1,1,null,null,null,null,null,4]},
+    "grad_cohort_asian": {"start":2005,"values":[0,0,0,0,0,0,0,0,null,null,null,null,null,0]},
+    "grad_cohort_hispanic": {"start":2005,"values":[0,0,0,0,0,0,0,0,null,null,null,null,null,0]},
+    "grad_cohort_black": {"start":2005,"values":[0,0,0,0,0,0,0,0,null,null,null,null,null,0]},
+    "grad_cohort_two_or_more": {"start":2005,"values":[0,0,0,0,0,0,0,0,null,null,null,null,null,0]},
+    "grad_cohort_international": {"start":2005,"values":[0,0,0,0,0,0,0,0,null,null,null,null,null,0]},
+    "instruction_per_student": {"start":2004,"values":[7069,10381,11206,10514,11606,28208,25768,15570,16457,6526,3206,5191,4968,5046,6163,5807,4632,7354,6582,5833]}
   },
   "repeated": [2005]
 }

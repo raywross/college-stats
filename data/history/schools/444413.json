@@ -21,6 +21,8 @@
     "live_on": {"start":2004,"values":[1,1,1,1,1,2,2,2,1,1,1,1,1,1,1,2,2,2,2,2]},
     "tuition_guarantee": {"start":2008,"values":[2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2]},
     "student_faculty_ratio": {"start":2009,"values":[29,27,26,31,19,18,20,20,20,20,22,31,28,27,26,23]},
+    "faculty_full_time_share": {"start":2005,"values":[0.5714,0.5714,0.5714,0.5714,1,0.8]},
+    "faculty_salary": {"start":2016,"values":[47997,49110,86919,90765,99963,94667,102411,113565,112427]},
     "out_of_state_share": {"start":2004,"values":[0.2,null,0.0968,null,0.1,null,0.125,null,0.1458,null,0.0938,null,0.1282,null,0.1842,null,0.1964,null,0.0213,null,0.2]},
     "international_share": {"start":2004,"values":[0.0667,null,0,null,0.06,null,0,null,0,null,0.0625,null,0.0513,null,0.0263,null,0.0357,null,0.0213,null,0.0267]},
     "athletic_association": {"start":2014,"values":[3,3,3,3,3,3,3,3,3,3,3,3]},
@@ -58,6 +60,17 @@
     "federal_loan_rate": {"start":2008,"values":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},
     "om_award": {"start":2009,"values":[0.1964,0.2391,0.2157,0.6327,0.8333,0.55,0.8627,0.449]},
     "om_transfer": {"start":2009,"values":[0.7143,0.7609,0.7451,0.3469,0.1667,0.45,0.1176,0.551]},
-    "om_award_non_pell": {"start":2009,"values":[0.2778,0.25,0.2195,0.6316,0.8182,0.5667,0.8605,0.4359]}
+    "om_award_non_pell": {"start":2009,"values":[0.2778,0.25,0.2195,0.6316,0.8182,0.5667,0.8605,0.4359]},
+    "grad_rate_no_pell_no_loan": {"start":2010,"values":[0.129,0.0606,0.3158,null,null,0.7,0.4194,null,0.5806]},
+    "grad_cohort_pell": {"start":2010,"values":[9,8,10,3,7,5,8,6,7]},
+    "grad_cohort_no_pell_no_loan": {"start":2010,"values":[31,33,38,29,25,40,31,28,31]},
+    "grad_rate_white": {"start":2006,"values":[0.2581,0.1,0.0588,0.2222,0.1,0.0732,0.2979,0.8125,0.75,0.7111,0.4211,0.1765,0.5263]},
+    "grad_cohort_white": {"start":2005,"values":[25,31,30,51,45,40,41,47,32,32,45,38,34,38]},
+    "grad_cohort_asian": {"start":2005,"values":[0,0,0,0,0,0,0,0,0,0,0,0,0,0]},
+    "grad_cohort_hispanic": {"start":2005,"values":[0,0,0,0,0,0,0,0,0,0,0,0,0,0]},
+    "grad_cohort_black": {"start":2005,"values":[0,0,0,0,0,0,0,0,0,0,0,0,0,0]},
+    "grad_cohort_two_or_more": {"start":2005,"values":[0,0,0,0,0,0,0,0,0,0,0,0,0,0]},
+    "grad_cohort_international": {"start":2005,"values":[0,0,0,0,0,0,0,1,0,0,0,1,0,0]},
+    "instruction_per_student": {"start":2004,"values":[7921,7633,6986,6610,5412,5393,5945,4272,5623,3703,3886,3497,3328,2960,4323,4535,3337,3961,3267,5927]}
   }
 }

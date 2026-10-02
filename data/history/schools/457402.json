@@ -9,6 +9,8 @@
     "application_fee": {"start":2010,"values":[35,35,35,35,35,35,35,35,35,35,35,35,35,35]},
     "tuition_guarantee": {"start":2010,"values":[2,2,2,2,2,2,2,2,2,2,2,2,2,2]},
     "student_faculty_ratio": {"start":2010,"values":[14,14,11,8,4,5,5,5,5,5,5,5,5,10,15]},
+    "faculty_full_time_share": {"start":2010,"values":[0.6364,0.4737,0.3462,0.4706,null,null,null,null,null,null,null,0.1667,0.1,0.129,0.0952]},
+    "faculty_salary": {"start":2016,"values":[29063,29063,35250,33750,null,44000,44000,34875,48750]},
     "out_of_state_share": {"start":2010,"values":[0,null,0,null,null,null,0,null,0.0303,null,0.125,null,0.1884,null,0.1613]},
     "international_share": {"start":2010,"values":[0,null,0,null,null,null,0,null,0,null,0,null,0,null,0]},
     "athletic_association": {"start":2014,"values":[3,3,3,3,3,3,3,3,3,3,3,3]},
@@ -31,6 +33,15 @@
     "federal_loan_rate": {"start":2009,"values":[0.0222,0.45,0.6667,0.62,0.6563,0.6207,0.6818,0.6379,0.7288,0.7667,0.65,0.3088,0.344,0.3682,0.5789]},
     "om_award": {"start":2010,"values":[0.3962,0.4035,0.7674]},
     "om_transfer": {"start":2010,"values":[0.1321,0,0]},
-    "om_award_pell": {"start":2010,"values":[0.3922,0.2667]}
+    "om_award_pell": {"start":2010,"values":[0.3922,0.2667]},
+    "grad_cohort_pell": {"start":2010,"values":[0,0,0,null,null,null,null,1,1]},
+    "grad_cohort_no_pell_no_loan": {"start":2010,"values":[2,7,4,null,null,null,null,3,0]},
+    "grad_cohort_white": {"start":2010,"values":[0,0,0,null,null,null,null,0,0]},
+    "grad_cohort_asian": {"start":2010,"values":[0,0,0,null,null,null,null,0,0]},
+    "grad_cohort_hispanic": {"start":2010,"values":[0,0,0,null,null,null,null,0,0]},
+    "grad_cohort_black": {"start":2010,"values":[2,7,4,null,null,null,null,4,1]},
+    "grad_cohort_two_or_more": {"start":2010,"values":[0,0,0,null,null,null,null,0,0]},
+    "grad_cohort_international": {"start":2010,"values":[0,0,0,null,null,null,null,0,0]},
+    "instruction_per_student": {"start":2009,"values":[7901,7742,5612,4281,8285,11080,14229,6419,5273,6231,5827,2563,2754,2984,3651]}
   }
 }

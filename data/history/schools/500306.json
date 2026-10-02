@@ -10,6 +10,8 @@
     "grant_pct": {"start":2023,"values":[0.7143]},
     "grant_avg": {"start":2023,"values":[6458]},
     "student_faculty_ratio": {"start":2024,"values":[20]},
+    "faculty_full_time_share": {"start":2024,"values":[0.1667]},
+    "faculty_salary": {"start":2024,"values":[75450]},
     "out_of_state_share": {"start":2024,"values":[0]},
     "international_share": {"start":2024,"values":[0]},
     "athletic_association": {"start":2024,"values":[3,3]},

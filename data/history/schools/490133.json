@@ -22,6 +22,8 @@
     "live_on": {"start":2018,"values":[2,2,2]},
     "tuition_guarantee": {"start":2017,"values":[2,2,1,1,1,2,2]},
     "student_faculty_ratio": {"start":2017,"values":[9,10,11,9,10,10,10,11]},
+    "faculty_full_time_share": {"start":2017,"values":[0.2593,0.3385,0.1905,0.2,0.1512,0.1309,0.0869,0.0841]},
+    "faculty_salary": {"start":2017,"values":[20037,31656,52300,56319,59998,60166,67740,68520]},
     "out_of_state_share": {"start":2018,"values":[0.0286,null,0.1298,null,0.0621,null,0.0292]},
     "international_share": {"start":2018,"values":[0.8857,null,0.3893,null,0.5776,null,0.8449]},
     "conference": {"start":2020,"values":[301,301,301,301,301,301]},
@@ -61,6 +63,17 @@
     "federal_loan_rate": {"start":2016,"values":[0,0.0384,0.083,0.1613,0.1927,0.1292,0.0292,0.0609]},
     "om_award": {"start":2015,"values":[0.7738,0.4585]},
     "om_transfer": {"start":2015,"values":[0.0106,0.083]},
-    "om_award_non_pell": {"start":2015,"values":[0.7738,0.4581]}
+    "om_award_non_pell": {"start":2015,"values":[0.7738,0.4581]},
+    "grad_rate_no_pell_no_loan": {"start":2015,"values":[0.6712,0.4444,0.6044,0.6482]},
+    "grad_cohort_pell": {"start":2015,"values":[0,0,1,10]},
+    "grad_cohort_no_pell_no_loan": {"start":2015,"values":[73,144,91,199]},
+    "grad_rate_international": {"start":2017,"values":[0.6044]},
+    "grad_cohort_white": {"start":2015,"values":[0,0,0,0]},
+    "grad_cohort_asian": {"start":2015,"values":[0,0,0,2]},
+    "grad_cohort_hispanic": {"start":2015,"values":[0,0,0,3]},
+    "grad_cohort_black": {"start":2015,"values":[0,0,1,6]},
+    "grad_cohort_two_or_more": {"start":2015,"values":[0,0,0,3]},
+    "grad_cohort_international": {"start":2015,"values":[2,3,91,7]},
+    "instruction_per_student": {"start":2016,"values":[669,587,768,1230,1565,1617,1536,2259]}
   }
 }

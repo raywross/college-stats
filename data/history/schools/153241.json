@@ -22,6 +22,8 @@
     "live_on": {"start":2004,"values":[1,1,1,1,2,1,1,1,1,2,2,2,2,2,2,2,2,2,2,2]},
     "tuition_guarantee": {"start":2008,"values":[2,1,2,2,2,2,2,2,2,2,2,2,2,2,2,2]},
     "student_faculty_ratio": {"start":2009,"values":[7,4,3,7,4,5,5,5,6,4,4,5,6,6,5,5]},
+    "faculty_full_time_share": {"start":2005,"values":[0.7826,0.9048,0.85,0.8,0.8095,0.8095,0.8636,0.7667,0.7879,0.7941,0.875,0.8148,0.8182,0.8621,0.68,0.7391,0.8696,0.7917,0.7308,0.6786]},
+    "faculty_salary": {"start":2016,"values":[50405,52650,51770,53046,55660,55633,58838,62352,65347]},
     "out_of_state_share": {"start":2004,"values":[0.8125,null,0.7273,null,1,null,0.5556,null,0.2727,null,0.4444,null,0.25,null,1,null,0,null,null,null,0.5]},
     "international_share": {"start":2004,"values":[0.0625,null,0,null,0,null,0.4444,null,0.7273,null,0.5556,null,0.5,null,0,null,1,null,null,null,0.5]},
     "athletic_association": {"start":2014,"values":[3,3,3,3,3,3,3,3,3,3,3,3]},
@@ -66,6 +68,15 @@
     "federal_loan_rate": {"start":2008,"values":[0.3279,0.25,0.2336,0.2846,0.3396,0.4,0.3438,0.321,0.2031,0.193,0.0877,0.0909,0.1159,0.0299,0,0]},
     "om_award": {"start":2009,"values":[0.625]},
     "om_transfer": {"start":2009,"values":[0.175]},
-    "om_award_non_pell": {"start":2009,"values":[0.5]}
+    "om_award_non_pell": {"start":2009,"values":[0.5]},
+    "grad_cohort_pell": {"start":2010,"values":[5,7,2,0,1,0,0,1,0]},
+    "grad_cohort_no_pell_no_loan": {"start":2010,"values":[3,6,2,1,1,2,3,1,1]},
+    "grad_cohort_white": {"start":2005,"values":[0,0,0,0,1,1,1,0,0,0,0,0,0,0]},
+    "grad_cohort_asian": {"start":2005,"values":[2,7,4,1,8,4,6,0,0,0,0,0,1,0]},
+    "grad_cohort_hispanic": {"start":2005,"values":[1,0,1,0,0,1,1,0,0,1,0,0,0,0]},
+    "grad_cohort_black": {"start":2005,"values":[0,2,0,1,0,0,0,0,0,0,0,1,0,0]},
+    "grad_cohort_two_or_more": {"start":2005,"values":[0,0,0,0,0,0,0,0,0,0,0,0,0,0]},
+    "grad_cohort_international": {"start":2005,"values":[3,2,4,0,27,3,5,4,1,1,2,2,1,1]},
+    "instruction_per_student": {"start":2004,"values":[32754,421827,52813,35420,25765,34708,12354,12887,15102,18087,19502,22088,27834,34601,30734,27698,25072,26663,30542,34808]}
   }
 }

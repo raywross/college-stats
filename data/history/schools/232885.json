@@ -15,6 +15,8 @@
     "application_fee": {"start":2001,"values":[35,null,35,35,35,50,50,50,50,50,50,85,85,85,85,85,85,85,85,85,85,85,85]},
     "tuition_guarantee": {"start":2008,"values":[2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2]},
     "student_faculty_ratio": {"start":2009,"values":[8,14,11,13,9,8,6,5,7,9,7,9,7,7,7,7]},
+    "faculty_full_time_share": {"start":2005,"values":[0.8,0.7073,null,null,null,0.9231,0.8214,0.6538,0.5758,0.5385,0.4706,0.4648,0.4853,0.4595,0.5231,0.5156,0.5467,0.4337,0.5672,0.6167]},
+    "faculty_salary": {"start":2016,"values":[66326,65299,68519,69028,68537,56340,77467,79854,80749]},
     "out_of_state_share": {"start":2004,"values":[0.0667,null,0.1188,null,0,null,0.0161]},
     "international_share": {"start":2004,"values":[0,null,0,null,0,null,0]},
     "athletic_association": {"start":2014,"values":[3,3,3,3,3,3,3,3,3,3,3,3]},
@@ -50,6 +52,15 @@
     "om_award": {"start":2009,"values":[0.871,0.9103,0.8689,0.8911,0.984,0.91,0.8923,0.837]},
     "om_transfer": {"start":2009,"values":[0,0.0207,0.0738,0.0506,0.0053,0,0,0]},
     "om_award_pell": {"start":2009,"values":[0.8889,0.8958,null,0.9241,0.9833,0.8667,0.8276,0.8667]},
-    "om_award_non_pell": {"start":2009,"values":[0.8608,0.9175,0.8925,0.8764,0.9843,0.9176,0.9109,0.8263]}
+    "om_award_non_pell": {"start":2009,"values":[0.8608,0.9175,0.8925,0.8764,0.9843,0.9176,0.9109,0.8263]},
+    "grad_rate_white": {"start":2005,"values":[0.8279,0.9028,0.8434]},
+    "grad_rate_black": {"start":2005,"values":[0.7297]},
+    "grad_cohort_white": {"start":2005,"values":[122,72,83]},
+    "grad_cohort_asian": {"start":2005,"values":[28,11,12]},
+    "grad_cohort_hispanic": {"start":2005,"values":[3,3,4]},
+    "grad_cohort_black": {"start":2005,"values":[37,11,12]},
+    "grad_cohort_two_or_more": {"start":2005,"values":[0,0,0]},
+    "grad_cohort_international": {"start":2005,"values":[0,0,0]},
+    "instruction_per_student": {"start":2004,"values":[9071,8780,8272,9974,11108,11074,9664,11281,11065,11563,10552,9675,9635,10944,11017,11176,10632,11950,15746,17030]}
   }
 }

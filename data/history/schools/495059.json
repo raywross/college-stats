@@ -9,6 +9,7 @@
     "application_fee": {"start":2020,"values":[50,50,50,0]},
     "tuition_guarantee": {"start":2020,"values":[1,1,1,1]},
     "student_faculty_ratio": {"start":2020,"values":[7,7,7,7,7]},
+    "faculty_salary": {"start":2020,"values":[9300,25500,60000,60000,67500]},
     "out_of_state_share": {"start":2020,"values":[0,null,0,null,0]},
     "international_share": {"start":2020,"values":[0,null,0,null,0]},
     "athletic_association": {"start":2020,"values":[3,3,3,3,3,3]},
@@ -37,6 +38,7 @@
     "grad_cohort_hispanic": {"start":2016,"values":[5,9]},
     "grad_cohort_black": {"start":2016,"values":[0,2]},
     "grad_cohort_two_or_more": {"start":2016,"values":[0,0]},
-    "grad_cohort_international": {"start":2016,"values":[0,0]}
+    "grad_cohort_international": {"start":2016,"values":[0,0]},
+    "instruction_per_student": {"start":2019,"values":[1495,1677,2042,3283,5281]}
   }
 }

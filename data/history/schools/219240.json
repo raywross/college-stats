@@ -15,6 +15,8 @@
     "application_fee": {"start":2020,"values":[25,25,25,25]},
     "tuition_guarantee": {"start":2008,"values":[2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2]},
     "student_faculty_ratio": {"start":2020,"values":[1,2,5,8,9]},
+    "faculty_full_time_share": {"start":2005,"values":[1,1,0.8333,0.8,0.8,0.75,0.75,0.8125,0.6667,0.6667,0.625,0.5556,0.5556,0.5556,null,null,null,1,1,1]},
+    "faculty_salary": {"start":2016,"values":[43650,57756,44130,44742,44518,46615,51219,55810,57083]},
     "out_of_state_share": {"start":2020,"values":[0.375,null,1,null,0.6667]},
     "international_share": {"start":2020,"values":[0.0625,null,0,null,0.3333]},
     "athletic_association": {"start":2014,"values":[3,3,3,3,3,3,3,3,3,3,3,3]},
@@ -44,6 +46,7 @@
     "race_other": {"start":2020,"values":[0,0,0.0526,0,0.0488]},
     "men_share": {"start":2020,"values":[0.4375,0.6111,0.5,0.6389,0.5854]},
     "part_time_share": {"start":2021,"values":[0.7222,0.7105,0.8611,0.8293]},
-    "federal_loan_rate": {"start":2020,"values":[0,0,0,0]}
+    "federal_loan_rate": {"start":2020,"values":[0,0,0,0]},
+    "instruction_per_student": {"start":2004,"values":[6041,7303,10544,11699,11448,9802,9016,8616,9182,7276,5220,5880,4949,5547,5141,4051,3084,2409,4420,4570]}
   }
 }

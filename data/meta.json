@@ -50,6 +50,20 @@
       "url": "https://nces.ed.gov/ipeds/complete-data-files/OM2024.zip",
       "description": "What happened to every student who started at each college, 8 years later: earned a degree or certificate there, still enrolled, enrolled at another college, or no record. Covers first-time and transfer students, full-time and part-time, with Pell Grant recipients separately."
     },
+    "ipeds-gr": {
+      "label": "IPEDS Graduation Rates survey (Pell Grant and subsidized loan recipients)",
+      "publisher": "National Center for Education Statistics (NCES)",
+      "edition": "Entered fall 2018 (GR2024_PELL_SSL)",
+      "url": "https://nces.ed.gov/ipeds/complete-data-files/GR2024_PELL_SSL.zip",
+      "description": "How many first-time, full-time students finished a degree or certificate within six years (150% of normal time), for Pell Grant recipients, students with a subsidized federal loan but no Pell Grant, and students with neither."
+    },
+    "ipeds-sal": {
+      "label": "IPEDS Salaries survey (SAL, instructional staff, all ranks)",
+      "publisher": "National Center for Education Statistics (NCES)",
+      "edition": "Fall 2024 (SAL2024_IS)",
+      "url": "https://nces.ed.gov/ipeds/complete-data-files/SAL2024_IS.zip",
+      "description": "Average salary of a college's full-time instructional staff (all academic ranks combined), equated to a 9-month contract so colleges with different contract lengths can be compared."
+    },
     "ipeds-ic-char": {
       "label": "IPEDS Institutional Characteristics survey (athletics, programs, services)",
       "publisher": "National Center for Education Statistics (NCES)",
@@ -57,12 +71,26 @@
       "url": "https://nces.ed.gov/ipeds/complete-data-files/IC2025.zip",
       "description": "What each college offers: its athletic association, conference, and sports; ROTC, study abroad, and undergraduate research; AP credit; student services; the academic calendar; and the share of undergrads registered with disability services."
     },
+    "ipeds-f": {
+      "label": "IPEDS Finance survey, derived per-student figures",
+      "publisher": "National Center for Education Statistics (NCES)",
+      "edition": "2023–24 (DRVF2024)",
+      "url": "https://nces.ed.gov/ipeds/complete-data-files/DRVF2024.zip",
+      "description": "Each college's endowment and spending per full-time-equivalent student, from its own finance report: endowment assets, instruction expenses, academic support, student services, and tuition's share of core revenue. Reported on one of three accounting forms by sector (public, private nonprofit, for-profit), which aren't comparable to each other."
+    },
     "cds": {
       "label": "Common Data Set",
       "publisher": "Each college (voluntary, standardized template)",
       "edition": "Varies by college",
       "url": "https://commondataset.org/",
       "description": "A standardized report many colleges publish on their own sites, with more detail than federal surveys: admissions for the latest class and need-based vs. merit aid (section H)."
+    },
+    "ipeds-ef-c": {
+      "label": "IPEDS Fall Enrollment survey (part C, residence of first-time students)",
+      "publisher": "National Center for Education Statistics (NCES)",
+      "edition": "Fall 2024 (EF2024C)",
+      "url": "https://nces.ed.gov/ipeds/complete-data-files/EF2024C.zip",
+      "description": "Where each college's first-time undergraduates lived when they were admitted: each U.S. state, DC, and territory, and foreign countries. Colleges must report it in even-numbered falls; in odd years it's optional, so the site uses even years."
     }
   },
   "vintages": {
@@ -73,6 +101,10 @@
     "ipeds-ic-char": "2025–26",
     "ipeds-ef": "Fall 2024",
     "ipeds-om": "Students entering fall 2016",
+    "ipeds-gr": "Entered fall 2018",
+    "ipeds-sal": "Fall 2024",
+    "ipeds-ef-c": "Fall 2024",
+    "ipeds-f": "2023–24",
     "scorecard-enrollment": "Fall 2024",
     "scorecard-age": "Fall 2023",
     "scorecard-cost": "2023–24",

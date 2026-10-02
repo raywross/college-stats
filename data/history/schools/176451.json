@@ -15,6 +15,8 @@
     "application_fee": {"start":2021,"values":[0,0,0]},
     "tuition_guarantee": {"start":2008,"values":[2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2]},
     "student_faculty_ratio": {"start":2021,"values":[26,11,7,8]},
+    "faculty_full_time_share": {"start":2005,"values":[0.9,1,1,1,1,1,0.875,1,null,null,null,null,null,null,null,0.5833,0.5333,0.5,0.45]},
+    "faculty_salary": {"start":2016,"values":[36000,37853,39969,41334,45452,48090,53625,52188,59375]},
     "out_of_state_share": {"start":2022,"values":[0,null,0]},
     "international_share": {"start":2022,"values":[0.3333,null,0]},
     "athletic_association": {"start":2014,"values":[3,3,3,3,3,3,3,3,3,3,3,3]},
@@ -42,6 +44,7 @@
     "race_two_or_more": {"start":2021,"values":[0,0,0,0]},
     "race_international": {"start":2021,"values":[0,0,0,0]},
     "race_other": {"start":2021,"values":[0.1,0.1579,0.1111,0.0833]},
-    "men_share": {"start":2021,"values":[0.45,0.6316,0.6296,0.625]}
+    "men_share": {"start":2021,"values":[0.45,0.6316,0.6296,0.625]},
+    "instruction_per_student": {"start":2004,"values":[7271,7348,7231,5357,7838,16762,9320,7379,8080,9772,8178,7622,11502,10482,7133,6245,4594,4438,5820,7832]}
   }
 }

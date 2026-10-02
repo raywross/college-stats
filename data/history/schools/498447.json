@@ -15,6 +15,8 @@
     "application_fee": {"start":2022,"values":[49,49]},
     "tuition_guarantee": {"start":2022,"values":[2,2]},
     "student_faculty_ratio": {"start":2022,"values":[20,20,20]},
+    "faculty_full_time_share": {"start":2023,"values":[0.0938,0.1321]},
+    "faculty_salary": {"start":2022,"values":[78750,71972,75653]},
     "out_of_state_share": {"start":2022,"values":[0.1875,null,0]},
     "international_share": {"start":2022,"values":[0,null,0]},
     "athletic_association": {"start":2022,"values":[3,3,3,3]},
@@ -47,6 +49,7 @@
     "race_other": {"start":2022,"values":[0.0347,0.0141,0.0144]},
     "men_share": {"start":2022,"values":[0.0625,0.0775,0.0632]},
     "part_time_share": {"start":2022,"values":[0.4931,0.4859,0.3707]},
-    "federal_loan_rate": {"start":2022,"values":[0.8194,0.8993]}
+    "federal_loan_rate": {"start":2022,"values":[0.8194,0.8993]},
+    "instruction_per_student": {"start":2021,"values":[759,4844,6010]}
   }
 }

@@ -56,6 +56,15 @@
     "federal_loan_rate": {"start":2018,"values":[0,0,0,0,0,0]},
     "om_award": {"start":2014,"values":[0.7813,null,0.7018]},
     "om_transfer": {"start":2014,"values":[0.0938,null,0]},
-    "om_award_non_pell": {"start":2014,"values":[0.7813,null,0.7018]}
+    "om_award_non_pell": {"start":2014,"values":[0.7813,null,0.7018]},
+    "grad_cohort_pell": {"start":2015,"values":[0,0,0,0]},
+    "grad_cohort_no_pell_no_loan": {"start":2015,"values":[5,16,4,6]},
+    "grad_cohort_white": {"start":2015,"values":[1,1,0,0]},
+    "grad_cohort_asian": {"start":2015,"values":[0,0,0,0]},
+    "grad_cohort_hispanic": {"start":2015,"values":[4,15,4,3]},
+    "grad_cohort_black": {"start":2015,"values":[0,0,0,0]},
+    "grad_cohort_two_or_more": {"start":2015,"values":[0,0,0,0]},
+    "grad_cohort_international": {"start":2015,"values":[0,0,0,2]},
+    "instruction_per_student": {"start":2018,"values":[1740,1513,1400,1337,1402,1255]}
   }
 }

@@ -171,3 +171,30 @@ test("nothing links to the retired #history anchor; history links take an href",
   assert.deepEqual(offenders, []);
   assert.ok(!existsSync(join(ROOT, "components/school/SectionNav.tsx")), "SectionNav was retired with the single-page profile");
 });
+
+test("Over time renders the ?group= it's linked to on the server, not after hydration", () => {
+  const page = readFileSync(join(ROOT, "app/schools/[id]/history/page.tsx"), "utf8");
+  assert.match(page, /searchParams/, "the history page reads searchParams");
+  assert.match(page, /initialGroup=\{parseHistoryGroup\(query\.group\)/, "and passes ?group= to OverTimeSection");
+  // A segment-level revalidate would be misleading on a page that renders per request.
+  assert.doesNotMatch(page, /export const revalidate/);
+  const section = readFileSync(join(ROOT, "components/profile/OverTimeSection.tsx"), "utf8");
+  assert.match(section, /initialGroup=\{initialGroup\}/, "OverTimeSection hands it to OverTime");
+});
+
+test("tablets fold the tall secondary blocks (ShowMore until lg)", () => {
+  // [page, ShowMore label] that fold below lg (specs/profile-redesign.md#phones-tablets-desktop).
+  const folded: [string, string][] = [
+    ["admissions", "Show out of every 100 applicants"],
+    ["admissions", "Show the admissions map"],
+    ["cost", "Show borrowing and repayment"],
+    ["cost", "Show who gets aid"],
+    ["outcomes", "Show the cost vs. earnings map"],
+  ];
+  for (const [topic, label] of folded) {
+    const page = readFileSync(join(ROOT, "app/schools/[id]", topic, "page.tsx"), "utf8");
+    const tag = page.match(new RegExp(`<ShowMore[^>]*label="${label}"[^>]*>`))?.[0];
+    assert.ok(tag, `${topic}: ShowMore "${label}"`);
+    assert.match(tag, /until="lg"/, `${topic}: "${label}" folds on tablets`);
+  }
+});

@@ -68,8 +68,8 @@ export default async function StudentsPage({ params }: Props) {
         school={school}
         fields={TOPIC_FIELDS[TOPIC]}
       >
-        <div className="grid gap-4 lg:grid-cols-2">
-          <Block id="race" className="lg:col-span-2">
+        <div className="grid gap-4 md:grid-cols-2">
+          <Block id="race" className="md:col-span-2">
             <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
               <h3 className="flex items-center gap-1 font-display text-lg font-bold">
                 Race & ethnicity <InfoTip term="race-ethnicity" cited={citeField("demographics.racial_diversity", school)} />
@@ -153,7 +153,7 @@ export default async function StudentsPage({ params }: Props) {
           />
           <Transfers id="transfers" school={school} citedIn={citeField("demographics.transfer_in", school)} citedOut={citeField("outcomes.eight_year", school)} rank={rankOf(school, "transferShare")} />
           {(d.men_share != null || d.part_time_share != null || d.age_25_plus_share != null) && (
-            <ShowMore id="who" label="Show men, women, part-time, and age" hint="How the student body compares with the median college" className="lg:col-span-2">
+            <ShowMore id="who" label="Show men, women, part-time, and age" hint="How the student body compares with the median college" className="md:col-span-2">
               <div className="rounded-3xl border bg-card p-4 sm:p-6">
                 <div className="mb-5 flex flex-wrap items-center gap-x-3 gap-y-2">
                   <h3 className="font-display text-lg font-bold">Who they are</h3>

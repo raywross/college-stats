@@ -72,8 +72,8 @@ export default async function AdmissionsPage({ params }: Props) {
       >
         <div className="grid gap-4 lg:grid-cols-[1fr_1.2fr]">
           {counts ? (
-            // Phones: the funnel says the same thing in a fifth of the height, so the waffle follows it, folded.
-            <ShowMore label="Show out of every 100 applicants" hint="The funnel as 100 squares" className="max-lg:order-last">
+            // Below lg: the funnel says the same thing in a fifth of the height, so the waffle follows it, folded (it sits beside the funnel from lg).
+            <ShowMore until="lg" label="Show out of every 100 applicants" hint="The funnel as 100 squares" className="max-lg:order-last">
               <Block title="Out of every 100 applicants…" className="h-full">
                 <Waffle applicants={a.applicants!} admitted={a.admitted!} enrolled={a.enrolled!} />
               </Block>
@@ -201,7 +201,7 @@ export default async function AdmissionsPage({ params }: Props) {
             <b className="text-foreground">Recent change:</b> {recentAdmissionChanges.map((e) => `${e.text} in ${eventYear(e)}`).join("; ")}.
           </p>
         )}
-        <ShowMore id="map" label="Show the admissions map" hint="Acceptance rate vs. SAT for 300 colleges" className="mt-4">
+        <ShowMore id="map" until="lg" label="Show the admissions map" hint="Acceptance rate vs. SAT for 300 colleges" className="mt-4">
           <Block title="On the admissions map">
             {onMap ? (
               <ScatterPlot focusId={school.unit_id} height={380} points={landscapePoints(undefined, 300, [school.unit_id])} x={LANDSCAPE_X} y={LANDSCAPE_Y} zone={LANDSCAPE_ZONE} />
@@ -239,7 +239,8 @@ export default async function AdmissionsPage({ params }: Props) {
                 }}
               />
             </div>
-            <div className="flex flex-col gap-4">
+            {/* Tablets: the two small blocks side by side under the score checker. */}
+            <div className={mid !== null ? "grid gap-4 md:max-lg:grid-cols-2 lg:flex lg:flex-col" : "flex flex-col gap-4"}>
               <Block
                 id="submitted"
                 className="flex-1"

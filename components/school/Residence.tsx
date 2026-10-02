@@ -59,7 +59,7 @@ export function Residence({
   const maxTop = top[0]?.share ?? 1;
 
   return (
-    <div id={id} className="rounded-3xl border bg-card p-4 sm:p-6 lg:col-span-2">
+    <div id={id} className="rounded-3xl border bg-card p-4 sm:p-6 md:col-span-2">
       <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
         <h3 className="flex items-center gap-1 font-display text-lg font-bold">
           Where first-years come from <InfoTip term="in-state-student" cited={cited} />

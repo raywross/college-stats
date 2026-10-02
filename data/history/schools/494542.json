@@ -21,6 +21,8 @@
     "live_on": {"start":2023,"values":[2]},
     "tuition_guarantee": {"start":2023,"values":[2]},
     "student_faculty_ratio": {"start":2023,"values":[2,2]},
+    "out_of_state_share": {"start":2024,"values":[0.4667]},
+    "international_share": {"start":2024,"values":[0.3333]},
     "athletic_association": {"start":2023,"values":[3,3,3]},
     "rotc": {"start":2023,"values":[2,2,2]},
     "promise": {"start":2023,"values":[2]},

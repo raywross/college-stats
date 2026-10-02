@@ -10,6 +10,7 @@ import { FACTOR_FILTERS } from "./factors";
 import { matchesCampus } from "./campus-profile";
 import { matchesServices } from "./campus-services.ts";
 import { withinMaxRatio } from "./academics.ts";
+import { drawsNationally } from "./residence.ts";
 import {
   METRICS,
   SIZE_BUCKETS,
@@ -105,6 +106,7 @@ const SORTERS: Record<SortKey, (s: School) => number | string | null> = {
   loan_rate: METRICS.loanRate.get,
   loan_rate_change: METRICS.loanRateChange.get,
   student_faculty: METRICS.studentFaculty.get,
+  out_of_state: METRICS.outOfState.get,
 };
 
 function mode(values: number[]): number | null {
@@ -218,6 +220,7 @@ export function createDataset({ schools, meta, releaseCalendar }: DatasetFiles) 
     if (filters.balance?.length) results = results.filter((s) => filters.balance!.includes(genderBalanceOf(s)!));
     if (filters.fullTime) results = results.filter(isMostlyFullTime);
     if (filters.fewLoans) results = results.filter(hasFewLoans);
+    if (filters.national) results = results.filter(drawsNationally);
     if (filters.liveOn) results = results.filter(requiresLiveOn);
     if (filters.noFee) results = results.filter(noApplicationFee);
     if (filters.guarantee) results = results.filter(hasTuitionGuarantee);

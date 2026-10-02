@@ -93,6 +93,7 @@ const SORTS = [
   { value: "admit_gap", label: "Admit rate gap (men higher first)", dir: "desc" },
   { value: "loan_rate", label: "Share who borrow (fewest)", dir: "asc" },
   { value: "student_faculty", label: "Students per faculty (fewest)", dir: "asc" },
+  { value: "out_of_state", label: "First-years from other states (most)", dir: "desc" },
   { value: "loan_rate_change", label: "Borrowing change, 10 yrs (biggest drop)", dir: "asc" },
 ] as const;
 
@@ -226,6 +227,7 @@ export function ActiveFilters() {
     chips.push({ key: `b-${b}`, label: GENDER_BALANCE.find((g) => g.key === b)?.label ?? b, onRemove: () => toggleInList("balance", b) });
   if (searchParams.get("fullTime") === "1") chips.push({ key: "fullTime", label: "Mostly full-time", onRemove: () => update({ fullTime: null }) });
   if (searchParams.get("fewLoans") === "1") chips.push({ key: "fewLoans", label: "Few students borrow", onRemove: () => update({ fewLoans: null }) });
+  if (searchParams.get("national") === "1") chips.push({ key: "national", label: "Draws nationally", onRemove: () => update({ national: null }) });
   for (const f of [...FACTOR_FILTERS, ...HOUSING_FILTERS]) if (searchParams.get(f.param) === "1") chips.push({ key: f.param, label: f.label, onRemove: () => update({ [f.param]: null }) });
 
   for (const g of getList("setting").filter(isSettingGroup))

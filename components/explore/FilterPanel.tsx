@@ -15,6 +15,7 @@ import { FACTOR_FILTERS, type FactorFilterParam } from "@/lib/factors";
 import { DESIGNATION_KEYS, DESIGNATION_LABELS, RESEARCH_TIERS, SETTING_GROUPS } from "@/lib/campus-profile";
 import { DIVISION_FILTERS, DIVISION_SHORT, ROTC_BRANCHES, ROTC_LABELS } from "@/lib/campus-services";
 import { MAX_RATIO_OPTIONS } from "@/lib/academics";
+import { DRAWS_NATIONALLY } from "@/lib/residence";
 import type { Designation, DivisionFilter, ResearchTier, RotcBranch, SettingGroup } from "@/lib/types";
 import { useExploreParams } from "./useExploreParams";
 import { cn } from "@/lib/utils";
@@ -46,6 +47,8 @@ export interface FilterFacets {
   medianRatio: number | null;
   /** Colleges where few undergrads take federal loans (lib/repayment.ts). */
   fewLoans: number;
+  /** Colleges where at least half of first-years come from other states (lib/residence.ts). */
+  national: number;
 }
 
 function Section({ title, term, children }: { title: string; term?: TermKey; children: ReactNode }) {
@@ -112,9 +115,10 @@ export function FilterPanel({ facets, onDone }: { facets: FilterFacets; onDone?:
   const activeBalance = getList("balance");
   const fullTime = searchParams.get("fullTime") === "1";
   const fewLoans = searchParams.get("fewLoans") === "1";
+  const national = searchParams.get("national") === "1";
 
   const hasFilters = [
-    ...["q", "types", "sizes", "regions", "states", "minAR", "maxAR", "minSAT", "maxSAT", "minCost", "maxCost", "minEnroll", "maxEnroll", "balance", "fullTime", "fewLoans", "liveOn", "noFee", "guarantee", "noLegacy", "noEssay", "gpaRequired", "setting", "research", "designation", "opportunity", "division", "conference", "football", "rotc", "ugResearch", "studyAbroad", "maxRatio"],
+    ...["q", "types", "sizes", "regions", "states", "minAR", "maxAR", "minSAT", "maxSAT", "minCost", "maxCost", "minEnroll", "maxEnroll", "balance", "fullTime", "fewLoans", "liveOn", "noFee", "guarantee", "noLegacy", "noEssay", "gpaRequired", "setting", "research", "designation", "opportunity", "division", "conference", "football", "rotc", "ugResearch", "studyAbroad", "maxRatio", "national"],
     ...INDICATOR_KEYS.map((k) => INDICATORS[k].param),
   ].some((k) => searchParams.get(k));
 
@@ -276,6 +280,17 @@ export function FilterPanel({ facets, onDone }: { facets: FilterFacets; onDone?:
         <p className="text-[11px] text-muted-foreground">
           Mostly women or men: over 60% one or the other. Mostly full-time: {Math.round(FULL_TIME_MAX_PART_TIME * 100)}% or fewer of undergrads
           study part-time.
+        </p>
+      </Section>
+
+      <Section title="Where first-years come from" term="in-state-student">
+        <div className="flex flex-wrap gap-1.5">
+          <Chip active={national} onClick={() => update({ national: national ? null : "1" })} count={facets.national}>
+            Draws nationally
+          </Chip>
+        </div>
+        <p className="text-[11px] text-muted-foreground">
+          At least {Math.round(DRAWS_NATIONALLY * 100)}% of first-years come from other states. Colleges that don&apos;t report it are hidden while this is set.
         </p>
       </Section>
 

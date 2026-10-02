@@ -21,6 +21,8 @@
     "live_on": {"start":2017,"values":[1,1,1,1,1,1,1]},
     "tuition_guarantee": {"start":2017,"values":[2,2,2,2,2,2,2]},
     "student_faculty_ratio": {"start":2017,"values":[3,7,13,12,15,13,14,16]},
+    "out_of_state_share": {"start":2018,"values":[0.5,null,0.8235,null,0.6667,null,0.75]},
+    "international_share": {"start":2018,"values":[0,null,0,null,0.1667,null,0.0833]},
     "athletic_association": {"start":2017,"values":[3,3,3,3,3,3,3,3,3]},
     "rotc": {"start":2017,"values":[2,2,2,2,2,2,2,2,2]},
     "promise": {"start":2022,"values":[2,2]},

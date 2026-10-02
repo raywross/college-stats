@@ -115,6 +115,7 @@ export async function SchoolTable({ schools, params }: { schools: School[]; para
     { key: "sat", label: "SAT middle 50%", term: "middle-50", className: "min-w-36" },
     { key: "pell", label: "Pell", term: "pell-grant" },
     { key: "first_gen", label: "First-gen", term: "first-gen" },
+    { key: "out_of_state", label: "Out of state", term: "in-state-student" },
     { key: "men_share", label: "Men", term: "gender-balance" },
     { key: "diversity", label: "Diversity", term: "diversity-index" },
     { key: "avg_cost", label: "Avg cost", term: "average-cost" },
@@ -143,7 +144,7 @@ export async function SchoolTable({ schools, params }: { schools: School[]; para
     </p>
     <div className="overflow-hidden rounded-3xl border bg-card">
       <div className="overflow-x-auto">
-        <table className={cn("w-full text-sm", changes ? "min-w-[2420px]" : "min-w-[1550px]")}>
+        <table className={cn("w-full text-sm", changes ? "min-w-[2520px]" : "min-w-[1650px]")}>
           <thead className="border-b bg-surface-2">
             <tr>
               <SortHeader k="name" label="School" className="sticky left-0 z-10 bg-surface-2 pl-4" params={params} sortBy={sortBy} sortDir={sortDir} />
@@ -208,6 +209,10 @@ export async function SchoolTable({ schools, params }: { schools: School[]; para
                   <td className="w-24 px-3 tabular-nums">
                     <Value v={fg === null ? null : pct(fg)} />
                     {fg !== null && <Bar value={fg} max={1} color={DOMAINS.access.color} />}
+                  </td>
+                  <td className="w-24 px-3 tabular-nums">
+                    <Value v={s.demographics.residence ? pct(s.demographics.residence.out_of_state) : null} />
+                    {s.demographics.residence && <Bar value={s.demographics.residence.out_of_state} max={1} color={DOMAINS.diversity.color} />}
                   </td>
                   <td className="w-24 px-3 tabular-nums">
                     <Value v={men == null ? null : pct(men)} />

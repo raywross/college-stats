@@ -1,6 +1,7 @@
 import type { School, SizeBucket } from "./types";
 import type { TermKey } from "./glossary";
 import { ratioLabel } from "./academics";
+import { NATIONAL_MIN_FIRST_YEARS } from "./residence";
 import type { FieldPath } from "./fields";
 import { money, num, pct, pctSmart } from "./format";
 import { admitRatesBySex, satMedian, simpsonIndex, yieldOf } from "./derive";
@@ -148,6 +149,8 @@ export type MetricKey =
   | "menShare"
   | "partTime"
   | "studentFaculty"
+  | "outOfState"
+  | "outOfStateLarge"
   | "adults"
   | "applicantsChange"
   | "sizeChange"
@@ -471,6 +474,37 @@ export const METRICS: Record<MetricKey, MetricDef> = {
     format: ratioLabel,
     more: "more students per faculty member",
     less: "fewer students per faculty member",
+  },
+  // Where first-years come from (specs/data-expansion/residence.md): share of every first-year from other states.
+  outOfState: {
+    key: "outOfState",
+    field: "demographics.residence",
+    label: "First-years from other states",
+    short: "Out of state",
+    term: "in-state-student",
+    domain: "diversity",
+    get: (s) => s.demographics.residence?.out_of_state ?? null,
+    format: (v) => pct(v),
+    scale: [0, 1],
+    more: "more first-years from other states",
+    less: "fewer first-years from other states",
+  },
+  // Only classes of 500+ first-years, for the "Draws students nationally" chip (a few students swing a small class).
+  outOfStateLarge: {
+    key: "outOfStateLarge",
+    field: "demographics.residence",
+    label: "First-years from other states (500+ first-years)",
+    short: "Out of state",
+    term: "in-state-student",
+    domain: "diversity",
+    get: (s) => {
+      const r = s.demographics.residence;
+      return r && r.first_years >= NATIONAL_MIN_FIRST_YEARS ? r.out_of_state : null;
+    },
+    format: (v) => pct(v),
+    scale: [0, 1],
+    more: "more first-years from other states",
+    less: "fewer first-years from other states",
   },
   partTime: {
     key: "partTime",

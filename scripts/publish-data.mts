@@ -15,6 +15,8 @@
  *   5. History (data/history/, from `npm run sync-history`), if built: the same shard checks as check:lineage, then
  *      stage_history() takes the shards in batches, publish_history_staged() swaps them in with one transaction, and
  *      it's read back and compared too.
+ *   5b. Per-college detail files (data/detail/, lib/detail.ts), if built: the same checks as check:lineage up front, then
+ *      stage_details() in batches, publish_details_staged() swaps them in with one transaction, and they're read back.
  *   6. If REVALIDATE_URL and REVALIDATE_SECRET are set, ask the site to regenerate its static pages.
  * Needs SUPABASE_URL and SUPABASE_SECRET_KEY (environment variables win over the env file, which is how the
  * GitHub Action points it at prod). See specs/supabase.md.
@@ -28,6 +30,7 @@ import type { ReleaseCalendar } from "../lib/releases";
 import { validateLineage } from "../lib/lineage.ts";
 import { fetchAllSchoolHistories, fetchDatasetFiles, fetchHistoryFiles, supabaseClient } from "../lib/supabase.ts";
 import { validateHistoryMeta, validateShard, type SchoolHistory } from "../lib/history.ts";
+import { detailFileProblems, detailTablesProblem, publishDetails, readDetails } from "./lib/publish-details.mts";
 
 const ROOT = join(import.meta.dirname, "..");
 const DRY_RUN = process.argv.includes("--dry-run");
@@ -82,6 +85,16 @@ if (history) {
   }
 }
 
+// Per-college detail files (lib/detail.ts), when built: checked up front too.
+const details = readDetails(ROOT);
+if (details) {
+  const dp = detailFileProblems(details, schools, meta);
+  if (dp.length) {
+    for (const p of dp.slice(0, 20)) console.error(`  ${p}`);
+    fail(`${dp.length} detail-file problem(s); run npm run check:lineage.`);
+  }
+}
+
 const client = supabaseClient("publish");
 const host = new URL(process.env.SUPABASE_URL!).host;
 console.log(`Publishing ${schools.length} colleges (retrieved ${meta.retrieved}) to ${host}${DRY_RUN ? " [dry run]" : ""}`);
@@ -109,6 +122,11 @@ if (history) {
   tableCheck(historyError, "supabase/migrations/20260928120000_history.sql");
   const { error: stagingError } = await client.from("history_staging").select("unit_id", { head: true });
   tableCheck(stagingError, "supabase/migrations/20260928180000_history_staging.sql");
+}
+
+if (details) {
+  const problem = await detailTablesProblem(client);
+  if (problem) fail(problem);
 }
 
 if (DRY_RUN) {
@@ -164,6 +182,14 @@ if (history) {
   console.log(`Published ${shardCount} college histories (built ${history.files.meta.built}); read back and verified.`);
 } else {
   console.log("No data/history/ (run npm run sync-history); history not published.");
+}
+
+// 5b. Detail files (home states; later majors).
+if (details) {
+  const n = await publishDetails(client, details).catch((err: Error) => fail(err.message));
+  console.log(`Published ${n} college detail files; read back and verified.`);
+} else {
+  console.log("No data/detail/ (run npm run sync-data); detail files not published.");
 }
 
 // 6. Revalidate the site's static pages.

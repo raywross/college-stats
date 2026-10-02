@@ -22,6 +22,8 @@
     "live_on": {"start":2004,"values":[2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2]},
     "tuition_guarantee": {"start":2008,"values":[2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2]},
     "student_faculty_ratio": {"start":2009,"values":[12,13,13,13,13,13,13,13,13,14,15,13,10,8,9,10]},
+    "out_of_state_share": {"start":2004,"values":[0.3093,null,0.2907,null,0.2822,null,0.2592,null,0.2806,null,0.3808,null,0.2852,null,0.3938,null,0.4148,null,0.3578,null,0.3249]},
+    "international_share": {"start":2004,"values":[0.067,null,0.0617,null,0.0523,null,0,null,0.0356,null,0.0346,null,0.0492,null,0,null,0.0742,null,0.0979,null,0.0084]},
     "conference": {"start":2014,"values":[160,160,160,160,160,160,160,160,160,160,160,160]},
     "athletic_association": {"start":2014,"values":[1,1,1,1,1,1,1,1,1,1,1,1]},
     "rotc": {"start":2014,"values":[1,1,1,1,1,1,1,1,1,1,2,2]},

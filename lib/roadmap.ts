@@ -80,15 +80,6 @@ export interface RoadmapSpec {
 /** In build order within each group (the backlog's order, specs/backlog.md). */
 export const ROADMAP: RoadmapSpec[] = [
   {
-    slug: "residence",
-    file: "specs/data-expansion/residence.md",
-    group: "wave-2",
-    summary: "Where first-years come from: in-state, out-of-state, international, and the top home states.",
-    complexity: 3,
-    complexityNote: "Home-state tables are too big for the main dataset, so it may build the per-college detail file.",
-    status: "planned",
-  },
-  {
     slug: "outcome-measures",
     file: "specs/data-expansion/outcome-measures.md",
     group: "wave-2",

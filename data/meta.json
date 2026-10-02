@@ -1,5 +1,5 @@
 {
-  "retrieved": "2026-09-30",
+  "retrieved": "2026-10-02",
   "sources": {
     "scorecard": {
       "label": "College Scorecard",
@@ -56,6 +56,13 @@
       "edition": "Varies by college",
       "url": "https://commondataset.org/",
       "description": "A standardized report many colleges publish on their own sites, with more detail than federal surveys: admissions for the latest class and need-based vs. merit aid (section H)."
+    },
+    "ipeds-ef-c": {
+      "label": "IPEDS Fall Enrollment survey (part C, residence of first-time students)",
+      "publisher": "National Center for Education Statistics (NCES)",
+      "edition": "Fall 2024 (EF2024C)",
+      "url": "https://nces.ed.gov/ipeds/complete-data-files/EF2024C.zip",
+      "description": "Where each college's first-time undergraduates lived when they were admitted: each U.S. state, DC, and territory, and foreign countries. Colleges must report it in even-numbered falls; in odd years it's optional, so the site uses even years."
     }
   },
   "vintages": {
@@ -65,6 +72,7 @@
     "ipeds-hd": "2025–26",
     "ipeds-ic-char": "2025–26",
     "ipeds-ef": "Fall 2024",
+    "ipeds-ef-c": "Fall 2024",
     "scorecard-enrollment": "Fall 2024",
     "scorecard-age": "Fall 2023",
     "scorecard-cost": "2023–24",

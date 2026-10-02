@@ -30,7 +30,7 @@ Each spec here is a separate unit of work, so pieces can ship when they're usefu
 | [metro-area.md](metro-area.md) | **Deferred.** Metro area and county, for nearby colleges and a metro filter | IPEDS HD |
 | [campus-services.md](campus-services.md) | **Built.** Athletics (NCAA/NAIA, conference), ROTC, study abroad, undergraduate research, AP credit, disability services share | IPEDS IC |
 | [student-faculty-ratio.md](student-faculty-ratio.md) | **Built.** Students per faculty member | IPEDS EF part D |
-| [residence.md](residence.md) | Where first-years come from: in-state, out-of-state, international; top home states | IPEDS EF part C |
+| [residence.md](residence.md) | **Built.** Where first-years come from: in-state, out-of-state, international; top home states | IPEDS EF part C |
 | [outcome-measures.md](outcome-measures.md) | 8-year outcomes for **all** entering students (incl. transfers in and part-time), with transfer-out and Pell splits | IPEDS OM |
 | [graduation-by-group.md](graduation-by-group.md) | Graduation rates for Pell recipients and by race/ethnicity | IPEDS GR (Pell/SSL file) + Scorecard |
 | [finances.md](finances.md) | Endowment per student, instruction spending per student | IPEDS F / DRVF (+ Scorecard) |

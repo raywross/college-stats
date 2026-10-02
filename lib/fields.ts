@@ -20,6 +20,8 @@ export type VintageKey =
   | "ipeds-ic-char"
   /** IPEDS Fall Enrollment part D (EF{Y}D): the student-to-faculty ratio. Fall, like admissions. */
   | "ipeds-ef"
+  /** IPEDS Fall Enrollment part C (EF{Y}C): where first-years come from. Required in even-numbered falls only. */
+  | "ipeds-ef-c"
   | "scorecard-enrollment"
   /** Student age: IPEDS collects it in odd-numbered falls only, so it trails enrollment by a year every other year. */
   | "scorecard-age"
@@ -128,6 +130,9 @@ export const FIELDS = {
   "admissions.application_fee": { ...ic("Application fee"), topic: "admissions" },
   "campus.housing": { ...ic("Campus housing and meal plans"), topic: "campus" },
   "academics.student_faculty_ratio": { label: "Students per faculty member", topic: "academics", source: "ipeds-ef", vintage: "ipeds-ef" },
+  "demographics.residence": { label: "Where first-years come from: in-state, other states, abroad", topic: "demographics", source: "ipeds-ef-c", vintage: "ipeds-ef-c" },
+  // Stored in the per-college detail file (lib/detail.ts), not data/schools.json.
+  "detail.home_states": { label: "First-years by home state", topic: "demographics", source: "ipeds-ef-c", vintage: "ipeds-ef-c" },
   "campus.athletics": icChar("Athletics: association, division, conference, sports"),
   "campus.programs": icChar("ROTC, study abroad, undergraduate research, and other programs"),
   "campus.services": icChar("Student services"),

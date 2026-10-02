@@ -3,7 +3,8 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowRight, Calculator, ChevronRight, ExternalLink, MapPin, TriangleAlert } from "lucide-react";
-import { getData, getHistory, getHistoryFiles } from "@/lib/data";
+import { getData, getDetail, getHistory, getHistoryFiles } from "@/lib/data";
+import { Residence } from "@/components/school/Residence";
 import type { Cited } from "@/lib/lineage";
 import {
   DOMAINS,
@@ -85,13 +86,13 @@ const HISTORY_GROUPS = {
   aid: ["grant_pct", "grant_avg", "aid_generosity", "federal_loan_rate"],
   admissions: ["applicants", "admitted", "enrolled", "acceptance_rate", "yield", "admit_rate_men", "admit_rate_women", "application_fee"],
   scores: ["sat_25", "sat_75", "act_25", "act_75", "sat_submit", "test_policy"],
-  students: ["undergrads", "race_white", "men_share", "part_time_share", "housing_capacity"],
+  students: ["undergrads", "race_white", "men_share", "part_time_share", "housing_capacity", "out_of_state_share", "international_share"],
   outcomes: ["grad_rate", "median_debt"],
   academics: ["student_faculty_ratio"],
 } as const satisfies Record<string, readonly SeriesKey[]>;
 
 /** National series the charts draw as a band (keeps the page payload small). */
-const BANDED: readonly SeriesKey[] = ["avg_paid_all", "grant_pct", "grant_avg", "acceptance_rate", "sat_25", "sat_75", "act_25", "act_75", "grad_rate", "median_debt", "men_share", "part_time_share", "federal_loan_rate", "student_faculty_ratio"];
+const BANDED: readonly SeriesKey[] = ["avg_paid_all", "grant_pct", "grant_avg", "acceptance_rate", "sat_25", "sat_75", "act_25", "act_75", "grad_rate", "median_debt", "men_share", "part_time_share", "federal_loan_rate", "student_faculty_ratio", "out_of_state_share"];
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -161,6 +162,8 @@ const SECTION_FIELDS = {
     "demographics.women_share",
     "demographics.part_time_share",
     "demographics.age_25_plus_share",
+    "demographics.residence",
+    "detail.home_states",
   ],
   cost: [
     "cost.avg_paid_all",
@@ -308,7 +311,7 @@ export default async function SchoolPage({ params }: Props) {
   const { citeField, distribution, getSchoolById, landscapePoints, metricMedian, rankOf, valuePoints } = data;
   const school = getSchoolById(id);
   if (!school) notFound();
-  const [history, historyFiles] = await Promise.all([getHistory(school.unit_id), getHistoryFiles()]);
+  const [history, historyFiles, detail] = await Promise.all([getHistory(school.unit_id), getHistoryFiles(), getDetail(school.unit_id)]);
   const hasHistory = history !== null && historyFiles !== null && Object.keys(history.series).length > 0;
 
   const { admissions: a, demographics: d } = school;
@@ -882,6 +885,13 @@ export default async function SchoolPage({ params }: Props) {
                   color={DOMAINS.size.color}
                 />
               </div>
+              <Residence
+                school={school}
+                detail={detail}
+                cited={citeField("demographics.residence", school)}
+                citedStates={citeField("detail.home_states", school)}
+                rank={rankOf(school, "outOfState")}
+              />
               {(d.men_share != null || d.part_time_share != null || d.age_25_plus_share != null) && (
                 <ShowMore label="Show men, women, part-time, and age" hint="How the student body compares with the median college" className="lg:col-span-2">
                   <div className="rounded-3xl border bg-card p-4 sm:p-6">

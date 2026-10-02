@@ -26,6 +26,7 @@ import { FACTOR_FILTERS } from "@/lib/factors";
 import { DESIGNATION_KEYS, RESEARCH_TIERS, SETTING_GROUPS, designationsOf, isOpportunityCollege } from "@/lib/campus-profile";
 import { DIVISION_FILTERS, ROTC_BRANCHES, divisionFilterOf } from "@/lib/campus-services";
 import { MAX_RATIO_OPTIONS } from "@/lib/academics";
+import { drawsNationally } from "@/lib/residence";
 import { InfoTip } from "@/components/ui/info-tip";
 import { MultiSourceNote } from "@/components/sources/MultiSourceNote";
 
@@ -93,6 +94,7 @@ function buildFacets({ getAllSchools, histogram }: Dataset): FilterFacets {
     balance,
     fullTime: all.filter(isMostlyFullTime).length,
     fewLoans: all.filter(hasFewLoans).length,
+    national: all.filter(drawsNationally).length,
     housing: Object.fromEntries(HOUSING_FILTERS.map((f) => [f.param, all.filter(f.test).length])) as FilterFacets["housing"],
     factors: Object.fromEntries(FACTOR_FILTERS.map((f) => [f.param, all.filter(f.test).length])) as FilterFacets["factors"],
     campus,

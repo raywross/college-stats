@@ -66,14 +66,27 @@ export const HISTORY_FAMILIES = {
   characteristics: { source: "ipeds-ic", kind: "academic", files: "IC{year} (housing and application fee), then COST1_{year+1}" },
   services: { source: "ipeds-ic-char", kind: "academic", files: "IC{year} (athletics and ROTC)" },
   "ef-d": { source: "ipeds-ef", kind: "fall", files: "EF{year}D (student-to-faculty ratio)" },
+  // Residence is required in even-numbered falls only (odd years cover about half the colleges): every other year.
+  "ef-c": { source: "ipeds-ef-c", kind: "fall", files: "EF{year}C (residence of first-time students), even-numbered falls", step: 2 },
   // College Scorecard API, year-prefixed fields (not files): years can have gaps, so they aren't checked as consecutive.
   "scorecard-enrollment": { source: "scorecard", kind: "fall", files: "API fields {year}.student.size, {year}.student.demographics.race_ethnicity.*, .men, and {year}.student.part_time_share", api: true, citeAs: "enrollment" },
   "scorecard-completion": { source: "scorecard", kind: "cohort", files: "API field {year+6}.completion.completion_rate_4yr_150nt", api: true, citeAs: "graduation by entering class" },
   "scorecard-debt": { source: "scorecard", kind: "academic", files: "API field {year}.aid.median_debt.completers.overall", api: true, citeAs: "median debt" },
   "scorecard-loans": { source: "scorecard", kind: "academic", files: "API field {year+1}.aid.federal_loan_rate", api: true, citeAs: "federal loan rate" },
-} as const satisfies Record<string, { source: SourceKey; kind: YearKind; files: string; api?: true; citeAs?: string }>;
+} as const satisfies Record<string, { source: SourceKey; kind: YearKind; files: string; api?: true; citeAs?: string; step?: number }>;
 
 export type HistoryFamily = keyof typeof HISTORY_FAMILIES;
+
+/** Years between a family's files: 1, or 2 for a survey part collected every other year (residence). */
+export function familyStep(f: HistoryFamily): number {
+  const fam = HISTORY_FAMILIES[f];
+  return "step" in fam ? fam.step : 1;
+}
+
+/** Years between a series' points: its families' step (residence: every other fall). */
+export function seriesStep(k: SeriesKey): number {
+  return Math.max(...SERIES[k].families.map(familyStep));
+}
 
 const ADMISSIONS: readonly HistoryFamily[] = ["ic-admissions", "adm"];
 const ENROLLMENT: readonly HistoryFamily[] = ["scorecard-enrollment"];
@@ -117,6 +130,9 @@ export const SERIES = {
   live_on: { label: "First-years must live on campus", short: "Live-on rule", field: "campus.housing", term: "live-on-requirement", unit: "code", kind: "academic", format: "int", families: ["characteristics"] },
   tuition_guarantee: { label: "Tuition guarantee", short: "Tuition guarantee", field: "cost.tuition_plans", term: "tuition-guarantee", unit: "code", kind: "academic", format: "int", families: ["characteristics"] },
   student_faculty_ratio: { label: "Students per faculty member", short: "Students/faculty", field: "academics.student_faculty_ratio", term: "student-faculty-ratio", unit: "count", kind: "fall", format: "int", families: ["ef-d"] },
+  // Where first-years come from (specs/data-expansion/residence.md): even-numbered falls only, shares of all first-years.
+  out_of_state_share: { label: "First-years from other states", short: "Other states", field: "demographics.residence", term: "in-state-student", unit: "share", kind: "fall", format: "pct", families: ["ef-c"] },
+  international_share: { label: "First-years from abroad", short: "From abroad", field: "demographics.residence", term: "in-state-student", unit: "share", kind: "fall", format: "pct", families: ["ef-c"] },
   // Athletics and ROTC as codes, for events (lib/events.ts; lib/campus-services.ts reads them).
   conference: { label: "Athletic conference", short: "Conference", field: "campus.athletics", term: "athletic-conference", unit: "conference", kind: "academic", format: "int", families: ["services"] },
   football_conference: { label: "Football conference", short: "Football conference", field: "campus.athletics", term: "athletic-conference", unit: "conference", kind: "academic", format: "int", families: ["services"] },
@@ -645,7 +661,7 @@ export function validateHistoryMeta(hmeta: HistoryMeta, meta: DatasetMeta): stri
     const files = hmeta.files[f];
     const api = "api" in HISTORY_FAMILIES[f];
     if (!files?.length) errors.push(`history meta: no files recorded for ${f}`);
-    else if (!api && files.some((x, i) => i > 0 && x.year !== files[i - 1].year + 1)) errors.push(`history meta: ${f} years aren't consecutive`);
+    else if (!api && files.some((x, i) => i > 0 && x.year !== files[i - 1].year + familyStep(f))) errors.push(`history meta: ${f} years aren't consecutive`);
   }
   return errors;
 }

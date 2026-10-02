@@ -30,6 +30,8 @@ import { applyProbes, filesToProbe, type FileProbe, type ReleaseCalendar } from 
 import { IPEDS_BASES, parseCsv } from "./lib/ipeds.mts";
 import { MSI_FIELDS, campusProfileFrom, directoryIssues, msiFrom } from "../lib/campus-profile.ts";
 import { studentFacultyRatioFrom } from "../lib/academics.ts";
+import { residenceFrom } from "../lib/residence.ts";
+import { addResidenceMeta, buildDetails, crossCheckDerived, detailProblems, fetchResidence, writeDetails } from "./lib/residence-sync.mts";
 import { apCreditFrom, athleticsFrom, calendarFrom, disabilityFrom, programsFrom, servicesFrom } from "../lib/campus-services.ts";
 import { acceptanceRate, applicationFeeFrom, computePrices, factorsFrom, housingFrom, ipedsNum, parseShareBand, priceSuffix, promiseProgramFrom, raceShares, toAid, tuitionPlansFrom } from "../lib/derive.ts";
 
@@ -514,6 +516,8 @@ function buildMeta(
       "ipeds-hd": `${hd.name.slice(2)}–${String(Number(hd.name.slice(2)) + 1).slice(2)}`,
       "ipeds-ic-char": academicYear(icChar.name.slice(2)),
       "ipeds-ef": `Fall ${efd.name.slice(2, 6)}`,
+      // Set with its source by addResidenceMeta (scripts/lib/residence-sync.mts).
+      "ipeds-ef-c": null,
       "scorecard-enrollment": scorecardYears.enrollment,
       "scorecard-age": scorecardYears.age,
       "scorecard-cost": scorecardYears.cost,
@@ -676,6 +680,8 @@ async function main() {
   const efd = await fetchIpeds(EF_D_NAMES);
   if (![...efd.rows.values()].some((r) => "STUFACR" in r)) throw new Error(`${efd.name} has no STUFACR column`);
   if (![...hd.rows.values()].some((r) => "LOCALE" in r && "CARNEGIEIC" in r)) throw new Error(`${hd.name} has no LOCALE/CARNEGIEIC columns`);
+  // Where first-years come from (specs/data-expansion/residence.md): the newest even-year EF{Y}C.
+  const efc = await fetchResidence(join(ROOT, ".cache", "ipeds"), thisYear);
   // Campus services (specs/data-expansion/campus-services.md): the newest IC{Y}, a year ahead of the price files.
   const icChar = await fetchIpeds(IC_CHAR_NAMES);
   if (![...icChar.rows.values()].some((r) => "ATHASSOC" in r && "CONFNO2" in r && "SLO5" in r && "CALSYS" in r))
@@ -699,6 +705,7 @@ async function main() {
     if (school) directoryWarnings.push(...directoryIssues(hd.rows.get(school.unit_id), school));
     if (school) addServices(school, icChar.rows.get(school.unit_id));
     if (school) school.academics = { student_faculty_ratio: studentFacultyRatioFrom(efd.rows.get(school.unit_id)) };
+    if (school) school.demographics.residence = residenceFrom(efc.table.rows.get(school.unit_id), school.location.state);
     if (!school) {
       stats.noSize++;
       continue;
@@ -727,6 +734,14 @@ async function main() {
   }
   const scorecardYears = await detectScorecardYears(key, String(scorecard[0]?.id ?? "221999"));
   const meta = buildMeta(adm, sfa, ic, sfaYears, scorecardYears, cost2, chars, hd, icChar, efd);
+  addResidenceMeta(meta, efc.table, efc.year);
+
+  // Residence: the per-state rows must add up to NCES's own derived counts, and the detail files must check out.
+  const derived = await crossCheckDerived(schools, efc.table, efc.year, join(ROOT, ".cache", "ipeds"));
+  if (derived.differ.length > derived.checked * 0.01) throw new Error(`EF${efc.year}C differs from DRVEF${efc.year} for ${derived.differ.length} of ${derived.checked} colleges:\n  ${derived.differ.slice(0, 10).join("\n  ")}`);
+  const details = buildDetails(schools, efc.table, meta);
+  const detailIssues = detailProblems(schools, details, meta);
+  if (detailIssues.length) throw new Error(`Detail files failed their checks:\n  ${detailIssues.slice(0, 20).join("\n  ")}`);
 
   // Nothing is written unless every value's lineage checks out.
   const problems = validateLineage(schools, meta);
@@ -739,6 +754,8 @@ async function main() {
   writeFileSync(META, `${JSON.stringify(meta, null, 2)}\n`);
   // One school per line keeps diffs readable between syncs.
   writeFileSync(OUT, `[\n${schools.map((s) => JSON.stringify(s)).join(",\n")}\n]\n`);
+  writeDetails(join(ROOT, "data", "detail", "schools"), details);
+  console.log(`  residence (EF${efc.year}C): ${schools.filter((s) => s.demographics.residence).length} colleges, ${details.length} detail files; DRVEF${efc.year} agrees for ${derived.checked - derived.differ.length} of ${derived.checked}`);
 
   console.log(`\nWrote ${schools.length} schools to data/schools.json`);
   console.log(`  with acceptance rate: ${stats.withAdmissions}`);

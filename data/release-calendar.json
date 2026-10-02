@@ -62,6 +62,19 @@
       "note": "Reaches the site through the next College Scorecard update"
     },
     {
+      "id": "ipeds-2026-27-winter-residence",
+      "source": "ipeds",
+      "label": "IPEDS winter release (provisional), residence year",
+      "brings": ["Where first-years come from, fall 2026 (EF2026C)"],
+      "updates": ["ipeds-ef-c"],
+      "expected": "2027-12",
+      "status": "estimated",
+      "basis": "Colleges report residence in even-numbered falls; fall 2024's (EF2024C) came with the winter release in December 2025 (file dated Dec 30, 2025)",
+      "url": "https://nces.ed.gov/ipeds/survey-components/data-release-schedule",
+      "files": ["EF2026C"],
+      "note": "Fall 2025's residence (EF2025C, winter 2026) is optional for colleges, so the site skips it"
+    },
+    {
       "id": "scorecard-next",
       "source": "scorecard",
       "label": "College Scorecard update",

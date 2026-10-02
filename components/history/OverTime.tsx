@@ -173,7 +173,10 @@ function ChartPanel({
   spans = [],
   extras = [],
   note,
+  cadence = 1,
 }: {
+  /** Years between reported points (residence: every other fall; TrendLine `cadence`). */
+  cadence?: number;
   title: string;
   term?: TermKey;
   specs: PanelSeries[];
@@ -338,7 +341,7 @@ function ChartPanel({
         </div>
       )}
       {table ? (
-        <HistoryTable series={series} ranges={trendRanges} extras={trendExtras} band={band} from={window[0]} to={window[1]} kind={kind} format={format} provisionalYear={provisionalYear} />
+        <HistoryTable series={series} ranges={trendRanges} extras={trendExtras} band={band} from={window[0]} to={window[1]} kind={kind} format={format} provisionalYear={provisionalYear} cadence={cadence} />
       ) : (
         <TrendLine
           series={series}
@@ -354,6 +357,7 @@ function ChartPanel({
           provisionalYear={provisionalYear}
           events={EVENTS}
           label={`${title}, ${historyYearLabel(window[0], kind)} to ${historyYearLabel(window[1], kind)}`}
+          cadence={cadence}
         />
       )}
       {note && <p className="mt-2 text-[11px] text-muted-foreground">{note}</p>}
@@ -371,6 +375,7 @@ function HistoryTable({
   kind,
   format,
   provisionalYear,
+  cadence = 1,
 }: {
   series: TrendSeries[];
   ranges?: TrendRange[];
@@ -381,8 +386,10 @@ function HistoryTable({
   kind: YearKind;
   format: FormatKind;
   provisionalYear: number | null;
+  /** Only every `cadence`-th year has data (residence): list just those. */
+  cadence?: number;
 }) {
-  const years = Array.from({ length: to - from + 1 }, (_, i) => to - i);
+  const years = Array.from({ length: to - from + 1 }, (_, i) => to - i).filter((y) => y % cadence === 0);
   const at = (start: number, arr: readonly (number | null)[], y: number) => arr[y - start] ?? null;
   return (
     <div className="max-h-72 overflow-auto rounded-xl border">
@@ -507,7 +514,7 @@ export function OverTime(props: OverTimeProps) {
   const debtWindow = windowFor("academic", ["median_debt"]);
   const spans = policySpans(history.series.test_policy);
   const hasScores = !!(history.series.sat_25 || history.series.act_25);
-  const hasStudents = !!(history.series.undergrads || history.series.race_white || history.series.men_share || history.series.part_time_share || history.series.housing_capacity);
+  const hasStudents = !!(history.series.undergrads || history.series.race_white || history.series.men_share || history.series.part_time_share || history.series.housing_capacity || history.series.out_of_state_share);
   const hasOutcomes = !!(history.series.grad_rate || history.series.median_debt);
   const debtEnd = history.series.median_debt ? lastYear(history.series.median_debt) : null;
 
@@ -826,6 +833,31 @@ export function OverTime(props: OverTimeProps) {
                 specs={[{ key: "part_time_share", name: "Part-time", color: colors.size, band: true }]}
               />
             )}
+            {history.series.out_of_state_share && (() => {
+              // Residence is collected every other fall (specs/data-expansion/residence.md): the chart ends at its own
+              // newest fall, which can trail the admissions fall by a year.
+              const keys: SeriesKey[] = ["out_of_state_share", "international_share"];
+              const end = Math.min(latest.fall, lastYear(history.series.out_of_state_share));
+              const resWindow: [number, number] = [ui.range === "10" ? end - 10 : Math.min(earliest(keys), end - 10), end];
+              return (
+                <ChartPanel
+                  {...common}
+                  title="Where first-years come from"
+                  term="in-state-student"
+                  kind="fall"
+                  format="pct"
+                  window={resWindow}
+                  headline="out_of_state_share"
+                  provisionalYear={null}
+                  cadence={2}
+                  specs={[
+                    { key: "out_of_state_share", name: "Other states", color: colors.size, band: true },
+                    { key: "international_share", name: "Abroad", color: CONTEXT, dashed: true },
+                  ]}
+                  note="Shares of every first-year. Colleges must report where first-years come from every other fall, so points are two years apart. Shaded: the pandemic year, when fewer students came from abroad."
+                />
+              );
+            })()}
           </div>
         </Group>
       )}

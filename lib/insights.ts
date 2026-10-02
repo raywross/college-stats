@@ -21,6 +21,8 @@ import { money, moneyCompact, pct, pctSmart, num } from "./format";
 import { shortName } from "./brand";
 import { SERIES, changeOver, defaultWindow, historyYearLabel, isTinyBase, type SchoolHistory, type SeriesKey } from "./history";
 import type { HistoryFiles } from "./supabase";
+import { mostFromOtherState } from "./residence";
+import { stateName } from "./states";
 
 /* ------------------------------------------------------------------ */
 /* "Known for" badges: computed standouts vs. the dataset              */
@@ -53,6 +55,11 @@ export function standouts({ rankOf }: Dataset, s: School, { trends = false }: { 
   if (at("enrollment", (v) => v <= 0.1)) out.push({ label: "Intimate campus", domain: "size", metric: "enrollment" });
   // The national bottom 5% of students per faculty member (specs/data-expansion/student-faculty-ratio.md): a snapshot standout.
   if (at("studentFaculty", (v) => v <= 0.05)) out.push({ label: "Very small student-faculty ratio", domain: "size", metric: "studentFaculty" });
+  // Where first-years come from (specs/data-expansion/residence.md): the top 5% from other states among classes of
+  // 500+, and colleges where a majority come from one other state (e.g. North Dakota State: Minnesota).
+  if (at("outOfStateLarge", (v) => v >= 0.95)) out.push({ label: "Draws students nationally", domain: "diversity", metric: "outOfState" });
+  const homeState = mostFromOtherState(s);
+  if (homeState) out.push({ label: `Most students are from ${stateName(homeState)}`, domain: "diversity", metric: "outOfState" });
   if (at("pell", (v) => v >= 0.85)) out.push({ label: "Economic diversity", domain: "access", metric: "pell" });
   if (at("firstGen", (v) => v >= 0.85)) out.push({ label: "First-gen friendly", domain: "access", metric: "firstGen" });
   if (at("diversity", (v) => v >= 0.85)) out.push({ label: "Very diverse", domain: "diversity", metric: "diversity" });

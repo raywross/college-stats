@@ -18,6 +18,8 @@
     "live_on": {"start":2004,"values":[2,2,2,2,2,2,2,2,2,2,2,null,2,2,2,2,2,2,2,2]},
     "tuition_guarantee": {"start":2008,"values":[2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2]},
     "student_faculty_ratio": {"start":2009,"values":[17,17,16,14,14,15,14,14,16,11,13,14,12,12,11,15]},
+    "out_of_state_share": {"start":2004,"values":[0.5115,null,0.5606,null,0.3815,null,0.3799,null,0.4036,null,0.3519,null,0.4478,null,0.4379,null,0.3243,null,0.3062,null,0.3579]},
+    "international_share": {"start":2004,"values":[0.0033,null,0.0069,null,0.0407,null,0,null,0.0291,null,0,null,0,null,0.0034,null,0.0154,null,0,null,0.0368]},
     "conference": {"start":2014,"values":[367,367,367,367,367,367,367,367,367,367,367,367]},
     "football_conference": {"start":2014,"values":[367,367,367,367,367,367,367,367,367,367,367,367]},
     "athletic_association": {"start":2014,"values":[1,1,1,1,1,1,1,1,1,1,1,1]},

@@ -35,6 +35,8 @@ import {
 import { readSpec, type ColumnSpec, type Era, type FileChoice } from "./registry.mts";
 import { associationCode, footballConferenceCode, mainConferenceCode, rotcCode } from "../../lib/campus-services.ts";
 import { studentFacultyRatioFrom } from "../../lib/academics.ts";
+import { residenceFrom } from "../../lib/residence.ts";
+import { seriesStep } from "../../lib/history.ts";
 import { COHORT_LAG, type ScorecardRow } from "./scorecard.mts";
 
 /** One year of one family, read. */
@@ -58,6 +60,8 @@ export interface Inputs {
   services?: readonly YearTable[];
   /** Student-to-faculty ratio (EF{Y}D), one table per fall. */
   efd?: readonly YearTable[];
+  /** Residence of first-years (EF{Y}C pivoted to one wide row per college), one table per even-numbered fall. */
+  efc?: readonly YearTable[];
   /** College Scorecard year-prefixed values by unit ID (scripts/history/scorecard.mts), and the years requested. */
   scorecard?: { rows: ReadonlyMap<string, ScorecardRow>; first: number; last: number };
 }
@@ -88,7 +92,7 @@ export function toSeries(m: Map<number, number> | undefined, approx?: Set<number
 }
 
 /** Every series for one college. `approx` collects years whose average cost used the fallback grant formula. */
-export function buildCollege(school: Pick<School, "unit_id" | "type">, inputs: Inputs): SchoolHistory {
+export function buildCollege(school: Pick<School, "unit_id" | "type"> & { location?: Pick<School["location"], "state"> }, inputs: Inputs): SchoolHistory {
   const id = school.unit_id;
   const raw: Raw = {};
   const approx = new Set<number>();
@@ -194,6 +198,15 @@ export function buildCollege(school: Pick<School, "unit_id" | "type">, inputs: I
 
   // Student-to-faculty ratio, with the snapshot's reader (lib/academics.ts).
   for (const t of inputs.efd ?? []) put(raw, "student_faculty_ratio", t.year, studentFacultyRatioFrom(t.rows.get(id)));
+
+  // Where first-years come from, with the snapshot's reader (lib/residence.ts); in-state is the college's state today.
+  if (school.location?.state) {
+    for (const t of inputs.efc ?? []) {
+      const r = residenceFrom(t.rows.get(id), school.location.state);
+      put(raw, "out_of_state_share", t.year, r?.out_of_state);
+      put(raw, "international_share", t.year, r?.international);
+    }
+  }
 
   // Athletics and ROTC as codes for events: the same readers as the snapshot (lib/campus-services.ts).
   for (const t of inputs.services ?? []) {
@@ -484,7 +497,8 @@ export function coverageDrops(
     const years = [...m.keys()].sort((a, b) => a - b);
     for (let i = 1; i < years.length; i++) {
       const [prev, cur] = [m.get(years[i - 1])!, m.get(years[i])!];
-      const gap = years[i] - years[i - 1] > 1;
+      // A series collected every other year (residence) skips the odd years by design.
+      const gap = years[i] - years[i - 1] > seriesStep(k);
       if ((cur < prev * (1 - maxDrop) || gap) && !allow.some((a) => a.series === k && a.year === years[i])) {
         problems.push(`${k} ${years[i]}: ${gap ? "no colleges reported the year before" : `${cur} colleges, down from ${prev} the year before`}`);
       }
@@ -537,6 +551,9 @@ export function lastPointMismatches(schools: readonly School[], histories: Reado
   // The newest EF part D fall history read: what the snapshot's EF{Y}D describes (its own year, not admissions').
   const efdYears = [...histories.values()].flatMap((h) => (h.series.student_faculty_ratio ? [lastYear(h.series.student_faculty_ratio)] : []));
   const efdYear = efdYears.length ? Math.max(...efdYears) : null;
+  // The newest EF part C fall history read (an even year): what the snapshot's EF{Y}C describes.
+  const efcYears = [...histories.values()].flatMap((h) => (h.series.out_of_state_share ? [lastYear(h.series.out_of_state_share)] : []));
+  const efcYear = efcYears.length ? Math.max(...efcYears) : null;
   for (const s of schools) {
     const h = histories.get(s.unit_id);
     if (!h) continue;
@@ -629,6 +646,10 @@ export function lastPointMismatches(schools: readonly School[], histories: Reado
       check("promise", c.promise_program == null ? null : c.promise_program ? 1 : 2);
     }
     if (efdYear !== null) check("student_faculty_ratio", s.academics?.student_faculty_ratio, false, efdYear);
+    if (efcYear !== null) {
+      check("out_of_state_share", s.demographics.residence?.out_of_state, false, efcYear);
+      check("international_share", s.demographics.residence?.international, false, efcYear);
+    }
     // Athletics and ROTC: the snapshot reads the newest IC file, which is the services series' newest year.
     const a = s.campus?.athletics;
     if (servicesYear !== null && (a !== undefined || h.series.athletic_association)) {

@@ -177,6 +177,7 @@ export default async function DataPage() {
     "ipeds-hd": all.filter((s) => s.campus?.setting).length,
     "ipeds-ic-char": all.filter((s) => s.campus?.calendar !== undefined && s.campus?.programs).length,
     "ipeds-ef": all.filter((s) => s.academics?.student_faculty_ratio != null).length,
+    "ipeds-ef-c": all.filter((s) => s.demographics.residence != null).length,
     cds: cds.length,
   };
   const sourceUses = (key: SourceKey) => {
@@ -184,7 +185,7 @@ export default async function DataPage() {
     for (const [, def] of STORED) if (def.source === key) topics.add(def.topic);
     return [...topics].map((t) => TOPIC_LABELS[t]);
   };
-  const order: SourceKey[] = ["scorecard", "ipeds-adm", "ipeds-sfa", "ipeds-ic", "ipeds-ic-char", "ipeds-hd", "ipeds-ef", "cds"];
+  const order: SourceKey[] = ["scorecard", "ipeds-adm", "ipeds-sfa", "ipeds-ic", "ipeds-ic-char", "ipeds-hd", "ipeds-ef", "ipeds-ef-c", "cds"];
 
   const toc = [
     ["why", "Why it lags"],

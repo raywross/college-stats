@@ -126,7 +126,7 @@ const maxAgeFor = (year: number) => (REFRESH ? 0 : year >= THIS_YEAR - 3 ? 7 : I
 
 async function fetchYear(era: Era, year: number, keep: ReadonlySet<string>): Promise<Fetched | null> {
   for (const choice of era.files(year)) {
-    const table = await fetchIpedsTable(choice.name, { cacheDir: CACHE, maxAgeDays: maxAgeFor(year), keep, offline: NCES_CACHED });
+    const table = await fetchIpedsTable(choice.name, { cacheDir: CACHE, maxAgeDays: maxAgeFor(year), keep, offline: NCES_CACHED, wide: era.wide });
     if (!table) continue;
     let supplement: IpedsTable | undefined;
     if (era.supplement) {
@@ -143,7 +143,8 @@ async function fetchYear(era: Era, year: number, keep: ReadonlySet<string>): Pro
 async function fetchAll(keep: ReadonlySet<string>): Promise<Fetched[]> {
   const jobs = ERAS.flatMap((era) => {
     const to = Math.min(era.years[1], THIS_YEAR);
-    return Array.from({ length: to - era.years[0] + 1 }, (_, i) => ({ era, year: era.years[0] + i }));
+    const step = era.step ?? 1;
+    return Array.from({ length: Math.floor((to - era.years[0]) / step) + 1 }, (_, i) => ({ era, year: era.years[0] + i * step }));
   });
   let done = 0;
   const results = await pool(jobs, 6, async ({ era, year }) => {
@@ -189,7 +190,7 @@ function toInputs(fetched: Fetched[]): Inputs {
     return { year: f.year, family: f.family, rows, suffix: f.choice.suffix, values: f.era.values };
   };
   const of = (...fams: HistoryFamily[]) => fetched.filter((f) => fams.includes(f.family)).sort((a, b) => a.year - b.year).map(table);
-  return { admissions: of("ic-admissions", "adm"), prices: of("prices"), sfa: of("sfa"), characteristics: of("characteristics"), services: of("services"), efd: of("ef-d") };
+  return { admissions: of("ic-admissions", "adm"), prices: of("prices"), sfa: of("sfa"), characteristics: of("characteristics"), services: of("services"), efd: of("ef-d"), efc: of("ef-c") };
 }
 
 /* ------------------------------------------------------------------ */

@@ -22,6 +22,8 @@
     "live_on": {"start":2022,"values":[2,2]},
     "tuition_guarantee": {"start":2022,"values":[2,2]},
     "student_faculty_ratio": {"start":2022,"values":[18,17,18]},
+    "out_of_state_share": {"start":2022,"values":[0.1115,null,0.1053]},
+    "international_share": {"start":2022,"values":[0.0138,null,0.0196]},
     "conference": {"start":2022,"values":[158,158,158,158]},
     "football_conference": {"start":2022,"values":[158,158,158,158]},
     "athletic_association": {"start":2022,"values":[1,1,1,1]},

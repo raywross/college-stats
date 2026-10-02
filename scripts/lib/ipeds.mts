@@ -70,6 +70,11 @@ export interface FetchOptions {
   keep?: ReadonlySet<string>;
   /** Never touch the network: cached files only, and anything not cached counts as unpublished. */
   offline?: boolean;
+  /**
+   * Files with several rows per college (EF{Y}C: one per home state): pivot them into one row per college, each
+   * `values` column becoming `{column}_{row's key value}` (e.g. EFRES01_47). `columns` keeps the file's own header.
+   */
+  wide?: { key: string; values: readonly string[] };
 }
 
 /** fetch with retries on network errors and 5xx (NCES drops connections under load). */
@@ -140,6 +145,15 @@ export async function fetchIpedsTable(name: string, opts: FetchOptions): Promise
   const parsed = parseCsv(text);
   const columns = new Set(Object.keys(parsed[0] ?? {}));
   const rows = new Map<string, Record<string, string>>();
-  for (const r of parsed) if (!opts.keep || opts.keep.has(r.UNITID)) rows.set(r.UNITID, r);
+  for (const r of parsed) {
+    if (opts.keep && !opts.keep.has(r.UNITID)) continue;
+    if (!opts.wide) {
+      rows.set(r.UNITID, r);
+      continue;
+    }
+    const row = rows.get(r.UNITID) ?? rows.set(r.UNITID, { UNITID: r.UNITID }).get(r.UNITID)!;
+    const k = String(Number(r[opts.wide.key]));
+    for (const v of opts.wide.values) row[`${v}_${k}`] = r[v] ?? "";
+  }
   return { name, url, csv, revised: !!rv, columns, rows };
 }

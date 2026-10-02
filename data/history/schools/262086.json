@@ -16,6 +16,8 @@
     "application_fee": {"start":2001,"values":[40,40,40,40,40,50,50,50,50,50,50,50,0,0,0,0,0,0,0,0,0,0,0]},
     "tuition_guarantee": {"start":2008,"values":[2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2]},
     "student_faculty_ratio": {"start":2009,"values":[12,13,12,13,14,15,16,15,15,17,19,22,22,18,28,24]},
+    "out_of_state_share": {"start":2012,"values":[0,null,0.1915,null,0.2727,null,0.6,null,0.5842,null,0.8796,null,0.7416]},
+    "international_share": {"start":2012,"values":[0,null,0,null,0,null,0,null,0,null,0,null,0]},
     "athletic_association": {"start":2014,"values":[3,3,3,3,3,3,3,3,3,3,3,3]},
     "rotc": {"start":2014,"values":[2,2,2,2,2,2,2,2,2,2,2,2]},
     "promise": {"start":2022,"values":[2,2]},

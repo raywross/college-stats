@@ -1,6 +1,8 @@
 {
   "unit_id": "231095",
   "tables": {
-    "home_states": {"source":"ipeds-ef-c","vintage":"ipeds-ef-c","year":"Fall 2024","rows":{"CA":2,"DC":1,"MA":1,"NH":1}}
+    "home_states": {"source":"ipeds-ef-c","vintage":"ipeds-ef-c","year":"Fall 2024","rows":{"CA":2,"DC":1,"MA":1,"NH":1}},
+    "majors": {"source":"ipeds-c","vintage":"ipeds-c","year":"2024–25 graduates","rows":{"03.0103":[7,1],"26.1301":[4,0],"24.0199":[3,1],"01.0308":[3,0],"31.0601":[2,0]}},
+    "programs": {"source":"scorecard-fos","vintage":"scorecard-fos","year":null,"rows":{"01.03":{"title":"Agricultural Production Operations","graduates":26,"earnings":{"y1":null,"y4":null,"y4_national":null,"y4_pell":null,"y4_non_pell":null},"debt_median":null},"24.01":{"title":"Liberal Arts and Sciences, General Studies and Humanities","graduates":11,"earnings":{"y1":null,"y4":null,"y4_national":null,"y4_pell":null,"y4_non_pell":null},"debt_median":null},"26.13":{"title":"Ecology, Evolution, Systematics, and Population Biology","graduates":16,"earnings":{"y1":null,"y4":null,"y4_national":null,"y4_pell":null,"y4_non_pell":null},"debt_median":null},"31.06":{"title":"Outdoor Education","graduates":9,"earnings":{"y1":null,"y4":null,"y4_national":null,"y4_pell":null,"y4_non_pell":null},"debt_median":null}}}
   }
 }

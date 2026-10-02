@@ -1,6 +1,8 @@
 {
   "unit_id": "192110",
   "tables": {
-    "home_states": {"source":"ipeds-ef-c","vintage":"ipeds-ef-c","year":"Fall 2024","rows":{"CA":10,"NY":10,"FL":7,"IL":6,"TX":6,"NJ":5,"PA":5,"CT":3,"MI":3,"NC":3,"SC":3,"CO":2,"IA":2,"KY":2,"OH":2,"AK":1,"AZ":1,"GA":1,"HI":1,"LA":1,"MD":1,"UT":1,"VA":1,"WA":1,"WI":1}}
+    "home_states": {"source":"ipeds-ef-c","vintage":"ipeds-ef-c","year":"Fall 2024","rows":{"CA":10,"NY":10,"FL":7,"IL":6,"TX":6,"NJ":5,"PA":5,"CT":3,"MI":3,"NC":3,"SC":3,"CO":2,"IA":2,"KY":2,"OH":2,"AK":1,"AZ":1,"GA":1,"HI":1,"LA":1,"MD":1,"UT":1,"VA":1,"WA":1,"WI":1}},
+    "majors": {"source":"ipeds-c","vintage":"ipeds-c","year":"2024–25 graduates","rows":{"50.0911":[40,0],"50.0301":[22,0],"50.0908":[13,0],"50.0907":[12,0],"50.0506":[8,0],"50.0910":[7,0],"50.0914":[6,0],"50.0915":[6,0],"50.0904":[5,0],"50.0916":[2,0]}},
+    "programs": {"source":"scorecard-fos","vintage":"scorecard-fos","year":null,"rows":{"50.03":{"title":"Dance","graduates":42,"earnings":{"y1":14220,"y4":50287,"y4_national":39980,"y4_pell":null,"y4_non_pell":null},"debt_median":27000},"50.05":{"title":"Drama/Theatre Arts and Stagecraft","graduates":15,"earnings":{"y1":null,"y4":null,"y4_national":39775,"y4_pell":null,"y4_non_pell":null},"debt_median":null},"50.09":{"title":"Music","graduates":168,"earnings":{"y1":null,"y4":32842,"y4_national":42892,"y4_pell":26089,"y4_non_pell":null},"debt_median":24485}}}
   }
 }

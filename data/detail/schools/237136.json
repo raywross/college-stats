@@ -1,6 +1,8 @@
 {
   "unit_id": "237136",
   "tables": {
-    "home_states": {"source":"ipeds-ef-c","vintage":"ipeds-ef-c","year":"Fall 2024","rows":{"WV":22,"NC":5,"OH":4,"PA":4,"KS":3,"IL":2,"MD":2,"MI":2,"NJ":2,"NY":2,"FL":1,"IN":1,"MA":1,"MN":1,"MO":1,"SD":1,"TX":1,"VA":1,"WI":1}}
+    "home_states": {"source":"ipeds-ef-c","vintage":"ipeds-ef-c","year":"Fall 2024","rows":{"WV":22,"NC":5,"OH":4,"PA":4,"KS":3,"IL":2,"MD":2,"MI":2,"NJ":2,"NY":2,"FL":1,"IN":1,"MA":1,"MN":1,"MO":1,"SD":1,"TX":1,"VA":1,"WI":1}},
+    "majors": {"source":"ipeds-c","vintage":"ipeds-c","year":"2024–25 graduates","rows":{"39.0201":[26,0]}},
+    "programs": {"source":"scorecard-fos","vintage":"scorecard-fos","year":null,"rows":{"39.02":{"title":"Bible/Biblical Studies","graduates":58,"earnings":{"y1":21367,"y4":28980,"y4_national":44533,"y4_pell":25476,"y4_non_pell":null},"debt_median":12500}}}
   }
 }

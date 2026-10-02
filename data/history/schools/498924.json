@@ -34,6 +34,9 @@
     "grad_cohort_black": {"start":2017,"values":[0,0]},
     "grad_cohort_two_or_more": {"start":2017,"values":[0,0]},
     "grad_cohort_international": {"start":2017,"values":[0,0]},
-    "instruction_per_student": {"start":2022,"values":[14182,6736]}
+    "instruction_per_student": {"start":2022,"values":[14182,6736]},
+    "bachelors": {"start":2022,"values":[4,8,3]},
+    "major_09": {"start":2022,"values":[0.75,0.125,0.6667]},
+    "major_52": {"start":2022,"values":[0.25,0.875,0.3333]}
   }
 }

@@ -1,6 +1,8 @@
 {
   "unit_id": "241331",
   "tables": {
-    "home_states": {"source":"ipeds-ef-c","vintage":"ipeds-ef-c","year":"Fall 2024","rows":{"PR":178}}
+    "home_states": {"source":"ipeds-ef-c","vintage":"ipeds-ef-c","year":"Fall 2024","rows":{"PR":178}},
+    "majors": {"source":"ipeds-c","vintage":"ipeds-c","year":"2024–25 graduates","rows":{"42.0101":[92,0],"51.0203":[50,0]}},
+    "programs": {"source":"scorecard-fos","vintage":"scorecard-fos","year":null,"rows":{"13.10":{"title":"Special Education and Teaching","graduates":null,"earnings":{"y1":null,"y4":null,"y4_national":50499,"y4_pell":null,"y4_non_pell":null},"debt_median":null},"42.01":{"title":"Psychology, General","graduates":153,"earnings":{"y1":null,"y4":null,"y4_national":50706,"y4_pell":42237,"y4_non_pell":null},"debt_median":null},"43.01":{"title":"Criminal Justice and Corrections","graduates":null,"earnings":{"y1":null,"y4":null,"y4_national":55378,"y4_pell":null,"y4_non_pell":null},"debt_median":null},"51.02":{"title":"Communication Disorders Sciences and Services","graduates":60,"earnings":{"y1":null,"y4":null,"y4_national":58928,"y4_pell":null,"y4_non_pell":null},"debt_median":null},"52.02":{"title":"Business Administration, Management and Operations","graduates":null,"earnings":{"y1":null,"y4":null,"y4_national":68257,"y4_pell":49432,"y4_non_pell":null},"debt_median":null}}}
   }
 }

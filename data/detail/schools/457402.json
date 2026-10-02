@@ -1,6 +1,8 @@
 {
   "unit_id": "457402",
   "tables": {
-    "home_states": {"source":"ipeds-ef-c","vintage":"ipeds-ef-c","year":"Fall 2024","rows":{"FL":50,"GA":2,"IL":2,"DE":1,"IN":1,"MS":1,"NJ":1,"NV":1,"TX":1}}
+    "home_states": {"source":"ipeds-ef-c","vintage":"ipeds-ef-c","year":"Fall 2024","rows":{"FL":50,"GA":2,"IL":2,"DE":1,"IN":1,"MS":1,"NJ":1,"NV":1,"TX":1}},
+    "majors": {"source":"ipeds-c","vintage":"ipeds-c","year":"2024–25 graduates","rows":{"52.0201":[11,0],"24.0101":[8,0],"52.1401":[1,0]}},
+    "programs": {"source":"scorecard-fos","vintage":"scorecard-fos","year":null,"rows":{"39.04":{"title":"Religious Education","graduates":0,"earnings":{"y1":null,"y4":null,"y4_national":null,"y4_pell":null,"y4_non_pell":null},"debt_median":null},"39.06":{"title":"Theological and Ministerial Studies","graduates":4,"earnings":{"y1":null,"y4":null,"y4_national":44535,"y4_pell":null,"y4_non_pell":null},"debt_median":null},"52.02":{"title":"Business Administration, Management and Operations","graduates":6,"earnings":{"y1":null,"y4":null,"y4_national":68257,"y4_pell":null,"y4_non_pell":null},"debt_median":null}}}
   }
 }

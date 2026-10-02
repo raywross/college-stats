@@ -1,6 +1,8 @@
 {
   "unit_id": "446561",
   "tables": {
-    "home_states": {"source":"ipeds-ef-c","vintage":"ipeds-ef-c","year":"Fall 2024","rows":{"CA":312}}
+    "home_states": {"source":"ipeds-ef-c","vintage":"ipeds-ef-c","year":"Fall 2024","rows":{"CA":312}},
+    "majors": {"source":"ipeds-c","vintage":"ipeds-c","year":"2024–25 graduates","rows":{"51.3801":[431,0]}},
+    "programs": {"source":"scorecard-fos","vintage":"scorecard-fos","year":null,"rows":{"11.10":{"title":"Computer/Information Technology Administration and Management","graduates":null,"earnings":{"y1":null,"y4":null,"y4_national":85063,"y4_pell":null,"y4_non_pell":null},"debt_median":null},"51.07":{"title":"Health and Medical Administrative Services","graduates":7,"earnings":{"y1":null,"y4":null,"y4_national":null,"y4_pell":null,"y4_non_pell":null},"debt_median":null},"51.38":{"title":"Registered Nursing, Nursing Administration, Nursing Research and Clinical Nursing","graduates":31,"earnings":{"y1":null,"y4":null,"y4_national":88910,"y4_pell":null,"y4_non_pell":null},"debt_median":null}}}
   }
 }

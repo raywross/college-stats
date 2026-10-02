@@ -1,6 +1,8 @@
 {
   "unit_id": "461148",
   "tables": {
-    "home_states": {"source":"ipeds-ef-c","vintage":"ipeds-ef-c","year":"Fall 2024","rows":{"NY":13,"FL":12,"CA":10,"TX":6,"PA":4,"GA":3,"IL":3,"NJ":3,"MI":2,"OK":2,"CO":1,"KS":1,"LA":1,"MA":1,"MD":1,"MO":1,"NC":1,"NE":1,"NH":1,"NV":1,"OH":1,"TN":1,"VA":1,"WI":1}}
+    "home_states": {"source":"ipeds-ef-c","vintage":"ipeds-ef-c","year":"Fall 2024","rows":{"NY":13,"FL":12,"CA":10,"TX":6,"PA":4,"GA":3,"IL":3,"NJ":3,"MI":2,"OK":2,"CO":1,"KS":1,"LA":1,"MA":1,"MD":1,"MO":1,"NC":1,"NE":1,"NH":1,"NV":1,"OH":1,"TN":1,"VA":1,"WI":1}},
+    "majors": {"source":"ipeds-c","vintage":"ipeds-c","year":"2024–25 graduates","rows":{"50.0506":[82,0],"50.0602":[69,0],"50.0504":[9,0],"10.0304":[5,0],"50.0605":[5,0],"50.0411":[3,0]}},
+    "programs": {"source":"scorecard-fos","vintage":"scorecard-fos","year":null,"rows":{"10.03":{"title":"Graphic Communications","graduates":15,"earnings":{"y1":null,"y4":null,"y4_national":43283,"y4_pell":null,"y4_non_pell":null},"debt_median":null},"50.04":{"title":"Design and Applied Arts","graduates":6,"earnings":{"y1":null,"y4":null,"y4_national":51490,"y4_pell":null,"y4_non_pell":null},"debt_median":null},"50.05":{"title":"Drama/Theatre Arts and Stagecraft","graduates":184,"earnings":{"y1":18181,"y4":32057,"y4_national":39775,"y4_pell":21193,"y4_non_pell":null},"debt_median":27000},"50.06":{"title":"Film/Video and Photographic Arts","graduates":231,"earnings":{"y1":16415,"y4":28275,"y4_national":43765,"y4_pell":null,"y4_non_pell":null},"debt_median":30750}}}
   }
 }

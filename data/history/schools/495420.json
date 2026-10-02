@@ -53,6 +53,8 @@
     "part_time_share": {"start":2020,"values":[0.5524,0.4933,0.4,0.3383,0.3164]},
     "median_debt": {"start":2020,"values":[9500]},
     "federal_loan_rate": {"start":2019,"values":[0.8372,0.9021,0.793,0.8106,0.8193]},
-    "instruction_per_student": {"start":2019,"values":[2736,4129,5597,7556,8117]}
+    "instruction_per_student": {"start":2019,"values":[2736,4129,5597,7556,8117]},
+    "bachelors": {"start":2021,"values":[7,35,48,69]},
+    "major_51": {"start":2021,"values":[1,1,1,1]}
   }
 }

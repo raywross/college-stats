@@ -1,6 +1,8 @@
 {
   "unit_id": "238324",
   "tables": {
-    "home_states": {"source":"ipeds-ef-c","vintage":"ipeds-ef-c","year":"Fall 2024","rows":{"WI":60,"MI":1}}
+    "home_states": {"source":"ipeds-ef-c","vintage":"ipeds-ef-c","year":"Fall 2024","rows":{"WI":60,"MI":1}},
+    "majors": {"source":"ipeds-c","vintage":"ipeds-c","year":"2024–25 graduates","rows":{"51.3801":[82,0],"51.0911":[15,0],"51.0910":[13,0],"51.0907":[8,0],"51.0909":[4,0]}},
+    "programs": {"source":"scorecard-fos","vintage":"scorecard-fos","year":null,"rows":{"51.09":{"title":"Allied Health Diagnostic, Intervention, and Treatment Professions","graduates":49,"earnings":{"y1":57528,"y4":72442,"y4_national":70786,"y4_pell":null,"y4_non_pell":null},"debt_median":18375},"51.38":{"title":"Registered Nursing, Nursing Administration, Nursing Research and Clinical Nursing","graduates":191,"earnings":{"y1":66723,"y4":77754,"y4_national":88910,"y4_pell":66789,"y4_non_pell":67318},"debt_median":15500}}}
   }
 }

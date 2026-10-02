@@ -1,6 +1,8 @@
 {
   "unit_id": "124487",
   "tables": {
-    "home_states": {"source":"ipeds-ef-c","vintage":"ipeds-ef-c","year":"Fall 2024","rows":{"CA":1}}
+    "home_states": {"source":"ipeds-ef-c","vintage":"ipeds-ef-c","year":"Fall 2024","rows":{"CA":1}},
+    "majors": {"source":"ipeds-c","vintage":"ipeds-c","year":"2024–25 graduates","rows":{"39.0201":[5,0],"39.0701":[1,0]}},
+    "programs": {"source":"scorecard-fos","vintage":"scorecard-fos","year":null,"rows":{"39.06":{"title":"Theological and Ministerial Studies","graduates":14,"earnings":{"y1":null,"y4":null,"y4_national":44535,"y4_pell":null,"y4_non_pell":null},"debt_median":null}}}
   }
 }

@@ -1,6 +1,8 @@
 {
   "unit_id": "167057",
   "tables": {
-    "home_states": {"source":"ipeds-ef-c","vintage":"ipeds-ef-c","year":"Fall 2024","rows":{"MA":16,"CA":11,"NY":7,"TX":7,"FL":5,"ME":2,"MI":2,"MN":2,"MO":2,"NV":2,"PA":2,"WA":2,"AR":1,"AZ":1,"CO":1,"GA":1,"IA":1,"IN":1,"KS":1,"KY":1,"MD":1,"ND":1,"OH":1,"TN":1,"VA":1,"VT":1,"WI":1}}
+    "home_states": {"source":"ipeds-ef-c","vintage":"ipeds-ef-c","year":"Fall 2024","rows":{"MA":16,"CA":11,"NY":7,"TX":7,"FL":5,"ME":2,"MI":2,"MN":2,"MO":2,"NV":2,"PA":2,"WA":2,"AR":1,"AZ":1,"CO":1,"GA":1,"IA":1,"IN":1,"KS":1,"KY":1,"MD":1,"ND":1,"OH":1,"TN":1,"VA":1,"VT":1,"WI":1}},
+    "majors": {"source":"ipeds-c","vintage":"ipeds-c","year":"2024–25 graduates","rows":{"50.0911":[32,0],"50.0915":[13,0],"50.0908":[12,0],"50.0910":[11,0],"50.0904":[7,0],"50.0914":[7,0],"50.0903":[5,0],"50.0907":[5,0],"50.0916":[2,0],"50.0902":[0,2]}},
+    "programs": {"source":"scorecard-fos","vintage":"scorecard-fos","year":null,"rows":{"50.09":{"title":"Music","graduates":190,"earnings":{"y1":null,"y4":26985,"y4_national":42892,"y4_pell":null,"y4_non_pell":null},"debt_median":26983}}}
   }
 }

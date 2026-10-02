@@ -1,0 +1,7 @@
+{
+  "unit_id": "229300",
+  "tables": {
+    "majors": {"source":"ipeds-c","vintage":"ipeds-c","year":"2024–25 graduates","rows":{"51.3801":[240,0],"51.0602":[20,0]}},
+    "programs": {"source":"scorecard-fos","vintage":"scorecard-fos","year":null,"rows":{"51.06":{"title":"Dental Support Services and Allied Professions","graduates":51,"earnings":{"y1":59360,"y4":64980,"y4_national":68061,"y4_pell":54414,"y4_non_pell":null},"debt_median":18469},"51.38":{"title":"Registered Nursing, Nursing Administration, Nursing Research and Clinical Nursing","graduates":745,"earnings":{"y1":82043,"y4":92899,"y4_national":88910,"y4_pell":83086,"y4_non_pell":78011},"debt_median":15000}}}
+  }
+}

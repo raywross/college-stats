@@ -1,0 +1,7 @@
+{
+  "unit_id": "183804",
+  "tables": {
+    "majors": {"source":"ipeds-c","vintage":"ipeds-c","year":"2024–25 graduates","rows":{"38.0207":[859,0]}},
+    "programs": {"source":"scorecard-fos","vintage":"scorecard-fos","year":null,"rows":{"38.02":{"title":"Religion/Religious Studies","graduates":987,"earnings":{"y1":36798,"y4":59036,"y4_national":41390,"y4_pell":46656,"y4_non_pell":null},"debt_median":null}}}
+  }
+}

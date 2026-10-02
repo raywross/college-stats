@@ -80,6 +80,16 @@
     "grad_cohort_black": {"start":2018,"values":[15]},
     "grad_cohort_two_or_more": {"start":2018,"values":[7]},
     "grad_cohort_international": {"start":2018,"values":[1]},
-    "instruction_per_student": {"start":2004,"values":[5788,5217,5188,5390,5315,5887,5907,6952,7329,7929,8611,7763,8212,8070,8570,8540,7231,7155,7332,7838]}
+    "instruction_per_student": {"start":2004,"values":[5788,5217,5188,5390,5315,5887,5907,6952,7329,7929,8611,7763,8212,8070,8570,8540,7231,7155,7332,7838]},
+    "bachelors": {"start":2022,"values":[55,62,59]},
+    "major_09": {"start":2022,"values":[0.0182,0,0.0339]},
+    "major_13": {"start":2022,"values":[0.2182,0.1774,0.1356]},
+    "major_26": {"start":2022,"values":[0,0,0.0169]},
+    "major_31": {"start":2022,"values":[0,0,0.0169]},
+    "major_42": {"start":2022,"values":[0,0,0.0169]},
+    "major_44": {"start":2022,"values":[0.4182,0.3387,0.1864]},
+    "major_50": {"start":2022,"values":[0,0,0.0169]},
+    "major_51": {"start":2022,"values":[0.2545,0.3871,0.2712]},
+    "major_52": {"start":2022,"values":[0.0909,0.0968,0.3051]}
   }
 }

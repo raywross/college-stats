@@ -1,6 +1,8 @@
 {
   "unit_id": "117557",
   "tables": {
-    "home_states": {"source":"ipeds-ef-c","vintage":"ipeds-ef-c","year":"Fall 2024","rows":{"CA":76}}
+    "home_states": {"source":"ipeds-ef-c","vintage":"ipeds-ef-c","year":"Fall 2024","rows":{"CA":76}},
+    "majors": {"source":"ipeds-c","vintage":"ipeds-c","year":"2024–25 graduates","rows":{"51.0910":[5,0],"52.0201":[4,0]}},
+    "programs": {"source":"scorecard-fos","vintage":"scorecard-fos","year":null,"rows":{"51.09":{"title":"Allied Health Diagnostic, Intervention, and Treatment Professions","graduates":25,"earnings":{"y1":null,"y4":null,"y4_national":null,"y4_pell":null,"y4_non_pell":null},"debt_median":null},"52.02":{"title":"Business Administration, Management and Operations","graduates":16,"earnings":{"y1":null,"y4":null,"y4_national":68257,"y4_pell":null,"y4_non_pell":null},"debt_median":null}}}
   }
 }

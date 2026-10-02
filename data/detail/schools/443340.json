@@ -1,6 +1,8 @@
 {
   "unit_id": "443340",
   "tables": {
-    "home_states": {"source":"ipeds-ef-c","vintage":"ipeds-ef-c","year":"Fall 2024","rows":{"TN":8}}
+    "home_states": {"source":"ipeds-ef-c","vintage":"ipeds-ef-c","year":"Fall 2024","rows":{"TN":8}},
+    "majors": {"source":"ipeds-c","vintage":"ipeds-c","year":"2024–25 graduates","rows":{"38.0299":[7,0],"52.0201":[3,0]}},
+    "programs": {"source":"scorecard-fos","vintage":"scorecard-fos","year":null,"rows":{"38.02":{"title":"Religion/Religious Studies","graduates":8,"earnings":{"y1":null,"y4":null,"y4_national":41390,"y4_pell":null,"y4_non_pell":null},"debt_median":null},"52.02":{"title":"Business Administration, Management and Operations","graduates":11,"earnings":{"y1":null,"y4":null,"y4_national":68257,"y4_pell":null,"y4_non_pell":null},"debt_median":null}}}
   }
 }

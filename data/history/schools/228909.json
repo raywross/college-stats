@@ -26,6 +26,8 @@
     "part_time_share": {"start":2001,"values":[0,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,0.0244]},
     "grad_rate": {"start":1997,"values":[1]},
     "federal_loan_rate": {"start":2023,"values":[0.5294]},
-    "instruction_per_student": {"start":2004,"values":[22451,23980,22562,23603,22472,33190,21743,19228,17864,20073,16806,45117,27130,33642,37016,40298,34145,35071,38483,40520]}
+    "instruction_per_student": {"start":2004,"values":[22451,23980,22562,23603,22472,33190,21743,19228,17864,20073,16806,45117,27130,33642,37016,40298,34145,35071,38483,40520]},
+    "bachelors": {"start":2023,"values":[8,28]},
+    "major_26": {"start":2023,"values":[1,1]}
   }
 }

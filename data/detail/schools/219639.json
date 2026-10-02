@@ -1,6 +1,8 @@
 {
   "unit_id": "219639",
   "tables": {
-    "home_states": {"source":"ipeds-ef-c","vintage":"ipeds-ef-c","year":"Fall 2024","rows":{"TN":88,"MS":13,"AL":1,"AR":1,"GA":1,"IL":1}}
+    "home_states": {"source":"ipeds-ef-c","vintage":"ipeds-ef-c","year":"Fall 2024","rows":{"TN":88,"MS":13,"AL":1,"AR":1,"GA":1,"IL":1}},
+    "majors": {"source":"ipeds-c","vintage":"ipeds-c","year":"2024–25 graduates","rows":{"51.3801":[98,0],"51.0911":[18,0],"51.0910":[12,0],"51.0701":[9,0],"51.0907":[6,0],"51.1005":[5,0],"26.0102":[4,0],"51.0903":[4,0],"51.0905":[3,0],"51.0908":[2,0],"51.2212":[1,0]}},
+    "programs": {"source":"scorecard-fos","vintage":"scorecard-fos","year":null,"rows":{"26.01":{"title":"Biology, General","graduates":14,"earnings":{"y1":null,"y4":null,"y4_national":57214,"y4_pell":null,"y4_non_pell":null},"debt_median":26000},"51.07":{"title":"Health and Medical Administrative Services","graduates":33,"earnings":{"y1":39451,"y4":51673,"y4_national":58716,"y4_pell":44847,"y4_non_pell":null},"debt_median":35000},"51.09":{"title":"Allied Health Diagnostic, Intervention, and Treatment Professions","graduates":85,"earnings":{"y1":57633,"y4":61506,"y4_national":70786,"y4_pell":56059,"y4_non_pell":55864},"debt_median":26906},"51.10":{"title":"Clinical/Medical Laboratory Science/Research and Allied Professions","graduates":12,"earnings":{"y1":null,"y4":null,"y4_national":75975,"y4_pell":null,"y4_non_pell":null},"debt_median":null},"51.22":{"title":"Public Health","graduates":1,"earnings":{"y1":null,"y4":null,"y4_national":null,"y4_pell":null,"y4_non_pell":null},"debt_median":null},"51.38":{"title":"Registered Nursing, Nursing Administration, Nursing Research and Clinical Nursing","graduates":237,"earnings":{"y1":74962,"y4":82135,"y4_national":88910,"y4_pell":67648,"y4_non_pell":62584},"debt_median":34895}}}
   }
 }

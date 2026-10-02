@@ -1,0 +1,7 @@
+{
+  "unit_id": "448239",
+  "tables": {
+    "majors": {"source":"ipeds-c","vintage":"ipeds-c","year":"2024–25 graduates","rows":{"51.0602":[59,0]}},
+    "programs": {"source":"scorecard-fos","vintage":"scorecard-fos","year":null,"rows":{"51.06":{"title":"Dental Support Services and Allied Professions","graduates":117,"earnings":{"y1":52423,"y4":44722,"y4_national":68061,"y4_pell":36359,"y4_non_pell":49216},"debt_median":28896}}}
+  }
+}

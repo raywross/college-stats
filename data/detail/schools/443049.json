@@ -1,6 +1,8 @@
 {
   "unit_id": "443049",
   "tables": {
-    "home_states": {"source":"ipeds-ef-c","vintage":"ipeds-ef-c","year":"Fall 2024","rows":{"CA":12,"FL":4,"TX":4,"WA":3,"TN":2,"NV":1,"OH":1,"OK":1}}
+    "home_states": {"source":"ipeds-ef-c","vintage":"ipeds-ef-c","year":"Fall 2024","rows":{"CA":12,"FL":4,"TX":4,"WA":3,"TN":2,"NV":1,"OH":1,"OK":1}},
+    "majors": {"source":"ipeds-c","vintage":"ipeds-c","year":"2024–25 graduates","rows":{"52.0213":[34,0],"38.0201":[22,0],"42.2803":[8,0],"13.0101":[7,0],"52.0299":[6,0]}},
+    "programs": {"source":"scorecard-fos","vintage":"scorecard-fos","year":null,"rows":{"13.01":{"title":"Education, General","graduates":8,"earnings":{"y1":null,"y4":null,"y4_national":49808,"y4_pell":null,"y4_non_pell":null},"debt_median":null},"38.02":{"title":"Religion/Religious Studies","graduates":43,"earnings":{"y1":42103,"y4":64235,"y4_national":41390,"y4_pell":null,"y4_non_pell":null},"debt_median":22209},"39.06":{"title":"Theological and Ministerial Studies","graduates":null,"earnings":{"y1":null,"y4":null,"y4_national":44535,"y4_pell":null,"y4_non_pell":null},"debt_median":null},"42.28":{"title":"Clinical, Counseling and Applied Psychology","graduates":0,"earnings":{"y1":null,"y4":null,"y4_national":null,"y4_pell":null,"y4_non_pell":null},"debt_median":null},"52.02":{"title":"Business Administration, Management and Operations","graduates":39,"earnings":{"y1":null,"y4":49234,"y4_national":68257,"y4_pell":null,"y4_non_pell":null},"debt_median":null}}}
   }
 }

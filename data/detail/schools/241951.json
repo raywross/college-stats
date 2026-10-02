@@ -1,6 +1,8 @@
 {
   "unit_id": "241951",
   "tables": {
-    "home_states": {"source":"ipeds-ef-c","vintage":"ipeds-ef-c","year":"Fall 2024","rows":{"PR":61}}
+    "home_states": {"source":"ipeds-ef-c","vintage":"ipeds-ef-c","year":"Fall 2024","rows":{"PR":61}},
+    "majors": {"source":"ipeds-c","vintage":"ipeds-c","year":"2024–25 graduates","rows":{"50.0699":[13,0],"50.0708":[11,0],"50.0409":[5,0],"50.0710":[4,0],"50.0407":[3,0],"50.0709":[3,0],"50.0404":[2,0]}},
+    "programs": {"source":"scorecard-fos","vintage":"scorecard-fos","year":null,"rows":{"13.13":{"title":"Teacher Education and Professional Development, Specific Subject Areas","graduates":4,"earnings":{"y1":null,"y4":null,"y4_national":51389,"y4_pell":null,"y4_non_pell":null},"debt_median":null},"50.01":{"title":"Visual and Performing Arts, General","graduates":8,"earnings":{"y1":null,"y4":23558,"y4_national":41688,"y4_pell":28086,"y4_non_pell":null},"debt_median":null},"50.04":{"title":"Design and Applied Arts","graduates":34,"earnings":{"y1":null,"y4":null,"y4_national":51490,"y4_pell":22108,"y4_non_pell":null},"debt_median":null},"50.06":{"title":"Film/Video and Photographic Arts","graduates":17,"earnings":{"y1":null,"y4":null,"y4_national":null,"y4_pell":null,"y4_non_pell":null},"debt_median":null},"50.07":{"title":"Fine and Studio Arts","graduates":44,"earnings":{"y1":7453,"y4":23194,"y4_national":41367,"y4_pell":null,"y4_non_pell":null},"debt_median":null}}}
   }
 }

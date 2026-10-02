@@ -1,6 +1,8 @@
 {
   "unit_id": "160409",
   "tables": {
-    "home_states": {"source":"ipeds-ef-c","vintage":"ipeds-ef-c","year":"Fall 2024","rows":{"LA":7,"FL":3,"SC":3,"MS":2,"TX":2,"GA":1,"NM":1,"TN":1}}
+    "home_states": {"source":"ipeds-ef-c","vintage":"ipeds-ef-c","year":"Fall 2024","rows":{"LA":7,"FL":3,"SC":3,"MS":2,"TX":2,"GA":1,"NM":1,"TN":1}},
+    "majors": {"source":"ipeds-c","vintage":"ipeds-c","year":"2024–25 graduates","rows":{"38.0001":[15,0],"38.0203":[11,0]}},
+    "programs": {"source":"scorecard-fos","vintage":"scorecard-fos","year":null,"rows":{"38.00":{"title":"Philosophy and Religious Studies, General","graduates":39,"earnings":{"y1":null,"y4":null,"y4_national":47213,"y4_pell":null,"y4_non_pell":null},"debt_median":null},"38.02":{"title":"Religion/Religious Studies","graduates":8,"earnings":{"y1":null,"y4":null,"y4_national":41390,"y4_pell":null,"y4_non_pell":null},"debt_median":null}}}
   }
 }

@@ -1,6 +1,8 @@
 {
   "unit_id": "124292",
   "tables": {
-    "home_states": {"source":"ipeds-ef-c","vintage":"ipeds-ef-c","year":"Fall 2024","rows":{"CA":50,"NY":8,"TX":8,"AZ":6,"CO":6,"CT":6,"MA":6,"VA":6,"MI":4,"MN":4,"PA":4,"AR":3,"IL":3,"MO":3,"NE":3,"FL":2,"KS":2,"MT":2,"NJ":2,"WA":2,"WI":2,"GA":1,"ID":1,"KY":1,"MD":1,"NH":1,"NM":1,"NV":1,"OR":1,"RI":1,"SC":1,"TN":1}}
+    "home_states": {"source":"ipeds-ef-c","vintage":"ipeds-ef-c","year":"Fall 2024","rows":{"CA":50,"NY":8,"TX":8,"AZ":6,"CO":6,"CT":6,"MA":6,"VA":6,"MI":4,"MN":4,"PA":4,"AR":3,"IL":3,"MO":3,"NE":3,"FL":2,"KS":2,"MT":2,"NJ":2,"WA":2,"WI":2,"GA":1,"ID":1,"KY":1,"MD":1,"NH":1,"NM":1,"NV":1,"OR":1,"RI":1,"SC":1,"TN":1}},
+    "majors": {"source":"ipeds-c","vintage":"ipeds-c","year":"2024–25 graduates","rows":{"24.0101":[119,0]}},
+    "programs": {"source":"scorecard-fos","vintage":"scorecard-fos","year":null,"rows":{"24.01":{"title":"Liberal Arts and Sciences, General Studies and Humanities","graduates":217,"earnings":{"y1":33432,"y4":49898,"y4_national":53072,"y4_pell":40464,"y4_non_pell":40638},"debt_median":18000}}}
   }
 }

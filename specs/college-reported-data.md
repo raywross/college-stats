@@ -218,3 +218,48 @@ on) is its own doc: [college-reported-setup.md](college-reported-setup.md).
   been exercised against the real script in GitHub Actions (that needs the secrets from
   [college-reported-setup.md](college-reported-setup.md) and a merged script). The YAML was validated by parsing
   it with `js-yaml` and syntax-checking every `run:` block with `bash -n`.
+
+### Pipeline
+`npm run sync-college-reported` (`scripts/sync-college-reported.mts`) needs `ANTHROPIC_API_KEY` (`.env.local` or the
+environment). Flags: `--pilot` (colleges in `data/reference/college-reported-pilot.json`, `{ "colleges": [{ unit_id,
+tier, sector }] }`; without the file it picks 50 deterministically across admit-rate tiers × sectors and says so),
+`--college <unit_id>` (repeatable), `--all` (every college; the scheduled mode), `--rediscover` (ignore stored
+recipes; documents with the same URL keep their hashes, so unchanged files are still skipped), `--dry-run` (nothing
+written to `data/`; downloads are still cached), `--max-discoveries N` (Sonnet discovery budget, default 100),
+`--run <id>` (default: start time, ISO). Exit code 2 = circuit breaker tripped (files are still written).
+
+Files, all under `scripts/lib/college-reported/` except the CLI:
+- `pipeline.mts`: `createPipeline({ client, fetch, now, sleep?, minDelayMs?, cacheDir?, concurrency?, log? })` →
+  `run({ schools, sources, reported, queue, run, rediscover?, maxDiscoveries? })`, working on the files' contents in
+  memory and returning them updated with a `RunSummary`; `circuitBreaker()`.
+- `llm.mts`: `discover()` (Sonnet 5, `web_search_20260209` + `web_fetch_20260209`, recipe returned through a strict
+  `save_recipe` tool, `pause_turn` resumed) and `extract()` (Haiku 4.5, `output_config.format` = `EXTRACTION_SCHEMA`,
+  falling back to a strict forced tool if a model rejects structured outputs; system prompt marked for caching).
+- `http.mts`: robots.txt (RFC 9309; disallowed URLs are skipped and logged; an unreachable robots.txt disallows),
+  one request at a time per host at least 1 s apart (longer for a Crawl-delay), conditional GETs, sha256, the
+  `.cache/college-docs/<sha256>` cache. 401/403/429 and challenge pages stop there; no user-agent switching.
+- `documents.mts`: HTML → text (headings as `##`, table cells joined with `|`), PDF text per page with pdf.js
+  (`pdfjs-dist` legacy build: whole document up to 30 pages, else the recipe's pages and anchor pages ±1; under 200
+  characters of text = scanned, sent as a PDF block), index-page link scanning (a CDS or class-profile link for a
+  newer year than the recipe has becomes a new source).
+- `scripts/lib/cds-xlsx.mts`: the Excel CDS reader shared with `import-cds` (moved there unchanged). Excel CDS files
+  are read without a model: C1 totals, the edition from the workbook's own title (else the URL), and quotes like
+  `C1 Total first-time, first-year students who applied: 45,409`. The model reads the C sheet only if C1 isn't found.
+- `models.mts`: per-model prices (estimates) and the usage/cost log; `files.mts`: one-entry-per-line JSON files
+  sorted by `unit_id`, run summaries in `data/reports/college-reported-run-<run>.json`; `pilot.mts`: the pilot pick.
+
+Behaviour worth knowing:
+- A document is read (by code or model) only when it is new, its hash changed, or escalation forces a re-read; a
+  304 or the same hash keeps the stored extraction. `processed` is the date of the last real read.
+- Figures that fail only check 5 (not newer than the federal year) mean the college hasn't published a newer year:
+  not published, not queued, not escalated. A recipe marked `none_found` is retried only with `--rediscover`.
+- Missing anchors and unreadable documents are queued as `quote-present` failures ("no figures read: …").
+- Counts: `attempted` = colleges where something was read or discovered (an all-304 college is not an attempt);
+  `changed` = published values that changed within the same entering term (a new term is a new year, not a change);
+  the breaker's changed share is over all values in `college-reported.json` before the run.
+- Tests (`tests/college-reported-pipeline.test.mts`) pass a fake client (answers `save_recipe` calls with a canned
+  recipe and extraction calls with canned JSON, recording every request) and a fake fetch (a URL → response table).
+  They prove: same hash and 304 skip the model (and send the conditional headers), a new index link is read alone,
+  the Excel fixture (`tests/fixtures/cds-c1.xlsx`) is read deterministically and its entry passes `validateSchool`,
+  a PDF fixture's page text reaches the model, failing checks escalate Haiku → Sonnet → Opus and land in the queue
+  with nothing published, robots.txt is obeyed, the breaker trips just past its limits, and the summary counts.

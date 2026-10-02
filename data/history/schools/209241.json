@@ -24,6 +24,8 @@
     "faculty_full_time_share": {"start":2005,"values":[0.5,0.5,0.7778,0.7778,0.875,0.64,0.6087,0.75,0.6829,0.6842,0.7353,0.7568,0.6905,0.7838,0.7368,0.7429,0.6667,0.6563,0.6667,0.6571]},
     "faculty_salary": {"start":2016,"values":[47451,52809,60165,59696,61179,57762,59241,75280,77260]},
     "out_of_state_share": {"start":2004,"values":[0.6,null,1,null,0.75,null,1,null,0.6923,null,0.75,null,1,null,0.3333,null,0.5,null,null,null,1]},
+    "transfer_in_count": {"start":2008,"values":[0,0,0,0,0,0,0,9,11,10,7,9,5,8,8,8,15]},
+    "transfer_in_share": {"start":2008,"values":[0,0,0,0,0,0,0,0.4091,0.8462,0.5882,0.7,0.6,0.5556,0.8,1,0.8,0.6818]},
     "international_share": {"start":2004,"values":[0,null,0,null,0.0833,null,0,null,0,null,0,null,0,null,0,null,0.5,null,null,null,0]},
     "athletic_association": {"start":2014,"values":[3,3,3,3,3,3,3,3,3,3,3,3]},
     "rotc": {"start":2014,"values":[2,2,2,2,2,2,2,2,2,2,2,2]},

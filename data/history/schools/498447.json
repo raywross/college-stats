@@ -18,6 +18,8 @@
     "faculty_full_time_share": {"start":2023,"values":[0.0938,0.1321]},
     "faculty_salary": {"start":2022,"values":[78750,71972,75653]},
     "out_of_state_share": {"start":2022,"values":[0.1875,null,0]},
+    "transfer_in_count": {"start":2022,"values":[56,76,39]},
+    "transfer_in_share": {"start":2022,"values":[0.7778,0.8,0.5342]},
     "international_share": {"start":2022,"values":[0,null,0]},
     "athletic_association": {"start":2022,"values":[3,3,3,3]},
     "rotc": {"start":2022,"values":[2,2,2,2]},

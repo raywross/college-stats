@@ -25,6 +25,8 @@
     "faculty_full_time_share": {"start":2018,"values":[1,1,1,1,0.9333,0.9412,1]},
     "faculty_salary": {"start":2018,"values":[49250,54350,54917,55797,56798,59785,60279]},
     "out_of_state_share": {"start":2018,"values":[0.2946,null,0.4077,null,0.3943,null,0.3656]},
+    "transfer_in_count": {"start":2018,"values":[81,115,77,102,108,125,136]},
+    "transfer_in_share": {"start":2018,"values":[0.2656,0.371,0.2285,0.2802,0.3051,0.372,0.3277]},
     "international_share": {"start":2018,"values":[0.0045,null,0.0077,null,0.0041,null,0.043]},
     "conference": {"start":2018,"values":[302,302,302,302,302,302,302,302]},
     "football_conference": {"start":2018,"values":[302,302,302,302,302,302,302,302]},

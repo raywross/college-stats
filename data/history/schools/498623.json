@@ -6,6 +6,8 @@
     "student_faculty_ratio": {"start":2024,"values":[9]},
     "faculty_salary": {"start":2024,"values":[36000]},
     "out_of_state_share": {"start":2024,"values":[0.5484]},
+    "transfer_in_count": {"start":2024,"values":[19]},
+    "transfer_in_share": {"start":2024,"values":[0.38]},
     "international_share": {"start":2024,"values":[0.0645]},
     "athletic_association": {"start":2024,"values":[3,3]},
     "rotc": {"start":2024,"values":[2,2]},

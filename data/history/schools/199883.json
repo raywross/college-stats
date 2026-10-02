@@ -17,6 +17,8 @@
     "faculty_full_time_share": {"start":2005,"values":[0.625,0.7857,null,null,null,null,null,null,null,null,null,null,null,null,null,null,1,1,1,1]},
     "faculty_salary": {"start":2021,"values":[41252,63357,64975,57000]},
     "out_of_state_share": {"start":2004,"values":[0]},
+    "transfer_in_count": {"start":2008,"values":[50,57,0,0,0,0,0,0,0,0,0,0,0,0,40,40,41]},
+    "transfer_in_share": {"start":2008,"values":[1,1,null,null,null,null,null,null,null,null,null,null,null,null,1,1,1]},
     "international_share": {"start":2004,"values":[0]},
     "athletic_association": {"start":2021,"values":[3,3,3,3,3]},
     "rotc": {"start":2014,"values":[2,2,2,2,2,2,2,2,2,2,2,2]},
@@ -49,6 +51,8 @@
     "om_award": {"start":2013,"values":[0.8961,0.9296,0.8625,0.8553]},
     "om_transfer": {"start":2013,"values":[0,0,0,0]},
     "om_award_pell": {"start":2013,"values":[0.9333,0.9355,0.8889,0.875]},
+    "om_award_4": {"start":2013,"values":[0.8961,0.9296,0.8625,0.8553]},
+    "om_award_6": {"start":2013,"values":[0.8961,0.9296,0.8625,0.8553]},
     "om_award_non_pell": {"start":2013,"values":[0.8723,0.925,0.8409,0.8409]},
     "instruction_per_student": {"start":2004,"values":[9683,12591,19997,25604,19803,12133,11327,11910,10361,13998,10610,9044,11400,12550,15688,19413,18839,19570,13546,13077]}
   }

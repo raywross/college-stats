@@ -9,6 +9,8 @@
     "tuition_guarantee": {"start":2016,"values":[2,2,2,2,2,2,2,2]},
     "student_faculty_ratio": {"start":2016,"values":[10,7,4,4,4,3,4,4,3]},
     "faculty_salary": {"start":2016,"values":[41513,38700,41550,38700,28260,33675,30325,46662,37693]},
+    "transfer_in_count": {"start":2016,"values":[20,16,9,7,11,7,15,4,2]},
+    "transfer_in_share": {"start":2016,"values":[1,1,1,1,1,1,1,1,1]},
     "athletic_association": {"start":2016,"values":[3,3,3,3,3,3,3,3,3,3]},
     "rotc": {"start":2016,"values":[2,2,2,2,2,2,2,2,2,2]},
     "promise": {"start":2022,"values":[2,2]},
@@ -37,6 +39,8 @@
     "federal_loan_rate": {"start":2015,"values":[0,0,0,0,0,0,0,0,0]},
     "om_award": {"start":2012,"values":[0.6471,0.7143,0.3333,null,0.3]},
     "om_transfer": {"start":2012,"values":[0.1765,0.0952,0.5667,null,0.5]},
+    "om_award_4": {"start":2012,"values":[0.6176,0.6429,0.3333,null,0.2667]},
+    "om_award_6": {"start":2012,"values":[0.6471,0.6905,0.3333,null,0.3]},
     "om_award_non_pell": {"start":2012,"values":[0.6471,0.7143,0.3333]},
     "instruction_per_student": {"start":2015,"values":[5062,6327,9046,15383,20040,9137,13560,12721,17447]}
   }

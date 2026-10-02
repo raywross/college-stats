@@ -9,6 +9,8 @@
     "admit_rate_women": {"start":2024,"values":[1]},
     "student_faculty_ratio": {"start":2024,"values":[20]},
     "out_of_state_share": {"start":2024,"values":[0]},
+    "transfer_in_count": {"start":2024,"values":[38]},
+    "transfer_in_share": {"start":2024,"values":[0.6552]},
     "international_share": {"start":2024,"values":[0]},
     "athletic_association": {"start":2024,"values":[3,3]},
     "rotc": {"start":2024,"values":[2,2]},

@@ -9,6 +9,8 @@
     "student_faculty_ratio": {"start":2022,"values":[1,6,6]},
     "faculty_full_time_share": {"start":2022,"values":[1,0.7765,0.8196]},
     "faculty_salary": {"start":2022,"values":[96750,106844,108941]},
+    "transfer_in_count": {"start":2008,"values":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,5,4,21]},
+    "transfer_in_share": {"start":2022,"values":[1,1,1]},
     "athletic_association": {"start":2014,"values":[3,3,3,3,3,3,3,3,3,3,3,3]},
     "rotc": {"start":2014,"values":[2,2,2,2,2,2,2,2,2,2,2,2]},
     "promise": {"start":2022,"values":[2,2]},

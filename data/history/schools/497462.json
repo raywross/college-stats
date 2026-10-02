@@ -16,6 +16,8 @@
     "student_faculty_ratio": {"start":2022,"values":[41,15,12]},
     "faculty_salary": {"start":2024,"values":[52500]},
     "out_of_state_share": {"start":2022,"values":[0,null,0]},
+    "transfer_in_count": {"start":2022,"values":[0,0,0]},
+    "transfer_in_share": {"start":2022,"values":[0,null,0]},
     "international_share": {"start":2022,"values":[0,null,0]},
     "athletic_association": {"start":2022,"values":[3,3,3,3]},
     "rotc": {"start":2022,"values":[2,2,2,2]},

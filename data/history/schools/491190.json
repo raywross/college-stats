@@ -11,6 +11,8 @@
     "tuition_guarantee": {"start":2017,"values":[2,2,2,2,2,2,2]},
     "student_faculty_ratio": {"start":2021,"values":[2,4,5,11]},
     "faculty_salary": {"start":2018,"values":[68632,53738,74966,74147,78567,69969,70682]},
+    "transfer_in_count": {"start":2017,"values":[0,0,0,0,2,1,2,0]},
+    "transfer_in_share": {"start":2021,"values":[1,1,1]},
     "athletic_association": {"start":2017,"values":[3,3,3,3,3,3,3,3,3]},
     "rotc": {"start":2017,"values":[2,2,2,2,2,2,2,2,2]},
     "promise": {"start":2022,"values":[2,2]},

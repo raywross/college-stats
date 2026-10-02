@@ -17,6 +17,8 @@
     "student_faculty_ratio": {"start":2020,"values":[11,12,10,8,10]},
     "faculty_salary": {"start":2020,"values":[19750,18450,16000,30450,27750]},
     "out_of_state_share": {"start":2020,"values":[0.8571,null,0.8,null,0.375]},
+    "transfer_in_count": {"start":2020,"values":[16,8,4,2,4]},
+    "transfer_in_share": {"start":2020,"values":[0.6957,0.6154,0.2105,0.1429,0.3333]},
     "international_share": {"start":2020,"values":[0,null,0,null,0.125]},
     "athletic_association": {"start":2020,"values":[3,3,3,3,3,3]},
     "rotc": {"start":2020,"values":[2,2,2,2,2,2]},

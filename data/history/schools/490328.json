@@ -8,6 +8,8 @@
     "tuition_guarantee": {"start":2017,"values":[2,2,2,2,2,2,2]},
     "student_faculty_ratio": {"start":2017,"values":[8,12,15,8,11,16,21,17]},
     "faculty_salary": {"start":2017,"values":[14382,21300,21300,16440,16800,16800,16800,18810]},
+    "transfer_in_count": {"start":2017,"values":[31,7,22,11,3,11,6,3]},
+    "transfer_in_share": {"start":2017,"values":[1,1,1,1,1,1,1,1]},
     "athletic_association": {"start":2017,"values":[3,3,3,3,3,3,3,3,3]},
     "rotc": {"start":2017,"values":[2,2,2,2,2,2,2,2,2]},
     "promise": {"start":2022,"values":[2,2]},

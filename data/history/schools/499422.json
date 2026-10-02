@@ -6,6 +6,8 @@
     "student_faculty_ratio": {"start":2023,"values":[9,10]},
     "faculty_full_time_share": {"start":2024,"values":[0.0882]},
     "faculty_salary": {"start":2023,"values":[63750,63500]},
+    "transfer_in_count": {"start":2023,"values":[20,26]},
+    "transfer_in_share": {"start":2023,"values":[1,1]},
     "athletic_association": {"start":2023,"values":[3,3,3]},
     "rotc": {"start":2023,"values":[2,2,2]},
     "promise": {"start":2023,"values":[2]},

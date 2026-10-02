@@ -21,6 +21,8 @@
     "student_faculty_ratio": {"start":2015,"values":[6,4,4,2,2,2,2,2,2,3]},
     "faculty_salary": {"start":2016,"values":[68884,71184,72816,74585,76350,78419,79988,82130,83783]},
     "out_of_state_share": {"start":2016,"values":[0.3333,null,null,null,null,null,0,null,0.375]},
+    "transfer_in_count": {"start":2015,"values":[4,2,0,0,0,2,2,0,2,3]},
+    "transfer_in_share": {"start":2015,"values":[0.5,0.4,null,0,null,1,0.6667,0,0.4,0.2727]},
     "international_share": {"start":2016,"values":[0,null,null,null,null,null,0,null,0.25]},
     "athletic_association": {"start":2015,"values":[3,3,3,3,3,3,3,3,3,3,3]},
     "rotc": {"start":2015,"values":[2,2,2,2,2,2,2,2,2,2,2]},

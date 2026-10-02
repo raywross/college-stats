@@ -91,6 +91,13 @@
       "edition": "Fall 2024 (EF2024C)",
       "url": "https://nces.ed.gov/ipeds/complete-data-files/EF2024C.zip",
       "description": "Where each college's first-time undergraduates lived when they were admitted: each U.S. state, DC, and territory, and foreign countries. Colleges must report it in even-numbered falls; in odd years it's optional, so the site uses even years."
+    },
+    "ipeds-ef-a": {
+      "label": "IPEDS Fall Enrollment survey (part A, enrollment by level)",
+      "publisher": "National Center for Education Statistics (NCES)",
+      "edition": "Fall 2024 (EF2024A)",
+      "url": "https://nces.ed.gov/ipeds/complete-data-files/EF2024A.zip",
+      "description": "Each college's fall enrollment by level of student, including new transfer-in undergraduates (full-time and part-time) and first-time degree-seeking undergraduates."
     }
   },
   "vintages": {
@@ -104,6 +111,7 @@
     "ipeds-gr": "Entered fall 2018",
     "ipeds-sal": "Fall 2024",
     "ipeds-ef-c": "Fall 2024",
+    "ipeds-ef-a": "Fall 2024",
     "ipeds-f": "2023–24",
     "scorecard-enrollment": "Fall 2024",
     "scorecard-age": "Fall 2023",

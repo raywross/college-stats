@@ -17,6 +17,8 @@
     "student_faculty_ratio": {"start":2011,"values":[1,1,6,8,7,7,7,7,7,7,7,7,8,8]},
     "faculty_full_time_share": {"start":2012,"values":[0.1875,0.1875,0.1875]},
     "out_of_state_share": {"start":2012,"values":[0,null,0,null,0,null,0,null,0,null,0,null,0]},
+    "transfer_in_count": {"start":2008,"values":[0,0,0,0,14,7,5,5,10,13,11,6,2,4,4,4,24]},
+    "transfer_in_share": {"start":2011,"values":[0,0.875,0.5385,0.2941,0.3846,0.625,0.7647,0.44,0.2857,0.125,0.1905,0.2,0.3077,0.7273]},
     "international_share": {"start":2012,"values":[0,null,0,null,0,null,0,null,0,null,0,null,0]},
     "athletic_association": {"start":2014,"values":[3,3,3,3,3,3,3,3,3,3,3,3]},
     "rotc": {"start":2014,"values":[1,1,2,2,2,2,2,2,2,2,2,2]},

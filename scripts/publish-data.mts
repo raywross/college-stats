@@ -10,7 +10,8 @@
  *   1. The same lineage check as `npm run check:lineage` (lib/lineage.ts). Nothing invalid is published.
  *   2. Refuse to drop more than 10% of the colleges already published (a broken sync, most likely)
  *      unless --allow-shrink.
- *   3. publish_dataset() replaces everything in one transaction (supabase/migrations/).
+ *   3. stage_schools() takes the colleges in batches (one call with all of them exceeds the statement timeout), then
+ *      publish_schools_staged() swaps them in with meta and the release calendar in one transaction.
  *   4. Read it all back and require an exact match with the local files.
  *   5. History (data/history/, from `npm run sync-history`), if built: the same shard checks as check:lineage, then
  *      stage_history() takes the shards in batches, publish_history_staged() swaps them in with one transaction, and
@@ -37,6 +38,9 @@ const DRY_RUN = process.argv.includes("--dry-run");
 const ALLOW_SHRINK = process.argv.includes("--allow-shrink");
 /** History shards per staging call (~1 MB), well under the API's statement timeout. */
 const HISTORY_BATCH = 150;
+/** Colleges per staging call (~0.9 MB at 11 MB for 1,893); one call with all of them timed out on 2026-10-02. */
+const SCHOOL_BATCH = 150;
+const SCHOOL_STAGING_MIGRATION = "supabase/migrations/20261002140000_school_staging.sql";
 
 const read = <T,>(name: string): T => JSON.parse(readFileSync(join(ROOT, "data", name), "utf8"));
 const schools = read<School[]>("schools.json");
@@ -107,6 +111,8 @@ if (count && schools.length < count * 0.9 && !ALLOW_SHRINK) {
 }
 
 /**
+ * Callers check a table with a one-row select, never `head: true`: PostgREST answers a HEAD request for a missing table
+ * with a bare 204, which supabase-js reports as no error (found 2026-10-02), so the check would always pass.
  * Only a missing table (Postgres 42P01, or PostgREST's PGRST205) means a migration isn't applied. Anything else (an empty
  * error from a dropped connection, or another publish running at the same moment) is reported as it is.
  */
@@ -117,10 +123,15 @@ function tableCheck(error: { message?: string; code?: string; details?: string }
   fail(`checking the database failed: ${what}. Retry; if it keeps failing, check the project.`);
 }
 
+{
+  const { error: stagingError } = await client.from("school_staging").select("unit_id").limit(1);
+  tableCheck(stagingError, SCHOOL_STAGING_MIGRATION);
+}
+
 if (history) {
-  const { error: historyError } = await client.from("history_files").select("name", { head: true });
+  const { error: historyError } = await client.from("history_files").select("name").limit(1);
   tableCheck(historyError, "supabase/migrations/20260928120000_history.sql");
-  const { error: stagingError } = await client.from("history_staging").select("unit_id", { head: true });
+  const { error: stagingError } = await client.from("history_staging").select("unit_id").limit(1);
   tableCheck(stagingError, "supabase/migrations/20260928180000_history_staging.sql");
 }
 
@@ -137,10 +148,14 @@ if (DRY_RUN) {
 
 // 3. Publish
 const commit = gitCommit();
-const { data: written, error } = await client.rpc("publish_dataset", {
-  p_schools: schools,
+for (let i = 0; i < schools.length; i += SCHOOL_BATCH) {
+  const { error } = await client.rpc("stage_schools", { p_schools: schools.slice(i, i + SCHOOL_BATCH), p_offset: i, p_reset: i === 0 });
+  if (error) fail(`staging colleges ${i}–${Math.min(i + SCHOOL_BATCH, schools.length)}: ${error.message}. Has ${SCHOOL_STAGING_MIGRATION} been applied?`);
+}
+const { data: written, error } = await client.rpc("publish_schools_staged", {
   p_meta: meta,
   p_release_calendar: releaseCalendar,
+  p_expected: schools.length,
   p_git_commit: commit,
   p_published_by: process.env.GITHUB_ACTOR ?? userInfo().username,
 });

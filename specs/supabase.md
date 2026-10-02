@@ -52,6 +52,12 @@ back to JSON.
   200, then `publish_details_staged(p_expected)` swaps them in with one transaction and they're read back.
   `publish-data` stops if the tables are missing, so **apply the migration to dev (and prod) before the next publish**.
   The app's `getDetail()` is fail-soft: without the table, profiles render without home states.
+- **The dataset in batches** (migration `20261002140000_school_staging.sql`, added 2026-10-02): wave 2 took
+  `data/schools.json` past 11 MB, and one `publish_dataset()` call (the whole file as one argument) hit the statement
+  timeout. `stage_schools(p_schools, p_offset, p_reset)` now takes 150 colleges per call, keeping each one's position,
+  and `publish_schools_staged(p_meta, p_release_calendar, p_expected, …)` swaps them in with meta and the release
+  calendar in one transaction. `publish_dataset()` remains for older checkouts. `publish-data` checks the staging table
+  first and stops with the migration's name if it's missing.
 
 - Documents are **`json`, not `jsonb`**: jsonb reorders object keys (e.g. race/ethnicity shares come back as
   asian, black, other, white, …), and the UI iterates some objects in key order.
@@ -81,7 +87,8 @@ which Next.js would load into every local `next build`/`next start` and point th
 
 1. Lineage check (same as `npm run check:lineage`). Any problem stops the publish.
 2. Shrink guard: refuses to drop more than 10% of the colleges already published unless `--allow-shrink`.
-3. `publish_dataset()` in one transaction, recording the git commit (`+uncommitted` if `data/` has local changes).
+3. `stage_schools()` in batches of 150, then `publish_schools_staged()` in one transaction, recording the git commit
+   (`+uncommitted` if `data/` has local changes).
 4. Reads everything back through the same code the app uses and requires an exact match with the files.
 5. If `REVALIDATE_URL` and `REVALIDATE_SECRET` are set, POSTs to the site so static pages regenerate
    ([Revalidation](#revalidation)). A failure here exits non-zero but says the data is already published.

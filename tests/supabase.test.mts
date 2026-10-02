@@ -5,6 +5,8 @@
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { fetchDatasetFiles, fetchPublishedVersion } from "../lib/supabase.ts";
 import { createDatasetLoader } from "../lib/dataset-loader.ts";
@@ -153,4 +155,17 @@ test("revalidation requires the exact bearer secret, and is off when no secret i
   assert.equal(isAuthorized(null, "s3cret"), false);
   assert.equal(isAuthorized("Bearer ", ""), false);
   assert.equal(isAuthorized("Bearer undefined", undefined), false);
+});
+
+test("publish-data checks migrations with a one-row select, never head: true (a missing table looks fine to HEAD)", () => {
+  const root = join(import.meta.dirname, "..");
+  for (const file of ["scripts/publish-data.mts", "scripts/lib/publish-details.mts"]) {
+    // The shrink guard's row count on `schools` is the one allowed HEAD request: that table always exists.
+    const heads = readFileSync(join(root, file), "utf8")
+      .split("\n")
+      .filter((line) => line.includes("head: true") && !line.includes('from("schools")') && !line.trim().startsWith("*"));
+    assert.deepEqual(heads, [], `${file}: table checks must not use head: true`);
+  }
+  const publish = readFileSync(join(root, "scripts/publish-data.mts"), "utf8");
+  assert.match(publish, /from\("school_staging"\)\.select\("unit_id"\)\.limit\(1\)/, "the staging table is checked before publishing");
 });

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Minus, TrendingDown, TrendingUp } from "lucide-react";
 import type { School } from "@/lib/types";
 import { DOMAINS } from "@/lib/metrics";
@@ -39,8 +40,8 @@ export function DirectionIcon({ indicator: i, className }: { indicator: Indicato
   );
 }
 
-/** Profile hero: one card per indicator the college has history for. */
-export function TrendIndicatorStrip({ school, className }: { school: School; className?: string }) {
+/** Profile hero: one card per indicator the college has history for, each linking to `href` (the history page). */
+export function TrendIndicatorStrip({ school, href, className }: { school: School; href: string; className?: string }) {
   const list = indicatorsOf(school);
   if (!list.length) return null;
   return (
@@ -51,8 +52,8 @@ export function TrendIndicatorStrip({ school, className }: { school: School; cla
       <ul className="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4">
         {list.map((i) => (
           <li key={i.def.key}>
-            <a
-              href="#history"
+            <Link
+              href={href}
               title={indicatorSentence(i)}
               className="flex h-full items-start gap-2.5 rounded-2xl border bg-card/80 px-3 py-2.5 backdrop-blur transition-colors hover:border-foreground/30"
             >
@@ -64,7 +65,7 @@ export function TrendIndicatorStrip({ school, className }: { school: School; cla
                   {detailText(i)} <span className="whitespace-nowrap">{since(i)}</span>
                 </span>
               </span>
-            </a>
+            </Link>
           </li>
         ))}
       </ul>

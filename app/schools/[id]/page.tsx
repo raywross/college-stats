@@ -78,6 +78,7 @@ import { HeadlineDelta } from "@/components/history/HeadlineDelta";
 import { TrendIndicatorStrip } from "@/components/trends/TrendIndicators";
 import { HistorySourceNote } from "@/components/sources/HistorySourceNote";
 import { historyYearLabel, lastYear, type NationalHistory, type SeriesKey } from "@/lib/history";
+import { FORM_LABELS } from "@/lib/finances";
 
 /** Series each "Over time" group shows; they drive the group's source footnote. */
 const HISTORY_GROUPS = {
@@ -87,7 +88,7 @@ const HISTORY_GROUPS = {
   scores: ["sat_25", "sat_75", "act_25", "act_75", "sat_submit", "test_policy"],
   students: ["undergrads", "race_white", "men_share", "part_time_share", "housing_capacity"],
   outcomes: ["grad_rate", "median_debt"],
-  academics: ["student_faculty_ratio"],
+  academics: ["student_faculty_ratio", "instruction_per_student"],
 } as const satisfies Record<string, readonly SeriesKey[]>;
 
 /** National series the charts draw as a band (keeps the page payload small). */
@@ -191,7 +192,7 @@ const SECTION_FIELDS = {
     "outcomes.retention_rate",
     "outcomes.graduation_rate",
   ],
-  academics: ["academics.student_faculty_ratio"],
+  academics: ["academics.student_faculty_ratio", "finances"],
   campus: ["campus.housing", "campus.athletics", "campus.programs", "campus.services", "campus.calendar", "demographics.disability_services"],
   ranks: ["derived.sat_mid", "derived.yield", "demographics.pell_grant_percent", "derived.diversity_index", "admissions.acceptance_rate"],
 } as const satisfies Record<string, readonly FieldPath[]>;
@@ -335,6 +336,14 @@ export default async function SchoolPage({ params }: Props) {
   // Say "fewer than at 96%" below the median and "more than at 88%" above it, never "fewer than at 10%".
   const ratioVs =
     ratioRank === null ? null : ratioRank <= 0.5 ? { share: 1 - ratioRank, word: "fewer" as const } : { share: ratioRank, word: "more" as const };
+  // Finances (specs/data-expansion/finances.md): benchmarked only within the same accounting form (sector), never
+  // publics against private nonprofits. financesFasb === "fasb" ? endowmentFasb : endowmentGasb, same for instruction.
+  const finances = school.finances ?? null;
+  const financeForm = finances?.form ?? null;
+  const instructionKey = financeForm === "gasb" ? "instructionGasb" : financeForm === "fasb" ? "instructionFasb" : financeForm === "forprofit" ? "instructionForprofit" : null;
+  const endowmentKey = financeForm === "gasb" ? "endowmentGasb" : financeForm === "fasb" ? "endowmentFasb" : null;
+  const instructionRank = instructionKey ? rankOf(school, instructionKey) : null;
+  const endowmentRank = endowmentKey && finances?.endowment_per_student != null ? rankOf(school, endowmentKey) : null;
   const recentAdmissionChanges = history ? historyEvents(history).filter((e) => e.area === "admissions" && e.kind === "fall" && e.year > FACTOR_ERA) : [];
   const federalSat = citeField("admissions.sat_reading_25_75", school).isDefault && citeField("admissions.sat_math_25_75", school).isDefault;
   const federalAct = citeField("admissions.act_composite_25_75", school).isDefault;
@@ -366,7 +375,7 @@ export default async function SchoolPage({ params }: Props) {
     ...(scores ? [{ id: "scores", label: "Test scores", color: DOMAINS.scores.color }] : []),
     { id: "students", label: "Students", color: DOMAINS.access.color },
     ...(school.campus?.housing || school.campus?.athletics || school.campus?.programs ? [{ id: "campus", label: "Campus life", color: DOMAINS.size.color }] : []),
-    ...(ratio !== null ? [{ id: "academics", label: "Academics", color: DOMAINS.size.color }] : []),
+    ...(ratio !== null || finances !== null ? [{ id: "academics", label: "Academics", color: DOMAINS.size.color }] : []),
     ...(hasValue ? [{ id: "cost", label: "Cost & outcomes", color: DOMAINS.value.color }] : []),
     ...(hasHistory ? [{ id: "history", label: "Over time" }] : []),
     { id: "ranks", label: "How it ranks" },
@@ -957,34 +966,85 @@ export default async function SchoolPage({ params }: Props) {
           )}
 
           {/* ============================== ACADEMICS ============================== */}
-          {ratio !== null && (
+          {(ratio !== null || finances !== null) && (
             <Panel
               id="academics"
               domain="size"
               eyebrow="Academics"
               title="Faculty and students"
-              takeaway={`${ratio} students for every faculty member${ratioVs ? `, ${ratioVs.word} than at ${pct(ratioVs.share)} of colleges` : ""}.`}
+              takeaway={
+                ratio !== null
+                  ? `${ratio} students for every faculty member${ratioVs ? `, ${ratioVs.word} than at ${pct(ratioVs.share)} of colleges` : ""}.`
+                  : finances?.instruction_per_student != null
+                    ? `Spends ${money(finances.instruction_per_student)} a year on instruction per student.`
+                    : "How this college invests in students."
+              }
               school={school}
               fields={SECTION_FIELDS.academics}
             >
-              <div className="rounded-3xl border bg-card p-4 sm:p-6">
-                <DistributionStrip
-                  label="Students per faculty member vs. every college"
-                  term="student-faculty-ratio"
-                  dist={distribution("studentFaculty")}
-                  value={ratio}
-                  rank={ratioVs?.share ?? null}
-                  rankPhrase={`${ratioVs?.word ?? "fewer"} students per faculty member than`}
-                  format="ratio"
-                  color={DOMAINS.size.color}
-                  lowLabel="Fewer students per faculty"
-                  highLabel="More students per faculty"
-                />
-                <p className="mt-4 text-xs text-muted-foreground">
-                  Not the average class size: faculty also teach graduate students and do research, and large lectures can sit alongside small seminars.
-                  <InfoTip term="student-faculty-ratio" className="ml-1" />
-                </p>
-              </div>
+              {ratio !== null && (
+                <div className="rounded-3xl border bg-card p-4 sm:p-6">
+                  <DistributionStrip
+                    label="Students per faculty member vs. every college"
+                    term="student-faculty-ratio"
+                    dist={distribution("studentFaculty")}
+                    value={ratio}
+                    rank={ratioVs?.share ?? null}
+                    rankPhrase={`${ratioVs?.word ?? "fewer"} students per faculty member than`}
+                    format="ratio"
+                    color={DOMAINS.size.color}
+                    lowLabel="Fewer students per faculty"
+                    highLabel="More students per faculty"
+                  />
+                  <p className="mt-4 text-xs text-muted-foreground">
+                    Not the average class size: faculty also teach graduate students and do research, and large lectures can sit alongside small seminars.
+                    <InfoTip term="student-faculty-ratio" className="ml-1" />
+                  </p>
+                </div>
+              )}
+              {finances && (
+                <div className="mt-4 rounded-3xl border bg-card p-4 sm:p-6">
+                  <h4 className="mb-1 flex items-center gap-1 font-display text-base font-bold">
+                    Spending and endowment <InfoTip term="gasb-fasb" />
+                  </h4>
+                  <p className="mb-4 text-xs text-muted-foreground">
+                    Fiscal {finances.fiscal_year !== null ? historyYearLabel(finances.fiscal_year, "academic") : "year"}. Compared only against other{" "}
+                    {FORM_LABELS[finances.form]}: public and private colleges report finances on different accounting forms that aren&apos;t comparable.
+                    {finances.form === "gasb" &&
+                      " Many public universities' endowments sit mostly in a separate foundation this survey doesn't count, so this likely understates what's actually available."}
+                  </p>
+                  {finances.instruction_per_student != null && instructionKey && (
+                    <DistributionStrip
+                      label="Instruction spending per student"
+                      term="instruction-expenses"
+                      dist={distribution(instructionKey)}
+                      value={finances.instruction_per_student}
+                      rank={instructionRank}
+                      rankPhrase="more than"
+                      format="money"
+                      color={DOMAINS.value.color}
+                      lowLabel="Less"
+                      highLabel="More"
+                    />
+                  )}
+                  {finances.endowment_per_student != null && endowmentKey && (
+                    <div className="mt-4">
+                      <DistributionStrip
+                        label="Endowment per student"
+                        term="endowment"
+                        dist={distribution(endowmentKey)}
+                        value={finances.endowment_per_student}
+                        rank={endowmentRank}
+                        rankPhrase="more than"
+                        format="money"
+                        color={DOMAINS.value.color}
+                        lowLabel="Less"
+                        highLabel="More"
+                      />
+                    </div>
+                  )}
+                </div>
+              )}
             </Panel>
           )}
 

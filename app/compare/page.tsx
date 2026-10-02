@@ -15,6 +15,7 @@ import { RADAR_AXES, keyDifferences, radarProfile, similarSchools } from "@/lib/
 import { SLOT_COLORS, shortName } from "@/lib/brand";
 import { DESIGNATION_LABELS, RESEARCH_LABELS } from "@/lib/campus-profile";
 import { CALENDAR_LABELS, DIVISION_LABELS, ROTC_LABELS, divisionFilterOf } from "@/lib/campus-services";
+import { FORM_SHORT } from "@/lib/finances";
 import { compact, money, moneyCompact, num, pct, pctSmart } from "@/lib/format";
 import type { School } from "@/lib/types";
 import { CompareHeader } from "@/components/compare/CompareHeader";
@@ -132,6 +133,13 @@ const TABLE_ROWS = (
     ["Undergrads", "undergrad-enrollment", "demographics.undergrad_enrollment", (s: School) => num(s.demographics.undergrad_enrollment)],
     ["Students per faculty member", "student-faculty-ratio", "academics.student_faculty_ratio", (s: School) =>
       s.academics?.student_faculty_ratio == null ? null : `${s.academics.student_faculty_ratio} to 1`],
+    // Compared only within the same accounting form; the form is shown since figures otherwise look directly comparable.
+    ["Instruction spending per student", "instruction-expenses", "finances", (s: School) =>
+      s.finances?.instruction_per_student == null ? null : `${money(s.finances.instruction_per_student)} (${FORM_SHORT[s.finances.form]})`],
+    ["Endowment per student", "endowment", "finances", (s: School) =>
+      s.finances?.endowment_per_student == null ? null : `${money(s.finances.endowment_per_student)} (${FORM_SHORT[s.finances.form]})`],
+    ["Tuition share of core revenue", "gasb-fasb", "finances", (s: School) =>
+      s.finances?.tuition_share_of_revenue == null ? null : pct(s.finances.tuition_share_of_revenue)],
     ["Beds in college housing", "housing-capacity", "campus.housing", (s: School) => {
       const h = s.campus?.housing;
       return !h ? null : !h.offered ? "No housing" : h.capacity == null ? null : num(h.capacity);

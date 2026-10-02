@@ -830,21 +830,37 @@ export function OverTime(props: OverTimeProps) {
         </Group>
       )}
 
-      {history.series.student_faculty_ratio && (
+      {(history.series.student_faculty_ratio || history.series.instruction_per_student) && (
         <Group title="Academics" color={colors.size} open={open.academics} onToggle={toggle("academics")} footer={sources.academics}>
           <div className="grid gap-4 lg:grid-cols-2">
-            <ChartPanel
-              {...common}
-              title="Students per faculty member"
-              term="student-faculty-ratio"
-              kind="fall"
-              format="num"
-              window={windowFor("fall", ["student_faculty_ratio"])}
-              headline="student_faculty_ratio"
-              provisionalYear={null}
-              specs={[{ key: "student_faculty_ratio", name: "Students per faculty", color: colors.size, band: true }]}
-              note="Lower means fewer students for each faculty member. Colleges compute it themselves, so small moves can be a change in counting."
-            />
+            {history.series.student_faculty_ratio && (
+              <ChartPanel
+                {...common}
+                title="Students per faculty member"
+                term="student-faculty-ratio"
+                kind="fall"
+                format="num"
+                window={windowFor("fall", ["student_faculty_ratio"])}
+                headline="student_faculty_ratio"
+                provisionalYear={null}
+                specs={[{ key: "student_faculty_ratio", name: "Students per faculty", color: colors.size, band: true }]}
+                note="Lower means fewer students for each faculty member. Colleges compute it themselves, so small moves can be a change in counting."
+              />
+            )}
+            {history.series.instruction_per_student && (
+              <ChartPanel
+                {...common}
+                title="Instruction spending per student"
+                term="instruction-expenses"
+                kind="academic"
+                format="money"
+                window={windowFor("academic", ["instruction_per_student"])}
+                headline="instruction_per_student"
+                provisionalYear={null}
+                specs={[{ key: "instruction_per_student", name: "Instruction spending", color: colors.value }]}
+                note="No national comparison band: public and private nonprofit colleges report finances on different accounting forms that aren't comparable, so this chart shows only this college's own trend."
+              />
+            )}
           </div>
         </Group>
       )}

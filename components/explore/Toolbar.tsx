@@ -93,6 +93,8 @@ const SORTS = [
   { value: "admit_gap", label: "Admit rate gap (men higher first)", dir: "desc" },
   { value: "loan_rate", label: "Share who borrow (fewest)", dir: "asc" },
   { value: "student_faculty", label: "Students per faculty (fewest)", dir: "asc" },
+  { value: "instruction_spending", label: "Instruction spending per student (most)", dir: "desc" },
+  { value: "endowment_per_student", label: "Endowment per student (most, private nonprofits)", dir: "desc" },
   { value: "loan_rate_change", label: "Borrowing change, 10 yrs (biggest drop)", dir: "asc" },
 ] as const;
 

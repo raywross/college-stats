@@ -107,15 +107,6 @@ export const ROADMAP: RoadmapSpec[] = [
     status: "planned",
   },
   {
-    slug: "finances",
-    file: "specs/data-expansion/finances.md",
-    group: "wave-2",
-    summary: "Endowment per student and spending on instruction per student.",
-    complexity: 2,
-    complexityNote: "A new file; public and private colleges report finances on different forms, so they are never ranked together.",
-    status: "planned",
-  },
-  {
     slug: "faculty",
     file: "specs/data-expansion/faculty.md",
     group: "wave-2",

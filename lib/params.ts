@@ -23,6 +23,7 @@ const SORT_KEYS: SortKey[] = [
   "applicants", "name", "acceptance_rate", "enrollment", "sat", "pell", "first_gen", "diversity", "avg_cost", "aid_generosity", "net_price", "earnings", "grad_rate",
   "avg_cost_change", "admit_rate_change", "size_change", "apps_change", "diversity_change",
   "men_share", "part_time", "men_share_change", "admit_gap", "loan_rate", "loan_rate_change", "student_faculty",
+  "instruction_spending", "endowment_per_student",
 ];
 const VIEWS: ExploreView[] = ["grid", "table", "chart", "map"];
 

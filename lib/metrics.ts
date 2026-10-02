@@ -148,6 +148,12 @@ export type MetricKey =
   | "menShare"
   | "partTime"
   | "studentFaculty"
+  | "financesInstruction"
+  | "instructionGasb"
+  | "instructionFasb"
+  | "instructionForprofit"
+  | "endowmentGasb"
+  | "endowmentFasb"
   | "adults"
   | "applicantsChange"
   | "sizeChange"
@@ -471,6 +477,83 @@ export const METRICS: Record<MetricKey, MetricDef> = {
     format: ratioLabel,
     more: "more students per faculty member",
     less: "fewer students per faculty member",
+  },
+  // Finances (specs/data-expansion/finances.md). Instruction spending per student, global (for Explore's sort, which
+  // isn't sector-restricted) and one key per accounting form (for the profile's within-sector benchmark; a public
+  // college is never ranked against private nonprofits, and vice versa).
+  financesInstruction: {
+    key: "financesInstruction",
+    field: "finances",
+    label: "Instruction spending per student",
+    short: "Instruction spending",
+    term: "instruction-expenses",
+    domain: "value",
+    get: (s) => s.finances?.instruction_per_student ?? null,
+    format: money,
+    more: "more on instruction per student",
+    less: "less on instruction per student",
+  },
+  instructionGasb: {
+    key: "instructionGasb",
+    field: "finances",
+    label: "Instruction spending per student",
+    short: "Instruction spending",
+    term: "instruction-expenses",
+    domain: "value",
+    get: (s) => (s.finances?.form === "gasb" ? s.finances.instruction_per_student : null),
+    format: money,
+    more: "more on instruction per student",
+    less: "less on instruction per student",
+  },
+  instructionFasb: {
+    key: "instructionFasb",
+    field: "finances",
+    label: "Instruction spending per student",
+    short: "Instruction spending",
+    term: "instruction-expenses",
+    domain: "value",
+    get: (s) => (s.finances?.form === "fasb" ? s.finances.instruction_per_student : null),
+    format: money,
+    more: "more on instruction per student",
+    less: "less on instruction per student",
+  },
+  instructionForprofit: {
+    key: "instructionForprofit",
+    field: "finances",
+    label: "Instruction spending per student",
+    short: "Instruction spending",
+    term: "instruction-expenses",
+    domain: "value",
+    get: (s) => (s.finances?.form === "forprofit" ? s.finances.instruction_per_student : null),
+    format: money,
+    more: "more on instruction per student",
+    less: "less on instruction per student",
+  },
+  // Endowment per student: only GASB (public) and FASB (private nonprofit) report one; never compare the two.
+  // endowmentFasb doubles as Explore's endowment sort, which defaults to private nonprofits only (specs/data-expansion/finances.md).
+  endowmentGasb: {
+    key: "endowmentGasb",
+    field: "finances",
+    label: "Endowment per student",
+    short: "Endowment/student",
+    term: "endowment",
+    domain: "value",
+    get: (s) => (s.finances?.form === "gasb" ? s.finances.endowment_per_student : null),
+    format: money,
+    more: "more endowment per student",
+    less: "less endowment per student",
+  },
+  endowmentFasb: {
+    key: "endowmentFasb",
+    field: "finances",
+    label: "Endowment per student",
+    short: "Endowment/student",
+    term: "endowment",
+    domain: "value",
+    get: (s) => (s.finances?.form === "fasb" ? s.finances.endowment_per_student : null),
+    format: money,
+    more: "more endowment per student",
+    less: "less endowment per student",
   },
   partTime: {
     key: "partTime",

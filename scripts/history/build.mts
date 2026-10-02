@@ -8,6 +8,7 @@ import { FIELDS, isFieldPath, type FieldPath } from "../../lib/fields.ts";
 import type { IpedsRow } from "../../lib/derive.ts";
 import { FACTOR_CODE, FACTOR_COLUMNS, FACTOR_ERA, acceptanceRate, admitRatesBySex, applicationFeeFrom, computePrices, housingFrom, netPriceByIncome, promiseProgramFrom, raceShares, satMedian, toAid, tuitionPlansFrom, yieldOf } from "../../lib/derive.ts";
 import {
+  FINANCE_FROM,
   NET_PRICE_BANDS,
   RACE_FROM,
   RACE_SERIES,
@@ -175,6 +176,9 @@ export function buildCollege(school: Pick<School, "unit_id" | "type">, inputs: I
       // Key Y is the Y−1–Y school year, stored at its fall (Y−1); rounded like the snapshot.
       const loans = sc[`${y}.aid.federal_loan_rate`];
       if (loans !== undefined && loans !== null) put(raw, "federal_loan_rate", y - 1, round4(loans));
+      // Instruction spending per student (specs/data-expansion/finances.md): key Y describes fiscal (Y-1)-Y, same
+      // convention as the snapshot's DRVF{Y} fiscal_year (stored at its start, Y-1).
+      if (y >= FINANCE_FROM) put(raw, "instruction_per_student", y - 1, sc[`${y}.school.instructional_expenditure_per_fte`]);
     }
   }
 
@@ -537,6 +541,9 @@ export function lastPointMismatches(schools: readonly School[], histories: Reado
   // The newest EF part D fall history read: what the snapshot's EF{Y}D describes (its own year, not admissions').
   const efdYears = [...histories.values()].flatMap((h) => (h.series.student_faculty_ratio ? [lastYear(h.series.student_faculty_ratio)] : []));
   const efdYear = efdYears.length ? Math.max(...efdYears) : null;
+  // The newest fiscal year history's instruction-spending series reaches: what the snapshot's DRVF{Y} describes.
+  const financeYears = [...histories.values()].flatMap((h) => (h.series.instruction_per_student ? [lastYear(h.series.instruction_per_student)] : []));
+  const financeYear = financeYears.length ? Math.max(...financeYears) : null;
   for (const s of schools) {
     const h = histories.get(s.unit_id);
     if (!h) continue;
@@ -629,6 +636,7 @@ export function lastPointMismatches(schools: readonly School[], histories: Reado
       check("promise", c.promise_program == null ? null : c.promise_program ? 1 : 2);
     }
     if (efdYear !== null) check("student_faculty_ratio", s.academics?.student_faculty_ratio, false, efdYear);
+    if (financeYear !== null) check("instruction_per_student", s.finances?.instruction_per_student, false, financeYear);
     // Athletics and ROTC: the snapshot reads the newest IC file, which is the services series' newest year.
     const a = s.campus?.athletics;
     if (servicesYear !== null && (a !== undefined || h.series.athletic_association)) {

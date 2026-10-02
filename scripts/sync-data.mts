@@ -30,6 +30,7 @@ import { applyProbes, filesToProbe, type FileProbe, type ReleaseCalendar } from 
 import { IPEDS_BASES, parseCsv } from "./lib/ipeds.mts";
 import { MSI_FIELDS, campusProfileFrom, directoryIssues, msiFrom } from "../lib/campus-profile.ts";
 import { studentFacultyRatioFrom } from "../lib/academics.ts";
+import { financesFrom } from "../lib/finances.ts";
 import { apCreditFrom, athleticsFrom, calendarFrom, disabilityFrom, programsFrom, servicesFrom } from "../lib/campus-services.ts";
 import { acceptanceRate, applicationFeeFrom, computePrices, factorsFrom, housingFrom, ipedsNum, parseShareBand, priceSuffix, promiseProgramFrom, raceShares, toAid, tuitionPlansFrom } from "../lib/derive.ts";
 
@@ -244,6 +245,8 @@ const HD_NAMES = [thisYear + 1, ...recentYears].map((y) => `HD${y}`);
 const IC_CHAR_NAMES = [thisYear + 1, ...recentYears].map((y) => `IC${y}`);
 // Fall enrollment part D (student-faculty ratio): EF{Y}D = fall Y, with the winter release.
 const EF_D_NAMES = recentYears.map((y) => `EF${y}D`);
+// Finance derived variables (endowment, instruction spending per student): DRVF{Y} = fiscal year Y-1–Y.
+const DRVF_NAMES = recentYears.map((y) => `DRVF${y}`);
 
 /* ------------------------------------------------------------------ */
 /* 3. Merge                                                            */
@@ -436,7 +439,9 @@ function buildMeta(
   chars: IpedsFile,
   hd: IpedsFile,
   icChar: IpedsFile,
-  efd: IpedsFile
+  efd: IpedsFile,
+  drvf: IpedsFile,
+  drvfFiscalYear: number
 ): DatasetMeta {
   const scorecardCostYear = scorecardYears.cost;
   return {
@@ -498,6 +503,14 @@ function buildMeta(
         description:
           "What each college offers: its athletic association, conference, and sports; ROTC, study abroad, and undergraduate research; AP credit; student services; the academic calendar; and the share of undergrads registered with disability services.",
       },
+      "ipeds-f": {
+        label: "IPEDS Finance survey, derived per-student figures",
+        publisher: "National Center for Education Statistics (NCES)",
+        edition: `${academicYear(String(drvfFiscalYear))} (${drvf.name})`,
+        url: drvf.url,
+        description:
+          "Each college's endowment and spending per full-time-equivalent student, from its own finance report: endowment assets, instruction expenses, academic support, student services, and tuition's share of core revenue. Reported on one of three accounting forms by sector (public, private nonprofit, for-profit), which aren't comparable to each other.",
+      },
       cds: {
         label: "Common Data Set",
         publisher: "Each college (voluntary, standardized template)",
@@ -514,6 +527,7 @@ function buildMeta(
       "ipeds-hd": `${hd.name.slice(2)}–${String(Number(hd.name.slice(2)) + 1).slice(2)}`,
       "ipeds-ic-char": academicYear(icChar.name.slice(2)),
       "ipeds-ef": `Fall ${efd.name.slice(2, 6)}`,
+      "ipeds-f": academicYear(String(drvfFiscalYear)),
       "scorecard-enrollment": scorecardYears.enrollment,
       "scorecard-age": scorecardYears.age,
       "scorecard-cost": scorecardYears.cost,
@@ -675,6 +689,12 @@ async function main() {
   // Student-faculty ratio (specs/data-expansion/student-faculty-ratio.md).
   const efd = await fetchIpeds(EF_D_NAMES);
   if (![...efd.rows.values()].some((r) => "STUFACR" in r)) throw new Error(`${efd.name} has no STUFACR column`);
+  // Finances (specs/data-expansion/finances.md): DRVF{Y}, picked newest-first like the others.
+  const drvf = await fetchIpeds(DRVF_NAMES);
+  if (![...drvf.rows.values()].some((r) => "F1INSTFT" in r || "F2INSTFT" in r || "F3INSTFT" in r))
+    throw new Error(`${drvf.name} has no F1INSTFT/F2INSTFT/F3INSTFT column`);
+  // DRVF{Y} describes fiscal year (Y-1)–Y; stored by its start year, like other academic-year fields.
+  const drvfFiscalYear = Number(drvf.name.slice(4)) - 1;
   if (![...hd.rows.values()].some((r) => "LOCALE" in r && "CARNEGIEIC" in r)) throw new Error(`${hd.name} has no LOCALE/CARNEGIEIC columns`);
   // Campus services (specs/data-expansion/campus-services.md): the newest IC{Y}, a year ahead of the price files.
   const icChar = await fetchIpeds(IC_CHAR_NAMES);
@@ -699,6 +719,7 @@ async function main() {
     if (school) directoryWarnings.push(...directoryIssues(hd.rows.get(school.unit_id), school));
     if (school) addServices(school, icChar.rows.get(school.unit_id));
     if (school) school.academics = { student_faculty_ratio: studentFacultyRatioFrom(efd.rows.get(school.unit_id)) };
+    if (school) school.finances = financesFrom(drvf.rows.get(school.unit_id), drvfFiscalYear);
     if (!school) {
       stats.noSize++;
       continue;
@@ -726,7 +747,7 @@ async function main() {
     }
   }
   const scorecardYears = await detectScorecardYears(key, String(scorecard[0]?.id ?? "221999"));
-  const meta = buildMeta(adm, sfa, ic, sfaYears, scorecardYears, cost2, chars, hd, icChar, efd);
+  const meta = buildMeta(adm, sfa, ic, sfaYears, scorecardYears, cost2, chars, hd, icChar, efd, drvf, drvfFiscalYear);
 
   // Nothing is written unless every value's lineage checks out.
   const problems = validateLineage(schools, meta);
@@ -747,6 +768,7 @@ async function main() {
   console.log(`  with earnings:        ${schools.filter((s) => s.outcomes?.median_earnings_10yr != null).length}`);
   console.log(`  with grad rate:       ${schools.filter((s) => s.outcomes?.graduation_rate != null).length}`);
   console.log(`  with aid (IPEDS SFA): ${schools.filter((s) => s.aid?.grant_pct != null).length}`);
+  console.log(`  with finances (DRVF): ${schools.filter((s) => s.finances != null).length}`);
   console.log(`  with CDS aid detail:  ${schools.filter((s) => s.aid?.cds).length}`);
   console.log(`  with avg paid (all):  ${schools.filter((s) => s.cost?.avg_paid_all != null).length}`);
   console.log(`  overrides applied:    ${stats.overridden}`);

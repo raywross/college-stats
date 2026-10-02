@@ -181,6 +181,12 @@ export interface School {
     /** Students per instructional faculty member, "N to 1" (IPEDS EF part D `STUFACR`, fall). */
     student_faculty_ratio: number | null;
   };
+  /**
+   * College finances (specs/data-expansion/finances.md): IPEDS Finance survey, derived per-student figures
+   * (`DRVF{Y}`). Reported on three different accounting forms by sector, never comparable across forms: GASB
+   * (public), FASB (private nonprofit), or for-profit. Null when the college's finance survey isn't in the file yet.
+   */
+  finances?: SchoolFinances | null;
   campus?: {
     /** Athletics (IPEDS IC; lib/campus-services.ts). Null when the college didn't answer. */
     athletics?: Athletics | null;
@@ -382,7 +388,28 @@ export interface CampusPrograms {
   intellectual_disability_program: boolean;
 }
 
-export type SourceKey = "scorecard" | "ipeds-adm" | "ipeds-sfa" | "ipeds-ic" | "ipeds-ic-char" | "ipeds-hd" | "ipeds-ef" | "cds";
+export type SourceKey = "scorecard" | "ipeds-adm" | "ipeds-sfa" | "ipeds-ic" | "ipeds-ic-char" | "ipeds-hd" | "ipeds-ef" | "ipeds-f" | "cds";
+
+/**
+ * College finances (specs/data-expansion/finances.md): which IPEDS Finance accounting form a college reports under,
+ * by sector. Never compare values across forms.
+ */
+export type FinanceForm = "gasb" | "fasb" | "forprofit";
+
+/** IPEDS Finance survey, derived per-student figures (`DRVF{Y}`), fiscal year stored as its start year. */
+export interface SchoolFinances {
+  /** Start year of the fiscal year the figures describe (e.g. 2023 for fiscal 2023–24). */
+  fiscal_year: number | null;
+  /** Which accounting form reported values: GASB (public), FASB (private nonprofit), or for-profit. */
+  form: FinanceForm;
+  /** Endowment assets at year end per FTE student; null for for-profits (no endowment column). */
+  endowment_per_student: number | null;
+  instruction_per_student: number | null;
+  student_services_per_student: number | null;
+  academic_support_per_student: number | null;
+  /** Tuition & fee revenue as a share of core revenue, 0–1. */
+  tuition_share_of_revenue: number | null;
+}
 
 export interface SourceInfo {
   /** Full citation name, e.g. "College Scorecard". */
@@ -408,6 +435,8 @@ export type SizeBucket = "small" | "medium" | "large" | "xl";
 export type SortKey =
   | "applicants"
   | "student_faculty"
+  | "instruction_spending"
+  | "endowment_per_student"
   | "name"
   | "acceptance_rate"
   | "enrollment"

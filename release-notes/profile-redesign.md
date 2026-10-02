@@ -20,7 +20,7 @@ plan, including the four layouts that were considered and how they were scored, 
 
 ## Behind the scenes
 
-The review measured the profile at three widths (about 22,000 pixels tall on a desktop and 32,000 on a tablet, with
-380 charts on one page), looked at how BigFuture, CollegeVine, Appily, Niche, US News, and College Scorecard organize
+The review measured the profile at three widths (about 23,000 pixels tall on a desktop and 33,000 on a tablet, with
+395 charts on one page), looked at how BigFuture, CollegeVine, Appily, Niche, US News, and College Scorecard organize
 the same information, and applied the usability research on tabs, accordions, and progressive disclosure. The
 roadmap gains a "Design and usability" group for this kind of work. Nothing is built yet.

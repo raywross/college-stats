@@ -6,15 +6,15 @@
 
 ## Why
 The profile has grown with every data wave. It began as six sections and is now ten, each with sub-blocks that
-were added one PR at a time. Measured on 2026-10-02 (Harvard; Ohio State is within 5%):
+were added one PR at a time. Measured on 2026-10-02 after wave 3 merged (Harvard; Ohio State is within 5%):
 
 | Width | Page height | Screens | Longest sections |
 |---|---|---|---|
-| Desktop 1440 | 22,238px | ~25 | Over time 7,561 · Cost & outcomes 4,330 · Students 1,959 |
-| Tablet 810 (iPad) | 31,854px | ~30 | Over time 12,403 · Cost & outcomes 6,519 · Students 2,177 |
-| Phone 390 | 17,690px | ~21 | Cost & outcomes 4,797 · Students 2,582 · Admissions 1,640 |
+| Desktop 1440 | 23,285px | ~26 | Over time 7,561 · Cost & outcomes 4,330 · Academics 1,965 |
+| Tablet 810 (iPad) | 33,033px | ~31 | Over time 12,403 · Cost & outcomes 6,519 · Academics 2,184 |
+| Phone 390 | 19,061px | ~23 | Cost & outcomes 4,797 · Academics 2,642 · Students 2,582 |
 
-380 SVG charts render on one page. What the review found, section by section:
+395 SVG charts render on one page. What the review found, section by section:
 - **The overview answers the main questions well** (acceptance, scores, size, cost, earnings, graduation) in
   thirteen tiles, but every one of those numbers appears again further down, so the page starts by repeating itself.
 - **The section nav has ten items** and overflows the viewport even at 1440px ("Sim…" is cut off). On a phone it is
@@ -25,10 +25,14 @@ were added one PR at a time. Measured on 2026-10-02 (Harvard; Ohio State is with
   groups fold and it is 750px; on tablets nothing folds because folding only happens below 640px, so a tablet gets
   the longest page of all. Ten-year history also shows up in four places: the hero's four trend cards, the "10 years"
   tile, "Over time" links under section takeaways, and the section itself.
+- **Academics doubled with wave 3** (merged the same day, [majors.md](data-expansion/majors.md)): the most popular
+  majors list with its search and "show all programs", the fastest-growing field, and the top-earning majors with
+  expandable earnings rows now sit under the faculty figures. It is the right content for a topic page and the wrong
+  amount for a section of one.
 - **Several desktop blocks are mostly empty space**: the 100-applicant waffle for a 3.6% admit rate is a 450px
   panel with four colored squares; Admissions' right column is three stacked cards next to it.
 - **Tablets get the desktop content in one column.** The 2-column grids collapse at 810px but nothing is folded or
-  reflowed, so the tablet page is 43% taller than desktop.
+  reflowed, so the tablet page is 42% taller than desktop.
 - **Sources lines close every section** (seven of them, three lines each on phones). They matter, but as the last
   thing in every section they add length without adding orientation.
 - What works and must survive: the hero, "Known for" chips, the takeaway sentence that opens each section, the
@@ -115,7 +119,7 @@ The "before" images are the live site on 2026-10-02. The "after" images are a st
 type, colors, and Harvard's real figures to show the shape of the design; the built version will differ in detail.
 
 ![Harvard's profile today and the overview mockup, whole pages at the same scale](/roadmap/profile-redesign/desktop-length.jpg)
-*Whole pages at the same scale, desktop: 22,238px today against about 2,300px for the overview. The detail moves to
+*Whole pages at the same scale, desktop: 23,285px today against about 2,300px for the overview. The detail moves to
 topic pages rather than disappearing.*
 
 ![First screen on desktop, today and in the mockup](/roadmap/profile-redesign/desktop-fold.jpg)
@@ -130,7 +134,7 @@ slimmer hero and the first two topic cards, each with its headline figure, suppo
 list replaces the ten-item section nav, and today's admissions and test-score blocks follow in full.*
 
 ![The overview on a phone, today and in the mockup](/roadmap/profile-redesign/phone.jpg)
-*On a phone: today's first screen and 17,690px page; the mockup's first screen; and the whole mockup overview, about
+*On a phone: today's first screen and 19,061px page; the mockup's first screen; and the whole mockup overview, about
 3,800px, where each card is a tap to its topic page.*
 
 ## Design: overview cards and topic pages
@@ -141,7 +145,7 @@ list replaces the ten-item section nav, and today's admissions and test-score bl
 | `/schools/{id}` | Overview: hero, topic cards, similar schools, sources | Top 50 prerendered, the rest on first visit (as today) |
 | `/schools/{id}/admissions` | Getting in, test scores, what they look at | On demand, daily revalidation |
 | `/schools/{id}/students` | Who's on campus, campus life (housing, sports, programs, services) | same |
-| `/schools/{id}/academics` | Faculty and students; majors and earnings by major when built ([majors.md](data-expansion/majors.md)) | same |
+| `/schools/{id}/academics` | Majors and faculty: most popular majors with search, the fastest-growing field, top-earning majors ([majors.md](data-expansion/majors.md), [field-of-study.md](data-expansion/field-of-study.md)), student to faculty ratio, faculty, spending | same |
 | `/schools/{id}/cost` | What students pay, aid, borrowing | same |
 | `/schools/{id}/outcomes` | Earnings, staying and finishing, 8-year outcomes, graduation by group, cost vs earnings map | same |
 | `/schools/{id}/history` | Over time: every chart group, with the controls | same |
@@ -160,8 +164,9 @@ outcomes splits in two. Old anchors keep working: a small client script on the o
    - a **headline figure** (the one number people quote: acceptance rate ring, SAT range bar, undergrads, student
      to faculty ratio, average cost, graduation rate) with its percentile line ("larger than 85% of colleges");
    - **two to four supporting figures** in a compact row (Admissions: applied, admitted, yield; Students: diversity
-     bar, Pell, setting; Academics: faculty full-time share, instruction spending; Cost: aid generosity, net price for
-     the middle income band; Outcomes: median earnings, median debt, retention);
+     bar, Pell, setting; Academics: the most popular major and its share, the top-earning major, faculty full-time
+     share; Cost: aid generosity, net price for the middle income band; Outcomes: median earnings, median debt,
+     retention);
    - a **ten-year line** where history exists ("Applications +57% since fall 2014"), replacing the hero trend cards
      and the "10 years" tile;
    - a footer link, the whole card clickable: "Getting in, in detail →".

@@ -63,6 +63,18 @@
     "part_time_share": {"start":1996,"values":[0.0211,0.0287,0.0299,0.0258,null,0.0608,0.0784,0.0739,0.0867,0.0958,0.0764,0.0603,0.0506,0.0522,0.0587,0.0539,0.0595,0.0362,0.0511,0.0485,0.0673,0.0619,0.0503,null,null,null,0.0318,0.0346,0.0436]},
     "grad_rate": {"start":1991,"values":[0.472,0.4184,0.4419,0.4813,0.3581,0.4738,0.4534,0.454,0.4452,0.4722,0.4526,0.4125,0.486,0.4381,0.4328,0.4519,0.4333,0.4096,0.4476,0.4721,0.46,0.4585,null,null,null,0.2018,0.212,0.2174]},
     "median_debt": {"start":1997,"values":[15719,15894.5,16305,16750,17125,17125,17125,17125,17125,17125,17125,17125,19125,22125,25000,26000,26750,26933,26687,26120,26000,25928,25000]},
-    "federal_loan_rate": {"start":2008,"values":[0.6471,0.6287,0.6435,0.6563,0.6653,0.6743,0.7042,0.6596,0.6584,0.5908,null,null,null,0.5297,0.5785,0.5476]}
+    "federal_loan_rate": {"start":2008,"values":[0.6471,0.6287,0.6435,0.6563,0.6653,0.6743,0.7042,0.6596,0.6584,0.5908,null,null,null,0.5297,0.5785,0.5476]},
+    "grad_rate_pell": {"start":2010,"values":[0.472,0.3364,0.3929,null,null,null,0.2326,0.2667,0.2308]},
+    "grad_rate_no_pell_no_loan": {"start":2010,"values":[0.4603,0.5789,0.5217,null,null,null,0.1549,0.1667,0.2373]},
+    "grad_cohort_pell": {"start":2010,"values":[125,110,84,null,null,null,86,75,78]},
+    "grad_cohort_no_pell_no_loan": {"start":2010,"values":[63,76,69,null,null,null,71,72,59]},
+    "grad_rate_white": {"start":2005,"values":[0.4293,0.4726,0.4737,0.4177,0.4646,0.4752,0.5,0.4803,null,null,null,0.2387,0.2182,0.25]},
+    "grad_rate_black": {"start":2007,"values":[0.1613,null,0.2903,0.4872,0.2727,null,null,null,null,0.0625]},
+    "grad_cohort_white": {"start":2005,"values":[184,201,247,249,198,202,182,152,null,null,null,155,110,124]},
+    "grad_cohort_asian": {"start":2005,"values":[7,7,8,9,4,7,4,6,null,null,null,7,13,3]},
+    "grad_cohort_hispanic": {"start":2005,"values":[2,1,11,7,8,7,13,8,null,null,null,11,10,13]},
+    "grad_cohort_black": {"start":2005,"values":[8,29,31,25,31,39,33,27,null,null,null,32,17,27]},
+    "grad_cohort_two_or_more": {"start":2005,"values":[0,0,0,0,4,8,7,7,null,null,null,13,18,4]},
+    "grad_cohort_international": {"start":2005,"values":[0,1,2,1,2,1,4,3,null,null,null,5,16,11]}
   }
 }

@@ -13,6 +13,7 @@
  */
 import type { HistoryFamily } from "../../lib/history.ts";
 import { FACTOR_COLUMNS } from "../../lib/derive.ts";
+import { GR_PELL_COHORT_TYPE, GR_PELL_COLUMNS } from "../../lib/graduation-groups.ts";
 
 /** A value read from one row: a column, or the sum of parts (IC2001 splits admissions by gender). */
 export type ColumnSpec = string | { sum: readonly string[] };
@@ -37,6 +38,10 @@ export interface Era {
   supplement?: (year: number) => string;
   /** Columns that must exist in the supplement. */
   supplementRequired?: readonly string[];
+  /** Files with several rows per college: the row to keep (GR{Y}_PELL_SSL keeps the total cohort). */
+  keepRow?: (row: Record<string, string>) => boolean;
+  /** The file for year Y is published as year Y + lag (graduation files follow a class 6 years on), for the refresh age. */
+  lag?: number;
 }
 
 const yy = (y: number) => String(y % 100).padStart(2, "0");
@@ -160,6 +165,16 @@ export const ERAS: readonly Era[] = [
     files: (y) => [{ name: `EF${y}D` }],
     required: () => ["STUFACR"],
   },
+  // Graduation by Pell and loan status (specs/data-expansion/graduation-by-group.md): GR{Y+6}_PELL_SSL follows the class
+  // that entered fall Y. GR2016 is the first file (probed 2026-10-02: GR2015_PELL_SSL doesn't exist); same columns since.
+  {
+    family: "gr-pell",
+    years: [2010, OPEN],
+    files: (y) => [{ name: `GR${y + 6}_PELL_SSL` }],
+    required: () => GR_PELL_COLUMNS,
+    keepRow: (r) => r.PSGRTYPE === GR_PELL_COHORT_TYPE,
+    lag: 6,
+  },
   {
     family: "services",
     years: [2014, OPEN],
@@ -202,7 +217,7 @@ export function eraFor(family: HistoryFamily, year: number): Era | null {
 }
 
 /** Families by the kind of year they describe, and the first year each can start. */
-export const FAMILY_ORDER: readonly HistoryFamily[] = ["ic-admissions", "adm", "prices", "sfa", "characteristics", "services", "ef-d"];
+export const FAMILY_ORDER: readonly HistoryFamily[] = ["ic-admissions", "adm", "prices", "sfa", "characteristics", "services", "ef-d", "gr-pell"];
 
 /** Columns a value spec reads. */
 export function specColumns(spec: ColumnSpec): readonly string[] {

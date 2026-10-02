@@ -145,6 +145,20 @@ export interface School {
     median_debt_by_income?: { low: number | null; mid: number | null; high: number | null } | null;
     /** Where undergraduate borrowers stand 3 years into repayment, as ranges (Scorecard publishes some as bands). */
     repayment_3yr?: Partial<Record<RepaymentStatus, ShareRange>> | null;
+    /**
+     * Graduation by group (specs/data-expansion/graduation-by-group.md; lib/graduation-groups.ts): first-time
+     * full-time students finishing within 6 years (150% of normal time), IPEDS GR{Y}_PELL_SSL. Null under 30 students.
+     */
+    grad_rate_pell?: number | null;
+    grad_rate_loan_no_pell?: number | null;
+    grad_rate_no_pell_no_loan?: number | null;
+    /** All students in the same file (equals Scorecard's 4-year 150% rate, not the headline consumer rate). */
+    grad_rate_ftft?: number | null;
+    /** Adjusted cohort sizes behind those rates. */
+    grad_cohorts?: Record<"pell" | "loan_no_pell" | "no_pell_no_loan" | "total", number | null> | null;
+    /** By race/ethnicity (College Scorecard `completion_rate_4yr_150_*`), null under 30 students; and the cohorts. */
+    grad_rate_by_race?: Record<GradRaceGroup, number | null> | null;
+    grad_cohorts_by_race?: Record<GradRaceGroup, number | null> | null;
   };
   /** Financial aid for full-time first-time undergrads (IPEDS Student Financial Aid survey). */
   aid?: {
@@ -248,7 +262,9 @@ export interface TrendSummary {
 }
 
 /** History series summaries, plus `diversity`: the diversity index computed from the race/ethnicity shares. */
-export type TrendKey = "avg_paid_all" | "full_price" | "acceptance_rate" | "applicants" | "undergrads" | "grant_pct" | "men_share" | "federal_loan_rate" | "diversity";
+export type TrendKey = "avg_paid_all" | "full_price" | "acceptance_rate" | "applicants" | "undergrads" | "grant_pct" | "men_share" | "federal_loan_rate" | "diversity"
+  /** Pell graduation gap (neither minus Pell, points) by entering class (lib/history.ts pellGapChange). */
+  | "pell_gap";
 export type SchoolTrends = Partial<Record<TrendKey, TrendSummary>>;
 
 /**
@@ -382,7 +398,11 @@ export interface CampusPrograms {
   intellectual_disability_program: boolean;
 }
 
-export type SourceKey = "scorecard" | "ipeds-adm" | "ipeds-sfa" | "ipeds-ic" | "ipeds-ic-char" | "ipeds-hd" | "ipeds-ef" | "cds";
+export type SourceKey = "scorecard" | "ipeds-adm" | "ipeds-sfa" | "ipeds-ic" | "ipeds-ic-char" | "ipeds-hd" | "ipeds-ef" | "cds"
+  /** IPEDS Graduation Rates, Pell and subsidized-loan file (GR{Y}_PELL_SSL; specs/data-expansion/graduation-by-group.md). */
+  | "ipeds-gr";
+/** Race/ethnicity groups for graduation rates (lib/graduation-groups.ts RACE_GROUPS). */
+export type GradRaceGroup = "white" | "asian" | "hispanic" | "black" | "two_or_more" | "international" | "aian" | "nhpi";
 
 export interface SourceInfo {
   /** Full citation name, e.g. "College Scorecard". */
@@ -430,7 +450,10 @@ export type SortKey =
   | "men_share_change"
   | "admit_gap"
   | "loan_rate"
-  | "loan_rate_change";
+  | "loan_rate_change"
+  /** Graduation by group: the Pell graduation gap, and its 10-year change. */
+  | "pell_gap"
+  | "pell_gap_change";
 
 export type ExploreView = "grid" | "table" | "chart" | "map";
 
@@ -479,6 +502,8 @@ export interface SearchFilters {
   guarantee?: boolean;
   /** Only colleges where at most 20% of undergraduates have a federal loan (lib/repayment.ts). */
   fewLoans?: boolean;
+  /** Only colleges whose Pell graduation gap is under 5 points (lib/graduation-groups.ts). */
+  pellGap?: boolean;
   /** Only colleges where at most 10% of undergraduates study part-time. */
   fullTime?: boolean;
   sortBy?: SortKey;

@@ -34,6 +34,16 @@
     "men_share": {"start":2023,"values":[1,1]},
     "part_time_share": {"start":2023,"values":[0,0]},
     "grad_rate": {"start":2017,"values":[0.1087,0.1087]},
-    "federal_loan_rate": {"start":2022,"values":[0,0]}
+    "federal_loan_rate": {"start":2022,"values":[0,0]},
+    "grad_rate_no_pell_no_loan": {"start":2017,"values":[0.1087,0.1087]},
+    "grad_cohort_pell": {"start":2017,"values":[0,0]},
+    "grad_cohort_no_pell_no_loan": {"start":2017,"values":[46,46]},
+    "grad_rate_white": {"start":2017,"values":[0.1087,0.1087]},
+    "grad_cohort_white": {"start":2017,"values":[46,46]},
+    "grad_cohort_asian": {"start":2017,"values":[0,0]},
+    "grad_cohort_hispanic": {"start":2017,"values":[0,0]},
+    "grad_cohort_black": {"start":2017,"values":[0,0]},
+    "grad_cohort_two_or_more": {"start":2017,"values":[0,0]},
+    "grad_cohort_international": {"start":2017,"values":[0,0]}
   }
 }

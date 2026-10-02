@@ -16,6 +16,7 @@ import { SLOT_COLORS, shortName } from "@/lib/brand";
 import { DESIGNATION_LABELS, RESEARCH_LABELS } from "@/lib/campus-profile";
 import { CALENDAR_LABELS, DIVISION_LABELS, ROTC_LABELS, divisionFilterOf } from "@/lib/campus-services";
 import { compact, money, moneyCompact, num, pct, pctSmart } from "@/lib/format";
+import { gradRateCell } from "@/lib/graduation-groups";
 import type { School } from "@/lib/types";
 import { CompareHeader } from "@/components/compare/CompareHeader";
 import { CompareMetric } from "@/components/compare/CompareMetric";
@@ -161,6 +162,24 @@ const TABLE_ROWS = (
     ["First-years paying out-of-state rates", "in-state-tuition", "cost.residency", (s: School) => (s.type === "public" ? opt(s.cost?.residency?.out_of_state ?? null, (v) => pct(v)) : null)],
     ["Median earnings (10 yrs)", "median-earnings", "outcomes.median_earnings_10yr", (s: School) => opt(s.outcomes?.median_earnings_10yr ?? null, money)],
     ["Graduation rate", "graduation-rate", "outcomes.graduation_rate", (s: School) => opt(s.outcomes?.graduation_rate ?? null, (v) => pct(v))],
+    // Graduation by group (specs/data-expansion/graduation-by-group.md): blank under 30 students, with the class size.
+    ["Graduated in 6 years, Pell Grant recipients", "pell-graduation-gap", "outcomes.grad_rate_pell", (s: School) =>
+      gradRateCell(s.outcomes?.grad_rate_pell, s.outcomes?.grad_cohorts?.pell)],
+    ["Graduated in 6 years, neither Pell nor subsidized loan", "pell-graduation-gap", "outcomes.grad_rate_no_pell_no_loan", (s: School) =>
+      gradRateCell(s.outcomes?.grad_rate_no_pell_no_loan, s.outcomes?.grad_cohorts?.no_pell_no_loan)],
+    ["Pell graduation gap", "pell-graduation-gap", "derived.pell_grad_gap", (s: School) => opt(METRICS.pellGap.get(s), METRICS.pellGap.format)],
+    ["Graduated in 6 years, White students", "graduation-rate", "outcomes.grad_rate_by_race", (s: School) =>
+      gradRateCell(s.outcomes?.grad_rate_by_race?.white, s.outcomes?.grad_cohorts_by_race?.white)],
+    ["Graduated in 6 years, Asian students", "graduation-rate", "outcomes.grad_rate_by_race", (s: School) =>
+      gradRateCell(s.outcomes?.grad_rate_by_race?.asian, s.outcomes?.grad_cohorts_by_race?.asian)],
+    ["Graduated in 6 years, Hispanic/Latino students", "graduation-rate", "outcomes.grad_rate_by_race", (s: School) =>
+      gradRateCell(s.outcomes?.grad_rate_by_race?.hispanic, s.outcomes?.grad_cohorts_by_race?.hispanic)],
+    ["Graduated in 6 years, Black students", "graduation-rate", "outcomes.grad_rate_by_race", (s: School) =>
+      gradRateCell(s.outcomes?.grad_rate_by_race?.black, s.outcomes?.grad_cohorts_by_race?.black)],
+    ["Graduated in 6 years, students of two or more races", "graduation-rate", "outcomes.grad_rate_by_race", (s: School) =>
+      gradRateCell(s.outcomes?.grad_rate_by_race?.two_or_more, s.outcomes?.grad_cohorts_by_race?.two_or_more)],
+    ["Graduated in 6 years, international students", "graduation-rate", "outcomes.grad_rate_by_race", (s: School) =>
+      gradRateCell(s.outcomes?.grad_rate_by_race?.international, s.outcomes?.grad_cohorts_by_race?.international)],
     ["Retention rate", "retention-rate", "outcomes.retention_rate", (s: School) => opt(s.outcomes?.retention_rate ?? null, (v) => pct(v))],
     ["Median debt", "median-debt", "outcomes.median_debt", (s: School) => opt(s.outcomes?.median_debt ?? null, money)],
     ["Undergrads with a federal loan", "federal-loan-rate", "outcomes.federal_loan_rate", (s: School) => opt(s.outcomes?.federal_loan_rate ?? null, (v) => pct(v))],
@@ -211,7 +230,7 @@ export default async function ComparePage({
   const thenAndNow: ThenAndNowMetric[] = historyFiles
     ? THEN_AND_NOW.map((m) => {
         // The diversity index comes from the race/ethnicity shares, a fall series.
-        const kind = m.key === "diversity" ? "fall" : SERIES[m.key].kind;
+        const kind = m.key === "diversity" ? "fall" : m.key === "pell_gap" ? "cohort" : SERIES[m.key].kind;
         const [from, to] = defaultWindow(historyFiles.meta, kind);
         const withData = schools.map((sc, i) => ({ sc, i, t: sc.trends?.[m.key] })).filter((x) => x.t);
         return {

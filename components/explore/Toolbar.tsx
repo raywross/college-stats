@@ -94,6 +94,8 @@ const SORTS = [
   { value: "loan_rate", label: "Share who borrow (fewest)", dir: "asc" },
   { value: "student_faculty", label: "Students per faculty (fewest)", dir: "asc" },
   { value: "loan_rate_change", label: "Borrowing change, 10 yrs (biggest drop)", dir: "asc" },
+  { value: "pell_gap", label: "Pell graduation gap (lowest)", dir: "asc" },
+  { value: "pell_gap_change", label: "Pell gap change, 10 yrs (most narrowed)", dir: "asc" },
 ] as const;
 
 export function SortControl() {
@@ -226,6 +228,7 @@ export function ActiveFilters() {
     chips.push({ key: `b-${b}`, label: GENDER_BALANCE.find((g) => g.key === b)?.label ?? b, onRemove: () => toggleInList("balance", b) });
   if (searchParams.get("fullTime") === "1") chips.push({ key: "fullTime", label: "Mostly full-time", onRemove: () => update({ fullTime: null }) });
   if (searchParams.get("fewLoans") === "1") chips.push({ key: "fewLoans", label: "Few students borrow", onRemove: () => update({ fewLoans: null }) });
+  if (searchParams.get("pellGap") === "1") chips.push({ key: "pellGap", label: "Pell gap under 5 points", onRemove: () => update({ pellGap: null }) });
   for (const f of [...FACTOR_FILTERS, ...HOUSING_FILTERS]) if (searchParams.get(f.param) === "1") chips.push({ key: f.param, label: f.label, onRemove: () => update({ [f.param]: null }) });
 
   for (const g of getList("setting").filter(isSettingGroup))

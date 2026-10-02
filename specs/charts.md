@@ -28,6 +28,7 @@ tokens and adapts to dark mode. Recharts is still installed but unused.
 | `StackedArea100` | 100% stacked area | yes | Profile "Over time" | Race/ethnicity shares by year in the fixed `--demo-1..7` order, normalized to 100% each year, 1px surface line between layers, gaps left blank, crosshair listing every share, legend in stack order. |
 | `SlopeChart` | Slope | yes | Compare "Then & now" | Two points per college in slot colors on one scale, direct labels at both ends nudged apart; values printed, so no hover. |
 | `Dumbbell` | Dumbbell | no | Profile "Over time" | Change per category between two years: hollow start dot, solid end dot in the domain color, both values printed (no hover needed). Scale starts at zero or below for negative net prices. |
+| `GroupDotPlot` | Dot plot | no | Profile "Cost & outcomes" (graduation by group) | One row per group on a shared scale: solid dots in one hue, the comparison group hollow, the overall rate as a dashed line, class sizes under each label, values and gaps printed (no hover needed). Scale starts at the nearest 10% below the lowest value, with labeled ticks. |
 
 `useWidth` (ResizeObserver) lets SVG charts draw at real pixel width so text stays legible on phones.
 

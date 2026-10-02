@@ -21,6 +21,7 @@ import { cn } from "@/lib/utils";
 import { INDICATOR_KEYS, indicatorOf, type Direction } from "@/lib/indicators";
 import { genderBalanceOf, isMostlyFullTime } from "@/lib/student-body";
 import { hasFewLoans } from "@/lib/repayment";
+import { hasSmallPellGap } from "@/lib/graduation-groups";
 import { HOUSING_FILTERS } from "@/lib/housing";
 import { FACTOR_FILTERS } from "@/lib/factors";
 import { DESIGNATION_KEYS, RESEARCH_TIERS, SETTING_GROUPS, designationsOf, isOpportunityCollege } from "@/lib/campus-profile";
@@ -93,6 +94,7 @@ function buildFacets({ getAllSchools, histogram }: Dataset): FilterFacets {
     balance,
     fullTime: all.filter(isMostlyFullTime).length,
     fewLoans: all.filter(hasFewLoans).length,
+    pellGap: all.filter(hasSmallPellGap).length,
     housing: Object.fromEntries(HOUSING_FILTERS.map((f) => [f.param, all.filter(f.test).length])) as FilterFacets["housing"],
     factors: Object.fromEntries(FACTOR_FILTERS.map((f) => [f.param, all.filter(f.test).length])) as FilterFacets["factors"],
     campus,

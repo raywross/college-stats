@@ -35,6 +35,8 @@ import { Dumbbell } from "@/components/charts/Dumbbell";
 import { InfoTip } from "@/components/ui/info-tip";
 import { cn } from "@/lib/utils";
 import { historyEvents } from "@/lib/events";
+import { GRAD_RACE_SERIES } from "@/lib/history";
+import { rollingRate } from "@/lib/graduation-groups";
 
 type Range = "10" | "all";
 type Dollars = "real" | "nominal";
@@ -508,7 +510,29 @@ export function OverTime(props: OverTimeProps) {
   const spans = policySpans(history.series.test_policy);
   const hasScores = !!(history.series.sat_25 || history.series.act_25);
   const hasStudents = !!(history.series.undergrads || history.series.race_white || history.series.men_share || history.series.part_time_share || history.series.housing_capacity);
-  const hasOutcomes = !!(history.series.grad_rate || history.series.median_debt);
+  const hasOutcomes = !!(history.series.grad_rate || history.series.median_debt || history.series.grad_rate_pell || history.series.grad_rate_white);
+  // Graduation by group (specs/data-expansion/graduation-by-group.md): small groups swing year to year, so the charts
+  // offer a 3-class rolling average (weighted by class size) and always show class sizes in the tooltip and table.
+  const [smoothGrad, setSmoothGrad] = useState(false);
+  const gradRaceGroups = DEMOGRAPHIC_CATEGORIES.filter((c) => c.key in GRAD_RACE_SERIES).map((c) => ({ ...c, keys: GRAD_RACE_SERIES[c.key as keyof typeof GRAD_RACE_SERIES] }));
+  const gradHistory = useMemo((): SchoolHistory => {
+    if (!smoothGrad) return history;
+    const series = { ...history.series };
+    const pairs: [SeriesKey, SeriesKey | null][] = [
+      ["grad_rate", null],
+      ["grad_rate_pell", "grad_cohort_pell"],
+      ["grad_rate_no_pell_no_loan", "grad_cohort_no_pell_no_loan"],
+      ...Object.values(GRAD_RACE_SERIES).map(([r, c]) => [r, c] as [SeriesKey, SeriesKey]),
+    ];
+    for (const [rate, cohort] of pairs) {
+      const s = history.series[rate];
+      if (s) series[rate] = rollingRate(s, cohort ? history.series[cohort] : undefined);
+    }
+    return { ...history, series };
+  }, [history, smoothGrad]);
+  const pellWindow = windowFor("cohort", ["grad_rate_pell"]);
+  const latestPell = valueAt(history.series.grad_cohort_pell, latest.cohort);
+  const latestNeither = valueAt(history.series.grad_cohort_no_pell_no_loan, latest.cohort);
   const debtEnd = history.series.median_debt ? lastYear(history.series.median_debt) : null;
 
   const incomeRows = useMemo(() => {
@@ -881,6 +905,61 @@ export function OverTime(props: OverTimeProps) {
               }
             />
           </div>
+          {(history.series.grad_rate_pell || history.series.grad_rate_white) && (
+            <div className="mt-6">
+              <div className="mb-3 flex flex-wrap items-center gap-2">
+                <h4 className="font-display text-base font-bold">Graduation by group</h4>
+                <Segmented
+                  label="Graduation rates by group"
+                  value={smoothGrad ? "avg" : "each"}
+                  onChange={(v) => setSmoothGrad(v === "avg")}
+                  options={[{ value: "each", label: "Each class" }, { value: "avg", label: "3-class average" }]}
+                />
+              </div>
+              <div className="grid gap-4 lg:grid-cols-2">
+                {history.series.grad_rate_pell && (
+                  <ChartPanel
+                    {...common}
+                    history={gradHistory}
+                    title="Pell Grant recipients vs. everyone"
+                    term="pell-graduation-gap"
+                    kind="cohort"
+                    format="pct"
+                    window={pellWindow}
+                    headline="grad_rate_pell"
+                    provisionalYear={null}
+                    specs={[
+                      { key: "grad_rate_pell", name: "Pell recipients", color: colors.value },
+                      { key: "grad_rate_no_pell_no_loan", name: "Neither", color: CONTEXT },
+                      { key: "grad_rate", name: "All students", color: CONTEXT, dashed: true },
+                    ]}
+                    extras={[
+                      { key: "grad_cohort_pell", name: "Pell students" },
+                      { key: "grad_cohort_no_pell_no_loan", name: "Students with neither" },
+                    ]}
+                    note={`${smoothGrad ? "Each point averages that entering class and the two before it, weighted by class size. " : ""}${
+                      latestPell !== null ? `Newest class: ${latestPell.toLocaleString("en-US")} Pell recipients${latestNeither !== null ? `, ${latestNeither.toLocaleString("en-US")} with neither` : ""}. ` : ""
+                    }"Neither": no Pell Grant or subsidized loan. Groups under 30 students aren't shown. The federal Pell split starts with the class that entered fall ${history.series.grad_rate_pell.start}.`}
+                  />
+                )}
+                {history.series.grad_rate_white && (
+                  <ChartPanel
+                    {...common}
+                    history={gradHistory}
+                    title="By race and ethnicity"
+                    term="graduation-rate"
+                    kind="cohort"
+                    format="pct"
+                    window={windowFor("cohort", ["grad_rate_white"])}
+                    provisionalYear={null}
+                    specs={gradRaceGroups.map((g) => ({ key: g.keys[0], name: g.label, color: g.color }))}
+                    extras={gradRaceGroups.map((g) => ({ key: g.keys[1], name: `${g.label} students` }))}
+                    note={`${smoothGrad ? "3-class averages, weighted by class size. " : ""}Class sizes are in the tooltip and table. Groups under 30 students aren't shown.`}
+                  />
+                )}
+              </div>
+            </div>
+          )}
           <p className="mt-4 max-w-3xl text-sm text-muted-foreground">
             <b className="text-foreground">Earnings</b> aren&apos;t shown over time: the College Scorecard changed how it measures them, so earlier
             years aren&apos;t comparable with today&apos;s figure.

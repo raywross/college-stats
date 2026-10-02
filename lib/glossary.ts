@@ -308,6 +308,22 @@ const entries = {
     category: "Cost & outcomes",
     related: ["retention-rate"],
   },
+  // Graduation by group (specs/data-expansion/graduation-by-group.md).
+  "pell-graduation-gap": {
+    term: "Pell graduation gap",
+    short: "How many points lower the 6-year graduation rate is for Pell Grant recipients than for students who got neither a Pell Grant nor a subsidized federal loan, in the same entering class.",
+    long: "Federal data splits each entering class of first-time, full-time students three ways: Pell Grant recipients, students with a subsidized federal loan but no Pell Grant, and students with neither. Comparing Pell recipients with the \"neither\" group compares lower-income students with students who didn't qualify for need-based federal aid. A negative gap means Pell recipients graduated more often. Groups under 30 students aren't shown.",
+    why: "Colleges admit students from every income level; the gap shows whether lower-income students who enroll finish as often as everyone else. It says more about support than the overall rate does.",
+    category: "Cost & outcomes",
+    related: ["graduation-rate", "pell-grant", "adjusted-cohort"],
+  },
+  "adjusted-cohort": {
+    term: "Adjusted cohort",
+    short: "The first-time, full-time students who entered in a given fall, minus those who left for allowed reasons (military service, a church mission, a foreign aid service, death or total disability). Graduation rates divide by it.",
+    long: "We don't show a group's graduation rate when its adjusted cohort has fewer than 30 students: a few students would swing it by many points.",
+    category: "How we measure",
+    related: ["graduation-rate", "pell-graduation-gap"],
+  },
   "retention-rate": {
     term: "Retention rate",
     short: "The share of full-time first-year students who come back for their second year. An early signal of student satisfaction and support.",

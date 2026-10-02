@@ -55,6 +55,17 @@
     "part_time_share": {"start":1996,"values":[0.0877,0.088,0.079,0.071,null,0.0926,0.1102,0.1133,0.1029,0.0885,0.0882,0.087,0.0861,0.069,0.0654,0.0715,0.0535,0.0581,0.0385,0.0609,0.0367,0.047,0.0923,null,null,null,0.0427,0.0562,0.0767]},
     "grad_rate": {"start":1991,"values":[0.4821,0.4558,0.4439,0.4412,0.4803,0.4298,0.4416,0.496,0.5172,0.4908,0.5311,0.5058,0.508,0.5497,0.4907,0.5027,0.5029,0.4888,0.5198,0.4615,0.6021,0.5338,null,null,null,0.2016,0.1667,0.2273]},
     "median_debt": {"start":1997,"values":[15719,15894.5,16305,16750,17125,17125,17125,17125,17125,17125,17125,17125,19125,22125,25000,26000,26750,26933,26687,26120,26000,25928,25000]},
-    "federal_loan_rate": {"start":2008,"values":[0.6204,0.6622,0.6551,0.6519,0.6823,0.6287,0.6884,0.6653,0.6059,0.5702,null,null,null,0.534,0.5592,0.5431]}
+    "federal_loan_rate": {"start":2008,"values":[0.6204,0.6622,0.6551,0.6519,0.6823,0.6287,0.6884,0.6653,0.6059,0.5702,null,null,null,0.534,0.5592,0.5431]},
+    "grad_rate_pell": {"start":2010,"values":[0.4118,0.5526,0.4314,null,null,null,0.193,0.125,0.225]},
+    "grad_rate_no_pell_no_loan": {"start":2010,"values":[0.5156,0.5645,0.6275,null,null,null,0.1951,0.1892]},
+    "grad_cohort_pell": {"start":2010,"values":[85,76,51,null,null,null,57,40,40]},
+    "grad_cohort_no_pell_no_loan": {"start":2010,"values":[64,62,51,null,null,null,41,37,26]},
+    "grad_rate_white": {"start":2005,"values":[0.4933,0.5029,0.5097,0.4909,0.5414,0.4703,0.6118,0.5574,null,null,null,0.2268,0.1786,0.1948]},
+    "grad_cohort_white": {"start":2005,"values":[150,171,155,165,181,185,170,122,null,null,null,97,84,77]},
+    "grad_cohort_asian": {"start":2005,"values":[1,2,4,5,1,4,4,3,null,null,null,6,2,2]},
+    "grad_cohort_hispanic": {"start":2005,"values":[5,6,6,1,5,7,9,13,null,null,null,5,5,5]},
+    "grad_cohort_black": {"start":2005,"values":[5,4,7,7,9,7,5,6,null,null,null,11,5,3]},
+    "grad_cohort_two_or_more": {"start":2005,"values":[0,0,0,0,4,2,3,2,null,null,null,2,3,1]},
+    "grad_cohort_international": {"start":2005,"values":[0,0,1,0,0,1,0,0,null,null,null,2,0,0]}
   }
 }

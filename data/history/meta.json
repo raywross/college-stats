@@ -1,5 +1,5 @@
 {
-  "built": "2026-09-30",
+  "built": "2026-10-02",
   "latest": {
     "fall": 2024,
     "academic": 2023,
@@ -752,6 +752,62 @@
         "revised": false
       }
     ],
+    "gr-pell": [
+      {
+        "year": 2010,
+        "file": "GR2016_PELL_SSL",
+        "url": "https://nces.ed.gov/ipeds/datacenter/data/GR2016_PELL_SSL.zip",
+        "revised": true
+      },
+      {
+        "year": 2011,
+        "file": "GR2017_PELL_SSL",
+        "url": "https://nces.ed.gov/ipeds/datacenter/data/GR2017_PELL_SSL.zip",
+        "revised": true
+      },
+      {
+        "year": 2012,
+        "file": "GR2018_PELL_SSL",
+        "url": "https://nces.ed.gov/ipeds/datacenter/data/GR2018_PELL_SSL.zip",
+        "revised": true
+      },
+      {
+        "year": 2013,
+        "file": "GR2019_PELL_SSL",
+        "url": "https://nces.ed.gov/ipeds/datacenter/data/GR2019_PELL_SSL.zip",
+        "revised": true
+      },
+      {
+        "year": 2014,
+        "file": "GR2020_PELL_SSL",
+        "url": "https://nces.ed.gov/ipeds/datacenter/data/GR2020_PELL_SSL.zip",
+        "revised": true
+      },
+      {
+        "year": 2015,
+        "file": "GR2021_PELL_SSL",
+        "url": "https://nces.ed.gov/ipeds/datacenter/data/GR2021_PELL_SSL.zip",
+        "revised": true
+      },
+      {
+        "year": 2016,
+        "file": "GR2022_PELL_SSL",
+        "url": "https://nces.ed.gov/ipeds/datacenter/data/GR2022_PELL_SSL.zip",
+        "revised": true
+      },
+      {
+        "year": 2017,
+        "file": "GR2023_PELL_SSL",
+        "url": "https://nces.ed.gov/ipeds/complete-data-files/GR2023_PELL_SSL.zip",
+        "revised": true
+      },
+      {
+        "year": 2018,
+        "file": "GR2024_PELL_SSL",
+        "url": "https://nces.ed.gov/ipeds/complete-data-files/GR2024_PELL_SSL.zip",
+        "revised": false
+      }
+    ],
     "scorecard-enrollment": [
       {
         "year": 1996,
@@ -1335,13 +1391,100 @@
         "url": "https://collegescorecard.ed.gov/data/",
         "revised": false
       }
+    ],
+    "scorecard-completion-race": [
+      {
+        "year": 2005,
+        "file": "College Scorecard API (grad_rate_white, grad_rate_asian, grad_rate_hispanic, grad_rate_black, grad_rate_two_or_more, grad_rate_international)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2006,
+        "file": "College Scorecard API (grad_rate_white, grad_rate_asian, grad_rate_hispanic, grad_rate_black, grad_rate_two_or_more, grad_rate_international)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2007,
+        "file": "College Scorecard API (grad_rate_white, grad_rate_asian, grad_rate_hispanic, grad_rate_black, grad_rate_two_or_more, grad_rate_international)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2008,
+        "file": "College Scorecard API (grad_rate_white, grad_rate_asian, grad_rate_hispanic, grad_rate_black, grad_rate_two_or_more, grad_rate_international)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2009,
+        "file": "College Scorecard API (grad_rate_white, grad_rate_asian, grad_rate_hispanic, grad_rate_black, grad_rate_two_or_more, grad_rate_international)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2010,
+        "file": "College Scorecard API (grad_rate_white, grad_rate_asian, grad_rate_hispanic, grad_rate_black, grad_rate_two_or_more, grad_rate_international)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2011,
+        "file": "College Scorecard API (grad_rate_white, grad_rate_asian, grad_rate_hispanic, grad_rate_black, grad_rate_two_or_more, grad_rate_international)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2012,
+        "file": "College Scorecard API (grad_rate_white, grad_rate_asian, grad_rate_hispanic, grad_rate_black, grad_rate_two_or_more, grad_rate_international)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2013,
+        "file": "College Scorecard API (grad_rate_white, grad_rate_asian, grad_rate_hispanic, grad_rate_black, grad_rate_two_or_more, grad_rate_international)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2014,
+        "file": "College Scorecard API (grad_rate_white, grad_rate_asian, grad_rate_hispanic, grad_rate_black, grad_rate_two_or_more, grad_rate_international)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2015,
+        "file": "College Scorecard API (grad_rate_white, grad_rate_asian, grad_rate_hispanic, grad_rate_black, grad_rate_two_or_more, grad_rate_international)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2016,
+        "file": "College Scorecard API (grad_rate_white, grad_rate_asian, grad_rate_hispanic, grad_rate_black, grad_rate_two_or_more, grad_rate_international)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2017,
+        "file": "College Scorecard API (grad_rate_white, grad_rate_asian, grad_rate_hispanic, grad_rate_black, grad_rate_two_or_more, grad_rate_international)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      },
+      {
+        "year": 2018,
+        "file": "College Scorecard API (grad_rate_white, grad_rate_asian, grad_rate_hispanic, grad_rate_black, grad_rate_two_or_more, grad_rate_international)",
+        "url": "https://collegescorecard.ed.gov/data/",
+        "revised": false
+      }
     ]
   },
   "provisional": {
     "adm": 2024,
     "sfa": 2023,
     "services": 2025,
-    "ef-d": 2024
+    "ef-d": 2024,
+    "gr-pell": 2018
   },
   "schools": 1893,
   "universe": 1893

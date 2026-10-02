@@ -15,6 +15,7 @@ import { FACTOR_FILTERS, type FactorFilterParam } from "@/lib/factors";
 import { DESIGNATION_KEYS, DESIGNATION_LABELS, RESEARCH_TIERS, SETTING_GROUPS } from "@/lib/campus-profile";
 import { DIVISION_FILTERS, DIVISION_SHORT, ROTC_BRANCHES, ROTC_LABELS } from "@/lib/campus-services";
 import { MAX_RATIO_OPTIONS } from "@/lib/academics";
+import { SMALL_PELL_GAP } from "@/lib/graduation-groups";
 import type { Designation, DivisionFilter, ResearchTier, RotcBranch, SettingGroup } from "@/lib/types";
 import { useExploreParams } from "./useExploreParams";
 import { cn } from "@/lib/utils";
@@ -46,6 +47,8 @@ export interface FilterFacets {
   medianRatio: number | null;
   /** Colleges where few undergrads take federal loans (lib/repayment.ts). */
   fewLoans: number;
+  /** Colleges whose Pell graduation gap is under 5 points (lib/graduation-groups.ts). */
+  pellGap: number;
 }
 
 function Section({ title, term, children }: { title: string; term?: TermKey; children: ReactNode }) {
@@ -112,9 +115,10 @@ export function FilterPanel({ facets, onDone }: { facets: FilterFacets; onDone?:
   const activeBalance = getList("balance");
   const fullTime = searchParams.get("fullTime") === "1";
   const fewLoans = searchParams.get("fewLoans") === "1";
+  const pellGap = searchParams.get("pellGap") === "1";
 
   const hasFilters = [
-    ...["q", "types", "sizes", "regions", "states", "minAR", "maxAR", "minSAT", "maxSAT", "minCost", "maxCost", "minEnroll", "maxEnroll", "balance", "fullTime", "fewLoans", "liveOn", "noFee", "guarantee", "noLegacy", "noEssay", "gpaRequired", "setting", "research", "designation", "opportunity", "division", "conference", "football", "rotc", "ugResearch", "studyAbroad", "maxRatio"],
+    ...["q", "types", "sizes", "regions", "states", "minAR", "maxAR", "minSAT", "maxSAT", "minCost", "maxCost", "minEnroll", "maxEnroll", "balance", "fullTime", "fewLoans", "liveOn", "noFee", "guarantee", "noLegacy", "noEssay", "gpaRequired", "setting", "research", "designation", "opportunity", "division", "conference", "football", "rotc", "ugResearch", "studyAbroad", "maxRatio", "pellGap"],
     ...INDICATOR_KEYS.map((k) => INDICATORS[k].param),
   ].some((k) => searchParams.get(k));
 
@@ -192,6 +196,18 @@ export function FilterPanel({ facets, onDone }: { facets: FilterFacets; onDone?:
         </div>
         <p className="text-[11px] text-muted-foreground">
           {Math.round(FEW_LOANS_MAX * 100)}% or fewer of undergrads take a federal loan.
+        </p>
+      </Section>
+
+      <Section title="Graduation" term="pell-graduation-gap">
+        <div className="flex flex-wrap gap-1.5">
+          <Chip active={pellGap} onClick={() => update({ pellGap: pellGap ? null : "1" })} count={facets.pellGap}>
+            Pell gap under {Math.round(SMALL_PELL_GAP * 100)} points
+          </Chip>
+        </div>
+        <p className="text-[11px] text-muted-foreground">
+          Pell Grant recipients graduate within {Math.round(SMALL_PELL_GAP * 100)} points of students with no need-based federal aid (or more often).
+          Colleges with under 30 students in either group are hidden while this is set.
         </p>
       </Section>
 

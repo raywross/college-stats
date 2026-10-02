@@ -61,6 +61,7 @@ import { LANDSCAPE_X, LANDSCAPE_Y, LANDSCAPE_ZONE, VALUE_X, VALUE_Y, valueZone }
 import { NetPriceByIncome } from "@/components/charts/NetPriceByIncome";
 import { WhatStudentsPay } from "@/components/school/WhatStudentsPay";
 import { LoansCard } from "@/components/school/LoansCard";
+import { GraduationByGroup } from "@/components/school/GraduationByGroup";
 import { CampusLife } from "@/components/school/CampusLife";
 import { CampusServices } from "@/components/school/CampusServices";
 import { DESIGNATION_LABELS, DESIGNATION_TERMS, SETTING_SHORT, designationsOf } from "@/lib/campus-profile";
@@ -86,7 +87,7 @@ const HISTORY_GROUPS = {
   admissions: ["applicants", "admitted", "enrolled", "acceptance_rate", "yield", "admit_rate_men", "admit_rate_women", "application_fee"],
   scores: ["sat_25", "sat_75", "act_25", "act_75", "sat_submit", "test_policy"],
   students: ["undergrads", "race_white", "men_share", "part_time_share", "housing_capacity"],
-  outcomes: ["grad_rate", "median_debt"],
+  outcomes: ["grad_rate", "median_debt", "grad_rate_pell", "grad_rate_white"],
   academics: ["student_faculty_ratio"],
 } as const satisfies Record<string, readonly SeriesKey[]>;
 
@@ -190,6 +191,14 @@ const SECTION_FIELDS = {
     "outcomes.median_earnings_6yr",
     "outcomes.retention_rate",
     "outcomes.graduation_rate",
+    // Graduation by group (specs/data-expansion/graduation-by-group.md).
+    "outcomes.grad_rate_pell",
+    "outcomes.grad_rate_loan_no_pell",
+    "outcomes.grad_rate_no_pell_no_loan",
+    "outcomes.grad_rate_ftft",
+    "outcomes.grad_cohorts",
+    "outcomes.grad_rate_by_race",
+    "outcomes.grad_cohorts_by_race",
   ],
   academics: ["academics.student_faculty_ratio"],
   campus: ["campus.housing", "campus.athletics", "campus.programs", "campus.services", "campus.calendar", "demographics.disability_services"],
@@ -1175,6 +1184,8 @@ export default async function SchoolPage({ params }: Props) {
                   </div>
                 </>
               )}
+
+              <GraduationByGroup school={school} />
 
               {onValueMap && (
                 <ShowMore label="Show the cost vs. earnings map" hint={`Where ${school.name} sits among 300 colleges`} className="mt-4">

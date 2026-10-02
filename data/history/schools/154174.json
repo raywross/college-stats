@@ -52,6 +52,14 @@
     "part_time_share": {"start":1996,"values":[0.1111,0,0.1892,0.3,null,0.2097,0.3182,0.1429,0.0515,0.1563,0.087,0.0714,0.0492,0.0889,0.1622,0.1356,0.0833,0.0769,0.1176,0.0313,0.2051,0.0488,0,0.0345,0,0.0769,0.0345,0.0244,0.0698]},
     "grad_rate": {"start":1991,"values":[0.7241,0.129,null,0.7083,0.6818,1,1,1,0.6667,1,0.5714,0.6957,0.68,0.5,0.6957,0.6364,0.6667,null,null,null,1,0.6667,null,0,1,0,0]},
     "median_debt": {"start":1998,"values":[5500,10000,10500,13827,14051,14162.5,14125,7687.5,6125,6612.5,6821,5500,5500,5381.5,7500,10484,7500,7500,9375,9901]},
-    "federal_loan_rate": {"start":2008,"values":[0.7077,0.8222,0.7027,0.8545,0.8542,0.7436,0.7647,0.7742,0.7692,0.7073,0.7083,0.6552,0.6471,0.7674,0.75,0.6383]}
+    "federal_loan_rate": {"start":2008,"values":[0.7077,0.8222,0.7027,0.8545,0.8542,0.7436,0.7647,0.7742,0.7692,0.7073,0.7083,0.6552,0.6471,0.7674,0.75,0.6383]},
+    "grad_cohort_pell": {"start":2011,"values":[2,0,null,1,1,1,1]},
+    "grad_cohort_no_pell_no_loan": {"start":2011,"values":[1,2,null,0,0,0,0]},
+    "grad_cohort_white": {"start":2005,"values":[18,10,28,null,null,null,2,3,null,2,2,1,0]},
+    "grad_cohort_asian": {"start":2005,"values":[1,0,1,null,null,null,0,0,null,0,0,0,0]},
+    "grad_cohort_hispanic": {"start":2005,"values":[1,0,0,null,null,null,0,0,null,0,0,0,0]},
+    "grad_cohort_black": {"start":2005,"values":[1,1,1,null,null,null,1,0,null,0,0,0,1]},
+    "grad_cohort_two_or_more": {"start":2005,"values":[0,0,0,null,null,null,0,0,null,0,0,0,0]},
+    "grad_cohort_international": {"start":2005,"values":[0,0,0,null,null,null,0,0,null,0,0,0,0]}
   }
 }

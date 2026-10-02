@@ -8,6 +8,7 @@ import { FIELDS, isFieldPath, type FieldPath } from "../../lib/fields.ts";
 import type { IpedsRow } from "../../lib/derive.ts";
 import { FACTOR_CODE, FACTOR_COLUMNS, FACTOR_ERA, acceptanceRate, admitRatesBySex, applicationFeeFrom, computePrices, housingFrom, netPriceByIncome, promiseProgramFrom, raceShares, satMedian, toAid, tuitionPlansFrom, yieldOf } from "../../lib/derive.ts";
 import {
+  GRAD_RACE_SERIES,
   NET_PRICE_BANDS,
   RACE_FROM,
   RACE_SERIES,
@@ -35,6 +36,7 @@ import {
 import { readSpec, type ColumnSpec, type Era, type FileChoice } from "./registry.mts";
 import { associationCode, footballConferenceCode, mainConferenceCode, rotcCode } from "../../lib/campus-services.ts";
 import { studentFacultyRatioFrom } from "../../lib/academics.ts";
+import { aidGroupGradFrom, raceGradFrom } from "../../lib/graduation-groups.ts";
 import { COHORT_LAG, type ScorecardRow } from "./scorecard.mts";
 
 /** One year of one family, read. */
@@ -60,6 +62,10 @@ export interface Inputs {
   efd?: readonly YearTable[];
   /** College Scorecard year-prefixed values by unit ID (scripts/history/scorecard.mts), and the years requested. */
   scorecard?: { rows: ReadonlyMap<string, ScorecardRow>; first: number; last: number };
+  /** Graduation by Pell and loan status (GR{Y+6}_PELL_SSL), one table per entering class. */
+  grPell?: readonly YearTable[];
+  /** Graduation by race/ethnicity: Scorecard year-prefixed completion fields (scorecard.mts gradByRaceFields). */
+  scorecardGradRace?: { rows: ReadonlyMap<string, ScorecardRow>; first: number; last: number };
 }
 
 const VALID_POLICY = new Set<number>(Object.values(TEST_POLICY_CODES));
@@ -194,6 +200,27 @@ export function buildCollege(school: Pick<School, "unit_id" | "type">, inputs: I
 
   // Student-to-faculty ratio, with the snapshot's reader (lib/academics.ts).
   for (const t of inputs.efd ?? []) put(raw, "student_faculty_ratio", t.year, studentFacultyRatioFrom(t.rows.get(id)));
+
+  // Graduation by group (lib/graduation-groups.ts, the snapshot's readers), stored at the entering class.
+  for (const t of inputs.grPell ?? []) {
+    const g = aidGroupGradFrom(t.rows.get(id));
+    put(raw, "grad_rate_pell", t.year, g?.rates.pell);
+    put(raw, "grad_rate_no_pell_no_loan", t.year, g?.rates.no_pell_no_loan);
+    put(raw, "grad_cohort_pell", t.year, g?.cohorts.pell);
+    put(raw, "grad_cohort_no_pell_no_loan", t.year, g?.cohorts.no_pell_no_loan);
+  }
+  const race = inputs.scorecardGradRace;
+  const rc = race?.rows.get(id);
+  if (race && rc) {
+    for (let y = race.first; y <= race.last; y++) {
+      const g = raceGradFrom((f) => rc[`${y}.${f}`]);
+      if (!g) continue;
+      for (const [group, [rate, cohort]] of Object.entries(GRAD_RACE_SERIES)) {
+        put(raw, rate, y - COHORT_LAG, g.rates[group as keyof typeof GRAD_RACE_SERIES]);
+        put(raw, cohort, y - COHORT_LAG, g.cohorts[group as keyof typeof GRAD_RACE_SERIES]);
+      }
+    }
+  }
 
   // Athletics and ROTC as codes for events: the same readers as the snapshot (lib/campus-services.ts).
   for (const t of inputs.services ?? []) {

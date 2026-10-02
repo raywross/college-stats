@@ -177,6 +177,7 @@ export default async function DataPage() {
     "ipeds-hd": all.filter((s) => s.campus?.setting).length,
     "ipeds-ic-char": all.filter((s) => s.campus?.calendar !== undefined && s.campus?.programs).length,
     "ipeds-ef": all.filter((s) => s.academics?.student_faculty_ratio != null).length,
+    "ipeds-gr": all.filter((s) => s.outcomes?.grad_cohorts != null).length,
     cds: cds.length,
   };
   const sourceUses = (key: SourceKey) => {

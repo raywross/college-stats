@@ -66,7 +66,7 @@ page, and wider screens are unchanged.
 | Students | Race and ethnicity, economic access, campus size, residence, transfers, campus life | "Who they are" (men/women, part-time, 25 and older; [student-body.md](data-expansion/student-body.md)) |
 | Cost | What students pay, price by income, debt/payback | "Borrowing and repayment" (loan rate, debt by background, repayment status); "Who actually gets aid" (generosity card + breakdown; the overview has the generosity tile) |
 | Outcomes | Earnings, retention/graduation, 8-year outcomes, graduation by group | Cost vs. earnings map |
-| Over time | Takeaway and controls; six topic headers | Every group (was: all but Cost, collapsed after hydration, which made the page jump) |
+| Over time | Takeaway, controls, the group pills, and the one selected group (Cost by default) | Nothing folds: the other groups aren't rendered ([trends-design.md](trends-design.md#profile-over-time-page-schoolsidhistory)) |
 
 Harvard (2026-10-02, phase 1): overview 4,150px; topic pages 2,100–5,000px each, where the single page was ~19,000px.
 Charts inside folded content keep their last real width (`useWidth` ignores 0) and re-measure when shown.

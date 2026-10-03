@@ -1,9 +1,11 @@
 /**
  * The pipeline's two model calls:
- * - discover(): learns where a college publishes (Sonnet 5, or Opus 5 on escalation) with the server web search and
- *   web fetch tools, and returns a Recipe through a strict `save_recipe` tool.
- * - extract(): reads one known document into the fixed EXTRACTION_SCHEMA (Haiku 4.5 by default) with structured
- *   outputs, falling back to a strict forced tool if the model rejects structured outputs.
+ * - discover(): finds where a college publishes (Sonnet 5) with the server web search and web fetch tools, and returns
+ *   a Recipe of LINKS through a strict `save_recipe` tool. It never reads the documents themselves: web fetch is capped
+ *   per page and the prompt forbids opening PDF or Excel files (specs/college-reported-round-2.md, decision 2).
+ * - extract(): reads one known document into the fixed EXTRACTION_SCHEMA (Haiku 4.5 by default; Sonnet 5 as the
+ *   stronger extractor on escalation) with structured outputs, falling back to a strict forced tool if the model
+ *   rejects structured outputs.
  */
 import Anthropic from "@anthropic-ai/sdk";
 import { EXTRACTION_SCHEMA, type Extraction, type Recipe, type RecipeSource } from "../../../lib/reported.ts";
@@ -21,10 +23,13 @@ export interface LlmContext {
 /* Discovery                                                           */
 /* ------------------------------------------------------------------ */
 
+/** Discovery's web-tool limits per college: a few searches and a few capped HTML pages, never whole documents. */
+export const DISCOVERY_LIMITS = { searches: 4, fetches: 4, fetchTokens: 6000 } as const;
+
 const RECIPE_TOOL: Anthropic.Tool = {
   name: "save_recipe",
   description:
-    "Record where this college publishes its admissions figures. Call it exactly once, when you are done searching. Use none_found=true with an empty sources list when the college publishes nothing newer than the federal year.",
+    "Record where this college publishes its admissions figures, as links. Call it exactly once, when you are done searching. Use none_found=true with an empty sources list when the college publishes nothing newer than the federal year.",
   strict: true,
   input_schema: {
     type: "object",
@@ -37,13 +42,11 @@ const RECIPE_TOOL: Anthropic.Tool = {
         items: {
           type: "object",
           additionalProperties: false,
-          required: ["kind", "url", "format", "pages", "anchor"],
+          required: ["kind", "url", "format"],
           properties: {
             kind: { type: "string", enum: ["cds", "class-profile"] },
-            url: { type: "string", description: "The document itself (the PDF or XLSX file for a CDS), not a page linking to it" },
-            format: { type: "string", enum: ["pdf", "html", "xlsx"] },
-            pages: { type: ["array", "null"], items: { type: "integer" }, description: "PDF pages (1-based) holding section C1, if known" },
-            anchor: { type: ["string", "null"], description: 'Short text that appears verbatim next to the figures ("C1" for a CDS)' },
+            url: { type: "string", description: "The document itself (the PDF or XLSX file for a CDS, as linked from its index page), not a page linking to it" },
+            format: { type: "string", enum: ["pdf", "html", "xlsx"], description: "From the link's file extension" },
           },
         },
       },
@@ -59,21 +62,41 @@ const RECIPE_TOOL: Anthropic.Tool = {
 };
 
 interface RecipeInput {
-  sources: { kind: ReportedSourceKind; url: string; format: RecipeSource["format"]; pages: number[] | null; anchor: string | null }[];
+  sources: { kind: ReportedSourceKind; url: string; format: RecipeSource["format"] }[];
   index_urls: string[];
   none_found: boolean;
   notes: string;
 }
 
-const DISCOVERY_SYSTEM = `You find where a U.S. college publishes its own admissions figures, so a program can read them every year.
+const DISCOVERY_SYSTEM = `You find links to where a U.S. college publishes its own admissions figures, so a program can download and read them every year. You return URLs only; another step reads the documents.
 
-Find two kinds of official documents on the college's own website (or its institutional research office or file host):
-1. Its Common Data Set (CDS): the page that lists each year's edition (an index URL), and the direct file of the newest edition (PDF or Excel). Section C1 holds first-year applicants, admits, and enrollees. If both PDF and Excel are offered, give the Excel file. For a PDF, give the page numbers of section C1 when you can see them, and use "C1" as the anchor.
-2. Its newest class profile or admissions news release that states first-year applicants, admits, or the admit rate for the newest entering class, with a short anchor phrase that appears verbatim near the figures.
+Find, on the college's own website (or its institutional research office or file host):
+1. Its Common Data Set (CDS): the index page that lists each year's edition, and the URL of the newest edition's file (PDF or Excel), as linked from that page. If both PDF and Excel are offered, give the Excel file.
+2. Its newest class profile or admissions news release about the newest entering class (first-year applicants, admits, or admit rate), as a page URL.
 
-Only documents newer than the federal year matter. Never use third-party sites (rankings, news aggregators, test-prep sites) as sources. When finished, call save_recipe exactly once.`;
+How to work:
+- Use web search to find candidate pages. Open only HTML pages that list or link documents (a CDS index page, an admissions facts or class profile page) to read their links.
+- Never open a PDF or Excel file, and never fetch a document to check its contents: its link text and file name are enough. Take the format from the file extension.
+- Only documents newer than the federal year matter. Never use third-party sites (rankings, news aggregators, test-prep sites).
+- Stop as soon as you have the links. When finished, call save_recipe exactly once.`;
 
-export async function discover(ctx: LlmContext, school: School, opts: { model: string; job: Job }): Promise<Recipe> {
+/** The request messages with a cache breakpoint on the last block, so a resumed turn reads the earlier ones from cache. */
+function withCacheOnLast(messages: Anthropic.MessageParam[]): Anthropic.MessageParam[] {
+  const out = messages.map((m) => ({ ...m }));
+  const last = out[out.length - 1];
+  const blocks = (typeof last.content === "string" ? [{ type: "text" as const, text: last.content }] : [...last.content]) as Anthropic.ContentBlockParam[];
+  // Thinking blocks can't carry a breakpoint; put it on the last block that can.
+  for (let i = blocks.length - 1; i >= 0; i--) {
+    const b = blocks[i];
+    if (b.type === "thinking" || b.type === "redacted_thinking") continue;
+    blocks[i] = { ...b, cache_control: { type: "ephemeral" } } as Anthropic.ContentBlockParam;
+    break;
+  }
+  last.content = blocks;
+  return out;
+}
+
+export async function discover(ctx: LlmContext, school: School, opts: { model: string; job: Job; effort: "low" | "medium" }): Promise<Recipe> {
   const federal = school.admissions.year;
   const user = [
     `College: ${school.name} (${school.location.city}, ${school.location.state}), IPEDS unit ${school.unit_id}`,
@@ -83,14 +106,21 @@ export async function discover(ctx: LlmContext, school: School, opts: { model: s
   const messages: Anthropic.MessageParam[] = [{ role: "user", content: user }];
   let nudged = false;
   for (let turn = 0; turn < 8; turn++) {
-    const res = await ctx.client.messages.create({
-      model: opts.model,
-      max_tokens: 16000,
-      system: DISCOVERY_SYSTEM,
-      output_config: { effort: opts.job === "escalation" ? "high" : "medium" },
-      tools: [{ type: "web_search_20260209", name: "web_search", max_uses: 8 }, { type: "web_fetch_20260209", name: "web_fetch", max_uses: 8 }, RECIPE_TOOL],
-      messages,
-    });
+    // Streamed, so a long web-tool loop can't hit the client's request timeout.
+    const res = await ctx.client.messages
+      .stream({
+        model: opts.model,
+        max_tokens: 16000,
+        system: DISCOVERY_SYSTEM,
+        output_config: { effort: opts.effort },
+        tools: [
+          { type: "web_search_20260209", name: "web_search", max_uses: DISCOVERY_LIMITS.searches },
+          { type: "web_fetch_20260209", name: "web_fetch", max_uses: DISCOVERY_LIMITS.fetches, max_content_tokens: DISCOVERY_LIMITS.fetchTokens },
+          RECIPE_TOOL,
+        ],
+        messages: withCacheOnLast(messages),
+      })
+      .finalMessage();
     addUsage(ctx.usage, opts.job, opts.model, res.usage);
     const call = res.content.find((b): b is Anthropic.ToolUseBlock => b.type === "tool_use" && b.name === RECIPE_TOOL.name);
     if (call) return recipeFrom(school.unit_id, call.input as RecipeInput, opts.model, ctx.today);
@@ -99,20 +129,14 @@ export async function discover(ctx: LlmContext, school: School, opts: { model: s
     if (res.stop_reason === "pause_turn") continue;
     if (nudged) break;
     nudged = true;
-    messages.push({ role: "user", content: "Call save_recipe now with what you found (none_found: true if nothing newer is published)." });
+    messages.push({ role: "user", content: "Call save_recipe now with the links you found (none_found: true if nothing newer is published)." });
   }
   throw new Error("discovery ended without a recipe");
 }
 
 function recipeFrom(unit_id: string, input: RecipeInput, model: string, today: string): Recipe {
   const okUrl = (u: string) => /^https?:\/\//.test(u);
-  const sources: RecipeSource[] = (input.sources ?? []).filter((s) => okUrl(s.url)).map((s) => ({
-    kind: s.kind,
-    url: s.url,
-    format: s.format,
-    ...(s.pages?.length ? { pages: s.pages } : {}),
-    ...(s.anchor ? { anchor: s.anchor } : {}),
-  }));
+  const sources: RecipeSource[] = (input.sources ?? []).filter((s) => okUrl(s.url)).map((s) => ({ kind: s.kind, url: s.url, format: s.format }));
   return {
     unit_id,
     sources,

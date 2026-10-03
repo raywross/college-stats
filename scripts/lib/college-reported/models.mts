@@ -12,11 +12,20 @@ export type Job = keyof typeof REPORTED_MODELS;
  * List prices in US dollars per million tokens, from the claude-api skill's model table (2026-06). ESTIMATES: the
  * run's logged cost is only as current as this table; check https://claude.com/pricing when the models change.
  * Cache writes (5-minute TTL) cost 1.25× input and cache reads 0.1× input.
+ *
+ * What a college costs after round 2 (specs/college-reported-round-2.md), estimates to be checked against a run's
+ * `data/reports/` summary:
+ * - Discovery (Sonnet 5, links only): ~15–40K input tokens (system + tools ~2K, up to 4 searches of ~3–5K tokens of
+ *   results each, up to 4 fetched HTML pages capped at 6K tokens each, resent across a few internal turns as cache
+ *   reads) and under 1.5K output, plus up to 4 searches at $0.01: about $0.05–0.12. The pilot's uncapped discovery
+ *   averaged ~627K input tokens ($1.34) per call.
+ * - A guessed next-edition URL, a 304, or an unchanged hash: $0.
+ * - Extraction (Haiku 4.5): ~5K input tokens per document, about $0.006.
+ * - Escalation (Sonnet 5 re-extraction from the same document): ~5K input tokens, about $0.012. Opus is not called.
  */
 export const MODEL_PRICES: Record<string, { input: number; output: number }> = {
   "claude-sonnet-5": { input: 2, output: 10 },
   "claude-haiku-4-5": { input: 1, output: 5 },
-  "claude-opus-5": { input: 5, output: 25 },
 };
 /** Web search is billed per search on top of tokens (estimate: $10 per 1,000); web fetch has no per-call charge. */
 export const WEB_SEARCH_PRICE_USD = 10 / 1000;
@@ -49,8 +58,12 @@ export function addUsage(log: UsageLog, job: Job, model: string, usage: Anthropi
 }
 
 /**
- * The slice of the Anthropic client the pipeline uses, so tests can pass a fake. A real `new Anthropic()` fits it.
+ * The slice of the Anthropic client the pipeline uses, so tests can pass a fake. A real `new Anthropic()` fits it:
+ * `create` for extraction, `stream` (→ `finalMessage()`) for discovery, whose web-tool loop can run long.
  */
 export interface ModelClient {
-  messages: { create(body: Anthropic.MessageCreateParamsNonStreaming): Promise<Anthropic.Message> };
+  messages: {
+    create(body: Anthropic.MessageCreateParamsNonStreaming): Promise<Anthropic.Message>;
+    stream(body: Anthropic.MessageStreamParams): { finalMessage(): Promise<Anthropic.Message> };
+  };
 }

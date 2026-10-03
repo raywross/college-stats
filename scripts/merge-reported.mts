@@ -28,6 +28,7 @@ const ROOT = process.env.MERGE_REPORTED_ROOT ?? join(import.meta.dirname, "..");
 const SCHOOLS = join(ROOT, "data", "schools.json");
 const REPORTED = join(ROOT, "data", "college-reported.json");
 const META = join(ROOT, "data", "meta.json");
+const CDS_RECORDS = join(ROOT, "data", "cds-records");
 
 const dryRun = process.argv.includes("--dry-run");
 
@@ -37,7 +38,7 @@ function main() {
   const meta: DatasetMeta = JSON.parse(readFileSync(META, "utf8"));
 
   // The CDS records (data/cds-records/) then supply the newest groups (specs/data-expansion/cds-student-body-and-outcomes.md).
-  const records = readRecords(join(ROOT, "data", "cds-records"));
+  const records = readRecords(CDS_RECORDS);
   const { schools: merged, merged: mergedCount, removed } = mergeReported(schools, reported, { records, meta, table: CDS_TEMPLATE });
 
   const problems = validateLineage(merged, meta);

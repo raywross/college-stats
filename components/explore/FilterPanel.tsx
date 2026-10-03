@@ -21,6 +21,7 @@ import { DRAWS_NATIONALLY } from "@/lib/residence";
 import { FIELD_MIN_OPTIONS, MAJOR_FAMILIES, MAJOR_FAMILY_CODES } from "@/lib/majors";
 import type { Designation, DivisionFilter, ResearchTier, RotcBranch, SettingGroup } from "@/lib/types";
 import { useExploreParams } from "./useExploreParams";
+import { POLICY_BUCKETS, type PolicyBucket } from "@/lib/test-policy";
 import { cn } from "@/lib/utils";
 
 export interface FilterFacets {
@@ -36,6 +37,8 @@ export interface FilterFacets {
   trends: Record<IndicatorKey, Record<Direction, number>>;
   /** Colleges in each gender-balance bucket, and mostly full-time colleges (lib/student-body.ts). */
   balance: Record<GenderBalance, number>;
+  /** Colleges in each test-policy bucket, by each college's newest policy (lib/test-policy.ts). */
+  policy: Record<PolicyBucket, number>;
   fullTime: number;
   /** Colleges matching each housing and policy filter (lib/housing.ts). */
   housing: Record<HousingFilterParam, number>;
@@ -136,6 +139,7 @@ export function FilterPanel({ facets, onDone }: { facets: FilterFacets; onDone?:
   const hasFilters = [
     ...["q", "types", "sizes", "regions", "states", "minAR", "maxAR", "minSAT", "maxSAT", "minCost", "maxCost", "minEnroll", "maxEnroll", "balance", "fullTime", "fewLoans", "liveOn", "noFee", "guarantee", "noLegacy", "noEssay", "gpaRequired", "setting", "research", "designation", "opportunity", "division", "conference", "football", "rotc", "ugResearch", "studyAbroad", "maxRatio", "pellGap", "minFullTimeFaculty", "national", "field", "byRes", "oosEven", "gpa"],
     ...INDICATOR_KEYS.map((k) => INDICATORS[k].param),
+    "policy",
   ].some((k) => searchParams.get(k));
 
   const clearAll = () => {
@@ -191,6 +195,20 @@ export function FilterPanel({ facets, onDone }: { facets: FilterFacets; onDone?:
           }
         />
         <p className="text-[11px] text-muted-foreground">Shows schools whose middle-50% range overlaps yours.</p>
+      </Section>
+
+      <Section title="Test policy" term="test-policy">
+        <div role="group" aria-label="Test policy" className="flex flex-wrap gap-1.5">
+          {POLICY_BUCKETS.map((b) => (
+            <Chip key={b.key} active={getList("policy").includes(b.key)} onClick={() => toggleInList("policy", b.key)} count={facets.policy[b.key]}>
+              {b.label}
+            </Chip>
+          ))}
+        </div>
+        <p className="flex items-center gap-1 text-[11px] text-muted-foreground">
+          Each college&apos;s newest published policy, so cycles differ between colleges. Optional includes colleges that require scores of some
+          applicants. <InfoTip term="application-cycle" />
+        </p>
       </Section>
 
       <Section title="Average cost per year" term="average-cost">

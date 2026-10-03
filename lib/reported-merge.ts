@@ -15,8 +15,10 @@ import { reportedToPatch } from "./reported-checks.ts";
 import type { CollegeRecord, TemplateTable } from "./cds-sections.ts";
 import { indexRecords } from "./cds-records.ts";
 import { applyNewestGroups, federalYears } from "./newest-groups.ts";
+import { lineageFall } from "./score-bands.ts";
 import { studentBodyFromRecord } from "./cds/student-body.ts";
 import { withAdmissionProfile } from "./cds/admissions.ts";
+import { mergeTestScores } from "./cds/test-scores.ts";
 import { mergeResidency } from "./cds/residency.ts";
 import { applyCostAndDebt } from "./cds/cost-and-debt.ts";
 
@@ -55,6 +57,8 @@ export interface CdsMergeInputs {
   table?: TemplateTable;
   /** The federal admissions release year (IPEDS ADM fall) the six shared C7 factors compare against. Default: from meta. */
   factorsYear?: number | null;
+  /** The fall the dataset's IPEDS ADM test policy describes, which a newer CDS C8 policy may replace. Default: from meta. */
+  federalPolicyYear?: number | null;
 }
 
 /** The fall year of the IPEDS ADM vintage ("Fall 2024" → 2024), or null when meta doesn't say. */
@@ -76,20 +80,23 @@ const RECORD_STEPS: readonly ((school: School, record: CollegeRecord | undefined
 
 /**
  * Strips every school (`stripReported`), then re-applies the current entries in `reported.entries` (through
- * `reportedToPatch`, exactly as `sync-data` does); adds the CDS admissions profile (lib/cds/admissions.ts); runs
- * `applyNewest`, so each college's newer published figures and factor answers replace its older ones in
- * `admissions.*`, with lineage and `admissions.federal`; then, from the record, the newest groups (enrollment, race,
- * retention, graduation; lib/newest-groups.ts, every federal comparison against the stripped baseline) and the
- * wave-4 blocks under `school.reported` (`RECORD_STEPS`).
+ * `reportedToPatch`, exactly as `sync-data` does); adds the CDS admissions profile (lib/cds/admissions.ts) and the
+ * C8/C9 test blocks (lib/cds/test-scores.ts); runs `applyNewest`, so each college's newer published figures, factor
+ * answers, test policy, and scores replace its older ones in `admissions.*`, with lineage and the federal values
+ * kept; then, from the record, the newest groups (enrollment, race, retention, graduation; lib/newest-groups.ts,
+ * every federal comparison against the stripped baseline) and the wave-4 blocks under `school.reported`
+ * (`RECORD_STEPS`).
  */
 export function mergeReported(schools: School[], reported: ReportedFile, cds?: CdsMergeInputs): MergeReportedResult {
   const byUnitId = new Map(reported.entries.map((e) => [e.unit_id, e]));
   const byRecord = indexRecords(cds?.records ?? []);
   const years = cds?.meta ? federalYears(cds.meta) : null;
   const factorsYear = cds?.factorsYear ?? admissionsYear(cds?.meta);
+  const federalPolicyYear = cds?.federalPolicyYear ?? (cds?.meta ? lineageFall(cds.meta.vintages["ipeds-adm"]) : null);
   let merged = 0;
   let removed = 0;
   const profiled = (s: School): School => (cds?.table ? withAdmissionProfile(s, byRecord.get(s.unit_id), cds.table) : s);
+  const withTests = (s: School): School => (cds ? mergeTestScores(s, byRecord.get(s.unit_id), federalPolicyYear) : s);
   const groups = (s: School, baseline: School): School => {
     const record = byRecord.get(s.unit_id);
     return record && years ? applyNewestGroups(s, studentBodyFromRecord(record, baseline).found, years) : s;
@@ -110,7 +117,7 @@ export function mergeReported(schools: School[], reported: ReportedFile, cds?: C
       const { reported: reportedData, lineage: entryLineage } = reportedToPatch(entry);
       withC1 = { ...stripped, reported: reportedData, lineage: { ...stripped.lineage, ...entryLineage } };
     }
-    const newest = applyNewest(profiled(withC1), { factorsYear });
+    const newest = applyNewest(withTests(profiled(withC1)), { factorsYear });
     return fromRecords(groups(newest, stripped));
   });
   return { schools: result, merged, removed };

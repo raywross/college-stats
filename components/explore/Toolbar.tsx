@@ -5,6 +5,7 @@ import { ArrowDownWideNarrow, ArrowUpNarrowWide, LayoutGrid, Map as MapIcon, Sca
 import { SIZE_BUCKETS } from "@/lib/metrics";
 import { INDICATORS, INDICATOR_KEYS, isDirection } from "@/lib/indicators";
 import { GENDER_BALANCE } from "@/lib/student-body";
+import { POLICY_BUCKETS } from "@/lib/test-policy";
 import { HOUSING_FILTERS } from "@/lib/housing";
 import { FACTOR_FILTERS } from "@/lib/factors";
 import { RESIDENCY_FILTERS } from "@/lib/cds/residency-display";
@@ -234,6 +235,8 @@ export function ActiveFilters() {
   for (const r of getList("regions")) chips.push({ key: `r-${r}`, label: r, onRemove: () => toggleInList("regions", r) });
   for (const s of getList("states")) chips.push({ key: `st-${s}`, label: s, onRemove: () => toggleInList("states", s) });
 
+  for (const b of getList("policy"))
+    chips.push({ key: `p-${b}`, label: `Tests: ${POLICY_BUCKETS.find((g) => g.key === b)?.label ?? b}`, onRemove: () => toggleInList("policy", b) });
   for (const b of getList("balance"))
     chips.push({ key: `b-${b}`, label: GENDER_BALANCE.find((g) => g.key === b)?.label ?? b, onRemove: () => toggleInList("balance", b) });
   if (searchParams.get("fullTime") === "1") chips.push({ key: "fullTime", label: "Mostly full-time", onRemove: () => update({ fullTime: null }) });

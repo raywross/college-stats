@@ -76,7 +76,9 @@ Newest figures (`applyNewest`) write records too:
 The guard (`validateSchool`) requires every stored `reported.*` value to cite `college-site` with method `extracted` or
 `derived` (a value computed from the college's printed figures; since round 3), each with quote, URL, date, and year;
 every `admissions.*` value cited to `college-site` to be extracted or derived
-with quote, URL, date, and year, `admissions.federal` to exist beside it, `admissions.year` to equal the reported
+with quote, URL, date, and year (for the test policy and SAT/ACT blocks, `admissions.federal_tests` keeps the replaced
+block and every non-null value inside a replaced block must be the college's: `lib/cds/test-blocks.ts#validateTests`,
+[cds-test-scores-and-policy.md](data-expansion/cds-test-scores-and-policy.md)), `admissions.federal` to exist beside it, `admissions.year` to equal the reported
 class's when applicants or admitted were replaced, any value that differs from `admissions.federal` to be cited to
 the college, and `reported.admissions.year` to be newer than `admissions.federal.year` (or `admissions.year` when
 nothing was replaced).

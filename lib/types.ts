@@ -4,8 +4,12 @@ import type { GenderBalance } from "./student-body";
 
 export type SchoolType = "public" | "private-nonprofit" | "private-forprofit";
 
-/** IPEDS ADMCON7: how test scores are used in admissions. */
-export type TestPolicy = "required" | "recommended" | "considered" | "not-considered" | null;
+/**
+ * How SAT/ACT scores are used in admission. IPEDS ADMCON7 answers required / considered / not-considered (and
+ * recommended before fall 2022); a college's Common Data Set C8 adds "required-some" ("Required for some"), which never
+ * comes from federal data (specs/data-expansion/cds-test-scores-and-policy.md, Decision 1).
+ */
+export type TestPolicy = "required" | "required-some" | "recommended" | "considered" | "not-considered" | null;
 
 /**
  * One institution. Fields are `null` when the school doesn't report them
@@ -63,6 +67,11 @@ export interface School {
      * considered") and put back by `restoreFederal`.
      */
     federal_factors?: Partial<Record<AdmissionFactor, FactorUse | null>>;
+    /**
+     * The test-policy, SAT, and ACT blocks a newer college-reported C8/C9 replaced (cds-test-scores-and-policy.md,
+     * Decisions 1–2; `lib/cds/test-scores.ts#applyNewestTests`). Present only then; restored byte for byte.
+     */
+    federal_tests?: FederalTests;
   };
   demographics: {
     undergrad_enrollment: number;
@@ -318,6 +327,10 @@ export interface School {
    * ingestion agent and checked (specs/college-reported-data.md). Newest values replace older ones in every view
    * (round 2, Decision 1); partial-coverage fields are never used in ranks, medians, sorts, or Home. Every value here
    * has an `extracted` (or `derived`) lineage record with its quote, URL, retrieval date, and year.
+   * ingestion agent and checked (specs/college-reported-data.md). Values with a federal definition replace the older
+   * ones in the dataset itself (`lib/newest.ts`, round 2 Decision 1), so every view shows the newest; the rest are
+   * shown on profiles and Compare and never feed ranks, medians, or Home (each owning spec says exactly what may).
+   * Every value here has an `extracted` (or `derived`) lineage record with its quote, URL, retrieval date, and year.
    */
   reported?: ReportedData;
 }
@@ -346,6 +359,16 @@ export interface ReportedData {
   outcomes?: ReportedOutcomes;
   /** CDS C2, C7, C10–C12, C21–C22 from data/cds-records (specs/data-expansion/cds-admissions.md; lib/cds/admissions.ts). */
   admission_profile?: ReportedAdmissionProfile;
+  /* CDS C8/C9 (specs/data-expansion/cds-test-scores-and-policy.md): beside `admissions`, not inside it, because a
+     college can publish C8/C9 without a newer C1 class (Cornell 2025–26). */
+  /** C8: policy for students applying to enter in fall `cycle` (C.801–C.804). */
+  test_policy?: ReportedTestPolicy | null;
+  /** C8F verbatim, trimmed to 500 characters; shown as a quote. */
+  test_policy_note?: string | null;
+  /** Changes across the college's CDS editions and against the federal value. */
+  test_policy_events?: TestPolicyEvent[] | null;
+  /** C9: the first-years who entered in fall `year` and sent scores. */
+  tests?: ReportedTests | null;
 }
 
 /* ---- CDS student body and outcomes (specs/data-expansion/cds-student-body-and-outcomes.md) ---- */
@@ -571,6 +594,114 @@ export type C7Factor =
   | "interest";
 /** A month and day with no year (CDS dates are labeled with the edition that published them). */
 export type MonthDayValue = { month: number; day: number };
+/* ---- CDS C8/C9: test policy and test scores (specs/data-expansion/cds-test-scores-and-policy.md) ---- */
+
+/** A test policy answer (never null). */
+export type TestPolicyAnswer = Exclude<TestPolicy, null>;
+
+/** CDS C8: the grid for one application cycle. */
+export interface ReportedTestPolicy {
+  /** The fall the applicants would enter (2027 for a 2025–26 CDS). */
+  cycle: number;
+  /** C.801: does the college use SAT or ACT scores in admission decisions? */
+  uses_tests: boolean | null;
+  /** C.802–C.804: the grid rows "SAT or ACT", "ACT Only", "SAT Only". */
+  sat_or_act: TestPolicyAnswer | null;
+  act_only: TestPolicyAnswer | null;
+  sat_only: TestPolicyAnswer | null;
+  /** The headline: the "SAT or ACT" row, else ACT Only and SAT Only when they agree; null = varies by test. */
+  policy: TestPolicyAnswer | null;
+}
+
+/** 25th / 50th / 75th percentiles; a missing 50th is allowed. */
+export interface Pct3 {
+  p25: number | null;
+  p50: number | null;
+  p75: number | null;
+}
+
+/** Shares 0–1 of enrolled first-years who sent that test, top band first, in the template's order. */
+export type Bands6 = [number, number, number, number, number, number];
+
+/** The six band columns C9 prints. */
+export type BandTest = "sat_ebrw" | "sat_math" | "sat_composite" | "act_composite" | "act_english" | "act_math";
+
+/** CDS C9: the entering class's test scores. */
+export interface ReportedTests {
+  /** Entering fall (2025 for a 2025–26 CDS). */
+  year: number;
+  /** C.901–C.902: shares 0–1 of enrolled first-years who sent each test. */
+  sat_share: number | null;
+  act_share: number | null;
+  /** C.903–C.904: how many sent each (null unless the same document's C1 enrolled passed). */
+  sat_submitters: number | null;
+  act_submitters: number | null;
+  /** C.905–C.907: the college's own SAT total percentiles. */
+  sat_composite: Pct3 | null;
+  /** C.908–C.913: SAT Evidence-Based Reading and Writing, SAT Math. */
+  sat_ebrw: Pct3 | null;
+  sat_math: Pct3 | null;
+  /** C.914–C.922: ACT composite, Math, English. */
+  act_composite: Pct3 | null;
+  act_math: Pct3 | null;
+  act_english: Pct3 | null;
+  /** C.926–C.931: ACT Science, Reading. */
+  act_science: Pct3 | null;
+  act_reading: Pct3 | null;
+  /** C.932–C.972: the share in each score band, per test. */
+  bands: Record<BandTest, Bands6 | null>;
+}
+
+/** A test-policy change: across the college's CDS editions, or from the federal value to its first CDS. */
+export interface TestPolicyEvent {
+  /** The fall the new policy applies to. */
+  cycle: number;
+  from: TestPolicyAnswer;
+  to: TestPolicyAnswer;
+  from_source: "cds" | "ipeds-adm";
+  /** The fall the previous policy described (a CDS's cycle, or the federal fall). */
+  from_year: number;
+}
+
+/** The SAT block's dataset fields (Decision 2). */
+export interface SatBlock {
+  sat_reading_25_75?: [number, number] | null;
+  sat_math_25_75?: [number, number] | null;
+  sat_reading_median?: number | null;
+  sat_math_median?: number | null;
+  test_submission_rate_sat?: number | null;
+}
+
+/** The ACT block's dataset fields (Decision 2). */
+export interface ActBlock {
+  act_composite_25_75?: [number, number] | null;
+  act_composite_median?: number | null;
+  act_english_25_75?: [number, number] | null;
+  act_math_25_75?: [number, number] | null;
+  test_submission_rate_act?: number | null;
+}
+
+/** The policy block's dataset field (Decision 1). */
+export interface PolicyBlock {
+  test_policy?: TestPolicy;
+}
+
+/**
+ * One replaced block, kept so `restoreFederalTests` can put it back byte for byte: the fall it described (null = the
+ * dataset's IPEDS ADM release), its values (a key absent here was absent from `admissions`), and the lineage record
+ * each value had (absent = the field's default source).
+ */
+export type KeptBlock<T> = T & {
+  year: number | null;
+  records?: Partial<Record<keyof T & string, LineageRecord>>;
+};
+
+/** `school.admissions.federal_tests`: the blocks a newer C8/C9 replaced. */
+export interface FederalTests {
+  policy?: KeptBlock<PolicyBlock>;
+  sat?: KeptBlock<SatBlock>;
+  act?: KeptBlock<ActBlock>;
+}
 
 /** One measure's change over the default 10-year window. */
 export interface TrendSummary {
@@ -933,6 +1064,8 @@ export interface SearchFilters {
   /** Where applicants live (lib/cds/residency-display.ts): publishes admit rates by residency; admits out-of-state about as often. */
   byRes?: boolean;
   oosEven?: boolean;
+  /** Test policy buckets to keep (lib/test-policy.ts): each college's newest policy; colleges with none are excluded. */
+  policy?: ("required" | "optional" | "blind")[];
   sortBy?: SortKey;
   sortDir?: "asc" | "desc";
 }

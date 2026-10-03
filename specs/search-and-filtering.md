@@ -36,6 +36,11 @@ Still supported by the data layer (no UI yet): `minACT`/`maxACT`.
 Missing values: range filters (admit rate, SAT, ACT) and direction filters exclude colleges that don't report the measure. Sorting always
 puts missing values last, in either direction. Card meters and table cells show "–".
 
+**Test policy** (`policy=required,optional,blind`; [cds-test-scores-and-policy.md](data-expansion/cds-test-scores-and-policy.md)):
+three chips with counts. Required = `required`; Optional = `required-some`, `recommended`, `considered`; Test-blind =
+`not-considered`. Reads each college's newest published policy (`admissions.test_policy`, a coming cycle's from its CDS
+when newer), so cycles differ between colleges; colleges with no policy are excluded (`lib/test-policy.ts#matchesPolicy`).
+
 Parsing lives in `lib/params.ts` (`parseFilters`, `parseView`, `countActiveFilters`). Client controls update
 the URL through `components/explore/useExploreParams.ts` (`router.push`, `scroll: false`). "Reset" keeps
 sort and view.

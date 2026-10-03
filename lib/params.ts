@@ -5,6 +5,7 @@ import { isDesignation, isResearchTier, isSettingGroup } from "./campus-profile.
 import { isDivisionFilter, isRotcBranch } from "./campus-services.ts";
 import { conferenceName } from "./conferences.ts";
 import { isMajorFamily } from "./majors.ts";
+import { isPolicyBucket } from "./test-policy.ts";
 
 /** Unique values, or undefined when none remain. */
 const uniq = <T,>(v: T[] | undefined): T[] | undefined => (v?.length ? [...new Set(v)] : undefined);
@@ -62,6 +63,11 @@ export function parseFilters(params: Params): SearchFilters {
     trends: parseTrends(params),
     balance: (() => {
       const b = list(params.balance)?.filter(isGenderBalance);
+      return b?.length ? [...new Set(b)] : undefined;
+    })(),
+    // Test policy (specs/data-expansion/cds-test-scores-and-policy.md): policy=required,optional,blind.
+    policy: (() => {
+      const b = list(params.policy)?.filter(isPolicyBucket);
       return b?.length ? [...new Set(b)] : undefined;
     })(),
     fullTime: str(params.fullTime) === "1" || undefined,
@@ -147,6 +153,7 @@ export const FILTER_KEYS = [
   "byRes",
   "oosEven",
   "gpa",
+  "policy",
   ...INDICATOR_KEYS.map((k) => INDICATORS[k].param),
 ] as const;
 

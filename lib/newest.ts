@@ -13,6 +13,7 @@ import { applyNewestFactors, restoreFederalFactors } from "./cds/admissions.ts";
 import type { FieldPath } from "./fields";
 import type { FederalAdmissions, LineageRecord, School } from "./types";
 import { restoreNewestGroups } from "./newest-groups.ts";
+import { applyNewestTests, restoreFederalTests } from "./cds/test-blocks.ts";
 
 /** The funnel values `applyNewest` may replace, in `school.admissions` key order. */
 const COUNTS = ["applicants", "admitted", "enrolled"] as const;
@@ -36,6 +37,7 @@ const sameRecord = (a: LineageRecord | undefined, b: LineageRecord | undefined) 
  * alone, so `restoreFederal` can always put back exactly what was there.
  */
 export function applyNewest(school: School, opts: { factorsYear?: number | null } = {}): School {
+  school = applyNewestTests(school); // CDS C8/C9 blocks (specs/data-expansion/cds-test-scores-and-policy.md)
   school = applyNewestFactors(school, opts.factorsYear); // the six shared C7 factors (lib/cds/admissions.ts)
   const r = school.reported?.admissions;
   const a = school.admissions;
@@ -122,6 +124,7 @@ export function applyNewest(school: School, opts: { factorsYear?: number | null 
 export function restoreFederal(school: School): School {
   school = restoreNewestGroups(school); // enrollment, race, retention, graduation (lib/newest-groups.ts), applied after C1
   school = restoreFederalFactors(school); // undoes applyNewestFactors (lib/cds/admissions.ts)
+  school = restoreFederalTests(school); // CDS C8/C9 blocks (specs/data-expansion/cds-test-scores-and-policy.md)
   const federal = school.admissions.federal;
   if (!federal) return school;
   // eslint-disable-next-line @typescript-eslint/no-unused-vars -- dropping `federal` is the point

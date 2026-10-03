@@ -69,7 +69,9 @@ school whose `reported.admissions` describes a newer fall than `admissions.year`
   acceptance_rate }`, stored only when something was replaced, for the tooltip's "Federal data…" line and for yield.
 - yield (`derived.yield`, render time): enrolled ÷ admitted only when both describe the same class (same lineage
   year); otherwise from `admissions.federal`'s pair, cited to the federal year. Never a mixed-year ratio.
-- SAT/ACT, submission rates, test policy, by-sex, factors: federal (the agent doesn't read them yet).
+- SAT/ACT, submission rates, test policy: replaced by CDS C8/C9 blocks from round 3's records, a block per test
+  ([cds-test-scores-and-policy.md](data-expansion/cds-test-scores-and-policy.md), Decisions 1–2; kept in
+  `admissions.federal_tests`). By-sex, factors: federal.
 - Hand-imported CDS overrides (`data/overrides.json`): a college-reported class newer than the override's edition
   replaces it the same way; `admissions.federal` then holds the override's values (the previous value), labeled by
   its own source.

@@ -164,7 +164,11 @@ export function scoresTakeaway({ metricMedian }: Dataset, s: School): string | u
       : diff > 0
         ? `${Math.round(diff)} points above the median`
         : `${Math.round(-diff)} points below the median`;
-  return `The typical admitted student scores around ${mid} on the SAT, ${cmp} for colleges that report scores.`;
+  // A coming-cycle requirement from the college's CDS (cds-test-scores-and-policy.md): the scores predate it.
+  const rp = s.reported?.test_policy;
+  const required = rp?.policy === "required" && s.admissions.test_policy === "required" && s.reported?.test_policy_events?.some((e) => e.to === "required" && e.cycle === rp.cycle);
+  const coming = required ? ` It requires SAT or ACT scores again from students entering in fall ${rp.cycle}.` : "";
+  return `The typical enrolled first-year who sent scores is around ${mid} on the SAT, ${cmp} for colleges that report scores.${coming}`;
 }
 
 export function studentsTakeaway({ rankOf }: Dataset, s: School): string {

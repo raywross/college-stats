@@ -52,6 +52,7 @@ const ROOT = join(import.meta.dirname, "..");
 const OUT = join(ROOT, "data", "schools.json");
 const OVERRIDES = join(ROOT, "data", "overrides.json");
 const REPORTED = join(ROOT, "data", "college-reported.json");
+const CDS_RECORDS = join(ROOT, "data", "cds-records");
 const META = join(ROOT, "data", "meta.json");
 const CALENDAR = join(ROOT, "data", "release-calendar.json");
 const API = "https://api.data.gov/ed/collegescorecard/v1/schools";
@@ -893,7 +894,7 @@ async function main() {
     const reportedFile: ReportedFile = JSON.parse(readFileSync(REPORTED, "utf8"));
     // CDS records (data/cds-records/) feed the newest groups after C1; they need meta's federal years, so this runs
     // after buildMeta (specs/data-expansion/cds-student-body-and-outcomes.md).
-    const merged = mergeReported(schools, reportedFile, { records: readRecords(join(ROOT, "data", "cds-records")), meta, table: CDS_TEMPLATE });
+    const merged = mergeReported(schools, reportedFile, { records: readRecords(CDS_RECORDS), meta, table: CDS_TEMPLATE });
     schools.splice(0, schools.length, ...merged.schools);
     reportedMerged = merged.merged;
   }

@@ -125,7 +125,12 @@ export const TEST_POLICY_LABELS: Record<string, string> = {
   recommended: "Test scores recommended",
   considered: "Test-optional",
   "not-considered": "Test-blind",
+  // CDS C8 only (specs/data-expansion/cds-test-scores-and-policy.md, Decision 1).
+  "required-some": "Required for some applicants",
 };
+
+// The SAT total a college shows (derived.sat_total, Decision 3): drawn, never ranked. satMid/satComposite stay the sum.
+export { satTotal, satTotalMedian } from "./score-bands.ts";
 
 /* ------------------------------------------------------------------ */
 /* Metric registry: one place that knows how to read, format & explain */

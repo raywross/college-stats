@@ -365,6 +365,40 @@ export const FIELDS = {
     computed: true,
     derived: { formula: "The GPA bands holding the 25th and 75th percentiles of the \"all\" column", inputs: ["reported.admission_profile.gpa.bands.all"] },
   },
+  // CDS C8/C9 (specs/data-expansion/cds-test-scores-and-policy.md): records → school.reported (lib/cds/test-scores.ts).
+  "reported.test_policy": reported("Test policy for the coming application cycle (CDS C8)"),
+  "reported.test_policy_note": reported("Test policy note (CDS C8F)"),
+  "reported.test_policy_events": reported("Test policy changes (CDS C8)"),
+  "reported.tests.year": reported("Entering class the test scores describe (CDS C9)"),
+  "reported.tests.sat_share": reported("Share who sent an SAT (CDS C9)"),
+  "reported.tests.act_share": reported("Share who sent an ACT (CDS C9)"),
+  "reported.tests.sat_submitters": reported("Number who sent an SAT (CDS C9)"),
+  "reported.tests.act_submitters": reported("Number who sent an ACT (CDS C9)"),
+  "reported.tests.sat_composite": reported("SAT total, 25th/50th/75th percentile (CDS C9)"),
+  "reported.tests.sat_ebrw": reported("SAT Reading & Writing, 25th/50th/75th percentile (CDS C9)"),
+  "reported.tests.sat_math": reported("SAT Math, 25th/50th/75th percentile (CDS C9)"),
+  "reported.tests.act_composite": reported("ACT composite, 25th/50th/75th percentile (CDS C9)"),
+  "reported.tests.act_math": reported("ACT Math, 25th/50th/75th percentile (CDS C9)"),
+  "reported.tests.act_english": reported("ACT English, 25th/50th/75th percentile (CDS C9)"),
+  "reported.tests.act_science": reported("ACT Science, 25th/50th/75th percentile (CDS C9)"),
+  "reported.tests.act_reading": reported("ACT Reading, 25th/50th/75th percentile (CDS C9)"),
+  "reported.tests.bands.sat_ebrw": reported("SAT Reading & Writing score bands (CDS C9)"),
+  "reported.tests.bands.sat_math": reported("SAT Math score bands (CDS C9)"),
+  "reported.tests.bands.sat_composite": reported("SAT total score bands (CDS C9)"),
+  "reported.tests.bands.act_composite": reported("ACT composite score bands (CDS C9)"),
+  "reported.tests.bands.act_english": reported("ACT English score bands (CDS C9)"),
+  "reported.tests.bands.act_math": reported("ACT Math score bands (CDS C9)"),
+  // The test-policy, SAT, and ACT blocks a newer C8/C9 replaced (Decisions 1–2), like admissions.federal for the funnel.
+  "admissions.federal_tests": adm("Federal test policy and scores replaced by a newer Common Data Set"),
+  // The SAT total a college shows (Decision 3): never ranked; ranks keep derived.sat_composite for every college.
+  "derived.sat_total": {
+    ...adm("SAT total, middle 50% (as shown)"),
+    computed: true,
+    derived: {
+      formula: "The college's own SAT total when its scores come from its Common Data Set and it reports one; else Reading & Writing + Math",
+      inputs: ["reported.tests.sat_composite", "derived.sat_composite"],
+    },
+  },
 
   /* ---- History summary (data/history/, `npm run sync-history`) ---- */
   trends: {

@@ -11,7 +11,7 @@ the drill-down.
 | Route | Content |
 |---|---|
 | `/schools/{id}` | Hero, the at-a-glance tiles, "In detail" links to the topic pages, similar schools, the full sources list |
-| `/schools/{id}/admissions` | Getting in: funnel (the college's newest published class when newer than federal, else federal; `lib/newest.ts`), men and women, yield (+ strip), acceptance-rate strip, what they look at, the admissions map; then Test scores (`#scores`): `ScoreChecker`, who submitted, SAT-midpoint strip |
+| `/schools/{id}/admissions` | Getting in: funnel (the college's newest published class when newer than federal, else federal; `lib/newest.ts`), men and women, yield (+ strip), acceptance-rate strip, what they look at, the admissions map; then Test scores (`#scores`): Test policy (`TestPolicyBlock`), `ScoreChecker`, Score bands (`ScoreBands`, `#bands`), who submitted (with counts), SAT-midpoint strip |
 | `/schools/{id}/students` | Who's on campus: race & ethnicity (+ diversity strip), economic access (+ Pell strip), campus size, where they come from, transfers, who they are; then Campus life (`#campus`) |
 | `/schools/{id}/academics` | Majors and faculty: popular majors, top-earning majors, students per faculty, faculty, spending and endowment |
 | `/schools/{id}/cost` | What it costs: price calculator link, what students pay, price by family income, debt and payback, borrowing and repayment, who gets aid |
@@ -77,7 +77,8 @@ routes in `ANCHOR_TOPICS` (`lib/profile-topics.ts`); `#overview`, `#ranks`, and 
      (`profile.newest`, `lib/newest.ts`; [college-reported-round-2.md](college-reported-round-2.md#decision-1-show-the-newest-figures-we-have)).
      When the college's own figures are the headline, `FederalBaselineLine` adds "Federal data, Fall 2024: 5.8%"
      underneath; when the college published something newer but not enough for a full funnel (e.g. applicants only),
-     `PartialReportedLine` adds a line instead, under the (federal) funnel. SAT/ACT stay federal.
+     `PartialReportedLine` adds a line instead, under the (federal) funnel. SAT/ACT are the newest blocks (a college's
+     CDS C9 when newer); the card's SAT bar draws `derived.sat_total` ([cds-test-scores-and-policy.md](data-expansion/cds-test-scores-and-policy.md)).
    - **Students**: "Who's on campus", `studentsTakeaway`; undergrads with "larger than X% of colleges"; diversity
      index with a mini `StackedBar`, Pell share, first-generation share, each against the median; chips for setting,
      housing, athletics association and conference, ROTC, study abroad, undergraduate research (each cited; the row

@@ -92,6 +92,9 @@ export const OVERVIEW_FIELDS: readonly FieldPath[] = [
   "reported.admissions.acceptance_rate",
   // First-years' average GPA from the college's CDS (specs/data-expansion/cds-admissions.md).
   "reported.admission_profile.gpa.average",
+  // The card's SAT bar and the hero's test policy (cds-test-scores-and-policy.md).
+  "derived.sat_total",
+  "admissions.test_policy",
   // Students & campus card.
   "demographics.undergrad_enrollment",
   "derived.diversity_index",
@@ -177,6 +180,22 @@ export const TOPIC_FIELDS: Readonly<Record<TopicKey, readonly FieldPath[]>> = {
     "reported.admission_profile.gpa.average",
     "reported.admission_profile.gpa.bands.all",
     "reported.admission_profile.class_rank.submitted_share",
+    // CDS C8/C9 (specs/data-expansion/cds-test-scores-and-policy.md): the Test policy block, the SAT total, bands, counts.
+    "derived.sat_total",
+    "reported.test_policy",
+    "reported.test_policy_note",
+    "reported.test_policy_events",
+    "reported.tests.sat_composite",
+    "reported.tests.sat_submitters",
+    "reported.tests.act_submitters",
+    "reported.tests.act_science",
+    "reported.tests.act_reading",
+    "reported.tests.bands.sat_composite",
+    "reported.tests.bands.act_composite",
+    "reported.tests.bands.sat_ebrw",
+    "reported.tests.bands.sat_math",
+    "reported.tests.bands.act_english",
+    "reported.tests.bands.act_math",
   ],
   students: [
     "demographics.racial_diversity",

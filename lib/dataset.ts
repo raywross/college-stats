@@ -4,6 +4,7 @@ import { lineageFor, sourcesForFields as sourcesForFieldsPure, type Cited, type 
 import type { ReleaseCalendar } from "./releases";
 import { matchesIndicators } from "./indicators";
 import { genderBalanceOf, isMostlyFullTime } from "./student-body";
+import { matchesPolicy } from "./test-policy";
 import { hasFewLoans } from "./repayment";
 import { hasTuitionGuarantee, noApplicationFee, requiresLiveOn } from "./housing";
 import { FACTOR_FILTERS } from "./factors";
@@ -233,6 +234,8 @@ export function createDataset({ schools, meta, releaseCalendar }: DatasetFiles) 
     // Student body (lib/student-body.ts); colleges that don't report the share are left out while set.
     if (filters.balance?.length) results = results.filter((s) => filters.balance!.includes(genderBalanceOf(s)!));
     if (filters.fullTime) results = results.filter(isMostlyFullTime);
+    // Test policy (lib/test-policy.ts): each college's newest policy; colleges with none are left out while set.
+    if (filters.policy?.length) results = results.filter((s) => matchesPolicy(s, filters.policy!));
     if (filters.fewLoans) results = results.filter(hasFewLoans);
     // Graduation by group: colleges without both Pell and "neither" rates are left out while set.
     if (filters.pellGap) results = results.filter(hasSmallPellGap);

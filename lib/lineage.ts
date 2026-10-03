@@ -7,6 +7,7 @@ import type { AdmissionFactor, DatasetMeta, FactorUse, FederalAdmissions, Lineag
 import { validateAdmissionProfile } from "./cds/admissions.ts";
 import { FIELDS, METADATA_KEYS, PER_DOCUMENT_SOURCES, REPORTED_PATHS, isFieldPath, registeredPathFor, type FieldPath, type VintageKey } from "./fields.ts";
 import { NEWEST_TARGETS, newestGroupCitation, validateNewestGroups } from "./newest-groups.ts";
+import { replacedTest, satTotalInputs, validateTests } from "./cds/test-blocks.ts";
 
 /** A source as cited for one value: plain data, safe to pass to client components. */
 export interface CitedSource {
@@ -35,7 +36,7 @@ export interface Cited extends CitedSource {
    * For a funnel value that a newer college-reported class replaced: the previous (federal or hand-imported CDS)
    * value and the year it describes, from `admissions.federal`, so the tooltip can say "Federal data, fall 2024: 5.8%".
    */
-  replaces?: { value: number | Record<string, number> | null; year: string | null; label?: string };
+  replaces?: { value: number | Record<string, number> | null; year: string | null; label?: string; text?: string };
   /** For a value reported by the college itself (source "college-site"): which kind of document supplied it. */
   sourceKind?: ReportedSourceKind;
   /** For a value from a college's Common Data Set record: its edition, "2025–26" (the year is the value's own). */
@@ -160,6 +161,7 @@ function underlyingSources(path: FieldPath, school: School | undefined, meta: Da
  * `admissions.federal`; every other derived value uses all its registered inputs.
  */
 function inputsUsed(path: FieldPath, inputs: readonly string[], school: School | undefined): readonly string[] {
+  if (path === "derived.sat_total") return satTotalInputs(school);
   if (path !== "derived.yield") return inputs;
   const sameClass = school?.lineage?.["admissions.enrolled"]?.year === school?.lineage?.["admissions.admitted"]?.year;
   return sameClass || !school?.admissions?.federal ? inputs.filter((i) => i !== "admissions.federal") : ["admissions.federal"];
@@ -200,7 +202,14 @@ export function lineageFor(path: FieldPath, school: School | undefined, meta: Da
         : {}),
     ...newestGroupCitation(path, school),
     ...replacedFactor(path, school, meta),
+    ...replacedTestBy(path, school, meta),
   };
+}
+
+/** The previous test value a newer CDS block replaced (`admissions.federal_tests`; lib/cds/test-blocks.ts). */
+function replacedTestBy(path: FieldPath, school: School | undefined, meta: DatasetMeta): Pick<Cited, "replaces"> {
+  const r = replacedTest(path, school);
+  return r ? { replaces: { value: r.value, year: r.year ?? meta.vintages["ipeds-adm"] ?? null, text: r.text } } : {};
 }
 
 /** The federal value a college-reported funnel value replaced, when the school keeps one (`admissions.federal`). */
@@ -363,6 +372,7 @@ export function validateSchool(school: School, meta: DatasetMeta): string[] {
   errors.push(...validateNewest(school, where));
   errors.push(...validateNewestGroups(school, where, meta));
   errors.push(...validateAdmissionProfile(school, where));
+  errors.push(...validateTests(school, where));
   return errors;
 }
 

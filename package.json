@@ -25,7 +25,8 @@
     "check:lineage": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/check-lineage.mts",
     "test": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test \"tests/**/*.test.mts\"",
     "typecheck": "next typegen && tsc --noEmit",
-    "verify": "npm run typecheck && npm run lint && npm test && npm run check:lineage"
+    "verify": "npm run typecheck && npm run lint && npm test && npm run check:lineage",
+    "build-cds-template": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/build-cds-template.mts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.131.0",

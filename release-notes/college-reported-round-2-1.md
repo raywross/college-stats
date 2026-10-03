@@ -1,6 +1,6 @@
 ---
 title: "College figures publish as soon as they pass their checks"
-pr: 0
+pr: 58
 date: 2026-10-03
 kind: improvement
 summary: Figures that pass their checks now publish on their own, a few checks learned from the first live runs, and discovery is tighter and faster.

@@ -813,6 +813,9 @@ export interface SearchFilters {
   /** Majors (lib/majors.ts): a 2-digit CIP family, and at least this many first-major bachelor's a year in it (default 1). */
   field?: string;
   fieldMin?: number;
+  /** CDS financial aid (lib/cds/financial-aid.ts): no CSS Profile required; the college aids international students. */
+  aidForms?: "no-css";
+  intlAid?: boolean;
   sortBy?: SortKey;
   sortDir?: "asc" | "desc";
 }

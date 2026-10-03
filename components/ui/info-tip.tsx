@@ -38,7 +38,7 @@ function SourceLinkBare({ s }: { s: CitedSource }) {
 function sourceKindPhrase(cited: Cited): string {
   const year = yearLabel(cited);
   // A CDS record value (round 3): the edition and the year it describes can differ (an aid year, an application cycle).
-  if (cited.edition) return `in its ${cited.edition} Common Data Set, for ${year}`;
+  if (cited.cdsEdition) return `in its ${cited.cdsEdition} Common Data Set, for ${year}`;
   if (cited.sourceKind === "cds") return `in its Common Data Set ${year}`;
   if (cited.sourceKind === "class-profile") return `in its class profile for the ${year} class`;
   return "on its own site";

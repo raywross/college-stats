@@ -351,6 +351,29 @@ export function h2Shares(c: Pick<H2Column, "a" | "c" | "d" | "h" | "n"> | null |
   return { hasNeed: div(c?.c, c?.a), fullyMet: div(c?.h, c?.d), meritNoNeed: div(c?.n, c?.a) };
 }
 
+const MONTH_NAMES = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+/** { month: 2, day: 15 } → "February 15". */
+export const formatAidDay = (d: AidDay) => `${MONTH_NAMES[d.month - 1]} ${d.day}`;
+
+/** True once today is past the cycle's reply date (May 1 of the entering year when the college gives none). */
+export function pastReplyDate(cycleYear: number | null, reply: AidDay | null, today = new Date()): boolean {
+  if (cycleYear === null) return false;
+  const r = reply ?? { month: 5, day: 1 };
+  return today.getTime() > Date.UTC(cycleYear, r.month - 1, r.day);
+}
+
+/**
+ * Explore's "No CSS Profile" (`aidForms=no-css`): the college's H8 list was read and the CSS Profile isn't on it. A
+ * blank list (forms null) or a college with no record never matches: college-reported booleans exclude no-data colleges.
+ */
+export const noCssProfile = (s: Pick<School, "reported">): boolean => s.reported?.aid?.forms?.css_profile === false;
+
+/** Explore's "Aid for international students" (`intlAid=1`): need-based or merit offered, or anyone awarded it. */
+export function offersInternationalAid(s: Pick<School, "reported">): boolean {
+  const x = s.reported?.aid?.international;
+  return !!x && !x.none && (x.need_based || x.non_need || (x.recipients ?? 0) > 0);
+}
+
 /** H2 headline lines from a full column. */
 export const headlineOf = (c: H2Column): H2Headline => Object.fromEntries(HEADLINE_LINES.map((l) => [l, c[l]])) as H2Headline;
 

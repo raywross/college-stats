@@ -215,6 +215,14 @@ export const TOPIC_FIELDS: Readonly<Record<TopicKey, readonly FieldPath[]>> = {
     "derived.payback_years",
     // The payback estimate divides net price by median earnings.
     "outcomes.median_earnings_10yr",
+    // CDS financial aid (specs/data-expansion/cds-financial-aid.md): the CDS panel, Applying for aid, International.
+    "reported.aid.first_years",
+    "reported.aid.institutional_grants",
+    "derived.merit_dollar_share",
+    "reported.aid.forms",
+    "reported.aid.methodology",
+    "reported.aid.dates",
+    "reported.aid.international",
   ],
   outcomes: [
     "outcomes.median_earnings_10yr",

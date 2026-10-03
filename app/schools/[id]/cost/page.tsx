@@ -17,6 +17,8 @@ import { AidBreakdown } from "@/components/charts/AidBreakdown";
 import { WhatStudentsPay } from "@/components/school/WhatStudentsPay";
 import { LoansCard } from "@/components/school/LoansCard";
 import { AidGenerosityCard } from "@/components/school/AidGenerosityCard";
+import { ApplyingForAid } from "@/components/school/ApplyingForAid";
+import { InternationalAid } from "@/components/school/InternationalAid";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -38,7 +40,7 @@ const TOPIC = "cost";
 export default async function CostPage({ params }: Props) {
   const { id } = await params;
   const p = await requireTopic(id, TOPIC);
-  const { data, school, history, byIncome, payback, avgCost } = p;
+  const { data, school, history, byIncome, payback, avgCost, detail } = p;
   const { citeField } = data;
   const c = school.cost;
   const o = school.outcomes;
@@ -54,6 +56,9 @@ export default async function CostPage({ params }: Props) {
     { id: "debt", label: "Debt and payback" },
     { id: "loans", label: "Borrowing and repayment" },
     { id: "aid", label: "Who gets aid" },
+    // CDS financial aid (specs/data-expansion/cds-financial-aid.md): only when the college's CDS record has them.
+    ...(school.reported?.aid ? [{ id: "apply-for-aid", label: "Applying for aid" }] : []),
+    ...(school.reported?.aid?.international || detail?.tables.cds_aid?.rows.h7 ? [{ id: "international-aid", label: "International students" }] : []),
   ];
 
   return (
@@ -165,11 +170,13 @@ export default async function CostPage({ params }: Props) {
             <ShowMore until="lg" label="Show who gets aid" hint="How generous grants are, who gets them, where aid comes from, and aid by family income">
               <div className="space-y-4">
                 <AidGenerosityCard school={school} />
-                <AidBreakdown school={school} />
+                <AidBreakdown school={school} detail={detail} />
               </div>
             </ShowMore>
           </div>
         )}
+        <ApplyingForAid school={school} detail={detail} />
+        <InternationalAid school={school} detail={detail} />
       </Panel>
     </TopicPage>
   );

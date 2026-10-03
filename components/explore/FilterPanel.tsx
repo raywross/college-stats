@@ -58,6 +58,9 @@ export interface FilterFacets {
   national: number;
   /** Colleges per bachelor's field at each graduates-a-year threshold (lib/majors.ts fieldFacets). */
   fields: Record<string, number[]>;
+  /** CDS financial aid (lib/cds/financial-aid.ts): colleges whose own report shows no CSS Profile, or aid for international students. */
+  aidNoCss: number;
+  intlAid: number;
 }
 
 function Section({ title, term, children }: { title: string; term?: TermKey; children: ReactNode }) {
@@ -126,12 +129,14 @@ export function FilterPanel({ facets, onDone }: { facets: FilterFacets; onDone?:
   const fewLoans = searchParams.get("fewLoans") === "1";
   const pellGap = searchParams.get("pellGap") === "1";
   const national = searchParams.get("national") === "1";
-  const field = searchParams.get("field") ?? "";
+  const aidNoCss = searchParams.get("aidForms") === "no-css";
+  const intlAid = searchParams.get("intlAid") === "1";
+  const field =searchParams.get("field") ?? "";
   const fieldMin = Number(searchParams.get("fieldMin") ?? 1) || 1;
   const fieldOptions = MAJOR_FAMILY_CODES.filter((f) => (facets.fields[f]?.[0] ?? 0) > 0).sort((a, b) => MAJOR_FAMILIES[a].localeCompare(MAJOR_FAMILIES[b]));
 
   const hasFilters = [
-    ...["q", "types", "sizes", "regions", "states", "minAR", "maxAR", "minSAT", "maxSAT", "minCost", "maxCost", "minEnroll", "maxEnroll", "balance", "fullTime", "fewLoans", "liveOn", "noFee", "guarantee", "noLegacy", "noEssay", "gpaRequired", "setting", "research", "designation", "opportunity", "division", "conference", "football", "rotc", "ugResearch", "studyAbroad", "maxRatio", "pellGap", "minFullTimeFaculty", "national", "field"],
+    ...["q", "types", "sizes", "regions", "states", "minAR", "maxAR", "minSAT", "maxSAT", "minCost", "maxCost", "minEnroll", "maxEnroll", "balance", "fullTime", "fewLoans", "liveOn", "noFee", "guarantee", "noLegacy", "noEssay", "gpaRequired", "setting", "research", "designation", "opportunity", "division", "conference", "football", "rotc", "ugResearch", "studyAbroad", "maxRatio", "pellGap", "minFullTimeFaculty", "national", "field", "aidForms", "intlAid"],
     ...INDICATOR_KEYS.map((k) => INDICATORS[k].param),
   ].some((k) => searchParams.get(k));
 
@@ -317,6 +322,18 @@ export function FilterPanel({ facets, onDone }: { facets: FilterFacets; onDone?:
         <p className="text-[11px] text-muted-foreground">
           At least {Math.round(DRAWS_NATIONALLY * 100)}% of first-years come from other states. Colleges that don&apos;t report it are hidden while this is set.
         </p>
+      </Section>
+
+      <Section title="Financial aid (from colleges' own reports)" term="css-profile">
+        <div className="flex flex-wrap gap-1.5">
+          <Chip active={aidNoCss} onClick={() => update({ aidForms: aidNoCss ? null : "no-css" })} count={facets.aidNoCss}>
+            No CSS Profile
+          </Chip>
+          <Chip active={intlAid} onClick={() => update({ intlAid: intlAid ? null : "1" })} count={facets.intlAid}>
+            Aid for international students
+          </Chip>
+        </div>
+        <p className="text-[11px] text-muted-foreground">From each college&apos;s Common Data Set; colleges whose report we don&apos;t have yet are hidden while these are set.</p>
       </Section>
 
       <Section title="Majors" term="cip-code">

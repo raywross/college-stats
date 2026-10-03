@@ -45,7 +45,7 @@ export interface Cited extends CitedSource {
   /** For a value reported by the college itself (source "college-site"): which kind of document supplied it. */
   sourceKind?: ReportedSourceKind;
   /** A value read from a college's CDS record (round 3): the edition it came from, "2025–26"; the year may differ (aid year, cycle). */
-  edition?: string;
+  cdsEdition?: string;
 }
 
 /** The funnel paths `applyNewest` may replace, keyed to their `admissions.federal` counterparts. */
@@ -196,7 +196,7 @@ export function lineageFor(path: FieldPath, school: School | undefined, meta: Da
     ...(rec?.page !== undefined ? { page: rec.page } : {}),
     ...replacedBy(path, school, meta),
     ...(rec?.source === "college-site" && school?.reported?.admissions ? { sourceKind: school.reported.admissions.source_kind } : {}),
-    ...(rec?.source === "college-site" && rec.edition ? { sourceKind: "cds" as const, edition: rec.edition } : {}),
+    ...(rec?.source === "college-site" && rec.edition ? { sourceKind: "cds" as const, cdsEdition: rec.edition } : {}),
   };
 }
 

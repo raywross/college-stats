@@ -28,6 +28,7 @@ import { DESIGNATION_KEYS, RESEARCH_TIERS, SETTING_GROUPS, designationsOf, isOpp
 import { DIVISION_FILTERS, ROTC_BRANCHES, divisionFilterOf } from "@/lib/campus-services";
 import { MAX_RATIO_OPTIONS, MIN_FULL_TIME_FACULTY_OPTIONS } from "@/lib/academics";
 import { drawsNationally } from "@/lib/residence";
+import { noCssProfile, offersInternationalAid } from "@/lib/cds/financial-aid";
 import { fieldFacets } from "@/lib/majors";
 import { InfoTip } from "@/components/ui/info-tip";
 import { BaselineNote } from "@/components/ui/BaselineNote";
@@ -104,6 +105,8 @@ function buildFacets({ getAllSchools, histogram }: Dataset): FilterFacets {
     fewLoans: all.filter(hasFewLoans).length,
     pellGap: all.filter(hasSmallPellGap).length,
     national: all.filter(drawsNationally).length,
+    aidNoCss: all.filter(noCssProfile).length,
+    intlAid: all.filter(offersInternationalAid).length,
     fields: fieldFacets(all),
     housing: Object.fromEntries(HOUSING_FILTERS.map((f) => [f.param, all.filter(f.test).length])) as FilterFacets["housing"],
     factors: Object.fromEntries(FACTOR_FILTERS.map((f) => [f.param, all.filter(f.test).length])) as FilterFacets["factors"],

@@ -22,6 +22,7 @@ import { CALENDAR_LABELS, DIVISION_LABELS, ROTC_LABELS, divisionFilterOf } from 
 import { FORM_SHORT } from "@/lib/finances";
 import { compact, money, moneyCompact, num, pct, pctSmart } from "@/lib/format";
 import { gradRateCell } from "@/lib/graduation-groups";
+import { compareAidRows } from "@/lib/cds/financial-aid-compare";
 import type { School } from "@/lib/types";
 import { CompareHeader } from "@/components/compare/CompareHeader";
 import { CompareMetric } from "@/components/compare/CompareMetric";
@@ -247,6 +248,10 @@ export default async function ComparePage({
   if (schools.length === 0) return <EmptyState />;
 
   const diffs = keyDifferences(schools);
+  // CDS financial aid rows (specs/data-expansion/cds-financial-aid.md#compare), after the rest of "All the numbers".
+  const aidRows = compareAidRows(citeField("aid.cohort").year);
+  const tableRows = [...TABLE_ROWS, ...aidRows];
+  const tableFields: readonly FieldPath[] = [...new Set([...TABLE_FIELDS, ...aidRows.map((r) => r[2])])];
   const historyFiles = await getHistoryFiles();
 
   // "Your major" (specs/data-expansion/majors.md, field-of-study.md): broad fields (2-digit CIP families) that at
@@ -559,7 +564,7 @@ export default async function ComparePage({
                   </tr>
                 </thead>
                 <tbody className="divide-y tabular-nums">
-                  {TABLE_ROWS.map(([label, term, field, fmt]) => {
+                  {tableRows.map(([label, term, field, fmt]) => {
                     const rowYear = citeField(field).year;
                     return (
                       <tr key={label}>
@@ -583,7 +588,7 @@ export default async function ComparePage({
                 </tbody>
               </table>
             </div>
-            <MultiSourceNote schools={schools} fields={TABLE_FIELDS} />
+            <MultiSourceNote schools={schools} fields={tableFields} />
             <BaselineNote />
           </section>
         </div>

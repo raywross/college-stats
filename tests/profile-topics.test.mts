@@ -130,6 +130,16 @@ const LEGACY_FIELDS = Object.freeze({
   ],
   campus: ["campus.housing", "campus.athletics", "campus.programs", "campus.services", "campus.calendar", "demographics.disability_services"],
   ranks: ["derived.sat_mid", "derived.yield", "demographics.pell_grant_percent", "derived.diversity_index", "admissions.acceptance_rate"],
+  // New with CDS financial aid (specs/data-expansion/cds-financial-aid.md), on the cost page.
+  cdsFinancialAid: [
+    "reported.aid.first_years",
+    "reported.aid.institutional_grants",
+    "derived.merit_dollar_share",
+    "reported.aid.forms",
+    "reported.aid.methodology",
+    "reported.aid.dates",
+    "reported.aid.international",
+  ],
 });
 
 function sourceFiles(dir: string): string[] {

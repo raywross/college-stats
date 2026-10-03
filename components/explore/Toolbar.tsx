@@ -239,6 +239,8 @@ export function ActiveFilters() {
   if (searchParams.get("fewLoans") === "1") chips.push({ key: "fewLoans", label: "Few students borrow", onRemove: () => update({ fewLoans: null }) });
   if (searchParams.get("pellGap") === "1") chips.push({ key: "pellGap", label: "Pell gap under 5 points", onRemove: () => update({ pellGap: null }) });
   if (searchParams.get("national") === "1") chips.push({ key: "national", label: "Draws nationally", onRemove: () => update({ national: null }) });
+  if (searchParams.get("aidForms") === "no-css") chips.push({ key: "aidForms", label: "No CSS Profile", onRemove: () => update({ aidForms: null }) });
+  if (searchParams.get("intlAid") === "1") chips.push({ key: "intlAid", label: "Aid for international students", onRemove: () => update({ intlAid: null }) });
   const field = searchParams.get("field");
   if (field && isMajorFamily(field)) {
     const min = Number(searchParams.get("fieldMin")) || 1;

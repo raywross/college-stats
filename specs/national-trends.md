@@ -1,7 +1,25 @@
 # National Trends: How College Is Changing
 
-> Status: **planned** (not built). Opened 2026-09-29 with one study; more will be added. Uses the year-by-year history
-> already on the site ([how history is built](trends-data.md)).
+> Status: **planned** (not built). Opened 2026-09-29 with one study. Expanded 2026-10-03 into a family of specs: this
+> hub (the shared method, groups, routes, and computation), five more studies, top-10 lists, and pages by athletic
+> conference and by state, each in [specs/trends/](trends/). Uses the year-by-year history already on the site
+> ([how history is built](trends-data.md)). First-look numbers below and in the study specs were computed 2026-10-03
+> from the committed history (fall 2024 / 2023–24 / entering 2018 are the newest points).
+
+## The family of specs
+| Spec | What readers get | Depends on |
+|---|---|---|
+| This hub | The `/trends` page, the study template, the standard groups, the shared computation (`studies.json`) and tests | history (built) |
+| [Top-10 lists](trends/top-10-lists.md) | "Biggest movers": ten colleges per measure, with the floors and exclusions that keep the lists honest | this hub |
+| [By athletic conference](trends/conferences.md) | A page per conference: members, medians over time, realignment timeline, Power 4 side by side | this hub |
+| [By state](trends/states.md) | A page per state: how its colleges changed, public flagships, where students come from | this hub |
+| [Study 2: Test-optional](trends/test-optional.md) | Who still requires tests, who submits scores, and what happened to score ranges | this hub |
+| [Study 3: Shrinking colleges](trends/shrinking-colleges.md) | Half of colleges are 10% smaller than ten years ago; who grew | this hub |
+| [Study 4: The price gap](trends/price-gap.md) | Full price vs what students pay, by group: who is discounting | this hub |
+| [Study 5: Out-of-state students](trends/out-of-state.md) | Public colleges enrolling more first-years from other states | this hub |
+| [Study 6: The Pell graduation gap](trends/pell-gap.md) | Pell recipients graduate less often, and the gap widened | this hub |
+
+Study 1 (men and women in admissions) stays in this file as the worked example of the template.
 
 ## Why
 Every page on the site so far answers a question about **one college**: what it costs, who gets in, how that changed.
@@ -37,6 +55,23 @@ Every study offers the same four, so readers learn one way of reading them:
 
 A study can add its own grouping when the question needs it (for example, test policy for a testing study).
 
+### Additional groupings (added 2026-10-03)
+The snapshot now carries more ways to slice colleges, all built in data waves 2–3. A study offers one or two of these
+only when they change the story; the four standard breakdowns always come first. Counts are today's dataset (1,893
+colleges) and show which groups clear the 30-college floor.
+
+| Grouping | Groups (colleges) | Source field | Where it earns its place |
+|---|---|---|---|
+| **Setting** | City 973 · Suburb 456 · Town 316 · Rural 148 | `campus.setting.group` (IPEDS HD locale) | Enrollment: town and rural colleges shrank most (Study 3) |
+| **Athletic division** | D-I FBS 136 · D-I FCS 127 · D-I other 99 · D-II 289 · D-III 415 · none/NAIA 827 | `campus.athletics.division` | Enrollment, out-of-state, price: FBS colleges move with the big publics; D-III with small privates |
+| **Research tier** | R1 183 · R2 129 · RCU 191 · other 1,390 | `campus.carnegie.research` (Carnegie 2025) | Admissions and enrollment: R1s grew while the median college shrank |
+| **Designation** | HBCU 84 · HSI 281 · Land-grant 82 · Women's 30 · Men's 45 · AANAPISI 110 | `campus.designations`, `campus.msi` | Applications: HBCU applications rose 77% at the median since fall 2014 while enrollment fell 12% |
+| **Athletic conference** | 131 conferences; 107 have 8+ members | `campus.athletics.conference` (+ history series `conference` since 2014–15) | Its own pages ([conferences.md](trends/conferences.md)), never a study breakdown: too many groups |
+| **State** | 54 states and territories; 23 have 30+ colleges, 45 have 10+ | `location.state` | Its own pages ([states.md](trends/states.md)); the 30-college rule relaxes to 10 there, labeled |
+
+Groups with fewer than 30 colleges in a study's panel (Women's colleges, usually; Men's, the Tribal college) show "too
+few colleges to say", as the rules require. A study never invents a group that isn't a stored field.
+
 ## Rules
 1. **Fixed panel for "then vs now."** Compare the same colleges at both ends, so a change isn't just colleges entering or
    leaving the data. The panel and its size are always stated.
@@ -55,10 +90,18 @@ A study can add its own grouping when the question needs it (for example, test p
    `data/history/facts.json`), so pages stay static, and a test recomputes each one from the committed history.
 
 ## Where it appears
-- **A new "Trends" page** (`/trends`), linked from the main navigation and from the phone's More menu. One card per
-  study, newest first; each opens to the full study.
+- **A new "Trends" page** (`/trends`), linked from the footer, the phone's More menu, and Home's "What's changed"
+  band ("All trends"). The header keeps its four main tasks; whether Trends earns a fifth slot is an open question
+  below. Sections, top to bottom: the studies (one card each: headline number, sparkline, one sentence, newest first),
+  then **Biggest movers** (three of the top-10 lists, with a link to all), then **By conference** and **By state**
+  entry cards (the Power 4 strip and the state tile map, each linking to its index).
 - **Study pages** (`/trends/{study}`): the national chart, a small chart per breakdown group side by side (same scale,
-  so they compare at a glance), the takeaway, and the method note.
+  so they compare at a glance), the takeaway, and the method note. Slugs are the study spec's file name
+  (`/trends/test-optional`, `/trends/shrinking-colleges`, `/trends/price-gap`, `/trends/out-of-state`,
+  `/trends/pell-gap`, and `/trends/men-and-women` for Study 1).
+- **Lists and group pages**, specified separately: `/trends/movers` ([top-10 lists](trends/top-10-lists.md)),
+  `/trends/conferences` and `/trends/conferences/{slug}` ([conferences](trends/conferences.md)), `/trends/states` and
+  `/trends/states/{state}` ([states](trends/states.md)).
 - **Home "What's changed"** can feature one study's headline number when it's striking, linking to the study.
 - **College pages** can link to a relevant study ("How does this compare nationally?") where the college's own chart
   sits, e.g. the "Acceptance rate, men and women" chart links to Study 1.
@@ -124,6 +167,47 @@ are already read) so the study can use the same rule and weight by applicants.
    may be the ones whose gap changed.
 3. How to phrase this without implying a policy: a gap can reflect who applies as much as how colleges choose.
 
+### Studies 2–6 (specified 2026-10-03, each in its own file)
+| Study | Headline from the first look | Spec |
+|---|---|---|
+| 2. Test-optional went mainstream | 66% of colleges required a test in fall 2019; 5% do now. Published SAT ranges rose ~30 points where tests became optional | [test-optional.md](trends/test-optional.md) |
+| 3. Shrinking colleges | Half of colleges have 10%+ fewer undergraduates than ten years ago; R1s and the most selective grew | [shrinking-colleges.md](trends/shrinking-colleges.md) |
+| 4. The price gap, by who is discounting | Average paid fell 11% after inflation at the median college, but not at the most selective (0%, $51,300) | [price-gap.md](trends/price-gap.md) |
+| 5. Public colleges and out-of-state students | The median public's out-of-state share rose 11% → 13%; R1 publics 18% → 22% | [out-of-state.md](trends/out-of-state.md) |
+| 6. The Pell graduation gap | Pell recipients graduate 11 points less often than peers with neither Pell nor loans; the gap widened from 9 | [pell-gap.md](trends/pell-gap.md) |
+
+## Shared computation and tests
+All studies, lists, and group pages are computed by `npm run sync-history` and committed, so pages stay static and
+every number is reproducible from the shards in git.
+
+| Piece | Where | Notes |
+|---|---|---|
+| Group definitions | `lib/trend-groups.ts` | One function per grouping (`region`, `control`, `size`, `selectivity`, `setting`, `division`, `research`, `designation`, `state`, `conference`) from a `School`; the 30-college floor (10 for states, 8 for conferences) as constants, read by the build and the pages |
+| Study registry | `lib/trend-studies.ts` | Slug, title, question, series used, year kind, window, which groupings it offers, and the panel rule; typed against `SeriesKey` so a study can't name a missing series |
+| Build | `scripts/history/studies.mts`, called from `build.mts` after facts | Shared helpers: `fixedPanel(series, from, to, floor)`, `medianBy(group)`, `shareBy(group, predicate)`, `weightedBy(group, weights)`, inflation through the CPI table |
+| Output | `data/history/studies.json` (studies), `movers.json`, `conferences.json`, `states.json` | Each entry records `from`, `to`, `n`, and per-group `n`, so pages print panel sizes from data, never from copy |
+| Tests | `tests/trend-studies.test.mts` | Recomputes each study's national row and one group from the committed shards (as `facts` are tested today); asserts floors are applied; asserts Study 2's fall 2019 share equals Home fact 3 and Study 4's national row equals Home fact 1 |
+| Lineage | `lib/fields.ts` | Study measures cite the series' registered fields; year labels come from `history/meta.json` through lineage helpers ([data-lineage.md](data-lineage.md)) |
+
+Build order for the area: the hub (groups, registry, build, `/trends`, Study 1) first, then Studies 2–6 in the order
+above (each is small once the hub exists: one registry entry, one build function, one page from the shared layout),
+then the Movers page, then conferences and states (which reuse the movers registry for their per-group lists).
+
+## More ideas, not yet specified
+Candidates for later studies, each already possible from stored series. Add one by writing a spec in `specs/trends/`
+and a row in the table above.
+- **The HBCU surge.** Median HBCU applications rose 77% since fall 2014 while undergraduates fell 12%: who applied,
+  and did enrollment follow at any of them? (`applicants`, `enrolled`, `undergrads`, designation grouping.)
+- **Legacy and the other factors.** Share of colleges considering legacy fell from 32% to 28% in two years (Home fact
+  4); the longer story of class rank, essays, and recommendations since fall 2001 (`factor_*`).
+- **What graduates study.** The majors shift (Home fact 5) by group: computing's rise, education's fall, by region and
+  type (`major_*`, `bachelors`).
+- **Transfer students.** Transfer-ins as a share of new undergraduates since fall 2008, where it rose (`transfer_in_share`).
+- **Faculty.** Full-time faculty share since fall 2005 and salaries since fall 2016, by type and size.
+- **Debt and borrowing.** Share of undergraduates with a federal loan since 2008–09, by group (`federal_loan_rate`).
+- **The year in college data.** A generated annual page when each IPEDS release lands: what moved most since last
+  year across every study, written from `studies.json` deltas. Editorial, so it waits until several studies exist.
+
 ## Adding a study
 Copy this template into **Studies**, and add a line to the backlog's National trends section:
 
@@ -138,4 +222,10 @@ Copy this template into **Studies**, and add a line to the backlog's National tr
    page is about sources.)
 2. Should studies be generated with the history build (always current) or hand-reviewed per release (more editorial
    control)? Recommendation: generated, with the takeaway text reviewed whenever a release changes a headline number by
-   more than a few points.
+   more than a few points. The test can flag this: fail when a headline moves more than 3 points without the takeaway
+   file changing in the same commit.
+3. Does Trends join the header (a fifth item) or stay in the footer and More menu? Recommendation: footer and Home
+   link first; promote it when telemetry shows the Home band is used.
+4. Takeaway copy: generated from numbers with direction words (as Home facts do with `movedBy()`), or written by hand
+   per study and checked by the test above? Recommendation: hand-written sentences with templated numbers, so the
+   prose survives a data release and the numbers never go stale.

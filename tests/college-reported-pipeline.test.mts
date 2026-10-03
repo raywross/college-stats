@@ -324,6 +324,10 @@ test("helpers: HTML text, years in links, robots rules, one-entry-per-line files
   assert.equal(entryYearOf("https://x.edu/CDS_2025-2026.pdf"), 2025);
   assert.equal(entryYearOf("Class of 2030 profile"), 2026);
   assert.equal(entryYearOf("https://x.edu/cds-2026-27.xlsx"), 2026);
+  // The pilot's two real misreads (2026-10-03): an upload-date folder before the edition made these "Fall 2026".
+  assert.equal(entryYearOf("https://irp.cornell.edu/wp-content/uploads/2026/09/CDS-Cornell-2025-2026-v2.xlsx"), 2025);
+  assert.equal(entryYearOf("https://cdn.vanderbilt.edu/vu-wpfsx/wp-content/uploads/sites/70/2026/07/CDS_2025-2026.xlsx"), 2025);
+  assert.equal(entryYearOf("https://ir.example.edu/files/2026-04/cds-pdf-2025-2026-final.pdf"), 2025);
   const found = newSourcesFromIndex('<a href="CDS_2024-25.pdf">2024-25</a><a href="CDS_2026-27.pdf">Common Data Set 2026-27</a>', "https://x.edu/ir/", [{ kind: "cds", url: "https://x.edu/ir/CDS_2025-26.pdf", format: "pdf", anchor: "C1" }]);
   assert.deepEqual(found, [{ kind: "cds", url: "https://x.edu/ir/CDS_2026-27.pdf", format: "pdf", anchor: "C1" }]);
   const robots = parseRobots("User-agent: *\nDisallow: /\nAllow: /admissions/\nCrawl-delay: 5\n\nUser-agent: OtherBot\nDisallow: /admissions/");

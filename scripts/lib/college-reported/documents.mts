@@ -174,10 +174,19 @@ export function linkKind(link: FoundLink): ReportedSourceKind | null {
  */
 export function entryYearOf(text: string): number | null {
   const t = decodeURIComponent(text);
+  // The file name first: a URL's folders often hold an upload date ("…/uploads/2026/09/CDS_2025-2026.xlsx") that
+  // isn't the edition. Then the whole text.
+  const name = t.split(/[?#]/)[0].split("/").pop() ?? "";
+  return yearIn(name) ?? yearIn(t);
+}
+
+function yearIn(t: string): number | null {
   const classOf = /class[\s_-]*of[\s_-]*(20\d\d)/i.exec(t);
   if (classOf) return Number(classOf[1]) - 4;
-  const range = /(20\d\d)\s*[-–_/]\s*(?:20)?(\d\d)(?!\d)/.exec(t);
-  if (range && (Number(range[2]) === (Number(range[1]) + 1) % 100)) return Number(range[1]);
+  // Every range, not just the first: "2026/09" (a date) must not hide "2025-2026" (the edition) after it.
+  for (const range of t.matchAll(/(20\d\d)\s*[-–_/]\s*(?:20)?(\d\d)(?!\d)/g)) {
+    if (Number(range[2]) === (Number(range[1]) + 1) % 100) return Number(range[1]);
+  }
   const fall = /fall[\s_-]*(20\d\d)/i.exec(t);
   if (fall) return Number(fall[1]);
   const lone = [...t.matchAll(/(?<!\d)(20\d\d)(?!\d)/g)].map((m) => Number(m[1]));

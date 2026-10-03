@@ -170,6 +170,15 @@ jobs:
             exit 1
           fi
 
+      # Merges data/college-reported.json into the committed data/schools.json (Decision 5,
+      # specs/college-reported-round-2.md), so this PR carries the site's figures too — its Vercel preview shows
+      # them without anyone running `npm run sync-data` by hand. always(): a stopped or cancelled run still wrote
+      # whatever it finished, and that should still merge. No network, no API key; nothing to fail on an empty
+      # college-reported.json (merges 0, removes 0, exits 0).
+      - name: Merge the published figures into schools.json
+        if: always() && steps.secret.outputs.ready == 'true'
+        run: npm run merge-reported
+
       # always(): also after a cancelled run, so the colleges it finished still reach a PR and the artifact.
       - name: Keep this run's files as an artifact
         if: always() && steps.secret.outputs.ready == 'true'
@@ -209,7 +218,9 @@ jobs:
           git push -u origin "$branch"
           node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/college-reported-pr-body.mts body \
             --summary "data/reports/college-reported-run-${RUN_ID}.json" \
-            --queue data/review-queue.json > /tmp/college-reported-pr-body.md
+            --queue data/review-queue.json \
+            --reported data/college-reported.json \
+            --schools data/schools.json > /tmp/college-reported-pr-body.md
           gh pr create --base main --head "$branch" \
             --title "College-reported data: run ${RUN_ID}" \
             --body-file /tmp/college-reported-pr-body.md

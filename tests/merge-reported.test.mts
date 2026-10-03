@@ -17,6 +17,7 @@ import type { Extraction } from "../lib/reported";
 import type { ReportedEntry, ReportedFile } from "../lib/reported.ts";
 import { toReportedEntry } from "../lib/reported-checks.ts";
 import { mergeReported, stripReported } from "../lib/reported-merge.ts";
+import { validateLineage } from "../lib/lineage.ts";
 
 const ROOT = join(import.meta.dirname, "..");
 const SCRIPT = join(ROOT, "scripts", "merge-reported.mts");
@@ -96,14 +97,54 @@ test("mergeReported strips the block and reported lineage for a college removed 
 });
 
 test("mergeReported leaves a school with no entry and no prior block untouched", () => {
-  const { schools, merged, removed } = mergeReported([school(OTHER)], { updated: "2026-10-03", entries: [] });
+  const input = school(OTHER);
+  const { schools, merged, removed } = mergeReported([input], { updated: "2026-10-03", entries: [] });
   assert.equal(merged, 0);
   assert.equal(removed, 0);
   assert.equal(schools[0].reported, undefined);
   // Byte for byte: no empty `lineage: {}` added, keys in the same order, so the school's line in data/schools.json
   // doesn't change (the first merge of the pilot rewrote all 1,893 lines because of exactly that).
   assert.equal(JSON.stringify(schools[0]), JSON.stringify(school(OTHER)));
-  assert.strictEqual(schools[0], schools[0]);
+  assert.strictEqual(schools[0], input);
+});
+
+test("mergeReported puts the newer class into admissions.*, keeping the federal funnel in admissions.federal", () => {
+  const before = school(PRINCETON);
+  const p = mergeReported([before], { updated: "2026-10-03", entries: [entryFor(PRINCETON)] }).schools[0];
+  assert.equal(p.admissions.year, 2026);
+  assert.equal(p.admissions.applicants, 46618);
+  assert.equal(p.admissions.acceptance_rate, 0.04);
+  assert.deepEqual(p.admissions.federal, {
+    year: before.admissions.year,
+    applicants: before.admissions.applicants,
+    admitted: before.admissions.admitted,
+    enrolled: before.admissions.enrolled,
+    acceptance_rate: before.admissions.acceptance_rate,
+  });
+  assert.equal(p.lineage?.["admissions.applicants"]?.source, "college-site");
+  assert.deepEqual(validateLineage([p], meta), []);
+});
+
+test("a hand-imported CDS college: admissions.federal holds the override's values, cited to its edition; dropping it restores them exactly", () => {
+  const NYU = "193900"; // CDS override 2024-25, no college-reported class in the committed data
+  const before = school(NYU);
+  assert.equal(before.lineage?.["admissions.applicants"]?.source, "cds");
+  const merged = mergeReported([before], { updated: "2026-10-03", entries: [entryFor(NYU)] }).schools[0];
+  assert.equal(merged.admissions.applicants, 46618);
+  assert.equal(merged.admissions.federal?.applicants, before.admissions.applicants);
+  assert.deepEqual(merged.lineage?.["admissions.federal"], before.lineage?.["admissions.applicants"]);
+  assert.deepEqual(validateLineage([merged], meta), []);
+  const dropped = mergeReported([merged], { updated: "2026-10-04", entries: [] }).schools[0];
+  assert.equal(JSON.stringify(dropped), JSON.stringify(before));
+});
+
+test("the committed data/schools.json is exactly what merging data/college-reported.json produces (re-merge changes nothing)", () => {
+  const reported: ReportedFile = JSON.parse(readFileSync(join(ROOT, "data", "college-reported.json"), "utf8"));
+  const { schools } = mergeReported(allSchools, reported);
+  const changed = schools.filter((s, i) => JSON.stringify(s) !== JSON.stringify(allSchools[i])).map((s) => s.unit_id);
+  assert.deepEqual(changed, [], "run `npm run merge-reported`");
+  // Every college with a reported block actually had something replaced or nothing newer to replace.
+  for (const s of allSchools) if (s.reported && s.admissions.federal) assert.ok(s.reported.admissions!.year > (s.admissions.federal.year ?? 0));
 });
 
 test("stripping a college's block leaves no empty lineage behind", () => {

@@ -6,7 +6,7 @@ import { NATIONAL_MIN_FIRST_YEARS } from "./residence";
 import { transferShare } from "./transfers";
 import type { FieldPath } from "./fields";
 import { money, num, pct, pctSmart } from "./format";
-import { admitRatesBySex, satMedian, simpsonIndex, yieldOf } from "./derive";
+import { admitRatesBySex, sameClassYield, satMedian, simpsonIndex } from "./derive";
 import { bedsPer100 } from "./housing";
 import { pellGap } from "./graduation-groups";
 import { endowmentOnForm, instructionOnForm } from "./finances";
@@ -46,9 +46,12 @@ export function actMid(s: School): number | null {
   return a ? (a[0] + a[1]) / 2 : null;
 }
 
-/** Share of admitted students who enroll. */
+/**
+ * Share of admitted students who enroll, from one class only: the newest pair when enrolled and admitted describe the
+ * same class, else the previous class's (`admissions.federal`). See `sameClassYield` (lib/derive.ts).
+ */
 export function yieldRate(s: School): number | null {
-  return yieldOf(s.admissions.admitted, s.admissions.enrolled);
+  return sameClassYield(s);
 }
 
 /** "1 in N" applicants admitted, from a rate (any source: federal or the newest a college has published). */

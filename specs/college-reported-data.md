@@ -116,12 +116,12 @@ Discovery runs once for all colleges, then only on escalation or when a college 
 - Starting budget ceiling agreed: ~$1.5–3K/year. Actual spend is logged per run from `usage`.
 
 ## Display
-See [data-lineage.md](data-lineage.md#display-which-citation-where) and
-[college-reported-round-2.md](college-reported-round-2.md#decision-1-show-the-newest-figures-we-have) (Decision 1,
-built 2026-10-03): a college's profile shows the **newest** class it has published anywhere — its own figures when
-newer than the federal year, otherwise federal — as the headline, with the federal figure one line below as the
-baseline and a lineage popover (quote, link, retrieved date, "checked automatically"). Not used in Explore, Compare,
-ranks, medians, or Home charts.
+Superseded by [college-reported-round-2.md](college-reported-round-2.md#decision-1-show-the-newest-figures-we-have)
+(Decision 1, revised 2026-10-03): a college's newer published figures replace its older ones **in the dataset**
+(`lib/newest.ts#applyNewest`, run by `merge-reported` and `sync-data`), value by value, with an `extracted` lineage
+record each and the replaced funnel kept in `admissions.federal`. Every view (the profile, Explore, Compare, ranks,
+medians, Home) shows those newest values; the ⓘ tooltip carries the document, year, quote, link, retrieval date, and
+the figure it replaced. No chips. See [data-lineage.md](data-lineage.md) rule 3.
 
 ## Pilot (first build step)
 ~50 colleges across selectivity tiers (very selective, selective, less selective, open admission) and sectors.

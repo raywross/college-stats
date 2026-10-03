@@ -1,27 +1,33 @@
 /**
- * The one merge of `data/college-reported.json` into `school.reported` + `school.lineage`, shared by
- * `scripts/sync-data.mts` (which builds `schools` fresh every run, so stripping is a no-op there) and
- * `scripts/merge-reported.mts` (which re-merges into the committed `data/schools.json`, where a college dropped
- * from `college-reported.json` since the last merge must lose its block). Pure: no file I/O. See Decision 5 of
+ * The one merge of `data/college-reported.json` into the dataset, shared by `scripts/sync-data.mts` (which builds
+ * `schools` fresh every run, so stripping is a no-op there) and `scripts/merge-reported.mts` (which re-merges into
+ * the committed `data/schools.json`, where a college dropped from `college-reported.json` since the last merge must
+ * lose its block and get its previous funnel back). Each merged college's `reported` block then replaces its older
+ * admissions figures in `admissions.*` (`lib/newest.ts#applyNewest`). Pure: no file I/O. See Decisions 1 and 5 of
  * specs/college-reported-round-2.md.
  */
 import type { School } from "./types";
 import { REPORTED_PATHS } from "./fields.ts";
+import { applyNewest, restoreFederal } from "./newest.ts";
 import type { ReportedFile } from "./reported.ts";
 import { reportedToPatch } from "./reported-checks.ts";
 
 /**
- * `school`, with its `reported` block and every `reported.*` lineage record removed. A school that ends up with no
- * lineage gets none (not `{}`), and key order is kept, so a school the merge doesn't touch serializes byte for byte
- * as before and the one-college-per-line diff of data/schools.json shows only the colleges that changed.
+ * `school` as it was before any merge: its previous admissions funnel restored from `admissions.federal`
+ * (`restoreFederal`), and its `reported` block and every `reported.*` lineage record removed. A school that ends up
+ * with no lineage gets none (not `{}`), and key order is kept, so a school the merge doesn't touch serializes byte
+ * for byte as before and the one-college-per-line diff of data/schools.json shows only the colleges that changed.
  */
 export function stripReported(school: School): School {
-  if (!school.reported && !Object.keys(school.lineage ?? {}).some((k) => k.startsWith("reported."))) return school;
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- discarding `reported` is the point
-  const { reported: _reported, lineage: oldLineage, ...rest } = school;
-  const lineage = { ...(oldLineage ?? {}) };
+  const restored = restoreFederal(school);
+  if (!restored.reported && !Object.keys(restored.lineage ?? {}).some((k) => k.startsWith("reported."))) return restored;
+  const lineage = { ...(restored.lineage ?? {}) };
   for (const path of REPORTED_PATHS) delete lineage[path];
-  return (Object.keys(lineage).length ? { ...rest, lineage } : rest) as School;
+  // Rewrite `lineage` in place (spreading keeps its key position, e.g. before `trends` at a CDS college).
+  const out: Partial<School> = { ...restored, lineage };
+  delete out.reported;
+  if (!Object.keys(lineage).length) delete out.lineage;
+  return out as School;
 }
 
 export interface MergeReportedResult {
@@ -33,8 +39,9 @@ export interface MergeReportedResult {
 }
 
 /**
- * Strips every school's existing `reported` block and `reported.*` lineage, then re-applies the current entries in
- * `reported.entries` (through `reportedToPatch`, exactly as `sync-data` does). Never touches a federal field.
+ * Strips every school (`stripReported`), then re-applies the current entries in `reported.entries` (through
+ * `reportedToPatch`, exactly as `sync-data` does) and `applyNewest`, so each college's newer published figures
+ * replace its older ones in `admissions.*`, with lineage and `admissions.federal`.
  */
 export function mergeReported(schools: School[], reported: ReportedFile): MergeReportedResult {
   const byUnitId = new Map(reported.entries.map((e) => [e.unit_id, e]));
@@ -50,7 +57,7 @@ export function mergeReported(schools: School[], reported: ReportedFile): MergeR
     }
     merged++;
     const { reported: reportedData, lineage: entryLineage } = reportedToPatch(entry);
-    return { ...stripped, reported: reportedData, lineage: { ...stripped.lineage, ...entryLineage } };
+    return applyNewest({ ...stripped, reported: reportedData, lineage: { ...stripped.lineage, ...entryLineage } });
   });
   return { schools: result, merged, removed };
 }

@@ -139,11 +139,22 @@ function underlyingSources(path: FieldPath, school: School | undefined, meta: Da
   if (!("derived" in def) || !def.derived || overridden || seen.has(path)) return [sourceFor(path, school, meta)];
   seen.add(path);
   const out = new Map<string, CitedSource>();
-  for (const input of def.derived.inputs) {
+  for (const input of inputsUsed(path, def.derived.inputs, school)) {
     if (!isFieldPath(input)) continue;
     for (const s of underlyingSources(input, school, meta, seen)) out.set(sourceId(s), s);
   }
   return [...out.values()];
+}
+
+/**
+ * The inputs a derived value actually used for this school. Yield (lib/metrics.ts#yieldRate) uses the shown enrolled
+ * and admitted when they describe the same class (same lineage year), else the previous class's pair in
+ * `admissions.federal`; every other derived value uses all its registered inputs.
+ */
+function inputsUsed(path: FieldPath, inputs: readonly string[], school: School | undefined): readonly string[] {
+  if (path !== "derived.yield") return inputs;
+  const sameClass = school?.lineage?.["admissions.enrolled"]?.year === school?.lineage?.["admissions.admitted"]?.year;
+  return sameClass || !school?.admissions?.federal ? inputs.filter((i) => i !== "admissions.federal") : ["admissions.federal"];
 }
 
 /** True when a value and everything it's calculated from use their fields' default sources. */
@@ -152,7 +163,7 @@ function usesDefaults(path: FieldPath, school: School | undefined, seen = new Se
   const def = FIELDS[path] as (typeof FIELDS)[FieldPath];
   if (!("derived" in def) || !def.derived || seen.has(path)) return true;
   seen.add(path);
-  return def.derived.inputs.every((i) => !isFieldPath(i) || usesDefaults(i, school, seen));
+  return inputsUsed(path, def.derived.inputs, school).every((i) => !isFieldPath(i) || usesDefaults(i, school, seen));
 }
 
 /** Full citation for one value of one school (or the dataset default without a school). */
@@ -180,7 +191,8 @@ function replacedBy(path: FieldPath, school: School | undefined, meta: DatasetMe
   const key = FEDERAL_COUNTERPART[path];
   const federal = school?.admissions?.federal;
   if (!key || !federal || school?.lineage?.[path]?.source !== "college-site") return {};
-  const year = federal.year !== null ? `Fall ${federal.year}` : meta.vintages["ipeds-adm"] ?? null;
+  // A hand-imported CDS override's values carry its edition (lineage on admissions.federal); federal ones, the fall.
+  const year = school?.lineage?.["admissions.federal"]?.year ?? (federal.year !== null ? `Fall ${federal.year}` : (meta.vintages["ipeds-adm"] ?? null));
   return { replaces: { value: federal[key], year } };
 }
 
@@ -315,9 +327,47 @@ export function validateSchool(school: School, meta: DatasetMeta): string[] {
     else if (rec.source !== "college-site") errors.push(`${where}: ${path} must cite source "college-site", not "${rec.source}"`);
     else if (rec.method !== "extracted") errors.push(`${where}: ${path} must have method "extracted"`);
   }
-  const reportedYear = school.reported?.admissions?.year;
-  if (reportedYear !== undefined && school.admissions.year !== null && reportedYear <= school.admissions.year) {
-    errors.push(`${where}: reported.admissions.year ${reportedYear} isn't newer than the federal year ${school.admissions.year}`);
+  errors.push(...validateNewest(school, where));
+  return errors;
+}
+
+/**
+ * Newest figures in the dataset (specs/college-reported-round-2.md, Decision 1; `lib/newest.ts#applyNewest`): a
+ * college-reported class is newer than what it replaced (or would replace); every `admissions.*` value cited to the
+ * college's site is extracted or derived and names its document; a replaced value means `admissions.federal` keeps
+ * what it replaced; and when applicants or admitted were replaced, `admissions.year` is the reported class's.
+ */
+function validateNewest(school: School, where: string): string[] {
+  const errors: string[] = [];
+  const a = school.admissions;
+  const federal = a.federal;
+  const reported = school.reported?.admissions;
+  const isCollegeSite = (k: keyof FederalAdmissions) => school.lineage?.[`admissions.${k}` as FieldPath]?.source === "college-site";
+
+  if (reported) {
+    // What the reported class replaced (admissions.federal) or, when nothing was replaced, what it would replace.
+    const previousYear = federal ? federal.year : a.year;
+    if (previousYear !== null && reported.year <= previousYear) {
+      errors.push(`${where}: reported.admissions.year ${reported.year} isn't newer than the federal year ${previousYear}`);
+    }
+    if ((isCollegeSite("applicants") || isCollegeSite("admitted")) && a.year !== reported.year) {
+      errors.push(`${where}: applicants or admitted come from the college's ${reported.year} class, but admissions.year is ${a.year}`);
+    }
+  }
+  for (const k of ["year", "applicants", "admitted", "enrolled", "acceptance_rate"] as const) {
+    const path = `admissions.${k}` as FieldPath;
+    const rec = school.lineage?.[path];
+    if (rec?.source !== "college-site") continue;
+    if (rec.method !== "extracted" && rec.method !== "derived") errors.push(`${where}: ${path} cites the college's site, so it must be extracted or derived`);
+    if (!rec.quote || !rec.url || !rec.retrieved || !rec.year) errors.push(`${where}: ${path} cites the college's site but lacks quote, url, retrieved, or year`);
+    if (!federal) errors.push(`${where}: ${path} cites the college's site, but admissions.federal doesn't keep the value it replaced`);
+    if (!reported) errors.push(`${where}: ${path} cites the college's site, but the school has no reported.admissions`);
+  }
+  // A replaced count differs from the one it replaced: that difference must be cited to the college's own document.
+  if (federal) {
+    for (const k of ["applicants", "admitted", "enrolled", "acceptance_rate"] as const) {
+      if (a[k] !== federal[k] && !isCollegeSite(k)) errors.push(`${where}: admissions.${k} differs from admissions.federal.${k} but isn't cited to the college's site`);
+    }
   }
   return errors;
 }

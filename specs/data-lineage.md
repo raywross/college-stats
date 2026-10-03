@@ -18,13 +18,14 @@ regression test pins it).
 1. **Every stored value is registered** in `lib/fields.ts`, or the sync refuses to write.
 2. **Year travels with the value.** Years come from `meta.json` `vintages` or the lineage record, never from literals
    in UI code.
-3. **Federal data is the comparison baseline** ([college-reported-data.md](college-reported-data.md#display)). Explore,
-   Compare, ranks, medians, and Home always use it, so every college is measured on the same year
-   ([college-reported-round-2.md](college-reported-round-2.md#decision-1-show-the-newest-figures-we-have)). The 8 CDS
-   overrides still replace federal values in `schools.json` (same fall 2024 class, different source); the chips make
-   that visible. A college's own profile is different: its admissions headline (`lib/newest.ts`) shows the **newest**
-   class the college has published anywhere, federal or its own, with its year and a chip, and the federal figure
-   stays one line below as the baseline a reader can still compare against.
+3. **Every value shown is the newest its college has published**
+   ([college-reported-round-2.md](college-reported-round-2.md#decision-1-show-the-newest-figures-we-have)). The
+   dataset holds the newest values, lineage says where each came from, and `admissions.federal` keeps what was
+   replaced. A college's own newer class (its CDS or class profile, `school.reported`) replaces its federal or
+   hand-imported CDS admissions figures in `data/schools.json` value by value (`lib/newest.ts#applyNewest`, run by
+   `merge-reported` and `sync-data`), so the profile, Explore, Compare, ranks, medians, and Home all read the same
+   `school.admissions`; years can differ between colleges, and each value's ⓘ says its own. Yield is never a
+   mixed-year ratio (`lib/derive.ts#sameClassYield`). History charts stay federal.
 4. **Derived values cite their inputs.** A value calculated from non-default inputs (yield from CDS counts) is itself
    non-default.
 5. **Missing is `null`**, and has no lineage.
@@ -54,9 +55,28 @@ Stored only where a value's source differs from its registry default. Keys are r
 Missing parts fall back to the source's defaults in `meta.json`. The sync writes them for Scorecard admission-rate
 fallbacks and for every value an override sets ([data-sync.md](data-sync.md#overrides)).
 
+Newest figures (`applyNewest`) write records too:
+- each replaced `admissions.{applicants,admitted,enrolled,acceptance_rate}`: a copy of its `reported.admissions.*`
+  record (`source: "college-site"`, `method: "extracted"`, year, URL, retrieved date, quote); a rate calculated from
+  the college's two counts gets `method: "derived"` with both quotes;
+- `admissions.year`, when applicants or admitted were replaced: the `reported.admissions.entering_term` record;
+- a previous rate kept beside newer counts: `{ source: <previous source>, method: "derived", year: <previous year> }`,
+  so the ⓘ says it's calculated from the previous class's counts;
+- `admissions.federal`, only when the replaced funnel was a hand-imported CDS override: that override's record, so
+  "replaces" names the CDS edition (none means IPEDS ADM, the field's default).
+
+The guard (`validateSchool`) requires every `admissions.*` value cited to `college-site` to be extracted or derived
+with quote, URL, date, and year, `admissions.federal` to exist beside it, `admissions.year` to equal the reported
+class's when applicants or admitted were replaced, any value that differs from `admissions.federal` to be cited to
+the college, and `reported.admissions.year` to be newer than `admissions.federal.year` (or `admissions.year` when
+nothing was replaced).
+
 ### Resolution: `lib/lineage.ts` (pure; also used by the sync and tests)
 - `lineageFor(path, school, meta)` → `Cited`: source label, publisher, year, URL, retrieved date, method, `isDefault`,
-  formula, input sources, quote.
+  formula, input sources, quote, and `replaces` (`{ value, year }`) for a funnel value cited to the college that
+  replaced an older one: the value from `admissions.federal`, the year from its lineage record (a CDS edition) or
+  "Fall {federal.year}". Yield's inputs are the pair it was calculated from: enrolled and admitted when they describe
+  the same class, otherwise `admissions.federal`.
 - `sourcesForFields(paths, school, meta)` → distinct sources (derived values expand to inputs), for footnotes.
 - App wrappers in `lib/data.ts`: `citeField(path, school?)`, `sourcesForFields(paths, school?)`,
   `sourcesForSchools(paths, schools)`.

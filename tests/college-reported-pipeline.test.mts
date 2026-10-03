@@ -11,7 +11,7 @@ import type Anthropic from "@anthropic-ai/sdk";
 import type { Extraction, Recipe, ReportedEntry, ReportedFile, SourcesFile } from "../lib/reported.ts";
 import type { DatasetMeta, School } from "../lib/types";
 import { validateSchool } from "../lib/lineage.ts";
-import { reportedToPatch } from "../lib/reported-checks.ts";
+import { mergeReported, stripReported } from "../lib/reported-merge.ts";
 import { readC1, readWorkbook, workbookEdition } from "../scripts/lib/cds-xlsx.mts";
 import { circuitBreaker, createPipeline, fatalApiError } from "../scripts/lib/college-reported/pipeline.mts";
 import { entryYearOf, htmlToText, newSourcesFromIndex } from "../scripts/lib/college-reported/documents.mts";
@@ -124,7 +124,8 @@ test("an Excel CDS is read deterministically: C1 totals, edition, and quotes, wi
   assert.equal(workbookEdition(book), "2025-26");
 
   // The real Harvard record (federal fall 2024), so the published entry can be run through the lineage guard.
-  const harvard = (JSON.parse(readFileSync(join(ROOT, "data", "schools.json"), "utf8")) as School[]).find((s) => s.unit_id === "166027")!;
+  // stripReported: the federal baseline the pipeline compares against, without a previous run's newer values.
+  const harvard = stripReported((JSON.parse(readFileSync(join(ROOT, "data", "schools.json"), "utf8")) as School[]).find((s) => s.unit_id === "166027")!);
   assert.equal(harvard.admissions.year, 2024);
   const url = "https://c166027.edu/ir/CDS_2025-26.xlsx";
   const { client, calls } = fakeClient({});
@@ -135,10 +136,8 @@ test("an Excel CDS is read deterministically: C1 totals, edition, and quotes, wi
   assert.deepEqual(entry.admissions, { entering_term: "Fall 2025", year: 2025, applicants: 45409, admitted: 2045, enrolled: 1690, acceptance_rate: 2045 / 45409, source_kind: "cds" });
   assert.equal(entry.lineage["reported.admissions.applicants"]?.quote, "C1 Total first-time, first-year students who applied: 45,409");
   assert.equal(entry.lineage["reported.admissions.applicants"]?.url, url);
-  const merged = structuredClone(harvard);
-  const { reported, lineage } = reportedToPatch(entry);
-  merged.reported = reported;
-  merged.lineage = { ...(merged.lineage ?? {}), ...lineage };
+  const merged = mergeReported([structuredClone(harvard)], { updated: "", entries: [entry] }).schools[0];
+  assert.equal(merged.admissions.applicants, 45409, "the merge puts the newer class into admissions.*");
   assert.deepEqual(validateSchool(merged, META), [], "what the pipeline publishes passes the lineage guard once merged");
   const src = out.sources.recipes[0].sources[0];
   assert.equal(src.sha256, sha256(XLSX));

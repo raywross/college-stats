@@ -169,8 +169,33 @@ Built 2026-10-03 on `feature/college-reported-2` (includes #52's incremental wri
 - `--max-cost`; the workflow input `max_cost`.
 
 ### Data in the PR
-- `scripts/merge-reported.mts` (`npm run merge-reported`); the workflow runs it and commits `data/schools.json`.
-- PR body: published colleges table, unreachable list.
+Built 2026-10-03.
+- `lib/reported-merge.ts#mergeReported` (pure: strips every school's `reported` block and `reported.*` lineage, then
+  re-applies the current `data/college-reported.json` entries through `reportedToPatch`) is the one merge, called by
+  both `scripts/sync-data.mts` and the new `scripts/merge-reported.mts` (`npm run merge-reported`, `--dry-run`), so
+  the two can't disagree. `merge-reported.mts` reads `data/schools.json` + `data/college-reported.json`, refuses to
+  write if `validateLineage` finds a problem, and rewrites `data/schools.json` one school per line, same format as
+  `sync-data`. No network, no API key, a few seconds. `ROOT` is overridable with `MERGE_REPORTED_ROOT` so
+  `tests/merge-reported.test.mts` can run the real CLI against a scratch copy of a dataset slice instead of the
+  committed files: adding the block and lineage, idempotence (byte-identical output on a second run), a college
+  dropped from the file losing its block, and a bad entry's year refusing the write.
+- The workflow runs `npm run merge-reported` right after the pipeline (`if: always()`, so a stopped/cancelled run
+  still merges what it kept) and before the data-changed check, so the PR's `git add data` picks up
+  `data/schools.json` alongside the pipeline's own files.
+- `scripts/report-college-reported.mts` (`npm run report-college-reported`; logic in `lib/reported-report.ts`,
+  tested in `tests/reported-report.test.mts`): a readable snapshot of `data/college-reported.json` — each published
+  college's term, source kind, which values it has, URL, and run; totals by term and by source kind; and how many
+  colleges in `data/schools.json` currently carry a `reported` block, so a person can tell at a glance whether the
+  merge has run.
+- PR body (`scripts/college-reported-pr-body.mts`): a **Published this run** table (college, term, kind,
+  applicants, admitted, enrolled, rate, source URL) for `data/college-reported.json` entries whose `run` matches
+  this run, resolving names from `data/schools.json` when given (falls back to the unit id); an **Unreachable**
+  list for review-queue items whose failures include the `unreachable` check id (compared as a plain string, since
+  that id is landing in `lib/reported.ts`'s `CheckId` on a parallel branch), kept out of the ordinary review-queue
+  table since no model call could have fixed them; and a `guessed` row in the Summary table, shown only when the
+  run summary has that optional field. The CLI takes `--reported` and `--schools` to supply these; both are
+  optional, so the pre-Decision-5 fixture tests still pass unchanged. `tests/college-reported-pr-body.test.mts`
+  gained fixtures (`reported.json`, an `unreachable` item in `review-queue.json`) and tests for all of this.
 
 ### Specs updated
 [college-reported-data.md](college-reported-data.md) (display, escalation, cost), [data-lineage.md](data-lineage.md)

@@ -146,6 +146,9 @@ supporting quote, and a human-review queue for conduct-code findings:
 - `data/college-sources.json` (recipes, hashes), `data/college-reported.json` (published values),
   `data/review-queue.json`, `data/reports/`.
 - `.github/workflows/college-reported.yml`. Secret: `ANTHROPIC_API_KEY`.
+- `scripts/merge-reported.mts` (`npm run merge-reported`) and `scripts/report-college-reported.mts`
+  (`npm run report-college-reported`): built with Decision 5 of
+  [college-reported-round-2.md](college-reported-round-2.md), see its As built for what they do.
 
 ## As built
 
@@ -168,11 +171,15 @@ depend on them without pulling in the rest of the app:
   numbers, since the rate itself was never stated. `lib/reported.ts`'s `ReportedValuePath` type lists all seven
   paths, not only the four figures, to match what the guard actually checks.
 - `reportedToPatch(entry)` turns a `ReportedEntry` into `{ reported, lineage }`, ready to merge into a `School`.
-- The sync (`scripts/sync-data.mts`) reads `data/college-reported.json` after overrides are applied and before
-  `validateLineage` runs: for each entry whose `unit_id` matches a school, it sets `school.reported.admissions` and
-  spreads the entry's lineage into `school.lineage`. It never touches a federal field — `reported` and
-  `reported.admissions.*` lineage are the only things it writes. Missing file = skipped (silent, since the pipeline
-  hasn't published yet). Printed as `  college-reported:     N colleges`, alongside the other sync counts.
+- The actual merge — strip every school's `reported` block and `reported.*` lineage, then re-apply the current
+  `college-reported.json` entries through `reportedToPatch` — is `mergeReported` in `lib/reported-merge.ts`, shared
+  by `scripts/sync-data.mts` (which reads `data/college-reported.json` after overrides are applied and before
+  `validateLineage` runs, against `schools` it just built fresh, so stripping is a no-op there) and
+  `scripts/merge-reported.mts` (Decision 5 of [college-reported-round-2.md](college-reported-round-2.md): see "Data
+  in the PR" there for the committed `data/schools.json` case, where a college dropped from the file must lose its
+  block). Neither ever touches a federal field — `reported` and `reported.admissions.*` lineage are the only things
+  either writes. Missing file = skipped (silent, since the pipeline hasn't published yet). Printed as
+  `  college-reported:     N colleges`, alongside the other sync counts.
 - Initial empty files committed so the sync and `npm run check:lineage` have something to read before the pipeline
   exists: `data/college-reported.json` (`{"updated": null, "entries": []}`; `ReportedFile.updated` is `string | null`
   for this reason), `data/college-sources.json`, `data/review-queue.json`, `data/reports/.gitkeep`.
@@ -205,9 +212,16 @@ on) is its own doc: [college-reported-setup.md](college-reported-setup.md).
   commit and open a PR, but a PR opened with it doesn't trigger `pull_request` workflows — so `Verify` would never
   run and `--auto-merge` would wait forever. `COLLEGE_REPORTED_TOKEN` is a fine-grained PAT (Contents + pull
   requests, read/write; no Workflows permission needed since this workflow never touches `.github/workflows/*`).
-- **PR body and release note:** generated from the run summary and `data/review-queue.json` by
-  `scripts/college-reported-pr-body.mts` (`prBody`, `releaseNote`; unit-tested against fixtures in
-  `tests/college-reported-pr-body.test.mts`): counts, cost, circuit-breaker status, and a table of *this run's*
+- **Data in the PR:** a step right after the pipeline runs (`npm run merge-reported`, `if: always()` so a stopped
+  or cancelled run still merges what it kept) rewrites `data/schools.json` to match the fresh
+  `data/college-reported.json`, before the PR's `git add data` — see "Data in the PR" under
+  [college-reported-round-2.md](college-reported-round-2.md)'s As built.
+- **PR body and release note:** generated from the run summary, `data/review-queue.json`, `data/college-reported.json`,
+  and `data/schools.json` (for college names) by `scripts/college-reported-pr-body.mts` (`prBody`, `releaseNote`;
+  unit-tested against fixtures in `tests/college-reported-pr-body.test.mts`): counts, cost, circuit-breaker status,
+  a "Published this run" table (college, term, kind, applicants, admitted, enrolled, rate, source), an
+  "Unreachable" list (review items whose failure is the `unreachable` check, e.g. a blocked site — kept separate
+  from the ordinary review-queue table since no model could have fixed them), and a table of *this run's* other
   review-queue items (college, term, failed checks, URL) with a note on how to resolve one. The release note needs
   the PR number, so it's written and pushed as a second commit once the PR exists.
 - **Merge logic:** auto-merges (`gh pr merge --auto --squash`) only when `auto_merge` was on for this run **and**

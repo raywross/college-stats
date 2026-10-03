@@ -75,11 +75,19 @@ document that `data/schools.json` already holds, and `npm run publish-data` (and
    ```
    This writes `data/college-sources.json`, `data/college-reported.json`, `data/review-queue.json`, and
    `data/reports/college-reported-run-<run>.json`.
-4. Merge the published values into the dataset and verify:
+4. Merge the published values into the dataset and verify. `npm run merge-reported` is the usual way — it only
+   reads/writes `data/schools.json` and `data/college-reported.json` (no network, no API key), exactly the merge
+   the workflow runs so the data PR itself carries the site's figures (Decision 5,
+   [college-reported-round-2.md](college-reported-round-2.md)). `npm run sync-data` still does the same merge as
+   part of its full rebuild, if you're running that anyway:
    ```sh
-   npm run sync-data
+   npm run merge-reported
    npm run verify
    ```
+   `npm run report-college-reported` prints a readable snapshot first, if you want to see what's in
+   `data/college-reported.json` before merging it: each published college's term, source kind, which values it has,
+   its URL and run, totals by term and source kind, and how many colleges in `data/schools.json` already carry a
+   `reported` block (so you can tell whether the merge has run yet).
 5. **Score it against the answer key**:
    ```sh
    npm run score-college-reported
@@ -112,6 +120,12 @@ document that `data/schools.json` already holds, and `npm run publish-data` (and
   around $0.10–0.25/college, extraction (Haiku 4.5) fractions of a cent to a few cents.
 - **Circuit breaker**: should say "Not tripped" for a healthy pilot. If it tripped, the PR explains why and a
   comment on the PR says it's waiting for a person — don't merge it without reading the review queue first.
+- The **Published this run** table: each college that passed every check this run, its term, source kind, and
+  figures. This PR already includes the `npm run merge-reported` commit (Decision 5,
+  [college-reported-round-2.md](college-reported-round-2.md)), so the PR's Vercel preview shows these figures on
+  the college's profile right now — check a couple against the quote and link before merging.
+- **Unreachable**, if present: colleges whose site blocked the fetch or whose document 404ed. No model call could
+  have fixed these, so they aren't counted as check failures; they're retried on the next run.
 - The **Review queue** table: college, term, which check(s) failed, and the source URL. A reasonable pilot has a
   handful of these, not most of the 50.
 - The **release note** the PR also adds (`release-notes/college-reported-<run-id>.md`): read it as a site visitor
@@ -119,7 +133,7 @@ document that `data/schools.json` already holds, and `npm run publish-data` (and
 - Let CI (`Verify`) run. If `COLLEGE_REPORTED_TOKEN` isn't set up correctly, CI won't start on this PR at all —
   that's the tell that step 2 above needs fixing.
 - Merge it by hand once you're satisfied. `publish-data.yml` already runs on any merge to `main` that touches
-  `data/**`, so nothing else to trigger.
+  `data/**`, so nothing else to trigger — `data/schools.json` rode along in this same PR.
 
 ## 6. Resolving a review-queue item
 Each item names the college, the failed check(s), and the source URL. Typical fixes:

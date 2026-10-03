@@ -378,6 +378,8 @@ export interface ReportedData {
   aid?: ReportedAid;
   /** CDS I-2, I-3, E1, E3 (specs/data-expansion/cds-academics.md; lib/cds/academics.ts). Alongside the federal figures. */
   academics?: ReportedAcademics;
+  /** CDS section D, transfer admission (specs/data-expansion/cds-transfer.md; lib/cds/transfer.ts). */
+  transfer?: ReportedTransfer;
 }
 
 /* ---- CDS student body and outcomes (specs/data-expansion/cds-student-body-and-outcomes.md) ---- */
@@ -888,6 +890,68 @@ export type CdsCoreAreaKey =
   | "sciences"
   | "social_science";
 
+/** One CDS D2 row (transfer applicants, admitted, or enrolled) by sex, with the printed total. Missing is null. */
+export interface TransferCounts {
+  men: number | null;
+  women: number | null;
+  unknown: number | null;
+  total: number;
+}
+
+/** Terms a transfer student may enter (CDS D3; the 2025–26 template offers all four). */
+export type TransferTerm = "fall" | "winter" | "spring" | "summer";
+
+/**
+ * A CDS D5 requirement as the college marked it. The template's five choices: "Required of All", "Required of Some",
+ * "Recommended of All", "Recommended of Some", "Not Required".
+ */
+export type TransferRequirement = "required" | "required_some" | "recommended" | "recommended_some" | "not_required";
+
+/** CDS D5: what a transfer application needs. A row the college left unmarked (or marked twice) is null. */
+export interface TransferMaterials {
+  high_school_transcript: TransferRequirement | null;
+  college_transcript: TransferRequirement | null;
+  essay: TransferRequirement | null;
+  interview: TransferRequirement | null;
+  standardized_tests: TransferRequirement | null;
+  statement_of_good_standing: TransferRequirement | null;
+}
+
+/** CDS D9 for one entry term: month and day, no year (the cycle is the lineage year). */
+export interface TransferTermDates {
+  priority: { month: number; day: number } | null;
+  closing: { month: number; day: number } | null;
+  notification: { month: number; day: number } | "rolling" | null;
+  reply: { month: number; day: number } | null;
+}
+
+/**
+ * CDS section D, transfer admission (specs/data-expansion/cds-transfer.md): the funnel (D2), whether and when transfers
+ * may enter, and what they need to apply. Each value comes from a passed record item and carries its own lineage record
+ * and year (D2: the fall; D9: the next cycle; the rest: the edition). Additive to `demographics.transfer_in` (a
+ * federal headcount), never a replacement for it. Partial coverage: never in ranks, medians, sorts, or percentiles.
+ */
+export interface ReportedTransfer {
+  /** D1, or true when D1 is blank and D2 reports transfer applicants (the lineage record says so). */
+  enrolls_transfers: boolean | null;
+  /** D1's second question: credit for course work completed elsewhere. */
+  advanced_standing: boolean | null;
+  applicants: TransferCounts | null;
+  admitted: TransferCounts | null;
+  enrolled: TransferCounts | null;
+  /** admitted.total ÷ applicants.total, when at least 10 were admitted. */
+  admit_rate: number | null;
+  terms: TransferTerm[] | null;
+  /** D4: minimum credits completed to apply as a transfer, and D4's unit ("Credit(s)", "Semester hours"). */
+  min_credits: number | null;
+  min_credits_unit: string | null;
+  required_materials: TransferMaterials | null;
+  /** D6/D7 on a 4.0 scale; null when the college states none ("No minimum required"). */
+  min_hs_gpa: number | null;
+  min_college_gpa: number | null;
+  dates: Partial<Record<TransferTerm, TransferTermDates>> | null;
+}
+
 /** One measure's change over the default 10-year window. */
 export interface TrendSummary {
   /** Start year (a fall term). */
@@ -1256,6 +1320,8 @@ export interface SearchFilters {
   intlAid?: boolean;
   /** Has an honors program, from the college's CDS E1 (lib/cds/academics-display.ts). Positive only: no "exclude". */
   honors?: boolean;
+  /** Admits transfer students (lib/cds/transfer-display.ts): the CDS D1/D2 answer, else the federal transfer-in count. */
+  transfers?: boolean;
   sortBy?: SortKey;
   sortDir?: "asc" | "desc";
 }

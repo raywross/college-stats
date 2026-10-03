@@ -1,6 +1,7 @@
 # CDS Transfer Admissions
 
-> Status: **planned** (2026-10-03). Wave 4. Captured by [college-reported-round-3.md](../college-reported-round-3.md)'s
+> Status: **built** (2026-10-03; see [As built](#as-built): the per-edition history series and the checks' review-queue
+> wiring wait on other work). Wave 4. Captured by [college-reported-round-3.md](../college-reported-round-3.md)'s
 > single run (section D joins model group `DEF`, alongside E and F); no separate agent or model call of its own.
 > Research 2026-10-03: a 19-document, item-by-item Common Data Set inventory (2025–26 editions of Vanderbilt, Cornell,
 > William & Mary, UIUC, Berkeley, Purdue, Harvard, USC, Georgia Tech, Howard, Spelman, Baylor, TCU, Loyola Chicago,
@@ -200,6 +201,70 @@ From the inventory's section 4, applied in this version:
 3. **D5 PDF coverage beyond the template set.** The inventory's item matrix confirms D5 in all T5 (the 4 template
    workbooks plus Howard's form) but doesn't separately list PDF coverage counts the way D2 does; it's a standard
    CDS item expected in every edition, but worth confirming during the pilot rather than assuming.
+
+## As built
+Built 2026-10-03 on the round-3 foundation. Real data: Vanderbilt 221999, Cornell 190415, William & Mary 231624, and
+Illinois 145637 have a `reported.transfer` block in `data/schools.json` (transfer acceptance rates 26%, 12%, 46%, 43%;
+all four pass every check; Vanderbilt's and Cornell's enrolled totals are just inside the 25% limit, 24.2% and 24.3% above the federal count).
+
+**Record → block** (`lib/cds/transfer.ts`, pure). `transferFromRecord(record, { federalCount })` reads the newest
+document with any passed section-D item and returns the block, one lineage record per stored field, and an outcome
+(`failures`, `inferredEnrolls`). `mergeTransfer(school, record)` is idempotent and removes a previous block;
+`lib/reported-merge.ts#mergeReported` calls it after `mergeResidency`, so `npm run merge-reported` and `sync-data` carry
+it. Only **passed** items are read. Each group is checked on its own and a failure drops only that group, listed in
+`outcome.failures` (the review-queue wiring belongs to `lib/cds-checks.ts`):
+- `transfer-d1-consistency`: D1 "No" with D2 applicants drops D1. D1 blank with D2 applicants sets `enrolls_transfers:
+  true` with a `derived` lineage record cited to D.204 whose quote reads "D1 left blank; inferred from D2: 6,639 transfer
+  applicants" (Illinois), so the ⓘ says it was inferred.
+- `transfer-d2-sum` (±1, rows printing only a total skip it), `transfer-d2-funnel` (total and each sex), and
+  `transfer-d2-vs-federal` (25% of `demographics.transfer_in.count`; skipped without a federal count). Any D2 failure
+  drops applicants, admitted, enrolled, and the rate. The federal count is IPEDS's newest fall, which can be a year
+  behind the edition (today Fall 2024 against the 2025–26 editions' Fall 2025); the tolerance applies as written.
+- `transfer-d5-mark`: per row, exactly one level. A blank row in an answered grid is "zero marks"; a value naming two
+  levels is "more than one mark"; either leaves that row null. The layout/vision passes are the readers' work.
+- `transfer-d9-date` and `transfer-d9-order` per term. The order checks allow a window across the new year (a
+  December priority date before a March closing date) up to 240 days; a rolling term skips notification-vs-reply.
+- `transfer-range`: D4 credits 0–200; D6/D7 must be on a 4.0 scale. A GPA over 4.0 is not stored (held for review)
+  rather than stored with a `weighted` flag; no college in the sample states one.
+- **Years:** D2 and the rate use `years.fall` ("Fall 2025"); D9 uses `years["next-cycle"]` ("Fall 2026 cycle", the
+  template's year rule, answering open question 1 provisionally); the rest use `years.edition` ("2025–26").
+- **Quotes:** workbook cells get generated quotes that say which row a number is in ("Transfer applicants, total:
+  7,381"; the rate: "Transfer applicants: 7,381; admitted: 864"; the materials and dates list each row, clipped at 160).
+
+**Corrections to the Store schema** (from the live 2025–26 template; open question 2 answered):
+- D3 has four options, **winter** included: `terms: ("fall" | "winter" | "spring" | "summer")[] | null` (null, not `[]`,
+  when none is checked).
+- D5 has **six** rows, two transcripts: `high_school_transcript` and `college_transcript` replace `transcript`. Each
+  row keeps the template's five marks: `required`, `required_some`, `recommended`, `recommended_some`, `not_required`
+  (Cornell's interview is "Required of Some", William & Mary's high school transcript "Recommended of Some"); folding
+  them into three would overstate the requirement.
+- `min_credits_unit` (D.403, e.g. "Credit(s)") is stored beside `min_credits` and registered, and
+  `advanced_standing` is registered too (every stored leaf must be). D4's minimum is dropped when D.401 says no minimum.
+- "No minimum required" in D6/D7 (Cornell) is text, stored as null: the card shows no row.
+- Types: `ReportedTransfer`, `TransferCounts`, `TransferTerm`, `TransferRequirement`, `TransferMaterials`,
+  `TransferTermDates` in `lib/types.ts`; 13 `reported.transfer.*` fields in `lib/fields.ts`.
+
+**Display** (`lib/cds/transfer-display.ts`, pure: `transferCard`, `compareTransferAdmitRate`, `admitsTransfers`,
+`TRANSFER_FILTER`, labels):
+- Admissions page: `components/school/TransferringInCard.tsx` below "What they look at", "On this page" id `transfer`
+  ("Transferring in", listed only when the card shows). The transfer rate and the first-year rate are separate cited
+  labels ("12% of transfer applicants were admitted" · "vs. 8.4% of first-year applicants"), then applied/admitted/
+  enrolled, terms, minimum credits, minimum GPAs when present, advanced standing, dates per term, and the materials as a
+  checklist (`components/school/RequirementChecklist.tsx`, a generic label → level list for a future C7 grid). A
+  college with `enrolls_transfers: false` gets "Does not enroll transfer students". The fields are in `TOPIC_FIELDS.admissions`.
+- Compare: "Transfer acceptance rate" after the federal transfer rows, blank (–) without data.
+- Explore: "Admits transfer students" (`transfers=1`) in its own "Transfer students" section and the active-filter
+  chips: the CDS answer when known, else `demographics.transfer_in.count > 0`.
+- Glossary: `transfer-admission` and `advanced-standing`, both related to `transfer-in`.
+- Not yet: the per-edition history series (one edition per college today); the ⓘ says "on its own site" rather than
+  "in its Common Data Set" for colleges without a `reported.admissions` block, because `lineageFor` takes `sourceKind`
+  from that block (shared with the residency rows).
+
+**Tests** (`tests/cds-transfer.test.mts`): the four real records' values and years; D2 sum and funnel; the planted 25%
+mismatch; Illinois's inference not flagged and D1 "No" with applicants flagged; D5 zero and double marks; D9 dates and
+order; merge idempotence and lineage validation; the card, Compare, and filter (with its federal fallback); and the
+partial-coverage guard (`reported.transfer` never in `lib/metrics.ts`, `insights`, `indicators`, `history`, `compare`,
+Home, Explore sorts, or `lib/dataset.ts` outside its filter). Each check was shown to fail with its code broken.
 
 ## Roadmap entry
 - slug: cds-transfer

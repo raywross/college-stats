@@ -14,6 +14,7 @@ import { HOUSING_FILTERS, type HousingFilterParam } from "@/lib/housing";
 import { FACTOR_FILTERS, type FactorFilterParam } from "@/lib/factors";
 import { RESIDENCY_FILTERS, type ResidencyFilterParam } from "@/lib/cds/residency-display";
 import { HONORS_FILTER_LABEL } from "@/lib/cds/academics-display";
+import { TRANSFER_FILTER } from "@/lib/cds/transfer-display";
 import { DESIGNATION_KEYS, DESIGNATION_LABELS, RESEARCH_TIERS, SETTING_GROUPS } from "@/lib/campus-profile";
 import { DIVISION_FILTERS, DIVISION_SHORT, ROTC_BRANCHES, ROTC_LABELS } from "@/lib/campus-services";
 import { MAX_RATIO_OPTIONS, MIN_FULL_TIME_FACULTY_OPTIONS } from "@/lib/academics";
@@ -70,6 +71,8 @@ export interface FilterFacets {
   intlAid: number;
   /** Colleges whose Common Data Set marks an honors program (lib/cds/academics-display.ts). */
   honors: number;
+  /** Colleges matching "Admits transfer students" (lib/cds/transfer-display.ts). */
+  transfers: number;
 }
 
 function Section({ title, term, children }: { title: string; term?: TermKey; children: ReactNode }) {
@@ -145,7 +148,7 @@ export function FilterPanel({ facets, onDone }: { facets: FilterFacets; onDone?:
   const fieldOptions = MAJOR_FAMILY_CODES.filter((f) => (facets.fields[f]?.[0] ?? 0) > 0).sort((a, b) => MAJOR_FAMILIES[a].localeCompare(MAJOR_FAMILIES[b]));
 
   const hasFilters = [
-    ...["q", "types", "sizes", "regions", "states", "minAR", "maxAR", "minSAT", "maxSAT", "minCost", "maxCost", "minEnroll", "maxEnroll", "balance", "fullTime", "fewLoans", "liveOn", "noFee", "guarantee", "noLegacy", "noEssay", "gpaRequired", "setting", "research", "designation", "opportunity", "division", "conference", "football", "rotc", "ugResearch", "studyAbroad", "maxRatio", "pellGap", "minFullTimeFaculty", "national", "field", "byRes", "oosEven", "gpa", "aidForms", "intlAid", "honors"],
+    ...["q", "types", "sizes", "regions", "states", "minAR", "maxAR", "minSAT", "maxSAT", "minCost", "maxCost", "minEnroll", "maxEnroll", "balance", "fullTime", "fewLoans", "liveOn", "noFee", "guarantee", "noLegacy", "noEssay", "gpaRequired", "setting", "research", "designation", "opportunity", "division", "conference", "football", "rotc", "ugResearch", "studyAbroad", "maxRatio", "pellGap", "minFullTimeFaculty", "national", "field", "byRes", "oosEven", "gpa", "aidForms", "intlAid", "honors", "transfers"],
     ...INDICATOR_KEYS.map((k) => INDICATORS[k].param),
     "policy",
   ].some((k) => searchParams.get(k));
@@ -534,6 +537,18 @@ export function FilterPanel({ facets, onDone }: { facets: FilterFacets; onDone?:
           })}
         </div>
         <p className="text-[11px] text-muted-foreground">Only the {facets.residency.byRes} colleges that publish these figures in their Common Data Set can match.</p>
+      </Section>
+
+      <Section title="Transfer students" term="transfer-admission">
+        <div className="flex flex-wrap gap-1.5">
+          <Chip
+            active={searchParams.get(TRANSFER_FILTER.param) === "1"}
+            onClick={() => update({ [TRANSFER_FILTER.param]: searchParams.get(TRANSFER_FILTER.param) === "1" ? null : "1" })}
+            count={facets.transfers}
+          >
+            {TRANSFER_FILTER.label}
+          </Chip>
+        </div>
       </Section>
 
       <Section title="Housing & policies" term="housing-capacity">

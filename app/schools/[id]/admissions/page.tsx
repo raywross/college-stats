@@ -31,6 +31,8 @@ import { TestPolicyBlock } from "@/components/school/TestPolicyBlock";
 import { lineageFall, satTotalMedian } from "@/lib/score-bands";
 import { changesRequirement, policyEventText } from "@/lib/test-policy";
 import type { BandTest } from "@/lib/types";
+import { TransferringInCard } from "@/components/school/TransferringInCard";
+import { transferCard } from "@/lib/cds/transfer-display";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -102,6 +104,7 @@ export default async function AdmissionsPage({ params }: Props) {
     { id: "yield", label: "Yield" },
     ...(hasEarly ? [{ id: "early", label: "Applying early" }] : []),
     { id: "factors", label: "What they look at" },
+    ...(transferCard(school) ? [{ id: "transfer", label: "Transferring in" }] : []),
     { id: "map", label: "Admissions map" },
     ...(hasGpa ? [{ id: "gpa", label: "High school GPA" }] : []),
     { id: "scores", label: "Test scores" },
@@ -244,6 +247,7 @@ export default async function AdmissionsPage({ params }: Props) {
             <AdmissionFactors school={school} />
           </div>
         )}
+        <TransferringInCard id="transfer" className="mt-4" school={school} cite={citeField} color={DOMAINS.admissions.color} />
         {recentAdmissionChanges.length > 0 && (
           <p className="mt-3 max-w-3xl text-sm text-muted-foreground">
             <b className="text-foreground">Recent change:</b> {recentAdmissionChanges.map((e) => `${e.text} in ${eventYear(e)}`).join("; ")}.

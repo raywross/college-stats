@@ -1024,6 +1024,22 @@ const entries = {
     category: "Students & access",
     related: ["open-curriculum"],
   },
+  // CDS transfer admission (specs/data-expansion/cds-transfer.md).
+  "transfer-admission": {
+    term: "Transfer admission",
+    short: "How many students applied to transfer in from another college, how many were admitted, and how many enrolled, as the college reports them in its Common Data Set. The transfer acceptance rate is admitted ÷ applied.",
+    long: "This is the transfer funnel, so it counts who got in. The federal count of new transfer students is a different measure: it counts every transfer student who enrolled that fall, however they were admitted, and comes from a different survey, so the two numbers rarely match exactly. The college's Common Data Set also lists the terms transfers may start, the minimum credits to apply, and what the application needs.",
+    why: "A college that admits few first-year applicants may admit transfers at a very different rate, higher or lower, and some colleges take transfers only in the fall.",
+    category: "Admissions",
+    related: ["transfer-in", "acceptance-rate", "advanced-standing"],
+  },
+  "advanced-standing": {
+    term: "Advanced standing",
+    short: "Credit a transfer student gets for courses already completed at another college, so they don't start over as a first-year.",
+    long: "Colleges say in their Common Data Set whether transfers can earn it. How many credits count, and for which courses, varies by college and program.",
+    category: "Admissions",
+    related: ["transfer-admission", "transfer-in"],
+  },
 } satisfies Record<string, GlossaryEntry>;
 
 export type TermKey = keyof typeof entries;

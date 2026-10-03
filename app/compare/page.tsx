@@ -38,6 +38,7 @@ import { InfoTip, Term } from "@/components/ui/info-tip";
 import { compareAdmitRates, compareYields } from "@/lib/cds/residency-display";
 import { ADMISSION_PROFILE_ROWS, admissionProfileCellField, c7FactorCell } from "@/lib/cds/compare-rows";
 import { compareClassesUnder20 } from "@/lib/cds/academics-display";
+import { compareTransferAdmitRate } from "@/lib/cds/transfer-display";
 
 export const metadata: Metadata = { title: "Compare" };
 
@@ -215,6 +216,8 @@ const TABLE_ROWS = (
     ["First-years from abroad", "in-state-student", "demographics.residence", (s: School) => opt(s.demographics.residence?.international ?? null, (v) => pct(v))],
     ["New transfer students this fall", "transfer-in", "demographics.transfer_in", (s: School) => opt(s.demographics.transfer_in?.count ?? null, (v) => v.toLocaleString("en-US"))],
     ["Transfers, share of new undergraduates", "transfer-in", "demographics.transfer_in", (s: School) => opt(s.demographics.transfer_in?.share_of_new ?? null, (v) => pct(v))],
+    // CDS D2 (specs/data-expansion/cds-transfer.md): blank, never 0, without a transfer funnel.
+    ["Transfer acceptance rate", "transfer-admission", "reported.transfer.admit_rate", compareTransferAdmitRate],
     ["Diversity index", "diversity-index", "derived.diversity_index", (s: School) => opt(METRICS.diversity.get(s), (v) => v.toFixed(2))],
     ["Average cost, all students (est.)", "average-cost", "cost.avg_paid_all", (s: School) => opt(s.cost?.avg_paid_all ?? null, money)],
     ["Aid generosity (grants ÷ full price)", "aid-generosity", "derived.aid_generosity", (s: School) => opt(METRICS.aidGenerosity.get(s), (v) => pct(v))],

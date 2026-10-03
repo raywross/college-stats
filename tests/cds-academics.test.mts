@@ -268,7 +268,9 @@ test("lineage: each block cites the college's document with a quote and the item
 
 test("mergeAcademics is idempotent, removes a block whose record is gone, and leaves the other reported blocks", () => {
   const vu = school("221999");
-  assert.equal(JSON.stringify(mergeAcademics(vu, record("221999"))), JSON.stringify(vu));
+  // deepEqual, not a string comparison: later record steps (lib/reported-merge.ts RECORD_STEPS) add their blocks
+  // after this one, so re-applying this step alone to the merged school moves keys without changing values.
+  assert.deepEqual(mergeAcademics(vu, record("221999")), vu);
   const gone = mergeAcademics(vu, undefined);
   assert.equal(gone.reported?.academics, undefined);
   assert.ok(!Object.keys(gone.lineage ?? {}).some((k) => k.startsWith("reported.academics.")));

@@ -68,7 +68,9 @@ fallbacks and for every value an override sets ([data-sync.md](data-sync.md#over
 | Values that always share a source (the funnel) | One chip on the group heading, not per row | `MetricLabel chip={false}` |
 | Compare "All the numbers" | Each row has a field; per-school cells get chips; row ⓘ shows the default source | `TABLE_ROWS` in `app/compare/page.tsx` |
 | Many schools (Explore, Home, Compare) | Union of sources; more than 3 CDS files collapse to "Common Data Sets from N colleges" | `MultiSourceNote` |
+| Explore and Compare, near `MultiSourceNote` | Quiet reminder that comparisons use the federal baseline, not a college's own newer figures | `BaselineNote` (built 2026-10-02; see [college-reported-data.md](college-reported-data.md#display)) |
 | Bottom of profile | Numbered list, one entry per dataset/document with every year used | `SourceList` |
+| `college-site` value (college-reported-data.md) | Headline with the lineage year ("Admit rate, Fall 2026: 4.0% · reported by the college"), the federal figure and year underneath as the baseline, each number cited | `ReportedAdmissionsBlock` / `ReportedRateLine` (`components/profile/ReportedAdmissions.tsx`), admissions topic page and overview card only |
 
 ## Enforcement
 Each guard below was verified by breaking the rule on purpose and confirming the check fails (2026-09-28).
@@ -101,7 +103,8 @@ the card. The workflow's revalidation, after the publish and again after the dep
 app is lenient: the sync and `check:lineage` still refuse a dataset missing any source.
 
 ## Not built yet
-- **Explore/Compare baseline banner** ("Comparisons use federal data…") and a separate `school.reported` block: arrive
-  with [college-reported-data.md](college-reported-data.md), when college-reported values stop replacing federal ones.
 - Superscript numbers linking values to the numbered source list (the popover links straight to the source instead).
 - Lineage in the `/api/schools` payload (client components currently show only search results, which aren't cited).
+
+Built 2026-10-02: the Explore/Compare baseline banner (`BaselineNote`) and `school.reported` display
+([college-reported-data.md](college-reported-data.md#display)) — see that spec's **As built** section.

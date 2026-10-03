@@ -27,6 +27,7 @@ import { CompareHeader } from "@/components/compare/CompareHeader";
 import { CompareMetric } from "@/components/compare/CompareMetric";
 import { NetPriceCompare } from "@/components/compare/NetPriceCompare";
 import { MultiSourceNote } from "@/components/sources/MultiSourceNote";
+import { BaselineNote } from "@/components/ui/BaselineNote";
 import { Crest } from "@/components/school/Crest";
 import { RadarChart } from "@/components/charts/RadarChart";
 import { RangeBar } from "@/components/charts/RangeBar";
@@ -577,6 +578,7 @@ export default async function ComparePage({
               </table>
             </div>
             <MultiSourceNote schools={schools} fields={TABLE_FIELDS} />
+            <BaselineNote />
           </section>
         </div>
       )}

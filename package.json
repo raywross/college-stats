@@ -13,6 +13,8 @@
     "sync-data": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --env-file=.env.local scripts/sync-data.mts",
     "sync-history": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --env-file-if-exists=.env.local scripts/sync-history.mts",
     "sync-all": "npm run sync-data && npm run sync-history",
+    "sync-college-reported": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --env-file-if-exists=.env.local scripts/sync-college-reported.mts",
+    "score-college-reported": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/score-college-reported.mts",
     "import-cds": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/import-cds.mts",
     "publish-data": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --env-file-if-exists=.env.local scripts/publish-data.mts",
     "publish-data:prod": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --env-file=.env.prod.local scripts/publish-data.mts",
@@ -24,6 +26,7 @@
     "verify": "npm run typecheck && npm run lint && npm test && npm run check:lineage"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.131.0",
     "@base-ui/react": "^1.8.0",
     "@supabase/supabase-js": "^2.117.2",
     "class-variance-authority": "^0.7.1",
@@ -33,6 +36,7 @@
     "marked": "^18.0.14",
     "next": "16.3.6",
     "next-themes": "^0.4.6",
+    "pdfjs-dist": "^6.3.289",
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "recharts": "^3.10.1",

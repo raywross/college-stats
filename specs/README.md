@@ -23,6 +23,7 @@ Structured documentation for the Higher Education Data Explorer ("Quad").
 | [sources-and-citations.md](sources-and-citations.md) | How every number is attributed; Common Data Set importer |
 | [data-lineage.md](data-lineage.md) | Per-value source/year tracking: field registry, lineage records, citation popovers and chips, guards (`npm run verify`) |
 | [college-reported-data.md](college-reported-data.md) | *Planned:* ingestion agent for newer college-published figures (CDS, class profiles) |
+| [college-reported-setup.md](college-reported-setup.md) | Repo-owner setup for the college-reported workflow: API key, GitHub secrets, auto-merge, branch protection, running locally, the first pilot, resolving review-queue items |
 | [data-page.md](data-page.md) | `/data` tab: data vintages and timeline, release calendar (auto-marked published by the sync), baseline rule, sources, methods |
 | [data-sync.md](data-sync.md) | Building `data/schools.json` from College Scorecard + IPEDS; API key setup; overrides |
 | [trends-data.md](trends-data.md) | Year-by-year history (`npm run sync-history`): how far back each series goes, per-era file mapping, storage, checks. Built (phases 1–3) |

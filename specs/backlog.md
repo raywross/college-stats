@@ -66,6 +66,7 @@ published at `/roadmap` ([roadmap.md](roadmap.md)): add each new one to `lib/roa
 - [ ] **College-reported data agent** ([college-reported-data.md](college-reported-data.md)): newer admissions figures
   from colleges' CDS and class profiles, auto-published when checks pass. Pilot on ~50 colleges first. Replaces the
   former "Read CDS PDFs" and "Expand CDS coverage" items (the existing 8 CDS overrides stay until the agent covers them).
+  Workflow and one-time repo setup built 2026-10-02: [college-reported-setup.md](college-reported-setup.md).
 - [ ] **Religious life** ([religious-life.md](religious-life.md)). Phase 1: IPEDS affiliation for all colleges (685 of
   1,893). Then a 25-college pilot of per-school sources (CDS C7/H14, IR reports, org directories, Hillel), national
   faith-org directories, and partnership requests (Hillel, Chabad, Anthology).

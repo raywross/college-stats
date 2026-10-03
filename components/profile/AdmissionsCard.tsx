@@ -10,6 +10,7 @@ import { RangeBar } from "@/components/charts/RangeBar";
 import { InfoTip, MetricLabel, Term } from "@/components/ui/info-tip";
 import { CardHeadline, CardStat, CardStats, TopicCard } from "./TopicCard";
 import { TenYearLine } from "./TenYearLine";
+import { ReportedRateLine } from "./ReportedAdmissions";
 
 /**
  * Getting in: the acceptance ring with "1 in N" and the selectivity tier (or the open-admission state), applied,
@@ -61,6 +62,7 @@ export async function AdmissionsCard({ profile: p }: { profile: Profile }) {
           </p>
         </div>
       )}
+      <ReportedRateLine school={school} citeField={citeField} />
 
       {counts && (
         <CardStats>

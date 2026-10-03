@@ -112,6 +112,13 @@
       "edition": "2024–25 graduates (C2025_A)",
       "url": "https://nces.ed.gov/ipeds/complete-data-files/C2025_A.zip",
       "description": "Every degree and certificate each college awarded from July through June, by field of study (Classification of Instructional Programs, CIP 2020) and award level. The site counts bachelor's degrees, first and second majors separately."
+    },
+    "college-site": {
+      "label": "College website (class profile or Common Data Set)",
+      "publisher": "Each college",
+      "edition": "Newest figures each college has published; the year is shown with each value",
+      "url": "/data#college-reported",
+      "description": "Figures a college posted itself, usually a year ahead of federal data: its newest class profile or Common Data Set. Read automatically from the college's site, checked against its own math and the federal baseline, and shown only on that college's profile with the exact quote and link."
     }
   },
   "vintages": {

@@ -16,7 +16,7 @@ export async function WaitListLine({ school }: { school: School }) {
   let text: string;
   let cited = citeField("reported.admission_profile.wait_list.policy", school);
   if (w.offered !== null && w.accepted !== null && w.admitted !== null) {
-    text = `Wait list: ${num(w.offered)} offered a place, ${num(w.accepted)} accepted, ${num(w.admitted)} admitted${rate !== null ? ` (${pctSmart(rate)} of those who accepted)` : ""}`;
+    text = `Wait list: ${num(w.offered)} offered a place, ${num(w.accepted)} accepted, ${num(w.admitted)} admitted${rate !== null ? ` (${rate > 0 && rate < 0.001 ? "under 0.1%" : pctSmart(rate)} of those who accepted)` : ""}`;
     cited = citeField("reported.admission_profile.wait_list.admitted", school);
   } else if (w.admitted !== null) {
     text = `${num(w.admitted)} admitted from the wait list`;

@@ -1,5 +1,5 @@
 import { getData } from "@/lib/data";
-import { admissionProfile } from "@/lib/cds/admissions";
+import { admissionProfile, classRankSentence } from "@/lib/cds/admissions";
 import type { FieldPath } from "@/lib/fields";
 import { DOMAINS } from "@/lib/metrics";
 import { pct } from "@/lib/format";
@@ -21,15 +21,6 @@ export const GPA_PANEL_FIELDS = [
   "reported.admission_profile.class_rank.top_quarter",
   "reported.admission_profile.class_rank.submitted_share",
 ] as const satisfies readonly FieldPath[];
-
-/** "{91}% were in the top tenth …, of the {20}% whose high school reported a rank": never without the share. */
-export function classRankSentence(r: NonNullable<NonNullable<School["reported"]>["admission_profile"]>["class_rank"]): string | null {
-  if (!r) return null;
-  const parts = [r.top_tenth !== null && `${pct(r.top_tenth)} were in the top tenth of their high school class`, r.top_quarter !== null && `${pct(r.top_quarter)} in the top quarter`].filter(Boolean);
-  if (!parts.length && r.top_half !== null) parts.push(`${pct(r.top_half)} were in the top half of their high school class`);
-  if (!parts.length) return null;
-  return `${parts.join(", ")}, of the ${pct(r.submitted_share)} whose high school reported a rank.`;
-}
 
 /**
  * "High school record" (specs/data-expansion/cds-admissions.md, Display 4): enrolled first-years' average GPA (with
@@ -56,7 +47,7 @@ export async function GpaPanel({ school, id }: { school: School; id?: string }) 
       id={id}
       domain="admissions"
       eyebrow={classYear ? `${classYear} first-years` : "First-years"}
-      title="First-years' high school GPA"
+      title={gpa ? "First-years' high school GPA" : "First-years' high school class rank"}
       school={school}
       fields={GPA_PANEL_FIELDS}
       className="mt-14 sm:mt-20"

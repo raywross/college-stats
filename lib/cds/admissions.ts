@@ -25,6 +25,7 @@ import type {
   School,
 } from "../types";
 import { compareDocuments, editionFallYear, editionLabel, itemBoolean, itemMonthDay, itemNumber, itemShare, itemText, itemYear, lineageFromItem, passedItem } from "../cds-records.ts";
+import { pct } from "../format.ts";
 import { parseEdition, type CdsCode, type CollegeRecord, type DocumentRecord, type TemplateTable } from "../cds-sections.ts";
 
 type Lineage = Partial<Record<FieldPath, LineageRecord>>;
@@ -567,6 +568,15 @@ export function gpaPosition(bands: GpaBands | null | undefined, gpa: number): Gp
   const i = index < 0 ? 8 : index;
   const sum = (from: number, to: number) => s.slice(from, to).reduce((a, b) => a + b, 0);
   return { kind: "band", index: i, label: GPA_BANDS[i].label, share: s[i], higher: sum(0, i), lower: sum(i + 1, 9) };
+}
+
+/** "{91}% were in the top tenth …, of the {20}% whose high school reported a rank": never without the share. */
+export function classRankSentence(r: Profile["class_rank"] | null | undefined): string | null {
+  if (!r) return null;
+  const parts = [r.top_tenth !== null && `${pct(r.top_tenth)} were in the top tenth of their high school class`, r.top_quarter !== null && `${pct(r.top_quarter)} in the top quarter`].filter(Boolean);
+  if (!parts.length && r.top_half !== null) parts.push(`${pct(r.top_half)} were in the top half of their high school class`);
+  if (!parts.length) return null;
+  return `${parts.join(", ")}, of the ${pct(r.submitted_share)} whose high school reported a rank.`;
 }
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];

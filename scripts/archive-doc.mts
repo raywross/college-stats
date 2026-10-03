@@ -62,6 +62,7 @@ const { entry, record, addedUrl } = await archiveDoc({
   dataDir: join(ROOT, "data"),
   archive,
   table: CDS_TEMPLATE,
+  school,
   today: new Date().toISOString().slice(0, 10),
 });
 

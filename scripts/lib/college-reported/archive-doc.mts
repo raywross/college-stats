@@ -8,6 +8,9 @@
 import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import type { DocumentRecord, DocumentType, ManifestEntry, TemplateTable } from "../../../lib/cds-sections.ts";
+import type { School } from "../../../lib/types.ts";
+import { applyChecks } from "../../../lib/cds-checks.ts";
+import { restoreFederal } from "../../../lib/newest.ts";
 import { findBySha, manifestEntryFor } from "../../../lib/cds-reads.ts";
 import type { CdsUrlEntry, CdsUrlsFile } from "../../../lib/reported.ts";
 import { isTemplateWorkbook, readWorkbook, recordFromTemplate, workbookEdition, type Workbook } from "../cds-xlsx.mts";
@@ -97,6 +100,8 @@ export interface ArchiveDocOptions {
   dataDir: string;
   archive: Archive;
   table: TemplateTable;
+  /** The college as in data/schools.json, for the checks that compare against federal values; null skips those. */
+  school?: School | null;
   /** ISO date for the manifest's `updated` (default: retrieved). */
   today?: string;
 }
@@ -126,7 +131,10 @@ export async function archiveDoc(o: ArchiveDocOptions): Promise<ArchiveDocResult
   let edition: string | null = o.edition ?? sniffed.edition ?? null;
   let editionFrom: ManifestEntry["edition_from"] = o.edition ? "manual" : sniffed.edition ? "cover" : undefined;
   if (sniffed.type === "xlsx-template") {
-    record = recordFromTemplate(sniffed.book!, { unit_id: o.unit_id, url: o.url, sha256: sha, retrieved, table: o.table, edition: o.edition });
+    // The same read and the same per-item checks as scripts/cds-records-from-workbooks.mts, so a dropped file and a
+    // fetched one produce identical records.
+    const read = recordFromTemplate(sniffed.book!, { unit_id: o.unit_id, url: o.url, sha256: sha, retrieved, table: o.table, edition: o.edition });
+    record = applyChecks(read, { table: o.table, school: o.school ? restoreFederal(o.school) : null });
     edition = record.edition;
     editionFrom = o.edition ? "manual" : workbookEdition(sniffed.book!) ? "workbook" : "items";
     upsertDocument(join(o.dataDir, "cds-records"), o.unit_id, record);

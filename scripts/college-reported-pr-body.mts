@@ -12,6 +12,7 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import type { REPORTED_MODELS, ReportedEntry, ReportedFile, ReviewItem, ReviewQueueFile, RunSummary } from "../lib/reported.ts";
 import type { School } from "../lib/types";
+import { itemOfCode } from "../lib/cds-sections.ts";
 
 type ModelJob = keyof typeof REPORTED_MODELS;
 
@@ -81,7 +82,9 @@ function escapeCell(s: string): string {
 export function prBody(summary: RunSummary, queue: ReviewQueueFile, reported?: ReportedFile, names?: Map<string, string>): string {
   const items = itemsForRun(queue, summary.run);
   const unreachableItems = items.filter(isUnreachable);
-  const checkFailureItems = items.filter((i) => !isUnreachable(i));
+  const checkFailureItems = items.filter((i) => !isUnreachable(i) && !i.code);
+  // Round 3: entries keyed by college + edition + template code (specs/college-reported-round-3.md Decision 9).
+  const perItem = items.filter((i) => !isUnreachable(i) && i.code);
   const nameFor = (unitId: string) => names?.get(unitId) ?? unitId;
   const lines: string[] = [];
 
@@ -161,9 +164,9 @@ export function prBody(summary: RunSummary, queue: ReviewQueueFile, reported?: R
   }
 
   lines.push("## Review queue", "");
-  if (checkFailureItems.length === 0) {
+  if (checkFailureItems.length === 0 && perItem.length === 0) {
     lines.push("Nothing from this run needs a person — every attempted value either published, was unchanged, or was unreachable (see above).");
-  } else {
+  } else if (checkFailureItems.length > 0) {
     lines.push(
       `${checkFailureItems.length} item${checkFailureItems.length === 1 ? "" : "s"} failed a check and did **not** publish. Resolve one by ` +
         `fixing its recipe in \`data/college-sources.json\` (or adding a manual override), then re-running ` +
@@ -178,6 +181,9 @@ export function prBody(summary: RunSummary, queue: ReviewQueueFile, reported?: R
       const url = item.urls[0] ?? "";
       lines.push(`| ${escapeCell(item.name)} (${item.unit_id}) | ${escapeCell(term)} | ${escapeCell(checks)} | ${url} |`);
     }
+  }
+  if (perItem.length > 0) {
+    lines.push(...perItemTable(perItem));
   }
   lines.push("");
 
@@ -197,6 +203,31 @@ export function prBody(summary: RunSummary, queue: ReviewQueueFile, reported?: R
   );
 
   return lines.join("\n");
+}
+
+/**
+ * Round 3's per-item rows: one per college + edition + template code that failed a check and didn't publish. Every
+ * other item of the same document published on its own (an H2 failure never holds back C1).
+ */
+export function perItemTable(items: ReviewItem[]): string[] {
+  const sorted = [...items].sort((a, b) => a.name.localeCompare(b.name) || (a.edition ?? "").localeCompare(b.edition ?? "") || (a.code ?? "").localeCompare(b.code ?? ""));
+  const out = [
+    "",
+    `${items.length} item${items.length === 1 ? "" : "s"} from colleges' Common Data Sets failed a check and did **not** publish; ` +
+      "every other item of the same document was judged on its own. A failure in a template workbook or fillable form is " +
+      "the college's own file (never escalated); fix it with an override or wait for the college's corrected file.",
+    "",
+    "| College | Edition | Item | Value | Failed checks | URL |",
+    "|---|---|---|---|---|---|",
+  ];
+  for (const item of sorted) {
+    const code = item.code ?? "";
+    const label = code ? `${itemOfCode(code)} · ${code}` : "";
+    const value = item.value === undefined || item.value === null ? "—" : String(item.value);
+    const checks = item.failures.map((f) => `${f.check} (${f.detail})`).join("; ");
+    out.push(`| ${escapeCell(item.name)} (${item.unit_id}) | ${item.edition ?? ""} | ${label} | ${escapeCell(value.slice(0, 40))} | ${escapeCell(checks)} | ${item.urls[0] ?? ""} |`);
+  }
+  return out;
 }
 
 /* ------------------------------------------------------------------ */

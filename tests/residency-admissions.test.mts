@@ -112,12 +112,29 @@ const GT = {
   "C.128": 0, "C.129": 0, "C.130": 0,
 } satisfies Record<string, number>;
 
+/**
+ * Illinois's record as the deterministic read left it, before the checks track resolved its misfiled residency cells
+ * (lib/cds-checks.ts applyChecks publishes the visible grid and keeps the code table in `code_table`): each such item
+ * back to the code-table value, failed `form-vs-code`, with the grid value in `form`. The reader's own rule is tested
+ * against this shape; the committed record is tested as merged below.
+ */
+function asCodeTableFailing(college: CollegeRecord): CollegeRecord {
+  for (const it of Object.values(college.documents[0].items)) {
+    const ct = (it as { code_table?: { v: unknown; cell?: string; quote?: string } }).code_table;
+    if (!ct) continue;
+    const grid = { v: it.v, cell: it.cell };
+    Object.assign(it, { v: ct.v, cell: ct.cell, quote: ct.quote, status: "failed", failures: [{ check: "form-vs-code", detail: "test" }], form: grid });
+    delete (it as { code_table?: unknown }).code_table;
+  }
+  return college;
+}
+
 /* ------------------------------------------------------------------ */
 /* 1–2. Illinois: code table vs visible grid                           */
 /* ------------------------------------------------------------------ */
 
 test("Illinois 2025–26: the code table fails residency-funnel and residency-vs-federal; the visible grid passes and is published with its cells", () => {
-  const il = record("145637");
+  const il = asCodeTableFailing(record("145637"));
   const s = school("145637");
   const doc = il.documents[0];
   const code = checkGrid(codeTableGrid(doc), s.demographics.residence).map((f) => f.check);
@@ -137,7 +154,7 @@ test("Illinois 2025–26: the code table fails residency-funnel and residency-vs
 });
 
 test("Illinois without the visible grid's values (break: drop the grid read): nothing merged, the grid is failed", () => {
-  const il = record("145637");
+  const il = asCodeTableFailing(record("145637"));
   for (const it of Object.values(il.documents[0].items)) delete it.form;
   const { block, outcomes } = residencyFromRecord(il);
   assert.equal(block, null);
@@ -145,7 +162,7 @@ test("Illinois without the visible grid's values (break: drop the grid read): no
 });
 
 test("both sources fail (the visible grid is wrong too): one failed outcome for the edition, nothing merged", () => {
-  const il = record("145637");
+  const il = asCodeTableFailing(record("145637"));
   il.documents[0].items["C.120"].form = { v: 40000, cell: "CDS-C!E38" }; // admitted > applied in the grid too
   const { block, outcomes } = residencyFromRecord(il);
   assert.equal(block, null);

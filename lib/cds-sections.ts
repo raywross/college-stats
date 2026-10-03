@@ -224,6 +224,11 @@ export interface ItemResult {
   method?: "reported" | "derived";
   /** When a workbook's visible form disagrees with its code table: the form's value and cell, kept beside the code's. */
   form?: { v: number | string | boolean | null; cell: string };
+  /**
+   * When the checks published the visible form's value instead (lib/cds-checks.ts: the form passed every check of its
+   * group, the code table didn't): the code table's value, cell, and quote as read, so both values stay in the record.
+   */
+  code_table?: { v: number | string | boolean | null; cell?: string; quote?: string };
 }
 
 /** How one part of a document was read. */

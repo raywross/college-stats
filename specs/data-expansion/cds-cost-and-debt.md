@@ -176,6 +176,19 @@ codes and falling back to row-label matching for Berkeley's/Purdue's classic lay
    exists to catch a genuine extraction error (a misread decimal or a six-figure mis-scan), not to flag a real gap
    between the figures — see Display below for how that gap is explained to users, not hidden by this check.
 
+> **As built (checks, 2026-10-03; `lib/cds-checks.ts`).** Two tolerances changed by the real workbooks:
+> - **Check 1 compares tuition + required fees** (G.111/G.115) with federal `tuition_in_state`/`tuition_out_of_state`,
+>   which are Scorecard's tuition *and fees*: tuition alone fails valid files (William & Mary $19,734 vs $25,914;
+>   Illinois $12,992 vs $16,004).
+> - **Check 7 compares the federal-loan row** (H.512, the same loans Scorecard counts) with `median_debt` at ×0.5–×2,
+>   and keeps a loose ×0.25–×4 bound on the any-loan row (H.511): Vanderbilt's valid any-loan average $30,578 is ×2.18
+>   of its $14,000 median because private loans average $64,280; its federal row ($15,500) is ×1.11.
+>
+> G.002's "not final" flag is **not** a failure (this spec: the figures publish as provisional); the scope table's
+> "holds G1 out of publishing" was not built. A G.001 that isn't a URL fails `not-a-url` (Cornell). Check 2's
+> first-year vs undergraduate gap is a display disclosure, not a check; check 4's class year is read from H.401's own
+> text (`edition-mismatch` when it disagrees with the edition).
+
 ## Store
 ```ts
 reported.cost.next_year: {

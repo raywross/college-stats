@@ -17,6 +17,10 @@ import { createArchive, priorEditionLinks, LocalArchive } from "../scripts/lib/c
 import { addOwnerUrl, archiveDoc } from "../scripts/lib/college-reported/archive-doc.mts";
 import { sha256 } from "../scripts/lib/college-reported/http.mts";
 import { readManifest, readRecords } from "../scripts/lib/college-reported/records.mts";
+import type { School } from "../lib/types.ts";
+
+const ROOT_SCHOOLS: School[] = JSON.parse(readFileSync(join(import.meta.dirname, "..", "data", "schools.json"), "utf8"));
+const schoolOf = (id: string) => ROOT_SCHOOLS.find((s) => s.unit_id === id) ?? null;
 
 const tmp = () => mkdtempSync(join(tmpdir(), "cds-archive-"));
 const bytesOf = (s: string) => new Uint8Array(Buffer.from(s));
@@ -324,7 +328,7 @@ test("archive-doc: a template workbook is archived, listed, and read with no mod
   try {
     const archive = new LocalArchive(cache);
     const url = "https://www.wm.edu/offices/ir/university_data/cds/wm-2025-2026-cds1.xlsx";
-    const res = await archiveDoc({ unit_id: "231624", file: WM, url, retrieved: "2026-10-03", addUrl: true, note: "test", dataDir: data, archive, table: CDS_TEMPLATE });
+    const res = await archiveDoc({ unit_id: "231624", file: WM, url, retrieved: "2026-10-03", addUrl: true, note: "test", dataDir: data, archive, table: CDS_TEMPLATE, school: schoolOf("231624") });
     const sha = sha256(new Uint8Array(readFileSync(WM)));
     assert.equal(res.entry.sha256, sha);
     assert.equal(res.entry.type, "xlsx-template");
@@ -346,7 +350,7 @@ test("archive-doc: a template workbook is archived, listed, and read with no mod
 
     // Re-running changes nothing; the same file for another college is refused.
     const before = readFileSync(join(data, "college-docs.json"), "utf8");
-    const again = await archiveDoc({ unit_id: "231624", file: WM, url, retrieved: "2026-10-03", addUrl: true, dataDir: data, archive, table: CDS_TEMPLATE });
+    const again = await archiveDoc({ unit_id: "231624", file: WM, url, retrieved: "2026-10-03", addUrl: true, dataDir: data, archive, table: CDS_TEMPLATE, school: schoolOf("231624") });
     assert.equal(again.addedUrl, false);
     assert.equal(readFileSync(join(data, "college-docs.json"), "utf8"), before);
     await assert.rejects(archiveDoc({ unit_id: "221999", file: WM, url, dataDir: data, archive, table: CDS_TEMPLATE }), /already archived for college 231624/);

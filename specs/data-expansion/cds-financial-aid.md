@@ -165,6 +165,13 @@ No H item has a federal value with the same definition (IPEDS SFA counts first-t
 kind of aid; CDS H2 frames the class by need), so there is **no agreement-with-federal check** beyond the cohort size
 above, and no item replaces a federal value.
 
+> **As built (checks, 2026-10-03; `lib/cds-checks.ts`).** Every row above is built except: **M ≤ L is dropped** (M
+> averages over loan recipients, a subset of line F's self-help recipients, so it can exceed L: Vanderbilt's valid file
+> has M $2,931 > L $2,229 for first-years and $3,733 > $2,649 for all full-time); H2 line A's "final prior-year"
+> comparison (previous edition's record, or federal `aid.cohort`) waits for prior-edition records; the H6/H7 section
+> boundary is the layout reader's job. H.101 that names no aid year fails `aid-year` on every aid-year item (H1, H2,
+> H2A, H6). The cost-of-attendance bound is G1's out-of-state tuition + fees + food and housing, else federal, × 1.1.
+
 ## Store
 ### Snapshot: `school.reported.aid` (small; what filters, Compare, and the headlines read)
 ```ts

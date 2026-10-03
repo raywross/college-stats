@@ -35,7 +35,7 @@ export function readRecord(dir: string, unitId: string): CollegeRecord | null {
   return existsSync(file) ? (JSON.parse(readFileSync(file, "utf8")) as CollegeRecord) : null;
 }
 
-const ITEM_KEYS: (keyof ItemResult)[] = ["v", "status", "page", "line", "lines", "cell", "field", "quote", "method", "failures", "form"];
+const ITEM_KEYS: (keyof ItemResult)[] = ["v", "status", "page", "line", "lines", "cell", "field", "quote", "method", "failures", "form", "code_table"];
 const DOC_KEYS: (keyof DocumentRecord)[] = ["sha256", "edition", "type", "url", "final_url", "retrieved", "reads", "years"];
 
 const ordered = <T extends object>(o: T, keys: (keyof T)[]) =>

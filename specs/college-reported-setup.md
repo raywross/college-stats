@@ -136,6 +136,11 @@ Each item names the college, the failed check(s), and the source URL. Typical fi
   Then `npm run sync-data && npm run verify` and open a PR as usual (or let the next scheduled run pick it up).
 
 ## 7. Reading the cost
+**While a run is going**, open it in Actions → the "Run the ingestion pipeline" step: each finished college logs a
+line like `[12/50] Princeton University done · run cost so far ~$34.10`. If the Anthropic spend limit is reached, the
+run stops cleanly (exit code 3), keeps every college it finished, and still opens a PR marked "Stopped early";
+cancelling the run from GitHub does the same. The next run picks up the rest.
+
 Every run's summary (`data/reports/college-reported-run-<run>.json`, surfaced in the PR's **Model usage** table)
 breaks down calls, tokens, and `cost_usd` per model job (`discovery`, `extraction`, `escalation`). Watch two things
 over the first few months:

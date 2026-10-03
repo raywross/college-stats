@@ -162,15 +162,30 @@ jobs:
           code=$?
           set -e
           echo "exit_code=$code" >> "$GITHUB_OUTPUT"
-          # 0 = normal, 2 = circuit breaker tripped (files still written), 1 = error. Only 1 fails the job outright.
+          # 0 = normal, 2 = circuit breaker tripped, 3 = stopped early (spend limit, credit balance, or key refused);
+          # 2 and 3 still write files. 1 = error. Only 1 fails the step. The script writes its files after every
+          # college, so even a failed or cancelled run leaves what it finished for the steps below.
           if [ "$code" = "1" ]; then
             echo "::error::sync-college-reported exited 1 (error); see the job log above."
             exit 1
           fi
 
+      # always(): also after a cancelled run, so the colleges it finished still reach a PR and the artifact.
+      - name: Keep this run's files as an artifact
+        if: always() && steps.secret.outputs.ready == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: college-reported-${{ steps.run_id.outputs.id }}
+          path: |
+            data/college-sources.json
+            data/college-reported.json
+            data/review-queue.json
+            data/reports/college-reported-run-${{ steps.run_id.outputs.id }}.json
+          if-no-files-found: ignore
+
       - name: Check for data changes
         id: diff
-        if: steps.secret.outputs.ready == 'true'
+        if: always() && steps.secret.outputs.ready == 'true'
         run: |
           if git status --porcelain -- data | grep -q .; then
             echo "changed=true" >> "$GITHUB_OUTPUT"
@@ -181,7 +196,7 @@ jobs:
 
       - name: Open a pull request
         id: pr
-        if: steps.secret.outputs.ready == 'true' && steps.diff.outputs.changed == 'true'
+        if: always() && steps.secret.outputs.ready == 'true' && steps.diff.outputs.changed == 'true'
         env:
           GH_TOKEN: ${{ secrets.COLLEGE_REPORTED_TOKEN || github.token }}
           RUN_ID: ${{ steps.run_id.outputs.id }}
@@ -205,7 +220,7 @@ jobs:
       # The PR number is only known once the PR exists, so the release note (specs/release-notes.md) is written and
       # pushed as a second commit onto the same branch, naming it.
       - name: Add the release note
-        if: steps.secret.outputs.ready == 'true' && steps.diff.outputs.changed == 'true'
+        if: always() && steps.secret.outputs.ready == 'true' && steps.diff.outputs.changed == 'true' && steps.pr.outputs.number != ''
         env:
           GH_TOKEN: ${{ secrets.COLLEGE_REPORTED_TOKEN || github.token }}
           RUN_ID: ${{ steps.run_id.outputs.id }}
@@ -223,7 +238,7 @@ jobs:
           git push
 
       - name: Auto-merge, or explain why this PR waits for a person
-        if: steps.secret.outputs.ready == 'true' && steps.diff.outputs.changed == 'true'
+        if: always() && steps.secret.outputs.ready == 'true' && steps.diff.outputs.changed == 'true' && steps.pr.outputs.number != ''
         env:
           GH_TOKEN: ${{ secrets.COLLEGE_REPORTED_TOKEN || github.token }}
           PR_NUMBER: ${{ steps.pr.outputs.number }}
@@ -233,7 +248,11 @@ jobs:
           if [ "$AUTO_MERGE" = "true" ] && [ "$EXIT_CODE" = "0" ]; then
             gh pr merge "$PR_NUMBER" --auto --squash
           else
-            if [ "$EXIT_CODE" = "2" ]; then
+            if [ -z "$EXIT_CODE" ]; then
+              reason="the run was cancelled before it finished; this PR holds the colleges it completed (see the run summary) — review and merge by hand"
+            elif [ "$EXIT_CODE" = "3" ]; then
+              reason="the run stopped early (the Anthropic spend limit or credit balance was reached, or the API key was refused); this PR holds the colleges it completed and the next run picks up the rest — review and merge by hand"
+            elif [ "$EXIT_CODE" = "2" ]; then
               reason="the circuit breaker tripped (more than 10% of attempted colleges failed checks, or more than 25% of published values changed) — review the PR body and the review queue before merging by hand"
             elif [ "$AUTO_MERGE" != "true" ]; then
               reason="auto-merge is off for this run (default during the pilot; turn it on from Actions → Run workflow, or let the schedule do it) — review and merge by hand once CI is green"

@@ -218,7 +218,18 @@ export const CIRCUIT_BREAKER = {
 export interface RunSummary {
   run: string;
   started: string;
-  finished: string;
+  /** When the run ended; null while it's still running (the summary is rewritten after every college). */
+  finished: string | null;
+  /**
+   * running: written mid-run, after each college. finished: every college was processed. stopped: the run ended early
+   * (API budget or key problem, or cancelled); everything up to `done` is kept. Absent in summaries before 2026-10-03.
+   */
+  status?: "running" | "finished" | "stopped";
+  /** Why a stopped run stopped. */
+  stopped_reason?: string;
+  /** Colleges processed so far, out of `total`. */
+  done?: number;
+  total?: number;
   attempted: number;
   /** Documents the model actually read (the rest were unchanged: 304 or same hash). */
   documents_read: number;

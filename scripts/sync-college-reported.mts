@@ -12,8 +12,11 @@
  *
  * Needs ANTHROPIC_API_KEY (from .env.local or the environment). Writes data/college-sources.json (recipes),
  * data/college-reported.json (values that passed every check), data/review-queue.json (values that failed), and
- * data/reports/college-reported-run-<run>.json. Exit code 2 = the circuit breaker tripped: the files are written so a
- * PR can show them, but the workflow must not auto-merge.
+ * data/reports/college-reported-run-<run>.json, after EVERY college (the summary says "running" until the end), so a
+ * run that stops or is cancelled keeps what it finished. Each college logs a "[n/total] … run cost so far" line.
+ * Exit codes: 0 = done; 2 = the circuit breaker tripped (files written, the workflow must not auto-merge);
+ * 3 = stopped early (spend limit, credit balance, or key refused; or cancelled), files hold every finished college;
+ * 1 = error.
  */
 import Anthropic from "@anthropic-ai/sdk";
 import { existsSync } from "node:fs";
@@ -21,7 +24,7 @@ import { join } from "node:path";
 import type { School } from "../lib/types";
 import { dataPaths, readQueue, readReported, readSources, writeQueue, writeReported, writeRunSummary, writeSources } from "./lib/college-reported/files.mts";
 import { MODEL_PRICES, REPORTED_MODELS } from "./lib/college-reported/models.mts";
-import { createPipeline, readJsonFile } from "./lib/college-reported/pipeline.mts";
+import { createPipeline, readJsonFile, type RunOutput } from "./lib/college-reported/pipeline.mts";
 import { pickPilot, type PilotFile } from "./lib/college-reported/pilot.mts";
 
 const ROOT = join(import.meta.dirname, "..");
@@ -37,6 +40,8 @@ const DRY = flag("dry-run");
 const REDISCOVER = flag("rediscover");
 const MAX_DISCOVERIES = Number(values("max-discoveries")[0] ?? 100);
 const RUN = values("run")[0] ?? new Date().toISOString();
+/** Exit code for a run that ended early (API budget or key, or cancelled): files hold every finished college. */
+const STOPPED = 3;
 
 function usage(msg: string): never {
   console.error(`${msg}\nUsage: npm run sync-college-reported -- (--pilot | --all | --college <unit_id> ...) [--rediscover] [--dry-run] [--max-discoveries N] [--run <id>]`);
@@ -70,7 +75,35 @@ async function main() {
   }
 
   const paths = dataPaths(ROOT);
-  const pipeline = createPipeline({ client: new Anthropic(), fetch: globalThis.fetch, now: () => new Date() });
+  // Written after every college (not only at the end), so a run that stops, fails, or is cancelled keeps its work.
+  const save = (snap: RunOutput) => {
+    if (DRY) return;
+    writeSources(paths.sources, snap.sources);
+    writeReported(paths.reported, snap.reported);
+    writeQueue(paths.queue, snap.queue);
+    return writeRunSummary(paths.reports, snap.summary);
+  };
+  let latest: RunOutput | null = null;
+  // Cancelling the workflow sends SIGINT then SIGTERM: mark the newest snapshot stopped and exit with the stop code.
+  for (const signal of ["SIGINT", "SIGTERM"] as const) {
+    process.on(signal, () => {
+      if (latest) {
+        latest.summary = { ...latest.summary, status: "stopped", stopped_reason: `cancelled (${signal})`, finished: new Date().toISOString() };
+        save(latest);
+        console.error(`\nCancelled (${signal}): kept ${latest.summary.done} of ${latest.summary.total} colleges.`);
+      }
+      process.exit(STOPPED);
+    });
+  }
+  const pipeline = createPipeline({
+    client: new Anthropic(),
+    fetch: globalThis.fetch,
+    now: () => new Date(),
+    onProgress: (snap) => {
+      latest = snap;
+      save(snap);
+    },
+  });
   console.log(`Run ${RUN}: ${targets.length} colleges${DRY ? " (dry run: nothing written to data/)" : ""}`);
   const out = await pipeline.run({
     schools: targets,
@@ -87,11 +120,11 @@ async function main() {
   console.log(`\nAttempted ${s.attempted}, documents read ${s.documents_read}, published ${s.published}, changed values ${s.changed}, failed ${s.failed}, discovered ${s.discovered}, escalated ${s.escalated}`);
   for (const [job, u] of Object.entries(s.usage)) console.log(`  ${job}: ${u.calls} calls, ${u.input_tokens} in / ${u.output_tokens} out, ~$${u.cost_usd.toFixed(4)}`);
   console.log(`  estimated total: ~$${cost.toFixed(2)}`);
-  if (!DRY) {
-    writeSources(paths.sources, out.sources);
-    writeReported(paths.reported, out.reported);
-    writeQueue(paths.queue, out.queue);
-    console.log(`Wrote data/college-sources.json, data/college-reported.json, data/review-queue.json, ${writeRunSummary(paths.reports, s).slice(ROOT.length + 1)}`);
+  const summaryFile = save(out);
+  if (summaryFile) console.log(`Wrote data/college-sources.json, data/college-reported.json, data/review-queue.json, ${summaryFile.slice(ROOT.length + 1)}`);
+  if (s.status === "stopped") {
+    console.error(`\nStopped early: ${s.stopped_reason}. Kept ${s.done} of ${s.total} colleges; the rest are picked up by the next run.`);
+    process.exit(STOPPED);
   }
   if (s.tripped) {
     console.error(`\nCircuit breaker tripped: ${s.tripped}. Do not auto-merge; look at the review queue.`);

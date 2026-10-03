@@ -67,3 +67,10 @@ test("releaseNote mentions the review queue when this run has items", () => {
   const text = releaseNote(summary, queue, 48, "2026-10-02");
   assert.match(text, /waiting for a person/);
 });
+
+test("a run that stopped early says so, with how far it got and why, in the PR body and the release note", () => {
+  const stopped: RunSummary = { ...summary, status: "stopped", stopped_reason: "the Anthropic account's spend limit or credit balance was reached", done: 31, total: 50 };
+  assert.match(prBody(stopped, queue), /Stopped early\*\* after 31 of 50 colleges: the Anthropic account's spend limit/);
+  assert.match(releaseNote(stopped, queue, 48, "2026-10-02"), /Stopped early after 31 of 50 colleges/);
+  assert.doesNotMatch(prBody(summary, queue), /Stopped early/, "a finished run has no notice");
+});

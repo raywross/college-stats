@@ -13,7 +13,7 @@ import type { DatasetMeta, School } from "../lib/types";
 import { validateSchool } from "../lib/lineage.ts";
 import { reportedToPatch } from "../lib/reported-checks.ts";
 import { readC1, readWorkbook, workbookEdition } from "../scripts/lib/cds-xlsx.mts";
-import { circuitBreaker, createPipeline } from "../scripts/lib/college-reported/pipeline.mts";
+import { circuitBreaker, createPipeline, fatalApiError } from "../scripts/lib/college-reported/pipeline.mts";
 import { entryYearOf, htmlToText, newSourcesFromIndex } from "../scripts/lib/college-reported/documents.mts";
 import { parseRobots, robotsAllows, sha256 } from "../scripts/lib/college-reported/http.mts";
 import { linesJson } from "../scripts/lib/college-reported/files.mts";
@@ -337,4 +337,84 @@ test("helpers: HTML text, years in links, robots rules, one-entry-per-line files
   assert.equal(a.colleges.length, 50);
   assert.deepEqual(pickPilot(many), a, "deterministic");
   assert.equal(new Set(a.colleges.map((c) => `${c.tier}/${c.sector}`)).size, 12);
+});
+
+/* ------------------------------------------------------------------ */
+/* Written as it goes; stops cleanly when the API budget runs out      */
+/* ------------------------------------------------------------------ */
+
+const PROFILE_HTML = "<h1>Class of 2030</h1><p>48,000 students applied and we admitted 1,950; 1,660 enrolled, an admit rate of 4.1%.</p>";
+/** Three colleges with stored class-profile recipes (no discovery), processed one at a time. */
+function threeColleges() {
+  const ids = ["1", "2", "3"];
+  const routes = Object.fromEntries(ids.map((id) => [`https://c${id}.edu/class-profile`, PROFILE_HTML]));
+  const recipes = ids.map((id) => recipe(id, [{ kind: "class-profile", url: `https://c${id}.edu/class-profile`, format: "html" }]));
+  return { routes, sources: { updated: "", recipes } as SourcesFile, schools: ids.map((id) => school(id)) };
+}
+const progressDeps = (client: ModelClient, fetch: typeof globalThis.fetch, onProgress: Parameters<typeof createPipeline>[0]["onProgress"]) => ({
+  client,
+  fetch,
+  now: () => new Date("2026-10-02T12:00:00Z"),
+  sleep: async () => {},
+  minDelayMs: 0,
+  cacheDir: mkdtempSync(join(tmpdir(), "college-docs-")),
+  log: () => {},
+  concurrency: 1,
+  onProgress,
+});
+
+test("a snapshot of the files is handed over after every college, marked running, so a run that dies keeps its work", async () => {
+  const { routes, sources, schools } = threeColleges();
+  const { client } = fakeClient({ extraction: () => FALL_2026 });
+  const snaps: unknown[] = [];
+  const p = createPipeline(progressDeps(client, fakeFetch(routes).fn, (s) => snaps.push([s.summary.done, s.summary.status, s.summary.finished, s.reported.entries.length])));
+  const out = await p.run({ ...empty(), sources, schools, run: "r1" });
+  assert.deepEqual(snaps, [
+    [1, "running", null, 1],
+    [2, "running", null, 2],
+    [3, "running", null, 3],
+  ]);
+  assert.equal(out.summary.status, "finished");
+  assert.equal(out.summary.done, 3);
+  assert.equal(out.summary.total, 3);
+  assert.ok(out.summary.finished);
+});
+
+test("a spend-limit error stops the run: finished colleges are kept, the one in flight records nothing, the rest never start", async () => {
+  const { routes, sources, schools } = threeColleges();
+  const fetch = fakeFetch(routes);
+  let calls = 0;
+  const client: ModelClient = {
+    messages: {
+      async create(body) {
+        calls++;
+        if (calls === 2) throw Object.assign(new Error("You have reached your specified API usage limits. You will regain access on 2026-11-01."), { status: 400 });
+        return message(body.model, [{ type: "text", text: JSON.stringify(FALL_2026), citations: null }]);
+      },
+    },
+  };
+  const snaps: unknown[] = [];
+  const out = await createPipeline(progressDeps(client, fetch.fn, (s) => snaps.push(s.summary.done))).run({ ...empty(), sources, schools, run: "r1" });
+  assert.equal(out.summary.status, "stopped");
+  assert.match(out.summary.stopped_reason ?? "", /spend limit or credit balance/);
+  assert.equal(out.summary.done, 1);
+  assert.deepEqual(snaps, [1], "a snapshot after the first college only");
+  assert.deepEqual(out.reported.entries.map((e) => e.unit_id), ["1"], "the first college is published");
+  assert.deepEqual(out.queue.items, [], "the college cut off by the error is not sent to review");
+  assert.equal(out.summary.failed, 0);
+  const second = out.sources.recipes.find((r) => r.unit_id === "2")!;
+  assert.equal(second.sources[0].sha256, undefined, "the interrupted college's document isn't marked read, so the next run reads it");
+  assert.ok(!fetch.calls.some((c) => c.url.startsWith("https://c3.edu/")), "the third college never starts");
+  assert.equal(calls, 2, "no model call after the stop");
+});
+
+test("only errors that would fail every later call stop a run", () => {
+  assert.match(fatalApiError({ status: 401, message: "invalid x-api-key" }) ?? "", /key was refused/);
+  assert.match(fatalApiError({ status: 403, message: "forbidden" }) ?? "", /key was refused/);
+  assert.match(fatalApiError({ status: 400, message: "Your credit balance is too low to access the Anthropic API." }) ?? "", /credit balance/);
+  assert.match(fatalApiError({ status: 429, message: "You have reached your specified API usage limits." }) ?? "", /spend limit/);
+  assert.equal(fatalApiError({ status: 429, message: "Number of request tokens has exceeded your per-minute rate limit" }), null, "a rate limit is retried, not fatal");
+  assert.equal(fatalApiError({ status: 400, message: "max_tokens: must be at most 64000" }), null);
+  assert.equal(fatalApiError({ status: 529, message: "Overloaded" }), null);
+  assert.equal(fatalApiError(new Error("fetch failed")), null);
 });

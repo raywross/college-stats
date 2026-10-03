@@ -51,6 +51,27 @@ export interface PipelineDeps {
   /** Colleges processed at once (requests to one host are still serialized). Default 4. */
   concurrency?: number;
   log?: (msg: string) => void;
+  /**
+   * Called after each college finishes, with the files' contents and a summary as they stand (status "running"), so
+   * the CLI can write them as it goes: a run that stops or is cancelled keeps every college it finished.
+   */
+  onProgress?: (snapshot: RunOutput) => void;
+}
+
+/**
+ * An API error that will fail every later call too, so the run stops instead of failing each remaining college:
+ * a bad or revoked key, or the account's spend limit or credit balance reached. Duck-typed on `status` and `message`
+ * so it works for the SDK's error classes and for test fakes.
+ */
+export function fatalApiError(err: unknown): string | null {
+  if (!err || typeof err !== "object") return null;
+  const status = (err as { status?: unknown }).status;
+  const message = String((err as { message?: unknown }).message ?? "");
+  if (status === 401 || status === 403) return `the API key was refused (HTTP ${status}): ${message.slice(0, 200)}`;
+  if ((status === 400 || status === 429) && /usage limit|spend limit|credit balance|billing/i.test(message)) {
+    return `the Anthropic account's spend limit or credit balance was reached: ${message.slice(0, 200)}`;
+  }
+  return null;
 }
 
 export interface RunInput {
@@ -144,7 +165,27 @@ export function createPipeline(deps: PipelineDeps) {
     const started = deps.now().toISOString();
     const today = started.slice(0, 10);
     const usage = emptyUsage();
-    const ctx: LlmContext = { client: deps.client, usage, today, log };
+    // Set by the first fatal API error (fatalApiError): no new college starts, and colleges in flight record nothing.
+    let stopReason: string | null = null;
+    const stopped = () => stopReason !== null;
+    const client: typeof deps.client = {
+      messages: {
+        create: async (body) => {
+          if (stopReason) throw new Error(`run stopped: ${stopReason}`);
+          try {
+            return await deps.client.messages.create(body);
+          } catch (err) {
+            const fatal = fatalApiError(err);
+            if (fatal && !stopReason) {
+              stopReason = fatal;
+              log(`\nStopping: ${fatal}. Colleges already finished are kept.`);
+            }
+            throw err;
+          }
+        },
+      },
+    };
+    const ctx: LlmContext = { client, usage, today, log };
     const maxDiscoveries = input.maxDiscoveries ?? 100;
     const counts = { attempted: 0, documents_read: 0, published: 0, changed: 0, failed: 0, discovered: 0, escalated: 0 };
 
@@ -315,6 +356,7 @@ export function createPipeline(deps: PipelineDeps) {
           if (!recipe) return void log(`${school.name}: no recipe and the discovery budget is spent; skipped`);
         } else {
           const fresh = await learn(school, recipe, REPORTED_MODELS.discovery, "discovery");
+          if (stopped()) return;
           if (fresh) {
             recipe = fresh;
             discoveredNow = true;
@@ -352,6 +394,8 @@ export function createPipeline(deps: PipelineDeps) {
           }
         }
       }
+      // A college cut off by a fatal API error isn't a result: record nothing, so the next run does it again.
+      if (stopped()) return;
       recipes.set(school.unit_id, current);
 
       if (out.status === "unchanged" || out.status === "skipped") {
@@ -388,35 +432,53 @@ export function createPipeline(deps: PipelineDeps) {
 
     /* ---------------- all colleges ---------------- */
 
+    const total = input.schools.length;
+    let done = 0;
+    const totalCost = () => Object.values(usage).reduce((n, u) => n + u.cost_usd, 0);
+
+    /** The files' contents and summary as they stand; `final` marks the run finished or stopped. */
+    function snapshot(final: boolean): RunOutput {
+      const summary: RunSummary = {
+        run: input.run,
+        started,
+        finished: final ? deps.now().toISOString() : null,
+        status: stopReason ? "stopped" : final ? "finished" : "running",
+        ...(stopReason ? { stopped_reason: stopReason } : {}),
+        done,
+        total,
+        ...counts,
+        tripped: circuitBreaker({ attempted: counts.attempted, failed: counts.failed, changed: counts.changed, priorValues }),
+        usage: structuredClone(usage),
+      };
+      return {
+        sources: { updated: today, recipes: [...recipes.values()] },
+        // `updated` on the published file moves only when something published, so a quiet run leaves it untouched.
+        reported: { updated: counts.published ? today : input.reported.updated, entries: [...entries.values()] },
+        queue: { updated: today, items: [...items] },
+        summary,
+      };
+    }
+
     const queue = [...input.schools];
     const workers = Array.from({ length: Math.max(1, deps.concurrency ?? 4) }, async () => {
-      for (let s = queue.shift(); s; s = queue.shift()) {
+      for (let s = queue.shift(); s && !stopped(); s = queue.shift()) {
         try {
           await processCollege(s);
         } catch (err) {
           log(`${s.name}: ${err instanceof Error ? err.stack : err}`);
-          counts.attempted++;
-          counts.failed++;
+          if (!stopped()) {
+            counts.attempted++;
+            counts.failed++;
+          }
         }
+        if (stopped()) break;
+        done++;
+        log(`[${done}/${total}] ${s.name} done · run cost so far ~$${totalCost().toFixed(2)}`);
+        deps.onProgress?.(snapshot(false));
       }
     });
     await Promise.all(workers);
-
-    const summary: RunSummary = {
-      run: input.run,
-      started,
-      finished: deps.now().toISOString(),
-      ...counts,
-      tripped: circuitBreaker({ attempted: counts.attempted, failed: counts.failed, changed: counts.changed, priorValues }),
-      usage,
-    };
-    return {
-      sources: { updated: today, recipes: [...recipes.values()] },
-      // `updated` on the published file moves only when something published, so a quiet run leaves it untouched.
-      reported: { updated: counts.published ? today : input.reported.updated, entries: [...entries.values()] },
-      queue: { updated: today, items },
-      summary,
-    };
+    return snapshot(true);
   }
 
   return { run };

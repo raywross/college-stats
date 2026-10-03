@@ -231,6 +231,20 @@ recipes; documents with the same URL keep their hashes, so unchanged files are s
 written to `data/`; downloads are still cached), `--max-discoveries N` (Sonnet discovery budget, default 100),
 `--run <id>` (default: start time, ISO). Exit code 2 = circuit breaker tripped (files are still written).
 
+**Written as it goes (2026-10-03).** The first pilot wrote nothing until all 50 colleges were done (80 minutes), so a
+failure or cancel would have lost the whole run. Now:
+- After **every college**, the CLI writes the four data files and the run summary (`status: "running"`, `done`,
+  `total`, `finished: null`; writes are atomic, temp file then rename) and logs `[n/total] <college> done · run cost so
+  far ~$X`, which the Actions log shows live.
+- A **fatal API error** (`fatalApiError`: key refused, 401/403; or a 400/429 naming the spend limit, credit balance, or
+  billing) stops the run: no new college starts, a college in flight records nothing (its document isn't marked read,
+  so the next run does it), and the summary says `status: "stopped"` with `stopped_reason`. Exit code **3**. Ordinary
+  rate limits and overloads aren't fatal (the SDK retries them).
+- **Cancelling** (SIGINT/SIGTERM) writes the newest snapshot as stopped and exits 3.
+- The workflow runs its artifact, PR, and release-note steps with `always()`, so a stopped, failed, or cancelled run
+  still opens a PR for the colleges it finished; such a PR never auto-merges and its body opens with "Stopped early".
+  The files are also uploaded as an Actions artifact, `college-reported-<run id>`.
+
 Files, all under `scripts/lib/college-reported/` except the CLI:
 - `pipeline.mts`: `createPipeline({ client, fetch, now, sleep?, minDelayMs?, cacheDir?, concurrency?, log? })` →
   `run({ schools, sources, reported, queue, run, rediscover?, maxDiscoveries? })`, working on the files' contents in

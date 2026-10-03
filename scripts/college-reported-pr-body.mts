@@ -49,6 +49,13 @@ export function prBody(summary: RunSummary, queue: ReviewQueueFile): string {
   const lines: string[] = [];
 
   lines.push(`Run \`${summary.run}\` of the college-reported ingestion agent (specs/college-reported-data.md).`, "");
+  if (summary.status === "stopped") {
+    lines.push(
+      `> **Stopped early** after ${summary.done ?? "?"} of ${summary.total ?? "?"} colleges: ${summary.stopped_reason ?? "no reason recorded"}. ` +
+        `Everything below covers the colleges it finished; the rest are picked up by the next run. This PR does not auto-merge.`,
+      "",
+    );
+  }
 
   lines.push("## Summary", "");
   lines.push(`| | |`, `|---|---|`);
@@ -151,6 +158,7 @@ export function releaseNote(summary: RunSummary, queue: ReviewQueueFile, pr: num
       `college${summary.discovered === 1 ? "" : "s"} re-discovered, ${summary.escalated} escalated to the fallback model.`,
     `- Cost: ${usd(totalCost(summary))}.`,
     summary.tripped ? `- Circuit breaker tripped (${summary.tripped}); this run waited for a person before merging.` : "",
+    summary.status === "stopped" ? `- Stopped early after ${summary.done ?? "?"} of ${summary.total ?? "?"} colleges (${summary.stopped_reason ?? "no reason recorded"}); the rest follow in the next run.` : "",
     "- See [specs/college-reported-data.md](../specs/college-reported-data.md) for the pipeline and checks.",
   ]
     .filter(Boolean)

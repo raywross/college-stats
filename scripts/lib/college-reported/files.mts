@@ -2,7 +2,7 @@
  * Reading and writing the pipeline's committed files (shapes in lib/reported.ts). Lists are written one entry per
  * line, sorted by college, like data/schools.json, so a run's PR diff shows exactly which colleges changed.
  */
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import type { ReportedFile, ReviewQueueFile, RunSummary, SourcesFile } from "../../../lib/reported.ts";
 
@@ -38,9 +38,12 @@ export function linesJson(updated: string | null, key: string, items: unknown[])
 
 const byUnit = <T extends { unit_id: string }>(a: T, b: T) => (a.unit_id < b.unit_id ? -1 : a.unit_id > b.unit_id ? 1 : 0);
 
+/** Writes to a temporary file, then renames it over the target, so a run cancelled mid-write never leaves half a file. */
 function write(file: string, text: string) {
   mkdirSync(dirname(file), { recursive: true });
-  writeFileSync(file, text);
+  const tmp = `${file}.tmp-${process.pid}`;
+  writeFileSync(tmp, text);
+  renameSync(tmp, file);
 }
 
 export function writeSources(file: string, f: SourcesFile) {

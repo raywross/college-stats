@@ -50,7 +50,9 @@ Colleges rarely change where or how they publish, so each college gets a stored 
    URLs itself (plain HTTP, no model tools), sends only the relevant pages/section, and asks for a fixed JSON schema
    (structured outputs) with a verbatim quote per number.
 3. **Escalation.** If extraction fails the checks, or the recipe's anchor isn't found, re-run discovery for that
-   college. If that fails too, use `claude-opus-5` once; still failing → review queue.
+   college. If that fails too, use `claude-opus-5` once; still failing → review queue. *(Changed after the pilot:
+   escalation now happens only where a model can help, and Opus is not called; see
+   [round 2](college-reported-round-2.md#decision-3-escalate-only-when-a-model-can-help) and "As built → Pipeline".)*
 
 Model IDs live in one config object so they can change after the pilot. CDS **Excel** files go through the existing
 deterministic importer (`scripts/import-cds.mts`) first; the model is the fallback.
@@ -229,7 +231,28 @@ tier, sector }] }`; without the file it picks 50 deterministically across admit-
 `--college <unit_id>` (repeatable), `--all` (every college; the scheduled mode), `--rediscover` (ignore stored
 recipes; documents with the same URL keep their hashes, so unchanged files are still skipped), `--dry-run` (nothing
 written to `data/`; downloads are still cached), `--max-discoveries N` (Sonnet discovery budget, default 100),
-`--run <id>` (default: start time, ISO). Exit code 2 = circuit breaker tripped (files are still written).
+`--max-cost <usd>` (default 25 for `--pilot`/`--college`, 150 for `--all`), `--run <id>` (default: start time, ISO).
+Exit code 2 = circuit breaker tripped (files are still written).
+
+**Round 2 (2026-10-03, [why](college-reported-round-2.md)).** The pilot's discovery averaged ~627K input tokens a
+call because web fetch returned whole documents; escalation sent blocked sites to Opus. Now:
+- **Discovery finds links only**: `web_search` and `web_fetch` at most 4 uses each, `max_content_tokens: 6000` per
+  fetched page, a prompt that opens only HTML pages listing documents (never PDF or Excel), no `pages`/`anchor` in
+  `save_recipe` (the extractor uses `DEFAULT_ANCHORS`: "C1" for a CDS, "appl" for a class profile), effort `low`.
+  It streams (`messages.stream` → `finalMessage()`); a `pause_turn` is resumed with the cache breakpoint on the last
+  message block. The CLI's discovery client has `maxRetries: 1` and a 30-minute timeout; extraction keeps the SDK's
+  default retries.
+- **Guess before discovering** (`guess.mts`): a college needing discovery that has `school.cds.url` or a CDS source in
+  its old recipe gets the next one and two editions guessed in the file name (`CDS_2024-2025` → `CDS_2026-2027`,
+  `CDS_2025-2026`; also `2024-25`, `2024_25`, `2425`, `CDS2024`). A 200 whose bytes or content type say PDF/Excel
+  becomes the recipe (`model: "guessed"`), with no model call; counted as `guessed`.
+- **Escalation where a model can help**: every source unfetchable (robots, 401/403/405/429, 404, network) → queued
+  with `unreachable` failures, no model call, counted as `unreachable` (not `failed`, so the breaker ignores it);
+  anchor missing / unreadable → one re-discovery (effort `medium`), re-read; a check failing on real figures → one
+  re-read by `REPORTED_MODELS.escalation` (Sonnet 5) from the cached copy, no refetch; still failing → queue.
+- **Cost cap**: before each college starts, logged cost + $0.50 ≥ `--max-cost` stops the run like a spend-limit error
+  (`status: "stopped"`, "the run's cost cap of $N was reached", exit 3); colleges in flight finish and are kept. The
+  workflow's `max_cost` input (default "25"; scheduled runs 150) is passed through.
 
 **Written as it goes (2026-10-03).** The first pilot wrote nothing until all 50 colleges were done (80 minutes), so a
 failure or cancel would have lost the whole run. Now:
@@ -247,11 +270,12 @@ failure or cancel would have lost the whole run. Now:
 
 Files, all under `scripts/lib/college-reported/` except the CLI:
 - `pipeline.mts`: `createPipeline({ client, fetch, now, sleep?, minDelayMs?, cacheDir?, concurrency?, log? })` →
-  `run({ schools, sources, reported, queue, run, rediscover?, maxDiscoveries? })`, working on the files' contents in
-  memory and returning them updated with a `RunSummary`; `circuitBreaker()`.
-- `llm.mts`: `discover()` (Sonnet 5, `web_search_20260209` + `web_fetch_20260209`, recipe returned through a strict
-  `save_recipe` tool, `pause_turn` resumed) and `extract()` (Haiku 4.5, `output_config.format` = `EXTRACTION_SCHEMA`,
-  falling back to a strict forced tool if a model rejects structured outputs; system prompt marked for caching).
+  `run({ schools, sources, reported, queue, run, rediscover?, maxDiscoveries?, maxCost? })`, working on the files'
+  contents in memory and returning them updated with a `RunSummary`; `circuitBreaker()`.
+- `llm.mts`: `discover()` (Sonnet 5, links only, streamed; see Round 2 above; recipe returned through a strict
+  `save_recipe` tool, `pause_turn` resumed) and `extract()` (Haiku 4.5, or Sonnet 5 on escalation;
+  `output_config.format` = `EXTRACTION_SCHEMA`, falling back to a strict forced tool if a model rejects structured
+  outputs; system prompt marked for caching). `guess.mts`: `guessNextEditionUrls(url, federalYear)`.
 - `http.mts`: robots.txt (RFC 9309; disallowed URLs are skipped and logged; an unreachable robots.txt disallows),
   one request at a time per host at least 1 s apart (longer for a Crawl-delay), conditional GETs, sha256, the
   `.cache/college-docs/<sha256>` cache. 401/403/429 and challenge pages stop there; no user-agent switching.
@@ -270,16 +294,22 @@ Behaviour worth knowing:
   304 or the same hash keeps the stored extraction. `processed` is the date of the last real read.
 - Figures that fail only check 5 (not newer than the federal year) mean the college hasn't published a newer year:
   not published, not queued, not escalated. A recipe marked `none_found` is retried only with `--rediscover`.
-- Missing anchors and unreadable documents are queued as `quote-present` failures ("no figures read: …").
+- Missing anchors and unreadable documents are queued as `quote-present` failures ("no figures read: …") after their
+  one re-discovery; a college none of whose sources could be fetched is queued as `unreachable` (the PR body lists
+  these separately).
 - Counts: `attempted` = colleges where something was read or discovered (an all-304 college is not an attempt);
   `changed` = published values that changed within the same entering term (a new term is a new year, not a change);
   the breaker's changed share is over all values in `college-reported.json` before the run.
-- Tests (`tests/college-reported-pipeline.test.mts`) pass a fake client (answers `save_recipe` calls with a canned
-  recipe and extraction calls with canned JSON, recording every request) and a fake fetch (a URL → response table).
-  They prove: same hash and 304 skip the model (and send the conditional headers), a new index link is read alone,
-  the Excel fixture (`tests/fixtures/cds-c1.xlsx`) is read deterministically and its entry passes `validateSchool`,
-  a PDF fixture's page text reaches the model, failing checks escalate Haiku → Sonnet → Opus and land in the queue
-  with nothing published, robots.txt is obeyed, the breaker trips just past its limits, and the summary counts.
+- Tests (`tests/college-reported-pipeline.test.mts`) pass a fake client (answers streamed `save_recipe` calls with a
+  canned recipe and extraction calls with canned JSON, recording every request) and a fake fetch (a URL → response
+  table). They prove: same hash and 304 skip the model (and send the conditional headers), a new index link is read
+  alone, the Excel fixture (`tests/fixtures/cds-c1.xlsx`) is read deterministically and its entry passes
+  `validateSchool`, a PDF fixture's page text reaches the model, discovery streams with capped web tools and is never
+  sent a document, a resumed `pause_turn` moves the cache breakpoint, a guessed URL that exists skips discovery, a
+  failed check gets one Sonnet re-read from the cache and then the queue, a missing anchor gets one re-discovery at
+  effort medium, blocked sites go to the queue as `unreachable` with no model call and don't trip the breaker,
+  robots.txt is obeyed, the cost cap stops the run, the breaker trips just past its limits, and the summary counts.
+  `tests/college-reported-guess.test.mts` covers the pilot's real CDS URL shapes.
 
 ### Pilot set and answer key
 `data/reference/college-reported-pilot.json` (50 colleges) and `data/reference/college-reported-answer-key.json`

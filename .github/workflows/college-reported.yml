@@ -33,6 +33,10 @@ on:
         description: Cap on discovery calls this run
         type: string
         default: "100"
+      max_cost:
+        description: Stop the run (keeping finished colleges) once its estimated cost reaches this many US dollars
+        type: string
+        default: "25"
   schedule:
     # Two entries because one cron line can't mix a weekly Aug–Nov cadence with a monthly Dec–Jul one (and GitHub's
     # schedule parser doesn't reliably support month ranges combined with a weekday filter); each fires on a plain,
@@ -84,6 +88,7 @@ jobs:
             echo "college=" >> "$GITHUB_OUTPUT"
             echo "rediscover=false" >> "$GITHUB_OUTPUT"
             echo "max_discoveries=100" >> "$GITHUB_OUTPUT"
+            echo "max_cost=150" >> "$GITHUB_OUTPUT"
           else
             mode="${{ inputs.mode }}"
             college="${{ inputs.college }}"
@@ -96,6 +101,7 @@ jobs:
             echo "college=$college" >> "$GITHUB_OUTPUT"
             echo "rediscover=${{ inputs.rediscover }}" >> "$GITHUB_OUTPUT"
             echo "max_discoveries=${{ inputs.max_discoveries }}" >> "$GITHUB_OUTPUT"
+            echo "max_cost=${{ inputs.max_cost }}" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Compute run id
@@ -128,6 +134,7 @@ jobs:
             flags="$flags --rediscover"
           fi
           flags="$flags --max-discoveries ${{ steps.params.outputs.max_discoveries }}"
+          flags="$flags --max-cost ${{ steps.params.outputs.max_cost }}"
           echo "flags=$flags" >> "$GITHUB_OUTPUT"
 
       - uses: actions/setup-node@v4
@@ -162,7 +169,8 @@ jobs:
           code=$?
           set -e
           echo "exit_code=$code" >> "$GITHUB_OUTPUT"
-          # 0 = normal, 2 = circuit breaker tripped, 3 = stopped early (spend limit, credit balance, or key refused);
+          # 0 = normal, 2 = circuit breaker tripped, 3 = stopped early (the run's max_cost, the spend limit, credit
+          # balance, or key refused);
           # 2 and 3 still write files. 1 = error. Only 1 fails the step. The script writes its files after every
           # college, so even a failed or cancelled run leaves what it finished for the steps below.
           if [ "$code" = "1" ]; then
@@ -251,7 +259,7 @@ jobs:
             if [ -z "$EXIT_CODE" ]; then
               reason="the run was cancelled before it finished; this PR holds the colleges it completed (see the run summary) — review and merge by hand"
             elif [ "$EXIT_CODE" = "3" ]; then
-              reason="the run stopped early (the Anthropic spend limit or credit balance was reached, or the API key was refused); this PR holds the colleges it completed and the next run picks up the rest — review and merge by hand"
+              reason="the run stopped early (its max_cost cap or the Anthropic spend limit or credit balance was reached, or the API key was refused); this PR holds the colleges it completed and the next run picks up the rest — review and merge by hand"
             elif [ "$EXIT_CODE" = "2" ]; then
               reason="the circuit breaker tripped (more than 10% of attempted colleges failed checks, or more than 25% of published values changed) — review the PR body and the review queue before merging by hand"
             elif [ "$AUTO_MERGE" != "true" ]; then

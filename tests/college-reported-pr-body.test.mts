@@ -68,6 +68,18 @@ test("releaseNote mentions the review queue when this run has items", () => {
   assert.match(text, /waiting for a person/);
 });
 
+test("prBody lists unreachable colleges apart from check failures, and counts guesses", () => {
+  const withCounts: RunSummary = { ...summary, unreachable: 1, guessed: 3 };
+  const blocked = { ...queue.items[0], unit_id: "999777", name: "Blocked State", urls: ["https://blocked.edu/cds.pdf"], failures: [{ check: "unreachable" as const, detail: "HTTP 403 at https://blocked.edu/cds.pdf" }] };
+  const body = prBody(withCounts, { ...queue, items: [...queue.items, blocked] });
+  assert.match(body, /Unreachable \(site blocks us or file missing; no model call\) \| 1 \|/);
+  assert.match(body, /Next CDS edition guessed \(no model call\) \| 3 \|/);
+  const [review, rest] = body.split("## Unreachable");
+  assert.doesNotMatch(review, /Blocked State/, "not in the review-queue table");
+  assert.match(rest, /Blocked State \(999777\) \| HTTP 403 at https:\/\/blocked\.edu\/cds\.pdf/);
+  assert.doesNotMatch(prBody(summary, queue), /## Unreachable/, "no section when nothing was unreachable");
+});
+
 test("a run that stopped early says so, with how far it got and why, in the PR body and the release note", () => {
   const stopped: RunSummary = { ...summary, status: "stopped", stopped_reason: "the Anthropic account's spend limit or credit balance was reached", done: 31, total: 50 };
   assert.match(prBody(stopped, queue), /Stopped early\*\* after 31 of 50 colleges: the Anthropic account's spend limit/);

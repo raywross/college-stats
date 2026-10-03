@@ -349,7 +349,9 @@ export const FIELDS = {
     },
   },
   "derived.next_year_change": {
-    ...reported("Change from the federal price", "cost"),
+    // Two sources (the college's document and the federal release); the fallback is the federal one it compares to.
+    ...ic("Change from the federal price"),
+    topic: "cost",
     computed: true,
     derived: {
       formula: "Next year's price ÷ the federal year's tuition & fees + on-campus room & board − 1",

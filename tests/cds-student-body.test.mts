@@ -314,6 +314,10 @@ test("citations: race's replaced value is the federal object with its fall; grad
   assert.equal(pell.key, "college-site");
   assert.equal(pell.cdsEdition, "2025–26");
   assert.deepEqual(pell.replaces, { value: s.outcomes!.federal!.graduation!.grad_rate_pell, year: meta.vintages["ipeds-gr"] });
+  // The 4-year shares and a value calculated from a replaced group name the same document.
+  assert.equal(lineageFor("reported.outcomes.graduation", s, meta).cdsEdition, "2025–26");
+  assert.equal(lineageFor("derived.diversity_index", byId(VANDERBILT), meta).sourceKind, "cds");
+  assert.equal(lineageFor("derived.diversity_index", byId(VANDERBILT), meta).replaces, undefined);
   // Illinois's newer admit rate is from its class profile, but its enrollment is from its CDS.
   assert.equal(lineageFor("demographics.undergrad_enrollment", byId(ILLINOIS), meta).sourceKind, "cds");
   // A federal value names no replacement.

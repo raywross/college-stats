@@ -232,8 +232,7 @@ export const TOPIC_FIELDS: Readonly<Record<TopicKey, readonly FieldPath[]>> = {
     "outcomes.grad_cohorts_by_race",
     // The cost vs. earnings map.
     "cost.avg_paid_all",
-    // CDS 4-year graduation by aid group, and the federal class it replaced (specs/data-expansion/cds-student-body-and-outcomes.md).
-    "reported.outcomes.graduation",
+    // The race plot's overall line when a newer CDS class replaced the Pell plot (specs/data-expansion/cds-student-body-and-outcomes.md).
     "outcomes.federal.graduation",
   ],
   // Every "Over time" chart cites its history editions in its group (HistorySourceNote), not the snapshot registry.

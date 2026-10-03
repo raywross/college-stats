@@ -66,7 +66,7 @@ function SourceBlock({ cited }: { cited: Cited }) {
       <p className="flex items-center gap-1 text-[10px] font-bold tracking-[0.14em] text-foreground/70 uppercase">
         <BookMarked className="size-3" aria-hidden /> Source
       </p>
-      {cited.method === "derived" && inputs.length > 0 && !isCollegeSite ? (
+      {cited.method === "derived" && inputs.length > 0 && !(isCollegeSite && cited.sourceKind) ? (
         <p>
           Calculated: {cited.formula}. From{" "}
           {inputs.map((s, i) => (
@@ -97,7 +97,7 @@ function SourceBlock({ cited }: { cited: Cited }) {
       )}
       {cited.replaces && (
         <p className="font-medium text-foreground">
-          Federal data, {cited.replaces.year ?? "most recent release"}: {formatReplaced(cited)}
+          Federal data, {cited.replaces.year?.replace(/^Entered\b/, "entered") ?? "most recent release"}: {formatReplaced(cited)}
         </p>
       )}
       <p className="text-[11px]">Retrieved {cited.retrieved}</p>

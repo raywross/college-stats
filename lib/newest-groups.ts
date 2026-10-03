@@ -11,9 +11,9 @@
  * `lib/newest.ts#restoreFederal` calls it, so every "federal baseline" in the pipeline is the same function.
  * `validateNewestGroups` is the lineage guard (rules 1–8; rule 9 lives in `lineageForPatch`).
  *
- * Pure: type-only imports, never mutates its input. Later CDS specs (C8 test policy, G1 next year's price) add rows.
+ * Pure: imports only the field registry (itself pure), never mutates its input. Later CDS specs (C8 test policy, G1 next year's price) add rows.
  */
-import type { FieldPath, VintageKey } from "./fields";
+import { FIELDS, type FieldPath, type VintageKey } from "./fields.ts";
 import type { DatasetMeta, FederalDemographics, FederalOutcomes, LineageRecord, ReportedOutcomes, School } from "./types";
 
 export type NewestGroupKey = "enrollment" | "race" | "retention" | "graduation";
@@ -287,7 +287,20 @@ export function newestGroupCitation(
   school: School | undefined
 ): { sourceKind?: "cds"; cdsEdition?: string; replaces?: { value: number | Record<string, number> | null; year: string | null } } {
   const g = GROUP_OF.get(path);
-  if (!g || !school) return {};
+  if (!school) return {};
+  if (!g) {
+    // A value from a CDS record (its lineage names the edition, e.g. reported.outcomes.graduation): that document.
+    const own = school.lineage?.[path];
+    if (own) return own.source === "college-site" && own.edition ? { sourceKind: "cds", cdsEdition: own.edition } : {};
+    // A value calculated from a replaced group (the diversity index from race): the same document, nothing replaced.
+    const def = FIELDS[path] as { derived?: { inputs: readonly string[] } };
+    for (const input of def.derived?.inputs ?? []) {
+      const ig = GROUP_OF.get(input);
+      const r = ig && collegeRecord(school, ig, input as FieldPath);
+      if (r) return { sourceKind: "cds", ...(r.edition ? { cdsEdition: r.edition } : {}) };
+    }
+    return {};
+  }
   const rec = collegeRecord(school, g, path);
   if (!rec) return {};
   const c = container(school, g);

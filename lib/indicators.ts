@@ -127,7 +127,7 @@ export function indicatorOf(s: School, key: IndicatorKey): Indicator | null {
   // Compare in the stored precision so a change of exactly the band (e.g. 0.05) is steady, not up.
   const direction: Direction = c > def.steady + 1e-9 ? "up" : c < -def.steady - 1e-9 ? "down" : "steady";
   // History stays federal (specs/data-expansion/cds-student-body-and-outcomes.md): name its end fall when the shown value is newer.
-  const endFall = key === "diversity" ? s.demographics.federal?.year : key === "selectivity" ? (s.admissions.federal?.year ?? undefined) : undefined;
+  const endFall = key === "diversity" ? s.demographics?.federal?.year : key === "selectivity" ? (s.admissions?.federal?.year ?? undefined) : undefined;
   return { def, direction, trend: t, ...(endFall != null ? { endFall } : {}) };
 }
 

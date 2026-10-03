@@ -1,6 +1,6 @@
 ---
 title: "Profiles show the newest admissions figures, and the first 22 are in"
-pr: 0
+pr: 54
 date: 2026-10-03
 kind: feature
 summary: A college's profile now leads with the newest admissions figures it has published itself, 22 colleges have them already, and the agent that collects them costs about a tenth of what its first run did.

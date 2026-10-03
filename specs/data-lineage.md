@@ -18,9 +18,14 @@ regression test pins it).
 1. **Every stored value is registered** in `lib/fields.ts`, or the sync refuses to write.
 2. **Year travels with the value.** Years come from `meta.json` `vintages` or the lineage record, never from literals
    in UI code.
-3. **Federal data is the comparison baseline** ([college-reported-data.md](college-reported-data.md#display)). *Today*
-   the 8 CDS overrides still replace federal values in `schools.json` (same fall 2024 class, different source); the
-   chips make that visible. Separate `school.reported` values arrive with the ingestion agent.
+3. **Every value shown is the newest its college has published**
+   ([college-reported-round-2.md](college-reported-round-2.md#decision-1-show-the-newest-figures-we-have)). The
+   dataset holds the newest values, lineage says where each came from, and `admissions.federal` keeps what was
+   replaced. A college's own newer class (its CDS or class profile, `school.reported`) replaces its federal or
+   hand-imported CDS admissions figures in `data/schools.json` value by value (`lib/newest.ts#applyNewest`, run by
+   `merge-reported` and `sync-data`), so the profile, Explore, Compare, ranks, medians, and Home all read the same
+   `school.admissions`; years can differ between colleges, and each value's ⓘ says its own. Yield is never a
+   mixed-year ratio (`lib/derive.ts#sameClassYield`). History charts stay federal.
 4. **Derived values cite their inputs.** A value calculated from non-default inputs (yield from CDS counts) is itself
    non-default.
 5. **Missing is `null`**, and has no lineage.
@@ -50,9 +55,28 @@ Stored only where a value's source differs from its registry default. Keys are r
 Missing parts fall back to the source's defaults in `meta.json`. The sync writes them for Scorecard admission-rate
 fallbacks and for every value an override sets ([data-sync.md](data-sync.md#overrides)).
 
+Newest figures (`applyNewest`) write records too:
+- each replaced `admissions.{applicants,admitted,enrolled,acceptance_rate}`: a copy of its `reported.admissions.*`
+  record (`source: "college-site"`, `method: "extracted"`, year, URL, retrieved date, quote); a rate calculated from
+  the college's two counts gets `method: "derived"` with both quotes;
+- `admissions.year`, when applicants or admitted were replaced: the `reported.admissions.entering_term` record;
+- a previous rate kept beside newer counts: `{ source: <previous source>, method: "derived", year: <previous year> }`,
+  so the ⓘ says it's calculated from the previous class's counts;
+- `admissions.federal`, only when the replaced funnel was a hand-imported CDS override: that override's record, so
+  "replaces" names the CDS edition (none means IPEDS ADM, the field's default).
+
+The guard (`validateSchool`) requires every `admissions.*` value cited to `college-site` to be extracted or derived
+with quote, URL, date, and year, `admissions.federal` to exist beside it, `admissions.year` to equal the reported
+class's when applicants or admitted were replaced, any value that differs from `admissions.federal` to be cited to
+the college, and `reported.admissions.year` to be newer than `admissions.federal.year` (or `admissions.year` when
+nothing was replaced).
+
 ### Resolution: `lib/lineage.ts` (pure; also used by the sync and tests)
 - `lineageFor(path, school, meta)` → `Cited`: source label, publisher, year, URL, retrieved date, method, `isDefault`,
-  formula, input sources, quote.
+  formula, input sources, quote, and `replaces` (`{ value, year }`) for a funnel value cited to the college that
+  replaced an older one: the value from `admissions.federal`, the year from its lineage record (a CDS edition) or
+  "Fall {federal.year}". Yield's inputs are the pair it was calculated from: enrolled and admitted when they describe
+  the same class, otherwise `admissions.federal`.
 - `sourcesForFields(paths, school, meta)` → distinct sources (derived values expand to inputs), for footnotes.
 - App wrappers in `lib/data.ts`: `citeField(path, school?)`, `sourcesForFields(paths, school?)`,
   `sourcesForSchools(paths, schools)`.
@@ -63,14 +87,13 @@ fallbacks and for every value an override sets ([data-sync.md](data-sync.md#over
 |---|---|---|
 | Section values | Footnote listing each source **with its year**, built from the section's `fields` | `SourceNote`; profile `Panel` requires `fields` |
 | Any metric label | The glossary ⓘ popover gains a **Source** block: "Reported in … , Fall 2024" or "Calculated: formula. From …", retrieved date | `MetricLabel` / `InfoTip` `cited` prop; `SourceTip` when there's no glossary term |
-| Value from a non-default source or year | Visible chip, e.g. `CDS 2024-25`, next to the label | `SourceChip` (automatic in `MetricLabel`) |
-| Section containing such values | One line under the takeaway: "Figures marked [chip] come from {college} Common Data Set, 2024-25. Everything else here is federal data." | `SourceExceptions` in the profile |
-| Values that always share a source (the funnel) | One chip on the group heading, not per row | `MetricLabel chip={false}` |
-| Compare "All the numbers" | Each row has a field; per-school cells get chips; row ⓘ shows the default source | `TABLE_ROWS` in `app/compare/page.tsx` |
+| Value from a non-default source or year | **Nothing visible next to the value** (chips and the "Figures marked like this…" line were removed 2026-10-03 at the owner's request); the ⓘ popover carries the source, the kind of document ("in its Common Data Set 2025–26", "in its class profile for the Fall 2026 class"), the year, the quote, the link, the retrieval date, and the replaced figure ("Federal data, Fall 2024: 5.8%", from `Cited.replaces`) | `SourceBlock` in `components/ui/info-tip.tsx`; `tests/reported-guards.test.mts` bans `SourceChip`, `SourceExceptions`, and `chip=` from `app/` and `components/` |
+| Compare "All the numbers" | Each row has a field; a cell whose cited year differs from the row's default year gets a small muted year after the value; row ⓘ shows the default source | `TABLE_ROWS` in `app/compare/page.tsx` |
 | Many schools (Explore, Home, Compare) | Union of sources; more than 3 CDS files collapse to "Common Data Sets from N colleges" | `MultiSourceNote` |
-| Explore and Compare, near `MultiSourceNote` | Quiet reminder that comparisons use the federal baseline, not a college's own newer figures | `BaselineNote` (built 2026-10-02; see [college-reported-data.md](college-reported-data.md#display)) |
+| Explore and Compare, near `MultiSourceNote` | Quiet note: figures are the newest each college has published, years can differ between colleges, each value's ⓘ shows its source and year | `BaselineNote` (revised 2026-10-03) |
 | Bottom of profile | Numbered list, one entry per dataset/document with every year used | `SourceList` |
-| `college-site` value (college-reported-data.md) | Headline with the lineage year ("Admit rate, Fall 2026: 4.0% · reported by the college"), the federal figure and year underneath as the baseline, each number cited | `ReportedAdmissionsBlock` / `ReportedRateLine` (`components/profile/ReportedAdmissions.tsx`), admissions topic page and overview card only |
+| `college-site` value, newer than federal (college-reported-round-2.md) | **Is** the value, in every view: `applyNewest` writes it into `school.admissions` with its lineage and keeps the replaced funnel in `admissions.federal`; nothing resolves at render time | `lib/newest.ts`, run by `merge-reported` and `sync-data` |
+| `college-site` value that's newer but not a full funnel (e.g. applicants only) | A line under the federal funnel: "Fall 2026: 46,618 applied · reported by the college", each present number cited | `PartialReportedLine` (`components/profile/ReportedAdmissions.tsx`) |
 
 ## Enforcement
 Each guard below was verified by breaking the rule on purpose and confirming the check fails (2026-09-28).
@@ -106,5 +129,5 @@ app is lenient: the sync and `check:lineage` still refuse a dataset missing any 
 - Superscript numbers linking values to the numbered source list (the popover links straight to the source instead).
 - Lineage in the `/api/schools` payload (client components currently show only search results, which aren't cited).
 
-Built 2026-10-02: the Explore/Compare baseline banner (`BaselineNote`) and `school.reported` display
-([college-reported-data.md](college-reported-data.md#display)) — see that spec's **As built** section.
+Built 2026-10-02 and revised 2026-10-03: `BaselineNote` and the newest-value display
+([college-reported-round-2.md](college-reported-round-2.md#decision-1-show-the-newest-figures-we-have-everywhere)).

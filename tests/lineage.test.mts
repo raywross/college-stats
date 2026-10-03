@@ -8,13 +8,15 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import type { DatasetMeta, School } from "../lib/types";
 import { FIELDS, PER_DOCUMENT_SOURCES, registeredPathFor } from "../lib/fields.ts";
+import { applyNewest } from "../lib/newest.ts";
 import { lineageFor, lineageForPatch, sourcesForFields, validateLineage, validateRegistry, validateSchool } from "../lib/lineage.ts";
 
 const ROOT = join(import.meta.dirname, "..");
 const meta: DatasetMeta = JSON.parse(readFileSync(join(ROOT, "data", "meta.json"), "utf8"));
 const schools: School[] = JSON.parse(readFileSync(join(ROOT, "data", "schools.json"), "utf8"));
 const byId = new Map(schools.map((s) => [s.unit_id, s]));
-const VANDERBILT = "221999"; // has a Common Data Set override
+const VANDERBILT = "221999"; // a Common Data Set override, replaced by its newer college-reported class (fall 2025)
+const NYU = "193900"; // a Common Data Set override and no newer college-reported class
 
 /** A minimal valid school to mutate in validation tests. */
 function fixture(): School {
@@ -58,7 +60,7 @@ test("a default value cites its field's default source and release year", () => 
 });
 
 test("CDS values cite the college's own file; untouched fields stay federal", () => {
-  const v = byId.get(VANDERBILT)!;
+  const v = byId.get(NYU)!;
   const applicants = lineageFor("admissions.applicants", v, meta);
   assert.equal(applicants.key, "cds");
   assert.equal(applicants.url, v.cds!.url);
@@ -79,12 +81,12 @@ test("derived values cite their inputs' sources", () => {
   const cost = new Set(sourcesForFields(["cost.avg_paid_all"], s, meta).map((x) => x.key));
   assert.ok(cost.has("ipeds-ic") && cost.has("ipeds-sfa"), [...cost].join(","));
   // A derived value over CDS inputs cites the CDS.
-  const vYield = lineageFor("derived.yield", byId.get(VANDERBILT)!, meta);
+  const vYield = lineageFor("derived.yield", byId.get(NYU)!, meta);
   assert.deepEqual(vYield.inputs?.map((i) => i.key), ["cds"]);
 });
 
 test("a derived value from non-default inputs is flagged non-default (so it gets a chip)", () => {
-  const v = byId.get(VANDERBILT)!;
+  const v = byId.get(NYU)!;
   for (const p of ["derived.yield", "derived.diversity_index", "derived.sat_composite", "derived.sat_mid"] as const) {
     assert.equal(lineageFor(p, v, meta).isDefault, false, p);
   }
@@ -175,4 +177,93 @@ test("an override attributes exactly the fields it sets", () => {
 
 test("an override setting an unregistered field is rejected", () => {
   assert.throws(() => lineageForPatch("1", { cds: { edition: "2024-25", url: "u" }, admissions: { waitlist: 3 } }), /isn't registered/);
+});
+
+/* ---- Newest figures in the dataset (specs/college-reported-round-2.md, Decision 1; lib/newest.ts) ---- */
+
+const RETRIEVED = "2026-10-03";
+const extracted = (quote: string, year = "Fall 2026") => ({ source: "college-site" as const, method: "extracted" as const, year, url: "https://example.edu/profile", retrieved: RETRIEVED, quote });
+
+/** The fixture (federal, fall 2024) with a newer college-reported class merged and applied, as merge-reported does. */
+function replaced(r: Partial<NonNullable<NonNullable<School["reported"]>["admissions"]>> = {}): School {
+  const s = fixture();
+  const admissions = { entering_term: "Fall 2026", year: 2026, applicants: 50000, admitted: 2000, enrolled: null, acceptance_rate: 0.04, source_kind: "class-profile" as const, ...r };
+  s.reported = { admissions };
+  const lineage: NonNullable<School["lineage"]> = {};
+  for (const k of ["entering_term", "year", "source_kind", "applicants", "admitted", "enrolled", "acceptance_rate"] as const) {
+    if (admissions[k] != null) lineage[`reported.admissions.${k}`] = extracted(`${k} ${admissions[k]}`);
+  }
+  s.lineage = lineage;
+  return applyNewest(s);
+}
+
+test("a replaced value cites the college's document and names the federal value it replaced, with its year", () => {
+  const s = replaced();
+  const fed = fixture().admissions;
+  const c = lineageFor("admissions.applicants", s, meta);
+  assert.equal(c.key, "college-site");
+  assert.equal(c.year, "Fall 2026");
+  assert.equal(c.quote, "applicants 50000");
+  assert.deepEqual(c.replaces, { value: fed.applicants, year: `Fall ${fed.year}` });
+  // Enrolled wasn't published, so it stays federal and replaces nothing; an untouched school has no `replaces` at all.
+  assert.equal(lineageFor("admissions.enrolled", s, meta).replaces, undefined);
+  assert.equal(lineageFor("admissions.enrolled", s, meta).key, "ipeds-adm");
+  assert.equal(lineageFor("admissions.applicants", fixture(), meta).replaces, undefined);
+  assert.deepEqual(validateSchool(s, meta), []);
+});
+
+test("a value that replaced a hand-imported CDS figure names the CDS edition it replaced", () => {
+  const v = byId.get(VANDERBILT)!;
+  const c = lineageFor("admissions.admitted", v, meta);
+  assert.equal(c.key, "college-site");
+  assert.deepEqual(c.replaces, { value: v.admissions.federal!.admitted, year: v.cds!.edition });
+});
+
+test("yield cites the class it was calculated from: the newest pair, or the previous class's when they differ", () => {
+  // Same class: both from the college's document.
+  const both = replaced({ enrolled: 1500 });
+  assert.deepEqual(lineageFor("derived.yield", both, meta).inputs?.map((i) => [i.key, i.year]), [["college-site", "Fall 2026"]]);
+  // Mixed: enrolled is federal (fall 2024), admitted the college's (fall 2026), so yield comes from admissions.federal.
+  const mixed = replaced();
+  assert.deepEqual(lineageFor("derived.yield", mixed, meta).inputs?.map((i) => [i.key, i.year]), [["ipeds-adm", meta.vintages["ipeds-adm"]]]);
+});
+
+test("validator: a reported class must be newer than what it replaced", () => {
+  const s = replaced();
+  s.admissions.federal!.year = 2026;
+  assert.match(validateSchool(s, meta).join("\n"), /reported\.admissions\.year 2026 isn't newer than the federal year 2026/);
+  // Not applied (nothing replaced): still must be newer than admissions.year.
+  const t = fixture();
+  t.reported = { admissions: { entering_term: "Fall 2020", year: 2020, applicants: 5, admitted: null, enrolled: null, acceptance_rate: null, source_kind: "cds" } };
+  t.lineage = {
+    "reported.admissions.entering_term": extracted("x", "Fall 2020"),
+    "reported.admissions.year": extracted("x", "Fall 2020"),
+    "reported.admissions.source_kind": extracted("x", "Fall 2020"),
+    "reported.admissions.applicants": extracted("x", "Fall 2020"),
+  };
+  assert.match(validateSchool(t, meta).join("\n"), /isn't newer than the federal year/);
+});
+
+test("validator: replaced applicants or admitted move admissions.year to the reported class", () => {
+  const s = replaced();
+  s.admissions.year = 2024;
+  assert.match(validateSchool(s, meta).join("\n"), /come from the college's 2026 class, but admissions\.year is 2024/);
+});
+
+test("validator: an admissions value cited to the college's site is extracted or derived, names its document, and keeps what it replaced", () => {
+  const s = replaced();
+  s.lineage!["admissions.applicants"] = { source: "college-site", method: "reported", url: "https://example.edu", year: "Fall 2026", retrieved: RETRIEVED, quote: "q" };
+  assert.match(validateSchool(s, meta).join("\n"), /admissions\.applicants cites the college's site, so it must be extracted or derived/);
+  const t = replaced();
+  delete t.lineage!["admissions.applicants"]!.quote;
+  assert.match(validateSchool(t, meta).join("\n"), /admissions\.applicants cites the college's site but lacks quote/);
+  const u = replaced();
+  delete u.admissions.federal;
+  assert.match(validateSchool(u, meta).join("\n"), /admissions\.federal doesn't keep the value it replaced/);
+});
+
+test("validator: a value that differs from admissions.federal must be cited to the college's site", () => {
+  const s = replaced();
+  delete s.lineage!["admissions.admitted"];
+  assert.match(validateSchool(s, meta).join("\n"), /admissions\.admitted differs from admissions\.federal\.admitted/);
 });

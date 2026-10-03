@@ -5,7 +5,8 @@ import type { ReactNode } from "react";
 import { Popover } from "@base-ui/react/popover";
 import { Info, ArrowRight, BookMarked, ExternalLink } from "lucide-react";
 import { GLOSSARY, type TermKey } from "@/lib/glossary";
-import { shortSource, yearLabel, type Cited, type CitedSource } from "@/lib/lineage";
+import { yearLabel, type Cited, type CitedSource } from "@/lib/lineage";
+import { num, pctSmart } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 function SourceLink({ s }: { s: CitedSource }) {
@@ -20,9 +21,38 @@ function SourceLink({ s }: { s: CitedSource }) {
   );
 }
 
-/** Where a value came from: source, year, method, formula and inputs. */
+/** Bare link, no trailing year (the year's already in the sentence above it). */
+function SourceLinkBare({ s }: { s: CitedSource }) {
+  return (
+    <a href={s.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-0.5 font-semibold text-foreground hover:text-primary hover:underline">
+      {s.label}
+      <ExternalLink className="size-2.5" aria-hidden />
+    </a>
+  );
+}
+
+/**
+ * "in its Common Data Set Fall 2026" / "in its class profile for the Fall 2026 class" / "on its own site", from
+ * `cited.sourceKind` (lib/lineage.ts, from `school.reported.admissions.source_kind`) when it's known.
+ */
+function sourceKindPhrase(cited: Cited): string {
+  const year = yearLabel(cited);
+  if (cited.sourceKind === "cds") return `in its Common Data Set ${year}`;
+  if (cited.sourceKind === "class-profile") return `in its class profile for the ${year} class`;
+  return "on its own site";
+}
+
+/** The federal (or previous) value a college-reported value replaced, formatted by field. */
+function formatReplaced(cited: Cited): string {
+  const value = cited.replaces?.value ?? null;
+  if (value === null) return "not reported";
+  return cited.path.endsWith("acceptance_rate") ? pctSmart(value) : num(value);
+}
+
+/** Where a value came from: source, year, method, formula, inputs, and what it replaced, if anything. */
 function SourceBlock({ cited }: { cited: Cited }) {
   const inputs = cited.inputs ?? [];
+  const isCollegeSite = cited.key === "college-site";
   return (
     <div className="space-y-1.5 text-[12px] leading-relaxed text-muted-foreground">
       <p className="flex items-center gap-1 text-[10px] font-bold tracking-[0.14em] text-foreground/70 uppercase">
@@ -39,6 +69,10 @@ function SourceBlock({ cited }: { cited: Cited }) {
           ))}
           .
         </p>
+      ) : isCollegeSite ? (
+        <p>
+          Reported by {cited.publisher} {sourceKindPhrase(cited)}.
+        </p>
       ) : (
         <p>
           {cited.method === "extracted" ? "Read from " : "Reported in "}
@@ -47,11 +81,15 @@ function SourceBlock({ cited }: { cited: Cited }) {
         </p>
       )}
       {cited.quote && <blockquote className="border-l-2 pl-2 italic">“{cited.quote}”</blockquote>}
-      {!cited.isDefault && (
+      {isCollegeSite && (
+        <p>
+          <SourceLinkBare s={cited} />
+          {cited.page !== undefined && `, p. ${cited.page}`}.
+        </p>
+      )}
+      {cited.replaces && (
         <p className="font-medium text-foreground">
-          {cited.key === "college-site"
-            ? "Reported by the college on its own site and checked automatically against its own figures and the federal baseline."
-            : `This value comes from a different source than most of this page${cited.key === "cds" ? ": the college's own Common Data Set" : ""}.`}
+          Federal data, {cited.replaces.year ?? "most recent release"}: {formatReplaced(cited)}
         </p>
       )}
       <p className="text-[11px]">Retrieved {cited.retrieved}</p>
@@ -143,19 +181,6 @@ export function SourceTip({ cited, className }: { cited: Cited; className?: stri
   );
 }
 
-/** Visible marker for a value from a different source or year than its section, e.g. "CDS 2024-25". */
-export function SourceChip({ cited, className }: { cited: Cited; className?: string }) {
-  if (cited.isDefault) return null;
-  return (
-    <span
-      className={cn("inline-flex items-center rounded-full bg-pop/80 px-1.5 py-px text-[10px] font-bold whitespace-nowrap text-pop-foreground", className)}
-      title={`${cited.label}, ${yearLabel(cited)}`}
-    >
-      {shortSource(cited)}
-    </span>
-  );
-}
-
 /** Inline word with a dotted underline that opens the same explanation. */
 export function Term({ term, children, className }: { term: TermKey; children?: ReactNode; className?: string }) {
   return (
@@ -179,21 +204,17 @@ export function Term({ term, children, className }: { term: TermKey; children?: 
 }
 
 /**
- * Label + info icon, the standard way to title any metric. Pass `cited`
- * (from `citeField`) so the popover shows the value's source, and a chip marks
- * values from a non-default source.
+ * Label + info icon, the standard way to title any metric. Pass `cited` (from
+ * `citeField`) so the popover shows the value's source and year.
  */
 export function MetricLabel({
   term,
   cited,
-  chip = true,
   children,
   className,
 }: {
   term?: TermKey;
   cited?: Cited;
-  /** Set false when a group heading already carries the chip (values that always share a source). */
-  chip?: boolean;
   children: ReactNode;
   className?: string;
 }) {
@@ -201,7 +222,6 @@ export function MetricLabel({
     <span className={cn("inline-flex items-center gap-1", className)}>
       {children}
       {term ? <InfoTip term={term} cited={cited} /> : cited && <SourceTip cited={cited} />}
-      {cited && chip && <SourceChip cited={cited} />}
     </span>
   );
 }

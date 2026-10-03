@@ -1,6 +1,6 @@
 import { getData } from "@/lib/data";
 import type { AdmissionFactor, FactorUse, School } from "@/lib/types";
-import { InfoTip, SourceChip } from "@/components/ui/info-tip";
+import { InfoTip } from "@/components/ui/info-tip";
 import { cn } from "@/lib/utils";
 
 /** Grid order: what families ask about first. Test scores are shown with the scores (`test_policy`). */
@@ -35,9 +35,7 @@ export async function AdmissionFactors({ school }: { school: School }) {
   return (
     <div className="rounded-3xl border bg-card p-4 sm:p-6">
       <h3 className="mb-1 flex items-center gap-1.5 font-display text-lg font-bold">
-        What they look at <InfoTip term="admission-factor" cited={cited} />
-        <SourceChip cited={cited} />
-      </h3>
+        What they look at <InfoTip term="admission-factor" cited={cited} />      </h3>
       {(f.legacy === "considered" || f.legacy === "required") && (
         <p className="text-sm text-muted-foreground">Considers whether an applicant&apos;s parent attended (legacy status).</p>
       )}

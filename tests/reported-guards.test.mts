@@ -27,10 +27,17 @@ function code(path: string): string {
     .replace(/(^|[^:"'`])\/\/.*$/gm, "$1");
 }
 
-/** `school.reported`, and never used for comparisons, ranks, medians, or charts (profiles only). */
+/** `school.reported`, and never used for comparisons, ranks, medians, or charts (the newest values already live in `school.admissions`). */
 const REPORTED_REFERENCE = /reported\??\.admissions|school\.reported/;
 
-const BANNED_FILES = [join(ROOT, "lib/metrics.ts"), join(ROOT, "lib/dataset.ts"), join(ROOT, "lib/compare.ts"), join(ROOT, "lib/insights.ts"), join(ROOT, "lib/indicators.ts"), join(ROOT, "app/page.tsx")];
+const BANNED_FILES = [
+  join(ROOT, "lib/metrics.ts"),
+  join(ROOT, "lib/dataset.ts"),
+  join(ROOT, "lib/compare.ts"),
+  join(ROOT, "lib/insights.ts"),
+  join(ROOT, "lib/indicators.ts"),
+  join(ROOT, "app/page.tsx"),
+];
 const BANNED_DIRS = [join(ROOT, "app/explore"), join(ROOT, "app/compare"), join(ROOT, "components/charts")];
 
 function offenders(): string[] {
@@ -50,12 +57,27 @@ test("college-reported values never reach comparisons, ranks, medians, or charts
   assert.deepEqual(offenders(), []);
 });
 
-const ADMISSIONS_FILES = [join(ROOT, "app/schools/[id]/admissions/page.tsx"), join(ROOT, "components/profile/AdmissionsCard.tsx"), join(ROOT, "components/profile/ReportedAdmissions.tsx")];
-const DISPLAYED_PATHS = ["applicants", "admitted", "enrolled", "acceptance_rate"];
+/**
+ * No chips (specs/college-reported-round-2.md, Decision 1 revised): the ⓘ popover carries source, year, and what a
+ * value replaced, instead of a visible tag next to it. `SourceChip` and `SourceExceptions` are gone from the
+ * codebase entirely, and `MetricLabel` no longer takes a `chip` prop.
+ */
+const CHIP_REFERENCE = /\bSourceChip\b|\bSourceExceptions\b|\bchip=/;
+const CHIP_CHECKED_DIRS = [join(ROOT, "app"), join(ROOT, "components")];
 
-test("every college-reported value the admissions page can show is cited by name", () => {
-  const combined = ADMISSIONS_FILES.map((f) => code(f)).join("\n");
-  for (const field of DISPLAYED_PATHS) {
-    assert.match(combined, new RegExp(`citeField\\("reported\\.admissions\\.${field}`), `missing citeField("reported.admissions.${field}", …) somewhere in the admissions page`);
+function chipOffenders(): string[] {
+  const files = CHIP_CHECKED_DIRS.flatMap(sourceFiles);
+  const out: string[] = [];
+  for (const f of files) {
+    code(f)
+      .split("\n")
+      .forEach((line, i) => {
+        if (CHIP_REFERENCE.test(line)) out.push(`${rel(f)}:${i + 1}: ${line.trim()}`);
+      });
   }
+  return out;
+}
+
+test("no source chips anywhere under app/ or components/", () => {
+  assert.deepEqual(chipOffenders(), []);
 });

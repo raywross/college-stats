@@ -1,0 +1,33 @@
+{
+  "run": "20261003-113224-1",
+  "started": "2026-10-03T11:32:49.443Z",
+  "finished": "2026-10-03T12:52:24.546Z",
+  "attempted": 50,
+  "documents_read": 70,
+  "published": 23,
+  "changed": 0,
+  "failed": 7,
+  "discovered": 50,
+  "escalated": 17,
+  "tripped": "7 of 50 attempted colleges failed checks (limit 10%)",
+  "usage": {
+    "discovery": {
+      "calls": 35,
+      "input_tokens": 21938487,
+      "output_tokens": 144171,
+      "cost_usd": 47.318684
+    },
+    "extraction": {
+      "calls": 36,
+      "input_tokens": 182579,
+      "output_tokens": 4377,
+      "cost_usd": 0.204464
+    },
+    "escalation": {
+      "calls": 37,
+      "input_tokens": 5810322,
+      "output_tokens": 99817,
+      "cost_usd": 32.54505
+    }
+  }
+}

@@ -27,7 +27,7 @@ import { join } from "node:path";
 import type { DatasetMeta, RepaymentStatus, School, SchoolType, TestPolicy } from "../lib/types";
 import { lineageForPatch, validateLineage } from "../lib/lineage.ts";
 import { COLLEGE_SITE_SOURCE, type ReportedFile } from "../lib/reported.ts";
-import { reportedToPatch } from "../lib/reported-checks.ts";
+import { mergeReported } from "../lib/reported-merge.ts";
 import { applyProbes, filesToProbe, type FileProbe, type ReleaseCalendar } from "../lib/releases.ts";
 import { IPEDS_BASES, parseCsv } from "./lib/ipeds.mts";
 import { MSI_FIELDS, campusProfileFrom, directoryIssues, msiFrom } from "../lib/campus-profile.ts";
@@ -872,20 +872,17 @@ async function main() {
       if (t) s.trends = t;
     }
   }
-  // College-reported data (specs/college-reported-data.md): the ingestion agent's published values, keyed by
-  // unit_id. Adds `school.reported` and lineage for `reported.*` paths only; never touches a federal field.
+  // College-reported data (specs/college-reported-data.md, Decision 5 of specs/college-reported-round-2.md): the
+  // ingestion agent's published values, keyed by unit_id, merged the same way scripts/merge-reported.mts re-merges
+  // them into the committed data/schools.json later (lib/reported-merge.ts), so the two can't disagree. Adds
+  // `school.reported` and lineage for `reported.*` paths only; never touches a federal field. `schools` here was
+  // just built fresh from Scorecard/IPEDS, so no school has a `reported` block yet to strip.
   let reportedMerged = 0;
   if (existsSync(REPORTED)) {
     const reportedFile: ReportedFile = JSON.parse(readFileSync(REPORTED, "utf8"));
-    const byUnitId = new Map(schools.map((s) => [s.unit_id, s]));
-    for (const entry of reportedFile.entries) {
-      const school = byUnitId.get(entry.unit_id);
-      if (!school) continue;
-      const { reported, lineage } = reportedToPatch(entry);
-      school.reported = reported;
-      school.lineage = { ...(school.lineage ?? {}), ...lineage };
-      reportedMerged++;
-    }
+    const merged = mergeReported(schools, reportedFile);
+    schools.splice(0, schools.length, ...merged.schools);
+    reportedMerged = merged.merged;
   }
 
   const scorecardYears = await detectScorecardYears(key, String(scorecard[0]?.id ?? "221999"));

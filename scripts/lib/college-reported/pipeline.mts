@@ -8,15 +8,20 @@
  * `run` works on the files' contents in memory and returns the updated contents plus a RunSummary; the CLI
  * (scripts/sync-college-reported.mts) reads and writes the files.
  *
- * Per college: discovery when there's no recipe (or --rediscover) → re-check index pages for new links → fetch each
- * source conditionally (304 or same hash = skip the model) → read changed documents (Excel CDS deterministically, PDF
- * and HTML with the extraction model) → checks → publish, or escalate (re-discover with Sonnet, then one Opus try) →
- * review queue.
+ * Per college: when there's no recipe (or --rediscover), first guess next year's CDS URL from the one we know (no
+ * model), else discovery (links only) → re-check index pages for new links → fetch each source conditionally (304 or
+ * same hash = skip the model) → read changed documents (Excel CDS deterministically, PDF and HTML with the extraction
+ * model) → checks → publish, or escalate only where a model can help (specs/college-reported-round-2.md, decision 3):
+ *   - every source failed to fetch (blocked, 404, network) → review queue as `unreachable`, no model call;
+ *   - anchor not found / unreadable document → one Sonnet re-discovery (effort medium), re-extract;
+ *   - a check failed on real figures → one re-extraction with the stronger model from the same cached document;
+ *   still failing → review queue. The run stops before a college starts once its logged cost reaches `maxCost`.
  */
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import {
   CIRCUIT_BREAKER,
+  DEFAULT_ANCHORS,
   REPORTED_MODELS,
   fallYear,
   type CheckFailure,
@@ -35,6 +40,7 @@ import { readC1, readWorkbook, sheetText, workbookEdition } from "../cds-xlsx.mt
 import { runChecks, toReportedEntry } from "../../../lib/reported-checks.ts";
 import { SCANNED_TEXT_CHARS, detectFormat, entryYearOf, htmlToText, newSourcesFromIndex, pagesText, pdfPages, selectPages, windowAround } from "./documents.mts";
 import { PoliteHttp, cacheDocument, isBlocked, sha256, type FetchFn } from "./http.mts";
+import { guessNextEditionUrls } from "./guess.mts";
 import { discover, extract, type DocumentInput, type LlmContext } from "./llm.mts";
 import { emptyUsage, type Job, type ModelClient } from "./models.mts";
 
@@ -51,6 +57,27 @@ export interface PipelineDeps {
   /** Colleges processed at once (requests to one host are still serialized). Default 4. */
   concurrency?: number;
   log?: (msg: string) => void;
+  /**
+   * Called after each college finishes, with the files' contents and a summary as they stand (status "running"), so
+   * the CLI can write them as it goes: a run that stops or is cancelled keeps every college it finished.
+   */
+  onProgress?: (snapshot: RunOutput) => void;
+}
+
+/**
+ * An API error that will fail every later call too, so the run stops instead of failing each remaining college:
+ * a bad or revoked key, or the account's spend limit or credit balance reached. Duck-typed on `status` and `message`
+ * so it works for the SDK's error classes and for test fakes.
+ */
+export function fatalApiError(err: unknown): string | null {
+  if (!err || typeof err !== "object") return null;
+  const status = (err as { status?: unknown }).status;
+  const message = String((err as { message?: unknown }).message ?? "");
+  if (status === 401 || status === 403) return `the API key was refused (HTTP ${status}): ${message.slice(0, 200)}`;
+  if ((status === 400 || status === 429) && /usage limit|spend limit|credit balance|billing/i.test(message)) {
+    return `the Anthropic account's spend limit or credit balance was reached: ${message.slice(0, 200)}`;
+  }
+  return null;
 }
 
 export interface RunInput {
@@ -64,7 +91,15 @@ export interface RunInput {
   rediscover?: boolean;
   /** Most discoveries (Sonnet + web search) this run may start; colleges past it without a recipe are skipped. */
   maxDiscoveries?: number;
+  /**
+   * The run's dollar cap (logged, estimated cost). Checked before each college starts: once the cost so far plus
+   * COLLEGE_ALLOWANCE_USD reaches it, the run stops like a spend-limit error (status "stopped"). No cap when absent.
+   */
+  maxCost?: number;
 }
+
+/** What one college may cost, at most, in the cost-cap check (a discovery plus a re-extraction, with room to spare). */
+export const COLLEGE_ALLOWANCE_USD = 0.5;
 
 export interface RunOutput {
   sources: SourcesFile;
@@ -119,15 +154,26 @@ const fmt = (n: number) => n.toLocaleString("en-US");
 type SourceRead =
   | { state: "unchanged" }
   | { state: "read" }
-  | { state: "skipped"; detail: string }
+  /** Couldn't fetch it: robots.txt, 401/403/405/429 or another HTTP error (404), a network error. No model can help. */
+  | { state: "unreachable"; detail: string }
+  /** Fetched but no figures read: anchor not found, unreadable document, extraction error. */
   | { state: "problem"; detail: string };
 
 type Outcome =
   | { status: "unchanged" }
-  | { status: "skipped"; reason: string }
   | { status: "stale"; reason: string }
   | { status: "published"; entry: ReportedEntry }
-  | { status: "failed"; failures: CheckFailure[]; extraction: Extraction | null; urls: string[] };
+  | { status: "unreachable"; failures: CheckFailure[]; urls: string[] }
+  | {
+      status: "failed";
+      failures: CheckFailure[];
+      extraction: Extraction | null;
+      urls: string[];
+      /** Sources whose figures failed a check on real figures (re-extracted once by the stronger model). */
+      failing: RecipeSource[];
+      /** Documents fetched but not read (missing anchor, unreadable); re-discovery may find better links. */
+      problems: string[];
+    };
 
 export function createPipeline(deps: PipelineDeps) {
   const log = deps.log ?? ((m: string) => console.log(m));
@@ -144,32 +190,60 @@ export function createPipeline(deps: PipelineDeps) {
     const started = deps.now().toISOString();
     const today = started.slice(0, 10);
     const usage = emptyUsage();
-    const ctx: LlmContext = { client: deps.client, usage, today, log };
+    // Set by the first fatal API error (fatalApiError) or the cost cap: no new college starts, and colleges in flight
+    // record nothing.
+    let stopReason: string | null = null;
+    const stopped = () => stopReason !== null;
+    async function guarded<T>(call: () => Promise<T>): Promise<T> {
+      if (stopReason) throw new Error(`run stopped: ${stopReason}`);
+      try {
+        return await call();
+      } catch (err) {
+        const fatal = fatalApiError(err);
+        if (fatal && !stopReason) {
+          stopReason = fatal;
+          log(`\nStopping: ${fatal}. Colleges already finished are kept.`);
+        }
+        throw err;
+      }
+    }
+    const client: ModelClient = {
+      messages: {
+        create: (body) => guarded(() => deps.client.messages.create(body)),
+        stream: (body) => ({ finalMessage: () => guarded(() => deps.client.messages.stream(body).finalMessage()) }),
+      },
+    };
+    const ctx: LlmContext = { client, usage, today, log };
     const maxDiscoveries = input.maxDiscoveries ?? 100;
-    const counts = { attempted: 0, documents_read: 0, published: 0, changed: 0, failed: 0, discovered: 0, escalated: 0 };
+    const counts = { attempted: 0, documents_read: 0, published: 0, changed: 0, failed: 0, unreachable: 0, discovered: 0, guessed: 0, escalated: 0 };
 
     const recipes = new Map(input.sources.recipes.map((r) => [r.unit_id, r]));
     const entries = new Map(input.reported.entries.map((e) => [e.unit_id, e]));
     const priorValues = input.reported.entries.reduce((n, e) => n + countValues(e), 0);
     let items = [...input.queue.items];
+    /** Documents a URL guess already downloaded, handed to the first read so they aren't fetched twice. */
+    const prefetched = new Map<string, Response>();
 
     /* ---------------- one document ---------------- */
 
     async function readSource(school: School, src: RecipeSource, o: { force: boolean; model: string; job: Job }): Promise<SourceRead> {
       const conditional = !o.force && src.sha256 ? { etag: src.etag, last_modified: src.last_modified } : {};
       let res: Response | null;
-      try {
-        res = await http.get(src.url, conditional);
-      } catch (err) {
-        return { state: "problem", detail: `${src.url}: ${err instanceof Error ? err.message : err}` };
+      const pre = prefetched.get(src.url);
+      if (pre) {
+        prefetched.delete(src.url);
+        res = pre;
+      } else {
+        try {
+          res = await http.get(src.url, conditional);
+        } catch (err) {
+          return { state: "unreachable", detail: `${src.url}: ${err instanceof Error ? err.message : err}` };
+        }
       }
-      if (!res) return { state: "skipped", detail: `robots.txt disallows ${src.url}` };
+      if (!res) return { state: "unreachable", detail: `robots.txt disallows ${src.url}` };
       if (res.status === 304) return { state: "unchanged" };
-      if (isBlocked(res)) {
-        log(`  ${src.url}: HTTP ${res.status} (bot protection or rate limit); not retried`);
-        return { state: "skipped", detail: `HTTP ${res.status} at ${src.url}` };
-      }
-      if (!res.ok) return { state: "problem", detail: `HTTP ${res.status} at ${src.url}` };
+      if (isBlocked(res)) log(`  ${src.url}: HTTP ${res.status} (bot protection or rate limit); not retried`);
+      if (!res.ok) return { state: "unreachable", detail: `HTTP ${res.status} at ${src.url}` };
       const bytes = new Uint8Array(await res.arrayBuffer());
       const hash = sha256(bytes);
       const etag = res.headers.get("etag") ?? undefined;
@@ -179,8 +253,25 @@ export function createPipeline(deps: PipelineDeps) {
         src.last_modified = lastModified ?? src.last_modified;
         return { state: "unchanged" };
       }
+      const read = await readBytes(school, src, bytes, hash, detectFormat(bytes, res.headers.get("content-type"), src.url), o);
+      if (read.state !== "read") return read;
+      if (etag) src.etag = etag;
+      else delete src.etag;
+      if (lastModified) src.last_modified = lastModified;
+      else delete src.last_modified;
+      return read;
+    }
+
+    /** Reads downloaded bytes (cached by hash) into `src.extraction`. */
+    async function readBytes(
+      school: School,
+      src: RecipeSource,
+      bytes: Uint8Array,
+      hash: string,
+      format: RecipeSource["format"],
+      o: { model: string; job: Job }
+    ): Promise<SourceRead> {
       const file = cacheDocument(cacheDir, hash, bytes);
-      const format = detectFormat(bytes, res.headers.get("content-type"), src.url);
       counts.documents_read++;
       let extraction: Extraction | null;
       try {
@@ -191,11 +282,18 @@ export function createPipeline(deps: PipelineDeps) {
         return { state: "problem", detail: `${src.url}: ${err instanceof Error ? err.message : err}` };
       }
       Object.assign(src, { format, sha256: hash, processed: today, extraction });
-      if (etag) src.etag = etag;
-      else delete src.etag;
-      if (lastModified) src.last_modified = lastModified;
-      else delete src.last_modified;
       return { state: "read" };
+    }
+
+    /**
+     * The stronger extractor's one re-read of a document whose figures failed a check: from the cached copy when we
+     * have it (same bytes, no refetch), else fetched again.
+     */
+    async function reextract(school: School, src: RecipeSource): Promise<SourceRead> {
+      const o = { force: true, model: REPORTED_MODELS.escalation, job: "escalation" as const };
+      const file = src.sha256 ? join(cacheDir, src.sha256) : null;
+      if (src.sha256 && file && existsSync(file)) return readBytes(school, src, new Uint8Array(readFileSync(file)), src.sha256, src.format, o);
+      return readSource(school, src, o);
     }
 
     async function readDocument(
@@ -205,6 +303,8 @@ export function createPipeline(deps: PipelineDeps) {
       o: { model: string; job: Job }
     ): Promise<{ extraction: Extraction } | { problem: string }> {
       const ask = (d: Omit<DocumentInput, "kind" | "url">) => extract(ctx, school, { kind: src.kind, url: src.url, ...d }, o);
+      // Discovery returns links only, so most sources carry no anchor: the extractor finds its section itself.
+      const anchor = src.anchor ?? DEFAULT_ANCHORS[src.kind];
       if (doc.format === "xlsx") {
         const book = readWorkbook(doc.file);
         const c1 = readC1(book);
@@ -221,7 +321,7 @@ export function createPipeline(deps: PipelineDeps) {
         }
         const text = sheetText(book.get("CDS-C")) || [...book.values()].map(sheetText).join("\n\n");
         if (!text.trim()) return { problem: `${src.url}: workbook has no readable sheets` };
-        return { extraction: await ask({ text: windowAround(text, src.anchor ?? "C1") }) };
+        return { extraction: await ask({ text: windowAround(text, anchor) }) };
       }
       if (doc.format === "pdf") {
         const pages = await pdfPages(doc.bytes);
@@ -230,13 +330,13 @@ export function createPipeline(deps: PipelineDeps) {
           if (pages.length > 100) return { problem: `${src.url}: scanned PDF of ${pages.length} pages is too long to send` };
           return { extraction: await ask({ pdfBase64: Buffer.from(doc.bytes).toString("base64") }) };
         }
-        const which = selectPages(pages, src.pages, src.anchor);
-        if (!which.length) return { problem: `anchor "${src.anchor ?? ""}" not found in ${src.url}` };
+        const which = selectPages(pages, src.pages, anchor);
+        if (!which.length) return { problem: `anchor "${anchor}" not found in ${src.url}` };
         return { extraction: await ask({ text: pagesText(pages, which) }) };
       }
       const text = htmlToText(new TextDecoder().decode(doc.bytes));
-      if (src.anchor && !text.toLowerCase().includes(src.anchor.toLowerCase())) return { problem: `anchor "${src.anchor}" not found in ${src.url}` };
-      return { extraction: await ask({ text: windowAround(text, src.anchor) }) };
+      if (!text.toLowerCase().includes(anchor.toLowerCase())) return { problem: `anchor "${anchor}" not found in ${src.url}` };
+      return { extraction: await ask({ text: windowAround(text, anchor) }) };
     }
 
     /* ---------------- one recipe ---------------- */
@@ -255,13 +355,21 @@ export function createPipeline(deps: PipelineDeps) {
           log(`  ${idx}: ${err instanceof Error ? err.message : err}`);
         }
       }
+      if (!recipe.sources.length) return { status: "stale", reason: "the recipe lists no documents" };
       const reads = await Promise.all(recipe.sources.map((s) => readSource(school, s, o)));
+      const unreachable = reads.flatMap((r) => (r.state === "unreachable" ? [r.detail] : []));
       const problems = reads.flatMap((r) => (r.state === "problem" ? [r.detail] : []));
-      for (const r of reads) if (r.state === "skipped" || r.state === "problem") log(`  ${school.name}: ${r.detail}`);
-      if (!reads.some((r) => r.state === "read") && !problems.length) {
-        return reads.some((r) => r.state === "unchanged") ? { status: "unchanged" } : { status: "skipped", reason: "no source could be fetched" };
+      for (const r of reads) if (r.state === "unreachable" || r.state === "problem") log(`  ${school.name}: ${r.detail}`);
+      // Every source failed to fetch: no model can fix a blocked site or a missing file, so no model is called.
+      if (unreachable.length === reads.length) {
+        return { status: "unreachable", failures: unreachable.map((detail) => ({ check: "unreachable" as const, detail })), urls: recipe.sources.map((s) => s.url) };
       }
+      if (!reads.some((r) => r.state === "read") && !problems.length) return { status: "unchanged" };
+      return judge(school, recipe, problems);
+    }
 
+    /** Runs the checks over every source's extraction: publish the newest passing one, else say what failed. */
+    function judge(school: School, recipe: Recipe, problems: string[]): Outcome {
       const withFigures = recipe.sources.filter((s) => hasFigures(s.extraction));
       const extractions = withFigures.map((s) => s.extraction!);
       const judged = withFigures.map((s) => ({ src: s, e: s.extraction!, failures: runChecks(s.extraction!, school, extractions) }));
@@ -283,7 +391,7 @@ export function createPipeline(deps: PipelineDeps) {
         // Missing anchors and unreadable documents: no number could be quoted, so they're reported as quote failures.
         ...problems.map((detail) => ({ check: "quote-present" as const, detail: `no figures read: ${detail}` })),
       ];
-      return { status: "failed", failures, extraction: worst?.e ?? null, urls: worst ? [worst.src.url] : recipe.sources.map((s) => s.url) };
+      return { status: "failed", failures, extraction: worst?.e ?? null, urls: worst ? [worst.src.url] : recipe.sources.map((s) => s.url), failing: real.map((j) => j.src), problems };
     }
 
     /* ---------------- one college ---------------- */
@@ -291,13 +399,13 @@ export function createPipeline(deps: PipelineDeps) {
     let discoveries = 0;
     const canDiscover = () => discoveries < maxDiscoveries;
 
-    async function learn(school: School, old: Recipe | undefined, model: string, job: Job): Promise<Recipe | null> {
-      if (job === "discovery") {
-        discoveries++;
-        counts.discovered++;
-      }
+    /** Discovery (links only) with the Sonnet model: effort low the first time, medium on the one re-discovery. */
+    async function learn(school: School, old: Recipe | undefined, effort: "low" | "medium"): Promise<Recipe | null> {
+      discoveries++;
+      counts.discovered++;
+      const model = REPORTED_MODELS.discovery;
       try {
-        const fresh = await discover(ctx, school, { model, job });
+        const fresh = await discover(ctx, school, { model, job: "discovery", effort });
         log(`  ${school.name}: ${model} found ${fresh.sources.length} source(s)${fresh.none_found ? " (none newer)" : ""}`);
         return carryState(fresh, old);
       } catch (err) {
@@ -306,18 +414,88 @@ export function createPipeline(deps: PipelineDeps) {
       }
     }
 
+    /**
+     * Next year's CDS, guessed from the CDS URL we already know (`school.cds.url`, or the old recipe's CDS sources) by
+     * changing the edition in the file name. A guess that returns a PDF or Excel file becomes the recipe: no model call.
+     */
+    async function guess(school: School, old: Recipe | undefined): Promise<Recipe | null> {
+      const known = old?.sources.filter((s) => s.kind === "cds") ?? [];
+      const bases = [...new Set([school.cds?.url, ...known.map((s) => s.url)].filter((u): u is string => !!u))];
+      const tried = new Set<string>();
+      for (const base of bases) {
+        for (const url of guessNextEditionUrls(base, school.admissions.year ?? 0)) {
+          if (tried.has(url)) continue;
+          tried.add(url);
+          const prior = known.find((s) => s.url === url);
+          let res: Response | null;
+          try {
+            res = await http.get(url, prior?.sha256 ? { etag: prior.etag, last_modified: prior.last_modified } : {});
+          } catch {
+            continue;
+          }
+          if (!res) continue;
+          let format: RecipeSource["format"];
+          if (res.status === 304 && prior) format = prior.format;
+          else if (res.status === 200) {
+            const bytes = new Uint8Array(await res.arrayBuffer());
+            // From the bytes and content type only: the guessed URL's own extension proves nothing.
+            format = detectFormat(bytes, res.headers.get("content-type"), "");
+            if (format === "html") continue; // e.g. a "not found" page served with 200
+            prefetched.set(url, new Response(bytes, { status: 200, headers: res.headers }));
+          } else {
+            await res.body?.cancel().catch(() => {});
+            continue;
+          }
+          log(`  ${school.name}: guessed the next CDS edition: ${url}`);
+          const fresh: Recipe = {
+            unit_id: school.unit_id,
+            sources: [{ kind: "cds", url, format }, ...(old?.sources.filter((s) => s.kind !== "cds") ?? [])],
+            index_urls: old?.index_urls ?? [],
+            learned: today,
+            model: "guessed",
+            notes: `CDS URL guessed from ${base}`,
+          };
+          return carryState(fresh, old);
+        }
+      }
+      return null;
+    }
+
+    const emptyExtraction = (): Extraction => ({ cohort: "unknown", scope: "unknown", entering_term: null, applicants: null, admitted: null, enrolled: null, acceptance_rate: null, quotes: {}, page: null });
+
+    function enqueue(school: School, urls: string[], extraction: Extraction | null, failures: CheckFailure[]) {
+      const item: ReviewItem = {
+        unit_id: school.unit_id,
+        name: school.name,
+        urls,
+        entering_term: extraction?.entering_term ?? null,
+        extraction: extraction ?? emptyExtraction(),
+        failures,
+        queued: today,
+        run: input.run,
+      };
+      items = [...items.filter((i) => i.unit_id !== school.unit_id), item];
+    }
+
     async function processCollege(school: School): Promise<void> {
       const stored = recipes.get(school.unit_id);
       let recipe = stored ? structuredClone(stored) : undefined;
-      let discoveredNow = false;
+      // A recipe found this run, by a guessed URL or by discovery.
+      let learnedNow = false;
       if (!recipe || input.rediscover) {
-        if (!canDiscover()) {
+        const guessed = await guess(school, recipe);
+        if (guessed) {
+          recipe = guessed;
+          learnedNow = true;
+          counts.guessed++;
+        } else if (!canDiscover()) {
           if (!recipe) return void log(`${school.name}: no recipe and the discovery budget is spent; skipped`);
         } else {
-          const fresh = await learn(school, recipe, REPORTED_MODELS.discovery, "discovery");
+          const fresh = await learn(school, recipe, "low");
+          if (stopped()) return;
           if (fresh) {
             recipe = fresh;
-            discoveredNow = true;
+            learnedNow = true;
           } else if (!recipe) {
             counts.attempted++;
             return;
@@ -325,38 +503,41 @@ export function createPipeline(deps: PipelineDeps) {
         }
       }
       if (recipe!.none_found) {
-        if (discoveredNow) counts.attempted++;
+        if (learnedNow) counts.attempted++;
         recipes.set(school.unit_id, recipe!);
-        return void log(`${school.name}: nothing newer published${discoveredNow ? "" : " (per recipe; re-checked on --rediscover)"}`);
+        return void log(`${school.name}: nothing newer published${learnedNow ? "" : " (per recipe; re-checked on --rediscover)"}`);
       }
 
       let current = recipe!;
       let out = await attempt(school, current, { force: false, model: REPORTED_MODELS.extraction, job: "extraction" });
-      if (out.status === "failed") {
-        counts.escalated++;
-        log(`${school.name}: checks failed (${out.failures.map((f) => f.check).join(", ")}); escalating`);
-        if (!discoveredNow && canDiscover()) {
-          const again = await learn(school, current, REPORTED_MODELS.discovery, "discovery");
-          if (again && !again.none_found) {
-            const retry = await attempt(school, again, { force: true, model: REPORTED_MODELS.extraction, job: "extraction" });
-            current = again;
-            out = retry;
+      if (out.status === "failed" && !stopped()) {
+        if (out.failing.length) {
+          // Real figures failed a check: the stronger extractor re-reads the same documents once (no new search).
+          counts.escalated++;
+          log(`${school.name}: checks failed (${out.failures.map((f) => f.check).join(", ")}); re-reading with ${REPORTED_MODELS.escalation}`);
+          for (const src of out.failing) {
+            const r = await reextract(school, src);
+            if (r.state === "problem" || r.state === "unreachable") log(`  ${school.name}: ${r.detail}`);
           }
-        }
-        if (out.status === "failed") {
-          const last = await learn(school, current, REPORTED_MODELS.escalation, "escalation");
-          if (last && !last.none_found) {
-            const retry = await attempt(school, last, { force: true, model: REPORTED_MODELS.escalation, job: "escalation" });
-            current = last;
-            out = retry;
+          if (!stopped()) out = judge(school, current, out.problems);
+        } else if (canDiscover()) {
+          // Nothing could be read (anchor missing, unreadable file): better links may help, so re-discover once.
+          counts.escalated++;
+          log(`${school.name}: no figures read; re-discovering (effort medium)`);
+          const again = await learn(school, current, "medium");
+          if (again && !again.none_found && !stopped()) {
+            out = await attempt(school, again, { force: true, model: REPORTED_MODELS.extraction, job: "extraction" });
+            current = again;
           }
         }
       }
+      // A college cut off by a fatal API error isn't a result: record nothing, so the next run does it again.
+      if (stopped()) return;
       recipes.set(school.unit_id, current);
 
-      if (out.status === "unchanged" || out.status === "skipped") {
-        if (discoveredNow) counts.attempted++;
-        return void log(`${school.name}: ${out.status === "unchanged" ? "unchanged" : out.reason}`);
+      if (out.status === "unchanged") {
+        if (learnedNow) counts.attempted++;
+        return void log(`${school.name}: unchanged`);
       }
       counts.attempted++;
       if (out.status === "stale") return void log(`${school.name}: ${out.reason}`);
@@ -371,52 +552,76 @@ export function createPipeline(deps: PipelineDeps) {
         const a = out.entry.admissions;
         return void log(`${school.name}: published ${a.entering_term} (${a.source_kind}): ${a.applicants ?? "–"} applied, ${a.admitted ?? "–"} admitted`);
       }
+      if (out.status === "unreachable") {
+        // Not a check failure: the breaker doesn't count it.
+        counts.unreachable++;
+        enqueue(school, out.urls, null, out.failures);
+        return void log(`${school.name}: unreachable, to the review queue (${out.failures.map((f) => f.detail).join("; ")})`);
+      }
       counts.failed++;
-      const item: ReviewItem = {
-        unit_id: school.unit_id,
-        name: school.name,
-        urls: out.urls,
-        entering_term: out.extraction?.entering_term ?? null,
-        extraction: out.extraction ?? { cohort: "unknown", scope: "unknown", entering_term: null, applicants: null, admitted: null, enrolled: null, acceptance_rate: null, quotes: {}, page: null },
-        failures: out.failures,
-        queued: today,
-        run: input.run,
-      };
-      items = [...items.filter((i) => i.unit_id !== school.unit_id), item];
+      enqueue(school, out.urls, out.extraction, out.failures);
       log(`${school.name}: to the review queue (${out.failures.map((f) => `${f.check}: ${f.detail}`).join("; ")})`);
     }
 
     /* ---------------- all colleges ---------------- */
 
+    const total = input.schools.length;
+    let done = 0;
+    const totalCost = () => Object.values(usage).reduce((n, u) => n + u.cost_usd, 0);
+    // Set when the run's cost cap is reached: no new college starts, but colleges in flight finish and are kept.
+    let capReason: string | null = null;
+    /** Checked before each college starts: the logged cost plus one college's allowance must stay under the cap. */
+    function capReached(): boolean {
+      if (capReason) return true;
+      if (input.maxCost === undefined || totalCost() + COLLEGE_ALLOWANCE_USD < input.maxCost) return false;
+      capReason = `the run's cost cap of $${input.maxCost} was reached`;
+      log(`\nStopping: ${capReason} (~$${totalCost().toFixed(2)} logged). Colleges already finished are kept.`);
+      return true;
+    }
+
+    /** The files' contents and summary as they stand; `final` marks the run finished or stopped. */
+    function snapshot(final: boolean): RunOutput {
+      const summary: RunSummary = {
+        run: input.run,
+        started,
+        finished: final ? deps.now().toISOString() : null,
+        status: stopReason || capReason ? "stopped" : final ? "finished" : "running",
+        ...(stopReason || capReason ? { stopped_reason: (stopReason ?? capReason)! } : {}),
+        done,
+        total,
+        ...counts,
+        tripped: circuitBreaker({ attempted: counts.attempted, failed: counts.failed, changed: counts.changed, priorValues }),
+        usage: structuredClone(usage),
+      };
+      return {
+        sources: { updated: today, recipes: [...recipes.values()] },
+        // `updated` on the published file moves only when something published, so a quiet run leaves it untouched.
+        reported: { updated: counts.published ? today : input.reported.updated, entries: [...entries.values()] },
+        queue: { updated: today, items: [...items] },
+        summary,
+      };
+    }
+
     const queue = [...input.schools];
     const workers = Array.from({ length: Math.max(1, deps.concurrency ?? 4) }, async () => {
-      for (let s = queue.shift(); s; s = queue.shift()) {
+      for (let s = queue.shift(); s && !stopped() && !capReached(); s = queue.shift()) {
         try {
           await processCollege(s);
         } catch (err) {
           log(`${s.name}: ${err instanceof Error ? err.stack : err}`);
-          counts.attempted++;
-          counts.failed++;
+          if (!stopped()) {
+            counts.attempted++;
+            counts.failed++;
+          }
         }
+        if (stopped()) break;
+        done++;
+        log(`[${done}/${total}] ${s.name} done · run cost so far ~$${totalCost().toFixed(2)}`);
+        deps.onProgress?.(snapshot(false));
       }
     });
     await Promise.all(workers);
-
-    const summary: RunSummary = {
-      run: input.run,
-      started,
-      finished: deps.now().toISOString(),
-      ...counts,
-      tripped: circuitBreaker({ attempted: counts.attempted, failed: counts.failed, changed: counts.changed, priorValues }),
-      usage,
-    };
-    return {
-      sources: { updated: today, recipes: [...recipes.values()] },
-      // `updated` on the published file moves only when something published, so a quiet run leaves it untouched.
-      reported: { updated: counts.published ? today : input.reported.updated, entries: [...entries.values()] },
-      queue: { updated: today, items },
-      summary,
-    };
+    return snapshot(true);
   }
 
   return { run };

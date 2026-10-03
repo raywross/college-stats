@@ -11,7 +11,7 @@ the drill-down.
 | Route | Content |
 |---|---|
 | `/schools/{id}` | Hero, the at-a-glance tiles, "In detail" links to the topic pages, similar schools, the full sources list |
-| `/schools/{id}/admissions` | Getting in: funnel, men and women, yield (+ strip), acceptance-rate strip, what they look at, the admissions map; then Test scores (`#scores`): `ScoreChecker`, who submitted, SAT-midpoint strip |
+| `/schools/{id}/admissions` | Getting in: funnel (the college's newest published class when newer than federal, else federal; `lib/newest.ts`), men and women, yield (+ strip), acceptance-rate strip, what they look at, the admissions map; then Test scores (`#scores`): `ScoreChecker`, who submitted, SAT-midpoint strip |
 | `/schools/{id}/students` | Who's on campus: race & ethnicity (+ diversity strip), economic access (+ Pell strip), campus size, where they come from, transfers, who they are; then Campus life (`#campus`) |
 | `/schools/{id}/academics` | Majors and faculty: popular majors, top-earning majors, students per faculty, faculty, spending and endowment |
 | `/schools/{id}/cost` | What it costs: price calculator link, what students pay, price by family income, debt and payback, borrowing and repayment, who gets aid |
@@ -35,8 +35,8 @@ routes in `ANCHOR_TOPICS` (`lib/profile-topics.ts`); `#overview`, `#ranks`, and 
 - `lib/profile-history.ts` (pure): `HISTORY_GROUPS`, `HISTORY_SERIES`, `BANDED` for the Over time charts.
 - `lib/profile-cards.ts` (pure): what the overview cards say: `CARD_FOOTERS`, `CARD_TITLES`, `admissionsTitle`,
   `campusChips`, `middleBand`, `sinceLabel`, `tenYear`, `diversityValues` (`tests/profile-cards.test.mts`).
-- `components/profile/`: `Panel` (section header: eyebrow, h1 or h2, takeaway, `HeadlineDelta`, `SourceExceptions`,
-  and a `SourceNote` for h2 sections), `Block` (an h3 card with an id), `NotReported`, `SourceExceptions`,
+- `components/profile/`: `Panel` (section header: eyebrow, h1 or h2, takeaway, `HeadlineDelta`, and a `SourceNote`
+  for h2 sections), `Block` (an h3 card with an id), `NotReported`,
   `CompactHeader` (the topic pages' sticky band: crest, name linking to the overview, city · type, Compare,
   `TopicPills`), `OnThisPage` (client scroll-spy of the page's blocks; a sticky side column from `lg`, a collapsible
   row above the content below it; jumps to a folded block's "Show …" button on phones), `TopicPage` (the frame:
@@ -61,8 +61,7 @@ routes in `ANCHOR_TOPICS` (`lib/profile-topics.ts`); `#overview`, `#ranks`, and 
 1. **Hero**, slim: tinted with the school's crest color. Breadcrumb (Explore › State › School), crest, name,
    location, type, size, test policy, setting, and designations as glossary `Term`s, the Compare button, and the
    "Known for" standout chips. The ten-year trend cards left the hero: each topic card carries its own ten-year line.
-2. **`SourceExceptions`** for `OVERVIEW_FIELDS` ("Figures marked like this come from … Common Data Set").
-3. **Topic cards** (`components/profile/TopicCards.tsx`): one card per page in `profile.topics`, two columns from
+2. **Topic cards** (`components/profile/TopicCards.tsx`): one card per page in `profile.topics`, two columns from
    `sm`, stacked on phones. The whole card is a link to its page (an overlay anchor; popovers, the calculator link,
    "Over time" links, and the swipeable chip row stay interactive above it), with a footer line naming what the page
    holds ("Getting in, in detail: funnel, what they look at, your scores →"). Shell: `TopicCard` with
@@ -70,10 +69,15 @@ routes in `ANCHOR_TOPICS` (`lib/profile-topics.ts`); `#overview`, `#ranks`, and 
    ten-year row (compact `Sparkline` from `sm`, the change, an "Over time" link to the history page); pure helpers in
    `lib/profile-cards.ts` (footers, titles, campus chips, the middle income band, the ten-year change text).
    Every figure is cited through `citeField`; a card omits any figure that is null and never shows it as 0.
-   - **Admissions** (eyebrow with the admissions year from lineage): "1 in 27 applicants admitted" (`admitRatio`),
-     `admissionsTakeaway`; acceptance ring + rate + selectivity tier, or "Not reported" with the open-admission term;
-     applied, admitted, yield; SAT and ACT middle-50% compact `RangeBar`s with the median tick; ten-year line:
-     applications (and the admit rate from → to).
+   - **Admissions** (eyebrow with the year of whichever class is shown): "1 in 27 applicants admitted"
+     (`admitRatioFromRate`), `admissionsTakeaway`; acceptance ring + rate + selectivity tier, or "Not reported" with
+     the open-admission term; applied, admitted, yield; SAT and ACT middle-50% compact `RangeBar`s with the median
+     tick; ten-year line: applications (and the admit rate from → to). The ring, rate, and counts show the **newest**
+     class the college has published anywhere — its own figures when newer than the federal year, otherwise federal
+     (`profile.newest`, `lib/newest.ts`; [college-reported-round-2.md](college-reported-round-2.md#decision-1-show-the-newest-figures-we-have)).
+     When the college's own figures are the headline, `FederalBaselineLine` adds "Federal data, Fall 2024: 5.8%"
+     underneath; when the college published something newer but not enough for a full funnel (e.g. applicants only),
+     `PartialReportedLine` adds a line instead, under the (federal) funnel. SAT/ACT stay federal.
    - **Students**: "Who's on campus", `studentsTakeaway`; undergrads with "larger than X% of colleges"; diversity
      index with a mini `StackedBar`, Pell share, first-generation share, each against the median; chips for setting,
      housing, athletics association and conference, ROTC, study abroad, undergraduate research (each cited; the row
@@ -94,8 +98,8 @@ routes in `ANCHOR_TOPICS` (`lib/profile-topics.ts`); `#overview`, `#ranks`, and 
      tiles (cost, applications, selectivity, diversity): the indicator word and detail from `indicatorsOf`, a compact
      sparkline (money in end-year dollars), cited to `trends`; a tile with a series but no indicator shows from → to;
      with neither it is omitted.
-4. **Similar schools**: nearest neighbors (`similarSchools`) with "why similar" chips and one-click compare links.
-5. **Sources for this overview**: one collapsed `<details>` at every width wrapping the numbered `SourceList` for
+3. **Similar schools**: nearest neighbors (`similarSchools`) with "why similar" chips and one-click compare links.
+4. **Sources for this overview**: one collapsed `<details>` at every width wrapping the numbered `SourceList` for
    `PROFILE_FIELDS` (every field the whole profile shows); each number's (i) popover carries its own citation.
 
 ## Topic pages

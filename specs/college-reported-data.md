@@ -26,7 +26,8 @@ Dec 2025); fall 2025 arrives about Dec 2026. Colleges publish sooner:
 - **Start with cheaper models.** A stronger model is used only to learn a college's format (discovery) and when a
   format changes; routine extraction uses the cheapest model that passes the pilot.
 - **Never re-read a document we've already processed** unless it changed.
-- Federal data remains the comparison baseline ([data-lineage.md](data-lineage.md#rules)).
+- ~~Federal data remains the comparison baseline~~ Revised 2026-10-03: the newest figure a college has published is
+  the value everywhere ([college-reported-round-2.md](college-reported-round-2.md), Decision 1).
 
 ## How it works
 
@@ -50,7 +51,9 @@ Colleges rarely change where or how they publish, so each college gets a stored 
    URLs itself (plain HTTP, no model tools), sends only the relevant pages/section, and asks for a fixed JSON schema
    (structured outputs) with a verbatim quote per number.
 3. **Escalation.** If extraction fails the checks, or the recipe's anchor isn't found, re-run discovery for that
-   college. If that fails too, use `claude-opus-5` once; still failing → review queue.
+   college. If that fails too, use `claude-opus-5` once; still failing → review queue. *(Changed after the pilot:
+   escalation now happens only where a model can help, and Opus is not called; see
+   [round 2](college-reported-round-2.md#decision-3-escalate-only-when-a-model-can-help) and "As built → Pipeline".)*
 
 Model IDs live in one config object so they can change after the pilot. CDS **Excel** files go through the existing
 deterministic importer (`scripts/import-cds.mts`) first; the model is the fallback.
@@ -114,9 +117,12 @@ Discovery runs once for all colleges, then only on escalation or when a college 
 - Starting budget ceiling agreed: ~$1.5–3K/year. Actual spend is logged per run from `usage`.
 
 ## Display
-See [data-lineage.md](data-lineage.md#display-which-citation-where). On a profile: "Admit rate, fall 2026: 4.0% ·
-reported by the college" with the federal figure underneath and a lineage popover (quote, link, retrieved date,
-"checked automatically"). Not used in Explore, Compare, ranks, medians, or Home charts.
+Superseded by [college-reported-round-2.md](college-reported-round-2.md#decision-1-show-the-newest-figures-we-have)
+(Decision 1, revised 2026-10-03): a college's newer published figures replace its older ones **in the dataset**
+(`lib/newest.ts#applyNewest`, run by `merge-reported` and `sync-data`), value by value, with an `extracted` lineage
+record each and the replaced funnel kept in `admissions.federal`. Every view (the profile, Explore, Compare, ranks,
+medians, Home) shows those newest values; the ⓘ tooltip carries the document, year, quote, link, retrieval date, and
+the figure it replaced. No chips. See [data-lineage.md](data-lineage.md) rule 3.
 
 ## Pilot (first build step)
 ~50 colleges across selectivity tiers (very selective, selective, less selective, open admission) and sectors.
@@ -146,6 +152,9 @@ supporting quote, and a human-review queue for conduct-code findings:
 - `data/college-sources.json` (recipes, hashes), `data/college-reported.json` (published values),
   `data/review-queue.json`, `data/reports/`.
 - `.github/workflows/college-reported.yml`. Secret: `ANTHROPIC_API_KEY`.
+- `scripts/merge-reported.mts` (`npm run merge-reported`) and `scripts/report-college-reported.mts`
+  (`npm run report-college-reported`): built with Decision 5 of
+  [college-reported-round-2.md](college-reported-round-2.md), see its As built for what they do.
 
 ## As built
 
@@ -168,11 +177,15 @@ depend on them without pulling in the rest of the app:
   numbers, since the rate itself was never stated. `lib/reported.ts`'s `ReportedValuePath` type lists all seven
   paths, not only the four figures, to match what the guard actually checks.
 - `reportedToPatch(entry)` turns a `ReportedEntry` into `{ reported, lineage }`, ready to merge into a `School`.
-- The sync (`scripts/sync-data.mts`) reads `data/college-reported.json` after overrides are applied and before
-  `validateLineage` runs: for each entry whose `unit_id` matches a school, it sets `school.reported.admissions` and
-  spreads the entry's lineage into `school.lineage`. It never touches a federal field — `reported` and
-  `reported.admissions.*` lineage are the only things it writes. Missing file = skipped (silent, since the pipeline
-  hasn't published yet). Printed as `  college-reported:     N colleges`, alongside the other sync counts.
+- The actual merge — strip every school's `reported` block and `reported.*` lineage, then re-apply the current
+  `college-reported.json` entries through `reportedToPatch` — is `mergeReported` in `lib/reported-merge.ts`, shared
+  by `scripts/sync-data.mts` (which reads `data/college-reported.json` after overrides are applied and before
+  `validateLineage` runs, against `schools` it just built fresh, so stripping is a no-op there) and
+  `scripts/merge-reported.mts` (Decision 5 of [college-reported-round-2.md](college-reported-round-2.md): see "Data
+  in the PR" there for the committed `data/schools.json` case, where a college dropped from the file must lose its
+  block). Neither ever touches a federal field — `reported` and `reported.admissions.*` lineage are the only things
+  either writes. Missing file = skipped (silent, since the pipeline hasn't published yet). Printed as
+  `  college-reported:     N colleges`, alongside the other sync counts.
 - Initial empty files committed so the sync and `npm run check:lineage` have something to read before the pipeline
   exists: `data/college-reported.json` (`{"updated": null, "entries": []}`; `ReportedFile.updated` is `string | null`
   for this reason), `data/college-sources.json`, `data/review-queue.json`, `data/reports/.gitkeep`.
@@ -205,9 +218,16 @@ on) is its own doc: [college-reported-setup.md](college-reported-setup.md).
   commit and open a PR, but a PR opened with it doesn't trigger `pull_request` workflows — so `Verify` would never
   run and `--auto-merge` would wait forever. `COLLEGE_REPORTED_TOKEN` is a fine-grained PAT (Contents + pull
   requests, read/write; no Workflows permission needed since this workflow never touches `.github/workflows/*`).
-- **PR body and release note:** generated from the run summary and `data/review-queue.json` by
-  `scripts/college-reported-pr-body.mts` (`prBody`, `releaseNote`; unit-tested against fixtures in
-  `tests/college-reported-pr-body.test.mts`): counts, cost, circuit-breaker status, and a table of *this run's*
+- **Data in the PR:** a step right after the pipeline runs (`npm run merge-reported`, `if: always()` so a stopped
+  or cancelled run still merges what it kept) rewrites `data/schools.json` to match the fresh
+  `data/college-reported.json`, before the PR's `git add data` — see "Data in the PR" under
+  [college-reported-round-2.md](college-reported-round-2.md)'s As built.
+- **PR body and release note:** generated from the run summary, `data/review-queue.json`, `data/college-reported.json`,
+  and `data/schools.json` (for college names) by `scripts/college-reported-pr-body.mts` (`prBody`, `releaseNote`;
+  unit-tested against fixtures in `tests/college-reported-pr-body.test.mts`): counts, cost, circuit-breaker status,
+  a "Published this run" table (college, term, kind, applicants, admitted, enrolled, rate, source), an
+  "Unreachable" list (review items whose failure is the `unreachable` check, e.g. a blocked site — kept separate
+  from the ordinary review-queue table since no model could have fixed them), and a table of *this run's* other
   review-queue items (college, term, failed checks, URL) with a note on how to resolve one. The release note needs
   the PR number, so it's written and pushed as a second commit once the PR exists.
 - **Merge logic:** auto-merges (`gh pr merge --auto --squash`) only when `auto_merge` was on for this run **and**
@@ -229,15 +249,51 @@ tier, sector }] }`; without the file it picks 50 deterministically across admit-
 `--college <unit_id>` (repeatable), `--all` (every college; the scheduled mode), `--rediscover` (ignore stored
 recipes; documents with the same URL keep their hashes, so unchanged files are still skipped), `--dry-run` (nothing
 written to `data/`; downloads are still cached), `--max-discoveries N` (Sonnet discovery budget, default 100),
-`--run <id>` (default: start time, ISO). Exit code 2 = circuit breaker tripped (files are still written).
+`--max-cost <usd>` (default 25 for `--pilot`/`--college`, 150 for `--all`), `--run <id>` (default: start time, ISO).
+Exit code 2 = circuit breaker tripped (files are still written).
+
+**Round 2 (2026-10-03, [why](college-reported-round-2.md)).** The pilot's discovery averaged ~627K input tokens a
+call because web fetch returned whole documents; escalation sent blocked sites to Opus. Now:
+- **Discovery finds links only**: `web_search` and `web_fetch` at most 4 uses each, `max_content_tokens: 6000` per
+  fetched page, a prompt that opens only HTML pages listing documents (never PDF or Excel), no `pages`/`anchor` in
+  `save_recipe` (the extractor uses `DEFAULT_ANCHORS`: "C1" for a CDS, "appl" for a class profile), effort `low`.
+  It streams (`messages.stream` → `finalMessage()`); a `pause_turn` is resumed with the cache breakpoint on the last
+  message block. The CLI's discovery client has `maxRetries: 1` and a 30-minute timeout; extraction keeps the SDK's
+  default retries.
+- **Guess before discovering** (`guess.mts`): a college needing discovery that has `school.cds.url` or a CDS source in
+  its old recipe gets the next one and two editions guessed in the file name (`CDS_2024-2025` → `CDS_2026-2027`,
+  `CDS_2025-2026`; also `2024-25`, `2024_25`, `2425`, `CDS2024`). A 200 whose bytes or content type say PDF/Excel
+  becomes the recipe (`model: "guessed"`), with no model call; counted as `guessed`.
+- **Escalation where a model can help**: every source unfetchable (robots, 401/403/405/429, 404, network) → queued
+  with `unreachable` failures, no model call, counted as `unreachable` (not `failed`, so the breaker ignores it);
+  anchor missing / unreadable → one re-discovery (effort `medium`), re-read; a check failing on real figures → one
+  re-read by `REPORTED_MODELS.escalation` (Sonnet 5) from the cached copy, no refetch; still failing → queue.
+- **Cost cap**: before each college starts, logged cost + $0.50 ≥ `--max-cost` stops the run like a spend-limit error
+  (`status: "stopped"`, "the run's cost cap of $N was reached", exit 3); colleges in flight finish and are kept. The
+  workflow's `max_cost` input (default "25"; scheduled runs 150) is passed through.
+
+**Written as it goes (2026-10-03).** The first pilot wrote nothing until all 50 colleges were done (80 minutes), so a
+failure or cancel would have lost the whole run. Now:
+- After **every college**, the CLI writes the four data files and the run summary (`status: "running"`, `done`,
+  `total`, `finished: null`; writes are atomic, temp file then rename) and logs `[n/total] <college> done · run cost so
+  far ~$X`, which the Actions log shows live.
+- A **fatal API error** (`fatalApiError`: key refused, 401/403; or a 400/429 naming the spend limit, credit balance, or
+  billing) stops the run: no new college starts, a college in flight records nothing (its document isn't marked read,
+  so the next run does it), and the summary says `status: "stopped"` with `stopped_reason`. Exit code **3**. Ordinary
+  rate limits and overloads aren't fatal (the SDK retries them).
+- **Cancelling** (SIGINT/SIGTERM) writes the newest snapshot as stopped and exits 3.
+- The workflow runs its artifact, PR, and release-note steps with `always()`, so a stopped, failed, or cancelled run
+  still opens a PR for the colleges it finished; such a PR never auto-merges and its body opens with "Stopped early".
+  The files are also uploaded as an Actions artifact, `college-reported-<run id>`.
 
 Files, all under `scripts/lib/college-reported/` except the CLI:
 - `pipeline.mts`: `createPipeline({ client, fetch, now, sleep?, minDelayMs?, cacheDir?, concurrency?, log? })` →
-  `run({ schools, sources, reported, queue, run, rediscover?, maxDiscoveries? })`, working on the files' contents in
-  memory and returning them updated with a `RunSummary`; `circuitBreaker()`.
-- `llm.mts`: `discover()` (Sonnet 5, `web_search_20260209` + `web_fetch_20260209`, recipe returned through a strict
-  `save_recipe` tool, `pause_turn` resumed) and `extract()` (Haiku 4.5, `output_config.format` = `EXTRACTION_SCHEMA`,
-  falling back to a strict forced tool if a model rejects structured outputs; system prompt marked for caching).
+  `run({ schools, sources, reported, queue, run, rediscover?, maxDiscoveries?, maxCost? })`, working on the files'
+  contents in memory and returning them updated with a `RunSummary`; `circuitBreaker()`.
+- `llm.mts`: `discover()` (Sonnet 5, links only, streamed; see Round 2 above; recipe returned through a strict
+  `save_recipe` tool, `pause_turn` resumed) and `extract()` (Haiku 4.5, or Sonnet 5 on escalation;
+  `output_config.format` = `EXTRACTION_SCHEMA`, falling back to a strict forced tool if a model rejects structured
+  outputs; system prompt marked for caching). `guess.mts`: `guessNextEditionUrls(url, federalYear)`.
 - `http.mts`: robots.txt (RFC 9309; disallowed URLs are skipped and logged; an unreachable robots.txt disallows),
   one request at a time per host at least 1 s apart (longer for a Crawl-delay), conditional GETs, sha256, the
   `.cache/college-docs/<sha256>` cache. 401/403/429 and challenge pages stop there; no user-agent switching.
@@ -256,16 +312,22 @@ Behaviour worth knowing:
   304 or the same hash keeps the stored extraction. `processed` is the date of the last real read.
 - Figures that fail only check 5 (not newer than the federal year) mean the college hasn't published a newer year:
   not published, not queued, not escalated. A recipe marked `none_found` is retried only with `--rediscover`.
-- Missing anchors and unreadable documents are queued as `quote-present` failures ("no figures read: …").
+- Missing anchors and unreadable documents are queued as `quote-present` failures ("no figures read: …") after their
+  one re-discovery; a college none of whose sources could be fetched is queued as `unreachable` (the PR body lists
+  these separately).
 - Counts: `attempted` = colleges where something was read or discovered (an all-304 college is not an attempt);
   `changed` = published values that changed within the same entering term (a new term is a new year, not a change);
   the breaker's changed share is over all values in `college-reported.json` before the run.
-- Tests (`tests/college-reported-pipeline.test.mts`) pass a fake client (answers `save_recipe` calls with a canned
-  recipe and extraction calls with canned JSON, recording every request) and a fake fetch (a URL → response table).
-  They prove: same hash and 304 skip the model (and send the conditional headers), a new index link is read alone,
-  the Excel fixture (`tests/fixtures/cds-c1.xlsx`) is read deterministically and its entry passes `validateSchool`,
-  a PDF fixture's page text reaches the model, failing checks escalate Haiku → Sonnet → Opus and land in the queue
-  with nothing published, robots.txt is obeyed, the breaker trips just past its limits, and the summary counts.
+- Tests (`tests/college-reported-pipeline.test.mts`) pass a fake client (answers streamed `save_recipe` calls with a
+  canned recipe and extraction calls with canned JSON, recording every request) and a fake fetch (a URL → response
+  table). They prove: same hash and 304 skip the model (and send the conditional headers), a new index link is read
+  alone, the Excel fixture (`tests/fixtures/cds-c1.xlsx`) is read deterministically and its entry passes
+  `validateSchool`, a PDF fixture's page text reaches the model, discovery streams with capped web tools and is never
+  sent a document, a resumed `pause_turn` moves the cache breakpoint, a guessed URL that exists skips discovery, a
+  failed check gets one Sonnet re-read from the cache and then the queue, a missing anchor gets one re-discovery at
+  effort medium, blocked sites go to the queue as `unreachable` with no model call and don't trip the breaker,
+  robots.txt is obeyed, the cost cap stops the run, the breaker trips just past its limits, and the summary counts.
+  `tests/college-reported-guess.test.mts` covers the pilot's real CDS URL shapes.
 
 ### Pilot set and answer key
 `data/reference/college-reported-pilot.json` (50 colleges) and `data/reference/college-reported-answer-key.json`
@@ -323,48 +385,50 @@ with a genuine Fall 2025 or Fall 2026 figure. Below ~50% acceptance, the web thi
   theory.
 
 ### Display
-Built 2026-10-02, against the shared contract (`school.reported`, `lib/fields.ts` `reported.*` paths, `lib/lineage.ts`'s
-`college-site` handling, `lib/reported.ts`), ahead of the ingestion pipeline — there's no live college-reported data
-yet, so this was built and QA'd against a temporary local fixture (one school's `data/schools.json` entry, reverted
-before committing; never merged).
+Built 2026-10-02 (phase 1: a side block above the funnel), **replaced 2026-10-03** by
+[college-reported-round-2.md](college-reported-round-2.md#decision-1-show-the-newest-figures-we-have) Decision 1: the
+college's newest figures now *are* the headline, not a block beside it. QA'd against the first live run's published
+data (`data/college-reported-20261003-113224-1`, 22 colleges: Harvard fall 2025 CDS full funnel, Duke fall 2026
+class profile with applicants/admitted but no enrolled yet, Purdue applicants + enrolled but no admitted, Illinois
+rate only) merged into a local `data/schools.json` copy with a throwaway script and reverted before committing.
 
-- **Admissions topic page** (`app/schools/[id]/admissions/page.tsx`): when `school.reported?.admissions` exists,
-  `ReportedAdmissionsBlock` (`components/profile/ReportedAdmissions.tsx`) renders above the funnel: a headline built
-  from the lineage year, never a literal ("Admit rate, Fall 2026: 4.0% · reported by the college"), the federal rate
-  and its year underneath as the baseline, and applicants/admitted/enrolled when present — each cited with
-  `citeField("reported.admissions.…", school)` by name (not a shared path variable), so
-  `tests/reported-guards.test.mts` can check every displayed path is cited. Missing values are omitted, never shown
-  as 0 or null.
-- **Overview card** (`components/profile/AdmissionsCard.tsx`): `ReportedRateLine`, a compact one-line addition under
-  the existing stats row ("Newer: 4.0% admitted for Fall 2026, reported by the college"); the federal rate stays the
-  card's headline figure.
-- **`reported.*` fields** added to `TOPIC_FIELDS.admissions` (all four) and `OVERVIEW_FIELDS` (acceptance rate only,
-  matching what the card shows) in `lib/profile-topics.ts`, so `SourceNote`/`SourceList`/`SourceExceptions` cite the
-  college's page automatically; `tests/profile-topics.test.mts`'s `LEGACY_FIELDS` was updated to acknowledge the four
-  new fields deliberately (its own failure message says to).
-- **Popover copy** (`components/ui/info-tip.tsx`): the "different source" line now special-cases `cited.key ===
-  "college-site"`: "Reported by the college on its own site and checked automatically against its own figures and the
-  federal baseline," replacing the generic CDS-shaped sentence.
-- **Explore/Compare baseline banner**: `components/ui/BaselineNote.tsx`, a quiet one-line reminder ("Comparisons use
-  federal data, the newest year every college reports. Newer figures some colleges publish appear only on their
-  profiles.") linking to `/data#compare`. Placed next to each page's one `MultiSourceNote` call (Explore's results
-  footer; Compare's "All the numbers" table).
-- **Data page** (`app/data/page.tsx`): new section 5, id `college-reported` (matches
-  `meta.sources["college-site"].url`), between "How we compare" and "Watching": what the agent collects, the seven
-  checks (`lib/reported.ts` `CheckId`) in plain language, what happens on failure (review queue, federal figure keeps
-  showing), the live count (`all.filter(s => s.reported?.admissions).length`), and the schedule. Section 4's second
-  card gained a paragraph stating the rule explicitly (CDS overrides still replace federal values today; college-site
-  class profiles/CDS files never do) and a link to section 5. The sources list's `college-site` card links in-page to
-  `#college-reported` (its `meta.sources` url is the relative anchor `/data#college-reported`) instead of through
-  `ExtLink`, which always opens a new tab with an external-link icon — wrong for an in-page anchor.
-- **Guard**: `tests/reported-guards.test.mts` greps `lib/metrics.ts`, `lib/dataset.ts`, `lib/compare.ts`,
-  `lib/insights.ts`, `lib/indicators.ts`, `app/explore/**`, `app/compare/**`, `app/page.tsx`, and
-  `components/charts/**` for `reported.admissions`, `reported?.admissions`, or `school.reported`, and checks the
-  admissions page's three source files for a `citeField("reported.admissions.<field>` call per displayed path.
-  Verified to fail: a throwaway `s.reported?.admissions` reference was added to `lib/metrics.ts`, the guard test was
-  run and failed on that line, then the line was reverted (not committed).
-- **Not built with this PR**: the ingestion pipeline itself (`scripts/sync-college-reported.mts`, discovery/extraction,
-  `data/college-sources.json`, `data/college-reported.json`, `data/review-queue.json`, the GitHub Action, the
-  self-measurement accuracy report). Until it exists, `school.reported` is never set in the real dataset, and the Data
-  page's "Newer figures from colleges" section — built against live data, so it degrades correctly — shows a count of
-  0 and the "What we collect" / checks / schedule text with nothing to list yet.
+- **`lib/newest.ts`** (pure, `tests/newest.test.mts`): `newestAdmissions(school)` resolves which source's funnel to
+  show — see [college-reported-round-2.md](college-reported-round-2.md#decision-1-show-the-newest-figures-we-have)
+  for the rule. Returns the chosen funnel (source, year, term, counts, rate, yield, and the `FieldPath` to cite for
+  each), plus `partial` when the college has a newer figure that doesn't clear the bar for a full funnel.
+- **Admissions topic page** (`app/schools/[id]/admissions/page.tsx`): the eyebrow year, the funnel's bar rows (each
+  row shown independently — Duke's applicants/admitted show without an invented enrolled count), the 100-square
+  waffle (needs all three counts, so it falls back to federal when the college's newest class is missing one), the
+  yield ring, and the admit-ratio headline all read `profile.newest` (computed once in `lib/profile-data.ts`). The
+  acceptance-rate and yield distribution strips, and the admissions map, stay federal (`profile.rate`/`yld`), since
+  those compare this college against every other on the same year. `newest.source === "reported"` adds
+  `FederalBaselineLine` ("Federal data, Fall 2024: 5.8%") under the headline; `newest.partial` adds
+  `PartialReportedLine` under the (federal) funnel instead. Every displayed figure is cited with
+  `citeField(newest.paths.<field>, school)`, which resolves to the right `reported.admissions.*` or `admissions.*`
+  path for the source in play.
+- **Overview card** (`components/profile/AdmissionsCard.tsx`): the same `profile.newest` drives the ring, headline
+  rate, admit-ratio title (`admitRatioFromRate`, a `lib/metrics.ts` export that takes a rate instead of a `School` so
+  it works with either source), and the Applied/Admitted/Yield stats row; `FederalBaselineLine`/`PartialReportedLine`
+  replace the phase-1 `ReportedRateLine`.
+- **`lib/insights.ts`**: `admissionsTakeaway` and `yieldTakeaway` import `newestAdmissions` directly (the one file
+  outside the admissions page allowed to — `tests/reported-guards.test.mts` bans the import everywhere comparisons,
+  ranks, or charts live, not here) so the takeaway sentence names the newest rate; the national-percentile comparison
+  inside it still comes from `rankOf`, which is always federal.
+- **`reported.*` fields** in `TOPIC_FIELDS.admissions` (all four) and `OVERVIEW_FIELDS` (acceptance rate) in
+  `lib/profile-topics.ts` are unchanged from phase 1.
+- **Popover copy** (`components/ui/info-tip.tsx`, revised 2026-10-03): a `college-site` value reads "Reported by
+  {college} in its Common Data Set {year}" or "…in its class profile for the {year} class", then the quote, the
+  link, "Federal data, {year}: {value}" for what it replaced, and the retrieval date. No chips anywhere.
+- **Data page** (`app/data/page.tsx`): section 4 says every figure is the newest its college has published, in every
+  view, with years that can differ between colleges; section 5's count says "in use across the site".
+- **Explore/Compare note** (`components/ui/BaselineNote.tsx`): figures are the newest each college has published;
+  years can differ; each value's ⓘ shows source and year.
+- **Guard**: `tests/reported-guards.test.mts` still greps the phase-1 banned files/dirs for any `school.reported`
+  reference, and adds a second check banning `lib/newest`/`newestAdmissions` from the same comparison-only files
+  (`lib/metrics.ts`, `lib/dataset.ts`, `lib/compare.ts`, `lib/indicators.ts`, `app/explore/**`, `app/compare/**`,
+  `app/page.tsx`, `components/charts/**` — a narrower list than the `school.reported` ban, since `lib/insights.ts` is
+  allowed to use `lib/newest`). Verified to fail: a throwaway `import { newestAdmissions } from "./newest"` was added
+  to `lib/metrics.ts`, the guard test was run and failed on that line, then the line was reverted (not committed).
+- **Not built with this PR**: the ingestion pipeline itself (`scripts/sync-college-reported.mts`) and
+  `scripts/merge-reported.mts` — both specified and built separately
+  ([college-reported-round-2.md](college-reported-round-2.md), decisions 2–5).

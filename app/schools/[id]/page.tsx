@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { ArrowRight, ChevronDown, ChevronRight, MapPin } from "lucide-react";
 import { getData } from "@/lib/data";
 import { loadProfile } from "@/lib/profile-data";
-import { OVERVIEW_FIELDS, PROFILE_FIELDS } from "@/lib/profile-topics";
+import { PROFILE_FIELDS } from "@/lib/profile-topics";
 import { TEST_POLICY_LABELS, satMid, sizeBucket } from "@/lib/metrics";
 import { similarSchools, standouts } from "@/lib/insights";
 import { compact, pctSmart, typeLabel } from "@/lib/format";
@@ -16,7 +16,6 @@ import { CompareButton } from "@/components/compare/CompareButton";
 import { DESIGNATION_LABELS, DESIGNATION_TERMS, SETTING_SHORT, designationsOf } from "@/lib/campus-profile";
 import { Term } from "@/components/ui/info-tip";
 import { Panel } from "@/components/profile/Panel";
-import { SourceExceptions } from "@/components/profile/SourceExceptions";
 import { TopicCards } from "@/components/profile/TopicCards";
 import { AnchorRedirect } from "@/components/profile/AnchorRedirect";
 
@@ -120,7 +119,6 @@ export default async function SchoolPage({ params }: Props) {
         <div className="space-y-14 pt-2 sm:space-y-16 sm:pt-4">
           {/* ============================== TOPIC CARDS ============================== */}
           <section id="overview" className="scroll-mt-28 sm:scroll-mt-36" aria-label="At a glance">
-            <SourceExceptions fields={OVERVIEW_FIELDS} school={school} />
             <TopicCards profile={p} />
           </section>
 

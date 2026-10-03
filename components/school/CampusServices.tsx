@@ -6,7 +6,7 @@ import { DOMAINS } from "@/lib/metrics";
 import { CALENDAR_LABELS, DIVISION_LABELS, ROTC_LABELS, SPORT_LABELS, divisionFilterOf } from "@/lib/campus-services";
 import { eventYear, type PolicyEvent } from "@/lib/events";
 import type { School } from "@/lib/types";
-import { InfoTip, SourceChip } from "@/components/ui/info-tip";
+import { InfoTip } from "@/components/ui/info-tip";
 
 /**
  * Athletics and programs (specs/data-expansion/campus-services.md). IPEDS checkboxes that weren't ticked read "Not
@@ -36,8 +36,7 @@ export async function CampusServices({ school, recentMoves }: { school: School; 
   return (
     <div className="rounded-3xl border bg-card p-4 sm:p-6">
       <h3 className="mb-5 flex items-center gap-1.5 font-display text-lg font-bold">
-        Athletics &amp; programs <SourceChip cited={programsCited} />
-      </h3>
+        Athletics &amp; programs      </h3>
       <div className="grid gap-6 sm:grid-cols-2">
         {a && (
           <div className="sm:col-span-2">
@@ -119,9 +118,7 @@ export async function CampusServices({ school, recentMoves }: { school: School; 
       {(services.length > 0 || dis || p?.intellectual_disability_program) && (
         <div className="mt-6 border-t pt-4">
           <p className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
-            <Medal className="size-4" style={{ color }} /> Student services
-            <SourceChip cited={citeField("campus.services", school)} />
-          </p>
+            <Medal className="size-4" style={{ color }} /> Student services          </p>
           <ul className="mt-2 grid gap-x-6 gap-y-1 text-sm sm:grid-cols-2">
             {services.map((s) => (
               <li key={s}>{s}</li>

@@ -33,6 +33,10 @@ on:
         description: Cap on discovery calls this run
         type: string
         default: "100"
+      max_cost:
+        description: Stop the run (keeping finished colleges) once its estimated cost reaches this many US dollars
+        type: string
+        default: "25"
   schedule:
     # Two entries because one cron line can't mix a weekly Aug–Nov cadence with a monthly Dec–Jul one (and GitHub's
     # schedule parser doesn't reliably support month ranges combined with a weekday filter); each fires on a plain,
@@ -84,6 +88,7 @@ jobs:
             echo "college=" >> "$GITHUB_OUTPUT"
             echo "rediscover=false" >> "$GITHUB_OUTPUT"
             echo "max_discoveries=100" >> "$GITHUB_OUTPUT"
+            echo "max_cost=150" >> "$GITHUB_OUTPUT"
           else
             mode="${{ inputs.mode }}"
             college="${{ inputs.college }}"
@@ -96,6 +101,7 @@ jobs:
             echo "college=$college" >> "$GITHUB_OUTPUT"
             echo "rediscover=${{ inputs.rediscover }}" >> "$GITHUB_OUTPUT"
             echo "max_discoveries=${{ inputs.max_discoveries }}" >> "$GITHUB_OUTPUT"
+            echo "max_cost=${{ inputs.max_cost }}" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Compute run id
@@ -128,6 +134,7 @@ jobs:
             flags="$flags --rediscover"
           fi
           flags="$flags --max-discoveries ${{ steps.params.outputs.max_discoveries }}"
+          flags="$flags --max-cost ${{ steps.params.outputs.max_cost }}"
           echo "flags=$flags" >> "$GITHUB_OUTPUT"
 
       - uses: actions/setup-node@v4
@@ -162,15 +169,40 @@ jobs:
           code=$?
           set -e
           echo "exit_code=$code" >> "$GITHUB_OUTPUT"
-          # 0 = normal, 2 = circuit breaker tripped (files still written), 1 = error. Only 1 fails the job outright.
+          # 0 = normal, 2 = circuit breaker tripped, 3 = stopped early (the run's max_cost, the spend limit, credit
+          # balance, or key refused);
+          # 2 and 3 still write files. 1 = error. Only 1 fails the step. The script writes its files after every
+          # college, so even a failed or cancelled run leaves what it finished for the steps below.
           if [ "$code" = "1" ]; then
             echo "::error::sync-college-reported exited 1 (error); see the job log above."
             exit 1
           fi
 
+      # Merges data/college-reported.json into the committed data/schools.json (Decision 5,
+      # specs/college-reported-round-2.md), so this PR carries the site's figures too — its Vercel preview shows
+      # them without anyone running `npm run sync-data` by hand. always(): a stopped or cancelled run still wrote
+      # whatever it finished, and that should still merge. No network, no API key; nothing to fail on an empty
+      # college-reported.json (merges 0, removes 0, exits 0).
+      - name: Merge the published figures into schools.json
+        if: always() && steps.secret.outputs.ready == 'true'
+        run: npm run merge-reported
+
+      # always(): also after a cancelled run, so the colleges it finished still reach a PR and the artifact.
+      - name: Keep this run's files as an artifact
+        if: always() && steps.secret.outputs.ready == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: college-reported-${{ steps.run_id.outputs.id }}
+          path: |
+            data/college-sources.json
+            data/college-reported.json
+            data/review-queue.json
+            data/reports/college-reported-run-${{ steps.run_id.outputs.id }}.json
+          if-no-files-found: ignore
+
       - name: Check for data changes
         id: diff
-        if: steps.secret.outputs.ready == 'true'
+        if: always() && steps.secret.outputs.ready == 'true'
         run: |
           if git status --porcelain -- data | grep -q .; then
             echo "changed=true" >> "$GITHUB_OUTPUT"
@@ -181,7 +213,7 @@ jobs:
 
       - name: Open a pull request
         id: pr
-        if: steps.secret.outputs.ready == 'true' && steps.diff.outputs.changed == 'true'
+        if: always() && steps.secret.outputs.ready == 'true' && steps.diff.outputs.changed == 'true'
         env:
           GH_TOKEN: ${{ secrets.COLLEGE_REPORTED_TOKEN || github.token }}
           RUN_ID: ${{ steps.run_id.outputs.id }}
@@ -194,7 +226,9 @@ jobs:
           git push -u origin "$branch"
           node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/college-reported-pr-body.mts body \
             --summary "data/reports/college-reported-run-${RUN_ID}.json" \
-            --queue data/review-queue.json > /tmp/college-reported-pr-body.md
+            --queue data/review-queue.json \
+            --reported data/college-reported.json \
+            --schools data/schools.json > /tmp/college-reported-pr-body.md
           gh pr create --base main --head "$branch" \
             --title "College-reported data: run ${RUN_ID}" \
             --body-file /tmp/college-reported-pr-body.md
@@ -205,7 +239,7 @@ jobs:
       # The PR number is only known once the PR exists, so the release note (specs/release-notes.md) is written and
       # pushed as a second commit onto the same branch, naming it.
       - name: Add the release note
-        if: steps.secret.outputs.ready == 'true' && steps.diff.outputs.changed == 'true'
+        if: always() && steps.secret.outputs.ready == 'true' && steps.diff.outputs.changed == 'true' && steps.pr.outputs.number != ''
         env:
           GH_TOKEN: ${{ secrets.COLLEGE_REPORTED_TOKEN || github.token }}
           RUN_ID: ${{ steps.run_id.outputs.id }}
@@ -223,7 +257,7 @@ jobs:
           git push
 
       - name: Auto-merge, or explain why this PR waits for a person
-        if: steps.secret.outputs.ready == 'true' && steps.diff.outputs.changed == 'true'
+        if: always() && steps.secret.outputs.ready == 'true' && steps.diff.outputs.changed == 'true' && steps.pr.outputs.number != ''
         env:
           GH_TOKEN: ${{ secrets.COLLEGE_REPORTED_TOKEN || github.token }}
           PR_NUMBER: ${{ steps.pr.outputs.number }}
@@ -233,7 +267,11 @@ jobs:
           if [ "$AUTO_MERGE" = "true" ] && [ "$EXIT_CODE" = "0" ]; then
             gh pr merge "$PR_NUMBER" --auto --squash
           else
-            if [ "$EXIT_CODE" = "2" ]; then
+            if [ -z "$EXIT_CODE" ]; then
+              reason="the run was cancelled before it finished; this PR holds the colleges it completed (see the run summary) — review and merge by hand"
+            elif [ "$EXIT_CODE" = "3" ]; then
+              reason="the run stopped early (its max_cost cap or the Anthropic spend limit or credit balance was reached, or the API key was refused); this PR holds the colleges it completed and the next run picks up the rest — review and merge by hand"
+            elif [ "$EXIT_CODE" = "2" ]; then
               reason="the circuit breaker tripped (more than 10% of attempted colleges failed checks, or more than 25% of published values changed) — review the PR body and the review queue before merging by hand"
             elif [ "$AUTO_MERGE" != "true" ]; then
               reason="auto-merge is off for this run (default during the pilot; turn it on from Actions → Run workflow, or let the schedule do it) — review and merge by hand once CI is green"

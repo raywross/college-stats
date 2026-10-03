@@ -4,7 +4,7 @@ import { topEarningPrograms, type ProgramEarnings } from "@/lib/field-of-study";
 import { DOMAINS } from "@/lib/metrics";
 import { money, num } from "@/lib/format";
 import { BenchmarkBar } from "@/components/charts/BenchmarkBar";
-import { InfoTip, SourceChip } from "@/components/ui/info-tip";
+import { InfoTip } from "@/components/ui/info-tip";
 
 /** Never blank or 0 for a value that exists but was too small a group to report (specs/data-lineage.md). */
 const TOO_FEW = "Too few graduates to report";
@@ -60,9 +60,7 @@ export function FieldOfStudy({ detail, cited, id }: { detail: SchoolDetail | nul
     <div id={id} className="rounded-3xl border bg-card p-4 sm:p-6 lg:col-span-2">
       <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
         <h3 className="flex items-center gap-1 font-display text-lg font-bold">
-          Top-earning majors here <InfoTip term="field-of-study" cited={cited} />
-          <SourceChip cited={cited} />
-        </h3>
+          Top-earning majors here <InfoTip term="field-of-study" cited={cited} />        </h3>
         <p className="text-xs text-muted-foreground">
           By earnings 4 years after completion <InfoTip term="earnings-after-completion" />
         </p>

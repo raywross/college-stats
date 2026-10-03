@@ -1,7 +1,8 @@
 # Data Page (`/data`)
 
 > Status: **built** 2026-09-28; section 5 ("Newer figures from colleges") built 2026-10-02 with
-> [college-reported-data.md](college-reported-data.md)'s display.
+> [college-reported-data.md](college-reported-data.md)'s display; sections 4 and 5's wording updated 2026-10-03 for
+> the newest-first display rule ([college-reported-round-2.md](college-reported-round-2.md) Decision 1).
 > Replaced the `/sources` page ([sources-and-citations.md](sources-and-citations.md)) with a main-nav **Data** tab.
 > What differed from the plan: [As built](#as-built).
 
@@ -20,11 +21,12 @@ links. Also explains the federal-baseline rule and how college-reported figures 
 2. **What's on the site now.** One row per topic: source, year shown, next expected update, with a timeline chart
    (per topic: bar from the year shown to today) built with the charts in `components/charts/` (see [charts.md](charts.md)).
 3. **Upcoming releases.** From the release calendar below, each with a date, "confirmed" or "estimated", and a link.
-4. **How we compare colleges.** Federal data is the baseline for every comparison; newer college-reported figures
-   appear only on profiles, labeled. Links to an example.
+4. **How we compare colleges.** Federal data is the baseline for every comparison (Explore, Compare, ranks, medians,
+   Home); a college's own profile instead shows the newest figure it has published anywhere, with its year and a
+   chip. Links to an example.
 5. **Newer figures from colleges.** What the ingestion agent collects, the automated checks, what happens when a check
    fails, and the latest accuracy report ([college-reported-data.md](college-reported-data.md)). Count of colleges with
-   newer figures.
+   newer figures. Profiles show the newest figure as the headline, with the federal figure one line below.
 6. **Sources.** Today's `/sources` content: each dataset, edition, coverage, link; colleges with CDS / college-reported
    data; "How we calculate"; suggested citation.
 7. **Watching.** Sources not used yet, with status (ACTS, below).
@@ -140,6 +142,11 @@ Alternatives considered: College Transitions CDS repository (stops at 2022–23)
   with an external-link icon, which is wrong for an in-page anchor. The card instead renders a plain `<a href={s.url}>`
   for that one source.
 - **Probe runs whenever `sync-data` runs**; there's no schedule yet (backlog: scheduled data refresh).
+- **Sections 4 and 5 reworded, 2026-10-03** ([college-reported-round-2.md](college-reported-round-2.md) Decision 1):
+  "Where colleges' own figures appear" and the section 5 intro no longer say a newer figure "appears only on that
+  college's own profile, under the federal figure" — it's now the profile's headline figure, with its year and a
+  chip, and the federal figure moves one line below as the baseline. The computed counts (CDS colleges, colleges with
+  a newer college-reported figure) are unchanged.
 - **Dates re-checked 2026-09-28** against the [NCES release schedule](https://nces.ed.gov/ipeds/survey-components/data-release-schedule),
   the [Scorecard changelog](https://collegescorecard.ed.gov/data/changelog) and NCES's file server: all initial entries
   held. New facts: the 2024–25 collection's fall *final* release came out Sep 8, 2026 (IC, completions, 12-month

@@ -24,6 +24,28 @@
       "run": "2026-10-02-1"
     },
     {
+      "unit_id": "999003",
+      "name": "Fixture Blocked College",
+      "urls": ["https://blocked.example.edu/cds/2025-26.pdf"],
+      "entering_term": null,
+      "extraction": {
+        "cohort": "unknown",
+        "scope": "unknown",
+        "entering_term": null,
+        "applicants": null,
+        "admitted": null,
+        "enrolled": null,
+        "acceptance_rate": null,
+        "quotes": {},
+        "page": null
+      },
+      "failures": [
+        { "check": "unreachable", "detail": "GET https://blocked.example.edu/cds/2025-26.pdf returned 403" }
+      ],
+      "queued": "2026-10-02T08:14:00Z",
+      "run": "2026-10-02-1"
+    },
+    {
       "unit_id": "999002",
       "name": "Older Fixture College",
       "urls": ["https://example.edu/class-of-2030"],

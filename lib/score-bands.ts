@@ -110,6 +110,27 @@ export function bandsAgreeWithPercentiles(bands: Bands6, pct: Pct3 | null, test:
   return true;
 }
 
+/** Checks, "Composite vs sections": |composite − (EBRW + Math)| at each percentile with all three present. */
+export const COMPOSITE_TOLERANCE = 50;
+
+/** The percentiles where the college's SAT total and its section sum disagree by more than the tolerance. */
+export function compositeVsSections(composite: Pct3 | null, ebrw: Pct3 | null, math: Pct3 | null, tolerance = COMPOSITE_TOLERANCE): ("p25" | "p50" | "p75")[] {
+  const out: ("p25" | "p50" | "p75")[] = [];
+  for (const p of ["p25", "p50", "p75"] as const) {
+    const c = composite?.[p];
+    const e = ebrw?.[p];
+    const m = math?.[p];
+    if (c == null || e == null || m == null) continue;
+    if (Math.abs(c - (e + m)) > tolerance) out.push(p);
+  }
+  return out;
+}
+
+/** Checks, "Number vs share": |stated share − number ÷ C1 enrolled| ≤ 1 point, and number ≤ enrolled. */
+export function submittersAgree(n: number, share: number, enrolled: number): boolean {
+  return n <= enrolled && Math.abs(share - n / enrolled) <= 0.01;
+}
+
 const pctText = (x: number) => `${Math.round(x * 100)}%`;
 
 /**

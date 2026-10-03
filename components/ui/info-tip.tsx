@@ -185,7 +185,7 @@ export function SourceTip({ cited, className }: { cited: Cited; className?: stri
 }
 
 /** Inline word with a dotted underline that opens the same explanation. */
-export function Term({ term, children, className }: { term: TermKey; children?: ReactNode; className?: string }) {
+export function Term({ term, children, className, cited }: { term: TermKey; children?: ReactNode; className?: string; cited?: Cited }) {
   return (
     <Popover.Root>
       <Popover.Trigger
@@ -201,7 +201,7 @@ export function Term({ term, children, className }: { term: TermKey; children?: 
       >
         {children ?? GLOSSARY[term].term}
       </Popover.Trigger>
-      <TermPopup term={term} />
+      <TermPopup term={term} cited={cited} />
     </Popover.Root>
   );
 }

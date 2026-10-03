@@ -169,6 +169,10 @@ export const POLICY_BUCKETS: readonly { key: PolicyBucket; label: string }[] = [
   { key: "blind", label: "Test-blind" },
 ];
 
+export function isPolicyBucket(v: string): v is PolicyBucket {
+  return v === "required" || v === "optional" || v === "blind";
+}
+
 /** The Explore chip a policy falls in; "required for some" counts as Optional (open question 3). Null = no policy. */
 export function policyBucket(p: TestPolicy | undefined): PolicyBucket | null {
   if (!p) return null;

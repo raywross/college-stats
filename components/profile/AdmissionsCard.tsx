@@ -73,7 +73,7 @@ export async function AdmissionsCard({ profile: p }: { profile: Profile }) {
         <div className="mt-4 grid grid-cols-2 gap-4">
           {sat && (
             <div className="min-w-0">
-              <MetricLabel term="middle-50" cited={citeField("derived.sat_composite", school)} className="flex-wrap text-[11px] font-semibold text-muted-foreground">
+              <MetricLabel term="middle-50" cited={citeField("derived.sat_total", school)} className="flex-wrap text-[11px] font-semibold text-muted-foreground">
                 SAT middle 50%
               </MetricLabel>
               <p className="mt-0.5 mb-1 font-display text-xl font-extrabold whitespace-nowrap">{range(sat)}</p>

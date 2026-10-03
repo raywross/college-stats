@@ -90,6 +90,9 @@ export const OVERVIEW_FIELDS: readonly FieldPath[] = [
   "admissions.act_composite_25_75",
   // Newer admit rate the college published itself (ReportedRateLine; specs/college-reported-data.md).
   "reported.admissions.acceptance_rate",
+  // The card's SAT bar and the hero's test policy (cds-test-scores-and-policy.md).
+  "derived.sat_total",
+  "admissions.test_policy",
   // Students & campus card.
   "demographics.undergrad_enrollment",
   "derived.diversity_index",
@@ -156,6 +159,22 @@ export const TOPIC_FIELDS: Readonly<Record<TopicKey, readonly FieldPath[]>> = {
     "reported.admissions.admitted",
     "reported.admissions.enrolled",
     "reported.admissions.acceptance_rate",
+    // CDS C8/C9 (specs/data-expansion/cds-test-scores-and-policy.md): the Test policy block, the SAT total, bands, counts.
+    "derived.sat_total",
+    "reported.test_policy",
+    "reported.test_policy_note",
+    "reported.test_policy_events",
+    "reported.tests.sat_composite",
+    "reported.tests.sat_submitters",
+    "reported.tests.act_submitters",
+    "reported.tests.act_science",
+    "reported.tests.act_reading",
+    "reported.tests.bands.sat_composite",
+    "reported.tests.bands.act_composite",
+    "reported.tests.bands.sat_ebrw",
+    "reported.tests.bands.sat_math",
+    "reported.tests.bands.act_english",
+    "reported.tests.bands.act_math",
   ],
   students: [
     "demographics.racial_diversity",

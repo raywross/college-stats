@@ -12,7 +12,7 @@ import type { Bands6, BandTest, LineageRecord, Pct3, ReportedData, ReportedTestP
 import type { CdsCode, CollegeRecord, DocumentRecord } from "../cds-sections.ts";
 import { compareDocuments, editionFallYear, itemBoolean, itemNumber, itemShare, itemText, lineageFromItem, passedItem } from "../cds-records.ts";
 import { headlinePolicy, policyFromText, testPolicyEvents, type CyclePolicy } from "../test-policy.ts";
-import { lineageFall, normalizeBandColumn } from "../score-bands.ts";
+import { bandsAgreeWithPercentiles, lineageFall, normalizeBandColumn, submittersAgree } from "../score-bands.ts";
 
 /* ------------------------------------------------------------------ */
 /* Codes                                                               */
@@ -119,7 +119,9 @@ function bands(doc: DocumentRecord, test: BandTest): Bands6 | null {
   const codes = BAND_COLUMNS[test].codes;
   // A cell that failed its checks poisons the column; blanks in a filled column are 0.
   if (codes.some((c) => doc.items[c]?.status === "failed")) return null;
-  return normalizeBandColumn(codes.map((c) => itemNumber(doc, c)));
+  const b = normalizeBandColumn(codes.map((c) => itemNumber(doc, c)));
+  // Checks, "Bands agree with percentiles": a column that disagrees with its own row goes to review, never the page.
+  return b && bandsAgreeWithPercentiles(b, pct3(doc, test), test) ? b : null;
 }
 
 /** True when a document has any passed C9 value. */
@@ -133,20 +135,23 @@ export function testsFromDocument(doc: DocumentRecord): ReportedTests | null {
   if (year === null || !hasScores(doc)) return null;
   // Number submitting is shown only beside the same document's passed C1 enrolled, and never above it.
   const enrolled = itemNumber(doc, C1_ENROLLED);
-  const count = (code: CdsCode) => {
-    const n = itemNumber(doc, code);
-    return n !== null && enrolled !== null && Number.isInteger(n) && n >= 0 && n <= enrolled ? n : null;
-  };
   const share = (code: CdsCode) => {
     const s = itemShare(doc, code);
     return s === null ? null : Math.round(Math.min(1, s) * 10000) / 10000;
+  };
+  // Checks, "Number vs share": shown only when it agrees with the stated share (the checks track sends the rest to review).
+  const count = (code: CdsCode, shareCode: CdsCode) => {
+    const n = itemNumber(doc, code);
+    if (n === null || enrolled === null || !Number.isInteger(n) || n < 0 || n > enrolled) return null;
+    const s = share(shareCode);
+    return s === null || submittersAgree(n, s, enrolled) ? n : null;
   };
   return {
     year,
     sat_share: share(C9.sat_share),
     act_share: share(C9.act_share),
-    sat_submitters: count(C9.sat_submitters),
-    act_submitters: count(C9.act_submitters),
+    sat_submitters: count(C9.sat_submitters, C9.sat_share),
+    act_submitters: count(C9.act_submitters, C9.act_share),
     sat_composite: pct3(doc, "sat_composite"),
     sat_ebrw: pct3(doc, "sat_ebrw"),
     sat_math: pct3(doc, "sat_math"),

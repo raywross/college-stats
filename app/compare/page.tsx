@@ -14,7 +14,8 @@ import { ThenAndNow, type ThenAndNowMetric } from "@/components/compare/ThenAndN
 import { HistorySourceNote } from "@/components/sources/HistorySourceNote";
 import type { FieldPath } from "@/lib/fields";
 import type { TermKey } from "@/lib/glossary";
-import { DEMOGRAPHIC_CATEGORIES, DOMAINS, METRICS, TEST_POLICY_LABELS, admitRatesBySex, satComposite, type Domain } from "@/lib/metrics";
+import { DEMOGRAPHIC_CATEGORIES, DOMAINS, METRICS, TEST_POLICY_LABELS, admitRatesBySex, satTotal, type Domain } from "@/lib/metrics";
+import { TEST_ROWS } from "@/lib/compare-tests";
 import { RADAR_AXES, keyDifferences, radarProfile, similarSchools } from "@/lib/insights";
 import { SLOT_COLORS, shortName } from "@/lib/brand";
 import { DESIGNATION_LABELS, RESEARCH_LABELS } from "@/lib/campus-profile";
@@ -103,8 +104,10 @@ const TABLE_ROWS = (
     ["Admitted", "admitted", "admissions.admitted", (s: School) => opt(s.admissions.admitted, num)],
     ["Enrolled", "enrolled", "admissions.enrolled", (s: School) => opt(s.admissions.enrolled, num)],
     ["Yield", "yield", "derived.yield", (s: School) => opt(METRICS.yield.get(s), (v) => pct(v))],
-    ["SAT middle 50%", "middle-50", "derived.sat_composite", (s: School) => satComposite(s)?.join("–") ?? null],
+    ["SAT middle 50%", "middle-50", "derived.sat_total", (s: School) => satTotal(s)?.join("–") ?? null],
     ["ACT middle 50%", "act", "admissions.act_composite_25_75", (s: School) => s.admissions.act_composite_25_75?.join("–") ?? null],
+    // CDS C9 (cds-test-scores-and-policy.md): counts and top bands, "–" where not reported; never ranked or in Key differences.
+    ...TEST_ROWS,
     ...FACTOR_ROWS,
     ["Test policy", "test-policy", "admissions.test_policy", (s: School) => (s.admissions.test_policy ? TEST_POLICY_LABELS[s.admissions.test_policy] : null)],
     ["Application fee", "application-fee", "admissions.application_fee", (s: School) =>
@@ -596,7 +599,8 @@ export default async function ComparePage({
 
 async function ScoreCompare({ schools, test }: { schools: School[]; test: "sat" | "act" }) {
   const { metricMedian } = await getData();
-  const ranges = schools.map((s) => (test === "sat" ? satComposite(s) : s.admissions.act_composite_25_75));
+  // The SAT total each college shows (derived.sat_total: its own CDS total when reported, else the sum of sections).
+  const ranges = schools.map((s) => (test === "sat" ? satTotal(s) : s.admissions.act_composite_25_75));
   const present = ranges.filter((r): r is [number, number] => r !== null);
   const title = test === "sat" ? "SAT total" : "ACT composite";
   if (present.length === 0) {

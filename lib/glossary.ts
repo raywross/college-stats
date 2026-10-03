@@ -141,7 +141,7 @@ const entries = {
   sat: {
     term: "SAT total",
     short: "The College Board's admissions test, scored 400–1600: Reading & Writing (200–800) plus Math (200–800).",
-    long: "We estimate a school's SAT total range by adding the Reading & Writing and Math percentiles. That's an approximation, because the same student isn't always at the 25th percentile in both sections.",
+    long: "Where a college's own Common Data Set reports its SAT total percentiles, we show those. Elsewhere we estimate the total range by adding the Reading & Writing and Math percentiles, an approximation because the same student isn't always at the 25th percentile in both sections. Rankings always use the added sections, so every college is measured the same way.",
     category: "Test scores",
     related: ["sat-ebrw", "sat-math", "middle-50", "act"],
   },
@@ -160,6 +160,7 @@ const entries = {
   act: {
     term: "ACT composite",
     short: "The ACT's overall score, from 1 to 36, averaging English, Math, Reading, and Science.",
+    long: "From 2025 the enhanced ACT makes the Science section optional and computes the composite from English, Math, and Reading alone, so composites from newer classes may mix both kinds of scores.",
     category: "Test scores",
     related: ["sat", "middle-50"],
   },
@@ -172,14 +173,16 @@ const entries = {
   },
   "test-policy": {
     term: "Test policy",
-    short: "How a college uses SAT/ACT scores: required, recommended, considered if submitted (test-optional), or not considered at all (test-blind).",
+    short: "How a college uses SAT/ACT scores: required, required for some applicants, recommended, considered if submitted (test-optional), or not considered at all (test-blind).",
+    long: "Federal data gives the policy for students who already enrolled. Where a college's Common Data Set states its policy for the coming application cycle, we show that instead, and its source names the cycle.",
     why: "At test-blind schools (like the University of California) you won't see score ranges, because scores aren't collected.",
     category: "Test scores",
-    related: ["test-optional", "test-submission"],
+    related: ["test-optional", "test-submission", "application-cycle", "required-for-some"],
   },
   "test-submission": {
     term: "Test submission rate",
     short: "The share of enrolled students who submitted a given test score. Below 50%, the reported range may not represent the whole class.",
+    long: "A college's Common Data Set also gives how many students sent each test, shown with the share where it's reported.",
     category: "Test scores",
     related: ["test-optional", "middle-50"],
   },
@@ -789,6 +792,26 @@ const entries = {
     short: "A standardized survey colleges publish voluntarily, with detailed admissions, enrollment, and aid statistics.",
     category: "Data sources",
     related: ["ipeds"],
+  },
+  // CDS C8/C9 (specs/data-expansion/cds-test-scores-and-policy.md).
+  "score-bands": {
+    term: "Score bands",
+    short: "The share of enrolled first-years who sent a test whose score fell in each range, such as SAT 1400–1600 or ACT 30–36, from the college's Common Data Set.",
+    why: "Bands show how scores spread across the whole class, not just the middle half. They describe only students who sent scores.",
+    category: "Test scores",
+    related: ["middle-50", "test-submission", "sat", "act"],
+  },
+  "application-cycle": {
+    term: "Application cycle",
+    short: "The year students apply, named by the fall they would enroll. A college's Common Data Set states its test policy for the coming cycle.",
+    category: "Admissions",
+    related: ["test-policy"],
+  },
+  "required-for-some": {
+    term: "Required for some applicants",
+    short: "A test policy where some applicants (for example, those to certain programs) must send SAT or ACT scores and others needn't. Only a college's Common Data Set reports it.",
+    category: "Test scores",
+    related: ["test-policy", "test-optional"],
   },
   region: {
     term: "Region",

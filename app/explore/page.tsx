@@ -29,6 +29,7 @@ import { DIVISION_FILTERS, ROTC_BRANCHES, divisionFilterOf } from "@/lib/campus-
 import { MAX_RATIO_OPTIONS, MIN_FULL_TIME_FACULTY_OPTIONS } from "@/lib/academics";
 import { drawsNationally } from "@/lib/residence";
 import { fieldFacets } from "@/lib/majors";
+import { policyBucket } from "@/lib/test-policy";
 import { InfoTip } from "@/components/ui/info-tip";
 import { BaselineNote } from "@/components/ui/BaselineNote";
 import { MultiSourceNote } from "@/components/sources/MultiSourceNote";
@@ -60,6 +61,13 @@ function buildFacets({ getAllSchools, histogram }: Dataset): FilterFacets {
   for (const s of all) {
     const b = genderBalanceOf(s);
     if (b) balance[b]++;
+  }
+
+  // Test policy (lib/test-policy.ts): each college's newest policy.
+  const policy: FilterFacets["policy"] = { required: 0, optional: 0, blind: 0 };
+  for (const s of all) {
+    const b = policyBucket(s.admissions.test_policy);
+    if (b) policy[b]++;
   }
 
   const campus: FilterFacets["campus"] = {
@@ -100,6 +108,7 @@ function buildFacets({ getAllSchools, histogram }: Dataset): FilterFacets {
     medianFullTimeFaculty: median(ftShares),
     services,
     balance,
+    policy,
     fullTime: all.filter(isMostlyFullTime).length,
     fewLoans: all.filter(hasFewLoans).length,
     pellGap: all.filter(hasSmallPellGap).length,

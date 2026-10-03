@@ -828,6 +828,8 @@ export interface SearchFilters {
   /** Majors (lib/majors.ts): a 2-digit CIP family, and at least this many first-major bachelor's a year in it (default 1). */
   field?: string;
   fieldMin?: number;
+  /** Test policy buckets to keep (lib/test-policy.ts): each college's newest policy; colleges with none are excluded. */
+  policy?: ("required" | "optional" | "blind")[];
   sortBy?: SortKey;
   sortDir?: "asc" | "desc";
 }

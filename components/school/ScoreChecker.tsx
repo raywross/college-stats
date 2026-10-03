@@ -4,6 +4,8 @@ import { useState } from "react";
 import { RangeBar } from "@/components/charts/RangeBar";
 import { InfoTip } from "@/components/ui/info-tip";
 import { scoreScale } from "@/lib/score-scale";
+import { yourBandSentence } from "@/lib/score-bands";
+import type { Bands6 } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 interface Ranges {
@@ -15,6 +17,9 @@ interface Ranges {
   medianActMid: number | null;
   actEnglish?: [number, number] | null;
   actMath?: [number, number] | null;
+  /** ACT Reading and Science (a college's CDS C9), drawn under the composite with English and Math when present. */
+  actReading?: [number, number] | null;
+  actScience?: [number, number] | null;
 }
 
 /** This college's true medians (fall 2022 on); pass only when they describe the same report as the ranges. */
@@ -26,7 +31,18 @@ interface Medians {
 }
 
 /** "Where do I land?" Enter a score and see it on the middle-50% bars. */
-export function ScoreChecker({ ranges, medians, color }: { ranges: Ranges; medians?: Medians | null; color: string }) {
+export function ScoreChecker({
+  ranges,
+  medians,
+  color,
+  bands,
+}: {
+  ranges: Ranges;
+  medians?: Medians | null;
+  color: string;
+  /** SAT total and ACT composite score bands (CDS C9), for "Your score is in the … band" under the bar. */
+  bands?: { sat: Bands6 | null; act: Bands6 | null } | null;
+}) {
   const available = (["sat", "act"] as const).filter((t) => (t === "sat" ? ranges.satTotal : ranges.act));
   const [test, setTest] = useState<"sat" | "act">(available[0] ?? "sat");
   const [raw, setRaw] = useState("");
@@ -37,7 +53,17 @@ export function ScoreChecker({ ranges, medians, color }: { ranges: Ranges; media
   const satAxis = scoreScale("sat", ranges.satTotal?.[0], test === "sat" ? you : null);
   const sectionAxis = scoreScale("sat-section", ranges.satReading?.[0], ranges.satMath?.[0]);
   const actAxis = scoreScale("act", ranges.act?.[0], test === "act" ? you : null);
-  const actPartAxis = scoreScale("act", ranges.actEnglish?.[0], ranges.actMath?.[0]);
+  const actParts = (
+    [
+      ["English", ranges.actEnglish],
+      ["Math", ranges.actMath],
+      ["Reading", ranges.actReading],
+      ["Science", ranges.actScience],
+    ] as [string, [number, number] | null | undefined][]
+  ).filter((r): r is [string, [number, number]] => !!r[1]);
+  const actPartAxis = scoreScale("act", ...actParts.map(([, r]) => r[0]));
+  const testBands = test === "sat" ? bands?.sat : bands?.act;
+  const bandLine = you !== null && testBands ? yourBandSentence(you, testBands, test === "sat" ? "sat_composite" : "act_composite") : null;
   const hasMedian = test === "sat" ? medians?.satTotal != null || medians?.satReading != null : medians?.act != null;
 
   return (
@@ -90,6 +116,7 @@ export function ScoreChecker({ ranges, medians, color }: { ranges: Ranges; media
             median={medians?.satTotal}
             you={you}
           />
+          {bandLine && <p className="text-sm text-muted-foreground">{bandLine}</p>}
           {ranges.satReading && ranges.satMath && (
             <div className="grid gap-6 sm:grid-cols-2">
               <RangeBar label="Reading & Writing" term="sat-ebrw" low={ranges.satReading[0]} high={ranges.satReading[1]} scale={sectionAxis.scale} ticks={sectionAxis.ticks} color={color} median={medians?.satReading} />
@@ -111,10 +138,12 @@ export function ScoreChecker({ ranges, medians, color }: { ranges: Ranges; media
             median={medians?.act}
             you={you}
           />
-          {ranges.actEnglish && ranges.actMath && (
+          {bandLine && <p className="text-sm text-muted-foreground">{bandLine}</p>}
+          {actParts.length >= 2 && (
             <div className="grid gap-6 sm:grid-cols-2">
-              <RangeBar label="English" term="act" low={ranges.actEnglish[0]} high={ranges.actEnglish[1]} scale={actPartAxis.scale} ticks={actPartAxis.ticks} color={color} />
-              <RangeBar label="Math" term="act" low={ranges.actMath[0]} high={ranges.actMath[1]} scale={actPartAxis.scale} ticks={actPartAxis.ticks} color={color} />
+              {actParts.map(([label, r]) => (
+                <RangeBar key={label} label={label} term="act" low={r[0]} high={r[1]} scale={actPartAxis.scale} ticks={actPartAxis.ticks} color={color} />
+              ))}
             </div>
           )}
         </>
@@ -122,7 +151,7 @@ export function ScoreChecker({ ranges, medians, color }: { ranges: Ranges; media
 
       <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
         <span className="inline-flex items-center gap-1.5">
-          <span className="h-2.5 w-5 rounded-full" style={{ backgroundColor: color }} /> Middle 50% of admitted students
+          <span className="h-2.5 w-5 rounded-full" style={{ backgroundColor: color }} /> Middle 50% of enrolled first-years who sent scores
           <InfoTip term="middle-50" />
         </span>
         {hasMedian && (

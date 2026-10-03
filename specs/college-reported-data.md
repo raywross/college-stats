@@ -142,8 +142,10 @@ supporting quote, and a human-review queue for conduct-code findings:
   on every value; see [religious-life.md](religious-life.md#source-tiers).
 - **National directories** are crawled once per organization, not per college, and matched to `unit_id`s
   (`data/directories/`).
-- **Checkboxes** (CDS F2/F4/C7/H14) lose their labels in PDF text extraction (verified on UT's 2025–26 CDS), so these
-  items go to a layout-aware parser or a vision call.
+- **Checkboxes.** Multi-column grids (C7, C8, D5, F3, H14) lose their column in plain PDF text (verified on UT's
+  2025–26 CDS and 10 more in the 2026-10-03 inventory); single-column lists (F2, F4, E1, H8) keep "X Label". Rebuilding
+  lines by position (pdf.js x/y) recovers the column on every PDF tested, so no vision call is needed
+  ([round 3](college-reported-round-3.md), Decision 3).
 - **Access rules:** obey `robots.txt` and crawl delays, never get around bot protection, and ask organizations that
   cover many campuses for data directly ([religious-life.md](religious-life.md#access-rules-apply-to-both-specs)).
 

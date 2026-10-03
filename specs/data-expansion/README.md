@@ -44,17 +44,29 @@ Each spec here is a separate unit of work, so pieces can ship when they're usefu
 | [majors.md](majors.md) | **Built.** Degrees awarded by field: top majors (searchable list of every program), fastest-growing field, field filter, Home fact | IPEDS Completions (C_A) |
 | [field-of-study.md](field-of-study.md) | **Built.** Earnings and debt by major at each college: "Top-earning majors here", Compare's "your major" | Scorecard Field of Study |
 
-### Wave 4: college-specific, after the college-reported data agent
+### Wave 4: college-specific, from the CDS records of round 3
+Specified in full on 2026-10-03 after an inventory of 19 real 2025–26 Common Data Sets (6 Excel, 11 PDF, 2 HTML; see
+[college-reported-round-3.md](../college-reported-round-3.md), whose extraction scope lists every item below by
+template code). The one full run captures all of these; each spec then ships from the stored records with no new
+visit to any college.
+
 | Spec | Adds | CDS items |
 |---|---|---|
-| [cds-admissions.md](cds-admissions.md) | **High school GPA** (average and distribution), weighted admission factors, early decision/action, wait list, class rank | C2, C7, C10–C12, C21–C22 |
-| [cds-academics.md](cds-academics.md) | Class sizes, CDS student-faculty ratio | I-2, I-3 |
-| [cds-transfer.md](cds-transfer.md) | Transfer applicants, admits, enrollees, requirements | D |
-| [cds-cost-and-debt.md](cds-cost-and-debt.md) | Next year's tuition before IPEDS has it; graduates' total debt including private loans | G1, H4–H5 |
+| [cds-admissions.md](cds-admissions.md) | **High school GPA** (average, weighted flag, and bands), the 18-factor importance grid, early decision/action, wait list, class rank | C2, C7, C10–C12, C21–C22 |
+| [cds-residency-admissions.md](cds-residency-admissions.md) | In-state, out-of-state, and international admit rates and yields | C1 by residency |
+| [cds-test-scores-and-policy.md](cds-test-scores-and-policy.md) | The test policy for the coming application cycle; true SAT composite percentiles and score-band distributions | C8, C9 |
+| [cds-application-logistics.md](cds-application-logistics.md) | Deadlines, notification and reply dates, housing deposit, gap-year deferral, fee waivers, high school units required | C3–C5, C13–C18 |
+| [cds-financial-aid.md](cds-financial-aid.md) | CSS Profile and other forms, aid methodology and deadlines, aid for international students, need vs merit dollars, athletic awards, the full H2 lines for first-years | H0–H2A, H6–H11, H14–H15 |
+| [cds-student-body-and-outcomes.md](cds-student-body-and-outcomes.md) | Enrollment, race/ethnicity, retention, and graduation by Pell group one year newer than federal data, with a 4-year rate | B1, B2, B4–B11, B22 |
+| [cds-academics.md](cds-academics.md) | Class sizes, the CDS student-faculty ratio, honors and other programs, core requirements | I-2, I-3, E1, E3 |
+| [cds-transfer.md](cds-transfer.md) | Transfer applicants, admits, enrollees, requirements, dates | D |
+| [cds-cost-and-debt.md](cds-cost-and-debt.md) | Next year's price before IPEDS has it (first-year and upper-division), differential tuition, graduates' debt from every loan source | G, H4–H5 |
 
-CDS F1 (fraternity/sorority share) is in [greek-life.md](../greek-life.md); C7 religious commitment and H14 are in
-[religious-life.md](../religious-life.md). F1 out-of-state and on-campus shares are covered as CDS supplements in
-[residence.md](residence.md) and [housing-and-policies.md](housing-and-policies.md).
+CDS F1 (fraternity/sorority share) is in [greek-life.md](../greek-life.md); C7 religious commitment, F2 campus
+ministries, and H14's religious row are in [religious-life.md](../religious-life.md). F1 out-of-state and on-campus
+shares are covered as CDS supplements in [residence.md](residence.md) and [housing-and-policies.md](housing-and-policies.md).
+Items the inventory judged not worth a page (A, B3, I-1, J, most free-text policy items) are still stored by the run
+because template workbooks and fillable PDFs read for free.
 
 ## Deciding on history
 Every spec answers **"Keep history?"** with one of three answers:

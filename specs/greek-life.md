@@ -62,7 +62,9 @@ extraction.
   behind member logins, so ask them rather than scrape.
 - **Extraction:** size and grade reports are tables. Parse them deterministically where the layout is known (UT's
   come from one internal app, so all six councils share a layout) and fall back to a cheap model with a table schema.
-  Checkboxes (CDS F4) need layout-aware parsing or a vision call.
+  F4 is a single-column list and survives plain PDF text; the F1 grid needs layout-aware text (2026-10-03 inventory:
+  Michigan prints one F1 column, Howard's "0.61" means 0.61%). Gender-inclusive housing is not an F4 option; it appears
+  only as "Other" text.
 
 ## Data model (sketch)
 ```ts

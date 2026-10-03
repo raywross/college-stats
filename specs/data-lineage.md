@@ -87,14 +87,12 @@ nothing was replaced).
 |---|---|---|
 | Section values | Footnote listing each source **with its year**, built from the section's `fields` | `SourceNote`; profile `Panel` requires `fields` |
 | Any metric label | The glossary ⓘ popover gains a **Source** block: "Reported in … , Fall 2024" or "Calculated: formula. From …", retrieved date | `MetricLabel` / `InfoTip` `cited` prop; `SourceTip` when there's no glossary term |
-| Value from a non-default source or year | Visible chip, e.g. `CDS 2024-25`, next to the label | `SourceChip` (automatic in `MetricLabel`) |
-| Section containing such values | One line under the takeaway: "Figures marked [chip] come from {college} Common Data Set, 2024-25. Everything else here is federal data." | `SourceExceptions` in the profile |
-| Values that always share a source (the funnel) | One chip on the group heading, not per row | `MetricLabel chip={false}` |
-| Compare "All the numbers" | Each row has a field; per-school cells get chips; row ⓘ shows the default source | `TABLE_ROWS` in `app/compare/page.tsx` |
+| Value from a non-default source or year | **Nothing visible next to the value** (chips and the "Figures marked like this…" line were removed 2026-10-03 at the owner's request); the ⓘ popover carries the source, the kind of document ("in its Common Data Set 2025–26", "in its class profile for the Fall 2026 class"), the year, the quote, the link, the retrieval date, and the replaced figure ("Federal data, Fall 2024: 5.8%", from `Cited.replaces`) | `SourceBlock` in `components/ui/info-tip.tsx`; `tests/reported-guards.test.mts` bans `SourceChip`, `SourceExceptions`, and `chip=` from `app/` and `components/` |
+| Compare "All the numbers" | Each row has a field; a cell whose cited year differs from the row's default year gets a small muted year after the value; row ⓘ shows the default source | `TABLE_ROWS` in `app/compare/page.tsx` |
 | Many schools (Explore, Home, Compare) | Union of sources; more than 3 CDS files collapse to "Common Data Sets from N colleges" | `MultiSourceNote` |
-| Explore and Compare, near `MultiSourceNote` | Quiet reminder that comparisons use the federal baseline, not a college's own newer figures | `BaselineNote` (built 2026-10-02; see [college-reported-data.md](college-reported-data.md#display)) |
+| Explore and Compare, near `MultiSourceNote` | Quiet note: figures are the newest each college has published, years can differ between colleges, each value's ⓘ shows its source and year | `BaselineNote` (revised 2026-10-03) |
 | Bottom of profile | Numbered list, one entry per dataset/document with every year used | `SourceList` |
-| `college-site` value, newer than federal (college-reported-round-2.md) | **Is** the headline: the funnel, ring, admit-ratio, and yield show the college's own newest figures, each cited; `FederalBaselineLine` ("Federal data, Fall 2024: 5.8%") sits one line below | `lib/newest.ts` resolves which source; admissions topic page and overview card only (`tests/reported-guards.test.mts` keeps it out of comparisons) |
+| `college-site` value, newer than federal (college-reported-round-2.md) | **Is** the value, in every view: `applyNewest` writes it into `school.admissions` with its lineage and keeps the replaced funnel in `admissions.federal`; nothing resolves at render time | `lib/newest.ts`, run by `merge-reported` and `sync-data` |
 | `college-site` value that's newer but not a full funnel (e.g. applicants only) | A line under the federal funnel: "Fall 2026: 46,618 applied · reported by the college", each present number cited | `PartialReportedLine` (`components/profile/ReportedAdmissions.tsx`) |
 
 ## Enforcement
@@ -131,5 +129,5 @@ app is lenient: the sync and `check:lineage` still refuse a dataset missing any 
 - Superscript numbers linking values to the numbered source list (the popover links straight to the source instead).
 - Lineage in the `/api/schools` payload (client components currently show only search results, which aren't cited).
 
-Built 2026-10-02: the Explore/Compare baseline banner (`BaselineNote`) and `school.reported` display
-([college-reported-data.md](college-reported-data.md#display)) — see that spec's **As built** section.
+Built 2026-10-02 and revised 2026-10-03: `BaselineNote` and the newest-value display
+([college-reported-round-2.md](college-reported-round-2.md#decision-1-show-the-newest-figures-we-have-everywhere)).

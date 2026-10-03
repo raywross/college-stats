@@ -32,7 +32,7 @@ import { Crest } from "@/components/school/Crest";
 import { RadarChart } from "@/components/charts/RadarChart";
 import { RangeBar } from "@/components/charts/RangeBar";
 import { StackedBar } from "@/components/charts/StackedBar";
-import { InfoTip, SourceChip, Term } from "@/components/ui/info-tip";
+import { InfoTip, Term } from "@/components/ui/info-tip";
 
 export const metadata: Metadata = { title: "Compare" };
 
@@ -559,21 +559,27 @@ export default async function ComparePage({
                   </tr>
                 </thead>
                 <tbody className="divide-y tabular-nums">
-                  {TABLE_ROWS.map(([label, term, field, fmt]) => (
-                    <tr key={label}>
-                      <td className="sticky left-0 z-10 max-w-36 bg-card px-3 py-2.5 text-muted-foreground shadow-[1px_0_0_var(--border)] sm:max-w-none sm:px-4 sm:shadow-none">
-                        <span className="inline-flex items-center gap-1">
-                          {label} <InfoTip term={term} cited={citeField(field)} />
-                        </span>
-                      </td>
-                      {schools.map((s) => (
-                        <td key={s.unit_id} className="px-4 py-2.5 font-semibold">
-                          {fmt(s) ?? <span className="font-normal text-muted-foreground">–</span>}
-                          {fmt(s) !== null && <SourceChip cited={citeField(field, s)} className="ml-1.5 align-middle" />}
+                  {TABLE_ROWS.map(([label, term, field, fmt]) => {
+                    const rowYear = citeField(field).year;
+                    return (
+                      <tr key={label}>
+                        <td className="sticky left-0 z-10 max-w-36 bg-card px-3 py-2.5 text-muted-foreground shadow-[1px_0_0_var(--border)] sm:max-w-none sm:px-4 sm:shadow-none">
+                          <span className="inline-flex items-center gap-1">
+                            {label} <InfoTip term={term} cited={citeField(field)} />
+                          </span>
                         </td>
-                      ))}
-                    </tr>
-                  ))}
+                        {schools.map((s) => {
+                          const cellYear = citeField(field, s).year;
+                          return (
+                            <td key={s.unit_id} className="px-4 py-2.5 font-semibold">
+                              {fmt(s) ?? <span className="font-normal text-muted-foreground">–</span>}
+                              {fmt(s) !== null && cellYear !== rowYear && <span className="ml-1.5 align-middle text-[11px] font-normal text-muted-foreground">{cellYear}</span>}
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>

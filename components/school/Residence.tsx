@@ -6,7 +6,7 @@ import { unknownShare } from "@/lib/residence";
 import { stateByPostal, stateName } from "@/lib/states";
 import { num, pct, pctSmart } from "@/lib/format";
 import { TILES } from "@/components/charts/StateTileMap";
-import { InfoTip, SourceChip } from "@/components/ui/info-tip";
+import { InfoTip } from "@/components/ui/info-tip";
 import { cn } from "@/lib/utils";
 
 /**
@@ -34,7 +34,6 @@ export function Residence({
   school,
   detail,
   cited,
-  citedStates,
   rank,
   id,
 }: {
@@ -43,8 +42,6 @@ export function Residence({
   detail: SchoolDetail | null;
   /** citeField("demographics.residence", school) */
   cited: Cited;
-  /** citeField("detail.home_states", school) */
-  citedStates: Cited;
   /** Percentile rank of the out-of-state share (rankOf "outOfState"). */
   rank: number | null;
 }) {
@@ -62,9 +59,7 @@ export function Residence({
     <div id={id} className="rounded-3xl border bg-card p-4 sm:p-6 md:col-span-2">
       <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
         <h3 className="flex items-center gap-1 font-display text-lg font-bold">
-          Where first-years come from <InfoTip term="in-state-student" cited={cited} />
-          <SourceChip cited={cited} />
-        </h3>
+          Where first-years come from <InfoTip term="in-state-student" cited={cited} />        </h3>
         <p className="text-sm text-muted-foreground">
           <b className="text-foreground">{num(r.first_years)}</b> first-time students <InfoTip term="first-time-student" />
         </p>
@@ -112,8 +107,7 @@ export function Residence({
         <div className="mt-6 grid gap-6 md:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
           <div>
             <h4 className="mb-3 flex items-center gap-1.5 text-sm font-semibold">
-              Top home states <SourceChip cited={citedStates} />
-            </h4>
+              Top home states            </h4>
             <ol className="space-y-2.5">
               {top.map((t) => (
                 <li key={t.state} className="text-sm">

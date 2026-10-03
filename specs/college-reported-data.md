@@ -26,7 +26,8 @@ Dec 2025); fall 2025 arrives about Dec 2026. Colleges publish sooner:
 - **Start with cheaper models.** A stronger model is used only to learn a college's format (discovery) and when a
   format changes; routine extraction uses the cheapest model that passes the pilot.
 - **Never re-read a document we've already processed** unless it changed.
-- Federal data remains the comparison baseline ([data-lineage.md](data-lineage.md#rules)).
+- ~~Federal data remains the comparison baseline~~ Revised 2026-10-03: the newest figure a college has published is
+  the value everywhere ([college-reported-round-2.md](college-reported-round-2.md), Decision 1).
 
 ## How it works
 
@@ -415,13 +416,13 @@ rate only) merged into a local `data/schools.json` copy with a throwaway script 
   inside it still comes from `rankOf`, which is always federal.
 - **`reported.*` fields** in `TOPIC_FIELDS.admissions` (all four) and `OVERVIEW_FIELDS` (acceptance rate) in
   `lib/profile-topics.ts` are unchanged from phase 1.
-- **Popover copy** (`components/ui/info-tip.tsx`): `cited.key === "college-site"` now reads "Reported by the college
-  itself; newer than the federal figure, which is one line below," matching the new layout.
-- **Data page** (`app/data/page.tsx`): section 4's second card and section 5's intro paragraph now describe the
-  newest-first rule (profile headline with year and chip; federal stays the comparison baseline everywhere else)
-  instead of "appears only on that college's own profile, under the federal figure."
-- **Explore/Compare baseline banner** (`components/ui/BaselineNote.tsx`) and the Data page's live counts and checks
-  list are unchanged from phase 1.
+- **Popover copy** (`components/ui/info-tip.tsx`, revised 2026-10-03): a `college-site` value reads "Reported by
+  {college} in its Common Data Set {year}" or "…in its class profile for the {year} class", then the quote, the
+  link, "Federal data, {year}: {value}" for what it replaced, and the retrieval date. No chips anywhere.
+- **Data page** (`app/data/page.tsx`): section 4 says every figure is the newest its college has published, in every
+  view, with years that can differ between colleges; section 5's count says "in use across the site".
+- **Explore/Compare note** (`components/ui/BaselineNote.tsx`): figures are the newest each college has published;
+  years can differ; each value's ⓘ shows source and year.
 - **Guard**: `tests/reported-guards.test.mts` still greps the phase-1 banned files/dirs for any `school.reported`
   reference, and adds a second check banning `lib/newest`/`newestAdmissions` from the same comparison-only files
   (`lib/metrics.ts`, `lib/dataset.ts`, `lib/compare.ts`, `lib/indicators.ts`, `app/explore/**`, `app/compare/**`,

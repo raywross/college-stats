@@ -8,7 +8,7 @@
  * `npm run sync-data`); `restoreFederal` undoes it exactly (byte for byte), so a college dropped from
  * data/college-reported.json gets its previous funnel back. Pure: no I/O, never mutates its input.
  */
-import { acceptanceRate, sameClassYield } from "./derive.ts";
+import { acceptanceRate } from "./derive.ts";
 import type { FieldPath } from "./fields";
 import type { FederalAdmissions, LineageRecord, School } from "./types";
 
@@ -145,65 +145,4 @@ export function restoreFederal(school: School): School {
 /** The lineage of a previous rate `applyNewest` kept: the previous funnel's source and year, `method: "derived"`. */
 function keptRateRecord(prev: LineageRecord | undefined, year: number | null): LineageRecord {
   return { ...(prev ?? {}), source: prev?.source ?? "ipeds-adm", method: "derived", year: prev?.year ?? (year !== null ? `Fall ${year}` : null) };
-}
-
-/* ------------------------------------------------------------------ */
-/* Deprecated: the render-time resolver the UI used before the dataset held the newest values. Kept only so the  */
-/* admissions page, card, and takeaways compile until feature/cr2-newest-ui removes their calls; it now reads     */
-/* `school.admissions` directly (which already holds the newest figures), with no partial line and no chips.      */
-/* ------------------------------------------------------------------ */
-
-export interface NewestFunnelPaths {
-  applicants: FieldPath;
-  admitted: FieldPath;
-  enrolled: FieldPath;
-  acceptance_rate: FieldPath;
-}
-
-/** @deprecated No longer produced: every newer value the college published is in `school.admissions`. */
-export interface PartialAdmissions {
-  applicants?: number;
-  admitted?: number;
-  enrolled?: number;
-  acceptance_rate?: number;
-  paths: Partial<NewestFunnelPaths>;
-  term: string;
-}
-
-/** @deprecated Read `school.admissions` (and `yieldRate`) directly. */
-export interface NewestAdmissions {
-  source: "reported" | "federal";
-  year: number | null;
-  term: string | null;
-  applicants: number | null;
-  admitted: number | null;
-  enrolled: number | null;
-  acceptance_rate: number | null;
-  yield: number | null;
-  paths: NewestFunnelPaths;
-  partial: PartialAdmissions | null;
-}
-
-const PATHS: NewestFunnelPaths = {
-  applicants: "admissions.applicants",
-  admitted: "admissions.admitted",
-  enrolled: "admissions.enrolled",
-  acceptance_rate: "admissions.acceptance_rate",
-};
-
-/** @deprecated `school.admissions` already holds the newest figures (`applyNewest`); read it directly. */
-export function newestAdmissions(school: Pick<School, "admissions" | "lineage">): NewestAdmissions {
-  const a = school.admissions;
-  return {
-    source: "federal",
-    year: a.year,
-    term: a.year !== null ? `Fall ${a.year}` : null,
-    applicants: a.applicants,
-    admitted: a.admitted,
-    enrolled: a.enrolled,
-    acceptance_rate: a.acceptance_rate,
-    yield: sameClassYield(school),
-    paths: PATHS,
-    partial: null,
-  };
 }

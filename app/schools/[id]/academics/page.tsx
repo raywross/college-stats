@@ -69,8 +69,6 @@ export default async function AcademicsPage({ params }: Props) {
             school={school}
             detail={detail}
             cited={citeField("academics.majors_top", school)}
-            citedPrograms={citeField("detail.majors", school)}
-            citedEarnings={citeField("detail.programs", school)}
             growth={majorGrowth}
             growthNote={
               majorGrowth && history ? (

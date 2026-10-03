@@ -10,23 +10,18 @@ import { RangeBar } from "@/components/charts/RangeBar";
 import { InfoTip, MetricLabel, Term } from "@/components/ui/info-tip";
 import { CardHeadline, CardStat, CardStats, TopicCard } from "./TopicCard";
 import { TenYearLine } from "./TenYearLine";
-import { FederalBaselineLine, PartialReportedLine } from "./ReportedAdmissions";
 
 /**
  * Getting in: the acceptance ring with "1 in N" and the selectivity tier (or the open-admission state), applied,
  * admitted, and yield, the SAT and ACT middle 50% bars, and applications over ten years with the acceptance rate.
- * The headline, ring, and counts show the newest class the college has published (lib/newest.ts,
- * specs/college-reported-round-2.md Decision 1); the SAT/ACT bars and ten-year line stay federal.
  */
 export async function AdmissionsCard({ profile: p }: { profile: Profile }) {
-  const { data, school, history, newest, sat } = p;
+  const { data, school, history, counts, rate, sat, yld } = p;
   const { citeField, metricMedian } = data;
   const a = school.admissions;
   const color = DOMAINS.admissions.color;
-  const rate = newest.acceptance_rate;
-  const counts = newest.applicants != null && newest.admitted != null;
   // The fall the headline figure describes, from lineage (the counts' release, or the rate's when counts aren't reported).
-  const year = citeField(counts ? newest.paths.applicants : newest.paths.acceptance_rate, school).year;
+  const year = citeField(counts ? "admissions.applicants" : "admissions.acceptance_rate", school).year;
   const tier = selectivityTier(rate);
   const apps = history ? tenYear("applicants", history.history, history.files) : null;
   const rateTen = history ? tenYear("acceptance_rate", history.history, history.files) : null;
@@ -39,7 +34,7 @@ export async function AdmissionsCard({ profile: p }: { profile: Profile }) {
           value={pctSmart(rate)}
           caption={
             <>
-              <MetricLabel term="acceptance-rate" cited={citeField(newest.paths.acceptance_rate, school)}>
+              <MetricLabel term="acceptance-rate" cited={citeField("admissions.acceptance_rate", school)}>
                 acceptance rate
               </MetricLabel>
               <span className="mt-1.5 flex items-center gap-1 rounded-full bg-muted px-2.5 py-1 text-xs font-bold text-foreground">
@@ -66,14 +61,11 @@ export async function AdmissionsCard({ profile: p }: { profile: Profile }) {
           </p>
         </div>
       )}
-      {newest.source === "reported" && <FederalBaselineLine school={school} citeField={citeField} className="mt-2" />}
-      {newest.partial && <PartialReportedLine school={school} citeField={citeField} partial={newest.partial} className="mt-2" />}
-
       {counts && (
         <CardStats>
-          <CardStat label="Applied" term="applicants" cited={citeField(newest.paths.applicants, school)} value={num(newest.applicants!)} />
-          <CardStat label="Admitted" term="admitted" cited={citeField(newest.paths.admitted, school)} value={num(newest.admitted!)} />
-          {newest.yield !== null && <CardStat label="Yield" term="yield" cited={citeField(newest.source === "reported" ? newest.paths.enrolled : "derived.yield", school)} value={pct(newest.yield)} sub="of admits enroll" />}
+          <CardStat label="Applied" term="applicants" cited={citeField("admissions.applicants", school)} value={num(a.applicants!)} />
+          <CardStat label="Admitted" term="admitted" cited={citeField("admissions.admitted", school)} value={num(a.admitted!)} />
+          {yld !== null && <CardStat label="Yield" term="yield" cited={citeField("derived.yield", school)} value={pct(yld)} sub="of admits enroll" />}
         </CardStats>
       )}
 

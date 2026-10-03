@@ -35,8 +35,8 @@ routes in `ANCHOR_TOPICS` (`lib/profile-topics.ts`); `#overview`, `#ranks`, and 
 - `lib/profile-history.ts` (pure): `HISTORY_GROUPS`, `HISTORY_SERIES`, `BANDED` for the Over time charts.
 - `lib/profile-cards.ts` (pure): what the overview cards say: `CARD_FOOTERS`, `CARD_TITLES`, `admissionsTitle`,
   `campusChips`, `middleBand`, `sinceLabel`, `tenYear`, `diversityValues` (`tests/profile-cards.test.mts`).
-- `components/profile/`: `Panel` (section header: eyebrow, h1 or h2, takeaway, `HeadlineDelta`, `SourceExceptions`,
-  and a `SourceNote` for h2 sections), `Block` (an h3 card with an id), `NotReported`, `SourceExceptions`,
+- `components/profile/`: `Panel` (section header: eyebrow, h1 or h2, takeaway, `HeadlineDelta`, and a `SourceNote`
+  for h2 sections), `Block` (an h3 card with an id), `NotReported`,
   `CompactHeader` (the topic pages' sticky band: crest, name linking to the overview, city · type, Compare,
   `TopicPills`), `OnThisPage` (client scroll-spy of the page's blocks; a sticky side column from `lg`, a collapsible
   row above the content below it; jumps to a folded block's "Show …" button on phones), `TopicPage` (the frame:
@@ -61,8 +61,7 @@ routes in `ANCHOR_TOPICS` (`lib/profile-topics.ts`); `#overview`, `#ranks`, and 
 1. **Hero**, slim: tinted with the school's crest color. Breadcrumb (Explore › State › School), crest, name,
    location, type, size, test policy, setting, and designations as glossary `Term`s, the Compare button, and the
    "Known for" standout chips. The ten-year trend cards left the hero: each topic card carries its own ten-year line.
-2. **`SourceExceptions`** for `OVERVIEW_FIELDS` ("Figures marked like this come from … Common Data Set").
-3. **Topic cards** (`components/profile/TopicCards.tsx`): one card per page in `profile.topics`, two columns from
+2. **Topic cards** (`components/profile/TopicCards.tsx`): one card per page in `profile.topics`, two columns from
    `sm`, stacked on phones. The whole card is a link to its page (an overlay anchor; popovers, the calculator link,
    "Over time" links, and the swipeable chip row stay interactive above it), with a footer line naming what the page
    holds ("Getting in, in detail: funnel, what they look at, your scores →"). Shell: `TopicCard` with
@@ -99,8 +98,8 @@ routes in `ANCHOR_TOPICS` (`lib/profile-topics.ts`); `#overview`, `#ranks`, and 
      tiles (cost, applications, selectivity, diversity): the indicator word and detail from `indicatorsOf`, a compact
      sparkline (money in end-year dollars), cited to `trends`; a tile with a series but no indicator shows from → to;
      with neither it is omitted.
-4. **Similar schools**: nearest neighbors (`similarSchools`) with "why similar" chips and one-click compare links.
-5. **Sources for this overview**: one collapsed `<details>` at every width wrapping the numbered `SourceList` for
+3. **Similar schools**: nearest neighbors (`similarSchools`) with "why similar" chips and one-click compare links.
+4. **Sources for this overview**: one collapsed `<details>` at every width wrapping the numbered `SourceList` for
    `PROFILE_FIELDS` (every field the whole profile shows); each number's (i) popover carries its own citation.
 
 ## Topic pages

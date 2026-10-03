@@ -3,7 +3,7 @@
  * sync script, the checker, tests, and the app all resolve citations the same way.
  * See specs/data-lineage.md.
  */
-import type { DatasetMeta, FederalAdmissions, LineageRecord, School, SourceInfo, SourceKey } from "./types";
+import type { DatasetMeta, FederalAdmissions, LineageRecord, ReportedSourceKind, School, SourceInfo, SourceKey } from "./types";
 import { FIELDS, METADATA_KEYS, PER_DOCUMENT_SOURCES, REPORTED_PATHS, isFieldPath, registeredPathFor, type FieldPath, type VintageKey } from "./fields.ts";
 
 /** A source as cited for one value: plain data, safe to pass to client components. */
@@ -34,6 +34,8 @@ export interface Cited extends CitedSource {
    * value and the year it describes, from `admissions.federal`, so the tooltip can say "Federal data, fall 2024: 5.8%".
    */
   replaces?: { value: number | null; year: string | null };
+  /** For a value reported by the college itself (source "college-site"): which kind of document supplied it. */
+  sourceKind?: ReportedSourceKind;
 }
 
 /** The funnel paths `applyNewest` may replace, keyed to their `admissions.federal` counterparts. */
@@ -183,6 +185,7 @@ export function lineageFor(path: FieldPath, school: School | undefined, meta: Da
     ...(rec?.quote ? { quote: rec.quote } : {}),
     ...(rec?.page !== undefined ? { page: rec.page } : {}),
     ...replacedBy(path, school, meta),
+    ...(rec?.source === "college-site" && school?.reported?.admissions ? { sourceKind: school.reported.admissions.source_kind } : {}),
   };
 }
 

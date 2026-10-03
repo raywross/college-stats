@@ -4,7 +4,7 @@ import { DOMAINS } from "@/lib/metrics";
 import { rangeLabel, repaymentGroups } from "@/lib/repayment";
 import type { School } from "@/lib/types";
 import { BenchmarkBar } from "@/components/charts/BenchmarkBar";
-import { InfoTip, MetricLabel, SourceChip } from "@/components/ui/info-tip";
+import { InfoTip, MetricLabel } from "@/components/ui/info-tip";
 
 /**
  * Borrowing and repayment (specs/data-expansion/loans-and-repayment.md): how many undergrads borrow, median debt by
@@ -68,9 +68,7 @@ export async function LoansCard({ school }: { school: School }) {
       {groups && (
         <div>
           <h4 className="flex items-center gap-1 text-sm font-medium">
-            Three years into repayment <InfoTip term="repayment-status" cited={citeField("outcomes.repayment_3yr", school)} />
-            <SourceChip cited={citeField("outcomes.repayment_3yr", school)} />
-          </h4>
+            Three years into repayment <InfoTip term="repayment-status" cited={citeField("outcomes.repayment_3yr", school)} />          </h4>
           <p className="mb-3 text-xs text-muted-foreground">Where former undergraduates stand on their federal loans.</p>
           <div className="flex h-4 overflow-hidden rounded-full" role="img" aria-label={groups.map((g) => `${g.label} ${rangeLabel(g)}`).join(", ")}>
             {groups.map((g) => (

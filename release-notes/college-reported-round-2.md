@@ -1,26 +1,28 @@
 ---
-title: "Profiles show the newest admissions figures, and the first 22 are in"
+title: "The newest admissions figures, everywhere, and the first 22 are in"
 pr: 54
 date: 2026-10-03
 kind: feature
-summary: A college's profile now leads with the newest admissions figures it has published itself, 22 colleges have them already, and the agent that collects them costs about a tenth of what its first run did.
+summary: The newest admissions figures a college has published are now the ones the site shows everywhere, with the source in each value's ⓘ instead of tags; 22 colleges have them already, and collecting them costs about a tenth of what the first run did.
 ---
 
 ## What's new
 
-- **The newest numbers first.** When a college has published admissions figures for a newer class than the federal
-  data covers, its admissions page and overview card lead with those: applicants, admitted, enrolled, the admit rate
-  and yield for the newest class, each with its year and a chip saying it came from the college itself. The
-  federal figure stays one line below, so you can see the change. A profile can now mix years, and every number
-  says which year it describes.
-- **22 colleges already have them.** Ten from their 2025–26 Common Data Sets (fall 2025 class): Baylor, Berkeley,
-  Columbia, Harvard, Michigan, MIT, Texas Christian, USC, Vanderbilt and William & Mary. Twelve from class profiles:
-  Duke, Illinois, Loyola Chicago, Spelman and Villanova for fall 2026; Georgetown, Loyola Maryland, Morehouse,
-  Pepperdine, Purdue, Stanford and UT Austin for fall 2025. Some class profiles give only part of the funnel (Purdue
-  and UT Austin publish applicants but not admits), and the page shows what was published.
-- **Comparisons are unchanged.** Explore, Compare, rankings, medians and the home page still use federal data, the
-  newest year every college reports, so one college's fall 2025 is never set against another's fall 2024.
-- **The Data page** explains the new rule.
+- **The newest numbers, everywhere.** When a college has published admissions figures for a newer class than the
+  federal data covers, those are the figures the site shows: on its profile, in Explore and Compare, and in
+  rankings and medians. Applicants, admitted, enrolled, the admit rate and yield each describe the newest class the
+  college published them for, and each one's ⓘ says which document it came from, the exact sentence, the link, the
+  year, and the federal figure it replaced.
+- **A calmer page.** The green source tags and the "Figures marked like this come from…" line are gone. The ⓘ next
+  to a number holds everything about its source. On Compare, a value from a different year than the rest of its row
+  shows the year in small text.
+- **22 colleges already have newer figures.** Ten from their 2025–26 Common Data Sets (fall 2025 class): Baylor,
+  Berkeley, Columbia, Harvard, Michigan, MIT, Texas Christian, USC, Vanderbilt and William & Mary. Twelve from class
+  profiles: Duke, Illinois, Loyola Chicago, Spelman and Villanova for fall 2026; Georgetown, Loyola Maryland,
+  Morehouse, Pepperdine, Purdue, Stanford and UT Austin for fall 2025. A class profile often gives only part of the
+  funnel; the rest stays federal, with its own year in its ⓘ.
+- **Years can differ between colleges** shown side by side, since each publishes on its own schedule. The Data page
+  explains the rule.
 
 ## Behind the scenes
 

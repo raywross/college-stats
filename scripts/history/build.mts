@@ -727,7 +727,8 @@ export function lastPointMismatches(schools: readonly School[], histories: Reado
       check("act_75", s.admissions.act_composite_25_75?.[1]);
       check("sat_submit", s.admissions.test_submission_rate_sat);
       check("act_submit", s.admissions.test_submission_rate_act);
-      check("test_policy", s.admissions.test_policy ? TEST_POLICY_CODES[s.admissions.test_policy] : null);
+      // "required-some" is CDS-only, always with a lineage record, so `check` skips it; it never has a code.
+      check("test_policy", s.admissions.test_policy ? ((TEST_POLICY_CODES as Record<string, number>)[s.admissions.test_policy] ?? null) : null);
     }
     // By sex and medians are always federal (no CDS override sets them), so they're checked against the ADM file's fall.
     if (federalFall === latest.fall) {

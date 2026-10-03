@@ -28,6 +28,7 @@ import type { DatasetMeta, RepaymentStatus, School, SchoolType, TestPolicy } fro
 import { lineageForPatch, validateLineage } from "../lib/lineage.ts";
 import { COLLEGE_SITE_SOURCE, type ReportedFile } from "../lib/reported.ts";
 import { mergeReported } from "../lib/reported-merge.ts";
+import { readRecords } from "./lib/college-reported/records.mts";
 import { applyProbes, filesToProbe, type FileProbe, type ReleaseCalendar } from "../lib/releases.ts";
 import { IPEDS_BASES, parseCsv } from "./lib/ipeds.mts";
 import { MSI_FIELDS, campusProfileFrom, directoryIssues, msiFrom } from "../lib/campus-profile.ts";
@@ -50,6 +51,7 @@ const ROOT = join(import.meta.dirname, "..");
 const OUT = join(ROOT, "data", "schools.json");
 const OVERRIDES = join(ROOT, "data", "overrides.json");
 const REPORTED = join(ROOT, "data", "college-reported.json");
+const CDS_RECORDS = join(ROOT, "data", "cds-records");
 const META = join(ROOT, "data", "meta.json");
 const CALENDAR = join(ROOT, "data", "release-calendar.json");
 const API = "https://api.data.gov/ed/collegescorecard/v1/schools";
@@ -880,7 +882,9 @@ async function main() {
   let reportedMerged = 0;
   if (existsSync(REPORTED)) {
     const reportedFile: ReportedFile = JSON.parse(readFileSync(REPORTED, "utf8"));
-    const merged = mergeReported(schools, reportedFile);
+    // Round-3 CDS records (C8/C9 here; specs/data-expansion/cds-test-scores-and-policy.md).
+    const records = new Map(readRecords(CDS_RECORDS).map((r) => [r.unit_id, r]));
+    const merged = mergeReported(schools, reportedFile, { records, federalPolicyYear: Number(adm.name.slice(3)) || null });
     schools.splice(0, schools.length, ...merged.schools);
     reportedMerged = merged.merged;
   }

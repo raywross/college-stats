@@ -18,6 +18,8 @@ import type { DatasetMeta, School } from "../lib/types";
 import { validateLineage } from "../lib/lineage.ts";
 import type { ReportedFile } from "../lib/reported.ts";
 import { mergeReported } from "../lib/reported-merge.ts";
+import { lineageFall } from "../lib/score-bands.ts";
+import { readRecords } from "./lib/college-reported/records.mts";
 
 // MERGE_REPORTED_ROOT lets tests point this at a scratch directory holding just data/schools.json,
 // data/college-reported.json, and data/meta.json, without copying the whole repo.
@@ -25,6 +27,7 @@ const ROOT = process.env.MERGE_REPORTED_ROOT ?? join(import.meta.dirname, "..");
 const SCHOOLS = join(ROOT, "data", "schools.json");
 const REPORTED = join(ROOT, "data", "college-reported.json");
 const META = join(ROOT, "data", "meta.json");
+const CDS_RECORDS = join(ROOT, "data", "cds-records");
 
 const dryRun = process.argv.includes("--dry-run");
 
@@ -33,7 +36,10 @@ function main() {
   const reported: ReportedFile = JSON.parse(readFileSync(REPORTED, "utf8"));
   const meta: DatasetMeta = JSON.parse(readFileSync(META, "utf8"));
 
-  const { schools: merged, merged: mergedCount, removed } = mergeReported(schools, reported);
+  // Round-3 CDS records (C8/C9 here; specs/data-expansion/cds-test-scores-and-policy.md); none in a scratch root.
+  const records = new Map(readRecords(CDS_RECORDS).map((r) => [r.unit_id, r]));
+  const federalPolicyYear = lineageFall(meta.vintages["ipeds-adm"]);
+  const { schools: merged, merged: mergedCount, removed } = mergeReported(schools, reported, { records, federalPolicyYear });
 
   const problems = validateLineage(merged, meta);
   if (problems.length) {

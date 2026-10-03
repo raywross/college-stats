@@ -37,6 +37,8 @@ function SourceLinkBare({ s }: { s: CitedSource }) {
  */
 function sourceKindPhrase(cited: Cited): string {
   const year = yearLabel(cited);
+  // A round-3 record: the edition names the document, the item's own year says what it describes.
+  if (cited.sourceKind === "cds" && cited.cdsEdition) return `in its Common Data Set ${cited.cdsEdition} (${year.replace(/^Fall/, "fall")})`;
   if (cited.sourceKind === "cds") return `in its Common Data Set ${year}`;
   if (cited.sourceKind === "class-profile") return `in its class profile for the ${year} class`;
   return "on its own site";
@@ -44,6 +46,7 @@ function sourceKindPhrase(cited: Cited): string {
 
 /** The federal (or previous) value a college-reported value replaced, formatted by field. */
 function formatReplaced(cited: Cited): string {
+  if (cited.replaces?.text) return cited.replaces.text;
   const value = cited.replaces?.value ?? null;
   if (value === null) return "not reported";
   return cited.path.endsWith("acceptance_rate") ? pctSmart(value) : num(value);

@@ -11,6 +11,7 @@
 import { acceptanceRate } from "./derive.ts";
 import type { FieldPath } from "./fields";
 import type { FederalAdmissions, LineageRecord, School } from "./types";
+import { applyNewestTests, restoreFederalTests } from "./cds/test-blocks.ts";
 
 /** The funnel values `applyNewest` may replace, in `school.admissions` key order. */
 const COUNTS = ["applicants", "admitted", "enrolled"] as const;
@@ -34,6 +35,7 @@ const sameRecord = (a: LineageRecord | undefined, b: LineageRecord | undefined) 
  * alone, so `restoreFederal` can always put back exactly what was there.
  */
 export function applyNewest(school: School): School {
+  school = applyNewestTests(school); // CDS C8/C9 blocks (specs/data-expansion/cds-test-scores-and-policy.md)
   const r = school.reported?.admissions;
   const a = school.admissions;
   if (!r || a.federal) return school;
@@ -117,6 +119,7 @@ export function applyNewest(school: School): School {
  * there's nothing to undo.
  */
 export function restoreFederal(school: School): School {
+  school = restoreFederalTests(school); // CDS C8/C9 blocks (specs/data-expansion/cds-test-scores-and-policy.md)
   const federal = school.admissions.federal;
   if (!federal) return school;
   // eslint-disable-next-line @typescript-eslint/no-unused-vars -- dropping `federal` is the point

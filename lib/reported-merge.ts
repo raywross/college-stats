@@ -11,6 +11,8 @@ import { REPORTED_PATHS } from "./fields.ts";
 import { applyNewest, restoreFederal } from "./newest.ts";
 import type { ReportedFile } from "./reported.ts";
 import { reportedToPatch } from "./reported-checks.ts";
+import type { CollegeRecord } from "./cds-sections.ts";
+import { mergeTestScores } from "./cds/test-scores.ts";
 
 /**
  * `school` as it was before any merge: its previous admissions funnel restored from `admissions.federal`
@@ -30,6 +32,12 @@ export function stripReported(school: School): School {
   return out as School;
 }
 
+/** Round-3 CDS records for the merge: by unit id, and the fall the dataset's IPEDS ADM release describes. */
+export interface CdsMergeInput {
+  records: ReadonlyMap<string, CollegeRecord>;
+  federalPolicyYear: number | null;
+}
+
 export interface MergeReportedResult {
   schools: School[];
   /** Colleges that got (or kept) a `reported` block from this file. */
@@ -43,7 +51,7 @@ export interface MergeReportedResult {
  * `reportedToPatch`, exactly as `sync-data` does) and `applyNewest`, so each college's newer published figures
  * replace its older ones in `admissions.*`, with lineage and `admissions.federal`.
  */
-export function mergeReported(schools: School[], reported: ReportedFile): MergeReportedResult {
+export function mergeReported(schools: School[], reported: ReportedFile, cds?: CdsMergeInput): MergeReportedResult {
   const byUnitId = new Map(reported.entries.map((e) => [e.unit_id, e]));
   let merged = 0;
   let removed = 0;
@@ -51,13 +59,15 @@ export function mergeReported(schools: School[], reported: ReportedFile): MergeR
     const hadReported = school.reported?.admissions != null;
     const stripped = stripReported(school);
     const entry = byUnitId.get(school.unit_id);
+    // CDS C8/C9 from data/cds-records/ (specs/data-expansion/cds-test-scores-and-policy.md), with or without a C1 entry.
+    const withTests = (s: School) => mergeTestScores(s, cds?.records.get(school.unit_id), cds?.federalPolicyYear ?? null);
     if (!entry) {
       if (hadReported) removed++;
-      return stripped;
+      return applyNewest(withTests(stripped));
     }
     merged++;
     const { reported: reportedData, lineage: entryLineage } = reportedToPatch(entry);
-    return applyNewest({ ...stripped, reported: reportedData, lineage: { ...stripped.lineage, ...entryLineage } });
+    return applyNewest(withTests({ ...stripped, reported: reportedData, lineage: { ...stripped.lineage, ...entryLineage } }));
   });
   return { schools: result, merged, removed };
 }

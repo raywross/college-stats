@@ -1,0 +1,51 @@
+{
+  "updated": "2026-10-02",
+  "entries": [
+    {
+      "unit_id": "999010",
+      "admissions": {
+        "entering_term": "Fall 2026",
+        "year": 2026,
+        "applicants": 46618,
+        "admitted": 1865,
+        "enrolled": 1500,
+        "acceptance_rate": 0.04,
+        "source_kind": "class-profile"
+      },
+      "lineage": {
+        "reported.admissions.entering_term": {
+          "source": "college-site",
+          "method": "extracted",
+          "year": "Fall 2026",
+          "url": "https://fixture.edu/class-of-2030",
+          "retrieved": "2026-10-02",
+          "quote": "The Class of 2030 had 46,618 applicants."
+        }
+      },
+      "run": "2026-10-02-1"
+    },
+    {
+      "unit_id": "999011",
+      "admissions": {
+        "entering_term": "Fall 2025",
+        "year": 2025,
+        "applicants": 20000,
+        "admitted": 10000,
+        "enrolled": null,
+        "acceptance_rate": 0.5,
+        "source_kind": "cds"
+      },
+      "lineage": {
+        "reported.admissions.entering_term": {
+          "source": "college-site",
+          "method": "extracted",
+          "year": "Fall 2025",
+          "url": "https://fixture.edu/cds-2025-26.pdf",
+          "retrieved": "2026-09-01",
+          "quote": "Fall 2025 entering class."
+        }
+      },
+      "run": "2026-09-01-1"
+    }
+  ]
+}

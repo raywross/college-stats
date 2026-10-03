@@ -7,13 +7,18 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import type { ReviewQueueFile, RunSummary } from "../lib/reported.ts";
-import { itemsForRun, prBody, releaseNote, releaseNoteSlug, totalCost } from "../scripts/college-reported-pr-body.mts";
+import type { ReportedFile, ReviewQueueFile, RunSummary } from "../lib/reported.ts";
+import { entriesForRun, itemsForRun, prBody, releaseNote, releaseNoteSlug, totalCost } from "../scripts/college-reported-pr-body.mts";
 import { parseReleaseNote } from "../lib/release-notes.ts";
 
 const FIXTURES = join(import.meta.dirname, "fixtures", "college-reported");
 const summary: RunSummary = JSON.parse(readFileSync(join(FIXTURES, "run-summary.json"), "utf8"));
 const queue: ReviewQueueFile = JSON.parse(readFileSync(join(FIXTURES, "review-queue.json"), "utf8"));
+const reported: ReportedFile = JSON.parse(readFileSync(join(FIXTURES, "reported.json"), "utf8"));
+const names = new Map([
+  ["999010", "Fixture Newly Published University"],
+  ["999011", "Fixture Older Published College"],
+]);
 
 test("totalCost sums every model job's cost", () => {
   assert.equal(Math.round(totalCost(summary) * 100), Math.round((0.87 + 0.14 + 0.33) * 100));
@@ -21,8 +26,9 @@ test("totalCost sums every model job's cost", () => {
 
 test("itemsForRun keeps only this run's queue items", () => {
   const items = itemsForRun(queue, summary.run);
-  assert.equal(items.length, 1);
-  assert.equal(items[0].unit_id, "999001");
+  assert.equal(items.length, 2); // a check failure (999001) and an unreachable site (999003)
+  assert.ok(items.some((i) => i.unit_id === "999001"));
+  assert.ok(items.some((i) => i.unit_id === "999003"));
   // The fixture also has an older item from a previous run, to prove it's excluded.
   assert.ok(queue.items.some((i) => i.run !== summary.run));
 });
@@ -68,16 +74,50 @@ test("releaseNote mentions the review queue when this run has items", () => {
   assert.match(text, /waiting for a person/);
 });
 
-test("prBody lists unreachable colleges apart from check failures, and counts guesses", () => {
-  const withCounts: RunSummary = { ...summary, unreachable: 1, guessed: 3 };
-  const blocked = { ...queue.items[0], unit_id: "999777", name: "Blocked State", urls: ["https://blocked.edu/cds.pdf"], failures: [{ check: "unreachable" as const, detail: "HTTP 403 at https://blocked.edu/cds.pdf" }] };
-  const body = prBody(withCounts, { ...queue, items: [...queue.items, blocked] });
-  assert.match(body, /Unreachable \(site blocks us or file missing; no model call\) \| 1 \|/);
-  assert.match(body, /Next CDS edition guessed \(no model call\) \| 3 \|/);
-  const [review, rest] = body.split("## Unreachable");
-  assert.doesNotMatch(review, /Blocked State/, "not in the review-queue table");
-  assert.match(rest, /Blocked State \(999777\) \| HTTP 403 at https:\/\/blocked\.edu\/cds\.pdf/);
-  assert.doesNotMatch(prBody(summary, queue), /## Unreachable/, "no section when nothing was unreachable");
+test("entriesForRun keeps only this run's published entries", () => {
+  const entries = entriesForRun(reported, summary.run);
+  assert.equal(entries.length, 1);
+  assert.equal(entries[0].unit_id, "999010");
+  assert.ok(reported.entries.some((e) => e.run !== summary.run));
+});
+
+test("prBody adds a 'Published this run' table when given the reported file, with the college's name when given names", () => {
+  const body = prBody(summary, queue, reported, names);
+  assert.match(body, /## Published this run/);
+  assert.match(body, /Fixture Newly Published University/);
+  assert.match(body, /class-profile/);
+  assert.match(body, /46,618/);
+  assert.match(body, /4\.0%/);
+  assert.match(body, /https:\/\/fixture\.edu\/class-of-2030/);
+  // The other run's entry must not appear.
+  assert.doesNotMatch(body, /Fixture Older Published College/);
+});
+
+test("prBody falls back to the unit id when no names are given, and omits the section when reported is omitted", () => {
+  const withoutNames = prBody(summary, queue, reported);
+  assert.match(withoutNames, /999010/);
+  const withoutReported = prBody(summary, queue);
+  assert.doesNotMatch(withoutReported, /## Published this run/);
+});
+
+test("prBody lists an unreachable item separately from the check-failure review queue", () => {
+  const body = prBody(summary, queue);
+  assert.match(body, /## Unreachable/);
+  assert.match(body, /Fixture Blocked College/);
+  assert.match(body, /403/);
+  // It must not also appear in the ordinary review-queue table's check-failure list.
+  const reviewSection = body.slice(body.indexOf("## Review queue"));
+  assert.doesNotMatch(reviewSection, /Fixture Blocked College/);
+  // The other failing item (a real check failure) still appears in the review-queue table.
+  assert.match(reviewSection, /Fixture State University/);
+  assert.match(reviewSection, /cohort-and-scope/);
+});
+
+test("prBody shows the guessed-URL and unreachable rows only when the summary has them", () => {
+  assert.doesNotMatch(prBody(summary, queue), /guessed/i);
+  const withCounts: RunSummary = { ...summary, guessed: 7, unreachable: 2 };
+  assert.match(prBody(withCounts, queue), /Next-edition URL guessed.*\| 7 \|/);
+  assert.match(prBody(withCounts, queue), /Unreachable \(site blocks us or file missing; no model call\) \| 2 \|/);
 });
 
 test("a run that stopped early says so, with how far it got and why, in the PR body and the release note", () => {

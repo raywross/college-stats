@@ -248,6 +248,12 @@ export interface RunSummary {
   attempted: number;
   /** Documents the model actually read (the rest were unchanged: 304 or same hash). */
   documents_read: number;
+  /**
+   * Colleges whose next-edition URL was guessed from a known CDS file name and confirmed with a HEAD/GET, so no
+   * discovery call was needed (Decision 2, specs/college-reported-round-2.md). Optional: absent in summaries from
+   * before that decision, and the PR body only shows this row when it's present.
+   */
+  guessed?: number;
   published: number;
   changed: number;
   /** Colleges whose figures failed a check: the circuit breaker's failure count. */
@@ -255,8 +261,6 @@ export interface RunSummary {
   /** Colleges none of whose sources could be fetched; queued as `unreachable`, not in `failed`. Absent before round 2. */
   unreachable?: number;
   discovered: number;
-  /** Colleges whose newer CDS was found by guessing next year's URL, with no model call. Absent before round 2. */
-  guessed?: number;
   /** Colleges that got one more try: a re-discovery (unreadable document) or a stronger re-extraction (failed check). */
   escalated: number;
   /** Whether the circuit breaker tripped, and why. */

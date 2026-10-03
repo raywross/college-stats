@@ -37,6 +37,7 @@ function SourceLinkBare({ s }: { s: CitedSource }) {
  */
 function sourceKindPhrase(cited: Cited): string {
   const year = yearLabel(cited);
+  if (cited.document) return `in its ${cited.document} (figures for ${year})`;
   if (cited.sourceKind === "cds") return `in its Common Data Set ${year}`;
   if (cited.sourceKind === "class-profile") return `in its class profile for the ${year} class`;
   return "on its own site";

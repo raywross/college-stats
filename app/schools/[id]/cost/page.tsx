@@ -17,6 +17,7 @@ import { AidBreakdown } from "@/components/charts/AidBreakdown";
 import { WhatStudentsPay } from "@/components/school/WhatStudentsPay";
 import { LoansCard } from "@/components/school/LoansCard";
 import { AidGenerosityCard } from "@/components/school/AidGenerosityCard";
+import { NextYearPrice } from "@/components/school/NextYearPrice";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -92,6 +93,7 @@ export default async function CostPage({ params }: Props) {
             <WhatStudentsPay school={school} />
           </div>
         )}
+        <NextYearPrice school={school} />
         {(hasTuitionGuarantee(school) || c?.promise_program) && (
           <div className="mt-4 flex flex-wrap gap-2 text-sm">
             {hasTuitionGuarantee(school) && (

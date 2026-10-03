@@ -1,6 +1,7 @@
 # CDS Cost and Debt: Next Year's Price, Graduates' Total Debt
 
-> Status: **planned** (2026-10-03). Wave 4, after [college-reported-round-3.md](../college-reported-round-3.md) (the
+> Status: **planned** → built 2026-10-03 (see [As built](#as-built)); the status word flips to **built** together
+> with its `lib/roadmap.ts` entry's removal when the round-3 branch merges. Planned 2026-10-03. Wave 4, after [college-reported-round-3.md](../college-reported-round-3.md) (the
 > records pipeline this spec's items feed into). Research 2026-09-28 (Vanderbilt CDS 2024–25); upgraded from a
 > skeleton using a 2026-10-03 CDS gap inventory (19 real 2025–26 documents read item by item: Vanderbilt, Cornell,
 > William & Mary, UIUC, Berkeley, Purdue, Harvard, USC, Georgia Tech, Howard, Spelman, Baylor, TCU, Loyola Chicago,
@@ -333,6 +334,86 @@ a Home fact) — the same ceiling [cds-admissions.md](cds-admissions.md) sets fo
    profile-only until more colleges have it?
 3. H6's new home, [cds-financial-aid.md](cds-financial-aid.md), needs to exist before this spec's H6 cross-link
    resolves to a real page.
+
+## As built
+Built 2026-10-03 on the round-3 foundation, reading the committed CDS records (`data/cds-records/<unit_id>.json`).
+Live for the four 2025–26 template workbooks: Vanderbilt, Cornell, William & Mary, Illinois.
+
+**Module:** `lib/cds/cost-and-debt.ts` (pure). `costAndDebtFromRecord(record, school)` returns the blocks, their
+lineage, and `held` (what was not published and why); `applyCostAndDebt(school, record)` is the merge step;
+`columnTotal`, `federalMatchingTotal`, `change`, `undergraduateDiffers`, `showsPayingMore`, `fullEstimate`,
+`hasGraduateDebt` are what the pages show; `check*` are the seven checks.
+- G comes only from the college's **newest** document (an older edition's "next year" has already happened); H4–H5
+  from the newest document within two editions where H4 passed, so the class and its borrowing describe one class.
+- Years come from each record's `years`: G `next-year` ("2026–27"), H4–H5 `graduating-class` ("Class of 2025"); the
+  number in `class_year` is parsed from that label.
+- **G0 holds back, rather than marking provisional:** when `G.002` is checked, `next_year` is not published and G5
+  (`expenses`) and G6 (`per_credit_hour`) are null; tuition policy (G3, G4, `G.402`) still publishes. So the stored
+  type has no `not_final`/`final_date` (they would always be false/null). Illinois's 2025–26 CDS is checked ("final
+  by 03-15"), so Illinois shows only its differential-tuition footnote (70.6%).
+- A failed check holds its block back (check 1 or 2 → `next_year`; 3 → `pct_paying_more` only; 4 → both H blocks;
+  5–7 → `graduate_debt`), recorded in `held`. Two deviations, both from real data: **check 1** adds G1's required fees
+  before comparing, because Scorecard's `tuition_in_state`/`_out_of_state` are tuition *and fees* (W&M's tuition-only
+  $19,734 is 76% of its $25,914 federal figure; tuition + fees is 105%); **check 7**'s band is ×0.5–×3, not ×0.5–×2,
+  because Vanderbilt's real any-loan average ($30,578, with private borrowers averaging $64,280) is ×2.18 its $14,000
+  federal median.
+- `G.001` (net price calculator URL) is not stored; `links.price_calculator` stays the federal link (Cornell's cell is
+  garbage and passed the type check). `G.119`/`G.120` (comprehensive fee, other) are not stored yet.
+- G5 non-numeric answers ("varies") are null leaves with the printed text in `expenses.text` (keyed
+  `"residents.transportation"`), so the full estimate says "varies" and is marked partial instead of totalled.
+
+**Store** (`lib/types.ts`): `ReportedData.cost` (`ReportedCost`: `next_year`, `next_year_detail`) and
+`ReportedData.outcomes` (`ReportedOutcomes`: `graduating_class`, `graduate_debt`), with `CdsCostColumn`,
+`CdsTuition`, `CdsExpenses`, `ReportedGraduateDebt` as in Store above (minus `not_final`/`final_date`, plus
+`expenses.text`). Absent blocks are omitted, not null.
+
+**Fields** (`lib/fields.ts`, source `college-site`, no vintage): `reported.cost.next_year` (cites the headline
+tuition: the private rate or in-state), `…next_year.first_year.fees`, `…next_year.first_year.food_and_housing`,
+`reported.cost.next_year_detail` (cites G.402, else G4, G3, or a G5/G6 item), `…next_year_detail.pct_paying_more`,
+`reported.outcomes.graduating_class` (H.401), `reported.outcomes.graduate_debt` (the first passed any-loan item),
+`…graduate_debt.rows.any.share` (H.506), `…rows.any.avg_principal` (H.511). Computed at render time:
+`derived.next_year_price` (tuition + fees + food and housing, first-year column) and `derived.next_year_change`
+(against `cost.tuition_fees` + `cost.components.room_board`; cites both the CDS and the IPEDS year).
+
+**Merge:** `lib/reported-merge.ts#mergeReported(schools, reported, records)` strips and re-applies every college's
+blocks after the admissions entries; `npm run merge-reported` and `sync-data` read `data/cds-records/` with
+`readRecords`. `cost.*` and `outcomes.*` are never touched.
+
+**Display** (quiet style, no chips; source, edition, year, and quote in the ⓘ):
+- Cost topic page, under "What students pay": `components/school/NextYearPrice.tsx`, "Next year (2026–27), reported
+  by {college}: $X before aid" (public: in-state and out-of-state), "up N% from {federal year}" (each year from
+  lineage), the continuing-student line when the undergraduate column differs by more than 1%, a "Show the full
+  next-year estimate" disclosure (G1 + G5 residents), and the differential-tuition footnote at `G.402` ≥ 5%. The
+  footnote shows even when G1 is held back, since it describes tuition policy. Not built: the public by-residency
+  table's extra muted row (the line names both rates instead) and the overview Cost card line.
+- Outcomes topic page, after "Staying and finishing": `components/school/GraduateDebt.tsx` ("What graduates owe",
+  anchor `#graduate-debt`): the federal median ("federal loans only"), then the college's all-loans sentence for its
+  graduating class. The federal H5 row is read and checked but not shown.
+- The ⓘ for any value from a CDS record now says "Reported by {college} in its 2025–26 Common Data Set (figures for
+  2026–27)" (`Cited.document` in `lib/lineage.ts`, set from the lineage record's `edition`), instead of borrowing
+  `reported.admissions.source_kind`, which would have called Illinois's CDS figures a class profile.
+- Glossary: `next-year-price`, `cumulative-principal`.
+
+**Not built:** the Explore "Has next year's price" / "Has reported graduate debt" filters (they need a reader in
+`lib/dataset.ts`, which `tests/reported-guards.test.mts` and this spec's guard both ban; a helper exemption is a
+separate decision); Compare rows (the spec allows none); history (none for next year's price; the graduate-debt
+series waits for two editions per college); the reader work in `scripts/lib/cds-xlsx.mts` (Purdue's campus sheets,
+Georgia Tech's split digits: round 3's readers track); per-item checks in round 3's `lib/cds-checks.ts`.
+
+**Known data issue:** the 2025–26 template's code-table label for H.401 names "the 2024 undergraduate class" while
+the form names 2025 (gap report). The foundation's quote comes from the code table, so the ⓘ for the class size
+quotes "2024" beside "Class of 2025". The year shown is the year rule's (2025, per the coordinator and the inventory).
+
+**Tests:** `tests/cds-cost-and-debt.test.mts`: the four real records (values, Illinois's G0 hold and its release when
+the box is unchecked), checks 1–7 (a good fixture passes, a broken one fails that check; 1 and 7 also shown holding
+the block back through the merge), the non-numeric-cell path, the 1% disclosure and 5% footnote thresholds, the
+like-for-like change, the lineage round trip (merge → `validateSchool`, a missing record fails, re-merge idempotent,
+a record removed strips its blocks, `cost.*` unchanged), and the guard: no read of `reported.cost`/`.outcomes`,
+`next_year*`, `graduate_debt`, `graduating_class`, or this module in metrics, dataset, compare, field-compare,
+insights, indicators, params, score-scale, newest, derive, the history modules, Home, Explore, Compare, charts,
+trends, or the history build. Each guard was shown failing: a `reported?.cost?.next_year` line appended to
+`lib/metrics.ts`, and the G0 hold disabled, each fail their test. `tests/merge-reported.test.mts`'s re-merge test now
+passes the records too.
 
 ## Roadmap entry
 - slug: cds-cost-and-debt

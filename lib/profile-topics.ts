@@ -223,6 +223,13 @@ export const TOPIC_FIELDS: Readonly<Record<TopicKey, readonly FieldPath[]>> = {
     "derived.payback_years",
     // The payback estimate divides net price by median earnings.
     "outcomes.median_earnings_10yr",
+    // Next year's price beside the federal one (specs/data-expansion/cds-cost-and-debt.md).
+    "derived.next_year_price",
+    "derived.next_year_change",
+    "reported.cost.next_year",
+    "reported.cost.next_year.first_year.fees",
+    "reported.cost.next_year.first_year.food_and_housing",
+    "reported.cost.next_year_detail.pct_paying_more",
   ],
   outcomes: [
     "outcomes.median_earnings_10yr",
@@ -240,6 +247,11 @@ export const TOPIC_FIELDS: Readonly<Record<TopicKey, readonly FieldPath[]>> = {
     "outcomes.grad_cohorts_by_race",
     // The cost vs. earnings map.
     "cost.avg_paid_all",
+    // What graduates owe: the federal median beside the college's own all-loans line (specs/data-expansion/cds-cost-and-debt.md).
+    "outcomes.median_debt",
+    "reported.outcomes.graduating_class",
+    "reported.outcomes.graduate_debt.rows.any.share",
+    "reported.outcomes.graduate_debt.rows.any.avg_principal",
   ],
   // Every "Over time" chart cites its history editions in its group (HistorySourceNote), not the snapshot registry.
   history: [],

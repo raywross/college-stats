@@ -138,6 +138,18 @@ const LEGACY_FIELDS = Object.freeze({
   ],
   campus: ["campus.housing", "campus.athletics", "campus.programs", "campus.services", "campus.calendar", "demographics.disability_services"],
   ranks: ["derived.sat_mid", "derived.yield", "demographics.pell_grant_percent", "derived.diversity_index", "admissions.acceptance_rate"],
+  // Added deliberately with specs/data-expansion/cds-cost-and-debt.md (cost and outcomes topic pages).
+  cdsCostAndDebt: [
+    "derived.next_year_price",
+    "derived.next_year_change",
+    "reported.cost.next_year",
+    "reported.cost.next_year.first_year.fees",
+    "reported.cost.next_year.first_year.food_and_housing",
+    "reported.cost.next_year_detail.pct_paying_more",
+    "reported.outcomes.graduating_class",
+    "reported.outcomes.graduate_debt.rows.any.share",
+    "reported.outcomes.graduate_debt.rows.any.avg_principal",
+  ],
 });
 
 function sourceFiles(dir: string): string[] {

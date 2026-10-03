@@ -810,6 +810,25 @@ const entries = {
     category: "Admissions",
     related: ["yield", "admit-rate-by-residency"],
   },
+  // CDS cost and debt (specs/data-expansion/cds-cost-and-debt.md).
+  "next-year-price": {
+    term: "Next year's price",
+    short:
+      "Tuition, required fees, and on-campus food and housing for the coming academic year, as the college published them in its Common Data Set, before any aid.",
+    long: "Federal prices describe a year that has already happened and arrive a year or more late, so this is shown beside the federal price rather than replacing it. It isn't used in rankings or comparisons, and it doesn't include books, transportation, or personal expenses.",
+    why: "It tells you roughly what the next entering class will be charged, and how fast the price is rising.",
+    category: "Cost & outcomes",
+    related: ["cost-of-attendance", "net-price"],
+  },
+  "cumulative-principal": {
+    term: "Average total borrowed (all loan types)",
+    short:
+      "From the college's Common Data Set: the average total a graduating class's borrowers took out over their whole degree, counting federal, institutional, state, and private loans.",
+    long: "The federal median debt beside it counts only federal loans, uses the middle borrower rather than the average, and includes students who left without a degree, so the two figures differ by design. Only students who started at the college as first-time students and earned a bachelor's are counted. Interest isn't included.",
+    why: "Private loans often carry higher rates and fewer protections than federal ones, and federal data leaves them out.",
+    category: "Cost & outcomes",
+    related: ["median-debt", "federal-loan-rate"],
+  },
 } satisfies Record<string, GlossaryEntry>;
 
 export type TermKey = keyof typeof entries;

@@ -34,9 +34,8 @@ function main() {
   const reported: ReportedFile = JSON.parse(readFileSync(REPORTED, "utf8"));
   const meta: DatasetMeta = JSON.parse(readFileSync(META, "utf8"));
 
-  // Round-3 CDS records (data/cds-records/): display specs' blocks, e.g. admissions by residency.
+  // Round-3 CDS records (data/cds-records/): their blocks merge in the same pass (lib/reported-merge.ts).
   const records = readRecords(join(ROOT, "data", "cds-records"));
-
   const { schools: merged, merged: mergedCount, removed } = mergeReported(schools, reported, records);
 
   const problems = validateLineage(merged, meta);

@@ -141,12 +141,13 @@ test("a hand-imported CDS college: admissions.federal holds the override's value
 
 test("the committed data/schools.json is exactly what merging data/college-reported.json produces (re-merge changes nothing)", () => {
   const reported: ReportedFile = JSON.parse(readFileSync(join(ROOT, "data", "college-reported.json"), "utf8"));
-  // With the round-3 CDS records, as scripts/merge-reported.mts merges them.
-  const { schools } = mergeReported(allSchools, reported, readRecords(join(ROOT, "data", "cds-records")));
+  // The round-3 CDS records merge in the same pass (scripts/merge-reported.mts reads them too).
+  const records = readRecords(join(ROOT, "data", "cds-records"));
+  const { schools } = mergeReported(allSchools, reported, records);
   const changed = schools.filter((s, i) => JSON.stringify(s) !== JSON.stringify(allSchools[i])).map((s) => s.unit_id);
   assert.deepEqual(changed, [], "run `npm run merge-reported`");
   // Every college with a reported block actually had something replaced or nothing newer to replace.
-  for (const s of allSchools) if (s.reported && s.admissions.federal) assert.ok(s.reported.admissions!.year > (s.admissions.federal.year ?? 0));
+  for (const s of allSchools) if (s.reported?.admissions && s.admissions.federal) assert.ok(s.reported.admissions.year > (s.admissions.federal.year ?? 0));
 });
 
 test("stripping a college's block leaves no empty lineage behind", () => {

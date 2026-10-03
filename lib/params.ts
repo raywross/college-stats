@@ -5,6 +5,7 @@ import { isDesignation, isResearchTier, isSettingGroup } from "./campus-profile.
 import { isDivisionFilter, isRotcBranch } from "./campus-services.ts";
 import { conferenceName } from "./conferences.ts";
 import { isMajorFamily } from "./majors.ts";
+import { isPolicyBucket } from "./test-policy.ts";
 
 /** Unique values, or undefined when none remain. */
 const uniq = <T,>(v: T[] | undefined): T[] | undefined => (v?.length ? [...new Set(v)] : undefined);
@@ -64,6 +65,11 @@ export function parseFilters(params: Params): SearchFilters {
       const b = list(params.balance)?.filter(isGenderBalance);
       return b?.length ? [...new Set(b)] : undefined;
     })(),
+    // Test policy (specs/data-expansion/cds-test-scores-and-policy.md): policy=required,optional,blind.
+    policy: (() => {
+      const b = list(params.policy)?.filter(isPolicyBucket);
+      return b?.length ? [...new Set(b)] : undefined;
+    })(),
     fullTime: str(params.fullTime) === "1" || undefined,
     fewLoans: str(params.fewLoans) === "1" || undefined,
     pellGap: str(params.pellGap) === "1" || undefined,
@@ -88,6 +94,18 @@ export function parseFilters(params: Params): SearchFilters {
     studyAbroad: str(params.studyAbroad) === "1" || undefined,
     noEssay: str(params.noEssay) === "1" || undefined,
     gpaRequired: str(params.gpaRequired) === "1" || undefined,
+    // Where applicants live (lib/cds/residency-display.ts).
+    byRes: str(params.byRes) === "1" || undefined,
+    oosEven: str(params.oosEven) === "1" || undefined,
+    gpa: str(params.gpa) === "1" || undefined,
+    aidForms: str(params.aidForms) === "no-css" ? "no-css" : undefined,
+    intlAid: str(params.intlAid) === "1" || undefined,
+    // Honors program from the college's CDS (lib/cds/academics-display.ts): positive only, no "exclude" state.
+    honors: str(params.honors) === "1" || undefined,
+    // Admits transfers (lib/cds/transfer-display.ts): CDS D1/D2, else the federal transfer-in count.
+    transfers: str(params.transfers) === "1" || undefined,
+    // Allows deferred admission, a gap year (lib/cds/application-logistics-display.ts).
+    gapYear: str(params.gapYear) === "1" || undefined,
     sortBy: sortBy && SORT_KEYS.includes(sortBy) ? sortBy : "applicants",
     // Default direction: most-applied-to first; everything else ascending.
     sortDir: params.sortDir === "desc" || params.sortDir === "asc" ? params.sortDir : sortBy && sortBy !== "applicants" ? "asc" : "desc",
@@ -140,6 +158,15 @@ export const FILTER_KEYS = [
   "studyAbroad",
   "noEssay",
   "gpaRequired",
+  "byRes",
+  "oosEven",
+  "gpa",
+  "policy",
+  "aidForms",
+  "intlAid",
+  "honors",
+  "transfers",
+  "gapYear",
   ...INDICATOR_KEYS.map((k) => INDICATORS[k].param),
 ] as const;
 

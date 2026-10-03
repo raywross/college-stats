@@ -4,8 +4,12 @@ import type { GenderBalance } from "./student-body";
 
 export type SchoolType = "public" | "private-nonprofit" | "private-forprofit";
 
-/** IPEDS ADMCON7: how test scores are used in admissions. */
-export type TestPolicy = "required" | "recommended" | "considered" | "not-considered" | null;
+/**
+ * How SAT/ACT scores are used in admission. IPEDS ADMCON7 answers required / considered / not-considered (and
+ * recommended before fall 2022); a college's Common Data Set C8 adds "required-some" ("Required for some"), which never
+ * comes from federal data (specs/data-expansion/cds-test-scores-and-policy.md, Decision 1).
+ */
+export type TestPolicy = "required" | "required-some" | "recommended" | "considered" | "not-considered" | null;
 
 /**
  * One institution. Fields are `null` when the school doesn't report them
@@ -57,6 +61,17 @@ export interface School {
     accepts_ap_credit?: boolean | null;
     /** How each factor is used in admission (IPEDS ADMCON1–12, except test scores, which are `test_policy`). */
     factors?: Partial<Record<AdmissionFactor, FactorUse | null>> | null;
+    /**
+     * The federal answers a newer Common Data Set C7 replaced in `factors` (specs/data-expansion/cds-admissions.md,
+     * the six shared factors): present only when `applyNewest` flipped one; read by the ⓘ ("Federal data, fall 2024:
+     * considered") and put back by `restoreFederal`.
+     */
+    federal_factors?: Partial<Record<AdmissionFactor, FactorUse | null>>;
+    /**
+     * The test-policy, SAT, and ACT blocks a newer college-reported C8/C9 replaced (cds-test-scores-and-policy.md,
+     * Decisions 1–2; `lib/cds/test-scores.ts#applyNewestTests`). Present only then; restored byte for byte.
+     */
+    federal_tests?: FederalTests;
   };
   demographics: {
     undergrad_enrollment: number;
@@ -97,6 +112,8 @@ export interface School {
       international: number;
       other: number;
     } | null;
+    /** The federal fall a newer CDS fall replaced (lib/newest-groups.ts); present only when enrollment or race was replaced. */
+    federal?: FederalDemographics;
   };
   /** What students pay, per year (College Scorecard; dollars). */
   cost?: {
@@ -184,6 +201,8 @@ export interface School {
     /** By race/ethnicity (College Scorecard `completion_rate_4yr_150_*`), null under 30 students; and the cohorts. */
     grad_rate_by_race?: Record<GradRaceGroup, number | null> | null;
     grad_cohorts_by_race?: Record<GradRaceGroup, number | null> | null;
+    /** Federal outcomes a newer CDS cohort replaced (lib/newest-groups.ts); each part present only when replaced. */
+    federal?: FederalOutcomes;
   };
   /** Financial aid for full-time first-time undergrads (IPEDS Student Financial Aid survey). */
   aid?: {
@@ -213,6 +232,11 @@ export interface School {
     } | null;
     /** Richer detail from the school's Common Data Set, section H (full-time undergraduates). */
     cds?: CdsAid;
+    /**
+     * The hand-imported `aid.cds` a same-or-newer CDS record replaced (specs/data-expansion/cds-financial-aid.md): kept
+     * for the ⓘ ("Replaces: … Common Data Set 2024–25: 77%"); `aid.cds` itself is removed then.
+     */
+    cds_previous?: CdsAidPrevious;
   };
   /** Housing and campus services (IPEDS Institutional Characteristics, same year as the prices), and the campus profile. */
   /** Academics (specs/data-expansion/student-faculty-ratio.md; later majors, faculty, class sizes). */
@@ -305,9 +329,13 @@ export interface School {
   trends?: SchoolTrends;
   /**
    * Newer figures the college itself published (class profiles, Common Data Sets), read from its website by the
-   * ingestion agent and checked (specs/college-reported-data.md). Shown on profiles next to the federal baseline,
-   * never used in Explore, Compare, ranks, medians, or Home. Every value here has an `extracted` lineage record with
-   * its quote, URL, retrieval date, and year.
+   * ingestion agent and checked (specs/college-reported-data.md). Newest values replace older ones in every view
+   * (round 2, Decision 1); partial-coverage fields are never used in ranks, medians, sorts, or Home. Every value here
+   * has an `extracted` (or `derived`) lineage record with its quote, URL, retrieval date, and year.
+   * ingestion agent and checked (specs/college-reported-data.md). Values with a federal definition replace the older
+   * ones in the dataset itself (`lib/newest.ts`, round 2 Decision 1), so every view shows the newest; the rest are
+   * shown on profiles and Compare and never feed ranks, medians, or Home (each owning spec says exactly what may).
+   * Every value here has an `extracted` (or `derived`) lineage record with its quote, URL, retrieval date, and year.
    */
   reported?: ReportedData;
 }
@@ -324,6 +352,83 @@ export interface FederalAdmissions {
 /** `school.reported`: one block per topic; phase 1 is admissions only. */
 export interface ReportedData {
   admissions?: ReportedAdmissions;
+  /** CDS C1 by residency (specs/data-expansion/cds-residency-admissions.md; lib/cds/residency.ts). */
+  admissions_by_residency?: ReportedResidencyAdmissions;
+  /** Next year's price and its detail (CDS G; specs/data-expansion/cds-cost-and-debt.md). Never replaces `cost.*`. */
+  cost?: ReportedCost;
+  /**
+   * CDS outcome fields federal data doesn't have at this definition: 4- and 5-year graduation by aid group
+   * (specs/data-expansion/cds-student-body-and-outcomes.md) and the graduating class with its borrowing (CDS H4–H5;
+   * specs/data-expansion/cds-cost-and-debt.md).
+   */
+  outcomes?: ReportedOutcomes;
+  /** CDS C2, C7, C10–C12, C21–C22 from data/cds-records (specs/data-expansion/cds-admissions.md; lib/cds/admissions.ts). */
+  admission_profile?: ReportedAdmissionProfile;
+  /* CDS C8/C9 (specs/data-expansion/cds-test-scores-and-policy.md): beside `admissions`, not inside it, because a
+     college can publish C8/C9 without a newer C1 class (Cornell 2025–26). */
+  /** C8: policy for students applying to enter in fall `cycle` (C.801–C.804). */
+  test_policy?: ReportedTestPolicy | null;
+  /** C8F verbatim, trimmed to 500 characters; shown as a quote. */
+  test_policy_note?: string | null;
+  /** Changes across the college's CDS editions and against the federal value. */
+  test_policy_events?: TestPolicyEvent[] | null;
+  /** C9: the first-years who entered in fall `year` and sent scores. */
+  tests?: ReportedTests | null;
+  /** CDS section H facts (specs/data-expansion/cds-financial-aid.md). */
+  aid?: ReportedAid;
+  /** CDS I-2, I-3, E1, E3 (specs/data-expansion/cds-academics.md; lib/cds/academics.ts). Alongside the federal figures. */
+  academics?: ReportedAcademics;
+  /** CDS section D, transfer admission (specs/data-expansion/cds-transfer.md; lib/cds/transfer.ts). */
+  transfer?: ReportedTransfer;
+  /** CDS C13–C18, the regular round (specs/data-expansion/cds-application-logistics.md; lib/cds/application-logistics.ts). */
+  admissions_logistics?: ReportedLogistics;
+  /** CDS C3–C5, high school preparation (same spec and module). */
+  admissions_hs_prep?: ReportedHsPrep;
+}
+
+/* ---- CDS student body and outcomes (specs/data-expansion/cds-student-body-and-outcomes.md) ---- */
+
+/** The four Pell/loan groups of the graduation grid (IPEDS GR and CDS B4–B11). */
+export type GradAidGroup = "pell" | "loan_no_pell" | "no_pell_no_loan" | "total";
+
+/** `demographics.federal`: the federal fall a newer CDS fall (B1, B2) replaced. */
+export interface FederalDemographics {
+  /** The federal fall replaced, e.g. 2024. */
+  year: number;
+  undergrad_enrollment: number;
+  men_share: number | null;
+  women_share: number | null;
+  part_time_share: number | null;
+  racial_diversity: School["demographics"]["racial_diversity"];
+}
+
+/** `outcomes.federal`: the federal retention and graduation a newer CDS cohort replaced. */
+export interface FederalOutcomes {
+  retention?: { entering_year: number | null; retention_rate: number | null };
+  graduation?: {
+    /** The entering fall of the federal class replaced, e.g. 2018. */
+    entering_year: number;
+    grad_rate_pell: number | null;
+    grad_rate_loan_no_pell: number | null;
+    grad_rate_no_pell_no_loan: number | null;
+    grad_rate_ftft: number | null;
+    grad_cohorts: Record<GradAidGroup, number | null> | null;
+  };
+}
+
+/** `school.reported.outcomes`: CDS outcome fields federal data doesn't have at this definition. */
+export interface ReportedOutcomes {
+  /** Finished within 4 and 5 years, first-time full-time bachelor's-seeking students, by aid group (B4–B11 D, D+E ÷ C). Null under 30 students. */
+  graduation?: {
+    /** Always the class the shown six-year rates describe. */
+    entering_year: number;
+    within_4: Record<GradAidGroup, number | null>;
+    within_5: Record<GradAidGroup, number | null>;
+  };
+  /** H4: first-time students who earned a bachelor's in the class named by the document (lib/cds/cost-and-debt.ts). */
+  graduating_class?: { year: number; size: number };
+  /** H5: that class's borrowing, by loan source. */
+  graduate_debt?: ReportedGraduateDebt;
 }
 
 /** The newest first-year, all-rounds admissions figures a college has published, newer than its federal year. */
@@ -342,6 +447,594 @@ export interface ReportedAdmissions {
 }
 
 export type ReportedSourceKind = "cds" | "class-profile";
+
+/** One residency column of the CDS C1 grid: first-time, first-year students. Missing is null, never 0. */
+export interface ResidencyCounts {
+  applicants: number | null;
+  admitted: number | null;
+  enrolled: number | null;
+}
+
+/**
+ * CDS C1 by residency (specs/data-expansion/cds-residency-admissions.md): applied, admitted, and enrolled first-years by
+ * where they lived when applying. Stored only from a grid that passed its checks; rates are computed at render time.
+ */
+export interface ReportedResidencyAdmissions {
+  /** Entering class from the record's C-group year (the grid heading's "Fall YYYY"), never page headers. */
+  entering_term: string;
+  /** Its fall year as a number. */
+  year: number;
+  /** CDS edition the grid was read from, e.g. "2025-26". */
+  edition: string;
+  in_state: ResidencyCounts;
+  out_of_state: ResidencyCounts;
+  international: ResidencyCounts;
+  /** Kept for the sum check and the record; never shown as a rate. */
+  unknown: ResidencyCounts;
+  /** C1 totals of the same document (C.116–C.118): the same-class "all applicants" reference. */
+  total: ResidencyCounts;
+}
+
+/* ---- CDS cost and debt (specs/data-expansion/cds-cost-and-debt.md; built by lib/cds/cost-and-debt.ts) ---- */
+
+/** `school.reported.cost`: CDS section G, which describes the coming academic year. */
+export interface ReportedCost {
+  /**
+   * Next year's price (G1), a separate labeled value beside the federal price: it never replaces `cost.*`, never
+   * enters ranks, Explore sorts, or history. Absent while the college says its costs aren't final (G0).
+   */
+  next_year?: ReportedNextYearPrice;
+  /** G2–G6: tuition policy, the share paying more than the G1 rate, other expenses, per-credit charges. */
+  next_year_detail?: ReportedNextYearDetail;
+}
+
+export interface ReportedNextYearPrice {
+  /** The academic year the prices describe, from the document's own year rule (e.g. "2026–27"). */
+  entering_term: string;
+  /** The headline column: what an entering first-year pays. */
+  first_year: CdsCostColumn;
+  /** The undergraduate column; shown only when its total differs from the first-year total by more than 1%. */
+  undergraduate: CdsCostColumn;
+}
+
+/** One G1 column. Every amount is per academic year, in dollars; null when not reported or not a number. */
+export interface CdsCostColumn {
+  tuition: CdsTuition | null;
+  fees: number | null;
+  food_and_housing: number | null;
+  housing_only: number | null;
+  food_only: number | null;
+}
+
+export type CdsTuition =
+  | { kind: "private"; amount: number | null }
+  | { kind: "public"; in_district: number | null; in_state: number | null; out_of_state: number | null; nonresident_international: number | null };
+
+/** G2–G6. A null leaf means the college didn't answer with a number; its verbatim answer, if any, is in `text`. */
+export interface ReportedNextYearDetail {
+  credits_per_term: { min: number | null; max: number | null } | null;
+  tuition_varies_by_year: boolean | null;
+  tuition_varies_by_program: boolean | null;
+  /** G.402: share (0–1) of full-time undergraduates paying more than the G1 tuition because it varies by program. */
+  pct_paying_more: number | null;
+  /** G5; null while the college says its costs aren't final (G0), like `next_year`. */
+  expenses: CdsExpenses | null;
+  /** G6; null while the college says its costs aren't final (G0). */
+  per_credit_hour: { private: number | null; in_district: number | null; in_state: number | null; out_of_state: number | null; nonresident: number | null } | null;
+}
+
+/** G5: books, transportation, and other expenses by where the student lives. */
+export interface CdsExpenses {
+  residents: { books_supplies: number | null; transportation: number | null; other: number | null };
+  commuters_at_home: { books_supplies: number | null; food_only: number | null; transportation: number | null; other: number | null };
+  commuters_away: { books_supplies: number | null; housing_only: number | null; food_only: number | null; food_and_housing_total: number | null; transportation: number | null; other: number | null };
+  /** Non-numeric answers as printed ("varies"), keyed like "residents.transportation"; never treated as $0. */
+  text?: Record<string, string>;
+}
+
+export type GraduateDebtRowKey = "any" | "federal" | "institutional" | "state" | "private";
+
+export interface ReportedGraduateDebt {
+  /** Same as `graduating_class.year`. */
+  class_year: number;
+  /** Number who borrowed, their share (0–1) of the class, and the average cumulative principal among them. */
+  rows: Record<GraduateDebtRowKey, { number: number | null; share: number | null; avg_principal: number | null }>;
+}
+/* ---- CDS admissions profile (specs/data-expansion/cds-admissions.md; built by lib/cds/admissions.ts) ---- */
+
+/**
+ * `school.reported.admission_profile`. Each block comes from the newest CDS edition where it passed (at most two
+ * editions behind the college's newest), so blocks may describe different classes; each value's lineage says its year.
+ * A block (or a sub-object such as ED's second round) with nothing published is absent rather than null, so every
+ * stored leaf is a registered, cited path; a missing number inside a block is null, never 0.
+ */
+export interface ReportedAdmissionProfile {
+  /** C11 + C12, always from one edition. */
+  gpa?: {
+    /** C.1201 as published (3.895, 4.34). Never compared across colleges: it may be weighted. */
+    average: number | null;
+    /** `weighted` when the average is above 4.0 (or the document says so); `unweighted` only when stated. */
+    scale: GpaScale;
+    /** C.1202, 0–1. */
+    submitted_share: number | null;
+    /** Nine shares 0–1, top band (4.0) first; null = column blank or failed its checks. */
+    bands: { with_test: GpaBands | null; without_test: GpaBands | null; all: GpaBands | null };
+  };
+  /** C10; the bands are never stored without the share whose high school reported a rank. */
+  class_rank?: {
+    top_tenth: number | null;
+    top_quarter: number | null;
+    top_half: number | null;
+    bottom_half: number | null;
+    bottom_quarter: number | null;
+    submitted_share: number;
+  };
+  /** C.701–C.718; a row with no (or two) marks is null. */
+  factors?: Partial<Record<C7Factor, FactorImportance | null>>;
+  /** C.201–C.204. All-zero counts beside a Yes policy are blank (null). */
+  wait_list?: { policy: boolean | null; offered: number | null; accepted: number | null; admitted: number | null };
+  /** C.2101–C.2111; one count pair covers every ED round. */
+  early_decision?: {
+    offered: boolean;
+    first?: { closing: MonthDayValue | null; notification: MonthDayValue | null };
+    /** ED II. */
+    other?: { closing: MonthDayValue | null; notification: MonthDayValue | null };
+    applicants: number | null;
+    admitted: number | null;
+  };
+  /** C.2201–C.2206; the CDS has no early action counts. */
+  early_action?: { offered: boolean; closing: MonthDayValue | null; notification: MonthDayValue | null; restrictive: boolean | null };
+}
+export type GpaScale = "weighted" | "unweighted" | "not_stated";
+export type GpaBands = [number, number, number, number, number, number, number, number, number];
+export type FactorImportance = "very_important" | "important" | "considered" | "not_considered";
+export type C7Factor =
+  | "rigor"
+  | "class_rank"
+  | "gpa"
+  | "test_scores"
+  | "essay"
+  | "recommendations"
+  | "interview"
+  | "extracurriculars"
+  | "talent"
+  | "character"
+  | "first_generation"
+  | "alumni_relation"
+  | "geographic_residence"
+  | "state_residency"
+  | "religious"
+  | "volunteer_work"
+  | "work_experience"
+  | "interest";
+/** A month and day with no year (CDS dates are labeled with the edition that published them). */
+export type MonthDayValue = { month: number; day: number };
+/* ---- CDS C8/C9: test policy and test scores (specs/data-expansion/cds-test-scores-and-policy.md) ---- */
+
+/** A test policy answer (never null). */
+export type TestPolicyAnswer = Exclude<TestPolicy, null>;
+
+/** CDS C8: the grid for one application cycle. */
+export interface ReportedTestPolicy {
+  /** The fall the applicants would enter (2027 for a 2025–26 CDS). */
+  cycle: number;
+  /** C.801: does the college use SAT or ACT scores in admission decisions? */
+  uses_tests: boolean | null;
+  /** C.802–C.804: the grid rows "SAT or ACT", "ACT Only", "SAT Only". */
+  sat_or_act: TestPolicyAnswer | null;
+  act_only: TestPolicyAnswer | null;
+  sat_only: TestPolicyAnswer | null;
+  /** The headline: the "SAT or ACT" row, else ACT Only and SAT Only when they agree; null = varies by test. */
+  policy: TestPolicyAnswer | null;
+}
+
+/** 25th / 50th / 75th percentiles; a missing 50th is allowed. */
+export interface Pct3 {
+  p25: number | null;
+  p50: number | null;
+  p75: number | null;
+}
+
+/** Shares 0–1 of enrolled first-years who sent that test, top band first, in the template's order. */
+export type Bands6 = [number, number, number, number, number, number];
+
+/** The six band columns C9 prints. */
+export type BandTest = "sat_ebrw" | "sat_math" | "sat_composite" | "act_composite" | "act_english" | "act_math";
+
+/** CDS C9: the entering class's test scores. */
+export interface ReportedTests {
+  /** Entering fall (2025 for a 2025–26 CDS). */
+  year: number;
+  /** C.901–C.902: shares 0–1 of enrolled first-years who sent each test. */
+  sat_share: number | null;
+  act_share: number | null;
+  /** C.903–C.904: how many sent each (null unless the same document's C1 enrolled passed). */
+  sat_submitters: number | null;
+  act_submitters: number | null;
+  /** C.905–C.907: the college's own SAT total percentiles. */
+  sat_composite: Pct3 | null;
+  /** C.908–C.913: SAT Evidence-Based Reading and Writing, SAT Math. */
+  sat_ebrw: Pct3 | null;
+  sat_math: Pct3 | null;
+  /** C.914–C.922: ACT composite, Math, English. */
+  act_composite: Pct3 | null;
+  act_math: Pct3 | null;
+  act_english: Pct3 | null;
+  /** C.926–C.931: ACT Science, Reading. */
+  act_science: Pct3 | null;
+  act_reading: Pct3 | null;
+  /** C.932–C.972: the share in each score band, per test. */
+  bands: Record<BandTest, Bands6 | null>;
+}
+
+/** A test-policy change: across the college's CDS editions, or from the federal value to its first CDS. */
+export interface TestPolicyEvent {
+  /** The fall the new policy applies to. */
+  cycle: number;
+  from: TestPolicyAnswer;
+  to: TestPolicyAnswer;
+  from_source: "cds" | "ipeds-adm";
+  /** The fall the previous policy described (a CDS's cycle, or the federal fall). */
+  from_year: number;
+}
+
+/** The SAT block's dataset fields (Decision 2). */
+export interface SatBlock {
+  sat_reading_25_75?: [number, number] | null;
+  sat_math_25_75?: [number, number] | null;
+  sat_reading_median?: number | null;
+  sat_math_median?: number | null;
+  test_submission_rate_sat?: number | null;
+}
+
+/** The ACT block's dataset fields (Decision 2). */
+export interface ActBlock {
+  act_composite_25_75?: [number, number] | null;
+  act_composite_median?: number | null;
+  act_english_25_75?: [number, number] | null;
+  act_math_25_75?: [number, number] | null;
+  test_submission_rate_act?: number | null;
+}
+
+/** The policy block's dataset field (Decision 1). */
+export interface PolicyBlock {
+  test_policy?: TestPolicy;
+}
+
+/**
+ * One replaced block, kept so `restoreFederalTests` can put it back byte for byte: the fall it described (null = the
+ * dataset's IPEDS ADM release), its values (a key absent here was absent from `admissions`), and the lineage record
+ * each value had (absent = the field's default source).
+ */
+export type KeptBlock<T> = T & {
+  year: number | null;
+  records?: Partial<Record<keyof T & string, LineageRecord>>;
+};
+
+/** `school.admissions.federal_tests`: the blocks a newer C8/C9 replaced. */
+export interface FederalTests {
+  policy?: KeptBlock<PolicyBlock>;
+  sat?: KeptBlock<SatBlock>;
+  act?: KeptBlock<ActBlock>;
+}
+/* ---- CDS financial aid (specs/data-expansion/cds-financial-aid.md) ---- */
+
+/** CDS section H facts for filters, Compare, and the cost page (`school.reported.aid`). Null wherever the document is blank, never 0. */
+export interface ReportedAid {
+  /** "2025-26": the document the process facts (forms, dates, methodology) came from. */
+  edition: string;
+  /** H.101; null → H1, H2, H2A, H6 aren't published (a value with no year can't be cited). */
+  aid_year: AidYear | null;
+  /** H.102–H.104 as stated; never inferred here (`derived.aid_methodology` infers). */
+  methodology: "federal" | "institutional" | "both" | null;
+  /** H.801–H.808; null = the list was left blank (not "nothing required"). */
+  forms: AidForms | null;
+  /** H.901–H.1103. */
+  dates: AidDates | null;
+  /** H.601–H.605 (the total is in the detail file). */
+  international: InternationalAid | null;
+  /** H2/H2A first-year column, the lines shown. */
+  first_years: H2Headline | null;
+  /** H1 institutional grant dollars: need-based (H.107) and non-need (H.119). */
+  institutional_grants: { need: number | null; non_need: number | null } | null;
+}
+
+/** H.101 parsed: `start` 2025 = 2025–26; estimated (the edition's own year) or final (last year's). */
+export interface AidYear {
+  start: number;
+  status: "estimated" | "final";
+}
+
+export interface AidForms {
+  fafsa: boolean;
+  own_form: boolean;
+  css_profile: boolean;
+  state_form: boolean;
+  noncustodial_profile: boolean;
+  business_farm_supplement: boolean;
+  other: string | null;
+}
+
+/** A month and day with no year: the year is the cycle in the value's lineage. */
+export interface AidDay {
+  month: number;
+  day: number;
+}
+
+export interface AidDates {
+  priority: AidDay | "unstated" | null;
+  deadline: AidDay | "unstated" | null;
+  no_deadline: boolean | null;
+  notify_by: AidDay | null;
+  notify_rolling_from: AidDay | "unstated" | null;
+  reply_by: AidDay | null;
+  reply_within_weeks: number | null;
+}
+
+export interface InternationalAid {
+  need_based: boolean;
+  non_need: boolean;
+  none: boolean;
+  recipients: number | null;
+  average: number | null;
+}
+
+/** H2 lines by template letter: a–m, and H2A n–q. Shares are derived, never stored. */
+export type H2Line = "a" | "b" | "c" | "d" | "e" | "f" | "g" | "h" | "i" | "j" | "k" | "l" | "m" | "n" | "o" | "p" | "q";
+/** One H2 column; `i` (average share of need met) is a fraction 0–1. */
+export type H2Column = Record<H2Line, number | null>;
+export type H2Headline = Pick<H2Column, "a" | "c" | "d" | "h" | "i" | "j" | "k" | "m" | "n" | "o" | "p" | "q">;
+
+/** H1 dollars, one column (need-based or non-need). Federal Work-Study is need-based only (null in the non-need row). */
+export interface H1Row {
+  federal: number | null;
+  state: number | null;
+  institutional: number | null;
+  external: number | null;
+  total_grants: number | null;
+  student_loans: number | null;
+  federal_work_study: number | null;
+  other_work: number | null;
+  total_self_help: number | null;
+  parent_loans: number | null;
+  tuition_waivers: number | null;
+  athletic: number | null;
+}
+
+export type H14Criterion = "academics" | "alumni_affiliation" | "art" | "athletics" | "job_skills" | "rotc" | "leadership" | "music_drama" | "religious_affiliation" | "state_residency";
+
+/** `detail.cds_aid`: all of section H with a quote per value (the per-college detail file, lib/detail.ts). */
+export interface CdsAidDetail {
+  document: { url: string; edition: string; retrieved: string; sha256: string };
+  aid_year: AidYear | null;
+  h1: { need: H1Row; non_need: H1Row } | null;
+  h2: { first_years: H2Column; full_time: H2Column; part_time: H2Column } | null;
+  h6: { need_based: boolean; non_need: boolean; none: boolean; recipients: number | null; average: number | null; total: number | null } | null;
+  h7: { own_form: boolean; css_profile: boolean; other: boolean; other_text: string | null } | null;
+  h14: Record<H14Criterion, { non_need: boolean | null; need: boolean | null }> | null;
+  h15: { text: string; display: boolean } | null;
+  /** Every non-null value above, by template code: the verbatim quote and where it is. */
+  cite: Record<string, { quote: string; page?: number; cell?: string; line?: number; field?: string }>;
+}
+
+/** `aid.cds_previous`: the hand-imported `aid.cds` a same-or-newer CDS record replaced. */
+export interface CdsAidPrevious {
+  edition: string;
+  url: string;
+  values: CdsAid;
+}
+/** Seven class-size bins in CDS I-3 order: 2–9, 10–19, 20–29, 30–39, 40–49, 50–99, 100+. */
+export type ClassSizeBins = [number, number, number, number, number, number, number];
+
+/**
+ * CDS academics (specs/data-expansion/cds-academics.md): class sections by size, the college's own student-to-faculty
+ * ratio, special programs offered, and required coursework. Additive: nothing here replaces a federal value.
+ */
+export interface ReportedAcademics {
+  class_sections?: {
+    /** I.301–I.307. */
+    sections: ClassSizeBins;
+    /** I.308 as printed, or the bins' sum when the printed total is unreadable (an Excel `##`). */
+    sections_total: number;
+    /** I.309–I.315; null when the college didn't fill the subsection rows. */
+    subsections: ClassSizeBins | null;
+    /** I.316 (or the sum); null with `subsections`. */
+    subsections_total: number | null;
+    /** The fall the item labels itself with, e.g. "Fall 2025". */
+    term: string;
+    /** CDS edition read, e.g. "2025-26". */
+    edition: string;
+  } | null;
+  /** The college's own figure, by its own CDS definition (never compared to academics.student_faculty_ratio). */
+  student_faculty_ratio?: {
+    /** I.201. */
+    ratio: number;
+    /** I.202, or null when not printed. */
+    students: number | null;
+    /** I.203, or null when not printed. */
+    faculty: number | null;
+    term: string;
+  } | null;
+  /** E1: only programs the college marked. A key present means "offered"; blank ≠ no, so never `false`. */
+  programs?: Partial<Record<CdsProgramKey, true>>;
+  /**
+   * E3: a key present means the college checked that area as required. Present and empty (`{}`) means the section was
+   * read and nothing was checked: an open curriculum. Absent means not read.
+   */
+  core_curriculum?: Partial<Record<CdsCoreAreaKey, true>>;
+}
+
+export type CdsProgramKey =
+  | "accelerated"
+  | "cross_registration"
+  | "distance_learning"
+  | "double_major"
+  | "dual_enrollment"
+  | "esl"
+  | "exchange"
+  | "honors"
+  | "independent_study"
+  | "internships"
+  | "liberal_arts_career"
+  | "student_designed_major"
+  | "teacher_certification"
+  | "weekend_college";
+
+export type CdsCoreAreaKey =
+  | "arts"
+  | "computer_literacy"
+  | "english"
+  | "foreign_languages"
+  | "history"
+  | "physical_education"
+  | "humanities"
+  | "intensive_writing"
+  | "mathematics"
+  | "philosophy"
+  | "sciences"
+  | "social_science";
+
+/** One CDS D2 row (transfer applicants, admitted, or enrolled) by sex, with the printed total. Missing is null. */
+export interface TransferCounts {
+  men: number | null;
+  women: number | null;
+  unknown: number | null;
+  total: number;
+}
+
+/** Terms a transfer student may enter (CDS D3; the 2025–26 template offers all four). */
+export type TransferTerm = "fall" | "winter" | "spring" | "summer";
+
+/**
+ * A CDS D5 requirement as the college marked it. The template's five choices: "Required of All", "Required of Some",
+ * "Recommended of All", "Recommended of Some", "Not Required".
+ */
+export type TransferRequirement = "required" | "required_some" | "recommended" | "recommended_some" | "not_required";
+
+/** CDS D5: what a transfer application needs. A row the college left unmarked (or marked twice) is null. */
+export interface TransferMaterials {
+  high_school_transcript: TransferRequirement | null;
+  college_transcript: TransferRequirement | null;
+  essay: TransferRequirement | null;
+  interview: TransferRequirement | null;
+  standardized_tests: TransferRequirement | null;
+  statement_of_good_standing: TransferRequirement | null;
+}
+
+/** CDS D9 for one entry term: month and day, no year (the cycle is the lineage year). */
+export interface TransferTermDates {
+  priority: { month: number; day: number } | null;
+  closing: { month: number; day: number } | null;
+  notification: { month: number; day: number } | "rolling" | null;
+  reply: { month: number; day: number } | null;
+}
+
+/**
+ * CDS section D, transfer admission (specs/data-expansion/cds-transfer.md): the funnel (D2), whether and when transfers
+ * may enter, and what they need to apply. Each value comes from a passed record item and carries its own lineage record
+ * and year (D2: the fall; D9: the next cycle; the rest: the edition). Additive to `demographics.transfer_in` (a
+ * federal headcount), never a replacement for it. Partial coverage: never in ranks, medians, sorts, or percentiles.
+ */
+export interface ReportedTransfer {
+  /** D1, or true when D1 is blank and D2 reports transfer applicants (the lineage record says so). */
+  enrolls_transfers: boolean | null;
+  /** D1's second question: credit for course work completed elsewhere. */
+  advanced_standing: boolean | null;
+  applicants: TransferCounts | null;
+  admitted: TransferCounts | null;
+  enrolled: TransferCounts | null;
+  /** admitted.total ÷ applicants.total, when at least 10 were admitted. */
+  admit_rate: number | null;
+  terms: TransferTerm[] | null;
+  /** D4: minimum credits completed to apply as a transfer, and D4's unit ("Credit(s)", "Semester hours"). */
+  min_credits: number | null;
+  min_credits_unit: string | null;
+  required_materials: TransferMaterials | null;
+  /** D6/D7 on a 4.0 scale; null when the college states none ("No minimum required"). */
+  min_hs_gpa: number | null;
+  min_college_gpa: number | null;
+  dates: Partial<Record<TransferTerm, TransferTermDates>> | null;
+}
+
+/**
+ * A month/day with no year (the year lives in the field's lineage record, e.g. "Fall 2026 cycle"). Both null means the
+ * cell held free text; the verbatim text is in the lineage quote. Same shape as lib/cds-dates.ts `CdsDate`.
+ */
+export interface CdsDate {
+  month: number | null;
+  day: number | null;
+}
+
+/**
+ * CDS C13–C18 for the regular round (specs/data-expansion/cds-application-logistics.md): fee waivers, the closing and
+ * priority dates, notification, the reply rule, the housing deposit, and deferred admission. Describes the cycle that
+ * opens after the edition's own class (2025–26 edition → applying for fall 2026). Nothing here replaces a federal value.
+ * Each key is null when the college's CDS left it blank; there is no fallback to an older edition.
+ */
+export interface ReportedLogistics {
+  /** "Fall 2026": the entering class applicants in this cycle are applying for. */
+  cycle: string;
+  /** CDS edition, e.g. "2025-26". */
+  edition: string;
+  /** C.1303–C.1305. `online_same`: the online fee is the same as the paper fee. */
+  fee: { waiver: boolean | null; online_same: boolean | null; online_waiver: boolean | null } | null;
+  /** C.1401–C.1403: the regular round's closing date. */
+  regular_closing: CdsDate | null;
+  /** C.1404–C.1405. */
+  priority_date: CdsDate | null;
+  /** C.1501: first-years accepted for terms other than fall. Stored, never displayed. */
+  other_terms: boolean | null;
+  /** C.1601–C.1608. `other_date` is C.1608 when it reads as a date (W&M's Excel serial → April 1); else `other_text`. */
+  notification: {
+    kind: "rolling" | "by_date" | "other";
+    rolling_from: CdsDate | null;
+    by_date: CdsDate | null;
+    other_date: CdsDate | null;
+    other_text: string | null;
+  } | null;
+  /** C.1701–C.1708. */
+  reply: {
+    kind: "fixed_date" | "may1_or_weeks" | "no_set_date" | "other";
+    date: CdsDate | null;
+    weeks: number | null;
+    other_text: string | null;
+  } | null;
+  /** C.1709–C.1712. A non-number in the amount cell ("varies") leaves `amount` null; the text stays in the quote. */
+  housing_deposit: { due: CdsDate | null; amount: number | null; refundable: "full" | "partial" | "no" | null } | null;
+  /** C.1801–C.1802. `max_postponement` is the college's own words ("2 Year"); "Yes or No" is a placeholder, never true. */
+  deferred_admission: { allowed: boolean | null; max_postponement: string | null } | null;
+}
+
+/** High school units by subject (CDS C5). Lab is a subset of science, never an addend. */
+export interface UnitsBySubject {
+  total: number | null;
+  /** True when the college left the total blank and it was summed from the subjects (C5's sum rule). */
+  total_summed?: boolean;
+  english: number | null;
+  math: number | null;
+  science: number | null;
+  lab: number | null;
+  foreign_language: number | null;
+  social_studies: number | null;
+  history: number | null;
+  electives: number | null;
+  computer_science: number | null;
+  arts: number | null;
+  /** C.512 / C.524's free-text "Other" line. */
+  other_text: string | null;
+}
+
+/** CDS C3–C5 (specs/data-expansion/cds-application-logistics.md): standing admission policy, no cycle year. */
+export interface ReportedHsPrep {
+  /** C.301, the template's own wording, verbatim (a closed checklist). */
+  completion: string | null;
+  /** C.401. */
+  college_prep: "required" | "recommended" | "neither" | null;
+  /** C.501–C.512. */
+  units_required: UnitsBySubject | null;
+  /** C.513–C.524. */
+  units_recommended: UnitsBySubject | null;
+}
 
 /** One measure's change over the default 10-year window. */
 export interface TrendSummary {
@@ -377,6 +1070,12 @@ export interface LineageRecord {
   /** Extracted values: the verbatim text the number came from. */
   quote?: string;
   page?: number;
+  /** College-reported values: the Common Data Set edition the value came from, "2025–26" (the year is the item's own). */
+  edition?: string;
+  /** A workbook value: the sheet and cell, "CDS-C!AC17". */
+  cell?: string;
+  /** A fillable-PDF value: the form field name (the template's US News PDF tag), "AP_RECD_1ST_N". */
+  field?: string;
 }
 
 /** Borrower status 3 years into repayment (College Scorecard `repayment.3_yr_bb_fed_repayment.ug.*`); they sum to 100%. */
@@ -678,6 +1377,8 @@ export interface SearchFilters {
   noLegacy?: boolean;
   noEssay?: boolean;
   gpaRequired?: boolean;
+  /** Publishes first-years' GPA (CDS C11/C12; lib/cds/admissions.ts hasGpaData). */
+  gpa?: boolean;
   /** Housing and policies (lib/housing.ts): first-years must live on campus, no application fee, tuition guarantee. */
   liveOn?: boolean;
   noFee?: boolean;
@@ -693,6 +1394,20 @@ export interface SearchFilters {
   /** Majors (lib/majors.ts): a 2-digit CIP family, and at least this many first-major bachelor's a year in it (default 1). */
   field?: string;
   fieldMin?: number;
+  /** Where applicants live (lib/cds/residency-display.ts): publishes admit rates by residency; admits out-of-state about as often. */
+  byRes?: boolean;
+  oosEven?: boolean;
+  /** Test policy buckets to keep (lib/test-policy.ts): each college's newest policy; colleges with none are excluded. */
+  policy?: ("required" | "optional" | "blind")[];
+  /** CDS financial aid (lib/cds/financial-aid.ts): no CSS Profile required; the college aids international students. */
+  aidForms?: "no-css";
+  intlAid?: boolean;
+  /** Has an honors program, from the college's CDS E1 (lib/cds/academics-display.ts). Positive only: no "exclude". */
+  honors?: boolean;
+  /** Admits transfer students (lib/cds/transfer-display.ts): the CDS D1/D2 answer, else the federal transfer-in count. */
+  transfers?: boolean;
+  /** Allows deferred admission, a gap year (CDS C18; lib/cds/application-logistics-display.ts). */
+  gapYear?: boolean;
   sortBy?: SortKey;
   sortDir?: "asc" | "desc";
 }

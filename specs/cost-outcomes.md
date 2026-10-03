@@ -22,6 +22,10 @@ loans; federal-aid recipients and average grant by the same five income bands. C
 percent of need met, average need-based grant and package, and merit aid for students without need. Shown in the
 profile's **Who actually gets aid** panel (`AidBreakdown`) and in Compare (grants metrics + table rows).
 
+The hand-imported `aid.cds` (full-time column only) is superseded by `reported.aid` and `detail.cds_aid` wherever a
+college's CDS record is the same edition or newer ([cds-financial-aid.md](data-expansion/cds-financial-aid.md)): the
+panel then shows first-years beside all full-time undergraduates, and `aid.cds` moves to `aid.cds_previous`.
+
 ## Average cost, all students (the headline)
 Published net prices only cover aided students, so they understate what a typical student pays. We estimate it from
 **same-year IPEDS data** (the SFA year, currently 2023–24, with the matching prices file; see

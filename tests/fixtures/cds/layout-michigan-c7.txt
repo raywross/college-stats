@@ -1,0 +1,18 @@
+# Michigan C7, box glyphs and a wrapped header. Cut from the 2026-10-03 CDS inventory's layout text of Michigan's 2025-26 CDS PDF (rows by y, @x positions).
+=== Page 18 ===
+@234 Common Data Set 2025-2026
+@54 C7. Relative importance of each of the following academic and nonacademic factors in
+@72 your | @106 first-time, | @169 first-year, | @232 degree-seeking | @328 general | @379 (not including | @471 programs | @534 with
+@72 specific criteria) admission decisions.
+@526 Not
+@59 Factors | @241 Very Important | @345 Important | @421 Considered
+@503 Considered
+@59 Academic
+@81 Rigor of secondary school
+@277 ☒ | @368 ☐ | @449 ☐ | @531 ☐
+@81 record
+@81 Class rank | @278 ☐ | @368 ☐ | @449 ☐ | @530 ☒
+@81 Academic GPA | @277 ☒ | @368 ☐ | @449 ☐ | @531 ☐
+@81 Standardized test scores | @278 ☐ | @367 ☒ | @449 ☐ | @531 ☐
+@81 Application Essay | @278 ☐ | @367 ☒ | @449 ☐ | @531 ☐
+@81 Recommendation | @278 ☐ | @367 ☒ | @449 ☐ | @531 ☐

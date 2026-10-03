@@ -31,11 +31,14 @@ test("Vanderbilt matches its ADM2024 row (the spec's worked example)", () => {
     men: { applicants: 20851, admitted: 1238, enrolled: 744 },
     women: { applicants: 24553, admitted: 1424, enrolled: 886 },
   });
-  assert.equal(vu.admissions.sat_reading_median, 750);
-  assert.equal(vu.admissions.sat_math_median, 790);
-  assert.equal(vu.admissions.act_composite_median, 35);
-  assert.deepEqual(vu.admissions.act_english_25_75, [35, 36]);
-  assert.deepEqual(vu.admissions.act_math_25_75, [32, 35]);
+  // Its 2025–26 CDS C9 now replaces the SAT and ACT blocks (cds-test-scores-and-policy.md, Decision 2); the ADM2024
+  // values are kept in admissions.federal_tests.
+  const kept = vu.admissions.federal_tests!;
+  assert.equal(kept.sat?.sat_reading_median, 750);
+  assert.equal(kept.sat?.sat_math_median, 790);
+  assert.equal(kept.act?.act_composite_median, 35);
+  assert.deepEqual(kept.act?.act_english_25_75, [35, 36]);
+  assert.deepEqual(kept.act?.act_math_25_75, [32, 35]);
 });
 
 test("stored admissions detail is internally consistent", () => {

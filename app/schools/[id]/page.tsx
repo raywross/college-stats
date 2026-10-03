@@ -89,7 +89,12 @@ export default async function SchoolPage({ params }: Props) {
                 </span>
                 <Term term={school.type}>{typeLabel(school.type)}</Term>
                 <Term term="size-tier">{size.label} campus</Term>
-                {policy && <Term term="test-policy">{policy}</Term>}
+                {policy && (
+                  // The newest policy (a coming cycle's from the college's CDS when newer); the ⓘ names the cycle and the replaced value.
+                  <Term term="test-policy" cited={data.citeField("admissions.test_policy", school)}>
+                    {policy}
+                  </Term>
+                )}
                 {school.campus?.setting && <Term term="locale">{SETTING_SHORT[school.campus.setting.locale]}</Term>}
                 {school.campus?.carnegie?.research && (
                   <Term term="r1">{school.campus.carnegie.research === "RCU" ? "Research college" : school.campus.carnegie.research}</Term>

@@ -41,6 +41,11 @@ the federal number.
 - **Explore:** "Out-of-state share" sort and filter ("Draws nationally": 50%+).
 - **Compare:** rows for the three shares.
 - **Glossary:** `in-state-student`, `first-time-student`.
+- **Two different measures.** These shares count who *enrolled*. How often applicants from each place were *admitted*
+  (and how many of those admitted came) is [cds-residency-admissions.md](cds-residency-admissions.md), from CDS C1;
+  the two are never worded as the same number. When a college publishes that grid, the Students card adds one link line,
+  "How applicants from each place were admitted →" (to `admissions#residency`), with no figures repeated. The grid's
+  enrolled row is a check on these EF-C shares (`residency-vs-federal`, within 10 points), not a replacement.
 
 ## Keep history?
 **Series: out-of-state share and international share**, every even year from fall 2004 (11 points). Per-state history:

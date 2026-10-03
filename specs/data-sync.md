@@ -39,7 +39,10 @@ publishes a new one. It prefers the revised `_rv.csv` when the zip contains one.
 ## Overrides
 Each override must say where its values came from: a `cds` record (`{ edition, url }`, written by `import-cds`) or,
 for a hand patch, `"_lineage": { "source": …, "url": …, "year": … }`. Every value the patch sets is attributed to
-that source, field by field. A patch with neither, or with the retired `provenance` key, stops the sync.
+that source, field by field. A patch with neither, or with the retired `provenance` key, stops the sync. An override
+can't set a newest group's path (enrollment, gender and part-time shares, race, retention, graduation by Pell group):
+those come from the CDS records ([cds-student-body-and-outcomes.md](data-expansion/cds-student-body-and-outcomes.md)),
+and `check:lineage` fails on one.
 
 ```json
 {

@@ -37,13 +37,16 @@ export function decodeEntities(s: string): string {
 
 /**
  * Readable text from an HTML page: scripts, styles, navigation chrome and comments dropped; headings kept as
- * "## Heading" lines; table rows kept one per line with cells separated by " | ".
+ * "## Heading" lines; table rows kept one per line with cells separated by " | ", **empty cells included**: MIT puts
+ * each `<td>` on its own source line, so whitespace (and any line break inside a cell) is collapsed within each `<tr>`
+ * first, and "Rigor of secondary school record | | X | |" keeps its "X" in the "Important" column.
  */
 export function htmlToText(html: string): string {
   let s = html
     .replace(/<!--[\s\S]*?-->/g, " ")
     .replace(/<(script|style|noscript|svg|template|iframe)\b[\s\S]*?<\/\1>/gi, " ")
-    .replace(/<(nav|footer)\b[\s\S]*?<\/\1>/gi, " ");
+    .replace(/<(nav|footer)\b[\s\S]*?<\/\1>/gi, " ")
+    .replace(/<tr\b[\s\S]*?<\/tr>/gi, (row) => row.replace(/<(br|hr)\b[^>]*>|<\/(p|div|li)>/gi, " ").replace(/\s+/g, " "));
   s = s
     .replace(/<h([1-6])\b[^>]*>/gi, "\n\n## ")
     .replace(/<\/h[1-6]>/gi, "\n")
@@ -198,11 +201,16 @@ function yearIn(t: string): number | null {
  * `CDS_2026-27.pdf` when the recipe holds 2025-26). Each becomes a new recipe source.
  */
 export function newSourcesFromIndex(html: string, indexUrl: string, existing: RecipeSource[]): RecipeSource[] {
+  return newSourcesFromLinks(findLinks(html, indexUrl), existing);
+}
+
+/** `newSourcesFromIndex` over links found anywhere (an index page, a sitemap's `<loc>` entries). */
+export function newSourcesFromLinks(links: FoundLink[], existing: RecipeSource[]): RecipeSource[] {
   const known = new Set(existing.map((s) => s.url));
   const newest = (kind: ReportedSourceKind) =>
     Math.max(-Infinity, ...existing.filter((s) => s.kind === kind).map((s) => entryYearOf(s.url) ?? -Infinity));
   const found: RecipeSource[] = [];
-  for (const link of findLinks(html, indexUrl)) {
+  for (const link of links) {
     if (known.has(link.url)) continue;
     const kind = linkKind(link);
     if (!kind) continue;

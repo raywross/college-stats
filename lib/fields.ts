@@ -38,6 +38,8 @@ export type VintageKey =
   /** Student age: IPEDS collects it in odd-numbered falls only, so it trails enrollment by a year every other year. */
   | "scorecard-age"
   | "scorecard-cost"
+  /** Retention: the class that entered the fall before the enrollment fall ("Entered fall 2023"); probed like scorecard-age. */
+  | "scorecard-retention"
   | "scorecard-latest"
   /** College Scorecard Field of Study bulk CSV: each metric pools a different, independently-refreshed cohort, so like scorecard-latest this has no single year. */
   | "scorecard-fos";
@@ -204,7 +206,7 @@ export const FIELDS = {
   "outcomes.median_earnings_10yr": scorecard("Median earnings, 10 years after entry", "outcomes"),
   "outcomes.median_earnings_6yr": scorecard("Median earnings, 6 years after entry", "outcomes"),
   "outcomes.graduation_rate": scorecard("Graduation rate", "outcomes"),
-  "outcomes.retention_rate": scorecard("Retention rate", "outcomes"),
+  "outcomes.retention_rate": scorecard("Retention rate", "outcomes", "scorecard-retention"),
   "outcomes.median_debt": scorecard("Median debt at graduation", "outcomes"),
   "outcomes.monthly_loan_payment": scorecard("Monthly loan payment", "outcomes"),
   // Key N = the N-1–N academic year (matches IPEDS SFA UFLOANP; checked 2026-09-29), like net price.
@@ -254,6 +256,210 @@ export const FIELDS = {
   "reported.admissions.enrolled": reported("Enrolled (college-reported)"),
   "reported.admissions.acceptance_rate": reported("Acceptance rate (college-reported)"),
   "reported.admissions.source_kind": reported("Kind of document (college-reported)"),
+  // CDS C1 by residency (specs/data-expansion/cds-residency-admissions.md; lib/cds/residency.ts): one lineage record
+  // per stored leaf, from the newest passed grid.
+  "reported.admissions_by_residency.entering_term": reported("Entering class of the residency grid (college-reported)"),
+  "reported.admissions_by_residency.year": reported("Residency grid year (college-reported)"),
+  "reported.admissions_by_residency.edition": reported("Residency grid CDS edition (college-reported)"),
+  "reported.admissions_by_residency.in_state.applicants": reported("Applied, from the college's state (college-reported)"),
+  "reported.admissions_by_residency.in_state.admitted": reported("Admitted, from the college's state (college-reported)"),
+  "reported.admissions_by_residency.in_state.enrolled": reported("Enrolled, from the college's state (college-reported)"),
+  "reported.admissions_by_residency.out_of_state.applicants": reported("Applied, from other states (college-reported)"),
+  "reported.admissions_by_residency.out_of_state.admitted": reported("Admitted, from other states (college-reported)"),
+  "reported.admissions_by_residency.out_of_state.enrolled": reported("Enrolled, from other states (college-reported)"),
+  "reported.admissions_by_residency.international.applicants": reported("Applied, from abroad (college-reported)"),
+  "reported.admissions_by_residency.international.admitted": reported("Admitted, from abroad (college-reported)"),
+  "reported.admissions_by_residency.international.enrolled": reported("Enrolled, from abroad (college-reported)"),
+  "reported.admissions_by_residency.unknown.applicants": reported("Applied, residency unknown (college-reported)"),
+  "reported.admissions_by_residency.unknown.admitted": reported("Admitted, residency unknown (college-reported)"),
+  "reported.admissions_by_residency.unknown.enrolled": reported("Enrolled, residency unknown (college-reported)"),
+  "reported.admissions_by_residency.total.applicants": reported("Applied, all residencies (college-reported)"),
+  "reported.admissions_by_residency.total.admitted": reported("Admitted, all residencies (college-reported)"),
+  "reported.admissions_by_residency.total.enrolled": reported("Enrolled, all residencies (college-reported)"),
+  // CDS cost and debt (specs/data-expansion/cds-cost-and-debt.md, lib/cds/cost-and-debt.ts). Next year's price sits
+  // beside the federal price and never replaces it; none of these reach ranks, sorts, percentiles, or history.
+  "reported.cost.next_year": reported("Next year's tuition (college-reported)", "cost"),
+  "reported.cost.next_year.first_year.fees": reported("Next year's required fees (college-reported)", "cost"),
+  "reported.cost.next_year.first_year.food_and_housing": reported("Next year's food and housing (college-reported)", "cost"),
+  "reported.cost.next_year_detail": reported("Next year's tuition policy and other expenses (college-reported)", "cost"),
+  "reported.cost.next_year_detail.pct_paying_more": reported("Undergraduates paying more than the published tuition (college-reported)", "cost"),
+  "reported.outcomes.graduating_class": reported("Graduating class size (college-reported)", "outcomes"),
+  "reported.outcomes.graduate_debt": reported("Graduates who borrowed, by loan source (college-reported)", "outcomes"),
+  "reported.outcomes.graduate_debt.rows.any.share": reported("Graduates who borrowed from any source (college-reported)", "outcomes"),
+  "reported.outcomes.graduate_debt.rows.any.avg_principal": reported("Average total borrowed, all loan types (college-reported)", "outcomes"),
+  // CDS student body and outcomes (specs/data-expansion/cds-student-body-and-outcomes.md): the federal values a newer
+  // CDS fall or cohort replaced (lib/newest-groups.ts), and the one new field, 4- and 5-year graduation by aid group.
+  "demographics.federal": scorecard("Federal enrollment figures replaced by a newer college-reported fall", "enrollment", "scorecard-enrollment"),
+  "outcomes.federal.retention": scorecard("Federal retention rate replaced by a newer college-reported class", "outcomes", "scorecard-retention"),
+  "outcomes.federal.graduation": { label: "Federal graduation by Pell and loan status replaced by a newer college-reported class", topic: "outcomes", source: "ipeds-gr", vintage: "ipeds-gr" },
+  "reported.outcomes.graduation": reported("Graduated within 4 and 5 years, by Pell and loan status (college-reported)", "outcomes"),
+
+  // CDS admissions profile (specs/data-expansion/cds-admissions.md; lib/cds/admissions.ts): one cited path per stored
+  // leaf, so each value's ⓘ carries its own cell and quote.
+  "reported.admission_profile.gpa.average": reported("Average high school GPA of first-years"),
+  "reported.admission_profile.gpa.scale": reported("GPA scale (derived: weighted when above 4.0 or stated)"),
+  "reported.admission_profile.gpa.submitted_share": reported("Share of first-years who reported a GPA"),
+  "reported.admission_profile.gpa.bands.all": reported("First-years by GPA band (all)"),
+  "reported.admission_profile.gpa.bands.with_test": reported("First-years by GPA band (sent test scores)"),
+  "reported.admission_profile.gpa.bands.without_test": reported("First-years by GPA band (didn't send scores)"),
+  "reported.admission_profile.class_rank.top_tenth": reported("First-years in the top tenth of their high school class"),
+  "reported.admission_profile.class_rank.top_quarter": reported("First-years in the top quarter of their high school class"),
+  "reported.admission_profile.class_rank.top_half": reported("First-years in the top half of their high school class"),
+  "reported.admission_profile.class_rank.bottom_half": reported("First-years in the bottom half of their high school class"),
+  "reported.admission_profile.class_rank.bottom_quarter": reported("First-years in the bottom quarter of their high school class"),
+  "reported.admission_profile.class_rank.submitted_share": reported("Share of first-years whose high school reported a rank"),
+  "reported.admission_profile.factors.rigor": reported("How much it counts: rigor of high school record"),
+  "reported.admission_profile.factors.class_rank": reported("How much it counts: class rank"),
+  "reported.admission_profile.factors.gpa": reported("How much it counts: academic GPA"),
+  "reported.admission_profile.factors.test_scores": reported("How much it counts: test scores"),
+  "reported.admission_profile.factors.essay": reported("How much it counts: essay"),
+  "reported.admission_profile.factors.recommendations": reported("How much it counts: recommendations"),
+  "reported.admission_profile.factors.interview": reported("How much it counts: interview"),
+  "reported.admission_profile.factors.extracurriculars": reported("How much it counts: extracurricular activities"),
+  "reported.admission_profile.factors.talent": reported("How much it counts: talent or ability"),
+  "reported.admission_profile.factors.character": reported("How much it counts: character and personal qualities"),
+  "reported.admission_profile.factors.first_generation": reported("How much it counts: first generation"),
+  "reported.admission_profile.factors.alumni_relation": reported("How much it counts: alumni relation (legacy)"),
+  "reported.admission_profile.factors.geographic_residence": reported("How much it counts: geographic residence"),
+  "reported.admission_profile.factors.state_residency": reported("How much it counts: state residency"),
+  "reported.admission_profile.factors.religious": reported("How much it counts: religious affiliation"),
+  "reported.admission_profile.factors.volunteer_work": reported("How much it counts: volunteer work"),
+  "reported.admission_profile.factors.work_experience": reported("How much it counts: work experience"),
+  "reported.admission_profile.factors.interest": reported("How much it counts: level of applicant's interest"),
+  "reported.admission_profile.wait_list.policy": reported("Wait list: uses one"),
+  "reported.admission_profile.wait_list.offered": reported("Wait list: offered a place"),
+  "reported.admission_profile.wait_list.accepted": reported("Wait list: accepted a place"),
+  "reported.admission_profile.wait_list.admitted": reported("Wait list: admitted"),
+  "reported.admission_profile.early_decision.offered": reported("Early decision: offered"),
+  "reported.admission_profile.early_decision.first.closing": reported("Early decision: apply-by date"),
+  "reported.admission_profile.early_decision.first.notification": reported("Early decision: decision date"),
+  "reported.admission_profile.early_decision.other.closing": reported("Early decision II: apply-by date"),
+  "reported.admission_profile.early_decision.other.notification": reported("Early decision II: decision date"),
+  "reported.admission_profile.early_decision.applicants": reported("Early decision: applications"),
+  "reported.admission_profile.early_decision.admitted": reported("Early decision: admitted"),
+  "reported.admission_profile.early_action.offered": reported("Early action: offered"),
+  "reported.admission_profile.early_action.closing": reported("Early action: apply-by date"),
+  "reported.admission_profile.early_action.notification": reported("Early action: decision date"),
+  "reported.admission_profile.early_action.restrictive": reported("Early action: restrictive"),
+  // The six C7 factors IPEDS also asks about: a newer C7 flips the federal considered / not considered answer
+  // (lib/cds/admissions.ts applyNewestFactors), cited to the CDS; the federal answer is kept in federal_factors.
+  "admissions.factors.gpa": adm("Whether GPA is considered in admission"),
+  "admissions.factors.class_rank": adm("Whether class rank is considered in admission"),
+  "admissions.factors.recommendations": adm("Whether recommendations are considered in admission"),
+  "admissions.factors.essay": adm("Whether an essay is considered in admission"),
+  "admissions.factors.legacy": adm("Whether legacy status is considered in admission"),
+  "admissions.factors.work_experience": adm("Whether work experience is considered in admission"),
+  "admissions.federal_factors": adm("Federal admission-factor answers replaced by a newer Common Data Set"),
+  "derived.ed_admit_rate": {
+    ...reported("Early decision admit rate"),
+    computed: true,
+    derived: { formula: "Early decision admitted ÷ early decision applications", inputs: ["reported.admission_profile.early_decision.admitted", "reported.admission_profile.early_decision.applicants"] },
+  },
+  "derived.wait_list_admit_rate": {
+    ...reported("Wait-list admit rate"),
+    computed: true,
+    derived: { formula: "Admitted from the wait list ÷ accepted a place on it", inputs: ["reported.admission_profile.wait_list.admitted", "reported.admission_profile.wait_list.accepted"] },
+  },
+  "derived.gpa_middle_half": {
+    ...reported("Middle half of first-years' GPAs"),
+    computed: true,
+    derived: { formula: "The GPA bands holding the 25th and 75th percentiles of the \"all\" column", inputs: ["reported.admission_profile.gpa.bands.all"] },
+  },
+  // CDS C8/C9 (specs/data-expansion/cds-test-scores-and-policy.md): records → school.reported (lib/cds/test-scores.ts).
+  "reported.test_policy": reported("Test policy for the coming application cycle (CDS C8)"),
+  "reported.test_policy_note": reported("Test policy note (CDS C8F)"),
+  "reported.test_policy_events": reported("Test policy changes (CDS C8)"),
+  "reported.tests.year": reported("Entering class the test scores describe (CDS C9)"),
+  "reported.tests.sat_share": reported("Share who sent an SAT (CDS C9)"),
+  "reported.tests.act_share": reported("Share who sent an ACT (CDS C9)"),
+  "reported.tests.sat_submitters": reported("Number who sent an SAT (CDS C9)"),
+  "reported.tests.act_submitters": reported("Number who sent an ACT (CDS C9)"),
+  "reported.tests.sat_composite": reported("SAT total, 25th/50th/75th percentile (CDS C9)"),
+  "reported.tests.sat_ebrw": reported("SAT Reading & Writing, 25th/50th/75th percentile (CDS C9)"),
+  "reported.tests.sat_math": reported("SAT Math, 25th/50th/75th percentile (CDS C9)"),
+  "reported.tests.act_composite": reported("ACT composite, 25th/50th/75th percentile (CDS C9)"),
+  "reported.tests.act_math": reported("ACT Math, 25th/50th/75th percentile (CDS C9)"),
+  "reported.tests.act_english": reported("ACT English, 25th/50th/75th percentile (CDS C9)"),
+  "reported.tests.act_science": reported("ACT Science, 25th/50th/75th percentile (CDS C9)"),
+  "reported.tests.act_reading": reported("ACT Reading, 25th/50th/75th percentile (CDS C9)"),
+  "reported.tests.bands.sat_ebrw": reported("SAT Reading & Writing score bands (CDS C9)"),
+  "reported.tests.bands.sat_math": reported("SAT Math score bands (CDS C9)"),
+  "reported.tests.bands.sat_composite": reported("SAT total score bands (CDS C9)"),
+  "reported.tests.bands.act_composite": reported("ACT composite score bands (CDS C9)"),
+  "reported.tests.bands.act_english": reported("ACT English score bands (CDS C9)"),
+  "reported.tests.bands.act_math": reported("ACT Math score bands (CDS C9)"),
+  // The test-policy, SAT, and ACT blocks a newer C8/C9 replaced (Decisions 1–2), like admissions.federal for the funnel.
+  "admissions.federal_tests": adm("Federal test policy and scores replaced by a newer Common Data Set"),
+  // The SAT total a college shows (Decision 3): never ranked; ranks keep derived.sat_composite for every college.
+  "derived.sat_total": {
+    ...adm("SAT total, middle 50% (as shown)"),
+    computed: true,
+    derived: {
+      formula: "The college's own SAT total when its scores come from its Common Data Set and it reports one; else Reading & Writing + Math",
+      inputs: ["reported.tests.sat_composite", "derived.sat_composite"],
+    },
+  },
+  // CDS financial aid (specs/data-expansion/cds-financial-aid.md; lib/cds/financial-aid.ts): section H from each
+  // college's CDS record. Partial coverage: never in ranks, sorts, medians, key differences, the radar, or "Known for".
+  "reported.aid.edition": reported("Common Data Set the aid process facts came from", "aid"),
+  "reported.aid.aid_year": reported("Academic year of the aid figures (CDS H.101)", "aid"),
+  "reported.aid.methodology": reported("How the college figures need: federal or its own formula (CDS H.102–H.104)", "aid"),
+  "reported.aid.forms": reported("Forms aid applicants file (CDS H8)", "aid"),
+  "reported.aid.dates": reported("Aid application dates (CDS H9–H11)", "aid"),
+  "reported.aid.international": reported("College aid for international students (CDS H6)", "aid"),
+  "reported.aid.first_years": reported("Need and aid, first-years (CDS H2, H2A)", "aid"),
+  "reported.aid.institutional_grants": reported("College grant dollars, need-based and not (CDS H1)", "aid"),
+  "detail.cds_aid": { label: "Financial aid, all of CDS section H with quotes", topic: "aid", source: "college-site", vintage: null },
+  "aid.cds_previous": { label: "Need-based and merit aid a newer Common Data Set replaced (CDS H2/H2A)", topic: "aid", source: "cds", vintage: null },
+  "derived.merit_dollar_share": {
+    ...reported("College grant dollars given without regard to need", "aid"),
+    computed: true,
+    derived: { formula: "Non-need institutional grant dollars ÷ (need-based + non-need institutional grant dollars), CDS H1", inputs: ["reported.aid.institutional_grants"] },
+  },
+  "derived.aid_methodology": {
+    ...reported("Need methodology, stated or inferred", "aid"),
+    computed: true,
+    derived: { formula: "The stated methodology; else the college's own (institutional) formula when it requires the CSS Profile or its own form", inputs: ["reported.aid.methodology", "reported.aid.forms"] },
+  },
+  // CDS academics (specs/data-expansion/cds-academics.md; lib/cds/academics.ts): one lineage record per block, from the
+  // newest document whose items passed. Alongside the federal figures, never replacing them.
+  "reported.academics.class_sections": reported("Undergraduate class sections by size (Common Data Set I-3)", "academics"),
+  "reported.academics.student_faculty_ratio": reported("Student-to-faculty ratio, the college's own (Common Data Set I-2)", "academics"),
+  "reported.academics.programs": reported("Special study options offered (Common Data Set E1)", "academics"),
+  "reported.academics.core_curriculum": reported("Required coursework areas (Common Data Set E3)", "academics"),
+  // CDS section D, transfer admission (specs/data-expansion/cds-transfer.md; lib/cds/transfer.ts): one lineage record
+  // per stored field; the sex breakdown inside applicants/admitted/enrolled and each material are covered by their parent.
+  // Partial coverage: never in METRICS, ranks, medians, sorts, or percentiles (tests/cds-transfer.test.mts).
+  "reported.transfer.enrolls_transfers": reported("Enrolls transfer students (college-reported)"),
+  "reported.transfer.advanced_standing": reported("Grants advanced standing to transfers (college-reported)"),
+  "reported.transfer.applicants": reported("Transfer applicants (college-reported)"),
+  "reported.transfer.admitted": reported("Transfer applicants admitted (college-reported)"),
+  "reported.transfer.enrolled": reported("Transfer students enrolled (college-reported)"),
+  "reported.transfer.admit_rate": reported("Transfer acceptance rate (college-reported)"),
+  "reported.transfer.terms": reported("Terms transfers may enter (college-reported)"),
+  "reported.transfer.min_credits": reported("Minimum credits to apply as a transfer (college-reported)"),
+  "reported.transfer.min_credits_unit": reported("Unit of the minimum credits (college-reported)"),
+  "reported.transfer.required_materials": reported("What a transfer application needs (college-reported)"),
+  "reported.transfer.min_hs_gpa": reported("Minimum high school GPA for transfers (college-reported)"),
+  "reported.transfer.min_college_gpa": reported("Minimum college GPA for transfers (college-reported)"),
+  "reported.transfer.dates": reported("Transfer application dates (college-reported)"),
+  // CDS application logistics and high school preparation (specs/data-expansion/cds-application-logistics.md;
+  // lib/cds/application-logistics.ts): one lineage record per block from the newest CDS. Logistics years are the
+  // cycle ("Fall 2026 cycle"); high school preparation's is the edition ("2025–26").
+  "reported.admissions_logistics.cycle": reported("Admissions cycle of the application dates (college-reported)"),
+  "reported.admissions_logistics.edition": reported("CDS edition of the application dates (college-reported)"),
+  "reported.admissions_logistics.fee": reported("Application fee waivers (college-reported)"),
+  "reported.admissions_logistics.regular_closing": reported("Regular application deadline (college-reported)"),
+  "reported.admissions_logistics.priority_date": reported("Priority application date (college-reported)"),
+  "reported.admissions_logistics.other_terms": reported("First-years admitted for terms other than fall (college-reported)"),
+  "reported.admissions_logistics.notification": reported("When decisions are sent (college-reported)"),
+  "reported.admissions_logistics.reply": reported("Reply-by date for admitted students (college-reported)"),
+  "reported.admissions_logistics.housing_deposit": reported("Housing deposit (college-reported)"),
+  "reported.admissions_logistics.deferred_admission": reported("Deferred admission, a gap year (college-reported)"),
+  "reported.admissions_hs_prep.completion": reported("High school completion requirement (college-reported)"),
+  "reported.admissions_hs_prep.college_prep": reported("College-preparatory program (college-reported)"),
+  "reported.admissions_hs_prep.units_required": reported("High school units required, by subject (college-reported)"),
+  "reported.admissions_hs_prep.units_recommended": reported("High school units recommended, by subject (college-reported)"),
 
   /* ---- History summary (data/history/, `npm run sync-history`) ---- */
   trends: {
@@ -323,10 +529,98 @@ export const FIELDS = {
     computed: true,
     derived: { formula: "Graduation rate of students with neither a Pell Grant nor a subsidized loan − Pell Grant recipients' rate (points)", inputs: ["outcomes.grad_rate_no_pell_no_loan", "outcomes.grad_rate_pell"] },
   },
+  // Residency rates (specs/data-expansion/cds-residency-admissions.md; lib/cds/residency-display.ts). Partial coverage:
+  // never in METRICS, ranks, medians, sorts, the radar, Key differences, or "Known for" (tests/residency-admissions.test.mts).
+  "derived.admit_rate_in_state": {
+    ...reported("Acceptance rate, in-state"),
+    computed: true,
+    derived: { formula: "Admitted ÷ applied from the college's state, from the college's Common Data Set C1 grid (not calculated under 10 applicants)", inputs: ["reported.admissions_by_residency.in_state.applicants", "reported.admissions_by_residency.in_state.admitted"] },
+  },
+  "derived.admit_rate_out_of_state": {
+    ...reported("Acceptance rate, other states"),
+    computed: true,
+    derived: { formula: "Admitted ÷ applied from other states, from the college's Common Data Set C1 grid (not calculated under 10 applicants)", inputs: ["reported.admissions_by_residency.out_of_state.applicants", "reported.admissions_by_residency.out_of_state.admitted"] },
+  },
+  "derived.admit_rate_international": {
+    ...reported("Acceptance rate, international"),
+    computed: true,
+    derived: { formula: "Admitted ÷ applied from abroad, from the college's Common Data Set C1 grid (not calculated under 10 applicants)", inputs: ["reported.admissions_by_residency.international.applicants", "reported.admissions_by_residency.international.admitted"] },
+  },
+  "derived.yield_in_state": {
+    ...reported("Yield, in-state"),
+    computed: true,
+    derived: { formula: "Enrolled ÷ admitted from the college's state, from the same grid (not calculated under 10 admits)", inputs: ["reported.admissions_by_residency.in_state.admitted", "reported.admissions_by_residency.in_state.enrolled"] },
+  },
+  "derived.yield_out_of_state": {
+    ...reported("Yield, other states"),
+    computed: true,
+    derived: { formula: "Enrolled ÷ admitted from other states, from the same grid (not calculated under 10 admits)", inputs: ["reported.admissions_by_residency.out_of_state.admitted", "reported.admissions_by_residency.out_of_state.enrolled"] },
+  },
+  "derived.yield_international": {
+    ...reported("Yield, international"),
+    computed: true,
+    derived: { formula: "Enrolled ÷ admitted from abroad, from the same grid (not calculated under 10 admits)", inputs: ["reported.admissions_by_residency.international.admitted", "reported.admissions_by_residency.international.enrolled"] },
+  },
+  "derived.admit_rate_for_student": {
+    ...reported("Acceptance rate for you"),
+    computed: true,
+    derived: {
+      formula: "The in-state rate when the student lives in the college's state, the other-states rate otherwise, the international rate for a student outside the U.S.",
+      inputs: ["derived.admit_rate_in_state", "derived.admit_rate_out_of_state", "derived.admit_rate_international", "location.state"],
+    },
+  },
+  "derived.admit_rate_same_class": {
+    ...reported("Acceptance rate, all applicants in the same class"),
+    computed: true,
+    derived: { formula: "C1 total admitted ÷ total applied, from the same Common Data Set as the residency grid (not calculated under 10 applicants)", inputs: ["reported.admissions_by_residency.total.applicants", "reported.admissions_by_residency.total.admitted"] },
+  },
+  // Class sizes (specs/data-expansion/cds-academics.md; lib/cds/academics-display.ts). Partial coverage: never in
+  // METRICS, ranks, medians, sorts, Key differences, or "Known for" (tests/cds-academics.test.mts).
+  "derived.class_share_under_20": {
+    ...reported("Classes under 20 students", "academics"),
+    computed: true,
+    derived: { formula: "Class sections of 2–19 students ÷ all class sections, from the college's Common Data Set I-3 (sections, not students)", inputs: ["reported.academics.class_sections"] },
+  },
+  "derived.class_share_50_plus": {
+    ...reported("Classes of 50 or more students", "academics"),
+    computed: true,
+    derived: { formula: "Class sections of 50 or more students ÷ all class sections, from the college's Common Data Set I-3 (sections, not students)", inputs: ["reported.academics.class_sections"] },
+  },
+  // Compare's application-logistics rows (specs/data-expansion/cds-application-logistics.md;
+  // lib/cds/application-logistics-display.ts). Partial coverage: never in METRICS, ranks, sorts, or Key differences.
+  "derived.application_deadlines": {
+    ...reported("Regular deadline, reply-by rule, and housing deposit"),
+    computed: true,
+    derived: { formula: "The regular closing date, reply-by rule, and housing deposit amount from the college's newest Common Data Set (C14, C17)", inputs: ["reported.admissions_logistics.regular_closing", "reported.admissions_logistics.reply", "reported.admissions_logistics.housing_deposit"] },
+  },
+  "derived.gap_year_allowed": {
+    ...reported("Gap year allowed (deferred admission)"),
+    computed: true,
+    derived: { formula: "Whether admitted students may postpone enrollment, and for how long, from the college's newest Common Data Set (C18)", inputs: ["reported.admissions_logistics.deferred_admission"] },
+  },
   "derived.payback_years": {
     ...scorecard("Payback estimate", "outcomes"),
     computed: true,
     derived: { formula: "4 × average cost ÷ median earnings 10 years after entry", inputs: ["cost.avg_paid_all", "outcomes.median_earnings_10yr"] },
+  },
+  // CDS cost and debt (specs/data-expansion/cds-cost-and-debt.md): computed on the cost page only, never ranked.
+  "derived.next_year_price": {
+    ...reported("Next year's price before aid (college-reported)", "cost"),
+    computed: true,
+    derived: {
+      formula: "Next year's tuition + required fees + on-campus food and housing, first-year column",
+      inputs: ["reported.cost.next_year", "reported.cost.next_year.first_year.fees", "reported.cost.next_year.first_year.food_and_housing"],
+    },
+  },
+  "derived.next_year_change": {
+    // Two sources (the college's document and the federal release); the fallback is the federal one it compares to.
+    ...ic("Change from the federal price"),
+    topic: "cost",
+    computed: true,
+    derived: {
+      formula: "Next year's price ÷ the federal year's tuition & fees + on-campus room & board − 1",
+      inputs: ["derived.next_year_price", "cost.tuition_fees", "cost.components"],
+    },
   },
 } satisfies Record<string, FieldDef>;
 

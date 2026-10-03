@@ -8,6 +8,9 @@ import { num, pct, pctSmart } from "@/lib/format";
 import { TILES } from "@/components/charts/StateTileMap";
 import { InfoTip } from "@/components/ui/info-tip";
 import { cn } from "@/lib/utils";
+import Link from "next/link";
+import { topicHref } from "@/lib/profile-topics";
+import { publishesResidencyRates } from "@/lib/cds/residency-display";
 
 /**
  * Where first-years come from (specs/data-expansion/residence.md): a 3-part bar (in-state, other states, abroad), the
@@ -178,6 +181,14 @@ export function Residence({
       <p className="mt-4 text-xs text-muted-foreground">
         Students starting college for the first time, by where they lived when admitted. Colleges report it every other fall.
       </p>
+      {publishesResidencyRates(school) && (
+        // A different measure (who got in, not who came): cds-residency-admissions.md. Link only, no figures repeated.
+        <p className="mt-2 text-xs">
+          <Link href={topicHref(school.unit_id, "admissions", "residency")} className="font-medium underline-offset-4 hover:underline">
+            How applicants from each place were admitted →
+          </Link>
+        </p>
+      )}
     </div>
   );
 }

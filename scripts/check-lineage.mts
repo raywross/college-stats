@@ -6,14 +6,18 @@
  * Same validation the syncs run before writing: every stored field is registered in lib/fields.ts, every lineage
  * record is complete, every release has a year, and the registry's derivations are sound (lib/lineage.ts). For
  * history (lib/history.ts): every series is registered in SERIES, every shard belongs to a college in the dataset,
- * values are possible, and every file family cites a known source.
+ * values are possible, and every file family cites a known source. For CDS records (data/cds-records/, lib/cds-records.ts):
+ * every passed value is located and quoted and every document is in data/college-docs.json.
  */
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import type { DatasetMeta, School } from "../lib/types";
-import { validateLineage } from "../lib/lineage.ts";
+import { validateLineage, validateOverrides } from "../lib/lineage.ts";
 import { validateHistoryMeta, validateShard, type HistoryMeta, type SchoolHistory } from "../lib/history.ts";
 import { detailFileProblems, readDetails } from "./lib/publish-details.mts";
+import { validateCdsRecords } from "../lib/cds-records.ts";
+import { CDS_TEMPLATE } from "../lib/cds-template.ts";
+import { readManifest, readRecords } from "./lib/college-reported/records.mts";
 
 const ROOT = join(import.meta.dirname, "..");
 const schools: School[] = JSON.parse(readFileSync(join(ROOT, "data", "schools.json"), "utf8"));
@@ -40,6 +44,16 @@ if (existsSync(join(HISTORY, "meta.json"))) {
 const details = readDetails(ROOT);
 if (details) problems.push(...detailFileProblems(details, schools, meta));
 
+// CDS records (specs/college-reported-round-3.md, Decision 2): every passed value located and quoted, every document
+// in the manifest, a year for every item group, a known schema or reader version.
+const records = readRecords(join(ROOT, "data", "cds-records"));
+problems.push(...validateCdsRecords(records, readManifest(join(ROOT, "data", "college-docs.json")), CDS_TEMPLATE));
+
+// Overrides (data/overrides.json): each says where its values came from, and none sets a path a newest group owns
+// (specs/data-expansion/cds-student-body-and-outcomes.md, rule 9): those come from the CDS records.
+const OVERRIDES = join(ROOT, "data", "overrides.json");
+if (existsSync(OVERRIDES)) problems.push(...validateOverrides(JSON.parse(readFileSync(OVERRIDES, "utf8"))));
+
 if (problems.length) {
   console.error(`Lineage check failed: ${problems.length} problem${problems.length === 1 ? "" : "s"}`);
   for (const p of problems.slice(0, 50)) console.error(`  ${p}`);
@@ -50,5 +64,6 @@ const overridden = schools.filter((s) => s.lineage && Object.keys(s.lineage).len
 console.log(
   `Lineage OK: ${schools.length} colleges, ${overridden} with values from a non-default source` +
     (shards ? `; ${shards} college histories` : "") +
-    (details ? `; ${details.length} detail files.` : ".")
+    (details ? `; ${details.length} detail files` : "") +
+    `; ${records.length} CDS records.`
 );

@@ -5,8 +5,13 @@ import { ArrowDownWideNarrow, ArrowUpNarrowWide, LayoutGrid, Map as MapIcon, Sca
 import { SIZE_BUCKETS } from "@/lib/metrics";
 import { INDICATORS, INDICATOR_KEYS, isDirection } from "@/lib/indicators";
 import { GENDER_BALANCE } from "@/lib/student-body";
+import { POLICY_BUCKETS } from "@/lib/test-policy";
 import { HOUSING_FILTERS } from "@/lib/housing";
 import { FACTOR_FILTERS } from "@/lib/factors";
+import { RESIDENCY_FILTERS } from "@/lib/cds/residency-display";
+import { HONORS_FILTER_LABEL } from "@/lib/cds/academics-display";
+import { TRANSFER_FILTER } from "@/lib/cds/transfer-display";
+import { LOGISTICS_FILTERS } from "@/lib/cds/application-logistics-display";
 import { DESIGNATION_LABELS, RESEARCH_LABELS, SETTING_GROUPS, isDesignation, isResearchTier, isSettingGroup } from "@/lib/campus-profile";
 import { DIVISION_LABELS, ROTC_LABELS, isDivisionFilter, isRotcBranch } from "@/lib/campus-services";
 import { conferenceName } from "@/lib/conferences";
@@ -233,18 +238,24 @@ export function ActiveFilters() {
   for (const r of getList("regions")) chips.push({ key: `r-${r}`, label: r, onRemove: () => toggleInList("regions", r) });
   for (const s of getList("states")) chips.push({ key: `st-${s}`, label: s, onRemove: () => toggleInList("states", s) });
 
+  for (const b of getList("policy"))
+    chips.push({ key: `p-${b}`, label: `Tests: ${POLICY_BUCKETS.find((g) => g.key === b)?.label ?? b}`, onRemove: () => toggleInList("policy", b) });
   for (const b of getList("balance"))
     chips.push({ key: `b-${b}`, label: GENDER_BALANCE.find((g) => g.key === b)?.label ?? b, onRemove: () => toggleInList("balance", b) });
   if (searchParams.get("fullTime") === "1") chips.push({ key: "fullTime", label: "Mostly full-time", onRemove: () => update({ fullTime: null }) });
   if (searchParams.get("fewLoans") === "1") chips.push({ key: "fewLoans", label: "Few students borrow", onRemove: () => update({ fewLoans: null }) });
   if (searchParams.get("pellGap") === "1") chips.push({ key: "pellGap", label: "Pell gap under 5 points", onRemove: () => update({ pellGap: null }) });
   if (searchParams.get("national") === "1") chips.push({ key: "national", label: "Draws nationally", onRemove: () => update({ national: null }) });
+  if (searchParams.get("aidForms") === "no-css") chips.push({ key: "aidForms", label: "No CSS Profile", onRemove: () => update({ aidForms: null }) });
+  if (searchParams.get("intlAid") === "1") chips.push({ key: "intlAid", label: "Aid for international students", onRemove: () => update({ intlAid: null }) });
   const field = searchParams.get("field");
   if (field && isMajorFamily(field)) {
     const min = Number(searchParams.get("fieldMin")) || 1;
     chips.push({ key: "field", label: `${majorFamilyName(field)} majors${min > 1 ? `, ${min}+ a year` : ""}`, onRemove: () => update({ field: null, fieldMin: null }) });
   }
-  for (const f of [...FACTOR_FILTERS, ...HOUSING_FILTERS]) if (searchParams.get(f.param) === "1") chips.push({ key: f.param, label: f.label, onRemove: () => update({ [f.param]: null }) });
+  for (const f of [...FACTOR_FILTERS, ...HOUSING_FILTERS, ...RESIDENCY_FILTERS]) if (searchParams.get(f.param) === "1") chips.push({ key: f.param, label: f.label, onRemove: () => update({ [f.param]: null }) });
+  if (searchParams.get(TRANSFER_FILTER.param) === "1") chips.push({ key: TRANSFER_FILTER.param, label: TRANSFER_FILTER.label, onRemove: () => update({ [TRANSFER_FILTER.param]: null }) });
+  for (const f of [...FACTOR_FILTERS, ...HOUSING_FILTERS, ...RESIDENCY_FILTERS, ...LOGISTICS_FILTERS]) if (searchParams.get(f.param) === "1") chips.push({ key: f.param, label: f.label, onRemove: () => update({ [f.param]: null }) });
 
   for (const g of getList("setting").filter(isSettingGroup))
     chips.push({ key: `set-${g}`, label: SETTING_GROUPS.find((x) => x.key === g)!.label, onRemove: () => toggleInList("setting", g) });
@@ -267,6 +278,7 @@ export function ActiveFilters() {
   if (minFullTimeFaculty > 0) chips.push({ key: "minFullTimeFaculty", label: `${minFullTimeFaculty}% or more full-time faculty`, onRemove: () => update({ minFullTimeFaculty: null }) });
   if (searchParams.get("ugResearch") === "1") chips.push({ key: "ugResearch", label: "Undergraduate research", onRemove: () => update({ ugResearch: null }) });
   if (searchParams.get("studyAbroad") === "1") chips.push({ key: "studyAbroad", label: "Study abroad", onRemove: () => update({ studyAbroad: null }) });
+  if (searchParams.get("honors") === "1") chips.push({ key: "honors", label: HONORS_FILTER_LABEL, onRemove: () => update({ honors: null }) });
   if (searchParams.get("opportunity") === "1") chips.push({ key: "opportunity", label: "Opportunity colleges", onRemove: () => update({ opportunity: null }) });
 
   for (const k of INDICATOR_KEYS) {

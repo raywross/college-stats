@@ -14,14 +14,16 @@ import { ThenAndNow, type ThenAndNowMetric } from "@/components/compare/ThenAndN
 import { HistorySourceNote } from "@/components/sources/HistorySourceNote";
 import type { FieldPath } from "@/lib/fields";
 import type { TermKey } from "@/lib/glossary";
-import { DEMOGRAPHIC_CATEGORIES, DOMAINS, METRICS, TEST_POLICY_LABELS, admitRatesBySex, satComposite, type Domain } from "@/lib/metrics";
+import { DEMOGRAPHIC_CATEGORIES, DOMAINS, METRICS, TEST_POLICY_LABELS, admitRatesBySex, satTotal, type Domain } from "@/lib/metrics";
+import { TEST_ROWS } from "@/lib/compare-tests";
 import { RADAR_AXES, keyDifferences, radarProfile, similarSchools } from "@/lib/insights";
 import { SLOT_COLORS, shortName } from "@/lib/brand";
 import { DESIGNATION_LABELS, RESEARCH_LABELS } from "@/lib/campus-profile";
 import { CALENDAR_LABELS, DIVISION_LABELS, ROTC_LABELS, divisionFilterOf } from "@/lib/campus-services";
 import { FORM_SHORT } from "@/lib/finances";
 import { compact, money, moneyCompact, num, pct, pctSmart } from "@/lib/format";
-import { gradRateCell } from "@/lib/graduation-groups";
+import { MIN_GROUP_COHORT, gradRateCell } from "@/lib/graduation-groups";
+import { compareAidRows } from "@/lib/cds/financial-aid-compare";
 import type { School } from "@/lib/types";
 import { CompareHeader } from "@/components/compare/CompareHeader";
 import { CompareMetric } from "@/components/compare/CompareMetric";
@@ -33,6 +35,14 @@ import { RadarChart } from "@/components/charts/RadarChart";
 import { RangeBar } from "@/components/charts/RangeBar";
 import { StackedBar } from "@/components/charts/StackedBar";
 import { InfoTip, Term } from "@/components/ui/info-tip";
+import { compareAdmitRates, compareYields } from "@/lib/cds/residency-display";
+import { ADMISSION_PROFILE_ROWS, admissionProfileCellField, c7FactorCell } from "@/lib/cds/compare-rows";
+import { compareClassesUnder20 } from "@/lib/cds/academics-display";
+import { compareTransferAdmitRate } from "@/lib/cds/transfer-display";
+import { compareDeadlines, compareGapYear } from "@/lib/cds/application-logistics-display";
+
+/** Compare rows from CDS C14–C18, hidden when no compared college has the data (cds-application-logistics.md). */
+const LOGISTICS_ROW_LABELS: ReadonlySet<string> = new Set(["Deadlines & deposit", "Gap year allowed"]);
 
 export const metadata: Metadata = { title: "Compare" };
 
@@ -80,10 +90,39 @@ const FACTOR_ROWS = (
       k === "legacy" ? "legacy-status" : "admission-factor",
       "admissions.factors",
       (s: School) => {
+        // The college's own C7 level where its CDS has one (cds-admissions.md), else the federal use.
+        const c7 = c7FactorCell(s, k);
+        if (c7) return c7;
         const use = s.admissions.factors?.[k];
         return use ? FACTOR_USE_LABELS[use] : null;
       },
     ] as const
+) satisfies readonly (readonly [string, TermKey, FieldPath, (s: School) => string | null])[];
+
+/** Finished within 4 and 5 years by aid group (`reported.outcomes.graduation`): "Not published" where the college's CDS doesn't say. */
+const ON_TIME_ROWS = (
+  [4, 5].flatMap((years) =>
+    (
+      [
+        ["Pell recipients", "pell"],
+        ["neither Pell nor subsidized loan", "no_pell_no_loan"],
+        ["all first-time full-time", "total"],
+      ] as const
+    ).map(
+      ([who, group]) =>
+        [
+          `Finished within ${years} years: ${who}`,
+          "on-time-graduation",
+          "reported.outcomes.graduation",
+          (s: School) => {
+            const g = s.reported?.outcomes?.graduation;
+            if (!g) return "Not published";
+            const v = (years === 4 ? g.within_4 : g.within_5)[group];
+            return v === null ? `Not shown: under ${MIN_GROUP_COHORT} students` : pct(v);
+          },
+        ] as const
+    )
+  )
 ) satisfies readonly (readonly [string, TermKey, FieldPath, (s: School) => string | null])[];
 
 /**
@@ -99,16 +138,25 @@ const TABLE_ROWS = (
       const r = admitRatesBySex(s);
       return r.men === null || r.women === null ? null : `${pctSmart(r.men)} / ${pctSmart(r.women)}`;
     }],
+    // CDS C1 by residency (specs/data-expansion/cds-residency-admissions.md): "Not published" without a grid.
+    ["Acceptance rate, in-state / other states / international", "admit-rate-by-residency", "derived.admit_rate_in_state", compareAdmitRates],
+    ["Yield, in-state / other states / international", "yield-by-residency", "derived.yield_in_state", compareYields],
     ["Applicants", "applicants", "admissions.applicants", (s: School) => opt(s.admissions.applicants, num)],
     ["Admitted", "admitted", "admissions.admitted", (s: School) => opt(s.admissions.admitted, num)],
     ["Enrolled", "enrolled", "admissions.enrolled", (s: School) => opt(s.admissions.enrolled, num)],
     ["Yield", "yield", "derived.yield", (s: School) => opt(METRICS.yield.get(s), (v) => pct(v))],
-    ["SAT middle 50%", "middle-50", "derived.sat_composite", (s: School) => satComposite(s)?.join("–") ?? null],
+    ["SAT middle 50%", "middle-50", "derived.sat_total", (s: School) => satTotal(s)?.join("–") ?? null],
     ["ACT middle 50%", "act", "admissions.act_composite_25_75", (s: School) => s.admissions.act_composite_25_75?.join("–") ?? null],
+    // CDS C9 (cds-test-scores-and-policy.md): counts and top bands, "–" where not reported; never ranked or in Key differences.
+    ...TEST_ROWS,
     ...FACTOR_ROWS,
+    ...ADMISSION_PROFILE_ROWS,
     ["Test policy", "test-policy", "admissions.test_policy", (s: School) => (s.admissions.test_policy ? TEST_POLICY_LABELS[s.admissions.test_policy] : null)],
     ["Application fee", "application-fee", "admissions.application_fee", (s: School) =>
       s.admissions.application_fee == null ? null : s.admissions.application_fee === 0 ? "None" : money(s.admissions.application_fee)],
+    // CDS C14–C18 (specs/data-expansion/cds-application-logistics.md): shown only when a compared college has the data.
+    ["Deadlines & deposit", "reply-by-date", "derived.application_deadlines", compareDeadlines],
+    ["Gap year allowed", "deferred-admission", "derived.gap_year_allowed", compareGapYear],
     ["Setting", "locale", "campus.setting", (s: School) => s.campus?.setting?.label ?? null],
     ["Carnegie class", "carnegie-classification", "campus.carnegie", (s: School) => s.campus?.carnegie?.ic ?? null],
     ["Research activity", "r1", "campus.carnegie", (s: School) =>
@@ -139,6 +187,8 @@ const TABLE_ROWS = (
     ["Undergrads", "undergrad-enrollment", "demographics.undergrad_enrollment", (s: School) => num(s.demographics.undergrad_enrollment)],
     ["Students per faculty member", "student-faculty-ratio", "academics.student_faculty_ratio", (s: School) =>
       s.academics?.student_faculty_ratio == null ? null : `${s.academics.student_faculty_ratio} to 1`],
+    // CDS I-3 (specs/data-expansion/cds-academics.md): class sections, not students; "–" without a record.
+    ["Classes under 20 students", "class-section", "derived.class_share_under_20", compareClassesUnder20],
     ["Full-time faculty share", "full-time-faculty", "academics.faculty.full_time_share", (s: School) =>
       s.academics?.faculty?.full_time_share == null ? null : pct(s.academics.faculty.full_time_share)],
     ["Average faculty salary", "nine-month-equated-salary", "academics.faculty", (s: School) =>
@@ -173,6 +223,8 @@ const TABLE_ROWS = (
     ["First-years from abroad", "in-state-student", "demographics.residence", (s: School) => opt(s.demographics.residence?.international ?? null, (v) => pct(v))],
     ["New transfer students this fall", "transfer-in", "demographics.transfer_in", (s: School) => opt(s.demographics.transfer_in?.count ?? null, (v) => v.toLocaleString("en-US"))],
     ["Transfers, share of new undergraduates", "transfer-in", "demographics.transfer_in", (s: School) => opt(s.demographics.transfer_in?.share_of_new ?? null, (v) => pct(v))],
+    // CDS D2 (specs/data-expansion/cds-transfer.md): blank, never 0, without a transfer funnel.
+    ["Transfer acceptance rate", "transfer-admission", "reported.transfer.admit_rate", compareTransferAdmitRate],
     ["Diversity index", "diversity-index", "derived.diversity_index", (s: School) => opt(METRICS.diversity.get(s), (v) => v.toFixed(2))],
     ["Average cost, all students (est.)", "average-cost", "cost.avg_paid_all", (s: School) => opt(s.cost?.avg_paid_all ?? null, money)],
     ["Aid generosity (grants ÷ full price)", "aid-generosity", "derived.aid_generosity", (s: School) => opt(METRICS.aidGenerosity.get(s), (v) => pct(v))],
@@ -194,6 +246,8 @@ const TABLE_ROWS = (
     ["Graduated in 6 years, neither Pell nor subsidized loan", "pell-graduation-gap", "outcomes.grad_rate_no_pell_no_loan", (s: School) =>
       gradRateCell(s.outcomes?.grad_rate_no_pell_no_loan, s.outcomes?.grad_cohorts?.no_pell_no_loan)],
     ["Pell graduation gap", "pell-graduation-gap", "derived.pell_grad_gap", (s: School) => opt(METRICS.pellGap.get(s), METRICS.pellGap.format)],
+    // From the college's CDS, same class as the 6-year rates above (specs/data-expansion/cds-student-body-and-outcomes.md); no "Highest" flags.
+    ...ON_TIME_ROWS,
     ["Graduated in 6 years, White students", "graduation-rate", "outcomes.grad_rate_by_race", (s: School) =>
       gradRateCell(s.outcomes?.grad_rate_by_race?.white, s.outcomes?.grad_cohorts_by_race?.white)],
     ["Graduated in 6 years, Asian students", "graduation-rate", "outcomes.grad_rate_by_race", (s: School) =>
@@ -247,6 +301,10 @@ export default async function ComparePage({
   if (schools.length === 0) return <EmptyState />;
 
   const diffs = keyDifferences(schools);
+  // CDS financial aid rows (specs/data-expansion/cds-financial-aid.md#compare), after the rest of "All the numbers".
+  const aidRows = compareAidRows(citeField("aid.cohort").year);
+  const tableRows = [...TABLE_ROWS, ...aidRows];
+  const tableFields: readonly FieldPath[] = [...new Set([...TABLE_FIELDS, ...aidRows.map((r) => r[2])])];
   const historyFiles = await getHistoryFiles();
 
   // "Your major" (specs/data-expansion/majors.md, field-of-study.md): broad fields (2-digit CIP families) that at
@@ -559,7 +617,7 @@ export default async function ComparePage({
                   </tr>
                 </thead>
                 <tbody className="divide-y tabular-nums">
-                  {TABLE_ROWS.map(([label, term, field, fmt]) => {
+                  {tableRows.filter(([label, , , fmt]) => !LOGISTICS_ROW_LABELS.has(label) || schools.some((s) => fmt(s) !== null)).map(([label, term, field, fmt]) => {
                     const rowYear = citeField(field).year;
                     return (
                       <tr key={label}>
@@ -569,7 +627,7 @@ export default async function ComparePage({
                           </span>
                         </td>
                         {schools.map((s) => {
-                          const cellYear = citeField(field, s).year;
+                          const cellYear = citeField(admissionProfileCellField(label, s) ?? field, s).year;
                           return (
                             <td key={s.unit_id} className="px-4 py-2.5 font-semibold">
                               {fmt(s) ?? <span className="font-normal text-muted-foreground">–</span>}
@@ -583,7 +641,7 @@ export default async function ComparePage({
                 </tbody>
               </table>
             </div>
-            <MultiSourceNote schools={schools} fields={TABLE_FIELDS} />
+            <MultiSourceNote schools={schools} fields={tableFields} />
             <BaselineNote />
           </section>
         </div>
@@ -596,7 +654,8 @@ export default async function ComparePage({
 
 async function ScoreCompare({ schools, test }: { schools: School[]; test: "sat" | "act" }) {
   const { metricMedian } = await getData();
-  const ranges = schools.map((s) => (test === "sat" ? satComposite(s) : s.admissions.act_composite_25_75));
+  // The SAT total each college shows (derived.sat_total: its own CDS total when reported, else the sum of sections).
+  const ranges = schools.map((s) => (test === "sat" ? satTotal(s) : s.admissions.act_composite_25_75));
   const present = ranges.filter((r): r is [number, number] => r !== null);
   const title = test === "sat" ? "SAT total" : "ACT composite";
   if (present.length === 0) {

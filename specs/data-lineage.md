@@ -25,7 +25,10 @@ regression test pins it).
    hand-imported CDS admissions figures in `data/schools.json` value by value (`lib/newest.ts#applyNewest`, run by
    `merge-reported` and `sync-data`), so the profile, Explore, Compare, ranks, medians, and Home all read the same
    `school.admissions`; years can differ between colleges, and each value's ⓘ says its own. Yield is never a
-   mixed-year ratio (`lib/derive.ts#sameClassYield`). History charts stay federal.
+   mixed-year ratio (`lib/derive.ts#sameClassYield`). History charts stay federal. The same rule covers the groups in
+   `lib/newest-groups.ts#NEWEST_GROUPS` (enrollment, race, retention, graduation by Pell group, from the CDS records),
+   which keep what they replaced in `demographics.federal` and `outcomes.federal` beside `admissions.federal`
+   ([cds-student-body-and-outcomes.md](data-expansion/cds-student-body-and-outcomes.md)).
 4. **Derived values cite their inputs.** A value calculated from non-default inputs (yield from CDS counts) is itself
    non-default.
 5. **Missing is `null`**, and has no lineage.
@@ -50,8 +53,13 @@ similar fields describe different cohorts; shown as "most recent release").
 Stored only where a value's source differs from its registry default. Keys are registered paths.
 ```ts
 { source: SourceKey; year?: string | null; url?: string; retrieved?: string;
-  method?: "reported" | "derived" | "extracted"; quote?: string; page?: number }
+  method?: "reported" | "derived" | "extracted"; quote?: string; page?: number;
+  edition?: string; cell?: string; field?: string }
 ```
+Round 3 (2026-10-03, [college-reported-round-3.md](college-reported-round-3.md#as-built)) added the last three for values
+read from a college's Common Data Set: `edition` ("2025–26", the document; the value's own `year` comes from its item
+group, e.g. "Fall 2025" or "2024–25 final"), and where the value sits when it isn't a PDF page: a workbook `cell`
+("CDS-C!AC17") or a fillable-PDF form `field`. `lineageFromItem` in `lib/cds-records.ts` builds these records.
 Missing parts fall back to the source's defaults in `meta.json`. The sync writes them for Scorecard admission-rate
 fallbacks and for every value an override sets ([data-sync.md](data-sync.md#overrides)).
 
@@ -65,8 +73,12 @@ Newest figures (`applyNewest`) write records too:
 - `admissions.federal`, only when the replaced funnel was a hand-imported CDS override: that override's record, so
   "replaces" names the CDS edition (none means IPEDS ADM, the field's default).
 
-The guard (`validateSchool`) requires every `admissions.*` value cited to `college-site` to be extracted or derived
-with quote, URL, date, and year, `admissions.federal` to exist beside it, `admissions.year` to equal the reported
+The guard (`validateSchool`) requires every stored `reported.*` value to cite `college-site` with method `extracted` or
+`derived` (a value computed from the college's printed figures; since round 3), each with quote, URL, date, and year;
+every `admissions.*` value cited to `college-site` to be extracted or derived
+with quote, URL, date, and year (for the test policy and SAT/ACT blocks, `admissions.federal_tests` keeps the replaced
+block and every non-null value inside a replaced block must be the college's: `lib/cds/test-blocks.ts#validateTests`,
+[cds-test-scores-and-policy.md](data-expansion/cds-test-scores-and-policy.md)), `admissions.federal` to exist beside it, `admissions.year` to equal the reported
 class's when applicants or admitted were replaced, any value that differs from `admissions.federal` to be cited to
 the college, and `reported.admissions.year` to be newer than `admissions.federal.year` (or `admissions.year` when
 nothing was replaced).
@@ -105,6 +117,7 @@ Each guard below was verified by breaking the rule on purpose and confirming the
 | `validateRegistry` source check | A dataset missing any `SourceKey` in `meta.sources` (the type is `Partial`, so this check is what requires them) | Sync, `npm run check:lineage`, `npm test` |
 | `DatasetMeta.sources` is `Partial` | Code that reads a source without handling "not published yet" (use `sourceInfo()`) | `tsc` |
 | `lineageForPatch` | Overrides with no source, the retired `provenance` key, unregistered fields | Sync, `npm test` |
+| `validateCdsRecords` (`lib/cds-records.ts`) | CDS records (`data/cds-records/`): a passed value without a page and line, cell, or field; an owned item without a quote (≤ 160 characters); a document not in `data/college-docs.json` (or listed for another college); an item group with a passed value but no year; an unknown schema or reader version; an unknown code or status; a failed item that doesn't say why | `npm run check:lineage`, `npm test` (`tests/cds-records.test.mts`, each rule broken on purpose) |
 | `tests/citation-guards.test.mts` | Hard-coded data years in `app/` or `components/` ("Fall 2024", "2023–24"); reading `meta.sources` / `vintages` / `.edition` directly outside `app/data/page.tsx`; any return of `provenance` / `topics=` | `npm test` |
 | `tests/lineage.test.mts` | Resolution behavior: defaults, CDS vs federal fields at a CDS school, derived inputs and non-default propagation, de-duplication; every field still cites when any one source is missing from meta | `npm test` |
 | `npm run verify` | typecheck + lint + tests + lineage check | Locally before committing; CI (`.github/workflows/verify.yml`, also runs `next build`) |

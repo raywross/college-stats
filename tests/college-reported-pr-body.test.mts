@@ -10,6 +10,7 @@ import { join } from "node:path";
 import type { ReportedFile, ReviewQueueFile, RunSummary } from "../lib/reported.ts";
 import { entriesForRun, itemsForRun, prBody, releaseNote, releaseNoteSlug, totalCost } from "../scripts/college-reported-pr-body.mts";
 import { parseReleaseNote } from "../lib/release-notes.ts";
+import { emptySummaryV3 } from "../scripts/lib/college-reported/models.mts";
 
 const FIXTURES = join(import.meta.dirname, "fixtures", "college-reported");
 const summary: RunSummary = JSON.parse(readFileSync(join(FIXTURES, "run-summary.json"), "utf8"));
@@ -125,4 +126,28 @@ test("a run that stopped early says so, with how far it got and why, in the PR b
   assert.match(prBody(stopped, queue), /Stopped early\*\* after 31 of 50 colleges: the Anthropic account's spend limit/);
   assert.match(releaseNote(stopped, queue, 48, "2026-10-02"), /Stopped early after 31 of 50 colleges/);
   assert.doesNotMatch(prBody(summary, queue), /Stopped early/, "a finished run has no notice");
+});
+
+test("a round-3 summary adds the blocked colleges, the batches (open ones say so), the projection, and documents by type", () => {
+  const v3 = emptySummaryV3(summary.run, summary.started);
+  v3.blocked_colleges = [{ unit_id: "234076", name: "University of Virginia", hosts: ["ira.virginia.edu"] }];
+  v3.batches = [
+    { id: "msgbatch_001", requests: 120, submitted: "2026-10-06T10:00:00Z", ended: "2026-10-06T10:41:00Z", succeeded: 119, errored: 1, expired: 0, reserved_usd: 6.1, cost_usd: 2.34 },
+    { id: "msgbatch_002", requests: 1, submitted: "2026-10-06T10:42:00Z", ended: null, succeeded: 0, errored: 0, expired: 0, reserved_usd: 0.07, cost_usd: 0 },
+  ];
+  v3.open_batches = 1;
+  v3.projection = { full_run_usd: 61.5, run_usd: 3.25, basis: "60 pdf-flat × $0.05" };
+  v3.documents["pdf-flat"].fetched = 60;
+  v3.documents["pdf-flat"].model_calls = 120;
+  const body = prBody(v3, queue);
+  assert.match(body, /## Blocked colleges \(for the owner\)/);
+  assert.match(body, /University of Virginia \(234076\) \| ira\.virginia\.edu/);
+  assert.match(body, /npm run archive-doc/);
+  assert.match(body, /1 batch is still open/);
+  assert.match(body, /\| msgbatch_002 \| 1 \| 2026-10-06T10:42:00Z \| open \|/);
+  assert.match(body, /This run: \$3\.25; the full run: \$61\.50/);
+  assert.match(body, /\| pdf-flat \| 60 \| 0 \| 0 \| 120 \|/);
+  assert.match(body, /CIRCUIT_BREAKER_V3/);
+  // A round-2 summary has none of it.
+  assert.doesNotMatch(prBody(summary, queue), /Blocked colleges|## Batches|## Projection/);
 });

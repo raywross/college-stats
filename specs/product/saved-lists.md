@@ -41,10 +41,14 @@ list_notes (item_id, author_id, body, private bool, created)
   1 Likely: counselors suggest 2–3 Likely"), each row with crest, admit rate, the student's standing
   ([chances-and-fit.md](chances-and-fit.md)) when the profile has numbers, average cost, the chosen round and its
   deadline, status, and notes count. Drag to re-sort; category chips to move.
-- **Deadlines** come from the college's own data when the site has it (CDS C21/C22 deadlines via
+- **Deadlines** come from the college's own data when the site has it: the regular round's closing date (and priority
+  date, when one exists) from CDS C14 via [cds-application-logistics.md](../data-expansion/cds-application-logistics.md)
+  (`reported.admissions_logistics`); early-round deadlines from C21/C22 via
   [cds-admissions.md](../data-expansion/cds-admissions.md); application fee from
-  [housing-and-policies.md](../data-expansion/housing-and-policies.md)); otherwise the student types one. A
-  "Next 30 days" strip at the top of `/me`.
+  [housing-and-policies.md](../data-expansion/housing-and-policies.md). Otherwise the student types one. A
+  "Next 30 days" strip at the top of `/me` shows whichever round's deadline is still ahead for an applying or
+  considering student, and the housing deposit's due date (C17) once the status is `admitted`. These are display
+  sources, not new list columns.
 - **Compare all** (up to 4 free, 10 with Plus: [comparison.md](../comparison.md) today caps at 4 for layout reasons,
   so the 10-college view is the table view only).
 - **Guardian view:** the same page read-only unless `can_edit`, with "Added by" attribution and private notes hidden.

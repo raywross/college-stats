@@ -11,6 +11,11 @@ export interface GroupDotRow {
   note?: string;
   /** The comparison group: drawn hollow, so the eye reads the others against it. */
   reference?: boolean;
+  /**
+   * A second, lighter mark on the same scale for the same students (specs/data-expansion/cds-student-body-and-outcomes.md:
+   * "within 4 years" beside the 6-year dot), printed beside the main value with `secondaryLabel`.
+   */
+  secondary?: number | null;
 }
 
 /**
@@ -24,14 +29,17 @@ export function GroupDotPlot({
   overall,
   color,
   label,
+  secondaryLabel = "within 4 years",
 }: {
   rows: GroupDotRow[];
   overall: { label: string; value: number } | null;
   color: string;
   /** Accessible name for the figure. */
   label: string;
+  /** How the rows' `secondary` values read beside the main value. */
+  secondaryLabel?: string;
 }) {
-  const vals = [...rows.map((r) => r.value), overall?.value ?? null].filter((v): v is number => v !== null);
+  const vals = [...rows.map((r) => r.value), ...rows.map((r) => (r.value !== null ? (r.secondary ?? null) : null)), overall?.value ?? null].filter((v): v is number => v !== null);
   if (!vals.length) return null;
   const lo = Math.max(0, Math.floor((Math.min(...vals) - 0.05) * 10) / 10);
   const hi = 1;
@@ -55,6 +63,13 @@ export function GroupDotPlot({
                 {overall && (
                   <div className="absolute inset-y-[-6px] border-l border-dashed border-foreground/40" style={{ left: pos(overall.value) }} aria-hidden />
                 )}
+                {r.value !== null && r.secondary != null && (
+                  <span
+                    className="absolute top-1/2 size-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full opacity-40"
+                    style={{ left: pos(r.secondary), backgroundColor: color }}
+                    aria-hidden
+                  />
+                )}
                 {r.value !== null &&
                   (r.reference ? (
                     <span
@@ -72,6 +87,7 @@ export function GroupDotPlot({
                 {r.value !== null ? (
                   <>
                     <b className="text-foreground">{pct(r.value)}</b>
+                    {r.secondary != null ? ` · ${pct(r.secondary)} ${secondaryLabel}` : ""}
                     {r.note ? ` · ${r.note}` : ""}
                   </>
                 ) : r.cohort !== null && r.cohort > 0 && r.cohort < MIN_GROUP_COHORT ? (

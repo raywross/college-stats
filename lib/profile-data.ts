@@ -6,7 +6,7 @@ import type { FinanceForm, MajorShare, School, SchoolFinances } from "./types";
 import type { SchoolDetail } from "./detail";
 import type { SchoolHistory } from "./history";
 import type { HistoryFiles } from "./supabase";
-import { diversityIndex, hasAdmissionCounts, hasTestScores, paybackYears, satComposite, satMid, yieldRate } from "./metrics";
+import { diversityIndex, hasAdmissionCounts, hasTestScores, paybackYears, satMid, satTotal, yieldRate } from "./metrics";
 import { hasGradByGroup } from "./graduation-groups";
 import { isShown } from "./outcome-measures";
 import { INSTRUCTION_METRIC, endowmentMetricFor } from "./finances";
@@ -134,7 +134,8 @@ export const loadProfile = cache(async (id: string): Promise<Profile | null> => 
     hasOutcomes,
     topics: PROFILE_TOPICS.filter((t) => has[t.key]).map((t) => t.key),
     rate,
-    sat: satComposite(school),
+    // The SAT total the college shows (derived.sat_total: its own CDS total when reported, else the sum; never ranked).
+    sat: satTotal(school),
     yld: yieldRate(school),
     div: diversityIndex(school),
     avgCost,

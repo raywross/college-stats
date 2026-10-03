@@ -30,14 +30,28 @@ export async function GraduationByGroup({ school }: { school: School }) {
   const neither = o.grad_rate_no_pell_no_loan ?? null;
   const pellCited = citeField("outcomes.grad_rate_pell", school);
   const raceCited = citeField("outcomes.grad_rate_by_race", school);
+  // 4-year shares from the college's CDS (specs/data-expansion/cds-student-body-and-outcomes.md), stored only beside
+  // six-year rates of the same class. The race plot stays on Scorecard's class, so its overall line is the federal one.
+  const within4 = school.reported?.outcomes?.graduation?.within_4 ?? null;
+  const fedGrad = o.federal?.graduation ?? null;
+  const fedGradCited = citeField("outcomes.federal.graduation", school);
+  const onTimeCited = citeField("reported.outcomes.graduation", school);
   const vsNeither = (v: number | null | undefined) => (v != null && neither !== null ? `${gapPhrase(v, neither)} students with neither` : undefined);
 
   const aidRows: GroupDotRow[] = [
-    { key: "pell", label: AID_GROUP_LABELS.pell, value: o.grad_rate_pell ?? null, cohort: o.grad_cohorts?.pell ?? null, note: vsNeither(o.grad_rate_pell) },
-    { key: "loan", label: AID_GROUP_LABELS.loan_no_pell, value: o.grad_rate_loan_no_pell ?? null, cohort: o.grad_cohorts?.loan_no_pell ?? null, note: vsNeither(o.grad_rate_loan_no_pell) },
-    { key: "neither", label: AID_GROUP_LABELS.no_pell_no_loan, value: neither, cohort: o.grad_cohorts?.no_pell_no_loan ?? null, reference: true, note: neither !== null ? "comparison group" : undefined },
+    { key: "pell", label: AID_GROUP_LABELS.pell, value: o.grad_rate_pell ?? null, cohort: o.grad_cohorts?.pell ?? null, note: vsNeither(o.grad_rate_pell), secondary: within4?.pell },
+    { key: "loan", label: AID_GROUP_LABELS.loan_no_pell, value: o.grad_rate_loan_no_pell ?? null, cohort: o.grad_cohorts?.loan_no_pell ?? null, note: vsNeither(o.grad_rate_loan_no_pell), secondary: within4?.loan_no_pell },
+    { key: "neither", label: AID_GROUP_LABELS.no_pell_no_loan, value: neither, cohort: o.grad_cohorts?.no_pell_no_loan ?? null, reference: true, note: neither !== null ? "comparison group" : undefined, secondary: within4?.no_pell_no_loan },
   ];
   const overall = o.grad_rate_ftft ?? null;
+  const raceOverall = fedGrad ? fedGrad.grad_rate_ftft : overall;
+  const raceOverallYear = fedGrad ? fedGradCited.year : pellCited.year;
+  // "Of 100 Pell Grant recipients who entered in fall 2019, 78 finished within 4 years and 89 within 6."
+  const enteredIn = onTimeCited.year?.replace(/^Entered /, "").toLowerCase() ?? null;
+  const onTimeSentence =
+    within4?.pell != null && o.grad_rate_pell != null && enteredIn
+      ? `Of 100 Pell Grant recipients who entered in ${enteredIn}, ${Math.round(within4.pell * 100)} finished within 4 years and ${Math.round(o.grad_rate_pell * 100)} within 6.`
+      : null;
   const raceRows: GroupDotRow[] = RACE_GROUPS.filter((g) => (o.grad_cohorts_by_race?.[g] ?? 0) > 0).map((g) => {
     const v = o.grad_rate_by_race?.[g] ?? null;
     return { key: g, label: RACE_GROUP_LABELS[g], value: v, cohort: o.grad_cohorts_by_race?.[g] ?? null, note: v !== null && overall !== null ? `${gapPhrase(v, overall)} all students` : undefined };
@@ -55,7 +69,7 @@ export async function GraduationByGroup({ school }: { school: School }) {
             Do lower-income students finish? <InfoTip term="pell-graduation-gap" cited={pellCited} />
           </h3>
           <p className="mb-4 text-xs text-muted-foreground">
-            {sentence ? `${sentence} ` : ""}
+            {onTimeSentence ? `${onTimeSentence} ` : sentence ? `${sentence} ` : ""}
             First-time, full-time students who finished within 6 years
             {pellCited.year ? `; ${pellCited.year.toLowerCase()}` : ""}.
           </p>
@@ -65,6 +79,14 @@ export async function GraduationByGroup({ school }: { school: School }) {
             overall={overall !== null ? { label: "All students in this class", value: overall } : null}
             color={color}
           />
+          {within4 && (
+            <p className="mt-2 flex items-center gap-1.5 text-[11px] text-muted-foreground">
+              <span className="size-2.5 rounded-full opacity-40" style={{ backgroundColor: color }} aria-hidden />
+              <MetricLabel term="on-time-graduation" cited={onTimeCited}>
+                Within 4 years
+              </MetricLabel>
+            </p>
+          )}
           {implausible && (
             <p className="mt-3 text-[11px] text-muted-foreground">
               These groups&apos; rates are more than {Math.round(MAX_PLAUSIBLE_GAP * 100)} points apart, which usually means the college sorted
@@ -87,7 +109,7 @@ export async function GraduationByGroup({ school }: { school: School }) {
           <GroupDotPlot
             label="Graduation rate by race and ethnicity"
             rows={raceRows}
-            overall={overall !== null ? { label: `All students (IPEDS${pellCited.year ? `, ${pellCited.year.toLowerCase()}` : ""})`, value: overall } : null}
+            overall={raceOverall !== null ? { label: `All students (IPEDS${raceOverallYear ? `, ${raceOverallYear.toLowerCase()}` : ""})`, value: raceOverall } : null}
             color={color}
           />
         </div>

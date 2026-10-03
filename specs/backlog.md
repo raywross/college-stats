@@ -20,7 +20,8 @@ published at `/roadmap` ([roadmap.md](roadmap.md)): add each new one to `lib/roa
     [trend-indicators.md](trend-indicators.md#when-theres-no-indicator)).
   - [ ] Publish after each history change (`npm run publish-data`); pages that were prerendered pick it up at their
     daily regeneration unless `REVALIDATE_URL`/`REVALIDATE_SECRET` are set locally.
-  - [ ] Explore test-policy filter (required / test-optional / test-blind), so Home fact 3 can link to it.
+  - [x] Explore test-policy filter (required / test-optional / test-blind), so Home fact 3 can link to it: built as
+    `policy=required,optional,blind` ([cds-test-scores-and-policy.md](data-expansion/cds-test-scores-and-policy.md)).
   - [ ] Review the ~50 soft median-debt differences (Scorecard `latest` vs its year fields) that sync-history lists.
   - [ ] Review the ~890 year-over-year jumps over 3× that `sync-history` lists (mostly small colleges' reporting
     errors, kept as reported). Decide whether to drop clear typos the way carried-forward repeats are dropped, or to

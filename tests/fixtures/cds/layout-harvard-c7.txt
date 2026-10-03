@@ -1,0 +1,17 @@
+# Harvard C7 grid, page 8. Cut from the 2026-10-03 CDS inventory's layout text of Harvard's 2025-26 CDS PDF (rows by y, @x positions).
+=== Page 8 ===
+@78 other (explain):
+@53 C7 | @78 Relative importance of each of the following academic and nonacademic factors in your first-time, first-
+@78 Academic | @255 Very Important | @348 Important | @425 Considered | @497 Not Considered
+@78 Rigor of secondary school record | @450 X
+@78 Class rank | @532 X
+@78 Academic GPA | @450 X
+@78 Standardized test scores | @450 X
+@78 Application Essay | @450 X
+@78 Recommendation(s) | @450 X
+@78 Nonacademic | @255 Very Important | @348 Important | @425 Considered | @497 Not Considered
+@78 Interview | @450 X
+@78 Extracurricular activities | @450 X
+@78 Talent/ability | @450 X
+@78 Character/personal qualities | @450 X
+@78 First generation | @450 X

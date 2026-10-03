@@ -3,8 +3,12 @@
  * sync script, the checker, tests, and the app all resolve citations the same way.
  * See specs/data-lineage.md.
  */
-import type { DatasetMeta, FederalAdmissions, LineageRecord, ReportedSourceKind, School, SourceInfo, SourceKey } from "./types";
+import type { AdmissionFactor, DatasetMeta, FactorUse, FederalAdmissions, LineageRecord, ReportedSourceKind, School, SourceInfo, SourceKey } from "./types";
+import { validateAdmissionProfile } from "./cds/admissions.ts";
 import { FIELDS, METADATA_KEYS, PER_DOCUMENT_SOURCES, REPORTED_PATHS, isFieldPath, registeredPathFor, type FieldPath, type VintageKey } from "./fields.ts";
+import { NEWEST_TARGETS, newestGroupCitation, validateNewestGroups } from "./newest-groups.ts";
+import { replacedTest, satTotalInputs, validateTests } from "./cds/test-blocks.ts";
+import { financialAidProblems } from "./cds/financial-aid.ts";
 
 /** A source as cited for one value: plain data, safe to pass to client components. */
 export interface CitedSource {
@@ -33,9 +37,22 @@ export interface Cited extends CitedSource {
    * For a funnel value that a newer college-reported class replaced: the previous (federal or hand-imported CDS)
    * value and the year it describes, from `admissions.federal`, so the tooltip can say "Federal data, fall 2024: 5.8%".
    */
-  replaces?: { value: number | null; year: string | null };
+  replaces?: {
+    value: number | Record<string, number> | null;
+    year: string | null;
+    /** Whose figure it was, when not the federal one: "Cornell University Common Data Set" (`aid.cds_previous`). */
+    label?: string;
+    /** The replaced value as text, when it isn't a number (a test policy). */
+    text?: string;
+    /** The replaced value already formatted (e.g. a share as "77%"), when the path alone can't say how. */
+    display?: string;
+  };
   /** For a value reported by the college itself (source "college-site"): which kind of document supplied it. */
   sourceKind?: ReportedSourceKind;
+  /** For a value from a college's Common Data Set record: its edition, "2025–26" (the year is the value's own). */
+  cdsEdition?: string;
+  /** The same document named in full, "Common Data Set 2025–26", for lines that spell out the document. */
+  document?: string;
 }
 
 /** The funnel paths `applyNewest` may replace, keyed to their `admissions.federal` counterparts. */
@@ -103,7 +120,8 @@ function sourceFor(path: FieldPath, school: School | undefined, meta: DatasetMet
     // The college's own page or file; the record names the document (validateSchool requires url, year, quote).
     return {
       key,
-      label: `${school.name} (${rec?.year ?? "college-reported"})`,
+      // A CDS record value (round 3) names its document's edition; the year after it is the value's own.
+      label: rec?.edition ? `${school.name} Common Data Set ${rec.edition}` : `${school.name} (${rec?.year ?? "college-reported"})`,
       publisher: school.name,
       year: rec?.year ?? null,
       url: rec?.url ?? info.url,
@@ -138,6 +156,8 @@ const sourceId = (s: CitedSource) => `${s.key}|${s.url}|${s.year ?? ""}`;
 function underlyingSources(path: FieldPath, school: School | undefined, meta: DatasetMeta, seen = new Set<string>()): CitedSource[] {
   const def = FIELDS[path] as (typeof FIELDS)[FieldPath];
   const overridden = !!school?.lineage?.[path];
+  // A college-reported field this college has no value for (no lineage record) has nothing to cite.
+  if (school && !overridden && def.source === "college-site" && !("derived" in def && def.derived)) return [];
   if (!("derived" in def) || !def.derived || overridden || seen.has(path)) return [sourceFor(path, school, meta)];
   seen.add(path);
   const out = new Map<string, CitedSource>();
@@ -154,6 +174,7 @@ function underlyingSources(path: FieldPath, school: School | undefined, meta: Da
  * `admissions.federal`; every other derived value uses all its registered inputs.
  */
 function inputsUsed(path: FieldPath, inputs: readonly string[], school: School | undefined): readonly string[] {
+  if (path === "derived.sat_total") return satTotalInputs(school);
   if (path !== "derived.yield") return inputs;
   const sameClass = school?.lineage?.["admissions.enrolled"]?.year === school?.lineage?.["admissions.admitted"]?.year;
   return sameClass || !school?.admissions?.federal ? inputs.filter((i) => i !== "admissions.federal") : ["admissions.federal"];
@@ -185,8 +206,23 @@ export function lineageFor(path: FieldPath, school: School | undefined, meta: Da
     ...(rec?.quote ? { quote: rec.quote } : {}),
     ...(rec?.page !== undefined ? { page: rec.page } : {}),
     ...replacedBy(path, school, meta),
-    ...(rec?.source === "college-site" && school?.reported?.admissions ? { sourceKind: school.reported.admissions.source_kind } : {}),
+    // A round-3 record value names its CDS edition (its year is the item's own, e.g. next year's price); the
+    // admissions block's document kind applies only to values without one.
+    ...(rec?.source === "college-site" && rec.edition
+      ? { sourceKind: "cds" as const, cdsEdition: rec.edition, document: `Common Data Set ${rec.edition}` }
+      : rec?.source === "college-site" && school?.reported?.admissions
+        ? { sourceKind: school.reported.admissions.source_kind }
+        : {}),
+    ...newestGroupCitation(path, school),
+    ...replacedFactor(path, school, meta),
+    ...replacedTestBy(path, school, meta),
   };
+}
+
+/** The previous test value a newer CDS block replaced (`admissions.federal_tests`; lib/cds/test-blocks.ts). */
+function replacedTestBy(path: FieldPath, school: School | undefined, meta: DatasetMeta): Pick<Cited, "replaces"> {
+  const r = replacedTest(path, school);
+  return r ? { replaces: { value: r.value, year: r.year ?? meta.vintages["ipeds-adm"] ?? null, text: r.text } } : {};
 }
 
 /** The federal value a college-reported funnel value replaced, when the school keeps one (`admissions.federal`). */
@@ -198,6 +234,16 @@ function replacedBy(path: FieldPath, school: School | undefined, meta: DatasetMe
   const year = school?.lineage?.["admissions.federal"]?.year ?? (federal.year !== null ? `Fall ${federal.year}` : (meta.vintages["ipeds-adm"] ?? null));
   return { replaces: { value: federal[key], year } };
 }
+
+/** A federal factor answer a newer CDS C7 replaced (`admissions.federal_factors`; lib/cds/admissions.ts). */
+function replacedFactor(path: FieldPath, school: School | undefined, meta: DatasetMeta): Pick<Cited, "replaces"> | Record<string, never> {
+  if (!path.startsWith("admissions.factors.") || school?.lineage?.[path]?.source !== "college-site") return {};
+  const key = path.slice("admissions.factors.".length) as AdmissionFactor;
+  const federal = school.admissions.federal_factors;
+  if (!federal || !(key in federal)) return {};
+  return { replaces: { value: null, label: FACTOR_USE_WORDS[federal[key] ?? "not_considered"], year: meta.vintages["ipeds-adm"] ?? null } };
+}
+const FACTOR_USE_WORDS: Record<FactorUse, string> = { required: "required", considered: "considered", not_considered: "not considered" };
 
 /** Distinct sources behind a set of values (section footnotes), in first-seen order. */
 export function sourcesForFields(paths: readonly FieldPath[], school: School | undefined, meta: DatasetMeta): CitedSource[] {
@@ -227,6 +273,7 @@ export const VINTAGE_KEYS: readonly VintageKey[] = [
   "scorecard-enrollment",
   "scorecard-age",
   "scorecard-cost",
+  "scorecard-retention",
   "scorecard-latest",
   "scorecard-fos",
 ];
@@ -316,21 +363,30 @@ export function validateSchool(school: School, meta: DatasetMeta): string[] {
     if (rec.method === "extracted" && (!rec.quote || !rec.url || !rec.retrieved || !rec.year)) {
       errors.push(`${where}: ${path} is extracted but lacks quote, url, retrieved, or year`);
     }
+    // A value computed from a college's printed figures (a share from two CDS counts) cites them the same way.
+    if (rec.source === "college-site" && rec.method === "derived" && (!rec.quote || !rec.url || !rec.retrieved || !rec.year)) {
+      errors.push(`${where}: ${path} is derived from the college's document but lacks quote, url, retrieved, or year`);
+    }
   }
   if (school.cds && !Object.values(school.lineage ?? {}).some((r) => r?.source === "cds")) {
     errors.push(`${where}: has a "cds" record but no field cites it`);
   }
   // College-reported values (specs/college-reported-data.md): every stored one names its document, with a quote,
-  // and describes a year newer than the federal admissions year. Null is "not published", and has no lineage.
+  // and describes a year newer than the federal admissions year. Null is "not published", and has no lineage. A value
+  // computed from printed figures (round 3: a CDS share from its counts) may be "derived", with the same citation.
   for (const path of REPORTED_PATHS) {
     const value = valueAt(school, path);
     if (value === undefined || value === null) continue;
     const rec = school.lineage?.[path];
     if (!rec) errors.push(`${where}: ${path} is stored without a lineage record`);
     else if (rec.source !== "college-site") errors.push(`${where}: ${path} must cite source "college-site", not "${rec.source}"`);
-    else if (rec.method !== "extracted") errors.push(`${where}: ${path} must have method "extracted"`);
+    else if (rec.method !== "extracted" && rec.method !== "derived") errors.push(`${where}: ${path} must have method "extracted" or "derived"`);
   }
   errors.push(...validateNewest(school, where));
+  errors.push(...validateNewestGroups(school, where, meta));
+  errors.push(...validateAdmissionProfile(school, where));
+  errors.push(...validateTests(school, where));
+  errors.push(...financialAidProblems(school));
   return errors;
 }
 
@@ -403,7 +459,23 @@ export function lineageForPatch(id: string, patch: Record<string, unknown>): Par
   for (const leaf of leafPaths(data)) {
     const p = registeredPathFor(leaf);
     if (!p) throw new Error(`overrides.json ${id}: "${leaf}" isn't registered in lib/fields.ts`);
+    // Rule 9 (specs/data-expansion/cds-student-body-and-outcomes.md): a newest group's paths come from the CDS records.
+    if (NEWEST_TARGETS.has(p)) throw new Error(`overrides.json ${id}: "${p}" comes from the college's CDS record (data/cds-records/, lib/newest-groups.ts), not an override`);
     out[p] = rec;
   }
   return { ...out, ...((patch.lineage as Partial<Record<FieldPath, LineageRecord>>) ?? {}) };
+}
+
+/** Every override in data/overrides.json that `lineageForPatch` refuses (`npm run check:lineage`). */
+export function validateOverrides(overrides: Record<string, unknown>): string[] {
+  const errors: string[] = [];
+  for (const [id, patch] of Object.entries(overrides)) {
+    if (id.startsWith("_")) continue;
+    try {
+      lineageForPatch(id, patch as Record<string, unknown>);
+    } catch (e) {
+      errors.push(e instanceof Error ? e.message : String(e));
+    }
+  }
+  return errors;
 }

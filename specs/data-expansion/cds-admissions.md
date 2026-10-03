@@ -1,6 +1,6 @@
 # CDS Admissions Profile: GPA, Factors, Early Rounds, Wait List
 
-> Status: **planned** (2026-10-03). Wave 4. Built from the per-document records of
+> Status: **built** (2026-10-03; display side, from committed records; see [As built](#as-built)). Wave 4. Built from the per-document records of
 > [college-reported-round-3.md](../college-reported-round-3.md) (`data/cds-records/<unit_id>.json`), which must capture
 > every item in [Items the one run must capture](#items-the-one-run-must-capture) on its first visit to each document,
 > even the ones shown later or never. Upgraded from the 2026-09-28 skeleton (Vanderbilt 2024–25 and Cornell 2025–26
@@ -596,6 +596,77 @@ For the coordinator; this spec doesn't edit them.
 If NCES publishes the ACTS supplement ([data-page.md](../data-page.md#watching-acts)) at the institution level, it may
 give GPA for every college. It would then be the baseline, and a newer CDS value would replace it under the newest rule
 when the definitions match.
+
+## As built
+Built 2026-10-03 on `feature/cds3-admissions` (into `feature/cds-round-3`). The display side consumes
+`data/cds-records/<unit_id>.json` only; extraction and per-item checks (the C7 layout pass, Howard's form fields, the
+`<tr>` fix, `lib/cds-checks.ts`) belong to round 3's readers and checks tracks.
+
+**Module.** `lib/cds/admissions.ts` (the spec's `lib/admission-profile.ts`; wave-4 modules live in `lib/cds/<slug>.ts`).
+Pure; Node tests and the client `GpaChecker` load it.
+- `buildAdmissionProfile(record, table)` / `withAdmissionProfile(school, record, table)`: each block from the newest
+  document where its builder succeeds, at most `MAX_EDITIONS_BACK` = 2 editions behind the college's newest (C11 and
+  C12 always from one document). The block checks run here on passed items: C11 column sums (100 ± 1, per column),
+  all-zero column = blank, the "all" band between the other two; C12 0 < x ≤ 5, `weighted` above 4.0; C10 order,
+  top + bottom half = 100 ± 1, never without C.1006; C7 ≥ 9 marked rows and not all one level; C2 nesting, against
+  the same document's C.116/C.117, policy No with counts, all-zero counts = blank; C21 counts ≤ C1, offered No (or
+  blank) with counts or dates fails, dates out of cycle order dropped; C22 offered No with dates or restrictive fails.
+- **Cornell's C21.** When any C21 item carries `form` or a `form-vs-code` failure, the code table is distrusted for
+  all of C21: counts and the offered flag come from the visible form's values (cited to the form's cell, quoted
+  with the template's wording), and the code-table dates are dropped (Cornell's "notification" cells hold its closing
+  date). Without a form value, a code-table "admitted" above C1's admits is never published.
+- **Shape changes from [Store](#shape).** A block (or ED's `first`/`other`) with nothing published is **absent**
+  instead of `null`, so every stored leaf is a registered, cited path; numbers inside a block stay `null` when
+  missing. Dates are `MonthDayValue` (`{ month, day }`). The registry has one path per stored leaf (6 GPA, 6 class
+  rank, 18 factors, 4 wait list, 7 ED: `offered`, `first.closing`, `first.notification`, `other.closing`,
+  `other.notification`, `applicants`, `admitted`; 4 EA), not the `.dates` rows above, so each value's ⓘ quotes its
+  own cell (a date's record quotes both its month and day cells).
+- **Lineage.** `lineageFromItem` with the template's year rule: "Fall 2025" for C2, C7, C10–C12 and C21 counts,
+  "2025–26" for C21/C22 flags and dates; `edition` on every record. `validateAdmissionProfile` (called from
+  `validateSchool`) requires the edition and that year on every stored leaf. `lineageFor` gives these values
+  `sourceKind: "cds"` and `document: "Common Data Set 2025–26"`, so the ⓘ says "Reported by William & Mary in its
+  Common Data Set 2025–26 (Fall 2025)" with the quote, link, and retrieval date.
+- **Six shared factors.** `applyNewestFactors` / `restoreFederalFactors`, one line each at the top of
+  `applyNewest` / `restoreFederal`. The federal factors' year is the IPEDS ADM release (`applyNewest(school,
+  { factorsYear })`, passed by `mergeReported` from `meta.vintages["ipeds-adm"]` or sync-data's ADM year); a flipped
+  factor is cited at `admissions.factors.<factor>` (six new registry paths) and the federal answer kept in
+  `admissions.federal_factors`, which the ⓘ shows ("Federal data, fall 2024: considered"). History's last-point check
+  compares factors against `federal_factors`. Live: William & Mary legacy considered → not considered; Illinois GPA
+  not considered → considered. The review notes ("changed since federal" / "contradicts federal") are not built:
+  they belong to the checks track's review queue.
+- **Merge.** `mergeReported(schools, reported, { records, table, factorsYear })` (`lib/reported-merge.ts`) attaches
+  the profile after C1 for every college with a record, then `applyNewest`. `npm run merge-reported` and
+  `npm run sync-data` read `data/cds-records/` and `CDS_TEMPLATE`. `data/schools.json` carries the profiles of
+  Vanderbilt, Cornell, William & Mary (GPA 4.34, weighted), and Illinois.
+
+**Display.**
+- Admissions page (`app/schools/[id]/admissions/page.tsx`): `WaitListLine` after the funnel and yield; `EarlyRounds`
+  (`#early`; ED rate with the same document's overall rate via `sameDocumentRate`, which needs the funnel's lineage
+  URL to be the CDS's; dates; the ED caveat; EA, restrictive); `AdmissionFactors` shows the four-level grid
+  (`FourLevelGrid`, Academic / Personal, words on phones, each row's ⓘ quoting its cell) when C7's class is at least as
+  new as the IPEDS year, plus the "From the federal survey" line; `GpaPanel` (`#gpa`, before `#scores`; titled
+  "First-years' high school class rank" when only C10 is published) with `GpaChecker` (client: six-segment band bar,
+  column toggle, marker, all nine bands in a table, `gpaMiddleHalf`, `gpaPosition`). On this page lists `early` and
+  `gpa` only when present. Overview Admissions card: "Avg. GPA" `CardStat` (open question 5 assumed yes).
+- Compare (`lib/cds/compare-rows.ts`): Average high school GPA, top tenth (with the share), Early decision, Early
+  action, Wait list, and the 12 C7-only factors; the six shared federal factor rows show the C7 level where present,
+  their muted year from the C7 item (`admissionProfileCellField`).
+- Explore: `gpa=1` "Publishes first-years' GPA" in `FACTOR_FILTERS` (`hasGpaData`), so it sits in "What they look at"
+  with its count. No sort, column, or tile.
+- Glossary: `high-school-gpa`, `weighted-gpa`, `gpa-band`, `class-rank`, `factor-importance`, `early-decision`,
+  `early-action`, `restrictive-early-action`, `wait-list`.
+
+**Not built.** The two history series (`cds_gpa_average`, ED admit rate): `scripts/sync-history.mts` reads only
+federal files, and a CDS series needs a new college-site family, scale breaks, and two editions per college (the
+records hold one), so it waits for prior editions. `lib/profile-data.ts` flags (the page computes them).
+
+**Tests.** `tests/cds-admissions.test.mts` (23 tests): spec tests 1, 4–9, 11–15 plus real-record, nesting, and
+edition-limit cases; 2–3 are adapted to records (column sums, lone column); 10 covers `VI`/`NC` (the x-placed and
+HTML marks are the readers track's). Breaking the C1 comparison, the year comparison, the one-column rule, band
+codes, a GPA sort, the lineage guard, or the class-rank share rule each fails a test.
+
+**Measured** (`npm run measure-profile -- 231624 221999`, `DATA_SOURCE=json`): admissions page William & Mary
+4,728 px desktop / 5,395 phone, Vanderbilt 4,476 / 5,065; all 42 checks pass (innerWidth 390 on phones).
 
 ## Open questions
 1. **Six shared factors:** let a newer C7 flip the federal considered / not considered answer (and so Explore's legacy,

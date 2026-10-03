@@ -10,6 +10,7 @@ import { RangeBar } from "@/components/charts/RangeBar";
 import { InfoTip, MetricLabel, Term } from "@/components/ui/info-tip";
 import { CardHeadline, CardStat, CardStats, TopicCard } from "./TopicCard";
 import { TenYearLine } from "./TenYearLine";
+import { admissionProfile } from "@/lib/cds/admissions";
 
 /**
  * Getting in: the acceptance ring with "1 in N" and the selectivity tier (or the open-admission state), applied,
@@ -26,6 +27,8 @@ export async function AdmissionsCard({ profile: p }: { profile: Profile }) {
   const apps = history ? tenYear("applicants", history.history, history.files) : null;
   const rateTen = history ? tenYear("acceptance_rate", history.history, history.files) : null;
   const act = a.act_composite_25_75;
+  // First-years' average GPA from the college's CDS (specs/data-expansion/cds-admissions.md); never ranked.
+  const gpa = admissionProfile(school)?.gpa;
 
   return (
     <TopicCard topic="admissions" unitId={school.unit_id} title={admissionsTitle(admitRatioFromRate(rate))} takeaway={admissionsTakeaway(data, school) ?? topicOf("admissions").description} year={year}>
@@ -66,6 +69,15 @@ export async function AdmissionsCard({ profile: p }: { profile: Profile }) {
           <CardStat label="Applied" term="applicants" cited={citeField("admissions.applicants", school)} value={num(a.applicants!)} />
           <CardStat label="Admitted" term="admitted" cited={citeField("admissions.admitted", school)} value={num(a.admitted!)} />
           {yld !== null && <CardStat label="Yield" term="yield" cited={citeField("derived.yield", school)} value={pct(yld)} sub="of admits enroll" />}
+          {gpa && gpa.average !== null && (
+            <CardStat
+              label="Avg. GPA"
+              term={gpa.scale === "weighted" ? "weighted-gpa" : "high-school-gpa"}
+              cited={citeField("reported.admission_profile.gpa.average", school)}
+              value={gpa.average.toFixed(2)}
+              sub={gpa.scale === "weighted" ? "weighted" : undefined}
+            />
+          )}
         </CardStats>
       )}
 
@@ -73,7 +85,7 @@ export async function AdmissionsCard({ profile: p }: { profile: Profile }) {
         <div className="mt-4 grid grid-cols-2 gap-4">
           {sat && (
             <div className="min-w-0">
-              <MetricLabel term="middle-50" cited={citeField("derived.sat_composite", school)} className="flex-wrap text-[11px] font-semibold text-muted-foreground">
+              <MetricLabel term="middle-50" cited={citeField("derived.sat_total", school)} className="flex-wrap text-[11px] font-semibold text-muted-foreground">
                 SAT middle 50%
               </MetricLabel>
               <p className="mt-0.5 mb-1 font-display text-xl font-extrabold whitespace-nowrap">{range(sat)}</p>

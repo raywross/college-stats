@@ -1,0 +1,9 @@
+{
+  "updated": "2026-10-03",
+  "documents": [
+    {"sha256":"9fd806a412276af516571b680b68bbec1319620cd3884540845ca29e59cf9d85","unit_id":"145637","url":"https://uofi.box.com/shared/static/orx4vnmzkt2drmgoiksxpfs39pr42uor.xlsx","kind":"cds","type":"xlsx-template","edition":"2025-26","edition_from":"items","retrieved":"2026-10-03","bytes":1017294,"archive":null},
+    {"sha256":"26f98228a37d98edd12330707ec8a1985aef601c94bca90ae254a25c32aa1c60","unit_id":"190415","url":"https://irp.cornell.edu/wp-content/uploads/2026/09/CDS-Cornell-2025-2026-v2.xlsx","kind":"cds","type":"xlsx-template","edition":"2025-26","edition_from":"items","retrieved":"2026-10-03","bytes":1015067,"archive":null},
+    {"sha256":"37b70162d0e9e9d27bdb00fd01b0a618e4da8ce11d6948453c71e73c0af83637","unit_id":"221999","url":"https://cdn.vanderbilt.edu/vu-wpfsx/wp-content/uploads/sites/70/2026/07/CDS_2025-2026.xlsx","kind":"cds","type":"xlsx-template","edition":"2025-26","edition_from":"items","retrieved":"2026-10-03","bytes":1009249,"archive":null},
+    {"sha256":"a9247d4588d483c45dbf1ff797e5d9403ca6a41afe481fd9a9d8de091631bdf0","unit_id":"231624","url":"https://www.wm.edu/offices/ir/university_data/cds/wm-2025-2026-cds1.xlsx","kind":"cds","type":"xlsx-template","edition":"2025-26","edition_from":"items","retrieved":"2026-10-03","bytes":1013669,"archive":null}
+  ]
+}

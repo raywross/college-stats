@@ -9,8 +9,12 @@
  * data/college-reported.json gets its previous funnel back. Pure: no I/O, never mutates its input.
  */
 import { acceptanceRate } from "./derive.ts";
+import { applyNewestFactors, restoreFederalFactors } from "./cds/admissions.ts";
 import type { FieldPath } from "./fields";
 import type { FederalAdmissions, LineageRecord, School } from "./types";
+import { restoreNewestGroups } from "./newest-groups.ts";
+import { applyNewestTests, restoreFederalTests } from "./cds/test-blocks.ts";
+import { restoreCdsAid } from "./cds/financial-aid.ts";
 
 /** The funnel values `applyNewest` may replace, in `school.admissions` key order. */
 const COUNTS = ["applicants", "admitted", "enrolled"] as const;
@@ -33,7 +37,9 @@ const sameRecord = (a: LineageRecord | undefined, b: LineageRecord | undefined) 
  * record for a hand-imported CDS. A value whose own lineage differs from that (e.g. a Scorecard-only rate) is left
  * alone, so `restoreFederal` can always put back exactly what was there.
  */
-export function applyNewest(school: School): School {
+export function applyNewest(school: School, opts: { factorsYear?: number | null } = {}): School {
+  school = applyNewestTests(school); // CDS C8/C9 blocks (specs/data-expansion/cds-test-scores-and-policy.md)
+  school = applyNewestFactors(school, opts.factorsYear); // the six shared C7 factors (lib/cds/admissions.ts)
   const r = school.reported?.admissions;
   const a = school.admissions;
   if (!r || a.federal) return school;
@@ -116,7 +122,11 @@ export function applyNewest(school: School): School {
  * `admissions.federal` itself removed. Byte-identical to the school before `applyNewest`; the same object when
  * there's nothing to undo.
  */
-export function restoreFederal(school: School): School {
+export function restoreFederal(input: School): School {
+  let school = restoreCdsAid(input); // CDS aid: put back a superseded aid.cds (specs/data-expansion/cds-financial-aid.md)
+  school = restoreNewestGroups(school); // enrollment, race, retention, graduation (lib/newest-groups.ts), applied after C1
+  school = restoreFederalFactors(school); // undoes applyNewestFactors (lib/cds/admissions.ts)
+  school = restoreFederalTests(school); // CDS C8/C9 blocks (specs/data-expansion/cds-test-scores-and-policy.md)
   const federal = school.admissions.federal;
   if (!federal) return school;
   // eslint-disable-next-line @typescript-eslint/no-unused-vars -- dropping `federal` is the point

@@ -8,17 +8,18 @@
  *   readers can open.) Then run `npm run sync-data`.
  *
  * Reads, by row label rather than fixed cell, from the standard CDS sheets:
- *   B1/B2  undergraduate total and race/ethnicity
  *   C1     applied / admitted / enrolled
  *   C9     SAT/ACT percentiles and submission rates
- *   H2/H2A need-based and merit aid (full-time undergraduates)
+ * H2/H2A (aid) is no longer read here: CDS records read all three columns by code (lib/cds/financial-aid.ts,
+ * specs/data-expansion/cds-financial-aid.md). Re-importing keeps a patch's existing hand-imported `aid` and its
+ * `lineage` until a record supersedes them.
  * Anything it can't find is left out of the patch, so federal data fills the gap.
  * PDF-only Common Data Sets aren't supported.
  */
 import { existsSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { c1Total, flat, flatItems, frac, fullTimeUndergradCol, inCol, numbers, readWorkbook, round4, row, type C1Verb } from "./lib/cds-xlsx.mts";
+import { c1Total, flat, flatItems, frac, numbers, readWorkbook, round4, row, type C1Verb } from "./lib/cds-xlsx.mts";
 
 const ROOT = join(import.meta.dirname, "..");
 const OVERRIDES = join(ROOT, "data", "overrides.json");
@@ -79,8 +80,6 @@ async function main() {
 
   /* ---- C1 / C9: admissions & tests ---- */
   const FC = flatItems(C);
-  const FB = flatItems(B);
-  const FH = flatItems(H);
   const warnings: string[] = [];
   /**
    * C1 totals, cross-checked against the gender rows and (classic layout) the
@@ -119,50 +118,9 @@ async function main() {
   if (satPct !== null) admissions.test_submission_rate_sat = round4(satPct);
   if (actPct !== null) admissions.test_submission_rate_act = round4(actPct);
 
-  /* ---- B1 / B2: enrollment & race ---- */
-  const undergrads = flat(FB, "Total all undergraduates") ?? numbers(row(B, "Total all undergraduates"))[0] ?? null;
-  note("B1 undergraduates", undergrads !== null);
-  // Race rows repeat for first-years, degree-seeking, and all undergrads; the last group is all undergrads.
-  const last = (label: string) => flat(FB, label, "last") ?? numbers(row(B, label)).at(-1) ?? 0;
-  const race = {
-    international: last("Nonresidents"),
-    hispanic: last("Hispanic/Latino"),
-    black: last("Black or African American"),
-    white: last("White, non-Hispanic"),
-    asian: last("Asian, non-Hispanic"),
-    two_or_more: last("Two or more races"),
-    other: last("American Indian") + last("Native Hawaiian") + last("Race and/or ethnicity unknown"),
-  };
-  const raceTotal = Object.values(race).reduce((a, b) => a + b, 0);
-  note("B2 race/ethnicity", raceTotal > 0);
-  const demographics: Record<string, unknown> = {};
-  if (undergrads !== null) demographics.undergrad_enrollment = undergrads;
-  if (raceTotal > 0) {
-    demographics.racial_diversity = Object.fromEntries(Object.entries(race).map(([k, v]) => [k, round4(v / raceTotal)]));
-  }
-
-  /* ---- H2 / H2A: need-based & merit aid ---- */
-  const col = fullTimeUndergradCol(H);
-  // Flat H2/H2A repeat each line for first-years, full-time, and part-time undergrads: take the 2nd (full-time).
-  const h = (label: string) => flat(FH, label, 2) ?? inCol(row(H, label), col);
-  const hMoney = (label: string) => {
-    const v = h(label);
-    return v === null ? null : Math.round(v);
-  };
-  const cdsAid = {
-    undergrads: h("Number of degree-seeking undergraduate students"),
-    applied_need: h("Number of students in line a who applied for need-based"),
-    has_need: h("Number of students in line b who were determined to have financial need"),
-    need_fully_met: h("Number of students in line d whose need was fully met"),
-    pct_need_met: frac(h("On average, the percentage of need that was met")),
-    avg_package: hMoney("The average financial aid package"),
-    avg_need_grant: hMoney("Average need-based scholarship and grant award"),
-    avg_need_loan: hMoney("Average need-based loan"),
-    merit_no_need: h("Number of students in line a who had no financial need"),
-    merit_avg: hMoney("Average dollar amount of institutional non-need-based scholarship"),
-  };
-  const hasAid = Object.values(cdsAid).some((v) => v !== null);
-  note("H2/H2A aid", hasAid);
+  // B1/B2 (enrollment and race) are not imported: they come from the CDS records through the newest groups
+  // (lib/newest-groups.ts, specs/data-expansion/cds-student-body-and-outcomes.md), read by code, column 2 of B2, never
+  // "the last group" (column 3 at Illinois is non-degree students only). lineageForPatch refuses them in an override.
 
   /* ---- Write the patch ---- */
   // The sync attributes every value in the patch to this CDS (field-level lineage; specs/data-lineage.md).
@@ -172,8 +130,9 @@ async function main() {
     cds: { edition, url: link },
   };
   if (Object.keys(admissions).length > 1) patch.admissions = admissions;
-  if (Object.keys(demographics).length) patch.demographics = demographics;
-  if (hasAid) patch.aid = { cds: cdsAid };
+  const previous = existsSync(OVERRIDES) ? JSON.parse(readFileSync(OVERRIDES, "utf8"))[id!] : undefined;
+  if (previous?.aid) patch.aid = previous.aid;
+  if (previous?.lineage) patch.lineage = previous.lineage;
 
   if (warnings.length) patch._warnings = warnings;
   const overrides = existsSync(OVERRIDES) ? JSON.parse(readFileSync(OVERRIDES, "utf8")) : {};

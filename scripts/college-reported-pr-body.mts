@@ -10,8 +10,9 @@
  * "body" prints the PR body to stdout. "note" writes the release note to --out (release-notes/<slug>.md).
  */
 import { readFileSync, writeFileSync } from "node:fs";
-import type { REPORTED_MODELS, ReportedEntry, ReportedFile, ReviewItem, ReviewQueueFile, RunSummary } from "../lib/reported.ts";
+import type { REPORTED_MODELS, ReportedEntry, ReportedFile, ReviewItem, ReviewQueueFile, RunSummary, RunSummaryV3 } from "../lib/reported.ts";
 import type { School } from "../lib/types";
+import { itemOfCode } from "../lib/cds-sections.ts";
 
 type ModelJob = keyof typeof REPORTED_MODELS;
 
@@ -81,7 +82,9 @@ function escapeCell(s: string): string {
 export function prBody(summary: RunSummary, queue: ReviewQueueFile, reported?: ReportedFile, names?: Map<string, string>): string {
   const items = itemsForRun(queue, summary.run);
   const unreachableItems = items.filter(isUnreachable);
-  const checkFailureItems = items.filter((i) => !isUnreachable(i));
+  const checkFailureItems = items.filter((i) => !isUnreachable(i) && !i.code);
+  // Round 3: entries keyed by college + edition + template code (specs/college-reported-round-3.md Decision 9).
+  const perItem = items.filter((i) => !isUnreachable(i) && i.code);
   const nameFor = (unitId: string) => names?.get(unitId) ?? unitId;
   const lines: string[] = [];
 
@@ -115,9 +118,14 @@ export function prBody(summary: RunSummary, queue: ReviewQueueFile, reported?: R
         `problem, not the data. Review before merging by hand.`,
     );
   } else {
-    lines.push("Not tripped. Failure and change shares were within the limits in `CIRCUIT_BREAKER` (lib/reported.ts).");
+    lines.push(
+      isRound3(summary)
+        ? "Not tripped. C1 failures, per-item failure shares in model reads, and changed values were within `CIRCUIT_BREAKER_V3` (lib/cds-checks.ts)."
+        : "Not tripped. Failure and change shares were within the limits in `CIRCUIT_BREAKER` (lib/reported.ts)."
+    );
   }
   lines.push("");
+  if (isRound3(summary)) lines.push(...round3Sections(summary));
 
   if (reported) {
     const entries = entriesForRun(reported, summary.run);
@@ -161,9 +169,9 @@ export function prBody(summary: RunSummary, queue: ReviewQueueFile, reported?: R
   }
 
   lines.push("## Review queue", "");
-  if (checkFailureItems.length === 0) {
+  if (checkFailureItems.length === 0 && perItem.length === 0) {
     lines.push("Nothing from this run needs a person — every attempted value either published, was unchanged, or was unreachable (see above).");
-  } else {
+  } else if (checkFailureItems.length > 0) {
     lines.push(
       `${checkFailureItems.length} item${checkFailureItems.length === 1 ? "" : "s"} failed a check and did **not** publish. Resolve one by ` +
         `fixing its recipe in \`data/college-sources.json\` (or adding a manual override), then re-running ` +
@@ -178,6 +186,9 @@ export function prBody(summary: RunSummary, queue: ReviewQueueFile, reported?: R
       const url = item.urls[0] ?? "";
       lines.push(`| ${escapeCell(item.name)} (${item.unit_id}) | ${escapeCell(term)} | ${escapeCell(checks)} | ${url} |`);
     }
+  }
+  if (perItem.length > 0) {
+    lines.push(...perItemTable(perItem));
   }
   lines.push("");
 
@@ -197,6 +208,77 @@ export function prBody(summary: RunSummary, queue: ReviewQueueFile, reported?: R
   );
 
   return lines.join("\n");
+}
+
+/** A round-3 run summary (specs/college-reported-round-3.md Decision 11) has `round: 3`. */
+export function isRound3(summary: RunSummary): summary is RunSummaryV3 {
+  return (summary as Partial<RunSummaryV3>).round === 3;
+}
+
+/**
+ * Round 3's own sections: colleges whose every candidate host refuses us (for the owner to add by hand), the batches
+ * (open ones keep the PR a draft), and the projection the run checked against its cap.
+ */
+export function round3Sections(summary: RunSummaryV3): string[] {
+  const out: string[] = [];
+  const blocked = summary.blocked_colleges ?? [];
+  if (blocked.length) {
+    out.push(
+      "## Blocked colleges (for the owner)",
+      "",
+      `${blocked.length} college${blocked.length === 1 ? "" : "s"} whose every candidate host refuses our user agent; no money was spent on ` +
+        "them. To add one: find the link in a browser, add it to `data/reference/cds-urls.json`, download the file, and run " +
+        "`npm run archive-doc -- --college <unit_id> --file <path> --url <url>`.",
+      "",
+      "| College | Hosts |",
+      "|---|---|",
+      ...blocked.map((b) => `| ${escapeCell(b.name)} (${b.unit_id}) | ${escapeCell(b.hosts.join(", "))} |`),
+      ""
+    );
+  }
+  if (summary.batches.length || summary.open_batches) {
+    out.push("## Batches", "");
+    if (summary.open_batches) out.push(`${summary.open_batches} batch${summary.open_batches === 1 ? " is" : "es are"} still open (\`data/college-batches.json\`); the collect job finishes ${summary.open_batches === 1 ? "it" : "them"}.`, "");
+    out.push("| Batch | Requests | Submitted | Ended | Succeeded | Errored | Expired | Reserved | Cost |", "|---|---|---|---|---|---|---|---|---|");
+    for (const b of summary.batches) out.push(`| ${b.id} | ${b.requests} | ${b.submitted} | ${b.ended ?? "open"} | ${b.succeeded} | ${b.errored} | ${b.expired} | ${usd(b.reserved_usd)} | ${usd(b.cost_usd)} |`);
+    out.push("");
+  }
+  if (summary.projection) {
+    const p = summary.projection;
+    out.push("## Projection", "", `This run: ${usd(p.run_usd ?? p.full_run_usd)}; the full run: ${usd(p.full_run_usd)} (${escapeCell(p.basis)}).`, "");
+  }
+  const types = Object.entries(summary.documents).filter(([, d]) => d.fetched || d.unchanged || d.model_calls);
+  if (types.length) {
+    out.push("## Documents by type", "", "| Type | Fetched | Unchanged | Archived | Model calls | No C/D split | Cost |", "|---|---|---|---|---|---|---|");
+    for (const [type, d] of types) out.push(`| ${type} | ${d.fetched} | ${d.unchanged} | ${d.archived} | ${d.model_calls} | ${d.split_fallback} | ${usd(d.cost_usd)} |`);
+    out.push("");
+  }
+  return out;
+}
+
+/**
+ * Round 3's per-item rows: one per college + edition + template code that failed a check and didn't publish. Every
+ * other item of the same document published on its own (an H2 failure never holds back C1).
+ */
+export function perItemTable(items: ReviewItem[]): string[] {
+  const sorted = [...items].sort((a, b) => a.name.localeCompare(b.name) || (a.edition ?? "").localeCompare(b.edition ?? "") || (a.code ?? "").localeCompare(b.code ?? ""));
+  const out = [
+    "",
+    `${items.length} item${items.length === 1 ? "" : "s"} from colleges' Common Data Sets failed a check and did **not** publish; ` +
+      "every other item of the same document was judged on its own. A failure in a template workbook or fillable form is " +
+      "the college's own file (never escalated); fix it with an override or wait for the college's corrected file.",
+    "",
+    "| College | Edition | Item | Value | Failed checks | URL |",
+    "|---|---|---|---|---|---|",
+  ];
+  for (const item of sorted) {
+    const code = item.code ?? "";
+    const label = code ? `${itemOfCode(code)} · ${code}` : "";
+    const value = item.value === undefined || item.value === null ? "—" : String(item.value);
+    const checks = item.failures.map((f) => `${f.check} (${f.detail})`).join("; ");
+    out.push(`| ${escapeCell(item.name)} (${item.unit_id}) | ${item.edition ?? ""} | ${label} | ${escapeCell(value.slice(0, 40))} | ${escapeCell(checks)} | ${item.urls[0] ?? ""} |`);
+  }
+  return out;
 }
 
 /* ------------------------------------------------------------------ */

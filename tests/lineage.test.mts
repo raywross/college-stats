@@ -87,9 +87,11 @@ test("derived values cite their inputs' sources", () => {
 
 test("a derived value from non-default inputs is flagged non-default (so it gets a chip)", () => {
   const v = byId.get(NYU)!;
-  for (const p of ["derived.yield", "derived.diversity_index", "derived.sat_composite", "derived.sat_mid"] as const) {
+  for (const p of ["derived.yield", "derived.sat_composite", "derived.sat_mid"] as const) {
     assert.equal(lineageFor(p, v, meta).isDefault, false, p);
   }
+  // Race at a college whose newer CDS fall replaced it (specs/data-expansion/cds-student-body-and-outcomes.md).
+  assert.equal(lineageFor("derived.diversity_index", byId.get(VANDERBILT)!, meta).isDefault, false);
   // Pell comes from Scorecard even at a CDS school, so it stays default.
   assert.equal(lineageFor("demographics.pell_grant_percent", v, meta).isDefault, true);
   assert.equal(lineageFor("derived.yield", fixture(), meta).isDefault, true);
@@ -169,9 +171,9 @@ test("an override attributes exactly the fields it sets", () => {
     _imported: "2026-09-27",
     cds: { edition: "2024-25", url: "https://example.edu/cds.xlsx" },
     admissions: { applicants: 10, admitted: 5 },
-    demographics: { racial_diversity: { asian: 0.2, white: 0.8 } },
+    aid: { cds: { undergrads: 100 } },
   });
-  assert.deepEqual(Object.keys(out).sort(), ["admissions.admitted", "admissions.applicants", "demographics.racial_diversity"]);
+  assert.deepEqual(Object.keys(out).sort(), ["admissions.admitted", "admissions.applicants", "aid.cds"]);
   assert.deepEqual(out["admissions.applicants"], { source: "cds", year: "2024-25", url: "https://example.edu/cds.xlsx", retrieved: "2026-09-27" });
 });
 

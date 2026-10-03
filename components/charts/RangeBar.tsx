@@ -119,9 +119,9 @@ export function RangeBar({
       )}
       {youStatus && !compact && (
         <p className="text-xs text-muted-foreground">
-          {youStatus === "inside" && "Your score is inside the middle 50%, typical for admitted students."}
-          {youStatus === "above" && "Your score is above the 75th percentile, stronger than most admitted students."}
-          {youStatus === "below" && "Your score is below the 25th percentile; about a quarter of admitted students are here too."}
+          {youStatus === "inside" && "Your score is inside the middle 50%, typical for enrolled first-years who sent scores."}
+          {youStatus === "above" && "Your score is above the 75th percentile, stronger than most enrolled first-years who sent scores."}
+          {youStatus === "below" && "Your score is below the 25th percentile; about a quarter of enrolled first-years who sent scores are here too."}
         </p>
       )}
     </div>

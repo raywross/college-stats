@@ -21,6 +21,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import {
   CIRCUIT_BREAKER,
+  enqueueItems,
   DEFAULT_ANCHORS,
   REPORTED_MODELS,
   fallYear,
@@ -491,7 +492,8 @@ export function createPipeline(deps: PipelineDeps) {
         queued: today,
         run: input.run,
       };
-      items = [...items.filter((i) => i.unit_id !== school.unit_id), item];
+      // Replaces only the same key (college + edition + code): round 3's per-item entries for the college stay.
+      items = enqueueItems(items, [item]);
     }
 
     async function processCollege(school: School): Promise<void> {

@@ -1,6 +1,6 @@
 # CDS Financial Aid: Forms, Deadlines, International Aid, Need vs Merit
 
-> Status: **planned** (2026-10-03). Wave 4, built from the per-document CDS records of
+> Status: **built** (2026-10-03; see [As built](#as-built)). Wave 4, built from the per-document CDS records of
 > [college-reported-round-3.md](../college-reported-round-3.md). Covers the CDS inventory's units **U5** (aid process
 > and forms), **U6** (aid for international students), **U7** (aid dollars by source, athletic awards), and **U8** (the
 > full H2 lines for first-years and all full-time undergraduates). Supersedes the hand importer's `aid.cds`. Part of
@@ -164,6 +164,13 @@ when read (it describes the next year, so the bound only loosens), else federal 
 No H item has a federal value with the same definition (IPEDS SFA counts first-time full-time students receiving each
 kind of aid; CDS H2 frames the class by need), so there is **no agreement-with-federal check** beyond the cohort size
 above, and no item replaces a federal value.
+
+> **As built (checks, 2026-10-03; `lib/cds-checks.ts`).** Every row above is built except: **M ≤ L is dropped** (M
+> averages over loan recipients, a subset of line F's self-help recipients, so it can exceed L: Vanderbilt's valid file
+> has M $2,931 > L $2,229 for first-years and $3,733 > $2,649 for all full-time); H2 line A's "final prior-year"
+> comparison (previous edition's record, or federal `aid.cohort`) waits for prior-edition records; the H6/H7 section
+> boundary is the layout reader's job. H.101 that names no aid year fails `aid-year` on every aid-year item (H1, H2,
+> H2A, H6). The cost-of-attendance bound is G1's out-of-state tuition + fees + food and housing, else federal, × 1.1.
 
 ## Store
 ### Snapshot: `school.reported.aid` (small; what filters, Compare, and the headlines read)
@@ -451,6 +458,66 @@ Reused: `need-based-aid`, `merit-aid`, `need-met`, `institutional-aid`, and `pri
    chip or an Explore boolean while coverage is partial?
 4. **Policy note.** Show H15 as the college's own words (recommended), or only link to it?
 5. **Part-time column.** Store only (recommended), or show it for colleges with many part-time students?
+
+## As built
+Built 2026-10-03 on branch `feature/cds3-financial-aid` against the four real 2025–26 records (Vanderbilt 221999,
+Cornell 190415, William & Mary 231624, Illinois 145637). All four publish with no review items.
+
+**Where it lives**
+- `lib/cds/financial-aid.ts` (pure; the spec's `lib/aid-cds.ts`): template code maps (`H1_CODES`, `H2_CODES`,
+  `H6/H7/H8_CODES`, `METHOD_CODES`, `H14_CODES`); normalizers and checks (`normalizeNeedMet`, `checkH2Column`,
+  `checkAthletic`, `checkH1Row`, `checkH6`, `checkForms`, `checkMethodology`, `checkDates`, `showPolicyNote`); years
+  (`aidYearLabel` → "2025–26 (estimated)" / "2024–25", `cycleLabel` → "Fall 2026 entrants", `cdsAidYearNote`,
+  `pickAidRecord`, `pickProcessRecord`); derived values (`meritDollarShare`, `aidMethodology`, `h2Shares`); the build
+  (`buildFinancialAid` → snapshot, lineage per path, detail table, review items), `applyFinancialAid`,
+  `supersedeCdsAid` / `restoreCdsAid`, `financialAidProblems` (lineage guard), `financialAidDetails`,
+  `checkCdsAidDetail`, `cdsAidMismatch`, and the Explore predicates `noCssProfile`, `offersInternationalAid`.
+- `lib/cds/financial-aid-compare.ts`: `compareAidRows(sfaYear)`, appended to Compare's "All the numbers".
+- Types appended in `lib/types.ts` (`ReportedAid`, `AidYear`, `AidForms`, `AidDay` (the spec's `CdsDate`), `AidDates`,
+  `InternationalAid`, `H2Line/H2Column/H2Headline`, `H1Row`, `H14Criterion`, `CdsAidDetail`, `CdsAidPrevious`);
+  `ReportedData.aid`; `School.aid.cds_previous`; `SearchFilters.aidForms/intlAid`.
+- Fields (`lib/fields.ts`, end of the college-reported block): the eight `reported.aid.*` paths, `detail.cds_aid`,
+  `aid.cds_previous`, and computed `derived.merit_dollar_share`, `derived.aid_methodology`.
+- Detail table: `DETAIL_TABLES.cds_aid` (`lib/detail.ts`); `DetailTable.vintage` may now be null for a per-document
+  source (the table's `year` is then its aid year, checked present, not against meta). `detailMismatches` requires
+  `reported.aid.first_years` to equal the detail file's first-year column.
+- Merge: `mergeReported(schools, reported, records)` (`lib/reported-merge.ts`) applies each college's record after its
+  round-2 entry; `restoreFederal` (`lib/newest.ts`) first undoes the `aid.cds` supersession, so `stripReported` restores
+  the school byte for byte. `npm run merge-reported` reads `data/cds-records/` and rewrites only the `cds_aid` table of
+  each detail file; `npm run sync-data` merges the records and adds `financialAidDetails` to its detail builders.
+- Lineage display (`lib/lineage.ts`, `components/ui/info-tip.tsx`): a record value's ⓘ reads "Reported by {college}
+  in its 2025–26 Common Data Set, for {year}" (`Cited.cdsEdition`), its source label is "{college} Common Data Set
+  {edition}", `Cited.replaces` gained `label`/`display` (the CDS panel's "Replaces" line for `aid.cds_previous`), and a
+  college-reported field a college has no value for no longer adds a placeholder source to footnotes.
+- UI: `components/school/CdsAidTable.tsx` (rendered by `components/charts/AidBreakdown.tsx` when there's no `aid.cds`;
+  the full-time cells' ⓘ names the replaced hand-imported figure), `components/school/ApplyingForAid.tsx`
+  (`#apply-for-aid`), `components/school/InternationalAid.tsx` (`#international-aid`), on `/schools/{id}/cost`;
+  `TOPIC_FIELDS.cost` appended. Explore: `aidForms=no-css`, `intlAid=1` in `lib/params.ts`, `lib/dataset.ts`,
+  `FilterPanel` ("Financial aid (from colleges' own reports)"), `Toolbar` chips. Glossary: the nine new terms.
+- `scripts/import-cds.mts` no longer reads H2/H2A; a re-import keeps the patch's existing `aid` and `lineage`.
+- `data/overrides.json`: each override's `lineage["aid.cds"].year` is the aid year its workbook marks in H0 (read
+  2026-10-03): Berkeley and Vanderbilt 2024–25 (estimated); Illinois, Maryland, W&M, Purdue 2023–24; Cornell
+  2025–26 (estimated). NYU's workbook URL returned 403, so its year is still the edition.
+- Tests: `tests/cds-financial-aid.test.mts` (spec tests 1–5, 7–10, 12, plus dates and the committed aid years); the
+  re-merge test in `tests/merge-reported.test.mts` now includes the records.
+
+**Measured deviations from the spec**
+- `M ≤ L` is not a check: Vanderbilt's valid first-years have M $2,931 > L $2,229 (M averages only loan recipients).
+- "Notification ≥ priority" applies to an on-date notification only: Illinois notifies on a rolling basis from
+  February 15, before its March 15 priority date, which is valid.
+- A failed line I nulls line I only; a failed H2 column nulls the column; failed P/Q null P and Q only.
+- `H.101` blank or unparseable keeps the record from winning the aid-year pick; there is no review-queue UI yet, so
+  review items are returned by `buildFinancialAid` (`reviews`) and not persisted.
+
+**Not built (deferred)**
+- Net price estimator and saved-list changes: those features don't exist yet.
+- The H2 line A vs B1 cohort check (needs the B1 codes and the checks track's `lib/cds-checks.ts`); the H7/H8 boundary
+  in flattened PDFs (spec test 6) belongs to the round-3 split/layout pass; Howard's fillable-PDF fields aren't a
+  record yet, so tests use the four workbooks only.
+- The per-aid-year history series and events (spec test 11): history shards are built by `sync-history`, and with
+  one edition per college there is nothing to chart yet.
+- The scope-table and `lib/cds-sections.ts` changes the Build list names (group `GH`, schema bump) belong to the
+  round-3 pipeline track.
 
 ## Roadmap entry
 - slug: cds-financial-aid

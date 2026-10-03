@@ -52,15 +52,15 @@ visit to any college.
 
 | Spec | Adds | CDS items |
 |---|---|---|
-| [cds-admissions.md](cds-admissions.md) | **High school GPA** (average, weighted flag, and bands), the 18-factor importance grid, early decision/action, wait list, class rank | C2, C7, C10–C12, C21–C22 |
-| [cds-residency-admissions.md](cds-residency-admissions.md) | In-state, out-of-state, and international admit rates and yields | C1 by residency |
-| [cds-test-scores-and-policy.md](cds-test-scores-and-policy.md) | The test policy for the coming application cycle; true SAT composite percentiles and score-band distributions | C8, C9 |
-| [cds-application-logistics.md](cds-application-logistics.md) | Deadlines, notification and reply dates, housing deposit, gap-year deferral, fee waivers, high school units required | C3–C5, C13–C18 |
-| [cds-financial-aid.md](cds-financial-aid.md) | CSS Profile and other forms, aid methodology and deadlines, aid for international students, need vs merit dollars, athletic awards, the full H2 lines for first-years | H0–H2A, H6–H11, H14–H15 |
-| [cds-student-body-and-outcomes.md](cds-student-body-and-outcomes.md) | Enrollment, race/ethnicity, retention, and graduation by Pell group one year newer than federal data, with a 4-year rate | B1, B2, B4–B11, B22 |
-| [cds-academics.md](cds-academics.md) | Class sizes, the CDS student-faculty ratio, honors and other programs, core requirements | I-2, I-3, E1, E3 |
-| [cds-transfer.md](cds-transfer.md) | Transfer applicants, admits, enrollees, requirements, dates | D |
-| [cds-cost-and-debt.md](cds-cost-and-debt.md) | Next year's price before IPEDS has it (first-year and upper-division), differential tuition, graduates' debt from every loan source | G, H4–H5 |
+| [cds-admissions.md](cds-admissions.md) | **Built** 2026-10-03. **High school GPA** (average, weighted flag, and bands), the 18-factor importance grid, early decision/action, wait list, class rank | C2, C7, C10–C12, C21–C22 |
+| [cds-residency-admissions.md](cds-residency-admissions.md) | **Built** 2026-10-03. In-state, out-of-state, and international admit rates and yields | C1 by residency |
+| [cds-test-scores-and-policy.md](cds-test-scores-and-policy.md) | **Built** 2026-10-03. The test policy for the coming application cycle; true SAT composite percentiles and score-band distributions | C8, C9 |
+| [cds-application-logistics.md](cds-application-logistics.md) | **Built** 2026-10-03. Deadlines, notification and reply dates, housing deposit, gap-year deferral, fee waivers, high school units required | C3–C5, C13–C18 |
+| [cds-financial-aid.md](cds-financial-aid.md) | **Built** 2026-10-03. CSS Profile and other forms, aid methodology and deadlines, aid for international students, need vs merit dollars, athletic awards, the full H2 lines for first-years | H0–H2A, H6–H11, H14–H15 |
+| [cds-student-body-and-outcomes.md](cds-student-body-and-outcomes.md) | **Built** 2026-10-03. Enrollment, race/ethnicity, retention, and graduation by Pell group one year newer than federal data, with a 4-year rate | B1, B2, B4–B11, B22 |
+| [cds-academics.md](cds-academics.md) | **Built** 2026-10-03. Class sizes, the CDS student-faculty ratio, honors and other programs, core requirements | I-2, I-3, E1, E3 |
+| [cds-transfer.md](cds-transfer.md) | **Built** 2026-10-03. Transfer applicants, admits, enrollees, requirements, dates | D |
+| [cds-cost-and-debt.md](cds-cost-and-debt.md) | **Built** 2026-10-03. Next year's price before IPEDS has it (first-year and upper-division), differential tuition, graduates' debt from every loan source | G, H4–H5 |
 
 CDS F1 (fraternity/sorority share) is in [greek-life.md](../greek-life.md); C7 religious commitment, F2 campus
 ministries, and H14's religious row are in [religious-life.md](../religious-life.md). F1 out-of-state and on-campus

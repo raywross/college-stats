@@ -10,6 +10,7 @@
  *   reports/               per-run summaries and accuracy reports
  */
 import type { LineageRecord, ReportedAdmissions, ReportedSourceKind, SourceInfo } from "./types";
+import type { CallKey, DocumentType } from "./cds-sections";
 
 /** `meta.sources["college-site"]`, written by the sync; the app's placeholder when a publish is mid-flight. */
 export const COLLEGE_SITE_SOURCE: SourceInfo = {
@@ -70,6 +71,11 @@ export interface RecipeSource {
   processed?: string;
   /** The last extraction from this document, kept so a re-run can re-check without re-reading. */
   extraction?: Extraction | null;
+  /**
+   * Round 3: ISO date this URL was last requested (a 200 or a 304), so a known document gets its conditional GET at most
+   * monthly (lib/cds-reads.ts needsFetch, Decision 10). Absent: the manifest's `retrieved` is used.
+   */
+  checked?: string;
 }
 
 /** Where one college publishes its newer figures. Written by discovery; `sources` updated by every run. */
@@ -85,6 +91,48 @@ export interface Recipe {
   none_found?: true;
   /** Free text from discovery: what the college publishes and where (helps a person fix the recipe). */
   notes?: string;
+  /** How the round-3 discovery ladder found this recipe, what it tried, and when to try again (Decisions 6–7). */
+  discovery?: RecipeDiscovery;
+}
+
+/**
+ * How a recipe was found (specs/college-reported-round-3.md Decision 6): `known` an index page re-scan, `guessed` the
+ * next edition's file name, `manual` the owner's list (data/reference/cds-urls.json), `probe-*` the free probes
+ * (sitemap, IR host pattern, two-hop crawl), `picker`/`search`/`full` the paid steps 2–4, `blocked` every candidate
+ * host refuses us (listed for the owner, no money spent), `none` nothing found.
+ */
+export type DiscoveryPath =
+  | "known"
+  | "guessed"
+  | "manual"
+  | "probe-sitemap"
+  | "probe-host"
+  | "probe-crawl"
+  | "picker"
+  | "search"
+  | "full"
+  | "blocked"
+  | "none";
+
+/** One rung of the ladder tried for a college: 0 known, 1 free probes, 2 picker, 3 search only, 4 full, 5 manual. */
+export interface DiscoveryAttempt {
+  step: 0 | 1 | 2 | 3 | 4 | 5;
+  /** The sub-step for step 1 (sitemap, host, crawl) and the path a find took. */
+  via?: DiscoveryPath;
+  /** ISO date. */
+  at: string;
+  result: "found" | "none" | "failed" | "blocked" | "skipped";
+  /** What was found or why not: a URL, an error, "budget spent". */
+  detail?: string;
+  cost_usd: number;
+}
+
+export interface RecipeDiscovery {
+  path: DiscoveryPath;
+  /** Every attempt, oldest first; the newest 20 are kept. */
+  tried: DiscoveryAttempt[];
+  /** ISO date before which the ladder isn't run again (Decision 7 back-off); absent = retry on the next run. */
+  next_attempt?: string;
 }
 
 export interface SourcesFile {
@@ -193,24 +241,83 @@ export type CheckId =
   | "sources-agree" // 7. two documents for the same term agree within 1%
   // Not a check on figures: every source of the college failed to fetch (robots.txt, 401/403/405/429, 404, network
   // error). No model can fix that, so it is queued without a model call and not counted in `failed`.
-  | "unreachable";
+  | "unreachable"
+  // Round 3 (specs/college-reported-round-3.md Decision 9; lib/cds-checks.ts): checks on every record item.
+  // Universal checks, on every value:
+  | "type-range" // the value fits its type: counts whole and ≥ 0, shares 0–100%, GPA 0–5, SAT/ACT ranges, months, days
+  | "number-on-line" // model reads: the value (number, mark, or words) appears on its cited line(s)
+  | "line-in-document" // model reads: every cited line id exists in the archived line text
+  | "edition-mismatch" // the edition (cover) or the year an item's own text names matches the edition it's filed under
+  | "form-vs-code" // template workbooks: the visible form and the code table hold the same value
+  | "overflow-total" // reader: a total printed "##" (Excel overflow) whose parts can't be summed
+  | "aid-year" // reader: H.101 names no aid year ("2023"), so H1, H2, H2A and H6 have no year
+  // Per-item checks (the scope table's Checks column, refined by the nine cds-*.md specs):
+  | "parts-sum" // parts add up to their printed total (±1 count, ±$1K in H1, ±1 unit in C5); H5's union bound
+  | "sums-to-100" // a percent column (C9 bands, C11 GPA bands, J) sums to 100% ±1 point
+  | "order" // a ≤ b: funnels, percentiles, class-rank bands, H2 lines, wait list, ED counts, H5 rows
+  | "ratio-matches" // a stated rate, ratio, or average matches its counts (B22, B4 H, C9 share, H2 I, H6, I-2)
+  | "one-mark" // exactly one mark or level per row (C7, C8, C16/C17 kind, D5, H0 methodology, H9 deadline)
+  | "inconsistent" // two answers in one document contradict (C2/C21/C22 "No" with counts, C8A vs grid, D1 vs D2, H8)
+  | "valid-date" // a month/day that looks numeric is a calendar date
+  | "date-order" // dates in cycle order: closing ≤ notification ≤ reply; regular after early closing
+  | "enrollment-disagrees" // agrees with section B of the same document (B2 vs B1, H2 line A vs B1, H4, H6 vs B2)
+  | "federal-disagrees" // an implausible change against the federal value (one year older; escalated once)
+  | "residency-funnel" // C1 by residency: admitted ≤ applied, enrolled ≤ admitted, per residency
+  | "residency-sum" // C1 by residency: rows sum to the C1 total within 1%
+  | "residency-vs-federal" // C1 by residency: enrolled shares within 10 points of IPEDS residence
+  | "column-3-not-all-undergrads" // B2 column 3 total ≠ B1 total undergraduates (Illinois: non-degree only)
+  | "previous-cohort-disagrees" // B5 grid (previous cohort) disagrees with IPEDS GR for the same cohort
+  | "not-a-url" // G.001 isn't a URL (Cornell's "89*---31")
+  | "out-of-range" // a domain range beyond the type (credits 0–200, reply weeks 1–12, aid averages ≤ cost)
+  // Round 3 pipeline (scripts/lib/college-reported/phases.mts): a batch request that failed twice, or was refused as
+  // invalid, so the document's call was never read. Not a check on figures; the breaker doesn't count it.
+  | "batch-failed"
 
 export interface CheckFailure {
   check: CheckId;
   detail: string;
 }
 
-/** One item for a person to look at. Resolving it = fix the recipe or add an override, then re-run. */
+/**
+ * One item for a person to look at. Resolving it = fix the recipe or add an override, then re-run.
+ *
+ * Round 3 keys the queue by college + edition + template code (Decision 9): a per-item entry has `code`, `edition`
+ * and `sha256`, so one college can have a failing H2 and a published C1. Entries without `code` are round-1/2 C1
+ * entries (a whole college's extraction) and stay valid.
+ */
 export interface ReviewItem {
   unit_id: string;
   name: string;
   /** Which document(s) the values came from. */
   urls: string[];
+  /** C1 entries: the class the figures describe. Per-item entries: the item group's year label ("Fall 2025"). */
   entering_term: string | null;
-  extraction: Extraction;
+  /** C1 entries only: the model's extraction. Per-item entries carry `code` and `value` instead. */
+  extraction?: Extraction;
   failures: CheckFailure[];
   queued: string;
   run: string;
+  /** Round 3: the template code that failed ("H.210"), the document's edition ("2025-26"), and its sha256. */
+  code?: string;
+  edition?: string;
+  sha256?: string;
+  /** Round 3: the item's value as read (the code table's, for a template workbook). */
+  value?: number | string | boolean | null;
+}
+
+/** The review queue's key: college + edition + code. Round-1/2 entries (no code) share one key per college. */
+export function reviewKey(item: Pick<ReviewItem, "unit_id" | "edition" | "code">): string {
+  return `${item.unit_id}|${item.edition ?? ""}|${item.code ?? ""}`;
+}
+
+/**
+ * Adds items to the queue, replacing only entries with the same key (college + edition + code). Replacing one
+ * college's H2 entry leaves its C1 entry and every other code alone (Decision 9; the round-2 `enqueue` replaced every
+ * item of the college).
+ */
+export function enqueueItems(queue: readonly ReviewItem[], items: readonly ReviewItem[]): ReviewItem[] {
+  const keys = new Set(items.map(reviewKey));
+  return [...queue.filter((q) => !keys.has(reviewKey(q))), ...items];
 }
 
 export interface ReviewQueueFile {
@@ -283,6 +390,236 @@ export interface JobUsage {
   cache_creation_input_tokens?: number;
   /** Server web searches, billed per search on top of tokens. */
   web_searches?: number;
+}
+
+/* ------------------------------------------------------------------ */
+/* Round 3 state files (specs/college-reported-round-3.md)             */
+/* ------------------------------------------------------------------ */
+
+/**
+ * One Message Batches API batch a run submitted and hasn't finished collecting (Decision 5). A run that ends with
+ * batches open leaves them here; the next collect picks them up within the API's 29-day window.
+ */
+export interface BatchEntry {
+  /** The API's id, "msgbatch_…". */
+  id: string;
+  /** extract: the C and rest calls; escalate: Sonnet re-reads of failing calls; picker: Haiku link pickers. */
+  phase: "extract" | "escalate" | "picker";
+  /** ISO timestamp of submission. */
+  submitted: string;
+  requests: number;
+  /** Worst-case cost held against `--max-cost` until results replace it with the actual cost. */
+  reserved_usd: number;
+  /** "u<unit_id>-<sha8>-<call>-v<version>", one per request, so results (which arrive in any order) are keyed back. */
+  custom_ids: string[];
+  /** The run that submitted it. */
+  run: string;
+  /**
+   * custom_ids in this batch that are already a resubmission of an errored or expired request (Decision 5): when one
+   * fails again it is queued, never resubmitted a second time. Absent when the batch holds no resubmissions.
+   */
+  resubmits?: string[];
+  /** The model every request in this batch uses (one model per batch), for pricing collected results. */
+  model?: string;
+}
+
+/** data/college-batches.json: the open batches. Empty between runs. */
+export interface BatchesFile {
+  /** ISO date of the last change; null before the first batch. */
+  updated: string | null;
+  batches: BatchEntry[];
+}
+
+/**
+ * How a host refused us (Decision 8): an HTTP status, "404-to-tools" when it answers a tool user agent with 404 but a
+ * browser with 200 (Texas A&M), or "challenge" for a bot-protection page (UVA's Cloudflare).
+ */
+export type BlockedStatus = 401 | 403 | "404-to-tools" | 405 | 429 | "challenge";
+
+/** A host the pipeline never spends discovery money on. Blocking is per host, not per college. */
+export interface BlockedHost {
+  host: string;
+  status: BlockedStatus;
+  /** ISO dates. */
+  first_seen: string;
+  last_seen: string;
+  /** Which colleges' candidates were on this host (for the PR body's list for the owner). */
+  unit_ids?: string[];
+}
+
+/** data/reference/blocked-hosts.json, written by the pipeline. */
+export interface BlockedHostsFile {
+  hosts: BlockedHost[];
+}
+
+/**
+ * A link the owner found by hand (Decision 8): step 0 of discovery for that college. For a blocked host, the owner
+ * also downloads the file and runs `npm run archive-doc`.
+ */
+export interface CdsUrlEntry {
+  unit_id: string;
+  url: string;
+  kind: ReportedSourceKind;
+  note?: string;
+  /** ISO date the owner added it. */
+  added: string;
+}
+
+/** data/reference/cds-urls.json, the owner's manual list. */
+export interface CdsUrlsFile {
+  entries: CdsUrlEntry[];
+}
+
+/* ------------------------------------------------------------------ */
+/* Round 3 measurement: per-call log and run summary (Decision 11)     */
+/* ------------------------------------------------------------------ */
+
+/** What a model call is for. Round 2's three jobs (REPORTED_MODELS) plus the round-3 picker, search, and vision. */
+export type CallJob = "picker" | "search" | "discovery" | "extraction" | "vision" | "escalation";
+export const CALL_JOBS: readonly CallJob[] = ["picker", "search", "discovery", "extraction", "vision", "escalation"];
+
+/** Message Batches (half price, Decision 5) or a direct Messages API call. */
+export type CallMode = "batch" | "interactive";
+
+/** Which model does each round-3 job (specs/college-reported-round-3.md, Decisions 4, 6, 9). Opus is not called. */
+export const ROUND3_MODELS: Record<CallJob, string> = {
+  picker: "claude-haiku-4-5",
+  search: "claude-sonnet-5",
+  discovery: REPORTED_MODELS.discovery,
+  extraction: REPORTED_MODELS.extraction,
+  vision: "claude-haiku-4-5",
+  escalation: REPORTED_MODELS.escalation,
+};
+
+/**
+ * One model call: a line of data/reports/college-reported-calls-<run>.jsonl. Lets the reservation estimate be checked
+ * against actual tokens and the console's bill be matched (batch ids make batched calls reconcilable).
+ */
+export interface CallLog {
+  run: string;
+  /** ISO timestamp the response (or batch result) was recorded. */
+  at: string;
+  /** The college's unit id. */
+  college: string;
+  job: CallJob;
+  model: string;
+  mode: CallMode;
+  /** The document's type for extraction, vision, and escalation; null for discovery jobs. */
+  document_type: DocumentType | null;
+  call: CallKey | null;
+  /** Batched calls: the request's custom_id and the batch id. */
+  custom_id?: string;
+  batch?: string;
+  /** The estimate the reservation used (characters ÷ 3.5, no safety margin); null when none was made. */
+  estimated_input_tokens: number | null;
+  /** Every input token billed: uncached + cache writes + cache reads. */
+  input_tokens: number;
+  cache_write_tokens: number;
+  cache_read_tokens: number;
+  output_tokens: number;
+  /** Server web searches billed on top of tokens. */
+  searches: number;
+  stop_reason: string | null;
+  cost_usd: number;
+}
+
+/** Decision 11's `usage[]`: one row per job × model × mode × call, summed over a run's CallLog lines. */
+export interface UsageRow {
+  job: CallJob;
+  model: string;
+  mode: CallMode;
+  call?: CallKey;
+  calls: number;
+  input_tokens: number;
+  cache_write_tokens: number;
+  cache_read_tokens: number;
+  output_tokens: number;
+  searches: number;
+  cost_usd: number;
+  /** Batched rows: worst-case cost still reserved for requests not yet collected. */
+  reserved_usd?: number;
+}
+
+/** Every `DiscoveryPath` (defined with the recipe types above), for summary tables. */
+export const DISCOVERY_PATHS: readonly DiscoveryPath[] = [
+  "known", "guessed", "manual", "probe-sitemap", "probe-host", "probe-crawl", "picker", "search", "full", "blocked", "none",
+];
+
+export interface DocumentTypeCounts {
+  fetched: number;
+  unchanged: number;
+  archived: number;
+  model_calls: number;
+  split_fallback: number;
+  grid_rows_undecided: number;
+  vision: number;
+  cost_usd: number;
+}
+
+export interface ItemCounts {
+  passed: number;
+  failed: number;
+  blank: number;
+  not_found: number;
+}
+
+/** Admit-rate tiers, as scripts/lib/college-reported/pilot.mts `tierOf` names them. */
+export type ReportedTier = "very selective" | "selective" | "less selective" | "open admission";
+export const REPORTED_TIERS: readonly ReportedTier[] = ["very selective", "selective", "less selective", "open admission"];
+
+export interface TierCounts {
+  colleges: number;
+  located: number;
+  cds_found: number;
+  published_c1: number;
+  cost_usd: number;
+}
+
+/** One batch the run submitted or collected. */
+export interface BatchSummaryRow {
+  id: string;
+  requests: number;
+  submitted: string;
+  /** ISO timestamp the API reported `ended`; null while open. */
+  ended: string | null;
+  succeeded: number;
+  errored: number;
+  expired: number;
+  reserved_usd: number;
+  cost_usd: number;
+}
+
+/** What the run projects a full run would cost, printed and written before any model call (Decision 5). */
+export interface CostProjection {
+  full_run_usd: number;
+  /** This run's own projection (before scaling a sample to the full run): what the cap guard compares. */
+  run_usd?: number;
+  /** How it was computed: counts × per-unit estimates, in words. */
+  basis: string;
+}
+
+/**
+ * The round-3 run summary (Decision 11). Extends round 2's `RunSummary` without removing anything: `usage` (by round-2
+ * job) stays, and the PR-body script keeps reading it; the per-job/model/mode/call rows are `usage_rows`.
+ */
+export interface RunSummaryV3 extends RunSummary {
+  round: 3;
+  usage_rows: UsageRow[];
+  discovery: Record<DiscoveryPath, { colleges: number; cost_usd: number }>;
+  documents: Record<DocumentType, DocumentTypeCounts>;
+  /** Per template code. */
+  items: Record<string, ItemCounts>;
+  tiers: Record<ReportedTier, TierCounts>;
+  batches: BatchSummaryRow[];
+  /** null until prepare has run. */
+  projection: CostProjection | null;
+  /**
+   * Colleges whose every candidate host refuses us (Decision 8): no money was spent on them; the PR body lists them so
+   * the owner can add a link to data/reference/cds-urls.json and drop the file with `npm run archive-doc`.
+   */
+  blocked_colleges?: { unit_id: string; name: string; hosts: string[] }[];
+  /** Batches still open when the summary was written (the draft-PR signal; data/college-batches.json holds them). */
+  open_batches?: number;
 }
 
 /** "Fall 2026" → 2026; null for anything else. */

@@ -29,11 +29,21 @@ Route: `/explore` (dynamic, URL-driven). The middle of the drill-down, where you
 | Page | `Pagination` | `page` (reset to 1 by any filter/sort/view change) |
 | Min/max undergrads | chip only (set by home lenses) | `minEnroll`, `maxEnroll` |
 | 10-year direction | three chips with counts per indicator ([trend-indicators.md](trend-indicators.md)) | `costTrend`, `appsTrend`, `divTrend`, `selTrend`: comma lists of `up`, `steady`, `down` |
+| Where applicants live | two boolean chips with counts ([cds-residency-admissions.md](data-expansion/cds-residency-admissions.md)): "Publishes admit rates by residency", "Admits out-of-state applicants about as often as in-state" (out-of-state rate ≥ in-state − 5 points, 200+ applicants each). Colleges without a CDS residency grid never match; no sort, slider, or column while coverage is partial | `byRes`, `oosEven` |
+| Financial aid (from colleges' own reports) | two chips with counts ([cds-financial-aid.md](data-expansion/cds-financial-aid.md)) | `aidForms=no-css` (H8 read, CSS Profile not required), `intlAid=1` (the college aids international students) |
+
+College-reported booleans (the financial aid chips) exclude colleges with no data: a college whose CDS record we
+don't have, or whose list was left blank, never matches.
 
 Still supported by the data layer (no UI yet): `minACT`/`maxACT`.
 
 Missing values: range filters (admit rate, SAT, ACT) and direction filters exclude colleges that don't report the measure. Sorting always
 puts missing values last, in either direction. Card meters and table cells show "–".
+
+**Test policy** (`policy=required,optional,blind`; [cds-test-scores-and-policy.md](data-expansion/cds-test-scores-and-policy.md)):
+three chips with counts. Required = `required`; Optional = `required-some`, `recommended`, `considered`; Test-blind =
+`not-considered`. Reads each college's newest published policy (`admissions.test_policy`, a coming cycle's from its CDS
+when newer), so cycles differ between colleges; colleges with no policy are excluded (`lib/test-policy.ts#matchesPolicy`).
 
 Parsing lives in `lib/params.ts` (`parseFilters`, `parseView`, `countActiveFilters`). Client controls update
 the URL through `components/explore/useExploreParams.ts` (`router.push`, `scroll: false`). "Reset" keeps

@@ -1,6 +1,6 @@
 # CDS Student Body and Outcomes: Enrollment, Race, Retention, and Graduation One Year Newer
 
-> Status: **planned** (2026-10-03). Wave 4, unit U9 of the CDS inventory plus the B1/B2 items that
+> Status: **built** (2026-10-03; see [As built](#as-built)). Wave 4, unit U9 of the CDS inventory plus the B1/B2 items that
 > [college-reported-data.md](../college-reported-data.md) listed under "Later". Ships from the round-3 records
 > ([college-reported-round-3.md](../college-reported-round-3.md)) with no new visit to any college. Research: 19 real
 > 2025–26 Common Data Sets (the inventory's working files), the site's own data (`data/schools.json`,
@@ -172,6 +172,15 @@ classes on one dot plot.
 
 Every federal comparison is made against `restoreFederal(school)`, the baseline before any replacement, as
 `sync-college-reported` already does for C1, so a re-run never compares a college with its own previous CDS value.
+
+> **As built (checks, 2026-10-03; `lib/cds-checks.ts`).** Every check above is built and runs on deterministic reads
+> too. Two tolerances changed with the real workbooks: the current B4 grid's final cohort is compared with
+> federal `grad_cohorts` within **±25%**, not ±10% (entering classes move: Illinois's Pell cohort grew 13%, William &
+> Mary's loan group shrank 22%, Vanderbilt's Pell group 11%, all valid), and groups under 30 students (whose rates aren't
+> shown) skip the federal comparison (Vanderbilt's 29-student loan group, 75.9% vs 97.1%). The ±5-point rate bound is
+> unchanged. B2's sub-items are its three columns' codes (B.201–B.210, B.211–B.220, B.221–B.230), each failing alone;
+> B22's year check reads each code's own text (Illinois's B.2203 says "Fall 2025 entering cohort" and fails
+> `edition-mismatch`; its counts still give the rate). `holds-previous-cohort` is the merge's rule, not a record check.
 
 ## How the records take over from the 8 hand-imported overrides
 `data/overrides.json` sets `demographics.undergrad_enrollment` and `demographics.racial_diversity` for 8 colleges
@@ -513,6 +522,71 @@ nothing the charts lack. The 4-year rate by Pell group has no federal series, bu
   and women.
 - Not verified: which class Scorecard's latest retention describes (probe at build); why Harvard's degree-seeking count
   is 12% below federal; coverage of the B2 column-3 problem beyond Illinois.
+
+## As built
+Built 2026-10-03 on the round-3 foundation, from the four template-workbook records (Vanderbilt 221999, Cornell
+190415, William & Mary 231624, Illinois 145637). Differences from the plan above are marked **Changed**.
+
+**Where it lives**
+| File | What |
+|---|---|
+| `lib/newest-groups.ts` (new, pure) | `NEWEST_GROUPS`, `NEWEST_TARGETS`, `federalYears(meta)`, `applyNewestGroups`, `restoreNewestGroups`, `newestGroupCitation` (`Cited.sourceKind`, `cdsEdition`, `replaces`), `validateNewestGroups` (rules 1–8). **Changed:** the spec put the table in `lib/newest.ts`; it has its own module so other display specs' edits to `lib/newest.ts` stay one line. `lib/newest.ts#restoreFederal` calls `restoreNewestGroups` first (one line), so every federal baseline in the pipeline undoes the groups too |
+| `lib/cds/student-body.ts` (new, pure; the spec's `lib/cds-b.ts`) | `parseRate`, `checkB1`, `checkB2` (three sub-items), `checkRetention`, `checkGrid`, and `studentBodyFromRecord(record, federalBaseline)` → the value set per group with lineage plus every problem (check id, detail, edition). **Changed:** the section-B checks live here, not in `lib/cds-checks.ts`, and run when the value set is built; a group is offered only when its record items passed and every check here passes. The checks track can call the same functions to write statuses into the records |
+| `lib/reported-merge.ts` | `mergeReported(schools, reported, records = [], meta?)`: strip (restores groups and admissions) → C1 → the newest groups. Without `records` and `meta` it applies no groups (old callers unchanged) |
+| `lib/lineage.ts` | `validateSchool` runs `validateNewestGroups`; `lineageFor` spreads `newestGroupCitation`; `lineageForPatch` refuses a group's path (rule 9); `validateOverrides` (run by `check:lineage`); `Cited.replaces.value` widened to objects; `Cited.cdsEdition` (**Changed** from `edition`: the citation guard forbids `.edition` in UI code) |
+| `lib/types.ts`, `lib/fields.ts` | `FederalDemographics`, `FederalOutcomes`, `ReportedOutcomes`, `GradAidGroup`; `demographics.federal`, `outcomes.federal.retention`, `outcomes.federal.graduation`, `reported.outcomes.graduation` registered; `outcomes.retention_rate` on vintage `scorecard-retention` |
+| `scripts/sync-data.mts` | Probes the retention year (`student.retention_rate.four_year.full_time`, key N → "Entered fall N − 1"); builds meta before the merge and passes the records |
+| `scripts/merge-reported.mts`, `scripts/check-lineage.mts` | Pass `data/cds-records/` and meta; check `data/overrides.json` |
+| `scripts/import-cds.mts`, `data/overrides.json` | B1/B2 no longer imported; `demographics` removed from all 8 patches |
+| `scripts/history/build.mts`, `scripts/history/graduation-groups.mts` | Rule 1 against `demographics.federal` and `outcomes.federal.graduation` |
+| `lib/indicators.ts` | `Indicator.endFall`; `detailText` adds "(to fall 2024)" for diversity (and selectivity) when the shown value is newer |
+| `components/ui/info-tip.tsx` | "Reported by X in its Common Data Set 2025–26 (fall 2025)."; replaced race shares in the chart's order; percent formatting by path |
+| `components/charts/GroupDotPlot.tsx`, `components/school/GraduationByGroup.tsx` | `secondary` mark ("within 4 years"), the headline sentence, the legend with the `on-time-graduation` term, the race plot's overall line from `outcomes.federal.graduation` |
+| `app/compare/page.tsx`, `app/data/page.tsx`, `app/schools/[id]/students/page.tsx`, `lib/glossary.ts` | Six 4/5-year rows; counts per group; a cited ⓘ on Campus size; `on-time-graduation` and the three sentences |
+| `data/meta.json`, `data/release-calendar.json` | `scorecard-retention`: "Entered fall 2023" (the probe: Scorecard key 2024 equals `latest` at all 8 former override colleges) |
+| `tests/cds-student-body.test.mts` | Tests 1–6 of the plan in one file (plus the updated `lineage`, `merge-reported`, `profile-topics` tests) |
+
+**Lineage years.** Enrollment and race: the record's fall ("Fall 2025"). Retention: "Entered fall 2024". Graduation and
+the 4/5-year shares: "Entered fall 2019" (edition − 6; − 7 when the grid holds the previous cohort). Every record
+carries `edition: "2025–26"` and the cell; quotes join the printed cells a value was computed from (≤ 160 characters).
+
+**The former overrides.** The 8 colleges' federal enrollment and race were put back in `data/schools.json` from the
+College Scorecard API (the values `sync-data` builds: `latest.student.size`, `raceShares`) rather than by a full
+`sync-data` run; Berkeley's override race shares equalled Scorecard's, the other seven differed.
+
+**What the four records give** (`npm run merge-reported`):
+| College | Enrollment, race (fall 2025) | Retention (entered fall 2024) | Graduation (entered fall 2019) |
+|---|---|---|---|
+| Vanderbilt | 7,355 (federal fall 2024: 7,208) | Review: B.2201 holds 0.97 (`count-not-integer`) | Review: Pell cohort 270 vs federal 244 (+10.7%, `federal-disagrees`) |
+| Cornell | 15,979 (federal 15,995; the override's 16,138 was B.176) | 97.8% (federal 98.4%) | Replaced, with 4- and 5-year shares: Pell 78% / 86% / 89% |
+| William & Mary | 6,941 (federal 7,055) | 95.3% (federal 94.6%) | Review: subsidized-loan cohort 178 vs federal 229 (−22%) |
+| Illinois | 37,562 (federal 36,258) | 95.3% (federal 94.8%) | Review: Pell cohort 2,160 vs federal 1,913 (+12.9%) |
+
+The ±10% cohort rule sends three of the four grids to review although each one's previous grid matches IPEDS GR
+exactly: Pell and loan groups move more than 10% between classes. See open question 6.
+
+**Size.** `data/schools.json` grew 11,880 bytes for the four colleges (12,381,769 → 12,393,649 after the baselines):
+about 2.0 KB for enrollment and race only (Vanderbilt), 2.4 KB with retention, 3.5 KB with every group (Cornell). At
+~700 CDS colleges that is about 2–2.5 MB, over the 2 MB line of open question 4.
+
+**Verified** in the running app (`DATA_SOURCE=json npm run dev`): `/schools/221999/students` shows 7,355 undergrads,
+47% men, the CDS race shares; each ⓘ reads "Reported by Vanderbilt University in its Common Data Set 2025–26 (fall
+2025)" with "Federal data, Fall 2024: 7,208" (race lists the seven federal shares); the diversity index cites the same
+document; the overview's ten-year line ends "(to fall 2024)". `/schools/190415/outcomes`: retention 98% with "Federal
+data, entered fall 2023: 98%"; "Of 100 Pell Grant recipients who entered in fall 2019, 78 finished within 4 years and
+89 within 6." with the lighter 4-year marks. `/compare?ids=221999,190415`: the replaced rows carry the muted year,
+"Finished within 4/5 years" rows read "Not published" for Vanderbilt.
+
+**Not built.** The ⓘ for retention doesn't compose the "{retained} of the {cohort} … returned the next fall" sentence
+(the quote shows both counts). The checks don't yet read stated dates in B1 ("October 15, 2025"); B22's quotes are
+checked for the fall they name (`edition-mismatch`). PDF and HTML readers for section B and the review queue
+(`ReviewItem` per code) belong to the round-3 pipeline tracks. Of "Changes to other specs", `data-lineage.md`,
+`college-reported-data.md`, `data-sync.md`, and `sources-and-citations.md` are updated, and `lgbtq-life.md` already
+says the 2025–26 third column is "Unknown"; the round-3, student-body, graduation-by-group, cost-outcomes,
+time-to-degree, and trend-indicators notes are left for the coordinator's spec pass.
+
+**Open question 6 (new).** Keep ±10% for each shown group's cohort against federal, or check the total cohort only
+(±10%) when the previous grid matches IPEDS GR? Today only Cornell's graduation class publishes.
 
 ## Roadmap entry
 - slug: cds-student-body-and-outcomes

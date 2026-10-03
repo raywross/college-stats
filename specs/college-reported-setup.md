@@ -179,6 +179,184 @@ Untick **auto_merge** in the workflow-dispatch form when you want to read a spec
   (comment out `auto_merge: true` in `.github/workflows/college-reported.yml`'s "Resolve run parameters" step) until
   you've found and fixed the underlying cause.
 
+## 9. Archive repo and token
+Round 3 keeps every fetched document forever, keyed by the sha256 of its bytes
+([college-reported-round-3.md Decision 1](college-reported-round-3.md#decision-1-one-permanent-archive-a-document-is-fetched-once)),
+so no college's site is visited twice for the same file. Code: `scripts/lib/college-reported/archive.mts`.
+
+**Without any setup** the archive is the local directory `.cache/college-docs/archive/` (git-ignored). That is
+enough for local runs, but in Actions it lives only as long as the Actions cache (evicted after 7 days unused, 10 GB
+per repo), so set up the repo below before the full run.
+
+**One-time setup (owner):**
+1. Create a **private** repository, e.g. `quad-college-docs`, **with a README** (a release needs a commit to tag;
+   an empty repo can't hold releases). Never make it public: we keep colleges' documents, we don't republish them.
+2. Edit the fine-grained PAT from step 2 (`COLLEGE_REPORTED_TOKEN`): **Repository access** → add
+   `quad-college-docs`; on that repo it needs **Contents: Read and write** (releases and their assets are under
+   Contents). Nothing else on that repo. The default `GITHUB_TOKEN` of a workflow can't reach another repo, so this
+   PAT is required in Actions.
+3. Add a repository **variable** (Settings → Secrets and variables → Actions → Variables) `COLLEGE_DOCS_REPO` =
+   `<owner>/quad-college-docs`. It isn't secret; setting it is what switches the archive to release assets.
+4. Locally, add the same two lines to `.env.local` when you want local runs to use the shared archive:
+   `COLLEGE_DOCS_REPO=<owner>/quad-college-docs` and `COLLEGE_REPORTED_TOKEN=<the PAT>` (or `GITHUB_TOKEN`).
+
+**How it is stored.** One release per month, `docs-2026-10`, created on first use (then `docs-2026-10.2`, … when one
+reaches 1,000 assets). Each document is an asset named `<sha256>.<ext>` (`xlsx`, `pdf`, `html`), and a PDF's
+numbered line text sits beside it as `<sha256>.lines.json.gz`. A document already uploaded in any month is never
+uploaded again. The manifest's `archive` field records where each document is (`gh:docs-2026-10/<sha>.pdf`; a
+`local:` value means it was archived on a machine without the repo set). The local directory stays a hot cache in
+front of the repo.
+
+**Workflow steps needed** (for whoever edits `.github/workflows/college-reported.yml`; the archive code needs no
+flags):
+- In the pipeline step's `env` (and the `collect` job's, which re-reads archived text):
+  ```yaml
+  COLLEGE_DOCS_REPO: ${{ vars.COLLEGE_DOCS_REPO }}
+  COLLEGE_REPORTED_TOKEN: ${{ secrets.COLLEGE_REPORTED_TOKEN }}
+  ```
+  When `COLLEGE_DOCS_REPO` is set and no token is, the run stops at once with "neither COLLEGE_REPORTED_TOKEN nor
+  GITHUB_TOKEN is" rather than archiving to a cache that will be evicted.
+- Keep the existing "Restore document cache" step (`actions/cache@v4`, path `.cache/college-docs`, key
+  `college-docs-<run id>`, restore-keys `college-docs-`): it now also restores `archive/`, so most documents are read
+  from the cache without a download. `actions/cache` saves the path automatically at the end of the job; nothing
+  else is needed. With the repo set, losing the cache costs only downloads, never a refetch from a college.
+- The `collect` job (batch results) needs the same cache restore and env, because escalation reads the archived
+  line text.
+
+**Adding a document by hand** (a blocked host, a Google Drive folder): download it in a browser, then
+```
+npm run archive-doc -- --college <unit_id> --file <path> --url <the link you downloaded it from> [--add-url]
+  [--kind cds|class-profile] [--edition 2025-26] [--retrieved YYYY-MM-DD] [--note "…"]
+```
+It archives the file and lists it in `data/college-docs.json` exactly as a fetch would (`retrieved` = today unless
+given). A 2025–26 template workbook is read into `data/cds-records/<unit_id>.json` at once with no model; a PDF or
+other file is extracted from the archive by the next pipeline run. `--add-url` also adds the link to
+`data/reference/cds-urls.json`, the list discovery tries first. Commit the changed `data/` files. Run it with
+`COLLEGE_DOCS_REPO` set so the file reaches the shared archive, not just your machine.
+
+## 10. Links you find by hand, and blocked hosts
+Round 3 ([college-reported-round-3.md, Decision 8](college-reported-round-3.md#decision-8-share-links-blocked-hosts-and-the-owners-list)).
+Discovery never gets past bot protection: it never switches user agents and never fetches a blocked host another
+way. Where it can't reach a document, you can.
+
+**Blocked hosts** — `data/reference/blocked-hosts.json`, written by the pipeline:
+```json
+{ "hosts": [{ "host": "admission.virginia.edu", "status": "challenge", "first_seen": "2026-10-03", "last_seen": "2026-10-10", "unit_ids": ["234076"] }] }
+```
+- A host is listed when it answers our requests with 401, 403, 405, 429, or a bot-protection page (Cloudflare's
+  "Just a moment…", Incapsula, PerimeterX, DataDome, Akamai "Access Denied"). `404-to-tools` (a 404 to a tool and a
+  200 to a browser, like Texas A&M) can't be told from one honest request: enter it by hand if you see it.
+- Blocking is per host, not per college: a college whose admissions site refuses us may still publish its CDS on an
+  IR host that doesn't.
+- When **every** candidate host of a college is listed, no paid discovery step runs for it, and the run's PR lists the
+  college for you to add a link by hand. Entries not seen for a year are tried again; delete an entry to retry
+  sooner.
+
+**The owner's list** — `data/reference/cds-urls.json`, edited by you. It is step 0 of discovery: an entry is used
+before any probe or model, even for a college whose recipe otherwise works.
+```json
+{ "entries": [{ "unit_id": "152080", "url": "https://drive.google.com/file/d/<id>/view", "kind": "cds", "note": "Notre Dame: picked from the Drive folder", "added": "2026-10-03" }] }
+```
+- `kind` is `cds` or `class-profile`. Paste the link as the browser shows it: Google Sheets and Drive file links, Box
+  `/s/` links, and SharePoint/OneDrive links are rewritten to their direct downloads automatically. A Drive **folder**
+  can't be: open it and paste the file's link.
+- For a blocked host, also download the file and drop it in the archive, so extraction reads your copy:
+  ```sh
+  npm run archive-doc -- --college <unit_id> --file <path> --url <original url>
+  ```
+- Where to look: the PR's "Blocked" list, and recipes whose `discovery.path` is `none` with a `discovery.tried` that
+  shows what was attempted.
+
+**Back-off.** A college whose ladder found nothing records `discovery.next_attempt` in its recipe
+(`data/college-sources.json`): the next 1 February for every tier but open admission, a year later for open
+admission. Runs skip it until then. To retry one sooner, delete its `next_attempt` (or add a link to the owner's list).
+
+## 11. Batches, draft PRs, and the collect job (round 3)
+From round 3 ([college-reported-round-3.md](college-reported-round-3.md#decision-5-extraction-runs-as-a-batch)),
+extraction, escalation, and link-picker calls go through the Message Batches API at half price. Most batches end within
+an hour, but one may take up to 24, so a run can end before its batches do.
+- **The `run` job** has `timeout-minutes: 330` (GitHub stops hosted jobs at 6 hours). It passes
+  `COLLEGE_REPORTED_POLL_UNTIL` (an ISO time 300 minutes after the job started) to the script, which stops polling
+  then and leaves the rest open.
+- **The draft signal** is the state file itself: `data/college-batches.json` lists every batch still open when the
+  script exits (it is rewritten after each submit and each collect). If it lists any, the run opens its PR **as a
+  draft**, notes how many batches are open, and comments that the collect job will finish it. No new exit code: 0/1/2/3
+  mean what they meant.
+- **The `collect` job** runs every 30 minutes (cron `*/30 * * * *`) and by hand (**Run workflow**, `mode`:
+  **collect**). It exits at once unless an open **draft** PR from a `data/college-reported-<run>` branch exists whose
+  `data/college-batches.json` lists open batches. Otherwise it checks out that branch and runs
+  `npm run sync-college-reported -- --phase collect --run <run>` (collect, settle reservations, resubmit errored or
+  expired requests once, submit escalations), then `npm run merge-reported`, commits, and pushes. When no batch is
+  left open it rewrites the release note and the PR body, marks the PR **ready**, and applies the same merge rules as
+  the run job (the run's `auto_merge` choice is kept in a hidden `<!-- college-reported: auto_merge=… -->` line of the
+  PR body). While batches remain (an escalation batch, or resubmitted requests) the PR stays a draft and the next
+  collect continues.
+- Both jobs are in the workflow's one `college-reported` concurrency group. The collect job's `timeout-minutes: 25`
+  keeps it shorter than the cron interval, so it never queues behind itself or displaces a pending scheduled run.
+  Collecting is idempotent: a collect cut off before its push leaves the state file unchanged, and the next one
+  collects the same batches again (results are kept 29 days).
+- Both jobs restore the `.cache/college-docs/` cache (keys `college-docs-<run>` and
+  `college-docs-<run>-collect-<id>`, restoring the newest `college-docs-` entry).
+- **A stuck draft**: if a draft pipeline PR lists no open batches (say a collect was cancelled after its push), the
+  collect job logs a notice and does nothing; mark the PR ready by hand.
+
+The run's calls file, `data/reports/college-reported-calls-<run>.jsonl`, has one line per model call (college, job,
+model, mode, document type, call, estimated vs actual input tokens, cache reads and writes, output tokens, stop
+reason, cost; batched calls also carry their `custom_id` and batch id), so the console's bill can be matched to the
+batch ids. Both files are in the run's artifact.
+
+None of this can be exercised outside GitHub Actions; the YAML was parsed with `js-yaml` and every `run:` block
+checked with `bash -n`.
+
+## 12. The two round-3 pilot runs and the go/no-go table
+The first run on round-3 code is two small runs, estimated at $4–10 together
+([Decision 11](college-reported-round-3.md#decision-11-measure-the-model-before-the-full-run)). They measure what the
+full run's estimates assume before any money goes to all 1,893 colleges. Run them locally, one after the other, from a
+clean `main` with `ANTHROPIC_API_KEY` in `.env.local`. The archive is the local directory unless `COLLEGE_DOCS_REPO` is
+set (§9).
+
+**Run 1: the pilot set, every college up the ladder from step 0** (`--rediscover` matters: 35 of the 50 already have
+recipes, so without it the run measures almost no discovery):
+```sh
+npm run sync-college-reported -- --pilot --rediscover --max-cost 10 --run r3-pilot-1
+```
+**Run 2: a stratified random sample of the two big tiers** (the pilot has only 20 of their 1,644 colleges):
+```sh
+npm run sync-college-reported -- --sample 60 --tiers less,open --max-cost 5 --run r3-pilot-2
+```
+Each run prepares first (no model), prints its projection, and stops with exit 3 before any model call if the
+projection is over the cap. Otherwise it discovers, submits one extraction batch, and polls for up to 90 minutes
+(`--poll-minutes`). If a batch is still open when it stops, finish it later with the same run id:
+```sh
+npm run sync-college-reported -- --phase collect --run r3-pilot-1
+```
+Exit 2 means the breaker tripped: read the review queue before going further. Then run `npm run merge-reported` and
+`npm run verify`, and review `git diff data/` as in §4. Both pilots can also run from Actions: run 1 is **Run workflow**
+with `mode` **pilot**, `rediscover` on, and `max_cost` 10. Run 2 has no workflow mode, so run it locally.
+
+**Reading the go/no-go table.** Everything is in `data/reports/college-reported-run-<run>.json` (the summary) and
+`data/reports/college-reported-calls-<run>.jsonl` (one line per model call). The PR body, or
+`node scripts/college-reported-pr-body.mts body --summary <file> --queue data/review-queue.json`, shows the batches,
+the projection, documents by type, and the blocked colleges.
+
+| Read | Where | Go ahead if | Otherwise |
+|---|---|---|---|
+| Share found at steps 0–1, by tier | `discovery`: colleges under `known`, `guessed`, `manual`, and `probe-*`, against `tiers.<tier>.colleges`. Run 1 for the two selective tiers, run 2 for less selective | ≥ 40% of very selective + selective; ≥ 25% of less selective | Add probe patterns from the misses (`discovery.tried` in each recipe) before spending on steps 3–4 |
+| Cost per college at steps 2, 3, 4 | `discovery.picker`, `.search`, and `.full`: `cost_usd ÷ colleges` | $0.003–0.005 picker, $0.05–0.08 search, $0.08–0.15 full | Re-estimate; tighten step 3 to one search |
+| Share of each document type | `documents.<type>.fetched` | `xlsx-template` + `pdf-form` ≥ 10% | Re-estimate extraction cost (the spec assumes ~20%) |
+| Flattened-PDF tokens | Calls file, `document_type: "pdf-flat"`: `input_tokens` summed per `custom_id` pair; `output_tokens` per call | ≤ 45 K in per document; ≤ 4 K out (`C`) and ≤ 8 K (`rest`) | Revisit the code table's size and line ids |
+| Split fallback share | `documents.pdf-flat.split_fallback ÷ fetched` | < 10% | Improve the C/D markers (layout.mts `splitCD`) |
+| Undecided grid rows | `documents.*.grid_rows_undecided` | Not measured yet (always 0): spot-check C7 and C8 in a few records instead | Turn on the vision last resort, or improve the layout pass |
+| Cache reads | `usage_rows` for extraction: `cache_read_tokens ÷ (calls × the static prefix, ~5 K for C and ~10 K for rest)` | ≥ 25% | Remove the cache marker (`cache: "off"`) |
+| Token estimate | Calls file: `estimated_input_tokens` vs `input_tokens` | Within 20% | Reserve with `countTokens` instead |
+| Failure share per code | `items.<code>`: `failed ÷ (passed + failed)`; the breaker trips on any code over 20% of 20+ model-read documents | < 20% each | Fix that item's label, normalization, or check |
+| Deterministic documents | Howard (form PDF) and the four template workbooks: their records in `data/cds-records/`, and no calls-file line for them | Every in-scope code read with no model call | Fix the readers before the full run |
+| Batch time | `batches[].submitted` → `ended` | Under the run job's 300-minute polling window | Rely on the collect job |
+| Projection | `projection.full_run_usd` (scaled from the run's colleges to all 1,893) | ≤ the planned cap ($150, owner decision 5) | Raise the cap or narrow the tiers |
+
+The PR body's "Blocked colleges" list names the colleges every candidate host refused. Add links you find by hand to
+`data/reference/cds-urls.json` (§10) before the full run.
+
 ## What to check in your own tests
 - [ ] A profile for a college with a published `reported` value shows the chip/popover next to the federal figure,
   with the verbatim quote, the source link, and "checked automatically" (see

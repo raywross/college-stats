@@ -11,10 +11,10 @@ the drill-down.
 | Route | Content |
 |---|---|
 | `/schools/{id}` | Hero, the at-a-glance tiles, "In detail" links to the topic pages, similar schools, the full sources list |
-| `/schools/{id}/admissions` | Getting in: funnel (the college's newest published class when newer than federal, else federal; `lib/newest.ts`), men and women, yield (+ strip), acceptance-rate strip, what they look at, the admissions map; then Test scores (`#scores`): `ScoreChecker`, who submitted, SAT-midpoint strip |
+| `/schools/{id}/admissions` | Getting in: funnel (the college's newest published class when newer than federal, else federal; `lib/newest.ts`), men and women, yield (+ strip), acceptance-rate strip, what they look at, Applying (`#applying`) and What you'll need in high school (`#hs-prep`) from the college's CDS ([cds-application-logistics.md](data-expansion/cds-application-logistics.md)), the admissions map; then Test scores (`#scores`): Test policy (`TestPolicyBlock`), `ScoreChecker`, Score bands (`ScoreBands`, `#bands`), who submitted (with counts), SAT-midpoint strip |
 | `/schools/{id}/students` | Who's on campus: race & ethnicity (+ diversity strip), economic access (+ Pell strip), campus size, where they come from, transfers, who they are; then Campus life (`#campus`) |
 | `/schools/{id}/academics` | Majors and faculty: popular majors, top-earning majors, students per faculty, faculty, spending and endowment |
-| `/schools/{id}/cost` | What it costs: price calculator link, what students pay, price by family income, debt and payback, borrowing and repayment, who gets aid |
+| `/schools/{id}/cost` | What it costs: price calculator link, what students pay, price by family income, debt and payback, borrowing and repayment, who gets aid, applying for aid, international students |
 | `/schools/{id}/outcomes` | What it pays: earnings, staying and finishing, 8 years later, graduation by group, cost vs. earnings map |
 | `/schools/{id}/history` | Over time: every chart group with the controls ([trends-design.md](trends-design.md)) |
 
@@ -77,7 +77,8 @@ routes in `ANCHOR_TOPICS` (`lib/profile-topics.ts`); `#overview`, `#ranks`, and 
      (`profile.newest`, `lib/newest.ts`; [college-reported-round-2.md](college-reported-round-2.md#decision-1-show-the-newest-figures-we-have)).
      When the college's own figures are the headline, `FederalBaselineLine` adds "Federal data, Fall 2024: 5.8%"
      underneath; when the college published something newer but not enough for a full funnel (e.g. applicants only),
-     `PartialReportedLine` adds a line instead, under the (federal) funnel. SAT/ACT stay federal.
+     `PartialReportedLine` adds a line instead, under the (federal) funnel. SAT/ACT are the newest blocks (a college's
+     CDS C9 when newer); the card's SAT bar draws `derived.sat_total` ([cds-test-scores-and-policy.md](data-expansion/cds-test-scores-and-policy.md)).
    - **Students**: "Who's on campus", `studentsTakeaway`; undergrads with "larger than X% of colleges"; diversity
      index with a mini `StackedBar`, Pell share, first-generation share, each against the median; chips for setting,
      housing, athletics association and conference, ROTC, study abroad, undergraduate research (each cited; the row
@@ -109,6 +110,10 @@ view. The page opens with its `Panel` header (eyebrow, h1, the takeaway sentence
 `HeadlineDelta` "since" line where history exists, the non-default-source notice), then today's blocks in the order
 above, the page's `SourceNote`, and previous/next links. Sub-sections that were their own sections (Test scores,
 Campus life) are h2 `Panel`s within their page, with their old ids.
+
+Admissions page: "Where applicants live" (`#residency`, `components/school/ResidencyAdmissions.tsx`) sits after "Men and
+women" and before Yield when a college's CDS has a residency grid; `TOPIC_FIELDS.admissions` lists its derived fields
+([cds-residency-admissions.md](data-expansion/cds-residency-admissions.md)).
 
 ## Insight helpers (`lib/insights.ts`)
 - `standouts(s)`: "Known for" chips from percentile thresholds (ultra-selective, high yield, big campus,

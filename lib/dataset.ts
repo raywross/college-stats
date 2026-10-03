@@ -4,15 +4,21 @@ import { lineageFor, sourcesForFields as sourcesForFieldsPure, type Cited, type 
 import type { ReleaseCalendar } from "./releases";
 import { matchesIndicators } from "./indicators";
 import { genderBalanceOf, isMostlyFullTime } from "./student-body";
+import { matchesPolicy } from "./test-policy";
 import { hasFewLoans } from "./repayment";
 import { hasTuitionGuarantee, noApplicationFee, requiresLiveOn } from "./housing";
 import { FACTOR_FILTERS } from "./factors";
+import { RESIDENCY_FILTERS } from "./cds/residency-display";
+import { hasHonorsProgram } from "./cds/academics-display";
+import { TRANSFER_FILTER } from "./cds/transfer-display";
+import { LOGISTICS_FILTERS } from "./cds/application-logistics-display";
 import { matchesCampus } from "./campus-profile";
 import { matchesServices } from "./campus-services.ts";
 import { withinMaxRatio, withinMinFullTimeFaculty } from "./academics.ts";
 import { hasSmallPellGap } from "./graduation-groups.ts";
 import { drawsNationally } from "./residence.ts";
 import { matchesField } from "./majors.ts";
+import { noCssProfile, offersInternationalAid } from "./cds/financial-aid.ts";
 import {
   METRICS,
   SIZE_BUCKETS,
@@ -232,6 +238,8 @@ export function createDataset({ schools, meta, releaseCalendar }: DatasetFiles) 
     // Student body (lib/student-body.ts); colleges that don't report the share are left out while set.
     if (filters.balance?.length) results = results.filter((s) => filters.balance!.includes(genderBalanceOf(s)!));
     if (filters.fullTime) results = results.filter(isMostlyFullTime);
+    // Test policy (lib/test-policy.ts): each college's newest policy; colleges with none are left out while set.
+    if (filters.policy?.length) results = results.filter((s) => matchesPolicy(s, filters.policy!));
     if (filters.fewLoans) results = results.filter(hasFewLoans);
     // Graduation by group: colleges without both Pell and "neither" rates are left out while set.
     if (filters.pellGap) results = results.filter(hasSmallPellGap);
@@ -242,9 +250,19 @@ export function createDataset({ schools, meta, releaseCalendar }: DatasetFiles) 
     if (filters.noFee) results = results.filter(noApplicationFee);
     if (filters.guarantee) results = results.filter(hasTuitionGuarantee);
     for (const f of FACTOR_FILTERS) if (filters[f.param]) results = results.filter(f.test);
+    // Where applicants live: colleges without a residency grid never match (cds-residency-admissions.md).
+    for (const f of RESIDENCY_FILTERS) if (filters[f.param]) results = results.filter(f.test);
+    // Honors program (cds-academics.md): narrows only toward colleges whose CDS marks one; nothing excludes for its absence.
+    if (filters.honors) results = results.filter(hasHonorsProgram);
+    if (filters.transfers) results = results.filter(TRANSFER_FILTER.test);
+    // Gap year (LOGISTICS_FILTERS, cds-application-logistics.md): colleges without a CDS answer never match.
+    for (const f of LOGISTICS_FILTERS) if (filters[f.param]) results = results.filter(f.test);
     if (filters.setting || filters.research || filters.designation || filters.opportunity) results = results.filter((s) => matchesCampus(s, filters));
     if (filters.division || filters.conference !== undefined || filters.football || filters.rotc || filters.ugResearch || filters.studyAbroad)
       results = results.filter((s) => matchesServices(s, filters));
+    // CDS financial aid: colleges without the college's own report never match.
+    if (filters.aidForms === "no-css") results = results.filter(noCssProfile);
+    if (filters.intlAid) results = results.filter(offersInternationalAid);
 
     const sortBy: SortKey = filters.sortBy && filters.sortBy in SORTERS ? filters.sortBy : "applicants";
     const multiplier = (filters.sortDir ?? (sortBy === "applicants" ? "desc" : "asc")) === "asc" ? 1 : -1;

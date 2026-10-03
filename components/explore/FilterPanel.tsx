@@ -12,6 +12,10 @@ import { FULL_TIME_MAX_PART_TIME, GENDER_BALANCE, type GenderBalance } from "@/l
 import { FEW_LOANS_MAX } from "@/lib/repayment";
 import { HOUSING_FILTERS, type HousingFilterParam } from "@/lib/housing";
 import { FACTOR_FILTERS, type FactorFilterParam } from "@/lib/factors";
+import { RESIDENCY_FILTERS, type ResidencyFilterParam } from "@/lib/cds/residency-display";
+import { HONORS_FILTER_LABEL } from "@/lib/cds/academics-display";
+import { TRANSFER_FILTER } from "@/lib/cds/transfer-display";
+import { LOGISTICS_FILTERS, type LogisticsFilterParam } from "@/lib/cds/application-logistics-display";
 import { DESIGNATION_KEYS, DESIGNATION_LABELS, RESEARCH_TIERS, SETTING_GROUPS } from "@/lib/campus-profile";
 import { DIVISION_FILTERS, DIVISION_SHORT, ROTC_BRANCHES, ROTC_LABELS } from "@/lib/campus-services";
 import { MAX_RATIO_OPTIONS, MIN_FULL_TIME_FACULTY_OPTIONS } from "@/lib/academics";
@@ -20,6 +24,7 @@ import { DRAWS_NATIONALLY } from "@/lib/residence";
 import { FIELD_MIN_OPTIONS, MAJOR_FAMILIES, MAJOR_FAMILY_CODES } from "@/lib/majors";
 import type { Designation, DivisionFilter, ResearchTier, RotcBranch, SettingGroup } from "@/lib/types";
 import { useExploreParams } from "./useExploreParams";
+import { POLICY_BUCKETS, type PolicyBucket } from "@/lib/test-policy";
 import { cn } from "@/lib/utils";
 
 export interface FilterFacets {
@@ -35,6 +40,8 @@ export interface FilterFacets {
   trends: Record<IndicatorKey, Record<Direction, number>>;
   /** Colleges in each gender-balance bucket, and mostly full-time colleges (lib/student-body.ts). */
   balance: Record<GenderBalance, number>;
+  /** Colleges in each test-policy bucket, by each college's newest policy (lib/test-policy.ts). */
+  policy: Record<PolicyBucket, number>;
   fullTime: number;
   /** Colleges matching each housing and policy filter (lib/housing.ts). */
   housing: Record<HousingFilterParam, number>;
@@ -58,6 +65,17 @@ export interface FilterFacets {
   national: number;
   /** Colleges per bachelor's field at each graduates-a-year threshold (lib/majors.ts fieldFacets). */
   fields: Record<string, number[]>;
+  /** Colleges matching each "Where applicants live" chip (lib/cds/residency-display.ts). */
+  residency: Record<ResidencyFilterParam, number>;
+  /** CDS financial aid (lib/cds/financial-aid.ts): colleges whose own report shows no CSS Profile, or aid for international students. */
+  aidNoCss: number;
+  intlAid: number;
+  /** Colleges whose Common Data Set marks an honors program (lib/cds/academics-display.ts). */
+  honors: number;
+  /** Colleges matching "Admits transfer students" (lib/cds/transfer-display.ts). */
+  transfers: number;
+  /** Colleges matching the gap-year chip (lib/cds/application-logistics-display.ts). */
+  logistics: Record<LogisticsFilterParam, number>;
 }
 
 function Section({ title, term, children }: { title: string; term?: TermKey; children: ReactNode }) {
@@ -126,13 +144,16 @@ export function FilterPanel({ facets, onDone }: { facets: FilterFacets; onDone?:
   const fewLoans = searchParams.get("fewLoans") === "1";
   const pellGap = searchParams.get("pellGap") === "1";
   const national = searchParams.get("national") === "1";
-  const field = searchParams.get("field") ?? "";
+  const aidNoCss = searchParams.get("aidForms") === "no-css";
+  const intlAid = searchParams.get("intlAid") === "1";
+  const field =searchParams.get("field") ?? "";
   const fieldMin = Number(searchParams.get("fieldMin") ?? 1) || 1;
   const fieldOptions = MAJOR_FAMILY_CODES.filter((f) => (facets.fields[f]?.[0] ?? 0) > 0).sort((a, b) => MAJOR_FAMILIES[a].localeCompare(MAJOR_FAMILIES[b]));
 
   const hasFilters = [
-    ...["q", "types", "sizes", "regions", "states", "minAR", "maxAR", "minSAT", "maxSAT", "minCost", "maxCost", "minEnroll", "maxEnroll", "balance", "fullTime", "fewLoans", "liveOn", "noFee", "guarantee", "noLegacy", "noEssay", "gpaRequired", "setting", "research", "designation", "opportunity", "division", "conference", "football", "rotc", "ugResearch", "studyAbroad", "maxRatio", "pellGap", "minFullTimeFaculty", "national", "field"],
+    ...["q", "types", "sizes", "regions", "states", "minAR", "maxAR", "minSAT", "maxSAT", "minCost", "maxCost", "minEnroll", "maxEnroll", "balance", "fullTime", "fewLoans", "liveOn", "noFee", "guarantee", "noLegacy", "noEssay", "gpaRequired", "setting", "research", "designation", "opportunity", "division", "conference", "football", "rotc", "ugResearch", "studyAbroad", "maxRatio", "pellGap", "minFullTimeFaculty", "national", "field", "byRes", "oosEven", "gpa", "aidForms", "intlAid", "honors", "transfers", "gapYear"],
     ...INDICATOR_KEYS.map((k) => INDICATORS[k].param),
+    "policy",
   ].some((k) => searchParams.get(k));
 
   const clearAll = () => {
@@ -188,6 +209,20 @@ export function FilterPanel({ facets, onDone }: { facets: FilterFacets; onDone?:
           }
         />
         <p className="text-[11px] text-muted-foreground">Shows schools whose middle-50% range overlaps yours.</p>
+      </Section>
+
+      <Section title="Test policy" term="test-policy">
+        <div role="group" aria-label="Test policy" className="flex flex-wrap gap-1.5">
+          {POLICY_BUCKETS.map((b) => (
+            <Chip key={b.key} active={getList("policy").includes(b.key)} onClick={() => toggleInList("policy", b.key)} count={facets.policy[b.key]}>
+              {b.label}
+            </Chip>
+          ))}
+        </div>
+        <p className="flex items-center gap-1 text-[11px] text-muted-foreground">
+          Each college&apos;s newest published policy, so cycles differ between colleges. Optional includes colleges that require scores of some
+          applicants. <InfoTip term="application-cycle" />
+        </p>
       </Section>
 
       <Section title="Average cost per year" term="average-cost">
@@ -317,6 +352,18 @@ export function FilterPanel({ facets, onDone }: { facets: FilterFacets; onDone?:
         <p className="text-[11px] text-muted-foreground">
           At least {Math.round(DRAWS_NATIONALLY * 100)}% of first-years come from other states. Colleges that don&apos;t report it are hidden while this is set.
         </p>
+      </Section>
+
+      <Section title="Financial aid (from colleges' own reports)" term="css-profile">
+        <div className="flex flex-wrap gap-1.5">
+          <Chip active={aidNoCss} onClick={() => update({ aidForms: aidNoCss ? null : "no-css" })} count={facets.aidNoCss}>
+            No CSS Profile
+          </Chip>
+          <Chip active={intlAid} onClick={() => update({ intlAid: intlAid ? null : "1" })} count={facets.intlAid}>
+            Aid for international students
+          </Chip>
+        </div>
+        <p className="text-[11px] text-muted-foreground">From each college&apos;s Common Data Set; colleges whose report we don&apos;t have yet are hidden while these are set.</p>
       </Section>
 
       <Section title="Majors" term="cip-code">
@@ -459,7 +506,11 @@ export function FilterPanel({ facets, onDone }: { facets: FilterFacets; onDone?:
               <Chip active={searchParams.get("studyAbroad") === "1"} onClick={() => update({ studyAbroad: searchParams.get("studyAbroad") === "1" ? null : "1" })} count={facets.services.studyAbroad}>
                 Study abroad
               </Chip>
+              <Chip active={searchParams.get("honors") === "1"} onClick={() => update({ honors: searchParams.get("honors") === "1" ? null : "1" })} count={facets.honors}>
+                {HONORS_FILTER_LABEL}
+              </Chip>
             </div>
+            <p className="mt-1.5 text-[11px] text-muted-foreground">Honors program: only the {facets.honors} colleges whose Common Data Set lists one can match.</p>
           </div>
         </div>
       </Section>
@@ -475,6 +526,46 @@ export function FilterPanel({ facets, onDone }: { facets: FilterFacets; onDone?:
             );
           })}
         </div>
+      </Section>
+
+      <Section title="Where applicants live" term="admit-rate-by-residency">
+        <div className="flex flex-wrap gap-1.5">
+          {RESIDENCY_FILTERS.map((f) => {
+            const active = searchParams.get(f.param) === "1";
+            return (
+              <Chip key={f.param} active={active} onClick={() => update({ [f.param]: active ? null : "1" })} count={facets.residency[f.param]}>
+                {f.label}
+              </Chip>
+            );
+          })}
+        </div>
+        <p className="text-[11px] text-muted-foreground">Only the {facets.residency.byRes} colleges that publish these figures in their Common Data Set can match.</p>
+      </Section>
+
+      <Section title="Transfer students" term="transfer-admission">
+        <div className="flex flex-wrap gap-1.5">
+          <Chip
+            active={searchParams.get(TRANSFER_FILTER.param) === "1"}
+            onClick={() => update({ [TRANSFER_FILTER.param]: searchParams.get(TRANSFER_FILTER.param) === "1" ? null : "1" })}
+            count={facets.transfers}
+          >
+            {TRANSFER_FILTER.label}
+          </Chip>
+        </div>
+      </Section>
+
+      <Section title="After you're admitted" term="deferred-admission">
+        <div className="flex flex-wrap gap-1.5">
+          {LOGISTICS_FILTERS.map((f) => {
+            const active = searchParams.get(f.param) === "1";
+            return (
+              <Chip key={f.param} active={active} onClick={() => update({ [f.param]: active ? null : "1" })} count={facets.logistics[f.param]}>
+                {f.label}
+              </Chip>
+            );
+          })}
+        </div>
+        <p className="text-[11px] text-muted-foreground">Only colleges whose Common Data Set answers this can match.</p>
       </Section>
 
       <Section title="Housing & policies" term="housing-capacity">

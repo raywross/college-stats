@@ -141,7 +141,7 @@ const entries = {
   sat: {
     term: "SAT total",
     short: "The College Board's admissions test, scored 400–1600: Reading & Writing (200–800) plus Math (200–800).",
-    long: "We estimate a school's SAT total range by adding the Reading & Writing and Math percentiles. That's an approximation, because the same student isn't always at the 25th percentile in both sections.",
+    long: "Where a college's own Common Data Set reports its SAT total percentiles, we show those. Elsewhere we estimate the total range by adding the Reading & Writing and Math percentiles, an approximation because the same student isn't always at the 25th percentile in both sections. Rankings always use the added sections, so every college is measured the same way.",
     category: "Test scores",
     related: ["sat-ebrw", "sat-math", "middle-50", "act"],
   },
@@ -160,6 +160,7 @@ const entries = {
   act: {
     term: "ACT composite",
     short: "The ACT's overall score, from 1 to 36, averaging English, Math, Reading, and Science.",
+    long: "From 2025 the enhanced ACT makes the Science section optional and computes the composite from English, Math, and Reading alone, so composites from newer classes may mix both kinds of scores.",
     category: "Test scores",
     related: ["sat", "middle-50"],
   },
@@ -172,14 +173,16 @@ const entries = {
   },
   "test-policy": {
     term: "Test policy",
-    short: "How a college uses SAT/ACT scores: required, recommended, considered if submitted (test-optional), or not considered at all (test-blind).",
+    short: "How a college uses SAT/ACT scores: required, required for some applicants, recommended, considered if submitted (test-optional), or not considered at all (test-blind).",
+    long: "Federal data gives the policy for students who already enrolled. Where a college's Common Data Set states its policy for the coming application cycle, we show that instead, and its source names the cycle.",
     why: "At test-blind schools (like the University of California) you won't see score ranges, because scores aren't collected.",
     category: "Test scores",
-    related: ["test-optional", "test-submission"],
+    related: ["test-optional", "test-submission", "application-cycle", "required-for-some"],
   },
   "test-submission": {
     term: "Test submission rate",
     short: "The share of enrolled students who submitted a given test score. Below 50%, the reported range may not represent the whole class.",
+    long: "A college's Common Data Set also gives how many students sent each test, shown with the share where it's reported.",
     category: "Test scores",
     related: ["test-optional", "middle-50"],
   },
@@ -245,7 +248,7 @@ const entries = {
   "in-state-student": {
     term: "In-state, out-of-state, and international students",
     short: "Where a first-year lived when they applied: the college's own state, another U.S. state, DC, or territory (out-of-state), or another country (international). Shares here are of every first-year, including the few whose residence wasn't reported.",
-    long: "Colleges report each first-year's home state to the federal government every fall; reporting is required in even-numbered years and optional in odd ones, so the site uses even years. A Common Data Set's \"percent from out of state\" leaves international students out of both the count and the total, so it reads higher than the out-of-state share here.",
+    long: "Colleges report each first-year's home state to the federal government every fall; reporting is required in even-numbered years and optional in odd ones, so the site uses even years. A Common Data Set's \"percent from out of state\" leaves international students out of both the count and the total, so it reads higher than the out-of-state share here. The share of first-years from out of state is not the same as the out-of-state acceptance rate, which counts who got in, not who came.",
     why: "A college that draws mostly from its own state feels different from one with students from across the country, and at a public university, out-of-state students usually pay a higher tuition.",
     category: "Students & access",
     related: ["first-time-student", "in-state-tuition"],
@@ -259,6 +262,7 @@ const entries = {
   "degree-seeking": {
     term: "Degree-seeking undergraduate",
     short: "A student enrolled toward a bachelor's or associate degree, as opposed to someone taking classes without pursuing a degree. The site's undergraduate counts and shares include only degree-seeking students.",
+    long: "The newest figure may come from the college's own Common Data Set, a year newer than federal data; the ⓘ shows which.",
     category: "Students & access",
     related: ["undergrad-enrollment"],
   },
@@ -377,10 +381,19 @@ const entries = {
   "pell-graduation-gap": {
     term: "Pell graduation gap",
     short: "How many points lower the 6-year graduation rate is for Pell Grant recipients than for students who got neither a Pell Grant nor a subsidized federal loan, in the same entering class.",
-    long: "Federal data splits each entering class of first-time, full-time students three ways: Pell Grant recipients, students with a subsidized federal loan but no Pell Grant, and students with neither. Comparing Pell recipients with the \"neither\" group compares lower-income students with students who didn't qualify for need-based federal aid. A negative gap means Pell recipients graduated more often. Groups under 30 students aren't shown.",
+    long: "Federal data splits each entering class of first-time, full-time students three ways: Pell Grant recipients, students with a subsidized federal loan but no Pell Grant, and students with neither. Comparing Pell recipients with the \"neither\" group compares lower-income students with students who didn't qualify for need-based federal aid. A negative gap means Pell recipients graduated more often. Groups under 30 students aren't shown. The newest figure may come from the college's own Common Data Set, a year newer than federal data; the ⓘ shows which.",
     why: "Colleges admit students from every income level; the gap shows whether lower-income students who enroll finish as often as everyone else. It says more about support than the overall rate does.",
     category: "Cost & outcomes",
-    related: ["graduation-rate", "pell-grant", "adjusted-cohort"],
+    related: ["graduation-rate", "pell-grant", "adjusted-cohort", "on-time-graduation"],
+  },
+  // CDS student body and outcomes (specs/data-expansion/cds-student-body-and-outcomes.md).
+  "on-time-graduation": {
+    term: "Finished within 4 years",
+    short: "First-time, full-time students who started a bachelor's degree; the college's own count from its Common Data Set. The 6-year rate counts the same students two years later.",
+    long: "Colleges that publish a Common Data Set report how many of each entering class finished within 4, 5, and 6 years, split by Pell Grant recipients, students with a subsidized federal loan but no Pell Grant, and students with neither. Groups under 30 students aren't shown. This is a different group from the \"Time to degree\" figures, which follow every entering student, including part-time and transfer students.",
+    why: "Four years of tuition is the plan for most families; the gap between the 4- and 6-year marks shows how many students need longer, and whether that differs for lower-income students.",
+    category: "Cost & outcomes",
+    related: ["pell-graduation-gap", "time-to-degree", "cds"],
   },
   "adjusted-cohort": {
     term: "Adjusted cohort",
@@ -392,6 +405,7 @@ const entries = {
   "retention-rate": {
     term: "Retention rate",
     short: "The share of full-time first-year students who come back for their second year. An early signal of student satisfaction and support.",
+    long: "The newest figure may come from the college's own Common Data Set, a year newer than federal data; the ⓘ shows which.",
     category: "Cost & outcomes",
     related: ["graduation-rate"],
   },
@@ -790,10 +804,281 @@ const entries = {
     category: "Data sources",
     related: ["ipeds"],
   },
+  // CDS C8/C9 (specs/data-expansion/cds-test-scores-and-policy.md).
+  "score-bands": {
+    term: "Score bands",
+    short: "The share of enrolled first-years who sent a test whose score fell in each range, such as SAT 1400–1600 or ACT 30–36, from the college's Common Data Set.",
+    why: "Bands show how scores spread across the whole class, not just the middle half. They describe only students who sent scores.",
+    category: "Test scores",
+    related: ["middle-50", "test-submission", "sat", "act"],
+  },
+  "application-cycle": {
+    term: "Application cycle",
+    short: "The year students apply, named by the fall they would enroll. A college's Common Data Set states its test policy for the coming cycle.",
+    category: "Admissions",
+    related: ["test-policy"],
+  },
+  "required-for-some": {
+    term: "Required for some applicants",
+    short: "A test policy where some applicants (for example, those to certain programs) must send SAT or ACT scores and others needn't. Only a college's Common Data Set reports it.",
+    category: "Test scores",
+    related: ["test-policy", "test-optional"],
+  },
   region: {
     term: "Region",
     short: "The part of the country a school is in: Northeast, Southeast, Midwest, Southwest, or West.",
     category: "School types",
+  },
+  // CDS admissions by residency (specs/data-expansion/cds-residency-admissions.md).
+  "admit-rate-by-residency": {
+    term: "Acceptance rate by residency",
+    short: "The share of applicants from the college's own state who were admitted, and the same for applicants from other states and from abroad, as the college reports them in its Common Data Set.",
+    long: "Residency is where an applicant lived when applying, which isn't always the same as qualifying for in-state tuition. This is different from the share of first-years who come from out of state: that counts who enrolled, this counts who got in.",
+    why: "At many public universities in-state applicants are admitted at a higher rate, but not everywhere, and some private colleges show the opposite. A group's rate also depends on who applies from there.",
+    category: "Admissions",
+    related: ["acceptance-rate", "in-state-student", "yield-by-residency"],
+  },
+  "yield-by-residency": {
+    term: "Yield by residency",
+    short: "Of the students admitted from each place, the share who enrolled.",
+    category: "Admissions",
+    related: ["yield", "admit-rate-by-residency"],
+  },
+  // CDS cost and debt (specs/data-expansion/cds-cost-and-debt.md).
+  "next-year-price": {
+    term: "Next year's price",
+    short:
+      "Tuition, required fees, and on-campus food and housing for the coming academic year, as the college published them in its Common Data Set, before any aid.",
+    long: "Federal prices describe a year that has already happened and arrive a year or more late, so this is shown beside the federal price rather than replacing it. It isn't used in rankings or comparisons, and it doesn't include books, transportation, or personal expenses.",
+    why: "It tells you roughly what the next entering class will be charged, and how fast the price is rising.",
+    category: "Cost & outcomes",
+    related: ["cost-of-attendance", "net-price"],
+  },
+  "cumulative-principal": {
+    term: "Average total borrowed (all loan types)",
+    short:
+      "From the college's Common Data Set: the average total a graduating class's borrowers took out over their whole degree, counting federal, institutional, state, and private loans.",
+    long: "The federal median debt beside it counts only federal loans, uses the middle borrower rather than the average, and includes students who left without a degree, so the two figures differ by design. Only students who started at the college as first-time students and earned a bachelor's are counted. Interest isn't included.",
+    why: "Private loans often carry higher rates and fewer protections than federal ones, and federal data leaves them out.",
+    category: "Cost & outcomes",
+    related: ["median-debt", "federal-loan-rate"],
+  },
+  // CDS admissions profile (specs/data-expansion/cds-admissions.md).
+  "high-school-gpa": {
+    term: "High school GPA",
+    short: "First-years' grade-point averages from high school, as the college reports them in its Common Data Set: an average, and the share in each GPA band.",
+    long: "These describe students who enrolled, not everyone admitted. The bands use a 4.0 scale; the average may be weighted, and only counts the first-years who reported a GPA.",
+    why: "It shows where a typical first-year's grades fell, but high schools grade differently, so compare a college only with itself.",
+    category: "Admissions",
+    related: ["weighted-gpa", "gpa-band", "class-rank"],
+  },
+  "weighted-gpa": {
+    term: "Weighted GPA",
+    short: "A GPA that gives extra points for honors, AP, or IB courses, so it can run above 4.0. It can't be compared with an unweighted GPA on a 4.0 scale.",
+    category: "Admissions",
+    related: ["high-school-gpa"],
+  },
+  "gpa-band": {
+    term: "GPA band",
+    short: "A range of high school GPAs (4.0, 3.75–3.99, 3.50–3.74, and so on) and the share of first-years whose GPA fell in it, on a 4.0 scale.",
+    long: "At colleges whose average is weighted, the top \"4.0\" band seems to hold every GPA of 4.0 or more.",
+    category: "Admissions",
+    related: ["high-school-gpa"],
+  },
+  "class-rank": {
+    term: "Class rank",
+    short: "Where a student stood in their high school class (top tenth, top quarter, top half). Many high schools no longer rank, so these shares describe only the first-years whose school reported one.",
+    category: "Admissions",
+    related: ["high-school-gpa"],
+  },
+  "factor-importance": {
+    term: "How much each factor counts",
+    short: "In its Common Data Set, a college marks each part of an application as very important, important, considered, or not considered when it decides whom to admit.",
+    long: "\"Very important\" parts weigh most; \"considered\" parts can help but weigh less; \"not considered\" parts aren't used, even if you send them. The federal survey asks a simpler question (required, considered, or not considered).",
+    category: "Admissions",
+    related: ["admission-factor", "legacy-status"],
+  },
+  "early-decision": {
+    term: "Early decision",
+    short: "An early application that is binding: if admitted, you commit to enroll and withdraw your other applications. Decisions usually come in December.",
+    long: "Some colleges run a second round (ED II) with a later deadline. Recruited athletes and other applicants with an edge often apply early, so a college's early admit rate overstates the gain for a typical applicant.",
+    category: "Admissions",
+    related: ["early-action", "restrictive-early-action"],
+  },
+  "early-action": {
+    term: "Early action",
+    short: "An early application that isn't binding: you hear back early but can still choose another college by the usual May 1 deadline.",
+    category: "Admissions",
+    related: ["early-decision", "restrictive-early-action"],
+  },
+  "restrictive-early-action": {
+    term: "Restrictive early action",
+    short: "Non-binding early action where you agree not to apply early to other colleges' early plans, with exceptions the college sets. Also called single-choice early action.",
+    category: "Admissions",
+    related: ["early-action", "early-decision"],
+  },
+  "wait-list": {
+    term: "Wait list",
+    short: "A list of qualified applicants a college may admit later if spaces open. Applicants choose whether to accept a place on it; at many colleges few are admitted from it.",
+    category: "Admissions",
+    related: ["admitted", "yield"],
+  },
+  // CDS financial aid (specs/data-expansion/cds-financial-aid.md).
+  "css-profile": {
+    term: "CSS Profile",
+    short: "A financial aid form from the College Board that many private colleges require on top of the FAFSA. It asks more than the FAFSA does (home equity, a business, both parents' finances) so the college can award its own grants.",
+    long: "The FAFSA decides federal aid such as Pell Grants. Colleges that give a lot of their own money often want the fuller picture the CSS Profile gives, and use it with their own formula for need. It has a fee, with waivers for lower-income families.",
+    why: "If a college you're applying to requires it, its deadline is usually earlier than the FAFSA's and missing it can cost you the college's own grants.",
+    category: "Cost & outcomes",
+    related: ["noncustodial-profile", "aid-methodology", "need-based-aid"],
+  },
+  "noncustodial-profile": {
+    term: "CSS Noncustodial Profile",
+    short: "A second CSS Profile filed by the parent a student doesn't live with, when parents are divorced or separated. Colleges that require it count that parent's income and assets in figuring need.",
+    category: "Cost & outcomes",
+    related: ["css-profile"],
+  },
+  "business-farm-supplement": {
+    term: "Business/Farm Supplement",
+    short: "An extra form some colleges ask of families who own a business or farm, so they can judge what it's worth and what it earns before awarding their own aid.",
+    category: "Cost & outcomes",
+    related: ["css-profile"],
+  },
+  "aid-methodology": {
+    term: "Need methodology (federal or institutional)",
+    short: "How a college works out what a family can pay. The federal formula uses the FAFSA alone; a college's own (institutional) formula usually adds the CSS Profile and can count home equity or a noncustodial parent. The same family can show different need at two colleges.",
+    category: "Cost & outcomes",
+    related: ["css-profile", "need-met", "need-based-aid"],
+  },
+  "aid-package": {
+    term: "Aid package",
+    short: "Everything a college offers a student with need: grants and scholarships, plus self-help (loans and work-study). The Common Data Set's average package leaves out loans meant to replace the family's contribution (parent PLUS, unsubsidized, private loans).",
+    category: "Cost & outcomes",
+    related: ["self-help-aid", "need-based-aid"],
+  },
+  "self-help-aid": {
+    term: "Self-help aid",
+    short: "Aid a student pays back or works for: student loans and work-study jobs, as opposed to grants and scholarships, which are free money.",
+    category: "Cost & outcomes",
+    related: ["aid-package"],
+  },
+  "merit-dollar-share": {
+    term: "College grant dollars given as merit",
+    short: "Of the grant money a college gives from its own funds, the share awarded without regard to need. Merit money that went toward a student's need counts as need-based in the Common Data Set, so this is merit beyond need.",
+    category: "Cost & outcomes",
+    related: ["merit-aid", "institutional-aid"],
+  },
+  "athletic-scholarship": {
+    term: "Athletic scholarship",
+    short: "Aid a college gives for playing a sport, regardless of need. NCAA Division III colleges don't give them; Division I and II colleges and NAIA members can.",
+    category: "Cost & outcomes",
+    related: ["merit-aid", "ncaa-division"],
+  },
+  "aid-for-international-students": {
+    term: "Aid for international students",
+    short: "Grants a college gives from its own funds to students who aren't U.S. citizens or permanent residents. They can't get federal aid, so the college's own aid is usually all there is. Federal data doesn't track it; this comes from the college's Common Data Set.",
+    category: "Cost & outcomes",
+    related: ["institutional-aid", "css-profile"],
+  },
+  // CDS academics (specs/data-expansion/cds-academics.md). Definitions quoted from the Common Data Set's own sheet.
+  "cds-student-faculty-ratio": {
+    term: "Student-to-faculty ratio (Common Data Set)",
+    short:
+      "The college's own ratio from its Common Data Set: full-time-equivalent undergraduate and graduate students (full-time plus 1/3 part-time) to full-time-equivalent instructional faculty, leaving out stand-alone graduate or professional programs such as medicine, law, or business.",
+    long:
+      "The Common Data Set's definition: \"the ratio of full-time equivalent undergraduate and graduate students (full-time plus 1/3 part time) to full-time equivalent instructional faculty of undergraduate and graduate students (full-time plus 1/3 part time). In the ratio calculations, exclude both faculty and students in stand-alone graduate or professional programs such as medicine, law, veterinary, dentistry, social work, business, or public health in which faculty teach virtually only graduate level students.\" It is a different number than the federal ratio shown elsewhere on this page, because the two are defined differently, not because one is wrong.",
+    why: "Two honest numbers can differ: Harvard reports 11 to 1 in its Common Data Set and 7 to 1 to the federal survey.",
+    category: "Students & access",
+    related: ["student-faculty-ratio", "class-section"],
+  },
+  "class-section": {
+    term: "Class section",
+    short:
+      "One meeting of a credit course at a stated time, not a lab or discussion subsection, with at least one degree-seeking undergraduate enrolled. Class sizes count sections, not students.",
+    long:
+      "The Common Data Set's definition: \"an organized course offered for credit, identified by discipline and number, meeting at a stated time or times in a classroom or similar setting, and not a subsection such as a laboratory or discussion session.\" Distance-learning and noncredit classes, independent study, internships, and one-on-one instruction are left out. Because a lecture of 300 is one section, a student is more likely to sit in a large class than the share of sections suggests.",
+    why: "The closest published answer to \"how big are my classes?\", if you keep in mind that it counts sections, not seats.",
+    category: "Students & access",
+    related: ["class-subsection", "student-faculty-ratio"],
+  },
+  "class-subsection": {
+    term: "Class subsection",
+    short: "A lab, recitation, or discussion that meets separately from a course's lecture. The Common Data Set counts these apart from class sections.",
+    long:
+      "The Common Data Set's definition: \"any subsection of a course, such as laboratory, recitation, and discussion subsections that are supplementary in nature and are scheduled to meet separately from the lecture portion.\" Like sections, they are counted per meeting group, not per student.",
+    category: "Students & access",
+    related: ["class-section"],
+  },
+  "open-curriculum": {
+    term: "Open curriculum",
+    short: "The college reports no college-wide required coursework: students choose their own classes outside their major.",
+    long: "Shown when a college's Common Data Set lists special study options but checks none of the required-coursework areas. Majors still have their own requirements, and some colleges with an open curriculum ask for a writing course or a spread of subjects in other ways.",
+    why: "Freedom to explore, with more responsibility for building a broad education yourself.",
+    category: "Students & access",
+    related: ["required-core"],
+  },
+  "required-core": {
+    term: "Required coursework",
+    short: "Subject areas every undergraduate must take courses in, whatever their major, as the college lists them in its Common Data Set.",
+    long: "A college checks each area it requires (English composition, math, sciences, a foreign language, and so on). An area that isn't listed may still be required by some programs, or the college may simply not have checked the box.",
+    category: "Students & access",
+    related: ["open-curriculum"],
+  },
+  // CDS transfer admission (specs/data-expansion/cds-transfer.md).
+  "transfer-admission": {
+    term: "Transfer admission",
+    short: "How many students applied to transfer in from another college, how many were admitted, and how many enrolled, as the college reports them in its Common Data Set. The transfer acceptance rate is admitted ÷ applied.",
+    long: "This is the transfer funnel, so it counts who got in. The federal count of new transfer students is a different measure: it counts every transfer student who enrolled that fall, however they were admitted, and comes from a different survey, so the two numbers rarely match exactly. The college's Common Data Set also lists the terms transfers may start, the minimum credits to apply, and what the application needs.",
+    why: "A college that admits few first-year applicants may admit transfers at a very different rate, higher or lower, and some colleges take transfers only in the fall.",
+    category: "Admissions",
+    related: ["transfer-in", "acceptance-rate", "advanced-standing"],
+  },
+  "advanced-standing": {
+    term: "Advanced standing",
+    short: "Credit a transfer student gets for courses already completed at another college, so they don't start over as a first-year.",
+    long: "Colleges say in their Common Data Set whether transfers can earn it. How many credits count, and for which courses, varies by college and program.",
+    category: "Admissions",
+    related: ["transfer-admission", "transfer-in"],
+  },
+  // CDS application logistics and high school preparation (specs/data-expansion/cds-application-logistics.md).
+  "priority-date": {
+    term: "Priority date",
+    short: "An earlier date some colleges set before the regular deadline. Applying by it can matter for scholarships, honors programs, or housing, even though applications are still accepted afterwards.",
+    why: "Missing a priority date usually doesn't rule you out, but it can cost you a chance at money or a place in a program that fills first.",
+    category: "Admissions",
+    related: ["reply-by-date"],
+  },
+  "rolling-notification": {
+    term: "Rolling notification",
+    short: "The college sends decisions as it finishes reading applications, starting on a set date, rather than all on one day.",
+    why: "Applying early in a rolling cycle usually means hearing back sooner.",
+    category: "Admissions",
+    related: ["reply-by-date"],
+  },
+  "reply-by-date": {
+    term: "Reply-by date",
+    short: "The date by which an admitted student must accept or decline the offer, usually with a deposit. Many colleges use May 1, or a few weeks after the decision for students admitted later.",
+    category: "Admissions",
+    related: ["housing-deposit", "rolling-notification"],
+  },
+  "housing-deposit": {
+    term: "Housing deposit",
+    short: "Money an admitted student pays to hold a place in campus housing, with its own deadline. The college's Common Data Set says whether it's refunded if you don't enroll.",
+    category: "Cost & outcomes",
+    related: ["reply-by-date"],
+  },
+  "deferred-admission": {
+    term: "Deferred admission (gap year)",
+    short: "Postponing enrollment after being admitted, for example to take a gap year, with the college holding your place for a set time.",
+    long: "Not the same as being deferred in early decision or early action, where the college moves your application to the regular round without deciding yet. Deferred admission comes after you're admitted.",
+    category: "Admissions",
+    related: ["reply-by-date"],
+  },
+  "college-preparatory-program": {
+    term: "College-preparatory program",
+    short: "A high school course plan built around academic subjects: English, math, science, a foreign language, and social studies. A college's Common Data Set says whether it requires one, recommends one, or neither, and how many years (units) of each subject it expects.",
+    long: "A unit is one year of a subject. Lab science units are part of the science count, not extra.",
+    category: "Admissions",
   },
 } satisfies Record<string, GlossaryEntry>;
 

@@ -59,6 +59,9 @@ federal too, so a federal median never sits on a college-reported range. The by-
   option "Admit rate gap (men higher first)". No filter.
 - **Compare:** "Acceptance rate, men / women" row in All the numbers.
 - **Glossary:** `median-vs-midpoint`, `admit-rate-by-sex`.
+- **See also:** [cds-residency-admissions.md](cds-residency-admissions.md)'s "Where applicants live" card reuses this
+  card's pattern and notable-gap rule (its own thresholds: 5 points or 1.5×, 200+ applicants per group). The by-sex card
+  stays federal.
 
 ## Keep history?
 - **Series `admit_rate_men`, `admit_rate_women`**, fall 2001 on, same eras as applicants; charted in Over time →

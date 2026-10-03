@@ -29,6 +29,7 @@ Route: `/explore` (dynamic, URL-driven). The middle of the drill-down, where you
 | Page | `Pagination` | `page` (reset to 1 by any filter/sort/view change) |
 | Min/max undergrads | chip only (set by home lenses) | `minEnroll`, `maxEnroll` |
 | 10-year direction | three chips with counts per indicator ([trend-indicators.md](trend-indicators.md)) | `costTrend`, `appsTrend`, `divTrend`, `selTrend`: comma lists of `up`, `steady`, `down` |
+| Where applicants live | two boolean chips with counts ([cds-residency-admissions.md](data-expansion/cds-residency-admissions.md)): "Publishes admit rates by residency", "Admits out-of-state applicants about as often as in-state" (out-of-state rate ≥ in-state − 5 points, 200+ applicants each). Colleges without a CDS residency grid never match; no sort, slider, or column while coverage is partial | `byRes`, `oosEven` |
 
 Still supported by the data layer (no UI yet): `minACT`/`maxACT`.
 

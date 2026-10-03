@@ -28,6 +28,7 @@ import type { DatasetMeta, RepaymentStatus, School, SchoolType, TestPolicy } fro
 import { lineageForPatch, validateLineage } from "../lib/lineage.ts";
 import { COLLEGE_SITE_SOURCE, type ReportedFile } from "../lib/reported.ts";
 import { mergeReported } from "../lib/reported-merge.ts";
+import { readRecords } from "./lib/college-reported/records.mts";
 import { applyProbes, filesToProbe, type FileProbe, type ReleaseCalendar } from "../lib/releases.ts";
 import { IPEDS_BASES, parseCsv } from "./lib/ipeds.mts";
 import { MSI_FIELDS, campusProfileFrom, directoryIssues, msiFrom } from "../lib/campus-profile.ts";
@@ -880,7 +881,7 @@ async function main() {
   let reportedMerged = 0;
   if (existsSync(REPORTED)) {
     const reportedFile: ReportedFile = JSON.parse(readFileSync(REPORTED, "utf8"));
-    const merged = mergeReported(schools, reportedFile);
+    const merged = mergeReported(schools, reportedFile, readRecords(join(ROOT, "data", "cds-records")));
     schools.splice(0, schools.length, ...merged.schools);
     reportedMerged = merged.merged;
   }

@@ -254,6 +254,26 @@ export const FIELDS = {
   "reported.admissions.enrolled": reported("Enrolled (college-reported)"),
   "reported.admissions.acceptance_rate": reported("Acceptance rate (college-reported)"),
   "reported.admissions.source_kind": reported("Kind of document (college-reported)"),
+  // CDS C1 by residency (specs/data-expansion/cds-residency-admissions.md; lib/cds/residency.ts): one lineage record
+  // per stored leaf, from the newest passed grid.
+  "reported.admissions_by_residency.entering_term": reported("Entering class of the residency grid (college-reported)"),
+  "reported.admissions_by_residency.year": reported("Residency grid year (college-reported)"),
+  "reported.admissions_by_residency.edition": reported("Residency grid CDS edition (college-reported)"),
+  "reported.admissions_by_residency.in_state.applicants": reported("Applied, from the college's state (college-reported)"),
+  "reported.admissions_by_residency.in_state.admitted": reported("Admitted, from the college's state (college-reported)"),
+  "reported.admissions_by_residency.in_state.enrolled": reported("Enrolled, from the college's state (college-reported)"),
+  "reported.admissions_by_residency.out_of_state.applicants": reported("Applied, from other states (college-reported)"),
+  "reported.admissions_by_residency.out_of_state.admitted": reported("Admitted, from other states (college-reported)"),
+  "reported.admissions_by_residency.out_of_state.enrolled": reported("Enrolled, from other states (college-reported)"),
+  "reported.admissions_by_residency.international.applicants": reported("Applied, from abroad (college-reported)"),
+  "reported.admissions_by_residency.international.admitted": reported("Admitted, from abroad (college-reported)"),
+  "reported.admissions_by_residency.international.enrolled": reported("Enrolled, from abroad (college-reported)"),
+  "reported.admissions_by_residency.unknown.applicants": reported("Applied, residency unknown (college-reported)"),
+  "reported.admissions_by_residency.unknown.admitted": reported("Admitted, residency unknown (college-reported)"),
+  "reported.admissions_by_residency.unknown.enrolled": reported("Enrolled, residency unknown (college-reported)"),
+  "reported.admissions_by_residency.total.applicants": reported("Applied, all residencies (college-reported)"),
+  "reported.admissions_by_residency.total.admitted": reported("Admitted, all residencies (college-reported)"),
+  "reported.admissions_by_residency.total.enrolled": reported("Enrolled, all residencies (college-reported)"),
 
   /* ---- History summary (data/history/, `npm run sync-history`) ---- */
   trends: {
@@ -322,6 +342,51 @@ export const FIELDS = {
     ...gr("Pell graduation gap"),
     computed: true,
     derived: { formula: "Graduation rate of students with neither a Pell Grant nor a subsidized loan − Pell Grant recipients' rate (points)", inputs: ["outcomes.grad_rate_no_pell_no_loan", "outcomes.grad_rate_pell"] },
+  },
+  // Residency rates (specs/data-expansion/cds-residency-admissions.md; lib/cds/residency-display.ts). Partial coverage:
+  // never in METRICS, ranks, medians, sorts, the radar, Key differences, or "Known for" (tests/residency-admissions.test.mts).
+  "derived.admit_rate_in_state": {
+    ...reported("Acceptance rate, in-state"),
+    computed: true,
+    derived: { formula: "Admitted ÷ applied from the college's state, from the college's Common Data Set C1 grid (not calculated under 10 applicants)", inputs: ["reported.admissions_by_residency.in_state.applicants", "reported.admissions_by_residency.in_state.admitted"] },
+  },
+  "derived.admit_rate_out_of_state": {
+    ...reported("Acceptance rate, other states"),
+    computed: true,
+    derived: { formula: "Admitted ÷ applied from other states, from the college's Common Data Set C1 grid (not calculated under 10 applicants)", inputs: ["reported.admissions_by_residency.out_of_state.applicants", "reported.admissions_by_residency.out_of_state.admitted"] },
+  },
+  "derived.admit_rate_international": {
+    ...reported("Acceptance rate, international"),
+    computed: true,
+    derived: { formula: "Admitted ÷ applied from abroad, from the college's Common Data Set C1 grid (not calculated under 10 applicants)", inputs: ["reported.admissions_by_residency.international.applicants", "reported.admissions_by_residency.international.admitted"] },
+  },
+  "derived.yield_in_state": {
+    ...reported("Yield, in-state"),
+    computed: true,
+    derived: { formula: "Enrolled ÷ admitted from the college's state, from the same grid (not calculated under 10 admits)", inputs: ["reported.admissions_by_residency.in_state.admitted", "reported.admissions_by_residency.in_state.enrolled"] },
+  },
+  "derived.yield_out_of_state": {
+    ...reported("Yield, other states"),
+    computed: true,
+    derived: { formula: "Enrolled ÷ admitted from other states, from the same grid (not calculated under 10 admits)", inputs: ["reported.admissions_by_residency.out_of_state.admitted", "reported.admissions_by_residency.out_of_state.enrolled"] },
+  },
+  "derived.yield_international": {
+    ...reported("Yield, international"),
+    computed: true,
+    derived: { formula: "Enrolled ÷ admitted from abroad, from the same grid (not calculated under 10 admits)", inputs: ["reported.admissions_by_residency.international.admitted", "reported.admissions_by_residency.international.enrolled"] },
+  },
+  "derived.admit_rate_for_student": {
+    ...reported("Acceptance rate for you"),
+    computed: true,
+    derived: {
+      formula: "The in-state rate when the student lives in the college's state, the other-states rate otherwise, the international rate for a student outside the U.S.",
+      inputs: ["derived.admit_rate_in_state", "derived.admit_rate_out_of_state", "derived.admit_rate_international", "location.state"],
+    },
+  },
+  "derived.admit_rate_same_class": {
+    ...reported("Acceptance rate, all applicants in the same class"),
+    computed: true,
+    derived: { formula: "C1 total admitted ÷ total applied, from the same Common Data Set as the residency grid (not calculated under 10 applicants)", inputs: ["reported.admissions_by_residency.total.applicants", "reported.admissions_by_residency.total.admitted"] },
   },
   "derived.payback_years": {
     ...scorecard("Payback estimate", "outcomes"),

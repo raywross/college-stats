@@ -110,6 +110,10 @@ view. The page opens with its `Panel` header (eyebrow, h1, the takeaway sentence
 above, the page's `SourceNote`, and previous/next links. Sub-sections that were their own sections (Test scores,
 Campus life) are h2 `Panel`s within their page, with their old ids.
 
+Admissions page: "Where applicants live" (`#residency`, `components/school/ResidencyAdmissions.tsx`) sits after "Men and
+women" and before Yield when a college's CDS has a residency grid; `TOPIC_FIELDS.admissions` lists its derived fields
+([cds-residency-admissions.md](data-expansion/cds-residency-admissions.md)).
+
 ## Insight helpers (`lib/insights.ts`)
 - `standouts(s)`: "Known for" chips from percentile thresholds (ultra-selective, high yield, big campus,
   economic diversity, test-optional heavy…).

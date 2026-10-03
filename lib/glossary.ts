@@ -245,7 +245,7 @@ const entries = {
   "in-state-student": {
     term: "In-state, out-of-state, and international students",
     short: "Where a first-year lived when they applied: the college's own state, another U.S. state, DC, or territory (out-of-state), or another country (international). Shares here are of every first-year, including the few whose residence wasn't reported.",
-    long: "Colleges report each first-year's home state to the federal government every fall; reporting is required in even-numbered years and optional in odd ones, so the site uses even years. A Common Data Set's \"percent from out of state\" leaves international students out of both the count and the total, so it reads higher than the out-of-state share here.",
+    long: "Colleges report each first-year's home state to the federal government every fall; reporting is required in even-numbered years and optional in odd ones, so the site uses even years. A Common Data Set's \"percent from out of state\" leaves international students out of both the count and the total, so it reads higher than the out-of-state share here. The share of first-years from out of state is not the same as the out-of-state acceptance rate, which counts who got in, not who came.",
     why: "A college that draws mostly from its own state feels different from one with students from across the country, and at a public university, out-of-state students usually pay a higher tuition.",
     category: "Students & access",
     related: ["first-time-student", "in-state-tuition"],
@@ -794,6 +794,21 @@ const entries = {
     term: "Region",
     short: "The part of the country a school is in: Northeast, Southeast, Midwest, Southwest, or West.",
     category: "School types",
+  },
+  // CDS admissions by residency (specs/data-expansion/cds-residency-admissions.md).
+  "admit-rate-by-residency": {
+    term: "Acceptance rate by residency",
+    short: "The share of applicants from the college's own state who were admitted, and the same for applicants from other states and from abroad, as the college reports them in its Common Data Set.",
+    long: "Residency is where an applicant lived when applying, which isn't always the same as qualifying for in-state tuition. This is different from the share of first-years who come from out of state: that counts who enrolled, this counts who got in.",
+    why: "At many public universities in-state applicants are admitted at a higher rate, but not everywhere, and some private colleges show the opposite. A group's rate also depends on who applies from there.",
+    category: "Admissions",
+    related: ["acceptance-rate", "in-state-student", "yield-by-residency"],
+  },
+  "yield-by-residency": {
+    term: "Yield by residency",
+    short: "Of the students admitted from each place, the share who enrolled.",
+    category: "Admissions",
+    related: ["yield", "admit-rate-by-residency"],
   },
 } satisfies Record<string, GlossaryEntry>;
 

@@ -1,6 +1,7 @@
 # CDS Admissions by Residency: In-State, Out-of-State, International
 
-> Status: **planned** (2026-10-03). Wave 4, unit U1 of the CDS inventory. Ships from the round-3 records
+> Status: **built** (2026-10-03; see [As built](#as-built): the per-edition history series, the "for you" rows, and the
+> grid checks' review-queue wiring wait on other work). Wave 4, unit U1 of the CDS inventory. Ships from the round-3 records
 > ([college-reported-round-3.md](../college-reported-round-3.md)) with no new visit to any college. Research: 19 real
 > 2025–26 Common Data Sets read cell by cell (6 Excel, 11 PDF, 2 HTML; the inventory's working files). Part of
 > [data-expansion](README.md).
@@ -422,6 +423,75 @@ the rule is the one [cds-admissions.md](cds-admissions.md) set: a series once tw
 - The inventory's check "out-of-state + international admits ≤ total admits" is implied by `residency-sum`.
 - Not verified: the first template year with the residency grid (matters for backfill depth); the grid's coverage
   outside this selective-heavy sample.
+
+## As built
+Built 2026-10-03 on the round-3 foundation. Real data: Vanderbilt 221999, Cornell 190415, and Illinois 145637 have a
+block in `data/schools.json`; William & Mary 231624 prints C1 totals only (C.119–C.130 blank), so it has none and
+Compare shows "Not published".
+
+**Record → block** (`lib/cds/residency.ts`, pure; the spec's `lib/cds-merge/residency.ts`). `residencyFromRecord(record,
+{ admissionsYear, federal })` walks the college's documents newest first and returns the block, a lineage record per
+stored leaf, and an outcome per edition (`merged`, `blank`, `failed`, `too-old`). `mergeResidency(school, record)` is
+idempotent and removes a previous block. `lib/reported-merge.ts#mergeReported(schools, reported, records = [])` calls it
+once per school after the admissions block; `npm run merge-reported` and `sync-data` pass `readRecords(data/cds-records)`.
+- **Which values.** A cell is a **passed** item's number. The one exception is the `residency-form-vs-codes` rule for
+  template workbooks: an item that failed *only* `form-vs-code` takes its `form` value (the visible grid), and only if
+  the whole grid built that way passes the checks below. A failed item's code-table value is never used; an item that
+  failed any other check, or failed `form-vs-code` without a `form` value, makes the grid unusable. Illinois's C.120–C.122
+  and C.125 are published this way (lineage `cell` is the visible grid's `CDS-C!E38`, `F37`, …; cells whose code and
+  grid agree cite the code-table cell, since the record keeps a form cell only for disagreements). When the checks track
+  promotes such items to `passed` with the grid's value, the reader takes them as ordinary passed items.
+- **Grid checks at merge** (`checkGrid`): `residency-funnel`, `residency-sum` (rows whose three residency cells are all
+  filled; blank Unknown as 0), and `residency-vs-federal` (10 points against `demographics.residence`). A grid that fails
+  isn't merged; an older passed grid is used only within two falls of `admissions.year`. `residency-total-unreadable`
+  (`##` totals vs C1's by-sex totals) is not here: a row without a printed total isn't sum-checked; it belongs to
+  `lib/cds-checks.ts` with the review-queue item.
+- **Year:** the record's `years.fall` ("Fall 2025"), else the edition's first fall; never a page header.
+- **Quotes:** workbook cells get the generated "Total first-time, first-year who applied, In-State: 29,419".
+
+**Registry** (`lib/fields.ts`): 18 `reported.admissions_by_residency.*` paths (`entering_term`, `year`, `edition`, and
+5 groups × 3 counts) and 8 computed `derived.*` fields: the spec's seven plus `derived.admit_rate_same_class` (the
+tick's own ⓘ: C.117 ÷ C.116 of the same document). Derived ⓘs show the college, the CDS year, the document link, the
+retrieval date, and the formula; the quote and cell are on the stored counts' lineage.
+
+**Display helpers** (`lib/cds/residency-display.ts`, pure; the spec placed these in `lib/derive.ts` and `lib/insights.ts`,
+moved to one module so parallel tracks don't collide): `admitRatesByResidency`, `yieldsByResidency` (none under 10
+admits), `sameClassAdmitRate`, `rateForStudent` (`OUTSIDE_US` = "outside-us"), `admissionsByResidency(school,
+studentState?)` with `RESIDENCY_NOTABLE_GAP` 0.05, `RESIDENCY_NOTABLE_RATIO` 1.5, `RESIDENCY_MIN_APPLICANTS` 200,
+`RESIDENCY_FILTERS` (`byRes`, `oosEven`), and Compare's `compareAdmitRates` / `compareYields`.
+
+**Where it shows**
+- Admissions page: `components/school/ResidencyAdmissions.tsx`, `variant="card"` after "Men and women" (title, ⓘ, the
+  headline sentence, a bar per group with the same-class tick, the yield line, the caveat) or `variant="line"` under the
+  funnel when not notable; both `id="residency"`, listed in On this page when the rates exist. The "(you)" marker is
+  wired (`studentState`) but no page passes a state until the student profile exists.
+- Students page: `components/school/Residence.tsx` adds the link line.
+- Compare, All the numbers: the two rows after "Acceptance rate, men / women" (`app/compare/page.tsx`).
+- Explore: "Where applicants live" chips in `FilterPanel` with counts, active-filter chips in `Toolbar`, `lib/params.ts`,
+  `lib/dataset.ts`, and the facets in `app/explore/page.tsx`.
+- Glossary: `admit-rate-by-residency`, `yield-by-residency`, and the sentence on `in-state-student`.
+
+**Tests** (`tests/residency-admissions.test.mts`; each guard was broken once and the tests failed): the Illinois
+fixture both ways (code table fails funnel and vs-federal; the visible grid publishes with grid cells; without `form`
+nothing merges), both sources failing, tag-to-column mapping by code (`NRES` out-of-state, `INTL` international), sums
+(8,920 vs 8,921 passes, 2% fails), blank vs zero (W&M's empty grid, a Spelman-like enrolled-only grid), year, rate
+minimums and the same-class tick, the merge window both ways, lineage (a missing leaf record fails `validateSchool`),
+the committed data equals a re-merge, the partial-coverage guard (no residency field in `lib/metrics.ts`,
+`lib/insights.ts`, `lib/indicators.ts`, `lib/history.ts`, `app/page.tsx`, or Explore's sorters), "for you", the insight
+(Georgia Tech notable, 43%/44% one line, small groups, Vanderbilt and Cornell notable), Compare cells, and the Explore
+chips. `tests/merge-reported.test.mts` and `tests/profile-topics.test.mts` were updated for the records argument and the
+new fields.
+
+**Not built**
+- **History** (`cds-c1-res` family, the Over time chart, test 14): not built. It needs two or more passed editions per
+  college; the records hold one (2025–26) per college, and it touches `lib/history.ts`, `sync-history`, and the history
+  shards, which other tracks share. Build it with the prior-edition backfill (open question 3).
+- **"Acceptance rate for you"** in Compare and the chances base rate: wait for the student profile; the helper and its
+  test exist.
+- **Readers and per-item checks**: the classic-Excel grid reader, the fillable-PDF tag map, placement by x (test 4), the
+  `C1-residency` item and review-queue entry, and `residency-total-unreadable` belong to the readers and checks tracks
+  (`scripts/lib/cds-xlsx.mts`, `lib/cds-checks.ts`).
+- Compare's "Not published" cell has no per-cell ⓘ (the row's ⓘ explains the term).
 
 ## Roadmap entry
 - slug: cds-residency-admissions

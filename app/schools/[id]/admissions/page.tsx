@@ -20,6 +20,8 @@ import { DistributionStrip } from "@/components/charts/DistributionStrip";
 import { ScatterPlot } from "@/components/charts/ScatterPlot";
 import { AdmissionFactors } from "@/components/school/AdmissionFactors";
 import { ScoreChecker } from "@/components/school/ScoreChecker";
+import { ResidencyAdmissions } from "@/components/school/ResidencyAdmissions";
+import { publishesResidencyRates } from "@/lib/cds/residency-display";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -64,6 +66,7 @@ export default async function AdmissionsPage({ params }: Props) {
 
   const items = [
     { id: "funnel", label: "The funnel" },
+    ...(publishesResidencyRates(school) ? [{ id: "residency", label: "Where applicants live" }] : []),
     { id: "yield", label: "Yield" },
     { id: "factors", label: "What they look at" },
     { id: "map", label: "Admissions map" },
@@ -128,6 +131,7 @@ export default async function AdmissionsPage({ params }: Props) {
                 {bySex && !bySex.notable && (
                   <p className="mt-4 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-sm text-muted-foreground">{bySex.sentence}</p>
                 )}
+                <ResidencyAdmissions id="residency" variant="line" school={school} cite={citeField} color={DOMAINS.admissions.color} />
                 {a.application_fee != null && (
                   <p className="mt-2 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-sm text-muted-foreground">
                     <MetricLabel term="application-fee" cited={citeField("admissions.application_fee", school)}>
@@ -160,6 +164,7 @@ export default async function AdmissionsPage({ params }: Props) {
                 </div>
               </div>
             )}
+            <ResidencyAdmissions id="residency" variant="card" school={school} cite={citeField} color={DOMAINS.admissions.color} />
             {yld !== null && (
               <Block id="yield" className="space-y-6">
                 <div className="flex items-center gap-4">

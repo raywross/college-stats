@@ -37,5 +37,9 @@ history source line (per-kind year ranges). See [trends-design.md](trends-design
   6. **All the numbers**: a full table (the accessible/data view), with info tips on every row. A cell whose year
      differs from the row's usual year shows that year in small muted text after the value (a college whose newest
      published class is newer than the federal release; [college-reported-round-2.md](college-reported-round-2.md)).
+     Admissions rows include "Acceptance rate, in-state / other states / international" and "Yield, in-state / other
+     states / international" from a college's CDS C1 grid ("Not published" without one;
+     [cds-residency-admissions.md](data-expansion/cds-residency-admissions.md)). "Acceptance rate for you" follows once
+     the student profile knows a state. Never in Key differences or the radar.
 
 School colors come from the compare slots in pick order (`SLOT_COLORS`), validated all-pairs for overlap.

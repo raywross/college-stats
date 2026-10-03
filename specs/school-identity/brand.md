@@ -5,7 +5,8 @@
 > college color data module downloaded and counted; fourteen colleges' Wikipedia infoboxes read; twenty college
 > homepages probed for icons and theme colors; four Commons logo files' license tags read; the trademark and
 > copyright position summarized below. Figures are measured unless marked *estimate*. **The legal section is a
-> summary for the owner's decision, not legal advice.**
+> summary, not legal advice.** Decided 2026-10-03: the owner chose to show marks (option b below: colors and each
+> college's own site icon, with every safeguard listed), accepting the trademark risk.
 
 ## Question it answers
 *Does this page feel like the college?* Every profile hero today is tinted with a hue hashed from the unit id, and
@@ -17,7 +18,8 @@ carry the college's own colors and, where allowed, its mark in place of the mono
    the crest tile's gradient. Colors carry no legal risk worth planning around (below), so this part ships first.
 2. **A mark** in the crest tile, the same size as the tile today (56 px on phones, 96 px on desktop in the hero;
    36–48 px in the compact header, cards, and search rows), from the college's own site icon, with the monogram as
-   the fallback. This part ships only after the owner's decision in the legal section.
+   the fallback. Approved by the owner on 2026-10-03 (legal section below); it ships with the safeguards listed
+   there, in the PR after colors.
 3. **Opt-out and correction files**, a trademark line on `/data`, and a documented removal route, whichever marks
    are used.
 
@@ -100,9 +102,11 @@ identify colleges, belong to them, and imply no endorsement; publish a removal a
 day by setting `logo: false` in `data/brand-overrides.json` (the monogram returns on the next deploy); and ask
 counsel once before the first deploy with marks.
 
-**Decision the owner makes:** (a) colors only; (b) colors and site icons with the safeguards above; (c) colors and
+**The options were:** (a) colors only; (b) colors and site icons with the safeguards above; (c) colors and
 icons only for colleges that have opted in or granted permission (the college-reported workflow could ask, but
-that is a different project). The spec is written for (b) and degrades to (a) by one flag.
+that is a different project). **Decided 2026-10-03: (b).** The owner accepts the trademark risk; the safeguards
+above are all required, and a removal request is honored within a day. The spec degrades to (a) by one flag
+(`BRAND_MARKS=off` at build time hides every mark without touching the data) should that ever be needed.
 
 ## Ingest
 - `sync-wikidata` (existing from [social-accounts.md](social-accounts.md)) fetches each college's article infobox
@@ -170,8 +174,8 @@ No. Colors and marks are replaced when they change; the previous WebP is overwri
 ## Cost
 Wikipedia and the homepages: free. `sharp` adds a dev dependency. Storage: *estimate* 10 MB of WebP in the repo.
 
-## Open questions for the owner
-1. The legal decision above: colors only, or colors and site icons with the safeguards.
+## Decisions and open questions
+1. **Decided 2026-10-03:** show colors and site icons (option b), with the safeguards.
 2. Should a college with colors but no acceptable icon get a monogram in its colors (as specified), or keep the
    site's hashed gradient so the two cases look alike? Default: its colors.
 3. Where the WebP files live: the repo (simple, reviewed in PRs) or Supabase Storage (keeps the repo small).
@@ -179,7 +183,7 @@ Wikipedia and the homepages: free. `sharp` adds a dev dependency. Storage: *esti
 
 ## Implementation plan
 1. Colors: `lib/brand-colors.ts`, the module and infobox fetch in `sync-wikidata`, derived fields, overrides,
-   tests; hero tint and crest gradient. One PR, no legal dependency.
-2. Marks (after the owner's decision): the icon fetch in the links probe, `sharp`, `public/brand/`, overrides,
-   the `/data` paragraph and removal route, the verify check; `Crest.tsx` renders the mark.
+   tests; hero tint and crest gradient. One PR.
+2. Marks: the icon fetch in the links probe, `sharp`, `public/brand/`, overrides, the `/data` paragraph and
+   removal route, the `BRAND_MARKS` flag, the verify check; `Crest.tsx` renders the mark. The next PR.
 3. The rendered contrast check in both themes.

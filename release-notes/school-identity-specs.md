@@ -21,9 +21,9 @@ its own:
   Tech**, or **Ole Miss** and get the right college, with the short name shown in the result so you know why it
   matched. "ASU" lists all five.
 - **[Colors and marks](../specs/school-identity/brand.md)**: the hero and the lettered tile take the college's own
-  colors, sourced from brand guides, and the tile can show the college's own site icon instead of its initials.
-  Colors will ship first; whether to show marks is a decision for the site's owner, and the plan explains what the
-  law allows in plain terms.
+  colors, sourced from brand guides, and the tile shows the college's own site icon instead of its initials.
+  Colors ship first, then the icons. Marks and colors identify colleges and belong to them; a college that would
+  rather not be shown that way can ask, and its tile goes back to initials within a day.
 
 ## Behind the scenes
 

@@ -150,7 +150,7 @@ Specified 2026-10-03 in [school-identity/](school-identity/README.md), in build 
 - [ ] **Colors and marks** ([school-identity/brand.md](school-identity/brand.md)): colors from Wikipedia's college
   color data (cited to brand guides) joined through each article's infobox, tints derived per theme at sync time;
   the college's site icon at 192 px in `public/brand/` in place of the monogram; opt-out file, `/data` trademark line,
-  removal route. **Owner decision first:** colors only, or colors and icons (legal summary in the spec).
+  removal route. Decided 2026-10-03: show colors and icons, with the safeguards in the spec; colors ship first.
 
 ## Design and usability
 - [ ] **Compare redesign** ([compare-redesign.md](compare-redesign.md)): the compare page is 10,000px on desktop and

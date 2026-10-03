@@ -20,6 +20,7 @@ export type RoadmapGroupKey =
   | "college-reported"
   | "campus-life"
   | "national-trends"
+  | "identity"
   | "design"
   | "accounts"
   | "planning"
@@ -45,6 +46,12 @@ export const ROADMAP_GROUPS: { key: RoadmapGroupKey; title: string; description:
     title: "National trends",
     description:
       "How college is changing across the country, not at one college: nationally, and by region, public or private, size, and selectivity.",
+  },
+  {
+    key: "identity",
+    title: "Links, names, and looks",
+    description:
+      "Each college's official pages and social accounts, the short names people actually use when they search, and its own colors and mark on its profile.",
   },
   {
     key: "design",
@@ -337,6 +344,48 @@ export const ROADMAP: RoadmapSpec[] = [
     after: ["national-trends", "trends-top-10-lists"],
   },
   {
+    slug: "school-links",
+    file: "specs/school-identity/links.md",
+    group: "identity",
+    summary:
+      "Links to each college's website, admissions office, application, financial aid office, and the page where you book a campus visit.",
+    complexity: 2,
+    complexityNote:
+      "Seven columns from a file already downloaded, plus a crawl of each college's admissions page to find its visit link, with a liveness check.",
+    status: "planned",
+  },
+  {
+    slug: "social-accounts",
+    file: "specs/school-identity/social-accounts.md",
+    group: "identity",
+    summary: "Each college's Instagram, YouTube, TikTok, X, Facebook, and LinkedIn, one tap from its profile.",
+    complexity: 2,
+    complexityNote: "A new source (Wikidata, joined by IPEDS id) with its own sync script and checks, a homepage scan for the rest, and one hero row.",
+    status: "planned",
+    after: ["school-links"],
+  },
+  {
+    slug: "school-aliases",
+    file: "specs/school-identity/aliases.md",
+    group: "identity",
+    summary: "Search for UGA, Vandy, Georgia Tech, or Ole Miss and get the right college, with the short name shown so you know why.",
+    complexity: 2,
+    complexityNote: "A table of short names from four sources with their own cleaning rules, a shared scorer for search and Explore, and the first value-indexed Supabase table.",
+    status: "planned",
+    after: ["social-accounts"],
+  },
+  {
+    slug: "school-brand",
+    file: "specs/school-identity/brand.md",
+    group: "identity",
+    summary: "A college's own colors on its profile, and its mark in place of the lettered tile, with a plain summary of what the law allows for the owner to decide.",
+    complexity: 3,
+    complexityNote:
+      "Cited brand colors joined through Wikipedia, a per-theme tint derived at sync time, icons fetched and resized into the repo, opt-out and removal files, and a legal decision before marks ship.",
+    status: "planned",
+    after: ["school-links", "social-accounts"],
+  },
+  {
     slug: "compare-redesign",
     file: "specs/compare-redesign.md",
     group: "design",
@@ -507,6 +556,7 @@ export const ROADMAP: RoadmapSpec[] = [
 export const ROADMAP_OVERVIEWS: { slug: string; file: string; title: string }[] = [
   { slug: "data-expansion", file: "specs/data-expansion/README.md", title: "Data expansion overview" },
   { slug: "product", file: "specs/product/README.md", title: "Product overview: accounts, planning tools, high schools, business" },
+  { slug: "school-identity", file: "specs/school-identity/README.md", title: "School identity overview: links, accounts, short names, colors and marks" },
 ];
 
 export function roadmapSpec(slug: string): RoadmapSpec | undefined {

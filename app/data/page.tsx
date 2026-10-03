@@ -380,8 +380,10 @@ export default async function DataPage() {
             </p>
             <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
               Newer class profiles and Common Data Sets we read automatically from a college&apos;s own site work
-              differently: they never replace the federal figures used here. They show up only on that college&apos;s own
-              profile, next to the federal baseline. See{" "}
+              differently: a college&apos;s own profile shows the newest figure it has published anywhere, with its
+              year and a chip saying where it came from, even when that&apos;s newer than the federal release. These
+              never replace the federal figures used here, so Explore, Compare, ranks, and medians keep comparing
+              every college on the same year. See{" "}
               <a href="#college-reported" className="font-semibold text-primary hover:underline">
                 newer figures from colleges
               </a>
@@ -400,8 +402,10 @@ export default async function DataPage() {
       <Section id="college-reported" eyebrow="Newer figures" title="Newer figures from colleges" icon={<ClipboardCheck className="size-4" aria-hidden />}>
         <p className="max-w-3xl text-sm leading-relaxed text-muted-foreground">
           For admissions, the newest year a college has published anywhere on its own site, we read it automatically and
-          check it before showing it. These figures never replace the federal baseline used for comparisons; they appear
-          only on that college&apos;s own profile, under the federal figure.
+          check it before showing it. On that college&apos;s profile it becomes the headline figure, with its year and a
+          chip saying where it came from, and the federal figure moves one line below as the comparison baseline.
+          Comparisons elsewhere on the site &mdash; Explore, Compare, ranks, and medians &mdash; keep using federal data,
+          so every college is measured on the same year.
         </p>
         <div className="grid gap-4 md:grid-cols-2">
           <div className="rounded-3xl border bg-card p-5 sm:p-6">

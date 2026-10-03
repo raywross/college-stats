@@ -6,7 +6,7 @@ import {
   METRICS,
   admitRateGap,
   admitRatesBySex,
-  admitRatio,
+  admitRatioFromRate,
   aidGenerosity,
   generosityTier,
   paybackYears,
@@ -17,6 +17,7 @@ import {
   type Domain,
   type MetricKey,
 } from "./metrics";
+import { newestAdmissions } from "./newest";
 import { money, moneyCompact, pct, pctSmart, num } from "./format";
 import { leaversElsewhere } from "./outcome-measures";
 import { shortName } from "./brand";
@@ -134,19 +135,28 @@ function share(rank: number): string {
   return `${Math.round(rank * 100)}%`;
 }
 
+/**
+ * The headline figure is the newest class the college has published (lib/newest.ts, specs/college-reported-round-2.md
+ * Decision 1); the national comparison ("more selective than X%") stays federal, since ranks compare every college
+ * on the same year.
+ */
 export function admissionsTakeaway({ rankOf, reportingCount }: Dataset, s: School): string | undefined {
-  const rate = s.admissions.acceptance_rate;
-  const n = admitRatio(s);
+  const newest = newestAdmissions(s);
+  const rate = newest.acceptance_rate;
+  const n = admitRatioFromRate(rate);
   const rank = rankOf(s, "acceptance");
   if (rate === null || n === null || rank === null) return undefined;
   const tier = selectivityTier(rate).label;
-  return `${shortName(s)} admits about ${n} applicants (${pctSmart(rate)}). That puts it in the "${tier}" tier, more selective than ${share(
+  const sentence = `${shortName(s)} admits about ${n} applicants (${pctSmart(rate)}). That puts it in the "${tier}" tier, more selective than ${share(
     1 - rank
   )} of the ${num(reportingCount("acceptance"))} colleges that report admissions.`;
+  return newest.source === "reported" ? `${sentence} (${newest.term}, reported by the college.)` : sentence;
 }
 
+/** Yield from the newest funnel the college has published; federal when it has none newer. */
 export function yieldTakeaway({ rankOf }: Dataset, s: School): string | undefined {
-  const y = yieldRate(s);
+  const newest = newestAdmissions(s);
+  const y = newest.yield ?? yieldRate(s);
   const r = rankOf(s, "yield");
   if (y === null || r === null) return undefined;
   const tone = r >= 0.8 ? "one of the highest" : r <= 0.2 ? "on the lower end" : "in the typical range";

@@ -135,6 +135,11 @@ export function documentsToReadAfterRediscovery(fresh: Pick<Recipe, "sources">, 
 export interface LadderCollege {
   school: School;
   recipe?: Recipe;
+  /**
+   * What an earlier free pass (`only: "free"`) already learned, for a paid pass (`only: "paid"`) in the same run: the
+   * pages steps 0–1 fetched (the picker reads their links) and the hosts that answered (the blocked-host rule).
+   */
+  seed?: { pages: ProbePage[]; answered: string[] };
 }
 
 /** A paid step's find, with what it cost. */
@@ -163,6 +168,12 @@ export interface LadderState {
   /** data/reference/blocked-hosts.json as it stands; the ladder merges this run's refusals into it. */
   blocked: BlockedHostsFile;
   pass?: "main" | "leftover";
+  /**
+   * Run only part of the ladder (the pipeline's phases, Decision 5): `free` = steps 0–1 (the prepare phase; a miss
+   * sets no back-off date, since the paid steps are still to come), `paid` = steps 2–4 (the discover phase, seeded from
+   * the free pass). Absent = every step the tier allows.
+   */
+  only?: "free" | "paid";
 }
 
 export interface LadderResult {
@@ -177,6 +188,9 @@ export interface LadderResult {
   blockedHosts: string[] | null;
   /** Documents already downloaded on the way (url → bytes), for the first read. */
   prefetched: Map<string, Prefetched>;
+  /** The pages the free steps fetched and the hosts that answered (a free pass hands them to the paid pass's seed). */
+  pages: ProbePage[];
+  answered: string[];
 }
 
 const KEEP_TRIED = 20;
@@ -196,13 +210,13 @@ export async function ladder(college: LadderCollege, state: LadderState, deps: L
   const base = college.recipe ? structuredClone(college.recipe) : undefined;
   const tried: DiscoveryAttempt[] = [...(base?.discovery?.tried ?? [])];
   const fullWithinYear = tried.some((t) => t.step === 4 && t.result !== "skipped" && days(t.at, today) < 365);
-  const steps = stepsFor(tier, { pass: state.pass, fullWithinYear });
+  const steps = stepsFor(tier, { pass: state.pass, fullWithinYear }).filter((s) => (state.only === "free" ? s <= 1 : state.only === "paid" ? s >= 2 : true));
 
   let sources = [...(base?.sources ?? [])];
   const index = new Set(base?.index_urls ?? []);
   const retired: RecipeSource[] = [];
-  const answered = new Set<string>();
-  const pages: ProbePage[] = [];
+  const answered = new Set<string>(college.seed?.answered ?? []);
+  const pages: ProbePage[] = [...(college.seed?.pages ?? [])];
   const prefetched = new Map<string, Prefetched>();
   let spent = 0;
   let found: StepFind | null = null;
@@ -276,6 +290,8 @@ export async function ladder(college: LadderCollege, state: LadderState, deps: L
   }
 
   const path: DiscoveryPath = found ? found.path : blockedHosts ? "blocked" : "none";
+  // A free pass that missed hands over to the paid steps: no back-off date and no `none_found` yet.
+  const deferred = !found && !blockedHosts && state.only === "free";
   const recipe: Recipe = {
     ...(base ?? {}),
     unit_id: school.unit_id,
@@ -283,12 +299,12 @@ export async function ladder(college: LadderCollege, state: LadderState, deps: L
     index_urls: [...index],
     learned: found ? today : (base?.learned ?? today),
     model: found ? (found.model ?? path) : (base?.model ?? "none"),
-    discovery: { path, tried: tried.slice(-KEEP_TRIED), ...(found ? {} : { next_attempt: nextAttempt(tier, today) }) },
+    discovery: { path, tried: tried.slice(-KEEP_TRIED), ...(found || deferred ? {} : { next_attempt: nextAttempt(tier, today) }) },
   };
   if (found?.notes) recipe.notes = found.notes;
   if (found || sources.length) delete recipe.none_found;
-  else recipe.none_found = true;
-  return { recipe, path, found: !!found, spent_usd: spent, retired, blockedHosts, prefetched };
+  else if (!deferred) recipe.none_found = true;
+  return { recipe, path, found: !!found, spent_usd: spent, retired, blockedHosts, prefetched, pages, answered: [...answered] };
 }
 
 /* ------------------------------------------------------------------ */

@@ -42,9 +42,10 @@ Coverage at the 2026-09-29 sync (1,893 colleges): `by_sex` 1,586; both rates 1,4
 points: women admitted at the higher rate at 600, men at 108. So the "Men and women" card shows at about half of
 colleges; raise `BY_SEX_NOTABLE_GAP` if that proves too common.
 
-**Common Data Set overrides:** the 8 colleges with CDS admissions keep federal `by_sex`, medians, and ACT sections (no
-override sets them). The profile draws a college's medians and ACT section ranges only when its score ranges are
-federal too, so a federal median never sits on a college-reported range. The by-sex line carries its own source chip.
+**Common Data Set overrides:** the 8 colleges with CDS admissions keep federal `by_sex` (no override sets it). Medians
+and ACT sections: since [cds-test-scores-and-policy.md](cds-test-scores-and-policy.md) (Decision 2), a college's
+CDS C9 replaces its SAT and ACT blocks whole (ranges, medians, sections, shares), so a block is never mixed and the
+profile's old "federal ranges only" guard is gone. The by-sex line carries its own source chip.
 
 ## Display
 - **Profile, Admissions:** a "Men and women" card with a bar per sex and a sentence ("Women were admitted at 12%, men at

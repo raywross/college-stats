@@ -38,4 +38,10 @@ history source line (per-kind year ranges). See [trends-design.md](trends-design
      differs from the row's usual year shows that year in small muted text after the value (a college whose newest
      published class is newer than the federal release; [college-reported-round-2.md](college-reported-round-2.md)).
 
+Test policy and scores ([cds-test-scores-and-policy.md](data-expansion/cds-test-scores-and-policy.md)): "Test policy"
+reads the newest policy (a coming cycle's from a college's CDS shows "Fall 2027 applicants" muted); "SAT middle 50%"
+and the SAT range bars draw `derived.sat_total`; All the numbers adds "Sent an SAT", "Sent an ACT" ("1,243 (33%)"),
+"Scored 1400+ on the SAT", and "Scored 30+ on the ACT" (`lib/compare-tests.ts`), "–" where not reported. Nothing new
+in the radar, metric cards, or Key differences.
+
 School colors come from the compare slots in pick order (`SLOT_COLORS`), validated all-pairs for overlap.

@@ -1,6 +1,6 @@
 # CDS Test Policy and Test Scores (C8, C9)
 
-> Status: **planned** (2026-10-03). Wave 4: built from the CDS records of [round 3](../college-reported-round-3.md)
+> Status: **built** (2026-10-03; see [As built](#as-built)). Wave 4: built from the CDS records of [round 3](../college-reported-round-3.md)
 > after its one full run, with no new visit to any college. Inventory units U2 (the coming cycle's test policy) and U3
 > (C9 detail: the college's own SAT total, score bands, number submitting). Coverage figures come from the CDS
 > inventory of 19 read 2025–26 documents (scratchpad `cds-gap/cds-gap-report.md`, 2026-10-03); where this spec counts
@@ -445,6 +445,68 @@ verify the dates before writing).
 4. **Forward-looking policy:** a college can change its policy after publishing its CDS. Accept the CDS as the newest
    statement (recommended), or also read the admissions page's testing policy each autumn (a class-profile-style
    source, not in round 3's scope)?
+
+## As built
+Built 2026-10-03 from the four 2025–26 template-workbook records (Vanderbilt 221999, Cornell 190415, William & Mary
+231624, Illinois 145637); every other college gets its values when round 3's full run writes its record.
+
+**Where things live.**
+- `lib/cds/test-scores.ts`: record → `school.reported`. `policyFromDocument` (C8 grid via `policyFromText`, headline
+  rule, the C8A-agrees rule, cycle = edition + 2), `testsFromDocument` (C9 percentiles with order checked, shares, the
+  number submitting only beside the same document's passed C1 enrolled and within a point of the share, band columns
+  normalized and dropped when they disagree with their own percentiles), `reportedTestsFromRecord` (newest document per
+  group, C8F note, events, lineage quotes such as "SAT Composite | 1490 | 1530 | 1550" and "SAT Composite: 1400–1600
+  93.5%, …"), `mergeTestScores` (called once per school by `mergeReported`).
+- `lib/cds/test-blocks.ts`: `applyNewestTests` / `restoreFederalTests` (one-line hooks at the top of
+  `lib/newest.ts#applyNewest` and `#restoreFederal`), `replacedTest` (the ⓘ's "Federal data, Fall 2024:
+  Test-optional"), `satTotalInputs` (`derived.sat_total`'s citation), `validateTests` (the guard, called from
+  `validateSchool`).
+- `lib/test-policy.ts` (answer maps `C8_TEXT`, `C8_EXPORT`; headline; events and their sentences; labels and the
+  block's headlines; Explore buckets) and `lib/score-bands.ts` (band edges, `bandOf`, shares below/through,
+  `normalizeBandColumn`, `bandsAgreeWithPercentiles`, `compositeVsSections`, `submittersAgree`, sentences,
+  `MIN_SUBMITTERS = 50`, `satTotal`/`satTotalMedian`, `lineageFall`). Both pure, client-safe.
+- UI: `components/school/TestPolicyBlock.tsx`, `components/school/ScoreBands.tsx`, `ScoreChecker` (own SAT total and
+  its 50th, ACT Reading/Science bars, the typed-score band sentence, new legend), the admissions page (`#scores`:
+  policy block first, Score bands `#bands`, counts under the rings, "Recent change" for policy events in the last 3
+  cycles, "before the change" line), hero `Term` with the policy's citation, card and Compare on `derived.sat_total`,
+  `lib/compare-tests.ts` rows, Explore `policy=` (`lib/params.ts`, `lib/dataset.ts`, FilterPanel chips with counts,
+  Toolbar chip), glossary `score-bands`, `application-cycle`, `required-for-some` and updated `test-policy`, `sat`,
+  `act`, `test-submission`.
+- Wiring: `mergeReported(schools, reported, { records, federalPolicyYear })`; `scripts/merge-reported.mts` and
+  `scripts/sync-data.mts` read `data/cds-records/` (`readRecords`) and the ADM fall.
+- Tests: `tests/cds-test-scores-and-policy.test.mts` (Tests 1–10). Each guard was broken in turn and the file failed:
+  satMid reading `satTotal`, the replaced-block rule, the restore, a value-by-value block, "not required" read as
+  required, tolerance 150, a number without C1 or disagreeing with its share, bands without the percentile check, no
+  slip rule, required-some as Required, no cycle check.
+
+**Choices made while building.**
+- **Fields live at `reported.test_policy`, `reported.test_policy_note`, `reported.test_policy_events`, and
+  `reported.tests.*`**, beside `reported.admissions`, not inside it: a college can publish C8/C9 without a newer C1
+  (Cornell), and `reported.admissions` means "a newer C1 class" to the lineage guard and the Data page's counts.
+- **A same-edition hand-imported override is replaced too** (Cornell's override is its 2025–26 CDS): the record is the
+  same document read in full, and replacing it means the SAT/ACT blocks are never mixed (override ranges with federal
+  medians). "Newer" otherwise, as Decision 2 says.
+- `admissions.federal_tests.<block>` keeps `year` (null = the dataset's IPEDS ADM release), each replaced value
+  (absent = the key was absent), and `records`, the lineage each value had, so restore is byte for byte.
+- `Cited` gained `cdsEdition` (from a record's `edition`) and `replaces.text`; the ⓘ reads "Reported by Cornell
+  University in its Common Data Set 2025–26 (fall 2027 applicants)" and "Federal data, Fall 2024: Test-optional".
+- Display-safety checks run in the merge until the checks track's per-item statuses land: number vs share, band
+  column form and sum, bands vs percentiles, 25th ≤ 50th ≤ 75th, C8A vs grid, cycle and class year. William & Mary's
+  SAT total bands fail bands-vs-percentiles (25th 1390, but 20.1% at or below 1399), so they stay off the page.
+- `RangeBar`'s typed-score sentences say "enrolled first-years who sent scores", like the legend.
+
+**Measured on the four colleges.** Cornell: policy Required for fall 2027 applicants (federal fall 2024:
+Test-optional), one event. Vanderbilt, William & Mary, Illinois: Optional for fall 2027 applicants. Every SAT and ACT
+block replaced (all have ≥ 50 submitters); Illinois's ACT 50th is 32.3 as printed. Composite vs sections ≤ 38 points.
+
+**Not built here (other tracks or later).**
+- The C8/C9 per-item checks as record statuses (`lib/cds-checks.ts`: the checks track) and PDF/HTML reading, layout
+  column-by-x and Michigan's glyph index (the readers track). `lib/score-bands.ts` exports the check functions they
+  can call.
+- Over time → Changes listing the policy events (`lib/events.ts`), the test-optional study's "Announced for coming
+  cycles" list (`sync-history`), and the planning-tool rules (chances-and-fit): the admissions page shows the events.
+- The "SAT midpoint vs. every college" strip still prints the sum's midpoint beside the shown total (the shared
+  `DistributionStrip` has no "position only" mode yet).
 
 ## Roadmap entry
 - slug: cds-test-scores-and-policy

@@ -8,6 +8,7 @@ import { hasFewLoans } from "./repayment";
 import { hasTuitionGuarantee, noApplicationFee, requiresLiveOn } from "./housing";
 import { FACTOR_FILTERS } from "./factors";
 import { RESIDENCY_FILTERS } from "./cds/residency-display";
+import { LOGISTICS_FILTERS } from "./cds/application-logistics-display";
 import { matchesCampus } from "./campus-profile";
 import { matchesServices } from "./campus-services.ts";
 import { withinMaxRatio, withinMinFullTimeFaculty } from "./academics.ts";
@@ -245,6 +246,8 @@ export function createDataset({ schools, meta, releaseCalendar }: DatasetFiles) 
     for (const f of FACTOR_FILTERS) if (filters[f.param]) results = results.filter(f.test);
     // Where applicants live: colleges without a residency grid never match (cds-residency-admissions.md).
     for (const f of RESIDENCY_FILTERS) if (filters[f.param]) results = results.filter(f.test);
+    // Gap year (LOGISTICS_FILTERS, cds-application-logistics.md): colleges without a CDS answer never match.
+    for (const f of LOGISTICS_FILTERS) if (filters[f.param]) results = results.filter(f.test);
     if (filters.setting || filters.research || filters.designation || filters.opportunity) results = results.filter((s) => matchesCampus(s, filters));
     if (filters.division || filters.conference !== undefined || filters.football || filters.rotc || filters.ugResearch || filters.studyAbroad)
       results = results.filter((s) => matchesServices(s, filters));

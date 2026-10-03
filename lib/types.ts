@@ -326,6 +326,10 @@ export interface ReportedData {
   admissions?: ReportedAdmissions;
   /** CDS C1 by residency (specs/data-expansion/cds-residency-admissions.md; lib/cds/residency.ts). */
   admissions_by_residency?: ReportedResidencyAdmissions;
+  /** CDS C13–C18, the regular round (specs/data-expansion/cds-application-logistics.md; lib/cds/application-logistics.ts). */
+  admissions_logistics?: ReportedLogistics;
+  /** CDS C3–C5, high school preparation (same spec and module). */
+  admissions_hs_prep?: ReportedHsPrep;
 }
 
 /** The newest first-year, all-rounds admissions figures a college has published, newer than its federal year. */
@@ -370,6 +374,86 @@ export interface ReportedResidencyAdmissions {
   unknown: ResidencyCounts;
   /** C1 totals of the same document (C.116–C.118): the same-class "all applicants" reference. */
   total: ResidencyCounts;
+}
+
+/**
+ * A month/day with no year (the year lives in the field's lineage record, e.g. "Fall 2026 cycle"). Both null means the
+ * cell held free text; the verbatim text is in the lineage quote. Same shape as lib/cds-dates.ts `CdsDate`.
+ */
+export interface CdsDate {
+  month: number | null;
+  day: number | null;
+}
+
+/**
+ * CDS C13–C18 for the regular round (specs/data-expansion/cds-application-logistics.md): fee waivers, the closing and
+ * priority dates, notification, the reply rule, the housing deposit, and deferred admission. Describes the cycle that
+ * opens after the edition's own class (2025–26 edition → applying for fall 2026). Nothing here replaces a federal value.
+ * Each key is null when the college's CDS left it blank; there is no fallback to an older edition.
+ */
+export interface ReportedLogistics {
+  /** "Fall 2026": the entering class applicants in this cycle are applying for. */
+  cycle: string;
+  /** CDS edition, e.g. "2025-26". */
+  edition: string;
+  /** C.1303–C.1305. `online_same`: the online fee is the same as the paper fee. */
+  fee: { waiver: boolean | null; online_same: boolean | null; online_waiver: boolean | null } | null;
+  /** C.1401–C.1403: the regular round's closing date. */
+  regular_closing: CdsDate | null;
+  /** C.1404–C.1405. */
+  priority_date: CdsDate | null;
+  /** C.1501: first-years accepted for terms other than fall. Stored, never displayed. */
+  other_terms: boolean | null;
+  /** C.1601–C.1608. `other_date` is C.1608 when it reads as a date (W&M's Excel serial → April 1); else `other_text`. */
+  notification: {
+    kind: "rolling" | "by_date" | "other";
+    rolling_from: CdsDate | null;
+    by_date: CdsDate | null;
+    other_date: CdsDate | null;
+    other_text: string | null;
+  } | null;
+  /** C.1701–C.1708. */
+  reply: {
+    kind: "fixed_date" | "may1_or_weeks" | "no_set_date" | "other";
+    date: CdsDate | null;
+    weeks: number | null;
+    other_text: string | null;
+  } | null;
+  /** C.1709–C.1712. A non-number in the amount cell ("varies") leaves `amount` null; the text stays in the quote. */
+  housing_deposit: { due: CdsDate | null; amount: number | null; refundable: "full" | "partial" | "no" | null } | null;
+  /** C.1801–C.1802. `max_postponement` is the college's own words ("2 Year"); "Yes or No" is a placeholder, never true. */
+  deferred_admission: { allowed: boolean | null; max_postponement: string | null } | null;
+}
+
+/** High school units by subject (CDS C5). Lab is a subset of science, never an addend. */
+export interface UnitsBySubject {
+  total: number | null;
+  /** True when the college left the total blank and it was summed from the subjects (C5's sum rule). */
+  total_summed?: boolean;
+  english: number | null;
+  math: number | null;
+  science: number | null;
+  lab: number | null;
+  foreign_language: number | null;
+  social_studies: number | null;
+  history: number | null;
+  electives: number | null;
+  computer_science: number | null;
+  arts: number | null;
+  /** C.512 / C.524's free-text "Other" line. */
+  other_text: string | null;
+}
+
+/** CDS C3–C5 (specs/data-expansion/cds-application-logistics.md): standing admission policy, no cycle year. */
+export interface ReportedHsPrep {
+  /** C.301, the template's own wording, verbatim (a closed checklist). */
+  completion: string | null;
+  /** C.401. */
+  college_prep: "required" | "recommended" | "neither" | null;
+  /** C.501–C.512. */
+  units_required: UnitsBySubject | null;
+  /** C.513–C.524. */
+  units_recommended: UnitsBySubject | null;
 }
 
 /** One measure's change over the default 10-year window. */
@@ -731,6 +815,8 @@ export interface SearchFilters {
   /** Where applicants live (lib/cds/residency-display.ts): publishes admit rates by residency; admits out-of-state about as often. */
   byRes?: boolean;
   oosEven?: boolean;
+  /** Allows deferred admission, a gap year (CDS C18; lib/cds/application-logistics-display.ts). */
+  gapYear?: boolean;
   sortBy?: SortKey;
   sortDir?: "asc" | "desc";
 }

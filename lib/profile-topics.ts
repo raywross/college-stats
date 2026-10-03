@@ -164,6 +164,18 @@ export const TOPIC_FIELDS: Readonly<Record<TopicKey, readonly FieldPath[]>> = {
     "derived.yield_out_of_state",
     "derived.yield_international",
     "derived.admit_rate_same_class",
+    // Applying and What you'll need in high school: CDS C3–C5, C13–C18 (specs/data-expansion/cds-application-logistics.md).
+    "reported.admissions_logistics.fee",
+    "reported.admissions_logistics.regular_closing",
+    "reported.admissions_logistics.priority_date",
+    "reported.admissions_logistics.notification",
+    "reported.admissions_logistics.reply",
+    "reported.admissions_logistics.housing_deposit",
+    "reported.admissions_logistics.deferred_admission",
+    "reported.admissions_hs_prep.completion",
+    "reported.admissions_hs_prep.college_prep",
+    "reported.admissions_hs_prep.units_required",
+    "reported.admissions_hs_prep.units_recommended",
   ],
   students: [
     "demographics.racial_diversity",

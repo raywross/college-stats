@@ -274,6 +274,23 @@ export const FIELDS = {
   "reported.admissions_by_residency.total.applicants": reported("Applied, all residencies (college-reported)"),
   "reported.admissions_by_residency.total.admitted": reported("Admitted, all residencies (college-reported)"),
   "reported.admissions_by_residency.total.enrolled": reported("Enrolled, all residencies (college-reported)"),
+  // CDS application logistics and high school preparation (specs/data-expansion/cds-application-logistics.md;
+  // lib/cds/application-logistics.ts): one lineage record per block from the newest CDS. Logistics years are the
+  // cycle ("Fall 2026 cycle"); high school preparation's is the edition ("2025–26").
+  "reported.admissions_logistics.cycle": reported("Admissions cycle of the application dates (college-reported)"),
+  "reported.admissions_logistics.edition": reported("CDS edition of the application dates (college-reported)"),
+  "reported.admissions_logistics.fee": reported("Application fee waivers (college-reported)"),
+  "reported.admissions_logistics.regular_closing": reported("Regular application deadline (college-reported)"),
+  "reported.admissions_logistics.priority_date": reported("Priority application date (college-reported)"),
+  "reported.admissions_logistics.other_terms": reported("First-years admitted for terms other than fall (college-reported)"),
+  "reported.admissions_logistics.notification": reported("When decisions are sent (college-reported)"),
+  "reported.admissions_logistics.reply": reported("Reply-by date for admitted students (college-reported)"),
+  "reported.admissions_logistics.housing_deposit": reported("Housing deposit (college-reported)"),
+  "reported.admissions_logistics.deferred_admission": reported("Deferred admission, a gap year (college-reported)"),
+  "reported.admissions_hs_prep.completion": reported("High school completion requirement (college-reported)"),
+  "reported.admissions_hs_prep.college_prep": reported("College-preparatory program (college-reported)"),
+  "reported.admissions_hs_prep.units_required": reported("High school units required, by subject (college-reported)"),
+  "reported.admissions_hs_prep.units_recommended": reported("High school units recommended, by subject (college-reported)"),
 
   /* ---- History summary (data/history/, `npm run sync-history`) ---- */
   trends: {
@@ -387,6 +404,18 @@ export const FIELDS = {
     ...reported("Acceptance rate, all applicants in the same class"),
     computed: true,
     derived: { formula: "C1 total admitted ÷ total applied, from the same Common Data Set as the residency grid (not calculated under 10 applicants)", inputs: ["reported.admissions_by_residency.total.applicants", "reported.admissions_by_residency.total.admitted"] },
+  },
+  // Compare's application-logistics rows (specs/data-expansion/cds-application-logistics.md;
+  // lib/cds/application-logistics-display.ts). Partial coverage: never in METRICS, ranks, sorts, or Key differences.
+  "derived.application_deadlines": {
+    ...reported("Regular deadline, reply-by rule, and housing deposit"),
+    computed: true,
+    derived: { formula: "The regular closing date, reply-by rule, and housing deposit amount from the college's newest Common Data Set (C14, C17)", inputs: ["reported.admissions_logistics.regular_closing", "reported.admissions_logistics.reply", "reported.admissions_logistics.housing_deposit"] },
+  },
+  "derived.gap_year_allowed": {
+    ...reported("Gap year allowed (deferred admission)"),
+    computed: true,
+    derived: { formula: "Whether admitted students may postpone enrollment, and for how long, from the college's newest Common Data Set (C18)", inputs: ["reported.admissions_logistics.deferred_admission"] },
   },
   "derived.payback_years": {
     ...scorecard("Payback estimate", "outcomes"),

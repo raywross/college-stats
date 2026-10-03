@@ -282,7 +282,8 @@ test("lineage: every stored leaf has an extracted record; dropping one fails the
 
 test("mergeResidency is idempotent and removes a block whose record is gone", () => {
   const vu = school("221999");
-  assert.equal(JSON.stringify(mergeResidency(vu, record("221999"))), JSON.stringify(vu));
+  // Same values; key order may differ because later CDS merges (application logistics) append after this one.
+  assert.deepEqual(mergeResidency(vu, record("221999")), vu);
   const gone = mergeResidency(vu, undefined);
   assert.equal(gone.reported?.admissions_by_residency, undefined);
   assert.ok(!Object.keys(gone.lineage ?? {}).some((k) => k.startsWith("reported.admissions_by_residency")));

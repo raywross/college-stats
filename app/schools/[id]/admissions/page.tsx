@@ -22,6 +22,9 @@ import { AdmissionFactors } from "@/components/school/AdmissionFactors";
 import { ScoreChecker } from "@/components/school/ScoreChecker";
 import { ResidencyAdmissions } from "@/components/school/ResidencyAdmissions";
 import { publishesResidencyRates } from "@/lib/cds/residency-display";
+import { ApplyingBox } from "@/components/school/ApplyingBox";
+import { HsPrepBox } from "@/components/school/HsPrepBox";
+import { applyingLines, feeWaiverSentence, showsHsPrep } from "@/lib/cds/application-logistics-display";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -69,6 +72,8 @@ export default async function AdmissionsPage({ params }: Props) {
     ...(publishesResidencyRates(school) ? [{ id: "residency", label: "Where applicants live" }] : []),
     { id: "yield", label: "Yield" },
     { id: "factors", label: "What they look at" },
+    ...(applyingLines(school).length ? [{ id: "applying", label: "Applying" }] : []),
+    ...(showsHsPrep(school) ? [{ id: "hs-prep", label: "What you'll need in high school" }] : []),
     { id: "map", label: "Admissions map" },
     { id: "scores", label: "Test scores" },
     { id: "submitted", label: "Who submitted scores" },
@@ -139,6 +144,11 @@ export default async function AdmissionsPage({ params }: Props) {
                     </MetricLabel>
                   </p>
                 )}
+                {a.application_fee != null && a.application_fee !== 0 && feeWaiverSentence(school.reported?.admissions_logistics) && (
+                  <p className="mt-1 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs text-muted-foreground">
+                    <MetricLabel cited={citeField("reported.admissions_logistics.fee", school)}>{feeWaiverSentence(school.reported?.admissions_logistics)}</MetricLabel>
+                  </p>
+                )}
                 {a.accepts_ap_credit != null && (
                   <p className="mt-2 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-sm text-muted-foreground">
                     <MetricLabel term="ap-credit" cited={citeField("admissions.accepts_ap_credit", school)}>
@@ -202,6 +212,12 @@ export default async function AdmissionsPage({ params }: Props) {
         {a.factors && (
           <div id="factors" className={`mt-4 ${BLOCK_SCROLL}`}>
             <AdmissionFactors school={school} />
+          </div>
+        )}
+        {(applyingLines(school).length > 0 || showsHsPrep(school)) && (
+          <div className="mt-4 grid gap-4 lg:grid-cols-2">
+            <ApplyingBox id="applying" school={school} cite={citeField} />
+            <HsPrepBox id="hs-prep" school={school} cite={citeField} />
           </div>
         )}
         {recentAdmissionChanges.length > 0 && (

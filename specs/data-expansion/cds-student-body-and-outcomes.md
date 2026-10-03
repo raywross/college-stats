@@ -173,6 +173,15 @@ classes on one dot plot.
 Every federal comparison is made against `restoreFederal(school)`, the baseline before any replacement, as
 `sync-college-reported` already does for C1, so a re-run never compares a college with its own previous CDS value.
 
+> **As built (checks, 2026-10-03; `lib/cds-checks.ts`).** Every check above is built and runs on deterministic reads
+> too. Two tolerances changed with the real workbooks: the current B4 grid's final cohort is compared with
+> federal `grad_cohorts` within **±25%**, not ±10% (entering classes move: Illinois's Pell cohort grew 13%, William &
+> Mary's loan group shrank 22%, Vanderbilt's Pell group 11%, all valid), and groups under 30 students (whose rates aren't
+> shown) skip the federal comparison (Vanderbilt's 29-student loan group, 75.9% vs 97.1%). The ±5-point rate bound is
+> unchanged. B2's sub-items are its three columns' codes (B.201–B.210, B.211–B.220, B.221–B.230), each failing alone;
+> B22's year check reads each code's own text (Illinois's B.2203 says "Fall 2025 entering cohort" and fails
+> `edition-mismatch`; its counts still give the rate). `holds-previous-cohort` is the merge's rule, not a record check.
+
 ## How the records take over from the 8 hand-imported overrides
 `data/overrides.json` sets `demographics.undergrad_enrollment` and `demographics.racial_diversity` for 8 colleges
 (Berkeley, Illinois, Maryland, Cornell, NYU, Vanderbilt, William & Mary, Purdue), from `scripts/import-cds.mts`. Those

@@ -138,6 +138,14 @@ a failure sends the item to the review queue, never a silent fix. Only `passed` 
 - Template totals are formulas: a total of 0 with "-" cells is a blank column, not a 0% column.
 - Rounding: VU-style stated shares to two places; IL-style long floats. Store as 0–1 rounded to 4 places.
 
+> **As built (checks, 2026-10-03; `lib/cds-checks.ts`).** One tolerance changed: "bands agree with percentiles" lets a
+> percentile within the reporting precision of a band edge (10 SAT points, 1 ACT point) sit in either adjacent band.
+> William & Mary's composite 25th is 1390 with 79.9% of students in 1400–1600: one rounding step from the edge, and a
+> valid file. "Composite vs sections" uses this spec's ±50 at each percentile (the scope table's "section 75ths ≥
+> composite 75th − 20" was superseded). C8's "C8A agrees with the grid" and "C8F agrees" fail `inconsistent`; the
+> federal changes fail `federal-disagrees` (escalated once on a model read). The display minimum is a display rule,
+> not a check.
+
 ## Decision 1: the coming cycle's policy is the newest test policy
 **Rule.** A passed C8 policy **replaces `admissions.test_policy` in the dataset** under the newest-everywhere rule
 ([round 2, Decision 1](../college-reported-round-2.md#decision-1-show-the-newest-figures-we-have-everywhere)), with

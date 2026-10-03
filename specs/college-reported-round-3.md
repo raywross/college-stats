@@ -1033,7 +1033,7 @@ workbooks, retrieved 2026-10-03 (~90–100 KB a record):
 | William & Mary (231624) | 688 | 411 | 0 | 6 | — |
 | Illinois (145637) | 756 | 339 | 4 | 6 | C.120, C.121, C.122, C.125 (`form-vs-code`: residency cells misfiled; the visible grid is consistent) |
 
-Per-item checks (sums, order, Illinois's swapped C.111/C.112) are not applied yet: they belong to `lib/cds-checks.ts`.
+Per-item checks (sums, order, Illinois's swapped C.111/C.112) were not applied by the foundation: see [Checks](#checks-2026-10-03-branch-feature-cds3-checks) below.
 
 **Validator** — `validateCdsRecords(records, manifest, table)` runs in `npm run check:lineage`
 (`scripts/check-lineage.mts`). Each rule is broken on purpose in `tests/cds-records.test.mts`.
@@ -1047,3 +1047,89 @@ schema), `tests/cds-xlsx-template.test.mts` (an in-memory template workbook: ANS
 C21, an unparseable aid year, `readC1` unchanged), `tests/cds-records.test.mts` (helpers, lineage, every validator
 rule, the four committed records' real values). `tests/citation-guards.test.mts` allows the template edition in
 `lib/cds-template.ts`'s import path (the table is per template edition, not a data year).
+
+### Checks (2026-10-03, branch `feature/cds3-checks`)
+Build order step 8: every item of every record is checked on its own, deterministic reads included, and a failure
+marks exactly the codes it names. Nothing here fetches or calls a model; the checks re-judge stored records.
+
+**`lib/cds-checks.ts`** (pure; imports `lib/cds-sections.ts`, `lib/reported.ts`, `lib/reported-checks.ts`):
+- `runItemChecks(doc, ctx): ItemCheckResult` (`failures: CodedFailure[]` each with `check`, `detail`, `codes`;
+  `byCode`; `derived`; `resolved`) and `applyChecks(doc, ctx): DocumentRecord`, with
+  `ctx: CheckContext = { table, school?, federal?, lines?, others? }`. `school` must be `restoreFederal(school)`;
+  `federal` defaults to `federalBaseline(school)` (`FederalBaseline`: the flat federal values the checks use). `lines`
+  is a model-read document's archived numbered line text (line n = `lines[n - 1]`); without it the line checks skip.
+  `others` are the college's other documents (C1's "sources agree", same edition).
+- `applyChecks` is idempotent: it first undoes its own work (restores code-table values, drops derived totals and its
+  own failures), keeps reader failures it can't recompute (`overflow-total` with no parts), then re-judges. A code
+  with no value stays `blank`, whatever names it.
+- **Derived totals:** a total printed "##" or left blank whose parts are present is summed (`method: "derived"`,
+  quote "Sum of C.514 + … | 20", `cell` the parts' cells joined by "+", or their page and lines). Parts are never
+  filled from totals. Applies to B1, B2, C1 by sex, C5, D2, H1, I-3.
+- **Form vs code:** a template workbook's `form` value is tried against its group's checks; when the whole group
+  (CDS item, or the C1 residency grid) passes with the form's values, they are published: `v` and `cell` from the
+  form, the code table's `{ v, cell, quote }` kept in the new `ItemResult.code_table` (lib/cds-sections.ts; serialized
+  by `records.mts`). Otherwise the group stays failed with `form-vs-code` and both values.
+- **Universal checks:** `type-range` (`typeFailure`; text in a numeric B1/B2/B4/B5/B22/C1 cell fails too),
+  `number-on-line` and `line-in-document` (model reads only, `valueOnLine` handles thousands separators, split digits,
+  percents as printed, marks, month names), `edition-mismatch` (the cover's edition via `coverEdition(lines)`, and the
+  year named by B.2201–B.2203, H.401 and I.201's own text against the template's), `form-vs-code`, `aid-year`.
+- **Per-item checks**, one named function per group: B1, B2, B4–B11, B22, C1 (sums, FT + PT = enrolled by sex, and the
+  seven round-1 checks via `runChecks`, minus `newer-than-federal`, which is the merge's rule), C1-residency (one status
+  for the grid), C2, C3–C5, C7, C8, C9, C10, C11, C14, C16–C17, C21, C22, D2, D4–D7, D9, G0, G1, H0, H1, H2, H2A, H4, H5,
+  H6, H7–H8, H9–H11, I-2, I-3, J. C12, C13, E, F1, G3–G6 are covered by the type checks; H14's "one column" and C3/C4's
+  "one mark" are layout facts (a single value per code here).
+- **New `CheckId`s** (lib/reported.ts, appended): `type-range`, `number-on-line`, `line-in-document`,
+  `edition-mismatch`, `form-vs-code`, `overflow-total`, `aid-year`, `parts-sum`, `sums-to-100`, `order`,
+  `ratio-matches`, `one-mark`, `inconsistent`, `valid-date`, `date-order`, `enrollment-disagrees`, `federal-disagrees`,
+  `residency-funnel`, `residency-sum`, `residency-vs-federal`, `column-3-not-all-undergrads`,
+  `previous-cohort-disagrees`, `not-a-url`, `out-of-range`.
+- **Escalation:** `escalationFor(doc, table, { model? }): Escalation[]` (`{ call, codes, checks, pages, model }`), once
+  per failing call, only model-read codes whose failures include a check in `ESCALATE` (number not on its line, sums,
+  order, ratios, marks, date order, section-B and federal disagreements, C1's round-1 checks). Returns `[]` for a
+  template workbook or form PDF and for a document with nothing read; skips a call the escalation model already read
+  (a second failure is "document inconsistent"); never escalates `type-range`, `edition-mismatch`, `form-vs-code`,
+  `aid-year`, `inconsistent`, `newer-than-federal`, or `unreachable`. Building the request is the batch track's job.
+- **Breaker:** `circuitBreakerV3({ attempted, failedC1, itemFailureShares, changed, priorValues })` with
+  `CIRCUIT_BREAKER_V3` (C1 > 10% of attempted colleges; any code failing in > 20% of ≥ 20 model-read documents
+  containing it; > 25% of published values changed). Inputs: `itemFailureShares(docs, table)` and
+  `failedC1Count(records, table)` count only model-read items that failed a check (never deterministic reads, blanks,
+  `unreachable`, `newer-than-federal`, or B2 column 3, which publishes nothing). **Conflict to settle:** round 2.1
+  dropped the "10% of colleges fail" trigger (`CIRCUIT_BREAKER` in lib/reported.ts, 2026-10-03: it fired on blocked
+  sites and rounding); Decision 9 above reinstates it for C1. Both exist; the pipeline still calls round 2's
+  `circuitBreaker`, so wiring `circuitBreakerV3` in is the batch track's (and the owner's) call.
+- **Review queue:** `ReviewItem` gains optional `code`, `edition`, `sha256`, `value` (and `extraction` becomes
+  optional; round-2 entries stay valid). `reviewKey`/`enqueueItems(queue, items)` (lib/reported.ts) replace only the
+  same college + edition + code; the pipeline's `enqueue` now uses it. `reviewItemsFor(doc, table, { unit_id, name,
+  run, queued })` makes one entry per failed item; `dropPassed(queue, unitId, doc)` removes entries whose code now
+  passes. `scripts/college-reported-pr-body.mts` renders them as a per-item table (`perItemTable`: college, edition,
+  item and code, value, failed checks, URL) beside the round-2 table.
+
+**Tolerances that differ from the scope table** (the owning specs' "As built" notes say why): B4's federal cohort
+±25% (not ±10%) and no federal comparison under 30 students; C9 bands vs percentiles allow one reporting step at a band
+edge, and composite vs sections is the owning spec's ±50; G1 compares tuition + required fees with Scorecard's tuition
+and fees; H5 compares the federal-loan row with Scorecard's median debt (×0.5–×2) and the any-loan row loosely
+(×0.25–×4); H2's "M ≤ L" is dropped; G0's "not final" flag is not a failure (cds-cost-and-debt.md: provisional, shown
+as such), against the scope table's "holds G1 out of publishing".
+
+**The four records, re-checked** (`npm run check-cds-records`, which re-judges every committed record against
+`restoreFederal(school)` and is a no-op on a second run; `npm run cds-records-from-workbooks` now applies the checks
+too, and re-reading the four workbooks reproduces the committed records exactly):
+
+| College | Passed | Blank | Failed | What changed |
+|---|---|---|---|---|
+| Vanderbilt (221999) | 693 | 405 | 1 | Nothing: B.2201's 0.97 still fails `type-range`; every other check passes |
+| Cornell (190415) | 613 | 485 | 1 | C21 publishes the visible form (offered Yes, 10,057 applications, 1,889 admits; the code table's 10,057 "admits" kept in `code_table`); G.001 "89*---31" fails `not-a-url` |
+| William & Mary (231624) | 689 | 410 | 0 | C.513 (recommended units, blank) summed from its subjects: 20 |
+| Illinois (145637) | 745 | 339 | 15 | The residency grid publishes from the visible form (in-state 29,419 / 14,509 / 6,587; out-of-state 32,702 applicants; international 20,924); C.110–C.113 (full-/part-time by sex, swapped) fail `parts-sum`; B.221–B.230 (B2 column 3, non-degree only) fail `column-3-not-all-undergrads`; B.2203 fails `edition-mismatch` (its label says "Fall 2025 entering cohort") |
+
+Not caught: Cornell's C21 dates are one row off too (C.2104/C.2105 11/1 is its closing date, read as notification);
+with no closing date to compare, no check can tell. The display track should treat Cornell's ED notification date
+with care.
+
+**Tests:** `tests/cds-checks.test.mts` (34): the committed records are already checked and fail exactly where the
+colleges' files are wrong; test 9 (Vanderbilt's 0.97, Illinois's code-table residency, its B2 column 3: each fails, is
+never escalated, never counted); every universal check; a passing real record and a one-value break that fails exactly
+its codes for each group; test 16 (a failing H2 never blocks C1; the queue's keys; `dropPassed`); the PR body's per-item
+rows; test 17 (escalation scope on a model-read fixture with line text); test 18 (the breaker's shares, minimum, and
+exclusions). `tests/cds-records.test.mts` now expects Cornell's C21 and Illinois's residency grid published from the
+form.

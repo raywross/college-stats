@@ -105,6 +105,21 @@ list them here.
 - [ ] **Study 1: Men and women in admissions.** Share of colleges admitting men vs women at a notably higher rate, 2001 to
   now, and where the change is concentrated (first look: the Northeast and moderately selective colleges drive it; the
   West moved the other way). Needs `applicants_men`/`applicants_women` history series first.
+- [ ] **Studies 2–6** (specified 2026-10-03 in [trends/](trends/), each one registry entry, one build function, one
+  page once the hub exists): [test-optional](trends/test-optional.md) (66% → 5% requiring tests; needs the Explore
+  test-policy filter), [shrinking colleges](trends/shrinking-colleges.md) (half of colleges 10%+ smaller),
+  [price gap](trends/price-gap.md) (who is discounting), [out-of-state students](trends/out-of-state.md) (publics),
+  [Pell graduation gap](trends/pell-gap.md) (widened 9 → 11 points).
+- [ ] **Top-10 lists** ([trends/top-10-lists.md](trends/top-10-lists.md)): `/trends/movers`, ten lists with floors and
+  reviewed exclusions (online-first, closed or merged); Explore `minApplicants`/`minUndergrads` params; later the
+  distance-education share from `EF{Y}A_DIST` as `demographics.online_share`.
+- [ ] **By athletic conference** ([trends/conferences.md](trends/conferences.md)): index with the Power 4 side by side,
+  a page per conference (members, medians over time under today's-members and members-at-the-time rules, realignment
+  timeline). Slugs added to `lib/conferences.ts`.
+- [ ] **By state** ([trends/states.md](trends/states.md)): tile map colored by measure, a page per state (10-college
+  floor, public/private split, origins, movers, public research universities). Metro pages later reuse the template.
+- [ ] More ideas (HBCU applications, legacy and factors, majors by group, transfers, faculty, borrowing, an annual
+  "year in college data") are listed in the hub; spec one before building it.
 
 ## Design and usability
 - [ ] **Compare redesign** ([compare-redesign.md](compare-redesign.md)): the compare page is 10,000px on desktop and

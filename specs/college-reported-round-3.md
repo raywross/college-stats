@@ -944,3 +944,106 @@ and an MIT-style HTML table.
     items by code; tiers; batches; and a projection. The calls file has one line per model call.
 22. **No refetch after re-discovery:** a source read successfully earlier in the run is not fetched or extracted again
     when a re-discovery adds another.
+
+## As built
+### Foundation (2026-10-03, branch `feature/cds3-foundation`)
+The shared contract the pipeline tracks and the nine display specs build on: the template table, the record shapes,
+the template-workbook reader, real records for the four template workbooks, and the records validator. Nothing here
+calls a model or fetches anything.
+
+**Template table** — `data/reference/cds-template-2025-26.json`, built by `scripts/build-cds-template.mts`:
+```
+npm run build-cds-template -- --workbook <2025-26 template workbook.xlsx> [--workbook …]
+```
+- Reads each workbook's ANSWER SHEET (code, US News PDF tag, question, the template's descriptors, value type) and
+  the code tables of CDS-A … CDS-J, and takes the union of codes. Built from the inventory's Vanderbilt, Cornell,
+  William & Mary and Illinois workbooks: **1,105 codes**, identical in all four.
+- Each item: `code`, `tag`, `question`, `section`, `item` (from the code: "C.1201" → C12, "H.2A01" → H2A, "C.8D" → C8D;
+  H.101–H.104 are H0; all of J is "J"), the template's `sub`/`category`/`group`/`cohort`/`residency`/`unit`/`gender`,
+  `value_type`, `call` (`C`, `rest`, `store`), `owner` (spec slug or null), `also` (other readers, e.g.
+  religious-life on C.715, H.1409, H.1418), and `year_rule`.
+- `call`, `owner`, and `year_rule` come from the `SCOPE` table in the script: one row per line of the Extraction scope
+  table above, as code ranges in template order, plus three small per-code tables (F1's owners by column, C21's and
+  D2's counts on the fall rule, H.101 on the aid-year rule).
+- `value_type` normalizes the template's own column (whose "Whole Number or Round to Nearest Tenth" holds SAT scores,
+  GPA-band shares and ages alike) into a closed set: `count`, `percent` (stored 0–1), `currency`, `decimal`, `gpa`,
+  `sat-section`, `sat-composite`, `act`, `act-writing`, `month`, `day`, `date` (one cell, stored "--MM-DD"), `yes-no`,
+  `check`, `choice`, `text`, `url`. Per-code fixes are listed in the script's `CODE_TYPE`.
+- Stored compact, one item per line (~390 KB).
+
+**Totals against the spec.** `C` matches exactly (263). The table has **497** codes in `rest` and **345** store-only,
+against the spec's 503 and 339: the six F1 age codes (F.106–F.108, F.114–F.116), which the scope table marks
+"age store-only" while its totals count F.101–F.116 whole. Model total: 760, not 766. `tests/cds-sections.test.mts`
+pins the difference to exactly those six codes.
+
+**Year rules as built** (record `years` keys; labels for the 2025–26 edition): `edition` "2025–26", `fall` "Fall
+2025", `test-policy-cycle` "Fall 2027 applicants" (C8A–D, C8F), `next-cycle` "Fall 2026 cycle" (C13–C14, C16–C18, D9,
+H7–H11), `next-year` "2026–27" (G), `aid-year` from H.101 ("2024–25 final", "2025–26 estimated"; absent when H.101
+doesn't parse), `graduating-class` "Class of 2025" (H4–H5), `cohort` "Fall 2019 cohort" (B4 block), `previous-cohort`
+"Fall 2018 cohort" (B5 block), `retention` "Fall 2024 cohort to Fall 2025" (B22), `prior-year` "2024–25" (B3, J).
+Where an owning spec is more specific than the scope table, the owner's rule was used, and the coordinator should
+confirm: C18 on `next-cycle` (Decision 2 and cds-application-logistics.md; the scope table says edition); D1, D3–D8
+on `edition` and D2 counts on `fall` (cds-transfer.md; the scope table says Fall 2025 for D1–D5); C21 counts on
+`fall` and C21/C22 flags and dates on `edition` (cds-admissions.md); H14 on `edition` (cds-financial-aid.md; the
+scope table says aid year); H.102–H.104 on `edition`.
+
+**`lib/cds-sections.ts`** (pure, no imports): `CdsCode`, `CDS_CODE`, `CdsSection`, `CallKey`, `CallAssignment`,
+`ValueType`, `YearRule`/`ItemGroupKey`, `TemplateItem`, `TemplateFile`, `TemplateTable`, `loadTemplate` (indexes by
+code and by item; refuses malformed codes, unknown enums, owned store-only items, unowned model items),
+`itemOfCode`, `compareCodes`; record shapes `DocumentType`, `ItemStatus`, `ItemFailure`, `ItemResult` (adds `form`:
+the visible-form value kept beside a disagreeing code-table value), `CallRead`, `DocumentRecord`, `CollegeRecord`;
+manifest shapes `ManifestEntry`, `CollegeDocsFile`; `parseEdition`, `AidYear`, `parseAidYear`, `ITEM_GROUPS`,
+`yearsForEdition`; normalizers `Normalized`, `normalizeValue`, `isPlaceholder`, `readMark`, `parseNumber`, `MonthDay`,
+`monthDay`, `formatMonthDay`; `typeFailure` (the universal type checks, check id `type-range`); `SCHEMA_VERSIONS`
+(`C`: 1, `rest`: 1), `READER_VERSIONS` (`xlsx-template`: 1, `pdf-form`: 1), `maxTokensFor`, `codesFor`,
+`storeOnlyCodes`, `schemaFor`, `codeTableText`. **`lib/cds-template.ts`** loads the table for server code and scripts
+(`CDS_TEMPLATE`); client components never import it.
+
+**`lib/cds-records.ts`** (pure): `editionFallYear`, `editionLabel`, `compareDocuments`, `indexRecords`, `passedItem`,
+`newestPassed` (all/any modes, `maxEditionsBack`), accessors `itemValue`, `itemNumber`, `itemShare`, `itemBoolean`,
+`itemText`, `itemMonthDay` (one cell, or a split month/day pair), `itemYear`, `lineageFromItem`, and
+`validateCdsRecords`. `LineageRecord` (`lib/types.ts`) gained `edition`, `cell`, `field`; `validateSchool` accepts
+`method: "derived"` on `reported.*` paths cited to `college-site`, with the same quote/url/retrieved/year requirement.
+
+**Template-workbook reader** — `scripts/lib/cds-xlsx.mts`: `isTemplateWorkbook`, `readTemplate` (code tables, then
+the ANSWER SHEET for empty codes, then the visible form's C1-by-sex, residency-grid and C21 rows against the code
+table), `recordFromTemplate` (every template code normalized and type-checked; `form-vs-code`, `overflow-total` and
+`aid-year` failures; cells on every value; "question | value" quotes ≤ 160 characters on owned items), `quoteOf`.
+The edition comes from a "Common Data Set 2025-2026" cell, else I.201's "Fall 2025", else B.2202's text, else
+G.002's (Illinois edited its G.002 sentence to say 2025-2026). The respondent's name, title, office, phone and email
+(A.001–A.004, A.012, A.013) are recorded `not-read`: no spec shows them and the records are public. `readC1` and the
+label readers are unchanged. `scripts/import-cds.mts` still reads by label: moving it to `readTemplate` means
+rewriting every block it writes to `data/overrides.json` (and the B2 last-column fix with it), which the display specs
+that supersede those overrides will do.
+
+**Records and manifest** — `scripts/cds-records-from-workbooks.mts`:
+```
+npm run cds-records-from-workbooks -- --workbook <file.xlsx> --unit <unit_id> --url <url> [--retrieved YYYY-MM-DD]
+```
+writes `data/cds-records/<unit_id>.json` (via `scripts/lib/college-reported/records.mts`: `readRecords`,
+`readRecord`, `serializeRecord`, `writeRecord`, `upsertDocument`, `readManifest`, `writeManifest`, `upsertManifest`;
+fixed key order, newest document first, items in template order, one per line) and upserts the
+`data/college-docs.json` entry (`archive: null` until the archive exists). Run on the inventory's four template
+workbooks, retrieved 2026-10-03 (~90–100 KB a record):
+
+| College | Passed | Blank | Failed | Not read | Failures |
+|---|---|---|---|---|---|
+| Vanderbilt (221999) | 693 | 405 | 1 | 6 | B.2201 cohort 0.97 (`type-range`) |
+| Cornell (190415) | 611 | 485 | 3 | 6 | C.2101, C.2110, C.2111 (`form-vs-code`: the C21 table is one row off; the form says 10,057 applications, 1,889 admits) |
+| William & Mary (231624) | 688 | 411 | 0 | 6 | — |
+| Illinois (145637) | 756 | 339 | 4 | 6 | C.120, C.121, C.122, C.125 (`form-vs-code`: residency cells misfiled; the visible grid is consistent) |
+
+Per-item checks (sums, order, Illinois's swapped C.111/C.112) are not applied yet: they belong to `lib/cds-checks.ts`.
+
+**Validator** — `validateCdsRecords(records, manifest, table)` runs in `npm run check:lineage`
+(`scripts/check-lineage.mts`). Each rule is broken on purpose in `tests/cds-records.test.mts`.
+
+**State files** (empty, typed in `lib/reported.ts`): `data/college-batches.json` (`BatchesFile`, `BatchEntry`),
+`data/reference/blocked-hosts.json` (`BlockedHostsFile`, `BlockedHost`, `BlockedStatus`),
+`data/reference/cds-urls.json` (`CdsUrlsFile`, `CdsUrlEntry`).
+
+**Tests:** `tests/cds-sections.test.mts` (table totals and scope, year rules, every normalizer case, type checks, the
+schema), `tests/cds-xlsx-template.test.mts` (an in-memory template workbook: ANSWER SHEET fill, Cornell's off-by-one
+C21, an unparseable aid year, `readC1` unchanged), `tests/cds-records.test.mts` (helpers, lineage, every validator
+rule, the four committed records' real values). `tests/citation-guards.test.mts` allows the template edition in
+`lib/cds-template.ts`'s import path (the table is per template edition, not a data year).

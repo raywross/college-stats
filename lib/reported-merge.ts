@@ -10,13 +10,18 @@ import { REPORTED_PATHS } from "./fields.ts";
 import type { ReportedFile } from "./reported.ts";
 import { reportedToPatch } from "./reported-checks.ts";
 
-/** `school`, with its `reported` block and every `reported.*` lineage record removed. */
+/**
+ * `school`, with its `reported` block and every `reported.*` lineage record removed. A school that ends up with no
+ * lineage gets none (not `{}`), and key order is kept, so a school the merge doesn't touch serializes byte for byte
+ * as before and the one-college-per-line diff of data/schools.json shows only the colleges that changed.
+ */
 export function stripReported(school: School): School {
+  if (!school.reported && !Object.keys(school.lineage ?? {}).some((k) => k.startsWith("reported."))) return school;
   // eslint-disable-next-line @typescript-eslint/no-unused-vars -- discarding `reported` is the point
-  const { reported: _reported, ...rest } = school;
-  const lineage = { ...(school.lineage ?? {}) };
+  const { reported: _reported, lineage: oldLineage, ...rest } = school;
+  const lineage = { ...(oldLineage ?? {}) };
   for (const path of REPORTED_PATHS) delete lineage[path];
-  return { ...rest, lineage } as School;
+  return (Object.keys(lineage).length ? { ...rest, lineage } : rest) as School;
 }
 
 export interface MergeReportedResult {

@@ -100,6 +100,16 @@ test("mergeReported leaves a school with no entry and no prior block untouched",
   assert.equal(merged, 0);
   assert.equal(removed, 0);
   assert.equal(schools[0].reported, undefined);
+  // Byte for byte: no empty `lineage: {}` added, keys in the same order, so the school's line in data/schools.json
+  // doesn't change (the first merge of the pilot rewrote all 1,893 lines because of exactly that).
+  assert.equal(JSON.stringify(schools[0]), JSON.stringify(school(OTHER)));
+  assert.strictEqual(schools[0], schools[0]);
+});
+
+test("stripping a college's block leaves no empty lineage behind", () => {
+  const withBlock = mergeReported([school(PRINCETON)], { updated: "2026-10-03", entries: [entryFor(PRINCETON)] }).schools[0];
+  const stripped = mergeReported([withBlock], { updated: "2026-10-04", entries: [] }).schools[0];
+  assert.equal(JSON.stringify(stripped), JSON.stringify(school(PRINCETON)));
 });
 
 /* ------------------------------------------------------------------ */

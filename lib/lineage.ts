@@ -3,7 +3,8 @@
  * sync script, the checker, tests, and the app all resolve citations the same way.
  * See specs/data-lineage.md.
  */
-import type { DatasetMeta, FederalAdmissions, LineageRecord, ReportedSourceKind, School, SourceInfo, SourceKey } from "./types";
+import type { AdmissionFactor, DatasetMeta, FactorUse, FederalAdmissions, LineageRecord, ReportedSourceKind, School, SourceInfo, SourceKey } from "./types";
+import { validateAdmissionProfile } from "./cds/admissions.ts";
 import { FIELDS, METADATA_KEYS, PER_DOCUMENT_SOURCES, REPORTED_PATHS, isFieldPath, registeredPathFor, type FieldPath, type VintageKey } from "./fields.ts";
 import { NEWEST_TARGETS, newestGroupCitation, validateNewestGroups } from "./newest-groups.ts";
 
@@ -34,12 +35,12 @@ export interface Cited extends CitedSource {
    * For a funnel value that a newer college-reported class replaced: the previous (federal or hand-imported CDS)
    * value and the year it describes, from `admissions.federal`, so the tooltip can say "Federal data, fall 2024: 5.8%".
    */
-  replaces?: { value: number | Record<string, number> | null; year: string | null };
+  replaces?: { value: number | Record<string, number> | null; year: string | null; label?: string };
   /** For a value reported by the college itself (source "college-site"): which kind of document supplied it. */
   sourceKind?: ReportedSourceKind;
   /** For a value from a college's Common Data Set record: its edition, "2025–26" (the year is the value's own). */
   cdsEdition?: string;
-  /** The same document named in full, "2025–26 Common Data Set", for lines that spell out the document. */
+  /** The same document named in full, "Common Data Set 2025–26", for lines that spell out the document. */
   document?: string;
 }
 
@@ -193,11 +194,12 @@ export function lineageFor(path: FieldPath, school: School | undefined, meta: Da
     // A round-3 record value names its CDS edition (its year is the item's own, e.g. next year's price); the
     // admissions block's document kind applies only to values without one.
     ...(rec?.source === "college-site" && rec.edition
-      ? { sourceKind: "cds" as const, cdsEdition: rec.edition, document: `${rec.edition} Common Data Set` }
+      ? { sourceKind: "cds" as const, cdsEdition: rec.edition, document: `Common Data Set ${rec.edition}` }
       : rec?.source === "college-site" && school?.reported?.admissions
         ? { sourceKind: school.reported.admissions.source_kind }
         : {}),
     ...newestGroupCitation(path, school),
+    ...replacedFactor(path, school, meta),
   };
 }
 
@@ -210,6 +212,16 @@ function replacedBy(path: FieldPath, school: School | undefined, meta: DatasetMe
   const year = school?.lineage?.["admissions.federal"]?.year ?? (federal.year !== null ? `Fall ${federal.year}` : (meta.vintages["ipeds-adm"] ?? null));
   return { replaces: { value: federal[key], year } };
 }
+
+/** A federal factor answer a newer CDS C7 replaced (`admissions.federal_factors`; lib/cds/admissions.ts). */
+function replacedFactor(path: FieldPath, school: School | undefined, meta: DatasetMeta): Pick<Cited, "replaces"> | Record<string, never> {
+  if (!path.startsWith("admissions.factors.") || school?.lineage?.[path]?.source !== "college-site") return {};
+  const key = path.slice("admissions.factors.".length) as AdmissionFactor;
+  const federal = school.admissions.federal_factors;
+  if (!federal || !(key in federal)) return {};
+  return { replaces: { value: null, label: FACTOR_USE_WORDS[federal[key] ?? "not_considered"], year: meta.vintages["ipeds-adm"] ?? null } };
+}
+const FACTOR_USE_WORDS: Record<FactorUse, string> = { required: "required", considered: "considered", not_considered: "not considered" };
 
 /** Distinct sources behind a set of values (section footnotes), in first-seen order. */
 export function sourcesForFields(paths: readonly FieldPath[], school: School | undefined, meta: DatasetMeta): CitedSource[] {
@@ -350,6 +362,7 @@ export function validateSchool(school: School, meta: DatasetMeta): string[] {
   }
   errors.push(...validateNewest(school, where));
   errors.push(...validateNewestGroups(school, where, meta));
+  errors.push(...validateAdmissionProfile(school, where));
   return errors;
 }
 

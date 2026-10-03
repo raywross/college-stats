@@ -19,6 +19,7 @@ import type { DatasetMeta, School } from "../lib/types";
 import { validateLineage } from "../lib/lineage.ts";
 import type { ReportedFile } from "../lib/reported.ts";
 import { mergeReported } from "../lib/reported-merge.ts";
+import { CDS_TEMPLATE } from "../lib/cds-template.ts";
 import { readRecords } from "./lib/college-reported/records.mts";
 
 // MERGE_REPORTED_ROOT lets tests point this at a scratch directory holding just data/schools.json,
@@ -37,7 +38,7 @@ function main() {
 
   // The CDS records (data/cds-records/) then supply the newest groups (specs/data-expansion/cds-student-body-and-outcomes.md).
   const records = readRecords(join(ROOT, "data", "cds-records"));
-  const { schools: merged, merged: mergedCount, removed } = mergeReported(schools, reported, { records, meta });
+  const { schools: merged, merged: mergedCount, removed } = mergeReported(schools, reported, { records, meta, table: CDS_TEMPLATE });
 
   const problems = validateLineage(merged, meta);
   if (problems.length) {

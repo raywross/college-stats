@@ -12,10 +12,11 @@ import { REPORTED_PATHS } from "./fields.ts";
 import { applyNewest, restoreFederal } from "./newest.ts";
 import type { ReportedFile } from "./reported.ts";
 import { reportedToPatch } from "./reported-checks.ts";
-import type { CollegeRecord } from "./cds-sections.ts";
+import type { CollegeRecord, TemplateTable } from "./cds-sections.ts";
 import { indexRecords } from "./cds-records.ts";
 import { applyNewestGroups, federalYears } from "./newest-groups.ts";
 import { studentBodyFromRecord } from "./cds/student-body.ts";
+import { withAdmissionProfile } from "./cds/admissions.ts";
 import { mergeResidency } from "./cds/residency.ts";
 import { applyCostAndDebt } from "./cds/cost-and-debt.ts";
 
@@ -45,11 +46,21 @@ export interface MergeReportedResult {
   removed: number;
 }
 
-/** What the round-3 CDS records need to merge: the records themselves and, for the newest-everywhere groups, meta. */
+/** What the round-3 CDS records need to merge. Every field but `records` has a default derived from `meta`. */
 export interface CdsMergeInputs {
   records: readonly CollegeRecord[];
   /** `data/meta.json` vintages: the federal year each newest group compares against. Without it no group replaces. */
   meta?: Pick<DatasetMeta, "vintages">;
+  /** The template table (lib/cds-template.ts CDS_TEMPLATE); the admissions profile needs it for labels and years. */
+  table?: TemplateTable;
+  /** The federal admissions release year (IPEDS ADM fall) the six shared C7 factors compare against. Default: from meta. */
+  factorsYear?: number | null;
+}
+
+/** The fall year of the IPEDS ADM vintage ("Fall 2024" → 2024), or null when meta doesn't say. */
+function admissionsYear(meta: Pick<DatasetMeta, "vintages"> | undefined): number | null {
+  const m = /\d{4}/.exec(meta?.vintages?.["ipeds-adm"] ?? "");
+  return m ? Number(m[0]) : null;
 }
 
 /**
@@ -65,17 +76,20 @@ const RECORD_STEPS: readonly ((school: School, record: CollegeRecord | undefined
 
 /**
  * Strips every school (`stripReported`), then re-applies the current entries in `reported.entries` (through
- * `reportedToPatch`, exactly as `sync-data` does) and `applyNewest`, so each college's newer published figures
- * replace its older ones in `admissions.*`, with lineage and `admissions.federal`. Then, from each college's CDS
- * record: the newest groups (enrollment, race, retention, graduation; lib/newest-groups.ts, every federal comparison
- * against the stripped baseline), and the wave-4 blocks under `school.reported` (`RECORD_STEPS`).
+ * `reportedToPatch`, exactly as `sync-data` does); adds the CDS admissions profile (lib/cds/admissions.ts); runs
+ * `applyNewest`, so each college's newer published figures and factor answers replace its older ones in
+ * `admissions.*`, with lineage and `admissions.federal`; then, from the record, the newest groups (enrollment, race,
+ * retention, graduation; lib/newest-groups.ts, every federal comparison against the stripped baseline) and the
+ * wave-4 blocks under `school.reported` (`RECORD_STEPS`).
  */
 export function mergeReported(schools: School[], reported: ReportedFile, cds?: CdsMergeInputs): MergeReportedResult {
   const byUnitId = new Map(reported.entries.map((e) => [e.unit_id, e]));
   const byRecord = indexRecords(cds?.records ?? []);
   const years = cds?.meta ? federalYears(cds.meta) : null;
+  const factorsYear = cds?.factorsYear ?? admissionsYear(cds?.meta);
   let merged = 0;
   let removed = 0;
+  const profiled = (s: School): School => (cds?.table ? withAdmissionProfile(s, byRecord.get(s.unit_id), cds.table) : s);
   const groups = (s: School, baseline: School): School => {
     const record = byRecord.get(s.unit_id);
     return record && years ? applyNewestGroups(s, studentBodyFromRecord(record, baseline).found, years) : s;
@@ -88,16 +102,16 @@ export function mergeReported(schools: School[], reported: ReportedFile, cds?: C
     const hadReported = school.reported?.admissions != null;
     const stripped = stripReported(school);
     const entry = byUnitId.get(school.unit_id);
-    let withC1: School;
+    let withC1 = stripped;
     if (!entry) {
       if (hadReported) removed++;
-      withC1 = stripped;
     } else {
       merged++;
       const { reported: reportedData, lineage: entryLineage } = reportedToPatch(entry);
-      withC1 = applyNewest({ ...stripped, reported: reportedData, lineage: { ...stripped.lineage, ...entryLineage } });
+      withC1 = { ...stripped, reported: reportedData, lineage: { ...stripped.lineage, ...entryLineage } };
     }
-    return fromRecords(groups(withC1, stripped));
+    const newest = applyNewest(profiled(withC1), { factorsYear });
+    return fromRecords(groups(newest, stripped));
   });
   return { schools: result, merged, removed };
 }

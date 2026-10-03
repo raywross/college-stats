@@ -90,6 +90,8 @@ export const OVERVIEW_FIELDS: readonly FieldPath[] = [
   "admissions.act_composite_25_75",
   // Newer admit rate the college published itself (ReportedRateLine; specs/college-reported-data.md).
   "reported.admissions.acceptance_rate",
+  // First-years' average GPA from the college's CDS (specs/data-expansion/cds-admissions.md).
+  "reported.admission_profile.gpa.average",
   // Students & campus card.
   "demographics.undergrad_enrollment",
   "derived.diversity_index",
@@ -164,6 +166,17 @@ export const TOPIC_FIELDS: Readonly<Record<TopicKey, readonly FieldPath[]>> = {
     "derived.yield_out_of_state",
     "derived.yield_international",
     "derived.admit_rate_same_class",
+    // CDS admissions profile (specs/data-expansion/cds-admissions.md): wait list, early rounds, factor weights, GPA.
+    "reported.admission_profile.wait_list.admitted",
+    "reported.admission_profile.early_decision.applicants",
+    "reported.admission_profile.early_decision.admitted",
+    "derived.ed_admit_rate",
+    "reported.admission_profile.early_action.offered",
+    "reported.admission_profile.factors.rigor",
+    "admissions.factors.legacy",
+    "reported.admission_profile.gpa.average",
+    "reported.admission_profile.gpa.bands.all",
+    "reported.admission_profile.class_rank.submitted_share",
   ],
   students: [
     "demographics.racial_diversity",

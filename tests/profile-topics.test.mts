@@ -59,6 +59,17 @@ const LEGACY_FIELDS = Object.freeze({
     "derived.yield_out_of_state",
     "derived.yield_international",
     "derived.admit_rate_same_class",
+    // CDS admissions profile, added with wave 4 (specs/data-expansion/cds-admissions.md).
+    "reported.admission_profile.gpa.average",
+    "reported.admission_profile.wait_list.admitted",
+    "reported.admission_profile.early_decision.applicants",
+    "reported.admission_profile.early_decision.admitted",
+    "derived.ed_admit_rate",
+    "reported.admission_profile.early_action.offered",
+    "reported.admission_profile.factors.rigor",
+    "admissions.factors.legacy",
+    "reported.admission_profile.gpa.bands.all",
+    "reported.admission_profile.class_rank.submitted_share",
   ],
   scores: [
     "admissions.sat_reading_25_75",

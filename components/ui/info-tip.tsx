@@ -47,6 +47,7 @@ function sourceKindPhrase(cited: Cited): string {
 
 /** The federal (or previous) value a college-reported value replaced, formatted by field. */
 function formatReplaced(cited: Cited): string {
+  if (cited.replaces?.label) return cited.replaces.label;
   const value = cited.replaces?.value ?? null;
   if (value === null) return "not reported";
   // Race: the seven federal shares in the chart's order; cohort sizes: each group's count.

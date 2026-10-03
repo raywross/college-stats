@@ -57,6 +57,12 @@ export interface School {
     accepts_ap_credit?: boolean | null;
     /** How each factor is used in admission (IPEDS ADMCON1–12, except test scores, which are `test_policy`). */
     factors?: Partial<Record<AdmissionFactor, FactorUse | null>> | null;
+    /**
+     * The federal answers a newer Common Data Set C7 replaced in `factors` (specs/data-expansion/cds-admissions.md,
+     * the six shared factors): present only when `applyNewest` flipped one; read by the ⓘ ("Federal data, fall 2024:
+     * considered") and put back by `restoreFederal`.
+     */
+    federal_factors?: Partial<Record<AdmissionFactor, FactorUse | null>>;
   };
   demographics: {
     undergrad_enrollment: number;
@@ -309,9 +315,9 @@ export interface School {
   trends?: SchoolTrends;
   /**
    * Newer figures the college itself published (class profiles, Common Data Sets), read from its website by the
-   * ingestion agent and checked (specs/college-reported-data.md). Shown on profiles next to the federal baseline,
-   * never used in Explore, Compare, ranks, medians, or Home. Every value here has an `extracted` lineage record with
-   * its quote, URL, retrieval date, and year.
+   * ingestion agent and checked (specs/college-reported-data.md). Newest values replace older ones in every view
+   * (round 2, Decision 1); partial-coverage fields are never used in ranks, medians, sorts, or Home. Every value here
+   * has an `extracted` (or `derived`) lineage record with its quote, URL, retrieval date, and year.
    */
   reported?: ReportedData;
 }
@@ -338,6 +344,8 @@ export interface ReportedData {
    * specs/data-expansion/cds-cost-and-debt.md).
    */
   outcomes?: ReportedOutcomes;
+  /** CDS C2, C7, C10–C12, C21–C22 from data/cds-records (specs/data-expansion/cds-admissions.md; lib/cds/admissions.ts). */
+  admission_profile?: ReportedAdmissionProfile;
 }
 
 /* ---- CDS student body and outcomes (specs/data-expansion/cds-student-body-and-outcomes.md) ---- */
@@ -494,6 +502,75 @@ export interface ReportedGraduateDebt {
   /** Number who borrowed, their share (0–1) of the class, and the average cumulative principal among them. */
   rows: Record<GraduateDebtRowKey, { number: number | null; share: number | null; avg_principal: number | null }>;
 }
+/* ---- CDS admissions profile (specs/data-expansion/cds-admissions.md; built by lib/cds/admissions.ts) ---- */
+
+/**
+ * `school.reported.admission_profile`. Each block comes from the newest CDS edition where it passed (at most two
+ * editions behind the college's newest), so blocks may describe different classes; each value's lineage says its year.
+ * A block (or a sub-object such as ED's second round) with nothing published is absent rather than null, so every
+ * stored leaf is a registered, cited path; a missing number inside a block is null, never 0.
+ */
+export interface ReportedAdmissionProfile {
+  /** C11 + C12, always from one edition. */
+  gpa?: {
+    /** C.1201 as published (3.895, 4.34). Never compared across colleges: it may be weighted. */
+    average: number | null;
+    /** `weighted` when the average is above 4.0 (or the document says so); `unweighted` only when stated. */
+    scale: GpaScale;
+    /** C.1202, 0–1. */
+    submitted_share: number | null;
+    /** Nine shares 0–1, top band (4.0) first; null = column blank or failed its checks. */
+    bands: { with_test: GpaBands | null; without_test: GpaBands | null; all: GpaBands | null };
+  };
+  /** C10; the bands are never stored without the share whose high school reported a rank. */
+  class_rank?: {
+    top_tenth: number | null;
+    top_quarter: number | null;
+    top_half: number | null;
+    bottom_half: number | null;
+    bottom_quarter: number | null;
+    submitted_share: number;
+  };
+  /** C.701–C.718; a row with no (or two) marks is null. */
+  factors?: Partial<Record<C7Factor, FactorImportance | null>>;
+  /** C.201–C.204. All-zero counts beside a Yes policy are blank (null). */
+  wait_list?: { policy: boolean | null; offered: number | null; accepted: number | null; admitted: number | null };
+  /** C.2101–C.2111; one count pair covers every ED round. */
+  early_decision?: {
+    offered: boolean;
+    first?: { closing: MonthDayValue | null; notification: MonthDayValue | null };
+    /** ED II. */
+    other?: { closing: MonthDayValue | null; notification: MonthDayValue | null };
+    applicants: number | null;
+    admitted: number | null;
+  };
+  /** C.2201–C.2206; the CDS has no early action counts. */
+  early_action?: { offered: boolean; closing: MonthDayValue | null; notification: MonthDayValue | null; restrictive: boolean | null };
+}
+export type GpaScale = "weighted" | "unweighted" | "not_stated";
+export type GpaBands = [number, number, number, number, number, number, number, number, number];
+export type FactorImportance = "very_important" | "important" | "considered" | "not_considered";
+export type C7Factor =
+  | "rigor"
+  | "class_rank"
+  | "gpa"
+  | "test_scores"
+  | "essay"
+  | "recommendations"
+  | "interview"
+  | "extracurriculars"
+  | "talent"
+  | "character"
+  | "first_generation"
+  | "alumni_relation"
+  | "geographic_residence"
+  | "state_residency"
+  | "religious"
+  | "volunteer_work"
+  | "work_experience"
+  | "interest";
+/** A month and day with no year (CDS dates are labeled with the edition that published them). */
+export type MonthDayValue = { month: number; day: number };
 
 /** One measure's change over the default 10-year window. */
 export interface TrendSummary {
@@ -836,6 +913,8 @@ export interface SearchFilters {
   noLegacy?: boolean;
   noEssay?: boolean;
   gpaRequired?: boolean;
+  /** Publishes first-years' GPA (CDS C11/C12; lib/cds/admissions.ts hasGpaData). */
+  gpa?: boolean;
   /** Housing and policies (lib/housing.ts): first-years must live on campus, no application fee, tuition guarantee. */
   liveOn?: boolean;
   noFee?: boolean;

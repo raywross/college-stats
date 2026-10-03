@@ -28,6 +28,7 @@ import {
   undergraduateDiffers,
 } from "../lib/cds/cost-and-debt.ts";
 import { mergeReported, stripReported } from "../lib/reported-merge.ts";
+import { CDS_TEMPLATE } from "../lib/cds-template.ts";
 import { lineageFor, validateSchool } from "../lib/lineage.ts";
 
 const ROOT = join(import.meta.dirname, "..");
@@ -199,7 +200,7 @@ test("the change compares like with like: G1's total against the federal tuition
 test("merge: the four colleges get their blocks with valid lineage; federal cost and debt are untouched", () => {
   const stripped = schools.map(stripReported);
   const records = [VANDERBILT, CORNELL, WM, ILLINOIS].map(record);
-  const { schools: merged } = mergeReported(stripped, reportedFile, { records, meta });
+  const { schools: merged } = mergeReported(stripped, reportedFile, { records, meta, table: CDS_TEMPLATE });
   for (const id of [VANDERBILT, CORNELL, WM, ILLINOIS]) {
     const before = schools.find((s) => s.unit_id === id)!;
     const s = merged.find((x) => x.unit_id === id)!;
@@ -213,7 +214,7 @@ test("merge: the four colleges get their blocks with valid lineage; federal cost
   assert.equal(cited.key, "college-site");
   assert.equal(cited.year, "2026–27");
   assert.equal(cited.sourceKind, "cds");
-  assert.equal(cited.document, "2025–26 Common Data Set");
+  assert.equal(cited.document, "Common Data Set 2025–26");
   assert.match(cited.quote ?? "", /69822/);
   const debt = lineageFor("reported.outcomes.graduate_debt.rows.any.avg_principal", vu, meta);
   assert.equal(debt.year, "Class of 2025");
@@ -233,10 +234,10 @@ test("lineage: a stored block without its record fails validation", () => {
 });
 
 test("re-merging is idempotent and a college whose record goes away loses its blocks", () => {
-  const once = mergeReported(schools, reportedFile, { records: [record(CORNELL)], meta }).schools;
-  const twice = mergeReported(once, reportedFile, { records: [record(CORNELL)], meta }).schools;
+  const once = mergeReported(schools, reportedFile, { records: [record(CORNELL)], meta, table: CDS_TEMPLATE }).schools;
+  const twice = mergeReported(once, reportedFile, { records: [record(CORNELL)], meta, table: CDS_TEMPLATE }).schools;
   assert.deepEqual(twice.find((s) => s.unit_id === CORNELL), once.find((s) => s.unit_id === CORNELL));
-  const gone = mergeReported(once, reportedFile, { records: [], meta }).schools.find((s) => s.unit_id === CORNELL)!;
+  const gone = mergeReported(once, reportedFile, { records: [], meta, table: CDS_TEMPLATE }).schools.find((s) => s.unit_id === CORNELL)!;
   assert.equal(gone.reported, undefined);
   assert.ok(!Object.keys(gone.lineage ?? {}).some((k) => k.startsWith("reported.")));
 });

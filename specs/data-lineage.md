@@ -18,9 +18,13 @@ regression test pins it).
 1. **Every stored value is registered** in `lib/fields.ts`, or the sync refuses to write.
 2. **Year travels with the value.** Years come from `meta.json` `vintages` or the lineage record, never from literals
    in UI code.
-3. **Federal data is the comparison baseline** ([college-reported-data.md](college-reported-data.md#display)). *Today*
-   the 8 CDS overrides still replace federal values in `schools.json` (same fall 2024 class, different source); the
-   chips make that visible. Separate `school.reported` values arrive with the ingestion agent.
+3. **Federal data is the comparison baseline** ([college-reported-data.md](college-reported-data.md#display)). Explore,
+   Compare, ranks, medians, and Home always use it, so every college is measured on the same year
+   ([college-reported-round-2.md](college-reported-round-2.md#decision-1-show-the-newest-figures-we-have)). The 8 CDS
+   overrides still replace federal values in `schools.json` (same fall 2024 class, different source); the chips make
+   that visible. A college's own profile is different: its admissions headline (`lib/newest.ts`) shows the **newest**
+   class the college has published anywhere, federal or its own, with its year and a chip, and the federal figure
+   stays one line below as the baseline a reader can still compare against.
 4. **Derived values cite their inputs.** A value calculated from non-default inputs (yield from CDS counts) is itself
    non-default.
 5. **Missing is `null`**, and has no lineage.
@@ -70,7 +74,8 @@ fallbacks and for every value an override sets ([data-sync.md](data-sync.md#over
 | Many schools (Explore, Home, Compare) | Union of sources; more than 3 CDS files collapse to "Common Data Sets from N colleges" | `MultiSourceNote` |
 | Explore and Compare, near `MultiSourceNote` | Quiet reminder that comparisons use the federal baseline, not a college's own newer figures | `BaselineNote` (built 2026-10-02; see [college-reported-data.md](college-reported-data.md#display)) |
 | Bottom of profile | Numbered list, one entry per dataset/document with every year used | `SourceList` |
-| `college-site` value (college-reported-data.md) | Headline with the lineage year ("Admit rate, Fall 2026: 4.0% · reported by the college"), the federal figure and year underneath as the baseline, each number cited | `ReportedAdmissionsBlock` / `ReportedRateLine` (`components/profile/ReportedAdmissions.tsx`), admissions topic page and overview card only |
+| `college-site` value, newer than federal (college-reported-round-2.md) | **Is** the headline: the funnel, ring, admit-ratio, and yield show the college's own newest figures, each cited; `FederalBaselineLine` ("Federal data, Fall 2024: 5.8%") sits one line below | `lib/newest.ts` resolves which source; admissions topic page and overview card only (`tests/reported-guards.test.mts` keeps it out of comparisons) |
+| `college-site` value that's newer but not a full funnel (e.g. applicants only) | A line under the federal funnel: "Fall 2026: 46,618 applied · reported by the college", each present number cited | `PartialReportedLine` (`components/profile/ReportedAdmissions.tsx`) |
 
 ## Enforcement
 Each guard below was verified by breaking the rule on purpose and confirming the check fails (2026-09-28).

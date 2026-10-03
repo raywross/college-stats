@@ -114,9 +114,12 @@ Discovery runs once for all colleges, then only on escalation or when a college 
 - Starting budget ceiling agreed: ~$1.5–3K/year. Actual spend is logged per run from `usage`.
 
 ## Display
-See [data-lineage.md](data-lineage.md#display-which-citation-where). On a profile: "Admit rate, fall 2026: 4.0% ·
-reported by the college" with the federal figure underneath and a lineage popover (quote, link, retrieved date,
-"checked automatically"). Not used in Explore, Compare, ranks, medians, or Home charts.
+See [data-lineage.md](data-lineage.md#display-which-citation-where) and
+[college-reported-round-2.md](college-reported-round-2.md#decision-1-show-the-newest-figures-we-have) (Decision 1,
+built 2026-10-03): a college's profile shows the **newest** class it has published anywhere — its own figures when
+newer than the federal year, otherwise federal — as the headline, with the federal figure one line below as the
+baseline and a lineage popover (quote, link, retrieved date, "checked automatically"). Not used in Explore, Compare,
+ranks, medians, or Home charts.
 
 ## Pilot (first build step)
 ~50 colleges across selectivity tiers (very selective, selective, less selective, open admission) and sectors.
@@ -337,48 +340,50 @@ with a genuine Fall 2025 or Fall 2026 figure. Below ~50% acceptance, the web thi
   theory.
 
 ### Display
-Built 2026-10-02, against the shared contract (`school.reported`, `lib/fields.ts` `reported.*` paths, `lib/lineage.ts`'s
-`college-site` handling, `lib/reported.ts`), ahead of the ingestion pipeline — there's no live college-reported data
-yet, so this was built and QA'd against a temporary local fixture (one school's `data/schools.json` entry, reverted
-before committing; never merged).
+Built 2026-10-02 (phase 1: a side block above the funnel), **replaced 2026-10-03** by
+[college-reported-round-2.md](college-reported-round-2.md#decision-1-show-the-newest-figures-we-have) Decision 1: the
+college's newest figures now *are* the headline, not a block beside it. QA'd against the first live run's published
+data (`data/college-reported-20261003-113224-1`, 22 colleges: Harvard fall 2025 CDS full funnel, Duke fall 2026
+class profile with applicants/admitted but no enrolled yet, Purdue applicants + enrolled but no admitted, Illinois
+rate only) merged into a local `data/schools.json` copy with a throwaway script and reverted before committing.
 
-- **Admissions topic page** (`app/schools/[id]/admissions/page.tsx`): when `school.reported?.admissions` exists,
-  `ReportedAdmissionsBlock` (`components/profile/ReportedAdmissions.tsx`) renders above the funnel: a headline built
-  from the lineage year, never a literal ("Admit rate, Fall 2026: 4.0% · reported by the college"), the federal rate
-  and its year underneath as the baseline, and applicants/admitted/enrolled when present — each cited with
-  `citeField("reported.admissions.…", school)` by name (not a shared path variable), so
-  `tests/reported-guards.test.mts` can check every displayed path is cited. Missing values are omitted, never shown
-  as 0 or null.
-- **Overview card** (`components/profile/AdmissionsCard.tsx`): `ReportedRateLine`, a compact one-line addition under
-  the existing stats row ("Newer: 4.0% admitted for Fall 2026, reported by the college"); the federal rate stays the
-  card's headline figure.
-- **`reported.*` fields** added to `TOPIC_FIELDS.admissions` (all four) and `OVERVIEW_FIELDS` (acceptance rate only,
-  matching what the card shows) in `lib/profile-topics.ts`, so `SourceNote`/`SourceList`/`SourceExceptions` cite the
-  college's page automatically; `tests/profile-topics.test.mts`'s `LEGACY_FIELDS` was updated to acknowledge the four
-  new fields deliberately (its own failure message says to).
-- **Popover copy** (`components/ui/info-tip.tsx`): the "different source" line now special-cases `cited.key ===
-  "college-site"`: "Reported by the college on its own site and checked automatically against its own figures and the
-  federal baseline," replacing the generic CDS-shaped sentence.
-- **Explore/Compare baseline banner**: `components/ui/BaselineNote.tsx`, a quiet one-line reminder ("Comparisons use
-  federal data, the newest year every college reports. Newer figures some colleges publish appear only on their
-  profiles.") linking to `/data#compare`. Placed next to each page's one `MultiSourceNote` call (Explore's results
-  footer; Compare's "All the numbers" table).
-- **Data page** (`app/data/page.tsx`): new section 5, id `college-reported` (matches
-  `meta.sources["college-site"].url`), between "How we compare" and "Watching": what the agent collects, the seven
-  checks (`lib/reported.ts` `CheckId`) in plain language, what happens on failure (review queue, federal figure keeps
-  showing), the live count (`all.filter(s => s.reported?.admissions).length`), and the schedule. Section 4's second
-  card gained a paragraph stating the rule explicitly (CDS overrides still replace federal values today; college-site
-  class profiles/CDS files never do) and a link to section 5. The sources list's `college-site` card links in-page to
-  `#college-reported` (its `meta.sources` url is the relative anchor `/data#college-reported`) instead of through
-  `ExtLink`, which always opens a new tab with an external-link icon — wrong for an in-page anchor.
-- **Guard**: `tests/reported-guards.test.mts` greps `lib/metrics.ts`, `lib/dataset.ts`, `lib/compare.ts`,
-  `lib/insights.ts`, `lib/indicators.ts`, `app/explore/**`, `app/compare/**`, `app/page.tsx`, and
-  `components/charts/**` for `reported.admissions`, `reported?.admissions`, or `school.reported`, and checks the
-  admissions page's three source files for a `citeField("reported.admissions.<field>` call per displayed path.
-  Verified to fail: a throwaway `s.reported?.admissions` reference was added to `lib/metrics.ts`, the guard test was
-  run and failed on that line, then the line was reverted (not committed).
-- **Not built with this PR**: the ingestion pipeline itself (`scripts/sync-college-reported.mts`, discovery/extraction,
-  `data/college-sources.json`, `data/college-reported.json`, `data/review-queue.json`, the GitHub Action, the
-  self-measurement accuracy report). Until it exists, `school.reported` is never set in the real dataset, and the Data
-  page's "Newer figures from colleges" section — built against live data, so it degrades correctly — shows a count of
-  0 and the "What we collect" / checks / schedule text with nothing to list yet.
+- **`lib/newest.ts`** (pure, `tests/newest.test.mts`): `newestAdmissions(school)` resolves which source's funnel to
+  show — see [college-reported-round-2.md](college-reported-round-2.md#decision-1-show-the-newest-figures-we-have)
+  for the rule. Returns the chosen funnel (source, year, term, counts, rate, yield, and the `FieldPath` to cite for
+  each), plus `partial` when the college has a newer figure that doesn't clear the bar for a full funnel.
+- **Admissions topic page** (`app/schools/[id]/admissions/page.tsx`): the eyebrow year, the funnel's bar rows (each
+  row shown independently — Duke's applicants/admitted show without an invented enrolled count), the 100-square
+  waffle (needs all three counts, so it falls back to federal when the college's newest class is missing one), the
+  yield ring, and the admit-ratio headline all read `profile.newest` (computed once in `lib/profile-data.ts`). The
+  acceptance-rate and yield distribution strips, and the admissions map, stay federal (`profile.rate`/`yld`), since
+  those compare this college against every other on the same year. `newest.source === "reported"` adds
+  `FederalBaselineLine` ("Federal data, Fall 2024: 5.8%") under the headline; `newest.partial` adds
+  `PartialReportedLine` under the (federal) funnel instead. Every displayed figure is cited with
+  `citeField(newest.paths.<field>, school)`, which resolves to the right `reported.admissions.*` or `admissions.*`
+  path for the source in play.
+- **Overview card** (`components/profile/AdmissionsCard.tsx`): the same `profile.newest` drives the ring, headline
+  rate, admit-ratio title (`admitRatioFromRate`, a `lib/metrics.ts` export that takes a rate instead of a `School` so
+  it works with either source), and the Applied/Admitted/Yield stats row; `FederalBaselineLine`/`PartialReportedLine`
+  replace the phase-1 `ReportedRateLine`.
+- **`lib/insights.ts`**: `admissionsTakeaway` and `yieldTakeaway` import `newestAdmissions` directly (the one file
+  outside the admissions page allowed to — `tests/reported-guards.test.mts` bans the import everywhere comparisons,
+  ranks, or charts live, not here) so the takeaway sentence names the newest rate; the national-percentile comparison
+  inside it still comes from `rankOf`, which is always federal.
+- **`reported.*` fields** in `TOPIC_FIELDS.admissions` (all four) and `OVERVIEW_FIELDS` (acceptance rate) in
+  `lib/profile-topics.ts` are unchanged from phase 1.
+- **Popover copy** (`components/ui/info-tip.tsx`): `cited.key === "college-site"` now reads "Reported by the college
+  itself; newer than the federal figure, which is one line below," matching the new layout.
+- **Data page** (`app/data/page.tsx`): section 4's second card and section 5's intro paragraph now describe the
+  newest-first rule (profile headline with year and chip; federal stays the comparison baseline everywhere else)
+  instead of "appears only on that college's own profile, under the federal figure."
+- **Explore/Compare baseline banner** (`components/ui/BaselineNote.tsx`) and the Data page's live counts and checks
+  list are unchanged from phase 1.
+- **Guard**: `tests/reported-guards.test.mts` still greps the phase-1 banned files/dirs for any `school.reported`
+  reference, and adds a second check banning `lib/newest`/`newestAdmissions` from the same comparison-only files
+  (`lib/metrics.ts`, `lib/dataset.ts`, `lib/compare.ts`, `lib/indicators.ts`, `app/explore/**`, `app/compare/**`,
+  `app/page.tsx`, `components/charts/**` — a narrower list than the `school.reported` ban, since `lib/insights.ts` is
+  allowed to use `lib/newest`). Verified to fail: a throwaway `import { newestAdmissions } from "./newest"` was added
+  to `lib/metrics.ts`, the guard test was run and failed on that line, then the line was reverted (not committed).
+- **Not built with this PR**: the ingestion pipeline itself (`scripts/sync-college-reported.mts`) and
+  `scripts/merge-reported.mts` — both specified and built separately
+  ([college-reported-round-2.md](college-reported-round-2.md), decisions 2–5).

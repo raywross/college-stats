@@ -222,10 +222,13 @@ export interface ReviewQueueFile {
 /* Runs: the circuit breaker and cost log                              */
 /* ------------------------------------------------------------------ */
 
-/** Limits past which a run's output is a pipeline problem, not data: the PR must not auto-merge. */
+/**
+ * The one limit past which a run's output looks like a pipeline problem, not data: the PR must not auto-merge.
+ * Values that passed their own checks always publish; the breaker only holds a run in which many figures that were
+ * already published came back different (a systematic misread). The former failure-share trigger (10% of attempted
+ * colleges failing checks) was dropped 2026-10-03: it fired on blocked sites and rounding, never on a real problem.
+ */
 export const CIRCUIT_BREAKER = {
-  /** Share of attempted colleges that failed checks. */
-  maxFailureShare: 0.1,
   /** Share of already-published values that changed in one run. */
   maxChangedShare: 0.25,
 } as const;
@@ -266,7 +269,20 @@ export interface RunSummary {
   /** Whether the circuit breaker tripped, and why. */
   tripped: string | null;
   /** Token usage and estimated cost by job, from each response's `usage`. */
-  usage: Record<keyof typeof REPORTED_MODELS, { calls: number; input_tokens: number; output_tokens: number; cost_usd: number }>;
+  usage: Record<keyof typeof REPORTED_MODELS, JobUsage>;
+}
+
+/** Token usage and estimated cost of one job's calls. `input_tokens` includes cache writes and reads; the detail fields split them out. */
+export interface JobUsage {
+  calls: number;
+  input_tokens: number;
+  output_tokens: number;
+  cost_usd: number;
+  /** Tokens served from the prompt cache (billed at a tenth), part of `input_tokens`. Absent in summaries before 2026-10-03. */
+  cache_read_input_tokens?: number;
+  cache_creation_input_tokens?: number;
+  /** Server web searches, billed per search on top of tokens. */
+  web_searches?: number;
 }
 
 /** "Fall 2026" → 2026; null for anything else. */

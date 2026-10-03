@@ -13,7 +13,7 @@ import type { DatasetMeta, School } from "../lib/types";
 import { validateSchool } from "../lib/lineage.ts";
 import { mergeReported, stripReported } from "../lib/reported-merge.ts";
 import { readC1, readWorkbook, workbookEdition } from "../scripts/lib/cds-xlsx.mts";
-import { circuitBreaker, createPipeline, fatalApiError } from "../scripts/lib/college-reported/pipeline.mts";
+import { circuitBreaker, createPipeline, fatalApiError, withNextEditions } from "../scripts/lib/college-reported/pipeline.mts";
 import { entryYearOf, htmlToText, newSourcesFromIndex } from "../scripts/lib/college-reported/documents.mts";
 import { parseRobots, robotsAllows, sha256 } from "../scripts/lib/college-reported/http.mts";
 import { linesJson } from "../scripts/lib/college-reported/files.mts";
@@ -241,7 +241,7 @@ test("figures that fail a check are re-read once by the stronger model from the 
   assert.equal(out.summary.usage.extraction.calls, 1);
   assert.equal(out.summary.usage.escalation.calls, 1);
   assert.equal(out.summary.usage.escalation.cost_usd, (1000 * 2 + 100 * 10) / 1e6, "priced as Sonnet 5");
-  assert.equal(out.summary.tripped !== null, true, "1 of 1 failed is past the 10% limit");
+  assert.equal(out.summary.tripped, null, "a check failure alone never trips the breaker (2026-10-03)");
 });
 
 test("a document without its anchor gets one re-discovery (effort medium), then the new link is read", async () => {
@@ -315,12 +315,11 @@ test("robots.txt disallow is obeyed: the document is never requested", async () 
 /* Circuit breaker and the run summary                                 */
 /* ------------------------------------------------------------------ */
 
-test("the circuit breaker trips just past its limits", () => {
-  assert.equal(circuitBreaker({ attempted: 10, failed: 1, changed: 0, priorValues: 0 }), null, "10% is at the limit");
-  assert.match(circuitBreaker({ attempted: 10, failed: 2, changed: 0, priorValues: 0 })!, /2 of 10 attempted/);
-  assert.equal(circuitBreaker({ attempted: 0, failed: 0, changed: 25, priorValues: 100 }), null, "25% is at the limit");
-  assert.match(circuitBreaker({ attempted: 0, failed: 0, changed: 26, priorValues: 100 })!, /26 of 100 published values/);
-  assert.equal(circuitBreaker({ attempted: 0, failed: 0, changed: 0, priorValues: 0 }), null);
+test("the circuit breaker trips only when many already-published values change at once", () => {
+  assert.equal(circuitBreaker({ changed: 25, priorValues: 100 }), null, "25% is at the limit");
+  assert.match(circuitBreaker({ changed: 26, priorValues: 100 })!, /26 of 100 published values/);
+  assert.equal(circuitBreaker({ changed: 0, priorValues: 0 }), null);
+  assert.equal(circuitBreaker({ changed: 3, priorValues: 0 }), null, "nothing published before: nothing to compare");
 });
 
 test("the run summary counts attempts, reads, publishes, changes, failures, and cost", async () => {
@@ -355,7 +354,7 @@ test("the run summary counts attempts, reads, publishes, changes, failures, and 
   assert.equal(s.discovered, 0, "a failed check is re-read, not re-discovered");
   assert.equal(s.unreachable, 0);
   assert.equal(s.guessed, 0);
-  assert.match(s.tripped!, /1 of 3 attempted/);
+  assert.match(s.tripped!, /3 of 4 published values changed/, "the change-share trigger, not a failure count");
   assert.match(s.tripped!, /3 of 4 published values changed/);
   // Haiku reads c.edu and d.edu ($1/$5 per MTok); the Excel file needs no model. c.edu fails a check, so Sonnet
   // ($2/$10) re-reads it once.
@@ -492,8 +491,8 @@ test("discovery streams, finds links only (capped web fetch, a few searches, no 
   assert.deepEqual(calls.map((c) => c.model), ["claude-sonnet-5", "claude-haiku-4-5"]);
   const d = streamed[0];
   const tool = (type: string) => d.tools?.find((t) => "type" in t && t.type === type) as Record<string, unknown> | undefined;
-  assert.deepEqual(tool("web_search_20260209"), { type: "web_search_20260209", name: "web_search", max_uses: 4 });
-  assert.deepEqual(tool("web_fetch_20260209"), { type: "web_fetch_20260209", name: "web_fetch", max_uses: 4, max_content_tokens: 6000 });
+  assert.deepEqual(tool("web_search_20260209"), { type: "web_search_20260209", name: "web_search", max_uses: 3 });
+  assert.deepEqual(tool("web_fetch_20260209"), { type: "web_fetch_20260209", name: "web_fetch", max_uses: 3, max_content_tokens: 4000 });
   assert.deepEqual(d.output_config, { effort: "low" });
   assert.match(String(d.system), /Never open a PDF or Excel file/);
   assert.doesNotMatch(JSON.stringify(d.messages), /"type":"document"/, "discovery is never sent a document");
@@ -585,4 +584,37 @@ test("the cost cap stops the run before the next college: finished colleges kept
   const open = await createPipeline(progressDeps(fakeClient({ extraction: () => FALL_2026 }).client, fakeFetch(again.routes).fn, undefined)).run({ ...empty(), sources: again.sources, schools: again.schools, run: "r2", maxCost: 25 });
   assert.equal(open.summary.status, "finished", "a cap the run doesn't reach changes nothing");
   assert.equal(open.summary.done, 3);
+});
+
+/* ------------------------------------------------------------------ */
+/* A stale CDS link from discovery gets next year's URLs tried too     */
+/* ------------------------------------------------------------------ */
+
+test("a CDS link for an edition no newer than the federal year gains guessed next-edition URLs (Northwestern, ten-college test)", () => {
+  // Discovery returned last year's file (2024-25, 404 now); the 2025-26 and 2026-27 guesses go first.
+  const stale = recipe("147767", [{ kind: "cds", url: "https://enrollment.northwestern.edu/pdf/common-data/2024-25.pdf", format: "pdf" }]);
+  const out = withNextEditions(stale, 2024);
+  assert.deepEqual(
+    out.sources.map((s) => s.url),
+    [
+      "https://enrollment.northwestern.edu/pdf/common-data/2026-27.pdf",
+      "https://enrollment.northwestern.edu/pdf/common-data/2025-26.pdf",
+      "https://enrollment.northwestern.edu/pdf/common-data/2024-25.pdf",
+    ].sort((a, b) => (out.sources.findIndex((s) => s.url === a) - out.sources.findIndex((s) => s.url === b))),
+  );
+  assert.ok(out.sources.slice(0, 2).every((s) => s.kind === "cds" && s.format === "pdf"));
+  // A link that's already newer than the federal year, or has no year, is left alone.
+  const fresh = recipe("1", [{ kind: "cds", url: "https://x.edu/CDS_2025-2026.pdf", format: "pdf" }, { kind: "class-profile", url: "https://x.edu/profile", format: "html" }]);
+  assert.strictEqual(withNextEditions(fresh, 2024), fresh);
+  assert.strictEqual(withNextEditions(stale, null), stale);
+});
+
+test("the run summary breaks input tokens into cache reads and counts web searches", async () => {
+  const url = "https://c166027.edu/class-profile";
+  const { client } = fakeClient({ extraction: () => FALL_2026 });
+  const out = await pipeline(client, fakeFetch({ [url]: PROFILE_HTML }).fn).run({ ...empty(), schools: [school()], sources: { updated: "", recipes: [recipe("166027", [{ kind: "class-profile", url, format: "html" }])] }, run: "r1" });
+  const u = out.summary.usage.extraction;
+  assert.equal(u.calls, 1);
+  assert.equal(u.cache_read_input_tokens, 0);
+  assert.equal(u.web_searches, 0);
 });

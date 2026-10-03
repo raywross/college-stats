@@ -92,8 +92,10 @@ and the extraction result.
 ### Publishing
 - A GitHub Action runs the pipeline and opens a PR that changes `data/college-reported.json` (one college per line)
   and `data/college-sources.json`. The PR **auto-merges** when CI passes.
-- **Circuit breaker:** no auto-merge if more than 10% of attempted colleges fail checks, or more than 25% of published
-  values change in one run. That points to a pipeline or model problem, not the data.
+- **Circuit breaker:** no auto-merge if more than 25% of already-published values come back different in one run,
+  which points to a systematic misread rather than the data. (The original second trigger, more than 10% of
+  attempted colleges failing checks, was dropped 2026-10-03: in two runs it fired only on blocked sites and rounding.
+  Values that pass their checks always publish; failures go to the review queue on their own.)
 - Failed items go to `data/review-queue.json` (college, field, extracted value, quote, URL, failed check) and are
   listed in the PR description. Resolving one = fix the recipe or add a manual override, then re-run.
 - `sync-data` merges `college-reported.json` into `school.reported` with field-level lineage (`method: "extracted"`).

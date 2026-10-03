@@ -26,9 +26,9 @@ on:
         type: boolean
         default: false
       auto_merge:
-        description: Auto-merge the resulting PR once CI passes (off by default during the pilot)
+        description: Auto-merge the resulting PR once CI passes (on by default; values that passed their checks publish)
         type: boolean
-        default: false
+        default: true
       max_discoveries:
         description: Cap on discovery calls this run
         type: string
@@ -272,9 +272,9 @@ jobs:
             elif [ "$EXIT_CODE" = "3" ]; then
               reason="the run stopped early (its max_cost cap or the Anthropic spend limit or credit balance was reached, or the API key was refused); this PR holds the colleges it completed and the next run picks up the rest — review and merge by hand"
             elif [ "$EXIT_CODE" = "2" ]; then
-              reason="the circuit breaker tripped (more than 10% of attempted colleges failed checks, or more than 25% of published values changed) — review the PR body and the review queue before merging by hand"
+              reason="the circuit breaker tripped (more than 25% of already-published values came back different in one run, which points to a systematic misread) — review the PR body before merging by hand"
             elif [ "$AUTO_MERGE" != "true" ]; then
-              reason="auto-merge is off for this run (default during the pilot; turn it on from Actions → Run workflow, or let the schedule do it) — review and merge by hand once CI is green"
+              reason="auto-merge was turned off for this run — review and merge by hand once CI is green"
             else
               reason="the run exited with an unexpected code ($EXIT_CODE) — review before merging"
             fi

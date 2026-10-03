@@ -5,6 +5,7 @@
  */
 import type { DatasetMeta, FederalAdmissions, LineageRecord, ReportedSourceKind, School, SourceInfo, SourceKey } from "./types";
 import { FIELDS, METADATA_KEYS, PER_DOCUMENT_SOURCES, REPORTED_PATHS, isFieldPath, registeredPathFor, type FieldPath, type VintageKey } from "./fields.ts";
+import { financialAidProblems } from "./cds/financial-aid.ts";
 
 /** A source as cited for one value: plain data, safe to pass to client components. */
 export interface CitedSource {
@@ -33,9 +34,18 @@ export interface Cited extends CitedSource {
    * For a funnel value that a newer college-reported class replaced: the previous (federal or hand-imported CDS)
    * value and the year it describes, from `admissions.federal`, so the tooltip can say "Federal data, fall 2024: 5.8%".
    */
-  replaces?: { value: number | null; year: string | null };
+  replaces?: {
+    value: number | null;
+    year: string | null;
+    /** Whose figure it was, when not the federal one: "Cornell University Common Data Set" (`aid.cds_previous`). */
+    label?: string;
+    /** The replaced value already formatted (e.g. a share as "77%"), when the path alone can't say how. */
+    display?: string;
+  };
   /** For a value reported by the college itself (source "college-site"): which kind of document supplied it. */
   sourceKind?: ReportedSourceKind;
+  /** A value read from a college's CDS record (round 3): the edition it came from, "2025–26"; the year may differ (aid year, cycle). */
+  edition?: string;
 }
 
 /** The funnel paths `applyNewest` may replace, keyed to their `admissions.federal` counterparts. */
@@ -186,6 +196,7 @@ export function lineageFor(path: FieldPath, school: School | undefined, meta: Da
     ...(rec?.page !== undefined ? { page: rec.page } : {}),
     ...replacedBy(path, school, meta),
     ...(rec?.source === "college-site" && school?.reported?.admissions ? { sourceKind: school.reported.admissions.source_kind } : {}),
+    ...(rec?.source === "college-site" && rec.edition ? { sourceKind: "cds" as const, edition: rec.edition } : {}),
   };
 }
 
@@ -336,6 +347,7 @@ export function validateSchool(school: School, meta: DatasetMeta): string[] {
     else if (rec.method !== "extracted" && rec.method !== "derived") errors.push(`${where}: ${path} must have method "extracted" or "derived"`);
   }
   errors.push(...validateNewest(school, where));
+  errors.push(...financialAidProblems(school));
   return errors;
 }
 

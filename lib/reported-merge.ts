@@ -11,6 +11,8 @@ import { REPORTED_PATHS } from "./fields.ts";
 import { applyNewest, restoreFederal } from "./newest.ts";
 import type { ReportedFile } from "./reported.ts";
 import { reportedToPatch } from "./reported-checks.ts";
+import type { CollegeRecord } from "./cds-sections.ts";
+import { applyFinancialAid } from "./cds/financial-aid.ts";
 
 /**
  * `school` as it was before any merge: its previous admissions funnel restored from `admissions.federal`
@@ -43,11 +45,15 @@ export interface MergeReportedResult {
  * `reportedToPatch`, exactly as `sync-data` does) and `applyNewest`, so each college's newer published figures
  * replace its older ones in `admissions.*`, with lineage and `admissions.federal`.
  */
-export function mergeReported(schools: School[], reported: ReportedFile): MergeReportedResult {
+export function mergeReported(schools: School[], reported: ReportedFile, records: readonly CollegeRecord[] = []): MergeReportedResult {
   const byUnitId = new Map(reported.entries.map((e) => [e.unit_id, e]));
+  // Each college's CDS record (data/cds-records/, specs/college-reported-round-3.md) adds its section blocks after.
+  const recordById = new Map(records.map((r) => [r.unit_id, r]));
+  const fromRecords = (school: School): School => applyFinancialAid(school, recordById.get(school.unit_id));
   let merged = 0;
   let removed = 0;
-  const result = schools.map((school) => {
+  const result = schools.map((school) => fromRecords(mergeEntry(school)));
+  function mergeEntry(school: School): School {
     const hadReported = school.reported?.admissions != null;
     const stripped = stripReported(school);
     const entry = byUnitId.get(school.unit_id);
@@ -58,6 +64,6 @@ export function mergeReported(schools: School[], reported: ReportedFile): MergeR
     merged++;
     const { reported: reportedData, lineage: entryLineage } = reportedToPatch(entry);
     return applyNewest({ ...stripped, reported: reportedData, lineage: { ...stripped.lineage, ...entryLineage } });
-  });
+  }
   return { schools: result, merged, removed };
 }

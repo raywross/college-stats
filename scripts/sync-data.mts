@@ -40,6 +40,8 @@ import { addResidenceMeta, buildDetails, crossCheckDerived, detailProblems, fetc
 import { addTransferMeta, checkTransfers, fetchTransfers } from "./lib/transfers-sync.mts";
 import { addMajorsMeta, buildMajorDetails, checkTotals, fetchCompletions, majorsFor, unknownCodes } from "./lib/majors-sync.mts";
 import { mergeDetails } from "../lib/detail.ts";
+import { financialAidDetails } from "../lib/cds/financial-aid.ts";
+import { readRecords } from "./lib/college-reported/records.mts";
 import { transferInFrom } from "../lib/transfers.ts";
 import { financesFrom } from "../lib/finances.ts";
 import { apCreditFrom, athleticsFrom, calendarFrom, disabilityFrom, programsFrom, servicesFrom } from "../lib/campus-services.ts";
@@ -878,9 +880,11 @@ async function main() {
   // `school.reported` and lineage for `reported.*` paths only; never touches a federal field. `schools` here was
   // just built fresh from Scorecard/IPEDS, so no school has a `reported` block yet to strip.
   let reportedMerged = 0;
-  if (existsSync(REPORTED)) {
-    const reportedFile: ReportedFile = JSON.parse(readFileSync(REPORTED, "utf8"));
-    const merged = mergeReported(schools, reportedFile);
+  // CDS records (data/cds-records/, round 3) merge in the same call; their detail tables join the sync's below.
+  const cdsRecords = readRecords(join(ROOT, "data", "cds-records"));
+  if (existsSync(REPORTED) || cdsRecords.length) {
+    const reportedFile: ReportedFile = existsSync(REPORTED) ? JSON.parse(readFileSync(REPORTED, "utf8")) : { updated: "", entries: [] };
+    const merged = mergeReported(schools, reportedFile, cdsRecords);
     schools.splice(0, schools.length, ...merged.schools);
     reportedMerged = merged.merged;
   }
@@ -906,7 +910,7 @@ async function main() {
   if (programs.unknown.length > 25) throw new Error(`Field of Study uses ${programs.unknown.length} codes that aren't in CIP 2020:\n  ${programs.unknown.slice(0, 10).join("\n  ")}`);
   if (programs.unknown.length) console.warn(`  ⚠ Field of Study: left out ${programs.unknown.length} program(s) whose code isn't in CIP 2020: ${programs.unknown.join("; ")}`);
   for (const s of schools) s.academics!.programs_with_earnings = programs.counts.get(s.unit_id) ?? null;
-  const details = mergeDetails(buildDetails(schools, efc.table, meta), buildMajorDetails(schools, completions.table, meta), programs.details);
+  const details = mergeDetails(buildDetails(schools, efc.table, meta), buildMajorDetails(schools, completions.table, meta), programs.details, financialAidDetails(schools, cdsRecords));
   const detailIssues = detailProblems(schools, details, meta);
   if (detailIssues.length) throw new Error(`Detail files failed their checks:\n  ${detailIssues.slice(0, 20).join("\n  ")}`);
 

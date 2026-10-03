@@ -11,6 +11,7 @@
 import { acceptanceRate } from "./derive.ts";
 import type { FieldPath } from "./fields";
 import type { FederalAdmissions, LineageRecord, School } from "./types";
+import { restoreCdsAid } from "./cds/financial-aid.ts";
 
 /** The funnel values `applyNewest` may replace, in `school.admissions` key order. */
 const COUNTS = ["applicants", "admitted", "enrolled"] as const;
@@ -116,7 +117,8 @@ export function applyNewest(school: School): School {
  * `admissions.federal` itself removed. Byte-identical to the school before `applyNewest`; the same object when
  * there's nothing to undo.
  */
-export function restoreFederal(school: School): School {
+export function restoreFederal(input: School): School {
+  const school = restoreCdsAid(input); // CDS aid: put back a superseded aid.cds (specs/data-expansion/cds-financial-aid.md)
   const federal = school.admissions.federal;
   if (!federal) return school;
   // eslint-disable-next-line @typescript-eslint/no-unused-vars -- dropping `federal` is the point

@@ -11,16 +11,18 @@
  * lib/fields.ts, and have the sync fill it. Node scripts, tests, and server code load it; it reads the CIP 2020 table
  * (lib/cip.ts), so client components import its types only.
  */
-import type { DatasetMeta, School, SourceKey } from "./types";
+import type { CdsAidDetail, DatasetMeta, School, SourceKey } from "./types";
 import { FIELDS, type FieldPath, type VintageKey } from "./fields.ts";
 import { stateByPostal } from "./states.ts";
 import { hasCip4, isCipField } from "./cip.ts";
 import { majorsSnapshot, programsFromRows, type MajorRows } from "./majors.ts";
 import { hasEarnings, isPlausibleCip4, type ProgramEarnings } from "./field-of-study.ts";
+import { cdsAidMismatch, checkCdsAidDetail } from "./cds/financial-aid.ts";
 
 export interface DetailTable<T> {
   source: SourceKey;
-  vintage: VintageKey;
+  /** Null for a per-document source (a college's own CDS, `college-site`): `year` is then the document's own. */
+  vintage: VintageKey | null;
   /**
    * The release's display year when built (equals meta.vintages[vintage]), e.g. "Fall 2024"; null for a table
    * whose vintage has no single year (e.g. `scorecard-fos`), shown as "most recent release".
@@ -39,6 +41,8 @@ export interface DetailTables {
   majors?: DetailTable<MajorRows>;
   /** Earnings and debt by bachelor's program, 4-digit CIP → record (lib/field-of-study.ts). */
   programs?: DetailTable<Record<string, ProgramEarnings>>;
+  /** All of CDS section H with a quote per value (specs/data-expansion/cds-financial-aid.md, lib/cds/financial-aid.ts). */
+  cds_aid?: DetailTable<CdsAidDetail>;
 }
 
 export type DetailTableKey = keyof DetailTables;
@@ -104,6 +108,10 @@ export const DETAIL_TABLES: Record<DetailTableKey, { field: FieldPath; checkRows
       return null;
     },
   },
+  cds_aid: {
+    field: "detail.cds_aid",
+    checkRows: checkCdsAidDetail,
+  },
 };
 
 const isTableKey = (k: string): k is DetailTableKey => Object.prototype.hasOwnProperty.call(DETAIL_TABLES, k);
@@ -129,6 +137,13 @@ export function validateDetail(d: SchoolDetail, meta: DatasetMeta, knownIds?: Re
     if (!(table.source in (meta.sources ?? {}))) errors.push(`${where}: ${key} cites unknown source ${table.source}`);
     // null is a legitimate year (a vintage with no single year, e.g. scorecard-fos — "most recent release");
     // it must still match meta.json, not just be present.
+    // A per-document table (vintage null) carries its document's own year, which must be there.
+    if (table.vintage === null) {
+      if (!table.year) errors.push(`${where}: ${key} needs its document's year`);
+      const rowProblem = checkRows(table.rows);
+      if (rowProblem) errors.push(`${where}: ${key} ${rowProblem}`);
+      continue;
+    }
     const year = meta.vintages?.[table.vintage] ?? null;
     if (table.year !== year) errors.push(`${where}: ${key} is ${table.year ?? "no year"}, but meta.json says ${table.vintage} is ${year ?? "unset"} (re-run npm run sync-data)`);
     const rowProblem = checkRows(table.rows);
@@ -173,6 +188,9 @@ export function detailMismatches(school: School, d: SchoolDetail): string[] {
     if ((school.academics?.programs_with_earnings ?? null) !== withEarnings)
       out.push(`detail ${d.unit_id}: academics.programs_with_earnings is ${school.academics?.programs_with_earnings ?? "null"}, but the detail file has ${withEarnings}`);
   }
+  const cdsAid = d.tables.cds_aid;
+  const aidProblem = cdsAid ? cdsAidMismatch(school, cdsAid.rows) : null;
+  if (aidProblem) out.push(`detail ${d.unit_id}: ${aidProblem}`);
   return out;
 }
 

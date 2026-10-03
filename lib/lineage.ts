@@ -113,7 +113,8 @@ function sourceFor(path: FieldPath, school: School | undefined, meta: DatasetMet
     // The college's own page or file; the record names the document (validateSchool requires url, year, quote).
     return {
       key,
-      label: `${school.name} (${rec?.year ?? "college-reported"})`,
+      // A CDS record value (round 3) names its document's edition; the year after it is the value's own.
+      label: rec?.edition ? `${school.name} Common Data Set ${rec.edition}` : `${school.name} (${rec?.year ?? "college-reported"})`,
       publisher: school.name,
       year: rec?.year ?? null,
       url: rec?.url ?? info.url,
@@ -148,6 +149,8 @@ const sourceId = (s: CitedSource) => `${s.key}|${s.url}|${s.year ?? ""}`;
 function underlyingSources(path: FieldPath, school: School | undefined, meta: DatasetMeta, seen = new Set<string>()): CitedSource[] {
   const def = FIELDS[path] as (typeof FIELDS)[FieldPath];
   const overridden = !!school?.lineage?.[path];
+  // A college-reported field this college has no value for (no lineage record) has nothing to cite.
+  if (school && !overridden && def.source === "college-site" && !("derived" in def && def.derived)) return [];
   if (!("derived" in def) || !def.derived || overridden || seen.has(path)) return [sourceFor(path, school, meta)];
   seen.add(path);
   const out = new Map<string, CitedSource>();

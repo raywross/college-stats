@@ -35,10 +35,10 @@ export async function InternationalAid({ school, detail }: { school: School; det
                 <>The college doesn&apos;t offer its own grants to international students.</>
               ) : intl.recipients !== null && intl.average !== null ? (
                 <>
-                  <b>{num(intl.recipients)}</b> international students received an average of <b>{money(intl.average)}</b> from the college ({cited.year}).
+                  <b>{num(intl.recipients)}</b> international students received an average of <b>{money(intl.average)}</b> from the college in {cited.year}.
                 </>
               ) : (
-                <>The college offers its own aid to international students ({cited.year}).</>
+                <>The college offered its own aid to international students in {cited.year}.</>
               )}
             </span>
           </MetricLabel>

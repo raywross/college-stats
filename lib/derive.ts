@@ -172,6 +172,18 @@ export function yieldOf(admitted: number | null, enrolled: number | null): numbe
 }
 
 /**
+ * A school's yield from one class only (specs/college-reported-round-2.md, Decision 1): the shown enrolled ÷ admitted
+ * when both describe the same class (same lineage year; none = the federal default, a CDS record's year is its
+ * edition), else the previous class's pair kept in `admissions.federal` (lib/newest.ts). Never a mixed-year ratio.
+ * `lib/metrics.ts#yieldRate` is this; `lib/lineage.ts` cites the same inputs.
+ */
+export function sameClassYield(s: Pick<School, "admissions" | "lineage">): number | null {
+  const { admissions: a, lineage } = s;
+  if (lineage?.["admissions.enrolled"]?.year === lineage?.["admissions.admitted"]?.year) return yieldOf(a.admitted, a.enrolled);
+  return a.federal ? yieldOf(a.federal.admitted, a.federal.enrolled) : null;
+}
+
+/**
  * Simpson's diversity index over group shares: the chance two randomly chosen students come from different groups
  * (0 = one group, 1 = maximal). Shares are normalized first; null when they sum to 0.
  */

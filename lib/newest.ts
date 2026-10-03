@@ -1,15 +1,157 @@
 /**
- * The newest admissions figures a college has published, federal or its own (specs/college-reported-round-2.md,
- * Decision 1): the admissions topic page, the overview admissions card, the admit-ratio headline, the takeaway, and
- * the yield ring all read from here instead of `school.admissions` directly, so the newest class a college has
- * published anywhere shows up everywhere its headline figures do.
+ * Newest figures everywhere (specs/college-reported-round-2.md, Decision 1, "What replaces what"): a college's own
+ * newer class (`school.reported.admissions`) replaces the federal (or hand-imported CDS) funnel **in the dataset
+ * itself**, value by value, with a lineage record per replaced value and the previous funnel kept in
+ * `admissions.federal`. Every view then reads `school.admissions` as before; nothing resolves at render time.
  *
- * Pure (type-only imports), so `lib/metrics.ts`, `lib/dataset.ts`, `lib/compare.ts`, `lib/indicators.ts`, Explore,
- * Compare, Home, and the chart components must never import it (tests/reported-guards.test.mts) — those compare
- * colleges against one another and need every college on the same federal year.
+ * `applyNewest` is called by `lib/reported-merge.ts#mergeReported` (so by `npm run merge-reported` and
+ * `npm run sync-data`); `restoreFederal` undoes it exactly (byte for byte), so a college dropped from
+ * data/college-reported.json gets its previous funnel back. Pure: no I/O, never mutates its input.
  */
+import { acceptanceRate, sameClassYield } from "./derive.ts";
 import type { FieldPath } from "./fields";
-import type { School } from "./types";
+import type { FederalAdmissions, LineageRecord, School } from "./types";
+
+/** The funnel values `applyNewest` may replace, in `school.admissions` key order. */
+const COUNTS = ["applicants", "admitted", "enrolled"] as const;
+/** Every funnel path whose value or lineage `applyNewest` can change (and `restoreFederal` puts back). */
+const FUNNEL = ["year", "applicants", "admitted", "enrolled", "acceptance_rate"] as const;
+type FunnelKey = (typeof FUNNEL)[number];
+
+const adm = (k: FunnelKey) => `admissions.${k}` as FieldPath;
+const rep = (k: FunnelKey | "entering_term") => `reported.admissions.${k}` as FieldPath;
+
+const sameRecord = (a: LineageRecord | undefined, b: LineageRecord | undefined) => JSON.stringify(a) === JSON.stringify(b);
+
+/**
+ * The school with its newest published admissions figures in `admissions.*` (see the file comment). Returns the
+ * same object when there's nothing newer to apply: no `reported.admissions`, a reported class that isn't newer than
+ * `admissions.year`, or a school already applied (`admissions.federal` present; call `restoreFederal` first to
+ * re-apply after the reported block changed, as `mergeReported` does).
+ *
+ * The previous funnel's provenance is `lineage["admissions.year"]`: none for federal (IPEDS ADM), the override's
+ * record for a hand-imported CDS. A value whose own lineage differs from that (e.g. a Scorecard-only rate) is left
+ * alone, so `restoreFederal` can always put back exactly what was there.
+ */
+export function applyNewest(school: School): School {
+  const r = school.reported?.admissions;
+  const a = school.admissions;
+  if (!r || a.federal) return school;
+  if (a.year !== null && r.year <= a.year) return school;
+
+  const oldLineage = school.lineage ?? {};
+  const prev = oldLineage["admissions.year"];
+  /** A path we may rewrite: its lineage is the previous funnel's own, so restoring puts back exactly that. */
+  const replaceable = (k: FunnelKey) => sameRecord(oldLineage[adm(k)], prev);
+
+  const values: Partial<Record<FunnelKey, number | null>> = {};
+  const records: Partial<Record<FunnelKey, LineageRecord>> = {};
+  const copy = (from: FieldPath): LineageRecord | undefined => {
+    const rec = oldLineage[from];
+    return rec ? { ...rec } : undefined;
+  };
+
+  for (const k of COUNTS) {
+    if (r[k] == null || !replaceable(k)) continue;
+    values[k] = r[k];
+    const rec = copy(rep(k));
+    if (rec) records[k] = rec;
+  }
+  const replacedCounts = COUNTS.filter((k) => k in values);
+
+  let rateReplaced = false;
+  if (replaceable("acceptance_rate")) {
+    if (r.acceptance_rate != null) {
+      values.acceptance_rate = r.acceptance_rate;
+      const rec = copy(rep("acceptance_rate"));
+      if (rec) records.acceptance_rate = rec;
+      rateReplaced = true;
+    } else if ("applicants" in values && "admitted" in values && acceptanceRate(values.applicants!, values.admitted!) !== null) {
+      values.acceptance_rate = acceptanceRate(values.applicants!, values.admitted!);
+      const ap = oldLineage[rep("applicants")];
+      const ad = oldLineage[rep("admitted")];
+      records.acceptance_rate = {
+        source: "college-site",
+        method: "derived",
+        year: ap?.year ?? r.entering_term,
+        ...(ap?.url ? { url: ap.url } : {}),
+        ...(ap?.retrieved ? { retrieved: ap.retrieved } : {}),
+        quote: `${ap?.quote ?? ""} / ${ad?.quote ?? ""}`,
+      };
+      rateReplaced = true;
+    }
+  }
+
+  // Nothing the college published could replace anything: leave the school as it was.
+  if (!replacedCounts.length && !rateReplaced) return school;
+
+  // The previous rate, kept, but no longer next to its own counts: say it's calculated from the previous class's.
+  if (!rateReplaced && a.acceptance_rate !== null && replaceable("acceptance_rate")) records.acceptance_rate = keptRateRecord(prev, a.year);
+
+  // The class year moves with applicants or admitted (the counts that define a class), never with enrolled alone.
+  if ((values.applicants !== undefined || values.admitted !== undefined) && replaceable("year")) {
+    values.year = r.year;
+    const rec = copy(rep("entering_term"));
+    if (rec) records.year = rec;
+  }
+
+  const federal: FederalAdmissions = { year: a.year, applicants: a.applicants, admitted: a.admitted, enrolled: a.enrolled, acceptance_rate: a.acceptance_rate };
+  const admissions: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(a)) {
+    admissions[k] = k in values ? values[k as FunnelKey] : v;
+    if (k === "acceptance_rate") admissions.federal = federal;
+  }
+  if (!("federal" in admissions)) admissions.federal = federal;
+
+  const lineage: Partial<Record<FieldPath, LineageRecord>> = { ...oldLineage };
+  for (const k of FUNNEL) if (records[k]) lineage[adm(k)] = records[k];
+  if (prev) lineage["admissions.federal"] = { ...prev };
+
+  return { ...school, admissions: admissions as School["admissions"], lineage };
+}
+
+/**
+ * Undoes `applyNewest`: the funnel values from `admissions.federal`, each rewritten path's lineage put back to the
+ * previous funnel's record (`lineage["admissions.federal"]`, a CDS override's) or removed (federal default), and
+ * `admissions.federal` itself removed. Byte-identical to the school before `applyNewest`; the same object when
+ * there's nothing to undo.
+ */
+export function restoreFederal(school: School): School {
+  const federal = school.admissions.federal;
+  if (!federal) return school;
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- dropping `federal` is the point
+  const { federal: _federal, ...rest } = school.admissions;
+  // Same key order as before: only the funnel values change.
+  const admissions = Object.fromEntries(Object.entries(rest).map(([k, v]) => [k, k in federal ? federal[k as keyof FederalAdmissions] : v])) as School["admissions"];
+
+  const old = school.lineage ?? {};
+  const prev = old["admissions.federal"];
+  const keptRate = keptRateRecord(prev, federal.year);
+  const lineage: Partial<Record<FieldPath, LineageRecord>> = { ...old };
+  delete lineage["admissions.federal"];
+  for (const k of FUNNEL) {
+    const rec = old[adm(k)];
+    // Only the records `applyNewest` wrote: a copied college-site one, or the kept rate's explicit `derived` one.
+    if (!rec || !(rec.source === "college-site" || (k === "acceptance_rate" && sameRecord(rec, keptRate)))) continue;
+    if (prev) lineage[adm(k)] = prev;
+    else delete lineage[adm(k)];
+  }
+  if (Object.keys(lineage).length) return { ...school, admissions, lineage };
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- no lineage left: drop the key, as before applyNewest
+  const { lineage: _lineage, ...withoutLineage } = school;
+  return { ...withoutLineage, admissions };
+}
+
+/** The lineage of a previous rate `applyNewest` kept: the previous funnel's source and year, `method: "derived"`. */
+function keptRateRecord(prev: LineageRecord | undefined, year: number | null): LineageRecord {
+  return { ...(prev ?? {}), source: prev?.source ?? "ipeds-adm", method: "derived", year: prev?.year ?? (year !== null ? `Fall ${year}` : null) };
+}
+
+/* ------------------------------------------------------------------ */
+/* Deprecated: the render-time resolver the UI used before the dataset held the newest values. Kept only so the  */
+/* admissions page, card, and takeaways compile until feature/cr2-newest-ui removes their calls; it now reads     */
+/* `school.admissions` directly (which already holds the newest figures), with no partial line and no chips.      */
+/* ------------------------------------------------------------------ */
 
 export interface NewestFunnelPaths {
   applicants: FieldPath;
@@ -18,127 +160,50 @@ export interface NewestFunnelPaths {
   acceptance_rate: FieldPath;
 }
 
-/** A newer figure the college published that doesn't qualify as a full funnel (e.g. applicants only). */
+/** @deprecated No longer produced: every newer value the college published is in `school.admissions`. */
 export interface PartialAdmissions {
   applicants?: number;
   admitted?: number;
   enrolled?: number;
   acceptance_rate?: number;
   paths: Partial<NewestFunnelPaths>;
-  /** Entering term as the college stated it, e.g. "Fall 2026". */
   term: string;
 }
 
+/** @deprecated Read `school.admissions` (and `yieldRate`) directly. */
 export interface NewestAdmissions {
-  /** Which source supplies the funnel shown as the headline. */
   source: "reported" | "federal";
-  /** The fall year the headline funnel describes; null when federal has none. */
   year: number | null;
-  /** "Fall 2025", or null when `year` is null. */
   term: string | null;
   applicants: number | null;
   admitted: number | null;
   enrolled: number | null;
   acceptance_rate: number | null;
-  /** Enrolled ÷ admitted, from the same source as the funnel; null when either is missing or enrolled > admitted. */
   yield: number | null;
-  /** Field paths to cite for each value above, all from the same source (the funnel never mixes sources). */
   paths: NewestFunnelPaths;
-  /** A newer figure the college published that isn't a full funnel, shown as a line under the federal funnel. */
   partial: PartialAdmissions | null;
 }
 
-const FEDERAL_PATHS: NewestFunnelPaths = {
+const PATHS: NewestFunnelPaths = {
   applicants: "admissions.applicants",
   admitted: "admissions.admitted",
   enrolled: "admissions.enrolled",
   acceptance_rate: "admissions.acceptance_rate",
 };
 
-const REPORTED_PATHS: NewestFunnelPaths = {
-  applicants: "reported.admissions.applicants",
-  admitted: "reported.admissions.admitted",
-  enrolled: "reported.admissions.enrolled",
-  acceptance_rate: "reported.admissions.acceptance_rate",
-};
-
-const REPORTED_PARTIAL_PATHS: Record<keyof NewestFunnelPaths, FieldPath> = REPORTED_PATHS;
-
-/** Enrolled ÷ admitted; null when nobody was admitted or enrolled exceeds admitted (reimplemented, see lib/derive.ts). */
-function yieldOf(admitted: number | null, enrolled: number | null): number | null {
-  if (!admitted || enrolled === null || enrolled > admitted) return null;
-  return enrolled / admitted;
-}
-
-function federalOnly(school: Pick<School, "admissions">, partial: PartialAdmissions | null = null): NewestAdmissions {
-  const fed = school.admissions;
+/** @deprecated `school.admissions` already holds the newest figures (`applyNewest`); read it directly. */
+export function newestAdmissions(school: Pick<School, "admissions" | "lineage">): NewestAdmissions {
+  const a = school.admissions;
   return {
     source: "federal",
-    year: fed.year,
-    term: fed.year !== null ? `Fall ${fed.year}` : null,
-    applicants: fed.applicants,
-    admitted: fed.admitted,
-    enrolled: fed.enrolled,
-    acceptance_rate: fed.acceptance_rate,
-    yield: yieldOf(fed.admitted, fed.enrolled),
-    paths: FEDERAL_PATHS,
-    partial,
+    year: a.year,
+    term: a.year !== null ? `Fall ${a.year}` : null,
+    applicants: a.applicants,
+    admitted: a.admitted,
+    enrolled: a.enrolled,
+    acceptance_rate: a.acceptance_rate,
+    yield: sameClassYield(school),
+    paths: PATHS,
+    partial: null,
   };
-}
-
-/**
- * The newest class a college has published: its own reported funnel when it's newer than the federal year and has
- * either a full applicants/admitted count or a stated rate, otherwise the federal funnel. A reported value that's
- * newer but doesn't clear that bar (e.g. applicants only) rides along as `partial`, to show as a line under the
- * federal funnel rather than replacing it.
- */
-export function newestAdmissions(school: Pick<School, "admissions" | "reported">): NewestAdmissions {
-  const r = school.reported?.admissions;
-  if (!r) return federalOnly(school);
-
-  const fed = school.admissions;
-  const isNewer = fed.year === null || r.year > fed.year;
-  if (!isNewer) return federalOnly(school);
-
-  const hasFunnel = r.applicants != null && r.admitted != null;
-  const hasRate = r.acceptance_rate != null;
-  if (hasFunnel || hasRate) {
-    return {
-      source: "reported",
-      year: r.year,
-      term: r.entering_term,
-      applicants: r.applicants,
-      admitted: r.admitted,
-      enrolled: r.enrolled,
-      acceptance_rate: r.acceptance_rate,
-      yield: yieldOf(r.admitted, r.enrolled),
-      paths: REPORTED_PATHS,
-      partial: null,
-    };
-  }
-
-  // Newer, but not enough for a funnel (e.g. applicants only): a line under the federal funnel, not the headline.
-  const paths: Partial<NewestFunnelPaths> = {};
-  const partial: PartialAdmissions = { term: r.entering_term, paths };
-  if (r.applicants != null) {
-    partial.applicants = r.applicants;
-    paths.applicants = REPORTED_PARTIAL_PATHS.applicants;
-  }
-  if (r.admitted != null) {
-    partial.admitted = r.admitted;
-    paths.admitted = REPORTED_PARTIAL_PATHS.admitted;
-  }
-  if (r.enrolled != null) {
-    partial.enrolled = r.enrolled;
-    paths.enrolled = REPORTED_PARTIAL_PATHS.enrolled;
-  }
-  if (r.acceptance_rate != null) {
-    partial.acceptance_rate = r.acceptance_rate;
-    paths.acceptance_rate = REPORTED_PARTIAL_PATHS.acceptance_rate;
-  }
-  // Nothing at all to show (shouldn't happen for validated data, which requires at least one figure): plain federal.
-  if (partial.applicants == null && partial.admitted == null && partial.enrolled == null && partial.acceptance_rate == null) {
-    return federalOnly(school);
-  }
-  return federalOnly(school, partial);
 }

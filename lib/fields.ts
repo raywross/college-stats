@@ -302,7 +302,10 @@ export const FIELDS = {
   "derived.yield": {
     ...adm("Yield rate"),
     computed: true,
-    derived: { formula: "Enrolled ÷ admitted", inputs: ["admissions.enrolled", "admissions.admitted"] },
+    derived: {
+      formula: "Enrolled ÷ admitted, from the same class; when the newest enrolled and admitted describe different classes, from the previous class's figures",
+      inputs: ["admissions.enrolled", "admissions.admitted", "admissions.federal"],
+    },
   },
   "derived.diversity_index": {
     ...scorecard("Diversity index", "demographics", "scorecard-enrollment"),

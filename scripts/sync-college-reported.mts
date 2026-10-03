@@ -25,6 +25,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 import type { School } from "../lib/types";
+import { restoreFederal } from "../lib/newest.ts";
 import { dataPaths, readQueue, readReported, readSources, writeQueue, writeReported, writeRunSummary, writeSources } from "./lib/college-reported/files.mts";
 import { MODEL_PRICES, REPORTED_MODELS, type ModelClient } from "./lib/college-reported/models.mts";
 import { createPipeline, readJsonFile, type RunOutput } from "./lib/college-reported/pipeline.mts";
@@ -60,7 +61,9 @@ async function main() {
   if (!process.env.ANTHROPIC_API_KEY) usage("ANTHROPIC_API_KEY is not set (add it to .env.local).");
   for (const m of Object.values(REPORTED_MODELS)) if (!MODEL_PRICES[m]) console.warn(`Warning: no price for ${m}; its cost is logged as $0.`);
 
-  const schools = readJsonFile<School[]>(join(ROOT, "data", "schools.json"));
+  // The checks compare against the federal (or hand-imported CDS) baseline, not the newer college-reported values
+  // a previous run already put into admissions.* (lib/newest.ts), so undo those first.
+  const schools = readJsonFile<School[]>(join(ROOT, "data", "schools.json")).map(restoreFederal);
   const byId = new Map(schools.map((s) => [s.unit_id, s]));
   let targets: School[];
   if (ALL) targets = schools;

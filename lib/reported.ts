@@ -233,6 +233,12 @@ export interface RunSummary {
   attempted: number;
   /** Documents the model actually read (the rest were unchanged: 304 or same hash). */
   documents_read: number;
+  /**
+   * Colleges whose next-edition URL was guessed from a known CDS file name and confirmed with a HEAD/GET, so no
+   * discovery call was needed (Decision 2, specs/college-reported-round-2.md). Optional: absent in summaries from
+   * before that decision, and the PR body only shows this row when it's present.
+   */
+  guessed?: number;
   published: number;
   changed: number;
   failed: number;

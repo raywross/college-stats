@@ -810,6 +810,50 @@ const entries = {
     category: "Admissions",
     related: ["yield", "admit-rate-by-residency"],
   },
+  // CDS academics (specs/data-expansion/cds-academics.md). Definitions quoted from the Common Data Set's own sheet.
+  "cds-student-faculty-ratio": {
+    term: "Student-to-faculty ratio (Common Data Set)",
+    short:
+      "The college's own ratio from its Common Data Set: full-time-equivalent undergraduate and graduate students (full-time plus 1/3 part-time) to full-time-equivalent instructional faculty, leaving out stand-alone graduate or professional programs such as medicine, law, or business.",
+    long:
+      "The Common Data Set's definition: \"the ratio of full-time equivalent undergraduate and graduate students (full-time plus 1/3 part time) to full-time equivalent instructional faculty of undergraduate and graduate students (full-time plus 1/3 part time). In the ratio calculations, exclude both faculty and students in stand-alone graduate or professional programs such as medicine, law, veterinary, dentistry, social work, business, or public health in which faculty teach virtually only graduate level students.\" It is a different number than the federal ratio shown elsewhere on this page, because the two are defined differently, not because one is wrong.",
+    why: "Two honest numbers can differ: Harvard reports 11 to 1 in its Common Data Set and 7 to 1 to the federal survey.",
+    category: "Students & access",
+    related: ["student-faculty-ratio", "class-section"],
+  },
+  "class-section": {
+    term: "Class section",
+    short:
+      "One meeting of a credit course at a stated time, not a lab or discussion subsection, with at least one degree-seeking undergraduate enrolled. Class sizes count sections, not students.",
+    long:
+      "The Common Data Set's definition: \"an organized course offered for credit, identified by discipline and number, meeting at a stated time or times in a classroom or similar setting, and not a subsection such as a laboratory or discussion session.\" Distance-learning and noncredit classes, independent study, internships, and one-on-one instruction are left out. Because a lecture of 300 is one section, a student is more likely to sit in a large class than the share of sections suggests.",
+    why: "The closest published answer to \"how big are my classes?\", if you keep in mind that it counts sections, not seats.",
+    category: "Students & access",
+    related: ["class-subsection", "student-faculty-ratio"],
+  },
+  "class-subsection": {
+    term: "Class subsection",
+    short: "A lab, recitation, or discussion that meets separately from a course's lecture. The Common Data Set counts these apart from class sections.",
+    long:
+      "The Common Data Set's definition: \"any subsection of a course, such as laboratory, recitation, and discussion subsections that are supplementary in nature and are scheduled to meet separately from the lecture portion.\" Like sections, they are counted per meeting group, not per student.",
+    category: "Students & access",
+    related: ["class-section"],
+  },
+  "open-curriculum": {
+    term: "Open curriculum",
+    short: "The college reports no college-wide required coursework: students choose their own classes outside their major.",
+    long: "Shown when a college's Common Data Set lists special study options but checks none of the required-coursework areas. Majors still have their own requirements, and some colleges with an open curriculum ask for a writing course or a spread of subjects in other ways.",
+    why: "Freedom to explore, with more responsibility for building a broad education yourself.",
+    category: "Students & access",
+    related: ["required-core"],
+  },
+  "required-core": {
+    term: "Required coursework",
+    short: "Subject areas every undergraduate must take courses in, whatever their major, as the college lists them in its Common Data Set.",
+    long: "A college checks each area it requires (English composition, math, sciences, a foreign language, and so on). An area that isn't listed may still be required by some programs, or the college may simply not have checked the box.",
+    category: "Students & access",
+    related: ["open-curriculum"],
+  },
 } satisfies Record<string, GlossaryEntry>;
 
 export type TermKey = keyof typeof entries;

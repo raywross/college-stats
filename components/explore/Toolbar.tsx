@@ -8,6 +8,7 @@ import { GENDER_BALANCE } from "@/lib/student-body";
 import { HOUSING_FILTERS } from "@/lib/housing";
 import { FACTOR_FILTERS } from "@/lib/factors";
 import { RESIDENCY_FILTERS } from "@/lib/cds/residency-display";
+import { HONORS_FILTER_LABEL } from "@/lib/cds/academics-display";
 import { DESIGNATION_LABELS, RESEARCH_LABELS, SETTING_GROUPS, isDesignation, isResearchTier, isSettingGroup } from "@/lib/campus-profile";
 import { DIVISION_LABELS, ROTC_LABELS, isDivisionFilter, isRotcBranch } from "@/lib/campus-services";
 import { conferenceName } from "@/lib/conferences";
@@ -268,6 +269,7 @@ export function ActiveFilters() {
   if (minFullTimeFaculty > 0) chips.push({ key: "minFullTimeFaculty", label: `${minFullTimeFaculty}% or more full-time faculty`, onRemove: () => update({ minFullTimeFaculty: null }) });
   if (searchParams.get("ugResearch") === "1") chips.push({ key: "ugResearch", label: "Undergraduate research", onRemove: () => update({ ugResearch: null }) });
   if (searchParams.get("studyAbroad") === "1") chips.push({ key: "studyAbroad", label: "Study abroad", onRemove: () => update({ studyAbroad: null }) });
+  if (searchParams.get("honors") === "1") chips.push({ key: "honors", label: HONORS_FILTER_LABEL, onRemove: () => update({ honors: null }) });
   if (searchParams.get("opportunity") === "1") chips.push({ key: "opportunity", label: "Opportunity colleges", onRemove: () => update({ opportunity: null }) });
 
   for (const k of INDICATOR_KEYS) {

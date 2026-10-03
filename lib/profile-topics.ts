@@ -196,6 +196,14 @@ export const TOPIC_FIELDS: Readonly<Record<TopicKey, readonly FieldPath[]>> = {
     "academics.faculty",
     "academics.faculty.full_time_share",
     "finances",
+    // CDS academics (specs/data-expansion/cds-academics.md): class sizes, the college's own ratio, programs, core.
+    "reported.academics.class_sections",
+    "derived.class_share_under_20",
+    "derived.class_share_50_plus",
+    "reported.academics.student_faculty_ratio",
+    "reported.academics.programs",
+    "reported.academics.core_curriculum",
+    "campus.programs",
   ],
   cost: [
     "cost.avg_paid_all",

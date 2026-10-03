@@ -14,6 +14,7 @@ import { DistributionStrip } from "@/components/charts/DistributionStrip";
 import { Majors } from "@/components/school/Majors";
 import { FieldOfStudy } from "@/components/school/FieldOfStudy";
 import { HistorySourceNote } from "@/components/sources/HistorySourceNote";
+import { CdsAcademics, CdsRatioLine } from "@/components/school/ClassSizes";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -46,6 +47,9 @@ export default async function AcademicsPage({ params }: Props) {
     { id: "majors", label: "Popular majors" },
     { id: "earnings-by-major", label: "Top-earning majors" },
     { id: "ratio", label: "Students per faculty" },
+    // CDS academics (specs/data-expansion/cds-academics.md): only when the college's Common Data Set has them.
+    ...(school.reported?.academics?.class_sections ? [{ id: "class-sizes", label: "Class sizes" }] : []),
+    ...(school.reported?.academics?.programs || school.reported?.academics?.core_curriculum ? [{ id: "programs", label: "Programs & curriculum" }] : []),
     { id: "faculty", label: "Faculty" },
     { id: "finances", label: "Spending and endowment" },
   ];
@@ -92,12 +96,14 @@ export default async function AcademicsPage({ params }: Props) {
                 lowLabel="Fewer students per faculty"
                 highLabel="More students per faculty"
               />
+              <CdsRatioLine school={school} cite={citeField} />
               <p className="mt-4 text-xs text-muted-foreground">
                 Not the average class size: faculty also teach graduate students and do research, and large lectures can sit alongside small seminars.
                 <InfoTip term="student-faculty-ratio" className="ml-1" />
               </p>
             </Block>
           )}
+          <CdsAcademics school={school} cite={citeField} color={DOMAINS.size.color} hasFederalRatio={ratio !== null} />
           {fullTimeShare !== null && (
             <Block id="faculty">
               <BenchmarkBar

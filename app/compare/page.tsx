@@ -34,6 +34,7 @@ import { RangeBar } from "@/components/charts/RangeBar";
 import { StackedBar } from "@/components/charts/StackedBar";
 import { InfoTip, Term } from "@/components/ui/info-tip";
 import { compareAdmitRates, compareYields } from "@/lib/cds/residency-display";
+import { compareClassesUnder20 } from "@/lib/cds/academics-display";
 
 export const metadata: Metadata = { title: "Compare" };
 
@@ -143,6 +144,8 @@ const TABLE_ROWS = (
     ["Undergrads", "undergrad-enrollment", "demographics.undergrad_enrollment", (s: School) => num(s.demographics.undergrad_enrollment)],
     ["Students per faculty member", "student-faculty-ratio", "academics.student_faculty_ratio", (s: School) =>
       s.academics?.student_faculty_ratio == null ? null : `${s.academics.student_faculty_ratio} to 1`],
+    // CDS I-3 (specs/data-expansion/cds-academics.md): class sections, not students; "–" without a record.
+    ["Classes under 20 students", "class-section", "derived.class_share_under_20", compareClassesUnder20],
     ["Full-time faculty share", "full-time-faculty", "academics.faculty.full_time_share", (s: School) =>
       s.academics?.faculty?.full_time_share == null ? null : pct(s.academics.faculty.full_time_share)],
     ["Average faculty salary", "nine-month-equated-salary", "academics.faculty", (s: School) =>

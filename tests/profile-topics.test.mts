@@ -135,6 +135,13 @@ const LEGACY_FIELDS = Object.freeze({
     "academics.faculty",
     "academics.faculty.full_time_share",
     "finances",
+    // Class sizes, the college's own ratio, programs and core, added with CDS round 3 (specs/data-expansion/cds-academics.md).
+    "reported.academics.class_sections",
+    "derived.class_share_under_20",
+    "derived.class_share_50_plus",
+    "reported.academics.student_faculty_ratio",
+    "reported.academics.programs",
+    "reported.academics.core_curriculum",
   ],
   campus: ["campus.housing", "campus.athletics", "campus.programs", "campus.services", "campus.calendar", "demographics.disability_services"],
   ranks: ["derived.sat_mid", "derived.yield", "demographics.pell_grant_percent", "derived.diversity_index", "admissions.acceptance_rate"],

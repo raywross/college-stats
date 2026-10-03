@@ -13,6 +13,7 @@ import { FEW_LOANS_MAX } from "@/lib/repayment";
 import { HOUSING_FILTERS, type HousingFilterParam } from "@/lib/housing";
 import { FACTOR_FILTERS, type FactorFilterParam } from "@/lib/factors";
 import { RESIDENCY_FILTERS, type ResidencyFilterParam } from "@/lib/cds/residency-display";
+import { HONORS_FILTER_LABEL } from "@/lib/cds/academics-display";
 import { DESIGNATION_KEYS, DESIGNATION_LABELS, RESEARCH_TIERS, SETTING_GROUPS } from "@/lib/campus-profile";
 import { DIVISION_FILTERS, DIVISION_SHORT, ROTC_BRANCHES, ROTC_LABELS } from "@/lib/campus-services";
 import { MAX_RATIO_OPTIONS, MIN_FULL_TIME_FACULTY_OPTIONS } from "@/lib/academics";
@@ -61,6 +62,8 @@ export interface FilterFacets {
   fields: Record<string, number[]>;
   /** Colleges matching each "Where applicants live" chip (lib/cds/residency-display.ts). */
   residency: Record<ResidencyFilterParam, number>;
+  /** Colleges whose Common Data Set marks an honors program (lib/cds/academics-display.ts). */
+  honors: number;
 }
 
 function Section({ title, term, children }: { title: string; term?: TermKey; children: ReactNode }) {
@@ -134,7 +137,7 @@ export function FilterPanel({ facets, onDone }: { facets: FilterFacets; onDone?:
   const fieldOptions = MAJOR_FAMILY_CODES.filter((f) => (facets.fields[f]?.[0] ?? 0) > 0).sort((a, b) => MAJOR_FAMILIES[a].localeCompare(MAJOR_FAMILIES[b]));
 
   const hasFilters = [
-    ...["q", "types", "sizes", "regions", "states", "minAR", "maxAR", "minSAT", "maxSAT", "minCost", "maxCost", "minEnroll", "maxEnroll", "balance", "fullTime", "fewLoans", "liveOn", "noFee", "guarantee", "noLegacy", "noEssay", "gpaRequired", "setting", "research", "designation", "opportunity", "division", "conference", "football", "rotc", "ugResearch", "studyAbroad", "maxRatio", "pellGap", "minFullTimeFaculty", "national", "field", "byRes", "oosEven"],
+    ...["q", "types", "sizes", "regions", "states", "minAR", "maxAR", "minSAT", "maxSAT", "minCost", "maxCost", "minEnroll", "maxEnroll", "balance", "fullTime", "fewLoans", "liveOn", "noFee", "guarantee", "noLegacy", "noEssay", "gpaRequired", "setting", "research", "designation", "opportunity", "division", "conference", "football", "rotc", "ugResearch", "studyAbroad", "maxRatio", "pellGap", "minFullTimeFaculty", "national", "field", "byRes", "oosEven", "honors"],
     ...INDICATOR_KEYS.map((k) => INDICATORS[k].param),
   ].some((k) => searchParams.get(k));
 
@@ -462,7 +465,11 @@ export function FilterPanel({ facets, onDone }: { facets: FilterFacets; onDone?:
               <Chip active={searchParams.get("studyAbroad") === "1"} onClick={() => update({ studyAbroad: searchParams.get("studyAbroad") === "1" ? null : "1" })} count={facets.services.studyAbroad}>
                 Study abroad
               </Chip>
+              <Chip active={searchParams.get("honors") === "1"} onClick={() => update({ honors: searchParams.get("honors") === "1" ? null : "1" })} count={facets.honors}>
+                {HONORS_FILTER_LABEL}
+              </Chip>
             </div>
+            <p className="mt-1.5 text-[11px] text-muted-foreground">Honors program: only the {facets.honors} colleges whose Common Data Set lists one can match.</p>
           </div>
         </div>
       </Section>

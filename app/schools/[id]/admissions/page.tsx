@@ -20,6 +20,10 @@ import { DistributionStrip } from "@/components/charts/DistributionStrip";
 import { ScatterPlot } from "@/components/charts/ScatterPlot";
 import { AdmissionFactors } from "@/components/school/AdmissionFactors";
 import { ScoreChecker } from "@/components/school/ScoreChecker";
+import { WaitListLine } from "@/components/school/WaitListLine";
+import { EarlyRounds } from "@/components/school/EarlyRounds";
+import { GpaPanel } from "@/components/school/GpaPanel";
+import { admissionProfile } from "@/lib/cds/admissions";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -62,11 +66,20 @@ export default async function AdmissionsPage({ params }: Props) {
   // The year named in the eyebrow: the applicants count's lineage year, or the rate's when there are no counts.
   const headlineYear = citeField(a.applicants !== null ? "admissions.applicants" : "admissions.acceptance_rate", school).year;
 
+  // The college's own CDS: early rounds, factor weights, GPA and class rank (specs/data-expansion/cds-admissions.md).
+  const cdsProfile = admissionProfile(school);
+  const ed = cdsProfile?.early_decision;
+  const ea = cdsProfile?.early_action;
+  const hasEarly = !!(ed?.offered || ea?.offered || (ed?.offered === false && ea?.offered === false));
+  const hasGpa = !!(cdsProfile?.gpa || cdsProfile?.class_rank);
+
   const items = [
     { id: "funnel", label: "The funnel" },
     { id: "yield", label: "Yield" },
+    ...(hasEarly ? [{ id: "early", label: "Applying early" }] : []),
     { id: "factors", label: "What they look at" },
     { id: "map", label: "Admissions map" },
+    ...(hasGpa ? [{ id: "gpa", label: "High school GPA" }] : []),
     { id: "scores", label: "Test scores" },
     { id: "submitted", label: "Who submitted scores" },
   ];
@@ -194,7 +207,13 @@ export default async function AdmissionsPage({ params }: Props) {
             )}
           </div>
         </div>
-        {a.factors && (
+        <WaitListLine school={school} />
+        {hasEarly && (
+          <div className="mt-4">
+            <EarlyRounds school={school} id="early" />
+          </div>
+        )}
+        {(a.factors || cdsProfile?.factors) && (
           <div id="factors" className={`mt-4 ${BLOCK_SCROLL}`}>
             <AdmissionFactors school={school} />
           </div>
@@ -216,6 +235,8 @@ export default async function AdmissionsPage({ params }: Props) {
           </Block>
         </ShowMore>
       </Panel>
+
+      <GpaPanel school={school} id="gpa" />
 
       {scores && (
         <Panel id="scores" domain="scores" eyebrow="Test scores" title="What admitted students scored" takeaway={scoresTakeaway(data, school)} fields={[]} className="mt-14 sm:mt-20">

@@ -33,6 +33,7 @@ import { RadarChart } from "@/components/charts/RadarChart";
 import { RangeBar } from "@/components/charts/RangeBar";
 import { StackedBar } from "@/components/charts/StackedBar";
 import { InfoTip, Term } from "@/components/ui/info-tip";
+import { ADMISSION_PROFILE_ROWS, admissionProfileCellField, c7FactorCell } from "@/lib/cds/compare-rows";
 
 export const metadata: Metadata = { title: "Compare" };
 
@@ -80,6 +81,9 @@ const FACTOR_ROWS = (
       k === "legacy" ? "legacy-status" : "admission-factor",
       "admissions.factors",
       (s: School) => {
+        // The college's own C7 level where its CDS has one (cds-admissions.md), else the federal use.
+        const c7 = c7FactorCell(s, k);
+        if (c7) return c7;
         const use = s.admissions.factors?.[k];
         return use ? FACTOR_USE_LABELS[use] : null;
       },
@@ -106,6 +110,7 @@ const TABLE_ROWS = (
     ["SAT middle 50%", "middle-50", "derived.sat_composite", (s: School) => satComposite(s)?.join("–") ?? null],
     ["ACT middle 50%", "act", "admissions.act_composite_25_75", (s: School) => s.admissions.act_composite_25_75?.join("–") ?? null],
     ...FACTOR_ROWS,
+    ...ADMISSION_PROFILE_ROWS,
     ["Test policy", "test-policy", "admissions.test_policy", (s: School) => (s.admissions.test_policy ? TEST_POLICY_LABELS[s.admissions.test_policy] : null)],
     ["Application fee", "application-fee", "admissions.application_fee", (s: School) =>
       s.admissions.application_fee == null ? null : s.admissions.application_fee === 0 ? "None" : money(s.admissions.application_fee)],
@@ -569,7 +574,7 @@ export default async function ComparePage({
                           </span>
                         </td>
                         {schools.map((s) => {
-                          const cellYear = citeField(field, s).year;
+                          const cellYear = citeField(admissionProfileCellField(label, s) ?? field, s).year;
                           return (
                             <td key={s.unit_id} className="px-4 py-2.5 font-semibold">
                               {fmt(s) ?? <span className="font-normal text-muted-foreground">–</span>}

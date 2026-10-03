@@ -131,7 +131,7 @@ export function FilterPanel({ facets, onDone }: { facets: FilterFacets; onDone?:
   const fieldOptions = MAJOR_FAMILY_CODES.filter((f) => (facets.fields[f]?.[0] ?? 0) > 0).sort((a, b) => MAJOR_FAMILIES[a].localeCompare(MAJOR_FAMILIES[b]));
 
   const hasFilters = [
-    ...["q", "types", "sizes", "regions", "states", "minAR", "maxAR", "minSAT", "maxSAT", "minCost", "maxCost", "minEnroll", "maxEnroll", "balance", "fullTime", "fewLoans", "liveOn", "noFee", "guarantee", "noLegacy", "noEssay", "gpaRequired", "setting", "research", "designation", "opportunity", "division", "conference", "football", "rotc", "ugResearch", "studyAbroad", "maxRatio", "pellGap", "minFullTimeFaculty", "national", "field"],
+    ...["q", "types", "sizes", "regions", "states", "minAR", "maxAR", "minSAT", "maxSAT", "minCost", "maxCost", "minEnroll", "maxEnroll", "balance", "fullTime", "fewLoans", "liveOn", "noFee", "guarantee", "noLegacy", "noEssay", "gpaRequired", "gpa", "setting", "research", "designation", "opportunity", "division", "conference", "football", "rotc", "ugResearch", "studyAbroad", "maxRatio", "pellGap", "minFullTimeFaculty", "national", "field"],
     ...INDICATOR_KEYS.map((k) => INDICATORS[k].param),
   ].some((k) => searchParams.get(k));
 

@@ -762,6 +762,8 @@ export interface SearchFilters {
   noLegacy?: boolean;
   noEssay?: boolean;
   gpaRequired?: boolean;
+  /** Publishes first-years' GPA (CDS C11/C12; lib/cds/admissions.ts hasGpaData). */
+  gpa?: boolean;
   /** Housing and policies (lib/housing.ts): first-years must live on campus, no application fee, tuition guarantee. */
   liveOn?: boolean;
   noFee?: boolean;

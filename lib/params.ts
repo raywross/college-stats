@@ -88,6 +88,7 @@ export function parseFilters(params: Params): SearchFilters {
     studyAbroad: str(params.studyAbroad) === "1" || undefined,
     noEssay: str(params.noEssay) === "1" || undefined,
     gpaRequired: str(params.gpaRequired) === "1" || undefined,
+    gpa: str(params.gpa) === "1" || undefined,
     sortBy: sortBy && SORT_KEYS.includes(sortBy) ? sortBy : "applicants",
     // Default direction: most-applied-to first; everything else ascending.
     sortDir: params.sortDir === "desc" || params.sortDir === "asc" ? params.sortDir : sortBy && sortBy !== "applicants" ? "asc" : "desc",
@@ -140,6 +141,7 @@ export const FILTER_KEYS = [
   "studyAbroad",
   "noEssay",
   "gpaRequired",
+  "gpa",
   ...INDICATOR_KEYS.map((k) => INDICATORS[k].param),
 ] as const;
 

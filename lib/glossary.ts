@@ -795,6 +795,66 @@ const entries = {
     short: "The part of the country a school is in: Northeast, Southeast, Midwest, Southwest, or West.",
     category: "School types",
   },
+  // CDS admissions profile (specs/data-expansion/cds-admissions.md).
+  "high-school-gpa": {
+    term: "High school GPA",
+    short: "First-years' grade-point averages from high school, as the college reports them in its Common Data Set: an average, and the share in each GPA band.",
+    long: "These describe students who enrolled, not everyone admitted. The bands use a 4.0 scale; the average may be weighted, and only counts the first-years who reported a GPA.",
+    why: "It shows where a typical first-year's grades fell, but high schools grade differently, so compare a college only with itself.",
+    category: "Admissions",
+    related: ["weighted-gpa", "gpa-band", "class-rank"],
+  },
+  "weighted-gpa": {
+    term: "Weighted GPA",
+    short: "A GPA that gives extra points for honors, AP, or IB courses, so it can run above 4.0. It can't be compared with an unweighted GPA on a 4.0 scale.",
+    category: "Admissions",
+    related: ["high-school-gpa"],
+  },
+  "gpa-band": {
+    term: "GPA band",
+    short: "A range of high school GPAs (4.0, 3.75–3.99, 3.50–3.74, and so on) and the share of first-years whose GPA fell in it, on a 4.0 scale.",
+    long: "At colleges whose average is weighted, the top \"4.0\" band seems to hold every GPA of 4.0 or more.",
+    category: "Admissions",
+    related: ["high-school-gpa"],
+  },
+  "class-rank": {
+    term: "Class rank",
+    short: "Where a student stood in their high school class (top tenth, top quarter, top half). Many high schools no longer rank, so these shares describe only the first-years whose school reported one.",
+    category: "Admissions",
+    related: ["high-school-gpa"],
+  },
+  "factor-importance": {
+    term: "How much each factor counts",
+    short: "In its Common Data Set, a college marks each part of an application as very important, important, considered, or not considered when it decides whom to admit.",
+    long: "\"Very important\" parts weigh most; \"considered\" parts can help but weigh less; \"not considered\" parts aren't used, even if you send them. The federal survey asks a simpler question (required, considered, or not considered).",
+    category: "Admissions",
+    related: ["admission-factor", "legacy-status"],
+  },
+  "early-decision": {
+    term: "Early decision",
+    short: "An early application that is binding: if admitted, you commit to enroll and withdraw your other applications. Decisions usually come in December.",
+    long: "Some colleges run a second round (ED II) with a later deadline. Recruited athletes and other applicants with an edge often apply early, so a college's early admit rate overstates the gain for a typical applicant.",
+    category: "Admissions",
+    related: ["early-action", "restrictive-early-action"],
+  },
+  "early-action": {
+    term: "Early action",
+    short: "An early application that isn't binding: you hear back early but can still choose another college by the usual May 1 deadline.",
+    category: "Admissions",
+    related: ["early-decision", "restrictive-early-action"],
+  },
+  "restrictive-early-action": {
+    term: "Restrictive early action",
+    short: "Non-binding early action where you agree not to apply early to other colleges' early plans, with exceptions the college sets. Also called single-choice early action.",
+    category: "Admissions",
+    related: ["early-action", "early-decision"],
+  },
+  "wait-list": {
+    term: "Wait list",
+    short: "A list of qualified applicants a college may admit later if spaces open. Applicants choose whether to accept a place on it; at many colleges few are admitted from it.",
+    category: "Admissions",
+    related: ["admitted", "yield"],
+  },
 } satisfies Record<string, GlossaryEntry>;
 
 export type TermKey = keyof typeof entries;

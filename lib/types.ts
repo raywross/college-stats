@@ -376,6 +376,8 @@ export interface ReportedData {
   tests?: ReportedTests | null;
   /** CDS section H facts (specs/data-expansion/cds-financial-aid.md). */
   aid?: ReportedAid;
+  /** CDS I-2, I-3, E1, E3 (specs/data-expansion/cds-academics.md; lib/cds/academics.ts). Alongside the federal figures. */
+  academics?: ReportedAcademics;
 }
 
 /* ---- CDS student body and outcomes (specs/data-expansion/cds-student-body-and-outcomes.md) ---- */
@@ -815,6 +817,76 @@ export interface CdsAidPrevious {
   url: string;
   values: CdsAid;
 }
+/** Seven class-size bins in CDS I-3 order: 2–9, 10–19, 20–29, 30–39, 40–49, 50–99, 100+. */
+export type ClassSizeBins = [number, number, number, number, number, number, number];
+
+/**
+ * CDS academics (specs/data-expansion/cds-academics.md): class sections by size, the college's own student-to-faculty
+ * ratio, special programs offered, and required coursework. Additive: nothing here replaces a federal value.
+ */
+export interface ReportedAcademics {
+  class_sections?: {
+    /** I.301–I.307. */
+    sections: ClassSizeBins;
+    /** I.308 as printed, or the bins' sum when the printed total is unreadable (an Excel `##`). */
+    sections_total: number;
+    /** I.309–I.315; null when the college didn't fill the subsection rows. */
+    subsections: ClassSizeBins | null;
+    /** I.316 (or the sum); null with `subsections`. */
+    subsections_total: number | null;
+    /** The fall the item labels itself with, e.g. "Fall 2025". */
+    term: string;
+    /** CDS edition read, e.g. "2025-26". */
+    edition: string;
+  } | null;
+  /** The college's own figure, by its own CDS definition (never compared to academics.student_faculty_ratio). */
+  student_faculty_ratio?: {
+    /** I.201. */
+    ratio: number;
+    /** I.202, or null when not printed. */
+    students: number | null;
+    /** I.203, or null when not printed. */
+    faculty: number | null;
+    term: string;
+  } | null;
+  /** E1: only programs the college marked. A key present means "offered"; blank ≠ no, so never `false`. */
+  programs?: Partial<Record<CdsProgramKey, true>>;
+  /**
+   * E3: a key present means the college checked that area as required. Present and empty (`{}`) means the section was
+   * read and nothing was checked: an open curriculum. Absent means not read.
+   */
+  core_curriculum?: Partial<Record<CdsCoreAreaKey, true>>;
+}
+
+export type CdsProgramKey =
+  | "accelerated"
+  | "cross_registration"
+  | "distance_learning"
+  | "double_major"
+  | "dual_enrollment"
+  | "esl"
+  | "exchange"
+  | "honors"
+  | "independent_study"
+  | "internships"
+  | "liberal_arts_career"
+  | "student_designed_major"
+  | "teacher_certification"
+  | "weekend_college";
+
+export type CdsCoreAreaKey =
+  | "arts"
+  | "computer_literacy"
+  | "english"
+  | "foreign_languages"
+  | "history"
+  | "physical_education"
+  | "humanities"
+  | "intensive_writing"
+  | "mathematics"
+  | "philosophy"
+  | "sciences"
+  | "social_science";
 
 /** One measure's change over the default 10-year window. */
 export interface TrendSummary {
@@ -1182,6 +1254,8 @@ export interface SearchFilters {
   /** CDS financial aid (lib/cds/financial-aid.ts): no CSS Profile required; the college aids international students. */
   aidForms?: "no-css";
   intlAid?: boolean;
+  /** Has an honors program, from the college's CDS E1 (lib/cds/academics-display.ts). Positive only: no "exclude". */
+  honors?: boolean;
   sortBy?: SortKey;
   sortDir?: "asc" | "desc";
 }

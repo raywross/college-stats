@@ -25,6 +25,7 @@ import { hasSmallPellGap } from "@/lib/graduation-groups";
 import { HOUSING_FILTERS } from "@/lib/housing";
 import { FACTOR_FILTERS } from "@/lib/factors";
 import { RESIDENCY_FILTERS } from "@/lib/cds/residency-display";
+import { hasHonorsProgram } from "@/lib/cds/academics-display";
 import { DESIGNATION_KEYS, RESEARCH_TIERS, SETTING_GROUPS, designationsOf, isOpportunityCollege } from "@/lib/campus-profile";
 import { DIVISION_FILTERS, ROTC_BRANCHES, divisionFilterOf } from "@/lib/campus-services";
 import { MAX_RATIO_OPTIONS, MIN_FULL_TIME_FACULTY_OPTIONS } from "@/lib/academics";
@@ -121,6 +122,7 @@ function buildFacets({ getAllSchools, histogram }: Dataset): FilterFacets {
     housing: Object.fromEntries(HOUSING_FILTERS.map((f) => [f.param, all.filter(f.test).length])) as FilterFacets["housing"],
     factors: Object.fromEntries(FACTOR_FILTERS.map((f) => [f.param, all.filter(f.test).length])) as FilterFacets["factors"],
     residency: Object.fromEntries(RESIDENCY_FILTERS.map((f) => [f.param, all.filter(f.test).length])) as FilterFacets["residency"],
+    honors: all.filter(hasHonorsProgram).length,
     campus,
     states: Object.keys(states).sort().map((value) => ({ value, count: states[value] })),
     regions: Object.keys(regions).sort().map((value) => ({ value, count: regions[value] })),

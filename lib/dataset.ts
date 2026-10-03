@@ -9,6 +9,7 @@ import { hasFewLoans } from "./repayment";
 import { hasTuitionGuarantee, noApplicationFee, requiresLiveOn } from "./housing";
 import { FACTOR_FILTERS } from "./factors";
 import { RESIDENCY_FILTERS } from "./cds/residency-display";
+import { hasHonorsProgram } from "./cds/academics-display";
 import { matchesCampus } from "./campus-profile";
 import { matchesServices } from "./campus-services.ts";
 import { withinMaxRatio, withinMinFullTimeFaculty } from "./academics.ts";
@@ -249,6 +250,8 @@ export function createDataset({ schools, meta, releaseCalendar }: DatasetFiles) 
     for (const f of FACTOR_FILTERS) if (filters[f.param]) results = results.filter(f.test);
     // Where applicants live: colleges without a residency grid never match (cds-residency-admissions.md).
     for (const f of RESIDENCY_FILTERS) if (filters[f.param]) results = results.filter(f.test);
+    // Honors program (cds-academics.md): narrows only toward colleges whose CDS marks one; nothing excludes for its absence.
+    if (filters.honors) results = results.filter(hasHonorsProgram);
     if (filters.setting || filters.research || filters.designation || filters.opportunity) results = results.filter((s) => matchesCampus(s, filters));
     if (filters.division || filters.conference !== undefined || filters.football || filters.rotc || filters.ugResearch || filters.studyAbroad)
       results = results.filter((s) => matchesServices(s, filters));

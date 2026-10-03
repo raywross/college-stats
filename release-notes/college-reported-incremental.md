@@ -20,3 +20,4 @@ figures it has already collected are no longer lost if a run is interrupted.
 - When the Anthropic account's spending limit or credit runs out, the run stops at once instead of failing every
   remaining college, and the next run picks up where it left off.
 - The run's files are also kept as a downloadable artifact on the Actions run.
+- Fixed: a Common Data Set whose web address included an upload date ("…/2026/09/CDS_2025-2026.xlsx") was read as the wrong year. The year now comes from the file name first.

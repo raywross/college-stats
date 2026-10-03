@@ -38,6 +38,14 @@
         "merit_no_need": 1827,
         "merit_avg": 8894
       }
+    },
+    "lineage": {
+      "aid.cds": {
+        "source": "cds",
+        "year": "2024–25 (estimated)",
+        "url": "https://docs.google.com/spreadsheets/d/11BnFbit7JcrmFMi9iV_TMkzhUyCQ_dQHS0V8weuOHPM/export?format=xlsx",
+        "retrieved": "2026-09-27"
+      }
     }
   },
   "145637": {
@@ -92,6 +100,14 @@
         "avg_need_loan": 4272,
         "merit_no_need": 4335,
         "merit_avg": 6348
+      }
+    },
+    "lineage": {
+      "aid.cds": {
+        "source": "cds",
+        "year": "2023–24",
+        "url": "https://uofi.box.com/shared/static/1m3p4sedkotywoec55zbnodc4oci5ctf.xlsx",
+        "retrieved": "2026-09-27"
       }
     }
   },
@@ -148,6 +164,14 @@
         "merit_no_need": 4936,
         "merit_avg": 7051
       }
+    },
+    "lineage": {
+      "aid.cds": {
+        "source": "cds",
+        "year": "2023–24",
+        "url": "https://www.irpa.umd.edu/InstitutionalData/CommonDataSet/CDS_2024-2025.xlsx",
+        "retrieved": "2026-09-27"
+      }
     }
   },
   "190415": {
@@ -202,6 +226,14 @@
         "avg_need_loan": 3512,
         "merit_no_need": null,
         "merit_avg": null
+      }
+    },
+    "lineage": {
+      "aid.cds": {
+        "source": "cds",
+        "year": "2025–26 (estimated)",
+        "url": "https://irp.cornell.edu/wp-content/uploads/2026/09/CDS-Cornell-2025-2026-v2.xlsx",
+        "retrieved": "2026-09-27"
       }
     }
   },
@@ -313,6 +345,14 @@
         "merit_no_need": 740,
         "merit_avg": 32009
       }
+    },
+    "lineage": {
+      "aid.cds": {
+        "source": "cds",
+        "year": "2024–25 (estimated)",
+        "url": "https://cdn.vanderbilt.edu/vu-wpfsx/wp-content/uploads/sites/70/2025/11/CDS_2024-2025.xlsx",
+        "retrieved": "2026-09-27"
+      }
     }
   },
   "231624": {
@@ -367,6 +407,14 @@
         "avg_need_loan": 3198,
         "merit_no_need": 620,
         "merit_avg": 6067
+      }
+    },
+    "lineage": {
+      "aid.cds": {
+        "source": "cds",
+        "year": "2023–24",
+        "url": "https://www.wm.edu/offices/ir/university_data/cds/wm_cds_2024-20252.xlsx",
+        "retrieved": "2026-09-27"
       }
     }
   },
@@ -424,7 +472,15 @@
     },
     "_warnings": [
       "C1 \"were admitted\" total 30272 disagrees with its breakdowns (39272); using 39272."
-    ]
+    ],
+    "lineage": {
+      "aid.cds": {
+        "source": "cds",
+        "year": "2023–24",
+        "url": "https://www.purdue.edu/idata/wp-content/uploads/2026/04/CDS_2024-2025.xlsx",
+        "retrieved": "2026-09-27"
+      }
+    }
   },
   "_readme": "Hand-verified patches applied after each sync (npm run sync-data). Keyed by IPEDS unit ID; any subset of School fields. Keys starting with _ are ignored."
 }

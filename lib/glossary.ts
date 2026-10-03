@@ -923,6 +923,63 @@ const entries = {
     category: "Admissions",
     related: ["admitted", "yield"],
   },
+  // CDS financial aid (specs/data-expansion/cds-financial-aid.md).
+  "css-profile": {
+    term: "CSS Profile",
+    short: "A financial aid form from the College Board that many private colleges require on top of the FAFSA. It asks more than the FAFSA does (home equity, a business, both parents' finances) so the college can award its own grants.",
+    long: "The FAFSA decides federal aid such as Pell Grants. Colleges that give a lot of their own money often want the fuller picture the CSS Profile gives, and use it with their own formula for need. It has a fee, with waivers for lower-income families.",
+    why: "If a college you're applying to requires it, its deadline is usually earlier than the FAFSA's and missing it can cost you the college's own grants.",
+    category: "Cost & outcomes",
+    related: ["noncustodial-profile", "aid-methodology", "need-based-aid"],
+  },
+  "noncustodial-profile": {
+    term: "CSS Noncustodial Profile",
+    short: "A second CSS Profile filed by the parent a student doesn't live with, when parents are divorced or separated. Colleges that require it count that parent's income and assets in figuring need.",
+    category: "Cost & outcomes",
+    related: ["css-profile"],
+  },
+  "business-farm-supplement": {
+    term: "Business/Farm Supplement",
+    short: "An extra form some colleges ask of families who own a business or farm, so they can judge what it's worth and what it earns before awarding their own aid.",
+    category: "Cost & outcomes",
+    related: ["css-profile"],
+  },
+  "aid-methodology": {
+    term: "Need methodology (federal or institutional)",
+    short: "How a college works out what a family can pay. The federal formula uses the FAFSA alone; a college's own (institutional) formula usually adds the CSS Profile and can count home equity or a noncustodial parent. The same family can show different need at two colleges.",
+    category: "Cost & outcomes",
+    related: ["css-profile", "need-met", "need-based-aid"],
+  },
+  "aid-package": {
+    term: "Aid package",
+    short: "Everything a college offers a student with need: grants and scholarships, plus self-help (loans and work-study). The Common Data Set's average package leaves out loans meant to replace the family's contribution (parent PLUS, unsubsidized, private loans).",
+    category: "Cost & outcomes",
+    related: ["self-help-aid", "need-based-aid"],
+  },
+  "self-help-aid": {
+    term: "Self-help aid",
+    short: "Aid a student pays back or works for: student loans and work-study jobs, as opposed to grants and scholarships, which are free money.",
+    category: "Cost & outcomes",
+    related: ["aid-package"],
+  },
+  "merit-dollar-share": {
+    term: "College grant dollars given as merit",
+    short: "Of the grant money a college gives from its own funds, the share awarded without regard to need. Merit money that went toward a student's need counts as need-based in the Common Data Set, so this is merit beyond need.",
+    category: "Cost & outcomes",
+    related: ["merit-aid", "institutional-aid"],
+  },
+  "athletic-scholarship": {
+    term: "Athletic scholarship",
+    short: "Aid a college gives for playing a sport, regardless of need. NCAA Division III colleges don't give them; Division I and II colleges and NAIA members can.",
+    category: "Cost & outcomes",
+    related: ["merit-aid", "ncaa-division"],
+  },
+  "aid-for-international-students": {
+    term: "Aid for international students",
+    short: "Grants a college gives from its own funds to students who aren't U.S. citizens or permanent residents. They can't get federal aid, so the college's own aid is usually all there is. Federal data doesn't track it; this comes from the college's Common Data Set.",
+    category: "Cost & outcomes",
+    related: ["institutional-aid", "css-profile"],
+  },
 } satisfies Record<string, GlossaryEntry>;
 
 export type TermKey = keyof typeof entries;

@@ -98,6 +98,8 @@ export function parseFilters(params: Params): SearchFilters {
     byRes: str(params.byRes) === "1" || undefined,
     oosEven: str(params.oosEven) === "1" || undefined,
     gpa: str(params.gpa) === "1" || undefined,
+    aidForms: str(params.aidForms) === "no-css" ? "no-css" : undefined,
+    intlAid: str(params.intlAid) === "1" || undefined,
     sortBy: sortBy && SORT_KEYS.includes(sortBy) ? sortBy : "applicants",
     // Default direction: most-applied-to first; everything else ascending.
     sortDir: params.sortDir === "desc" || params.sortDir === "asc" ? params.sortDir : sortBy && sortBy !== "applicants" ? "asc" : "desc",
@@ -154,6 +156,8 @@ export const FILTER_KEYS = [
   "oosEven",
   "gpa",
   "policy",
+  "aidForms",
+  "intlAid",
   ...INDICATOR_KEYS.map((k) => INDICATORS[k].param),
 ] as const;
 

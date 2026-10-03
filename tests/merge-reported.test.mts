@@ -140,7 +140,7 @@ test("a hand-imported CDS college: admissions.federal holds the override's value
   assert.equal(JSON.stringify(dropped), JSON.stringify(before));
 });
 
-test("the committed data/schools.json is exactly what merging data/college-reported.json produces (re-merge changes nothing)", () => {
+test("the committed data/schools.json is exactly what merging data/college-reported.json and data/cds-records/ produces (re-merge changes nothing)", () => {
   const reported: ReportedFile = JSON.parse(readFileSync(join(ROOT, "data", "college-reported.json"), "utf8"));
   // C1 first, then the newest groups from the CDS records (specs/data-expansion/cds-student-body-and-outcomes.md).
   const { schools } = mergeReported(allSchools, reported, { records: readRecords(join(ROOT, "data", "cds-records")), meta, table: CDS_TEMPLATE });

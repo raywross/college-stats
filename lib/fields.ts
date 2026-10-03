@@ -399,6 +399,28 @@ export const FIELDS = {
       inputs: ["reported.tests.sat_composite", "derived.sat_composite"],
     },
   },
+  // CDS financial aid (specs/data-expansion/cds-financial-aid.md; lib/cds/financial-aid.ts): section H from each
+  // college's CDS record. Partial coverage: never in ranks, sorts, medians, key differences, the radar, or "Known for".
+  "reported.aid.edition": reported("Common Data Set the aid process facts came from", "aid"),
+  "reported.aid.aid_year": reported("Academic year of the aid figures (CDS H.101)", "aid"),
+  "reported.aid.methodology": reported("How the college figures need: federal or its own formula (CDS H.102–H.104)", "aid"),
+  "reported.aid.forms": reported("Forms aid applicants file (CDS H8)", "aid"),
+  "reported.aid.dates": reported("Aid application dates (CDS H9–H11)", "aid"),
+  "reported.aid.international": reported("College aid for international students (CDS H6)", "aid"),
+  "reported.aid.first_years": reported("Need and aid, first-years (CDS H2, H2A)", "aid"),
+  "reported.aid.institutional_grants": reported("College grant dollars, need-based and not (CDS H1)", "aid"),
+  "detail.cds_aid": { label: "Financial aid, all of CDS section H with quotes", topic: "aid", source: "college-site", vintage: null },
+  "aid.cds_previous": { label: "Need-based and merit aid a newer Common Data Set replaced (CDS H2/H2A)", topic: "aid", source: "cds", vintage: null },
+  "derived.merit_dollar_share": {
+    ...reported("College grant dollars given without regard to need", "aid"),
+    computed: true,
+    derived: { formula: "Non-need institutional grant dollars ÷ (need-based + non-need institutional grant dollars), CDS H1", inputs: ["reported.aid.institutional_grants"] },
+  },
+  "derived.aid_methodology": {
+    ...reported("Need methodology, stated or inferred", "aid"),
+    computed: true,
+    derived: { formula: "The stated methodology; else the college's own (institutional) formula when it requires the CSS Profile or its own form", inputs: ["reported.aid.methodology", "reported.aid.forms"] },
+  },
 
   /* ---- History summary (data/history/, `npm run sync-history`) ---- */
   trends: {

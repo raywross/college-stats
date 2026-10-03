@@ -8,6 +8,7 @@ import { validateAdmissionProfile } from "./cds/admissions.ts";
 import { FIELDS, METADATA_KEYS, PER_DOCUMENT_SOURCES, REPORTED_PATHS, isFieldPath, registeredPathFor, type FieldPath, type VintageKey } from "./fields.ts";
 import { NEWEST_TARGETS, newestGroupCitation, validateNewestGroups } from "./newest-groups.ts";
 import { replacedTest, satTotalInputs, validateTests } from "./cds/test-blocks.ts";
+import { financialAidProblems } from "./cds/financial-aid.ts";
 
 /** A source as cited for one value: plain data, safe to pass to client components. */
 export interface CitedSource {
@@ -36,7 +37,16 @@ export interface Cited extends CitedSource {
    * For a funnel value that a newer college-reported class replaced: the previous (federal or hand-imported CDS)
    * value and the year it describes, from `admissions.federal`, so the tooltip can say "Federal data, fall 2024: 5.8%".
    */
-  replaces?: { value: number | Record<string, number> | null; year: string | null; label?: string; text?: string };
+  replaces?: {
+    value: number | Record<string, number> | null;
+    year: string | null;
+    /** Whose figure it was, when not the federal one: "Cornell University Common Data Set" (`aid.cds_previous`). */
+    label?: string;
+    /** The replaced value as text, when it isn't a number (a test policy). */
+    text?: string;
+    /** The replaced value already formatted (e.g. a share as "77%"), when the path alone can't say how. */
+    display?: string;
+  };
   /** For a value reported by the college itself (source "college-site"): which kind of document supplied it. */
   sourceKind?: ReportedSourceKind;
   /** For a value from a college's Common Data Set record: its edition, "2025–26" (the year is the value's own). */
@@ -110,7 +120,8 @@ function sourceFor(path: FieldPath, school: School | undefined, meta: DatasetMet
     // The college's own page or file; the record names the document (validateSchool requires url, year, quote).
     return {
       key,
-      label: `${school.name} (${rec?.year ?? "college-reported"})`,
+      // A CDS record value (round 3) names its document's edition; the year after it is the value's own.
+      label: rec?.edition ? `${school.name} Common Data Set ${rec.edition}` : `${school.name} (${rec?.year ?? "college-reported"})`,
       publisher: school.name,
       year: rec?.year ?? null,
       url: rec?.url ?? info.url,
@@ -145,6 +156,8 @@ const sourceId = (s: CitedSource) => `${s.key}|${s.url}|${s.year ?? ""}`;
 function underlyingSources(path: FieldPath, school: School | undefined, meta: DatasetMeta, seen = new Set<string>()): CitedSource[] {
   const def = FIELDS[path] as (typeof FIELDS)[FieldPath];
   const overridden = !!school?.lineage?.[path];
+  // A college-reported field this college has no value for (no lineage record) has nothing to cite.
+  if (school && !overridden && def.source === "college-site" && !("derived" in def && def.derived)) return [];
   if (!("derived" in def) || !def.derived || overridden || seen.has(path)) return [sourceFor(path, school, meta)];
   seen.add(path);
   const out = new Map<string, CitedSource>();
@@ -373,6 +386,7 @@ export function validateSchool(school: School, meta: DatasetMeta): string[] {
   errors.push(...validateNewestGroups(school, where, meta));
   errors.push(...validateAdmissionProfile(school, where));
   errors.push(...validateTests(school, where));
+  errors.push(...financialAidProblems(school));
   return errors;
 }
 

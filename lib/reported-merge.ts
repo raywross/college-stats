@@ -21,6 +21,7 @@ import { withAdmissionProfile } from "./cds/admissions.ts";
 import { mergeTestScores } from "./cds/test-scores.ts";
 import { mergeResidency } from "./cds/residency.ts";
 import { applyCostAndDebt } from "./cds/cost-and-debt.ts";
+import { applyFinancialAid } from "./cds/financial-aid.ts";
 
 /**
  * `school` as it was before any merge: its previous admissions funnel restored from `admissions.federal`
@@ -76,6 +77,8 @@ const RECORD_STEPS: readonly ((school: School, record: CollegeRecord | undefined
   mergeResidency,
   // specs/data-expansion/cds-cost-and-debt.md: next year's price and graduates' debt, beside the federal figures.
   applyCostAndDebt,
+  // specs/data-expansion/cds-financial-aid.md: aid forms, deadlines, need met, merit, international aid.
+  applyFinancialAid,
 ];
 
 /**

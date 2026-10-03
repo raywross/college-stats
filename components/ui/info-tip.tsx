@@ -99,7 +99,7 @@ function SourceBlock({ cited }: { cited: Cited }) {
       )}
       {cited.replaces && (
         <p className="font-medium text-foreground">
-          Federal data, {cited.replaces.year?.replace(/^Entered\b/, "entered") ?? "most recent release"}: {formatReplaced(cited)}
+          {cited.replaces.label ?? "Federal data"}, {cited.replaces.year?.replace(/^Entered\b/, "entered") ?? "most recent release"}: {cited.replaces.display ?? formatReplaced(cited)}
         </p>
       )}
       <p className="text-[11px]">Retrieved {cited.retrieved}</p>

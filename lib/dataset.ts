@@ -15,6 +15,7 @@ import { withinMaxRatio, withinMinFullTimeFaculty } from "./academics.ts";
 import { hasSmallPellGap } from "./graduation-groups.ts";
 import { drawsNationally } from "./residence.ts";
 import { matchesField } from "./majors.ts";
+import { noCssProfile, offersInternationalAid } from "./cds/financial-aid.ts";
 import {
   METRICS,
   SIZE_BUCKETS,
@@ -251,6 +252,9 @@ export function createDataset({ schools, meta, releaseCalendar }: DatasetFiles) 
     if (filters.setting || filters.research || filters.designation || filters.opportunity) results = results.filter((s) => matchesCampus(s, filters));
     if (filters.division || filters.conference !== undefined || filters.football || filters.rotc || filters.ugResearch || filters.studyAbroad)
       results = results.filter((s) => matchesServices(s, filters));
+    // CDS financial aid: colleges without the college's own report never match.
+    if (filters.aidForms === "no-css") results = results.filter(noCssProfile);
+    if (filters.intlAid) results = results.filter(offersInternationalAid);
 
     const sortBy: SortKey = filters.sortBy && filters.sortBy in SORTERS ? filters.sortBy : "applicants";
     const multiplier = (filters.sortDir ?? (sortBy === "applicants" ? "desc" : "asc")) === "asc" ? 1 : -1;

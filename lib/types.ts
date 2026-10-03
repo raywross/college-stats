@@ -232,6 +232,11 @@ export interface School {
     } | null;
     /** Richer detail from the school's Common Data Set, section H (full-time undergraduates). */
     cds?: CdsAid;
+    /**
+     * The hand-imported `aid.cds` a same-or-newer CDS record replaced (specs/data-expansion/cds-financial-aid.md): kept
+     * for the ⓘ ("Replaces: … Common Data Set 2024–25: 77%"); `aid.cds` itself is removed then.
+     */
+    cds_previous?: CdsAidPrevious;
   };
   /** Housing and campus services (IPEDS Institutional Characteristics, same year as the prices), and the campus profile. */
   /** Academics (specs/data-expansion/student-faculty-ratio.md; later majors, faculty, class sizes). */
@@ -369,6 +374,8 @@ export interface ReportedData {
   test_policy_events?: TestPolicyEvent[] | null;
   /** C9: the first-years who entered in fall `year` and sent scores. */
   tests?: ReportedTests | null;
+  /** CDS section H facts (specs/data-expansion/cds-financial-aid.md). */
+  aid?: ReportedAid;
 }
 
 /* ---- CDS student body and outcomes (specs/data-expansion/cds-student-body-and-outcomes.md) ---- */
@@ -701,6 +708,112 @@ export interface FederalTests {
   policy?: KeptBlock<PolicyBlock>;
   sat?: KeptBlock<SatBlock>;
   act?: KeptBlock<ActBlock>;
+}
+/* ---- CDS financial aid (specs/data-expansion/cds-financial-aid.md) ---- */
+
+/** CDS section H facts for filters, Compare, and the cost page (`school.reported.aid`). Null wherever the document is blank, never 0. */
+export interface ReportedAid {
+  /** "2025-26": the document the process facts (forms, dates, methodology) came from. */
+  edition: string;
+  /** H.101; null → H1, H2, H2A, H6 aren't published (a value with no year can't be cited). */
+  aid_year: AidYear | null;
+  /** H.102–H.104 as stated; never inferred here (`derived.aid_methodology` infers). */
+  methodology: "federal" | "institutional" | "both" | null;
+  /** H.801–H.808; null = the list was left blank (not "nothing required"). */
+  forms: AidForms | null;
+  /** H.901–H.1103. */
+  dates: AidDates | null;
+  /** H.601–H.605 (the total is in the detail file). */
+  international: InternationalAid | null;
+  /** H2/H2A first-year column, the lines shown. */
+  first_years: H2Headline | null;
+  /** H1 institutional grant dollars: need-based (H.107) and non-need (H.119). */
+  institutional_grants: { need: number | null; non_need: number | null } | null;
+}
+
+/** H.101 parsed: `start` 2025 = 2025–26; estimated (the edition's own year) or final (last year's). */
+export interface AidYear {
+  start: number;
+  status: "estimated" | "final";
+}
+
+export interface AidForms {
+  fafsa: boolean;
+  own_form: boolean;
+  css_profile: boolean;
+  state_form: boolean;
+  noncustodial_profile: boolean;
+  business_farm_supplement: boolean;
+  other: string | null;
+}
+
+/** A month and day with no year: the year is the cycle in the value's lineage. */
+export interface AidDay {
+  month: number;
+  day: number;
+}
+
+export interface AidDates {
+  priority: AidDay | "unstated" | null;
+  deadline: AidDay | "unstated" | null;
+  no_deadline: boolean | null;
+  notify_by: AidDay | null;
+  notify_rolling_from: AidDay | "unstated" | null;
+  reply_by: AidDay | null;
+  reply_within_weeks: number | null;
+}
+
+export interface InternationalAid {
+  need_based: boolean;
+  non_need: boolean;
+  none: boolean;
+  recipients: number | null;
+  average: number | null;
+}
+
+/** H2 lines by template letter: a–m, and H2A n–q. Shares are derived, never stored. */
+export type H2Line = "a" | "b" | "c" | "d" | "e" | "f" | "g" | "h" | "i" | "j" | "k" | "l" | "m" | "n" | "o" | "p" | "q";
+/** One H2 column; `i` (average share of need met) is a fraction 0–1. */
+export type H2Column = Record<H2Line, number | null>;
+export type H2Headline = Pick<H2Column, "a" | "c" | "d" | "h" | "i" | "j" | "k" | "m" | "n" | "o" | "p" | "q">;
+
+/** H1 dollars, one column (need-based or non-need). Federal Work-Study is need-based only (null in the non-need row). */
+export interface H1Row {
+  federal: number | null;
+  state: number | null;
+  institutional: number | null;
+  external: number | null;
+  total_grants: number | null;
+  student_loans: number | null;
+  federal_work_study: number | null;
+  other_work: number | null;
+  total_self_help: number | null;
+  parent_loans: number | null;
+  tuition_waivers: number | null;
+  athletic: number | null;
+}
+
+export type H14Criterion = "academics" | "alumni_affiliation" | "art" | "athletics" | "job_skills" | "rotc" | "leadership" | "music_drama" | "religious_affiliation" | "state_residency";
+
+/** `detail.cds_aid`: all of section H with a quote per value (the per-college detail file, lib/detail.ts). */
+export interface CdsAidDetail {
+  document: { url: string; edition: string; retrieved: string; sha256: string };
+  aid_year: AidYear | null;
+  h1: { need: H1Row; non_need: H1Row } | null;
+  h2: { first_years: H2Column; full_time: H2Column; part_time: H2Column } | null;
+  h6: { need_based: boolean; non_need: boolean; none: boolean; recipients: number | null; average: number | null; total: number | null } | null;
+  h7: { own_form: boolean; css_profile: boolean; other: boolean; other_text: string | null } | null;
+  h14: Record<H14Criterion, { non_need: boolean | null; need: boolean | null }> | null;
+  h15: { text: string; display: boolean } | null;
+  /** Every non-null value above, by template code: the verbatim quote and where it is. */
+  cite: Record<string, { quote: string; page?: number; cell?: string; line?: number; field?: string }>;
+}
+
+/** `aid.cds_previous`: the hand-imported `aid.cds` a same-or-newer CDS record replaced. */
+export interface CdsAidPrevious {
+  edition: string;
+  url: string;
+  values: CdsAid;
 }
 
 /** One measure's change over the default 10-year window. */
@@ -1066,6 +1179,9 @@ export interface SearchFilters {
   oosEven?: boolean;
   /** Test policy buckets to keep (lib/test-policy.ts): each college's newest policy; colleges with none are excluded. */
   policy?: ("required" | "optional" | "blind")[];
+  /** CDS financial aid (lib/cds/financial-aid.ts): no CSS Profile required; the college aids international students. */
+  aidForms?: "no-css";
+  intlAid?: boolean;
   sortBy?: SortKey;
   sortDir?: "asc" | "desc";
 }

@@ -5,6 +5,8 @@ import { InfoTip, MetricLabel } from "@/components/ui/info-tip";
 import { SourceNote } from "@/components/sources/SourceNote";
 import { getData } from "@/lib/data";
 import { stickerPhrase } from "@/lib/insights";
+import type { SchoolDetail } from "@/lib/detail";
+import { CdsAidTable } from "@/components/school/CdsAidTable";
 
 const COLOR = "var(--d-value)";
 
@@ -36,9 +38,10 @@ function ShareBar({ label, share, avg, term }: { label: string; share: number | 
 /**
  * "Who actually gets aid": grant vs. no-grant split, aid by source, federal-aid
  * recipients by family income, and Common Data Set need/merit detail when the
- * school publishes one.
+ * school publishes one: the hand-imported `aid.cds` (full-time column only) until the college's CDS record supersedes
+ * it, then the record's first-year and full-time columns (CdsAidTable, specs/data-expansion/cds-financial-aid.md).
  */
-export async function AidBreakdown({ school }: { school: School }) {
+export async function AidBreakdown({ school, detail = null }: { school: School; detail?: SchoolDetail | null }) {
   const { citeField } = await getData();
   const aid = school.aid;
   const grant = aid?.grant_pct ?? null;
@@ -195,6 +198,7 @@ export async function AidBreakdown({ school }: { school: School }) {
         </div>
       </div>
 
+      {!cds && <CdsAidTable school={school} detail={detail} />}
       {cds && school.cds && (
         <div className="rounded-3xl border bg-card p-4 sm:p-6">
           <h3 className="font-display text-lg font-bold">From {school.name}&apos;s Common Data Set</h3>

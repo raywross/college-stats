@@ -180,6 +180,16 @@ const LEGACY_FIELDS = Object.freeze({
     "reported.outcomes.graduate_debt.rows.any.share",
     "reported.outcomes.graduate_debt.rows.any.avg_principal",
   ],
+  // New with CDS financial aid (specs/data-expansion/cds-financial-aid.md), on the cost page.
+  cdsFinancialAid: [
+    "reported.aid.first_years",
+    "reported.aid.institutional_grants",
+    "derived.merit_dollar_share",
+    "reported.aid.forms",
+    "reported.aid.methodology",
+    "reported.aid.dates",
+    "reported.aid.international",
+  ],
 });
 
 function sourceFiles(dir: string): string[] {

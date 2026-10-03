@@ -14,6 +14,7 @@ import type { FieldPath } from "./fields";
 import type { FederalAdmissions, LineageRecord, School } from "./types";
 import { restoreNewestGroups } from "./newest-groups.ts";
 import { applyNewestTests, restoreFederalTests } from "./cds/test-blocks.ts";
+import { restoreCdsAid } from "./cds/financial-aid.ts";
 
 /** The funnel values `applyNewest` may replace, in `school.admissions` key order. */
 const COUNTS = ["applicants", "admitted", "enrolled"] as const;
@@ -121,7 +122,8 @@ export function applyNewest(school: School, opts: { factorsYear?: number | null 
  * `admissions.federal` itself removed. Byte-identical to the school before `applyNewest`; the same object when
  * there's nothing to undo.
  */
-export function restoreFederal(school: School): School {
+export function restoreFederal(input: School): School {
+  let school = restoreCdsAid(input); // CDS aid: put back a superseded aid.cds (specs/data-expansion/cds-financial-aid.md)
   school = restoreNewestGroups(school); // enrollment, race, retention, graduation (lib/newest-groups.ts), applied after C1
   school = restoreFederalFactors(school); // undoes applyNewestFactors (lib/cds/admissions.ts)
   school = restoreFederalTests(school); // CDS C8/C9 blocks (specs/data-expansion/cds-test-scores-and-policy.md)

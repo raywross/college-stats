@@ -318,7 +318,7 @@
       "C.510": {"status":"blank"},
       "C.511": {"status":"blank"},
       "C.512": {"status":"blank"},
-      "C.513": {"status":"blank"},
+      "C.513": {"v":20,"status":"passed","cell":"CDS-C!AC54+CDS-C!AC55+CDS-C!AC56+CDS-C!AC58+CDS-C!AC59","quote":"Sum of C.514 + C.515 + C.516 + C.518 + C.519 | 20","method":"derived"},
       "C.514": {"v":4,"status":"passed","cell":"CDS-C!AC54","quote":"English | 4"},
       "C.515": {"v":4,"status":"passed","cell":"CDS-C!AC55","quote":"Mathematics | 4"},
       "C.516": {"v":4,"status":"passed","cell":"CDS-C!AC56","quote":"Science | 4"},

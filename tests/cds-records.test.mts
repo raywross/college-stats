@@ -246,14 +246,20 @@ test("the four template workbooks give their real totals with no model call", ()
 test("the committed records keep the colleges' own errors as failures", () => {
   // Vanderbilt typed 0.97 into B22's cohort count.
   assert.equal(newest("221999").items["B.2201"].failures![0].check, "type-range");
-  // Cornell's C21 code table is wired one row off: 10,057 applications sit in the "admitted" cell.
+  // Cornell's C21 code table is wired one row off (10,057 applications sit in the "admitted" cell). The visible form
+  // passes every C21 check (lib/cds-checks.ts), so it is published, with the code table's value kept beside it.
   const cu = newest("190415").items["C.2111"];
-  assert.equal(cu.status, "failed");
-  assert.equal(cu.v, 10057);
-  assert.deepEqual(cu.form, { v: 1889, cell: "CDS-C!E327" });
-  // Illinois's residency code cells are misfiled while its visible grid is consistent.
-  assert.equal(newest("145637").items["C.120"].status, "failed");
-  assert.equal(newest("145637").items["C.120"].form!.v, 14509);
+  assert.equal(cu.status, "passed");
+  assert.equal(cu.v, 1889);
+  assert.equal(cu.cell, "CDS-C!E327");
+  assert.deepEqual(cu.code_table, { v: 10057, cell: "CDS-C!AC272", quote: "Number of applicants admitted under early decision plan | 10057" });
+  // Illinois's residency code cells are misfiled while its visible grid is consistent: the grid is published.
+  assert.equal(newest("145637").items["C.120"].status, "passed");
+  assert.equal(newest("145637").items["C.120"].v, 14509);
+  assert.equal(newest("145637").items["C.120"].code_table!.v, 32702);
+  // Illinois swapped C1's full-/part-time cells: the sex-sum check fails them, and only them.
+  for (const k of ["C.110", "C.111", "C.112", "C.113"]) assert.equal(newest("145637").items[k].failures![0].check, "parts-sum", k);
+  assert.equal(newest("145637").items["C.118"].status, "passed");
   // The aid year differs by college within one edition.
   assert.equal(newest("190415").years["aid-year"], "2025–26 estimated");
   assert.equal(newest("231624").years["aid-year"], "2024–25 final");

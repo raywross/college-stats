@@ -193,24 +193,80 @@ export type CheckId =
   | "sources-agree" // 7. two documents for the same term agree within 1%
   // Not a check on figures: every source of the college failed to fetch (robots.txt, 401/403/405/429, 404, network
   // error). No model can fix that, so it is queued without a model call and not counted in `failed`.
-  | "unreachable";
+  | "unreachable"
+  // Round 3 (specs/college-reported-round-3.md Decision 9; lib/cds-checks.ts): checks on every record item.
+  // Universal checks, on every value:
+  | "type-range" // the value fits its type: counts whole and ≥ 0, shares 0–100%, GPA 0–5, SAT/ACT ranges, months, days
+  | "number-on-line" // model reads: the value (number, mark, or words) appears on its cited line(s)
+  | "line-in-document" // model reads: every cited line id exists in the archived line text
+  | "edition-mismatch" // the edition (cover) or the year an item's own text names matches the edition it's filed under
+  | "form-vs-code" // template workbooks: the visible form and the code table hold the same value
+  | "overflow-total" // reader: a total printed "##" (Excel overflow) whose parts can't be summed
+  | "aid-year" // reader: H.101 names no aid year ("2023"), so H1, H2, H2A and H6 have no year
+  // Per-item checks (the scope table's Checks column, refined by the nine cds-*.md specs):
+  | "parts-sum" // parts add up to their printed total (±1 count, ±$1K in H1, ±1 unit in C5); H5's union bound
+  | "sums-to-100" // a percent column (C9 bands, C11 GPA bands, J) sums to 100% ±1 point
+  | "order" // a ≤ b: funnels, percentiles, class-rank bands, H2 lines, wait list, ED counts, H5 rows
+  | "ratio-matches" // a stated rate, ratio, or average matches its counts (B22, B4 H, C9 share, H2 I, H6, I-2)
+  | "one-mark" // exactly one mark or level per row (C7, C8, C16/C17 kind, D5, H0 methodology, H9 deadline)
+  | "inconsistent" // two answers in one document contradict (C2/C21/C22 "No" with counts, C8A vs grid, D1 vs D2, H8)
+  | "valid-date" // a month/day that looks numeric is a calendar date
+  | "date-order" // dates in cycle order: closing ≤ notification ≤ reply; regular after early closing
+  | "enrollment-disagrees" // agrees with section B of the same document (B2 vs B1, H2 line A vs B1, H4, H6 vs B2)
+  | "federal-disagrees" // an implausible change against the federal value (one year older; escalated once)
+  | "residency-funnel" // C1 by residency: admitted ≤ applied, enrolled ≤ admitted, per residency
+  | "residency-sum" // C1 by residency: rows sum to the C1 total within 1%
+  | "residency-vs-federal" // C1 by residency: enrolled shares within 10 points of IPEDS residence
+  | "column-3-not-all-undergrads" // B2 column 3 total ≠ B1 total undergraduates (Illinois: non-degree only)
+  | "previous-cohort-disagrees" // B5 grid (previous cohort) disagrees with IPEDS GR for the same cohort
+  | "not-a-url" // G.001 isn't a URL (Cornell's "89*---31")
+  | "out-of-range" // a domain range beyond the type (credits 0–200, reply weeks 1–12, aid averages ≤ cost)
 
 export interface CheckFailure {
   check: CheckId;
   detail: string;
 }
 
-/** One item for a person to look at. Resolving it = fix the recipe or add an override, then re-run. */
+/**
+ * One item for a person to look at. Resolving it = fix the recipe or add an override, then re-run.
+ *
+ * Round 3 keys the queue by college + edition + template code (Decision 9): a per-item entry has `code`, `edition`
+ * and `sha256`, so one college can have a failing H2 and a published C1. Entries without `code` are round-1/2 C1
+ * entries (a whole college's extraction) and stay valid.
+ */
 export interface ReviewItem {
   unit_id: string;
   name: string;
   /** Which document(s) the values came from. */
   urls: string[];
+  /** C1 entries: the class the figures describe. Per-item entries: the item group's year label ("Fall 2025"). */
   entering_term: string | null;
-  extraction: Extraction;
+  /** C1 entries only: the model's extraction. Per-item entries carry `code` and `value` instead. */
+  extraction?: Extraction;
   failures: CheckFailure[];
   queued: string;
   run: string;
+  /** Round 3: the template code that failed ("H.210"), the document's edition ("2025-26"), and its sha256. */
+  code?: string;
+  edition?: string;
+  sha256?: string;
+  /** Round 3: the item's value as read (the code table's, for a template workbook). */
+  value?: number | string | boolean | null;
+}
+
+/** The review queue's key: college + edition + code. Round-1/2 entries (no code) share one key per college. */
+export function reviewKey(item: Pick<ReviewItem, "unit_id" | "edition" | "code">): string {
+  return `${item.unit_id}|${item.edition ?? ""}|${item.code ?? ""}`;
+}
+
+/**
+ * Adds items to the queue, replacing only entries with the same key (college + edition + code). Replacing one
+ * college's H2 entry leaves its C1 entry and every other code alone (Decision 9; the round-2 `enqueue` replaced every
+ * item of the college).
+ */
+export function enqueueItems(queue: readonly ReviewItem[], items: readonly ReviewItem[]): ReviewItem[] {
+  const keys = new Set(items.map(reviewKey));
+  return [...queue.filter((q) => !keys.has(reviewKey(q))), ...items];
 }
 
 export interface ReviewQueueFile {

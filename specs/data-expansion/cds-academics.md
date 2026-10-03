@@ -1,6 +1,7 @@
 # CDS Academics: Class Sizes
 
-> Status: **planned** (2026-10-03). Wave 4. Depends on
+> Status: **built** (2026-10-03; see [As built](#as-built): the class-sections history series is not built, and the
+> checks live in `lib/cds/academics.ts` until `lib/cds-checks.ts` exists). Wave 4. Depends on
 > [college-reported-round-3.md](../college-reported-round-3.md) (the one-big-run record model: every document read
 > once into `data/cds-records/<unit_id>.json`, items grouped, line-cited quotes, checks per item). Supersedes this
 > file's 2026-09-28 skeleton (Vanderbilt 2024–25 research); now grounded in a CDS gap inventory (19 real 2025–26 CDS
@@ -292,3 +293,51 @@ set for its own "Known for" standout.
 - complexity: 2 — a new profile section (class-size histogram, program chips) with one Explore filter and a low-priority
   history series, built on records the one-big-run already captures; no new pipeline of its own.
 - after: ["college-reported-round-3"]
+
+## As built
+Built 2026-10-03 on `feature/cds3-academics`, from the round-3 records in `data/cds-records/`. Live for the four
+colleges with records: Vanderbilt 221999 (1,809 sections, 57% under 20, 8 to 1), Cornell 190415 (2,391, 53%, 12.1 to
+1), William & Mary 231624 (1,176, 48%, 11 to 1), Illinois 145637 (4,040, 37%, 20 to 1).
+
+- **Read** (`lib/cds/academics.ts`, pure): `academicsFromRecord(record)` takes each block from the newest document
+  whose items passed and whose checks pass; `mergeAcademics(school, record)` is the one call in
+  `lib/reported-merge.ts` (after `mergeResidency`), idempotent, and never reads or changes `school.academics.*`.
+  `npm run merge-reported` applies it to `data/schools.json`.
+  - I-3: all seven section bins must pass. `academics-sections-sum` / `academics-subsections-sum`: bins within ±1 of
+    the printed total; a total that didn't pass (an Excel `##`) is replaced by the sum. Subsections are stored when
+    their seven bins passed, else `null` (the type allows it; the spec's draft made them required).
+  - I-2: `academics-ratio-internal` (printed ratio within 0.5 of students ÷ faculty). `FEDERAL_RATIO_CHECK` is `null`
+    on purpose; a blank I.201 (UW–Eau Claire) is simply absent.
+  - Year: I-2 and I-3 take "Fall YYYY" from I.201's own label on the cited line (fallback: the record's fall label,
+    which the reader derived from the item text); E1/E3 take the edition's academic year ("2025–26").
+  - E1/E3: a key is stored only for a passed `true` mark (`assertOfferedOnly` throws on anything else). Open
+    curriculum is stored as an empty `core_curriculum` only when all twelve E3 items were read `blank` **and** the
+    same document marked at least one E1 box (so a skipped section E is not read as "no required core"); E3 items
+    `not-read`/`not-found`/missing leave `core_curriculum` absent.
+  - Lineage: one record per block (`reported.academics.{class_sections,student_faculty_ratio,programs,core_curriculum}`),
+    source `college-site`, cell of the cited item; quotes are generated from the cited items ("Class sections 2-9: 418,
+    …; total 1809", "Fall 2025 Student to Faculty ratio | 8; based on ____ students | 7329; …"). Open curriculum is
+    `method: "derived"`.
+- **Types** (`lib/types.ts`): `ReportedAcademics` (with `edition` and `term` in the blocks), `ClassSizeBins`,
+  `CdsProgramKey` (14 keys: the table lists 14 codes, not 13), `CdsCoreAreaKey`; `SearchFilters.honors`.
+- **Fields** (`lib/fields.ts`): the four `reported.academics.*` paths, plus computed `derived.class_share_under_20` and
+  `derived.class_share_50_plus` (inputs: `reported.academics.class_sections`).
+- **Display** (`lib/cds/academics-display.ts`, pure: `classSizeShareUnder20`, `classSizeShareOver50`, `hasCdsProgram`,
+  `offeredPrograms`, `coreCurriculum`, `compareClassesUnder20`, `hasHonorsProgram`):
+  - Academics page: `components/school/ClassSizes.tsx` `CdsAcademics` (one element in the grid after the ratio tile)
+    renders `ClassSizes` (headline, `components/charts/ClassSizeHistogram.tsx` 7-column chart with the under-20 bins
+    at full strength, hover tooltips, a screen-reader table, and the sections-not-students caveat) and
+    `components/school/ProgramChips.tsx` (CDS chips + IPEDS study abroad / undergraduate research, each group with its
+    own source; "Requires coursework in …" or "Open curriculum"). `CdsRatioLine` sits under the federal ratio strip
+    ("The college also reports 8 to 1 in its Common Data Set (7,329 students, 935 faculty)"), or in its own block when
+    there is no federal ratio. On-this-page items "Class sizes" and "Programs & curriculum" appear only with data.
+  - Compare: "Classes under 20 students" after "Students per faculty member" (`–` without a record).
+  - Explore: "Honors program" chip in Campus services → Programs (`honors=1`; positive only, count of colleges shown).
+  - Glossary: `cds-student-faculty-ratio`, `class-section`, `class-subsection`, `open-curriculum`, `required-core`.
+- **Tests** (`tests/cds-academics.test.mts`, 13 tests): the six listed above, each shown to fail when broken (bins
+  tolerance widened, the federal tolerance reintroduced, blanks stored as `false`, open curriculum without the read
+  check, the honors filter inverted, the share's bins changed), plus the committed data, lineage, idempotent merge,
+  Compare cell, and the partial-coverage guard (no METRICS, insights, indicators, history, Home, or Explore sort use).
+- **Not built**: the per-edition under-20 history series (one edition read so far); the spec's `lib/cds-sections.ts`
+  group names (`IJ`, `DEF`) are not used: the foundation groups items by year rule, and the template already owns these
+  codes (`owner: "cds-academics"`).

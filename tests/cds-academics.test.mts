@@ -104,7 +104,7 @@ test("I.201 is never checked against the federal ratio: CDS 11 vs federal 7 (Har
   s.academics = { ...s.academics, student_faculty_ratio: 7 };
   const merged = mergeAcademics(s, rec);
   assert.equal(merged.reported?.academics?.student_faculty_ratio?.ratio, 11);
-  assert.equal(merged.academics.student_faculty_ratio, 7, "the federal figure is never touched");
+  assert.equal(merged.academics?.student_faculty_ratio, 7, "the federal figure is never touched");
   assert.deepEqual(validateSchool(merged, meta), []);
   const { outcomes } = academicsFromRecord(rec);
   assert.ok(outcomes.every((o) => o.status === "merged"), "no check fails on disagreement");
@@ -260,7 +260,7 @@ test("lineage: each block cites the college's document with a quote and the item
   assert.match(L["reported.academics.student_faculty_ratio"]?.quote ?? "", /Fall 2025 Student to Faculty ratio \| 8/);
   assert.equal(L["reported.academics.programs"]?.year, "2025–26", "E1/E3 use the edition's year");
   assert.equal(L["reported.academics.core_curriculum"]?.year, "2025–26");
-  for (const k of ["class_sections", "student_faculty_ratio", "programs", "core_curriculum"]) assert.equal(L[`reported.academics.${k}`]?.source, "college-site");
+  for (const k of ["class_sections", "student_faculty_ratio", "programs", "core_curriculum"] as const) assert.equal(L[`reported.academics.${k}`]?.source, "college-site");
   delete vu.lineage!["reported.academics.class_sections"];
   assert.ok(validateSchool(vu, meta).some((e) => e.includes("reported.academics.class_sections is stored without a lineage record")));
 });

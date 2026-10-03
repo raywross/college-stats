@@ -30,17 +30,31 @@ export function ClassSizeHistogram({
   const total = bins.reduce((a, b) => a + b, 0);
   const peak = Math.max(1, ...bins);
   if (!total) return null;
-  const fill = (i: number) => (i < highlight ? color : `color-mix(in oklch, ${color} 38%, transparent)`);
+  const fill = (i: number) =>
+    i < highlight ? color : `color-mix(in oklch, ${color} 38%, transparent)`;
 
   return (
     <figure className="space-y-2">
       <div className="relative" onMouseLeave={() => setActive(null)}>
-        <div className="flex h-36 items-end border-b border-foreground/20" aria-hidden>
+        <div
+          className="flex h-36 items-end border-b border-foreground/20"
+          aria-hidden
+        >
           {bins.map((v, i) => (
-            <div key={labels[i]} className="flex h-full flex-1 items-end justify-center" onMouseEnter={() => setActive(i)}>
+            <div
+              key={labels[i]}
+              className="flex h-full flex-1 items-end justify-center"
+              onMouseEnter={() => setActive(i)}
+            >
               <span
-                className={cn("block w-full max-w-6 origin-bottom animate-grow-y rounded-t-[4px] transition-opacity", active !== null && active !== i && "opacity-40")}
-                style={{ height: `${v === 0 ? 0 : Math.max(2, (v / peak) * 100)}%`, backgroundColor: fill(i) }}
+                className={cn(
+                  "block w-full max-w-6 origin-bottom animate-grow-y rounded-t-[4px] transition-opacity",
+                  active !== null && active !== i && "opacity-40",
+                )}
+                style={{
+                  height: `${v === 0 ? 0 : Math.max(2, (v / peak) * 100)}%`,
+                  backgroundColor: fill(i),
+                }}
               />
             </div>
           ))}
@@ -50,18 +64,26 @@ export function ClassSizeHistogram({
             className={cn(
               "pointer-events-none absolute z-10 rounded-lg bg-foreground px-2 py-1 text-xs font-medium whitespace-nowrap text-background shadow-lg",
               // Edge columns anchor the tooltip inward so it never overflows a phone screen.
-              active < 2 ? "translate-x-0" : active >= bins.length - 2 ? "-translate-x-full" : "-translate-x-1/2"
+              active < 2
+                ? "translate-x-0"
+                : active >= bins.length - 2
+                  ? "-translate-x-full"
+                  : "-translate-x-1/2",
             )}
             style={{
               left: `${((active < 2 ? active : active >= bins.length - 2 ? active + 1 : active + 0.5) / bins.length) * 100}%`,
               bottom: `calc(${(bins[active] / peak) * 100}% + 0.5rem)`,
             }}
           >
-            {bins[active].toLocaleString("en-US")} {unit} of {labels[active]} students ({pct(bins[active] / total)})
+            {bins[active].toLocaleString("en-US")} {unit} of {labels[active]}{" "}
+            students ({pct(bins[active] / total)})
           </div>
         )}
       </div>
-      <div className="flex text-[11px] text-muted-foreground tabular-nums" aria-hidden>
+      <div
+        className="flex text-[11px] text-muted-foreground tabular-nums"
+        aria-hidden
+      >
         {labels.map((l) => (
           <span key={l} className="flex-1 text-center">
             {l}
@@ -70,32 +92,44 @@ export function ClassSizeHistogram({
       </div>
       <figcaption className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
         <span className="inline-flex items-center gap-1.5">
-          <span className="size-3 rounded-[3px]" style={{ backgroundColor: color }} aria-hidden /> Under 20 students
+          <span
+            className="size-3 rounded-[3px]"
+            style={{ backgroundColor: color }}
+            aria-hidden
+          />{" "}
+          Under 20 students
         </span>
         <span className="inline-flex items-center gap-1.5">
-          <span className="size-3 rounded-[3px]" style={{ backgroundColor: fill(bins.length - 1) }} aria-hidden /> 20 or more
+          <span
+            className="size-3 rounded-[3px]"
+            style={{ backgroundColor: fill(bins.length - 1) }}
+            aria-hidden
+          />{" "}
+          20 or more
         </span>
         <span>Students per class section</span>
       </figcaption>
-      <table className="sr-only">
-        <caption>Undergraduate class {unit} by number of students</caption>
-        <thead>
-          <tr>
-            <th scope="col">Students</th>
-            <th scope="col">{unit}</th>
-            <th scope="col">Share</th>
-          </tr>
-        </thead>
-        <tbody>
-          {bins.map((v, i) => (
-            <tr key={labels[i]}>
-              <th scope="row">{labels[i]}</th>
-              <td>{v.toLocaleString("en-US")}</td>
-              <td>{pct(v / total)}</td>
+      <div className="sr-only">
+        <table>
+          <caption>Undergraduate class {unit} by number of students</caption>
+          <thead>
+            <tr>
+              <th scope="col">Students</th>
+              <th scope="col">{unit}</th>
+              <th scope="col">Share</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {bins.map((v, i) => (
+              <tr key={labels[i]}>
+                <th scope="row">{labels[i]}</th>
+                <td>{v.toLocaleString("en-US")}</td>
+                <td>{pct(v / total)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </figure>
   );
 }

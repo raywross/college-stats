@@ -10,6 +10,7 @@
  *   reports/               per-run summaries and accuracy reports
  */
 import type { LineageRecord, ReportedAdmissions, ReportedSourceKind, SourceInfo } from "./types";
+import type { CallKey, DocumentType } from "./cds-sections";
 
 /** `meta.sources["college-site"]`, written by the sync; the app's placeholder when a publish is mid-flight. */
 export const COLLEGE_SITE_SOURCE: SourceInfo = {
@@ -307,6 +308,13 @@ export interface BatchEntry {
   custom_ids: string[];
   /** The run that submitted it. */
   run: string;
+  /**
+   * custom_ids in this batch that are already a resubmission of an errored or expired request (Decision 5): when one
+   * fails again it is queued, never resubmitted a second time. Absent when the batch holds no resubmissions.
+   */
+  resubmits?: string[];
+  /** The model every request in this batch uses (one model per batch), for pricing collected results. */
+  model?: string;
 }
 
 /** data/college-batches.json: the open batches. Empty between runs. */
@@ -354,6 +362,153 @@ export interface CdsUrlEntry {
 /** data/reference/cds-urls.json, the owner's manual list. */
 export interface CdsUrlsFile {
   entries: CdsUrlEntry[];
+}
+
+/* ------------------------------------------------------------------ */
+/* Round 3 measurement: per-call log and run summary (Decision 11)     */
+/* ------------------------------------------------------------------ */
+
+/** What a model call is for. Round 2's three jobs (REPORTED_MODELS) plus the round-3 picker, search, and vision. */
+export type CallJob = "picker" | "search" | "discovery" | "extraction" | "vision" | "escalation";
+export const CALL_JOBS: readonly CallJob[] = ["picker", "search", "discovery", "extraction", "vision", "escalation"];
+
+/** Message Batches (half price, Decision 5) or a direct Messages API call. */
+export type CallMode = "batch" | "interactive";
+
+/** Which model does each round-3 job (specs/college-reported-round-3.md, Decisions 4, 6, 9). Opus is not called. */
+export const ROUND3_MODELS: Record<CallJob, string> = {
+  picker: "claude-haiku-4-5",
+  search: "claude-sonnet-5",
+  discovery: REPORTED_MODELS.discovery,
+  extraction: REPORTED_MODELS.extraction,
+  vision: "claude-haiku-4-5",
+  escalation: REPORTED_MODELS.escalation,
+};
+
+/**
+ * One model call: a line of data/reports/college-reported-calls-<run>.jsonl. Lets the reservation estimate be checked
+ * against actual tokens and the console's bill be matched (batch ids make batched calls reconcilable).
+ */
+export interface CallLog {
+  run: string;
+  /** ISO timestamp the response (or batch result) was recorded. */
+  at: string;
+  /** The college's unit id. */
+  college: string;
+  job: CallJob;
+  model: string;
+  mode: CallMode;
+  /** The document's type for extraction, vision, and escalation; null for discovery jobs. */
+  document_type: DocumentType | null;
+  call: CallKey | null;
+  /** Batched calls: the request's custom_id and the batch id. */
+  custom_id?: string;
+  batch?: string;
+  /** The estimate the reservation used (characters ÷ 3.5, no safety margin); null when none was made. */
+  estimated_input_tokens: number | null;
+  /** Every input token billed: uncached + cache writes + cache reads. */
+  input_tokens: number;
+  cache_write_tokens: number;
+  cache_read_tokens: number;
+  output_tokens: number;
+  /** Server web searches billed on top of tokens. */
+  searches: number;
+  stop_reason: string | null;
+  cost_usd: number;
+}
+
+/** Decision 11's `usage[]`: one row per job × model × mode × call, summed over a run's CallLog lines. */
+export interface UsageRow {
+  job: CallJob;
+  model: string;
+  mode: CallMode;
+  call?: CallKey;
+  calls: number;
+  input_tokens: number;
+  cache_write_tokens: number;
+  cache_read_tokens: number;
+  output_tokens: number;
+  searches: number;
+  cost_usd: number;
+  /** Batched rows: worst-case cost still reserved for requests not yet collected. */
+  reserved_usd?: number;
+}
+
+/** How a college's document link was found (the discovery ladder, Decision 6). */
+export type DiscoveryPath =
+  | "known" | "guessed" | "manual" | "probe-sitemap" | "probe-host" | "probe-crawl" | "picker" | "search" | "full" | "blocked" | "none";
+export const DISCOVERY_PATHS: readonly DiscoveryPath[] = [
+  "known", "guessed", "manual", "probe-sitemap", "probe-host", "probe-crawl", "picker", "search", "full", "blocked", "none",
+];
+
+export interface DocumentTypeCounts {
+  fetched: number;
+  unchanged: number;
+  archived: number;
+  model_calls: number;
+  split_fallback: number;
+  grid_rows_undecided: number;
+  vision: number;
+  cost_usd: number;
+}
+
+export interface ItemCounts {
+  passed: number;
+  failed: number;
+  blank: number;
+  not_found: number;
+}
+
+/** Admit-rate tiers, as scripts/lib/college-reported/pilot.mts `tierOf` names them. */
+export type ReportedTier = "very selective" | "selective" | "less selective" | "open admission";
+export const REPORTED_TIERS: readonly ReportedTier[] = ["very selective", "selective", "less selective", "open admission"];
+
+export interface TierCounts {
+  colleges: number;
+  located: number;
+  cds_found: number;
+  published_c1: number;
+  cost_usd: number;
+}
+
+/** One batch the run submitted or collected. */
+export interface BatchSummaryRow {
+  id: string;
+  requests: number;
+  submitted: string;
+  /** ISO timestamp the API reported `ended`; null while open. */
+  ended: string | null;
+  succeeded: number;
+  errored: number;
+  expired: number;
+  reserved_usd: number;
+  cost_usd: number;
+}
+
+/** What the run projects a full run would cost, printed and written before any model call (Decision 5). */
+export interface CostProjection {
+  full_run_usd: number;
+  /** This run's own projection (before scaling a sample to the full run): what the cap guard compares. */
+  run_usd?: number;
+  /** How it was computed: counts × per-unit estimates, in words. */
+  basis: string;
+}
+
+/**
+ * The round-3 run summary (Decision 11). Extends round 2's `RunSummary` without removing anything: `usage` (by round-2
+ * job) stays, and the PR-body script keeps reading it; the per-job/model/mode/call rows are `usage_rows`.
+ */
+export interface RunSummaryV3 extends RunSummary {
+  round: 3;
+  usage_rows: UsageRow[];
+  discovery: Record<DiscoveryPath, { colleges: number; cost_usd: number }>;
+  documents: Record<DocumentType, DocumentTypeCounts>;
+  /** Per template code. */
+  items: Record<string, ItemCounts>;
+  tiers: Record<ReportedTier, TierCounts>;
+  batches: BatchSummaryRow[];
+  /** null until prepare has run. */
+  projection: CostProjection | null;
 }
 
 /** "Fall 2026" → 2026; null for anything else. */

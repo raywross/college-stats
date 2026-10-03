@@ -179,6 +179,43 @@ Untick **auto_merge** in the workflow-dispatch form when you want to read a spec
   (comment out `auto_merge: true` in `.github/workflows/college-reported.yml`'s "Resolve run parameters" step) until
   you've found and fixed the underlying cause.
 
+## 9. Batches, draft PRs, and the collect job (round 3)
+From round 3 ([college-reported-round-3.md](college-reported-round-3.md#decision-5-extraction-runs-as-a-batch)),
+extraction, escalation, and link-picker calls go through the Message Batches API at half price. Most batches end within
+an hour, but one may take up to 24, so a run can end before its batches do.
+- **The `run` job** has `timeout-minutes: 330` (GitHub stops hosted jobs at 6 hours). It passes
+  `COLLEGE_REPORTED_POLL_UNTIL` (an ISO time 300 minutes after the job started) to the script, which stops polling
+  then and leaves the rest open.
+- **The draft signal** is the state file itself: `data/college-batches.json` lists every batch still open when the
+  script exits (it is rewritten after each submit and each collect). If it lists any, the run opens its PR **as a
+  draft**, notes how many batches are open, and comments that the collect job will finish it. No new exit code: 0/1/2/3
+  mean what they meant.
+- **The `collect` job** runs every 30 minutes (cron `*/30 * * * *`) and by hand (**Run workflow**, `mode`:
+  **collect**). It exits at once unless an open **draft** PR from a `data/college-reported-<run>` branch exists whose
+  `data/college-batches.json` lists open batches. Otherwise it checks out that branch and runs
+  `npm run sync-college-reported -- --phase collect --run <run>` (collect, settle reservations, resubmit errored or
+  expired requests once, submit escalations), then `npm run merge-reported`, commits, and pushes. When no batch is
+  left open it rewrites the release note and the PR body, marks the PR **ready**, and applies the same merge rules as
+  the run job (the run's `auto_merge` choice is kept in a hidden `<!-- college-reported: auto_merge=… -->` line of the
+  PR body). While batches remain (an escalation batch, or resubmitted requests) the PR stays a draft and the next
+  collect continues.
+- Both jobs are in the workflow's one `college-reported` concurrency group. The collect job's `timeout-minutes: 25`
+  keeps it shorter than the cron interval, so it never queues behind itself or displaces a pending scheduled run.
+  Collecting is idempotent: a collect cut off before its push leaves the state file unchanged, and the next one
+  collects the same batches again (results are kept 29 days).
+- Both jobs restore the `.cache/college-docs/` cache (keys `college-docs-<run>` and
+  `college-docs-<run>-collect-<id>`, restoring the newest `college-docs-` entry).
+- **A stuck draft**: if a draft pipeline PR lists no open batches (say a collect was cancelled after its push), the
+  collect job logs a notice and does nothing; mark the PR ready by hand.
+
+The run's calls file, `data/reports/college-reported-calls-<run>.jsonl`, has one line per model call (college, job,
+model, mode, document type, call, estimated vs actual input tokens, cache reads and writes, output tokens, stop
+reason, cost; batched calls also carry their `custom_id` and batch id), so the console's bill can be matched to the
+batch ids. Both files are in the run's artifact.
+
+None of this can be exercised outside GitHub Actions; the YAML was parsed with `js-yaml` and every `run:` block
+checked with `bash -n`.
+
 ## What to check in your own tests
 - [ ] A profile for a college with a published `reported` value shows the chip/popover next to the federal figure,
   with the verbatim quote, the source link, and "checked automatically" (see

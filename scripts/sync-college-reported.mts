@@ -27,7 +27,7 @@ import { join } from "node:path";
 import type { School } from "../lib/types";
 import { restoreFederal } from "../lib/newest.ts";
 import { dataPaths, readQueue, readReported, readSources, writeQueue, writeReported, writeRunSummary, writeSources } from "./lib/college-reported/files.mts";
-import { MODEL_PRICES, REPORTED_MODELS, type ModelClient } from "./lib/college-reported/models.mts";
+import { UnpricedModelError, assertPriced, type ModelClient } from "./lib/college-reported/models.mts";
 import { createPipeline, readJsonFile, type RunOutput } from "./lib/college-reported/pipeline.mts";
 import { pickPilot, type PilotFile } from "./lib/college-reported/pilot.mts";
 
@@ -59,7 +59,13 @@ async function main() {
   if (!Number.isInteger(MAX_DISCOVERIES) || MAX_DISCOVERIES < 0) usage("--max-discoveries needs a whole number.");
   if (!Number.isFinite(MAX_COST) || MAX_COST <= 0) usage("--max-cost needs a dollar amount above 0.");
   if (!process.env.ANTHROPIC_API_KEY) usage("ANTHROPIC_API_KEY is not set (add it to .env.local).");
-  for (const m of Object.values(REPORTED_MODELS)) if (!MODEL_PRICES[m]) console.warn(`Warning: no price for ${m}; its cost is logged as $0.`);
+  // Every configured model must have a price, or the cost cap goes blind (specs/college-reported-round-3.md, test 20).
+  try {
+    assertPriced();
+  } catch (err) {
+    if (err instanceof UnpricedModelError) usage(err.message);
+    throw err;
+  }
 
   // The checks compare against the federal (or hand-imported CDS) baseline, not the newer college-reported values
   // a previous run already put into admissions.* (lib/newest.ts), so undo those first.

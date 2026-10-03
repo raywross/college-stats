@@ -1047,3 +1047,110 @@ schema), `tests/cds-xlsx-template.test.mts` (an in-memory template workbook: ANS
 C21, an unparseable aid year, `readC1` unchanged), `tests/cds-records.test.mts` (helpers, lineage, every validator
 rule, the four committed records' real values). `tests/citation-guards.test.mts` allows the template edition in
 `lib/cds-template.ts`'s import path (the table is per template edition, not a data year).
+
+### Models, batches, and the collect job (2026-10-03, branch `feature/cds3-models`)
+Build order steps 6 and 9 on the API side, plus the measurement types of step 11. Clean functions only: the pipeline
+(`pipeline.mts`) and the CLI (`--phase`) are wired by the integration track. API facts were re-checked against the
+claude-api skill on 2026-10-03 (Message Batches, structured outputs, prompt caching, pricing): batches are 50% off every
+token **including cache reads and writes**; Opus 5.5's cache reads are 0.05× ($0.20/M), not 0.1×; an errored batch
+result whose `error.error.type` is `invalid_request_error` is the request's own fault. Still silent, so still
+assumptions: the custom_id limit (taken as `^[A-Za-z0-9_-]{1,64}$`), whether the schema counts as input tokens (the
+estimate leaves it out; the calls file will tell), and whether the batch discount applies to searches (taken as no).
+
+**Prices** — `scripts/lib/college-reported/models.mts`: `MODEL_PRICES` lists Haiku 4.5, Sonnet 5 and Opus 5.5 with
+`interactive` and `batch` rates (input, output, 5-minute and 1-hour cache writes, cache reads). `costOf(model, usage,
+{ mode })` splits cache writes by TTL when the response says so. An unpriced model **throws** `UnpricedModelError`
+(`priceOf`, `assertPriced`); `scripts/sync-college-reported.mts` calls `assertPriced()` before anything else and exits 1
+with the message, replacing round 2's warning-and-$0. `MIN_CACHE_PREFIX` holds each model's cacheable minimum (Haiku
+4,096; Sonnet 5 1,024).
+
+**Call log and summary** — `CallLog`, `UsageRow`, `RunSummaryV3` (with `CallJob`, `CallMode`, `DiscoveryPath`,
+`DocumentTypeCounts`, `ItemCounts`, `ReportedTier`, `TierCounts`, `BatchSummaryRow`, `CostProjection`) in
+`lib/reported.ts`. `RunSummaryV3 extends RunSummary` and only adds fields: Decision 11's `usage[]` is `usage_rows`
+because round 2's `usage` record stays (the PR-body script sums it), and `addCall` keeps that record whole by counting
+picker and search under `discovery` and vision under `extraction`. `ROUND3_MODELS` names the model per job (picker and
+vision Haiku 4.5; search, discovery, escalation Sonnet 5; extraction Haiku 4.5). In `models.mts`: `callLogRow`,
+`CallLogWriter` with `fileCallLogWriter(reportsDir, run)` (appends to `data/reports/college-reported-calls-<run>.jsonl`)
+and `memoryCallLogWriter()`, `emptySummaryV3(run, started)`, `addCall(summary, row)`, `summaryCost`, and
+`callRecorder(summary, writer)`, the `onCall` hook that does both.
+
+**Model calls** — `scripts/lib/college-reported/llm.mts`:
+- `buildExtractRequest(input)` → `{ params, chars, estimated_input_tokens, prefix_tokens, cached, codes }`, shared by
+  interactive calls and batch requests. The system prompt is one block, the **static prefix**: `extractionInstructions
+  (call)` plus `codeTableText(table, call)`, about 5.0 K estimated tokens for `C` and 10.1 K for `rest` (characters ÷
+  3.5), marked `cache_control` (5-minute default; `cache: "1h" | "off"`) only when it reaches the model's minimum. The
+  user turn is the document header and the numbered lines (`renderLines`: "--- Page N ---" markers, "412| text").
+  Structured output is `schemaForCodes(table, call, codes)` (`schemaFor` narrowed), `max_tokens` is `maxTokensFor
+  (call)`, Haiku gets no `thinking` and no `effort`. A code outside the call, or an unpriced model, throws before
+  anything is sent.
+- `parseExtractResponse(message, { call, codes, lines })` → `{ values: { code: { v, lines, quote } }, dropped,
+  missing, truncated, stop_reason, usage }`. Codes not asked for are dropped and listed; `null`/empty values count as
+  not found; quotes come from `quoteFromLines` over the cited lines, so a cited id that isn't a line gives no quote. On
+  a `max_tokens` stop every whole entry before the cut is kept and only the unreturned codes are `missing`.
+- `extractCall(ctx, input)` runs one interactive call and logs it; batched calls use `batch.mts`.
+- `escalationInput(input)` / `escalateCall(ctx, { call, lines, failingCodes, pageRange, table, doc, mode })`: Sonnet 5,
+  effort low, thinking left adaptive, only the lines on the call's pages, only the failing codes that belong to the
+  call (the code table and schema shrink to them).
+- `buildPickerRequest` / `parsePickerResponse` / `pickLinks(ctx, { college, links, mode })`: Haiku 4.5, links
+  deduplicated and numbered, capped at ~4 K tokens; the answer is link **numbers** (`{ cds_index?, cds_file?,
+  class_profile? }` as integers) mapped back to URLs, so the picker can't invent one.
+- `searchOnly(ctx, school)` → `{ candidates: [{ kind, url }], none_found, searches }`: Sonnet 5, effort low,
+  `web_search_20260209` only (no `web_fetch`), at most two searches **counted across `pause_turn` continuations**
+  (each turn's `max_uses` is what is left), answered through a strict `save_candidates` tool. `searchOnlyParams`
+  builds one turn.
+- `discover()` is kept as ladder step 4 with uses counted across turns: `discoveryTools(left)` gives each continuation
+  only the searches and fetches left (minimum 1, since the history holds the tool's earlier results), and once both
+  are spent the loop asks for the recipe instead of resuming. It also emits call-log rows when `ctx.onCall` is set.
+- `lib/cds-quotes.ts` (new, pure): `NumberedLine { id, page, text }` and `quoteFromLines(lines, ids)` (cited lines in
+  order, joined with " / ", ≤ 160 characters). A minimal version: the readers track may own a fuller one with the same
+  name and contract.
+
+**Batches** — `scripts/lib/college-reported/batch.mts`, over a `BatchApi` slice that `new Anthropic().messages.batches`
+fits:
+- `customId({ unit_id, sha256, call, version, job })` → `u<unit_id>-<sha8>-<call>-v<version>` (escalations end in
+  `-x`, pickers use call `pick`); `parseCustomId`.
+- `buildRequests(docs: PendingDocument[])` (one request per call), `buildEscalationRequests`, `buildPickerRequests` →
+  `BatchRequest { custom_id, params, job, unit_id, sha256, call, document_type, priority, chars,
+  estimated_input_tokens, pdf_pages?, reserved_usd }`.
+- `reserve(req)`: characters ÷ 3.5 × 1.2 (or pages × 3,000 × 1.2 for a scanned PDF) at the batch input price, plus
+  `max_tokens` at the batch output price. A full `C` request reserves about $0.024 and `rest` about $0.047 before the
+  document's own text.
+- `splitBySize(requests, 200 MB, 100,000)`, `trimToCap(requests, spent, cap, priority?)` (whole documents, most
+  important first; once one doesn't fit, everything after it is trimmed, so tier order is never skipped; trimmed
+  documents are only returned, never touched in the archive), `openReservations(state)`.
+- `submit(api, requests, state, { run, phase, now, resubmits })` (one batch per model and size chunk, entries appended
+  to `BatchesFile`, which gained optional `resubmits` and `model`), `poll(api, id, { now, sleep, intervalMs, deadline })`
+  (null at the deadline: the batch stays open for the collect job), `collect(api, entry, state, { now, ended, meta })`
+  (results keyed by custom_id, classified `succeeded` / `errored` / `expired` / `invalid_request` / `canceled`, plus
+  `absent` ids the stream never returned; succeeded results priced at batch rates into call-log rows; the entry leaves
+  the state file, settling its reservation), and `resubmitOnce(collected, rebuild)` (errored, expired, canceled, and
+  absent requests retried once; a second failure, an `invalid_request`, or one the archive can't rebuild is queued).
+- `readBatches` / `writeBatches` / `hasOpenBatches` for `data/college-batches.json`.
+- `projection({ documents, discovery, escalations, scale })` → `{ full_run_usd, run_usd, basis }` from
+  `UNIT_ESTIMATES` (the high end of each range in "Expected cost"); `projectionGuard(projection, cap)` → stop with
+  exit 3 and "projection $X exceeds the cap $Y" when this run's own `run_usd` is over the cap (a sample's
+  `full_run_usd` is for the go/no-go table, not the guard).
+
+**For the integration track** (what the CLI must do with these): call `projectionGuard` after prepare and before any
+model call; build `PendingDocument`s from the archive's numbered lines and pass `trimToCap(buildRequests(...),
+summaryCost(summary) + openReservations(state), maxCost)` to `submit`, writing `data/college-batches.json` after each
+submit and collect; `poll` until `COLLEGE_REPORTED_POLL_UNTIL` (set by the workflow) and leave the rest open; on
+`--phase collect`, `collect` every ended batch, parse with `parseExtractResponse`, add `collected.calls` through
+`callRecorder`, push `collected.summary` into `summary.batches`, `resubmitOnce`, and submit escalations with
+`buildEscalationRequests`.
+
+**Workflow** — `.github/workflows/college-reported.yml`: `timeout-minutes: 330` on `run`; the draft PR when
+`data/college-batches.json` lists open batches; the `collect` job (cron every 30 minutes and `mode: collect`); see
+[college-reported-setup.md §9](college-reported-setup.md#9-batches-draft-prs-and-the-collect-job-round-3). Validated
+by parsing with `js-yaml` and `bash -n` on all 22 `run:` blocks; it has not run in Actions.
+
+**Tests:** `tests/cds-llm.test.mts` (the call's schema, codes, and `max_tokens`; no thinking on Haiku; the cache marker
+on a prefix of at least 4,096 estimated tokens for both calls, and off below the minimum; unknown codes dropped and
+logged; line-built quotes; a `max_tokens` cut; escalation's codes and pages on Sonnet 5; the picker's numbers;
+search-only with no `web_fetch` and two searches across turns; discovery's uses across turns; test 20; batch vs
+interactive and TTL prices; summary rows), `tests/cds-batch.test.mts` (custom_ids; reservations at batch prices; test
+10: size split, out-of-order results keyed by custom_id at batch prices, errored and expired resubmitted once then
+queued, invalid requests queued, a poll deadline; test 11: tier-order trimming of whole documents with the archive
+untouched, open reservations against the cap, the projection guard stopping before any batch is created), and the
+fake batch API in `tests/fixtures/fake-batch-api.mts` (create, retrieve, shuffled results, errored, expired, invalid,
+and omitted entries).

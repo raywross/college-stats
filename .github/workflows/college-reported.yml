@@ -7,6 +7,11 @@
 # `github.token`. The default token works for commits and comments, but a PR opened with it does NOT trigger
 # `pull_request` workflows (so Verify, and therefore auto-merge, would never run) — set COLLEGE_REPORTED_TOKEN to a
 # fine-grained PAT (Contents: read/write, Pull requests: read/write) to get CI on these PRs and real auto-merge.
+#
+# Round 3 (specs/college-reported-round-3.md, Decision 5): extraction runs as Message Batches. The `run` job prepares,
+# discovers, submits, and polls until its deadline; if batches are still open (data/college-batches.json lists any)
+# it opens the PR as a DRAFT. The `collect` job (every 30 minutes, or by hand with mode = collect) finishes a draft
+# pipeline PR whose batches are open: collect, escalate, merge-reported, commit, and mark it ready.
 name: College-reported data
 
 on:
@@ -15,7 +20,7 @@ on:
       mode:
         description: Which colleges to run
         type: choice
-        options: [pilot, all, college]
+        options: [pilot, all, college, collect]
         default: pilot
       college:
         description: Unit id (only used when mode = college)
@@ -44,6 +49,8 @@ on:
     # whether this particular firing should actually run (specs/college-reported-data.md#schedule).
     - cron: "0 13 * * 1" # every Monday 13:00 UTC — proceeds only Aug–Nov (fall class-profile season)
     - cron: "0 13 1 * *" # the 1st of every month, 13:00 UTC — proceeds only Dec–Jul (CDS edition season)
+    # The collect job: exits at once unless a draft pipeline PR has open batches. Only the collect job runs on it.
+    - cron: "*/30 * * * *"
 
 permissions:
   contents: write
@@ -53,9 +60,14 @@ concurrency:
   group: college-reported
   cancel-in-progress: false
 
+# Both jobs share this group, so a collect never runs while a run is writing the same branch's state.
 jobs:
   run:
+    if: github.event.schedule != '*/30 * * * *' && (github.event_name != 'workflow_dispatch' || inputs.mode != 'collect')
     runs-on: ubuntu-latest
+    # GitHub-hosted jobs stop at 6 hours; the script polls batches until COLLEGE_REPORTED_POLL_UNTIL (300 minutes in),
+    # leaving the rest for the merge, PR, and release-note steps. Open batches go to the collect job.
+    timeout-minutes: 330
     steps:
       - uses: actions/checkout@v4
         with:
@@ -107,7 +119,10 @@ jobs:
       - name: Compute run id
         id: run_id
         if: github.event_name != 'schedule' || steps.window.outputs.proceed == 'true'
-        run: echo "id=$(date -u +%Y%m%d-%H%M%S)-${{ github.run_number }}" >> "$GITHUB_OUTPUT"
+        run: |
+          echo "id=$(date -u +%Y%m%d-%H%M%S)-${{ github.run_number }}" >> "$GITHUB_OUTPUT"
+          # The script stops polling open batches at this time (ISO, UTC) and leaves them to the collect job.
+          echo "poll_until=$(date -u -d '+300 minutes' +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_OUTPUT"
 
       - name: Check for the Anthropic API key
         id: secret
@@ -163,6 +178,7 @@ jobs:
         continue-on-error: true
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          COLLEGE_REPORTED_POLL_UNTIL: ${{ steps.run_id.outputs.poll_until }}
         run: |
           set +e
           npm run sync-college-reported -- ${{ steps.flags.outputs.flags }}
@@ -187,6 +203,16 @@ jobs:
         if: always() && steps.secret.outputs.ready == 'true'
         run: npm run merge-reported
 
+      # The draft signal: data/college-batches.json lists the batches still open when the script exits (it is written
+      # after every submit and collect). Any open batch → the PR opens as a draft and waits for the collect job.
+      - name: Check for open batches
+        id: batches
+        if: always() && steps.secret.outputs.ready == 'true'
+        run: |
+          open=$(node -e "const fs=require('fs');const f='data/college-batches.json';console.log(fs.existsSync(f)?JSON.parse(fs.readFileSync(f,'utf8')).batches.length:0)")
+          echo "open=$open" >> "$GITHUB_OUTPUT"
+          echo "Open batches: $open"
+
       # always(): also after a cancelled run, so the colleges it finished still reach a PR and the artifact.
       - name: Keep this run's files as an artifact
         if: always() && steps.secret.outputs.ready == 'true'
@@ -197,7 +223,9 @@ jobs:
             data/college-sources.json
             data/college-reported.json
             data/review-queue.json
+            data/college-batches.json
             data/reports/college-reported-run-${{ steps.run_id.outputs.id }}.json
+            data/reports/college-reported-calls-${{ steps.run_id.outputs.id }}.jsonl
           if-no-files-found: ignore
 
       - name: Check for data changes
@@ -217,6 +245,8 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.COLLEGE_REPORTED_TOKEN || github.token }}
           RUN_ID: ${{ steps.run_id.outputs.id }}
+          OPEN_BATCHES: ${{ steps.batches.outputs.open }}
+          AUTO_MERGE: ${{ steps.params.outputs.auto_merge }}
         run: |
           branch="data/college-reported-${RUN_ID}"
           git checkout -b "$branch"
@@ -229,7 +259,14 @@ jobs:
             --queue data/review-queue.json \
             --reported data/college-reported.json \
             --schools data/schools.json > /tmp/college-reported-pr-body.md
-          gh pr create --base main --head "$branch" \
+          # The collect job reads this back to apply the run's auto-merge choice once the batches are in.
+          printf '\n<!-- college-reported: auto_merge=%s -->\n' "$AUTO_MERGE" >> /tmp/college-reported-pr-body.md
+          draft=""
+          if [ "${OPEN_BATCHES:-0}" != "0" ]; then
+            draft="--draft"
+            printf '\n> Draft: %s batch(es) still open. The collect job (every 30 minutes) collects them, commits, and marks this PR ready.\n' "$OPEN_BATCHES" >> /tmp/college-reported-pr-body.md
+          fi
+          gh pr create --base main --head "$branch" $draft \
             --title "College-reported data: run ${RUN_ID}" \
             --body-file /tmp/college-reported-pr-body.md
           number=$(gh pr view "$branch" --json number -q .number)
@@ -263,8 +300,11 @@ jobs:
           PR_NUMBER: ${{ steps.pr.outputs.number }}
           EXIT_CODE: ${{ steps.sync.outputs.exit_code }}
           AUTO_MERGE: ${{ steps.params.outputs.auto_merge }}
+          OPEN_BATCHES: ${{ steps.batches.outputs.open }}
         run: |
-          if [ "$AUTO_MERGE" = "true" ] && [ "$EXIT_CODE" = "0" ]; then
+          if [ "${OPEN_BATCHES:-0}" != "0" ]; then
+            gh pr comment "$PR_NUMBER" --body "Draft until its ${OPEN_BATCHES} open batch(es) are collected: the collect job finishes this PR and then applies the merge rules."
+          elif [ "$AUTO_MERGE" = "true" ] && [ "$EXIT_CODE" = "0" ]; then
             gh pr merge "$PR_NUMBER" --auto --squash
           else
             if [ -z "$EXIT_CODE" ]; then
@@ -277,6 +317,178 @@ jobs:
               reason="auto-merge was turned off for this run — review and merge by hand once CI is green"
             else
               reason="the run exited with an unexpected code ($EXIT_CODE) — review before merging"
+            fi
+            gh pr comment "$PR_NUMBER" --body "Waiting for a person: ${reason}."
+          fi
+
+  collect:
+    if: github.event.schedule == '*/30 * * * *' || (github.event_name == 'workflow_dispatch' && inputs.mode == 'collect')
+    runs-on: ubuntu-latest
+    # Shorter than the cron's 30 minutes, so a collect never queues behind another and (through the shared concurrency
+    # group) never displaces a pending scheduled run. Collecting is idempotent: a collect cut off before its push leaves
+    # the state file as it was, and the next one collects the same batches again (results are kept 29 days).
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.COLLEGE_REPORTED_TOKEN || github.token }}
+
+      # The oldest open draft PR from the pipeline (branch data/college-reported-<run>) whose branch still lists open
+      # batches in data/college-batches.json. None → every later step is skipped and the job ends at once.
+      - name: Find a draft pipeline PR with open batches
+        id: find
+        env:
+          GH_TOKEN: ${{ secrets.COLLEGE_REPORTED_TOKEN || github.token }}
+        run: |
+          pr=$(gh pr list --state open --json number,headRefName,isDraft \
+            --jq '[.[] | select(.isDraft and (.headRefName | startswith("data/college-reported-")))] | sort_by(.number) | .[0].number // empty')
+          if [ -z "$pr" ]; then
+            echo "No draft pipeline PR; nothing to collect."
+            echo "found=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          branch=$(gh pr view "$pr" --json headRefName -q .headRefName)
+          git fetch --depth 1 origin "$branch"
+          git checkout -B "$branch" FETCH_HEAD
+          open=$(node -e "const fs=require('fs');const f='data/college-batches.json';console.log(fs.existsSync(f)?JSON.parse(fs.readFileSync(f,'utf8')).batches.length:0)")
+          if [ "$open" = "0" ]; then
+            echo "::notice::Draft PR #$pr lists no open batches; nothing to collect (mark it ready by hand if it is done)."
+            echo "found=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "Collecting $open open batch(es) for PR #$pr ($branch)."
+          echo "found=true" >> "$GITHUB_OUTPUT"
+          echo "number=$pr" >> "$GITHUB_OUTPUT"
+          echo "branch=$branch" >> "$GITHUB_OUTPUT"
+          echo "run_id=${branch#data/college-reported-}" >> "$GITHUB_OUTPUT"
+
+      - name: Check for the Anthropic API key
+        id: secret
+        if: steps.find.outputs.found == 'true'
+        run: |
+          if [ -z "${{ secrets.ANTHROPIC_API_KEY }}" ]; then
+            echo "::notice::ANTHROPIC_API_KEY is not set; skipping. See specs/college-reported-setup.md."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/setup-node@v4
+        if: steps.secret.outputs.ready == 'true'
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+        if: steps.secret.outputs.ready == 'true'
+
+      # The same document cache as the run job (escalation re-reads archived text). Its own key per collect, so a
+      # collect never writes over the run's entry; restore-keys picks the newest.
+      - name: Restore document cache
+        if: steps.secret.outputs.ready == 'true'
+        uses: actions/cache@v4
+        with:
+          path: .cache/college-docs
+          key: college-docs-${{ steps.find.outputs.run_id }}-collect-${{ github.run_id }}
+          restore-keys: |
+            college-docs-
+
+      - name: Collect the open batches
+        id: sync
+        if: steps.secret.outputs.ready == 'true'
+        continue-on-error: true
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          RUN_ID: ${{ steps.find.outputs.run_id }}
+        run: |
+          set +e
+          npm run sync-college-reported -- --phase collect --run "$RUN_ID"
+          code=$?
+          set -e
+          echo "exit_code=$code" >> "$GITHUB_OUTPUT"
+          # Same exit codes as the run job: 0 normal, 2 breaker, 3 stopped early, 1 error (fails the step).
+          if [ "$code" = "1" ]; then
+            echo "::error::sync-college-reported --phase collect exited 1 (error); see the job log above."
+            exit 1
+          fi
+
+      - name: Merge the published figures into schools.json
+        if: always() && steps.secret.outputs.ready == 'true'
+        run: npm run merge-reported
+
+      - name: Check for open batches
+        id: batches
+        if: always() && steps.secret.outputs.ready == 'true'
+        run: |
+          open=$(node -e "const fs=require('fs');const f='data/college-batches.json';console.log(fs.existsSync(f)?JSON.parse(fs.readFileSync(f,'utf8')).batches.length:0)")
+          echo "open=$open" >> "$GITHUB_OUTPUT"
+          echo "Open batches after collect: $open"
+
+      # Once every batch is in, the release note is rewritten from the final summary (the file the run job wrote).
+      - name: Rewrite the release note
+        if: always() && steps.secret.outputs.ready == 'true' && steps.batches.outputs.open == '0'
+        env:
+          RUN_ID: ${{ steps.find.outputs.run_id }}
+          PR_NUMBER: ${{ steps.find.outputs.number }}
+        run: |
+          date=$(date -u +%Y-%m-%d)
+          node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/college-reported-pr-body.mts note \
+            --summary "data/reports/college-reported-run-${RUN_ID}.json" \
+            --queue data/review-queue.json \
+            --pr "$PR_NUMBER" --date "$date" --out "release-notes/college-reported-${RUN_ID}.md"
+
+      - name: Commit and push
+        if: always() && steps.secret.outputs.ready == 'true'
+        env:
+          RUN_ID: ${{ steps.find.outputs.run_id }}
+          BRANCH: ${{ steps.find.outputs.branch }}
+        run: |
+          git add data release-notes
+          if git diff --cached --quiet; then
+            echo "Nothing new to commit."
+            exit 0
+          fi
+          printf 'College-reported data: collect for run %s\n\nCo-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>\n' "$RUN_ID" > /tmp/college-reported-collect-msg.txt
+          git -c user.name="college-reported-bot" -c user.email="noreply@anthropic.com" commit -F /tmp/college-reported-collect-msg.txt
+          git push origin "HEAD:${BRANCH}"
+
+      # Still open (an escalation batch, or resubmitted requests): the PR stays a draft and the next collect continues.
+      # All in: refresh the body, mark it ready, and apply the run's merge rules (as the run job does).
+      - name: Mark ready and apply the merge rules
+        if: always() && steps.secret.outputs.ready == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.COLLEGE_REPORTED_TOKEN || github.token }}
+          PR_NUMBER: ${{ steps.find.outputs.number }}
+          RUN_ID: ${{ steps.find.outputs.run_id }}
+          OPEN_BATCHES: ${{ steps.batches.outputs.open }}
+          EXIT_CODE: ${{ steps.sync.outputs.exit_code }}
+        run: |
+          if [ "${OPEN_BATCHES:-1}" != "0" ]; then
+            echo "Batches still open (${OPEN_BATCHES:-unknown}); PR #$PR_NUMBER stays a draft."
+            exit 0
+          fi
+          auto_merge=$(gh pr view "$PR_NUMBER" --json body -q .body | sed -n 's/.*<!-- college-reported: auto_merge=\([a-z]*\) -->.*/\1/p' | head -n 1)
+          node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/college-reported-pr-body.mts body \
+            --summary "data/reports/college-reported-run-${RUN_ID}.json" \
+            --queue data/review-queue.json \
+            --reported data/college-reported.json \
+            --schools data/schools.json > /tmp/college-reported-pr-body.md
+          printf '\n<!-- college-reported: auto_merge=%s -->\n' "$auto_merge" >> /tmp/college-reported-pr-body.md
+          gh pr edit "$PR_NUMBER" --body-file /tmp/college-reported-pr-body.md
+          gh pr ready "$PR_NUMBER"
+          if [ "$auto_merge" = "true" ] && [ "$EXIT_CODE" = "0" ]; then
+            gh pr merge "$PR_NUMBER" --auto --squash
+          else
+            if [ -z "$EXIT_CODE" ]; then
+              reason="the collect was cancelled before it finished — review and merge by hand"
+            elif [ "$EXIT_CODE" = "3" ]; then
+              reason="the collect stopped early (the cost cap, the Anthropic spend limit or credit balance, or the API key) — review and merge by hand"
+            elif [ "$EXIT_CODE" = "2" ]; then
+              reason="the circuit breaker tripped — review the PR body before merging by hand"
+            elif [ "$auto_merge" != "true" ]; then
+              reason="auto-merge was turned off for this run — review and merge by hand once CI is green"
+            else
+              reason="the collect exited with an unexpected code ($EXIT_CODE) — review before merging"
             fi
             gh pr comment "$PR_NUMBER" --body "Waiting for a person: ${reason}."
           fi

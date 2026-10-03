@@ -10,9 +10,19 @@
  * "body" prints the PR body to stdout. "note" writes the release note to --out (release-notes/<slug>.md).
  */
 import { readFileSync, writeFileSync } from "node:fs";
-import type { REPORTED_MODELS, ReviewItem, ReviewQueueFile, RunSummary } from "../lib/reported.ts";
+import type { REPORTED_MODELS, ReportedEntry, ReportedFile, ReviewItem, ReviewQueueFile, RunSummary } from "../lib/reported.ts";
+import type { School } from "../lib/types";
 
 type ModelJob = keyof typeof REPORTED_MODELS;
+
+/**
+ * `f.check === "unreachable"` is compared as a plain string, not against `CheckId`: a parallel branch is adding
+ * that id to `lib/reported.ts`'s `CheckId` union, and this file must typecheck against either version of it.
+ */
+const UNREACHABLE_CHECK = "unreachable";
+function isUnreachable(item: ReviewItem): boolean {
+  return item.failures.some((f) => (f.check as string) === UNREACHABLE_CHECK);
+}
 
 /* ------------------------------------------------------------------ */
 /* Formatting helpers                                                  */
@@ -32,6 +42,25 @@ export function itemsForRun(queue: ReviewQueueFile, run: string): ReviewItem[] {
   return queue.items.filter((item) => item.run === run);
 }
 
+/** This run's published entries only (`data/college-reported.json` accumulates across runs). */
+export function entriesForRun(reported: ReportedFile, run: string): ReportedEntry[] {
+  return reported.entries.filter((entry) => entry.run === run);
+}
+
+/** Any URL cited in an entry's lineage, for the "Published this run" table's source column. */
+function entryUrl(entry: ReportedEntry): string {
+  const rec = Object.values(entry.lineage).find((r) => r?.url);
+  return rec?.url ?? "";
+}
+
+function pct(n: number | null): string {
+  return n === null ? "—" : `${(n * 100).toFixed(1)}%`;
+}
+
+function num(n: number | null): string {
+  return n === null ? "—" : n.toLocaleString("en-US");
+}
+
 function escapeCell(s: string): string {
   return s.replace(/\|/g, "\\|").replace(/\n/g, " ");
 }
@@ -41,11 +70,19 @@ function escapeCell(s: string): string {
 /* ------------------------------------------------------------------ */
 
 /**
- * The PR description: counts and cost from the run summary, the circuit-breaker status, and a table of this run's
- * review-queue items with a note on how to resolve one. See specs/college-reported-data.md#publishing.
+ * The PR description: counts and cost from the run summary, the circuit-breaker status, a "Published this run"
+ * table of the colleges whose figures reached `data/schools.json` through this same PR (Decision 5,
+ * specs/college-reported-round-2.md), an "Unreachable" list of review items blocked on a site (no model could have
+ * fixed it), and a table of this run's remaining check-failure review-queue items. `reported` and `names` are
+ * optional so existing callers (and the fixture-based tests written before Decision 5) keep working; without
+ * `reported` the "Published this run" section is omitted, and without `names` a college is shown by its unit id.
+ * See specs/college-reported-data.md#publishing.
  */
-export function prBody(summary: RunSummary, queue: ReviewQueueFile): string {
+export function prBody(summary: RunSummary, queue: ReviewQueueFile, reported?: ReportedFile, names?: Map<string, string>): string {
   const items = itemsForRun(queue, summary.run);
+  const unreachableItems = items.filter(isUnreachable);
+  const checkFailureItems = items.filter((i) => !isUnreachable(i));
+  const nameFor = (unitId: string) => names?.get(unitId) ?? unitId;
   const lines: string[] = [];
 
   lines.push(`Run \`${summary.run}\` of the college-reported ingestion agent (specs/college-reported-data.md).`, "");
@@ -61,6 +98,7 @@ export function prBody(summary: RunSummary, queue: ReviewQueueFile): string {
   lines.push(`| | |`, `|---|---|`);
   lines.push(`| Colleges attempted | ${summary.attempted} |`);
   lines.push(`| Documents read | ${summary.documents_read} |`);
+  if (summary.guessed !== undefined) lines.push(`| Next-edition URL guessed (no discovery call) | ${summary.guessed} |`);
   lines.push(`| Published | ${summary.published} |`);
   lines.push(`| Changed from the last publish | ${summary.changed} |`);
   lines.push(`| Failed a check (sent to review) | ${summary.failed} |`);
@@ -80,19 +118,60 @@ export function prBody(summary: RunSummary, queue: ReviewQueueFile): string {
   }
   lines.push("");
 
+  if (reported) {
+    const entries = entriesForRun(reported, summary.run);
+    lines.push("## Published this run", "");
+    if (entries.length === 0) {
+      lines.push("No college's figures passed every check this run.");
+    } else {
+      lines.push(
+        `${entries.length} college${entries.length === 1 ? "" : "s"}' figures reached \`data/schools.json\` in this ` +
+          `same PR (specs/college-reported-round-2.md, Decision 5) — this PR's Vercel preview already shows them.`,
+        "",
+        "| College | Term | Kind | Applicants | Admitted | Enrolled | Rate | Source |",
+        "|---|---|---|---|---|---|---|---|",
+      );
+      for (const entry of entries) {
+        const a = entry.admissions;
+        lines.push(
+          `| ${escapeCell(nameFor(entry.unit_id))} (${entry.unit_id}) | ${escapeCell(a.entering_term)} | ${a.source_kind} | ` +
+            `${num(a.applicants)} | ${num(a.admitted)} | ${num(a.enrolled)} | ${pct(a.acceptance_rate)} | ${entryUrl(entry)} |`,
+        );
+      }
+    }
+    lines.push("");
+  }
+
+  if (unreachableItems.length > 0) {
+    lines.push("## Unreachable", "");
+    lines.push(
+      `${unreachableItems.length} college${unreachableItems.length === 1 ? "" : "s"} blocked the attempt (site ` +
+        `blocked us, or a document 404ed) — no model could have fixed this, so these weren't counted as check ` +
+        `failures by the circuit breaker. They're retried on the next run.`,
+      "",
+      "| College | URL | Why |",
+      "|---|---|---|",
+    );
+    for (const item of unreachableItems) {
+      const why = item.failures.find((f) => (f.check as string) === UNREACHABLE_CHECK)?.detail ?? "";
+      lines.push(`| ${escapeCell(item.name)} (${item.unit_id}) | ${item.urls[0] ?? ""} | ${escapeCell(why)} |`);
+    }
+    lines.push("");
+  }
+
   lines.push("## Review queue", "");
-  if (items.length === 0) {
-    lines.push("Nothing from this run needs a person — every attempted value either published or was unchanged.");
+  if (checkFailureItems.length === 0) {
+    lines.push("Nothing from this run needs a person — every attempted value either published, was unchanged, or was unreachable (see above).");
   } else {
     lines.push(
-      `${items.length} item${items.length === 1 ? "" : "s"} failed a check and did **not** publish. Resolve one by ` +
+      `${checkFailureItems.length} item${checkFailureItems.length === 1 ? "" : "s"} failed a check and did **not** publish. Resolve one by ` +
         `fixing its recipe in \`data/college-sources.json\` (or adding a manual override), then re-running ` +
         `\`npm run sync-college-reported -- --college <unit_id>\`.`,
       "",
       "| College | Term | Failed checks | URL |",
       "|---|---|---|---|",
     );
-    for (const item of items) {
+    for (const item of checkFailureItems) {
       const term = item.entering_term ?? "unknown";
       const checks = item.failures.map((f) => `${f.check} (${f.detail})`).join("; ");
       const url = item.urls[0] ?? "";
@@ -190,7 +269,9 @@ function arg(name: string): string | undefined {
 async function main() {
   const mode = process.argv[2];
   if (mode !== "body" && mode !== "note") {
-    console.error("Usage: college-reported-pr-body.mts <body|note> --summary <file> --queue <file> [--pr <n> --date <YYYY-MM-DD> --out <file>]");
+    console.error(
+      "Usage: college-reported-pr-body.mts <body|note> --summary <file> --queue <file> [--reported <file>] [--schools <file>] [--pr <n> --date <YYYY-MM-DD> --out <file>]",
+    );
     process.exit(1);
   }
   const summaryPath = arg("summary");
@@ -201,9 +282,15 @@ async function main() {
   }
   const summary: RunSummary = JSON.parse(readFileSync(summaryPath, "utf8"));
   const queue: ReviewQueueFile = JSON.parse(readFileSync(queuePath, "utf8"));
+  const reportedPath = arg("reported");
+  const reported: ReportedFile | undefined = reportedPath ? JSON.parse(readFileSync(reportedPath, "utf8")) : undefined;
+  const schoolsPath = arg("schools");
+  const names: Map<string, string> | undefined = schoolsPath
+    ? new Map((JSON.parse(readFileSync(schoolsPath, "utf8")) as School[]).map((s) => [s.unit_id, s.name]))
+    : undefined;
 
   if (mode === "body") {
-    console.log(prBody(summary, queue));
+    console.log(prBody(summary, queue, reported, names));
     return;
   }
 

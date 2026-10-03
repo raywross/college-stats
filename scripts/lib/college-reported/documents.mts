@@ -198,11 +198,16 @@ function yearIn(t: string): number | null {
  * `CDS_2026-27.pdf` when the recipe holds 2025-26). Each becomes a new recipe source.
  */
 export function newSourcesFromIndex(html: string, indexUrl: string, existing: RecipeSource[]): RecipeSource[] {
+  return newSourcesFromLinks(findLinks(html, indexUrl), existing);
+}
+
+/** `newSourcesFromIndex` over links found anywhere (an index page, a sitemap's `<loc>` entries). */
+export function newSourcesFromLinks(links: FoundLink[], existing: RecipeSource[]): RecipeSource[] {
   const known = new Set(existing.map((s) => s.url));
   const newest = (kind: ReportedSourceKind) =>
     Math.max(-Infinity, ...existing.filter((s) => s.kind === kind).map((s) => entryYearOf(s.url) ?? -Infinity));
   const found: RecipeSource[] = [];
-  for (const link of findLinks(html, indexUrl)) {
+  for (const link of links) {
     if (known.has(link.url)) continue;
     const kind = linkKind(link);
     if (!kind) continue;

@@ -234,6 +234,43 @@ other file is extracted from the archive by the next pipeline run. `--add-url` a
 `data/reference/cds-urls.json`, the list discovery tries first. Commit the changed `data/` files. Run it with
 `COLLEGE_DOCS_REPO` set so the file reaches the shared archive, not just your machine.
 
+## 10. Links you find by hand, and blocked hosts
+Round 3 ([college-reported-round-3.md, Decision 8](college-reported-round-3.md#decision-8-share-links-blocked-hosts-and-the-owners-list)).
+Discovery never gets past bot protection: it never switches user agents and never fetches a blocked host another
+way. Where it can't reach a document, you can.
+
+**Blocked hosts** — `data/reference/blocked-hosts.json`, written by the pipeline:
+```json
+{ "hosts": [{ "host": "admission.virginia.edu", "status": "challenge", "first_seen": "2026-10-03", "last_seen": "2026-10-10", "unit_ids": ["234076"] }] }
+```
+- A host is listed when it answers our requests with 401, 403, 405, 429, or a bot-protection page (Cloudflare's
+  "Just a moment…", Incapsula, PerimeterX, DataDome, Akamai "Access Denied"). `404-to-tools` (a 404 to a tool and a
+  200 to a browser, like Texas A&M) can't be told from one honest request: enter it by hand if you see it.
+- Blocking is per host, not per college: a college whose admissions site refuses us may still publish its CDS on an
+  IR host that doesn't.
+- When **every** candidate host of a college is listed, no paid discovery step runs for it, and the run's PR lists the
+  college for you to add a link by hand. Entries not seen for a year are tried again; delete an entry to retry
+  sooner.
+
+**The owner's list** — `data/reference/cds-urls.json`, edited by you. It is step 0 of discovery: an entry is used
+before any probe or model, even for a college whose recipe otherwise works.
+```json
+{ "entries": [{ "unit_id": "152080", "url": "https://drive.google.com/file/d/<id>/view", "kind": "cds", "note": "Notre Dame: picked from the Drive folder", "added": "2026-10-03" }] }
+```
+- `kind` is `cds` or `class-profile`. Paste the link as the browser shows it: Google Sheets and Drive file links, Box
+  `/s/` links, and SharePoint/OneDrive links are rewritten to their direct downloads automatically. A Drive **folder**
+  can't be: open it and paste the file's link.
+- For a blocked host, also download the file and drop it in the archive, so extraction reads your copy:
+  ```sh
+  npm run archive-doc -- --college <unit_id> --file <path> --url <original url>
+  ```
+- Where to look: the PR's "Blocked" list, and recipes whose `discovery.path` is `none` with a `discovery.tried` that
+  shows what was attempted.
+
+**Back-off.** A college whose ladder found nothing records `discovery.next_attempt` in its recipe
+(`data/college-sources.json`): the next 1 February for every tier but open admission, a year later for open
+admission. Runs skip it until then. To retry one sooner, delete its `next_attempt` (or add a link to the owner's list).
+
 ## What to check in your own tests
 - [ ] A profile for a college with a published `reported` value shows the chip/popover next to the federal figure,
   with the verbatim quote, the source link, and "checked automatically" (see

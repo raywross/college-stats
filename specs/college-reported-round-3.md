@@ -1118,3 +1118,93 @@ reader bump deterministic, the committed records due nothing); `priorEditionLink
 inventory's `wm.xlsx` into a temp data dir (skipped when the file is missing; `CDS_INVENTORY_DOCS` points elsewhere):
 output passes `validateCdsRecords`, items equal the committed record, and the record fails it once its manifest entry
 is removed. Changing `<` to `<=` in `callsNeedingRead` fails the version test.
+
+### Discovery (2026-10-03, branch `feature/cds3-discovery`)
+Build order step 10, minus the two model steps (the models track's `pickLinks` and `searchOnly`) and the wiring into
+`pipeline.mts`'s main loop (the integration track). Everything is injected, so the ladder runs in tests with a fake
+fetch and no model.
+
+**`scripts/lib/college-reported/probe.mts`** — the free steps, HTTP only through `PoliteHttp`:
+- `knownStep(http, { school, recipe?, manual? })` (step 0): the owner's entries for the college first, used with **no
+  request** (the host may be blocked; share links rewritten); then the recipe's index pages re-scanned
+  (`newSourcesFromIndex`); then `guessNextEditionUrls`, accepted only by the bytes. Paths `manual`, `known`, `guessed`.
+- `probeStep(http, school, { limit? })` (step 1), stopping at the first CDS: **(a)** `Sitemap:` lines from the
+  robots.txt `PoliteHttp` already fetches (else `/sitemap.xml`), sitemap indexes followed page-sitemaps first,
+  gzipped sitemaps unpacked, `<loc>`s matched against `SITEMAP_HIT` (CDS and class-profile patterns); a CDS file is
+  taken directly, else up to three CDS pages are fetched and scanned. **(b)** `IR_HOST_PREFIXES` (the 17 hosts) ×
+  `IR_PATHS` (the 4 paths) on `collegeDomain(website)`; a host that doesn't resolve costs only its robots.txt attempt,
+  and a host that redirects off itself (a catch-all) is left after one request. **(c)** The Scorecard website, then a
+  two-hop crawl on the college's own domain, following links by `crawlScore` (CDS 5, institutional research 3, facts
+  or data 1, anything else not followed). `PROBE_LIMITS`: 40 page requests per college in all (sitemaps 8, hosts 20,
+  crawl 12; robots.txt once per host on top). Every HTML page fetched is returned as `pages` (its link list) for the
+  step-2 picker.
+- Pages are read with `sourcesFromPage(html, url)`: `newSourcesFromIndex`'s newest CDS/class-profile file links, plus
+  CDS share links (a Box or Drive link whose text names the Common Data Set), resolved when no direct file is there.
+  `documents.mts` gained `newSourcesFromLinks(links, existing)` (what `newSourcesFromIndex` now calls) so sitemap
+  entries use the same edition logic.
+- Share links: `rewriteShareLink(url)` (pure; Sheets → `export?format=xlsx`, Drive file → `uc?export=download&id=`,
+  Drive folder → manual, Box `/s/` → `/shared/static/`, SharePoint/OneDrive → `download=1`), `confirmDocument(get, url)`
+  (accepts only `%PDF` → pdf or `PK` → xlsx by `magicFormat(bytes)`; HTML back, a status, or robots.txt → `manual`),
+  `resolveShareLink(get, url)`. Confirmed bytes come back in `prefetched` so the first read doesn't fetch them again.
+- `freeSteps(http, manual)` returns `{ known, probe }` in the ladder's shape.
+
+**`scripts/lib/college-reported/blocked.mts`** (pure): `blockedStatusOf(status, headers, head)` (401, 403, 405, 429,
+and `challenge` from the body: Cloudflare, Incapsula, PerimeterX, DataDome, Akamai; or a 503 with `cf-mitigated`),
+`recordBlocked(file, observations, today)` (first/last seen, unit ids, sorted by host), `isBlockedHost` (an entry
+not seen for `BLOCK_STALE_DAYS` = 365 is tried again), `onlyBlockedCandidates({ recipe, answered }, file, today)` (the
+blocked hosts when every candidate host is blocked: the recipe's documents and index pages plus every host that
+answered steps 0–1 with a page or a refusal; a college with no candidates is not "blocked"). `404-to-tools` can't be
+detected with one honest request, so only the owner enters it.
+
+**`scripts/lib/college-reported/discovery.mts`** — the ladder and its rules (Decisions 6, 7, 10):
+- `orderColleges(schools)`: `tierOf` rank, then `demographics.undergrad_enrollment` descending, then unit id.
+- `stepsFor(tier, { pass, fullWithinYear })`: very selective and selective `[0,1,2,3,4]` (step 4 dropped when one ran
+  in the last 365 days, from `discovery.tried`), less selective `[0,1,2,3]`, open admission `[0,1,2]`; the `leftover`
+  pass gives open admission `[3]` and everyone else nothing.
+- `STEP_ESTIMATE_USD` {2: 0.01, 3: 0.08, 4: 0.15}: a paid step starts only when the run's remaining discovery budget
+  covers its estimate; the actual cost is then subtracted.
+- `nextAttempt(tier, today)` (the next 1 February; a year on for open admission) and `shouldRetry(recipe, today,
+  { unitId, manual, brokenIndex })`: an owner's link the recipe doesn't hold → yes; else not before
+  `next_attempt`; else no recipe, no sources, `none_found`, or a broken index page. `none_found` alone no longer waits
+  for `--rediscover`.
+- `retireSuperseded(recipe, newSources)` → `{ keep, retire }`: same-kind sources whose edition is older than the
+  newest new one (UCLA's 2019–20 section H, Rutgers' 2023–24); undated sources stay. The caller moves `retire` out of
+  the recipe; the manifest keeps them.
+- `documentsToReadAfterRediscovery(fresh, fetchedThisRun)`: only sources this run hasn't fetched (the
+  `pipeline.mts:527-529` fix, test 22).
+- `ladder(college, state, deps)` → `LadderResult { recipe, path, found, spent_usd, retired, blockedHosts,
+  prefetched }`. Free steps find only with a CDS; a paid step's find is any source the model returns. It stops at the
+  first find; at a paid step when every candidate host is blocked (path `blocked`, nothing spent); when the budget
+  can't cover the next step; or when a paid step throws (timeout, refusal), which backs off instead of climbing to a
+  dearer step. Every attempt is a `discovery.tried` row (`step`, `via`, `at`, `result`, `detail`, `cost_usd`; newest 20
+  kept). No find → `next_attempt` set, and `none_found` when the recipe has no sources. `state.budget` and
+  `state.blocked` are updated in place.
+- `discoverAll(colleges, state, deps, { manual, openAdmissionLeftover })`: `shouldRetry` filter, `orderColleges`
+  order, one ladder each; then the leftover pass (step 3 for open-admission colleges still without a document while
+  the budget lasts; `openAdmissionLeftover: false` gives the owner's "open admission 0–2 only"). Returns `results`,
+  `listed` (blocked colleges for the PR body) and `spent_usd`. Sequential.
+
+**`http.mts`**: `REQUEST_TIMEOUT_MS` (60 s, headers and body together, via `AbortController`) and `MAX_DOCUMENT_BYTES`
+(50 MB; a `Content-Length` over it is refused unread, a streamed body is cancelled when it passes it) throw
+`HttpLimitError` (`limit: "timeout" | "size"`), which `readSource` already records as `unreachable`. Bodies are
+buffered inside the per-host queue, so `arrayBuffer()` on a returned Response never hangs; the final URL after
+redirects is kept on `res.url`. `parseRobots` keeps `Sitemap:` lines (`sitemaps(url)`), and every refusal is kept for
+`blockedSeen()`. Both limits are `HttpDeps` options for tests.
+
+**`lib/reported.ts`**: `Recipe.discovery?: RecipeDiscovery` (`path: DiscoveryPath`, `tried: DiscoveryAttempt[]`,
+`next_attempt?`), with `DiscoveryPath` = `known | guessed | manual | probe-sitemap | probe-host | probe-crawl | picker |
+search | full | blocked | none`.
+
+**Not wired yet (integration track):** calling `discoverAll`/`ladder` from `pipeline.mts` in place of
+`guess`/`learn`; writing `recordBlocked(…, http.blockedSeen(), today)` to `data/reference/blocked-hosts.json` and
+reading `data/reference/cds-urls.json`; the PR body's blocked list; applying `retired` to the manifest; using
+`documentsToReadAfterRediscovery` at `pipeline.mts:546`; the `prefetched` bytes. Steps 2 and 3 come from the models
+track; step 4 is round 2's `discover`, adapted to `PaidFind`.
+
+**Tests:** `tests/cds-discovery.test.mts`: 12 (a sitemap index → CDS page, a CDS file in a sitemap, an IR host
+pattern, a two-hop crawl, the request budget, every share-link rule, magic-byte confirmation and an HTML answer
+refused, a Box link on an IR page), 13 (a 403 host recorded, nothing spent and the college listed in that run and the
+next, per-host blocking, challenge bodies, the owner's list as step 0 with no request), step 0's index re-scan with a
+superseded edition retired and a guess confirmed by bytes, 14 (order, per-tier steps, a small budget spent in tier
+order, open admission's step 3 only in the leftover pass, a paid find's cost), 15 (dates; a failed paid step sets
+`next_attempt` and doesn't climb; removing the date makes it retry), 22, and the timeout and both size-cap paths.

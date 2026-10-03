@@ -21,7 +21,7 @@ says what the data can say and stops.
 | Admission factors | IPEDS ADM ([admission-factors.md](../data-expansion/admission-factors.md)) and CDS C7 | Wording: "GPA is required and very important here; essays are considered" |
 | Early rounds | CDS C21/C22 ([early-decision-strategy.md](early-decision-strategy.md)) | "Applying ED here admitted 28% vs 11% overall (fall 2025)" |
 | Local outcomes | [scattergrams.md](scattergrams.md) | When 10+ applicants from the student's high school exist, their outcomes replace the national ranges as the primary view |
-| In-state status | Student's state vs college's state, public colleges | Wording only ("Public colleges often admit in-state applicants at higher rates"); IPEDS has no in-state admit rate |
+| In-state status | Student's state vs college's state | CDS C1 by residency where the college publishes it ([cds-residency-admissions.md](../data-expansion/cds-residency-admissions.md); `rateForStudent` in `lib/cds/residency-display.ts`): rule 3's base rate becomes the student's group rate, and the reason sentence names it ("Applicants from {State} were admitted at {rate}"), cited. Elsewhere, the overall rate with wording only ("Public colleges often admit in-state applicants at higher rates"). Tests: one row for a college with a grid (in-state, out-of-state, international) and one without |
 
 ## Rules
 Computed in `lib/chances.ts`, pure and tested, and published on the glossary page under `standing`.

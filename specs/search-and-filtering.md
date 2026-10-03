@@ -29,6 +29,10 @@ Route: `/explore` (dynamic, URL-driven). The middle of the drill-down, where you
 | Page | `Pagination` | `page` (reset to 1 by any filter/sort/view change) |
 | Min/max undergrads | chip only (set by home lenses) | `minEnroll`, `maxEnroll` |
 | 10-year direction | three chips with counts per indicator ([trend-indicators.md](trend-indicators.md)) | `costTrend`, `appsTrend`, `divTrend`, `selTrend`: comma lists of `up`, `steady`, `down` |
+| Financial aid (from colleges' own reports) | two chips with counts ([cds-financial-aid.md](data-expansion/cds-financial-aid.md)) | `aidForms=no-css` (H8 read, CSS Profile not required), `intlAid=1` (the college aids international students) |
+
+College-reported booleans (the financial aid chips) exclude colleges with no data: a college whose CDS record we
+don't have, or whose list was left blank, never matches.
 
 Still supported by the data layer (no UI yet): `minACT`/`maxACT`.
 

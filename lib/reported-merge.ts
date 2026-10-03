@@ -13,6 +13,7 @@ import type { ReportedFile } from "./reported.ts";
 import { reportedToPatch } from "./reported-checks.ts";
 import type { CollegeRecord } from "./cds-sections.ts";
 import { mergeResidency } from "./cds/residency.ts";
+import { mergeAcademics } from "./cds/academics.ts";
 
 /**
  * `school` as it was before any merge: its previous admissions funnel restored from `admissions.federal`
@@ -63,6 +64,6 @@ export function mergeReported(schools: School[], reported: ReportedFile, records
     return applyNewest({ ...stripped, reported: reportedData, lineage: { ...stripped.lineage, ...entryLineage } });
   };
   // Round-3 CDS blocks from data/cds-records/ (each spec's own module), after the admissions block they may key on.
-  const result = schools.map((school) => mergeResidency(mergeOne(school), recordById.get(school.unit_id)));
+  const result = schools.map((school) => mergeAcademics(mergeResidency(mergeOne(school), recordById.get(school.unit_id)), recordById.get(school.unit_id)));
   return { schools: result, merged, removed };
 }

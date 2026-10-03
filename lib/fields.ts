@@ -274,6 +274,12 @@ export const FIELDS = {
   "reported.admissions_by_residency.total.applicants": reported("Applied, all residencies (college-reported)"),
   "reported.admissions_by_residency.total.admitted": reported("Admitted, all residencies (college-reported)"),
   "reported.admissions_by_residency.total.enrolled": reported("Enrolled, all residencies (college-reported)"),
+  // CDS academics (specs/data-expansion/cds-academics.md; lib/cds/academics.ts): one lineage record per block, from the
+  // newest document whose items passed. Alongside the federal figures, never replacing them.
+  "reported.academics.class_sections": reported("Undergraduate class sections by size (Common Data Set I-3)", "academics"),
+  "reported.academics.student_faculty_ratio": reported("Student-to-faculty ratio, the college's own (Common Data Set I-2)", "academics"),
+  "reported.academics.programs": reported("Special study options offered (Common Data Set E1)", "academics"),
+  "reported.academics.core_curriculum": reported("Required coursework areas (Common Data Set E3)", "academics"),
 
   /* ---- History summary (data/history/, `npm run sync-history`) ---- */
   trends: {
@@ -387,6 +393,18 @@ export const FIELDS = {
     ...reported("Acceptance rate, all applicants in the same class"),
     computed: true,
     derived: { formula: "C1 total admitted ÷ total applied, from the same Common Data Set as the residency grid (not calculated under 10 applicants)", inputs: ["reported.admissions_by_residency.total.applicants", "reported.admissions_by_residency.total.admitted"] },
+  },
+  // Class sizes (specs/data-expansion/cds-academics.md; lib/cds/academics-display.ts). Partial coverage: never in
+  // METRICS, ranks, medians, sorts, Key differences, or "Known for" (tests/cds-academics.test.mts).
+  "derived.class_share_under_20": {
+    ...reported("Classes under 20 students", "academics"),
+    computed: true,
+    derived: { formula: "Class sections of 2–19 students ÷ all class sections, from the college's Common Data Set I-3 (sections, not students)", inputs: ["reported.academics.class_sections"] },
+  },
+  "derived.class_share_50_plus": {
+    ...reported("Classes of 50 or more students", "academics"),
+    computed: true,
+    derived: { formula: "Class sections of 50 or more students ÷ all class sections, from the college's Common Data Set I-3 (sections, not students)", inputs: ["reported.academics.class_sections"] },
   },
   "derived.payback_years": {
     ...scorecard("Payback estimate", "outcomes"),

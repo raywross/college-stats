@@ -38,6 +38,8 @@ export type VintageKey =
   /** Student age: IPEDS collects it in odd-numbered falls only, so it trails enrollment by a year every other year. */
   | "scorecard-age"
   | "scorecard-cost"
+  /** Retention: the class that entered the fall before the enrollment fall ("Entered fall 2023"); probed like scorecard-age. */
+  | "scorecard-retention"
   | "scorecard-latest"
   /** College Scorecard Field of Study bulk CSV: each metric pools a different, independently-refreshed cohort, so like scorecard-latest this has no single year. */
   | "scorecard-fos";
@@ -204,7 +206,7 @@ export const FIELDS = {
   "outcomes.median_earnings_10yr": scorecard("Median earnings, 10 years after entry", "outcomes"),
   "outcomes.median_earnings_6yr": scorecard("Median earnings, 6 years after entry", "outcomes"),
   "outcomes.graduation_rate": scorecard("Graduation rate", "outcomes"),
-  "outcomes.retention_rate": scorecard("Retention rate", "outcomes"),
+  "outcomes.retention_rate": scorecard("Retention rate", "outcomes", "scorecard-retention"),
   "outcomes.median_debt": scorecard("Median debt at graduation", "outcomes"),
   "outcomes.monthly_loan_payment": scorecard("Monthly loan payment", "outcomes"),
   // Key N = the N-1–N academic year (matches IPEDS SFA UFLOANP; checked 2026-09-29), like net price.
@@ -254,6 +256,12 @@ export const FIELDS = {
   "reported.admissions.enrolled": reported("Enrolled (college-reported)"),
   "reported.admissions.acceptance_rate": reported("Acceptance rate (college-reported)"),
   "reported.admissions.source_kind": reported("Kind of document (college-reported)"),
+  // CDS student body and outcomes (specs/data-expansion/cds-student-body-and-outcomes.md): the federal values a newer
+  // CDS fall or cohort replaced (lib/newest-groups.ts), and the one new field, 4- and 5-year graduation by aid group.
+  "demographics.federal": scorecard("Federal enrollment figures replaced by a newer college-reported fall", "enrollment", "scorecard-enrollment"),
+  "outcomes.federal.retention": scorecard("Federal retention rate replaced by a newer college-reported class", "outcomes", "scorecard-retention"),
+  "outcomes.federal.graduation": { label: "Federal graduation by Pell and loan status replaced by a newer college-reported class", topic: "outcomes", source: "ipeds-gr", vintage: "ipeds-gr" },
+  "reported.outcomes.graduation": reported("Graduated within 4 and 5 years, by Pell and loan status (college-reported)", "outcomes"),
 
   /* ---- History summary (data/history/, `npm run sync-history`) ---- */
   trends: {

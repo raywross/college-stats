@@ -11,6 +11,7 @@
 import { acceptanceRate } from "./derive.ts";
 import type { FieldPath } from "./fields";
 import type { FederalAdmissions, LineageRecord, School } from "./types";
+import { restoreNewestGroups } from "./newest-groups.ts";
 
 /** The funnel values `applyNewest` may replace, in `school.admissions` key order. */
 const COUNTS = ["applicants", "admitted", "enrolled"] as const;
@@ -117,6 +118,7 @@ export function applyNewest(school: School): School {
  * there's nothing to undo.
  */
 export function restoreFederal(school: School): School {
+  school = restoreNewestGroups(school); // enrollment, race, retention, graduation (lib/newest-groups.ts), applied after C1
   const federal = school.admissions.federal;
   if (!federal) return school;
   // eslint-disable-next-line @typescript-eslint/no-unused-vars -- dropping `federal` is the point

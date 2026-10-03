@@ -7,6 +7,7 @@ import { Info, ArrowRight, BookMarked, ExternalLink } from "lucide-react";
 import { GLOSSARY, type TermKey } from "@/lib/glossary";
 import { yearLabel, type Cited, type CitedSource } from "@/lib/lineage";
 import { num, pctSmart } from "@/lib/format";
+import { DEMOGRAPHIC_CATEGORIES } from "@/lib/metrics";
 import { cn } from "@/lib/utils";
 
 function SourceLink({ s }: { s: CitedSource }) {
@@ -37,6 +38,8 @@ function SourceLinkBare({ s }: { s: CitedSource }) {
  */
 function sourceKindPhrase(cited: Cited): string {
   const year = yearLabel(cited);
+  // A CDS record value names its edition, then the year it describes: "in its Common Data Set 2025–26 (fall 2025)".
+  if (cited.sourceKind === "cds" && cited.cdsEdition) return `in its Common Data Set ${cited.cdsEdition} (${year.replace(/^(Fall|Entered)\b/, (w) => w.toLowerCase())})`;
   if (cited.sourceKind === "cds") return `in its Common Data Set ${year}`;
   if (cited.sourceKind === "class-profile") return `in its class profile for the ${year} class`;
   return "on its own site";
@@ -46,7 +49,12 @@ function sourceKindPhrase(cited: Cited): string {
 function formatReplaced(cited: Cited): string {
   const value = cited.replaces?.value ?? null;
   if (value === null) return "not reported";
-  return cited.path.endsWith("acceptance_rate") ? pctSmart(value) : num(value);
+  // Race: the seven federal shares in the chart's order; cohort sizes: each group's count.
+  if (typeof value === "object") {
+    if (cited.path === "demographics.racial_diversity") return DEMOGRAPHIC_CATEGORIES.filter((c) => value[c.key] != null).map((c) => `${c.label} ${pctSmart(value[c.key])}`).join(", ");
+    return Object.entries(value).map(([k, v]) => `${k.replace(/_/g, " ")} ${num(v)}`).join(", ");
+  }
+  return /(acceptance_rate|_share|retention_rate|grad_rate_)/.test(cited.path) ? pctSmart(value) : num(value);
 }
 
 /** Where a value came from: source, year, method, formula, inputs, and what it replaced, if anything. */
@@ -58,7 +66,7 @@ function SourceBlock({ cited }: { cited: Cited }) {
       <p className="flex items-center gap-1 text-[10px] font-bold tracking-[0.14em] text-foreground/70 uppercase">
         <BookMarked className="size-3" aria-hidden /> Source
       </p>
-      {cited.method === "derived" && inputs.length > 0 ? (
+      {cited.method === "derived" && inputs.length > 0 && !isCollegeSite ? (
         <p>
           Calculated: {cited.formula}. From{" "}
           {inputs.map((s, i) => (
@@ -71,7 +79,7 @@ function SourceBlock({ cited }: { cited: Cited }) {
         </p>
       ) : isCollegeSite ? (
         <p>
-          Reported by {cited.publisher} {sourceKindPhrase(cited)}.
+          Reported by {cited.publisher} {sourceKindPhrase(cited)}.{cited.method === "derived" && cited.formula && ` Calculated: ${cited.formula}.`}
         </p>
       ) : (
         <p>

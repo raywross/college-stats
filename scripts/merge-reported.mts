@@ -8,7 +8,8 @@
  *
  * For every school, strips any existing `reported` block and every `reported.*` lineage record, then re-applies
  * the current `data/college-reported.json` entries (through `reportedToPatch`, exactly as `scripts/sync-data.mts`
- * does — both call `lib/reported-merge.ts#mergeReported`, so they can't disagree). A college dropped from
+ * does — both call `lib/reported-merge.ts#mergeReported`, so they can't disagree), then the newest groups from
+ * `data/cds-records/` (enrollment, race, retention, graduation; lib/newest-groups.ts). A college dropped from
  * `college-reported.json` since the last merge loses its block. Refuses to write if the result fails
  * `validateLineage`. No network, no API key.
  */
@@ -18,6 +19,7 @@ import type { DatasetMeta, School } from "../lib/types";
 import { validateLineage } from "../lib/lineage.ts";
 import type { ReportedFile } from "../lib/reported.ts";
 import { mergeReported } from "../lib/reported-merge.ts";
+import { readRecords } from "./lib/college-reported/records.mts";
 
 // MERGE_REPORTED_ROOT lets tests point this at a scratch directory holding just data/schools.json,
 // data/college-reported.json, and data/meta.json, without copying the whole repo.
@@ -33,7 +35,9 @@ function main() {
   const reported: ReportedFile = JSON.parse(readFileSync(REPORTED, "utf8"));
   const meta: DatasetMeta = JSON.parse(readFileSync(META, "utf8"));
 
-  const { schools: merged, merged: mergedCount, removed } = mergeReported(schools, reported);
+  // The CDS records (data/cds-records/) then supply the newest groups (specs/data-expansion/cds-student-body-and-outcomes.md).
+  const records = readRecords(join(ROOT, "data", "cds-records"));
+  const { schools: merged, merged: mergedCount, removed } = mergeReported(schools, reported, records, meta);
 
   const problems = validateLineage(merged, meta);
   if (problems.length) {

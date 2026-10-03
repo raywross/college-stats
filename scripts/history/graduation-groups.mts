@@ -31,10 +31,13 @@ export function gradByGroupMismatches(schools: readonly School[], histories: Rea
       if (hv === null && sv === null) return;
       if (hv === null || sv === null || !same(hv, sv)) out.push(`${s.unit_id} ${key}: history ${hv ?? "none"}, snapshot ${sv ?? "none"}`);
     };
-    check("grad_rate_pell", grYear, o?.grad_rate_pell);
-    check("grad_rate_no_pell_no_loan", grYear, o?.grad_rate_no_pell_no_loan);
-    check("grad_cohort_pell", grYear, o?.grad_cohorts?.pell);
-    check("grad_cohort_no_pell_no_loan", grYear, o?.grad_cohorts?.no_pell_no_loan);
+    // History stays federal (specs/data-expansion/cds-student-body-and-outcomes.md): where a newer CDS class replaced
+    // the Pell/loan rates, compare with the kept federal class in outcomes.federal.graduation, not the shown one.
+    const gr = o?.federal?.graduation ?? o;
+    check("grad_rate_pell", grYear, gr?.grad_rate_pell);
+    check("grad_rate_no_pell_no_loan", grYear, gr?.grad_rate_no_pell_no_loan);
+    check("grad_cohort_pell", grYear, gr?.grad_cohorts?.pell);
+    check("grad_cohort_no_pell_no_loan", grYear, gr?.grad_cohorts?.no_pell_no_loan);
     for (const [group, [rate, cohort]] of Object.entries(GRAD_RACE_SERIES)) {
       const g = group as keyof typeof GRAD_RACE_SERIES;
       check(rate, raceYear, o?.grad_rate_by_race?.[g]);

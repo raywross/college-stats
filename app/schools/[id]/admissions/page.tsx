@@ -9,7 +9,7 @@ import { eventYear, historyEvents } from "@/lib/events";
 import { FACTOR_ERA } from "@/lib/derive";
 import { LANDSCAPE_X, LANDSCAPE_Y, LANDSCAPE_ZONE } from "@/lib/chart-configs";
 import { BLOCK_SCROLL, Panel, Block, NotReported } from "@/components/profile/Panel";
-import { ReportedAdmissionsBlock } from "@/components/profile/ReportedAdmissions";
+import { FederalBaselineLine, PartialReportedLine } from "@/components/profile/ReportedAdmissions";
 import { TopicPage, topicMetadata } from "@/components/profile/TopicPage";
 import { HeadlineDelta } from "@/components/history/HeadlineDelta";
 import { ShowMore } from "@/components/ui/show-more";
@@ -42,10 +42,19 @@ const TOPIC = "admissions";
 export default async function AdmissionsPage({ params }: Props) {
   const { id } = await params;
   const p = await requireTopic(id, TOPIC);
-  const { data, school, history, counts, scores, rate, sat, yld, onMap } = p;
+  const { data, school, history, scores, rate, sat, onMap, newest, yld: federalYld } = p;
   const { citeField, distribution, landscapePoints, metricMedian, rankOf } = data;
   const { admissions: a } = school;
   const bySex = admissionsBySex(school);
+  // The funnel, waffle, and yield ring show the newest class the college has published (lib/newest.ts,
+  // specs/college-reported-round-2.md Decision 1); the yield and acceptance-rate distribution strips below stay
+  // federal (`federalYld`, `rate`), since they compare this college against every other on the same year.
+  const counts = newest.applicants !== null && newest.applicants >= 10 && newest.admitted !== null && newest.enrolled !== null;
+  // The funnel's bar rows only need applicants (to size the bars) and show whichever of admitted/enrolled the
+  // college has; the 100-square waffle needs all three, so a newer class missing one (e.g. Duke has no enrolled
+  // count yet) still shows its applied/admitted bars without inventing a square count.
+  const funnelRows = newest.applicants !== null && newest.applicants >= 10;
+  const yld = newest.yield;
   // Admission factor changes since the fall 2022 redesign, when both years use the same codes (lib/events.ts).
   const recentAdmissionChanges = history ? historyEvents(history.history).filter((e) => e.area === "admissions" && e.kind === "fall" && e.year > FACTOR_ERA) : [];
   const federalSat = citeField("admissions.sat_reading_25_75", school).isDefault && citeField("admissions.sat_math_25_75", school).isDefault;
@@ -70,41 +79,46 @@ export default async function AdmissionsPage({ params }: Props) {
         level={1}
         domain="admissions"
         eyebrow="Admissions"
-        title={a.year ? `Getting in, fall ${a.year}` : "Getting in"}
+        title={newest.year ? `Getting in, fall ${newest.year}` : "Getting in"}
         takeaway={admissionsTakeaway(data, school)}
         delta={history && <HeadlineDelta seriesKey="acceptance_rate" history={history.history} files={history.files} color={DOMAINS.admissions.color} href={topicHref(school.unit_id, "history")} />}
         school={school}
         fields={TOPIC_FIELDS[TOPIC]}
       >
-        {school.reported?.admissions && <ReportedAdmissionsBlock school={school} citeField={citeField} className="mb-4" />}
         <div className="grid gap-4 lg:grid-cols-[1fr_1.2fr]">
           {counts ? (
             // Below lg: the funnel says the same thing in a fifth of the height, so the waffle follows it, folded (it sits beside the funnel from lg).
             <ShowMore until="lg" label="Show out of every 100 applicants" hint="The funnel as 100 squares" className="max-lg:order-last">
               <Block title="Out of every 100 applicants…" className="h-full">
-                <Waffle applicants={a.applicants!} admitted={a.admitted!} enrolled={a.enrolled!} />
+                <Waffle applicants={newest.applicants!} admitted={newest.admitted!} enrolled={newest.enrolled!} />
               </Block>
             </ShowMore>
           ) : (
             <NotReported what="An applicant/admit/enroll breakdown" />
           )}
           <div className="flex flex-col gap-4">
-            {counts && (
+            {newest.partial && <PartialReportedLine school={school} citeField={citeField} partial={newest.partial} />}
+            {funnelRows && (
               <Block
                 id="funnel"
                 title={
                   <>
                     {/* Applied, admitted, and enrolled always come from the same report, so the heading carries the chip. */}
-                    The funnel <SourceChip cited={citeField("admissions.applicants", school)} />
+                    The funnel <SourceChip cited={citeField(newest.paths.applicants, school)} />
                   </>
                 }
               >
+                {newest.source === "reported" && <FederalBaselineLine school={school} citeField={citeField} className="mb-3" />}
                 <div className="space-y-3">
-                  {[
-                    { label: "Applied", value: a.applicants!, term: "applicants" as const, field: "admissions.applicants" as const },
-                    { label: "Admitted", value: a.admitted!, term: "admitted" as const, field: "admissions.admitted" as const },
-                    { label: "Enrolled", value: a.enrolled!, term: "enrolled" as const, field: "admissions.enrolled" as const },
-                  ].map((step, i) => (
+                  {(
+                    [
+                      { label: "Applied", value: newest.applicants, term: "applicants" as const, field: newest.paths.applicants },
+                      { label: "Admitted", value: newest.admitted, term: "admitted" as const, field: newest.paths.admitted },
+                      { label: "Enrolled", value: newest.enrolled, term: "enrolled" as const, field: newest.paths.enrolled },
+                    ] satisfies { label: string; value: number | null; term: "applicants" | "admitted" | "enrolled"; field: (typeof newest.paths)[keyof typeof newest.paths] }[]
+                  )
+                    .filter((step): step is typeof step & { value: number } => step.value !== null)
+                    .map((step, i) => (
                     <div key={step.label} className="grid grid-cols-[5.5rem_1fr] items-center gap-3">
                       <MetricLabel term={step.term} cited={citeField(step.field, school)} chip={false} className="text-sm font-medium">
                         {step.label}
@@ -113,7 +127,7 @@ export default async function AdmissionsPage({ params }: Props) {
                         <div
                           className="h-7 origin-left animate-grow-x rounded-lg"
                           style={{
-                            width: `${Math.max(2, (step.value / a.applicants!) * 100) * 0.8}%`,
+                            width: `${Math.max(2, (step.value / newest.applicants!) * 100) * 0.8}%`,
                             backgroundColor: `color-mix(in oklch, ${DOMAINS.admissions.color} ${100 - i * 30}%, transparent)`,
                             animationDelay: `${i * 120}ms`,
                           }}
@@ -171,13 +185,13 @@ export default async function AdmissionsPage({ params }: Props) {
                   </Ring>
                   <div>
                     <h3 className="flex items-center gap-1 font-display text-lg font-bold">
-                      Yield <InfoTip term="yield" cited={citeField("derived.yield", school)} />
-                      <SourceChip cited={citeField("derived.yield", school)} />
+                      Yield <InfoTip term="yield" cited={citeField(newest.source === "reported" ? newest.paths.enrolled : "derived.yield", school)} />
+                      <SourceChip cited={citeField(newest.source === "reported" ? newest.paths.enrolled : "derived.yield", school)} />
                     </h3>
                     <p className="text-sm text-muted-foreground">{yieldTakeaway(data, school)}</p>
                   </div>
                 </div>
-                <DistributionStrip label="Yield rate vs. every college" term="yield" dist={distribution("yield")} value={yld} rank={rankOf(school, "yield")} format="pct" color={DOMAINS.admissions.color} />
+                <DistributionStrip label="Yield rate vs. every college" term="yield" dist={distribution("yield")} value={federalYld ?? yld} rank={rankOf(school, "yield")} format="pct" color={DOMAINS.admissions.color} />
               </Block>
             )}
             {rate !== null && (

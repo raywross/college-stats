@@ -11,6 +11,7 @@ import { hasGradByGroup } from "./graduation-groups";
 import { isShown } from "./outcome-measures";
 import { INSTRUCTION_METRIC, endowmentMetricFor } from "./finances";
 import { PROFILE_TOPICS, type TopicKey } from "./profile-topics";
+import { newestAdmissions, type NewestAdmissions } from "./newest";
 
 /** A college's history shard and the shared history files, when both exist (specs/trends-data.md). */
 export interface ProfileHistory {
@@ -45,6 +46,12 @@ export interface Profile {
   rate: number | null;
   sat: [number, number] | null;
   yld: number | null;
+  /**
+   * The newest class a college has published anywhere (specs/college-reported-round-2.md, Decision 1): its own
+   * reported funnel when newer than the federal year, else federal. Drives the admissions page's funnel, ring, and
+   * headline; `rate`/`counts`/`yld` above stay federal for the admissions map and other cross-college comparisons.
+   */
+  newest: NewestAdmissions;
   div: number | null;
   avgCost: number | null;
   earnings: number | null;
@@ -136,6 +143,7 @@ export const loadProfile = cache(async (id: string): Promise<Profile | null> => 
     rate,
     sat: satComposite(school),
     yld: yieldRate(school),
+    newest: newestAdmissions(school),
     div: diversityIndex(school),
     avgCost,
     earnings,

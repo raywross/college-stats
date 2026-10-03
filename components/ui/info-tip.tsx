@@ -50,7 +50,7 @@ function SourceBlock({ cited }: { cited: Cited }) {
       {!cited.isDefault && (
         <p className="font-medium text-foreground">
           {cited.key === "college-site"
-            ? "Reported by the college on its own site and checked automatically against its own figures and the federal baseline."
+            ? "Reported by the college itself; newer than the federal figure, which is one line below."
             : `This value comes from a different source than most of this page${cited.key === "cds" ? ": the college's own Common Data Set" : ""}.`}
         </p>
       )}

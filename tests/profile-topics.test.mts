@@ -124,6 +124,9 @@ const LEGACY_FIELDS = Object.freeze({
     "outcomes.grad_cohorts",
     "outcomes.grad_rate_by_race",
     "outcomes.grad_cohorts_by_race",
+    // Deliberately new (specs/data-expansion/cds-student-body-and-outcomes.md): the race plot's federal overall line
+    // when a newer CDS class replaced the Pell plot.
+    "outcomes.federal.graduation",
   ],
   academics: [
     "academics.bachelors_awarded",

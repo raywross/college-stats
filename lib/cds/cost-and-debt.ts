@@ -341,7 +341,8 @@ export function applyCostAndDebt(school: School, record: CollegeRecord | undefin
   if (!cost && !outcomes) return school;
   return {
     ...school,
-    reported: { ...school.reported, ...(cost ? { cost } : {}), ...(outcomes ? { outcomes } : {}) },
+    // `reported.outcomes` is shared with the 4- and 5-year graduation shares (lib/cds/student-body.ts), so merge into it.
+    reported: { ...school.reported, ...(cost ? { cost } : {}), ...(outcomes ? { outcomes: { ...school.reported?.outcomes, ...outcomes } } : {}) },
     lineage: { ...school.lineage, ...lineage },
   };
 }

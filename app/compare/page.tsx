@@ -21,7 +21,7 @@ import { DESIGNATION_LABELS, RESEARCH_LABELS } from "@/lib/campus-profile";
 import { CALENDAR_LABELS, DIVISION_LABELS, ROTC_LABELS, divisionFilterOf } from "@/lib/campus-services";
 import { FORM_SHORT } from "@/lib/finances";
 import { compact, money, moneyCompact, num, pct, pctSmart } from "@/lib/format";
-import { gradRateCell } from "@/lib/graduation-groups";
+import { MIN_GROUP_COHORT, gradRateCell } from "@/lib/graduation-groups";
 import type { School } from "@/lib/types";
 import { CompareHeader } from "@/components/compare/CompareHeader";
 import { CompareMetric } from "@/components/compare/CompareMetric";
@@ -85,6 +85,32 @@ const FACTOR_ROWS = (
         return use ? FACTOR_USE_LABELS[use] : null;
       },
     ] as const
+) satisfies readonly (readonly [string, TermKey, FieldPath, (s: School) => string | null])[];
+
+/** Finished within 4 and 5 years by aid group (`reported.outcomes.graduation`): "Not published" where the college's CDS doesn't say. */
+const ON_TIME_ROWS = (
+  [4, 5].flatMap((years) =>
+    (
+      [
+        ["Pell recipients", "pell"],
+        ["neither Pell nor subsidized loan", "no_pell_no_loan"],
+        ["all first-time full-time", "total"],
+      ] as const
+    ).map(
+      ([who, group]) =>
+        [
+          `Finished within ${years} years: ${who}`,
+          "on-time-graduation",
+          "reported.outcomes.graduation",
+          (s: School) => {
+            const g = s.reported?.outcomes?.graduation;
+            if (!g) return "Not published";
+            const v = (years === 4 ? g.within_4 : g.within_5)[group];
+            return v === null ? `Not shown: under ${MIN_GROUP_COHORT} students` : pct(v);
+          },
+        ] as const
+    )
+  )
 ) satisfies readonly (readonly [string, TermKey, FieldPath, (s: School) => string | null])[];
 
 /**
@@ -198,6 +224,8 @@ const TABLE_ROWS = (
     ["Graduated in 6 years, neither Pell nor subsidized loan", "pell-graduation-gap", "outcomes.grad_rate_no_pell_no_loan", (s: School) =>
       gradRateCell(s.outcomes?.grad_rate_no_pell_no_loan, s.outcomes?.grad_cohorts?.no_pell_no_loan)],
     ["Pell graduation gap", "pell-graduation-gap", "derived.pell_grad_gap", (s: School) => opt(METRICS.pellGap.get(s), METRICS.pellGap.format)],
+    // From the college's CDS, same class as the 6-year rates above (specs/data-expansion/cds-student-body-and-outcomes.md); no "Highest" flags.
+    ...ON_TIME_ROWS,
     ["Graduated in 6 years, White students", "graduation-rate", "outcomes.grad_rate_by_race", (s: School) =>
       gradRateCell(s.outcomes?.grad_rate_by_race?.white, s.outcomes?.grad_cohorts_by_race?.white)],
     ["Graduated in 6 years, Asian students", "graduation-rate", "outcomes.grad_rate_by_race", (s: School) =>

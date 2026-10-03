@@ -5,6 +5,7 @@
  */
 import type { DatasetMeta, FederalAdmissions, LineageRecord, ReportedSourceKind, School, SourceInfo, SourceKey } from "./types";
 import { FIELDS, METADATA_KEYS, PER_DOCUMENT_SOURCES, REPORTED_PATHS, isFieldPath, registeredPathFor, type FieldPath, type VintageKey } from "./fields.ts";
+import { NEWEST_TARGETS, newestGroupCitation, validateNewestGroups } from "./newest-groups.ts";
 
 /** A source as cited for one value: plain data, safe to pass to client components. */
 export interface CitedSource {
@@ -33,10 +34,12 @@ export interface Cited extends CitedSource {
    * For a funnel value that a newer college-reported class replaced: the previous (federal or hand-imported CDS)
    * value and the year it describes, from `admissions.federal`, so the tooltip can say "Federal data, fall 2024: 5.8%".
    */
-  replaces?: { value: number | null; year: string | null };
+  replaces?: { value: number | Record<string, number> | null; year: string | null };
   /** For a value reported by the college itself (source "college-site"): which kind of document supplied it. */
   sourceKind?: ReportedSourceKind;
-  /** For a value read from a CDS record: the document, "2025–26 Common Data Set", when its year differs from the value's. */
+  /** For a value from a college's Common Data Set record: its edition, "2025–26" (the year is the value's own). */
+  cdsEdition?: string;
+  /** The same document named in full, "2025–26 Common Data Set", for lines that spell out the document. */
   document?: string;
 }
 
@@ -190,10 +193,11 @@ export function lineageFor(path: FieldPath, school: School | undefined, meta: Da
     // A round-3 record value names its CDS edition (its year is the item's own, e.g. next year's price); the
     // admissions block's document kind applies only to values without one.
     ...(rec?.source === "college-site" && rec.edition
-      ? { sourceKind: "cds" as const, document: `${rec.edition} Common Data Set` }
+      ? { sourceKind: "cds" as const, cdsEdition: rec.edition, document: `${rec.edition} Common Data Set` }
       : rec?.source === "college-site" && school?.reported?.admissions
         ? { sourceKind: school.reported.admissions.source_kind }
         : {}),
+    ...newestGroupCitation(path, school),
   };
 }
 
@@ -235,6 +239,7 @@ export const VINTAGE_KEYS: readonly VintageKey[] = [
   "scorecard-enrollment",
   "scorecard-age",
   "scorecard-cost",
+  "scorecard-retention",
   "scorecard-latest",
   "scorecard-fos",
 ];
@@ -344,6 +349,7 @@ export function validateSchool(school: School, meta: DatasetMeta): string[] {
     else if (rec.method !== "extracted" && rec.method !== "derived") errors.push(`${where}: ${path} must have method "extracted" or "derived"`);
   }
   errors.push(...validateNewest(school, where));
+  errors.push(...validateNewestGroups(school, where, meta));
   return errors;
 }
 
@@ -416,7 +422,23 @@ export function lineageForPatch(id: string, patch: Record<string, unknown>): Par
   for (const leaf of leafPaths(data)) {
     const p = registeredPathFor(leaf);
     if (!p) throw new Error(`overrides.json ${id}: "${leaf}" isn't registered in lib/fields.ts`);
+    // Rule 9 (specs/data-expansion/cds-student-body-and-outcomes.md): a newest group's paths come from the CDS records.
+    if (NEWEST_TARGETS.has(p)) throw new Error(`overrides.json ${id}: "${p}" comes from the college's CDS record (data/cds-records/, lib/newest-groups.ts), not an override`);
     out[p] = rec;
   }
   return { ...out, ...((patch.lineage as Partial<Record<FieldPath, LineageRecord>>) ?? {}) };
+}
+
+/** Every override in data/overrides.json that `lineageForPatch` refuses (`npm run check:lineage`). */
+export function validateOverrides(overrides: Record<string, unknown>): string[] {
+  const errors: string[] = [];
+  for (const [id, patch] of Object.entries(overrides)) {
+    if (id.startsWith("_")) continue;
+    try {
+      lineageForPatch(id, patch as Record<string, unknown>);
+    } catch (e) {
+      errors.push(e instanceof Error ? e.message : String(e));
+    }
+  }
+  return errors;
 }

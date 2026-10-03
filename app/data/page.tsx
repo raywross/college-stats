@@ -162,6 +162,13 @@ export default async function DataPage() {
 
   /* ---- Newer figures from colleges (specs/college-reported-data.md) ---- */
   const reportedCount = all.filter((s) => s.reported?.admissions).length;
+  // CDS student body and outcomes (specs/data-expansion/cds-student-body-and-outcomes.md): newer falls and classes by group.
+  const newerGroups = [
+    ["enrollment", all.filter((s) => s.lineage?.["demographics.undergrad_enrollment"]?.source === "college-site").length],
+    ["race and ethnicity", all.filter((s) => s.lineage?.["demographics.racial_diversity"]?.source === "college-site").length],
+    ["retention", all.filter((s) => s.lineage?.["outcomes.retention_rate"]?.source === "college-site").length],
+    ["graduation by Pell status", all.filter((s) => s.lineage?.["outcomes.grad_cohorts"]?.source === "college-site").length],
+  ] as const;
 
   /* ---- Upcoming releases ---- */
   const next = upcoming(calendar);
@@ -433,7 +440,13 @@ export default async function DataPage() {
           <div className="rounded-3xl border bg-card p-5 sm:p-6">
             <h3 className="font-display text-lg font-bold">Coverage so far</h3>
             <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-              {num(reportedCount)} {reportedCount === 1 ? "college" : "colleges"} currently {reportedCount === 1 ? "has" : "have"} a newer, checked figure in use across the site. Coverage
+              {num(reportedCount)} {reportedCount === 1 ? "college" : "colleges"} currently {reportedCount === 1 ? "has" : "have"} a newer, checked admissions figure in use across the site.
+              {newerGroups.some(([, n]) => n > 0) &&
+                ` From colleges' Common Data Sets, newer figures for ${newerGroups
+                  .filter(([, n]) => n > 0)
+                  .map(([what, n], i) => `${what} (${num(n)}${i === 0 ? (n === 1 ? " college" : " colleges") : ""})`)
+                  .join(", ")}.`}{" "}
+              Coverage
               depends on what each college publishes: selective colleges tend to post class profiles; many others post
               only a Common Data Set, and some publish neither.
             </p>

@@ -130,7 +130,7 @@ export default async function StudentsPage({ params }: Props) {
           </Block>
           <Block id="size" className="space-y-6">
             <h3 className="flex items-center gap-1.5 font-display text-lg font-bold">
-              Campus size
+              Campus size <InfoTip term="undergrad-enrollment" cited={citeField("demographics.undergrad_enrollment", school)} />
             </h3>
             <div className="flex items-baseline gap-2">
               <span className="font-display text-5xl font-extrabold tracking-tight">{num(d.undergrad_enrollment)}</span>

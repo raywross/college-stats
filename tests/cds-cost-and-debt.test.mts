@@ -199,7 +199,7 @@ test("the change compares like with like: G1's total against the federal tuition
 test("merge: the four colleges get their blocks with valid lineage; federal cost and debt are untouched", () => {
   const stripped = schools.map(stripReported);
   const records = [VANDERBILT, CORNELL, WM, ILLINOIS].map(record);
-  const { schools: merged } = mergeReported(stripped, reportedFile, records);
+  const { schools: merged } = mergeReported(stripped, reportedFile, { records, meta });
   for (const id of [VANDERBILT, CORNELL, WM, ILLINOIS]) {
     const before = schools.find((s) => s.unit_id === id)!;
     const s = merged.find((x) => x.unit_id === id)!;
@@ -233,10 +233,10 @@ test("lineage: a stored block without its record fails validation", () => {
 });
 
 test("re-merging is idempotent and a college whose record goes away loses its blocks", () => {
-  const once = mergeReported(schools, reportedFile, [record(CORNELL)]).schools;
-  const twice = mergeReported(once, reportedFile, [record(CORNELL)]).schools;
+  const once = mergeReported(schools, reportedFile, { records: [record(CORNELL)], meta }).schools;
+  const twice = mergeReported(once, reportedFile, { records: [record(CORNELL)], meta }).schools;
   assert.deepEqual(twice.find((s) => s.unit_id === CORNELL), once.find((s) => s.unit_id === CORNELL));
-  const gone = mergeReported(once, reportedFile, []).schools.find((s) => s.unit_id === CORNELL)!;
+  const gone = mergeReported(once, reportedFile, { records: [], meta }).schools.find((s) => s.unit_id === CORNELL)!;
   assert.equal(gone.reported, undefined);
   assert.ok(!Object.keys(gone.lineage ?? {}).some((k) => k.startsWith("reported.")));
 });
@@ -244,7 +244,7 @@ test("re-merging is idempotent and a college whose record goes away loses its bl
 /* ---- Guard: never in ranks, sorts, percentiles, Compare, Home, or history ---- */
 
 /** Any read of the cost-and-debt blocks or their computed fields. */
-const COST_DEBT_REFERENCE = /reported\??\.(cost|outcomes)\b|\bnext_year|\bgraduate_debt\b|\bgraduating_class\b|cds\/cost-and-debt/;
+const COST_DEBT_REFERENCE = /reported\??\.cost\b|reported\??\.outcomes\??\.(graduating_class|graduate_debt)\b|\bnext_year|\bgraduate_debt\b|\bgraduating_class\b|cds\/cost-and-debt/;
 
 const GUARDED_FILES = [
   "lib/metrics.ts",

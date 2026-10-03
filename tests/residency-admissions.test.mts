@@ -286,7 +286,7 @@ test("data/schools.json carries the grid for Vanderbilt, Cornell, and Illinois, 
   // The committed file is what a merge of the committed records gives (mergeReported is idempotent).
   const ids = ["221999", "190415", "231624", "145637"];
   const reported = JSON.parse(readFileSync(join(ROOT, "data", "college-reported.json"), "utf8"));
-  const again = mergeReported(ids.map(school), reported, records).schools;
+  const again = mergeReported(ids.map(school), reported, { records, meta }).schools;
   for (const s of again) assert.equal(JSON.stringify(s), JSON.stringify(schools.find((x) => x.unit_id === s.unit_id)), s.name);
 });
 

@@ -8,7 +8,6 @@
  *   readers can open.) Then run `npm run sync-data`.
  *
  * Reads, by row label rather than fixed cell, from the standard CDS sheets:
- *   B1/B2  undergraduate total and race/ethnicity
  *   C1     applied / admitted / enrolled
  *   C9     SAT/ACT percentiles and submission rates
  *   H2/H2A need-based and merit aid (full-time undergraduates)
@@ -79,7 +78,6 @@ async function main() {
 
   /* ---- C1 / C9: admissions & tests ---- */
   const FC = flatItems(C);
-  const FB = flatItems(B);
   const FH = flatItems(H);
   const warnings: string[] = [];
   /**
@@ -119,27 +117,9 @@ async function main() {
   if (satPct !== null) admissions.test_submission_rate_sat = round4(satPct);
   if (actPct !== null) admissions.test_submission_rate_act = round4(actPct);
 
-  /* ---- B1 / B2: enrollment & race ---- */
-  const undergrads = flat(FB, "Total all undergraduates") ?? numbers(row(B, "Total all undergraduates"))[0] ?? null;
-  note("B1 undergraduates", undergrads !== null);
-  // Race rows repeat for first-years, degree-seeking, and all undergrads; the last group is all undergrads.
-  const last = (label: string) => flat(FB, label, "last") ?? numbers(row(B, label)).at(-1) ?? 0;
-  const race = {
-    international: last("Nonresidents"),
-    hispanic: last("Hispanic/Latino"),
-    black: last("Black or African American"),
-    white: last("White, non-Hispanic"),
-    asian: last("Asian, non-Hispanic"),
-    two_or_more: last("Two or more races"),
-    other: last("American Indian") + last("Native Hawaiian") + last("Race and/or ethnicity unknown"),
-  };
-  const raceTotal = Object.values(race).reduce((a, b) => a + b, 0);
-  note("B2 race/ethnicity", raceTotal > 0);
-  const demographics: Record<string, unknown> = {};
-  if (undergrads !== null) demographics.undergrad_enrollment = undergrads;
-  if (raceTotal > 0) {
-    demographics.racial_diversity = Object.fromEntries(Object.entries(race).map(([k, v]) => [k, round4(v / raceTotal)]));
-  }
+  // B1/B2 (enrollment and race) are not imported: they come from the CDS records through the newest groups
+  // (lib/newest-groups.ts, specs/data-expansion/cds-student-body-and-outcomes.md), read by code, column 2 of B2, never
+  // "the last group" (column 3 at Illinois is non-degree students only). lineageForPatch refuses them in an override.
 
   /* ---- H2 / H2A: need-based & merit aid ---- */
   const col = fullTimeUndergradCol(H);
@@ -172,7 +152,6 @@ async function main() {
     cds: { edition, url: link },
   };
   if (Object.keys(admissions).length > 1) patch.admissions = admissions;
-  if (Object.keys(demographics).length) patch.demographics = demographics;
   if (hasAid) patch.aid = { cds: cdsAid };
 
   if (warnings.length) patch._warnings = warnings;

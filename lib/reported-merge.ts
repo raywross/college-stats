@@ -3,16 +3,19 @@
  * `schools` fresh every run, so stripping is a no-op there) and `scripts/merge-reported.mts` (which re-merges into
  * the committed `data/schools.json`, where a college dropped from `college-reported.json` since the last merge must
  * lose its block and get its previous funnel back). Each merged college's `reported` block then replaces its older
- * admissions figures in `admissions.*` (`lib/newest.ts#applyNewest`). Pure: no file I/O. See Decisions 1 and 5 of
- * specs/college-reported-round-2.md.
+ * admissions figures in `admissions.*` (`lib/newest.ts#applyNewest`), and its CDS record (data/cds-records/, round 3)
+ * adds the wave-4 blocks. Pure: no file I/O. See Decisions 1 and 5 of specs/college-reported-round-2.md and
+ * specs/college-reported-round-3.md Decision 2.
  */
-import type { School } from "./types";
+import type { DatasetMeta, School } from "./types";
 import { REPORTED_PATHS } from "./fields.ts";
 import { applyNewest, restoreFederal } from "./newest.ts";
 import type { ReportedFile } from "./reported.ts";
 import { reportedToPatch } from "./reported-checks.ts";
 import type { CollegeRecord } from "./cds-sections.ts";
 import { indexRecords } from "./cds-records.ts";
+import { applyNewestGroups, federalYears } from "./newest-groups.ts";
+import { studentBodyFromRecord } from "./cds/student-body.ts";
 import { mergeResidency } from "./cds/residency.ts";
 import { applyCostAndDebt } from "./cds/cost-and-debt.ts";
 
@@ -42,10 +45,16 @@ export interface MergeReportedResult {
   removed: number;
 }
 
+/** What the round-3 CDS records need to merge: the records themselves and, for the newest-everywhere groups, meta. */
+export interface CdsMergeInputs {
+  records: readonly CollegeRecord[];
+  /** `data/meta.json` vintages: the federal year each newest group compares against. Without it no group replaces. */
+  meta?: Pick<DatasetMeta, "vintages">;
+}
+
 /**
- * The round-3 CDS blocks each display spec adds from a college's record (data/cds-records/), applied in this order
- * after the C1 admissions block they may key on. Each step is that spec's own module and leaves a school without a
- * record untouched.
+ * The round-3 CDS blocks each display spec adds from a college's record, applied in this order after C1 and the
+ * newest groups. Each step is that spec's own module and leaves a school without a record untouched.
  */
 const RECORD_STEPS: readonly ((school: School, record: CollegeRecord | undefined) => School)[] = [
   // specs/data-expansion/cds-residency-admissions.md: admit rates and yields by residency.
@@ -57,30 +66,38 @@ const RECORD_STEPS: readonly ((school: School, record: CollegeRecord | undefined
 /**
  * Strips every school (`stripReported`), then re-applies the current entries in `reported.entries` (through
  * `reportedToPatch`, exactly as `sync-data` does) and `applyNewest`, so each college's newer published figures
- * replace its older ones in `admissions.*`, with lineage and `admissions.federal`. Then each college's CDS record
- * (`records`) adds its round-3 blocks under `school.reported` (`RECORD_STEPS`).
+ * replace its older ones in `admissions.*`, with lineage and `admissions.federal`. Then, from each college's CDS
+ * record: the newest groups (enrollment, race, retention, graduation; lib/newest-groups.ts, every federal comparison
+ * against the stripped baseline), and the wave-4 blocks under `school.reported` (`RECORD_STEPS`).
  */
-export function mergeReported(schools: School[], reported: ReportedFile, records: readonly CollegeRecord[] = []): MergeReportedResult {
+export function mergeReported(schools: School[], reported: ReportedFile, cds?: CdsMergeInputs): MergeReportedResult {
   const byUnitId = new Map(reported.entries.map((e) => [e.unit_id, e]));
-  const byRecord = indexRecords(records);
+  const byRecord = indexRecords(cds?.records ?? []);
+  const years = cds?.meta ? federalYears(cds.meta) : null;
   let merged = 0;
   let removed = 0;
-  const mergeEntry = (school: School): School => {
+  const groups = (s: School, baseline: School): School => {
+    const record = byRecord.get(s.unit_id);
+    return record && years ? applyNewestGroups(s, studentBodyFromRecord(record, baseline).found, years) : s;
+  };
+  const fromRecords = (s: School): School => {
+    const record = byRecord.get(s.unit_id);
+    return RECORD_STEPS.reduce((acc, step) => step(acc, record), s);
+  };
+  const result = schools.map((school) => {
     const hadReported = school.reported?.admissions != null;
     const stripped = stripReported(school);
     const entry = byUnitId.get(school.unit_id);
+    let withC1: School;
     if (!entry) {
       if (hadReported) removed++;
-      return stripped;
+      withC1 = stripped;
+    } else {
+      merged++;
+      const { reported: reportedData, lineage: entryLineage } = reportedToPatch(entry);
+      withC1 = applyNewest({ ...stripped, reported: reportedData, lineage: { ...stripped.lineage, ...entryLineage } });
     }
-    merged++;
-    const { reported: reportedData, lineage: entryLineage } = reportedToPatch(entry);
-    return applyNewest({ ...stripped, reported: reportedData, lineage: { ...stripped.lineage, ...entryLineage } });
-  };
-  const fromRecords = (school: School): School => {
-    const record = byRecord.get(school.unit_id);
-    return RECORD_STEPS.reduce((s, step) => step(s, record), school);
-  };
-  const result = schools.map((school) => fromRecords(mergeEntry(school)));
+    return fromRecords(groups(withC1, stripped));
+  });
   return { schools: result, merged, removed };
 }

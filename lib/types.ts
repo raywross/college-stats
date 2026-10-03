@@ -97,6 +97,8 @@ export interface School {
       international: number;
       other: number;
     } | null;
+    /** The federal fall a newer CDS fall replaced (lib/newest-groups.ts); present only when enrollment or race was replaced. */
+    federal?: FederalDemographics;
   };
   /** What students pay, per year (College Scorecard; dollars). */
   cost?: {
@@ -184,6 +186,8 @@ export interface School {
     /** By race/ethnicity (College Scorecard `completion_rate_4yr_150_*`), null under 30 students; and the cohorts. */
     grad_rate_by_race?: Record<GradRaceGroup, number | null> | null;
     grad_cohorts_by_race?: Record<GradRaceGroup, number | null> | null;
+    /** Federal outcomes a newer CDS cohort replaced (lib/newest-groups.ts); each part present only when replaced. */
+    federal?: FederalOutcomes;
   };
   /** Financial aid for full-time first-time undergrads (IPEDS Student Financial Aid survey). */
   aid?: {
@@ -328,8 +332,57 @@ export interface ReportedData {
   admissions_by_residency?: ReportedResidencyAdmissions;
   /** Next year's price and its detail (CDS G; specs/data-expansion/cds-cost-and-debt.md). Never replaces `cost.*`. */
   cost?: ReportedCost;
-  /** The graduating class and its borrowing (CDS H4–H5; specs/data-expansion/cds-cost-and-debt.md). */
+  /**
+   * CDS outcome fields federal data doesn't have at this definition: 4- and 5-year graduation by aid group
+   * (specs/data-expansion/cds-student-body-and-outcomes.md) and the graduating class with its borrowing (CDS H4–H5;
+   * specs/data-expansion/cds-cost-and-debt.md).
+   */
   outcomes?: ReportedOutcomes;
+}
+
+/* ---- CDS student body and outcomes (specs/data-expansion/cds-student-body-and-outcomes.md) ---- */
+
+/** The four Pell/loan groups of the graduation grid (IPEDS GR and CDS B4–B11). */
+export type GradAidGroup = "pell" | "loan_no_pell" | "no_pell_no_loan" | "total";
+
+/** `demographics.federal`: the federal fall a newer CDS fall (B1, B2) replaced. */
+export interface FederalDemographics {
+  /** The federal fall replaced, e.g. 2024. */
+  year: number;
+  undergrad_enrollment: number;
+  men_share: number | null;
+  women_share: number | null;
+  part_time_share: number | null;
+  racial_diversity: School["demographics"]["racial_diversity"];
+}
+
+/** `outcomes.federal`: the federal retention and graduation a newer CDS cohort replaced. */
+export interface FederalOutcomes {
+  retention?: { entering_year: number | null; retention_rate: number | null };
+  graduation?: {
+    /** The entering fall of the federal class replaced, e.g. 2018. */
+    entering_year: number;
+    grad_rate_pell: number | null;
+    grad_rate_loan_no_pell: number | null;
+    grad_rate_no_pell_no_loan: number | null;
+    grad_rate_ftft: number | null;
+    grad_cohorts: Record<GradAidGroup, number | null> | null;
+  };
+}
+
+/** `school.reported.outcomes`: CDS outcome fields federal data doesn't have at this definition. */
+export interface ReportedOutcomes {
+  /** Finished within 4 and 5 years, first-time full-time bachelor's-seeking students, by aid group (B4–B11 D, D+E ÷ C). Null under 30 students. */
+  graduation?: {
+    /** Always the class the shown six-year rates describe. */
+    entering_year: number;
+    within_4: Record<GradAidGroup, number | null>;
+    within_5: Record<GradAidGroup, number | null>;
+  };
+  /** H4: first-time students who earned a bachelor's in the class named by the document (lib/cds/cost-and-debt.ts). */
+  graduating_class?: { year: number; size: number };
+  /** H5: that class's borrowing, by loan source. */
+  graduate_debt?: ReportedGraduateDebt;
 }
 
 /** The newest first-year, all-rounds admissions figures a college has published, newer than its federal year. */
@@ -431,14 +484,6 @@ export interface CdsExpenses {
   commuters_away: { books_supplies: number | null; housing_only: number | null; food_only: number | null; food_and_housing_total: number | null; transportation: number | null; other: number | null };
   /** Non-numeric answers as printed ("varies"), keyed like "residents.transportation"; never treated as $0. */
   text?: Record<string, string>;
-}
-
-/** `school.reported.outcomes`: CDS H4–H5, the class that just graduated. */
-export interface ReportedOutcomes {
-  /** H4: first-time students who earned a bachelor's in the class named by the document. */
-  graduating_class?: { year: number; size: number };
-  /** H5: that class's borrowing, by loan source. */
-  graduate_debt?: ReportedGraduateDebt;
 }
 
 export type GraduateDebtRowKey = "any" | "federal" | "institutional" | "state" | "private";

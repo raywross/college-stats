@@ -13,18 +13,6 @@
       "enrolled": 6272,
       "acceptance_rate": 0.1104
     },
-    "demographics": {
-      "undergrad_enrollment": 33469,
-      "racial_diversity": {
-        "international": 0.0984,
-        "hispanic": 0.221,
-        "black": 0.0205,
-        "white": 0.1979,
-        "asian": 0.3545,
-        "two_or_more": 0.0678,
-        "other": 0.0399
-      }
-    },
     "aid": {
       "cds": {
         "undergrads": 31572,
@@ -67,18 +55,6 @@
       ],
       "test_submission_rate_sat": 0.4128,
       "test_submission_rate_act": 0.1433
-    },
-    "demographics": {
-      "undergrad_enrollment": 37140,
-      "racial_diversity": {
-        "international": 0.149,
-        "hispanic": 0.1418,
-        "black": 0.0523,
-        "white": 0.3722,
-        "asian": 0.2267,
-        "two_or_more": 0.0407,
-        "other": 0.0173
-      }
     },
     "aid": {
       "cds": {
@@ -123,18 +99,6 @@
       "test_submission_rate_sat": 0.37,
       "test_submission_rate_act": 0.06
     },
-    "demographics": {
-      "undergrad_enrollment": 31133,
-      "racial_diversity": {
-        "international": 0.0367,
-        "hispanic": 0.1108,
-        "black": 0.1291,
-        "white": 0.3849,
-        "asian": 0.2363,
-        "two_or_more": 0.0508,
-        "other": 0.0514
-      }
-    },
     "aid": {
       "cds": {
         "undergrads": 28371,
@@ -177,18 +141,6 @@
       ],
       "test_submission_rate_sat": 0.43,
       "test_submission_rate_act": 0.13
-    },
-    "demographics": {
-      "undergrad_enrollment": 16138,
-      "racial_diversity": {
-        "international": 0.1039,
-        "hispanic": 0.1219,
-        "black": 0.0579,
-        "white": 0.3028,
-        "asian": 0.2751,
-        "two_or_more": 0.0612,
-        "other": 0.0771
-      }
     },
     "aid": {
       "cds": {
@@ -233,18 +185,6 @@
       "test_submission_rate_sat": 0.28,
       "test_submission_rate_act": 0.1
     },
-    "demographics": {
-      "undergrad_enrollment": 29060,
-      "racial_diversity": {
-        "international": 0.2619,
-        "hispanic": 0.1433,
-        "black": 0.0684,
-        "white": 0.2201,
-        "asian": 0.2205,
-        "two_or_more": 0.0433,
-        "other": 0.0425
-      }
-    },
     "aid": {
       "cds": {
         "undergrads": 27778,
@@ -287,18 +227,6 @@
       ],
       "test_submission_rate_sat": 0.274,
       "test_submission_rate_act": 0.246
-    },
-    "demographics": {
-      "undergrad_enrollment": 7221,
-      "racial_diversity": {
-        "international": 0.1118,
-        "hispanic": 0.1136,
-        "black": 0.0921,
-        "white": 0.39,
-        "asian": 0.1854,
-        "two_or_more": 0.0568,
-        "other": 0.0504
-      }
     },
     "aid": {
       "cds": {
@@ -343,18 +271,6 @@
       "test_submission_rate_sat": 0.4299,
       "test_submission_rate_act": 0.1557
     },
-    "demographics": {
-      "undergrad_enrollment": 7063,
-      "racial_diversity": {
-        "international": 0.0333,
-        "hispanic": 0.0906,
-        "black": 0.0515,
-        "white": 0.6232,
-        "asian": 0.1147,
-        "two_or_more": 0.0723,
-        "other": 0.0143
-      }
-    },
     "aid": {
       "cds": {
         "undergrads": 6882,
@@ -395,18 +311,6 @@
         27,
         34
       ]
-    },
-    "demographics": {
-      "undergrad_enrollment": 44819,
-      "racial_diversity": {
-        "international": 0,
-        "hispanic": 0.0827,
-        "black": 0.0303,
-        "white": 0.5964,
-        "asian": 0.1672,
-        "two_or_more": 0.0524,
-        "other": 0.0709
-      }
     },
     "aid": {
       "cds": {

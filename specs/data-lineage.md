@@ -25,7 +25,10 @@ regression test pins it).
    hand-imported CDS admissions figures in `data/schools.json` value by value (`lib/newest.ts#applyNewest`, run by
    `merge-reported` and `sync-data`), so the profile, Explore, Compare, ranks, medians, and Home all read the same
    `school.admissions`; years can differ between colleges, and each value's ⓘ says its own. Yield is never a
-   mixed-year ratio (`lib/derive.ts#sameClassYield`). History charts stay federal.
+   mixed-year ratio (`lib/derive.ts#sameClassYield`). History charts stay federal. The same rule covers the groups in
+   `lib/newest-groups.ts#NEWEST_GROUPS` (enrollment, race, retention, graduation by Pell group, from the CDS records),
+   which keep what they replaced in `demographics.federal` and `outcomes.federal` beside `admissions.federal`
+   ([cds-student-body-and-outcomes.md](data-expansion/cds-student-body-and-outcomes.md)).
 4. **Derived values cite their inputs.** A value calculated from non-default inputs (yield from CDS counts) is itself
    non-default.
 5. **Missing is `null`**, and has no lineage.

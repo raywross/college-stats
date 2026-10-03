@@ -12,7 +12,7 @@
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import type { DatasetMeta, School } from "../lib/types";
-import { validateLineage } from "../lib/lineage.ts";
+import { validateLineage, validateOverrides } from "../lib/lineage.ts";
 import { validateHistoryMeta, validateShard, type HistoryMeta, type SchoolHistory } from "../lib/history.ts";
 import { detailFileProblems, readDetails } from "./lib/publish-details.mts";
 import { validateCdsRecords } from "../lib/cds-records.ts";
@@ -48,6 +48,11 @@ if (details) problems.push(...detailFileProblems(details, schools, meta));
 // in the manifest, a year for every item group, a known schema or reader version.
 const records = readRecords(join(ROOT, "data", "cds-records"));
 problems.push(...validateCdsRecords(records, readManifest(join(ROOT, "data", "college-docs.json")), CDS_TEMPLATE));
+
+// Overrides (data/overrides.json): each says where its values came from, and none sets a path a newest group owns
+// (specs/data-expansion/cds-student-body-and-outcomes.md, rule 9): those come from the CDS records.
+const OVERRIDES = join(ROOT, "data", "overrides.json");
+if (existsSync(OVERRIDES)) problems.push(...validateOverrides(JSON.parse(readFileSync(OVERRIDES, "utf8"))));
 
 if (problems.length) {
   console.error(`Lineage check failed: ${problems.length} problem${problems.length === 1 ? "" : "s"}`);

@@ -252,6 +252,8 @@ export const TOPIC_FIELDS: Readonly<Record<TopicKey, readonly FieldPath[]>> = {
     "reported.outcomes.graduating_class",
     "reported.outcomes.graduate_debt.rows.any.share",
     "reported.outcomes.graduate_debt.rows.any.avg_principal",
+    // The race plot's overall line when a newer CDS class replaced the Pell plot (specs/data-expansion/cds-student-body-and-outcomes.md).
+    "outcomes.federal.graduation",
   ],
   // Every "Over time" chart cites its history editions in its group (HistorySourceNote), not the snapshot registry.
   history: [],

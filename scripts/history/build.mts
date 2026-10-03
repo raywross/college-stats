@@ -700,8 +700,9 @@ export function lastPointMismatches(schools: readonly School[], histories: Reado
     };
     /** `atLatest`: compare the series' own latest point (Scorecard fields, which don't share one year). */
     /** `at`: compare at this year instead of the kind's latest (athletics: the newest IC year). */
-    const check = (key: SeriesKey, snapshot: number | null | undefined, atLatest = false, at?: number) => {
-      if (overridden(SERIES[key].field)) return;
+    /** `kept`: the snapshot value is the federal one a newer CDS value replaced (demographics.federal), so compare even though the shown value has lineage. */
+    const check = (key: SeriesKey, snapshot: number | null | undefined, atLatest = false, at?: number, kept = false) => {
+      if (!kept && overridden(SERIES[key].field)) return;
       const kind = SERIES[key].kind;
       const hv = at !== undefined ? valueAt(h.series[key], at) : atLatest ? (latestPoint(h.series[key])?.value ?? null) : kind === "cohort" ? null : valueAt(h.series[key], latest[kind]);
       const sv = snapshot ?? null;
@@ -743,8 +744,12 @@ export function lastPointMismatches(schools: readonly School[], histories: Reado
     }
     // College Scorecard series end on the snapshot's "latest" values. (Graduation isn't compared: the profile shows
     // Scorecard's consumer rate, which has no history; the chart is the 6-year rate and says so.)
-    if (h.series.undergrads) check("undergrads", s.demographics.undergrad_enrollment, true);
-    if (h.series.men_share || s.demographics.men_share != null) check("men_share", s.demographics.men_share, true);
+    // Where a newer CDS fall replaced them (specs/data-expansion/cds-student-body-and-outcomes.md), history stays
+    // federal: its last point is compared with the kept federal values in demographics.federal, not the shown ones.
+    const fed = s.demographics.federal;
+    const dem = fed ?? s.demographics;
+    if (h.series.undergrads) check("undergrads", dem.undergrad_enrollment, true, undefined, !!fed);
+    if (h.series.men_share || dem.men_share != null) check("men_share", dem.men_share, true, undefined, !!fed);
     // At the newest loan-rate year any college reports, not each series' own last point: some colleges (the service
     // academies, a few small ones) reported 0% years ago and nothing since, and Scorecard's "latest" is empty for them.
     if (loanYear !== null && (h.series.federal_loan_rate || s.outcomes?.federal_loan_rate != null)) {
@@ -754,9 +759,9 @@ export function lastPointMismatches(schools: readonly School[], histories: Reado
         if (hv === null || sv === null || !same(hv, sv)) out.push(`${s.unit_id} federal_loan_rate: history ${hv ?? "none"}, snapshot ${sv ?? "none"}`);
       }
     }
-    if (h.series.part_time_share || s.demographics.part_time_share != null) check("part_time_share", s.demographics.part_time_share, true);
-    const race = s.demographics.racial_diversity;
-    if (race && h.series.race_white) for (const [k, key] of Object.entries(RACE_SERIES)) check(key, race[k as keyof typeof race], true);
+    if (h.series.part_time_share || dem.part_time_share != null) check("part_time_share", dem.part_time_share, true, undefined, !!fed);
+    const race = dem.racial_diversity;
+    if (race && h.series.race_white) for (const [k, key] of Object.entries(RACE_SERIES)) check(key, race[k as keyof typeof race], true, undefined, !!fed);
     if (h.series.median_debt || s.outcomes?.median_debt != null) check("median_debt", s.outcomes?.median_debt, true);
     const c = s.cost;
     // Only when the snapshot describes the same year (a newer sync-data run moves it ahead until history catches up).

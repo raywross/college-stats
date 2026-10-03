@@ -8,7 +8,8 @@
  *
  * For every school, strips any existing `reported` block and every `reported.*` lineage record, then re-applies
  * the current `data/college-reported.json` entries (through `reportedToPatch`, exactly as `scripts/sync-data.mts`
- * does — both call `lib/reported-merge.ts#mergeReported`, so they can't disagree). A college dropped from
+ * does — both call `lib/reported-merge.ts#mergeReported`, so they can't disagree), then the newest groups from
+ * `data/cds-records/` (enrollment, race, retention, graduation; lib/newest-groups.ts). A college dropped from
  * `college-reported.json` since the last merge loses its block. Refuses to write if the result fails
  * `validateLineage`. No network, no API key.
  */
@@ -34,9 +35,9 @@ function main() {
   const reported: ReportedFile = JSON.parse(readFileSync(REPORTED, "utf8"));
   const meta: DatasetMeta = JSON.parse(readFileSync(META, "utf8"));
 
-  // Round-3 CDS records (data/cds-records/): their blocks merge in the same pass (lib/reported-merge.ts).
+  // The CDS records (data/cds-records/) then supply the newest groups (specs/data-expansion/cds-student-body-and-outcomes.md).
   const records = readRecords(join(ROOT, "data", "cds-records"));
-  const { schools: merged, merged: mergedCount, removed } = mergeReported(schools, reported, records);
+  const { schools: merged, merged: mergedCount, removed } = mergeReported(schools, reported, { records, meta });
 
   const problems = validateLineage(merged, meta);
   if (problems.length) {

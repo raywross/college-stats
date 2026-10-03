@@ -259,6 +259,7 @@ const entries = {
   "degree-seeking": {
     term: "Degree-seeking undergraduate",
     short: "A student enrolled toward a bachelor's or associate degree, as opposed to someone taking classes without pursuing a degree. The site's undergraduate counts and shares include only degree-seeking students.",
+    long: "The newest figure may come from the college's own Common Data Set, a year newer than federal data; the ⓘ shows which.",
     category: "Students & access",
     related: ["undergrad-enrollment"],
   },
@@ -377,10 +378,19 @@ const entries = {
   "pell-graduation-gap": {
     term: "Pell graduation gap",
     short: "How many points lower the 6-year graduation rate is for Pell Grant recipients than for students who got neither a Pell Grant nor a subsidized federal loan, in the same entering class.",
-    long: "Federal data splits each entering class of first-time, full-time students three ways: Pell Grant recipients, students with a subsidized federal loan but no Pell Grant, and students with neither. Comparing Pell recipients with the \"neither\" group compares lower-income students with students who didn't qualify for need-based federal aid. A negative gap means Pell recipients graduated more often. Groups under 30 students aren't shown.",
+    long: "Federal data splits each entering class of first-time, full-time students three ways: Pell Grant recipients, students with a subsidized federal loan but no Pell Grant, and students with neither. Comparing Pell recipients with the \"neither\" group compares lower-income students with students who didn't qualify for need-based federal aid. A negative gap means Pell recipients graduated more often. Groups under 30 students aren't shown. The newest figure may come from the college's own Common Data Set, a year newer than federal data; the ⓘ shows which.",
     why: "Colleges admit students from every income level; the gap shows whether lower-income students who enroll finish as often as everyone else. It says more about support than the overall rate does.",
     category: "Cost & outcomes",
-    related: ["graduation-rate", "pell-grant", "adjusted-cohort"],
+    related: ["graduation-rate", "pell-grant", "adjusted-cohort", "on-time-graduation"],
+  },
+  // CDS student body and outcomes (specs/data-expansion/cds-student-body-and-outcomes.md).
+  "on-time-graduation": {
+    term: "Finished within 4 years",
+    short: "First-time, full-time students who started a bachelor's degree; the college's own count from its Common Data Set. The 6-year rate counts the same students two years later.",
+    long: "Colleges that publish a Common Data Set report how many of each entering class finished within 4, 5, and 6 years, split by Pell Grant recipients, students with a subsidized federal loan but no Pell Grant, and students with neither. Groups under 30 students aren't shown. This is a different group from the \"Time to degree\" figures, which follow every entering student, including part-time and transfer students.",
+    why: "Four years of tuition is the plan for most families; the gap between the 4- and 6-year marks shows how many students need longer, and whether that differs for lower-income students.",
+    category: "Cost & outcomes",
+    related: ["pell-graduation-gap", "time-to-degree", "cds"],
   },
   "adjusted-cohort": {
     term: "Adjusted cohort",
@@ -392,6 +402,7 @@ const entries = {
   "retention-rate": {
     term: "Retention rate",
     short: "The share of full-time first-year students who come back for their second year. An early signal of student satisfaction and support.",
+    long: "The newest figure may come from the college's own Common Data Set, a year newer than federal data; the ⓘ shows which.",
     category: "Cost & outcomes",
     related: ["graduation-rate"],
   },

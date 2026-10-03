@@ -216,6 +216,29 @@ shared rules for user data are in that README. All user data lives only in Supab
 - [ ] **Data API** ([product/data-api.md](product/data-api.md)): `/api/v1` with keys, limits, lineage and history
   endpoints, bulk downloads, `/developers` docs; free and paid tiers.
 
+## Ideas
+Not planned work: directions from the 2026-10-03 competitive analysis (CollegeIQ, College Kickstart) and a survey of
+guide-and-advisor sites in other verticals (travel, real estate, camps, cars, measured product reviews), each written
+up in [ideas/](ideas/README.md) far enough to judge and shown in their own section of `/roadmap`. An accepted idea
+moves into a section above.
+- [ ] **Guides** ([ideas/guides.md](ideas/guides.md)): common questions answered as living lists, each a published
+  query with its criteria shown, recomputed at every publish.
+- [ ] **Cost to a degree** ([ideas/cost-to-a-degree.md](ideas/cost-to-a-degree.md)): the four-year plan beside the
+  typical time to finish and the debt of those who leave.
+- [ ] **Near and far** ([ideas/near-and-far.md](ideas/near-and-far.md)): an Explore map view, distance and drive time
+  from a home ZIP, visit trips from the list, and the cost of getting home in the projection.
+- [ ] **Worst plausible spring** ([ideas/worst-plausible-spring.md](ideas/worst-plausible-spring.md)): a stress test
+  of the saved list under three scenarios, with gaps as facts, instead of a grade.
+- [ ] **Colleges that would compete for you** ([ideas/would-compete-for-you.md](ideas/would-compete-for-you.md)):
+  above the range, merit without need routine, demand softened, with the reasons.
+- [ ] **Cycle watch** ([ideas/cycle-watch.md](ideas/cycle-watch.md)): what changed for the coming cycle at every
+  college, from the agent's editions, plus an opt-in brief for counselors.
+- [ ] **Getting into the major** ([ideas/getting-into-the-major.md](ideas/getting-into-the-major.md)): admission
+  unit, direct admission, secondary admission, and change-of-major rules, read by the agent with quotes.
+- [ ] Smaller additions proposed for existing specs (standing with its direction, the list as a calendar feed, follow
+  a search, the household timeline, "check this number", a price after merit, a home ZIP, what the money never buys,
+  counselor-invited students free) are listed in the ideas README, unapplied.
+
 ## Quality
 - [ ] Tests for the sync mapping (`toSchool`), the CDS importer (fixtures for classic and flat layouts, including the
   Purdue typo case), and missing-data handling in `lib/metrics.ts`. (Aid and price derivations moved to

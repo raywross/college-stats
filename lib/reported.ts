@@ -71,6 +71,11 @@ export interface RecipeSource {
   processed?: string;
   /** The last extraction from this document, kept so a re-run can re-check without re-reading. */
   extraction?: Extraction | null;
+  /**
+   * Round 3: ISO date this URL was last requested (a 200 or a 304), so a known document gets its conditional GET at most
+   * monthly (lib/cds-reads.ts needsFetch, Decision 10). Absent: the manifest's `retrieved` is used.
+   */
+  checked?: string;
 }
 
 /** Where one college publishes its newer figures. Written by discovery; `sources` updated by every run. */
@@ -264,6 +269,9 @@ export type CheckId =
   | "previous-cohort-disagrees" // B5 grid (previous cohort) disagrees with IPEDS GR for the same cohort
   | "not-a-url" // G.001 isn't a URL (Cornell's "89*---31")
   | "out-of-range" // a domain range beyond the type (credits 0–200, reply weeks 1–12, aid averages ≤ cost)
+  // Round 3 pipeline (scripts/lib/college-reported/phases.mts): a batch request that failed twice, or was refused as
+  // invalid, so the document's call was never read. Not a check on figures; the breaker doesn't count it.
+  | "batch-failed"
 
 export interface CheckFailure {
   check: CheckId;
@@ -605,6 +613,13 @@ export interface RunSummaryV3 extends RunSummary {
   batches: BatchSummaryRow[];
   /** null until prepare has run. */
   projection: CostProjection | null;
+  /**
+   * Colleges whose every candidate host refuses us (Decision 8): no money was spent on them; the PR body lists them so
+   * the owner can add a link to data/reference/cds-urls.json and drop the file with `npm run archive-doc`.
+   */
+  blocked_colleges?: { unit_id: string; name: string; hosts: string[] }[];
+  /** Batches still open when the summary was written (the draft-PR signal; data/college-batches.json holds them). */
+  open_batches?: number;
 }
 
 /** "Fall 2026" → 2026; null for anything else. */

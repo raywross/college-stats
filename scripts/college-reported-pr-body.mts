@@ -10,7 +10,7 @@
  * "body" prints the PR body to stdout. "note" writes the release note to --out (release-notes/<slug>.md).
  */
 import { readFileSync, writeFileSync } from "node:fs";
-import type { REPORTED_MODELS, ReportedEntry, ReportedFile, ReviewItem, ReviewQueueFile, RunSummary } from "../lib/reported.ts";
+import type { REPORTED_MODELS, ReportedEntry, ReportedFile, ReviewItem, ReviewQueueFile, RunSummary, RunSummaryV3 } from "../lib/reported.ts";
 import type { School } from "../lib/types";
 import { itemOfCode } from "../lib/cds-sections.ts";
 
@@ -118,9 +118,14 @@ export function prBody(summary: RunSummary, queue: ReviewQueueFile, reported?: R
         `problem, not the data. Review before merging by hand.`,
     );
   } else {
-    lines.push("Not tripped. Failure and change shares were within the limits in `CIRCUIT_BREAKER` (lib/reported.ts).");
+    lines.push(
+      isRound3(summary)
+        ? "Not tripped. C1 failures, per-item failure shares in model reads, and changed values were within `CIRCUIT_BREAKER_V3` (lib/cds-checks.ts)."
+        : "Not tripped. Failure and change shares were within the limits in `CIRCUIT_BREAKER` (lib/reported.ts)."
+    );
   }
   lines.push("");
+  if (isRound3(summary)) lines.push(...round3Sections(summary));
 
   if (reported) {
     const entries = entriesForRun(reported, summary.run);
@@ -203,6 +208,52 @@ export function prBody(summary: RunSummary, queue: ReviewQueueFile, reported?: R
   );
 
   return lines.join("\n");
+}
+
+/** A round-3 run summary (specs/college-reported-round-3.md Decision 11) has `round: 3`. */
+export function isRound3(summary: RunSummary): summary is RunSummaryV3 {
+  return (summary as Partial<RunSummaryV3>).round === 3;
+}
+
+/**
+ * Round 3's own sections: colleges whose every candidate host refuses us (for the owner to add by hand), the batches
+ * (open ones keep the PR a draft), and the projection the run checked against its cap.
+ */
+export function round3Sections(summary: RunSummaryV3): string[] {
+  const out: string[] = [];
+  const blocked = summary.blocked_colleges ?? [];
+  if (blocked.length) {
+    out.push(
+      "## Blocked colleges (for the owner)",
+      "",
+      `${blocked.length} college${blocked.length === 1 ? "" : "s"} whose every candidate host refuses our user agent; no money was spent on ` +
+        "them. To add one: find the link in a browser, add it to `data/reference/cds-urls.json`, download the file, and run " +
+        "`npm run archive-doc -- --college <unit_id> --file <path> --url <url>`.",
+      "",
+      "| College | Hosts |",
+      "|---|---|",
+      ...blocked.map((b) => `| ${escapeCell(b.name)} (${b.unit_id}) | ${escapeCell(b.hosts.join(", "))} |`),
+      ""
+    );
+  }
+  if (summary.batches.length || summary.open_batches) {
+    out.push("## Batches", "");
+    if (summary.open_batches) out.push(`${summary.open_batches} batch${summary.open_batches === 1 ? " is" : "es are"} still open (\`data/college-batches.json\`); the collect job finishes ${summary.open_batches === 1 ? "it" : "them"}.`, "");
+    out.push("| Batch | Requests | Submitted | Ended | Succeeded | Errored | Expired | Reserved | Cost |", "|---|---|---|---|---|---|---|---|---|");
+    for (const b of summary.batches) out.push(`| ${b.id} | ${b.requests} | ${b.submitted} | ${b.ended ?? "open"} | ${b.succeeded} | ${b.errored} | ${b.expired} | ${usd(b.reserved_usd)} | ${usd(b.cost_usd)} |`);
+    out.push("");
+  }
+  if (summary.projection) {
+    const p = summary.projection;
+    out.push("## Projection", "", `This run: ${usd(p.run_usd ?? p.full_run_usd)}; the full run: ${usd(p.full_run_usd)} (${escapeCell(p.basis)}).`, "");
+  }
+  const types = Object.entries(summary.documents).filter(([, d]) => d.fetched || d.unchanged || d.model_calls);
+  if (types.length) {
+    out.push("## Documents by type", "", "| Type | Fetched | Unchanged | Archived | Model calls | No C/D split | Cost |", "|---|---|---|---|---|---|---|");
+    for (const [type, d] of types) out.push(`| ${type} | ${d.fetched} | ${d.unchanged} | ${d.archived} | ${d.model_calls} | ${d.split_fallback} | ${usd(d.cost_usd)} |`);
+    out.push("");
+  }
+  return out;
 }
 
 /**

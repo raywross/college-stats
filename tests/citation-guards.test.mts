@@ -45,7 +45,10 @@ function offenders(pattern: RegExp, allow: (file: string) => boolean = () => fal
 
 test("no hard-coded data years in app code (years come from lineage, so they update with each release)", () => {
   // e.g. "Fall 2024", "2023–24", "2024-25": these go stale silently when the data is refreshed.
-  assert.deepEqual(offenders(/\b[Ff]all 20\d\d\b|\b20\d\d[–-]\d\d\b/, () => false, APP_CODE), []);
+  // The one exception: lib/cds-template.ts imports the CDS template table of one template edition by name; its codes
+  // are only valid within that edition, so the file is named for it and a new edition is a new file, not a refresh.
+  const allow = (f: string) => f === "lib/cds-template.ts";
+  assert.deepEqual(offenders(/\b[Ff]all 20\d\d\b|\b20\d\d[–-]\d\d\b/, allow, APP_CODE), []);
 });
 
 test("UI reads sources through the lineage API, not raw metadata", () => {

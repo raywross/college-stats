@@ -377,6 +377,12 @@ export interface LineageRecord {
   /** Extracted values: the verbatim text the number came from. */
   quote?: string;
   page?: number;
+  /** College-reported values: the Common Data Set edition the value came from, "2025–26" (the year is the item's own). */
+  edition?: string;
+  /** A workbook value: the sheet and cell, "CDS-C!AC17". */
+  cell?: string;
+  /** A fillable-PDF value: the form field name (the template's US News PDF tag), "AP_RECD_1ST_N". */
+  field?: string;
 }
 
 /** Borrower status 3 years into repayment (College Scorecard `repayment.3_yr_bb_fed_repayment.ug.*`); they sum to 100%. */

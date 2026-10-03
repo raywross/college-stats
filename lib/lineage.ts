@@ -316,19 +316,24 @@ export function validateSchool(school: School, meta: DatasetMeta): string[] {
     if (rec.method === "extracted" && (!rec.quote || !rec.url || !rec.retrieved || !rec.year)) {
       errors.push(`${where}: ${path} is extracted but lacks quote, url, retrieved, or year`);
     }
+    // A value computed from a college's printed figures (a share from two CDS counts) cites them the same way.
+    if (rec.source === "college-site" && rec.method === "derived" && (!rec.quote || !rec.url || !rec.retrieved || !rec.year)) {
+      errors.push(`${where}: ${path} is derived from the college's document but lacks quote, url, retrieved, or year`);
+    }
   }
   if (school.cds && !Object.values(school.lineage ?? {}).some((r) => r?.source === "cds")) {
     errors.push(`${where}: has a "cds" record but no field cites it`);
   }
   // College-reported values (specs/college-reported-data.md): every stored one names its document, with a quote,
-  // and describes a year newer than the federal admissions year. Null is "not published", and has no lineage.
+  // and describes a year newer than the federal admissions year. Null is "not published", and has no lineage. A value
+  // computed from printed figures (round 3: a CDS share from its counts) may be "derived", with the same citation.
   for (const path of REPORTED_PATHS) {
     const value = valueAt(school, path);
     if (value === undefined || value === null) continue;
     const rec = school.lineage?.[path];
     if (!rec) errors.push(`${where}: ${path} is stored without a lineage record`);
     else if (rec.source !== "college-site") errors.push(`${where}: ${path} must cite source "college-site", not "${rec.source}"`);
-    else if (rec.method !== "extracted") errors.push(`${where}: ${path} must have method "extracted"`);
+    else if (rec.method !== "extracted" && rec.method !== "derived") errors.push(`${where}: ${path} must have method "extracted" or "derived"`);
   }
   errors.push(...validateNewest(school, where));
   return errors;

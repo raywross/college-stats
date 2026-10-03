@@ -285,6 +285,77 @@ export interface JobUsage {
   web_searches?: number;
 }
 
+/* ------------------------------------------------------------------ */
+/* Round 3 state files (specs/college-reported-round-3.md)             */
+/* ------------------------------------------------------------------ */
+
+/**
+ * One Message Batches API batch a run submitted and hasn't finished collecting (Decision 5). A run that ends with
+ * batches open leaves them here; the next collect picks them up within the API's 29-day window.
+ */
+export interface BatchEntry {
+  /** The API's id, "msgbatch_…". */
+  id: string;
+  /** extract: the C and rest calls; escalate: Sonnet re-reads of failing calls; picker: Haiku link pickers. */
+  phase: "extract" | "escalate" | "picker";
+  /** ISO timestamp of submission. */
+  submitted: string;
+  requests: number;
+  /** Worst-case cost held against `--max-cost` until results replace it with the actual cost. */
+  reserved_usd: number;
+  /** "u<unit_id>-<sha8>-<call>-v<version>", one per request, so results (which arrive in any order) are keyed back. */
+  custom_ids: string[];
+  /** The run that submitted it. */
+  run: string;
+}
+
+/** data/college-batches.json: the open batches. Empty between runs. */
+export interface BatchesFile {
+  /** ISO date of the last change; null before the first batch. */
+  updated: string | null;
+  batches: BatchEntry[];
+}
+
+/**
+ * How a host refused us (Decision 8): an HTTP status, "404-to-tools" when it answers a tool user agent with 404 but a
+ * browser with 200 (Texas A&M), or "challenge" for a bot-protection page (UVA's Cloudflare).
+ */
+export type BlockedStatus = 401 | 403 | "404-to-tools" | 405 | 429 | "challenge";
+
+/** A host the pipeline never spends discovery money on. Blocking is per host, not per college. */
+export interface BlockedHost {
+  host: string;
+  status: BlockedStatus;
+  /** ISO dates. */
+  first_seen: string;
+  last_seen: string;
+  /** Which colleges' candidates were on this host (for the PR body's list for the owner). */
+  unit_ids?: string[];
+}
+
+/** data/reference/blocked-hosts.json, written by the pipeline. */
+export interface BlockedHostsFile {
+  hosts: BlockedHost[];
+}
+
+/**
+ * A link the owner found by hand (Decision 8): step 0 of discovery for that college. For a blocked host, the owner
+ * also downloads the file and runs `npm run archive-doc`.
+ */
+export interface CdsUrlEntry {
+  unit_id: string;
+  url: string;
+  kind: ReportedSourceKind;
+  note?: string;
+  /** ISO date the owner added it. */
+  added: string;
+}
+
+/** data/reference/cds-urls.json, the owner's manual list. */
+export interface CdsUrlsFile {
+  entries: CdsUrlEntry[];
+}
+
 /** "Fall 2026" → 2026; null for anything else. */
 export function fallYear(term: string | null | undefined): number | null {
   const m = /^Fall (\d{4})$/.exec(term?.trim() ?? "");

@@ -167,15 +167,14 @@ over the first few months:
   college's index page started looking "changed" every time (e.g. a dynamic timestamp on the page) and needs its
   recipe adjusted so it doesn't get re-read needlessly.
 
-## 8. When to turn `auto_merge` on
-Keep `auto_merge` off for manually-triggered runs until you've reviewed several pilot PRs and are comfortable with
-the checks' judgment. Once you are:
-- **Scheduled runs already default to `auto_merge: true`** (mode `all`) — nothing to change there once you trust
-  the pipeline; the circuit breaker is the safety net (no auto-merge when more than 10% of attempted colleges fail
-  checks, or more than 25% of published values change in one run — the PR gets a comment explaining it's waiting
-  for a person instead).
-- For a manual run, check **auto_merge** in the workflow-dispatch form once you want that specific run to merge
-  itself after CI passes.
+## 8. Auto-merge is on by default
+Since 2026-10-03 every run, manual or scheduled, auto-merges its PR once CI passes: whatever passed the checks
+publishes, and whatever didn't is in the review queue. The PR is the mechanism (CI, a readable diff, a place for the
+queue), not a review step. Two things still hold a PR for a person:
+- **The circuit breaker**: more than 25% of already-published values came back different in one run (a systematic
+  misread). The PR gets a comment saying so.
+- **A run that stopped early** (cost cap, spend limit, cancel): its PR says "Stopped early" and waits.
+Untick **auto_merge** in the workflow-dispatch form when you want to read a specific run's PR before it merges.
 - If a scheduled run's circuit breaker trips more than once in a row, it's worth turning scheduled auto-merge off
   (comment out `auto_merge: true` in `.github/workflows/college-reported.yml`'s "Resolve run parameters" step) until
   you've found and fixed the underlying cause.

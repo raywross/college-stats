@@ -54,6 +54,10 @@ export function addUsage(log: UsageLog, job: Job, model: string, usage: Anthropi
   u.calls++;
   u.input_tokens += usage.input_tokens + (usage.cache_creation_input_tokens ?? 0) + (usage.cache_read_input_tokens ?? 0);
   u.output_tokens += usage.output_tokens;
+  // Detail for reading a run's cost: how much of the input was cache reads, and how many searches were billed.
+  u.cache_read_input_tokens = (u.cache_read_input_tokens ?? 0) + (usage.cache_read_input_tokens ?? 0);
+  u.cache_creation_input_tokens = (u.cache_creation_input_tokens ?? 0) + (usage.cache_creation_input_tokens ?? 0);
+  u.web_searches = (u.web_searches ?? 0) + (usage.server_tool_use?.web_search_requests ?? 0);
   u.cost_usd = Math.round((u.cost_usd + costOf(model, usage)) * 1e6) / 1e6;
 }
 
@@ -64,6 +68,6 @@ export function addUsage(log: UsageLog, job: Job, model: string, usage: Anthropi
 export interface ModelClient {
   messages: {
     create(body: Anthropic.MessageCreateParamsNonStreaming): Promise<Anthropic.Message>;
-    stream(body: Anthropic.MessageStreamParams): { finalMessage(): Promise<Anthropic.Message> };
+    stream(body: Anthropic.MessageStreamParams, options?: { signal?: AbortSignal }): { finalMessage(): Promise<Anthropic.Message> };
   };
 }

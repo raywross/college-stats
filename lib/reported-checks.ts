@@ -73,14 +73,16 @@ export function runChecks(x: Extraction, school: School, others?: Extraction[]):
     failures.push(fail("funnel-order", `enrolled ${x.enrolled} > admitted ${x.admitted}`));
   }
 
-  // 4. Stated rate matches admitted ÷ applicants within 0.1 pt, when both are given; otherwise nothing to check
-  //    (the rate is computed instead, in toReportedEntry).
+  // 4. Stated rate matches admitted ÷ applicants, when both are given, within the precision the college printed:
+  //    "42%" allows 0.5 pt (Clemson states 42% for 42.43%), "4.0%" allows 0.1 pt, "4.18%" 0.05 pt. Otherwise nothing
+  //    to check (the rate is computed instead, in toReportedEntry).
   if (x.acceptance_rate !== null && x.admitted !== null && x.applicants !== null && x.applicants > 0) {
     const computed = x.admitted / x.applicants;
     const diffPts = Math.abs(x.acceptance_rate - computed) * 100;
-    if (diffPts > 0.1) {
+    const tolerance = rateTolerancePts(x.quotes.acceptance_rate);
+    if (diffPts > tolerance) {
       failures.push(
-        fail("rate-matches", `stated rate ${(x.acceptance_rate * 100).toFixed(2)}% vs admitted ÷ applicants ${(computed * 100).toFixed(2)}% (diff ${diffPts.toFixed(2)} pt)`),
+        fail("rate-matches", `stated rate ${(x.acceptance_rate * 100).toFixed(2)}% vs admitted ÷ applicants ${(computed * 100).toFixed(2)}% (diff ${diffPts.toFixed(2)} pt, allowed ${tolerance} for a rate printed as "${quotedRate(x.quotes.acceptance_rate) ?? "?"}")`),
       );
     }
   }
@@ -191,4 +193,18 @@ export function reportedToPatch(entry: ReportedEntry): { reported: ReportedData;
     reported: { admissions: entry.admissions },
     lineage: entry.lineage as Partial<Record<FieldPath, LineageRecord>>,
   };
+}
+
+/** The rate as the document printed it ("42%", "4.0 percent"), from its quote; null when the quote has none. */
+export function quotedRate(quote: string | undefined): string | null {
+  const m = /(\d+(?:\.\d+)?)\s*(%|percent)/i.exec(quote ?? "");
+  return m ? `${m[1]}%` : null;
+}
+
+/** How far a stated rate may sit from the computed one, in points, given how many decimals the document printed. */
+export function rateTolerancePts(quote: string | undefined): number {
+  const printed = quotedRate(quote);
+  if (!printed) return 0.1;
+  const decimals = (printed.split(".")[1] ?? "").replace("%", "").length;
+  return decimals === 0 ? 0.5 : decimals === 1 ? 0.1 : 0.05;
 }

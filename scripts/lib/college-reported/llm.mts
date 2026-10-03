@@ -24,7 +24,12 @@ export interface LlmContext {
 /* ------------------------------------------------------------------ */
 
 /** Discovery's web-tool limits per college: a few searches and a few capped HTML pages, never whole documents. */
-export const DISCOVERY_LIMITS = { searches: 4, fetches: 4, fetchTokens: 6000 } as const;
+export const DISCOVERY_LIMITS = { searches: 3, fetches: 3, fetchTokens: 4000 } as const;
+/**
+ * One college's discovery may not run longer than this (the ten-college test spent 17 minutes on one college). The
+ * stream is aborted and the college is queued; no retry.
+ */
+export const DISCOVERY_TIMEOUT_MS = 6 * 60 * 1000;
 
 const RECIPE_TOOL: Anthropic.Tool = {
   name: "save_recipe",
@@ -110,7 +115,7 @@ export async function discover(ctx: LlmContext, school: School, opts: { model: s
     const res = await ctx.client.messages
       .stream({
         model: opts.model,
-        max_tokens: 16000,
+        max_tokens: 8000,
         system: DISCOVERY_SYSTEM,
         output_config: { effort: opts.effort },
         tools: [
@@ -119,7 +124,7 @@ export async function discover(ctx: LlmContext, school: School, opts: { model: s
           RECIPE_TOOL,
         ],
         messages: withCacheOnLast(messages),
-      })
+      }, { signal: AbortSignal.timeout(DISCOVERY_TIMEOUT_MS) })
       .finalMessage();
     addUsage(ctx.usage, opts.job, opts.model, res.usage);
     const call = res.content.find((b): b is Anthropic.ToolUseBlock => b.type === "tool_use" && b.name === RECIPE_TOOL.name);
@@ -199,7 +204,7 @@ export async function extract(ctx: LlmContext, school: School, doc: DocumentInpu
   });
   const base = {
     model: opts.model,
-    max_tokens: 4096,
+    max_tokens: 8192,
     system: [{ type: "text" as const, text: EXTRACTION_SYSTEM, cache_control: { type: "ephemeral" as const } }],
     messages: [{ role: "user" as const, content }],
   };

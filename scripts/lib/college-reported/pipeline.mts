@@ -112,15 +112,32 @@ const ROOT = join(import.meta.dirname, "..", "..", "..");
 export const DEFAULT_CACHE_DIR = join(ROOT, ".cache", "college-docs");
 
 /** Why the run's output must not auto-merge, or null. Limits are shares strictly greater than CIRCUIT_BREAKER's. */
-export function circuitBreaker(c: { attempted: number; failed: number; changed: number; priorValues: number }): string | null {
-  const reasons: string[] = [];
-  if (c.attempted > 0 && c.failed / c.attempted > CIRCUIT_BREAKER.maxFailureShare) {
-    reasons.push(`${c.failed} of ${c.attempted} attempted colleges failed checks (limit ${CIRCUIT_BREAKER.maxFailureShare * 100}%)`);
-  }
+export function circuitBreaker(c: { changed: number; priorValues: number }): string | null {
   if (c.priorValues > 0 && c.changed / c.priorValues > CIRCUIT_BREAKER.maxChangedShare) {
-    reasons.push(`${c.changed} of ${c.priorValues} published values changed (limit ${CIRCUIT_BREAKER.maxChangedShare * 100}%)`);
+    return `${c.changed} of ${c.priorValues} published values changed (limit ${CIRCUIT_BREAKER.maxChangedShare * 100}%)`;
   }
-  return reasons.length ? reasons.join("; ") : null;
+  return null;
+}
+
+/**
+ * A CDS link discovery returned for an edition no newer than the federal year (Northwestern's `2024-25.pdf` in the
+ * ten-college test, which 404s now) gets next year's URLs guessed beside it, so the fetch tries the newer file too.
+ */
+export function withNextEditions(recipe: Recipe, federalYear: number | null): Recipe {
+  if (federalYear === null) return recipe;
+  const urls = new Set(recipe.sources.map((s) => s.url));
+  const added: RecipeSource[] = [];
+  for (const s of recipe.sources) {
+    if (s.kind !== "cds") continue;
+    const year = entryYearOf(s.url);
+    if (year === null || year > federalYear) continue;
+    for (const url of guessNextEditionUrls(s.url, federalYear)) {
+      if (urls.has(url)) continue;
+      urls.add(url);
+      added.push({ kind: "cds", url, format: s.format });
+    }
+  }
+  return added.length ? { ...recipe, sources: [...added, ...recipe.sources] } : recipe;
 }
 
 const VALUE_KEYS = ["applicants", "admitted", "enrolled", "acceptance_rate"] as const;
@@ -405,7 +422,7 @@ export function createPipeline(deps: PipelineDeps) {
       counts.discovered++;
       const model = REPORTED_MODELS.discovery;
       try {
-        const fresh = await discover(ctx, school, { model, job: "discovery", effort });
+        const fresh = withNextEditions(await discover(ctx, school, { model, job: "discovery", effort }), school.admissions.year);
         log(`  ${school.name}: ${model} found ${fresh.sources.length} source(s)${fresh.none_found ? " (none newer)" : ""}`);
         return carryState(fresh, old);
       } catch (err) {
@@ -590,7 +607,7 @@ export function createPipeline(deps: PipelineDeps) {
         done,
         total,
         ...counts,
-        tripped: circuitBreaker({ attempted: counts.attempted, failed: counts.failed, changed: counts.changed, priorValues }),
+        tripped: circuitBreaker({ changed: counts.changed, priorValues }),
         usage: structuredClone(usage),
       };
       return {

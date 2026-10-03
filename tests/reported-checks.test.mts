@@ -8,7 +8,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import type { DatasetMeta, School } from "../lib/types";
 import type { Extraction } from "../lib/reported";
-import { runChecks, toReportedEntry, reportedToPatch } from "../lib/reported-checks.ts";
+import { rateTolerancePts, runChecks, toReportedEntry, reportedToPatch } from "../lib/reported-checks.ts";
 import { lineageFor, validateSchool } from "../lib/lineage.ts";
 
 const ROOT = join(import.meta.dirname, "..");
@@ -85,11 +85,20 @@ test("check 3: admitted ≤ applicants, enrolled ≤ admitted", () => {
 
 /* ---- 4. rate-matches ---- */
 
-test("check 4: a stated rate must match admitted ÷ applicants within 0.1 pt", () => {
+test("check 4: a stated rate must match admitted ÷ applicants within the precision the college printed", () => {
   assert.deepEqual(runChecks(goodExtraction(), school()), []);
   const bad: Extraction = { ...goodExtraction(), acceptance_rate: 0.1 };
   const failures = runChecks(bad, school());
   assert.ok(failures.some((f) => f.check === "rate-matches"), JSON.stringify(failures));
+  // Clemson (ten-college test, 2026-10-03): "42%" stated, 42.43% computed. A whole-percent rate allows 0.5 pt.
+  const clemson: Extraction = { ...goodExtraction(), applicants: 60000, admitted: 25458, enrolled: 4000, acceptance_rate: 0.42, quotes: { ...goodExtraction().quotes, applicants: "60,000 applied", admitted: "25,458 admitted", enrolled: "4,000 enrolled", acceptance_rate: "an admit rate of 42%" } };
+  assert.deepEqual(runChecks(clemson, school()).filter((f) => f.check === "rate-matches"), [], "42% vs 42.43% passes when printed without decimals");
+  const clemsonPrecise: Extraction = { ...clemson, quotes: { ...clemson.quotes, acceptance_rate: "an admit rate of 42.0%" } };
+  assert.ok(runChecks(clemsonPrecise, school()).some((f) => f.check === "rate-matches"), "42.0% vs 42.43% fails when printed with a decimal");
+  assert.equal(rateTolerancePts("about 42 percent"), 0.5);
+  assert.equal(rateTolerancePts("4.0%"), 0.1);
+  assert.equal(rateTolerancePts("4.18%"), 0.05);
+  assert.equal(rateTolerancePts(undefined), 0.1);
   // When the rate isn't stated, there's nothing to check (the rate gets computed instead).
   const unstated: Extraction = { ...goodExtraction(), acceptance_rate: null, quotes: { ...goodExtraction().quotes, acceptance_rate: undefined } };
   assert.deepEqual(runChecks(unstated, school()).filter((f) => f.check === "rate-matches"), []);

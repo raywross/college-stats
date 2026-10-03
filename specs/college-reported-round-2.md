@@ -141,6 +141,31 @@ profiles only after someone ran `npm run sync-data`. Now:
 - The PR body lists each published college with its term, source kind, and the values; the review queue and the
   `unreachable` list follow.
 
+## Round 2.1: after the ten-college test (2026-10-03)
+
+The first run on the round-2 code (10 colleges never tried before: Northwestern, Chicago, Rice, Emory, Carnegie
+Mellon, Boston College, Washington, Georgia, Clemson, Elon) took **26.5 minutes and $1.93** against an estimate of
+8–12 minutes and $0.60–1.40. 4 published (Rice, Emory, Carnegie Mellon, Elon, all fall 2025), 2 failed a check
+(Chicago: the extractor hit its output limit on a PDF; Clemson: "42%" stated vs 42.43% computed), 1 unreachable
+(Northwestern: discovery returned last year's CDS URL, which 404s), 3 found nothing newer (Boston College, Georgia,
+and Washington, whose file host's robots.txt disallows the CDS). Discovery still averaged 266,000 input tokens per
+call ($1.80 of the $1.93), and one college's discovery ran 17 minutes. Changes made in response:
+
+- **Breaker: change share only.** The failure-share trigger (10% of attempted colleges) tripped in both runs on
+  blocked sites and rounding, never on a real problem, and held back values that had passed their checks. Only the
+  25%-of-published-values-changed trigger remains. Values that pass publish; failures go to the queue.
+- **Auto-merge on by default** for manual runs too. The PR stays as the mechanism (CI, diff, queue in the body),
+  not a review step.
+- **Rate check tolerates printed precision**: a rate printed as a whole percent ("42%") may sit 0.5 pt from the
+  computed one; one decimal 0.1 pt; two decimals 0.05 pt (`rateTolerancePts`).
+- **Stale CDS links get next year's URL guessed beside them** (`withNextEditions`): a discovery result for an
+  edition no newer than the federal year is tried alongside the 2025–26 and 2026–27 guesses.
+- **Extraction output limit** 4,096 → 8,192 tokens.
+- **Discovery tightened**: 3 searches, 3 fetches of at most 4,000 tokens, `max_tokens` 8,000, and a **6-minute
+  timeout per college** (the stream is aborted; the college is queued, no retry).
+- **Usage detail** in the run summary: cache reads, cache writes and web searches per job, so the next run can show
+  where discovery's tokens go (the cost arithmetic already prices cache reads at a tenth).
+
 ## Expected cost after this round
 
 | Run | Before (pilot, measured) | After (estimate) |

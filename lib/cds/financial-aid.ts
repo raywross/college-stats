@@ -200,16 +200,17 @@ export function normalizeNeedMet(
     const s = raw.trim();
     const parsed = Number(s.replace(/[%\s]/g, ""));
     if (!Number.isFinite(parsed)) return { v: null, review: `"${raw}" isn't a percent` };
-    if (s.endsWith("%")) return range(parsed / 100, raw);
+    if (s.endsWith("%")) return range(per100(parsed), raw);
     n = parsed;
   } else n = raw;
-  if (n > 1) return range(n / 100, raw);
+  if (n > 1) return range(per100(n), raw);
   if (n === 1) {
     const fullyMet = ctx.h !== null && ctx.d !== null && ctx.d > 0 && ctx.h >= 0.95 * ctx.d;
     return fullyMet || ctx.otherColumnsUseFractions ? { v: 1 } : { v: null, review: `"1" could be 1% or 100%, and line H (${ctx.h ?? "blank"}) isn't near line D (${ctx.d ?? "blank"})` };
   }
   return range(n, raw);
 }
+const per100 = (n: number) => Math.round(n * 100) / 10000;
 function range(v: number, raw: unknown): { v: number | null; review?: string } {
   if (v < 0 || v > 1) return { v: null, review: `${raw} is outside 0–100%` };
   if (v < 0.05) return { v: null, review: `${raw} would mean under 5% of need met: check the units` };

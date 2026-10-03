@@ -324,6 +324,8 @@ export interface FederalAdmissions {
 /** `school.reported`: one block per topic; phase 1 is admissions only. */
 export interface ReportedData {
   admissions?: ReportedAdmissions;
+  /** CDS C1 by residency (specs/data-expansion/cds-residency-admissions.md; lib/cds/residency.ts). */
+  admissions_by_residency?: ReportedResidencyAdmissions;
 }
 
 /** The newest first-year, all-rounds admissions figures a college has published, newer than its federal year. */
@@ -342,6 +344,33 @@ export interface ReportedAdmissions {
 }
 
 export type ReportedSourceKind = "cds" | "class-profile";
+
+/** One residency column of the CDS C1 grid: first-time, first-year students. Missing is null, never 0. */
+export interface ResidencyCounts {
+  applicants: number | null;
+  admitted: number | null;
+  enrolled: number | null;
+}
+
+/**
+ * CDS C1 by residency (specs/data-expansion/cds-residency-admissions.md): applied, admitted, and enrolled first-years by
+ * where they lived when applying. Stored only from a grid that passed its checks; rates are computed at render time.
+ */
+export interface ReportedResidencyAdmissions {
+  /** Entering class from the record's C-group year (the grid heading's "Fall YYYY"), never page headers. */
+  entering_term: string;
+  /** Its fall year as a number. */
+  year: number;
+  /** CDS edition the grid was read from, e.g. "2025-26". */
+  edition: string;
+  in_state: ResidencyCounts;
+  out_of_state: ResidencyCounts;
+  international: ResidencyCounts;
+  /** Kept for the sum check and the record; never shown as a rate. */
+  unknown: ResidencyCounts;
+  /** C1 totals of the same document (C.116–C.118): the same-class "all applicants" reference. */
+  total: ResidencyCounts;
+}
 
 /** One measure's change over the default 10-year window. */
 export interface TrendSummary {
@@ -699,6 +728,9 @@ export interface SearchFilters {
   /** Majors (lib/majors.ts): a 2-digit CIP family, and at least this many first-major bachelor's a year in it (default 1). */
   field?: string;
   fieldMin?: number;
+  /** Where applicants live (lib/cds/residency-display.ts): publishes admit rates by residency; admits out-of-state about as often. */
+  byRes?: boolean;
+  oosEven?: boolean;
   sortBy?: SortKey;
   sortDir?: "asc" | "desc";
 }

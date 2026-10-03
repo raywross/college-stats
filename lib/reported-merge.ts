@@ -11,6 +11,8 @@ import { REPORTED_PATHS } from "./fields.ts";
 import { applyNewest, restoreFederal } from "./newest.ts";
 import type { ReportedFile } from "./reported.ts";
 import { reportedToPatch } from "./reported-checks.ts";
+import type { CollegeRecord } from "./cds-sections.ts";
+import { mergeResidency } from "./cds/residency.ts";
 
 /**
  * `school` as it was before any merge: its previous admissions funnel restored from `admissions.federal`
@@ -43,11 +45,12 @@ export interface MergeReportedResult {
  * `reportedToPatch`, exactly as `sync-data` does) and `applyNewest`, so each college's newer published figures
  * replace its older ones in `admissions.*`, with lineage and `admissions.federal`.
  */
-export function mergeReported(schools: School[], reported: ReportedFile): MergeReportedResult {
+export function mergeReported(schools: School[], reported: ReportedFile, records: readonly CollegeRecord[] = []): MergeReportedResult {
   const byUnitId = new Map(reported.entries.map((e) => [e.unit_id, e]));
+  const recordById = new Map(records.map((r) => [r.unit_id, r]));
   let merged = 0;
   let removed = 0;
-  const result = schools.map((school) => {
+  const mergeOne = (school: School): School => {
     const hadReported = school.reported?.admissions != null;
     const stripped = stripReported(school);
     const entry = byUnitId.get(school.unit_id);
@@ -58,6 +61,8 @@ export function mergeReported(schools: School[], reported: ReportedFile): MergeR
     merged++;
     const { reported: reportedData, lineage: entryLineage } = reportedToPatch(entry);
     return applyNewest({ ...stripped, reported: reportedData, lineage: { ...stripped.lineage, ...entryLineage } });
-  });
+  };
+  // Round-3 CDS blocks from data/cds-records/ (each spec's own module), after the admissions block they may key on.
+  const result = schools.map((school) => mergeResidency(mergeOne(school), recordById.get(school.unit_id)));
   return { schools: result, merged, removed };
 }

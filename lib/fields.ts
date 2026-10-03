@@ -254,6 +254,17 @@ export const FIELDS = {
   "reported.admissions.enrolled": reported("Enrolled (college-reported)"),
   "reported.admissions.acceptance_rate": reported("Acceptance rate (college-reported)"),
   "reported.admissions.source_kind": reported("Kind of document (college-reported)"),
+  // CDS cost and debt (specs/data-expansion/cds-cost-and-debt.md, lib/cds/cost-and-debt.ts). Next year's price sits
+  // beside the federal price and never replaces it; none of these reach ranks, sorts, percentiles, or history.
+  "reported.cost.next_year": reported("Next year's tuition (college-reported)", "cost"),
+  "reported.cost.next_year.first_year.fees": reported("Next year's required fees (college-reported)", "cost"),
+  "reported.cost.next_year.first_year.food_and_housing": reported("Next year's food and housing (college-reported)", "cost"),
+  "reported.cost.next_year_detail": reported("Next year's tuition policy and other expenses (college-reported)", "cost"),
+  "reported.cost.next_year_detail.pct_paying_more": reported("Undergraduates paying more than the published tuition (college-reported)", "cost"),
+  "reported.outcomes.graduating_class": reported("Graduating class size (college-reported)", "outcomes"),
+  "reported.outcomes.graduate_debt": reported("Graduates who borrowed, by loan source (college-reported)", "outcomes"),
+  "reported.outcomes.graduate_debt.rows.any.share": reported("Graduates who borrowed from any source (college-reported)", "outcomes"),
+  "reported.outcomes.graduate_debt.rows.any.avg_principal": reported("Average total borrowed, all loan types (college-reported)", "outcomes"),
 
   /* ---- History summary (data/history/, `npm run sync-history`) ---- */
   trends: {
@@ -327,6 +338,23 @@ export const FIELDS = {
     ...scorecard("Payback estimate", "outcomes"),
     computed: true,
     derived: { formula: "4 × average cost ÷ median earnings 10 years after entry", inputs: ["cost.avg_paid_all", "outcomes.median_earnings_10yr"] },
+  },
+  // CDS cost and debt (specs/data-expansion/cds-cost-and-debt.md): computed on the cost page only, never ranked.
+  "derived.next_year_price": {
+    ...reported("Next year's price before aid (college-reported)", "cost"),
+    computed: true,
+    derived: {
+      formula: "Next year's tuition + required fees + on-campus food and housing, first-year column",
+      inputs: ["reported.cost.next_year", "reported.cost.next_year.first_year.fees", "reported.cost.next_year.first_year.food_and_housing"],
+    },
+  },
+  "derived.next_year_change": {
+    ...reported("Change from the federal price", "cost"),
+    computed: true,
+    derived: {
+      formula: "Next year's price ÷ the federal year's tuition & fees + on-campus room & board − 1",
+      inputs: ["derived.next_year_price", "cost.tuition_fees", "cost.components"],
+    },
   },
 } satisfies Record<string, FieldDef>;
 

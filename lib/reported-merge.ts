@@ -11,6 +11,9 @@ import { REPORTED_PATHS } from "./fields.ts";
 import { applyNewest, restoreFederal } from "./newest.ts";
 import type { ReportedFile } from "./reported.ts";
 import { reportedToPatch } from "./reported-checks.ts";
+import type { CollegeRecord } from "./cds-sections.ts";
+import { indexRecords } from "./cds-records.ts";
+import { applyCostAndDebt } from "./cds/cost-and-debt.ts";
 
 /**
  * `school` as it was before any merge: its previous admissions funnel restored from `admissions.federal`
@@ -41,13 +44,23 @@ export interface MergeReportedResult {
 /**
  * Strips every school (`stripReported`), then re-applies the current entries in `reported.entries` (through
  * `reportedToPatch`, exactly as `sync-data` does) and `applyNewest`, so each college's newer published figures
- * replace its older ones in `admissions.*`, with lineage and `admissions.federal`.
+ * replace its older ones in `admissions.*`, with lineage and `admissions.federal`. Then each college's CDS record
+ * (data/cds-records/, `records`) adds its round-3 blocks under `school.reported`.
  */
-export function mergeReported(schools: School[], reported: ReportedFile): MergeReportedResult {
+export function mergeReported(schools: School[], reported: ReportedFile, records: readonly CollegeRecord[] = []): MergeReportedResult {
   const byUnitId = new Map(reported.entries.map((e) => [e.unit_id, e]));
+  const byRecord = indexRecords(records);
   let merged = 0;
   let removed = 0;
-  const result = schools.map((school) => {
+  const fromRecords = (school: School): School => {
+    const record = byRecord.get(school.unit_id);
+    // specs/data-expansion/cds-cost-and-debt.md: next year's price and graduates' debt, beside the federal figures.
+    return applyCostAndDebt(school, record);
+  };
+  const result = schools.map((school) => fromRecords(mergeEntry(school)));
+  return { schools: result, merged, removed };
+
+  function mergeEntry(school: School): School {
     const hadReported = school.reported?.admissions != null;
     const stripped = stripReported(school);
     const entry = byUnitId.get(school.unit_id);
@@ -58,6 +71,5 @@ export function mergeReported(schools: School[], reported: ReportedFile): MergeR
     merged++;
     const { reported: reportedData, lineage: entryLineage } = reportedToPatch(entry);
     return applyNewest({ ...stripped, reported: reportedData, lineage: { ...stripped.lineage, ...entryLineage } });
-  });
-  return { schools: result, merged, removed };
+  }
 }

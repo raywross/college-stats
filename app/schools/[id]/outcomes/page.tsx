@@ -16,6 +16,8 @@ import { DistributionStrip } from "@/components/charts/DistributionStrip";
 import { ScatterPlot } from "@/components/charts/ScatterPlot";
 import { OutcomeMeasures } from "@/components/school/OutcomeMeasures";
 import { GraduationByGroup } from "@/components/school/GraduationByGroup";
+import { GraduateDebt } from "@/components/school/GraduateDebt";
+import { hasGraduateDebt } from "@/lib/cds/cost-and-debt";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -44,6 +46,7 @@ export default async function OutcomesPage({ params }: Props) {
   const items = [
     { id: "earnings", label: "Earnings" },
     { id: "finishing", label: "Staying and finishing" },
+    ...(hasGraduateDebt(school) ? [{ id: "graduate-debt", label: "What graduates owe" }] : []),
     { id: "eight-year", label: "8 years later" },
     { id: "by-group", label: "Graduation by group" },
     { id: "map", label: "Cost vs. earnings" },
@@ -110,6 +113,8 @@ export default async function OutcomesPage({ params }: Props) {
             </Block>
           </div>
         )}
+
+        <GraduateDebt school={school} id="graduate-debt" />
 
         {isShown(o?.eight_year?.all) && (
           <div id="eight-year" className={BLOCK_SCROLL}>

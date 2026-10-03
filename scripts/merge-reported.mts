@@ -18,6 +18,7 @@ import type { DatasetMeta, School } from "../lib/types";
 import { validateLineage } from "../lib/lineage.ts";
 import type { ReportedFile } from "../lib/reported.ts";
 import { mergeReported } from "../lib/reported-merge.ts";
+import { readRecords } from "./lib/college-reported/records.mts";
 
 // MERGE_REPORTED_ROOT lets tests point this at a scratch directory holding just data/schools.json,
 // data/college-reported.json, and data/meta.json, without copying the whole repo.
@@ -33,7 +34,9 @@ function main() {
   const reported: ReportedFile = JSON.parse(readFileSync(REPORTED, "utf8"));
   const meta: DatasetMeta = JSON.parse(readFileSync(META, "utf8"));
 
-  const { schools: merged, merged: mergedCount, removed } = mergeReported(schools, reported);
+  // Round-3 CDS records (data/cds-records/): their blocks merge in the same pass (lib/reported-merge.ts).
+  const records = readRecords(join(ROOT, "data", "cds-records"));
+  const { schools: merged, merged: mergedCount, removed } = mergeReported(schools, reported, records);
 
   const problems = validateLineage(merged, meta);
   if (problems.length) {

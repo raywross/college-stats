@@ -324,6 +324,10 @@ export interface FederalAdmissions {
 /** `school.reported`: one block per topic; phase 1 is admissions only. */
 export interface ReportedData {
   admissions?: ReportedAdmissions;
+  /** Next year's price and its detail (CDS G; specs/data-expansion/cds-cost-and-debt.md). Never replaces `cost.*`. */
+  cost?: ReportedCost;
+  /** The graduating class and its borrowing (CDS H4–H5; specs/data-expansion/cds-cost-and-debt.md). */
+  outcomes?: ReportedOutcomes;
 }
 
 /** The newest first-year, all-rounds admissions figures a college has published, newer than its federal year. */
@@ -342,6 +346,80 @@ export interface ReportedAdmissions {
 }
 
 export type ReportedSourceKind = "cds" | "class-profile";
+
+/* ---- CDS cost and debt (specs/data-expansion/cds-cost-and-debt.md; built by lib/cds/cost-and-debt.ts) ---- */
+
+/** `school.reported.cost`: CDS section G, which describes the coming academic year. */
+export interface ReportedCost {
+  /**
+   * Next year's price (G1), a separate labeled value beside the federal price: it never replaces `cost.*`, never
+   * enters ranks, Explore sorts, or history. Absent while the college says its costs aren't final (G0).
+   */
+  next_year?: ReportedNextYearPrice;
+  /** G2–G6: tuition policy, the share paying more than the G1 rate, other expenses, per-credit charges. */
+  next_year_detail?: ReportedNextYearDetail;
+}
+
+export interface ReportedNextYearPrice {
+  /** The academic year the prices describe, from the document's own year rule (e.g. "2026–27"). */
+  entering_term: string;
+  /** The headline column: what an entering first-year pays. */
+  first_year: CdsCostColumn;
+  /** The undergraduate column; shown only when its total differs from the first-year total by more than 1%. */
+  undergraduate: CdsCostColumn;
+}
+
+/** One G1 column. Every amount is per academic year, in dollars; null when not reported or not a number. */
+export interface CdsCostColumn {
+  tuition: CdsTuition | null;
+  fees: number | null;
+  food_and_housing: number | null;
+  housing_only: number | null;
+  food_only: number | null;
+}
+
+export type CdsTuition =
+  | { kind: "private"; amount: number | null }
+  | { kind: "public"; in_district: number | null; in_state: number | null; out_of_state: number | null; nonresident_international: number | null };
+
+/** G2–G6. A null leaf means the college didn't answer with a number; its verbatim answer, if any, is in `text`. */
+export interface ReportedNextYearDetail {
+  credits_per_term: { min: number | null; max: number | null } | null;
+  tuition_varies_by_year: boolean | null;
+  tuition_varies_by_program: boolean | null;
+  /** G.402: share (0–1) of full-time undergraduates paying more than the G1 tuition because it varies by program. */
+  pct_paying_more: number | null;
+  /** G5; null while the college says its costs aren't final (G0), like `next_year`. */
+  expenses: CdsExpenses | null;
+  /** G6; null while the college says its costs aren't final (G0). */
+  per_credit_hour: { private: number | null; in_district: number | null; in_state: number | null; out_of_state: number | null; nonresident: number | null } | null;
+}
+
+/** G5: books, transportation, and other expenses by where the student lives. */
+export interface CdsExpenses {
+  residents: { books_supplies: number | null; transportation: number | null; other: number | null };
+  commuters_at_home: { books_supplies: number | null; food_only: number | null; transportation: number | null; other: number | null };
+  commuters_away: { books_supplies: number | null; housing_only: number | null; food_only: number | null; food_and_housing_total: number | null; transportation: number | null; other: number | null };
+  /** Non-numeric answers as printed ("varies"), keyed like "residents.transportation"; never treated as $0. */
+  text?: Record<string, string>;
+}
+
+/** `school.reported.outcomes`: CDS H4–H5, the class that just graduated. */
+export interface ReportedOutcomes {
+  /** H4: first-time students who earned a bachelor's in the class named by the document. */
+  graduating_class?: { year: number; size: number };
+  /** H5: that class's borrowing, by loan source. */
+  graduate_debt?: ReportedGraduateDebt;
+}
+
+export type GraduateDebtRowKey = "any" | "federal" | "institutional" | "state" | "private";
+
+export interface ReportedGraduateDebt {
+  /** Same as `graduating_class.year`. */
+  class_year: number;
+  /** Number who borrowed, their share (0–1) of the class, and the average cumulative principal among them. */
+  rows: Record<GraduateDebtRowKey, { number: number | null; share: number | null; avg_principal: number | null }>;
+}
 
 /** One measure's change over the default 10-year window. */
 export interface TrendSummary {

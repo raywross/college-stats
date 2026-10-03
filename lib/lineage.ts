@@ -36,6 +36,8 @@ export interface Cited extends CitedSource {
   replaces?: { value: number | null; year: string | null };
   /** For a value reported by the college itself (source "college-site"): which kind of document supplied it. */
   sourceKind?: ReportedSourceKind;
+  /** For a value read from a CDS record: the document, "2025–26 Common Data Set", when its year differs from the value's. */
+  document?: string;
 }
 
 /** The funnel paths `applyNewest` may replace, keyed to their `admissions.federal` counterparts. */
@@ -185,7 +187,13 @@ export function lineageFor(path: FieldPath, school: School | undefined, meta: Da
     ...(rec?.quote ? { quote: rec.quote } : {}),
     ...(rec?.page !== undefined ? { page: rec.page } : {}),
     ...replacedBy(path, school, meta),
-    ...(rec?.source === "college-site" && school?.reported?.admissions ? { sourceKind: school.reported.admissions.source_kind } : {}),
+    // A round-3 record value names its CDS edition (its year is the item's own, e.g. next year's price); the
+    // admissions block's document kind applies only to values without one.
+    ...(rec?.source === "college-site" && rec.edition
+      ? { sourceKind: "cds" as const, document: `${rec.edition} Common Data Set` }
+      : rec?.source === "college-site" && school?.reported?.admissions
+        ? { sourceKind: school.reported.admissions.source_kind }
+        : {}),
   };
 }
 

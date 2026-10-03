@@ -37,13 +37,16 @@ export function decodeEntities(s: string): string {
 
 /**
  * Readable text from an HTML page: scripts, styles, navigation chrome and comments dropped; headings kept as
- * "## Heading" lines; table rows kept one per line with cells separated by " | ".
+ * "## Heading" lines; table rows kept one per line with cells separated by " | ", **empty cells included**: MIT puts
+ * each `<td>` on its own source line, so whitespace (and any line break inside a cell) is collapsed within each `<tr>`
+ * first, and "Rigor of secondary school record | | X | |" keeps its "X" in the "Important" column.
  */
 export function htmlToText(html: string): string {
   let s = html
     .replace(/<!--[\s\S]*?-->/g, " ")
     .replace(/<(script|style|noscript|svg|template|iframe)\b[\s\S]*?<\/\1>/gi, " ")
-    .replace(/<(nav|footer)\b[\s\S]*?<\/\1>/gi, " ");
+    .replace(/<(nav|footer)\b[\s\S]*?<\/\1>/gi, " ")
+    .replace(/<tr\b[\s\S]*?<\/tr>/gi, (row) => row.replace(/<(br|hr)\b[^>]*>|<\/(p|div|li)>/gi, " ").replace(/\s+/g, " "));
   s = s
     .replace(/<h([1-6])\b[^>]*>/gi, "\n\n## ")
     .replace(/<\/h[1-6]>/gi, "\n")

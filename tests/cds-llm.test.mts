@@ -7,7 +7,7 @@ import assert from "node:assert/strict";
 import type Anthropic from "@anthropic-ai/sdk";
 import { CDS_TEMPLATE } from "../lib/cds-template.ts";
 import { codesFor, maxTokensFor } from "../lib/cds-sections.ts";
-import { quoteFromLines, type NumberedLine } from "../lib/cds-quotes.ts";
+import { quoteFromNumberedLines, type NumberedLine } from "../lib/cds-quotes.ts";
 import type { CallLog } from "../lib/reported.ts";
 import type { School } from "../lib/types";
 import {
@@ -142,7 +142,7 @@ test("extractCall: values keyed by code with quotes built from the cited lines; 
   const out = await extractCall(ctxWith(client, rows, logs), { call: "C", lines: LINES, table: CDS_TEMPLATE, mode: "interactive", doc: DOC });
   assert.deepEqual(Object.keys(out.values).sort(), ["C.101", "C.102", "C.201"]);
   assert.deepEqual(out.values["C.101"], { v: 24410, lines: [2], quote: "Total first-time, first-year males who applied | 24,410" });
-  assert.equal(out.values["C.102"].quote, quoteFromLines(LINES, [3]));
+  assert.equal(out.values["C.102"].quote, quoteFromNumberedLines(LINES, [3]));
   assert.deepEqual(out.dropped.sort(), ["B.101", "Z.999"]);
   assert.ok(out.missing.includes("C.103"));
   assert.ok(logs.some((l) => /dropped 2 code/.test(l)));

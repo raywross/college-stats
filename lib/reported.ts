@@ -476,9 +476,7 @@ export interface UsageRow {
   reserved_usd?: number;
 }
 
-/** How a college's document link was found (the discovery ladder, Decision 6). */
-export type DiscoveryPath =
-  | "known" | "guessed" | "manual" | "probe-sitemap" | "probe-host" | "probe-crawl" | "picker" | "search" | "full" | "blocked" | "none";
+/** Every `DiscoveryPath` (defined with the recipe types above), for summary tables. */
 export const DISCOVERY_PATHS: readonly DiscoveryPath[] = [
   "known", "guessed", "manual", "probe-sitemap", "probe-host", "probe-crawl", "picker", "search", "full", "blocked", "none",
 ];

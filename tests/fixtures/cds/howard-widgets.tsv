@@ -1,0 +1,62 @@
+# page	field name	field type	button kind	button export value	field value	value (filled)
+# Cut from Howard University's 2025-26 fillable CDS PDF form (ira.howard.edu), 2026-10-03 inventory; respondent replaced.
+p2	CDS_NAME	Tx			Respondent	Respondent
+p13	AP_RECD_1ST_MEN_N	Tx			10738	10738
+p13	AP_RECD_1ST_WMN_N	Tx			26532	26532
+p13	AP_RECD_1ST_UNK_N	Tx			0	0
+p13	AP_ADMT_1ST_MEN_N	Tx			4315	4315
+p13	AP_ADMT_1ST_WMN_N	Tx			11409	11409
+p13	AP_ADMT_1ST_UNK_N	Tx			0	0
+p14	AP_RECD_STATE_1ST_N	Tx			668	668
+p14	AP_RECD_1ST_N	Tx			37270	37270
+p14	AP_ADMT_STATE_1ST_N	Tx			258	258
+p14	AP_ADMT_1ST_N	Tx			15724	15724
+p14	AP_ADMT_WAIT_N	Tx				
+p16	Q111_1	Btn	radio	VI	VI	VI
+p16	Q111_1	Btn	radio	I	VI	
+p16	Q111_1	Btn	radio	C	VI	
+p16	Q111_1	Btn	radio	NC	VI	
+p16	Q111_2	Btn	radio	VI	C	
+p16	Q111_2	Btn	radio	I	C	
+p16	Q111_2	Btn	radio	C	C	C
+p16	Q111_2	Btn	radio	NC	C	
+p16	Q112_1	Btn	radio	VI	NC	
+p16	Q112_1	Btn	radio	I	NC	
+p16	Q112_1	Btn	radio	C	NC	
+p16	Q112_1	Btn	radio	NC	NC	NC
+p17	ADMS	Btn	radio	Y	Y	Y
+p17	ADMS	Btn	radio	N	Y	
+p17	EXAM_CODE_S1A	Btn	radio	ADMS_REQ	ADMS_CONSIDER 	
+p17	EXAM_CODE_S1A	Btn	radio	ADMS_REC	ADMS_CONSIDER 	
+p17	EXAM_CODE_S1A	Btn	radio	ADMS_RFS 	ADMS_CONSIDER 	
+p17	EXAM_CODE_S1A	Btn	radio	ADMS_CONSIDER 	ADMS_CONSIDER 	ADMS_CONSIDER 
+p17	EXAM_CODE_S1A	Btn	radio	ADMS_NOT_USED	ADMS_CONSIDER 	
+p17	AP_TEST_ADVISE	Btn	radio	Y	N	
+p17	AP_TEST_ADVISE	Btn	radio	N	N	N
+p17	ADMS	Btn	radio	N/A	Y	
+p17	AP_TEST_ADVISE	Btn	radio	N/A	N	
+p19	SUBMIT_SAT1_P	Tx			47	47
+p19	SUBMIT_SAT1_N	Tx			1163	1163
+p19	SAT1_COMP_25TH_P	Tx			1050	1050
+p23	AD_EDEC	Btn	radio	Y	Y	Y
+p23	AD_EDEC	Btn	radio	N	Y	
+p23	AP_DL_EDEC_1_MON	Ch			11	11
+p23	AP_DL_EDEC_1_DAY	Ch			15	15
+p23	AP_RECD_EDEC_N	Tx			430	430
+p23	AP_ADMT_EDEC_N	Tx			363	363
+p23	AD_EDEC	Btn	radio	N/A	Y	
+p24	REQ_CODE_ESSAY	Btn	radio	TFER_REQ	TFER_REQ	TFER_REQ
+p24	REQ_CODE_ESSAY	Btn	radio	TFER_REC	TFER_REQ	
+p24	REQ_CODE_ESSAY	Btn	radio	TFER_RFS	TFER_REQ	
+p24	REQ_CODE_ESSAY	Btn	radio	TFER_ROS	TFER_REQ	
+p24	REQ_CODE_ESSAY	Btn	radio	TFER_NREQ	TFER_REQ	
+p28	ROTC_NAVY	Btn	radio	B	C	
+p28	ROTC_NAVY	Btn	radio	C	C	C
+p32	ACAD_YR	Btn	radio	2024	2023	
+p32	ACAD_YR	Btn	radio	2023	2023	2023
+p32	METH_FM	Btn	check		X	X
+p32	METH_IM	Btn	check		Off	
+p32	SCHOL_NB_FED_D	Tx			28906749 	28906749 
+p32	SCHOL_NB_TOT_D	Tx			58498625	58498625
+p32	ACAD_YR	Btn	radio	N/A	2023	
+p36	AP_NOTF_ROLL	Btn	check		X	X

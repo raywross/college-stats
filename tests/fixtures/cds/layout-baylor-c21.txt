@@ -1,0 +1,19 @@
+# Baylor C21. Cut from the 2026-10-03 CDS inventory's layout text of Baylor's 2025-26 CDS PDF (rows by y, @x positions).
+=== Page 19 ===
+@47 Common Data Set 2025-2026
+@67 C21-C22: Early Decision and Early Action Plans
+@48 C21 Early Decision
+@342 Yes or No
+@66 Does your institution offer an early decision plan (an admission plan that
+@66 permits students to apply and be notified of an admission decision well in
+@353 Yes
+@66 advance of the regular notification date and that asks students to commit to
+@66 attending if accepted) for first-time, first-year applicants for fall enrollment?
+@66 If “yes,” please complete the following:
+@66 First or only early decision plan closing date | @352 11/1
+@66 First or only early decision plan notification date | @350 12/15
+@66 Other early decision plan closing date
+@66 Other early decision plan notification date
+@66 For the Fall 2025 entering class:
+@66 Number of early decision applications received by your institution | @353 566
+@66 Number of applicants admitted under early decision plan | @353 453

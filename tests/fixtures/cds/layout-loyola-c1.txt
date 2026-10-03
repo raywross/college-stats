@@ -1,0 +1,29 @@
+# Loyola: 2024-2025 page headers and C1 totals printed as ##. Cut from the 2026-10-03 CDS inventory's layout text of Loyola Chicago's 2025-26 CDS PDF (rows by y, @x positions).
+=== Page 1 ===
+@66 Common Data Set 2025-2026
+@66 Welcome to the 2025-2026 Common Data Set collection!
+=== Page 2 ===
+@43 Common Data Set 2024-2025
+@207 A. General Information
+=== Page 3 ===
+@43 Common Data Set 2024-2025
+@63 Admissions Email Address: | @296 admission@LUC.edu
+=== Page 10 ===
+@277 0
+@63 sex who enrolled
+@63 Total part-time, first-time, first-year students of unknown
+@277 0
+@63 sex who enrolled
+@63 If available, please provide residency breakdowns for total applicants, admits, and enrolled students: Fall
+@63 2025
+@63 Please report based on known physical address at time of application.
+@434 To
+@84 First-Time, First-Year Student Applicants | @265 In-State | @307 Out-of-State International nknow
+@434 tal
+@43 CDS-C | @519 Page 10
+=== Page 11 ===
+@43 Common Data Set 2024-2025
+@63 Total first-time, first-year (degree-seeking) who applied | @280 20089 | @331 15530 | @389 7973 | @417 362 ##
+@63 Total first-time, first-year (degree-seeking) who were | @280 15546 | @331 13530 | @389 3769 | @417 164 ##
+@63 Total first-time, first-year (degree-seeking) who enrolled | @285 1382 | @335 1170 | @398 53 | @425 0 ##
+@44 C2 | @63 First-time, first-year wait-listed students

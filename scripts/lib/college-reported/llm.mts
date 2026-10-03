@@ -11,7 +11,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { EXTRACTION_SCHEMA, ROUND3_MODELS, type CallLog, type CallMode, type Extraction, type Recipe, type RecipeSource } from "../../../lib/reported.ts";
 import type { ReportedSourceKind, School } from "../../../lib/types";
 import { codeTableText, codesFor, maxTokensFor, schemaFor, type CallKey, type CdsCode, type DocumentType, type TemplateTable } from "../../../lib/cds-sections.ts";
-import { quoteFromLines, type NumberedLine } from "../../../lib/cds-quotes.ts";
+import { quoteFromNumberedLines, type NumberedLine } from "../../../lib/cds-quotes.ts";
 import { MIN_CACHE_PREFIX, addUsage, callLogRow, priceOf, type Job, type ModelClient, type UsageLog } from "./models.mts";
 
 export interface LlmContext {
@@ -532,7 +532,7 @@ export function parseExtractResponse(
     if (typeof v !== "number" && typeof v !== "string" && typeof v !== "boolean") continue;
     if (v === "" || (typeof v === "number" && !Number.isFinite(v))) continue;
     const ids = Array.isArray(lines) ? lines.filter((n): n is number => Number.isInteger(n)) : [];
-    values[code] = { v, lines: ids, quote: ids.length ? quoteFromLines(byId, ids) : null };
+    values[code] = { v, lines: ids, quote: ids.length ? quoteFromNumberedLines(byId, ids) : null };
   }
   return {
     call: req.call,

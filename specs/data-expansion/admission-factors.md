@@ -93,7 +93,10 @@ Registered as one field `admissions.factors` (source `ipeds-adm`, vintage `ipeds
 - **Profile, admissions page:** "What they look at": a compact grid of factors with Required / Considered /
   Not considered, GPA first. Legacy gets its own line when considered ("Considers whether a parent attended").
   When a college has a CDS C7 answer ([cds-admissions.md](cds-admissions.md)), that richer 4-level weighting replaces
-  the grid, with the federal answer in the citation.
+  the grid. For the six factors both surveys define the same way (GPA, class rank, recommendations, essay, alumni
+  relation ↔ legacy, work experience) the newer C7 answer also replaces the federal considered / not-considered value
+  under the newest-everywhere rule, with the federal answer kept in `admissions.federal_factors` and shown in the ⓘ
+  popover (decided in cds-admissions.md, 2026-10-03); the Explore filters follow the newest value.
 - **Explore filters:** "Doesn't consider legacy", "Essay not required", "GPA required".
 - **Compare:** one row per factor in "All the numbers".
 - **Glossary:** `admission-factor`, `legacy-status`, `secondary-school-record`, `college-prep-program`.

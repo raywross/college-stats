@@ -23,7 +23,7 @@ Association, InterVarsity, …).
 |---|---|---|---|
 | IPEDS / Scorecard | No religious affiliation (public) | API | Affiliation = none |
 | UT Institutional Reporting | Nothing on student religion | — | Public universities generally don't collect it |
-| UT CDS 2025–26 (Box link from reports.utexas.edu) | C7 "Religious affiliation/commitment" row, H14 "Religious affiliation" aid, F2 "Campus Ministries" | PDF. **Checkmarks are extracted as a separate column of ✔ with no labels**, so plain text can't tell which box is checked | Needs layout-aware parsing or a vision model |
+| UT CDS 2025–26 (Box link from reports.utexas.edu) | C7 "Religious affiliation/commitment" row, H14 "Religious affiliation" aid, F2 "Campus Ministries" | PDF. **Checkmarks are extracted as a separate column of ✔ with no labels**, so plain text can't tell which box is checked | Layout-aware text (pdf.js x/y) recovers the column on every PDF tested in the 2026-10-03 inventory; F2 is a single-column list and survives plain text. No vision call needed ([round 3](college-reported-round-3.md)) |
 | Hillel International College Guide (hillel.org/college/university-of-texas-austin) | **2,750** Jewish students, **6.4%** of 42,855 (that's the IPEDS undergrad count, same as ours) | HTML behind a Cloudflare bot check (403 to scripts). `robots.txt` allows crawling with `Crawl-delay: 10` | Estimate, reported by the campus Hillel |
 | Texas Hillel (texashillel.org) | "More than **4,000** Jewish students" | HTML | Scope unclear (may include grad students or other Austin colleges) |
 | Chabad at UT (jewishlonghorns.com on chabad.org templates; its HornsLink listing) | UT Jewish population "around **5,000**"; 50–100 students at a weekly Shabbat meal | HTML | Estimate by the group itself; age of the claim unknown |
@@ -146,7 +146,7 @@ cheap model with a keyword pre-pass.
 ```ts
 school.religion = {
   affiliation: { code: 30, label: "Roman Catholic" } | null,   // tier A; null = unaffiliated
-  admission_weight: "very_important" | "important" | "considered" | "not_considered" | null, // CDS C7
+  admission_weight: "very_important" | "important" | "considered" | "not_considered" | null, // CDS C7: read from reported.admission_profile.factors.religious (cds-admissions.md)
   aid_by_affiliation: boolean | null,                           // CDS H14
   composition: { label: string; share: number }[] | null,       // tier A, college-published
   communities: {                                                // tiers B/D

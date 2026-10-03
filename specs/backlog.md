@@ -57,8 +57,16 @@ published at `/roadmap` ([roadmap.md](roadmap.md)): add each new one to `lib/roa
   - [x] Wave 3, built 2026-10-02: majors (completions, C{Y}_A, [majors.md](data-expansion/majors.md#as-built)) and
     earnings by major ([field-of-study.md](data-expansion/field-of-study.md): the `detail.programs` table, "Top-earning
     majors here" and Compare's "your major"). Both use the detail file; Field of Study codes are checked against CIP 2020.
-  - [ ] Wave 4, after the college-reported data agent: CDS high school GPA and admissions profile, class sizes,
-    transfer admissions, next-year price and graduates' total debt.
+  - [ ] Wave 4, from the CDS records of [round 3](college-reported-round-3.md) (specified in full 2026-10-03 after an
+    inventory of 19 real 2025–26 CDS files): [admissions profile](data-expansion/cds-admissions.md) (GPA, factors,
+    early rounds, wait list), [admissions by residency](data-expansion/cds-residency-admissions.md),
+    [test scores and the coming cycle's policy](data-expansion/cds-test-scores-and-policy.md),
+    [application logistics](data-expansion/cds-application-logistics.md) (deadlines, deposits, gap years),
+    [financial aid](data-expansion/cds-financial-aid.md) (CSS Profile, aid for international students, need vs merit,
+    full H2), [enrollment, retention and graduation a year newer](data-expansion/cds-student-body-and-outcomes.md),
+    [class sizes and programs](data-expansion/cds-academics.md), [transfer](data-expansion/cds-transfer.md),
+    [next-year price and graduates' debt](data-expansion/cds-cost-and-debt.md). Every item each spec needs is in the
+    round-3 extraction scope, so the one full run captures them all before any of these ships.
   - [ ] Graduation as a fifth trend indicator ([outcome-measures.md](data-expansion/outcome-measures.md#top-level-trend)).
 - [ ] **2024–25 sticker prices** from `COST1_2024` (`…AY3`), keeping same-year inputs for the all-student average
   ([data-page.md](data-page.md#research-findings-vintages-as-of-2026-09-28)). If the snapshot moves ahead, history's
@@ -67,7 +75,13 @@ published at `/roadmap` ([roadmap.md](roadmap.md)): add each new one to `lib/roa
   pilot run 2026-10-03 (22 colleges published), round 2 the same day ([college-reported-round-2.md](college-reported-round-2.md):
   profiles lead with the newest published figures, discovery costs a tenth as much, saves as it goes, data PRs carry
   `schools.json`). Setup: [college-reported-setup.md](college-reported-setup.md). Leftovers:
-  - [ ] Measure the new discovery cost on a real `--pilot --max-cost 10` run and update the round-2 estimates.
+  - [ ] **Round 3** ([college-reported-round-3.md](college-reported-round-3.md), planned 2026-10-03): build before the
+    full 1,893-college run so no document is visited twice: permanent archive + manifest, template-workbook and
+    fillable-PDF readers keyed by CDS code (no model), layout-aware PDF text, the full code-keyed extraction scope
+    (sections B–I) into per-document records, batch extraction, free discovery probes, per-tier budgets, the measured
+    pilot (`--pilot --rediscover --max-cost 10`) and its go/no-go table. Owner decisions listed in the spec's open
+    questions (archive location, prior editions, cap).
+  - [ ] Measure discovery cost on that pilot and update the round-3 estimates (the round-2 figures were never measured).
   - [ ] Re-run the 15 pilot colleges that never got a full attempt (6 timeouts, 9 stopped by the credit limit).
   - [ ] Check Duke (61,935 vs 61,395 applicants) and Stanford (enrolled 1,866 vs 1,839) against their sources.
   - [ ] Update the 8 hand-imported CDS overrides to their 2025–26 editions (`npm run import-cds`), or retire them

@@ -4,7 +4,8 @@
 > (phase 1, PR #50) and its first pilot run (PR #51). Changes three things: **the newest figure a college has
 > published is the value shown everywhere**, with the source in the tooltip rather than chips; discovery costs about
 > a tenth of what it did; and every run saves as it goes. Decided with the owner 2026-10-03 (Decision 1 revised the
-> same day).
+> same day). Followed by [college-reported-round-3.md](college-reported-round-3.md) (planned 2026-10-03: read every
+> document once, every CDS section, batches, free discovery probes).
 
 ## What the pilot showed (run `20261003-113224-1`, 50 colleges, 80 minutes)
 

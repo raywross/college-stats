@@ -11,10 +11,12 @@ student decide whether an early application makes sense for them, including the 
 ## Research (2026-10-02)
 - **CDS C21** asks whether a college offers ED, its deadlines, and the number of ED applications and admits;
   **C22** covers early action (restrictive or not) and its deadlines. Admit counts for EA are not in the template.
-  The site's existing CDS overrides already carry C21 for 8 colleges; the agent extends it.
+  The hand importer (`import-cds`) does not read C21 (only B1/B2, C1, C9, H2/H2A; verified 2026-10-03), so today no
+  college on the site has it; the agent's records ([cds-admissions.md](../data-expansion/cds-admissions.md)) will.
 - At selective colleges that publish numbers, the ED admit rate is typically two to three times the overall rate
-  (fall 2025 class: Duke 13.8% ED, Brown 16.5% ED, Vanderbilt 11.9% across ED I and II, Emory 29.0% ED I, against
-  low-single-digit RD rates). The gap overstates the advantage for an unhooked applicant: recruited athletes,
+  (fall 2025 class, from the colleges' own announcements, not their CDS files: Duke 13.8% ED, Brown 16.5% ED,
+  Vanderbilt 11.9% across ED I and II, Emory 29.0% ED I, against low-single-digit RD rates; Duke's CDS offers ED but
+  publishes no counts, so its figure would come from a class-profile source). The gap overstates the advantage for an unhooked applicant: recruited athletes,
   legacies, and other hooked applicants are concentrated in ED pools, and ED applicants self-select.
 - ED is binding, so a family can't compare offers; the only protection is a reliable estimate of the price before
   applying ([net-price-estimator.md](net-price-estimator.md)).
@@ -41,8 +43,8 @@ ED advantage over 8× goes to review.
   paired bar (ED vs non-ED admit rate) with the advantage line; share of class filled by ED; a short series when
   editions exist. Caveats inline, as `Term`s: `early-decision`, `early-action`, `restrictive-early-action`,
   `ed-advantage`, `hooked-applicant`.
-- **Explore:** filters "Offers ED", "Offers EA", "Fills under 40% of class early"; a sort by ED advantage among
-  colleges with 1,000+ ED applicants.
+- **Explore:** filters "Offers ED", "Offers EA", "Fills under 40% of class early". No sort by ED advantage: coverage is
+  partial, and partial college-reported data is never ranked ([cds-admissions.md](../data-expansion/cds-admissions.md)).
 - **Compare:** rows for ED rate, non-ED rate, share of class from ED.
 - **Home fact candidate:** share of the class filled early at the 50 most selective colleges, over five editions.
 - **For a signed-in student** (with [chances-and-fit.md](chances-and-fit.md) and the family's estimate): a

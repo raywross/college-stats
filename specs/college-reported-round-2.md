@@ -74,8 +74,9 @@ school whose `reported.admissions` describes a newer fall than `admissions.year`
   its own source.
 
 `school.reported` stays in the file as the agent's raw record (the Data page's count and `report-college-reported`
-read it). The lineage guard requires every replaced `admissions.*` value to carry an `extracted` record and
-`reported.admissions.year` to be newer than `admissions.federal.year`.
+read it). The lineage guard requires every replaced `admissions.*` value to carry an `extracted` (or, for a rate
+calculated from the college's counts, `derived`) record and `reported.admissions.year` to be newer than
+`admissions.federal.year`.
 
 **History and trends** stay federal, as for CDS overrides today: the "Over time" admissions charts end on the federal
 year while the headline may be a year newer; the existing note says so. The history latest-point check skips any
@@ -162,9 +163,45 @@ circuit breaker's change-share limit, and the schedule.
 Built 2026-10-03 on `feature/college-reported-2` (includes #52's incremental writes and the CDS-year fix).
 
 ### Newest-first display (revised)
-- `lib/newest.ts`: `applyNewest(school)` (pure; `tests/newest.test.mts`) does the replacement described above;
-  `lib/reported-merge.ts` calls it, so `merge-reported` and `sync-data` write the newest values into `admissions.*`
-  with lineage and `admissions.federal`.
+Data layer, built 2026-10-03 on `feature/cr2-newest-data`:
+- `lib/newest.ts` (pure, never mutates; `tests/newest.test.mts`):
+  - `applyNewest(school)` does the replacement above when `reported.admissions.year` is newer than `admissions.year`
+    (or that is null). Counts are replaced when published, each with a copy of its `reported.admissions.*` record;
+    the rate is the stated one, else admitted ÷ applicants (`acceptanceRate`, ≥ 10 applicants) when both counts were
+    replaced (`college-site`, `derived`, both quotes), else the previous rate kept with `{ source: <previous>,
+    method: "derived", year: <previous> }`, or null with no record. `admissions.year` (and its record, from
+    `reported.admissions.entering_term`) moves only when applicants or admitted were replaced. `admissions.federal`
+    (placed right after `acceptance_rate`) holds the previous funnel; when that was a hand-imported CDS override,
+    `lineage["admissions.federal"]` is the override's record. The previous funnel's provenance is
+    `lineage["admissions.year"]`; a value whose own record differs (e.g. a Scorecard-only rate) is left alone so the
+    undo is always exact. Returns the same object when there's nothing newer, nothing published, or the school is
+    already applied (`admissions.federal` present).
+  - `restoreFederal(school)` undoes it byte for byte: values from `admissions.federal`, rewritten records put back
+    (the CDS record) or removed, `admissions.federal` and its record dropped, key order kept.
+  - `newestAdmissions` remains only as a deprecated shim (reads `school.admissions`, no partial line) until the UI
+    branch removes its callers.
+- `lib/reported-merge.ts`: `stripReported` = `restoreFederal`, then drop `reported` and `reported.*` lineage (keeping
+  `lineage`'s key position); `mergeReported` strips every school, re-adds each entry, then `applyNewest`. Untouched
+  schools come back as the same object. Running it on the branch's 22 pilot colleges changed exactly those 22 lines
+  of `data/schools.json`, and `restoreFederal` on each gives back the pre-merge line byte for byte.
+- `scripts/sync-college-reported.mts` runs the pipeline against `restoreFederal(school)`, so its "newer than federal"
+  and consistency checks compare against the baseline, not a previous run's replaced values.
+- `lib/lineage.ts`: `validateSchool` (`validateNewest`) enforces the rules in [data-lineage.md](data-lineage.md)
+  (replaced values extracted or derived with quote/url/retrieved/year, `admissions.federal` beside them, the year
+  moved with applicants/admitted, a value differing from `admissions.federal` cited to the college, the reported year
+  newer than `admissions.federal.year`). `lineageFor` fills `Cited.replaces` (year from `lineage["admissions.federal"]`
+  for a CDS override, else "Fall {year}") and cites yield's inputs as the pair actually used.
+- Yield: `lib/derive.ts#sameClassYield` (what `lib/metrics.ts#yieldRate` returns, so ranks and medians use it):
+  enrolled ÷ admitted when their lineage years match, else `admissions.federal`'s pair, else null.
+  `derived.yield` in `lib/fields.ts` lists `admissions.federal` as an input.
+- History: `scripts/history/build.mts`'s latest-point check already skips any value with a lineage record (every
+  replaced value, and the kept rate) and finds the federal fall from a college without an `admissions.year` record;
+  `admissions.federal` isn't a series.
+- Tests: `tests/newest.test.mts` (each rule, CDS override, idempotence, exact restore, yield both ways),
+  `tests/merge-reported.test.mts` (newest values written, a CDS college restored exactly, the committed file equals a
+  re-merge), `tests/lineage.test.mts` (`Cited.replaces` present with the right year or absent, each validator rule).
+  Breaking the year rule in `validateNewest` and the same-class check in `sameClassYield` each failed a test; both
+  were restored.
 - No chips (`SourceChip`, `MetricLabel`'s chip, Compare's per-cell chips) and no `SourceExceptions` line anywhere.
   The ⓘ popover (`components/ui/info-tip.tsx`) shows the document kind, year, quote, link, date, and the replaced
   federal figure (`Cited.replaces`, filled by `lineageFor` from `admissions.federal`).

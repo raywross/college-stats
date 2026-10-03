@@ -34,6 +34,8 @@ history source line (per-kind year ranges). See [trends-design.md](trends-design
   4. Grouped metric cards (`CompareMetric`): Admissions, Test scores (range bars on a shared axis), Students,
      race/ethnicity stacked bars with a shared legend.
   5. **Cost & outcomes**: net price, earnings, graduation, median debt, plus `NetPriceCompare` by family income.
-  6. **All the numbers**: a full table (the accessible/data view), with info tips on every row.
+  6. **All the numbers**: a full table (the accessible/data view), with info tips on every row. A cell whose year
+     differs from the row's usual year shows that year in small muted text after the value (a college whose newest
+     published class is newer than the federal release; [college-reported-round-2.md](college-reported-round-2.md)).
 
 School colors come from the compare slots in pick order (`SLOT_COLORS`), validated all-pairs for overlap.

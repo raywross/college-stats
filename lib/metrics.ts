@@ -6,7 +6,7 @@ import { NATIONAL_MIN_FIRST_YEARS } from "./residence";
 import { transferShare } from "./transfers";
 import type { FieldPath } from "./fields";
 import { money, num, pct, pctSmart } from "./format";
-import { admitRatesBySex, satMedian, simpsonIndex, yieldOf } from "./derive";
+import { admitRatesBySex, sameClassYield, satMedian, simpsonIndex } from "./derive";
 import { bedsPer100 } from "./housing";
 import { pellGap } from "./graduation-groups";
 import { endowmentOnForm, instructionOnForm } from "./finances";
@@ -46,22 +46,36 @@ export function actMid(s: School): number | null {
   return a ? (a[0] + a[1]) / 2 : null;
 }
 
-/** Share of admitted students who enroll. */
+/**
+ * Share of admitted students who enroll, from one class only: the newest pair when enrolled and admitted describe the
+ * same class, else the previous class's (`admissions.federal`). See `sameClassYield` (lib/derive.ts).
+ */
 export function yieldRate(s: School): number | null {
-  return yieldOf(s.admissions.admitted, s.admissions.enrolled);
+  return sameClassYield(s);
 }
 
-/** "1 in N" applicants admitted. */
-export function oneIn(s: School): number | null {
-  const r = s.admissions.acceptance_rate;
+/** "1 in N" applicants admitted, from a rate (any source: federal or the newest a college has published). */
+export function oneInFromRate(r: number | null): number | null {
   return r && r > 0 ? Math.max(1, Math.round(1 / r)) : null;
 }
 
-/** Human phrasing of an admit rate: "1 in 29" when selective, "8 in 10" when not. */
-export function admitRatio(s: School): string | null {
-  const r = s.admissions.acceptance_rate;
+/** "1 in N" applicants admitted, federal rate. */
+export function oneIn(s: School): number | null {
+  return oneInFromRate(s.admissions.acceptance_rate);
+}
+
+/**
+ * Human phrasing of an admit rate: "1 in 29" when selective, "8 in 10" when not. Takes the rate directly (not a
+ * School) so callers can pass the newest rate a college has published (lib/newest.ts) as well as the federal one.
+ */
+export function admitRatioFromRate(r: number | null): string | null {
   if (r === null || r <= 0) return null;
-  return r < 0.5 ? `1 in ${oneIn(s)}` : `${Math.round(r * 10)} in 10`;
+  return r < 0.5 ? `1 in ${oneInFromRate(r)}` : `${Math.round(r * 10)} in 10`;
+}
+
+/** Human phrasing of the federal admit rate: "1 in 29" when selective, "8 in 10" when not. */
+export function admitRatio(s: School): string | null {
+  return admitRatioFromRate(s.admissions.acceptance_rate);
 }
 
 /**

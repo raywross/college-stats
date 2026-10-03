@@ -2,7 +2,7 @@ import type { School } from "@/lib/types";
 import type { Cited } from "@/lib/lineage";
 import { isShown } from "@/lib/outcome-measures";
 import { num, pct, pctSmart } from "@/lib/format";
-import { InfoTip, SourceChip } from "@/components/ui/info-tip";
+import { InfoTip } from "@/components/ui/info-tip";
 
 /**
  * Transfers in and out (specs/data-expansion/transfers.md). The two halves come from different files and years, so each
@@ -39,8 +39,7 @@ export function Transfers({
       <div className="grid gap-6 sm:grid-cols-2">
         <div>
           <p className="flex items-center gap-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-            Transferring in{citedIn.year ? `, ${citedIn.year.toLowerCase()}` : ""} <SourceChip cited={citedIn} />
-          </p>
+            Transferring in{citedIn.year ? `, ${citedIn.year.toLowerCase()}` : ""}          </p>
           {t ? (
             <>
               <p className="mt-2 font-display text-3xl font-extrabold">{num(t.count)}</p>

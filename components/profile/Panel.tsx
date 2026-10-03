@@ -3,7 +3,6 @@ import { DOMAINS, type Domain } from "@/lib/metrics";
 import type { FieldPath } from "@/lib/fields";
 import type { School } from "@/lib/types";
 import { SourceNote } from "@/components/sources/SourceNote";
-import { SourceExceptions } from "./SourceExceptions";
 import { cn } from "@/lib/utils";
 
 /** Blocks with ids land below the site header and the topic pages' sticky band when linked to. */
@@ -11,8 +10,8 @@ export const BLOCK_SCROLL = "scroll-mt-[calc(env(safe-area-inset-top,0px)+var(--
 
 /**
  * A profile section: eyebrow with its domain color, title, the takeaway sentence, an optional "since" line
- * (HeadlineDelta), the notice for values from a non-default source, the content, and its source footnote.
- * `level` 1 is a topic page's header (h1, no footnote: the page closes with its own); 2 is a section within a page.
+ * (HeadlineDelta), the content, and its source footnote. `level` 1 is a topic page's header (h1, no footnote:
+ * the page closes with its own); 2 is a section within a page.
  */
 export function Panel({
   id,
@@ -52,7 +51,6 @@ export function Panel({
       <Title className={cn("font-display font-extrabold tracking-tight", level === 1 ? "text-3xl sm:text-4xl" : "text-2xl sm:text-3xl")}>{title}</Title>
       {takeaway && <p className="mt-2 max-w-3xl text-base text-muted-foreground sm:text-lg">{takeaway}</p>}
       {delta}
-      {school && <SourceExceptions fields={fields} school={school} />}
       <div className="mt-5 sm:mt-6">{children}</div>
       {level === 2 && school && fields.length > 0 && <SourceNote fields={fields} school={school} className="mt-4" />}
     </section>

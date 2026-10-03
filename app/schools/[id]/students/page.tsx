@@ -10,7 +10,7 @@ import { Panel, Block } from "@/components/profile/Panel";
 import { TopicPage, topicMetadata } from "@/components/profile/TopicPage";
 import { HeadlineDelta } from "@/components/history/HeadlineDelta";
 import { ShowMore } from "@/components/ui/show-more";
-import { InfoTip, SourceChip } from "@/components/ui/info-tip";
+import { InfoTip } from "@/components/ui/info-tip";
 import { StackedBar } from "@/components/charts/StackedBar";
 import { BenchmarkBar } from "@/components/charts/BenchmarkBar";
 import { DistributionStrip } from "@/components/charts/DistributionStrip";
@@ -78,7 +78,6 @@ export default async function StudentsPage({ params }: Props) {
             <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
               <h3 className="flex items-center gap-1 font-display text-lg font-bold">
                 Race & ethnicity <InfoTip term="race-ethnicity" cited={citeField("demographics.racial_diversity", school)} />
-                <SourceChip cited={citeField("demographics.racial_diversity", school)} />
               </h3>
               {div !== null && (
                 <p className="flex items-center gap-1 text-sm">
@@ -131,7 +130,7 @@ export default async function StudentsPage({ params }: Props) {
           </Block>
           <Block id="size" className="space-y-6">
             <h3 className="flex items-center gap-1.5 font-display text-lg font-bold">
-              Campus size <SourceChip cited={citeField("demographics.undergrad_enrollment", school)} />
+              Campus size
             </h3>
             <div className="flex items-baseline gap-2">
               <span className="font-display text-5xl font-extrabold tracking-tight">{num(d.undergrad_enrollment)}</span>
@@ -153,7 +152,6 @@ export default async function StudentsPage({ params }: Props) {
             school={school}
             detail={detail}
             cited={citeField("demographics.residence", school)}
-            citedStates={citeField("detail.home_states", school)}
             rank={rankOf(school, "outOfState")}
           />
           <Transfers id="transfers" school={school} citedIn={citeField("demographics.transfer_in", school)} citedOut={citeField("outcomes.eight_year", school)} rank={rankOf(school, "transferShare")} />

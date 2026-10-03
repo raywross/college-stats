@@ -6,7 +6,7 @@ import { cip4, cipTitle } from "@/lib/cip";
 import { MAJOR_FAMILIES, majorFamilyName, programsFromRows, type FieldGrowth } from "@/lib/majors";
 import { historyYearLabel } from "@/lib/history";
 import { num, pct, pctSmart } from "@/lib/format";
-import { InfoTip, SourceChip, Term } from "@/components/ui/info-tip";
+import { InfoTip, Term } from "@/components/ui/info-tip";
 import { MajorsList, type MajorRow } from "./MajorsList";
 
 /**
@@ -18,8 +18,6 @@ export function Majors({
   school,
   detail,
   cited,
-  citedPrograms,
-  citedEarnings,
   growth,
   growthNote,
   color,
@@ -30,10 +28,6 @@ export function Majors({
   detail: SchoolDetail | null;
   /** citeField("academics.majors_top", school) */
   cited: Cited;
-  /** citeField("detail.majors", school) */
-  citedPrograms: Cited;
-  /** citeField("detail.programs", school): Field of Study earnings shown on rows. */
-  citedEarnings?: Cited;
   /** lib/majors.ts fastestGrowingField over the history window, or null. */
   growth: FieldGrowth | null;
   /** The growth line's history footnote (HistorySourceNote). */
@@ -64,9 +58,7 @@ export function Majors({
     <div id={id} className="rounded-3xl border bg-card p-4 sm:p-6 lg:col-span-2">
       <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
         <h3 className="flex items-center gap-1 font-display text-lg font-bold">
-          Most popular majors <InfoTip term="first-major" cited={cited} />
-          <SourceChip cited={cited} />
-        </h3>
+          Most popular majors <InfoTip term="first-major" cited={cited} />        </h3>
         <p className="text-sm text-muted-foreground">
           <b className="text-foreground">{num(total)}</b> bachelor&apos;s degrees{cited.year ? `, ${cited.year}` : ""}
         </p>
@@ -110,8 +102,6 @@ export function Majors({
             </>
           )}
         </span>
-        {programs.length > 0 && <SourceChip cited={citedPrograms} />}
-        {anyEarnings && citedEarnings && <SourceChip cited={citedEarnings} />}
       </p>
     </div>
   );

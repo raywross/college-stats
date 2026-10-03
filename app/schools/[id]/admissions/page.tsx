@@ -9,11 +9,10 @@ import { eventYear, historyEvents } from "@/lib/events";
 import { FACTOR_ERA } from "@/lib/derive";
 import { LANDSCAPE_X, LANDSCAPE_Y, LANDSCAPE_ZONE } from "@/lib/chart-configs";
 import { BLOCK_SCROLL, Panel, Block, NotReported } from "@/components/profile/Panel";
-import { ReportedAdmissionsBlock } from "@/components/profile/ReportedAdmissions";
 import { TopicPage, topicMetadata } from "@/components/profile/TopicPage";
 import { HeadlineDelta } from "@/components/history/HeadlineDelta";
 import { ShowMore } from "@/components/ui/show-more";
-import { InfoTip, MetricLabel, SourceChip, Term } from "@/components/ui/info-tip";
+import { InfoTip, MetricLabel, Term } from "@/components/ui/info-tip";
 import { Waffle } from "@/components/charts/Waffle";
 import { Ring } from "@/components/charts/Ring";
 import { BenchmarkBar } from "@/components/charts/BenchmarkBar";
@@ -46,6 +45,12 @@ export default async function AdmissionsPage({ params }: Props) {
   const { citeField, distribution, landscapePoints, metricMedian, rankOf } = data;
   const { admissions: a } = school;
   const bySex = admissionsBySex(school);
+  // The 100-square waffle needs all three counts (`counts`, lib/metrics.ts hasAdmissionCounts); the funnel rows
+  // below show whichever of applicants/admitted/enrolled this college has published, since a class profile may
+  // give only two of them.
+  const funnelRows = a.applicants !== null || a.admitted !== null || a.enrolled !== null;
+  // The bars are sized relative to applicants when known, else the largest figure present.
+  const funnelDenom = a.applicants ?? (Math.max(a.admitted ?? 0, a.enrolled ?? 0) || 1);
   // Admission factor changes since the fall 2022 redesign, when both years use the same codes (lib/events.ts).
   const recentAdmissionChanges = history ? historyEvents(history.history).filter((e) => e.area === "admissions" && e.kind === "fall" && e.year > FACTOR_ERA) : [];
   const federalSat = citeField("admissions.sat_reading_25_75", school).isDefault && citeField("admissions.sat_math_25_75", school).isDefault;
@@ -54,6 +59,8 @@ export default async function AdmissionsPage({ params }: Props) {
   const lowSubmission = sub.sat !== null && sub.act !== null && sub.sat < 0.5 && sub.act < 0.5;
   const acceptanceRank = rankOf(school, "acceptance");
   const mid = satMid(school);
+  // The year named in the eyebrow: the applicants count's lineage year, or the rate's when there are no counts.
+  const headlineYear = citeField(a.applicants !== null ? "admissions.applicants" : "admissions.acceptance_rate", school).year;
 
   const items = [
     { id: "funnel", label: "The funnel" },
@@ -70,13 +77,12 @@ export default async function AdmissionsPage({ params }: Props) {
         level={1}
         domain="admissions"
         eyebrow="Admissions"
-        title={a.year ? `Getting in, fall ${a.year}` : "Getting in"}
+        title={headlineYear ? `Getting in, ${headlineYear.toLowerCase()}` : "Getting in"}
         takeaway={admissionsTakeaway(data, school)}
         delta={history && <HeadlineDelta seriesKey="acceptance_rate" history={history.history} files={history.files} color={DOMAINS.admissions.color} href={topicHref(school.unit_id, "history")} />}
         school={school}
         fields={TOPIC_FIELDS[TOPIC]}
       >
-        {school.reported?.admissions && <ReportedAdmissionsBlock school={school} citeField={citeField} className="mb-4" />}
         <div className="grid gap-4 lg:grid-cols-[1fr_1.2fr]">
           {counts ? (
             // Below lg: the funnel says the same thing in a fifth of the height, so the waffle follows it, folded (it sits beside the funnel from lg).
@@ -89,31 +95,27 @@ export default async function AdmissionsPage({ params }: Props) {
             <NotReported what="An applicant/admit/enroll breakdown" />
           )}
           <div className="flex flex-col gap-4">
-            {counts && (
-              <Block
-                id="funnel"
-                title={
-                  <>
-                    {/* Applied, admitted, and enrolled always come from the same report, so the heading carries the chip. */}
-                    The funnel <SourceChip cited={citeField("admissions.applicants", school)} />
-                  </>
-                }
-              >
+            {funnelRows && (
+              <Block id="funnel" title="The funnel">
                 <div className="space-y-3">
-                  {[
-                    { label: "Applied", value: a.applicants!, term: "applicants" as const, field: "admissions.applicants" as const },
-                    { label: "Admitted", value: a.admitted!, term: "admitted" as const, field: "admissions.admitted" as const },
-                    { label: "Enrolled", value: a.enrolled!, term: "enrolled" as const, field: "admissions.enrolled" as const },
-                  ].map((step, i) => (
+                  {(
+                    [
+                      { label: "Applied", value: a.applicants, term: "applicants" as const, field: "admissions.applicants" as const },
+                      { label: "Admitted", value: a.admitted, term: "admitted" as const, field: "admissions.admitted" as const },
+                      { label: "Enrolled", value: a.enrolled, term: "enrolled" as const, field: "admissions.enrolled" as const },
+                    ] satisfies { label: string; value: number | null; term: "applicants" | "admitted" | "enrolled"; field: "admissions.applicants" | "admissions.admitted" | "admissions.enrolled" }[]
+                  )
+                    .filter((step): step is typeof step & { value: number } => step.value !== null)
+                    .map((step, i) => (
                     <div key={step.label} className="grid grid-cols-[5.5rem_1fr] items-center gap-3">
-                      <MetricLabel term={step.term} cited={citeField(step.field, school)} chip={false} className="text-sm font-medium">
+                      <MetricLabel term={step.term} cited={citeField(step.field, school)} className="text-sm font-medium">
                         {step.label}
                       </MetricLabel>
                       <div className="flex items-center gap-2">
                         <div
                           className="h-7 origin-left animate-grow-x rounded-lg"
                           style={{
-                            width: `${Math.max(2, (step.value / a.applicants!) * 100) * 0.8}%`,
+                            width: `${Math.max(2, (step.value / funnelDenom) * 100) * 0.8}%`,
                             backgroundColor: `color-mix(in oklch, ${DOMAINS.admissions.color} ${100 - i * 30}%, transparent)`,
                             animationDelay: `${i * 120}ms`,
                           }}
@@ -124,24 +126,20 @@ export default async function AdmissionsPage({ params }: Props) {
                   ))}
                 </div>
                 {bySex && !bySex.notable && (
-                  <p className="mt-4 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-sm text-muted-foreground">
-                    {bySex.sentence} <SourceChip cited={citeField("admissions.by_sex", school)} />
-                  </p>
+                  <p className="mt-4 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-sm text-muted-foreground">{bySex.sentence}</p>
                 )}
                 {a.application_fee != null && (
                   <p className="mt-2 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-sm text-muted-foreground">
-                    <MetricLabel term="application-fee" cited={citeField("admissions.application_fee", school)} chip={false}>
+                    <MetricLabel term="application-fee" cited={citeField("admissions.application_fee", school)}>
                       {a.application_fee === 0 ? "No application fee" : `${money(a.application_fee)} to apply`}
                     </MetricLabel>
-                    <SourceChip cited={citeField("admissions.application_fee", school)} />
                   </p>
                 )}
                 {a.accepts_ap_credit != null && (
                   <p className="mt-2 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-sm text-muted-foreground">
-                    <MetricLabel term="ap-credit" cited={citeField("admissions.accepts_ap_credit", school)} chip={false}>
+                    <MetricLabel term="ap-credit" cited={citeField("admissions.accepts_ap_credit", school)}>
                       {a.accepts_ap_credit ? "Grants credit for AP exams" : "Doesn't list credit for AP exams"}
                     </MetricLabel>
-                    <SourceChip cited={citeField("admissions.accepts_ap_credit", school)} />
                   </p>
                 )}
               </Block>
@@ -150,7 +148,6 @@ export default async function AdmissionsPage({ params }: Props) {
               <div className="rounded-3xl border bg-card p-4 sm:p-6">
                 <h3 className="mb-1 flex items-center gap-1 font-display text-lg font-bold">
                   Men and women <InfoTip term="admit-rate-by-sex" cited={citeField("admissions.by_sex", school)} />
-                  <SourceChip cited={citeField("admissions.by_sex", school)} />
                 </h3>
                 <p className="mb-4 text-sm text-muted-foreground">{bySex.sentence}</p>
                 <div className="space-y-3">
@@ -172,7 +169,6 @@ export default async function AdmissionsPage({ params }: Props) {
                   <div>
                     <h3 className="flex items-center gap-1 font-display text-lg font-bold">
                       Yield <InfoTip term="yield" cited={citeField("derived.yield", school)} />
-                      <SourceChip cited={citeField("derived.yield", school)} />
                     </h3>
                     <p className="text-sm text-muted-foreground">{yieldTakeaway(data, school)}</p>
                   </div>
@@ -254,7 +250,6 @@ export default async function AdmissionsPage({ params }: Props) {
                 title={
                   <>
                     Who submitted scores? <InfoTip term="test-submission" cited={citeField("admissions.test_submission_rate_sat", school)} />
-                    <SourceChip cited={citeField("admissions.test_submission_rate_sat", school)} />
                   </>
                 }
               >

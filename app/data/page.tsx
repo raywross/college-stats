@@ -22,7 +22,7 @@ import {
 } from "@/lib/releases";
 import { DataAgeTimeline, type DataAgeRow } from "@/components/charts/DataAgeTimeline";
 import { Crest } from "@/components/school/Crest";
-import { SourceChip, Term } from "@/components/ui/info-tip";
+import { Term } from "@/components/ui/info-tip";
 import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = { title: "Data" };
@@ -159,10 +159,6 @@ export default async function DataPage() {
     return admYear !== null && y !== undefined && y > admYear;
   });
   const example = cds[0];
-  const exampleField = example
-    ? ((Object.entries(example.lineage ?? {}).find(([, r]) => r?.source === "cds")?.[0] as FieldPath | undefined) ?? null)
-    : null;
-  const exampleCited = example && exampleField ? citeField(exampleField, example) : null;
 
   /* ---- Newer figures from colleges (specs/college-reported-data.md) ---- */
   const reportedCount = all.filter((s) => s.reported?.admissions).length;
@@ -354,38 +350,29 @@ export default async function DataPage() {
       <Section id="compare" eyebrow="Fair comparisons" title="How we compare colleges" icon={<Scale className="size-4" aria-hidden />}>
         <div className="grid gap-4 md:grid-cols-2">
           <div className="rounded-3xl border bg-card p-5 sm:p-6">
-            <h3 className="font-display text-lg font-bold">Federal data is the baseline</h3>
+            <h3 className="font-display text-lg font-bold">Every figure is the newest a college has published</h3>
             <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-              Rankings, national medians, Explore and Compare use the same federal releases for every college: the same year,
-              the same definitions, checked by NCES. Colleges&apos; own reports can be newer, but each college publishes on its
-              own schedule, so mixing them in would compare one college&apos;s newest class with another&apos;s older one.
+              A college&apos;s admissions figures here are the newest it has published anywhere: the federal release, or
+              a newer Common Data Set or class profile from its own site when it has one. That holds everywhere a
+              figure appears, including Explore, Compare, rankings, and national medians. Years can differ between
+              colleges shown side by side, since each publishes on its own schedule; every value&apos;s ⓘ shows its
+              source and the year it describes, and a replaced federal figure stays one line down in that same ⓘ.
             </p>
           </div>
           <div className="rounded-3xl border bg-card p-5 sm:p-6">
-            <h3 className="font-display text-lg font-bold">Where colleges&apos; own figures appear</h3>
+            <h3 className="font-display text-lg font-bold">Where colleges&apos; own figures come from</h3>
             <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-              For {cds.length} {cds.length === 1 ? "college" : "colleges"}, we&apos;ve imported the college&apos;s own Common Data Set
-              for admissions counts, test scores and aid detail federal data lacks, and those values replace the federal
-              ones they describe.
+              For {cds.length} {cds.length === 1 ? "college" : "colleges"}, we&apos;ve hand-imported the college&apos;s own Common
+              Data Set for admissions counts, test scores and aid detail federal data lacks.
               {newerCds.length > 0
                 ? ` For ${newerCds.length} of them it describes a newer class than the federal data. `
                 : " They describe the same class as the federal data. "}
-              Every such value carries a tag with its source and year
-              {exampleCited && (
-                <>
-                  , like <SourceChip cited={exampleCited} className="align-middle" />
-                </>
-              )}
-              , and its ⓘ explains where it came from.
-            </p>
-            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-              Newer class profiles and Common Data Sets we read automatically from a college&apos;s own site work
-              differently: they never replace the federal figures used here. They show up only on that college&apos;s own
-              profile, next to the federal baseline. See{" "}
+              For {num(reportedCount)} more, an automated reader found a newer Common Data Set or class profile on
+              the college&apos;s own site; see{" "}
               <a href="#college-reported" className="font-semibold text-primary hover:underline">
                 newer figures from colleges
               </a>
-              .
+              . Either way, the ⓘ on the value itself says which document it came from and what it replaced.
             </p>
             {example && (
               <Link href={`/schools/${example.unit_id}`} className="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-primary hover:underline">
@@ -399,9 +386,11 @@ export default async function DataPage() {
       {/* 5. Newer figures from colleges */}
       <Section id="college-reported" eyebrow="Newer figures" title="Newer figures from colleges" icon={<ClipboardCheck className="size-4" aria-hidden />}>
         <p className="max-w-3xl text-sm leading-relaxed text-muted-foreground">
-          For admissions, the newest year a college has published anywhere on its own site, we read it automatically and
-          check it before showing it. These figures never replace the federal baseline used for comparisons; they appear
-          only on that college&apos;s own profile, under the federal figure.
+          For admissions, the newest figures a college has published anywhere on its own site, we read it automatically
+          and check it before showing it. A checked value replaces the federal figure it describes everywhere on the
+          site &mdash; the college&apos;s profile, Explore, Compare, ranks, and medians &mdash; with the replaced federal
+          figure kept in that value&apos;s ⓘ. Because each college publishes on its own schedule, the years behind the
+          figures shown side by side can differ; each value&apos;s ⓘ says which year it describes.
         </p>
         <div className="grid gap-4 md:grid-cols-2">
           <div className="rounded-3xl border bg-card p-5 sm:p-6">
@@ -444,7 +433,7 @@ export default async function DataPage() {
           <div className="rounded-3xl border bg-card p-5 sm:p-6">
             <h3 className="font-display text-lg font-bold">Coverage so far</h3>
             <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-              {num(reportedCount)} {reportedCount === 1 ? "college" : "colleges"} currently {reportedCount === 1 ? "has" : "have"} a newer, checked figure on its profile. Coverage
+              {num(reportedCount)} {reportedCount === 1 ? "college" : "colleges"} currently {reportedCount === 1 ? "has" : "have"} a newer, checked figure in use across the site. Coverage
               depends on what each college publishes: selective colleges tend to post class profiles; many others post
               only a Common Data Set, and some publish neither.
             </p>

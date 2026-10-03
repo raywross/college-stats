@@ -63,10 +63,15 @@ published at `/roadmap` ([roadmap.md](roadmap.md)): add each new one to `lib/roa
 - [ ] **2024–25 sticker prices** from `COST1_2024` (`…AY3`), keeping same-year inputs for the all-student average
   ([data-page.md](data-page.md#research-findings-vintages-as-of-2026-09-28)). If the snapshot moves ahead, history's
   price series (`scripts/history/registry.mts`) must follow, or CI's latest-point check fails.
-- [ ] **College-reported data agent** ([college-reported-data.md](college-reported-data.md)): newer admissions figures
-  from colleges' CDS and class profiles, auto-published when checks pass. Pilot on ~50 colleges first. Replaces the
-  former "Read CDS PDFs" and "Expand CDS coverage" items (the existing 8 CDS overrides stay until the agent covers them).
-  Workflow and one-time repo setup built 2026-10-02: [college-reported-setup.md](college-reported-setup.md).
+- [x] **College-reported data agent** ([college-reported-data.md](college-reported-data.md)): built 2026-10-02 (#50),
+  pilot run 2026-10-03 (22 colleges published), round 2 the same day ([college-reported-round-2.md](college-reported-round-2.md):
+  profiles lead with the newest published figures, discovery costs a tenth as much, saves as it goes, data PRs carry
+  `schools.json`). Setup: [college-reported-setup.md](college-reported-setup.md). Leftovers:
+  - [ ] Measure the new discovery cost on a real `--pilot --max-cost 10` run and update the round-2 estimates.
+  - [ ] Re-run the 15 pilot colleges that never got a full attempt (6 timeouts, 9 stopped by the credit limit).
+  - [ ] Check Duke (61,935 vs 61,395 applicants) and Stanford (enrolled 1,866 vs 1,839) against their sources.
+  - [ ] Update the 8 hand-imported CDS overrides to their 2025–26 editions (`npm run import-cds`), or retire them
+    now that the agent reads CDS files.
 - [ ] **Religious life** ([religious-life.md](religious-life.md)). Phase 1: IPEDS affiliation for all colleges (685 of
   1,893). Then a 25-college pilot of per-school sources (CDS C7/H14, IR reports, org directories, Hillel), national
   faith-org directories, and partnership requests (Hillel, Chabad, Anthology).

@@ -1,7 +1,7 @@
 import type { Profile } from "@/lib/profile-data";
 import { topicHref, topicOf } from "@/lib/profile-topics";
 import { admissionsTitle, tenYear } from "@/lib/profile-cards";
-import { DOMAINS, admitRatio, selectivityTier } from "@/lib/metrics";
+import { DOMAINS, admitRatioFromRate, selectivityTier } from "@/lib/metrics";
 import { admissionsTakeaway } from "@/lib/insights";
 import { num, pct, pctSmart, range } from "@/lib/format";
 import { scoreScale } from "@/lib/score-scale";
@@ -10,7 +10,6 @@ import { RangeBar } from "@/components/charts/RangeBar";
 import { InfoTip, MetricLabel, Term } from "@/components/ui/info-tip";
 import { CardHeadline, CardStat, CardStats, TopicCard } from "./TopicCard";
 import { TenYearLine } from "./TenYearLine";
-import { ReportedRateLine } from "./ReportedAdmissions";
 
 /**
  * Getting in: the acceptance ring with "1 in N" and the selectivity tier (or the open-admission state), applied,
@@ -21,7 +20,7 @@ export async function AdmissionsCard({ profile: p }: { profile: Profile }) {
   const { citeField, metricMedian } = data;
   const a = school.admissions;
   const color = DOMAINS.admissions.color;
-  // The fall the figures describe, from lineage (the counts' release, or the rate's when counts aren't reported).
+  // The fall the headline figure describes, from lineage (the counts' release, or the rate's when counts aren't reported).
   const year = citeField(counts ? "admissions.applicants" : "admissions.acceptance_rate", school).year;
   const tier = selectivityTier(rate);
   const apps = history ? tenYear("applicants", history.history, history.files) : null;
@@ -29,7 +28,7 @@ export async function AdmissionsCard({ profile: p }: { profile: Profile }) {
   const act = a.act_composite_25_75;
 
   return (
-    <TopicCard topic="admissions" unitId={school.unit_id} title={admissionsTitle(admitRatio(school))} takeaway={admissionsTakeaway(data, school) ?? topicOf("admissions").description} year={year}>
+    <TopicCard topic="admissions" unitId={school.unit_id} title={admissionsTitle(admitRatioFromRate(rate))} takeaway={admissionsTakeaway(data, school) ?? topicOf("admissions").description} year={year}>
       {rate !== null ? (
         <CardHeadline
           value={pctSmart(rate)}
@@ -62,8 +61,6 @@ export async function AdmissionsCard({ profile: p }: { profile: Profile }) {
           </p>
         </div>
       )}
-      <ReportedRateLine school={school} citeField={citeField} />
-
       {counts && (
         <CardStats>
           <CardStat label="Applied" term="applicants" cited={citeField("admissions.applicants", school)} value={num(a.applicants!)} />

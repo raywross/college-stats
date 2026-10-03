@@ -4,7 +4,7 @@ import { num } from "@/lib/format";
 import { DOMAINS } from "@/lib/metrics";
 import { bedsPer100 } from "@/lib/housing";
 import type { School } from "@/lib/types";
-import { InfoTip, SourceChip } from "@/components/ui/info-tip";
+import { InfoTip } from "@/components/ui/info-tip";
 
 /**
  * Campus life, starting with housing (specs/data-expansion/housing-and-policies.md): beds, beds per 100 undergrads
@@ -22,9 +22,7 @@ export async function CampusLife({ school }: { school: School }) {
   return (
     <div className="rounded-3xl border bg-card p-4 sm:p-6">
       <h3 className="mb-5 flex items-center gap-1.5 font-display text-lg font-bold">
-        Housing <InfoTip term="housing-capacity" cited={cited} />
-        <SourceChip cited={cited} />
-      </h3>
+        Housing <InfoTip term="housing-capacity" cited={cited} />      </h3>
       {!h.offered ? (
         <p className="flex items-center gap-2 text-sm text-muted-foreground">
           <Home className="size-4" /> No college housing: students live off campus.

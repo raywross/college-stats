@@ -100,8 +100,8 @@ export async function SourceList({ school, fields }: { school: School; fields: r
       </ol>
       <p className="mt-4 text-xs text-muted-foreground">
         IPEDS unit ID {school.unit_id} · Data retrieved {meta.retrieved}. Tap any <span className="font-semibold">ⓘ</span> to see
-        where that number came from; values marked with a highlighted tag come from a different source or year than the rest
-        of their section. National ranks and medians include every 4-year college that reports the measure.{" "}
+        where that number came from and what year it describes. National ranks and medians include every 4-year college that
+        reports the measure.{" "}
         <Link href="/data" className="font-semibold text-primary hover:underline">
           How we source and calculate everything
         </Link>

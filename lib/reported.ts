@@ -85,6 +85,48 @@ export interface Recipe {
   none_found?: true;
   /** Free text from discovery: what the college publishes and where (helps a person fix the recipe). */
   notes?: string;
+  /** How the round-3 discovery ladder found this recipe, what it tried, and when to try again (Decisions 6–7). */
+  discovery?: RecipeDiscovery;
+}
+
+/**
+ * How a recipe was found (specs/college-reported-round-3.md Decision 6): `known` an index page re-scan, `guessed` the
+ * next edition's file name, `manual` the owner's list (data/reference/cds-urls.json), `probe-*` the free probes
+ * (sitemap, IR host pattern, two-hop crawl), `picker`/`search`/`full` the paid steps 2–4, `blocked` every candidate
+ * host refuses us (listed for the owner, no money spent), `none` nothing found.
+ */
+export type DiscoveryPath =
+  | "known"
+  | "guessed"
+  | "manual"
+  | "probe-sitemap"
+  | "probe-host"
+  | "probe-crawl"
+  | "picker"
+  | "search"
+  | "full"
+  | "blocked"
+  | "none";
+
+/** One rung of the ladder tried for a college: 0 known, 1 free probes, 2 picker, 3 search only, 4 full, 5 manual. */
+export interface DiscoveryAttempt {
+  step: 0 | 1 | 2 | 3 | 4 | 5;
+  /** The sub-step for step 1 (sitemap, host, crawl) and the path a find took. */
+  via?: DiscoveryPath;
+  /** ISO date. */
+  at: string;
+  result: "found" | "none" | "failed" | "blocked" | "skipped";
+  /** What was found or why not: a URL, an error, "budget spent". */
+  detail?: string;
+  cost_usd: number;
+}
+
+export interface RecipeDiscovery {
+  path: DiscoveryPath;
+  /** Every attempt, oldest first; the newest 20 are kept. */
+  tried: DiscoveryAttempt[];
+  /** ISO date before which the ladder isn't run again (Decision 7 back-off); absent = retry on the next run. */
+  next_attempt?: string;
 }
 
 export interface SourcesFile {

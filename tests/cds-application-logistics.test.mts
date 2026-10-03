@@ -271,7 +271,8 @@ test("Applying lines for William & Mary, and nothing for a blank item", () => {
   const wm = school(WM);
   const l = wm.reported!.admissions_logistics!;
   assert.equal(deadlineSentence(l), "Apply by January 5 for fall 2026.");
-  assert.equal(notificationSentence(l), "Decisions are sent: April 1.");
+  assert.equal(notificationSentence(l), "Decisions are released April 1.");
+  assert.equal(notificationSentence(school(CU).reported!.admissions_logistics!), "Decisions are released: Early April.");
   assert.equal(replySentence(l), "Admitted students must reply by May 1.");
   assert.equal(depositSentence(l), "$350 housing deposit, due May 1, non-refundable.");
   assert.match(gapYearSentence(l)!, /postpone enrollment.*2 Year/);

@@ -1,6 +1,7 @@
 # CDS Application Logistics: Deadlines, Deferral, and High School Prep
 
-> Status: **planned** (2026-10-03). Wave 4. Covers the inventory's **U4** (application logistics: C13 fee waiver and
+> Status: **built** (2026-10-03; see [As built](#as-built) for where the build differs from the plan below and what
+> waits on other work). Wave 4. Covers the inventory's **U4** (application logistics: C13 fee waiver and
 > online fee, C14 regular closing/priority date, C15 other terms, C16 notification, C17 reply-by date and housing
 > deposit, C18 deferred admission) and **U10** (high school preparation: C3 completion requirement, C4 college-prep
 > requirement, C5 units required/recommended by subject), from the [CDS gap inventory](../../). **Blocked on**
@@ -255,6 +256,71 @@ bar.
    `status: "blank"` (unanswered) rather than 0 (no requirement in that subject), consistent with round-3's general
    blank-token list. If a larger sample shows "-" reliably means "no requirement" at Ivy-type colleges with no fixed
    HS curriculum mandate, revisit and store 0 instead of null for those cells.
+
+## As built
+Built 2026-10-03 from the round-3 records (`data/cds-records/<unit_id>.json`); live for the four template workbooks.
+
+**What exists**
+- `lib/cds-dates.ts` (pure): `parseCdsDate(raw, { excel })` on top of `lib/cds-sections.ts`'s `monthDay` (the one
+  cell parser the records reader already uses; the records already store one-cell dates as `"--MM-DD"`, so W&M's
+  `46113` arrives as April 1), `splitCdsDate(month, day)`, `dateCheck` (the `valid-date` outcomes: `valid`,
+  `unparsed` free text, `invalid` numeric-but-out-of-range, `blank`), `cycleOrder`/`compareInCycle` (a cycle runs
+  August to July, so November 1 sorts before January 5), `formatCdsDate` ("January 5"). `CdsDate` lives in
+  `lib/types.ts`.
+- `lib/cds/application-logistics.ts` (pure): `readLogistics(doc)` reads one document's passed items into both blocks
+  and runs the checks; `logisticsFromRecord(record)` adds lineage; `mergeApplicationLogistics(school, record)` is the
+  one call in `lib/reported-merge.ts`, after `mergeResidency`, idempotent. Only the **newest** document is read (a
+  blank item shows nothing, never last year's date). A block whose check fails is left out and the failure recorded in
+  the outcome (`regular-after-early`, `reply-after-notification` with `skipped` for not-checkable pairs, `one-mark`,
+  `valid-date`, `units-sum`, `recommended-at-least-required`, `lab-within-science`); other blocks still merge. Wiring
+  these outcomes into the review queue waits on the checks track (`lib/cds-checks.ts`).
+- `lib/cds/application-logistics-display.ts` (pure): the "Applying" lines, the fee-waiver caveat, the high school
+  sentences and unit rows, `LOGISTICS_FILTERS` (Explore `gapYear`), `compareDeadlines`/`compareGapYear`.
+- `components/school/ApplyingBox.tsx` (`#applying`) and `components/school/HsPrepBox.tsx` (`#hs-prep`) on the
+  Admissions page after "What they look at", side by side from `lg`, each in "On this page" only when it renders; the
+  fee-waiver caveat sits under "$75 to apply". Every line is cited to its block (`MetricLabel cited`), years from
+  lineage, never literals.
+- Explore: "After you're admitted" → "Allows deferred admission (gap year)" (`gapYear=1`; `lib/params.ts`,
+  `lib/dataset.ts`, `FilterPanel`, active-filter chip). Compare: "Deadlines & deposit" and "Gap year allowed", hidden
+  when no compared college has the data, cited through two computed fields (`derived.application_deadlines`,
+  `derived.gap_year_allowed`) because `tests/reported-guards.test.mts` bans `reported.admissions…` paths in
+  `app/compare/`.
+- Glossary: `priority-date`, `rolling-notification`, `reply-by-date`, `housing-deposit`, `deferred-admission` (with
+  the ED/EA "deferred" disambiguation in its long text), `college-preparatory-program`.
+- Tests: `tests/cds-dates.test.mts`, `tests/cds-application-logistics.test.mts` (each check shown failing on a broken
+  record, the placeholder, lineage, idempotency, newest-only, display, Explore, Compare, partial-coverage guard);
+  `tests/profile-topics.test.mts` lists the 11 displayed paths.
+
+**Where it differs from the plan**
+- Paths are `reported.admissions_logistics.*` and `reported.admissions_hs_prep.*`, siblings of
+  `admissions_by_residency`, not `reported.admissions.logistics`: `reported.admissions` is the funnel
+  (`ReportedAdmissions`, with required fields) that `applyNewest` and `validateNewest` read, and a CDS college can have
+  logistics without a newer funnel. `ReportedValuePath` (`lib/reported.ts`) was not extended; `REPORTED_PATHS` from
+  `lib/fields.ts` already puts the new paths under `validateSchool`'s guard.
+- Registered paths: 10 under logistics (`cycle`, `edition`, `fee`, `regular_closing`, `priority_date`, `other_terms`,
+  `notification`, `reply`, `housing_deposit`, `deferred_admission`) and 4 under hs_prep. One lineage record per
+  block, cited to its first answered item; for workbook cells the quote is generated from short labels and each
+  cell's printed answer ("Notified, other: ✔; Other: 46113"), since a cell alone doesn't say which question it
+  answers. C.1501 has no quote in the records (store-only), so its quote is generated the same way.
+- `notification` gained `other_date`/`other_text` and `reply` gained `other_text`, so the "Other:" answers (W&M's
+  April 1, Cornell's "Early April") display instead of living only in the quote. `UnitsBySubject` gained
+  `total_summed` (shown with an asterisk).
+- `lib/cds-sections.ts` needed no change: the template already assigns these codes to call C with this spec as owner.
+  C.1301/C.1302 (has a fee, amount) are read by the template but not stored here (the amount is IPEDS's
+  `admissions.application_fee`).
+- C3/C4 are one choice cell in the workbook, so `one-mark` applies only to C16/C17's checkboxes there.
+
+**Real values (2025–26)**: W&M: apply by Jan 5, decisions April 1 (the serial), reply by May 1, $350 deposit due May 1
+non-refundable, gap year up to "2 Year", recommended units summed to 20. Cornell: Jan 2, "Early April", May 1 or 2
+weeks, $0 deposit, no C18 answer (placeholder), C3/C4 only (no high school block). Illinois: Jan 5, priority Nov 1,
+reply by a set date (no date given), deposit non-refundable (amount cell says "$100 application fee", so null), gap year
+"1 year OR 2 years for U.S. Military", units 15 required / 24 recommended. Vanderbilt: closing date typed as free text
+outside the code cells (blank here; the reader's visible-form fallback for C14 is round-3 work), May 1 rule, gap year
+allowed, units 18 / 21. Explore's gap-year chip matches 3 colleges.
+
+**Waits on other work**: the review-queue wiring of these checks (checks track); the `regular-after-early` check
+reads C21/C22 items directly from the record and will also hold once cds-admissions.md stores its early dates;
+saved-lists' "Next 30 days" strip (not built) is the only consumer of the dates beyond the profile.
 
 ## Roadmap entry
 - slug: cds-application-logistics

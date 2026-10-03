@@ -48,8 +48,8 @@ export function notificationSentence(l: L): string | null {
     const d = dateOr(n.by_date);
     return d ? `Decisions are sent by ${d}.` : "Decisions are sent by a set date.";
   }
-  const d = dateOr(n.other_date, n.other_text);
-  return d ? `Decisions are sent: ${d}.` : null;
+  if (formatCdsDate(n.other_date)) return `Decisions are released ${formatCdsDate(n.other_date)}.`;
+  return n.other_text ? `Decisions are released: ${n.other_text}.` : null;
 }
 
 /** The reply-by rule. Open question 1: "within N weeks" isn't turned into a date. */
@@ -64,7 +64,7 @@ export function replySentence(l: L): string | null {
     case "may1_or_weeks":
       return r.weeks !== null
         ? `Admitted students must reply by May 1, or within ${r.weeks} week${r.weeks === 1 ? "" : "s"} if admitted later.`
-        : "Admitted students must reply by May 1, or within a few weeks if admitted later.";
+        : "Admitted students must reply by May 1, or within a set number of weeks if admitted later.";
     case "no_set_date":
       return "There's no set reply date.";
     case "other":

@@ -2,7 +2,7 @@ import type { School } from "@/lib/types";
 import type { Cited } from "@/lib/lineage";
 import type { FieldPath } from "@/lib/fields";
 import type { TermKey } from "@/lib/glossary";
-import { applyingLines, cycleText } from "@/lib/cds/application-logistics-display";
+import { applyingLines } from "@/lib/cds/application-logistics-display";
 import { Block } from "@/components/profile/Panel";
 import { MetricLabel } from "@/components/ui/info-tip";
 
@@ -30,7 +30,7 @@ export function ApplyingBox({ school, cite, id }: { school: School; cite: (path:
               : undefined;
   return (
     <Block id={id} title="Applying">
-      <p className="-mt-3 mb-3 text-sm text-muted-foreground">The regular round, for {cycleText(l)} entry, as the college reports it.</p>
+      <p className="-mt-3 mb-3 text-sm text-muted-foreground">The regular round, as the college reports it. Early rounds have their own dates.</p>
       <ul className="space-y-2 text-sm">
         {lines.map((line) => (
           <li key={line.key}>

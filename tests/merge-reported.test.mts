@@ -18,6 +18,8 @@ import type { ReportedEntry, ReportedFile } from "../lib/reported.ts";
 import { toReportedEntry } from "../lib/reported-checks.ts";
 import { mergeReported, stripReported } from "../lib/reported-merge.ts";
 import { validateLineage } from "../lib/lineage.ts";
+import { CDS_TEMPLATE } from "../lib/cds-template.ts";
+import { readRecords } from "../scripts/lib/college-reported/records.mts";
 
 const ROOT = join(import.meta.dirname, "..");
 const SCRIPT = join(ROOT, "scripts", "merge-reported.mts");
@@ -140,7 +142,9 @@ test("a hand-imported CDS college: admissions.federal holds the override's value
 
 test("the committed data/schools.json is exactly what merging data/college-reported.json produces (re-merge changes nothing)", () => {
   const reported: ReportedFile = JSON.parse(readFileSync(join(ROOT, "data", "college-reported.json"), "utf8"));
-  const { schools } = mergeReported(allSchools, reported);
+  // As scripts/merge-reported.mts runs it: with round 3's CDS records (cds-admissions.md) and the ADM release's fall.
+  const cds = { records: readRecords(join(ROOT, "data", "cds-records")), table: CDS_TEMPLATE, factorsYear: Number(/\d{4}/.exec(meta.vintages["ipeds-adm"] ?? "")?.[0]) || null };
+  const { schools } = mergeReported(allSchools, reported, cds);
   const changed = schools.filter((s, i) => JSON.stringify(s) !== JSON.stringify(allSchools[i])).map((s) => s.unit_id);
   assert.deepEqual(changed, [], "run `npm run merge-reported`");
   // Every college with a reported block actually had something replaced or nothing newer to replace.

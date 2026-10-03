@@ -37,6 +37,8 @@ function SourceLinkBare({ s }: { s: CitedSource }) {
  */
 function sourceKindPhrase(cited: Cited): string {
   const year = yearLabel(cited);
+  // A CDS-record value (round 3) names the edition, and the class or plan year when it differs (cds-admissions.md).
+  if (cited.document) return `in its ${cited.document}${cited.year && !cited.document.endsWith(cited.year) ? ` (${cited.year})` : ""}`;
   if (cited.sourceKind === "cds") return `in its Common Data Set ${year}`;
   if (cited.sourceKind === "class-profile") return `in its class profile for the ${year} class`;
   return "on its own site";
@@ -44,6 +46,7 @@ function sourceKindPhrase(cited: Cited): string {
 
 /** The federal (or previous) value a college-reported value replaced, formatted by field. */
 function formatReplaced(cited: Cited): string {
+  if (cited.replaces?.label) return cited.replaces.label;
   const value = cited.replaces?.value ?? null;
   if (value === null) return "not reported";
   return cited.path.endsWith("acceptance_rate") ? pctSmart(value) : num(value);

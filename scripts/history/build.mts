@@ -737,7 +737,9 @@ export function lastPointMismatches(schools: readonly School[], histories: Reado
       check("sat_50", satMedian(s));
       check("act_50", s.admissions.act_composite_median);
       for (const k of Object.keys(FACTOR_COLUMNS) as AdmissionFactor[]) {
-        const use = s.admissions.factors?.[k];
+        // A factor a newer CDS replaced (cds-admissions.md) is compared as IPEDS reported it (admissions.federal_factors).
+        const kept = s.admissions.federal_factors;
+        const use = kept && k in kept ? kept[k] : s.admissions.factors?.[k];
         check(`factor_${k}` as SeriesKey, use ? FACTOR_CODE[use] : null);
       }
     }

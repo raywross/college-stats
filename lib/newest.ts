@@ -9,6 +9,7 @@
  * data/college-reported.json gets its previous funnel back. Pure: no I/O, never mutates its input.
  */
 import { acceptanceRate } from "./derive.ts";
+import { applyNewestFactors, restoreFederalFactors } from "./cds/admissions.ts";
 import type { FieldPath } from "./fields";
 import type { FederalAdmissions, LineageRecord, School } from "./types";
 
@@ -33,7 +34,8 @@ const sameRecord = (a: LineageRecord | undefined, b: LineageRecord | undefined) 
  * record for a hand-imported CDS. A value whose own lineage differs from that (e.g. a Scorecard-only rate) is left
  * alone, so `restoreFederal` can always put back exactly what was there.
  */
-export function applyNewest(school: School): School {
+export function applyNewest(school: School, opts: { factorsYear?: number | null } = {}): School {
+  school = applyNewestFactors(school, opts.factorsYear); // the six shared C7 factors (lib/cds/admissions.ts)
   const r = school.reported?.admissions;
   const a = school.admissions;
   if (!r || a.federal) return school;
@@ -117,6 +119,7 @@ export function applyNewest(school: School): School {
  * there's nothing to undo.
  */
 export function restoreFederal(school: School): School {
+  school = restoreFederalFactors(school); // undoes applyNewestFactors (lib/cds/admissions.ts)
   const federal = school.admissions.federal;
   if (!federal) return school;
   // eslint-disable-next-line @typescript-eslint/no-unused-vars -- dropping `federal` is the point

@@ -8,7 +8,8 @@
  *
  * For every school, strips any existing `reported` block and every `reported.*` lineage record, then re-applies
  * the current `data/college-reported.json` entries (through `reportedToPatch`, exactly as `scripts/sync-data.mts`
- * does — both call `lib/reported-merge.ts#mergeReported`, so they can't disagree). A college dropped from
+ * does — both call `lib/reported-merge.ts#mergeReported`, so they can't disagree), and each college's CDS admissions
+ * profile from `data/cds-records/` (specs/data-expansion/cds-admissions.md). A college dropped from
  * `college-reported.json` since the last merge loses its block. Refuses to write if the result fails
  * `validateLineage`. No network, no API key.
  */
@@ -18,6 +19,8 @@ import type { DatasetMeta, School } from "../lib/types";
 import { validateLineage } from "../lib/lineage.ts";
 import type { ReportedFile } from "../lib/reported.ts";
 import { mergeReported } from "../lib/reported-merge.ts";
+import { CDS_TEMPLATE } from "../lib/cds-template.ts";
+import { readRecords } from "./lib/college-reported/records.mts";
 
 // MERGE_REPORTED_ROOT lets tests point this at a scratch directory holding just data/schools.json,
 // data/college-reported.json, and data/meta.json, without copying the whole repo.
@@ -33,7 +36,10 @@ function main() {
   const reported: ReportedFile = JSON.parse(readFileSync(REPORTED, "utf8"));
   const meta: DatasetMeta = JSON.parse(readFileSync(META, "utf8"));
 
-  const { schools: merged, merged: mergedCount, removed } = mergeReported(schools, reported);
+  // Round 3's CDS records feed the per-spec blocks (cds-admissions.md); IPEDS's factors describe the ADM release's fall.
+  const records = readRecords(join(ROOT, "data", "cds-records"));
+  const factorsYear = Number(/\d{4}/.exec(meta.vintages["ipeds-adm"] ?? "")?.[0]) || null;
+  const { schools: merged, merged: mergedCount, removed } = mergeReported(schools, reported, { records, table: CDS_TEMPLATE, factorsYear });
 
   const problems = validateLineage(merged, meta);
   if (problems.length) {

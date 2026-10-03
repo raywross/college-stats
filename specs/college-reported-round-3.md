@@ -1485,3 +1485,155 @@ its codes for each group; test 16 (a failing H2 never blocks C1; the queue's key
 rows; test 17 (escalation scope on a model-read fixture with line text); test 18 (the breaker's shares, minimum, and
 exclusions). `tests/cds-records.test.mts` now expects Cornell's C21 and Illinois's residency grid published from the
 form.
+
+### Pipeline and CLI (2026-10-03, branch `feature/cds3-integration`)
+Build order step 9's run phases and step 11's measurement, wired over everything above: `npm run sync-college-reported`
+now runs round 3 end to end. Nothing here has made a live model call; every path runs in tests over fakes.
+
+**`scripts/lib/college-reported/phases.mts`** — `createRound3(deps)` → `{ run(state, opts) }`. `deps`: the interactive
+`client`, the `batches` API (`new Anthropic().messages.batches` fits `BatchApi`), `fetch`, `now`, the `archive`, the
+template `table`, the `callLog` writer, `onProgress`. `state` (`Round3State`) holds the files' contents and is updated
+in place: recipes, `data/college-reported.json`, the review queue, the manifest, records by unit id (with a `dirty`
+set the CLI writes), `data/college-batches.json`, blocked hosts, the owner's list, and the `RunSummaryV3`.
+`onProgress` runs after every prepared college and every collected batch. Per-document states:
+
+| State | Where | What happens |
+|---|---|---|
+| located | prepare (steps 0–1), discover (steps 2–4) | A college with no working link (`shouldRetry`, a broken 404/410 index page, or `--rediscover`) climbs `ladder` with `only: "free"`. A miss sets no `next_attempt` yet, because the paid steps are still to come. Colleges with a working recipe get their index pages re-scanned with `newSourcesFromIndex`; superseded editions go through `retireSuperseded`. The owner's `cds-urls.json` is step 0. Refusals are merged into `data/reference/blocked-hosts.json` (`recordBlocked`) |
+| archived | `acquireSource` | `needsFetch` (manifest entry, the source's ETag/Last-Modified, the new `RecipeSource.checked` date, whether the index changed) → conditional GET → sha256 → `fetchOutcome`. A 304 or a known sha256 ends it. New bytes are stored with `archive.put` before anything reads them, and the manifest entry comes from `manifestEntryFor`. Bytes the ladder already downloaded (`prefetched`) aren't fetched again, and no URL is requested twice in one run (test 22) |
+| typed | `typeOfDocument` | Decided from the bytes. A `class-profile` source keeps its kind |
+| deterministic | template workbook, form PDF | `recordFromTemplate` / `readFormPdf` → `applyChecks` (federal baseline, the college's other documents) → stored, items counted, failures queued per item. C1 publishes at once |
+| laid out | `pdf-flat`, `xlsx-classic`, `html` | `layoutDocument` → `archive.putLines(sha, { lines, pages, split, edition })`. The manifest gets the edition (from the cover or the items), pages, body characters, definitions page, and section pages. A C/D split fallback is counted |
+| pending | submit | `callsNeedingRead` on the record document (or an empty one) gives the due calls, minus any `custom_id` already in an open batch |
+| extracted | collect | `parseExtractResponse` → `itemsFromCall`: values through `normalizeValue`, located and quoted by `citeAnswer` over the archived lines (a quote the model writes is ignored), codes left out become `not-found`, store-only codes are `not-read`. `reads[call]` records the schema version, model, `batch` mode, batch id, pages, and stop reason. Aid-year items without an H.101 year fail `aid-year` |
+| checked | collect | `applyChecks` with the archived lines, then `failUnlocated`: a `passed` value without a page and line, or an owned one without a quote, fails `line-in-document` and never publishes. Failing items go to the queue by college + edition + code (`reviewItemsFor` / `enqueueItems`, `dropPassed`) |
+
+**Phases** (`--phase`, default `all`):
+
+| Phase | Does | Model calls |
+|---|---|---|
+| `prepare` | Locate (steps 0–1), fetch, archive, type, run deterministic reads, lay out, publish C1 from deterministic reads, write the projection | None |
+| `discover` | Ladder steps 2–4 for colleges the free steps missed (at most `--max-discoveries`, in `orderColleges` order). Step 2 is one Haiku **picker batch** over the link lists the free steps saw; a picker whose batch hasn't ended by the deadline falls back to one interactive call. Steps 3 (`searchOnly`) and 4 (round 2's `discover`) are interactive. Every URL a model names is followed by our code (`confirmDocument` for files, `sourcesFromPage` for pages). The discovery budget is the cap minus what is spent and reserved. Found documents are fetched as in prepare | Picker batch; search and full discovery |
+| `submit` | Class-profile pages keep **round 2's extractor** (interactive Haiku, `extract`, within the cap). Model-read documents: `buildRequests` for every due call, `trimToCap(requests, spent + open reservations, --max-cost)` in tier order, then `submit`. Trimmed documents stay archived for the next run | Extraction batch; class profiles |
+| `collect` | Each open batch that has ended (polling until `COLLEGE_REPORTED_POLL_UNTIL` or `--poll-minutes`) goes through `collect` → records → checks → publish. Then `resubmitOnce` (requests rebuilt from the archive), `escalationFor` + `buildEscalationRequests` as an `escalate` batch (Sonnet 5, that call's pages, the failing codes), and C1 publishing for every college touched | Escalation batch |
+| `all` | prepare → projection guard → discover → submit → collect | |
+| `--reextract --call C\|rest` | Archive only, no fetch and no discovery: deterministic readers re-run from the archived bytes ($0), then the named call is submitted for every model-read document due it (after a `SCHEMA_VERSIONS` bump), then collect | Extraction batch |
+
+**The projection guard.** After prepare, `projection()` counts the pending model-read documents by type, the pending
+class profiles, and the colleges headed to steps 2–4 by tier (worst case: each climbs as far as its tier allows). Before
+any model call, `projectionGuard(projection, cap − spent − open reservations)` either passes or stops the run with exit
+3 and "projection $X exceeds the cap $Y". A `--sample` or `--pilot` run's `full_run_usd` is scaled by all colleges ÷
+this run's colleges, which gives the number for the go/no-go table.
+
+**CLI** — `scripts/sync-college-reported.mts`. `assertPriced()` runs first. Colleges come from `--pilot`, `--all`,
+`--college <id>` (repeatable), `--tiers very,selective,less,open` (alone: every college in those tiers), and
+`--sample N` (`sampleByTier` in pilot.mts: a stratified random sample in proportion to tier size, seeded by the run id).
+`--phase collect` needs no colleges. Other flags:
+- `--reextract --call C|rest`;
+- `--max-cost` (default 25; 150 with `--all`);
+- `--max-discoveries` (default 100);
+- `--rediscover` (every college climbs from step 0 without its old recipe; the log says whether the free steps found
+  the old CDS link; documents both recipes list keep their hashes);
+- `--archive-prior` (off; archives older editions linked from the index pages of known recipes, unread);
+- `--open-admission-search` (off: open admission gets steps 0–2 only, owner decision 4);
+- `--poll-minutes N` (used when `COLLEGE_REPORTED_POLL_UNTIL` isn't set; default 90 for `all`, 0 for `collect`);
+- `--dry-run`, `--run <id>`.
+
+`ANTHROPIC_API_KEY` is required except for `--phase prepare`. The CLI writes every state file after each college and
+each collected batch: recipes, `college-reported.json`, the queue, `college-docs.json`, changed
+`cds-records/<unit_id>.json`, `college-batches.json`, `reference/blocked-hosts.json`, the run summary, and (through
+`fileCallLogWriter`) the calls file. A later phase with the same `--run` (the collect job) continues that run's summary.
+
+**Exit codes**:
+- 0: done. Batches still open in `data/college-batches.json` (and `summary.open_batches`) are the draft-PR signal, not
+  an error.
+- 1: an error, including bad arguments or an unpriced model.
+- 2: the circuit breaker tripped.
+- 3: stopped early: the projection exceeds the cap, the key was refused, the spend limit or credit balance was reached,
+  or the run was cancelled. Files keep everything finished.
+
+**What each run redoes** (Decision 10), as built:
+- Discovery runs only for `shouldRetry` colleges, broken index pages, and `--rediscover`.
+- Index pages are fetched every run (not conditionally; "changed" is the set of document links).
+- Known documents get a conditional GET only when their index's links changed or a month has passed since
+  `RecipeSource.checked`. Class-profile pages are monthly too: the weekly Aug–Nov check isn't built.
+- A model call runs only for a new sha256 or a bumped `schema_version`.
+- An escalation never repeats once Sonnet 5 has read that call (`reads[call].read_by`). A second failure stays in the
+  queue.
+- Deterministic documents are re-read from the archive on `--reextract`, and on a reader-version bump through
+  `callsNeedingRead`.
+
+**The circuit breaker.** The run's breaker is `circuitBreakerV3` (lib/cds-checks.ts), called once at the end with:
+- the colleges this run attempted;
+- `failedC1Count` over their records;
+- `itemFailureShares` over the documents read this run;
+- changed against prior published values.
+
+It counts only model-read check failures. It never counts `unreachable`, `blank`, `newer-than-federal`, a
+deterministic read's failures, or the new `batch-failed` (a request that failed twice or was invalid; queued per call
+as `C-call`/`rest-call`). **Owner conflict, implemented as round 3 says:** round 2.1 dropped the "more than 10% of
+colleges fail" trigger (`CIRCUIT_BREAKER` in lib/reported.ts: it fired on blocked sites and rounding), and Decision 9
+reinstates it for C1 in model reads only, where neither of those can count. If the owner keeps round 2.1's call, drop
+`maxC1FailedShare` from `CIRCUIT_BREAKER_V3`. Round 2's `createPipeline` and its `circuitBreaker` stay in
+`pipeline.mts` for their tests; the CLI no longer calls them.
+
+**Measurement** (Decision 11). The summary is a `RunSummaryV3`, written after every college and every collected
+batch:
+- `usage_rows` by job × model × mode × call, through `callRecorder` (round 2's `usage` stays whole);
+- `discovery` by path (`known` counts colleges whose working recipe needed no ladder);
+- `documents` by type: fetched, unchanged, archived, model calls, split fallbacks, cost;
+- `items` per code (passed, failed, blank, not found);
+- `tiers`: colleges, located, CDS found, C1 published, cost;
+- `batches`: one row per batch, settled when collected;
+- `projection`;
+- new: `blocked_colleges` (for the PR body) and `open_batches`.
+
+The calls file has one line per model call. `grid_rows_undecided` and `vision` stay 0: layout doesn't report undecided
+grid rows yet, and vision isn't wired. The PR body (`scripts/college-reported-pr-body.mts`) adds blocked colleges,
+batches, the projection, and documents by type for a round-3 summary (`round3Sections`).
+
+**Shared files changed:**
+- `lib/reported.ts`: `RecipeSource.checked`, `CheckId` `batch-failed`, and `RunSummaryV3.blocked_colleges` and
+  `open_batches`.
+- `discovery.mts`: `LadderState.only` (`free` | `paid`), `LadderCollege.seed` (pages and answered hosts from the free
+  pass), and `LadderResult.pages`/`answered`. A free-only miss sets neither `next_attempt` nor `none_found`.
+- `pilot.mts`: `parseTiers`, `sampleByTier`.
+
+**Not done, or done differently:**
+- Scanned PDFs are archived and listed but not sent: whole-document reads aren't wired, and there were none in the
+  sample.
+- A model-read document whose edition can't be found is archived and listed but not sent.
+- The paid ladder runs its own loop over the colleges the run chose instead of `discoverAll`. `discoverAll`'s
+  `shouldRetry` filter can't see a broken index page that prepare found.
+- The four committed template records have `archive: null`, so `--reextract` skips them until `archive-doc` is
+  re-run with the archive repo set.
+- `--archive-prior` doesn't read the pages the probes fetched.
+
+**Tests:** `tests/cds-pipeline.test.mts`, over the fake fetch table, a fake client, `tests/fixtures/fake-batch-api.mts`,
+an in-memory archive (`tests/fixtures/memory-archive.mts`), a generated template workbook (`tests/helpers/tiny-xlsx.mts`),
+and a flattened PDF built with `tests/helpers/tiny-pdf.mts` from Loyola's layout-text fixture (its cover says 2025-2026
+and its running headers 2024-2025):
+- a template workbook from fetch to archive to record to published C1, with no model call;
+- the flattened PDF through layout, one batch of two requests, collect, and a record with line-cited quotes, plus the
+  test-21 summary and calls-file assertions;
+- test 1: run 2 fetches only the index page and makes no model request; a month later there is one conditional GET
+  answered 304; with the stored version made older, the call goes again;
+- test 2: a `C` bump re-extracts from the archive with zero fetches, one request (`…-C-v2`), and the template re-read
+  with no model;
+- test 11: tier-order trimming, the trimmed document submitted next run with no refetch, and the projection guard
+  (exit 3, no batch, no call);
+- test 16: a failing H.201 never blocks C1, the queue holds one entry per college + edition + code, and there is one
+  Sonnet escalation with only H.201;
+- test 22: a picker batch adds a CDS without refetching the class profile or a failed source;
+- `--phase collect` resuming an open batch;
+- exits 2 (model-read C1 failure), 0 (deterministic failures never trip), 3 (key refused), and 1 (CLI arguments).
+
+Each guard was broken on purpose and its test failed:
+- the version comparison;
+- the reservation cap;
+- the projection guard;
+- the per-run fetch set;
+- the breaker;
+- `needsFetch`;
+- the per-item queue;
+- escalation once.

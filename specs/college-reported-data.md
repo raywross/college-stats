@@ -248,6 +248,15 @@ on) is its own doc: [college-reported-setup.md](college-reported-setup.md).
   it with `js-yaml` and syntax-checking every `run:` block with `bash -n`.
 
 ### Pipeline
+> **Round 3 (2026-10-03).** `npm run sync-college-reported` now runs the round-3 pipeline
+> ([college-reported-round-3.md](college-reported-round-3.md#pipeline-and-cli-2026-10-03-branch-featurecds3-integration)).
+> Every document is archived and read once for every CDS item in scope. Template workbooks and fillable forms are read
+> by code; other documents are read by Haiku through the Message Batches API. Discovery climbs a ladder, cheapest step
+> first, and the run is split into phases (`--phase prepare|discover|submit|collect|all`). C1 still publishes through
+> `data/college-reported.json` and `npm run merge-reported` as described below. The flags and the round-2 pipeline
+> described in the rest of this section are kept for history; the two pilot runs on round-3 code are in
+> [college-reported-setup.md §12](college-reported-setup.md#12-the-two-round-3-pilot-runs-and-the-gono-go-table).
+
 `npm run sync-college-reported` (`scripts/sync-college-reported.mts`) needs `ANTHROPIC_API_KEY` (`.env.local` or the
 environment). Flags: `--pilot` (colleges in `data/reference/college-reported-pilot.json`, `{ "colleges": [{ unit_id,
 tier, sector }] }`; without the file it picks 50 deterministically across admit-rate tiers × sectors and says so),

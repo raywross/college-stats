@@ -308,6 +308,55 @@ batch ids. Both files are in the run's artifact.
 None of this can be exercised outside GitHub Actions; the YAML was parsed with `js-yaml` and every `run:` block
 checked with `bash -n`.
 
+## 12. The two round-3 pilot runs and the go/no-go table
+The first run on round-3 code is two small runs, estimated at $4–10 together
+([Decision 11](college-reported-round-3.md#decision-11-measure-the-model-before-the-full-run)). They measure what the
+full run's estimates assume before any money goes to all 1,893 colleges. Run them locally, one after the other, from a
+clean `main` with `ANTHROPIC_API_KEY` in `.env.local`. The archive is the local directory unless `COLLEGE_DOCS_REPO` is
+set (§9).
+
+**Run 1: the pilot set, every college up the ladder from step 0** (`--rediscover` matters: 35 of the 50 already have
+recipes, so without it the run measures almost no discovery):
+```sh
+npm run sync-college-reported -- --pilot --rediscover --max-cost 10 --run r3-pilot-1
+```
+**Run 2: a stratified random sample of the two big tiers** (the pilot has only 20 of their 1,644 colleges):
+```sh
+npm run sync-college-reported -- --sample 60 --tiers less,open --max-cost 5 --run r3-pilot-2
+```
+Each run prepares first (no model), prints its projection, and stops with exit 3 before any model call if the
+projection is over the cap. Otherwise it discovers, submits one extraction batch, and polls for up to 90 minutes
+(`--poll-minutes`). If a batch is still open when it stops, finish it later with the same run id:
+```sh
+npm run sync-college-reported -- --phase collect --run r3-pilot-1
+```
+Exit 2 means the breaker tripped: read the review queue before going further. Then run `npm run merge-reported` and
+`npm run verify`, and review `git diff data/` as in §4. Both pilots can also run from Actions: run 1 is **Run workflow**
+with `mode` **pilot**, `rediscover` on, and `max_cost` 10. Run 2 has no workflow mode, so run it locally.
+
+**Reading the go/no-go table.** Everything is in `data/reports/college-reported-run-<run>.json` (the summary) and
+`data/reports/college-reported-calls-<run>.jsonl` (one line per model call). The PR body, or
+`node scripts/college-reported-pr-body.mts body --summary <file> --queue data/review-queue.json`, shows the batches,
+the projection, documents by type, and the blocked colleges.
+
+| Read | Where | Go ahead if | Otherwise |
+|---|---|---|---|
+| Share found at steps 0–1, by tier | `discovery`: colleges under `known`, `guessed`, `manual`, and `probe-*`, against `tiers.<tier>.colleges`. Run 1 for the two selective tiers, run 2 for less selective | ≥ 40% of very selective + selective; ≥ 25% of less selective | Add probe patterns from the misses (`discovery.tried` in each recipe) before spending on steps 3–4 |
+| Cost per college at steps 2, 3, 4 | `discovery.picker`, `.search`, and `.full`: `cost_usd ÷ colleges` | $0.003–0.005 picker, $0.05–0.08 search, $0.08–0.15 full | Re-estimate; tighten step 3 to one search |
+| Share of each document type | `documents.<type>.fetched` | `xlsx-template` + `pdf-form` ≥ 10% | Re-estimate extraction cost (the spec assumes ~20%) |
+| Flattened-PDF tokens | Calls file, `document_type: "pdf-flat"`: `input_tokens` summed per `custom_id` pair; `output_tokens` per call | ≤ 45 K in per document; ≤ 4 K out (`C`) and ≤ 8 K (`rest`) | Revisit the code table's size and line ids |
+| Split fallback share | `documents.pdf-flat.split_fallback ÷ fetched` | < 10% | Improve the C/D markers (layout.mts `splitCD`) |
+| Undecided grid rows | `documents.*.grid_rows_undecided` | Not measured yet (always 0): spot-check C7 and C8 in a few records instead | Turn on the vision last resort, or improve the layout pass |
+| Cache reads | `usage_rows` for extraction: `cache_read_tokens ÷ (calls × the static prefix, ~5 K for C and ~10 K for rest)` | ≥ 25% | Remove the cache marker (`cache: "off"`) |
+| Token estimate | Calls file: `estimated_input_tokens` vs `input_tokens` | Within 20% | Reserve with `countTokens` instead |
+| Failure share per code | `items.<code>`: `failed ÷ (passed + failed)`; the breaker trips on any code over 20% of 20+ model-read documents | < 20% each | Fix that item's label, normalization, or check |
+| Deterministic documents | Howard (form PDF) and the four template workbooks: their records in `data/cds-records/`, and no calls-file line for them | Every in-scope code read with no model call | Fix the readers before the full run |
+| Batch time | `batches[].submitted` → `ended` | Under the run job's 300-minute polling window | Rely on the collect job |
+| Projection | `projection.full_run_usd` (scaled from the run's colleges to all 1,893) | ≤ the planned cap ($150, owner decision 5) | Raise the cap or narrow the tiers |
+
+The PR body's "Blocked colleges" list names the colleges every candidate host refused. Add links you find by hand to
+`data/reference/cds-urls.json` (§10) before the full run.
+
 ## What to check in your own tests
 - [ ] A profile for a college with a published `reported` value shows the chip/popover next to the federal figure,
   with the verbatim quote, the source link, and "checked automatically" (see

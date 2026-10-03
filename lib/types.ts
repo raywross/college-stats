@@ -31,6 +31,12 @@ export interface School {
     admitted: number | null;
     enrolled: number | null;
     acceptance_rate: number | null;
+    /**
+     * The federal (or hand-imported CDS) figures a newer college-reported class replaced (specs/college-reported-round-2.md,
+     * Decision 1). Present only when `applyNewest` replaced something; read by the ⓘ tooltip ("Federal data, fall
+     * 2024: 5.8%") and by yield when the shown enrolled and admitted describe different classes.
+     */
+    federal?: FederalAdmissions;
     sat_reading_25_75: [number, number] | null;
     sat_math_25_75: [number, number] | null;
     act_composite_25_75: [number, number] | null;
@@ -304,6 +310,15 @@ export interface School {
    * its quote, URL, retrieval date, and year.
    */
   reported?: ReportedData;
+}
+
+/** The previous admissions funnel, kept when a newer college-reported class replaces it (`admissions.federal`). */
+export interface FederalAdmissions {
+  year: number | null;
+  applicants: number | null;
+  admitted: number | null;
+  enrolled: number | null;
+  acceptance_rate: number | null;
 }
 
 /** `school.reported`: one block per topic; phase 1 is admissions only. */

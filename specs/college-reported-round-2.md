@@ -2,8 +2,9 @@
 
 > Status: **built** 2026-10-03 (see [As built](#as-built)). Follows [college-reported-data.md](college-reported-data.md)
 > (phase 1, PR #50) and its first pilot run (PR #51). Changes three things: **the newest figure a college has
-> published is what the profile shows** (not a side block), discovery costs about a tenth of what it did, and every
-> run saves as it goes. Decided with the owner 2026-10-03.
+> published is the value shown everywhere**, with the source in the tooltip rather than chips; discovery costs about
+> a tenth of what it did; and every run saves as it goes. Decided with the owner 2026-10-03 (Decision 1 revised the
+> same day).
 
 ## What the pilot showed (run `20261003-113224-1`, 50 colleges, 80 minutes)
 
@@ -37,39 +38,48 @@ secondary-source answers by a few hundred (Duke, Stanford, Vanderbilt's rate), a
 class than the key had (the pipeline took the CDS's fall 2025, the key a fall 2026 news item, or the reverse). The
 checks caught real problems: UCLA's stated rate didn't match its counts; Georgia Tech's two documents disagreed.
 
-## Decision 1: show the newest figures we have
+## Decision 1: show the newest figures we have, everywhere
 
-**Rule.** On a college's profile, the admissions headline figures (applicants, admitted, enrolled, admit rate, yield)
-come from the **newest class the college has published**, whichever source that is: a college-reported value
-(`school.reported.admissions`, from its CDS or class profile) when it describes a newer fall than the federal
-admissions year, otherwise the federal or hand-imported CDS value as today. The year is always shown with the figure
-and the chip says where it came from. **A profile may mix years**: the admit rate can be fall 2025 while SAT ranges
-are fall 2024. Each value carries its own year, so this is honest; the owner prefers fresher numbers to uniform ones.
+Revised 2026-10-03 after the owner saw the first version (chips, a federal line under each headline, comparisons
+kept federal) and asked for something quieter and simpler.
 
-**What stays federal.** Explore, Compare, ranks, medians, percentiles, similar-school matching, trend indicators,
-history charts, and Home facts keep using the federal values. Those compare colleges with one another, and most
-colleges have no newer figure; mixing in a few colleges' newest classes would compare one college's fall 2025 with
-another's fall 2024. `BaselineNote` on Explore and Compare says so, and the guard test
-(`tests/reported-guards.test.mts`) keeps `school.reported` out of that code. This is the only place the owner's
-"newest everywhere" preference is narrowed; it is easy to revisit per view.
+**Rule.** The admissions figures a college shows are **the newest it has published**, in every view: the profile,
+Explore, Compare, ranks, medians, the home page. A college-reported value from its newest CDS or class profile
+replaces the federal value **in the dataset itself** (`data/schools.json`), the way the 8 hand-imported CDS overrides
+already do, with a lineage record per value. Comparisons therefore compare the newest each college has against the
+newest the other has, even when the years differ. The year is in every value's ⓘ tooltip.
 
-**The funnel never mixes sources.** Applicants, admitted, enrolled, and the rate shown together come from one source:
-the college-reported set when it has at least applicants and admitted (or a stated rate), otherwise the federal set.
-A college that published only applicants for fall 2026 keeps its federal fall 2024 funnel and shows the newer
-applicant count as a line beneath ("Fall 2026: 46,618 applied · reported by the college").
+**No chips, no extra lines.** The green source chips and the "Figures marked like this come from…" line above the
+tiles are gone from every page. The ⓘ tooltip carries everything: the source and its kind ("Duke University's class
+profile for the fall 2026 class", "Harvard University's Common Data Set 2025–26"), the year, the quote, the link, the
+retrieval date, and, for a value that replaced a federal one, the federal figure it replaced ("Federal data, fall
+2024: 5.8%"). Compare's "All the numbers" table shows a small muted year next to a value whose year differs from the
+row's usual one, so two colleges on different years are readable without a chip.
 
-**The federal figure stays one line away.** Under a college-reported headline the page shows "Federal data, fall
-2024: 5.8%", cited, so the comparison baseline is visible and the change is readable.
+**What replaces what.** `applyNewest` (`lib/newest.ts`, pure; used by `merge-reported` and `sync-data`) rewrites a
+school whose `reported.admissions` describes a newer fall than `admissions.year`:
+- applicants, admitted, enrolled: each replaced when the college published it; otherwise the federal value stays,
+  with its own (federal) year in the tooltip. A profile and even a funnel can mix years; each value says its own.
+- acceptance_rate: the college's stated rate; else admitted ÷ applicants when both were published; else the federal
+  rate, kept with an explicit lineage record (`source: "ipeds-adm"`, `method: "derived"`, the federal year) so the
+  tooltip says it's calculated from the federal counts, not from the mixed ones shown.
+- year: the reported class's year when applicants or admitted were replaced; else unchanged.
+- `admissions.federal` (new registered field, IPEDS ADM): the federal `{ year, applicants, admitted, enrolled,
+  acceptance_rate }`, stored only when something was replaced, for the tooltip's "Federal data…" line and for yield.
+- yield (`derived.yield`, render time): enrolled ÷ admitted only when both describe the same class (same lineage
+  year); otherwise from `admissions.federal`'s pair, cited to the federal year. Never a mixed-year ratio.
+- SAT/ACT, submission rates, test policy, by-sex, factors: federal (the agent doesn't read them yet).
+- Hand-imported CDS overrides (`data/overrides.json`): a college-reported class newer than the override's edition
+  replaces it the same way; `admissions.federal` then holds the override's values (the previous value), labeled by
+  its own source.
 
-**Where this applies.** `lib/newest.ts` (pure): `newestAdmissions(school)` → `{ source: "reported" | "federal",
-year, term, applicants, admitted, enrolled, acceptance_rate, paths }` where `paths` are the field paths to cite for
-each value (`reported.admissions.*` or `admissions.*`). Used by the admissions topic page, the overview admissions
-card and tile, the takeaway sentence, the admit-ratio headline, and the yield ring. `derived.yield` stays registered
-against the federal inputs; a yield from reported counts is computed by the resolver and cited to the reported paths.
+`school.reported` stays in the file as the agent's raw record (the Data page's count and `report-college-reported`
+read it). The lineage guard requires every replaced `admissions.*` value to carry an `extracted` record and
+`reported.admissions.year` to be newer than `admissions.federal.year`.
 
-**Hand-imported CDS overrides** (8 colleges, `data/overrides.json`) are unchanged: they already replace federal values
-in `schools.json`. A college-reported figure newer than an override's edition still wins on the profile. The backlog
-item to keep newer overrides out of comparisons stands.
+**History and trends** stay federal, as for CDS overrides today: the "Over time" admissions charts end on the federal
+year while the headline may be a year newer; the existing note says so. The history latest-point check skips any
+value with a lineage record.
 
 ## Decision 2: discovery finds links, not figures
 
@@ -145,21 +155,22 @@ with `--max-cost 10`, and its summary (`data/reports/`) is the number to trust. 
 ## What did not change
 
 The seven checks, the quote-per-number rule, the lineage guard, the `extracted` records, the review queue, the
-circuit breaker's change-share limit, the schedule, and the display rule that comparisons stay federal.
+circuit breaker's change-share limit, and the schedule.
 
 ## As built
 
 Built 2026-10-03 on `feature/college-reported-2` (includes #52's incremental writes and the CDS-year fix).
 
-### Newest-first display
-- `lib/newest.ts`: `newestAdmissions(school)` (pure; `tests/newest.test.mts`). Picks the college-reported funnel when
-  it is newer than the federal year and has applicants and admitted (or a stated rate), else federal; never mixes
-  the two within the funnel; exposes the field paths to cite.
-- Admissions topic page, `AdmissionsCard`, the overview tile, `admissionsTakeaway`, `admitRatio` use it. Under a
-  college-reported headline: "Federal data, {year}: {rate}" (cited). A partial newer figure (applicants only) shows
-  as a line under the federal funnel. Chips: `College Fall 2025`.
-- Explore, Compare, ranks, medians, trends, Home: unchanged, guarded by `tests/reported-guards.test.mts`.
-- `/data`: section 4 now says profiles show the newest figure a college has published, comparisons use federal data.
+### Newest-first display (revised)
+- `lib/newest.ts`: `applyNewest(school)` (pure; `tests/newest.test.mts`) does the replacement described above;
+  `lib/reported-merge.ts` calls it, so `merge-reported` and `sync-data` write the newest values into `admissions.*`
+  with lineage and `admissions.federal`.
+- No chips (`SourceChip`, `MetricLabel`'s chip, Compare's per-cell chips) and no `SourceExceptions` line anywhere.
+  The ⓘ popover (`components/ui/info-tip.tsx`) shows the document kind, year, quote, link, date, and the replaced
+  federal figure (`Cited.replaces`, filled by `lineageFor` from `admissions.federal`).
+- The admissions page, cards, takeaways, Explore, Compare, ranks, medians, and Home read `school.admissions` as
+  before; nothing resolves at render time. Compare cells show a muted year when it differs from the row's.
+- `/data`: "How we compare" says every figure is the newest its college has published and years can differ.
 
 ### Discovery and escalation
 - `scripts/lib/college-reported/llm.mts`: links-only discovery (capped web fetch, no document reads, streaming,

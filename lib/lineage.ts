@@ -3,7 +3,7 @@
  * sync script, the checker, tests, and the app all resolve citations the same way.
  * See specs/data-lineage.md.
  */
-import type { DatasetMeta, LineageRecord, School, SourceInfo, SourceKey } from "./types";
+import type { DatasetMeta, FederalAdmissions, LineageRecord, School, SourceInfo, SourceKey } from "./types";
 import { FIELDS, METADATA_KEYS, PER_DOCUMENT_SOURCES, REPORTED_PATHS, isFieldPath, registeredPathFor, type FieldPath, type VintageKey } from "./fields.ts";
 
 /** A source as cited for one value: plain data, safe to pass to client components. */
@@ -29,7 +29,20 @@ export interface Cited extends CitedSource {
   inputs?: CitedSource[];
   quote?: string;
   page?: number;
+  /**
+   * For a funnel value that a newer college-reported class replaced: the previous (federal or hand-imported CDS)
+   * value and the year it describes, from `admissions.federal`, so the tooltip can say "Federal data, fall 2024: 5.8%".
+   */
+  replaces?: { value: number | null; year: string | null };
 }
+
+/** The funnel paths `applyNewest` may replace, keyed to their `admissions.federal` counterparts. */
+const FEDERAL_COUNTERPART: Partial<Record<FieldPath, keyof FederalAdmissions>> = {
+  "admissions.applicants": "applicants",
+  "admissions.admitted": "admitted",
+  "admissions.enrolled": "enrolled",
+  "admissions.acceptance_rate": "acceptance_rate",
+};
 
 /** Release year used when a school's lineage names a source without a year. */
 const SOURCE_VINTAGE: Record<SourceKey, VintageKey | null> = {
@@ -158,7 +171,17 @@ export function lineageFor(path: FieldPath, school: School | undefined, meta: Da
     ...(derived ? { formula: derived.formula, inputs } : {}),
     ...(rec?.quote ? { quote: rec.quote } : {}),
     ...(rec?.page !== undefined ? { page: rec.page } : {}),
+    ...replacedBy(path, school, meta),
   };
+}
+
+/** The federal value a college-reported funnel value replaced, when the school keeps one (`admissions.federal`). */
+function replacedBy(path: FieldPath, school: School | undefined, meta: DatasetMeta): Pick<Cited, "replaces"> {
+  const key = FEDERAL_COUNTERPART[path];
+  const federal = school?.admissions?.federal;
+  if (!key || !federal || school?.lineage?.[path]?.source !== "college-site") return {};
+  const year = federal.year !== null ? `Fall ${federal.year}` : meta.vintages["ipeds-adm"] ?? null;
+  return { replaces: { value: federal[key], year } };
 }
 
 /** Distinct sources behind a set of values (section footnotes), in first-seen order. */

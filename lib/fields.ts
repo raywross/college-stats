@@ -100,6 +100,9 @@ export const FIELDS = {
     ...adm("Acceptance rate"),
     derived: { formula: "Admitted ÷ applicants (not calculated under 10 applicants)", inputs: ["admissions.admitted", "admissions.applicants"] },
   },
+  // The funnel a newer college-reported class replaced (specs/college-reported-round-2.md, Decision 1): stored only
+  // then, shown in the tooltip as "Federal data, fall 2024: …", and used by yield when the shown pair mixes classes.
+  "admissions.federal": adm("Federal admissions figures replaced by a newer college-reported class"),
   "admissions.sat_reading_25_75": adm("SAT Reading & Writing, middle 50%"),
   "admissions.sat_math_25_75": adm("SAT Math, middle 50%"),
   "admissions.act_composite_25_75": adm("ACT composite, middle 50%"),

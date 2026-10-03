@@ -30,8 +30,9 @@ it to its section's `fields`. `npm run verify` fails if any of that is missing.
 `npm run import-cds -- --id <IPEDS unit id> --edition 2024-25 --url <xlsx url or path>`, then `npm run sync-data`.
 
 - Reads the official CDS Excel template with the system `unzip` (no dependencies), matching **row labels** rather
-  than cell addresses: B1/B2 (undergrads, race/ethnicity), C1 (applied/admitted/enrolled), C9 (SAT/ACT percentiles,
-  submission rates), H2/H2A (need-based and merit aid for full-time undergraduates).
+  than cell addresses: C1 (applied/admitted/enrolled), C9 (SAT/ACT percentiles, submission rates), H2/H2A (need-based
+  and merit aid for full-time undergraduates). B1/B2 (undergrads, race/ethnicity) are no longer imported: they come
+  from the CDS records ([cds-student-body-and-outcomes.md](data-expansion/cds-student-body-and-outcomes.md)).
 - Writes a patch to `data/overrides.json` with `cds` and the fields it found; the sync attributes each of those
   fields to the CDS. Anything it can't find is left out so federal data fills the gap. Re-running for the same school replaces its patch.
 - PDF-only Common Data Sets aren't supported yet (planned: see [backlog.md](backlog.md)).

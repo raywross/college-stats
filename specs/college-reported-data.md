@@ -16,7 +16,8 @@ Dec 2025); fall 2025 arrives about Dec 2026. Colleges publish sooner:
 ## Scope
 - **Phase 1: admissions** (applicants, admitted, enrolled, admit rate, year, cohort) for the newest year a college
   has published. Priority set by the user: fresher admit rates first.
-- **Later:** 2026–27 tuition and cost of attendance; CDS section H aid (need met, merit); B1/B2 enrollment.
+- **Later:** 2026–27 tuition and cost of attendance; CDS section H aid (need met, merit); B1/B2 enrollment (built from the CDS
+  records: [cds-student-body-and-outcomes.md](data-expansion/cds-student-body-and-outcomes.md)).
 - **All 1,893 colleges** are attempted. Coverage is limited by what colleges publish: selective colleges post class
   profiles; many others post only a CDS; some post neither and stay federal-only. The pilot measures hit rates by tier.
 

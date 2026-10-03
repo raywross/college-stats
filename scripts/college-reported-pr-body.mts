@@ -45,7 +45,11 @@ function escapeCell(s: string): string {
  * review-queue items with a note on how to resolve one. See specs/college-reported-data.md#publishing.
  */
 export function prBody(summary: RunSummary, queue: ReviewQueueFile): string {
-  const items = itemsForRun(queue, summary.run);
+  const runItems = itemsForRun(queue, summary.run);
+  // Sites that block us or files that are gone: listed apart from check failures (no model can fix them).
+  const isUnreachable = (item: ReviewItem) => item.failures.length > 0 && item.failures.every((f) => f.check === "unreachable");
+  const items = runItems.filter((i) => !isUnreachable(i));
+  const unreachable = runItems.filter(isUnreachable);
   const lines: string[] = [];
 
   lines.push(`Run \`${summary.run}\` of the college-reported ingestion agent (specs/college-reported-data.md).`, "");
@@ -64,8 +68,10 @@ export function prBody(summary: RunSummary, queue: ReviewQueueFile): string {
   lines.push(`| Published | ${summary.published} |`);
   lines.push(`| Changed from the last publish | ${summary.changed} |`);
   lines.push(`| Failed a check (sent to review) | ${summary.failed} |`);
-  lines.push(`| Discovery re-run | ${summary.discovered} |`);
-  lines.push(`| Escalated to the fallback model | ${summary.escalated} |`);
+  lines.push(`| Unreachable (site blocks us or file missing; no model call) | ${summary.unreachable ?? 0} |`);
+  lines.push(`| Next CDS edition guessed (no model call) | ${summary.guessed ?? 0} |`);
+  lines.push(`| Discovery run | ${summary.discovered} |`);
+  lines.push(`| Escalated (one re-discovery or a stronger re-read) | ${summary.escalated} |`);
   lines.push(`| Cost | ${usd(totalCost(summary))} |`);
   lines.push("");
 
@@ -82,7 +88,11 @@ export function prBody(summary: RunSummary, queue: ReviewQueueFile): string {
 
   lines.push("## Review queue", "");
   if (items.length === 0) {
-    lines.push("Nothing from this run needs a person — every attempted value either published or was unchanged.");
+    lines.push(
+      unreachable.length
+        ? "No value from this run failed a check (the colleges that couldn't be fetched are listed below)."
+        : "Nothing from this run needs a person — every attempted value either published or was unchanged.",
+    );
   } else {
     lines.push(
       `${items.length} item${items.length === 1 ? "" : "s"} failed a check and did **not** publish. Resolve one by ` +
@@ -100,6 +110,23 @@ export function prBody(summary: RunSummary, queue: ReviewQueueFile): string {
     }
   }
   lines.push("");
+
+  if (unreachable.length) {
+    lines.push(
+      "## Unreachable",
+      "",
+      `${unreachable.length} college${unreachable.length === 1 ? "" : "s"} couldn't be fetched at all (robots.txt, a ` +
+        `block, or a missing file). No model was called and the circuit breaker doesn't count them. Fix by finding a ` +
+        `URL we may fetch, or leave it to the federal figures.`,
+      "",
+      "| College | Why | URL |",
+      "|---|---|---|",
+    );
+    for (const item of unreachable) {
+      lines.push(`| ${escapeCell(item.name)} (${item.unit_id}) | ${escapeCell(item.failures.map((f) => f.detail).join("; "))} | ${item.urls[0] ?? ""} |`);
+    }
+    lines.push("");
+  }
 
   lines.push("## Model usage", "");
   lines.push("| Job | Calls | Input tokens | Output tokens | Cost |", "|---|---|---|---|---|");
@@ -155,7 +182,7 @@ export function releaseNote(summary: RunSummary, queue: ReviewQueueFile, pr: num
     "",
     `- Run \`${summary.run}\`: ${summary.attempted} colleges attempted, ${summary.documents_read} documents read, ` +
       `${summary.changed} value${summary.changed === 1 ? "" : "s"} changed from the last publish, ${summary.discovered} ` +
-      `college${summary.discovered === 1 ? "" : "s"} re-discovered, ${summary.escalated} escalated to the fallback model.`,
+      `college${summary.discovered === 1 ? "" : "s"} discovered, ${summary.guessed ?? 0} found by guessing next year's file name, ${summary.escalated} escalated.`,
     `- Cost: ${usd(totalCost(summary))}.`,
     summary.tripped ? `- Circuit breaker tripped (${summary.tripped}); this run waited for a person before merging.` : "",
     summary.status === "stopped" ? `- Stopped early after ${summary.done ?? "?"} of ${summary.total ?? "?"} colleges (${summary.stopped_reason ?? "no reason recorded"}); the rest follow in the next run.` : "",

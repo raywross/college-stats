@@ -1,6 +1,6 @@
 # College-Reported Data, Round 3: Read Every Document Once
 
-> Status: **planned** (2026-10-03; revised the same day from the CDS inventory of 19 real 2025–26 documents). Follows
+> Status: **built** (2026-10-03; see [As built](#as-built); the full 1,893-college run and its two pilot runs are the owner's to trigger). Planned and revised the same day from the CDS inventory of 19 real 2025–26 documents. Follows
 > [college-reported-round-2.md](college-reported-round-2.md) (built, PR #54) and
 > [college-reported-data.md](college-reported-data.md). Changes four things:
 > - Every fetched document is kept in a permanent archive and read once for **everything** in scope (766 template

@@ -14,8 +14,9 @@ export const COMPLEXITY: Record<Complexity, { label: string; description: string
 };
 
 // Wave 1 (data the site already downloads) was built on 2026-09-29, wave 2 (one new federal file each) on
-// 2026-10-02, and wave 3 (majors and earnings by major, in the per-college detail file) on 2026-10-02; see
-// /release-notes. Metro area, deferred from wave 2, is under "later".
+// 2026-10-02, wave 3 (majors and earnings by major, in the per-college detail file) on 2026-10-02, and wave 4
+// (the round-3 CDS pipeline and its nine display specs, group "college-reported") on 2026-10-03; see /release-notes.
+// Metro area, deferred from wave 2, is under "later".
 export type RoadmapGroupKey =
   | "college-reported"
   | "campus-life"
@@ -28,12 +29,6 @@ export type RoadmapGroupKey =
   | "later";
 
 export const ROADMAP_GROUPS: { key: RoadmapGroupKey; title: string; description: string }[] = [
-  {
-    key: "college-reported",
-    title: "Newer figures from colleges",
-    description:
-      "Colleges' own Common Data Sets, read once in full by the agent that already collects their newer admissions figures: GPA, admit rates by residency, aid forms, deadlines, class sizes, and more.",
-  },
   {
     key: "campus-life",
     title: "Campus life",
@@ -110,16 +105,6 @@ export interface RoadmapSpec {
 
 /** In build order within each group (the backlog's order, specs/backlog.md). */
 export const ROADMAP: RoadmapSpec[] = [
-  {
-    slug: "college-reported-round-3",
-    file: "specs/college-reported-round-3.md",
-    group: "college-reported",
-    summary:
-      "Every college's Common Data Set read once and kept, so the newer figures in every item below come from one run at a fraction of the earlier cost.",
-    complexity: 4,
-    complexityNote: "A document archive, code-keyed readers for every CDS section, batched extraction, cheaper discovery, and a measured pilot before the full run.",
-    status: "planned",
-  },
   {
     slug: "religious-life",
     file: "specs/religious-life.md",

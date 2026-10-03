@@ -1,7 +1,6 @@
 # CDS Cost and Debt: Next Year's Price, Graduates' Total Debt
 
-> Status: **planned** → built 2026-10-03 (see [As built](#as-built)); the status word flips to **built** together
-> with its `lib/roadmap.ts` entry's removal when the round-3 branch merges. Planned 2026-10-03. Wave 4, after [college-reported-round-3.md](../college-reported-round-3.md) (the
+> Status: **built** (2026-10-03; see [As built](#as-built)). Planned 2026-10-03. Wave 4, after [college-reported-round-3.md](../college-reported-round-3.md) (the
 > records pipeline this spec's items feed into). Research 2026-09-28 (Vanderbilt CDS 2024–25); upgraded from a
 > skeleton using a 2026-10-03 CDS gap inventory (19 real 2025–26 documents read item by item: Vanderbilt, Cornell,
 > William & Mary, UIUC, Berkeley, Purdue, Harvard, USC, Georgia Tech, Howard, Spelman, Baylor, TCU, Loyola Chicago,

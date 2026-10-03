@@ -7,6 +7,7 @@ import { INDICATORS, INDICATOR_KEYS, isDirection } from "@/lib/indicators";
 import { GENDER_BALANCE } from "@/lib/student-body";
 import { HOUSING_FILTERS } from "@/lib/housing";
 import { FACTOR_FILTERS } from "@/lib/factors";
+import { RESIDENCY_FILTERS } from "@/lib/cds/residency-display";
 import { DESIGNATION_LABELS, RESEARCH_LABELS, SETTING_GROUPS, isDesignation, isResearchTier, isSettingGroup } from "@/lib/campus-profile";
 import { DIVISION_LABELS, ROTC_LABELS, isDivisionFilter, isRotcBranch } from "@/lib/campus-services";
 import { conferenceName } from "@/lib/conferences";
@@ -244,7 +245,7 @@ export function ActiveFilters() {
     const min = Number(searchParams.get("fieldMin")) || 1;
     chips.push({ key: "field", label: `${majorFamilyName(field)} majors${min > 1 ? `, ${min}+ a year` : ""}`, onRemove: () => update({ field: null, fieldMin: null }) });
   }
-  for (const f of [...FACTOR_FILTERS, ...HOUSING_FILTERS]) if (searchParams.get(f.param) === "1") chips.push({ key: f.param, label: f.label, onRemove: () => update({ [f.param]: null }) });
+  for (const f of [...FACTOR_FILTERS, ...HOUSING_FILTERS, ...RESIDENCY_FILTERS]) if (searchParams.get(f.param) === "1") chips.push({ key: f.param, label: f.label, onRemove: () => update({ [f.param]: null }) });
 
   for (const g of getList("setting").filter(isSettingGroup))
     chips.push({ key: `set-${g}`, label: SETTING_GROUPS.find((x) => x.key === g)!.label, onRemove: () => toggleInList("setting", g) });

@@ -33,6 +33,7 @@ import { RadarChart } from "@/components/charts/RadarChart";
 import { RangeBar } from "@/components/charts/RangeBar";
 import { StackedBar } from "@/components/charts/StackedBar";
 import { InfoTip, Term } from "@/components/ui/info-tip";
+import { compareAdmitRates, compareYields } from "@/lib/cds/residency-display";
 
 export const metadata: Metadata = { title: "Compare" };
 
@@ -99,6 +100,9 @@ const TABLE_ROWS = (
       const r = admitRatesBySex(s);
       return r.men === null || r.women === null ? null : `${pctSmart(r.men)} / ${pctSmart(r.women)}`;
     }],
+    // CDS C1 by residency (specs/data-expansion/cds-residency-admissions.md): "Not published" without a grid.
+    ["Acceptance rate, in-state / other states / international", "admit-rate-by-residency", "derived.admit_rate_in_state", compareAdmitRates],
+    ["Yield, in-state / other states / international", "yield-by-residency", "derived.yield_in_state", compareYields],
     ["Applicants", "applicants", "admissions.applicants", (s: School) => opt(s.admissions.applicants, num)],
     ["Admitted", "admitted", "admissions.admitted", (s: School) => opt(s.admissions.admitted, num)],
     ["Enrolled", "enrolled", "admissions.enrolled", (s: School) => opt(s.admissions.enrolled, num)],

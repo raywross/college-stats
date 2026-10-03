@@ -156,6 +156,14 @@ export const TOPIC_FIELDS: Readonly<Record<TopicKey, readonly FieldPath[]>> = {
     "reported.admissions.admitted",
     "reported.admissions.enrolled",
     "reported.admissions.acceptance_rate",
+    // Where applicants live: CDS C1 by residency (specs/data-expansion/cds-residency-admissions.md).
+    "derived.admit_rate_in_state",
+    "derived.admit_rate_out_of_state",
+    "derived.admit_rate_international",
+    "derived.yield_in_state",
+    "derived.yield_out_of_state",
+    "derived.yield_international",
+    "derived.admit_rate_same_class",
   ],
   students: [
     "demographics.racial_diversity",

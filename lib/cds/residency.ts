@@ -85,11 +85,11 @@ const onlyFormVsCode = (it: ItemResult) => it.status === "failed" && !!it.failur
 function resolveCell(doc: DocumentRecord, code: CdsCode): { cell: GridCell; unusable: boolean } {
   const it = doc.items[code];
   if (it?.status === "passed") return { cell: { v: typeof it.v === "number" ? it.v : null, from: typeof it.v === "number" ? "item" : null, code }, unusable: typeof it.v !== "number" };
-  if (it && onlyFormVsCode(it)) {
-    const fv = it.form?.v;
+  if (it && onlyFormVsCode(it) && it.form) {
+    const fv = it.form.v;
     if (typeof fv === "number") return { cell: { v: fv, from: "form", code }, unusable: false };
     // The visible grid is empty where the code table had a value: the grid's own reading is "blank".
-    if (fv === null || fv === undefined) return { cell: { v: null, from: null, code }, unusable: false };
+    if (fv === null) return { cell: { v: null, from: null, code }, unusable: false };
     return { cell: { v: null, from: null, code }, unusable: true };
   }
   return { cell: { v: null, from: null, code }, unusable: it?.status === "failed" };

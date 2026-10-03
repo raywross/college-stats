@@ -149,6 +149,9 @@ const MODEL_READ: ReadonlySet<DocumentType> = new Set(["pdf-flat", "xlsx-classic
 /** C1 totals (applicants, admitted, enrolled): what publishes through data/college-reported.json. */
 const C1_TOTALS = { applicants: "C.116", admitted: "C.117", enrolled: "C.118" } as const;
 
+/** The longest the discover phase waits for its picker batch before asking late pickers interactively. */
+const PICKER_WAIT_MS = 60 * 60 * 1000;
+
 /** One college's interactive allowance before a paid step or a class-profile read (Decision 5's per-step check). */
 const INTERACTIVE_ALLOWANCE_USD = 0.02;
 
@@ -821,7 +824,9 @@ export function createRound3(deps: Round3Deps) {
       for (const e of entries) summary.batches.push({ id: e.id, requests: e.requests, submitted: e.submitted, ended: null, succeeded: 0, errored: 0, expired: 0, reserved_usd: e.reserved_usd, cost_usd: 0 });
       progress();
       for (const e of entries) {
-        const collected = await pollAndCollect(e);
+        // The ladders wait on the pickers, so they wait at most PICKER_WAIT_MS; a late picker is asked interactively.
+        const cap = new Date(deps.now().getTime() + PICKER_WAIT_MS);
+        const collected = await pollAndCollect(e, opts.pollUntil && opts.pollUntil < cap ? opts.pollUntil : opts.pollUntil ? cap : null);
         if (!collected) continue;
         for (const [id, msg] of collected.succeeded) {
           const p = parseCustomId(id);
@@ -1023,8 +1028,7 @@ export function createRound3(deps: Round3Deps) {
     /* ---------------- collect ---------------- */
 
     /** Waits for one batch until the deadline, then collects it; null when it hasn't ended (it stays open). */
-    async function pollAndCollect(entry: BatchEntry): Promise<Collected | null> {
-      const deadline = opts.pollUntil ?? null;
+    async function pollAndCollect(entry: BatchEntry, deadline: Date | null = opts.pollUntil ?? null): Promise<Collected | null> {
       let b = await api.retrieve(entry.id);
       while (b.processing_status !== "ended") {
         if (!deadline || deps.now().getTime() + (deps.pollIntervalMs ?? 60_000) > deadline.getTime()) return null;

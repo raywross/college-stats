@@ -1,0 +1,11 @@
+# Georgia Tech G1, digits split by the printer. Cut from the 2026-10-03 CDS inventory's layout text of Georgia Tech's 2025-26 CDS PDF (rows by y, @x positions).
+=== Page 20 ===
+@43 PUBLIC INSTITUTIONS | @250 First-Year | @341 Undergraduates
+@43 Tuition: In-district | @256 $10, 618 | @362 $10, 618
+@43 Tuition: In-state (out-of-district): | @256 $10, 618 | @362 $10, 618
+@43 Tuition: Out-of-state: | @256 $3 4 , 604 | @362 $3 4 , 604
+@43 Tuition: Nonresident | @256 $3 5 , 610 | @362 $3 5 , 610
+@43 FOR ALL INSTITUTIONS | @250 First-Year | @341 Undergraduates
+@43 Required Fees: | @258 $1, 51 6 | @364 $1, 51 6
+@43 Food and housing (on-campus): | @256 $1 4 , 628 | @362 $1 7 , 232
+@43 Housing Only (on-campus): | @258 $ 8 , 318 | @362 $10, 922

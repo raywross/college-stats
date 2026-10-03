@@ -231,6 +231,31 @@ export function sheetText(sheet: Sheet | undefined): string {
     .join("\n");
 }
 
+/**
+ * An older or custom workbook's sheet as layout lines for a model (round 3, Decision 3): one line per row, each cell
+ * tagged with its address and **empty cells kept** from the sheet's first used column to the row's last value, so a
+ * lone C11 value or a C7 "x" can still be placed under its header: "@B101 Rigor of secondary school record | @C101 x".
+ * `sheetText` drops both, which is why it isn't used for model reads any more.
+ */
+export function classicSheetText(sheet: Sheet | undefined): string {
+  if (!sheet) return "";
+  const rows = [...sheet.keys()].sort((a, b) => a - b);
+  let first = Infinity;
+  for (const r of rows) for (const c of sheet.get(r)!) first = Math.min(first, colNumber(c.col));
+  return rows
+    .map((r) => {
+      const byCol = new Map(sheet.get(r)!.map((c) => [colNumber(c.col), String(c.value).replace(/\s+/g, " ").trim()]));
+      const last = Math.max(...byCol.keys());
+      const cells: string[] = [];
+      for (let n = first; n <= last; n++) {
+        const v = byCol.get(n) ?? "";
+        cells.push(v ? `@${colLetters(n)}${r} ${v}` : `@${colLetters(n)}${r}`);
+      }
+      return cells.join(" | ");
+    })
+    .join("\n");
+}
+
 /* ------------------------------------------------------------------ */
 /* The 2025–26 template workbook, read by code (round 3, Decision 3)   */
 /* ------------------------------------------------------------------ */
@@ -418,7 +443,8 @@ function templateEdition(book: Workbook, items: Record<CdsCode, TemplateCell>): 
 }
 
 const QUOTE_MAX = 160;
-const RESPONDENT = new Set(["A.001", "A.002", "A.003", "A.004", "A.012", "A.013"]);
+/** The respondent (A0: a staff member's name, title, office, phone, email): never kept, the records are public. */
+export const RESPONDENT_CODES: ReadonlySet<string> = new Set(["A.001", "A.002", "A.003", "A.004", "A.012", "A.013"]);
 /** "question | value", ≤ 160 characters: a long question is shortened so the value always shows. */
 export function quoteOf(label: string, raw: string | number): string {
   const value = String(raw).replace(/\s+/g, " ").trim();
@@ -450,7 +476,7 @@ export function recordFromTemplate(
   for (const it of opts.table.items) {
     // A0's respondent is a staff member: no spec shows their name, title, office, phone, or email, and the records are
     // committed to a public repository, so those aren't kept (the office address and the CDS page URL are).
-    if (RESPONDENT.has(it.code)) {
+    if (RESPONDENT_CODES.has(it.code)) {
       items[it.code] = { status: "not-read" };
       continue;
     }

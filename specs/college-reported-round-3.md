@@ -1047,3 +1047,87 @@ schema), `tests/cds-xlsx-template.test.mts` (an in-memory template workbook: ANS
 C21, an unparseable aid year, `readC1` unchanged), `tests/cds-records.test.mts` (helpers, lineage, every validator
 rule, the four committed records' real values). `tests/citation-guards.test.mts` allows the template edition in
 `lib/cds-template.ts`'s import path (the table is per template edition, not a data year).
+
+### Readers (2026-10-03, branch `feature/cds3-readers`)
+Build order steps 3–5 for the documents that aren't template workbooks: type detection from the bytes, the form-PDF
+reader, layout-aware text, and line-cited quotes. Pure functions the pipeline and model tracks call; `pipeline.mts` and
+`llm.mts` are unchanged.
+
+**Type detection** — `scripts/lib/college-reported/doctype.mts`:
+- `detectDocumentType(bytes, { sheets?, widgets?, textChars? })`: `PK` → `xlsx-template` when the sheets pass
+  `isTemplateWorkbook`, else `xlsx-classic`; `%PDF` (within the first 1 KB) → `pdf-form` when any widget is filled,
+  `pdf-scanned` under 200 text characters, else `pdf-flat`; anything else `html`. Missing evidence throws rather than
+  guessing. `class-profile` stays the recipe's `kind`.
+- `inspectPdf(bytes)` → `{ pages, textChars, widgets, filledWidgets }` (pdf.js `getAnnotations`); `widgetFilled`;
+  `workbookFromBytes`; `typeOfDocument(bytes)` does all of it in one call.
+- `DETERMINISTIC_TYPES` (`xlsx-template`, `pdf-form`) and `needsModel(type)`: the guard that a template workbook or a
+  form is never sent to a model. `layoutDocument` refuses both types too.
+
+**Form-PDF reader** — `scripts/lib/college-reported/form-pdf.mts`:
+- `readFormWidgets(bytes)` → `FormWidget[]` (`widgetFromAnnotation`: text, checkbox "X" when on, radio with its own
+  export and the group's value, choice lists); `formFields` groups radio buttons by field name (trims "ADMS_CONSIDER ").
+- Field name → template `tag` → code. Radio exports go through `RADIO_WORDS` (by CDS item) to the words a template
+  workbook's code table holds, so both readers give the same value: C7 `VI/I/C/NC` → "Very Important" …; C8
+  `ADMS_REQ/RFS/REC/CONSIDER/NOT_USED`; D5 `TFER_REQ/REC/ROS/RFS/NREQ`; F3 `B/C/MRN_OPT`; A4, C3, C4, C13 (C.1304), C17
+  (C.1712). `Y/N` and `N/A` need no entry (`normalizeValue`); a radio standing for a checkbox is "X" when anything is
+  selected. The words were taken from the template workbooks' formulas (each code-table cell copies its grid header).
+- `recordFromForm(widgets, opts)` mirrors `recordFromTemplate`: normalized and type-checked values with `field` and
+  `page`, "question | value" quotes on owned items, `aid-year` failures, `yearsForEdition`, reads keyed
+  `deterministic` (`pdf-form` v1). Codes with no tag (formula totals) or whose field isn't on the form are `not-read`;
+  empty fields `blank`; the respondent `not-read`. The edition comes from `opts.edition` or the cover lines
+  (`editionFromBody`). `readFormPdf(bytes, opts)` does widgets + cover + record.
+- **H0's aid year (coordinator: confirm).** Howard's form exports `2024`/`2023` for its two options "2025-2026
+  Estimated or 2024-2025 Final" (start years, one behind). The reader maps the higher export to the edition's estimated
+  year and the lower to the prior year's final, so Howard's `2023` becomes "2024-2025 Final" and its H1/H2 figures get
+  the `aid-year` label "2024–25 final". The foundation had called Howard's "2023" unparseable; any other export shape is
+  kept as exported and fails `aid-year`.
+- On Howard's real form (inventory copy): 1,263 widgets, 729 holding a value (the inventory's 759 counted
+  whitespace-only fields); all 1,087 matching field names read; 716 passed, 362 blank, 24 not read, 3 failed
+  (`type-range`: F.111, J.181, J.195 are Howard's "1.14"-style percents meaning 1.14%, the known F1/J ambiguity the
+  per-column checks must settle). In scope: 558 passed, 1 failed.
+
+**Layout text** — `scripts/lib/college-reported/layout.mts` (from the inventory's `layout.mts`):
+- `rowsFromItems` (rows by y ±2.5 pt, sorted by x, a new cell on gaps > 8 pt, split digits joined per cell:
+  "$3 4 , 604" → "$34,604"), `formatRow` (`@x` tags), `parseCells`, `pdfTextItems(bytes)`, `linesFromItems`,
+  `pagesFromLayoutText` (the "=== Page N ===" / `@x` text format back to items; fixtures and the archive sidecar).
+- `definitionsStart`/`dropDefinitions` (first "Common Data Set Definitions" heading), `repeatedLines` (running
+  headers: a line on 3+ pages), `editionFromBody(lines, pages)` → `{ edition, from: "cover" | "items", conflict? }`:
+  the cover on page 1 (first 40 lines for HTML and Excel), never a running header; else the item text "For the Fall
+  2025 entering class" / "enrollment date in Fall 2025" by majority. B22's "Fall 2024 entering cohort" doesn't vote
+  (last year's cohort). Michigan prints its edition only as a running header, so its items decide.
+- `splitCD(lines)` → `{ C: [from, to], rest: [[1, c−1], [d, n]], fallback }`: line ids, 1-based; `rest` is a list of
+  ranges (B before C, D–J after). On a missing marker both calls get the whole body and `fallback` is true.
+  `sectionPages` gives the manifest's `sections` page hints.
+- `linesFor(doc, ranges)`: "412: @78 … | @450 37,270" with unnumbered "--- Page 9 ---" markers.
+- Grids: `gridColumns` (wrapped headers joined, cells within 30 pt), `placeCells` (a cell goes under the rightmost
+  column starting ≤ 10 pt right of it; a leading label drops the grid's own label column; `columns` keeps the
+  rightmost N), `placeGridMarks` (X, x, ✔, ☒, private-use glyphs checked; ☐ not), `isMarkGlyph`, `overflowTotal`
+  (a "##" total summed from its printed parts, for `method: "derived"`).
+- `layoutDocument(bytes | TextItem[][], type)` → `{ lines, pages, edition, split, definitionsFrom, pageCount,
+  bodyChars, sections }` for `pdf-flat`/`pdf-scanned` (bytes or items), `xlsx-classic` (each sheet as "Sheet CDS-C"
+  then `classicSheetText` lines), and `html`/`class-profile`. `split` is null only for an empty document.
+- Over the inventory's 17 readable documents: every edition 2025–26 (USC, Loyola, Baylor, Duke, MIT from the cover;
+  the rest from items), every C/D split found, definitions found where they exist. Known limit: Loyola's C7 headers
+  "Very Important" and "Considered" print exactly 8 pt apart and join into one cell (its marks still carry `@x`).
+
+**Older Excel and HTML** — `classicSheetText(sheet)` in `scripts/lib/cds-xlsx.mts`: one line per row, every cell
+tagged with its address and empty cells kept from the sheet's first used column ("@A102 | @B102 Class rank | @C102 |
+@D102 | @E102 | @F102 x"). `htmlToText` (documents.mts) now collapses whitespace, `<br>`, and `</p>`/`</div>` inside
+each `<tr>` before splitting lines, so MIT's empty `<td>`s survive ("Rigor of secondary school record | | X | |").
+`RESPONDENT_CODES` is now exported from cds-xlsx.mts for both deterministic readers.
+
+**Line-cited quotes** — `lib/cds-quotes.ts` (pure): `stripLayoutTags`, `joinSplitDigits`, `lineText`, `citedLines`,
+`quoteFromLines(lines, ids, around?)` (≤ 160 characters, verbatim, " / " between lines, the value kept in view),
+`numbersOn`, `numberOnLines(v, lines, ids, { percent })` (thousands separators, split digits, "27.4%" for a 0.274
+share; tag positions and row numbers never count), and `citeAnswer(answer, lines, pages)` → `{ citation: { line,
+lines?, page?, quote } }` or `{ failure: { check: "line-cite" } }`, ignoring any quote the model wrote. The extraction
+track builds item results from it.
+
+**Tests and fixtures:** `tests/cds-form-pdf.test.mts` (types, the never-to-a-model guard, Howard's widget fixture,
+a generated fillable PDF end to end, Howard's real PDF when the inventory is present), `tests/cds-layout.test.mts`
+(test 5: Harvard C7 and the pdfPages-order break, Michigan ☐☒ with a wrapped header, private-use glyphs, Harvard C11's
+lone column, Baylor C21, Georgia Tech's split digits, Loyola's "##", USC/Loyola/Michigan editions, definitions,
+split, numbering; test 6: Berkeley's classic sheet and MIT's table), `tests/cds-quotes.test.mts` (test 7). Each guard
+was broken on purpose and its test failed. Fixtures in `tests/fixtures/cds/` are cut from the inventory (60 Howard
+widget rows, a few pages of layout text, one MIT table, nine Berkeley rows); `tests/helpers/tiny-pdf.mts` writes
+small PDFs with positioned text and form widgets.

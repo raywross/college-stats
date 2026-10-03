@@ -1,0 +1,18 @@
+# USC: a 2025-2026 cover and 2024-2025 page headers (pages 2-4 of 38 shown). Cut from the 2026-10-03 CDS inventory's layout text of USC's 2025-26 CDS PDF (rows by y, @x positions).
+=== Page 1 ===
+@86 Common Data Set 2025-2026
+@86 Welcome to the 2025-2026 Common Data Set collection!
+@86 The Common Data Set (CDS) initiative is a collaborative effort among data providers in the higher education community
+=== Page 2 ===
+@55 Common Data Set 2024-2025
+@239 A. General Information
+@56 A0 | @77 Respondent Information (Not for Publication)
+@77 First Name:
+=== Page 3 ===
+@55 Common Data Set 2024-2025
+@77 Admissions Phone Number: | @338 213-821-0200
+@77 Admissions Phone Number (Ext):
+=== Page 4 ===
+@55 Common Data Set 2024-2025
+@72 From this group, identify how many were still enrolled at your institution as of the official enrollment date in Fall 2025. | @458 3319
+@72 Calculate the percentage of the Fall 2025 entering cohort who remained enrolled on the official census date. | @454 95.18%

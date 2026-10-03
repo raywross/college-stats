@@ -1,0 +1,21 @@
+# Harvard C11, values in the last column only. Cut from the 2026-10-03 CDS inventory's layout text of Harvard's 2025-26 CDS PDF (rows by y, @x positions).
+=== Page 10 ===
+@53 C11 Percentage of all enrolled, degree-seeking, first-time, first-year students who had high school grade-
+@78 * Report information only for those students from whom you collected high school GPA.
+@78 * If you are able to report GPA ranges separately for students that also submitted at least one test score
+@78 versus those who did not submit a test score, please do so in the respective columns. If you are unable
+@78 to report these data, please report the ranges for all students.
+@354 Percent | @436 Percent
+@507 Percent (All
+@340 (Students who | @421 (Students who
+@188 Range | @515 enrolled
+@349 submitted | @421 did not submit
+@512 students)
+@355 scores) | @436 scores)
+@78 Percent who had GPA of 4.0 | @540 74.70%
+@78 Percent who had GPA between 3.75 and 3.99 | @540 20.38%
+@78 Percent who had GPA between 3.50 and 3.74 | @545 3.49%
+@78 Percent who had GPA between 3.25 and 3.49 | @545 0.98%
+@78 Percent who had GPA between 3.00 and 3.24 | @545 0.18%
+@78 Percent who had GPA between 2.50 and 2.99 | @545 0.18%
+@78 Percent who had GPA between 2.0 and 2.49 | @545 0.09%

@@ -1,0 +1,104 @@
+{
+ "note": "Rows of UC Berkeley's 2025-26 CDS workbook, sheet CDS-C (classic layout, no code table), as readWorkbook returns them (empty cells absent). Cut from the 2026-10-03 CDS inventory.",
+ "sheet": "CDS-C",
+ "rows": {
+  "99": [
+   {
+    "col": "A",
+    "value": "C7"
+   },
+   {
+    "col": "B",
+    "value": "Relative importance of each of the following academic and nonacademic factors in your first-time, first-year, degree-seeking general (not including programs with specific criteria) admissions decisions."
+   }
+  ],
+  "100": [
+   {
+    "col": "B",
+    "value": "Academic"
+   },
+   {
+    "col": "C",
+    "value": "Very Important"
+   },
+   {
+    "col": "D",
+    "value": "Important"
+   },
+   {
+    "col": "E",
+    "value": "Considered"
+   },
+   {
+    "col": "F",
+    "value": "Not Considered"
+   }
+  ],
+  "101": [
+   {
+    "col": "B",
+    "value": "Rigor of secondary school record"
+   },
+   {
+    "col": "C",
+    "value": "x"
+   }
+  ],
+  "102": [
+   {
+    "col": "B",
+    "value": "Class rank"
+   },
+   {
+    "col": "F",
+    "value": "x"
+   }
+  ],
+  "103": [
+   {
+    "col": "B",
+    "value": "Academic GPA"
+   },
+   {
+    "col": "C",
+    "value": "x"
+   }
+  ],
+  "227": [
+   {
+    "col": "A",
+    "value": "C11"
+   },
+   {
+    "col": "B",
+    "value": "Percentage of all enrolled, degree-seeking, first-time, first-year students who had high school grade-point averages within each of the following ranges (using 4.0 scale)."
+   }
+  ],
+  "228": [
+   {
+    "col": "B",
+    "value": "* Report information only for those students from whom you collected high school GPA."
+   }
+  ],
+  "233": [
+   {
+    "col": "B",
+    "value": "Percent who had GPA between 3.75 and 3.99"
+   },
+   {
+    "col": "F",
+    "value": 0.501
+   }
+  ],
+  "234": [
+   {
+    "col": "B",
+    "value": "Percent who had GPA between 3.50 and 3.74"
+   },
+   {
+    "col": "F",
+    "value": 0.081
+   }
+  ]
+ }
+}

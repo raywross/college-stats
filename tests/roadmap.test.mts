@@ -19,9 +19,12 @@ function specFiles(dir: string): string[] {
   });
 }
 
-/** A spec is planned when its status line says so (not built, not a backlog or index file); deferred ones count. */
+/** The word after "> Status:" in a spec, or null (built specs say "built"; index files have none). */
+const statusWord = (file: string) => readFileSync(join(ROOT, file), "utf8").match(/^> Status: \*\*(\w+)\*\*/m)?.[1] ?? null;
+
+/** A spec is planned when its status line says so (not built, not a backlog or index file); deferred specs and ideas count. */
 const isPlanned = (file: string) =>
-  !file.endsWith("README.md") && /^> Status: \*\*(planned|skeleton|deferred)\*\*/m.test(readFileSync(join(ROOT, file), "utf8"));
+  !file.endsWith("README.md") && ["planned", "skeleton", "deferred", "idea"].includes(statusWord(file) ?? "");
 
 test("every planned spec is on the roadmap, and every roadmap entry is a planned spec", () => {
   const planned = specFiles(join(ROOT, "specs")).filter(isPlanned).sort();
@@ -42,6 +45,9 @@ test("roadmap entries are well formed", () => {
     assert.ok(spec.complexity in COMPLEXITY, `${spec.slug}: complexity 1–4`);
     assert.ok(spec.summary && spec.complexityNote, `${spec.slug}: summary and complexity note`);
     for (const dep of spec.after ?? []) assert.ok(ROADMAP.some((s) => s.slug === dep), `${spec.slug}: after ${dep}`);
+    // Ideas (specs/ideas/, status "idea") sit in the ideas group and nowhere else; the spec's own status line agrees.
+    assert.equal(spec.status === "idea", spec.group === "ideas", `${spec.slug}: ideas, and only ideas, are in the ideas group`);
+    assert.equal(spec.status === "idea", statusWord(spec.file) === "idea", `${spec.slug}: entry status matches the spec's status line`);
   }
   for (const group of ROADMAP_GROUPS) assert.ok(ROADMAP.some((s) => s.group === group.key), `${group.key} has specs`);
 });

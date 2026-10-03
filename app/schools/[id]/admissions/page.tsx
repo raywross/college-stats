@@ -33,6 +33,9 @@ import { changesRequirement, policyEventText } from "@/lib/test-policy";
 import type { BandTest } from "@/lib/types";
 import { TransferringInCard } from "@/components/school/TransferringInCard";
 import { transferCard } from "@/lib/cds/transfer-display";
+import { ApplyingBox } from "@/components/school/ApplyingBox";
+import { HsPrepBox } from "@/components/school/HsPrepBox";
+import { applyingLines, feeWaiverSentence, showsHsPrep } from "@/lib/cds/application-logistics-display";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -105,6 +108,8 @@ export default async function AdmissionsPage({ params }: Props) {
     ...(hasEarly ? [{ id: "early", label: "Applying early" }] : []),
     { id: "factors", label: "What they look at" },
     ...(transferCard(school) ? [{ id: "transfer", label: "Transferring in" }] : []),
+    ...(applyingLines(school).length ? [{ id: "applying", label: "Applying" }] : []),
+    ...(showsHsPrep(school) ? [{ id: "hs-prep", label: "What you'll need in high school" }] : []),
     { id: "map", label: "Admissions map" },
     ...(hasGpa ? [{ id: "gpa", label: "High school GPA" }] : []),
     { id: "scores", label: "Test scores" },
@@ -174,6 +179,11 @@ export default async function AdmissionsPage({ params }: Props) {
                     <MetricLabel term="application-fee" cited={citeField("admissions.application_fee", school)}>
                       {a.application_fee === 0 ? "No application fee" : `${money(a.application_fee)} to apply`}
                     </MetricLabel>
+                  </p>
+                )}
+                {a.application_fee != null && a.application_fee !== 0 && feeWaiverSentence(school.reported?.admissions_logistics) && (
+                  <p className="mt-1 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs text-muted-foreground">
+                    <MetricLabel cited={citeField("reported.admissions_logistics.fee", school)}>{feeWaiverSentence(school.reported?.admissions_logistics)}</MetricLabel>
                   </p>
                 )}
                 {a.accepts_ap_credit != null && (
@@ -248,6 +258,12 @@ export default async function AdmissionsPage({ params }: Props) {
           </div>
         )}
         <TransferringInCard id="transfer" className="mt-4" school={school} cite={citeField} color={DOMAINS.admissions.color} />
+        {(applyingLines(school).length > 0 || showsHsPrep(school)) && (
+          <div className="mt-4 grid gap-4 lg:grid-cols-2">
+            <ApplyingBox id="applying" school={school} cite={citeField} />
+            <HsPrepBox id="hs-prep" school={school} cite={citeField} />
+          </div>
+        )}
         {recentAdmissionChanges.length > 0 && (
           <p className="mt-3 max-w-3xl text-sm text-muted-foreground">
             <b className="text-foreground">Recent change:</b> {recentAdmissionChanges.map((e) => `${e.text} in ${eventYear(e)}`).join("; ")}.

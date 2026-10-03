@@ -1040,6 +1040,46 @@ const entries = {
     category: "Admissions",
     related: ["transfer-admission", "transfer-in"],
   },
+  // CDS application logistics and high school preparation (specs/data-expansion/cds-application-logistics.md).
+  "priority-date": {
+    term: "Priority date",
+    short: "An earlier date some colleges set before the regular deadline. Applying by it can matter for scholarships, honors programs, or housing, even though applications are still accepted afterwards.",
+    why: "Missing a priority date usually doesn't rule you out, but it can cost you a chance at money or a place in a program that fills first.",
+    category: "Admissions",
+    related: ["reply-by-date"],
+  },
+  "rolling-notification": {
+    term: "Rolling notification",
+    short: "The college sends decisions as it finishes reading applications, starting on a set date, rather than all on one day.",
+    why: "Applying early in a rolling cycle usually means hearing back sooner.",
+    category: "Admissions",
+    related: ["reply-by-date"],
+  },
+  "reply-by-date": {
+    term: "Reply-by date",
+    short: "The date by which an admitted student must accept or decline the offer, usually with a deposit. Many colleges use May 1, or a few weeks after the decision for students admitted later.",
+    category: "Admissions",
+    related: ["housing-deposit", "rolling-notification"],
+  },
+  "housing-deposit": {
+    term: "Housing deposit",
+    short: "Money an admitted student pays to hold a place in campus housing, with its own deadline. The college's Common Data Set says whether it's refunded if you don't enroll.",
+    category: "Cost & outcomes",
+    related: ["reply-by-date"],
+  },
+  "deferred-admission": {
+    term: "Deferred admission (gap year)",
+    short: "Postponing enrollment after being admitted, for example to take a gap year, with the college holding your place for a set time.",
+    long: "Not the same as being deferred in early decision or early action, where the college moves your application to the regular round without deciding yet. Deferred admission comes after you're admitted.",
+    category: "Admissions",
+    related: ["reply-by-date"],
+  },
+  "college-preparatory-program": {
+    term: "College-preparatory program",
+    short: "A high school course plan built around academic subjects: English, math, science, a foreign language, and social studies. A college's Common Data Set says whether it requires one, recommends one, or neither, and how many years (units) of each subject it expects.",
+    long: "A unit is one year of a subject. Lab science units are part of the science count, not extra.",
+    category: "Admissions",
+  },
 } satisfies Record<string, GlossaryEntry>;
 
 export type TermKey = keyof typeof entries;

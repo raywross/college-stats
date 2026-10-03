@@ -39,6 +39,10 @@ import { compareAdmitRates, compareYields } from "@/lib/cds/residency-display";
 import { ADMISSION_PROFILE_ROWS, admissionProfileCellField, c7FactorCell } from "@/lib/cds/compare-rows";
 import { compareClassesUnder20 } from "@/lib/cds/academics-display";
 import { compareTransferAdmitRate } from "@/lib/cds/transfer-display";
+import { compareDeadlines, compareGapYear } from "@/lib/cds/application-logistics-display";
+
+/** Compare rows from CDS C14–C18, hidden when no compared college has the data (cds-application-logistics.md). */
+const LOGISTICS_ROW_LABELS: ReadonlySet<string> = new Set(["Deadlines & deposit", "Gap year allowed"]);
 
 export const metadata: Metadata = { title: "Compare" };
 
@@ -150,6 +154,9 @@ const TABLE_ROWS = (
     ["Test policy", "test-policy", "admissions.test_policy", (s: School) => (s.admissions.test_policy ? TEST_POLICY_LABELS[s.admissions.test_policy] : null)],
     ["Application fee", "application-fee", "admissions.application_fee", (s: School) =>
       s.admissions.application_fee == null ? null : s.admissions.application_fee === 0 ? "None" : money(s.admissions.application_fee)],
+    // CDS C14–C18 (specs/data-expansion/cds-application-logistics.md): shown only when a compared college has the data.
+    ["Deadlines & deposit", "reply-by-date", "derived.application_deadlines", compareDeadlines],
+    ["Gap year allowed", "deferred-admission", "derived.gap_year_allowed", compareGapYear],
     ["Setting", "locale", "campus.setting", (s: School) => s.campus?.setting?.label ?? null],
     ["Carnegie class", "carnegie-classification", "campus.carnegie", (s: School) => s.campus?.carnegie?.ic ?? null],
     ["Research activity", "r1", "campus.carnegie", (s: School) =>
@@ -610,7 +617,7 @@ export default async function ComparePage({
                   </tr>
                 </thead>
                 <tbody className="divide-y tabular-nums">
-                  {tableRows.map(([label, term, field, fmt]) => {
+                  {tableRows.filter(([label, , , fmt]) => !LOGISTICS_ROW_LABELS.has(label) || schools.some((s) => fmt(s) !== null)).map(([label, term, field, fmt]) => {
                     const rowYear = citeField(field).year;
                     return (
                       <tr key={label}>

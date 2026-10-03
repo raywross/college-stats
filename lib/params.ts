@@ -104,6 +104,8 @@ export function parseFilters(params: Params): SearchFilters {
     honors: str(params.honors) === "1" || undefined,
     // Admits transfers (lib/cds/transfer-display.ts): CDS D1/D2, else the federal transfer-in count.
     transfers: str(params.transfers) === "1" || undefined,
+    // Allows deferred admission, a gap year (lib/cds/application-logistics-display.ts).
+    gapYear: str(params.gapYear) === "1" || undefined,
     sortBy: sortBy && SORT_KEYS.includes(sortBy) ? sortBy : "applicants",
     // Default direction: most-applied-to first; everything else ascending.
     sortDir: params.sortDir === "desc" || params.sortDir === "asc" ? params.sortDir : sortBy && sortBy !== "applicants" ? "asc" : "desc",
@@ -164,6 +166,7 @@ export const FILTER_KEYS = [
   "intlAid",
   "honors",
   "transfers",
+  "gapYear",
   ...INDICATOR_KEYS.map((k) => INDICATORS[k].param),
 ] as const;
 

@@ -24,6 +24,7 @@ import { applyCostAndDebt } from "./cds/cost-and-debt.ts";
 import { applyFinancialAid } from "./cds/financial-aid.ts";
 import { mergeAcademics } from "./cds/academics.ts";
 import { mergeTransfer } from "./cds/transfer.ts";
+import { mergeApplicationLogistics } from "./cds/application-logistics.ts";
 
 /**
  * `school` as it was before any merge: its previous admissions funnel restored from `admissions.federal`
@@ -85,6 +86,8 @@ const RECORD_STEPS: readonly ((school: School, record: CollegeRecord | undefined
   mergeAcademics,
   // specs/data-expansion/cds-transfer.md: transfer applicants, admits, and what transfers need.
   mergeTransfer,
+  // specs/data-expansion/cds-application-logistics.md: deadlines, notification, reply, deposit, gap year, units.
+  mergeApplicationLogistics,
 ];
 
 /**

@@ -1,6 +1,6 @@
 ---
 title: "College figures are saved as each college is read"
-pr: 0
+pr: 52
 date: 2026-10-03
 kind: infra
 summary: The agent that collects colleges' newer admissions figures now saves its work after every college, shows live progress and cost, and stops cleanly when its spending limit is reached.

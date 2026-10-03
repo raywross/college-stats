@@ -12,7 +12,7 @@ export function RequirementChecklist({
 }) {
   if (!rows.length) return null;
   return (
-    <dl className="grid gap-x-6 gap-y-1 sm:grid-cols-2">
+    <dl className="grid gap-y-1">
       {rows.map((r) => (
         <div key={r.key} className="flex items-center justify-between gap-3 border-b border-dashed py-1.5 text-sm last:border-0">
           <dt>{r.label}</dt>

@@ -179,6 +179,61 @@ Untick **auto_merge** in the workflow-dispatch form when you want to read a spec
   (comment out `auto_merge: true` in `.github/workflows/college-reported.yml`'s "Resolve run parameters" step) until
   you've found and fixed the underlying cause.
 
+## 9. Archive repo and token
+Round 3 keeps every fetched document forever, keyed by the sha256 of its bytes
+([college-reported-round-3.md Decision 1](college-reported-round-3.md#decision-1-one-permanent-archive-a-document-is-fetched-once)),
+so no college's site is visited twice for the same file. Code: `scripts/lib/college-reported/archive.mts`.
+
+**Without any setup** the archive is the local directory `.cache/college-docs/archive/` (git-ignored). That is
+enough for local runs, but in Actions it lives only as long as the Actions cache (evicted after 7 days unused, 10 GB
+per repo), so set up the repo below before the full run.
+
+**One-time setup (owner):**
+1. Create a **private** repository, e.g. `quad-college-docs`, **with a README** (a release needs a commit to tag;
+   an empty repo can't hold releases). Never make it public: we keep colleges' documents, we don't republish them.
+2. Edit the fine-grained PAT from step 2 (`COLLEGE_REPORTED_TOKEN`): **Repository access** → add
+   `quad-college-docs`; on that repo it needs **Contents: Read and write** (releases and their assets are under
+   Contents). Nothing else on that repo. The default `GITHUB_TOKEN` of a workflow can't reach another repo, so this
+   PAT is required in Actions.
+3. Add a repository **variable** (Settings → Secrets and variables → Actions → Variables) `COLLEGE_DOCS_REPO` =
+   `<owner>/quad-college-docs`. It isn't secret; setting it is what switches the archive to release assets.
+4. Locally, add the same two lines to `.env.local` when you want local runs to use the shared archive:
+   `COLLEGE_DOCS_REPO=<owner>/quad-college-docs` and `COLLEGE_REPORTED_TOKEN=<the PAT>` (or `GITHUB_TOKEN`).
+
+**How it is stored.** One release per month, `docs-2026-10`, created on first use (then `docs-2026-10.2`, … when one
+reaches 1,000 assets). Each document is an asset named `<sha256>.<ext>` (`xlsx`, `pdf`, `html`), and a PDF's
+numbered line text sits beside it as `<sha256>.lines.json.gz`. A document already uploaded in any month is never
+uploaded again. The manifest's `archive` field records where each document is (`gh:docs-2026-10/<sha>.pdf`; a
+`local:` value means it was archived on a machine without the repo set). The local directory stays a hot cache in
+front of the repo.
+
+**Workflow steps needed** (for whoever edits `.github/workflows/college-reported.yml`; the archive code needs no
+flags):
+- In the pipeline step's `env` (and the `collect` job's, which re-reads archived text):
+  ```yaml
+  COLLEGE_DOCS_REPO: ${{ vars.COLLEGE_DOCS_REPO }}
+  COLLEGE_REPORTED_TOKEN: ${{ secrets.COLLEGE_REPORTED_TOKEN }}
+  ```
+  When `COLLEGE_DOCS_REPO` is set and no token is, the run stops at once with "neither COLLEGE_REPORTED_TOKEN nor
+  GITHUB_TOKEN is" rather than archiving to a cache that will be evicted.
+- Keep the existing "Restore document cache" step (`actions/cache@v4`, path `.cache/college-docs`, key
+  `college-docs-<run id>`, restore-keys `college-docs-`): it now also restores `archive/`, so most documents are read
+  from the cache without a download. `actions/cache` saves the path automatically at the end of the job; nothing
+  else is needed. With the repo set, losing the cache costs only downloads, never a refetch from a college.
+- The `collect` job (batch results) needs the same cache restore and env, because escalation reads the archived
+  line text.
+
+**Adding a document by hand** (a blocked host, a Google Drive folder): download it in a browser, then
+```
+npm run archive-doc -- --college <unit_id> --file <path> --url <the link you downloaded it from> [--add-url]
+  [--kind cds|class-profile] [--edition 2025-26] [--retrieved YYYY-MM-DD] [--note "…"]
+```
+It archives the file and lists it in `data/college-docs.json` exactly as a fetch would (`retrieved` = today unless
+given). A 2025–26 template workbook is read into `data/cds-records/<unit_id>.json` at once with no model; a PDF or
+other file is extracted from the archive by the next pipeline run. `--add-url` also adds the link to
+`data/reference/cds-urls.json`, the list discovery tries first. Commit the changed `data/` files. Run it with
+`COLLEGE_DOCS_REPO` set so the file reaches the shared archive, not just your machine.
+
 ## What to check in your own tests
 - [ ] A profile for a college with a published `reported` value shows the chip/popover next to the federal figure,
   with the verbatim quote, the source link, and "checked automatically" (see

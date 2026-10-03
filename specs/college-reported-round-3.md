@@ -1047,3 +1047,74 @@ schema), `tests/cds-xlsx-template.test.mts` (an in-memory template workbook: ANS
 C21, an unparseable aid year, `readC1` unchanged), `tests/cds-records.test.mts` (helpers, lineage, every validator
 rule, the four committed records' real values). `tests/citation-guards.test.mts` allows the template edition in
 `lib/cds-template.ts`'s import path (the table is per template edition, not a data year).
+
+### Archive and manifest (2026-10-03, branch `feature/cds3-archive`)
+Build-order step 1, except the private repo itself (the owner creates it; setup in
+[college-reported-setup.md §9](college-reported-setup.md#9-archive-repo-and-token)). Nothing here calls a model.
+
+**`scripts/lib/college-reported/archive.mts`** — `createArchive(opts?)` returns an `Archive`:
+`has(sha)`, `get(sha)` → bytes or null, `put(sha, bytes, ext)` → location string for the manifest's `archive`,
+`putLines(sha, lines)` / `getLines(sha)` (any JSON, gzipped as `<sha>.lines.json.gz`; the layout reader owns its
+shape). All async, all keyed by the sha256 hex of the bytes; `put` refuses bytes that don't hash to the key.
+- **`local`** (default): `.cache/college-docs/archive/<sha>.<ext>`; location `local:<sha>.<ext>`.
+- **`github-release`** (when `COLLEGE_DOCS_REPO` is "owner/name"; token `COLLEGE_REPORTED_TOKEN`, else
+  `GITHUB_TOKEN`, else it throws): one release per month `docs-YYYY-MM` (created on first use; `docs-YYYY-MM.2`, …
+  past `assetLimit`, default 1,000), asset `<sha>.<ext>`; location `gh:docs-2026-10/<sha>.pdf`. It lists every
+  `docs-*` release's assets once per run, so a document uploaded in any earlier month is never uploaded again; `get`
+  reads the local hot cache first, downloads otherwise (checking the hash) and caches. `fetch`, `now`, `apiBase`,
+  `uploadBase` are injectable; the tests run it against a fake GitHub API.
+- `priorEditionLinks(links, currentEdition, max?)`: older CDS editions from an index page's `findLinks` output, one
+  per edition (Excel over PDF), newest first. Groundwork for `--archive-prior` (off by default, owner decision 2);
+  the pipeline doesn't call it yet.
+
+**`lib/cds-reads.ts`** (pure; imports only `lib/cds-sections.ts`):
+- `callsNeedingRead(doc, versions = SCHEMA_VERSIONS, readerVersions = READER_VERSIONS)` → `ReadKey[]`
+  (`"C" | "rest" | "deterministic"`). A type with a deterministic reader (template workbook, form PDF) is due only
+  `deterministic`, when its stored reader version is older; it never gets a model call. Flattened and scanned PDFs,
+  older Excel and HTML are due each call that is missing or stored at an older schema version. Class-profile pages:
+  nothing (round 2's profile extractor). Same versions → `[]`: this is "never a model read at the same schema version"
+  and "a schema bump reads only the archive".
+- `needsFetch(entry | undefined, { etag, last_modified, lastChecked, today, indexChanged })` → `{ fetch: false }` or
+  `{ fetch: true, reason: "new" | "index-changed" | "monthly", conditional: { etag?, last_modified? } }`: a URL not in
+  the manifest is fetched; a known one gets a conditional GET only when its index's link set changed or a calendar
+  month has passed since `lastChecked` (default: the entry's `retrieved`). `addMonth` clamps the day.
+- `fetchOutcome(manifest, { status, sha256? })` → `"unchanged"` (a 304, or bytes whose sha256 is already listed),
+  `"new-document"`, or `"failed"`.
+- Manifest lookups: `findBySha(manifest, sha)`, `documentsOf(manifest, unit_id)` (newest edition first),
+  `manifestEntryFor({ sha256, unit_id, url, final_url, kind, type, edition, edition_from, retrieved, bytes, pages,
+  body_chars, definitions_from_page, sections, archive })` (drops null optional fields and a `final_url` equal to
+  `url`; refuses a bad sha256, unit id, date, or size). Read/write stay `readManifest`/`upsertManifest` in
+  `records.mts`.
+
+**`npm run archive-doc`** — `scripts/archive-doc.mts` over `scripts/lib/college-reported/archive-doc.mts`
+(`archiveDoc(opts)`, `sniffType(bytes, { file, kind })`, `addOwnerUrl(file, entry)`):
+```
+npm run archive-doc -- --college <unit_id> --file <path> --url <original url>
+  [--kind cds|class-profile] [--edition 2025-26] [--retrieved YYYY-MM-DD] [--add-url] [--note "…"]
+```
+Hashes the file, sniffs its type from the bytes, puts it in the archive (the environment's backend), and upserts its
+manifest entry (`retrieved` = the day added). A `xlsx-template` is read at once with `recordFromTemplate` into
+`data/cds-records/<unit_id>.json` (the same items as `cds-records-from-workbooks`); other types wait for the
+pipeline. The same bytes already listed for another college are refused; re-running is a no-op. `--add-url` adds
+`{ unit_id, url, kind, note, added }` to `data/reference/cds-urls.json` unless already there. `sniffType` is minimal
+until the readers track's `doctype.mts` lands (TODO in the code): `%PDF` with ≥ 10 filled widgets → `pdf-form`, under
+200 characters → `pdf-scanned`, else `pdf-flat` (plus page count, characters, the definitions' first page, and the
+cover's "Common Data Set 2025-2026" edition); `PK` → `xlsx-template` when `isTemplateWorkbook`, else
+`xlsx-classic`; anything else `html` (`class-profile` for that kind). On the inventory it typed Howard `pdf-form`,
+Duke, USC, Michigan and Spelman `pdf-flat` with edition 2025-26 from the cover (USC's headers say 2024-2025), Berkeley
+`xlsx-classic`, William & Mary `xlsx-template`, MIT `html`.
+
+**Not done here:** the pipeline doesn't call any of this yet (the integration track wires `needsFetch` →
+`PoliteHttp.get` → `fetchOutcome` → `archive.put` → `manifestEntryFor`/`upsertManifest`, and `callsNeedingRead` for
+`--reextract`); the four committed manifest entries keep `archive: null` (their bytes are in the inventory, not an
+archive; re-running `archive-doc` on them with the repo set fills it); the workflow's env lines are written in the
+setup spec, not applied.
+
+**Tests:** `tests/cds-archive.test.mts`: local round trip, idempotent put and hash refusal; the gzip sidecar; backend
+choice from env; the GitHub backend through a fake API (one upload, second put a no-op, a later month finds last
+month's asset, get downloads once then hits the cache, sidecar round trip, a full release opens `.2`); `needsFetch`
+and `fetchOutcome` cases, including a 28-day February; `callsNeedingRead` (same versions nothing, bumped C only C,
+reader bump deterministic, the committed records due nothing); `priorEditionLinks`; `archive-doc` end to end on the
+inventory's `wm.xlsx` into a temp data dir (skipped when the file is missing; `CDS_INVENTORY_DOCS` points elsewhere):
+output passes `validateCdsRecords`, items equal the committed record, and the record fails it once its manifest entry
+is removed. Changing `<` to `<=` in `callsNeedingRead` fails the version test.

@@ -22,6 +22,8 @@ import { AdmissionFactors } from "@/components/school/AdmissionFactors";
 import { ScoreChecker } from "@/components/school/ScoreChecker";
 import { ResidencyAdmissions } from "@/components/school/ResidencyAdmissions";
 import { publishesResidencyRates } from "@/lib/cds/residency-display";
+import { TransferringInCard } from "@/components/school/TransferringInCard";
+import { transferCard } from "@/lib/cds/transfer-display";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -69,6 +71,7 @@ export default async function AdmissionsPage({ params }: Props) {
     ...(publishesResidencyRates(school) ? [{ id: "residency", label: "Where applicants live" }] : []),
     { id: "yield", label: "Yield" },
     { id: "factors", label: "What they look at" },
+    ...(transferCard(school) ? [{ id: "transfer", label: "Transferring in" }] : []),
     { id: "map", label: "Admissions map" },
     { id: "scores", label: "Test scores" },
     { id: "submitted", label: "Who submitted scores" },
@@ -204,6 +207,7 @@ export default async function AdmissionsPage({ params }: Props) {
             <AdmissionFactors school={school} />
           </div>
         )}
+        <TransferringInCard id="transfer" className="mt-4" school={school} cite={citeField} color={DOMAINS.admissions.color} />
         {recentAdmissionChanges.length > 0 && (
           <p className="mt-3 max-w-3xl text-sm text-muted-foreground">
             <b className="text-foreground">Recent change:</b> {recentAdmissionChanges.map((e) => `${e.text} in ${eventYear(e)}`).join("; ")}.

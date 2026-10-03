@@ -274,6 +274,22 @@ export const FIELDS = {
   "reported.admissions_by_residency.total.applicants": reported("Applied, all residencies (college-reported)"),
   "reported.admissions_by_residency.total.admitted": reported("Admitted, all residencies (college-reported)"),
   "reported.admissions_by_residency.total.enrolled": reported("Enrolled, all residencies (college-reported)"),
+  // CDS section D, transfer admission (specs/data-expansion/cds-transfer.md; lib/cds/transfer.ts): one lineage record
+  // per stored field; the sex breakdown inside applicants/admitted/enrolled and each material are covered by their parent.
+  // Partial coverage: never in METRICS, ranks, medians, sorts, or percentiles (tests/cds-transfer.test.mts).
+  "reported.transfer.enrolls_transfers": reported("Enrolls transfer students (college-reported)"),
+  "reported.transfer.advanced_standing": reported("Grants advanced standing to transfers (college-reported)"),
+  "reported.transfer.applicants": reported("Transfer applicants (college-reported)"),
+  "reported.transfer.admitted": reported("Transfer applicants admitted (college-reported)"),
+  "reported.transfer.enrolled": reported("Transfer students enrolled (college-reported)"),
+  "reported.transfer.admit_rate": reported("Transfer acceptance rate (college-reported)"),
+  "reported.transfer.terms": reported("Terms transfers may enter (college-reported)"),
+  "reported.transfer.min_credits": reported("Minimum credits to apply as a transfer (college-reported)"),
+  "reported.transfer.min_credits_unit": reported("Unit of the minimum credits (college-reported)"),
+  "reported.transfer.required_materials": reported("What a transfer application needs (college-reported)"),
+  "reported.transfer.min_hs_gpa": reported("Minimum high school GPA for transfers (college-reported)"),
+  "reported.transfer.min_college_gpa": reported("Minimum college GPA for transfers (college-reported)"),
+  "reported.transfer.dates": reported("Transfer application dates (college-reported)"),
 
   /* ---- History summary (data/history/, `npm run sync-history`) ---- */
   trends: {

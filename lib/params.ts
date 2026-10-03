@@ -91,6 +91,8 @@ export function parseFilters(params: Params): SearchFilters {
     // Where applicants live (lib/cds/residency-display.ts).
     byRes: str(params.byRes) === "1" || undefined,
     oosEven: str(params.oosEven) === "1" || undefined,
+    // Admits transfers (lib/cds/transfer-display.ts): CDS D1/D2, else the federal transfer-in count.
+    transfers: str(params.transfers) === "1" || undefined,
     sortBy: sortBy && SORT_KEYS.includes(sortBy) ? sortBy : "applicants",
     // Default direction: most-applied-to first; everything else ascending.
     sortDir: params.sortDir === "desc" || params.sortDir === "asc" ? params.sortDir : sortBy && sortBy !== "applicants" ? "asc" : "desc",
@@ -145,6 +147,7 @@ export const FILTER_KEYS = [
   "gpaRequired",
   "byRes",
   "oosEven",
+  "transfers",
   ...INDICATOR_KEYS.map((k) => INDICATORS[k].param),
 ] as const;
 

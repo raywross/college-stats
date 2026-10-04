@@ -400,7 +400,10 @@ const webpPath = (dir: string, id: string) => join(dir, `${id}.webp`);
  */
 export const PLATFORM_DEFAULT_URL = /\/wp-includes\/images\//i;
 
-/** The same mark on this many unrelated sites (registrable domains) is a platform's default, not any college's. */
+/**
+ * The same mark on this many unrelated sites (registrable domains), for this many differently named colleges, is a
+ * platform's default or a template's placeholder, not any college's.
+ */
 export const SHARED_DOMAINS = 3;
 
 /** "https://www.uga.edu/" → "uga.edu": the site a college's homepage belongs to (last two host labels). */
@@ -412,15 +415,30 @@ export function siteOf(url: string | null | undefined): string | null {
   }
 }
 
+/** "University of Puerto Rico at Cayey" → "university of puerto": a system's colleges share their names' first words. */
+export function nameFamily(name: string): string {
+  return name.toLowerCase().split(/\s*(?:-|–|—|,|:| at )\s*/)[0].split(/\s+/).slice(0, 3).join(" ");
+}
+
 /**
- * Hashes of stored marks that appear on SHARED_DOMAINS or more unrelated sites: a platform's default (a CMS's stock
- * icon), not a college's. One system's colleges sharing their system's icon on one site (the University of Minnesota's
- * campuses on umn.edu) or two (CU Boulder and CU Colorado Springs) stay.
+ * Hashes of stored marks that appear on SHARED_DOMAINS or more unrelated sites for as many differently named colleges:
+ * a platform's default or a template's placeholder (measured 2026-10-04: WordPress's W on 14 sites, one company's
+ * "arrow_forward.svg" touch icon on three of its colleges' sites), not a college's. One system's colleges sharing their
+ * system's icon stay: on one site (the University of Minnesota's campuses on umn.edu), or on several under one name
+ * (the University of Puerto Rico's campuses on uprb.edu, upr.edu, and uprh.edu).
  */
-export function platformDefaults(hashes: ReadonlyMap<string, string>, siteById: (id: string) => string | null): Set<string> {
+export function platformDefaults(
+  hashes: ReadonlyMap<string, string>,
+  siteById: (id: string) => string | null,
+  familyById: (id: string) => string | null = () => null,
+): Set<string> {
   const sites = new Map<string, Set<string>>();
-  for (const [id, h] of hashes) sites.set(h, (sites.get(h) ?? new Set()).add(siteById(id) ?? id));
-  return new Set([...sites].filter(([, s]) => s.size >= SHARED_DOMAINS).map(([h]) => h));
+  const families = new Map<string, Set<string>>();
+  for (const [id, h] of hashes) {
+    sites.set(h, (sites.get(h) ?? new Set()).add(siteById(id) ?? id));
+    families.set(h, (families.get(h) ?? new Set()).add(familyById(id) ?? id));
+  }
+  return new Set([...sites].filter(([h, s]) => s.size >= SHARED_DOMAINS && families.get(h)!.size >= SHARED_DOMAINS).map(([h]) => h));
 }
 
 /**
@@ -437,6 +455,8 @@ export async function syncIcons(opts: {
   deps: IconDeps;
   ids?: ReadonlySet<string>;
   today?: string;
+  /** Each college's name (data/schools.json), so one system's colleges sharing its icon aren't taken for a platform. */
+  names?: ReadonlyMap<string, string>;
 }): Promise<{ entries: BrandLogoEntry[]; outcomes: IconOutcome[]; requests: number }> {
   const { deps, brandDir } = opts;
   const today = opts.today ?? new Date(deps.now()).toISOString().slice(0, 10);
@@ -506,7 +526,11 @@ export async function syncIcons(opts: {
   // those colleges are tried again without it (their next candidate may be their own).
   const hashes = new Map<string, string>();
   for (const id of rows.keys()) if (existsSync(webpPath(brandDir, id))) hashes.set(id, sha256(readFileSync(webpPath(brandDir, id))));
-  const defaults = platformDefaults(hashes, (id) => siteOf(byId.get(id)?.homepage?.final_url ?? byId.get(id)?.homepage?.url));
+  const defaults = platformDefaults(
+    hashes,
+    (id) => siteOf(byId.get(id)?.homepage?.final_url ?? byId.get(id)?.homepage?.url),
+    (id) => (opts.names?.has(id) ? nameFamily(opts.names.get(id)!) : null),
+  );
   if (defaults.size) {
     const again = [...hashes].filter(([, h]) => defaults.has(h)).map(([id]) => id);
     deps.log(`  ${again.length} marks are a platform's default (${defaults.size} images); trying those colleges again without them`);
@@ -552,6 +576,7 @@ export async function syncBrandIcons(
     overrides: readJson<Record<string, BrandOverride>>(join(root, "data", "brand-overrides.json"), {}),
     brandDir: join(root, "public", "brand"),
     ids: opts.ids,
+    names: new Map(readJson<{ unit_id: string; name: string }[]>(join(root, "data", "schools.json"), []).map((s) => [s.unit_id, s.name])),
     deps: {
       fetch: globalThis.fetch,
       now: () => Date.now(),

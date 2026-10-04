@@ -277,6 +277,7 @@ test("a platform's default is never a mark: WordPress's own logo, or one image o
   const stock = await png(180, 180, "#3858E9"); // the same "stock" icon from every CMS site
   const own = await png(180, 180, "#BA0C2F");
   const system = await png(180, 180, "#7A0019");
+  const seal = await png(180, 180, "#00843D");
   const fetch = (async (input: string | URL | Request) => {
     const url = String(input);
     if (url.endsWith("/robots.txt")) return new Response("", { status: 404 });
@@ -290,14 +291,30 @@ test("a platform's default is never a mark: WordPress's own logo, or one image o
     if (/^https:\/\/(a|b|c)\.edu\/touch\.png$/.test(url)) return image(stock);
     if (url === "https://a.edu/favicon.ico") return image(own);
     if (/^https:\/\/(north|south)\.state\.edu\/touch\.png$/.test(url)) return image(system);
+    if (/^https:\/\/(www\.uprb\.edu|cayey\.upr\.edu|www\.uprh\.edu)\/touch\.png$/.test(url)) return image(seal);
     return new Response("", { status: 404 });
   }) as typeof globalThis.fetch;
   const run = await syncIcons({
-    probe: [probeFor("200001", "a.edu"), probeFor("200002", "b.edu"), probeFor("200003", "c.edu"), probeFor("200004", "wp.edu"), probeFor("200005", "north.state.edu"), probeFor("200006", "south.state.edu")],
+    probe: [
+      probeFor("200001", "a.edu"),
+      probeFor("200002", "b.edu"),
+      probeFor("200003", "c.edu"),
+      probeFor("200004", "wp.edu"),
+      probeFor("200005", "north.state.edu"),
+      probeFor("200006", "south.state.edu"),
+      probeFor("243133", "www.uprb.edu"),
+      probeFor("243151", "cayey.upr.edu"),
+      probeFor("243179", "www.uprh.edu"),
+    ],
     previous: [],
     overrides: {},
     brandDir: dir,
     deps: { fetch, now: () => 0, sleep: async () => {}, log: () => {} },
+    names: new Map([
+      ["243133", "University of Puerto Rico"],
+      ["243151", "University of Puerto Rico at Cayey"],
+      ["243179", "University of Puerto Rico-Humacao"],
+    ]),
   });
   const stored = new Map(run.entries.map((e) => [e.unit_id, e.source_url]));
   assert.equal(stored.get("200001"), "https://a.edu/favicon.ico", "a.edu falls back to its own icon");
@@ -307,6 +324,7 @@ test("a platform's default is never a mark: WordPress's own logo, or one image o
   const wp = run.outcomes.find((o) => o.unit_id === "200004");
   assert.ok(wp?.status === "none" && wp.reasons[0].includes("a platform's default icon"));
   assert.ok(stored.has("200005") && stored.has("200006"), "one system's colleges sharing its icon on one site keep it");
+  assert.ok(["243133", "243151", "243179"].every((id) => stored.has(id)), "and on three sites under one name");
 });
 
 test("a removal is honored on a partial run too, and the other colleges' marks are left alone", async () => {

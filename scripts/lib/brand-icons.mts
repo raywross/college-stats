@@ -4,8 +4,8 @@
  * this step ranks them, downloads them through PoliteHttp (robots.txt, one request a second per host, honest user
  * agent) best first, and keeps the first that passes:
  *   - decoded with sharp (PNG, JPEG, GIF, WebP, SVG rasterized); ICO is parsed here, since sharp can't read it: its PNG
- *     entries are decoded by sharp and its 32-bit BMP entries converted to raw RGBA; 1-, 4-, 8-, and 24-bit BMP entries
- *     (palette-era icons, 16–48 px, all under the 64 px floor) are skipped;
+ *     entries are decoded by sharp and its BMP entries (32-, 24-, 8-, 4-, and 1-bit) converted to raw RGBA; 16-bit and
+ *     compressed (RLE, BITFIELDS) BMP entries, which icons essentially never use, are skipped;
  *   - at least 64 px on its short side, not fully transparent, and square, or within 10% of square (then the center
  *     square is cut out);
  *   - resized to 192 px and written as WebP quality 85 to public/brand/{unit_id}.webp.
@@ -178,40 +178,77 @@ export function parseIco(b: Uint8Array): IcoEntry[] {
 }
 
 /**
- * A 32-bit BMP icon entry (BITMAPINFOHEADER, bottom-up BGRA rows, then the 1-bit AND mask) → top-down RGBA. When every
- * alpha byte is 0 (old icons that rely on the mask), the AND mask gives transparency. Other depths return null.
+ * A BMP icon entry (BITMAPINFOHEADER, bottom-up rows by convention, then the 1-bit AND mask) → top-down RGBA, for
+ * every depth ICO files use except 16-bit and compressed (RLE4/8, BITFIELDS), which return null:
+ *   - **32-bit**: BGRA rows. When every alpha byte is 0 (old icons that rely on the mask instead), the AND mask gives
+ *     transparency.
+ *   - **24-bit**: BGR rows, no alpha channel at all; transparency always comes from the AND mask.
+ *   - **8-, 4-, 1-bit**: a BGRx palette (RGBQUAD entries, 4 bytes each, the 4th unused) sits between the header and
+ *     the pixel rows; each row is packed palette indexes (8, 2, or 1 pixels per byte — 4-bit's high nibble and
+ *     1-bit's high bit are the leftmost pixel); transparency from the AND mask, same as 24-bit.
+ * Every row of both the color image and the AND mask is padded to a 4-byte boundary.
  */
 export function bmpToRgba(data: Uint8Array): { width: number; height: number; rgba: Buffer } | null {
   if (data.length < 40) return null;
   const dv = new DataView(data.buffer, data.byteOffset, data.byteLength);
-  const header = dv.getUint32(0, true);
+  const headerSize = dv.getUint32(0, true);
   const width = Math.abs(dv.getInt32(4, true));
   const rawHeight = dv.getInt32(8, true);
-  const height = Math.abs(rawHeight) / 2;
+  const height = Math.abs(rawHeight) / 2; // XOR bitmap + AND mask
   const bpp = dv.getUint16(14, true);
   const compression = dv.getUint32(16, true);
-  // BI_RGB only: icons don't use BI_BITFIELDS in practice, and guessing its mask layout isn't worth a wrong color.
-  if (bpp !== 32 || compression !== 0 || !width || !height || !Number.isInteger(height)) return null;
-  const rowBytes = width * 4;
-  const pixels = header;
-  const maskRow = Math.ceil(width / 32) * 4;
-  if (pixels + rowBytes * height > data.length) return null;
+  // BI_RGB only: icons don't use RLE or BITFIELDS in practice, and guessing a mask layout isn't worth a wrong
+  // color. 16-bit entries are rare enough in the wild to leave unread rather than guess a 5-5-5 vs. 5-6-5 split.
+  if (compression !== 0 || ![1, 4, 8, 24, 32].includes(bpp) || !width || !height || !Number.isInteger(height)) return null;
   const topDown = rawHeight < 0;
+  const rowBytes = Math.ceil((width * bpp) / 32) * 4;
+  const maskRow = Math.ceil(width / 32) * 4;
+
+  // 1-, 4-, and 8-bit entries carry their palette right after the header; biClrUsed (0 = the full 2^bpp) says how
+  // many BGRx entries it has, so the pixel rows start after it instead of right after the header.
+  let palette: Uint8Array | null = null;
+  let pixels = headerSize;
+  if (bpp <= 8) {
+    const used = dv.getUint32(32, true) || 1 << bpp;
+    palette = data.subarray(headerSize, headerSize + used * 4);
+    pixels = headerSize + used * 4;
+  }
+  if (pixels + rowBytes * height > data.length) return null;
+
   const rgba = Buffer.alloc(width * height * 4);
   let anyAlpha = false;
   for (let y = 0; y < height; y++) {
     const src = pixels + (topDown ? y : height - 1 - y) * rowBytes;
     for (let x = 0; x < width; x++) {
-      const s = src + x * 4;
       const d = (y * width + x) * 4;
-      rgba[d] = data[s + 2];
-      rgba[d + 1] = data[s + 1];
-      rgba[d + 2] = data[s];
-      rgba[d + 3] = data[s + 3];
-      if (data[s + 3]) anyAlpha = true;
+      if (bpp === 32) {
+        const s = src + x * 4;
+        rgba[d] = data[s + 2];
+        rgba[d + 1] = data[s + 1];
+        rgba[d + 2] = data[s];
+        rgba[d + 3] = data[s + 3];
+        if (data[s + 3]) anyAlpha = true;
+      } else if (bpp === 24) {
+        const s = src + x * 3;
+        rgba[d] = data[s + 2];
+        rgba[d + 1] = data[s + 1];
+        rgba[d + 2] = data[s];
+        rgba[d + 3] = 255;
+      } else {
+        // 8 bits, 2 pixels (high nibble first), or 8 pixels (high bit first) per byte, in that order.
+        const index =
+          bpp === 8 ? data[src + x] : bpp === 4 ? (data[src + (x >> 1)] >> (x % 2 ? 0 : 4)) & 0x0f : (data[src + (x >> 3)] >> (7 - (x & 7))) & 0x01;
+        const p = index * 4;
+        rgba[d] = palette![p + 2] ?? 0;
+        rgba[d + 1] = palette![p + 1] ?? 0;
+        rgba[d + 2] = palette![p] ?? 0;
+        rgba[d + 3] = 255;
+      }
     }
   }
-  if (!anyAlpha) {
+  // Every depth but 32-bit has no alpha channel of its own, so its transparency always comes from the AND mask;
+  // 32-bit only falls back to it when every alpha byte came back 0 (old icons built to rely on the mask instead).
+  if (bpp !== 32 || !anyAlpha) {
     const maskStart = pixels + rowBytes * height;
     const hasMask = maskStart + maskRow * height <= data.length;
     for (let y = 0; y < height; y++) {
@@ -261,7 +298,7 @@ async function rasterOf(bytes: Uint8Array): Promise<{ img: Sharp; width: number;
         }
       } else {
         const raw = bmpToRgba(e.data);
-        if (raw) return { img: sharp(raw.rgba, { raw: { width: raw.width, height: raw.height, channels: 4 } }), width: raw.width, height: raw.height, format: "ico/bmp32" };
+        if (raw) return { img: sharp(raw.rgba, { raw: { width: raw.width, height: raw.height, channels: 4 } }), width: raw.width, height: raw.height, format: `ico/bmp${e.bpp}` };
       }
     }
     return { reason: "undecodable", detail: `ICO entries: ${entries.map((e) => `${e.width}px ${e.format}${e.format === "bmp" ? ` ${e.bpp}-bit` : ""}`).join(", ")}` };

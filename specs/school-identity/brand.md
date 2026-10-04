@@ -360,7 +360,8 @@ and 2.65:1 (dark) and the check exited 1.
 ### Left for the owner
 - **The removal address.** `BRAND_REMOVAL_CONTACT` (`lib/brand.ts`) is a prefilled issue on
   `github.com/raywross/college-stats`; it only works while the repo is public. Choose a permanent address (an email
-  that someone reads daily, since a request is honored within a day).
+  that someone reads daily, since a request is honored within a day). The owner decided on 2026-10-04 to choose it at
+  the formal release (specs/backlog.md).
 - ~~Counsel, once, before the first deploy with marks~~: **approved 2026-10-04**. Marks are on (they show unless
   `BRAND_MARKS=off` is set at build time, and nothing sets it).
 - **The colleges without a mark** (775): a monogram in their colors when they have colors (open question 2's default).

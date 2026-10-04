@@ -11,7 +11,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import sharp from "sharp";
 import type { BrandLogoEntry, SiteProbeEntry } from "../lib/identity-files";
-import { bmpToRgba, parseIco, processIcon, rankIconCandidates, syncIcons, type IconCandidate } from "../scripts/lib/brand-icons.mts";
+import { bmpToRgba, describeCandidate, parseIco, processIcon, rankIconCandidates, syncIcons, type IconCandidate } from "../scripts/lib/brand-icons.mts";
 
 const png = (width: number, height: number, background: string | { r: number; g: number; b: number; alpha: number } = "#BA0C2F") =>
   sharp({ create: { width, height, channels: 4, background } }).png().toBuffer();
@@ -74,7 +74,7 @@ async function webpSize(webp: Buffer) {
 
 const c = (url: string, rel: string, sizes: string | null = null, type: string | null = null): IconCandidate => ({ url, rel, sizes, type });
 
-test("candidates: the largest touch icon first, then declared icons by size, then the conventional fallbacks", () => {
+test("candidates: the largest touch icon first, then declared icons by size, then the conventional fallbacks, then tab-sized icons", () => {
   const ranked = rankIconCandidates([
     c("https://u.edu/favicon.ico", "icon"),
     c("https://u.edu/img/icon-32.png", "icon", "32x32", "image/png"),
@@ -89,8 +89,23 @@ test("candidates: the largest touch icon first, then declared icons by size, the
   ]);
   assert.deepEqual(
     ranked.map((r) => r.url.replace("https://u.edu", "")),
-    ["/img/touch-180.png", "/img/touch-120.png", "/img/android-chrome-192x192.png", "/img/icon-32.png", "/apple-touch-icon.png", "/favicon.ico"],
+    ["/img/touch-180.png", "/img/touch-120.png", "/img/android-chrome-192x192.png", "/apple-touch-icon.png", "/favicon.ico", "/img/icon-32.png"],
   );
+});
+
+test("candidates as the site probe writes them: fallbacks after declared icons of a known size", () => {
+  // UGA's entry in data/site-probe.json (2026-10-04): a declared /favicon.ico of unknown size, then the probe's fallback.
+  const uga = rankIconCandidates([c("https://www.uga.edu/favicon.ico", "icon"), c("https://www.uga.edu/apple-touch-icon.png", "fallback")]);
+  assert.deepEqual(uga.map((r) => r.url), ["https://www.uga.edu/apple-touch-icon.png", "https://www.uga.edu/favicon.ico"]);
+  const stanford = rankIconCandidates([
+    c("https://www.stanford.edu/favicon.ico?x", "icon", "48x48", "image/x-icon"),
+    c("https://www.stanford.edu/icon1.png", "icon", "192x192", "image/png"),
+    c("https://www.stanford.edu/apple-touch-icon.png", "fallback"),
+    c("https://www.stanford.edu/favicon.ico", "fallback"),
+  ]);
+  assert.deepEqual(stanford.map((r) => new URL(r.url).pathname), ["/icon1.png", "/apple-touch-icon.png", "/favicon.ico", "/favicon.ico"]);
+  assert.equal(describeCandidate(c("https://www.uga.edu/apple-touch-icon.png", "fallback"), "https://www.uga.edu/"), "/apple-touch-icon.png at the site's root (https://www.uga.edu)");
+  assert.equal(describeCandidate(stanford[0], "https://www.stanford.edu/"), '<link rel="icon" sizes="192x192" type="image/png"> on https://www.stanford.edu/');
 });
 
 /* ---------------- Decoding and checks ---------------- */

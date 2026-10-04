@@ -43,22 +43,26 @@ export function parseSizes(sizes: string | null | undefined): number | null {
 const isSvg = (c: IconCandidate) => /svg/i.test(c.type ?? "") || /\.svg(?:$|[?#])/i.test(c.url);
 const relOf = (c: IconCandidate) => c.rel.toLowerCase().split(/\s+/);
 
-/**
- * The size a candidate is likely to be: its `sizes`, else a size in its file name ("android-chrome-192x192.png"),
- * else 180 for a touch icon (Apple's size) and 32 for anything else.
- */
-export function likelySize(c: IconCandidate): number {
+/** The size a candidate says it is: its `sizes`, else a size in its file name ("android-chrome-192x192.png"); an SVG
+ * counts as large. Null when it says nothing. */
+export function statedSize(c: IconCandidate): number | null {
   const declared = parseSizes(c.sizes);
   if (declared) return declared;
   if (isSvg(c)) return 512;
   const m = /(\d{2,4})x(\d{2,4})/i.exec(c.url.split(/[?#]/)[0]);
-  if (m) return Math.min(Number(m[1]), Number(m[2]));
-  return relOf(c).some((r) => r.startsWith("apple-touch-icon")) ? 180 : 32;
+  return m ? Math.min(Number(m[1]), Number(m[2])) : null;
+}
+
+/** The size a candidate is likely to be: what it says, else 180 for a touch icon (Apple's size) and 32 for the rest. */
+export function likelySize(c: IconCandidate): number {
+  return statedSize(c) ?? (relOf(c).some((r) => r.startsWith("apple-touch-icon")) ? 180 : 32);
 }
 
 /**
  * Candidates best first: touch icons (made by the college as a tile, usually 180 px), largest first; then declared
- * icons, largest first (an SVG counts as large); then the conventional /apple-touch-icon.png; then /favicon.ico.
+ * icons of a stated size of 64 px or more, largest first (an SVG counts as large); then the conventional
+ * /apple-touch-icon.png (the probe's `rel: "fallback"`); then declared icons of unknown size, and /favicon.ico; last,
+ * declared icons that say they're under 64 px.
  * Safari's monochrome `mask-icon` is never a mark; data: URIs and malformed URLs are skipped; duplicate URLs are dropped.
  */
 export function rankIconCandidates(icons: readonly IconCandidate[]): IconCandidate[] {
@@ -67,7 +71,13 @@ export function rankIconCandidates(icons: readonly IconCandidate[]): IconCandida
     if (rel.includes("mask-icon")) return -1;
     const declared = !isConventional(c);
     if (rel.some((r) => r.startsWith("apple-touch-icon")) && declared) return 0;
-    if (rel.includes("icon") && declared) return 1;
+    if (rel.includes("icon") && declared) {
+      // A declared icon of unknown size is usually a 16-48 px tab icon: the conventional touch icon goes before it,
+      // and one that says it's under the floor goes last (it would only be rejected).
+      const stated = statedSize(c);
+      if (stated === null) return 3;
+      return stated >= MIN_ICON ? 1 : 4;
+    }
     if (pathOf(c.url).toLowerCase().startsWith("/apple-touch-icon")) return 2;
     return 3;
   };
@@ -88,8 +98,12 @@ const pathOf = (url: string) => {
     return "";
   }
 };
-/** /apple-touch-icon.png or /favicon.ico at the root, with nothing declared about it: the conventional fallbacks. */
-const isConventional = (c: IconCandidate) => c.sizes === null && c.type === null && /^\/(?:apple-touch-icon(?:-precomposed)?\.png|favicon\.ico)$/i.test(pathOf(c.url));
+/**
+ * The conventional fallbacks: what the probe marks `rel: "fallback"` (/apple-touch-icon.png and /favicon.ico, which may
+ * not exist), or the same paths declared with nothing said about them.
+ */
+const isConventional = (c: IconCandidate) =>
+  c.rel.toLowerCase() === "fallback" || (c.sizes === null && c.type === null && /^\/(?:apple-touch-icon(?:-precomposed)?\.png|favicon\.ico)$/i.test(pathOf(c.url)));
 
 /** How the homepage declared an icon, for the lineage quote. */
 export function describeCandidate(c: IconCandidate, homepage: string | null): string {
@@ -425,7 +439,9 @@ export async function syncIcons(opts: {
       if (++done % 50 === 0) deps.log(`  icons: ${done} colleges done`);
     }
   };
-  await Promise.all(Array.from({ length: Math.max(1, opts.deps.concurrency ?? 8) }, worker));
+  // Colleges in flight at once; PoliteHttp still spaces requests to any one host a second apart (icons on a shared
+  // CDN wait their turn).
+  await Promise.all(Array.from({ length: Math.max(1, opts.deps.concurrency ?? 12) }, worker));
 
   // A full run leaves no file without a row.
   if (!opts.ids) {

@@ -8,6 +8,7 @@ import type { DatasetMeta, School } from "./types";
 import type { ReleaseCalendar } from "./releases";
 import type { DatasetFiles } from "./dataset";
 import type { CpiTable, HistoryMeta, NationalHistory, SchoolHistory, TrendFacts } from "./history";
+import type { AliasRow } from "./identity-files";
 
 /** data/history/{meta,national,facts,cpi}.json */
 export interface HistoryFiles {
@@ -84,7 +85,45 @@ async function readDataset(client: SupabaseClient): Promise<PublishedDataset> {
   if (!schools.length || !meta || !releaseCalendar) {
     throw new Error("Supabase has no published dataset yet. Run `npm run publish-data` (see specs/supabase.md).");
   }
-  return { schools, meta, releaseCalendar, version: file("meta")!.published_at as string };
+  return { schools, meta, releaseCalendar, aliases: await fetchAliasRows(client), version: file("meta")!.published_at as string };
+}
+
+/* ------------------------------------------------------------------ */
+/* Short names and nicknames (supabase/migrations/20261004120000_school_aliases.sql; specs/school-identity/aliases.md) */
+/* ------------------------------------------------------------------ */
+
+/** Every row of school_aliases, paged like schools. Throws on any failure; used by publish-data's read-back check. */
+export async function fetchAllAliasRows(client: SupabaseClient): Promise<AliasRow[]> {
+  const rows: AliasRow[] = [];
+  for (let from = 0; ; from += PAGE_SIZE) {
+    const { data, error } = await client
+      .from("school_aliases")
+      .select("unit_id, alias, key, source, weight")
+      .order("unit_id")
+      .range(from, from + PAGE_SIZE - 1);
+    if (error) throw new Error(`Supabase: reading school_aliases failed: ${error.message}`);
+    rows.push(...(data as AliasRow[]));
+    if (data.length < PAGE_SIZE) break;
+  }
+  return rows;
+}
+
+let aliasWarned = false;
+
+/**
+ * Every alias row, fail-soft: a missing table (the migration isn't applied yet) or any other error is logged once
+ * — not on every request — and search runs without short names rather than failing the whole dataset load.
+ */
+export async function fetchAliasRows(client: SupabaseClient): Promise<AliasRow[]> {
+  try {
+    return await fetchAllAliasRows(client);
+  } catch (err) {
+    if (!aliasWarned) {
+      aliasWarned = true;
+      console.error(`Supabase: school_aliases unavailable; search runs without short names (${err instanceof Error ? err.message : err}).`);
+    }
+    return [];
+  }
 }
 
 /* ------------------------------------------------------------------ */

@@ -74,24 +74,44 @@ export default async function CostPage({ params }: Props) {
         school={school}
         fields={TOPIC_FIELDS[TOPIC]}
       >
-        {school.links?.price_calculator && (
-          <a
-            href={school.links.price_calculator}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="group mb-4 flex items-center gap-3 rounded-2xl border border-dashed p-4 transition-colors hover:border-primary/40"
-          >
-            <span className="inline-flex size-10 shrink-0 items-center justify-center rounded-xl bg-pop text-pop-foreground">
-              <Calculator className="size-5" />
-            </span>
-            <span className="min-w-0 flex-1 text-sm">
-              <b>Your family&apos;s price will differ.</b>{" "}
-              <span className="text-muted-foreground">
-                Get a personal estimate from {school.name}&apos;s official <Term term="net-price-calculator">net price calculator</Term>.
-              </span>
-            </span>
-            <ExternalLink className="size-4 shrink-0 text-muted-foreground group-hover:text-primary" />
-          </a>
+        {(school.links?.price_calculator || school.links?.financial_aid || school.links?.veterans) && (
+          <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-stretch">
+            {school.links?.price_calculator && (
+              <a
+                href={school.links.price_calculator}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group flex flex-1 items-center gap-3 rounded-2xl border border-dashed p-4 transition-colors hover:border-primary/40"
+              >
+                <span className="inline-flex size-10 shrink-0 items-center justify-center rounded-xl bg-pop text-pop-foreground">
+                  <Calculator className="size-5" />
+                </span>
+                <span className="min-w-0 flex-1 text-sm">
+                  <b>Your family&apos;s price will differ.</b>{" "}
+                  <span className="text-muted-foreground">
+                    Get a personal estimate from {school.name}&apos;s official <Term term="net-price-calculator">net price calculator</Term>.
+                  </span>
+                </span>
+                <ExternalLink className="size-4 shrink-0 text-muted-foreground group-hover:text-primary" />
+              </a>
+            )}
+            {(school.links?.financial_aid || school.links?.veterans) && (
+              <div className="flex flex-col justify-center gap-2 rounded-2xl border border-dashed p-4 text-sm sm:w-60 sm:shrink-0">
+                {school.links?.financial_aid && (
+                  <a href={school.links.financial_aid} target="_blank" rel="noopener noreferrer" className="group flex items-center gap-1.5 font-semibold text-primary">
+                    <span className="group-hover:underline">Financial aid office</span>
+                    <ExternalLink className="size-3.5 shrink-0" aria-hidden />
+                  </a>
+                )}
+                {school.links?.veterans && (
+                  <a href={school.links.veterans} target="_blank" rel="noopener noreferrer" className="group flex items-center gap-1.5 font-semibold text-primary">
+                    <span className="group-hover:underline">Veterans&apos; benefits</span>
+                    <ExternalLink className="size-3.5 shrink-0" aria-hidden />
+                  </a>
+                )}
+              </div>
+            )}
+          </div>
         )}
         {(avgCost !== null || c?.sticker) && (
           <div id="price" className={BLOCK_SCROLL}>

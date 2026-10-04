@@ -171,9 +171,12 @@ export function SchoolSearch({
                   i === active ? "bg-accent" : "hover:bg-muted"
                 )}
               >
-                <Crest id={s.id} name={s.name} size="sm" />
+                <Crest id={s.id} name={s.name} size="sm" brand={s.brand} />
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate text-sm font-semibold">{s.name}</span>
+                  <span className="block truncate text-sm font-semibold">
+                    {s.name}
+                    {s.matched && <span className="font-normal text-muted-foreground"> · &ldquo;{s.matched}&rdquo;</span>}
+                  </span>
                   <span className="block text-xs text-muted-foreground">
                     {s.city}, {s.state}
                     {s.acceptance !== null && <> · {pctSmart(s.acceptance)} admit rate</>}

@@ -29,11 +29,14 @@ import { userInfo } from "node:os";
 import { join } from "node:path";
 import type { DatasetMeta, School } from "../lib/types";
 import type { ReleaseCalendar } from "../lib/releases";
+import type { AliasRow } from "../lib/identity-files.ts";
 import { validateLineage } from "../lib/lineage.ts";
 import { fetchAllSchoolHistories, fetchDatasetFiles, fetchHistoryFiles, supabaseClient } from "../lib/supabase.ts";
 import { validateHistoryMeta, validateShard, type SchoolHistory } from "../lib/history.ts";
 import { detailFileProblems, detailTablesProblem, publishDetails, readDetails } from "./lib/publish-details.mts";
 import { replaceInBatches } from "./lib/publish-batches.mts";
+import { aliasesTableProblem, publishAliases } from "./lib/publish-aliases.mts";
+import { aliasTableProblems } from "../lib/aliases.ts";
 
 const ROOT = join(import.meta.dirname, "..");
 const DRY_RUN = process.argv.includes("--dry-run");
@@ -101,6 +104,17 @@ if (details) {
   }
 }
 
+// Short names and nicknames (lib/aliases.ts), when built: the same invariant check as npm test.
+const ALIASES_PATH = join(ROOT, "data", "aliases.json");
+const aliases = existsSync(ALIASES_PATH) ? (JSON.parse(readFileSync(ALIASES_PATH, "utf8")) as AliasRow[]) : null;
+if (aliases) {
+  const ap = aliasTableProblems(aliases, new Set(schools.map((s) => s.unit_id)));
+  if (ap.length) {
+    for (const p of ap.slice(0, 20)) console.error(`  ${p}`);
+    fail(`${ap.length} alias-table problem(s); run npm test.`);
+  }
+}
+
 const client = supabaseClient("publish");
 const host = new URL(process.env.SUPABASE_URL!).host;
 console.log(`Publishing ${schools.length} colleges (retrieved ${meta.retrieved}) to ${host}${DRY_RUN ? " [dry run]" : ""}`);
@@ -139,6 +153,11 @@ if (history) {
 
 if (details) {
   const problem = await detailTablesProblem(client);
+  if (problem) fail(problem);
+}
+
+if (aliases) {
+  const problem = await aliasesTableProblem(client);
   if (problem) fail(problem);
 }
 
@@ -210,6 +229,15 @@ if (details) {
   console.log(`Published ${n} college detail files; read back and verified.`);
 } else {
   console.log("No data/detail/ (run npm run sync-data); detail files not published.");
+}
+
+// 5c. Short names and nicknames (school_aliases; specs/school-identity/aliases.md). One transaction: small enough
+// (~400 KB today) that it doesn't need the batching schools and history required.
+if (aliases) {
+  const n = await publishAliases(client, aliases).catch((err: Error) => fail(err.message));
+  console.log(`Published ${n} short names (school_aliases); read back and verified.`);
+} else {
+  console.log("No data/aliases.json (run npm run sync-data); short names not published.");
 }
 
 // 6. Revalidate the site's static pages.

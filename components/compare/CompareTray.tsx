@@ -31,7 +31,7 @@ export function CompareTray() {
                 aria-label={`Remove ${s.name} from compare`}
                 title={`Remove ${s.name}`}
               >
-                <Crest id={s.id} name={s.name} size="sm" />
+                <Crest id={s.id} name={s.name} size="sm" brand={s.brand} />
                 <span className="absolute inset-0 flex items-center justify-center rounded-lg bg-black/55 opacity-0 transition-opacity group-hover:opacity-100">
                   <X className="size-4 text-white" />
                 </span>

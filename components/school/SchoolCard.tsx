@@ -4,7 +4,8 @@ import { getData } from "@/lib/data";
 import { standouts } from "@/lib/insights";
 import { DOMAINS, admitRatio, satComposite, selectivityTier } from "@/lib/metrics";
 import { compact, moneyCompact, pct, pctSmart, range, typeShort } from "@/lib/format";
-import { crestTint } from "@/lib/brand";
+import type { CSSProperties } from "react";
+import { brandTint, crestBrand } from "@/lib/brand";
 import { Crest } from "@/components/school/Crest";
 import { CompareButton } from "@/components/compare/CompareButton";
 import { StandoutChip } from "@/components/school/StandoutChip";
@@ -39,22 +40,23 @@ export async function SchoolCard({ school, index = 0 }: { school: School; index?
   const sat = satComposite(school);
   const acceptanceRank = rankOf(school, "acceptance");
   const n = admitRatio(school);
+  const tint = brandTint(school, 0.35);
 
   return (
     <article
       className="group relative flex animate-rise flex-col overflow-hidden rounded-3xl border bg-card p-5 transition-all duration-300 hover:-translate-y-1 hover:border-primary/30 hover:shadow-xl hover:shadow-primary/10"
       style={{ animationDelay: `${Math.min(index, 8) * 50}ms` }}
     >
-      {/* Crest-tinted glow */}
+      {/* Crest-tinted glow: the college's own tint per theme when it has colors (specs/school-identity/brand.md). */}
       <div
         aria-hidden
-        className="pointer-events-none absolute -top-16 -right-16 size-40 rounded-full opacity-60 blur-2xl transition-opacity group-hover:opacity-100"
-        style={{ backgroundColor: crestTint(school.unit_id, 0.35) }}
+        className="pointer-events-none absolute -top-16 -right-16 size-40 rounded-full opacity-60 blur-2xl transition-opacity [--tint:var(--tint-light)] group-hover:opacity-100 dark:[--tint:var(--tint-dark)]"
+        style={{ "--tint-light": tint.light, "--tint-dark": tint.dark, backgroundColor: "var(--tint)" } as CSSProperties}
       />
       <Link href={`/schools/${school.unit_id}`} className="absolute inset-0 z-10 rounded-3xl" aria-label={`View ${school.name}`} />
 
       <div className="relative flex items-start gap-3">
-        <Crest id={school.unit_id} name={school.name} size="md" />
+        <Crest id={school.unit_id} name={school.name} size="md" brand={crestBrand(school)} />
         <div className="min-w-0 flex-1">
           <h3 className="font-display text-base leading-snug font-bold group-hover:text-primary">{school.name}</h3>
           <p className="text-xs text-muted-foreground">

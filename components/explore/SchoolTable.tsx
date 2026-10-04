@@ -6,6 +6,7 @@ import { DOMAINS, METRICS, admitRateGap, admitRatesBySex, aidGenerosity, diversi
 import { compact, moneyCompact, num, pct, pctSmart } from "@/lib/format";
 import { getData } from "@/lib/data";
 import { Crest } from "@/components/school/Crest";
+import { crestBrand } from "@/lib/brand";
 import { CompareButton } from "@/components/compare/CompareButton";
 import { InfoTip } from "@/components/ui/info-tip";
 import { cn } from "@/lib/utils";
@@ -177,7 +178,7 @@ export async function SchoolTable({ schools, params }: { schools: School[]; para
                 <tr key={s.unit_id} className="group transition-colors hover:bg-muted/40">
                   <td className="sticky left-0 z-10 bg-card py-2.5 pr-3 pl-4 transition-colors group-hover:bg-muted">
                     <Link href={`/schools/${s.unit_id}`} className="flex items-center gap-2.5">
-                      <Crest id={s.unit_id} name={s.name} size="sm" />
+                      <Crest id={s.unit_id} name={s.name} size="sm" brand={crestBrand(s)} />
                       <span className="min-w-0">
                         <span className="block max-w-44 truncate font-semibold group-hover:text-primary">{s.name}</span>
                         <span className="block text-xs text-muted-foreground">

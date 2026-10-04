@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRight, Swords } from "lucide-react";
+import { ArrowRight, ExternalLink, Swords } from "lucide-react";
 import { getData, getDetail, getHistory, getHistoryFiles, toIndexEntry } from "@/lib/data";
 import { familiesOffered, fieldStat, type FieldStat } from "@/lib/field-compare";
 import { majorFamilyName } from "@/lib/majors";
@@ -17,7 +17,7 @@ import type { TermKey } from "@/lib/glossary";
 import { DEMOGRAPHIC_CATEGORIES, DOMAINS, METRICS, TEST_POLICY_LABELS, admitRatesBySex, satTotal, type Domain } from "@/lib/metrics";
 import { TEST_ROWS } from "@/lib/compare-tests";
 import { RADAR_AXES, keyDifferences, radarProfile, similarSchools } from "@/lib/insights";
-import { SLOT_COLORS, shortName } from "@/lib/brand";
+import { SLOT_COLORS, crestBrand, shortName } from "@/lib/brand";
 import { DESIGNATION_LABELS, RESEARCH_LABELS } from "@/lib/campus-profile";
 import { CALENDAR_LABELS, DIVISION_LABELS, ROTC_LABELS, divisionFilterOf } from "@/lib/campus-services";
 import { FORM_SHORT } from "@/lib/finances";
@@ -34,7 +34,8 @@ import { Crest } from "@/components/school/Crest";
 import { RadarChart } from "@/components/charts/RadarChart";
 import { RangeBar } from "@/components/charts/RangeBar";
 import { StackedBar } from "@/components/charts/StackedBar";
-import { InfoTip, Term } from "@/components/ui/info-tip";
+import { InfoTip, SourceTip, Term } from "@/components/ui/info-tip";
+import { linkHost } from "@/lib/links";
 import { compareAdmitRates, compareYields } from "@/lib/cds/residency-display";
 import { ADMISSION_PROFILE_ROWS, admissionProfileCellField, c7FactorCell } from "@/lib/cds/compare-rows";
 import { compareClassesUnder20 } from "@/lib/cds/academics-display";
@@ -317,7 +318,8 @@ export default async function ComparePage({
   // CDS financial aid rows (specs/data-expansion/cds-financial-aid.md#compare), after the rest of "All the numbers".
   const aidRows = compareAidRows(citeField("aid.cohort").year);
   const tableRows = [...TABLE_ROWS, ...aidRows];
-  const tableFields: readonly FieldPath[] = [...new Set([...TABLE_FIELDS, ...aidRows.map((r) => r[2])])];
+  // "Website" closes the table as its own row (an actual link, not text), so its field isn't in TABLE_ROWS.
+  const tableFields: readonly FieldPath[] = [...new Set([...TABLE_FIELDS, ...aidRows.map((r) => r[2]), "links.website" as const])];
   const historyFiles = await getHistoryFiles();
 
   // "Your major" (specs/data-expansion/majors.md, field-of-study.md): broad fields (2-digit CIP families) that at
@@ -706,6 +708,25 @@ export default async function ComparePage({
                       </tr>
                     );
                   })}
+                  {/* An actual link per college, not text, so it isn't one of the generic string rows above (links.md). */}
+                  <tr>
+                    <td className="sticky left-0 z-10 max-w-36 bg-card px-3 py-2.5 text-muted-foreground shadow-[1px_0_0_var(--border)] sm:max-w-none sm:px-4 sm:shadow-none">
+                      <span className="inline-flex items-center gap-1">
+                        Website <SourceTip cited={citeField("links.website")} />
+                      </span>
+                    </td>
+                    {schools.map((s) => (
+                      <td key={s.unit_id} className="px-4 py-2.5 font-semibold">
+                        {s.links?.website ? (
+                          <a href={s.links.website} target="_blank" rel="noopener" className="inline-flex items-center gap-1 text-primary hover:underline">
+                            {linkHost(s.links.website)} <ExternalLink className="size-3 shrink-0" aria-hidden />
+                          </a>
+                        ) : (
+                          <span className="font-normal text-muted-foreground">–</span>
+                        )}
+                      </td>
+                    ))}
+                  </tr>
                 </tbody>
               </table>
             </div>
@@ -786,7 +807,7 @@ async function SinglePrompt({ school }: { school: School }) {
             href={`/compare?ids=${school.unit_id},${s.unit_id}`}
             className="group rounded-3xl border bg-card p-5 transition-all hover:-translate-y-1 hover:shadow-xl hover:shadow-primary/10"
           >
-            <Crest id={s.unit_id} name={s.name} size="md" />
+            <Crest id={s.unit_id} name={s.name} size="md" brand={crestBrand(s)} />
             <p className="mt-3 font-display font-bold group-hover:text-primary">{s.name}</p>
             <p className="text-xs text-muted-foreground">{reasons.join(" · ")}</p>
             <span className="mt-3 inline-flex items-center gap-1 text-xs font-bold text-primary">
@@ -824,7 +845,7 @@ async function EmptyState() {
             >
               <div className="flex -space-x-2">
                 {schools.map((s) => (
-                  <Crest key={s.unit_id} id={s.unit_id} name={s.name} size="md" className="ring-2 ring-card" />
+                  <Crest key={s.unit_id} id={s.unit_id} name={s.name} brand={crestBrand(s)} size="md" className="ring-2 ring-card" />
                 ))}
               </div>
               <span className="min-w-0 flex-1 font-semibold">{schools.map((s) => shortName(s)).join(" vs. ")}</span>

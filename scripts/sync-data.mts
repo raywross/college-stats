@@ -4,6 +4,7 @@
  *   npm run sync-data                 # uses COLLEGE_SCORECARD_API_KEY from .env.local
  *   npm run sync-data -- --include-online
  *   npm run sync-data -- --releases-only  # only check NCES for upcoming releases (no API key needed)
+ *   npm run sync-data -- --links          # then the site probe (visit pages, link liveness; scripts/lib/site-probe.mts)
  *
  * First, it checks NCES for the files of each upcoming release in
  * data/release-calendar.json and marks the release published once they appear.
@@ -55,6 +56,11 @@ import { addFieldOfStudyMeta, buildProgramDetails, fetchFieldOfStudy } from "./l
 import { fetchValueLabels } from "./lib/ipeds-dictionary.mts";
 import { religionFrom } from "../lib/religion.ts";
 import { acceptanceRate, applicationFeeFrom, computePrices, factorsFrom, housingFrom, ipedsNum, parseShareBand, priceSuffix, promiseProgramFrom, raceShares, toAid, tuitionPlansFrom } from "../lib/derive.ts";
+import { normalizeUrl, websiteMismatch } from "../lib/links.ts";
+import { addIdentityMeta, applyIdentity } from "../lib/identity.ts";
+import { loadIdentityInputs } from "./lib/identity-sync.mts";
+import { writeAliasTable } from "./lib/aliases-sync.mts";
+import { runSiteProbe } from "./lib/site-probe.mts";
 
 const ROOT = join(import.meta.dirname, "..");
 const OUT = join(ROOT, "data", "schools.json");
@@ -67,6 +73,7 @@ const STATE_LAWS = join(ROOT, "data", "state-laws.json");
 const API = "https://api.data.gov/ed/collegescorecard/v1/schools";
 const INCLUDE_ONLINE = process.argv.includes("--include-online");
 const RELEASES_ONLY = process.argv.includes("--releases-only");
+const LINKS = process.argv.includes("--links");
 
 /* ------------------------------------------------------------------ */
 /* Helpers                                                             */
@@ -447,12 +454,6 @@ function toSchool(
   };
 }
 
-function normalizeUrl(v: unknown): string | null {
-  if (typeof v !== "string" || !v.trim()) return null;
-  const url = v.trim();
-  return /^https?:\/\//i.test(url) ? url : `https://${url}`;
-}
-
 /**
  * Scorecard's "latest" fields don't say which year they describe. Find the
  * year-keyed field whose value matches "latest". The key's meaning varies by
@@ -542,7 +543,7 @@ function buildMeta(
         edition: `${hd.name.slice(2)}–${String(Number(hd.name.slice(2)) + 1).slice(2)} (${hd.name})`,
         url: hd.url,
         description:
-          "Every college's directory entry: its city, suburb, town, or rural setting, Carnegie Classification, federal designations such as HBCU and land-grant, and its location on the map.",
+          "Every college's directory entry: its city, suburb, town, or rural setting, Carnegie Classification, federal designations such as HBCU and land-grant, and its location on the map. Also the links each college reports: its website, admissions and application pages, financial aid and net price calculator offices, and veterans' and disability-services offices.",
       },
       "ipeds-ef": {
         label: "IPEDS Fall Enrollment survey (part D)",
@@ -845,10 +846,14 @@ async function main() {
 
   const stats = { online: 0, noSize: 0, withAdmissions: 0, withSat: 0, overridden: 0 };
   const overrides: Record<string, Patch> = existsSync(OVERRIDES) ? JSON.parse(readFileSync(OVERRIDES, "utf8")) : {};
+  // School identity (specs/school-identity/): the committed Wikidata, site probe, and brand files, applied per school.
+  const identity = loadIdentityInputs(ROOT);
 
   const schools: School[] = [];
   // Scorecard and the directory should describe the same college under each id (campus-profile.md, "As built").
   const directoryWarnings: string[] = [];
+  // Homepages that disagree by more than scheme, "www.", or a trailing slash (links.md, Ingest); HD wins either way.
+  const websiteWarnings: string[] = [];
   for (const row of scorecard) {
     if (!INCLUDE_ONLINE && row["school.online_only"] === 1) {
       stats.online++;
@@ -883,6 +888,11 @@ async function main() {
       stats.noSize++;
       continue;
     }
+    // Links from the directory, the site probe's finds, social accounts, colors and mark (lib/identity.ts).
+    const scorecardWebsite = school.links?.website ?? null;
+    applyIdentity(school, identity, hd.rows.get(school.unit_id));
+    const hdWebsiteWarning = websiteMismatch(school, normalizeUrl(hd.rows.get(school.unit_id)?.WEBADDR), scorecardWebsite);
+    if (hdWebsiteWarning) websiteWarnings.push(hdWebsiteWarning);
     const patch = overrides[school.unit_id];
     if (patch) {
       // Every value the patch sets is attributed to the patch's source (throws if it names none).
@@ -911,6 +921,7 @@ async function main() {
   addTransferMeta(meta, efa.table, efa.year);
   addFieldOfStudyMeta(meta, fos);
   addStateLawMeta(meta, lgbtqInputs.laws);
+  addIdentityMeta(meta, identity);
   // College-reported data (specs/college-reported-data.md, Decision 5 of specs/college-reported-round-2.md): the
   // ingestion agent's published values, keyed by unit_id, merged the same way scripts/merge-reported.mts re-merges
   // them into the committed data/schools.json later (lib/reported-merge.ts), so the two can't disagree. Adds
@@ -981,6 +992,8 @@ async function main() {
   // One school per line keeps diffs readable between syncs.
   writeFileSync(OUT, `[\n${schools.map((s) => JSON.stringify(s)).join(",\n")}\n]\n`);
   writeDetails(join(ROOT, "data", "detail", "schools"), details);
+  // Short names for search (specs/school-identity/aliases.md), from this HD file's IALIAS column and the identity files.
+  writeAliasTable(ROOT, { schools, hdRows: hd.rows, wikidata: identity.wikidata });
   console.log(`  residence (EF${efc.year}C): ${schools.filter((s) => s.demographics.residence).length} colleges, ${details.length} detail files; DRVEF${efc.year} agrees for ${derived.checked - derived.differ.length} of ${derived.checked}`);
   console.log(`  field of study: ${programs.counts.size} colleges with bachelor's programs, ${schools.filter((s) => (s.academics?.programs_with_earnings ?? 0) > 0).length} with at least one earnings figure (${fos.url})`);
 
@@ -1011,8 +1024,16 @@ async function main() {
     for (const w of directoryWarnings.slice(0, 20)) console.warn(`    ${w}`);
     if (directoryWarnings.length > 20) console.warn(`    …and ${directoryWarnings.length - 20} more`);
   } else console.log(`  directory mismatches: 0`);
+  if (websiteWarnings.length) {
+    console.warn(`  website mismatches (HD vs. Scorecard, beyond scheme/www/slash): ${websiteWarnings.length}`);
+    for (const w of websiteWarnings.slice(0, 20)) console.warn(`    ${w}`);
+    if (websiteWarnings.length > 20) console.warn(`    …and ${websiteWarnings.length - 20} more`);
+  } else console.log(`  website mismatches (HD vs. Scorecard): 0`);
   console.log(`  skipped online-only:  ${stats.online}${INCLUDE_ONLINE ? "" : " (use --include-online to keep)"}`);
   console.log(`  skipped (no undergrads reported): ${stats.noSize}`);
+  // The site probe over what was just written (specs/school-identity/links.md): visit pages, social links, icons, link
+  // liveness; it writes data/site-probe.json and data/link-issues.json, then re-applies identity (mergeIdentity).
+  if (LINKS) await runSiteProbe(ROOT, { schools, hdRows: hd.rows });
 }
 
 main().catch((err) => {

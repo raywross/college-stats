@@ -1,9 +1,12 @@
 import Link from "next/link";
+import { Globe } from "lucide-react";
 import { DOMAINS } from "@/lib/metrics";
 import { typeLabel } from "@/lib/format";
+import { linkHost } from "@/lib/links";
 import { PROFILE_TOPICS, overviewHref, type TopicKey } from "@/lib/profile-topics";
 import type { Profile } from "@/lib/profile-data";
 import { Crest } from "@/components/school/Crest";
+import { crestBrand } from "@/lib/brand";
 import { CompareButton } from "@/components/compare/CompareButton";
 import { TopicPills, type TopicPill } from "./TopicPills";
 
@@ -30,7 +33,7 @@ export function CompactHeader({ profile, current }: { profile: Profile; current:
     >
       <div className="flex h-12 items-center gap-3">
         <Link href={overviewHref(school.unit_id)} className="group flex min-w-0 flex-1 items-center gap-2.5" aria-label={`${school.name} overview`}>
-          <Crest id={school.unit_id} name={school.name} size="sm" className="shrink-0" />
+          <Crest id={school.unit_id} name={school.name} size="sm" brand={crestBrand(school)} className="shrink-0" />
           <span className="min-w-0">
             <span className="block truncate font-display text-base leading-tight font-extrabold group-hover:text-primary sm:text-lg">{school.name}</span>
             <span className="block truncate text-[11px] leading-tight text-muted-foreground sm:text-xs">
@@ -38,6 +41,19 @@ export function CompactHeader({ profile, current }: { profile: Profile; current:
             </span>
           </span>
         </Link>
+        {/* One-tap way back to the college's own site from any topic page (specs/school-identity/links.md). */}
+        {school.links?.website && (
+          <a
+            href={school.links.website}
+            target="_blank"
+            rel="noopener"
+            title={linkHost(school.links.website)}
+            aria-label="Website"
+            className="inline-flex size-8 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-primary"
+          >
+            <Globe className="size-4" aria-hidden />
+          </a>
+        )}
         <CompareButton id={school.unit_id} variant="pill" />
       </div>
       <TopicPills unitId={school.unit_id} current={current} pills={pillsFor(profile)} className="flex h-11 items-center" />

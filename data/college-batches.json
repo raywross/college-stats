@@ -1,4 +1,21 @@
 {
-  "updated": null,
-  "batches": []
+  "updated": "2026-10-03T23:56:56.557Z",
+  "batches": [
+    {
+      "id": "msgbatch_01P1XD5xzUH9LLftF3Qyz6vn",
+      "phase": "picker",
+      "submitted": "2026-10-03T23:56:56.557Z",
+      "requests": 5,
+      "reserved_usd": 0.012712,
+      "custom_ids": [
+        "u164988-68d967ab-pick-v1",
+        "u215062-2c8e580b-pick-v1",
+        "u179867-1ff4d3bb-pick-v1",
+        "u110680-a41e7803-pick-v1",
+        "u104179-af7aa757-pick-v1"
+      ],
+      "run": "20261003-235404-3",
+      "model": "claude-haiku-4-5"
+    }
+  ]
 }

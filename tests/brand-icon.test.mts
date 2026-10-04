@@ -1,8 +1,8 @@
 /**
  * Marks (specs/school-identity/brand.md, Checks; scripts/lib/brand-icons.mts): which of the probe's icon candidates
- * comes first, what is decoded and how (ICO parsed here, its PNG and 32-bit BMP entries), what is rejected (under
- * 64 px, more than 10% from square, fully transparent, blank on the white tile), and what a run does with removals,
- * passing failures, and orphan files. Fixtures are made here with sharp. `npm test`.
+ * comes first, what is decoded and how (ICO parsed here: its PNG entries, and its 32-, 24-, 8-, 4-, and 1-bit BMP
+ * entries), what is rejected (under 64 px, more than 10% from square, fully transparent, blank on the white tile),
+ * and what a run does with removals, passing failures, and orphan files. Fixtures are made here with sharp. `npm test`.
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -43,6 +43,76 @@ function bmpEntry(width: number, height: number, pixel: (x: number, y: number) =
     }
   }
   return Buffer.concat([header, pixels, andMask]);
+}
+
+/** The 1-bit AND mask block for a BMP icon entry: bottom-up, each row padded to 4 bytes. */
+function andMaskBuf(width: number, height: number, mask?: (x: number, y: number) => boolean): Buffer {
+  const maskRow = Math.ceil(width / 32) * 4;
+  const buf = Buffer.alloc(maskRow * height);
+  if (mask) {
+    for (let row = 0; row < height; row++) {
+      const y = height - 1 - row; // bottom-up
+      for (let x = 0; x < width; x++) if (mask(x, y)) buf[row * maskRow + (x >> 3)] |= 0x80 >> (x & 7);
+    }
+  }
+  return buf;
+}
+
+/** A 24-bit BMP icon entry: BITMAPINFOHEADER, bottom-up BGR rows (no alpha channel), then the 1-bit AND mask. */
+function bmp24Entry(width: number, height: number, pixel: (x: number, y: number) => [number, number, number], mask?: (x: number, y: number) => boolean): Buffer {
+  const header = Buffer.alloc(40);
+  header.writeUInt32LE(40, 0);
+  header.writeInt32LE(width, 4);
+  header.writeInt32LE(height * 2, 8);
+  header.writeUInt16LE(1, 12);
+  header.writeUInt16LE(24, 14);
+  header.writeUInt32LE(0, 16); // BI_RGB
+  const rowBytes = Math.ceil((width * 24) / 32) * 4;
+  const pixels = Buffer.alloc(rowBytes * height);
+  for (let row = 0; row < height; row++) {
+    const y = height - 1 - row; // bottom-up
+    for (let x = 0; x < width; x++) {
+      const [r, g, b] = pixel(x, y);
+      pixels.set([b, g, r], row * rowBytes + x * 3);
+    }
+  }
+  return Buffer.concat([header, pixels, andMaskBuf(width, height, mask)]);
+}
+
+/**
+ * A 1-, 4-, or 8-bit palette BMP icon entry: BITMAPINFOHEADER, a BGRx palette (RGBQUAD, 4 bytes a color, the 4th
+ * unused), bottom-up rows of packed palette indexes (8, 2, or 1 pixels a byte), then the 1-bit AND mask.
+ */
+function paletteBmpEntry(
+  width: number,
+  height: number,
+  bpp: 1 | 4 | 8,
+  colors: [number, number, number][],
+  index: (x: number, y: number) => number,
+  mask?: (x: number, y: number) => boolean,
+): Buffer {
+  const header = Buffer.alloc(40);
+  header.writeUInt32LE(40, 0);
+  header.writeInt32LE(width, 4);
+  header.writeInt32LE(height * 2, 8);
+  header.writeUInt16LE(1, 12);
+  header.writeUInt16LE(bpp, 14);
+  header.writeUInt32LE(0, 16); // BI_RGB
+  header.writeUInt32LE(colors.length, 32); // biClrUsed
+  const palette = Buffer.alloc(colors.length * 4);
+  colors.forEach(([r, g, b], i) => palette.set([b, g, r, 0], i * 4));
+  const rowBytes = Math.ceil((width * bpp) / 32) * 4;
+  const pixels = Buffer.alloc(rowBytes * height);
+  for (let row = 0; row < height; row++) {
+    const y = height - 1 - row; // bottom-up
+    for (let x = 0; x < width; x++) {
+      const i = index(x, y);
+      if (bpp === 8) pixels[row * rowBytes + x] = i;
+      else if (bpp === 4) pixels[row * rowBytes + (x >> 1)] |= (i & 0x0f) << (x % 2 ? 0 : 4);
+      else if (i & 1) pixels[row * rowBytes + (x >> 3)] |= 0x80 >> (x & 7);
+    }
+  }
+  return Buffer.concat([header, palette, pixels, andMaskBuf(width, height, mask)]);
 }
 
 /** An ICO file from entries (the directory's 0 means 256). */
@@ -145,7 +215,7 @@ test("an ICO with several sizes gives its largest entry", async () => {
   assert.ok(data[2] > 60 && data[0] < 30, "the 128 px navy entry, not the green 48 px one");
 });
 
-test("32-bit BMP entries become RGBA top-down (alpha from the mask when the alpha bytes are all zero); other depths are skipped", async () => {
+test("32-bit BMP entries become RGBA top-down (alpha from the mask when the alpha bytes are all zero)", async () => {
   // Top half red, bottom half blue: rows must come out top-down.
   const entry = bmpEntry(64, 64, (_x, y) => (y < 32 ? [255, 0, 0, 255] : [0, 0, 255, 255]));
   const raw = bmpToRgba(entry)!;
@@ -160,12 +230,81 @@ test("32-bit BMP entries become RGBA top-down (alpha from the mask when the alph
   const masked = bmpToRgba(bmpEntry(64, 64, () => [10, 20, 30, 0], (x) => x < 32))!;
   assert.equal(masked.rgba[3], 0);
   assert.equal(masked.rgba[63 * 4 + 3], 255);
-  // A 24-bit entry isn't decoded.
-  const bmp24 = bmpEntry(64, 64, () => [1, 2, 3, 255]);
-  bmp24.writeUInt16LE(24, 14);
-  assert.equal(bmpToRgba(bmp24), null);
-  const only24 = await processIcon(ico([{ width: 64, height: 64, bpp: 24, data: bmp24 }]));
-  assert.deepEqual(only24.ok ? null : only24.reason, "undecodable");
+});
+
+test("16-bit and compressed BMP entries stay skipped", async () => {
+  // A 16-bit entry (bytes per pixel aside, the depth alone is enough to reject it).
+  const bmp16 = bmpEntry(64, 64, () => [1, 2, 3, 255]);
+  bmp16.writeUInt16LE(16, 14);
+  assert.equal(bmpToRgba(bmp16), null);
+  // A 32-bit entry declaring BI_BITFIELDS (3) instead of BI_RGB (0).
+  const compressed = bmpEntry(64, 64, () => [1, 2, 3, 255]);
+  compressed.writeUInt32LE(3, 16);
+  assert.equal(bmpToRgba(compressed), null);
+  const r = await processIcon(ico([{ width: 64, height: 64, bpp: 16, data: bmp16 }]));
+  assert.deepEqual(r.ok ? null : r.reason, "undecodable");
+});
+
+test("a 24-bit BMP entry becomes RGBA with no alpha channel of its own: transparency always comes from the AND mask", async () => {
+  // Navy everywhere, except an 8 px corner the AND mask marks transparent.
+  const entry = bmp24Entry(64, 64, () => [0, 43, 92], (x, y) => x < 8 && y < 8);
+  const raw = bmpToRgba(entry)!;
+  const at = (x: number, y: number) => [...raw.rgba.subarray((y * 64 + x) * 4, (y * 64 + x) * 4 + 4)];
+  assert.equal(raw.width, 64);
+  assert.equal(raw.height, 64);
+  assert.deepEqual(at(0, 0), [0, 43, 92, 0], "the masked corner: navy's color, but transparent");
+  assert.deepEqual(at(30, 30), [0, 43, 92, 255], "elsewhere: opaque");
+  const r = await processIcon(ico([{ width: 64, height: 64, bpp: 24, data: entry }]));
+  assert.ok(r.ok);
+  assert.equal(r.source.format, "ico/bmp24");
+});
+
+test("an 8-bit palette BMP entry reads its colors from the BGRx palette; transparency from the AND mask", async () => {
+  const colors: [number, number, number][] = [
+    [255, 255, 255], // 0: white
+    [186, 12, 47], // 1: crimson
+    [0, 43, 92], // 2: navy
+  ];
+  // Top half crimson (index 1), bottom half navy (index 2); an 8 px corner masked transparent.
+  const entry = paletteBmpEntry(64, 64, 8, colors, (_x, y) => (y < 32 ? 1 : 2), (x, y) => x >= 56 && y >= 56);
+  const raw = bmpToRgba(entry)!;
+  const at = (x: number, y: number) => [...raw.rgba.subarray((y * 64 + x) * 4, (y * 64 + x) * 4 + 4)];
+  assert.deepEqual(at(0, 0), [186, 12, 47, 255], "top half: crimson, top-down");
+  assert.deepEqual(at(0, 63), [0, 43, 92, 255], "bottom half: navy");
+  assert.deepEqual(at(60, 60), [0, 43, 92, 0], "the masked corner: navy's color, but transparent");
+  const r = await processIcon(ico([{ width: 64, height: 64, bpp: 8, data: entry }]));
+  assert.ok(r.ok);
+  assert.equal(r.source.format, "ico/bmp8");
+});
+
+test("4- and 1-bit palette BMP entries pack their indexes into nibbles and single bits; transparency from the AND mask", async () => {
+  // 4-bit: a 16-color palette, left half index 1, right half index 2, one pixel masked.
+  const colors4: [number, number, number][] = Array.from({ length: 16 }, (_, i) => [i * 16, 0, 0]);
+  const raw4 = bmpToRgba(paletteBmpEntry(16, 16, 4, colors4, (x) => (x < 8 ? 1 : 2), (x, y) => x === 0 && y === 0))!;
+  const at4 = (x: number, y: number) => [...raw4.rgba.subarray((y * 16 + x) * 4, (y * 16 + x) * 4 + 4)];
+  assert.deepEqual(at4(1, 5), [16, 0, 0, 255], "left half: index 1's color");
+  assert.deepEqual(at4(9, 5), [32, 0, 0, 255], "right half: index 2's color");
+  assert.deepEqual(at4(0, 0), [16, 0, 0, 0], "the masked pixel: index 1's color, but transparent");
+
+  // 1-bit: a black/white palette, a single white pixel at (3,2) on an otherwise black 8×8.
+  const raw1 = bmpToRgba(paletteBmpEntry(8, 8, 1, [[0, 0, 0], [255, 255, 255]], (x, y) => (x === 3 && y === 2 ? 1 : 0)))!;
+  const at1 = (x: number, y: number) => [...raw1.rgba.subarray((y * 8 + x) * 4, (y * 8 + x) * 4 + 4)];
+  assert.deepEqual(at1(3, 2), [255, 255, 255, 255]);
+  assert.deepEqual(at1(0, 0), [0, 0, 0, 255]);
+  assert.deepEqual(at1(7, 7), [0, 0, 0, 255], "the last pixel in its packed byte, read correctly");
+});
+
+test("an ICO with a 16 px 32-bit entry and a 64 px 8-bit entry gives the 64 px one", async () => {
+  const small = bmpEntry(16, 16, () => [255, 0, 0, 255]);
+  const big = paletteBmpEntry(64, 64, 8, [[0, 43, 92]], () => 0);
+  const r = await processIcon(
+    ico([
+      { width: 16, height: 16, bpp: 32, data: small },
+      { width: 64, height: 64, bpp: 8, data: big },
+    ]),
+  );
+  assert.ok(r.ok);
+  assert.deepEqual(r.source, { width: 64, height: 64, format: "ico/bmp8" });
 });
 
 test("fully transparent and blank-on-white icons are rejected; SVG is rasterized; HTML is not an image", async () => {

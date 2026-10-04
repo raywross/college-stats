@@ -52,10 +52,25 @@ export class PageFetcher {
   /** Refusals seen, for data/directories/blocked.json. */
   blocked: { url: string; reason: string }[] = [];
 
-  constructor(http: PoliteHttp, cacheDir: string, today: string) {
+  private unreachableHosts: ReadonlySet<string>;
+
+  /**
+   * `unreachableHosts`: filled by the PoliteHttp's log hook (see `httpLogHook`) with hosts that didn't answer, so a
+   * dead host isn't recorded as a robots.txt refusal.
+   */
+  constructor(http: PoliteHttp, cacheDir: string, today: string, unreachableHosts: ReadonlySet<string> = new Set()) {
     this.http = http;
     this.dir = cacheDir;
     this.today = today;
+    this.unreachableHosts = unreachableHosts;
+  }
+
+  private unreachable(url: string): boolean {
+    try {
+      return this.unreachableHosts.has(new URL(url).host);
+    } catch {
+      return false;
+    }
   }
 
   get(url: string): Promise<FetchResult> {
@@ -90,6 +105,9 @@ export class PageFetcher {
       return { ok: false, url, error: (err instanceof Error ? err.message : String(err)).slice(0, 160) };
     }
     if (!res) {
+      // PoliteHttp returns null both for a robots.txt refusal and for a host that never answered (no DNS, refused, or
+      // a 5xx for robots.txt); only the first is a block for the owner's list (decision 1), the second is a dead page.
+      if (this.unreachable(url)) return { ok: false, url, error: "host didn't answer" };
       this.blocked.push({ url, reason: "robots" });
       return { ok: false, url, blocked: "robots" };
     }
@@ -260,4 +278,16 @@ export function shortQuote(q: string, max = 160): string {
   if (s.length <= max) return s;
   const cut = s.slice(0, max - 1);
   return `${cut.slice(0, Math.max(cut.lastIndexOf(" "), max - 30)).trim()}…`;
+}
+
+/**
+ * A PoliteHttp log hook that records hosts that didn't answer (its "<host> didn't respond" and "<host> returned a
+ * server error for robots.txt" lines) into `hosts`, then passes every line on to `log`.
+ */
+export function httpLogHook(hosts: Set<string>, log: (m: string) => void = () => {}): (m: string) => void {
+  return (m) => {
+    const dead = /^\s*(\S+) didn't respond/.exec(m) ?? /^\s*(\S+) returned a server error for robots\.txt/.exec(m);
+    if (dead) hosts.add(dead[1]);
+    log(m);
+  };
 }

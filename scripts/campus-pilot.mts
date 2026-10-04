@@ -19,7 +19,7 @@ import type { School } from "../lib/types";
 import { directoryHttp } from "./lib/directories/context.mts";
 import { readBlocked, recordBlock, writeBlocked } from "./lib/directories/files.mts";
 import { Budget, PILOT_MODELS, type CollegeRef, type Ctx } from "./lib/campus-pilot/llm.mts";
-import { PageFetcher } from "./lib/campus-pilot/pages.mts";
+import { PageFetcher, httpLogHook } from "./lib/campus-pilot/pages.mts";
 import { runCollege, type CampusRecipe, type CollegeResult } from "./lib/campus-pilot/run.mts";
 import { PILOT_IDS, formatPagesFile, publishable, readPagesFile, type PagesFile } from "./lib/campus-pilot/files.mts";
 
@@ -56,8 +56,9 @@ async function main() {
   console.log(`campus-pilot ${run}: ${colleges.length} colleges; spent so far $${ledger.spent.toFixed(2)} of $${cap}`);
 
   const ctx: Ctx = { client: new Anthropic({ maxRetries: 2, timeout: 10 * 60 * 1000 }), budget };
-  const http = directoryHttp({ log: (m) => console.log(m) });
-  const fetcher = new PageFetcher(http, CACHE, today);
+  const deadHosts = new Set<string>();
+  const http = directoryHttp({ log: httpLogHook(deadHosts, (m) => console.log(m)) });
+  const fetcher = new PageFetcher(http, CACHE, today, deadHosts);
   const results: CollegeResult[] = [];
 
   const queue = [...colleges];

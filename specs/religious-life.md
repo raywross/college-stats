@@ -4,7 +4,8 @@
 > with NCES's own label, an Explore filter by faith family, a Compare row, a "Religious life" block in the profile's
 > Campus life section with the CDS answers we already read (C7, H14, F2), "Known for: Faith-centered" from C7, and
 > glossary entries. See [Phase 1 as built](#phase-1-as-built). Phases 2–4 (pilot, national directories, per-school
-> rollout) are still **planned**. Research 2026-09-28: Scorecard API probe, 2025–26 Common Data Sets, and a
+> rollout) are still **planned**; the phase 2 pilot pipeline is built (2026-10-04, branch
+> `feature/campus-life-2-pilot`), with its live run pending ([Phase 2 as built](#phase-2-as-built-pilot)). Research 2026-09-28: Scorecard API probe, 2025–26 Common Data Sets, and a
 > per-school deep dive on UT Austin. Findings are verified unless marked *unverified*. Companions:
 > [greek-life.md](greek-life.md), [lgbtq-life.md](lgbtq-life.md). Per-school collection shares the engine in
 > [college-reported-data.md](college-reported-data.md#campus-life-sources).
@@ -225,6 +226,42 @@ non-need), F2 campus ministries 8.
    religious affiliation".
 5. **Partial coverage:** the CDS facts never feed ranks, sorts, medians, Explore filters, or Compare rows beyond C7's
    existing one. The affiliation filter uses IPEDS only (all colleges).
+
+## Phase 2 as built (pilot)
+Built 2026-10-04 on the shared pilot engine ([college-reported-data.md](college-reported-data.md#campus-life-pilot-as-built-2026-10-04)).
+Per college: the faith/spiritual-life office or chaplaincy, the college's own list of faith communities, a
+college-published report of students' religious affiliation, and campus groups' own size claims.
+- **Stored:** the office (name, page, quote) and an official composition (labels with counts and/or shares as printed,
+  shares computed from a printed total, population, as of) in the `campus_pages` detail table; the composition only
+  after the second check confirms it (owner decision 3, extended to tier A religious figures). Groups the college's own
+  pages name become tier B listings in the `directories` table, by tradition; a group's own size claim becomes a tier C
+  listing with the fields of [What each estimate record needs](#what-each-estimate-record-needs) folded into its fact
+  ("2,750 Jewish undergraduates (2026)", "scope not stated" when the population isn't given) and quote.
+- **Shown:** "Religious life, from the college" (`components/school/CampusPages.tsx` `FaithFacts`): the office linked
+  and the composition as a two-column list, each with its ⓘ (page, date checked, quote). Tier B and C listings show in
+  the faith directory block with the college's page as their credit. Hidden when empty; facts older than two years hide.
+
+**Measured without a model (2026-10-04).** The pipeline's fetcher and page gathering were run on the answer key's own
+URLs (257 requests): every page the key could read, and whether the key's hand-copied quotes pass our quote check on
+the text we read. 274 of 289 quotes on readable pages passed (94.8%); every miss was in the key, not the check
+(bracketed completions such as "C[atholic faith]", a computed sum given as a quote, a home-page quote reused on
+sub-pages, a meta description). Average extraction input per college: Greek 30,900 characters (max 70,100), faith
+11,600, LGBTQ+ 20,800. For this domain: faith office pages 14 read of 14, the college's group lists 11 of 11, religion
+reports 3 of 3 (Baylor's IR PDF is readable although its HTML pages are behind Cloudflare). The key found an official
+composition at only 3 of 25 colleges (Baylor, Notre Dame, BYU) and no readable organization estimate (every Hillel
+College Guide page is behind Cloudflare).
+
+**Cost (estimates until the workflow run measures them).** Per college: discovery 3 Sonnet calls with up to 12
+searches, about $0.20–0.25 (searches $0.10 per 10); extraction about 21,600 Haiku input tokens and 3,600 output from the
+measured page sizes, $0.04; escalation (assumed one domain in three) $0.03; second checks $0.02. About $0.30–0.34 per
+college, $8 for the 25, $570–640 for ~1,890 colleges. Cheapest configuration to test next: free path probes before paid
+search, one discovery call for all three domains, and Message Batches for extraction and checks (half price): about
+$0.16–0.20 per college, $300–380 for a full run.
+
+**Worth scaling (pending the live run's precision):** the faith office and the college's group list at private and
+religious colleges (the richest lists: Georgetown, Vanderbilt, Grinnell, ASU's CORA, UCLA); the religion report only at
+the 685 affiliated colleges. **Not worth it per college:** organization estimates (blocked; ask Hillel for a data
+partnership instead) and Engage directories at large publics (robots and JavaScript).
 
 ## Phases
 1. **Affiliation for all colleges** (IPEDS). Cheap; ship first. **Built** 2026-10-03, with the CDS items already read

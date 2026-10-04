@@ -331,3 +331,22 @@ test("the fetcher never requests a Campus Labs Engage API path", async () => {
   assert.equal(r.ok, false);
   assert.equal(requested, 0);
 });
+
+test("a robots.txt refusal is a block for the owner's list; a dead host is not", async () => {
+  const { PageFetcher, httpLogHook } = await import("../scripts/lib/campus-pilot/pages.mts");
+  const { directoryHttp } = await import("../scripts/lib/directories/context.mts");
+  const fetch = (async (url: string) => {
+    if (url.startsWith("https://dead.example.edu")) throw new Error("getaddrinfo ENOTFOUND");
+    if (url.endsWith("/robots.txt")) return new Response("User-agent: *\nDisallow: /sfl/downloads/\n", { status: 200 });
+    return new Response("<p>ok</p>", { status: 200, headers: { "content-type": "text/html" } });
+  }) as typeof globalThis.fetch;
+  const dead = new Set<string>();
+  const http = directoryHttp({ fetch, sleep: async () => {}, log: httpLogHook(dead) });
+  const f = new PageFetcher(http, "/nonexistent-cache-dir", "2026-10-04", dead);
+  const refused = await f.get("https://studentlife.example.edu/sfl/downloads/2026SpringIFCSizeReport.pdf");
+  assert.equal(!refused.ok && refused.blocked, "robots");
+  const gone = await f.get("https://dead.example.edu/center/");
+  assert.equal(gone.ok, false);
+  assert.equal(!gone.ok && gone.blocked, undefined);
+  assert.deepEqual(f.blocked.map((b) => b.url), ["https://studentlife.example.edu/sfl/downloads/2026SpringIFCSizeReport.pdf"]);
+});

@@ -5,7 +5,8 @@
 > (`lib/cds/greek.ts`, display helpers in `lib/cds/greek-display.ts`), merged by `lib/reported-merge.ts` alongside the
 > other round-3 blocks. Shown on the profile's Campus life section (`components/school/GreekLife.tsx`), Compare's "All
 > the numbers", and an Explore filter. Phases 2–4 (FSL office crawl, pilot, scale, national directories) are still
-> planned. Research 2026-09-28: 2025–26 Common Data Sets and a per-school deep dive on UT Austin. Findings are
+> planned; the phase 2 pilot pipeline is built (2026-10-04, branch `feature/campus-life-2-pilot`), with its live run
+> pending ([Phase 2 as built](#phase-2-as-built-pilot)). Research 2026-09-28: 2025–26 Common Data Sets and a per-school deep dive on UT Austin. Findings are
 > verified unless marked *unverified*. Companions: [religious-life.md](religious-life.md) (its source tiers, crawl
 > strategy, and access rules apply here too) and [lgbtq-life.md](lgbtq-life.md) (LGBTQ+ Greek chapters). Per-school
 > collection shares the engine in [college-reported-data.md](college-reported-data.md#campus-life-sources).
@@ -151,6 +152,45 @@ school.greek = {
 - **Compare (built):** the two undergrad percentages and fraternity/sorority housing.
 - **"Known for" (not built):** "Big Greek life" waits for `KNOWN_FOR_MIN_REPORTERS` (50) colleges to report an
   undergrad percentage — 7 do in the current round-3 pilot.
+
+## Phase 2 as built (pilot)
+Built 2026-10-04 on the shared pilot engine ([college-reported-data.md](college-reported-data.md#campus-life-pilot-as-built-2026-10-04)).
+Per college: the FSL office page, its size, community, and grade reports (followed from the office page by rule, size
+reports first, newest first), and its recruitment page.
+- **Stored** in the `campus_pages` detail table (`lib/campus-pages.ts` `CampusGreek`): `none_stated` (only when the
+  college says it has no fraternities or sororities), `members_total` with its term, `councils[]` (council key from
+  `COUNCILS`, the college's name for it, chapters, members, term, each with its page and quote), `housing`
+  (chapter houses), `deferred` and `formal_term`. Counts are never summed by the model; a council's numbers are the
+  report's own total line.
+- **Shown** by `GreekCouncils` (`components/school/CampusPages.tsx`): members by council (chapters, members, the term),
+  the stated total, formal recruitment, deferred recruitment, chapter houses, each with its ⓘ. Members under 10 show as
+  "fewer than 10"; facts older than two years hide. For the fraternities track, which owns `GreekLife.tsx`: the data
+  function is `greekCouncils(rows, today)` in `lib/campus-pages.ts` (tested in `tests/campus-pilot.test.mts`), and the
+  subcomponent takes `bare` to render inside the Greek life card (`<GreekCouncils school={school} detail={detail} bare />`);
+  until it moves there, the students page renders it as its own card right after `<GreekLife>`.
+
+**Measured without a model (2026-10-04).** The pipeline's fetcher and page gathering were run on the answer key's own
+URLs (257 requests): every page the key could read, and whether the key's hand-copied quotes pass our quote check on
+the text we read. 274 of 289 quotes on readable pages passed (94.8%); every miss was in the key, not the check
+(bracketed completions such as "C[atholic faith]", a computed sum given as a quote, a home-page quote reused on
+sub-pages, a meta description). Average extraction input per college: Greek 30,900 characters (max 70,100), faith
+11,600, LGBTQ+ 20,800. For this domain: FSL office pages 18 read of 18, report files 15 of 21, recruitment pages 4 of 5,
+and 110 pages followed by rule. **UT Austin's size reports can't be read by any polite crawler:**
+`studentlife.utexas.edu/robots.txt` (where `deanofstudents.utexas.edu` redirects) has `Disallow: /sfl/downloads/`
+for every user agent, which covers all of them (recorded in `data/directories/blocked.json`). The case study's
+council table came from those files, so UT needs hand reading or a request to UT. The key has members by council at
+only 4 of the 13 colleges with Greek life, chapters by council at 11.
+
+**Cost (estimates until the workflow run measures them).** Per college: discovery 3 Sonnet calls with up to 12
+searches, about $0.20–0.25 (searches $0.10 per 10); extraction about 21,600 Haiku input tokens and 3,600 output from the
+measured page sizes, $0.04; escalation (assumed one domain in three) $0.03; second checks $0.02. About $0.30–0.34 per
+college, $8 for the 25, $570–640 for ~1,890 colleges. Cheapest configuration to test next: free path probes before paid
+search, one discovery call for all three domains, and Message Batches for extraction and checks (half price): about
+$0.16–0.20 per college, $300–380 for a full run.
+
+**Worth scaling (pending the live run's precision):** the FSL office page (status, councils, chapters, recruitment)
+at colleges with Greek life; report files where robots.txt allows them. **Not worth it:** grade reports (chapter GPAs
+are out of scope), and per-chapter detail (open question 2).
 
 ## Phases
 1. **CDS F1 and F4 — built 2026-10-03** (`lib/cds/greek.ts`), reading `data/cds-records/` (populated by `import-cds`

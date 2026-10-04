@@ -313,6 +313,14 @@
       "last_seen": "2026-10-04"
     },
     {
+      "org": "kappa-alpha-psi",
+      "url": "https://www.kappaalphapsi1911.com/find-a-chapter/",
+      "reason": "forbidden",
+      "detail": "https://www.kappaalphapsi1911.com/find-a-chapter/: blocked (forbidden): HTTP 403",
+      "first_seen": "2026-10-04",
+      "last_seen": "2026-10-04"
+    },
+    {
       "org": "kappa-kappa-gamma",
       "url": "https://www.kappakappagamma.org/stay-connected/mykappa/chapters-and-advisory-boards/",
       "reason": "login",

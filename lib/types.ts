@@ -1,7 +1,7 @@
 import type { FieldPath, VintageKey } from "./fields";
 import type { Direction, IndicatorKey } from "./indicators";
 import type { GenderBalance } from "./student-body";
-import type { DirectorySummary, PolicyCheck, Tradition } from "./directories";
+import type { Council, DirectorySummary, PolicyCheck, Tradition } from "./directories";
 
 export type SchoolType = "public" | "private-nonprofit" | "private-forprofit";
 
@@ -1576,6 +1576,8 @@ export interface SearchFilters {
   lgbtqCenter?: boolean;
   lgbtqHousing?: boolean;
   lgbtqNondiscrimination?: boolean;
+  /** National chapter directories (specs/campus-directories.md, specs/greek-life.md phase 4): has a listed chapter in any of these councils. */
+  greekCouncils?: Council[];
   sortBy?: SortKey;
   sortDir?: "asc" | "desc";
 }

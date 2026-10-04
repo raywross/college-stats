@@ -1199,6 +1199,51 @@ const entries = {
     why: "How big a part Greek organizations play varies enormously by college, from none to a majority of students, and the two sides (fraternities, sororities) can differ a lot at the same college.",
     category: "School types",
   },
+  // Greek life, phase 4: national chapter directories by council (specs/greek-life.md, specs/campus-directories.md).
+  npc: {
+    term: "Panhellenic (NPC)",
+    short: "The National Panhellenic Conference, the umbrella of 26 historically white sororities. A college's \"Panhellenic\" council is usually its NPC chapters.",
+    long: "NPC's own campus-level chapter data is kept behind a member login, so what's shown here (when shown) comes from each sorority's own public chapter list, credited by name.",
+    category: "Students & access",
+    related: ["greek-life", "national-directory"],
+  },
+  nic: {
+    term: "Interfraternity (IFC / NIC)",
+    short: "Most historically white fraternities belong to the North American Interfraternity Conference (NIC); a college's own Interfraternity Council (IFC) is usually its NIC chapters.",
+    long: "Like NPC, NIC's own campus-level chapter data is kept behind a member login; this site reads each fraternity's own public chapter list instead.",
+    category: "Students & access",
+    related: ["greek-life", "national-directory"],
+  },
+  nphc: {
+    term: "NPHC (the \"Divine Nine\")",
+    short: "The National Pan-Hellenic Council, the umbrella of nine historically Black fraternities and sororities, often called the Divine Nine.",
+    category: "Students & access",
+    related: ["greek-life", "national-directory"],
+  },
+  nalfo: {
+    term: "NALFO (Latino fraternities and sororities)",
+    short: "The National Association of Latino Fraternal Organizations, an umbrella of fraternities and sororities founded by and for Latino students.",
+    category: "Students & access",
+    related: ["greek-life", "national-directory"],
+  },
+  napa: {
+    term: "NAPA (Asian-interest fraternities and sororities)",
+    short: "The National APIDA Panhellenic Association, an umbrella of fraternities and sororities founded by and for Asian American and Pacific Islander Desi American students.",
+    category: "Students & access",
+    related: ["greek-life", "national-directory"],
+  },
+  nmgc: {
+    term: "NMGC (multicultural fraternities and sororities)",
+    short: "The National Multicultural Greek Council, an umbrella of fraternities and sororities founded around a shared multicultural or affinity identity other than NPC, NIC, NPHC, NALFO, or NAPA's.",
+    category: "Students & access",
+    related: ["greek-life", "national-directory"],
+  },
+  colony: {
+    term: "Colony",
+    short: "A group a national fraternity or sorority is building toward a full chapter, usually with fewer members and without a chapter's full voting rights yet. Chapter directories flag colonies separately from active chapters.",
+    category: "Students & access",
+    related: ["greek-life", "national-directory"],
+  },
   // Campus-life pilot (lib/campus-pages.ts): facts read from a college's own pages, each quoted and dated.
   "college-page-fact": {
     term: "From the college's own page",

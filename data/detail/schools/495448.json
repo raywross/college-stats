@@ -2,6 +2,7 @@
   "unit_id": "495448",
   "tables": {
     "home_states": {"source":"ipeds-ef-c","vintage":"ipeds-ef-c","year":"Fall 2024","rows":{"AZ":13}},
-    "majors": {"source":"ipeds-c","vintage":"ipeds-c","year":"2024–25 graduates","rows":{"51.3801":[101,0]}}
+    "majors": {"source":"ipeds-c","vintage":"ipeds-c","year":"2024–25 graduates","rows":{"51.3801":[101,0]}},
+    "directories": {"source":"directory","vintage":null,"year":"October 2026","rows":{"credits":{"pi-kappa-phi":{"organization":"Pi Kappa Phi","publisher":"Pi Kappa Phi","list_url":"https://www.pikapp.org/about/chapters/","read":"2026-10-04","tier":"D","domain":"greek","council":"nic"}},"listings":[{"org":"pi-kappa-phi","name":"Beta Theta (Pi Kappa Phi)"}]}}
   }
 }

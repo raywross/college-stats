@@ -16,6 +16,8 @@ import { DESIGNATION_LABELS, RESEARCH_LABELS, SETTING_GROUPS, isDesignation, isR
 import { DIVISION_LABELS, ROTC_LABELS, isDivisionFilter, isRotcBranch } from "@/lib/campus-services";
 import { conferenceName } from "@/lib/conferences";
 import { faithFamilyLabel, isFaithFilter } from "@/lib/religion";
+import { GREEK_COUNCIL_FILTERS } from "@/lib/cds/greek-display";
+import { isCouncil } from "@/lib/directories";
 import { isMajorFamily, majorFamilyName } from "@/lib/majors";
 import { typeLabel } from "@/lib/format";
 import { useExploreParams } from "./useExploreParams";
@@ -275,6 +277,8 @@ export function ActiveFilters() {
   if (searchParams.get("lgbtqHousing") === "1") chips.push({ key: "lgbtqHousing", label: "Gender-inclusive housing", onRemove: () => update({ lgbtqHousing: null }) });
   if (searchParams.get("lgbtqNondiscrimination") === "1")
     chips.push({ key: "lgbtqNondiscrimination", label: "Nondiscrimination covers gender identity", onRemove: () => update({ lgbtqNondiscrimination: null }) });
+  for (const c of getList("greekCouncils").filter(isCouncil))
+    chips.push({ key: `greek-${c}`, label: GREEK_COUNCIL_FILTERS.find((x) => x.key === c)!.label, onRemove: () => toggleInList("greekCouncils", c) });
 
   for (const d of getList("division").filter(isDivisionFilter))
     chips.push({ key: `div-${d}`, label: DIVISION_LABELS[d], onRemove: () => toggleInList("division", d) });

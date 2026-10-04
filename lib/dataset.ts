@@ -11,7 +11,7 @@ import { FACTOR_FILTERS } from "./factors";
 import { RESIDENCY_FILTERS } from "./cds/residency-display";
 import { hasHonorsProgram } from "./cds/academics-display";
 import { TRANSFER_FILTER } from "./cds/transfer-display";
-import { meetsGreekThreshold } from "./cds/greek-display";
+import { matchesGreekCouncils, meetsGreekThreshold } from "./cds/greek-display";
 import { LOGISTICS_FILTERS } from "./cds/application-logistics-display";
 import { hasLgbtqCenter, policyIsYes } from "./lgbtq-policy";
 import { matchesCampus } from "./campus-profile";
@@ -272,6 +272,8 @@ export function createDataset({ schools, meta, releaseCalendar }: DatasetFiles) 
     if (filters.lgbtqCenter) results = results.filter(hasLgbtqCenter);
     if (filters.lgbtqHousing) results = results.filter((s) => policyIsYes(s, "inclusive_housing"));
     if (filters.lgbtqNondiscrimination) results = results.filter((s) => policyIsYes(s, "nondiscrimination_identity"));
+    // Greek life, phase 4 (specs/campus-directories.md): has a chapter listed under any of these councils.
+    if (filters.greekCouncils?.length) results = results.filter((s) => matchesGreekCouncils(s, filters.greekCouncils!));
     if (filters.division || filters.conference !== undefined || filters.football || filters.rotc || filters.ugResearch || filters.studyAbroad)
       results = results.filter((s) => matchesServices(s, filters));
     // CDS financial aid: colleges without the college's own report never match.

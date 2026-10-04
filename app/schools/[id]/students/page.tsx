@@ -236,9 +236,8 @@ export default async function StudentsPage({ params }: Props) {
           <CampusServices school={school} recentMoves={recentMoves} />
           <ReligiousLife school={school} detail={detail} />
           <FaithFacts school={school} detail={detail} />
-          <GreekLife school={school} />
+          <GreekLife school={school} detail={detail} />
           <GreekCouncils school={school} detail={detail} />
-          <DirectoryListings detail={detail} domain="greek" />
           <LgbtqLife
             school={school}
             detail={detail}

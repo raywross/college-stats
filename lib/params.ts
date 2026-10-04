@@ -8,6 +8,7 @@ import { isMajorFamily } from "./majors.ts";
 import { isPolicyBucket } from "./test-policy.ts";
 import { isFaithFilter } from "./religion.ts";
 import { isTradition } from "./directories.ts";
+import { isCouncil } from "./directories.ts";
 
 /** Unique values, or undefined when none remain. */
 const uniq = <T,>(v: T[] | undefined): T[] | undefined => (v?.length ? [...new Set(v)] : undefined);
@@ -118,6 +119,8 @@ export function parseFilters(params: Params): SearchFilters {
     lgbtqCenter: str(params.lgbtqCenter) === "1" || undefined,
     lgbtqHousing: str(params.lgbtqHousing) === "1" || undefined,
     lgbtqNondiscrimination: str(params.lgbtqNondiscrimination) === "1" || undefined,
+    // Greek chapter directories (lib/directories.ts): council keys other than npc/nic; unknown keys are dropped.
+    greekCouncils: uniq(list(params.greekCouncils)?.filter(isCouncil)),
     sortBy: sortBy && SORT_KEYS.includes(sortBy) ? sortBy : "applicants",
     // Default direction: most-applied-to first; everything else ascending.
     sortDir: params.sortDir === "desc" || params.sortDir === "asc" ? params.sortDir : sortBy && sortBy !== "applicants" ? "asc" : "desc",
@@ -185,6 +188,7 @@ export const FILTER_KEYS = [
   "lgbtqCenter",
   "lgbtqHousing",
   "lgbtqNondiscrimination",
+  "greekCouncils",
   ...INDICATOR_KEYS.map((k) => INDICATORS[k].param),
 ] as const;
 

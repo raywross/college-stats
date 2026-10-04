@@ -429,6 +429,25 @@ export interface OrgLogo {
   license: string;
   /** Shown in the ⓘ: "© <Organization>" for the org's own logo, or Commons' required attribution. */
   attribution: string;
+  /**
+   * The trimmed logo's width/height (specs/campus-directories.md "Organizations"), measured once from the committed
+   * file so display can pick a wordmark-shaped tile (wide) vs. a mark/crest (square) instead of squashing every
+   * logo into one box. Optional: missing means the square tile (pre-2026-10-04 behavior).
+   */
+  aspect?: number;
+  /**
+   * "light" when the logo is light-on-transparent (white or pale artwork that disappears on a light tile) and needs
+   * a dark tile instead; omitted or "dark" for a logo that reads fine on light. Measured alongside `aspect`.
+   */
+  tone?: "light" | "dark";
+  /**
+   * Set only when no tile size makes the logo legible (e.g. a long wordmark that stays illegible even widened):
+   * display falls back to the Greek-letter badge instead of the image. `logo` itself stays populated (still used
+   * for the ⓘ credit) but the picture never renders.
+   */
+  logo_display?: "badge";
+  /** Required when `logo_display` is "badge": why the image doesn't render. */
+  logo_display_reason?: string;
 }
 
 export interface OrgEntry {
@@ -470,6 +489,10 @@ export function organizationProblems(key: string, o: OrgEntry, keys?: readonly s
     if (!isHttps(l.source)) out.push(`${what}: logo.source must be an https URL`);
     if (!(ALLOWED_LOGO_LICENSES as readonly string[]).includes(l.license)) out.push(`${what}: logo.license "${l.license}" isn't an allowed license`);
     if (!l.attribution) out.push(`${what}: logo needs an attribution`);
+    if (l.aspect !== undefined && !(typeof l.aspect === "number" && l.aspect > 0)) out.push(`${what}: logo.aspect must be a positive number`);
+    if (l.tone !== undefined && l.tone !== "light" && l.tone !== "dark") out.push(`${what}: logo.tone must be "light" or "dark"`);
+    if (l.logo_display !== undefined && l.logo_display !== "badge") out.push(`${what}: logo.logo_display must be "badge"`);
+    if (l.logo_display === "badge" && !l.logo_display_reason) out.push(`${what}: logo.logo_display "badge" needs logo_display_reason`);
   }
   return out;
 }

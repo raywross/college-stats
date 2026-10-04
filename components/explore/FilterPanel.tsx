@@ -110,13 +110,16 @@ function Chip({
   onClick,
   children,
   count,
+  term,
 }: {
   active: boolean;
   onClick: () => void;
   children: ReactNode;
   count?: number;
+  /** A glossary term explained by an (i) beside the chip (a tip is a button, so never inside this one). */
+  term?: TermKey;
 }) {
-  return (
+  const chip = (
     <button
       type="button"
       aria-pressed={active}
@@ -134,6 +137,13 @@ function Chip({
         <span className={cn("tabular-nums", active ? "text-background/70" : "text-muted-foreground")}>{count}</span>
       )}
     </button>
+  );
+  if (!term) return chip;
+  return (
+    <span className="inline-flex items-center gap-1">
+      {chip}
+      <InfoTip term={term} />
+    </span>
   );
 }
 
@@ -476,18 +486,29 @@ export function FilterPanel({ facets, onDone }: { facets: FilterFacets; onDone?:
 
       <Section title="LGBTQ+ campus life" term="national-directory">
         <div className="flex flex-wrap gap-1.5" role="group" aria-label="LGBTQ+ campus life">
-          <Chip active={searchParams.get("lgbtqCenter") === "1"} onClick={() => update({ lgbtqCenter: searchParams.get("lgbtqCenter") === "1" ? null : "1" })} count={facets.lgbtq.center}>
-            Has an LGBTQ+ center <InfoTip term="lgbtq-resource-center" />
+          <Chip
+            active={searchParams.get("lgbtqCenter") === "1"}
+            onClick={() => update({ lgbtqCenter: searchParams.get("lgbtqCenter") === "1" ? null : "1" })}
+            count={facets.lgbtq.center}
+            term="lgbtq-resource-center"
+          >
+            Has an LGBTQ+ center
           </Chip>
-          <Chip active={searchParams.get("lgbtqHousing") === "1"} onClick={() => update({ lgbtqHousing: searchParams.get("lgbtqHousing") === "1" ? null : "1" })} count={facets.lgbtq.housing}>
-            Gender-inclusive housing <InfoTip term="gender-inclusive-housing" />
+          <Chip
+            active={searchParams.get("lgbtqHousing") === "1"}
+            onClick={() => update({ lgbtqHousing: searchParams.get("lgbtqHousing") === "1" ? null : "1" })}
+            count={facets.lgbtq.housing}
+            term="gender-inclusive-housing"
+          >
+            Gender-inclusive housing
           </Chip>
           <Chip
             active={searchParams.get("lgbtqNondiscrimination") === "1"}
             onClick={() => update({ lgbtqNondiscrimination: searchParams.get("lgbtqNondiscrimination") === "1" ? null : "1" })}
             count={facets.lgbtq.nondiscrimination}
+            term="nondiscrimination-policy"
           >
-            Nondiscrimination covers gender identity <InfoTip term="nondiscrimination-policy" />
+            Nondiscrimination covers gender identity
           </Chip>
         </div>
         <p className="text-[11px] text-muted-foreground">

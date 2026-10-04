@@ -58,7 +58,8 @@ test("links between roadmap specs stay on the site; other repo links go to GitHu
   // Built specs leave the roadmap, so links to them go to GitHub.
   assert.equal(resolveHref("majors.md", from), "https://github.com/raywross/college-stats/blob/main/specs/data-expansion/majors.md");
   assert.equal(resolveHref("README.md", from), "/roadmap/data-expansion");
-  assert.equal(resolveHref("../religious-life.md", from), "/roadmap/religious-life");
+  assert.equal(resolveHref("../campus-pilot-accuracy.md", from), "/roadmap/campus-pilot-accuracy");
+  assert.equal(resolveHref("../religious-life.md", from), "https://github.com/raywross/college-stats/blob/main/specs/religious-life.md");
   assert.equal(
     resolveHref("../trends-data.md#storage", from),
     "https://github.com/raywross/college-stats/blob/main/specs/trends-data.md#storage",

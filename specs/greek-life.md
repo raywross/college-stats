@@ -1,6 +1,6 @@
 # Greek Life
 
-> Status: **planned**, with **phase 1 built** 2026-10-03 (branch `feature/campus-life`, part of the Campus life
+> Status: **built** 2026-10-04: everything this spec could build now is live (#72, #73, #75, #76). The per-college rollout continues in [campus-pilot-accuracy.md](campus-pilot-accuracy.md) and the sources we couldn't read in [campus-sources-later.md](campus-sources-later.md), both on the roadmap under Later. History: **phase 1 built** 2026-10-03 (branch `feature/campus-life`, part of the Campus life
 > roadmap group), **phase 4 (national chapter directories) built** 2026-10-04 (branch
 > `feature/campus-life-2-fraternities`, fraternities/NALFO/NPHC side; the parallel `feature/campus-life-2-sororities`
 > branch did the 26 NPC sororities), and the **phase 2/3 pilot pipeline built** 2026-10-04 (branch

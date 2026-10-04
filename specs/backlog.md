@@ -88,21 +88,18 @@ published at `/roadmap` ([roadmap.md](roadmap.md)): add each new one to `lib/roa
   - [ ] Update the 8 hand-imported CDS overrides to their 2025–26 editions (`npm run import-cds`), or retire them
     now that the agent reads CDS files.
 - [ ] **Campus life rollout** ([campus-directories.md](campus-directories.md); religious, Greek, and LGBTQ+ life).
-  Built: phase 1 (`feature/campus-life`, #72); national directories, state laws, and the 25-college pilot
-  (`feature/campus-life-2`). Open:
-  - [ ] Improve the per-college pilot before any full run (measured $0.61/college, ~$1,150 for all; discovery is
-    95% of the cost and finds the right page too rarely): free path probes and the college's own site search before
-    paid web search, one discovery call for all three domains, tighter Greek recruitment/housing/membership
-    extraction. Re-run the 25 and re-score; lift `HELD_BACK` entries only with a passing score. Full run needs the
-    owner's go-ahead.
+  Built: phase 1 (#72); national directories, state laws, organization logos, and the redesign (#73); the
+  college-page pilot over 75 colleges in three scored rounds (#73, #75, #76; $0.16 a college by round 3). Open:
+  - [ ] Accuracy fixes before a full run (nondiscrimination policies, LGBTQ+ centers, membership tables, faith
+    offices, recall), a re-score, then one full run of about $300: [campus-pilot-accuracy.md](campus-pilot-accuracy.md).
+    Full run needs the owner's go-ahead.
   - [ ] Sources we couldn't read — hand reading, directories that only render in a browser, and data partnerships to
     ask for — are collected in [campus-sources-later.md](campus-sources-later.md), one source at a time with what
     it would give and a candidate fix.
   - [ ] Unmatched directory entries in `data/directories/unmatched/` (Tri Delta's short names especially): review by hand
     into `matches.json`.
-  - [ ] State laws: owner's call on Ohio SB 1, Tennessee Pub. Ch. 458, and North Carolina S.L. 2026-21 (general DEI
-    bans that don't name LGBTQ+ programs); hand-read Indiana SEA 289; re-check after each legislative session and the
-    Mississippi and New Hampshire injunctions.
+  - [ ] State laws (nine states built, Ohio, Tennessee, and North Carolina as general DEI bans): hand-read Indiana
+    SEA 289; re-check after each legislative session and the Mississippi and New Hampshire injunctions.
 - [ ] **Watch ACTS** (IPEDS admissions supplement): adopt if NCES publishes institution-level files. See
   [data-page.md](data-page.md#watching-acts).
 - [ ] **Scheduled data refresh** (`chore/scheduled-data-sync`): monthly GitHub Action runs `npm run sync-all`

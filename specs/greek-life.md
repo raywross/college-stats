@@ -87,6 +87,9 @@ extraction.
    (not just Greek ones), and each college posts its own format.
 
 ## Scaling
+> National chapter directories use the shared infrastructure in [campus-directories.md](campus-directories.md): one
+> adapter file per organization, classified by council.
+
 - **Presence first.** NPC sororities are on "more than 670 campuses," so many of our 1,893 colleges likely have no
   Greek life. A cheap pass (CDS F1 = 0 or blank, no FSL office found, no tier D chapters) marks "none found" so the
   expensive steps run only where Greek life exists. Show "none found," not "none," unless the college states it (e.g.

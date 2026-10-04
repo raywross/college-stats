@@ -18,6 +18,7 @@ import { detailFileProblems, readDetails } from "./lib/publish-details.mts";
 import { validateCdsRecords } from "../lib/cds-records.ts";
 import { CDS_TEMPLATE } from "../lib/cds-template.ts";
 import { readManifest, readRecords } from "./lib/college-reported/records.mts";
+import { orphanSummaries } from "./lib/directories/merge.mts";
 
 const ROOT = join(import.meta.dirname, "..");
 const schools: School[] = JSON.parse(readFileSync(join(ROOT, "data", "schools.json"), "utf8"));
@@ -43,6 +44,8 @@ if (existsSync(join(HISTORY, "meta.json"))) {
 // Per-college detail files (lib/detail.ts): valid tables, cited like the registry says, consistent with the snapshot.
 const details = readDetails(ROOT);
 if (details) problems.push(...detailFileProblems(details, schools, meta));
+// National directories (specs/campus-directories.md): a summary with no credited listings behind it.
+problems.push(...orphanSummaries(schools, details ?? []));
 
 // CDS records (specs/college-reported-round-3.md, Decision 2): every passed value located and quoted, every document
 // in the manifest, a year for every item group, a known schema or reader version.

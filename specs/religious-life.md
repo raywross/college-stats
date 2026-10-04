@@ -118,6 +118,9 @@ before it's hidden (proposal: 3 years).
 5. **Community size estimates** (tier C): Hillel's Jewish-student estimate and other group-reported sizes, with date.
 
 ## Scaling: turn the crawl around
+> The shared infrastructure for national directories (adapter contract, crawler, matcher, merge, credited display) is
+> built: [campus-directories.md](campus-directories.md). Each directory below is one adapter file.
+
 Crawling 10–20 sites for each of 1,893 colleges is ~30,000 sources. Most can be replaced with one read per national
 directory:
 - **National directories (tier D): one adapter each, covering every campus.** ~15 directories × one crawl yields

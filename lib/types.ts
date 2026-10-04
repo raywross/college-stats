@@ -1,6 +1,7 @@
 import type { FieldPath, VintageKey } from "./fields";
 import type { Direction, IndicatorKey } from "./indicators";
 import type { GenderBalance } from "./student-body";
+import type { DirectorySummary } from "./directories";
 
 export type SchoolType = "public" | "private-nonprofit" | "private-forprofit";
 
@@ -280,6 +281,12 @@ export interface School {
    * a "Known for" chip.
    */
   lgbtq?: LgbtqLife | null;
+  /**
+   * Which groups national directories list at this college, per domain (specs/campus-directories.md; lib/directories.ts
+   * `summarize`): tradition, council, or LGBTQ+ kind/policy keys. The listings themselves, each credited to its
+   * organization, live in the college's detail file (`directories` table). Absent when no directory lists the college.
+   */
+  directories?: DirectorySummary | null;
   campus?: {
     /** Athletics (IPEDS IC; lib/campus-services.ts). Null when the college didn't answer. */
     athletics?: Athletics | null;
@@ -1375,7 +1382,16 @@ export type SourceKey = "scorecard" | "ipeds-adm" | "ipeds-sfa" | "ipeds-ic" | "
   /** College Scorecard Field of Study bulk CSV: earnings and debt by 4-digit CIP (specs/data-expansion/field-of-study.md). */
   | "scorecard-fos"
   /** State statutes that apply to public colleges, read by hand (data/state-laws.json; specs/lgbtq-life.md). */
-  | "state-law";
+  | "state-law"
+  /**
+   * National and official directories of campus chapters and groups (tiers B and D; specs/campus-directories.md).
+   * Each listing names its organization, list URL, and the date read in the `directories` detail table's credits.
+   */
+  | "directory"
+  /** An organization's estimate for one campus (tier C, e.g. Hillel's Jewish-student count), credited and dated. */
+  | "org-estimate"
+  /** A college's own policy page, checked on a date with a quote (tier A; lgbtq-life.md policies, `PolicyCheck`). */
+  | "policy-page";
 /** Race/ethnicity groups for graduation rates (lib/graduation-groups.ts RACE_GROUPS). */
 export type GradRaceGroup = "white" | "asian" | "hispanic" | "black" | "two_or_more" | "international" | "aian" | "nhpi";
 

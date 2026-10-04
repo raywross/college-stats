@@ -43,7 +43,14 @@ async function main() {
   const problems = Object.entries(overrides).flatMap(([id, o]) => (id.startsWith("_") ? [] : overrideProblems(id, o)));
   if (problems.length) throw new Error(`data/brand-overrides.json:\n  ${problems.join("\n  ")}`);
 
-  if (doColors) {
+  // Without a step named, a step whose input file isn't there yet is skipped with a note; named, it fails.
+  const ready = (step: string, file: string, named: boolean, run: string) => {
+    if (existsSync(join(ROOT, "data", file)) || named) return true;
+    console.log(`${step}: skipped, data/${file} isn't there yet (${run})`);
+    return false;
+  };
+
+  if (doColors && ready("Colors", "wikidata.json", onlyColors || !!value("--wikidata"), "npm run sync-wikidata")) {
     console.log("Colors: Wikipedia's college color data and each article's infobox");
     const run = await syncBrandColors(ROOT, { ids, refresh: flag("--refresh"), wikidataPath: value("--wikidata") });
     const via: Record<string, number> = {};
@@ -53,7 +60,7 @@ async function main() {
     console.log(`  none: ${Object.entries(run.misses).map(([k, n]) => `${k} ${n}`).join(", ") || "-"}`);
   }
 
-  if (doIcons) {
+  if (doIcons && ready("Marks", "site-probe.json", onlyIcons, "npm run probe-sites")) {
     console.log("Marks: each college's own site icon");
     const run = await syncBrandIcons(ROOT, { ids });
     const stored = run.outcomes.filter((o) => o.status === "stored");

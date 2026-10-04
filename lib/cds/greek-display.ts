@@ -12,6 +12,7 @@
  */
 import type { ReportedGreek, School } from "../types";
 import { pctSmart } from "../format.ts";
+import { COUNCILS, type Council } from "../directories.ts";
 
 /** "Known for: Big Greek life" waits for at least this many colleges to report an undergrad percentage (spec Open questions). */
 export const KNOWN_FOR_MIN_REPORTERS = 50;
@@ -100,3 +101,54 @@ export function meetsGreekThreshold(s: Pick<School, "reported">, min: number): b
 }
 
 export const GREEK_FILTER_LABEL = "Fraternity or sorority participation";
+
+/* ------------------------------------------------------------------ */
+/* Phase 4: national chapter directories, by council                   */
+/* (specs/greek-life.md phase 4, specs/campus-directories.md)           */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Explore's "has NPHC / Latino / Asian / multicultural / LGBTQ+ Greek chapters" filters: the councils besides NPC
+ * (sororities, built by the parallel sorority track) and NIC (fraternities) that a national directory can show
+ * even when the college's CDS says nothing, because most historically Black, Latino, Asian, multicultural, and
+ * LGBTQ+ organizations aren't in the CDS F1 participation percentage at all.
+ */
+export const GREEK_COUNCIL_FILTERS: readonly { key: Council; label: string }[] = [
+  { key: "nphc", label: COUNCILS.nphc },
+  { key: "nalfo", label: COUNCILS.nalfo },
+  { key: "napa", label: COUNCILS.napa },
+  { key: "nmgc", label: COUNCILS.nmgc },
+  { key: "lgbtq", label: COUNCILS.lgbtq },
+];
+
+/** Whether a directory lists the college under this council (`school.directories.greek`, the summary for filters). */
+export function hasGreekCouncil(s: Pick<School, "directories">, council: Council): boolean {
+  return !!s.directories?.greek?.includes(council);
+}
+
+/** Explore's filter: the college has a listed chapter in any of the wanted councils. */
+export function matchesGreekCouncils(s: Pick<School, "directories">, wanted: readonly Council[]): boolean {
+  return wanted.some((c) => hasGreekCouncil(s, c));
+}
+
+/** Compare's "Greek councils present": every council a directory or the CDS supports, in COUNCILS' order. */
+export function compareGreekCouncils(s: Pick<School, "directories">): string | null {
+  const present = s.directories?.greek;
+  if (!present?.length) return null;
+  const order = Object.keys(COUNCILS) as Council[];
+  return order
+    .filter((c) => present.includes(c))
+    .map((c) => COUNCILS[c])
+    .join(", ");
+}
+
+/**
+ * CDS F1's two undergrad percentages are both unreported, 0, or absent — the condition for showing "none found"
+ * instead of the usual benchmark bars (spec: "none found" vs. "none reported"; never add the two).
+ */
+export function greekParticipationBlankOrZero(s: Pick<School, "reported">): boolean {
+  const g = s.reported?.greek;
+  const frat = g?.frat_pct_undergrad ?? null;
+  const sor = g?.sor_pct_undergrad ?? null;
+  return (frat === null || frat === 0) && (sor === null || sor === 0);
+}

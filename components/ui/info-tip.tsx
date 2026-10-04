@@ -59,6 +59,16 @@ function formatReplaced(cited: Cited): string {
   return /(acceptance_rate|_share|retention_rate|grad_rate_)/.test(cited.path) ? pctSmart(value) : num(value);
 }
 
+/** "Wikimedia Commons" for a Commons file page, else the site's host ("sigep.org"). */
+function imageHost(url: string): string {
+  try {
+    const host = new URL(url).hostname.replace(/^www\./, "");
+    return /(^|\.)wikimedia\.org$/.test(host) ? "Wikimedia Commons" : host;
+  } catch {
+    return "its source";
+  }
+}
+
 /** Where a value came from: source, year, method, formula, inputs, and what it replaced, if anything. */
 function SourceBlock({ cited }: { cited: Cited }) {
   const inputs = cited.inputs ?? [];
@@ -68,7 +78,14 @@ function SourceBlock({ cited }: { cited: Cited }) {
       <p className="flex items-center gap-1 text-[10px] font-bold tracking-[0.14em] text-foreground/70 uppercase">
         <BookMarked className="size-3" aria-hidden /> Source
       </p>
-      {cited.method === "derived" && inputs.length > 0 && !(isCollegeSite && cited.sourceKind) ? (
+      {cited.directory ? (
+        // Someone else's list (owner decision 4, specs/campus-directories.md): credited by name, dated, linked, labeled.
+        <p>
+          Listed by {cited.directory.organization}
+          {cited.publisher !== cited.directory.organization && `, published by ${cited.publisher}`} in <SourceLinkBare s={{ ...cited, label: "its list" }} />, read{" "}
+          {cited.retrieved}. This is {cited.directory.phrase}.
+        </p>
+      ) : cited.method === "derived" && inputs.length > 0 && !(isCollegeSite && cited.sourceKind) ? (
         <p>
           Calculated: {cited.formula}. From{" "}
           {inputs.map((s, i) => (
@@ -91,6 +108,12 @@ function SourceBlock({ cited }: { cited: Cited }) {
         </p>
       )}
       {cited.quote && <blockquote className="border-l-2 pl-2 italic">“{cited.quote}”</blockquote>}
+      {cited.image && (
+        <p className="text-[11px]">
+          {cited.image.what}: {cited.image.attribution}, {cited.image.license}, via{" "}
+          <SourceLinkBare s={{ ...cited, label: imageHost(cited.image.source), url: cited.image.source }} />.
+        </p>
+      )}
       {isCollegeSite && (
         <p>
           <SourceLinkBare s={cited} />
@@ -102,7 +125,7 @@ function SourceBlock({ cited }: { cited: Cited }) {
           {cited.replaces.label ?? "Federal data"}, {cited.replaces.year?.replace(/^Entered\b/, "entered") ?? "most recent release"}: {cited.replaces.display ?? formatReplaced(cited)}
         </p>
       )}
-      <p className="text-[11px]">Retrieved {cited.retrieved}</p>
+      {!cited.directory && <p className="text-[11px]">Retrieved {cited.retrieved}</p>}
     </div>
   );
 }

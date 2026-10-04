@@ -3,6 +3,7 @@
   "tables": {
     "home_states": {"source":"ipeds-ef-c","vintage":"ipeds-ef-c","year":"Fall 2024","rows":{"CA":2}},
     "majors": {"source":"ipeds-c","vintage":"ipeds-c","year":"2024–25 graduates","rows":{"50.0408":[16,0]}},
-    "programs": {"source":"scorecard-fos","vintage":"scorecard-fos","year":null,"rows":{"50.04":{"title":"Design and Applied Arts","graduates":42,"earnings":{"y1":34589,"y4":null,"y4_national":51490,"y4_pell":null,"y4_non_pell":null},"debt_median":44191}}}
+    "programs": {"source":"scorecard-fos","vintage":"scorecard-fos","year":null,"rows":{"50.04":{"title":"Design and Applied Arts","graduates":42,"earnings":{"y1":34589,"y4":null,"y4_national":51490,"y4_pell":null,"y4_non_pell":null},"debt_median":44191}}},
+    "directories": {"source":"directory","vintage":null,"year":"October 2026","rows":{"credits":{"tpc-nondiscrimination":{"organization":"Trans Policy Clearinghouse","publisher":"Dr. Genny Beemyn","list_url":"https://www.gennyb.com/research/trans-supportive-campus-policies/nondiscrimination-policies","read":"2026-10-04","tier":"D","domain":"lgbtq","kind":"policy","policy":"nondiscrimination_identity"}},"listings":[{"org":"tpc-nondiscrimination"}]}}
   }
 }

@@ -87,19 +87,22 @@ published at `/roadmap` ([roadmap.md](roadmap.md)): add each new one to `lib/roa
   - [ ] Check Duke (61,935 vs 61,395 applicants) and Stanford (enrolled 1,866 vs 1,839) against their sources.
   - [ ] Update the 8 hand-imported CDS overrides to their 2025–26 editions (`npm run import-cds`), or retire them
     now that the agent reads CDS files.
-- [ ] **Religious life** ([religious-life.md](religious-life.md)). Phase 1 built (`feature/campus-life`): IPEDS
-  affiliation for all colleges (685 of 1,893) in ten families with an Explore filter and a Compare row, plus CDS C7,
-  H14, and F2 where a record has them. Next: a 25-college pilot of per-school sources (IR reports, org directories,
-  Hillel), national faith-org directories, and partnership requests (Hillel, Chabad, Anthology).
-- [ ] **Greek life** ([greek-life.md](greek-life.md)). Phase 1 built (`feature/campus-life`): CDS F1/F4 from the
-  round-3 records, with an Explore filter and Compare rows; "Known for" waits for 50 reporting colleges. Next: the
-  same pilot for fraternity & sorority life office reports (members by council, recruitment), checked against F1.
-- [ ] **LGBTQ+ life** ([lgbtq-life.md](lgbtq-life.md)). Phase 1 built (`feature/campus-life`): IPEDS "another
-  gender" counts (fall 2024 is the last year: NCES dropped the item from the 2025–26 surveys) with the
-  not-collected / withheld / reported distinction, and the Texas SB 17 line on Texas public colleges. Next: the other
-  reported states' statutes, Trans Policy Clearinghouse and campus-center leads matched to colleges, permission
-  requests (Beemyn, Consortium, oSTEM), and a 25-college pilot verifying policies on each college's own pages, with
-  human review of conduct-code findings.
+- [ ] **Campus life rollout** ([campus-directories.md](campus-directories.md); religious, Greek, and LGBTQ+ life).
+  Built: phase 1 (`feature/campus-life`, #72); national directories, state laws, and the 25-college pilot
+  (`feature/campus-life-2`). Open:
+  - [ ] Improve the per-college pilot before any full run (measured $0.61/college, ~$1,150 for all; discovery is
+    95% of the cost and finds the right page too rarely): free path probes and the college's own site search before
+    paid web search, one discovery call for all three domains, tighter Greek recruitment/housing/membership
+    extraction. Re-run the 25 and re-score; lift `HELD_BACK` entries only with a passing score. Full run needs the
+    owner's go-ahead.
+  - [ ] Sources we couldn't read — hand reading, directories that only render in a browser, and data partnerships to
+    ask for — are collected in [campus-sources-later.md](campus-sources-later.md), one source at a time with what
+    it would give and a candidate fix.
+  - [ ] Unmatched directory entries in `data/directories/unmatched/` (Tri Delta's short names especially): review by hand
+    into `matches.json`.
+  - [ ] State laws: owner's call on Ohio SB 1, Tennessee Pub. Ch. 458, and North Carolina S.L. 2026-21 (general DEI
+    bans that don't name LGBTQ+ programs); hand-read Indiana SEA 289; re-check after each legislative session and the
+    Mississippi and New Hampshire injunctions.
 - [ ] **Watch ACTS** (IPEDS admissions supplement): adopt if NCES publishes institution-level files. See
   [data-page.md](data-page.md#watching-acts).
 - [ ] **Scheduled data refresh** (`chore/scheduled-data-sync`): monthly GitHub Action runs `npm run sync-all`

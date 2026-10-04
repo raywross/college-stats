@@ -1,6 +1,7 @@
 import type { FieldPath, VintageKey } from "./fields";
 import type { Direction, IndicatorKey } from "./indicators";
 import type { GenderBalance } from "./student-body";
+import type { Council, DirectorySummary, PolicyCheck, Tradition } from "./directories";
 
 export type SchoolType = "public" | "private-nonprofit" | "private-forprofit";
 
@@ -280,6 +281,12 @@ export interface School {
    * a "Known for" chip.
    */
   lgbtq?: LgbtqLife | null;
+  /**
+   * Which groups national directories list at this college, per domain (specs/campus-directories.md; lib/directories.ts
+   * `summarize`): tradition, council, or LGBTQ+ kind/policy keys. The listings themselves, each credited to its
+   * organization, live in the college's detail file (`directories` table). Absent when no directory lists the college.
+   */
+  directories?: DirectorySummary | null;
   campus?: {
     /** Athletics (IPEDS IC; lib/campus-services.ts). Null when the college didn't answer. */
     athletics?: Athletics | null;
@@ -1149,6 +1156,12 @@ export interface ReligiousAffiliation {
 export interface SchoolReligion {
   /** Null: IPEDS "not applicable", the college has no religious affiliation. */
   affiliation: ReligiousAffiliation | null;
+  /**
+   * Phase 3 (specs/religious-life.md#measures item 2; specs/campus-directories.md): true when the CCCU's own
+   * member-school list names this college a full (voting) member. A membership fact, not a campus chapter: never
+   * shown in the "Faith communities" list, only feeds "Known for: Faith-centered" alongside C7. Absent, never false.
+   */
+  cccu_member?: true;
 }
 /** The faith families the Explore filter groups IPEDS's ~60 affiliations into (lib/religion.ts RELAFFIL_FAMILY). */
 export type FaithFilter = FaithFamily | "none";
@@ -1269,6 +1282,14 @@ export interface LgbtqLife {
   /** Null when the college isn't in the admissions file (open admission) or the file has no such columns. */
   admissions: GenderAdmissions | null;
   state_law: StateLaw | null;
+  /**
+   * Tier A policy facts from the college's own pages (lgbtq-life.md "Inclusive policies"; built by the pilot track,
+   * specs/lgbtq-life.md phase 4). Absent until then. For a key also carried by a national directory's tier D lead
+   * (`school.directories.lgbtq`, specs/campus-directories.md), the tier A fact here takes precedence in the profile's
+   * policy checklist (lib/lgbtq-policy.ts `policyChecklist`): the directory lead never shows once the college's own
+   * page has been checked for that key, even when the tier A answer is "no".
+   */
+  policies?: PolicyCheck[] | null;
 }
 
 /** New transfer-in undergraduates in one fall (IPEDS EF{Y}A levels 19, 39, 59; lib/transfers.ts). */
@@ -1375,7 +1396,16 @@ export type SourceKey = "scorecard" | "ipeds-adm" | "ipeds-sfa" | "ipeds-ic" | "
   /** College Scorecard Field of Study bulk CSV: earnings and debt by 4-digit CIP (specs/data-expansion/field-of-study.md). */
   | "scorecard-fos"
   /** State statutes that apply to public colleges, read by hand (data/state-laws.json; specs/lgbtq-life.md). */
-  | "state-law";
+  | "state-law"
+  /**
+   * National and official directories of campus chapters and groups (tiers B and D; specs/campus-directories.md).
+   * Each listing names its organization, list URL, and the date read in the `directories` detail table's credits.
+   */
+  | "directory"
+  /** An organization's estimate for one campus (tier C, e.g. Hillel's Jewish-student count), credited and dated. */
+  | "org-estimate"
+  /** A college's own policy page, checked on a date with a quote (tier A; lgbtq-life.md policies, `PolicyCheck`). */
+  | "policy-page";
 /** Race/ethnicity groups for graduation rates (lib/graduation-groups.ts RACE_GROUPS). */
 export type GradRaceGroup = "white" | "asian" | "hispanic" | "black" | "two_or_more" | "international" | "aian" | "nhpi";
 
@@ -1537,6 +1567,17 @@ export interface SearchFilters {
   gapYear?: boolean;
   /** Religious affiliation (lib/religion.ts): faith families, or "none" for colleges with no affiliation. */
   faith?: FaithFilter[];
+  /** Has a named community of this tradition, from national directories (specs/campus-directories.md; lib/directories.ts `school.directories.faith`). */
+  faithGroup?: Tradition[];
+  /**
+   * LGBTQ+ policy facts only, never the gender-identity counts (lib/lgbtq-policy.ts; specs/lgbtq-life.md "Where it
+   * appears"): a listed center, gender-inclusive housing, nondiscrimination covering gender identity.
+   */
+  lgbtqCenter?: boolean;
+  lgbtqHousing?: boolean;
+  lgbtqNondiscrimination?: boolean;
+  /** National chapter directories (specs/campus-directories.md, specs/greek-life.md phase 4): has a listed chapter in any of these councils. */
+  greekCouncils?: Council[];
   sortBy?: SortKey;
   sortDir?: "asc" | "desc";
 }

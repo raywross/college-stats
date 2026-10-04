@@ -43,6 +43,10 @@ import { addTransferMeta, checkTransfers, fetchTransfers } from "./lib/transfers
 import { addLgbtq, addStateLawMeta, fetchLgbtqInputs, lgbtqSummary } from "./lib/lgbtq-sync.mts";
 import { addMajorsMeta, buildMajorDetails, checkTotals, fetchCompletions, majorsFor, unknownCodes } from "./lib/majors-sync.mts";
 import { mergeDetails } from "../lib/detail.ts";
+import { readDirectoryFiles } from "./lib/directories/files.mts";
+import { addDirectoryMeta, applyCccuMembership, applyDirectories, chapterFiles, directoryDetails } from "./lib/directories/merge.mts";
+import { readPagesFile } from "./lib/campus-pilot/files.mts";
+import { applyLgbtqPolicies, campusPagesDetails, pilotDirectoryFiles } from "./lib/campus-pilot/merge.mts";
 import { financialAidDetails } from "../lib/cds/financial-aid.ts";
 import { transferInFrom } from "../lib/transfers.ts";
 import { financesFrom } from "../lib/finances.ts";
@@ -939,7 +943,23 @@ async function main() {
   if (programs.unknown.length > 25) throw new Error(`Field of Study uses ${programs.unknown.length} codes that aren't in CIP 2020:\n  ${programs.unknown.slice(0, 10).join("\n  ")}`);
   if (programs.unknown.length) console.warn(`  ⚠ Field of Study: left out ${programs.unknown.length} program(s) whose code isn't in CIP 2020: ${programs.unknown.join("; ")}`);
   for (const s of schools) s.academics!.programs_with_earnings = programs.counts.get(s.unit_id) ?? null;
-  const details = mergeDetails(buildDetails(schools, efc.table, meta), buildMajorDetails(schools, completions.table, meta), programs.details, financialAidDetails(schools, cdsRecords));
+  // National directories (specs/campus-directories.md): data/directories/<org>.json → a credited `directories` table
+  // per college and the `school.directories` summary, exactly as `npm run merge-directories` does.
+  const directoryFiles = readDirectoryFiles(ROOT);
+  // The campus-life pilot (data/campus-pages.json): its groups join the listings; its tier A facts get their own table.
+  // Membership lists (CCCU) set `religion.cccu_member` rather than listings.
+  const campusPages = readPagesFile(join(ROOT, "data", "campus-pages.json"));
+  const directoryTables = directoryDetails([...chapterFiles(directoryFiles), ...pilotDirectoryFiles(campusPages)], new Set(schools.map((s) => s.unit_id)));
+  schools.splice(0, schools.length, ...applyLgbtqPolicies(applyCccuMembership(applyDirectories(schools, directoryTables), directoryFiles), campusPages));
+  addDirectoryMeta(meta, directoryFiles);
+  const details = mergeDetails(
+    buildDetails(schools, efc.table, meta),
+    buildMajorDetails(schools, completions.table, meta),
+    programs.details,
+    financialAidDetails(schools, cdsRecords),
+    directoryTables,
+    campusPagesDetails(campusPages, new Set(schools.map((s) => s.unit_id)))
+  );
   const detailIssues = detailProblems(schools, details, meta);
   if (detailIssues.length) throw new Error(`Detail files failed their checks:\n  ${detailIssues.slice(0, 20).join("\n  ")}`);
 

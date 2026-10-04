@@ -1,0 +1,379 @@
+{
+ "report": "campus-pilot-2026-10-04T13-31-00.json",
+ "facts": {
+  "greek.status": {
+   "published": 9,
+   "correct": 9,
+   "expected": 18,
+   "found": 9,
+   "blocked_both": 3,
+   "wrong": []
+  },
+  "greek.members_total": {
+   "published": 4,
+   "correct": 2,
+   "expected": 7,
+   "found": 2,
+   "blocked_both": 3,
+   "wrong": [
+    "176017 University of Mississippi: published 5113, key 10700",
+    "110662 University of California-Los Angeles: published 4100, key 4200"
+   ]
+  },
+  "greek.housing": {
+   "published": 4,
+   "correct": 2,
+   "expected": 7,
+   "found": 2,
+   "blocked_both": 2,
+   "wrong": [
+    "100751 The University of Alabama: published yes, key \"not_found\"",
+    "110662 University of California-Los Angeles: published yes, key \"not_found\""
+   ]
+  },
+  "greek.deferred": {
+   "published": 3,
+   "correct": 2,
+   "expected": 10,
+   "found": 2,
+   "blocked_both": 2,
+   "wrong": [
+    "110662 University of California-Los Angeles: published no, key \"not_found\""
+   ]
+  },
+  "greek.formal_term": {
+   "published": 2,
+   "correct": 0,
+   "expected": 8,
+   "found": 0,
+   "blocked_both": 2,
+   "wrong": [
+    "176017 University of Mississippi: published Fall, key \"not_found\"",
+    "110662 University of California-Los Angeles: published Fall, during True Bruin Welcome Week (zero week), key \"not_found\""
+   ]
+  },
+  "greek.council_chapters": {
+   "published": 21,
+   "correct": 20,
+   "expected": 36,
+   "found": 20,
+   "blocked_both": 0,
+   "wrong": [
+    "100751 The University of Alabama: National Pan-Hellenic Council (NPHC) chapters 9, key 7"
+   ]
+  },
+  "greek.council_members": {
+   "published": 0,
+   "correct": 0,
+   "expected": 12,
+   "found": 0,
+   "blocked_both": 0,
+   "wrong": []
+  },
+  "faith.office": {
+   "published": 5,
+   "correct": 5,
+   "expected": 12,
+   "found": 5,
+   "blocked_both": 6,
+   "wrong": []
+  },
+  "faith.composition": {
+   "published": 0,
+   "correct": 0,
+   "expected": 3,
+   "found": 0,
+   "blocked_both": 1,
+   "wrong": []
+  },
+  "faith.groups_by_tradition": {
+   "published": 28,
+   "correct": 26,
+   "expected": 75,
+   "found": 26,
+   "blocked_both": 0,
+   "wrong": [
+    "131496 Georgetown University: latter_day_saint group published; key lists none",
+    "209922 Reed College: protestant_evangelical group published; key lists none"
+   ]
+  },
+  "faith.estimates": {
+   "published": 0,
+   "correct": 0,
+   "expected": 0,
+   "found": 0,
+   "blocked_both": 0,
+   "wrong": []
+  },
+  "lgbtq.center": {
+   "published": 3,
+   "correct": 3,
+   "expected": 10,
+   "found": 3,
+   "blocked_both": 3,
+   "wrong": []
+  },
+  "lgbtq.groups": {
+   "published": 3,
+   "correct": 2,
+   "expected": 8,
+   "found": 2,
+   "blocked_both": 0,
+   "wrong": [
+    "110662 University of California-Los Angeles: LGBTQ+ groups published; key lists none"
+   ]
+  },
+  "policy.nondiscrimination_orientation": {
+   "published": 1,
+   "correct": 1,
+   "expected": 17,
+   "found": 1,
+   "blocked_both": 6,
+   "wrong": []
+  },
+  "policy.nondiscrimination_identity": {
+   "published": 1,
+   "correct": 1,
+   "expected": 17,
+   "found": 1,
+   "blocked_both": 6,
+   "wrong": []
+  },
+  "lgbtq.conduct_restriction": {
+   "published": 1,
+   "correct": 1,
+   "expected": 4,
+   "found": 1,
+   "blocked_both": 1,
+   "wrong": []
+  },
+  "policy.inclusive_housing": {
+   "published": 1,
+   "correct": 1,
+   "expected": 8,
+   "found": 1,
+   "blocked_both": 0,
+   "wrong": []
+  },
+  "policy.name_on_records": {
+   "published": 1,
+   "correct": 1,
+   "expected": 8,
+   "found": 1,
+   "blocked_both": 0,
+   "wrong": []
+  },
+  "policy.inclusive_restrooms": {
+   "published": 2,
+   "correct": 2,
+   "expected": 8,
+   "found": 2,
+   "blocked_both": 1,
+   "wrong": []
+  },
+  "policy.health_plan_transition": {
+   "published": 1,
+   "correct": 0,
+   "expected": 0,
+   "found": 0,
+   "blocked_both": 0,
+   "wrong": [
+    "110662 University of California-Los Angeles: published yes, key \"not_found\""
+   ]
+  },
+  "policy.trans_admission": {
+   "published": 0,
+   "correct": 0,
+   "expected": 1,
+   "found": 0,
+   "blocked_both": 0,
+   "wrong": []
+  }
+ },
+ "discovery": {
+  "fsl_office": {
+   "key_has": 11,
+   "found_page": 7,
+   "same_page": 4,
+   "blocked": 3
+  },
+  "fsl_reports": {
+   "key_has": 14,
+   "found_page": 4,
+   "same_page": 2,
+   "blocked": 3
+  },
+  "recruitment": {
+   "key_has": 8,
+   "found_page": 1,
+   "same_page": 0,
+   "blocked": 2
+  },
+  "faith_office": {
+   "key_has": 12,
+   "found_page": 5,
+   "same_page": 4,
+   "blocked": 5
+  },
+  "religion_report": {
+   "key_has": 5,
+   "found_page": 1,
+   "same_page": 1,
+   "blocked": 0
+  },
+  "lgbtq_center": {
+   "key_has": 14,
+   "found_page": 3,
+   "same_page": 2,
+   "blocked": 0
+  },
+  "nondiscrimination": {
+   "key_has": 19,
+   "found_page": 2,
+   "same_page": 0,
+   "blocked": 1
+  },
+  "housing": {
+   "key_has": 9,
+   "found_page": 1,
+   "same_page": 0,
+   "blocked": 0
+  },
+  "name_policy": {
+   "key_has": 8,
+   "found_page": 0,
+   "same_page": 0,
+   "blocked": 2
+  },
+  "restrooms": {
+   "key_has": 8,
+   "found_page": 0,
+   "same_page": 0,
+   "blocked": 0
+  },
+  "health_plan": {
+   "key_has": 0,
+   "found_page": 0,
+   "same_page": 0,
+   "blocked": 2
+  },
+  "conduct_code": {
+   "key_has": 4,
+   "found_page": 1,
+   "same_page": 0,
+   "blocked": 1
+  }
+ },
+ "second_check": {
+  "checks": 1,
+  "confirmed": 1,
+  "rejected": 0,
+  "agree_with_key": 1,
+  "disagree_with_key": 0,
+  "unscored": 0,
+  "disagreements": []
+ },
+ "cost": {
+  "total": 11.56988,
+  "colleges": 19,
+  "per_college": 0.6089410526315789,
+  "by_job": {
+   "discovery": 11.14904,
+   "extraction": 0.226246,
+   "escalation": 0.18643,
+   "verify": 0.008164
+  },
+  "by_domain": {
+   "greek": 3.357376,
+   "faith": 2.9740450000000003,
+   "lgbtq": 5.238458999999999
+  },
+  "searches": 175
+ },
+ "rates": {
+  "greek.status": {
+   "precision": 1,
+   "recall": 0.5
+  },
+  "greek.members_total": {
+   "precision": 0.5,
+   "recall": 0.2857142857142857
+  },
+  "greek.housing": {
+   "precision": 0.5,
+   "recall": 0.2857142857142857
+  },
+  "greek.deferred": {
+   "precision": 0.6666666666666666,
+   "recall": 0.2
+  },
+  "greek.formal_term": {
+   "precision": 0,
+   "recall": 0
+  },
+  "greek.council_chapters": {
+   "precision": 0.9523809523809523,
+   "recall": 0.5555555555555556
+  },
+  "greek.council_members": {
+   "precision": null,
+   "recall": 0
+  },
+  "faith.office": {
+   "precision": 1,
+   "recall": 0.4166666666666667
+  },
+  "faith.composition": {
+   "precision": null,
+   "recall": 0
+  },
+  "faith.groups_by_tradition": {
+   "precision": 0.9285714285714286,
+   "recall": 0.3466666666666667
+  },
+  "faith.estimates": {
+   "precision": null,
+   "recall": null
+  },
+  "lgbtq.center": {
+   "precision": 1,
+   "recall": 0.3
+  },
+  "lgbtq.groups": {
+   "precision": 0.6666666666666666,
+   "recall": 0.25
+  },
+  "policy.nondiscrimination_orientation": {
+   "precision": 1,
+   "recall": 0.058823529411764705
+  },
+  "policy.nondiscrimination_identity": {
+   "precision": 1,
+   "recall": 0.058823529411764705
+  },
+  "lgbtq.conduct_restriction": {
+   "precision": 1,
+   "recall": 0.25
+  },
+  "policy.inclusive_housing": {
+   "precision": 1,
+   "recall": 0.125
+  },
+  "policy.name_on_records": {
+   "precision": 1,
+   "recall": 0.125
+  },
+  "policy.inclusive_restrooms": {
+   "precision": 1,
+   "recall": 0.25
+  },
+  "policy.health_plan_transition": {
+   "precision": 0,
+   "recall": null
+  },
+  "policy.trans_admission": {
+   "precision": null,
+   "recall": 0
+  }
+ }
+}

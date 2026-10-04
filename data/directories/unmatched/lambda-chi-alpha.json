@@ -1,0 +1,9 @@
+{
+  "org": "lambda-chi-alpha",
+  "crawled": "2026-10-04",
+  "entries": [
+    {"campus":"University of Southern Indiana","city":"Evansville","state":"IN","name":"Phi-Xi (Southern Indiana) (Lambda Chi Alpha)","reason":"no college in IN matches","candidates":[{"unit_id":"475741","name":"Chamberlain University-Indiana","score":0.57},{"unit_id":"150534","name":"University of Evansville","score":0.57},{"unit_id":"151263","name":"University of Indianapolis","score":0.57}]},
+    {"campus":"University of Toronto","city":"Toronto","state":"Ontario","name":"Epsilon-Epsilon (Toronto) (Lambda Chi Alpha)","reason":"unknown state \"Ontario\"","candidates":[]},
+    {"campus":"University of Western Ontario","city":"London","state":"Ontario","name":"Delta-Eta (Western) (Lambda Chi Alpha)","reason":"unknown state \"Ontario\"","candidates":[]}
+  ]
+}

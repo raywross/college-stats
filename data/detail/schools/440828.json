@@ -1,6 +1,7 @@
 {
   "unit_id": "440828",
   "tables": {
-    "home_states": {"source":"ipeds-ef-c","vintage":"ipeds-ef-c","year":"Fall 2024","rows":{"OR":149,"CA":17,"WA":9,"TX":5,"UT":4,"AK":3,"HI":3,"AZ":1,"CO":1,"DC":1,"IL":1,"MA":1,"MN":1,"MT":1,"NM":1,"NV":1,"TN":1,"WI":1,"WY":1}}
+    "home_states": {"source":"ipeds-ef-c","vintage":"ipeds-ef-c","year":"Fall 2024","rows":{"OR":149,"CA":17,"WA":9,"TX":5,"UT":4,"AK":3,"HI":3,"AZ":1,"CO":1,"DC":1,"IL":1,"MA":1,"MN":1,"MT":1,"NM":1,"NV":1,"TN":1,"WI":1,"WY":1}},
+    "directories": {"source":"directory","vintage":null,"year":"October 2026","rows":{"credits":{"tpc-housing":{"organization":"Trans Policy Clearinghouse","publisher":"Dr. Genny Beemyn","list_url":"https://www.gennyb.com/research/trans-supportive-campus-policies/colleges-and-universities-that-provide-gender-inclusive-housing","read":"2026-10-04","tier":"D","domain":"lgbtq","kind":"policy","policy":"inclusive_housing"},"tpc-name-pronouns":{"organization":"Trans Policy Clearinghouse","publisher":"Dr. Genny Beemyn","list_url":"https://www.gennyb.com/research/trans-supportive-campus-policies/name-and-pronouns/","read":"2026-10-04","tier":"D","domain":"lgbtq","kind":"policy","policy":"name_on_records"}},"listings":[{"org":"tpc-housing"},{"org":"tpc-name-pronouns"}]}}
   }
 }

@@ -173,6 +173,18 @@ export const FIELDS = {
   "lgbtq.admissions": { label: "First-time applicants, admits, and enrollees of another gender", topic: "admissions", source: "ipeds-adm", vintage: "ipeds-adm" },
   // Hand-kept table (data/state-laws.json); each value's lineage record carries the statute link and effective date.
   "lgbtq.state_law": { label: "State law on public colleges' identity-based offices and programs", topic: "campus", source: "state-law", vintage: null },
+  // Phase 4 (pilot, built 2026-10-04 integration pass): tier A policy facts from the college's own pages, copied
+  // from the `campus_pages` detail table by scripts/lib/campus-pilot/merge.mts applyLgbtqPolicies so the policy
+  // checklist, Explore filters, and Compare can read school.lgbtq.policies directly; each item itself carries the
+  // page URL and date checked (lib/directories.ts PolicyCheck), and this field's own lineage record names the
+  // newest check date.
+  "lgbtq.policies": { label: "Policies checked on the college's own pages (housing, records, nondiscrimination, …)", topic: "campus", source: "policy-page", vintage: null },
+  // National directories (specs/campus-directories.md): each listing is credited to its organization in the detail
+  // table; the summary here says which traditions, councils, and LGBTQ+ kinds appear, for filters and section checks.
+  directories: { label: "Groups listed by national directories", topic: "campus", source: "directory", vintage: null },
+  "detail.directories": { label: "Campus chapters and groups listed by national organizations", topic: "campus", source: "directory", vintage: null },
+  // Campus-life pilot (lib/campus-pages.ts): facts from the college's own policy, office, and report pages, each quoted.
+  "detail.campus_pages": { label: "Campus life facts from the college's own pages (policies, offices, reports)", topic: "campus", source: "policy-page", vintage: null },
   // Majors (specs/data-expansion/majors.md): IPEDS Completions, bachelor's degrees by field (lib/majors.ts).
   "academics.bachelors_awarded": { label: "Bachelor's degrees awarded (first majors)", topic: "academics", source: "ipeds-c", vintage: "ipeds-c" },
   "academics.majors_top": {
@@ -203,6 +215,10 @@ export const FIELDS = {
   // Religious life, phase 1 (specs/religious-life.md): IPEDS IC{Y} RELAFFIL, code and NCES's dictionary label; null =
   // no affiliation. Families for the Explore filter are derived from the code at render time (lib/religion.ts).
   "religion.affiliation": icChar("Religious affiliation"),
+  // Phase 3 (specs/religious-life.md#measures item 2): the CCCU's own list of its voting (GOVM) member colleges,
+  // read by the "cccu" directory adapter. A membership fact, not a chapter: feeds "Known for: Faith-centered"
+  // alongside C7, never the "Faith communities" list.
+  "religion.cccu_member": { label: "CCCU (Christian college consortium) membership", topic: "campus", source: "directory", vintage: null },
   "location.lat": { ...hd("Latitude"), topic: "institution" },
   "location.lng": { ...hd("Longitude"), topic: "institution" },
   "cost.avg_paid_all": {
@@ -674,7 +690,7 @@ export function registeredPathFor(path: string): FieldPath | null {
 export const METADATA_KEYS = new Set(["lineage", "cds"]);
 
 /** Sources whose values each carry their own document and year in lineage, so their fields have no vintage. */
-export const PER_DOCUMENT_SOURCES: ReadonlySet<SourceKey> = new Set<SourceKey>(["cds", "college-site", "state-law"]);
+export const PER_DOCUMENT_SOURCES: ReadonlySet<SourceKey> = new Set<SourceKey>(["cds", "college-site", "state-law", "directory", "org-estimate", "policy-page"]);
 
 /** Every registered `reported.*` path: each stored one must have an `extracted` lineage record (lib/lineage.ts). */
 export const REPORTED_PATHS = (Object.keys(FIELDS) as FieldPath[]).filter((p) => p.startsWith("reported."));

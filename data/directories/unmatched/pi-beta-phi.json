@@ -1,0 +1,12 @@
+{
+  "org": "pi-beta-phi",
+  "crawled": "2026-10-04",
+  "entries": [
+    {"campus":"University of Alberta","city":"Edmonton","state":"Alberta","name":"Alberta Alpha","reason":"unknown state \"Alberta\"","candidates":[]},
+    {"campus":"Tulane University-Newcomb College","city":"New Orleans","state":"LA","name":"Louisiana Alpha","reason":"no college in LA matches","candidates":[{"unit_id":"160755","name":"Tulane University of Louisiana","score":0.5},{"unit_id":"160621","name":"Southern University and A & M College","score":0.36},{"unit_id":"158802","name":"Dillard University","score":0.33}]},
+    {"campus":"University of Guelph","city":"Guelph","state":"Ontario","name":"Ontario Gamma","reason":"unknown state \"Ontario\"","candidates":[]},
+    {"campus":"University of Toronto","city":"Toronto","state":"Ontario","name":"Ontario Alpha","reason":"unknown state \"Ontario\"","candidates":[]},
+    {"campus":"Western University","city":"London","state":"Ontario","name":"Ontario Beta","reason":"unknown state \"Ontario\"","candidates":[]},
+    {"campus":"College of William & Mary","city":"Williamsburg","state":"VA","name":"Virginia Gamma","reason":"no college in VA matches","candidates":[{"unit_id":"231624","name":"William & Mary","score":0.75},{"unit_id":"232681","name":"University of Mary Washington","score":0.44},{"unit_id":"500290","name":"Arizona College of Nursing - Chesapeake","score":0.4}]}
+  ]
+}

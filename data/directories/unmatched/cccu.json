@@ -1,0 +1,11 @@
+{
+  "org": "cccu",
+  "crawled": "2026-10-04",
+  "entries": [
+    {"campus":"Ambrose University","city":"Calgary","state":"AB","url":"http://www.ambrose.edu","reason":"unknown state \"AB\"","candidates":[]},
+    {"campus":"Trinity Western University","city":"Langley","state":"BC","url":"http://www.twu.ca","reason":"unknown state \"BC\"","candidates":[]},
+    {"campus":"Azusa Pacific University Global","city":"San Dimas","state":"CA","url":"https://www.lapu.edu","reason":"no college in CA matches","candidates":[{"unit_id":"109785","name":"Azusa Pacific University","score":0.86},{"unit_id":"114813","name":"Fresno Pacific University","score":0.57},{"unit_id":"117104","name":"Life Pacific University","score":0.57}]},
+    {"campus":"Redeemer University","city":"Ancaster","state":"ON","url":"http://www.redeemer.ca","reason":"unknown state \"ON\"","candidates":[]},
+    {"campus":"Multnomah University","city":"Portland","state":"OR","url":"http://www.multnomah.edu","reason":"no college in OR matches","candidates":[{"unit_id":"209409","name":"Bushnell University","score":0.5},{"unit_id":"210331","name":"Corban University","score":0.5},{"unit_id":"209065","name":"Linfield University","score":0.5}]}
+  ]
+}

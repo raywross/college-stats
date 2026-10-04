@@ -39,8 +39,9 @@ import { compareAdmitRates, compareYields } from "@/lib/cds/residency-display";
 import { ADMISSION_PROFILE_ROWS, admissionProfileCellField, c7FactorCell } from "@/lib/cds/compare-rows";
 import { compareClassesUnder20 } from "@/lib/cds/academics-display";
 import { compareTransferAdmitRate } from "@/lib/cds/transfer-display";
-import { compareFratPct, compareSorPct } from "@/lib/cds/greek-display";
+import { compareFratPct, compareGreekCouncils, compareSorPct } from "@/lib/cds/greek-display";
 import { compareDeadlines, compareGapYear } from "@/lib/cds/application-logistics-display";
+import { comparedChecklist } from "@/lib/lgbtq-policy";
 
 /** Compare rows from CDS C14–C18, hidden when no compared college has the data (cds-application-logistics.md). */
 const LOGISTICS_ROW_LABELS: ReadonlySet<string> = new Set(["Deadlines & deposit", "Gap year allowed"]);
@@ -222,6 +223,8 @@ const TABLE_ROWS = (
       const h = s.reported?.greek?.housing;
       return h == null ? null : "Offered";
     }],
+    // National chapter directories, phase 4 (specs/campus-directories.md): councils with a listed chapter, credited.
+    ["Greek councils present", "national-directory", "directories", compareGreekCouncils],
     ["Pell Grant", "pell-grant", "demographics.pell_grant_percent", (s: School) => opt(s.demographics.pell_grant_percent, (v) => pct(v))],
     ["First-gen", "first-gen", "demographics.first_gen_percent", (s: School) => opt(s.demographics.first_gen_percent, (v) => pct(v))],
     ["Men / women", "gender-balance", "demographics.men_share", (s: School) =>
@@ -322,6 +325,8 @@ export default async function ComparePage({
   // the client section swaps fields in place; `?major=` picks the first one shown (an older 4-digit `11.07` link maps to
   // its family).
   const [details, histories] = await Promise.all([Promise.all(schools.map((s) => getDetail(s.unit_id))), Promise.all(schools.map((s) => getHistory(s.unit_id)))]);
+  // LGBTQ+ policy checklist (lib/lgbtq-policy.ts; specs/lgbtq-life.md "Where it appears"): never the gender-identity counts.
+  const lgbtqRows = comparedChecklist(schools, details);
   const caFiles = historyFiles?.meta.files["c-a"];
   const caEnd = caFiles?.length ? caFiles[caFiles.length - 1].year : null;
   const caWindow: [number, number] | null = caEnd !== null ? [caEnd - WINDOW_YEARS, caEnd] : null;
@@ -605,6 +610,59 @@ export default async function ComparePage({
                 <ThenAndNow metrics={thenAndNow} />
               </div>
               <HistorySourceNote keys={["avg_paid_all", "acceptance_rate", "applicants", "undergrads", ...Object.values(RACE_SERIES)]} files={historyFiles} range={{ academic: defaultWindow(historyFiles.meta, "academic"), fall: defaultWindow(historyFiles.meta, "fall") }} />
+            </section>
+          )}
+
+          {/* LGBTQ+ policy checklist (lib/lgbtq-policy.ts): national-directory leads and, once checked, the college's
+              own verified facts; never the gender-identity counts, which have no Compare row. */}
+          {lgbtqRows.length > 0 && (
+            <section className="space-y-4">
+              <h2 className="font-display text-xl font-extrabold tracking-tight sm:text-2xl">LGBTQ+ policies</h2>
+              <p className="max-w-3xl text-sm text-muted-foreground">
+                Each item is dated: either the college&apos;s own page, checked on that date, or a national list&apos;s claim, read on that date &mdash; never a plain
+                &ldquo;yes&rdquo; or &ldquo;no.&rdquo; A key missing for a college isn&apos;t shown as &ldquo;no&rdquo;: nothing was found for it.
+              </p>
+              <div className="overflow-x-auto rounded-3xl border bg-card">
+                <table className="w-full min-w-[480px] text-sm sm:min-w-[560px]">
+                  <thead className="border-b bg-surface-2">
+                    <tr>
+                      <th className="sticky left-0 z-10 bg-surface-2 px-3 py-3 text-left text-xs font-semibold text-muted-foreground sm:px-4">Policy</th>
+                      {schools.map((s, i) => (
+                        <th key={s.unit_id} className="px-4 py-3 text-left text-xs font-bold">
+                          <span className="inline-flex items-center gap-1.5">
+                            <span className="size-2 rounded-full" style={{ backgroundColor: SLOT_COLORS[i] }} />
+                            {shortName(s)}
+                          </span>
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y tabular-nums">
+                    {lgbtqRows.map((row) => (
+                      <tr key={row.key}>
+                        <td className="sticky left-0 z-10 max-w-36 bg-card px-3 py-2.5 text-muted-foreground shadow-[1px_0_0_var(--border)] sm:max-w-none sm:px-4 sm:shadow-none">
+                          {row.label}
+                        </td>
+                        {row.cells.map((item, i) => (
+                          <td key={schools[i].unit_id} className="px-4 py-2.5 font-normal">
+                            {item ? (
+                              item.url ? (
+                                <a href={item.url} target="_blank" rel="noopener noreferrer" className="underline decoration-dotted underline-offset-2 hover:text-primary">
+                                  {item.text}
+                                </a>
+                              ) : (
+                                item.text
+                              )
+                            ) : (
+                              <span className="text-muted-foreground">–</span>
+                            )}
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </section>
           )}
 

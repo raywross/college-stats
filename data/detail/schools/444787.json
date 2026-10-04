@@ -3,6 +3,7 @@
   "tables": {
     "home_states": {"source":"ipeds-ef-c","vintage":"ipeds-ef-c","year":"Fall 2024","rows":{"CA":66,"CO":12,"OH":10,"NV":8,"AR":6,"IN":5,"FL":4,"KS":4,"PA":4,"WY":4,"MI":3,"NY":3,"SD":3,"ME":2,"UT":2,"WA":2,"WI":2,"AZ":1,"DE":1,"HI":1,"IA":1,"MD":1,"ND":1,"OR":1}},
     "majors": {"source":"ipeds-c","vintage":"ipeds-c","year":"2024–25 graduates","rows":{"51.3801":[1240,0]}},
-    "programs": {"source":"scorecard-fos","vintage":"scorecard-fos","year":null,"rows":{"51.38":{"title":"Registered Nursing, Nursing Administration, Nursing Research and Clinical Nursing","graduates":829,"earnings":{"y1":79449,"y4":null,"y4_national":88910,"y4_pell":null,"y4_non_pell":null},"debt_median":null}}}
+    "programs": {"source":"scorecard-fos","vintage":"scorecard-fos","year":null,"rows":{"51.38":{"title":"Registered Nursing, Nursing Administration, Nursing Research and Clinical Nursing","graduates":829,"earnings":{"y1":79449,"y4":null,"y4_national":88910,"y4_pell":null,"y4_non_pell":null},"debt_median":null}}},
+    "directories": {"source":"directory","vintage":null,"year":"October 2026","rows":{"credits":{"tpc-nondiscrimination":{"organization":"Trans Policy Clearinghouse","publisher":"Dr. Genny Beemyn","list_url":"https://www.gennyb.com/research/trans-supportive-campus-policies/nondiscrimination-policies","read":"2026-10-04","tier":"D","domain":"lgbtq","kind":"policy","policy":"nondiscrimination_identity"}},"listings":[{"org":"tpc-nondiscrimination"}]}}
   }
 }

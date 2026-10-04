@@ -16,6 +16,8 @@ import { DESIGNATION_LABELS, RESEARCH_LABELS, SETTING_GROUPS, isDesignation, isR
 import { DIVISION_LABELS, ROTC_LABELS, isDivisionFilter, isRotcBranch } from "@/lib/campus-services";
 import { conferenceName } from "@/lib/conferences";
 import { faithFamilyLabel, isFaithFilter } from "@/lib/religion";
+import { GREEK_COUNCIL_FILTERS } from "@/lib/cds/greek-display";
+import { isCouncil } from "@/lib/directories";
 import { isMajorFamily, majorFamilyName } from "@/lib/majors";
 import { typeLabel } from "@/lib/format";
 import { useExploreParams } from "./useExploreParams";
@@ -269,6 +271,9 @@ export function ActiveFilters() {
 
   for (const f of getList("faith").filter(isFaithFilter))
     chips.push({ key: `faith-${f}`, label: f === "none" ? "No religious affiliation" : faithFamilyLabel(f), onRemove: () => toggleInList("faith", f) });
+
+  for (const c of getList("greekCouncils").filter(isCouncil))
+    chips.push({ key: `greek-${c}`, label: GREEK_COUNCIL_FILTERS.find((x) => x.key === c)!.label, onRemove: () => toggleInList("greekCouncils", c) });
 
   for (const d of getList("division").filter(isDivisionFilter))
     chips.push({ key: `div-${d}`, label: DIVISION_LABELS[d], onRemove: () => toggleInList("division", d) });

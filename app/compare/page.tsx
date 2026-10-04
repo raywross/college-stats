@@ -39,7 +39,7 @@ import { compareAdmitRates, compareYields } from "@/lib/cds/residency-display";
 import { ADMISSION_PROFILE_ROWS, admissionProfileCellField, c7FactorCell } from "@/lib/cds/compare-rows";
 import { compareClassesUnder20 } from "@/lib/cds/academics-display";
 import { compareTransferAdmitRate } from "@/lib/cds/transfer-display";
-import { compareFratPct, compareSorPct } from "@/lib/cds/greek-display";
+import { compareFratPct, compareGreekCouncils, compareSorPct } from "@/lib/cds/greek-display";
 import { compareDeadlines, compareGapYear } from "@/lib/cds/application-logistics-display";
 
 /** Compare rows from CDS C14–C18, hidden when no compared college has the data (cds-application-logistics.md). */
@@ -222,6 +222,8 @@ const TABLE_ROWS = (
       const h = s.reported?.greek?.housing;
       return h == null ? null : "Offered";
     }],
+    // National chapter directories, phase 4 (specs/campus-directories.md): councils with a listed chapter, credited.
+    ["Greek councils present", "national-directory", "directories", compareGreekCouncils],
     ["Pell Grant", "pell-grant", "demographics.pell_grant_percent", (s: School) => opt(s.demographics.pell_grant_percent, (v) => pct(v))],
     ["First-gen", "first-gen", "demographics.first_gen_percent", (s: School) => opt(s.demographics.first_gen_percent, (v) => pct(v))],
     ["Men / women", "gender-balance", "demographics.men_share", (s: School) =>

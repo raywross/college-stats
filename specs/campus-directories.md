@@ -72,7 +72,12 @@ anything" checks.
   `directory` with a date and equal what the listings say; a summary without a table fails `check:lineage`. Each was
   broken on purpose in `tests/directories.test.mts`.
 - **Blocked lists (decision 1):** recorded in `data/directories/blocked.json` (org, URL, reason, first and last seen),
-  never bypassed; the previous data file is kept. A successful read clears the org's records.
+  never bypassed; the previous data file is kept. A successful read clears the org's records. **Not the same as
+  "no server-rendered data"** (greek-life.md phase 4, 2026-10-04): a site that answers 200 with permissive
+  robots.txt but renders its chapter list entirely client-side (Gamma Rho Lambda's page-builder site, Delta Lambda
+  Phi's Wix site) has nothing for `Blocked` to catch — the adapter was simply never written, so it isn't in
+  `blocked.json` either. Both outcomes mean "no adapter yet," but only a genuine refusal (403, a challenge, robots
+  disallow) belongs in `blocked.json`.
 
 ## Example: SSA
 Secular Student Alliance "Find a Chapter" (robots.txt allows all), faith / nonreligious, tier D. 2026-10-04: 267 map

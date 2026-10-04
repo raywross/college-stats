@@ -58,6 +58,7 @@ export const COUNCILS = {
   professional: "Professional and other",
 } as const;
 export type Council = keyof typeof COUNCILS;
+export const isCouncil = (v: string): v is Council => v in COUNCILS;
 
 /** What an LGBTQ+ listing is (lgbtq-life.md, "Measures" 2 and 4). */
 export const LGBTQ_KINDS = {
@@ -313,6 +314,19 @@ const MONTHS = ["January", "February", "March", "April", "May", "June", "July", 
 export function readLabel(iso: string): string {
   const [y, m] = iso.split("-").map(Number);
   return `${MONTHS[m - 1]} ${y}`;
+}
+
+/**
+ * The newest date any college's `directories` lineage record was read, across the whole dataset, as a display
+ * label ("October 2026"); null before any adapter has ever run. For a college with no listing of its own
+ * (`listingsFor` returns []), this is how a "none found" sentence can still name a date without inventing one for
+ * that college specifically — it's the date the sweep of every national directory last ran, not a claim about
+ * this college. (specs/greek-life.md phase 4 "none found" vs. "none reported"; shared by faith, Greek, and LGBTQ+.)
+ */
+export function latestDirectoryRead(schools: readonly { lineage?: { directories?: { retrieved?: string } } | null }[]): string | null {
+  const dates = schools.map((s) => s.lineage?.directories?.retrieved).filter((d): d is string => !!d);
+  if (!dates.length) return null;
+  return readLabel(dates.sort().at(-1)!);
 }
 
 /** The ⓘ citation for one listing: the organization's list, its tier, the date read, and any quote. Plain data. */

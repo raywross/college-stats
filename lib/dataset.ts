@@ -11,7 +11,7 @@ import { FACTOR_FILTERS } from "./factors";
 import { RESIDENCY_FILTERS } from "./cds/residency-display";
 import { hasHonorsProgram } from "./cds/academics-display";
 import { TRANSFER_FILTER } from "./cds/transfer-display";
-import { meetsGreekThreshold } from "./cds/greek-display";
+import { matchesGreekCouncils, meetsGreekThreshold } from "./cds/greek-display";
 import { LOGISTICS_FILTERS } from "./cds/application-logistics-display";
 import { matchesCampus } from "./campus-profile";
 import { matchesFaith } from "./religion.ts";
@@ -264,6 +264,8 @@ export function createDataset({ schools, meta, releaseCalendar }: DatasetFiles) 
     if (filters.setting || filters.research || filters.designation || filters.opportunity) results = results.filter((s) => matchesCampus(s, filters));
     // Religious affiliation (lib/religion.ts): colleges IPEDS has no answer for never match.
     if (filters.faith?.length) results = results.filter((s) => matchesFaith(s, filters.faith!));
+    // Greek life, phase 4 (specs/campus-directories.md): has a chapter listed under any of these councils.
+    if (filters.greekCouncils?.length) results = results.filter((s) => matchesGreekCouncils(s, filters.greekCouncils!));
     if (filters.division || filters.conference !== undefined || filters.football || filters.rotc || filters.ugResearch || filters.studyAbroad)
       results = results.filter((s) => matchesServices(s, filters));
     // CDS financial aid: colleges without the college's own report never match.

@@ -1,7 +1,7 @@
 import type { FieldPath, VintageKey } from "./fields";
 import type { Direction, IndicatorKey } from "./indicators";
 import type { GenderBalance } from "./student-body";
-import type { DirectorySummary } from "./directories";
+import type { Council, DirectorySummary } from "./directories";
 
 export type SchoolType = "public" | "private-nonprofit" | "private-forprofit";
 
@@ -1553,6 +1553,8 @@ export interface SearchFilters {
   gapYear?: boolean;
   /** Religious affiliation (lib/religion.ts): faith families, or "none" for colleges with no affiliation. */
   faith?: FaithFilter[];
+  /** National chapter directories (specs/campus-directories.md, specs/greek-life.md phase 4): has a listed chapter in any of these councils. */
+  greekCouncils?: Council[];
   sortBy?: SortKey;
   sortDir?: "asc" | "desc";
 }

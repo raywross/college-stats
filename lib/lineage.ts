@@ -80,6 +80,8 @@ const SOURCE_VINTAGE: Record<SourceKey, VintageKey | null> = {
   "ipeds-c": "ipeds-c",
   "ipeds-f": "ipeds-f",
   "scorecard-fos": "scorecard-fos",
+  // A hand-kept table; each value's lineage record carries the statute and its effective date.
+  "state-law": null,
   cds: null,
   "college-site": null,
 };
@@ -146,7 +148,8 @@ export function yearLabel(s: Pick<CitedSource, "year">): string {
 
 /** Compact name for a chip: "CDS 2024-25", "IPEDS Fall 2024", "Scorecard". */
 export function shortSource(s: CitedSource): string {
-  const name = s.key === "cds" ? "CDS" : s.key === "college-site" ? "College" : s.key === "scorecard" || s.key === "scorecard-fos" ? "Scorecard" : "IPEDS";
+  const name =
+    s.key === "cds" ? "CDS" : s.key === "college-site" ? "College" : s.key === "state-law" ? "State law" : s.key === "scorecard" || s.key === "scorecard-fos" ? "Scorecard" : "IPEDS";
   return s.year ? `${name} ${s.year}` : name;
 }
 
@@ -156,8 +159,8 @@ const sourceId = (s: CitedSource) => `${s.key}|${s.url}|${s.year ?? ""}`;
 function underlyingSources(path: FieldPath, school: School | undefined, meta: DatasetMeta, seen = new Set<string>()): CitedSource[] {
   const def = FIELDS[path] as (typeof FIELDS)[FieldPath];
   const overridden = !!school?.lineage?.[path];
-  // A college-reported field this college has no value for (no lineage record) has nothing to cite.
-  if (school && !overridden && def.source === "college-site" && !("derived" in def && def.derived)) return [];
+  // A college-reported field or state law this college has no value for (no lineage record) has nothing to cite.
+  if (school && !overridden && (def.source === "college-site" || def.source === "state-law") && !("derived" in def && def.derived)) return [];
   if (!("derived" in def) || !def.derived || overridden || seen.has(path)) return [sourceFor(path, school, meta)];
   seen.add(path);
   const out = new Map<string, CitedSource>();
@@ -281,6 +284,9 @@ export const VINTAGE_KEYS: readonly VintageKey[] = [
 const YEAR_REQUIRED: readonly VintageKey[] = ["ipeds-adm", "ipeds-sfa", "ipeds-ic", "ipeds-hd", "ipeds-ic-char", "ipeds-ef", "ipeds-ef-c", "ipeds-ef-a", "ipeds-c", "ipeds-gr", "ipeds-sal", "ipeds-f", "scorecard-enrollment", "scorecard-age", "scorecard-cost", "ipeds-om"];
 const METHODS = new Set(["reported", "derived", "extracted"]);
 
+/** Fields read from the hand-kept state-law table (data/state-laws.json). */
+const STATE_LAW_PATHS = (Object.keys(FIELDS) as FieldPath[]).filter((p) => FIELDS[p].source === "state-law");
+
 /** Every stored leaf path of a school, e.g. "demographics.racial_diversity.asian". Arrays and null are leaves; undefined isn't stored. */
 export function leafPaths(value: unknown, prefix = ""): string[] {
   if (value === null || typeof value !== "object" || Array.isArray(value)) return prefix ? [prefix] : [];
@@ -381,6 +387,12 @@ export function validateSchool(school: School, meta: DatasetMeta): string[] {
     if (!rec) errors.push(`${where}: ${path} is stored without a lineage record`);
     else if (rec.source !== "college-site") errors.push(`${where}: ${path} must cite source "college-site", not "${rec.source}"`);
     else if (rec.method !== "extracted" && rec.method !== "derived") errors.push(`${where}: ${path} must have method "extracted" or "derived"`);
+  }
+  // State laws (specs/lgbtq-life.md): each stored one cites its statute and effective date (scripts/lib/lgbtq-sync.mts).
+  for (const path of STATE_LAW_PATHS) {
+    if (valueAt(school, path) == null) continue;
+    const rec = school.lineage?.[path];
+    if (rec?.source !== "state-law" || !rec.url || !rec.year) errors.push(`${where}: ${path} must cite source "state-law" with the statute's URL and effective date`);
   }
   errors.push(...validateNewest(school, where));
   errors.push(...validateNewestGroups(school, where, meta));

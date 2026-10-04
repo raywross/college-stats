@@ -247,6 +247,10 @@ export const TOPIC_FIELDS: Readonly<Record<TopicKey, readonly FieldPath[]>> = {
     "reported.admission_profile.factors.religious",
     "reported.religion.aid_by_affiliation",
     "reported.religion.campus_ministries",
+    // LGBTQ+ life (specs/lgbtq-life.md): another-gender counts (also beside men and women) and the state-law line.
+    "lgbtq.gender",
+    "lgbtq.admissions",
+    "lgbtq.state_law",
   ],
   academics: [
     "academics.bachelors_awarded",

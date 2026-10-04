@@ -1,0 +1,16 @@
+{
+  "reviewed": "2026-10-03",
+  "laws": [
+    {
+      "state": "TX",
+      "applies_to": "public",
+      "name": "Texas SB 17 (2023)",
+      "statute": "Texas Education Code §51.3525",
+      "act": "Acts 2023, 88th Leg., R.S., Ch. 922 (S.B. 17), Sec. 1",
+      "effective": "2024-01-01",
+      "summary": "Texas public colleges may not have diversity, equity, and inclusion offices, including offices for programs designed around gender identity or sexual orientation; courses, research, and registered student groups are exempt.",
+      "url": "https://statutes.capitol.texas.gov/Docs/ED/htm/ED.51.htm#51.3525",
+      "checked": "2026-10-03"
+    }
+  ]
+}

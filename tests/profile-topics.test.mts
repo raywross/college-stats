@@ -234,6 +234,8 @@ const LEGACY_FIELDS = Object.freeze({
     "reported.aid.dates",
     "reported.aid.international",
   ],
+  // New with LGBTQ+ life, phase 1 (specs/lgbtq-life.md), in the students page's Campus life section.
+  lgbtqLife: ["lgbtq.gender", "lgbtq.admissions", "lgbtq.state_law"],
 });
 
 function sourceFiles(dir: string): string[] {

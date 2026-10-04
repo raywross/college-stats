@@ -5,12 +5,16 @@
  */
 import type { DatasetMeta } from "../../lib/types.ts";
 import { fetchIpedsTable, type IpedsTable } from "./ipeds.mts";
-import { EFA_COLUMNS, EFA_WIDE, checkTransferLevels } from "../../lib/transfers.ts";
+import { EFA_COLUMNS, checkTransferLevels } from "../../lib/transfers.ts";
+import { EFA_WIDE_WITH_GENDER } from "./lgbtq-sync.mts";
 
-/** The newest published EF{Y}A (fall Y), pivoted to one row per college. Fails if it lacks the columns read. */
+/**
+ * The newest published EF{Y}A (fall Y), pivoted to one row per college. Fails if it lacks the columns read. The pivot
+ * also keeps the another-gender columns (scripts/lib/lgbtq-sync.mts), so the file is read once.
+ */
 export async function fetchTransfers(cacheDir: string, thisYear: number): Promise<{ table: IpedsTable; year: number }> {
   for (let y = thisYear; y >= thisYear - 5; y--) {
-    const table = await fetchIpedsTable(`EF${y}A`, { cacheDir, maxAgeDays: 7, wide: EFA_WIDE });
+    const table = await fetchIpedsTable(`EF${y}A`, { cacheDir, maxAgeDays: 7, wide: EFA_WIDE_WITH_GENDER });
     if (!table) continue;
     const missing = EFA_COLUMNS.filter((c) => !table.columns.has(c));
     if (missing.length) throw new Error(`EF${y}A has no ${missing.join(", ")} column`);

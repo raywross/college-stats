@@ -491,6 +491,17 @@ export const ROADMAP: RoadmapSpec[] = [
     status: "deferred",
   },
   {
+    slug: "campus-pilot-accuracy",
+    file: "specs/campus-pilot-accuracy.md",
+    group: "later",
+    summary:
+      "Reading every college's own fraternity, faith, and LGBTQ+ pages accurately enough to show the results everywhere, not just at the 75 colleges we tested.",
+    complexity: 3,
+    complexityNote:
+      "Fixes for the fact types three scored rounds got wrong (policies, centers, membership tables), a re-score of 75 colleges, then one full run of about $300.",
+    status: "deferred",
+  },
+  {
     slug: "identity-follow-ups",
     file: "specs/school-identity/follow-ups.md",
     group: "later",

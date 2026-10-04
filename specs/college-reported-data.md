@@ -406,6 +406,8 @@ LGBTQ+ center 9, FSL office 6, conduct code 3): **about $0.12 a college** ($0.10
 lift. No full run without the owner's go-ahead.
 
 ### Campus-life pilot, round 3 results (2026-10-04)
+*Next steps across all three rounds, and the full run: [campus-pilot-accuracy.md](campus-pilot-accuracy.md).*
+
 Run in Actions on branch `data/campus-pilot-3` (report `data/reports/campus-pilot-2026-10-04T22-14-48.json`, score
 `campus-pilot-score-2026-10-04T22-14-48.md`), all 25 colleges, scored against a new hand-checked key (490 quotes, all
 verbatim; every Greek council the colleges name is listed, with or without counts).

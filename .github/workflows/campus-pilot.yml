@@ -1,0 +1,88 @@
+# Runs the campus-life pilot (scripts/campus-pilot.mts; specs/religious-life.md phase 2, greek-life.md phase 2,
+# lgbtq-life.md phase 4) on the 25 pilot colleges, where the Anthropic key lives (the repository secret
+# ANTHROPIC_API_KEY; there is no key in local .env files). Dispatch it on the branch that should carry the results
+# ("Use workflow from": the pilot or integration branch): it runs the pilot, scores it against the hand-checked answer
+# key when one is committed (data/reports/campus-pilot-answer-key.json), merges the published facts into the dataset,
+# and commits the data back to that same branch for review. Never auto-merges; never runs on a schedule (owner
+# decision 2: the 25-college pilot only, no full run).
+name: Campus-life pilot
+
+on:
+  workflow_dispatch:
+    inputs:
+      college:
+        description: Unit ids to run, space-separated (blank = the 25 pilot colleges)
+        type: string
+        default: ""
+      cap:
+        description: Spend cap in US dollars for this run (the pilot stops starting calls once reached)
+        type: string
+        default: "15"
+      rediscover:
+        description: Run discovery again even for colleges with saved links
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: campus-pilot
+  cancel-in-progress: false
+
+jobs:
+  pilot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check the API key
+        id: secret
+        run: |
+          if [ -z "${{ secrets.ANTHROPIC_API_KEY }}" ]; then
+            echo "::error::ANTHROPIC_API_KEY is not set (repository secret)."
+            exit 1
+          fi
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+
+      - name: Run the pilot
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          COLLEGES: ${{ inputs.college }}
+          CAP: ${{ inputs.cap }}
+          REDISCOVER: ${{ inputs.rediscover }}
+        run: |
+          args="--cap ${CAP:-15}"
+          for id in $COLLEGES; do args="$args --college $id"; done
+          if [ "$REDISCOVER" = "true" ]; then args="$args --rediscover"; fi
+          npm run campus-pilot -- $args
+
+      - name: Score against the answer key
+        run: |
+          if [ -f data/reports/campus-pilot-answer-key.json ]; then
+            npm run score-campus-pilot -- --key data/reports/campus-pilot-answer-key.json
+          else
+            echo "::notice::No answer key committed; skipping the score."
+          fi
+
+      - name: Merge into the dataset and check it
+        run: |
+          npm run merge-directories
+          npm run check:lineage
+
+      - name: Commit the results to this branch
+        run: |
+          git add data
+          if git diff --cached --quiet; then
+            echo "No data changes."
+            exit 0
+          fi
+          printf 'Data: campus-life pilot run\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n' > /tmp/campus-pilot-msg.txt
+          git -c user.name="campus-pilot-bot" -c user.email="noreply@anthropic.com" commit -F /tmp/campus-pilot-msg.txt
+          git push origin "HEAD:${GITHUB_REF_NAME}"

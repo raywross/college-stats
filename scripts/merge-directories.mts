@@ -18,6 +18,8 @@ import { formatDetail } from "../lib/detail.ts";
 import { detailFileProblems, readDetails } from "./lib/publish-details.mts";
 import { readDirectoryFiles } from "./lib/directories/files.mts";
 import { addDirectoryMeta, applyDirectories, directoryDetails, orphanSummaries, withDirectoryTables } from "./lib/directories/merge.mts";
+import { readPagesFile } from "./lib/campus-pilot/files.mts";
+import { campusPagesDetails, pilotDirectoryFiles, withTable } from "./lib/campus-pilot/merge.mts";
 
 // MERGE_DIRECTORIES_ROOT lets tests point this at a scratch copy holding data/schools.json, meta.json, detail/, directories/.
 const ROOT = process.env.MERGE_DIRECTORIES_ROOT ?? join(import.meta.dirname, "..");
@@ -30,10 +32,17 @@ function main() {
   const schools: School[] = JSON.parse(readFileSync(SCHOOLS, "utf8"));
   const meta: DatasetMeta = JSON.parse(readFileSync(META, "utf8"));
   const files = readDirectoryFiles(ROOT);
-  const built = directoryDetails(files, new Set(schools.map((s) => s.unit_id)));
+  // The campus-life pilot's facts (data/campus-pages.json): groups named on a college's own pages join the listings;
+  // tier A facts get their own detail table (scripts/lib/campus-pilot/merge.mts).
+  const pages = readPagesFile(join(ROOT, "data", "campus-pages.json"));
+  const ids = new Set(schools.map((s) => s.unit_id));
+  const built = directoryDetails([...files, ...pilotDirectoryFiles(pages)], ids);
   const merged = applyDirectories(schools, built);
   addDirectoryMeta(meta, files);
-  const { details, changed } = withDirectoryTables(readDetails(ROOT) ?? [], built);
+  const step1 = withDirectoryTables(readDetails(ROOT) ?? [], built);
+  const step2 = withTable(step1.details, campusPagesDetails(pages, ids), "campus_pages");
+  const details = step2.details;
+  const changed = new Set([...step1.changed, ...step2.changed]);
 
   const problems = [
     ...validateLineage(merged, meta),
@@ -48,7 +57,8 @@ function main() {
   }
   const listed = merged.filter((s) => s.directories).length;
   const listings = built.reduce((n, d) => n + (d.tables.directories?.rows.listings.length ?? 0), 0);
-  const summary = `directories: ${files.length} list${files.length === 1 ? "" : "s"}, ${listings} listings at ${listed} colleges; ${changed.size} detail files changed`;
+  const pilot = details.filter((d) => d.tables.campus_pages).length;
+  const summary = `directories: ${files.length} list${files.length === 1 ? "" : "s"}, ${listings} listings at ${listed} colleges; campus pages at ${pilot} colleges; ${changed.size} detail files changed`;
   if (dryRun) {
     console.log(`${summary} (--dry-run, nothing written)`);
     return;

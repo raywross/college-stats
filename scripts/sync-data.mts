@@ -45,6 +45,8 @@ import { addMajorsMeta, buildMajorDetails, checkTotals, fetchCompletions, majors
 import { mergeDetails } from "../lib/detail.ts";
 import { readDirectoryFiles } from "./lib/directories/files.mts";
 import { addDirectoryMeta, applyDirectories, directoryDetails } from "./lib/directories/merge.mts";
+import { readPagesFile } from "./lib/campus-pilot/files.mts";
+import { campusPagesDetails, pilotDirectoryFiles } from "./lib/campus-pilot/merge.mts";
 import { financialAidDetails } from "../lib/cds/financial-aid.ts";
 import { transferInFrom } from "../lib/transfers.ts";
 import { financesFrom } from "../lib/finances.ts";
@@ -944,7 +946,9 @@ async function main() {
   // National directories (specs/campus-directories.md): data/directories/<org>.json → a credited `directories` table
   // per college and the `school.directories` summary, exactly as `npm run merge-directories` does.
   const directoryFiles = readDirectoryFiles(ROOT);
-  const directoryTables = directoryDetails(directoryFiles, new Set(schools.map((s) => s.unit_id)));
+  // The campus-life pilot (data/campus-pages.json): its groups join the listings; its tier A facts get their own table.
+  const campusPages = readPagesFile(join(ROOT, "data", "campus-pages.json"));
+  const directoryTables = directoryDetails([...directoryFiles, ...pilotDirectoryFiles(campusPages)], new Set(schools.map((s) => s.unit_id)));
   schools.splice(0, schools.length, ...applyDirectories(schools, directoryTables));
   addDirectoryMeta(meta, directoryFiles);
   const details = mergeDetails(
@@ -952,7 +956,8 @@ async function main() {
     buildMajorDetails(schools, completions.table, meta),
     programs.details,
     financialAidDetails(schools, cdsRecords),
-    directoryTables
+    directoryTables,
+    campusPagesDetails(campusPages, new Set(schools.map((s) => s.unit_id)))
   );
   const detailIssues = detailProblems(schools, details, meta);
   if (detailIssues.length) throw new Error(`Detail files failed their checks:\n  ${detailIssues.slice(0, 20).join("\n  ")}`);

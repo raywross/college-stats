@@ -26,6 +26,25 @@ auto-merges and expects only college-reported data changes):
   release note, and auto-merge when CI passes, like the college-reported data PRs. The same guards apply as for any
   data change: lineage, the alias table's invariants, and every mark having its file.
 
+**As built (2026-10-04).** `.github/workflows/identity-refresh.yml` and `scripts/identity-refresh.mts` (`due`,
+`pr-body`, `release-note`; tests in `tests/identity-refresh.test.mts`):
+- The due rule is the newest `retrieved` in `data/site-probe.json` at least 28 days old (or no file); an open
+  college-reported data PR always skips the run, even with `force`, since the two PRs would conflict. A skipped run is
+  a green job with a notice.
+- It runs the three syncs in order, caching `.cache/wikipedia` and `.cache/wikidata` between runs, and opens a PR when
+  `data/` or `public/brand/` changed. The body has before and after counts (visit pages, accounts, colors, marks), the
+  colleges that gained or lost each, the links that failed this run and that became null, and the marks added and
+  removed. The release note follows once the PR has a number. Auto-merge (`--squash`, as the college-reported PRs) is
+  on when all three syncs succeeded; otherwise a comment says why it waits for a person.
+- **Key order.** The refresh ends in `merge-identity`, which used to move identity's keys to the end of each record:
+  a run with nothing new rewrote 1,606 lines and broke five other pipelines' re-merge checks, which compare bytes. So
+  `applyIdentity` now keeps fixed positions (lineage records in one block after the ones other pipelines pin to the
+  front, `directories` and `lgbtq.policies`; new top-level keys before `directories`, `lineage`, `trends`, and
+  `reported`). `sync-data`'s output and `merge-identity`'s are byte-identical, and a test fails if they drift.
+- Owner, once: the repository already allows auto-merge and `COLLEGE_REPORTED_TOKEN` (Contents and Pull requests,
+  read and write) covers this workflow too, since the token is per repository. The first run happens the first
+  morning the probe is 28 days old (2026-11-01), or by hand with `force`.
+
 ## 2. Older icon formats (built 2026-10-04)
 **Problem.** The icon step read ICO entries that are PNG or 32-bit BMP and skipped the rest, so 42 colleges whose only
 icon was an older ICO got no mark.

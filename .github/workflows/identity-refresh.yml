@@ -172,7 +172,7 @@ jobs:
           branch="data/identity-refresh-$(date -u +%Y%m%d)"
           git checkout -b "$branch"
           git add data public/brand
-          printf 'Identity refresh: %s\n\nCo-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>\n' "$(date -u +%Y-%m-%d)" > /tmp/identity-refresh-commit-msg.txt
+          printf 'Identity refresh: %s\n' "$(date -u +%Y-%m-%d)" > /tmp/identity-refresh-commit-msg.txt
           git -c user.name="identity-refresh-bot" -c user.email="noreply@anthropic.com" commit -F /tmp/identity-refresh-commit-msg.txt
           git push -u origin "$branch"
 
@@ -199,7 +199,7 @@ jobs:
             --before /tmp/identity-refresh-before.json --after data/schools.json --issues data/link-issues.json \
             --pr "$PR_NUMBER" --date "$(date -u +%Y-%m-%d)" --out "$note"
           git add "$note"
-          printf 'Release note for #%s\n\nCo-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>\n' "$PR_NUMBER" > /tmp/identity-refresh-note-commit-msg.txt
+          printf 'Release note for #%s\n' "$PR_NUMBER" > /tmp/identity-refresh-note-commit-msg.txt
           git -c user.name="identity-refresh-bot" -c user.email="noreply@anthropic.com" commit -F /tmp/identity-refresh-note-commit-msg.txt
           git push
 

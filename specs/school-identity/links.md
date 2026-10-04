@@ -273,10 +273,10 @@ idempotence test pass on it) and wrote this section from that data.
 - **The Haiku picker** is built behind `--picker`, capped in US dollars and tested with a fake client. It was not run,
   since it calls the paid API: 492 colleges have neither a visit page nor a virtual tour, so at about $0.003 each a run
   would cost about $1.50.
-- **Schedule**: not added to the college-reported workflow. That pipeline auto-merges, its commit and PR steps assume
-  college-reported changes under `data/`, and the brand step that follows the probe writes `public/brand/`. Until a
-  separate monthly workflow exists, run `npm run probe-sites` and then `npm run sync-brand` by hand; the second run
-  is also what nulls a link that failed twice.
+- **Schedule**: not in the college-reported workflow (it auto-merges, its steps assume college-reported changes under
+  `data/`, and the brand step after the probe writes `public/brand/`). A workflow of its own runs the probe monthly
+  with `sync-wikidata` and `sync-brand`: `.github/workflows/identity-refresh.yml` (follow-ups.md section 1). Its second
+  run is what nulls a link that failed twice.
 
 ### Real run (2026-10-04, all 1,893 colleges)
 

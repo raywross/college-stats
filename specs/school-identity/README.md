@@ -45,7 +45,8 @@ refresh below changes only its own file:
 The last three scripts call `merge-identity` themselves. A link becomes null only after two probe runs a day or more
 apart both find it gone, so run `probe-sites` (then `sync-brand`) about monthly. Corrections go in
 `data/overrides.json` (links, accounts), `data/aliases-curated.json`, and `data/brand-overrides.json` (`logo: false`
-removes a college's mark on the next deploy). No scheduled workflow runs these yet; see links.md's As built.
+removes a college's mark on the next deploy). `.github/workflows/identity-refresh.yml` runs the three syncs monthly
+and opens an auto-merging PR when anything changed ([follow-ups.md](follow-ups.md) section 1).
 
 ## What was measured (2026-10-03)
 - `HD2025`: homepage 1,893, admissions 1,800, application 1,757, financial aid 1,807, net price 1,877, veterans

@@ -144,8 +144,9 @@ list them here.
 
 ## Links, names, and looks
 Specified 2026-10-03 in [school-identity/](school-identity/README.md); all four built 2026-10-04 (each spec's "As
-built" has the numbers). Left open: a monthly workflow for `sync-wikidata`, `probe-sites`, and `sync-brand`; the Haiku
-visit picker's first run (~$1.50, 492 colleges); a permanent mark-removal address.
+built" has the numbers), with the monthly refresh workflow and older icon formats from
+[follow-ups.md](school-identity/follow-ups.md). Left open: the Haiku visit picker's first run (~$1.50, 492 colleges;
+on the roadmap under Later) and a permanent mark-removal address.
 - [x] **Official links** ([school-identity/links.md](school-identity/links.md)): website (already stored, unused),
   admissions, application, financial aid, veterans', disability services from `HD{Y}` columns the sync already
   downloads; the campus visit page found on each college's admissions page by a scored link probe (Haiku picker for

@@ -97,6 +97,10 @@ export function score(input: ScoreInput): Score {
   const facts: Record<string, Tally> = {};
   const t = (k: string) => (facts[k] ??= tally());
   const second: Score["second_check"] = { checks: 0, confirmed: 0, rejected: 0, agree_with_key: 0, disagree_with_key: 0, unscored: 0, disagreements: [] };
+  // Round 1's key checked four policy items only at BACKFILLED; a key that checked every item everywhere (round 2's)
+  // says so in `_meta.all_policy_items_checked`, and then every college's answers count.
+  const allChecked = (input.key as { _meta?: { all_policy_items_checked?: boolean } })._meta?.all_policy_items_checked === true;
+  const unchecked = (item: string, unitId: string) => !allChecked && BACKFILLED_ITEMS.has(item) && !BACKFILLED.has(unitId);
 
   /** One yes/no-style fact: `p` the published value or null, `k` the key fact. */
   const judge = (name: string, id: string, p: string | null, k: Any, positive: (v: Any) => boolean, eq: (p: string, v: Any) => boolean) => {
@@ -206,7 +210,7 @@ export function score(input: ScoreInput): Score {
     }
     const policies = r.lgbtq?.policies ?? [];
     for (const key of ["nondiscrimination_orientation", "nondiscrimination_identity", "inclusive_housing", "name_on_records", "inclusive_restrooms", "health_plan_transition", "trans_admission"]) {
-      if (BACKFILLED_ITEMS.has(key) && !BACKFILLED.has(r.unit_id)) continue;
+      if (unchecked(key, r.unit_id)) continue;
       const kp = kl.policies?.[key];
       if (kp?.value === "n/a") continue;
       const p = policies.find((x) => x.key === key)?.value ?? null;
@@ -233,7 +237,7 @@ export function score(input: ScoreInput): Score {
       if (pol === "conduct_restriction") truth = isBlocked(kl.conduct) ? null : !!kl.conduct?.value?.restricts;
       else if (pol && kl.policies?.[pol]) {
         const v = kl.policies[pol];
-        truth = isBlocked(v) || v.value === "partial" || (BACKFILLED_ITEMS.has(pol) && !BACKFILLED.has(r.unit_id)) ? null : v.value === "no";
+        truth = isBlocked(v) || v.value === "partial" || unchecked(pol, r.unit_id) ? null : v.value === "no";
       } else if (c.fact === "faith.composition") truth = isBlocked(kr.composition) ? null : Array.isArray(kr.composition?.value);
       if (truth === null) second.unscored++;
       else if (truth === c.confirmed) second.agree_with_key++;

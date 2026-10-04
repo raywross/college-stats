@@ -296,3 +296,20 @@ test("the budget counts calls waiting in a batch, and batch results are charged 
   assert.equal(batched.mode, "batch");
   assert.ok(Math.abs(batched.cost_usd * 2 - direct.cost_usd) < 1e-9);
 });
+
+test("scorer: a key that checked every policy item everywhere scores them at every college; round 1's key only at BACKFILLED", async () => {
+  const { score, BACKFILLED } = await import("../scripts/lib/campus-pilot/score.mts");
+  const id = "204796"; // Ohio State: not in round 1's BACKFILLED list
+  assert.ok(!BACKFILLED.has(id));
+  const result = {
+    unit_id: id, name: "Ohio State", checked: "2026-10-04", greek: null, faith: null, listings: [], raw: {}, escalated: [], dropped: [], checks: [], errors: [],
+    lgbtq: { policies: [{ key: "inclusive_housing", value: "yes", url: "https://example.edu/h", checked: "2026-10-04", quote: "gender-inclusive housing" }] },
+  };
+  const college = { lgbtq: { policies: { inclusive_housing: { value: "yes", url: "https://example.edu/h", quote: "gender-inclusive housing", checked: "2026-10-04" } } } };
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const run = (key: any) => score({ results: [result as any], recipes: [], calls: [], key }).facts["policy.inclusive_housing"];
+  assert.equal(run({ colleges: { [id]: college } })?.published ?? 0, 0, "round 1 style key: not scored outside BACKFILLED");
+  const all = run({ _meta: { all_policy_items_checked: true }, colleges: { [id]: college } });
+  assert.equal(all?.published, 1);
+  assert.equal(all?.correct, 1);
+});

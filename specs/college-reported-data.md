@@ -405,6 +405,31 @@ LGBTQ+ center 9, FSL office 6, conduct code 3): **about $0.12 a college** ($0.10
 **After the run:** score it against a hand-checked key for these 25, then decide which `HELD_BACK` types the numbers
 lift. No full run without the owner's go-ahead.
 
+### Campus-life pilot, round 3 results (2026-10-04)
+Run in Actions on branch `data/campus-pilot-3` (report `data/reports/campus-pilot-2026-10-04T22-14-48.json`, score
+`campus-pilot-score-2026-10-04T22-14-48.md`), all 25 colleges, scored against a new hand-checked key (490 quotes, all
+verbatim; every Greek council the colleges name is listed, with or without counts).
+
+**Cost: $3.89, $0.16 a college** (round 2: $0.31; round 1: $0.61), 28 searches; discovery $3.59 of it. A full run at
+this configuration is about **$300**.
+
+**Precision, after reading every miss:** Greek status 11/11, councils' chapter counts 13/13 checkable (three more were
+councils the key lists without counts), deferred recruitment 4/4, formal term 8/8, Greek total members 3/3,
+inclusive housing 2/2, restrooms 4/4, name on records 3/3, LGBTQ+ groups 3/3. Wrong: **members by council 0/4**
+(Rutgers: 9, 62, 114, 43 against its report's 88, 879, 1,545, 1,234); **LGBTQ+ center 3/6** (diversity offices at
+Davidson, Furman, Villanova read as LGBTQ+ centers); **nondiscrimination 11/13 each** (FAMU's March 2025 statement,
+which replaced its list with "any legally protected group status", read as covering both; TCU's short notice read as
+"no" although its full policy covers both, and the second check confirmed that "no"); Greek housing 3/4, faith office
+7/8, faith groups 18/22 (held already).
+
+**Decisions:** across the three rounds the center is 12/15 and nondiscrimination about 91%, so `HELD_BACK` adds the
+LGBTQ+ center, both nondiscrimination items, and council membership (`councilFields: ["members"]`; a council row left
+with neither chapters nor members is dropped). The national lists still show these facts, credited. The Greek
+recruitment and membership types were right this round but stay held: across three rounds deferred recruitment is
+8/9 and the formal term 11/13. A wrong "no" (TCU) is the costliest error this section can make; before lifting either
+nondiscrimination item, the extractor must read the full policy, not a notice, and the second check must compare the
+two.
+
 ## Files (planned)
 - `scripts/sync-college-reported.mts` (`npm run sync-college-reported`), `--pilot`, `--college <id>`, `--rediscover`.
 - `data/college-sources.json` (recipes, hashes), `data/college-reported.json` (published values),

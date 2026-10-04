@@ -35,13 +35,19 @@ test("the round-3 college list is the default: 25 colleges in the dataset, none 
   assert.match(workflow, /default: data\/reference\/campus-pilot-3-colleges\.json/);
 });
 
-test("HELD_BACK is unchanged by round 3 (only a scored run can lift a held-back fact type)", () => {
-  assert.deepEqual(JSON.parse(JSON.stringify(HELD_BACK)), {
+test("HELD_BACK only grows: every type held after round 2 is still held (only a scored run can lift one)", () => {
+  const afterRound2 = {
     greek: ["members_total", "housing", "deferred", "formal_term"],
     faith: ["office"],
     policies: ["health_plan_transition"],
     listings: ["faith/group", "lgbtq/group", "faith/estimate"],
-  });
+  } as const;
+  const held = HELD_BACK as unknown as Record<string, readonly string[]>;
+  for (const [group, keys] of Object.entries(afterRound2)) for (const k of keys) assert.ok(held[group]?.includes(k), `${group}: ${k} was lifted`);
+  // Round 3's score (2026-10-04) added these holds.
+  assert.ok(held.councilFields.includes("members"));
+  assert.ok(held.lgbtq.includes("center"));
+  assert.ok(held.policies.includes("nondiscrimination_orientation") && held.policies.includes("nondiscrimination_identity"));
 });
 
 /* ------------------------------------------------------------------ */

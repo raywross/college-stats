@@ -100,7 +100,7 @@ const ExtLink = ({ href, children, className }: { href: string; children: ReactN
 );
 
 export default async function DataPage() {
-  const { cdsSchools, citeField, getAllSchools, getMeta, getReleaseCalendar } = await getData();
+  const { aliasStats, cdsSchools, citeField, getAllSchools, getMeta, getReleaseCalendar } = await getData();
   const meta = getMeta();
   const all = getAllSchools();
   const cds = cdsSchools();
@@ -560,6 +560,17 @@ export default async function DataPage() {
             </li>
           ))}
         </ul>
+
+        <h3 className="pt-6 font-display text-xl font-bold">Short names and nicknames</h3>
+        <p className="max-w-3xl text-sm text-muted-foreground">
+          Search understands short names and nicknames — &ldquo;UGA,&rdquo; &ldquo;Vandy,&rdquo; &ldquo;Georgia
+          Tech&rdquo; — not just official names: {num(aliasStats().rows)} short names across{" "}
+          {num(aliasStats().colleges)} colleges, from the IPEDS directory, Wikidata, each college&apos;s own homepage
+          address, and a small hand-curated list for well-known cases like &ldquo;Cal&rdquo; and &ldquo;USC.&rdquo;
+          Spot a wrong or missing one? Wikidata corrections help everyone who uses it; the curated list is{" "}
+          <code className="rounded bg-muted px-1 py-0.5 text-xs">data/aliases-curated.json</code> in the
+          site&apos;s source.
+        </p>
       </Section>
 
       <Section id="method" eyebrow="Methods" title="How we calculate" icon={<Calculator className="size-4" aria-hidden />}>

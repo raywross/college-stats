@@ -10,7 +10,7 @@ summary: Profiles now link to each college's website, admissions, application, c
 
 - **Profile → top of the page**: links to the college's own pages: Website, Admissions, Apply, Visit (where you book a
   campus tour; found for 1,390 colleges), and Financial aid. Next to them, the college's Instagram, YouTube, TikTok, X,
-  Facebook, and LinkedIn, for 1,758 colleges.
+  Facebook, and LinkedIn in their own colors, for 1,758 colleges, and one ⓘ that says where each came from.
 - **Profile → topic pages**: a Website link in the bar at the top, so the college's site is one tap away from any page.
   The Cost page adds the financial aid office and veterans' benefits; the Students page adds the disability services
   office.
@@ -19,7 +19,7 @@ summary: Profiles now link to each college's website, admissions, application, c
   them) find the right college, with the matched name shown beside the result so you know why it's there. Explore's
   search understands them too.
 - **Colors and marks**: profiles, cards, and search results now use each college's own colors (1,316 colleges) and, for
-  1,118 of them, the icon the college uses for its own website in place of the lettered tile. They're decoration only:
+  1,119 of them, the icon the college uses for its own website in place of the lettered tile. They're decoration only:
   charts keep the site's own colors.
 - **Data page**: Wikidata and Wikipedia's college color data join the list of sources, with a paragraph on colors and
   marks: whose they are, that they imply no endorsement, and how a college can ask us to remove its mark.
@@ -34,3 +34,5 @@ summary: Profiles now link to each college's website, admissions, application, c
 - Short names come from four sources: the federal directory, Wikidata, each college's web address, and a short
   hand-picked list for the cases the others miss (like putting the University of Miami first for "Miami").
 - Every new value cites its source in the ⓘ popover, like every number on the site.
+- It all refreshes on its own each month: accounts, visit pages, colors, and marks are re-read, broken links are
+  retired, and the changes arrive as a data update like any other.

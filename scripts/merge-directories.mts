@@ -17,7 +17,7 @@ import { validateLineage } from "../lib/lineage.ts";
 import { formatDetail } from "../lib/detail.ts";
 import { detailFileProblems, readDetails } from "./lib/publish-details.mts";
 import { readDirectoryFiles } from "./lib/directories/files.mts";
-import { addDirectoryMeta, applyDirectories, directoryDetails, orphanSummaries, withDirectoryTables } from "./lib/directories/merge.mts";
+import { addDirectoryMeta, applyCccuMembership, applyDirectories, chapterFiles, directoryDetails, orphanSummaries, withDirectoryTables } from "./lib/directories/merge.mts";
 
 // MERGE_DIRECTORIES_ROOT lets tests point this at a scratch copy holding data/schools.json, meta.json, detail/, directories/.
 const ROOT = process.env.MERGE_DIRECTORIES_ROOT ?? join(import.meta.dirname, "..");
@@ -30,8 +30,8 @@ function main() {
   const schools: School[] = JSON.parse(readFileSync(SCHOOLS, "utf8"));
   const meta: DatasetMeta = JSON.parse(readFileSync(META, "utf8"));
   const files = readDirectoryFiles(ROOT);
-  const built = directoryDetails(files, new Set(schools.map((s) => s.unit_id)));
-  const merged = applyDirectories(schools, built);
+  const built = directoryDetails(chapterFiles(files), new Set(schools.map((s) => s.unit_id)));
+  const merged = applyCccuMembership(applyDirectories(schools, built), files);
   addDirectoryMeta(meta, files);
   const { details, changed } = withDirectoryTables(readDetails(ROOT) ?? [], built);
 

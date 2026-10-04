@@ -175,6 +175,7 @@ export const FLAGSHIPS: Record<string, string> = {
   "texas a and m university": "Texas A&M University-College Station",
   "university of pittsburgh": "University of Pittsburgh-Pittsburgh Campus",
   "colorado state university": "Colorado State University-Fort Collins",
+  "university of tennessee": "The University of Tennessee-Knoxville",
   "texas tech": "Texas Tech University",
   "louisiana state university": "Louisiana State University and Agricultural & Mechanical College",
 };

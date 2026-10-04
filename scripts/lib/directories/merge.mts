@@ -5,6 +5,8 @@
  * `npm run sync-data`, so the two can't disagree. Pure: no I/O.
  */
 import type { DatasetMeta, LineageRecord, School } from "../../../lib/types.ts";
+/** CCCU's adapter key (scripts/lib/directories/adapters/cccu.mts): a membership fact, kept out of the chapter table. */
+export const CCCU_ORG = "cccu";
 import { DETAIL_TABLES, formatDetail, type DetailTableKey, type SchoolDetail } from "../../../lib/detail.ts";
 import {
   newestRead,
@@ -16,6 +18,11 @@ import {
   type Listing,
 } from "../../../lib/directories.ts";
 import type { DirectoryFile } from "./files.mts";
+
+/** Every directory file except membership-only lists (CCCU): what `directoryDetails` should build chapter tables from. */
+export function chapterFiles(files: readonly DirectoryFile[]): DirectoryFile[] {
+  return files.filter((f) => f.org !== CCCU_ORG);
+}
 
 export function creditOf(f: DirectoryFile): DirectoryCredit {
   return { organization: f.organization, publisher: f.publisher, list_url: f.list_url, read: f.crawled, tier: f.tier, ...f.classification } as DirectoryCredit;
@@ -143,6 +150,36 @@ export function withDirectoryTables(existing: readonly SchoolDetail[], built: re
     if (Object.keys(d.tables).length) out.push(d);
   }
   return { details: out, changed };
+}
+
+/** Removes any earlier CCCU membership mark and its lineage (re-merging starts clean, so it's idempotent). */
+export function stripCccuMembership(school: School): School {
+  if (!school.religion?.cccu_member && school.lineage?.["religion.cccu_member"] === undefined) return school;
+  const out = structuredClone(school);
+  if (out.religion) delete out.religion.cccu_member;
+  if (out.lineage) {
+    delete out.lineage["religion.cccu_member"];
+    if (!Object.keys(out.lineage).length) delete out.lineage;
+  }
+  return out;
+}
+
+/**
+ * CCCU membership (specs/religious-life.md#measures item 2; owner decision 4, "a membership fact, not a chapter"):
+ * `school.religion.cccu_member` for every college the "cccu" adapter's file matched, with its lineage. Colleges with
+ * no `religion` object at all (IPEDS has no answer) are left alone rather than inventing one. Schools without the
+ * "cccu" file read yet keep nothing (idempotent either way).
+ */
+export function applyCccuMembership(schools: readonly School[], files: readonly DirectoryFile[]): School[] {
+  const file = files.find((f) => f.org === CCCU_ORG);
+  if (!file) return schools.map(stripCccuMembership);
+  const ids = new Set(file.entries.flatMap((e) => e.matches.map((m) => m.unit_id)));
+  const lineage: LineageRecord = { source: "directory", method: "derived", year: readLabel(file.crawled), retrieved: file.crawled };
+  return schools.map((s) => {
+    const clean = stripCccuMembership(s);
+    if (!ids.has(s.unit_id) || !clean.religion) return clean;
+    return { ...clean, religion: { ...clean.religion, cccu_member: true }, lineage: { ...(clean.lineage ?? {}), "religion.cccu_member": lineage } };
+  });
 }
 
 /** Colleges whose summary has no detail table behind it (a file the per-file checks never see). */

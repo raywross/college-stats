@@ -79,3 +79,18 @@ Secular Student Alliance "Find a Chapter" (robots.txt allows all), faith / nonre
 markers, 233 at colleges (high schools, law and medical schools left out); 206 matched (3 hand-checked renames),
 27 to review (mostly community colleges, which the site doesn't cover); 203 colleges. Shown by `DirectoryListings`
 in the students page's Campus life section.
+
+## Faith adapters (religious-life.md phase 3, 2026-10-04)
+Six more adapters — Chabad on Campus (an open JSON API behind an HTML page that 403s), Reformed University
+Fellowship, FOCUS, The Navigators, CCCU (a membership list, not a chapter directory — see below), plus two
+confirmed-blocked recorders (Hillel International, Orthodox Christian Fellowship). Per-organization coverage,
+match rates, and what wasn't built (InterVarsity's AJAX-only list, Chi Alpha's search-only locator, CCMA's stale
+PDF, and the several organizations with no locator found) are in
+[religious-life.md#phase-3-as-built](religious-life.md#phase-3-as-built).
+
+**A membership list isn't a chapter list:** CCCU's own list says which colleges are its voting members, not which
+colleges have a CCCU student group (there isn't one). `applyCccuMembership` (merge.mts) reads its file separately
+from `directoryDetails`/`chapterFiles` and writes `school.religion.cccu_member` instead of a `directories` listing,
+so a membership fact never shows up as a "Faith communities" chapter. Any future membership-only list (as opposed to
+a chapter or center list) should follow the same pattern: still a normal adapter and `data/directories/<org>.json`
+file, but excluded from `chapterFiles` and read by its own merge step.

@@ -45,6 +45,7 @@ export const TRADITIONS = {
   other: "Other",
 } as const;
 export type Tradition = keyof typeof TRADITIONS;
+export const isTradition = (v: string): v is Tradition => v in TRADITIONS;
 
 /** Greek councils (greek-life.md, "Size and makeup"). */
 export const COUNCILS = {
@@ -163,6 +164,12 @@ export interface DirectoryRows {
 
 /** `school.directories`: which groups each domain's listings cover, for filters and "has anything" checks. */
 export type DirectorySummary = Partial<Record<DirectoryDomain, string[]>>;
+
+/** Explore's "has a [tradition] community" filter (religious-life.md, "Later": now phase 3): the faith summary names it. */
+export function hasFaithTradition(s: { directories?: DirectorySummary | null }, wanted: readonly Tradition[]): boolean {
+  const present = s.directories?.faith;
+  return !!present && wanted.some((t) => present.includes(t));
+}
 
 /** A listing joined to its credit, for display. */
 export type CreditedListing = Listing & { credit: DirectoryCredit; tier: DirectoryTier };

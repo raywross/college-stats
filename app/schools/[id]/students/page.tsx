@@ -233,8 +233,7 @@ export default async function StudentsPage({ params }: Props) {
         <Panel id="campus" domain="size" eyebrow="Campus life" title="Housing, sports, and programs" takeaway={campusTakeaway(school)} fields={[]} className="mt-14 sm:mt-20">
           <CampusLife school={school} />
           <CampusServices school={school} recentMoves={recentMoves} />
-          <ReligiousLife school={school} />
-          <DirectoryListings detail={detail} domain="faith" />
+          <ReligiousLife school={school} detail={detail} />
           <GreekLife school={school} />
           <DirectoryListings detail={detail} domain="greek" />
           <LgbtqLife

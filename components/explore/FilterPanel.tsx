@@ -27,6 +27,7 @@ import type { Designation, DivisionFilter, ResearchTier, RotcBranch, SettingGrou
 import { useExploreParams } from "./useExploreParams";
 import { POLICY_BUCKETS, type PolicyBucket } from "@/lib/test-policy";
 import { FAITH_FILTERS } from "@/lib/religion";
+import { TRADITIONS, type Tradition } from "@/lib/directories";
 import type { FaithFilter } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -54,6 +55,8 @@ export interface FilterFacets {
   campus: { setting: Record<SettingGroup, number>; research: Record<ResearchTier, number>; designation: Record<Designation, number>; opportunity: number };
   /** Colleges per faith family, and with no religious affiliation (lib/religion.ts). */
   faith: Record<FaithFilter, number>;
+  /** Colleges with a named community of each tradition, from national directories (specs/campus-directories.md). */
+  faithGroup: Record<Tradition, number>;
   /** Colleges per division, and with football, each ROTC branch, undergrad research, study abroad (lib/campus-services.ts). */
   services: { division: Record<DivisionFilter, number>; football: number; rotc: Record<RotcBranch, number>; ugResearch: number; studyAbroad: number };
   /** Colleges with at most N students per faculty member, for each option (lib/academics.ts MAX_RATIO_OPTIONS). */
@@ -158,7 +161,7 @@ export function FilterPanel({ facets, onDone }: { facets: FilterFacets; onDone?:
   const fieldOptions = MAJOR_FAMILY_CODES.filter((f) => (facets.fields[f]?.[0] ?? 0) > 0).sort((a, b) => MAJOR_FAMILIES[a].localeCompare(MAJOR_FAMILIES[b]));
 
   const hasFilters = [
-    ...["q", "types", "sizes", "regions", "states", "minAR", "maxAR", "minSAT", "maxSAT", "minCost", "maxCost", "minEnroll", "maxEnroll", "balance", "fullTime", "fewLoans", "liveOn", "noFee", "guarantee", "noLegacy", "noEssay", "gpaRequired", "setting", "research", "designation", "opportunity", "division", "conference", "football", "rotc", "ugResearch", "studyAbroad", "maxRatio", "pellGap", "minFullTimeFaculty", "national", "field", "byRes", "oosEven", "gpa", "aidForms", "intlAid", "honors", "transfers", "minGreek", "gapYear", "faith"],
+    ...["q", "types", "sizes", "regions", "states", "minAR", "maxAR", "minSAT", "maxSAT", "minCost", "maxCost", "minEnroll", "maxEnroll", "balance", "fullTime", "fewLoans", "liveOn", "noFee", "guarantee", "noLegacy", "noEssay", "gpaRequired", "setting", "research", "designation", "opportunity", "division", "conference", "football", "rotc", "ugResearch", "studyAbroad", "maxRatio", "pellGap", "minFullTimeFaculty", "national", "field", "byRes", "oosEven", "gpa", "aidForms", "intlAid", "honors", "transfers", "minGreek", "gapYear", "faith", "faithGroup"],
     ...INDICATOR_KEYS.map((k) => INDICATORS[k].param),
     "policy",
   ].some((k) => searchParams.get(k));
@@ -454,6 +457,16 @@ export function FilterPanel({ facets, onDone }: { facets: FilterFacets; onDone?:
           ))}
         </div>
         <p className="text-[11px] text-muted-foreground">Groups of the affiliations colleges report to the federal government. Each profile shows the exact one.</p>
+        <div className="mt-3 flex flex-wrap gap-1.5" role="group" aria-label="Has a faith community">
+          {Object.entries(TRADITIONS).map(([key, label]) => (
+            <Chip key={key} active={getList("faithGroup").includes(key)} onClick={() => toggleInList("faithGroup", key)} count={facets.faithGroup[key as Tradition]}>
+              {label}
+            </Chip>
+          ))}
+        </div>
+        <p className="text-[11px] text-muted-foreground">
+          Has a named community of this tradition, from a national organization&apos;s own list of its campus chapters. <InfoTip term="national-directory" />
+        </p>
       </Section>
 
       <Section title="Students per faculty" term="student-faculty-ratio">

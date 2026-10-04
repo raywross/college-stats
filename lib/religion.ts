@@ -125,9 +125,12 @@ export function religiousCommitment(s: Pick<School, "reported">): FactorImportan
   return s.reported?.admission_profile?.factors?.religious ?? null;
 }
 
-/** "Known for: Faith-centered": only C7 = very important (never affiliation alone; CCCU membership is a later phase). */
-export function isFaithCentered(s: Pick<School, "reported">): boolean {
-  return religiousCommitment(s) === "very_important";
+/**
+ * "Known for: Faith-centered": C7 = very important, or CCCU voting membership (phase 3; religious-life.md#measures
+ * item 2) — never affiliation alone.
+ */
+export function isFaithCentered(s: Pick<School, "reported" | "religion">): boolean {
+  return religiousCommitment(s) === "very_important" || s.religion?.cccu_member === true;
 }
 
 /** What the profile's "Religious life" block shows; null hides it. */

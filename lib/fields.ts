@@ -207,6 +207,10 @@ export const FIELDS = {
   // Religious life, phase 1 (specs/religious-life.md): IPEDS IC{Y} RELAFFIL, code and NCES's dictionary label; null =
   // no affiliation. Families for the Explore filter are derived from the code at render time (lib/religion.ts).
   "religion.affiliation": icChar("Religious affiliation"),
+  // Phase 3 (specs/religious-life.md#measures item 2): the CCCU's own list of its voting (GOVM) member colleges,
+  // read by the "cccu" directory adapter. A membership fact, not a chapter: feeds "Known for: Faith-centered"
+  // alongside C7, never the "Faith communities" list.
+  "religion.cccu_member": { label: "CCCU (Christian college consortium) membership", topic: "campus", source: "directory", vintage: null },
   "location.lat": { ...hd("Latitude"), topic: "institution" },
   "location.lng": { ...hd("Longitude"), topic: "institution" },
   "cost.avg_paid_all": {

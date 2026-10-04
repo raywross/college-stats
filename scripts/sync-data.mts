@@ -44,7 +44,7 @@ import { addLgbtq, addStateLawMeta, fetchLgbtqInputs, lgbtqSummary } from "./lib
 import { addMajorsMeta, buildMajorDetails, checkTotals, fetchCompletions, majorsFor, unknownCodes } from "./lib/majors-sync.mts";
 import { mergeDetails } from "../lib/detail.ts";
 import { readDirectoryFiles } from "./lib/directories/files.mts";
-import { addDirectoryMeta, applyDirectories, directoryDetails } from "./lib/directories/merge.mts";
+import { addDirectoryMeta, applyCccuMembership, applyDirectories, chapterFiles, directoryDetails } from "./lib/directories/merge.mts";
 import { financialAidDetails } from "../lib/cds/financial-aid.ts";
 import { transferInFrom } from "../lib/transfers.ts";
 import { financesFrom } from "../lib/finances.ts";
@@ -944,8 +944,8 @@ async function main() {
   // National directories (specs/campus-directories.md): data/directories/<org>.json → a credited `directories` table
   // per college and the `school.directories` summary, exactly as `npm run merge-directories` does.
   const directoryFiles = readDirectoryFiles(ROOT);
-  const directoryTables = directoryDetails(directoryFiles, new Set(schools.map((s) => s.unit_id)));
-  schools.splice(0, schools.length, ...applyDirectories(schools, directoryTables));
+  const directoryTables = directoryDetails(chapterFiles(directoryFiles), new Set(schools.map((s) => s.unit_id)));
+  schools.splice(0, schools.length, ...applyCccuMembership(applyDirectories(schools, directoryTables), directoryFiles));
   addDirectoryMeta(meta, directoryFiles);
   const details = mergeDetails(
     buildDetails(schools, efc.table, meta),

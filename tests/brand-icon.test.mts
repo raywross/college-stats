@@ -177,6 +177,13 @@ test("fully transparent and blank-on-white icons are rejected; SVG is rasterized
     .toBuffer();
   const blank = await processIcon(whiteGlyph);
   assert.deepEqual(blank.ok ? null : blank.reason, "blank on white");
+  // A near-white glyph (one college's real touch icon, 2026-10-04) vanishes too; a small dark one is a mark.
+  const onTransparent = async (glyph: Buffer, at: number) =>
+    sharp({ create: { width: 180, height: 180, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } } }).composite([{ input: glyph, left: at, top: at }]).png().toBuffer();
+  const faint = await processIcon(await onTransparent(await png(120, 120, "#F2F2F2"), 30));
+  assert.deepEqual(faint.ok ? null : faint.reason, "blank on white");
+  const small = await processIcon(await onTransparent(await png(30, 30, "#002B5C"), 75)); // 2.8% of the tile
+  assert.ok(small.ok, "a small dark mark passes");
   const svg = await processIcon(Buffer.from('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32"><rect width="32" height="32" rx="6" fill="#8C1515"/></svg>'));
   assert.ok(svg.ok, "a 32-unit SVG is vector: rasterized large, not too small");
   assert.deepEqual(await webpSize(svg.webp), { format: "webp", width: 192, height: 192 });
@@ -263,6 +270,43 @@ test("a host that doesn't answer keeps its mark; one whose robots.txt disallows 
   assert.equal(existsSync(join(dir, "100007.webp")), false, "robots.txt says no: the mark goes");
   const why = run.outcomes.find((o) => o.unit_id === "100007");
   assert.ok(why?.status === "none" && why.reasons.every((r) => r.endsWith("robots.txt disallows it")));
+});
+
+test("a platform's default is never a mark: WordPress's own logo, or one image on three unrelated sites", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "brand-"));
+  const stock = await png(180, 180, "#3858E9"); // the same "stock" icon from every CMS site
+  const own = await png(180, 180, "#BA0C2F");
+  const system = await png(180, 180, "#7A0019");
+  const fetch = (async (input: string | URL | Request) => {
+    const url = String(input);
+    if (url.endsWith("/robots.txt")) return new Response("", { status: 404 });
+    const image = (bytes: Buffer, finalUrl?: string) => {
+      const res = new Response(new Uint8Array(bytes), { status: 200, headers: { "content-type": "image/png" } });
+      if (finalUrl) Object.defineProperty(res, "url", { value: finalUrl });
+      return res;
+    };
+    // WordPress answers a missing /favicon.ico with a redirect to its own logo.
+    if (url === "https://wp.edu/touch.png") return image(own, "https://wp.edu/wp-includes/images/w-logo-blue-white-bg.png");
+    if (/^https:\/\/(a|b|c)\.edu\/touch\.png$/.test(url)) return image(stock);
+    if (url === "https://a.edu/favicon.ico") return image(own);
+    if (/^https:\/\/(north|south)\.state\.edu\/touch\.png$/.test(url)) return image(system);
+    return new Response("", { status: 404 });
+  }) as typeof globalThis.fetch;
+  const run = await syncIcons({
+    probe: [probeFor("200001", "a.edu"), probeFor("200002", "b.edu"), probeFor("200003", "c.edu"), probeFor("200004", "wp.edu"), probeFor("200005", "north.state.edu"), probeFor("200006", "south.state.edu")],
+    previous: [],
+    overrides: {},
+    brandDir: dir,
+    deps: { fetch, now: () => 0, sleep: async () => {}, log: () => {} },
+  });
+  const stored = new Map(run.entries.map((e) => [e.unit_id, e.source_url]));
+  assert.equal(stored.get("200001"), "https://a.edu/favicon.ico", "a.edu falls back to its own icon");
+  assert.ok(!stored.has("200002") && !stored.has("200003"), "b.edu and c.edu had only the stock icon");
+  assert.ok(!existsSync(join(dir, "200002.webp")) && !existsSync(join(dir, "200003.webp")));
+  assert.ok(!stored.has("200004"), "WordPress's logo is never a college's mark");
+  const wp = run.outcomes.find((o) => o.unit_id === "200004");
+  assert.ok(wp?.status === "none" && wp.reasons[0].includes("a platform's default icon"));
+  assert.ok(stored.has("200005") && stored.has("200006"), "one system's colleges sharing its icon on one site keep it");
 });
 
 test("a removal is honored on a partial run too, and the other colleges' marks are left alone", async () => {

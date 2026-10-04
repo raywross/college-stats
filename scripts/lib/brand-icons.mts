@@ -14,7 +14,7 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, unlinkSync, writeFile
 import { join } from "node:path";
 import sharp, { type Sharp } from "sharp";
 import type { BrandLogoEntry, BrandOverride, SiteProbeEntry } from "../../lib/identity-files";
-import { PoliteHttp, type FetchFn } from "./college-reported/http.mts";
+import { PoliteHttp, sha256, type FetchFn } from "./college-reported/http.mts";
 
 export const LOGO_SIZE = 192;
 export const MIN_ICON = 64;
@@ -25,6 +25,19 @@ export const WEBP_QUALITY = 85;
 export const MAX_ICON_BYTES = 2 * 1024 * 1024;
 /** Downloads per college at most, best candidate first. */
 export const MAX_TRIES = 4;
+/**
+ * The least visible ink a mark may have on the white tile: the share of its pixels with a channel under 230 once laid
+ * on white. Measured 2026-10-04: a near-white glyph scored 0.0%, the faintest real mark 1.1%, every other over 10%.
+ */
+export const INK_FLOOR = 0.01;
+
+/** The share of an image's pixels that show on a white tile (any channel under 230 once flattened onto white). */
+export async function inkShare(png: Buffer): Promise<number> {
+  const { data, info } = await sharp(png).flatten({ background: "#ffffff" }).resize(64, 64, { fit: "fill" }).raw().toBuffer({ resolveWithObject: true });
+  let ink = 0;
+  for (let i = 0; i < data.length; i += info.channels) if (Math.min(data[i], data[i + 1], data[i + 2]) < 230) ink++;
+  return ink / (info.width * info.height);
+}
 
 export type IconCandidate = SiteProbeEntry["icons"][number];
 
@@ -294,9 +307,9 @@ export async function processIcon(bytes: Uint8Array): Promise<IconResult> {
   const square = await img.png().toBuffer();
   const rgba = await sharp(square).stats();
   if (rgba.channels[3].max === 0) return { ok: false, reason: "fully transparent" };
-  // The tile behind a mark is white: a white glyph on transparency (a dark-tab favicon) or a blank square would vanish.
-  const onWhite = await sharp(await sharp(square).flatten({ background: "#ffffff" }).png().toBuffer()).stats();
-  if (onWhite.channels.slice(0, 3).every((c) => c.min >= 247)) return { ok: false, reason: "blank on white" };
+  // The tile behind a mark is white: a white or near-white glyph on transparency (a dark-tab favicon) would vanish.
+  const ink = await inkShare(square);
+  if (ink < INK_FLOOR) return { ok: false, reason: "blank on white", detail: `${(ink * 100).toFixed(1)}% visible` };
   const webp = await sharp(square).resize(LOGO_SIZE, LOGO_SIZE, { fit: "fill", kernel: "lanczos3" }).webp({ quality: WEBP_QUALITY, alphaQuality: 100 }).toBuffer();
   return { ok: true, webp, source: { width, height, format } };
 }
@@ -326,6 +339,8 @@ export async function iconForCollege(
   today: string,
   /** Whether a host failed to answer this run (PoliteHttp returns null both for that and for a robots.txt refusal). */
   unreachable: (url: string) => boolean = () => false,
+  /** Images already known to be a platform's default (`platformDefaults`), by the stored WebP's hash. */
+  defaults: ReadonlySet<string> = new Set(),
 ): Promise<{ entry: Omit<BrandLogoEntry, "unit_id">; webp: Buffer } | { reasons: string[]; transient: boolean }> {
   const reasons: string[] = [];
   let transient = false;
@@ -350,6 +365,10 @@ export async function iconForCollege(
       reasons.push(`${c.url}: HTTP ${res.status}`);
       continue;
     }
+    if (PLATFORM_DEFAULT_URL.test(res.url || c.url)) {
+      reasons.push(`${c.url}: a platform's default icon (${res.url || c.url})`);
+      continue;
+    }
     const bytes = new Uint8Array(await res.arrayBuffer());
     if (bytes.length > MAX_ICON_BYTES) {
       reasons.push(`${c.url}: ${bytes.length} bytes`);
@@ -358,6 +377,10 @@ export async function iconForCollege(
     const out = await processIcon(bytes);
     if (!out.ok) {
       reasons.push(`${c.url}: ${out.reason}${out.detail ? ` (${out.detail})` : ""}`);
+      continue;
+    }
+    if (defaults.has(sha256(out.webp))) {
+      reasons.push(`${c.url}: a platform's default icon (the same image on ${SHARED_DOMAINS} or more unrelated sites)`);
       continue;
     }
     return {
@@ -370,6 +393,35 @@ export async function iconForCollege(
 }
 
 const webpPath = (dir: string, id: string) => join(dir, `${id}.webp`);
+
+/**
+ * Icons a platform serves when a site sets none, never a college's choice: WordPress redirects a missing /favicon.ico
+ * to its own logo in /wp-includes/images/ (measured 2026-10-04: five colleges got WordPress's W that way).
+ */
+export const PLATFORM_DEFAULT_URL = /\/wp-includes\/images\//i;
+
+/** The same mark on this many unrelated sites (registrable domains) is a platform's default, not any college's. */
+export const SHARED_DOMAINS = 3;
+
+/** "https://www.uga.edu/" → "uga.edu": the site a college's homepage belongs to (last two host labels). */
+export function siteOf(url: string | null | undefined): string | null {
+  try {
+    return url ? new URL(url).host.replace(/^www\./, "").split(".").slice(-2).join(".") : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Hashes of stored marks that appear on SHARED_DOMAINS or more unrelated sites: a platform's default (a CMS's stock
+ * icon), not a college's. One system's colleges sharing their system's icon on one site (the University of Minnesota's
+ * campuses on umn.edu) or two (CU Boulder and CU Colorado Springs) stay.
+ */
+export function platformDefaults(hashes: ReadonlyMap<string, string>, siteById: (id: string) => string | null): Set<string> {
+  const sites = new Map<string, Set<string>>();
+  for (const [id, h] of hashes) sites.set(h, (sites.get(h) ?? new Set()).add(siteById(id) ?? id));
+  return new Set([...sites].filter(([, s]) => s.size >= SHARED_DOMAINS).map(([h]) => h));
+}
 
 /**
  * Icons for every college the probe visited (or `ids`): writes public/brand/{unit_id}.webp and returns the new
@@ -419,29 +471,52 @@ export async function syncIcons(opts: {
     if (rows.delete(id)) outcomes.push({ unit_id: id, status: "removed", reason: "logo: false in data/brand-overrides.json" });
   }
 
-  const queue = opts.probe.filter((p) => (!opts.ids || opts.ids.has(p.unit_id)) && !removed(p.unit_id));
-  let done = 0;
-  const worker = async () => {
-    for (let p = queue.shift(); p; p = queue.shift()) {
-      const got = await iconForCollege(p, http, today, unreachable);
-      if ("webp" in got) {
-        writeFileSync(webpPath(brandDir, p.unit_id), got.webp);
-        const entry: BrandLogoEntry = { unit_id: p.unit_id, ...got.entry };
-        rows.set(p.unit_id, entry);
-        outcomes.push({ unit_id: p.unit_id, status: "stored", entry, bytes: got.webp.length });
-      } else {
-        if (!got.transient && rows.has(p.unit_id)) {
-          rows.delete(p.unit_id);
-          if (existsSync(webpPath(brandDir, p.unit_id))) unlinkSync(webpPath(brandDir, p.unit_id));
-        }
-        outcomes.push({ unit_id: p.unit_id, status: "none", reasons: got.reasons, transient: got.transient });
+  const outcomeOf = new Map<string, IconOutcome>();
+  const record = (p: SiteProbeEntry, got: Awaited<ReturnType<typeof iconForCollege>>) => {
+    if ("webp" in got) {
+      writeFileSync(webpPath(brandDir, p.unit_id), got.webp);
+      const entry: BrandLogoEntry = { unit_id: p.unit_id, ...got.entry };
+      rows.set(p.unit_id, entry);
+      outcomeOf.set(p.unit_id, { unit_id: p.unit_id, status: "stored", entry, bytes: got.webp.length });
+    } else {
+      if (!got.transient && rows.has(p.unit_id)) {
+        rows.delete(p.unit_id);
+        if (existsSync(webpPath(brandDir, p.unit_id))) unlinkSync(webpPath(brandDir, p.unit_id));
       }
-      if (++done % 50 === 0) deps.log(`  icons: ${done} colleges done`);
+      outcomeOf.set(p.unit_id, { unit_id: p.unit_id, status: "none", reasons: got.reasons, transient: got.transient });
     }
   };
-  // Colleges in flight at once; PoliteHttp still spaces requests to any one host a second apart (icons on a shared
-  // CDN wait their turn).
-  await Promise.all(Array.from({ length: Math.max(1, opts.deps.concurrency ?? 12) }, worker));
+  const runAll = async (list: SiteProbeEntry[], defaults: ReadonlySet<string>) => {
+    const queue = [...list];
+    let done = 0;
+    const worker = async () => {
+      for (let p = queue.shift(); p; p = queue.shift()) {
+        record(p, await iconForCollege(p, http, today, unreachable, defaults));
+        if (++done % 50 === 0) deps.log(`  icons: ${done} colleges done`);
+      }
+    };
+    // Colleges in flight at once; PoliteHttp still spaces requests to any one host a second apart (icons on a shared
+    // CDN wait their turn).
+    await Promise.all(Array.from({ length: Math.max(1, opts.deps.concurrency ?? 12) }, worker));
+  };
+  const byId = new Map(opts.probe.map((p) => [p.unit_id, p]));
+  await runAll(opts.probe.filter((p) => (!opts.ids || opts.ids.has(p.unit_id)) && !removed(p.unit_id)), new Set());
+
+  // A mark that turned out to be the same image on SHARED_DOMAINS or more unrelated sites is a platform's default:
+  // those colleges are tried again without it (their next candidate may be their own).
+  const hashes = new Map<string, string>();
+  for (const id of rows.keys()) if (existsSync(webpPath(brandDir, id))) hashes.set(id, sha256(readFileSync(webpPath(brandDir, id))));
+  const defaults = platformDefaults(hashes, (id) => siteOf(byId.get(id)?.homepage?.final_url ?? byId.get(id)?.homepage?.url));
+  if (defaults.size) {
+    const again = [...hashes].filter(([, h]) => defaults.has(h)).map(([id]) => id);
+    deps.log(`  ${again.length} marks are a platform's default (${defaults.size} images); trying those colleges again without them`);
+    for (const id of again) {
+      rows.delete(id);
+      unlinkSync(webpPath(brandDir, id));
+    }
+    await runAll(again.map((id) => byId.get(id)).filter((p): p is SiteProbeEntry => !!p), defaults);
+  }
+  outcomes.push(...outcomeOf.values());
 
   // A full run leaves no file without a row.
   if (!opts.ids) {

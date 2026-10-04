@@ -6,7 +6,7 @@
   "tier": "D",
   "classification": {"domain":"lgbtq","kind":"policy","policy":"inclusive_restrooms"},
   "crawled": "2026-10-04",
-  "counts": {"entries":494,"matched":408,"multi":0,"unmatched":86,"colleges":408},
+  "counts": {"entries":494,"matched":409,"multi":0,"unmatched":85,"colleges":409},
   "entries": [
     {"campus":"University of Alaska, Anchorage","state":"AK","matches":[{"unit_id":"102553","name":"University of Alaska Anchorage","confidence":1,"method":"exact"}]},
     {"campus":"University of Alaska, Fairbanks","state":"AK","matches":[{"unit_id":"102614","name":"University of Alaska Fairbanks","confidence":1,"method":"exact"}]},
@@ -357,6 +357,7 @@
     {"campus":"East Tennessee State University","state":"TN","matches":[{"unit_id":"220075","name":"East Tennessee State University","confidence":1,"method":"exact"}]},
     {"campus":"Rhodes College","state":"TN","matches":[{"unit_id":"221351","name":"Rhodes College","confidence":1,"method":"exact"}]},
     {"campus":"University of Memphis","state":"TN","matches":[{"unit_id":"220862","name":"University of Memphis","confidence":1,"method":"exact"}]},
+    {"campus":"University of Tennessee","state":"TN","matches":[{"unit_id":"221759","name":"The University of Tennessee-Knoxville","confidence":0.9,"method":"flagship"}]},
     {"campus":"Vanderbilt University","state":"TN","matches":[{"unit_id":"221999","name":"Vanderbilt University","confidence":1,"method":"exact"}]},
     {"campus":"Rice University","state":"TX","matches":[{"unit_id":"227757","name":"Rice University","confidence":1,"method":"exact"}]},
     {"campus":"Southwestern University","state":"TX","matches":[{"unit_id":"228343","name":"Southwestern University","confidence":1,"method":"exact"}]},

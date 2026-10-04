@@ -6,7 +6,7 @@
   "tier": "D",
   "classification": {"domain":"greek","council":"npc"},
   "crawled": "2026-10-04",
-  "counts": {"entries":61,"matched":60,"multi":0,"unmatched":1,"colleges":60},
+  "counts": {"entries":59,"matched":58,"multi":0,"unmatched":1,"colleges":58},
   "entries": [
     {"campus":"University of Alabama","city":"Tuscaloosa","state":"AL","name":"Rho","matches":[{"unit_id":"100751","name":"The University of Alabama","confidence":1,"method":"exact"}]},
     {"campus":"University of Hartford","city":"West Hartford","state":"CT","name":"Gamma Iota","matches":[{"unit_id":"129525","name":"University of Hartford","confidence":1,"method":"exact"}]},
@@ -59,14 +59,12 @@
     {"campus":"Union College","city":"Schenectady","state":"NY","name":"Beta Xi","matches":[{"unit_id":"196866","name":"Union College","confidence":1,"method":"exact"}]},
     {"campus":"University of Rochester","city":"Rochester","state":"NY","name":"Beta Pi","matches":[{"unit_id":"195030","name":"University of Rochester","confidence":1,"method":"exact"}]},
     {"campus":"Kent State University","city":"Kent","state":"OH","name":"Delta Omicron","matches":[{"unit_id":"203517","name":"Kent State University at Kent","confidence":0.85,"method":"prefix"}]},
-    {"campus":"University of Cincinnati","city":"Cincinnati","state":"OH","name":"Coming soon!","matches":[{"unit_id":"201885","name":"University of Cincinnati-Main Campus","confidence":1,"method":"exact"}]},
     {"campus":"Penn State University","city":"University Park","state":"PA","name":"Phi","matches":[{"unit_id":"214777","name":"Pennsylvania State University-Main Campus","confidence":1,"method":"exact"}]},
     {"campus":"University of Pennsylvania","city":"Philadelphia","state":"PA","name":"Beta","matches":[{"unit_id":"215062","name":"University of Pennsylvania","confidence":1,"method":"exact"}]},
     {"campus":"University of Pittsburgh","city":"Pittsburgh","state":"PA","name":"Alpha Zeta","matches":[{"unit_id":"215293","name":"University of Pittsburgh-Pittsburgh Campus","confidence":0.9,"method":"city"}]},
     {"campus":"York College of Pennsylvania","city":"York","state":"PA","name":"Gamma Phi","matches":[{"unit_id":"217059","name":"York College of Pennsylvania","confidence":1,"method":"exact"}]},
     {"campus":"Johnson & Wales University","city":"Providence","state":"RI","name":"Gamma Sigma","matches":[{"unit_id":"217235","name":"Johnson & Wales University-Providence","confidence":0.85,"method":"prefix"}]},
     {"campus":"University of Rhode Island","city":"Kingston","state":"RI","name":"Alpha Beta","matches":[{"unit_id":"217484","name":"University of Rhode Island","confidence":1,"method":"exact"}]},
-    {"campus":"University of Texas","city":"Austin","state":"TX","name":"Coming Soon!","matches":[{"unit_id":"228778","name":"The University of Texas at Austin","confidence":0.9,"method":"city"}]},
     {"campus":"University of Wisconsin","city":"Madison","state":"WI","name":"Alpha Nu","matches":[{"unit_id":"240444","name":"University of Wisconsin-Madison","confidence":0.9,"method":"city"}]}
   ]
 }

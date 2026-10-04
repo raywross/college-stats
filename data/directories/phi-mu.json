@@ -6,7 +6,7 @@
   "tier": "D",
   "classification": {"domain":"greek","council":"npc"},
   "crawled": "2026-10-04",
-  "counts": {"entries":152,"matched":124,"multi":0,"unmatched":28,"colleges":124},
+  "counts": {"entries":152,"matched":125,"multi":0,"unmatched":27,"colleges":124},
   "entries": [
     {"campus":"Auburn University","city":"Auburn","state":"AL","name":"Alpha Mu","matches":[{"unit_id":"100858","name":"Auburn University","confidence":1,"method":"exact"}]},
     {"campus":"Huntingdon College","city":"Montgomery","state":"AL","name":"Theta Kappa","matches":[{"unit_id":"101435","name":"Huntingdon College","confidence":1,"method":"exact"}]},
@@ -43,6 +43,7 @@
     {"campus":"LaGrange College","city":"LaGrange","state":"GA","name":"Kappa Phi","matches":[{"unit_id":"140234","name":"LaGrange College","confidence":1,"method":"exact"}]},
     {"campus":"Mercer University","city":"Macon","state":"GA","name":"Alpha Iota","matches":[{"unit_id":"140447","name":"Mercer University","confidence":1,"method":"exact"}]},
     {"campus":"Middle Georgia State University","city":"Cochran","state":"GA","name":"Theta Iota","matches":[{"unit_id":"482158","name":"Middle Georgia State University","confidence":1,"method":"exact"}]},
+    {"campus":"North Georgia","city":"Cumming","state":"GA","name":"Georgia","matches":[{"unit_id":"482680","name":"University of North Georgia","confidence":1,"method":"reviewed"}]},
     {"campus":"University of Georgia","city":"Athens","state":"GA","name":"Alpha Alpha","matches":[{"unit_id":"139959","name":"University of Georgia","confidence":1,"method":"exact"}]},
     {"campus":"University of North Georgia","city":"Dahlonega","state":"GA","name":"Kappa Upsilon","matches":[{"unit_id":"482680","name":"University of North Georgia","confidence":1,"method":"exact"}]},
     {"campus":"University of West Georgia","city":"Carrollton","state":"GA","name":"Gamma Rho","matches":[{"unit_id":"141334","name":"University of West Georgia","confidence":1,"method":"exact"}]},

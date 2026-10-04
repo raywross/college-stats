@@ -1637,3 +1637,19 @@ Each guard was broken on purpose and its test failed:
 - `needsFetch`;
 - the per-item queue;
 - escalation once.
+
+### First live run (2026-10-04): what it changed
+The first round-3 run on ten new colleges (runs `20261003-235404-3` and `20261004-000618-4`) found three things the fakes
+could not:
+- **Dated model ids.** Batch results name the snapshot (`claude-haiku-4-5-20251001`). `priceKey` in `models.mts` now
+  prices a dated id as its alias; any other unknown id still stops the run (#63).
+- **Structured-output limits.** The API allows at most 24 optional and 16 union-typed parameters per request (the
+  structured-outputs docs, "Schema limits"). Decision 4's code-keyed schema (one optional, union-typed property per
+  code: 263 and 497) was rejected as `invalid_request` on every call. `schemaFor()` is now one required list,
+  `{"values": [{"code", "v", "lines"}]}`, every field one type; `v` is the printed text (read by `normalizeValue` like a
+  workbook cell), and codes are checked against the call's code table in `parseExtractResponse`, as before.
+  `schemaComplexity` and a test keep every schema inside `STRUCTURED_OUTPUT_LIMITS`. The schema version stays 1: no
+  record ever held an answer read with the old schema.
+- **Error messages.** `collect` now keeps the API's message for each errored or invalid result
+  (`Collected.error_messages`), and the review queue's reason carries it. The PR body lists a failed whole call
+  ("whole C call") instead of crashing on its `C-call` key.

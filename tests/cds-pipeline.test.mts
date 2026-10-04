@@ -3,6 +3,7 @@
  * 2, 11, 16, 22, plus the template and flattened-PDF paths, collect resuming, and exit codes) over a fake fetch table,
  * a fake interactive client, the fake Message Batches API, and an in-memory archive: no network, no API key.
  */
+import { answerJson, askedCodes } from "./helpers/answers.mts";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
@@ -151,14 +152,16 @@ function batchApi(plans: { C?: Plan; rest?: Plan; pick?: Record<string, number> 
       const p = parseCustomId(id)!;
       if (p.call === "pick") return { text: JSON.stringify(plans.pick ?? {}) };
       const lines = renderedLines(params);
-      const asked = new Set(Object.keys((params.output_config?.format as unknown as { schema: { properties: object } }).schema.properties));
-      const out: Record<string, unknown> = {};
+      // The codes a call asks for are the code table in its system prompt ("C.101 | question | type").
+      const system = (params.system as { text: string }[]).map((b) => b.text).join("\n");
+      const asked = new Set([...system.matchAll(/^([A-J]\.[0-9A-Z]{2,5}) \|/gm)].map((m) => m[1]));
+      const out: Record<string, { v: unknown; lines: number[]; quote?: string }> = {};
       for (const [code, [v, re]] of Object.entries((p.call === "C" ? plans.C : plans.rest) ?? {})) {
         if (!asked.has(code)) continue;
         const line = [...lines].find(([, t]) => re.test(t))?.[0];
         if (line !== undefined) out[code] = { v, lines: [line], quote: "a quote the model invented" };
       }
-      return { text: JSON.stringify(out) };
+      return { text: answerJson(out) };
     },
   });
 }
@@ -445,7 +448,7 @@ test("test 16: a failing H2 code doesn't stop C1 from publishing; the queue hold
   const esc = api.created.flat().filter((r) => r.custom_id.endsWith("-x"));
   assert.equal(esc.length, 1);
   assert.equal(esc[0].params.model, "claude-sonnet-5");
-  assert.deepEqual(Object.keys((esc[0].params.output_config!.format as unknown as { schema: { properties: object } }).schema.properties), ["H.201"]);
+  assert.deepEqual(askedCodes(esc[0].params), ["H.201"]);
   assert.equal(doc.reads.rest?.read_by, "claude-sonnet-5");
   assert.equal(state.summary.escalated, 1);
   assert.equal(out.exit, 0, "a failing H2 in one document doesn't trip the breaker");

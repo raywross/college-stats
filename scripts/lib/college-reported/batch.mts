@@ -354,6 +354,11 @@ export interface Collected {
   canceled: string[];
   /** custom_ids the batch listed that never came back in the results (treated like expired). */
   absent: string[];
+  /**
+   * The API's own message for each errored or invalid result, by custom_id ("output_config.format.schema: ..."),
+   * so a review item says why. The first live run kept only the type, and its cause had to be inferred.
+   */
+  error_messages: Map<string, string>;
   /** Actual cost of the succeeded results at batch prices; replaces `batch.reserved_usd`. */
   cost_usd: number;
   /** One call-log row per succeeded result. */
@@ -385,6 +390,7 @@ export async function collect(
     invalid_request: [],
     canceled: [],
     absent: [],
+    error_messages: new Map(),
     cost_usd: 0,
     calls: [],
     summary: { id: entry.id, requests: entry.requests, submitted: entry.submitted, ended: opts.ended ?? null, succeeded: 0, errored: 0, expired: 0, reserved_usd: entry.reserved_usd, cost_usd: 0 },
@@ -423,6 +429,10 @@ export async function collect(
     else if (kind === "expired") out.expired.push(r.custom_id);
     else if (kind === "invalid_request") out.invalid_request.push(r.custom_id);
     else out.canceled.push(r.custom_id);
+    if (r.result.type === "errored") {
+      const message = (r.result.error as { error?: { message?: string } } | undefined)?.error?.message;
+      if (message) out.error_messages.set(r.custom_id, message);
+    }
   }
   out.absent = entry.custom_ids.filter((id) => !seen.has(id));
   out.cost_usd = roundUsd(out.cost_usd);
@@ -441,21 +451,25 @@ export function resubmitOnce(collected: Collected, rebuild: (custom_id: string) 
   const already = new Set(collected.batch.resubmits ?? []);
   const retry: BatchRequest[] = [];
   const queue: Array<{ custom_id: string; reason: string }> = [];
-  for (const id of collected.invalid_request) queue.push({ custom_id: id, reason: "invalid_request" });
+  const why = (id: string, kind: string) => {
+    const m = collected.error_messages?.get(id);
+    return m ? `${kind}: ${m.slice(0, 300)}` : kind;
+  };
+  for (const id of collected.invalid_request) queue.push({ custom_id: id, reason: why(id, "invalid_request") });
   const retryable: Array<[string, string]> = [
-    ...collected.errored.map((id): [string, string] => [id, "errored"]),
+    ...collected.errored.map((id): [string, string] => [id, why(id, "errored")]),
     ...collected.expired.map((id): [string, string] => [id, "expired"]),
     ...collected.canceled.map((id): [string, string] => [id, "canceled"]),
     ...collected.absent.map((id): [string, string] => [id, "absent"]),
   ];
-  for (const [id, why] of retryable) {
+  for (const [id, reason] of retryable) {
     if (already.has(id)) {
-      queue.push({ custom_id: id, reason: `${why} twice` });
+      queue.push({ custom_id: id, reason: `${reason} twice` });
       continue;
     }
     const req = rebuild(id);
     if (req) retry.push(req);
-    else queue.push({ custom_id: id, reason: `${why}; not rebuildable` });
+    else queue.push({ custom_id: id, reason: `${reason}; not rebuildable` });
   }
   return { retry, queue };
 }

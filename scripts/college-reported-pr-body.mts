@@ -12,7 +12,7 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import type { REPORTED_MODELS, ReportedEntry, ReportedFile, ReviewItem, ReviewQueueFile, RunSummary, RunSummaryV3 } from "../lib/reported.ts";
 import type { School } from "../lib/types";
-import { itemOfCode } from "../lib/cds-sections.ts";
+import { CDS_CODE, itemOfCode } from "../lib/cds-sections.ts";
 
 type ModelJob = keyof typeof REPORTED_MODELS;
 
@@ -273,7 +273,8 @@ export function perItemTable(items: ReviewItem[]): string[] {
   ];
   for (const item of sorted) {
     const code = item.code ?? "";
-    const label = code ? `${itemOfCode(code)} · ${code}` : "";
+    // A whole extraction call that failed is queued as "C-call" / "rest-call", not a template code.
+    const label = CDS_CODE.test(code) ? `${itemOfCode(code)} · ${code}` : code.endsWith("-call") ? `whole ${code.slice(0, -5)} call` : code;
     const value = item.value === undefined || item.value === null ? "—" : String(item.value);
     const checks = item.failures.map((f) => `${f.check} (${f.detail})`).join("; ");
     out.push(`| ${escapeCell(item.name)} (${item.unit_id}) | ${item.edition ?? ""} | ${label} | ${escapeCell(value.slice(0, 40))} | ${escapeCell(checks)} | ${item.urls[0] ?? ""} |`);

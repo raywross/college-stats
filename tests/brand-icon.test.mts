@@ -84,6 +84,8 @@ test("candidates: the largest touch icon first, then declared icons by size, the
     c("https://u.edu/apple-touch-icon.png", "apple-touch-icon"),
     c("https://u.edu/img/android-chrome-192x192.png", "icon"),
     c("https://u.edu/img/touch-180.png", "apple-touch-icon", "180x180"),
+    c("data:image/svg+xml,%3Csvg%3E%3C/svg%3E", "icon", "any", "image/svg+xml"),
+    c("/img/relative.png", "apple-touch-icon", "512x512"),
   ]);
   assert.deepEqual(
     ranked.map((r) => r.url.replace("https://u.edu", "")),

@@ -59,7 +59,7 @@ export function likelySize(c: IconCandidate): number {
 /**
  * Candidates best first: touch icons (made by the college as a tile, usually 180 px), largest first; then declared
  * icons, largest first (an SVG counts as large); then the conventional /apple-touch-icon.png; then /favicon.ico.
- * Safari's monochrome `mask-icon` is never a mark. Duplicate URLs are dropped.
+ * Safari's monochrome `mask-icon` is never a mark; data: URIs and malformed URLs are skipped; duplicate URLs are dropped.
  */
 export function rankIconCandidates(icons: readonly IconCandidate[]): IconCandidate[] {
   const tier = (c: IconCandidate) => {
@@ -74,7 +74,8 @@ export function rankIconCandidates(icons: readonly IconCandidate[]): IconCandida
   const seen = new Set<string>();
   return icons
     .map((c, k) => ({ c, k, t: tier(c), s: likelySize(c) }))
-    .filter((x) => x.t >= 0)
+    // Only fetchable files: a data: URI has no URL to cite, and a malformed one would look like a network failure.
+    .filter((x) => x.t >= 0 && /^https?:\/\/[^/\s]+/i.test(x.c.url))
     .sort((a, b) => a.t - b.t || b.s - a.s || a.k - b.k)
     .map((x) => x.c)
     .filter((c) => (seen.has(c.url) ? false : (seen.add(c.url), true)));

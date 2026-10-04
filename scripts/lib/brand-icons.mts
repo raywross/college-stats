@@ -309,6 +309,8 @@ export async function iconForCollege(
   probe: SiteProbeEntry,
   http: Pick<PoliteHttp, "get">,
   today: string,
+  /** Whether a host failed to answer this run (PoliteHttp returns null both for that and for a robots.txt refusal). */
+  unreachable: (url: string) => boolean = () => false,
 ): Promise<{ entry: Omit<BrandLogoEntry, "unit_id">; webp: Buffer } | { reasons: string[]; transient: boolean }> {
   const reasons: string[] = [];
   let transient = false;
@@ -323,7 +325,9 @@ export async function iconForCollege(
       continue;
     }
     if (!res) {
-      reasons.push(`${c.url}: robots.txt or no answer`);
+      // A host that didn't answer is a passing failure; a robots.txt refusal is an answer.
+      if (unreachable(c.url)) transient = true;
+      reasons.push(`${c.url}: ${unreachable(c.url) ? "no answer" : "robots.txt disallows it"}`);
       continue;
     }
     if (!res.ok) {
@@ -375,7 +379,20 @@ export async function syncIcons(opts: {
     requests++;
     return deps.fetch(input, init);
   };
-  const http = new PoliteHttp({ fetch: counting, now: deps.now, sleep: deps.sleep, minDelayMs: 1000, log: () => {}, timeoutMs: 30_000, maxBytes: MAX_ICON_BYTES });
+  // PoliteHttp says which hosts didn't answer (or answered robots.txt with a server error) in its log; keep them.
+  const down = new Set<string>();
+  const log = (m: string) => {
+    const host = /^\s*(\S+) (?:didn't respond|returned a server error)/.exec(m)?.[1];
+    if (host) down.add(host);
+  };
+  const unreachable = (url: string) => {
+    try {
+      return down.has(new URL(url).host);
+    } catch {
+      return false;
+    }
+  };
+  const http = new PoliteHttp({ fetch: counting, now: deps.now, sleep: deps.sleep, minDelayMs: 1000, log, timeoutMs: 30_000, maxBytes: MAX_ICON_BYTES });
   const removed = (id: string) => opts.overrides[id]?.logo === false;
   const rows = new Map(opts.previous.map((e) => [e.unit_id, e]));
   const outcomes: IconOutcome[] = [];
@@ -391,7 +408,7 @@ export async function syncIcons(opts: {
   let done = 0;
   const worker = async () => {
     for (let p = queue.shift(); p; p = queue.shift()) {
-      const got = await iconForCollege(p, http, today);
+      const got = await iconForCollege(p, http, today, unreachable);
       if ("webp" in got) {
         writeFileSync(webpPath(brandDir, p.unit_id), got.webp);
         const entry: BrandLogoEntry = { unit_id: p.unit_id, ...got.entry };

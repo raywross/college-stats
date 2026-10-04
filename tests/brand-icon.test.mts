@@ -222,6 +222,32 @@ test("a run stores icons, honors logo: false, keeps a mark through a passing fai
   assert.equal(fetched.filter((u) => u.endsWith("/robots.txt")).length, 3, "robots.txt once per host");
 });
 
+test("a host that doesn't answer keeps its mark; one whose robots.txt disallows us loses it", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "brand-"));
+  for (const id of ["100006", "100007"]) writeFileSync(join(dir, `${id}.webp`), "old");
+  const fetch = (async (input: string | URL | Request) => {
+    const url = String(input);
+    if (url.startsWith("https://silent.edu/")) throw new Error("getaddrinfo ENOTFOUND silent.edu");
+    if (url === "https://private.edu/robots.txt") return new Response("User-agent: *\nDisallow: /\n", { status: 200 });
+    return new Response("", { status: 404 });
+  }) as typeof globalThis.fetch;
+  const run = await syncIcons({
+    probe: [probeFor("100006", "silent.edu"), probeFor("100007", "private.edu")],
+    previous: [
+      { unit_id: "100006", source_url: "https://silent.edu/touch.png", retrieved: "2026-09-01", width: 192 },
+      { unit_id: "100007", source_url: "https://private.edu/touch.png", retrieved: "2026-09-01", width: 192 },
+    ],
+    overrides: {},
+    brandDir: dir,
+    deps: { fetch, now: () => 0, sleep: async () => {}, log: () => {} },
+  });
+  assert.deepEqual(run.entries.map((e) => e.unit_id), ["100006"]);
+  assert.ok(existsSync(join(dir, "100006.webp")), "no answer: yesterday's mark stays");
+  assert.equal(existsSync(join(dir, "100007.webp")), false, "robots.txt says no: the mark goes");
+  const why = run.outcomes.find((o) => o.unit_id === "100007");
+  assert.ok(why?.status === "none" && why.reasons.every((r) => r.endsWith("robots.txt disallows it")));
+});
+
 test("a removal is honored on a partial run too, and the other colleges' marks are left alone", async () => {
   const dir = mkdtempSync(join(tmpdir(), "brand-"));
   for (const id of ["100001", "100005"]) writeFileSync(join(dir, `${id}.webp`), "old");

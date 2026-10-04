@@ -88,6 +88,12 @@ const PAGES: Record<string, string> = {
 
 function fakeFetcher(): PageFetcher {
   return {
+    async sitemaps() {
+      return [];
+    },
+    async raw() {
+      return null;
+    },
     async get(url: string) {
       const text = PAGES[url];
       if (!text) return { ok: false as const, url, error: "HTTP 404" };
@@ -175,10 +181,11 @@ function fakeClient(log: string[], verdicts: (finding: string) => boolean): Mode
         return msg("record_facts", extraction(domain, body.model));
       },
       stream(body: Anthropic.MessageStreamParams) {
-        const text = JSON.stringify(body.messages);
-        const domain = text.includes("Greek life") ? "greek" : text.includes("spiritual life") ? "faith" : "lgbtq";
-        log.push(`discover ${domain}`);
-        return { finalMessage: async () => msg("save_links", LINKS[domain]) };
+        // Round 2: one discovery call per college, asking only for the fields the free probes didn't find.
+        const asked = Object.keys(((body.tools ?? []).find((t) => "name" in t && t.name === "save_links") as Anthropic.Tool).input_schema.properties ?? {});
+        log.push(`discover ${asked.filter((k) => k !== "notes").join(",")}`);
+        const all: Record<string, unknown> = Object.assign({}, ...Object.values(LINKS));
+        return { finalMessage: async () => msg("save_links", Object.fromEntries(asked.map((k) => [k, all[k] ?? null]))) };
       },
     },
   };
@@ -190,7 +197,9 @@ test("runCollege: quotes checked, escalation on a bad quote, second check gates 
   const ctx: Ctx = { client: fakeClient(log, (f) => !f.startsWith("Gender-inclusive housing")), budget: new Budget(5) };
   const { result, recipe } = await runCollege(ctx, fakeFetcher(), COLLEGE, { today: "2026-10-04", log: () => {} });
 
-  assert.deepEqual(log.filter((l) => l.startsWith("discover")), ["discover greek", "discover faith", "discover lgbtq"]);
+  // One discovery call for the whole college, for what the probes (none found here) missed: the scored types, the
+  // conduct code (a religious college), and the religion report (an affiliated one); never restrooms or the health plan.
+  assert.deepEqual(log.filter((l) => l.startsWith("discover")), ["discover fsl_office,greek_none,faith_office,lgbtq_center,nondiscrimination,housing,name_policy,conduct_code,religion_report"]);
   // Greek: Haiku's invented quote triggered one Sonnet re-read; the corrected fact is kept.
   assert.deepEqual(result.escalated, ["greek"], JSON.stringify(result.dropped));
   assert.equal(result.greek?.formal_term?.value, "Fall");

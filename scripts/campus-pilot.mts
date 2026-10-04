@@ -1,11 +1,17 @@
 /**
- * The campus-life pilot (specs/religious-life.md phase 2, greek-life.md phase 2, lgbtq-life.md phase 4): 25 colleges,
- * per-college discovery, extraction, quote checks, and the second-model check, then the facts to publish.
+ * The campus-life pilot (specs/religious-life.md phase 2, greek-life.md phase 2, lgbtq-life.md phase 4): per-college
+ * discovery (free probes, then one paid call), extraction, quote and support checks, and the second-model check, then
+ * the facts to publish. Round 2 (specs/college-reported-data.md "Round 2 plan").
  *
- *   npm run campus-pilot                       # the 25 pilot colleges (owner decision 2: no full run)
- *   npm run campus-pilot -- --college 228778   # one college (repeatable)
+ *   npm run campus-pilot                       # the colleges in data/reference/campus-pilot-2-colleges.json
+ *   npm run campus-pilot -- --colleges-file data/reference/x.json   # another list ({ colleges: [{ unit_id }] })
+ *   npm run campus-pilot -- --college 228778   # one college (repeatable; overrides the list)
  *   npm run campus-pilot -- --rediscover       # ignore saved links and run discovery again
  *   npm run campus-pilot -- --cap 15           # spend cap in dollars across every pilot run (default 15)
+ *   npm run campus-pilot -- --no-batch         # make extraction and second-check calls directly (default: Message Batches)
+ *
+ * A run only changes the colleges it reads: every other college's published facts and recipe are kept as they were
+ * (files.mts mergeRun).
  *
  * Needs ANTHROPIC_API_KEY (.env.local). Writes data/campus-sources.json (links and page hashes per college),
  * data/campus-pages.json (published facts), data/reports/campus-pilot-<run>.json (everything: raw extractions,
@@ -21,7 +27,8 @@ import { readBlocked, recordBlock, writeBlocked } from "./lib/directories/files.
 import { Budget, PILOT_MODELS, type CollegeRef, type Ctx } from "./lib/campus-pilot/llm.mts";
 import { PageFetcher, httpLogHook } from "./lib/campus-pilot/pages.mts";
 import { runCollege, type CampusRecipe, type CollegeResult } from "./lib/campus-pilot/run.mts";
-import { PILOT_IDS, formatPagesFile, publishable, readPagesFile, type PagesFile } from "./lib/campus-pilot/files.mts";
+import { DEFAULT_COLLEGES_FILE, formatPagesFile, formatSourcesFile, mergeRun, readCollegeList, readPagesFile, readSourcesFile } from "./lib/campus-pilot/files.mts";
+import { BatchCaller, directCaller, type PilotBatchApi } from "./lib/campus-pilot/batch.mts";
 
 const ROOT = join(import.meta.dirname, "..");
 const SOURCES = join(ROOT, "data", "campus-sources.json");
@@ -29,7 +36,9 @@ const PAGES = join(ROOT, "data", "campus-pages.json");
 const REPORTS = join(ROOT, "data", "reports");
 const CACHE = join(ROOT, ".cache", "campus-pages");
 const LEDGER = join(CACHE, "spent.json");
-const CONCURRENCY = 4;
+const batch = !process.argv.includes("--no-batch");
+// Batched calls wait for each other, so every college runs at once (requests to one host are still paced by robots).
+const CONCURRENCY = batch ? 25 : 4;
 
 const args = process.argv.slice(2);
 const flag = (name: string) => args.includes(`--${name}`);
@@ -41,21 +50,25 @@ async function main() {
   const today = new Date().toISOString().slice(0, 10);
   const run = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
   const schools: School[] = JSON.parse(readFileSync(join(ROOT, "data", "schools.json"), "utf8"));
-  const ids = values("college").length ? values("college") : PILOT_IDS;
+  const listFile = join(ROOT, values("colleges-file")[0] ?? DEFAULT_COLLEGES_FILE);
+  const ids = values("college").length ? values("college") : readCollegeList(listFile);
   const colleges = ids.map((id) => {
     const s = schools.find((x) => x.unit_id === id);
     if (!s) throw new Error(`no college ${id} in data/schools.json`);
     return s;
   });
 
-  const sourcesFile: { updated: string; recipes: CampusRecipe[] } = existsSync(SOURCES) ? JSON.parse(readFileSync(SOURCES, "utf8")) : { updated: today, recipes: [] };
+  const sourcesFile = readSourcesFile(SOURCES, today);
   const recipes = new Map(sourcesFile.recipes.map((r) => [r.unit_id, r]));
+  const runRecipes: CampusRecipe[] = [];
   const ledger: { spent: number } = existsSync(LEDGER) ? JSON.parse(readFileSync(LEDGER, "utf8")) : { spent: 0 };
   const budget = new Budget(cap);
   budget.spent = ledger.spent;
-  console.log(`campus-pilot ${run}: ${colleges.length} colleges; spent so far $${ledger.spent.toFixed(2)} of $${cap}`);
+  console.log(`campus-pilot ${run}: ${colleges.length} colleges${values("college").length ? "" : ` from ${listFile}`}; spent so far $${ledger.spent.toFixed(2)} of $${cap}; ${batch ? "Message Batches" : "direct calls"}`);
 
-  const ctx: Ctx = { client: new Anthropic({ maxRetries: 2, timeout: 10 * 60 * 1000 }), budget };
+  const client = new Anthropic({ maxRetries: 2, timeout: 10 * 60 * 1000 });
+  const batcher = batch ? new BatchCaller(client.messages.batches as unknown as PilotBatchApi, directCaller(client), { deadlineMs: 20 * 60_000, log: (m) => console.log(m) }) : null;
+  const ctx: Ctx = { client, budget, ...(batcher ? { caller: batcher } : {}) };
   const deadHosts = new Set<string>();
   const http = directoryHttp({ log: httpLogHook(deadHosts, (m) => console.log(m)) });
   const fetcher = new PageFetcher(http, CACHE, today, deadHosts);
@@ -76,7 +89,7 @@ async function main() {
       };
       const before = budget.spent;
       const { result, recipe } = await runCollege(ctx, fetcher, ref, { today, recipe: flag("rediscover") ? undefined : recipes.get(s.unit_id), log: (m) => console.log(m) });
-      recipes.set(s.unit_id, recipe);
+      runRecipes.push(recipe);
       results.push(result);
       const n = (x: unknown) => (x ? 1 : 0);
       console.log(
@@ -88,17 +101,10 @@ async function main() {
   mkdirSync(CACHE, { recursive: true });
   await Promise.all(Array.from({ length: CONCURRENCY }, worker));
 
-  // Recipes and published facts (a partial run keeps the other colleges' entries).
-  writeFileSync(SOURCES, `${JSON.stringify({ updated: today, recipes: [...recipes.values()].sort((a, b) => a.unit_id.localeCompare(b.unit_id)) }, null, 1)}\n`);
-  const pages: PagesFile = readPagesFile(PAGES);
-  const byId = new Map(pages.colleges.map((c) => [c.unit_id, c]));
-  for (const r of results) {
-    if (r.stopped && !r.greek && !r.faith && !r.lgbtq) continue;
-    const p = publishable(r);
-    if (p) byId.set(r.unit_id, p);
-    else byId.delete(r.unit_id);
-  }
-  writeFileSync(PAGES, formatPagesFile({ updated: today, colleges: [...byId.values()] }));
+  // Recipes and published facts: only this run's colleges change; every other college's entries are kept as they were.
+  const merged = mergeRun(readPagesFile(PAGES), sourcesFile, { results, recipes: runRecipes }, today);
+  writeFileSync(SOURCES, formatSourcesFile(merged.sources));
+  writeFileSync(PAGES, formatPagesFile(merged.pages));
 
   let blocked = readBlocked(ROOT);
   for (const b of fetcher.blocked) blocked = recordBlock(blocked, { org: "campus-pilot", url: b.url, reason: b.reason as never, detail: "college page (campus-life pilot); hand reading per owner decision 1" }, today);
@@ -108,7 +114,7 @@ async function main() {
   const report = join(REPORTS, `campus-pilot-${run}.json`);
   writeFileSync(
     report,
-    `${JSON.stringify({ run, today, models: PILOT_MODELS, cap, spent_total: budget.spent, spent_run: Math.round((budget.spent - ledger.spent) * 1e6) / 1e6, requests: fetcher.requests, blocked: fetcher.blocked, calls: budget.rows, results }, null, 1)}\n`
+    `${JSON.stringify({ run, today, models: PILOT_MODELS, cap, spent_total: budget.spent, spent_run: Math.round((budget.spent - ledger.spent) * 1e6) / 1e6, requests: fetcher.requests, blocked: fetcher.blocked, batches: batcher?.sent ?? [], discovery: Object.fromEntries(runRecipes.map((r) => [r.unit_id, r.discovery ?? null])), calls: budget.rows, results }, null, 1)}\n`
   );
   console.log(`done: $${budget.spent.toFixed(2)} spent in all; report ${report}`);
 }

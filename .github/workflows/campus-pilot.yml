@@ -1,17 +1,22 @@
 # Runs the campus-life pilot (scripts/campus-pilot.mts; specs/religious-life.md phase 2, greek-life.md phase 2,
-# lgbtq-life.md phase 4) on the 25 pilot colleges, where the Anthropic key lives (the repository secret
-# ANTHROPIC_API_KEY; there is no key in local .env files). Dispatch it on the branch that should carry the results
+# lgbtq-life.md phase 4) on a list of pilot colleges (default: round 2's 25, data/reference/campus-pilot-2-colleges.json),
+# where the Anthropic key lives (the repository secret ANTHROPIC_API_KEY; there is no key in local .env files). Dispatch it on the branch that should carry the results
 # ("Use workflow from": the pilot or integration branch): it runs the pilot, scores it against the hand-checked answer
 # key when one is committed (data/reports/campus-pilot-answer-key.json), merges the published facts into the dataset,
 # and commits the data back to that same branch for review. Never auto-merges; never runs on a schedule (owner
-# decision 2: the 25-college pilot only, no full run).
+# decision 2: pilot colleges only, no full run). A run changes only the colleges it reads: every other college's
+# published facts (data/campus-pages.json) and recipes (data/campus-sources.json) are kept byte for byte.
 name: Campus-life pilot
 
 on:
   workflow_dispatch:
     inputs:
+      colleges_file:
+        description: "College list file to run: a colleges array of unit_id objects"
+        type: string
+        default: data/reference/campus-pilot-2-colleges.json
       college:
-        description: Unit ids to run, space-separated (blank = the 25 pilot colleges)
+        description: Unit ids to run, space-separated (overrides the list when set)
         type: string
         default: ""
       cap:
@@ -22,6 +27,10 @@ on:
         description: Run discovery again even for colleges with saved links
         type: boolean
         default: false
+      batch:
+        description: Send extraction and second checks as Message Batches (half price; a batch not done in 20 minutes is cancelled and its calls made directly)
+        type: boolean
+        default: true
 
 permissions:
   contents: write
@@ -33,7 +42,7 @@ concurrency:
 jobs:
   pilot:
     runs-on: ubuntu-latest
-    timeout-minutes: 120
+    timeout-minutes: 150
     steps:
       - uses: actions/checkout@v4
 
@@ -55,12 +64,15 @@ jobs:
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           COLLEGES: ${{ inputs.college }}
+          COLLEGES_FILE: ${{ inputs.colleges_file }}
           CAP: ${{ inputs.cap }}
           REDISCOVER: ${{ inputs.rediscover }}
+          BATCH: ${{ inputs.batch }}
         run: |
-          args="--cap ${CAP:-15}"
+          args="--cap ${CAP:-15} --colleges-file ${COLLEGES_FILE:-data/reference/campus-pilot-2-colleges.json}"
           for id in $COLLEGES; do args="$args --college $id"; done
           if [ "$REDISCOVER" = "true" ]; then args="$args --rediscover"; fi
+          if [ "$BATCH" = "false" ]; then args="$args --no-batch"; fi
           npm run campus-pilot -- $args
 
       - name: Score against the answer key

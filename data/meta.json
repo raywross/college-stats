@@ -113,6 +113,13 @@
       "url": "https://ed-public-download.scorecard.network/downloads/Most-Recent-Cohorts-Field-of-Study_06102026.zip",
       "description": "Earnings and federal loan debt by detailed field of study (4-digit CIP) and credential level, bachelor's programs only, among each college's federal financial aid recipients. Each column is Scorecard's latest calculation for that one metric, and different columns pool different completion cohorts a few years apart, so a program's figures aren't all one snapshot (see the Field of Study spec for the exact years)."
     },
+    "state-law": {
+      "label": "State laws on public colleges",
+      "publisher": "State legislatures (statutes read and summarized by hand)",
+      "edition": "Reviewed 2026-10-03",
+      "url": "https://statutes.capitol.texas.gov/Docs/ED/htm/ED.51.htm#51.3525",
+      "description": "Laws that limit what public colleges in a state may offer, such as identity-based offices and programs, each with its statute, effective date, and a one-line summary checked against the statute text. Now: Texas SB 17 (2023)."
+    },
     "ipeds-c": {
       "label": "IPEDS Completions survey (degrees awarded by field)",
       "publisher": "National Center for Education Statistics (NCES)",

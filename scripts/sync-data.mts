@@ -4,6 +4,7 @@
  *   npm run sync-data                 # uses COLLEGE_SCORECARD_API_KEY from .env.local
  *   npm run sync-data -- --include-online
  *   npm run sync-data -- --releases-only  # only check NCES for upcoming releases (no API key needed)
+ *   npm run sync-data -- --links          # then the site probe (visit pages, link liveness; scripts/lib/site-probe.mts)
  *
  * First, it checks NCES for the files of each upcoming release in
  * data/release-calendar.json and marks the release published once they appear.
@@ -55,6 +56,7 @@ import { normalizeUrl } from "../lib/links.ts";
 import { addIdentityMeta, applyIdentity } from "../lib/identity.ts";
 import { loadIdentityInputs } from "./lib/identity-sync.mts";
 import { writeAliasTable } from "./lib/aliases-sync.mts";
+import { runSiteProbe } from "./lib/site-probe.mts";
 
 const ROOT = join(import.meta.dirname, "..");
 const OUT = join(ROOT, "data", "schools.json");
@@ -67,6 +69,7 @@ const STATE_LAWS = join(ROOT, "data", "state-laws.json");
 const API = "https://api.data.gov/ed/collegescorecard/v1/schools";
 const INCLUDE_ONLINE = process.argv.includes("--include-online");
 const RELEASES_ONLY = process.argv.includes("--releases-only");
+const LINKS = process.argv.includes("--links");
 
 /* ------------------------------------------------------------------ */
 /* Helpers                                                             */
@@ -998,6 +1001,9 @@ async function main() {
   } else console.log(`  directory mismatches: 0`);
   console.log(`  skipped online-only:  ${stats.online}${INCLUDE_ONLINE ? "" : " (use --include-online to keep)"}`);
   console.log(`  skipped (no undergrads reported): ${stats.noSize}`);
+  // The site probe over what was just written (specs/school-identity/links.md): visit pages, social links, icons, link
+  // liveness; it writes data/site-probe.json and data/link-issues.json, then re-applies identity (mergeIdentity).
+  if (LINKS) await runSiteProbe(ROOT, { schools, hdRows: hd.rows });
 }
 
 main().catch((err) => {

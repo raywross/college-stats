@@ -10,6 +10,8 @@
  *   Response's `arrayBuffer()` never hangs.
  * - Answers that refuse us (401, 403, 405, 429, a bot-protection challenge) are kept in `blockedSeen()` for
  *   data/reference/blocked-hosts.json (Decision 8; ./blocked.mts).
+ * - The school identity site probe (scripts/lib/site-probe.mts) shares the client: `head` and `skipReason` serve its
+ *   liveness check, under the same robots.txt and pacing rules.
  */
 import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
@@ -33,6 +35,8 @@ export interface RobotsRules {
   disallowAll?: boolean;
   /** Why everything is disallowed when it is: the server answered 5xx, or the host didn't answer at all (no DNS, refused). */
   unreachable?: "server-error" | "no-response";
+  /** For "no-response": the failed request's code (`errorCode`), e.g. "ENOTFOUND" for a host that doesn't exist. */
+  cause?: string;
   /** `Sitemap:` lines (absolute URLs; they belong to no group and apply to every user agent). */
   sitemaps?: string[];
 }
@@ -147,6 +151,21 @@ export async function readCapped(res: Response, url: string, max = MAX_DOCUMENT_
 /** Statuses whose Response may not carry a body. */
 const NULL_BODY = new Set([101, 204, 205, 304]);
 
+/**
+ * A failed request's code: "timeout" or "size" for our own limits, else the network error's code from Node's fetch
+ * ("ENOTFOUND" for a host that doesn't exist, "ECONNREFUSED", "CERT_HAS_EXPIRED", "UND_ERR_CONNECT_TIMEOUT", …), else
+ * one found in its message, else the message itself.
+ */
+export function errorCode(err: unknown): string {
+  if (err instanceof HttpLimitError) return err.limit;
+  const e = (err ?? {}) as { code?: unknown; message?: unknown; cause?: { code?: unknown; message?: unknown } };
+  const code = e.cause?.code ?? e.code;
+  if (typeof code === "string" && code) return code;
+  const text = `${String(e.message ?? "")} ${String(e.cause?.message ?? "")}`;
+  const found = /\b(E[A-Z]{3,}|UND_ERR_[A-Z_]+|ERR_[A-Z_]+|CERT_[A-Z_]+|UNABLE_TO_[A-Z_]+|DEPTH_ZERO_[A-Z_]+|SELF_SIGNED_[A-Z_]+)\b/.exec(text);
+  return found ? found[1] : String(e.message ?? err) || "error";
+}
+
 /* ------------------------------------------------------------------ */
 /* Per-host pacing                                                     */
 /* ------------------------------------------------------------------ */
@@ -206,8 +225,8 @@ export class PoliteHttp {
           if (res.ok) return parseRobots(await res.text());
           if (res.status >= 500) return { rules: [], crawlDelayMs: null, disallowAll: true, unreachable: "server-error" as const };
           return { rules: [], crawlDelayMs: null };
-        } catch {
-          return { rules: [], crawlDelayMs: null, disallowAll: true, unreachable: "no-response" as const };
+        } catch (err) {
+          return { rules: [], crawlDelayMs: null, disallowAll: true, unreachable: "no-response" as const, cause: errorCode(err) };
         }
       });
       this.robots.set(origin, p);
@@ -239,6 +258,42 @@ export class PoliteHttp {
     const status = blockedStatusOf(res.status, res.headers, head);
     if (status !== null) this.blocked.push({ host: u.host, url, status });
     return res;
+  }
+
+  /**
+   * HEAD `url` politely, like `get`: robots.txt, the per-host gap (a HEAD counts as a request), the deadline. Null when
+   * robots.txt disallows it. Refusals aren't recorded in `blockedSeen()`: a server may refuse HEAD alone (405), and the
+   * GET a caller falls back to is recorded as usual. Throws on a network error or the timeout. Used by the site probe's
+   * liveness check (scripts/lib/site-probe.mts).
+   */
+  async head(url: string): Promise<Response | null> {
+    const u = new URL(url);
+    const robots = await this.robotsFor(u.origin);
+    if (!robotsAllows(robots, url)) return null;
+    const delay = Math.max(this.deps.minDelayMs, robots.crawlDelayMs ?? 0);
+    const { res } = await this.paced(u.host, delay, () => this.limited(url, { method: "HEAD", headers: { "User-Agent": USER_AGENT }, redirect: "follow" }));
+    return res;
+  }
+
+  /**
+   * Why `get` or `head` would skip `url` without a request, or null when it may be fetched: robots.txt disallows it
+   * ("robots"), the host's robots.txt answered a server error ("server-error"), or the host didn't answer robots.txt at
+   * all ("no-response", with the error's code as `cause`: "ENOTFOUND" when the host doesn't exist). Reads the same
+   * robots.txt, fetched once per origin.
+   */
+  async skipReason(url: string): Promise<{ reason: "robots" | "server-error" | "no-response"; cause?: string } | null> {
+    const robots = await this.robotsFor(new URL(url).origin);
+    if (robotsAllows(robots, url)) return null;
+    if (robots.unreachable === "no-response") return { reason: "no-response", ...(robots.cause ? { cause: robots.cause } : {}) };
+    return { reason: robots.unreachable === "server-error" ? "server-error" : "robots" };
+  }
+
+  /**
+   * The gap robots.txt asks between our requests to `url`'s origin (its Crawl-delay, in ms), or null when it sets none.
+   * `get` and `head` honor it; a caller with many URLs on a host that asks for minutes can choose to skip them instead.
+   */
+  async crawlDelayMs(url: string): Promise<number | null> {
+    return (await this.robotsFor(new URL(url).origin)).crawlDelayMs;
   }
 
   /** The `Sitemap:` URLs in the origin's robots.txt (fetched once per run and shared with every `get`). */

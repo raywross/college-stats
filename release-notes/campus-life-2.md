@@ -3,7 +3,7 @@ title: "Campus life: faith communities, Greek chapters, LGBTQ+ support, and stat
 pr: 73
 date: 2026-10-04
 kind: data
-summary: Campus life now lists faith communities, fraternity and sorority chapters, and LGBTQ+ centers and policies from national organizations' own lists, each credited, plus state laws in six states and facts checked on 12 colleges' own pages.
+summary: Campus life now lists faith communities, fraternity and sorority chapters, and LGBTQ+ centers and policies from national organizations' own lists, each credited, plus state laws in nine states and facts checked on 12 colleges' own pages.
 ---
 
 ## What's new
@@ -20,8 +20,10 @@ summary: Campus life now lists faith communities, fraternity and sorority chapte
   (the Trans Policy Clearinghouse or the college's own page) and when. A list never turns into a "No": if no one
   lists a policy, nothing is shown. Where a religious college's conduct code restricts same-sex relationships or
   gender expression, we quote it.
-- **State laws**: public colleges in Alabama, Florida, Idaho, Iowa, Texas, and Utah show a line on the state law
-  that limits identity-based offices or programs, linked to the statute.
+- **State laws**: public colleges in nine states show a line on the state law that limits identity-based or
+  diversity, equity, and inclusion offices or programs, linked to the statute. In Alabama, Florida, Idaho, Iowa, Texas,
+  and Utah the law names programs around gender identity or sexual orientation; in Ohio, Tennessee, and North Carolina
+  it's a general ban on such offices, and the line says the law doesn't name them.
 - **Explore**: filter by colleges with a Jewish, Catholic, or other faith community; with historically Black, Latino,
   Asian, or multicultural Greek chapters; with an LGBTQ+ center, gender-inclusive housing, or a nondiscrimination
   policy covering gender identity.

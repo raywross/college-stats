@@ -2,6 +2,8 @@ import type { DatasetMeta, School, SearchFilters, SchoolType, SortKey } from "./
 import type { FieldPath } from "./fields";
 import { lineageFor, sourcesForFields as sourcesForFieldsPure, type Cited, type CitedSource } from "./lineage";
 import type { ReleaseCalendar } from "./releases";
+import { crestBrand, type CrestBrand } from "./brand";
+import { compareMatches, scoreSchool, type AliasRow } from "./aliases";
 import { matchesIndicators } from "./indicators";
 import { genderBalanceOf, isMostlyFullTime } from "./student-body";
 import { matchesPolicy } from "./test-policy";
@@ -46,6 +48,8 @@ export interface DatasetFiles {
   schools: School[];
   meta: DatasetMeta;
   releaseCalendar: ReleaseCalendar;
+  /** Short names and nicknames (specs/school-identity/aliases.md); absent/empty when none loaded (fail-soft). */
+  aliases?: AliasRow[];
 }
 
 /** Lightweight shape sent to the browser. */
@@ -56,9 +60,20 @@ export interface SchoolIndexEntry {
   state: string;
   type: SchoolType;
   acceptance: number | null;
+  /** The crest's colors and mark (specs/school-identity/brand.md), when the college has them. */
+  brand?: CrestBrand;
+  /** The alias' display form that matched a search query ("Georgia Tech"), when one did (lib/aliases.ts). */
+  matched?: string;
+}
+
+/** `{ brand }` when the college has colors or a mark, else nothing (keeps client payloads small). */
+function withBrand(s: School): { brand?: CrestBrand } {
+  const brand = crestBrand(s);
+  return brand ? { brand } : {};
 }
 
 export function toIndexEntry(s: School): SchoolIndexEntry {
+  const brand = crestBrand(s);
   return {
     id: s.unit_id,
     name: s.name,
@@ -66,6 +81,7 @@ export function toIndexEntry(s: School): SchoolIndexEntry {
     state: s.location.state,
     type: s.type,
     acceptance: s.admissions.acceptance_rate,
+    ...(brand ? { brand } : {}),
   };
 }
 
@@ -85,6 +101,8 @@ export interface ScatterPointData {
   type: SchoolType;
   city: string;
   state: string;
+  /** The crest's colors and mark for the hover card (specs/school-identity/brand.md), when the college has them. */
+  brand?: CrestBrand;
 }
 
 const SORTERS: Record<SortKey, (s: School) => number | string | null> = {
@@ -146,8 +164,12 @@ export type Dataset = ReturnType<typeof createDataset>;
  * Query functions bound to one dataset. They are closures, not methods, so callers can destructure:
  * `const { rankOf } = await getData();`.
  */
-export function createDataset({ schools, meta, releaseCalendar }: DatasetFiles) {
+export function createDataset({ schools, meta, releaseCalendar, aliases = [] }: DatasetFiles) {
   const byId = new Map(schools.map((s) => [s.unit_id, s]));
+
+  /** The alias key index beside the school index (specs/school-identity/aliases.md#store): each school's own rows. */
+  const aliasesByUnitId = new Map<string, AliasRow[]>();
+  for (const row of aliases) aliasesByUnitId.set(row.unit_id, [...(aliasesByUnitId.get(row.unit_id) ?? []), row]);
 
   /* ---------------------------------------------------------------- */
   /* Sources & citations                                               */
@@ -196,13 +218,15 @@ export function createDataset({ schools, meta, releaseCalendar }: DatasetFiles) 
     let results = schools;
 
     if (filters.q) {
-      const query = filters.q.toLowerCase();
-      results = results.filter(
-        (s) =>
-          s.name.toLowerCase().includes(query) ||
-          s.location.city.toLowerCase().includes(query) ||
-          s.location.state.toLowerCase() === query
-      );
+      // Shares lib/aliases.ts's scorer with searchSchools, so "uga" lists the University of Georgia here too
+      // (specs/school-identity/aliases.md#search). An exact alias match wins outright; substring matches (the
+      // existing name/city/state rules, all part of the same scorer) still appear below it, ties broken by
+      // applicants — the same order the typeahead uses, kept stable into whatever sort the caller applies next.
+      const matches = results
+        .map((s) => ({ s, m: scoreSchool(s, filters.q!, aliasesByUnitId.get(s.unit_id)) }))
+        .filter((x): x is { s: School; m: NonNullable<typeof x.m> } => x.m !== null);
+      matches.sort((a, b) => compareMatches({ match: a.m, school: a.s }, { match: b.m, school: b.s }));
+      results = matches.map((x) => x.s);
     }
     if (filters.states?.length) results = results.filter((s) => filters.states!.includes(s.location.state));
     if (filters.regions?.length) results = results.filter((s) => filters.regions!.includes(s.location.region));
@@ -312,26 +336,24 @@ export function createDataset({ schools, meta, releaseCalendar }: DatasetFiles) 
   /* Search (typeahead + compare picker, served by /api/schools)       */
   /* ---------------------------------------------------------------- */
 
-  /** Name-prefix matches first, then word-prefix, then anywhere; ties go to bigger applicant pools. */
+  /**
+   * Alias-exact matches first, then name-prefix, alias-prefix, word-prefix, then anywhere; ties go to bigger
+   * applicant pools (lib/aliases.ts#scoreSchool; specs/school-identity/aliases.md#search). "UGA" finds the
+   * University of Georgia; "ASU" lists Arizona State first among the five colleges that share the alias.
+   */
   function searchSchools(q: string, limit = 8, exclude: string[] = []): SchoolIndexEntry[] {
-    const query = q.trim().toLowerCase();
-    if (!query) return [];
+    if (!q.trim()) return [];
     const skip = new Set(exclude);
-    const scored: { s: School; score: number }[] = [];
+    const scored: { s: School; m: NonNullable<ReturnType<typeof scoreSchool>> }[] = [];
     for (const s of schools) {
       if (skip.has(s.unit_id)) continue;
-      const name = s.name.toLowerCase();
-      let score = -1;
-      if (name.startsWith(query)) score = 3;
-      else if (name.includes(` ${query}`) || name.includes(`-${query}`)) score = 2;
-      else if (name.includes(query)) score = 1;
-      else if (s.location.city.toLowerCase().startsWith(query) || s.location.state.toLowerCase() === query) score = 0.5;
-      if (score >= 0) scored.push({ s, score });
+      const m = scoreSchool(s, q, aliasesByUnitId.get(s.unit_id));
+      if (m) scored.push({ s, m });
     }
     return scored
-      .sort((a, b) => b.score - a.score || (b.s.admissions.applicants ?? 0) - (a.s.admissions.applicants ?? 0))
+      .sort((a, b) => compareMatches({ match: a.m, school: a.s }, { match: b.m, school: b.s }))
       .slice(0, limit)
-      .map(({ s }) => toIndexEntry(s));
+      .map(({ s, m }) => ({ ...toIndexEntry(s), ...(m.matched ? { matched: m.matched } : {}) }));
   }
 
   /* ---------------------------------------------------------------- */
@@ -365,6 +387,11 @@ export function createDataset({ schools, meta, releaseCalendar }: DatasetFiles) 
 
   function reportingCount(key: MetricKey): number {
     return metricValues(key).length;
+  }
+
+  /** Short names and nicknames (specs/school-identity/aliases.md), for the /data page: row and college counts. */
+  function aliasStats(): { rows: number; colleges: number } {
+    return { rows: aliases.length, colleges: aliasesByUnitId.size };
   }
 
   function getDatasetSummary() {
@@ -451,6 +478,7 @@ export function createDataset({ schools, meta, releaseCalendar }: DatasetFiles) 
       type: s.type,
       city: s.location.city,
       state: s.location.state,
+      ...withBrand(s),
     }));
   }
 
@@ -475,6 +503,7 @@ export function createDataset({ schools, meta, releaseCalendar }: DatasetFiles) 
       type: s.type,
       city: s.location.city,
       state: s.location.state,
+      ...withBrand(s),
     }));
   }
 
@@ -496,6 +525,7 @@ export function createDataset({ schools, meta, releaseCalendar }: DatasetFiles) 
       type: s.type,
       city: s.location.city,
       state: s.location.state,
+      ...withBrand(s),
     }));
   }
 
@@ -553,6 +583,7 @@ export function createDataset({ schools, meta, releaseCalendar }: DatasetFiles) 
     rankOf,
     reportingCount,
     getDatasetSummary,
+    aliasStats,
     countByState,
     topBy,
     histogram,

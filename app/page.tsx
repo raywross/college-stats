@@ -6,7 +6,7 @@ import { DOMAINS, METRICS, admitRatio, median, oneIn, satMid, type Domain } from
 import { GLOSSARY, type TermKey } from "@/lib/glossary";
 import { compact, moneyCompact, num, pct, pctSmart } from "@/lib/format";
 import { Ring } from "@/components/charts/Ring";
-import { shortName } from "@/lib/brand";
+import { crestBrand, shortName } from "@/lib/brand";
 import { SchoolSearch } from "@/components/search/SchoolSearch";
 import { Crest } from "@/components/school/Crest";
 import { ScatterPlot } from "@/components/charts/ScatterPlot";
@@ -136,7 +136,7 @@ export default async function HomePage() {
                   style={{ animationDelay: `${200 + i * 120}ms` }}
                 >
                   <div className="flex items-center gap-3">
-                    <Crest id={s.unit_id} name={s.name} size="md" />
+                    <Crest id={s.unit_id} name={s.name} size="md" brand={crestBrand(s)} />
                     <div className="min-w-0">
                       <p className="truncate font-display font-bold">{s.name}</p>
                       <p className="text-xs text-muted-foreground">
@@ -208,7 +208,7 @@ export default async function HomePage() {
                   <div className="relative mt-4 flex items-center justify-between">
                     <div className="flex -space-x-2">
                       {l.matches.slice(0, 4).map((s) => (
-                        <Crest key={s.unit_id} id={s.unit_id} name={s.name} size="sm" className="ring-2 ring-card" />
+                        <Crest key={s.unit_id} id={s.unit_id} name={s.name} brand={crestBrand(s)} size="sm" className="ring-2 ring-card" />
                       ))}
                     </div>
                     <ArrowRight className="size-5 text-muted-foreground transition-transform group-hover:translate-x-1 group-hover:text-primary" />
@@ -333,7 +333,7 @@ export default async function HomePage() {
                     >
                       <div className="flex -space-x-2">
                         {schools.map((s) => (
-                          <Crest key={s.unit_id} id={s.unit_id} name={s.name} size="sm" className="ring-2 ring-foreground" />
+                          <Crest key={s.unit_id} id={s.unit_id} name={s.name} brand={crestBrand(s)} size="sm" className="ring-2 ring-foreground" />
                         ))}
                       </div>
                       <span className="flex-1 truncate text-sm font-semibold">

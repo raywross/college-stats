@@ -1,0 +1,156 @@
+[
+  {
+    "unit_id": "228246",
+    "qid": "Q1536258",
+    "network": "x",
+    "reason": "ambiguous: 2 distinct handles with no preferred Wikidata rank, kept none (SMU, SMUHigherEd)"
+  },
+  {
+    "unit_id": "155627",
+    "qid": "Q7109265",
+    "network": "x",
+    "reason": "ambiguous: 2 distinct handles with no preferred Wikidata rank, kept none (O_U_A_Z, OttawaU)"
+  },
+  {
+    "unit_id": "180461",
+    "qid": "Q1861687",
+    "network": "youtube",
+    "reason": "ambiguous: 2 distinct handles with no preferred Wikidata rank, kept none (UChW6A1RUB6xkppLo_S-JNqA, UCpPCC7ue8ga1mLFpuYYvaPg)"
+  },
+  {
+    "unit_id": "192448",
+    "qid": "Q543394",
+    "reason": "two Wikidata items share this unit id; kept Q1783603 (its website matched, or it has more statements)"
+  },
+  {
+    "unit_id": "228644",
+    "qid": "Q4005868",
+    "network": "x",
+    "reason": "ambiguous: 2 distinct handles with no preferred Wikidata rank, kept none (uthealthsa, UTHResearch)"
+  },
+  {
+    "unit_id": "191649",
+    "qid": "Q1623314",
+    "network": "x",
+    "reason": "ambiguous: 2 distinct handles with no preferred Wikidata rank, kept none (HofAdmission, hofstrau)"
+  },
+  {
+    "unit_id": "245652",
+    "qid": "Q20950055",
+    "network": "linkedin",
+    "reason": "dropped \"st.-john's-college-nm-\": doesn't match the linkedin handle shape"
+  },
+  {
+    "unit_id": "245652",
+    "qid": "Q20950055",
+    "network": "linkedin",
+    "reason": "dropped \"st.-john's-college-santa-fe\": doesn't match the linkedin handle shape"
+  },
+  {
+    "unit_id": "216366",
+    "qid": "Q2471216",
+    "network": "x",
+    "reason": "ambiguous: 2 distinct handles with no preferred Wikidata rank, kept none (JeffAdmissions, JeffersonUniv)"
+  },
+  {
+    "unit_id": "134945",
+    "qid": "Q935018",
+    "network": "x",
+    "reason": "ambiguous: 2 distinct handles with no preferred Wikidata rank, kept none (JacksonvilleU, JUNewsroom)"
+  },
+  {
+    "unit_id": "156745",
+    "qid": "Q5546985",
+    "network": "x",
+    "reason": "ambiguous: 2 distinct handles with no preferred Wikidata rank, kept none (gctigers, GtownCollege)"
+  },
+  {
+    "unit_id": "108232",
+    "qid": "Q2822225",
+    "network": "youtube",
+    "reason": "ambiguous: 2 distinct handles with no preferred Wikidata rank, kept none (UCKBbRLuMP8SiuCBsoq31MAQ, UCLPgV5dTL49zwIvrZXUhJxQ)"
+  },
+  {
+    "unit_id": "196413",
+    "qid": "Q617433",
+    "network": "x",
+    "reason": "ambiguous: 3 distinct handles with no preferred Wikidata rank, kept none (EngineeringSU, SU_ECSOnline, SyracuseU)"
+  },
+  {
+    "unit_id": "151111",
+    "qid": "Q1433199",
+    "reason": "two Wikidata items share this unit id; kept Q123207578 (its website matched, or it has more statements)"
+  },
+  {
+    "unit_id": "214157",
+    "qid": "Q4571902",
+    "network": "x",
+    "reason": "dropped \"moravianuniversity\": doesn't match the x handle shape"
+  },
+  {
+    "unit_id": "163976",
+    "qid": "Q20950053",
+    "network": "linkedin",
+    "reason": "dropped \"st.-john's-college-annapolis-md\": doesn't match the linkedin handle shape"
+  },
+  {
+    "unit_id": "217891",
+    "qid": "Q5134167",
+    "network": "x",
+    "reason": "ambiguous: 2 distinct handles with no preferred Wikidata rank, kept none (clinton_hbcu, Clinton1894)"
+  },
+  {
+    "unit_id": "228723",
+    "qid": "Q49212",
+    "network": "linkedin",
+    "reason": "dropped \"texas-a&m-university\": doesn't match the linkedin handle shape"
+  },
+  {
+    "unit_id": "173665",
+    "qid": "Q1366519",
+    "network": "facebook",
+    "reason": "dropped \"qa2wtp[\": doesn't match the facebook handle shape"
+  },
+  {
+    "unit_id": "231420",
+    "qid": "Q4828300",
+    "network": "x",
+    "reason": "ambiguous: 2 distinct handles with no preferred Wikidata rank, kept none (auprez, AverettU1859)"
+  },
+  {
+    "unit_id": "119173",
+    "qid": "Q6923797",
+    "network": "linkedin",
+    "reason": "dropped \"mount-saint-mary's-university\": doesn't match the linkedin handle shape"
+  },
+  {
+    "unit_id": "119173",
+    "qid": "Q6923797",
+    "network": "linkedin",
+    "reason": "dropped \"mount-st--mary's-college\": doesn't match the linkedin handle shape"
+  },
+  {
+    "unit_id": "171100",
+    "qid": "Q270222",
+    "network": "x",
+    "reason": "ambiguous: 2 distinct handles with no preferred Wikidata rank, kept none (michiganstateu, MSUnews)"
+  },
+  {
+    "unit_id": "232186",
+    "qid": "Q1411222",
+    "network": "x",
+    "reason": "ambiguous: 2 distinct handles with no preferred Wikidata rank, kept none (GeorgeMasonNews, GeorgeMasonU)"
+  },
+  {
+    "unit_id": "233921",
+    "qid": "Q65379",
+    "network": "x",
+    "reason": "ambiguous: 2 distinct handles with no preferred Wikidata rank, kept none (virginia_tech, vtnews)"
+  },
+  {
+    "unit_id": "216597",
+    "qid": "Q1466001",
+    "network": "x",
+    "reason": "ambiguous: 2 distinct handles with no preferred Wikidata rank, kept none (VillanovaMedia, VillanovaU)"
+  }
+]

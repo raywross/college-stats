@@ -10,7 +10,7 @@ import { SocialLinks } from "@/components/school/SocialIcons";
  */
 export function HeroIdentity({ school }: { school: School }) {
   return (
-    <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-2 empty:hidden sm:mt-5">
+    <div className="mt-4 flex flex-wrap items-start gap-x-3 gap-y-2 empty:hidden sm:mt-5">
       <OfficialLinks school={school} />
       <SocialLinks school={school} />
     </div>

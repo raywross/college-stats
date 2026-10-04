@@ -309,7 +309,11 @@ test("Explore: gapYear parses, counts as a filter, and matches only colleges who
   assert.equal(parseFilters({ gapYear: "1" }).gapYear, true);
   assert.equal(countActiveFilters({ gapYear: "1" }), 1);
   const [gap] = LOGISTICS_FILTERS;
-  assert.deepEqual(schools.filter(gap.test).map((s) => s.unit_id).sort(), [IL, VU, WM]);
+  // The first records' three gap-year colleges always match; a pipeline run may add more, each saying yes in its CDS.
+  const matched = schools.filter(gap.test);
+  for (const id of [IL, VU, WM]) assert.ok(matched.some((s) => s.unit_id === id), id);
+  assert.ok(!matched.some((s) => s.unit_id === CU), "Cornell's 'Yes or No' placeholder is not a yes");
+  for (const s of matched) assert.ok(s.reported?.admissions_logistics, `${s.unit_id} has the block`);
 });
 
 test("Compare: deadlines & deposit and gap year cells; null (row hidden) without data", () => {

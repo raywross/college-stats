@@ -303,7 +303,10 @@ test("the committed records' aid years: Cornell 2025–26 estimated, William & M
   assert.equal(school(WM).lineage?.["reported.aid.first_years"]?.year, "2024–25");
   assert.equal(school(IL).lineage?.["reported.aid.first_years"]?.year, "2024–25");
   assert.equal(school(VU).lineage?.["reported.aid.forms"]?.year, "Fall 2026 entrants");
-  // Only the four colleges with records have the block.
-  assert.deepEqual(schools.filter((s) => s.reported?.aid).map((s) => s.unit_id).sort(), [IL, CU, VU, WM].sort());
+  // Only colleges with records have the block, and the four first records all do.
+  const withRecord = new Set(readdirSync(join(ROOT, "data", "cds-records")).map((f) => f.replace(/\.json$/, "")));
+  const withAid = schools.filter((s) => s.reported?.aid).map((s) => s.unit_id);
+  for (const id of withAid) assert.ok(withRecord.has(id), `${id} has a record`);
+  for (const id of [IL, CU, VU, WM]) assert.ok(withAid.includes(id), id);
   assert.equal(readdirSync(join(ROOT, "data", "cds-records")).length >= 4, true);
 });

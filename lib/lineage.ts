@@ -53,6 +53,13 @@ export interface Cited extends CitedSource {
   cdsEdition?: string;
   /** The same document named in full, "Common Data Set 2025–26", for lines that spell out the document. */
   document?: string;
+  /**
+   * A listing from someone else's list (specs/campus-directories.md; lib/directories.ts `citeListing`): who compiled
+   * it, its tier, and what that tier means. The ⓘ credits the organization and the date read (owner decision 4).
+   */
+  directory?: { organization: string; tier: "B" | "C" | "D"; phrase: string };
+  /** A freely licensed image shown beside the value (an organization's logo from Wikimedia Commons), credited as its license asks. */
+  image?: { what: string; attribution: string; license: string; source: string };
 }
 
 /**
@@ -88,6 +95,10 @@ const SOURCE_VINTAGE: Record<SourceKey, VintageKey | null> = {
   "scorecard-fos": "scorecard-fos",
   // A hand-kept table; each value's lineage record carries the statute and its effective date.
   "state-law": null,
+  // Directories, organization estimates, and policy pages: each listing or check carries its own list or page and date.
+  directory: null,
+  "org-estimate": null,
+  "policy-page": null,
   cds: null,
   "college-site": null,
   // Undated references (UNDATED_SOURCES): the retrieval date in meta.json's edition stands in for a year.
@@ -176,20 +187,27 @@ export function shortSource(s: CitedSource): string {
             ? "Wikidata"
             : s.key === "wikipedia"
               ? "Wikipedia"
-              : s.key === "scorecard" || s.key === "scorecard-fos"
-                ? "Scorecard"
-                : "IPEDS";
+              : s.key === "directory" || s.key === "org-estimate"
+                ? "Directories"
+                : s.key === "policy-page"
+                  ? "Policy page"
+                  : s.key === "scorecard" || s.key === "scorecard-fos"
+                    ? "Scorecard"
+                    : "IPEDS";
   return s.year ? `${name} ${s.year}` : name;
 }
 
 const sourceId = (s: CitedSource) => `${s.key}|${s.url}|${s.year ?? ""}`;
+
+/** Sources a college either has a value from (with its own lineage record) or has nothing to cite from. */
+const PER_COLLEGE_ONLY: ReadonlySet<SourceKey> = new Set<SourceKey>(["college-site", "state-law", "directory", "org-estimate", "policy-page"]);
 
 /** Distinct sources behind a value: a derived value cites its inputs, recursively. */
 function underlyingSources(path: FieldPath, school: School | undefined, meta: DatasetMeta, seen = new Set<string>()): CitedSource[] {
   const def = FIELDS[path] as (typeof FIELDS)[FieldPath];
   const overridden = !!school?.lineage?.[path];
   // A college-reported field or state law this college has no value for (no lineage record) has nothing to cite.
-  if (school && !overridden && (def.source === "college-site" || def.source === "state-law") && !("derived" in def && def.derived)) return [];
+  if (school && !overridden && PER_COLLEGE_ONLY.has(def.source) && !("derived" in def && def.derived)) return [];
   if (!("derived" in def) || !def.derived || overridden || seen.has(path)) return [sourceFor(path, school, meta)];
   seen.add(path);
   const out = new Map<string, CitedSource>();
@@ -315,6 +333,11 @@ const METHODS = new Set(["reported", "derived", "extracted"]);
 
 /** Fields read from the hand-kept state-law table (data/state-laws.json). */
 const STATE_LAW_PATHS = (Object.keys(FIELDS) as FieldPath[]).filter((p) => FIELDS[p].source === "state-law");
+/** Stored fields summarizing national directories (school.directories); detail tables are checked in lib/detail.ts. */
+const DIRECTORY_PATHS = (Object.keys(FIELDS) as FieldPath[]).filter((p) => (FIELDS[p].source === "directory" || FIELDS[p].source === "org-estimate") && !p.startsWith("detail."));
+/** Tier A facts the campus-life pilot checked on a college's own page (lgbtq-life.md "Inclusive policies"); the
+ * `campus_pages` detail table is checked in lib/detail.ts, so this is only the top-level `lgbtq.policies` copy. */
+const POLICY_PAGE_PATHS = (Object.keys(FIELDS) as FieldPath[]).filter((p) => FIELDS[p].source === "policy-page" && !p.startsWith("detail."));
 
 /** Every stored leaf path of a school, e.g. "demographics.racial_diversity.asian". Arrays and null are leaves; undefined isn't stored. */
 export function leafPaths(value: unknown, prefix = ""): string[] {
@@ -422,6 +445,20 @@ export function validateSchool(school: School, meta: DatasetMeta): string[] {
     if (valueAt(school, path) == null) continue;
     const rec = school.lineage?.[path];
     if (rec?.source !== "state-law" || !rec.url || !rec.year) errors.push(`${where}: ${path} must cite source "state-law" with the statute's URL and effective date`);
+  }
+  // Directory summaries (specs/campus-directories.md): each cites the directories and the date they were read; the
+  // listings behind it, each credited, are checked against it in lib/detail.ts (detailMismatches).
+  for (const path of DIRECTORY_PATHS) {
+    if (valueAt(school, path) == null) continue;
+    const rec = school.lineage?.[path];
+    if ((rec?.source !== "directory" && rec?.source !== "org-estimate") || !rec.retrieved || !rec.year) errors.push(`${where}: ${path} must cite source "directory" with the date the lists were read`);
+  }
+  // Campus-life pilot policy facts (specs/lgbtq-life.md phase 4; scripts/lib/campus-pilot/merge.mts
+  // applyLgbtqPolicies): each cites the date the college's own pages were checked.
+  for (const path of POLICY_PAGE_PATHS) {
+    if (valueAt(school, path) == null) continue;
+    const rec = school.lineage?.[path];
+    if (rec?.source !== "policy-page" || !rec.retrieved || !rec.year) errors.push(`${where}: ${path} must cite source "policy-page" with the date checked`);
   }
   errors.push(...validateNewest(school, where));
   errors.push(...validateNewestGroups(school, where, meta));

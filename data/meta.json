@@ -116,9 +116,9 @@
     "state-law": {
       "label": "State laws on public colleges",
       "publisher": "State legislatures (statutes read and summarized by hand)",
-      "edition": "Reviewed 2026-10-03",
-      "url": "https://statutes.capitol.texas.gov/Docs/ED/htm/ED.51.htm#51.3525",
-      "description": "Laws that limit what public colleges in a state may offer, such as identity-based offices and programs, each with its statute, effective date, and a one-line summary checked against the statute text. Now: Texas SB 17 (2023)."
+      "edition": "Reviewed 2026-10-04",
+      "url": "https://alison.legislature.state.al.us/files/pdf/SearchableInstruments/2024RS/SB129-enr.pdf",
+      "description": "Laws that limit what public colleges in a state may offer, such as identity-based offices and programs, each with its statute, effective date, and a one-line summary checked against the statute text. Now: Alabama SB 129 (2024), Florida SB 266 (2023), Iowa SF 2435 (2024) and HF 856 (2025), Idaho SB 1198 (2025), North Carolina SB 558 (2026), Ohio SB 1 (2025), Tennessee SB 1084 (2025), Texas SB 17 (2023), Utah HB 261 (2024)."
     },
     "wikidata": {
       "label": "Wikidata",
@@ -140,6 +140,27 @@
       "edition": "2024–25 graduates (C2025_A)",
       "url": "https://nces.ed.gov/ipeds/complete-data-files/C2025_A.zip",
       "description": "Every degree and certificate each college awarded from July through June, by field of study (Classification of Instructional Programs, CIP 2020) and award level. The site counts bachelor's degrees, first and second majors separately."
+    },
+    "directory": {
+      "label": "National directories of campus chapters and groups",
+      "publisher": "Each organization, credited on every listing",
+      "edition": "Lists read 2026-10-04",
+      "url": "/data#sources",
+      "description": "Lists that national organizations publish of their campus chapters and groups, matched to colleges by name, city, and state. Each listing names the organization, the list, and the date we read it; a listing is the organization's claim, not confirmed by the college. Now: Alpha Delta Pi, Council for Christian Colleges & Universities, Chabad on Campus, Delta Phi Epsilon, FOCUS (Fellowship of Catholic University Students), Kappa Delta, Kappa Sigma, Lambda Chi Alpha, Consortium of Higher Education LGBT Resource Professionals, The Navigators, Omega Phi Beta, Phi Mu, Phi Sigma Sigma, Pi Beta Phi, Pi Kappa Phi, Reformed University Fellowship, Sigma Phi Epsilon, Sigma Delta Tau, Sigma Kappa, Sigma Nu, Secular Student Alliance, Theta Phi Alpha, Trans Policy Clearinghouse, Trans Policy Clearinghouse, Trans Policy Clearinghouse, Trans Policy Clearinghouse, Trans Policy Clearinghouse, Trans Policy Clearinghouse, Trans Policy Clearinghouse, Tri Delta."
+    },
+    "org-estimate": {
+      "label": "Organization estimates for a campus",
+      "publisher": "Each organization, credited on every figure",
+      "edition": "Dated per figure",
+      "url": "/data#sources",
+      "description": "Figures an organization publishes about one campus, such as how many students of a faith it estimates. Shown with the organization's name and the date we read it, never ranked or compared as official counts. Now: none yet."
+    },
+    "policy-page": {
+      "label": "College policy and office pages",
+      "publisher": "Each college",
+      "edition": "Checked per page",
+      "url": "/data#sources",
+      "description": "A college's own current pages, checked on a date and quoted: policy pages and handbooks (nondiscrimination, housing, records, health plan, conduct code), its offices' pages (fraternity and sorority life, religious life, LGBTQ+ center), and its reports (fraternity and sorority sizes, students' religious affiliation). Findings of a restriction or a missing policy are confirmed by a second, independent model check against the quote and the page before they are published, as is any official religious composition."
     }
   },
   "vintages": {

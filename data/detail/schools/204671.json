@@ -2,6 +2,7 @@
   "unit_id": "204671",
   "tables": {
     "home_states": {"source":"ipeds-ef-c","vintage":"ipeds-ef-c","year":"Fall 2024","rows":{"OH":236,"MI":3}},
-    "majors": {"source":"ipeds-c","vintage":"ipeds-c","year":"2024–25 graduates","rows":{"13.0408":[19,0],"52.0101":[17,0],"26.0101":[11,0],"44.0701":[9,0],"42.2704":[6,0],"13.1202":[5,0],"13.1203":[5,0],"15.0000":[4,0],"54.0101":[3,0],"23.0101":[2,0],"50.0501":[2,0],"26.0701":[1,0]}}
+    "majors": {"source":"ipeds-c","vintage":"ipeds-c","year":"2024–25 graduates","rows":{"13.0408":[19,0],"52.0101":[17,0],"26.0101":[11,0],"44.0701":[9,0],"42.2704":[6,0],"13.1202":[5,0],"13.1203":[5,0],"15.0000":[4,0],"54.0101":[3,0],"23.0101":[2,0],"50.0501":[2,0],"26.0701":[1,0]}},
+    "directories": {"source":"directory","vintage":null,"year":"October 2026","rows":{"credits":{"tpc-nondiscrimination":{"organization":"Trans Policy Clearinghouse","publisher":"Dr. Genny Beemyn","list_url":"https://www.gennyb.com/research/trans-supportive-campus-policies/nondiscrimination-policies","read":"2026-10-04","tier":"D","domain":"lgbtq","kind":"policy","policy":"nondiscrimination_identity"}},"listings":[{"org":"tpc-nondiscrimination"}]}}
   }
 }

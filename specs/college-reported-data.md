@@ -152,6 +152,201 @@ supporting quote, and a human-review queue for conduct-code findings:
 - **Access rules:** obey `robots.txt` and crawl delays, never get around bot protection, and ask organizations that
   cover many campuses for data directly ([religious-life.md](religious-life.md#access-rules-apply-to-both-specs)).
 
+### Campus-life pilot, as built (2026-10-04)
+Branch `feature/campus-life-2-pilot`. The per-college step that [religious-life.md](religious-life.md#phase-2-as-built-pilot)
+(phase 2), [greek-life.md](greek-life.md#phase-2-as-built-pilot) (phase 2), and
+[lgbtq-life.md](lgbtq-life.md#phase-4-as-built-pilot) (phase 4) call "pilot", for the 25 pilot colleges only (owner
+decision 2, 2026-10-04: no full run). `npm run campus-pilot [-- --college <id> … --rediscover --cap 15]`,
+`npm run score-campus-pilot -- --key <answer-key.json>`; workflow `.github/workflows/campus-pilot.yml`.
+
+**Pipeline** (`scripts/lib/campus-pilot/`, reusing this engine's pricing, robots-aware HTTP, HTML and PDF text):
+1. **Discovery** (`llm.mts`, `REPORTED_MODELS.discovery` = Sonnet 5): one call per domain (Greek, faith, LGBTQ+),
+   web search only (at most 4 searches per domain, no web fetch), returning links through a strict `save_links` tool
+   (`schema.mts` `DISCOVERY_SCHEMAS`): FSL office, report pages/files, recruitment; faith office, the college's group
+   list, a religion report, campus faith groups' own pages; LGBTQ+ center and groups, and the policy pages
+   (nondiscrimination, housing, name/pronouns, health plan, restrooms, trans admission at single-sex colleges, and the
+   conduct code at religious colleges). Links are saved per college in `data/campus-sources.json` (recipe: links,
+   and each page's status, SHA-256, ETag, Last-Modified), so later runs skip discovery and re-fetch only changed pages.
+2. **Fetching** (`pages.mts`): our code fetches every page through the national-directory crawler's `PoliteHttp`
+   (robots.txt, Crawl-delay, ≥ 2 s per host, `college-stats-research/0.1`), caches bodies in `.cache/campus-pages/`,
+   never requests a Campus Labs `/engage/api/` path, and follows a few links from office pages by rule (FSL size,
+   community, and grade reports newest first; the office's group pages). Refusals go to `data/directories/blocked.json`
+   (org `campus-pilot`; owner decision 1); a host that never answered is a dead page, not a block. Long pages are cut to
+   keyword windows (conduct terms in a handbook, "gender-inclusive" on a housing page).
+3. **Extraction** (`REPORTED_MODELS.extraction` = Haiku 4.5): one call per domain against a fixed schema through a
+   forced strict tool (`EXTRACTION_SCHEMAS`; "not stated" is `""`/`0` rather than `null` to stay under the 16-union
+   limit, #64). Every fact names its page (P1, P2, …) and quotes it.
+4. **Quote check** (code): each quote must be on its page (`quoteOnPage`: case, spacing, curly quotes, dashes folded;
+   "…" splits parts). A failed quote, a failed call, or `confidence: "low"` re-reads the domain once with Sonnet 5
+   (thinking off for the forced tool); a quote that still fails drops that fact. Tier A facts must come from the
+   college's own domain.
+5. **Second check** (owner decision 3, replacing the human review in lgbtq-life.md "Sensitive facts: rules"):
+   Sonnet 5 re-reads every LGBTQ+ "no", every conduct restriction, and every official religious composition against
+   the stored quote and the page text around it; only confirmed findings are kept (`verified_by: "claude-sonnet-5"`,
+   with the date checked); rejections are dropped and listed in the run report.
+6. **Spend cap**: every response's usage is priced (`costOf`) into a run budget that refuses a call that could pass
+   the cap (default $15, kept across runs in `.cache/campus-pages/spent.json`).
+
+**Files:** `data/campus-pages.json` (published facts, one college per line), `data/campus-sources.json` (recipes),
+`data/reports/campus-pilot-<run>.json` (raw extractions, dropped facts with reasons, second checks, every call's
+tokens and cost) and `campus-pilot-score-<run>.{json,md}`.
+
+**Into the dataset** (`scripts/lib/campus-pilot/merge.mts`, run by `npm run merge-directories` and `npm run
+sync-data`): tier A facts become a `campus_pages` detail table (`lib/campus-pages.ts`, field `detail.campus_pages`,
+source `policy-page`, year = newest date checked, checked by `checkCampusPages`); groups the college's own pages
+name (tier B) and a group's own size claim (tier C) become listings in the `directories` table, each credited to the
+page it came from. The `policy-page` source now describes office pages and reports as well as policies.
+
+**Live run (2026-10-04, GitHub Actions; report `data/reports/campus-pilot-2026-10-04T13-31-00.json`).** The $15 cap
+stopped it after 19 of the 25 colleges: **$11.57, $0.61 per college** (discovery's web searches $11.15 of it: 175
+searches; extraction $0.23, escalation $0.19, second checks $0.01). At this configuration a full run of ~1,890
+colleges would cost about **$1,150**. Scored against the hand-checked key (scratchpad key; kept out of the public repo
+because it holds page text beyond the short quotes we publish), excluding facts the key itself couldn't read:
+
+| Fact type | Published | Correct | Precision | Recall |
+|---|---|---|---|---|
+| Greek councils' chapter counts | 21 | 20 | 95% | 56% |
+| Greek life exists / stated none | 9 | 9 | 100% | 50% |
+| Faith office | 5 | 5 | 100% | 42% |
+| LGBTQ+ center | 3 | 3 | 100% | 30% |
+| Policies (nondiscrimination ×2, housing, name, restrooms) and conduct restriction | 7 | 7 | 100% | 6–25% |
+| Faith groups by tradition | 28 | 26 | 93% | 35% |
+| Greek total members / housing | 4 / 4 | 2 / 2 | 50% | 29% |
+| Greek deferred recruitment / formal term | 3 / 2 | 2 / 0 | 67% / 0% | 20% / 0% |
+| LGBTQ+ groups | 3 | 2 | 67% | 25% |
+| Health plan covers transition care | 1 | 0 | 0% | – |
+
+Second check: 1 finding, confirmed (and right). Discovery found a page of the key's type far less often than a careful
+reader did (nondiscrimination 2 of 19 readable, LGBTQ+ center 3 of 14, faith office 5 of 12): recall is the problem,
+and nearly all the cost is discovery.
+
+**Decision (2026-10-04): publish only fact types at ≥ ~95% precision.** `HELD_BACK` in
+`scripts/lib/campus-pilot/merge.mts` keeps Greek total members, housing, deferred recruitment, and formal term; the
+health-plan policy; and faith and LGBTQ+ groups read from college pages out of the dataset (they stay in
+`data/campus-pages.json` for re-scoring). A test fails if any of them reaches a detail file. An example of why:
+Alabama's "Freshmen … are not allowed to live in a fraternity or sorority house" was extracted as "no deferred
+recruitment".
+
+**Before a full run:** cheaper and better discovery (try the college's own site search and common paths before paid
+web search; one discovery call for all three domains), tighter Greek recruitment/housing/membership extraction
+prompts, then re-run these 25 and re-score. No full run without the owner's go-ahead.
+
+### Campus-life pilot, round 2 plan (2026-10-04)
+Branch `feature/campus-pilot-2`. The owner approved a second run on **25 different colleges**
+(`data/reference/campus-pilot-2-colleges.json`, none from round 1), keeping round 1's work. The run happens in GitHub
+Actions once the workflow is on `main` (dispatch **Campus-life pilot**; the defaults run this list under the $15 cap).
+
+**What changed, and why**
+1. **Discovery: free first, then one paid call.** Round 1's cost was discovery: $11.15 of $11.57, nearly all of it the
+   search results Sonnet read back (4.3M input tokens over 51 calls), not the $0.01 search fee. Now
+   `scripts/lib/campus-pilot/probe.mts` looks on the college's own site first, through the same robots-aware fetcher
+   (robots.txt, ≥ 2 s per host): the sitemaps robots.txt lists (or `/sitemap.xml`), the home page and up to four
+   student-life/about hubs it links to, well-known subdomains (`fsl.`, `greeklife.`, `chaplain.`, `campusministry.`,
+   `lgbtq.`, `housing.`, `registrar.`, `policy.`, `titleix.`, `equity.`, …) and their sitemaps, well-known paths
+   (`/fraternity-sorority-life`, `/greek-life`, `/fsl`, `/religious-life`, `/spiritual-life`, `/chaplain`, `/lgbtq`,
+   `/pride`, `/gender-sexuality`, `/nondiscrimination`, `/title-ix`, `/housing/gender-inclusive`,
+   `/registrar/chosen-name`, …), and, for what's still missing, the site's own `/search?q=` page (two at most).
+   Candidates are matched by URL and link text (news, events, and employee/HR pages excluded); the best one or two per
+   type are fetched and kept only if the page's own text is about that thing, and a redirect to the home page doesn't
+   count. Probe requests are "quiet": a robots.txt refusal of a guessed path is a miss, not a block for the owner's
+   list. Then **one** Sonnet call per college (not three) asks only for the scored types the probes missed (FSL
+   office, faith office, LGBTQ+ center, nondiscrimination, housing, chosen name; the conduct code at religious colleges,
+   trans admission at single-sex ones, the religion report at affiliated ones), with web search **limited to the
+   college's own domain** and to 2–4 searches (one per two missing types; round 1 allowed 12). Restroom lists, the
+   health plan, and faith groups' own sites are no longer searched for (round 1: rarely published, held back, or
+   behind Cloudflare). The recipe records which types the probes found and what the paid call was asked for.
+2. **Extraction precision: the quote must state the fact.** The schemas answer `not_stated` instead of being forced to
+   yes or no; the prompts say a true sentence about something else is not a quote for a field (with Alabama's house
+   rule as the example); and `scripts/lib/campus-pilot/support.mts` checks every fact's quote for its field's key
+   terms before it's kept (dropped facts are logged with the reason): deferred recruitment needs recruitment/joining
+   words and first-year/term words; housing needs chapter-house words; a formal term's season must be the quote's
+   season; a members total must contain the number (digits or words), say it counts the whole fraternity and sorority
+   community (not one council's page), and be no more than two years old; council counts must be in their quote;
+   policy yes/no quotes must name the category (a "no" must be the list of protected categories); the health plan
+   needs coverage and care words in one sentence; a conduct restriction must say what it restricts; faith groups need
+   their name in the quote and a word that shows the tradition; LGBTQ+ groups outside a list page must be presented as
+   student groups. Stored quotes cut to 160 characters keep the words that state a policy ("…sexual orientation…").
+3. **Unchanged:** the second check (Sonnet 5 on every LGBTQ+ "no", conduct restriction, and religious composition)
+   and `HELD_BACK`: only a scored run can lift a held-back fact type.
+4. **Message Batches** for extraction, escalation, and second checks (half price; `scripts/lib/campus-pilot/batch.mts`).
+   Each college's flow still awaits its own call; the batcher sends what has queued after a 20-second lull, polls, and
+   hands each flow its result. A batch not ended within 20 minutes is cancelled and its calls (and any errored or
+   expired one) are made directly, so the 150-minute job can't stall; the budget holds calls in flight so the cap
+   still holds. Discovery stays direct (it streams searches over turns). `--no-batch` / the workflow's `batch` input
+   turns it off.
+5. **Keeping round 1.** `npm run campus-pilot -- --colleges-file <list>` (default the round-2 list; `--college` still
+   overrides), and the workflow's `colleges_file` input. `mergeRun` (`scripts/lib/campus-pilot/files.mts`) changes
+   only the colleges the run read: others' published facts and recipes are carried over; a college in the run is
+   replaced when it has facts, removed when it ran clean with nothing, and kept when it stopped or failed.
+   `tests/campus-pilot-2.test.mts` merges a run on round-2 colleges into the committed round-1 files and checks every
+   round-1 line and recipe is still there byte for byte (and that the old overwrite would fail the same check).
+
+**Measured offline on round 1's colleges** (no model; the hand-checked key's URLs used only to score, never as input).
+Where the key has a readable page of a type, did discovery give the extractor a readable page whose text states that
+thing (19 colleges where round 1's discovery ran; scratchpad `pilot2/useful-score.mts`):
+
+| Source type | Key has a page | Round 1 paid discovery | Round 2 free probes alone |
+|---|---|---|---|
+| FSL office | 7 | 7 | 6 |
+| Faith office | 10 | 5 | 8 |
+| LGBTQ+ center | 12 | 3 | 7 |
+| Nondiscrimination | 14 | 1 | 6 |
+| Gender-inclusive housing | 6 | 1 | 3 |
+| Chosen name | 5 | 0 | 1 |
+| Conduct code | 3 | 1 | 1 |
+| **All** | **57** | **18 (32%)** | **32 (56%)** |
+
+By the key's exact URL (or the same section of the same site) the probes alone match 24 of 68 key pages, round 1's
+paid discovery 13. The paid call then looks for what's left; with round 1's paid answers standing in for it, 34 of 57
+(60%) — a floor, since round 2's call is narrower and limited to the college's domain. Probes made about 67 requests
+per college (about a minute at the polite pace) and found 3.0 types per college on round 1's colleges, 4.3 on round
+2's. Some sites refuse our requests outright (a challenge page at Michigan, Williams, Columbia, and Wheaton; 403 at
+Brandeis): probes find nothing there, and those pages stay for hand reading (owner decision 1). At Baylor and
+Tennessee the sites answer but the probes found nothing; the paid call covers them.
+
+The quote checks alone, applied to round 1's published facts and scored with the same scorer: deferred recruitment
+67% → 100% (Alabama's and UCLA's inferences dropped), LGBTQ+ groups 67% → 100% (UCLA's names from a news paragraph),
+the health plan's wrong "yes" dropped, Ole Miss's Panhellenic-only total dropped; council chapters stay 95% (counts in
+words now read), faith groups 93% → 92% with recall 35% → 31% (groups whose quote doesn't name them). Housing, formal
+term, and members stay at 50%/0%/50% on this key, whose misses there are mostly items the key didn't record; the
+prompt changes need the live run to measure.
+
+**Projected cost per college** (measured inputs: what the probes left on each college, the search cap for that many
+types, round 1's mean discovery call cost at that many searches, $0.104 at 2, $0.129 at 3, $0.271 at 4, and round 1's
+reading cost per college halved): **about $0.12–0.13 per college** ($0.112 discovery + $0.011 reading on the round-2
+list; $0.134 on round 1's), so about **$3–4 for the 25** and **$230–260 for 1,890 colleges**, against $0.61 and
+$1,150 in round 1. Reading will cost more than round 1's figure because the probes hand the extractor more pages;
+even at the pilot report's full-page estimate ($0.07 a college directly, $0.035 batched) the total stays under
+$0.16 a college.
+
+**After the run:** score it (round 2 has no hand-checked key yet: one is needed for these 25 colleges, or re-run
+round 1's colleges with `--rediscover` and score against the existing key), then decide which `HELD_BACK` types the
+new numbers lift. No full run without the owner's go-ahead.
+
+### Campus-life pilot, round 2 results (2026-10-04)
+Run in Actions on branch `data/campus-pilot-2` (report `data/reports/campus-pilot-2026-10-04T21-07-02.json`, score
+`campus-pilot-score-2026-10-04T21-07-02.md`), 23 of the 25 new colleges, scored against a new hand-checked key that
+checked all seven policy items at every college (kept in the scratchpad, not the public repo; the scorer reads
+`_meta.all_policy_items_checked`). Round 1's colleges are untouched.
+
+**Cost: $7.16, $0.31 a college** (round 1: $0.61), 61 searches. Discovery is still $6.89 of it: the probes found
+pages, but the paid call still ran at most colleges and its search results dominate. The projection of $0.12–0.13
+was low; a full run at this configuration is about **$590**.
+
+**Precision** (published / correct), after reading every miss: Greek members, housing, deferred recruitment, formal
+term 1/1, 1/1, 2/2, 3/3; Greek status 5/5; councils' chapters 13/13 (two "misses" were councils the key omitted:
+Wake Forest's NPHC and SMU's IFC); LGBTQ+ center 6/6; nondiscrimination 8/8 and 9/9; name on records 4/4; restrooms
+4/4 (Ohio State's "no", which cites the state law requiring single-sex multi-user restrooms, was marked not_found by
+the key and confirmed by the second check); faith office 8/9 (UNC's Campus Y was read as a faith office); a 2016
+organization estimate was published although estimates expire; faith groups 28/30 and LGBTQ+ groups 2/5 (both held).
+**Recall stayed low** (4–41% by type): no FSL report files were read, and name, housing, and restroom pages were
+found at a third of colleges or fewer.
+
+**Decisions:** `HELD_BACK` adds the faith office (13/14 across both rounds) and organization estimates. The Greek
+detail types stay held: they were right in round 2, but 3–5 checked findings each across both rounds are too few to
+publish on. Next before any full run: make the paid discovery call conditional on what the probes missed (most of the
+cost), read FSL report files the probes find, and re-score.
+
 ## Files (planned)
 - `scripts/sync-college-reported.mts` (`npm run sync-college-reported`), `--pilot`, `--college <id>`, `--rediscover`.
 - `data/college-sources.json` (recipes, hashes), `data/college-reported.json` (published values),

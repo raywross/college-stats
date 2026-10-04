@@ -229,17 +229,28 @@ export default async function StudentsPage({ params }: Props) {
       </Panel>
 
       {hasCampus && (
-        <Panel id="campus" domain="size" eyebrow="Campus life" title="Housing, sports, and programs" takeaway={campusTakeaway(school)} fields={[]} className="mt-14 sm:mt-20">
-          <CampusLife school={school} />
-          <CampusServices school={school} recentMoves={recentMoves} />
-          <ReligiousLife school={school} />
-          <GreekLife school={school} />
-          <LgbtqLife
-            school={school}
-            citedGender={citeField("lgbtq.gender", school)}
-            citedAdmissions={citeField("lgbtq.admissions", school)}
-            citedLaw={citeField("lgbtq.state_law", school)}
-          />
+        <Panel
+          id="campus"
+          domain="size"
+          eyebrow="Campus life"
+          title="Housing, sports, faith, Greek life, and LGBTQ+ life"
+          takeaway={campusTakeaway(school)}
+          fields={[]}
+          className="mt-14 sm:mt-20"
+        >
+          <div className="space-y-4">
+            <CampusLife school={school} />
+            <CampusServices school={school} recentMoves={recentMoves} />
+            <ReligiousLife school={school} detail={detail} />
+            <GreekLife school={school} detail={detail} />
+            <LgbtqLife
+              school={school}
+              detail={detail}
+              citedGender={citeField("lgbtq.gender", school)}
+              citedAdmissions={citeField("lgbtq.admissions", school)}
+              citedLaw={citeField("lgbtq.state_law", school)}
+            />
+          </div>
         </Panel>
       )}
     </TopicPage>

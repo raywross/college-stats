@@ -2,6 +2,7 @@
   "unit_id": "454856",
   "tables": {
     "majors": {"source":"ipeds-c","vintage":"ipeds-c","year":"2024–25 graduates","rows":{"51.3801":[323,0]}},
-    "programs": {"source":"scorecard-fos","vintage":"scorecard-fos","year":null,"rows":{"51.38":{"title":"Registered Nursing, Nursing Administration, Nursing Research and Clinical Nursing","graduates":858,"earnings":{"y1":76161,"y4":83778,"y4_national":88910,"y4_pell":70821,"y4_non_pell":70579},"debt_median":29090}}}
+    "programs": {"source":"scorecard-fos","vintage":"scorecard-fos","year":null,"rows":{"51.38":{"title":"Registered Nursing, Nursing Administration, Nursing Research and Clinical Nursing","graduates":858,"earnings":{"y1":76161,"y4":83778,"y4_national":88910,"y4_pell":70821,"y4_non_pell":70579},"debt_median":29090}}},
+    "directories": {"source":"directory","vintage":null,"year":"October 2026","rows":{"credits":{"pi-kappa-phi":{"organization":"Pi Kappa Phi","publisher":"Pi Kappa Phi","list_url":"https://www.pikapp.org/about/chapters/","read":"2026-10-04","tier":"D","domain":"greek","council":"nic"}},"listings":[{"org":"pi-kappa-phi","name":"Epsilon Chi (Pi Kappa Phi)"}]}}
   }
 }

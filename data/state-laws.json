@@ -1,6 +1,83 @@
 {
-  "reviewed": "2026-10-03",
+  "reviewed": "2026-10-04",
   "laws": [
+    {
+      "state": "AL",
+      "applies_to": "public",
+      "name": "Alabama SB 129 (2024)",
+      "statute": "Code of Alabama §41-1-90 et seq.",
+      "act": "Ala. Acts 2024-34 (S.B. 129)",
+      "effective": "2024-10-01",
+      "summary": "Alabama public colleges may not sponsor programs where attendance is based on race, sex, gender identity, sexual orientation, or similar traits, or keep offices promoting them; student and faculty groups may host them without state funds.",
+      "url": "https://alison.legislature.state.al.us/files/pdf/SearchableInstruments/2024RS/SB129-enr.pdf",
+      "checked": "2026-10-04"
+    },
+    {
+      "state": "FL",
+      "applies_to": "public",
+      "name": "Florida SB 266 (2023)",
+      "statute": "Florida Statutes §1004.06",
+      "act": "Laws of Fla. ch. 2023-82, s. 4 (S.B. 266); Board of Governors Reg. 9.016 and Fla. Admin. Code R. 6A-14.0718",
+      "effective": "2023-07-01",
+      "summary": "Florida public colleges may not use state or federal funds for programs advocating diversity, equity, and inclusion, defined in state rules as favoring people by race, sex, gender identity, or sexual orientation; student groups are exempt.",
+      "url": "https://www.leg.state.fl.us/statutes/index.cfm?App_mode=Display_Statute&URL=1000-1099/1004/Sections/1004.06.html",
+      "checked": "2026-10-04"
+    },
+    {
+      "state": "IA",
+      "applies_to": "public",
+      "name": "Iowa SF 2435 (2024) and HF 856 (2025)",
+      "statute": "Iowa Code chapter 261J",
+      "act": "2024 Iowa Acts ch. 1152, §§31–37 (S.F. 2435); 2025 Iowa Acts ch. 113, §§5–7 (H.F. 856)",
+      "effective": "2025-07-01",
+      "summary": "Iowa public universities and community colleges may not have offices that promote programming designed around race, ethnicity, gender identity, or sexual orientation; courses, research, student groups, and health services are exempt.",
+      "url": "https://www.legis.iowa.gov/docs/code/261J.pdf",
+      "checked": "2026-10-04"
+    },
+    {
+      "state": "ID",
+      "applies_to": "public",
+      "name": "Idaho SB 1198 (2025)",
+      "statute": "Idaho Code §67-5909D",
+      "act": "2025 Idaho Sess. Laws ch. 317 (S.B. 1198), sec. 2",
+      "effective": "2025-07-01",
+      "summary": "Idaho public colleges may not have diversity, equity, and inclusion offices, defined to include programs promoting concepts such as gender theory or queer theory; research and registered student groups not using state funds are exempt.",
+      "url": "https://legislature.idaho.gov/statutesrules/idstat/Title67/T67CH59/SECT67-5909D/",
+      "checked": "2026-10-04"
+    },
+    {
+      "state": "NC",
+      "applies_to": "public",
+      "name": "North Carolina SB 558 (2026)",
+      "statute": "N.C. Gen. Stat. §§116-415 to 116-417",
+      "act": "S.L. 2026-21 (S.B. 558), law notwithstanding the Governor's veto on 2026-06-24",
+      "effective": "2026-06-24",
+      "summary": "North Carolina public universities and community colleges may not keep offices named diversity, equity, and inclusion or promoting different treatment by federally protected class; the law doesn't name sexual orientation or gender identity.",
+      "url": "https://www.ncleg.gov/EnactedLegislation/Statutes/HTML/ByArticle/Chapter_116/Article_39.html",
+      "checked": "2026-10-04"
+    },
+    {
+      "state": "OH",
+      "applies_to": "public",
+      "name": "Ohio SB 1 (2025)",
+      "statute": "Ohio Revised Code §3345.0217",
+      "act": "S.B. 1, 136th General Assembly (2025)",
+      "effective": "2025-06-27",
+      "summary": "Ohio public colleges may not keep diversity, equity, and inclusion offices or departments or hold DEI trainings; the law doesn't define DEI or name sexual orientation or gender identity in the office ban, and student groups are exempt.",
+      "url": "https://codes.ohio.gov/ohio-revised-code/section-3345.0217",
+      "checked": "2026-10-04"
+    },
+    {
+      "state": "TN",
+      "applies_to": "public",
+      "name": "Tennessee SB 1084 (2025)",
+      "statute": "Tennessee Code Annotated Title 49, Chapter 7, Part 1 (new section)",
+      "act": "2025 Tenn. Pub. Acts ch. 458 (S.B. 1084, the \"Dismantling DEI Departments Act\", as amended by Senate Amendment 1, SA0330)",
+      "effective": "2025-05-09",
+      "summary": "Tennessee public colleges may not favor people by race, ethnicity, sex, age, or any other demographic characteristic to increase diversity, equity, or inclusion, or keep such offices; it doesn't name sexual orientation or gender identity.",
+      "url": "https://www.capitol.tn.gov/Bills/114/Amend/SA0330.pdf",
+      "checked": "2026-10-04"
+    },
     {
       "state": "TX",
       "applies_to": "public",
@@ -11,6 +88,17 @@
       "summary": "Texas public colleges may not have diversity, equity, and inclusion offices, including offices for programs designed around gender identity or sexual orientation; courses, research, and registered student groups are exempt.",
       "url": "https://statutes.capitol.texas.gov/Docs/ED/htm/ED.51.htm#51.3525",
       "checked": "2026-10-03"
+    },
+    {
+      "state": "UT",
+      "applies_to": "public",
+      "name": "Utah HB 261 (2024)",
+      "statute": "Utah Code §53H-1-504 (formerly §53B-1-118)",
+      "act": "Laws of Utah 2024, H.B. 261, Sec. 3; renumbered by S.B. 1001 (2025 1st Special Session); amended by Laws of Utah 2026, ch. 438",
+      "effective": "2024-07-01",
+      "summary": "Utah public colleges may not keep offices or programs that treat people differently by race, sex, sexual orientation, gender identity, or similar traits, or that are named diversity, equity, and inclusion; teaching and research are exempt.",
+      "url": "https://le.utah.gov/xcode/Title53H/Chapter1/53H-1-S504.html",
+      "checked": "2026-10-04"
     }
   ]
 }

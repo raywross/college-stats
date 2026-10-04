@@ -1,6 +1,7 @@
 {
   "unit_id": "119058",
   "tables": {
-    "majors": {"source":"ipeds-c","vintage":"ipeds-c","year":"2024–25 graduates","rows":{"45.0901":[6,0]}}
+    "majors": {"source":"ipeds-c","vintage":"ipeds-c","year":"2024–25 graduates","rows":{"45.0901":[6,0]}},
+    "directories": {"source":"directory","vintage":null,"year":"October 2026","rows":{"credits":{"tpc-restrooms":{"organization":"Trans Policy Clearinghouse","publisher":"Dr. Genny Beemyn","list_url":"https://www.gennyb.com/research/trans-supportive-campus-policies/gender-inclusive-restrooms","read":"2026-10-04","tier":"D","domain":"lgbtq","kind":"policy","policy":"inclusive_restrooms"}},"listings":[{"org":"tpc-restrooms"}]}}
   }
 }

@@ -196,6 +196,12 @@ export default async function DataPage() {
     cds: cds.length,
     "college-site": all.filter((s) => s.reported?.admissions).length,
     "state-law": all.filter((s) => s.lgbtq?.state_law).length,
+    // National directories (specs/campus-directories.md): colleges with at least one credited listing.
+    directory: all.filter((s) => s.directories).length,
+    // Not in `order` until a track stores values from them (organization estimates, policy pages).
+    "org-estimate": 0,
+    "policy-page": 0,
+    // School identity (specs/school-identity/): social accounts from Wikidata; colors from Wikipedia's color data.
     wikidata: all.filter((s) => s.social && Object.keys(s.social).length).length,
     wikipedia: all.filter((s) => s.brand?.colors?.length).length,
   };
@@ -204,8 +210,7 @@ export default async function DataPage() {
     for (const [, def] of STORED) if (def.source === key) topics.add(def.topic);
     return [...topics].map((t) => TOPIC_LABELS[t]);
   };
-  // "wikidata" added by the school-identity social-accounts track; "wikipedia" is the brand track's (specs/school-identity/).
-  const order: SourceKey[] = ["scorecard", "ipeds-adm", "ipeds-sfa", "ipeds-ic", "ipeds-ic-char", "ipeds-hd", "ipeds-ef", "ipeds-ef-c", "ipeds-ef-a", "ipeds-c", "ipeds-om", "ipeds-gr", "ipeds-sal", "ipeds-f", "scorecard-fos", "cds", "college-site", "state-law", "wikidata"];
+  const order: SourceKey[] = ["scorecard", "ipeds-adm", "ipeds-sfa", "ipeds-ic", "ipeds-ic-char", "ipeds-hd", "ipeds-ef", "ipeds-ef-c", "ipeds-ef-a", "ipeds-c", "ipeds-om", "ipeds-gr", "ipeds-sal", "ipeds-f", "scorecard-fos", "cds", "college-site", "state-law", "directory", "wikidata", "wikipedia"];
 
   const toc = [
     ["why", "Why it lags"],
@@ -525,7 +530,7 @@ export default async function DataPage() {
                     </div>
                   )}
                 </dl>
-                {key === "college-site" ? (
+                {key === "directory" ? null : key === "college-site" ? (
                   <a href={s.url} className="mt-auto inline-flex items-center gap-1 self-start pt-4 text-sm font-semibold text-primary hover:underline">
                     How we read it
                   </a>

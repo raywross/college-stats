@@ -1,0 +1,378 @@
+{
+ "report": "campus-pilot-2026-10-04T21-07-02.json",
+ "facts": {
+  "greek.status": {
+   "published": 5,
+   "correct": 5,
+   "expected": 21,
+   "found": 5,
+   "blocked_both": 1,
+   "wrong": []
+  },
+  "greek.members_total": {
+   "published": 1,
+   "correct": 1,
+   "expected": 11,
+   "found": 1,
+   "blocked_both": 3,
+   "wrong": []
+  },
+  "greek.housing": {
+   "published": 1,
+   "correct": 1,
+   "expected": 12,
+   "found": 1,
+   "blocked_both": 0,
+   "wrong": []
+  },
+  "greek.deferred": {
+   "published": 2,
+   "correct": 2,
+   "expected": 17,
+   "found": 2,
+   "blocked_both": 0,
+   "wrong": []
+  },
+  "greek.formal_term": {
+   "published": 3,
+   "correct": 3,
+   "expected": 17,
+   "found": 3,
+   "blocked_both": 0,
+   "wrong": []
+  },
+  "greek.council_chapters": {
+   "published": 13,
+   "correct": 11,
+   "expected": 46,
+   "found": 11,
+   "blocked_both": 0,
+   "wrong": [
+    "199847 Wake Forest University: National Pan-Hellenic Council chapters 7 (no such council in the key)",
+    "228246 Southern Methodist University: Interfraternity Council (IFC) chapters 10 (no such council in the key)"
+   ]
+  },
+  "greek.council_members": {
+   "published": 1,
+   "correct": 1,
+   "expected": 24,
+   "found": 1,
+   "blocked_both": 0,
+   "wrong": []
+  },
+  "faith.office": {
+   "published": 9,
+   "correct": 8,
+   "expected": 16,
+   "found": 8,
+   "blocked_both": 1,
+   "wrong": [
+    "199120 University of North Carolina at Chapel Hill: published UNC Y, key \"not_found\""
+   ]
+  },
+  "faith.composition": {
+   "published": 0,
+   "correct": 0,
+   "expected": 2,
+   "found": 0,
+   "blocked_both": 2,
+   "wrong": []
+  },
+  "faith.groups_by_tradition": {
+   "published": 30,
+   "correct": 28,
+   "expected": 92,
+   "found": 28,
+   "blocked_both": 0,
+   "wrong": [
+    "228246 Southern Methodist University: buddhist group published; key lists none",
+    "228246 Southern Methodist University: hindu group published; key lists none"
+   ]
+  },
+  "faith.estimates": {
+   "published": 1,
+   "correct": 0,
+   "expected": 0,
+   "found": 0,
+   "blocked_both": 0,
+   "wrong": [
+    "228246 Southern Methodist University: estimate \"200 students (scope not stated) (participants) (2016)\" by SMU Center for Faith and Learning (key has no verified estimate; check by hand)"
+   ]
+  },
+  "lgbtq.center": {
+   "published": 6,
+   "correct": 6,
+   "expected": 20,
+   "found": 6,
+   "blocked_both": 1,
+   "wrong": []
+  },
+  "lgbtq.groups": {
+   "published": 5,
+   "correct": 2,
+   "expected": 11,
+   "found": 2,
+   "blocked_both": 0,
+   "wrong": [
+    "199120 University of North Carolina at Chapel Hill: LGBTQ+ groups published; key lists none",
+    "164924 Boston College: LGBTQ+ groups published; key lists none",
+    "214777 Pennsylvania State University-Main Campus: LGBTQ+ groups published; key lists none"
+   ]
+  },
+  "policy.nondiscrimination_orientation": {
+   "published": 9,
+   "correct": 9,
+   "expected": 22,
+   "found": 9,
+   "blocked_both": 1,
+   "wrong": []
+  },
+  "policy.nondiscrimination_identity": {
+   "published": 8,
+   "correct": 8,
+   "expected": 22,
+   "found": 8,
+   "blocked_both": 1,
+   "wrong": []
+  },
+  "policy.inclusive_housing": {
+   "published": 1,
+   "correct": 1,
+   "expected": 11,
+   "found": 1,
+   "blocked_both": 3,
+   "wrong": []
+  },
+  "policy.name_on_records": {
+   "published": 4,
+   "correct": 4,
+   "expected": 18,
+   "found": 4,
+   "blocked_both": 2,
+   "wrong": []
+  },
+  "policy.inclusive_restrooms": {
+   "published": 4,
+   "correct": 3,
+   "expected": 13,
+   "found": 3,
+   "blocked_both": 3,
+   "wrong": [
+    "204796 Ohio State University-Main Campus: published no, key \"not_found\""
+   ]
+  },
+  "policy.health_plan_transition": {
+   "published": 0,
+   "correct": 0,
+   "expected": 3,
+   "found": 0,
+   "blocked_both": 3,
+   "wrong": []
+  },
+  "lgbtq.conduct_restriction": {
+   "published": 0,
+   "correct": 0,
+   "expected": 2,
+   "found": 0,
+   "blocked_both": 1,
+   "wrong": []
+  },
+  "policy.trans_admission": {
+   "published": 0,
+   "correct": 0,
+   "expected": 2,
+   "found": 0,
+   "blocked_both": 1,
+   "wrong": []
+  }
+ },
+ "discovery": {
+  "fsl_office": {
+   "key_has": 18,
+   "found_page": 10,
+   "same_page": 9,
+   "blocked": 0
+  },
+  "fsl_reports": {
+   "key_has": 18,
+   "found_page": 0,
+   "same_page": 0,
+   "blocked": 0
+  },
+  "recruitment": {
+   "key_has": 15,
+   "found_page": 4,
+   "same_page": 1,
+   "blocked": 0
+  },
+  "faith_office": {
+   "key_has": 15,
+   "found_page": 9,
+   "same_page": 4,
+   "blocked": 0
+  },
+  "religion_report": {
+   "key_has": 1,
+   "found_page": 0,
+   "same_page": 0,
+   "blocked": 0
+  },
+  "lgbtq_center": {
+   "key_has": 19,
+   "found_page": 8,
+   "same_page": 3,
+   "blocked": 0
+  },
+  "nondiscrimination": {
+   "key_has": 22,
+   "found_page": 12,
+   "same_page": 4,
+   "blocked": 0
+  },
+  "housing": {
+   "key_has": 11,
+   "found_page": 1,
+   "same_page": 1,
+   "blocked": 0
+  },
+  "name_policy": {
+   "key_has": 17,
+   "found_page": 5,
+   "same_page": 0,
+   "blocked": 0
+  },
+  "restrooms": {
+   "key_has": 13,
+   "found_page": 2,
+   "same_page": 1,
+   "blocked": 0
+  },
+  "health_plan": {
+   "key_has": 3,
+   "found_page": 0,
+   "same_page": 0,
+   "blocked": 0
+  },
+  "conduct_code": {
+   "key_has": 1,
+   "found_page": 0,
+   "same_page": 0,
+   "blocked": 0
+  }
+ },
+ "second_check": {
+  "checks": 1,
+  "confirmed": 1,
+  "rejected": 0,
+  "agree_with_key": 0,
+  "disagree_with_key": 1,
+  "unscored": 0,
+  "disagreements": [
+   "204796 Ohio State University-Main Campus: lgbtq.inclusive_restrooms confirmed; key says false (The page confirms Ohio State's current policy, per state law, prohibits gender-inclusive/neutral multi-use restrooms and designates all such facilities by biological sex, supporting the finding that no gender-inclusive restrooms are listed.)"
+  ]
+ },
+ "cost": {
+  "total": 7.164747000000002,
+  "colleges": 23,
+  "per_college": 0.31151073913043487,
+  "by_job": {
+   "discovery": 6.893214,
+   "extraction": 0.18002999999999997,
+   "escalation": 0.088233,
+   "verify": 0.00327
+  },
+  "by_domain": {
+   "none": 6.893214,
+   "lgbtq": 0.09230600000000001,
+   "greek": 0.136817,
+   "faith": 0.04241
+  },
+  "searches": 61
+ },
+ "rates": {
+  "greek.status": {
+   "precision": 1,
+   "recall": 0.23809523809523808
+  },
+  "greek.members_total": {
+   "precision": 1,
+   "recall": 0.09090909090909091
+  },
+  "greek.housing": {
+   "precision": 1,
+   "recall": 0.08333333333333333
+  },
+  "greek.deferred": {
+   "precision": 1,
+   "recall": 0.11764705882352941
+  },
+  "greek.formal_term": {
+   "precision": 1,
+   "recall": 0.17647058823529413
+  },
+  "greek.council_chapters": {
+   "precision": 0.8461538461538461,
+   "recall": 0.2391304347826087
+  },
+  "greek.council_members": {
+   "precision": 1,
+   "recall": 0.041666666666666664
+  },
+  "faith.office": {
+   "precision": 0.8888888888888888,
+   "recall": 0.5
+  },
+  "faith.composition": {
+   "precision": null,
+   "recall": 0
+  },
+  "faith.groups_by_tradition": {
+   "precision": 0.9333333333333333,
+   "recall": 0.30434782608695654
+  },
+  "faith.estimates": {
+   "precision": 0,
+   "recall": null
+  },
+  "lgbtq.center": {
+   "precision": 1,
+   "recall": 0.3
+  },
+  "lgbtq.groups": {
+   "precision": 0.4,
+   "recall": 0.18181818181818182
+  },
+  "policy.nondiscrimination_orientation": {
+   "precision": 1,
+   "recall": 0.4090909090909091
+  },
+  "policy.nondiscrimination_identity": {
+   "precision": 1,
+   "recall": 0.36363636363636365
+  },
+  "policy.inclusive_housing": {
+   "precision": 1,
+   "recall": 0.09090909090909091
+  },
+  "policy.name_on_records": {
+   "precision": 1,
+   "recall": 0.2222222222222222
+  },
+  "policy.inclusive_restrooms": {
+   "precision": 0.75,
+   "recall": 0.23076923076923078
+  },
+  "policy.health_plan_transition": {
+   "precision": null,
+   "recall": 0
+  },
+  "lgbtq.conduct_restriction": {
+   "precision": null,
+   "recall": 0
+  },
+  "policy.trans_admission": {
+   "precision": null,
+   "recall": 0
+  }
+ }
+}

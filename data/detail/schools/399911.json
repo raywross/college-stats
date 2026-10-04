@@ -3,6 +3,7 @@
   "tables": {
     "home_states": {"source":"ipeds-ef-c","vintage":"ipeds-ef-c","year":"Fall 2024","rows":{"CA":41,"TX":4,"CO":3,"CT":1,"HI":1,"NJ":1,"OH":1,"VA":1,"WA":1,"WI":1}},
     "majors": {"source":"ipeds-c","vintage":"ipeds-c","year":"2024–25 graduates","rows":{"24.0101":[122,0]}},
-    "programs": {"source":"scorecard-fos","vintage":"scorecard-fos","year":null,"rows":{"24.01":{"title":"Liberal Arts and Sciences, General Studies and Humanities","graduates":195,"earnings":{"y1":19776,"y4":52896,"y4_national":53072,"y4_pell":38070,"y4_non_pell":null},"debt_median":18750}}}
+    "programs": {"source":"scorecard-fos","vintage":"scorecard-fos","year":null,"rows":{"24.01":{"title":"Liberal Arts and Sciences, General Studies and Humanities","graduates":195,"earnings":{"y1":19776,"y4":52896,"y4_national":53072,"y4_pell":38070,"y4_non_pell":null},"debt_median":18750}}},
+    "directories": {"source":"directory","vintage":null,"year":"October 2026","rows":{"credits":{"tpc-name-pronouns":{"organization":"Trans Policy Clearinghouse","publisher":"Dr. Genny Beemyn","list_url":"https://www.gennyb.com/research/trans-supportive-campus-policies/name-and-pronouns/","read":"2026-10-04","tier":"D","domain":"lgbtq","kind":"policy","policy":"name_on_records"},"tpc-nondiscrimination":{"organization":"Trans Policy Clearinghouse","publisher":"Dr. Genny Beemyn","list_url":"https://www.gennyb.com/research/trans-supportive-campus-policies/nondiscrimination-policies","read":"2026-10-04","tier":"D","domain":"lgbtq","kind":"policy","policy":"nondiscrimination_identity"}},"listings":[{"org":"tpc-name-pronouns"},{"org":"tpc-nondiscrimination"}]}}
   }
 }

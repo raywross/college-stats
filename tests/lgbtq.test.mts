@@ -95,13 +95,46 @@ test("the state-law table: the real one passes, and each rule fails when broken"
   assert.equal(broken({ state: "Texas" }).length, 1);
   assert.equal(broken({ applies_to: "all" }).length, 1, "only public colleges so far");
   assert.equal(broken({ summary: "" }).length, 1);
-  assert.equal(broken({ summary: "x".repeat(241) }).length, 1);
+  assert.equal(broken({ summary: `Texas ${"x".repeat(235)}` }).length, 1);
   assert.equal(broken({ effective: "January 1, 2024" }).length, 1);
   assert.equal(broken({ checked: "" }).length, 1, "the statute must have been read on a date");
   assert.equal(broken({ url: "http://example.com" }).length, 1);
   assert.equal(broken({ statute: " " }).length, 1);
   assert.equal(validateStateLaws({ ...LAWS, laws: [tx, tx] }).length, 1, "one law per state");
   assert.equal(validateStateLaws({ ...LAWS, reviewed: "" }).length, 1);
+  // Phase 2: every law names its state in both lines, was read on or before the review date, and the table stays sorted.
+  assert.equal(broken({ summary: "Utah public colleges may not …" }).length, 1, "a summary under another state's law");
+  assert.equal(broken({ checked: "2099-01-01" }).length, 1, "read after the review date");
+  assert.equal(validateStateLaws({ ...LAWS, laws: [...LAWS.laws].reverse() }).length, 1, "sorted by state");
+});
+
+test("phase 2: each state law in the table, read from the statute (specs/lgbtq-life.md#phase-2-as-built)", () => {
+  const byState = new Map(LAWS.laws.map((l) => [l.state, l]));
+  assert.deepEqual([...byState.keys()], ["AL", "FL", "IA", "ID", "NC", "OH", "TN", "TX", "UT"]);
+  assert.equal(byState.get("AL")!.effective, "2024-10-01");
+  assert.equal(byState.get("FL")!.statute, "Florida Statutes §1004.06");
+  assert.equal(byState.get("IA")!.statute, "Iowa Code chapter 261J");
+  assert.equal(byState.get("ID")!.statute, "Idaho Code §67-5909D");
+  assert.equal(byState.get("UT")!.statute, "Utah Code §53H-1-504 (formerly §53B-1-118)");
+  for (const l of LAWS.laws) {
+    assert.ok(/sexual orientation|gender identity|queer theory/.test(l.summary), `${l.state}: the line says how the law reaches LGBTQ+ programs`);
+    assert.ok(l.checked <= LAWS.reviewed && l.effective <= l.checked, `${l.state}: in effect when read`);
+  }
+});
+
+test("general DEI-office bans (owner decision 2026-10-04): included, and the line says they don't name LGBTQ+ programs", () => {
+  const byState = new Map(LAWS.laws.map((l) => [l.state, l]));
+  const general = ["NC", "OH", "TN"];
+  assert.equal(byState.get("OH")!.statute, "Ohio Revised Code §3345.0217");
+  assert.equal(byState.get("OH")!.effective, "2025-06-27");
+  assert.equal(byState.get("TN")!.effective, "2025-05-09", "Pub. Ch. 458 took effect when the Governor signed it");
+  assert.equal(byState.get("NC")!.statute, "N.C. Gen. Stat. §§116-415 to 116-417");
+  assert.equal(byState.get("NC")!.effective, "2026-06-24", "the veto override");
+  // Neither direction may be overstated: a general ban says it doesn't name them; a law that names them doesn't say it doesn't.
+  for (const l of LAWS.laws) {
+    const saysNotNamed = /doesn't (?:define DEI or )?name sexual orientation or gender identity/.test(l.summary);
+    assert.equal(saysNotNamed, general.includes(l.state), `${l.state}: ${l.summary}`);
+  }
 });
 
 test("a state law applies to public colleges in that state only", () => {
@@ -125,7 +158,7 @@ test("the sync step cites the older file when NCES no longer collects the count,
   addLgbtq(now, inputs(false));
   assert.equal(now.lgbtq?.gender?.another, 12);
   assert.equal(now.lineage?.["lgbtq.gender"], undefined, "the newest file: the field's default vintage is right");
-  assert.equal(now.lineage?.["lgbtq.state_law"]?.url, LAWS.laws[0].url);
+  assert.equal(now.lineage?.["lgbtq.state_law"]?.url, LAWS.laws.find((l) => l.state === "TX")!.url);
   const later = structuredClone(base);
   addLgbtq(later, inputs(true));
   assert.deepEqual(later.lineage?.["lgbtq.gender"], { source: "ipeds-ef-a", year: "Fall 2024", url: "https://nces.ed.gov/EF2024A.zip" });
@@ -152,11 +185,20 @@ function sources(path: string): string[] {
  * for" chip. The modules that do those things must not read them. (Broken on purpose 2026-10-03: a `lgbtq` reference
  * added to lib/metrics.ts fails this test.)
  */
+/**
+ * Phase 3 (specs/lgbtq-life.md "Where it appears", 2026-10-04) deliberately lets LGBTQ+ *policy* facts reach
+ * Explore and Compare (lib/lgbtq-policy.ts: a listed center, gender-inclusive housing, nondiscrimination covering
+ * gender identity) while keeping the gender-identity *counts* (this file's phase 1: another gender, gender unknown)
+ * out of them, per the owner's scaling note: "policy facts are allowed there, counts are not." So this guard no
+ * longer bans the bare word "lgbtq" (the policy filters and Compare rows need it, e.g. `school.directories?.lgbtq`),
+ * only the count-specific symbols and the module that holds them: a file in this list must never import
+ * lib/lgbtq.ts (gender, admissions) or name GenderDetail/GenderAdmissions/"another gender".
+ */
 test("another-gender counts never feed rankings, medians, filters, Compare, or Known for", () => {
   const files = ["lib/metrics.ts", "lib/params.ts", "lib/indicators.ts", "lib/dataset.ts", "lib/compare.ts", "lib/cds/compare-rows.ts", "lib/insights.ts", "app/explore", "app/compare", "components/explore", "app/page.tsx"].flatMap(sources);
   for (const f of files) {
     const text = readFileSync(f, "utf8");
-    assert.ok(!/lgbtq|another[-_ ]gender|GenderDetail/i.test(text), `${f.slice(ROOT.length + 1)} reads the another-gender counts`);
+    assert.ok(!/another[-_ ]gender|GenderDetail|GenderAdmissions|lib\/lgbtq(?:\.ts)?["']|from ["']\.\.?\/.*\/lgbtq(?:\.ts)?["']/i.test(text), `${f.slice(ROOT.length + 1)} reads the another-gender counts`);
   }
 });
 

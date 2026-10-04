@@ -41,8 +41,8 @@ export interface RobotsRules {
   sitemaps?: string[];
 }
 
-/** Parses robots.txt, keeping the group for our user agent if there is one, else the `*` group. */
-export function parseRobots(text: string): RobotsRules {
+/** Parses robots.txt, keeping the group for our user agent (`token`) if there is one, else the `*` group. */
+export function parseRobots(text: string, token: string = UA_TOKEN): RobotsRules {
   type Group = { agents: string[]; rules: RobotsRules["rules"]; delay: number | null };
   const groups: Group[] = [];
   const sitemaps: string[] = [];
@@ -73,7 +73,7 @@ export function parseRobots(text: string): RobotsRules {
       if (Number.isFinite(s) && s > 0) cur.delay = s * 1000;
     }
   }
-  const mine = groups.filter((g) => g.agents.some((a) => a !== "*" && UA_TOKEN.startsWith(a.split("/")[0])));
+  const mine = groups.filter((g) => g.agents.some((a) => a !== "*" && token.startsWith(a.split("/")[0])));
   const chosen = mine.length ? mine : groups.filter((g) => g.agents.includes("*"));
   return { rules: chosen.flatMap((g) => g.rules), crawlDelayMs: chosen.find((g) => g.delay !== null)?.delay ?? null, sitemaps };
 }
@@ -181,6 +181,13 @@ export interface HttpDeps {
   timeoutMs?: number;
   /** Largest body read (default MAX_DOCUMENT_BYTES). */
   maxBytes?: number;
+  /**
+   * Another crawler's identity (default USER_AGENT): the national-directory crawler identifies as
+   * `college-stats-research` (scripts/lib/directories/context.mts). `uaToken` is the lowercase product token
+   * robots.txt groups are matched against.
+   */
+  userAgent?: string;
+  uaToken?: string;
 }
 
 /** Fetches with robots.txt and per-host pacing. One instance per run, shared by every college. */
@@ -221,8 +228,8 @@ export class PoliteHttp {
       const host = new URL(origin).host;
       p = this.paced(host, this.deps.minDelayMs, async () => {
         try {
-          const { res } = await this.limited(`${origin}/robots.txt`, { headers: { "User-Agent": USER_AGENT }, redirect: "follow" });
-          if (res.ok) return parseRobots(await res.text());
+          const { res } = await this.limited(`${origin}/robots.txt`, { headers: { "User-Agent": this.deps.userAgent ?? USER_AGENT }, redirect: "follow" });
+          if (res.ok) return parseRobots(await res.text(), this.deps.uaToken);
           if (res.status >= 500) return { rules: [], crawlDelayMs: null, disallowAll: true, unreachable: "server-error" as const };
           return { rules: [], crawlDelayMs: null };
         } catch (err) {
@@ -238,7 +245,7 @@ export class PoliteHttp {
    * GET `url` politely. Returns null (and logs) when robots.txt disallows it; otherwise the response, which may be a
    * 304 when `conditional` headers matched. Throws on a network error, the timeout, or the size cap.
    */
-  async get(url: string, conditional: { etag?: string; last_modified?: string } = {}): Promise<Response | null> {
+  async get(url: string, conditional: { etag?: string; last_modified?: string } = {}, extraHeaders: Record<string, string> = {}): Promise<Response | null> {
     const u = new URL(url);
     const robots = await this.robotsFor(u.origin);
     if (!robotsAllows(robots, url)) {
@@ -250,7 +257,8 @@ export class PoliteHttp {
       else this.deps.log(`  robots.txt disallows ${url}; skipped`);
       return null;
     }
-    const headers: Record<string, string> = { "User-Agent": USER_AGENT };
+    // Extra headers never replace our identity.
+    const headers: Record<string, string> = { ...extraHeaders, "User-Agent": this.deps.userAgent ?? USER_AGENT };
     if (conditional.etag) headers["If-None-Match"] = conditional.etag;
     if (conditional.last_modified) headers["If-Modified-Since"] = conditional.last_modified;
     const delay = Math.max(this.deps.minDelayMs, robots.crawlDelayMs ?? 0);

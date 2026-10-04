@@ -1,0 +1,10 @@
+{
+  "org": "alpha-delta-pi",
+  "crawled": "2026-10-04",
+  "entries": [
+    {"campus":"Loyola University","name":"Theta Mu Chapter","reason":"ambiguous: 3 colleges fit","candidates":[{"unit_id":"146719","name":"Loyola University Chicago","score":0.8},{"unit_id":"163046","name":"Loyola University Maryland","score":0.8},{"unit_id":"159656","name":"Loyola University New Orleans","score":0.67}]},
+    {"campus":"Santa Clara Panhellenic","name":"Theta Pi Chapter","reason":"no college matches (no state given)","candidates":[{"unit_id":"122931","name":"Santa Clara University","score":0.67},{"unit_id":"245847","name":"Antioch University-Santa Barbara","score":0.29},{"unit_id":"110705","name":"University of California-Santa Barbara","score":0.25}]},
+    {"campus":"University of British Columbia","name":"Beta Kappa Chapter","reason":"no college matches (no state given)","candidates":[{"unit_id":"178396","name":"University of Missouri-Columbia","score":0.75},{"unit_id":"131803","name":"Strayer University-District of Columbia","score":0.67},{"unit_id":"218663","name":"University of South Carolina-Columbia","score":0.67}]},
+    {"campus":"VA Polytechnic Institute and State University","name":"Eta Pi Chapter","reason":"no college matches (no state given)","candidates":[{"unit_id":"233921","name":"Virginia Polytechnic Institute and State University","score":0.83},{"unit_id":"139861","name":"Georgia College & State University","score":0.55},{"unit_id":"111188","name":"Cal Poly Maritime Academy","score":0.5}]}
+  ]
+}

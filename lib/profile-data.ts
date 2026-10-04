@@ -118,7 +118,9 @@ export const loadProfile = cache(async (id: string): Promise<Profile | null> => 
   // so the section and its "Campus life" link show for any of them alone.
   const hasCampus =
     !!(school.campus?.housing || school.campus?.athletics || school.campus?.programs || greekCard(school) || religionView(school)) ||
-    hasLgbtq(school);
+    hasLgbtq(school) ||
+    !!school.directories ||
+    !!detail?.tables.campus_pages;
   const hasAcademics = !!majorsTop?.length || hasTopPrograms || ratio !== null || fullTimeShare !== null || facultySalaryValue !== null || finances !== null;
   // The single-page profile showed Cost & outcomes when any of these existed; the split keeps that for cost and
   // adds the outcome blocks' own conditions for the outcomes page.

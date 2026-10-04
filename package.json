@@ -14,6 +14,9 @@
     "sync-history": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --env-file-if-exists=.env.local scripts/sync-history.mts",
     "sync-all": "npm run sync-data && npm run sync-history",
     "sync-college-reported": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --env-file-if-exists=.env.local scripts/sync-college-reported.mts",
+    "sync-directories": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/sync-directories.mts",
+    "merge-directories": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/merge-directories.mts",
+    "merge-state-laws": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/merge-state-laws.mts",
     "merge-reported": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/merge-reported.mts",
     "merge-identity": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/merge-identity.mts",
     "sync-wikidata": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/sync-wikidata.mts",
@@ -33,6 +36,8 @@
     "build-cds-template": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/build-cds-template.mts",
     "cds-records-from-workbooks": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/cds-records-from-workbooks.mts",
     "archive-doc": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/archive-doc.mts",
+    "campus-pilot": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --env-file-if-exists=.env.local scripts/campus-pilot.mts",
+    "score-campus-pilot": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/score-campus-pilot.mts",
     "check-cds-records": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/check-cds-records.mts"
   },
   "dependencies": {

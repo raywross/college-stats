@@ -159,7 +159,14 @@ export function validateStateLaws(table: StateLawTable): string[] {
     if (!ISO_DATE.test(law.checked ?? "")) errors.push(`${at}: checked must be YYYY-MM-DD (the day the statute was read)`);
     if (!/^https:\/\//.test(law.url ?? "")) errors.push(`${at}: url must link to the statute (https)`);
     if ((law.summary ?? "").length > 240) errors.push(`${at}: summary must be one short sentence (≤ 240 characters)`);
+    // "Texas SB 17 (2023)" / "Texas public colleges may not …": both name the same state, so a summary can't land on another state's law.
+    const stateWord = (s: string | undefined) => (s ?? "").trim().split(/\s+/)[0];
+    if (law.name?.trim() && law.summary?.trim() && stateWord(law.name) !== stateWord(law.summary)) errors.push(`${at}: name and summary must both start with the state's name`);
+    if (ISO_DATE.test(law.checked ?? "") && ISO_DATE.test(table.reviewed ?? "") && law.checked > table.reviewed)
+      errors.push(`${at}: checked (${law.checked}) is after the table's "reviewed" date (${table.reviewed})`);
   }
+  const order = (table.laws ?? []).map((l) => l.state);
+  if (order.join() !== [...order].sort().join()) errors.push(`state-laws.json: keep laws sorted by state code`);
   return errors;
 }
 

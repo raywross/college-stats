@@ -1,6 +1,7 @@
 {
   "unit_id": "207342",
   "tables": {
-    "majors": {"source":"ipeds-c","vintage":"ipeds-c","year":"2024–25 graduates","rows":{"51.3801":[538,0],"51.0602":[47,0],"51.0905":[47,0],"51.0201":[32,0],"51.0907":[7,0],"30.1901":[6,0]}}
+    "majors": {"source":"ipeds-c","vintage":"ipeds-c","year":"2024–25 graduates","rows":{"51.3801":[538,0],"51.0602":[47,0],"51.0905":[47,0],"51.0201":[32,0],"51.0907":[7,0],"30.1901":[6,0]}},
+    "directories": {"source":"directory","vintage":null,"year":"October 2026","rows":{"credits":{"tpc-nondiscrimination":{"organization":"Trans Policy Clearinghouse","publisher":"Dr. Genny Beemyn","list_url":"https://www.gennyb.com/research/trans-supportive-campus-policies/nondiscrimination-policies","read":"2026-10-04","tier":"D","domain":"lgbtq","kind":"policy","policy":"nondiscrimination_identity"}},"listings":[{"org":"tpc-nondiscrimination"}]}}
   }
 }

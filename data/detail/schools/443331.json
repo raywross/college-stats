@@ -3,6 +3,7 @@
   "tables": {
     "home_states": {"source":"ipeds-ef-c","vintage":"ipeds-ef-c","year":"Fall 2024","rows":{"CA":13}},
     "majors": {"source":"ipeds-c","vintage":"ipeds-c","year":"2024–25 graduates","rows":{"51.3801":[320,0],"51.0701":[9,0],"51.2201":[5,0],"52.0201":[2,0]}},
-    "programs": {"source":"scorecard-fos","vintage":"scorecard-fos","year":null,"rows":{"51.06":{"title":"Dental Support Services and Allied Professions","graduates":null,"earnings":{"y1":73751,"y4":85797,"y4_national":68061,"y4_pell":71457,"y4_non_pell":67948},"debt_median":33707},"51.38":{"title":"Registered Nursing, Nursing Administration, Nursing Research and Clinical Nursing","graduates":1873,"earnings":{"y1":95859,"y4":111455,"y4_national":88910,"y4_pell":98380,"y4_non_pell":100137},"debt_median":34145}}}
+    "programs": {"source":"scorecard-fos","vintage":"scorecard-fos","year":null,"rows":{"51.06":{"title":"Dental Support Services and Allied Professions","graduates":null,"earnings":{"y1":73751,"y4":85797,"y4_national":68061,"y4_pell":71457,"y4_non_pell":67948},"debt_median":33707},"51.38":{"title":"Registered Nursing, Nursing Administration, Nursing Research and Clinical Nursing","graduates":1873,"earnings":{"y1":95859,"y4":111455,"y4_national":88910,"y4_pell":98380,"y4_non_pell":100137},"debt_median":34145}}},
+    "directories": {"source":"directory","vintage":null,"year":"October 2026","rows":{"credits":{"tpc-nondiscrimination":{"organization":"Trans Policy Clearinghouse","publisher":"Dr. Genny Beemyn","list_url":"https://www.gennyb.com/research/trans-supportive-campus-policies/nondiscrimination-policies","read":"2026-10-04","tier":"D","domain":"lgbtq","kind":"policy","policy":"nondiscrimination_identity"}},"listings":[{"org":"tpc-nondiscrimination"}]}}
   }
 }

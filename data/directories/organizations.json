@@ -1,0 +1,426 @@
+{
+  "updated": "2026-10-04",
+  "organizations": {
+    "alpha-delta-pi": {
+      "name": "Alpha Delta Pi",
+      "website": "https://www.alphadeltapi.org/",
+      "letters": "ΑΔΠ",
+      "colors": [],
+      "wikidata": "Q4735022",
+      "logo": {
+        "file": "public/org-logos/alpha-delta-pi.png",
+        "source": "https://www.alphadeltapi.org/",
+        "license": "Organization's own logo (used to identify it)",
+        "attribution": "© Alpha Delta Pi",
+        "aspect": 2.13,
+        "logo_display": "badge",
+        "logo_display_reason": "Pale, thin wordmark: unreadable at the 36 px list height even in a wide tile (review 2026-10-04)."
+      }
+    },
+    "alpha-phi": {
+      "name": "Alpha Phi",
+      "website": "https://www.alphaphi.org/",
+      "letters": "ΑΦ",
+      "colors": [],
+      "wikidata": "Q4735093",
+      "logo": null
+    },
+    "alpha-sigma-tau": {
+      "name": "Alpha Sigma Tau",
+      "website": "https://alphasigmatau.org/",
+      "letters": "ΑΣΤ",
+      "colors": [],
+      "wikidata": "Q4735128",
+      "logo": {
+        "file": "public/org-logos/alpha-sigma-tau.png",
+        "source": "https://alphasigmatau.org/",
+        "license": "Organization's own logo (used to identify it)",
+        "attribution": "© Alpha Sigma Tau",
+        "aspect": 4.13
+      }
+    },
+    "cccu": {
+      "name": "Council for Christian Colleges & Universities",
+      "website": "https://www.cccu.org/",
+      "letters": null,
+      "colors": [],
+      "wikidata": null,
+      "logo": null
+    },
+    "chabad": {
+      "name": "Chabad on Campus",
+      "website": "https://www.chabad.org/centers/campus_cdo/",
+      "letters": null,
+      "colors": [],
+      "wikidata": "Q3665696",
+      "logo": null
+    },
+    "delta-phi-epsilon": {
+      "name": "Delta Phi Epsilon",
+      "website": "https://dphie.org/",
+      "letters": "ΔΦΕ",
+      "colors": [],
+      "wikidata": "Q5254713",
+      "logo": {
+        "file": "public/org-logos/delta-phi-epsilon.png",
+        "source": "https://dphie.org/",
+        "license": "Organization's own logo (used to identify it)",
+        "attribution": "© Delta Phi Epsilon",
+        "aspect": 5.05
+      }
+    },
+    "delta-zeta": {
+      "name": "Delta Zeta",
+      "website": "https://www.deltazeta.org/",
+      "letters": "ΔΖ",
+      "colors": [],
+      "wikidata": "Q5254785",
+      "logo": null
+    },
+    "focus": {
+      "name": "FOCUS (Fellowship of Catholic University Students)",
+      "website": "https://focus.org/",
+      "letters": null,
+      "colors": [],
+      "wikidata": null,
+      "logo": {
+        "file": "public/org-logos/focus.svg",
+        "source": "https://focus.org/",
+        "license": "Organization's own logo (used to identify it)",
+        "attribution": "© FOCUS (Fellowship of Catholic University Students)",
+        "aspect": 3.29
+      }
+    },
+    "hillel": {
+      "name": "Hillel International",
+      "website": "https://www.hillel.org/",
+      "letters": null,
+      "colors": [],
+      "wikidata": "Q119945",
+      "logo": null
+    },
+    "kappa-alpha-psi": {
+      "name": "Kappa Alpha Psi",
+      "website": "https://www.kappaalphapsi1911.com/",
+      "letters": "ΚΑΨ",
+      "colors": [],
+      "wikidata": "Q16151590",
+      "logo": null
+    },
+    "kappa-delta": {
+      "name": "Kappa Delta",
+      "website": "https://kappadelta.org/",
+      "letters": "ΚΔ",
+      "colors": [],
+      "wikidata": "Q16237806",
+      "logo": {
+        "file": "public/org-logos/kappa-delta.svg",
+        "source": "https://kappadelta.org/",
+        "license": "Organization's own logo (used to identify it)",
+        "attribution": "© Kappa Delta",
+        "aspect": 4.92
+      }
+    },
+    "kappa-kappa-gamma": {
+      "name": "Kappa Kappa Gamma",
+      "website": "https://www.kappakappagamma.org/",
+      "letters": "ΚΚΓ",
+      "colors": [],
+      "wikidata": "Q1728686",
+      "logo": {
+        "file": "public/org-logos/kappa-kappa-gamma.svg",
+        "source": "https://www.kappakappagamma.org/",
+        "license": "Organization's own logo (used to identify it)",
+        "attribution": "© Kappa Kappa Gamma",
+        "aspect": 7.88
+      }
+    },
+    "kappa-sigma": {
+      "name": "Kappa Sigma",
+      "website": "https://www.kappasigma.org/",
+      "letters": "ΚΣ",
+      "colors": [],
+      "wikidata": "Q6367086",
+      "logo": {
+        "file": "public/org-logos/kappa-sigma.png",
+        "source": "https://www.kappasigma.org/",
+        "license": "Organization's own logo (used to identify it)",
+        "attribution": "© Kappa Sigma",
+        "aspect": 2.28,
+        "logo_display": "badge",
+        "logo_display_reason": "Small crest with fine text inside a wide lockup: the crest is a few pixels tall at list size (review 2026-10-04)."
+      }
+    },
+    "lambda-chi-alpha": {
+      "name": "Lambda Chi Alpha",
+      "website": "https://www.lambdachi.org/",
+      "letters": "ΛΧΑ",
+      "colors": [],
+      "wikidata": "Q6481107",
+      "logo": {
+        "file": "public/org-logos/lambda-chi-alpha.svg",
+        "source": "https://www.lambdachi.org/",
+        "license": "Organization's own logo (used to identify it)",
+        "attribution": "© Lambda Chi Alpha",
+        "aspect": 7.18
+      }
+    },
+    "lgbt-campus-consortium": {
+      "name": "Consortium of Higher Education LGBT Resource Professionals",
+      "website": "https://www.lgbtcampus.org/",
+      "letters": null,
+      "colors": [],
+      "wikidata": "Q5163387",
+      "logo": {
+        "file": "public/org-logos/lgbt-campus-consortium.png",
+        "source": "https://www.lgbtcampus.org/",
+        "license": "Organization's own logo (used to identify it)",
+        "attribution": "© Consortium of Higher Education LGBT Resource Professionals",
+        "aspect": 3.59
+      }
+    },
+    "navigators": {
+      "name": "The Navigators",
+      "website": "https://www.navigators.org/",
+      "letters": null,
+      "colors": [],
+      "wikidata": "Q828849",
+      "logo": null
+    },
+    "ocf": {
+      "name": "Orthodox Christian Fellowship",
+      "website": "https://ocf.net/",
+      "letters": null,
+      "colors": [],
+      "wikidata": "Q7104451",
+      "logo": null
+    },
+    "omega-phi-beta": {
+      "name": "Omega Phi Beta",
+      "website": "https://www.omegaphibeta.org/",
+      "letters": "ΩΦΒ",
+      "colors": [],
+      "wikidata": "Q7090010",
+      "logo": null
+    },
+    "ostem": {
+      "name": "oSTEM Inc.",
+      "website": "https://www.ostem.org/",
+      "letters": null,
+      "colors": [],
+      "wikidata": null,
+      "logo": null
+    },
+    "phi-mu": {
+      "name": "Phi Mu",
+      "website": "https://phimu.org/",
+      "letters": "ΦΜ",
+      "colors": [],
+      "wikidata": "Q7181545",
+      "logo": {
+        "file": "public/org-logos/phi-mu.svg",
+        "source": "https://phimu.org/",
+        "license": "Organization's own logo (used to identify it)",
+        "attribution": "© Phi Mu",
+        "aspect": 3.89
+      }
+    },
+    "phi-sigma-sigma": {
+      "name": "Phi Sigma Sigma",
+      "website": "https://www.onephisigmasigma.org/",
+      "letters": "ΦΣΣ",
+      "colors": [],
+      "wikidata": "Q7181567",
+      "logo": null
+    },
+    "pi-beta-phi": {
+      "name": "Pi Beta Phi",
+      "website": "https://pibetaphi.org/",
+      "letters": "ΠΒΦ",
+      "colors": [],
+      "wikidata": "Q7189942",
+      "logo": {
+        "file": "public/org-logos/pi-beta-phi.svg",
+        "source": "https://pibetaphi.org/",
+        "license": "Organization's own logo (used to identify it)",
+        "attribution": "© Pi Beta Phi",
+        "aspect": 5.43
+      }
+    },
+    "pi-kappa-phi": {
+      "name": "Pi Kappa Phi",
+      "website": "https://www.pikapp.org/",
+      "letters": "ΠΚΦ",
+      "colors": [],
+      "wikidata": "Q7189962",
+      "logo": {
+        "file": "public/org-logos/pi-kappa-phi.svg",
+        "source": "https://pikapp.org/",
+        "license": "Organization's own logo (used to identify it)",
+        "attribution": "© Pi Kappa Phi",
+        "aspect": 6.68
+      }
+    },
+    "ruf": {
+      "name": "Reformed University Fellowship",
+      "website": "https://ruf.org/",
+      "letters": null,
+      "colors": [],
+      "wikidata": "Q7307544",
+      "logo": null
+    },
+    "sigep": {
+      "name": "Sigma Phi Epsilon",
+      "website": "https://sigep.org/",
+      "letters": "ΣΦΕ",
+      "colors": [],
+      "wikidata": "Q7512359",
+      "logo": {
+        "file": "public/org-logos/sigep.png",
+        "source": "https://sigep.org/",
+        "license": "Organization's own logo (used to identify it)",
+        "attribution": "© Sigma Phi Epsilon",
+        "aspect": 2.09
+      }
+    },
+    "sigma-delta-tau": {
+      "name": "Sigma Delta Tau",
+      "website": "https://sigmadeltatau.org/",
+      "letters": "ΣΔΤ",
+      "colors": [],
+      "wikidata": "Q7512306",
+      "logo": {
+        "file": "public/org-logos/sigma-delta-tau.svg",
+        "source": "https://sigmadeltatau.org/",
+        "license": "Organization's own logo (used to identify it)",
+        "attribution": "© Sigma Delta Tau",
+        "aspect": 0.63,
+        "tone": "light",
+        "logo_display": "badge",
+        "logo_display_reason": "Fine-line light mark: reads as a speck at list size even on a dark tile (review 2026-10-04)."
+      }
+    },
+    "sigma-kappa": {
+      "name": "Sigma Kappa",
+      "website": "https://www.sigmakappa.org/",
+      "letters": "ΣΚ",
+      "colors": [],
+      "wikidata": "Q7512330",
+      "logo": null
+    },
+    "sigma-nu": {
+      "name": "Sigma Nu",
+      "website": "https://www.sigmanu.org/",
+      "letters": "ΣΝ",
+      "colors": [],
+      "wikidata": "Q3483553",
+      "logo": {
+        "file": "public/org-logos/sigma-nu.png",
+        "source": "https://www.sigmanu.org/",
+        "license": "Organization's own logo (used to identify it)",
+        "attribution": "© Sigma Nu",
+        "aspect": 6.19,
+        "logo_display": "badge",
+        "logo_display_reason": "Thin serif wordmark plus a tagline line stays illegible even widened and capped to a sane tile width; the Greek-letter badge reads better at the sizes chapter lists use."
+      }
+    },
+    "ssa": {
+      "name": "Secular Student Alliance",
+      "website": "https://www.secularstudents.org/",
+      "letters": null,
+      "colors": [],
+      "wikidata": "Q3477561",
+      "logo": {
+        "file": "public/org-logos/ssa.png",
+        "source": "https://www.secularstudents.org/",
+        "license": "Organization's own logo (used to identify it)",
+        "attribution": "© Secular Student Alliance",
+        "aspect": 1.56
+      }
+    },
+    "theta-phi-alpha": {
+      "name": "Theta Phi Alpha",
+      "website": "https://thetaphialpha.org/",
+      "letters": "ΘΦΑ",
+      "colors": [],
+      "wikidata": "Q7783537",
+      "logo": {
+        "file": "public/org-logos/theta-phi-alpha.png",
+        "source": "https://thetaphialpha.org/",
+        "license": "Organization's own logo (used to identify it)",
+        "attribution": "© Theta Phi Alpha",
+        "aspect": 4.8
+      }
+    },
+    "tpc-athletics": {
+      "name": "Trans Policy Clearinghouse",
+      "website": "https://www.gennyb.com/",
+      "letters": null,
+      "colors": [],
+      "wikidata": null,
+      "logo": null
+    },
+    "tpc-health-plan": {
+      "name": "Trans Policy Clearinghouse",
+      "website": "https://www.gennyb.com/",
+      "letters": null,
+      "colors": [],
+      "wikidata": null,
+      "logo": null
+    },
+    "tpc-housing": {
+      "name": "Trans Policy Clearinghouse",
+      "website": "https://www.gennyb.com/",
+      "letters": null,
+      "colors": [],
+      "wikidata": null,
+      "logo": null
+    },
+    "tpc-name-pronouns": {
+      "name": "Trans Policy Clearinghouse",
+      "website": "https://www.gennyb.com/",
+      "letters": null,
+      "colors": [],
+      "wikidata": null,
+      "logo": null
+    },
+    "tpc-nondiscrimination": {
+      "name": "Trans Policy Clearinghouse",
+      "website": "https://www.gennyb.com/",
+      "letters": null,
+      "colors": [],
+      "wikidata": null,
+      "logo": null
+    },
+    "tpc-restrooms": {
+      "name": "Trans Policy Clearinghouse",
+      "website": "https://www.gennyb.com/",
+      "letters": null,
+      "colors": [],
+      "wikidata": null,
+      "logo": null
+    },
+    "tpc-trans-admission": {
+      "name": "Trans Policy Clearinghouse",
+      "website": "https://www.gennyb.com/",
+      "letters": null,
+      "colors": [],
+      "wikidata": null,
+      "logo": null
+    },
+    "tri-delta": {
+      "name": "Tri Delta",
+      "website": "https://www.tridelta.org/",
+      "letters": "ΤΔ",
+      "colors": [],
+      "wikidata": "Q1184880",
+      "logo": {
+        "file": "public/org-logos/tri-delta.png",
+        "source": "https://www.tridelta.org/",
+        "license": "Organization's own logo (used to identify it)",
+        "attribution": "© Tri Delta",
+        "aspect": 5.33
+      }
+    }
+  }
+}

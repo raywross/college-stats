@@ -1,14 +1,18 @@
 # Greek Life
 
-> Status: **planned**, with **phase 1 built** 2026-10-03 (branch `feature/campus-life`, part of the Campus life roadmap group).
-> CDS F1 (participation) and F4 (housing) are read from `data/cds-records/` into `school.reported.greek`
+> Status: **planned**, with **phase 1 built** 2026-10-03 (branch `feature/campus-life`, part of the Campus life
+> roadmap group), **phase 4 (national chapter directories) built** 2026-10-04 (branch
+> `feature/campus-life-2-fraternities`, fraternities/NALFO/NPHC side; the parallel `feature/campus-life-2-sororities`
+> branch did the 26 NPC sororities), and the **phase 2/3 pilot pipeline built** 2026-10-04 (branch
+> `feature/campus-life-2-pilot`), with its live run pending ([Phase 2 as built](#phase-2-as-built-pilot)). CDS F1
+> (participation) and F4 (housing) are read from `data/cds-records/` into `school.reported.greek`
 > (`lib/cds/greek.ts`, display helpers in `lib/cds/greek-display.ts`), merged by `lib/reported-merge.ts` alongside the
-> other round-3 blocks. Shown on the profile's Campus life section (`components/school/GreekLife.tsx`), Compare's "All
-> the numbers", and an Explore filter. Phases 2–4 (FSL office crawl, pilot, scale, national directories) are still
-> planned. Research 2026-09-28: 2025–26 Common Data Sets and a per-school deep dive on UT Austin. Findings are
-> verified unless marked *unverified*. Companions: [religious-life.md](religious-life.md) (its source tiers, crawl
-> strategy, and access rules apply here too) and [lgbtq-life.md](lgbtq-life.md) (LGBTQ+ Greek chapters). Per-school
-> collection shares the engine in [college-reported-data.md](college-reported-data.md#campus-life-sources).
+> other round-3 blocks. National directories (`scripts/lib/directories/adapters/`, shared infrastructure in
+> [campus-directories.md](campus-directories.md)) add council chapter lists the CDS never covers. Shown on the
+> profile's Campus life section (`components/school/GreekLife.tsx`; design in [campus-directories.md](campus-directories.md#display-redesign-2026-10-04)),
+> Compare's "All the numbers" and "Greek councils present", and Explore filters. Research 2026-09-28: 2025–26 Common
+> Data Sets and a per-school deep dive on UT Austin. Findings are verified unless marked *unverified*. Companions:
+> [religious-life.md](religious-life.md) (its source tiers, crawl
 
 ## Phase 1, as built
 
@@ -43,6 +47,68 @@ record (F1: the document's fall; F4: the edition) and is registered in `lib/fiel
 
 **Not built in phase 1** (still phases 2–4): council breakdowns, member totals, recruitment facts, chapter-level
 detail, and anything that crawls an FSL office site.
+
+## Phase 4, as built (national chapter directories)
+
+Built on the shared infrastructure in [campus-directories.md](campus-directories.md) (`scripts/lib/directories/`,
+`lib/directories.ts`): one adapter per organization, classified by council, matched to IPEDS unit ids, merged into
+each college's `directories` detail table and the `school.directories` summary. This fraternities/NALFO/NPHC track
+built the adapters below; the parallel sorority track built the 26 NPC adapters (council `npc`) at the same time.
+
+**What this session actually found**, after checking every organization named in the brief by hand (fetching
+robots.txt and the real locator page, not guessing): most national Greek organizations' "find a chapter" pages are
+client-rendered (a JavaScript map widget with no server-side data behind the visible HTML), so "readable" by
+robots.txt alone didn't mean "scrapable." Six organizations turned out to publish their full roster in a form a
+plain HTTP request can read; a seventh (Kappa Alpha Psi) is a genuine block, not a parsing problem. Matching used
+IPEDS aliases plus hand-checked answers in `data/directories/matches.json` for renamed/merged colleges (Moravian →
+Moravian University, William & Mary, Emory & Henry University, PennWest's campuses, East Texas A&M, …) and for
+entries that gave only a bare state/city name with no street address (resolved from the entry's own city/state
+field, never guessed) — see the `_why` notes there. Counts after that pass, 2026-10-04:
+
+| Org | Council | Format found | Entries | Matched | Unmatched | Colleges |
+|---|---|---|---|---|---|---|
+| Sigma Phi Epsilon | `nic` | Ninja Tables widget's own AJAX endpoint (table id + nonce embedded in the page) | 190 | 190 | 0 | 190 |
+| Lambda Chi Alpha | `nic` | `window.chaptersMapData` JSON array embedded in the page | 166 | 163 | 3 | 162 |
+| Kappa Sigma | `nic` | Same Ninja Tables AJAX pattern, different fields (no city/state given) | 286 | 267 | 19 | 267 |
+| Pi Kappa Phi | `nic` | "WP Google Maps Pro" plugin's base64 map data embedded in the page (`categories[0].name` gives Active/Inactive; only Active kept) | 157 | 155 | 2 | 153 |
+| Sigma Nu | `nic` | Plain server-rendered HTML table (`<table class="chapters">`, a second `dormant` table left out) | 151 | 149 | 2 | 149 |
+| Omega Phi Beta | `nalfo` | Plain HTML table (Entity, College/University, Location); found via NALFO's member-organizations page | 6 | 5 | 1 | 5 |
+| Kappa Alpha Psi | `nphc` | **Blocked**: robots.txt doesn't disallow the page, but it returns HTTP 403 to our UA (a bot-protection layer) | — | — | — | — |
+
+The remaining unmatched entries (27 across the five organizations with any) are genuinely unresolvable without
+guessing: non-U.S. universities (Canadian chapters several of these fraternities also list), colleges not in this
+site's ~1,900, or names ambiguous even with a city (two colleges share "Boca Raton, FL"; "Rutgers, The State
+University of New Jersey" doesn't say which of the three campuses). They stay in `data/directories/unmatched/`.
+
+**Named in the brief but not built this round** (so the next session can pick up where recon stopped, rather than
+re-discovering the same dead ends):
+- **Sigma Alpha Epsilon, Pi Kappa Alpha ("Pike"), Phi Delta Theta, Alpha Tau Omega, Beta Theta Pi, Phi Gamma Delta
+  (FIJI), Delta Tau Delta, Kappa Alpha Order, Alpha Sigma Phi** (`nic`): each site is reachable, but its chapter
+  list is loaded by a search form, a paginated widget (FacetWP, on Kappa Alpha Order), or a JS map with no visible
+  backing data in the page's own HTML — needs a browser, not a plain HTTP client.
+- **The other eight NPHC ("Divine Nine") organizations** besides Kappa Alpha Psi: each site returned 200 for its
+  locator page, but none of them exposed a static table, embedded JSON, or a discoverable AJAX endpoint the way
+  SigEp/Kappa Sigma/Pi Kappa Phi did — likely a client-rendered widget this pass couldn't see into. Delta Sigma
+  Theta's locator is on a members-only portal (`members.dstonline.org`), so it's member-locked like NPC/NIC, not
+  just hard to parse.
+- **NAPA and NMGC** (Asian-interest and multicultural umbrellas): NAPA's site (napa-online.org) didn't respond from
+  this environment (DNS/connection failure, matching an earlier recon finding); NMGC's site (nationalmgc.org)
+  appears to have been compromised with spam-link injection as of 2026-10-04 and wasn't crawled further. **NALFO**
+  itself is just a member-organization list (18 Latino Greek organizations); only one member's own locator (Omega
+  Phi Beta) was built this round — the other 17 are untried.
+- **LGBTQ+ Greek council**: **Gamma Rho Lambda** is readable (permissive robots.txt, 200 response) but its site is
+  a fully client-rendered page builder (GoDaddy Website Builder) with no server-rendered content at all — nothing
+  to parse without a browser. **Delta Lambda Phi**: the brief and an earlier recon pass call this blocked
+  (`dlp.org` robots.txt disallowing everything); a fresh check today found `dlp.org/robots.txt` now permissive and
+  its `/chapters` page returning HTTP 200 — but the page is a Wix site with no server-rendered chapter data either,
+  so the practical outcome (no adapter) is the same as "blocked," even though the technical reason has changed
+  from "robots disallow" to "nothing to parse." Neither was built; no entries were added to `blocked.json` for
+  Gamma Rho Lambda or Delta Lambda Phi, since `Blocked` is for refusals, not unreachable data — see the note in
+  [campus-directories.md](campus-directories.md).
+
+**Shared helpers** (`scripts/lib/directories/adapters/`, prefixed `_` so the registry skips them): `_html.mts`
+(entity decoding, tag stripping), `_ninja-tables.mts` (the Ninja Tables AJAX pattern SigEp and Kappa Sigma share),
+`_wpgmp.mts` (the "WP Google Maps Pro" base64 blob Pi Kappa Phi's page carries).
 
 ## Goal
 Answer, with cited sources: *Is there Greek life? How big is it? Which kinds of organizations (fraternities,
@@ -87,6 +153,9 @@ extraction.
    (not just Greek ones), and each college posts its own format.
 
 ## Scaling
+> National chapter directories use the shared infrastructure in [campus-directories.md](campus-directories.md): one
+> adapter file per organization, classified by council.
+
 - **Presence first.** NPC sororities are on "more than 670 campuses," so many of our 1,893 colleges likely have no
   Greek life. A cheap pass (CDS F1 = 0 or blank, no FSL office found, no tier D chapters) marks "none found" so the
   expensive steps run only where Greek life exists. Show "none found," not "none," unless the college states it (e.g.
@@ -140,14 +209,63 @@ school.greek = {
 ## Where it appears
 - **Explore (built):** "Fraternity or sorority participation" filter, ≥ 10/20/30% of undergrad men or women
   (`lib/cds/greek-display.ts` `MIN_GREEK_OPTIONS`), matching either percentage, never summed; colleges that report
-  neither never match. "Has NPHC / Latino / Asian / multicultural chapters" is phase 3 (FSL council data), not built.
+  neither never match. **Phase 4 adds** "Has NPHC / Latino / Asian / multicultural / LGBTQ+ Greek life" — one chip
+  per council other than NPC/NIC (`GREEK_COUNCIL_FILTERS`), reading `school.directories.greek` from a national
+  directory; a college with none listed may still have the chapter (no directory covers every organization yet),
+  so this narrows toward, never away from, a college.
 - **Profile, the students page's "Campus life" section (built):** fraternity and sorority participation
   `BenchmarkBar`s against the median of reporting colleges (`components/school/GreekLife.tsx`), and whether
-  fraternity/sorority housing is offered. Cited, with the CDS edition and fall term. A council breakdown and
-  recruitment chips are phase 3 (FSL reports), not built.
-- **Compare (built):** the two undergrad percentages and fraternity/sorority housing.
+  fraternity/sorority housing is offered. Cited, with the CDS edition and fall term. **Phase 4 adds** a "Chapters by
+  council" block below it: each council present (CDS's NPC/NIC-style participation plus whatever a directory
+  lists) with its chapter count always visible and chapter names behind a native `<details>` disclosure (open
+  question 2's recommendation: council totals over a chapter table). A college with neither a CDS answer nor any
+  directory listing shows "No fraternity or sorority chapters found in national directories (month, year)" instead
+  of the cards — never "none" — and only once at least one directory sweep has run (`latestDirectoryRead`);
+  recruitment chips are still phase 3 (FSL reports), not built.
+- **Compare (built):** the two undergrad percentages and fraternity/sorority housing. **Phase 4 adds** "Greek
+  councils present": every council (NPC/NIC/NPHC/NALFO/NAPA/NMGC/LGBTQ+) a directory or the CDS supports, in a
+  fixed order, blank for a college with none.
+- **Glossary (built in phase 4):** `npc`, `nic`, `nphc`, `nalfo`, `napa`, `nmgc`, `colony`, cross-linked from
+  `greek-life` and `national-directory`.
 - **"Known for" (not built):** "Big Greek life" waits for `KNOWN_FOR_MIN_REPORTERS` (50) colleges to report an
   undergrad percentage — 7 do in the current round-3 pilot.
+
+## Phase 2 as built (pilot)
+Built 2026-10-04 on the shared pilot engine ([college-reported-data.md](college-reported-data.md#campus-life-pilot-as-built-2026-10-04)).
+Per college: the FSL office page, its size, community, and grade reports (followed from the office page by rule, size
+reports first, newest first), and its recruitment page.
+- **Stored** in the `campus_pages` detail table (`lib/campus-pages.ts` `CampusGreek`): `none_stated` (only when the
+  college says it has no fraternities or sororities), `members_total` with its term, `councils[]` (council key from
+  `COUNCILS`, the college's name for it, chapters, members, term, each with its page and quote), `housing`
+  (chapter houses), `deferred` and `formal_term`. Counts are never summed by the model; a council's numbers are the
+  report's own total line.
+- **Shown** in `GreekLife.tsx` (redesign 2026-10-04): each council's count leads its row, joined with the chapters
+  national lists name for that council (`greekView` in `lib/campus-view.ts`, over `greekCouncils(rows, today)` in
+  `lib/campus-pages.ts`); the stated total and members, formal and deferred recruitment, and chapter houses as the
+  headline and chips, each with its ⓘ. Members under 10 show as "fewer than 10"; facts older than two years hide.
+
+**Measured without a model (2026-10-04).** The pipeline's fetcher and page gathering were run on the answer key's own
+URLs (257 requests): every page the key could read, and whether the key's hand-copied quotes pass our quote check on
+the text we read. 274 of 289 quotes on readable pages passed (94.8%); every miss was in the key, not the check
+(bracketed completions such as "C[atholic faith]", a computed sum given as a quote, a home-page quote reused on
+sub-pages, a meta description). Average extraction input per college: Greek 30,900 characters (max 70,100), faith
+11,600, LGBTQ+ 20,800. For this domain: FSL office pages 18 read of 18, report files 15 of 21, recruitment pages 4 of 5,
+and 110 pages followed by rule. **UT Austin's size reports can't be read by any polite crawler:**
+`studentlife.utexas.edu/robots.txt` (where `deanofstudents.utexas.edu` redirects) has `Disallow: /sfl/downloads/`
+for every user agent, which covers all of them (recorded in `data/directories/blocked.json`). The case study's
+council table came from those files, so UT needs hand reading or a request to UT. The key has members by council at
+only 4 of the 13 colleges with Greek life, chapters by council at 11.
+
+**Cost (estimates until the workflow run measures them).** Per college: discovery 3 Sonnet calls with up to 12
+searches, about $0.20–0.25 (searches $0.10 per 10); extraction about 21,600 Haiku input tokens and 3,600 output from the
+measured page sizes, $0.04; escalation (assumed one domain in three) $0.03; second checks $0.02. About $0.30–0.34 per
+college, $8 for the 25, $570–640 for ~1,890 colleges. Cheapest configuration to test next: free path probes before paid
+search, one discovery call for all three domains, and Message Batches for extraction and checks (half price): about
+$0.16–0.20 per college, $300–380 for a full run.
+
+**Worth scaling (pending the live run's precision):** the FSL office page (status, councils, chapters, recruitment)
+at colleges with Greek life; report files where robots.txt allows them. **Not worth it:** grade reports (chapter GPAs
+are out of scope), and per-chapter detail (open question 2).
 
 ## Phases
 1. **CDS F1 and F4 — built 2026-10-03** (`lib/cds/greek.ts`), reading `data/cds-records/` (populated by `import-cds`
@@ -157,6 +275,9 @@ school.greek = {
    HBCU, and a college without Greek life): find FSL offices, parse their reports, measure hit rate and cost.
 3. **FSL reports at scale** for colleges where Greek life exists.
 4. **National chapter directories** only if needed to cover colleges without FSL reports; ask NPC/NIC for data first.
+   The directories this build couldn't read — most NIC fraternities, 7 of the Divine Nine, NAPA, NMGC, most NALFO
+   organizations, and the pilot's blocked FSL office pages — are in [campus-sources-later.md](campus-sources-later.md),
+   with what each would give and a candidate fix.
 
 ## Open questions
 1. Hazing transparency reports: include (per-college counts only, linking to the college's report) or leave out?

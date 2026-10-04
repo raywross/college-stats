@@ -391,10 +391,17 @@ test("Explore: byRes and oosEven parse, count as filters, and match only college
   assert.deepEqual([f.byRes, f.oosEven], [true, true]);
   assert.equal(countActiveFilters({ byRes: "1", oosEven: "1" }), 2);
   const [byRes, oosEven] = RESIDENCY_FILTERS;
-  assert.deepEqual(schools.filter(byRes.test).map((s) => s.unit_id).sort(), ["145637", "190415", "221999"]);
+  // The first records' three grids always match; a pipeline run may add colleges, each with a grid. William & Mary
+  // (totals only) never does.
+  const withGrid = schools.filter(byRes.test).map((s) => s.unit_id);
+  for (const id of ["145637", "190415", "221999"]) assert.ok(withGrid.includes(id), id);
+  assert.ok(!withGrid.includes("231624"));
+  for (const s of schools.filter(byRes.test)) assert.ok(s.reported?.admissions_by_residency, s.unit_id);
   // Out-of-state at least the in-state rate minus 5 points, 200+ applicants each: Cornell (9.0% vs 13.3%) does;
   // Vanderbilt (5.3% vs 10.4%) and Illinois (29.0% vs 49.3%) don't.
-  assert.deepEqual(schools.filter(oosEven.test).map((s) => s.unit_id), ["190415"]);
+  const evenIds = schools.filter(oosEven.test).map((s) => s.unit_id);
+  assert.ok(evenIds.includes("190415"));
+  assert.ok(!evenIds.includes("221999") && !evenIds.includes("145637"));
   const even = withBlock({ in_state: counts(1000, 430, 100), out_of_state: counts(1000, 400, 80) });
   assert.equal(oosEven.test(even), true);
   const tiny = withBlock({ in_state: counts(1000, 430, 100), out_of_state: counts(150, 100, 80) });

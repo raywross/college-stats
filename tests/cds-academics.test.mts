@@ -202,8 +202,10 @@ test("Explore honors=1: positive only, matches exactly the colleges whose CDS ma
   assert.equal(parseFilters({ honors: "0" }).honors, undefined, "there is no exclude state");
   assert.equal(parseFilters({}).honors, undefined);
   assert.equal(countActiveFilters({ honors: "1" }), 1);
+  // The four colleges of the first records always match; a pipeline run may add more, each with a record.
   const matched = schools.filter(hasHonorsProgram);
-  assert.deepEqual(matched.map((s) => s.unit_id).sort(), [...IDS].sort());
+  for (const id of IDS) assert.ok(matched.some((s) => s.unit_id === id), id);
+  for (const s of matched) assert.ok(records.some((r) => r.unit_id === s.unit_id), `${s.unit_id} has a record`);
   for (const s of matched) assert.equal(s.reported?.academics?.programs?.honors, true);
   // The only use in the query narrows with the positive predicate; nothing filters on its absence.
   const dataset = code("lib/dataset.ts");
@@ -246,7 +248,7 @@ test("data/schools.json carries the real values for the four colleges, and a mer
   assert.equal(a("231624")?.class_sections?.sections_total, 1176);
   assert.equal(a("145637")?.class_sections?.sections_total, 4040);
   assert.deepEqual(offeredPrograms(school("221999")).map((p) => p.key).slice(0, 3), ["accelerated", "double_major", "esl"]);
-  assert.ok(!schools.some((s) => s.reported?.academics && !IDS.includes(s.unit_id)), "only colleges with records");
+  assert.ok(!schools.some((s) => s.reported?.academics && !records.some((r) => r.unit_id === s.unit_id)), "only colleges with records");
   const reported = JSON.parse(readFileSync(join(ROOT, "data", "college-reported.json"), "utf8"));
   const again = mergeReported(IDS.map(school), reported, { records, meta, table: CDS_TEMPLATE }).schools;
   for (const s of again) assert.equal(JSON.stringify(s), JSON.stringify(schools.find((x) => x.unit_id === s.unit_id)), s.name);

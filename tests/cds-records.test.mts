@@ -219,7 +219,9 @@ const newest = (id: string) => by.get(id)!.documents[0];
 test("the committed records pass the validator and round-trip byte for byte", () => {
   assert.deepEqual(validateCdsRecords(records, manifest, T), []);
   for (const r of records) assert.equal(serializeRecord(r), readFileSync(join(ROOT, "data", "cds-records", `${r.unit_id}.json`), "utf8"), r.unit_id);
-  assert.deepEqual(records.map((r) => r.unit_id), ["145637", "190415", "221999", "231624"]);
+  // The four template workbooks of the foundation are always there; a pipeline run adds more.
+  for (const id of ["145637", "190415", "221999", "231624"]) assert.ok(records.some((r) => r.unit_id === id), id);
+  assert.deepEqual(records.map((r) => r.unit_id), [...records.map((r) => r.unit_id)].sort(), "one file per college, in id order");
 });
 
 test("the four template workbooks give their real totals with no model call", () => {
@@ -269,9 +271,15 @@ test("the committed records keep the colleges' own errors as failures", () => {
 
 /* ---- Empty state files other tracks build on ---- */
 
-test("the round-3 state files exist with their empty shapes", () => {
+test("the round-3 state files exist with their shapes", () => {
+  // Empty at first; a pipeline run fills them (open batches, blocked hosts), so their shape is what's checked.
   const read = <T,>(p: string): T => JSON.parse(readFileSync(join(ROOT, "data", p), "utf8"));
-  assert.deepEqual(read<BatchesFile>("college-batches.json"), { updated: null, batches: [] });
-  assert.deepEqual(read<BlockedHostsFile>("reference/blocked-hosts.json"), { hosts: [] });
-  assert.deepEqual(read<CdsUrlsFile>("reference/cds-urls.json"), { entries: [] });
+  const batches = read<BatchesFile>("college-batches.json");
+  assert.ok(Array.isArray(batches.batches) && (batches.updated === null || typeof batches.updated === "string"));
+  const blocked = read<BlockedHostsFile>("reference/blocked-hosts.json");
+  assert.ok(Array.isArray(blocked.hosts));
+  for (const h of blocked.hosts) assert.ok(h.host && h.status, JSON.stringify(h));
+  const urls = read<CdsUrlsFile>("reference/cds-urls.json");
+  assert.ok(Array.isArray(urls.entries));
+  for (const e of urls.entries) assert.ok(e.unit_id && e.url, JSON.stringify(e));
 });

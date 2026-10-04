@@ -1202,7 +1202,11 @@ export function valueOnLine(rawLine: string, v: Value, item: Pick<TemplateItem, 
     return nums.includes(d.day) && (nums.includes(d.month) || new RegExp(`\\b${MONTHS[d.month - 1]}`, "i").test(line));
   }
   const norm = (s: string) => s.toLowerCase().replace(/\s+/g, " ").trim();
-  return norm(line).includes(norm(v).slice(0, 20)) || (t === "choice" && MARK.test(line));
+  if (norm(line).includes(norm(v).slice(0, 20)) || (t === "choice" && MARK.test(line))) return true;
+  // Text read from a column heading a mark sits under (H.101 "2025-2026 Estimated" under "@370 2025-2026"): every digit
+  // group of the value is printed on the cited line.
+  const groups = v.match(/\d+/g);
+  return !!groups && groups.every((g) => new RegExp(`(?:^|\\D)${g}(?:\\D|$)`).test(line));
 }
 
 /** The edition a model-read document's cover states ("Common Data Set 2025-2026"), from its first 80 lines. */

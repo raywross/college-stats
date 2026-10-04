@@ -672,12 +672,42 @@ export function schemaComplexity(schema: unknown): { optional: number; union: nu
 }
 
 /**
- * The code table a call's static prompt carries: one line per code, "C.101 | Total first-time, first-year males who
- * applied | count". The labels live here rather than in the schema so the cached prefix holds them once.
+ * The code table a call's static prompt carries: one line per code, "C.119 | Total first-time, first-year who applied
+ * [Applied · In-State] | count". The labels live here rather than in the schema so the cached prefix holds them once.
+ *
+ * The bracket holds the template's row and column descriptors that aren't "All". Without them a grid's cells share one
+ * question: the first live run's model put Washington University's 33,283 total applicants in the in-state cell
+ * (C.119 and C.116 both read "Total first-time, first-year who applied"), swapped transfer admits and enrollees, and
+ * mixed required and recommended high-school units.
  */
 export function codeTableText(table: TemplateTable, call: CallKey): string {
-  return table.items
-    .filter((it) => it.call === call)
-    .map((it) => `${it.code} | ${it.question.replace(/\s+/g, " ").trim()} | ${it.value_type}`)
+  const items = table.items.filter((it) => it.call === call);
+  const describe = (it: TemplateItem) => `${it.question.replace(/\s+/g, " ").trim()}${descriptorText(it)}`;
+  // Codes the descriptors still don't tell apart (GPA's three columns, B1's undergraduate and graduate rows, the B4–B5
+  // grids, H1's need and non-need columns): the template's section heading when that separates them, else its PDF tag,
+  // whose words the instructions explain (FRSH_GPA_SUBMIT, EN_GRAD_OTH, GRS_LY_…, SCHOL_NN_…).
+  const count = (key: (it: TemplateItem) => string) => {
+    const n = new Map<string, number>();
+    for (const it of items) n.set(key(it), (n.get(key(it)) ?? 0) + 1);
+    return n;
+  };
+  const plain = count(describe);
+  const withSub = (it: TemplateItem) => `${describe(it)} {${it.sub ?? ""}}`;
+  const bySub = count(withSub);
+  return items
+    .map((it) => {
+      let text = describe(it);
+      if ((plain.get(text) ?? 0) > 1) text = (bySub.get(withSub(it)) ?? 0) === 1 && it.sub ? `${text} (${it.sub})` : `${text} (tag ${it.tag})`;
+      return `${it.code} | ${text} | ${it.value_type}`;
+    })
     .join("\n");
+}
+
+/** " [Applied · In-State · Males]": the item's descriptors other than "All", the question's own words, or the group default. */
+export function descriptorText(it: Pick<TemplateItem, "question" | "category" | "cohort" | "residency" | "gender" | "unit">): string {
+  const q = it.question.toLowerCase();
+  const parts = [it.category, it.cohort === "First-time, first-year" ? null : it.cohort, it.residency, it.gender, it.unit]
+    .map((p) => (p ?? "").replace(/\s+/g, " ").trim())
+    .filter((p) => p && p !== "All" && !q.includes(p.toLowerCase()));
+  return parts.length ? ` [${[...new Set(parts)].join(" · ")}]` : "";
 }

@@ -41,11 +41,18 @@ function readJson<T>(name: string): T {
   return JSON.parse(readFileSync(join(process.cwd(), "data", name), "utf8"));
 }
 
+/** Short names and nicknames (specs/school-identity/aliases.md): absent file reads as none, not an error. */
+function readAliases(): DatasetFiles["aliases"] {
+  const path = join(process.cwd(), "data", "aliases.json");
+  return existsSync(path) ? JSON.parse(readFileSync(path, "utf8")) : [];
+}
+
 function jsonFiles(): DatasetFiles {
   return {
     schools: readJson("schools.json"),
     meta: readJson("meta.json"),
     releaseCalendar: readJson("release-calendar.json"),
+    aliases: readAliases(),
   };
 }
 

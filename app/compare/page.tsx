@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRight, Swords } from "lucide-react";
+import { ArrowRight, ExternalLink, Swords } from "lucide-react";
 import { getData, getDetail, getHistory, getHistoryFiles, toIndexEntry } from "@/lib/data";
 import { familiesOffered, fieldStat, type FieldStat } from "@/lib/field-compare";
 import { majorFamilyName } from "@/lib/majors";
@@ -34,7 +34,8 @@ import { Crest } from "@/components/school/Crest";
 import { RadarChart } from "@/components/charts/RadarChart";
 import { RangeBar } from "@/components/charts/RangeBar";
 import { StackedBar } from "@/components/charts/StackedBar";
-import { InfoTip, Term } from "@/components/ui/info-tip";
+import { InfoTip, SourceTip, Term } from "@/components/ui/info-tip";
+import { linkHost } from "@/lib/links";
 import { compareAdmitRates, compareYields } from "@/lib/cds/residency-display";
 import { ADMISSION_PROFILE_ROWS, admissionProfileCellField, c7FactorCell } from "@/lib/cds/compare-rows";
 import { compareClassesUnder20 } from "@/lib/cds/academics-display";
@@ -314,7 +315,8 @@ export default async function ComparePage({
   // CDS financial aid rows (specs/data-expansion/cds-financial-aid.md#compare), after the rest of "All the numbers".
   const aidRows = compareAidRows(citeField("aid.cohort").year);
   const tableRows = [...TABLE_ROWS, ...aidRows];
-  const tableFields: readonly FieldPath[] = [...new Set([...TABLE_FIELDS, ...aidRows.map((r) => r[2])])];
+  // "Website" closes the table as its own row (an actual link, not text), so its field isn't in TABLE_ROWS.
+  const tableFields: readonly FieldPath[] = [...new Set([...TABLE_FIELDS, ...aidRows.map((r) => r[2]), "links.website" as const])];
   const historyFiles = await getHistoryFiles();
 
   // "Your major" (specs/data-expansion/majors.md, field-of-study.md): broad fields (2-digit CIP families) that at
@@ -648,6 +650,25 @@ export default async function ComparePage({
                       </tr>
                     );
                   })}
+                  {/* An actual link per college, not text, so it isn't one of the generic string rows above (links.md). */}
+                  <tr>
+                    <td className="sticky left-0 z-10 max-w-36 bg-card px-3 py-2.5 text-muted-foreground shadow-[1px_0_0_var(--border)] sm:max-w-none sm:px-4 sm:shadow-none">
+                      <span className="inline-flex items-center gap-1">
+                        Website <SourceTip cited={citeField("links.website")} />
+                      </span>
+                    </td>
+                    {schools.map((s) => (
+                      <td key={s.unit_id} className="px-4 py-2.5 font-semibold">
+                        {s.links?.website ? (
+                          <a href={s.links.website} target="_blank" rel="noopener" className="inline-flex items-center gap-1 text-primary hover:underline">
+                            {linkHost(s.links.website)} <ExternalLink className="size-3 shrink-0" aria-hidden />
+                          </a>
+                        ) : (
+                          <span className="font-normal text-muted-foreground">–</span>
+                        )}
+                      </td>
+                    ))}
+                  </tr>
                 </tbody>
               </table>
             </div>

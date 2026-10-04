@@ -86,7 +86,7 @@ function uiSources(): [string, string][] {
 test("every <Crest> passes brand, so no view is left with the generated tile by accident", () => {
   const missing: string[] = [];
   for (const [path, src] of uiSources()) {
-    for (const m of src.matchAll(/<Crest\b[^>]*?\/>/gs)) if (!/\bbrand=/.test(m[0])) missing.push(`${path}: ${m[0].slice(0, 80)}`);
+    for (const m of src.matchAll(/<Crest\b[^>]*?\/>/g)) if (!/\bbrand=/.test(m[0])) missing.push(`${path}: ${m[0].slice(0, 80)}`);
   }
   assert.deepEqual(missing, [], "pass brand={crestBrand(school)} on the server, or the brand the client's data carries");
 });

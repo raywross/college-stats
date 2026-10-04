@@ -101,7 +101,7 @@ const ExtLink = ({ href, children, className }: { href: string; children: ReactN
 );
 
 export default async function DataPage() {
-  const { cdsSchools, citeField, getAllSchools, getMeta, getReleaseCalendar } = await getData();
+  const { aliasStats, cdsSchools, citeField, getAllSchools, getMeta, getReleaseCalendar } = await getData();
   const meta = getMeta();
   const all = getAllSchools();
   const cds = cdsSchools();
@@ -204,7 +204,8 @@ export default async function DataPage() {
     for (const [, def] of STORED) if (def.source === key) topics.add(def.topic);
     return [...topics].map((t) => TOPIC_LABELS[t]);
   };
-  const order: SourceKey[] = ["scorecard", "ipeds-adm", "ipeds-sfa", "ipeds-ic", "ipeds-ic-char", "ipeds-hd", "ipeds-ef", "ipeds-ef-c", "ipeds-ef-a", "ipeds-c", "ipeds-om", "ipeds-gr", "ipeds-sal", "ipeds-f", "scorecard-fos", "cds", "college-site", "state-law"];
+  // "wikidata" added by the school-identity social-accounts track; "wikipedia" is the brand track's (specs/school-identity/).
+  const order: SourceKey[] = ["scorecard", "ipeds-adm", "ipeds-sfa", "ipeds-ic", "ipeds-ic-char", "ipeds-hd", "ipeds-ef", "ipeds-ef-c", "ipeds-ef-a", "ipeds-c", "ipeds-om", "ipeds-gr", "ipeds-sal", "ipeds-f", "scorecard-fos", "cds", "college-site", "state-law", "wikidata"];
 
   const toc = [
     ["why", "Why it lags"],
@@ -562,6 +563,17 @@ export default async function DataPage() {
           ))}
         </ul>
 
+        <h3 className="pt-6 font-display text-xl font-bold">Short names and nicknames</h3>
+        <p className="max-w-3xl text-sm text-muted-foreground">
+          Search understands short names and nicknames — &ldquo;UGA,&rdquo; &ldquo;Vandy,&rdquo; &ldquo;Georgia
+          Tech&rdquo; — not just official names: {num(aliasStats().rows)} short names across{" "}
+          {num(aliasStats().colleges)} colleges, from the IPEDS directory, Wikidata, each college&apos;s own homepage
+          address, and a small hand-curated list for well-known cases like &ldquo;Cal&rdquo; and &ldquo;USC.&rdquo;
+          Spot a wrong or missing one? Wikidata corrections help everyone who uses it; the curated list is{" "}
+          <code className="rounded bg-muted px-1 py-0.5 text-xs">data/aliases-curated.json</code> in the
+          site&apos;s source.
+        </p>
+
         {/* Colors and marks (specs/school-identity/brand.md): sources, the trademark line, and the removal route. */}
         <h3 id="colors-and-marks" className="scroll-mt-24 pt-6 font-display text-xl font-bold">
           Colors and marks
@@ -673,7 +685,8 @@ export default async function DataPage() {
             </h3>
             <p className="mt-2 text-sm text-muted-foreground">
               Averages can&apos;t tell you what your family will pay. Every college&apos;s profile links to its official{" "}
-              <Term term="net-price-calculator">net price calculator</Term> for a personal estimate.
+              <Term term="net-price-calculator">net price calculator</Term> for a personal estimate, alongside its own
+              admissions, application, and financial aid pages.
             </p>
           </div>
         </div>

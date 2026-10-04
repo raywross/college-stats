@@ -76,6 +76,28 @@ test("color rows and overrides are well formed and name real schools", () => {
   }
 });
 
+/** Every .tsx under app/ and components/, as [path, source]. */
+function uiSources(): [string, string][] {
+  const walk = (dir: string): string[] =>
+    readdirSync(join(ROOT, dir), { withFileTypes: true }).flatMap((d) => (d.isDirectory() ? walk(join(dir, d.name)) : d.name.endsWith(".tsx") ? [join(dir, d.name)] : []));
+  return [...walk("app"), ...walk("components")].map((p) => [p, readFileSync(join(ROOT, p), "utf8")]);
+}
+
+test("every <Crest> passes brand, so no view is left with the generated tile by accident", () => {
+  const missing: string[] = [];
+  for (const [path, src] of uiSources()) {
+    for (const m of src.matchAll(/<Crest\b[^>]*?\/>/gs)) if (!/\bbrand=/.test(m[0])) missing.push(`${path}: ${m[0].slice(0, 80)}`);
+  }
+  assert.deepEqual(missing, [], "pass brand={crestBrand(school)} on the server, or the brand the client's data carries");
+});
+
+test("charts never use a college's colors (the compare slot palette is validated for contrast)", () => {
+  for (const [path, src] of uiSources()) {
+    if (!path.startsWith(join("components", "charts"))) continue;
+    assert.doesNotMatch(src, /\.(accent|on_accent|tint_light|tint_dark|crest_to|gradient)\b|brandTint|crestTint/, `${path} reads a college's colors`);
+  }
+});
+
 test("the committed brand files give every school valid lineage", () => {
   const byId = <T extends { unit_id: string }>(rows: T[]) => new Map(rows.map((r) => [r.unit_id, r]));
   const colorRows = byId(colors);

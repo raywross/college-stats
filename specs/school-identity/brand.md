@@ -273,11 +273,12 @@ and 2.65:1 (dark) and the check exited 1.
   cropped, 300×100 and 229×256 rejected; an ICO's largest entry; 32-bit BMP entries top-down with the mask's alpha;
   transparent and blank-on-white rejected; SVG rasterized; runs: removals (full and `--ids`), a timeout or a silent host
   keeps the mark, a refusal or 404s remove it, orphans deleted. Broken 11 ways: each failed.
-- `tests/brand-files.test.mts` (5, the verify-time check): every mark has its 192 px WebP and every file a mark and a
+- `tests/brand-files.test.mts` (7, the verify-time check): every mark has its 192 px WebP and every file a mark and a
   school; a `brand.logo` in the dataset has its file; a `logo: false` removal leaves no file, row, or mark; color rows
-  and overrides are well formed; the committed files give every school valid lineage. Broken 7 ways (an orphan file, a
-  row without its file, a 64 px file, a removal with its file still there, an unsourced override, an override for no
-  school, a color that isn't hex): each failed.
+  and overrides are well formed; the committed files give every school valid lineage; every `<Crest>` in `app/` and
+  `components/` passes `brand`; nothing in `components/charts/` reads a college's colors. Broken 9 ways (an orphan
+  file, a row without its file, a 64 px file, a removal with its file still there, an unsourced override, an override
+  for no school, a color that isn't hex, a `<Crest>` without `brand`, a chart reading the accent): each failed.
 - `tests/identity.test.mts` (foundation) passes with the real files: applying identity twice equals once.
 
 ### Deviations from the plan

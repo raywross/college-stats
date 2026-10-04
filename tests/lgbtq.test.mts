@@ -132,7 +132,7 @@ test("general DEI-office bans (owner decision 2026-10-04): included, and the lin
   assert.equal(byState.get("NC")!.effective, "2026-06-24", "the veto override");
   // Neither direction may be overstated: a general ban says it doesn't name them; a law that names them doesn't say it doesn't.
   for (const l of LAWS.laws) {
-    const saysNotNamed = /doesn't name sexual orientation or gender identity/.test(l.summary);
+    const saysNotNamed = /doesn't (?:define DEI or )?name sexual orientation or gender identity/.test(l.summary);
     assert.equal(saysNotNamed, general.includes(l.state), `${l.state}: ${l.summary}`);
   }
 });

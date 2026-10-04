@@ -26,11 +26,20 @@ const dryRun = process.argv.includes("--dry-run");
 function withStateLaw(school: School, laws: StateLawTable): School {
   const law = stateLawFor(school, laws);
   const s: School = { ...school };
-  const lineage = { ...(s.lineage ?? {}) };
+  let lineage = { ...(s.lineage ?? {}) };
   if (!law) delete lineage["lgbtq.state_law"];
   if (law) {
     s.lgbtq = { gender: null, admissions: null, ...(s.lgbtq ?? {}), state_law: law };
-    lineage["lgbtq.state_law"] = { source: "state-law", year: effectiveLabel(law.effective), url: law.url, retrieved: law.checked };
+    const record = { source: "state-law", year: effectiveLabel(law.effective), url: law.url, retrieved: law.checked } as const;
+    if ("lgbtq.state_law" in lineage) lineage["lgbtq.state_law"] = record;
+    else {
+      // A new record goes where sync-data + merge-reported put it: before the college-reported records, which
+      // merge-reported appends last (its idempotence test compares the file byte for byte).
+      const entries = Object.entries(lineage);
+      const at = entries.findIndex(([k]) => k.startsWith("reported."));
+      entries.splice(at < 0 ? entries.length : at, 0, ["lgbtq.state_law", record]);
+      lineage = Object.fromEntries(entries) as typeof lineage;
+    }
   } else if (s.lgbtq) {
     const rest = { ...s.lgbtq, state_law: null };
     const empty = !rest.gender && !rest.admissions && !(rest.policies?.length);

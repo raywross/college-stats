@@ -1,9 +1,11 @@
 # LGBTQ+ Life
 
-> Status: **planned**, with **phase 1 built** (2026-10-03, branch `feature/campus-life`): the IPEDS another-gender counts for every
-> college and the first state-law line (Texas SB 17), shown in an "LGBTQ+ life" block in the students page's Campus life
-> section and beside the men/women shares ([As built](#as-built-phase-1)). Phases 2 (other states) through 5
-> (policies, centers, conduct codes, pilot, rollout) are still planned, so the spec stays on the roadmap. Research 2026-09-29: IPEDS 2023 data files and dictionaries (every figure below
+> Status: **planned**, with **phases 1 and 2 built**. Phase 1 (2026-10-03, branch `feature/campus-life`): the IPEDS
+> another-gender counts for every college and the first state-law line (Texas SB 17), shown in an "LGBTQ+ life" block in
+> the students page's Campus life section and beside the men/women shares ([As built](#as-built-phase-1)). Phase 2
+> (2026-10-04, branch `feature/campus-life-2-state-laws`): the state-law table now covers six states, each read in the
+> statute ([Phase 2 as built](#phase-2-as-built-state-laws)). Phases 3
+> through 5 (directory leads, policies, centers, conduct codes, pilot, rollout) are still planned, so the spec stays on the roadmap. Research 2026-09-29: IPEDS 2023 data files and dictionaries (every figure below
 > about IPEDS was computed from them), Common Data Set templates, the national directories named here, and a
 > per-school look at UT Austin with contrasting colleges. Findings are verified unless marked *unverified*.
 > Companions: [religious-life.md](religious-life.md) (its source tiers, crawl strategy, and access rules apply here
@@ -123,9 +125,9 @@ lists give names only, so each entry needs a matching step and a check of the co
    full-time position), named student groups and how many, oSTEM chapter, LGBTQ+ Greek chapters, and dedicated
    counseling groups where the counseling center lists them.
 5. **State context** (tier A state law, public colleges only): laws that close or restrict identity-based offices or
-   programs, with statute, effective date, and a one-line neutral summary. Texas SB 17 is verified; at least eight
-   other states (Alabama, Florida, Idaho, Iowa, North Dakota, South Dakota, Tennessee, Utah) have been reported to
-   restrict DEI at public colleges (*unverified*: each must be read in the statute for what it covers).
+   programs, with statute, effective date, and a one-line neutral summary. Built for six states (Alabama, Florida,
+   Idaho, Iowa, Texas, Utah) after reading each statute; 24 other states checked and left out, each with its reason
+   ([Phase 2 as built](#phase-2-as-built-state-laws)).
 
 ## Sensitive facts: rules
 - **Quote, don't characterize.** A conduct restriction appears as the college's own sentence (short quote, link,
@@ -194,8 +196,9 @@ source kinds that show the page and the date checked.
 1. **Built 2026-10-03.** **IPEDS counts** for all colleges, with the display rules and glossary terms. Adds one file to the sync (fall
    enrollment `EF{Y}A`, undergrad rows; ~3 MB zipped); the admissions file (`ADM{Y}`) is already downloaded. Cheap;
    ship first.
-2. **State-law table** for public colleges (Texas first, then each reported state after reading its statute). Texas
-   built 2026-10-03; the other states are planned.
+2. **Built 2026-10-04.** **State-law table** for public colleges (Texas first, then each reported state after reading
+   its statute). Texas built 2026-10-03; Alabama, Florida, Idaho, Iowa, and Utah added 2026-10-04
+   ([Phase 2 as built](#phase-2-as-built-state-laws)).
 3. **Clearinghouse and directory leads** matched to `unit_id`s, plus permission requests (Beemyn, Consortium, oSTEM).
 4. **Pilot of 25 colleges:** UT Austin, UCLA, Columbia, Harvard, BYU, a CCCU college, a Catholic college, an HBCU, a
    historically women's college (Smith), Reed, a large public in Florida, a large public in a state without such
@@ -239,7 +242,8 @@ source kinds that show the page and the date checked.
   2024 (read 2026-10-03 in the enrolled bill, capitol.texas.gov SB00017F, and the current code text, which is
   unamended). Summary: "Texas public colleges may not have diversity, equity, and inclusion offices, including offices
   for programs designed around gender identity or sexual orientation; courses, research, and registered student groups
-  are exempt." Applied to the 42 public Texas colleges on the site.
+  are exempt." Applied to the 42 public Texas colleges on the site. Phase 2 added five states and three validator
+  checks ([Phase 2 as built](#phase-2-as-built-state-laws)).
 - **Profile:** "LGBTQ+ life" block (`components/school/LgbtqLife.tsx`) in Campus life: the undergraduate count (count
   and share at 10+, "fewer than 10", or the blank/0/withheld sentence), gender unknown, first-year applicants of
   another gender (shown only when reported or withheld; "not collected" is already said once), the caveat, and the
@@ -251,6 +255,107 @@ source kinds that show the page and the date checked.
   Home code mentions these fields (checked by breaking it on purpose).
 - **Glossary:** another gender, gender unknown, state law on public colleges. The other terms in "Where it appears"
   wait for the phases that show them.
+
+## Phase 2 as built (state laws)
+Built 2026-10-04. Every state below was checked in its legislature's own text (enrolled bill, session law, or current
+code); news and trackers were leads only. We kept facts, citations, and short quotes, not copies of the texts.
+
+**Rule for inclusion.** A state gets a line when an enacted statute or session law (not a bill, executive order, or
+board policy) closes or restricts offices, centers, or programs at public colleges **and its text reaches LGBTQ+
+programming**: it names sexual orientation or gender identity (or concepts such as gender theory or queer theory) in
+what it closes, or it hands the definition to a binding state rule that does. A general "DEI office" ban whose text
+doesn't name them is left out, because whether it covers an LGBTQ+ center would be our interpretation, not what the
+statute says; those states are listed below so the owner can revisit the rule. A law blocked by a court order is left
+out until the order is lifted (the line says "in effect since").
+- **Board policies:** left out (decision 2026-10-04). They aren't statutes and change without a session. The ones
+  found are Idaho's State Board resolution (December 2024), now covered by Idaho's statute, and South Dakota Board of
+  Regents guidance on training and email signatures.
+- **Florida** is included through its statute's delegation: §1004.06(2)(a)2 bars state or federal funds for programs
+  that "advocate for diversity, equity, and inclusion … as defined by rules of the State Board of Education and
+  regulations of the Board of Governors", and BOG Regulation 9.016(1)(a)1 defines DEI as any program that "classifies
+  individuals on the basis of race, color, sex, national origin, gender identity, or sexual orientation and promotes
+  differential or preferential treatment" (Rule 6A-14.0718 covers the state colleges; amended 2026-08-25). The `act`
+  field names both rules.
+
+**Data.** `data/state-laws.json` (reviewed 2026-10-04), one entry per state. Iowa's two acts amend one chapter, so
+they share an entry (`name` and `act` list both). No schema change was needed. `validateStateLaws` gained three
+checks, each proved by a test that breaks it: `name` and `summary` start with the same state name, no law's `checked`
+date is after the table's `reviewed` date, and entries stay sorted by state code. The profile still shows one line per
+college. `meta.sources["state-law"].url` is the first entry's statute (Alabama); each value's lineage record carries
+its own statute URL, which is what the ⓘ tooltip shows.
+
+**Included** (public colleges on the site, from `data/schools.json` after the 2026-10-04 sync; 78 in all):
+
+| State | Law | Statute | Effective | Summary (as shown) | Public colleges |
+|---|---|---|---|---|---|
+| Alabama | SB 129 (2024), Ala. Acts 2024-34 | Code of Alabama §41-1-90 et seq. | 2024-10-01 | Alabama public colleges may not sponsor programs where attendance is based on race, sex, gender identity, sexual orientation, or similar traits, or keep offices promoting them; student and faculty groups may host them without state funds. | 14 |
+| Florida | SB 266 (2023), Laws of Fla. ch. 2023-82, s. 4 | Fla. Stat. §1004.06 (with BOG Reg. 9.016, Rule 6A-14.0718) | 2023-07-01 | Florida public colleges may not use state or federal funds for programs advocating diversity, equity, and inclusion, defined in state rules as favoring people by race, sex, gender identity, or sexual orientation; student groups are exempt. | 12 |
+| Idaho | SB 1198 (2025), 2025 Idaho Sess. Laws ch. 317 | Idaho Code §67-5909D | 2025-07-01 | Idaho public colleges may not have diversity, equity, and inclusion offices, defined to include programs promoting concepts such as gender theory or queer theory; research and registered student groups not using state funds are exempt. | 4 |
+| Iowa | SF 2435 (2024), 2024 Iowa Acts ch. 1152; HF 856 (2025), 2025 Iowa Acts ch. 113 (adds community colleges) | Iowa Code ch. 261J | 2025-07-01 | Iowa public universities and community colleges may not have offices that promote programming designed around race, ethnicity, gender identity, or sexual orientation; courses, research, student groups, and health services are exempt. | 3 |
+| Texas | SB 17 (2023), Acts 2023, 88th Leg., R.S., Ch. 922 | Tex. Educ. Code §51.3525 | 2024-01-01 | Unchanged from phase 1 | 42 |
+| Utah | HB 261 (2024); renumbered by SB 1001 (2025 1st Special Session); amended by Laws of Utah 2026, ch. 438 | Utah Code §53H-1-504 (formerly §53B-1-118) | 2024-07-01 | Utah public colleges may not keep offices or programs that treat people differently by race, sex, sexual orientation, gender identity, or similar traits, or that are named diversity, equity, and inclusion; teaching and research are exempt. | 3 |
+
+Notes on the included texts:
+- **Alabama:** read in the enrolled bill (alison.legislature.state.al.us, `SB129-enr.pdf`). §1(3) defines a DEI
+  program as one "where attendance is based on an individual's race, sex, gender identity, ethnicity, national origin,
+  or sexual orientation"; §2(1) bars sponsoring one or keeping "any office, physical location, or department that
+  promotes" them; §4(1) lets student, staff, and faculty groups host them "provided that no state funds are used".
+  The act number (2024-34) and codification (§41-1-90 et seq.) come from the University of Alabama in Huntsville's
+  compliance page: Alabama's code site is JavaScript-only, so neither was read on a state site (*re-check by hand*).
+- **Idaho:** read in the current code section (history: "added 2025, ch. 317, sec. 2") and the bill page (signed
+  2025-04-04, effective 2025-07-01). It also exempts centers for American Indian students. Idaho's 2024 SB 1274
+  (diversity statements in hiring and admissions) is hiring-only and left out.
+- **Iowa:** read in Iowa Code 2026 ch. 261J (each section "effective July 1, 2025", 2024 Acts ch. 1152, §37) and 2025
+  Iowa Acts ch. 113 (Division II adds community colleges; with no special effective date it took effect July 1,
+  2025). §261J.1(1)(d) names "gender identity, or sexual orientation"; (e) names "transgender ideology",
+  "heteronormativity", and "gender theory".
+- **Utah:** read in the enrolled HB 261 (§53B-1-118 as enacted, effective July 1, 2024) and the current §53H-1-504
+  ("Amended by Chapter 438, 2026 General Session", effective 2026-07-01). The 2026 change added privacy as an
+  "important government interest" and exempted invited speakers; the ban itself is unchanged. The old §53B-1-118 page
+  now lists no versions.
+- **Florida:** read in the 2026 Florida Statutes (history "s. 4, ch. 2023-82; s. 11, ch. 2026-28"; the 2026 change
+  added the terrorist-organization clause) and the Senate bill page (effective 7/1/2023, Chapter 2023-82).
+
+**Checked and left out** (2026-10-04). "Read" means the statute or enrolled text was read; "lead" means only news or
+a legislature status page was seen.
+
+| State | What was found | Why it's out |
+|---|---|---|
+| Arizona | SB 1694 (2025) | Vetoed 2025-05-02 (lead) |
+| Arkansas | Act 116 (2025) and Act 341 (2025, "Arkansas ACCESS Act", Ark. Code §6-60-1601 et seq.) | Read: both define DEI by race, color, sex, ethnicity, or national origin; neither names sexual orientation or gender identity |
+| Georgia | HB 127 / SB 120 (2025) | Not enacted (lead) |
+| Indiana | SEA 289 (2025), P.L. 196-2025; EO 25-14 | **Couldn't read the text:** iga.in.gov is JavaScript-only (bill PDFs return an empty app shell). Left out until read by hand. The executive order is out by rule |
+| Kansas | HB 2105 (2024); 2025 SB 125 §161; 2026 HB 2513 | HB 2105 bans ideological statements in hiring and admission (lead). SB 125 §161 (read) is a one-year budget certification that agencies eliminated DEI positions and removed "gender identifying pronouns or gender ideology" from email signatures; DEI is undefined. HB 2513 is a general-education course proviso (lead). None names LGBTQ+ programs |
+| Kentucky | HB 4 (2025), Acts ch. 120 | Read: DEI defined by religion, race, sex, color, or national origin, and "services and programming of resource centers" are excluded when optional and open to all |
+| Louisiana | SB 128 (2025) | Not enacted (lead) |
+| Mississippi | HB 1193 (2025), approved 2025-04-17, effective on passage | Read: names "transgender ideology", "gender-neutral pronouns", "heteronormativity", and "gender theory", and diversity training on gender identity and sexual orientation, so it would qualify. **Blocked by a federal preliminary injunction** (August 2025; Fifth Circuit appeal argued September 2026, undecided; lead). Add it when the injunction is lifted |
+| Missouri | SB 410, SB 680, HB 1196; EO 25-18 | Bills died (lead); executive order out by rule |
+| Montana | HB 635 (2025) | Failed in the House (lead); no 2026 session |
+| Nebraska | LB 552 (2026) | Read on the bill page: "Returned by Governor without approval on April 16, 2026"; no override vote recorded after it |
+| New Hampshire | HB 2 (2025 budget), DEI sections | **Blocked by a federal preliminary injunction** (2025-10-02, vagueness; lead) |
+| North Carolina | SB 558, S.L. 2026-21 (veto overridden 2026-06-24, effective then); G.S. 116-415 to -417 | Read: bars offices promoting "discriminatory practices" (based on a "protected classification under federal law") or named DEI; its divisive concepts are about race and sex only; doesn't name sexual orientation or gender identity. HB 171 (state agencies) wasn't law when checked |
+| North Dakota | SB 2247 (2023), N.D.C.C. ch. 15-10.6 as enacted | Read: bars asking viewpoints and mandatory noncredit training on race and sex concepts; no office closure. SB 2392 (2025) failed 1–46 |
+| Ohio | SB 1 (2025), R.C. 3345.0217, effective 2025-06-27 | Read: bars "existing diversity, equity, and inclusion offices or departments" without defining DEI; sexual orientation and gender identity appear only in the ban on consultants promoting admission or hiring on those bases. General DEI-office ban, out by the rule |
+| Oklahoma | SB 796 (2025), 70 O.S. §3251, effective 2025-07-01 | Read: bars DEI positions and programs only "to the extent they grant preferential treatment based on … race, color, ethnicity, or national origin", and mandated pronoun disclosure. EO 2023-5 out by rule |
+| South Carolina | H.3927 (2025) | Read on the bill page: passed the House, in Senate Judiciary since 2025-04-10; not enacted |
+| South Dakota | HB 1012 (2022), 2022 S.D. Sess. Laws ch. 39 | Read: mandatory training on "divisive concepts" (race, sex, religion, and similar) only. Board of Regents policy out by rule |
+| Tennessee | SB 1084, Pub. Ch. 458 (2025), "Dismantling DEI Departments Act", effective on signing 2025-05-15 | Read (Senate Amendment 1, the enacted text): bars a "discriminatory preference" by "race, ethnicity, sex, age, or any other demographic characteristic" and offices "for such purposes"; doesn't name sexual orientation or gender identity. Its 2023 laws are training and hiring only. The Secretary of State's public-chapter PDF is blocked (CloudFront 403), so the capitol.tn.gov amendment was read |
+| West Virginia | SB 474 (2025), W. Va. Code §18B-1G-1 et seq., effective 2025-07-11 | Read: DEI defined by race, color, sex, ethnicity, or national origin only. EO 3-25 out by rule |
+| Wyoming | HB 147 (2025), Enrolled Act 67, W.S. 9-25-101, effective 2025-07-01 | Read: DEI defined by race, color, religion, sex, ethnicity, or national origin; no sexual orientation or gender identity. SF 103 was vetoed |
+
+Close calls for the owner: **Ohio, Tennessee, North Carolina** ban DEI offices in general terms without naming LGBTQ+
+programs; **Mississippi** qualifies on its text and waits on the courts; **Indiana** is unread.
+
+**Re-check after each legislative session** (most adjourn by June) and after any court ruling:
+1. New enactments: search each legislature for bills on "diversity, equity, and inclusion" at public colleges, with
+   news trackers (BestColleges, the Chronicle) as leads. Watch Indiana (read SEA 289 by hand), Mississippi (Fifth
+   Circuit), New Hampshire (injunction), Ohio, Tennessee, and North Carolina (amendments that name sexual orientation
+   or gender identity), repeat bills in Missouri, South Carolina, Georgia, Louisiana, Nebraska, and Arizona, and Kansas
+   budget provisos (yearly).
+2. Amendments and renumbering of included laws: re-read each URL. Utah renumbered Title 53B to 53H in 2025, and
+   Florida's definition lives in board rules that change without a session (BOG 9.016, Rule 6A-14.0718).
+3. Update `checked` for each law re-read and `reviewed` for the table (the validator refuses a `checked` date after
+   `reviewed`), then run `npm run sync-data` so the lineage dates move.
 
 ## Rejected
 Campus Pride Index and its "Worst List" (offline, pay-to-participate self-assessment, not updated since 2023);
@@ -275,3 +380,32 @@ Princeton Review and Niche LGBTQ+ rankings (proprietary, survey-based); composit
 - Title IX exemptions: https://www.ed.gov/laws-and-policy/civil-rights-laws/title-ix-and-sex-discrimination/title-ix-key-issues/title-ix-exemptions;
   CRS report R47613: https://www.congress.gov/crs-product/R47613
 - oSTEM chapters: https://www.ostem.org/chapters; REAP: https://www.thereap.org/
+- State laws, phase 2 (read 2026-10-04). Included: Alabama SB 129 enrolled,
+  https://alison.legislature.state.al.us/files/pdf/SearchableInstruments/2024RS/SB129-enr.pdf (act number and
+  codification: https://www.uah.edu/compliance/federal-law-sb129-compliance-guidance); Florida §1004.06,
+  https://www.leg.state.fl.us/statutes/index.cfm?App_mode=Display_Statute&URL=1000-1099/1004/Sections/1004.06.html,
+  SB 266 https://www.flsenate.gov/Session/Bill/2023/266, BOG Regulation 9.016
+  https://www.flbog.edu/wp-content/uploads/2024/01/Regulation-9.016-Prohibited-Expenditures_-post-circulation_v6-FINAL.pdf,
+  Rule 6A-14.0718 https://www.flrules.org/gateway/ruleNo.asp?id=6A-14.0718; Idaho §67-5909D
+  https://legislature.idaho.gov/statutesrules/idstat/Title67/T67CH59/SECT67-5909D/ and
+  https://legislature.idaho.gov/sessioninfo/2025/legislation/S1198/; Iowa ch. 261J
+  https://www.legis.iowa.gov/docs/code/261J.pdf and 2025 Acts ch. 113
+  https://www.legis.iowa.gov/docs/publications/iactc/91.1/CH0113.pdf; Utah §53H-1-504
+  https://le.utah.gov/xcode/Title53H/Chapter1/53H-1-S504.html and HB 261 enrolled
+  https://le.utah.gov/~2024/bills/hbillenr/HB0261.pdf. Left out (read): Arkansas Acts 116 and 341 of 2025
+  (arkleg.state.ar.us ACT116.pdf, ACT341.pdf); Kansas SB 125 (2025) enrolled, kslegislature.gov; Kentucky Acts 2025
+  ch. 120 https://apps.legislature.ky.gov/law/acts/25RS/documents/0120.pdf; Mississippi HB 1193 as sent to the
+  Governor https://billstatus.ls.state.ms.us/documents/2025/html/HB/1100-1199/HB1193SG.htm; Nebraska LB 552
+  https://nebraskalegislature.gov/bills/view_bill.php?DocumentID=63261; North Carolina S.L. 2026-21
+  https://www.ncleg.gov/BillLookUp/2025/S558; North Dakota SB 2247
+  https://ndlegis.gov/assembly/68-2023/regular/bill-overview/bo2247.html; Ohio R.C. 3345.0217
+  https://codes.ohio.gov/ohio-revised-code/section-3345.0217; Oklahoma SB 796 enrolled, oklegislature.gov; South
+  Carolina H.3927 https://www.scstatehouse.gov/sess126_2025-2026/bills/3927.htm; South Dakota 2022 ch. 39
+  https://mylrc.sdlegislature.gov/api/Documents/SessionLaw/236258.html?Year=2022; Tennessee SB 1084 and Senate
+  Amendment 1 https://wapp.capitol.tn.gov/apps/BillInfo/Default.aspx?BillNumber=SB1084&GA=114,
+  https://www.capitol.tn.gov/Bills/114/Amend/SA0330.pdf; West Virginia SB 474 enrolled
+  https://www.wvlegislature.gov/Bill_Status/Bills_history.cfm?input=474&year=2025&sessiontype=RS&btype=bill; Wyoming
+  HB 147 enrolled https://wyoleg.gov/2025/Enroll/HB0147.pdf. Leads: https://www.bestcolleges.com/news/anti-dei-legislation-tracker/,
+  https://www.ednc.org/6-26-2026-north-carolina-lawmakers-ban-dei-in-public-schools-higher-education-state-agencies/,
+  https://mississippitoday.org/2026/09/01/dei-ban-wingate-ai-mississippi/,
+  https://www.gladlaw.org/federal-court-temporarily-blocks-new-hampshire-law-attacking-diversity-equity-and-inclusion/

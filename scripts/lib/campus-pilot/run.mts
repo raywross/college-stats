@@ -1,17 +1,21 @@
 /**
  * One college through the campus-life pilot (specs/religious-life.md phase 2, greek-life.md phase 2, lgbtq-life.md
- * phase 4): discovery (or the saved recipe) → our code fetches each page and follows a few links from office pages →
+ * phase 4): discovery (or the saved recipe; round 2: free probes of the college's own site first, then one paid call for
+ * what they missed) → our code fetches each page and follows a few links from office pages →
  * extraction per domain (Haiku 4.5; Sonnet 5 when a quote isn't on its page, the schema call fails, or the model marks
  * low confidence) → every quote checked against its page → the second check (Sonnet 5) on every LGBTQ+ "no", every
  * conduct restriction, and every official religious composition (owner decision 3) → the facts to publish.
  *
- * Nothing unverified is published: a fact whose quote isn't on its page is dropped; a sensitive finding the second
- * check doesn't confirm is dropped and logged; tier A facts must come from the college's own domain.
+ * Nothing unverified is published: a fact whose quote isn't on its page is dropped; a fact whose quote doesn't itself
+ * state it (./support.mts) is dropped; a sensitive finding the second check doesn't confirm is dropped and logged;
+ * tier A facts must come from the college's own domain.
  */
 import { collegeDomain } from "../college-reported/probe.mts";
 import { POLICY_KEYS, TRADITIONS, type Council, type PolicyCheck, type PolicyKey, type Tradition } from "../../../lib/directories.ts";
 import type { CampusFaith, CampusGreek, CampusLgbtq, CompositionItem, GreekCouncilFact, PageRef } from "../../../lib/campus-pages.ts";
-import { BudgetSpent, PILOT_MODELS, discoverDomain, extractDomain, verifyFinding, type CollegeRef, type Ctx, type PromptPage } from "./llm.mts";
+import { BudgetSpent, PILOT_MODELS, discoverCollege, extractDomain, verifyFinding, type CollegeRef, type Ctx, type PromptPage } from "./llm.mts";
+import { missingForPaid, probeCollege } from "./probe.mts";
+import { centerSupport, conductSupport, faithGroupSupport, greekSupport, lgbtqGroupSupport, policySupport, type GreekField } from "./support.mts";
 import { fslLinks, groupPageLinks, keywordWindows, quoteOnPage, shortQuote, type PageFetcher, type Page } from "./pages.mts";
 import { DOMAINS, SOURCE_TYPES, type Domain } from "./schema.mts";
 
@@ -38,6 +42,8 @@ export interface CampusRecipe {
   /** Discovery's links per domain, as returned (re-used on later runs; pages re-fetched only when changed). */
   links: Partial<Record<Domain, Record<string, unknown>>>;
   sources: CampusSource[];
+  /** Round 2: how the links were found — by the free probes, by the paid call (types asked for), and its searches. */
+  discovery?: { probed: string[]; paid: string[]; searches: number; fetches: number };
 }
 
 /* ------------------------------------------------------------------ */
@@ -109,6 +115,14 @@ const WINDOWS: Record<string, RegExp> = {
   religion_report: /religio|denomination|faith|catholic|baptist|christian|jewish|muslim|latter[- ]day|lds/i,
   fsl_reports: /total|chapter|council|members|panhellenic|interfraternity|recruit/i,
 };
+/** The words a stored policy quote must keep when it's cut to 160 characters (the long list's own category). */
+const POLICY_FOCUS: Partial<Record<PolicyKey, RegExp>> = {
+  nondiscrimination_orientation: /sexual orientation/i,
+  nondiscrimination_identity: /gender identity|gender expression/i,
+  inclusive_housing: /gender[- ]inclusive|all[- ]gender|gender[- ]neutral|mixed[- ]gender|open housing/i,
+  name_on_records: /(chosen|preferred|lived|display) (first )?name/i,
+};
+
 const ROLE_LABEL: Record<string, string> = {
   fsl_office: "fraternity & sorority life office",
   fsl_reports: "fraternity & sorority report or reports page",
@@ -138,6 +152,8 @@ interface Gathered {
   prompt: PromptPage[];
   /** P number → the full page (for quote checks and the second check). */
   full: Map<number, Page>;
+  /** P number → the source type the page was read as ("followed" for a page followed from an office page). */
+  types: Map<number, string>;
 }
 
 function linksOf(links: Record<string, unknown>, type: string): string[] {
@@ -160,6 +176,9 @@ export async function gather(fetcher: PageFetcher, domain: Domain, links: Record
 
   const prompt: PromptPage[] = [];
   const full = new Map<number, Page>();
+  const types = new Map<number, string>();
+  /** Pages followed from the LGBTQ+ center (its group lists). */
+  const fromCenter = new Set<string>();
   let chars = 0;
   for (let i = 0; i < queue.length && prompt.length < MAX_PAGES[domain]; i++) {
     const { url, type } = queue[i];
@@ -175,7 +194,11 @@ export async function gather(fetcher: PageFetcher, domain: Domain, links: Record
     if (p.format === "html") {
       if (type === "fsl_office" || type === "fsl_reports") for (const l of fslLinks(p, type === "fsl_reports" ? 8 : 6)) push(l.url, "followed");
       if (type === "faith_office") for (const l of groupPageLinks(p, "faith", 2)) push(l.url, "followed");
-      if (type === "lgbtq_center") for (const l of groupPageLinks(p, "lgbtq", 2)) push(l.url, "followed");
+      if (type === "lgbtq_center")
+        for (const l of groupPageLinks(p, "lgbtq", 2)) {
+          fromCenter.add(l.url.replace(/#.*$/, ""));
+          push(l.url, "followed");
+        }
     }
     const window = WINDOWS[type] ?? (domain === "greek" ? WINDOWS.fsl_reports : undefined);
     let text = window ? keywordWindows(p.text, window, PAGE_CHARS) : p.text.slice(0, PAGE_CHARS);
@@ -185,8 +208,9 @@ export async function gather(fetcher: PageFetcher, domain: Domain, links: Record
     const n = prompt.length + 1;
     prompt.push({ n, url: p.final_url, role: ROLE_LABEL[type] ?? type, text });
     full.set(n, p);
+    types.set(n, type === "followed" && fromCenter.has(url) ? "lgbtq_groups" : type);
   }
-  return { prompt, full };
+  return { prompt, full, types };
 }
 
 /* ------------------------------------------------------------------ */
@@ -221,7 +245,7 @@ function normalize(domain: Domain, raw: Raw, g: Gathered, college: CollegeRef, t
   const site = college.website ? collegeDomain(new URL(college.website).host) : null;
 
   /** A page ref for (page, quote), or null (and the reason logged). `own`: the page must be on the college's domain. */
-  const refOf = (fact: string, pageNo: unknown, quote: unknown, o: { own?: boolean } = { own: true }): (PageRef & { page: Page }) | null => {
+  const refOf = (fact: string, pageNo: unknown, quote: unknown, o: { own?: boolean; focus?: RegExp } = { own: true }): (PageRef & { page: Page }) | null => {
     const page = typeof pageNo === "number" ? g.full.get(pageNo) : undefined;
     if (!page) {
       out.dropped.push({ domain, fact, reason: "no page" });
@@ -241,8 +265,15 @@ function normalize(domain: Domain, raw: Raw, g: Gathered, college: CollegeRef, t
       out.dropped.push({ domain, fact, reason: "not the college's own page", detail: url });
       return null;
     }
-    return { url, checked: today, quote: shortQuote(quote), page };
+    return { url, checked: today, quote: shortQuote(quote, 160, o.focus), page };
   };
+  /** Drops a fact whose quote doesn't state it (./support.mts); true when it's kept. */
+  const supported = (fact: string, reason: string | null, quote: string): boolean => {
+    if (reason === null) return true;
+    out.dropped.push({ domain, fact, reason: "quote doesn't state it", detail: `${reason}: ${quote.slice(0, 100)}` });
+    return false;
+  };
+  const greekOk = (fact: string, field: GreekField, value: unknown, quote: string, term?: string) => supported(fact, greekSupport(field, value, quote, { term, today }), quote);
   const strip = <T extends { page: Page }>(r: T): Omit<T, "page"> => {
     const { page: _p, ...rest } = r;
     void _p;
@@ -253,18 +284,20 @@ function normalize(domain: Domain, raw: Raw, g: Gathered, college: CollegeRef, t
     const gk: CampusGreek = {};
     if (raw.status?.value === "none_stated") {
       const r = refOf("greek.none_stated", raw.status.page, raw.status.quote);
-      if (r) gk.none_stated = strip(r);
+      if (r && greekOk("greek.none_stated", "status_none", null, raw.status.quote)) gk.none_stated = strip(r);
     }
     if (!gk.none_stated) {
       if (Number.isInteger(raw.members_total?.value) && raw.members_total.value > 0) {
         const r = refOf("greek.members_total", raw.members_total.page, raw.members_total.quote);
-        if (r) gk.members_total = { ...strip(r), value: raw.members_total.value, term: raw.members_total.term || null };
+        if (r && greekOk("greek.members_total", "members_total", raw.members_total.value, raw.members_total.quote, raw.members_total.term)) gk.members_total = { ...strip(r), value: raw.members_total.value, term: raw.members_total.term || null };
       }
       const councils: GreekCouncilFact[] = [];
       for (const c of (raw.councils ?? []) as Raw[]) {
         if (c.chapters == null && c.members == null) continue;
         const r = refOf(`greek.council.${c.council}`, c.page, c.quote);
         if (!r) continue;
+        if (c.chapters != null && !greekOk(`greek.council.${c.council}`, "council", c.chapters, c.quote)) continue;
+        if (c.members != null && !greekOk(`greek.council.${c.council}`, "council", c.members, c.quote)) continue;
         if (councils.some((x) => x.council === c.council && x.name === c.name)) continue;
         councils.push({ ...strip(r), council: c.council as Council, name: String(c.name), chapters: c.chapters ?? null, members: c.members ?? null, term: c.term || null });
       }
@@ -273,12 +306,12 @@ function normalize(domain: Domain, raw: Raw, g: Gathered, college: CollegeRef, t
         const v = raw[k];
         if (v?.value === "yes" || v?.value === "no") {
           const r = refOf(`greek.${k}`, v.page, v.quote);
-          if (r) gk[k] = { ...strip(r), value: v.value };
+          if (r && greekOk(`greek.${k}`, k, v.value, v.quote)) gk[k] = { ...strip(r), value: v.value };
         }
       }
       if (typeof raw.formal_term?.value === "string" && raw.formal_term.value.trim()) {
         const r = refOf("greek.formal_term", raw.formal_term.page, raw.formal_term.quote);
-        if (r) gk.formal_term = { ...strip(r), value: raw.formal_term.value.trim() };
+        if (r && greekOk("greek.formal_term", "formal_term", raw.formal_term.value, raw.formal_term.quote)) gk.formal_term = { ...strip(r), value: raw.formal_term.value.trim() };
       }
     }
     out.greek = Object.keys(gk).length ? gk : null;
@@ -322,6 +355,7 @@ function normalize(domain: Domain, raw: Raw, g: Gathered, college: CollegeRef, t
       if (!(c.tradition in TRADITIONS)) continue;
       const r = refOf(`faith.community.${c.tradition}`, c.page, c.quote);
       if (!r) continue;
+      if (!supported(`faith.community.${c.tradition}`, faithGroupSupport(c.tradition, String(c.name), c.quote), c.quote)) continue;
       out.listings.push({ domain: "faith", kind: "group", tradition: c.tradition, name: String(c.name), url: r.url, publisher: college.name, quote: r.quote, checked: today });
     }
     for (const e of (raw.estimates ?? []) as Raw[]) {
@@ -343,18 +377,19 @@ function normalize(domain: Domain, raw: Raw, g: Gathered, college: CollegeRef, t
     const policies: PolicyCheck[] = [];
     if ((raw.center?.status === "open" || raw.center?.status === "closed") && raw.center.name) {
       const r = refOf("lgbtq.center", raw.center.page, raw.center.quote);
-      if (r) l.center = { ...strip(r), name: String(raw.center.name), status: raw.center.status, ...(raw.center.closed ? { closed: String(raw.center.closed) } : {}) };
+      if (r && supported("lgbtq.center", centerSupport(raw.center.status, String(raw.center.name), raw.center.quote), raw.center.quote)) l.center = { ...strip(r), name: String(raw.center.name), status: raw.center.status, ...(raw.center.closed ? { closed: String(raw.center.closed) } : {}) };
     }
     for (const gr of (raw.groups ?? []) as Raw[]) {
       const r = refOf("lgbtq.group", gr.page, gr.quote);
-      if (r) out.listings.push({ domain: "lgbtq", kind: "group", name: String(gr.name), url: r.url, publisher: college.name, quote: r.quote, checked: today });
+      if (r && supported("lgbtq.group", lgbtqGroupSupport(String(gr.name), gr.quote, ["lgbtq_groups", "lgbtq_center"].includes(g.types.get(gr.page) ?? "")), gr.quote)) out.listings.push({ domain: "lgbtq", kind: "group", name: String(gr.name), url: r.url, publisher: college.name, quote: r.quote, checked: today });
     }
     for (const key of Object.keys(POLICY_KEYS) as PolicyKey[]) {
       const v = raw.policies?.[key];
       if (v?.value !== "yes" && v?.value !== "no") continue;
       if (key === "trans_admission" && !college.single_sex) continue;
-      const r = refOf(`lgbtq.${key}`, v.page, v.quote);
+      const r = refOf(`lgbtq.${key}`, v.page, v.quote, { focus: POLICY_FOCUS[key] });
       if (!r) continue;
+      if (!supported(`lgbtq.${key}`, policySupport(key, v.value, v.quote), v.quote)) continue;
       const check: PolicyCheck = { key, value: v.value, url: r.url, checked: today, quote: r.quote };
       if (v.value === "no") {
         out.pending.push({ fact: `lgbtq.${key}`, finding: `${POLICY_KEYS[key]}: NO (the college's page shows it does not)`, ref: r, page: r.page, apply: (by) => policies.push({ ...check, verified_by: by }) });
@@ -365,7 +400,7 @@ function normalize(domain: Domain, raw: Raw, g: Gathered, college: CollegeRef, t
       const quotes = ((cd.quotes ?? []) as string[]).filter((q) => typeof q === "string" && q.trim());
       const ok = quotes.find((q) => g.full.get(cd.page) && quoteOnPage(q, g.full.get(cd.page)!.text));
       const r = refOf("lgbtq.conduct_restriction", cd.page, ok ?? quotes[0]);
-      if (r) {
+      if (r && supported("lgbtq.conduct_restriction", conductSupport(ok ?? quotes[0]), ok ?? quotes[0])) {
         const check: PolicyCheck = { key: "conduct_restriction", value: "yes", url: r.url, checked: today, quote: r.quote };
         out.pending.push({
           fact: "lgbtq.conduct_restriction",
@@ -405,15 +440,43 @@ function around(page: Page, quote: string, radius = 6000): string {
 
 export async function runCollege(ctx: Ctx, fetcher: PageFetcher, college: CollegeRef, o: RunCollegeOptions): Promise<{ result: CollegeResult; recipe: CampusRecipe }> {
   const result: CollegeResult = { unit_id: college.unit_id, name: college.name, checked: o.today, greek: null, faith: null, lgbtq: null, listings: [], raw: {}, escalated: [], dropped: [], checks: [], errors: [] };
-  const recipe: CampusRecipe = { unit_id: college.unit_id, learned: o.recipe?.learned ?? o.today, model: PILOT_MODELS.discovery, links: { ...(o.recipe?.links ?? {}) }, sources: [] };
+  const recipe: CampusRecipe = {
+    unit_id: college.unit_id,
+    learned: o.recipe?.learned ?? o.today,
+    model: PILOT_MODELS.discovery,
+    links: { ...(o.recipe?.links ?? {}) },
+    sources: [],
+    ...(o.recipe?.discovery ? { discovery: o.recipe.discovery } : {}),
+  };
+
+  // Discovery, once per college: free probes of its own site, then one paid call for what they missed.
+  if (DOMAINS.some((d) => !recipe.links[d])) {
+    try {
+      const probe = await probeCollege(fetcher, college);
+      const missing: string[] = missingForPaid(college, probe.found);
+      if (college.affiliation) missing.push("religion_report");
+      const paid = await discoverCollege(ctx, college, missing);
+      for (const d of DOMAINS) {
+        if (recipe.links[d]) continue;
+        const merged: Record<string, unknown> = { ...probe.links[d] };
+        for (const [k, v] of Object.entries(paid.links[d] ?? {})) if (v !== null && !(Array.isArray(v) && !v.length) && v !== "") merged[k] = v;
+        recipe.links[d] = merged;
+      }
+      recipe.discovery = { probed: Object.keys(probe.found), paid: missing, searches: paid.searches, fetches: probe.tried };
+      o.log(`  ${college.name}: probes found ${Object.keys(probe.found).length} type(s) in ${probe.tried} fetches; paid search for ${missing.length ? missing.join(", ") : "nothing"}`);
+    } catch (err) {
+      if (err instanceof BudgetSpent) {
+        result.stopped = err.message;
+        return { result, recipe };
+      }
+      result.errors.push(`discovery: ${(err as Error).message}`);
+    }
+  }
 
   for (const domain of DOMAINS) {
     try {
-      let links = recipe.links[domain];
-      if (!links) {
-        links = await discoverDomain(ctx, college, domain);
-        recipe.links[domain] = links;
-      }
+      const links = recipe.links[domain];
+      if (!links) continue;
       const g = await gather(fetcher, domain, links, recipe.sources);
       if (!g.prompt.length) {
         o.log(`  ${college.name}: ${domain}: no readable pages`);

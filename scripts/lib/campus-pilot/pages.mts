@@ -8,6 +8,7 @@
 import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import { gunzipSync } from "node:zlib";
 import type { PoliteHttp } from "../college-reported/http.mts";
 import { detectFormat, findLinks, htmlToText, pdfPages, type FoundLink } from "../college-reported/documents.mts";
 import { refusalOf } from "../directories/context.mts";
@@ -19,6 +20,8 @@ export interface Page {
   /** Readable text (HTML → text; PDF → text with "--- Page N ---" markers). */
   text: string;
   links: FoundLink[];
+  /** XML bodies (sitemaps) as served; HTML and PDF pages leave it out. */
+  raw?: string;
   sha256: string;
   etag?: string;
   last_modified?: string;
@@ -51,6 +54,7 @@ export class PageFetcher {
   requests = 0;
   /** Refusals seen, for data/directories/blocked.json. */
   blocked: { url: string; reason: string }[] = [];
+  private recorded = new Set<string>();
 
   private unreachableHosts: ReadonlySet<string>;
 
@@ -73,13 +77,38 @@ export class PageFetcher {
     }
   }
 
-  get(url: string): Promise<FetchResult> {
+  /**
+   * The page at `url` (memoized per run). `quiet`: a free discovery probe — a robots.txt refusal or a challenge is just
+   * a miss, not a block for the owner's list (a later non-quiet read of the same URL still records it).
+   */
+  async get(url: string, o: { quiet?: boolean } = {}): Promise<FetchResult> {
     let p = this.memo.get(url);
     if (!p) {
       p = this.load(url);
       this.memo.set(url, p);
     }
-    return p;
+    const r = await p;
+    if (!r.ok && r.blocked && !o.quiet && !this.recorded.has(url)) {
+      this.recorded.add(url);
+      this.blocked.push({ url, reason: r.blocked });
+    }
+    return r;
+  }
+
+  /** The `Sitemap:` URLs robots.txt lists for `origin` (none when the fetcher has no robots-aware client). */
+  async sitemaps(origin: string): Promise<string[]> {
+    try {
+      return await this.http.sitemaps(origin);
+    } catch {
+      return [];
+    }
+  }
+
+  /** A text body as served (a sitemap's XML), through the same cache and robots rules, or null. Gzip is unpacked. */
+  async raw(url: string, o: { quiet?: boolean } = {}): Promise<string | null> {
+    const r = await this.get(url, o);
+    if (!r.ok) return null;
+    return r.page.raw ?? null;
   }
 
   private key(url: string) {
@@ -108,16 +137,12 @@ export class PageFetcher {
       // PoliteHttp returns null both for a robots.txt refusal and for a host that never answered (no DNS, refused, or
       // a 5xx for robots.txt); only the first is a block for the owner's list (decision 1), the second is a dead page.
       if (this.unreachable(url)) return { ok: false, url, error: "host didn't answer" };
-      this.blocked.push({ url, reason: "robots" });
       return { ok: false, url, blocked: "robots" };
     }
     const bytes = new Uint8Array(await res.arrayBuffer());
     const head = new TextDecoder().decode(bytes.subarray(0, 64 * 1024));
     const refusal = refusalOf(url, res, head);
-    if (refusal) {
-      this.blocked.push({ url, reason: refusal });
-      return { ok: false, url, blocked: refusal };
-    }
+    if (refusal) return { ok: false, url, blocked: refusal };
     if (!res.ok) return { ok: false, url, error: `HTTP ${res.status}` };
     const meta: CacheMeta = {
       url,
@@ -147,8 +172,17 @@ export class PageFetcher {
       }
     }
     if (fmt === "xlsx") return { ok: false, url: meta.url, error: "spreadsheet (not read by the pilot)" };
-    const html = new TextDecoder().decode(bytes);
-    return { ok: true, page: { ...common, format: "html", text: htmlToText(html), links: findLinks(html, meta.final_url) } };
+    const body = bytes[0] === 0x1f && bytes[1] === 0x8b ? gunzip(bytes) : new TextDecoder().decode(bytes);
+    if (/^\s*<\?xml|<(urlset|sitemapindex)[\s>]/i.test(body.slice(0, 500))) return { ok: true, page: { ...common, format: "other", text: "", links: [], raw: body } };
+    return { ok: true, page: { ...common, format: "html", text: htmlToText(body), links: findLinks(body, meta.final_url) } };
+  }
+}
+
+function gunzip(bytes: Uint8Array): string {
+  try {
+    return gunzipSync(bytes).toString("utf8");
+  } catch {
+    return "";
   }
 }
 
@@ -273,9 +307,18 @@ export function quoteOnPage(quote: string, pageText: string): boolean {
 }
 
 /** A quote cut to `max` characters at a word boundary (stored quotes are short; lib/directories.ts MAX_QUOTE). */
-export function shortQuote(q: string, max = 160): string {
+export function shortQuote(q: string, max = 160, focus?: RegExp): string {
   const s = q.replace(/\s+/g, " ").trim();
   if (s.length <= max) return s;
+  // Keep the words that state the fact (a long nondiscrimination list's "sexual orientation") when they'd be cut off:
+  // "…" marks the cut, and quoteOnPage reads each side of it separately.
+  const at = focus ? s.search(focus) : -1;
+  if (at > max - 40) {
+    const start = Math.max(0, s.lastIndexOf(" ", Math.max(0, at - (max - 50))) + 1);
+    if (start + max - 1 >= s.length) return `…${s.slice(start)}`;
+    const piece = s.slice(start, start + max - 2);
+    return `…${piece.slice(0, Math.max(piece.lastIndexOf(" "), max - 40)).trim()}…`;
+  }
   const cut = s.slice(0, max - 1);
   return `${cut.slice(0, Math.max(cut.lastIndexOf(" "), max - 30)).trim()}…`;
 }

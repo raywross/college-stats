@@ -1,0 +1,391 @@
+{
+ "report": "campus-pilot-2026-10-04T22-14-48.json",
+ "facts": {
+  "greek.status": {
+   "published": 11,
+   "correct": 11,
+   "expected": 22,
+   "found": 11,
+   "blocked_both": 3,
+   "wrong": []
+  },
+  "greek.members_total": {
+   "published": 3,
+   "correct": 3,
+   "expected": 15,
+   "found": 3,
+   "blocked_both": 1,
+   "wrong": []
+  },
+  "greek.housing": {
+   "published": 4,
+   "correct": 3,
+   "expected": 13,
+   "found": 3,
+   "blocked_both": 1,
+   "wrong": [
+    "217882 Clemson University: published yes, key \"not_found\""
+   ]
+  },
+  "greek.deferred": {
+   "published": 4,
+   "correct": 4,
+   "expected": 19,
+   "found": 4,
+   "blocked_both": 2,
+   "wrong": []
+  },
+  "greek.formal_term": {
+   "published": 8,
+   "correct": 8,
+   "expected": 18,
+   "found": 8,
+   "blocked_both": 1,
+   "wrong": []
+  },
+  "greek.council_chapters": {
+   "published": 16,
+   "correct": 13,
+   "expected": 49,
+   "found": 13,
+   "blocked_both": 0,
+   "wrong": [
+    "126614 University of Colorado Boulder: CU Interfraternity Council chapters 10 (no such council in the key)",
+    "218070 Furman University: Interfraternity Council chapters 6 (no such council in the key)",
+    "218070 Furman University: Panhellenic Council chapters 6 (no such council in the key)"
+   ]
+  },
+  "greek.council_members": {
+   "published": 4,
+   "correct": 0,
+   "expected": 35,
+   "found": 0,
+   "blocked_both": 0,
+   "wrong": [
+    "186380 Rutgers University-New Brunswick: National Pan-Hellenic Council members 9, key 88",
+    "186380 Rutgers University-New Brunswick: Professional Fraternity Council members 62, key 879",
+    "186380 Rutgers University-New Brunswick: Panhellenic Council members 114, key 1545",
+    "186380 Rutgers University-New Brunswick: Interfraternity Council members 43, key 1234"
+   ]
+  },
+  "faith.office": {
+   "published": 8,
+   "correct": 7,
+   "expected": 10,
+   "found": 7,
+   "blocked_both": 5,
+   "wrong": [
+    "134097 Florida State University: published Interfaith Council, key \"not_found\""
+   ]
+  },
+  "faith.composition": {
+   "published": 0,
+   "correct": 0,
+   "expected": 1,
+   "found": 0,
+   "blocked_both": 3,
+   "wrong": []
+  },
+  "faith.groups_by_tradition": {
+   "published": 22,
+   "correct": 18,
+   "expected": 69,
+   "found": 18,
+   "blocked_both": 0,
+   "wrong": [
+    "166629 University of Massachusetts-Amherst: protestant_evangelical group published; key lists none",
+    "166629 University of Massachusetts-Amherst: muslim group published; key lists none",
+    "166629 University of Massachusetts-Amherst: jewish group published; key lists none",
+    "166629 University of Massachusetts-Amherst: hindu group published; key lists none"
+   ]
+  },
+  "faith.estimates": {
+   "published": 0,
+   "correct": 0,
+   "expected": 0,
+   "found": 0,
+   "blocked_both": 0,
+   "wrong": []
+  },
+  "lgbtq.center": {
+   "published": 6,
+   "correct": 3,
+   "expected": 12,
+   "found": 3,
+   "blocked_both": 4,
+   "wrong": [
+    "198385 Davidson College: published open, key \"not_found\"",
+    "218070 Furman University: published open, key \"not_found\"",
+    "216597 Villanova University: published open, key \"not_found\""
+   ]
+  },
+  "lgbtq.groups": {
+   "published": 3,
+   "correct": 3,
+   "expected": 8,
+   "found": 3,
+   "blocked_both": 0,
+   "wrong": []
+  },
+  "policy.nondiscrimination_orientation": {
+   "published": 13,
+   "correct": 11,
+   "expected": 20,
+   "found": 11,
+   "blocked_both": 4,
+   "wrong": [
+    "133650 Florida Agricultural and Mechanical University: published yes, key \"no\"",
+    "228875 Texas Christian University: published no, key \"yes\""
+   ]
+  },
+  "policy.nondiscrimination_identity": {
+   "published": 13,
+   "correct": 11,
+   "expected": 20,
+   "found": 11,
+   "blocked_both": 4,
+   "wrong": [
+    "133650 Florida Agricultural and Mechanical University: published yes, key \"no\"",
+    "228875 Texas Christian University: published no, key \"yes\""
+   ]
+  },
+  "policy.inclusive_housing": {
+   "published": 2,
+   "correct": 2,
+   "expected": 12,
+   "found": 2,
+   "blocked_both": 2,
+   "wrong": []
+  },
+  "policy.name_on_records": {
+   "published": 3,
+   "correct": 3,
+   "expected": 16,
+   "found": 3,
+   "blocked_both": 4,
+   "wrong": []
+  },
+  "policy.inclusive_restrooms": {
+   "published": 4,
+   "correct": 4,
+   "expected": 15,
+   "found": 4,
+   "blocked_both": 3,
+   "wrong": []
+  },
+  "policy.health_plan_transition": {
+   "published": 0,
+   "correct": 0,
+   "expected": 5,
+   "found": 0,
+   "blocked_both": 3,
+   "wrong": []
+  },
+  "lgbtq.conduct_restriction": {
+   "published": 0,
+   "correct": 0,
+   "expected": 1,
+   "found": 0,
+   "blocked_both": 2,
+   "wrong": []
+  },
+  "policy.trans_admission": {
+   "published": 0,
+   "correct": 0,
+   "expected": 1,
+   "found": 0,
+   "blocked_both": 0,
+   "wrong": []
+  }
+ },
+ "discovery": {
+  "fsl_office": {
+   "key_has": 18,
+   "found_page": 11,
+   "same_page": 7,
+   "blocked": 1
+  },
+  "fsl_reports": {
+   "key_has": 19,
+   "found_page": 4,
+   "same_page": 1,
+   "blocked": 0
+  },
+  "recruitment": {
+   "key_has": 17,
+   "found_page": 8,
+   "same_page": 2,
+   "blocked": 0
+  },
+  "faith_office": {
+   "key_has": 10,
+   "found_page": 7,
+   "same_page": 0,
+   "blocked": 0
+  },
+  "religion_report": {
+   "key_has": 1,
+   "found_page": 0,
+   "same_page": 0,
+   "blocked": 0
+  },
+  "lgbtq_center": {
+   "key_has": 12,
+   "found_page": 4,
+   "same_page": 2,
+   "blocked": 1
+  },
+  "nondiscrimination": {
+   "key_has": 19,
+   "found_page": 15,
+   "same_page": 4,
+   "blocked": 0
+  },
+  "housing": {
+   "key_has": 12,
+   "found_page": 3,
+   "same_page": 1,
+   "blocked": 0
+  },
+  "name_policy": {
+   "key_has": 15,
+   "found_page": 4,
+   "same_page": 2,
+   "blocked": 0
+  },
+  "restrooms": {
+   "key_has": 15,
+   "found_page": 1,
+   "same_page": 0,
+   "blocked": 0
+  },
+  "health_plan": {
+   "key_has": 5,
+   "found_page": 0,
+   "same_page": 0,
+   "blocked": 0
+  },
+  "conduct_code": {
+   "key_has": 1,
+   "found_page": 0,
+   "same_page": 0,
+   "blocked": 0
+  }
+ },
+ "second_check": {
+  "checks": 2,
+  "confirmed": 2,
+  "rejected": 0,
+  "agree_with_key": 0,
+  "disagree_with_key": 2,
+  "unscored": 0,
+  "disagreements": [
+   "228875 Texas Christian University: lgbtq.nondiscrimination_orientation confirmed; key says false (The quoted list of protected categories (race, color, national origin, sex, disability, age) appears verbatim on TCU's current nondiscrimination notice and omits sexual orientation, supporting the finding.)",
+   "228875 Texas Christian University: lgbtq.nondiscrimination_identity confirmed; key says false (The quoted list of protected categories (race, color, national origin, sex, disability, age) appears verbatim and does not include gender identity or expression, supporting the finding.)"
+  ]
+ },
+ "cost": {
+  "total": 3.8868769999999992,
+  "colleges": 24,
+  "per_college": 0.1619532083333333,
+  "by_job": {
+   "discovery": 3.587071999999999,
+   "extraction": 0.17051700000000003,
+   "escalation": 0.124122,
+   "verify": 0.0051660000000000005
+  },
+  "by_domain": {
+   "none": 3.587071999999999,
+   "lgbtq": 0.113001,
+   "greek": 0.155921,
+   "faith": 0.030882999999999997
+  },
+  "searches": 28
+ },
+ "rates": {
+  "greek.status": {
+   "precision": 1,
+   "recall": 0.5
+  },
+  "greek.members_total": {
+   "precision": 1,
+   "recall": 0.2
+  },
+  "greek.housing": {
+   "precision": 0.75,
+   "recall": 0.23076923076923078
+  },
+  "greek.deferred": {
+   "precision": 1,
+   "recall": 0.21052631578947367
+  },
+  "greek.formal_term": {
+   "precision": 1,
+   "recall": 0.4444444444444444
+  },
+  "greek.council_chapters": {
+   "precision": 0.8125,
+   "recall": 0.2653061224489796
+  },
+  "greek.council_members": {
+   "precision": 0,
+   "recall": 0
+  },
+  "faith.office": {
+   "precision": 0.875,
+   "recall": 0.7
+  },
+  "faith.composition": {
+   "precision": null,
+   "recall": 0
+  },
+  "faith.groups_by_tradition": {
+   "precision": 0.8181818181818182,
+   "recall": 0.2608695652173913
+  },
+  "faith.estimates": {
+   "precision": null,
+   "recall": null
+  },
+  "lgbtq.center": {
+   "precision": 0.5,
+   "recall": 0.25
+  },
+  "lgbtq.groups": {
+   "precision": 1,
+   "recall": 0.375
+  },
+  "policy.nondiscrimination_orientation": {
+   "precision": 0.8461538461538461,
+   "recall": 0.55
+  },
+  "policy.nondiscrimination_identity": {
+   "precision": 0.8461538461538461,
+   "recall": 0.55
+  },
+  "policy.inclusive_housing": {
+   "precision": 1,
+   "recall": 0.16666666666666666
+  },
+  "policy.name_on_records": {
+   "precision": 1,
+   "recall": 0.1875
+  },
+  "policy.inclusive_restrooms": {
+   "precision": 1,
+   "recall": 0.26666666666666666
+  },
+  "policy.health_plan_transition": {
+   "precision": null,
+   "recall": 0
+  },
+  "lgbtq.conduct_restriction": {
+   "precision": null,
+   "recall": 0
+  },
+  "policy.trans_admission": {
+   "precision": null,
+   "recall": 0
+  }
+ }
+}

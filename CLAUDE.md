@@ -39,6 +39,12 @@ Several Claude chats work on this repo at once, so each works in its own git wor
   and branch-changing git in the main checkout are blocked. To override for one session, start Claude Code with
   `CLAUDE_ALLOW_MAIN_CHECKOUT=1`
 
+### Building a roadmap section
+- When asked to build a roadmap section (a `lib/roadmap.ts` group, wave, or several specs), follow the
+  `build-roadmap-section` skill (`.claude/skills/build-roadmap-section/SKILL.md`): read every spec, write a plan, split
+  it into units run by subagents on `feature/<section>-<unit>` sub-branches with a model chosen per unit, then merge into
+  `feature/<section>`, verify, and open one PR
+
 ### Release notes (see `specs/release-notes.md`)
 - **Every PR into `main` adds a release note**: `release-notes/<branch-name-without-prefix>.md`, with frontmatter
   `title`, `pr`, `date` (merge day), `kind` (`feature`, `improvement`, `data`, `fix`, `plans`, `infra`), and a

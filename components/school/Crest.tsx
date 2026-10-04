@@ -17,7 +17,8 @@ const MARK_PX = 192;
  * A school's crest (specs/school-identity/brand.md, Display), decoration never data. Three looks at the same sizes:
  *   - its mark (the college's own site icon) on a white tile with 10% padding, which stays white in dark mode (a mark
  *     drawn for a light tile often has no dark variant), ringed at 15% there so it reads on indigo;
- *   - its monogram on a gradient in its colors, the text in `brand.text` (4.5:1 on the accent, checked at sync time);
+ *   - its monogram on a gradient in its colors, the text in `brand.text` (4.5:1 on both stops, checked at sync time),
+ *     ringed at 15% in dark mode too, since a college's navy or black would sink into indigo;
  *   - otherwise the generated monogram tile.
  * The mark is a plain 192 px WebP: next/image with `unoptimized`, since next.config sets no image loader and the file is
  * already the largest size any tile shows (96 px at 2x), so the optimizer would only add per-size transformations.
@@ -54,7 +55,9 @@ export function Crest({
       data-crest={colors ? "colors" : "generated"}
       className={cn(
         base,
+        // A college's dark colors (navy, black) need the ring on indigo too; the generated tiles are bright enough.
         "font-display font-extrabold tracking-tight ring-black/5",
+        colors && "dark:ring-white/15",
         dark ? "text-black" : "text-white",
         SIZES[size],
         className

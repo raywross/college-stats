@@ -2,6 +2,7 @@
   "unit_id": "237950",
   "tables": {
     "home_states": {"source":"ipeds-ef-c","vintage":"ipeds-ef-c","year":"Fall 2024","rows":{"WV":225,"VA":7,"OH":5,"FL":4,"GA":2,"NC":2,"WA":2,"AL":1,"MD":1,"PR":1,"TN":1,"TX":1}},
-    "majors": {"source":"ipeds-c","vintage":"ipeds-c","year":"2024–25 graduates","rows":{"24.0102":[18,0],"14.1901":[14,0],"52.0101":[14,0],"26.0101":[13,0],"14.0801":[10,0],"43.0406":[10,0],"14.1001":[8,0],"42.0101":[8,0],"11.0501":[7,0],"43.0103":[7,0],"52.0301":[7,0],"11.0101":[4,0],"14.0901":[4,0],"49.0104":[4,0],"51.0701":[4,0],"52.2001":[4,0],"31.0101":[3,0],"14.0701":[2,0],"45.1001":[2,0],"44.0201":[1,0]}}
+    "majors": {"source":"ipeds-c","vintage":"ipeds-c","year":"2024–25 graduates","rows":{"24.0102":[18,0],"14.1901":[14,0],"52.0101":[14,0],"26.0101":[13,0],"14.0801":[10,0],"43.0406":[10,0],"14.1001":[8,0],"42.0101":[8,0],"11.0501":[7,0],"43.0103":[7,0],"52.0301":[7,0],"11.0101":[4,0],"14.0901":[4,0],"49.0104":[4,0],"51.0701":[4,0],"52.2001":[4,0],"31.0101":[3,0],"14.0701":[2,0],"45.1001":[2,0],"44.0201":[1,0]}},
+    "directories": {"source":"directory","vintage":null,"year":"October 2026","rows":{"credits":{"tpc-nondiscrimination":{"organization":"Trans Policy Clearinghouse","publisher":"Dr. Genny Beemyn","list_url":"https://www.gennyb.com/research/trans-supportive-campus-policies/nondiscrimination-policies","read":"2026-10-04","tier":"D","domain":"lgbtq","kind":"policy","policy":"nondiscrimination_identity"}},"listings":[{"org":"tpc-nondiscrimination"}]}}
   }
 }

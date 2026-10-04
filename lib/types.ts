@@ -1,7 +1,7 @@
 import type { FieldPath, VintageKey } from "./fields";
 import type { Direction, IndicatorKey } from "./indicators";
 import type { GenderBalance } from "./student-body";
-import type { DirectorySummary, Tradition } from "./directories";
+import type { DirectorySummary, PolicyCheck, Tradition } from "./directories";
 
 export type SchoolType = "public" | "private-nonprofit" | "private-forprofit";
 
@@ -1282,6 +1282,14 @@ export interface LgbtqLife {
   /** Null when the college isn't in the admissions file (open admission) or the file has no such columns. */
   admissions: GenderAdmissions | null;
   state_law: StateLaw | null;
+  /**
+   * Tier A policy facts from the college's own pages (lgbtq-life.md "Inclusive policies"; built by the pilot track,
+   * specs/lgbtq-life.md phase 4). Absent until then. For a key also carried by a national directory's tier D lead
+   * (`school.directories.lgbtq`, specs/campus-directories.md), the tier A fact here takes precedence in the profile's
+   * policy checklist (lib/lgbtq-policy.ts `policyChecklist`): the directory lead never shows once the college's own
+   * page has been checked for that key, even when the tier A answer is "no".
+   */
+  policies?: PolicyCheck[] | null;
 }
 
 /** New transfer-in undergraduates in one fall (IPEDS EF{Y}A levels 19, 39, 59; lib/transfers.ts). */
@@ -1561,6 +1569,13 @@ export interface SearchFilters {
   faith?: FaithFilter[];
   /** Has a named community of this tradition, from national directories (specs/campus-directories.md; lib/directories.ts `school.directories.faith`). */
   faithGroup?: Tradition[];
+  /**
+   * LGBTQ+ policy facts only, never the gender-identity counts (lib/lgbtq-policy.ts; specs/lgbtq-life.md "Where it
+   * appears"): a listed center, gender-inclusive housing, nondiscrimination covering gender identity.
+   */
+  lgbtqCenter?: boolean;
+  lgbtqHousing?: boolean;
+  lgbtqNondiscrimination?: boolean;
   sortBy?: SortKey;
   sortDir?: "asc" | "desc";
 }

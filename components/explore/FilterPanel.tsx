@@ -57,6 +57,8 @@ export interface FilterFacets {
   faith: Record<FaithFilter, number>;
   /** Colleges with a named community of each tradition, from national directories (specs/campus-directories.md). */
   faithGroup: Record<Tradition, number>;
+  /** LGBTQ+ policy facts (lib/lgbtq-policy.ts): never the gender-identity counts. */
+  lgbtq: { center: number; housing: number; nondiscrimination: number };
   /** Colleges per division, and with football, each ROTC branch, undergrad research, study abroad (lib/campus-services.ts). */
   services: { division: Record<DivisionFilter, number>; football: number; rotc: Record<RotcBranch, number>; ugResearch: number; studyAbroad: number };
   /** Colleges with at most N students per faculty member, for each option (lib/academics.ts MAX_RATIO_OPTIONS). */
@@ -161,7 +163,7 @@ export function FilterPanel({ facets, onDone }: { facets: FilterFacets; onDone?:
   const fieldOptions = MAJOR_FAMILY_CODES.filter((f) => (facets.fields[f]?.[0] ?? 0) > 0).sort((a, b) => MAJOR_FAMILIES[a].localeCompare(MAJOR_FAMILIES[b]));
 
   const hasFilters = [
-    ...["q", "types", "sizes", "regions", "states", "minAR", "maxAR", "minSAT", "maxSAT", "minCost", "maxCost", "minEnroll", "maxEnroll", "balance", "fullTime", "fewLoans", "liveOn", "noFee", "guarantee", "noLegacy", "noEssay", "gpaRequired", "setting", "research", "designation", "opportunity", "division", "conference", "football", "rotc", "ugResearch", "studyAbroad", "maxRatio", "pellGap", "minFullTimeFaculty", "national", "field", "byRes", "oosEven", "gpa", "aidForms", "intlAid", "honors", "transfers", "minGreek", "gapYear", "faith", "faithGroup"],
+    ...["q", "types", "sizes", "regions", "states", "minAR", "maxAR", "minSAT", "maxSAT", "minCost", "maxCost", "minEnroll", "maxEnroll", "balance", "fullTime", "fewLoans", "liveOn", "noFee", "guarantee", "noLegacy", "noEssay", "gpaRequired", "setting", "research", "designation", "opportunity", "division", "conference", "football", "rotc", "ugResearch", "studyAbroad", "maxRatio", "pellGap", "minFullTimeFaculty", "national", "field", "byRes", "oosEven", "gpa", "aidForms", "intlAid", "honors", "transfers", "minGreek", "gapYear", "faith", "faithGroup", "lgbtqCenter", "lgbtqHousing", "lgbtqNondiscrimination"],
     ...INDICATOR_KEYS.map((k) => INDICATORS[k].param),
     "policy",
   ].some((k) => searchParams.get(k));
@@ -466,6 +468,27 @@ export function FilterPanel({ facets, onDone }: { facets: FilterFacets; onDone?:
         </div>
         <p className="text-[11px] text-muted-foreground">
           Has a named community of this tradition, from a national organization&apos;s own list of its campus chapters. <InfoTip term="national-directory" />
+        </p>
+      </Section>
+
+      <Section title="LGBTQ+ campus life" term="national-directory">
+        <div className="flex flex-wrap gap-1.5" role="group" aria-label="LGBTQ+ campus life">
+          <Chip active={searchParams.get("lgbtqCenter") === "1"} onClick={() => update({ lgbtqCenter: searchParams.get("lgbtqCenter") === "1" ? null : "1" })} count={facets.lgbtq.center}>
+            Has an LGBTQ+ center <InfoTip term="lgbtq-resource-center" />
+          </Chip>
+          <Chip active={searchParams.get("lgbtqHousing") === "1"} onClick={() => update({ lgbtqHousing: searchParams.get("lgbtqHousing") === "1" ? null : "1" })} count={facets.lgbtq.housing}>
+            Gender-inclusive housing <InfoTip term="gender-inclusive-housing" />
+          </Chip>
+          <Chip
+            active={searchParams.get("lgbtqNondiscrimination") === "1"}
+            onClick={() => update({ lgbtqNondiscrimination: searchParams.get("lgbtqNondiscrimination") === "1" ? null : "1" })}
+            count={facets.lgbtq.nondiscrimination}
+          >
+            Nondiscrimination covers gender identity <InfoTip term="nondiscrimination-policy" />
+          </Chip>
+        </div>
+        <p className="text-[11px] text-muted-foreground">
+          From national directories and, where checked, the college&apos;s own pages &mdash; never the federal gender-identity counts, which we never rank, filter, or compare.
         </p>
       </Section>
 

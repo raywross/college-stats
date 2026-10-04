@@ -114,6 +114,10 @@ export function parseFilters(params: Params): SearchFilters {
     faith: uniq(list(params.faith)?.filter(isFaithFilter)),
     // Has a named community of this tradition, from national directories (specs/campus-directories.md).
     faithGroup: uniq(list(params.faithGroup)?.filter(isTradition)),
+    // LGBTQ+ policy facts only (lib/lgbtq-policy.ts); the gender-identity counts are never a filter.
+    lgbtqCenter: str(params.lgbtqCenter) === "1" || undefined,
+    lgbtqHousing: str(params.lgbtqHousing) === "1" || undefined,
+    lgbtqNondiscrimination: str(params.lgbtqNondiscrimination) === "1" || undefined,
     sortBy: sortBy && SORT_KEYS.includes(sortBy) ? sortBy : "applicants",
     // Default direction: most-applied-to first; everything else ascending.
     sortDir: params.sortDir === "desc" || params.sortDir === "asc" ? params.sortDir : sortBy && sortBy !== "applicants" ? "asc" : "desc",
@@ -178,6 +182,9 @@ export const FILTER_KEYS = [
   "gapYear",
   "faith",
   "faithGroup",
+  "lgbtqCenter",
+  "lgbtqHousing",
+  "lgbtqNondiscrimination",
   ...INDICATOR_KEYS.map((k) => INDICATORS[k].param),
 ] as const;
 

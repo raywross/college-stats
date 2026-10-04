@@ -77,6 +77,8 @@ export const POLICY_KEYS = {
   inclusive_restrooms: "Gender-inclusive restrooms listed online",
   health_plan_transition: "Student health plan covers transition-related care",
   trans_admission: "Trans admission policy (historically women's or men's college)",
+  /** lgbtq-life.md open question 3: athletic eligibility is set nationally (NCAA); a per-college policy covers intramurals and club sports only. */
+  trans_athletics: "Trans-inclusive athletic policy (intramurals and club sports)",
 } as const;
 export type PolicyKey = keyof typeof POLICY_KEYS;
 

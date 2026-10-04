@@ -2,6 +2,7 @@
   "unit_id": "178989",
   "tables": {
     "majors": {"source":"ipeds-c","vintage":"ipeds-c","year":"2024–25 graduates","rows":{"51.3801":[123,0]}},
-    "programs": {"source":"scorecard-fos","vintage":"scorecard-fos","year":null,"rows":{"51.38":{"title":"Registered Nursing, Nursing Administration, Nursing Research and Clinical Nursing","graduates":314,"earnings":{"y1":75705,"y4":78188,"y4_national":88910,"y4_pell":null,"y4_non_pell":null},"debt_median":13500}}}
+    "programs": {"source":"scorecard-fos","vintage":"scorecard-fos","year":null,"rows":{"51.38":{"title":"Registered Nursing, Nursing Administration, Nursing Research and Clinical Nursing","graduates":314,"earnings":{"y1":75705,"y4":78188,"y4_national":88910,"y4_pell":null,"y4_non_pell":null},"debt_median":13500}}},
+    "directories": {"source":"directory","vintage":null,"year":"October 2026","rows":{"credits":{"tpc-nondiscrimination":{"organization":"Trans Policy Clearinghouse","publisher":"Dr. Genny Beemyn","list_url":"https://www.gennyb.com/research/trans-supportive-campus-policies/nondiscrimination-policies","read":"2026-10-04","tier":"D","domain":"lgbtq","kind":"policy","policy":"nondiscrimination_identity"}},"listings":[{"org":"tpc-nondiscrimination"}]}}
   }
 }

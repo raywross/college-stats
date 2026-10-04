@@ -1,0 +1,8 @@
+{
+  "org": "tpc-athletics",
+  "crawled": "2026-10-04",
+  "entries": [
+    {"campus":"The Sage Colleges","state":"NY","reason":"no college in NY matches","candidates":[{"unit_id":"195128","name":"Russell Sage College","score":0.4},{"unit_id":"191630","name":"Hobart William Smith Colleges","score":0.33},{"unit_id":"188429","name":"Adelphi University","score":0}]},
+    {"campus":"PennWest Clarion","state":"PA","reason":"no college in PA matches","candidates":[{"unit_id":"210571","name":"Albright College","score":0},{"unit_id":"210669","name":"Allegheny College","score":0},{"unit_id":"210775","name":"Alvernia University","score":0}]}
+  ]
+}

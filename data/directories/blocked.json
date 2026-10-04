@@ -327,6 +327,14 @@
       "detail": "https://ocf.net/chapters/: blocked (forbidden): HTTP 403",
       "first_seen": "2026-10-04",
       "last_seen": "2026-10-04"
+    },
+    {
+      "org": "ostem",
+      "url": "https://www.ostem.org/page/chapters",
+      "reason": "challenge",
+      "detail": "https://www.ostem.org/page/chapters: blocked (challenge): HTTP 403",
+      "first_seen": "2026-10-04",
+      "last_seen": "2026-10-04"
     }
   ]
 }

@@ -2,6 +2,7 @@
   "unit_id": "148511",
   "tables": {
     "majors": {"source":"ipeds-c","vintage":"ipeds-c","year":"2024–25 graduates","rows":{"51.0911":[18,0],"51.0000":[17,0],"51.0901":[14,0]}},
-    "programs": {"source":"scorecard-fos","vintage":"scorecard-fos","year":null,"rows":{"51.00":{"title":"Health Services/Allied Health/Health Sciences, General","graduates":20,"earnings":{"y1":null,"y4":null,"y4_national":61296,"y4_pell":null,"y4_non_pell":null},"debt_median":null},"51.09":{"title":"Allied Health Diagnostic, Intervention, and Treatment Professions","graduates":64,"earnings":{"y1":75202,"y4":85450,"y4_national":70786,"y4_pell":81699,"y4_non_pell":84948},"debt_median":26500}}}
+    "programs": {"source":"scorecard-fos","vintage":"scorecard-fos","year":null,"rows":{"51.00":{"title":"Health Services/Allied Health/Health Sciences, General","graduates":20,"earnings":{"y1":null,"y4":null,"y4_national":61296,"y4_pell":null,"y4_non_pell":null},"debt_median":null},"51.09":{"title":"Allied Health Diagnostic, Intervention, and Treatment Professions","graduates":64,"earnings":{"y1":75202,"y4":85450,"y4_national":70786,"y4_pell":81699,"y4_non_pell":84948},"debt_median":26500}}},
+    "directories": {"source":"directory","vintage":null,"year":"October 2026","rows":{"credits":{"tpc-nondiscrimination":{"organization":"Trans Policy Clearinghouse","publisher":"Dr. Genny Beemyn","list_url":"https://www.gennyb.com/research/trans-supportive-campus-policies/nondiscrimination-policies","read":"2026-10-04","tier":"D","domain":"lgbtq","kind":"policy","policy":"nondiscrimination_identity"}},"listings":[{"org":"tpc-nondiscrimination"}]}}
   }
 }

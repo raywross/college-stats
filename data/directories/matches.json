@@ -1,13 +1,34 @@
 {
   "_about": "Hand-checked answers the directory matcher uses before its own rules (specs/campus-directories.md#review). Key: the campus exactly as a list prints it, a bar, and the two-letter state the list gives (empty when it gives none). Value: the IPEDS unit ids it means ([] = checked, not a college on the site). Add one only after checking the college; say why in _why.",
   "_why": {
-    "Humboldt State University|": "Renamed California State Polytechnic University, Humboldt in 2022 (same IPEDS unit 115755).",
-    "Clarion University of Pennsylvania|": "Merged into Pennsylvania Western University (PennWest) in July 2022; Clarion is one of its campuses.",
     "California University of Pennsylvania|": "Merged into Pennsylvania Western University (PennWest) in July 2022; California is one of its campuses.",
-    "Indiana Wesleyan University|IN": "CCCU's member listing names the university, not a campus; its IPEDS record splits the physical Marion campus (151801) from the National & Global online division (488679) — the physical campus is the CCCU member."
+    "Clarion University of Pennsylvania|": "Merged into Pennsylvania Western University (PennWest) in July 2022; Clarion is one of its campuses.",
+    "Humboldt State University|": "Renamed California State Polytechnic University, Humboldt in 2022 (same IPEDS unit 115755).",
+    "Indiana Wesleyan University|IN": "CCCU's member listing names the university, not a campus; its IPEDS record splits the physical Marion campus (151801) from the National & Global online division (488679) — the physical campus is the CCCU member.",
+    "Saint John’s University|": "The Consortium's and the Trans Policy Clearinghouse's 'Saint John's University' (men's college, no state given) is the Collegeville, MN campus coordinate with the College of Saint Benedict, not St. John's University-New York: both lists' entries for it link csbsju.edu, the Minnesota campus's shared domain with Saint Benedict.",
+    "UC-Denver|": "The Consortium's center map names 'UC-Denver' once but its description lists three Auraria Campus institutions sharing one center: Community College of Denver (a two-year college, not on this site), University of Colorado Denver (126562), and Metropolitan State University of Denver, formerly Metropolitan State College of Denver (127565).",
+    "Worcester Polytechnic Institute (WPI)|": "The Consortium's map spells out the acronym in parentheses; same college as 'Worcester Polytechnic Institute' (168421)."
   },
-  "California University of Pennsylvania|": ["498571"],
-  "Clarion University of Pennsylvania|": ["498571"],
-  "Humboldt State University|": ["115755"],
-  "Indiana Wesleyan University|IN": ["151801"]
+  "California University of Pennsylvania|": [
+    "498571"
+  ],
+  "Clarion University of Pennsylvania|": [
+    "498571"
+  ],
+  "Humboldt State University|": [
+    "115755"
+  ],
+  "Indiana Wesleyan University|IN": [
+    "151801"
+  ],
+  "Saint John’s University|": [
+    "174792"
+  ],
+  "UC-Denver|": [
+    "126562",
+    "127565"
+  ],
+  "Worcester Polytechnic Institute (WPI)|": [
+    "168421"
+  ]
 }

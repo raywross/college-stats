@@ -2,6 +2,7 @@
   "unit_id": "214768",
   "tables": {
     "home_states": {"source":"ipeds-ef-c","vintage":"ipeds-ef-c","year":"Fall 2024","rows":{"PA":124,"NJ":7,"NY":4,"FL":2,"CT":1,"ME":1,"MN":1,"OK":1,"RI":1,"TX":1,"UT":1,"VA":1}},
-    "majors": {"source":"ipeds-c","vintage":"ipeds-c","year":"2024–25 graduates","rows":{"42.0101":[18,0],"43.0103":[10,0],"51.2399":[10,0],"52.0101":[7,0],"11.0701":[5,0],"14.0101":[3,0],"24.0101":[2,0],"51.0701":[2,0],"52.0501":[2,0],"11.0401":[1,0],"52.1399":[1,0]}}
+    "majors": {"source":"ipeds-c","vintage":"ipeds-c","year":"2024–25 graduates","rows":{"42.0101":[18,0],"43.0103":[10,0],"51.2399":[10,0],"52.0101":[7,0],"11.0701":[5,0],"14.0101":[3,0],"24.0101":[2,0],"51.0701":[2,0],"52.0501":[2,0],"11.0401":[1,0],"52.1399":[1,0]}},
+    "directories": {"source":"directory","vintage":null,"year":"October 2026","rows":{"credits":{"tpc-name-pronouns":{"organization":"Trans Policy Clearinghouse","publisher":"Dr. Genny Beemyn","list_url":"https://www.gennyb.com/research/trans-supportive-campus-policies/name-and-pronouns/","read":"2026-10-04","tier":"D","domain":"lgbtq","kind":"policy","policy":"name_on_records"},"tpc-nondiscrimination":{"organization":"Trans Policy Clearinghouse","publisher":"Dr. Genny Beemyn","list_url":"https://www.gennyb.com/research/trans-supportive-campus-policies/nondiscrimination-policies","read":"2026-10-04","tier":"D","domain":"lgbtq","kind":"policy","policy":"nondiscrimination_identity"}},"listings":[{"org":"tpc-name-pronouns"},{"org":"tpc-nondiscrimination"}]}}
   }
 }

@@ -14,7 +14,7 @@
 | Matcher | `scripts/lib/directories/matcher.mts` | Campus text → IPEDS unit ids with a confidence; below 0.85 → review |
 | Runner | `npm run sync-directories -- [--org k] [--domain d] [--refresh] [--dry-run]` | Writes `data/directories/<org>.json`, `unmatched/<org>.json`, `blocked.json` |
 | Merge | `npm run merge-directories` (also run by `sync-data`) | `directories` table in each college's detail file + `school.directories` summary + source kinds in `meta.json` |
-| Data model, display | `lib/directories.ts`, `components/school/CreditedList.tsx`, `DirectoryListings.tsx` | Classification, credits, guards, `listingsFor`, `groupListings`, `citeListing`, `PolicyCheck` |
+| Data model, display | `lib/directories.ts`, `lib/organizations.ts`, `lib/campus-view.ts`, `components/school/CampusListing.tsx`, `CreditedList.tsx`, `DirectoryListings.tsx` | Classification, credits, guards, `listingsFor`, `groupListings`, `citeListing`, `PolicyCheck` |
 
 ## Contract
 ```ts
@@ -78,6 +78,33 @@ anything" checks.
   Phi's Wix site) has nothing for `Blocked` to catch — the adapter was simply never written, so it isn't in
   `blocked.json` either. Both outcomes mean "no adapter yet," but only a genuine refusal (403, a challenge, robots
   disallow) belongs in `blocked.json`.
+
+## Display (redesign 2026-10-04)
+Owner feedback on PR #73: "it all reads like a footnote … these are important data points for many applicants." The
+three blocks now lead with facts in the profile's own language (display numbers, icon-labeled values, cards, chips,
+check marks) and keep provenance in the ⓘ, with at most one short credit line per section.
+- **Organizations:** `lib/organizations.ts` reads `data/directories/organizations.json` (`{ updated, organizations:
+  { <adapter key>: { name, website, letters, colors, wikidata, logo: { file, source, license, attribution } | null } } }`,
+  built by the directory runner) at request time; missing file or entry degrades gracefully. Logos are the
+  organization's own (owner decision 2026-10-04, license "Organization's own logo (used to identify it)") or a free
+  Commons file, shown in a light tile so mixed shapes and dark marks read in dark mode; the attribution goes in the
+  listing's ⓘ (`Cited.image`), never on the page. Fallbacks: Greek letters (the file's, else spelled from the name,
+  "Sigma Phi Epsilon" → ΣΦΕ) on the org's first color or the neutral surface; a tradition icon for faith groups; for
+  the website, the home page of the org's own chapter-list site (only when the org publishes the list itself).
+  Contract checked by `organizationsProblems` (tests/campus-view.test.mts, on a fixture and on the real file once it
+  exists).
+- **Pieces:** `components/school/CampusListing.tsx` (`OrgBadge`, `ListingCard`, `FactChip`, `SubHead`, `OutLink`),
+  view models in `lib/campus-view.ts` (`greekView` joins the college's council counts with the lists' chapters;
+  `faithView`; `listingView`).
+- **Greek:** headline display number (all chapters when the college counts every council; listed chapters when only
+  the lists speak; else the number of councils — a college count is never added to a list count), CDS participation
+  bars, recruitment and housing as chips, then one row per council (count as a display number) that opens (native
+  `<details>`) to its chapters with badge, organization linked to its site, and chapter name linked to its page.
+- **Faith:** the college's facts as labeled values (affiliation, faith office, admission, scholarships, ministries),
+  then "Faith communities" as cards with the tradition as a kicker, then the college's own composition as bars.
+- **LGBTQ+:** support on campus as cards, the policy checklist with check marks (a minus only for a "no" the college's
+  own page states; absence is never shown), one credit line per list, the conduct quote, the state law as a callout,
+  then the another-gender counts. `CreditedList`/`DirectoryListings` remain for any future domain without its own block.
 
 ## Example: SSA
 Secular Student Alliance "Find a Chapter" (robots.txt allows all), faith / nonreligious, tier D. 2026-10-04: 267 map

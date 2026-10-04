@@ -238,17 +238,19 @@ export default async function StudentsPage({ params }: Props) {
           fields={[]}
           className="mt-14 sm:mt-20"
         >
-          <CampusLife school={school} />
-          <CampusServices school={school} recentMoves={recentMoves} />
-          <ReligiousLife school={school} detail={detail} />
-          <GreekLife school={school} detail={detail} />
-          <LgbtqLife
-            school={school}
-            detail={detail}
-            citedGender={citeField("lgbtq.gender", school)}
-            citedAdmissions={citeField("lgbtq.admissions", school)}
-            citedLaw={citeField("lgbtq.state_law", school)}
-          />
+          <div className="space-y-4">
+            <CampusLife school={school} />
+            <CampusServices school={school} recentMoves={recentMoves} />
+            <ReligiousLife school={school} detail={detail} />
+            <GreekLife school={school} detail={detail} />
+            <LgbtqLife
+              school={school}
+              detail={detail}
+              citedGender={citeField("lgbtq.gender", school)}
+              citedAdmissions={citeField("lgbtq.admissions", school)}
+              citedLaw={citeField("lgbtq.state_law", school)}
+            />
+          </div>
         </Panel>
       )}
     </TopicPage>

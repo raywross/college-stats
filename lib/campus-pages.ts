@@ -232,7 +232,7 @@ export function greekCouncils(rows: CampusPagesRows | null | undefined, today: s
   };
 }
 
-/** Whether `GreekCouncils` (components/school/CampusPages.tsx) has anything fresh to show: a council breakdown, a
+/** Whether the college's own pages give GreekLife (components/school/GreekLife.tsx) anything fresh to show: a council breakdown, a
  * recruitment or housing fact, or "none stated". Shared with `GreekLife` so it only shows its own "none found in
  * national directories" line when the college's own pages have nothing either. */
 export function hasGreekPageFacts(rows: CampusPagesRows | null | undefined, today: string): boolean {
@@ -242,7 +242,7 @@ export function hasGreekPageFacts(rows: CampusPagesRows | null | undefined, toda
   return !!greekCouncils(rows, today) || fresh(g.deferred) || fresh(g.formal_term) || fresh(g.housing) || fresh(g.none_stated);
 }
 
-/** Whether `FaithFacts` has anything fresh to show: the office or an official composition. Shared with `ReligiousLife`
+/** Whether the college's own pages give ReligiousLife anything fresh to show: the office or an official composition. Shared with `ReligiousLife`
  * so a college with only these tier A facts (no IPEDS affiliation, no CDS answer, no directory listing) still gets a
  * "Religious life" block instead of none at all. */
 export function hasFaithPageFacts(rows: CampusPagesRows | null | undefined, today: string): boolean {

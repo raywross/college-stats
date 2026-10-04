@@ -9,7 +9,7 @@
 > (`lib/cds/greek.ts`, display helpers in `lib/cds/greek-display.ts`), merged by `lib/reported-merge.ts` alongside the
 > other round-3 blocks. National directories (`scripts/lib/directories/adapters/`, shared infrastructure in
 > [campus-directories.md](campus-directories.md)) add council chapter lists the CDS never covers. Shown on the
-> profile's Campus life section (`components/school/GreekLife.tsx`, `GreekCouncils` in `components/school/CampusPages.tsx`),
+> profile's Campus life section (`components/school/GreekLife.tsx`; design in [campus-directories.md](campus-directories.md#display-redesign-2026-10-04)),
 > Compare's "All the numbers" and "Greek councils present", and Explore filters. Research 2026-09-28: 2025–26 Common
 > Data Sets and a per-school deep dive on UT Austin. Findings are verified unless marked *unverified*. Companions:
 > [religious-life.md](religious-life.md) (its source tiers, crawl
@@ -239,12 +239,10 @@ reports first, newest first), and its recruitment page.
   `COUNCILS`, the college's name for it, chapters, members, term, each with its page and quote), `housing`
   (chapter houses), `deferred` and `formal_term`. Counts are never summed by the model; a council's numbers are the
   report's own total line.
-- **Shown** by `GreekCouncils` (`components/school/CampusPages.tsx`): members by council (chapters, members, the term),
-  the stated total, formal recruitment, deferred recruitment, chapter houses, each with its ⓘ. Members under 10 show as
-  "fewer than 10"; facts older than two years hide. For the fraternities track, which owns `GreekLife.tsx`: the data
-  function is `greekCouncils(rows, today)` in `lib/campus-pages.ts` (tested in `tests/campus-pilot.test.mts`), and the
-  subcomponent takes `bare` to render inside the Greek life card (`<GreekCouncils school={school} detail={detail} bare />`);
-  until it moves there, the students page renders it as its own card right after `<GreekLife>`.
+- **Shown** in `GreekLife.tsx` (redesign 2026-10-04): each council's count leads its row, joined with the chapters
+  national lists name for that council (`greekView` in `lib/campus-view.ts`, over `greekCouncils(rows, today)` in
+  `lib/campus-pages.ts`); the stated total and members, formal and deferred recruitment, and chapter houses as the
+  headline and chips, each with its ⓘ. Members under 10 show as "fewer than 10"; facts older than two years hide.
 
 **Measured without a model (2026-10-04).** The pipeline's fetcher and page gathering were run on the answer key's own
 URLs (257 requests): every page the key could read, and whether the key's hand-copied quotes pass our quote check on

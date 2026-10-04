@@ -142,6 +142,28 @@ async function download(name: string, zip: string): Promise<string | null> {
 const urlFile = (zip: string) => `${zip}.url`;
 
 /**
+ * Any NCES zip by name (e.g. "IC2025_Dict", a data dictionary), cached like the data files: the local path and its
+ * URL, or null when NCES hasn't published it. A stale copy is used when NCES can't be reached.
+ */
+export async function fetchIpedsZip(name: string, cacheDir: string, maxAgeDays = 7): Promise<{ zip: string; url: string } | null> {
+  mkdirSync(cacheDir, { recursive: true });
+  const zip = join(cacheDir, `${name}.zip`);
+  const cached = existsSync(zip) && existsSync(urlFile(zip));
+  if (cached && Date.now() - statSync(zip).mtimeMs < maxAgeDays * 86_400_000) return { zip, url: readFileSync(urlFile(zip), "utf8").trim() };
+  let url: string | null;
+  try {
+    url = await download(name, zip);
+  } catch (err) {
+    if (!cached) throw err;
+    console.warn(`\n  ${name}: NCES unreachable, using the cached copy (${err instanceof Error ? err.message : err})`);
+    return { zip, url: readFileSync(urlFile(zip), "utf8").trim() };
+  }
+  if (!url) return null;
+  writeFileSync(urlFile(zip), url);
+  return { zip, url };
+}
+
+/**
  * An IPEDS file by name (e.g. "IC2013_AY"), from the cache when fresh enough. Null when NCES hasn't published it.
  * Prefers the revised CSV (`_rv`) when the zip has one.
  */

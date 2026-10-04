@@ -6,6 +6,7 @@ import { isDivisionFilter, isRotcBranch } from "./campus-services.ts";
 import { conferenceName } from "./conferences.ts";
 import { isMajorFamily } from "./majors.ts";
 import { isPolicyBucket } from "./test-policy.ts";
+import { isFaithFilter } from "./religion.ts";
 
 /** Unique values, or undefined when none remain. */
 const uniq = <T,>(v: T[] | undefined): T[] | undefined => (v?.length ? [...new Set(v)] : undefined);
@@ -106,6 +107,8 @@ export function parseFilters(params: Params): SearchFilters {
     transfers: str(params.transfers) === "1" || undefined,
     // Allows deferred admission, a gap year (lib/cds/application-logistics-display.ts).
     gapYear: str(params.gapYear) === "1" || undefined,
+    // Religious affiliation (lib/religion.ts): faith families or "none"; unknown keys are dropped.
+    faith: uniq(list(params.faith)?.filter(isFaithFilter)),
     sortBy: sortBy && SORT_KEYS.includes(sortBy) ? sortBy : "applicants",
     // Default direction: most-applied-to first; everything else ascending.
     sortDir: params.sortDir === "desc" || params.sortDir === "asc" ? params.sortDir : sortBy && sortBy !== "applicants" ? "asc" : "desc",
@@ -167,6 +170,7 @@ export const FILTER_KEYS = [
   "honors",
   "transfers",
   "gapYear",
+  "faith",
   ...INDICATOR_KEYS.map((k) => INDICATORS[k].param),
 ] as const;
 

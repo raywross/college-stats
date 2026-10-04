@@ -25,6 +25,7 @@ import { applyFinancialAid } from "./cds/financial-aid.ts";
 import { mergeAcademics } from "./cds/academics.ts";
 import { mergeTransfer } from "./cds/transfer.ts";
 import { mergeApplicationLogistics } from "./cds/application-logistics.ts";
+import { mergeReligion } from "./cds/religion.ts";
 
 /**
  * `school` as it was before any merge: its previous admissions funnel restored from `admissions.federal`
@@ -88,6 +89,8 @@ const RECORD_STEPS: readonly ((school: School, record: CollegeRecord | undefined
   mergeTransfer,
   // specs/data-expansion/cds-application-logistics.md: deadlines, notification, reply, deposit, gap year, units.
   mergeApplicationLogistics,
+  // specs/religious-life.md (phase 1): H14 religious-affiliation scholarships and F2 campus ministries.
+  mergeReligion,
 ];
 
 /**

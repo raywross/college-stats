@@ -11,6 +11,7 @@ import { hasGradByGroup } from "./graduation-groups";
 import { isShown } from "./outcome-measures";
 import { INSTRUCTION_METRIC, endowmentMetricFor } from "./finances";
 import { PROFILE_TOPICS, type TopicKey } from "./profile-topics";
+import { religionView } from "./religion";
 
 /** A college's history shard and the shared history files, when both exist (specs/trends-data.md). */
 export interface ProfileHistory {
@@ -111,7 +112,8 @@ export const loadProfile = cache(async (id: string): Promise<Profile | null> => 
 
   const hasHistory = history !== null && files !== null && Object.keys(history.series).length > 0;
   const hasAdmissions = rate !== null || counts;
-  const hasCampus = !!(school.campus?.housing || school.campus?.athletics || school.campus?.programs);
+  // Religious life (specs/religious-life.md) counts too, so the section and its "Campus life" link show for it alone.
+  const hasCampus = !!(school.campus?.housing || school.campus?.athletics || school.campus?.programs || religionView(school));
   const hasAcademics = !!majorsTop?.length || hasTopPrograms || ratio !== null || fullTimeShare !== null || facultySalaryValue !== null || finances !== null;
   // The single-page profile showed Cost & outcomes when any of these existed; the split keeps that for cost and
   // adds the outcome blocks' own conditions for the outcomes page.

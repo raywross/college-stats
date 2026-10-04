@@ -1,6 +1,10 @@
 # Religious Life
 
-> Status: **planned** (not built). Research 2026-09-28: Scorecard API probe, 2025–26 Common Data Sets, and a
+> Status: **phase 1 built** (2026-10-03, branch `feature/campus-life-religious`): IPEDS affiliation for every college
+> with NCES's own label, an Explore filter by faith family, a Compare row, a "Religious life" block in the profile's
+> Campus life section with the CDS answers we already read (C7, H14, F2), "Known for: Faith-centered" from C7, and
+> glossary entries. See [Phase 1 as built](#phase-1-as-built). Phases 2–4 (pilot, national directories, per-school
+> rollout) are still **planned**. Research 2026-09-28: Scorecard API probe, 2025–26 Common Data Sets, and a
 > per-school deep dive on UT Austin. Findings are verified unless marked *unverified*. Companions:
 > [greek-life.md](greek-life.md), [lgbtq-life.md](lgbtq-life.md). Per-school collection shares the engine in
 > [college-reported-data.md](college-reported-data.md#campus-life-sources).
@@ -159,15 +163,69 @@ Each field is registered in `lib/fields.ts` ([data-lineage.md](data-lineage.md))
 source kinds so citations show the organization and date.
 
 ## Where it appears
-- **Explore:** affiliation filter (grouped into ~8 families for the filter, exact label on the profile) and "has a
-  [tradition] community" filters (tier B/D).
-- **Profile, the students page's "Campus life" section:** affiliation; "Religious commitment is *very important* in admissions" (C7);
-  a faith-communities list with links; tier C estimates as labeled callouts. Hidden when empty.
-- **"Known for":** "Faith-centered" only from C7 = Very important or CCCU membership, never from affiliation alone.
-- **Glossary:** religious affiliation, CCCU, Hillel/Chabad/Newman Center, "organization estimate."
+Built in phase 1 unless marked *later*.
+- **Explore:** "Religious affiliation" filter: ten faith families plus "No affiliation" (`?faith=catholic,none`), exact
+  label on the profile. *Later:* "has a [tradition] community" filters (tier B/D).
+- **Profile, the students page's "Campus life" section:** a "Religious life" block (`#religion`,
+  `components/school/ReligiousLife.tsx`): the affiliation (or "No religious affiliation"), with a link to other
+  colleges in its family; "Religious affiliation or commitment: very important" in admission (C7); "Some of the
+  college's own non-need-based aid considers religious affiliation" (H14); "Campus ministries: listed among campus
+  activities" (F2). Hidden when empty (see the rules below); the section and its "Campus life" link show when only
+  this block has data. *Later:* a faith-communities list with links; tier C estimates as labeled callouts.
+- **Compare:** a "Religious affiliation" row (NCES label, or "None"). C7's religion row was already there
+  ("Admission: Religious affiliation", cds-admissions.md).
+- **"Known for":** "Faith-centered" only from C7 = Very important, never from affiliation alone. *Later:* CCCU
+  membership.
+- **Glossary:** religious affiliation, religious commitment in admissions, scholarships for religious affiliation,
+  campus ministries, Faith-centered. *Later:* CCCU, Hillel/Chabad/Newman Center, "organization estimate."
+- **Data page:** the IPEDS IC card names religious affiliation; nothing new to register.
+
+## Phase 1 as built
+**Data.** `npm run sync-data` reads `RELAFFIL` from the IC{Y} file it already downloads for campus services
+(`IC2025`, 2025–26), and the labels from that file's own data dictionary (`IC2025_Dict.zip`, sheet "Frequencies";
+`scripts/lib/ipeds-dictionary.mts`, cached in `.cache/ipeds`). Stored as `school.religion = { affiliation: { code,
+label } | null }` (`religion.affiliation`, source `ipeds-ic-char`); `null` is IPEDS "not applicable" (no
+affiliation). A college with no IC row or a negative code other than −2 gets no `religion` at all (unknown, never
+"none"). The sync fails on a code the dictionary doesn't label or `lib/religion.ts` doesn't group.
+
+**Real data (IC2025, 2026-10-03):** 685 of 1,893 colleges affiliated (all private nonprofit), 1,208 none, 0 missing;
+58 distinct codes. Families: Catholic 189, Other Christian 131, Methodist and Wesleyan 97, Baptist 85,
+Nondenominational Christian 58, Presbyterian and Reformed 52, Lutheran 35, Jewish 29, Other 7, Latter-day Saint 2
+(the Explore filter shows the live counts; they move with each release).
+
+**CDS facts** (`lib/cds/religion.ts`, a `RECORD_STEPS` step in `lib/reported-merge.ts`): `reported.religion.
+aid_by_affiliation` = `{ non_need, need }` from H14 (H.1409, H.1418) and `reported.religion.campus_ministries` from F2
+(F.201), each with its own lineage record. C7 stays where cds-admissions.md put it
+(`reported.admission_profile.factors.religious`); the block reads it, nothing is copied. Of the 10 CDS records on
+2026-10-03: C7 religion 10 (all "not considered"), H14 religious scholarships 2 (Vanderbilt, UNC Chapel Hill, both
+non-need), F2 campus ministries 8.
+
+**Decisions this spec left open:**
+1. **Families** (open question 2): ten, by denominational family, not by theology (no evangelical/mainline split):
+   Catholic; Baptist; Methodist and Wesleyan (incl. AME, AME Zion, CME, Free Methodist, Wesleyan, Nazarene);
+   Lutheran; Presbyterian and Reformed; Nondenominational Christian (Interdenominational, Non-Denominational,
+   Undenominational, Evangelical Christian, Multiple Protestant Denomination); Other Christian (everything else
+   Christian, incl. Episcopal, Orthodox, Adventist, Pentecostal, Churches of Christ, Mennonite, Friends, UCC, Church of
+   God); Jewish; Latter-day Saint; Other (Unitarian Universalist, "Other (none of the above)"). Plus "No affiliation"
+   in the filter. Grouped by code in `RELAFFIL_FAMILY`.
+2. **Where the CDS facts live:** under `school.reported.religion`, not `school.religion`, because they are
+   college-reported values: `stripReported` and the lineage guard (every `reported.*` value cites the college with a
+   quote) then cover them, and re-merging is idempotent, like every other round-3 block. `school.religion` holds only
+   the federal affiliation. `admission_weight` from the sketch is not stored: it is C7, read in place.
+3. **Blank ≠ no:** H14 and F2 are stored only when a box is marked. An unmarked box stores nothing (the Cost page's
+   H14 rule), so `aid_by_affiliation` is never `false`. H14 comes from the same document as the Cost page's "Applying
+   for aid" (`pickProcessRecord`); its year is the aid cycle ("Fall 2026 entrants"). F2 comes from the newest document
+   that read section F; a blank there hides an older edition's mark. Its year is the edition.
+4. **When the block shows:** for an affiliated college, or for any college whose CDS says something (C7 above "not
+   considered", H14, F2). C7 "not considered" is shown only at an affiliated college (useful there, noise at a public
+   university). An unaffiliated college with none of those gets no block, so 1,200 profiles don't say only "No
+   religious affiliation".
+5. **Partial coverage:** the CDS facts never feed ranks, sorts, medians, Explore filters, or Compare rows beyond C7's
+   existing one. The affiliation filter uses IPEDS only (all colleges).
 
 ## Phases
-1. **Affiliation for all colleges** (IPEDS). Cheap; ship first.
+1. **Affiliation for all colleges** (IPEDS). Cheap; ship first. **Built** 2026-10-03, with the CDS items already read
+   (C7, H14, F2); see [Phase 1 as built](#phase-1-as-built).
 2. **Pilot of 25 colleges** (UT Austin, Notre Dame, Baylor, BYU, a CCCU college, a Jesuit college, an HBCU, a
    liberal-arts college, large publics in several regions): run discovery by hand-checked agent, measure hit rate per
    source type, extraction accuracy, and cost. Decide which sources are worth scaling.

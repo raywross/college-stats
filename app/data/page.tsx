@@ -202,7 +202,8 @@ export default async function DataPage() {
     for (const [, def] of STORED) if (def.source === key) topics.add(def.topic);
     return [...topics].map((t) => TOPIC_LABELS[t]);
   };
-  const order: SourceKey[] = ["scorecard", "ipeds-adm", "ipeds-sfa", "ipeds-ic", "ipeds-ic-char", "ipeds-hd", "ipeds-ef", "ipeds-ef-c", "ipeds-ef-a", "ipeds-c", "ipeds-om", "ipeds-gr", "ipeds-sal", "ipeds-f", "scorecard-fos", "cds", "college-site", "state-law"];
+  // "wikidata" added by the school-identity social-accounts track; "wikipedia" is the brand track's (specs/school-identity/).
+  const order: SourceKey[] = ["scorecard", "ipeds-adm", "ipeds-sfa", "ipeds-ic", "ipeds-ic-char", "ipeds-hd", "ipeds-ef", "ipeds-ef-c", "ipeds-ef-a", "ipeds-c", "ipeds-om", "ipeds-gr", "ipeds-sal", "ipeds-f", "scorecard-fos", "cds", "college-site", "state-law", "wikidata"];
 
   const toc = [
     ["why", "Why it lags"],

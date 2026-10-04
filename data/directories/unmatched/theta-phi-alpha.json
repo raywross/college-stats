@@ -1,0 +1,12 @@
+{
+  "org": "theta-phi-alpha",
+  "crawled": "2026-10-04",
+  "entries": [
+    {"campus":"Embry-Riddle Aeronautical University","city":"Daytona Beach","state":"FL","name":"Alpha Tau","reason":"ambiguous: 2 colleges fit","candidates":[{"unit_id":"133553","name":"Embry-Riddle Aeronautical University-Daytona Beach","score":0.8},{"unit_id":"426314","name":"Embry-Riddle Aeronautical University-Worldwide","score":0.89}]},
+    {"campus":"Kean University of New Jersey","city":"Union","state":"NJ","name":"Beta Omega","reason":"no college in NJ matches","candidates":[{"unit_id":"187444","name":"William Paterson University of New Jersey","score":0.73},{"unit_id":"486956","name":"Chamberlain University-New Jersey","score":0.67},{"unit_id":"482556","name":"DeVry University-New Jersey","score":0.67}]},
+    {"campus":"Hobart & William Smith Colleges","city":"Geneva","state":"NY","name":"Delta Kappa","reason":"no college in NY matches","candidates":[{"unit_id":"191630","name":"Hobart William Smith Colleges","score":0.89},{"unit_id":"189565","name":"Bryant & Stratton College-Syracuse North","score":0.18},{"unit_id":"190576","name":"CUNY Graduate School and University Center","score":0.18}]},
+    {"campus":"St. Joseph's College","city":"Patchogue","state":"NY","name":"Delta Beta","reason":"no college in NY matches","candidates":[{"unit_id":"195173","name":"St. Francis College","score":0.67},{"unit_id":"193353","name":"Mount Saint Mary College","score":0.57},{"unit_id":"195243","name":"St. Thomas Aquinas College","score":0.57}]},
+    {"campus":"Utica College","city":"Utica","state":"NY","name":"Gamma Omicron","reason":"no college in NY matches","candidates":[{"unit_id":"189088","name":"Bard College","score":0.5},{"unit_id":"189097","name":"Barnard College","score":0.5},{"unit_id":"189413","name":"Boricua College","score":0.5}]},
+    {"campus":"Jefferson University","city":"Philadelphia","state":"PA","name":"Gamma Psi","reason":"no college in PA matches","candidates":[{"unit_id":"216366","name":"Thomas Jefferson University","score":0.8},{"unit_id":"210775","name":"Alvernia University","score":0.5},{"unit_id":"211088","name":"Arcadia University","score":0.5}]}
+  ]
+}

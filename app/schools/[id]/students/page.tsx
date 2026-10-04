@@ -23,6 +23,7 @@ import { CampusServices } from "@/components/school/CampusServices";
 import { ReligiousLife } from "@/components/school/ReligiousLife";
 import { LgbtqLife } from "@/components/school/LgbtqLife";
 import { DirectoryListings } from "@/components/school/DirectoryListings";
+import { FaithFacts, GreekCouncils, LgbtqPolicies } from "@/components/school/CampusPages";
 import { countDisplay, countText } from "@/lib/lgbtq";
 
 type Props = { params: Promise<{ id: string }> };
@@ -234,14 +235,17 @@ export default async function StudentsPage({ params }: Props) {
           <CampusLife school={school} />
           <CampusServices school={school} recentMoves={recentMoves} />
           <ReligiousLife school={school} />
+          <FaithFacts school={school} detail={detail} />
           <DirectoryListings detail={detail} domain="faith" />
           <GreekLife school={school} detail={detail} />
+          <GreekCouncils school={school} detail={detail} />
           <LgbtqLife
             school={school}
             citedGender={citeField("lgbtq.gender", school)}
             citedAdmissions={citeField("lgbtq.admissions", school)}
             citedLaw={citeField("lgbtq.state_law", school)}
           />
+          <LgbtqPolicies school={school} detail={detail} />
           <DirectoryListings detail={detail} domain="lgbtq" />
         </Panel>
       )}

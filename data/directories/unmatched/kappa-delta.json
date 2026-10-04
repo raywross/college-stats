@@ -1,0 +1,10 @@
+{
+  "org": "kappa-delta",
+  "crawled": "2026-10-04",
+  "entries": [
+    {"campus":"Lenoir-Rhyne College","state":"NC","name":"Gamma Chi","reason":"no college in NC matches","candidates":[{"unit_id":"198835","name":"Lenoir-Rhyne University","score":0.67},{"unit_id":"197911","name":"Barton College","score":0.4},{"unit_id":"197993","name":"Bennett College","score":0.4}]},
+    {"campus":"University of Texas","state":"TX","name":"Sigma Epsilon","reason":"ambiguous: 12 colleges fit","candidates":[{"unit_id":"228769","name":"The University of Texas at Arlington","score":0.86},{"unit_id":"228778","name":"The University of Texas at Austin","score":0.86},{"unit_id":"228787","name":"The University of Texas at Dallas","score":0.86}]},
+    {"campus":"College of William & Mary","state":"VA","name":"Alpha Pi","reason":"no college in VA matches","candidates":[{"unit_id":"231624","name":"William & Mary","score":0.75},{"unit_id":"232681","name":"University of Mary Washington","score":0.44},{"unit_id":"500290","name":"Arizona College of Nursing - Chesapeake","score":0.4}]},
+    {"campus":"Lynchburg College","state":"VA","name":"Zeta Nu","reason":"no college in VA matches","candidates":[{"unit_id":"231581","name":"Bridgewater College","score":0.5},{"unit_id":"232089","name":"Ferrum College","score":0.5},{"unit_id":"233301","name":"Randolph College","score":0.5}]}
+  ]
+}

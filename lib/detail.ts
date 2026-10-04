@@ -19,6 +19,7 @@ import { majorsSnapshot, programsFromRows, type MajorRows } from "./majors.ts";
 import { hasEarnings, isPlausibleCip4, type ProgramEarnings } from "./field-of-study.ts";
 import { cdsAidMismatch, checkCdsAidDetail } from "./cds/financial-aid.ts";
 import { checkDirectoryRows, summarize, type DirectoryRows } from "./directories.ts";
+import { checkCampusPages, type CampusPagesRows } from "./campus-pages.ts";
 
 export interface DetailTable<T> {
   source: SourceKey;
@@ -49,6 +50,12 @@ export interface DetailTables {
    * the date read, and its tier (specs/campus-directories.md, lib/directories.ts). Year: the newest date read.
    */
   directories?: DetailTable<DirectoryRows>;
+  /**
+   * Facts read from the college's own pages by the campus-life pilot (lib/campus-pages.ts): policy items and conduct
+   * findings, the LGBTQ+ center, Greek councils and recruitment, the office for religious life, and official religious
+   * composition. Each fact carries its page, date checked, and quote. Year: the newest date checked.
+   */
+  campus_pages?: DetailTable<CampusPagesRows>;
 }
 
 export type DetailTableKey = keyof DetailTables;
@@ -121,6 +128,10 @@ export const DETAIL_TABLES: Record<DetailTableKey, { field: FieldPath; checkRows
   directories: {
     field: "detail.directories",
     checkRows: checkDirectoryRows,
+  },
+  campus_pages: {
+    field: "detail.campus_pages",
+    checkRows: checkCampusPages,
   },
 };
 

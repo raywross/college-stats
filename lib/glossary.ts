@@ -1197,6 +1197,48 @@ const entries = {
     category: "Students & access",
     related: ["greek-life", "national-directory"],
   },
+  // Campus-life pilot (lib/campus-pages.ts): facts read from a college's own pages, each quoted and dated.
+  "college-page-fact": {
+    term: "From the college's own page",
+    short: "A fact read on the college's own website (a policy page, an office's page, or a report), with the page's own words and the date we checked it.",
+    long: "Facts older than two years are hidden until they're checked again. A finding that a policy is missing, a conduct-code restriction, or an official religious breakdown is published only after a second, independent model check confirms it against the quote and the page.",
+    category: "Students & access",
+    related: ["national-directory"],
+  },
+  "greek-council": {
+    term: "Fraternity and sorority councils",
+    short: "The governing groups a college's fraternities and sororities belong to, such as the Panhellenic Council (sororities), the Interfraternity Council, and the National Pan-Hellenic Council (historically Black organizations).",
+    long: "Member counts come from the college's fraternity and sorority life office and describe one term; spring counts usually run lower than fall. Counts under 10 show as \"fewer than 10\".",
+    category: "School types",
+    related: ["greek-life"],
+  },
+  "deferred-recruitment": {
+    term: "Deferred recruitment",
+    short: "First-year students can't join a fraternity or sorority in their first term; recruitment for them waits until a later term.",
+    category: "School types",
+    related: ["greek-life"],
+  },
+  "religious-composition": {
+    term: "Students by religious affiliation",
+    short: "The religions students report, as the college itself publishes them (usually in an institutional-research report). Few colleges publish one, mostly religious colleges.",
+    long: "Students choose whether to answer, so \"not specified\" can be large. The figures describe the students and year the college names.",
+    category: "Students & access",
+    related: ["religious-affiliation"],
+  },
+  "lgbtq-policies": {
+    term: "LGBTQ+ policies on the college's pages",
+    short: "Whether the college's own pages say its nondiscrimination policy covers sexual orientation and gender identity, and whether it offers gender-inclusive housing, chosen names on records, an all-gender restroom list, and student health coverage of transition-related care.",
+    long: "Each item links the page and the date it was checked. \"Not found\" items aren't shown: a missing page is not a no. A \"no\" appears only where a page says so, confirmed by a second model check.",
+    category: "Students & access",
+    related: ["another-gender"],
+  },
+  "conduct-code-restriction": {
+    term: "What the student conduct policy says",
+    short: "The college's own words, quoted, where its conduct code, honor code, or community covenant restricts same-sex relationships, gender expression, or transition.",
+    long: "Shown only from the college's current document, never inferred from a religious affiliation, and only after a second model check confirms the quote and its meaning.",
+    category: "Students & access",
+    related: ["religious-affiliation"],
+  },
 } satisfies Record<string, GlossaryEntry>;
 
 export type TermKey = keyof typeof entries;

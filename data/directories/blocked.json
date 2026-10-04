@@ -1,10 +1,50 @@
 {
   "blocked": [
     {
+      "org": "alpha-phi",
+      "url": "https://www.alphaphi.org/discover-alpha-phi/chapter-locator/",
+      "reason": "challenge",
+      "detail": "https://www.alphaphi.org/discover-alpha-phi/chapter-locator/: blocked (challenge): Cloudflare 'Just a moment...' challenge on every request, checked 2026-10-04",
+      "first_seen": "2026-10-04",
+      "last_seen": "2026-10-04"
+    },
+    {
+      "org": "alpha-sigma-tau",
+      "url": "https://alphasigmatau.org/members/find-a-chapter/",
+      "reason": "forbidden",
+      "detail": "https://alphasigmatau.org/members/find-a-chapter/: blocked (forbidden): 403 from the site's WAF on /members/find-a-chapter/ regardless of user agent, checked 2026-10-04",
+      "first_seen": "2026-10-04",
+      "last_seen": "2026-10-04"
+    },
+    {
+      "org": "campus-pilot",
+      "url": "https://deanofstudents.utexas.edu/sfl/downloads/",
+      "reason": "robots",
+      "detail": "UT Austin's Sorority and Fraternity Life chapter size and grade reports (one PDF per council per term); studentlife.utexas.edu robots.txt has Disallow: /sfl/downloads/ for every user agent. Hand reading per owner decision 1, or ask UT",
+      "first_seen": "2026-10-04",
+      "last_seen": "2026-10-04"
+    },
+    {
+      "org": "delta-zeta",
+      "url": "https://www.deltazeta.org/",
+      "reason": "challenge",
+      "detail": "https://www.deltazeta.org/: blocked (challenge): Cloudflare 'Just a moment...' challenge on every request, checked 2026-10-04",
+      "first_seen": "2026-10-04",
+      "last_seen": "2026-10-04"
+    },
+    {
       "org": "kappa-alpha-psi",
       "url": "https://www.kappaalphapsi1911.com/find-a-chapter/",
       "reason": "forbidden",
       "detail": "https://www.kappaalphapsi1911.com/find-a-chapter/: blocked (forbidden): HTTP 403",
+      "first_seen": "2026-10-04",
+      "last_seen": "2026-10-04"
+    },
+    {
+      "org": "kappa-kappa-gamma",
+      "url": "https://www.kappakappagamma.org/stay-connected/mykappa/chapters-and-advisory-boards/",
+      "reason": "login",
+      "detail": "https://www.kappakappagamma.org/stay-connected/mykappa/chapters-and-advisory-boards/: blocked (login): page is served by the password-protected-categories plugin (myKappa member area), checked 2026-10-04",
       "first_seen": "2026-10-04",
       "last_seen": "2026-10-04"
     }

@@ -132,7 +132,7 @@
       "publisher": "Each organization, credited on every listing",
       "edition": "Lists read 2026-10-04",
       "url": "/data#sources",
-      "description": "Lists that national organizations publish of their campus chapters and groups, matched to colleges by name, city, and state. Each listing names the organization, the list, and the date we read it; a listing is the organization's claim, not confirmed by the college. Now: Secular Student Alliance."
+      "description": "Lists that national organizations publish of their campus chapters and groups, matched to colleges by name, city, and state. Each listing names the organization, the list, and the date we read it; a listing is the organization's claim, not confirmed by the college. Now: Alpha Delta Pi, Delta Phi Epsilon, Kappa Delta, Phi Mu, Phi Sigma Sigma, Pi Beta Phi, Sigma Delta Tau, Sigma Kappa, Secular Student Alliance, Theta Phi Alpha, Tri Delta."
     },
     "org-estimate": {
       "label": "Organization estimates for a campus",
@@ -142,11 +142,11 @@
       "description": "Figures an organization publishes about one campus, such as how many students of a faith it estimates. Shown with the organization's name and the date we read it, never ranked or compared as official counts. Now: none yet."
     },
     "policy-page": {
-      "label": "College policy pages",
+      "label": "College policy and office pages",
       "publisher": "Each college",
       "edition": "Checked per page",
       "url": "/data#sources",
-      "description": "A college's own current policy page or handbook (nondiscrimination, housing, records, health plan, conduct code), checked on a date and quoted. Findings of a restriction or a missing policy are confirmed by a second, independent model check against the quote and the page before they are published."
+      "description": "A college's own current pages, checked on a date and quoted: policy pages and handbooks (nondiscrimination, housing, records, health plan, conduct code), its offices' pages (fraternity and sorority life, religious life, LGBTQ+ center), and its reports (fraternity and sorority sizes, students' religious affiliation). Findings of a restriction or a missing policy are confirmed by a second, independent model check against the quote and the page before they are published, as is any official religious composition."
     }
   },
   "vintages": {

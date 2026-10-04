@@ -1,0 +1,11 @@
+{
+  "org": "sigma-kappa",
+  "crawled": "2026-10-04",
+  "entries": [
+    {"campus":"Embry Riddle Aeronautical University","city":"Daytona Beach","state":"FL","name":"Lambda Kappa","reason":"ambiguous: 2 colleges fit","candidates":[{"unit_id":"133553","name":"Embry-Riddle Aeronautical University-Daytona Beach","score":0.8},{"unit_id":"426314","name":"Embry-Riddle Aeronautical University-Worldwide","score":0.89}]},
+    {"campus":"Elmhurst College","city":"Elmhurst","state":"IL","name":"Zeta Iota","reason":"no college in IL matches","candidates":[{"unit_id":"143084","name":"Augustana College","score":0.5},{"unit_id":"143288","name":"Blackburn College","score":0.5},{"unit_id":"144962","name":"Elmhurst University","score":0.5}]},
+    {"campus":"California University of Pennsylvania","city":"California","state":"PA","name":"Gamma Upsilon","reason":"no college in PA matches","candidates":[{"unit_id":"215062","name":"University of Pennsylvania","score":0.86},{"unit_id":"211608","name":"Cheyney University of Pennsylvania","score":0.75},{"unit_id":"498562","name":"Commonwealth University of Pennsylvania","score":0.75}]},
+    {"campus":"Lock Haven University of Pennsylvania","city":"Lock Haven","state":"PA","name":"Delta Pi","reason":"no college in PA matches","candidates":[{"unit_id":"215062","name":"University of Pennsylvania","score":0.75},{"unit_id":"211608","name":"Cheyney University of Pennsylvania","score":0.67},{"unit_id":"498562","name":"Commonwealth University of Pennsylvania","score":0.67}]},
+    {"campus":"Tennessee Wesleyan College","city":"Athens","state":"TN","name":"Gamma Psi","reason":"no college in TN matches","candidates":[{"unit_id":"221731","name":"Tennessee Wesleyan University","score":0.67},{"unit_id":"220598","name":"Lane College","score":0.4},{"unit_id":"220710","name":"Maryville College","score":0.4}]}
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "org": "phi-sigma-sigma",
+  "crawled": "2026-10-04",
+  "entries": [
+    {"campus":"Fairleigh Dickinson University at Madison","name":"Zeta Theta Chapter","reason":"no college matches (no state given)","candidates":[{"unit_id":"184694","name":"Fairleigh Dickinson University-Florham Campus","score":0.75},{"unit_id":"184603","name":"Fairleigh Dickinson University-Metropolitan Campus","score":0.75},{"unit_id":"200059","name":"Dickinson State University","score":0.57}]},
+    {"campus":"Miami University of Ohio","name":"Iota Tau Chapter","reason":"no college matches (no state given)","candidates":[{"unit_id":"454236","name":"Chamberlain University-Ohio","score":0.57},{"unit_id":"482574","name":"DeVry University-Ohio","score":0.57},{"unit_id":"204006","name":"Miami University-Hamilton","score":0.57}]},
+    {"campus":"Pennsylvania Western University, California","name":"Epsilon Tau Chapter","reason":"no college in CA matches","candidates":[{"unit_id":"110060","name":"Bethesda University","score":0.4},{"unit_id":"110097","name":"Biola University","score":0.4},{"unit_id":"111948","name":"Chapman University","score":0.4}]},
+    {"campus":"Phi Sigma Sigma University","name":"Omega Omega Chapter","reason":"no college matches (no state given)","candidates":[{"unit_id":"188429","name":"Adelphi University","score":0.33},{"unit_id":"142832","name":"Adler University","score":0.33},{"unit_id":"133872","name":"AdventHealth University","score":0.33}]},
+    {"campus":"Rutgers University","name":"Gamma Nu Chapter","reason":"ambiguous: 3 colleges fit","candidates":[{"unit_id":"186371","name":"Rutgers University-Camden","score":0.8},{"unit_id":"186380","name":"Rutgers University-New Brunswick","score":0.67},{"unit_id":"186399","name":"Rutgers University-Newark","score":0.8}]},
+    {"campus":"St. John&#x27;s University","name":"Epsilon Omicron Chapter","reason":"no college matches (no state given)","candidates":[{"unit_id":"195720","name":"St. John Fisher University","score":0.6},{"unit_id":"107141","name":"John Brown University","score":0.44},{"unit_id":"203368","name":"John Carroll University","score":0.44}]},
+    {"campus":"St. John`s University","name":"Epsilon Omicron Chapter","reason":"ambiguous: 2 colleges fit","candidates":[{"unit_id":"174792","name":"Saint Johns University","score":1},{"unit_id":"195809","name":"St. John's University-New York","score":0.75}]},
+    {"campus":"St. Joseph&#x27;s University","name":"Iota Rho Chapter","reason":"no college matches (no state given)","candidates":[{"unit_id":"204200","name":"Mount St. Joseph University","score":0.6},{"unit_id":"154235","name":"Saint Ambrose University","score":0.44},{"unit_id":"199582","name":"Saint Augustine's University","score":0.44}]},
+    {"campus":"St. Joseph`s University","name":"Iota Rho Chapter","reason":"ambiguous: 2 colleges fit","candidates":[{"unit_id":"215770","name":"Saint Joseph's University - Philadelphia","score":0.86},{"unit_id":"195544","name":"St. Joseph's University-New York","score":0.75}]},
+    {"campus":"The College at Brockport","name":"Delta Sigma Chapter","reason":"no college matches (no state given)","candidates":[{"unit_id":"172866","name":"Academy College","score":0.5},{"unit_id":"168528","name":"Adrian College","score":0.5},{"unit_id":"168546","name":"Albion College","score":0.5}]}
+  ]
+}

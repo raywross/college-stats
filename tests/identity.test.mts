@@ -10,7 +10,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { DatasetMeta, School } from "../lib/types";
 import { addIdentityMeta, applyIdentity, applyIdentityOverride, emptyIdentityInputs } from "../lib/identity.ts";
-import { validateLineage, validateRegistry } from "../lib/lineage.ts";
+import { citesYear, lineageFor, validateLineage, validateRegistry } from "../lib/lineage.ts";
 import { formatSchools, loadIdentityInputs, mergeIdentity } from "../scripts/lib/identity-sync.mts";
 
 const ROOT = join(import.meta.dirname, "..");
@@ -53,6 +53,29 @@ test("an override's links/social/brand part is applied with its lineage; the res
   assert.equal(school.lineage?.["links.visit"]?.source, "college-site");
   assert.equal(school.admissions.applicants, before.admissions.applicants, "non-identity paths are sync-data's");
   assert.equal(school.lineage?.["admissions.applicants"], before.lineage?.["admissions.applicants"]);
+});
+
+test("a link or account found on the college's site isn't credited to its admissions document", () => {
+  // Duke has a newer admissions class from its own document (reported.admissions) and identity values from its site.
+  const duke = structuredClone(byId.get("198419")!);
+  assert.ok(duke.reported?.admissions, "fixture: Duke has college-reported admissions");
+  duke.links = { ...(duke.links ?? { website: null, price_calculator: null }), visit: "https://admissions.duke.edu/visit/" };
+  duke.lineage = {
+    ...(duke.lineage ?? {}),
+    "links.visit": { source: "college-site", method: "extracted", url: "https://admissions.duke.edu/", retrieved: "2026-10-04", year: "2026", quote: "Visit" },
+  };
+  const visit = lineageFor("links.visit", duke, meta);
+  assert.equal(visit.sourceKind, undefined, "the visit link names no Common Data Set or class profile");
+  const applicants = lineageFor("admissions.applicants", duke, meta);
+  if (duke.lineage["admissions.applicants"]?.source === "college-site") assert.ok(applicants.sourceKind, "admissions values keep their document");
+});
+
+test("an undated reference names no year; every other source still does", () => {
+  const school = structuredClone(byId.get(UGA)!);
+  school.social = { instagram: "universityofga" };
+  assert.equal(citesYear(lineageFor("social.instagram", school, meta)), false, "Wikidata: no 'most recent release'");
+  assert.equal(citesYear(lineageFor("links.admissions", school, meta)), true, "IPEDS HD names its edition");
+  assert.equal(citesYear(lineageFor("outcomes.median_earnings_10yr", school, meta)), true, "Scorecard keeps 'most recent release'");
 });
 
 test("an identity override without a source is refused", () => {

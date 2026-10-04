@@ -92,8 +92,9 @@ Supabase: the `links` object is part of the school document, so `publish-data` n
 - **Profile hero** (`app/schools/[id]/page.tsx`): a row of outlined pill links under the chips, in this order:
   **Website · Admissions · Apply · Visit · Financial aid**. Each is an `<a target="_blank" rel="noopener">` with the
   external-link icon and the college's domain as its `title`. Missing links are left out, never shown disabled. On
-  phones the row scrolls sideways like the "Known for" chips. The row's `SourceNote` lists the HD edition and, when
-  present, the college's site for the visit link.
+  phones the row scrolls sideways like the "Known for" chips. One (i) at the end of the row (after the social
+  icons) names every source behind the links and accounts, each once with the items it covers (`SourcesTip`); the
+  owner moved it there from a footnote line under the pills on 2026-10-04, since the line took a lot of room.
 - **Compact header** (topic pages): one "Website" icon link at the right of the name, so a visitor on any topic page
   can reach the college in one tap. Nothing else; the band is already full on phones.
 - **Cost page and Cost card**: "Financial aid office" next to the existing net price calculator link; "Veterans'
@@ -180,9 +181,8 @@ heuristic misses: *estimate* 500 colleges × $0.003 ≈ $1.50, once; later runs 
 ### Step 3: Display
 - **`OfficialLinks`**: Website · Admissions · Apply · Visit (or Virtual tour, when there's no Visit) · Financial aid,
   as outlined pills, each `<a target="_blank" rel="noopener">` with the external-link icon and `linkHost(href)` as
-  `title`. A pill's field is only added to its `SourceNote` when that pill is actually shown, so the row never cites
-  a source for a link the college doesn't have. Returns `null` (no row, no source note) when the college has none of
-  these five.
+  `title`. Returns `null` when the college has none of these five. (Built with a `SourceNote` line under the pills;
+  replaced on 2026-10-04 by the row's (i) in `HeroIdentity`, which cites only the links and accounts shown.)
 - **`HeroIdentity`**: kept the foundation's placement under "Known for". Screenshots (desktop 1280 and phone 390,
   both themes) showed the plain foundation markup — pills and `SocialLinks` in one unconstrained flex row — would
   make the pill strip's mobile horizontal scroll bleed only to the edge of whatever width the social icons left it,

@@ -4,55 +4,76 @@ import { SOCIAL_LABELS, SOCIAL_NETWORKS, socialUrl } from "@/lib/social";
 import { cn } from "@/lib/utils";
 
 /**
- * One hand-drawn, monochrome glyph per network (specs/school-identity/social-accounts.md, Display): tiny marks that
- * identify a link target, the way every site shows them, not full-color brand logos. `currentColor` throughout, so
- * they inherit the button's text color (and its hover/dark-mode color) for free.
+ * One small mark per network in its own colors (specs/school-identity/social-accounts.md, Display; the owner chose
+ * colored marks over monochrome on 2026-10-04): Instagram's gradient tile, YouTube's red play button, TikTok's note
+ * with its cyan and red edges, X, Facebook's blue circle, LinkedIn's blue square. Simple SVG drawn here, not the
+ * networks' asset files; the black parts of X and TikTok turn white in dark mode so they read on the indigo background.
  */
 function InstagramGlyph() {
   return (
-    <svg viewBox="0 0 24 24" aria-hidden className="size-4">
-      <rect x="3.3" y="3.3" width="17.4" height="17.4" rx="5" fill="none" stroke="currentColor" strokeWidth="1.7" />
-      <circle cx="12" cy="12" r="4.1" fill="none" stroke="currentColor" strokeWidth="1.7" />
-      <circle cx="17.1" cy="6.9" r="1.15" fill="currentColor" />
+    <svg viewBox="0 0 24 24" aria-hidden className="size-5">
+      <defs>
+        <radialGradient id="quad-instagram-warm" cx="0.3" cy="1.07" r="1.35">
+          <stop offset="0" stopColor="#FFDD55" />
+          <stop offset="0.1" stopColor="#FFDD55" />
+          <stop offset="0.5" stopColor="#FF543E" />
+          <stop offset="1" stopColor="#C837AB" />
+        </radialGradient>
+        <radialGradient id="quad-instagram-cool" cx="-0.17" cy="0.07" r="0.6">
+          <stop offset="0" stopColor="#3771C8" />
+          <stop offset="0.13" stopColor="#3771C8" />
+          <stop offset="1" stopColor="#6600FF" stopOpacity="0" />
+        </radialGradient>
+      </defs>
+      <rect x="2" y="2" width="20" height="20" rx="5.6" fill="url(#quad-instagram-warm)" />
+      <rect x="2" y="2" width="20" height="20" rx="5.6" fill="url(#quad-instagram-cool)" />
+      <rect x="5.9" y="5.9" width="12.2" height="12.2" rx="3.6" fill="none" stroke="#fff" strokeWidth="1.7" />
+      <circle cx="12" cy="12" r="2.9" fill="none" stroke="#fff" strokeWidth="1.7" />
+      <circle cx="15.7" cy="8.3" r="0.95" fill="#fff" />
     </svg>
   );
 }
 
 function YouTubeGlyph() {
   return (
-    <svg viewBox="0 0 24 24" aria-hidden className="size-4">
-      <rect x="2.3" y="5.8" width="19.4" height="12.4" rx="4" fill="none" stroke="currentColor" strokeWidth="1.7" />
-      <path d="M10.3 9.1 16 12l-5.7 2.9z" fill="currentColor" />
+    <svg viewBox="0 0 24 24" aria-hidden className="size-5">
+      <rect x="1.5" y="5" width="21" height="14" rx="4.2" fill="#FF0000" />
+      <path d="M9.9 8.7 15.6 12l-5.7 3.3z" fill="#fff" />
     </svg>
   );
 }
 
+const TIKTOK_NOTE =
+  "M13.2 2.8h2.3c.2 1.9 1.5 3.5 3.5 3.8v2.3a6.4 6.4 0 0 1-3.5-1.3v6.1a4.8 4.8 0 1 1-4.8-4.8c.2 0 .4 0 .6.03v2.4a2.5 2.5 0 1 0 2.2 2.48V2.8Z";
+
 function TikTokGlyph() {
   return (
-    <svg viewBox="0 0 24 24" aria-hidden className="size-4">
-      <path
-        d="M13.2 2.8h2.3c.2 1.9 1.5 3.5 3.5 3.8v2.3a6.4 6.4 0 0 1-3.5-1.3v6.1a4.8 4.8 0 1 1-4.8-4.8c.2 0 .4 0 .6.03v2.4a2.5 2.5 0 1 0 2.2 2.48V2.8Z"
-        fill="currentColor"
-      />
+    <svg viewBox="0 0 24 24" aria-hidden className="size-5">
+      <path d={TIKTOK_NOTE} fill="#25F4EE" transform="translate(-0.7 -0.7)" />
+      <path d={TIKTOK_NOTE} fill="#FE2C55" transform="translate(0.7 0.7)" />
+      <path d={TIKTOK_NOTE} className="fill-black dark:fill-white" />
     </svg>
   );
 }
 
 function XGlyph() {
   return (
-    <svg viewBox="0 0 24 24" aria-hidden className="size-4">
-      <path d="M4.3 4h3.4l4.3 5.7L16.3 4h3.4l-6 7.8 6.3 8.2h-3.4l-4.6-6-4.9 6H3.7l6.2-8.2z" fill="currentColor" />
+    <svg viewBox="0 0 24 24" aria-hidden className="size-[18px]">
+      <path
+        d="M18.9 1.15h3.68l-8.04 9.19L24 22.85h-7.41l-5.8-7.59-6.64 7.59H.47l8.6-9.83L0 1.15h7.59l5.24 6.93zm-1.29 19.5h2.04L6.49 3.24H4.3z"
+        className="fill-black dark:fill-white"
+      />
     </svg>
   );
 }
 
 function FacebookGlyph() {
   return (
-    <svg viewBox="0 0 24 24" aria-hidden className="size-4">
-      <rect x="3.3" y="3.3" width="17.4" height="17.4" rx="5" fill="none" stroke="currentColor" strokeWidth="1.7" />
+    <svg viewBox="0 0 24 24" aria-hidden className="size-5">
+      <circle cx="12" cy="12" r="10.5" fill="#0866FF" />
       <path
-        d="M13.4 20v-6.4h2.1l.33-2.5h-2.43v-1.5c0-.72.2-1.21 1.23-1.21h1.3V6.1c-.22-.03-1-.1-1.9-.1-1.88 0-3.17 1.15-3.17 3.26v1.83H8.8v2.5h2.1V20z"
-        fill="currentColor"
+        d="M13.5 22.4v-7.3h2.45l.37-2.85H13.5v-1.82c0-.82.23-1.38 1.41-1.38h1.5V6.5c-.26-.03-1.15-.11-2.19-.11-2.17 0-3.65 1.32-3.65 3.75v2.1H8.12v2.85h2.45v7.3z"
+        fill="#fff"
       />
     </svg>
   );
@@ -60,13 +81,13 @@ function FacebookGlyph() {
 
 function LinkedInGlyph() {
   return (
-    <svg viewBox="0 0 24 24" aria-hidden className="size-4">
-      <rect x="3.3" y="3.3" width="17.4" height="17.4" rx="5" fill="none" stroke="currentColor" strokeWidth="1.7" />
-      <circle cx="8.1" cy="8.3" r="1.25" fill="currentColor" />
-      <rect x="7" y="10.6" width="2.2" height="7" fill="currentColor" />
+    <svg viewBox="0 0 24 24" aria-hidden className="size-5">
+      <rect x="2" y="2" width="20" height="20" rx="3.2" fill="#0A66C2" />
+      <circle cx="7.55" cy="7.6" r="1.5" fill="#fff" />
+      <rect x="6.25" y="10.1" width="2.6" height="7.9" fill="#fff" />
       <path
-        d="M11.9 10.6h2.1v1.07c.47-.63 1.17-1.27 2.33-1.27 1.9 0 2.67 1.26 2.67 3.13V17.6h-2.2v-3.63c0-.9-.33-1.6-1.27-1.6-.72 0-1.2.5-1.4 1-.07.18-.1.42-.1.68v3.55h-2.14z"
-        fill="currentColor"
+        d="M10.95 10.1h2.5v1.15c.42-.72 1.33-1.35 2.67-1.35 2.36 0 2.98 1.55 2.98 3.67V18h-2.6v-4.02c0-.98-.27-1.82-1.33-1.82-1.02 0-1.62.73-1.62 1.85V18h-2.6z"
+        fill="#fff"
       />
     </svg>
   );
@@ -105,7 +126,7 @@ export function SocialLinks({ school, className }: { school: School; className?:
             rel="noopener"
             aria-label={label}
             title={SOCIAL_LABELS[network]}
-            className="inline-flex size-8 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+            className="inline-flex size-8 items-center justify-center rounded-full transition-[background-color,transform] hover:scale-110 hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
           >
             <Glyph />
           </a>

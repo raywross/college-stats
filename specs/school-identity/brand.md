@@ -101,7 +101,7 @@ Two separate questions apply to every mark, and a third to colors.
 at tile size, never in the site's own branding, ads, or share images; add to `/data` a line that marks and colors
 identify colleges, belong to them, and imply no endorsement; publish a removal address and honor a request within a
 day by setting `logo: false` in `data/brand-overrides.json` (the monogram returns on the next deploy); and ask
-counsel once before the first deploy with marks.
+counsel once before the first deploy with marks (done: counsel approved showing the marks, 2026-10-04).
 
 **The options were:** (a) colors only; (b) colors and site icons with the safeguards above; (c) colors and
 icons only for colleges that have opted in or granted permission (the college-reported workflow could ask, but
@@ -360,7 +360,8 @@ and 2.65:1 (dark) and the check exited 1.
 - **The removal address.** `BRAND_REMOVAL_CONTACT` (`lib/brand.ts`) is a prefilled issue on
   `github.com/raywross/college-stats`; it only works while the repo is public. Choose a permanent address (an email
   that someone reads daily, since a request is honored within a day).
-- **Counsel, once, before the first deploy with marks** (the safeguard above).
+- ~~Counsel, once, before the first deploy with marks~~: **approved 2026-10-04**. Marks are on (they show unless
+  `BRAND_MARKS=off` is set at build time, and nothing sets it).
 - **The colleges without a mark** (775): a monogram in their colors when they have colors (open question 2's default).
   Many have a 16–48 px favicon only; a college that wants its mark shown can add a 180 px `apple-touch-icon` to its
   homepage, and the next run picks it up.

@@ -55,6 +55,12 @@ export interface Cited extends CitedSource {
   document?: string;
 }
 
+/**
+ * Identity values found on the college's own site (a visit link, a footer account, its icon; specs/school-identity/):
+ * they come from its homepage or admissions page, never from the admissions document `reported.admissions` names.
+ */
+const IDENTITY_PATH = /^(links|social|brand)\./;
+
 /** The funnel paths `applyNewest` may replace, keyed to their `admissions.federal` counterparts. */
 const FEDERAL_COUNTERPART: Partial<Record<FieldPath, keyof FederalAdmissions>> = {
   "admissions.applicants": "applicants",
@@ -149,6 +155,14 @@ export function yearLabel(s: Pick<CitedSource, "year">): string {
   return s.year ?? "most recent release";
 }
 
+/**
+ * Whether a citation names a year at all. Undated references (UNDATED_SOURCES: Wikidata, Wikipedia) have no release
+ * to name; the retrieval date shown with them dates them, so "Wikidata, most recent release" would only mislead.
+ */
+export function citesYear(s: Pick<CitedSource, "key" | "year">): boolean {
+  return s.year !== null || !UNDATED_SOURCES.has(s.key);
+}
+
 /** Compact name for a chip: "CDS 2024-25", "IPEDS Fall 2024", "Scorecard". */
 export function shortSource(s: CitedSource): string {
   const name =
@@ -228,7 +242,7 @@ export function lineageFor(path: FieldPath, school: School | undefined, meta: Da
     // admissions block's document kind applies only to values without one.
     ...(rec?.source === "college-site" && rec.edition
       ? { sourceKind: "cds" as const, cdsEdition: rec.edition, document: `Common Data Set ${rec.edition}` }
-      : rec?.source === "college-site" && school?.reported?.admissions
+      : rec?.source === "college-site" && school?.reported?.admissions && !IDENTITY_PATH.test(path)
         ? { sourceKind: school.reported.admissions.source_kind }
         : {}),
     ...newestGroupCitation(path, school),

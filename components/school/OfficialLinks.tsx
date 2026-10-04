@@ -2,18 +2,17 @@ import { ExternalLink } from "lucide-react";
 import type { School } from "@/lib/types";
 import type { FieldPath } from "@/lib/fields";
 import { linkHost } from "@/lib/links";
-import { SourceNote } from "@/components/sources/SourceNote";
 
-interface Pill {
+export interface LinkPill {
   label: string;
   href: string;
   field: FieldPath;
 }
 
 /** Website · Admissions · Apply · Visit (or Virtual tour) · Financial aid, skipping whichever the college lacks. */
-function pillsFor(school: School): Pill[] {
+export function officialLinkPills(school: School): LinkPill[] {
   const l = school.links;
-  const pills: (Pill | null)[] = [
+  const pills: (LinkPill | null)[] = [
     l?.website ? { label: "Website", href: l.website, field: "links.website" } : null,
     l?.admissions ? { label: "Admissions", href: l.admissions, field: "links.admissions" } : null,
     l?.apply ? { label: "Apply", href: l.apply, field: "links.apply" } : null,
@@ -24,17 +23,17 @@ function pillsFor(school: School): Pill[] {
         : null,
     l?.financial_aid ? { label: "Financial aid", href: l.financial_aid, field: "links.financial_aid" } : null,
   ];
-  return pills.filter((p): p is Pill => p !== null);
+  return pills.filter((p): p is LinkPill => p !== null);
 }
 
 /**
  * Website · Admissions · Apply · Visit · Financial aid, as outlined pill links (specs/school-identity/links.md,
  * Display). Each opens the college's own site in a new tab, with its domain as the tooltip; missing links are left
  * out, never shown disabled. Scrolls sideways on phones like the hero's "Known for" chips; wraps normally from `sm:`
- * up. Nothing when the college has none of these (and then no source note either).
+ * up. Their sources are in the row's (i) (HeroIdentity), not a footnote line. Nothing when the college has none.
  */
 export function OfficialLinks({ school }: { school: School }) {
-  const pills = pillsFor(school);
+  const pills = officialLinkPills(school);
   if (pills.length === 0) return null;
   return (
     <div className="min-w-0 max-sm:w-full">
@@ -53,7 +52,6 @@ export function OfficialLinks({ school }: { school: School }) {
           </a>
         ))}
       </div>
-      <SourceNote fields={[...new Set(pills.map((p) => p.field))]} school={school} className="mt-2" />
     </div>
   );
 }

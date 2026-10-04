@@ -96,9 +96,10 @@ The profile URL is built at render time from the handle (`https://www.instagram.
 - **Profile hero**: a row of small round icon buttons after the [official links](links.md) row (or at the end of the
   same row on desktop): Instagram, YouTube, TikTok, X, Facebook, LinkedIn, in that order (the order students use
   them, not alphabetical), each with `aria-label="{College} on Instagram"` and `rel="noopener"`. Icons are inline
-  SVG in `components/school/SocialIcons.tsx` (the networks' simple marks, drawn in the current text color: they are
-  tiny, monochrome, and identify a link target, which is how every site shows them). Nothing when the college has
-  no account.
+  SVG in `components/school/SocialIcons.tsx`. Built monochrome first; on 2026-10-04 the owner chose the networks'
+  own colors (Instagram's gradient tile, YouTube's red button, Facebook's and LinkedIn's blue, TikTok's cyan and red
+  edges), with the black of X and TikTok turning white in dark mode. Their sources are in the row's (i) with the
+  links' (see links.md). Nothing when the college has no account.
 - **Compact header**: nothing (the Website link is enough there).
 - **Compare**: no row. Six icons per college in a table cell is noise.
 - `/data`: Wikidata joins the source list with its retrieval date and a line that corrections belong on Wikidata.

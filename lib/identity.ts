@@ -52,6 +52,8 @@ export function applyIdentity(school: School, inputs: IdentityInputs, hdRow?: Re
   applySocial(school, inputs.wikidata.get(id), inputs.probe.get(id));
   applyBrand(school, { colors: inputs.brandColors.get(id), logo: inputs.brandLogos.get(id), override: inputs.brandOverrides[id] });
   applyIdentityOverride(school, inputs.overrides[id]);
+  // Appliers clear their own records first, which can leave `{}` behind; sync-data never stores an empty lineage.
+  if (school.lineage && !Object.keys(school.lineage).length) delete school.lineage;
   return school;
 }
 

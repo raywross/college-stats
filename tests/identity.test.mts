@@ -29,6 +29,16 @@ test("applying identity twice gives the same school as applying it once", () => 
   }
 });
 
+test("applying identity never leaves an empty lineage behind", () => {
+  const inputs = loadIdentityInputs(ROOT);
+  const bare = schools.filter((s) => !s.lineage).slice(0, 50);
+  assert.ok(bare.length > 0);
+  for (const s of bare) {
+    const out = applyIdentity(structuredClone(s), inputs);
+    assert.ok(out.lineage === undefined || Object.keys(out.lineage).length > 0, `${s.name}: empty lineage`);
+  }
+});
+
 test("an override's links/social/brand part is applied with its lineage; the rest is left to sync-data", () => {
   const school = structuredClone(byId.get(UGA)!);
   const before = structuredClone(school);

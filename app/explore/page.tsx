@@ -27,6 +27,7 @@ import { FACTOR_FILTERS } from "@/lib/factors";
 import { RESIDENCY_FILTERS } from "@/lib/cds/residency-display";
 import { hasHonorsProgram } from "@/lib/cds/academics-display";
 import { TRANSFER_FILTER } from "@/lib/cds/transfer-display";
+import { MIN_GREEK_OPTIONS, meetsGreekThreshold } from "@/lib/cds/greek-display";
 import { LOGISTICS_FILTERS } from "@/lib/cds/application-logistics-display";
 import { DESIGNATION_KEYS, RESEARCH_TIERS, SETTING_GROUPS, designationsOf, isOpportunityCollege } from "@/lib/campus-profile";
 import { DIVISION_FILTERS, ROTC_BRANCHES, divisionFilterOf } from "@/lib/campus-services";
@@ -126,6 +127,7 @@ function buildFacets({ getAllSchools, histogram }: Dataset): FilterFacets {
     residency: Object.fromEntries(RESIDENCY_FILTERS.map((f) => [f.param, all.filter(f.test).length])) as FilterFacets["residency"],
     honors: all.filter(hasHonorsProgram).length,
     transfers: all.filter(TRANSFER_FILTER.test).length,
+    minGreek: Object.fromEntries(MIN_GREEK_OPTIONS.map((n) => [n, all.filter((s) => meetsGreekThreshold(s, n)).length])),
     logistics: Object.fromEntries(LOGISTICS_FILTERS.map((f) => [f.param, all.filter(f.test).length])) as FilterFacets["logistics"],
     campus,
     states: Object.keys(states).sort().map((value) => ({ value, count: states[value] })),

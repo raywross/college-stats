@@ -18,6 +18,7 @@ import { Residence } from "@/components/school/Residence";
 import { Transfers } from "@/components/school/Transfers";
 import { StandoutChip } from "@/components/school/StandoutChip";
 import { CampusLife } from "@/components/school/CampusLife";
+import { GreekLife } from "@/components/school/GreekLife";
 import { CampusServices } from "@/components/school/CampusServices";
 
 type Props = { params: Promise<{ id: string }> };
@@ -215,6 +216,7 @@ export default async function StudentsPage({ params }: Props) {
         <Panel id="campus" domain="size" eyebrow="Campus life" title="Housing, sports, and programs" takeaway={campusTakeaway(school)} fields={[]} className="mt-14 sm:mt-20">
           <CampusLife school={school} />
           <CampusServices school={school} recentMoves={recentMoves} />
+          <GreekLife school={school} />
         </Panel>
       )}
     </TopicPage>

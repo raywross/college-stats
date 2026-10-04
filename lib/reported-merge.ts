@@ -24,6 +24,7 @@ import { applyCostAndDebt } from "./cds/cost-and-debt.ts";
 import { applyFinancialAid } from "./cds/financial-aid.ts";
 import { mergeAcademics } from "./cds/academics.ts";
 import { mergeTransfer } from "./cds/transfer.ts";
+import { mergeGreek } from "./cds/greek.ts";
 import { mergeApplicationLogistics } from "./cds/application-logistics.ts";
 
 /**
@@ -86,6 +87,8 @@ const RECORD_STEPS: readonly ((school: School, record: CollegeRecord | undefined
   mergeAcademics,
   // specs/data-expansion/cds-transfer.md: transfer applicants, admits, and what transfers need.
   mergeTransfer,
+  // specs/greek-life.md phase 1: F1 participation percentages and F4 fraternity/sorority housing.
+  mergeGreek,
   // specs/data-expansion/cds-application-logistics.md: deadlines, notification, reply, deposit, gap year, units.
   mergeApplicationLogistics,
 ];

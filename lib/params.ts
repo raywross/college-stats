@@ -104,6 +104,8 @@ export function parseFilters(params: Params): SearchFilters {
     honors: str(params.honors) === "1" || undefined,
     // Admits transfers (lib/cds/transfer-display.ts): CDS D1/D2, else the federal transfer-in count.
     transfers: str(params.transfers) === "1" || undefined,
+    // Greek life (lib/cds/greek-display.ts): stored as a share (0–1); the URL holds a percent (minGreek=20).
+    minGreek: ((v) => (v !== undefined && v > 0 ? v / 100 : undefined))(n(params.minGreek)),
     // Allows deferred admission, a gap year (lib/cds/application-logistics-display.ts).
     gapYear: str(params.gapYear) === "1" || undefined,
     sortBy: sortBy && SORT_KEYS.includes(sortBy) ? sortBy : "applicants",
@@ -166,6 +168,7 @@ export const FILTER_KEYS = [
   "intlAid",
   "honors",
   "transfers",
+  "minGreek",
   "gapYear",
   ...INDICATOR_KEYS.map((k) => INDICATORS[k].param),
 ] as const;

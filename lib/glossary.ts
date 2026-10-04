@@ -1080,6 +1080,14 @@ const entries = {
     long: "A unit is one year of a subject. Lab science units are part of the science count, not extra.",
     category: "Admissions",
   },
+  // CDS Greek life, phase 1 (specs/greek-life.md; lib/cds/greek.ts).
+  "greek-life": {
+    term: "Fraternity / sorority participation",
+    short: "The share of undergraduate men in a fraternity and women in a sorority, as the college reports them separately in its Common Data Set. The two percentages are never added together.",
+    long: "Each percentage is reported for first-year students and for all undergraduates; a blank means the college didn't answer, not 0%. Housing is reported separately (whether the college offers fraternity or sorority housing) and doesn't imply a participation rate, or the reverse.",
+    why: "How big a part Greek organizations play varies enormously by college, from none to a majority of students, and the two sides (fraternities, sororities) can differ a lot at the same college.",
+    category: "School types",
+  },
 } satisfies Record<string, GlossaryEntry>;
 
 export type TermKey = keyof typeof entries;

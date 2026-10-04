@@ -443,6 +443,13 @@ export const FIELDS = {
   "reported.transfer.min_hs_gpa": reported("Minimum high school GPA for transfers (college-reported)"),
   "reported.transfer.min_college_gpa": reported("Minimum college GPA for transfers (college-reported)"),
   "reported.transfer.dates": reported("Transfer application dates (college-reported)"),
+  // CDS Greek life, phase 1 (specs/greek-life.md; lib/cds/greek.ts): one lineage record per field, from F1 (fall) and
+  // F4 (edition). Partial coverage: never in METRICS, ranks, medians, sorts, or "Known for" (tests/cds-greek.test.mts).
+  "reported.greek.frat_pct_first_year": reported("First-year men who join fraternities (Common Data Set F1)", "campus"),
+  "reported.greek.frat_pct_undergrad": reported("Undergraduate men who join fraternities (Common Data Set F1)", "campus"),
+  "reported.greek.sor_pct_first_year": reported("First-year women who join sororities (Common Data Set F1)", "campus"),
+  "reported.greek.sor_pct_undergrad": reported("Undergraduate women who join sororities (Common Data Set F1)", "campus"),
+  "reported.greek.housing": reported("Fraternity/sorority housing (Common Data Set F4)", "campus"),
   // CDS application logistics and high school preparation (specs/data-expansion/cds-application-logistics.md;
   // lib/cds/application-logistics.ts): one lineage record per block from the newest CDS. Logistics years are the
   // cycle ("Fall 2026 cycle"); high school preparation's is the edition ("2025–26").

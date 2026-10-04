@@ -380,6 +380,8 @@ export interface ReportedData {
   academics?: ReportedAcademics;
   /** CDS section D, transfer admission (specs/data-expansion/cds-transfer.md; lib/cds/transfer.ts). */
   transfer?: ReportedTransfer;
+  /** CDS F1/F4, Greek life phase 1 (specs/greek-life.md; lib/cds/greek.ts). */
+  greek?: ReportedGreek;
   /** CDS C13–C18, the regular round (specs/data-expansion/cds-application-logistics.md; lib/cds/application-logistics.ts). */
   admissions_logistics?: ReportedLogistics;
   /** CDS C3–C5, high school preparation (same spec and module). */
@@ -957,6 +959,25 @@ export interface ReportedTransfer {
 }
 
 /**
+ * CDS Greek life, phase 1 (specs/greek-life.md; lib/cds/greek.ts): F1's participation percentages (men in
+ * fraternities, women in sororities, each for first-years and all undergrads) and F4's fraternity/sorority housing
+ * checkbox. Each value carries its own lineage record and year (F1: the fall; `housing`: the edition). Partial
+ * coverage: never in ranks, medians, sorts, or "Known for" until enough colleges report it (spec Open questions).
+ */
+export interface ReportedGreek {
+  /** F.102: percent of first-year men who join fraternities. */
+  frat_pct_first_year: number | null;
+  /** F.110: percent of all undergraduate men who join fraternities. */
+  frat_pct_undergrad: number | null;
+  /** F.103: percent of first-year women who join sororities. */
+  sor_pct_first_year: number | null;
+  /** F.111: percent of all undergraduate women who join sororities. */
+  sor_pct_undergrad: number | null;
+  /** F.408: fraternity/sorority housing. A checked box stores `true`; unchecked or blank stores `null` (never `false`). */
+  housing: boolean | null;
+}
+
+/**
  * A month/day with no year (the year lives in the field's lineage record, e.g. "Fall 2026 cycle"). Both null means the
  * cell held free text; the verbatim text is in the lineage quote. Same shape as lib/cds-dates.ts `CdsDate`.
  */
@@ -1406,6 +1427,8 @@ export interface SearchFilters {
   honors?: boolean;
   /** Admits transfer students (lib/cds/transfer-display.ts): the CDS D1/D2 answer, else the federal transfer-in count. */
   transfers?: boolean;
+  /** Fraternity or sorority participation at least this share (0–1) of undergrad men or women (lib/cds/greek-display.ts). Colleges that don't report either percentage are excluded. */
+  minGreek?: number;
   /** Allows deferred admission, a gap year (CDS C18; lib/cds/application-logistics-display.ts). */
   gapYear?: boolean;
   sortBy?: SortKey;

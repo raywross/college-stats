@@ -1,6 +1,9 @@
 # LGBTQ+ Life
 
-> Status: **planned** (not built). Research 2026-09-29: IPEDS 2023 data files and dictionaries (every figure below
+> Status: **planned**, with **phase 1 built** (2026-10-03, branch `feature/campus-life-lgbtq`): the IPEDS another-gender counts for every
+> college and the first state-law line (Texas SB 17), shown in an "LGBTQ+ life" block in the students page's Campus life
+> section and beside the men/women shares ([As built](#as-built-phase-1)). Phases 2 (other states) through 5
+> (policies, centers, conduct codes, pilot, rollout) are still planned, so the spec stays on the roadmap. Research 2026-09-29: IPEDS 2023 data files and dictionaries (every figure below
 > about IPEDS was computed from them), Common Data Set templates, the national directories named here, and a
 > per-school look at UT Austin with contrasting colleges. Findings are verified unless marked *unverified*.
 > Companions: [religious-life.md](religious-life.md) (its source tiers, crawl strategy, and access rules apply here
@@ -62,13 +65,24 @@ Across our 1,893 colleges, fall 2023 undergrads: **206** report at least one stu
 report 0, and **1,435 (76%) leave it blank.** Among the 206, the median share is about 1%, and a few art and
 liberal-arts colleges are far higher (Hampshire 25%, Reed 22%).
 
+**Fall 2024 (EF2024A, what the site shows; checked 2026-10-03):** 229 colleges report a count (all ≥ 5), 219 report 0,
+**327 withheld** (flag "S", below), 1,117 don't collect it, and 1 isn't in the file. First-time applicants (ADM2024):
+345 colleges report a number. The fall 2023 figures above still check out against EF2023A: 206 / 252 / 1,430 blank
+(1,162 not collected + 268 withheld) + 5 not in the file = the 1,435 above.
+
+**NCES stopped collecting it.** From the 2025–26 surveys, "pursuant to Executive Order (dated January 20, 2025) … non-binary
+sex (i.e., Another Gender) will no longer be collected" (IPEDS 2025–26 changes page), in Fall Enrollment, Admissions,
+and every other survey. Fall 2024 is the last year. The sync reads the newest file that still has the columns and, once
+EF2025A/ADM2025 arrive without them, cites the older file and its fall in each value's lineage record.
+
 It counts students whose records hold a gender other than man or woman (nonbinary, for example). It does **not**
 count transgender students overall (a trans woman is counted as a woman), and it says nothing about sexual
 orientation. The site's existing gender balance ([student-body.md](data-expansion/student-body.md)) always adds to
 100% men and women, because IPEDS has colleges assign unknown and another-gender students to one of the two for its
 main tables; the another-gender count belongs next to that figure, with a note saying so. Display rules:
 - **Blank** → "Not collected by this college." **0** → "0 reported. The college may not record other genders." Never
-  treat either as a finding about students.
+  treat either as a finding about students. **Withheld** (blank with flag "S", since fall 2023) → "Not reported: the
+  college records other genders but leaves these counts blank when any is under 5, for privacy."
 - Show a count and share only above a small-number threshold (proposal: 10 students) so a small college's figure
   can't point at individuals; below it, "fewer than 10."
 - **Never ranked, averaged, or turned into a filter or "Known for" chip.** Colleges collect it so differently that a
@@ -164,20 +178,24 @@ Each field is registered in `lib/fields.ts` ([data-lineage.md](data-lineage.md))
 source kinds that show the page and the date checked.
 
 ## Where it appears
-- **Profile, the students page's "Campus life" section, "LGBTQ+ life" block:** support on campus (center, groups), the policy checklist
+- **Profile, the students page's "Campus life" section, "LGBTQ+ life" block** (built: the gender counts and the
+  state-law line; the rest is planned): support on campus (center, groups), the policy checklist
   (each item linked and dated), the gender counts with their caveat, the state-law line for public colleges, and,
   where present, "What the student conduct policy says." Hidden when there's nothing verified.
 - **Explore filters (policy facts only):** "Has an LGBTQ+ center," "Gender-inclusive housing," "Nondiscrimination
   covers gender identity," and "Conduct code restricts same-sex relationships" (to exclude). No filter on counts.
-- **Compare:** the checklist rows side by side, each cell dated.
+- **Beside the men/women shares** ("Who they are", built): the another-gender count under the same rules, with the
+  100% note.
+- **Compare:** the checklist rows side by side, each cell dated (planned; the counts never get a row).
 - **Glossary:** another gender, gender-inclusive housing, chosen name policy, nondiscrimination policy, LGBTQ+
   resource center, Title IX religious exemption, "as of" dates on policies.
 
 ## Phases
-1. **IPEDS counts** for all colleges, with the display rules and glossary terms. Adds one file to the sync (fall
+1. **Built 2026-10-03.** **IPEDS counts** for all colleges, with the display rules and glossary terms. Adds one file to the sync (fall
    enrollment `EF{Y}A`, undergrad rows; ~3 MB zipped); the admissions file (`ADM{Y}`) is already downloaded. Cheap;
    ship first.
-2. **State-law table** for public colleges (Texas first, then each reported state after reading its statute).
+2. **State-law table** for public colleges (Texas first, then each reported state after reading its statute). Texas
+   built 2026-10-03; the other states are planned.
 3. **Clearinghouse and directory leads** matched to `unit_id`s, plus permission requests (Beemyn, Consortium, oSTEM).
 4. **Pilot of 25 colleges:** UT Austin, UCLA, Columbia, Harvard, BYU, a CCCU college, a Catholic college, an HBCU, a
    historically women's college (Smith), Reed, a large public in Florida, a large public in a state without such
@@ -186,7 +204,14 @@ source kinds that show the page and the date checked.
 5. **Rollout** of what the pilot supports, with the yearly re-check.
 
 ## Open questions
-1. Small-number threshold for counts: 10, or IPEDS's own practice? Check whether NCES already suppresses small cells.
+1. ~~Small-number threshold for counts: 10, or IPEDS's own practice?~~ **Answered 2026-10-03.** NCES has the colleges
+   suppress at the source: from the 2023–24 Fall Enrollment form on, a college that collects another gender but would
+   have "a value of less than 5 students" in any cell answers "No, some cells will have a value of less than 5
+   students" and leaves every another-gender cell blank (form instructions, 2023–24 survey package). The data files
+   flag those blanks "S" (not listed in the dictionary's imputation codes, but 657 EF2023A rows carry it, and no count
+   of 1–4 appears in EF2023A, EF2024A, ADM2023, or ADM2024; EF2022A, before the rule, has 150 undergraduate counts of 1–4). So
+   published counts are 0 or ≥ 5. We keep our own threshold of 10 on top ("fewer than 10" for 5–9), as proposed, and
+   apply it to gender unknown and the applicant counts too.
 2. Title IX religious exemptions: ED's Office for Civil Rights has published exemption request and response letters
    since 2016, but since 2020 a college can claim the exemption without asking first, so the list is incomplete
    (*unverified*: page blocks scripts; confirm by hand). Recommendation, as in religious life: don't show it; use it
@@ -197,6 +222,35 @@ source kinds that show the page and the date checked.
    adopt only college-published figures, as tier A, with the survey's response rate.
 5. Wording review: have LGBTQ+ student-affairs professionals (the Consortium) review labels and glossary text before
    launch.
+
+## As built (phase 1)
+- **Data:** `school.lgbtq = { gender, admissions, state_law }` (`lib/types.ts` `LgbtqLife`; null when none applies).
+  `gender = { status: "reported" | "withheld" | "not_collected", another, unknown, undergrads }` from EF{Y}A level 2
+  (all undergraduates) `EFGNDRAN`/`XEFGNDRAN`/`EFGNDRUN`/`EFTOTLT`, read in the same pivot as the transfer-in totals.
+  `admissions = { status, applicants, admitted, enrolled }` from ADM{Y} `APPLCNAN`/`ADMSSNAN`/`ENRLAN`, the applicants
+  cell's flag deciding the status. The spec's `collected: boolean` became `status` because withheld is a third state;
+  the year comes from lineage (field vintage, or a lineage record once the newest file lacks the columns), not a
+  stored `year`. Readers and display rules: `lib/lgbtq.ts`; sync step: `scripts/lib/lgbtq-sync.mts`.
+- **Fields:** `lgbtq.gender` (`ipeds-ef-a`), `lgbtq.admissions` (`ipeds-adm`), `lgbtq.state_law` (new source
+  `state-law`, a per-document source: each value's lineage record carries the statute URL and "In effect since …").
+- **State laws:** `data/state-laws.json`, hand-kept, validated by the sync (`validateStateLaws`: two-letter state, one
+  law per state, public only, statute, act, effective and checked dates, https link, summary ≤ 240 characters). Texas
+  only: Texas Education Code §51.3525, added by Acts 2023, 88th Leg., R.S., Ch. 922 (S.B. 17), Sec. 1, eff. January 1,
+  2024 (read 2026-10-03 in the enrolled bill, capitol.texas.gov SB00017F, and the current code text, which is
+  unamended). Summary: "Texas public colleges may not have diversity, equity, and inclusion offices, including offices
+  for programs designed around gender identity or sexual orientation; courses, research, and registered student groups
+  are exempt." Applied to the 42 public Texas colleges on the site.
+- **Profile:** "LGBTQ+ life" block (`components/school/LgbtqLife.tsx`) in Campus life: the undergraduate count (count
+  and share at 10+, "fewer than 10", or the blank/0/withheld sentence), gender unknown, first-year applicants of
+  another gender (shown only when reported or withheld; "not collected" is already said once), the caveat, and the
+  state-law line with the statute link. Beside the men/women shares in "Who they are": "Another gender: …" plus the
+  note that men and women add up to 100% because federal data assigns another or unknown gender to one of the two.
+  Campus life now shows (and its nav link) whenever this block has something.
+- **Never ranked, averaged, filtered, compared, or "Known for":** no metric, filter, Compare row, or chip;
+  `tests/lgbtq.test.mts` fails if the metrics, params, indicators, dataset, compare, insights, Explore, Compare, or
+  Home code mentions these fields (checked by breaking it on purpose).
+- **Glossary:** another gender, gender unknown, state law on public colleges. The other terms in "Where it appears"
+  wait for the phases that show them.
 
 ## Rejected
 Campus Pride Index and its "Worst List" (offline, pay-to-participate self-assessment, not updated since 2023);

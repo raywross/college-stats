@@ -274,6 +274,12 @@ export interface School {
    * (public), FASB (private nonprofit), or for-profit. Null when the college's finance survey isn't in the file yet.
    */
   finances?: SchoolFinances | null;
+  /**
+   * LGBTQ+ life (specs/lgbtq-life.md, phase 1; lib/lgbtq.ts): the federal "another gender" counts and, at public
+   * colleges in a state with a law in data/state-laws.json, that law. Never ranked, averaged, filtered, or turned into
+   * a "Known for" chip.
+   */
+  lgbtq?: LgbtqLife | null;
   campus?: {
     /** Athletics (IPEDS IC; lib/campus-services.ts). Null when the college didn't answer. */
     athletics?: Athletics | null;
@@ -1148,6 +1154,58 @@ export interface ResidencyPrices {
  * One entering group's status 8 years after starting (IPEDS Outcome Measures): shares of its adjusted cohort, summing to
  * 1. Rates are null when the cohort is under 30 students (lib/outcome-measures.ts MIN_COHORT).
  */
+/**
+ * Whether a college reported its "another gender" count (IPEDS imputation flag): `reported` (a count, 0 included),
+ * `withheld` (it records other genders but left the cells blank because at least one count was under 5, flag "S"),
+ * or `not_collected` (it doesn't record other genders, flag "A"). Blank and 0 never mean the same thing.
+ */
+export type GenderReportStatus = "reported" | "withheld" | "not_collected";
+
+/** Fall undergraduates (all, IPEDS EF{Y}A level 2) of another gender and of unknown gender (lib/lgbtq.ts). */
+export interface GenderDetail {
+  status: GenderReportStatus;
+  /** Undergraduates whose records hold a gender other than man or woman; null unless `status` is "reported". */
+  another: number | null;
+  /** Undergraduates whose gender the college doesn't know (reported separately, by every college). */
+  unknown: number | null;
+  /** All undergraduates that fall, the denominator for the share. */
+  undergrads: number | null;
+}
+
+/** First-time applicants, admits, and enrollees of another gender (IPEDS ADM `APPLCNAN`, `ADMSSNAN`, `ENRLAN`). */
+export interface GenderAdmissions {
+  status: GenderReportStatus;
+  applicants: number | null;
+  admitted: number | null;
+  enrolled: number | null;
+}
+
+/** A state law that applies to the college because it's public (data/state-laws.json; specs/lgbtq-life.md). */
+export interface StateLaw {
+  state: string;
+  /** Short name, e.g. "Texas SB 17 (2023)". */
+  name: string;
+  /** The codified section, e.g. "Texas Education Code §51.3525". */
+  statute: string;
+  /** Session law citation, e.g. "Acts 2023, 88th Leg., R.S., Ch. 922 (S.B. 17)". */
+  act: string;
+  /** ISO date the law took effect. */
+  effective: string;
+  /** One neutral sentence, checked against the statute text. */
+  summary: string;
+  /** The statute text. */
+  url: string;
+  /** ISO date the statute was last read. */
+  checked: string;
+}
+
+export interface LgbtqLife {
+  gender: GenderDetail | null;
+  /** Null when the college isn't in the admissions file (open admission) or the file has no such columns. */
+  admissions: GenderAdmissions | null;
+  state_law: StateLaw | null;
+}
+
 /** New transfer-in undergraduates in one fall (IPEDS EF{Y}A levels 19, 39, 59; lib/transfers.ts). */
 export interface TransferIn {
   count: number;
@@ -1250,7 +1308,9 @@ export type SourceKey = "scorecard" | "ipeds-adm" | "ipeds-sfa" | "ipeds-ic" | "
   /** IPEDS Graduation Rates, Pell and subsidized-loan file (GR{Y}_PELL_SSL; specs/data-expansion/graduation-by-group.md). */
   | "ipeds-gr"
   /** College Scorecard Field of Study bulk CSV: earnings and debt by 4-digit CIP (specs/data-expansion/field-of-study.md). */
-  | "scorecard-fos";
+  | "scorecard-fos"
+  /** State statutes that apply to public colleges, read by hand (data/state-laws.json; specs/lgbtq-life.md). */
+  | "state-law";
 /** Race/ethnicity groups for graduation rates (lib/graduation-groups.ts RACE_GROUPS). */
 export type GradRaceGroup = "white" | "asian" | "hispanic" | "black" | "two_or_more" | "international" | "aian" | "nhpi";
 

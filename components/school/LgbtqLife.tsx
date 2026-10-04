@@ -5,11 +5,13 @@ import type { Cited } from "@/lib/lineage";
 import { WITHHELD_TEXT, ZERO_TEXT, countDisplay, countText, longDate, smallCount } from "@/lib/lgbtq";
 import { citeListing, listingsFor, type PolicyKey } from "@/lib/directories";
 import { policyChecklist } from "@/lib/lgbtq-policy";
+import { citePage, isFresh, policyRows } from "@/lib/campus-pages";
 import { num, pctSmart } from "@/lib/format";
 import { DOMAINS } from "@/lib/metrics";
 import type { TermKey } from "@/lib/glossary";
 import { InfoTip, SourceTip } from "@/components/ui/info-tip";
 import { CreditedList } from "./CreditedList";
+import { LgbtqPolicies } from "./CampusPages";
 
 /** A glossary term for the checklist items that have a dedicated one; the rest fall back to the general term. */
 const POLICY_TERMS: Partial<Record<PolicyKey, TermKey>> = {
@@ -45,10 +47,17 @@ export function LgbtqLife({
   const a = school.lgbtq?.admissions ?? null;
   const law = school.lgbtq?.state_law ?? null;
   const listings = listingsFor(detail?.tables.directories?.rows, "lgbtq");
-  const centers = listings.filter((l) => l.credit.domain === "lgbtq" && l.credit.kind === "center");
   const groups = listings.filter((l) => l.credit.domain === "lgbtq" && l.credit.kind === "group");
   const checklist = policyChecklist(school.lgbtq, listings);
-  if (!g && !law && !centers.length && !groups.length && !checklist.length) return null;
+  // A college-page center (tier A, checked by the campus pilot) replaces a Consortium-list center (tier D) for the
+  // same college rather than showing both — one place for "is there a center" (specs/lgbtq-life.md "Where it
+  // appears"; this integration pass).
+  const now = new Date().toISOString().slice(0, 10);
+  const pageCenter = detail?.tables.campus_pages?.rows.lgbtq?.center;
+  const freshPageCenter = pageCenter && isFresh(pageCenter.checked, now) ? pageCenter : null;
+  const centers = freshPageCenter ? [] : listings.filter((l) => l.credit.domain === "lgbtq" && l.credit.kind === "center");
+  const hasConduct = policyRows(detail?.tables.campus_pages?.rows ?? null, now).some((p) => p.key === "conduct_restriction" && p.value === "yes");
+  if (!g && !law && !freshPageCenter && !centers.length && !groups.length && !checklist.length && !hasConduct) return null;
   const another = g ? countDisplay(g.status, g.another, g.undergrads) : null;
   const unknown = g ? smallCount(g.unknown) : null;
   // Applicants: shown when the college reported them or withheld them; "not collected" is already said above.
@@ -59,16 +68,24 @@ export function LgbtqLife({
   return (
     <div id="lgbtq" className="rounded-3xl border bg-card p-4 sm:p-6">
       <h3 className="mb-5 font-display text-lg font-bold">LGBTQ+ life</h3>
-      {(centers.length > 0 || groups.length > 0) && (
+      {(freshPageCenter || centers.length > 0 || groups.length > 0) && (
         <div className="mb-5">
           <p className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
             <Users className="size-4" style={{ color: DOMAINS.size.color }} /> Support on campus <InfoTip term="lgbtq-resource-center" />
           </p>
+          {freshPageCenter && (
+            <p className="flex items-center gap-1.5 text-sm">
+              {freshPageCenter.status === "open" ? freshPageCenter.name : `${freshPageCenter.name}: closed${freshPageCenter.closed ? ` (${freshPageCenter.closed})` : ""}`}
+              <SourceTip cited={citePage(freshPageCenter, school.name, "LGBTQ+ center or office")} />
+            </p>
+          )}
           {centers.length > 0 && <CreditedList items={centers} className="space-y-1.5" />}
           {groups.length > 0 && <CreditedList items={groups} className="mt-1.5 space-y-1.5" />}
-          <p className="mt-1.5 text-[11px] text-muted-foreground">
-            Directories lag closures: a listed center may have since closed, especially under a state law like the one below.
-          </p>
+          {!freshPageCenter && (
+            <p className="mt-1.5 text-[11px] text-muted-foreground">
+              Directories lag closures: a listed center may have since closed, especially under a state law like the one below.
+            </p>
+          )}
         </div>
       )}
       {checklist.length > 0 && (
@@ -95,6 +112,7 @@ export function LgbtqLife({
           </ul>
         </div>
       )}
+      <LgbtqPolicies school={school} detail={detail} bare />
       {g && another && (
         <div className="grid gap-6 border-t pt-4 sm:grid-cols-2">
           <div>

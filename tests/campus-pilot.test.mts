@@ -8,15 +8,17 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import type Anthropic from "@anthropic-ai/sdk";
-import type { DatasetMeta } from "../lib/types";
+import type { DatasetMeta, School } from "../lib/types";
 import { campusPagesProblems, checkCampusPages, greekCouncils, isFresh, policyRows, countLabel, type CampusPagesRows } from "../lib/campus-pages.ts";
-import { checkDirectoryRows } from "../lib/directories.ts";
+import { checkDirectoryRows, type CreditedListing } from "../lib/directories.ts";
 import { validateDetail } from "../lib/detail.ts";
+import { validateSchool } from "../lib/lineage.ts";
+import { policyChecklist } from "../lib/lgbtq-policy.ts";
 import { fslLinks, keywordWindows, quoteOnPage, shortQuote, type Page, type PageFetcher } from "../scripts/lib/campus-pilot/pages.mts";
 import { Budget, BudgetSpent, type CollegeRef, type Ctx } from "../scripts/lib/campus-pilot/llm.mts";
 import { runCollege } from "../scripts/lib/campus-pilot/run.mts";
 import { publishable } from "../scripts/lib/campus-pilot/files.mts";
-import { NONE_HELD, campusPagesDetails, pilotDirectoryFiles } from "../scripts/lib/campus-pilot/merge.mts";
+import { NONE_HELD, applyLgbtqPolicies, campusPagesDetails, pilotDirectoryFiles } from "../scripts/lib/campus-pilot/merge.mts";
 import { directoryDetails } from "../scripts/lib/directories/merge.mts";
 import type { ModelClient } from "../scripts/lib/college-reported/models.mts";
 
@@ -373,4 +375,59 @@ test("held-back fact types never reach the dataset, on the committed pilot resul
   // And withoutHeld keeps the facts that passed.
   const kept = JSON.stringify(withoutHeld(pages));
   assert.ok(kept.includes('"councils"'));
+});
+
+/* ------------------------------------------------------------------ */
+/* lgbtq.policies: the pilot's facts into the dataset (2026-10-04)     */
+/* ------------------------------------------------------------------ */
+
+test("applyLgbtqPolicies merges UCLA's real pilot facts into school.lgbtq.policies, with lineage, and a tier A fact beats a tier D lead for the same key", async () => {
+  const { readFileSync } = await import("node:fs");
+  const schools: School[] = JSON.parse(readFileSync(new URL("../data/schools.json", import.meta.url), "utf8"));
+  const meta: DatasetMeta = JSON.parse(readFileSync(new URL("../data/meta.json", import.meta.url), "utf8"));
+  const pages = JSON.parse(readFileSync(new URL("../data/campus-pages.json", import.meta.url), "utf8"));
+  const ucla = schools.find((s) => s.unit_id === "110662")!;
+  const uclaPage = pages.colleges.find((c: { unit_id: string }) => c.unit_id === "110662");
+  assert.ok(uclaPage?.lgbtq?.policies?.some((p: { key: string }) => p.key === "name_on_records"), "fixture needs UCLA's real pilot policies");
+
+  const [merged] = applyLgbtqPolicies([structuredClone(ucla)], pages);
+  // health_plan_transition is held back (specs/college-reported-data.md "Campus-life pilot, as built", HELD_BACK);
+  // name_on_records and inclusive_restrooms pass.
+  assert.deepEqual(merged.lgbtq!.policies!.map((p) => p.key).sort(), ["inclusive_restrooms", "name_on_records"]);
+  assert.equal(merged.lineage!["lgbtq.policies"]!.source, "policy-page");
+  assert.deepEqual(validateSchool(merged, meta), []);
+
+  // Idempotent: re-merging onto the already-merged school changes nothing.
+  const [again] = applyLgbtqPolicies([merged], pages);
+  assert.deepEqual(again, merged);
+
+  // The lineage guard fails without a source: deleting the record makes validateSchool object.
+  const unlineaged = structuredClone(merged);
+  delete unlineaged.lineage!["lgbtq.policies"];
+  const problems = validateSchool(unlineaged, meta);
+  assert.equal(problems.length, 1);
+  assert.match(problems[0], /lgbtq\.policies.*policy-page/);
+
+  // Precedence: UCLA is also on the Trans Policy Clearinghouse's name/pronoun list (specs/lgbtq-life.md phase 3,
+  // `tpc-name-pronouns`); the college's own page (tier A, "yes") replaces that tier D lead for the same key.
+  const tierD: CreditedListing = {
+    org: "tpc-name-pronouns",
+    name: "University of California, Los Angeles",
+    credit: {
+      organization: "Trans Policy Clearinghouse",
+      publisher: "Trans Policy Clearinghouse",
+      list_url: "https://www.gennyb.com/research/trans-supportive-campus-policies/name-and-pronouns/",
+      read: "2026-10-04",
+      tier: "D",
+      domain: "lgbtq",
+      kind: "policy",
+      policy: "name_on_records",
+    },
+    tier: "D",
+  };
+  const checklist = policyChecklist(merged.lgbtq, [tierD]);
+  const row = checklist.find((i) => i.key === "name_on_records")!;
+  assert.equal(row.source, "tier-a");
+  assert.match(row.text, /college's own page/);
+  assert.doesNotMatch(row.text, /Trans Policy Clearinghouse/);
 });

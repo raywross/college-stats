@@ -17,7 +17,7 @@ import { DIVISION_LABELS, ROTC_LABELS, isDivisionFilter, isRotcBranch } from "@/
 import { conferenceName } from "@/lib/conferences";
 import { faithFamilyLabel, isFaithFilter } from "@/lib/religion";
 import { GREEK_COUNCIL_FILTERS } from "@/lib/cds/greek-display";
-import { isCouncil } from "@/lib/directories";
+import { TRADITIONS, isCouncil, isTradition } from "@/lib/directories";
 import { isMajorFamily, majorFamilyName } from "@/lib/majors";
 import { typeLabel } from "@/lib/format";
 import { useExploreParams } from "./useExploreParams";
@@ -271,6 +271,8 @@ export function ActiveFilters() {
 
   for (const f of getList("faith").filter(isFaithFilter))
     chips.push({ key: `faith-${f}`, label: f === "none" ? "No religious affiliation" : faithFamilyLabel(f), onRemove: () => toggleInList("faith", f) });
+  for (const t of getList("faithGroup").filter(isTradition))
+    chips.push({ key: `faithGroup-${t}`, label: `${TRADITIONS[t]} community`, onRemove: () => toggleInList("faithGroup", t) });
 
   // LGBTQ+ policy facts only (lib/lgbtq-policy.ts); the gender-identity counts are never a filter.
   if (searchParams.get("lgbtqCenter") === "1") chips.push({ key: "lgbtqCenter", label: "Has an LGBTQ+ center", onRemove: () => update({ lgbtqCenter: null }) });

@@ -46,7 +46,7 @@ import { mergeDetails } from "../lib/detail.ts";
 import { readDirectoryFiles } from "./lib/directories/files.mts";
 import { addDirectoryMeta, applyCccuMembership, applyDirectories, chapterFiles, directoryDetails } from "./lib/directories/merge.mts";
 import { readPagesFile } from "./lib/campus-pilot/files.mts";
-import { campusPagesDetails, pilotDirectoryFiles } from "./lib/campus-pilot/merge.mts";
+import { applyLgbtqPolicies, campusPagesDetails, pilotDirectoryFiles } from "./lib/campus-pilot/merge.mts";
 import { financialAidDetails } from "../lib/cds/financial-aid.ts";
 import { transferInFrom } from "../lib/transfers.ts";
 import { financesFrom } from "../lib/finances.ts";
@@ -950,7 +950,7 @@ async function main() {
   // Membership lists (CCCU) set `religion.cccu_member` rather than listings.
   const campusPages = readPagesFile(join(ROOT, "data", "campus-pages.json"));
   const directoryTables = directoryDetails([...chapterFiles(directoryFiles), ...pilotDirectoryFiles(campusPages)], new Set(schools.map((s) => s.unit_id)));
-  schools.splice(0, schools.length, ...applyCccuMembership(applyDirectories(schools, directoryTables), directoryFiles));
+  schools.splice(0, schools.length, ...applyLgbtqPolicies(applyCccuMembership(applyDirectories(schools, directoryTables), directoryFiles), campusPages));
   addDirectoryMeta(meta, directoryFiles);
   const details = mergeDetails(
     buildDetails(schools, efc.table, meta),

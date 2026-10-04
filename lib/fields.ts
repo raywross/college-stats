@@ -173,8 +173,11 @@ export const FIELDS = {
   "lgbtq.admissions": { label: "First-time applicants, admits, and enrollees of another gender", topic: "admissions", source: "ipeds-adm", vintage: "ipeds-adm" },
   // Hand-kept table (data/state-laws.json); each value's lineage record carries the statute link and effective date.
   "lgbtq.state_law": { label: "State law on public colleges' identity-based offices and programs", topic: "campus", source: "state-law", vintage: null },
-  // Phase 4 (pilot, not yet built): tier A policy facts from the college's own pages; each item's lineage record
-  // carries the page URL and date checked (lib/directories.ts PolicyCheck).
+  // Phase 4 (pilot, built 2026-10-04 integration pass): tier A policy facts from the college's own pages, copied
+  // from the `campus_pages` detail table by scripts/lib/campus-pilot/merge.mts applyLgbtqPolicies so the policy
+  // checklist, Explore filters, and Compare can read school.lgbtq.policies directly; each item itself carries the
+  // page URL and date checked (lib/directories.ts PolicyCheck), and this field's own lineage record names the
+  // newest check date.
   "lgbtq.policies": { label: "Policies checked on the college's own pages (housing, records, nondiscrimination, …)", topic: "campus", source: "policy-page", vintage: null },
   // National directories (specs/campus-directories.md): each listing is credited to its organization in the detail
   // table; the summary here says which traditions, councils, and LGBTQ+ kinds appear, for filters and section checks.

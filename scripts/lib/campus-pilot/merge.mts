@@ -8,8 +8,9 @@
  * Pure: no I/O.
  */
 import { DETAIL_TABLES, formatDetail, type DetailTableKey, type SchoolDetail } from "../../../lib/detail.ts";
-import { checkedDates, type CampusPagesRows } from "../../../lib/campus-pages.ts";
-import { readLabel, type Classification, type DirectoryTier } from "../../../lib/directories.ts";
+import { checkedDates, checkedLabel, type CampusPagesRows } from "../../../lib/campus-pages.ts";
+import { readLabel, type Classification, type DirectoryTier, type PolicyCheck } from "../../../lib/directories.ts";
+import type { LineageRecord, School } from "../../../lib/types.ts";
 import type { DirectoryFile, MatchedEntry } from "../directories/files.mts";
 import type { PagesFile } from "./files.mts";
 
@@ -120,6 +121,49 @@ export function campusPagesDetails(pages: PagesFile, knownIds: ReadonlySet<strin
       const newest = checkedDates(rows).at(-1) ?? c.checked;
       return { unit_id: c.unit_id, tables: { campus_pages: { source: "policy-page" as const, vintage: null, year: readLabel(newest), rows } } };
     });
+}
+
+/** Removes any earlier tier A policy facts and their lineage from `school.lgbtq.policies` (idempotent re-merging). */
+export function stripLgbtqPolicies(school: School): School {
+  if (!school.lgbtq?.policies && school.lineage?.["lgbtq.policies"] === undefined) return school;
+  const out = structuredClone(school);
+  if (out.lgbtq) delete out.lgbtq.policies;
+  if (out.lineage) {
+    delete out.lineage["lgbtq.policies"];
+    if (!Object.keys(out.lineage).length) delete out.lineage;
+  }
+  return out;
+}
+
+/**
+ * The pilot's published (non-held) policy facts into `school.lgbtq.policies` (field `lgbtq.policies`, source
+ * `policy-page`), the same rows the `campus_pages` detail table stores (held back the same way, `withoutHeld`), so
+ * the checklist (lib/lgbtq-policy.ts `policyChecklist`) shows a tier A fact — including a "no" with its quote — in
+ * place of a tier D lead for the same key, and Explore's filters and Compare's checklist row read it too
+ * (`policyIsYes`, `comparedChecklist`), not only the profile. Each `PolicyCheck` keeps its own `verified_by`; a
+ * college with no `lgbtq` object at all (not in IPEDS) is left alone rather than inventing one.
+ */
+export function applyLgbtqPolicies(schools: readonly School[], pages: PagesFile, held: HeldBack = HELD_BACK): School[] {
+  const byId = new Map<string, PolicyCheck[]>();
+  for (const c of withoutHeld(pages, held).colleges) {
+    if (c.lgbtq?.policies?.length) byId.set(c.unit_id, c.lgbtq.policies);
+  }
+  return schools.map((s) => {
+    const clean = stripLgbtqPolicies(s);
+    const policies = byId.get(s.unit_id);
+    if (!policies?.length || !clean.lgbtq) return clean;
+    const newest = policies.map((p) => p.checked).sort().at(-1)!;
+    const lineage: LineageRecord = { source: "policy-page", year: checkedLabel(newest), retrieved: newest };
+    // Right after `directories` (applyDirectories always puts that one first) and before anything else:
+    // `lgbtq.policies`, like `directories`, is never touched by stripReported/restoreFederal (it's not a
+    // REPORTED_PATHS or admissions.* key), but reported.*/admissions.* entries are removed and re-appended at the end
+    // on every mergeReported pass, so either path must sit ahead of them to survive that round-trip byte for byte
+    // (tests/merge-reported.test.mts), while `directories` itself must still come first (tests/directories.test.mts,
+    // whose own fresh `applyDirectories` call always puts it there).
+    const { directories, ...restLineage } = clean.lineage ?? {};
+    const newLineage = directories !== undefined ? { directories, "lgbtq.policies": lineage, ...restLineage } : { "lgbtq.policies": lineage, ...restLineage };
+    return { ...clean, lgbtq: { ...clean.lgbtq, policies }, lineage: newLineage };
+  });
 }
 
 /** Every detail file with table `key` replaced by `built`'s (files left empty are dropped), and which files changed. */

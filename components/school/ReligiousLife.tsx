@@ -5,11 +5,13 @@ import { DOMAINS } from "@/lib/metrics";
 import { IMPORTANCE_LABELS } from "@/lib/cds/admissions";
 import { faithFamilyLabel, faithFilterOf, religionView } from "@/lib/religion";
 import { groupListings, listingsFor } from "@/lib/directories";
+import { hasFaithPageFacts } from "@/lib/campus-pages";
 import type { SchoolDetail } from "@/lib/detail";
 import type { School } from "@/lib/types";
 import { InfoTip } from "@/components/ui/info-tip";
 import { BLOCK_SCROLL } from "@/components/profile/Panel";
 import { CreditedList } from "./CreditedList";
+import { FaithFacts } from "./CampusPages";
 
 /**
  * Campus life, "Religious life" (specs/religious-life.md): the IPEDS affiliation with NCES's exact label, what the
@@ -22,7 +24,9 @@ import { CreditedList } from "./CreditedList";
 export async function ReligiousLife({ school, detail }: { school: School; detail: SchoolDetail | null }) {
   const view = religionView(school);
   const groups = groupListings(listingsFor(detail?.tables.directories?.rows, "faith"));
-  if (!view && !groups.length) return null;
+  const now = new Date().toISOString().slice(0, 10);
+  const pageFacts = hasFaithPageFacts(detail?.tables.campus_pages?.rows ?? null, now);
+  if (!view && !groups.length && !pageFacts) return null;
   const { citeField } = await getData();
   const color = DOMAINS.size.color;
   const affiliation = view?.religion?.affiliation ?? null;
@@ -96,6 +100,7 @@ export async function ReligiousLife({ school, detail }: { school: School; detail
           </div>
         </div>
       )}
+      <FaithFacts school={school} detail={detail} bare />
     </div>
   );
 }

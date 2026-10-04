@@ -232,6 +232,25 @@ export function greekCouncils(rows: CampusPagesRows | null | undefined, today: s
   };
 }
 
+/** Whether `GreekCouncils` (components/school/CampusPages.tsx) has anything fresh to show: a council breakdown, a
+ * recruitment or housing fact, or "none stated". Shared with `GreekLife` so it only shows its own "none found in
+ * national directories" line when the college's own pages have nothing either. */
+export function hasGreekPageFacts(rows: CampusPagesRows | null | undefined, today: string): boolean {
+  const g = rows?.greek;
+  if (!g) return false;
+  const fresh = (r?: { checked: string }) => !!r && isFresh(r.checked, today);
+  return !!greekCouncils(rows, today) || fresh(g.deferred) || fresh(g.formal_term) || fresh(g.housing) || fresh(g.none_stated);
+}
+
+/** Whether `FaithFacts` has anything fresh to show: the office or an official composition. Shared with `ReligiousLife`
+ * so a college with only these tier A facts (no IPEDS affiliation, no CDS answer, no directory listing) still gets a
+ * "Religious life" block instead of none at all. */
+export function hasFaithPageFacts(rows: CampusPagesRows | null | undefined, today: string): boolean {
+  const f = rows?.faith;
+  if (!f) return false;
+  return (!!f.office && isFresh(f.office.checked, today)) || (!!f.composition && isFresh(f.composition.checked, today));
+}
+
 /** The policy rows to show, fresh only, in POLICY_KEYS order with the conduct finding last. */
 export function policyRows(rows: CampusPagesRows | null | undefined, today: string): PolicyCheck[] {
   const order: string[] = [...Object.keys(POLICY_KEYS), "conduct_restriction"];

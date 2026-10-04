@@ -28,7 +28,7 @@ export interface ChecklistItem {
   listing?: CreditedListing;
 }
 
-const tierDText = (l: CreditedListing) => `Listed by ${l.credit.organization} (${l.credit.read})`;
+const tierDText = (label: string, l: CreditedListing) => `${label}: listed by ${l.credit.organization} (${l.credit.read})`;
 
 /** This college's tier D leads, one per policy key (the first list that names it, when more than one does). */
 function tierDByKey(listings: readonly CreditedListing[]): Map<PolicyKey, CreditedListing> {
@@ -60,7 +60,7 @@ export function policyChecklist(lgbtq: Pick<LgbtqLife, "policies"> | null | unde
         label,
         source: "tier-a",
         value: a.value,
-        text: a.value === "yes" ? `${label}, per the college's own page (checked ${a.checked})` : `Not, per the college's own page (checked ${a.checked})`,
+        text: a.value === "yes" ? `${label}, per the college's own page (checked ${a.checked})` : `No: ${label}, per the college's own page (checked ${a.checked})`,
         url: a.url,
         date: a.checked,
         ...(a.quote ? { quote: a.quote } : {}),
@@ -68,7 +68,7 @@ export function policyChecklist(lgbtq: Pick<LgbtqLife, "policies"> | null | unde
       continue;
     }
     const d = tierD.get(key);
-    if (d) out.push({ key, label, source: "tier-d", value: "yes", text: tierDText(d), url: d.credit.list_url, date: d.credit.read, listing: d });
+    if (d) out.push({ key, label, source: "tier-d", value: "yes", text: tierDText(label, d), url: d.credit.list_url, date: d.credit.read, listing: d });
   }
   return out;
 }

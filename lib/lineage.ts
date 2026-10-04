@@ -312,6 +312,9 @@ const METHODS = new Set(["reported", "derived", "extracted"]);
 const STATE_LAW_PATHS = (Object.keys(FIELDS) as FieldPath[]).filter((p) => FIELDS[p].source === "state-law");
 /** Stored fields summarizing national directories (school.directories); detail tables are checked in lib/detail.ts. */
 const DIRECTORY_PATHS = (Object.keys(FIELDS) as FieldPath[]).filter((p) => (FIELDS[p].source === "directory" || FIELDS[p].source === "org-estimate") && !p.startsWith("detail."));
+/** Tier A facts the campus-life pilot checked on a college's own page (lgbtq-life.md "Inclusive policies"); the
+ * `campus_pages` detail table is checked in lib/detail.ts, so this is only the top-level `lgbtq.policies` copy. */
+const POLICY_PAGE_PATHS = (Object.keys(FIELDS) as FieldPath[]).filter((p) => FIELDS[p].source === "policy-page" && !p.startsWith("detail."));
 
 /** Every stored leaf path of a school, e.g. "demographics.racial_diversity.asian". Arrays and null are leaves; undefined isn't stored. */
 export function leafPaths(value: unknown, prefix = ""): string[] {
@@ -426,6 +429,13 @@ export function validateSchool(school: School, meta: DatasetMeta): string[] {
     if (valueAt(school, path) == null) continue;
     const rec = school.lineage?.[path];
     if ((rec?.source !== "directory" && rec?.source !== "org-estimate") || !rec.retrieved || !rec.year) errors.push(`${where}: ${path} must cite source "directory" with the date the lists were read`);
+  }
+  // Campus-life pilot policy facts (specs/lgbtq-life.md phase 4; scripts/lib/campus-pilot/merge.mts
+  // applyLgbtqPolicies): each cites the date the college's own pages were checked.
+  for (const path of POLICY_PAGE_PATHS) {
+    if (valueAt(school, path) == null) continue;
+    const rec = school.lineage?.[path];
+    if (rec?.source !== "policy-page" || !rec.retrieved || !rec.year) errors.push(`${where}: ${path} must cite source "policy-page" with the date checked`);
   }
   errors.push(...validateNewest(school, where));
   errors.push(...validateNewestGroups(school, where, meta));

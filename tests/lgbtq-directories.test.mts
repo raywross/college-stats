@@ -209,7 +209,7 @@ const centerListing: CreditedListing = { org: "lgbt-campus-consortium", credit: 
 test("policyChecklist: a tier D lead shows as 'Listed by …', never a plain yes", () => {
   const items = policyChecklist(null, [housingListing]);
   assert.deepEqual(items, [
-    { key: "inclusive_housing", label: "Gender-inclusive housing", source: "tier-d", value: "yes", text: "Listed by Trans Policy Clearinghouse (2026-10-04)", url: housingCredit.list_url, date: "2026-10-04", listing: housingListing },
+    { key: "inclusive_housing", label: "Gender-inclusive housing", source: "tier-d", value: "yes", text: "Gender-inclusive housing: listed by Trans Policy Clearinghouse (2026-10-04)", url: housingCredit.list_url, date: "2026-10-04", listing: housingListing },
   ]);
   assert.ok(!items.some((i) => /^yes$/i.test(i.text)));
 });

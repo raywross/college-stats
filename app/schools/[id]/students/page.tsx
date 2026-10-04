@@ -22,8 +22,6 @@ import { GreekLife } from "@/components/school/GreekLife";
 import { CampusServices } from "@/components/school/CampusServices";
 import { ReligiousLife } from "@/components/school/ReligiousLife";
 import { LgbtqLife } from "@/components/school/LgbtqLife";
-import { DirectoryListings } from "@/components/school/DirectoryListings";
-import { FaithFacts, GreekCouncils, LgbtqPolicies } from "@/components/school/CampusPages";
 import { countDisplay, countText } from "@/lib/lgbtq";
 
 type Props = { params: Promise<{ id: string }> };
@@ -231,13 +229,19 @@ export default async function StudentsPage({ params }: Props) {
       </Panel>
 
       {hasCampus && (
-        <Panel id="campus" domain="size" eyebrow="Campus life" title="Housing, sports, and programs" takeaway={campusTakeaway(school)} fields={[]} className="mt-14 sm:mt-20">
+        <Panel
+          id="campus"
+          domain="size"
+          eyebrow="Campus life"
+          title="Housing, sports, faith, Greek life, and LGBTQ+ life"
+          takeaway={campusTakeaway(school)}
+          fields={[]}
+          className="mt-14 sm:mt-20"
+        >
           <CampusLife school={school} />
           <CampusServices school={school} recentMoves={recentMoves} />
           <ReligiousLife school={school} detail={detail} />
-          <FaithFacts school={school} detail={detail} />
           <GreekLife school={school} detail={detail} />
-          <GreekCouncils school={school} detail={detail} />
           <LgbtqLife
             school={school}
             detail={detail}
@@ -245,7 +249,6 @@ export default async function StudentsPage({ params }: Props) {
             citedAdmissions={citeField("lgbtq.admissions", school)}
             citedLaw={citeField("lgbtq.state_law", school)}
           />
-          <LgbtqPolicies school={school} detail={detail} />
         </Panel>
       )}
     </TopicPage>

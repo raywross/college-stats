@@ -4,11 +4,13 @@ import { pctSmart } from "@/lib/format";
 import { DOMAINS } from "@/lib/metrics";
 import { fratMedian, greekCard, greekParticipationBlankOrZero, greekReporters, sorMedian } from "@/lib/cds/greek-display";
 import { groupListings, latestDirectoryRead, listingsFor } from "@/lib/directories";
+import { hasGreekPageFacts } from "@/lib/campus-pages";
 import type { SchoolDetail } from "@/lib/detail";
 import type { School } from "@/lib/types";
 import { BenchmarkBar } from "@/components/charts/BenchmarkBar";
 import { InfoTip } from "@/components/ui/info-tip";
 import { CreditedList } from "./CreditedList";
+import { GreekCouncils } from "./CampusPages";
 
 /**
  * Greek life (specs/greek-life.md phases 1 and 4): the college's own CDS F1/F4 numbers (fraternity/sorority
@@ -28,8 +30,10 @@ export async function GreekLife({ school, detail }: { school: School; detail: Sc
   const card = greekCard(school);
   const listings = listingsFor(detail?.tables.directories?.rows, "greek");
   const groups = groupListings(listings);
+  const now = new Date().toISOString().slice(0, 10);
+  const pageFacts = hasGreekPageFacts(detail?.tables.campus_pages?.rows ?? null, now);
 
-  if (!card && !groups.length) {
+  if (!card && !groups.length && !pageFacts) {
     if (!greekParticipationBlankOrZero(school)) return null;
     const checked = latestDirectoryRead(getAllSchools());
     if (!checked) return null;
@@ -131,6 +135,8 @@ export async function GreekLife({ school, detail }: { school: School; detail: Sc
           <p className="mt-3 text-xs text-muted-foreground">From each organization&apos;s own chapter list, not confirmed by the college; see each chapter&apos;s ⓘ for the source and date read.</p>
         </div>
       )}
+
+      <GreekCouncils school={school} detail={detail} bare />
     </div>
   );
 }

@@ -105,7 +105,8 @@ export interface BrandColorEntry {
   unit_id: string;
   /** Hex colors in brand order, "#BA0C2F". */
   colors: string[];
-  names: string[] | null;
+  /** Names aligned with `colors`; null where the source names no color (the module's white text slot, usually). */
+  names: (string | null)[] | null;
   /** The `Module:College color/data` key the colors came from; null when read from the article's infobox. */
   key: string | null;
   /** The college's Wikipedia article. */
@@ -114,6 +115,10 @@ export interface BrandColorEntry {
   cite_url: string | null;
   cite_title: string | null;
   retrieved: string;
+  /** How the article reached the colors: the module key exactly, an alias key, a normalized key, or the infobox's own hex values. */
+  via?: "key" | "alias" | "normalized" | "infobox";
+  /** Infobox colors: the field as written (the lineage quote, at most 160 characters). */
+  quote?: string;
 }
 
 /** data/brand-logos.json: each stored site icon (public/brand/{unit_id}.webp). */
@@ -124,6 +129,8 @@ export interface BrandLogoEntry {
   retrieved: string;
   /** Stored width in px (192). */
   width: number;
+  /** How the homepage declared it, e.g. '<link rel="apple-touch-icon" sizes="180x180"> on https://www.uga.edu/' (the lineage quote). */
+  tag?: string;
 }
 
 /** data/brand-overrides.json, keyed by unit id: corrections and removals, applied after everything else (brand.md). */
@@ -131,7 +138,7 @@ export interface BrandOverride {
   /** false: never show this college's mark (a removal request). The file is deleted and the monogram returns. */
   logo?: false;
   colors?: string[];
-  names?: string[];
+  names?: (string | null)[];
   /** Where corrected colors came from (the college's brand guide). */
   _lineage?: LineageRecord;
   _note?: string;

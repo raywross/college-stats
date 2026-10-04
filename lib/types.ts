@@ -1440,12 +1440,20 @@ export type SchoolSocial = Partial<Record<SocialNetwork, string>>;
 export interface SchoolBrand {
   /** Hex colors in brand order, e.g. ["#BA0C2F", "#FFFFFF", "#000000"]. */
   colors: string[] | null;
-  /** The colors' names in the same order, e.g. ["red", "white", "black"], when the source gives them. */
-  names: string[] | null;
+  /**
+   * The colors' names in the same order, e.g. ["red", null, "black"], when the source gives them; null where it names
+   * no color (Wikipedia's module leaves the white text-color slot unnamed).
+   */
+  names: (string | null)[] | null;
   /** The first color that is neither white, black, nor gray (else the first color). */
   accent: string | null;
   /** The monogram's text color on the accent: whichever gives at least 4.5:1 contrast. */
   on_accent: "white" | "black" | null;
+  /**
+   * The crest gradient's end (hex): the next brand color after the accent, or the accent darkened or lightened when
+   * that color is black, gray, or white; always 4.5:1 or more against `on_accent`. Optional: older documents lack it.
+   */
+  crest_to?: string | null;
   /** The accent re-lit for the light theme's hero tint, e.g. "oklch(0.72 0.16 20)". */
   tint_light: string | null;
   /** The accent re-lit for the dark theme's hero tint. */

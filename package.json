@@ -18,6 +18,7 @@
     "merge-identity": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/merge-identity.mts",
     "sync-wikidata": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/sync-wikidata.mts",
     "probe-sites": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --env-file-if-exists=.env.local scripts/probe-sites.mts",
+    "sync-brand": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/sync-brand.mts",
     "report-college-reported": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/report-college-reported.mts",
     "score-college-reported": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/score-college-reported.mts",
     "import-cds": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/import-cds.mts",
@@ -63,6 +64,7 @@
     "@types/topojson-client": "^3.1.5",
     "eslint": "^9",
     "eslint-config-next": "16.3.6",
+    "sharp": "^0.35.5",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

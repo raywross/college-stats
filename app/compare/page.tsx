@@ -17,7 +17,7 @@ import type { TermKey } from "@/lib/glossary";
 import { DEMOGRAPHIC_CATEGORIES, DOMAINS, METRICS, TEST_POLICY_LABELS, admitRatesBySex, satTotal, type Domain } from "@/lib/metrics";
 import { TEST_ROWS } from "@/lib/compare-tests";
 import { RADAR_AXES, keyDifferences, radarProfile, similarSchools } from "@/lib/insights";
-import { SLOT_COLORS, shortName } from "@/lib/brand";
+import { SLOT_COLORS, crestBrand, shortName } from "@/lib/brand";
 import { DESIGNATION_LABELS, RESEARCH_LABELS } from "@/lib/campus-profile";
 import { CALENDAR_LABELS, DIVISION_LABELS, ROTC_LABELS, divisionFilterOf } from "@/lib/campus-services";
 import { FORM_SHORT } from "@/lib/finances";
@@ -749,7 +749,7 @@ async function SinglePrompt({ school }: { school: School }) {
             href={`/compare?ids=${school.unit_id},${s.unit_id}`}
             className="group rounded-3xl border bg-card p-5 transition-all hover:-translate-y-1 hover:shadow-xl hover:shadow-primary/10"
           >
-            <Crest id={s.unit_id} name={s.name} size="md" />
+            <Crest id={s.unit_id} name={s.name} size="md" brand={crestBrand(s)} />
             <p className="mt-3 font-display font-bold group-hover:text-primary">{s.name}</p>
             <p className="text-xs text-muted-foreground">{reasons.join(" · ")}</p>
             <span className="mt-3 inline-flex items-center gap-1 text-xs font-bold text-primary">
@@ -787,7 +787,7 @@ async function EmptyState() {
             >
               <div className="flex -space-x-2">
                 {schools.map((s) => (
-                  <Crest key={s.unit_id} id={s.unit_id} name={s.name} size="md" className="ring-2 ring-card" />
+                  <Crest key={s.unit_id} id={s.unit_id} name={s.name} brand={crestBrand(s)} size="md" className="ring-2 ring-card" />
                 ))}
               </div>
               <span className="min-w-0 flex-1 font-semibold">{schools.map((s) => shortName(s)).join(" vs. ")}</span>

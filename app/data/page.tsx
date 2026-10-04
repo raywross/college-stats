@@ -22,6 +22,7 @@ import {
 } from "@/lib/releases";
 import { DataAgeTimeline, type DataAgeRow } from "@/components/charts/DataAgeTimeline";
 import { Crest } from "@/components/school/Crest";
+import { BRAND_REMOVAL_CONTACT, brandMarksOn, crestBrand } from "@/lib/brand";
 import { Term } from "@/components/ui/info-tip";
 import { cn } from "@/lib/utils";
 
@@ -104,6 +105,7 @@ export default async function DataPage() {
   const meta = getMeta();
   const all = getAllSchools();
   const cds = cdsSchools();
+  const brandCount = { colors: all.filter((s) => s.brand?.colors?.length).length, marks: all.filter((s) => s.brand?.logo).length };
   const calendar = getReleaseCalendar();
   const now = new Date();
   const stale = isStale(calendar, now);
@@ -548,7 +550,7 @@ export default async function DataPage() {
         <ul className="grid gap-2 sm:grid-cols-2">
           {cds.map((s) => (
             <li key={s.unit_id} className="flex items-center gap-3 rounded-2xl border bg-card p-3">
-              <Crest id={s.unit_id} name={s.name} size="sm" />
+              <Crest id={s.unit_id} name={s.name} size="sm" brand={crestBrand(s)} />
               <div className="min-w-0 flex-1">
                 <Link href={`/schools/${s.unit_id}`} className="block truncate text-sm font-semibold hover:text-primary">
                   {s.name}
@@ -571,6 +573,34 @@ export default async function DataPage() {
           <code className="rounded bg-muted px-1 py-0.5 text-xs">data/aliases-curated.json</code> in the
           site&apos;s source.
         </p>
+
+        {/* Colors and marks (specs/school-identity/brand.md): sources, the trademark line, and the removal route. */}
+        <h3 id="colors-and-marks" className="scroll-mt-24 pt-6 font-display text-xl font-bold">
+          Colors and marks
+        </h3>
+        <div className="max-w-3xl space-y-3 text-sm leading-relaxed text-muted-foreground">
+          <p>
+            A profile&apos;s tint and crest use the college&apos;s own colors and, where it has one, its own mark. They&apos;re
+            decoration, never data: no chart or figure uses them. Colors come from{" "}
+            <ExtLink href={meta.sources.wikipedia?.url ?? "https://en.wikipedia.org/wiki/Module:College_color/data"}>English Wikipedia&apos;s college color data</ExtLink>{" "}
+            (CC BY-SA), where each entry cites the college&apos;s own brand or athletics style guide; for a college it doesn&apos;t
+            list, the hex values in the college&apos;s Wikipedia article. Color names alone are never turned into colors. A mark is
+            the icon the college&apos;s own homepage declares for itself (its home-screen or browser icon), fetched once with the
+            site&apos;s robots.txt honored and stored at tile size.{" "}
+            <span className="text-foreground">
+              {num(brandCount.colors)} colleges have colors{brandMarksOn() ? <> and {num(brandCount.marks)} have a mark</> : null}
+            </span>
+            ; the rest keep a generated monogram.
+          </p>
+          <p>
+            Marks and colors identify the colleges and belong to them. Showing them implies no endorsement: no college endorses this
+            site, and this site endorses no college.
+          </p>
+          <p>
+            A college that wants its mark taken down can{" "}
+            <ExtLink href={BRAND_REMOVAL_CONTACT}>ask here</ExtLink>. We honor a request within a day, and its monogram returns.
+          </p>
+        </div>
       </Section>
 
       <Section id="method" eyebrow="Methods" title="How we calculate" icon={<Calculator className="size-4" aria-hidden />}>

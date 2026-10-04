@@ -75,7 +75,7 @@ function SchoolPicker({ exclude, onPick }: { exclude: string[]; onPick: (id: str
                   onClick={() => onPick(s.id)}
                   className="flex w-full items-center gap-2.5 rounded-xl px-2 py-1.5 text-left hover:bg-muted"
                 >
-                  <Crest id={s.id} name={s.name} size="sm" />
+                  <Crest id={s.id} name={s.name} size="sm" brand={s.brand} />
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-sm font-semibold">
                       {s.name}
@@ -119,7 +119,7 @@ export function CompareHeader({ schools }: { schools: SchoolIndexEntry[] }) {
             className="relative flex min-w-0 shrink-0 items-center gap-2 rounded-full border bg-card py-1 pr-8 pl-1 md:shrink md:gap-2.5 md:rounded-2xl md:p-3 md:pr-9"
           >
             <span className="absolute inset-x-3 top-0 hidden h-1 rounded-b-full md:block" style={{ backgroundColor: SLOT_COLORS[i] }} />
-            <Crest id={s.id} name={s.name} size="sm" className="size-8 rounded-full text-[10px] md:size-9 md:rounded-lg md:text-[11px]" />
+            <Crest id={s.id} name={s.name} size="sm" brand={s.brand} className="size-8 rounded-full text-[10px] md:size-9 md:rounded-lg md:text-[11px]" />
             <Link href={`/schools/${s.id}`} className="min-w-0 hover:text-primary">
               <span className="flex items-center gap-1.5">
                 <span className="size-2.5 shrink-0 rounded-full" style={{ backgroundColor: SLOT_COLORS[i] }} />

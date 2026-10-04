@@ -64,6 +64,12 @@ export interface SchoolIndexEntry {
   matched?: string;
 }
 
+/** `{ brand }` when the college has colors or a mark, else nothing (keeps client payloads small). */
+function withBrand(s: School): { brand?: CrestBrand } {
+  const brand = crestBrand(s);
+  return brand ? { brand } : {};
+}
+
 export function toIndexEntry(s: School): SchoolIndexEntry {
   const brand = crestBrand(s);
   return {
@@ -93,6 +99,8 @@ export interface ScatterPointData {
   type: SchoolType;
   city: string;
   state: string;
+  /** The crest's colors and mark for the hover card (specs/school-identity/brand.md), when the college has them. */
+  brand?: CrestBrand;
 }
 
 const SORTERS: Record<SortKey, (s: School) => number | string | null> = {
@@ -460,6 +468,7 @@ export function createDataset({ schools, meta, releaseCalendar, aliases = [] }: 
       type: s.type,
       city: s.location.city,
       state: s.location.state,
+      ...withBrand(s),
     }));
   }
 
@@ -484,6 +493,7 @@ export function createDataset({ schools, meta, releaseCalendar, aliases = [] }: 
       type: s.type,
       city: s.location.city,
       state: s.location.state,
+      ...withBrand(s),
     }));
   }
 
@@ -505,6 +515,7 @@ export function createDataset({ schools, meta, releaseCalendar, aliases = [] }: 
       type: s.type,
       city: s.location.city,
       state: s.location.state,
+      ...withBrand(s),
     }));
   }
 

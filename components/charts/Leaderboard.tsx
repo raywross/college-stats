@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { School } from "@/lib/types";
 import { Crest } from "@/components/school/Crest";
+import { crestBrand } from "@/lib/brand";
 
 /** Ranked list with value bars. One series, so one color and no legend. */
 export function Leaderboard({
@@ -28,7 +29,7 @@ export function Leaderboard({
               className="group flex items-center gap-3 rounded-xl px-2 py-2 transition-colors hover:bg-muted/70"
             >
               <span className="w-4 text-right text-xs font-bold text-muted-foreground tabular-nums">{i + 1}</span>
-              <Crest id={s.unit_id} name={s.name} size="xs" />
+              <Crest id={s.unit_id} name={s.name} size="xs" brand={crestBrand(s)} />
               <span className="min-w-0 flex-1">
                 <span className="flex items-baseline justify-between gap-2">
                   <span className="truncate text-sm font-medium group-hover:text-primary">{s.name}</span>

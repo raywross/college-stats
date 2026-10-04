@@ -6,7 +6,7 @@
   "tier": "D",
   "classification": {"domain":"greek","council":"nic"},
   "crawled": "2026-10-04",
-  "counts": {"entries":151,"matched":149,"multi":0,"unmatched":2,"colleges":149},
+  "counts": {"entries":150,"matched":148,"multi":0,"unmatched":2,"colleges":148},
   "entries": [
     {"campus":"Albion College","name":"Gamma Gamma (Sigma Nu)","matches":[{"unit_id":"168546","name":"Albion College","confidence":0.95,"method":"exact"}]},
     {"campus":"Appalachian State University","name":"Kappa Epsilon (Sigma Nu)","matches":[{"unit_id":"197869","name":"Appalachian State University","confidence":0.95,"method":"exact"}]},
@@ -83,7 +83,6 @@
     {"campus":"San Diego State University","name":"Eta Kappa (Sigma Nu)","matches":[{"unit_id":"122409","name":"San Diego State University","confidence":0.95,"method":"exact"}]},
     {"campus":"San Jose State University","name":"Zeta Iota (Sigma Nu)","matches":[{"unit_id":"122755","name":"San Jose State University","confidence":0.95,"method":"exact"}]},
     {"campus":"Sewanee: The University of the South","name":"Beta Omicron (Sigma Nu)","matches":[{"unit_id":"221519","name":"The University of the South","confidence":1,"method":"reviewed"}]},
-    {"campus":"Shenandoah University","name":"TBD (Sigma Nu)","matches":[{"unit_id":"233541","name":"Shenandoah University","confidence":0.95,"method":"exact"}]},
     {"campus":"Southeast Missouri State University","name":"Mu Kappa (Sigma Nu)","matches":[{"unit_id":"179557","name":"Southeast Missouri State University","confidence":0.95,"method":"exact"}]},
     {"campus":"Southern Methodist University","name":"Iota Theta (Sigma Nu)","matches":[{"unit_id":"228246","name":"Southern Methodist University","confidence":0.95,"method":"exact"}]},
     {"campus":"Stanford University","name":"Beta Chi (Sigma Nu)","matches":[{"unit_id":"243744","name":"Stanford University","confidence":0.95,"method":"exact"}]},

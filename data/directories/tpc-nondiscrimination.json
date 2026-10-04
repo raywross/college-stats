@@ -6,7 +6,7 @@
   "tier": "D",
   "classification": {"domain":"lgbtq","kind":"policy","policy":"nondiscrimination_identity"},
   "crawled": "2026-10-04",
-  "counts": {"entries":1931,"matched":952,"multi":0,"unmatched":979,"colleges":952},
+  "counts": {"entries":1931,"matched":953,"multi":0,"unmatched":978,"colleges":953},
   "entries": [
     {"campus":"Athens State University","state":"AL","matches":[{"unit_id":"100812","name":"Athens State University","confidence":1,"method":"exact"}]},
     {"campus":"Auburn University","state":"AL","matches":[{"unit_id":"100858","name":"Auburn University","confidence":1,"method":"exact"}]},
@@ -737,6 +737,7 @@
     {"campus":"Millersville University","state":"PA","matches":[{"unit_id":"214041","name":"Millersville University of Pennsylvania","confidence":0.85,"method":"prefix"}]},
     {"campus":"Misericordia University","state":"PA","matches":[{"unit_id":"214069","name":"Misericordia University","confidence":1,"method":"exact"}]},
     {"campus":"Moore College of Art and Design","state":"PA","matches":[{"unit_id":"214148","name":"Moore College of Art and Design","confidence":1,"method":"exact"}]},
+    {"campus":"Moravian College","state":"PA","matches":[{"unit_id":"214157","name":"Moravian University","confidence":1,"method":"reviewed"}]},
     {"campus":"Mount Aloysius College","state":"PA","matches":[{"unit_id":"214166","name":"Mount Aloysius College","confidence":1,"method":"exact"}]},
     {"campus":"Muhlenberg College","state":"PA","fact":"since 2005","matches":[{"unit_id":"214175","name":"Muhlenberg College","confidence":1,"method":"exact"}]},
     {"campus":"Penn State, Abington","state":"PA","matches":[{"unit_id":"214801","name":"Pennsylvania State University-Penn State Abington","confidence":1,"method":"exact"}]},

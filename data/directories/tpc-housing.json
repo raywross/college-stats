@@ -6,7 +6,7 @@
   "tier": "D",
   "classification": {"domain":"lgbtq","kind":"policy","policy":"inclusive_housing"},
   "crawled": "2026-10-04",
-  "counts": {"entries":489,"matched":444,"multi":0,"unmatched":45,"colleges":444},
+  "counts": {"entries":489,"matched":445,"multi":0,"unmatched":44,"colleges":445},
   "entries": [
     {"campus":"University of Alaska, Anchorage","state":"AK","matches":[{"unit_id":"102553","name":"University of Alaska Anchorage","confidence":1,"method":"exact"}]},
     {"campus":"University of Alaska, Fairbanks","state":"AK","fact":"since 2015","matches":[{"unit_id":"102614","name":"University of Alaska Fairbanks","confidence":1,"method":"exact"}]},
@@ -370,6 +370,7 @@
     {"campus":"Lafayette College","state":"PA","matches":[{"unit_id":"213385","name":"Lafayette College","confidence":1,"method":"exact"}]},
     {"campus":"Lehigh University","state":"PA","fact":"since 2010","matches":[{"unit_id":"213543","name":"Lehigh University","confidence":1,"method":"exact"}]},
     {"campus":"Millersville University","state":"PA","matches":[{"unit_id":"214041","name":"Millersville University of Pennsylvania","confidence":0.85,"method":"prefix"}]},
+    {"campus":"Moravian College","state":"PA","matches":[{"unit_id":"214157","name":"Moravian University","confidence":1,"method":"reviewed"}]},
     {"campus":"Muhlenberg College","state":"PA","matches":[{"unit_id":"214175","name":"Muhlenberg College","confidence":1,"method":"exact"}]},
     {"campus":"Pennsylvania State University, University Park","state":"PA","matches":[{"unit_id":"214777","name":"Pennsylvania State University-Main Campus","confidence":0.9,"method":"city"}]},
     {"campus":"Saint Joseph's University","state":"PA","matches":[{"unit_id":"215770","name":"Saint Joseph's University - Philadelphia","confidence":0.85,"method":"prefix"}]},

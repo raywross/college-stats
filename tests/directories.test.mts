@@ -7,28 +7,31 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { cpSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { DatasetMeta, School } from "../lib/types";
 import { validateLineage } from "../lib/lineage.ts";
 import { detailMismatches, validateDetail, type SchoolDetail } from "../lib/detail.ts";
 import {
+  ALLOWED_LOGO_LICENSES,
   checkDirectoryRows,
   citeListing,
   groupListings,
   listingsFor,
+  organizationProblems,
   policyCheckProblems,
   sortListings,
   summarize,
   type DirectoryRows,
+  type OrganizationsFile,
 } from "../lib/directories.ts";
 import { buildIndex, FLAGSHIPS, matchEntry, normKey, type MatchInput, type MatchResult } from "../scripts/lib/directories/matcher.mts";
 import { collegesFrom } from "../scripts/lib/directories/colleges.mts";
 import { createContext, DIRECTORY_USER_AGENT } from "../scripts/lib/directories/context.mts";
 import { Blocked, HttpError, defineAdapter, type CrawlContext } from "../scripts/lib/directories/contract.mts";
 import { adapterProblems, loadAdapters } from "../scripts/lib/directories/registry.mts";
-import { buildFiles, runAdapter } from "../scripts/lib/directories/run.mts";
+import { buildFiles, isPlaceholder, runAdapter } from "../scripts/lib/directories/run.mts";
 import { clearBlocks, readDirectoryFiles, recordBlock } from "../scripts/lib/directories/files.mts";
 import { applyCccuMembership, applyDirectories, chapterFiles, directoryDetails, orphanSummaries } from "../scripts/lib/directories/merge.mts";
 import { campusOf, entriesFrom } from "../scripts/lib/directories/adapters/ssa.mts";
@@ -37,6 +40,8 @@ import { entriesFrom as focusEntriesFrom } from "../scripts/lib/directories/adap
 import { campusOf as chabadCampusOf, entriesFrom as chabadEntriesFrom } from "../scripts/lib/directories/adapters/chabad.mts";
 import { entriesFrom as navigatorsEntriesFrom } from "../scripts/lib/directories/adapters/navigators.mts";
 import { entriesFrom as cccuEntriesFrom } from "../scripts/lib/directories/adapters/cccu.mts";
+import { entriesFrom as sigmaDeltaTauEntriesFrom } from "../scripts/lib/directories/adapters/sigma-delta-tau.mts";
+import { entriesFrom as sigmaNuEntriesFrom } from "../scripts/lib/directories/adapters/sigma-nu.mts";
 import { readDetails } from "../scripts/lib/publish-details.mts";
 
 const ROOT = join(import.meta.dirname, "..");
@@ -308,6 +313,44 @@ test("runner: cleans, de-duplicates, sorts, and splits matched from unmatched", 
   await assert.rejects(runAdapter(fakeAdapter([]), ctx, index), /no entries/);
 });
 
+test("placeholder guard: a 'coming soon'/TBA/TBD/new-or-future-chapter/interest-group/expansion row never becomes a listing", () => {
+  // Real fixtures: a Sigma Delta Tau row named exactly like the one that gave UT Austin a fake Panhellenic chapter
+  // (owner feedback 2026-10-04), and a Sigma Nu "TBD" placeholder.
+  assert.equal(isPlaceholder({ campus: "x", name: "Coming Soon!" }), true);
+  assert.equal(isPlaceholder({ campus: "x", name: "Coming soon!" }), true);
+  assert.equal(isPlaceholder({ campus: "x", name: "TBD (Sigma Nu)" }), true);
+  assert.equal(isPlaceholder({ campus: "x", name: "Rho Chapter" }), false, "a real chapter name never matches");
+  assert.equal(isPlaceholder({ campus: "x", name: "New England Chapter" }), false, "'New' alone, not 'new chapter', isn't flagged");
+  assert.equal(isPlaceholder({ campus: "x", name: "Alpha Beta Colony" }), false, "an installed colony is a real chapter, not a placeholder");
+
+  const html = [
+    '<td class="tbl-school"><h2 class="h5 nomargB">Vanderbilt University</h2></td>',
+    '<td class="tbl-chapter">Alpha Chapter</td>',
+    '<td class="tbl-loc">Nashville, TN</td>',
+    '<td class="tbl-school"><h2 class="h5 nomargB">The University of Texas at Austin</h2></td>',
+    '<td class="tbl-chapter">Coming Soon!</td>',
+    '<td class="tbl-loc">Austin, TX</td>',
+  ].join("");
+  const raw = sigmaDeltaTauEntriesFrom(html);
+  assert.equal(raw.length, 2, "both rows parse; the placeholder is dropped later, not by the adapter");
+  const ctx = { org: "sigma-delta-tau", today: "2026-10-04", fetchText: async () => "", fetchJson: async () => ({}), log: () => {} } as CrawlContext;
+  const greekAdapter = (key: string) =>
+    defineAdapter({ key, organization: key, publisher: key, listUrl: "https://fake.org/chapters", tier: "D", domain: "greek", council: "npc", async crawl() { return []; } });
+  const { file, placeholders } = buildFiles(greekAdapter("sigma-delta-tau"), raw, index, ctx.today);
+  assert.equal(placeholders, 1);
+  assert.equal(file.entries.length, 1);
+  assert.equal(file.entries[0].name, "Alpha Chapter");
+  assert.ok(!file.entries.some((e) => e.name === "Coming Soon!"), "UT Austin's 'Coming Soon!' row never reaches the listing");
+
+  const nuRaw = sigmaNuEntriesFrom([
+    { chapter: "Beta", school: "Vanderbilt University" },
+    { chapter: "TBD", school: "Columbia College" },
+  ]);
+  const { placeholders: nuPlaceholders, file: nuFile } = buildFiles(greekAdapter("sigma-nu"), nuRaw, index, ctx.today);
+  assert.equal(nuPlaceholders, 1);
+  assert.equal(nuFile.entries.length, 1);
+});
+
 test("blocked.json: a refusal is recorded once per org and URL with first and last seen; a good read clears it", () => {
   let f = recordBlock({ blocked: [] }, { org: "ocf", url: "https://ocf.net/chapters/", reason: "forbidden" }, "2026-10-01");
   f = recordBlock(f, { org: "ocf", url: "https://ocf.net/chapters/", reason: "challenge" }, "2026-10-04");
@@ -540,7 +583,7 @@ test("focus adapter: state headings apply to the campuses listed after them; Was
   ]);
 });
 
-test("chabad adapter: the campus named after the last at/@/of/serving/for that isn't part of the college's own name", () => {
+test("chabad adapter: the campus named after at/@/of/serving/for, picking the split whose tail names an institution", () => {
   assert.equal(chabadCampusOf("Chabad at Yale University"), "Yale University");
   assert.equal(chabadCampusOf("Chabad House @ University of Pennsylvania"), "University of Pennsylvania");
   assert.equal(chabadCampusOf("Rohr Chabad House at The University of Virginia"), "The University of Virginia");
@@ -548,6 +591,16 @@ test("chabad adapter: the campus named after the last at/@/of/serving/for that i
   assert.equal(chabadCampusOf("Chabad Serving Tufts University"), "Tufts University");
   assert.equal(chabadCampusOf("Chabad Serving Drexel University - Rohr Jewish Student Center"), "Drexel University");
   assert.equal(chabadCampusOf("Tannenbaum Chabad House"), null, "no connector names a campus");
+  // 2026-10-04 owner feedback: UT Austin's chapter used to disappear because the last "at" (before "Austin") won,
+  // dropping "University of Texas"; the split that lands on a full institution name wins instead.
+  assert.equal(chabadCampusOf("The Igor Tulchinsky Chabad Campus at the University of Texas at Austin"), "the University of Texas at Austin");
+  // A nested "University of X" and a nested "for Jewish Student Life ... at College" both still resolve to the
+  // right-hand institution, not the segment right before the last connector.
+  assert.equal(chabadCampusOf("Chabad House @ University of Chicago"), "University of Chicago");
+  assert.equal(chabadCampusOf("The Rohr Chabad Center for Jewish Student Life at Binghamton University"), "Binghamton University");
+  // An abbreviation with no full "University"/"College" in it can't be told apart this way; the last split is kept
+  // (for review), same as before this fix.
+  assert.equal(chabadCampusOf("Chabad U of M - The Rohr Center for Jewish Student Life"), "Jewish Student Life");
   assert.deepEqual(
     chabadEntriesFrom([
       { name: "Chabad at Yale University", city: "New Haven", "center-type": { name: "Campus Chabad House" } },
@@ -589,4 +642,46 @@ test("policy checks (tier A): page, date, quote; a 'no' or a conduct restriction
   assert.match(policyCheckProblems({ ...ok, key: "conduct_restriction" }).join(), /verified_by/);
   assert.match(policyCheckProblems({ ...ok, quote: null }).join(), /quote/);
   assert.match(policyCheckProblems({ ...ok, url: "http://x.edu" }).join(), /https/);
+});
+
+/* ------------------------------------------------------------------ */
+/* Organizations (data/directories/organizations.json)                 */
+/* ------------------------------------------------------------------ */
+
+test("organizationProblems: website https, hex colors, wikidata shape, logo file/source/license/attribution", () => {
+  const ok = { name: "Sigma Phi Epsilon", website: "https://sigep.org/", letters: "ΣΦΕ", colors: ["#C8102E"], wikidata: "Q1478437", logo: null };
+  assert.deepEqual(organizationProblems("sigep", ok), []);
+  assert.match(organizationProblems("sigep", { ...ok, website: "http://sigep.org/" }).join(), /https/);
+  assert.match(organizationProblems("sigep", { ...ok, colors: ["red"] }).join(), /hex/);
+  assert.match(organizationProblems("sigep", { ...ok, wikidata: "1478437" }).join(), /wikidata/);
+  assert.match(organizationProblems("ssa", ok, ["sigep"]).join(), /no adapter/);
+  const withLogo = {
+    ...ok,
+    logo: { file: "public/org-logos/sigep.png", source: "https://sigep.org/", license: "Organization's own logo (used to identify it)", attribution: "© Sigma Phi Epsilon" },
+  };
+  assert.deepEqual(organizationProblems("sigep", withLogo), []);
+  assert.match(organizationProblems("sigep", { ...withLogo, logo: { ...withLogo.logo, source: "http://sigep.org/" } }).join(), /https/);
+  assert.match(organizationProblems("sigep", { ...withLogo, logo: { ...withLogo.logo, license: "Fair use" } }).join(), /license/);
+  assert.match(organizationProblems("sigep", { ...withLogo, logo: { ...withLogo.logo, file: "public/org-logos/other-key.png" } }).join(), /named after this key/);
+  for (const license of ALLOWED_LOGO_LICENSES) assert.deepEqual(organizationProblems("sigep", { ...withLogo, logo: { ...withLogo.logo, license } }), []);
+});
+
+test("data/directories/organizations.json: one entry per adapter key, https URLs, logo files exist and are small, license allowed", async () => {
+  const path = join(ROOT, "data", "directories", "organizations.json");
+  const file = JSON.parse(readFileSync(path, "utf8")) as OrganizationsFile;
+  const adapterKeys = (await loadAdapters()).map((a) => a.key);
+  assert.deepEqual(Object.keys(file.organizations).sort(), [...adapterKeys].sort(), "one organizations.json entry per adapter, and no extra keys");
+  const problems: string[] = [];
+  for (const [key, org] of Object.entries(file.organizations)) {
+    problems.push(...organizationProblems(key, org, adapterKeys));
+    if (org.logo) {
+      const abs = join(ROOT, org.logo.file);
+      if (!existsSync(abs)) problems.push(`${key}: logo.file ${org.logo.file} doesn't exist`);
+      else {
+        const bytes = statSync(abs).size;
+        if (bytes > 30 * 1024) problems.push(`${key}: logo.file is ${bytes} bytes, over the 30 KB budget`);
+      }
+    }
+  }
+  assert.deepEqual(problems, []);
 });

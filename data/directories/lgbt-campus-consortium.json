@@ -227,7 +227,7 @@
     {"campus":"University of South Florida","url":"http://multicultural.usf.edu/cisogi/lgbtatusf.asp","fact":"founded 2004","matches":[{"unit_id":"137351","name":"University of South Florida","confidence":0.95,"method":"exact"}]},
     {"campus":"University of Southern California","url":"http://lgbtrc.usc.edu/","fact":"founded 2005","matches":[{"unit_id":"123961","name":"University of Southern California","confidence":0.95,"method":"exact"}]},
     {"campus":"University of Southern Maine","url":"http://usm.maine.edu/diversity/center-sexualities-and-gender-diversity","fact":"founded 2000","matches":[{"unit_id":"161554","name":"University of Southern Maine","confidence":0.95,"method":"exact"}]},
-    {"campus":"University of Tennessee","url":"http://pridecenter.utk.edu/","fact":"founded 2010","matches":[{"unit_id":"221759","name":"The University of Tennessee-Knoxville","confidence":0.95,"method":"url"}]},
+    {"campus":"University of Tennessee","url":"http://pridecenter.utk.edu/","fact":"founded 2010","matches":[{"unit_id":"221759","name":"The University of Tennessee-Knoxville","confidence":0.95,"method":"flagship"}]},
     {"campus":"University of Texas Arlington","matches":[{"unit_id":"228769","name":"The University of Texas at Arlington","confidence":0.95,"method":"exact"}]},
     {"campus":"University of Toledo","url":"https://www.utoledo.edu/studentaffairs/omss/lgbtqa/","fact":"founded 2010","matches":[{"unit_id":"206084","name":"University of Toledo","confidence":0.95,"method":"exact"}]},
     {"campus":"University of Utah","url":"http://lgbt.utah.edu/","fact":"founded 2001","matches":[{"unit_id":"230764","name":"University of Utah","confidence":0.95,"method":"exact"}]},

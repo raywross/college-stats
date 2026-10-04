@@ -6,7 +6,7 @@
   "tier": "D",
   "classification": {"domain":"faith","tradition":"jewish"},
   "crawled": "2026-10-04",
-  "counts": {"entries":169,"matched":87,"multi":0,"unmatched":82,"colleges":87},
+  "counts": {"entries":169,"matched":88,"multi":0,"unmatched":81,"colleges":88},
   "entries": [
     {"campus":"Adelphi University","city":"Garden City","name":"Chabad at Adelphi University","url":"https://www.chabad.org/Garden-City/Campus-Chabad-House/Chabad-at-Adelphi-University","matches":[{"unit_id":"188429","name":"Adelphi University","confidence":0.95,"method":"exact"}]},
     {"campus":"Amherst","city":"Amherst","name":"Chabad House At Amherst","url":"https://www.chabad.org/Amherst/Campus-Chabad-House/Chabad-House-At-Amherst","matches":[{"unit_id":"164465","name":"Amherst College","confidence":0.85,"method":"prefix"}]},
@@ -93,6 +93,7 @@
     {"campus":"the University of Rhode Island","city":"Kingston","name":"Chabad of the University of Rhode Island - Kingston","url":"https://www.chabad.org/Kingston/Campus-Chabad-House/Chabad-of-the-University-of-Rhode-Island-Kingston","matches":[{"unit_id":"217484","name":"University of Rhode Island","confidence":0.95,"method":"exact"}]},
     {"campus":"the University of South Carolina","city":"Columbia","name":"Chabad @ the University of South Carolina","url":"https://www.chabad.org/Columbia/Campus-Chabad-House/Chabad-the-University-of-South-Carolina","matches":[{"unit_id":"218663","name":"University of South Carolina-Columbia","confidence":0.9,"method":"city"}]},
     {"campus":"the University of South Florida","city":"Tampa","name":"Chabad at the University of South Florida","url":"https://www.chabad.org/Tampa/Campus-Chabad-House/Chabad-at-the-University-of-South-Florida","matches":[{"unit_id":"137351","name":"University of South Florida","confidence":0.95,"method":"exact"}]},
+    {"campus":"the University of Texas at Austin","city":"Austin","name":"The Igor Tulchinsky Chabad Campus at the University of Texas at Austin","url":"https://www.chabad.org/Austin/Campus-Chabad-House/The-Igor-Tulchinsky-Chabad-Campus-at-the-University-of-Texas-at-Austin","matches":[{"unit_id":"228778","name":"The University of Texas at Austin","confidence":0.95,"method":"exact"}]},
     {"campus":"the University of Washington","city":"Seattle","name":"Chabad at the University of Washington","url":"https://www.chabad.org/Seattle/Campus-Chabad-House/Chabad-at-the-University-of-Washington","matches":[{"unit_id":"236948","name":"University of Washington-Seattle Campus","confidence":0.9,"method":"city"}]},
     {"campus":"the University of Wisconsin","city":"Madison","name":"Chabad at the University of Wisconsin","url":"https://www.chabad.org/Madison/Campus-Chabad-House/Chabad-at-the-University-of-Wisconsin","matches":[{"unit_id":"240444","name":"University of Wisconsin-Madison","confidence":0.9,"method":"city"}]}
   ]

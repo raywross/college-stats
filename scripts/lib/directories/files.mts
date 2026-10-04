@@ -4,6 +4,7 @@
  *   unmatched/<org>.json  entries below the match threshold, with the reason and nearest colleges, for review
  *   blocked.json          lists that refused us (owner decision 1): org, URL, what blocks it, first and last seen
  *   matches.json          hand-checked answers the matcher uses first: "campus|ST" → unit ids ([] = not on the site)
+ *   organizations.json    one entry per adapter: website, Greek letters, colors, Wikidata id, logo (specs/campus-directories.md#organizations)
  * Entries are sorted and written one per line, so a re-crawl's diff shows only what changed.
  */
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
@@ -57,7 +58,7 @@ export interface BlockedFile {
 }
 
 export const directoriesDir = (root: string) => join(root, "data", "directories");
-const RESERVED = new Set(["blocked.json", "matches.json"]);
+const RESERVED = new Set(["blocked.json", "matches.json", "organizations.json"]);
 
 /** The classification fields of an adapter, alone (what every listing from it is). */
 export function classificationOf(a: Classification): Classification {

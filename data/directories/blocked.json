@@ -1,3 +1,36 @@
 {
-  "blocked": []
+  "blocked": [
+    {
+      "org": "alpha-phi",
+      "url": "https://www.alphaphi.org/discover-alpha-phi/chapter-locator/",
+      "reason": "challenge",
+      "detail": "https://www.alphaphi.org/discover-alpha-phi/chapter-locator/: blocked (challenge): Cloudflare 'Just a moment...' challenge on every request, checked 2026-10-04",
+      "first_seen": "2026-10-04",
+      "last_seen": "2026-10-04"
+    },
+    {
+      "org": "alpha-sigma-tau",
+      "url": "https://alphasigmatau.org/members/find-a-chapter/",
+      "reason": "forbidden",
+      "detail": "https://alphasigmatau.org/members/find-a-chapter/: blocked (forbidden): 403 from the site's WAF on /members/find-a-chapter/ regardless of user agent, checked 2026-10-04",
+      "first_seen": "2026-10-04",
+      "last_seen": "2026-10-04"
+    },
+    {
+      "org": "delta-zeta",
+      "url": "https://www.deltazeta.org/",
+      "reason": "challenge",
+      "detail": "https://www.deltazeta.org/: blocked (challenge): Cloudflare 'Just a moment...' challenge on every request, checked 2026-10-04",
+      "first_seen": "2026-10-04",
+      "last_seen": "2026-10-04"
+    },
+    {
+      "org": "kappa-kappa-gamma",
+      "url": "https://www.kappakappagamma.org/stay-connected/mykappa/chapters-and-advisory-boards/",
+      "reason": "login",
+      "detail": "https://www.kappakappagamma.org/stay-connected/mykappa/chapters-and-advisory-boards/: blocked (login): page is served by the password-protected-categories plugin (myKappa member area), checked 2026-10-04",
+      "first_seen": "2026-10-04",
+      "last_seen": "2026-10-04"
+    }
+  ]
 }

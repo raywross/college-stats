@@ -2,6 +2,7 @@
   "unit_id": "201867",
   "tables": {
     "majors": {"source":"ipeds-c","vintage":"ipeds-c","year":"2024–25 graduates","rows":{"12.0301":[67,0]}},
-    "programs": {"source":"scorecard-fos","vintage":"scorecard-fos","year":null,"rows":{"12.03":{"title":"Funeral Service and Mortuary Science","graduates":100,"earnings":{"y1":44110,"y4":52985,"y4_national":60056,"y4_pell":48399,"y4_non_pell":51010},"debt_median":15000}}}
+    "programs": {"source":"scorecard-fos","vintage":"scorecard-fos","year":null,"rows":{"12.03":{"title":"Funeral Service and Mortuary Science","graduates":100,"earnings":{"y1":44110,"y4":52985,"y4_national":60056,"y4_pell":48399,"y4_non_pell":51010},"debt_median":15000}}},
+    "directories": {"source":"directory","vintage":null,"year":"October 2026","rows":{"credits":{"tri-delta":{"organization":"Tri Delta","publisher":"Tri Delta","list_url":"https://www.tridelta.org/our-members/find-a-chapter/","read":"2026-10-04","tier":"D","domain":"greek","council":"npc"}},"listings":[{"org":"tri-delta","name":"Zeta","url":"https://www.tridelta.org/collegiate-chapters/zeta-cincinnati/"}]}}
   }
 }

@@ -87,16 +87,19 @@ published at `/roadmap` ([roadmap.md](roadmap.md)): add each new one to `lib/roa
   - [ ] Check Duke (61,935 vs 61,395 applicants) and Stanford (enrolled 1,866 vs 1,839) against their sources.
   - [ ] Update the 8 hand-imported CDS overrides to their 2025–26 editions (`npm run import-cds`), or retire them
     now that the agent reads CDS files.
-- [ ] **Religious life** ([religious-life.md](religious-life.md)). Phase 1: IPEDS affiliation for all colleges (685 of
-  1,893). Then a 25-college pilot of per-school sources (CDS C7/H14, IR reports, org directories, Hillel), national
-  faith-org directories, and partnership requests (Hillel, Chabad, Anthology).
-- [ ] **Greek life** ([greek-life.md](greek-life.md)). Phase 1: CDS F1/F4. Then the same pilot for fraternity &
-  sorority life office reports (members by council, recruitment), checked against F1.
-- [ ] **LGBTQ+ life** ([lgbtq-life.md](lgbtq-life.md)). Phase 1: IPEDS "another gender" counts (add `EF{Y}A` to the
-  sync; blank means not collected, never ranked). Then a state-law table for public colleges (Texas SB 17 first),
-  Trans Policy Clearinghouse and campus-center leads matched to colleges, permission requests (Beemyn, Consortium,
-  oSTEM), and a 25-college pilot verifying policies on each college's own pages, with human review of conduct-code
-  findings.
+- [ ] **Religious life** ([religious-life.md](religious-life.md)). Phase 1 built (`feature/campus-life`): IPEDS
+  affiliation for all colleges (685 of 1,893) in ten families with an Explore filter and a Compare row, plus CDS C7,
+  H14, and F2 where a record has them. Next: a 25-college pilot of per-school sources (IR reports, org directories,
+  Hillel), national faith-org directories, and partnership requests (Hillel, Chabad, Anthology).
+- [ ] **Greek life** ([greek-life.md](greek-life.md)). Phase 1 built (`feature/campus-life`): CDS F1/F4 from the
+  round-3 records, with an Explore filter and Compare rows; "Known for" waits for 50 reporting colleges. Next: the
+  same pilot for fraternity & sorority life office reports (members by council, recruitment), checked against F1.
+- [ ] **LGBTQ+ life** ([lgbtq-life.md](lgbtq-life.md)). Phase 1 built (`feature/campus-life`): IPEDS "another
+  gender" counts (fall 2024 is the last year: NCES dropped the item from the 2025–26 surveys) with the
+  not-collected / withheld / reported distinction, and the Texas SB 17 line on Texas public colleges. Next: the other
+  reported states' statutes, Trans Policy Clearinghouse and campus-center leads matched to colleges, permission
+  requests (Beemyn, Consortium, oSTEM), and a 25-college pilot verifying policies on each college's own pages, with
+  human review of conduct-code findings.
 - [ ] **Watch ACTS** (IPEDS admissions supplement): adopt if NCES publishes institution-level files. See
   [data-page.md](data-page.md#watching-acts).
 - [ ] **Scheduled data refresh** (`chore/scheduled-data-sync`): monthly GitHub Action runs `npm run sync-all`

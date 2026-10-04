@@ -27,6 +27,7 @@ import { FACTOR_FILTERS } from "@/lib/factors";
 import { RESIDENCY_FILTERS } from "@/lib/cds/residency-display";
 import { hasHonorsProgram } from "@/lib/cds/academics-display";
 import { TRANSFER_FILTER } from "@/lib/cds/transfer-display";
+import { MIN_GREEK_OPTIONS, meetsGreekThreshold } from "@/lib/cds/greek-display";
 import { LOGISTICS_FILTERS } from "@/lib/cds/application-logistics-display";
 import { DESIGNATION_KEYS, RESEARCH_TIERS, SETTING_GROUPS, designationsOf, isOpportunityCollege } from "@/lib/campus-profile";
 import { DIVISION_FILTERS, ROTC_BRANCHES, divisionFilterOf } from "@/lib/campus-services";
@@ -35,6 +36,7 @@ import { drawsNationally } from "@/lib/residence";
 import { noCssProfile, offersInternationalAid } from "@/lib/cds/financial-aid";
 import { fieldFacets } from "@/lib/majors";
 import { policyBucket } from "@/lib/test-policy";
+import { FAITH_FILTERS, faithFilterOf } from "@/lib/religion";
 import { InfoTip } from "@/components/ui/info-tip";
 import { BaselineNote } from "@/components/ui/BaselineNote";
 import { MultiSourceNote } from "@/components/sources/MultiSourceNote";
@@ -87,6 +89,13 @@ function buildFacets({ getAllSchools, histogram }: Dataset): FilterFacets {
     for (const d of designationsOf(s)) campus.designation[d]++;
   }
 
+  // Religious affiliation (lib/religion.ts): colleges per faith family, and with none.
+  const faith = Object.fromEntries(FAITH_FILTERS.map((f) => [f.key, 0])) as FilterFacets["faith"];
+  for (const s of all) {
+    const f = faithFilterOf(s);
+    if (f) faith[f]++;
+  }
+
   const ratios = all.map((s) => s.academics?.student_faculty_ratio).filter((v): v is number => v != null);
   const maxRatio = Object.fromEntries(MAX_RATIO_OPTIONS.map((n) => [n, ratios.filter((v) => v <= n).length]));
 
@@ -126,8 +135,10 @@ function buildFacets({ getAllSchools, histogram }: Dataset): FilterFacets {
     residency: Object.fromEntries(RESIDENCY_FILTERS.map((f) => [f.param, all.filter(f.test).length])) as FilterFacets["residency"],
     honors: all.filter(hasHonorsProgram).length,
     transfers: all.filter(TRANSFER_FILTER.test).length,
+    minGreek: Object.fromEntries(MIN_GREEK_OPTIONS.map((n) => [n, all.filter((s) => meetsGreekThreshold(s, n)).length])),
     logistics: Object.fromEntries(LOGISTICS_FILTERS.map((f) => [f.param, all.filter(f.test).length])) as FilterFacets["logistics"],
     campus,
+    faith,
     states: Object.keys(states).sort().map((value) => ({ value, count: states[value] })),
     regions: Object.keys(regions).sort().map((value) => ({ value, count: regions[value] })),
     types: Object.keys(types).map((value) => ({ value, label: typeLabel(value), count: types[value] })),

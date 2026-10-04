@@ -18,7 +18,11 @@ import { Residence } from "@/components/school/Residence";
 import { Transfers } from "@/components/school/Transfers";
 import { StandoutChip } from "@/components/school/StandoutChip";
 import { CampusLife } from "@/components/school/CampusLife";
+import { GreekLife } from "@/components/school/GreekLife";
 import { CampusServices } from "@/components/school/CampusServices";
+import { ReligiousLife } from "@/components/school/ReligiousLife";
+import { LgbtqLife } from "@/components/school/LgbtqLife";
+import { countDisplay, countText } from "@/lib/lgbtq";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -44,6 +48,9 @@ export default async function StudentsPage({ params }: Props) {
   const { citeField, distribution, metricMedian, rankOf } = data;
   const { demographics: d } = school;
   const body = studentBodyNotes(data, school);
+  // Another gender beside the men/women shares (specs/lgbtq-life.md), under the same display rules as the block.
+  const gender = school.lgbtq?.gender ?? null;
+  const another = gender ? countDisplay(gender.status, gender.another, gender.undergrads) : null;
   // Conference and association moves in the last three IC years, under the athletics line (campus-services.md).
   const servicesYear = history?.history.series.athletic_association ? lastYear(history.history.series.athletic_association) : null;
   const recentMoves =
@@ -177,6 +184,12 @@ export default async function StudentsPage({ params }: Props) {
                         color={DOMAINS.access.color}
                       />
                       {d.women_share != null && <p className="mt-1.5 text-xs text-muted-foreground">{pct(d.women_share)} women</p>}
+                      {another && (
+                        <p className="mt-1 flex items-start gap-1 text-xs text-muted-foreground">
+                          <span>Another gender: {countText(another, "undergraduates")}</span>
+                          <InfoTip term="another-gender" cited={citeField("lgbtq.gender", school)} />
+                        </p>
+                      )}
                     </div>
                   )}
                   {d.part_time_share != null && (
@@ -204,7 +217,11 @@ export default async function StudentsPage({ params }: Props) {
                     />
                   )}
                 </div>
-                <p className="mt-4 text-xs text-muted-foreground">Degree-seeking undergraduates.</p>
+                <p className="mt-4 text-xs text-muted-foreground">
+                  Degree-seeking undergraduates.
+                  {d.men_share != null &&
+                    " Men and women add up to 100% because federal data has colleges count each student of another or unknown gender as a man or a woman."}
+                </p>
               </div>
             </ShowMore>
           )}
@@ -215,6 +232,14 @@ export default async function StudentsPage({ params }: Props) {
         <Panel id="campus" domain="size" eyebrow="Campus life" title="Housing, sports, and programs" takeaway={campusTakeaway(school)} fields={[]} className="mt-14 sm:mt-20">
           <CampusLife school={school} />
           <CampusServices school={school} recentMoves={recentMoves} />
+          <ReligiousLife school={school} />
+          <GreekLife school={school} />
+          <LgbtqLife
+            school={school}
+            citedGender={citeField("lgbtq.gender", school)}
+            citedAdmissions={citeField("lgbtq.admissions", school)}
+            citedLaw={citeField("lgbtq.state_law", school)}
+          />
         </Panel>
       )}
     </TopicPage>

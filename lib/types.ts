@@ -274,6 +274,12 @@ export interface School {
    * (public), FASB (private nonprofit), or for-profit. Null when the college's finance survey isn't in the file yet.
    */
   finances?: SchoolFinances | null;
+  /**
+   * LGBTQ+ life (specs/lgbtq-life.md, phase 1; lib/lgbtq.ts): the federal "another gender" counts and, at public
+   * colleges in a state with a law in data/state-laws.json, that law. Never ranked, averaged, filtered, or turned into
+   * a "Known for" chip.
+   */
+  lgbtq?: LgbtqLife | null;
   campus?: {
     /** Athletics (IPEDS IC; lib/campus-services.ts). Null when the college didn't answer. */
     athletics?: Athletics | null;
@@ -310,6 +316,12 @@ export interface School {
       meals_per_week: number | null;
     } | null;
   };
+  /**
+   * Religious life, phase 1 (specs/religious-life.md; lib/religion.ts). Present when the college is in IPEDS IC{Y};
+   * `affiliation` null means IPEDS says "not applicable" (no religious affiliation). Later phases add the CDS and
+   * directory blocks the spec sketches; the CDS facts read so far live under `reported.religion`.
+   */
+  religion?: SchoolReligion;
   links?: {
     website: string | null;
     /** The college's federally required net price calculator. */
@@ -380,10 +392,14 @@ export interface ReportedData {
   academics?: ReportedAcademics;
   /** CDS section D, transfer admission (specs/data-expansion/cds-transfer.md; lib/cds/transfer.ts). */
   transfer?: ReportedTransfer;
+  /** CDS F1/F4, Greek life phase 1 (specs/greek-life.md; lib/cds/greek.ts). */
+  greek?: ReportedGreek;
   /** CDS C13–C18, the regular round (specs/data-expansion/cds-application-logistics.md; lib/cds/application-logistics.ts). */
   admissions_logistics?: ReportedLogistics;
   /** CDS C3–C5, high school preparation (same spec and module). */
   admissions_hs_prep?: ReportedHsPrep;
+  /** CDS H14 religious-affiliation scholarships and F2 campus ministries (specs/religious-life.md; lib/cds/religion.ts). */
+  religion?: ReportedReligion;
 }
 
 /* ---- CDS student body and outcomes (specs/data-expansion/cds-student-body-and-outcomes.md) ---- */
@@ -957,6 +973,25 @@ export interface ReportedTransfer {
 }
 
 /**
+ * CDS Greek life, phase 1 (specs/greek-life.md; lib/cds/greek.ts): F1's participation percentages (men in
+ * fraternities, women in sororities, each for first-years and all undergrads) and F4's fraternity/sorority housing
+ * checkbox. Each value carries its own lineage record and year (F1: the fall; `housing`: the edition). Partial
+ * coverage: never in ranks, medians, sorts, or "Known for" until enough colleges report it (spec Open questions).
+ */
+export interface ReportedGreek {
+  /** F.102: percent of first-year men who join fraternities. */
+  frat_pct_first_year: number | null;
+  /** F.110: percent of all undergraduate men who join fraternities. */
+  frat_pct_undergrad: number | null;
+  /** F.103: percent of first-year women who join sororities. */
+  sor_pct_first_year: number | null;
+  /** F.111: percent of all undergraduate women who join sororities. */
+  sor_pct_undergrad: number | null;
+  /** F.408: fraternity/sorority housing. A checked box stores `true`; unchecked or blank stores `null` (never `false`). */
+  housing: boolean | null;
+}
+
+/**
  * A month/day with no year (the year lives in the field's lineage record, e.g. "Fall 2026 cycle"). Both null means the
  * cell held free text; the verbatim text is in the lineage quote. Same shape as lib/cds-dates.ts `CdsDate`.
  */
@@ -1103,6 +1138,42 @@ export interface SexCounts {
 
 export type SettingGroup = "city" | "suburb" | "town" | "rural";
 
+/* ---- Religious life (specs/religious-life.md, phase 1) ---- */
+
+/** IPEDS IC `RELAFFIL`: the code and NCES's own label from the IC{Y} data dictionary (never typed by hand). */
+export interface ReligiousAffiliation {
+  code: number;
+  label: string;
+}
+/** `school.religion`. */
+export interface SchoolReligion {
+  /** Null: IPEDS "not applicable", the college has no religious affiliation. */
+  affiliation: ReligiousAffiliation | null;
+}
+/** The faith families the Explore filter groups IPEDS's ~60 affiliations into (lib/religion.ts RELAFFIL_FAMILY). */
+export type FaithFilter = FaithFamily | "none";
+export type FaithFamily =
+  | "catholic"
+  | "baptist"
+  | "methodist"
+  | "lutheran"
+  | "presbyterian_reformed"
+  | "nondenominational"
+  | "other_christian"
+  | "jewish"
+  | "latter_day_saint"
+  | "other";
+/**
+ * `school.reported.religion` (lib/cds/religion.ts). Stored only when a box is marked: an unmarked CDS box is "not
+ * marked", never "no", so there's no false.
+ */
+export interface ReportedReligion {
+  /** CDS H14: the college's own scholarships consider religious affiliation (H.1409 non-need, H.1418 need-based). */
+  aid_by_affiliation?: { non_need: boolean; need: boolean };
+  /** CDS F2 (F.201): campus ministries among the activities offered. */
+  campus_ministries?: true;
+}
+
 /** Carnegie 2025 research designation: R1, R2, or Research Colleges and Universities. */
 export type ResearchTier = "R1" | "R2" | "RCU";
 
@@ -1148,6 +1219,58 @@ export interface ResidencyPrices {
  * One entering group's status 8 years after starting (IPEDS Outcome Measures): shares of its adjusted cohort, summing to
  * 1. Rates are null when the cohort is under 30 students (lib/outcome-measures.ts MIN_COHORT).
  */
+/**
+ * Whether a college reported its "another gender" count (IPEDS imputation flag): `reported` (a count, 0 included),
+ * `withheld` (it records other genders but left the cells blank because at least one count was under 5, flag "S"),
+ * or `not_collected` (it doesn't record other genders, flag "A"). Blank and 0 never mean the same thing.
+ */
+export type GenderReportStatus = "reported" | "withheld" | "not_collected";
+
+/** Fall undergraduates (all, IPEDS EF{Y}A level 2) of another gender and of unknown gender (lib/lgbtq.ts). */
+export interface GenderDetail {
+  status: GenderReportStatus;
+  /** Undergraduates whose records hold a gender other than man or woman; null unless `status` is "reported". */
+  another: number | null;
+  /** Undergraduates whose gender the college doesn't know (reported separately, by every college). */
+  unknown: number | null;
+  /** All undergraduates that fall, the denominator for the share. */
+  undergrads: number | null;
+}
+
+/** First-time applicants, admits, and enrollees of another gender (IPEDS ADM `APPLCNAN`, `ADMSSNAN`, `ENRLAN`). */
+export interface GenderAdmissions {
+  status: GenderReportStatus;
+  applicants: number | null;
+  admitted: number | null;
+  enrolled: number | null;
+}
+
+/** A state law that applies to the college because it's public (data/state-laws.json; specs/lgbtq-life.md). */
+export interface StateLaw {
+  state: string;
+  /** Short name, e.g. "Texas SB 17 (2023)". */
+  name: string;
+  /** The codified section, e.g. "Texas Education Code §51.3525". */
+  statute: string;
+  /** Session law citation, e.g. "Acts 2023, 88th Leg., R.S., Ch. 922 (S.B. 17)". */
+  act: string;
+  /** ISO date the law took effect. */
+  effective: string;
+  /** One neutral sentence, checked against the statute text. */
+  summary: string;
+  /** The statute text. */
+  url: string;
+  /** ISO date the statute was last read. */
+  checked: string;
+}
+
+export interface LgbtqLife {
+  gender: GenderDetail | null;
+  /** Null when the college isn't in the admissions file (open admission) or the file has no such columns. */
+  admissions: GenderAdmissions | null;
+  state_law: StateLaw | null;
+}
+
 /** New transfer-in undergraduates in one fall (IPEDS EF{Y}A levels 19, 39, 59; lib/transfers.ts). */
 export interface TransferIn {
   count: number;
@@ -1250,7 +1373,9 @@ export type SourceKey = "scorecard" | "ipeds-adm" | "ipeds-sfa" | "ipeds-ic" | "
   /** IPEDS Graduation Rates, Pell and subsidized-loan file (GR{Y}_PELL_SSL; specs/data-expansion/graduation-by-group.md). */
   | "ipeds-gr"
   /** College Scorecard Field of Study bulk CSV: earnings and debt by 4-digit CIP (specs/data-expansion/field-of-study.md). */
-  | "scorecard-fos";
+  | "scorecard-fos"
+  /** State statutes that apply to public colleges, read by hand (data/state-laws.json; specs/lgbtq-life.md). */
+  | "state-law";
 /** Race/ethnicity groups for graduation rates (lib/graduation-groups.ts RACE_GROUPS). */
 export type GradRaceGroup = "white" | "asian" | "hispanic" | "black" | "two_or_more" | "international" | "aian" | "nhpi";
 
@@ -1406,8 +1531,12 @@ export interface SearchFilters {
   honors?: boolean;
   /** Admits transfer students (lib/cds/transfer-display.ts): the CDS D1/D2 answer, else the federal transfer-in count. */
   transfers?: boolean;
+  /** Fraternity or sorority participation at least this share (0–1) of undergrad men or women (lib/cds/greek-display.ts). Colleges that don't report either percentage are excluded. */
+  minGreek?: number;
   /** Allows deferred admission, a gap year (CDS C18; lib/cds/application-logistics-display.ts). */
   gapYear?: boolean;
+  /** Religious affiliation (lib/religion.ts): faith families, or "none" for colleges with no affiliation. */
+  faith?: FaithFilter[];
   sortBy?: SortKey;
   sortDir?: "asc" | "desc";
 }

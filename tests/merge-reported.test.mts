@@ -252,7 +252,7 @@ test("the CLI refuses to write when an entry's year isn't newer than the federal
     assert.notEqual(result.status, 0);
     assert.match(result.stderr, /isn't newer than the federal year/);
     const text = readFileSync(join(dir, "data", "schools.json"), "utf8");
-    assert.doesNotMatch(text, /"reported"/); // untouched: the original (reported-less) file is still there
+    assert.doesNotMatch(text, /"reported":/); // untouched: the original (reported-less) file is still there (the key; "reported" is also a status value)
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }

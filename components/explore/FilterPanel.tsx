@@ -15,6 +15,7 @@ import { FACTOR_FILTERS, type FactorFilterParam } from "@/lib/factors";
 import { RESIDENCY_FILTERS, type ResidencyFilterParam } from "@/lib/cds/residency-display";
 import { HONORS_FILTER_LABEL } from "@/lib/cds/academics-display";
 import { TRANSFER_FILTER } from "@/lib/cds/transfer-display";
+import { GREEK_FILTER_LABEL, MIN_GREEK_OPTIONS } from "@/lib/cds/greek-display";
 import { LOGISTICS_FILTERS, type LogisticsFilterParam } from "@/lib/cds/application-logistics-display";
 import { DESIGNATION_KEYS, DESIGNATION_LABELS, RESEARCH_TIERS, SETTING_GROUPS } from "@/lib/campus-profile";
 import { DIVISION_FILTERS, DIVISION_SHORT, ROTC_BRANCHES, ROTC_LABELS } from "@/lib/campus-services";
@@ -25,6 +26,8 @@ import { FIELD_MIN_OPTIONS, MAJOR_FAMILIES, MAJOR_FAMILY_CODES } from "@/lib/maj
 import type { Designation, DivisionFilter, ResearchTier, RotcBranch, SettingGroup } from "@/lib/types";
 import { useExploreParams } from "./useExploreParams";
 import { POLICY_BUCKETS, type PolicyBucket } from "@/lib/test-policy";
+import { FAITH_FILTERS } from "@/lib/religion";
+import type { FaithFilter } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 export interface FilterFacets {
@@ -49,6 +52,8 @@ export interface FilterFacets {
   factors: Record<FactorFilterParam, number>;
   /** Colleges per setting group, research tier, and designation (lib/campus-profile.ts). */
   campus: { setting: Record<SettingGroup, number>; research: Record<ResearchTier, number>; designation: Record<Designation, number>; opportunity: number };
+  /** Colleges per faith family, and with no religious affiliation (lib/religion.ts). */
+  faith: Record<FaithFilter, number>;
   /** Colleges per division, and with football, each ROTC branch, undergrad research, study abroad (lib/campus-services.ts). */
   services: { division: Record<DivisionFilter, number>; football: number; rotc: Record<RotcBranch, number>; ugResearch: number; studyAbroad: number };
   /** Colleges with at most N students per faculty member, for each option (lib/academics.ts MAX_RATIO_OPTIONS). */
@@ -74,6 +79,8 @@ export interface FilterFacets {
   honors: number;
   /** Colleges matching "Admits transfer students" (lib/cds/transfer-display.ts). */
   transfers: number;
+  /** Colleges with at least this share of undergrad men or women in a fraternity or sorority, for each option (lib/cds/greek-display.ts MIN_GREEK_OPTIONS). */
+  minGreek: Record<number, number>;
   /** Colleges matching the gap-year chip (lib/cds/application-logistics-display.ts). */
   logistics: Record<LogisticsFilterParam, number>;
 }
@@ -151,7 +158,7 @@ export function FilterPanel({ facets, onDone }: { facets: FilterFacets; onDone?:
   const fieldOptions = MAJOR_FAMILY_CODES.filter((f) => (facets.fields[f]?.[0] ?? 0) > 0).sort((a, b) => MAJOR_FAMILIES[a].localeCompare(MAJOR_FAMILIES[b]));
 
   const hasFilters = [
-    ...["q", "types", "sizes", "regions", "states", "minAR", "maxAR", "minSAT", "maxSAT", "minCost", "maxCost", "minEnroll", "maxEnroll", "balance", "fullTime", "fewLoans", "liveOn", "noFee", "guarantee", "noLegacy", "noEssay", "gpaRequired", "setting", "research", "designation", "opportunity", "division", "conference", "football", "rotc", "ugResearch", "studyAbroad", "maxRatio", "pellGap", "minFullTimeFaculty", "national", "field", "byRes", "oosEven", "gpa", "aidForms", "intlAid", "honors", "transfers", "gapYear"],
+    ...["q", "types", "sizes", "regions", "states", "minAR", "maxAR", "minSAT", "maxSAT", "minCost", "maxCost", "minEnroll", "maxEnroll", "balance", "fullTime", "fewLoans", "liveOn", "noFee", "guarantee", "noLegacy", "noEssay", "gpaRequired", "setting", "research", "designation", "opportunity", "division", "conference", "football", "rotc", "ugResearch", "studyAbroad", "maxRatio", "pellGap", "minFullTimeFaculty", "national", "field", "byRes", "oosEven", "gpa", "aidForms", "intlAid", "honors", "transfers", "minGreek", "gapYear", "faith"],
     ...INDICATOR_KEYS.map((k) => INDICATORS[k].param),
     "policy",
   ].some((k) => searchParams.get(k));
@@ -438,6 +445,17 @@ export function FilterPanel({ facets, onDone }: { facets: FilterFacets; onDone?:
         </div>
       </Section>
 
+      <Section title="Religious affiliation" term="religious-affiliation">
+        <div className="flex flex-wrap gap-1.5" role="group" aria-label="Religious affiliation">
+          {FAITH_FILTERS.map((f) => (
+            <Chip key={f.key} active={getList("faith").includes(f.key)} onClick={() => toggleInList("faith", f.key)} count={facets.faith[f.key]}>
+              {f.label}
+            </Chip>
+          ))}
+        </div>
+        <p className="text-[11px] text-muted-foreground">Groups of the affiliations colleges report to the federal government. Each profile shows the exact one.</p>
+      </Section>
+
       <Section title="Students per faculty" term="student-faculty-ratio">
         <div className="flex flex-wrap gap-1.5" role="group" aria-label="At most this many students per faculty member">
           {MAX_RATIO_OPTIONS.map((n) => {
@@ -552,6 +570,20 @@ export function FilterPanel({ facets, onDone }: { facets: FilterFacets; onDone?:
             {TRANSFER_FILTER.label}
           </Chip>
         </div>
+      </Section>
+
+      <Section title={GREEK_FILTER_LABEL} term="greek-life">
+        <div className="flex flex-wrap gap-1.5" role="group" aria-label="At least this share of undergrad men or women">
+          {MIN_GREEK_OPTIONS.map((n) => {
+            const active = searchParams.get("minGreek") === String(Math.round(n * 100));
+            return (
+              <Chip key={n} active={active} onClick={() => update({ minGreek: active ? null : String(Math.round(n * 100)) })} count={facets.minGreek[n]}>
+                {Math.round(n * 100)}% or more
+              </Chip>
+            );
+          })}
+        </div>
+        <p className="mt-1.5 text-[11px] text-muted-foreground">Of undergrad men in fraternities, or undergrad women in sororities (never summed). Only colleges whose Common Data Set reports either percentage can match.</p>
       </Section>
 
       <Section title="After you're admitted" term="deferred-admission">

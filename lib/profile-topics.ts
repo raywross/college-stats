@@ -242,6 +242,15 @@ export const TOPIC_FIELDS: Readonly<Record<TopicKey, readonly FieldPath[]>> = {
     "campus.services",
     "campus.calendar",
     "demographics.disability_services",
+    // Religious life (specs/religious-life.md): IPEDS affiliation, CDS C7, H14, F2.
+    "religion.affiliation",
+    "reported.admission_profile.factors.religious",
+    "reported.religion.aid_by_affiliation",
+    "reported.religion.campus_ministries",
+    // LGBTQ+ life (specs/lgbtq-life.md): another-gender counts (also beside men and women) and the state-law line.
+    "lgbtq.gender",
+    "lgbtq.admissions",
+    "lgbtq.state_law",
   ],
   academics: [
     "academics.bachelors_awarded",

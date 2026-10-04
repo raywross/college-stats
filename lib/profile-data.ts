@@ -9,8 +9,11 @@ import type { HistoryFiles } from "./supabase";
 import { diversityIndex, hasAdmissionCounts, hasTestScores, paybackYears, satMid, satTotal, yieldRate } from "./metrics";
 import { hasGradByGroup } from "./graduation-groups";
 import { isShown } from "./outcome-measures";
+import { hasLgbtq } from "./lgbtq";
 import { INSTRUCTION_METRIC, endowmentMetricFor } from "./finances";
 import { PROFILE_TOPICS, type TopicKey } from "./profile-topics";
+import { religionView } from "./religion";
+import { greekCard } from "./cds/greek-display";
 
 /** A college's history shard and the shared history files, when both exist (specs/trends-data.md). */
 export interface ProfileHistory {
@@ -111,7 +114,11 @@ export const loadProfile = cache(async (id: string): Promise<Profile | null> => 
 
   const hasHistory = history !== null && files !== null && Object.keys(history.series).length > 0;
   const hasAdmissions = rate !== null || counts;
-  const hasCampus = !!(school.campus?.housing || school.campus?.athletics || school.campus?.programs);
+  // Greek, religious, and LGBTQ+ life (specs/greek-life.md, specs/religious-life.md, specs/lgbtq-life.md) count too,
+  // so the section and its "Campus life" link show for any of them alone.
+  const hasCampus =
+    !!(school.campus?.housing || school.campus?.athletics || school.campus?.programs || greekCard(school) || religionView(school)) ||
+    hasLgbtq(school);
   const hasAcademics = !!majorsTop?.length || hasTopPrograms || ratio !== null || fullTimeShare !== null || facultySalaryValue !== null || finances !== null;
   // The single-page profile showed Cost & outcomes when any of these existed; the split keeps that for cost and
   // adds the outcome blocks' own conditions for the outcomes page.

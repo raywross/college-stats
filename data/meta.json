@@ -1,5 +1,5 @@
 {
-  "retrieved": "2026-10-02",
+  "retrieved": "2026-10-04",
   "sources": {
     "scorecard": {
       "label": "College Scorecard",
@@ -65,11 +65,11 @@
       "description": "Average salary of a college's full-time instructional staff (all academic ranks combined), equated to a 9-month contract so colleges with different contract lengths can be compared."
     },
     "ipeds-ic-char": {
-      "label": "IPEDS Institutional Characteristics survey (athletics, programs, services)",
+      "label": "IPEDS Institutional Characteristics survey (athletics, programs, services, religious affiliation)",
       "publisher": "National Center for Education Statistics (NCES)",
       "edition": "2025–26 (IC2025)",
       "url": "https://nces.ed.gov/ipeds/complete-data-files/IC2025.zip",
-      "description": "What each college offers: its athletic association, conference, and sports; ROTC, study abroad, and undergraduate research; AP credit; student services; the academic calendar; and the share of undergrads registered with disability services."
+      "description": "What each college offers: its athletic association, conference, and sports; ROTC, study abroad, and undergraduate research; AP credit; student services; the academic calendar; the share of undergrads registered with disability services; and its religious affiliation, if any (labels from the file's NCES data dictionary)."
     },
     "ipeds-f": {
       "label": "IPEDS Finance survey, derived per-student figures",
@@ -84,6 +84,13 @@
       "edition": "Varies by college",
       "url": "https://commondataset.org/",
       "description": "A standardized report many colleges publish on their own sites, with more detail than federal surveys: admissions for the latest class and need-based vs. merit aid (section H)."
+    },
+    "college-site": {
+      "label": "College website (class profile or Common Data Set)",
+      "publisher": "Each college",
+      "edition": "Newest figures each college has published; the year is shown with each value",
+      "url": "/data#college-reported",
+      "description": "Figures a college posted itself, usually a year ahead of federal data: its newest class profile or Common Data Set. Read automatically from the college's site, checked against its own math and the federal baseline, and shown only on that college's profile with the exact quote and link."
     },
     "ipeds-ef-c": {
       "label": "IPEDS Fall Enrollment survey (part C, residence of first-time students)",
@@ -106,19 +113,19 @@
       "url": "https://ed-public-download.scorecard.network/downloads/Most-Recent-Cohorts-Field-of-Study_06102026.zip",
       "description": "Earnings and federal loan debt by detailed field of study (4-digit CIP) and credential level, bachelor's programs only, among each college's federal financial aid recipients. Each column is Scorecard's latest calculation for that one metric, and different columns pool different completion cohorts a few years apart, so a program's figures aren't all one snapshot (see the Field of Study spec for the exact years)."
     },
+    "state-law": {
+      "label": "State laws on public colleges",
+      "publisher": "State legislatures (statutes read and summarized by hand)",
+      "edition": "Reviewed 2026-10-03",
+      "url": "https://statutes.capitol.texas.gov/Docs/ED/htm/ED.51.htm#51.3525",
+      "description": "Laws that limit what public colleges in a state may offer, such as identity-based offices and programs, each with its statute, effective date, and a one-line summary checked against the statute text. Now: Texas SB 17 (2023)."
+    },
     "ipeds-c": {
       "label": "IPEDS Completions survey (degrees awarded by field)",
       "publisher": "National Center for Education Statistics (NCES)",
       "edition": "2024–25 graduates (C2025_A)",
       "url": "https://nces.ed.gov/ipeds/complete-data-files/C2025_A.zip",
       "description": "Every degree and certificate each college awarded from July through June, by field of study (Classification of Instructional Programs, CIP 2020) and award level. The site counts bachelor's degrees, first and second majors separately."
-    },
-    "college-site": {
-      "label": "College website (class profile or Common Data Set)",
-      "publisher": "Each college",
-      "edition": "Newest figures each college has published; the year is shown with each value",
-      "url": "/data#college-reported",
-      "description": "Figures a college posted itself, usually a year ahead of federal data: its newest class profile or Common Data Set. Read automatically from the college's site, checked against its own math and the federal baseline, and shown only on that college's profile with the exact quote and link."
     }
   },
   "vintages": {

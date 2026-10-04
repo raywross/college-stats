@@ -40,6 +40,7 @@ import { GR_PELL_COHORT_TYPE, GR_PELL_COLUMNS, RACE_GROUPS, aidGroupGradFrom, ra
 import { residenceFrom } from "../lib/residence.ts";
 import { addResidenceMeta, buildDetails, crossCheckDerived, detailProblems, fetchResidence, writeDetails } from "./lib/residence-sync.mts";
 import { addTransferMeta, checkTransfers, fetchTransfers } from "./lib/transfers-sync.mts";
+import { addLgbtq, addStateLawMeta, fetchLgbtqInputs, lgbtqSummary } from "./lib/lgbtq-sync.mts";
 import { addMajorsMeta, buildMajorDetails, checkTotals, fetchCompletions, majorsFor, unknownCodes } from "./lib/majors-sync.mts";
 import { mergeDetails } from "../lib/detail.ts";
 import { financialAidDetails } from "../lib/cds/financial-aid.ts";
@@ -47,6 +48,8 @@ import { transferInFrom } from "../lib/transfers.ts";
 import { financesFrom } from "../lib/finances.ts";
 import { apCreditFrom, athleticsFrom, calendarFrom, disabilityFrom, programsFrom, servicesFrom } from "../lib/campus-services.ts";
 import { addFieldOfStudyMeta, buildProgramDetails, fetchFieldOfStudy } from "./lib/field-of-study-sync.mts";
+import { fetchValueLabels } from "./lib/ipeds-dictionary.mts";
+import { religionFrom } from "../lib/religion.ts";
 import { acceptanceRate, applicationFeeFrom, computePrices, factorsFrom, housingFrom, ipedsNum, parseShareBand, priceSuffix, promiseProgramFrom, raceShares, toAid, tuitionPlansFrom } from "../lib/derive.ts";
 
 const ROOT = join(import.meta.dirname, "..");
@@ -56,6 +59,7 @@ const REPORTED = join(ROOT, "data", "college-reported.json");
 const CDS_RECORDS = join(ROOT, "data", "cds-records");
 const META = join(ROOT, "data", "meta.json");
 const CALENDAR = join(ROOT, "data", "release-calendar.json");
+const STATE_LAWS = join(ROOT, "data", "state-laws.json");
 const API = "https://api.data.gov/ed/collegescorecard/v1/schools";
 const INCLUDE_ONLINE = process.argv.includes("--include-online");
 const RELEASES_ONLY = process.argv.includes("--releases-only");
@@ -569,12 +573,12 @@ function buildMeta(
           "Average salary of a college's full-time instructional staff (all academic ranks combined), equated to a 9-month contract so colleges with different contract lengths can be compared.",
       },
       "ipeds-ic-char": {
-        label: "IPEDS Institutional Characteristics survey (athletics, programs, services)",
+        label: "IPEDS Institutional Characteristics survey (athletics, programs, services, religious affiliation)",
         publisher: "National Center for Education Statistics (NCES)",
         edition: `${academicYear(icChar.name.slice(2))} (${icChar.name})`,
         url: icChar.url,
         description:
-          "What each college offers: its athletic association, conference, and sports; ROTC, study abroad, and undergraduate research; AP credit; student services; the academic calendar; and the share of undergrads registered with disability services.",
+          "What each college offers: its athletic association, conference, and sports; ROTC, study abroad, and undergraduate research; AP credit; student services; the academic calendar; the share of undergrads registered with disability services; and its religious affiliation, if any (labels from the file's NCES data dictionary).",
       },
       "ipeds-f": {
         label: "IPEDS Finance survey, derived per-student figures",
@@ -811,6 +815,14 @@ async function main() {
   const efc = await fetchResidence(join(ROOT, ".cache", "ipeds"), thisYear);
   // Transfers in (specs/data-expansion/transfers.md): the newest EF{Y}A, every fall.
   const efa = await fetchTransfers(join(ROOT, ".cache", "ipeds"), thisYear);
+  // LGBTQ+ life (specs/lgbtq-life.md): another-gender counts from EF{Y}A and ADM{Y} (the newest files that still have
+  // them; NCES stopped asking from 2025–26) and the state-law table.
+  const lgbtqInputs = await fetchLgbtqInputs(
+    { name: efa.table.name, url: efa.table.url, year: efa.year, rows: efa.table.rows },
+    { name: adm.name, url: adm.url, year: admYear, rows: adm.rows },
+    join(ROOT, ".cache", "ipeds"),
+    STATE_LAWS,
+  );
   // Majors (specs/data-expansion/majors.md): the newest C{Y}_A, bachelor's degrees by program.
   const completions = await fetchCompletions(join(ROOT, ".cache", "ipeds"), thisYear);
   const strayCodes = unknownCodes(completions.table);
@@ -819,6 +831,10 @@ async function main() {
   const icChar = await fetchIpeds(IC_CHAR_NAMES);
   if (![...icChar.rows.values()].some((r) => "ATHASSOC" in r && "CONFNO2" in r && "SLO5" in r && "CALSYS" in r))
     throw new Error(`${icChar.name} has no athletics/program columns`);
+  // Religious affiliation (specs/religious-life.md): RELAFFIL from the same IC{Y}, labels from its data dictionary.
+  if (![...icChar.rows.values()].some((r) => "RELAFFIL" in r)) throw new Error(`${icChar.name} has no RELAFFIL column`);
+  const relaffil = await fetchValueLabels(icChar.name, "RELAFFIL", join(ROOT, ".cache", "ipeds"));
+  console.log(`  IPEDS ${icChar.name}_Dict: ${relaffil.labels.size} RELAFFIL labels`);
   // Earnings and debt by major (specs/data-expansion/field-of-study.md): College Scorecard's bulk CSV, cached under
   // .cache/scorecard (dated URL, discovered from the data page every refresh).
   const fos = await fetchFieldOfStudy(join(ROOT, ".cache", "scorecard"), { maxAgeDays: 7 });
@@ -841,6 +857,10 @@ async function main() {
     if (school) directoryWarnings.push(...directoryIssues(hd.rows.get(school.unit_id), school));
     if (school) addServices(school, icChar.rows.get(school.unit_id));
     if (school) {
+      const religion = religionFrom(icChar.rows.get(school.unit_id), relaffil.labels);
+      if (religion) school.religion = religion;
+    }
+    if (school) {
       const salary = facultySalaryFrom(sal.rows.get(school.unit_id));
       const fullTimeShare = fullTimeFacultyShareFrom(row["school.ft_faculty_rate"]);
       school.academics = {
@@ -854,6 +874,7 @@ async function main() {
     if (school) school.demographics.residence = residenceFrom(efc.table.rows.get(school.unit_id), school.location.state);
     if (school) school.demographics.transfer_in = transferInFrom(efa.table.rows.get(school.unit_id));
     if (school) school.finances = financesFrom(drvf.rows.get(school.unit_id), drvfFiscalYear);
+    if (school) addLgbtq(school, lgbtqInputs);
     if (!school) {
       stats.noSize++;
       continue;
@@ -885,6 +906,7 @@ async function main() {
   addResidenceMeta(meta, efc.table, efc.year);
   addTransferMeta(meta, efa.table, efa.year);
   addFieldOfStudyMeta(meta, fos);
+  addStateLawMeta(meta, lgbtqInputs.laws);
   // College-reported data (specs/college-reported-data.md, Decision 5 of specs/college-reported-round-2.md): the
   // ingestion agent's published values, keyed by unit_id, merged the same way scripts/merge-reported.mts re-merges
   // them into the committed data/schools.json later (lib/reported-merge.ts), so the two can't disagree. Adds
@@ -950,6 +972,7 @@ async function main() {
   console.log(`  with grad rate:       ${schools.filter((s) => s.outcomes?.graduation_rate != null).length}`);
   console.log(`  with 8-year outcomes: ${schools.filter((s) => s.outcomes?.eight_year?.all.award != null).length}`);
   console.log(`  with transfer-ins:    ${schools.filter((s) => s.demographics.transfer_in != null).length} (EF${efa.year}A; level codes checked for ${transfersChecked} colleges)`);
+  console.log(`  LGBTQ+ life:          ${lgbtqSummary(schools, lgbtqInputs)}`);
   console.log(`  with 4-year finish:   ${schools.filter((s) => s.outcomes?.eight_year?.all.award_4 != null).length} (${timeToDegree.missing} shown groups without 4/6-year shares)`);
   console.log(`  with Pell grad rate:  ${schools.filter((s) => s.outcomes?.grad_rate_pell != null).length} (${grPell.name})`);
   console.log(`  with Black grad rate: ${schools.filter((s) => s.outcomes?.grad_rate_by_race?.black != null).length}`);
@@ -960,6 +983,7 @@ async function main() {
   console.log(`  with faculty salary:  ${schools.filter((s) => s.academics?.faculty?.avg_salary_9mo != null).length}`);
   console.log(`  with full-time share: ${schools.filter((s) => s.academics?.faculty?.full_time_share != null).length}`);
   console.log(`  with majors:          ${schools.filter((s) => s.academics?.majors_top != null).length} (C${completions.year}_A; programs match the total row for ${totals.checked - totals.differ.length} of ${totals.checked})`);
+  console.log(`  religious affiliation: ${schools.filter((s) => s.religion?.affiliation).length} affiliated, ${schools.filter((s) => s.religion && !s.religion.affiliation).length} none, ${schools.filter((s) => !s.religion).length} not in ${icChar.name}`);
   console.log(`  overrides applied:    ${stats.overridden}`);
   console.log(`  college-reported:     ${reportedMerged} colleges`);
   if (directoryWarnings.length) {

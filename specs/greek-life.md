@@ -1,10 +1,48 @@
 # Greek Life
 
-> Status: **planned** (not built). Research 2026-09-28: 2025–26 Common Data Sets and a per-school deep dive on UT
-> Austin. Findings are verified unless marked *unverified*. Companions: [religious-life.md](religious-life.md) (its
-> source tiers, crawl strategy, and access rules apply here too) and [lgbtq-life.md](lgbtq-life.md) (LGBTQ+ Greek
-> chapters). Per-school collection shares the engine in
-> [college-reported-data.md](college-reported-data.md#campus-life-sources).
+> Status: **planned**, with **phase 1 built** 2026-10-03 (branch `feature/campus-life`, part of the Campus life roadmap group).
+> CDS F1 (participation) and F4 (housing) are read from `data/cds-records/` into `school.reported.greek`
+> (`lib/cds/greek.ts`, display helpers in `lib/cds/greek-display.ts`), merged by `lib/reported-merge.ts` alongside the
+> other round-3 blocks. Shown on the profile's Campus life section (`components/school/GreekLife.tsx`), Compare's "All
+> the numbers", and an Explore filter. Phases 2–4 (FSL office crawl, pilot, scale, national directories) are still
+> planned. Research 2026-09-28: 2025–26 Common Data Sets and a per-school deep dive on UT Austin. Findings are
+> verified unless marked *unverified*. Companions: [religious-life.md](religious-life.md) (its source tiers, crawl
+> strategy, and access rules apply here too) and [lgbtq-life.md](lgbtq-life.md) (LGBTQ+ Greek chapters). Per-school
+> collection shares the engine in [college-reported-data.md](college-reported-data.md#campus-life-sources).
+
+## Phase 1, as built
+
+Round-3 pattern (`lib/cds/transfer.ts`, `lib/cds/academics.ts`): one module per display spec, wired into
+`lib/reported-merge.ts` `RECORD_STEPS`. `school.reported.greek` holds `frat_pct_first_year`, `frat_pct_undergrad`,
+`sor_pct_first_year`, `sor_pct_undergrad` (CDS F1, each a 0–1 share, `null` when blank — never 0), and `housing`
+(CDS F4, `true` when checked, `null` otherwise, following the E1/E3 convention: a blank box is never read as "no").
+F1 is read independently of F4 (the newest document with any F1 answer; separately, the newest document that
+answered F.408), so a college can have a newer F4 than F1 or the reverse. Each stored value carries its own lineage
+record (F1: the document's fall; F4: the edition) and is registered in `lib/fields.ts` under topic `campus`.
+
+**Decisions this build made that the spec left open:**
+- **The data model is `school.reported.greek`** (the round-3 `reported.*` shape), not a separate `school.greek` as
+  the original sketch showed — this is CDS F1/F4 data from a college's own record, exactly like transfer admission
+  and academics, so it follows their pattern (one lineage record per field, partial coverage, merged by the same
+  `RECORD_STEPS` list) rather than inventing a second shape for the same kind of data.
+- **Percent-vs-fraction ambiguity ("Howard's 0.61").** The generic CDS reader already resolves most of this
+  (`lib/cds-sections.ts` `percentShare`): a model/PDF-form read uses `percentPoints: true`, so a bare number is
+  always points, and an Excel cell holds a true fraction. What's left for this module to catch on its own: a
+  `greek-f1-ratio` check compares each organization's first-year and all-undergrad percentages (e.g., both
+  fraternity columns); if one side is more than 20× the other, it's a likely units mix-up and both values are
+  dropped (not merged), rather than guessed at. A real near-zero first-year share next to a normal undergrad share
+  (deferred recruitment) is allowed — the check only fires when both sides are nonzero.
+- **"Known for: Big Greek life" is not built.** Only 8 colleges carry a Greek-life block in the current round-3
+  pilot (7 report an undergrad percentage), far short of a meaningful top decile. `KNOWN_FOR_MIN_REPORTERS = 50`
+  (`lib/cds/greek-display.ts`) is the threshold the profile and tests check against; revisit once the pilot scales.
+- **Explore's filter** is "Fraternity or sorority participation ≥ X%" at 10/20/30%, matching at least one of the two
+  undergrad percentages (never summed, per spec Rules); a college that reports neither never matches, however low
+  the floor.
+- **Compare** shows the two undergrad percentages and whether fraternity/sorority housing is offered (CDS F4), not
+  first-year figures (the spec's "Where it appears" names only the undergrad percentages).
+
+**Not built in phase 1** (still phases 2–4): council breakdowns, member totals, recruitment facts, chapter-level
+detail, and anything that crawls an FSL office site.
 
 ## Goal
 Answer, with cited sources: *Is there Greek life? How big is it? Which kinds of organizations (fraternities,
@@ -66,12 +104,21 @@ extraction.
   Michigan prints one F1 column, Howard's "0.61" means 0.61%). Gender-inclusive housing is not an F4 option; it appears
   only as "Other" text.
 
-## Data model (sketch)
+## Data model
+
+Phase 1, as built (`lib/types.ts` `ReportedGreek`, under `school.reported.greek` — see "Phase 1, as built" above for
+why this shape rather than `school.greek`):
 ```ts
-school.greek = {
+school.reported.greek = {
   frat_pct_first_year: number | null, frat_pct_undergrad: number | null, // CDS F1, 0–1
   sor_pct_first_year: number | null,  sor_pct_undergrad: number | null,
-  housing: boolean | null,                                              // CDS F4
+  housing: boolean | null,                                              // CDS F4; true or null, never false
+}
+```
+
+Later phases (sketch, not built): a top-level `school.greek` for FSL-sourced facts no CDS carries —
+```ts
+school.greek = {
   status: "present" | "none_reported" | "none_found" | null,
   councils: { type: CouncilType; name: string; chapters: number | null; members: number | null }[] | null,
   members_total: number | null, term: string | null,                    // e.g. "Spring 2026"; FSL report
@@ -91,17 +138,21 @@ school.greek = {
 - Neutral tone. Size is a fact, not a grade (no "party school" labels).
 
 ## Where it appears
-- **Explore:** "Greek life" filter (fraternity or sorority participation ≥ X%, where reported) and "has NPHC /
-  Latino / Asian / multicultural chapters."
-- **Profile, the students page's "Campus life" section:** fraternity and sorority participation `BenchmarkBar`s against the median of
-  reporting colleges; a council breakdown (members by council type) where FSL reports exist; housing and recruitment
-  chips. Cited, with CDS edition or report term.
-- **Compare:** the two undergrad percentages.
-- **"Known for":** "Big Greek life" (top decile of reporting colleges on the undergrad percentages).
+- **Explore (built):** "Fraternity or sorority participation" filter, ≥ 10/20/30% of undergrad men or women
+  (`lib/cds/greek-display.ts` `MIN_GREEK_OPTIONS`), matching either percentage, never summed; colleges that report
+  neither never match. "Has NPHC / Latino / Asian / multicultural chapters" is phase 3 (FSL council data), not built.
+- **Profile, the students page's "Campus life" section (built):** fraternity and sorority participation
+  `BenchmarkBar`s against the median of reporting colleges (`components/school/GreekLife.tsx`), and whether
+  fraternity/sorority housing is offered. Cited, with the CDS edition and fall term. A council breakdown and
+  recruitment chips are phase 3 (FSL reports), not built.
+- **Compare (built):** the two undergrad percentages and fraternity/sorority housing.
+- **"Known for" (not built):** "Big Greek life" waits for `KNOWN_FOR_MIN_REPORTERS` (50) colleges to report an
+  undergrad percentage — 7 do in the current round-3 pilot.
 
 ## Phases
-1. **CDS F1 and F4** through `import-cds` (Excel) and the college-reported agent (PDF), with the F1/FSL cross-check
-   where both exist.
+1. **CDS F1 and F4 — built 2026-10-03** (`lib/cds/greek.ts`), reading `data/cds-records/` (populated by `import-cds`
+   and the college-reported agent per [college-reported-round-3.md](college-reported-round-3.md)). The F1/FSL
+   cross-check isn't built: it needs phase 2's FSL reports.
 2. **Pilot of 25 colleges** (shared with religious life, plus Greek-heavy ones such as Alabama, Ole Miss, W&L, an
    HBCU, and a college without Greek life): find FSL offices, parse their reports, measure hit rate and cost.
 3. **FSL reports at scale** for colleges where Greek life exists.

@@ -167,6 +167,12 @@ export const FIELDS = {
   // Transfers in (specs/data-expansion/transfers.md).
   "demographics.transfer_in": { label: "New transfer-in undergraduates this fall", topic: "demographics", source: "ipeds-ef-a", vintage: "ipeds-ef-a" },
   "detail.home_states": { label: "First-years by home state", topic: "demographics", source: "ipeds-ef-c", vintage: "ipeds-ef-c" },
+  // LGBTQ+ life, phase 1 (specs/lgbtq-life.md; lib/lgbtq.ts). Another gender was last collected for fall 2024; when the
+  // newest file lacks it, each value's lineage record names the older file and its fall (scripts/lib/lgbtq-sync.mts).
+  "lgbtq.gender": { label: "Undergraduates of another gender and of unknown gender", topic: "demographics", source: "ipeds-ef-a", vintage: "ipeds-ef-a" },
+  "lgbtq.admissions": { label: "First-time applicants, admits, and enrollees of another gender", topic: "admissions", source: "ipeds-adm", vintage: "ipeds-adm" },
+  // Hand-kept table (data/state-laws.json); each value's lineage record carries the statute link and effective date.
+  "lgbtq.state_law": { label: "State law on public colleges' identity-based offices and programs", topic: "campus", source: "state-law", vintage: null },
   // Majors (specs/data-expansion/majors.md): IPEDS Completions, bachelor's degrees by field (lib/majors.ts).
   "academics.bachelors_awarded": { label: "Bachelor's degrees awarded (first majors)", topic: "academics", source: "ipeds-c", vintage: "ipeds-c" },
   "academics.majors_top": {
@@ -194,6 +200,9 @@ export const FIELDS = {
   "campus.carnegie": hd("Carnegie Classification"),
   "campus.designations": hd("HBCU, tribal college, and land-grant designations"),
   "campus.msi": scorecard("Minority-serving and single-sex designations", "campus"),
+  // Religious life, phase 1 (specs/religious-life.md): IPEDS IC{Y} RELAFFIL, code and NCES's dictionary label; null =
+  // no affiliation. Families for the Explore filter are derived from the code at render time (lib/religion.ts).
+  "religion.affiliation": icChar("Religious affiliation"),
   "location.lat": { ...hd("Latitude"), topic: "institution" },
   "location.lng": { ...hd("Longitude"), topic: "institution" },
   "cost.avg_paid_all": {
@@ -430,6 +439,10 @@ export const FIELDS = {
   // CDS section D, transfer admission (specs/data-expansion/cds-transfer.md; lib/cds/transfer.ts): one lineage record
   // per stored field; the sex breakdown inside applicants/admitted/enrolled and each material are covered by their parent.
   // Partial coverage: never in METRICS, ranks, medians, sorts, or percentiles (tests/cds-transfer.test.mts).
+  // CDS H14 and F2 religion facts (specs/religious-life.md; lib/cds/religion.ts), stored only when marked. Partial
+  // coverage: never in ranks, sorts, medians, Explore filters, or "Known for".
+  "reported.religion.aid_by_affiliation": reported("Scholarships that consider religious affiliation (college-reported)", "campus"),
+  "reported.religion.campus_ministries": reported("Campus ministries (college-reported)", "campus"),
   "reported.transfer.enrolls_transfers": reported("Enrolls transfer students (college-reported)"),
   "reported.transfer.advanced_standing": reported("Grants advanced standing to transfers (college-reported)"),
   "reported.transfer.applicants": reported("Transfer applicants (college-reported)"),
@@ -443,6 +456,13 @@ export const FIELDS = {
   "reported.transfer.min_hs_gpa": reported("Minimum high school GPA for transfers (college-reported)"),
   "reported.transfer.min_college_gpa": reported("Minimum college GPA for transfers (college-reported)"),
   "reported.transfer.dates": reported("Transfer application dates (college-reported)"),
+  // CDS Greek life, phase 1 (specs/greek-life.md; lib/cds/greek.ts): one lineage record per field, from F1 (fall) and
+  // F4 (edition). Partial coverage: never in METRICS, ranks, medians, sorts, or "Known for" (tests/cds-greek.test.mts).
+  "reported.greek.frat_pct_first_year": reported("First-year men who join fraternities (Common Data Set F1)", "campus"),
+  "reported.greek.frat_pct_undergrad": reported("Undergraduate men who join fraternities (Common Data Set F1)", "campus"),
+  "reported.greek.sor_pct_first_year": reported("First-year women who join sororities (Common Data Set F1)", "campus"),
+  "reported.greek.sor_pct_undergrad": reported("Undergraduate women who join sororities (Common Data Set F1)", "campus"),
+  "reported.greek.housing": reported("Fraternity/sorority housing (Common Data Set F4)", "campus"),
   // CDS application logistics and high school preparation (specs/data-expansion/cds-application-logistics.md;
   // lib/cds/application-logistics.ts): one lineage record per block from the newest CDS. Logistics years are the
   // cycle ("Fall 2026 cycle"); high school preparation's is the edition ("2025–26").
@@ -654,7 +674,7 @@ export function registeredPathFor(path: string): FieldPath | null {
 export const METADATA_KEYS = new Set(["lineage", "cds"]);
 
 /** Sources whose values each carry their own document and year in lineage, so their fields have no vintage. */
-export const PER_DOCUMENT_SOURCES: ReadonlySet<SourceKey> = new Set<SourceKey>(["cds", "college-site"]);
+export const PER_DOCUMENT_SOURCES: ReadonlySet<SourceKey> = new Set<SourceKey>(["cds", "college-site", "state-law"]);
 
 /** Every registered `reported.*` path: each stored one must have an `extracted` lineage record (lib/lineage.ts). */
 export const REPORTED_PATHS = (Object.keys(FIELDS) as FieldPath[]).filter((p) => p.startsWith("reported."));

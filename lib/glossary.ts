@@ -219,7 +219,29 @@ const entries = {
     short: "The share of degree-seeking undergraduates who are men and who are women, as colleges report them to the federal government.",
     why: "Nationally, more women than men attend four-year colleges, so a campus near 50/50 is less common than it sounds.",
     category: "Students & access",
-    related: ["degree-seeking", "undergrad-enrollment"],
+    related: ["degree-seeking", "undergrad-enrollment", "another-gender"],
+  },
+  "another-gender": {
+    term: "Another gender",
+    short: "Students whose college records hold a gender other than man or woman, such as nonbinary. Colleges could report this count to the federal government for a few years; it was optional, and most didn't.",
+    long: "It doesn't count transgender students overall (a trans woman is counted as a woman), and it says nothing about sexual orientation. A blank means the college didn't collect it; 0 can mean the college doesn't record other genders rather than that no one does. Colleges that collect it left the cells blank when any count was under 5, and we show counts under 10 as \"fewer than 10\". Colleges record gender so differently that a higher number mostly reflects record-keeping, so we never rank or compare colleges by it. The federal survey has since stopped asking for it, so the newest count is the last one.",
+    why: "The federal men and women shares always add up to 100%, because colleges assign students of another or unknown gender to one of the two. This count is the only official figure beside them.",
+    category: "Students & access",
+    related: ["gender-balance", "gender-unknown"],
+  },
+  "gender-unknown": {
+    term: "Gender unknown",
+    short: "Students whose gender the college doesn't know, for example because they didn't answer. Every college reports this count, separately from another gender.",
+    long: "Like students of another gender, they're assigned to men or women in the federal shares. We show counts under 10 as \"fewer than 10\".",
+    category: "Students & access",
+    related: ["another-gender", "gender-balance"],
+  },
+  "state-law-public-colleges": {
+    term: "State law on public colleges",
+    short: "A state statute that limits what public colleges in that state may offer, such as offices or programs designed around identity. It applies to public colleges only; private colleges in the state aren't covered.",
+    long: "We show the statute, the date it took effect, and a one-line summary we checked against the statute's text, with a link to it. A law can close an office a college once had: UT Austin's Gender and Sexuality Center closed in 2024 under Texas SB 17. Student groups are often exempt, so a law doesn't mean there's no LGBTQ+ community on campus.",
+    category: "Students & access",
+    related: ["another-gender"],
   },
   "part-time-student": {
     term: "Part-time student",
@@ -898,6 +920,41 @@ const entries = {
     category: "Admissions",
     related: ["admission-factor", "legacy-status"],
   },
+  "religious-affiliation": {
+    term: "Religious affiliation",
+    short: "The church or faith a college says it's affiliated with in its federal report, such as Roman Catholic or United Methodist. Public colleges and many private ones have none.",
+    long: "Colleges report one affiliation from a federal list of about 60 to the Integrated Postsecondary Education Data System (IPEDS) each year, and we show the federal label as written. Explore groups them into broader families (Catholic, Baptist, Lutheran, and so on). Affiliation alone says little about daily campus life: some affiliated colleges are deeply religious and others keep only a historical tie.",
+    why: "It's a starting point. The college's own answers, such as how much religious commitment counts in admission, say more about how faith shapes the campus.",
+    category: "Students & access",
+    related: ["religious-commitment", "faith-centered", "campus-ministries"],
+  },
+  "religious-commitment": {
+    term: "Religious commitment in admissions",
+    short: "In its Common Data Set, a college marks how much an applicant's religious affiliation or commitment counts when it decides whom to admit: very important, important, considered, or not considered.",
+    long: "Most colleges, including most religiously affiliated ones, mark it not considered. A college that marks it very important usually expects students to share or support its faith.",
+    category: "Admissions",
+    related: ["factor-importance", "religious-affiliation", "faith-centered"],
+  },
+  "religious-scholarships": {
+    term: "Scholarships for religious affiliation",
+    short: "In its Common Data Set, a college marks the things its own scholarships consider. This one means some of its aid goes to students of a particular faith or church, need-based, non-need-based, or both.",
+    long: "An unmarked box isn't a \"no\": colleges often leave the list partly blank.",
+    category: "Cost & outcomes",
+    related: ["religious-affiliation", "merit-aid"],
+  },
+  "campus-ministries": {
+    term: "Campus ministries",
+    short: "Religious groups or a chaplaincy serving students on campus, as the college lists them among its activities in its Common Data Set.",
+    long: "A checked box says the college has some; it doesn't say which faiths or how many students take part. Public colleges often have student-run ministries even though they have no religious affiliation.",
+    category: "Students & access",
+    related: ["religious-affiliation"],
+  },
+  "faith-centered": {
+    term: "Faith-centered",
+    short: "The college's own Common Data Set says religious affiliation or commitment is very important in admission. We never use the label for an affiliation alone.",
+    category: "Students & access",
+    related: ["religious-commitment", "religious-affiliation"],
+  },
   "early-decision": {
     term: "Early decision",
     short: "An early application that is binding: if admitted, you commit to enroll and withdraw your other applications. Decisions usually come in December.",
@@ -1079,6 +1136,14 @@ const entries = {
     short: "A high school course plan built around academic subjects: English, math, science, a foreign language, and social studies. A college's Common Data Set says whether it requires one, recommends one, or neither, and how many years (units) of each subject it expects.",
     long: "A unit is one year of a subject. Lab science units are part of the science count, not extra.",
     category: "Admissions",
+  },
+  // CDS Greek life, phase 1 (specs/greek-life.md; lib/cds/greek.ts).
+  "greek-life": {
+    term: "Fraternity / sorority participation",
+    short: "The share of undergraduate men in a fraternity and women in a sorority, as the college reports them separately in its Common Data Set. The two percentages are never added together.",
+    long: "Each percentage is reported for first-year students and for all undergraduates; a blank means the college didn't answer, not 0%. Housing is reported separately (whether the college offers fraternity or sorority housing) and doesn't imply a participation rate, or the reverse.",
+    why: "How big a part Greek organizations play varies enormously by college, from none to a majority of students, and the two sides (fraternities, sororities) can differ a lot at the same college.",
+    category: "School types",
   },
 } satisfies Record<string, GlossaryEntry>;
 

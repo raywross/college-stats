@@ -51,7 +51,7 @@ import { addFieldOfStudyMeta, buildProgramDetails, fetchFieldOfStudy } from "./l
 import { fetchValueLabels } from "./lib/ipeds-dictionary.mts";
 import { religionFrom } from "../lib/religion.ts";
 import { acceptanceRate, applicationFeeFrom, computePrices, factorsFrom, housingFrom, ipedsNum, parseShareBand, priceSuffix, promiseProgramFrom, raceShares, toAid, tuitionPlansFrom } from "../lib/derive.ts";
-import { normalizeUrl } from "../lib/links.ts";
+import { normalizeUrl, websiteMismatch } from "../lib/links.ts";
 import { addIdentityMeta, applyIdentity } from "../lib/identity.ts";
 import { loadIdentityInputs } from "./lib/identity-sync.mts";
 import { writeAliasTable } from "./lib/aliases-sync.mts";
@@ -536,7 +536,7 @@ function buildMeta(
         edition: `${hd.name.slice(2)}–${String(Number(hd.name.slice(2)) + 1).slice(2)} (${hd.name})`,
         url: hd.url,
         description:
-          "Every college's directory entry: its city, suburb, town, or rural setting, Carnegie Classification, federal designations such as HBCU and land-grant, and its location on the map.",
+          "Every college's directory entry: its city, suburb, town, or rural setting, Carnegie Classification, federal designations such as HBCU and land-grant, and its location on the map. Also the links each college reports: its website, admissions and application pages, financial aid and net price calculator offices, and veterans' and disability-services offices.",
       },
       "ipeds-ef": {
         label: "IPEDS Fall Enrollment survey (part D)",
@@ -845,6 +845,8 @@ async function main() {
   const schools: School[] = [];
   // Scorecard and the directory should describe the same college under each id (campus-profile.md, "As built").
   const directoryWarnings: string[] = [];
+  // Homepages that disagree by more than scheme, "www.", or a trailing slash (links.md, Ingest); HD wins either way.
+  const websiteWarnings: string[] = [];
   for (const row of scorecard) {
     if (!INCLUDE_ONLINE && row["school.online_only"] === 1) {
       stats.online++;
@@ -880,7 +882,10 @@ async function main() {
       continue;
     }
     // Links from the directory, the site probe's finds, social accounts, colors and mark (lib/identity.ts).
+    const scorecardWebsite = school.links?.website ?? null;
     applyIdentity(school, identity, hd.rows.get(school.unit_id));
+    const hdWebsiteWarning = websiteMismatch(school, normalizeUrl(hd.rows.get(school.unit_id)?.WEBADDR), scorecardWebsite);
+    if (hdWebsiteWarning) websiteWarnings.push(hdWebsiteWarning);
     const patch = overrides[school.unit_id];
     if (patch) {
       // Every value the patch sets is attributed to the patch's source (throws if it names none).
@@ -996,6 +1001,11 @@ async function main() {
     for (const w of directoryWarnings.slice(0, 20)) console.warn(`    ${w}`);
     if (directoryWarnings.length > 20) console.warn(`    …and ${directoryWarnings.length - 20} more`);
   } else console.log(`  directory mismatches: 0`);
+  if (websiteWarnings.length) {
+    console.warn(`  website mismatches (HD vs. Scorecard, beyond scheme/www/slash): ${websiteWarnings.length}`);
+    for (const w of websiteWarnings.slice(0, 20)) console.warn(`    ${w}`);
+    if (websiteWarnings.length > 20) console.warn(`    …and ${websiteWarnings.length - 20} more`);
+  } else console.log(`  website mismatches (HD vs. Scorecard): 0`);
   console.log(`  skipped online-only:  ${stats.online}${INCLUDE_ONLINE ? "" : " (use --include-online to keep)"}`);
   console.log(`  skipped (no undergrads reported): ${stats.noSize}`);
 }

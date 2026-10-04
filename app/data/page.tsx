@@ -644,7 +644,8 @@ export default async function DataPage() {
             </h3>
             <p className="mt-2 text-sm text-muted-foreground">
               Averages can&apos;t tell you what your family will pay. Every college&apos;s profile links to its official{" "}
-              <Term term="net-price-calculator">net price calculator</Term> for a personal estimate.
+              <Term term="net-price-calculator">net price calculator</Term> for a personal estimate, alongside its own
+              admissions, application, and financial aid pages.
             </p>
           </div>
         </div>

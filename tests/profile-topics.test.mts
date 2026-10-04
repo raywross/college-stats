@@ -179,6 +179,11 @@ const LEGACY_FIELDS = Object.freeze({
     // Deliberately new (specs/data-expansion/cds-student-body-and-outcomes.md): the race plot's federal overall line
     // when a newer CDS class replaced the Pell plot.
     "outcomes.federal.graduation",
+    // Deliberately new (specs/school-identity/links.md): the net price calculator, financial aid office, and
+    // veterans' benefits links beside the cost figures.
+    "links.price_calculator",
+    "links.financial_aid",
+    "links.veterans",
   ],
   academics: [
     "academics.bachelors_awarded",
@@ -205,6 +210,8 @@ const LEGACY_FIELDS = Object.freeze({
     "campus.services",
     "campus.calendar",
     "demographics.disability_services",
+    // Deliberately new (specs/school-identity/links.md): the disability-services office link beside the share.
+    "links.disability_services",
     // Religious life (specs/religious-life.md, phase 1).
     "religion.affiliation",
     "reported.admission_profile.factors.religious",

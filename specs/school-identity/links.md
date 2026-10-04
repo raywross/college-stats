@@ -1,6 +1,8 @@
 # Official Links: Website, Admissions, Apply, Visit, Aid (IPEDS HD + the college's site)
 
-> Status: **planned** 2026-10-03. First of the [identity family](README.md) (links, social accounts,
+> Status: **built** 2026-10-04, steps 1 and 3 (the `links` track; see "As built" at the end). Step 2 (the visit probe
+> and liveness check) is the `probe` track's, built in parallel — its own notes land in this file once merged. First
+> of the [identity family](README.md) (links, social accounts,
 > short names, colors and marks). Research 2026-10-03: `HD2025` downloaded and its URL columns counted for all 1,893
 > colleges; the Scorecard `school.school_url` field checked for all of them; twenty college homepages fetched to see
 > what a "visit" link looks like. Values below are measured unless marked *estimate*.
@@ -134,3 +136,110 @@ heuristic misses: *estimate* 500 colleges × $0.003 ≈ $1.50, once; later runs 
    client and link finder; `data/link-issues.json`; the Haiku picker queue. Second PR, with the Visit link.
 3. Compact header, Cost, Students, Compare placements; the `/data` page's source description for HD gains "and the
    links each college reports".
+
+## As built (steps 1 and 3, 2026-10-04)
+
+### Step 1: `lib/links.ts`, `lib/fields.ts`, `scripts/sync-data.mts`
+- `normalizeUrl` (pure, exported) now handles every messy case this spec and the real `HD2025` file show: no scheme
+  (adds `https://`), a literal space in the path (percent-encoded, not dropped), trailing sentence punctuation
+  pasted in with the link (`.`, `,`, `;` dropped — a real trailing slash is kept, since that's meaningful), and
+  IPEDS's missing codes `-1`/`-2`/`-3` (treated as absent, same as blank). It then validates the result with
+  `new URL()` without reformatting it (no added trailing slash, no case changes, no `.href` reserialization), so a
+  genuinely malformed value (e.g. a bare `https://` with nothing after it) becomes `null` instead of a broken link,
+  while an already-good URL passes through byte-for-byte.
+- `applyLinks(school, hdRow?)`: without `hdRow` (the `merge-identity` path) it's a complete no-op, exactly as the
+  foundation's stub comment said. With a row: `website` is HD's `WEBADDR` whenever present (now the field's default
+  source — `lib/fields.ts`'s `"links.website"` changed from `scorecard(...)` to `hdLink(...)`); only when HD has none
+  does Scorecard's value (already on `school.links.website` from `toSchool`) stay, with a `{ source: "scorecard" }`
+  lineage record. `price_calculator` keeps Scorecard as the default and is filled from `NPRICURL` only when
+  Scorecard has none, with `{ source: "ipeds-hd" }`. `admissions`, `apply`, `financial_aid`, `veterans`,
+  `disability_services` are set straight from HD, `null` when the column is blank, no lineage record (HD is their
+  only registered source).
+- **Idempotence**: clears its own two lineage entries before recomputing them on every call (not just when a row is
+  given), which matters in one specific way — once HD has filled `price_calculator`, `school.links.price_calculator`
+  itself can no longer be told apart from a Scorecard value that happens to be non-null. Re-applying with the same
+  row has to get the same answer anyway, so the check now reads the existing `{ source: "ipeds-hd" }` lineage record
+  *before* clearing it, not just whether the field is currently empty. `tests/links.test.mts` has a dedicated case
+  for this (the one place a naive "fill only if empty" rule would have silently dropped the lineage record on a
+  second pass).
+- `websiteMismatch(school, hdUrl, scorecardUrl)` and the pure `urlsDiffer(a, b)` it's built on (both exported):
+  `urlsDiffer` ignores scheme, a leading `www.`, and a trailing slash; `websiteMismatch` returns a formatted
+  `"name (id): HD …, Scorecard …"` line, or `null` when they agree or HD has nothing to compare. `sync-data.mts`
+  collects these into `websiteWarnings` the same way it already collects `directoryWarnings` — captures Scorecard's
+  website right before `applyIdentity` overwrites it, computes the pair after, and prints the count plus the first
+  20 at the end of the run.
+- `buildMeta`'s `ipeds-hd` source description gains a sentence: "Also the links each college reports: its website,
+  admissions and application pages, financial aid and net price calculator offices, and veterans' and
+  disability-services offices."
+- `linkHost(url)` (exported, pure): the link's host for a `title` tooltip or a Compare cell, with a leading `www.`
+  dropped.
+
+### Step 3: Display
+- **`OfficialLinks`**: Website · Admissions · Apply · Visit (or Virtual tour, when there's no Visit) · Financial aid,
+  as outlined pills, each `<a target="_blank" rel="noopener">` with the external-link icon and `linkHost(href)` as
+  `title`. A pill's field is only added to its `SourceNote` when that pill is actually shown, so the row never cites
+  a source for a link the college doesn't have. Returns `null` (no row, no source note) when the college has none of
+  these five.
+- **`HeroIdentity`**: kept the foundation's placement under "Known for". Screenshots (desktop 1280 and phone 390,
+  both themes) showed the plain foundation markup — pills and `SocialLinks` in one unconstrained flex row — would
+  make the pill strip's mobile horizontal scroll bleed only to the edge of whatever width the social icons left it,
+  not the true viewport edge (the same `-mx-4` trick the "Known for" chips use only reaches the real edge when the
+  scrolling element is the full width of the page gutter). Fixed by giving the pill wrapper `max-sm:w-full`: on
+  phones it claims the full line (forcing `SocialLinks` to wrap below, where the chips-style edge-to-edge scroll
+  needs the room), and from `sm:` up — where the pills wrap instead of scrolling, so the bleed trick is inactive
+  anyway — it reverts to its content width and happily shares the row with the social icons after it, per the spec.
+- **`CompactHeader`**: one Website icon link (lucide `Globe`, `title`/`aria-label` from `linkHost`) between the name
+  link and `CompareButton`. Left the `<Crest>` line untouched for the brand track.
+- **Cost page and `CostCard`**: both now put "Financial aid office" beside the existing net price calculator link
+  (a new dashed box next to it on the page; a new `CardStats` cell next to "Your price" on the card), with
+  "Veterans' benefits" as a smaller line underneath when present. Neither adds a per-link `InfoTip`: the existing net
+  price calculator link had none either, so this matches established practice; the fields are still registered in
+  `TOPIC_FIELDS.cost` so the page's closing `SourceNote` cites them.
+- **Students page**: "Disability services office" added inside the same `<li>` as the disability-services share, in
+  `components/school/CampusServices.tsx` (where `demographics.disability_services` renders); registered in
+  `TOPIC_FIELDS.students`.
+- **Compare**: a literal trailing `<tr>` after the generic "All the numbers" rows (an actual `<a>` per college, which
+  the generic string-cell renderer can't produce), with a `SourceTip` (no glossary term needed) beside the "Website"
+  label. `links.website` added to the page's `tableFields` so `MultiSourceNote` covers it.
+- **Explore**: untouched, per spec.
+- **Open question 1 (show Apply?)**: went with the spec's default — shown.
+- Files touched outside the links track's explicit list, kept minimal: `lib/profile-topics.ts` (registered
+  `links.price_calculator`/`financial_aid`/`veterans` in `TOPIC_FIELDS.cost`, `links.disability_services` in
+  `TOPIC_FIELDS.students`, and the hero's link fields in `PROFILE_FIELDS`'s hand-added tail) and
+  `tests/profile-topics.test.mts` (the matching `LEGACY_FIELDS` entries its reconciliation test requires for any
+  newly-shown field, each commented "Deliberately new"). Nobody else owns this file; the edits are additive only.
+
+### Tests
+`tests/links.test.mts` (17 cases): `normalizeUrl`'s four messy-value categories plus the missing-code and
+pure-rejection cases; `urlsDiffer`/`websiteMismatch`'s scheme/www/slash tolerance and "only with a real HD value"
+rule; `applyLinks`'s website and price_calculator rules each tested both ways (HD wins outright; Scorecard-fills-gap
+only); the no-row no-op; two idempotence tests (same row twice; HD's homepage disappearing between passes); and
+`tests/fixtures/identity/hd-links.csv` (3 rows, a real BOM, and the spec's own messy examples: a scheme-less domain,
+a path with a literal space, a scheme plus trailing punctuation, `-2`, a quoted value ending in a comma, and two
+bare domains) read with the exact `parseCsv` sync-data uses.
+
+### Real-run numbers (`npm run sync-data`, `HD2025`, 2026-10-04; 1,893 colleges)
+| Field | Colleges | Note |
+|---|---|---|
+| `links.website` | 1,893 (100%) | Every one from HD; the Scorecard-fallback branch never fired — `HD2025`'s `WEBADDR` has full coverage |
+| `links.price_calculator` | 1,889 | All from Scorecard; HD's `NPRICURL` filled **0** gaps — the 4 colleges with neither (Oregon Health & Science, Rush, Samuel Merritt, MD Anderson Cancer Center) have no `NPRICURL` in HD either, confirmed against the raw file |
+| `links.admissions` | 1,800 | |
+| `links.apply` | 1,757 | |
+| `links.financial_aid` | 1,807 | |
+| `links.veterans` | 1,454 | |
+| `links.disability_services` | 1,893 (100%) | |
+| Website mismatches (HD vs. Scorecard, beyond scheme/`www.`/slash) | **0** | Scorecard's `school.school_url` and HD's `WEBADDR` appear to already be the same underlying NCES value for this cohort; the fallback and mismatch-warning code paths are exercised by the tests, not by this run |
+
+The per-column counts match the spec's own 2026-10-03 research table exactly, which is a good independent check that
+the reader lines up with the real file. Comparing this run's `links.website` against the previous (Scorecard-only)
+committed data turned up one real improvement from the normalization work, not a data difference: eight South
+University campuses whose Scorecard URL has a literal space in a query fragment (`#location=Austin, TX`) now come
+out correctly percent-encoded (`#location=Austin%20TX`) instead of carrying a raw space.
+
+### Left for the owner / integrator
+- Nothing blocking. The visit probe (step 2) will add `links.visit`/`links.virtual_tour`; `OfficialLinks` already
+  renders them and cites whichever one is present, so no further change is needed here once that track's files
+  merge in.
+- `data/schools.json`/`data/meta.json` were regenerated locally to produce the numbers above and were reverted
+  (`git checkout --`) before committing, per the shared brief; the integrator's full `sync-data` after merging every
+  track will pick up these links for real.

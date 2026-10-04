@@ -11,7 +11,8 @@
         "file": "public/org-logos/alpha-delta-pi.png",
         "source": "https://www.alphadeltapi.org/",
         "license": "Organization's own logo (used to identify it)",
-        "attribution": "© Alpha Delta Pi"
+        "attribution": "© Alpha Delta Pi",
+        "aspect": 2.13
       }
     },
     "alpha-phi": {
@@ -32,7 +33,8 @@
         "file": "public/org-logos/alpha-sigma-tau.png",
         "source": "https://alphasigmatau.org/",
         "license": "Organization's own logo (used to identify it)",
-        "attribution": "© Alpha Sigma Tau"
+        "attribution": "© Alpha Sigma Tau",
+        "aspect": 4.13
       }
     },
     "cccu": {
@@ -61,7 +63,8 @@
         "file": "public/org-logos/delta-phi-epsilon.png",
         "source": "https://dphie.org/",
         "license": "Organization's own logo (used to identify it)",
-        "attribution": "© Delta Phi Epsilon"
+        "attribution": "© Delta Phi Epsilon",
+        "aspect": 5.05
       }
     },
     "delta-zeta": {
@@ -82,7 +85,8 @@
         "file": "public/org-logos/focus.svg",
         "source": "https://focus.org/",
         "license": "Organization's own logo (used to identify it)",
-        "attribution": "© FOCUS (Fellowship of Catholic University Students)"
+        "attribution": "© FOCUS (Fellowship of Catholic University Students)",
+        "aspect": 3.29
       }
     },
     "hillel": {
@@ -111,7 +115,8 @@
         "file": "public/org-logos/kappa-delta.svg",
         "source": "https://kappadelta.org/",
         "license": "Organization's own logo (used to identify it)",
-        "attribution": "© Kappa Delta"
+        "attribution": "© Kappa Delta",
+        "aspect": 4.92
       }
     },
     "kappa-kappa-gamma": {
@@ -124,7 +129,8 @@
         "file": "public/org-logos/kappa-kappa-gamma.svg",
         "source": "https://www.kappakappagamma.org/",
         "license": "Organization's own logo (used to identify it)",
-        "attribution": "© Kappa Kappa Gamma"
+        "attribution": "© Kappa Kappa Gamma",
+        "aspect": 7.88
       }
     },
     "kappa-sigma": {
@@ -137,7 +143,8 @@
         "file": "public/org-logos/kappa-sigma.png",
         "source": "https://www.kappasigma.org/",
         "license": "Organization's own logo (used to identify it)",
-        "attribution": "© Kappa Sigma"
+        "attribution": "© Kappa Sigma",
+        "aspect": 2.28
       }
     },
     "lambda-chi-alpha": {
@@ -150,7 +157,8 @@
         "file": "public/org-logos/lambda-chi-alpha.svg",
         "source": "https://www.lambdachi.org/",
         "license": "Organization's own logo (used to identify it)",
-        "attribution": "© Lambda Chi Alpha"
+        "attribution": "© Lambda Chi Alpha",
+        "aspect": 7.18
       }
     },
     "lgbt-campus-consortium": {
@@ -163,7 +171,8 @@
         "file": "public/org-logos/lgbt-campus-consortium.png",
         "source": "https://www.lgbtcampus.org/",
         "license": "Organization's own logo (used to identify it)",
-        "attribution": "© Consortium of Higher Education LGBT Resource Professionals"
+        "attribution": "© Consortium of Higher Education LGBT Resource Professionals",
+        "aspect": 3.59
       }
     },
     "navigators": {
@@ -208,7 +217,8 @@
         "file": "public/org-logos/phi-mu.svg",
         "source": "https://phimu.org/",
         "license": "Organization's own logo (used to identify it)",
-        "attribution": "© Phi Mu"
+        "attribution": "© Phi Mu",
+        "aspect": 3.89
       }
     },
     "phi-sigma-sigma": {
@@ -229,7 +239,8 @@
         "file": "public/org-logos/pi-beta-phi.svg",
         "source": "https://pibetaphi.org/",
         "license": "Organization's own logo (used to identify it)",
-        "attribution": "© Pi Beta Phi"
+        "attribution": "© Pi Beta Phi",
+        "aspect": 5.43
       }
     },
     "pi-kappa-phi": {
@@ -242,7 +253,8 @@
         "file": "public/org-logos/pi-kappa-phi.svg",
         "source": "https://pikapp.org/",
         "license": "Organization's own logo (used to identify it)",
-        "attribution": "© Pi Kappa Phi"
+        "attribution": "© Pi Kappa Phi",
+        "aspect": 6.68
       }
     },
     "ruf": {
@@ -263,7 +275,8 @@
         "file": "public/org-logos/sigep.png",
         "source": "https://sigep.org/",
         "license": "Organization's own logo (used to identify it)",
-        "attribution": "© Sigma Phi Epsilon"
+        "attribution": "© Sigma Phi Epsilon",
+        "aspect": 2.09
       }
     },
     "sigma-delta-tau": {
@@ -276,7 +289,9 @@
         "file": "public/org-logos/sigma-delta-tau.svg",
         "source": "https://sigmadeltatau.org/",
         "license": "Organization's own logo (used to identify it)",
-        "attribution": "© Sigma Delta Tau"
+        "attribution": "© Sigma Delta Tau",
+        "aspect": 0.63,
+        "tone": "light"
       }
     },
     "sigma-kappa": {
@@ -297,7 +312,10 @@
         "file": "public/org-logos/sigma-nu.png",
         "source": "https://www.sigmanu.org/",
         "license": "Organization's own logo (used to identify it)",
-        "attribution": "© Sigma Nu"
+        "attribution": "© Sigma Nu",
+        "aspect": 6.19,
+        "logo_display": "badge",
+        "logo_display_reason": "Thin serif wordmark plus a tagline line stays illegible even widened and capped to a sane tile width; the Greek-letter badge reads better at the sizes chapter lists use."
       }
     },
     "ssa": {
@@ -310,7 +328,8 @@
         "file": "public/org-logos/ssa.png",
         "source": "https://www.secularstudents.org/",
         "license": "Organization's own logo (used to identify it)",
-        "attribution": "© Secular Student Alliance"
+        "attribution": "© Secular Student Alliance",
+        "aspect": 1.56
       }
     },
     "theta-phi-alpha": {
@@ -323,7 +342,8 @@
         "file": "public/org-logos/theta-phi-alpha.png",
         "source": "https://thetaphialpha.org/",
         "license": "Organization's own logo (used to identify it)",
-        "attribution": "© Theta Phi Alpha"
+        "attribution": "© Theta Phi Alpha",
+        "aspect": 4.8
       }
     },
     "tpc-athletics": {
@@ -392,7 +412,8 @@
         "file": "public/org-logos/tri-delta.png",
         "source": "https://www.tridelta.org/",
         "license": "Organization's own logo (used to identify it)",
-        "attribution": "© Tri Delta"
+        "attribution": "© Tri Delta",
+        "aspect": 5.33
       }
     }
   }

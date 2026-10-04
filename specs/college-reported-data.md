@@ -323,6 +323,30 @@ $0.16 a college.
 round 1's colleges with `--rediscover` and score against the existing key), then decide which `HELD_BACK` types the
 new numbers lift. No full run without the owner's go-ahead.
 
+### Campus-life pilot, round 2 results (2026-10-04)
+Run in Actions on branch `data/campus-pilot-2` (report `data/reports/campus-pilot-2026-10-04T21-07-02.json`, score
+`campus-pilot-score-2026-10-04T21-07-02.md`), 23 of the 25 new colleges, scored against a new hand-checked key that
+checked all seven policy items at every college (kept in the scratchpad, not the public repo; the scorer reads
+`_meta.all_policy_items_checked`). Round 1's colleges are untouched.
+
+**Cost: $7.16, $0.31 a college** (round 1: $0.61), 61 searches. Discovery is still $6.89 of it: the probes found
+pages, but the paid call still ran at most colleges and its search results dominate. The projection of $0.12–0.13
+was low; a full run at this configuration is about **$590**.
+
+**Precision** (published / correct), after reading every miss: Greek members, housing, deferred recruitment, formal
+term 1/1, 1/1, 2/2, 3/3; Greek status 5/5; councils' chapters 13/13 (two "misses" were councils the key omitted:
+Wake Forest's NPHC and SMU's IFC); LGBTQ+ center 6/6; nondiscrimination 8/8 and 9/9; name on records 4/4; restrooms
+4/4 (Ohio State's "no", which cites the state law requiring single-sex multi-user restrooms, was marked not_found by
+the key and confirmed by the second check); faith office 8/9 (UNC's Campus Y was read as a faith office); a 2016
+organization estimate was published although estimates expire; faith groups 28/30 and LGBTQ+ groups 2/5 (both held).
+**Recall stayed low** (4–41% by type): no FSL report files were read, and name, housing, and restroom pages were
+found at a third of colleges or fewer.
+
+**Decisions:** `HELD_BACK` adds the faith office (13/14 across both rounds) and organization estimates. The Greek
+detail types stay held: they were right in round 2, but 3–5 checked findings each across both rounds are too few to
+publish on. Next before any full run: make the paid discovery call conditional on what the probes missed (most of the
+cost), read FSL report files the probes find, and re-score.
+
 ## Files (planned)
 - `scripts/sync-college-reported.mts` (`npm run sync-college-reported`), `--pilot`, `--college <id>`, `--rediscover`.
 - `data/college-sources.json` (recipes, hashes), `data/college-reported.json` (published values),

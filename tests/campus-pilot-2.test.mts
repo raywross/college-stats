@@ -52,15 +52,23 @@ test("the committed files are already in the merge's format (so carrying them ov
 });
 
 test("a run on college set B leaves set A's published facts and recipes byte-identical", () => {
-  const pagesA = JSON.parse(pagesText) as PagesFile;
-  const sourcesA = JSON.parse(sourcesText) as SourcesFile;
+  const runB = runOnSetB();
+  const idsB = new Set(runB.results.map((r) => r.unit_id));
+  // Set A: the committed files without set B's colleges (round 2 has since been run and committed; this test keeps
+  // asking what a run on new colleges does to everyone else).
+  const pagesAll = JSON.parse(pagesText) as PagesFile;
+  const sourcesAll = JSON.parse(sourcesText) as SourcesFile;
+  const pagesA: PagesFile = { ...pagesAll, colleges: pagesAll.colleges.filter((c) => !idsB.has(c.unit_id)) };
+  const sourcesA: SourcesFile = { ...sourcesAll, recipes: sourcesAll.recipes.filter((r) => !idsB.has(r.unit_id)) };
   assert.ok(pagesA.colleges.length > 0 && sourcesA.recipes.length > 0, "round 1's data is committed");
-  const merged = mergeRun(structuredClone(pagesA), structuredClone(sourcesA), runOnSetB(), "2026-10-20");
+  const merged = mergeRun(structuredClone(pagesA), structuredClone(sourcesA), runB, "2026-10-20");
   const newPages = formatPagesFile(merged.pages);
   const newSources = formatSourcesFile(merged.sources);
-  // Every set-A entry, as its own formatted line (pages) or block (recipes), is in the new files unchanged.
-  for (const line of pagesText.split("\n").filter((l) => l.trim().startsWith('{"unit_id"'))) assert.ok(newPages.includes(line.replace(/,$/, "")), line.slice(0, 60));
-  for (const r of sourcesA.recipes) {
+  // Every entry outside set B (round 1's, and round 2's other colleges once committed), as its own formatted line
+  // (pages) or block (recipes), is in the new files unchanged; set B's own entries are the run's to replace.
+  const outsideB = (line: string) => !idsB.has(/"unit_id":"(\d+)"/.exec(line)?.[1] ?? "");
+  for (const line of pagesText.split("\n").filter((l) => l.trim().startsWith('{"unit_id"') && outsideB(l))) assert.ok(newPages.includes(line.replace(/,$/, "")), line.slice(0, 60));
+  for (const r of sourcesA.recipes.filter((x) => !idsB.has(x.unit_id))) {
     const block = JSON.stringify(r, null, 1).split("\n").map((l) => `  ${l}`).join("\n");
     assert.ok(newSources.includes(block), `recipe ${r.unit_id}`);
   }

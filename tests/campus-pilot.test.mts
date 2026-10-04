@@ -374,6 +374,7 @@ test("held-back fact types never reach the dataset, on the committed pilot resul
   const leaks = (json: string) => [
     ...HELD_BACK.greek.filter((k) => json.includes(`"${k}"`)),
     ...HELD_BACK.policies.filter((k) => json.includes(`"${k}"`)),
+    ...HELD_BACK.faith.filter((k) => json.includes(`"${k}"`)),
   ];
   // The filtered merge leaks nothing.
   assert.deepEqual(leaks(JSON.stringify(campusPagesDetails(pages, ids))), []);

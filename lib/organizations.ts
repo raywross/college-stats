@@ -23,6 +23,14 @@ export interface OrgLogo {
   source: string;
   license: string;
   attribution: string;
+  /** Trimmed width/height, measured once from the file: picks a wide tile (wordmark) vs. square (mark/crest). */
+  aspect?: number;
+  /** "light" when the artwork is light-on-transparent and needs a dark tile; omitted/"dark" reads fine on light. */
+  tone?: "light" | "dark";
+  /** "badge": the image never renders (even widened it stays illegible); the Greek-letter badge shows instead. */
+  logo_display?: "badge";
+  /** Why, when `logo_display` is "badge". */
+  logo_display_reason?: string;
 }
 
 export interface OrgInfo {
@@ -66,6 +74,10 @@ export function organizationsProblems(file: unknown): string[] {
       if (!LOGO_FILE.test(o.logo.file)) out.push(`${key}: logo file must be public/org-logos/<name>.svg|png|webp|jpg`);
       if (!isHttps(o.logo.source)) out.push(`${key}: logo source must be an https link`);
       if (!ALLOWED_LOGO_LICENSES.test(o.logo.license ?? "")) out.push(`${key}: logo license "${o.logo.license}" isn't public domain or a free license`);
+      if (o.logo.aspect !== undefined && !(typeof o.logo.aspect === "number" && o.logo.aspect > 0)) out.push(`${key}: logo aspect must be a positive number`);
+      if (o.logo.tone !== undefined && o.logo.tone !== "light" && o.logo.tone !== "dark") out.push(`${key}: logo tone must be "light" or "dark"`);
+      if (o.logo.logo_display !== undefined && o.logo.logo_display !== "badge") out.push(`${key}: logo_display must be "badge"`);
+      if (o.logo.logo_display === "badge" && !o.logo.logo_display_reason) out.push(`${key}: logo_display "badge" needs logo_display_reason`);
     }
   }
   return out;
@@ -128,9 +140,16 @@ export function lettersFromName(name: string): string | null {
   return words.map((w) => GREEK[w]).join("");
 }
 
-/** What a listing's badge shows: the logo, Greek letters, or neither (the caller's tradition or kind icon). */
+/**
+ * Below this trimmed aspect ratio (width/height) a logo reads as a mark/crest and gets the square tile; at or above
+ * it, it reads as a wordmark and gets a wider tile so the text isn't squashed illegible (specs/campus-directories.md
+ * "Organizations").
+ */
+export const WORDMARK_ASPECT = 1.8;
+
+/** What a listing's badge shows: the logo (sized to its own shape), Greek letters, or neither. */
 export type OrgBadgeData =
-  | { kind: "logo"; src: string; logo: OrgLogo }
+  | { kind: "logo"; src: string; logo: OrgLogo; shape: "wide" | "square"; tone: "light" | "dark" }
   | { kind: "letters"; letters: string; background: string | null; foreground: string | null }
   | { kind: "none" };
 
@@ -146,7 +165,11 @@ export function inkOn(hex: string): "#ffffff" | "#1a1530" {
 }
 
 export function orgBadge(info: OrgInfo | null | undefined, organization: string): OrgBadgeData {
-  if (info?.logo) return { kind: "logo", src: `/${info.logo.file.replace(/^public\//, "")}`, logo: info.logo };
+  if (info?.logo && info.logo.logo_display !== "badge") {
+    const shape = (info.logo.aspect ?? 1) >= WORDMARK_ASPECT ? "wide" : "square";
+    const tone = info.logo.tone === "light" ? "light" : "dark";
+    return { kind: "logo", src: `/${info.logo.file.replace(/^public\//, "")}`, logo: info.logo, shape, tone };
+  }
   const letters = info?.letters ?? lettersFromName(info?.name ?? organization);
   if (!letters) return { kind: "none" };
   const bg = info?.colors[0] ?? null;

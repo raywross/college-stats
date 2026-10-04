@@ -92,7 +92,7 @@ test("faithView: traditions in order, each with its groups", () => {
 
 test("badges: a logo, else the file's letters on its color, else letters spelled from the name, else nothing", () => {
   const o = fixture.organizations;
-  assert.deepEqual(orgBadge(o.sigep, "Sigma Phi Epsilon"), { kind: "logo", src: "/org-logos/sigep.svg", logo: o.sigep.logo });
+  assert.deepEqual(orgBadge(o.sigep, "Sigma Phi Epsilon"), { kind: "logo", src: "/org-logos/sigep.svg", logo: o.sigep.logo, shape: "square", tone: "dark" });
   assert.deepEqual(orgBadge(o["pi-beta-phi"], "Pi Beta Phi"), { kind: "letters", letters: "ΠΒΦ", background: "#8B1F41", foreground: "#ffffff" });
   assert.deepEqual(orgBadge(o["kappa-sigma"], "Kappa Sigma"), { kind: "letters", letters: "ΚΣ", background: null, foreground: null });
   assert.deepEqual(orgBadge(null, "Lambda Chi Alpha"), { kind: "letters", letters: "ΛΧΑ", background: null, foreground: null });
@@ -101,6 +101,28 @@ test("badges: a logo, else the file's letters on its color, else letters spelled
   assert.equal(lettersFromName("Alpha Kappa Alpha Sorority, Inc."), null);
   assert.equal(inkOn("#FFD700"), "#1a1530");
   assert.equal(inkOn("#002147"), "#ffffff");
+});
+
+test("orgBadge: a wordmark (aspect >= 1.8) gets a wide shape, a mark/crest gets square, light-on-transparent art gets a dark tone, and logo_display 'badge' skips the image", () => {
+  const wordmark = { name: "Wordmark Org", website: null, letters: "WO", colors: [], wikidata: null, logo: { file: "public/org-logos/wordmark.svg", source: "https://x.org/", license: "Organization's own logo (used to identify it)", attribution: "© Wordmark Org", aspect: 4 } };
+  assert.deepEqual(orgBadge(wordmark, "Wordmark Org"), { kind: "logo", src: "/org-logos/wordmark.svg", logo: wordmark.logo, shape: "wide", tone: "dark" });
+
+  const asLogo = (b: ReturnType<typeof orgBadge>) => {
+    assert.equal(b.kind, "logo");
+    return b as Extract<ReturnType<typeof orgBadge>, { kind: "logo" }>;
+  };
+
+  const crest = { ...wordmark, logo: { ...wordmark.logo, aspect: 0.8 } };
+  assert.equal(asLogo(orgBadge(crest, "Crest Org")).shape, "square");
+
+  const light = { ...wordmark, logo: { ...wordmark.logo, aspect: 0.6, tone: "light" as const } };
+  assert.equal(asLogo(orgBadge(light, "Light Org")).tone, "light");
+
+  const noAspect = { ...wordmark, logo: { file: wordmark.logo.file, source: wordmark.logo.source, license: wordmark.logo.license, attribution: wordmark.logo.attribution } };
+  assert.equal(asLogo(orgBadge(noAspect, "No Aspect")).shape, "square", "missing aspect degrades to the square tile");
+
+  const unreadable = { ...wordmark, letters: "WO", logo: { ...wordmark.logo, logo_display: "badge" as const, logo_display_reason: "wordmark stays illegible even widened" } };
+  assert.deepEqual(orgBadge(unreadable, "Wordmark Org"), { kind: "letters", letters: "WO", background: null, foreground: null });
 });
 
 test("chapterLabel strips a trailing (Organization), keeps everything else", () => {
@@ -121,6 +143,32 @@ test("organizations.json contract: the fixture passes, and broken entries are na
     'sigep: logo license "All rights reserved" isn\'t public domain or a free license',
     "pi-beta-phi: colors must be #rrggbb strings",
   ]);
+});
+
+test("organizationsProblems: logo aspect must be positive, tone must be light/dark, logo_display 'badge' needs a reason", () => {
+  const base = structuredClone(fixture);
+  const good = structuredClone(base);
+  good.organizations.sigep.logo!.aspect = 2.1;
+  good.organizations.sigep.logo!.tone = "dark";
+  assert.deepEqual(organizationsProblems(good), []);
+
+  const badAspect = structuredClone(base);
+  badAspect.organizations.sigep.logo!.aspect = -1;
+  assert.match(organizationsProblems(badAspect).join(), /aspect must be a positive number/);
+
+  const badTone = structuredClone(base);
+  // @ts-expect-error: deliberately invalid for the test
+  badTone.organizations.sigep.logo!.tone = "pastel";
+  assert.match(organizationsProblems(badTone).join(), /tone must be "light" or "dark"/);
+
+  const badgeNoReason = structuredClone(base);
+  badgeNoReason.organizations.sigep.logo!.logo_display = "badge";
+  assert.match(organizationsProblems(badgeNoReason).join(), /logo_display "badge" needs logo_display_reason/);
+
+  const badgeWithReason = structuredClone(base);
+  badgeWithReason.organizations.sigep.logo!.logo_display = "badge";
+  badgeWithReason.organizations.sigep.logo!.logo_display_reason = "wordmark stays illegible even widened";
+  assert.deepEqual(organizationsProblems(badgeWithReason), []);
 });
 
 test("loadOrganizations: reads the file under a root, tolerant of a bad entry, empty before the file exists", () => {

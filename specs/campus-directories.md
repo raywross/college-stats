@@ -163,3 +163,15 @@ was found at all (The Navigators, Omega Phi Beta, Phi Sigma Sigma). `colors` is 
 organizations' Wikidata items carry P462 (color), and scraping an arbitrary site's CSS for "the" brand color risked
 picking up an incidental UI color rather than an official one, so it was left for a future pass with a firmer
 source.
+
+**Logo legibility (owner fix 2026-10-04):** a logo's `logo` object carries two optional fields, measured once from
+the committed file (a small sharp script, not stored) and validated by `organizationProblems`/`organizationsProblems`
+alongside the rest: `aspect` (the trimmed content's width/height) and `tone` (`"light"` when the artwork is
+light-on-transparent and would vanish on a light tile, omitted/`"dark"` otherwise). Display
+(`lib/organizations.ts` `orgBadge`, `components/school/CampusListing.tsx` `OrgBadge`) uses `aspect` to pick a wide,
+fixed-height tile for a wordmark (`aspect >= 1.8`, `WORDMARK_ASPECT`) instead of squashing it into the square tile a
+mark/crest gets, capping the tile's width at 4.5× its height so one very wide lockup can't blow out a row; `tone`
+puts a light logo on a dark tile instead of the usual light one. When no tile size keeps a logo legible (Sigma Nu's
+thin serif wordmark plus tagline line, at the small size chapter lists use), `logo.logo_display: "badge"` with a
+`logo_display_reason` skips the image and falls back to the Greek-letter badge; `logo` itself stays populated so the
+ⓘ credit is unaffected.

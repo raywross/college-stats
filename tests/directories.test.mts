@@ -664,6 +664,11 @@ test("organizationProblems: website https, hex colors, wikidata shape, logo file
   assert.match(organizationProblems("sigep", { ...withLogo, logo: { ...withLogo.logo, license: "Fair use" } }).join(), /license/);
   assert.match(organizationProblems("sigep", { ...withLogo, logo: { ...withLogo.logo, file: "public/org-logos/other-key.png" } }).join(), /named after this key/);
   for (const license of ALLOWED_LOGO_LICENSES) assert.deepEqual(organizationProblems("sigep", { ...withLogo, logo: { ...withLogo.logo, license } }), []);
+  assert.deepEqual(organizationProblems("sigep", { ...withLogo, logo: { ...withLogo.logo, aspect: 2.1, tone: "dark" } }), []);
+  assert.match(organizationProblems("sigep", { ...withLogo, logo: { ...withLogo.logo, aspect: 0 } }).join(), /aspect must be a positive number/);
+  assert.match(organizationProblems("sigep", { ...withLogo, logo: { ...withLogo.logo, tone: "pastel" as never } }).join(), /tone must be "light" or "dark"/);
+  assert.match(organizationProblems("sigep", { ...withLogo, logo: { ...withLogo.logo, logo_display: "badge" } }).join(), /logo_display "badge" needs logo_display_reason/);
+  assert.deepEqual(organizationProblems("sigep", { ...withLogo, logo: { ...withLogo.logo, logo_display: "badge", logo_display_reason: "wordmark stays illegible even widened" } }), []);
 });
 
 test("data/directories/organizations.json: one entry per adapter key, https URLs, logo files exist and are small, license allowed", async () => {

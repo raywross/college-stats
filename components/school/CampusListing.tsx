@@ -24,17 +24,35 @@ const BADGE_SIZE = {
   md: "size-11 rounded-xl",
 } as const;
 
+/** Height (px) a logo tile renders at, matching `BADGE_SIZE`'s `size-*` box. */
+const BADGE_PX = { sm: 36, md: 44 } as const;
+/** Widest a "wide" (wordmark) tile grows before object-contain starts shrinking the logo to fit. */
+const WIDE_MAX_ASPECT = 4.5;
+
 /**
- * An organization's mark: its logo on a light tile (so dark-on-transparent and colored marks both read in dark mode,
- * and mixed shapes line up), else its Greek letters on its color (or the neutral surface), else `icon` on a tint of
- * the campus color. Decorative: the name always sits beside it.
+ * An organization's mark: its logo (a wide tile for a wordmark so the text isn't squashed, a square tile for a
+ * mark/crest, on a light surface by default or a dark one when the artwork itself is light-on-transparent and would
+ * vanish on light — `lib/organizations.ts` measures `aspect`/`tone` once per file), else its Greek letters on its
+ * color (or the neutral surface), else `icon` on a tint of the campus color. Decorative: the name always sits beside it.
  */
 export function OrgBadge({ badge, icon: Icon, size = "md", className }: { badge: OrgBadgeData; icon: LucideIcon; size?: keyof typeof BADGE_SIZE; className?: string }) {
   const box = cn("inline-flex shrink-0 items-center justify-center overflow-hidden", BADGE_SIZE[size], className);
   if (badge.kind === "logo") {
+    const h = BADGE_PX[size];
+    const aspect = Math.min(badge.logo.aspect ?? 1, WIDE_MAX_ASPECT);
+    const w = badge.shape === "wide" ? Math.round(h * aspect) : h;
     return (
-      <span aria-hidden className={cn(box, "bg-white p-1 ring-1 ring-black/10 dark:ring-white/15")}>
-        <Image src={badge.src} alt="" width={44} height={44} unoptimized className="size-full object-contain" />
+      <span
+        aria-hidden
+        className={cn(
+          "inline-flex shrink-0 items-center justify-center overflow-hidden p-1 ring-1",
+          size === "sm" ? "rounded-lg" : "rounded-xl",
+          badge.tone === "light" ? "bg-[#1a1530] ring-white/15" : "bg-white ring-black/10 dark:ring-white/15",
+          className
+        )}
+        style={{ height: h, width: w }}
+      >
+        <Image src={badge.src} alt="" width={w * 2} height={h * 2} unoptimized className="size-full object-contain" />
       </span>
     );
   }

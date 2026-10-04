@@ -491,7 +491,8 @@ export const ROADMAP: RoadmapSpec[] = [
     complexity: 2,
     complexityNote: "A query over standing, merit, and history fields, one page, one Explore chip, and a hand-checked pilot.",
     status: "idea",
-    after: ["chances-and-fit", "cds-financial-aid"],
+    // Also needs the CDS merit awards (cds-financial-aid), built 2026-10-03 and so no longer on the roadmap.
+    after: ["chances-and-fit"],
   },
   {
     slug: "cycle-watch",
@@ -502,7 +503,8 @@ export const ROADMAP: RoadmapSpec[] = [
     complexity: 2,
     complexityNote: "A change table built at publish from the agent's editions, one public page, a digest kind, and an email variant.",
     status: "idea",
-    after: ["cds-test-scores-and-policy", "cds-admissions", "cds-application-logistics", "follow-colleges"],
+    // Also needs the CDS policy, early-round, and logistics records, built 2026-10-03 and so no longer on the roadmap.
+    after: ["follow-colleges"],
   },
   {
     slug: "getting-into-the-major",
@@ -513,7 +515,8 @@ export const ROADMAP: RoadmapSpec[] = [
     complexity: 3,
     complexityNote: "A new recipe type for the agent with checks and review, new fields, a profile block, two filters, and a pilot.",
     status: "idea",
-    after: ["college-reported-round-3", "student-profile"],
+    // Also needs the round-3 agent (college-reported-round-3), built 2026-10-03 and so no longer on the roadmap.
+    after: ["student-profile"],
   },
   {
     slug: "metro-area",

@@ -44,7 +44,36 @@ interface TextBox {
   crest: boolean;
 }
 
-const { chromium } = (await import(PLAYWRIGHT)) as typeof import("playwright");
+/** The little of Playwright this uses (it isn't a dependency, so its types aren't installed). */
+interface Box {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+interface PwLocator {
+  first(): PwLocator;
+  boundingBox(): Promise<Box | null>;
+  evaluate<R>(fn: (el: Element) => R): Promise<R>;
+}
+interface PwPage {
+  goto(url: string, opts: { waitUntil: "load"; timeout: number }): Promise<unknown>;
+  waitForLoadState(state: "networkidle", opts: { timeout: number }): Promise<void>;
+  waitForTimeout(ms: number): Promise<void>;
+  locator(selector: string): PwLocator;
+  addStyleTag(opts: { content: string }): Promise<unknown>;
+  screenshot(opts: { clip: Box }): Promise<Buffer>;
+}
+interface PwContext {
+  addInitScript<A>(fn: (arg: A) => void, arg: A): Promise<void>;
+  newPage(): Promise<PwPage>;
+  close(): Promise<void>;
+}
+interface PwBrowser {
+  newContext(opts: { viewport: { width: number; height: number }; deviceScaleFactor: number; colorScheme: "light" | "dark"; isMobile: boolean }): Promise<PwContext>;
+  close(): Promise<void>;
+}
+const { chromium } = (await import(PLAYWRIGHT)) as { chromium: { launch(): Promise<PwBrowser> } };
 const browser = await chromium.launch();
 const rows: { id: string; width: number; theme: string; worst: { text: string; ratio: number; need: number }; texts: number; failures: string[]; crest: string }[] = [];
 
@@ -52,7 +81,7 @@ const runs = IDS.flatMap((id) => WIDTHS.flatMap((width) => (["light", "dark"] as
 for (const { id, width, theme } of runs) {
   {
     const ctx = await browser.newContext({ viewport: { width, height: 900 }, deviceScaleFactor: 1, colorScheme: theme, isMobile: width < 640 });
-    await ctx.addInitScript((t) => {
+    await ctx.addInitScript((t: string) => {
       try {
         localStorage.setItem("theme", t);
       } catch {}
@@ -64,7 +93,7 @@ for (const { id, width, theme } of runs) {
     await page.waitForTimeout(2500);
     const hero = page.locator("section").first();
     const box = (await hero.boundingBox())!;
-    const texts: TextBox[] = await hero.evaluate((root) => {
+    const texts: TextBox[] = await hero.evaluate((root: Element) => {
       const out: TextBox[] = [];
       const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
       // Computed colors come back in their own space (oklch(…), color-mix(…)): let a canvas turn them into sRGB.

@@ -114,6 +114,6 @@ export function addIdentityMeta(meta: DatasetMeta, inputs: IdentityInputs): void
     edition: wikipedia ? `Retrieved ${wikipedia}` : "Not retrieved yet",
     url: "https://en.wikipedia.org/wiki/Module:College_color/data",
     description:
-      "English Wikipedia's table of college athletic programs' colors, each cited to the college's own brand or athletics guide, joined to a college through its Wikipedia article. Used only to give each profile the college's own colors, never as data. CC BY-SA.",
+      "English Wikipedia's table of college athletic programs' colors (Module:College color/data), each cited to the college's own brand or athletics guide, joined to a college through its Wikipedia article; for a college the table doesn't list, the hex colors in its article's infobox. Used only to give each profile the college's own colors, never as data. CC BY-SA.",
   };
 }

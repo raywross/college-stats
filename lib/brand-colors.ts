@@ -612,7 +612,7 @@ export function colorsForArticle(lead: string, mod: ColorModule): { colors: Foun
     };
   }
   if (info.keys.length || info.nicknameLinks.length) return { colors: null, reason: "team not in the module" };
-  return { colors: null, reason: info.text ? "color names only" : "no colors in the infobox" };
+  return { colors: null, reason: info.raw ? "color names only" : "no colors in the infobox" };
 }
 
 /* ------------------------------------------------------------------ */

@@ -275,11 +275,12 @@ export async function processIcon(bytes: Uint8Array): Promise<IconResult> {
   if (long > short * (1 + SQUARE_TOLERANCE)) return { ok: false, reason: "not square", detail: `${width}×${height}` };
   let img = r.img.ensureAlpha();
   if (width !== height) img = img.extract({ left: Math.floor((width - short) / 2), top: Math.floor((height - short) / 2), width: short, height: short });
+  // sharp's stats() reads its input, not the pipeline, so each check measures a rendered buffer.
   const square = await img.png().toBuffer();
-  const alpha = await sharp(square).extractChannel(3).stats();
-  if (alpha.channels[0].max === 0) return { ok: false, reason: "fully transparent" };
+  const rgba = await sharp(square).stats();
+  if (rgba.channels[3].max === 0) return { ok: false, reason: "fully transparent" };
   // The tile behind a mark is white: a white glyph on transparency (a dark-tab favicon) or a blank square would vanish.
-  const onWhite = await sharp(square).flatten({ background: "#ffffff" }).stats();
+  const onWhite = await sharp(await sharp(square).flatten({ background: "#ffffff" }).png().toBuffer()).stats();
   if (onWhite.channels.slice(0, 3).every((c) => c.min >= 247)) return { ok: false, reason: "blank on white" };
   const webp = await sharp(square).resize(LOGO_SIZE, LOGO_SIZE, { fit: "fill", kernel: "lanczos3" }).webp({ quality: WEBP_QUALITY, alphaQuality: 100 }).toBuffer();
   return { ok: true, webp, source: { width, height, format } };

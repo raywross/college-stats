@@ -1,7 +1,8 @@
 # Colors and Marks: The College's Own Look on Its Profile (Wikipedia color data + the college's icon)
 
-> Status: **planned** 2026-10-03. Part of the [identity family](README.md); reads the Wikipedia article link and
-> the Commons logo file that [social-accounts.md](social-accounts.md) stores. Research 2026-10-03: Wikipedia's
+> Status: **built** 2026-10-04 (branch `feature/identity-brand`; see [As built](#as-built), with real coverage, the
+> contrast check's results, and the deviations). Planned 2026-10-03. Part of the [identity family](README.md); reads
+> the Wikipedia article link that [social-accounts.md](social-accounts.md) stores. Research 2026-10-03: Wikipedia's
 > college color data module downloaded and counted; fourteen colleges' Wikipedia infoboxes read; twenty college
 > homepages probed for icons and theme colors; four Commons logo files' license tags read; the trademark and
 > copyright position summarized below. Figures are measured unless marked *estimate*. **The legal section is a
@@ -130,9 +131,10 @@ above are all required, and a removal request is honored within a day. The spec 
 ```ts
 brand?: {
   colors: string[] | null;         // hex, brand order, e.g. ["#BA0C2F", "#FFFFFF", "#000000"]
-  names: string[] | null;          // ["red", "white", "black"]
+  names: (string | null)[] | null; // ["red", null, "black"] (as built: null where the source names no color)
   accent: string | null;           // "#BA0C2F"
   on_accent: "white" | "black" | null;
+  crest_to?: string | null;        // as built: the crest gradient's end, "#81001C" (see As built, deviation 3)
   tint_light: string | null;       // "oklch(0.72 0.16 20)"
   tint_dark: string | null;
   logo: { source_url: string; retrieved: string; width: number } | null;   // the file is public/brand/{unit_id}.webp
@@ -187,3 +189,144 @@ Wikipedia and the homepages: free. `sharp` adds a dev dependency. Storage: *esti
 2. Marks: the icon fetch in the links probe, `sharp`, `public/brand/`, overrides, the `/data` paragraph and
    removal route, the `BRAND_MARKS` flag, the verify check; `Crest.tsx` renders the mark. The next PR.
 3. The rendered contrast check in both themes.
+
+## As built
+Built 2026-10-04 on `feature/identity-brand`, all three steps in one branch. Defaults taken for the open questions: a
+college with colors but no acceptable icon gets a monogram in its colors (2), and the WebP files live in the repo
+until they pass about 25 MB (3).
+
+### Pieces
+| Piece | What it does |
+|---|---|
+| `lib/brand-colors.ts` | Pure. A Lua reader for the module (keyed and positional fields, comments, escapes, long strings; a repeated key keeps its last value, as Lua does); wikitext helpers (templates, links, the `{{cite …}}` an entry carries); the infobox reader; the join; OKLab/OKLCH and WCAG math; `deriveBrand`; `applyBrand` with lineage and override checks |
+| `scripts/lib/wikipedia-colors.mts` | The module once and every article's lead (section 0) through the MediaWiki API, redirects followed, one request a second, `maxlag=5`, user agent `QuadCollegeStats/1.0 (https://college-stats-nine.vercel.app/data)`, cached 30 days in `.cache/wikipedia/`; writes `data/brand-colors.json` |
+| `scripts/lib/brand-icons.mts` | Ranks each college's icon candidates from `data/site-probe.json`, downloads through `PoliteHttp`, decodes with `sharp` (ICO parsed here), checks, writes `public/brand/{unit_id}.webp` and `data/brand-logos.json` |
+| `scripts/sync-brand.mts` | `npm run sync-brand` (`--colors`, `--icons`, `--ids`, `--refresh`, `--no-merge`, `--wikidata <file>`), then `mergeIdentity` |
+| `lib/brand.ts` | `crestBrand` (gradient, text color, mark URL; `BRAND_MARKS=off` hides marks), `brandTint` (per-theme tints for the hero and card glow), `BRAND_REMOVAL_CONTACT` |
+| `components/school/Crest.tsx` | Mark on a white tile (image at 80%, so 10% padding each side), else the monogram on the college's gradient in `brand.text`, else today's tile; same sizes everywhere, the hero's `size-14 sm:size-24` unchanged |
+| Hero, cards | The hero's radial tint and the Explore card's glow read `--tint-light`/`--tint-dark` and pick with `dark:`; a 3 px accent line under the hero from `sm` up |
+| `/data` | "Colors and marks" under The datasets: sources, the trademark line, the removal route, and live counts |
+| `scripts/check-hero-contrast.mts` | The rendered contrast check (below) |
+
+### Real runs (2026-10-04)
+**Colors.** `Module:College color/data` revision 1375970502 (edited 2026-09-21): 1,552 entries and 951 alias keys
+after Lua's last-value rule (four keys are defined twice), 1,515 entries citing a guide (1,122 `cite web`, 392
+`cite manual`, 1 `cite book`), 37 uncited. `data/wikidata.json` (social track): 1,663 colleges with an English
+article. 35 requests in all (the module and 34 batches of 50 leads), 35 seconds.
+
+| Result | Colleges |
+|---|---|
+| **Colors** | **1,316** (79% of colleges with an article, 70% of 1,893) |
+| from the module by exact key / alias / normalized key | 682 / 31 / 33 (746) |
+| from the infobox's own hex values | 570 |
+| none: no colors in the infobox | 196 |
+| none: color names only ("Red and black", `{{color box|maroon}}`) | 133 |
+| none: a team link the module doesn't know | 8 |
+| none: no infobox | 10 |
+
+The spec's estimate of 1,500 assumed more infoboxes give hex values; the shortfall is the 329 articles that give
+names or nothing, which the rule against guessing from names leaves alone (the brand-guide reader deferred above is
+the way to close it). Derived: text white on 1,129 accents, black on 187; the crest's end is a second brand color for
+122, a darkened accent for 995, a lightened one for 198; 3 colleges have only neutral colors (accent = the first).
+Every accent and every gradient end has at least 4.50:1 against its text color. `data/brand-colors.json`: 462 KB.
+
+**Marks.** Waiting for `data/site-probe.json` (probe track) when this was written; see the integrator's note in the
+build PR. A development sample of 25 large universities' homepages (probed here, not committed) stored 13 icons
+(Stanford, Harvard, Yale, Berkeley, Texas, UNC, USC, Alabama, Florida, Illinois, Boston College, Syracuse, Virginia),
+974 B to 8.1 KB each (3.3 KB average, so about 5 MB for 1,500). The 12 without one: a 16–48 px favicon only (UGA,
+Michigan, Princeton, Georgia Tech, Indiana, Wisconsin, Washington's 57 px touch icon), Penn's shield at 229×256 (12%
+off square), ASU's 24-bit BMP ICO, Columbia's 404s, Ohio State's robots.txt, and Vanderbilt's icon host's robots.txt.
+So expect roughly half the colleges to get a mark, and the rest a monogram in their colors.
+
+### The rendered contrast check
+`scripts/check-hero-contrast.mts` opens each hero in Chromium (1280 and 390 px wide, light and dark), reads every hero
+text node's color and box, hides all text, screenshots what was behind it, and takes the 10th percentile of the
+pixel-by-pixel contrast in each box (so the hero's 1 px dot texture, one pixel in 22×22, isn't taken for the
+background while the tint's gradient still counts). AA: 4.5:1, or 3:1 at 24 px or 18.66 px bold. Run 2026-10-04 with
+the development marks in place:
+
+| College (tint hue) | 1280 light | 1280 dark | 390 light | 390 dark | Crest |
+|---|---|---|---|---|---|
+| UGA 139959 (red, 21°) | 4.65 | 5.76 | 5.06 | 6.57 | monogram 6.96:1 |
+| Vanderbilt 221999 (gold, 83°) | 4.80 | 5.50 | 5.25 | 6.57 | monogram 7.97:1 |
+| Stanford 243744 (cardinal, 27°) | 4.64 | 5.69 | 5.08 | 6.56 | mark |
+| Harvard 166027, and the hues worst for muted text: Boston U, Indiana, Clemson, Oregon | 4.60–4.85 | 5.50–5.76 | | | Harvard a mark; monograms 5.6–6.5:1 |
+| Hunter 190594 (no colors: today's hashed tint) | 4.66 | 5.19 | | | generated monogram 2.80:1 |
+
+Every hero text passes in both themes; the lowest is the muted breadcrumb at the top left, where the tint is
+strongest. Over every hue, muted text at the tint's full strength would be 4.33:1 (light) and 4.75:1 (dark) on a
+college's tint against 4.20:1 and 4.03:1 on today's hashed tint, so college colors never make the hero harder to read
+than it is now. Shown to fail: with the tint's alpha raised from 0.35 to 0.9, UGA's breadcrumb measured 3.10:1 (light)
+and 2.65:1 (dark) and the check exited 1.
+
+### Checks (each shown to fail when broken, 2026-10-04)
+- `tests/brand-colors.test.mts` (18): the Lua reader; entries, an alias, and a cite (the fixture is 50 real module
+  entries, `tests/fixtures/brand/college-color-data.lua`); the three infobox shapes and names-only; the join by key,
+  alias, and normalized key, and an ambiguous normalized form joining nothing; accent skips white, black, and gray;
+  `on_accent` black for `#FFC72C`, white for `#002B5C`; tints within L ± 0.02 and chroma ≤ 0.16 as a browser shows
+  them for all 147 colors of the fixture; the gradient end at 4.5:1; `applyBrand` lineage, idempotence, overrides;
+  `crestBrand` and `BRAND_MARKS=off`. Broken on purpose 13 ways (aliases dropped, cite ignored, names turned into
+  colors, no normalized join, accent = first color, text always white, tint chroma uncapped, gradient end without the
+  contrast check, old lineage kept, unsourced correction accepted, `logo: false` ignored, `BRAND_MARKS` ignored, the
+  mark's lineage not extracted): each failed.
+- `tests/brand-icon.test.mts` (9): the largest touch icon first; 32 px rejected, 180 px stored as a 192 px WebP; 200×190
+  cropped, 300×100 and 229×256 rejected; an ICO's largest entry; 32-bit BMP entries top-down with the mask's alpha;
+  transparent and blank-on-white rejected; SVG rasterized; runs: removals (full and `--ids`), a timeout or a silent host
+  keeps the mark, a refusal or 404s remove it, orphans deleted. Broken 11 ways: each failed.
+- `tests/brand-files.test.mts` (5, the verify-time check): every mark has its 192 px WebP and every file a mark and a
+  school; a `brand.logo` in the dataset has its file; a `logo: false` removal leaves no file, row, or mark; color rows
+  and overrides are well formed; the committed files give every school valid lineage. Broken 7 ways (an orphan file, a
+  row without its file, a 64 px file, a removal with its file still there, an unsourced override, an override for no
+  school, a color that isn't hex): each failed.
+- `tests/identity.test.mts` (foundation) passes with the real files: applying identity twice equals once.
+
+### Deviations from the plan
+1. **A separate step reads the other tracks' files.** The plan put the color fetch in `sync-wikidata` and the icon
+   fetch in the links probe. `npm run sync-brand` instead reads `data/wikidata.json` and `data/site-probe.json`, so
+   the five tracks could be built apart; `syncBrandColors(root)` and `syncBrandIcons(root)` can be called from those
+   scripts if the integrator prefers one command.
+2. **50-title batches.** `rvsection=0` turned out to work for every page of a 50-title batch (measured: Harvey Mudd's
+   lead 3,897 characters alone or batched), so 34 requests fetch every lead instead of ~1,660.
+3. **One more stored derived field, `brand.crest_to`**, the gradient's end, so the app does no color math. "Second
+   color" is read as the next brand color after the accent with white skipped (in the module white is nearly always
+   the text-color slot, unnamed); a black or gray one becomes a darkened accent, white alone a lightened one, and any
+   end that would leave the monogram under 4.5:1 is shaded back toward the accent. Without this Georgia (red, white,
+   black) would have gone red to pink rather than red to dark red.
+4. **Names are aligned with colors, null where the module names none** (`(string | null)[]`), since the module leaves
+   the white text slot unnamed (`name1="red", name3="black"`). `lib/types.ts` and `lib/identity-files.ts` changed
+   accordingly (additive for readers).
+5. **Infobox details.** "black" and "white" color boxes beside at least one hex value count as `#000000`/`#FFFFFF`
+   (exact whoever writes them); other named boxes are dropped, so a few colleges keep a partial list (Miles College's
+   gold without its purple). `{{color sample}}` counts as a color box. Names come from the text after the boxes when
+   there is exactly one per color.
+6. **Normalized join, measured.** Beyond dashes, accents, "&", and "St." (after the first word) as "State", it tries
+   the men's half of a two-team athletics article ("Central Arkansas Bears and Sugar Bears" → "Central Arkansas
+   Bears"): 33 joins, all checked by hand. A normalized form shared by two entries joins nothing.
+7. **Lineage.** `brand.colors` (and `brand.names`): `{ source: "wikipedia", method: "reported", url: <the brand guide
+   the entry cites, else the module's page>, field: <the module key>, quote: <the guide's title>, retrieved }`;
+   infobox colors cite the article with `field: "infobox colors"` and the field as written as the quote. Corrected
+   colors carry the override's `_lineage` (required, with source and URL). `brand.logo`: `{ source: "college-site",
+   method: "extracted", url: <the icon's URL>, retrieved, year: <retrieval year>, quote: <the declaring tag and the
+   homepage> }`. The derived fields cite `brand.colors` through the registry.
+8. **Marks: extra rules.** Safari's monochrome `mask-icon` is never used; candidates are re-ranked (touch icons by
+   size, then declared icons by size with SVG as large, then `/apple-touch-icon.png`, then `/favicon.ico`), at most four
+   downloads per college. A fifth rejection, **blank on white**, catches white glyphs on transparency (dark-tab
+   favicons) that would vanish on the white tile. ICO: PNG entries via sharp, 32-bit BMP entries converted to RGBA (the
+   AND mask gives alpha when every alpha byte is 0); 1-, 4-, 8-, and 24-bit entries are skipped (palette-era icons,
+   16–48 px, under the floor anyway). A passing failure (timeout, 5xx, a host that didn't answer) keeps yesterday's
+   mark; a refusal (robots.txt, 4xx, a rejected image) removes it.
+9. **`next/image` with `unoptimized`.** `next.config.ts` sets no image loader, and the stored WebP is already the
+   largest size any tile shows (96 px at 2x), so the optimizer would only add a transformation per size on Vercel.
+10. **Dark mode.** The 15% ring is white (a ring sits outside the tile, on indigo, where a black one can't show), and
+    tiles in a college's colors get it too, since navy and black tiles sank into indigo. The tile's sheen is fainter on
+    a college's colors (18% rather than 35%).
+11. **Client data.** `ScatterPointData` and the Explore map's `MapPoint` (`lib/us-map.ts`) carry `brand` for the hover
+    card (about 110 KB of uncompressed JSON for the map's 1,303 points with colors).
+
+### Left for the owner
+- **The removal address.** `BRAND_REMOVAL_CONTACT` (`lib/brand.ts`) is a prefilled issue on
+  `github.com/raywross/college-stats`; it only works while the repo is public. Choose a permanent address (an email
+  that someone reads daily, since a request is honored within a day).
+- **Counsel, once, before the first deploy with marks** (the safeguard above).
+- **The marks' real run** if the integrator hasn't done it: `npm run sync-brand -- --icons` after the probe's file is in,
+  then commit `public/brand/*.webp` and `data/brand-logos.json`.

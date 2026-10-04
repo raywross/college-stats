@@ -282,12 +282,16 @@ test("callsNeedingRead: template workbooks and form PDFs never go to a model; a 
   assert.deepEqual(callsNeedingRead(doc("class-profile", {})), []);
 });
 
-test("callsNeedingRead on the committed records: nothing is due at today's versions; a C bump touches no template workbook", () => {
+test("callsNeedingRead on the committed records: no call read at today's version is due again; a C bump touches no template workbook", () => {
   const recs = readRecords(join(import.meta.dirname, "..", "data", "cds-records"));
   assert.ok(recs.length >= 4);
   for (const r of recs) {
     for (const d of r.documents) {
-      assert.deepEqual(callsNeedingRead(d), [], `${r.unit_id} ${d.sha256.slice(0, 8)}`);
+      // A call is due only when the record never read it (a run's failed call, e.g. Houston's rest call that was too
+      // long for Haiku in run 20261004-011421-7), never one already read at today's version.
+      const due = callsNeedingRead(d);
+      for (const call of due) assert.equal((d.reads as Record<string, unknown>)[call], undefined, `${r.unit_id} ${d.sha256.slice(0, 8)} ${call} was read but is due`);
+      if (d.type === "xlsx-template" || d.type === "pdf-form") assert.deepEqual(due, [], `${r.unit_id}: deterministic documents are never due`);
       if (d.type === "xlsx-template") assert.deepEqual(callsNeedingRead(d, { C: 99, rest: 99 }), []);
     }
   }

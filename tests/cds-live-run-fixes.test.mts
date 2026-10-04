@@ -39,3 +39,37 @@ test("a value is found on its line past layout tags and printer-split digits, an
   // UNC D3: a footnoted mark.
   assert.equal(valueOnLine("@64 X* | @90 Summer | @164 *(See D11 Note)", true, { value_type: "check" }), true);
 });
+
+/* ---- Fourth run (20261004-004725-6) ---- */
+
+test("every code in a call has its own description, so a grid's cells can't be confused", async () => {
+  // The model had put Washington University's 33,283 total applicants in the in-state cell: C.116 and C.119 both read
+  // "Total first-time, first-year who applied" before the descriptors were added.
+  const { CDS_TEMPLATE } = await import("../lib/cds-template.ts");
+  const { codeTableText } = await import("../lib/cds-sections.ts");
+  for (const call of ["C", "rest"] as const) {
+    const lines = codeTableText(CDS_TEMPLATE, call).split("\n");
+    const descriptions = lines.map((l) => l.split(" | ").slice(1).join(" | "));
+    const shared = descriptions.filter((d, i) => descriptions.indexOf(d) !== i);
+    assert.deepEqual(shared, [], `${call}: ${shared.length} shared descriptions`);
+  }
+  const c = codeTableText(CDS_TEMPLATE, "C");
+  assert.match(c, /^C\.119 \| Total first-time, first-year who applied \[In-State\] \| count$/m);
+  assert.match(c, /^C\.1111 \| .*NO_SUB/m);
+});
+
+test("a document too long for Haiku's context goes to Sonnet 5 whole, not to a rejected request", async () => {
+  // Houston's older workbook measured 201,379 tokens and its rest call came back invalid_request.
+  const { extractionModelFor, HAIKU_CONTEXT_TOKENS } = await import("../scripts/lib/college-reported/llm.mts");
+  assert.equal(extractionModelFor(40_000, "rest"), "claude-haiku-4-5");
+  assert.equal(extractionModelFor(150_000, "rest"), "claude-sonnet-5");
+  assert.equal(extractionModelFor(HAIKU_CONTEXT_TOKENS, "C"), "claude-sonnet-5");
+});
+
+test("an aid year read from the heading its mark sits under is found on the heading's line", () => {
+  // Washington University and UC San Diego: "2025-2026 estimated" cited to the line "@370 2025-2026".
+  const text = { value_type: "text" as const };
+  assert.equal(valueOnLine("@370 2025-2026", "2025-2026 estimated", text), true);
+  assert.equal(valueOnLine("@370 2024-2025", "2025-2026 estimated", text), false);
+  assert.equal(valueOnLine("@57 Indicate the academic year for which data are reported", "2025-2026", text), false);
+});

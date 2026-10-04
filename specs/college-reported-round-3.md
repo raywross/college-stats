@@ -1666,3 +1666,14 @@ could not:
     and Arizona stopped at an admissions page);
   - the PR description lists at most `PER_ITEM_ROWS` review items and is cut to GitHub's 65,536-character limit (330
     items had made the PR step fail).
+- **Fourth run (`20261004-004725-6`): six CDS documents read, grid cells confused.** Washington University, Florida, UC
+  San Diego, UNC, Michigan State, and Houston were read. Fixed after it, not published:
+  - the code table now carries each code's row and column descriptors (`descriptorText`: category, residency, gender,
+    unit), and its section heading or PDF tag where they still collide (GPA's three columns, B1's undergraduate and
+    graduate rows, the B4–B5 grids, H1's need and non-need columns); a test keeps every code's description unique. The
+    twelve residency cells and the C1 totals had all read "Total first-time, first-year who applied";
+  - a request too long for Haiku 4.5's 200K context goes to Sonnet 5 whole (`extractionModelFor`; Houston's older
+    workbook measured 201,379 tokens);
+  - the instructions explain the tag words and how H.101's year is marked; a text value's digits found on its cited
+    line count (the aid year read from a column heading).
+  - Ohio State's robots.txt disallows its CDS PDF: an owner's-list entry (`data/reference/cds-urls.json`).

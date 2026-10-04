@@ -298,6 +298,24 @@ export function estimateTokens(chars: number): number {
   return Math.ceil(chars / 3.5);
 }
 
+/** Haiku 4.5's context window, in tokens (claude-api skill, model table). */
+export const HAIKU_CONTEXT_TOKENS = 200_000;
+/**
+ * Headroom on the chars ÷ 3.5 estimate before a request counts as too long for Haiku. Houston's older workbook (run
+ * 20261004-004725-6) measured 201,379 tokens and was rejected; layout text with many short cells runs denser than prose.
+ */
+export const CONTEXT_ESTIMATE_MARGIN = 1.3;
+
+/**
+ * The extraction model for a request of about `estimatedInput` tokens: Haiku 4.5, unless input plus the call's
+ * `max_tokens` might not fit its context, then the escalation model (Sonnet 5, 1M context) reads it whole rather than
+ * the request being rejected or the document cut.
+ */
+export function extractionModelFor(estimatedInput: number, call: CallKey): string {
+  const fits = estimatedInput * CONTEXT_ESTIMATE_MARGIN + maxTokensFor(call) <= HAIKU_CONTEXT_TOKENS;
+  return fits ? ROUND3_MODELS.extraction : ROUND3_MODELS.escalation;
+}
+
 /** The document a call reads, for the prompt's header and the call log. */
 export interface DocMeta {
   unit_id: string;
@@ -398,7 +416,11 @@ Answer with one JSON object {"values": [...]}, one entry per value the document 
 - Ignore the definitions and instructions the template itself prints; read only the college's answers.
 - Do not report codes that are not in the code table, and do not add fields of your own.
 
-Each line of the code table is "code | question | value type". Value types: count (a whole number of students, sections, or applications), percent, currency, decimal, gpa, sat-section, sat-composite, act, act-writing, month, day, date, yes-no, check (a checkbox or X mark), choice, text, url.
+Each line of the code table is "code | question [row and column descriptors] | value type". The descriptors in square brackets say which cell of a grid the code is: its column (In-State, Out-of-State, Nonresidents, Males, Females, FT, PT) and its row group. Where two cells would otherwise read alike, a parenthesis adds the template's section heading or its tag; tag words mean: SUBMIT = students who submitted test scores, NO_SUB = students who did not, EN_FRSH = all enrolled first-years; EN_DEG = degree-seeking undergraduates, GRAD = graduate students; 1ST = first-time, first-year; LY = the previous cohort's grid; INIT, EXCLUDE, ADJUST, 4YR, 5YR, 6YR, BACH = the graduation grid's rows (initial cohort, exclusions, final cohort, finished in four, five, and six years, total); NB = need-based, NN = non-need-based; FT, PT = full-time, part-time.
+
+H.101 (the aid year) is usually marked with an X under one of two printed column headings, such as "2024-2025 Final" and "2025-2026 Estimated": report the heading the mark sits under, and cite the line with the mark and the line with that heading.
+
+Value types: count (a whole number of students, sections, or applications), percent, currency, decimal, gpa, sat-section, sat-composite, act, act-writing, month, day, date, yes-no, check (a checkbox or X mark), choice, text, url.
 
 <code_table>
 `;
@@ -454,8 +476,6 @@ const isHaiku = (model: string) => model.startsWith("claude-haiku");
  * Codes outside the call are refused: a request never asks for a code its schema version doesn't cover.
  */
 export function buildExtractRequest(input: ExtractCallInput): BuiltRequest {
-  const model = input.model ?? ROUND3_MODELS.extraction;
-  priceOf(model);
   const all = codesFor(input.table, input.call);
   const callCodes = new Set(all);
   const codes = input.codes ? [...input.codes] : all;
@@ -465,9 +485,11 @@ export function buildExtractRequest(input: ExtractCallInput): BuiltRequest {
 
   const prefix = staticPrefix(input.table, input.call, codes);
   const prefixTokens = estimateTokens(prefix.length);
+  const user = `${documentHeader(input.doc)}\n\n<document>\n${renderLines(input.lines)}\n</document>`;
+  const model = input.model ?? extractionModelFor(estimateTokens(prefix.length + user.length), input.call);
+  priceOf(model);
   const cache = input.cache ?? "5m";
   const cached = cache !== "off" && prefixTokens >= (MIN_CACHE_PREFIX[priceKey(model)] ?? Infinity);
-  const user = `${documentHeader(input.doc)}\n\n<document>\n${renderLines(input.lines)}\n</document>`;
   const marker: Anthropic.CacheControlEphemeral = cache === "1h" ? { type: "ephemeral", ttl: "1h" } : { type: "ephemeral" };
   const system: Anthropic.TextBlockParam[] = [{ type: "text", text: prefix, ...(cached ? { cache_control: marker } : {}) }];
   const params: Anthropic.MessageCreateParamsNonStreaming = {

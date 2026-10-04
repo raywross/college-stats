@@ -95,6 +95,59 @@
    ]
   },
   {
+   "unit_id": "100858",
+   "learned": "2026-10-04",
+   "model": "claude-sonnet-5",
+   "links": {
+    "greek": {
+     "fsl_office": null,
+     "fsl_reports": [],
+     "recruitment": null,
+     "greek_none": null,
+     "notes": ""
+    },
+    "faith": {
+     "faith_office": null,
+     "faith_groups": null,
+     "religion_report": null,
+     "faith_estimate": [],
+     "notes": ""
+    },
+    "lgbtq": {
+     "lgbtq_center": null,
+     "lgbtq_groups": null,
+     "nondiscrimination": "https://auburn.edu/administration/eoc/nondiscriminationantiharassment.php",
+     "housing": null,
+     "name_policy": null,
+     "health_plan": null,
+     "restrooms": null,
+     "trans_admission": null,
+     "conduct_code": null,
+     "notes": ""
+    }
+   },
+   "sources": [
+    {
+     "domain": "lgbtq",
+     "type": "nondiscrimination",
+     "url": "https://auburn.edu/administration/eoc/nondiscriminationantiharassment.php",
+     "status": "ok",
+     "sha256": "ca000ac3760a7781fbc097e6395791ff8e68ca4774267d7cc33f91a46b33639a"
+    }
+   ],
+   "discovery": {
+    "probed": [
+     "nondiscrimination"
+    ],
+    "paid": [
+     "fsl_office",
+     "lgbtq_center"
+    ],
+    "searches": 1,
+    "fetches": 71
+   }
+  },
+  {
    "unit_id": "104151",
    "learned": "2026-10-04",
    "model": "claude-sonnet-5",
@@ -221,6 +274,91 @@
     ],
     "searches": 2,
     "fetches": 68
+   }
+  },
+  {
+   "unit_id": "110635",
+   "learned": "2026-10-04",
+   "model": "claude-sonnet-5",
+   "links": {
+    "greek": {
+     "fsl_office": null,
+     "fsl_reports": [],
+     "recruitment": null,
+     "greek_none": null,
+     "notes": ""
+    },
+    "faith": {
+     "faith_office": null,
+     "faith_groups": null,
+     "religion_report": null,
+     "faith_estimate": [],
+     "notes": ""
+    },
+    "lgbtq": {
+     "lgbtq_center": null,
+     "lgbtq_groups": null,
+     "nondiscrimination": "https://ophd.berkeley.edu/policies-procedures/nondiscrimination-policy-statement",
+     "housing": "https://facilities.berkeley.edu/home/inclusive-restrooms/gender-inclusive-restroom-implementation-guidelines",
+     "name_policy": "https://ophd.berkeley.edu/topics/gender-recognition-and-lived-name",
+     "health_plan": null,
+     "restrooms": "https://facilities.berkeley.edu/home/inclusive-restrooms",
+     "trans_admission": null,
+     "conduct_code": null,
+     "notes": ""
+    }
+   },
+   "sources": [
+    {
+     "domain": "lgbtq",
+     "type": "nondiscrimination",
+     "url": "https://ophd.berkeley.edu/policies-procedures/nondiscrimination-policy-statement",
+     "status": "ok",
+     "sha256": "7b17eb341654cd885cf3ccab26a0cffcfac3bd3aa9a579bc170ece8d049079bf",
+     "etag": "W/\"1791150305-0\"",
+     "last_modified": "Sun, 04 Oct 2026 21:45:05 GMT"
+    },
+    {
+     "domain": "lgbtq",
+     "type": "housing",
+     "url": "https://facilities.berkeley.edu/home/inclusive-restrooms/gender-inclusive-restroom-implementation-guidelines",
+     "status": "ok",
+     "sha256": "938c3a37d2ddd81a86223622341d3987b0c95b440068fc58756dab6c12555253",
+     "etag": "W/\"1790916398\"",
+     "last_modified": "Fri, 02 Oct 2026 04:46:38 GMT"
+    },
+    {
+     "domain": "lgbtq",
+     "type": "name_policy",
+     "url": "https://ophd.berkeley.edu/topics/gender-recognition-and-lived-name",
+     "status": "ok",
+     "sha256": "6f78b18201093e62b82d3a6fe93d1bf0cf23db7ee7c3fb98fa6cc38bb6acb15c",
+     "etag": "W/\"1791152203-0\"",
+     "last_modified": "Sun, 04 Oct 2026 22:16:43 GMT"
+    },
+    {
+     "domain": "lgbtq",
+     "type": "restrooms",
+     "url": "https://facilities.berkeley.edu/home/inclusive-restrooms",
+     "status": "ok",
+     "sha256": "d749e9d372bcf39d133f4cfc47f699263816b74313dd998c27b4bae85bd78211",
+     "etag": "W/\"1790875096\"",
+     "last_modified": "Thu, 01 Oct 2026 17:18:16 GMT"
+    }
+   ],
+   "discovery": {
+    "probed": [
+     "nondiscrimination",
+     "name_policy",
+     "restrooms",
+     "housing"
+    ],
+    "paid": [
+     "fsl_office",
+     "lgbtq_center"
+    ],
+    "searches": 1,
+    "fetches": 80
    }
   },
   {
@@ -443,6 +581,214 @@
      "last_modified": "Sat, 03 Oct 2026 01:02:29 GMT"
     }
    ]
+  },
+  {
+   "unit_id": "126614",
+   "learned": "2026-10-04",
+   "model": "claude-sonnet-5",
+   "links": {
+    "greek": {
+     "fsl_office": "https://www.colorado.edu/greeks/",
+     "fsl_reports": [],
+     "recruitment": "https://www.colorado.edu/greeks/how-join",
+     "greek_none": null,
+     "notes": ""
+    },
+    "faith": {
+     "faith_office": null,
+     "faith_groups": null,
+     "religion_report": null,
+     "faith_estimate": [],
+     "notes": ""
+    },
+    "lgbtq": {
+     "lgbtq_center": "https://www.colorado.edu/wgst/queer-trans-studies",
+     "lgbtq_groups": null,
+     "nondiscrimination": "https://www.colorado.edu/oiec/policies/nondiscrimination-harassment-policy",
+     "housing": null,
+     "name_policy": null,
+     "health_plan": null,
+     "restrooms": null,
+     "trans_admission": null,
+     "conduct_code": null,
+     "notes": ""
+    }
+   },
+   "sources": [
+    {
+     "domain": "greek",
+     "type": "fsl_office",
+     "url": "https://www.colorado.edu/greeks/",
+     "status": "ok",
+     "sha256": "bcff88a341f7c448c601b1d68c1e3a2d387514faa4535c4defae668abb37531e",
+     "etag": "W/\"1791130011\"",
+     "last_modified": "Sun, 04 Oct 2026 16:06:51 GMT"
+    },
+    {
+     "domain": "greek",
+     "type": "recruitment",
+     "url": "https://www.colorado.edu/greeks/how-join",
+     "status": "ok",
+     "sha256": "b18087d476bb9f3a25bd490a329c4bc9c4c6f9efa25b5385d9e74426eb828926",
+     "etag": "W/\"1791130372\"",
+     "last_modified": "Sun, 04 Oct 2026 16:12:52 GMT"
+    },
+    {
+     "domain": "greek",
+     "type": "followed",
+     "url": "https://www.colorado.edu/greeks/joining-a-chapter",
+     "status": "ok",
+     "sha256": "4eb043dad24e2ddbc7b07bc2d77969646f6d41f6253870f90eab7f5efe277af5",
+     "etag": "W/\"1791102962\"",
+     "last_modified": "Sun, 04 Oct 2026 08:36:02 GMT"
+    },
+    {
+     "domain": "greek",
+     "type": "followed",
+     "url": "https://www.colorado.edu/greeks/our-community",
+     "status": "ok",
+     "sha256": "3a5be4f12339faa1525e5216fb6ec7eb5b38394a014102cc4d452451bf2b9b47",
+     "etag": "W/\"1791098012\"",
+     "last_modified": "Sun, 04 Oct 2026 07:13:32 GMT"
+    },
+    {
+     "domain": "greek",
+     "type": "followed",
+     "url": "https://www.colorado.edu/greeks/greek-life-101-fall-recruitment",
+     "status": "ok",
+     "sha256": "37a045ed68d554cd5fdd9e2433ebdaadc805ad0e5e9f64a73d86a09c28307999",
+     "etag": "W/\"1791085481\"",
+     "last_modified": "Sun, 04 Oct 2026 03:44:41 GMT"
+    },
+    {
+     "domain": "greek",
+     "type": "followed",
+     "url": "https://www.colorado.edu/greeks/cuifc-university-affiliation",
+     "status": "ok",
+     "sha256": "5d99f1e8fa72ea0518e2211b77736029cd5c215bb247c9abd3ba7a299c64757e",
+     "etag": "W/\"1791144572\"",
+     "last_modified": "Sun, 04 Oct 2026 20:09:32 GMT"
+    },
+    {
+     "domain": "greek",
+     "type": "followed",
+     "url": "https://www.colorado.edu/greeks/panhellenic-council",
+     "status": "ok",
+     "sha256": "482295600e49239ec1dfe68597e25b91475e9ee9cdcac4d938e89a5b919043fc",
+     "etag": "W/\"1791140957\"",
+     "last_modified": "Sun, 04 Oct 2026 19:09:17 GMT"
+    },
+    {
+     "domain": "greek",
+     "type": "followed",
+     "url": "https://www.colorado.edu/greeks/multicultural-greek-council",
+     "status": "ok",
+     "sha256": "2322d6183b6e0c44ab19361283454cda4bceeb6c2f0570eb52e116b50793c33e",
+     "etag": "W/\"1791070175\"",
+     "last_modified": "Sat, 03 Oct 2026 23:29:35 GMT"
+    },
+    {
+     "domain": "lgbtq",
+     "type": "lgbtq_center",
+     "url": "https://www.colorado.edu/wgst/queer-trans-studies",
+     "status": "ok",
+     "sha256": "65e4aa5dab81012ecb4526640e5947d91d56d9cf08543110b81fe56a082dee23",
+     "etag": "W/\"1791132971\"",
+     "last_modified": "Sun, 04 Oct 2026 16:56:11 GMT"
+    },
+    {
+     "domain": "lgbtq",
+     "type": "nondiscrimination",
+     "url": "https://www.colorado.edu/oiec/policies/nondiscrimination-harassment-policy",
+     "status": "error",
+     "detail": "HTTP 404"
+    },
+    {
+     "domain": "lgbtq",
+     "type": "followed",
+     "url": "https://www.colorado.edu/wgst/",
+     "status": "ok",
+     "sha256": "87c8d5fc1ec849c50064894ecfd3e1e61157db4373fa74bf6422b90beaa65308",
+     "etag": "W/\"1791147024\"",
+     "last_modified": "Sun, 04 Oct 2026 20:50:24 GMT"
+    },
+    {
+     "domain": "lgbtq",
+     "type": "followed",
+     "url": "https://www.colorado.edu/wgst/about-women-and-gender-studies",
+     "status": "ok",
+     "sha256": "1793e2de762607a63a5fa54f102eb4a6f0b4a3aac0e2f64eaf370dbe50c8d03f",
+     "etag": "W/\"1791069354\"",
+     "last_modified": "Sat, 03 Oct 2026 23:15:54 GMT"
+    }
+   ],
+   "discovery": {
+    "probed": [
+     "fsl_office",
+     "recruitment",
+     "lgbtq_center"
+    ],
+    "paid": [
+     "nondiscrimination"
+    ],
+    "searches": 1,
+    "fetches": 77
+   }
+  },
+  {
+   "unit_id": "130794",
+   "learned": "2026-10-04",
+   "model": "claude-sonnet-5",
+   "links": {
+    "greek": {
+     "fsl_office": null,
+     "fsl_reports": [],
+     "recruitment": null,
+     "greek_none": null,
+     "notes": ""
+    },
+    "faith": {
+     "faith_office": null,
+     "faith_groups": null,
+     "religion_report": null,
+     "faith_estimate": [],
+     "notes": ""
+    },
+    "lgbtq": {
+     "lgbtq_center": null,
+     "lgbtq_groups": null,
+     "nondiscrimination": "https://www.yale.edu/eo-nondiscriminationstatement",
+     "housing": null,
+     "name_policy": null,
+     "health_plan": null,
+     "restrooms": null,
+     "trans_admission": null,
+     "conduct_code": null,
+     "notes": ""
+    }
+   },
+   "sources": [
+    {
+     "domain": "lgbtq",
+     "type": "nondiscrimination",
+     "url": "https://www.yale.edu/eo-nondiscriminationstatement",
+     "status": "ok",
+     "sha256": "316228577483f8cae39da8ab30629f6519fa513e6c1025c1f2ab181ad4238b96",
+     "etag": "W/\"1791131608-0\"",
+     "last_modified": "Sun, 04 Oct 2026 16:33:28 GMT"
+    }
+   ],
+   "discovery": {
+    "probed": [
+     "nondiscrimination"
+    ],
+    "paid": [
+     "fsl_office",
+     "lgbtq_center"
+    ],
+    "searches": 1,
+    "fetches": 66
+   }
   },
   {
    "unit_id": "131496",
@@ -751,6 +1097,185 @@
      "last_modified": "Sun, 04 Oct 2026 13:43:23 GMT"
     }
    ]
+  },
+  {
+   "unit_id": "133650",
+   "learned": "2026-10-04",
+   "model": "claude-sonnet-5",
+   "links": {
+    "greek": {
+     "fsl_office": null,
+     "fsl_reports": [],
+     "recruitment": null,
+     "greek_none": null,
+     "notes": ""
+    },
+    "faith": {
+     "faith_office": null,
+     "faith_groups": null,
+     "religion_report": null,
+     "faith_estimate": [],
+     "notes": ""
+    },
+    "lgbtq": {
+     "lgbtq_center": null,
+     "lgbtq_groups": null,
+     "nondiscrimination": "https://www.famu.edu/administration/compliance-and-ethics/titleix/index.php",
+     "housing": null,
+     "name_policy": null,
+     "health_plan": null,
+     "restrooms": null,
+     "trans_admission": null,
+     "conduct_code": null,
+     "notes": ""
+    }
+   },
+   "sources": [
+    {
+     "domain": "lgbtq",
+     "type": "nondiscrimination",
+     "url": "https://www.famu.edu/administration/compliance-and-ethics/titleix/index.php",
+     "status": "ok",
+     "sha256": "d1ad1284fbc4c08ae5bd2ea939be1a8a86ea899ae865204ea374ad9fe65275be"
+    }
+   ],
+   "discovery": {
+    "probed": [
+     "nondiscrimination"
+    ],
+    "paid": [
+     "fsl_office",
+     "lgbtq_center"
+    ],
+    "searches": 1,
+    "fetches": 68
+   }
+  },
+  {
+   "unit_id": "134097",
+   "learned": "2026-10-04",
+   "model": "claude-sonnet-5",
+   "links": {
+    "greek": {
+     "fsl_office": "https://fsl.fsu.edu/",
+     "fsl_reports": [],
+     "recruitment": null,
+     "greek_none": null,
+     "notes": ""
+    },
+    "faith": {
+     "faith_office": "https://interfaithcouncil.fsu.edu/",
+     "faith_groups": null,
+     "religion_report": null,
+     "faith_estimate": [],
+     "notes": ""
+    },
+    "lgbtq": {
+     "lgbtq_center": null,
+     "lgbtq_groups": null,
+     "nondiscrimination": null,
+     "housing": null,
+     "name_policy": null,
+     "health_plan": null,
+     "restrooms": null,
+     "trans_admission": null,
+     "conduct_code": null,
+     "notes": ""
+    }
+   },
+   "sources": [
+    {
+     "domain": "greek",
+     "type": "fsl_office",
+     "url": "https://fsl.fsu.edu/",
+     "status": "ok",
+     "sha256": "734df6064e0998ed2e498131deb2e399a21b9e1d04a5caf1e8de4362ae0eab8c",
+     "etag": "W/\"1790293737\"",
+     "last_modified": "Thu, 24 Sep 2026 23:48:57 GMT"
+    },
+    {
+     "domain": "greek",
+     "type": "followed",
+     "url": "https://fsl.fsu.edu/fslscorecard",
+     "status": "ok",
+     "sha256": "76f8fc230d7449bb6e5a994131e7b1bd1c0b1892e95162a3385a1b8c92fda7c2",
+     "etag": "W/\"1790294426\"",
+     "last_modified": "Fri, 25 Sep 2026 00:00:26 GMT"
+    },
+    {
+     "domain": "greek",
+     "type": "followed",
+     "url": "https://fsl.fsu.edu/about/governing-councils",
+     "status": "ok",
+     "sha256": "1fb8c102a87d8eb2569c6dc9e72aedf115310fec20e2afa069ed7d28ae984b93",
+     "etag": "W/\"1790295358\"",
+     "last_modified": "Fri, 25 Sep 2026 00:15:58 GMT"
+    },
+    {
+     "domain": "greek",
+     "type": "followed",
+     "url": "https://fsl.fsu.edu/current-members/scholarship-reports",
+     "status": "ok",
+     "sha256": "e61e401d9baaf54fb99d01e996d0ad1812e6aa82c37de9015b3651d6cca42a93",
+     "etag": "W/\"1790294824\"",
+     "last_modified": "Fri, 25 Sep 2026 00:07:04 GMT"
+    },
+    {
+     "domain": "greek",
+     "type": "followed",
+     "url": "https://fsl.fsu.edu/potential-members/mgc-nphc-orientation",
+     "status": "ok",
+     "sha256": "0300d254d35c2125c10d278cab14e00f1507ec968dc2c4eeef37d02681b397fc",
+     "etag": "W/\"1790299165\"",
+     "last_modified": "Fri, 25 Sep 2026 01:19:25 GMT"
+    },
+    {
+     "domain": "greek",
+     "type": "followed",
+     "url": "https://fsl.fsu.edu/potential-members/scholarship-reports",
+     "status": "blocked",
+     "detail": "forbidden"
+    },
+    {
+     "domain": "faith",
+     "type": "faith_office",
+     "url": "https://interfaithcouncil.fsu.edu/",
+     "status": "ok",
+     "sha256": "2e7089247182512e2e97be6a661fff2d26e0524b194ff7c070f092f3db34f819",
+     "etag": "W/\"1790468509\"",
+     "last_modified": "Sun, 27 Sep 2026 00:21:49 GMT"
+    },
+    {
+     "domain": "faith",
+     "type": "followed",
+     "url": "https://interfaithcouncil.fsu.edu/members-interfaith-council-fsu",
+     "status": "ok",
+     "sha256": "c22e25a0919532014dc11b78e98ca601c637203b29bf8d93de7d765ac28db005",
+     "etag": "W/\"1790416980\"",
+     "last_modified": "Sat, 26 Sep 2026 10:03:00 GMT"
+    },
+    {
+     "domain": "faith",
+     "type": "followed",
+     "url": "https://interfaithcouncil.fsu.edu/interfaith-council-activities",
+     "status": "ok",
+     "sha256": "d6609375a422369ee58453430814605cdbdd300ddf195a53c6220c20a9da650d",
+     "etag": "W/\"1790297346\"",
+     "last_modified": "Fri, 25 Sep 2026 00:49:06 GMT"
+    }
+   ],
+   "discovery": {
+    "probed": [
+     "fsl_office",
+     "faith_office"
+    ],
+    "paid": [
+     "lgbtq_center",
+     "nondiscrimination"
+    ],
+    "searches": 1,
+    "fetches": 70
+   }
   },
   {
    "unit_id": "134130",
@@ -1198,6 +1723,50 @@
     ],
     "searches": 3,
     "fetches": 60
+   }
+  },
+  {
+   "unit_id": "142115",
+   "learned": "2026-10-04",
+   "model": "claude-sonnet-5",
+   "links": {
+    "greek": {
+     "fsl_office": null,
+     "fsl_reports": [],
+     "recruitment": null,
+     "greek_none": null,
+     "notes": ""
+    },
+    "faith": {
+     "faith_office": null,
+     "faith_groups": null,
+     "religion_report": null,
+     "faith_estimate": [],
+     "notes": ""
+    },
+    "lgbtq": {
+     "lgbtq_center": null,
+     "lgbtq_groups": null,
+     "nondiscrimination": null,
+     "housing": null,
+     "name_policy": null,
+     "health_plan": null,
+     "restrooms": null,
+     "trans_admission": null,
+     "conduct_code": null,
+     "notes": ""
+    }
+   },
+   "sources": [],
+   "discovery": {
+    "probed": [],
+    "paid": [
+     "fsl_office",
+     "lgbtq_center",
+     "nondiscrimination"
+    ],
+    "searches": 2,
+    "fetches": 78
    }
   },
   {
@@ -1708,6 +2277,174 @@
    }
   },
   {
+   "unit_id": "159391",
+   "learned": "2026-10-04",
+   "model": "claude-sonnet-5",
+   "links": {
+    "greek": {
+     "fsl_office": "https://www.lsu.edu/greeks/index.php",
+     "fsl_reports": [
+      "https://www.lsu.edu/greeks/files/letters/thetachi_outcome_letter_2024.pdf",
+      "https://www.lsu.edu/greeks/scorecard/index.php",
+      "https://www.lsu.edu/greeks/scorecard/acacia.php",
+      "https://www.lsu.edu/greeks/files/letters/acacia_mar_2023_org_partnership_outcome_email_redacted.pdf"
+     ],
+     "recruitment": "https://www.lsu.edu/greeks/join/index.php",
+     "greek_none": null,
+     "notes": ""
+    },
+    "faith": {
+     "faith_office": null,
+     "faith_groups": null,
+     "religion_report": null,
+     "faith_estimate": [],
+     "notes": ""
+    },
+    "lgbtq": {
+     "lgbtq_center": null,
+     "lgbtq_groups": null,
+     "nondiscrimination": "https://lsu.edu/nondiscrimination/",
+     "housing": null,
+     "name_policy": null,
+     "health_plan": null,
+     "restrooms": null,
+     "trans_admission": null,
+     "conduct_code": null,
+     "notes": ""
+    }
+   },
+   "sources": [
+    {
+     "domain": "greek",
+     "type": "fsl_office",
+     "url": "https://www.lsu.edu/greeks/index.php",
+     "status": "ok",
+     "sha256": "c4e296dd350ea3e3cd163b830f8298a474404ac6eb57828aba685d02bb4fb946"
+    },
+    {
+     "domain": "greek",
+     "type": "fsl_reports",
+     "url": "https://www.lsu.edu/greeks/files/letters/thetachi_outcome_letter_2024.pdf",
+     "status": "ok",
+     "sha256": "9f9e1fd5d87a7b8c8312d85e12408fce9b22e21c14098f500afde7d21854f3b6",
+     "etag": "\"2dcb6-624c0bd2438d4\"",
+     "last_modified": "Fri, 18 Oct 2024 14:01:25 GMT"
+    },
+    {
+     "domain": "greek",
+     "type": "fsl_reports",
+     "url": "https://www.lsu.edu/greeks/scorecard/index.php",
+     "status": "ok",
+     "sha256": "7c44566479ba6317cfc643672403636809276191c264f814dca56bcd080a6131"
+    },
+    {
+     "domain": "greek",
+     "type": "fsl_reports",
+     "url": "https://www.lsu.edu/greeks/scorecard/acacia.php",
+     "status": "ok",
+     "sha256": "91660fad323197b3d96a6d3a363d01962af14dc03bcf791cb27e4569287719ef"
+    },
+    {
+     "domain": "greek",
+     "type": "fsl_reports",
+     "url": "https://www.lsu.edu/greeks/files/letters/acacia_mar_2023_org_partnership_outcome_email_redacted.pdf",
+     "status": "ok",
+     "sha256": "d9cd5dbddeda6aa1ce1a2380bbd91fc765b35585c265aa03db3c0b4d74c8b3a6",
+     "etag": "\"1accd-5f8897934c3a5\"",
+     "last_modified": "Tue, 04 Apr 2023 21:36:51 GMT"
+    },
+    {
+     "domain": "greek",
+     "type": "recruitment",
+     "url": "https://www.lsu.edu/greeks/join/index.php",
+     "status": "ok",
+     "sha256": "95deb9a14e7160851b29450900204274c9bd1bcdcf0bc9a68b3608791a340aa9"
+    },
+    {
+     "domain": "greek",
+     "type": "followed",
+     "url": "https://www.lsu.edu/greeks/community/index.php",
+     "status": "ok",
+     "sha256": "454626e7ba9a55016d614f356cf0db13dc5dcd7230d75226bee5c54d9996abc5"
+    },
+    {
+     "domain": "greek",
+     "type": "followed",
+     "url": "https://www.lsu.edu/greeks/join/families.php",
+     "status": "ok",
+     "sha256": "c7ccd897551dcc428aab67354a60a09044a44d3ce6e62755cc47ca6d108fa8e4"
+    },
+    {
+     "domain": "greek",
+     "type": "fsl_reports",
+     "url": "https://www.lsu.edu/greeks/scorecard/alpha-gamma-rho.php",
+     "status": "ok",
+     "sha256": "ea3bbbc981f6c11bf8861f7ed41e42a393c496122402e49d3dd06a5cc299011a"
+    },
+    {
+     "domain": "greek",
+     "type": "fsl_reports",
+     "url": "https://www.lsu.edu/greeks/scorecard/alpha-phi-alpha.php",
+     "status": "ok",
+     "sha256": "931bc4c7b408664799b5d1eb6712578b3129c9cb7ad2e8a2ff89778f92606ed9"
+    },
+    {
+     "domain": "greek",
+     "type": "fsl_reports",
+     "url": "https://www.lsu.edu/greeks/scorecard/",
+     "status": "ok",
+     "sha256": "7c44566479ba6317cfc643672403636809276191c264f814dca56bcd080a6131"
+    },
+    {
+     "domain": "greek",
+     "type": "fsl_reports",
+     "url": "https://www.lsu.edu/greeks/files/letters/acacia_partnership_outcome_redacted_2022.pdf",
+     "status": "ok",
+     "sha256": "3afcdaea3f1541f2ebac13f8fe1cd8a9fa3a022bfea526696eb36660514b95d0",
+     "etag": "\"1a92b-5ee26cf74af84\"",
+     "last_modified": "Wed, 23 Nov 2022 17:42:20 GMT"
+    },
+    {
+     "domain": "greek",
+     "type": "fsl_reports",
+     "url": "https://www.lsu.edu/greeks/files/letters/alpha_gamma_rho_partnership_outcome_warning_4_16_21_case_20202774_redacted.pdf",
+     "status": "ok",
+     "sha256": "c60af9301ce10f2d34d9aa7a18508e4fc05a96507802af33621b9c727aa9091f",
+     "etag": "\"1a589-5e43c6fd521d8\"",
+     "last_modified": "Wed, 20 Jul 2022 13:18:28 GMT"
+    },
+    {
+     "domain": "greek",
+     "type": "fsl_reports",
+     "url": "https://www.lsu.edu/greeks/files/letters/alpha_gamma_rho_outcome_probation_12_21_17_case_20170123_redacted.pdf",
+     "status": "ok",
+     "sha256": "17157423d2c76f1a9ebf0de9c25c93f8cd123f88e03766a46c7182b846ed883a",
+     "etag": "\"18297-5e43c6fba4e8c\"",
+     "last_modified": "Wed, 20 Jul 2022 13:18:27 GMT"
+    },
+    {
+     "domain": "lgbtq",
+     "type": "nondiscrimination",
+     "url": "https://lsu.edu/nondiscrimination/",
+     "status": "ok",
+     "sha256": "d1121d10c2cadc42a2cf3b078218a246edb0bd1d802719960f3b475cedf73922"
+    }
+   ],
+   "discovery": {
+    "probed": [
+     "fsl_office",
+     "recruitment",
+     "nondiscrimination",
+     "fsl_reports"
+    ],
+    "paid": [
+     "lgbtq_center"
+    ],
+    "searches": 1,
+    "fetches": 72
+   }
+  },
+  {
    "unit_id": "160755",
    "learned": "2026-10-04",
    "model": "claude-sonnet-5",
@@ -2059,6 +2796,189 @@
    ]
   },
   {
+   "unit_id": "166629",
+   "learned": "2026-10-04",
+   "model": "claude-sonnet-5",
+   "links": {
+    "greek": {
+     "fsl_office": "https://www.umass.edu/student-life/sororities-fraternities",
+     "fsl_reports": [
+      "https://www.umass.edu/student-life/sororities-fraternities",
+      "https://www.umass.edu/student-life/media/4137/download",
+      "https://www.umass.edu/student-life/media/4140/download"
+     ],
+     "recruitment": "https://www.umass.edu/student-life/sororities-fraternities/join",
+     "greek_none": null,
+     "notes": ""
+    },
+    "faith": {
+     "faith_office": "https://www.umass.edu/student-life/religious-spiritual-life",
+     "faith_groups": null,
+     "religion_report": null,
+     "faith_estimate": [],
+     "notes": ""
+    },
+    "lgbtq": {
+     "lgbtq_center": "https://www.umass.edu/student-life/stonewall",
+     "lgbtq_groups": "https://www.umass.edu/student-life/stonewall/resources",
+     "nondiscrimination": "https://www.umass.edu/policy/affirmative-action-non-discrimination-and-title-ix-non-discrimination-policy",
+     "housing": "https://www.umass.edu/student-life/gender-inclusive-restrooms",
+     "name_policy": "https://www.umass.edu/student-life/pronoun-information",
+     "health_plan": null,
+     "restrooms": "https://www.umass.edu/student-life/gender-inclusive-restrooms",
+     "trans_admission": null,
+     "conduct_code": null,
+     "notes": ""
+    }
+   },
+   "sources": [
+    {
+     "domain": "greek",
+     "type": "fsl_office",
+     "url": "https://www.umass.edu/student-life/sororities-fraternities",
+     "status": "ok",
+     "sha256": "cfc3eb7d4087e656ce1cc100d5d86395136d22e6e761d9a7eb267006ab37521b",
+     "last_modified": "Fri, 02 Oct 2026 21:37:38 GMT"
+    },
+    {
+     "domain": "greek",
+     "type": "fsl_reports",
+     "url": "https://www.umass.edu/student-life/media/4137/download",
+     "status": "ok",
+     "sha256": "32754d157d7d9dbd58ba4fd1164510cd7c99c037560f450960022335892201e6",
+     "last_modified": "Mon, 27 Jul 2026 14:08:20 GMT"
+    },
+    {
+     "domain": "greek",
+     "type": "fsl_reports",
+     "url": "https://www.umass.edu/student-life/media/4140/download",
+     "status": "ok",
+     "sha256": "b0762b99d201cb55119b0d1726612298fbfd6c474a3817002521bfe52f06e508",
+     "last_modified": "Mon, 27 Jul 2026 14:09:38 GMT"
+    },
+    {
+     "domain": "greek",
+     "type": "recruitment",
+     "url": "https://www.umass.edu/student-life/sororities-fraternities/join",
+     "status": "ok",
+     "sha256": "f09528ae428b3d89bc17a09e774319ff71ea09fb378360641d55eb5bde20663a",
+     "last_modified": "Fri, 02 Oct 2026 21:50:46 GMT"
+    },
+    {
+     "domain": "greek",
+     "type": "followed",
+     "url": "https://www.umass.edu/student-life/documents/umass-greek-scorecard-spring-2025",
+     "status": "ok",
+     "sha256": "7c1175ebaf3cfb47cdaf098d03edc00216069e49400c68143ac69b7bab3f8e36",
+     "last_modified": "Fri, 02 Oct 2026 21:52:12 GMT"
+    },
+    {
+     "domain": "greek",
+     "type": "followed",
+     "url": "https://www.umass.edu/student-life/documents/umass-greek-scorecard-fall-2025",
+     "status": "ok",
+     "sha256": "24ed0f565ff72e5edbb367e09667eb18f1eacad6f5eaac42557f30216d96d6c1",
+     "last_modified": "Fri, 02 Oct 2026 23:27:52 GMT"
+    },
+    {
+     "domain": "faith",
+     "type": "faith_office",
+     "url": "https://www.umass.edu/student-life/religious-spiritual-life",
+     "status": "ok",
+     "sha256": "e871a16b194a49699dc6a2ae3cbd0e110dddc95722a460b16fb8816770febcd6",
+     "last_modified": "Fri, 02 Oct 2026 21:52:34 GMT"
+    },
+    {
+     "domain": "faith",
+     "type": "followed",
+     "url": "https://www.umass.edu/student-life/student-union/student-organization-resource/established-student-organizations",
+     "status": "ok",
+     "sha256": "c1021ff18e3269a8b8f6f08f6a6cf2d841f1e77b563ce5019b9a89d043080d62",
+     "last_modified": "Fri, 02 Oct 2026 21:55:22 GMT"
+    },
+    {
+     "domain": "faith",
+     "type": "followed",
+     "url": "https://www.umass.edu/student-life/religious-spiritual-life/polices-observance-practice",
+     "status": "ok",
+     "sha256": "b872eb317869677950e6ff6fc7e3c2f55755d7a7a3a6b59b89a0477887d2b1ca",
+     "last_modified": "Fri, 02 Oct 2026 22:30:09 GMT"
+    },
+    {
+     "domain": "lgbtq",
+     "type": "lgbtq_center",
+     "url": "https://www.umass.edu/student-life/stonewall",
+     "status": "ok",
+     "sha256": "0554e76335caaa88ec82355c4e323b8017a8a6fc04ce4b73bcacdfc829daa165",
+     "last_modified": "Fri, 02 Oct 2026 21:34:52 GMT"
+    },
+    {
+     "domain": "lgbtq",
+     "type": "lgbtq_groups",
+     "url": "https://www.umass.edu/student-life/stonewall/resources",
+     "status": "ok",
+     "sha256": "de818e740a7c2772f237918b08a203ae42aa6721e8e0212fdd4c31fc7fde12fb",
+     "last_modified": "Fri, 02 Oct 2026 21:36:08 GMT"
+    },
+    {
+     "domain": "lgbtq",
+     "type": "nondiscrimination",
+     "url": "https://www.umass.edu/policy/affirmative-action-non-discrimination-and-title-ix-non-discrimination-policy",
+     "status": "ok",
+     "sha256": "9b407439048a724b74aa5fabcc6dbeae2026a56fca100596943c22f29a469b5d"
+    },
+    {
+     "domain": "lgbtq",
+     "type": "housing",
+     "url": "https://www.umass.edu/student-life/gender-inclusive-restrooms",
+     "status": "ok",
+     "sha256": "d6bbae03bb42d154f590c51717c68cfbac7642d8e746591e444c57850fe4d328",
+     "last_modified": "Sat, 03 Oct 2026 02:31:03 GMT"
+    },
+    {
+     "domain": "lgbtq",
+     "type": "name_policy",
+     "url": "https://www.umass.edu/student-life/pronoun-information",
+     "status": "ok",
+     "sha256": "c5e91a8482ff8b9bea0dd0586738981a79a15457f94be60e5e2445c7bd92ba62",
+     "last_modified": "Fri, 02 Oct 2026 21:34:58 GMT"
+    },
+    {
+     "domain": "lgbtq",
+     "type": "followed",
+     "url": "https://www.umass.edu/student-life/student-union/student-organization-resource/established-student-organizations",
+     "status": "ok",
+     "sha256": "c1021ff18e3269a8b8f6f08f6a6cf2d841f1e77b563ce5019b9a89d043080d62",
+     "last_modified": "Fri, 02 Oct 2026 21:55:22 GMT"
+    },
+    {
+     "domain": "lgbtq",
+     "type": "followed",
+     "url": "https://www.umass.edu/dean_students/student-life/student-support-resources/food-financial-and-housing-insecurity",
+     "status": "ok",
+     "sha256": "21707b4212ed6eb8ec590961368ed597f1436352062ce6ca7c1b305791b4ce3d",
+     "last_modified": "Sun, 27 Sep 2026 14:47:26 GMT"
+    }
+   ],
+   "discovery": {
+    "probed": [
+     "fsl_office",
+     "recruitment",
+     "faith_office",
+     "lgbtq_center",
+     "lgbtq_groups",
+     "nondiscrimination",
+     "housing",
+     "name_policy",
+     "restrooms",
+     "fsl_reports"
+    ],
+    "paid": [],
+    "searches": 0,
+    "fetches": 85
+   }
+  },
+  {
    "unit_id": "167835",
    "learned": "2026-10-04",
    "model": "claude-sonnet-5",
@@ -2137,6 +3057,59 @@
      "last_modified": "Sun, 04 Oct 2026 13:46:45 GMT"
     }
    ]
+  },
+  {
+   "unit_id": "168218",
+   "learned": "2026-10-04",
+   "model": "claude-sonnet-5",
+   "links": {
+    "greek": {
+     "fsl_office": null,
+     "fsl_reports": [],
+     "recruitment": null,
+     "greek_none": null,
+     "notes": ""
+    },
+    "faith": {
+     "faith_office": null,
+     "faith_groups": null,
+     "religion_report": null,
+     "faith_estimate": [],
+     "notes": ""
+    },
+    "lgbtq": {
+     "lgbtq_center": null,
+     "lgbtq_groups": null,
+     "nondiscrimination": "https://www.wellesley.edu/about-us/offices-departments/nondiscrimination/notice-of-nondiscrimination",
+     "housing": null,
+     "name_policy": null,
+     "health_plan": null,
+     "restrooms": null,
+     "trans_admission": null,
+     "conduct_code": null,
+     "notes": ""
+    }
+   },
+   "sources": [
+    {
+     "domain": "lgbtq",
+     "type": "nondiscrimination",
+     "url": "https://www.wellesley.edu/about-us/offices-departments/nondiscrimination/notice-of-nondiscrimination",
+     "status": "ok",
+     "sha256": "716ca863d69201183f924cea04ff8d403fe1cf56ed8f30bd34b6da71e49a88ac"
+    }
+   ],
+   "discovery": {
+    "probed": [
+     "nondiscrimination"
+    ],
+    "paid": [
+     "fsl_office",
+     "lgbtq_center"
+    ],
+    "searches": 1,
+    "fetches": 77
+   }
   },
   {
    "unit_id": "168342",
@@ -2344,6 +3317,124 @@
    ]
   },
   {
+   "unit_id": "171100",
+   "learned": "2026-10-04",
+   "model": "claude-sonnet-5",
+   "links": {
+    "greek": {
+     "fsl_office": "https://fsl.msu.edu/",
+     "fsl_reports": [],
+     "recruitment": null,
+     "greek_none": null,
+     "notes": ""
+    },
+    "faith": {
+     "faith_office": null,
+     "faith_groups": null,
+     "religion_report": null,
+     "faith_estimate": [],
+     "notes": ""
+    },
+    "lgbtq": {
+     "lgbtq_center": "https://lbgtrc.msu.edu/",
+     "lgbtq_groups": null,
+     "nondiscrimination": "https://civilrights.msu.edu/policies/index.html",
+     "housing": null,
+     "name_policy": null,
+     "health_plan": null,
+     "restrooms": null,
+     "trans_admission": null,
+     "conduct_code": null,
+     "notes": ""
+    }
+   },
+   "sources": [
+    {
+     "domain": "greek",
+     "type": "fsl_office",
+     "url": "https://fsl.msu.edu/",
+     "status": "error",
+     "detail": "fetch failed"
+    },
+    {
+     "domain": "lgbtq",
+     "type": "lgbtq_center",
+     "url": "https://lbgtrc.msu.edu/",
+     "status": "blocked",
+     "detail": "challenge"
+    },
+    {
+     "domain": "lgbtq",
+     "type": "nondiscrimination",
+     "url": "https://civilrights.msu.edu/policies/index.html",
+     "status": "ok",
+     "sha256": "577234bdeabc76634109bb2a97fbdf2d9369921eb7a0191910c28fb2697c70fa"
+    }
+   ],
+   "discovery": {
+    "probed": [],
+    "paid": [
+     "fsl_office",
+     "lgbtq_center",
+     "nondiscrimination"
+    ],
+    "searches": 2,
+    "fetches": 69
+   }
+  },
+  {
+   "unit_id": "174066",
+   "learned": "2026-10-04",
+   "model": "claude-sonnet-5",
+   "links": {
+    "greek": {
+     "fsl_office": "https://fsl.umn.edu/our-community",
+     "fsl_reports": [],
+     "recruitment": null,
+     "greek_none": null,
+     "notes": ""
+    },
+    "faith": {
+     "faith_office": null,
+     "faith_groups": null,
+     "religion_report": null,
+     "faith_estimate": [],
+     "notes": ""
+    },
+    "lgbtq": {
+     "lgbtq_center": null,
+     "lgbtq_groups": null,
+     "nondiscrimination": null,
+     "housing": null,
+     "name_policy": null,
+     "health_plan": null,
+     "restrooms": null,
+     "trans_admission": null,
+     "conduct_code": null,
+     "notes": ""
+    }
+   },
+   "sources": [
+    {
+     "domain": "greek",
+     "type": "fsl_office",
+     "url": "https://fsl.umn.edu/our-community",
+     "status": "blocked",
+     "detail": "challenge"
+    }
+   ],
+   "discovery": {
+    "probed": [],
+    "paid": [
+     "fsl_office",
+     "lgbtq_center",
+     "nondiscrimination"
+    ],
+    "searches": 2,
+    "fetches": 64
+   }
+  },
+  {
    "unit_id": "176017",
    "learned": "2026-10-04",
    "model": "claude-sonnet-5",
@@ -2414,6 +3505,261 @@
      "sha256": "05201500678a160eccbb94fd201e391a6fe14be02ed51dcb3c236166f59ea16c"
     }
    ]
+  },
+  {
+   "unit_id": "186131",
+   "learned": "2026-10-04",
+   "model": "claude-sonnet-5",
+   "links": {
+    "greek": {
+     "fsl_office": null,
+     "fsl_reports": [],
+     "recruitment": null,
+     "greek_none": null,
+     "notes": ""
+    },
+    "faith": {
+     "faith_office": null,
+     "faith_groups": null,
+     "religion_report": null,
+     "faith_estimate": [],
+     "notes": ""
+    },
+    "lgbtq": {
+     "lgbtq_center": null,
+     "lgbtq_groups": null,
+     "nondiscrimination": null,
+     "housing": null,
+     "name_policy": null,
+     "health_plan": null,
+     "restrooms": null,
+     "trans_admission": null,
+     "conduct_code": null,
+     "notes": ""
+    }
+   },
+   "sources": [],
+   "discovery": {
+    "probed": [],
+    "paid": [
+     "fsl_office",
+     "lgbtq_center",
+     "nondiscrimination"
+    ],
+    "searches": 2,
+    "fetches": 69
+   }
+  },
+  {
+   "unit_id": "186380",
+   "learned": "2026-10-04",
+   "model": "claude-sonnet-5",
+   "links": {
+    "greek": {
+     "fsl_office": "https://greeklife.rutgers.edu/",
+     "fsl_reports": [
+      "https://greeklife.rutgers.edu/sites/default/files/f_s-report-s26---sheet1.pdf",
+      "https://greeklife.rutgers.edu/sites/default/files/f_s-report-f25.pdf",
+      "https://greeklife.rutgers.edu/sites/default/files/f_s-report-s25---jul-8.pdf",
+      "https://greeklife.rutgers.edu/sites/default/files/f_s-report-f24.pdf"
+     ],
+     "recruitment": "https://greeklife.rutgers.edu/join-our-community/panhellenic-formal-recruitment-registration",
+     "greek_none": null,
+     "notes": ""
+    },
+    "faith": {
+     "faith_office": "https://ruoffcampus.rutgers.edu/basic-needs/mental-physical-and-spiritual-wellness/faith-and-spirituality-at-rutgers",
+     "faith_groups": null,
+     "religion_report": null,
+     "faith_estimate": [],
+     "notes": ""
+    },
+    "lgbtq": {
+     "lgbtq_center": "https://socialjustice.rutgers.edu/",
+     "lgbtq_groups": "https://socialjustice.rutgers.edu/engage/lgbtqa-student-clubs-organizations",
+     "nondiscrimination": "https://ruoffcampus.rutgers.edu/campus-living/antidiscrimination-policy",
+     "housing": "https://socialjustice.rutgers.edu/housing-options/gender-neutral-housing",
+     "name_policy": "https://socialjustice.rutgers.edu/trans-ru/campus-name-change",
+     "health_plan": null,
+     "restrooms": null,
+     "trans_admission": null,
+     "conduct_code": null,
+     "notes": ""
+    }
+   },
+   "sources": [
+    {
+     "domain": "greek",
+     "type": "fsl_office",
+     "url": "https://greeklife.rutgers.edu/",
+     "status": "ok",
+     "sha256": "bc0d8aa6c22862f0c62de4a822c32c9e3b84f6d20209ca8bf57dfb18f95f613c"
+    },
+    {
+     "domain": "greek",
+     "type": "fsl_reports",
+     "url": "https://greeklife.rutgers.edu/sites/default/files/f_s-report-s26---sheet1.pdf",
+     "status": "ok",
+     "sha256": "8d51486b63908ccd340fec948ff1881f3b986c984e89098cbc1a1b0d20d3c657",
+     "etag": "\"ad16f01b4b19dd1:0\"",
+     "last_modified": "Tue, 21 Jul 2026 19:57:07 GMT"
+    },
+    {
+     "domain": "greek",
+     "type": "fsl_reports",
+     "url": "https://greeklife.rutgers.edu/sites/default/files/f_s-report-f25.pdf",
+     "status": "ok",
+     "sha256": "1b81d3daf1ed946ab19c839b486a17bf9eb5eb89d30d041b7857f99d29b4bafa",
+     "etag": "\"72d3849454cdd1:0\"",
+     "last_modified": "Thu, 24 Sep 2026 16:53:55 GMT"
+    },
+    {
+     "domain": "greek",
+     "type": "fsl_reports",
+     "url": "https://greeklife.rutgers.edu/sites/default/files/f_s-report-s25---jul-8.pdf",
+     "status": "ok",
+     "sha256": "7fd02c573640ebaecbfdd13fd41e717fbfc6db9f06e722dbf024d76bea84abc7",
+     "etag": "\"3b2e35515f0db1:0\"",
+     "last_modified": "Tue, 08 Jul 2025 14:33:56 GMT"
+    },
+    {
+     "domain": "greek",
+     "type": "fsl_reports",
+     "url": "https://greeklife.rutgers.edu/sites/default/files/f_s-report-f24.pdf",
+     "status": "ok",
+     "sha256": "7ec8c9a1304e3825ec318f9c5e6b628f08c9cc736b78204d0ac9a5afb677b2f5",
+     "etag": "\"fab05fd1d4dadb1:0\"",
+     "last_modified": "Wed, 11 Jun 2025 13:29:11 GMT"
+    },
+    {
+     "domain": "greek",
+     "type": "recruitment",
+     "url": "https://greeklife.rutgers.edu/join-our-community/panhellenic-formal-recruitment-registration",
+     "status": "ok",
+     "sha256": "c11430374ecbe4613baa1f8a536914717a3948c81a9f0527e6044083fda7d86e"
+    },
+    {
+     "domain": "greek",
+     "type": "followed",
+     "url": "https://greeklife.rutgers.edu/standards-accountability/chapter-performance-statistics",
+     "status": "ok",
+     "sha256": "dd761fd4b05f65a682beeb064e2ea85204f854421c143f33ad84201b725bcc5a"
+    },
+    {
+     "domain": "greek",
+     "type": "followed",
+     "url": "https://greeklife.rutgers.edu/standards-accountability/annual-report",
+     "status": "ok",
+     "sha256": "b37dd2b5154853b20cc51fc79ea400dd14eb295bd3e099afe82178c972d286f3"
+    },
+    {
+     "domain": "greek",
+     "type": "followed",
+     "url": "https://greeklife.rutgers.edu/join-our-community/how-join",
+     "status": "ok",
+     "sha256": "bfcd005c5763c719899adc2f8b7790ed57e46fc719f65715b7ff9c00ec974b63"
+    },
+    {
+     "domain": "greek",
+     "type": "followed",
+     "url": "https://greeklife.rutgers.edu/chapters",
+     "status": "ok",
+     "sha256": "e7f49398afc408fefdf609fadf154d4b073d083177fd8203d7e75487e9d8d29f"
+    },
+    {
+     "domain": "greek",
+     "type": "followed",
+     "url": "https://greeklife.rutgers.edu/join-our-community/parentfamily-faqs",
+     "status": "ok",
+     "sha256": "cb28ad966f8522b6b13fdf0739865c23af0ad4ab9dd3e617687779dfd779aaf8"
+    },
+    {
+     "domain": "greek",
+     "type": "followed",
+     "url": "https://greeklife.rutgers.edu/join-our-community/potential-new-member-faqs",
+     "status": "ok",
+     "sha256": "68f96359496ca965e8ce2fa60b8cee61658a297aa56c13d59de6d5f44e833d51"
+    },
+    {
+     "domain": "faith",
+     "type": "faith_office",
+     "url": "https://ruoffcampus.rutgers.edu/basic-needs/mental-physical-and-spiritual-wellness/faith-and-spirituality-at-rutgers",
+     "status": "ok",
+     "sha256": "48acf0ba14598cd9a88c9061d0a60d773712325d45358bc785f00e97e78d0864"
+    },
+    {
+     "domain": "faith",
+     "type": "followed",
+     "url": "https://ruoffcampus.rutgers.edu/basic-needs/mental-physical-and-spiritual-wellness/faith-and-spirituality-at-rutgers/events",
+     "status": "ok",
+     "sha256": "fe481b8a584e3c4f792866825b31cbf0c69540faf3342c95c873cf848f1f83ea"
+    },
+    {
+     "domain": "faith",
+     "type": "followed",
+     "url": "https://ruoffcampus.rutgers.edu/basic-needs/mental-physical-and-spiritual-wellness",
+     "status": "ok",
+     "sha256": "d9b892b54147a81ae933421d6edd9b243815e64525f97f6d8feb3a189833f769"
+    },
+    {
+     "domain": "lgbtq",
+     "type": "lgbtq_center",
+     "url": "https://socialjustice.rutgers.edu/",
+     "status": "ok",
+     "sha256": "8d9d081082d1d8185e2d516812a90c331424dbb795f7c3605715ab1e2056569a"
+    },
+    {
+     "domain": "lgbtq",
+     "type": "lgbtq_groups",
+     "url": "https://socialjustice.rutgers.edu/engage/lgbtqa-student-clubs-organizations",
+     "status": "ok",
+     "sha256": "05b53bb0de23c81f47fc8eda5c39a09ee0d8a133489d4312af55a735f67ab55f"
+    },
+    {
+     "domain": "lgbtq",
+     "type": "nondiscrimination",
+     "url": "https://ruoffcampus.rutgers.edu/campus-living/antidiscrimination-policy",
+     "status": "ok",
+     "sha256": "5b2b3d1485fd9e277cf63266f04cdb6c4b141d01cc726d270bfa151073403533"
+    },
+    {
+     "domain": "lgbtq",
+     "type": "housing",
+     "url": "https://socialjustice.rutgers.edu/housing-options/gender-neutral-housing",
+     "status": "ok",
+     "sha256": "243b648f55b287649bfa5e1f46da4892bc7bd1d06c980db02f9213073eca7925"
+    },
+    {
+     "domain": "lgbtq",
+     "type": "name_policy",
+     "url": "https://socialjustice.rutgers.edu/trans-ru/campus-name-change",
+     "status": "ok",
+     "sha256": "ea9c68db2dc48286b6ca406da67eddfdc647fe805b9d0d680a6021a443aff79c"
+    },
+    {
+     "domain": "lgbtq",
+     "type": "followed",
+     "url": "https://socialjustice.rutgers.edu/trans-ru",
+     "status": "ok",
+     "sha256": "55b7412a6e63af7425b57a78599741b01d0afeb1c9acead932f3b64c9370e547"
+    }
+   ],
+   "discovery": {
+    "probed": [
+     "fsl_office",
+     "recruitment",
+     "faith_office",
+     "lgbtq_center",
+     "lgbtq_groups",
+     "nondiscrimination",
+     "housing",
+     "name_policy",
+     "fsl_reports"
+    ],
+    "paid": [],
+    "searches": 0,
+    "fetches": 64
+   }
   },
   {
    "unit_id": "190150",
@@ -2510,6 +3856,152 @@
    "model": "claude-sonnet-5",
    "links": {},
    "sources": []
+  },
+  {
+   "unit_id": "198385",
+   "learned": "2026-10-04",
+   "model": "claude-sonnet-5",
+   "links": {
+    "greek": {
+     "fsl_office": "https://www.davidson.edu/offices-and-services/student-activities/student-organizations/fraternity-sorority-life-patterson-court-council",
+     "fsl_reports": [],
+     "recruitment": null,
+     "greek_none": null,
+     "notes": ""
+    },
+    "faith": {
+     "faith_office": "https://www.davidson.edu/offices-and-services/religious-and-spiritual-life",
+     "faith_groups": "https://www.davidson.edu/offices-and-services/student-activities/student-organizations/religious-organizations",
+     "religion_report": null,
+     "faith_estimate": [],
+     "notes": ""
+    },
+    "lgbtq": {
+     "lgbtq_center": "https://www.davidson.edu/offices-and-services/center-student-diversity-and-inclusion/lgbtqia-student-support",
+     "lgbtq_groups": "https://www.davidson.edu/alumni-and-families/alumni-communities/identity-networks/lgbtq-alumni-network",
+     "nondiscrimination": "https://www.davidson.edu/offices-and-services/human-resources/employee-guide/non-discrimination-policies",
+     "housing": null,
+     "name_policy": null,
+     "health_plan": null,
+     "restrooms": null,
+     "trans_admission": null,
+     "conduct_code": "https://www.davidson.edu/about/mission-and-values/honor-code",
+     "notes": ""
+    }
+   },
+   "sources": [
+    {
+     "domain": "greek",
+     "type": "fsl_office",
+     "url": "https://www.davidson.edu/offices-and-services/student-activities/student-organizations/fraternity-sorority-life-patterson-court-council",
+     "status": "ok",
+     "sha256": "0cd44ccb15168ed3f8d74281b1d5d6ff86cecf05fb74877d6e5766928539d7f3",
+     "etag": "W/\"1791078309\"",
+     "last_modified": "Sun, 04 Oct 2026 01:45:09 GMT"
+    },
+    {
+     "domain": "faith",
+     "type": "faith_office",
+     "url": "https://www.davidson.edu/offices-and-services/religious-and-spiritual-life",
+     "status": "ok",
+     "sha256": "bb0a354336cb06902b3535ed3c5e6d1e76fc77cb0a1944db09c9205871613f0c",
+     "etag": "W/\"1791078465\"",
+     "last_modified": "Sun, 04 Oct 2026 01:47:45 GMT"
+    },
+    {
+     "domain": "faith",
+     "type": "faith_groups",
+     "url": "https://www.davidson.edu/offices-and-services/student-activities/student-organizations/religious-organizations",
+     "status": "ok",
+     "sha256": "5fa43626e0d2a467509d6de649ba0957ff78bbd015316a8d75cb80a8eca82bfd",
+     "etag": "W/\"1791076864\"",
+     "last_modified": "Sun, 04 Oct 2026 01:21:04 GMT"
+    },
+    {
+     "domain": "faith",
+     "type": "followed",
+     "url": "https://www.davidson.edu/offices-and-services/finance-administration",
+     "status": "ok",
+     "sha256": "c2f910dc3555585f877a56d96c8ed1c7b2695e69fe0fff4667d2a544aeb1000e",
+     "etag": "W/\"1791092268\"",
+     "last_modified": "Sun, 04 Oct 2026 05:37:48 GMT"
+    },
+    {
+     "domain": "faith",
+     "type": "followed",
+     "url": "https://www.davidson.edu/offices-and-services/finance-administration/cares-act",
+     "status": "ok",
+     "sha256": "60a4f33df9027d3a1a253fa4cc4296a3e945984394f9147fd83f2058ab2bfdfc",
+     "etag": "W/\"1791096270\"",
+     "last_modified": "Sun, 04 Oct 2026 06:44:30 GMT"
+    },
+    {
+     "domain": "lgbtq",
+     "type": "lgbtq_center",
+     "url": "https://www.davidson.edu/offices-and-services/center-student-diversity-and-inclusion/lgbtqia-student-support",
+     "status": "ok",
+     "sha256": "5bb91e3c9cfc1a77b7a4364560c5b134329a189ebc15519dcec1c39b178f3105",
+     "etag": "W/\"1791075652\"",
+     "last_modified": "Sun, 04 Oct 2026 01:00:52 GMT"
+    },
+    {
+     "domain": "lgbtq",
+     "type": "lgbtq_groups",
+     "url": "https://www.davidson.edu/alumni-and-families/alumni-communities/identity-networks/lgbtq-alumni-network",
+     "status": "ok",
+     "sha256": "1a3079db4d1048fead1369a1c97e3be1f8ecf7ebf1af97f1bd21ccaa9c11a31c",
+     "etag": "W/\"1791074620\"",
+     "last_modified": "Sun, 04 Oct 2026 00:43:40 GMT"
+    },
+    {
+     "domain": "lgbtq",
+     "type": "nondiscrimination",
+     "url": "https://www.davidson.edu/offices-and-services/human-resources/employee-guide/non-discrimination-policies",
+     "status": "ok",
+     "sha256": "a09a18b5747ed2e5cefb91b941af82d0e75562a776857c54ac046bab8fa5e670",
+     "etag": "W/\"1791093892\"",
+     "last_modified": "Sun, 04 Oct 2026 06:04:52 GMT"
+    },
+    {
+     "domain": "lgbtq",
+     "type": "conduct_code",
+     "url": "https://www.davidson.edu/about/mission-and-values/honor-code",
+     "status": "ok",
+     "sha256": "958c360cbf4e730df13113cf11e4b4f9db3e690ca6baf9bda3f2cb50635b8ee5",
+     "etag": "W/\"1791149969\"",
+     "last_modified": "Sun, 04 Oct 2026 21:39:29 GMT"
+    },
+    {
+     "domain": "lgbtq",
+     "type": "followed",
+     "url": "https://www.davidson.edu/about/maps-and-directions/resources-campus-visitors-community",
+     "status": "error",
+     "detail": "fetch failed"
+    },
+    {
+     "domain": "lgbtq",
+     "type": "followed",
+     "url": "https://www.davidson.edu/admission-and-financial-aid/counselor-resources",
+     "status": "ok",
+     "sha256": "03b81211588bf099f8f3b7cfd640b9000ea376a82c0ee322c7cb0ca06c19fc3c",
+     "etag": "W/\"1791152430\"",
+     "last_modified": "Sun, 04 Oct 2026 22:20:30 GMT"
+    }
+   ],
+   "discovery": {
+    "probed": [
+     "faith_office",
+     "faith_groups",
+     "lgbtq_center",
+     "lgbtq_groups",
+     "nondiscrimination",
+     "conduct_code",
+     "fsl_office"
+    ],
+    "paid": [],
+    "searches": 0,
+    "fetches": 65
+   }
   },
   {
    "unit_id": "198419",
@@ -3508,6 +5000,467 @@
    }
   },
   {
+   "unit_id": "216287",
+   "learned": "2026-10-04",
+   "model": "claude-sonnet-5",
+   "links": {
+    "greek": {
+     "fsl_office": null,
+     "fsl_reports": [],
+     "recruitment": null,
+     "greek_none": "https://www.swarthmore.edu/news-events/update-student-social-events-and-community-standards-president-smith",
+     "notes": ""
+    },
+    "faith": {
+     "faith_office": null,
+     "faith_groups": null,
+     "religion_report": null,
+     "faith_estimate": [],
+     "notes": ""
+    },
+    "lgbtq": {
+     "lgbtq_center": "https://www.swarthmore.edu/gender-sexuality-center",
+     "lgbtq_groups": null,
+     "nondiscrimination": "https://www.swarthmore.edu/equal-opportunity/non-discrimination-and-equal-opportunity",
+     "housing": null,
+     "name_policy": null,
+     "health_plan": null,
+     "restrooms": null,
+     "trans_admission": null,
+     "conduct_code": null,
+     "notes": ""
+    }
+   },
+   "sources": [
+    {
+     "domain": "greek",
+     "type": "greek_none",
+     "url": "https://www.swarthmore.edu/news-events/update-student-social-events-and-community-standards-president-smith",
+     "status": "ok",
+     "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+     "domain": "lgbtq",
+     "type": "lgbtq_center",
+     "url": "https://www.swarthmore.edu/gender-sexuality-center",
+     "status": "ok",
+     "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+     "domain": "lgbtq",
+     "type": "nondiscrimination",
+     "url": "https://www.swarthmore.edu/equal-opportunity/non-discrimination-and-equal-opportunity",
+     "status": "ok",
+     "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+   ],
+   "discovery": {
+    "probed": [],
+    "paid": [
+     "fsl_office",
+     "lgbtq_center",
+     "nondiscrimination"
+    ],
+    "searches": 2,
+    "fetches": 60
+   }
+  },
+  {
+   "unit_id": "216597",
+   "learned": "2026-10-04",
+   "model": "claude-sonnet-5",
+   "links": {
+    "greek": {
+     "fsl_office": "https://www.villanova.edu/university/student-life/ofsl.html",
+     "fsl_reports": [],
+     "recruitment": "https://www.villanova.edu/university/student-life/ofsl/prospective-new-members.html",
+     "greek_none": null,
+     "notes": ""
+    },
+    "faith": {
+     "faith_office": "https://www.villanova.edu/university/mission-ministry/spirituality-community.html",
+     "faith_groups": "https://www.villanova.edu/university/mission-ministry/spirituality-community/journey-groups.html",
+     "religion_report": null,
+     "faith_estimate": [],
+     "notes": ""
+    },
+    "lgbtq": {
+     "lgbtq_center": "https://www.villanova.edu/university/student-life/belonging-and-inclusion/lgbtqia.html",
+     "lgbtq_groups": null,
+     "nondiscrimination": "https://www.villanova.edu/university/non-discrimination.html",
+     "housing": null,
+     "name_policy": "https://www.villanova.edu/university/enrollment-management/registrar/resources/personal-update.html",
+     "health_plan": null,
+     "restrooms": null,
+     "trans_admission": null,
+     "conduct_code": "https://studenthandbook.villanova.edu/ethicspoint-hotline",
+     "notes": ""
+    }
+   },
+   "sources": [
+    {
+     "domain": "greek",
+     "type": "fsl_office",
+     "url": "https://www.villanova.edu/university/student-life/ofsl.html",
+     "status": "ok",
+     "sha256": "819f868ef0399a9e4223bbd6b2c1e40cd948caf6c054a0d2e5f3d63e185130f0",
+     "etag": "\"e1f6-65ce203361661\"",
+     "last_modified": "Fri, 02 Oct 2026 21:14:06 GMT"
+    },
+    {
+     "domain": "greek",
+     "type": "recruitment",
+     "url": "https://www.villanova.edu/university/student-life/ofsl/prospective-new-members.html",
+     "status": "ok",
+     "sha256": "1850081417ee2182b77bd46fe17e80fdd90f6aa15c80353db9e73c78bfda8ebb",
+     "etag": "\"f8e5-65ce42b43dea8\"",
+     "last_modified": "Fri, 02 Oct 2026 23:48:28 GMT"
+    },
+    {
+     "domain": "faith",
+     "type": "faith_office",
+     "url": "https://www.villanova.edu/university/mission-ministry/spirituality-community.html",
+     "status": "ok",
+     "sha256": "6336e95407d26e61bef0ae5c637f502318ca77aa87e193c8a83b5d08ccde2e49",
+     "etag": "\"da93-65ce356805fc5\"",
+     "last_modified": "Fri, 02 Oct 2026 22:48:58 GMT"
+    },
+    {
+     "domain": "faith",
+     "type": "faith_groups",
+     "url": "https://www.villanova.edu/university/mission-ministry/spirituality-community/journey-groups.html",
+     "status": "ok",
+     "sha256": "6fc11b2a6548a20dea50387218ab8c251ba015a3e9dd409c4b4393d701742c81",
+     "etag": "\"dae7-65ce7cc28f7ee\"",
+     "last_modified": "Sat, 03 Oct 2026 04:08:12 GMT"
+    },
+    {
+     "domain": "faith",
+     "type": "followed",
+     "url": "https://www.villanova.edu/content/university/mission-ministry",
+     "status": "ok",
+     "sha256": "bfe2f44e4c7abbd5b00675c7800c9325f969b26a1bae941d25a282f0e6c53214",
+     "etag": "\"fccd-65ce21a0bc67d\"",
+     "last_modified": "Fri, 02 Oct 2026 21:20:29 GMT"
+    },
+    {
+     "domain": "faith",
+     "type": "followed",
+     "url": "https://www.villanova.edu/content/university/research-scholarship/research-administration",
+     "status": "ok",
+     "sha256": "f9ffc9538cffb98e583181685394c540e8c7b2dadf12c8c137b0e8cf56f82ff4",
+     "etag": "\"86df-65ce20a027079\"",
+     "last_modified": "Fri, 02 Oct 2026 21:16:00 GMT"
+    },
+    {
+     "domain": "lgbtq",
+     "type": "lgbtq_center",
+     "url": "https://www.villanova.edu/university/student-life/belonging-and-inclusion/lgbtqia.html",
+     "status": "ok",
+     "sha256": "294c01b3ef7d964825e8afcfd8f55833dc36381788eea8a8e4d1d1e6530ef97f",
+     "etag": "\"18802-65ce22f0a6c28\"",
+     "last_modified": "Fri, 02 Oct 2026 21:26:21 GMT"
+    },
+    {
+     "domain": "lgbtq",
+     "type": "nondiscrimination",
+     "url": "https://www.villanova.edu/university/non-discrimination.html",
+     "status": "ok",
+     "sha256": "3e41c149ad91c94495558598f285ea3a16d29baa66bb694cf276f67198488af5",
+     "etag": "\"5ca3-65ce1edb2e3a6\"",
+     "last_modified": "Fri, 02 Oct 2026 21:08:05 GMT"
+    },
+    {
+     "domain": "lgbtq",
+     "type": "name_policy",
+     "url": "https://www.villanova.edu/university/enrollment-management/registrar/resources/personal-update.html",
+     "status": "ok",
+     "sha256": "c42d8266127a93fef6404f7ce40716df7007bcb969589564d3a8fd11f6ea86b9",
+     "etag": "\"b3eb-65ce74c113e5f\"",
+     "last_modified": "Sat, 03 Oct 2026 03:32:23 GMT"
+    },
+    {
+     "domain": "lgbtq",
+     "type": "conduct_code",
+     "url": "https://studenthandbook.villanova.edu/ethicspoint-hotline",
+     "status": "ok",
+     "sha256": "4af69761d498343afece7b59a5fb5ea18ff419f9591fbf26b52389247a24a861",
+     "etag": "W/\"1790785423\"",
+     "last_modified": "Wed, 30 Sep 2026 16:23:43 GMT"
+    },
+    {
+     "domain": "lgbtq",
+     "type": "followed",
+     "url": "https://www.villanova.edu/university/student-life/campus-break-resources.html",
+     "status": "ok",
+     "sha256": "40d8871e8bae628144a397b5c2a6b775b5f45f4bf75528847dd3ef1a5ac892a7",
+     "etag": "\"eb4e-65ce5da25cb3e\"",
+     "last_modified": "Sat, 03 Oct 2026 01:48:57 GMT"
+    }
+   ],
+   "discovery": {
+    "probed": [
+     "fsl_office",
+     "recruitment",
+     "faith_office",
+     "faith_groups",
+     "lgbtq_center",
+     "nondiscrimination",
+     "name_policy",
+     "conduct_code"
+    ],
+    "paid": [],
+    "searches": 0,
+    "fetches": 75
+   }
+  },
+  {
+   "unit_id": "217882",
+   "learned": "2026-10-04",
+   "model": "claude-sonnet-5",
+   "links": {
+    "greek": {
+     "fsl_office": "https://www.clemson.edu/studentaffairs/get-involved/fsl/",
+     "fsl_reports": [
+      "https://media.clemson.edu/studentaffairs/website-documents/fsl/FSL-Chapter-Resources-Page-Documents/Greek-Roster/greek-roster-instructions-updated.pdf"
+     ],
+     "recruitment": "https://www.clemson.edu/studentaffairs/get-involved/fsl/how-to-join.html",
+     "greek_none": null,
+     "notes": ""
+    },
+    "faith": {
+     "faith_office": null,
+     "faith_groups": null,
+     "religion_report": null,
+     "faith_estimate": [],
+     "notes": ""
+    },
+    "lgbtq": {
+     "lgbtq_center": null,
+     "lgbtq_groups": null,
+     "nondiscrimination": null,
+     "housing": null,
+     "name_policy": null,
+     "health_plan": null,
+     "restrooms": null,
+     "trans_admission": null,
+     "conduct_code": null,
+     "notes": ""
+    }
+   },
+   "sources": [
+    {
+     "domain": "greek",
+     "type": "fsl_office",
+     "url": "https://www.clemson.edu/studentaffairs/get-involved/fsl/",
+     "status": "ok",
+     "sha256": "5329874f9ffb4a60f6748f5c72bd33c43534a2ffef6bcd647729ff765da16aca"
+    },
+    {
+     "domain": "greek",
+     "type": "fsl_reports",
+     "url": "https://media.clemson.edu/studentaffairs/website-documents/fsl/FSL-Chapter-Resources-Page-Documents/Greek-Roster/greek-roster-instructions-updated.pdf",
+     "status": "ok",
+     "sha256": "3157c770a6955d1a46492138ea61b9e09002d78a1bef3479cbd763bfd0266baf",
+     "etag": "\"24945-64261dc690cb1\"",
+     "last_modified": "Thu, 30 Oct 2025 15:25:37 GMT"
+    },
+    {
+     "domain": "greek",
+     "type": "recruitment",
+     "url": "https://www.clemson.edu/studentaffairs/get-involved/fsl/how-to-join.html",
+     "status": "ok",
+     "sha256": "e26a398ef6da664a5171b1c2de8a6026b5e1e03543485bf96da6962e4d5c9082"
+    },
+    {
+     "domain": "greek",
+     "type": "followed",
+     "url": "https://www.clemson.edu/studentaffairs/get-involved/fsl/chapter-resources/",
+     "status": "ok",
+     "sha256": "2f1a25933f251a9cf2b671779aa2fa7a220cb035e9e174b18b6e6d3489d4dee8"
+    },
+    {
+     "domain": "greek",
+     "type": "followed",
+     "url": "https://www.clemson.edu/studentaffairs/get-involved/fsl/hazing-resources/organizational-conduct-reports.html",
+     "status": "ok",
+     "sha256": "363be608dbb2247c10097a4c8a80b72fed2841265520bb236b929cb2526274a1"
+    },
+    {
+     "domain": "greek",
+     "type": "followed",
+     "url": "https://www.clemson.edu/studentaffairs/get-involved/fsl/chapters.html",
+     "status": "ok",
+     "sha256": "3f1b03824ff964b4f622392434c0b50481f2afffaf46ae776ab652e7e264b6cd"
+    },
+    {
+     "domain": "greek",
+     "type": "followed",
+     "url": "https://www.clemson.edu/studentaffairs/get-involved/fsl/chapter-resources/index.html",
+     "status": "ok",
+     "sha256": "2f1a25933f251a9cf2b671779aa2fa7a220cb035e9e174b18b6e6d3489d4dee8"
+    }
+   ],
+   "discovery": {
+    "probed": [
+     "fsl_office",
+     "recruitment",
+     "fsl_reports"
+    ],
+    "paid": [
+     "lgbtq_center",
+     "nondiscrimination"
+    ],
+    "searches": 1,
+    "fetches": 78
+   }
+  },
+  {
+   "unit_id": "218070",
+   "learned": "2026-10-04",
+   "model": "claude-sonnet-5",
+   "links": {
+    "greek": {
+     "fsl_office": "https://www.furman.edu/fraternity-sorority-life/who-we-are/",
+     "fsl_reports": [],
+     "recruitment": "https://www.furman.edu/fraternity-sorority-life/join/",
+     "greek_none": null,
+     "notes": ""
+    },
+    "faith": {
+     "faith_office": "https://www.furman.edu/thriving-communities-initiatives/campus-diversity/spirituality-religion/",
+     "faith_groups": "https://www.furman.edu/thriving-communities-initiatives/campus-diversity/spirituality-religion/",
+     "religion_report": null,
+     "faith_estimate": [],
+     "notes": ""
+    },
+    "lgbtq": {
+     "lgbtq_center": "https://www.furman.edu/offices-services/",
+     "lgbtq_groups": null,
+     "nondiscrimination": "https://www.furman.edu/offices-services/human-resources/policies/nondiscrimination/",
+     "housing": null,
+     "name_policy": null,
+     "health_plan": null,
+     "restrooms": null,
+     "trans_admission": null,
+     "conduct_code": null,
+     "notes": ""
+    }
+   },
+   "sources": [
+    {
+     "domain": "greek",
+     "type": "fsl_office",
+     "url": "https://www.furman.edu/fraternity-sorority-life/who-we-are/",
+     "status": "ok",
+     "sha256": "f0ff36d3d9e723618874d3cebef940ebd0d59e34de02f17990a0145f358039bb",
+     "last_modified": "Sun, 04 Oct 2026 00:55:52 GMT"
+    },
+    {
+     "domain": "greek",
+     "type": "recruitment",
+     "url": "https://www.furman.edu/fraternity-sorority-life/join/",
+     "status": "ok",
+     "sha256": "31aec24ed9bd475c4cacd17f9e50ea1a09bd2ea7353a016f8485ab2ec9995b93",
+     "last_modified": "Sun, 04 Oct 2026 00:31:25 GMT"
+    },
+    {
+     "domain": "greek",
+     "type": "followed",
+     "url": "https://www.furman.edu/fraternity-sorority-life/who-we-are/interfraternity-council/",
+     "status": "ok",
+     "sha256": "010f1159ce7a61c7b3ee56d5ccbc6716a74cb53e5b8692a1abf4a5dfcaada9d8",
+     "last_modified": "Sun, 04 Oct 2026 00:56:11 GMT"
+    },
+    {
+     "domain": "greek",
+     "type": "followed",
+     "url": "https://www.furman.edu/fraternity-sorority-life/who-we-are/national-pan-hellenic-council/",
+     "status": "ok",
+     "sha256": "d127a9ddcdb491dd7db0632dec2adfa43b034bf111acd3fecc997929dcfc3ce3",
+     "last_modified": "Sun, 04 Oct 2026 03:16:07 GMT"
+    },
+    {
+     "domain": "greek",
+     "type": "followed",
+     "url": "https://www.furman.edu/fraternity-sorority-life/who-we-are/panhellenic-council/",
+     "status": "ok",
+     "sha256": "df2d1fe45dad1bf2687f7ef33e9cec7da8992ea8af3bdae75606ad3bc4ddfe77",
+     "last_modified": "Sun, 04 Oct 2026 00:55:00 GMT"
+    },
+    {
+     "domain": "faith",
+     "type": "faith_office",
+     "url": "https://www.furman.edu/thriving-communities-initiatives/campus-diversity/spirituality-religion/",
+     "status": "ok",
+     "sha256": "200a1844793f10a157a3c2b287abea5f9811584efeac4679f4954edee7089bad",
+     "last_modified": "Sun, 04 Oct 2026 02:59:38 GMT"
+    },
+    {
+     "domain": "faith",
+     "type": "followed",
+     "url": "https://www.furman.edu/thriving-communities-initiatives/campus-diversity/study-diversity/",
+     "status": "ok",
+     "sha256": "235636e071fed308cc18540179a779e18d3984f66dc5effada013a2111da3666",
+     "last_modified": "Sun, 04 Oct 2026 03:52:14 GMT"
+    },
+    {
+     "domain": "faith",
+     "type": "followed",
+     "url": "https://www.furman.edu/diversity-equity-inclusion/inclusive-communities/",
+     "status": "ok",
+     "sha256": "c812874e632d601f367727fd81f406364a25dc96336c559fa2e761bc6bd58886",
+     "last_modified": "Sun, 04 Oct 2026 15:54:49 GMT"
+    },
+    {
+     "domain": "lgbtq",
+     "type": "lgbtq_center",
+     "url": "https://www.furman.edu/offices-services/",
+     "status": "ok",
+     "sha256": "30fb97220340a565ebcbbbfb75a6fed0e7b892b5432ce4ebea5344f981712690",
+     "last_modified": "Sun, 04 Oct 2026 14:52:00 GMT"
+    },
+    {
+     "domain": "lgbtq",
+     "type": "nondiscrimination",
+     "url": "https://www.furman.edu/offices-services/human-resources/policies/nondiscrimination/",
+     "status": "ok",
+     "sha256": "27356fd45d9b8c6ff303db6b5820d54b0826faa68332d66e2f1654f5b9e6490e",
+     "last_modified": "Sun, 04 Oct 2026 02:28:00 GMT"
+    },
+    {
+     "domain": "lgbtq",
+     "type": "followed",
+     "url": "https://www.furman.edu/offices-services/human-resources/",
+     "status": "ok",
+     "sha256": "2c5f4cd048401eeef1a2eab55c1775b2b495deb273344619fcd9ee4bbe34963c",
+     "last_modified": "Sun, 04 Oct 2026 00:15:49 GMT"
+    },
+    {
+     "domain": "lgbtq",
+     "type": "followed",
+     "url": "https://www.furman.edu/diversity-inclusion/inclusive-communities/student-resources/gender-sexuality/",
+     "status": "ok",
+     "sha256": "f68841e632a363cd0bbc28e65367865a053fc1a3ba87cb79947059363f33803c",
+     "last_modified": "Sun, 04 Oct 2026 21:28:49 GMT"
+    }
+   ],
+   "discovery": {
+    "probed": [
+     "fsl_office",
+     "recruitment",
+     "faith_office",
+     "faith_groups",
+     "nondiscrimination"
+    ],
+    "paid": [
+     "lgbtq_center"
+    ],
+    "searches": 1,
+    "fetches": 68
+   }
+  },
+  {
    "unit_id": "221999",
    "learned": "2026-10-04",
    "model": "claude-sonnet-5",
@@ -3623,6 +5576,61 @@
      "last_modified": "Sun, 04 Oct 2026 13:44:27 GMT"
     }
    ]
+  },
+  {
+   "unit_id": "222178",
+   "learned": "2026-10-04",
+   "model": "claude-sonnet-5",
+   "links": {
+    "greek": {
+     "fsl_office": null,
+     "fsl_reports": [],
+     "recruitment": null,
+     "greek_none": null,
+     "notes": ""
+    },
+    "faith": {
+     "faith_office": "https://blogs.acu.edu/csart/",
+     "faith_groups": null,
+     "religion_report": null,
+     "faith_estimate": [],
+     "notes": ""
+    },
+    "lgbtq": {
+     "lgbtq_center": null,
+     "lgbtq_groups": null,
+     "nondiscrimination": null,
+     "housing": null,
+     "name_policy": null,
+     "health_plan": null,
+     "restrooms": null,
+     "trans_admission": null,
+     "conduct_code": null,
+     "notes": ""
+    }
+   },
+   "sources": [
+    {
+     "domain": "faith",
+     "type": "faith_office",
+     "url": "https://blogs.acu.edu/csart/",
+     "status": "ok",
+     "sha256": "50612b073f69f3490c5ceefb86ac2aecaa373ed333e7274ef7a87b819e463890"
+    }
+   ],
+   "discovery": {
+    "probed": [
+     "faith_office"
+    ],
+    "paid": [
+     "fsl_office",
+     "lgbtq_center",
+     "nondiscrimination",
+     "conduct_code"
+    ],
+    "searches": 2,
+    "fetches": 80
+   }
   },
   {
    "unit_id": "223232",
@@ -4133,6 +6141,98 @@
    ]
   },
   {
+   "unit_id": "228875",
+   "learned": "2026-10-04",
+   "model": "claude-sonnet-5",
+   "links": {
+    "greek": {
+     "fsl_office": "https://greeks.tcu.edu/",
+     "fsl_reports": [],
+     "recruitment": "https://greeks.tcu.edu/join/",
+     "greek_none": null,
+     "notes": ""
+    },
+    "faith": {
+     "faith_office": "https://chapel.tcu.edu/",
+     "faith_groups": null,
+     "religion_report": null,
+     "faith_estimate": [],
+     "notes": ""
+    },
+    "lgbtq": {
+     "lgbtq_center": null,
+     "lgbtq_groups": null,
+     "nondiscrimination": "https://www.tcu.edu/compliance/notice-of-nondiscrimination.php",
+     "housing": null,
+     "name_policy": null,
+     "health_plan": null,
+     "restrooms": null,
+     "trans_admission": null,
+     "conduct_code": "https://greeks.tcu.edu/community-standards/",
+     "notes": ""
+    }
+   },
+   "sources": [
+    {
+     "domain": "greek",
+     "type": "fsl_office",
+     "url": "https://greeks.tcu.edu/",
+     "status": "ok",
+     "sha256": "0725914376a5167b425f0b74b9099af7b089cfc1593ac41ed3a772ade2833d53"
+    },
+    {
+     "domain": "greek",
+     "type": "recruitment",
+     "url": "https://greeks.tcu.edu/join/",
+     "status": "ok",
+     "sha256": "5557a7d046607973eeb7983c3dcff12670317dec2cef96fdb93377935a3e2e1f"
+    },
+    {
+     "domain": "greek",
+     "type": "followed",
+     "url": "https://greeks.tcu.edu/councils/",
+     "status": "ok",
+     "sha256": "ec80368568be4f6280b2f8cbf6473edc7ed1ccbfed79690f62f687ca611a3e2e"
+    },
+    {
+     "domain": "faith",
+     "type": "faith_office",
+     "url": "https://chapel.tcu.edu/",
+     "status": "ok",
+     "sha256": "2a7911f01ca29d4737fd545b12349110bc5cadba46a195a5801325ccdc7f2ba5",
+     "last_modified": "Sun, 04 Oct 2026 22:15:02 GMT"
+    },
+    {
+     "domain": "lgbtq",
+     "type": "nondiscrimination",
+     "url": "https://www.tcu.edu/compliance/notice-of-nondiscrimination.php",
+     "status": "ok",
+     "sha256": "76408e075f5fcc2bcfaa6056c90e7e22a54ef4938ed213d5196d5be9b835c0e1"
+    },
+    {
+     "domain": "lgbtq",
+     "type": "conduct_code",
+     "url": "https://greeks.tcu.edu/community-standards/",
+     "status": "ok",
+     "sha256": "585264b116b2f034ca97c83a9010c581950b550062825817a3f24f3cefe21627"
+    }
+   ],
+   "discovery": {
+    "probed": [
+     "fsl_office",
+     "recruitment",
+     "faith_office",
+     "nondiscrimination",
+     "conduct_code"
+    ],
+    "paid": [
+     "lgbtq_center"
+    ],
+    "searches": 1,
+    "fetches": 72
+   }
+  },
+  {
    "unit_id": "230038",
    "learned": "2026-10-04",
    "model": "claude-sonnet-5",
@@ -4205,11 +6305,168 @@
    "sources": []
   },
   {
+   "unit_id": "232265",
+   "learned": "2026-10-04",
+   "model": "claude-sonnet-5",
+   "links": {
+    "greek": {
+     "fsl_office": null,
+     "fsl_reports": [],
+     "recruitment": null,
+     "greek_none": null,
+     "notes": ""
+    },
+    "faith": {
+     "faith_office": null,
+     "faith_groups": null,
+     "religion_report": null,
+     "faith_estimate": [],
+     "notes": ""
+    },
+    "lgbtq": {
+     "lgbtq_center": null,
+     "lgbtq_groups": null,
+     "nondiscrimination": null,
+     "housing": null,
+     "name_policy": null,
+     "health_plan": null,
+     "restrooms": null,
+     "trans_admission": null,
+     "conduct_code": null,
+     "notes": ""
+    }
+   },
+   "sources": [],
+   "discovery": {
+    "probed": [],
+    "paid": [
+     "fsl_office",
+     "lgbtq_center",
+     "nondiscrimination"
+    ],
+    "searches": 2,
+    "fetches": 69
+   }
+  },
+  {
    "unit_id": "232557",
    "learned": "2026-10-04",
    "model": "claude-sonnet-5",
    "links": {},
    "sources": []
+  },
+  {
+   "unit_id": "233921",
+   "learned": "2026-10-04",
+   "model": "claude-sonnet-5",
+   "links": {
+    "greek": {
+     "fsl_office": "https://www.fsl.vt.edu/",
+     "fsl_reports": [],
+     "recruitment": null,
+     "greek_none": null,
+     "notes": ""
+    },
+    "faith": {
+     "faith_office": null,
+     "faith_groups": null,
+     "religion_report": null,
+     "faith_estimate": [],
+     "notes": ""
+    },
+    "lgbtq": {
+     "lgbtq_center": "https://lgbtqa.vt.edu/",
+     "lgbtq_groups": null,
+     "nondiscrimination": "https://www.vt.edu/equal-opportunity.html",
+     "housing": null,
+     "name_policy": null,
+     "health_plan": null,
+     "restrooms": null,
+     "trans_admission": null,
+     "conduct_code": null,
+     "notes": ""
+    }
+   },
+   "sources": [
+    {
+     "domain": "greek",
+     "type": "fsl_office",
+     "url": "https://www.fsl.vt.edu/",
+     "status": "ok",
+     "sha256": "4efc4ab9167cefd11258d1c2fdb01f8445ade6d4101e6733d6d6ae83ae0cdc24",
+     "etag": "\"1712a-65cb814d8012c-gzip\"",
+     "last_modified": "Wed, 30 Sep 2026 19:12:33 GMT"
+    },
+    {
+     "domain": "greek",
+     "type": "followed",
+     "url": "https://fsl.vt.edu/content/dam/fsl_vt_edu/FSL%20Scorecard%202026-27.pdf",
+     "status": "error",
+     "detail": "host didn't answer"
+    },
+    {
+     "domain": "greek",
+     "type": "followed",
+     "url": "https://fsl.vt.edu/resources/academicreports.html",
+     "status": "error",
+     "detail": "host didn't answer"
+    },
+    {
+     "domain": "greek",
+     "type": "followed",
+     "url": "https://fsl.vt.edu/organizations/chapters.html",
+     "status": "error",
+     "detail": "host didn't answer"
+    },
+    {
+     "domain": "greek",
+     "type": "followed",
+     "url": "https://fsl.vt.edu/organizations/councils.html",
+     "status": "error",
+     "detail": "host didn't answer"
+    },
+    {
+     "domain": "greek",
+     "type": "followed",
+     "url": "https://fsl.vt.edu/currentmembers/prospectivemembers.html",
+     "status": "error",
+     "detail": "host didn't answer"
+    },
+    {
+     "domain": "greek",
+     "type": "followed",
+     "url": "https://fsl.vt.edu/resources/interested-in-joining-.html",
+     "status": "error",
+     "detail": "host didn't answer"
+    },
+    {
+     "domain": "lgbtq",
+     "type": "lgbtq_center",
+     "url": "https://lgbtqa.vt.edu/",
+     "status": "error",
+     "detail": "host didn't answer"
+    },
+    {
+     "domain": "lgbtq",
+     "type": "nondiscrimination",
+     "url": "https://www.vt.edu/equal-opportunity.html",
+     "status": "ok",
+     "sha256": "356001c86cfe978ced11f3a14a3ddce712ec59e7551008d38953426a9ace0f4a",
+     "etag": "W/\"11e28-65d0268a610aa-gzip\"",
+     "last_modified": "Sun, 04 Oct 2026 11:53:07 GMT"
+    }
+   ],
+   "discovery": {
+    "probed": [
+     "nondiscrimination"
+    ],
+    "paid": [
+     "fsl_office",
+     "lgbtq_center"
+    ],
+    "searches": 1,
+    "fetches": 68
+   }
   },
   {
    "unit_id": "234207",
@@ -4347,6 +6604,51 @@
      "sha256": "9060e997131806255ff5d117feb541f8a5fc17f2c6bcbd33b0d58c9f94ce3e16"
     }
    ]
+  },
+  {
+   "unit_id": "235316",
+   "learned": "2026-10-04",
+   "model": "claude-sonnet-5",
+   "links": {
+    "greek": {
+     "fsl_office": null,
+     "fsl_reports": [],
+     "recruitment": null,
+     "greek_none": null,
+     "notes": ""
+    },
+    "faith": {
+     "faith_office": null,
+     "faith_groups": null,
+     "religion_report": null,
+     "faith_estimate": [],
+     "notes": ""
+    },
+    "lgbtq": {
+     "lgbtq_center": null,
+     "lgbtq_groups": null,
+     "nondiscrimination": null,
+     "housing": null,
+     "name_policy": null,
+     "health_plan": null,
+     "restrooms": null,
+     "trans_admission": null,
+     "conduct_code": null,
+     "notes": ""
+    }
+   },
+   "sources": [],
+   "discovery": {
+    "probed": [],
+    "paid": [
+     "fsl_office",
+     "lgbtq_center",
+     "nondiscrimination",
+     "conduct_code"
+    ],
+    "searches": 2,
+    "fetches": 72
+   }
   },
   {
    "unit_id": "236948",

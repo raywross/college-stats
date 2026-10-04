@@ -194,6 +194,9 @@ export const FIELDS = {
   "campus.carnegie": hd("Carnegie Classification"),
   "campus.designations": hd("HBCU, tribal college, and land-grant designations"),
   "campus.msi": scorecard("Minority-serving and single-sex designations", "campus"),
+  // Religious life, phase 1 (specs/religious-life.md): IPEDS IC{Y} RELAFFIL, code and NCES's dictionary label; null =
+  // no affiliation. Families for the Explore filter are derived from the code at render time (lib/religion.ts).
+  "religion.affiliation": icChar("Religious affiliation"),
   "location.lat": { ...hd("Latitude"), topic: "institution" },
   "location.lng": { ...hd("Longitude"), topic: "institution" },
   "cost.avg_paid_all": {
@@ -430,6 +433,10 @@ export const FIELDS = {
   // CDS section D, transfer admission (specs/data-expansion/cds-transfer.md; lib/cds/transfer.ts): one lineage record
   // per stored field; the sex breakdown inside applicants/admitted/enrolled and each material are covered by their parent.
   // Partial coverage: never in METRICS, ranks, medians, sorts, or percentiles (tests/cds-transfer.test.mts).
+  // CDS H14 and F2 religion facts (specs/religious-life.md; lib/cds/religion.ts), stored only when marked. Partial
+  // coverage: never in ranks, sorts, medians, Explore filters, or "Known for".
+  "reported.religion.aid_by_affiliation": reported("Scholarships that consider religious affiliation (college-reported)", "campus"),
+  "reported.religion.campus_ministries": reported("Campus ministries (college-reported)", "campus"),
   "reported.transfer.enrolls_transfers": reported("Enrolls transfer students (college-reported)"),
   "reported.transfer.advanced_standing": reported("Grants advanced standing to transfers (college-reported)"),
   "reported.transfer.applicants": reported("Transfer applicants (college-reported)"),

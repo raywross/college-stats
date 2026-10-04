@@ -166,6 +166,8 @@ const TABLE_ROWS = (
       !s.campus?.designations ? null : s.campus.designations.map((d) => DESIGNATION_LABELS[d]).join(", ") || "None"],
     ["Minority-serving, single-sex", "hsi", "campus.msi", (s: School) =>
       !s.campus?.msi ? null : s.campus.msi.map((d) => DESIGNATION_LABELS[d]).join(", ") || "None"],
+    // IPEDS affiliation for every college ("None" = not applicable); the exact NCES label, not the Explore family.
+    ["Religious affiliation", "religious-affiliation", "religion.affiliation", (s: School) => (!s.religion ? null : s.religion.affiliation?.label ?? "None")],
     ["Athletics", "ncaa-division", "campus.athletics", (s: School) => {
       const d = divisionFilterOf(s);
       return !s.campus?.athletics ? null : d ? DIVISION_LABELS[d] : "No NCAA or NAIA division";

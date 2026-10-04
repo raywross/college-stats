@@ -15,6 +15,7 @@ import { LOGISTICS_FILTERS } from "@/lib/cds/application-logistics-display";
 import { DESIGNATION_LABELS, RESEARCH_LABELS, SETTING_GROUPS, isDesignation, isResearchTier, isSettingGroup } from "@/lib/campus-profile";
 import { DIVISION_LABELS, ROTC_LABELS, isDivisionFilter, isRotcBranch } from "@/lib/campus-services";
 import { conferenceName } from "@/lib/conferences";
+import { faithFamilyLabel, isFaithFilter } from "@/lib/religion";
 import { isMajorFamily, majorFamilyName } from "@/lib/majors";
 import { typeLabel } from "@/lib/format";
 import { useExploreParams } from "./useExploreParams";
@@ -263,6 +264,9 @@ export function ActiveFilters() {
     chips.push({ key: `rs-${r}`, label: RESEARCH_LABELS[r], onRemove: () => toggleInList("research", r) });
   for (const d of getList("designation").filter(isDesignation))
     chips.push({ key: `des-${d}`, label: DESIGNATION_LABELS[d], onRemove: () => toggleInList("designation", d) });
+
+  for (const f of getList("faith").filter(isFaithFilter))
+    chips.push({ key: `faith-${f}`, label: f === "none" ? "No religious affiliation" : faithFamilyLabel(f), onRemove: () => toggleInList("faith", f) });
 
   for (const d of getList("division").filter(isDivisionFilter))
     chips.push({ key: `div-${d}`, label: DIVISION_LABELS[d], onRemove: () => toggleInList("division", d) });

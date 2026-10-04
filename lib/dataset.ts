@@ -13,6 +13,7 @@ import { hasHonorsProgram } from "./cds/academics-display";
 import { TRANSFER_FILTER } from "./cds/transfer-display";
 import { LOGISTICS_FILTERS } from "./cds/application-logistics-display";
 import { matchesCampus } from "./campus-profile";
+import { matchesFaith } from "./religion.ts";
 import { matchesServices } from "./campus-services.ts";
 import { withinMaxRatio, withinMinFullTimeFaculty } from "./academics.ts";
 import { hasSmallPellGap } from "./graduation-groups.ts";
@@ -258,6 +259,8 @@ export function createDataset({ schools, meta, releaseCalendar }: DatasetFiles) 
     // Gap year (LOGISTICS_FILTERS, cds-application-logistics.md): colleges without a CDS answer never match.
     for (const f of LOGISTICS_FILTERS) if (filters[f.param]) results = results.filter(f.test);
     if (filters.setting || filters.research || filters.designation || filters.opportunity) results = results.filter((s) => matchesCampus(s, filters));
+    // Religious affiliation (lib/religion.ts): colleges IPEDS has no answer for never match.
+    if (filters.faith?.length) results = results.filter((s) => matchesFaith(s, filters.faith!));
     if (filters.division || filters.conference !== undefined || filters.football || filters.rotc || filters.ugResearch || filters.studyAbroad)
       results = results.filter((s) => matchesServices(s, filters));
     // CDS financial aid: colleges without the college's own report never match.

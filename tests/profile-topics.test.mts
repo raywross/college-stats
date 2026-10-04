@@ -198,7 +198,19 @@ const LEGACY_FIELDS = Object.freeze({
     "reported.academics.programs",
     "reported.academics.core_curriculum",
   ],
-  campus: ["campus.housing", "campus.athletics", "campus.programs", "campus.services", "campus.calendar", "demographics.disability_services"],
+  campus: [
+    "campus.housing",
+    "campus.athletics",
+    "campus.programs",
+    "campus.services",
+    "campus.calendar",
+    "demographics.disability_services",
+    // Religious life (specs/religious-life.md, phase 1).
+    "religion.affiliation",
+    "reported.admission_profile.factors.religious",
+    "reported.religion.aid_by_affiliation",
+    "reported.religion.campus_ministries",
+  ],
   ranks: ["derived.sat_mid", "derived.yield", "demographics.pell_grant_percent", "derived.diversity_index", "admissions.acceptance_rate"],
   // Added deliberately with specs/data-expansion/cds-cost-and-debt.md (cost and outcomes topic pages).
   cdsCostAndDebt: [

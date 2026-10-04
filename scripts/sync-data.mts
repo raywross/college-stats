@@ -47,6 +47,8 @@ import { transferInFrom } from "../lib/transfers.ts";
 import { financesFrom } from "../lib/finances.ts";
 import { apCreditFrom, athleticsFrom, calendarFrom, disabilityFrom, programsFrom, servicesFrom } from "../lib/campus-services.ts";
 import { addFieldOfStudyMeta, buildProgramDetails, fetchFieldOfStudy } from "./lib/field-of-study-sync.mts";
+import { fetchValueLabels } from "./lib/ipeds-dictionary.mts";
+import { religionFrom } from "../lib/religion.ts";
 import { acceptanceRate, applicationFeeFrom, computePrices, factorsFrom, housingFrom, ipedsNum, parseShareBand, priceSuffix, promiseProgramFrom, raceShares, toAid, tuitionPlansFrom } from "../lib/derive.ts";
 
 const ROOT = join(import.meta.dirname, "..");
@@ -569,12 +571,12 @@ function buildMeta(
           "Average salary of a college's full-time instructional staff (all academic ranks combined), equated to a 9-month contract so colleges with different contract lengths can be compared.",
       },
       "ipeds-ic-char": {
-        label: "IPEDS Institutional Characteristics survey (athletics, programs, services)",
+        label: "IPEDS Institutional Characteristics survey (athletics, programs, services, religious affiliation)",
         publisher: "National Center for Education Statistics (NCES)",
         edition: `${academicYear(icChar.name.slice(2))} (${icChar.name})`,
         url: icChar.url,
         description:
-          "What each college offers: its athletic association, conference, and sports; ROTC, study abroad, and undergraduate research; AP credit; student services; the academic calendar; and the share of undergrads registered with disability services.",
+          "What each college offers: its athletic association, conference, and sports; ROTC, study abroad, and undergraduate research; AP credit; student services; the academic calendar; the share of undergrads registered with disability services; and its religious affiliation, if any (labels from the file's NCES data dictionary).",
       },
       "ipeds-f": {
         label: "IPEDS Finance survey, derived per-student figures",
@@ -819,6 +821,10 @@ async function main() {
   const icChar = await fetchIpeds(IC_CHAR_NAMES);
   if (![...icChar.rows.values()].some((r) => "ATHASSOC" in r && "CONFNO2" in r && "SLO5" in r && "CALSYS" in r))
     throw new Error(`${icChar.name} has no athletics/program columns`);
+  // Religious affiliation (specs/religious-life.md): RELAFFIL from the same IC{Y}, labels from its data dictionary.
+  if (![...icChar.rows.values()].some((r) => "RELAFFIL" in r)) throw new Error(`${icChar.name} has no RELAFFIL column`);
+  const relaffil = await fetchValueLabels(icChar.name, "RELAFFIL", join(ROOT, ".cache", "ipeds"));
+  console.log(`  IPEDS ${icChar.name}_Dict: ${relaffil.labels.size} RELAFFIL labels`);
   // Earnings and debt by major (specs/data-expansion/field-of-study.md): College Scorecard's bulk CSV, cached under
   // .cache/scorecard (dated URL, discovered from the data page every refresh).
   const fos = await fetchFieldOfStudy(join(ROOT, ".cache", "scorecard"), { maxAgeDays: 7 });
@@ -840,6 +846,10 @@ async function main() {
     if (school) addProfile(school, hd.rows.get(school.unit_id), row);
     if (school) directoryWarnings.push(...directoryIssues(hd.rows.get(school.unit_id), school));
     if (school) addServices(school, icChar.rows.get(school.unit_id));
+    if (school) {
+      const religion = religionFrom(icChar.rows.get(school.unit_id), relaffil.labels);
+      if (religion) school.religion = religion;
+    }
     if (school) {
       const salary = facultySalaryFrom(sal.rows.get(school.unit_id));
       const fullTimeShare = fullTimeFacultyShareFrom(row["school.ft_faculty_rate"]);
@@ -960,6 +970,7 @@ async function main() {
   console.log(`  with faculty salary:  ${schools.filter((s) => s.academics?.faculty?.avg_salary_9mo != null).length}`);
   console.log(`  with full-time share: ${schools.filter((s) => s.academics?.faculty?.full_time_share != null).length}`);
   console.log(`  with majors:          ${schools.filter((s) => s.academics?.majors_top != null).length} (C${completions.year}_A; programs match the total row for ${totals.checked - totals.differ.length} of ${totals.checked})`);
+  console.log(`  religious affiliation: ${schools.filter((s) => s.religion?.affiliation).length} affiliated, ${schools.filter((s) => s.religion && !s.religion.affiliation).length} none, ${schools.filter((s) => !s.religion).length} not in ${icChar.name}`);
   console.log(`  overrides applied:    ${stats.overridden}`);
   console.log(`  college-reported:     ${reportedMerged} colleges`);
   if (directoryWarnings.length) {

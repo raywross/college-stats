@@ -310,6 +310,12 @@ export interface School {
       meals_per_week: number | null;
     } | null;
   };
+  /**
+   * Religious life, phase 1 (specs/religious-life.md; lib/religion.ts). Present when the college is in IPEDS IC{Y};
+   * `affiliation` null means IPEDS says "not applicable" (no religious affiliation). Later phases add the CDS and
+   * directory blocks the spec sketches; the CDS facts read so far live under `reported.religion`.
+   */
+  religion?: SchoolReligion;
   links?: {
     website: string | null;
     /** The college's federally required net price calculator. */
@@ -384,6 +390,8 @@ export interface ReportedData {
   admissions_logistics?: ReportedLogistics;
   /** CDS C3–C5, high school preparation (same spec and module). */
   admissions_hs_prep?: ReportedHsPrep;
+  /** CDS H14 religious-affiliation scholarships and F2 campus ministries (specs/religious-life.md; lib/cds/religion.ts). */
+  religion?: ReportedReligion;
 }
 
 /* ---- CDS student body and outcomes (specs/data-expansion/cds-student-body-and-outcomes.md) ---- */
@@ -1103,6 +1111,42 @@ export interface SexCounts {
 
 export type SettingGroup = "city" | "suburb" | "town" | "rural";
 
+/* ---- Religious life (specs/religious-life.md, phase 1) ---- */
+
+/** IPEDS IC `RELAFFIL`: the code and NCES's own label from the IC{Y} data dictionary (never typed by hand). */
+export interface ReligiousAffiliation {
+  code: number;
+  label: string;
+}
+/** `school.religion`. */
+export interface SchoolReligion {
+  /** Null: IPEDS "not applicable", the college has no religious affiliation. */
+  affiliation: ReligiousAffiliation | null;
+}
+/** The faith families the Explore filter groups IPEDS's ~60 affiliations into (lib/religion.ts RELAFFIL_FAMILY). */
+export type FaithFilter = FaithFamily | "none";
+export type FaithFamily =
+  | "catholic"
+  | "baptist"
+  | "methodist"
+  | "lutheran"
+  | "presbyterian_reformed"
+  | "nondenominational"
+  | "other_christian"
+  | "jewish"
+  | "latter_day_saint"
+  | "other";
+/**
+ * `school.reported.religion` (lib/cds/religion.ts). Stored only when a box is marked: an unmarked CDS box is "not
+ * marked", never "no", so there's no false.
+ */
+export interface ReportedReligion {
+  /** CDS H14: the college's own scholarships consider religious affiliation (H.1409 non-need, H.1418 need-based). */
+  aid_by_affiliation?: { non_need: boolean; need: boolean };
+  /** CDS F2 (F.201): campus ministries among the activities offered. */
+  campus_ministries?: true;
+}
+
 /** Carnegie 2025 research designation: R1, R2, or Research Colleges and Universities. */
 export type ResearchTier = "R1" | "R2" | "RCU";
 
@@ -1408,6 +1452,8 @@ export interface SearchFilters {
   transfers?: boolean;
   /** Allows deferred admission, a gap year (CDS C18; lib/cds/application-logistics-display.ts). */
   gapYear?: boolean;
+  /** Religious affiliation (lib/religion.ts): faith families, or "none" for colleges with no affiliation. */
+  faith?: FaithFilter[];
   sortBy?: SortKey;
   sortDir?: "asc" | "desc";
 }

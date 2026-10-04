@@ -27,6 +27,7 @@ import type { Profile } from "./profile-data";
 import { mostFromOtherState } from "./residence";
 import { stateName } from "./states";
 import { endowmentMetricFor } from "./finances";
+import { isFaithCentered } from "./religion";
 
 /* ------------------------------------------------------------------ */
 /* "Known for" badges: computed standouts vs. the dataset              */
@@ -35,7 +36,8 @@ import { endowmentMetricFor } from "./finances";
 export interface Standout {
   label: string;
   domain: Domain;
-  metric: MetricKey;
+  /** The metric a percentile standout ranks; absent for a rule from the college's own answer (Faith-centered). */
+  metric?: MetricKey;
 }
 
 /** Functions below that compare a college with all others take the loaded dataset first (`await getData()`). */
@@ -91,6 +93,9 @@ export function standouts({ rankOf }: Dataset, s: School, { trends = false }: { 
   if (sat !== null && act !== null && sat < 0.5 && act < 0.5) {
     out.push({ label: "Test-optional heavy", domain: "scores", metric: "sat" });
   }
+  // From the college's own CDS C7 only: religious affiliation or commitment is very important in admission. Never
+  // from IPEDS affiliation alone (specs/religious-life.md); CCCU membership is a later phase.
+  if (isFaithCentered(s)) out.push({ label: "Faith-centered", domain: "size" });
   // Trend chips only on the profile (specs/trends-design.md): Explore cards stay unchanged.
   const trend = trends ? trendStandout({ rankOf }, s) : null;
   if (trend) out.push(trend);

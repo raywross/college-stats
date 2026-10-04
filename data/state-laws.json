@@ -46,6 +46,39 @@
       "checked": "2026-10-04"
     },
     {
+      "state": "NC",
+      "applies_to": "public",
+      "name": "North Carolina SB 558 (2026)",
+      "statute": "N.C. Gen. Stat. §§116-415 to 116-417",
+      "act": "S.L. 2026-21 (S.B. 558), law notwithstanding the Governor's veto on 2026-06-24",
+      "effective": "2026-06-24",
+      "summary": "North Carolina public universities and community colleges may not keep offices named diversity, equity, and inclusion or promoting different treatment by federally protected class; the law doesn't name sexual orientation or gender identity.",
+      "url": "https://www.ncleg.gov/EnactedLegislation/Statutes/HTML/ByArticle/Chapter_116/Article_39.html",
+      "checked": "2026-10-04"
+    },
+    {
+      "state": "OH",
+      "applies_to": "public",
+      "name": "Ohio SB 1 (2025)",
+      "statute": "Ohio Revised Code §3345.0217",
+      "act": "S.B. 1, 136th General Assembly (2025)",
+      "effective": "2025-06-27",
+      "summary": "Ohio public colleges may not keep diversity, equity, and inclusion offices or departments or hold DEI trainings; the law doesn't define DEI or name sexual orientation or gender identity in the office ban, and student groups are exempt.",
+      "url": "https://codes.ohio.gov/ohio-revised-code/section-3345.0217",
+      "checked": "2026-10-04"
+    },
+    {
+      "state": "TN",
+      "applies_to": "public",
+      "name": "Tennessee SB 1084 (2025)",
+      "statute": "Tennessee Code Annotated Title 49, Chapter 7, Part 1 (new section)",
+      "act": "2025 Tenn. Pub. Acts ch. 458 (S.B. 1084, the \"Dismantling DEI Departments Act\", as amended by Senate Amendment 1, SA0330)",
+      "effective": "2025-05-09",
+      "summary": "Tennessee public colleges may not favor people by race, ethnicity, sex, age, or any other demographic characteristic to increase diversity, equity, or inclusion, or keep such offices; it doesn't name sexual orientation or gender identity.",
+      "url": "https://www.capitol.tn.gov/Bills/114/Amend/SA0330.pdf",
+      "checked": "2026-10-04"
+    },
+    {
       "state": "TX",
       "applies_to": "public",
       "name": "Texas SB 17 (2023)",

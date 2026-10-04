@@ -239,7 +239,7 @@ const entries = {
   "state-law-public-colleges": {
     term: "State law on public colleges",
     short: "A state statute that limits what public colleges in that state may offer, such as offices or programs designed around identity. It applies to public colleges only; private colleges in the state aren't covered.",
-    long: "We show the statute, the date it took effect, and a one-line summary we checked against the statute's text, with a link to it. A law can close an office a college once had: UT Austin's Gender and Sexuality Center closed in 2024 under Texas SB 17. Student groups are often exempt, so a law doesn't mean there's no LGBTQ+ community on campus.",
+    long: "We show the statute, the date it took effect, and a one-line summary we checked against the statute's text, with a link to it. Some laws name sexual orientation or gender identity; others ban diversity, equity, and inclusion offices in general terms, and the summary says when a law doesn't name them. A law can close an office a college once had: UT Austin's Gender and Sexuality Center closed in 2024 under Texas SB 17. Student groups are often exempt, so a law doesn't mean there's no LGBTQ+ community on campus.",
     category: "Students & access",
     related: ["another-gender"],
   },

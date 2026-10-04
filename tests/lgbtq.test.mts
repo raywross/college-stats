@@ -110,7 +110,7 @@ test("the state-law table: the real one passes, and each rule fails when broken"
 
 test("phase 2: each state law in the table, read from the statute (specs/lgbtq-life.md#phase-2-as-built)", () => {
   const byState = new Map(LAWS.laws.map((l) => [l.state, l]));
-  assert.deepEqual([...byState.keys()], ["AL", "FL", "IA", "ID", "TX", "UT"]);
+  assert.deepEqual([...byState.keys()], ["AL", "FL", "IA", "ID", "NC", "OH", "TN", "TX", "UT"]);
   assert.equal(byState.get("AL")!.effective, "2024-10-01");
   assert.equal(byState.get("FL")!.statute, "Florida Statutes §1004.06");
   assert.equal(byState.get("IA")!.statute, "Iowa Code chapter 261J");
@@ -119,6 +119,21 @@ test("phase 2: each state law in the table, read from the statute (specs/lgbtq-l
   for (const l of LAWS.laws) {
     assert.ok(/sexual orientation|gender identity|queer theory/.test(l.summary), `${l.state}: the line says how the law reaches LGBTQ+ programs`);
     assert.ok(l.checked <= LAWS.reviewed && l.effective <= l.checked, `${l.state}: in effect when read`);
+  }
+});
+
+test("general DEI-office bans (owner decision 2026-10-04): included, and the line says they don't name LGBTQ+ programs", () => {
+  const byState = new Map(LAWS.laws.map((l) => [l.state, l]));
+  const general = ["NC", "OH", "TN"];
+  assert.equal(byState.get("OH")!.statute, "Ohio Revised Code §3345.0217");
+  assert.equal(byState.get("OH")!.effective, "2025-06-27");
+  assert.equal(byState.get("TN")!.effective, "2025-05-09", "Pub. Ch. 458 took effect when the Governor signed it");
+  assert.equal(byState.get("NC")!.statute, "N.C. Gen. Stat. §§116-415 to 116-417");
+  assert.equal(byState.get("NC")!.effective, "2026-06-24", "the veto override");
+  // Neither direction may be overstated: a general ban says it doesn't name them; a law that names them doesn't say it doesn't.
+  for (const l of LAWS.laws) {
+    const saysNotNamed = /doesn't (?:define DEI or )?name sexual orientation or gender identity/.test(l.summary);
+    assert.equal(saysNotNamed, general.includes(l.state), `${l.state}: ${l.summary}`);
   }
 });
 

@@ -1,3 +1,13 @@
 {
-  "hosts": []
+  "hosts": [
+    {
+      "host": "penntoday.upenn.edu",
+      "status": "challenge",
+      "first_seen": "2026-10-04",
+      "last_seen": "2026-10-04",
+      "unit_ids": [
+        "215062"
+      ]
+    }
+  ]
 }

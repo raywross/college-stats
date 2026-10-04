@@ -273,6 +273,17 @@ export const ROADMAP: RoadmapSpec[] = [
     after: ["social-accounts"],
   },
   {
+    slug: "school-brand",
+    file: "specs/school-identity/brand.md",
+    group: "identity",
+    summary: "A college's own colors on its profile, and its own mark in place of the lettered tile, with a removal route for any college that asks.",
+    complexity: 3,
+    complexityNote:
+      "Cited brand colors joined through Wikipedia, a per-theme tint derived at sync time, icons fetched and resized into the repo, and opt-out and removal files.",
+    status: "planned",
+    after: ["school-links", "social-accounts"],
+  },
+  {
     slug: "compare-redesign",
     file: "specs/compare-redesign.md",
     group: "design",

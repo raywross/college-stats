@@ -201,7 +201,7 @@ until they pass about 25 MB (3).
 | `lib/brand-colors.ts` | Pure. A Lua reader for the module (keyed and positional fields, comments, escapes, long strings; a repeated key keeps its last value, as Lua does); wikitext helpers (templates, links, the `{{cite …}}` an entry carries); the infobox reader; the join; OKLab/OKLCH and WCAG math; `deriveBrand`; `applyBrand` with lineage and override checks |
 | `scripts/lib/wikipedia-colors.mts` | The module once and every article's lead (section 0) through the MediaWiki API, redirects followed, one request a second, `maxlag=5`, user agent `QuadCollegeStats/1.0 (https://college-stats-nine.vercel.app/data)`, cached 30 days in `.cache/wikipedia/`; writes `data/brand-colors.json` |
 | `scripts/lib/brand-icons.mts` | Ranks each college's icon candidates from `data/site-probe.json`, downloads through `PoliteHttp`, decodes with `sharp` (ICO parsed here), checks, writes `public/brand/{unit_id}.webp` and `data/brand-logos.json` |
-| `scripts/sync-brand.mts` | `npm run sync-brand` (`--colors`, `--icons`, `--ids`, `--refresh`, `--no-merge`, `--wikidata <file>`), then `mergeIdentity` |
+| `scripts/sync-brand.mts` | `npm run sync-brand` (`--colors`, `--icons`, `--ids`, `--refresh`, `--no-merge`, `--wikidata <file>`), then `mergeIdentity`; without a step named, a step whose input file isn't there yet is skipped with a note |
 | `lib/brand.ts` | `crestBrand` (gradient, text color, mark URL; `BRAND_MARKS=off` hides marks), `brandTint` (per-theme tints for the hero and card glow), `BRAND_REMOVAL_CONTACT` |
 | `components/school/Crest.tsx` | Mark on a white tile (image at 80%, so 10% padding each side), else the monogram on the college's gradient in `brand.text`, else today's tile; same sizes everywhere, the hero's `size-14 sm:size-24` unchanged |
 | Hero, cards | The hero's radial tint and the Explore card's glow read `--tint-light`/`--tint-dark` and pick with `dark:`; a 3 px accent line under the hero from `sm` up |
@@ -230,26 +230,48 @@ the way to close it). Derived: text white on 1,129 accents, black on 187; the cr
 122, a darkened accent for 994, a lightened one for 199; 3 colleges have only neutral colors (accent = the first).
 Every accent and every gradient end has at least 4.50:1 against its text color. `data/brand-colors.json`: 462 KB.
 
-**Marks.** Waiting for `data/site-probe.json` (probe track) when this was written; see the integrator's note in the
-build PR. A development sample of 25 large universities' homepages (probed here, not committed) stored 13 icons
-(Stanford, Harvard, Yale, Berkeley, Texas, UNC, USC, Alabama, Florida, Illinois, Boston College, Syracuse, Virginia),
-974 B to 8.1 KB each (3.3 KB average, so about 5 MB for 1,500). The 12 without one: a 16–48 px favicon only (UGA,
-Michigan, Princeton, Georgia Tech, Indiana, Wisconsin, Washington's 57 px touch icon), Penn's shield at 229×256 (12%
-off square), ASU's 24-bit BMP ICO, Columbia's 404s, Ohio State's robots.txt, and Vanderbilt's icon host's robots.txt.
-So expect roughly half the colleges to get a mark, and the rest a monogram in their colors.
+**Marks.** `data/site-probe.json` (probe track, 2026-10-04): 1,808 of 1,893 colleges with icon candidates (8,264 in
+all: 1,961 declared touch icons, 2,842 declared icons, 3,461 conventional fallbacks). One full run, 4,682 requests
+through `PoliteHttp` (robots.txt honored, a second apart per host, 12 colleges in flight), about 30 minutes; then a
+re-run of the 20 colleges the guards added afterwards (84 requests).
+
+| Result | Colleges |
+|---|---|
+| **A mark** | **1,118** (59% of 1,893; 62% of the 1,808 with candidates) |
+| from a declared touch icon / a declared icon / the conventional paths | 855 / 153 / 110 |
+| source format: PNG / ICO / JPEG / WebP / SVG / other | 902 / 95 / 68 / 32 / 15 / 6 |
+| none, by the last candidate's reason: 404 | 254 |
+| too small (under 64 px: mostly 16–48 px favicons) | 207 |
+| the probe found no candidate (no homepage answer) | 85 |
+| not an image (an HTML page with status 200) | 63 |
+| 403 (bot protection) | 57 |
+| robots.txt disallows it | 49 |
+| an ICO with no PNG or 32-bit entry (see deviation 8) | 42 |
+| a platform's default (below) / blank on white / other | 11 / 1 / 6 |
+
+Storage: 1,118 files, 5.9 MB (5,907,762 bytes; 5.3 KB average, 35 KB the largest), well under the 25 MB line.
+`data/brand-logos.json`: 246 KB. The first pass stored 1,137; reviewing them found what the checks then learned:
+WordPress's own W logo on 14 colleges (WordPress redirects a missing `/favicon.ico` to it), one company's
+`arrow_forward.svg` declared as the touch icon on three of its colleges' sites (5 colleges), and one near-white glyph;
+the re-run gave one of the 20 a real icon. Shared marks that stay are systems whose campuses use the system's icon
+(Arizona College of Nursing 18 campuses, Strayer 17, the University of Minnesota 5, Antioch 4, the University of Puerto
+Rico's campuses on three sites, CU Boulder and CU Colorado Springs on two, and so on: 32 images shared by 109 colleges,
+every one within one system or one site). Of the profiles in the visual QA, Stanford, Harvard, Berkeley, and Yale have
+marks; UGA (a 48 px favicon) and Vanderbilt (its icon host's robots.txt) show monograms in their colors.
 
 ### The rendered contrast check
 `scripts/check-hero-contrast.mts` opens each hero in Chromium (1280 and 390 px wide, light and dark), reads every hero
 text node's color and box, hides all text, screenshots what was behind it, and takes the 10th percentile of the
 pixel-by-pixel contrast in each box (so the hero's 1 px dot texture, one pixel in 22×22, isn't taken for the
 background while the tint's gradient still counts). AA: 4.5:1, or 3:1 at 24 px or 18.66 px bold. Run 2026-10-04 with
-the development marks in place:
+the real marks and the links and social rows of the other identity tracks in the hero (the last two rows: the first
+run, with development marks):
 
 | College (tint hue) | 1280 light | 1280 dark | 390 light | 390 dark | Crest |
 |---|---|---|---|---|---|
-| UGA 139959 (red, 21°) | 4.65 | 5.76 | 5.06 | 6.57 | monogram 6.96:1 |
-| Vanderbilt 221999 (gold, 83°) | 4.80 | 5.50 | 5.25 | 6.57 | monogram 7.97:1 |
-| Stanford 243744 (cardinal, 27°) | 4.64 | 5.69 | 5.08 | 6.56 | mark |
+| UGA 139959 (red, 21°) | 4.58 | 5.63 | 4.86 | 6.22 | monogram 6.96:1 |
+| Vanderbilt 221999 (gold, 83°) | 4.76 | 5.40 | 5.03 | 6.11 | monogram 7.97:1 |
+| Stanford 243744 (cardinal, 27°) | 4.59 | 5.56 | 4.88 | 6.21 | mark |
 | Harvard 166027, and the hues worst for muted text: Boston U, Indiana, Clemson, Oregon | 4.60–4.85 | 5.50–5.76 | | | Harvard a mark; monograms 5.6–6.5:1 |
 | Hunter 190594 (no colors: today's hashed tint) | 4.66 | 5.19 | | | generated monogram 2.80:1 |
 
@@ -269,10 +291,14 @@ and 2.65:1 (dark) and the check exited 1.
   colors, no normalized join, accent = first color, text always white, tint chroma uncapped, gradient end without the
   contrast check, old lineage kept, unsourced correction accepted, `logo: false` ignored, `BRAND_MARKS` ignored, the
   mark's lineage not extracted): each failed.
-- `tests/brand-icon.test.mts` (9): the largest touch icon first; 32 px rejected, 180 px stored as a 192 px WebP; 200×190
-  cropped, 300×100 and 229×256 rejected; an ICO's largest entry; 32-bit BMP entries top-down with the mask's alpha;
-  transparent and blank-on-white rejected; SVG rasterized; runs: removals (full and `--ids`), a timeout or a silent host
-  keeps the mark, a refusal or 404s remove it, orphans deleted. Broken 11 ways: each failed.
+- `tests/brand-icon.test.mts` (11): the largest touch icon first, and the probe's real entries (UGA's, Stanford's)
+  ranked; 32 px rejected, 180 px stored as a 192 px WebP; 200×190 cropped, 300×100 and 229×256 rejected; an ICO's largest
+  entry; 32-bit BMP entries top-down with the mask's alpha; transparent, white, and near-white glyphs rejected, a small
+  dark one kept; SVG rasterized; runs: removals (full and `--ids`), a timeout or a silent host keeps the mark, a refusal
+  or 404s remove it, orphans deleted, WordPress's logo refused, a stock image on three unrelated sites refused while one
+  system's shared seal stays. Broken 15 ways (size floor, square tolerance, ICO entry order, BMP rows, transparency,
+  ink floor, ranking, removals, timeouts, silent hosts, the WordPress check, the shared-image pass, its threshold, its
+  name families, orphans): each failed.
 - `tests/brand-files.test.mts` (7, the verify-time check): every mark has its 192 px WebP and every file a mark and a
   school; a `brand.logo` in the dataset has its file; a `logo: false` removal leaves no file, row, or mark; color rows
   and overrides are well formed; the committed files give every school valid lineage; every `<Crest>` in `app/` and
@@ -310,25 +336,33 @@ and 2.65:1 (dark) and the check exited 1.
    colors carry the override's `_lineage` (required, with source and URL). `brand.logo`: `{ source: "college-site",
    method: "extracted", url: <the icon's URL>, retrieved, year: <retrieval year>, quote: <the declaring tag and the
    homepage> }`. The derived fields cite `brand.colors` through the registry.
-8. **Marks: extra rules.** Safari's monochrome `mask-icon` is never used; candidates are re-ranked (touch icons by
-   size, then declared icons by size with SVG as large, then `/apple-touch-icon.png`, then `/favicon.ico`), at most four
-   downloads per college. A fifth rejection, **blank on white**, catches white glyphs on transparency (dark-tab
-   favicons) that would vanish on the white tile. ICO: PNG entries via sharp, 32-bit BMP entries converted to RGBA (the
-   AND mask gives alpha when every alpha byte is 0); 1-, 4-, 8-, and 24-bit entries are skipped (palette-era icons,
-   16–48 px, under the floor anyway). A passing failure (timeout, 5xx, a host that didn't answer) keeps yesterday's
-   mark; a refusal (robots.txt, 4xx, a rejected image) removes it.
+8. **Marks: extra rules.** Safari's monochrome `mask-icon` and `data:` URIs are never used. Candidates are re-ranked:
+   declared touch icons by size; declared icons of a stated size of 64 px or more (an SVG counts as large); the
+   probe's `rel: "fallback"` `/apple-touch-icon.png`; declared icons of unknown size and `/favicon.ico`; last, icons that
+   say they're under 64 px. At most four downloads per college. Three more rejections: **blank on white** (under 1% of
+   the tile shows ink once laid on white: white or near-white glyphs made for dark browser tabs); **WordPress's own
+   logo** (any final URL under `/wp-includes/images/`); and **a platform's default**: an identical mark on three or more
+   sites for three or more differently named colleges (name families: the first three words before a dash, comma,
+   or "at") sends those colleges back for their next candidate, while one system's shared icon stays. ICO: PNG entries
+   via sharp, 32-bit BMP entries converted to RGBA (the AND mask gives alpha when every alpha byte is 0); 1-, 4-, 8-,
+   and 24-bit entries are skipped (42 colleges' last candidate was such an ICO). A passing failure (timeout, 5xx, a
+   host that didn't answer) keeps yesterday's mark; a refusal (robots.txt, 4xx, a rejected image) removes it.
 9. **`next/image` with `unoptimized`.** `next.config.ts` sets no image loader, and the stored WebP is already the
    largest size any tile shows (96 px at 2x), so the optimizer would only add a transformation per size on Vercel.
 10. **Dark mode.** The 15% ring is white (a ring sits outside the tile, on indigo, where a black one can't show), and
     tiles in a college's colors get it too, since navy and black tiles sank into indigo. The tile's sheen is fainter on
     a college's colors (18% rather than 35%).
 11. **Client data.** `ScatterPointData` and the Explore map's `MapPoint` (`lib/us-map.ts`) carry `brand` for the hover
-    card (about 110 KB of uncompressed JSON for the map's 1,303 points with colors).
+    card (about 110 KB of uncompressed JSON for the map's 1,303 points with colors, measured before the marks; each
+    mark adds a 24-character URL).
 
 ### Left for the owner
 - **The removal address.** `BRAND_REMOVAL_CONTACT` (`lib/brand.ts`) is a prefilled issue on
   `github.com/raywross/college-stats`; it only works while the repo is public. Choose a permanent address (an email
   that someone reads daily, since a request is honored within a day).
 - **Counsel, once, before the first deploy with marks** (the safeguard above).
-- **The marks' real run** if the integrator hasn't done it: `npm run sync-brand -- --icons` after the probe's file is in,
-  then commit `public/brand/*.webp` and `data/brand-logos.json`.
+- **The colleges without a mark** (775): a monogram in their colors when they have colors (open question 2's default).
+  Many have a 16–48 px favicon only; a college that wants its mark shown can add a 180 px `apple-touch-icon` to its
+  homepage, and the next run picks it up.
+- **ICO entries other than PNG or 32-bit** (42 colleges' last candidate): reading 24-bit and palette entries is a small
+  follow-up if those files turn out to hold 64 px or larger entries (ASU's, the one inspected, held 16–48 px).

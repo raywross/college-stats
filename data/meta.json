@@ -119,6 +119,13 @@
       "edition": "Newest figures each college has published; the year is shown with each value",
       "url": "/data#college-reported",
       "description": "Figures a college posted itself, usually a year ahead of federal data: its newest class profile or Common Data Set. Read automatically from the college's site, checked against its own math and the federal baseline, and shown only on that college's profile with the exact quote and link."
+    },
+    "state-law": {
+      "label": "State laws on public colleges",
+      "publisher": "State legislatures (statutes read and summarized by hand)",
+      "edition": "Reviewed 2026-10-03",
+      "url": "https://statutes.capitol.texas.gov/Docs/ED/htm/ED.51.htm#51.3525",
+      "description": "Laws that limit what public colleges in a state may offer, such as identity-based offices and programs, each with its statute, effective date, and a one-line summary checked against the statute text. Now: Texas SB 17 (2023)."
     }
   },
   "vintages": {

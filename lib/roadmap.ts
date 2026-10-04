@@ -479,6 +479,16 @@ export const ROADMAP: RoadmapSpec[] = [
     complexityNote: "Columns from a file the site already reads, plus a table of metro names.",
     status: "deferred",
   },
+  {
+    slug: "identity-follow-ups",
+    file: "specs/school-identity/follow-ups.md",
+    group: "later",
+    summary:
+      "Find the campus visit page for the 492 colleges whose admissions page doesn't name one plainly, with one small paid run of a picker that's already built.",
+    complexity: 1,
+    complexityNote: "Built and tested behind a flag; left are one paid run (about $1.50), keeping its finds through the monthly refresh, and a look at its picks.",
+    status: "deferred",
+  },
 ];
 
 /** Readable background pages that aren't work items themselves (linked from the roadmap, not ranked). */

@@ -17,6 +17,7 @@ college looks like the site rather than like itself.
 | [social-accounts.md](social-accounts.md) | Instagram, YouTube, TikTok, X, Facebook, LinkedIn; introduces `npm run sync-wikidata` and `data/wikidata.json` | Wikidata (by IPEDS id) + the homepage footer | Medium |
 | [aliases.md](aliases.md) | A table of short names and nicknames (UGA, Vandy, Georgia Tech, Ole Miss) that search and Explore match | IPEDS HD, Wikidata, the homepage domain, a curated file | Medium |
 | [brand.md](brand.md) | The college's own colors in the hero and crest, and its site icon in place of the monogram; the legal summary (marks approved by the owner 2026-10-03, with safeguards and a removal route) | Wikipedia's college color data (cited to brand guides) + the college's site icon | Large |
+| [follow-ups.md](follow-ups.md) | A monthly refresh workflow and older icon formats (built 2026-10-04); the visit-page picker's first run (deferred: the one paid step) | The scripts above; Haiku for the picker | Small |
 
 ## Shared pieces
 - **The Wikidata link** (`sync-wikidata`, from social-accounts): one query keyed by IPEDS id gives accounts, other

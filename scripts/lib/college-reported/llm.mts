@@ -12,7 +12,7 @@ import { EXTRACTION_SCHEMA, ROUND3_MODELS, type CallLog, type CallMode, type Ext
 import type { ReportedSourceKind, School } from "../../../lib/types";
 import { codeTableText, codesFor, maxTokensFor, schemaFor, type CallKey, type CdsCode, type DocumentType, type TemplateTable } from "../../../lib/cds-sections.ts";
 import { quoteFromNumberedLines, type NumberedLine } from "../../../lib/cds-quotes.ts";
-import { MIN_CACHE_PREFIX, addUsage, callLogRow, priceOf, type Job, type ModelClient, type UsageLog } from "./models.mts";
+import { MIN_CACHE_PREFIX, addUsage, callLogRow, priceKey, priceOf, type Job, type ModelClient, type UsageLog } from "./models.mts";
 
 export interface LlmContext {
   client: ModelClient;
@@ -466,7 +466,7 @@ export function buildExtractRequest(input: ExtractCallInput): BuiltRequest {
   const prefix = staticPrefix(input.table, input.call, codes);
   const prefixTokens = estimateTokens(prefix.length);
   const cache = input.cache ?? "5m";
-  const cached = cache !== "off" && prefixTokens >= (MIN_CACHE_PREFIX[model] ?? Infinity);
+  const cached = cache !== "off" && prefixTokens >= (MIN_CACHE_PREFIX[priceKey(model)] ?? Infinity);
   const user = `${documentHeader(input.doc)}\n\n<document>\n${renderLines(input.lines)}\n</document>`;
   const marker: Anthropic.CacheControlEphemeral = cache === "1h" ? { type: "ephemeral", ttl: "1h" } : { type: "ephemeral" };
   const system: Anthropic.TextBlockParam[] = [{ type: "text", text: prefix, ...(cached ? { cache_control: marker } : {}) }];

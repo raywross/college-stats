@@ -195,11 +195,15 @@ test("runCollege: quotes checked, escalation on a bad quote, second check gates 
   const log: string[] = [];
   // The second model rejects the housing "no" (it reads "single-sex" halls as not ruling out an option) and accepts the rest.
   const ctx: Ctx = { client: fakeClient(log, (f) => !f.startsWith("Gender-inclusive housing")), budget: new Budget(5) };
-  const { result, recipe } = await runCollege(ctx, fakeFetcher(), COLLEGE, { today: "2026-10-04", log: () => {} });
+  // Round 3: the paid call no longer looks for housing or the religion report, so this test's faith and LGBTQ+ links
+  // come from a saved recipe (discovery fills only the domains a recipe lacks: here Greek).
+  const saved = { unit_id: COLLEGE.unit_id, learned: "2026-10-04", model: "claude-sonnet-5", links: { faith: LINKS.faith, lgbtq: LINKS.lgbtq } as never, sources: [] };
+  const { result, recipe } = await runCollege(ctx, fakeFetcher(), COLLEGE, { today: "2026-10-04", recipe: saved, log: () => {} });
 
-  // One discovery call for the whole college, for what the probes (none found here) missed: the scored types, the
-  // conduct code (a religious college), and the religion report (an affiliated one); never restrooms or the health plan.
-  assert.deepEqual(log.filter((l) => l.startsWith("discover")), ["discover fsl_office,greek_none,faith_office,lgbtq_center,nondiscrimination,housing,name_policy,conduct_code,religion_report"]);
+  // One discovery call for the whole college, for the paid types the probes (none found here) missed, the conduct
+  // code included (a religious college); round 3 no longer asks it for the faith office, housing, chosen name, or the
+  // religion report, and never restrooms or the health plan.
+  assert.deepEqual(log.filter((l) => l.startsWith("discover")), ["discover fsl_office,greek_none,lgbtq_center,nondiscrimination,conduct_code"]);
   // Greek: Haiku's invented quote triggered one Sonnet re-read; the corrected fact is kept.
   assert.deepEqual(result.escalated, ["greek"], JSON.stringify(result.dropped));
   assert.equal(result.greek?.formal_term?.value, "Fall");

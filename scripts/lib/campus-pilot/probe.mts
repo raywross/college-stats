@@ -13,7 +13,7 @@
 import { collegeDomain } from "../college-reported/probe.mts";
 import { parseSitemap } from "../college-reported/probe.mts";
 import type { FoundLink } from "../college-reported/documents.mts";
-import type { Page, PageFetcher } from "./pages.mts";
+import { FSL_REPORT, fslHubLinks, fslReportLinks, newestYear, safeDecode, type FetchResult, type Page, type PageFetcher } from "./pages.mts";
 import type { Domain } from "./schema.mts";
 
 /** The source types free probes look for, with the domain each belongs to. */
@@ -79,6 +79,7 @@ export function typesFor(c: { single_sex: boolean; affiliation: string | null })
 export const HUB_SUBDOMAINS: Record<string, ProbeType | null> = {
   fsl: "fsl_office",
   ofsl: "fsl_office",
+  osfl: "fsl_office",
   sfl: "fsl_office",
   greeklife: "fsl_office",
   greek: "fsl_office",
@@ -116,6 +117,7 @@ export const WELL_KNOWN_PATHS: Record<string, ProbeType> = {
   "/fraternity-and-sorority-life": "fsl_office",
   "/greek-life": "fsl_office",
   "/fsl": "fsl_office",
+  "/gogreek": "fsl_office",
   "/greeks": "fsl_office",
   "/student-life/fraternity-sorority-life": "fsl_office",
   "/religious-life": "faith_office",
@@ -147,6 +149,10 @@ export const WELL_KNOWN_PATHS: Record<string, ProbeType> = {
   "/student-handbook": "conduct_code",
   "/community-standards": "conduct_code",
   "/code-of-conduct": "conduct_code",
+  // Round 3: trans admission is no longer a paid search (round 2: 3 asks, no page), so single-sex colleges get guesses.
+  "/admission/gender-policy": "trans_admission",
+  "/admission/mission-and-gender-policy": "trans_admission",
+  "/gender-policy": "trans_admission",
 };
 
 /** Words a site search is asked for, per type (only for types still missing; at most `PROBE_LIMITS.searches`). */
@@ -158,11 +164,20 @@ const SEARCH_WORDS: Partial<Record<ProbeType, string>> = {
   housing: "gender inclusive housing",
   name_policy: "chosen name",
   conduct_code: "student handbook conduct",
+  trans_admission: "transgender applicants",
 };
 
-export const PROBE_LIMITS = { sitemapFiles: 6, hubSitemaps: 3, hubLinks: 4, perType: 2, searches: 2 } as const;
+/**
+ * Round 3: `fslHubs` pages in the FSL office's own section (reports, about, councils, families) are read for report
+ * links; at most `fslReports` report files or pages are fetched to confirm them, and `fslKeep` are kept.
+ */
+export const PROBE_LIMITS = { sitemapFiles: 6, hubSitemaps: 3, hubLinks: 4, perType: 2, searches: 2, fslHubs: 4, fslReports: 8, fslKeep: 4 } as const;
 
-const NOISE = /\/(news|stories|story|events?|calendar|blog|posts?|press|magazine|media|people|profiles?|directory\/person|tag|category|author)\/|\/20\d\d\/\d\d\/|\.(jpg|png|gif|mp4|docx?|xlsx?|zip)($|\?)/i;
+// Round 3: an admissions "student stories" page, a "discover" news feature, and alumni or affinity pages were taken as
+// office pages in round 2 (Arizona's FSL office, UNC's LGBTQ+ center, Bryn Mawr's); none is the office.
+const NOISE = /\/(news|stories|story|events?|calendar|blog|posts?|press|magazine|media|people|profiles?|directory\/person|tag|category|author|discover)\/|-stories\/|\/20\d\d\/\d\d\/|\.(jpg|png|gif|mp4|docx?|xlsx?|zip)($|\?)/i;
+const NOT_OFFICE = /alumn|affinity|giving|admissions?\/|lending[-_ ]library/i;
+const OFFICE_TYPES: readonly ProbeType[] = ["fsl_office", "faith_office", "lgbtq_center"];
 const HUB_LINK = /student[-_ ]?(life|affairs|experience|engagement)|campus[-_ ]?life|life[-_ ]?at|dean[-_ ]?of[-_ ]?students|diversity|inclusion|belonging|about|policies|offices[-_ ]?(and[-_ ]?)?services/i;
 
 /** Pages that match a type's words but are something else (an employee accommodation policy, an academic department). */
@@ -171,7 +186,7 @@ const NOT_TYPE: Partial<Record<ProbeType, RegExp>> = {
   lgbtq_center: /academics?\/|departments?|courses|program[s]?[-_]courses|studies|registrar|in-focus|ministry|employee|\/hr\//,
   name_policy: /employee|\/hr\/|human[-_ ]resources|faculty|teaching/,
   housing: /employee|faculty[-_ ]housing|staff[-_ ]housing/,
-  fsl_office: /alumni|giving|athletic/,
+  fsl_office: /alumni|giving|athletic|housing/,
 };
 /** Words that make a candidate the likelier page of its type. */
 const PREFER: Partial<Record<ProbeType, RegExp>> = {
@@ -233,7 +248,11 @@ export function classifyLinks(links: readonly FoundLink[], domain: string, types
       const inUrl = TYPE_URL[t](h);
       const inText = text.length > 2 && text.length < 120 && TYPE_URL[t](text);
       if (!inUrl && !inText) continue;
+      // Round 3: link text alone on a link to a section of a general page ("…/units-and-programs#fsl", Kentucky's
+      // FSL office in round 2) is that page, not the office.
+      if (!inUrl && l.url.includes("#")) continue;
       if (NOT_TYPE[t]?.test(`${h} ${text}`)) continue;
+      if (OFFICE_TYPES.includes(t) && NOT_OFFICE.test(h)) continue;
       // Policy pages live deep; office pages are near a root.
       const office = t === "fsl_office" || t === "faith_office" || t === "lgbtq_center";
       const score =
@@ -259,6 +278,8 @@ export interface ProbeResult {
   links: Record<Domain, Record<string, unknown>>;
   /** Types found and confirmed by a page's own text. */
   found: Partial<Record<ProbeType, string>>;
+  /** Round 3: FSL report files and pages followed from the office (also in `links.greek.fsl_reports`). */
+  reports: string[];
   /** Pages fetched for the probe (cache hits included). */
   tried: number;
   log: string[];
@@ -298,6 +319,52 @@ function isCatchAll(requested: string, page: Page): boolean {
   }
 }
 
+/** What a fraternity & sorority report (or the page listing reports) must say: the community, and sizes or grades. */
+const REPORT_TEXT = [/fraternit|sororit|panhellenic|interfraternity|chapter/i, /member|gpa|grade|average|size|total|chapters|statistic|report/i];
+
+/** True when a fetched page or file reads as an FSL report or a page of them. */
+export function reportConfirms(page: Page): boolean {
+  const t = page.text.slice(0, 200_000);
+  return t.length > 100 && REPORT_TEXT.every((re) => re.test(t));
+}
+
+/**
+ * Round 3: from a confirmed FSL office page, the report files and pages it links to (chapter size, community, and
+ * grade reports, scorecards), directly or one page down in the office's own section (its reports, about, councils, or
+ * resources page; its own site, like Oregon's FSL blog), and the files on a page of reports. Every request goes
+ * through `get` (robots.txt is checked on each file's own host by the fetcher); a candidate is kept only if its text
+ * reads as a report. Files before pages, newest first.
+ */
+export async function fslReports(get: (url: string) => Promise<FetchResult>, office: Page, log: string[] = []): Promise<string[]> {
+  const cands: { url: string; y: number; file: boolean }[] = [];
+  const add = (l: { url: string; text: string }) => {
+    const k = l.url.replace(/#.*$/, "");
+    if (k !== office.final_url && !cands.some((c) => c.url === k)) cands.push({ url: k, y: newestYear(l), file: /\.pdf($|[?#])/i.test(k) });
+  };
+  for (const l of fslReportLinks(office, PROBE_LIMITS.fslReports)) add(l);
+  for (const h of fslHubLinks(office, PROBE_LIMITS.fslHubs)) {
+    const r = await get(h.url);
+    if (!r.ok || r.page.format !== "html") continue;
+    // A hub that is itself a page of reports ("Academic reports"): every PDF on it is one.
+    const list = FSL_REPORT.test(`${safeDecode(h.url)} ${h.text}`) || /reports?\b/i.test(`${safeDecode(h.url)} ${h.text}`);
+    for (const l of fslReportLinks(r.page, PROBE_LIMITS.fslReports, list)) add(l);
+  }
+  // Files first (the report itself), then pages of reports, each newest first.
+  cands.sort((a, b) => Number(b.file) - Number(a.file) || b.y - a.y);
+  const kept: string[] = [];
+  let fetched = 0;
+  for (let i = 0; i < cands.length && fetched < PROBE_LIMITS.fslReports && kept.length < PROBE_LIMITS.fslKeep; i++) {
+    fetched++;
+    const r = await get(cands[i].url);
+    if (!r.ok || !reportConfirms(r.page) || kept.includes(r.page.final_url)) continue;
+    kept.push(r.page.final_url);
+    log.push(`fsl_reports: ${r.page.final_url}`);
+    // A page of reports kept without its files: its newest files join the queue.
+    if (r.page.format === "html") for (const l of fslReportLinks(r.page, 3, true).filter((x) => /\.pdf($|[?#])/i.test(x.url))) if (!cands.some((c) => c.url === l.url)) cands.splice(i + 1, 0, { url: l.url, y: newestYear(l), file: true });
+  }
+  return kept;
+}
+
 export function textConfirms(type: ProbeType, page: Page): boolean {
   const t = page.text.slice(0, 60_000);
   return t.length > 200 && TYPE_TEXT[type].every((re) => re.test(t));
@@ -313,7 +380,7 @@ export async function probeCollege(fetcher: PageFetcher, college: ProbeCollege):
   const log: string[] = [];
   let tried = 0;
   const site = college.website ? origin(college.website) : null;
-  if (!site) return { links, found, tried, log: ["no website"] };
+  if (!site) return { links, found, reports: [], tried, log: ["no website"] };
   const domain = collegeDomain(site.host);
   const types = typesFor(college);
   const cands: Candidate[] = [];
@@ -435,12 +502,27 @@ export async function probeCollege(fetcher: PageFetcher, college: ProbeCollege):
   if (searches) await confirm();
 
   for (const [t, url] of Object.entries(found) as [ProbeType, string][]) links[PROBE_TYPES[t]][t] = url;
-  return { links, found, tried, log };
+
+  // 7. Round 3: the FSL office's report files and pages (round 2 read none, though the key had them at 18 colleges).
+  let reports: string[] = [];
+  if (found.fsl_office) {
+    const office = await get(found.fsl_office);
+    if (office.ok && office.page.format === "html") reports = await fslReports(get, office.page, log);
+    links.greek.fsl_reports = reports;
+  }
+  return { links, found, reports, tried, log };
 }
 
-/** Types still missing that justify a paid search (the ones the pilot scores and publishes). */
-export const PAID_TYPES: readonly ProbeType[] = ["fsl_office", "faith_office", "lgbtq_center", "nondiscrimination", "housing", "name_policy", "trans_admission", "conduct_code"];
+/**
+ * The types whose absence justifies the paid search (round 3, measured on round 2's run report): pages behind
+ * published fact types for which round 2's paid call returned any link. Round 2 asked the paid call for 105 types at
+ * 23 colleges and got 16 links back, 5 of them readable, 3 published facts in all; housing (asked at 21 colleges),
+ * chosen name (18), the religion report (5), and trans admission (3) brought back no readable page, and the faith
+ * office (14 asks, one readable page, the wrong one) is held back from publishing. Those are left to the free probes.
+ */
+export const PAID_TYPES: readonly ProbeType[] = ["fsl_office", "lgbtq_center", "nondiscrimination", "conduct_code"];
 
+/** The paid types the probes didn't find at this college; empty means no paid call. */
 export function missingForPaid(college: ProbeCollege, found: ProbeResult["found"]): ProbeType[] {
   const types = typesFor(college);
   return PAID_TYPES.filter((t) => types.includes(t) && !found[t]);

@@ -347,6 +347,64 @@ detail types stay held: they were right in round 2, but 3–5 checked findings e
 publish on. Next before any full run: make the paid discovery call conditional on what the probes missed (most of the
 cost), read FSL report files the probes find, and re-score.
 
+### Campus-life pilot, round 3 plan (2026-10-04)
+Branch `feature/campus-pilot-3`. The owner approved a third run on **25 new colleges**
+(`data/reference/campus-pilot-3-colleges.json`, none from rounds 1 or 2; now the default for `npm run campus-pilot`
+and the workflow's `colleges_file`). Unchanged: the $15 cap, Message Batches, the second check, `HELD_BACK` (a test
+pins it; only a scored run lifts an entry), and a run changes only its own colleges.
+
+**Why round 2's paid call ran so often** (its run report, offline). It ran at **all 23** colleges discovery reached:
+the trigger was "any of eight scored types missing", and gender-inclusive housing was missing at 21 colleges and chosen
+name at 18 (the key has no housing page at 11 of those 21), plus the religion report at every affiliated college. It
+was asked for 105 types and returned **16 links, 5 readable, 3 published facts** (one wrong: UNC's Campus Y as a faith
+office): housing 21 asks/0 readable, name 18/0, faith office 14/1, FSL office 13/0 (3 right links on hosts Actions
+couldn't reach), religion report 5/0, trans admission 3/0. The probes' own finds were mostly usable; the unusable ones
+were an admissions "student stories" page (Arizona's FSL office), a "discover" news feature and alumni or affinity
+pages (UNC's, Bryn Mawr's LGBTQ+ center), and a housing page (Emory's FSL office). Each call read about **47,000 input
+tokens per search** (2.89M input over 24 calls, 61 searches; the prompt itself is about 2k): a 2-search call averaged
+$0.256, a 3-search one $0.332; output averaged 2,120 tokens ($0.51 in all).
+
+**What changed**
+1. **Paid discovery only for what the probes missed.** `PAID_TYPES` (`probe.mts`) is now the FSL office, LGBTQ+
+   center, nondiscrimination statement, and (at religious colleges) the conduct code: the published types for which
+   round 2's paid call returned anything. When the probes found all of them there is **no paid call**; otherwise it
+   asks only for those missing. Housing, chosen name, trans admission (well-known paths and site search added for
+   single-sex colleges instead), the faith office (held back), and the religion report are left to the probes. Probes
+   skip story, "discover", alumni, affinity, admissions, and housing pages as offices, and a link whose text alone
+   matches but points into a section of a general page (`…#fsl`).
+2. **Cheaper calls.** At most **2 searches** (1 for up to two missing types; round 2: 2–4), `max_tokens` 3,000 (round
+   2: 4,000; 2-search calls wrote 2,686 at most, and a call cut short costs a second turn that re-reads every result).
+3. **FSL report files.** After confirming the office, the probes follow its links to size, community, and grade
+   reports and scorecards (`fslLinks`/`fslReportLinks`/`fslHubLinks` in `pages.mts`, `fslReports` in `probe.mts`):
+   directly, one page down in the office's section (a reports, data, about, councils, or resources page, or the
+   office's own site such as Oregon's FSL blog), and every PDF on a page of reports; files on any host the office links
+   to, each robots-checked on its own host; never news, stories, sign-in pages, or script viewers (Issuu, Flipsnack,
+   Google Drive). A file is kept only if its text reads as a report; up to 4, files first, newest first, saved as
+   `fsl_reports` (read as "fraternity & sorority report"). Following from the office no longer wanders onto the rest of
+   the site (Morehouse's strategic plan, Penn State's recreation memberships).
+4. **Council counts from reports** (`support.mts`): the quote (or, on an HTML page, the council's own address or the
+   words just before it) must name the council the count is for, since a report table prints many councils' numbers;
+   a count from a report more than two years old (by its term, quote, or file name) is dropped. Every council count
+   already published passes.
+
+**Measured on round 2's colleges, offline** (no model; round 2's key used only to score). FSL report reach, by the
+key's council and member source URLs (42 at 20 colleges; 12 of them report files, 3 of those behind script viewers):
+
+| | Pages the extractor read | Report files read |
+|---|---|---|
+| Round 2 as run | 5 of 42 | 1 of 12 |
+| Round 2's code, offline | 9 of 42 | 1 of 12 |
+| Round 3's code, offline | **17 of 42** | **6 of 12** (Arizona, UGA, Northwestern, UNC, Oregon, SMU) |
+
+Projected cost per college from round 2's own numbers: before, **$0.312** ($0.300 discovery, paid call at 23 of 23,
+$0.012 reading). After, the paid call runs at 17 of 23 (15 with one search, 2 with two; asks: nondiscrimination 10,
+LGBTQ+ center 9, FSL office 6, conduct code 3): **about $0.12 a college** ($0.106 discovery at half a 2-search call per
+1-search call, $0.011 reading; $0.07 at round 1's measured 1-search cost), about **$3 for the 25** and **$220 for
+1,890 colleges** (round 2's configuration: $589). Probes make about 72 requests a college (round 2: 67).
+
+**After the run:** score it against a hand-checked key for these 25, then decide which `HELD_BACK` types the numbers
+lift. No full run without the owner's go-ahead.
+
 ## Files (planned)
 - `scripts/sync-college-reported.mts` (`npm run sync-college-reported`), `--pilot`, `--college <id>`, `--rediscover`.
 - `data/college-sources.json` (recipes, hashes), `data/college-reported.json` (published values),

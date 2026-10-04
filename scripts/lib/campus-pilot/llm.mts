@@ -22,13 +22,24 @@ export const PILOT_MODELS = {
 } as const;
 export type PilotJob = keyof typeof PILOT_MODELS;
 
-/** Web searches per college, all three domains together (round 1: up to 4 per domain, 12 per college). */
-export const SEARCHES_PER_COLLEGE = 4;
+/**
+ * Web searches per college, all three domains together (round 1: up to 4 per domain, 12 per college; round 2: 2–4).
+ * Round 3: at most 2. Round 2's calls read about 47,000 input tokens per search (search results, re-read on each
+ * server-side step), so a call's cost grows with every search; the $0.01 search fee is the small part.
+ */
+export const SEARCHES_PER_COLLEGE = 2;
 
-/** Searches for one college: one per two missing types (one search often finds several), at least 2, at most SEARCHES_PER_COLLEGE. */
+/** Searches for one college: one for up to two missing types (one search often finds several), two for more. */
 export function searchCap(missing: readonly string[]): number {
-  return Math.min(SEARCHES_PER_COLLEGE, Math.max(2, Math.ceil(missing.length / 2)));
+  return Math.min(SEARCHES_PER_COLLEGE, Math.max(1, Math.ceil(missing.length / 2)));
 }
+
+/**
+ * Output cap for a discovery call (round 2: 4,000). Round 2's calls with 2 searches wrote 1,873 output tokens on
+ * average and 2,686 at most (3,429 with 3–4 searches, which round 3 no longer allows). A cap below what a call needs
+ * costs more than it saves: a call cut short is asked once more for save_links, re-reading every search result.
+ */
+export const DISCOVERY_MAX_TOKENS = 3000;
 
 export interface CallRow {
   at: string;
@@ -179,7 +190,7 @@ export async function discoverCollege(ctx: Ctx, c: CollegeRef, missing: readonly
       .stream(
         {
           model: PILOT_MODELS.discovery,
-          max_tokens: 4000,
+          max_tokens: DISCOVERY_MAX_TOKENS,
           system: DISCOVERY_SYSTEM,
           output_config: { effort: "low" },
           tools: [{ type: "web_search_20260209", name: "web_search", max_uses: left, ...(domain ? { allowed_domains: [domain] } : {}) }, tool],
@@ -200,7 +211,9 @@ export async function discoverCollege(ctx: Ctx, c: CollegeRef, missing: readonly
       return { links, searches };
     }
     if (res.stop_reason === "refusal") throw new Error("discovery refused");
-    messages.push({ role: "assistant", content: res.content });
+    // A turn cut short by max_tokens may end in a half-written save_links call, which can't be sent back unanswered.
+    const kept = res.content.filter((b) => b.type !== "tool_use");
+    if (kept.length) messages.push({ role: "assistant", content: kept });
     if (res.stop_reason === "pause_turn" && searches < cap) continue;
     messages.push({ role: "user", content: "Call save_links now with what you found." });
   }

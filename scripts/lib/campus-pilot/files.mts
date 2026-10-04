@@ -60,8 +60,8 @@ export function publishable(r: CollegeResult): PublishedCollege | null {
 /* College lists and the run's merge (round 2)                         */
 /* ------------------------------------------------------------------ */
 
-/** The round-2 college list (default for `npm run campus-pilot`; data/reference/campus-pilot-2-colleges.json). */
-export const DEFAULT_COLLEGES_FILE = "data/reference/campus-pilot-2-colleges.json";
+/** The round-3 college list (default for `npm run campus-pilot`; round 2's is data/reference/campus-pilot-2-colleges.json). */
+export const DEFAULT_COLLEGES_FILE = "data/reference/campus-pilot-3-colleges.json";
 
 export interface CollegeListFile {
   description?: string;

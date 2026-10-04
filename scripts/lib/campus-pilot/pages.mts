@@ -192,37 +192,122 @@ function gunzip(bytes: Uint8Array): string {
 
 const YEAR = /20(1\d|2\d)/g;
 
+/** decodeURIComponent that returns the input when it isn't valid percent-encoding. */
+export function safeDecode(u: string): string {
+  try {
+    return decodeURIComponent(u);
+  } catch {
+    return u;
+  }
+}
+
 /** The newest four-digit year a link names (URL or text), or 0. */
 export function newestYear(l: FoundLink): number {
-  const ys = [...`${decodeURIComponent(l.url)} ${l.text}`.matchAll(YEAR)].map((m) => Number(m[0]));
+  const ys = [...`${safeDecode(l.url)} ${l.text}`.matchAll(YEAR)].map((m) => Number(m[0]));
   return ys.length ? Math.max(...ys) : 0;
 }
 
-const FSL_REPORT = /(chapter[\s_-]*size|size[\s_-]*report|community[\s_-]*report|membership|roster|statistic|demograph|by[\s_-]*the[\s_-]*numbers|fast[\s_-]*facts|scorecard|annual[\s_-]*report|grade[\s_-]*report|academic[\s_-]*report|gpa)/i;
-const FSL_PAGE = /(councils?|recruit|join|prospective|housing|chapters|our[\s_-]*community|about|reports?|data|forms)/i;
+/** Words that name a fraternity & sorority report (size, community, grade, scorecard), in a link's URL or text. */
+export const FSL_REPORT =
+  /(chapter[\s_-]*(size|data|statistic|report)|size[\s_-]*report|community[\s_-]*(report|data|statistic)|membership[\s_-]*(statistic|report|data|numbers)|roster|statistic|stats\b|demograph|by[\s_-]*the[\s_-]*numbers|fast[\s_-]*facts|facts[\s_-]*(and|&)[\s_-]*figures|scorecard|score[\s_-]*card|report[\s_-]*card|annual[\s_-]*report|grade[\s_-]*(report|ranking)|academic[\s_-]*(report|performance|ranking)|gpa|(chapter|community|council|membership|academic|grade|size)[\w\s%-]{0,40}(reports?|rankings?|statistics?|scorecards?)\b)/i;
+/** A page in the office's own section that names a part of the community (councils, chapters, joining, its reports). */
+const FSL_PAGE = /(councils?|chapters?|recruit|join|intake|prospective|our[\s_-]*community|meet[\s_-]*the[\s_-]*community|reports?|data|panhellenic|interfraternity|\bifc\b|\bnphc\b|\bmgc\b|\bupc\b|\bcpc\b|multicultural[\s_-]*greek|pan[\s_-]*hellenic)/i;
+/** Words that put a page in the fraternity & sorority community even outside the office's own path. */
+const FSL_WORDS = /fraternit|sororit|greek|panhellenic|interfraternity|\bfsl\b|\bsfl\b|\bofsl\b|\bosfl\b/i;
+/** News, stories, events, people, sign-in, and award pages: never followed as a report or council page. */
+const FSL_NOISE = /\/(news|stories|story|events?|calendar|blog|posts?|press|people|profiles?|staff|tag|category|author|secure|admin)\/|\/20\d\d\/\d\d\/|log-?in|sign-?in|recognized|award|spotlight|-stories\b/i;
+/** Viewers that show a file through a script (Issuu, Flipsnack, Google Drive): not a file we can read. */
+const VIEWER = /(issuu\.com|flipsnack\.com|drive\.google\.com|docs\.google\.com|canva\.com|yumpu\.com)/i;
+/** Pages in the office's section worth reading for report links (reports and data first, then about, councils, resources). */
+const FSL_HUB = /reports?|data|statistic|resources|about|families|parents|community|councils?|chapters?|hub|scholarship|academics?/i;
+
+const isFile = (u: string) => /\.pdf($|[?#])/i.test(u);
+/** The registrable domain of a host, roughly ("blogs.uoregon.edu" → "uoregon.edu"). */
+const siteOf = (host: string) => host.split(".").slice(-2).join(".");
+
+/** The office's own section: the path of its page without the last segment when that segment is a file ("/fsl/index.html" → "/fsl/"). */
+function sectionOf(url: string): string {
+  const p = new URL(url).pathname;
+  const dir = /\.[a-z]{2,5}$/i.test(p) ? p.slice(0, p.lastIndexOf("/") + 1) : p.endsWith("/") ? p : `${p}/`;
+  return dir.toLowerCase();
+}
 
 /**
- * Report files and pages to read from a fraternity & sorority life office page: size, community, and grade reports
- * (newest first, size before grade), then council, recruitment, and housing pages on the same host. At most `max`.
+ * Inside the office's section: same host and under the office page's path, or anywhere on a host of its own
+ * ("sfl.osu.edu"), or a page of the college's (any host on its domain, like Oregon's FSL blog) whose address or link
+ * text says it's about fraternities and sororities.
  */
-export function fslLinks(page: Page, max = 10): FoundLink[] {
-  const host = new URL(page.final_url).host;
-  const scored = page.links
-    .filter((l) => l.url !== page.final_url && l.url !== page.url)
-    .map((l) => {
-      const hay = `${decodeURIComponent(l.url)} ${l.text}`;
-      const isFile = /\.pdf($|\?)/i.test(l.url);
-      let s = 0;
-      if (FSL_REPORT.test(hay)) s += /size|membership|roster|community/i.test(hay) ? 6 : /grade|gpa|academic/i.test(hay) ? 3 : 4;
-      if (isFile && s) s += 1;
-      if (!isFile && new URL(l.url).host === host && FSL_PAGE.test(hay)) s += 2;
-      const y = newestYear(l);
-      if (s && y) s += Math.max(0, 3 - (new Date().getFullYear() - y));
-      return { l, s, y };
-    })
-    .filter((x) => x.s > 0);
+function inOfficeSection(page: Page, l: FoundLink): boolean {
+  try {
+    const u = new URL(l.url);
+    const base = new URL(page.final_url);
+    const says = FSL_WORDS.test(`${u.host.replace(/\./g, " ")} ${safeDecode(u.pathname)} ${l.text}`);
+    if (u.host === base.host) return u.pathname.toLowerCase().startsWith(sectionOf(page.final_url)) || FSL_WORDS.test(base.host.replace(/\./g, " ")) || says;
+    return siteOf(u.host) === siteOf(base.host) && says;
+  } catch {
+    return false;
+  }
+}
+
+/** `reportList`: the page is itself a page of reports, so every PDF it links to is one of them. */
+function fslScore(page: Page, l: FoundLink, reportList: boolean): number {
+  if (l.url === page.final_url || l.url === page.url || VIEWER.test(l.url)) return 0;
+  const hay = `${safeDecode(l.url)} ${l.text}`;
+  // A news story or an awards page isn't a report, unless its own words say it is one ("2025 awards and grade report").
+  const file = isFile(l.url);
+  // (A file's dated folder, "/wp-content/uploads/2026/07/", is where uploads live, not a news story's date.)
+  if (FSL_NOISE.test(file ? l.url.replace(/\/20\d\d\/\d\d\//, "/") : l.url) && !FSL_REPORT.test(hay)) return 0;
+  let s = 0;
+  // Report files may live on a CDN host (wpmucdn, an AWS bucket); only links the office's own pages give are taken.
+  if (FSL_REPORT.test(hay)) s += /size|membership|roster|community|statistic|stats|numbers|facts|scorecard|score[\s_-]*card/i.test(hay) ? 6 : /grade|gpa|academic/i.test(hay) ? 3 : 4;
+  else if (file && reportList) s += 4;
+  if (file && s) s += 1;
+  if (!file && inOfficeSection(page, l) && FSL_PAGE.test(hay)) s += 2;
+  if (s && !file && !inOfficeSection(page, l)) s = 0;
+  const y = newestYear(l);
+  if (s && y) s += Math.max(0, 3 - (new Date().getFullYear() - y));
+  return s;
+}
+
+const unique = (links: FoundLink[]): FoundLink[] => {
+  const seen = new Set<string>();
+  return links.filter((l) => {
+    const k = l.url.replace(/#.*$/, "");
+    if (seen.has(k)) return false;
+    seen.add(k);
+    return true;
+  });
+};
+
+/**
+ * Report files and pages to read from a fraternity & sorority life office page (round 3): size, community, and grade
+ * reports and scorecards (newest first, size before grade; files on any host the office links to, each robots-checked
+ * on its own host when fetched), then council, chapter, and joining pages in the office's own section. News, stories,
+ * sign-in pages, script viewers, and pages elsewhere on the site (an "about the university" page, recreation
+ * memberships) are never taken. `reportList`: the page is a page of reports (every PDF on it counts). At most `max`.
+ */
+export function fslLinks(page: Page, max = 10, reportList = false): FoundLink[] {
+  const scored = page.links.map((l) => ({ l, s: fslScore(page, l, reportList), y: newestYear(l) })).filter((x) => x.s > 0);
   scored.sort((a, b) => b.s - a.s || b.y - a.y);
-  return scored.slice(0, max).map((x) => x.l);
+  return unique(scored.map((x) => x.l)).slice(0, max);
+}
+
+/** Only the report links among `fslLinks` (files and pages whose URL or text names a report; any file on a page of reports), newest first. */
+export function fslReportLinks(page: Page, max = 6, reportList = false): FoundLink[] {
+  return fslLinks(page, 40, reportList)
+    .filter((l) => FSL_REPORT.test(`${safeDecode(l.url)} ${l.text}`) || (reportList && isFile(l.url)))
+    .slice(0, max);
+}
+
+/** Pages in the office's section that may link to its reports (a reports or data page first, then about, councils, resources). */
+export function fslHubLinks(page: Page, max = 4): FoundLink[] {
+  const hubs = unique(page.links).filter((l) => {
+    if (l.url === page.final_url || isFile(l.url) || VIEWER.test(l.url) || FSL_NOISE.test(l.url)) return false;
+    const hay = `${safeDecode(l.url)} ${l.text}`;
+    return inOfficeSection(page, l) && (FSL_HUB.test(hay) || FSL_REPORT.test(hay) || new URL(l.url).host !== new URL(page.final_url).host);
+  });
+  const rank = (l: FoundLink) => (FSL_REPORT.test(`${safeDecode(l.url)} ${l.text}`) ? 2 : /reports?|data|statistic|academic|resources/i.test(`${safeDecode(l.url)} ${l.text}`) ? 1 : 0);
+  return hubs.sort((a, b) => rank(b) - rank(a)).slice(0, max);
 }
 
 const FAITH_PAGE = /(student[\s_-]*(groups|organizations)|faith[\s_-]*(groups|communities|organizations)|religious[\s_-]*(groups|life|organizations)|ministr|chaplain|interfaith|communities|spiritual)/i;

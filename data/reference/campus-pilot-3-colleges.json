@@ -1,0 +1,130 @@
+{
+  "description": "Campus-life pilot, round 3: 25 colleges, none in rounds 1 or 2 (scripts/lib/campus-pilot/files.mts PILOT_IDS; data/reference/campus-pilot-2-colleges.json). Ids verified against data/schools.json 2026-10-04. The default list for npm run campus-pilot and the Campus-life pilot workflow.",
+  "colleges": [
+    {
+      "unit_id": "134097",
+      "name": "Florida State University",
+      "why": "Florida law; Greek-heavy"
+    },
+    {
+      "unit_id": "100858",
+      "name": "Auburn University",
+      "why": "Alabama law; Greek-heavy"
+    },
+    {
+      "unit_id": "159391",
+      "name": "Louisiana State University",
+      "why": "Large public, South"
+    },
+    {
+      "unit_id": "217882",
+      "name": "Clemson University",
+      "why": "Large public, SC"
+    },
+    {
+      "unit_id": "153658",
+      "name": "University of Iowa",
+      "why": "Iowa law"
+    },
+    {
+      "unit_id": "142115",
+      "name": "Boise State University",
+      "why": "Idaho law"
+    },
+    {
+      "unit_id": "233921",
+      "name": "Virginia Tech",
+      "why": "Large public, VA"
+    },
+    {
+      "unit_id": "110635",
+      "name": "University of California-Berkeley",
+      "why": "Large public, no such law; CDS override"
+    },
+    {
+      "unit_id": "166629",
+      "name": "University of Massachusetts-Amherst",
+      "why": "Large public, Northeast"
+    },
+    {
+      "unit_id": "186380",
+      "name": "Rutgers University-New Brunswick",
+      "why": "Large public, NJ"
+    },
+    {
+      "unit_id": "174066",
+      "name": "University of Minnesota-Twin Cities",
+      "why": "Large public, Midwest"
+    },
+    {
+      "unit_id": "126614",
+      "name": "University of Colorado Boulder",
+      "why": "Large public, Mountain West"
+    },
+    {
+      "unit_id": "171100",
+      "name": "Michigan State University",
+      "why": "CDS record"
+    },
+    {
+      "unit_id": "216597",
+      "name": "Villanova University",
+      "why": "Catholic (Augustinian)"
+    },
+    {
+      "unit_id": "228875",
+      "name": "Texas Christian University",
+      "why": "Disciples of Christ; Greek-heavy"
+    },
+    {
+      "unit_id": "218070",
+      "name": "Furman University",
+      "why": "Private South"
+    },
+    {
+      "unit_id": "198385",
+      "name": "Davidson College",
+      "why": "Liberal arts; eating houses"
+    },
+    {
+      "unit_id": "216287",
+      "name": "Swarthmore College",
+      "why": "Liberal arts; Greek life ended 2019"
+    },
+    {
+      "unit_id": "232265",
+      "name": "Hampton University",
+      "why": "Private HBCU"
+    },
+    {
+      "unit_id": "133650",
+      "name": "Florida A&M University",
+      "why": "Public HBCU; Florida law"
+    },
+    {
+      "unit_id": "168218",
+      "name": "Wellesley College",
+      "why": "Historically women's; trans admission policy"
+    },
+    {
+      "unit_id": "235316",
+      "name": "Gonzaga University",
+      "why": "Jesuit"
+    },
+    {
+      "unit_id": "222178",
+      "name": "Abilene Christian University",
+      "why": "Churches of Christ; CCCU"
+    },
+    {
+      "unit_id": "130794",
+      "name": "Yale University",
+      "why": "Private, Northeast"
+    },
+    {
+      "unit_id": "186131",
+      "name": "Princeton University",
+      "why": "Eating clubs; no recognized Greek life"
+    }
+  ]
+}

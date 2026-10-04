@@ -16,7 +16,7 @@ import type { CampusFaith, CampusGreek, CampusLgbtq, CompositionItem, GreekCounc
 import { BudgetSpent, PILOT_MODELS, discoverCollege, extractDomain, verifyFinding, type CollegeRef, type Ctx, type PromptPage } from "./llm.mts";
 import { missingForPaid, probeCollege } from "./probe.mts";
 import { centerSupport, conductSupport, faithGroupSupport, greekSupport, lgbtqGroupSupport, policySupport, type GreekField } from "./support.mts";
-import { fslLinks, groupPageLinks, keywordWindows, quoteOnPage, shortQuote, type PageFetcher, type Page } from "./pages.mts";
+import { fslLinks, fslReportLinks, groupPageLinks, keywordWindows, quoteOnPage, safeDecode, shortQuote, type PageFetcher, type Page } from "./pages.mts";
 import { DOMAINS, SOURCE_TYPES, type Domain } from "./schema.mts";
 
 /* ------------------------------------------------------------------ */
@@ -192,7 +192,9 @@ export async function gather(fetcher: PageFetcher, domain: Domain, links: Record
     // Follow a few links from office pages (code, no model): FSL report files and council/recruitment pages; the
     // office's own list of faith or LGBTQ+ groups.
     if (p.format === "html") {
-      if (type === "fsl_office" || type === "fsl_reports") for (const l of fslLinks(p, type === "fsl_reports" ? 8 : 6)) push(l.url, "followed");
+      if (type === "fsl_office") for (const l of fslLinks(p, 6)) push(l.url, "followed");
+      // Round 3: a page of reports hands on its newest report files, read as reports themselves.
+      if (type === "fsl_reports") for (const l of fslReportLinks(p, 4, true)) push(l.url, "fsl_reports");
       if (type === "faith_office") for (const l of groupPageLinks(p, "faith", 2)) push(l.url, "followed");
       if (type === "lgbtq_center")
         for (const l of groupPageLinks(p, "lgbtq", 2)) {
@@ -240,6 +242,14 @@ const onCollegeSite = (url: string, domain: string) => {
   }
 };
 
+/** Up to `n` characters of page text just before the quote's first words ("" when they aren't found as written). */
+export function textBefore(text: string, quote: unknown, n: number): string {
+  if (typeof quote !== "string") return "";
+  const head = quote.split(/\.\.\.|…/)[0].trim().slice(0, 40).toLowerCase();
+  const at = head ? text.toLowerCase().indexOf(head) : -1;
+  return at > 0 ? text.slice(Math.max(0, at - n), at) : "";
+}
+
 function normalize(domain: Domain, raw: Raw, g: Gathered, college: CollegeRef, today: string): Norm {
   const out: Norm = { greek: null, faith: null, lgbtq: null, listings: [], quoteFailures: [], pending: [], dropped: [] };
   const site = college.website ? collegeDomain(new URL(college.website).host) : null;
@@ -273,7 +283,8 @@ function normalize(domain: Domain, raw: Raw, g: Gathered, college: CollegeRef, t
     out.dropped.push({ domain, fact, reason: "quote doesn't state it", detail: `${reason}: ${quote.slice(0, 100)}` });
     return false;
   };
-  const greekOk = (fact: string, field: GreekField, value: unknown, quote: string, term?: string) => supported(fact, greekSupport(field, value, quote, { term, today }), quote);
+  const greekOk = (fact: string, field: GreekField, value: unknown, quote: string, term?: string, council?: { council: string; name: string; page: string; file: string }) =>
+    supported(fact, greekSupport(field, value, quote, { term, today, ...council }), quote);
   const strip = <T extends { page: Page }>(r: T): Omit<T, "page"> => {
     const { page: _p, ...rest } = r;
     void _p;
@@ -296,8 +307,16 @@ function normalize(domain: Domain, raw: Raw, g: Gathered, college: CollegeRef, t
         if (c.chapters == null && c.members == null) continue;
         const r = refOf(`greek.council.${c.council}`, c.page, c.quote);
         if (!r) continue;
-        if (c.chapters != null && !greekOk(`greek.council.${c.council}`, "council", c.chapters, c.quote)) continue;
-        if (c.members != null && !greekOk(`greek.council.${c.council}`, "council", c.members, c.quote)) continue;
+        // Round 3: a report table's line must also name the council its count is for (./support.mts COUNCIL_TERMS).
+        // A report file's own name dates it ("Community-Report-Spring-2021.pdf"); a count more than two years old is dropped.
+        const which = {
+          council: String(c.council),
+          name: String(c.name ?? ""),
+          page: `${r.url} ${r.page.format === "pdf" ? "" : textBefore(r.page.text, c.quote, 240)}`,
+          file: r.page.format === "pdf" ? safeDecode(new URL(r.url).pathname.split("/").pop() ?? "") : "",
+        };
+        if (c.chapters != null && !greekOk(`greek.council.${c.council}`, "council", c.chapters, c.quote, c.term, which)) continue;
+        if (c.members != null && !greekOk(`greek.council.${c.council}`, "council", c.members, c.quote, c.term, which)) continue;
         if (councils.some((x) => x.council === c.council && x.name === c.name)) continue;
         councils.push({ ...strip(r), council: c.council as Council, name: String(c.name), chapters: c.chapters ?? null, members: c.members ?? null, term: c.term || null });
       }
@@ -453,8 +472,9 @@ export async function runCollege(ctx: Ctx, fetcher: PageFetcher, college: Colleg
   if (DOMAINS.some((d) => !recipe.links[d])) {
     try {
       const probe = await probeCollege(fetcher, college);
+      // Round 3: the paid call runs only when a paid type is missing (missingForPaid; no religion report since round 2
+      // asked for it at 5 colleges and got nothing), and asks only for those.
       const missing: string[] = missingForPaid(college, probe.found);
-      if (college.affiliation) missing.push("religion_report");
       const paid = await discoverCollege(ctx, college, missing);
       for (const d of DOMAINS) {
         if (recipe.links[d]) continue;
@@ -462,8 +482,8 @@ export async function runCollege(ctx: Ctx, fetcher: PageFetcher, college: Colleg
         for (const [k, v] of Object.entries(paid.links[d] ?? {})) if (v !== null && !(Array.isArray(v) && !v.length) && v !== "") merged[k] = v;
         recipe.links[d] = merged;
       }
-      recipe.discovery = { probed: Object.keys(probe.found), paid: missing, searches: paid.searches, fetches: probe.tried };
-      o.log(`  ${college.name}: probes found ${Object.keys(probe.found).length} type(s) in ${probe.tried} fetches; paid search for ${missing.length ? missing.join(", ") : "nothing"}`);
+      recipe.discovery = { probed: [...Object.keys(probe.found), ...(probe.reports.length ? ["fsl_reports"] : [])], paid: missing, searches: paid.searches, fetches: probe.tried };
+      o.log(`  ${college.name}: probes found ${Object.keys(probe.found).length} type(s) and ${probe.reports.length} FSL report(s) in ${probe.tried} fetches; paid search for ${missing.length ? missing.join(", ") : "nothing (no paid call)"}`);
     } catch (err) {
       if (err instanceof BudgetSpent) {
         result.stopped = err.message;

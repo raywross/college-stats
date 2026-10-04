@@ -51,7 +51,22 @@ export type GreekField = "status_none" | "members_total" | "council" | "housing"
  * Greek facts. `value` is the recorded value ("yes"/"no", a count, a term); `today` (YYYY-MM-DD) dates the
  * staleness rule for the members total (a figure for a term more than a year before this one is not "the newest").
  */
-export function greekSupport(field: GreekField, value: unknown, quote: string, o: { term?: string; today: string }): string | null {
+/**
+ * Words that name each council (round 3). A report table prints many numbers on one line, so a council's count must
+ * come from a quote that names that council (or the council's own name as the extractor gave it).
+ */
+const COUNCIL_TERMS: Record<string, RegExp> = {
+  npc: /panhellenic|pan-hellenic|\bnpc\b|\bcpc\b|\bphc\b|\bupc\b/,
+  nic: /interfraternity|inter-fraternity|\bifc\b|\bnic\b/,
+  nphc: /pan[- ]?hellenic|\bnphc\b|divine nine|historically black/,
+  nalfo: /latin|\bnalfo\b|hispanic/,
+  napa: /asian|\bnapa\b/,
+  nmgc: /multicultural|multi-cultural|\bmgc\b|\bnmgc\b|\bumgc\b|\bmcgc\b|\bcgc\b|cultural/,
+  lgbtq: /lgbt|queer|gay|lesbian/,
+  professional: /./,
+};
+
+export function greekSupport(field: GreekField, value: unknown, quote: string, o: { term?: string; today: string; council?: string; name?: string; page?: string; file?: string }): string | null {
   const q = fold(quote);
   switch (field) {
     case "status_none":
@@ -65,8 +80,24 @@ export function greekSupport(field: GreekField, value: unknown, quote: string, o
       if (y !== null && y < Number(o.today.slice(0, 4)) - 2) return `figure is for ${y}, not the newest`;
       return null;
     }
-    case "council":
-      return numbersIn(q).includes(Number(value)) ? null : "the count isn't in the quote";
+    case "council": {
+      if (!numbersIn(q).includes(Number(value))) return "the count isn't in the quote";
+      // Round 3: an old report (Texas A&M's office still links its 2020–2021 community reports) is not today's count.
+      const y = newestYear(`${o.term ?? ""} ${quote} ${o.file ?? ""}`);
+      if (y !== null && y < Number(o.today.slice(0, 4)) - 2) return `figure is for ${y}, not the newest`;
+      if (!o.council) return null;
+      // The council's own page ("The council currently oversees 11 recognized chapters" on Wake Forest's /ifc/ page)
+      // names it in its address, and a page's sentence may lean on the one before it (UT Austin: "Eight of these
+      // organizations…" after the NPHC's own paragraph): `page` carries the address and, for HTML pages only, the
+      // words just before the quote. A report table's line (a PDF) must name the council itself.
+      const where = `${q} ${fold((o.page ?? "").replace(/[-_/.]+/g, " "))}`;
+      const name = fold(o.name ?? "");
+      // "19 social sororities" names the Panhellenic side and "nine IFC fraternities" the IFC side; a line about
+      // "fraternities and sororities" names neither.
+      const side = (o.council === "npc" && /sororit/.test(q) && !/fraternit/.test(q)) || (o.council === "nic" && /fraternit/.test(q) && !/sororit/.test(q));
+      const named = side || (COUNCIL_TERMS[o.council] ?? /./).test(where) || (name.length > 2 && where.includes(name));
+      return named ? null : "quote doesn't name the council the count is for";
+    }
     case "housing":
       if (!GREEK.test(q)) return "quote isn't about fraternities or sororities";
       if (!/hous|live|living|residen|facilit|lodge|home/.test(q)) return "quote isn't about chapter housing";

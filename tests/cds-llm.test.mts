@@ -2,6 +2,8 @@
  * Round-3 model calls (scripts/lib/college-reported/llm.mts, models.mts; specs/college-reported-round-3.md Decisions 4,
  * 6, 9, 11 and test 20) against a fake client: no network, no API key. `npm test`.
  */
+import { answerJson, askedCodes } from "./helpers/answers.mts";
+import { schemaFor } from "../lib/cds-sections.ts";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import type Anthropic from "@anthropic-ai/sdk";
@@ -98,11 +100,11 @@ test("extractCall: the call's code-keyed schema, max_tokens, no thinking or effo
     assert.equal(body.max_tokens, maxTokensFor(call));
     assert.equal(body.thinking, undefined, "no thinking on Haiku");
     assert.equal(body.output_config?.effort, undefined, "no effort on Haiku");
-    const schema = body.output_config?.format?.schema as { properties: Record<string, unknown>; additionalProperties: boolean };
-    assert.equal(schema.additionalProperties, false);
-    assert.deepEqual(Object.keys(schema.properties), codesFor(CDS_TEMPLATE, call));
+    // One small answer schema for every call (inside the structured-output limits); the codes are the code table's.
+    assert.deepEqual(body.output_config?.format?.schema, schemaFor());
+    assert.deepEqual(askedCodes(body), codesFor(CDS_TEMPLATE, call));
   }
-  assert.equal(Object.keys((calls[0].output_config!.format!.schema as { properties: object }).properties).length, 263);
+  assert.equal(askedCodes(calls[0]).length, 263);
 });
 
 test("extractCall: the cache marker sits on a static prefix of at least 4,096 estimated tokens (both calls)", () => {
@@ -128,7 +130,7 @@ test("extractCall: the cache marker sits on a static prefix of at least 4,096 es
 });
 
 test("extractCall: values keyed by code with quotes built from the cited lines; unknown codes dropped and logged", async () => {
-  const answer = JSON.stringify({
+  const answer = answerJson({
     "C.101": { v: 24410, lines: [2] },
     "C.102": { v: 27005, lines: [3, 99] }, // 99 is not a line: only line 3 quotes
     "C.201": { v: "Yes", lines: [4] },
@@ -154,7 +156,7 @@ test("extractCall: values keyed by code with quotes built from the cited lines; 
 });
 
 test("extractCall: a max_tokens stop keeps the whole entries before the cut; only the rest are missing", async () => {
-  const cut = '{"C.101": {"v": 24410, "lines": [2]}, "C.102": {"v": 27005, "lines": [3]}, "C.201": {"v": "Ye';
+  const cut = '{"values": [{"code": "C.101", "v": "24410", "lines": [2]}, {"code": "C.102", "v": "27005", "lines": [3]}, {"code": "C.201", "v": "Ye';
   const { client } = fakeClient((b) => text(b.model, cut, "max_tokens"));
   const out = await extractCall(ctxWith(client), { call: "C", lines: LINES, table: CDS_TEMPLATE, mode: "interactive", doc: DOC });
   assert.equal(out.truncated, true);
@@ -173,7 +175,7 @@ test("extractCall: a code outside the call is refused before any request", async
 /* ------------------------------------------------------------------ */
 
 test("escalateCall: Sonnet 5 gets only the failing codes and only the call's pages", async () => {
-  const { client, calls } = fakeClient((b) => text(b.model, JSON.stringify({ "C.101": { v: 24410, lines: [2] } })));
+  const { client, calls } = fakeClient((b) => text(b.model, answerJson({ "C.101": { v: 24410, lines: [2] } })));
   const rows: CallLog[] = [];
   const out = await escalateCall(ctxWith(client, rows), {
     call: "C",
@@ -188,7 +190,7 @@ test("escalateCall: Sonnet 5 gets only the failing codes and only the call's pag
   assert.equal(body.model, "claude-sonnet-5");
   assert.equal(body.output_config?.effort, "low");
   assert.equal(body.thinking, undefined, "thinking left adaptive (default)");
-  assert.deepEqual(Object.keys((body.output_config!.format!.schema as { properties: object }).properties), ["C.101", "C.201"]);
+  assert.deepEqual(askedCodes(body), ["C.101", "C.201"]);
   const user = body.messages[0].content as string;
   assert.match(user, /--- Page 10 ---/);
   assert.match(user, /--- Page 11 ---/);

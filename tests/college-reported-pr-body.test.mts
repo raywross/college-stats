@@ -101,6 +101,17 @@ test("prBody falls back to the unit id when no names are given, and omits the se
   assert.doesNotMatch(withoutReported, /## Published this run/);
 });
 
+test("prBody lists a failed whole extraction call without parsing it as a template code", () => {
+  // The first live round-3 run crashed here: "C-call" isn't a CDS code, and itemOfCode threw on it.
+  const run = summary.run;
+  const item = { unit_id: "999020", name: "Fixture Batch College", urls: ["https://x.edu/cds.pdf"], entering_term: null, failures: [{ check: "batch-failed" as const, detail: "u999020-abcdef12-C-v1: invalid_request: schema too complex" }], queued: "2026-10-04", run, code: "C-call", edition: "2025-26", sha256: "abc" };
+  const coded = { ...item, unit_id: "999021", name: "Fixture Coded College", code: "H.201", failures: [{ check: "funnel-order" as const, detail: "B > A" }] };
+  const body = prBody(summary, { updated: "2026-10-04", items: [...queue.items, item, coded] } as ReviewQueueFile);
+  assert.match(body, /whole C call/);
+  assert.match(body, /schema too complex/);
+  assert.match(body, /H2 · H\.201/);
+});
+
 test("prBody lists an unreachable item separately from the check-failure review queue", () => {
   const body = prBody(summary, queue);
   assert.match(body, /## Unreachable/);

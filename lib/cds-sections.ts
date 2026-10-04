@@ -611,19 +611,59 @@ export function storeOnlyCodes(table: TemplateTable): CdsCode[] {
  * or length constraints (structured outputs reject them; ranges are checked in code), `additionalProperties: false` on
  * every object.
  */
-export function schemaFor(table: TemplateTable, call: CallKey) {
-  const value = {
+export function schemaFor() {
+  // One list of answers, each naming its code, rather than one optional property per code: structured outputs allow
+  // at most 24 optional and 16 union-typed parameters per request (platform.claude.com structured-outputs, "Schema
+  // limits"), and the first live run's per-code schema (263 and 497 optional, union-typed properties) was rejected as
+  // invalid_request on every call. Every field here is required and of one type; `v` is the printed text, read by
+  // normalizeValue like a workbook cell, and the code is checked against the call's code list in code.
+  return {
     type: "object",
     additionalProperties: false,
-    required: ["v", "lines"],
+    required: ["values"],
     properties: {
-      v: { type: ["number", "string", "boolean", "null"] },
-      lines: { type: "array", items: { type: "integer" } },
+      values: {
+        type: "array",
+        items: {
+          type: "object",
+          additionalProperties: false,
+          required: ["code", "v", "lines"],
+          properties: {
+            code: { type: "string" },
+            v: { type: "string" },
+            lines: { type: "array", items: { type: "integer" } },
+          },
+        },
+      },
     },
   } as const;
-  const properties: Record<CdsCode, typeof value> = {};
-  for (const code of codesFor(table, call)) properties[code] = value;
-  return { type: "object", additionalProperties: false, properties } as const;
+}
+
+/** Documented structured-output limits per request (platform.claude.com structured-outputs, "Schema limits"). */
+export const STRUCTURED_OUTPUT_LIMITS = { optional: 24, union: 16 } as const;
+
+/**
+ * How a JSON schema counts against STRUCTURED_OUTPUT_LIMITS: properties not listed in their object's `required`
+ * (optional), and properties whose schema uses `anyOf` or a type array (union).
+ */
+export function schemaComplexity(schema: unknown): { optional: number; union: number } {
+  let optional = 0;
+  let union = 0;
+  const walk = (node: unknown): void => {
+    if (!node || typeof node !== "object") return;
+    const n = node as Record<string, unknown>;
+    if (n.properties && typeof n.properties === "object") {
+      const required = new Set(Array.isArray(n.required) ? (n.required as string[]) : []);
+      for (const [key, child] of Object.entries(n.properties as Record<string, unknown>)) {
+        if (!required.has(key)) optional++;
+        const c = child as Record<string, unknown> | null;
+        if (c && (Array.isArray(c.type) || Array.isArray(c.anyOf))) union++;
+      }
+    }
+    for (const v of Object.values(n)) walk(v);
+  };
+  walk(schema);
+  return { optional, union };
 }
 
 /**

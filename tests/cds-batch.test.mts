@@ -2,6 +2,7 @@
  * Message Batches for round 3 (scripts/lib/college-reported/batch.mts; specs/college-reported-round-3.md Decision 5,
  * tests 10 and 11) against a fake batch API (tests/fixtures/fake-batch-api.mts): no network. `npm test`.
  */
+import { answerJson } from "./helpers/answers.mts";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { CDS_TEMPLATE } from "../lib/cds-template.ts";
@@ -103,7 +104,7 @@ test("test 10: results out of order are keyed by custom_id and priced at batch p
   const api = fakeBatchApi({
     seed: 3,
     pollsUntilEnded: 2,
-    answer: (params, id) => ({ text: JSON.stringify({ [params.max_tokens === 8192 ? "C.101" : "B.101"]: { v: Number(parseCustomId(id)!.unit_id), lines: [1] } }), usage: { input_tokens: 20_000, output_tokens: 3000 } }),
+    answer: (params, id) => ({ text: answerJson({ [params.max_tokens === 8192 ? "C.101" : "B.101"]: { v: Number(parseCustomId(id)!.unit_id), lines: [1] } }), usage: { input_tokens: 20_000, output_tokens: 3000 } }),
   });
   const state = emptyBatchesFile();
   const [entry] = await submit(api, reqs, state, { run: "r1", phase: "extract", now: NOW });
@@ -160,7 +161,7 @@ test("test 10: errored and expired requests are resubmitted once, then queued; i
   assert.deepEqual(got.absent, ["u3-aaaaaaa3-rest-v1"]);
   const r1 = resubmitOnce(got, (id) => byId.get(id) ?? null);
   assert.deepEqual(r1.retry.map((r) => r.custom_id).sort(), ["u1-aaaaaaa1-C-v1", "u2-aaaaaaa2-rest-v1", "u3-aaaaaaa3-rest-v1"]);
-  assert.deepEqual(r1.queue, [{ custom_id: "u3-aaaaaaa3-C-v1", reason: "invalid_request" }]);
+  assert.deepEqual(r1.queue, [{ custom_id: "u3-aaaaaaa3-C-v1", reason: "invalid_request: output_config.format.schema: Schema is too complex for compilation." }]);
 
   const [second] = await submit(api, r1.retry, state, { run: "r1", phase: "extract", now: NOW, resubmits: new Set(r1.retry.map((r) => r.custom_id)) });
   assert.deepEqual(second.resubmits?.sort(), r1.retry.map((r) => r.custom_id).sort());
@@ -169,7 +170,7 @@ test("test 10: errored and expired requests are resubmitted once, then queued; i
   const r2 = resubmitOnce(got2, (id) => byId.get(id) ?? null);
   assert.deepEqual(r2.retry, [], "never resubmitted twice");
   assert.deepEqual(r2.queue, [
-    { custom_id: "u1-aaaaaaa1-C-v1", reason: "errored twice" },
+    { custom_id: "u1-aaaaaaa1-C-v1", reason: "errored: errored (fake) twice" },
     { custom_id: "u3-aaaaaaa3-rest-v1", reason: "absent twice" }, // the fake never returns it
   ]);
 });

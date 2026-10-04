@@ -387,16 +387,16 @@ export function extractionInstructions(call: CallKey): string {
 
 The document comes as numbered lines of layout text. Each line starts with its id and a bar ("412| ..."); pages are marked "--- Page N ---". Cells on one line are separated by " | ", and "@x" tags give a cell's horizontal position on the page so you can tell which column of a table a value sits in. Values that sit under a table's column headings belong to the heading at the closest horizontal position.
 
-Answer with one JSON object. Each key is a code from the code table at the end of these instructions. Each value is {"v": <value>, "lines": [<line ids>]}:
-- "v" is the value exactly as the document prints it, as a number where the item is numeric (4614, not "4,614"; 52.3 for "52.3%"; 0 only where the document prints 0), as true for a checked box or an "X" mark, as "Yes" or "No" for a yes/no item, as the printed words for a choice item ("Very Important", "Required of All"), and as the printed text for text, date, and URL items ("11/1", "January 15").
+Answer with one JSON object {"values": [...]}, one entry per value the document prints: {"code": "<code>", "v": "<value>", "lines": [<line ids>]}. "code" is a code from the code table at the end of these instructions.
+- "v" is always a string: the value as the document prints it, with digits only where the item is numeric ("4614", not "4,614"; "52.3" for "52.3%"; "0" only where the document prints 0), "X" for a checked box or an "X" mark, "Yes" or "No" for a yes/no item, the printed words for a choice item ("Very Important", "Required of All"), and the printed text for text, date, and URL items ("11/1", "January 15").
 - "lines" lists the id of the line the value is printed on, and also the id of the line holding its label when the label is on a different line. One or two ids; never more than three.
-- Leave a code out entirely when the document doesn't print a value for it, when the cell is blank, or when the document says the item doesn't apply. Never write null, an empty string, or a guess, and never compute a value the document doesn't print (no sums, differences, or percentages of your own).
+- Leave a code out entirely when the document doesn't print a value for it, when the cell is blank, or when the document says the item doesn't apply. Never write an empty string or a guess, and never compute a value the document doesn't print (no sums, differences, or percentages of your own). Report each code at most once.
 - Report a value only under the code whose row and column it belongs to. The code table gives, for each code, the template's question for that cell (row and column descriptors such as residency, gender, and cohort) and the kind of value it holds. Many items are grids: match the row label and the column heading both.
 - If the college printed the same item twice (a corrected table, a footnote restating a figure), report the value in the item's own table.
 - Percentages: report the number printed, without the percent sign. Currency: whole dollars without "$" or commas. Test scores: the printed score. Months and days split into two codes take the month number and the day number.
 - Text the college typed where a number belongs ("varies", "N/A", "see note") is reported as that text; a placeholder dash or "--" is blank, so leave the code out.
 - Ignore the definitions and instructions the template itself prints; read only the college's answers.
-- Do not report codes that are not in the code table, and do not add keys of your own.
+- Do not report codes that are not in the code table, and do not add fields of your own.
 
 Each line of the code table is "code | question | value type". Value types: count (a whole number of students, sections, or applications), percent, currency, decimal, gpa, sat-section, sat-composite, act, act-writing, month, day, date, yes-no, check (a checkbox or X mark), choice, text, url.
 
@@ -417,12 +417,12 @@ export function staticPrefix(table: TemplateTable, call: CallKey, codes: readonl
   return `${extractionInstructions(call)}${codeTableFor(table, call, codes)}\n</code_table>`;
 }
 
-/** schemaFor(table, call) narrowed to `codes` (all of them by default). */
-export function schemaForCodes(table: TemplateTable, call: CallKey, codes: readonly CdsCode[] = codesFor(table, call)) {
-  const full = schemaFor(table, call);
-  const properties: Record<string, (typeof full.properties)[string]> = {};
-  for (const c of codes) if (full.properties[c]) properties[c] = full.properties[c];
-  return { type: "object", additionalProperties: false, properties } as const;
+/**
+ * The answer schema for a call. The same for every call and code subset (the codes asked for are named in the code
+ * table and checked in parseExtractResponse), so it compiles once and stays inside the structured-output limits.
+ */
+export function schemaForCodes() {
+  return schemaFor();
 }
 
 /** The numbered lines as the model reads them, with a page marker wherever the page changes. */
@@ -476,7 +476,7 @@ export function buildExtractRequest(input: ExtractCallInput): BuiltRequest {
     system,
     messages: [{ role: "user", content: user }],
     output_config: {
-      format: { type: "json_schema", schema: schemaForCodes(input.table, input.call, codes) as unknown as Record<string, unknown> },
+      format: { type: "json_schema", schema: schemaForCodes() as unknown as Record<string, unknown> },
       // No thinking on Haiku (the parameter is simply omitted); effort only where the model takes it.
       ...(input.effort && !isHaiku(model) ? { effort: input.effort } : {}),
     },
@@ -485,24 +485,32 @@ export function buildExtractRequest(input: ExtractCallInput): BuiltRequest {
   return { params, chars, estimated_input_tokens: estimateTokens(chars), prefix_tokens: prefixTokens, cached, codes };
 }
 
-/** A whole `"X.123": { ... }` entry of the response JSON (values hold no nested objects), for salvaging a cut response. */
-const ENTRY = /"([A-J]\.[0-9A-Z]{2,4})"\s*:\s*(\{[^{}]*\})/g;
+/** One whole `{"code": ..., "v": ..., "lines": [...]}` entry (entries hold no nested objects), for salvaging a cut response. */
+const ENTRY = /\{[^{}]*"code"\s*:\s*"[^"]*"[^{}]*\}/g;
 
-/** Parses the response text: JSON when complete, else every whole entry before the cut (a `max_tokens` stop). */
+/**
+ * Parses the response text into code → entry: `{"values": [{code, v, lines}, ...]}` (schemaFor), when complete, else
+ * every whole entry before the cut (a `max_tokens` stop). The first entry for a code wins.
+ */
 function parseAnswer(text: string): Record<string, unknown> {
+  let entries: unknown[] = [];
   try {
-    const parsed = JSON.parse(text) as unknown;
-    if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) return parsed as Record<string, unknown>;
+    const parsed = JSON.parse(text) as { values?: unknown };
+    if (parsed && Array.isArray(parsed.values)) entries = parsed.values;
   } catch {
-    // fall through to salvage
+    for (const m of text.matchAll(ENTRY)) {
+      try {
+        entries.push(JSON.parse(m[0]));
+      } catch {
+        // a malformed entry is skipped
+      }
+    }
   }
   const out: Record<string, unknown> = {};
-  for (const m of text.matchAll(ENTRY)) {
-    try {
-      out[m[1]] = JSON.parse(m[2]);
-    } catch {
-      // a malformed entry is skipped
-    }
+  for (const e of entries) {
+    if (!e || typeof e !== "object") continue;
+    const { code, v, lines } = e as { code?: unknown; v?: unknown; lines?: unknown };
+    if (typeof code === "string" && !(code in out)) out[code] = { v, lines };
   }
   return out;
 }

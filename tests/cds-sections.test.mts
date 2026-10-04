@@ -17,7 +17,9 @@ import {
   parseAidYear,
   parseEdition,
   readMark,
+  schemaComplexity,
   schemaFor,
+  STRUCTURED_OUTPUT_LIMITS,
   SCHEMA_VERSIONS,
   storeOnlyCodes,
   typeFailure,
@@ -240,26 +242,41 @@ test("the universal type checks", () => {
 
 /* ---- The model schema ---- */
 
-test("the schema has only the call's model codes, all optional, additionalProperties false everywhere", () => {
+test("the answer schema is a list of {code, v, lines}, all required, additionalProperties false everywhere", () => {
+  const schema = schemaFor();
+  assert.deepEqual(schema.required, ["values"]);
+  assert.deepEqual(schema.properties.values.items.required, ["code", "v", "lines"]);
+  // Walk every object in the schema.
+  const walk = (node: unknown, path: string) => {
+    if (!node || typeof node !== "object") return;
+    const n = node as Record<string, unknown>;
+    if (n.type === "object") assert.equal(n.additionalProperties, false, path);
+    for (const banned of ["minimum", "maximum", "maxLength", "minLength", "pattern"]) assert.equal(banned in n, false, `${path}.${banned}`);
+    for (const [k, v] of Object.entries(n)) walk(v, `${path}.${k}`);
+  };
+  walk(schema, "schema");
+  // The codes a call may answer are named in its code table and checked in code, never in the schema.
   for (const call of ["C", "rest"] as const) {
-    const schema = schemaFor(T, call);
-    const keys = Object.keys(schema.properties);
-    assert.deepEqual(keys, codesFor(T, call));
-    assert.equal(schema.additionalProperties, false);
-    assert.equal("required" in schema, false);
     const store = new Set(storeOnlyCodes(T));
-    for (const k of keys) assert.ok(!store.has(k), `${k} is store-only`);
-    // Walk every object in the schema.
-    const walk = (node: unknown, path: string) => {
-      if (!node || typeof node !== "object") return;
-      const n = node as Record<string, unknown>;
-      if (n.type === "object") assert.equal(n.additionalProperties, false, path);
-      for (const banned of ["minimum", "maximum", "maxLength", "minLength", "pattern"]) assert.equal(banned in n, false, `${path}.${banned}`);
-      for (const [k, v] of Object.entries(n)) walk(v, `${path}.${k}`);
-    };
-    walk(schema, call);
-    assert.deepEqual(schema.properties["C.116" in schema.properties ? "C.116" : "H.105"].required, ["v", "lines"]);
+    for (const k of codesFor(T, call)) assert.ok(!store.has(k), `${k} is store-only`);
   }
+});
+
+test("the answer schema stays inside the documented structured-output limits (24 optional, 16 union-typed)", () => {
+  // The first live round-3 run (2026-10-04) sent one optional, union-typed property per code (263 and 497) and every
+  // extraction request came back invalid_request.
+  const { optional, union } = schemaComplexity(schemaFor());
+  assert.ok(optional <= STRUCTURED_OUTPUT_LIMITS.optional, `${optional} optional parameters`);
+  assert.ok(union <= STRUCTURED_OUTPUT_LIMITS.union, `${union} union-typed parameters`);
+  // The counter itself: the old per-code shape is far over both limits.
+  const perCode = { type: "object", additionalProperties: false, properties: Object.fromEntries(codesFor(T, "C").map((c) => [c, { type: ["number", "string", "null"] }])) };
+  const old = schemaComplexity(perCode);
+  assert.equal(old.optional, codesFor(T, "C").length);
+  assert.equal(old.union, codesFor(T, "C").length);
+});
+
+test("schema versions and output sizes", () => {
+  // Still 1: the per-code schema it replaced never produced a successful model read, so no record holds a v1 answer.
   assert.deepEqual(SCHEMA_VERSIONS, { C: 1, rest: 1 });
   assert.equal(maxTokensFor("C"), 8192);
   assert.equal(maxTokensFor("rest"), 16384);

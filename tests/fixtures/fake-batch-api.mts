@@ -80,7 +80,7 @@ export function fakeBatchApi(opts: FakeBatchOptions = {}) {
           }
           if (kind === "errored" || kind === "invalid_request") {
             const type = kind === "errored" ? "api_error" : "invalid_request_error";
-            return { custom_id: r.custom_id, result: { type: "errored", error: { type: "error", request_id: null, error: { type, message: kind } } } } as unknown as Anthropic.Messages.MessageBatchIndividualResponse;
+            return { custom_id: r.custom_id, result: { type: "errored", error: { type: "error", request_id: null, error: { type, message: kind === "invalid_request" ? "output_config.format.schema: Schema is too complex for compilation." : `${kind} (fake)` } } } } as unknown as Anthropic.Messages.MessageBatchIndividualResponse;
           }
           return { custom_id: r.custom_id, result: { type: kind } };
         });

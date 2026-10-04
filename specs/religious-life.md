@@ -1,6 +1,6 @@
 # Religious Life
 
-> Status: **phase 1 built** (2026-10-03, branch `feature/campus-life-religious`): IPEDS affiliation for every college
+> Status: **planned**, with **phase 1 built** (2026-10-03, branch `feature/campus-life`): IPEDS affiliation for every college
 > with NCES's own label, an Explore filter by faith family, a Compare row, a "Religious life" block in the profile's
 > Campus life section with the CDS answers we already read (C7, H14, F2), "Known for: Faith-centered" from C7, and
 > glossary entries. See [Phase 1 as built](#phase-1-as-built). Phases 2–4 (pilot, national directories, per-school

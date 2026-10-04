@@ -1,6 +1,6 @@
 # Greek Life
 
-> Status: **phase 1 built** 2026-10-03 (branch `feature/campus-life-greek`, part of the Campus life roadmap group).
+> Status: **planned**, with **phase 1 built** 2026-10-03 (branch `feature/campus-life`, part of the Campus life roadmap group).
 > CDS F1 (participation) and F4 (housing) are read from `data/cds-records/` into `school.reported.greek`
 > (`lib/cds/greek.ts`, display helpers in `lib/cds/greek-display.ts`), merged by `lib/reported-merge.ts` alongside the
 > other round-3 blocks. Shown on the profile's Campus life section (`components/school/GreekLife.tsx`), Compare's "All

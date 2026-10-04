@@ -1,6 +1,6 @@
 # LGBTQ+ Life
 
-> Status: **planned**, with **phase 1 built** (2026-10-03, branch `feature/campus-life-lgbtq`): the IPEDS another-gender counts for every
+> Status: **planned**, with **phase 1 built** (2026-10-03, branch `feature/campus-life`): the IPEDS another-gender counts for every
 > college and the first state-law line (Texas SB 17), shown in an "LGBTQ+ life" block in the students page's Campus life
 > section and beside the men/women shares ([As built](#as-built-phase-1)). Phases 2 (other states) through 5
 > (policies, centers, conduct codes, pilot, rollout) are still planned, so the spec stays on the roadmap. Research 2026-09-29: IPEDS 2023 data files and dictionaries (every figure below

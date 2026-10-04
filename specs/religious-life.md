@@ -312,7 +312,9 @@ domain (greek and lgbtq keep it until their own tracks take over).
    source type, extraction accuracy, and cost. Decide which sources are worth scaling. Still **planned**.
 3. **National directories** (tier D) with the matching step. **Built** 2026-10-04 (six adapters, two confirmed
    blocked); see [Phase 3 as built](#phase-3-as-built). Partnership requests (Hillel, Chabad, Anthology) are still
-   outstanding — the owner, not an agent, needs to make those asks.
+   outstanding — the owner, not an agent, needs to make those asks. The rest of this phase's sources that couldn't be
+   read — Hillel, InterVarsity, Chi Alpha, CCMA, MSA, LDS Institutes, and more — are in
+   [campus-sources-later.md](campus-sources-later.md), with what each would give and a candidate fix.
 4. **Per-school rollout** of whatever the pilot shows is worth it. Still **planned**.
 
 ## Open questions

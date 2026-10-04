@@ -95,19 +95,14 @@ published at `/roadmap` ([roadmap.md](roadmap.md)): add each new one to `lib/roa
     paid web search, one discovery call for all three domains, tighter Greek recruitment/housing/membership
     extraction. Re-run the 25 and re-score; lift `HELD_BACK` entries only with a passing score. Full run needs the
     owner's go-ahead.
-  - [ ] Hand reading (owner decision 1) needs a real browser session: Hillel estimates and the bot-protected college
-    pages (Williams, Michigan, Harvard, Columbia, Wheaton, Baylor), and blocked directories in
-    `data/directories/blocked.json`.
-  - [ ] Directories not built (pages render in the browser, no readable list): 12 NPC sororities, most NIC
-    fraternities, 8 of the Divine Nine, most NALFO groups, NAPA, NMGC, InterVarsity, Chi Alpha, MSA, LDS Institutes.
-    InterVarsity needs a form POST the crawler doesn't do by design: owner's call.
+  - [ ] Sources we couldn't read — hand reading, directories that only render in a browser, and data partnerships to
+    ask for — are collected in [campus-sources-later.md](campus-sources-later.md), one source at a time with what
+    it would give and a candidate fix.
   - [ ] Unmatched directory entries in `data/directories/unmatched/` (Tri Delta's short names especially): review by hand
     into `matches.json`.
   - [ ] State laws: owner's call on Ohio SB 1, Tennessee Pub. Ch. 458, and North Carolina S.L. 2026-21 (general DEI
     bans that don't name LGBTQ+ programs); hand-read Indiana SEA 289; re-check after each legislative session and the
     Mississippi and New Hampshire injunctions.
-  - [ ] Data partnerships (Hillel, Chabad, Anthology, NPC, NIC, the Consortium, Dr. Beemyn, oSTEM): drafts for the owner
-    to send.
 - [ ] **Watch ACTS** (IPEDS admissions supplement): adopt if NCES publishes institution-level files. See
   [data-page.md](data-page.md#watching-acts).
 - [ ] **Scheduled data refresh** (`chore/scheduled-data-sync`): monthly GitHub Action runs `npm run sync-all`

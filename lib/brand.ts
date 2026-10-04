@@ -107,12 +107,52 @@ export interface CrestBrand {
   logo: string | null;
 }
 
-/** A school's crest look from `school.brand`, or undefined for the generated tile. Server-side (reads BRAND_MARKS). */
-export function crestBrand(school: Pick<School, "unit_id" | "brand">): CrestBrand | undefined {
-  // Built by the brand track (brand.md, Display).
-  void school;
-  return undefined;
+/**
+ * Marks are shown unless `BRAND_MARKS=off` (brand.md: the one switch that degrades to colors only without touching the
+ * data). A server-side environment variable, read when a page renders: at build time for prerendered pages, so set it in
+ * the deployment's environment and redeploy.
+ */
+export function brandMarksOn(): boolean {
+  return (process.env.BRAND_MARKS ?? "").trim().toLowerCase() !== "off";
 }
+
+/**
+ * A school's crest look from `school.brand`, or undefined for the generated tile. The gradient runs from the accent to
+ * the stored gradient end (a darkened or lightened accent where the next color is black, gray, or white); both are
+ * computed at sync time (lib/brand-colors.ts), so this does no color math. Server-side (reads BRAND_MARKS): client
+ * components get it from their data (`SchoolIndexEntry.brand`, scatter and map points).
+ */
+export function crestBrand(school: Pick<School, "unit_id" | "brand">): CrestBrand | undefined {
+  const b = school.brand;
+  if (!b) return undefined;
+  const logo = b.logo && brandMarksOn() ? `/brand/${school.unit_id}.webp` : null;
+  const gradient: [string, string] | null = b.accent ? [b.accent, b.crest_to ?? b.accent] : null;
+  if (!gradient && !logo) return undefined;
+  return { gradient, text: b.on_accent ?? "white", logo };
+}
+
+/** `oklch(L C H)` → `oklch(L C H / alpha)`: a stored tint at the alpha a surface uses (string work, no color math). */
+const withAlpha = (oklch: string, alpha: number) => oklch.replace(/\)\s*$/, ` / ${alpha})`);
+
+/**
+ * The tint a surface (the profile hero, a card's glow) uses for a school, per theme: the college's own tints re-lit for
+ * the paper and indigo backgrounds when it has colors, else the hashed hue in both. Set the two as CSS variables and
+ * pick with `[--tint:var(--tint-light)] dark:[--tint:var(--tint-dark)]`.
+ */
+export function brandTint(school: Pick<School, "unit_id" | "brand">, alpha = 0.16): { light: string; dark: string } {
+  const b = school.brand;
+  if (b?.tint_light && b.tint_dark) return { light: withAlpha(b.tint_light, alpha), dark: withAlpha(b.tint_dark, alpha) };
+  const t = crestTint(school.unit_id, alpha);
+  return { light: t, dark: t };
+}
+
+/**
+ * Where a college asks for its mark to come down (brand.md safeguards: honored within a day by `logo: false` in
+ * data/brand-overrides.json). The owner hasn't chosen an address yet; until then, a prefilled issue on the public repo.
+ */
+export const BRAND_REMOVAL_CONTACT = `https://github.com/raywross/college-stats/issues/new?title=${encodeURIComponent(`Remove our mark from ${SITE_NAME}`)}&body=${encodeURIComponent(
+  "College:\nYour role at the college:\nAnything else (for example, corrected colors and the brand guide that publishes them):\n",
+)}`;
 
 /** Compare-slot colors (validated all-pairs, both themes). Slot order = pick order. */
 export const SLOT_COLORS = ["var(--s1)", "var(--s2)", "var(--s3)", "var(--s4)"];

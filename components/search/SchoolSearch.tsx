@@ -171,7 +171,7 @@ export function SchoolSearch({
                   i === active ? "bg-accent" : "hover:bg-muted"
                 )}
               >
-                <Crest id={s.id} name={s.name} size="sm" />
+                <Crest id={s.id} name={s.name} size="sm" brand={s.brand} />
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-sm font-semibold">{s.name}</span>
                   <span className="block text-xs text-muted-foreground">

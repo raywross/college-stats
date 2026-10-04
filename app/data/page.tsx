@@ -22,6 +22,7 @@ import {
 } from "@/lib/releases";
 import { DataAgeTimeline, type DataAgeRow } from "@/components/charts/DataAgeTimeline";
 import { Crest } from "@/components/school/Crest";
+import { crestBrand } from "@/lib/brand";
 import { Term } from "@/components/ui/info-tip";
 import { cn } from "@/lib/utils";
 
@@ -547,7 +548,7 @@ export default async function DataPage() {
         <ul className="grid gap-2 sm:grid-cols-2">
           {cds.map((s) => (
             <li key={s.unit_id} className="flex items-center gap-3 rounded-2xl border bg-card p-3">
-              <Crest id={s.unit_id} name={s.name} size="sm" />
+              <Crest id={s.unit_id} name={s.name} size="sm" brand={crestBrand(s)} />
               <div className="min-w-0 flex-1">
                 <Link href={`/schools/${s.unit_id}`} className="block truncate text-sm font-semibold hover:text-primary">
                   {s.name}

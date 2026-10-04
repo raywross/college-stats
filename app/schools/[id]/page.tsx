@@ -9,7 +9,8 @@ import { TEST_POLICY_LABELS, satMid, sizeBucket } from "@/lib/metrics";
 import { similarSchools, standouts } from "@/lib/insights";
 import { compact, pctSmart, typeLabel } from "@/lib/format";
 import { SourceList } from "@/components/sources/SourceNote";
-import { crestTint } from "@/lib/brand";
+import type { CSSProperties } from "react";
+import { brandTint, crestBrand } from "@/lib/brand";
 import { Crest } from "@/components/school/Crest";
 import { StandoutChip } from "@/components/school/StandoutChip";
 import { CompareButton } from "@/components/compare/CompareButton";
@@ -54,16 +55,19 @@ export default async function SchoolPage({ params }: Props) {
   const similar = similarSchools(data, school, 4);
   const designations = designationsOf(school);
   const policy = a.test_policy ? TEST_POLICY_LABELS[a.test_policy] : null;
+  const tint = brandTint(school, 0.35);
 
   return (
     <div>
       <AnchorRedirect unitId={school.unit_id} />
       {/* ============================== HERO ============================== */}
       <section className="relative isolate overflow-hidden">
+        {/* The college's own tint per theme when it has colors (specs/school-identity/brand.md), else the hashed hue. */}
         <div
-          className="absolute inset-0 -z-10"
-          style={{ background: `radial-gradient(ellipse 80% 90% at 15% 0%, ${crestTint(school.unit_id, 0.35)}, transparent 70%)` }}
+          className="absolute inset-0 -z-10 [--tint:var(--tint-light)] dark:[--tint:var(--tint-dark)]"
+          style={{ "--tint-light": tint.light, "--tint-dark": tint.dark, background: "radial-gradient(ellipse 80% 90% at 15% 0%, var(--tint), transparent 70%)" } as CSSProperties}
         />
+        {school.brand?.accent && <div aria-hidden className="absolute inset-x-0 bottom-0 hidden h-[3px] sm:block" style={{ backgroundColor: school.brand.accent }} />}
         <div className="absolute inset-0 -z-10 bg-dots opacity-40 [mask-image:linear-gradient(to_bottom,black,transparent)]" />
         <div className="mx-auto max-w-6xl px-4 pt-5 pb-6 sm:px-6 sm:pt-8 sm:pb-10">
           <nav aria-label="Breadcrumb" className="mb-6 hidden items-center gap-1 text-sm text-muted-foreground sm:flex">
@@ -80,7 +84,7 @@ export default async function SchoolPage({ params }: Props) {
 
           {/* Phones: crest beside the name, then facts, then a full-width Compare. */}
           <div className="flex flex-wrap items-center gap-x-4 gap-y-4 sm:flex-nowrap sm:items-end sm:gap-6">
-            <Crest id={school.unit_id} name={school.name} size="xl" className="size-14 animate-pop-in rounded-2xl text-lg shadow-xl sm:size-24 sm:rounded-3xl sm:text-2xl" />
+            <Crest id={school.unit_id} name={school.name} size="xl" brand={crestBrand(school)} className="size-14 animate-pop-in rounded-2xl text-lg shadow-xl sm:size-24 sm:rounded-3xl sm:text-2xl" />
             <div className="min-w-0 flex-1">
               <h1 className="animate-rise font-display text-[1.75rem] leading-[1.05] font-extrabold tracking-tight sm:text-5xl lg:text-6xl">{school.name}</h1>
               <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px] text-muted-foreground sm:mt-3 sm:gap-x-4 sm:gap-y-2 sm:text-sm">
@@ -138,7 +142,7 @@ export default async function SchoolPage({ params }: Props) {
                 <div key={s.unit_id} className="group relative flex flex-col rounded-3xl border bg-card p-5 transition-all hover:-translate-y-1 hover:shadow-xl hover:shadow-primary/10">
                   <Link href={`/schools/${s.unit_id}`} className="absolute inset-0 z-10 rounded-3xl" aria-label={s.name} />
                   <div className="flex items-start justify-between gap-2">
-                    <Crest id={s.unit_id} name={s.name} size="md" />
+                    <Crest id={s.unit_id} name={s.name} size="md" brand={crestBrand(s)} />
                     <CompareButton id={s.unit_id} variant="icon" />
                   </div>
                   <p className="mt-3 font-display font-bold group-hover:text-primary">{s.name}</p>

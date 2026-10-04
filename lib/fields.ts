@@ -123,6 +123,10 @@ export const FIELDS = {
   "brand.names": wikipedia("School color names"),
   "brand.accent": brandDerived("Accent color", "The first school color that is neither white, black, nor gray (else the first color)"),
   "brand.on_accent": brandDerived("Text color on the accent", "White or black, whichever has at least 4.5:1 contrast on the accent"),
+  "brand.crest_to": brandDerived(
+    "Crest gradient end",
+    "The next school color after the accent (white skipped), or the accent darkened or lightened when that color is black, gray, or white; at least 4.5:1 against the text color",
+  ),
   "brand.tint_light": brandDerived("Hero tint, light theme", "The accent re-lit to OKLCH lightness 0.72, chroma at most 0.16"),
   "brand.tint_dark": brandDerived("Hero tint, dark theme", "The accent re-lit to OKLCH lightness 0.62, chroma at most 0.16"),
   "brand.logo": siteFound("Mark (the college's own site icon)"),

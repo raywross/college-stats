@@ -1,0 +1,3670 @@
+{
+  "run": "20261004-000618-4",
+  "started": "2026-10-04T00:06:40.642Z",
+  "finished": "2026-10-04T00:17:39.534Z",
+  "status": "finished",
+  "attempted": 9,
+  "documents_read": 3,
+  "published": 2,
+  "changed": 0,
+  "failed": 0,
+  "discovered": 6,
+  "escalated": 0,
+  "tripped": null,
+  "usage": {
+    "discovery": {
+      "calls": 10,
+      "input_tokens": 168566,
+      "output_tokens": 3153,
+      "cost_usd": 0.439521,
+      "cache_read_input_tokens": 0,
+      "cache_creation_input_tokens": 0,
+      "web_searches": 10
+    },
+    "extraction": {
+      "calls": 2,
+      "input_tokens": 3945,
+      "output_tokens": 139,
+      "cost_usd": 0.00464,
+      "cache_read_input_tokens": 0,
+      "cache_creation_input_tokens": 0,
+      "web_searches": 0
+    },
+    "escalation": {
+      "calls": 0,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "cost_usd": 0
+    }
+  },
+  "round": 3,
+  "usage_rows": [
+    {
+      "job": "picker",
+      "model": "claude-haiku-4-5-20251001",
+      "mode": "batch",
+      "calls": 5,
+      "input_tokens": 19293,
+      "cache_write_tokens": 0,
+      "cache_read_tokens": 0,
+      "output_tokens": 27,
+      "searches": 0,
+      "cost_usd": 0.009715
+    },
+    {
+      "job": "search",
+      "model": "claude-sonnet-5",
+      "mode": "interactive",
+      "calls": 5,
+      "input_tokens": 149273,
+      "cache_write_tokens": 0,
+      "cache_read_tokens": 0,
+      "output_tokens": 3126,
+      "searches": 10,
+      "cost_usd": 0.429806
+    },
+    {
+      "job": "extraction",
+      "model": "claude-haiku-4-5",
+      "mode": "interactive",
+      "calls": 2,
+      "input_tokens": 3945,
+      "cache_write_tokens": 0,
+      "cache_read_tokens": 0,
+      "output_tokens": 139,
+      "searches": 0,
+      "cost_usd": 0.00464
+    }
+  ],
+  "discovery": {
+    "known": {
+      "colleges": 0,
+      "cost_usd": 0
+    },
+    "guessed": {
+      "colleges": 0,
+      "cost_usd": 0
+    },
+    "manual": {
+      "colleges": 0,
+      "cost_usd": 0
+    },
+    "probe-sitemap": {
+      "colleges": 1,
+      "cost_usd": 0
+    },
+    "probe-host": {
+      "colleges": 2,
+      "cost_usd": 0
+    },
+    "probe-crawl": {
+      "colleges": 1,
+      "cost_usd": 0
+    },
+    "picker": {
+      "colleges": 1,
+      "cost_usd": 0.001305
+    },
+    "search": {
+      "colleges": 4,
+      "cost_usd": 0.32392
+    },
+    "full": {
+      "colleges": 0,
+      "cost_usd": 0
+    },
+    "blocked": {
+      "colleges": 0,
+      "cost_usd": 0
+    },
+    "none": {
+      "colleges": 1,
+      "cost_usd": 0.114296
+    }
+  },
+  "documents": {
+    "xlsx-template": {
+      "fetched": 0,
+      "unchanged": 0,
+      "archived": 0,
+      "model_calls": 0,
+      "split_fallback": 0,
+      "grid_rows_undecided": 0,
+      "vision": 0,
+      "cost_usd": 0
+    },
+    "xlsx-classic": {
+      "fetched": 1,
+      "unchanged": 0,
+      "archived": 1,
+      "model_calls": 0,
+      "split_fallback": 0,
+      "grid_rows_undecided": 0,
+      "vision": 0,
+      "cost_usd": 0
+    },
+    "pdf-form": {
+      "fetched": 1,
+      "unchanged": 0,
+      "archived": 1,
+      "model_calls": 0,
+      "split_fallback": 0,
+      "grid_rows_undecided": 0,
+      "vision": 0,
+      "cost_usd": 0
+    },
+    "pdf-flat": {
+      "fetched": 4,
+      "unchanged": 0,
+      "archived": 4,
+      "model_calls": 0,
+      "split_fallback": 0,
+      "grid_rows_undecided": 0,
+      "vision": 0,
+      "cost_usd": 0
+    },
+    "pdf-scanned": {
+      "fetched": 0,
+      "unchanged": 0,
+      "archived": 0,
+      "model_calls": 0,
+      "split_fallback": 0,
+      "grid_rows_undecided": 0,
+      "vision": 0,
+      "cost_usd": 0
+    },
+    "html": {
+      "fetched": 0,
+      "unchanged": 0,
+      "archived": 0,
+      "model_calls": 0,
+      "split_fallback": 0,
+      "grid_rows_undecided": 0,
+      "vision": 0,
+      "cost_usd": 0
+    },
+    "class-profile": {
+      "fetched": 3,
+      "unchanged": 0,
+      "archived": 3,
+      "model_calls": 2,
+      "split_fallback": 0,
+      "grid_rows_undecided": 0,
+      "vision": 0,
+      "cost_usd": 0.00464
+    }
+  },
+  "items": {
+    "A.005": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "A.006": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "A.007": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "A.008": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "A.009": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "A.010": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "A.011": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "A.014": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "A.015": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "A.0A": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "A.101": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "A.102": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "A.103": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "A.104": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "A.105": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "A.106": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "A.107": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "A.108": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "A.109": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "A.110": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "A.111": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "A.113": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "A.114": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "A.115": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "A.116": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "A.117": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "A.118": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "A.119": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "A.120": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "A.121": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "A.122": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "A.123": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "A.124": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "A.125": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "A.126": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "A.127": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "A.129": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "B.201": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "B.202": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "B.203": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "B.204": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "B.205": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "B.206": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "B.207": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "B.208": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "B.209": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "B.210": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "B.211": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "B.212": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "B.213": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "B.214": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "B.215": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "B.216": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "B.217": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "B.218": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "B.219": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "B.220": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "B.221": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "B.222": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "B.223": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "B.224": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "B.225": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "B.226": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "B.227": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "B.228": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "B.229": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "B.230": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "B.301": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "B.302": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "B.303": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "B.304": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "B.305": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "B.306": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "B.307": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "B.308": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "B.309": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "B.2201": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "B.2202": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "B.2203": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "C.101": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "C.102": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "C.103": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "C.104": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "C.105": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "C.106": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "C.107": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "C.108": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "C.109": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "C.110": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "C.111": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "C.112": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "C.113": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "C.114": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "C.115": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "C.116": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "C.117": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "C.118": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "C.119": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "C.120": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "C.121": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "C.122": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "C.123": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "C.124": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "C.125": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "C.126": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "C.127": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "C.128": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "C.129": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "C.130": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "C.201": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "C.202": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "C.203": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "C.204": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "C.205": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "C.206": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "C.207": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "C.301": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "C.401": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "C.501": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "C.502": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "C.503": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "C.504": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "C.505": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "C.506": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "C.507": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "C.508": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "C.509": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "C.510": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "C.511": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "C.512": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "C.513": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "C.514": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "C.515": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "C.516": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "C.517": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "C.518": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "C.519": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "C.520": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "C.521": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "C.522": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "C.523": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "C.524": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "C.601": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "C.602": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "C.603": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "C.604": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "C.701": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "C.702": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "C.703": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "C.704": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "C.705": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "C.706": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "C.707": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "C.708": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "C.709": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "C.710": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "C.711": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "C.712": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "C.713": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "C.714": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "C.715": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "C.716": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "C.717": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "C.718": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "C.719": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "C.801": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "C.802": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "C.803": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "C.804": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "C.8D": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "C.8E01": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "C.8E02": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "C.8F": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "C.8G01": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "C.8G02": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "C.8G03": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "C.8G04": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "C.8G05": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "C.8G06": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "C.8G07": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "C.901": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "C.902": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "C.903": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "C.904": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "C.905": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "C.906": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "C.907": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "C.908": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "C.909": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "C.910": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "C.911": {
+      "passed": 0,
+      "failed": 1,
+      "blank": 0,
+      "not_found": 0
+    },
+    "C.912": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "C.913": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "C.914": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "C.915": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "C.916": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "C.917": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "C.918": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "C.919": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "C.920": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "C.921": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "C.922": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "C.923": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "C.924": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "C.925": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "C.926": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "C.927": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "C.928": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "C.929": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "C.930": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "C.931": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "G.201": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "G.202": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "G.301": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "G.401": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "G.402": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "G.501": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "G.502": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "G.503": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "G.504": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "G.505": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "G.506": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "G.507": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "G.508": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "G.509": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "G.510": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "G.511": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "G.512": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "G.513": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "G.601": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "G.602": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "G.603": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "G.604": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "G.605": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "H.101": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "H.102": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "H.103": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "H.104": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "H.105": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "H.106": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "H.107": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "H.108": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "H.109": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "H.110": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "H.111": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "H.112": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "H.113": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "H.114": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "H.115": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "H.116": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "H.117": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "H.118": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "H.119": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "H.120": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "H.121": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "H.122": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "H.123": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "H.124": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "H.125": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "H.126": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "H.127": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "H.201": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "H.202": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "H.203": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "H.204": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "H.205": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "H.206": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "H.207": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "H.208": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "H.209": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "H.210": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "H.211": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "H.212": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "H.213": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "H.214": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "H.215": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "H.216": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "H.217": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "H.218": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "H.219": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "H.220": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "H.221": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "H.222": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "H.223": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "H.224": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "H.225": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "H.226": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "H.227": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "H.228": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "H.229": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "H.230": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "H.231": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "H.232": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "H.233": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "H.234": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "H.235": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "H.236": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "H.237": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "H.238": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "H.239": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "H.2A01": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "H.2A02": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "H.2A03": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "H.2A04": {
+      "passed": 0,
+      "failed": 1,
+      "blank": 0,
+      "not_found": 0
+    },
+    "H.2A05": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "H.2A06": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "H.2A07": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "H.2A08": {
+      "passed": 0,
+      "failed": 1,
+      "blank": 0,
+      "not_found": 0
+    },
+    "H.2A09": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "H.2A10": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "H.2A11": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "H.2A12": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "H.401": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "H.501": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "H.502": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "H.503": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "H.504": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "H.505": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "H.506": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "H.507": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "H.508": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "H.509": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "H.510": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "H.511": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "H.512": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "H.513": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "H.514": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "H.515": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "H.601": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "H.602": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "H.603": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "H.604": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "H.605": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "H.606": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "H.701": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "H.702": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "H.703": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "H.704": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "H.801": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "H.802": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "H.803": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "H.804": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "H.805": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "H.806": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "H.807": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "H.808": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "H.901": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "H.902": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "H.903": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "H.904": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "H.905": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "H.906": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "H.907": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "H.1001": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "H.1002": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "H.1003": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "H.1004": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "H.1005": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "H.1006": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "H.1101": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "H.1102": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "H.1103": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "H.1201": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "H.1202": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "H.1203": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "H.1204": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "H.1205": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "H.1206": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "H.1207": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "H.1208": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "H.1301": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "H.1302": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "H.1303": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "H.1304": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "H.1305": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "H.1306": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "H.1307": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "H.1308": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "H.1309": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "H.1401": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "H.1402": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "H.1403": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "H.1404": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "H.1405": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "H.1406": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "H.1407": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "H.1408": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "H.1409": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "H.1410": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "H.1411": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "H.1412": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "H.1413": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "H.1414": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "H.1415": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "H.1416": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "H.1417": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "H.1418": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "H.1419": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "H.1501": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "I.101": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "I.102": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "I.103": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "I.104": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "I.105": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "I.106": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "I.107": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "I.108": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "I.109": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "I.110": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "I.111": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "I.112": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "I.113": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "I.114": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "I.115": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "I.116": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "I.117": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "I.118": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "I.119": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "I.120": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "I.121": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "I.122": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "I.123": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "I.124": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "I.125": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "I.126": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "I.127": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "I.128": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "I.129": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "I.130": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "I.201": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "I.202": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "I.203": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "I.301": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "I.302": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "I.303": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "I.304": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "I.305": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "I.306": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "I.307": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "I.308": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "I.309": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "I.310": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "I.311": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "I.312": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "I.313": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "I.314": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "I.315": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "I.316": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "J.101": {
+      "passed": 0,
+      "failed": 1,
+      "blank": 0,
+      "not_found": 0
+    },
+    "J.102": {
+      "passed": 0,
+      "failed": 1,
+      "blank": 0,
+      "not_found": 0
+    },
+    "J.103": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "J.104": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "J.105": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "J.106": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "J.107": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "J.108": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "J.109": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "J.110": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "J.111": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "J.112": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "J.113": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "J.114": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "J.115": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "J.116": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "J.117": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "J.118": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "J.119": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "J.120": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "J.121": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "J.122": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "J.123": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "J.124": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "J.125": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "J.126": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "J.127": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "J.128": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "J.129": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "J.130": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "J.131": {
+      "passed": 0,
+      "failed": 1,
+      "blank": 0,
+      "not_found": 0
+    },
+    "J.132": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "J.133": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "J.134": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "J.135": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "J.136": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "J.137": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "J.138": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "J.139": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "J.140": {
+      "passed": 0,
+      "failed": 1,
+      "blank": 0,
+      "not_found": 0
+    },
+    "J.141": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "J.142": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "J.143": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "J.144": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "J.145": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "J.146": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "J.147": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "J.148": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "J.149": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "J.150": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "J.151": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "J.152": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "J.153": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "J.154": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "J.155": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "J.156": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "J.157": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "J.158": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "J.159": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "J.160": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "J.161": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "J.162": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "J.163": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "J.164": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "J.165": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "J.166": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "J.167": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "J.168": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "J.169": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "J.170": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "J.171": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "J.172": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "J.173": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "J.174": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "J.175": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "J.176": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "J.177": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "J.178": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "J.179": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "J.180": {
+      "passed": 1,
+      "failed": 0,
+      "blank": 0,
+      "not_found": 0
+    },
+    "J.181": {
+      "passed": 0,
+      "failed": 1,
+      "blank": 0,
+      "not_found": 0
+    },
+    "J.182": {
+      "passed": 0,
+      "failed": 1,
+      "blank": 0,
+      "not_found": 0
+    },
+    "J.183": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "J.184": {
+      "passed": 0,
+      "failed": 1,
+      "blank": 0,
+      "not_found": 0
+    },
+    "J.185": {
+      "passed": 0,
+      "failed": 1,
+      "blank": 0,
+      "not_found": 0
+    },
+    "J.186": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "J.187": {
+      "passed": 0,
+      "failed": 1,
+      "blank": 0,
+      "not_found": 0
+    },
+    "J.188": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "J.189": {
+      "passed": 0,
+      "failed": 1,
+      "blank": 0,
+      "not_found": 0
+    },
+    "J.190": {
+      "passed": 0,
+      "failed": 1,
+      "blank": 0,
+      "not_found": 0
+    },
+    "J.191": {
+      "passed": 0,
+      "failed": 1,
+      "blank": 0,
+      "not_found": 0
+    },
+    "J.192": {
+      "passed": 0,
+      "failed": 1,
+      "blank": 0,
+      "not_found": 0
+    },
+    "J.193": {
+      "passed": 0,
+      "failed": 1,
+      "blank": 0,
+      "not_found": 0
+    },
+    "J.194": {
+      "passed": 0,
+      "failed": 1,
+      "blank": 0,
+      "not_found": 0
+    },
+    "J.195": {
+      "passed": 0,
+      "failed": 1,
+      "blank": 0,
+      "not_found": 0
+    },
+    "J.196": {
+      "passed": 0,
+      "failed": 1,
+      "blank": 0,
+      "not_found": 0
+    },
+    "J.197": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "J.198": {
+      "passed": 0,
+      "failed": 1,
+      "blank": 0,
+      "not_found": 0
+    },
+    "J.199": {
+      "passed": 0,
+      "failed": 1,
+      "blank": 0,
+      "not_found": 0
+    },
+    "J.200": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "J.201": {
+      "passed": 0,
+      "failed": 1,
+      "blank": 0,
+      "not_found": 0
+    },
+    "J.202": {
+      "passed": 0,
+      "failed": 1,
+      "blank": 0,
+      "not_found": 0
+    },
+    "J.203": {
+      "passed": 0,
+      "failed": 1,
+      "blank": 0,
+      "not_found": 0
+    },
+    "J.204": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "J.205": {
+      "passed": 0,
+      "failed": 1,
+      "blank": 0,
+      "not_found": 0
+    },
+    "J.206": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "J.207": {
+      "passed": 0,
+      "failed": 1,
+      "blank": 0,
+      "not_found": 0
+    },
+    "J.208": {
+      "passed": 0,
+      "failed": 1,
+      "blank": 0,
+      "not_found": 0
+    },
+    "J.209": {
+      "passed": 0,
+      "failed": 1,
+      "blank": 0,
+      "not_found": 0
+    },
+    "J.210": {
+      "passed": 0,
+      "failed": 1,
+      "blank": 0,
+      "not_found": 0
+    },
+    "J.211": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "J.212": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "J.213": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "J.214": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "J.215": {
+      "passed": 0,
+      "failed": 1,
+      "blank": 0,
+      "not_found": 0
+    },
+    "J.216": {
+      "passed": 0,
+      "failed": 1,
+      "blank": 0,
+      "not_found": 0
+    },
+    "J.217": {
+      "passed": 0,
+      "failed": 1,
+      "blank": 0,
+      "not_found": 0
+    },
+    "J.218": {
+      "passed": 0,
+      "failed": 1,
+      "blank": 0,
+      "not_found": 0
+    },
+    "J.219": {
+      "passed": 0,
+      "failed": 0,
+      "blank": 1,
+      "not_found": 0
+    },
+    "J.220": {
+      "passed": 0,
+      "failed": 1,
+      "blank": 0,
+      "not_found": 0
+    }
+  },
+  "tiers": {
+    "very selective": {
+      "colleges": 3,
+      "located": 3,
+      "cds_found": 1,
+      "published_c1": 1,
+      "cost_usd": 0.240557
+    },
+    "selective": {
+      "colleges": 3,
+      "located": 3,
+      "cds_found": 3,
+      "published_c1": 0,
+      "cost_usd": 0.085771
+    },
+    "less selective": {
+      "colleges": 3,
+      "located": 2,
+      "cds_found": 2,
+      "published_c1": 1,
+      "cost_usd": 0.114296
+    },
+    "open admission": {
+      "colleges": 1,
+      "located": 1,
+      "cds_found": 0,
+      "published_c1": 0,
+      "cost_usd": 0.003537
+    }
+  },
+  "batches": [
+    {
+      "id": "msgbatch_018x91W4qoVUj8jNXXAo3RVp",
+      "requests": 5,
+      "submitted": "2026-10-04T00:09:03.522Z",
+      "ended": "2026-10-04T00:10:42.684527+00:00",
+      "succeeded": 5,
+      "errored": 0,
+      "expired": 0,
+      "reserved_usd": 0.012712,
+      "cost_usd": 0.009715
+    },
+    {
+      "id": "msgbatch_014VBUV7bW7jmz1NeThQQQhr",
+      "requests": 10,
+      "submitted": "2026-10-04T00:15:37.949Z",
+      "ended": "2026-10-04T00:17:27.129341+00:00",
+      "succeeded": 0,
+      "errored": 10,
+      "expired": 0,
+      "reserved_usd": 0.501987,
+      "cost_usd": 0
+    }
+  ],
+  "projection": {
+    "full_run_usd": 223.37,
+    "run_usd": 1.18,
+    "basis": "2 pdf-flat × $0.05 + 1 xlsx-classic × $0.045 + 1 class-profile × $0.005 + 6 picker × $0.005 + 5 search × $0.08 + 4 full × $0.15, × 189.3 to the full run (high end of each estimate)"
+  },
+  "total": 10,
+  "done": 10,
+  "open_batches": 0,
+  "unreachable": 1
+}

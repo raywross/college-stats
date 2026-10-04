@@ -131,6 +131,30 @@ test("guard: the substring rule checks whole words, not raw characters — Cal a
   assert.equal(shouldDropAlias("California", "University of California-Berkeley"), true);
 });
 
+test("a curated alias may repeat a word of the college's name; every other drop rule still applies to it", () => {
+  assert.equal(shouldDropAlias("Miami", "University of Miami", { curated: true }), false);
+  assert.equal(shouldDropAlias("Miami", "Miami University-Oxford", { curated: true }), false);
+  assert.equal(shouldDropAlias("University of Miami", "University of Miami", { curated: true }), true, "equal to the name");
+  assert.equal(shouldDropAlias("miami.edu", "University of Miami", { curated: true }), true, "a bare domain");
+  assert.equal(shouldDropAlias("M", "University of Miami", { curated: true }), true, "one character");
+});
+
+test('"miami" ranks the University of Miami first: both Miamis are curated, so applicants break the tie', () => {
+  const curated: CuratedAliasEntry[] = JSON.parse(readFileSync(join(ROOT, "data", "aliases-curated.json"), "utf8"));
+  const florida = byName("University of Miami");
+  const ohio = byName("Miami University-Oxford");
+  const rowsFor = (s: School) =>
+    curated.filter((c) => c.unit_id === s.unit_id && aliasKey(c.alias) === "miami").map((c) => buildAliasRow(c.unit_id, c.alias, "curated", c.weight));
+  assert.equal(rowsFor(florida).length, 1, 'data/aliases-curated.json must give the University of Miami "Miami"');
+  const ranked = [ohio, florida]
+    .map((s) => ({ school: s, match: scoreSchool(s, "miami", rowsFor(s))! }))
+    .sort(compareMatches);
+  assert.equal(ranked[0].school.unit_id, florida.unit_id);
+  // Without the curated rows, the name-prefix tier puts Ohio first: the reason the curated exception exists.
+  const bare = [florida, ohio].map((s) => ({ school: s, match: scoreSchool(s, "miami", [])! })).sort(compareMatches);
+  assert.equal(bare[0].school.unit_id, ohio.unit_id);
+});
+
 test("drops an alias over 60 characters", () => {
   assert.equal(shouldDropAlias("A".repeat(61), "University of Georgia"), true);
   assert.equal(shouldDropAlias("A".repeat(60), "University of Georgia"), false);

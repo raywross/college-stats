@@ -86,7 +86,7 @@ export function writeAliasTable(root: string, inputs: AliasTableInputs): void {
       console.warn(`  aliases-curated.json: unit_id ${c.unit_id} ("${c.alias}") is not in data/schools.json; skipped`);
       continue;
     }
-    if (shouldDropAlias(c.alias, name)) continue;
+    if (shouldDropAlias(c.alias, name, { curated: true })) continue;
     rows.push(buildAliasRow(c.unit_id, c.alias, "curated", c.weight));
   }
 

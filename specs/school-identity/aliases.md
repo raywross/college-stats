@@ -161,16 +161,13 @@ are 24,893 vs. 27,486, too close to call), bare "UNO" (New Orleans vs. Nebraska-
 vs. Central Michigan), bare "Cal Poly" (three real campuses: SLO, Pomona, Humboldt), bare "Nova" (Villanova vs. Nova
 Southeastern, confirmed both exist in the dataset), bare "UW" (Washington only; Wisconsin-Madison equally claims it).
 
-**A finding worth flagging:** "Miami" was originally curated for both the University of Miami and Miami
-University-Oxford (the classic mix-up), pinning Florida first by applicants. Both rows were silently dropped by the
-*"plain substring of the official name"* rule — each school's own name already contains "Miami" as a whole word, so
-the rule (correctly, by its own logic) judged the alias redundant. The practical effect: today, searching "miami"
-ranks **Miami University-Oxford above the University of Miami** via the plain name-prefix tier (score 3, name starts
-with "Miami") vs. the word-boundary tier (score 2, "University of **Miami**") — the opposite of what the removed
-curated rows intended, and independent of applicant counts (Florida has more). The curated mechanism as spec'd
-*cannot* fix this (any alias that's already a substring of the name is dropped before weight is ever considered).
-Flagging for the owner: leave it, or add a narrow exception so a curated entry can override the substring drop for a
-specific (college, alias) pair.
+**Curated aliases may repeat a word of the name (the Miami case).** Searching "miami" ranked Miami
+University-Oxford above the University of Miami: Oxford's name *starts* with the query (score 3), while "University of
+**Miami**" only matches at a word boundary (score 2). A curated "Miami" couldn't fix it, because the *"plain substring
+of the official name"* rule dropped curated rows too. Since the curated file is the spec's only place for
+disambiguation, curated rows are exempt from that one rule (`shouldDropAlias(…, { curated: true })`; every other drop
+rule still applies). Both Miamis are curated at the default weight, so applicants break the tie: the University of
+Miami (53,954) first, Miami University-Oxford (39,580) second. Tested in `tests/aliases.test.mts`.
 
 ### Deviations and judgment calls
 - **"Plain substring of the official name," interpreted at the word level, not the character level.** A character-level
@@ -195,10 +192,9 @@ specific (college, alias) pair.
 - `lib/fields.ts`'s `aliases` entry already existed on the foundation commit (not added here).
 
 ### Left for the owner
-- Review `data/aliases-curated.json`, especially the KSU and Miami findings above.
+- Review `data/aliases-curated.json`, especially the KSU finding above.
 - Apply `supabase/migrations/20261004120000_school_aliases.sql` before `npm run publish-data` can publish aliases
   (checked, not run, per the brief).
 - Decide whether to curate "ASU" for Appalachian/Alabama/Angelo/Arkansas State too — today only Arizona State is
   curated; the other four rely on whatever Wikidata/IPEDS supply (Alabama State currently has none, so it doesn't
   appear for "ASU" at all; see the report).
-- The Miami substring/drop-rule tension above.

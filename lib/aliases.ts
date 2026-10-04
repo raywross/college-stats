@@ -81,9 +81,11 @@ function isPlainSubstringOfName(alias: string, officialName: string): boolean {
 /**
  * Every reason a split, trimmed alias value never becomes a row (specs/school-identity/aliases.md, "Drop"): equal to
  * the official name's key, a bare domain, one character, a stop word, a plain substring of the official name,
- * `Unull`/`null`/`-`, or over 60 characters.
+ * `Unull`/`null`/`-`, or over 60 characters. A curated alias may repeat a word of the name: the curated file is the
+ * only place to rank one college above another, and "Miami" must reach the University of Miami ahead of Miami
+ * University-Oxford, whose name merely starts with it.
  */
-export function shouldDropAlias(alias: string, officialName: string): boolean {
+export function shouldDropAlias(alias: string, officialName: string, opts: { curated?: boolean } = {}): boolean {
   const trimmed = alias.trim();
   if (!trimmed) return true;
   const lower = trimmed.toLowerCase();
@@ -94,7 +96,7 @@ export function shouldDropAlias(alias: string, officialName: string): boolean {
   if (key.length <= 1) return true;
   if (STOP_WORDS.has(key)) return true;
   if (key === aliasKey(officialName)) return true;
-  if (isPlainSubstringOfName(trimmed, officialName)) return true;
+  if (!opts.curated && isPlainSubstringOfName(trimmed, officialName)) return true;
   return false;
 }
 

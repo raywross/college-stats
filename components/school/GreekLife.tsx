@@ -204,7 +204,7 @@ function CountCell({ council: c }: { council: CouncilView }) {
   );
 }
 
-function CouncilName({ council: c, tip }: { council: CouncilView; tip?: ReactNode }) {
+function CouncilName({ council: c, tip, note }: { council: CouncilView; tip?: ReactNode; note?: string }) {
   return (
     <span className="min-w-0 flex-1">
       <span className="block text-sm font-semibold">
@@ -213,6 +213,7 @@ function CouncilName({ council: c, tip }: { council: CouncilView; tip?: ReactNod
       </span>
       {c.name && <span className="block text-xs text-muted-foreground">{c.label}</span>}
       {c.members && <span className="block text-xs text-muted-foreground">{c.members} members</span>}
+      {note && <span className="mt-0.5 block text-[11px] text-muted-foreground italic">{note}</span>}
     </span>
   );
 }
@@ -227,7 +228,7 @@ function CouncilRow({ council: c, school }: { council: CouncilView; school: Scho
     return (
       <div className="flex items-center gap-3 px-3 py-3 sm:px-4">
         <CountCell council={c} />
-        <CouncilName council={c} tip={collegeTip} />
+        <CouncilName council={c} tip={collegeTip} note="Its chapters aren't on the national lists we read yet." />
       </div>
     );
   }

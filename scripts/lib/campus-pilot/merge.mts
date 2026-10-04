@@ -21,17 +21,21 @@ import type { PagesFile } from "./files.mts";
  */
 export const HELD_BACK = {
   greek: ["members_total", "housing", "deferred", "formal_term"],
+  // Round 2 (2026-10-04): the faith office fell to 13 of 14 across both rounds (UNC's Campus Y was read as one), and a
+  // group's own size estimate from 2016 was published although estimates expire; both held until a re-scored run.
+  faith: ["office"],
   policies: ["health_plan_transition"],
-  listings: ["faith/group", "lgbtq/group"],
+  listings: ["faith/group", "lgbtq/group", "faith/estimate"],
 } as const;
 
 /** Which fact types to hold back; tests of the merge's mechanics pass `NONE_HELD`. */
 export interface HeldBack {
   greek: readonly string[];
+  faith: readonly string[];
   policies: readonly string[];
   listings: readonly string[];
 }
-export const NONE_HELD: HeldBack = { greek: [], policies: [], listings: [] };
+export const NONE_HELD: HeldBack = { greek: [], faith: [], policies: [], listings: [] };
 
 /** `pages` without the HELD_BACK fact types (blocks left empty are dropped). Pure. */
 export function withoutHeld(pages: PagesFile, held: HeldBack = HELD_BACK): PagesFile {
@@ -44,6 +48,12 @@ export function withoutHeld(pages: PagesFile, held: HeldBack = HELD_BACK): Pages
         for (const k of held.greek) delete greek[k];
         if (Object.keys(greek).length) out.greek = greek as typeof c.greek;
         else delete out.greek;
+      }
+      if (c.faith) {
+        const faith: Record<string, unknown> = { ...c.faith };
+        for (const k of held.faith) delete faith[k];
+        if (Object.keys(faith).length) out.faith = faith as typeof c.faith;
+        else delete out.faith;
       }
       if (c.lgbtq?.policies) {
         const policies = c.lgbtq.policies.filter((p) => !held.policies.includes(p.key));

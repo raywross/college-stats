@@ -13,6 +13,50 @@ import { readLabel, type Classification, type DirectoryTier } from "../../../lib
 import type { DirectoryFile, MatchedEntry } from "../directories/files.mts";
 import type { PagesFile } from "./files.mts";
 
+/**
+ * Fact types the 2026-10-04 pilot run published below ~95% precision against the hand-checked key (specs/
+ * college-reported-data.md, "Campus-life pilot, as built"): kept in data/campus-pages.json for re-scoring, never merged
+ * into the dataset until a later run clears the bar. Remove an entry only with a new score that shows it does.
+ */
+export const HELD_BACK = {
+  greek: ["members_total", "housing", "deferred", "formal_term"],
+  policies: ["health_plan_transition"],
+  listings: ["faith/group", "lgbtq/group"],
+} as const;
+
+/** Which fact types to hold back; tests of the merge's mechanics pass `NONE_HELD`. */
+export interface HeldBack {
+  greek: readonly string[];
+  policies: readonly string[];
+  listings: readonly string[];
+}
+export const NONE_HELD: HeldBack = { greek: [], policies: [], listings: [] };
+
+/** `pages` without the HELD_BACK fact types (blocks left empty are dropped). Pure. */
+export function withoutHeld(pages: PagesFile, held: HeldBack = HELD_BACK): PagesFile {
+  return {
+    ...pages,
+    colleges: pages.colleges.map((c) => {
+      const out = { ...c };
+      if (c.greek) {
+        const greek: Record<string, unknown> = { ...c.greek };
+        for (const k of held.greek) delete greek[k];
+        if (Object.keys(greek).length) out.greek = greek as typeof c.greek;
+        else delete out.greek;
+      }
+      if (c.lgbtq?.policies) {
+        const policies = c.lgbtq.policies.filter((p) => !held.policies.includes(p.key));
+        const lgbtq = { ...c.lgbtq, policies };
+        if (!policies.length) delete (lgbtq as Partial<typeof lgbtq>).policies;
+        if (Object.keys(lgbtq).length) out.lgbtq = lgbtq;
+        else delete out.lgbtq;
+      }
+      if (c.listings) out.listings = c.listings.filter((l) => !held.listings.includes(`${l.domain}/${l.kind}`));
+      return out;
+    }),
+  };
+}
+
 const slug = (s: string) =>
   s
     .toLowerCase()
@@ -25,9 +69,9 @@ const slug = (s: string) =>
  * One directory file per college, list page, and classification (a credit has one list URL and one classification),
  * each entry matched to its college with method "reviewed" (the college's own page, so no name matching).
  */
-export function pilotDirectoryFiles(pages: PagesFile): DirectoryFile[] {
+export function pilotDirectoryFiles(pages: PagesFile, held: HeldBack = HELD_BACK): DirectoryFile[] {
   const files = new Map<string, DirectoryFile>();
-  for (const c of pages.colleges) {
+  for (const c of withoutHeld(pages, held).colleges) {
     const keyN = new Map<string, number>();
     for (const l of c.listings ?? []) {
       const cls: Classification = l.domain === "faith" ? { domain: "faith", tradition: l.tradition ?? "other" } : { domain: "lgbtq", kind: "group" };
@@ -67,8 +111,8 @@ export function pilotDirectoryFiles(pages: PagesFile): DirectoryFile[] {
 }
 
 /** One `campus_pages` table per college with tier A facts, for colleges in `knownIds`. Sorted by unit id. */
-export function campusPagesDetails(pages: PagesFile, knownIds: ReadonlySet<string>): SchoolDetail[] {
-  return pages.colleges
+export function campusPagesDetails(pages: PagesFile, knownIds: ReadonlySet<string>, held: HeldBack = HELD_BACK): SchoolDetail[] {
+  return withoutHeld(pages, held).colleges
     .filter((c) => knownIds.has(c.unit_id) && (c.greek || c.faith || c.lgbtq))
     .sort((a, b) => a.unit_id.localeCompare(b.unit_id))
     .map((c) => {

@@ -16,7 +16,7 @@ import { fslLinks, keywordWindows, quoteOnPage, shortQuote, type Page, type Page
 import { Budget, BudgetSpent, type CollegeRef, type Ctx } from "../scripts/lib/campus-pilot/llm.mts";
 import { runCollege } from "../scripts/lib/campus-pilot/run.mts";
 import { publishable } from "../scripts/lib/campus-pilot/files.mts";
-import { campusPagesDetails, pilotDirectoryFiles } from "../scripts/lib/campus-pilot/merge.mts";
+import { NONE_HELD, campusPagesDetails, pilotDirectoryFiles } from "../scripts/lib/campus-pilot/merge.mts";
 import { directoryDetails } from "../scripts/lib/directories/merge.mts";
 import type { ModelClient } from "../scripts/lib/college-reported/models.mts";
 
@@ -287,14 +287,14 @@ test("the merge credits each listing to the college's page and builds a valid ca
       },
     ],
   };
-  const files = pilotDirectoryFiles(pages);
+  const files = pilotDirectoryFiles(pages, NONE_HELD);
   assert.equal(files.length, 3);
   const [table] = directoryDetails(files, new Set(["152080"]));
   assert.equal(checkDirectoryRows(table.tables.directories!.rows), null);
   const est = table.tables.directories!.rows.listings.find((l) => l.name === "Hillel at ND")!;
   assert.equal(table.tables.directories!.rows.credits[est.org].tier, "C");
 
-  const [detail] = campusPagesDetails(pages, new Set(["152080"]));
+  const [detail] = campusPagesDetails(pages, new Set(["152080"]), NONE_HELD);
   const meta = { sources: { "policy-page": { label: "x", publisher: "x", edition: "x", url: "/data", description: "x" } }, vintages: {} } as unknown as DatasetMeta;
   assert.deepEqual(validateDetail(detail, meta), []);
   assert.equal(detail.tables.campus_pages!.year, "October 2026");
@@ -349,4 +349,28 @@ test("a robots.txt refusal is a block for the owner's list; a dead host is not",
   assert.equal(gone.ok, false);
   assert.equal(!gone.ok && gone.blocked, undefined);
   assert.deepEqual(f.blocked.map((b) => b.url), ["https://studentlife.example.edu/sfl/downloads/2026SpringIFCSizeReport.pdf"]);
+});
+
+/* ------------------------------------------------------------------ */
+/* Held-back fact types (2026-10-04 pilot score below ~95%)            */
+/* ------------------------------------------------------------------ */
+
+test("held-back fact types never reach the dataset, on the committed pilot results; dropping the filter fails", async () => {
+  const { readFileSync } = await import("node:fs");
+  const { HELD_BACK, withoutHeld } = await import("../scripts/lib/campus-pilot/merge.mts");
+  const pages = JSON.parse(readFileSync(new URL("../data/campus-pages.json", import.meta.url), "utf8"));
+  const ids = new Set<string>(pages.colleges.map((c: { unit_id: string }) => c.unit_id));
+  const leaks = (json: string) => [
+    ...HELD_BACK.greek.filter((k) => json.includes(`"${k}"`)),
+    ...HELD_BACK.policies.filter((k) => json.includes(`"${k}"`)),
+  ];
+  // The filtered merge leaks nothing.
+  assert.deepEqual(leaks(JSON.stringify(campusPagesDetails(pages, ids))), []);
+  const listed = pilotDirectoryFiles(pages).map((f) => `${f.classification.domain}/${f.tier === "C" ? "estimate" : "group"}`);
+  for (const held of HELD_BACK.listings) assert.ok(!listed.includes(held), `${held} listings were merged`);
+  // The raw file does hold them (so this test would catch a merge that skipped the filter).
+  assert.ok(leaks(JSON.stringify(pages)).length > 0, "expected held facts in data/campus-pages.json");
+  // And withoutHeld keeps the facts that passed.
+  const kept = JSON.stringify(withoutHeld(pages));
+  assert.ok(kept.includes('"councils"'));
 });

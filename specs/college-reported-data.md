@@ -197,9 +197,39 @@ source `policy-page`, year = newest date checked, checked by `checkCampusPages`)
 name (tier B) and a group's own size claim (tier C) become listings in the `directories` table, each credited to the
 page it came from. The `policy-page` source now describes office pages and reports as well as policies.
 
-**The live run hasn't happened yet.** No Anthropic key is available outside GitHub Actions (none in any local
-`.env.local`), so the run goes through the workflow; see the domain specs' pilot sections for what was measured
-without a model and the cost estimates.
+**Live run (2026-10-04, GitHub Actions; report `data/reports/campus-pilot-2026-10-04T13-31-00.json`).** The $15 cap
+stopped it after 19 of the 25 colleges: **$11.57, $0.61 per college** (discovery's web searches $11.15 of it: 175
+searches; extraction $0.23, escalation $0.19, second checks $0.01). At this configuration a full run of ~1,890
+colleges would cost about **$1,150**. Scored against the hand-checked key (scratchpad key; kept out of the public repo
+because it holds page text beyond the short quotes we publish), excluding facts the key itself couldn't read:
+
+| Fact type | Published | Correct | Precision | Recall |
+|---|---|---|---|---|
+| Greek councils' chapter counts | 21 | 20 | 95% | 56% |
+| Greek life exists / stated none | 9 | 9 | 100% | 50% |
+| Faith office | 5 | 5 | 100% | 42% |
+| LGBTQ+ center | 3 | 3 | 100% | 30% |
+| Policies (nondiscrimination ×2, housing, name, restrooms) and conduct restriction | 7 | 7 | 100% | 6–25% |
+| Faith groups by tradition | 28 | 26 | 93% | 35% |
+| Greek total members / housing | 4 / 4 | 2 / 2 | 50% | 29% |
+| Greek deferred recruitment / formal term | 3 / 2 | 2 / 0 | 67% / 0% | 20% / 0% |
+| LGBTQ+ groups | 3 | 2 | 67% | 25% |
+| Health plan covers transition care | 1 | 0 | 0% | – |
+
+Second check: 1 finding, confirmed (and right). Discovery found a page of the key's type far less often than a careful
+reader did (nondiscrimination 2 of 19 readable, LGBTQ+ center 3 of 14, faith office 5 of 12): recall is the problem,
+and nearly all the cost is discovery.
+
+**Decision (2026-10-04): publish only fact types at ≥ ~95% precision.** `HELD_BACK` in
+`scripts/lib/campus-pilot/merge.mts` keeps Greek total members, housing, deferred recruitment, and formal term; the
+health-plan policy; and faith and LGBTQ+ groups read from college pages out of the dataset (they stay in
+`data/campus-pages.json` for re-scoring). A test fails if any of them reaches a detail file. An example of why:
+Alabama's "Freshmen … are not allowed to live in a fraternity or sorority house" was extracted as "no deferred
+recruitment".
+
+**Before a full run:** cheaper and better discovery (try the college's own site search and common paths before paid
+web search; one discovery call for all three domains), tighter Greek recruitment/housing/membership extraction
+prompts, then re-run these 25 and re-score. No full run without the owner's go-ahead.
 
 ## Files (planned)
 - `scripts/sync-college-reported.mts` (`npm run sync-college-reported`), `--pilot`, `--college <id>`, `--rediscover`.

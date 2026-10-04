@@ -16,7 +16,9 @@ export const COMPLEXITY: Record<Complexity, { label: string; description: string
 // Wave 1 (data the site already downloads) was built on 2026-09-29, wave 2 (one new federal file each) on
 // 2026-10-02, wave 3 (majors and earnings by major, in the per-college detail file) on 2026-10-02, and wave 4
 // (the round-3 CDS pipeline and its nine display specs, group "college-reported") on 2026-10-03; see /release-notes.
-// Metro area, deferred from wave 2, is under "later".
+// Metro area, deferred from wave 2, is under "later". Campus life (religious, Greek, and LGBTQ+ life, group
+// "campus-life") was built 2026-10-03/04 (#72, #73, #75, #76); its remaining work is under "later":
+// campus-pilot-accuracy and campus-sources-later.
 export type RoadmapGroupKey =
   | "college-reported"
   | "campus-life"
@@ -30,12 +32,6 @@ export type RoadmapGroupKey =
   | "later";
 
 export const ROADMAP_GROUPS: { key: RoadmapGroupKey; title: string; description: string }[] = [
-  {
-    key: "campus-life",
-    title: "Campus life",
-    description:
-      "Faith communities, Greek life, and LGBTQ+ life, from federal data, Common Data Sets, campus offices, and colleges' own policies.",
-  },
   {
     key: "national-trends",
     title: "National trends",
@@ -114,35 +110,6 @@ export interface RoadmapSpec {
 
 /** In build order within each group (the backlog's order, specs/backlog.md). */
 export const ROADMAP: RoadmapSpec[] = [
-  {
-    slug: "religious-life",
-    file: "specs/religious-life.md",
-    group: "campus-life",
-    summary: "Whether a college is religious, how much faith shapes it, and which faith communities are on campus.",
-    complexity: 4,
-    complexityNote: "Federal affiliation first, then per-college sources and faith-organization directories.",
-    status: "planned",
-  },
-  {
-    slug: "greek-life",
-    file: "specs/greek-life.md",
-    group: "campus-life",
-    summary: "How big Greek life is, which kinds of chapters there are, housing, and when students can join.",
-    complexity: 3,
-    complexityNote: "Common Data Set share first, then fraternity and sorority office reports at pilot colleges.",
-    status: "planned",
-  },
-  {
-    slug: "lgbtq-life",
-    file: "specs/lgbtq-life.md",
-    group: "campus-life",
-    summary:
-      "LGBTQ+ centers and student groups, gender-inclusive housing and other policies, conduct rules, and gender identity counts, each dated.",
-    complexity: 3,
-    complexityNote:
-      "Federal counts are quick; policies need a check of each college's own pages, and sensitive findings a person's review.",
-    status: "planned",
-  },
   {
     slug: "national-trends",
     file: "specs/national-trends.md",

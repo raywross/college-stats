@@ -1,6 +1,6 @@
 # Religious Life
 
-> Status: **planned**, with **phase 1 built** (2026-10-03, branch `feature/campus-life`): IPEDS affiliation for every college
+> Status: **built** 2026-10-04: everything this spec could build now is live (#72, #73, #75, #76). The per-college rollout continues in [campus-pilot-accuracy.md](campus-pilot-accuracy.md) and the sources we couldn't read in [campus-sources-later.md](campus-sources-later.md), both on the roadmap under Later. History: **phase 1 built** (2026-10-03, branch `feature/campus-life`): IPEDS affiliation for every college
 > with NCES's own label, an Explore filter by faith family, a Compare row, a "Religious life" block in the profile's
 > Campus life section with the CDS answers we already read (C7, H14, F2), "Known for: Faith-centered" from C7, and
 > glossary entries. See [Phase 1 as built](#phase-1-as-built). **Phase 3 (national directories) built** 2026-10-04,

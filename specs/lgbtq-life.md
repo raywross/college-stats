@@ -451,8 +451,9 @@ Per college: the LGBTQ+ center or office page, the college's list of LGBTQ+ grou
   `verified_by` (owner decision 3, above); `checkCampusPages` refuses one without it. The conduct quote is the
   college's own words, cut at a word boundary to 160 characters. College-recognized groups are tier B listings in
   the `directories` table.
-- **Shown** by `LgbtqPolicies` (`components/school/CampusPages.tsx`), after the LGBTQ+ life block: the center, the
-  policy items ("Yes"/"No" and the item, each with its ⓘ), and "What the student conduct policy says" as a quote.
+- **Shown** inside the LGBTQ+ life block: the center as a card and the policy items in the checklist (a check, or a
+  minus only for a "no" the page states, each with its ⓘ), and "What the student conduct policy says" as a quote
+  (`LgbtqPolicies` in `components/school/CampusPages.tsx`).
   Nothing is graded or ranked; no filter or Compare row yet (the Explore filters wait for rollout coverage).
   Facts older than two years hide.
 
@@ -562,11 +563,15 @@ counts on purpose — see the guard note below):**
   `lib/lgbtq.ts` from those files, instead of the bare word, so the policy facts can reach them while the counts
   still can't.
 
-**Display (`components/school/LgbtqLife.tsx`):** "Support on campus" (centers and groups via `listingsFor`,
-`CreditedList`, with the lag-closures caveat, and — when both a center and a state law are present — a note that the
-law can close an office like it, so a listed center isn't a claim that it's still open) and the policy checklist
-(each item linked, dated, with a ⓘ: `citeListing` for a tier D item, a glossary term for the five with one). Takes
-over the generic `<DirectoryListings domain="lgbtq">` placeholder entirely rather than running both.
+**Display (`components/school/LgbtqLife.tsx`, redesigned 2026-10-04; see
+[campus-directories.md](campus-directories.md#display-redesign-2026-10-04)):** "Support on campus" as cards (a center
+linked to its own site; groups with the organization's logo or badge), the policy checklist with check marks (each
+item's ⓘ carries its list or page and date; one line per list credits it by name, date read, and link, "not
+confirmed by the college"), the conduct quote, the state law as a callout (when a listed center sits beside it, a
+neutral note that lists can lag changes on campus — never a claim that the law closed it, since several laws are
+general DEI-office bans that don't name LGBTQ+ programs), then the another-gender counts. The lag-closures caveat
+lives in the `lgbtq-resource-center` glossary ⓘ. Takes over the generic `<DirectoryListings domain="lgbtq">`
+placeholder entirely rather than running both.
 
 **Explore and Compare:** three filters (`lgbtqCenter`, `lgbtqHousing`, `lgbtqNondiscrimination`) in a new "LGBTQ+
 campus life" `FilterPanel` section, with facets and removable chips; a "LGBTQ+ policies" Compare table, its own

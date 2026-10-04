@@ -245,8 +245,8 @@ college-published report of students' religious affiliation, and campus groups' 
   pages name become tier B listings in the `directories` table, by tradition; a group's own size claim becomes a tier C
   listing with the fields of [What each estimate record needs](#what-each-estimate-record-needs) folded into its fact
   ("2,750 Jewish undergraduates (2026)", "scope not stated" when the population isn't given) and quote.
-- **Shown:** "Religious life, from the college" (`components/school/CampusPages.tsx` `FaithFacts`): the office linked
-  and the composition as a two-column list, each with its ⓘ (page, date checked, quote). Tier B and C listings show in
+- **Shown** in the Religious life block (`components/school/ReligiousLife.tsx`, redesign 2026-10-04): the office as a
+  labeled value linked to its page, and the composition as share bars, each with its ⓘ (page, date checked, quote). Tier B and C listings show in
   the faith directory block with the college's page as their credit. Hidden when empty; facts older than two years hide.
 
 **Measured without a model (2026-10-04).** The pipeline's fetcher and page gathering were run on the answer key's own

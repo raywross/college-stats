@@ -1,0 +1,55 @@
+{
+  "updated": "2026-10-04",
+  "organizations": {
+    "sigep": {
+      "name": "Sigma Phi Epsilon",
+      "website": "https://sigep.org/",
+      "letters": "ΣΦΕ",
+      "colors": ["#C8102E", "#4B2E83"],
+      "wikidata": "Q1478437",
+      "logo": {
+        "file": "public/org-logos/sigep.svg",
+        "source": "https://sigep.org/",
+        "license": "Organization's own logo (used to identify it)",
+        "attribution": "© Sigma Phi Epsilon"
+      }
+    },
+    "pi-beta-phi": {
+      "name": "Pi Beta Phi",
+      "website": "https://www.pibetaphi.org/",
+      "letters": "ΠΒΦ",
+      "colors": ["#8B1F41"],
+      "wikidata": null,
+      "logo": null
+    },
+    "kappa-sigma": {
+      "name": "Kappa Sigma",
+      "website": "https://www.kappasigma.org/",
+      "letters": "ΚΣ",
+      "colors": [],
+      "wikidata": null,
+      "logo": null
+    },
+    "focus": {
+      "name": "FOCUS",
+      "website": "https://focus.org/",
+      "letters": null,
+      "colors": [],
+      "wikidata": null,
+      "logo": {
+        "file": "public/org-logos/focus.png",
+        "source": "https://commons.wikimedia.org/wiki/File:Example.png",
+        "license": "CC BY-SA 4.0",
+        "attribution": "Example Author"
+      }
+    },
+    "tpc-housing": {
+      "name": "Trans Policy Clearinghouse",
+      "website": "https://www.gennyb.com/research/trans-supportive-campus-policies",
+      "letters": null,
+      "colors": [],
+      "wikidata": null,
+      "logo": null
+    }
+  }
+}

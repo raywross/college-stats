@@ -58,6 +58,8 @@ export interface Cited extends CitedSource {
    * it, its tier, and what that tier means. The ⓘ credits the organization and the date read (owner decision 4).
    */
   directory?: { organization: string; tier: "B" | "C" | "D"; phrase: string };
+  /** A freely licensed image shown beside the value (an organization's logo from Wikimedia Commons), credited as its license asks. */
+  image?: { what: string; attribution: string; license: string; source: string };
 }
 
 /** The funnel paths `applyNewest` may replace, keyed to their `admissions.federal` counterparts. */

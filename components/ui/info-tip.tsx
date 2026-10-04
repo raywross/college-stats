@@ -59,6 +59,16 @@ function formatReplaced(cited: Cited): string {
   return /(acceptance_rate|_share|retention_rate|grad_rate_)/.test(cited.path) ? pctSmart(value) : num(value);
 }
 
+/** "Wikimedia Commons" for a Commons file page, else the site's host ("sigep.org"). */
+function imageHost(url: string): string {
+  try {
+    const host = new URL(url).hostname.replace(/^www\./, "");
+    return /(^|\.)wikimedia\.org$/.test(host) ? "Wikimedia Commons" : host;
+  } catch {
+    return "its source";
+  }
+}
+
 /** Where a value came from: source, year, method, formula, inputs, and what it replaced, if anything. */
 function SourceBlock({ cited }: { cited: Cited }) {
   const inputs = cited.inputs ?? [];
@@ -98,6 +108,12 @@ function SourceBlock({ cited }: { cited: Cited }) {
         </p>
       )}
       {cited.quote && <blockquote className="border-l-2 pl-2 italic">“{cited.quote}”</blockquote>}
+      {cited.image && (
+        <p className="text-[11px]">
+          {cited.image.what}: {cited.image.attribution}, {cited.image.license}, via{" "}
+          <SourceLinkBare s={{ ...cited, label: imageHost(cited.image.source), url: cited.image.source }} />.
+        </p>
+      )}
       {isCollegeSite && (
         <p>
           <SourceLinkBare s={cited} />

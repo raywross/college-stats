@@ -1,5 +1,5 @@
 # Runs the campus-life pilot (scripts/campus-pilot.mts; specs/religious-life.md phase 2, greek-life.md phase 2,
-# lgbtq-life.md phase 4) on a list of pilot colleges (default: round 2's 25, data/reference/campus-pilot-2-colleges.json),
+# lgbtq-life.md phase 4) on a list of pilot colleges (default: round 3's 25, data/reference/campus-pilot-3-colleges.json),
 # where the Anthropic key lives (the repository secret ANTHROPIC_API_KEY; there is no key in local .env files). Dispatch it on the branch that should carry the results
 # ("Use workflow from": the pilot or integration branch): it runs the pilot, scores it against the hand-checked answer
 # key when one is committed (data/reports/campus-pilot-answer-key.json), merges the published facts into the dataset,
@@ -14,7 +14,7 @@ on:
       colleges_file:
         description: "College list file to run: a colleges array of unit_id objects"
         type: string
-        default: data/reference/campus-pilot-2-colleges.json
+        default: data/reference/campus-pilot-3-colleges.json
       college:
         description: Unit ids to run, space-separated (overrides the list when set)
         type: string
@@ -69,7 +69,7 @@ jobs:
           REDISCOVER: ${{ inputs.rediscover }}
           BATCH: ${{ inputs.batch }}
         run: |
-          args="--cap ${CAP:-15} --colleges-file ${COLLEGES_FILE:-data/reference/campus-pilot-2-colleges.json}"
+          args="--cap ${CAP:-15} --colleges-file ${COLLEGES_FILE:-data/reference/campus-pilot-3-colleges.json}"
           for id in $COLLEGES; do args="$args --college $id"; done
           if [ "$REDISCOVER" = "true" ]; then args="$args --rediscover"; fi
           if [ "$BATCH" = "false" ]; then args="$args --no-batch"; fi

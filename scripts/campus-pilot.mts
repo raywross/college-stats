@@ -3,7 +3,7 @@
  * discovery (free probes, then one paid call), extraction, quote and support checks, and the second-model check, then
  * the facts to publish. Round 2 (specs/college-reported-data.md "Round 2 plan").
  *
- *   npm run campus-pilot                       # the colleges in data/reference/campus-pilot-2-colleges.json
+ *   npm run campus-pilot                       # the colleges in data/reference/campus-pilot-3-colleges.json
  *   npm run campus-pilot -- --colleges-file data/reference/x.json   # another list ({ colleges: [{ unit_id }] })
  *   npm run campus-pilot -- --college 228778   # one college (repeatable; overrides the list)
  *   npm run campus-pilot -- --rediscover       # ignore saved links and run discovery again

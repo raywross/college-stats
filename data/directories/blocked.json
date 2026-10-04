@@ -90,6 +90,14 @@
     },
     {
       "org": "campus-pilot",
+      "url": "https://fsl.fsu.edu/potential-members/scholarship-reports",
+      "reason": "forbidden",
+      "detail": "college page (campus-life pilot); hand reading per owner decision 1",
+      "first_seen": "2026-10-04",
+      "last_seen": "2026-10-04"
+    },
+    {
+      "org": "campus-pilot",
       "url": "https://fsl.umich.edu/article/community-statistics",
       "reason": "challenge",
       "detail": "college page (campus-life pilot); hand reading per owner decision 1",
@@ -122,6 +130,14 @@
     },
     {
       "org": "campus-pilot",
+      "url": "https://fsl.umn.edu/our-community",
+      "reason": "challenge",
+      "detail": "college page (campus-life pilot); hand reading per owner decision 1",
+      "first_seen": "2026-10-04",
+      "last_seen": "2026-10-04"
+    },
+    {
+      "org": "campus-pilot",
       "url": "https://fsl.web.baylor.edu/",
       "reason": "challenge",
       "detail": "college page (campus-life pilot); hand reading per owner decision 1",
@@ -140,6 +156,14 @@
       "org": "campus-pilot",
       "url": "https://idcenter.byu.edu/id-card-policies",
       "reason": "forbidden",
+      "detail": "college page (campus-life pilot); hand reading per owner decision 1",
+      "first_seen": "2026-10-04",
+      "last_seen": "2026-10-04"
+    },
+    {
+      "org": "campus-pilot",
+      "url": "https://lbgtrc.msu.edu/",
+      "reason": "challenge",
       "detail": "college page (campus-life pilot); hand reading per owner decision 1",
       "first_seen": "2026-10-04",
       "last_seen": "2026-10-04"

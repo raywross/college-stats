@@ -1,0 +1,5540 @@
+{
+ "run": "2026-10-04T22-14-48",
+ "today": "2026-10-04",
+ "models": {
+  "discovery": "claude-sonnet-5",
+  "extraction": "claude-haiku-4-5",
+  "escalation": "claude-sonnet-5",
+  "verify": "claude-sonnet-5"
+ },
+ "cap": 15,
+ "spent_total": 3.886876,
+ "spent_run": 3.886876,
+ "requests": 1784,
+ "blocked": [
+  {
+   "url": "https://fsl.umn.edu/our-community",
+   "reason": "challenge"
+  },
+  {
+   "url": "https://fsl.fsu.edu/potential-members/scholarship-reports",
+   "reason": "forbidden"
+  },
+  {
+   "url": "https://lbgtrc.msu.edu/",
+   "reason": "challenge"
+  }
+ ],
+ "batches": [
+  {
+   "id": "msgbatch_016DHUzs9gbAZERLL7vDaqsJ",
+   "requests": 17,
+   "status": "ended",
+   "fallback": 0
+  },
+  {
+   "id": "msgbatch_01BAk69Fg1e4J3zFSxYGcEyB",
+   "requests": 11,
+   "status": "ended",
+   "fallback": 0
+  },
+  {
+   "id": "msgbatch_01MhLHUFWa7mJJCBW7rGtkmn",
+   "requests": 1,
+   "status": "ended",
+   "fallback": 0
+  },
+  {
+   "id": "msgbatch_01B9HPTBSoEuhPXHqw8WzA2f",
+   "requests": 7,
+   "status": "ended",
+   "fallback": 0
+  },
+  {
+   "id": "msgbatch_01PcghDHsro7TatqTotgTaBY",
+   "requests": 3,
+   "status": "ended",
+   "fallback": 0
+  },
+  {
+   "id": "msgbatch_019dpkLpw5KTQxWvb5xYDY35",
+   "requests": 2,
+   "status": "ended",
+   "fallback": 0
+  }
+ ],
+ "discovery": {
+  "100858": {
+   "probed": [
+    "nondiscrimination"
+   ],
+   "paid": [
+    "fsl_office",
+    "lgbtq_center"
+   ],
+   "searches": 1,
+   "fetches": 71
+  },
+  "110635": {
+   "probed": [
+    "nondiscrimination",
+    "name_policy",
+    "restrooms",
+    "housing"
+   ],
+   "paid": [
+    "fsl_office",
+    "lgbtq_center"
+   ],
+   "searches": 1,
+   "fetches": 80
+  },
+  "126614": {
+   "probed": [
+    "fsl_office",
+    "recruitment",
+    "lgbtq_center"
+   ],
+   "paid": [
+    "nondiscrimination"
+   ],
+   "searches": 1,
+   "fetches": 77
+  },
+  "130794": {
+   "probed": [
+    "nondiscrimination"
+   ],
+   "paid": [
+    "fsl_office",
+    "lgbtq_center"
+   ],
+   "searches": 1,
+   "fetches": 66
+  },
+  "133650": {
+   "probed": [
+    "nondiscrimination"
+   ],
+   "paid": [
+    "fsl_office",
+    "lgbtq_center"
+   ],
+   "searches": 1,
+   "fetches": 68
+  },
+  "134097": {
+   "probed": [
+    "fsl_office",
+    "faith_office"
+   ],
+   "paid": [
+    "lgbtq_center",
+    "nondiscrimination"
+   ],
+   "searches": 1,
+   "fetches": 70
+  },
+  "142115": {
+   "probed": [],
+   "paid": [
+    "fsl_office",
+    "lgbtq_center",
+    "nondiscrimination"
+   ],
+   "searches": 2,
+   "fetches": 78
+  },
+  "153658": null,
+  "159391": {
+   "probed": [
+    "fsl_office",
+    "recruitment",
+    "nondiscrimination",
+    "fsl_reports"
+   ],
+   "paid": [
+    "lgbtq_center"
+   ],
+   "searches": 1,
+   "fetches": 72
+  },
+  "166629": {
+   "probed": [
+    "fsl_office",
+    "recruitment",
+    "faith_office",
+    "lgbtq_center",
+    "lgbtq_groups",
+    "nondiscrimination",
+    "housing",
+    "name_policy",
+    "restrooms",
+    "fsl_reports"
+   ],
+   "paid": [],
+   "searches": 0,
+   "fetches": 85
+  },
+  "168218": {
+   "probed": [
+    "nondiscrimination"
+   ],
+   "paid": [
+    "fsl_office",
+    "lgbtq_center"
+   ],
+   "searches": 1,
+   "fetches": 77
+  },
+  "171100": {
+   "probed": [],
+   "paid": [
+    "fsl_office",
+    "lgbtq_center",
+    "nondiscrimination"
+   ],
+   "searches": 2,
+   "fetches": 69
+  },
+  "174066": {
+   "probed": [],
+   "paid": [
+    "fsl_office",
+    "lgbtq_center",
+    "nondiscrimination"
+   ],
+   "searches": 2,
+   "fetches": 64
+  },
+  "186131": {
+   "probed": [],
+   "paid": [
+    "fsl_office",
+    "lgbtq_center",
+    "nondiscrimination"
+   ],
+   "searches": 2,
+   "fetches": 69
+  },
+  "186380": {
+   "probed": [
+    "fsl_office",
+    "recruitment",
+    "faith_office",
+    "lgbtq_center",
+    "lgbtq_groups",
+    "nondiscrimination",
+    "housing",
+    "name_policy",
+    "fsl_reports"
+   ],
+   "paid": [],
+   "searches": 0,
+   "fetches": 64
+  },
+  "198385": {
+   "probed": [
+    "faith_office",
+    "faith_groups",
+    "lgbtq_center",
+    "lgbtq_groups",
+    "nondiscrimination",
+    "conduct_code",
+    "fsl_office"
+   ],
+   "paid": [],
+   "searches": 0,
+   "fetches": 65
+  },
+  "216287": {
+   "probed": [],
+   "paid": [
+    "fsl_office",
+    "lgbtq_center",
+    "nondiscrimination"
+   ],
+   "searches": 2,
+   "fetches": 60
+  },
+  "216597": {
+   "probed": [
+    "fsl_office",
+    "recruitment",
+    "faith_office",
+    "faith_groups",
+    "lgbtq_center",
+    "nondiscrimination",
+    "name_policy",
+    "conduct_code"
+   ],
+   "paid": [],
+   "searches": 0,
+   "fetches": 75
+  },
+  "217882": {
+   "probed": [
+    "fsl_office",
+    "recruitment",
+    "fsl_reports"
+   ],
+   "paid": [
+    "lgbtq_center",
+    "nondiscrimination"
+   ],
+   "searches": 1,
+   "fetches": 78
+  },
+  "218070": {
+   "probed": [
+    "fsl_office",
+    "recruitment",
+    "faith_office",
+    "faith_groups",
+    "nondiscrimination"
+   ],
+   "paid": [
+    "lgbtq_center"
+   ],
+   "searches": 1,
+   "fetches": 68
+  },
+  "222178": {
+   "probed": [
+    "faith_office"
+   ],
+   "paid": [
+    "fsl_office",
+    "lgbtq_center",
+    "nondiscrimination",
+    "conduct_code"
+   ],
+   "searches": 2,
+   "fetches": 80
+  },
+  "228875": {
+   "probed": [
+    "fsl_office",
+    "recruitment",
+    "faith_office",
+    "nondiscrimination",
+    "conduct_code"
+   ],
+   "paid": [
+    "lgbtq_center"
+   ],
+   "searches": 1,
+   "fetches": 72
+  },
+  "232265": {
+   "probed": [],
+   "paid": [
+    "fsl_office",
+    "lgbtq_center",
+    "nondiscrimination"
+   ],
+   "searches": 2,
+   "fetches": 69
+  },
+  "233921": {
+   "probed": [
+    "nondiscrimination"
+   ],
+   "paid": [
+    "fsl_office",
+    "lgbtq_center"
+   ],
+   "searches": 1,
+   "fetches": 68
+  },
+  "235316": {
+   "probed": [],
+   "paid": [
+    "fsl_office",
+    "lgbtq_center",
+    "nondiscrimination",
+    "conduct_code"
+   ],
+   "searches": 2,
+   "fetches": 72
+  }
+ },
+ "calls": [
+  {
+   "at": "2026-10-04T22:16:03.580Z",
+   "college": "216287",
+   "domain": null,
+   "job": "discovery",
+   "model": "claude-sonnet-5",
+   "input_tokens": 32371,
+   "cache_read_tokens": 0,
+   "cache_write_tokens": 0,
+   "output_tokens": 726,
+   "searches": 2,
+   "cost_usd": 0.092002,
+   "stop_reason": "tool_use",
+   "mode": "interactive"
+  },
+  {
+   "at": "2026-10-04T22:16:18.473Z",
+   "college": "232265",
+   "domain": null,
+   "job": "discovery",
+   "model": "claude-sonnet-5",
+   "input_tokens": 107648,
+   "cache_read_tokens": 0,
+   "cache_write_tokens": 0,
+   "output_tokens": 1732,
+   "searches": 2,
+   "cost_usd": 0.252616,
+   "stop_reason": "tool_use",
+   "mode": "interactive"
+  },
+  {
+   "at": "2026-10-04T22:16:29.109Z",
+   "college": "174066",
+   "domain": null,
+   "job": "discovery",
+   "model": "claude-sonnet-5",
+   "input_tokens": 69495,
+   "cache_read_tokens": 0,
+   "cache_write_tokens": 0,
+   "output_tokens": 832,
+   "searches": 2,
+   "cost_usd": 0.16731,
+   "stop_reason": "tool_use",
+   "mode": "interactive"
+  },
+  {
+   "at": "2026-10-04T22:16:32.792Z",
+   "college": "218070",
+   "domain": null,
+   "job": "discovery",
+   "model": "claude-sonnet-5",
+   "input_tokens": 22669,
+   "cache_read_tokens": 0,
+   "cache_write_tokens": 0,
+   "output_tokens": 343,
+   "searches": 1,
+   "cost_usd": 0.058768,
+   "stop_reason": "tool_use",
+   "mode": "interactive"
+  },
+  {
+   "at": "2026-10-04T22:16:45.302Z",
+   "college": "228875",
+   "domain": null,
+   "job": "discovery",
+   "model": "claude-sonnet-5",
+   "input_tokens": 50386,
+   "cache_read_tokens": 0,
+   "cache_write_tokens": 0,
+   "output_tokens": 871,
+   "searches": 1,
+   "cost_usd": 0.119482,
+   "stop_reason": "tool_use",
+   "mode": "interactive"
+  },
+  {
+   "at": "2026-10-04T22:16:59.108Z",
+   "college": "100858",
+   "domain": null,
+   "job": "discovery",
+   "model": "claude-sonnet-5",
+   "input_tokens": 51896,
+   "cache_read_tokens": 0,
+   "cache_write_tokens": 0,
+   "output_tokens": 915,
+   "searches": 1,
+   "cost_usd": 0.122942,
+   "stop_reason": "tool_use",
+   "mode": "interactive"
+  },
+  {
+   "at": "2026-10-04T22:17:04.927Z",
+   "college": "126614",
+   "domain": null,
+   "job": "discovery",
+   "model": "claude-sonnet-5",
+   "input_tokens": 27433,
+   "cache_read_tokens": 0,
+   "cache_write_tokens": 0,
+   "output_tokens": 438,
+   "searches": 1,
+   "cost_usd": 0.069246,
+   "stop_reason": "tool_use",
+   "mode": "interactive"
+  },
+  {
+   "at": "2026-10-04T22:17:07.346Z",
+   "college": "142115",
+   "domain": null,
+   "job": "discovery",
+   "model": "claude-sonnet-5",
+   "input_tokens": 88429,
+   "cache_read_tokens": 0,
+   "cache_write_tokens": 0,
+   "output_tokens": 2043,
+   "searches": 2,
+   "cost_usd": 0.217288,
+   "stop_reason": "tool_use",
+   "mode": "interactive"
+  },
+  {
+   "at": "2026-10-04T22:17:11.159Z",
+   "college": "133650",
+   "domain": null,
+   "job": "discovery",
+   "model": "claude-sonnet-5",
+   "input_tokens": 96132,
+   "cache_read_tokens": 0,
+   "cache_write_tokens": 0,
+   "output_tokens": 1436,
+   "searches": 1,
+   "cost_usd": 0.216624,
+   "stop_reason": "tool_use",
+   "mode": "interactive"
+  },
+  {
+   "at": "2026-10-04T22:17:14.468Z",
+   "college": "186131",
+   "domain": null,
+   "job": "discovery",
+   "model": "claude-sonnet-5",
+   "input_tokens": 51081,
+   "cache_read_tokens": 0,
+   "cache_write_tokens": 0,
+   "output_tokens": 1204,
+   "searches": 2,
+   "cost_usd": 0.134202,
+   "stop_reason": "tool_use",
+   "mode": "interactive"
+  },
+  {
+   "at": "2026-10-04T22:17:18.807Z",
+   "college": "134097",
+   "domain": null,
+   "job": "discovery",
+   "model": "claude-sonnet-5",
+   "input_tokens": 137540,
+   "cache_read_tokens": 0,
+   "cache_write_tokens": 0,
+   "output_tokens": 2306,
+   "searches": 1,
+   "cost_usd": 0.30814,
+   "stop_reason": "tool_use",
+   "mode": "interactive"
+  },
+  {
+   "at": "2026-10-04T22:17:22.794Z",
+   "college": "217882",
+   "domain": null,
+   "job": "discovery",
+   "model": "claude-sonnet-5",
+   "input_tokens": 43424,
+   "cache_read_tokens": 0,
+   "cache_write_tokens": 0,
+   "output_tokens": 1015,
+   "searches": 1,
+   "cost_usd": 0.106998,
+   "stop_reason": "tool_use",
+   "mode": "interactive"
+  },
+  {
+   "at": "2026-10-04T22:17:26.227Z",
+   "college": "110635",
+   "domain": null,
+   "job": "discovery",
+   "model": "claude-sonnet-5",
+   "input_tokens": 68702,
+   "cache_read_tokens": 0,
+   "cache_write_tokens": 0,
+   "output_tokens": 1243,
+   "searches": 1,
+   "cost_usd": 0.159834,
+   "stop_reason": "tool_use",
+   "mode": "interactive"
+  },
+  {
+   "at": "2026-10-04T22:17:26.690Z",
+   "college": "159391",
+   "domain": null,
+   "job": "discovery",
+   "model": "claude-sonnet-5",
+   "input_tokens": 90986,
+   "cache_read_tokens": 0,
+   "cache_write_tokens": 0,
+   "output_tokens": 1466,
+   "searches": 1,
+   "cost_usd": 0.206632,
+   "stop_reason": "tool_use",
+   "mode": "interactive"
+  },
+  {
+   "at": "2026-10-04T22:17:31.126Z",
+   "college": "233921",
+   "domain": null,
+   "job": "discovery",
+   "model": "claude-sonnet-5",
+   "input_tokens": 89093,
+   "cache_read_tokens": 0,
+   "cache_write_tokens": 0,
+   "output_tokens": 1577,
+   "searches": 1,
+   "cost_usd": 0.203956,
+   "stop_reason": "tool_use",
+   "mode": "interactive"
+  },
+  {
+   "at": "2026-10-04T22:17:32.561Z",
+   "college": "235316",
+   "domain": null,
+   "job": "discovery",
+   "model": "claude-sonnet-5",
+   "input_tokens": 101849,
+   "cache_read_tokens": 0,
+   "cache_write_tokens": 0,
+   "output_tokens": 2363,
+   "searches": 2,
+   "cost_usd": 0.247328,
+   "stop_reason": "tool_use",
+   "mode": "interactive"
+  },
+  {
+   "at": "2026-10-04T22:17:41.629Z",
+   "college": "171100",
+   "domain": null,
+   "job": "discovery",
+   "model": "claude-sonnet-5",
+   "input_tokens": 127786,
+   "cache_read_tokens": 0,
+   "cache_write_tokens": 0,
+   "output_tokens": 2194,
+   "searches": 2,
+   "cost_usd": 0.297512,
+   "stop_reason": "tool_use",
+   "mode": "interactive"
+  },
+  {
+   "at": "2026-10-04T22:17:44.723Z",
+   "college": "168218",
+   "domain": null,
+   "job": "discovery",
+   "model": "claude-sonnet-5",
+   "input_tokens": 96896,
+   "cache_read_tokens": 0,
+   "cache_write_tokens": 0,
+   "output_tokens": 1906,
+   "searches": 1,
+   "cost_usd": 0.222852,
+   "stop_reason": "tool_use",
+   "mode": "interactive"
+  },
+  {
+   "at": "2026-10-04T22:17:44.764Z",
+   "college": "222178",
+   "domain": null,
+   "job": "discovery",
+   "model": "claude-sonnet-5",
+   "input_tokens": 81963,
+   "cache_read_tokens": 0,
+   "cache_write_tokens": 0,
+   "output_tokens": 2022,
+   "searches": 2,
+   "cost_usd": 0.204146,
+   "stop_reason": "tool_use",
+   "mode": "interactive"
+  },
+  {
+   "at": "2026-10-04T22:20:42.863Z",
+   "college": "110635",
+   "domain": "lgbtq",
+   "job": "extraction",
+   "model": "claude-haiku-4-5",
+   "input_tokens": 10876,
+   "cache_read_tokens": 0,
+   "cache_write_tokens": 0,
+   "output_tokens": 529,
+   "searches": 0,
+   "cost_usd": 0.006761,
+   "stop_reason": "tool_use",
+   "mode": "batch"
+  },
+  {
+   "at": "2026-10-04T22:20:42.867Z",
+   "college": "218070",
+   "domain": "greek",
+   "job": "extraction",
+   "model": "claude-haiku-4-5",
+   "input_tokens": 4489,
+   "cache_read_tokens": 0,
+   "cache_write_tokens": 0,
+   "output_tokens": 532,
+   "searches": 0,
+   "cost_usd": 0.003575,
+   "stop_reason": "tool_use",
+   "mode": "batch"
+  },
+  {
+   "at": "2026-10-04T22:20:42.869Z",
+   "college": "133650",
+   "domain": "lgbtq",
+   "job": "extraction",
+   "model": "claude-haiku-4-5",
+   "input_tokens": 5456,
+   "cache_read_tokens": 0,
+   "cache_write_tokens": 0,
+   "output_tokens": 419,
+   "searches": 0,
+   "cost_usd": 0.003776,
+   "stop_reason": "tool_use",
+   "mode": "batch"
+  },
+  {
+   "at": "2026-10-04T22:20:42.872Z",
+   "college": "134097",
+   "domain": "greek",
+   "job": "extraction",
+   "model": "claude-haiku-4-5",
+   "input_tokens": 4275,
+   "cache_read_tokens": 0,
+   "cache_write_tokens": 0,
+   "output_tokens": 705,
+   "searches": 0,
+   "cost_usd": 0.0039,
+   "stop_reason": "tool_use",
+   "mode": "batch"
+  },
+  {
+   "at": "2026-10-04T22:20:42.874Z",
+   "college": "198385",
+   "domain": "greek",
+   "job": "extraction",
+   "model": "claude-haiku-4-5",
+   "input_tokens": 4399,
+   "cache_read_tokens": 0,
+   "cache_write_tokens": 0,
+   "output_tokens": 400,
+   "searches": 0,
+   "cost_usd": 0.0032,
+   "stop_reason": "tool_use",
+   "mode": "batch"
+  },
+  {
+   "at": "2026-10-04T22:20:42.875Z",
+   "college": "222178",
+   "domain": "faith",
+   "job": "extraction",
+   "model": "claude-haiku-4-5",
+   "input_tokens": 2796,
+   "cache_read_tokens": 0,
+   "cache_write_tokens": 0,
+   "output_tokens": 191,
+   "searches": 0,
+   "cost_usd": 0.001876,
+   "stop_reason": "tool_use",
+   "mode": "batch"
+  },
+  {
+   "at": "2026-10-04T22:20:42.880Z",
+   "college": "186380",
+   "domain": "greek",
+   "job": "extraction",
+   "model": "claude-haiku-4-5",
+   "input_tokens": 25666,
+   "cache_read_tokens": 0,
+   "cache_write_tokens": 0,
+   "output_tokens": 749,
+   "searches": 0,
+   "cost_usd": 0.014706,
+   "stop_reason": "tool_use",
+   "mode": "batch"
+  },
+  {
+   "at": "2026-10-04T22:20:42.884Z",
+   "college": "216597",
+   "domain": "greek",
+   "job": "extraction",
+   "model": "claude-haiku-4-5",
+   "input_tokens": 5021,
+   "cache_read_tokens": 0,
+   "cache_write_tokens": 0,
+   "output_tokens": 551,
+   "searches": 0,
+   "cost_usd": 0.003888,
+   "stop_reason": "tool_use",
+   "mode": "batch"
+  },
+  {
+   "at": "2026-10-04T22:20:42.886Z",
+   "college": "233921",
+   "domain": "greek",
+   "job": "extraction",
+   "model": "claude-haiku-4-5",
+   "input_tokens": 3381,
+   "cache_read_tokens": 0,
+   "cache_write_tokens": 0,
+   "output_tokens": 288,
+   "searches": 0,
+   "cost_usd": 0.002411,
+   "stop_reason": "tool_use",
+   "mode": "batch"
+  },
+  {
+   "at": "2026-10-04T22:20:42.886Z",
+   "college": "168218",
+   "domain": "lgbtq",
+   "job": "extraction",
+   "model": "claude-haiku-4-5",
+   "input_tokens": 4641,
+   "cache_read_tokens": 0,
+   "cache_write_tokens": 0,
+   "output_tokens": 551,
+   "searches": 0,
+   "cost_usd": 0.003698,
+   "stop_reason": "tool_use",
+   "mode": "batch"
+  },
+  {
+   "at": "2026-10-04T22:20:42.888Z",
+   "college": "171100",
+   "domain": "lgbtq",
+   "job": "extraction",
+   "model": "claude-haiku-4-5",
+   "input_tokens": 5438,
+   "cache_read_tokens": 0,
+   "cache_write_tokens": 0,
+   "output_tokens": 441,
+   "searches": 0,
+   "cost_usd": 0.003822,
+   "stop_reason": "tool_use",
+   "mode": "batch"
+  },
+  {
+   "at": "2026-10-04T22:20:42.891Z",
+   "college": "166629",
+   "domain": "greek",
+   "job": "extraction",
+   "model": "claude-haiku-4-5",
+   "input_tokens": 9898,
+   "cache_read_tokens": 0,
+   "cache_write_tokens": 0,
+   "output_tokens": 774,
+   "searches": 0,
+   "cost_usd": 0.006884,
+   "stop_reason": "tool_use",
+   "mode": "batch"
+  },
+  {
+   "at": "2026-10-04T22:20:42.891Z",
+   "college": "100858",
+   "domain": "lgbtq",
+   "job": "extraction",
+   "model": "claude-haiku-4-5",
+   "input_tokens": 3993,
+   "cache_read_tokens": 0,
+   "cache_write_tokens": 0,
+   "output_tokens": 425,
+   "searches": 0,
+   "cost_usd": 0.003059,
+   "stop_reason": "tool_use",
+   "mode": "batch"
+  },
+  {
+   "at": "2026-10-04T22:20:42.892Z",
+   "college": "159391",
+   "domain": "greek",
+   "job": "extraction",
+   "model": "claude-haiku-4-5",
+   "input_tokens": 19676,
+   "cache_read_tokens": 0,
+   "cache_write_tokens": 0,
+   "output_tokens": 609,
+   "searches": 0,
+   "cost_usd": 0.011361,
+   "stop_reason": "tool_use",
+   "mode": "batch"
+  },
+  {
+   "at": "2026-10-04T22:20:42.894Z",
+   "college": "228875",
+   "domain": "greek",
+   "job": "extraction",
+   "model": "claude-haiku-4-5",
+   "input_tokens": 6927,
+   "cache_read_tokens": 0,
+   "cache_write_tokens": 0,
+   "output_tokens": 749,
+   "searches": 0,
+   "cost_usd": 0.005336,
+   "stop_reason": "tool_use",
+   "mode": "batch"
+  },
+  {
+   "at": "2026-10-04T22:20:42.897Z",
+   "college": "126614",
+   "domain": "greek",
+   "job": "extraction",
+   "model": "claude-haiku-4-5",
+   "input_tokens": 8770,
+   "cache_read_tokens": 0,
+   "cache_write_tokens": 0,
+   "output_tokens": 549,
+   "searches": 0,
+   "cost_usd": 0.005758,
+   "stop_reason": "tool_use",
+   "mode": "batch"
+  },
+  {
+   "at": "2026-10-04T22:20:42.899Z",
+   "college": "217882",
+   "domain": "greek",
+   "job": "extraction",
+   "model": "claude-haiku-4-5",
+   "input_tokens": 13710,
+   "cache_read_tokens": 0,
+   "cache_write_tokens": 0,
+   "output_tokens": 685,
+   "searches": 0,
+   "cost_usd": 0.008568,
+   "stop_reason": "tool_use",
+   "mode": "batch"
+  },
+  {
+   "at": "2026-10-04T22:21:11.724Z",
+   "college": "130794",
+   "domain": null,
+   "job": "discovery",
+   "model": "claude-sonnet-5",
+   "input_tokens": 76822,
+   "cache_read_tokens": 0,
+   "cache_write_tokens": 0,
+   "output_tokens": 1555,
+   "searches": 1,
+   "cost_usd": 0.179194,
+   "stop_reason": "tool_use",
+   "mode": "interactive"
+  },
+  {
+   "at": "2026-10-04T22:23:04.133Z",
+   "college": "130794",
+   "domain": "lgbtq",
+   "job": "extraction",
+   "model": "claude-haiku-4-5",
+   "input_tokens": 3524,
+   "cache_read_tokens": 0,
+   "cache_write_tokens": 0,
+   "output_tokens": 415,
+   "searches": 0,
+   "cost_usd": 0.0028,
+   "stop_reason": "tool_use",
+   "mode": "batch"
+  },
+  {
+   "at": "2026-10-04T22:24:10.996Z",
+   "college": "216597",
+   "domain": "faith",
+   "job": "extraction",
+   "model": "claude-haiku-4-5",
+   "input_tokens": 5658,
+   "cache_read_tokens": 0,
+   "cache_write_tokens": 0,
+   "output_tokens": 611,
+   "searches": 0,
+   "cost_usd": 0.004357,
+   "stop_reason": "tool_use",
+   "mode": "batch"
+  },
+  {
+   "at": "2026-10-04T22:24:10.999Z",
+   "college": "159391",
+   "domain": "greek",
+   "job": "escalation",
+   "model": "claude-sonnet-5",
+   "input_tokens": 28040,
+   "cache_read_tokens": 0,
+   "cache_write_tokens": 0,
+   "output_tokens": 791,
+   "searches": 0,
+   "cost_usd": 0.031995,
+   "stop_reason": "tool_use",
+   "mode": "batch"
+  },
+  {
+   "at": "2026-10-04T22:24:11.002Z",
+   "college": "233921",
+   "domain": "lgbtq",
+   "job": "extraction",
+   "model": "claude-haiku-4-5",
+   "input_tokens": 3331,
+   "cache_read_tokens": 0,
+   "cache_write_tokens": 0,
+   "output_tokens": 472,
+   "searches": 0,
+   "cost_usd": 0.002846,
+   "stop_reason": "tool_use",
+   "mode": "batch"
+  },
+  {
+   "at": "2026-10-04T22:24:11.002Z",
+   "college": "110635",
+   "domain": "lgbtq",
+   "job": "escalation",
+   "model": "claude-sonnet-5",
+   "input_tokens": 15222,
+   "cache_read_tokens": 0,
+   "cache_write_tokens": 0,
+   "output_tokens": 659,
+   "searches": 0,
+   "cost_usd": 0.018517,
+   "stop_reason": "tool_use",
+   "mode": "batch"
+  },
+  {
+   "at": "2026-10-04T22:24:11.005Z",
+   "college": "228875",
+   "domain": "faith",
+   "job": "extraction",
+   "model": "claude-haiku-4-5",
+   "input_tokens": 2497,
+   "cache_read_tokens": 0,
+   "cache_write_tokens": 0,
+   "output_tokens": 179,
+   "searches": 0,
+   "cost_usd": 0.001696,
+   "stop_reason": "tool_use",
+   "mode": "batch"
+  },
+  {
+   "at": "2026-10-04T22:24:11.005Z",
+   "college": "166629",
+   "domain": "greek",
+   "job": "escalation",
+   "model": "claude-sonnet-5",
+   "input_tokens": 12940,
+   "cache_read_tokens": 0,
+   "cache_write_tokens": 0,
+   "output_tokens": 904,
+   "searches": 0,
+   "cost_usd": 0.01746,
+   "stop_reason": "tool_use",
+   "mode": "batch"
+  },
+  {
+   "at": "2026-10-04T22:24:11.007Z",
+   "college": "134097",
+   "domain": "faith",
+   "job": "extraction",
+   "model": "claude-haiku-4-5",
+   "input_tokens": 6383,
+   "cache_read_tokens": 0,
+   "cache_write_tokens": 0,
+   "output_tokens": 1222,
+   "searches": 0,
+   "cost_usd": 0.006247,
+   "stop_reason": "tool_use",
+   "mode": "batch"
+  },
+  {
+   "at": "2026-10-04T22:24:11.021Z",
+   "college": "218070",
+   "domain": "faith",
+   "job": "extraction",
+   "model": "claude-haiku-4-5",
+   "input_tokens": 4187,
+   "cache_read_tokens": 0,
+   "cache_write_tokens": 0,
+   "output_tokens": 174,
+   "searches": 0,
+   "cost_usd": 0.002529,
+   "stop_reason": "tool_use",
+   "mode": "batch"
+  },
+  {
+   "at": "2026-10-04T22:24:11.022Z",
+   "college": "198385",
+   "domain": "faith",
+   "job": "extraction",
+   "model": "claude-haiku-4-5",
+   "input_tokens": 5045,
+   "cache_read_tokens": 0,
+   "cache_write_tokens": 0,
+   "output_tokens": 951,
+   "searches": 0,
+   "cost_usd": 0.0049,
+   "stop_reason": "tool_use",
+   "mode": "batch"
+  },
+  {
+   "at": "2026-10-04T22:24:11.026Z",
+   "college": "126614",
+   "domain": "lgbtq",
+   "job": "extraction",
+   "model": "claude-haiku-4-5",
+   "input_tokens": 4287,
+   "cache_read_tokens": 0,
+   "cache_write_tokens": 0,
+   "output_tokens": 452,
+   "searches": 0,
+   "cost_usd": 0.003274,
+   "stop_reason": "tool_use",
+   "mode": "batch"
+  },
+  {
+   "at": "2026-10-04T22:24:11.030Z",
+   "college": "186380",
+   "domain": "greek",
+   "job": "escalation",
+   "model": "claude-sonnet-5",
+   "input_tokens": 32899,
+   "cache_read_tokens": 0,
+   "cache_write_tokens": 0,
+   "output_tokens": 796,
+   "searches": 0,
+   "cost_usd": 0.036879,
+   "stop_reason": "tool_use",
+   "mode": "batch"
+  },
+  {
+   "at": "2026-10-04T22:26:39.298Z",
+   "college": "198385",
+   "domain": "lgbtq",
+   "job": "extraction",
+   "model": "claude-haiku-4-5",
+   "input_tokens": 7639,
+   "cache_read_tokens": 0,
+   "cache_write_tokens": 0,
+   "output_tokens": 717,
+   "searches": 0,
+   "cost_usd": 0.005612,
+   "stop_reason": "tool_use",
+   "mode": "batch"
+  },
+  {
+   "at": "2026-10-04T22:26:39.301Z",
+   "college": "159391",
+   "domain": "lgbtq",
+   "job": "extraction",
+   "model": "claude-haiku-4-5",
+   "input_tokens": 3305,
+   "cache_read_tokens": 0,
+   "cache_write_tokens": 0,
+   "output_tokens": 485,
+   "searches": 0,
+   "cost_usd": 0.002865,
+   "stop_reason": "tool_use",
+   "mode": "batch"
+  },
+  {
+   "at": "2026-10-04T22:26:39.302Z",
+   "college": "166629",
+   "domain": "faith",
+   "job": "extraction",
+   "model": "claude-haiku-4-5",
+   "input_tokens": 5091,
+   "cache_read_tokens": 0,
+   "cache_write_tokens": 0,
+   "output_tokens": 380,
+   "searches": 0,
+   "cost_usd": 0.003496,
+   "stop_reason": "tool_use",
+   "mode": "batch"
+  },
+  {
+   "at": "2026-10-04T22:26:39.303Z",
+   "college": "218070",
+   "domain": "lgbtq",
+   "job": "extraction",
+   "model": "claude-haiku-4-5",
+   "input_tokens": 7213,
+   "cache_read_tokens": 0,
+   "cache_write_tokens": 0,
+   "output_tokens": 742,
+   "searches": 0,
+   "cost_usd": 0.005462,
+   "stop_reason": "tool_use",
+   "mode": "batch"
+  },
+  {
+   "at": "2026-10-04T22:26:39.306Z",
+   "college": "186380",
+   "domain": "faith",
+   "job": "extraction",
+   "model": "claude-haiku-4-5",
+   "input_tokens": 6574,
+   "cache_read_tokens": 0,
+   "cache_write_tokens": 0,
+   "output_tokens": 998,
+   "searches": 0,
+   "cost_usd": 0.005782,
+   "stop_reason": "tool_use",
+   "mode": "batch"
+  },
+  {
+   "at": "2026-10-04T22:26:39.317Z",
+   "college": "216597",
+   "domain": "lgbtq",
+   "job": "extraction",
+   "model": "claude-haiku-4-5",
+   "input_tokens": 9042,
+   "cache_read_tokens": 0,
+   "cache_write_tokens": 0,
+   "output_tokens": 780,
+   "searches": 0,
+   "cost_usd": 0.006471,
+   "stop_reason": "tool_use",
+   "mode": "batch"
+  },
+  {
+   "at": "2026-10-04T22:26:39.322Z",
+   "college": "228875",
+   "domain": "lgbtq",
+   "job": "extraction",
+   "model": "claude-haiku-4-5",
+   "input_tokens": 3934,
+   "cache_read_tokens": 0,
+   "cache_write_tokens": 0,
+   "output_tokens": 403,
+   "searches": 0,
+   "cost_usd": 0.002975,
+   "stop_reason": "tool_use",
+   "mode": "batch"
+  },
+  {
+   "at": "2026-10-04T22:29:19.844Z",
+   "college": "166629",
+   "domain": "lgbtq",
+   "job": "extraction",
+   "model": "claude-haiku-4-5",
+   "input_tokens": 9917,
+   "cache_read_tokens": 0,
+   "cache_write_tokens": 0,
+   "output_tokens": 819,
+   "searches": 0,
+   "cost_usd": 0.007006,
+   "stop_reason": "tool_use",
+   "mode": "batch"
+  },
+  {
+   "at": "2026-10-04T22:29:19.847Z",
+   "college": "186380",
+   "domain": "lgbtq",
+   "job": "extraction",
+   "model": "claude-haiku-4-5",
+   "input_tokens": 10845,
+   "cache_read_tokens": 0,
+   "cache_write_tokens": 0,
+   "output_tokens": 1679,
+   "searches": 0,
+   "cost_usd": 0.00962,
+   "stop_reason": "tool_use",
+   "mode": "batch"
+  },
+  {
+   "at": "2026-10-04T22:29:19.857Z",
+   "college": "228875",
+   "domain": "lgbtq",
+   "job": "verify",
+   "model": "claude-sonnet-5",
+   "input_tokens": 1880,
+   "cache_read_tokens": 0,
+   "cache_write_tokens": 0,
+   "output_tokens": 147,
+   "searches": 0,
+   "cost_usd": 0.002615,
+   "stop_reason": "tool_use",
+   "mode": "batch"
+  },
+  {
+   "at": "2026-10-04T22:32:59.805Z",
+   "college": "228875",
+   "domain": "lgbtq",
+   "job": "verify",
+   "model": "claude-sonnet-5",
+   "input_tokens": 1881,
+   "cache_read_tokens": 0,
+   "cache_write_tokens": 0,
+   "output_tokens": 134,
+   "searches": 0,
+   "cost_usd": 0.002551,
+   "stop_reason": "tool_use",
+   "mode": "batch"
+  },
+  {
+   "at": "2026-10-04T22:32:59.805Z",
+   "college": "166629",
+   "domain": "lgbtq",
+   "job": "escalation",
+   "model": "claude-sonnet-5",
+   "input_tokens": 13611,
+   "cache_read_tokens": 0,
+   "cache_write_tokens": 0,
+   "output_tokens": 1132,
+   "searches": 0,
+   "cost_usd": 0.019271,
+   "stop_reason": "tool_use",
+   "mode": "batch"
+  }
+ ],
+ "results": [
+  {
+   "unit_id": "216287",
+   "name": "Swarthmore College",
+   "checked": "2026-10-04",
+   "greek": null,
+   "faith": null,
+   "lgbtq": null,
+   "listings": [],
+   "raw": {},
+   "escalated": [],
+   "dropped": [],
+   "checks": [],
+   "errors": []
+  },
+  {
+   "unit_id": "232265",
+   "name": "Hampton University",
+   "checked": "2026-10-04",
+   "greek": null,
+   "faith": null,
+   "lgbtq": null,
+   "listings": [],
+   "raw": {},
+   "escalated": [],
+   "dropped": [],
+   "checks": [],
+   "errors": []
+  },
+  {
+   "unit_id": "174066",
+   "name": "University of Minnesota-Twin Cities",
+   "checked": "2026-10-04",
+   "greek": null,
+   "faith": null,
+   "lgbtq": null,
+   "listings": [],
+   "raw": {},
+   "escalated": [],
+   "dropped": [],
+   "checks": [],
+   "errors": []
+  },
+  {
+   "unit_id": "142115",
+   "name": "Boise State University",
+   "checked": "2026-10-04",
+   "greek": null,
+   "faith": null,
+   "lgbtq": null,
+   "listings": [],
+   "raw": {},
+   "escalated": [],
+   "dropped": [],
+   "checks": [],
+   "errors": []
+  },
+  {
+   "unit_id": "186131",
+   "name": "Princeton University",
+   "checked": "2026-10-04",
+   "greek": null,
+   "faith": null,
+   "lgbtq": null,
+   "listings": [],
+   "raw": {},
+   "escalated": [],
+   "dropped": [],
+   "checks": [],
+   "errors": []
+  },
+  {
+   "unit_id": "235316",
+   "name": "Gonzaga University",
+   "checked": "2026-10-04",
+   "greek": null,
+   "faith": null,
+   "lgbtq": null,
+   "listings": [],
+   "raw": {},
+   "escalated": [],
+   "dropped": [],
+   "checks": [],
+   "errors": []
+  },
+  {
+   "unit_id": "133650",
+   "name": "Florida Agricultural and Mechanical University",
+   "checked": "2026-10-04",
+   "greek": null,
+   "faith": null,
+   "lgbtq": {
+    "policies": [
+     {
+      "key": "nondiscrimination_orientation",
+      "value": "yes",
+      "url": "https://www.famu.edu/administration/compliance-and-ethics/titleix/index.php",
+      "checked": "2026-10-04",
+      "quote": "…to providing an educational and work environment free from discrimination and harassment on the basis of sex, sexual orientation, gender identity, and gender…"
+     },
+     {
+      "key": "nondiscrimination_identity",
+      "value": "yes",
+      "url": "https://www.famu.edu/administration/compliance-and-ethics/titleix/index.php",
+      "checked": "2026-10-04",
+      "quote": "…educational and work environment free from discrimination and harassment on the basis of sex, sexual orientation, gender identity, and gender expression."
+     }
+    ]
+   },
+   "listings": [],
+   "raw": {
+    "lgbtq": {
+     "center": {
+      "status": "none_found",
+      "name": "",
+      "closed": "",
+      "page": 1,
+      "quote": ""
+     },
+     "groups": [],
+     "policies": {
+      "nondiscrimination_orientation": {
+       "value": "yes",
+       "page": 1,
+       "quote": "Florida A&M University is committed to providing an educational and work environment free from discrimination and harassment on the basis of sex, sexual orientation, gender identity, and gender expression."
+      },
+      "nondiscrimination_identity": {
+       "value": "yes",
+       "page": 1,
+       "quote": "Florida A&M University is committed to providing an educational and work environment free from discrimination and harassment on the basis of sex, sexual orientation, gender identity, and gender expression."
+      },
+      "inclusive_housing": {
+       "value": "not_found",
+       "page": 0,
+       "quote": ""
+      },
+      "name_on_records": {
+       "value": "not_found",
+       "page": 0,
+       "quote": ""
+      },
+      "inclusive_restrooms": {
+       "value": "not_found",
+       "page": 0,
+       "quote": ""
+      },
+      "health_plan_transition": {
+       "value": "not_found",
+       "page": 0,
+       "quote": ""
+      },
+      "trans_admission": {
+       "value": "not_found",
+       "page": 0,
+       "quote": ""
+      },
+      "trans_athletics": {
+       "value": "not_found",
+       "page": 0,
+       "quote": ""
+      }
+     },
+     "conduct": {
+      "restricts": "not_found",
+      "document": "",
+      "page": 0,
+      "quotes": []
+     },
+     "confidence": "high"
+    }
+   },
+   "escalated": [],
+   "dropped": [],
+   "checks": [],
+   "errors": []
+  },
+  {
+   "unit_id": "222178",
+   "name": "Abilene Christian University",
+   "checked": "2026-10-04",
+   "greek": null,
+   "faith": {
+    "office": {
+     "url": "https://blogs.acu.edu/csart/",
+     "checked": "2026-10-04",
+     "quote": "ACU's Center for the Study of Ancient Religious Texts (CSART) fosters the study of ancient religious documents through research, teaching, and academic…",
+     "name": "Center for the Study of Ancient Religious Texts (CSART)"
+    }
+   },
+   "lgbtq": null,
+   "listings": [],
+   "raw": {
+    "faith": {
+     "office": {
+      "name": "Center for the Study of Ancient Religious Texts (CSART)",
+      "page": 1,
+      "quote": "ACU's Center for the Study of Ancient Religious Texts (CSART) fosters the study of ancient religious documents through research, teaching, and academic mentoring."
+     },
+     "communities": [],
+     "composition": {
+      "items": [],
+      "total": null,
+      "population": "",
+      "as_of": "",
+      "page": 0,
+      "quote": ""
+     },
+     "estimates": [],
+     "confidence": "high"
+    }
+   },
+   "escalated": [],
+   "dropped": [],
+   "checks": [],
+   "errors": []
+  },
+  {
+   "unit_id": "168218",
+   "name": "Wellesley College",
+   "checked": "2026-10-04",
+   "greek": null,
+   "faith": null,
+   "lgbtq": {
+    "policies": [
+     {
+      "key": "nondiscrimination_orientation",
+      "value": "yes",
+      "url": "https://www.wellesley.edu/about-us/offices-departments/nondiscrimination/notice-of-nondiscrimination",
+      "checked": "2026-10-04",
+      "quote": "…basis of race, color, natural or protective hairstyles, age (40 and over), sex, gender identity or expression, sexual orientation, religion, ethnic origin or…"
+     },
+     {
+      "key": "nondiscrimination_identity",
+      "value": "yes",
+      "url": "https://www.wellesley.edu/about-us/offices-departments/nondiscrimination/notice-of-nondiscrimination",
+      "checked": "2026-10-04",
+      "quote": "…discriminated against or harassed on the basis of race, color, natural or protective hairstyles, age (40 and over), sex, gender identity or expression,…"
+     }
+    ]
+   },
+   "listings": [],
+   "raw": {
+    "lgbtq": {
+     "center": {
+      "status": "none_found",
+      "name": "",
+      "closed": "",
+      "page": 0,
+      "quote": ""
+     },
+     "groups": [],
+     "policies": {
+      "nondiscrimination_orientation": {
+       "value": "yes",
+       "page": 1,
+       "quote": "No employee or student shall be discriminated against or harassed on the basis of race, color, natural or protective hairstyles, age (40 and over), sex, gender identity or expression, sexual orientation, religion, ethnic origin or characteristics, national origin or shared ancestry, veteran status, physical or mental disability, pregnancy, sexual orientation, gender identity or expression, genetic information, veteran or military status, membership in Uniformed Services, or any category protected by applicable state and federal laws."
+      },
+      "nondiscrimination_identity": {
+       "value": "yes",
+       "page": 1,
+       "quote": "No employee or student shall be discriminated against or harassed on the basis of race, color, natural or protective hairstyles, age (40 and over), sex, gender identity or expression, sexual orientation, religion, ethnic origin or characteristics, national origin or shared ancestry, veteran status, physical or mental disability, pregnancy, sexual orientation, gender identity or expression, genetic information, veteran or military status, membership in Uniformed Services, or any category protected by applicable state and federal laws."
+      },
+      "inclusive_housing": {
+       "value": "not_found",
+       "page": 0,
+       "quote": ""
+      },
+      "name_on_records": {
+       "value": "not_found",
+       "page": 0,
+       "quote": ""
+      },
+      "inclusive_restrooms": {
+       "value": "not_found",
+       "page": 0,
+       "quote": ""
+      },
+      "health_plan_transition": {
+       "value": "not_found",
+       "page": 0,
+       "quote": ""
+      },
+      "trans_admission": {
+       "value": "not_found",
+       "page": 0,
+       "quote": ""
+      },
+      "trans_athletics": {
+       "value": "not_found",
+       "page": 0,
+       "quote": ""
+      }
+     },
+     "conduct": {
+      "restricts": "not_found",
+      "document": "",
+      "page": 0,
+      "quotes": []
+     },
+     "confidence": "high"
+    }
+   },
+   "escalated": [],
+   "dropped": [],
+   "checks": [],
+   "errors": []
+  },
+  {
+   "unit_id": "171100",
+   "name": "Michigan State University",
+   "checked": "2026-10-04",
+   "greek": null,
+   "faith": null,
+   "lgbtq": {
+    "policies": [
+     {
+      "key": "nondiscrimination_orientation",
+      "value": "yes",
+      "url": "https://civilrights.msu.edu/policies",
+      "checked": "2026-10-04",
+      "quote": "…color, gender (including gender identity and gender expression)... race, religion, sex (including pregnancy, sexual orientation)... or any other status…"
+     },
+     {
+      "key": "nondiscrimination_identity",
+      "value": "yes",
+      "url": "https://civilrights.msu.edu/policies",
+      "checked": "2026-10-04",
+      "quote": "The University prohibits discrimination and harassment... on the basis of age, color, gender (including gender identity and gender expression)... or any other…"
+     }
+    ]
+   },
+   "listings": [],
+   "raw": {
+    "lgbtq": {
+     "center": {
+      "status": "none_found",
+      "name": "",
+      "closed": "",
+      "page": 0,
+      "quote": ""
+     },
+     "groups": [],
+     "policies": {
+      "nondiscrimination_orientation": {
+       "value": "yes",
+       "page": 1,
+       "quote": "The University prohibits discrimination and harassment... on the basis of age, color, gender (including gender identity and gender expression)... race, religion, sex (including pregnancy, sexual orientation)... or any other status protected by applicable federal or state law"
+      },
+      "nondiscrimination_identity": {
+       "value": "yes",
+       "page": 1,
+       "quote": "The University prohibits discrimination and harassment... on the basis of age, color, gender (including gender identity and gender expression)... or any other status protected by applicable federal or state law"
+      },
+      "inclusive_housing": {
+       "value": "not_found",
+       "page": 0,
+       "quote": ""
+      },
+      "name_on_records": {
+       "value": "not_found",
+       "page": 0,
+       "quote": ""
+      },
+      "inclusive_restrooms": {
+       "value": "not_found",
+       "page": 0,
+       "quote": ""
+      },
+      "health_plan_transition": {
+       "value": "not_found",
+       "page": 0,
+       "quote": ""
+      },
+      "trans_admission": {
+       "value": "not_found",
+       "page": 0,
+       "quote": ""
+      },
+      "trans_athletics": {
+       "value": "not_found",
+       "page": 0,
+       "quote": ""
+      }
+     },
+     "conduct": {
+      "restricts": "not_found",
+      "document": "",
+      "page": 0,
+      "quotes": []
+     },
+     "confidence": "high"
+    }
+   },
+   "escalated": [],
+   "dropped": [],
+   "checks": [],
+   "errors": []
+  },
+  {
+   "unit_id": "100858",
+   "name": "Auburn University",
+   "checked": "2026-10-04",
+   "greek": null,
+   "faith": null,
+   "lgbtq": {
+    "policies": [
+     {
+      "key": "nondiscrimination_orientation",
+      "value": "yes",
+      "url": "https://auburn.edu/administration/eoc/nondiscriminationantiharassment.php",
+      "checked": "2026-10-04",
+      "quote": "Protected classes are race, color, sex (which includes sexual orientation, gender identity, and gender expression), religion, national origin, age,…"
+     },
+     {
+      "key": "nondiscrimination_identity",
+      "value": "yes",
+      "url": "https://auburn.edu/administration/eoc/nondiscriminationantiharassment.php",
+      "checked": "2026-10-04",
+      "quote": "Protected classes are race, color, sex (which includes sexual orientation, gender identity, and gender expression), religion, national origin, age,…"
+     }
+    ]
+   },
+   "listings": [],
+   "raw": {
+    "lgbtq": {
+     "center": {
+      "status": "none_found",
+      "name": "",
+      "closed": "",
+      "page": 0,
+      "quote": ""
+     },
+     "groups": [],
+     "policies": {
+      "nondiscrimination_orientation": {
+       "value": "yes",
+       "page": 1,
+       "quote": "Protected classes are race, color, sex (which includes sexual orientation, gender identity, and gender expression), religion, national origin, age, disability, protected veteran status, or genetic information."
+      },
+      "nondiscrimination_identity": {
+       "value": "yes",
+       "page": 1,
+       "quote": "Protected classes are race, color, sex (which includes sexual orientation, gender identity, and gender expression), religion, national origin, age, disability, protected veteran status, or genetic information."
+      },
+      "inclusive_housing": {
+       "value": "not_found",
+       "page": 0,
+       "quote": ""
+      },
+      "name_on_records": {
+       "value": "not_found",
+       "page": 0,
+       "quote": ""
+      },
+      "inclusive_restrooms": {
+       "value": "not_found",
+       "page": 0,
+       "quote": ""
+      },
+      "health_plan_transition": {
+       "value": "not_found",
+       "page": 0,
+       "quote": ""
+      },
+      "trans_admission": {
+       "value": "not_found",
+       "page": 0,
+       "quote": ""
+      },
+      "trans_athletics": {
+       "value": "not_found",
+       "page": 0,
+       "quote": ""
+      }
+     },
+     "conduct": {
+      "restricts": "not_found",
+      "document": "",
+      "page": 0,
+      "quotes": []
+     },
+     "confidence": "high"
+    }
+   },
+   "escalated": [],
+   "dropped": [],
+   "checks": [],
+   "errors": []
+  },
+  {
+   "unit_id": "217882",
+   "name": "Clemson University",
+   "checked": "2026-10-04",
+   "greek": {
+    "housing": {
+     "url": "https://www.clemson.edu/studentaffairs/get-involved/fsl/chapter-resources/",
+     "checked": "2026-10-04",
+     "quote": "FSH residents must be active \"Full Members\" of their chapter as reported through the University Greek Roster system. FSH Residents are granted 24/7 access to…",
+     "value": "yes"
+    },
+    "formal_term": {
+     "url": "https://www.clemson.edu/studentaffairs/get-involved/fsl/how-to-join.html",
+     "checked": "2026-10-04",
+     "quote": "Most of IFC's members join through IFC Rush, the formal recruitment process to join an IFC Fraternity, which takes place at the start of both the Fall and the…",
+     "value": "Fall; Spring"
+    }
+   },
+   "faith": null,
+   "lgbtq": null,
+   "listings": [],
+   "raw": {
+    "greek": {
+     "status": {
+      "value": "present",
+      "page": 1,
+      "quote": "Clemson fraternities and sororities are student led organizations that enhance the student experience inside and outside the classroom."
+     },
+     "office_name": "Fraternity and Sorority Life",
+     "members_total": {
+      "value": null,
+      "term": "",
+      "page": 0,
+      "quote": ""
+     },
+     "councils": [
+      {
+       "council": "nic",
+       "name": "Interfraternity Council",
+       "chapters": null,
+       "members": null,
+       "term": "",
+       "page": 6,
+       "quote": "The Interfraternity Council (IFC) governs organizations that are either affiliated with the North-American Interfraternity Conference or are independent social fraternities."
+      },
+      {
+       "council": "npc",
+       "name": "College Panhellenic Association",
+       "chapters": null,
+       "members": null,
+       "term": "",
+       "page": 6,
+       "quote": "The College Panhellenic Association (CPA) governs organizations that are affiliated with the National Panhellenic Conference."
+      },
+      {
+       "council": "nphc",
+       "name": "National Pan-Hellenic Council",
+       "chapters": null,
+       "members": null,
+       "term": "",
+       "page": 6,
+       "quote": "The National Pan-Hellenic Council (NPHC) governs organizations that are affiliated with the National Pan-Hellenic Council. These organizations are historically African American organizations."
+      },
+      {
+       "council": "nmgc",
+       "name": "Multicultural Greek Council",
+       "chapters": null,
+       "members": null,
+       "term": "",
+       "page": 6,
+       "quote": "The Multicultural Greek Council (MGC) governs organizations that are historically multicultural and multiethnic fraternities and sororities."
+      }
+     ],
+     "housing": {
+      "value": "yes",
+      "page": 4,
+      "quote": "FSH residents must be active \"Full Members\" of their chapter as reported through the University Greek Roster system. FSH Residents are granted 24/7 access to their chapter hall."
+     },
+     "deferred": {
+      "value": "not_stated",
+      "page": 0,
+      "quote": ""
+     },
+     "formal_term": {
+      "value": "Fall; Spring",
+      "page": 3,
+      "quote": "Most of IFC's members join through IFC Rush, the formal recruitment process to join an IFC Fraternity, which takes place at the start of both the Fall and the Spring semesters... Fall Primary Recruitment is the main opportunity for students to join a Panhellenic sorority at Clemson University."
+     },
+     "confidence": "high"
+    }
+   },
+   "escalated": [],
+   "dropped": [],
+   "checks": [],
+   "errors": []
+  },
+  {
+   "unit_id": "153658",
+   "name": "University of Iowa",
+   "checked": "2026-10-04",
+   "greek": null,
+   "faith": null,
+   "lgbtq": null,
+   "listings": [],
+   "raw": {},
+   "escalated": [],
+   "dropped": [],
+   "checks": [],
+   "errors": [
+    "discovery: Request was aborted."
+   ]
+  },
+  {
+   "unit_id": "130794",
+   "name": "Yale University",
+   "checked": "2026-10-04",
+   "greek": null,
+   "faith": null,
+   "lgbtq": {
+    "policies": [
+     {
+      "key": "nondiscrimination_orientation",
+      "value": "yes",
+      "url": "https://www.yale.edu/eo-nondiscriminationstatement",
+      "checked": "2026-10-04",
+      "quote": "…in admissions, educational programs, or employment against any individual on account of that individual's sex; sexual orientation; gender identity or…"
+     },
+     {
+      "key": "nondiscrimination_identity",
+      "value": "yes",
+      "url": "https://www.yale.edu/eo-nondiscriminationstatement",
+      "checked": "2026-10-04",
+      "quote": "…educational programs, or employment against any individual on account of that individual's sex; sexual orientation; gender identity or expression"
+     }
+    ]
+   },
+   "listings": [],
+   "raw": {
+    "lgbtq": {
+     "center": {
+      "status": "none_found",
+      "name": "",
+      "closed": "",
+      "page": 0,
+      "quote": ""
+     },
+     "groups": [],
+     "policies": {
+      "nondiscrimination_orientation": {
+       "value": "yes",
+       "page": 1,
+       "quote": "Yale does not discriminate in admissions, educational programs, or employment against any individual on account of that individual's sex; sexual orientation; gender identity or expression"
+      },
+      "nondiscrimination_identity": {
+       "value": "yes",
+       "page": 1,
+       "quote": "Yale does not discriminate in admissions, educational programs, or employment against any individual on account of that individual's sex; sexual orientation; gender identity or expression"
+      },
+      "inclusive_housing": {
+       "value": "not_found",
+       "page": 0,
+       "quote": ""
+      },
+      "name_on_records": {
+       "value": "not_found",
+       "page": 0,
+       "quote": ""
+      },
+      "inclusive_restrooms": {
+       "value": "not_found",
+       "page": 0,
+       "quote": ""
+      },
+      "health_plan_transition": {
+       "value": "not_found",
+       "page": 0,
+       "quote": ""
+      },
+      "trans_admission": {
+       "value": "not_found",
+       "page": 0,
+       "quote": ""
+      },
+      "trans_athletics": {
+       "value": "not_found",
+       "page": 0,
+       "quote": ""
+      }
+     },
+     "conduct": {
+      "restricts": "not_found",
+      "document": "",
+      "page": 0,
+      "quotes": []
+     },
+     "confidence": "high"
+    }
+   },
+   "escalated": [],
+   "dropped": [],
+   "checks": [],
+   "errors": []
+  },
+  {
+   "unit_id": "233921",
+   "name": "Virginia Polytechnic Institute and State University",
+   "checked": "2026-10-04",
+   "greek": {
+    "members_total": {
+     "url": "https://fsl.vt.edu/",
+     "checked": "2026-10-04",
+     "quote": "The fraternity and sorority community currently encompasses more than 5,700 students",
+     "value": 5700,
+     "term": "not_stated"
+    }
+   },
+   "faith": null,
+   "lgbtq": {
+    "policies": [
+     {
+      "key": "nondiscrimination_orientation",
+      "value": "yes",
+      "url": "https://www.vt.edu/equal-opportunity.html",
+      "checked": "2026-10-04",
+      "quote": "…gender expression, genetic information, ethnicity or national origin, political affiliation, race, religion, sexual orientation, or military status"
+     },
+     {
+      "key": "nondiscrimination_identity",
+      "value": "yes",
+      "url": "https://www.vt.edu/equal-opportunity.html",
+      "checked": "2026-10-04",
+      "quote": "…employees, students, or applicants on the basis of age, color, disability, sex (including pregnancy), gender, gender identity, gender expression, genetic…"
+     }
+    ]
+   },
+   "listings": [],
+   "raw": {
+    "greek": {
+     "status": {
+      "value": "present",
+      "page": 1,
+      "quote": "The fraternity and sorority community currently encompasses more than 5,700 students"
+     },
+     "office_name": "Fraternity and Sorority Life",
+     "members_total": {
+      "value": 5700,
+      "term": "not_stated",
+      "page": 1,
+      "quote": "The fraternity and sorority community currently encompasses more than 5,700 students"
+     },
+     "councils": [],
+     "housing": {
+      "value": "not_stated",
+      "page": 0,
+      "quote": ""
+     },
+     "deferred": {
+      "value": "not_stated",
+      "page": 0,
+      "quote": ""
+     },
+     "formal_term": {
+      "value": "",
+      "page": 0,
+      "quote": ""
+     },
+     "confidence": "high"
+    },
+    "lgbtq": {
+     "center": {
+      "status": "none_found",
+      "name": "",
+      "closed": "",
+      "page": 0,
+      "quote": ""
+     },
+     "groups": [],
+     "policies": {
+      "nondiscrimination_orientation": {
+       "value": "yes",
+       "page": 1,
+       "quote": "Virginia Tech does not discriminate against employees, students, or applicants on the basis of age, color, disability, sex (including pregnancy), gender, gender identity, gender expression, genetic information, ethnicity or national origin, political affiliation, race, religion, sexual orientation, or military status"
+      },
+      "nondiscrimination_identity": {
+       "value": "yes",
+       "page": 1,
+       "quote": "Virginia Tech does not discriminate against employees, students, or applicants on the basis of age, color, disability, sex (including pregnancy), gender, gender identity, gender expression, genetic information, ethnicity or national origin, political affiliation, race, religion, sexual orientation, or military status"
+      },
+      "inclusive_housing": {
+       "value": "not_found",
+       "page": 0,
+       "quote": ""
+      },
+      "name_on_records": {
+       "value": "not_found",
+       "page": 0,
+       "quote": ""
+      },
+      "inclusive_restrooms": {
+       "value": "not_found",
+       "page": 0,
+       "quote": ""
+      },
+      "health_plan_transition": {
+       "value": "not_found",
+       "page": 0,
+       "quote": ""
+      },
+      "trans_admission": {
+       "value": "not_found",
+       "page": 0,
+       "quote": ""
+      },
+      "trans_athletics": {
+       "value": "not_found",
+       "page": 0,
+       "quote": ""
+      }
+     },
+     "conduct": {
+      "restricts": "not_found",
+      "document": "",
+      "page": 0,
+      "quotes": []
+     },
+     "confidence": "high"
+    }
+   },
+   "escalated": [],
+   "dropped": [],
+   "checks": [],
+   "errors": []
+  },
+  {
+   "unit_id": "110635",
+   "name": "University of California-Berkeley",
+   "checked": "2026-10-04",
+   "greek": null,
+   "faith": null,
+   "lgbtq": {
+    "policies": [
+     {
+      "key": "nondiscrimination_identity",
+      "value": "yes",
+      "url": "https://ophd.berkeley.edu/policies-procedures/nondiscrimination-policy-statement",
+      "checked": "2026-10-04",
+      "quote": "gender, gender identity, gender expression, gender transition, sexual orientation, physical or mental disability"
+     },
+     {
+      "key": "name_on_records",
+      "value": "yes",
+      "url": "https://ophd.berkeley.edu/topics/gender-recognition-and-lived-name",
+      "checked": "2026-10-04",
+      "quote": "May request that their lived name be used in the UC system in all settings and situations that do not require their legal name."
+     },
+     {
+      "key": "inclusive_restrooms",
+      "value": "yes",
+      "url": "https://facilities.berkeley.edu/home/inclusive-restrooms",
+      "checked": "2026-10-04",
+      "quote": "A link to a map of existing gender inclusive single-stall and multi-stall restrooms, accessible restrooms, menstrual product dispensers, and changing tables…"
+     }
+    ]
+   },
+   "listings": [],
+   "raw": {
+    "lgbtq": {
+     "center": {
+      "status": "none_found",
+      "name": "",
+      "closed": "",
+      "page": 0,
+      "quote": ""
+     },
+     "groups": [],
+     "policies": {
+      "nondiscrimination_orientation": {
+       "value": "yes",
+       "page": 1,
+       "quote": "does not discriminate on the basis of race, religion, color, citizenship, national or ethnic origin, ancestry, sex (including pregnancy, childbirth, lactation or related medical conditions), gender, gender identity, gender expression, gender transition, sexual orientation, physical or mental disability"
+      },
+      "nondiscrimination_identity": {
+       "value": "yes",
+       "page": 1,
+       "quote": "gender, gender identity, gender expression, gender transition, sexual orientation, physical or mental disability"
+      },
+      "inclusive_housing": {
+       "value": "not_found",
+       "page": 0,
+       "quote": ""
+      },
+      "name_on_records": {
+       "value": "yes",
+       "page": 3,
+       "quote": "May request that their lived name be used in the UC system in all settings and situations that do not require their legal name."
+      },
+      "inclusive_restrooms": {
+       "value": "yes",
+       "page": 4,
+       "quote": "A link to a map of existing gender inclusive single-stall and multi-stall restrooms, accessible restrooms, menstrual product dispensers, and changing tables at UC Berkeley can be found below."
+      },
+      "health_plan_transition": {
+       "value": "not_found",
+       "page": 0,
+       "quote": ""
+      },
+      "trans_admission": {
+       "value": "not_found",
+       "page": 0,
+       "quote": ""
+      },
+      "trans_athletics": {
+       "value": "not_found",
+       "page": 0,
+       "quote": ""
+      }
+     },
+     "conduct": {
+      "restricts": "not_found",
+      "document": "",
+      "page": 0,
+      "quotes": []
+     },
+     "confidence": "low"
+    }
+   },
+   "escalated": [
+    "lgbtq"
+   ],
+   "dropped": [
+    {
+     "domain": "lgbtq",
+     "fact": "lgbtq.nondiscrimination_orientation",
+     "reason": "quote not on page",
+     "detail": "does not discriminate on the basis of race, religion, color, citizenship, national or ethnic origin, ancestry, sex (incl"
+    }
+   ],
+   "checks": [],
+   "errors": []
+  },
+  {
+   "unit_id": "134097",
+   "name": "Florida State University",
+   "checked": "2026-10-04",
+   "greek": {
+    "members_total": {
+     "url": "https://fsl.fsu.edu/",
+     "checked": "2026-10-04",
+     "quote": "7,500+ Fraternity and Sorority community members at FSU representing over 50 chapters",
+     "value": 7500,
+     "term": "not_stated"
+    },
+    "councils": [
+     {
+      "url": "https://fsl.fsu.edu/about/governing-councils",
+      "checked": "2026-10-04",
+      "quote": "The Interfraternity Council at Florida State University is the governing body for 15 men's fraternities on campus.",
+      "council": "nic",
+      "name": "Interfraternity Council (IFC)",
+      "chapters": 15,
+      "members": null,
+      "term": null
+     },
+     {
+      "url": "https://fsl.fsu.edu/about/governing-councils",
+      "checked": "2026-10-04",
+      "quote": "The Multicultural Greek Council is the governing body for 8 culturally-based fraternities and sororities on campus.",
+      "council": "nmgc",
+      "name": "Multicultural Greek Council (MGC)",
+      "chapters": 8,
+      "members": null,
+      "term": null
+     },
+     {
+      "url": "https://fsl.fsu.edu/about/governing-councils",
+      "checked": "2026-10-04",
+      "quote": "The National Pan-Hellenic Council consists of nine historically (but not exclusively) African-American fraternities and sororities.",
+      "council": "nphc",
+      "name": "National Pan-Hellenic Council (NPHC)",
+      "chapters": 9,
+      "members": null,
+      "term": null
+     },
+     {
+      "url": "https://fsl.fsu.edu/about/governing-councils",
+      "checked": "2026-10-04",
+      "quote": "The Panhellenic Association is the governing body for 17 women's sororities on campus.",
+      "council": "npc",
+      "name": "Panhellenic Association (PH)",
+      "chapters": 17,
+      "members": null,
+      "term": null
+     },
+     {
+      "url": "https://fsl.fsu.edu/about/governing-councils",
+      "checked": "2026-10-04",
+      "quote": "The United Greek Council consists of two fraternities that embody unique values and a multitude of niches not fully represented within the broader FSU FSL…",
+      "council": "professional",
+      "name": "United Greek Council (UGC)",
+      "chapters": 2,
+      "members": null,
+      "term": null
+     }
+    ],
+    "formal_term": {
+     "url": "https://fsl.fsu.edu/about/governing-councils",
+     "checked": "2026-10-04",
+     "quote": "Formal Recruitment takes place before the beginning of each fall semester.",
+     "value": "Fall, before the beginning of each fall semester"
+    }
+   },
+   "faith": {
+    "office": {
+     "url": "https://interfaithcouncil.fsu.edu/",
+     "checked": "2026-10-04",
+     "quote": "The Interfaith Council at Florida State University is an organization of religious communities...who have come together from a wide variety of religious…",
+     "name": "Interfaith Council"
+    }
+   },
+   "lgbtq": null,
+   "listings": [
+    {
+     "domain": "faith",
+     "kind": "group",
+     "tradition": "christian",
+     "name": "Baptist Collegiate Ministry",
+     "url": "https://interfaithcouncil.fsu.edu/members-interfaith-council-fsu",
+     "publisher": "Florida State University",
+     "quote": "The BCM is not just for Baptists. Students of all denominations and faith traditions are welcome to attend BCM sponsored activities and events",
+     "checked": "2026-10-04"
+    },
+    {
+     "domain": "faith",
+     "kind": "group",
+     "tradition": "catholic",
+     "name": "Catholic Noles",
+     "url": "https://interfaithcouncil.fsu.edu/members-interfaith-council-fsu",
+     "publisher": "Florida State University",
+     "quote": "Catholic Noles Student Mass, 8pm",
+     "checked": "2026-10-04"
+    },
+    {
+     "domain": "faith",
+     "kind": "group",
+     "tradition": "latter_day_saint",
+     "name": "Church of Jesus Christ of Latter Day Saints",
+     "url": "https://interfaithcouncil.fsu.edu/members-interfaith-council-fsu",
+     "publisher": "Florida State University",
+     "quote": "Our purpose is to help young adults deepen their conversion to Jesus Christ and His restored gospel",
+     "checked": "2026-10-04"
+    },
+    {
+     "domain": "faith",
+     "kind": "group",
+     "tradition": "christian",
+     "name": "Christian Campus Fellowship",
+     "url": "https://interfaithcouncil.fsu.edu/members-interfaith-council-fsu",
+     "publisher": "Florida State University",
+     "quote": "Christian Campus Fellowship, or CCF, is a community of students from a variety of backgrounds that desires to grow in devotion to Christ",
+     "checked": "2026-10-04"
+    },
+    {
+     "domain": "faith",
+     "kind": "group",
+     "tradition": "orthodox",
+     "name": "Orthodox Christian Campus Ministries",
+     "url": "https://interfaithcouncil.fsu.edu/members-interfaith-council-fsu",
+     "publisher": "Florida State University",
+     "quote": "Weekly on-campus meeting held at Ruge Hall",
+     "checked": "2026-10-04"
+    },
+    {
+     "domain": "faith",
+     "kind": "group",
+     "tradition": "christian",
+     "name": "Fellowship of Christian Athletes",
+     "url": "https://interfaithcouncil.fsu.edu/members-interfaith-council-fsu",
+     "publisher": "Florida State University",
+     "quote": "We are a community working to see the world transformed by Jesus Christ through the influence of coaches and athletes.",
+     "checked": "2026-10-04"
+    },
+    {
+     "domain": "faith",
+     "kind": "group",
+     "tradition": "jewish",
+     "name": "Hillel at Florida State University",
+     "url": "https://interfaithcouncil.fsu.edu/members-interfaith-council-fsu",
+     "publisher": "Florida State University",
+     "quote": "Hillel is the foundation of Jewish life at FSU.",
+     "checked": "2026-10-04"
+    },
+    {
+     "domain": "faith",
+     "kind": "group",
+     "tradition": "christian",
+     "name": "Intervarsity Christian Fellowship",
+     "url": "https://interfaithcouncil.fsu.edu/members-interfaith-council-fsu",
+     "publisher": "Florida State University",
+     "quote": "InterVarsity is an inter-denominational community of students who seek to follow Jesus and grow in love for God",
+     "checked": "2026-10-04"
+    },
+    {
+     "domain": "faith",
+     "kind": "group",
+     "tradition": "muslim",
+     "name": "Muslim Student Union at FSU",
+     "url": "https://interfaithcouncil.fsu.edu/members-interfaith-council-fsu",
+     "publisher": "Florida State University",
+     "quote": "Muslim Student Union at FSU",
+     "checked": "2026-10-04"
+    },
+    {
+     "domain": "faith",
+     "kind": "group",
+     "tradition": "christian",
+     "name": "The Navigators Campus Ministry",
+     "url": "https://interfaithcouncil.fsu.edu/members-interfaith-council-fsu",
+     "publisher": "Florida State University",
+     "quote": "The Navigators at FSU are an inter-denominational campus ministry that exists to help students know Christ",
+     "checked": "2026-10-04"
+    },
+    {
+     "domain": "faith",
+     "kind": "group",
+     "tradition": "orthodox",
+     "name": "Orthodox Christian Fellowship (OCF)",
+     "url": "https://interfaithcouncil.fsu.edu/members-interfaith-council-fsu",
+     "publisher": "Florida State University",
+     "quote": "Holy Mother of God Greek Orthodox Church",
+     "checked": "2026-10-04"
+    },
+    {
+     "domain": "faith",
+     "kind": "group",
+     "tradition": "christian",
+     "name": "Pentecostal Student Union",
+     "url": "https://interfaithcouncil.fsu.edu/members-interfaith-council-fsu",
+     "publisher": "Florida State University",
+     "quote": "Though the PSU is Pentecostal & Apostolic in flavor, students of all denominations and faith traditions are welcome",
+     "checked": "2026-10-04"
+    },
+    {
+     "domain": "faith",
+     "kind": "group",
+     "tradition": "christian",
+     "name": "Reach FSU",
+     "url": "https://interfaithcouncil.fsu.edu/members-interfaith-council-fsu",
+     "publisher": "Florida State University",
+     "quote": "Reaching FSU students with the Gospel of Jesus Christ.",
+     "checked": "2026-10-04"
+    },
+    {
+     "domain": "faith",
+     "kind": "group",
+     "tradition": "christian",
+     "name": "Seminole Christian Life",
+     "url": "https://interfaithcouncil.fsu.edu/members-interfaith-council-fsu",
+     "publisher": "Florida State University",
+     "quote": "Bringing college students to Jesus Christ and preparing them for a lifetime of service.",
+     "checked": "2026-10-04"
+    },
+    {
+     "domain": "faith",
+     "kind": "group",
+     "tradition": "christian",
+     "name": "UKirk Tallahassee (PCUSA)",
+     "url": "https://interfaithcouncil.fsu.edu/members-interfaith-council-fsu",
+     "publisher": "Florida State University",
+     "quote": "UKirk Tallahassee is a ministry of the Presbyterian Church (USA) for college students",
+     "checked": "2026-10-04"
+    },
+    {
+     "domain": "faith",
+     "kind": "group",
+     "tradition": "christian",
+     "name": "University Lutheran Church and Student Center",
+     "url": "https://interfaithcouncil.fsu.edu/members-interfaith-council-fsu",
+     "publisher": "Florida State University",
+     "quote": "\"A Jesus-Centered Community of Scripture, Faith, and Grace.\"",
+     "checked": "2026-10-04"
+    }
+   ],
+   "raw": {
+    "greek": {
+     "status": {
+      "value": "present",
+      "page": 1,
+      "quote": "Fraternity/Sorority Life provides a unique opportunity for students to be a part of a more than 100 year old campus tradition."
+     },
+     "office_name": "Fraternity and Sorority Life (FSL)",
+     "members_total": {
+      "value": 7500,
+      "term": "not_stated",
+      "page": 1,
+      "quote": "7,500+ Fraternity and Sorority community members at FSU representing over 50 chapters"
+     },
+     "councils": [
+      {
+       "council": "nic",
+       "name": "Interfraternity Council (IFC)",
+       "chapters": 15,
+       "members": null,
+       "term": "",
+       "page": 3,
+       "quote": "The Interfraternity Council at Florida State University is the governing body for 15 men's fraternities on campus."
+      },
+      {
+       "council": "nmgc",
+       "name": "Multicultural Greek Council (MGC)",
+       "chapters": 8,
+       "members": null,
+       "term": "",
+       "page": 3,
+       "quote": "The Multicultural Greek Council is the governing body for 8 culturally-based fraternities and sororities on campus."
+      },
+      {
+       "council": "nphc",
+       "name": "National Pan-Hellenic Council (NPHC)",
+       "chapters": 9,
+       "members": null,
+       "term": "",
+       "page": 3,
+       "quote": "The National Pan-Hellenic Council consists of nine historically (but not exclusively) African-American fraternities and sororities."
+      },
+      {
+       "council": "npc",
+       "name": "Panhellenic Association (PH)",
+       "chapters": 17,
+       "members": null,
+       "term": "",
+       "page": 3,
+       "quote": "The Panhellenic Association is the governing body for 17 women's sororities on campus."
+      },
+      {
+       "council": "professional",
+       "name": "United Greek Council (UGC)",
+       "chapters": 2,
+       "members": null,
+       "term": "",
+       "page": 3,
+       "quote": "The United Greek Council consists of two fraternities that embody unique values and a multitude of niches not fully represented within the broader FSU FSL community."
+      }
+     ],
+     "housing": {
+      "value": "not_stated",
+      "page": 0,
+      "quote": ""
+     },
+     "deferred": {
+      "value": "not_stated",
+      "page": 0,
+      "quote": ""
+     },
+     "formal_term": {
+      "value": "Fall, before the beginning of each fall semester",
+      "page": 3,
+      "quote": "Formal Recruitment takes place before the beginning of each fall semester."
+     },
+     "confidence": "high"
+    },
+    "faith": {
+     "office": {
+      "name": "Interfaith Council",
+      "page": 1,
+      "quote": "The Interfaith Council at Florida State University is an organization of religious communities...who have come together from a wide variety of religious traditions"
+     },
+     "communities": [
+      {
+       "name": "Baptist Collegiate Ministry",
+       "tradition": "christian",
+       "page": 2,
+       "quote": "The BCM is not just for Baptists. Students of all denominations and faith traditions are welcome to attend BCM sponsored activities and events"
+      },
+      {
+       "name": "Catholic Noles",
+       "tradition": "catholic",
+       "page": 2,
+       "quote": "Catholic Noles Student Mass, 8pm"
+      },
+      {
+       "name": "Chabad at FSU",
+       "tradition": "jewish",
+       "page": 2,
+       "quote": "Rabbi Schneur and Chanie Oirechman serve Jewish students 24 hours a day, 7 days a week, 365 days a year with exciting, educational and fun activities."
+      },
+      {
+       "name": "Chi Alpha Christian Fellowship",
+       "tradition": "christian",
+       "page": 2,
+       "quote": "We are a community of students at Florida State University who passionately follow Jesus."
+      },
+      {
+       "name": "Church of Jesus Christ of Latter Day Saints",
+       "tradition": "latter_day_saint",
+       "page": 2,
+       "quote": "Our purpose is to help young adults deepen their conversion to Jesus Christ and His restored gospel"
+      },
+      {
+       "name": "Christian Campus Fellowship",
+       "tradition": "christian",
+       "page": 2,
+       "quote": "Christian Campus Fellowship, or CCF, is a community of students from a variety of backgrounds that desires to grow in devotion to Christ"
+      },
+      {
+       "name": "Orthodox Christian Campus Ministries",
+       "tradition": "orthodox",
+       "page": 2,
+       "quote": "Weekly on-campus meeting held at Ruge Hall"
+      },
+      {
+       "name": "Chapel of the Resurrection & Ruge Hall (Episcopal)",
+       "tradition": "christian",
+       "page": 2,
+       "quote": "Open Everyday from 9 am to 5pm, All Are Welcome!"
+      },
+      {
+       "name": "Every Nation Campus",
+       "tradition": "christian",
+       "page": 2,
+       "quote": "\"Christ-centered, Spirit-empowered, socially responsible\""
+      },
+      {
+       "name": "Fellowship of Christian Athletes",
+       "tradition": "christian",
+       "page": 2,
+       "quote": "We are a community working to see the world transformed by Jesus Christ through the influence of coaches and athletes."
+      },
+      {
+       "name": "Hillel at Florida State University",
+       "tradition": "jewish",
+       "page": 2,
+       "quote": "Hillel is the foundation of Jewish life at FSU."
+      },
+      {
+       "name": "Intervarsity Christian Fellowship",
+       "tradition": "christian",
+       "page": 2,
+       "quote": "InterVarsity is an inter-denominational community of students who seek to follow Jesus and grow in love for God"
+      },
+      {
+       "name": "Islamic Centers of Tallahassee",
+       "tradition": "muslim",
+       "page": 2,
+       "quote": "The 5 daily prayers are offered at this masjid."
+      },
+      {
+       "name": "Muslim Student Union at FSU",
+       "tradition": "muslim",
+       "page": 2,
+       "quote": "Muslim Student Union at FSU"
+      },
+      {
+       "name": "The Navigators Campus Ministry",
+       "tradition": "christian",
+       "page": 2,
+       "quote": "The Navigators at FSU are an inter-denominational campus ministry that exists to help students know Christ"
+      },
+      {
+       "name": "Orthodox Christian Fellowship (OCF)",
+       "tradition": "orthodox",
+       "page": 2,
+       "quote": "Holy Mother of God Greek Orthodox Church"
+      },
+      {
+       "name": "Pentecostal Student Union",
+       "tradition": "christian",
+       "page": 2,
+       "quote": "Though the PSU is Pentecostal & Apostolic in flavor, students of all denominations and faith traditions are welcome"
+      },
+      {
+       "name": "Reach FSU",
+       "tradition": "christian",
+       "page": 2,
+       "quote": "Reaching FSU students with the Gospel of Jesus Christ."
+      },
+      {
+       "name": "Reformed University Fellowship (RUF)",
+       "tradition": "christian",
+       "page": 2,
+       "quote": "RUF is a Christian campus ministry committed to loving God, loving others, and loving FSU."
+      },
+      {
+       "name": "Seminole Christian Life",
+       "tradition": "christian",
+       "page": 2,
+       "quote": "Bringing college students to Jesus Christ and preparing them for a lifetime of service."
+      },
+      {
+       "name": "UKirk Tallahassee (PCUSA)",
+       "tradition": "christian",
+       "page": 2,
+       "quote": "UKirk Tallahassee is a ministry of the Presbyterian Church (USA) for college students"
+      },
+      {
+       "name": "University Lutheran Church and Student Center",
+       "tradition": "christian",
+       "page": 2,
+       "quote": "\"A Jesus-Centered Community of Scripture, Faith, and Grace.\""
+      }
+     ],
+     "composition": {
+      "items": [],
+      "total": null,
+      "population": "",
+      "as_of": "",
+      "page": 0,
+      "quote": ""
+     },
+     "estimates": [],
+     "confidence": "high"
+    }
+   },
+   "escalated": [],
+   "dropped": [
+    {
+     "domain": "faith",
+     "fact": "faith.community.jewish",
+     "reason": "quote doesn't state it",
+     "detail": "the group's name isn't in the quote: Rabbi Schneur and Chanie Oirechman serve Jewish students 24 hours a day, 7 days a week, 365 days a y"
+    },
+    {
+     "domain": "faith",
+     "fact": "faith.community.christian",
+     "reason": "quote doesn't state it",
+     "detail": "the group's name isn't in the quote: We are a community of students at Florida State University who passionately follow Jesus."
+    },
+    {
+     "domain": "faith",
+     "fact": "faith.community.christian",
+     "reason": "quote doesn't state it",
+     "detail": "the group's name isn't in the quote: Open Everyday from 9 am to 5pm, All Are Welcome!"
+    },
+    {
+     "domain": "faith",
+     "fact": "faith.community.christian",
+     "reason": "quote doesn't state it",
+     "detail": "the group's name isn't in the quote: \"Christ-centered, Spirit-empowered, socially responsible\""
+    },
+    {
+     "domain": "faith",
+     "fact": "faith.community.muslim",
+     "reason": "quote doesn't state it",
+     "detail": "the group's name isn't in the quote: The 5 daily prayers are offered at this masjid."
+    },
+    {
+     "domain": "faith",
+     "fact": "faith.community.christian",
+     "reason": "quote doesn't state it",
+     "detail": "the group's name isn't in the quote: RUF is a Christian campus ministry committed to loving God, loving others, and loving FSU."
+    }
+   ],
+   "checks": [],
+   "errors": []
+  },
+  {
+   "unit_id": "126614",
+   "name": "University of Colorado Boulder",
+   "checked": "2026-10-04",
+   "greek": {
+    "councils": [
+     {
+      "url": "https://www.colorado.edu/greeks/our-community",
+      "checked": "2026-10-04",
+      "quote": "This council has 10 fraternity chapters that are affiliated with the university.",
+      "council": "nic",
+      "name": "CU Interfraternity Council",
+      "chapters": 10,
+      "members": null,
+      "term": null
+     }
+    ],
+    "formal_term": {
+     "url": "https://www.colorado.edu/greeks/greek-life-101-fall-recruitment",
+     "checked": "2026-10-04",
+     "quote": "Greek Life 101: Fall Recruitment",
+     "value": "Fall"
+    }
+   },
+   "faith": null,
+   "lgbtq": {
+    "center": {
+     "url": "https://www.colorado.edu/wgst/queer-trans-studies",
+     "checked": "2026-10-04",
+     "quote": "Queer and Trans Studies (QTS) at the University of Colorado Boulder is an interdisciplinary academic program...QTS staff are available to assist students,…",
+     "name": "Queer and Trans Studies program",
+     "status": "open"
+    }
+   },
+   "listings": [],
+   "raw": {
+    "greek": {
+     "status": {
+      "value": "present",
+      "page": 1,
+      "quote": "Fraternity & Sorority Life at CU Boulder includes over 30 university-recognized chapters"
+     },
+     "office_name": "Fraternity & Sorority Life",
+     "members_total": {
+      "value": 4425,
+      "term": "",
+      "page": 1,
+      "quote": "4,425 Members"
+     },
+     "councils": [
+      {
+       "council": "npc",
+       "name": "College Panhellenic Council",
+       "chapters": 11,
+       "members": null,
+       "term": "",
+       "page": 4,
+       "quote": "This council consists of nine National Panhellenic Conference sorority chapters and two associate sorority chapters."
+      },
+      {
+       "council": "nic",
+       "name": "CU Interfraternity Council",
+       "chapters": 10,
+       "members": null,
+       "term": "",
+       "page": 4,
+       "quote": "This council has 10 fraternity chapters that are affiliated with the university."
+      },
+      {
+       "council": "nmgc",
+       "name": "Multicultural Greek Council",
+       "chapters": 9,
+       "members": null,
+       "term": "",
+       "page": 4,
+       "quote": "This council is comprised of four fraternity chapters and five sorority chapters."
+      },
+      {
+       "council": "nphc",
+       "name": "National Pan-Hellenic Council",
+       "chapters": null,
+       "members": null,
+       "term": "",
+       "page": 4,
+       "quote": "NPHC chapters in Colorado are city wide and have provisional status to recruit students from our campus."
+      }
+     ],
+     "housing": {
+      "value": "not_stated",
+      "page": 0,
+      "quote": ""
+     },
+     "deferred": {
+      "value": "no",
+      "page": 5,
+      "quote": "The fall semester is a great time to join."
+     },
+     "formal_term": {
+      "value": "Fall",
+      "page": 5,
+      "quote": "Greek Life 101: Fall Recruitment"
+     },
+     "confidence": "high"
+    },
+    "lgbtq": {
+     "center": {
+      "status": "open",
+      "name": "Queer and Trans Studies program",
+      "closed": "",
+      "page": 1,
+      "quote": "Queer and Trans Studies (QTS) at the University of Colorado Boulder is an interdisciplinary academic program...QTS staff are available to assist students, staff, and faculty on weekdays from 9:00 am to 5:00 pm."
+     },
+     "groups": [
+      {
+       "name": "Gender Justice League",
+       "page": 3,
+       "quote": "Through the Gender Justice League, department events, movie screenings and discussions of current events"
+      }
+     ],
+     "policies": {
+      "nondiscrimination_orientation": {
+       "value": "not_found",
+       "page": 0,
+       "quote": ""
+      },
+      "nondiscrimination_identity": {
+       "value": "not_found",
+       "page": 0,
+       "quote": ""
+      },
+      "inclusive_housing": {
+       "value": "not_found",
+       "page": 0,
+       "quote": ""
+      },
+      "name_on_records": {
+       "value": "not_found",
+       "page": 0,
+       "quote": ""
+      },
+      "inclusive_restrooms": {
+       "value": "not_found",
+       "page": 0,
+       "quote": ""
+      },
+      "health_plan_transition": {
+       "value": "not_found",
+       "page": 0,
+       "quote": ""
+      },
+      "trans_admission": {
+       "value": "not_found",
+       "page": 0,
+       "quote": ""
+      },
+      "trans_athletics": {
+       "value": "not_found",
+       "page": 0,
+       "quote": ""
+      }
+     },
+     "conduct": {
+      "restricts": "not_found",
+      "document": "",
+      "page": 0,
+      "quotes": []
+     },
+     "confidence": "high"
+    }
+   },
+   "escalated": [],
+   "dropped": [
+    {
+     "domain": "greek",
+     "fact": "greek.members_total",
+     "reason": "quote doesn't state it",
+     "detail": "quote doesn't say the count is all fraternity and sorority members: 4,425 Members"
+    },
+    {
+     "domain": "greek",
+     "fact": "greek.council.npc",
+     "reason": "quote doesn't state it",
+     "detail": "the count isn't in the quote: This council consists of nine National Panhellenic Conference sorority chapters and two associate so"
+    },
+    {
+     "domain": "greek",
+     "fact": "greek.council.nmgc",
+     "reason": "quote doesn't state it",
+     "detail": "the count isn't in the quote: This council is comprised of four fraternity chapters and five sorority chapters."
+    },
+    {
+     "domain": "greek",
+     "fact": "greek.deferred",
+     "reason": "quote doesn't state it",
+     "detail": "quote doesn't say when first-year students may join: The fall semester is a great time to join."
+    },
+    {
+     "domain": "lgbtq",
+     "fact": "lgbtq.group",
+     "reason": "quote doesn't state it",
+     "detail": "quote doesn't present it as a student group: Through the Gender Justice League, department events, movie screenings and discussions of current ev"
+    }
+   ],
+   "checks": [],
+   "errors": []
+  },
+  {
+   "unit_id": "198385",
+   "name": "Davidson College",
+   "checked": "2026-10-04",
+   "greek": {
+    "deferred": {
+     "url": "https://www.davidson.edu/offices-and-services/student-activities/student-organizations/fraternity-sorority-life-patterson-court-council",
+     "checked": "2026-10-04",
+     "quote": "If you are interested in joining a Patterson Court Council Organization you must have completed at least one full semester at Davidson College, meet the…",
+     "value": "yes"
+    }
+   },
+   "faith": {
+    "office": {
+     "url": "https://www.davidson.edu/offices-and-services/religious-and-spiritual-life",
+     "checked": "2026-10-04",
+     "quote": "Davidson's chaplaincy supports all members of the college community in expressing, exploring, and practicing particular traditions, beliefs, and worldviews in…",
+     "name": "Religious and Spiritual Life"
+    }
+   },
+   "lgbtq": {
+    "center": {
+     "url": "https://www.davidson.edu/offices-and-services/center-student-diversity-and-inclusion/lgbtqia-student-support",
+     "checked": "2026-10-04",
+     "quote": "The Center for Student Diversity and Inclusion provides a number of resources and networks for lesbian, gay, bisexual, transgender, queer, intersex and…",
+     "name": "Center for Student Diversity and Inclusion",
+     "status": "open"
+    },
+    "policies": [
+     {
+      "key": "nondiscrimination_orientation",
+      "value": "yes",
+      "url": "https://www.davidson.edu/offices-and-services/human-resources/employee-guide/non-discrimination-policies",
+      "checked": "2026-10-04",
+      "quote": "…and employment activities without discrimination based on race, color, gender, national origin, religion, age, sexual orientation, gender identity,…"
+     },
+     {
+      "key": "nondiscrimination_identity",
+      "value": "yes",
+      "url": "https://www.davidson.edu/offices-and-services/human-resources/employee-guide/non-discrimination-policies",
+      "checked": "2026-10-04",
+      "quote": "…activities without discrimination based on race, color, gender, national origin, religion, age, sexual orientation, gender identity, disability, or any other…"
+     },
+     {
+      "key": "inclusive_housing",
+      "value": "yes",
+      "url": "https://www.davidson.edu/offices-and-services/center-student-diversity-and-inclusion/lgbtqia-student-support",
+      "checked": "2026-10-04",
+      "quote": "Gender Inclusive Housing offers a gender-integrated community to meet those needs. As such, students of different gender identities may share a room."
+     },
+     {
+      "key": "inclusive_restrooms",
+      "value": "yes",
+      "url": "https://www.davidson.edu/offices-and-services/center-student-diversity-and-inclusion/lgbtqia-student-support",
+      "checked": "2026-10-04",
+      "quote": "Explore this Google Map to locate all-gender bathrooms, gendered single-occupancy bathrooms and lactation stations around campus."
+     }
+    ]
+   },
+   "listings": [
+    {
+     "domain": "faith",
+     "kind": "group",
+     "tradition": "buddhist",
+     "name": "Buddhism at Davidson",
+     "url": "https://www.davidson.edu/offices-and-services/student-activities/student-organizations/religious-organizations",
+     "publisher": "Davidson College",
+     "quote": "Buddhism at Davidson is an organization for students who practice or are exploring Buddhism.",
+     "checked": "2026-10-04"
+    },
+    {
+     "domain": "faith",
+     "kind": "group",
+     "tradition": "christian",
+     "name": "Campus Outreach",
+     "url": "https://www.davidson.edu/offices-and-services/student-activities/student-organizations/religious-organizations",
+     "publisher": "Davidson College",
+     "quote": "Campus Outreach trains future leaders and equips them for leadership through evangelism, discipleship, prayer, and Bible study.",
+     "checked": "2026-10-04"
+    },
+    {
+     "domain": "faith",
+     "kind": "group",
+     "tradition": "catholic",
+     "name": "Catholic Campus Ministry (CCM)",
+     "url": "https://www.davidson.edu/offices-and-services/student-activities/student-organizations/religious-organizations",
+     "publisher": "Davidson College",
+     "quote": "CCM strengthens students' Catholic life and faith in Christ through on-campus Sunday Mass, community dinners, faith sharing & prayer groups, retreats, and…",
+     "checked": "2026-10-04"
+    },
+    {
+     "domain": "faith",
+     "kind": "group",
+     "tradition": "christian",
+     "name": "Davidson Wesley Campus Ministry",
+     "url": "https://www.davidson.edu/offices-and-services/student-activities/student-organizations/religious-organizations",
+     "publisher": "Davidson College",
+     "quote": "Davidson Wesley Campus Ministry is the United Methodist campus ministry at Davidson College.",
+     "checked": "2026-10-04"
+    },
+    {
+     "domain": "faith",
+     "kind": "group",
+     "tradition": "christian",
+     "name": "Episcopal Student Fellowship",
+     "url": "https://www.davidson.edu/offices-and-services/student-activities/student-organizations/religious-organizations",
+     "publisher": "Davidson College",
+     "quote": "ESF fosters community spirit through worship, meals, and fellowship.",
+     "checked": "2026-10-04"
+    },
+    {
+     "domain": "faith",
+     "kind": "group",
+     "tradition": "christian",
+     "name": "Fellowship of Christian Athletes (FCA)",
+     "url": "https://www.davidson.edu/offices-and-services/student-activities/student-organizations/religious-organizations",
+     "publisher": "Davidson College",
+     "quote": "FCA seeks to see the world transformed by Jesus Christ through the influence of coaches and athletes.",
+     "checked": "2026-10-04"
+    },
+    {
+     "domain": "faith",
+     "kind": "group",
+     "tradition": "hindu",
+     "name": "Hindu Students Association (HSA)",
+     "url": "https://www.davidson.edu/offices-and-services/student-activities/student-organizations/religious-organizations",
+     "publisher": "Davidson College",
+     "quote": "HSA aims to provide a safe space for students to explore their Hindu identity through celebration, reflection, and meaningful conversations with Davidson's…",
+     "checked": "2026-10-04"
+    },
+    {
+     "domain": "faith",
+     "kind": "group",
+     "tradition": "christian",
+     "name": "InterVarsity",
+     "url": "https://www.davidson.edu/offices-and-services/student-activities/student-organizations/religious-organizations",
+     "publisher": "Davidson College",
+     "quote": "InterVarsity Christian Fellowship is a witnessing community that engages ethnically and culturally diverse students, staff and faculty with the Gospel of…",
+     "checked": "2026-10-04"
+    },
+    {
+     "domain": "faith",
+     "kind": "group",
+     "tradition": "jewish",
+     "name": "Jewish Student Union",
+     "url": "https://www.davidson.edu/offices-and-services/student-activities/student-organizations/religious-organizations",
+     "publisher": "Davidson College",
+     "quote": "Jewish Student Union is an open-minded student-led organization that celebrates the diversity of Jewish lives, experiences, and cultures and encourages…",
+     "checked": "2026-10-04"
+    },
+    {
+     "domain": "faith",
+     "kind": "group",
+     "tradition": "muslim",
+     "name": "Muslim Student Association (MSA)",
+     "url": "https://www.davidson.edu/offices-and-services/student-activities/student-organizations/religious-organizations",
+     "publisher": "Davidson College",
+     "quote": "The MSA helps Muslim students or students exploring Islam to find their place in the college environment.",
+     "checked": "2026-10-04"
+    },
+    {
+     "domain": "faith",
+     "kind": "group",
+     "tradition": "christian",
+     "name": "Reformed University Fellowship (RUF)",
+     "url": "https://www.davidson.edu/offices-and-services/student-activities/student-organizations/religious-organizations",
+     "publisher": "Davidson College",
+     "quote": "Reformed University Fellowship (RUF) exists to provide a place of welcome and rest for all Davidson students... We seek to extend the love of Jesus Christ to…",
+     "checked": "2026-10-04"
+    },
+    {
+     "domain": "faith",
+     "kind": "group",
+     "tradition": "christian",
+     "name": "UKirk",
+     "url": "https://www.davidson.edu/offices-and-services/student-activities/student-organizations/religious-organizations",
+     "publisher": "Davidson College",
+     "quote": "UKirk is the welcoming and inclusive campus ministry group of the Presbyterian Church (USA) and Davidson College Presbyterian Church.",
+     "checked": "2026-10-04"
+    },
+    {
+     "domain": "faith",
+     "kind": "group",
+     "tradition": "christian",
+     "name": "Young Life College",
+     "url": "https://www.davidson.edu/offices-and-services/student-activities/student-organizations/religious-organizations",
+     "publisher": "Davidson College",
+     "quote": "YLC is an outreach ministry to Davidson College students whose hope is to introduce students to the person of Jesus Christ and help them grow in their faith…",
+     "checked": "2026-10-04"
+    }
+   ],
+   "raw": {
+    "greek": {
+     "status": {
+      "value": "present",
+      "page": 1,
+      "quote": "Greek life at Davidson consists of a unique structure of fraternities, sororities, and eating houses known as Patterson Court Council."
+     },
+     "office_name": "Fraternity & Sorority Life (Patterson Court Council)",
+     "members_total": {
+      "value": null,
+      "term": "",
+      "page": 0,
+      "quote": ""
+     },
+     "councils": [
+      {
+       "council": "professional",
+       "name": "Patterson Court Council",
+       "chapters": null,
+       "members": null,
+       "term": "",
+       "page": 1,
+       "quote": "Greek life at Davidson consists of a unique structure of fraternities, sororities, and eating houses known as Patterson Court Council."
+      }
+     ],
+     "housing": {
+      "value": "yes",
+      "page": 1,
+      "quote": "Houses with facilities offer meal plans for upperclassmen."
+     },
+     "deferred": {
+      "value": "yes",
+      "page": 1,
+      "quote": "If you are interested in joining a Patterson Court Council Organization you must have completed at least one full semester at Davidson College, meet the academic and organization's requirements, and be able to uphold the responsibility of any financial costs for membership of the organization."
+     },
+     "formal_term": {
+      "value": "",
+      "page": 0,
+      "quote": ""
+     },
+     "confidence": "high"
+    },
+    "faith": {
+     "office": {
+      "name": "Religious and Spiritual Life",
+      "page": 1,
+      "quote": "Davidson's chaplaincy supports all members of the college community in expressing, exploring, and practicing particular traditions, beliefs, and worldviews in a diverse, respectful, and pluralistic environment."
+     },
+     "communities": [
+      {
+       "name": "Buddhism at Davidson",
+       "tradition": "buddhist",
+       "page": 2,
+       "quote": "Buddhism at Davidson is an organization for students who practice or are exploring Buddhism."
+      },
+      {
+       "name": "Campus Outreach",
+       "tradition": "christian",
+       "page": 2,
+       "quote": "Campus Outreach trains future leaders and equips them for leadership through evangelism, discipleship, prayer, and Bible study."
+      },
+      {
+       "name": "Catholic Campus Ministry (CCM)",
+       "tradition": "catholic",
+       "page": 2,
+       "quote": "CCM strengthens students' Catholic life and faith in Christ through on-campus Sunday Mass, community dinners, faith sharing & prayer groups, retreats, and social gatherings"
+      },
+      {
+       "name": "Davidson Wesley Campus Ministry",
+       "tradition": "christian",
+       "page": 2,
+       "quote": "Davidson Wesley Campus Ministry is the United Methodist campus ministry at Davidson College."
+      },
+      {
+       "name": "Episcopal Student Fellowship",
+       "tradition": "christian",
+       "page": 2,
+       "quote": "ESF fosters community spirit through worship, meals, and fellowship."
+      },
+      {
+       "name": "Fellowship of Christian Athletes (FCA)",
+       "tradition": "christian",
+       "page": 2,
+       "quote": "FCA seeks to see the world transformed by Jesus Christ through the influence of coaches and athletes."
+      },
+      {
+       "name": "Hindu Students Association (HSA)",
+       "tradition": "hindu",
+       "page": 2,
+       "quote": "HSA aims to provide a safe space for students to explore their Hindu identity through celebration, reflection, and meaningful conversations with Davidson's community."
+      },
+      {
+       "name": "InterVarsity",
+       "tradition": "christian",
+       "page": 2,
+       "quote": "InterVarsity Christian Fellowship is a witnessing community that engages ethnically and culturally diverse students, staff and faculty with the Gospel of Jesus Christ."
+      },
+      {
+       "name": "Jewish Student Union",
+       "tradition": "jewish",
+       "page": 2,
+       "quote": "Jewish Student Union is an open-minded student-led organization that celebrates the diversity of Jewish lives, experiences, and cultures and encourages students to engage in meaningful Jewish experiences."
+      },
+      {
+       "name": "Mindful Friends at Davidson College",
+       "tradition": "buddhist",
+       "page": 2,
+       "quote": "Mindful Friends at Davidson College is a group for Davidson College students, staff, and faculty seeking to incorporate mindfulness practices into daily life."
+      },
+      {
+       "name": "Muslim Student Association (MSA)",
+       "tradition": "muslim",
+       "page": 2,
+       "quote": "The MSA helps Muslim students or students exploring Islam to find their place in the college environment."
+      },
+      {
+       "name": "Reformed University Fellowship (RUF)",
+       "tradition": "christian",
+       "page": 2,
+       "quote": "Reformed University Fellowship (RUF) exists to provide a place of welcome and rest for all Davidson students... We seek to extend the love of Jesus Christ to those around us through weekly gatherings for worship, small group discussions, and social events."
+      },
+      {
+       "name": "UKirk",
+       "tradition": "christian",
+       "page": 2,
+       "quote": "UKirk is the welcoming and inclusive campus ministry group of the Presbyterian Church (USA) and Davidson College Presbyterian Church."
+      },
+      {
+       "name": "Young Life College",
+       "tradition": "christian",
+       "page": 2,
+       "quote": "YLC is an outreach ministry to Davidson College students whose hope is to introduce students to the person of Jesus Christ and help them grow in their faith through group events, small groups, and discipleship."
+      }
+     ],
+     "composition": {
+      "items": [],
+      "total": null,
+      "population": "",
+      "as_of": "",
+      "page": 0,
+      "quote": ""
+     },
+     "estimates": [],
+     "confidence": "high"
+    },
+    "lgbtq": {
+     "center": {
+      "status": "open",
+      "name": "Center for Student Diversity and Inclusion",
+      "closed": "",
+      "page": 1,
+      "quote": "The Center for Student Diversity and Inclusion provides a number of resources and networks for lesbian, gay, bisexual, transgender, queer, intersex and asexual (LGBTQIA+) students."
+     },
+     "groups": [
+      {
+       "name": "Lavender Lounge",
+       "page": 1,
+       "quote": "The LGBTQIA+ Lounge, affectionately known on campus as the Lavender Lounge, is located in Belk Residence Hall."
+      },
+      {
+       "name": "LGBTQIA+ student groups listed under Affinity & Identity Student Organizations",
+       "page": 1,
+       "quote": "A variety of student-led groups on campus advocate and serve as a resource for gender and sexuality issues on campus."
+      }
+     ],
+     "policies": {
+      "nondiscrimination_orientation": {
+       "value": "yes",
+       "page": 3,
+       "quote": "Our policy is to admit qualified students and administer all educational, athletic, financial, and employment activities without discrimination based on race, color, gender, national origin, religion, age, sexual orientation, gender identity, disability, or any other status protected by applicable federal, state, or local law"
+      },
+      "nondiscrimination_identity": {
+       "value": "yes",
+       "page": 3,
+       "quote": "Our policy is to admit qualified students and administer all educational, athletic, financial, and employment activities without discrimination based on race, color, gender, national origin, religion, age, sexual orientation, gender identity, disability, or any other status protected by applicable federal, state, or local law"
+      },
+      "inclusive_housing": {
+       "value": "yes",
+       "page": 1,
+       "quote": "Gender Inclusive Housing offers a gender-integrated community to meet those needs. As such, students of different gender identities may share a room."
+      },
+      "name_on_records": {
+       "value": "not_found",
+       "page": 0,
+       "quote": ""
+      },
+      "inclusive_restrooms": {
+       "value": "yes",
+       "page": 1,
+       "quote": "Explore this Google Map to locate all-gender bathrooms, gendered single-occupancy bathrooms and lactation stations around campus."
+      },
+      "health_plan_transition": {
+       "value": "not_found",
+       "page": 0,
+       "quote": ""
+      },
+      "trans_admission": {
+       "value": "not_found",
+       "page": 0,
+       "quote": ""
+      },
+      "trans_athletics": {
+       "value": "not_found",
+       "page": 0,
+       "quote": ""
+      }
+     },
+     "conduct": {
+      "restricts": "no",
+      "document": "Honor Code",
+      "page": 4,
+      "quotes": [
+       "Each Davidson student is honor bound to refrain from stealing, lying about College business, and cheating on academic work."
+      ]
+     },
+     "confidence": "high"
+    }
+   },
+   "escalated": [],
+   "dropped": [
+    {
+     "domain": "greek",
+     "fact": "greek.housing",
+     "reason": "quote doesn't state it",
+     "detail": "quote isn't about fraternities or sororities: Houses with facilities offer meal plans for upperclassmen."
+    },
+    {
+     "domain": "faith",
+     "fact": "faith.community.buddhist",
+     "reason": "quote doesn't state it",
+     "detail": "nothing in the name or quote says buddhist: Mindful Friends at Davidson College is a group for Davidson College students, staff, and faculty see"
+    },
+    {
+     "domain": "lgbtq",
+     "fact": "lgbtq.group",
+     "reason": "quote doesn't state it",
+     "detail": "quote doesn't present it as a student group: The LGBTQIA+ Lounge, affectionately known on campus as the Lavender Lounge, is located in Belk Resid"
+    },
+    {
+     "domain": "lgbtq",
+     "fact": "lgbtq.group",
+     "reason": "quote doesn't state it",
+     "detail": "the group's name isn't in the quote: A variety of student-led groups on campus advocate and serve as a resource for gender and sexuality "
+    }
+   ],
+   "checks": [],
+   "errors": []
+  },
+  {
+   "unit_id": "159391",
+   "name": "Louisiana State University and Agricultural & Mechanical College",
+   "checked": "2026-10-04",
+   "greek": {
+    "councils": [
+     {
+      "url": "https://www.lsu.edu/greeks/join/index.php",
+      "checked": "2026-10-04",
+      "quote": "The Interfraternity Council (IFC) is the governing body of 17 national fraternities.",
+      "council": "nic",
+      "name": "Interfraternity Council",
+      "chapters": 17,
+      "members": null,
+      "term": null
+     },
+     {
+      "url": "https://www.lsu.edu/greeks/community/index.php",
+      "checked": "2026-10-04",
+      "quote": "The NPHC, also known as the Divine Nine, is the governing body that supports all 9 of the fraternities and sororities that are represented in the LSU NPHC.",
+      "council": "nphc",
+      "name": "National Pan-Hellenic Council",
+      "chapters": 9,
+      "members": null,
+      "term": null
+     },
+     {
+      "url": "https://www.lsu.edu/greeks/join/index.php",
+      "checked": "2026-10-04",
+      "quote": "The Panhellenic Council (PHC) is the governing body of 12 National Panhellenic Conference sororities, and 1 affiliate sorority.",
+      "council": "npc",
+      "name": "Panhellenic Council",
+      "chapters": 12,
+      "members": null,
+      "term": null
+     },
+     {
+      "url": "https://www.lsu.edu/greeks/join/index.php",
+      "checked": "2026-10-04",
+      "quote": "The MGC is the governing body that supports both of the 2 multicultural fraternities and sororities that are represented in the LSU MGC.",
+      "council": "nmgc",
+      "name": "Multicultural Greek Council",
+      "chapters": 2,
+      "members": null,
+      "term": null
+     }
+    ],
+    "housing": {
+     "url": "https://www.lsu.edu/greeks/files/letters/thetachi_outcome_letter_2024.pdf",
+     "checked": "2026-10-04",
+     "quote": "The current residents of the Theta Chi fraternity house must be vacated from the on-campus house by December 14, 2024.",
+     "value": "yes"
+    },
+    "formal_term": {
+     "url": "https://www.lsu.edu/greeks/join/index.php",
+     "checked": "2026-10-04",
+     "quote": "IFC Formal Recruitment Dates: August 19th, 2026 - August 24th, 2026",
+     "value": "Fall, before classes start"
+    }
+   },
+   "faith": null,
+   "lgbtq": {
+    "policies": [
+     {
+      "key": "nondiscrimination_orientation",
+      "value": "yes",
+      "url": "https://lsu.edu/nondiscrimination/",
+      "checked": "2026-10-04",
+      "quote": "LSU does not discriminate on the basis of race, creed, color, marital status, sexual orientation, gender identity, gender expression, pregnancy, religion,…"
+     },
+     {
+      "key": "nondiscrimination_identity",
+      "value": "yes",
+      "url": "https://lsu.edu/nondiscrimination/",
+      "checked": "2026-10-04",
+      "quote": "LSU does not discriminate on the basis of race, creed, color, marital status, sexual orientation, gender identity, gender expression, pregnancy, religion,…"
+     }
+    ]
+   },
+   "listings": [],
+   "raw": {
+    "greek": {
+     "status": {
+      "value": "present",
+      "page": 1,
+      "quote": "42 chapters across four councils"
+     },
+     "office_name": "Greek Life",
+     "members_total": {
+      "value": 7000,
+      "term": "2026-27",
+      "page": 3,
+      "quote": "7,000+ Total Members"
+     },
+     "councils": [
+      {
+       "council": "nic",
+       "name": "Interfraternity Council",
+       "chapters": 17,
+       "members": null,
+       "term": "",
+       "page": 6,
+       "quote": "The Interfraternity Council (IFC) is the governing body of 17 national fraternities."
+      },
+      {
+       "council": "nphc",
+       "name": "National Pan-Hellenic Council",
+       "chapters": 9,
+       "members": null,
+       "term": "",
+       "page": 7,
+       "quote": "The NPHC, also known as the Divine Nine, is the governing body that supports all 9 of the fraternities and sororities that are represented in the LSU NPHC."
+      },
+      {
+       "council": "npc",
+       "name": "Panhellenic Council",
+       "chapters": 12,
+       "members": null,
+       "term": "",
+       "page": 6,
+       "quote": "The Panhellenic Council (PHC) is the governing body of 12 National Panhellenic Conference sororities, and 1 affiliate sorority."
+      },
+      {
+       "council": "nmgc",
+       "name": "Multicultural Greek Council",
+       "chapters": 2,
+       "members": null,
+       "term": "",
+       "page": 6,
+       "quote": "The MGC is the governing body that supports both of the 2 multicultural fraternities and sororities that are represented in the LSU MGC."
+      }
+     ],
+     "housing": {
+      "value": "yes",
+      "page": 2,
+      "quote": "The current residents of the Theta Chi fraternity house must be vacated from the on-campus house by December 14, 2024."
+     },
+     "deferred": {
+      "value": "not_stated",
+      "page": 0,
+      "quote": ""
+     },
+     "formal_term": {
+      "value": "Fall, before classes start",
+      "page": 6,
+      "quote": "IFC Formal Recruitment Dates: August 19th, 2026 - August 24th, 2026"
+     },
+     "confidence": "low"
+    },
+    "lgbtq": {
+     "center": {
+      "status": "none_found",
+      "name": "",
+      "closed": "",
+      "page": 0,
+      "quote": ""
+     },
+     "groups": [],
+     "policies": {
+      "nondiscrimination_orientation": {
+       "value": "yes",
+       "page": 1,
+       "quote": "LSU does not discriminate on the basis of race, creed, color, marital status, sexual orientation, gender identity, gender expression, pregnancy, religion, sex, national or ethnic origin, age, disability, genetic information, veteran's status, military status, or any other status or organization protected by state or federal law"
+      },
+      "nondiscrimination_identity": {
+       "value": "yes",
+       "page": 1,
+       "quote": "LSU does not discriminate on the basis of race, creed, color, marital status, sexual orientation, gender identity, gender expression, pregnancy, religion, sex, national or ethnic origin, age, disability, genetic information, veteran's status, military status, or any other status or organization protected by state or federal law"
+      },
+      "inclusive_housing": {
+       "value": "not_found",
+       "page": 0,
+       "quote": ""
+      },
+      "name_on_records": {
+       "value": "not_found",
+       "page": 0,
+       "quote": ""
+      },
+      "inclusive_restrooms": {
+       "value": "not_found",
+       "page": 0,
+       "quote": ""
+      },
+      "health_plan_transition": {
+       "value": "not_found",
+       "page": 0,
+       "quote": ""
+      },
+      "trans_admission": {
+       "value": "not_found",
+       "page": 0,
+       "quote": ""
+      },
+      "trans_athletics": {
+       "value": "not_found",
+       "page": 0,
+       "quote": ""
+      }
+     },
+     "conduct": {
+      "restricts": "not_found",
+      "document": "",
+      "page": 0,
+      "quotes": []
+     },
+     "confidence": "high"
+    }
+   },
+   "escalated": [
+    "greek"
+   ],
+   "dropped": [
+    {
+     "domain": "greek",
+     "fact": "greek.members_total",
+     "reason": "quote doesn't state it",
+     "detail": "quote doesn't say the count is all fraternity and sorority members: 7,000+ Total Members"
+    }
+   ],
+   "checks": [],
+   "errors": []
+  },
+  {
+   "unit_id": "218070",
+   "name": "Furman University",
+   "checked": "2026-10-04",
+   "greek": {
+    "councils": [
+     {
+      "url": "https://www.furman.edu/fraternity-sorority-life/who-we-are/interfraternity-council/",
+      "checked": "2026-10-04",
+      "quote": "The council consists of leaders from Furman's six active fraternities",
+      "council": "nic",
+      "name": "Interfraternity Council",
+      "chapters": 6,
+      "members": null,
+      "term": null
+     },
+     {
+      "url": "https://www.furman.edu/fraternity-sorority-life/who-we-are/national-pan-hellenic-council/",
+      "checked": "2026-10-04",
+      "quote": "Furman currently recognizes two National Pan-Hellenic Council chapters",
+      "council": "nphc",
+      "name": "National Pan-Hellenic Council",
+      "chapters": 2,
+      "members": null,
+      "term": null
+     },
+     {
+      "url": "https://www.furman.edu/fraternity-sorority-life/who-we-are/panhellenic-council/",
+      "checked": "2026-10-04",
+      "quote": "The Panhellenic Council consists of leaders from Furman's six sororities",
+      "council": "npc",
+      "name": "Panhellenic Council",
+      "chapters": 6,
+      "members": null,
+      "term": null
+     }
+    ],
+    "deferred": {
+     "url": "https://www.furman.edu/fraternity-sorority-life/join/",
+     "checked": "2026-10-04",
+     "quote": "Our fraternities and sororities practice a deferred recruitment, which takes place in January, to give new students a chance to get settled, make new friends…",
+     "value": "yes"
+    },
+    "formal_term": {
+     "url": "https://www.furman.edu/fraternity-sorority-life/join/",
+     "checked": "2026-10-04",
+     "quote": "Our fraternities and sororities practice a deferred recruitment, which takes place in January",
+     "value": "Spring, in January"
+    }
+   },
+   "faith": {
+    "office": {
+     "url": "https://www.furman.edu/thriving-communities-initiatives/campus-diversity/spirituality-religion/",
+     "checked": "2026-10-04",
+     "quote": "Located in Daniel Chapel, the Office of the University Chaplain is the hub for religious life at Furman.",
+     "name": "Office of the University Chaplain"
+    }
+   },
+   "lgbtq": {
+    "center": {
+     "url": "https://www.furman.edu/thriving-communities-initiatives/interpersonal-connections/student-resources/gender-sexuality/",
+     "checked": "2026-10-04",
+     "quote": "the WGSS/LGBTQ+ Resource Center provides students a safe and inviting place to meet for discussion and study.",
+     "name": "Women's, Gender, and Sexuality Studies (WGSS)/LGBTQ+ Resource Center",
+     "status": "open"
+    },
+    "policies": [
+     {
+      "key": "nondiscrimination_orientation",
+      "value": "yes",
+      "url": "https://www.furman.edu/offices-services/human-resources/policies/nondiscrimination/",
+      "checked": "2026-10-04",
+      "quote": "…discriminate on the basis of race, color, national origin (including shared ancestry and ethnic characteristics), sex, sexual orientation, gender, gender…"
+     },
+     {
+      "key": "nondiscrimination_identity",
+      "value": "yes",
+      "url": "https://www.furman.edu/offices-services/human-resources/policies/nondiscrimination/",
+      "checked": "2026-10-04",
+      "quote": "…color, national origin (including shared ancestry and ethnic characteristics), sex, sexual orientation, gender, gender identity, pregnancy, disability, age,…"
+     }
+    ]
+   },
+   "listings": [],
+   "raw": {
+    "greek": {
+     "status": {
+      "value": "present",
+      "page": 1,
+      "quote": "Furman has a dynamic Fraternity and Sorority Life community of 13 chapters that comprises 36.2% of the student population."
+     },
+     "office_name": "Fraternity & Sorority Life",
+     "members_total": {
+      "value": null,
+      "term": "",
+      "page": 0,
+      "quote": ""
+     },
+     "councils": [
+      {
+       "council": "nic",
+       "name": "Interfraternity Council",
+       "chapters": 6,
+       "members": null,
+       "term": "",
+       "page": 3,
+       "quote": "The council consists of leaders from Furman's six active fraternities"
+      },
+      {
+       "council": "nphc",
+       "name": "National Pan-Hellenic Council",
+       "chapters": 2,
+       "members": null,
+       "term": "",
+       "page": 4,
+       "quote": "Furman currently recognizes two National Pan-Hellenic Council chapters"
+      },
+      {
+       "council": "npc",
+       "name": "Panhellenic Council",
+       "chapters": 6,
+       "members": null,
+       "term": "",
+       "page": 5,
+       "quote": "The Panhellenic Council consists of leaders from Furman's six sororities"
+      }
+     ],
+     "housing": {
+      "value": "not_stated",
+      "page": 0,
+      "quote": ""
+     },
+     "deferred": {
+      "value": "yes",
+      "page": 2,
+      "quote": "Our fraternities and sororities practice a deferred recruitment, which takes place in January, to give new students a chance to get settled, make new friends and adjust academically before making a life-long commitment to an organization."
+     },
+     "formal_term": {
+      "value": "Spring, in January",
+      "page": 2,
+      "quote": "Our fraternities and sororities practice a deferred recruitment, which takes place in January"
+     },
+     "confidence": "high"
+    },
+    "faith": {
+     "office": {
+      "name": "Office of the University Chaplain",
+      "page": 1,
+      "quote": "Located in Daniel Chapel, the Office of the University Chaplain is the hub for religious life at Furman."
+     },
+     "communities": [],
+     "composition": {
+      "items": [],
+      "total": null,
+      "population": "",
+      "as_of": "",
+      "page": 0,
+      "quote": ""
+     },
+     "estimates": [],
+     "confidence": "high"
+    },
+    "lgbtq": {
+     "center": {
+      "status": "open",
+      "name": "Women's, Gender, and Sexuality Studies (WGSS)/LGBTQ+ Resource Center",
+      "closed": "",
+      "page": 4,
+      "quote": "the WGSS/LGBTQ+ Resource Center provides students a safe and inviting place to meet for discussion and study."
+     },
+     "groups": [
+      {
+       "name": "Furman Pride Alliance (FPA)",
+       "page": 4,
+       "quote": "A group for students who do not identify with society's normative gender or sexual roles and their allies, the FPA provides a social space where students can feel free to express their gender and sexual identifications in a non-judgmental environment and receive support from other students."
+      },
+      {
+       "name": "LGBTQ Committee",
+       "page": 4,
+       "quote": "Furman's LGBT+ faculty and staff represent a supportive community that celebrates the diversity of sexuality and gender expression found throughout campus."
+      },
+      {
+       "name": "Safe Zone Program",
+       "page": 4,
+       "quote": "Relaunched in Fall 2017, Furman's Safe Zone Program helps insure that there will be faculty and staff members across the university trained in providing non-judgmental support and guidance for students who want to explore issues about their sexuality or gender in a one-on-one environment."
+      }
+     ],
+     "policies": {
+      "nondiscrimination_orientation": {
+       "value": "yes",
+       "page": 2,
+       "quote": "Furman University does not unlawfully discriminate on the basis of race, color, national origin (including shared ancestry and ethnic characteristics), sex, sexual orientation, gender, gender identity, pregnancy, disability, age, religion, protected veteran status, or any other characteristic or status protected by applicable local, state or federal law."
+      },
+      "nondiscrimination_identity": {
+       "value": "yes",
+       "page": 2,
+       "quote": "Furman University does not unlawfully discriminate on the basis of race, color, national origin (including shared ancestry and ethnic characteristics), sex, sexual orientation, gender, gender identity, pregnancy, disability, age, religion, protected veteran status, or any other characteristic or status protected by applicable local, state or federal law."
+      },
+      "inclusive_housing": {
+       "value": "not_found",
+       "page": 0,
+       "quote": ""
+      },
+      "name_on_records": {
+       "value": "not_found",
+       "page": 0,
+       "quote": ""
+      },
+      "inclusive_restrooms": {
+       "value": "not_found",
+       "page": 0,
+       "quote": ""
+      },
+      "health_plan_transition": {
+       "value": "not_found",
+       "page": 0,
+       "quote": ""
+      },
+      "trans_admission": {
+       "value": "not_found",
+       "page": 0,
+       "quote": ""
+      },
+      "trans_athletics": {
+       "value": "not_found",
+       "page": 0,
+       "quote": ""
+      }
+     },
+     "conduct": {
+      "restricts": "not_found",
+      "document": "",
+      "page": 0,
+      "quotes": []
+     },
+     "confidence": "high"
+    }
+   },
+   "escalated": [],
+   "dropped": [
+    {
+     "domain": "lgbtq",
+     "fact": "lgbtq.group",
+     "reason": "quote doesn't state it",
+     "detail": "the group's name isn't in the quote: A group for students who do not identify with society's normative gender or sexual roles and their a"
+    },
+    {
+     "domain": "lgbtq",
+     "fact": "lgbtq.group",
+     "reason": "quote doesn't state it",
+     "detail": "the group's name isn't in the quote: Furman's LGBT+ faculty and staff represent a supportive community that celebrates the diversity of s"
+    },
+    {
+     "domain": "lgbtq",
+     "fact": "lgbtq.group",
+     "reason": "quote doesn't state it",
+     "detail": "quote doesn't present it as a student group: Relaunched in Fall 2017, Furman's Safe Zone Program helps insure that there will be faculty and staf"
+    }
+   ],
+   "checks": [],
+   "errors": []
+  },
+  {
+   "unit_id": "216597",
+   "name": "Villanova University",
+   "checked": "2026-10-04",
+   "greek": {
+    "members_total": {
+     "url": "https://www.villanova.edu/university/student-life/ofsl.html",
+     "checked": "2026-10-04",
+     "quote": "Today, 2,600+ students are part of a values-driven fraternity and sorority community",
+     "value": 2600,
+     "term": null
+    },
+    "deferred": {
+     "url": "https://www.villanova.edu/university/student-life/ofsl/prospective-new-members.html",
+     "checked": "2026-10-04",
+     "quote": "Villanova follows a deferred recruitment model, which means first-semester, first-year students are not eligible to join a fraternity or sorority.",
+     "value": "yes"
+    },
+    "formal_term": {
+     "url": "https://www.villanova.edu/university/student-life/ofsl/prospective-new-members.html",
+     "checked": "2026-10-04",
+     "quote": "Primary IFC recruitment typically takes place during the spring semester",
+     "value": "Spring"
+    }
+   },
+   "faith": {
+    "office": {
+     "url": "https://www.villanova.edu/university/mission-ministry.html",
+     "checked": "2026-10-04",
+     "quote": "The Office for Mission and Ministry provides students, faculty and staff members many opportunities to connect and engage with our Augustinian Catholic mission",
+     "name": "Office for Mission & Ministry"
+    }
+   },
+   "lgbtq": {
+    "center": {
+     "url": "https://www.villanova.edu/university/student-life/belonging-and-inclusion/lgbtqia.html",
+     "checked": "2026-10-04",
+     "quote": "Safe Zone is a visible presence on campus supporting the LGBTQIA+ community that provides education and training related to LGBTQIA+ identities and the needs…",
+     "name": "VU Pride and Safe Zone",
+     "status": "open"
+    },
+    "policies": [
+     {
+      "key": "nondiscrimination_orientation",
+      "value": "yes",
+      "url": "https://www.villanova.edu/university/non-discrimination.html",
+      "checked": "2026-10-04",
+      "quote": "…members of our community regardless of race, color, national origin, ancestry, ethnicity, religion, sex, gender, sexual orientation, gender identity or…"
+     },
+     {
+      "key": "nondiscrimination_identity",
+      "value": "yes",
+      "url": "https://www.villanova.edu/university/non-discrimination.html",
+      "checked": "2026-10-04",
+      "quote": "…community regardless of race, color, national origin, ancestry, ethnicity, religion, sex, gender, sexual orientation, gender identity or expression, age,…"
+     },
+     {
+      "key": "name_on_records",
+      "value": "yes",
+      "url": "https://www.villanova.edu/university/enrollment-management/registrar/resources/personal-update.html",
+      "checked": "2026-10-04",
+      "quote": "…University that any student, faculty or staff may choose to be identified within the University community with a chosen first name that may differ from the…"
+     }
+    ]
+   },
+   "listings": [
+    {
+     "domain": "faith",
+     "kind": "group",
+     "tradition": "catholic",
+     "name": "Hispanic & Latine Ministry",
+     "url": "https://www.villanova.edu/university/mission-ministry/spirituality-community.html",
+     "publisher": "Villanova University",
+     "quote": "Villanova offers opportunities for worship, community-building and service through and within the experience of Hispanic and Latin American Catholicism and…",
+     "checked": "2026-10-04"
+    },
+    {
+     "domain": "lgbtq",
+     "kind": "group",
+     "name": "VU Pride",
+     "url": "https://www.villanova.edu/university/student-life/belonging-and-inclusion/lgbtqia.html",
+     "publisher": "Villanova University",
+     "quote": "VU Pride is a group of students, faculty and staff working together to foster community, awareness and celebration of LGBTQIA+ identities on campus.",
+     "checked": "2026-10-04"
+    }
+   ],
+   "raw": {
+    "greek": {
+     "status": {
+      "value": "present",
+      "page": 1,
+      "quote": "Today, 2,600+ students are part of a values-driven fraternity and sorority community"
+     },
+     "office_name": "Office of Fraternity and Sorority Life",
+     "members_total": {
+      "value": 2600,
+      "term": "",
+      "page": 1,
+      "quote": "Today, 2,600+ students are part of a values-driven fraternity and sorority community"
+     },
+     "councils": [
+      {
+       "council": "nic",
+       "name": "Interfraternity Council",
+       "chapters": null,
+       "members": null,
+       "term": "",
+       "page": 2,
+       "quote": "The Interfraternity Council, commonly referred to as IFC, coordinates recruitment opportunities for Villanova's recognized IFC fraternities."
+      },
+      {
+       "council": "npc",
+       "name": "Panhellenic Council",
+       "chapters": null,
+       "members": null,
+       "term": "",
+       "page": 2,
+       "quote": "The Panhellenic Council coordinates the primary recruitment process for Villanova's recognized Panhellenic sororities."
+      },
+      {
+       "council": "nmgc",
+       "name": "Intercultural Greek Council",
+       "chapters": null,
+       "members": null,
+       "term": "",
+       "page": 2,
+       "quote": "The Intercultural Greek Council, commonly referred to as IGC, represents Villanova's culturally based fraternities and sororities."
+      }
+     ],
+     "housing": {
+      "value": "not_stated",
+      "page": 0,
+      "quote": ""
+     },
+     "deferred": {
+      "value": "yes",
+      "page": 2,
+      "quote": "Villanova follows a deferred recruitment model, which means first-semester, first-year students are not eligible to join a fraternity or sorority."
+     },
+     "formal_term": {
+      "value": "Spring",
+      "page": 2,
+      "quote": "Primary IFC recruitment typically takes place during the spring semester"
+     },
+     "confidence": "high"
+    },
+    "faith": {
+     "office": {
+      "name": "Office for Mission & Ministry",
+      "page": 3,
+      "quote": "The Office for Mission and Ministry provides students, faculty and staff members many opportunities to connect and engage with our Augustinian Catholic mission"
+     },
+     "communities": [
+      {
+       "name": "Journey Groups - Women's Group",
+       "tradition": "catholic",
+       "page": 2,
+       "quote": "Join us for a welcoming community where we walk together in faith, unpack our identity as God's beloved and navigate college life with grace and balance"
+      },
+      {
+       "name": "Journey Groups - First-Year Groups",
+       "tradition": "catholic",
+       "page": 2,
+       "quote": "Come join us every Monday as we grow together in faith"
+      },
+      {
+       "name": "Journey Groups - Sophomore Group",
+       "tradition": "catholic",
+       "page": 2,
+       "quote": "Join us at Cabrini for a welcoming community centered on accompanying sophomores as we navigate faith, life and the journey of college together"
+      },
+      {
+       "name": "Journey Groups - Men's Group",
+       "tradition": "catholic",
+       "page": 2,
+       "quote": "Join us as we talk together about the role that faith and prayer hold in our lives"
+      },
+      {
+       "name": "Journey Groups - Sophomores, Juniors and Seniors",
+       "tradition": "catholic",
+       "page": 2,
+       "quote": "Join this \"Walk a Little Slower\" group for bi-weekly reflective meditations and small group sharing"
+      },
+      {
+       "name": "Bible Study in the Catholic Tradition",
+       "tradition": "catholic",
+       "page": 2,
+       "quote": "Each week, we gather to open the Scriptures in our common search for meaning in life"
+      },
+      {
+       "name": "Hispanic & Latine Ministry",
+       "tradition": "catholic",
+       "page": 1,
+       "quote": "Villanova offers opportunities for worship, community-building and service through and within the experience of Hispanic and Latin American Catholicism and other faith traditions"
+      },
+      {
+       "name": "OASIS",
+       "tradition": "interfaith",
+       "page": 1,
+       "quote": "If you identify as part of the LGBTQIA+ community and want to meet other queer individuals in a safe and confidential location, attend Oasis's bi-weekly meetings"
+      }
+     ],
+     "composition": {
+      "items": [],
+      "total": null,
+      "population": "",
+      "as_of": "",
+      "page": 0,
+      "quote": ""
+     },
+     "estimates": [],
+     "confidence": "high"
+    },
+    "lgbtq": {
+     "center": {
+      "status": "open",
+      "name": "VU Pride and Safe Zone",
+      "closed": "",
+      "page": 1,
+      "quote": "Safe Zone is a visible presence on campus supporting the LGBTQIA+ community that provides education and training related to LGBTQIA+ identities and the needs of their community...VU Pride is a group of students, faculty and staff working together to foster community, awareness and celebration of LGBTQIA+ identities on campus."
+     },
+     "groups": [
+      {
+       "name": "VU Pride",
+       "page": 1,
+       "quote": "VU Pride is a group of students, faculty and staff working together to foster community, awareness and celebration of LGBTQIA+ identities on campus."
+      },
+      {
+       "name": "Oasis: LGBTQIA+ Small Group Sharing",
+       "page": 1,
+       "quote": "Oasis is a confidential, small group opportunity where a safe zone is established to engage in an open dialogue about the issues relevant to queer or questioning individuals."
+      },
+      {
+       "name": "Safe Zone",
+       "page": 1,
+       "quote": "Safe Zone is a visible presence on campus supporting the LGBTQIA+ community that provides education and training related to LGBTQIA+ identities and the needs of their community."
+      }
+     ],
+     "policies": {
+      "nondiscrimination_orientation": {
+       "value": "yes",
+       "page": 2,
+       "quote": "strives to provide a respectful and welcoming environment informed by the belief in the humanity and intrinsic worth of all members of our community regardless of race, color, national origin, ancestry, ethnicity, religion, sex, gender, sexual orientation, gender identity or expression, age, veteran status, disability, or any other protected category."
+      },
+      "nondiscrimination_identity": {
+       "value": "yes",
+       "page": 2,
+       "quote": "strives to provide a respectful and welcoming environment informed by the belief in the humanity and intrinsic worth of all members of our community regardless of race, color, national origin, ancestry, ethnicity, religion, sex, gender, sexual orientation, gender identity or expression, age, veteran status, disability, or any other protected category."
+      },
+      "inclusive_housing": {
+       "value": "not_found",
+       "page": 0,
+       "quote": ""
+      },
+      "name_on_records": {
+       "value": "yes",
+       "page": 3,
+       "quote": "It is the practice of Villanova University that any student, faculty or staff may choose to be identified within the University community with a chosen first name that may differ from the individual's legal first name."
+      },
+      "inclusive_restrooms": {
+       "value": "not_found",
+       "page": 0,
+       "quote": ""
+      },
+      "health_plan_transition": {
+       "value": "not_found",
+       "page": 0,
+       "quote": ""
+      },
+      "trans_admission": {
+       "value": "not_found",
+       "page": 0,
+       "quote": ""
+      },
+      "trans_athletics": {
+       "value": "not_found",
+       "page": 0,
+       "quote": ""
+      }
+     },
+     "conduct": {
+      "restricts": "not_found",
+      "document": "",
+      "page": 0,
+      "quotes": []
+     },
+     "confidence": "high"
+    }
+   },
+   "escalated": [],
+   "dropped": [
+    {
+     "domain": "faith",
+     "fact": "faith.community.catholic",
+     "reason": "quote doesn't state it",
+     "detail": "the group's name isn't in the quote: Join us for a welcoming community where we walk together in faith, unpack our identity as God's belo"
+    },
+    {
+     "domain": "faith",
+     "fact": "faith.community.catholic",
+     "reason": "quote doesn't state it",
+     "detail": "the group's name isn't in the quote: Come join us every Monday as we grow together in faith"
+    },
+    {
+     "domain": "faith",
+     "fact": "faith.community.catholic",
+     "reason": "quote doesn't state it",
+     "detail": "nothing in the name or quote says catholic: Join us at Cabrini for a welcoming community centered on accompanying sophomores as we navigate fait"
+    },
+    {
+     "domain": "faith",
+     "fact": "faith.community.catholic",
+     "reason": "quote doesn't state it",
+     "detail": "the group's name isn't in the quote: Join us as we talk together about the role that faith and prayer hold in our lives"
+    },
+    {
+     "domain": "faith",
+     "fact": "faith.community.catholic",
+     "reason": "quote doesn't state it",
+     "detail": "the group's name isn't in the quote: Join this \"Walk a Little Slower\" group for bi-weekly reflective meditations and small group sharing"
+    },
+    {
+     "domain": "faith",
+     "fact": "faith.community.catholic",
+     "reason": "quote doesn't state it",
+     "detail": "the group's name isn't in the quote: Each week, we gather to open the Scriptures in our common search for meaning in life"
+    },
+    {
+     "domain": "faith",
+     "fact": "faith.community.interfaith",
+     "reason": "quote doesn't state it",
+     "detail": "nothing in the name or quote says interfaith: If you identify as part of the LGBTQIA+ community and want to meet other queer individuals in a safe"
+    },
+    {
+     "domain": "lgbtq",
+     "fact": "lgbtq.group",
+     "reason": "quote doesn't state it",
+     "detail": "the group's name isn't in the quote: Oasis is a confidential, small group opportunity where a safe zone is established to engage in an op"
+    },
+    {
+     "domain": "lgbtq",
+     "fact": "lgbtq.group",
+     "reason": "quote doesn't state it",
+     "detail": "quote doesn't present it as a student group: Safe Zone is a visible presence on campus supporting the LGBTQIA+ community that provides education "
+    }
+   ],
+   "checks": [],
+   "errors": []
+  },
+  {
+   "unit_id": "186380",
+   "name": "Rutgers University-New Brunswick",
+   "checked": "2026-10-04",
+   "greek": {
+    "councils": [
+     {
+      "url": "https://greeklife.rutgers.edu/sites/default/files/f_s-report-f25.pdf",
+      "checked": "2026-10-04",
+      "quote": "Average Chapter Size ... NPHC 9",
+      "council": "nphc",
+      "name": "National Pan-Hellenic Council",
+      "chapters": null,
+      "members": 9,
+      "term": "Fall 2025"
+     },
+     {
+      "url": "https://greeklife.rutgers.edu/sites/default/files/f_s-report-f25.pdf",
+      "checked": "2026-10-04",
+      "quote": "Average Chapter Size ... PFC 62",
+      "council": "professional",
+      "name": "Professional Fraternity Council",
+      "chapters": null,
+      "members": 62,
+      "term": "Fall 2025"
+     },
+     {
+      "url": "https://greeklife.rutgers.edu/sites/default/files/f_s-report-f25.pdf",
+      "checked": "2026-10-04",
+      "quote": "Average Chapter Size ... Panhellenic 114",
+      "council": "npc",
+      "name": "Panhellenic Council",
+      "chapters": null,
+      "members": 114,
+      "term": "Fall 2025"
+     },
+     {
+      "url": "https://greeklife.rutgers.edu/sites/default/files/f_s-report-f25.pdf",
+      "checked": "2026-10-04",
+      "quote": "Average Chapter Size ... IFC 43",
+      "council": "nic",
+      "name": "Interfraternity Council",
+      "chapters": null,
+      "members": 43,
+      "term": "Fall 2025"
+     }
+    ],
+    "housing": {
+     "url": "https://greeklife.rutgers.edu/join-our-community/potential-new-member-faqs",
+     "checked": "2026-10-04",
+     "quote": "None of the fraternity/sorority houses are owned or operated by the university.",
+     "value": "yes"
+    },
+    "deferred": {
+     "url": "https://greeklife.rutgers.edu/join-our-community/potential-new-member-faqs",
+     "checked": "2026-10-04",
+     "quote": "First-year students must wait until their second semester to join.",
+     "value": "yes"
+    }
+   },
+   "faith": {
+    "office": {
+     "url": "https://ruoffcampus.rutgers.edu/basic-needs/mental-physical-and-spiritual-wellness/faith-and-spirituality-at-rutgers",
+     "checked": "2026-10-04",
+     "quote": "Rutgers is dedicated to supporting an inclusive community, where freedom of religious expression is protected and encouraged... Rutgers supports an open forum…",
+     "name": "Off-Campus Living & Community Initiatives - Faith & Spirituality at Rutgers"
+    }
+   },
+   "lgbtq": {
+    "center": {
+     "url": "https://socialjustice.rutgers.edu/",
+     "checked": "2026-10-04",
+     "quote": "The Center for Social Justice Education and LGBT Communities (SJE) provides educational and social programs, leadership development, and policy consultation…",
+     "name": "The Center for Social Justice Education and LGBT Communities",
+     "status": "open"
+    },
+    "policies": [
+     {
+      "key": "nondiscrimination_orientation",
+      "value": "yes",
+      "url": "https://ruoffcampus.rutgers.edu/campus-living/antidiscrimination-policy",
+      "checked": "2026-10-04",
+      "quote": "…to our students, faculty, and staff regardless of race, religion, color, national origin, ancestry, age, sex, sexual orientation, disability, marital status,…"
+     },
+     {
+      "key": "inclusive_housing",
+      "value": "yes",
+      "url": "https://socialjustice.rutgers.edu/housing-options/gender-neutral-housing",
+      "checked": "2026-10-04",
+      "quote": "Students entering their sophomore, junior, or senior year (returning students) may apply for Gender Neutral Housing... Currently, Gender Neutral Housing is…"
+     },
+     {
+      "key": "name_on_records",
+      "value": "yes",
+      "url": "https://socialjustice.rutgers.edu/trans-ru/campus-name-change",
+      "checked": "2026-10-04",
+      "quote": "…University has recognized that members of the university community use names other than their legal names... Chosen/preferred names shall be used in all…"
+     },
+     {
+      "key": "inclusive_restrooms",
+      "value": "yes",
+      "url": "https://socialjustice.rutgers.edu/housing-options/gender-neutral-housing",
+      "checked": "2026-10-04",
+      "quote": "In New Gibbons and in Demarest, students will have the option of using a gender-neutral, multi-stall restroom or a gender-specific, multi-stall restroom."
+     }
+    ]
+   },
+   "listings": [
+    {
+     "domain": "faith",
+     "kind": "group",
+     "tradition": "christian",
+     "name": "Alpha Omega",
+     "url": "https://ruoffcampus.rutgers.edu/basic-needs/mental-physical-and-spiritual-wellness/faith-and-spirituality-at-rutgers",
+     "publisher": "Rutgers University-New Brunswick",
+     "quote": "Alpha Omega serves as the Campus Ministry of the Central Jersey Church of Christ — a non-denominational church",
+     "checked": "2026-10-04"
+    },
+    {
+     "domain": "faith",
+     "kind": "group",
+     "tradition": "christian",
+     "name": "Canterbury House: The Episcopal Church at Rutgers",
+     "url": "https://ruoffcampus.rutgers.edu/basic-needs/mental-physical-and-spiritual-wellness/faith-and-spirituality-at-rutgers",
+     "publisher": "Rutgers University-New Brunswick",
+     "quote": "Canterbury House: The Episcopal Church at Rutgers",
+     "checked": "2026-10-04"
+    },
+    {
+     "domain": "faith",
+     "kind": "group",
+     "tradition": "catholic",
+     "name": "Catholic Center",
+     "url": "https://ruoffcampus.rutgers.edu/basic-needs/mental-physical-and-spiritual-wellness/faith-and-spirituality-at-rutgers",
+     "publisher": "Rutgers University-New Brunswick",
+     "quote": "We're a down-to-earth, relevant, fun-loving, God-centered, welcoming group on campus who genuinely want to grow in their faith! We're an active student group…",
+     "checked": "2026-10-04"
+    },
+    {
+     "domain": "faith",
+     "kind": "group",
+     "tradition": "muslim",
+     "name": "Center for Islamic Life at Rutgers University",
+     "url": "https://ruoffcampus.rutgers.edu/basic-needs/mental-physical-and-spiritual-wellness/faith-and-spirituality-at-rutgers",
+     "publisher": "Rutgers University-New Brunswick",
+     "quote": "Center for Islamic Life at Rutgers University",
+     "checked": "2026-10-04"
+    },
+    {
+     "domain": "faith",
+     "kind": "group",
+     "tradition": "jewish",
+     "name": "Chabad House Jewish Student Center at Rutgers",
+     "url": "https://ruoffcampus.rutgers.edu/basic-needs/mental-physical-and-spiritual-wellness/faith-and-spirituality-at-rutgers",
+     "publisher": "Rutgers University-New Brunswick",
+     "quote": "Chabad Jewish Student Center at Rutgers is a home away from home for thousands of Jewish students... a warm and exciting place to celebrate Jewish holidays...…",
+     "checked": "2026-10-04"
+    },
+    {
+     "domain": "faith",
+     "kind": "group",
+     "tradition": "christian",
+     "name": "Chi Alpha Christian Fellowship",
+     "url": "https://ruoffcampus.rutgers.edu/basic-needs/mental-physical-and-spiritual-wellness/faith-and-spirituality-at-rutgers",
+     "publisher": "Rutgers University-New Brunswick",
+     "quote": "Chi Alpha Christian Fellowship",
+     "checked": "2026-10-04"
+    },
+    {
+     "domain": "faith",
+     "kind": "group",
+     "tradition": "christian",
+     "name": "Cornerstone: Chinese Christian Church in Somerset",
+     "url": "https://ruoffcampus.rutgers.edu/basic-needs/mental-physical-and-spiritual-wellness/faith-and-spirituality-at-rutgers",
+     "publisher": "Rutgers University-New Brunswick",
+     "quote": "Cornerstone is a ministry of the Chinese Christian Church in Somerset designed to meet the spiritual needs of university students",
+     "checked": "2026-10-04"
+    },
+    {
+     "domain": "faith",
+     "kind": "group",
+     "tradition": "christian",
+     "name": "Cru",
+     "url": "https://ruoffcampus.rutgers.edu/basic-needs/mental-physical-and-spiritual-wellness/faith-and-spirituality-at-rutgers",
+     "publisher": "Rutgers University-New Brunswick",
+     "quote": "Cru is an international ministry that desires to be a caring community passionate about connecting people to Jesus",
+     "checked": "2026-10-04"
+    },
+    {
+     "domain": "faith",
+     "kind": "group",
+     "tradition": "christian",
+     "name": "Campus Light College Church",
+     "url": "https://ruoffcampus.rutgers.edu/basic-needs/mental-physical-and-spiritual-wellness/faith-and-spirituality-at-rutgers",
+     "publisher": "Rutgers University-New Brunswick",
+     "quote": "Campus Light Church is a church for college students located on the Rutgers- New Brunswick campus... a recognized chaplaincy and an affiliated congregation of…",
+     "checked": "2026-10-04"
+    },
+    {
+     "domain": "faith",
+     "kind": "group",
+     "tradition": "hindu",
+     "name": "Hindu Dharmic Center at Rutgers",
+     "url": "https://ruoffcampus.rutgers.edu/basic-needs/mental-physical-and-spiritual-wellness/faith-and-spirituality-at-rutgers",
+     "publisher": "Rutgers University-New Brunswick",
+     "quote": "The Hindu Dharmic Center at Rutgers exists to nurture the spiritual well-being of students, faculty, and the wider academic community... rooted in Vedic Dharma",
+     "checked": "2026-10-04"
+    },
+    {
+     "domain": "lgbtq",
+     "kind": "group",
+     "name": "Q&A: Queer & Asian",
+     "url": "https://socialjustice.rutgers.edu/engage/lgbtqa-student-clubs-organizations",
+     "publisher": "Rutgers University-New Brunswick",
+     "quote": "Q&A: Queer & Asian was founded in 2010 as \"B.R.I.D.G.E.\" as a discussion group around the intersection of LGBTQ and Asian identities.",
+     "checked": "2026-10-04"
+    },
+    {
+     "domain": "lgbtq",
+     "kind": "group",
+     "name": "Queer Caucus",
+     "url": "https://socialjustice.rutgers.edu/engage/lgbtqa-student-clubs-organizations",
+     "publisher": "Rutgers University-New Brunswick",
+     "quote": "Queer Caucus is an umbrella org for the LGBTQ+ community at Rutgers University.",
+     "checked": "2026-10-04"
+    },
+    {
+     "domain": "lgbtq",
+     "kind": "group",
+     "name": "Rainbow Pines",
+     "url": "https://socialjustice.rutgers.edu/engage/lgbtqa-student-clubs-organizations",
+     "publisher": "Rutgers University-New Brunswick",
+     "quote": "Rainbow Pines is a club specifically for LGBT+ folk and allies who are enrolled in Douglass.",
+     "checked": "2026-10-04"
+    },
+    {
+     "domain": "lgbtq",
+     "kind": "group",
+     "name": "UltraViolet",
+     "url": "https://socialjustice.rutgers.edu/engage/lgbtqa-student-clubs-organizations",
+     "publisher": "Rutgers University-New Brunswick",
+     "quote": "UltraViolet is a student organization for LGBTQIA+ women and other genders.",
+     "checked": "2026-10-04"
+    }
+   ],
+   "raw": {
+    "greek": {
+     "status": {
+      "value": "present",
+      "page": 1,
+      "quote": "The Mission of Fraternity & Sorority Affairs is to effectively on-board, educate and advise, the leadership and general members of the Rutgers fraternity/sorority community"
+     },
+     "office_name": "Fraternity and Sorority Affairs",
+     "members_total": {
+      "value": null,
+      "term": "",
+      "page": 0,
+      "quote": ""
+     },
+     "councils": [
+      {
+       "council": "nmgc",
+       "name": "Multicultural Greek Council",
+       "chapters": null,
+       "members": 18,
+       "term": "Fall 2025",
+       "page": 3,
+       "quote": "Average Chapter Size ... MGC 13"
+      },
+      {
+       "council": "nphc",
+       "name": "National Pan-Hellenic Council",
+       "chapters": null,
+       "members": 9,
+       "term": "Fall 2025",
+       "page": 3,
+       "quote": "Average Chapter Size ... NPHC 9"
+      },
+      {
+       "council": "professional",
+       "name": "Professional Fraternity Council",
+       "chapters": null,
+       "members": 62,
+       "term": "Fall 2025",
+       "page": 3,
+       "quote": "Average Chapter Size ... PFC 62"
+      },
+      {
+       "council": "npc",
+       "name": "Panhellenic Council",
+       "chapters": null,
+       "members": 114,
+       "term": "Fall 2025",
+       "page": 3,
+       "quote": "Average Chapter Size ... Panhellenic 114"
+      },
+      {
+       "council": "nic",
+       "name": "Interfraternity Council",
+       "chapters": null,
+       "members": 43,
+       "term": "Fall 2025",
+       "page": 3,
+       "quote": "Average Chapter Size ... IFC 43"
+      }
+     ],
+     "housing": {
+      "value": "yes",
+      "page": 12,
+      "quote": "None of the fraternity/sorority houses are owned or operated by the university."
+     },
+     "deferred": {
+      "value": "yes",
+      "page": 12,
+      "quote": "First-year students must wait until their second semester to join."
+     },
+     "formal_term": {
+      "value": "Spring, within the first two weeks of the semester",
+      "page": 12,
+      "quote": "Recruitment (also referred to as \"rush\" or \"intake\") takes place within the first two weeks of each semester."
+     },
+     "confidence": "low"
+    },
+    "faith": {
+     "office": {
+      "name": "Off-Campus Living & Community Initiatives - Faith & Spirituality at Rutgers",
+      "page": 1,
+      "quote": "Rutgers is dedicated to supporting an inclusive community, where freedom of religious expression is protected and encouraged... Rutgers supports an open forum for religious life through: more than 40 student organizations dedicated to religious and religious-cultural interests... more than 25 recognized chaplaincies serving students' spiritual needs... a Multifaith Council that promotes an inclusive atmosphere for the pursuit of intellectual and spiritual truths"
+     },
+     "communities": [
+      {
+       "name": "Alpha Omega",
+       "tradition": "christian",
+       "page": 1,
+       "quote": "Alpha Omega serves as the Campus Ministry of the Central Jersey Church of Christ — a non-denominational church"
+      },
+      {
+       "name": "Athletes in Action",
+       "tradition": "christian",
+       "page": 1,
+       "quote": "AIA exists to be a spiritual resource to the athletes, coaches, staff & families of the RU athletic department"
+      },
+      {
+       "name": "Canterbury House: The Episcopal Church at Rutgers",
+       "tradition": "christian",
+       "page": 1,
+       "quote": "Canterbury House: The Episcopal Church at Rutgers"
+      },
+      {
+       "name": "Catholic Center",
+       "tradition": "catholic",
+       "page": 1,
+       "quote": "We're a down-to-earth, relevant, fun-loving, God-centered, welcoming group on campus who genuinely want to grow in their faith! We're an active student group at Rutgers University, the Catholic Student Association"
+      },
+      {
+       "name": "Center for Islamic Life at Rutgers University",
+       "tradition": "muslim",
+       "page": 1,
+       "quote": "Center for Islamic Life at Rutgers University"
+      },
+      {
+       "name": "Chabad House Jewish Student Center at Rutgers",
+       "tradition": "jewish",
+       "page": 1,
+       "quote": "Chabad Jewish Student Center at Rutgers is a home away from home for thousands of Jewish students... a warm and exciting place to celebrate Jewish holidays... a center to experience the fun and spirituality of Judaism"
+      },
+      {
+       "name": "Chi Alpha Christian Fellowship",
+       "tradition": "christian",
+       "page": 1,
+       "quote": "Chi Alpha Christian Fellowship"
+      },
+      {
+       "name": "Cornerstone: Chinese Christian Church in Somerset",
+       "tradition": "christian",
+       "page": 1,
+       "quote": "Cornerstone is a ministry of the Chinese Christian Church in Somerset designed to meet the spiritual needs of university students"
+      },
+      {
+       "name": "Cru",
+       "tradition": "christian",
+       "page": 1,
+       "quote": "Cru is an international ministry that desires to be a caring community passionate about connecting people to Jesus"
+      },
+      {
+       "name": "Grace Community Chapel of NJ",
+       "tradition": "christian",
+       "page": 1,
+       "quote": "Grace Community Chapel of NJ"
+      },
+      {
+       "name": "Campus Light College Church",
+       "tradition": "christian",
+       "page": 1,
+       "quote": "Campus Light Church is a church for college students located on the Rutgers- New Brunswick campus... a recognized chaplaincy and an affiliated congregation of Rutgers University"
+      },
+      {
+       "name": "Spiritual But Not Religious (SBNR)",
+       "tradition": "nonreligious",
+       "page": 1,
+       "quote": "Spiritual But Not Religious (SBNR)... To share among seekers spirituality as a genuine science based on reason, logic and ancient wisdom literatures of the world and India in particular"
+      },
+      {
+       "name": "Hindu Dharmic Center at Rutgers",
+       "tradition": "hindu",
+       "page": 1,
+       "quote": "The Hindu Dharmic Center at Rutgers exists to nurture the spiritual well-being of students, faculty, and the wider academic community... rooted in Vedic Dharma"
+      },
+      {
+       "name": "International Friends at Rutgers",
+       "tradition": "interfaith",
+       "page": 1,
+       "quote": "International Friends at Rutgers (ISI - International Students, Inc.)"
+      }
+     ],
+     "composition": {
+      "items": [],
+      "total": null,
+      "population": "",
+      "as_of": "",
+      "page": 0,
+      "quote": ""
+     },
+     "estimates": [],
+     "confidence": "high"
+    },
+    "lgbtq": {
+     "center": {
+      "status": "open",
+      "name": "The Center for Social Justice Education and LGBT Communities",
+      "closed": "",
+      "page": 1,
+      "quote": "The Center for Social Justice Education and LGBT Communities (SJE) provides educational and social programs, leadership development, and policy consultation for LGBTQIA and ally students, faculty, staff, and community members."
+     },
+     "groups": [
+      {
+       "name": "Being Black & Queer (BBQ)",
+       "page": 2,
+       "quote": "Being Black and Queer was founded in 2024 after a group of Black Queers realized there was not a space specifically designated for them."
+      },
+      {
+       "name": "BIPOC LGBTQIA2S+ Affinity Group (Graduate Students)",
+       "page": 2,
+       "quote": "The BIPOC LGBTQIA2S+ affinity groups is for anyone who identifies as Black, Brown, Indigenous, Melanated, person of color, as well as part of the LGBTQ+ community."
+      },
+      {
+       "name": "Delta Lambda Phi: A National Social Fraternity for Gay, Bisexual and Progressive Men",
+       "page": 2,
+       "quote": "Delta Lambda Phi is a national social fraternity for gay, bisexual and progressive men founded in 1986 in Washington, D.C."
+      },
+      {
+       "name": "Fusion",
+       "page": 2,
+       "quote": "Fusion: The Rutgers Union of Mixed People aims to unite people who identify with or are interested in the multiracial experience."
+      },
+      {
+       "name": "GRADient",
+       "page": 2,
+       "quote": "GRADient is the queer professional and graduate student association at Rutgers University."
+      },
+      {
+       "name": "Jewish Allies and Queer Students (JAQS)",
+       "page": 2,
+       "quote": "This discussion group provides a forum for Queer Jewish students and their allies to discuss relevant topics and build connections."
+      },
+      {
+       "name": "LLEGO: LGBTQQIA People of Color Alliance",
+       "page": 2,
+       "quote": "LLEGO (pronounced, \"Jeh-go\") was founded in 1997. We are the LGBTQQIA People of Color Union at Rutgers New Brunswick."
+      },
+      {
+       "name": "Out in Business",
+       "page": 2,
+       "quote": "This organization is geared towards helping LGBTQ+ business students interested in pursuing careers in the business world."
+      },
+      {
+       "name": "oSTEM: Out in Science, Technology, Engineering & Mathematics",
+       "page": 2,
+       "quote": "oSTEM is a national student society, dedicated to increasing the participation of people who identify with LGBTQIA communities in disciplines related to science, technology, engineering, or mathematics (STEM)."
+      },
+      {
+       "name": "Out in Tech",
+       "page": 2,
+       "quote": "Rutgers' FIRST club for LGBTQ+ students pursuing a tech major!"
+      },
+      {
+       "name": "Q&A: Queer & Asian",
+       "page": 2,
+       "quote": "Q&A: Queer & Asian was founded in 2010 as \"B.R.I.D.G.E.\" as a discussion group around the intersection of LGBTQ and Asian identities."
+      },
+      {
+       "name": "Queer Caucus",
+       "page": 2,
+       "quote": "Queer Caucus is an umbrella org for the LGBTQ+ community at Rutgers University."
+      },
+      {
+       "name": "Queer & Christian",
+       "page": 2,
+       "quote": "The purpose of the organization shall provide a network for students with a strong interest in Christian faith, LGBT+ identity and how to navigate those identities while being in an open and safe space."
+      },
+      {
+       "name": "QSA: Queer Student Alliance",
+       "page": 2,
+       "quote": "The Queer Student Alliance is a political and social student organization that is based at Rutgers University, in New Brunswick, New Jersey."
+      },
+      {
+       "name": "Rainbow Pines",
+       "page": 2,
+       "quote": "Rainbow Pines is a club specifically for LGBT+ folk and allies who are enrolled in Douglass."
+      },
+      {
+       "name": "RU Inclusive",
+       "page": 2,
+       "quote": "The purpose of the organization is to provide a network for students with a strong interest in diversity, equity, and inclusion (DEI) in the workplace."
+      },
+      {
+       "name": "SWAGGER: Social Workers Advocating for GLBT and Gender-nonconforming Equal Rights",
+       "page": 2,
+       "quote": "SWAGGER (Social Workers Advocating for GLBT and Gender-nonconforming Equal Rights) is an organization at the Rutgers University School of Social Work dedicated to advocating for the rights and wellbeing of the LGBTQIA community."
+      },
+      {
+       "name": "Transmissions: For Trans and Nonbinary Students and Allies",
+       "page": 2,
+       "quote": "Transmissions aim to open up a safe space for trans folk and trans allies."
+      },
+      {
+       "name": "UltraViolet",
+       "page": 2,
+       "quote": "UltraViolet is a student organization for LGBTQIA+ women and other genders."
+      }
+     ],
+     "policies": {
+      "nondiscrimination_orientation": {
+       "value": "yes",
+       "page": 3,
+       "quote": "Rutgers University will accept for listing only those houses, apartments, and rooms that are available to our students, faculty, and staff regardless of race, religion, color, national origin, ancestry, age, sex, sexual orientation, disability, marital status, or veteran status."
+      },
+      "nondiscrimination_identity": {
+       "value": "not_found",
+       "page": 0,
+       "quote": ""
+      },
+      "inclusive_housing": {
+       "value": "yes",
+       "page": 4,
+       "quote": "Students entering their sophomore, junior, or senior year (returning students) may apply for Gender Neutral Housing... Currently, Gender Neutral Housing is available in any returning student residence hall that is suite or apartment-style on any campus."
+      },
+      "name_on_records": {
+       "value": "yes",
+       "page": 5,
+       "quote": "Since September 2014, Rutgers University has recognized that members of the university community use names other than their legal names... Chosen/preferred names shall be used in all university communications and reporting, except where the use of the legal name is required by university business or legal need."
+      },
+      "inclusive_restrooms": {
+       "value": "yes",
+       "page": 4,
+       "quote": "In New Gibbons and in Demarest, students will have the option of using a gender-neutral, multi-stall restroom or a gender-specific, multi-stall restroom."
+      },
+      "health_plan_transition": {
+       "value": "not_found",
+       "page": 0,
+       "quote": ""
+      },
+      "trans_admission": {
+       "value": "not_found",
+       "page": 0,
+       "quote": ""
+      },
+      "trans_athletics": {
+       "value": "not_found",
+       "page": 0,
+       "quote": ""
+      }
+     },
+     "conduct": {
+      "restricts": "not_found",
+      "document": "",
+      "page": 0,
+      "quotes": []
+     },
+     "confidence": "high"
+    }
+   },
+   "escalated": [
+    "greek"
+   ],
+   "dropped": [
+    {
+     "domain": "greek",
+     "fact": "greek.council.nmgc",
+     "reason": "quote doesn't state it",
+     "detail": "the count isn't in the quote: Average Chapter Size ... MGC 13"
+    },
+    {
+     "domain": "greek",
+     "fact": "greek.formal_term",
+     "reason": "quote doesn't state it",
+     "detail": "quote names no season or month: Recruitment (also referred to as \"rush\" or \"intake\") takes place within the first two weeks of each "
+    },
+    {
+     "domain": "faith",
+     "fact": "faith.community.christian",
+     "reason": "quote doesn't state it",
+     "detail": "nothing in the name or quote says christian: AIA exists to be a spiritual resource to the athletes, coaches, staff & families of the RU athletic "
+    },
+    {
+     "domain": "faith",
+     "fact": "faith.community.christian",
+     "reason": "quote doesn't state it",
+     "detail": "nothing in the name or quote says christian: Grace Community Chapel of NJ"
+    },
+    {
+     "domain": "faith",
+     "fact": "faith.community.nonreligious",
+     "reason": "quote doesn't state it",
+     "detail": "nothing in the name or quote says nonreligious: Spiritual But Not Religious (SBNR)... To share among seekers spirituality as a genuine science based"
+    },
+    {
+     "domain": "faith",
+     "fact": "faith.community.interfaith",
+     "reason": "quote doesn't state it",
+     "detail": "nothing in the name or quote says interfaith: International Friends at Rutgers (ISI - International Students, Inc.)"
+    },
+    {
+     "domain": "lgbtq",
+     "fact": "lgbtq.group",
+     "reason": "quote doesn't state it",
+     "detail": "the group's name isn't in the quote: Being Black and Queer was founded in 2024 after a group of Black Queers realized there was not a spa"
+    },
+    {
+     "domain": "lgbtq",
+     "fact": "lgbtq.group",
+     "reason": "quote doesn't state it",
+     "detail": "the group's name isn't in the quote: The BIPOC LGBTQIA2S+ affinity groups is for anyone who identifies as Black, Brown, Indigenous, Melan"
+    },
+    {
+     "domain": "lgbtq",
+     "fact": "lgbtq.group",
+     "reason": "quote doesn't state it",
+     "detail": "the group's name isn't in the quote: Delta Lambda Phi is a national social fraternity for gay, bisexual and progressive men founded in 19"
+    },
+    {
+     "domain": "lgbtq",
+     "fact": "lgbtq.group",
+     "reason": "quote doesn't state it",
+     "detail": "quote doesn't present it as a student group: Fusion: The Rutgers Union of Mixed People aims to unite people who identify with or are interested i"
+    },
+    {
+     "domain": "lgbtq",
+     "fact": "lgbtq.group",
+     "reason": "quote doesn't state it",
+     "detail": "quote doesn't present it as a student group: GRADient is the queer professional and graduate student association at Rutgers University."
+    },
+    {
+     "domain": "lgbtq",
+     "fact": "lgbtq.group",
+     "reason": "quote doesn't state it",
+     "detail": "the group's name isn't in the quote: This discussion group provides a forum for Queer Jewish students and their allies to discuss relevan"
+    },
+    {
+     "domain": "lgbtq",
+     "fact": "lgbtq.group",
+     "reason": "quote doesn't state it",
+     "detail": "the group's name isn't in the quote: LLEGO (pronounced, \"Jeh-go\") was founded in 1997. We are the LGBTQQIA People of Color Union at Rutge"
+    },
+    {
+     "domain": "lgbtq",
+     "fact": "lgbtq.group",
+     "reason": "quote doesn't state it",
+     "detail": "the group's name isn't in the quote: This organization is geared towards helping LGBTQ+ business students interested in pursuing careers "
+    },
+    {
+     "domain": "lgbtq",
+     "fact": "lgbtq.group",
+     "reason": "quote doesn't state it",
+     "detail": "the group's name isn't in the quote: oSTEM is a national student society, dedicated to increasing the participation of people who identif"
+    },
+    {
+     "domain": "lgbtq",
+     "fact": "lgbtq.group",
+     "reason": "quote doesn't state it",
+     "detail": "the group's name isn't in the quote: Rutgers' FIRST club for LGBTQ+ students pursuing a tech major!"
+    },
+    {
+     "domain": "lgbtq",
+     "fact": "lgbtq.group",
+     "reason": "quote doesn't state it",
+     "detail": "the group's name isn't in the quote: The purpose of the organization shall provide a network for students with a strong interest in Chris"
+    },
+    {
+     "domain": "lgbtq",
+     "fact": "lgbtq.group",
+     "reason": "quote doesn't state it",
+     "detail": "the group's name isn't in the quote: The Queer Student Alliance is a political and social student organization that is based at Rutgers U"
+    },
+    {
+     "domain": "lgbtq",
+     "fact": "lgbtq.group",
+     "reason": "quote doesn't state it",
+     "detail": "the group's name isn't in the quote: The purpose of the organization is to provide a network for students with a strong interest in diver"
+    },
+    {
+     "domain": "lgbtq",
+     "fact": "lgbtq.group",
+     "reason": "quote doesn't state it",
+     "detail": "the group's name isn't in the quote: SWAGGER (Social Workers Advocating for GLBT and Gender-nonconforming Equal Rights) is an organizatio"
+    },
+    {
+     "domain": "lgbtq",
+     "fact": "lgbtq.group",
+     "reason": "quote doesn't state it",
+     "detail": "the group's name isn't in the quote: Transmissions aim to open up a safe space for trans folk and trans allies."
+    }
+   ],
+   "checks": [],
+   "errors": []
+  },
+  {
+   "unit_id": "228875",
+   "name": "Texas Christian University",
+   "checked": "2026-10-04",
+   "greek": {
+    "councils": [
+     {
+      "url": "https://greeks.tcu.edu/councils/",
+      "checked": "2026-10-04",
+      "quote": "The TCU Interfraternity Council (IFC) serves as the governing body for the twelve national fraternities on our campus.",
+      "council": "nic",
+      "name": "Interfraternity Council",
+      "chapters": 12,
+      "members": null,
+      "term": null
+     },
+     {
+      "url": "https://greeks.tcu.edu/councils/",
+      "checked": "2026-10-04",
+      "quote": "TCU has 8 of the 9 historically black Greek-lettered organizations that embody the National Pan-Hellenic Council, Inc. chartered on campus.",
+      "council": "nphc",
+      "name": "National Pan-Hellenic Council",
+      "chapters": 8,
+      "members": null,
+      "term": null
+     },
+     {
+      "url": "https://greeks.tcu.edu/councils/",
+      "checked": "2026-10-04",
+      "quote": "The Multicultural Greek Council at Texas Christian University embodies seven Greek-lettered organizations.",
+      "council": "nmgc",
+      "name": "Multicultural Greek Council",
+      "chapters": 7,
+      "members": null,
+      "term": null
+     }
+    ],
+    "formal_term": {
+     "url": "https://greeks.tcu.edu/join/",
+     "checked": "2026-10-04",
+     "quote": "The Interfraternity Council facilitates a formal recruitment process the first week of fall semester... Some, but not all 13 fraternities will participate in…",
+     "value": "Fall, before classes start; Spring"
+    }
+   },
+   "faith": {
+    "office": {
+     "url": "https://chapel.tcu.edu/",
+     "checked": "2026-10-04",
+     "quote": "Robert Carr Chapel provides a welcoming, accessible, and sacred space for worship, ceremonies, concerts and important gatherings for the campus and…",
+     "name": "Robert Carr Chapel"
+    }
+   },
+   "lgbtq": {
+    "policies": [
+     {
+      "key": "nondiscrimination_orientation",
+      "value": "no",
+      "url": "https://www.tcu.edu/compliance/notice-of-nondiscrimination.php",
+      "checked": "2026-10-04",
+      "quote": "TCU does not discriminate based on race, color, national origin, sex, disability, or age in our programs and activities",
+      "verified_by": "claude-sonnet-5"
+     },
+     {
+      "key": "nondiscrimination_identity",
+      "value": "no",
+      "url": "https://www.tcu.edu/compliance/notice-of-nondiscrimination.php",
+      "checked": "2026-10-04",
+      "quote": "TCU does not discriminate based on race, color, national origin, sex, disability, or age in our programs and activities",
+      "verified_by": "claude-sonnet-5"
+     }
+    ]
+   },
+   "listings": [],
+   "raw": {
+    "greek": {
+     "status": {
+      "value": "present",
+      "page": 1,
+      "quote": "Fraternity and Sorority Life (FSL) at TCU began in 1955 when the first fraternity and sorority chapters were established."
+     },
+     "office_name": "Fraternity & Sorority Life",
+     "members_total": {
+      "value": null,
+      "term": "",
+      "page": 0,
+      "quote": ""
+     },
+     "councils": [
+      {
+       "council": "nic",
+       "name": "Interfraternity Council",
+       "chapters": 12,
+       "members": null,
+       "term": "",
+       "page": 3,
+       "quote": "The TCU Interfraternity Council (IFC) serves as the governing body for the twelve national fraternities on our campus."
+      },
+      {
+       "council": "npc",
+       "name": "Panhellenic Council",
+       "chapters": null,
+       "members": null,
+       "term": "",
+       "page": 3,
+       "quote": "Panhellenic shall be organized in recognition of the need to serve the Greek community to the best of our ability"
+      },
+      {
+       "council": "nphc",
+       "name": "National Pan-Hellenic Council",
+       "chapters": 8,
+       "members": null,
+       "term": "",
+       "page": 3,
+       "quote": "TCU has 8 of the 9 historically black Greek-lettered organizations that embody the National Pan-Hellenic Council, Inc. chartered on campus."
+      },
+      {
+       "council": "nmgc",
+       "name": "Multicultural Greek Council",
+       "chapters": 7,
+       "members": null,
+       "term": "",
+       "page": 3,
+       "quote": "The Multicultural Greek Council at Texas Christian University embodies seven Greek-lettered organizations."
+      },
+      {
+       "council": "professional",
+       "name": "Independent Greek Council",
+       "chapters": null,
+       "members": null,
+       "term": "",
+       "page": 3,
+       "quote": "The purpose of the IGC is to serve as a resource for its member organizations and to promote and foster positive fraternal relations"
+      }
+     ],
+     "housing": {
+      "value": "yes",
+      "page": 1,
+      "quote": "TCU believes that housing is an important part of the fraternal experience."
+     },
+     "deferred": {
+      "value": "no",
+      "page": 2,
+      "quote": "The Interfraternity Council facilitates a formal recruitment process the first week of fall semester... The Panhellenic Council facilitates a formal recruitment process the week prior to the start of fall semester."
+     },
+     "formal_term": {
+      "value": "Fall, before classes start; Spring",
+      "page": 2,
+      "quote": "The Interfraternity Council facilitates a formal recruitment process the first week of fall semester... Some, but not all 13 fraternities will participate in spring informal recruitment... The Panhellenic Council facilitates a formal recruitment process the week prior to the start of fall semester."
+     },
+     "confidence": "high"
+    },
+    "faith": {
+     "office": {
+      "name": "Robert Carr Chapel",
+      "page": 1,
+      "quote": "Robert Carr Chapel provides a welcoming, accessible, and sacred space for worship, ceremonies, concerts and important gatherings for the campus and surrounding community."
+     },
+     "communities": [],
+     "composition": {
+      "items": [],
+      "total": null,
+      "population": "",
+      "as_of": "",
+      "page": 0,
+      "quote": ""
+     },
+     "estimates": [],
+     "confidence": "high"
+    },
+    "lgbtq": {
+     "center": {
+      "status": "none_found",
+      "name": "",
+      "closed": "",
+      "page": 0,
+      "quote": ""
+     },
+     "groups": [],
+     "policies": {
+      "nondiscrimination_orientation": {
+       "value": "no",
+       "page": 1,
+       "quote": "TCU does not discriminate based on race, color, national origin, sex, disability, or age in our programs and activities"
+      },
+      "nondiscrimination_identity": {
+       "value": "no",
+       "page": 1,
+       "quote": "TCU does not discriminate based on race, color, national origin, sex, disability, or age in our programs and activities"
+      },
+      "inclusive_housing": {
+       "value": "not_found",
+       "page": 0,
+       "quote": ""
+      },
+      "name_on_records": {
+       "value": "not_found",
+       "page": 0,
+       "quote": ""
+      },
+      "inclusive_restrooms": {
+       "value": "not_found",
+       "page": 0,
+       "quote": ""
+      },
+      "health_plan_transition": {
+       "value": "not_found",
+       "page": 0,
+       "quote": ""
+      },
+      "trans_admission": {
+       "value": "not_found",
+       "page": 0,
+       "quote": ""
+      },
+      "trans_athletics": {
+       "value": "not_found",
+       "page": 0,
+       "quote": ""
+      }
+     },
+     "conduct": {
+      "restricts": "not_found",
+      "document": "",
+      "page": 0,
+      "quotes": []
+     },
+     "confidence": "high"
+    }
+   },
+   "escalated": [],
+   "dropped": [
+    {
+     "domain": "greek",
+     "fact": "greek.housing",
+     "reason": "quote doesn't state it",
+     "detail": "quote isn't about fraternities or sororities: TCU believes that housing is an important part of the fraternal experience."
+    },
+    {
+     "domain": "greek",
+     "fact": "greek.deferred",
+     "reason": "quote doesn't state it",
+     "detail": "quote doesn't say when first-year students may join: The Interfraternity Council facilitates a formal recruitment process the first week of fall semester"
+    }
+   ],
+   "checks": [
+    {
+     "domain": "lgbtq",
+     "fact": "lgbtq.nondiscrimination_orientation",
+     "url": "https://www.tcu.edu/compliance/notice-of-nondiscrimination.php",
+     "quote": "TCU does not discriminate based on race, color, national origin, sex, disability, or age in our programs and activities",
+     "confirmed": true,
+     "quote_on_page": true,
+     "reason": "The quoted list of protected categories (race, color, national origin, sex, disability, age) appears verbatim on TCU's current nondiscrimination notice and omits sexual orientation, supporting the finding."
+    },
+    {
+     "domain": "lgbtq",
+     "fact": "lgbtq.nondiscrimination_identity",
+     "url": "https://www.tcu.edu/compliance/notice-of-nondiscrimination.php",
+     "quote": "TCU does not discriminate based on race, color, national origin, sex, disability, or age in our programs and activities",
+     "confirmed": true,
+     "quote_on_page": true,
+     "reason": "The quoted list of protected categories (race, color, national origin, sex, disability, age) appears verbatim and does not include gender identity or expression, supporting the finding."
+    }
+   ],
+   "errors": []
+  },
+  {
+   "unit_id": "166629",
+   "name": "University of Massachusetts-Amherst",
+   "checked": "2026-10-04",
+   "greek": {
+    "housing": {
+     "url": "https://www.umass.edu/student-life/sororities-fraternities",
+     "checked": "2026-10-04",
+     "quote": "Not all chapters have houses, and first-year students cannot live in chapter facilities.",
+     "value": "yes"
+    },
+    "formal_term": {
+     "url": "https://www.umass.edu/student-life/sororities-fraternities",
+     "checked": "2026-10-04",
+     "quote": "Panhellenic sororities hold formal recruitment in the fall and informal recruitment in the spring.",
+     "value": "Fall"
+    }
+   },
+   "faith": {
+    "office": {
+     "url": "https://www.umass.edu/student-life/religious-spiritual-life",
+     "checked": "2026-10-04",
+     "quote": "The Office of Religious and Spiritual Life offers a range of educational programs, individual and institutional advocacy, interfaith dialogue, and other…",
+     "name": "Office of Religious and Spiritual Life"
+    }
+   },
+   "lgbtq": {
+    "center": {
+     "url": "https://www.umass.edu/student-life/stonewall",
+     "checked": "2026-10-04",
+     "quote": "The Stonewall Center : Student Affairs : UMass Amherst ... A Lesbian, Gay, Bisexual, Trans, Queer, Intersex, and Asexual (LGBTQIA+) Resource Center",
+     "name": "The Stonewall Center",
+     "status": "open"
+    },
+    "policies": [
+     {
+      "key": "nondiscrimination_orientation",
+      "value": "yes",
+      "url": "https://www.umass.edu/policy/affirmative-action-non-discrimination-and-title-ix-non-discrimination-policy",
+      "checked": "2026-10-04",
+      "quote": "…physical disability, political belief or affiliation, pregnancy and pregnancy related condition(s), veteran status, sexual orientation, gender identity and…"
+     },
+     {
+      "key": "nondiscrimination_identity",
+      "value": "yes",
+      "url": "https://www.umass.edu/policy/affirmative-action-non-discrimination-and-title-ix-non-discrimination-policy",
+      "checked": "2026-10-04",
+      "quote": "sexual orientation, gender identity and expression, genetic information, natural and protective hairstyle and any other class of individuals protected from…"
+     },
+     {
+      "key": "inclusive_restrooms",
+      "value": "yes",
+      "url": "https://www.umass.edu/student-life/gender-inclusive-restrooms",
+      "checked": "2026-10-04",
+      "quote": "There are more than 200 gender-inclusive restrooms in academic and service buildings , approximately 150 gender-inclusive restrooms on the first floors of…"
+     }
+    ]
+   },
+   "listings": [
+    {
+     "domain": "faith",
+     "kind": "group",
+     "tradition": "christian",
+     "name": "Christian organizations",
+     "url": "https://www.umass.edu/student-life/student-union/student-organization-resource/established-student-organizations",
+     "publisher": "University of Massachusetts-Amherst",
+     "quote": "This council supports the various faith groups on campus, including Christian, Muslim, Jewish, and Hindu organizations",
+     "checked": "2026-10-04"
+    },
+    {
+     "domain": "faith",
+     "kind": "group",
+     "tradition": "muslim",
+     "name": "Muslim organizations",
+     "url": "https://www.umass.edu/student-life/student-union/student-organization-resource/established-student-organizations",
+     "publisher": "University of Massachusetts-Amherst",
+     "quote": "This council supports the various faith groups on campus, including Christian, Muslim, Jewish, and Hindu organizations",
+     "checked": "2026-10-04"
+    },
+    {
+     "domain": "faith",
+     "kind": "group",
+     "tradition": "jewish",
+     "name": "Jewish organizations",
+     "url": "https://www.umass.edu/student-life/student-union/student-organization-resource/established-student-organizations",
+     "publisher": "University of Massachusetts-Amherst",
+     "quote": "This council supports the various faith groups on campus, including Christian, Muslim, Jewish, and Hindu organizations",
+     "checked": "2026-10-04"
+    },
+    {
+     "domain": "faith",
+     "kind": "group",
+     "tradition": "hindu",
+     "name": "Hindu organizations",
+     "url": "https://www.umass.edu/student-life/student-union/student-organization-resource/established-student-organizations",
+     "publisher": "University of Massachusetts-Amherst",
+     "quote": "This council supports the various faith groups on campus, including Christian, Muslim, Jewish, and Hindu organizations",
+     "checked": "2026-10-04"
+    },
+    {
+     "domain": "lgbtq",
+     "kind": "group",
+     "name": "Bi/Pan/Queer Collective (BPQC)",
+     "url": "https://www.umass.edu/student-life/stonewall/resources",
+     "publisher": "University of Massachusetts-Amherst",
+     "quote": "Bi/Pan/Queer Collective (BPQC) BPQC is social group for bisexual, pansexual, queer, and sexually fluid students that meets every Tuesday from 7-8 p.m. during…",
+     "checked": "2026-10-04"
+    },
+    {
+     "domain": "lgbtq",
+     "kind": "group",
+     "name": "The SpACE+",
+     "url": "https://www.umass.edu/student-life/stonewall/resources",
+     "publisher": "University of Massachusetts-Amherst",
+     "quote": "The SpACE+ The SpACE+ is a group for undergraduate and graduate students who are asexual, demisexual, gray asexual, and elsewhere on the asexual spectrum.",
+     "checked": "2026-10-04"
+    },
+    {
+     "domain": "lgbtq",
+     "kind": "group",
+     "name": "UMass Queer Kehillah",
+     "url": "https://www.umass.edu/student-life/stonewall/resources",
+     "publisher": "University of Massachusetts-Amherst",
+     "quote": "UMass Queer Kehillah Kehilah is a Registered Student Organization for LGBTQIA+ Jewish students and allies.",
+     "checked": "2026-10-04"
+    }
+   ],
+   "raw": {
+    "greek": {
+     "status": {
+      "value": "present",
+      "page": 1,
+      "quote": "Fraternities (for men) and sororities (for women) are student organizations, often called Greek-letter societies."
+     },
+     "office_name": "Office of Sorority & Fraternity Life",
+     "members_total": {
+      "value": null,
+      "term": "",
+      "page": 0,
+      "quote": ""
+     },
+     "councils": [
+      {
+       "council": "nic",
+       "name": "Interfraternity Council",
+       "chapters": null,
+       "members": null,
+       "term": "",
+       "page": 4,
+       "quote": "Interfraternity Council: This council is the representative body for any NIC-member fraternity chapters and their affiliates."
+      },
+      {
+       "council": "npc",
+       "name": "Panhellenic Council",
+       "chapters": null,
+       "members": null,
+       "term": "",
+       "page": 4,
+       "quote": "Panhellenic Council: This council is the representative body for any NPC-member sorority chapters and their affiliates."
+      },
+      {
+       "council": "nmgc",
+       "name": "Multicultural Greek Council",
+       "chapters": null,
+       "members": null,
+       "term": "",
+       "page": 4,
+       "quote": "Multicultural Greek Council: This council is the representative body for the Asian, Latina/o, and Multicultural Greek-letter organizations."
+      },
+      {
+       "council": "nphc",
+       "name": "National Pan-Hellenic Council",
+       "chapters": null,
+       "members": null,
+       "term": "",
+       "page": 4,
+       "quote": "National Pan-Hellenic Council: This council is the representative body for the historically African American Greek-letter organizations."
+      },
+      {
+       "council": "professional",
+       "name": "Greek Affiliated Council",
+       "chapters": null,
+       "members": null,
+       "term": "",
+       "page": 4,
+       "quote": "Greek Affiliated Council: This council is the representative body for our professional, service, and arts-based Greek-Letter Organizations."
+      }
+     ],
+     "housing": {
+      "value": "yes",
+      "page": 1,
+      "quote": "Not all chapters have houses, and first-year students cannot live in chapter facilities."
+     },
+     "deferred": {
+      "value": "yes",
+      "page": 1,
+      "quote": "first-year students cannot live in chapter facilities. Only initiated members with at least sophomore status may live in chapter houses, if available."
+     },
+     "formal_term": {
+      "value": "Fall",
+      "page": 1,
+      "quote": "Panhellenic sororities hold formal recruitment in the fall and informal recruitment in the spring."
+     },
+     "confidence": "low"
+    },
+    "faith": {
+     "office": {
+      "name": "Office of Religious and Spiritual Life",
+      "page": 1,
+      "quote": "The Office of Religious and Spiritual Life offers a range of educational programs, individual and institutional advocacy, interfaith dialogue, and other bridge-building activities designed to foster an informed, caring and supportive campus community for students of all backgrounds and beliefs"
+     },
+     "communities": [
+      {
+       "name": "Christian organizations",
+       "tradition": "christian",
+       "page": 2,
+       "quote": "This council supports the various faith groups on campus, including Christian, Muslim, Jewish, and Hindu organizations"
+      },
+      {
+       "name": "Muslim organizations",
+       "tradition": "muslim",
+       "page": 2,
+       "quote": "This council supports the various faith groups on campus, including Christian, Muslim, Jewish, and Hindu organizations"
+      },
+      {
+       "name": "Jewish organizations",
+       "tradition": "jewish",
+       "page": 2,
+       "quote": "This council supports the various faith groups on campus, including Christian, Muslim, Jewish, and Hindu organizations"
+      },
+      {
+       "name": "Hindu organizations",
+       "tradition": "hindu",
+       "page": 2,
+       "quote": "This council supports the various faith groups on campus, including Christian, Muslim, Jewish, and Hindu organizations"
+      }
+     ],
+     "composition": {
+      "items": [],
+      "total": null,
+      "population": "",
+      "as_of": "",
+      "page": 0,
+      "quote": ""
+     },
+     "estimates": [],
+     "confidence": "high"
+    },
+    "lgbtq": {
+     "center": {
+      "status": "open",
+      "name": "The Stonewall Center",
+      "closed": "",
+      "page": 1,
+      "quote": "The Stonewall Center : Student Affairs : UMass Amherst ... A Lesbian, Gay, Bisexual, Trans, Queer, Intersex, and Asexual (LGBTQIA+) Resource Center"
+     },
+     "groups": [
+      {
+       "name": "Bi/Pan/Queer Collective (BPQC)",
+       "page": 2,
+       "quote": "Bi/Pan/Queer Collective (BPQC) BPQC is social group for bisexual, pansexual, queer, and sexually fluid students that meets every Tuesday from 7-8 p.m. during the school year at the Stonewall Center."
+      },
+      {
+       "name": "Out in STEM at UMass (oSTEM)",
+       "page": 2,
+       "quote": "Out in STEM at UMass oSTEM is a group for undergraduate and graduate students in STEM (science, technology, engineering, math) fields."
+      },
+      {
+       "name": "The SpACE+",
+       "page": 2,
+       "quote": "The SpACE+ The SpACE+ is a group for undergraduate and graduate students who are asexual, demisexual, gray asexual, and elsewhere on the asexual spectrum."
+      },
+      {
+       "name": "UMass Queer Kehillah",
+       "page": 2,
+       "quote": "UMass Queer Kehillah Kehilah is a Registered Student Organization for LGBTQIA+ Jewish students and allies."
+      }
+     ],
+     "policies": {
+      "nondiscrimination_orientation": {
+       "value": "yes",
+       "page": 3,
+       "quote": "prohibits discrimination on the basis of race, color, religion, caste, creed, sex, age, marital status, national origin, mental or physical disability, political belief or affiliation, pregnancy and pregnancy related condition(s), veteran status, sexual orientation, gender identity and expression, genetic information, natural and protective hairstyle"
+      },
+      "nondiscrimination_identity": {
+       "value": "yes",
+       "page": 3,
+       "quote": "sexual orientation, gender identity and expression, genetic information, natural and protective hairstyle and any other class of individuals protected from discrimination under state or federal law"
+      },
+      "inclusive_housing": {
+       "value": "not_found",
+       "page": 0,
+       "quote": ""
+      },
+      "name_on_records": {
+       "value": "yes",
+       "page": 5,
+       "quote": "Students and employees can go into SPIRE (under \"Personal Information\") and enter or change their pronouns."
+      },
+      "inclusive_restrooms": {
+       "value": "yes",
+       "page": 4,
+       "quote": "There are more than 200 gender-inclusive restrooms in academic and service buildings , approximately 150 gender-inclusive restrooms on the first floors of residence halls"
+      },
+      "health_plan_transition": {
+       "value": "not_found",
+       "page": 0,
+       "quote": ""
+      },
+      "trans_admission": {
+       "value": "not_found",
+       "page": 0,
+       "quote": ""
+      },
+      "trans_athletics": {
+       "value": "not_found",
+       "page": 0,
+       "quote": ""
+      }
+     },
+     "conduct": {
+      "restricts": "not_found",
+      "document": "",
+      "page": 0,
+      "quotes": []
+     },
+     "confidence": "low"
+    }
+   },
+   "escalated": [
+    "greek",
+    "lgbtq"
+   ],
+   "dropped": [
+    {
+     "domain": "greek",
+     "fact": "greek.deferred",
+     "reason": "quote doesn't state it",
+     "detail": "quote isn't about recruitment or joining: first-year students cannot live in chapter facilities. Only initiated members with at least sophomor"
+    },
+    {
+     "domain": "lgbtq",
+     "fact": "lgbtq.group",
+     "reason": "quote doesn't state it",
+     "detail": "the group's name isn't in the quote: Out in STEM at UMass oSTEM is a group for undergraduate and graduate students in STEM (science, tech"
+    },
+    {
+     "domain": "lgbtq",
+     "fact": "lgbtq.name_on_records",
+     "reason": "quote doesn't state it",
+     "detail": "quote isn't about chosen names: Students and employees can go into SPIRE (under \"Personal Information\") and enter or change their pr"
+    }
+   ],
+   "checks": [],
+   "errors": []
+  }
+ ]
+}

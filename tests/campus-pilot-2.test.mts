@@ -159,8 +159,9 @@ test("probes find office and policy pages from the sitemap, a hub subdomain, and
   assert.equal(r.links.lgbtq.nondiscrimination, r.found.nondiscrimination);
   assert.ok(calls.every((c) => c.quiet), "every probe request is quiet");
   assert.ok(!calls.some((c) => c.url.includes("/news/")), "news pages are never candidates");
-  // What's left for the paid call: the scored types the probes missed (no conduct code: not a religious college).
-  assert.deepEqual(missingForPaid({ unit_id: "999001", website: null, single_sex: false, affiliation: null }, r.found), ["lgbtq_center", "housing", "name_policy"]);
+  // What's left for the paid call: the paid types the probes missed (no conduct code: not a religious college). Round
+  // 3 no longer asks the paid call for housing or chosen name (tests/campus-pilot-3.test.mts).
+  assert.deepEqual(missingForPaid({ unit_id: "999001", website: null, single_sex: false, affiliation: null }, r.found), ["lgbtq_center"]);
 });
 
 test("probe helpers: single-sex and religious items only where they apply; text must be about the type", () => {

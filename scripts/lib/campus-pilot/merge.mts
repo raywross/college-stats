@@ -24,18 +24,27 @@ export const HELD_BACK = {
   // Round 2 (2026-10-04): the faith office fell to 13 of 14 across both rounds (UNC's Campus Y was read as one), and a
   // group's own size estimate from 2016 was published although estimates expire; both held until a re-scored run.
   faith: ["office"],
-  policies: ["health_plan_transition"],
+  // Round 3 (2026-10-04): council membership read from reports was wrong at Rutgers (0 of 4); the LGBTQ+ center from
+  // college pages fell to 12 of 15 across three rounds (general diversity offices read as LGBTQ+ centers); the
+  // nondiscrimination items to about 91% (FAMU's replaced list read as covering both; TCU's short notice read as
+  // "no" though its full policy covers both). Held until a re-scored run; the national lists still credit these.
+  councilFields: ["members"],
+  lgbtq: ["center"],
+  policies: ["health_plan_transition", "nondiscrimination_orientation", "nondiscrimination_identity"],
   listings: ["faith/group", "lgbtq/group", "faith/estimate"],
 } as const;
 
 /** Which fact types to hold back; tests of the merge's mechanics pass `NONE_HELD`. */
 export interface HeldBack {
   greek: readonly string[];
+  /** Fields of each Greek council row blanked (set to null) rather than the whole row dropped. */
+  councilFields: readonly string[];
   faith: readonly string[];
+  lgbtq: readonly string[];
   policies: readonly string[];
   listings: readonly string[];
 }
-export const NONE_HELD: HeldBack = { greek: [], faith: [], policies: [], listings: [] };
+export const NONE_HELD: HeldBack = { greek: [], councilFields: [], faith: [], lgbtq: [], policies: [], listings: [] };
 
 /** `pages` without the HELD_BACK fact types (blocks left empty are dropped). Pure. */
 export function withoutHeld(pages: PagesFile, held: HeldBack = HELD_BACK): PagesFile {
@@ -46,6 +55,18 @@ export function withoutHeld(pages: PagesFile, held: HeldBack = HELD_BACK): Pages
       if (c.greek) {
         const greek: Record<string, unknown> = { ...c.greek };
         for (const k of held.greek) delete greek[k];
+        if (Array.isArray(greek.councils) && held.councilFields.length) {
+          // Blank the held fields; a row left with neither chapters nor members says nothing and is dropped.
+          const rows = (greek.councils as Record<string, unknown>[])
+            .map((row) => {
+              const kept = { ...row };
+              for (const f of held.councilFields) if (f in kept) kept[f] = null;
+              return kept;
+            })
+            .filter((row) => row.chapters != null || row.members != null);
+          if (rows.length) greek.councils = rows;
+          else delete greek.councils;
+        }
         if (Object.keys(greek).length) out.greek = greek as typeof c.greek;
         else delete out.greek;
       }
@@ -55,11 +76,15 @@ export function withoutHeld(pages: PagesFile, held: HeldBack = HELD_BACK): Pages
         if (Object.keys(faith).length) out.faith = faith as typeof c.faith;
         else delete out.faith;
       }
-      if (c.lgbtq?.policies) {
-        const policies = c.lgbtq.policies.filter((p) => !held.policies.includes(p.key));
-        const lgbtq = { ...c.lgbtq, policies };
-        if (!policies.length) delete (lgbtq as Partial<typeof lgbtq>).policies;
-        if (Object.keys(lgbtq).length) out.lgbtq = lgbtq;
+      if (c.lgbtq) {
+        const lgbtq: Record<string, unknown> = { ...c.lgbtq };
+        for (const k of held.lgbtq) delete lgbtq[k];
+        if (c.lgbtq.policies) {
+          const policies = c.lgbtq.policies.filter((p) => !held.policies.includes(p.key));
+          if (policies.length) lgbtq.policies = policies;
+          else delete lgbtq.policies;
+        }
+        if (Object.keys(lgbtq).length) out.lgbtq = lgbtq as typeof c.lgbtq;
         else delete out.lgbtq;
       }
       if (c.listings) out.listings = c.listings.filter((l) => !held.listings.includes(`${l.domain}/${l.kind}`));

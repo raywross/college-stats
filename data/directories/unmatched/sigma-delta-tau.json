@@ -1,0 +1,7 @@
+{
+  "org": "sigma-delta-tau",
+  "crawled": "2026-10-04",
+  "entries": [
+    {"campus":"LIU Post","city":"Brookville","state":"NY","name":"Beta Theta","reason":"no college in NY matches","candidates":[{"unit_id":"188429","name":"Adelphi University","score":0},{"unit_id":"188526","name":"Albany College of Pharmacy and Health Sciences","score":0},{"unit_id":"188641","name":"Alfred University","score":0}]}
+  ]
+}

@@ -194,6 +194,8 @@ export default async function DataPage() {
     cds: cds.length,
     "college-site": all.filter((s) => s.reported?.admissions).length,
     "state-law": all.filter((s) => s.lgbtq?.state_law).length,
+    wikidata: all.filter((s) => s.social && Object.keys(s.social).length).length,
+    wikipedia: all.filter((s) => s.brand?.colors?.length).length,
   };
   const sourceUses = (key: SourceKey) => {
     const topics = new Set<Topic>();

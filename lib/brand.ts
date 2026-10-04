@@ -94,5 +94,25 @@ export function crestTint(id: string, alpha = 0.16): string {
   return `oklch(0.7 0.17 ${h} / ${alpha})`;
 }
 
+/**
+ * What a crest needs to look like its college (specs/school-identity/brand.md): the gradient in its colors, the
+ * monogram's text color, and its mark. Plain data, safe for client components and search results.
+ */
+export interface CrestBrand {
+  /** Gradient from → to in the college's colors; null keeps the generated gradient. */
+  gradient: [string, string] | null;
+  /** The monogram's text color on that gradient. */
+  text: "white" | "black";
+  /** The mark's URL (/brand/{unit_id}.webp), or null for the monogram. Null for every college when BRAND_MARKS=off. */
+  logo: string | null;
+}
+
+/** A school's crest look from `school.brand`, or undefined for the generated tile. Server-side (reads BRAND_MARKS). */
+export function crestBrand(school: Pick<School, "unit_id" | "brand">): CrestBrand | undefined {
+  // Built by the brand track (brand.md, Display).
+  void school;
+  return undefined;
+}
+
 /** Compare-slot colors (validated all-pairs, both themes). Slot order = pick order. */
 export const SLOT_COLORS = ["var(--s1)", "var(--s2)", "var(--s3)", "var(--s4)"];

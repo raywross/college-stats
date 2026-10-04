@@ -1,4 +1,4 @@
-import { crestGradient, monogram } from "@/lib/brand";
+import { crestGradient, monogram, type CrestBrand } from "@/lib/brand";
 import { cn } from "@/lib/utils";
 
 const SIZES = {
@@ -15,12 +15,17 @@ export function Crest({
   name,
   size = "md",
   className,
+  brand,
 }: {
   id: string;
   name: string;
   size?: keyof typeof SIZES;
   className?: string;
+  /** The college's colors and mark (`crestBrand` in lib/brand.ts); without it, the generated tile. */
+  brand?: CrestBrand;
 }) {
+  // Rendered by the brand track (specs/school-identity/brand.md, Display).
+  void brand;
   const mono = monogram({ unit_id: id, name });
   const long = mono.length >= 4;
   return (

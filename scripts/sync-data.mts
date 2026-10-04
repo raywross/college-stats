@@ -51,6 +51,10 @@ import { addFieldOfStudyMeta, buildProgramDetails, fetchFieldOfStudy } from "./l
 import { fetchValueLabels } from "./lib/ipeds-dictionary.mts";
 import { religionFrom } from "../lib/religion.ts";
 import { acceptanceRate, applicationFeeFrom, computePrices, factorsFrom, housingFrom, ipedsNum, parseShareBand, priceSuffix, promiseProgramFrom, raceShares, toAid, tuitionPlansFrom } from "../lib/derive.ts";
+import { normalizeUrl } from "../lib/links.ts";
+import { addIdentityMeta, applyIdentity } from "../lib/identity.ts";
+import { loadIdentityInputs } from "./lib/identity-sync.mts";
+import { writeAliasTable } from "./lib/aliases-sync.mts";
 
 const ROOT = join(import.meta.dirname, "..");
 const OUT = join(ROOT, "data", "schools.json");
@@ -441,12 +445,6 @@ function toSchool(
     },
     ...(Object.keys(lineage).length ? { lineage } : {}),
   };
-}
-
-function normalizeUrl(v: unknown): string | null {
-  if (typeof v !== "string" || !v.trim()) return null;
-  const url = v.trim();
-  return /^https?:\/\//i.test(url) ? url : `https://${url}`;
 }
 
 /**
@@ -841,6 +839,8 @@ async function main() {
 
   const stats = { online: 0, noSize: 0, withAdmissions: 0, withSat: 0, overridden: 0 };
   const overrides: Record<string, Patch> = existsSync(OVERRIDES) ? JSON.parse(readFileSync(OVERRIDES, "utf8")) : {};
+  // School identity (specs/school-identity/): the committed Wikidata, site probe, and brand files, applied per school.
+  const identity = loadIdentityInputs(ROOT);
 
   const schools: School[] = [];
   // Scorecard and the directory should describe the same college under each id (campus-profile.md, "As built").
@@ -879,6 +879,8 @@ async function main() {
       stats.noSize++;
       continue;
     }
+    // Links from the directory, the site probe's finds, social accounts, colors and mark (lib/identity.ts).
+    applyIdentity(school, identity, hd.rows.get(school.unit_id));
     const patch = overrides[school.unit_id];
     if (patch) {
       // Every value the patch sets is attributed to the patch's source (throws if it names none).
@@ -907,6 +909,7 @@ async function main() {
   addTransferMeta(meta, efa.table, efa.year);
   addFieldOfStudyMeta(meta, fos);
   addStateLawMeta(meta, lgbtqInputs.laws);
+  addIdentityMeta(meta, identity);
   // College-reported data (specs/college-reported-data.md, Decision 5 of specs/college-reported-round-2.md): the
   // ingestion agent's published values, keyed by unit_id, merged the same way scripts/merge-reported.mts re-merges
   // them into the committed data/schools.json later (lib/reported-merge.ts), so the two can't disagree. Adds
@@ -961,6 +964,8 @@ async function main() {
   // One school per line keeps diffs readable between syncs.
   writeFileSync(OUT, `[\n${schools.map((s) => JSON.stringify(s)).join(",\n")}\n]\n`);
   writeDetails(join(ROOT, "data", "detail", "schools"), details);
+  // Short names for search (specs/school-identity/aliases.md), from this HD file's IALIAS column and the identity files.
+  writeAliasTable(ROOT, { schools, hdRows: hd.rows, wikidata: identity.wikidata });
   console.log(`  residence (EF${efc.year}C): ${schools.filter((s) => s.demographics.residence).length} colleges, ${details.length} detail files; DRVEF${efc.year} agrees for ${derived.checked - derived.differ.length} of ${derived.checked}`);
   console.log(`  field of study: ${programs.counts.size} colleges with bachelor's programs, ${schools.filter((s) => (s.academics?.programs_with_earnings ?? 0) > 0).length} with at least one earnings figure (${fos.url})`);
 

@@ -2,6 +2,7 @@ import type { DatasetMeta, School, SearchFilters, SchoolType, SortKey } from "./
 import type { FieldPath } from "./fields";
 import { lineageFor, sourcesForFields as sourcesForFieldsPure, type Cited, type CitedSource } from "./lineage";
 import type { ReleaseCalendar } from "./releases";
+import { crestBrand, type CrestBrand } from "./brand";
 import { matchesIndicators } from "./indicators";
 import { genderBalanceOf, isMostlyFullTime } from "./student-body";
 import { matchesPolicy } from "./test-policy";
@@ -54,9 +55,12 @@ export interface SchoolIndexEntry {
   state: string;
   type: SchoolType;
   acceptance: number | null;
+  /** The crest's colors and mark (specs/school-identity/brand.md), when the college has them. */
+  brand?: CrestBrand;
 }
 
 export function toIndexEntry(s: School): SchoolIndexEntry {
+  const brand = crestBrand(s);
   return {
     id: s.unit_id,
     name: s.name,
@@ -64,6 +68,7 @@ export function toIndexEntry(s: School): SchoolIndexEntry {
     state: s.location.state,
     type: s.type,
     acceptance: s.admissions.acceptance_rate,
+    ...(brand ? { brand } : {}),
   };
 }
 

@@ -77,6 +77,15 @@ const gr = (label: string): FieldDef => ({
 const icChar = (label: string, topic: Topic = "campus"): FieldDef => ({ label, topic, source: "ipeds-ic-char", vintage: "ipeds-ic-char" });
 /** A value the college published itself; the year lives in each value's lineage record, like `cds`. */
 const reported = (label: string, topic: Topic = "admissions"): FieldDef => ({ label, topic, source: "college-site", vintage: null });
+/** A link the college reports to NCES in the IPEDS directory (specs/school-identity/links.md). */
+const hdLink = (label: string): FieldDef => ({ label, topic: "institution", source: "ipeds-hd", vintage: "ipeds-hd" });
+/** A link or mark found on the college's own site; each value's lineage record names the page and the retrieval date. */
+const siteFound = (label: string): FieldDef => ({ label, topic: "institution", source: "college-site", vintage: null });
+/** Community-edited references have no release year (UNDATED_SOURCES); the source's edition gives the retrieval date. */
+const wikidata = (label: string): FieldDef => ({ label, topic: "institution", source: "wikidata", vintage: null });
+const wikipedia = (label: string): FieldDef => ({ label, topic: "institution", source: "wikipedia", vintage: null });
+/** Derived at sync time from the college's colors (lib/brand-colors.ts), so the app does no color math. */
+const brandDerived = (label: string, formula: string): FieldDef => ({ ...wikipedia(label), derived: { formula, inputs: ["brand.colors"] } });
 
 export const FIELDS = {
   /* ---- Institution ---- */
@@ -92,6 +101,34 @@ export const FIELDS = {
   type: scorecard("Type (public, private)", "institution"),
   "links.website": scorecard("Website", "institution"),
   "links.price_calculator": scorecard("Net price calculator", "institution"),
+  // Official links (specs/school-identity/links.md; lib/links.ts): what each college reports to NCES in the IPEDS
+  // directory; the visit pages are found on its own admissions page (lib/site-probe.ts).
+  "links.admissions": hdLink("Admissions office"),
+  "links.apply": hdLink("Online application"),
+  "links.financial_aid": hdLink("Financial aid office"),
+  "links.veterans": hdLink("Veterans' tuition benefits"),
+  "links.disability_services": hdLink("Disability services office"),
+  "links.visit": siteFound("Campus visit page"),
+  "links.virtual_tour": siteFound("Virtual tour"),
+  // Social accounts (specs/school-identity/social-accounts.md; lib/social.ts): Wikidata, else the homepage footer
+  // (lineage source college-site). Handles only; the profile URL is built at render time.
+  "social.instagram": wikidata("Instagram account"),
+  "social.youtube": wikidata("YouTube channel"),
+  "social.tiktok": wikidata("TikTok account"),
+  "social.x": wikidata("X account"),
+  "social.facebook": wikidata("Facebook page"),
+  "social.linkedin": wikidata("LinkedIn page"),
+  // Colors and mark (specs/school-identity/brand.md; lib/brand-colors.ts): decoration, never data.
+  "brand.colors": wikipedia("School colors"),
+  "brand.names": wikipedia("School color names"),
+  "brand.accent": brandDerived("Accent color", "The first school color that is neither white, black, nor gray (else the first color)"),
+  "brand.on_accent": brandDerived("Text color on the accent", "White or black, whichever has at least 4.5:1 contrast on the accent"),
+  "brand.tint_light": brandDerived("Hero tint, light theme", "The accent re-lit to OKLCH lightness 0.72, chroma at most 0.16"),
+  "brand.tint_dark": brandDerived("Hero tint, dark theme", "The accent re-lit to OKLCH lightness 0.62, chroma at most 0.16"),
+  "brand.logo": siteFound("Mark (the college's own site icon)"),
+  // Short names and nicknames (specs/school-identity/aliases.md; lib/aliases.ts): a table beside the schools
+  // (data/aliases.json), never stored on a school; each row names its own source.
+  aliases: hdLink("Short names and nicknames (search)"),
 
   /* ---- Admissions (IPEDS ADM) ---- */
   "admissions.year": adm("Admissions year"),
@@ -675,6 +712,12 @@ export const METADATA_KEYS = new Set(["lineage", "cds"]);
 
 /** Sources whose values each carry their own document and year in lineage, so their fields have no vintage. */
 export const PER_DOCUMENT_SOURCES: ReadonlySet<SourceKey> = new Set<SourceKey>(["cds", "college-site", "state-law"]);
+
+/**
+ * Community-edited references with no release year (specs/school-identity/): their fields have no vintage, and the
+ * source's edition in meta.json gives the date they were read. Never listed among the federal releases on /data.
+ */
+export const UNDATED_SOURCES: ReadonlySet<SourceKey> = new Set<SourceKey>(["wikidata", "wikipedia"]);
 
 /** Every registered `reported.*` path: each stored one must have an `extracted` lineage record (lib/lineage.ts). */
 export const REPORTED_PATHS = (Object.keys(FIELDS) as FieldPath[]).filter((p) => p.startsWith("reported."));

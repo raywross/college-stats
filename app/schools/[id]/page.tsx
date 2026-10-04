@@ -18,6 +18,7 @@ import { Term } from "@/components/ui/info-tip";
 import { Panel } from "@/components/profile/Panel";
 import { TopicCards } from "@/components/profile/TopicCards";
 import { AnchorRedirect } from "@/components/profile/AnchorRedirect";
+import { HeroIdentity } from "@/components/school/HeroIdentity";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -117,6 +118,9 @@ export default async function SchoolPage({ params }: Props) {
               ))}
             </div>
           )}
+
+          {/* Official links and social accounts (specs/school-identity/links.md, social-accounts.md). */}
+          <HeroIdentity school={school} />
         </div>
       </section>
 

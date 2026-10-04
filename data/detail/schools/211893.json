@@ -3,6 +3,7 @@
   "tables": {
     "home_states": {"source":"ipeds-ef-c","vintage":"ipeds-ef-c","year":"Fall 2024","rows":{"CA":2,"IL":2,"OR":2,"VA":2,"AL":1,"FL":1,"NC":1,"NJ":1,"OH":1,"SC":1,"TX":1}},
     "majors": {"source":"ipeds-c","vintage":"ipeds-c","year":"2024–25 graduates","rows":{"50.0903":[8,0],"50.0908":[3,0]}},
-    "programs": {"source":"scorecard-fos","vintage":"scorecard-fos","year":null,"rows":{"50.09":{"title":"Music","graduates":66,"earnings":{"y1":null,"y4":null,"y4_national":null,"y4_pell":null,"y4_non_pell":null},"debt_median":null}}}
+    "programs": {"source":"scorecard-fos","vintage":"scorecard-fos","year":null,"rows":{"50.09":{"title":"Music","graduates":66,"earnings":{"y1":null,"y4":null,"y4_national":null,"y4_pell":null,"y4_non_pell":null},"debt_median":null}}},
+    "directories": {"source":"directory","vintage":null,"year":"October 2026","rows":{"credits":{"tpc-nondiscrimination":{"organization":"Trans Policy Clearinghouse","publisher":"Dr. Genny Beemyn","list_url":"https://www.gennyb.com/research/trans-supportive-campus-policies/nondiscrimination-policies","read":"2026-10-04","tier":"D","domain":"lgbtq","kind":"policy","policy":"nondiscrimination_identity"}},"listings":[{"org":"tpc-nondiscrimination"}]}}
   }
 }

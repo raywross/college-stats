@@ -18,6 +18,7 @@ import { Residence } from "@/components/school/Residence";
 import { Transfers } from "@/components/school/Transfers";
 import { StandoutChip } from "@/components/school/StandoutChip";
 import { CampusLife } from "@/components/school/CampusLife";
+import { GreekLife } from "@/components/school/GreekLife";
 import { CampusServices } from "@/components/school/CampusServices";
 import { ReligiousLife } from "@/components/school/ReligiousLife";
 import { LgbtqLife } from "@/components/school/LgbtqLife";
@@ -232,6 +233,7 @@ export default async function StudentsPage({ params }: Props) {
           <CampusLife school={school} />
           <CampusServices school={school} recentMoves={recentMoves} />
           <ReligiousLife school={school} />
+          <GreekLife school={school} />
           <LgbtqLife
             school={school}
             citedGender={citeField("lgbtq.gender", school)}

@@ -256,6 +256,8 @@ export function ActiveFilters() {
   }
   for (const f of [...FACTOR_FILTERS, ...HOUSING_FILTERS, ...RESIDENCY_FILTERS]) if (searchParams.get(f.param) === "1") chips.push({ key: f.param, label: f.label, onRemove: () => update({ [f.param]: null }) });
   if (searchParams.get(TRANSFER_FILTER.param) === "1") chips.push({ key: TRANSFER_FILTER.param, label: TRANSFER_FILTER.label, onRemove: () => update({ [TRANSFER_FILTER.param]: null }) });
+  const minGreek = Number(searchParams.get("minGreek"));
+  if (minGreek > 0) chips.push({ key: "minGreek", label: `${minGreek}% or more in a fraternity or sorority`, onRemove: () => update({ minGreek: null }) });
   for (const f of [...FACTOR_FILTERS, ...HOUSING_FILTERS, ...RESIDENCY_FILTERS, ...LOGISTICS_FILTERS]) if (searchParams.get(f.param) === "1") chips.push({ key: f.param, label: f.label, onRemove: () => update({ [f.param]: null }) });
 
   for (const g of getList("setting").filter(isSettingGroup))

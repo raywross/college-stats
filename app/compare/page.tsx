@@ -39,6 +39,7 @@ import { compareAdmitRates, compareYields } from "@/lib/cds/residency-display";
 import { ADMISSION_PROFILE_ROWS, admissionProfileCellField, c7FactorCell } from "@/lib/cds/compare-rows";
 import { compareClassesUnder20 } from "@/lib/cds/academics-display";
 import { compareTransferAdmitRate } from "@/lib/cds/transfer-display";
+import { compareFratPct, compareSorPct } from "@/lib/cds/greek-display";
 import { compareDeadlines, compareGapYear } from "@/lib/cds/application-logistics-display";
 
 /** Compare rows from CDS C14–C18, hidden when no compared college has the data (cds-application-logistics.md). */
@@ -213,6 +214,13 @@ const TABLE_ROWS = (
     ["First-years must live on campus", "live-on-requirement", "campus.housing", (s: School) => {
       const r = s.campus?.housing?.first_years_required;
       return r == null ? null : r ? "Yes" : "No";
+    }],
+    // CDS F1/F4 (specs/greek-life.md phase 1): undergrad percentages, each gender on its own; blank, never 0, without a CDS answer.
+    ["Men in a fraternity", "greek-life", "reported.greek.frat_pct_undergrad", compareFratPct],
+    ["Women in a sorority", "greek-life", "reported.greek.sor_pct_undergrad", compareSorPct],
+    ["Fraternity/sorority housing", "greek-life", "reported.greek.housing", (s: School) => {
+      const h = s.reported?.greek?.housing;
+      return h == null ? null : "Offered";
     }],
     ["Pell Grant", "pell-grant", "demographics.pell_grant_percent", (s: School) => opt(s.demographics.pell_grant_percent, (v) => pct(v))],
     ["First-gen", "first-gen", "demographics.first_gen_percent", (s: School) => opt(s.demographics.first_gen_percent, (v) => pct(v))],

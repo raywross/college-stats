@@ -15,6 +15,7 @@ import { FACTOR_FILTERS, type FactorFilterParam } from "@/lib/factors";
 import { RESIDENCY_FILTERS, type ResidencyFilterParam } from "@/lib/cds/residency-display";
 import { HONORS_FILTER_LABEL } from "@/lib/cds/academics-display";
 import { TRANSFER_FILTER } from "@/lib/cds/transfer-display";
+import { GREEK_FILTER_LABEL, MIN_GREEK_OPTIONS } from "@/lib/cds/greek-display";
 import { LOGISTICS_FILTERS, type LogisticsFilterParam } from "@/lib/cds/application-logistics-display";
 import { DESIGNATION_KEYS, DESIGNATION_LABELS, RESEARCH_TIERS, SETTING_GROUPS } from "@/lib/campus-profile";
 import { DIVISION_FILTERS, DIVISION_SHORT, ROTC_BRANCHES, ROTC_LABELS } from "@/lib/campus-services";
@@ -78,6 +79,8 @@ export interface FilterFacets {
   honors: number;
   /** Colleges matching "Admits transfer students" (lib/cds/transfer-display.ts). */
   transfers: number;
+  /** Colleges with at least this share of undergrad men or women in a fraternity or sorority, for each option (lib/cds/greek-display.ts MIN_GREEK_OPTIONS). */
+  minGreek: Record<number, number>;
   /** Colleges matching the gap-year chip (lib/cds/application-logistics-display.ts). */
   logistics: Record<LogisticsFilterParam, number>;
 }
@@ -155,7 +158,7 @@ export function FilterPanel({ facets, onDone }: { facets: FilterFacets; onDone?:
   const fieldOptions = MAJOR_FAMILY_CODES.filter((f) => (facets.fields[f]?.[0] ?? 0) > 0).sort((a, b) => MAJOR_FAMILIES[a].localeCompare(MAJOR_FAMILIES[b]));
 
   const hasFilters = [
-    ...["q", "types", "sizes", "regions", "states", "minAR", "maxAR", "minSAT", "maxSAT", "minCost", "maxCost", "minEnroll", "maxEnroll", "balance", "fullTime", "fewLoans", "liveOn", "noFee", "guarantee", "noLegacy", "noEssay", "gpaRequired", "setting", "research", "designation", "opportunity", "division", "conference", "football", "rotc", "ugResearch", "studyAbroad", "maxRatio", "pellGap", "minFullTimeFaculty", "national", "field", "byRes", "oosEven", "gpa", "aidForms", "intlAid", "honors", "transfers", "gapYear", "faith"],
+    ...["q", "types", "sizes", "regions", "states", "minAR", "maxAR", "minSAT", "maxSAT", "minCost", "maxCost", "minEnroll", "maxEnroll", "balance", "fullTime", "fewLoans", "liveOn", "noFee", "guarantee", "noLegacy", "noEssay", "gpaRequired", "setting", "research", "designation", "opportunity", "division", "conference", "football", "rotc", "ugResearch", "studyAbroad", "maxRatio", "pellGap", "minFullTimeFaculty", "national", "field", "byRes", "oosEven", "gpa", "aidForms", "intlAid", "honors", "transfers", "minGreek", "gapYear", "faith"],
     ...INDICATOR_KEYS.map((k) => INDICATORS[k].param),
     "policy",
   ].some((k) => searchParams.get(k));
@@ -567,6 +570,20 @@ export function FilterPanel({ facets, onDone }: { facets: FilterFacets; onDone?:
             {TRANSFER_FILTER.label}
           </Chip>
         </div>
+      </Section>
+
+      <Section title={GREEK_FILTER_LABEL} term="greek-life">
+        <div className="flex flex-wrap gap-1.5" role="group" aria-label="At least this share of undergrad men or women">
+          {MIN_GREEK_OPTIONS.map((n) => {
+            const active = searchParams.get("minGreek") === String(Math.round(n * 100));
+            return (
+              <Chip key={n} active={active} onClick={() => update({ minGreek: active ? null : String(Math.round(n * 100)) })} count={facets.minGreek[n]}>
+                {Math.round(n * 100)}% or more
+              </Chip>
+            );
+          })}
+        </div>
+        <p className="mt-1.5 text-[11px] text-muted-foreground">Of undergrad men in fraternities, or undergrad women in sororities (never summed). Only colleges whose Common Data Set reports either percentage can match.</p>
       </Section>
 
       <Section title="After you're admitted" term="deferred-admission">

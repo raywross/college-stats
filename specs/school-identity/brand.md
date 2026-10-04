@@ -237,7 +237,7 @@ re-run of the 20 colleges the guards added afterwards (84 requests).
 
 | Result | Colleges |
 |---|---|
-| **A mark** | **1,118** (59% of 1,893; 62% of the 1,808 with candidates) |
+| **A mark** | **1,118** (59% of 1,893; 62% of the 1,808 with candidates); 1,119 after the older ICO formats (follow-ups.md) |
 | from a declared touch icon / a declared icon / the conventional paths | 855 / 153 / 110 |
 | source format: PNG / ICO / JPEG / WebP / SVG / other | 902 / 95 / 68 / 32 / 15 / 6 |
 | none, by the last candidate's reason: 404 | 254 |
@@ -246,7 +246,7 @@ re-run of the 20 colleges the guards added afterwards (84 requests).
 | not an image (an HTML page with status 200) | 63 |
 | 403 (bot protection) | 57 |
 | robots.txt disallows it | 49 |
-| an ICO with no PNG or 32-bit entry (see deviation 8) | 42 |
+| an ICO with no PNG or 32-bit entry (see deviation 8; decoded since, see follow-ups.md section 2) | 42 |
 | a platform's default (below) / blank on white / other | 11 / 1 / 6 |
 
 Storage: 1,118 files, 5.9 MB (5,907,762 bytes; 5.3 KB average, 35 KB the largest), well under the 25 MB line.
@@ -344,8 +344,9 @@ and 2.65:1 (dark) and the check exited 1.
    logo** (any final URL under `/wp-includes/images/`); and **a platform's default**: an identical mark on three or more
    sites for three or more differently named colleges (name families: the first three words before a dash, comma,
    or "at") sends those colleges back for their next candidate, while one system's shared icon stays. ICO: PNG entries
-   via sharp, 32-bit BMP entries converted to RGBA (the AND mask gives alpha when every alpha byte is 0); 1-, 4-, 8-,
-   and 24-bit entries are skipped (42 colleges' last candidate was such an ICO). A passing failure (timeout, 5xx, a
+   via sharp, 32-bit BMP entries converted to RGBA (the AND mask gives alpha when every alpha byte is 0). Built
+   first without 1-, 4-, 8-, and 24-bit entries (42 colleges' last candidate was such an ICO); those decode since
+   2026-10-04 (follow-ups.md section 2), and only 16-bit and compressed entries are skipped. A passing failure (timeout, 5xx, a
    host that didn't answer) keeps yesterday's mark; a refusal (robots.txt, 4xx, a rejected image) removes it.
 9. **`next/image` with `unoptimized`.** `next.config.ts` sets no image loader, and the stored WebP is already the
    largest size any tile shows (96 px at 2x), so the optimizer would only add a transformation per size on Vercel.
@@ -365,5 +366,5 @@ and 2.65:1 (dark) and the check exited 1.
 - **The colleges without a mark** (775): a monogram in their colors when they have colors (open question 2's default).
   Many have a 16–48 px favicon only; a college that wants its mark shown can add a 180 px `apple-touch-icon` to its
   homepage, and the next run picks it up.
-- **ICO entries other than PNG or 32-bit** (42 colleges' last candidate): reading 24-bit and palette entries is a small
-  follow-up if those files turn out to hold 64 px or larger entries (ASU's, the one inspected, held 16–48 px).
+- ~~ICO entries other than PNG or 32-bit~~: decoded since 2026-10-04 (follow-ups.md section 2). One college gained a
+  mark; the rest of those icons are 16–48 px favicons, below the 64 px floor.

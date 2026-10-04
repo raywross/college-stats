@@ -35,6 +35,16 @@ and 1-bit palette entries (colors from the palette, transparency from the mask).
 are unchanged, so a 16 px favicon is still rejected. Then re-run the icon step for the colleges that had an unreadable
 ICO.
 
+**As built (2026-10-04).** `bmpToRgba` in `scripts/lib/brand-icons.mts` decodes 24-, 8-, 4-, and 1-bit entries, rows
+padded to 4 bytes for both the image and the AND mask; 16-bit and compressed (RLE, BITFIELDS) entries stay skipped,
+and a mark's recorded format names its depth (`ico/bmp24`). Tests build tiny ICO files in memory (a 24-bit entry with
+a masked corner, an 8-bit palette entry, 4- and 1-bit entries, and a 16 px 32-bit entry beside a 64 px 8-bit one,
+which must win) and check exact pixels; each guard was broken once and failed. The real run re-tried every college
+without a mark whose candidates include an ICO (690, 2,362 requests): **one gained a mark** (Sweet Briar College, from
+a 238 x 256 24-bit entry), and "undecodable" no longer appears among the reasons. Old ICO favicons are mostly 16–48 px:
+they decode now and fail the 64 px floor, the honest reason. A few `.ico` URLs served one hosting template's default
+PNG, identical across unrelated colleges, which the shared-image rule already rejects. No mark was removed by hand.
+
 ## 3. The visit-page picker run (deferred)
 **Problem.** 492 colleges have neither a visit page nor a virtual tour: their admissions page links to one with wording
 the scorer doesn't recognize, or not at all.

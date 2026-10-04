@@ -382,6 +382,26 @@ test("14: with a small budget the paid steps go in tier order, and open admissio
   assert.ok(out.results.get("very")!.recipe.discovery!.tried.some((t) => t.step === 4 && t.result === "skipped"));
 });
 
+test("a paid step that finds only a class profile keeps climbing to a CDS; with none, the profile is the result", async () => {
+  // The first live run stopped at an admissions page the picker chose for Boston University, UC San Diego, and Arizona.
+  const profile = { kind: "class-profile" as const, url: "https://www.x.edu/admissions/profile", format: "html" as const };
+  const cds = { kind: "cds" as const, url: "https://ir.x.edu/cds-2025-26.pdf", format: "pdf" as const };
+  const climbing = paid({ pick: 0.003, search: 0.08 }, (step) =>
+    step === "pick" ? { path: "picker", sources: [profile], index_urls: [], cost_usd: 0.003 } : step === "search" ? { path: "search", sources: [cds], index_urls: [], cost_usd: 0.08 } : null,
+  );
+  const r = await ladder({ school: school("200001", { rate: 0.2 }) }, state(), { ...nothing, ...climbing.deps });
+  assert.deepEqual(climbing.calls, ["pick:200001", "search:200001"]);
+  assert.equal(r.path, "search");
+  assert.deepEqual(r.recipe.sources.map((s) => s.kind).sort(), ["cds", "class-profile"], "the profile is kept beside the CDS");
+
+  const onlyProfile = paid({ pick: 0.003, search: 0.08 }, (step) => (step === "pick" ? { path: "picker", sources: [profile], index_urls: [], cost_usd: 0.003 } : null));
+  const r2 = await ladder({ school: school("200002", { rate: 0.2 }) }, state(), { ...nothing, ...onlyProfile.deps, discover: undefined });
+  assert.deepEqual(onlyProfile.calls, ["pick:200002", "search:200002"]);
+  assert.equal(r2.path, "picker");
+  assert.equal(r2.found, true);
+  assert.equal(r2.recipe.none_found, undefined);
+});
+
 test("14: open admission reaches step 3 only with budget left after every other tier", async () => {
   const colleges = [school("open", { rate: null }), school("less", { rate: 0.7 })].map((s) => ({ school: s }));
   const rich = paid({ search: 0.08 });

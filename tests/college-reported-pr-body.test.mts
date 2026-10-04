@@ -8,7 +8,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import type { ReportedFile, ReviewQueueFile, RunSummary } from "../lib/reported.ts";
-import { entriesForRun, itemsForRun, prBody, releaseNote, releaseNoteSlug, totalCost } from "../scripts/college-reported-pr-body.mts";
+import { PER_ITEM_ROWS, PR_BODY_LIMIT, entriesForRun, itemsForRun, prBody, releaseNote, releaseNoteSlug, totalCost } from "../scripts/college-reported-pr-body.mts";
 import { parseReleaseNote } from "../lib/release-notes.ts";
 import { emptySummaryV3 } from "../scripts/lib/college-reported/models.mts";
 
@@ -110,6 +110,15 @@ test("prBody lists a failed whole extraction call without parsing it as a templa
   assert.match(body, /whole C call/);
   assert.match(body, /schema too complex/);
   assert.match(body, /H2 · H\.201/);
+});
+
+test("prBody stays under GitHub's limit however many items a run queues", () => {
+  // The first live run queued 330 per-item failures and GitHub refused its 65,536+ character body.
+  const run = summary.run;
+  const many = Array.from({ length: 400 }, (_, i) => ({ unit_id: `9990${i}`, name: `Fixture College ${i}`, urls: [`https://x${i}.edu/cds-2025-26.pdf`], entering_term: null, failures: [{ check: "sums-to-100" as const, detail: "SAT Math bands: shares sum to 199%, not 100% ±1 ".repeat(5) }], queued: "2026-10-04", run, code: "C.939", edition: "2025-26", sha256: "abc", value: 0.56 }));
+  const body = prBody(summary, { updated: "2026-10-04", items: [...queue.items, ...many] } as ReviewQueueFile);
+  assert.ok(body.length <= PR_BODY_LIMIT, `${body.length} characters`);
+  assert.match(body, new RegExp(`and ${400 - PER_ITEM_ROWS} more`));
 });
 
 test("prBody lists an unreachable item separately from the check-failure review queue", () => {

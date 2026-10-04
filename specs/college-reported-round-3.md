@@ -1653,3 +1653,16 @@ could not:
 - **Error messages.** `collect` now keeps the API's message for each errored or invalid result
   (`Collected.error_messages`), and the review queue's reason carries it. The PR body lists a failed whole call
   ("whole C call") instead of crashing on its `C-call` key.
+- **Third run (`20261004-002803-5`): reads worked, checks found pipeline bugs.** Four CDS documents were read (Florida and
+  UNC flattened PDFs, Michigan State's fillable form, Houston's older workbook) for $0.56 across ten colleges. Its
+  failures were mostly ours, fixed after it and not published:
+  - printed percents from a model or a form are always points (`normalizeValue(..., { percentPoints })`): "0.5" had
+    been read as 50%, so score-band columns summed to 149–199% and every percentile-order check failed after them;
+  - an H0 aid year printed without "final" or "estimated" ("2025-26", UNC) parses as `unstated` instead of failing
+    all of section H;
+  - `valueOnLine` strips layout tags before reading numbers, so printer-split digits ("@243 1,2 74") are found, and a
+    footnoted mark ("X*") counts;
+  - a paid discovery step that finds only a class profile keeps climbing toward a CDS (Boston University, UC San Diego,
+    and Arizona stopped at an admissions page);
+  - the PR description lists at most `PER_ITEM_ROWS` review items and is cut to GitHub's 65,536-character limit (330
+    items had made the PR step fail).

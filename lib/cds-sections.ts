@@ -320,7 +320,8 @@ const academicYear = (start: number) => `${start}–${String(start + 1).slice(2)
 /** The aid year a college states in H.101 (H0): which academic year H1, H2, H2A and H6 describe, and whether final. */
 export interface AidYear {
   start: number;
-  status: "estimated" | "final";
+  /** "unstated" when H.101 names the year without saying final or estimated (UNC 2025–26: "2025-26"). */
+  status: "estimated" | "final" | "unstated";
 }
 
 /**
@@ -329,11 +330,11 @@ export interface AidYear {
  */
 export function parseAidYear(raw: unknown): AidYear | null {
   if (typeof raw !== "string") return null;
-  const m = /^\s*(20\d{2})\s*[-–]\s*(\d{2}|\d{4})\s+(final|estimated|estimate|est\.?)\s*$/i.exec(raw);
+  const m = /^\s*(20\d{2})\s*[-–]\s*(\d{2}|\d{4})(?:\s+(final|estimated|estimate|est\.?))?\s*$/i.exec(raw);
   if (!m) return null;
   const ed = parseEdition(`${m[1]}-${m[2]}`);
   if (!ed) return null;
-  return { start: ed.start, status: /^final$/i.test(m[3]) ? "final" : "estimated" };
+  return { start: ed.start, status: !m[3] ? "unstated" : /^final$/i.test(m[3]) ? "final" : "estimated" };
 }
 
 /**
@@ -346,7 +347,7 @@ export const ITEM_GROUPS: Record<ItemGroupKey, { describes: string; label: (y: n
   "test-policy-cycle": { describes: "C8 test policy: students applying two falls out", label: (y) => `Fall ${y + 2} applicants` },
   "next-cycle": { describes: "C13–C14, C16–C18, D9, H7–H11: the application cycle that opens next", label: (y) => `Fall ${y + 1} cycle` },
   "next-year": { describes: "G: next academic year's prices", label: (y) => academicYear(y + 1) },
-  "aid-year": { describes: "H1, H2, H2A, H6: the aid year the college states in H.101", label: (_y, aid) => (aid ? `${academicYear(aid.start)} ${aid.status}` : null) },
+  "aid-year": { describes: "H1, H2, H2A, H6: the aid year the college states in H.101", label: (_y, aid) => (aid ? (aid.status === "unstated" ? academicYear(aid.start) : `${academicYear(aid.start)} ${aid.status}`) : null) },
   "graduating-class": { describes: "H4–H5: the bachelor's class that graduated in the year before the edition", label: (y) => `Class of ${y}` },
   cohort: { describes: "B4–B11 current grid: the cohort six falls back", label: (y) => `Fall ${y - 6} cohort` },
   "previous-cohort": { describes: "B4–B11 previous grid (B5 block): seven falls back", label: (y) => `Fall ${y - 7} cohort` },
@@ -433,13 +434,16 @@ export function parseNumber(raw: unknown): number | null {
 const per100 = (n: number) => Math.round(n * 1e8) / 1e10;
 
 /** A percent as a 0–1 share: 0.274, 27.4, "27.4%", "1%%", "0.61%" → 0.0061. Null when it isn't one. */
-function percentShare(raw: unknown): number | null {
+function percentShare(raw: unknown, points = false): number | null {
   if (typeof raw === "string" && /%/.test(raw)) {
     const n = parseNumber(raw.replace(/%+/g, ""));
     return n === null ? null : per100(n);
   }
   const n = parseNumber(raw);
   if (n === null) return null;
+  // Printed numbers (a model's answer, a PDF form field) are always percent points: "0.5" is 0.5%, never 50%. The first
+  // live run read small score bands as shares, so band columns summed to 149–199%.
+  if (points) return per100(n);
   // Excel percent cells hold fractions (0.274); typed percents are 27.4. A share can't exceed 1 by much (totals of
   // 1.0001 occur), so anything over 1.5 is a percent. Ambiguous small percents ("0.61" meaning 0.61%, Howard's F1)
   // can only be told apart per column, by the owning spec's checks.
@@ -500,9 +504,10 @@ const NUMERIC: ReadonlySet<ValueType> = new Set(["count", "currency", "decimal",
 
 /**
  * Normalizes one raw cell or model value by the item's value type. `excel`: the value came from a workbook cell, so a
- * bare integer in a date cell is a serial date.
+ * bare integer in a date cell is a serial date. `percentPoints`: the value is a printed number (a model's answer, a PDF
+ * form field), so a percent is always points ("0.5" is 0.5%); without it, a workbook's fraction (0.274) is kept.
  */
-export function normalizeValue(item: Pick<TemplateItem, "value_type">, raw: unknown, opts: { excel?: boolean } = {}): Normalized {
+export function normalizeValue(item: Pick<TemplateItem, "value_type">, raw: unknown, opts: { excel?: boolean; percentPoints?: boolean } = {}): Normalized {
   if (raw === null || raw === undefined) return BLANK;
   if (typeof raw === "string") {
     const s = raw.replace(/\s+/g, " ").trim();
@@ -518,7 +523,7 @@ export function normalizeValue(item: Pick<TemplateItem, "value_type">, raw: unkn
   }
   switch (t) {
     case "percent": {
-      const n = percentShare(raw);
+      const n = percentShare(raw, opts.percentPoints);
       return n === null ? text() : { status: "value", v: n };
     }
     case "month": {

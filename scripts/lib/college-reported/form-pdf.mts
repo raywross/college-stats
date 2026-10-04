@@ -196,7 +196,7 @@ export function recordFromForm(widgets: readonly FormWidget[], opts: FormRecordO
       continue;
     }
     const raw = formRaw(it, field, edition);
-    const n = normalizeValue(it, raw);
+    const n = normalizeValue(it, raw, { percentPoints: true }); // form fields hold printed numbers ("0.61" is 0.61%)
     if (n.status === "blank") {
       items[it.code] = { status: "blank" };
       continue;

@@ -30,8 +30,13 @@ import { Blocked, HttpError, defineAdapter, type CrawlContext } from "../scripts
 import { adapterProblems, loadAdapters } from "../scripts/lib/directories/registry.mts";
 import { buildFiles, runAdapter } from "../scripts/lib/directories/run.mts";
 import { clearBlocks, readDirectoryFiles, recordBlock } from "../scripts/lib/directories/files.mts";
-import { applyDirectories, directoryDetails, orphanSummaries } from "../scripts/lib/directories/merge.mts";
+import { applyCccuMembership, applyDirectories, chapterFiles, directoryDetails, orphanSummaries } from "../scripts/lib/directories/merge.mts";
 import { campusOf, entriesFrom } from "../scripts/lib/directories/adapters/ssa.mts";
+import { parsePage as rufParsePage } from "../scripts/lib/directories/adapters/ruf.mts";
+import { entriesFrom as focusEntriesFrom } from "../scripts/lib/directories/adapters/focus.mts";
+import { campusOf as chabadCampusOf, entriesFrom as chabadEntriesFrom } from "../scripts/lib/directories/adapters/chabad.mts";
+import { entriesFrom as navigatorsEntriesFrom } from "../scripts/lib/directories/adapters/navigators.mts";
+import { entriesFrom as cccuEntriesFrom } from "../scripts/lib/directories/adapters/cccu.mts";
 import { readDetails } from "../scripts/lib/publish-details.mts";
 
 const ROOT = join(import.meta.dirname, "..");
@@ -382,9 +387,11 @@ test("lineage: the committed data fails the checks when a real listing loses its
 test("merge: idempotent (deepEqual), and the committed data is exactly a fresh merge of data/directories/", () => {
   const files = readDirectoryFiles(ROOT);
   const known = new Set(allSchools.map((s) => s.unit_id));
-  const built = directoryDetails(files, known);
-  const once = applyDirectories(allSchools, built);
-  const twice = applyDirectories(once, directoryDetails(files, known));
+  // CCCU is a membership fact (specs/religious-life.md#measures item 2), not a chapter: applyCccuMembership handles
+  // it separately, so the chapter table is built from every other file (chapterFiles).
+  const built = directoryDetails(chapterFiles(files), known);
+  const once = applyCccuMembership(applyDirectories(allSchools, built), files);
+  const twice = applyCccuMembership(applyDirectories(once, directoryDetails(chapterFiles(files), known)), files);
   assert.deepEqual(twice, once);
   assert.equal(JSON.stringify(twice), JSON.stringify(once), "byte-identical, key order included");
   assert.equal(JSON.stringify(once), JSON.stringify(allSchools), "run `npm run merge-directories`");
@@ -392,6 +399,29 @@ test("merge: idempotent (deepEqual), and the committed data is exactly a fresh m
   for (const d of built) assert.deepEqual(committed.get(d.unit_id), d.tables.directories, d.unit_id);
   assert.equal([...committed.values()].filter(Boolean).length, built.length);
   assert.deepEqual(validateLineage(once, meta), []);
+});
+
+test("CCCU membership: a membership fact, kept out of the chapter table and applied to school.religion.cccu_member", () => {
+  const files = readDirectoryFiles(ROOT);
+  const cccu = files.find((f) => f.org === "cccu");
+  assert.ok(cccu, "the cccu adapter's file is committed");
+  assert.ok(cccu!.entries.length > 50, "most CCCU voting members should match");
+  // None of CCCU's entries land in anyone's chapter table.
+  const known = new Set(allSchools.map((s) => s.unit_id));
+  const built = directoryDetails(chapterFiles(files), known);
+  for (const d of built) assert.ok(!Object.keys(d.tables.directories!.rows.credits).includes("cccu"), d.unit_id);
+  // Every matched college has the flag, cited; re-merging is idempotent; stripping removes it cleanly.
+  const withFlag = applyCccuMembership(allSchools, files);
+  const ids = new Set(cccu!.entries.flatMap((e) => e.matches.map((m) => m.unit_id)));
+  for (const s of withFlag) {
+    if (ids.has(s.unit_id)) {
+      assert.equal(s.religion?.cccu_member, true, s.unit_id);
+      assert.equal(s.lineage?.["religion.cccu_member"]?.source, "directory", s.unit_id);
+    } else assert.equal(s.religion?.cccu_member, undefined, s.unit_id);
+  }
+  assert.deepEqual(applyCccuMembership(withFlag, files), withFlag);
+  const stripped = applyCccuMembership(withFlag, []);
+  assert.ok(!stripped.some((s) => s.religion?.cccu_member || s.lineage?.["religion.cccu_member"]));
 });
 
 test("merge CLI: a second run changes nothing (scratch copy)", () => {
@@ -469,6 +499,86 @@ test("ssa adapter: campus names from marker titles; high schools and law schools
     '<div title="Secular Student Alliance at Fordham University" aria-label="Secular Student Alliance at Fordham University" role="button" style="x"><img alt="" src="https://maps.gstatic.com/mapfiles/transparent.png"/></div>' +
     '<div title="Move down" aria-label="Move down" role="button"><span></span></div>';
   assert.deepEqual(entriesFrom(html), [{ campus: "Fordham University", name: "Secular Student Alliance at Fordham University" }]);
+});
+
+/* ------------------------------------------------------------------ */
+/* Faith directory adapters (phase 3: religious-life.md#scaling)       */
+/* ------------------------------------------------------------------ */
+
+test("ruf adapter: the 'All Campuses' block, paginated, entities decoded, RUF International/Global suffix stripped", () => {
+  const page1 = [
+    '<div class="ruf-campuses__list"><div class="ruf-campuses__list--item"><a href="https://ruf.org/ministry/auburn-university/">Auburn University</a></div>',
+    '<div class="ruf-campuses__list--item"><a href="https://ruf.org/ministry/x/">Johnson &#038; Wales University</a></div>',
+    '<div class="ruf-campuses__list--item"><a href="https://ruf.org/ministry/y/">Columbia University RUF International</a></div></div>',
+    '<div class="archive-pagination pagination" role="navigation"><a href="https://ruf.org/campus/page/2/" >Next Page &raquo;</a></div>',
+  ].join("");
+  const page2 =
+    '<div class="ruf-campuses__list"><div class="ruf-campuses__list--item"><a href="https://ruf.org/ministry/z/">Baylor University</a></div></div>' +
+    '<div class="archive-pagination pagination" role="navigation"></div>';
+  const p1 = rufParsePage(page1);
+  assert.deepEqual(p1.entries.map((e) => e.campus), ["Auburn University", "Johnson & Wales University", "Columbia University"]);
+  assert.equal(p1.entries[0].name, undefined, "a plain campus entry has no distinct chapter name");
+  assert.equal(p1.entries[2].name, "Columbia University RUF International");
+  assert.equal(p1.next, "https://ruf.org/campus/page/2/");
+  const p2 = rufParsePage(page2);
+  assert.equal(p2.entries[0].campus, "Baylor University");
+  assert.equal(p2.next, null);
+});
+
+test("focus adapter: state headings apply to the campuses listed after them; Washington DC resolves to a postal state", () => {
+  const html = [
+    '<span class="vc_tta-title-text">Alabama</span>',
+    '<div class="sortcampus"><h5 class="campusmoredh5"><a href="https://focus.org/campus/auburn-university/">Auburn University</a></h5></div>',
+    '<span class="vc_tta-title-text">Washington, DC</span>',
+    '<div class="sortcampus"><h5 class="campusmoredh5"><a href="https://focus.org/campus/gwu/">George Washington University</a></h5></div>',
+    '<div class="sortcampus"><h5 class="campusmoredh5"><a href="https://focus.org/campus/tamu/">Texas A&#038;M University</a></h5></div>',
+  ].join("");
+  assert.deepEqual(focusEntriesFrom(html), [
+    { campus: "Auburn University", url: "https://focus.org/campus/auburn-university/", state: "Alabama" },
+    { campus: "George Washington University", url: "https://focus.org/campus/gwu/", state: "DC" },
+    { campus: "Texas A&M University", url: "https://focus.org/campus/tamu/", state: "DC" },
+  ]);
+});
+
+test("chabad adapter: the campus named after the last at/@/of/serving/for that isn't part of the college's own name", () => {
+  assert.equal(chabadCampusOf("Chabad at Yale University"), "Yale University");
+  assert.equal(chabadCampusOf("Chabad House @ University of Pennsylvania"), "University of Pennsylvania");
+  assert.equal(chabadCampusOf("Rohr Chabad House at The University of Virginia"), "The University of Virginia");
+  assert.equal(chabadCampusOf("Chabad of Princeton University"), "Princeton University");
+  assert.equal(chabadCampusOf("Chabad Serving Tufts University"), "Tufts University");
+  assert.equal(chabadCampusOf("Chabad Serving Drexel University - Rohr Jewish Student Center"), "Drexel University");
+  assert.equal(chabadCampusOf("Tannenbaum Chabad House"), null, "no connector names a campus");
+  assert.deepEqual(
+    chabadEntriesFrom([
+      { name: "Chabad at Yale University", city: "New Haven", "center-type": { name: "Campus Chabad House" } },
+      { name: "Chabad of Beachwood", city: "Beachwood", "center-type": { name: "Synagogue" } },
+      { name: "Tannenbaum Chabad House", city: "Los Angeles", "center-type": { name: "Campus Chabad House" } },
+    ]),
+    [{ campus: "Yale University", name: "Chabad at Yale University", city: "New Haven" }]
+  );
+});
+
+test("navigators adapter: campus from <h3>, state from the address paragraph, entities decoded", () => {
+  const html =
+    "deLocations.push({ title: `<h3>Auburn Univ.</h3><h4>War Eagle!</h4><p>255 Heisman Dr Auburn, AL 36849</p>`, icon: `` });" +
+    "deLocations.push({ title: `<h3>Florida A&amp;M University</h3><p>Tallahassee, FL 32307</p>`, icon: `` });";
+  assert.deepEqual(navigatorsEntriesFrom(html), [
+    { campus: "Auburn Univ.", state: "AL" },
+    { campus: "Florida A&M University", state: "FL" },
+  ]);
+});
+
+test("cccu adapter: voting (GOVM) US/Canada members only; affiliates, partners, and other countries left out", () => {
+  const schools = [
+    { Company: "Abilene Christian University", MemberType: "GOVM", City: "Abilene", StateProvince: "TX", Country: "United States", Website: "http://www.acu.edu" },
+    { Company: "Ambrose University", MemberType: "GOVM", City: "Calgary", StateProvince: "AB", Country: "Canada" },
+    { Company: "Some Affiliate College", MemberType: "AMEM", Country: "United States" },
+    { Company: "Africa Nazarene University", MemberType: "IAFF", Country: "Kenya" },
+  ];
+  assert.deepEqual(cccuEntriesFrom(schools), [
+    { campus: "Abilene Christian University", city: "Abilene", state: "TX", url: "http://www.acu.edu" },
+    { campus: "Ambrose University", city: "Calgary", state: "AB" },
+  ]);
 });
 
 test("policy checks (tier A): page, date, quote; a 'no' or a conduct restriction needs the second model's check", () => {

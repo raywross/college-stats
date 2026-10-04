@@ -1,31 +1,39 @@
 import Link from "next/link";
-import { Church, HandCoins, Scale, UsersRound } from "lucide-react";
+import { Church, HandCoins, Scale, UsersRound, Users } from "lucide-react";
 import { getData } from "@/lib/data";
 import { DOMAINS } from "@/lib/metrics";
 import { IMPORTANCE_LABELS } from "@/lib/cds/admissions";
 import { faithFamilyLabel, faithFilterOf, religionView } from "@/lib/religion";
+import { groupListings, listingsFor } from "@/lib/directories";
+import type { SchoolDetail } from "@/lib/detail";
 import type { School } from "@/lib/types";
 import { InfoTip } from "@/components/ui/info-tip";
 import { BLOCK_SCROLL } from "@/components/profile/Panel";
+import { CreditedList } from "./CreditedList";
 
 /**
- * Campus life, "Religious life" (specs/religious-life.md, phase 1): the IPEDS affiliation with NCES's exact label, and
- * what the college's own Common Data Set says (C7 religious commitment in admission, H14 scholarships, F2 campus
- * ministries). Neutral facts only; hidden when `religionView` has nothing to show. Unmarked CDS boxes show nothing.
+ * Campus life, "Religious life" (specs/religious-life.md): the IPEDS affiliation with NCES's exact label, what the
+ * college's own Common Data Set says (C7 religious commitment in admission, H14 scholarships, F2 campus ministries;
+ * phase 1), and "Faith communities" — traditions present with named groups and links from national directories,
+ * credited per listing (phase 3). Neutral facts only; hidden when there's nothing in either part. Unmarked CDS boxes
+ * show nothing. Shows at an unaffiliated college that has directory listings, replacing the generic
+ * `<DirectoryListings domain="faith">` placeholder for this domain.
  */
-export async function ReligiousLife({ school }: { school: School }) {
+export async function ReligiousLife({ school, detail }: { school: School; detail: SchoolDetail | null }) {
   const view = religionView(school);
-  if (!view) return null;
+  const groups = groupListings(listingsFor(detail?.tables.directories?.rows, "faith"));
+  if (!view && !groups.length) return null;
   const { citeField } = await getData();
   const color = DOMAINS.size.color;
-  const affiliation = view.religion?.affiliation ?? null;
+  const affiliation = view?.religion?.affiliation ?? null;
   const family = faithFilterOf(school);
-  const aid = view.aid;
+  const aid = view?.aid ?? null;
   const aidKind = aid ? (aid.need && aid.non_need ? "need-based and non-need-based" : aid.need ? "need-based" : "non-need-based") : null;
 
   return (
     <div id="religion" className={`mt-4 rounded-3xl border bg-card p-4 sm:p-6 ${BLOCK_SCROLL}`}>
       <h3 className="mb-5 font-display text-lg font-bold">Religious life</h3>
+      {view && (
       <div className="grid gap-6 sm:grid-cols-2">
         {view.religion && (
           <div>
@@ -70,6 +78,24 @@ export async function ReligiousLife({ school }: { school: School }) {
           </div>
         )}
       </div>
+      )}
+      {groups.length > 0 && (
+        <div className={view ? "mt-6 border-t pt-5" : ""}>
+          <h4 className="mb-4 flex items-center gap-1.5 text-sm font-semibold text-muted-foreground">
+            Faith communities <InfoTip term="national-directory" />
+          </h4>
+          <div className="grid gap-5 sm:grid-cols-2">
+            {groups.map((g) => (
+              <div key={g.key}>
+                <p className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
+                  <Users className="size-4" style={{ color }} /> {g.label}
+                </p>
+                <CreditedList items={g.listings} />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

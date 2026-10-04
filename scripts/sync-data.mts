@@ -44,7 +44,7 @@ import { addLgbtq, addStateLawMeta, fetchLgbtqInputs, lgbtqSummary } from "./lib
 import { addMajorsMeta, buildMajorDetails, checkTotals, fetchCompletions, majorsFor, unknownCodes } from "./lib/majors-sync.mts";
 import { mergeDetails } from "../lib/detail.ts";
 import { readDirectoryFiles } from "./lib/directories/files.mts";
-import { addDirectoryMeta, applyDirectories, directoryDetails } from "./lib/directories/merge.mts";
+import { addDirectoryMeta, applyCccuMembership, applyDirectories, chapterFiles, directoryDetails } from "./lib/directories/merge.mts";
 import { readPagesFile } from "./lib/campus-pilot/files.mts";
 import { campusPagesDetails, pilotDirectoryFiles } from "./lib/campus-pilot/merge.mts";
 import { financialAidDetails } from "../lib/cds/financial-aid.ts";
@@ -947,9 +947,10 @@ async function main() {
   // per college and the `school.directories` summary, exactly as `npm run merge-directories` does.
   const directoryFiles = readDirectoryFiles(ROOT);
   // The campus-life pilot (data/campus-pages.json): its groups join the listings; its tier A facts get their own table.
+  // Membership lists (CCCU) set `religion.cccu_member` rather than listings.
   const campusPages = readPagesFile(join(ROOT, "data", "campus-pages.json"));
-  const directoryTables = directoryDetails([...directoryFiles, ...pilotDirectoryFiles(campusPages)], new Set(schools.map((s) => s.unit_id)));
-  schools.splice(0, schools.length, ...applyDirectories(schools, directoryTables));
+  const directoryTables = directoryDetails([...chapterFiles(directoryFiles), ...pilotDirectoryFiles(campusPages)], new Set(schools.map((s) => s.unit_id)));
+  schools.splice(0, schools.length, ...applyCccuMembership(applyDirectories(schools, directoryTables), directoryFiles));
   addDirectoryMeta(meta, directoryFiles);
   const details = mergeDetails(
     buildDetails(schools, efc.table, meta),

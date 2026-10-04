@@ -3,10 +3,12 @@
 > Status: **planned**, with **phase 1 built** (2026-10-03, branch `feature/campus-life`): IPEDS affiliation for every college
 > with NCES's own label, an Explore filter by faith family, a Compare row, a "Religious life" block in the profile's
 > Campus life section with the CDS answers we already read (C7, H14, F2), "Known for: Faith-centered" from C7, and
-> glossary entries. See [Phase 1 as built](#phase-1-as-built). Phases 2–4 (pilot, national directories, per-school
-> rollout) are still **planned**; the phase 2 pilot pipeline is built (2026-10-04, branch
-> `feature/campus-life-2-pilot`), with its live run pending ([Phase 2 as built](#phase-2-as-built-pilot)). Research 2026-09-28: Scorecard API probe, 2025–26 Common Data Sets, and a
-> per-school deep dive on UT Austin. Findings are verified unless marked *unverified*. Companions:
+> glossary entries. See [Phase 1 as built](#phase-1-as-built). **Phase 3 (national directories) built** 2026-10-04,
+> branch `feature/campus-life-2`: six adapters, CCCU membership, the "Faith communities" list, and an Explore
+> "has a [tradition] community" filter. See [Phase 3 as built](#phase-3-as-built). The phase 2 pilot pipeline is built
+> and run on the 25 pilot colleges ([Phase 2 as built](#phase-2-as-built-pilot)); phase 4 (per-school rollout) is still
+> **planned**. Research 2026-09-28: Scorecard API probe, 2025–26 Common Data
+> Sets, and a per-school deep dive on UT Austin. Findings are verified unless marked *unverified*. Companions:
 > [greek-life.md](greek-life.md), [lgbtq-life.md](lgbtq-life.md). Per-school collection shares the engine in
 > [college-reported-data.md](college-reported-data.md#campus-life-sources).
 
@@ -167,21 +169,27 @@ Each field is registered in `lib/fields.ts` ([data-lineage.md](data-lineage.md))
 source kinds so citations show the organization and date.
 
 ## Where it appears
-Built in phase 1 unless marked *later*.
+Built in phase 1 unless marked *later*; phase 3 additions are marked *phase 3*.
 - **Explore:** "Religious affiliation" filter: ten faith families plus "No affiliation" (`?faith=catholic,none`), exact
-  label on the profile. *Later:* "has a [tradition] community" filters (tier B/D).
+  label on the profile. *Phase 3:* "has a [tradition] community" filter (`?faithGroup=jewish,catholic`, tier D, from
+  `school.directories.faith`), alongside the affiliation filter.
 - **Profile, the students page's "Campus life" section:** a "Religious life" block (`#religion`,
   `components/school/ReligiousLife.tsx`): the affiliation (or "No religious affiliation"), with a link to other
   colleges in its family; "Religious affiliation or commitment: very important" in admission (C7); "Some of the
   college's own non-need-based aid considers religious affiliation" (H14); "Campus ministries: listed among campus
   activities" (F2). Hidden when empty (see the rules below); the section and its "Campus life" link show when only
-  this block has data. *Later:* a faith-communities list with links; tier C estimates as labeled callouts.
+  this block has data. *Phase 3:* a "Faith communities" list underneath, grouped by tradition with each group's named
+  chapters and links, each credited to its organization (`<CreditedList>`, owner decision 4); replaces the generic
+  `<DirectoryListings domain="faith">` placeholder. The block now also shows at an otherwise-unaffiliated college that
+  has directory listings. *Still later:* tier C estimates (Hillel/Chabad population figures) as labeled callouts —
+  needs Hillel's and Chabad's permission first (open question 1), so not built with the rest of phase 3.
 - **Compare:** a "Religious affiliation" row (NCES label, or "None"). C7's religion row was already there
   ("Admission: Religious affiliation", cds-admissions.md).
-- **"Known for":** "Faith-centered" only from C7 = Very important, never from affiliation alone. *Later:* CCCU
-  membership.
+- **"Known for":** "Faith-centered" from C7 = Very important, or CCCU voting (GOVM) membership (*phase 3*), never from
+  affiliation alone.
 - **Glossary:** religious affiliation, religious commitment in admissions, scholarships for religious affiliation,
-  campus ministries, Faith-centered. *Later:* CCCU, Hillel/Chabad/Newman Center, "organization estimate."
+  campus ministries, Faith-centered (now also naming CCCU), "listed by a national organization," and *phase 3:*
+  Hillel/Chabad and Newman Center.
 - **Data page:** the IPEDS IC card names religious affiliation; nothing new to register.
 
 ## Phase 1 as built
@@ -262,15 +270,50 @@ $0.16–0.20 per college, $300–380 for a full run.
 religious colleges (the richest lists: Georgetown, Vanderbilt, Grinnell, ASU's CORA, UCLA); the religion report only at
 the 685 affiliated colleges. **Not worth it per college:** organization estimates (blocked; ask Hillel for a data
 partnership instead) and Engage directories at large publics (robots and JavaScript).
+## Phase 3 as built
+**2026-10-04, branch `feature/campus-life-2-faith`**, on the shared infrastructure ([campus-directories.md](campus-directories.md)):
+six adapters in `scripts/lib/directories/adapters/`, each verified against its live page before writing the parser and
+spot-checked on at least 10 matches.
+
+| Organization | Tradition | Access | Entries → matched | Notes |
+|---|---|---|---|---|
+| Chabad on Campus | Jewish | **Open JSON API** (`chabad.org/api/v2/chabadorg/centers/`), explicitly `Allow`'d in robots.txt even though the HTML directory page it backs 403s. The API ignores `searchQuery` and always returns its whole worldwide directory (4,220 centers 2026-10-04); filtered to `center-type` "Campus Chabad House" (246) | 169 name a campus → 87 matched | Most entries have no address, only a free-text name ("Chabad at Yale University"); the campus is read out after the name's last at/@/of/serving/for that isn't part of the college's own name ("University of Pennsylvania" survives; "Tannenbaum Chabad House" names no campus and is dropped). Lower match rate than the other adapters because of this; the rest are legitimately unmatched (a city alone, several colleges named in one entry, non-U.S. centers) |
+| Reformed University Fellowship | Christian | HTML, `ruf.org/campus/`, paginated (24/page, a "Next Page »" link; 9 pages, 206 campuses 2026-10-04). robots.txt disallows only `/wp-admin/` | 206 → 176 | A second "RUF International" or "RUF Global" ministry at the same campus is its own listing (the suffix is stripped from the matched campus name but kept as the listing's distinct name) |
+| FOCUS (Fellowship of Catholic University Students) | Catholic | HTML, `focus.org/about/campuses/` (the spec's `focusoncampus.org/find-my-campus` now redirects here), one page, 216 campuses grouped under state headings. `Crawl-delay: 10`, otherwise permissive | 216 → 202 | Highest match rate: FOCUS's own page uses each college's formal name |
+| The Navigators | Christian | HTML, `collegiatenavigators.org` (navigators.org's `/ministries/collegiate` redirects here) — not the `navigators.org/location-type/college/` URL this spec first guessed, which 404s. Its "Find a Campus" section server-renders a Google Map's 281 markers as inline JS (no API call needed). `Crawl-delay: 10`, otherwise permissive | 281 → 192 | State is read from the address paragraph; the city is left out (the street address before it can't be isolated reliably, e.g. "255 Heisman Dr Auburn, AL"). A few of Navigators' own addresses give the wrong state (e.g. Doane University, really in Nebraska, listed as "IA") — left unmatched rather than hand-corrected, since that would mean verifying hundreds of entries against reality one by one |
+| CCCU (Council for Christian Colleges & Universities) | Christian (membership, not a chapter) | **Public JSON REST endpoint** (`cccu.org/wp-json/imis/member-schools`) behind the member list's Angular app; not disallowed (only `/wp-admin/` is) | 116 US/Canada "GOVM" (voting) members → 111 | A membership fact, not a chapter: `applyCccuMembership` (merge.mts) reads this file separately from the chapter pipeline and sets `school.religion.cccu_member`, never a "Faith communities" listing (owner decision 4's "it's a membership fact, not a chapter") |
+| Secular Student Alliance | Nonreligious | Built in infra (see [campus-directories.md](campus-directories.md#example-ssa)); unchanged here | 233 → 206 | — |
+| Hillel International | Jewish | **Blocked** — College Guide 403s (Cloudflare-style challenge) to a plain descriptive request, confirming this spec's prior finding; recorded in `data/directories/blocked.json` | — | A data partnership, not a scrape, per this spec's existing recommendation |
+| Orthodox Christian Fellowship | Orthodox Christian | **Blocked** — robots.txt itself returns a bare 403; the chapters page does too | — | Recorded in `data/directories/blocked.json` |
+| InterVarsity | Christian | Reachable (`intervarsity.org/chapters`, permissive robots.txt), but its chapter list loads only through a Drupal AJAX **form POST** (`/chapters?ajax_form=1`, needs a CSRF `form_build_id`); the adapter contract's crawler is GET-only by design (`ctx.fetchText`/`fetchJson`). Not built — a contract limitation, not a block | — | Would need the crawler extended to do an authenticated-feeling POST, which risks looking like getting around the form rather than reading a public list; left for a future decision |
+| Chi Alpha | Christian | Reachable (`chialpha.com` → `/group-locator/`), but it's a search-only widget (by school name or ZIP); no bulk "every campus" endpoint found | — | Not built |
+| Catholic Campus Ministry Association | Catholic | Reachable, but its "Member Directory" link is a single stale PDF from February 2019, not text or HTML | — | Not built: too old to be useful, and a PDF isn't a page `ctx.fetchText` is meant to parse |
+| Muslim Students Association National | Muslim | Reachable (Squarespace), but its current site has no chapters/locator page or link in its navigation at all (checked 2026-10-04) | — | Not found |
+| LDS Institutes of Religion | Latter-day Saint | Reachable, but `churchofjesuschrist.org/si/institute/search` is a general site-search results page, not a campus locator | — | Not found |
+| Baptist Collegiate Ministries, Hindu YUVA / Hindu Students Council, Lutheran Campus Ministry (LuMin), Wesley Foundations (UMC), Episcopal campus ministry | Various | Not checked beyond a guessed URL (404, timeout, or no single national page found) | — | Needs hand research to find (if one exists); state Baptist conventions, in particular, would be dozens of separate sites |
+
+**CCCU membership rule, as built:** the adapter keeps only `MemberType: "GOVM"` (the voting/governing membership the
+spec's "hire only faculty who profess Christian faith" sentence describes) in the United States or Canada; IAFF
+(international affiliate), AMEM (affiliate), and CPAR (corporate partner) are left out, as are international GOVM
+members outside the US/Canada (IPEDS doesn't cover them). `isFaithCentered` (`lib/religion.ts`) now returns true for
+either C7 = very important *or* `religion.cccu_member`.
+
+**Display, as built:** `ReligiousLife.tsx` now takes the college's detail file too, and renders "Faith communities"
+(grouped by tradition, each item via the shared `<CreditedList>`) under the phase 1 facts, in the same block; hidden
+when both parts are empty, shown when either has something (an unaffiliated college with a Hillel listing now gets a
+block). The generic `<DirectoryListings domain="faith">` placeholder is removed from the students page for this
+domain (greek and lgbtq keep it until their own tracks take over).
 
 ## Phases
 1. **Affiliation for all colleges** (IPEDS). Cheap; ship first. **Built** 2026-10-03, with the CDS items already read
    (C7, H14, F2); see [Phase 1 as built](#phase-1-as-built).
 2. **Pilot of 25 colleges** (UT Austin, Notre Dame, Baylor, BYU, a CCCU college, a Jesuit college, an HBCU, a
    liberal-arts college, large publics in several regions): run discovery by hand-checked agent, measure hit rate per
-   source type, extraction accuracy, and cost. Decide which sources are worth scaling.
-3. **National directories** (tier D) with the matching step, and partnership requests (Hillel, Chabad, Anthology).
-4. **Per-school rollout** of whatever the pilot shows is worth it.
+   source type, extraction accuracy, and cost. Decide which sources are worth scaling. Still **planned**.
+3. **National directories** (tier D) with the matching step. **Built** 2026-10-04 (six adapters, two confirmed
+   blocked); see [Phase 3 as built](#phase-3-as-built). Partnership requests (Hillel, Chabad, Anthology) are still
+   outstanding — the owner, not an agent, needs to make those asks.
+4. **Per-school rollout** of whatever the pilot shows is worth it. Still **planned**.
 
 ## Open questions
 1. Headline choice: this spec uses local first, national fallback

@@ -1,7 +1,7 @@
 import type { FieldPath, VintageKey } from "./fields";
 import type { Direction, IndicatorKey } from "./indicators";
 import type { GenderBalance } from "./student-body";
-import type { DirectorySummary } from "./directories";
+import type { DirectorySummary, Tradition } from "./directories";
 
 export type SchoolType = "public" | "private-nonprofit" | "private-forprofit";
 
@@ -1156,6 +1156,12 @@ export interface ReligiousAffiliation {
 export interface SchoolReligion {
   /** Null: IPEDS "not applicable", the college has no religious affiliation. */
   affiliation: ReligiousAffiliation | null;
+  /**
+   * Phase 3 (specs/religious-life.md#measures item 2; specs/campus-directories.md): true when the CCCU's own
+   * member-school list names this college a full (voting) member. A membership fact, not a campus chapter: never
+   * shown in the "Faith communities" list, only feeds "Known for: Faith-centered" alongside C7. Absent, never false.
+   */
+  cccu_member?: true;
 }
 /** The faith families the Explore filter groups IPEDS's ~60 affiliations into (lib/religion.ts RELAFFIL_FAMILY). */
 export type FaithFilter = FaithFamily | "none";
@@ -1553,6 +1559,8 @@ export interface SearchFilters {
   gapYear?: boolean;
   /** Religious affiliation (lib/religion.ts): faith families, or "none" for colleges with no affiliation. */
   faith?: FaithFilter[];
+  /** Has a named community of this tradition, from national directories (specs/campus-directories.md; lib/directories.ts `school.directories.faith`). */
+  faithGroup?: Tradition[];
   sortBy?: SortKey;
   sortDir?: "asc" | "desc";
 }

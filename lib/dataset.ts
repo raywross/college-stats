@@ -15,6 +15,7 @@ import { meetsGreekThreshold } from "./cds/greek-display";
 import { LOGISTICS_FILTERS } from "./cds/application-logistics-display";
 import { matchesCampus } from "./campus-profile";
 import { matchesFaith } from "./religion.ts";
+import { hasFaithTradition } from "./directories.ts";
 import { matchesServices } from "./campus-services.ts";
 import { withinMaxRatio, withinMinFullTimeFaculty } from "./academics.ts";
 import { hasSmallPellGap } from "./graduation-groups.ts";
@@ -264,6 +265,8 @@ export function createDataset({ schools, meta, releaseCalendar }: DatasetFiles) 
     if (filters.setting || filters.research || filters.designation || filters.opportunity) results = results.filter((s) => matchesCampus(s, filters));
     // Religious affiliation (lib/religion.ts): colleges IPEDS has no answer for never match.
     if (filters.faith?.length) results = results.filter((s) => matchesFaith(s, filters.faith!));
+    // Has a named community of this tradition (specs/campus-directories.md): colleges with no directory listing never match.
+    if (filters.faithGroup?.length) results = results.filter((s) => hasFaithTradition(s, filters.faithGroup!));
     if (filters.division || filters.conference !== undefined || filters.football || filters.rotc || filters.ugResearch || filters.studyAbroad)
       results = results.filter((s) => matchesServices(s, filters));
     // CDS financial aid: colleges without the college's own report never match.

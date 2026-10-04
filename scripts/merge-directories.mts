@@ -17,7 +17,7 @@ import { validateLineage } from "../lib/lineage.ts";
 import { formatDetail } from "../lib/detail.ts";
 import { detailFileProblems, readDetails } from "./lib/publish-details.mts";
 import { readDirectoryFiles } from "./lib/directories/files.mts";
-import { addDirectoryMeta, applyDirectories, directoryDetails, orphanSummaries, withDirectoryTables } from "./lib/directories/merge.mts";
+import { addDirectoryMeta, applyCccuMembership, applyDirectories, chapterFiles, directoryDetails, orphanSummaries, withDirectoryTables } from "./lib/directories/merge.mts";
 import { readPagesFile } from "./lib/campus-pilot/files.mts";
 import { campusPagesDetails, pilotDirectoryFiles, withTable } from "./lib/campus-pilot/merge.mts";
 
@@ -33,11 +33,12 @@ function main() {
   const meta: DatasetMeta = JSON.parse(readFileSync(META, "utf8"));
   const files = readDirectoryFiles(ROOT);
   // The campus-life pilot's facts (data/campus-pages.json): groups named on a college's own pages join the listings;
-  // tier A facts get their own detail table (scripts/lib/campus-pilot/merge.mts).
+  // tier A facts get their own detail table (scripts/lib/campus-pilot/merge.mts). Membership lists (CCCU) aren't
+  // chapters: they set `religion.cccu_member` instead (specs/campus-directories.md).
   const pages = readPagesFile(join(ROOT, "data", "campus-pages.json"));
   const ids = new Set(schools.map((s) => s.unit_id));
-  const built = directoryDetails([...files, ...pilotDirectoryFiles(pages)], ids);
-  const merged = applyDirectories(schools, built);
+  const built = directoryDetails([...chapterFiles(files), ...pilotDirectoryFiles(pages)], ids);
+  const merged = applyCccuMembership(applyDirectories(schools, built), files);
   addDirectoryMeta(meta, files);
   const step1 = withDirectoryTables(readDetails(ROOT) ?? [], built);
   const step2 = withTable(step1.details, campusPagesDetails(pages, ids), "campus_pages");

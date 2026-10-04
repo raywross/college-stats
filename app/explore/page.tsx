@@ -37,6 +37,7 @@ import { noCssProfile, offersInternationalAid } from "@/lib/cds/financial-aid";
 import { fieldFacets } from "@/lib/majors";
 import { policyBucket } from "@/lib/test-policy";
 import { FAITH_FILTERS, faithFilterOf } from "@/lib/religion";
+import { TRADITIONS } from "@/lib/directories";
 import { InfoTip } from "@/components/ui/info-tip";
 import { BaselineNote } from "@/components/ui/BaselineNote";
 import { MultiSourceNote } from "@/components/sources/MultiSourceNote";
@@ -96,6 +97,10 @@ function buildFacets({ getAllSchools, histogram }: Dataset): FilterFacets {
     if (f) faith[f]++;
   }
 
+  // Faith communities (specs/campus-directories.md): colleges with a named group of this tradition.
+  const faithGroup = Object.fromEntries(Object.keys(TRADITIONS).map((t) => [t, 0])) as FilterFacets["faithGroup"];
+  for (const s of all) for (const t of s.directories?.faith ?? []) if (t in faithGroup) faithGroup[t as keyof typeof faithGroup]++;
+
   const ratios = all.map((s) => s.academics?.student_faculty_ratio).filter((v): v is number => v != null);
   const maxRatio = Object.fromEntries(MAX_RATIO_OPTIONS.map((n) => [n, ratios.filter((v) => v <= n).length]));
 
@@ -139,6 +144,7 @@ function buildFacets({ getAllSchools, histogram }: Dataset): FilterFacets {
     logistics: Object.fromEntries(LOGISTICS_FILTERS.map((f) => [f.param, all.filter(f.test).length])) as FilterFacets["logistics"],
     campus,
     faith,
+    faithGroup,
     states: Object.keys(states).sort().map((value) => ({ value, count: states[value] })),
     regions: Object.keys(regions).sort().map((value) => ({ value, count: regions[value] })),
     types: Object.keys(types).map((value) => ({ value, label: typeLabel(value), count: types[value] })),

@@ -68,7 +68,14 @@ function SourceBlock({ cited }: { cited: Cited }) {
       <p className="flex items-center gap-1 text-[10px] font-bold tracking-[0.14em] text-foreground/70 uppercase">
         <BookMarked className="size-3" aria-hidden /> Source
       </p>
-      {cited.method === "derived" && inputs.length > 0 && !(isCollegeSite && cited.sourceKind) ? (
+      {cited.directory ? (
+        // Someone else's list (owner decision 4, specs/campus-directories.md): credited by name, dated, linked, labeled.
+        <p>
+          Listed by {cited.directory.organization}
+          {cited.publisher !== cited.directory.organization && `, published by ${cited.publisher}`} in <SourceLinkBare s={{ ...cited, label: "its list" }} />, read{" "}
+          {cited.retrieved}. This is {cited.directory.phrase}.
+        </p>
+      ) : cited.method === "derived" && inputs.length > 0 && !(isCollegeSite && cited.sourceKind) ? (
         <p>
           Calculated: {cited.formula}. From{" "}
           {inputs.map((s, i) => (
@@ -102,7 +109,7 @@ function SourceBlock({ cited }: { cited: Cited }) {
           {cited.replaces.label ?? "Federal data"}, {cited.replaces.year?.replace(/^Entered\b/, "entered") ?? "most recent release"}: {cited.replaces.display ?? formatReplaced(cited)}
         </p>
       )}
-      <p className="text-[11px]">Retrieved {cited.retrieved}</p>
+      {!cited.directory && <p className="text-[11px]">Retrieved {cited.retrieved}</p>}
     </div>
   );
 }

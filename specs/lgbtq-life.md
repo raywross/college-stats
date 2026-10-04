@@ -141,6 +141,9 @@ lists give names only, so each entry needs a matching step and a check of the co
 - **Colleges can respond.** A correction link on each fact; corrections are verified against the college's pages.
 
 ## Scaling
+> National lists use the shared infrastructure in [campus-directories.md](campus-directories.md): one adapter per
+> list (kind `center`, `group`, or `policy` with its policy key), and `PolicyCheck` for tier A policy pages.
+
 Same approach as religious life ([religious-life.md](religious-life.md#scaling-turn-the-crawl-around)):
 - **National lists, one adapter each:** the seven Clearinghouse lists (name → `unit_id` matching, as in
   `data/directories/`), the Consortium map (ask for an export; its format is *unverified*), oSTEM and LGBTQ+ Greek

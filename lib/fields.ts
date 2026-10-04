@@ -173,6 +173,10 @@ export const FIELDS = {
   "lgbtq.admissions": { label: "First-time applicants, admits, and enrollees of another gender", topic: "admissions", source: "ipeds-adm", vintage: "ipeds-adm" },
   // Hand-kept table (data/state-laws.json); each value's lineage record carries the statute link and effective date.
   "lgbtq.state_law": { label: "State law on public colleges' identity-based offices and programs", topic: "campus", source: "state-law", vintage: null },
+  // National directories (specs/campus-directories.md): each listing is credited to its organization in the detail
+  // table; the summary here says which traditions, councils, and LGBTQ+ kinds appear, for filters and section checks.
+  directories: { label: "Groups listed by national directories", topic: "campus", source: "directory", vintage: null },
+  "detail.directories": { label: "Campus chapters and groups listed by national organizations", topic: "campus", source: "directory", vintage: null },
   // Majors (specs/data-expansion/majors.md): IPEDS Completions, bachelor's degrees by field (lib/majors.ts).
   "academics.bachelors_awarded": { label: "Bachelor's degrees awarded (first majors)", topic: "academics", source: "ipeds-c", vintage: "ipeds-c" },
   "academics.majors_top": {
@@ -674,7 +678,7 @@ export function registeredPathFor(path: string): FieldPath | null {
 export const METADATA_KEYS = new Set(["lineage", "cds"]);
 
 /** Sources whose values each carry their own document and year in lineage, so their fields have no vintage. */
-export const PER_DOCUMENT_SOURCES: ReadonlySet<SourceKey> = new Set<SourceKey>(["cds", "college-site", "state-law"]);
+export const PER_DOCUMENT_SOURCES: ReadonlySet<SourceKey> = new Set<SourceKey>(["cds", "college-site", "state-law", "directory", "org-estimate", "policy-page"]);
 
 /** Every registered `reported.*` path: each stored one must have an `extracted` lineage record (lib/lineage.ts). */
 export const REPORTED_PATHS = (Object.keys(FIELDS) as FieldPath[]).filter((p) => p.startsWith("reported."));

@@ -949,6 +949,13 @@ const entries = {
     category: "Students & access",
     related: ["religious-affiliation"],
   },
+  "national-directory": {
+    term: "Listed by a national organization",
+    short: "A national organization's own list of its campus chapters or groups, matched to this college. Each listing names who published the list and when we read it.",
+    long: "It is the organization's claim, not confirmed by the college, and lists can lag behind a chapter that opened or closed. We match each entry to a college by name, city, and state, and leave out any we can't match with confidence.",
+    category: "Students & access",
+    related: ["campus-ministries"],
+  },
   "faith-centered": {
     term: "Faith-centered",
     short: "The college's own Common Data Set says religious affiliation or commitment is very important in admission. We never use the label for an affiliation alone.",

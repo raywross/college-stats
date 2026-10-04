@@ -18,6 +18,7 @@ import { hasCip4, isCipField } from "./cip.ts";
 import { majorsSnapshot, programsFromRows, type MajorRows } from "./majors.ts";
 import { hasEarnings, isPlausibleCip4, type ProgramEarnings } from "./field-of-study.ts";
 import { cdsAidMismatch, checkCdsAidDetail } from "./cds/financial-aid.ts";
+import { checkDirectoryRows, summarize, type DirectoryRows } from "./directories.ts";
 
 export interface DetailTable<T> {
   source: SourceKey;
@@ -43,6 +44,11 @@ export interface DetailTables {
   programs?: DetailTable<Record<string, ProgramEarnings>>;
   /** All of CDS section H with a quote per value (specs/data-expansion/cds-financial-aid.md, lib/cds/financial-aid.ts). */
   cds_aid?: DetailTable<CdsAidDetail>;
+  /**
+   * Campus chapters and groups listed by national directories, each credited to its organization with the list URL,
+   * the date read, and its tier (specs/campus-directories.md, lib/directories.ts). Year: the newest date read.
+   */
+  directories?: DetailTable<DirectoryRows>;
 }
 
 export type DetailTableKey = keyof DetailTables;
@@ -111,6 +117,10 @@ export const DETAIL_TABLES: Record<DetailTableKey, { field: FieldPath; checkRows
   cds_aid: {
     field: "detail.cds_aid",
     checkRows: checkCdsAidDetail,
+  },
+  directories: {
+    field: "detail.directories",
+    checkRows: checkDirectoryRows,
   },
 };
 
@@ -191,6 +201,11 @@ export function detailMismatches(school: School, d: SchoolDetail): string[] {
   const cdsAid = d.tables.cds_aid;
   const aidProblem = cdsAid ? cdsAidMismatch(school, cdsAid.rows) : null;
   if (aidProblem) out.push(`detail ${d.unit_id}: ${aidProblem}`);
+  // The snapshot's directory summary is exactly what the credited listings say (lib/directories.ts summarize); a summary
+  // with no table at all is caught across files (scripts/lib/directories/merge.mts orphanSummaries).
+  const dirs = d.tables.directories;
+  if (dirs && JSON.stringify(summarize(dirs.rows) ?? null) !== JSON.stringify(school.directories ?? null))
+    out.push(`detail ${d.unit_id}: school.directories doesn't match the directories table (re-run npm run merge-directories)`);
   return out;
 }
 

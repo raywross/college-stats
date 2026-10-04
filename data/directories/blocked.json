@@ -2,9 +2,281 @@
   "blocked": [
     {
       "org": "campus-pilot",
+      "url": "https://chaplain.williams.edu/",
+      "reason": "challenge",
+      "detail": "college page (campus-life pilot); hand reading per owner decision 1",
+      "first_seen": "2026-10-04",
+      "last_seen": "2026-10-04"
+    },
+    {
+      "org": "campus-pilot",
+      "url": "https://chaplain.williams.edu/catholic/",
+      "reason": "challenge",
+      "detail": "college page (campus-life pilot); hand reading per owner decision 1",
+      "first_seen": "2026-10-04",
+      "last_seen": "2026-10-04"
+    },
+    {
+      "org": "campus-pilot",
+      "url": "https://chaplains.harvard.edu/",
+      "reason": "forbidden",
+      "detail": "college page (campus-life pilot); hand reading per owner decision 1",
+      "first_seen": "2026-10-04",
+      "last_seen": "2026-10-04"
+    },
+    {
+      "org": "campus-pilot",
+      "url": "https://chaplains.harvard.edu/affiliates",
+      "reason": "forbidden",
+      "detail": "college page (campus-life pilot); hand reading per owner decision 1",
+      "first_seen": "2026-10-04",
+      "last_seen": "2026-10-04"
+    },
+    {
+      "org": "campus-pilot",
+      "url": "https://connection.newmanministry.com/colleges/washington-lee-university/",
+      "reason": "challenge",
+      "detail": "college page (campus-life pilot); hand reading per owner decision 1",
+      "first_seen": "2026-10-04",
+      "last_seen": "2026-10-04"
+    },
+    {
+      "org": "campus-pilot",
+      "url": "https://dean.williams.edu/student-handbook/fraternities/",
+      "reason": "challenge",
+      "detail": "college page (campus-life pilot); hand reading per owner decision 1",
+      "first_seen": "2026-10-04",
+      "last_seen": "2026-10-04"
+    },
+    {
+      "org": "campus-pilot",
       "url": "https://deanofstudents.utexas.edu/sfl/downloads/",
       "reason": "robots",
       "detail": "UT Austin's Sorority and Fraternity Life chapter size and grade reports (one PDF per council per term); studentlife.utexas.edu robots.txt has Disallow: /sfl/downloads/ for every user agent. Hand reading per owner decision 1, or ask UT",
+      "first_seen": "2026-10-04",
+      "last_seen": "2026-10-04"
+    },
+    {
+      "org": "campus-pilot",
+      "url": "https://deanofstudents.utexas.edu/sfl/downloads/CommunityAndCouncilRecruitmentInfo.pdf",
+      "reason": "robots",
+      "detail": "college page (campus-life pilot); hand reading per owner decision 1",
+      "first_seen": "2026-10-04",
+      "last_seen": "2026-10-04"
+    },
+    {
+      "org": "campus-pilot",
+      "url": "https://dso.college.harvard.edu/usgso-policy",
+      "reason": "forbidden",
+      "detail": "college page (campus-life pilot); hand reading per owner decision 1",
+      "first_seen": "2026-10-04",
+      "last_seen": "2026-10-04"
+    },
+    {
+      "org": "campus-pilot",
+      "url": "https://fsl.umich.edu/article/community-statistics",
+      "reason": "challenge",
+      "detail": "college page (campus-life pilot); hand reading per owner decision 1",
+      "first_seen": "2026-10-04",
+      "last_seen": "2026-10-04"
+    },
+    {
+      "org": "campus-pilot",
+      "url": "https://fsl.umich.edu/article/fsl-academic-reporting-process-chapters",
+      "reason": "challenge",
+      "detail": "college page (campus-life pilot); hand reading per owner decision 1",
+      "first_seen": "2026-10-04",
+      "last_seen": "2026-10-04"
+    },
+    {
+      "org": "campus-pilot",
+      "url": "https://fsl.umich.edu/content/panhellenic-primary-recruitment",
+      "reason": "challenge",
+      "detail": "college page (campus-life pilot); hand reading per owner decision 1",
+      "first_seen": "2026-10-04",
+      "last_seen": "2026-10-04"
+    },
+    {
+      "org": "campus-pilot",
+      "url": "https://fsl.umich.edu/staff",
+      "reason": "challenge",
+      "detail": "college page (campus-life pilot); hand reading per owner decision 1",
+      "first_seen": "2026-10-04",
+      "last_seen": "2026-10-04"
+    },
+    {
+      "org": "campus-pilot",
+      "url": "https://fsl.web.baylor.edu/",
+      "reason": "challenge",
+      "detail": "college page (campus-life pilot); hand reading per owner decision 1",
+      "first_seen": "2026-10-04",
+      "last_seen": "2026-10-04"
+    },
+    {
+      "org": "campus-pilot",
+      "url": "https://huhs.harvard.edu/ship",
+      "reason": "forbidden",
+      "detail": "college page (campus-life pilot); hand reading per owner decision 1",
+      "first_seen": "2026-10-04",
+      "last_seen": "2026-10-04"
+    },
+    {
+      "org": "campus-pilot",
+      "url": "https://idcenter.byu.edu/id-card-policies",
+      "reason": "forbidden",
+      "detail": "college page (campus-life pilot); hand reading per owner decision 1",
+      "first_seen": "2026-10-04",
+      "last_seen": "2026-10-04"
+    },
+    {
+      "org": "campus-pilot",
+      "url": "https://registrar.fas.harvard.edu/preferred-name-policy",
+      "reason": "forbidden",
+      "detail": "college page (campus-life pilot); hand reading per owner decision 1",
+      "first_seen": "2026-10-04",
+      "last_seen": "2026-10-04"
+    },
+    {
+      "org": "campus-pilot",
+      "url": "https://religiouslife.columbia.edu/",
+      "reason": "challenge",
+      "detail": "college page (campus-life pilot); hand reading per owner decision 1",
+      "first_seen": "2026-10-04",
+      "last_seen": "2026-10-04"
+    },
+    {
+      "org": "campus-pilot",
+      "url": "https://religiouslife.columbia.edu/content/religious-life-groups",
+      "reason": "challenge",
+      "detail": "college page (campus-life pilot); hand reading per owner decision 1",
+      "first_seen": "2026-10-04",
+      "last_seen": "2026-10-04"
+    },
+    {
+      "org": "campus-pilot",
+      "url": "https://spirituallife.web.baylor.edu/",
+      "reason": "challenge",
+      "detail": "college page (campus-life pilot); hand reading per owner decision 1",
+      "first_seen": "2026-10-04",
+      "last_seen": "2026-10-04"
+    },
+    {
+      "org": "campus-pilot",
+      "url": "https://spirituallife.web.baylor.edu/about-us",
+      "reason": "challenge",
+      "detail": "college page (campus-life pilot); hand reading per owner decision 1",
+      "first_seen": "2026-10-04",
+      "last_seen": "2026-10-04"
+    },
+    {
+      "org": "campus-pilot",
+      "url": "https://universe.byu.edu/2001/01/06/fraternities-and-sororities-pose-new-challenges-for-utah-schools/",
+      "reason": "forbidden",
+      "detail": "college page (campus-life pilot); hand reading per owner decision 1",
+      "first_seen": "2026-10-04",
+      "last_seen": "2026-10-04"
+    },
+    {
+      "org": "campus-pilot",
+      "url": "https://www.cc-seas.columbia.edu/reslife/fraternity_sorority",
+      "reason": "forbidden",
+      "detail": "college page (campus-life pilot); hand reading per owner decision 1",
+      "first_seen": "2026-10-04",
+      "last_seen": "2026-10-04"
+    },
+    {
+      "org": "campus-pilot",
+      "url": "https://www.cc-seas.columbia.edu/reslife/fraternity_sorority/panhellenic",
+      "reason": "forbidden",
+      "detail": "college page (campus-life pilot); hand reading per owner decision 1",
+      "first_seen": "2026-10-04",
+      "last_seen": "2026-10-04"
+    },
+    {
+      "org": "campus-pilot",
+      "url": "https://www.cc-seas.columbia.edu/reslife/fsl/chapters",
+      "reason": "forbidden",
+      "detail": "college page (campus-life pilot); hand reading per owner decision 1",
+      "first_seen": "2026-10-04",
+      "last_seen": "2026-10-04"
+    },
+    {
+      "org": "campus-pilot",
+      "url": "https://www.grinnell.edu/campus-life/organizations",
+      "reason": "forbidden",
+      "detail": "college page (campus-life pilot); hand reading per owner decision 1",
+      "first_seen": "2026-10-04",
+      "last_seen": "2026-10-04"
+    },
+    {
+      "org": "campus-pilot",
+      "url": "https://www.hillel.org/college/georgetown-university/",
+      "reason": "challenge",
+      "detail": "college page (campus-life pilot); hand reading per owner decision 1",
+      "first_seen": "2026-10-04",
+      "last_seen": "2026-10-04"
+    },
+    {
+      "org": "campus-pilot",
+      "url": "https://www.hillel.org/college/smith-college/",
+      "reason": "challenge",
+      "detail": "college page (campus-life pilot); hand reading per owner decision 1",
+      "first_seen": "2026-10-04",
+      "last_seen": "2026-10-04"
+    },
+    {
+      "org": "campus-pilot",
+      "url": "https://www.hillel.org/college/williams-college/",
+      "reason": "challenge",
+      "detail": "college page (campus-life pilot); hand reading per owner decision 1",
+      "first_seen": "2026-10-04",
+      "last_seen": "2026-10-04"
+    },
+    {
+      "org": "campus-pilot",
+      "url": "https://www.wheaton.edu/life-at-wheaton/spiritual-life/discipleship-ministries",
+      "reason": "challenge",
+      "detail": "college page (campus-life pilot); hand reading per owner decision 1",
+      "first_seen": "2026-10-04",
+      "last_seen": "2026-10-04"
+    },
+    {
+      "org": "campus-pilot",
+      "url": "https://www.wheaton.edu/life-at-wheaton/spiritual-life/spiritual-care",
+      "reason": "challenge",
+      "detail": "college page (campus-life pilot); hand reading per owner decision 1",
+      "first_seen": "2026-10-04",
+      "last_seen": "2026-10-04"
+    },
+    {
+      "org": "campus-pilot",
+      "url": "https://www.wheaton.edu/life-at-wheaton/student-development-offices/equity-and-title-ix-at-wheaton-college/nondiscrimination-policies/-equity-policy-and-procedures/",
+      "reason": "challenge",
+      "detail": "college page (campus-life pilot); hand reading per owner decision 1",
+      "first_seen": "2026-10-04",
+      "last_seen": "2026-10-04"
+    },
+    {
+      "org": "campus-pilot",
+      "url": "https://www.wheaton.edu/life-at-wheaton/student-development-offices/student-health/student-health-insurance/",
+      "reason": "challenge",
+      "detail": "college page (campus-life pilot); hand reading per owner decision 1",
+      "first_seen": "2026-10-04",
+      "last_seen": "2026-10-04"
+    },
+    {
+      "org": "campus-pilot",
+      "url": "https://www.wheaton.edu/life-at-wheaton/student-development-offices/vice-president-for-student-development/human-sexuality",
+      "reason": "challenge",
+      "detail": "college page (campus-life pilot); hand reading per owner decision 1",
+      "first_seen": "2026-10-04",
+      "last_seen": "2026-10-04"
+    },
+    {
+      "org": "campus-pilot",
+      "url": "https://www.williams.edu/life-at-williams/community/religion-spirituality/",
+      "reason": "challenge",
+      "detail": "college page (campus-life pilot); hand reading per owner decision 1",
       "first_seen": "2026-10-04",
       "last_seen": "2026-10-04"
     }

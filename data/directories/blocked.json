@@ -1,3 +1,20 @@
 {
-  "blocked": []
+  "blocked": [
+    {
+      "org": "hillel",
+      "url": "https://www.hillel.org/college-tools/",
+      "reason": "challenge",
+      "detail": "https://www.hillel.org/college-tools/: blocked (challenge): HTTP 403",
+      "first_seen": "2026-10-04",
+      "last_seen": "2026-10-04"
+    },
+    {
+      "org": "ocf",
+      "url": "https://ocf.net/chapters/",
+      "reason": "forbidden",
+      "detail": "https://ocf.net/chapters/: blocked (forbidden): HTTP 403",
+      "first_seen": "2026-10-04",
+      "last_seen": "2026-10-04"
+    }
+  ]
 }

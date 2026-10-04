@@ -3,9 +3,11 @@
   "_why": {
     "Humboldt State University|": "Renamed California State Polytechnic University, Humboldt in 2022 (same IPEDS unit 115755).",
     "Clarion University of Pennsylvania|": "Merged into Pennsylvania Western University (PennWest) in July 2022; Clarion is one of its campuses.",
-    "California University of Pennsylvania|": "Merged into Pennsylvania Western University (PennWest) in July 2022; California is one of its campuses."
+    "California University of Pennsylvania|": "Merged into Pennsylvania Western University (PennWest) in July 2022; California is one of its campuses.",
+    "Indiana Wesleyan University|IN": "CCCU's member listing names the university, not a campus; its IPEDS record splits the physical Marion campus (151801) from the National & Global online division (488679) — the physical campus is the CCCU member."
   },
   "California University of Pennsylvania|": ["498571"],
   "Clarion University of Pennsylvania|": ["498571"],
-  "Humboldt State University|": ["115755"]
+  "Humboldt State University|": ["115755"],
+  "Indiana Wesleyan University|IN": ["151801"]
 }

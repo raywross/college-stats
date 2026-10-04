@@ -99,7 +99,9 @@ export const FIELDS = {
     derived: { formula: "Region assigned from the state", inputs: ["location.state"] },
   },
   type: scorecard("Type (public, private)", "institution"),
-  "links.website": scorecard("Website", "institution"),
+  // Website: the IPEDS directory's WEBADDR is the default (one year newer than Scorecard's own field); a school
+  // without one keeps Scorecard's value, cited with a `{ source: "scorecard" }` lineage record (lib/links.ts).
+  "links.website": hdLink("Website"),
   "links.price_calculator": scorecard("Net price calculator", "institution"),
   // Official links (specs/school-identity/links.md; lib/links.ts): what each college reports to NCES in the IPEDS
   // directory; the visit pages are found on its own admissions page (lib/site-probe.ts).

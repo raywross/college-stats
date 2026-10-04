@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CalendarDays, Globe, Medal, Microscope, Shield, Trophy } from "lucide-react";
+import { CalendarDays, ExternalLink, Globe, Medal, Microscope, Shield, Trophy } from "lucide-react";
 import { getData } from "@/lib/data";
 import { pct } from "@/lib/format";
 import { DOMAINS } from "@/lib/metrics";
@@ -128,6 +128,16 @@ export async function CampusServices({ school, recentMoves }: { school: School; 
               <li className="flex flex-wrap items-center gap-1">
                 {"share" in dis ? `${pct(dis.share)} of undergrads registered with disability services` : "3% or fewer of undergrads registered with disability services"}
                 <InfoTip term="disability-services" cited={citeField("demographics.disability_services", school)} />
+                {school.links?.disability_services && (
+                  <a
+                    href={school.links.disability_services}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-0.5 font-semibold text-primary hover:underline"
+                  >
+                    · Disability services office <ExternalLink className="size-3 shrink-0" aria-hidden />
+                  </a>
+                )}
               </li>
             )}
           </ul>

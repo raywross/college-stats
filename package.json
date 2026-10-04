@@ -17,6 +17,7 @@
     "merge-reported": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/merge-reported.mts",
     "merge-identity": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/merge-identity.mts",
     "sync-wikidata": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/sync-wikidata.mts",
+    "probe-sites": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --env-file-if-exists=.env.local scripts/probe-sites.mts",
     "sync-brand": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/sync-brand.mts",
     "report-college-reported": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/report-college-reported.mts",
     "score-college-reported": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/score-college-reported.mts",

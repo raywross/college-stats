@@ -28,6 +28,11 @@ export interface ProbedPage {
   url: string;
   final_url: string | null;
   status: number | null;
+  /**
+   * Why there is no status, or why the page wasn't read (`ProbeError` in scripts/lib/site-probe.mts): "robots",
+   * "dns", "timeout", "challenge", … Absent when the page was fetched.
+   */
+  error?: string;
 }
 
 /** A link the probe picked from a page; `text` is the anchor text, kept as the lineage quote. */
@@ -36,22 +41,26 @@ export interface FoundLink {
   /** The page the link was found on. */
   found_on: string;
   text: string;
+  /** The visit scorer's score (links.md: "visit" +3, "tour" +2, …; ≥ 3 makes a visit page). */
   score: number;
+  /** "picker": the Haiku picker chose it from the page's links (`--picker`). Absent: the scorer did. */
+  by?: "picker";
 }
 
 /** One stored link's liveness result from a probe run. */
 export interface LinkCheck {
   url: string;
   status: number | null;
+  /** Where redirects ended, when that differs from `url`; null when the link answered without a redirect, or not at all. */
   final_url: string | null;
-  /** "dns", "timeout", "robots", …: why there is no status. */
+  /** "dns", "timeout", "robots", …: why there is no status (or "challenge" for a bot-protection page). */
   error?: string;
 }
 
 /**
- * data/site-probe.json: one entry per college the site probe visited (`npm run sync-data -- --links`; links.md). One
- * polite pass over each homepage and admissions page collects the visit link, the footer's social links, and the
- * site icon candidates, so the social and brand steps never fetch the homepage again.
+ * data/site-probe.json: one entry per college the site probe visited (`npm run probe-sites`, or `npm run sync-data --
+ * --links`; links.md). One polite pass over each homepage and admissions page collects the visit link, the footer's
+ * social links, and the site icon candidates, so the social and brand steps never fetch the homepage again.
  */
 export interface SiteProbeEntry {
   unit_id: string;
@@ -66,7 +75,12 @@ export interface SiteProbeEntry {
   virtual_tour: FoundLink | null;
   /** The homepage's link to each network, as found: the first in <footer> or <header>, else the first on the page. */
   social: Partial<Record<SocialNetwork, string>>;
-  /** Icon candidates from the homepage <head>, best first, then /apple-touch-icon.png and /favicon.ico. */
+  /**
+   * Icon candidates from the homepage <head>, best first, then /apple-touch-icon.png and /favicon.ico. Absolute URLs,
+   * resolved against the page's final URL (or its <base href>). `rel` is the kind: "apple-touch-icon" (incl.
+   * -precomposed; largest `sizes` first), "icon" (incl. "shortcut icon"; largest first, scalable "any"/SVG first), or
+   * "fallback" for the two conventional paths the head didn't declare (they may not exist). Not downloaded here.
+   */
   icons: { url: string; rel: string; sizes: string | null; type: string | null }[];
   /** Liveness of each stored link this run, keyed by field ("website", "admissions", …). */
   checked?: Record<string, LinkCheck>;

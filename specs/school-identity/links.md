@@ -1,9 +1,8 @@
 # Official Links: Website, Admissions, Apply, Visit, Aid (IPEDS HD + the college's site)
 
-> Status: **built** 2026-10-04, steps 1 and 3 (the `links` track; see "As built" at the end). Step 2 (the visit probe
-> and liveness check) is the `probe` track's, built in parallel — its own notes land in this file once merged. First
-> of the [identity family](README.md) (links, social accounts,
-> short names, colors and marks). Research 2026-10-03: `HD2025` downloaded and its URL columns counted for all 1,893
+> Status: **built** 2026-10-04: steps 1 and 3 (see "As built (steps 1 and 3)") and step 2, the site probe (see
+> [As built: the probe (step 2)](#as-built-the-probe-step-2)). First of the [identity family](README.md) (links,
+> social accounts, short names, colors and marks). Research 2026-10-03: `HD2025` downloaded and its URL columns counted for all 1,893
 > colleges; the Scorecard `school.school_url` field checked for all of them; twenty college homepages fetched to see
 > what a "visit" link looks like. Values below are measured unless marked *estimate*.
 
@@ -50,9 +49,10 @@ one ("Visit", "Visit campus", "Tours", "Plan your visit"), so it can be found wi
    the link list in, one URL or "none" out, about $0.003 a college. *Estimate:* the heuristic finds the page for
    three in four colleges; the picker for most of the rest; a few hundred stay null until a person adds them.
 
-The probe runs as a step of `npm run sync-data -- --links` (off by default, since it is ~2,000 requests and takes
-about 40 minutes at one request a second per host; the hosts are all different, so it parallelizes to a few minutes),
-and in the college-reported workflow's monthly run. It never runs on Vercel.
+The probe runs as `npm run probe-sites` and as a step of `npm run sync-data -- --links` (off by default, since it is
+~14,000 requests; it took 18 minutes for all 1,893 colleges, 40 at a time, on 2026-10-04). It never runs on Vercel.
+A monthly schedule is left for the owner (see the As built section). Built 2026-10-04: see
+[As built: the probe (step 2)](#as-built-the-probe-step-2) for the scorer's refinements and the measured coverage.
 
 ## Ingest
 - `sync-data` reads the seven columns from the `HD{Y}` rows it already keeps, normalizes them, and stores them under
@@ -62,7 +62,8 @@ and in the college-reported workflow's monthly run. It never runs on Vercel.
   one per host per second. A link that answers 404, 410, or a DNS failure twice in a row (two runs) becomes null,
   with the old value kept in `data/link-issues.json` for review; 403, 429, and timeouts keep the link (many college
   sites block bots but work in browsers; Princeton's homepage answered 403 to the probe on 2026-10-03). Redirects
-  are followed and the final URL stored when it stays on the college's domain.
+  are followed to judge liveness, but the stored URL stays the one the source published (decided in
+  [As built](#as-built-the-probe-step-2): a replaced HD link would no longer be what the college reported to NCES).
 - Overrides: `data/overrides.json` can set any `links.*` value with a `_lineage` of source `college-site`, for the
   colleges whose visit page nobody could find.
 
@@ -132,8 +133,10 @@ heuristic misses: *estimate* 500 colleges × $0.003 ≈ $1.50, once; later runs 
 1. `scripts/sync-data.mts`: read the HD columns, normalize, store; warn on homepage disagreements. `lib/fields.ts`
    and `lib/types.ts` entries. Fixture and tests. Ships the hero links row with Website, Admissions, Apply, Financial
    aid (one PR).
-2. `scripts/lib/links-probe.mts`: the visit scorer and liveness check behind `--links`, reusing the crawler's HTTP
-   client and link finder; `data/link-issues.json`; the Haiku picker queue. Second PR, with the Visit link.
+2. **Built 2026-10-04** as `scripts/lib/site-probe.mts` (`npm run probe-sites`, and behind `--links`): the visit
+   scorer and liveness check, reusing the crawler's HTTP client, with its own link parser (landmarks); the homepage's
+   social links and icon candidates in the same pass; `data/site-probe.json`, `data/link-issues.json`; the Haiku picker
+   behind `--picker`. Second PR, with the Visit link. See [As built](#as-built-the-probe-step-2).
 3. Compact header, Cost, Students, Compare placements; the `/data` page's source description for HD gains "and the
    links each college reports".
 
@@ -243,3 +246,50 @@ out correctly percent-encoded (`#location=Austin%20TX`) instead of carrying a ra
 - `data/schools.json`/`data/meta.json` were regenerated locally to produce the numbers above and were reverted
   (`git checkout --`) before committing, per the shared brief; the integrator's full `sync-data` after merging every
   track will pick up these links for real.
+
+## As built: the probe (step 2)
+
+Built 2026-10-04 by the probe track. Its agent was stopped by an account spend limit before it committed, so the
+integrator recovered its worktree as it stood (code, tests, and the full run's data; the tests and the identity
+idempotence test pass on it) and wrote this section from that data.
+
+- **Files**: `scripts/lib/site-probe.mts` (the pass), `scripts/probe-sites.mts` (`npm run probe-sites`, with `--ids`,
+  `--sample N`, `--concurrency`, `--picker`), `lib/site-probe.ts` (`applyProbeLinks`, the liveness rule,
+  `nextLinkIssues`), and `npm run sync-data -- --links`, which runs the same probe after the sync. `PoliteHttp` gained
+  `head`, `skipReason`, and `crawlDelayMs`; the changes are additive and the college-reported pipeline's tests pass.
+- **Its own link parser**: `findLinks` (documents.mts) gives neither a link's landmark nor every occurrence, so the
+  probe reads every anchor with its `<nav>`, `<header>`, or `<footer>` landmark (or ARIA role), and the head's
+  `<link>` tags for the icon candidates.
+- **The scorer**, beyond the weights above, from the full run's wrong picks: −2 for a map, directions, or parking page
+  whose path doesn't name a visit or tour; never a site's front page ("Visit our main site"), a visit that isn't a
+  prospective student's (accreditation, patient, clinic, "Visit the Newsroom", "Visit the Library"), or a
+  graduate-only page. A visit section's own page beats the pages inside it (`/visit/` over `/visit/admitted/`), and a
+  tie goes to a link on the page's own host (Pitt's admissions page lists every campus's visit page), then page order.
+- **Redirects** are followed to judge liveness only. A stored link keeps the URL its source published, so a value
+  never says something its cited source (IPEDS, Scorecard) didn't.
+- **Liveness**: only 404, 410, and a host that doesn't exist (confirmed by a DNS lookup) count as failures; at most one
+  failure a day counts, so two runs on one day can't null a link; a link becomes null after two failed runs for the
+  same URL (`FAILURES_TO_NULL`), its old value kept in `data/link-issues.json`.
+- **The Haiku picker** is built behind `--picker`, capped in US dollars and tested with a fake client. It was not run,
+  since it calls the paid API: 492 colleges have neither a visit page nor a virtual tour, so at about $0.003 each a run
+  would cost about $1.50.
+- **Schedule**: not added to the college-reported workflow. That pipeline auto-merges, its commit and PR steps assume
+  college-reported changes under `data/`, and the brand step that follows the probe writes `public/brand/`. Until a
+  separate monthly workflow exists, run `npm run probe-sites` and then `npm run sync-brand` by hand; the second run
+  is also what nulls a link that failed twice.
+
+### Real run (2026-10-04, all 1,893 colleges)
+
+| Measure | Colleges |
+|---|---|
+| Homepage answered | 1,648 |
+| Homepage not reached (largest reasons: a bot-protection page 95, 403 37, robots.txt 33, timeout 32, TLS 22) | 245 |
+| Admissions page answered | 1,608 |
+| Visit page found by the scorer | 1,390 (73%) |
+| Virtual tour only | 11 |
+| Neither (the picker's list) | 492 |
+| Homepage links to at least one social network | 1,547: Facebook 1,534, Instagram 1,503, YouTube 1,394, X 1,099, LinkedIn 994, TikTok 498 |
+| Icon candidates | 1,808: best a touch icon 983, an `icon` 489, only the conventional paths 336; none 85 |
+
+The liveness check tested 13,894 stored links: 11,806 answered; 484 failed once (404: 347, no such host: 136, 410: 1)
+and are in `data/link-issues.json`, none null yet. `data/site-probe.json` is 3.8 MB.

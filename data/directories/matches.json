@@ -1,0 +1,11 @@
+{
+  "_about": "Hand-checked answers the directory matcher uses before its own rules (specs/campus-directories.md#review). Key: the campus exactly as a list prints it, a bar, and the two-letter state the list gives (empty when it gives none). Value: the IPEDS unit ids it means ([] = checked, not a college on the site). Add one only after checking the college; say why in _why.",
+  "_why": {
+    "Humboldt State University|": "Renamed California State Polytechnic University, Humboldt in 2022 (same IPEDS unit 115755).",
+    "Clarion University of Pennsylvania|": "Merged into Pennsylvania Western University (PennWest) in July 2022; Clarion is one of its campuses.",
+    "California University of Pennsylvania|": "Merged into Pennsylvania Western University (PennWest) in July 2022; California is one of its campuses."
+  },
+  "California University of Pennsylvania|": ["498571"],
+  "Clarion University of Pennsylvania|": ["498571"],
+  "Humboldt State University|": ["115755"]
+}

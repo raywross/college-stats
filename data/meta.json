@@ -126,6 +126,27 @@
       "edition": "2024–25 graduates (C2025_A)",
       "url": "https://nces.ed.gov/ipeds/complete-data-files/C2025_A.zip",
       "description": "Every degree and certificate each college awarded from July through June, by field of study (Classification of Instructional Programs, CIP 2020) and award level. The site counts bachelor's degrees, first and second majors separately."
+    },
+    "directory": {
+      "label": "National directories of campus chapters and groups",
+      "publisher": "Each organization, credited on every listing",
+      "edition": "Lists read 2026-10-04",
+      "url": "/data#sources",
+      "description": "Lists that national organizations publish of their campus chapters and groups, matched to colleges by name, city, and state. Each listing names the organization, the list, and the date we read it; a listing is the organization's claim, not confirmed by the college. Now: Secular Student Alliance."
+    },
+    "org-estimate": {
+      "label": "Organization estimates for a campus",
+      "publisher": "Each organization, credited on every figure",
+      "edition": "Dated per figure",
+      "url": "/data#sources",
+      "description": "Figures an organization publishes about one campus, such as how many students of a faith it estimates. Shown with the organization's name and the date we read it, never ranked or compared as official counts. Now: none yet."
+    },
+    "policy-page": {
+      "label": "College policy pages",
+      "publisher": "Each college",
+      "edition": "Checked per page",
+      "url": "/data#sources",
+      "description": "A college's own current policy page or handbook (nondiscrimination, housing, records, health plan, conduct code), checked on a date and quoted. Findings of a restriction or a missing policy are confirmed by a second, independent model check against the quote and the page before they are published."
     }
   },
   "vintages": {

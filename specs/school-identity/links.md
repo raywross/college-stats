@@ -50,9 +50,10 @@ one ("Visit", "Visit campus", "Tours", "Plan your visit"), so it can be found wi
    the link list in, one URL or "none" out, about $0.003 a college. *Estimate:* the heuristic finds the page for
    three in four colleges; the picker for most of the rest; a few hundred stay null until a person adds them.
 
-The probe runs as a step of `npm run sync-data -- --links` (off by default, since it is ~2,000 requests and takes
-about 40 minutes at one request a second per host; the hosts are all different, so it parallelizes to a few minutes),
-and in the college-reported workflow's monthly run. It never runs on Vercel.
+The probe runs as `npm run probe-sites` and as a step of `npm run sync-data -- --links` (off by default, since it is
+~14,000 requests; it took 18 minutes for all 1,893 colleges, 40 at a time, on 2026-10-04), and in the college-reported
+workflow's monthly run. It never runs on Vercel. Built 2026-10-04: see
+[As built: the probe (step 2)](#as-built-the-probe-step-2) for the scorer's refinements and the measured coverage.
 
 ## Ingest
 - `sync-data` reads the seven columns from the `HD{Y}` rows it already keeps, normalizes them, and stores them under
@@ -62,7 +63,8 @@ and in the college-reported workflow's monthly run. It never runs on Vercel.
   one per host per second. A link that answers 404, 410, or a DNS failure twice in a row (two runs) becomes null,
   with the old value kept in `data/link-issues.json` for review; 403, 429, and timeouts keep the link (many college
   sites block bots but work in browsers; Princeton's homepage answered 403 to the probe on 2026-10-03). Redirects
-  are followed and the final URL stored when it stays on the college's domain.
+  are followed to judge liveness, but the stored URL stays the one the source published (decided in
+  [As built](#as-built-the-probe-step-2): a replaced HD link would no longer be what the college reported to NCES).
 - Overrides: `data/overrides.json` can set any `links.*` value with a `_lineage` of source `college-site`, for the
   colleges whose visit page nobody could find.
 
@@ -132,8 +134,10 @@ heuristic misses: *estimate* 500 colleges × $0.003 ≈ $1.50, once; later runs 
 1. `scripts/sync-data.mts`: read the HD columns, normalize, store; warn on homepage disagreements. `lib/fields.ts`
    and `lib/types.ts` entries. Fixture and tests. Ships the hero links row with Website, Admissions, Apply, Financial
    aid (one PR).
-2. `scripts/lib/links-probe.mts`: the visit scorer and liveness check behind `--links`, reusing the crawler's HTTP
-   client and link finder; `data/link-issues.json`; the Haiku picker queue. Second PR, with the Visit link.
+2. **Built 2026-10-04** as `scripts/lib/site-probe.mts` (`npm run probe-sites`, and behind `--links`): the visit
+   scorer and liveness check, reusing the crawler's HTTP client, with its own link parser (landmarks); the homepage's
+   social links and icon candidates in the same pass; `data/site-probe.json`, `data/link-issues.json`; the Haiku picker
+   behind `--picker`. Second PR, with the Visit link. See [As built](#as-built-the-probe-step-2).
 3. Compact header, Cost, Students, Compare placements; the `/data` page's source description for HD gains "and the
    links each college reports".
 

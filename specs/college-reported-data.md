@@ -231,6 +231,98 @@ recruitment".
 web search; one discovery call for all three domains), tighter Greek recruitment/housing/membership extraction
 prompts, then re-run these 25 and re-score. No full run without the owner's go-ahead.
 
+### Campus-life pilot, round 2 plan (2026-10-04)
+Branch `feature/campus-pilot-2`. The owner approved a second run on **25 different colleges**
+(`data/reference/campus-pilot-2-colleges.json`, none from round 1), keeping round 1's work. The run happens in GitHub
+Actions once the workflow is on `main` (dispatch **Campus-life pilot**; the defaults run this list under the $15 cap).
+
+**What changed, and why**
+1. **Discovery: free first, then one paid call.** Round 1's cost was discovery: $11.15 of $11.57, nearly all of it the
+   search results Sonnet read back (4.3M input tokens over 51 calls), not the $0.01 search fee. Now
+   `scripts/lib/campus-pilot/probe.mts` looks on the college's own site first, through the same robots-aware fetcher
+   (robots.txt, ≥ 2 s per host): the sitemaps robots.txt lists (or `/sitemap.xml`), the home page and up to four
+   student-life/about hubs it links to, well-known subdomains (`fsl.`, `greeklife.`, `chaplain.`, `campusministry.`,
+   `lgbtq.`, `housing.`, `registrar.`, `policy.`, `titleix.`, `equity.`, …) and their sitemaps, well-known paths
+   (`/fraternity-sorority-life`, `/greek-life`, `/fsl`, `/religious-life`, `/spiritual-life`, `/chaplain`, `/lgbtq`,
+   `/pride`, `/gender-sexuality`, `/nondiscrimination`, `/title-ix`, `/housing/gender-inclusive`,
+   `/registrar/chosen-name`, …), and, for what's still missing, the site's own `/search?q=` page (two at most).
+   Candidates are matched by URL and link text (news, events, and employee/HR pages excluded); the best one or two per
+   type are fetched and kept only if the page's own text is about that thing, and a redirect to the home page doesn't
+   count. Probe requests are "quiet": a robots.txt refusal of a guessed path is a miss, not a block for the owner's
+   list. Then **one** Sonnet call per college (not three) asks only for the scored types the probes missed (FSL
+   office, faith office, LGBTQ+ center, nondiscrimination, housing, chosen name; the conduct code at religious colleges,
+   trans admission at single-sex ones, the religion report at affiliated ones), with web search **limited to the
+   college's own domain** and to 2–4 searches (one per two missing types; round 1 allowed 12). Restroom lists, the
+   health plan, and faith groups' own sites are no longer searched for (round 1: rarely published, held back, or
+   behind Cloudflare). The recipe records which types the probes found and what the paid call was asked for.
+2. **Extraction precision: the quote must state the fact.** The schemas answer `not_stated` instead of being forced to
+   yes or no; the prompts say a true sentence about something else is not a quote for a field (with Alabama's house
+   rule as the example); and `scripts/lib/campus-pilot/support.mts` checks every fact's quote for its field's key
+   terms before it's kept (dropped facts are logged with the reason): deferred recruitment needs recruitment/joining
+   words and first-year/term words; housing needs chapter-house words; a formal term's season must be the quote's
+   season; a members total must contain the number (digits or words), say it counts the whole fraternity and sorority
+   community (not one council's page), and be no more than two years old; council counts must be in their quote;
+   policy yes/no quotes must name the category (a "no" must be the list of protected categories); the health plan
+   needs coverage and care words in one sentence; a conduct restriction must say what it restricts; faith groups need
+   their name in the quote and a word that shows the tradition; LGBTQ+ groups outside a list page must be presented as
+   student groups. Stored quotes cut to 160 characters keep the words that state a policy ("…sexual orientation…").
+3. **Unchanged:** the second check (Sonnet 5 on every LGBTQ+ "no", conduct restriction, and religious composition)
+   and `HELD_BACK`: only a scored run can lift a held-back fact type.
+4. **Message Batches** for extraction, escalation, and second checks (half price; `scripts/lib/campus-pilot/batch.mts`).
+   Each college's flow still awaits its own call; the batcher sends what has queued after a 20-second lull, polls, and
+   hands each flow its result. A batch not ended within 20 minutes is cancelled and its calls (and any errored or
+   expired one) are made directly, so the 150-minute job can't stall; the budget holds calls in flight so the cap
+   still holds. Discovery stays direct (it streams searches over turns). `--no-batch` / the workflow's `batch` input
+   turns it off.
+5. **Keeping round 1.** `npm run campus-pilot -- --colleges-file <list>` (default the round-2 list; `--college` still
+   overrides), and the workflow's `colleges_file` input. `mergeRun` (`scripts/lib/campus-pilot/files.mts`) changes
+   only the colleges the run read: others' published facts and recipes are carried over; a college in the run is
+   replaced when it has facts, removed when it ran clean with nothing, and kept when it stopped or failed.
+   `tests/campus-pilot-2.test.mts` merges a run on round-2 colleges into the committed round-1 files and checks every
+   round-1 line and recipe is still there byte for byte (and that the old overwrite would fail the same check).
+
+**Measured offline on round 1's colleges** (no model; the hand-checked key's URLs used only to score, never as input).
+Where the key has a readable page of a type, did discovery give the extractor a readable page whose text states that
+thing (19 colleges where round 1's discovery ran; scratchpad `pilot2/useful-score.mts`):
+
+| Source type | Key has a page | Round 1 paid discovery | Round 2 free probes alone |
+|---|---|---|---|
+| FSL office | 7 | 7 | 6 |
+| Faith office | 10 | 5 | 8 |
+| LGBTQ+ center | 12 | 3 | 7 |
+| Nondiscrimination | 14 | 1 | 6 |
+| Gender-inclusive housing | 6 | 1 | 3 |
+| Chosen name | 5 | 0 | 1 |
+| Conduct code | 3 | 1 | 1 |
+| **All** | **57** | **18 (32%)** | **32 (56%)** |
+
+By the key's exact URL (or the same section of the same site) the probes alone match 24 of 68 key pages, round 1's
+paid discovery 13. The paid call then looks for what's left; with round 1's paid answers standing in for it, 34 of 57
+(60%) — a floor, since round 2's call is narrower and limited to the college's domain. Probes made about 67 requests
+per college (about a minute at the polite pace) and found 3.0 types per college on round 1's colleges, 4.3 on round
+2's. Some sites refuse our requests outright (a challenge page at Michigan, Williams, Columbia, and Wheaton; 403 at
+Brandeis): probes find nothing there, and those pages stay for hand reading (owner decision 1). At Baylor and
+Tennessee the sites answer but the probes found nothing; the paid call covers them.
+
+The quote checks alone, applied to round 1's published facts and scored with the same scorer: deferred recruitment
+67% → 100% (Alabama's and UCLA's inferences dropped), LGBTQ+ groups 67% → 100% (UCLA's names from a news paragraph),
+the health plan's wrong "yes" dropped, Ole Miss's Panhellenic-only total dropped; council chapters stay 95% (counts in
+words now read), faith groups 93% → 92% with recall 35% → 31% (groups whose quote doesn't name them). Housing, formal
+term, and members stay at 50%/0%/50% on this key, whose misses there are mostly items the key didn't record; the
+prompt changes need the live run to measure.
+
+**Projected cost per college** (measured inputs: what the probes left on each college, the search cap for that many
+types, round 1's mean discovery call cost at that many searches, $0.104 at 2, $0.129 at 3, $0.271 at 4, and round 1's
+reading cost per college halved): **about $0.12–0.13 per college** ($0.112 discovery + $0.011 reading on the round-2
+list; $0.134 on round 1's), so about **$3–4 for the 25** and **$230–260 for 1,890 colleges**, against $0.61 and
+$1,150 in round 1. Reading will cost more than round 1's figure because the probes hand the extractor more pages;
+even at the pilot report's full-page estimate ($0.07 a college directly, $0.035 batched) the total stays under
+$0.16 a college.
+
+**After the run:** score it (round 2 has no hand-checked key yet: one is needed for these 25 colleges, or re-run
+round 1's colleges with `--rediscover` and score against the existing key), then decide which `HELD_BACK` types the
+new numbers lift. No full run without the owner's go-ahead.
+
 ## Files (planned)
 - `scripts/sync-college-reported.mts` (`npm run sync-college-reported`), `--pilot`, `--college <id>`, `--rediscover`.
 - `data/college-sources.json` (recipes, hashes), `data/college-reported.json` (published values),

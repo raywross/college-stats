@@ -13,6 +13,7 @@ import { hasHonorsProgram } from "./cds/academics-display";
 import { TRANSFER_FILTER } from "./cds/transfer-display";
 import { meetsGreekThreshold } from "./cds/greek-display";
 import { LOGISTICS_FILTERS } from "./cds/application-logistics-display";
+import { hasLgbtqCenter, policyIsYes } from "./lgbtq-policy";
 import { matchesCampus } from "./campus-profile";
 import { matchesFaith } from "./religion.ts";
 import { matchesServices } from "./campus-services.ts";
@@ -264,6 +265,10 @@ export function createDataset({ schools, meta, releaseCalendar }: DatasetFiles) 
     if (filters.setting || filters.research || filters.designation || filters.opportunity) results = results.filter((s) => matchesCampus(s, filters));
     // Religious affiliation (lib/religion.ts): colleges IPEDS has no answer for never match.
     if (filters.faith?.length) results = results.filter((s) => matchesFaith(s, filters.faith!));
+    // LGBTQ+ policy facts only (lib/lgbtq-policy.ts); the gender-identity counts are never a filter.
+    if (filters.lgbtqCenter) results = results.filter(hasLgbtqCenter);
+    if (filters.lgbtqHousing) results = results.filter((s) => policyIsYes(s, "inclusive_housing"));
+    if (filters.lgbtqNondiscrimination) results = results.filter((s) => policyIsYes(s, "nondiscrimination_identity"));
     if (filters.division || filters.conference !== undefined || filters.football || filters.rotc || filters.ugResearch || filters.studyAbroad)
       results = results.filter((s) => matchesServices(s, filters));
     // CDS financial aid: colleges without the college's own report never match.

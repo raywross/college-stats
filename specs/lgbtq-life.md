@@ -1,11 +1,14 @@
 # LGBTQ+ Life
 
-> Status: **planned**, with **phases 1 and 2 built**. Phase 1 (2026-10-03, branch `feature/campus-life`): the IPEDS
+> Status: **planned**, with **phases 1 through 3 built**. Phase 1 (2026-10-03, branch `feature/campus-life`): the IPEDS
 > another-gender counts for every college and the first state-law line (Texas SB 17), shown in an "LGBTQ+ life" block in
 > the students page's Campus life section and beside the men/women shares ([As built](#as-built-phase-1)). Phase 2
 > (2026-10-04, branch `feature/campus-life-2-state-laws`): the state-law table now covers six states, each read in the
-> statute ([Phase 2 as built](#phase-2-as-built-state-laws)). Phases 3
-> through 5 (directory leads, policies, centers, conduct codes, pilot, rollout) are still planned, so the spec stays on the roadmap. Research 2026-09-29: IPEDS 2023 data files and dictionaries (every figure below
+> statute ([Phase 2 as built](#phase-2-as-built-state-laws)). Phase 3 (2026-10-04, branch
+> `feature/campus-life-2-lgbtq-lists`): eight national-list adapters (seven at the Trans Policy Clearinghouse, one the
+> Consortium's campus-center map), the policy checklist, and "Support on campus" on the profile, plus Explore filters
+> and Compare rows for the policy facts only ([Phase 3 as built](#phase-3-as-built-national-lists-and-the-policy-checklist)).
+> Phases 4 and 5 (per-college policy pages, conduct codes, pilot, rollout) are still planned, so the spec stays on the roadmap. Research 2026-09-29: IPEDS 2023 data files and dictionaries (every figure below
 > about IPEDS was computed from them), Common Data Set templates, the national directories named here, and a
 > per-school look at UT Austin with contrasting colleges. Findings are verified unless marked *unverified*.
 > Companions: [religious-life.md](religious-life.md) (its source tiers, crawl strategy, and access rules apply here
@@ -110,6 +113,13 @@ colleges, some with the year it began; last updated 2026-09-21), name and pronou
 trans-inclusive athletic policies, and trans admission policies at historically women's and men's colleges. The
 lists give names only, so each entry needs a matching step and a check of the college's own page before it's shown.
 
+**Owner decision 4 (2026-10-04, shared with religious-life.md and greek-life.md):** lists compiled by others (the
+Clearinghouse, the Consortium's center map, any national directory) publish with credit — the fact shows with the
+organization's name, the date we read it, and a link to the list, as a labeled tier (B/C/D), never as a plain fact.
+Phase 3 builds this for the Clearinghouse's lists (tier D, `kind: "policy"`) and the Consortium's map (tier D,
+`kind: "center"`): `specs/campus-directories.md` lineage rules enforce the credit; `lib/lgbtq-policy.ts`'s checklist
+shows each as "Listed by [organization] ([date read])," never "Yes."
+
 ## Measures
 1. **Gender identity counts** (tier A, all colleges): IPEDS fall undergrads of another gender and gender unknown,
    applicants/admitted/enrolled where reported; CDS B1 where newer. History from 2022 on only (the item is new), so
@@ -161,8 +171,12 @@ Same approach as religious life ([religious-life.md](religious-life.md#scaling-t
 ## Access rules
 The rules in [religious-life.md](religious-life.md#access-rules-apply-to-both-specs) apply: obey `robots.txt` and
 crawl delays, never get around bot protection, store facts and short quotes rather than copies, and link back.
-**Ask first** where one party covers many campuses: Dr. Beemyn (Clearinghouse lists), the Consortium (center map),
-oSTEM.
+**Superseded 2026-10-04 (phase 3 as built):** this section originally said to ask Dr. Beemyn, the Consortium, and
+oSTEM before reading their lists. Phase 3 instead followed the campus-directories infrastructure's rule, shared with
+every other national list on the site (specs/campus-directories.md): crawl what `robots.txt` and a site's terms
+allow, politely and once; record what they don't (`data/directories/blocked.json`), never bypassed. The Clearinghouse
+(`Crawl-delay: 10`, otherwise permissive) and the Consortium (same) were both reachable this way; oSTEM returns 403
+to `robots.txt` itself and is recorded blocked, not asked.
 
 ## Data model (sketch)
 ```ts
@@ -183,17 +197,22 @@ Each field is registered in `lib/fields.ts` ([data-lineage.md](data-lineage.md))
 source kinds that show the page and the date checked.
 
 ## Where it appears
-- **Profile, the students page's "Campus life" section, "LGBTQ+ life" block** (built: the gender counts and the
-  state-law line; the rest is planned): support on campus (center, groups), the policy checklist
-  (each item linked and dated), the gender counts with their caveat, the state-law line for public colleges, and,
-  where present, "What the student conduct policy says." Hidden when there's nothing verified.
-- **Explore filters (policy facts only):** "Has an LGBTQ+ center," "Gender-inclusive housing," "Nondiscrimination
-  covers gender identity," and "Conduct code restricts same-sex relationships" (to exclude). No filter on counts.
+- **Profile, the students page's "Campus life" section, "LGBTQ+ life" block** (built through phase 3): the gender
+  counts and the state-law line (phase 1); "Support on campus" (a center or staffed office and student groups, tiers
+  B/D, with the caveat that directories lag closures and defer to the state-law line when both are present) and the
+  policy checklist (each item linked and dated, tier D leads shown as "Listed by …", never a plain yes) (phase 3).
+  "What the student conduct policy says" (tier A, human-review departure per owner decision 3) waits for phase 4.
+  Hidden when there's nothing verified.
+- **Explore filters (policy facts only, built):** "Has an LGBTQ+ center," "Gender-inclusive housing," and
+  "Nondiscrimination covers gender identity" (`lib/lgbtq-policy.ts`). "Conduct code restricts same-sex relationships"
+  (to exclude) waits for phase 4's conduct-code facts. No filter on counts.
 - **Beside the men/women shares** ("Who they are", built): the another-gender count under the same rules, with the
   100% note.
-- **Compare:** the checklist rows side by side, each cell dated (planned; the counts never get a row).
-- **Glossary:** another gender, gender-inclusive housing, chosen name policy, nondiscrimination policy, LGBTQ+
-  resource center, Title IX religious exemption, "as of" dates on policies.
+- **Compare (built):** the checklist rows side by side, each cell dated (`lib/lgbtq-policy.ts` `comparedChecklist`);
+  the counts never get a row.
+- **Glossary (built):** another gender, gender unknown, state law on public colleges (phases 1–2); gender-inclusive
+  housing, chosen name policy, nondiscrimination policy, LGBTQ+ resource center, Trans Policy Clearinghouse (phase
+  3). Title IX religious exemption and policy "as of" dates wait for phase 4.
 
 ## Phases
 1. **Built 2026-10-03.** **IPEDS counts** for all colleges, with the display rules and glossary terms. Adds one file to the sync (fall
@@ -202,7 +221,12 @@ source kinds that show the page and the date checked.
 2. **Built 2026-10-04.** **State-law table** for public colleges (Texas first, then each reported state after reading
    its statute). Texas built 2026-10-03; Alabama, Florida, Idaho, Iowa, and Utah added 2026-10-04
    ([Phase 2 as built](#phase-2-as-built-state-laws)).
-3. **Clearinghouse and directory leads** matched to `unit_id`s, plus permission requests (Beemyn, Consortium, oSTEM).
+3. **Built 2026-10-04.** **Clearinghouse and directory leads** matched to `unit_id`s: the seven Trans Policy
+   Clearinghouse lists and the Consortium's campus-center map, both public pages read under the shared access rules
+   (robots.txt, polite pacing); oSTEM is blocked (403), recorded rather than bypassed. The "ask first" step this
+   phase originally called for wasn't taken — the campus-directories infrastructure's rule is to crawl what robots.txt
+   and a site's terms allow and record what they don't, the same as every other national list on the site
+   ([Phase 3 as built](#phase-3-as-built-national-lists-and-the-policy-checklist)).
 4. **Pilot of 25 colleges:** UT Austin, UCLA, Columbia, Harvard, BYU, a CCCU college, a Catholic college, an HBCU, a
    historically women's college (Smith), Reed, a large public in Florida, a large public in a state without such
    laws, and a mix of sizes. Measure: share of Clearinghouse entries still true, extraction accuracy against a
@@ -360,6 +384,108 @@ programs; **Mississippi** qualifies on its text and waits on the courts; **India
 3. Update `checked` for each law re-read and `reviewed` for the table (the validator refuses a `checked` date after
    `reviewed`), then run `npm run sync-data` so the lineage dates move.
 
+## Phase 3 as built (national lists and the policy checklist)
+Built 2026-10-04, branch `feature/campus-life-2-lgbtq-lists`, on the shared campus-directories infrastructure
+(`specs/campus-directories.md`). Nine adapters, read 2026-10-04 (`scripts/lib/directories/adapters/`): the Trans
+Policy Clearinghouse's seven lists (six as the `_tpc-common.mts` shared accordion parser, one — trans admission — as
+its own prose parser), the Consortium's campus-center KML export, and oSTEM (blocked).
+
+**Per-list coverage** (`npm run sync-directories -- --domain lgbtq`, matched against the 1,893 colleges on the site):
+
+| List | Adapter key | Tier | Entries | Matched | Multi | Unmatched | Colleges |
+|---|---|---|---|---|---|---|---|
+| Gender-inclusive housing | `tpc-housing` | D | 489 | 444 | 0 | 45 | 444 |
+| Gender-inclusive restrooms online | `tpc-restrooms` | D | 494 | 408 | 0 | 86 | 408 |
+| Chosen name and pronouns on records | `tpc-name-pronouns` | D | 857 | 539 | 0 | 318 | 539 |
+| Nondiscrimination covers gender identity | `tpc-nondiscrimination` | D | 1,931 | 952 | 0 | 979 | 952 |
+| Student health plan covers transition care | `tpc-health-plan` | D | 186 | 177 | 0 | 9 | 177 |
+| Trans-inclusive athletic policy | `tpc-athletics` | D | 63 | 61 | 0 | 2 | 61 |
+| Trans admission (women's/men's colleges) | `tpc-trans-admission` | D | 32 | 32 | 0 | 0 | 29 |
+| LGBTQ+ center or staffed office | `lgbt-campus-consortium` | D | 276 | 256 | 4 | 20 | 254 |
+| oSTEM chapters | `ostem` | — | **blocked** (403 to `robots.txt` itself; recorded in `data/directories/blocked.json`, not bypassed) | | | | |
+
+Unmatched entries are mostly community colleges, graduate-only schools, and non-U.S. campuses the lists cover but
+this site doesn't (legitimate, per `specs/campus-directories.md#how-to-add-an-adapter`); the nondiscrimination list's
+51% unmatched rate reflects that it alone covers far more two-year and non-U.S. institutions than the site tracks.
+Five hand-checked answers went to `data/directories/matches.json`: Worcester Polytechnic Institute (the Consortium
+spelled out "(WPI)"); Saint John's University, Collegeville MN (both the Clearinghouse's and the Consortium's "no
+state given" entry shares a domain, csbsju.edu, with the College of Saint Benedict, so it's the MN coordinate
+campus, not St. John's University-New York); and UC-Denver, whose Consortium entry actually names three Auraria
+Campus institutions sharing one center, two of which (University of Colorado Denver, Metropolitan State University
+of Denver) are on this site.
+
+**Adapters:**
+- `_tpc-common.mts` (not itself an adapter; `_`-prefixed per the registry's convention): parses the WordPress
+  accordion five of the seven Clearinghouse lists share (one panel per state, each a `<ul>` of college names,
+  sometimes "(YYYY)" for a start year or a "**" footnote), drops entries the list itself marks "removed" (six, all on
+  the nondiscrimination list, after a 2025 state law or a college's own choice) rather than publish a policy that's
+  gone.
+- `tpc-housing.mts`, `tpc-restrooms.mts`, `tpc-health-plan.mts`, `tpc-name-pronouns.mts`, `tpc-nondiscrimination.mts`,
+  `tpc-athletics.mts`: one adapter per list, each `kind: "policy"` with its matching `PolicyKey`.
+- `tpc-trans-admission.mts`: the one Clearinghouse list that's prose, not the accordion — each college gets a bolded
+  name (sometimes linked) and Dr. Beemyn's description or a quoted excerpt. The section a college's paragraph is in
+  (permits, prevents, bans, or men's-college policy) becomes the entry's `name`, not its `fact`: three colleges
+  (Bennett, Stephens, Sweet Briar) appear in two sections with the same URL, and the runner's entry-level
+  de-duplication keys on campus/name/url, so without a distinct name per section the second finding silently
+  vanished into the first — caught by comparing the crawl's raw count (32) against the written file's (29, before
+  the fix) during this build.
+- `lgbt-campus-consortium.mts`: the find-an-lgbtq-campus-center page embeds a Google My Maps map
+  (`google.com/maps/d/u/1/embed?mid=…`); reading the same map's own public KML export
+  (`google.com/maps/d/kml?mid=…`) is that map's documented public-export feature, not a way around anything (the
+  page itself has no other data feed). 273 placemarks, one per campus, named like "University of Michigan-Ann Arbor"
+  with a description of "Center name<br>Founded: YYYY<br>URL" lines; about a fifth have no description at all (still
+  a center the Consortium lists, just with no further detail, so counted, not dropped) and a few list more than one
+  center for the same campus (UCLA's two). **`trans_athletics` policy key added** to `lib/directories.ts`
+  `POLICY_KEYS` (open question 3's own framing: "a per-college policy covers intramurals and club sports only") so
+  all seven Clearinghouse lists have a matching key, not six.
+- `ostem.mts`: fetches the chapters page and throws if it *isn't* blocked, so a future unblock is noticed rather than
+  silently never read; as of 2026-10-04 it's still 403 on `robots.txt` itself.
+
+**Policy checklist and tier A precedence (`lib/lgbtq-policy.ts`, kept apart from `lib/lgbtq.ts`'s gender-identity
+counts on purpose — see the guard note below):**
+- `policyChecklist(lgbtq, directoryListings)`: one row per `PolicyKey` with something to show, in `POLICY_KEYS`
+  order. A verified tier A fact from `school.lgbtq.policies` (not yet populated; phase 4's pilot track builds it)
+  replaces a tier D lead for the same key, even when the tier A answer is "no" — the college's own checked page
+  outranks any list. Absence is never shown as "No": a key with neither tier is left out of the checklist entirely.
+  Every row's text names its source ("Listed by Trans Policy Clearinghouse (2026-10-04)" for tier D; "…, per the
+  college's own page (checked …)" for tier A), never a plain "Yes"/"No". Fixture-tested
+  (`tests/lgbtq-directories.test.mts`): a tier D lead, a tier A "yes" that replaces it, a tier A "no" that still
+  replaces it (and is never shown as a plain "No"), and a tier A "not_found" that falls back to the tier D lead
+  rather than showing blank.
+- `hasLgbtqCenter` / `policyIsYes`: Explore's filter predicates, reading `school.directories.lgbtq` (tier D presence)
+  and, when present, `school.lgbtq.policies` (tier A, which wins).
+- `comparedChecklist(schools, details)`: Compare's rows, one per key any compared college has something for; built
+  as its own small section (not folded into the generic "All the numbers" `TABLE_ROWS`, whose cell functions take
+  only `School` — the tier D leads live in each college's *detail* file, so the checklist needed per-school detail
+  access the generic table doesn't thread through).
+- **The guard, widened on purpose.** `tests/lgbtq.test.mts`'s "never ranked, averaged, filtered, compared" test
+  (phase 1) banned the bare word "lgbtq" from `lib/params.ts`, `lib/dataset.ts`, `app/explore`, `app/compare`, and
+  others — right for phase 1, when nothing LGBTQ+-related belonged in any of them, but too wide for phase 3, which
+  the spec always meant to put policy facts in those same files ("Where it appears": Explore filters, Compare rows).
+  The owner's scaling note for this build — "policy facts are allowed there, counts are not" — says which half of the
+  old rule to keep: the test now bans `GenderDetail`/`GenderAdmissions`/"another gender" and any import of
+  `lib/lgbtq.ts` from those files, instead of the bare word, so the policy facts can reach them while the counts
+  still can't.
+
+**Display (`components/school/LgbtqLife.tsx`):** "Support on campus" (centers and groups via `listingsFor`,
+`CreditedList`, with the lag-closures caveat, and — when both a center and a state law are present — a note that the
+law can close an office like it, so a listed center isn't a claim that it's still open) and the policy checklist
+(each item linked, dated, with a ⓘ: `citeListing` for a tier D item, a glossary term for the five with one). Takes
+over the generic `<DirectoryListings domain="lgbtq">` placeholder entirely rather than running both.
+
+**Explore and Compare:** three filters (`lgbtqCenter`, `lgbtqHousing`, `lgbtqNondiscrimination`) in a new "LGBTQ+
+campus life" `FilterPanel` section, with facets and removable chips; a "LGBTQ+ policies" Compare table, its own
+section (not the generic numbers table, for the reason above), one row per key any compared college has something
+for.
+
+**Glossary:** gender-inclusive housing, chosen name policy, nondiscrimination policy, LGBTQ+ resource center, Trans
+Policy Clearinghouse — five new entries (`lib/glossary.ts`), cross-linked to each other and to the existing
+national-directory and state-law terms.
+
+**Not built this phase:** per-college policy pages (tier A), conduct-code quotes, and the second-model review of "no"
+answers (owner decision 3) all wait for phase 4's pilot; `PolicyCheck`'s validator (`policyCheckProblems`) and the
+`"policy-page"` source were already in place from the shared infrastructure, ready for that track to write into.
+
 ## Rejected
 Campus Pride Index and its "Worst List" (offline, pay-to-participate self-assessment, not updated since 2023);
 Princeton Review and Niche LGBTQ+ rankings (proprietary, survey-based); composite "friendliness" scores of our own
@@ -371,10 +497,13 @@ Princeton Review and Niche LGBTQ+ rankings (proprietary, survey-based); composit
   `APPLCNAN`, `ADMSSNAN`, `ENRLAN`, `EFYGUAN`): https://nces.ed.gov/ipeds/datacenter/DataFiles.aspx; survey changes:
   https://nces.ed.gov/IPEDS/report-your-data/archived-changes/2024-25
 - Common Data Set 2022–23 template (B1 "Another Gender"): https://commondataset.org/
-- Trans Policy Clearinghouse: https://www.gennyb.com/research/trans-supportive-campus-policies/ (housing list:
-  …/colleges-and-universities-that-provide-gender-inclusive-housing)
+- Trans Policy Clearinghouse, all seven lists (read 2026-10-04):
+  https://www.gennyb.com/research/trans-supportive-campus-policies/colleges-and-universities-that-provide-gender-inclusive-housing,
+  …/gender-inclusive-restrooms, …/name-and-pronouns/, …/nondiscrimination-policies, …/medical-expense-coverage,
+  …/athletic-policies, …/historically-womens-mens-colleges
 - Consortium of Higher Education LGBT Resource Professionals, campus center map:
-  https://www.lgbtcampus.org/find-an-lgbtq-campus-center
+  https://www.lgbtcampus.org/find-an-lgbtq-campus-center (its embedded Google My Maps export, read 2026-10-04:
+  https://www.google.com/maps/d/kml?mid=1uYlF3milN1euuDcLS_iXLncpsHQ&forcekml=1)
 - Campus Pride: https://www.insidehighered.com/news/diversity/sex-gender/2024/01/10/campus-pride-terminates-founder-alleged-fraud;
   Index FAQ (8 factors): https://www.campusprideindex.org/faqs/index
 - UT Austin center closure: https://thedailytexan.com/2024/01/15/gender-and-sexuality-center-closes-replaced-by-womens-community-center/,

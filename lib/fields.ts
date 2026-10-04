@@ -173,6 +173,9 @@ export const FIELDS = {
   "lgbtq.admissions": { label: "First-time applicants, admits, and enrollees of another gender", topic: "admissions", source: "ipeds-adm", vintage: "ipeds-adm" },
   // Hand-kept table (data/state-laws.json); each value's lineage record carries the statute link and effective date.
   "lgbtq.state_law": { label: "State law on public colleges' identity-based offices and programs", topic: "campus", source: "state-law", vintage: null },
+  // Phase 4 (pilot, not yet built): tier A policy facts from the college's own pages; each item's lineage record
+  // carries the page URL and date checked (lib/directories.ts PolicyCheck).
+  "lgbtq.policies": { label: "Policies checked on the college's own pages (housing, records, nondiscrimination, …)", topic: "campus", source: "policy-page", vintage: null },
   // National directories (specs/campus-directories.md): each listing is credited to its organization in the detail
   // table; the summary here says which traditions, councils, and LGBTQ+ kinds appear, for filters and section checks.
   directories: { label: "Groups listed by national directories", topic: "campus", source: "directory", vintage: null },

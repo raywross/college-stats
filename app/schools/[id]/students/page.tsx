@@ -239,11 +239,11 @@ export default async function StudentsPage({ params }: Props) {
           <DirectoryListings detail={detail} domain="greek" />
           <LgbtqLife
             school={school}
+            detail={detail}
             citedGender={citeField("lgbtq.gender", school)}
             citedAdmissions={citeField("lgbtq.admissions", school)}
             citedLaw={citeField("lgbtq.state_law", school)}
           />
-          <DirectoryListings detail={detail} domain="lgbtq" />
         </Panel>
       )}
     </TopicPage>

@@ -170,11 +170,20 @@ function sources(path: string): string[] {
  * for" chip. The modules that do those things must not read them. (Broken on purpose 2026-10-03: a `lgbtq` reference
  * added to lib/metrics.ts fails this test.)
  */
+/**
+ * Phase 3 (specs/lgbtq-life.md "Where it appears", 2026-10-04) deliberately lets LGBTQ+ *policy* facts reach
+ * Explore and Compare (lib/lgbtq-policy.ts: a listed center, gender-inclusive housing, nondiscrimination covering
+ * gender identity) while keeping the gender-identity *counts* (this file's phase 1: another gender, gender unknown)
+ * out of them, per the owner's scaling note: "policy facts are allowed there, counts are not." So this guard no
+ * longer bans the bare word "lgbtq" (the policy filters and Compare rows need it, e.g. `school.directories?.lgbtq`),
+ * only the count-specific symbols and the module that holds them: a file in this list must never import
+ * lib/lgbtq.ts (gender, admissions) or name GenderDetail/GenderAdmissions/"another gender".
+ */
 test("another-gender counts never feed rankings, medians, filters, Compare, or Known for", () => {
   const files = ["lib/metrics.ts", "lib/params.ts", "lib/indicators.ts", "lib/dataset.ts", "lib/compare.ts", "lib/cds/compare-rows.ts", "lib/insights.ts", "app/explore", "app/compare", "components/explore", "app/page.tsx"].flatMap(sources);
   for (const f of files) {
     const text = readFileSync(f, "utf8");
-    assert.ok(!/lgbtq|another[-_ ]gender|GenderDetail/i.test(text), `${f.slice(ROOT.length + 1)} reads the another-gender counts`);
+    assert.ok(!/another[-_ ]gender|GenderDetail|GenderAdmissions|lib\/lgbtq(?:\.ts)?["']|from ["']\.\.?\/.*\/lgbtq(?:\.ts)?["']/i.test(text), `${f.slice(ROOT.length + 1)} reads the another-gender counts`);
   }
 });
 

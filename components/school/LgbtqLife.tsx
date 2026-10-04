@@ -1,23 +1,39 @@
-import { Landmark } from "lucide-react";
+import { ExternalLink, Landmark, Users } from "lucide-react";
 import type { School } from "@/lib/types";
+import type { SchoolDetail } from "@/lib/detail";
 import type { Cited } from "@/lib/lineage";
 import { WITHHELD_TEXT, ZERO_TEXT, countDisplay, countText, longDate, smallCount } from "@/lib/lgbtq";
+import { citeListing, listingsFor, type PolicyKey } from "@/lib/directories";
+import { policyChecklist } from "@/lib/lgbtq-policy";
 import { num, pctSmart } from "@/lib/format";
 import { DOMAINS } from "@/lib/metrics";
-import { InfoTip } from "@/components/ui/info-tip";
+import type { TermKey } from "@/lib/glossary";
+import { InfoTip, SourceTip } from "@/components/ui/info-tip";
+import { CreditedList } from "./CreditedList";
+
+/** A glossary term for the checklist items that have a dedicated one; the rest fall back to the general term. */
+const POLICY_TERMS: Partial<Record<PolicyKey, TermKey>> = {
+  inclusive_housing: "gender-inclusive-housing",
+  name_on_records: "chosen-name-policy",
+  nondiscrimination_identity: "nondiscrimination-policy",
+};
 
 /**
- * LGBTQ+ life, phase 1 (specs/lgbtq-life.md): the federal another-gender counts under the spec's display rules (blank,
- * 0, and a count each mean something different; under 10 is "fewer than 10"), and, at public colleges in a state with
- * one, the state law. Describes; never ranks or compares. Hidden when there's nothing to show.
+ * LGBTQ+ life (specs/lgbtq-life.md). Phase 1 (built): the federal another-gender counts and, at public colleges in a
+ * state with one, the state law. Phase 3 (built here): "Support on campus" (a center or staffed office and student
+ * groups the Consortium or another national list credits, tier B/D) and the policy checklist (a national list's lead,
+ * tier D, or — once the pilot track checks the college's own page — a tier A fact that replaces it for the same key;
+ * lib/lgbtq-policy.ts `policyChecklist`). Describes; never ranks or compares. Hidden when there's nothing to show.
  */
 export function LgbtqLife({
   school,
+  detail,
   citedGender,
   citedAdmissions,
   citedLaw,
 }: {
   school: School;
+  detail: SchoolDetail | null;
   /** citeField("lgbtq.gender", school) */
   citedGender: Cited;
   /** citeField("lgbtq.admissions", school) */
@@ -28,7 +44,11 @@ export function LgbtqLife({
   const g = school.lgbtq?.gender ?? null;
   const a = school.lgbtq?.admissions ?? null;
   const law = school.lgbtq?.state_law ?? null;
-  if (!g && !law) return null;
+  const listings = listingsFor(detail?.tables.directories?.rows, "lgbtq");
+  const centers = listings.filter((l) => l.credit.domain === "lgbtq" && l.credit.kind === "center");
+  const groups = listings.filter((l) => l.credit.domain === "lgbtq" && l.credit.kind === "group");
+  const checklist = policyChecklist(school.lgbtq, listings);
+  if (!g && !law && !centers.length && !groups.length && !checklist.length) return null;
   const another = g ? countDisplay(g.status, g.another, g.undergrads) : null;
   const unknown = g ? smallCount(g.unknown) : null;
   // Applicants: shown when the college reported them or withheld them; "not collected" is already said above.
@@ -39,8 +59,44 @@ export function LgbtqLife({
   return (
     <div id="lgbtq" className="rounded-3xl border bg-card p-4 sm:p-6">
       <h3 className="mb-5 font-display text-lg font-bold">LGBTQ+ life</h3>
+      {(centers.length > 0 || groups.length > 0) && (
+        <div className="mb-5">
+          <p className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
+            <Users className="size-4" style={{ color: DOMAINS.size.color }} /> Support on campus <InfoTip term="lgbtq-resource-center" />
+          </p>
+          {centers.length > 0 && <CreditedList items={centers} className="space-y-1.5" />}
+          {groups.length > 0 && <CreditedList items={groups} className="mt-1.5 space-y-1.5" />}
+          <p className="mt-1.5 text-[11px] text-muted-foreground">
+            Directories lag closures: a listed center may have since closed, especially under a state law like the one below.
+          </p>
+        </div>
+      )}
+      {checklist.length > 0 && (
+        <div className="mb-5">
+          <p className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
+            <Landmark className="size-4" style={{ color: DOMAINS.size.color }} aria-hidden /> Policies <InfoTip term="trans-policy-clearinghouse" />
+          </p>
+          <ul className="space-y-1.5">
+            {checklist.map((item) => (
+              <li key={item.key} className="flex items-start gap-1.5 text-sm">
+                <span className="min-w-0">
+                  <a href={item.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-0.5 underline decoration-dotted underline-offset-4 hover:text-primary">
+                    {item.text}
+                    <ExternalLink className="size-3" aria-hidden />
+                  </a>
+                </span>
+                {item.listing ? (
+                  <SourceTip cited={citeListing(item.listing)} className="mt-0.5" />
+                ) : (
+                  POLICY_TERMS[item.key] && <InfoTip term={POLICY_TERMS[item.key]!} className="mt-0.5" />
+                )}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
       {g && another && (
-        <div className="grid gap-6 sm:grid-cols-2">
+        <div className="grid gap-6 border-t pt-4 sm:grid-cols-2">
           <div>
             <p className="flex items-center gap-1 text-xs font-medium tracking-wide text-muted-foreground uppercase">
               Undergraduates of another gender{year(citedGender)} <InfoTip term="another-gender" cited={citedGender} />
@@ -90,7 +146,7 @@ export function LgbtqLife({
         </p>
       )}
       {law && (
-        <div className={g ? "mt-5 border-t pt-4" : ""}>
+        <div className={g || centers.length > 0 || checklist.length > 0 ? "mt-5 border-t pt-4" : ""}>
           <p className="flex items-center gap-1.5 text-xs font-medium tracking-wide text-muted-foreground uppercase">
             <Landmark className="size-4" style={{ color: DOMAINS.size.color }} aria-hidden /> State law for public colleges{" "}
             <InfoTip term="state-law-public-colleges" cited={citedLaw} />
@@ -102,6 +158,11 @@ export function LgbtqLife({
             </a>{" "}
             ({law.name}), in effect since {longDate(law.effective)}.
           </p>
+          {centers.length > 0 && (
+            <p className="mt-2 text-[11px] text-muted-foreground">
+              A center listed above isn&apos;t a claim that it&apos;s still open: this law can close offices like it after a list was last read.
+            </p>
+          )}
         </div>
       )}
     </div>

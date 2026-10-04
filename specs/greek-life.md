@@ -277,6 +277,9 @@ are out of scope), and per-chapter detail (open question 2).
    HBCU, and a college without Greek life): find FSL offices, parse their reports, measure hit rate and cost.
 3. **FSL reports at scale** for colleges where Greek life exists.
 4. **National chapter directories** only if needed to cover colleges without FSL reports; ask NPC/NIC for data first.
+   The directories this build couldn't read — most NIC fraternities, 7 of the Divine Nine, NAPA, NMGC, most NALFO
+   organizations, and the pilot's blocked FSL office pages — are in [campus-sources-later.md](campus-sources-later.md),
+   with what each would give and a candidate fix.
 
 ## Open questions
 1. Hazing transparency reports: include (per-college counts only, linking to the college's report) or leave out?

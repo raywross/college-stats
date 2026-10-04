@@ -230,7 +230,9 @@ source kinds that show the page and the date checked.
    (robots.txt, polite pacing); oSTEM is blocked (403), recorded rather than bypassed. The "ask first" step this
    phase originally called for wasn't taken — the campus-directories infrastructure's rule is to crawl what robots.txt
    and a site's terms allow and record what they don't, the same as every other national list on the site
-   ([Phase 3 as built](#phase-3-as-built-national-lists-and-the-policy-checklist)).
+   ([Phase 3 as built](#phase-3-as-built-national-lists-and-the-policy-checklist)). oSTEM's blocked chapter list, and the
+   pilot's blocked policy pages at Harvard, Baylor, BYU, Wheaton, and Grinnell, are in
+   [campus-sources-later.md](campus-sources-later.md), with what each would give and a candidate fix.
 4. **Pilot of 25 colleges:** UT Austin, UCLA, Columbia, Harvard, BYU, a CCCU college, a Catholic college, an HBCU, a
    historically women's college (Smith), Reed, a large public in Florida, a large public in a state without such
    laws, and a mix of sizes. Measure: share of Clearinghouse entries still true, extraction accuracy against a

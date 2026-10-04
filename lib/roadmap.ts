@@ -527,6 +527,17 @@ export const ROADMAP: RoadmapSpec[] = [
     complexityNote: "Columns from a file the site already reads, plus a table of metro names.",
     status: "deferred",
   },
+  {
+    slug: "campus-sources-later",
+    file: "specs/campus-sources-later.md",
+    group: "later",
+    summary:
+      "More campus-life sources once we can read them: national chapter directories now rendered only by JavaScript, pages sitting behind a login or bot challenge, and facts only the organization itself can give us.",
+    complexity: 2,
+    complexityNote:
+      "Several independent fixes, not one project: a headless-browser renderer for JavaScript-only pages, hand reading for challenge-protected ones, and data-partnership requests to about a dozen organizations.",
+    status: "deferred",
+  },
 ];
 
 /** Readable background pages that aren't work items themselves (linked from the roadmap, not ranked). */

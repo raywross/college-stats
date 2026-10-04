@@ -1,0 +1,17 @@
+{
+  "org": "omega-phi-beta",
+  "organization": "Omega Phi Beta",
+  "publisher": "Omega Phi Beta",
+  "list_url": "https://www.omegaphibeta.org/membership/chapters-and-collectives/",
+  "tier": "D",
+  "classification": {"domain":"greek","council":"nalfo"},
+  "crawled": "2026-10-04",
+  "counts": {"entries":6,"matched":5,"multi":0,"unmatched":1,"colleges":5},
+  "entries": [
+    {"campus":"Rensselaer Polytechnic Institute","name":"Gamma Epsilon (Omega Phi Beta)","matches":[{"unit_id":"194824","name":"Rensselaer Polytechnic Institute","confidence":0.95,"method":"exact"}]},
+    {"campus":"St. Thomas Aquinas College","name":"Collective at STAC (Omega Phi Beta)","matches":[{"unit_id":"195243","name":"St. Thomas Aquinas College","confidence":0.95,"method":"exact"}]},
+    {"campus":"The State University of New York at Plattsburgh","name":"Sigma Chapter (Omega Phi Beta)","matches":[{"unit_id":"196246","name":"State University of New York at Plattsburgh","confidence":1,"method":"exact"}]},
+    {"campus":"Union College","name":"Gamma Chapter (Omega Phi Beta)","matches":[{"unit_id":"196866","name":"Union College","confidence":0.95,"method":"exact"}]},
+    {"campus":"University at Albany, SUNY","name":"Alpha Chapter (Omega Phi Beta)","matches":[{"unit_id":"196060","name":"University at Albany","confidence":1,"method":"exact"}]}
+  ]
+}

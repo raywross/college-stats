@@ -1,3 +1,12 @@
 {
-  "blocked": []
+  "blocked": [
+    {
+      "org": "kappa-alpha-psi",
+      "url": "https://www.kappaalphapsi1911.com/find-a-chapter/",
+      "reason": "forbidden",
+      "detail": "https://www.kappaalphapsi1911.com/find-a-chapter/: blocked (forbidden): HTTP 403",
+      "first_seen": "2026-10-04",
+      "last_seen": "2026-10-04"
+    }
+  ]
 }

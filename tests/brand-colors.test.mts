@@ -42,7 +42,15 @@ const FIXTURE = readFileSync(join(ROOT, "tests", "fixtures", "brand", "college-c
 const mod = parseColorModule(FIXTURE);
 const schools: School[] = JSON.parse(readFileSync(join(ROOT, "data", "schools.json"), "utf8"));
 const meta: DatasetMeta = JSON.parse(readFileSync(join(ROOT, "data", "meta.json"), "utf8"));
-const UGA = schools.find((s) => s.unit_id === "139959")!;
+/** A school as the sync builds it before the brand step: no `brand`, no brand lineage (the committed data has both). */
+function withoutBrand(school: School): School {
+  const s = structuredClone(school);
+  delete s.brand;
+  if (s.lineage) for (const k of Object.keys(s.lineage) as (keyof NonNullable<School["lineage"]>)[]) if (k.startsWith("brand.")) delete s.lineage[k];
+  if (s.lineage && !Object.keys(s.lineage).length) delete s.lineage;
+  return s;
+}
+const UGA = withoutBrand(schools.find((s) => s.unit_id === "139959")!);
 
 /* ---------------- The module's Lua ---------------- */
 

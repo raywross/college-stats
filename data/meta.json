@@ -34,7 +34,7 @@
       "publisher": "National Center for Education Statistics (NCES)",
       "edition": "2025–26 (HD2025)",
       "url": "https://nces.ed.gov/ipeds/complete-data-files/HD2025.zip",
-      "description": "Every college's directory entry: its city, suburb, town, or rural setting, Carnegie Classification, federal designations such as HBCU and land-grant, and its location on the map."
+      "description": "Every college's directory entry: its city, suburb, town, or rural setting, Carnegie Classification, federal designations such as HBCU and land-grant, and its location on the map. Also the links each college reports: its website, admissions and application pages, financial aid and net price calculator offices, and veterans' and disability-services offices."
     },
     "ipeds-ef": {
       "label": "IPEDS Fall Enrollment survey (part D)",
@@ -120,26 +120,26 @@
       "url": "https://statutes.capitol.texas.gov/Docs/ED/htm/ED.51.htm#51.3525",
       "description": "Laws that limit what public colleges in a state may offer, such as identity-based offices and programs, each with its statute, effective date, and a one-line summary checked against the statute text. Now: Texas SB 17 (2023)."
     },
-    "ipeds-c": {
-      "label": "IPEDS Completions survey (degrees awarded by field)",
-      "publisher": "National Center for Education Statistics (NCES)",
-      "edition": "2024–25 graduates (C2025_A)",
-      "url": "https://nces.ed.gov/ipeds/complete-data-files/C2025_A.zip",
-      "description": "Every degree and certificate each college awarded from July through June, by field of study (Classification of Instructional Programs, CIP 2020) and award level. The site counts bachelor's degrees, first and second majors separately."
-    },
     "wikidata": {
       "label": "Wikidata",
       "publisher": "Wikimedia Foundation and contributors",
-      "edition": "Not retrieved yet",
+      "edition": "Retrieved 2026-10-04",
       "url": "https://www.wikidata.org/wiki/Property:P1771",
       "description": "The free, community-edited knowledge base behind Wikipedia, joined to each college by its IPEDS unit ID: the college's social media accounts and the other names it goes by. Released under CC0. Corrections belong on Wikidata itself, which helps everyone who uses it."
     },
     "wikipedia": {
       "label": "Wikipedia college color data",
       "publisher": "Wikipedia contributors",
-      "edition": "Not retrieved yet",
+      "edition": "Retrieved 2026-10-04",
       "url": "https://en.wikipedia.org/wiki/Module:College_color/data",
-      "description": "English Wikipedia's table of college athletic programs' colors, each cited to the college's own brand or athletics guide, joined to a college through its Wikipedia article. Used only to give each profile the college's own colors, never as data. CC BY-SA."
+      "description": "English Wikipedia's table of college athletic programs' colors (Module:College color/data), each cited to the college's own brand or athletics guide, joined to a college through its Wikipedia article; for a college the table doesn't list, the hex colors in its article's infobox. Used only to give each profile the college's own colors, never as data. CC BY-SA."
+    },
+    "ipeds-c": {
+      "label": "IPEDS Completions survey (degrees awarded by field)",
+      "publisher": "National Center for Education Statistics (NCES)",
+      "edition": "2024–25 graduates (C2025_A)",
+      "url": "https://nces.ed.gov/ipeds/complete-data-files/C2025_A.zip",
+      "description": "Every degree and certificate each college awarded from July through June, by field of study (Classification of Instructional Programs, CIP 2020) and award level. The site counts bachelor's degrees, first and second majors separately."
     }
   },
   "vintages": {

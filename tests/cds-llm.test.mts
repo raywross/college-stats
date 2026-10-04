@@ -259,6 +259,15 @@ test("discover: web-tool uses are counted across continuation turns", async () =
 /* Prices and the call log (Decision 11, test 20)                      */
 /* ------------------------------------------------------------------ */
 
+test("a dated snapshot id (as batch results report it) is priced as its alias; an unknown dated id still throws", () => {
+  // The live run of 2026-10-03 (run 20261003-235404-3) stopped here: batch results name claude-haiku-4-5-20251001.
+  const usage = { input_tokens: 1_000_000, output_tokens: 0 };
+  assert.equal(costOf("claude-haiku-4-5-20251001", usage, { mode: "batch" }), costOf("claude-haiku-4-5", usage, { mode: "batch" }));
+  assert.equal(costOf("claude-sonnet-5-20260115", usage), costOf("claude-sonnet-5", usage));
+  assert.throws(() => costOf("claude-unknown-9-20251001", usage), UnpricedModelError);
+  assert.throws(() => costOf("claude-haiku-4-5-2025", usage), UnpricedModelError, "only an 8-digit date suffix is dropped");
+});
+
 test("test 20: an unpriced model throws, and no request is sent", async () => {
   assert.throws(() => costOf("claude-unknown-9", { input_tokens: 1, output_tokens: 1 }), UnpricedModelError);
   assert.throws(() => assertPriced(["claude-haiku-4-5", "claude-unknown-9"]), /no price for model "claude-unknown-9"/);

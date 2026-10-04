@@ -522,3 +522,25 @@ test("http: a body past the size cap is aborted, whether declared or streamed", 
   assert.equal(ok?.status, 200);
   assert.equal(new Uint8Array(await ok!.arrayBuffer()).length, PDF.length);
 });
+
+test("a probed host that doesn't respond is logged once as not responding, not as a robots.txt refusal", async () => {
+  // The live run of 2026-10-03 logged "robots.txt disallows" for 17 IR-host guesses per college that simply don't exist.
+  const lines: string[] = [];
+  const fetch = (async (input: RequestInfo | URL) => {
+    const url = String(input);
+    if (url.startsWith("https://ir.nowhere.edu/")) throw new TypeError("fetch failed (ENOTFOUND)");
+    if (url === "https://down.edu/robots.txt") return new Response("", { status: 503 });
+    if (url === "https://strict.edu/robots.txt") return new Response("User-agent: *\nDisallow: /", { status: 200 });
+    return new Response("ok", { status: 200 });
+  }) as typeof globalThis.fetch;
+  const http = new PoliteHttp({ fetch, now: () => 0, sleep: async () => {}, minDelayMs: 0, log: (m) => lines.push(m.trim()) });
+  assert.equal(await http.get("https://ir.nowhere.edu/common-data-set"), null);
+  assert.equal(await http.get("https://ir.nowhere.edu/cds"), null);
+  assert.equal(await http.get("https://down.edu/cds"), null);
+  assert.equal(await http.get("https://strict.edu/cds"), null);
+  assert.deepEqual(lines, [
+    "ir.nowhere.edu didn't respond; skipped",
+    "down.edu returned a server error for robots.txt; https://down.edu/cds skipped",
+    "robots.txt disallows https://strict.edu/cds; skipped",
+  ]);
+});

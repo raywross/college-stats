@@ -84,9 +84,20 @@ export class UnpricedModelError extends Error {
   }
 }
 
-/** The model's price; throws for a model the table doesn't list. */
+/**
+ * The table's key for a model id. Requests name the alias ("claude-haiku-4-5"), but responses, including Message
+ * Batches results, name the dated snapshot it resolved to ("claude-haiku-4-5-20251001"), so a trailing -YYYYMMDD is
+ * dropped. Any other unknown id stays unknown, so the cost cap is never blind.
+ */
+export function priceKey(model: string): string {
+  if (MODEL_PRICES[model]) return model;
+  const alias = model.replace(/-\d{8}$/, "");
+  return MODEL_PRICES[alias] ? alias : model;
+}
+
+/** The model's price; throws for a model the table doesn't list (a dated snapshot of a listed alias is listed). */
 export function priceOf(model: string): ModelPrice {
-  const p = MODEL_PRICES[model];
+  const p = MODEL_PRICES[priceKey(model)];
   if (!p) throw new UnpricedModelError(model);
   return p;
 }

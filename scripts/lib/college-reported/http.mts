@@ -31,6 +31,8 @@ export interface RobotsRules {
   crawlDelayMs: number | null;
   /** Unreachable robots.txt (5xx or network error): everything is disallowed, per RFC 9309. */
   disallowAll?: boolean;
+  /** Why everything is disallowed when it is: the server answered 5xx, or the host didn't answer at all (no DNS, refused). */
+  unreachable?: "server-error" | "no-response";
   /** `Sitemap:` lines (absolute URLs; they belong to no group and apply to every user agent). */
   sitemaps?: string[];
 }
@@ -166,6 +168,8 @@ export interface HttpDeps {
 export class PoliteHttp {
   private deps: HttpDeps;
   private robots = new Map<string, Promise<RobotsRules>>();
+  /** Hosts already logged as not responding, so a probe of many paths logs each once. */
+  private unreachableLogged = new Set<string>();
   /** Per host: the tail of its request queue and when the last request started. */
   private queues = new Map<string, { tail: Promise<void>; last: number }>();
   /** Every refusal this run, in order (Decision 8). */
@@ -200,10 +204,10 @@ export class PoliteHttp {
         try {
           const { res } = await this.limited(`${origin}/robots.txt`, { headers: { "User-Agent": USER_AGENT }, redirect: "follow" });
           if (res.ok) return parseRobots(await res.text());
-          if (res.status >= 500) return { rules: [], crawlDelayMs: null, disallowAll: true };
+          if (res.status >= 500) return { rules: [], crawlDelayMs: null, disallowAll: true, unreachable: "server-error" as const };
           return { rules: [], crawlDelayMs: null };
         } catch {
-          return { rules: [], crawlDelayMs: null, disallowAll: true };
+          return { rules: [], crawlDelayMs: null, disallowAll: true, unreachable: "no-response" as const };
         }
       });
       this.robots.set(origin, p);
@@ -219,7 +223,12 @@ export class PoliteHttp {
     const u = new URL(url);
     const robots = await this.robotsFor(u.origin);
     if (!robotsAllows(robots, url)) {
-      this.deps.log(`  robots.txt disallows ${url}; skipped`);
+      // A probed host that doesn't exist (most IR-host guesses) is not a robots.txt refusal: say which it was, once per host.
+      if (robots.unreachable === "no-response") {
+        if (!this.unreachableLogged.has(u.host)) this.deps.log(`  ${u.host} didn't respond; skipped`);
+        this.unreachableLogged.add(u.host);
+      } else if (robots.unreachable === "server-error") this.deps.log(`  ${u.host} returned a server error for robots.txt; ${url} skipped`);
+      else this.deps.log(`  robots.txt disallows ${url}; skipped`);
       return null;
     }
     const headers: Record<string, string> = { "User-Agent": USER_AGENT };

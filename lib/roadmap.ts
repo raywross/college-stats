@@ -1,6 +1,6 @@
 /**
- * The public roadmap (/roadmap, specs/roadmap.md): which planned specs appear, how they're grouped, and how complex
- * each one is. The spec text itself stays in specs/*.md; tests/roadmap.test.mts checks that every planned spec is
+ * The public roadmap (/roadmap, specs/roadmap.md): which planned specs and ideas appear, how they're grouped, and how
+ * complex each one is. The spec text itself stays in specs/*.md; tests/roadmap.test.mts checks that every planned spec is
  * listed here and every entry points at a real file.
  */
 
@@ -27,6 +27,7 @@ export type RoadmapGroupKey =
   | "planning"
   | "high-school"
   | "business"
+  | "ideas"
   | "later";
 
 export const ROADMAP_GROUPS: { key: RoadmapGroupKey; title: string; description: string }[] = [
@@ -79,6 +80,12 @@ export const ROADMAP_GROUPS: { key: RoadmapGroupKey; title: string; description:
       "Usage measurement that respects minors, paid tiers that keep public data free, counselor accounts, and a developer API.",
   },
   {
+    key: "ideas",
+    title: "Ideas",
+    description:
+      "Not yet planned: fresh directions from research into competing sites and guide-and-advisor sites in other fields, each written up far enough to judge. An idea becomes a plan when its data is verified and it gets a place in the build order.",
+  },
+  {
     key: "later",
     title: "Later",
     description:
@@ -86,12 +93,14 @@ export const ROADMAP_GROUPS: { key: RoadmapGroupKey; title: string; description:
   },
 ];
 
-export type RoadmapStatus = "planned" | "draft" | "deferred";
+/** "idea": written up far enough to judge, not planned work; always in the "ideas" group (the test checks). */
+export type RoadmapStatus = "planned" | "draft" | "deferred" | "idea";
 
 export const STATUS_LABELS: Record<RoadmapStatus, string> = {
   planned: "Planned",
   draft: "Early draft",
   deferred: "Deferred",
+  idea: "Idea",
 };
 
 export interface RoadmapSpec {
@@ -429,6 +438,83 @@ export const ROADMAP: RoadmapSpec[] = [
     complexityNote: "Versioned routes over the existing dataset, API keys with limits, and generated documentation.",
     status: "planned",
   },
+  // Ideas (specs/ideas/README.md): not planned; in the order they could be built.
+  {
+    slug: "guides",
+    file: "specs/ideas/guides.md",
+    group: "ideas",
+    summary:
+      "Common questions answered as living lists (\"where merit aid is the norm\", \"four years means four\"): each a published query with its criteria shown, recomputed with every data release.",
+    complexity: 2,
+    complexityNote: "A typed registry of queries, a build step at publish, one page template, a recompute test, and a personal variant.",
+    status: "idea",
+  },
+  {
+    slug: "cost-to-a-degree",
+    file: "specs/ideas/cost-to-a-degree.md",
+    group: "ideas",
+    summary:
+      "What a degree costs here, not one year of it: the four-year plan beside the typical time to finish, and the debt of those who leave without one.",
+    complexity: 1,
+    complexityNote: "Arithmetic on fields the site already has, a cost block, a Compare row, and an Explore sort.",
+    status: "idea",
+  },
+  {
+    slug: "near-and-far",
+    file: "specs/ideas/near-and-far.md",
+    group: "ideas",
+    summary:
+      "A map view, how far each college is from home and what getting there costs, and the colleges on your list grouped into visit trips.",
+    complexity: 3,
+    complexityNote:
+      "A new kind of view (the map), a home ZIP on the profile with a reference file, and lines in lists, Compare, and the estimator.",
+    status: "idea",
+    after: ["student-profile", "school-links"],
+  },
+  {
+    slug: "worst-plausible-spring",
+    file: "specs/ideas/worst-plausible-spring.md",
+    group: "ideas",
+    summary:
+      "If every Reach says no: what your list leaves you with, what it would cost, and what's missing, as facts rather than a grade.",
+    complexity: 1,
+    complexityNote: "One pure function over the saved list's rows and a panel; the figures come from the specs it builds on.",
+    status: "idea",
+    after: ["saved-lists"],
+  },
+  {
+    slug: "would-compete-for-you",
+    file: "specs/ideas/would-compete-for-you.md",
+    group: "ideas",
+    summary:
+      "Colleges where your numbers sit above the admitted range, merit awards without need are routine, and demand has softened, with the reasons.",
+    complexity: 2,
+    complexityNote: "A query over standing, merit, and history fields, one page, one Explore chip, and a hand-checked pilot.",
+    status: "idea",
+    after: ["chances-and-fit", "cds-financial-aid"],
+  },
+  {
+    slug: "cycle-watch",
+    file: "specs/ideas/cycle-watch.md",
+    group: "ideas",
+    summary:
+      "What changed for the coming application cycle at every college: test policy, early rounds, deadlines, fees, and aid forms, each in the college's own words.",
+    complexity: 2,
+    complexityNote: "A change table built at publish from the agent's editions, one public page, a digest kind, and an email variant.",
+    status: "idea",
+    after: ["cds-test-scores-and-policy", "cds-admissions", "cds-application-logistics", "follow-colleges"],
+  },
+  {
+    slug: "getting-into-the-major",
+    file: "specs/ideas/getting-into-the-major.md",
+    group: "ideas",
+    summary:
+      "Whether a college admits to the major or to the university, which programs admit directly, what it takes to get in after year one, and whether you can change in later.",
+    complexity: 3,
+    complexityNote: "A new recipe type for the agent with checks and review, new fields, a profile block, two filters, and a pilot.",
+    status: "idea",
+    after: ["college-reported-round-3", "student-profile"],
+  },
   {
     slug: "metro-area",
     file: "specs/data-expansion/metro-area.md",
@@ -445,6 +531,7 @@ export const ROADMAP_OVERVIEWS: { slug: string; file: string; title: string }[] 
   { slug: "data-expansion", file: "specs/data-expansion/README.md", title: "Data expansion overview" },
   { slug: "product", file: "specs/product/README.md", title: "Product overview: accounts, planning tools, high schools, business" },
   { slug: "school-identity", file: "specs/school-identity/README.md", title: "School identity overview: links, accounts, short names, colors and marks" },
+  { slug: "ideas", file: "specs/ideas/README.md", title: "Ideas overview: the research and the smaller additions proposed for existing specs" },
 ];
 
 export function roadmapSpec(slug: string): RoadmapSpec | undefined {

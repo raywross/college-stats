@@ -11,6 +11,7 @@ import {
   STATUS_LABELS,
   roadmapSpec,
   type Complexity,
+  type RoadmapGroupKey,
 } from "@/lib/roadmap";
 
 export const metadata: Metadata = {
@@ -20,8 +21,12 @@ export const metadata: Metadata = {
 
 const LEVELS: Complexity[] = [1, 2, 3, 4];
 
+/** Groups whose section links to a readable overview page (one of ROADMAP_OVERVIEWS). */
+const GROUP_OVERVIEWS: Partial<Record<RoadmapGroupKey, string>> = { "college-reported": "data-expansion", ideas: "ideas" };
+
 export default function RoadmapPage() {
-  const overview = ROADMAP_OVERVIEWS[0];
+  const planned = ROADMAP.filter((s) => s.status !== "idea");
+  const ideas = ROADMAP.length - planned.length;
   return (
     <div className="mx-auto max-w-5xl px-4 pt-8 pb-12 sm:px-6 sm:pt-10">
       <header className="mb-10 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
@@ -33,14 +38,14 @@ export default function RoadmapPage() {
           <p className="mt-3 max-w-2xl text-muted-foreground">
             Every planned feature starts as a written spec: the question it answers, where the data comes from, how
             it will appear on the site, and what&apos;s still open. Plans change as the research does, so treat these
-            as working documents, not promises.
+            as working documents, not promises. The Ideas section holds directions that aren&apos;t planned yet.
           </p>
         </div>
         <div className="flex shrink-0 items-center gap-3 self-start rounded-3xl border bg-card px-5 py-4 sm:self-auto">
           <MapIcon className="size-6 text-primary" />
           <div>
-            <p className="font-display text-3xl leading-none font-extrabold">{ROADMAP.length}</p>
-            <p className="text-xs text-muted-foreground">specs planned</p>
+            <p className="font-display text-3xl leading-none font-extrabold">{planned.length}</p>
+            <p className="text-xs text-muted-foreground">specs planned{ideas > 0 && ` · ${ideas} ideas`}</p>
           </div>
         </div>
       </header>
@@ -67,6 +72,7 @@ export default function RoadmapPage() {
       <div className="space-y-14">
         {ROADMAP_GROUPS.map((group) => {
           const specs = ROADMAP.filter((s) => s.group === group.key);
+          const overview = ROADMAP_OVERVIEWS.find((o) => o.slug === GROUP_OVERVIEWS[group.key]);
           return (
             <section key={group.key} aria-labelledby={`group-${group.key}`}>
               <div className="mb-4">
@@ -74,7 +80,7 @@ export default function RoadmapPage() {
                   {group.title}
                 </h2>
                 <p className="mt-1 text-sm text-muted-foreground">{group.description}</p>
-                {group.key === "college-reported" && overview && (
+                {overview && (
                   <Link
                     href={`/roadmap/${overview.slug}`}
                     className="mt-2 inline-flex items-center gap-1 text-sm font-semibold text-primary hover:underline"

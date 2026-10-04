@@ -62,9 +62,12 @@ async function main() {
   for (const adapter of adapters) {
     const ctx = createContext(adapter.key, { cacheDir: join(ROOT, ".cache", "directories"), maxAgeDays: opts.maxAgeDays, refresh: opts.refresh, today, http });
     try {
-      const { file, unmatched } = await runAdapter(adapter, ctx, index);
+      const { file, unmatched, placeholders } = await runAdapter(adapter, ctx, index);
       const c = file.counts;
-      console.log(`  ${adapter.key}: ${c.entries} entries → ${c.matched} matched (${c.multi} serving several colleges), ${c.unmatched} unmatched; ${c.colleges} colleges`);
+      console.log(
+        `  ${adapter.key}: ${c.entries} entries → ${c.matched} matched (${c.multi} serving several colleges), ${c.unmatched} unmatched; ${c.colleges} colleges` +
+          (placeholders ? `; ${placeholders} placeholder${placeholders === 1 ? "" : "s"} dropped` : "")
+      );
       if (!opts.dryRun) {
         writeOrgFiles(ROOT, file, unmatched);
         blocked = clearBlocks(blocked, adapter.key);

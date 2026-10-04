@@ -99,3 +99,40 @@ from `directoryDetails`/`chapterFiles` and writes `school.religion.cccu_member` 
 so a membership fact never shows up as a "Faith communities" chapter. Any future membership-only list (as opposed to
 a chapter or center list) should follow the same pattern: still a normal adapter and `data/directories/<org>.json`
 file, but excluded from `chapterFiles` and read by its own merge step.
+
+## Placeholder entries (owner feedback 2026-10-04)
+UT Austin's Panhellenic chapters used to end with "Sigma Delta Tau — Coming Soon!", a chapter the sorority hasn't
+installed yet. The runner (`scripts/lib/directories/run.mts`, `isPlaceholder`) drops any entry whose `name`,
+`status`, or `fact` matches "coming soon", "TBA"/"TBD", "new chapter", "future chapter", "interest group", or
+"expansion" before it's matched, so it never reaches a college's page; `sync-directories`'s per-org summary line
+reports how many were dropped. A chartered **colony** (pre-national-recognition, but installed and operating) is a
+real chapter, not a placeholder, and is kept.
+
+## Organizations (data/directories/organizations.json)
+One entry per adapter key (the contract is in this file's intro and validated by `organizationProblems` in
+`lib/directories.ts`, exercised on the real file in `tests/directories.test.mts`): display name, the organization's
+own home page, Greek letters for a Greek-letter organization, official colors when a reliable source states them,
+a Wikidata id, and a logo. The Clearinghouse/Consortium-style credits (Trans Policy Clearinghouse, the LGBT Campus
+Consortium) use the list's own home page as `website`.
+
+**Logo source (owner decision 2026-10-04, replacing this file's original Wikimedia-Commons-first rule):** take the
+logo the organization publishes on its own site (header/brand logo, or a press/brand page), obeying robots.txt and
+our research User-Agent, never bypassing a block — "it'll look nicer and it's worth the risk" was the owner's
+reasoning for preferring the org's own mark over a Commons lookup. `logo.source` is the page it was taken from,
+`logo.license` is `"Organization's own logo (used to identify it)"`, and `logo.attribution` is `"© <Organization>"`.
+A Wikimedia Commons free image (via the org's Wikidata item, P154 logo image or P94 coat of arms) is still the
+fallback where the org's own site gives nothing usable, keeping Commons' own license and attribution. Where neither
+exists, `logo: null` and the display falls back to a Greek-letter badge (Greek orgs) or a tradition icon (faith
+orgs). Every committed file is ≤ 30 KB, square-ish (padded on a transparent canvas when the source lockup is wide or
+tall, never stretched), under `public/org-logos/<key>.svg|png`.
+
+2026-10-04 build: 38 organizations (one per adapter key), 18 with a logo from the organization's own site. The other
+20 have `logo: null`: 7 because the site returns a Cloudflare/WAF challenge to every request (same organizations
+already in `blocked.json` for their chapter list: Alpha Phi, Chabad on Campus, Delta Zeta, Hillel International,
+Kappa Alpha Psi, Orthodox Christian Fellowship, oSTEM), and the rest because the only logo found on the org's site
+either wasn't usable as a standalone mark (white-on-transparent art meant for a dark header background — CCCU, Sigma
+Kappa; an inline SVG styled by the page's own CSS, not renderable standalone — RUF) or no confident logo candidate
+was found at all (The Navigators, Omega Phi Beta, Phi Sigma Sigma). `colors` is `[]` everywhere: none of these
+organizations' Wikidata items carry P462 (color), and scraping an arbitrary site's CSS for "the" brand color risked
+picking up an incidental UI color rather than an official one, so it was left for a future pass with a firmer
+source.

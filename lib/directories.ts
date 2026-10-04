@@ -397,3 +397,79 @@ export function policyCheckProblems(p: PolicyCheck): string[] {
   if (sensitive && !p.verified_by) out.push(`${what}: a "no" or a conduct restriction needs verified_by (the second model's check)`);
   return out;
 }
+
+/* ------------------------------------------------------------------ */
+/* Organizations (data/directories/organizations.json)                 */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Logo licenses `data/directories/organizations.json` may use (specs/campus-directories.md#organizations,
+ * owner decision 2026-10-04): the organization's own logo, taken from its own site ("it'll look nicer and it's
+ * worth the risk" — the owner's reasoning for using it over a Wikimedia Commons-first rule), or — only where the
+ * org's own site gives nothing usable — a free Wikimedia Commons image under one of these licenses.
+ */
+export const ALLOWED_LOGO_LICENSES = [
+  "Organization's own logo (used to identify it)",
+  "Public domain",
+  "CC0",
+  "CC0 1.0",
+  "CC BY 2.0",
+  "CC BY 3.0",
+  "CC BY 4.0",
+  "CC BY-SA 2.0",
+  "CC BY-SA 3.0",
+  "CC BY-SA 4.0",
+] as const;
+
+export interface OrgLogo {
+  /** Committed copy under public/org-logos/<key>.svg|png, ≤ 30 KB, square-ish. */
+  file: string;
+  /** The page the logo was taken from (the org's own site, or the Commons file page for a Commons fallback). */
+  source: string;
+  license: string;
+  /** Shown in the ⓘ: "© <Organization>" for the org's own logo, or Commons' required attribution. */
+  attribution: string;
+}
+
+export interface OrgEntry {
+  /** Display name: "Sigma Phi Epsilon". */
+  name: string;
+  /** The organization's own home page (https), or null. */
+  website: string | null;
+  /** Greek letters for a Greek-letter organization ("ΣΦΕ"), else null. */
+  letters: string | null;
+  /** Official colors (hex), only when a reliable source (Wikidata P462, or the org's own site) states them. */
+  colors: string[];
+  /** Wikidata item id ("Q1478437"), or null. */
+  wikidata: string | null;
+  logo: OrgLogo | null;
+}
+
+export interface OrganizationsFile {
+  updated: string;
+  organizations: Record<string, OrgEntry>;
+}
+
+const HEX_COLOR = /^#[0-9A-Fa-f]{6}$/;
+const WIKIDATA_ID = /^Q[1-9]\d*$/;
+
+/** Problems with one organization's entry; `keys` is every adapter key it must line up with (registry.mts). */
+export function organizationProblems(key: string, o: OrgEntry, keys?: readonly string[]): string[] {
+  const out: string[] = [];
+  const what = `organizations.json "${key}"`;
+  if (keys && !keys.includes(key)) out.push(`${what}: no adapter with this key`);
+  if (!o.name) out.push(`${what}: no name`);
+  if (o.website !== null && !isHttps(o.website)) out.push(`${what}: website must be an https URL or null`);
+  if (o.letters !== null && !o.letters) out.push(`${what}: letters must be non-empty or null`);
+  for (const c of o.colors) if (!HEX_COLOR.test(c)) out.push(`${what}: color "${c}" isn't a 6-digit hex code`);
+  if (o.wikidata !== null && !WIKIDATA_ID.test(o.wikidata)) out.push(`${what}: wikidata must look like "Q1234" or be null`);
+  if (o.logo) {
+    const l = o.logo;
+    if (!/^public\/org-logos\/[a-z0-9-]+\.(svg|png)$/.test(l.file)) out.push(`${what}: logo.file must be public/org-logos/<key>.svg or .png`);
+    else if (!l.file.endsWith(`/${key}.svg`) && !l.file.endsWith(`/${key}.png`)) out.push(`${what}: logo.file must be named after this key`);
+    if (!isHttps(l.source)) out.push(`${what}: logo.source must be an https URL`);
+    if (!(ALLOWED_LOGO_LICENSES as readonly string[]).includes(l.license)) out.push(`${what}: logo.license "${l.license}" isn't an allowed license`);
+    if (!l.attribution) out.push(`${what}: logo needs an attribution`);
+  }
+  return out;
+}

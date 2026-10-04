@@ -5,7 +5,7 @@
  */
 import type { AdmissionFactor, DatasetMeta, FactorUse, FederalAdmissions, LineageRecord, ReportedSourceKind, School, SourceInfo, SourceKey } from "./types";
 import { validateAdmissionProfile } from "./cds/admissions.ts";
-import { FIELDS, METADATA_KEYS, PER_DOCUMENT_SOURCES, REPORTED_PATHS, isFieldPath, registeredPathFor, type FieldPath, type VintageKey } from "./fields.ts";
+import { FIELDS, METADATA_KEYS, PER_DOCUMENT_SOURCES, REPORTED_PATHS, UNDATED_SOURCES, isFieldPath, registeredPathFor, type FieldPath, type VintageKey } from "./fields.ts";
 import { NEWEST_TARGETS, newestGroupCitation, validateNewestGroups } from "./newest-groups.ts";
 import { replacedTest, satTotalInputs, validateTests } from "./cds/test-blocks.ts";
 import { financialAidProblems } from "./cds/financial-aid.ts";
@@ -62,6 +62,12 @@ export interface Cited extends CitedSource {
   image?: { what: string; attribution: string; license: string; source: string };
 }
 
+/**
+ * Identity values found on the college's own site (a visit link, a footer account, its icon; specs/school-identity/):
+ * they come from its homepage or admissions page, never from the admissions document `reported.admissions` names.
+ */
+const IDENTITY_PATH = /^(links|social|brand)\./;
+
 /** The funnel paths `applyNewest` may replace, keyed to their `admissions.federal` counterparts. */
 const FEDERAL_COUNTERPART: Partial<Record<FieldPath, keyof FederalAdmissions>> = {
   "admissions.applicants": "applicants",
@@ -95,6 +101,9 @@ const SOURCE_VINTAGE: Record<SourceKey, VintageKey | null> = {
   "policy-page": null,
   cds: null,
   "college-site": null,
+  // Undated references (UNDATED_SOURCES): the retrieval date in meta.json's edition stands in for a year.
+  wikidata: null,
+  wikipedia: null,
 };
 
 /**
@@ -157,6 +166,14 @@ export function yearLabel(s: Pick<CitedSource, "year">): string {
   return s.year ?? "most recent release";
 }
 
+/**
+ * Whether a citation names a year at all. Undated references (UNDATED_SOURCES: Wikidata, Wikipedia) have no release
+ * to name; the retrieval date shown with them dates them, so "Wikidata, most recent release" would only mislead.
+ */
+export function citesYear(s: Pick<CitedSource, "key" | "year">): boolean {
+  return s.year !== null || !UNDATED_SOURCES.has(s.key);
+}
+
 /** Compact name for a chip: "CDS 2024-25", "IPEDS Fall 2024", "Scorecard". */
 export function shortSource(s: CitedSource): string {
   const name =
@@ -166,13 +183,17 @@ export function shortSource(s: CitedSource): string {
         ? "College"
         : s.key === "state-law"
           ? "State law"
-          : s.key === "directory" || s.key === "org-estimate"
-            ? "Directories"
-            : s.key === "policy-page"
-              ? "Policy page"
-              : s.key === "scorecard" || s.key === "scorecard-fos"
-                ? "Scorecard"
-                : "IPEDS";
+          : s.key === "wikidata"
+            ? "Wikidata"
+            : s.key === "wikipedia"
+              ? "Wikipedia"
+              : s.key === "directory" || s.key === "org-estimate"
+                ? "Directories"
+                : s.key === "policy-page"
+                  ? "Policy page"
+                  : s.key === "scorecard" || s.key === "scorecard-fos"
+                    ? "Scorecard"
+                    : "IPEDS";
   return s.year ? `${name} ${s.year}` : name;
 }
 
@@ -239,7 +260,7 @@ export function lineageFor(path: FieldPath, school: School | undefined, meta: Da
     // admissions block's document kind applies only to values without one.
     ...(rec?.source === "college-site" && rec.edition
       ? { sourceKind: "cds" as const, cdsEdition: rec.edition, document: `Common Data Set ${rec.edition}` }
-      : rec?.source === "college-site" && school?.reported?.admissions
+      : rec?.source === "college-site" && school?.reported?.admissions && !IDENTITY_PATH.test(path)
         ? { sourceKind: school.reported.admissions.source_kind }
         : {}),
     ...newestGroupCitation(path, school),
@@ -363,7 +384,7 @@ export function validateRegistry(meta: DatasetMeta): string[] {
   for (const [path, def] of Object.entries(FIELDS) as [FieldPath, (typeof FIELDS)[FieldPath]][]) {
     if (!(def.source in meta.sources)) errors.push(`fields.ts: ${path} uses unknown source "${def.source}"`);
     if (def.vintage && !VINTAGE_KEYS.includes(def.vintage)) errors.push(`fields.ts: ${path} uses unknown vintage "${def.vintage}"`);
-    if (!PER_DOCUMENT_SOURCES.has(def.source) && !def.vintage && !("derived" in def)) errors.push(`fields.ts: ${path} has no vintage`);
+    if (!PER_DOCUMENT_SOURCES.has(def.source) && !UNDATED_SOURCES.has(def.source) && !def.vintage && !("derived" in def)) errors.push(`fields.ts: ${path} has no vintage`);
     if ("derived" in def && def.derived) {
       if (!def.derived.inputs.length) errors.push(`fields.ts: ${path} is derived but lists no inputs`);
       for (const i of def.derived.inputs) if (!isFieldPath(i)) errors.push(`fields.ts: ${path} input "${i}" isn't a registered field`);

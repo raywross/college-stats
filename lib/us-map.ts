@@ -11,6 +11,7 @@ import type { GeometryCollection, Topology } from "topojson-specification";
 import states from "us-atlas/states-albers-10m.json";
 import { SETTING_GROUPS } from "./campus-profile";
 import type { School, SchoolType } from "./types";
+import { crestBrand, type CrestBrand } from "./brand";
 
 export const MAP_WIDTH = 975;
 export const MAP_HEIGHT = 610;
@@ -49,6 +50,8 @@ export interface MapPoint {
   state: string;
   setting: string | null;
   admit: number | null;
+  /** The hover card crest's colors and mark (specs/school-identity/brand.md), when the college has them. */
+  brand?: CrestBrand;
 }
 
 /** Colleges with coordinates, projected; `outside` counts those in territories the map doesn't draw. */
@@ -67,6 +70,7 @@ export function mapPoints(schools: School[]): { points: MapPoint[]; outside: num
       outside++;
       continue;
     }
+    const brand = crestBrand(s);
     points.push({
       id: s.unit_id,
       name: s.name,
@@ -78,6 +82,7 @@ export function mapPoints(schools: School[]): { points: MapPoint[]; outside: num
       state: s.location.state,
       setting: s.campus?.setting ? (SETTING_GROUPS.find((g) => g.key === s.campus!.setting!.group)?.label ?? null) : null,
       admit: s.admissions.acceptance_rate,
+      ...(brand ? { brand } : {}),
     });
   }
   return { points, outside, missing };

@@ -329,11 +329,18 @@ export interface School {
    * directory blocks the spec sketches; the CDS facts read so far live under `reported.religion`.
    */
   religion?: SchoolReligion;
-  links?: {
-    website: string | null;
-    /** The college's federally required net price calculator. */
-    price_calculator: string | null;
-  };
+  links?: SchoolLinks;
+  /**
+   * Social accounts (specs/school-identity/social-accounts.md): handles, not URLs (`socialUrl` in lib/social.ts builds
+   * the profile URL). From Wikidata, else the college's homepage footer. Absent or null when none is known.
+   */
+  social?: SchoolSocial | null;
+  /**
+   * The college's colors and mark (specs/school-identity/brand.md): colors from Wikipedia's college color data, the
+   * derived accent and tints (computed at sync time, so the app does no color math), and its site icon
+   * (`public/brand/{unit_id}.webp`). Decoration, never data. Absent or null when none is known.
+   */
+  brand?: SchoolBrand | null;
   /**
    * Where values came from, only for fields whose source differs from the registry
    * default (lib/fields.ts). Keys are registered field paths. See specs/data-lineage.md.
@@ -1397,6 +1404,10 @@ export type SourceKey = "scorecard" | "ipeds-adm" | "ipeds-sfa" | "ipeds-ic" | "
   | "scorecard-fos"
   /** State statutes that apply to public colleges, read by hand (data/state-laws.json; specs/lgbtq-life.md). */
   | "state-law"
+  /** Wikidata, joined by IPEDS id (P1771): social accounts and other names (specs/school-identity/social-accounts.md). */
+  | "wikidata"
+  /** English Wikipedia's college color data, cited to each college's brand guide (specs/school-identity/brand.md). */
+  | "wikipedia"
   /**
    * National and official directories of campus chapters and groups (tiers B and D; specs/campus-directories.md).
    * Each listing names its organization, list URL, and the date read in the `directories` detail table's credits.
@@ -1428,6 +1439,57 @@ export interface SchoolFinances {
   academic_support_per_student: number | null;
   /** Tuition & fee revenue as a share of core revenue, 0–1. */
   tuition_share_of_revenue: number | null;
+}
+
+/**
+ * Official links (specs/school-identity/links.md). `website` and `price_calculator` came first (College Scorecard);
+ * the rest come from the IPEDS directory (HD) except `visit` and `virtual_tour`, which are found on the college's own
+ * admissions page. Optional while older documents lack them; null = the college reported none.
+ */
+export interface SchoolLinks {
+  website: string | null;
+  /** The college's federally required net price calculator. */
+  price_calculator: string | null;
+  admissions?: string | null;
+  apply?: string | null;
+  financial_aid?: string | null;
+  /** The campus visit page, found on the college's site (lineage: the page it was found on and the link text). */
+  visit?: string | null;
+  /** Kept only when a virtual tour is the only visit page found. */
+  virtual_tour?: string | null;
+  veterans?: string | null;
+  disability_services?: string | null;
+}
+
+/** Social networks, in the order the profile shows them (the order students use them, not alphabetical). */
+export type SocialNetwork = "instagram" | "youtube" | "tiktok" | "x" | "facebook" | "linkedin";
+
+/** One handle per network: Instagram/TikTok/X handle, YouTube channel id (`UC…`), Facebook page id or name, LinkedIn slug. */
+export type SchoolSocial = Partial<Record<SocialNetwork, string>>;
+
+export interface SchoolBrand {
+  /** Hex colors in brand order, e.g. ["#BA0C2F", "#FFFFFF", "#000000"]. */
+  colors: string[] | null;
+  /**
+   * The colors' names in the same order, e.g. ["red", null, "black"], when the source gives them; null where it names
+   * no color (Wikipedia's module leaves the white text-color slot unnamed).
+   */
+  names: (string | null)[] | null;
+  /** The first color that is neither white, black, nor gray (else the first color). */
+  accent: string | null;
+  /** The monogram's text color on the accent: whichever gives at least 4.5:1 contrast. */
+  on_accent: "white" | "black" | null;
+  /**
+   * The crest gradient's end (hex): the next brand color after the accent, or the accent darkened or lightened when
+   * that color is black, gray, or white; always 4.5:1 or more against `on_accent`. Optional: older documents lack it.
+   */
+  crest_to?: string | null;
+  /** The accent re-lit for the light theme's hero tint, e.g. "oklch(0.72 0.16 20)". */
+  tint_light: string | null;
+  /** The accent re-lit for the dark theme's hero tint. */
+  tint_dark: string | null;
+  /** The college's site icon, stored as public/brand/{unit_id}.webp (192 px). Null = no acceptable icon, or removed. */
+  logo: { source_url: string; retrieved: string; width: number } | null;
 }
 
 export interface SourceInfo {

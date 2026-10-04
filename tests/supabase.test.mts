@@ -17,6 +17,8 @@ type FileRow = { name: string; data: unknown; published_at: string };
 /**
  * Enough of the query builder for lib/supabase.ts: from("schools").select().order().range(), and
  * from("dataset_files").select(). `onFilesRead` runs after each dataset_files read, to simulate a publish.
+ * `from("school_aliases")` (fetchDatasetFiles also reads this, fail-soft) always answers an empty page in its own
+ * branch, so it never adds to `ranges`, which the tests below use to count the *schools* pagination specifically.
  */
 function fakeClient(rows: unknown[], files: FileRow[], onFilesRead?: (reads: number) => void) {
   const ranges: [number, number][] = [];
@@ -31,6 +33,9 @@ function fakeClient(rows: unknown[], files: FileRow[], onFilesRead?: (reads: num
             return { data, error: null };
           },
         };
+      }
+      if (table === "school_aliases") {
+        return { select: () => ({ order: () => ({ range: async () => ({ data: [], error: null }) }) }) };
       }
       return {
         select: () => ({

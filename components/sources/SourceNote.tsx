@@ -3,7 +3,7 @@ import Link from "next/link";
 import { BookMarked, ExternalLink } from "lucide-react";
 import type { School } from "@/lib/types";
 import type { FieldPath } from "@/lib/fields";
-import { yearLabel, type CitedSource } from "@/lib/lineage";
+import { citesYear, yearLabel, type CitedSource } from "@/lib/lineage";
 import { getData } from "@/lib/data";
 import { cn } from "@/lib/utils";
 
@@ -20,7 +20,7 @@ export function SourceItem({ s, last }: { s: CitedSource; last: boolean }) {
         {s.label}
         <ExternalLink className="size-2.5" aria-hidden />
       </a>
-      , {yearLabel(s)}
+      {citesYear(s) && `, ${yearLabel(s)}`}
       {last ? "" : ";"}
     </span>
   );

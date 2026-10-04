@@ -1,0 +1,225 @@
+# Runs the monthly identity refresh (specs/school-identity/follow-ups.md, "The monthly refresh"): re-syncs Wikidata
+# social accounts, re-probes every college's own site for its visit page, footer accounts, icon candidates, and link
+# liveness, and re-reads Wikipedia's college colors — then, when anything changed, opens a pull request with a
+# generated body and its own release note, auto-merging only when asked. See specs/school-identity/README.md,
+# "Keeping it fresh", for what each script refreshes and scripts/identity-refresh.mts for the due check and the
+# generated text.
+#
+# Checkout and all git/gh steps use `secrets.COLLEGE_REPORTED_TOKEN` when it's set, falling back to the default
+# `github.token` — the same token .github/workflows/college-reported.yml uses, for the same reason: the default
+# token works for commits and comments, but a PR opened with it does NOT trigger `pull_request` workflows (so
+# Verify, and therefore auto-merge, would never run). No new secret: every source here is free and unauthenticated
+# (Wikidata, Wikipedia, each college's own site with a polite, honest user agent), so the fine-grained PAT already
+# scoped for college-reported (Contents: read/write, Pull requests: read/write) covers this workflow too — scopes
+# are per-repository, not per-workflow-file.
+#
+# Its own concurrency group, separate from college-reported's: that workflow's `*/30` collect job runs in college-
+# reported's group with cancel-in-progress: false, which only protects runs within that group — sharing a group
+# here would let an identity-refresh run and a college-reported run block each other for no reason. The two never
+# need to exclude one another directly; the "no college-reported PR open" gate below is what actually avoids the
+# conflict (both write data/schools.json).
+name: Identity refresh
+
+on:
+  workflow_dispatch:
+    inputs:
+      force:
+        description: Run even if the last site probe is less than 28 days old
+        type: boolean
+        default: false
+      auto_merge:
+        description: Auto-merge the resulting PR once CI passes (on by default)
+        type: boolean
+        default: true
+  schedule:
+    - cron: "0 6 * * *" # daily 06:00 UTC; the "Check whether a refresh is due" step below decides whether this firing does anything
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: identity-refresh
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.COLLEGE_REPORTED_TOKEN || github.token }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      # data/site-probe.json's newest `retrieved` date, compared with today (specs/school-identity/follow-ups.md).
+      - name: Check whether a refresh is due
+        id: due
+        run: |
+          due=$(node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/identity-refresh.mts due)
+          echo "due=$due" >> "$GITHUB_OUTPUT"
+
+      # Both workflows write data/schools.json; a second PR touching the same file would conflict on merge.
+      - name: Check for an open college-reported data PR
+        id: college_reported
+        env:
+          GH_TOKEN: ${{ secrets.COLLEGE_REPORTED_TOKEN || github.token }}
+        run: |
+          open=$(gh pr list --state open --json headRefName --jq '[.[] | select(.headRefName | startswith("data/college-reported-"))] | length')
+          echo "open=$open" >> "$GITHUB_OUTPUT"
+          echo "Open college-reported data PRs: $open"
+
+      - name: Decide whether to proceed
+        id: gate
+        env:
+          DUE: ${{ steps.due.outputs.due }}
+          OPEN: ${{ steps.college_reported.outputs.open }}
+        run: |
+          # inputs.* only exists on a workflow_dispatch run; branch in bash rather than reference it directly in an
+          # expression, so a schedule-triggered run never evaluates it at all (the same style college-reported.yml
+          # uses in its own "Resolve run parameters" step).
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            force="${{ inputs.force }}"
+          else
+            force="false"
+          fi
+          if [ "${OPEN:-0}" != "0" ]; then
+            echo "::notice::Skipping: a college-reported data PR is already open; both workflows write data/schools.json."
+            echo "proceed=false" >> "$GITHUB_OUTPUT"
+          elif [ "$force" = "true" ] || [ "$DUE" = "true" ]; then
+            echo "proceed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::notice::Skipping: the last site probe is less than 28 days old (due=$DUE) and force was not set."
+            echo "proceed=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Resolve run parameters
+        id: params
+        if: steps.gate.outputs.proceed == 'true'
+        run: |
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            echo "auto_merge=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "auto_merge=${{ inputs.auto_merge }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      # Keyed per run (so it always saves the latest state at the end) with a prefix restore-key (so it always
+      # restores the newest prior entry) — the same pattern college-reported.yml uses for its document cache.
+      - name: Restore identity caches (Wikipedia, Wikidata)
+        if: steps.gate.outputs.proceed == 'true'
+        uses: actions/cache@v4
+        with:
+          path: |
+            .cache/wikipedia
+            .cache/wikidata
+          key: identity-refresh-${{ github.run_id }}
+          restore-keys: |
+            identity-refresh-
+
+      # Social accounts, other names, the Wikipedia article link (data/wikidata.json). Wikidata only; no key.
+      - name: Sync Wikidata
+        if: steps.gate.outputs.proceed == 'true'
+        id: sync_wikidata
+        run: npm run sync-wikidata
+
+      # The campus visit page, footer social links, icon candidates, and stored-link liveness (data/site-probe.json,
+      # data/link-issues.json). Each college's own site only, politely; no key. ~20 minutes.
+      - name: Probe every college's site
+        if: steps.gate.outputs.proceed == 'true'
+        id: probe_sites
+        run: npm run probe-sites
+
+      # Colors from Wikipedia's college color data and each college's site icon (data/brand-colors.json,
+      # data/brand-logos.json, public/brand/*.webp). Wikipedia and each college's icon only; no key.
+      - name: Sync brand
+        if: steps.gate.outputs.proceed == 'true'
+        id: sync_brand
+        run: npm run sync-brand
+
+      # always(): a step above can fail partway through (e.g. probe-sites' ~20-minute run hitting the job timeout)
+      # while an earlier one still wrote real changes; those should still reach a PR rather than being discarded.
+      - name: Check for data changes
+        id: diff
+        if: always() && steps.gate.outputs.proceed == 'true'
+        run: |
+          if git status --porcelain -- data public/brand | grep -q .; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "No changes under data/ or public/brand/ this run; nothing to open a PR for."
+          fi
+
+      - name: Open a pull request
+        id: pr
+        if: always() && steps.gate.outputs.proceed == 'true' && steps.diff.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.COLLEGE_REPORTED_TOKEN || github.token }}
+          AUTO_MERGE: ${{ steps.params.outputs.auto_merge }}
+        run: |
+          # Read before anything is committed: HEAD is still the pre-run commit here, and the working tree holds
+          # this run's changes (scripts/identity-refresh.mts's "before" vs "after").
+          git show HEAD:data/schools.json > /tmp/identity-refresh-before.json
+          node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/identity-refresh.mts pr-body \
+            --before /tmp/identity-refresh-before.json --after data/schools.json --issues data/link-issues.json \
+            > /tmp/identity-refresh-pr-body.md
+
+          branch="data/identity-refresh-$(date -u +%Y%m%d)"
+          git checkout -b "$branch"
+          git add data public/brand
+          printf 'Identity refresh: %s\n' "$(date -u +%Y-%m-%d)" > /tmp/identity-refresh-commit-msg.txt
+          git -c user.name="identity-refresh-bot" -c user.email="noreply@anthropic.com" commit -F /tmp/identity-refresh-commit-msg.txt
+          git push -u origin "$branch"
+
+          # The collect-style auto-merge comment below reads this back, the same way college-reported.yml does.
+          printf '\n<!-- identity-refresh: auto_merge=%s -->\n' "$AUTO_MERGE" >> /tmp/identity-refresh-pr-body.md
+          gh pr create --base main --head "$branch" \
+            --title "Identity refresh: $(date -u +%Y-%m-%d)" \
+            --body-file /tmp/identity-refresh-pr-body.md
+          number=$(gh pr view "$branch" --json number -q .number)
+          echo "number=$number" >> "$GITHUB_OUTPUT"
+          echo "branch=$branch" >> "$GITHUB_OUTPUT"
+
+      # The PR number is only known once the PR exists, so the release note (specs/release-notes.md) is written and
+      # pushed as a second commit onto the same branch, naming it. Reuses the "before" snapshot the PR step read,
+      # since HEAD has now moved past it.
+      - name: Add the release note
+        if: always() && steps.gate.outputs.proceed == 'true' && steps.diff.outputs.changed == 'true' && steps.pr.outputs.number != ''
+        env:
+          GH_TOKEN: ${{ secrets.COLLEGE_REPORTED_TOKEN || github.token }}
+          PR_NUMBER: ${{ steps.pr.outputs.number }}
+        run: |
+          note="release-notes/identity-refresh-$(date -u +%Y%m%d).md"
+          node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/identity-refresh.mts release-note \
+            --before /tmp/identity-refresh-before.json --after data/schools.json --issues data/link-issues.json \
+            --pr "$PR_NUMBER" --date "$(date -u +%Y-%m-%d)" --out "$note"
+          git add "$note"
+          printf 'Release note for #%s\n' "$PR_NUMBER" > /tmp/identity-refresh-note-commit-msg.txt
+          git -c user.name="identity-refresh-bot" -c user.email="noreply@anthropic.com" commit -F /tmp/identity-refresh-note-commit-msg.txt
+          git push
+
+      - name: Auto-merge, or explain why this PR waits for a person
+        if: always() && steps.gate.outputs.proceed == 'true' && steps.diff.outputs.changed == 'true' && steps.pr.outputs.number != ''
+        env:
+          GH_TOKEN: ${{ secrets.COLLEGE_REPORTED_TOKEN || github.token }}
+          PR_NUMBER: ${{ steps.pr.outputs.number }}
+          AUTO_MERGE: ${{ steps.params.outputs.auto_merge }}
+          WIKIDATA_OK: ${{ steps.sync_wikidata.outcome }}
+          PROBE_OK: ${{ steps.probe_sites.outcome }}
+          BRAND_OK: ${{ steps.sync_brand.outcome }}
+        run: |
+          if [ "$AUTO_MERGE" = "true" ] && [ "$WIKIDATA_OK" = "success" ] && [ "$PROBE_OK" = "success" ] && [ "$BRAND_OK" = "success" ]; then
+            gh pr merge "$PR_NUMBER" --auto --squash
+          else
+            if [ "$AUTO_MERGE" != "true" ]; then
+              reason="auto-merge was turned off for this run — review and merge by hand once CI is green"
+            else
+              reason="not every sync step finished (sync-wikidata: ${WIKIDATA_OK:-n/a}, probe-sites: ${PROBE_OK:-n/a}, sync-brand: ${BRAND_OK:-n/a}); this PR holds whatever finished before the failure — review before merging by hand"
+            fi
+            gh pr comment "$PR_NUMBER" --body "Waiting for a person: ${reason}."
+          fi

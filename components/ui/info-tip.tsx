@@ -5,19 +5,20 @@ import type { ReactNode } from "react";
 import { Popover } from "@base-ui/react/popover";
 import { Info, ArrowRight, BookMarked, ExternalLink } from "lucide-react";
 import { GLOSSARY, type TermKey } from "@/lib/glossary";
-import { yearLabel, type Cited, type CitedSource } from "@/lib/lineage";
+import { citesYear, yearLabel, type Cited, type CitedSource } from "@/lib/lineage";
 import { num, pctSmart } from "@/lib/format";
 import { DEMOGRAPHIC_CATEGORIES } from "@/lib/metrics";
 import { cn } from "@/lib/utils";
 
+// Inline, not inline-flex, so a long source name wraps like the sentence around it and its year stays beside it.
 function SourceLink({ s }: { s: CitedSource }) {
   return (
     <>
-      <a href={s.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-0.5 font-semibold text-foreground hover:text-primary hover:underline">
+      <a href={s.url} target="_blank" rel="noopener noreferrer" className="font-semibold text-foreground hover:text-primary hover:underline">
         {s.label}
-        <ExternalLink className="size-2.5" aria-hidden />
+        <ExternalLink className="ml-0.5 inline size-2.5 align-baseline" aria-hidden />
       </a>
-      , {yearLabel(s)}
+      {citesYear(s) && `, ${yearLabel(s)}`}
     </>
   );
 }
@@ -25,9 +26,9 @@ function SourceLink({ s }: { s: CitedSource }) {
 /** Bare link, no trailing year (the year's already in the sentence above it). */
 function SourceLinkBare({ s }: { s: CitedSource }) {
   return (
-    <a href={s.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-0.5 font-semibold text-foreground hover:text-primary hover:underline">
+    <a href={s.url} target="_blank" rel="noopener noreferrer" className="font-semibold text-foreground hover:text-primary hover:underline">
       {s.label}
-      <ExternalLink className="size-2.5" aria-hidden />
+      <ExternalLink className="ml-0.5 inline size-2.5 align-baseline" aria-hidden />
     </a>
   );
 }
@@ -70,14 +71,16 @@ function imageHost(url: string): string {
 }
 
 /** Where a value came from: source, year, method, formula, inputs, and what it replaced, if anything. */
-function SourceBlock({ cited }: { cited: Cited }) {
+function SourceBlock({ cited, heading = true }: { cited: Cited; heading?: boolean }) {
   const inputs = cited.inputs ?? [];
   const isCollegeSite = cited.key === "college-site";
   return (
     <div className="space-y-1.5 text-[12px] leading-relaxed text-muted-foreground">
-      <p className="flex items-center gap-1 text-[10px] font-bold tracking-[0.14em] text-foreground/70 uppercase">
-        <BookMarked className="size-3" aria-hidden /> Source
-      </p>
+      {heading && (
+        <p className="flex items-center gap-1 text-[10px] font-bold tracking-[0.14em] text-foreground/70 uppercase">
+          <BookMarked className="size-3" aria-hidden /> Source
+        </p>
+      )}
       {cited.directory ? (
         // Someone else's list (owner decision 4, specs/campus-directories.md): credited by name, dated, linked, labeled.
         <p>
@@ -209,6 +212,36 @@ export function SourceTip({ cited, className }: { cited: Cited; className?: stri
       </Popover.Trigger>
       <Popup title={cited.field}>
         <SourceBlock cited={cited} />
+      </Popup>
+    </Popover.Root>
+  );
+}
+
+/** One source in a SourcesTip and the items it covers ("Website, Admissions, Apply"). */
+export interface SourceGroup {
+  items: string[];
+  cited: Cited;
+}
+
+/**
+ * One (i) for a row of values that share sources (the profile hero's links and accounts): each source once, with the
+ * items it covers, in the same popover as every other citation. Keeps a row of links free of footnote lines.
+ */
+export function SourcesTip({ title, groups, className }: { title: string; groups: SourceGroup[]; className?: string }) {
+  return (
+    <Popover.Root>
+      <Popover.Trigger openOnHover delay={120} closeDelay={120} aria-label={title} className={cn(triggerClass, className)}>
+        <Info className="size-3.5" />
+      </Popover.Trigger>
+      <Popup title={title}>
+        <div className="space-y-3 divide-y">
+          {groups.map((g) => (
+            <div key={`${g.cited.key}|${g.cited.url}|${g.cited.year ?? ""}`} className="space-y-1 pb-3 last:pb-0">
+              <p className="text-[12px] font-semibold text-foreground">{g.items.join(", ")}</p>
+              <SourceBlock cited={g.cited} heading={false} />
+            </div>
+          ))}
+        </div>
       </Popup>
     </Popover.Root>
   );

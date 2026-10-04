@@ -220,6 +220,8 @@ export async function ladder(college: LadderCollege, state: LadderState, deps: L
   const prefetched = new Map<string, Prefetched>();
   let spent = 0;
   let found: StepFind | null = null;
+  // The first paid step that found only a class profile: the result when no later step finds a CDS.
+  let profileOnly: PaidFind | null = null;
   let blockedHosts: string[] | null = null;
 
   const row = (step: LadderStep, result: DiscoveryAttempt["result"], detail?: string, cost = 0, via?: DiscoveryPath) =>
@@ -283,11 +285,15 @@ export async function ladder(college: LadderCollege, state: LadderState, deps: L
     const hit = find.sources.length > 0 && !find.none_found;
     row(step, hit ? "found" : "none", hit ? find.sources.map((s) => s.url).join(" ") : find.notes, find.cost_usd, find.path);
     merge(find);
-    if (hit) {
+    // Like the free steps, a paid step that found only a class profile keeps climbing toward a CDS while the tier
+    // allows (the first live run stopped at an admissions page for Boston University, UC San Diego, and Arizona).
+    if (hit && find.sources.some((s) => s.kind === "cds")) {
       found = find;
       break;
     }
+    if (hit) profileOnly ??= find;
   }
+  if (!found && profileOnly) found = profileOnly;
 
   const path: DiscoveryPath = found ? found.path : blockedHosts ? "blocked" : "none";
   // A free pass that missed hands over to the paid steps: no back-off date and no `none_found` yet.

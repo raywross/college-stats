@@ -38,6 +38,7 @@ import {
 } from "./cds-sections.ts";
 import { REPORTED_MODELS, type CheckFailure, type CheckId, type Extraction, type ReviewItem } from "./reported.ts";
 import { runChecks } from "./reported-checks.ts";
+import { stripLayoutTags } from "./cds-quotes.ts";
 
 /* ------------------------------------------------------------------ */
 /* Inputs and outputs                                                  */
@@ -1158,7 +1159,7 @@ const TEXT_FAILS = new Set(["B1", "B2", "B4", "B5", "B22", "C1"]);
 
 const NUMERIC_TYPES = new Set(["count", "percent", "currency", "decimal", "gpa", "sat-section", "sat-composite", "act", "act-writing", "month", "day"]);
 const MONTHS = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
-const MARK = /(?:^|[\s|(])(?:x|✔|✓|☒|☑|yes|y)(?:$|[\s|)])/i;
+const MARK = /(?:^|[\s|(])(?:x|✔|✓|☒|☑|yes|y)\*?(?:$|[\s|)])/i;
 
 /** Whether an item was read by a model call (a value with no workbook cell or form field, from a model-read call). */
 export function isModelRead(doc: DocumentRecord, code: CdsCode, table: TemplateTable): boolean {
@@ -1182,7 +1183,9 @@ function numbersOn(line: string): number[] {
 const decimalsOf = (n: number) => (String(n).split(".")[1] ?? "").length;
 
 /** Whether a value is printed on a line: the number (as a share or percent for percent items), a mark, or the words. */
-export function valueOnLine(line: string, v: Value, item: Pick<TemplateItem, "value_type">): boolean {
+export function valueOnLine(rawLine: string, v: Value, item: Pick<TemplateItem, "value_type">): boolean {
+  // Layout tags first: "@243 1,2 74" would otherwise join the tag's digits into the printer-split number.
+  const line = stripLayoutTags(rawLine);
   const t = item.value_type;
   if (typeof v === "boolean") return v ? MARK.test(line) : /(?:^|[\s|])(?:no|n)(?:$|[\s|])/i.test(line);
   if (typeof v === "number") {

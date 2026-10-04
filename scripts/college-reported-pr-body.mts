@@ -207,7 +207,10 @@ export function prBody(summary: RunSummary, queue: ReviewQueueFile, reported?: R
       "below explains why it is waiting for a person.",
   );
 
-  return lines.join("\n");
+  // A last stop so the PR always opens: the run's data is on the branch either way.
+  const body = lines.join("\n");
+  const note = "\n\n…(cut to fit GitHub's limit on a PR description; the full lists are in the run summary and review queue on this branch)";
+  return body.length <= PR_BODY_LIMIT ? body : body.slice(0, PR_BODY_LIMIT - note.length - 100) + note;
 }
 
 /** A round-3 run summary (specs/college-reported-round-3.md Decision 11) has `round: 3`. */
@@ -271,16 +274,25 @@ export function perItemTable(items: ReviewItem[]): string[] {
     "| College | Edition | Item | Value | Failed checks | URL |",
     "|---|---|---|---|---|---|",
   ];
-  for (const item of sorted) {
+  for (const item of sorted.slice(0, PER_ITEM_ROWS)) {
     const code = item.code ?? "";
     // A whole extraction call that failed is queued as "C-call" / "rest-call", not a template code.
     const label = CDS_CODE.test(code) ? `${itemOfCode(code)} · ${code}` : code.endsWith("-call") ? `whole ${code.slice(0, -5)} call` : code;
     const value = item.value === undefined || item.value === null ? "—" : String(item.value);
     const checks = item.failures.map((f) => `${f.check} (${f.detail})`).join("; ");
-    out.push(`| ${escapeCell(item.name)} (${item.unit_id}) | ${item.edition ?? ""} | ${label} | ${escapeCell(value.slice(0, 40))} | ${escapeCell(checks)} | ${item.urls[0] ?? ""} |`);
+    out.push(`| ${escapeCell(item.name)} (${item.unit_id}) | ${item.edition ?? ""} | ${label} | ${escapeCell(value.slice(0, 40))} | ${escapeCell(checks.slice(0, 200))} | ${item.urls[0] ?? ""} |`);
   }
+  if (sorted.length > PER_ITEM_ROWS) out.push("", `…and ${sorted.length - PER_ITEM_ROWS} more; every item is in \`data/review-queue.json\` on this branch.`);
   return out;
 }
+
+/**
+ * Rows of the per-item table before it stops. GitHub refuses a PR body over 65,536 characters, and the first live run's
+ * 330 items (about 400 characters a row) failed the PR step; 80 rows stay far under it with the rest of the body.
+ */
+export const PER_ITEM_ROWS = 80;
+/** GitHub's limit on a pull request body, in characters. */
+export const PR_BODY_LIMIT = 65_536;
 
 /* ------------------------------------------------------------------ */
 /* Release note                                                        */

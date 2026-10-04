@@ -207,7 +207,7 @@ export function itemsFromCall(
       if (!o.escalation) items[code] = { status: "not-found" };
       continue;
     }
-    const n = normalizeValue(item, got.v);
+    const n = normalizeValue(item, got.v, { percentPoints: true }); // the model reports printed percent numbers
     if (n.status === "blank") {
       items[code] = { status: "blank" };
       continue;

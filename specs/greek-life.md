@@ -58,21 +58,27 @@ built the adapters below; the parallel sorority track built the 26 NPC adapters 
 **What this session actually found**, after checking every organization named in the brief by hand (fetching
 robots.txt and the real locator page, not guessing): most national Greek organizations' "find a chapter" pages are
 client-rendered (a JavaScript map widget with no server-side data behind the visible HTML), so "readable" by
-robots.txt alone didn't mean "scrapable." Nine organizations turned out to publish their full roster in a form a
-plain HTTP request can read.
+robots.txt alone didn't mean "scrapable." Six organizations turned out to publish their full roster in a form a
+plain HTTP request can read; a seventh (Kappa Alpha Psi) is a genuine block, not a parsing problem. Matching used
+IPEDS aliases plus hand-checked answers in `data/directories/matches.json` for renamed/merged colleges (Moravian →
+Moravian University, William & Mary, Emory & Henry University, PennWest's campuses, East Texas A&M, …) and for
+entries that gave only a bare state/city name with no street address (resolved from the entry's own city/state
+field, never guessed) — see the `_why` notes there. Counts after that pass, 2026-10-04:
 
-| Org | Council | Format found | Entries | Matched | Multi | Unmatched |
+| Org | Council | Format found | Entries | Matched | Unmatched | Colleges |
 |---|---|---|---|---|---|---|
-| Sigma Phi Epsilon | `nic` | Ninja Tables widget's own AJAX endpoint (table id + nonce embedded in the page) | see `npm run sync-directories` output | — | — | — |
-| Kappa Sigma | `nic` | Same Ninja Tables AJAX pattern, different fields | — | — | — | — |
-| Lambda Chi Alpha | `nic` | `window.chaptersMapData` JSON array embedded in the page | — | — | — | — |
-| Pi Kappa Phi | `nic` | "WP Google Maps Pro" plugin's base64 map data embedded in the page (`categories[0].name` gives Active/Inactive) | — | — | — | — |
-| Sigma Nu | `nic` | Plain server-rendered HTML table (`<table class="chapters">`, a second `dormant` table left out) | — | — | — | — |
-| Omega Phi Beta | `nalfo` | Plain HTML table (Entity, College/University, Location); found via NALFO's member-organizations page | — | — | — | — |
+| Sigma Phi Epsilon | `nic` | Ninja Tables widget's own AJAX endpoint (table id + nonce embedded in the page) | 190 | 190 | 0 | 190 |
+| Lambda Chi Alpha | `nic` | `window.chaptersMapData` JSON array embedded in the page | 166 | 163 | 3 | 162 |
+| Kappa Sigma | `nic` | Same Ninja Tables AJAX pattern, different fields (no city/state given) | 286 | 267 | 19 | 267 |
+| Pi Kappa Phi | `nic` | "WP Google Maps Pro" plugin's base64 map data embedded in the page (`categories[0].name` gives Active/Inactive; only Active kept) | 157 | 155 | 2 | 153 |
+| Sigma Nu | `nic` | Plain server-rendered HTML table (`<table class="chapters">`, a second `dormant` table left out) | 151 | 149 | 2 | 149 |
+| Omega Phi Beta | `nalfo` | Plain HTML table (Entity, College/University, Location); found via NALFO's member-organizations page | 6 | 5 | 1 | 5 |
 | Kappa Alpha Psi | `nphc` | **Blocked**: robots.txt doesn't disallow the page, but it returns HTTP 403 to our UA (a bot-protection layer) | — | — | — | — |
 
-Run `npm run sync-directories -- --domain greek` then `npm run merge-directories` to fill in each adapter's exact
-entries/matched/multi/unmatched counts above from its run log and `data/directories/<org>.json`.
+The remaining unmatched entries (27 across the five organizations with any) are genuinely unresolvable without
+guessing: non-U.S. universities (Canadian chapters several of these fraternities also list), colleges not in this
+site's ~1,900, or names ambiguous even with a city (two colleges share "Boca Raton, FL"; "Rutgers, The State
+University of New Jersey" doesn't say which of the three campuses). They stay in `data/directories/unmatched/`.
 
 **Named in the brief but not built this round** (so the next session can pick up where recon stopped, rather than
 re-discovering the same dead ends):

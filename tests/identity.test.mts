@@ -29,6 +29,37 @@ test("applying identity twice gives the same school as applying it once", () => 
   }
 });
 
+test("re-applying identity to the committed data changes no byte, so a refresh's diff shows only real changes", () => {
+  const inputs = loadIdentityInputs(ROOT);
+  const changed = schools.filter((s) => JSON.stringify(applyIdentity(structuredClone(s), inputs)) !== JSON.stringify(s)).map((s) => s.unit_id);
+  assert.deepEqual(changed.slice(0, 10), [], `${changed.length} colleges reordered or changed; run \`npm run merge-identity\``);
+});
+
+test("new identity keys take fixed places, clear of the keys other pipelines re-append", () => {
+  const school = structuredClone(byId.get(UGA)!);
+  delete school.social;
+  delete school.brand;
+  school.lineage = {
+    directories: { source: "directory" },
+    "lgbtq.policies": { source: "policy-page" },
+    "reported.admissions.applicants": { source: "college-site" },
+  } as School["lineage"];
+  (school as unknown as Record<string, unknown>).directories = { count: 1 };
+  (school as unknown as Record<string, unknown>).reported = { admissions: null };
+  const inputs = emptyIdentityInputs();
+  inputs.wikidata.set(UGA, { unit_id: UGA, qid: "Q761534", wikipedia: null, website: null, accounts: { x: "universityofga" }, logo_file: null, alt_labels: [], retrieved: "2026-10-04" });
+  inputs.probe.set(UGA, {
+    unit_id: UGA, retrieved: "2026-10-04", homepage: null, admissions: null, social: {}, icons: [],
+    visit: { url: "https://www.admissions.uga.edu/visit/", found_on: "https://www.admissions.uga.edu/", text: "Visit", score: 4 }, virtual_tour: null,
+  });
+  applyIdentity(school, inputs);
+  const top = Object.keys(school);
+  assert.ok(top.indexOf("social") < top.indexOf("directories"), "a new social block goes before the directories summary");
+  assert.ok(top.indexOf("reported") === top.length - 1 || top.indexOf("reported") > top.indexOf("social"), "reported stays after it");
+  assert.deepEqual(Object.keys(school.lineage!).slice(0, 3), ["directories", "lgbtq.policies", "links.visit"], "identity records after the pinned ones");
+  assert.equal(Object.keys(school.lineage!).at(-1), "reported.admissions.applicants", "other pipelines' records stay last");
+});
+
 test("applying identity never leaves an empty lineage behind", () => {
   const inputs = loadIdentityInputs(ROOT);
   const bare = schools.filter((s) => !s.lineage).slice(0, 50);

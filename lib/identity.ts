@@ -9,6 +9,7 @@
 import type { DatasetMeta, LineageRecord, School } from "./types";
 import type { BrandColorEntry, BrandLogoEntry, BrandOverride, LinkIssue, SiteProbeEntry, WikidataEntry } from "./identity-files";
 import { lineageForPatch } from "./lineage.ts";
+import { FIELDS } from "./fields.ts";
 import { applyLinks } from "./links.ts";
 import { applyProbeLinks } from "./site-probe.ts";
 import { applySocial } from "./social.ts";
@@ -47,6 +48,7 @@ export function emptyIdentityInputs(): IdentityInputs {
  */
 export function applyIdentity(school: School, inputs: IdentityInputs, hdRow?: Record<string, string>): School {
   const id = school.unit_id;
+  const topKeys = Object.keys(school);
   applyLinks(school, hdRow);
   applyProbeLinks(school, inputs.probe.get(id), inputs.linkIssues.get(id) ?? []);
   applySocial(school, inputs.wikidata.get(id), inputs.probe.get(id));
@@ -54,7 +56,56 @@ export function applyIdentity(school: School, inputs: IdentityInputs, hdRow?: Re
   applyIdentityOverride(school, inputs.overrides[id]);
   // Appliers clear their own records first, which can leave `{}` behind; sync-data never stores an empty lineage.
   if (school.lineage && !Object.keys(school.lineage).length) delete school.lineage;
+  if (school.lineage) school.lineage = placeIdentityLineage(school.lineage);
+  placeTopLevel(school, topKeys);
   return school;
+}
+
+/*
+ * Key order. Each applier clears and re-adds its own keys, which would move them to the end of the object every run.
+ * Other pipelines re-merge the committed data/schools.json and compare bytes (merge-reported re-appends `reported` and
+ * its lineage last; the directories merge puts `directories` before `lineage`, `trends`, and `reported`, and its lineage
+ * record first), so identity keeps fixed positions: re-applying it changes no byte unless a value changed, a refresh's
+ * diff shows only what changed, and either pipeline can run after the other.
+ */
+
+const IDENTITY_KEY = /^(links|social|brand)\./;
+const FIELD_ORDER = new Map(Object.keys(FIELDS).map((path, i) => [path, i]));
+
+/**
+ * Records other pipelines pin to the front of `lineage`, in this order: the directories summary
+ * (scripts/lib/directories/merge.mts), then the campus pilot's policy facts (scripts/lib/campus-pilot/merge.mts). A new
+ * pinned record belongs here; the byte-stability test in tests/identity.test.mts fails until it's added.
+ */
+const FRONT_KEYS = ["directories", "lgbtq.policies"];
+
+/** The identity records as one block in registry order, right after the records other pipelines pin to the front. */
+function placeIdentityLineage(lineage: NonNullable<School["lineage"]>): NonNullable<School["lineage"]> {
+  const entries = Object.entries(lineage);
+  const identity = entries.filter(([k]) => IDENTITY_KEY.test(k)).sort(([a], [b]) => (FIELD_ORDER.get(a) ?? Infinity) - (FIELD_ORDER.get(b) ?? Infinity));
+  const rest = entries.filter(([k]) => !IDENTITY_KEY.test(k));
+  let at = 0;
+  while (at < rest.length && FRONT_KEYS.includes(rest[at][0])) at++;
+  return Object.fromEntries([...rest.slice(0, at), ...identity, ...rest.slice(at)]);
+}
+
+/** Top-level keys whose place later pipelines own: identity's new keys go before them, `lineage` before the last two. */
+const LATER_KEYS = ["directories", "lineage", "trends", "reported"];
+
+/** Restores the school's key order from before the appliers ran; a key they added goes before LATER_KEYS. In place. */
+function placeTopLevel(school: School, before: readonly string[]): void {
+  const obj = school as unknown as Record<string, unknown>;
+  const now = Object.keys(obj);
+  let order = before.filter((k) => k in obj);
+  for (const k of now.filter((key) => !before.includes(key))) {
+    const anchors = k === "lineage" ? ["trends", "reported"] : LATER_KEYS;
+    const i = order.findIndex((o) => anchors.includes(o));
+    order = i < 0 ? [...order, k] : [...order.slice(0, i), k, ...order.slice(i)];
+  }
+  if (order.join() === now.join()) return;
+  const values = Object.fromEntries(now.map((k) => [k, obj[k]]));
+  for (const k of now) delete obj[k];
+  for (const k of order) obj[k] = values[k];
 }
 
 /** Top-level School keys identity owns: their overrides are applied by `applyIdentity`. */

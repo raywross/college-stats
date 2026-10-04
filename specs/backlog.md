@@ -143,18 +143,20 @@ list them here.
   "year in college data") are listed in the hub; spec one before building it.
 
 ## Links, names, and looks
-Specified 2026-10-03 in [school-identity/](school-identity/README.md), in build order:
-- [ ] **Official links** ([school-identity/links.md](school-identity/links.md)): website (already stored, unused),
+Specified 2026-10-03 in [school-identity/](school-identity/README.md); all four built 2026-10-04 (each spec's "As
+built" has the numbers). Left open: a monthly workflow for `sync-wikidata`, `probe-sites`, and `sync-brand`; the Haiku
+visit picker's first run (~$1.50, 492 colleges); a permanent mark-removal address.
+- [x] **Official links** ([school-identity/links.md](school-identity/links.md)): website (already stored, unused),
   admissions, application, financial aid, veterans', disability services from `HD{Y}` columns the sync already
   downloads; the campus visit page found on each college's admissions page by a scored link probe (Haiku picker for
   the rest); a liveness check. Hero links row, compact-header Website link, Cost and Students placements.
-- [ ] **Social accounts** ([school-identity/social-accounts.md](school-identity/social-accounts.md)):
+- [x] **Social accounts** ([school-identity/social-accounts.md](school-identity/social-accounts.md)):
   `npm run sync-wikidata` (one SPARQL query by IPEDS id → `data/wikidata.json`: accounts, other names, article,
   logo file, 1,719 colleges); homepage footer scan fills ~350 more; icon row in the hero.
-- [ ] **Short names and nicknames** ([school-identity/aliases.md](school-identity/aliases.md)): `data/aliases.json`
+- [x] **Short names and nicknames** ([school-identity/aliases.md](school-identity/aliases.md)): `data/aliases.json`
   from IPEDS `IALIAS`, Wikidata other names, the homepage domain, and a curated file; one scorer for the typeahead and
   Explore's `q`; the matched alias shown in results; Supabase `school_aliases` table indexed by key.
-- [ ] **Colors and marks** ([school-identity/brand.md](school-identity/brand.md)): colors from Wikipedia's college
+- [x] **Colors and marks** ([school-identity/brand.md](school-identity/brand.md)): colors from Wikipedia's college
   color data (cited to brand guides) joined through each article's infobox, tints derived per theme at sync time;
   the college's site icon at 192 px in `public/brand/` in place of the monogram; opt-out file, `/data` trademark line,
   removal route. Decided 2026-10-03: show colors and icons, with the safeguards in the spec; colors ship first.

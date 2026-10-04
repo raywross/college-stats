@@ -132,6 +132,31 @@ export async function CostCard({ profile: p }: { profile: Profile }) {
             </p>
           </div>
         )}
+        {(school.links?.financial_aid || school.links?.veterans) && (
+          <div className="min-w-0">
+            <p className="text-[11px] font-semibold text-muted-foreground">Financial aid</p>
+            {school.links?.financial_aid && (
+              <a
+                href={school.links.financial_aid}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-0.5 inline-flex items-center gap-1 font-display text-base leading-snug font-extrabold text-primary hover:underline"
+              >
+                Financial aid office <ExternalLink className="size-3.5 shrink-0" aria-hidden />
+              </a>
+            )}
+            {school.links?.veterans && (
+              <a
+                href={school.links.veterans}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-1 inline-flex items-center gap-1 text-[11px] font-semibold text-muted-foreground hover:text-primary hover:underline"
+              >
+                Veterans&apos; benefits <ExternalLink className="size-3 shrink-0" aria-hidden />
+              </a>
+            )}
+          </div>
+        )}
       </CardStats>
 
       {cost && (

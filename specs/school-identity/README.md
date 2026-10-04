@@ -1,6 +1,8 @@
 # School Identity: Links, Accounts, Short Names, Colors and Marks
 
-> Overview of four planned specs (2026-10-03). Each is a separate unit of work; the order below is the build order.
+> Overview of four specs (2026-10-03), all built 2026-10-04 on one branch by five parallel tracks (links, the site
+> probe, social accounts, aliases, colors and marks). Each spec ends with an "As built" section: what changed from the
+> plan, and the real coverage numbers.
 
 ## Why
 A profile today is all figures. It has no link to the college's website (the dataset has one, unused), no way to
@@ -15,6 +17,7 @@ college looks like the site rather than like itself.
 | [social-accounts.md](social-accounts.md) | Instagram, YouTube, TikTok, X, Facebook, LinkedIn; introduces `npm run sync-wikidata` and `data/wikidata.json` | Wikidata (by IPEDS id) + the homepage footer | Medium |
 | [aliases.md](aliases.md) | A table of short names and nicknames (UGA, Vandy, Georgia Tech, Ole Miss) that search and Explore match | IPEDS HD, Wikidata, the homepage domain, a curated file | Medium |
 | [brand.md](brand.md) | The college's own colors in the hero and crest, and its site icon in place of the monogram; the legal summary (marks approved by the owner 2026-10-03, with safeguards and a removal route) | Wikipedia's college color data (cited to brand guides) + the college's site icon | Large |
+| [follow-ups.md](follow-ups.md) | A monthly refresh workflow and older icon formats (built 2026-10-04); the visit-page picker's first run (deferred: the one paid step) | The scripts above; Haiku for the picker | Small |
 
 ## Shared pieces
 - **The Wikidata link** (`sync-wikidata`, from social-accounts): one query keyed by IPEDS id gives accounts, other
@@ -24,6 +27,25 @@ college looks like the site rather than like itself.
   social links, and the site icon in a single pass.
 - **Corrections** go in the existing `data/overrides.json` (links, accounts) or the new `data/aliases-curated.json`
   and `data/brand-overrides.json`, each value with its source, like every other override.
+
+## Keeping it fresh
+Every identity value lives in a committed file under `data/` and is applied to each school by one function,
+`applyIdentity` (lib/identity.ts), in the same order wherever it runs. So a full `npm run sync-data` (which reads the
+newest IPEDS directory for the links and short names) keeps everything else exactly as the files say, and each
+refresh below changes only its own file:
+
+| Command | Refreshes | Network |
+|---|---|---|
+| `npm run sync-data` | Links from the newest `HD{Y}`; the IPEDS short names; applies every identity file | NCES, Scorecard |
+| `npm run sync-wikidata` | `data/wikidata.json`: social accounts, other names, article links | Wikidata (11 queries) |
+| `npm run probe-sites` | `data/site-probe.json`, `data/link-issues.json`: visit pages, footer accounts, icon candidates, broken links | Each college's site, ~14,000 polite requests, ~20 minutes |
+| `npm run sync-brand` | `data/brand-colors.json`, `data/brand-logos.json`, `public/brand/`: colors and marks | Wikipedia (35 requests), each college's icon |
+| `npm run merge-identity` | Re-applies the files above to the committed `data/schools.json` and rebuilds `data/aliases.json` (no network) | None |
+
+The last three scripts call `merge-identity` themselves. A link becomes null only after two probe runs a day or more
+apart both find it gone, so run `probe-sites` (then `sync-brand`) about monthly. Corrections go in
+`data/overrides.json` (links, accounts), `data/aliases-curated.json`, and `data/brand-overrides.json` (`logo: false`
+removes a college's mark on the next deploy). No scheduled workflow runs these yet; see links.md's As built.
 
 ## What was measured (2026-10-03)
 - `HD2025`: homepage 1,893, admissions 1,800, application 1,757, financial aid 1,807, net price 1,877, veterans

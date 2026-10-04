@@ -242,6 +242,8 @@ export const TOPIC_FIELDS: Readonly<Record<TopicKey, readonly FieldPath[]>> = {
     "campus.services",
     "campus.calendar",
     "demographics.disability_services",
+    // The disability-services office link beside the share (specs/school-identity/links.md).
+    "links.disability_services",
     // Religious life (specs/religious-life.md): IPEDS affiliation, CDS C7, H14, F2.
     "religion.affiliation",
     "reported.admission_profile.factors.religious",
@@ -312,6 +314,10 @@ export const TOPIC_FIELDS: Readonly<Record<TopicKey, readonly FieldPath[]>> = {
     "reported.aid.methodology",
     "reported.aid.dates",
     "reported.aid.international",
+    // The net price calculator, financial aid office, and veterans' benefits links (specs/school-identity/links.md).
+    "links.price_calculator",
+    "links.financial_aid",
+    "links.veterans",
   ],
   outcomes: [
     "outcomes.median_earnings_10yr",
@@ -342,4 +348,17 @@ export const TOPIC_FIELDS: Readonly<Record<TopicKey, readonly FieldPath[]>> = {
 };
 
 /** Every field the profile shows anywhere, for the overview's numbered source list. */
-export const PROFILE_FIELDS: readonly FieldPath[] = [...new Set([...OVERVIEW_FIELDS, ...Object.values(TOPIC_FIELDS).flat(), "aid.cds" as const, "location.city" as const])];
+export const PROFILE_FIELDS: readonly FieldPath[] = [
+  ...new Set([
+    ...OVERVIEW_FIELDS,
+    ...Object.values(TOPIC_FIELDS).flat(),
+    "aid.cds" as const,
+    "location.city" as const,
+    // The hero's official links row (specs/school-identity/links.md); shown on the overview, not a topic page.
+    "links.website" as const,
+    "links.admissions" as const,
+    "links.apply" as const,
+    "links.visit" as const,
+    "links.virtual_tour" as const,
+  ]),
+];

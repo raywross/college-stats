@@ -34,7 +34,7 @@
       "publisher": "National Center for Education Statistics (NCES)",
       "edition": "2025–26 (HD2025)",
       "url": "https://nces.ed.gov/ipeds/complete-data-files/HD2025.zip",
-      "description": "Every college's directory entry: its city, suburb, town, or rural setting, Carnegie Classification, federal designations such as HBCU and land-grant, and its location on the map."
+      "description": "Every college's directory entry: its city, suburb, town, or rural setting, Carnegie Classification, federal designations such as HBCU and land-grant, and its location on the map. Also the links each college reports: its website, admissions and application pages, financial aid and net price calculator offices, and veterans' and disability-services offices."
     },
     "ipeds-ef": {
       "label": "IPEDS Fall Enrollment survey (part D)",
@@ -119,6 +119,20 @@
       "edition": "Reviewed 2026-10-04",
       "url": "https://alison.legislature.state.al.us/files/pdf/SearchableInstruments/2024RS/SB129-enr.pdf",
       "description": "Laws that limit what public colleges in a state may offer, such as identity-based offices and programs, each with its statute, effective date, and a one-line summary checked against the statute text. Now: Alabama SB 129 (2024), Florida SB 266 (2023), Iowa SF 2435 (2024) and HF 856 (2025), Idaho SB 1198 (2025), North Carolina SB 558 (2026), Ohio SB 1 (2025), Tennessee SB 1084 (2025), Texas SB 17 (2023), Utah HB 261 (2024)."
+    },
+    "wikidata": {
+      "label": "Wikidata",
+      "publisher": "Wikimedia Foundation and contributors",
+      "edition": "Retrieved 2026-10-04",
+      "url": "https://www.wikidata.org/wiki/Property:P1771",
+      "description": "The free, community-edited knowledge base behind Wikipedia, joined to each college by its IPEDS unit ID: the college's social media accounts and the other names it goes by. Released under CC0. Corrections belong on Wikidata itself, which helps everyone who uses it."
+    },
+    "wikipedia": {
+      "label": "Wikipedia college color data",
+      "publisher": "Wikipedia contributors",
+      "edition": "Retrieved 2026-10-04",
+      "url": "https://en.wikipedia.org/wiki/Module:College_color/data",
+      "description": "English Wikipedia's table of college athletic programs' colors (Module:College color/data), each cited to the college's own brand or athletics guide, joined to a college through its Wikipedia article; for a college the table doesn't list, the hex colors in its article's infobox. Used only to give each profile the college's own colors, never as data. CC BY-SA."
     },
     "ipeds-c": {
       "label": "IPEDS Completions survey (degrees awarded by field)",

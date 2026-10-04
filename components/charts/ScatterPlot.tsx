@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { ArrowRight } from "lucide-react";
 import type { SchoolType } from "@/lib/types";
 import type { TermKey } from "@/lib/glossary";
+import type { CrestBrand } from "@/lib/brand";
 import { compact, formatBy, num, typeShort, type FormatKind } from "@/lib/format";
 import { Crest } from "@/components/school/Crest";
 import { InfoTip } from "@/components/ui/info-tip";
@@ -20,6 +21,8 @@ export interface ScatterPoint {
   type: SchoolType;
   city: string;
   state: string;
+  /** The crest's colors and mark (lib/brand.ts crestBrand), set on the server. */
+  brand?: CrestBrand;
 }
 
 /** Serializable axis config, so server pages can describe the chart. */
@@ -303,13 +306,13 @@ export function DotCard({
   school: active,
   stats,
 }: {
-  school: Pick<ScatterPoint, "id" | "name" | "city" | "state" | "type">;
+  school: Pick<ScatterPoint, "id" | "name" | "city" | "state" | "type" | "brand">;
   stats: { k: string; v: string }[];
 }) {
   return (
     <>
             <div className="flex items-center gap-2.5">
-              <Crest id={active.id} name={active.name} size="sm" />
+              <Crest id={active.id} name={active.name} size="sm" brand={active.brand} />
               <div className="min-w-0">
                 <p className="truncate text-sm font-bold">{active.name}</p>
                 <p className="text-xs text-muted-foreground">

@@ -217,17 +217,17 @@ article. 35 requests in all (the module and 34 batches of 50 leads), 35 seconds.
 | Result | Colleges |
 |---|---|
 | **Colors** | **1,316** (79% of colleges with an article, 70% of 1,893) |
-| from the module by exact key / alias / normalized key | 682 / 31 / 33 (746) |
-| from the infobox's own hex values | 570 |
-| none: no colors in the infobox | 196 |
-| none: color names only ("Red and black", `{{color box|maroon}}`) | 133 |
+| from the module by exact key / alias / normalized key | 682 / 31 / 35 (748) |
+| from the infobox's own hex values | 568 |
+| none: no colors in the infobox | 193 |
+| none: color names only ("Red and black", `{{color box|maroon}}`) | 136 |
 | none: a team link the module doesn't know | 8 |
 | none: no infobox | 10 |
 
 The spec's estimate of 1,500 assumed more infoboxes give hex values; the shortfall is the 329 articles that give
 names or nothing, which the rule against guessing from names leaves alone (the brand-guide reader deferred above is
 the way to close it). Derived: text white on 1,129 accents, black on 187; the crest's end is a second brand color for
-122, a darkened accent for 995, a lightened one for 198; 3 colleges have only neutral colors (accent = the first).
+122, a darkened accent for 994, a lightened one for 199; 3 colleges have only neutral colors (accent = the first).
 Every accent and every gradient end has at least 4.50:1 against its text color. `data/brand-colors.json`: 462 KB.
 
 **Marks.** Waiting for `data/site-probe.json` (probe track) when this was written; see the integrator's note in the
@@ -302,7 +302,8 @@ and 2.65:1 (dark) and the check exited 1.
    there is exactly one per color.
 6. **Normalized join, measured.** Beyond dashes, accents, "&", and "St." (after the first word) as "State", it tries
    the men's half of a two-team athletics article ("Central Arkansas Bears and Sugar Bears" → "Central Arkansas
-   Bears"): 33 joins, all checked by hand. A normalized form shared by two entries joins nothing.
+   Bears") and a sport's article for its program ("Sewanee Tigers football" → "Sewanee Tigers"): 35 joins, all
+   checked by hand. A normalized form shared by two entries joins nothing.
 7. **Lineage.** `brand.colors` (and `brand.names`): `{ source: "wikipedia", method: "reported", url: <the brand guide
    the entry cites, else the module's page>, field: <the module key>, quote: <the guide's title>, retrieved }`;
    infobox colors cite the article with `field: "infobox colors"` and the field as written as the quote. Corrected

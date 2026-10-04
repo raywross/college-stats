@@ -145,8 +145,10 @@ test("the join: exact key, then alias key, then normalized key", () => {
   assert.equal(normalizeKey("Ball St. Cardinals"), "ball state cardinals");
   assert.equal(normalizeKey("St. Cloud St. Huskies"), "st cloud state huskies", "a leading St. is Saint");
   assert.equal(normalizeKey("Texas A&M–Commerce Lions"), "texas a and m commerce lions");
-  // An athletics article named for both teams reaches the men's key.
+  // An athletics article named for both teams reaches the men's key; one sport's article reaches its program.
   assert.equal(joinTeam(mod, "Central Arkansas Bears and Sugar Bears")?.entry.key, "Central Arkansas Bears");
+  assert.equal(joinTeam(mod, "Stanford Cardinal football")?.entry.key, "Stanford Cardinal");
+  assert.equal(joinTeam(mod, "Duke Blue Devils men's basketball")?.entry.key, "Duke Blue Devils");
   assert.equal(joinTeam(mod, "Nowhere Nobodies"), null);
 });
 

@@ -474,7 +474,9 @@ export function joinTeam(mod: ColorModule, team: string): { entry: ColorModuleEn
     if (k) return { entry: mod.entries.get(k)!, via: "alias" };
   }
   const index = normalizedIndex(mod);
-  const tries = [name];
+  // A link to one sport's or the department's article is the same program: "Sewanee Tigers football" → "Sewanee Tigers".
+  const program = name.replace(/ (?:(?:men's |women's )?(?:football|basketball)|athletics)$/i, "");
+  const tries = [name, ...(program !== name ? [program] : [])];
   // Every " and " from the right: "Hobart and William Smith Statesmen and Herons" → "Hobart and William Smith Statesmen".
   for (let at = name.lastIndexOf(" and "); at > 0; at = name.lastIndexOf(" and ", at - 1)) tries.push(name.slice(0, at));
   for (const t of tries) {

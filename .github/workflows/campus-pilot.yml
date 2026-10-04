@@ -8,10 +8,6 @@
 name: Campus-life pilot
 
 on:
-  # A dispatch needs this file on main; until it gets there, pushing the run branch starts the 25-college pilot with
-  # the defaults below (all 25, $15 cap). The run's own commit back uses GITHUB_TOKEN, which doesn't start a new run.
-  push:
-    branches: [campus-pilot-run]
   workflow_dispatch:
     inputs:
       college:

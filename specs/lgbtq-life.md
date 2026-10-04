@@ -5,7 +5,7 @@
 > the students page's Campus life section and beside the men/women shares ([As built](#as-built-phase-1)). Phase 2
 > (2026-10-04, branch `feature/campus-life-2-state-laws`): the state-law table now covers six states, each read in the
 > statute ([Phase 2 as built](#phase-2-as-built-state-laws)). Phases 3
-> through 5 (directory leads, policies, centers, conduct codes, pilot, rollout) are still planned, so the spec stays on the roadmap. Research 2026-09-29: IPEDS 2023 data files and dictionaries (every figure below
+> through 5 (directory leads, policies, centers, conduct codes, pilot, rollout) are still planned, so the spec stays on the roadmap; the phase 4 pilot pipeline is built (2026-10-04, branch `feature/campus-life-2-pilot`), with its live run pending ([Phase 4 as built](#phase-4-as-built-pilot)). Research 2026-09-29: IPEDS 2023 data files and dictionaries (every figure below
 > about IPEDS was computed from them), Common Data Set templates, the national directories named here, and a
 > per-school look at UT Austin with contrasting colleges. Findings are verified unless marked *unverified*.
 > Companions: [religious-life.md](religious-life.md) (its source tiers, crawl strategy, and access rules apply here
@@ -134,8 +134,11 @@ lists give names only, so each entry needs a matching step and a check of the co
   date), under a neutral heading ("What the student conduct policy says"). No labels like "unsafe" or "hostile."
 - **Only from the college's current document.** Never inferred from religious affiliation, CCCU membership, a Title
   IX exemption, or an advocacy list. Those are leads for where to look, not evidence.
-- **Human review.** Every conduct-restriction finding and every "No" on a policy gets a person's check before it's
-  published; the agent's extraction alone isn't enough. Findings name the document and its date.
+- **Second check (was: human review).** Every conduct-restriction finding and every "No" on a policy is re-checked
+  before it's published; the agent's extraction alone isn't enough. Findings name the document and its date.
+  *Departure, owner decision 3 (2026-10-04):* the re-check is a second model (claude-sonnet-5) reading the stored
+  quote against the page, not a person; only findings it confirms are published (`verified_by`), and disagreements
+  are dropped and logged in the run report.
 - **Expiry.** Policies and centers are re-checked yearly. A fact older than 2 years is hidden until re-verified, and
   a closed center stays in history ("closed April 2024") rather than silently disappearing.
 - **Aggregate only.** No data about individual students or staff beyond what the college publishes, and the
@@ -359,6 +362,45 @@ programs; **Mississippi** qualifies on its text and waits on the courts; **India
    Florida's definition lives in board rules that change without a session (BOG 9.016, Rule 6A-14.0718).
 3. Update `checked` for each law re-read and `reviewed` for the table (the validator refuses a `checked` date after
    `reviewed`), then run `npm run sync-data` so the lineage dates move.
+
+## Phase 4 as built (pilot)
+Built 2026-10-04 on the shared pilot engine ([college-reported-data.md](college-reported-data.md#campus-life-pilot-as-built-2026-10-04)).
+Per college: the LGBTQ+ center or office page, the college's list of LGBTQ+ groups, and the policy pages (lgbtq-life
+"Scaling"); the conduct code only at religious colleges, trans admission only at historically single-sex colleges.
+- **Stored** in the `campus_pages` detail table: `center` (open or closed, with the closure date when stated) and
+  `policies[]` as `PolicyCheck` rows (lib/directories.ts): each item "yes" or "no" with its page, date checked, and
+  quote; "not found" is never stored (a missing page is not a no). Every "no" and the conduct restriction carry
+  `verified_by` (owner decision 3, above); `checkCampusPages` refuses one without it. The conduct quote is the
+  college's own words, cut at a word boundary to 160 characters. College-recognized groups are tier B listings in
+  the `directories` table.
+- **Shown** by `LgbtqPolicies` (`components/school/CampusPages.tsx`), after the LGBTQ+ life block: the center, the
+  policy items ("Yes"/"No" and the item, each with its ⓘ), and "What the student conduct policy says" as a quote.
+  Nothing is graded or ranked; no filter or Compare row yet (the Explore filters wait for rollout coverage).
+  Facts older than two years hide.
+
+**Measured without a model (2026-10-04).** The pipeline's fetcher and page gathering were run on the answer key's own
+URLs (257 requests): every page the key could read, and whether the key's hand-copied quotes pass our quote check on
+the text we read. 274 of 289 quotes on readable pages passed (94.8%); every miss was in the key, not the check
+(bracketed completions such as "C[atholic faith]", a computed sum given as a quote, a home-page quote reused on
+sub-pages, a meta description). Average extraction input per college: Greek 30,900 characters (max 70,100), faith
+11,600, LGBTQ+ 20,800. For this domain: nondiscrimination statements 19 read of 19, name policies 10 of 10, housing 7 of
+7, restroom lists 6 of 6, conduct codes 4 of 4 (Liberty's full Liberty Way is in a JavaScript-only viewer; the
+doctrinal statement was read), health plan pages 2 of 2, center pages 11 of 14 (the other three are dead: UT's
+diversity.utexas.edu, Alabama's safezone site, Harvard's bgltq.fas). The key found **no** college whose own page states
+that its student plan covers transition-related care.
+
+**Cost (estimates until the workflow run measures them).** Per college: discovery 3 Sonnet calls with up to 12
+searches, about $0.20–0.25 (searches $0.10 per 10); extraction about 21,600 Haiku input tokens and 3,600 output from the
+measured page sizes, $0.04; escalation (assumed one domain in three) $0.03; second checks $0.02. About $0.30–0.34 per
+college, $8 for the 25, $570–640 for ~1,890 colleges. Cheapest configuration to test next: free path probes before paid
+search, one discovery call for all three domains, and Message Batches for extraction and checks (half price): about
+$0.16–0.20 per college, $300–380 for a full run.
+
+**Worth scaling (pending the live run's precision):** the nondiscrimination statement (readable everywhere the key
+read it; the "partial" cases, Notre Dame and Baylor, cover these only in harassment policy), the center page (with
+closures), housing and name policies, and the conduct code at religious colleges. **Not worth it per college:** the
+student health plan item (0 of 25 colleges state it on a page; drop it or ask the Clearinghouse list's compiler) and
+restroom lists (rarely published, rarely answerable).
 
 ## Rejected
 Campus Pride Index and its "Worst List" (offline, pay-to-participate self-assessment, not updated since 2023);

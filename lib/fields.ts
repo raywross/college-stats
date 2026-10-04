@@ -177,6 +177,8 @@ export const FIELDS = {
   // table; the summary here says which traditions, councils, and LGBTQ+ kinds appear, for filters and section checks.
   directories: { label: "Groups listed by national directories", topic: "campus", source: "directory", vintage: null },
   "detail.directories": { label: "Campus chapters and groups listed by national organizations", topic: "campus", source: "directory", vintage: null },
+  // Campus-life pilot (lib/campus-pages.ts): facts from the college's own policy, office, and report pages, each quoted.
+  "detail.campus_pages": { label: "Campus life facts from the college's own pages (policies, offices, reports)", topic: "campus", source: "policy-page", vintage: null },
   // Majors (specs/data-expansion/majors.md): IPEDS Completions, bachelor's degrees by field (lib/majors.ts).
   "academics.bachelors_awarded": { label: "Bachelor's degrees awarded (first majors)", topic: "academics", source: "ipeds-c", vintage: "ipeds-c" },
   "academics.majors_top": {

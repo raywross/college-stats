@@ -152,6 +152,55 @@ supporting quote, and a human-review queue for conduct-code findings:
 - **Access rules:** obey `robots.txt` and crawl delays, never get around bot protection, and ask organizations that
   cover many campuses for data directly ([religious-life.md](religious-life.md#access-rules-apply-to-both-specs)).
 
+### Campus-life pilot, as built (2026-10-04)
+Branch `feature/campus-life-2-pilot`. The per-college step that [religious-life.md](religious-life.md#phase-2-as-built-pilot)
+(phase 2), [greek-life.md](greek-life.md#phase-2-as-built-pilot) (phase 2), and
+[lgbtq-life.md](lgbtq-life.md#phase-4-as-built-pilot) (phase 4) call "pilot", for the 25 pilot colleges only (owner
+decision 2, 2026-10-04: no full run). `npm run campus-pilot [-- --college <id> … --rediscover --cap 15]`,
+`npm run score-campus-pilot -- --key <answer-key.json>`; workflow `.github/workflows/campus-pilot.yml`.
+
+**Pipeline** (`scripts/lib/campus-pilot/`, reusing this engine's pricing, robots-aware HTTP, HTML and PDF text):
+1. **Discovery** (`llm.mts`, `REPORTED_MODELS.discovery` = Sonnet 5): one call per domain (Greek, faith, LGBTQ+),
+   web search only (at most 4 searches per domain, no web fetch), returning links through a strict `save_links` tool
+   (`schema.mts` `DISCOVERY_SCHEMAS`): FSL office, report pages/files, recruitment; faith office, the college's group
+   list, a religion report, campus faith groups' own pages; LGBTQ+ center and groups, and the policy pages
+   (nondiscrimination, housing, name/pronouns, health plan, restrooms, trans admission at single-sex colleges, and the
+   conduct code at religious colleges). Links are saved per college in `data/campus-sources.json` (recipe: links,
+   and each page's status, SHA-256, ETag, Last-Modified), so later runs skip discovery and re-fetch only changed pages.
+2. **Fetching** (`pages.mts`): our code fetches every page through the national-directory crawler's `PoliteHttp`
+   (robots.txt, Crawl-delay, ≥ 2 s per host, `college-stats-research/0.1`), caches bodies in `.cache/campus-pages/`,
+   never requests a Campus Labs `/engage/api/` path, and follows a few links from office pages by rule (FSL size,
+   community, and grade reports newest first; the office's group pages). Refusals go to `data/directories/blocked.json`
+   (org `campus-pilot`; owner decision 1); a host that never answered is a dead page, not a block. Long pages are cut to
+   keyword windows (conduct terms in a handbook, "gender-inclusive" on a housing page).
+3. **Extraction** (`REPORTED_MODELS.extraction` = Haiku 4.5): one call per domain against a fixed schema through a
+   forced strict tool (`EXTRACTION_SCHEMAS`; "not stated" is `""`/`0` rather than `null` to stay under the 16-union
+   limit, #64). Every fact names its page (P1, P2, …) and quotes it.
+4. **Quote check** (code): each quote must be on its page (`quoteOnPage`: case, spacing, curly quotes, dashes folded;
+   "…" splits parts). A failed quote, a failed call, or `confidence: "low"` re-reads the domain once with Sonnet 5
+   (thinking off for the forced tool); a quote that still fails drops that fact. Tier A facts must come from the
+   college's own domain.
+5. **Second check** (owner decision 3, replacing the human review in lgbtq-life.md "Sensitive facts: rules"):
+   Sonnet 5 re-reads every LGBTQ+ "no", every conduct restriction, and every official religious composition against
+   the stored quote and the page text around it; only confirmed findings are kept (`verified_by: "claude-sonnet-5"`,
+   with the date checked); rejections are dropped and listed in the run report.
+6. **Spend cap**: every response's usage is priced (`costOf`) into a run budget that refuses a call that could pass
+   the cap (default $15, kept across runs in `.cache/campus-pages/spent.json`).
+
+**Files:** `data/campus-pages.json` (published facts, one college per line), `data/campus-sources.json` (recipes),
+`data/reports/campus-pilot-<run>.json` (raw extractions, dropped facts with reasons, second checks, every call's
+tokens and cost) and `campus-pilot-score-<run>.{json,md}`.
+
+**Into the dataset** (`scripts/lib/campus-pilot/merge.mts`, run by `npm run merge-directories` and `npm run
+sync-data`): tier A facts become a `campus_pages` detail table (`lib/campus-pages.ts`, field `detail.campus_pages`,
+source `policy-page`, year = newest date checked, checked by `checkCampusPages`); groups the college's own pages
+name (tier B) and a group's own size claim (tier C) become listings in the `directories` table, each credited to the
+page it came from. The `policy-page` source now describes office pages and reports as well as policies.
+
+**The live run hasn't happened yet.** No Anthropic key is available outside GitHub Actions (none in any local
+`.env.local`), so the run goes through the workflow; see the domain specs' pilot sections for what was measured
+without a model and the cost estimates.
+
 ## Files (planned)
 - `scripts/sync-college-reported.mts` (`npm run sync-college-reported`), `--pilot`, `--college <id>`, `--rediscover`.
 - `data/college-sources.json` (recipes, hashes), `data/college-reported.json` (published values),

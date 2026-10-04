@@ -142,11 +142,11 @@
       "description": "Figures an organization publishes about one campus, such as how many students of a faith it estimates. Shown with the organization's name and the date we read it, never ranked or compared as official counts. Now: none yet."
     },
     "policy-page": {
-      "label": "College policy pages",
+      "label": "College policy and office pages",
       "publisher": "Each college",
       "edition": "Checked per page",
       "url": "/data#sources",
-      "description": "A college's own current policy page or handbook (nondiscrimination, housing, records, health plan, conduct code), checked on a date and quoted. Findings of a restriction or a missing policy are confirmed by a second, independent model check against the quote and the page before they are published."
+      "description": "A college's own current pages, checked on a date and quoted: policy pages and handbooks (nondiscrimination, housing, records, health plan, conduct code), its offices' pages (fraternity and sorority life, religious life, LGBTQ+ center), and its reports (fraternity and sorority sizes, students' religious affiliation). Findings of a restriction or a missing policy are confirmed by a second, independent model check against the quote and the page before they are published, as is any official religious composition."
     }
   },
   "vintages": {

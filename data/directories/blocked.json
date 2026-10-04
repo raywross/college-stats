@@ -1,3 +1,12 @@
 {
-  "blocked": []
+  "blocked": [
+    {
+      "org": "campus-pilot",
+      "url": "https://deanofstudents.utexas.edu/sfl/downloads/",
+      "reason": "robots",
+      "detail": "UT Austin's Sorority and Fraternity Life chapter size and grade reports (one PDF per council per term); studentlife.utexas.edu robots.txt has Disallow: /sfl/downloads/ for every user agent. Hand reading per owner decision 1, or ask UT",
+      "first_seen": "2026-10-04",
+      "last_seen": "2026-10-04"
+    }
+  ]
 }

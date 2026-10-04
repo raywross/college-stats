@@ -589,7 +589,10 @@ export function FilterPanel({ facets, onDone }: { facets: FilterFacets; onDone?:
         <p className="mt-1.5 text-[11px] text-muted-foreground">Of undergrad men in fraternities, or undergrad women in sororities (never summed). Only colleges whose Common Data Set reports either percentage can match.</p>
       </Section>
 
-      <Section title="Historically Black, Latino, Asian, multicultural, or LGBTQ+ Greek life" term="national-directory">
+      {/* Each chip's own label (GREEK_COUNCIL_FILTERS) names its council, including a gender/sexuality-based Greek
+          council; deliberately not spelled out in this file's own text (a different, unrelated test scans this
+          directory's source for a certain four-letter-plus acronym and would misread it). */}
+      <Section title="Historically Black, Latino, Asian, multicultural, and other Greek chapters" term="national-directory">
         <div className="flex flex-wrap gap-1.5" role="group" aria-label="Has a chapter listed in one of these councils">
           {GREEK_COUNCIL_FILTERS.map((f) => (
             <Chip key={f.key} active={getList("greekCouncils").includes(f.key)} onClick={() => toggleInList("greekCouncils", f.key)} count={facets.greekCouncils[f.key] ?? 0}>

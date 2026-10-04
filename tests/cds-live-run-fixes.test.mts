@@ -73,3 +73,32 @@ test("an aid year read from the heading its mark sits under is found on the head
   assert.equal(valueOnLine("@370 2024-2025", "2025-2026 estimated", text), false);
   assert.equal(valueOnLine("@57 Indicate the academic year for which data are reported", "2025-2026", text), false);
 });
+
+/* ---- Fifth run (20261004-011421-7) ---- */
+
+test("next year's tuition is read from the cells of the college's own sector: a public's stray private cell is ignored", async () => {
+  // Florida's 2025–26 record had its in-state $6,436 in G.101 (the private cell) as well as G.104, and the page showed it
+  // as a private college's tuition.
+  const { readFileSync } = await import("node:fs");
+  const { join } = await import("node:path");
+  const { costAndDebtFromRecord, tuitionSector } = await import("../lib/cds/cost-and-debt.ts");
+  const schools = JSON.parse(readFileSync(join(import.meta.dirname, "..", "data", "schools.json"), "utf8")) as { unit_id: string; type: string }[];
+  const uf = schools.find((s) => s.unit_id === "134130")!;
+  assert.equal(tuitionSector(uf as never), "public");
+  const cell = (v: number) => ({ v, status: "passed", quote: `Tuition | $${v}`, cell: "G1" });
+  const record = {
+    unit_id: "134130",
+    documents: [
+      {
+        sha256: "f".repeat(64), edition: "2025-26", type: "pdf-flat", url: "https://ir.aa.ufl.edu/cds.pdf", retrieved: "2026-10-04", reads: {},
+        years: { "next-year": "2026–27", "graduating-class": "Class of 2025" },
+        items: { "G.101": cell(6436), "G.104": cell(6436), "G.105": cell(34616), "G.106": cell(34616), "G.111": cell(1959), "G.112": cell(14190) },
+      },
+    ],
+  };
+  const out = costAndDebtFromRecord(record as never, uf as never);
+  const tuition = out.cost?.next_year?.first_year.tuition;
+  assert.equal(tuition?.kind, "public", JSON.stringify(out.held ?? []));
+  assert.equal(tuition?.kind === "public" ? tuition.in_state : null, 6436);
+  assert.equal(tuition?.kind === "public" ? tuition.out_of_state : null, 34616);
+});

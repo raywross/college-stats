@@ -703,11 +703,22 @@ export function codeTableText(table: TemplateTable, call: CallKey): string {
     .join("\n");
 }
 
+/**
+ * Cells whose template wording leaves out the heading that scopes them on the printed form. G.101/G.102 sit under
+ * "PRIVATE INSTITUTIONS" but read only "Tuition", and the first live run filled them at public colleges.
+ */
+const SCOPE_NOTES: Record<string, string> = {
+  "G.101": "private institutions only; leave out at a public college",
+  "G.102": "private institutions only; leave out at a public college",
+};
+
 /** " [Applied · In-State · Males]": the item's descriptors other than "All", the question's own words, or the group default. */
-export function descriptorText(it: Pick<TemplateItem, "question" | "category" | "cohort" | "residency" | "gender" | "unit">): string {
+export function descriptorText(it: Pick<TemplateItem, "question" | "category" | "cohort" | "residency" | "gender" | "unit"> & { code?: string }): string {
   const q = it.question.toLowerCase();
   const parts = [it.category, it.cohort === "First-time, first-year" ? null : it.cohort, it.residency, it.gender, it.unit]
     .map((p) => (p ?? "").replace(/\s+/g, " ").trim())
     .filter((p) => p && p !== "All" && !q.includes(p.toLowerCase()));
+  const note = SCOPE_NOTES[(it as { code?: string }).code ?? ""];
+  if (note) parts.push(note);
   return parts.length ? ` [${[...new Set(parts)].join(" · ")}]` : "";
 }

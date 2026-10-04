@@ -1677,3 +1677,9 @@ could not:
   - the instructions explain the tag words and how H.101's year is marked; a text value's digits found on its cited
     line count (the aid year read from a column heading).
   - Ohio State's robots.txt disallows its CDS PDF: an owner's-list entry (`data/reference/cds-urls.json`).
+- **Fifth run (`20261004-011421-7`): the first run worth publishing.** Grid confusion was gone (UC San Diego 4 failures,
+  Michigan State 3, Houston 1). A spot check against the colleges' published figures found one display bug: G.101/G.102
+  are the private-college tuition cells but read only "Tuition", and the model filled them at Florida and UC San Diego
+  too. `tuitionSector` now picks the G1 cells by the college's federal sector, and the code table labels G.101/G.102
+  private-only. Found, not fixed: Washington University's search step returned its 2024–25 CDS though a 2025–26 one
+  exists (the fourth run found it), so its "next year" price is 2025–26.

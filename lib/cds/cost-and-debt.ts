@@ -53,18 +53,29 @@ export interface Held {
 const PUBLIC_FIRST_YEAR = ["G.103", "G.104", "G.105", "G.106"] as const;
 const PUBLIC_UNDERGRAD = ["G.107", "G.108", "G.109", "G.110"] as const;
 
-function tuitionOf(doc: DocumentRecord, privateCode: CdsCode, publicCodes: readonly CdsCode[]): CdsTuition | null {
-  const amount = itemNumber(doc, privateCode);
-  if (amount !== null) return { kind: "private", amount };
+/**
+ * Which G1 tuition cells a college fills, from its federal sector: G.101/G.102 are the private-college cells, G.103–G.110
+ * the public ones. The first live run filed Florida's and UC San Diego's public tuition under the private cell too
+ * (its template question reads only "Tuition"), so a public's private cell is never read, nor a private's public ones.
+ */
+export function tuitionSector(school: Pick<School, "type">): "public" | "private" {
+  return school.type === "public" ? "public" : "private";
+}
+
+function tuitionOf(doc: DocumentRecord, sector: "public" | "private", privateCode: CdsCode, publicCodes: readonly CdsCode[]): CdsTuition | null {
+  if (sector === "private") {
+    const amount = itemNumber(doc, privateCode);
+    return amount === null ? null : { kind: "private", amount };
+  }
   const [d, s, o, n] = publicCodes.map((c) => itemNumber(doc, c));
   if (d === null && s === null && o === null && n === null) return null;
   return { kind: "public", in_district: d, in_state: s, out_of_state: o, nonresident_international: n };
 }
 
-function columnOf(doc: DocumentRecord, which: "first_year" | "undergraduate"): CdsCostColumn {
+function columnOf(doc: DocumentRecord, which: "first_year" | "undergraduate", sector: "public" | "private"): CdsCostColumn {
   const fy = which === "first_year";
   return {
-    tuition: fy ? tuitionOf(doc, "G.101", PUBLIC_FIRST_YEAR) : tuitionOf(doc, "G.102", PUBLIC_UNDERGRAD),
+    tuition: fy ? tuitionOf(doc, sector, "G.101", PUBLIC_FIRST_YEAR) : tuitionOf(doc, sector, "G.102", PUBLIC_UNDERGRAD),
     fees: itemNumber(doc, fy ? "G.111" : "G.115"),
     food_and_housing: itemNumber(doc, fy ? "G.112" : "G.116"),
     housing_only: itemNumber(doc, fy ? "G.113" : "G.117"),
@@ -72,9 +83,9 @@ function columnOf(doc: DocumentRecord, which: "first_year" | "undergraduate"): C
   };
 }
 
-/** The code behind the headline tuition: the private rate, or the in-state rate at a public. */
-function headlineTuitionCode(doc: DocumentRecord): CdsCode | null {
-  for (const c of ["G.101", "G.104", "G.103", "G.105"]) if (itemNumber(doc, c) !== null) return c;
+/** The code behind the headline tuition: the private rate at a private college, the in-state rate at a public. */
+function headlineTuitionCode(doc: DocumentRecord, sector: "public" | "private"): CdsCode | null {
+  for (const c of sector === "private" ? ["G.101"] : ["G.104", "G.103", "G.105"]) if (itemNumber(doc, c) !== null) return c;
   return null;
 }
 
@@ -220,14 +231,15 @@ function firstPassed(doc: DocumentRecord, codes: readonly CdsCode[]): CdsCode | 
 function nextYear(doc: DocumentRecord, school: School, lineage: Lineage, held: Held[]): { price: ReportedNextYearPrice | null; final: boolean } {
   const year = doc.years["next-year"];
   const notFinal = itemBoolean(doc, "G.002") === true;
-  const code = headlineTuitionCode(doc);
+  const sector = tuitionSector(school);
+  const code = headlineTuitionCode(doc, sector);
   if (!code || !year) return { price: null, final: !notFinal };
   if (notFinal) {
     const by = itemText(doc, "G.003");
     held.push({ block: "next_year", reason: `the college says its costs aren't final${by ? ` (final by ${by.replace(/^--/, "")})` : ""}` });
     return { price: null, final: false };
   }
-  const price: ReportedNextYearPrice = { entering_term: year, first_year: columnOf(doc, "first_year"), undergraduate: columnOf(doc, "undergraduate") };
+  const price: ReportedNextYearPrice = { entering_term: year, first_year: columnOf(doc, "first_year", sector), undergraduate: columnOf(doc, "undergraduate", sector) };
   const failures = [...checkTuitionVsFederal(price.first_year, school), ...checkColumnAgreement(price.first_year), ...checkColumnAgreement(price.undergraduate, "undergraduate")];
   if (failures.length) {
     held.push({ block: "next_year", reason: failures.join("; ") });

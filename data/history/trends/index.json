@@ -29,7 +29,36 @@
       "from": 2004,
       "to": 2024,
       "n": 912
+    },
+    {
+      "slug": "price-gap",
+      "title": "The price gap, by who is discounting",
+      "headline": {
+        "value": -0.116,
+        "format": "pct",
+        "caption": "change in what students pay on average, after inflation"
+      },
+      "sentence": "At the median college, full price fell 1% after inflation over 10 years, while what students actually paid fell 12%, and the discount off the sticker price grew.",
+      "spark": {
+        "start": 2013,
+        "kind": "academic",
+        "format": "num",
+        "series": [
+          {
+            "name": "Full price, indexed",
+            "values": [100,102.3,104.6,105.2,105.3,105.8,106.7,106.5,101.8,98.2,98.8]
+          },
+          {
+            "name": "Average paid, indexed",
+            "values": [100,101.9,103.9,103.8,101.8,100.9,99.9,99.5,92.1,90.5,88.4]
+          }
+        ]
+      },
+      "yearKind": "academic",
+      "from": 2013,
+      "to": 2023,
+      "n": 1432
     }
   ],
-  "files": ["men-and-women"]
+  "files": ["men-and-women","price-gap"]
 }

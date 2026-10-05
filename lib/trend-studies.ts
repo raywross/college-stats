@@ -55,6 +55,22 @@ export const STUDIES = [
     spec: "specs/national-trends.md",
     color: "var(--d-admissions)",
   },
+  {
+    slug: "price-gap",
+    number: 2,
+    title: "The price gap, by who is discounting",
+    question: "Full price held roughly steady after inflation while what students paid fell. Where, and for whom?",
+    series: ["full_price", "avg_paid_all", "aid_generosity", "grant_pct", "grant_avg", "net_price_income_1", "net_price_income_2", "net_price_income_3", "net_price_income_4", "net_price_income_5"],
+    yearKind: "academic",
+    window: 10,
+    groupings: ["region", "control", "size", "selectivity", "setting", "research"],
+    panelRule: "Colleges reporting both full price and average total cost in both years",
+    fields: ["cost.breakdown", "cost.avg_paid_all", "derived.aid_generosity", "aid.grant_pct", "aid.grant_avg", "cost.net_price_by_income"],
+    added: 20261004,
+    explore: { href: "/explore?sortBy=avg_cost_change", label: "Colleges by the change in what students pay" },
+    spec: "specs/trends/price-gap.md",
+    color: "var(--d-value)",
+  },
   // ↑ One entry per study. Studies 2–6 add theirs here (copy Study 1's shape).
 ] as const satisfies readonly StudyDef[];
 

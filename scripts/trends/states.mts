@@ -11,7 +11,7 @@ import { DIVERSITY_MIN_UNDERGRADS, real, type CpiTable } from "../../lib/history
 import type { SeriesKey } from "../../lib/history.ts";
 import { STATE_FLOOR } from "../../lib/trend-groups.ts";
 import { at, byGroup, fixedPanel, medianBy, nationalRow, reporting, round4, shareBy, totalBy, yearly, type Member } from "../../lib/trend-panel.ts";
-import { stateByPostal, stateName } from "../../lib/states.ts";
+import { stateByPostal } from "../../lib/states.ts";
 import type { StateEntry, StateMapMeasures, StateMeasures, StateOutOfState, StateOutOfStateSide, StateResearchUni, StateSparkLines, StateTopSendingState, StatesFile } from "../../lib/trends.ts";
 import type { TrendBuilder, TrendContext, TrendOutput } from "./context.mts";
 import { moversFor } from "./movers.mts";
@@ -43,14 +43,20 @@ function ptsChangeOf(m: Member, key: SeriesKey, from: number, to: number): numbe
   return a === null || b === null ? null : round4(b - a);
 }
 
-/** Yearly median of `key` over `ms`'s reporting colleges, `from` to `to`; real (to-year) dollars when `cpi` is given. */
-function medianLine(ms: readonly Member[], key: SeriesKey, from: number, to: number, cpi?: CpiTable, step = 1): (number | null)[] {
+/**
+ * Yearly median of `key` over `ms`'s reporting colleges, `from` to `to`; real (to-year) dollars when `cpi` is given.
+ * `requireCoverage` gates a year on MIN_YEAR_COVERAGE (90%) of `ms`, as the fall admissions/enrollment series report
+ * almost universally within a 300-undergrad panel; `avg_paid_all` (an academic-year money series) reports more
+ * unevenly even within that panel (price-gap.mts's yearly lines don't gate on it either), so its line is false here:
+ * every year's actual reporters, not held to 90%.
+ */
+function medianLine(ms: readonly Member[], key: SeriesKey, from: number, to: number, cpi?: CpiTable, step = 1, requireCoverage = true): (number | null)[] {
   return yearly(
     from,
     to,
     (y) => {
-      const r = reporting(ms, (m) => at(m, key, y) !== null);
-      if (!r) return null;
+      const r = requireCoverage ? reporting(ms, (m) => at(m, key, y) !== null) : ms.filter((m) => at(m, key, y) !== null);
+      if (!r || !r.length) return null;
       const v = medianBy(r, (m) => {
         const raw = at(m, key, y);
         if (raw === null) return null;
@@ -86,7 +92,7 @@ function sparkLinesOf(ms: readonly Member[], from: number, to: number, fromMoney
     undergrads: medianLine(ms, "undergrads", from, to),
     applicants: medianLine(ms, "applicants", from, to),
     acceptanceRate: medianLine(ms, "acceptance_rate", from, to),
-    avgPaid: medianLine(ms, "avg_paid_all", fromMoney, toMoney, cpi),
+    avgPaid: medianLine(ms, "avg_paid_all", fromMoney, toMoney, cpi, 1, false),
   };
 }
 
@@ -175,11 +181,12 @@ function buildState(
     privateForprofit: stateMembers.filter((m) => m.school.type === "private-forprofit").length,
   };
   const windows10 = moversFor(ctx, stateMembers, ["applications-surged", "grew-most", "pay-less"], [10], 10);
-  const base: Pick<StateEntry, "postal" | "name" | "territory" | "onSite" | "topSendingStates" | "researchUnis" | "movers"> = {
+  const base: Pick<StateEntry, "postal" | "name" | "territory" | "onSite" | "members" | "topSendingStates" | "researchUnis" | "movers"> = {
     postal,
     name: info?.name ?? postal,
     territory: !(info?.state ?? true),
     onSite,
+    members: [...stateMembers].map((m) => ({ unit_id: m.school.unit_id, name: m.school.name })).sort((a, b) => a.name.localeCompare(b.name)),
     topSendingStates: topSendingStatesOf(ctx, stateMembers),
     researchUnis: researchUnisOf(stateMembers, from, to),
     movers: windows10,
@@ -219,6 +226,12 @@ export function buildStates(ctx: TrendContext): TrendOutput {
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([postal, ms]) => buildState(ctx, postal, ms, from, to, fromMoney, toMoney));
 
+  // The "national median" comparison line uses the same 300-undergrad fixed panel as every state's own panel
+  // (not every college on the site): the raw, unfiltered universe includes hundreds of open-admission and very
+  // small colleges that don't report applicants or cost most years, which pushed every national line's coverage
+  // under MIN_YEAR_COVERAGE and left it entirely null.
+  const nationalPanel = fixedPanel(ctx.members, [from, to], (m, y) => (at(m, "undergrads", y) ?? 0) >= MIN_UNDERGRADS);
+
   const file: StatesFile = {
     name: NAME,
     built: ctx.hmeta.built,
@@ -231,9 +244,9 @@ export function buildStates(ctx: TrendContext): TrendOutput {
     fromMoney,
     toMoney,
     national: {
-      sparkLines: sparkLinesOf(ctx.members, from, to, fromMoney, toMoney, ctx.cpi),
+      sparkLines: sparkLinesOf(nationalPanel, from, to, fromMoney, toMoney, ctx.cpi),
       outOfStatePublicLine: medianLine(
-        ctx.members.filter((m) => m.school.type === "public"),
+        nationalPanel.filter((m) => m.school.type === "public"),
         "out_of_state_share",
         from,
         to,

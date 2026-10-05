@@ -53,7 +53,12 @@ price, and table columns follow the same order. A separate outcomes green was re
   for overlapping radar polygons. Exposed as `SLOT_COLORS` in `lib/brand.ts`.
 - **Demographics** `--demo-1..7`: fixed stack order (White, Asian, Hispanic, Black, Two+, Intl, Other) so each
   category keeps its color and neighbors.
-- **Sequential** `--seq-1..5` (violet): state tile map.
+- **Sequential** `--seq-1..5` (violet): state tile map (college counts; non-negative measures on the trends-by-state
+  map, e.g. acceptance rate, average cost, out-of-state share, test-optional share).
+- **Diverging** `--div-1..5` (orange = shrank ↔ neutral gray midpoint ↔ blue = grew; added for the trends-by-state
+  map's undergraduate-change measure, specs/trends/states.md): two hues + a neutral midpoint, monotone lightness
+  per arm. The categorical validator doesn't apply to a diverging ramp (it checks lightness monotonicity, not
+  adjacency ΔE); re-check monotonicity by eye if either arm's steps change.
 - **Status** `--good`, `--warning`, `--critical`: reserved; always shipped with an icon + label.
 
 Re-run the validator whenever a chart color changes (see [charts.md](charts.md)).

@@ -331,6 +331,8 @@ export interface StateEntry {
   territory: boolean;
   /** Colleges on the site, by control (regardless of the panel). */
   onSite: { total: number; public: number; privateNonprofit: number; privateForprofit: number };
+  /** Every on-site college, name order (the member list a tooFew state's page shows). */
+  members: { unit_id: string; name: string }[];
   /** The fixed panel (300+ undergraduates both ends, as Study 3's floor). */
   panel: { n: number; ids: string[] };
   /** Under STATE_FLOOR on-site colleges: every field below except `movers` is omitted. */

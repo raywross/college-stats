@@ -156,6 +156,13 @@
   --seq-4: oklch(0.56 0.23 283);
   --seq-5: oklch(0.42 0.2 283);
 
+  /* Diverging (orange = shrank, blue = grew, neutral gray midpoint) for signed change maps (specs/trends/states.md) */
+  --div-1: oklch(0.56 0.19 40);
+  --div-2: oklch(0.78 0.13 40);
+  --div-3: oklch(0.91 0.01 95);
+  --div-4: oklch(0.78 0.1 255);
+  --div-5: oklch(0.52 0.18 255);
+
   --good: #0ca30c;
   --warning: #fab219;
   --critical: #d03b3b;
@@ -226,6 +233,12 @@
   --seq-3: oklch(0.55 0.17 283);
   --seq-4: oklch(0.68 0.19 285);
   --seq-5: oklch(0.82 0.13 285);
+
+  --div-1: oklch(0.72 0.17 40);
+  --div-2: oklch(0.5 0.13 40);
+  --div-3: oklch(0.3 0.02 282);
+  --div-4: oklch(0.5 0.12 255);
+  --div-5: oklch(0.72 0.16 255);
 
   --hero-glow-1: oklch(0.55 0.25 283 / 0.45);
   --hero-glow-2: oklch(0.55 0.22 350 / 0.3);

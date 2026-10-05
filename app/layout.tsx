@@ -5,6 +5,7 @@ import { ThemeProvider } from "@/components/ThemeProvider";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { BottomNav } from "@/components/layout/BottomNav";
+import { ScrollDebug } from "@/components/layout/ScrollDebug";
 import { CompareTray } from "@/components/compare/CompareTray";
 import { SITE_NAME, SITE_TAGLINE } from "@/lib/brand";
 import "./globals.css";
@@ -58,6 +59,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             <Footer />
             <CompareTray />
             <BottomNav />
+            <ScrollDebug />
           </TooltipProvider>
         </ThemeProvider>
       </body>

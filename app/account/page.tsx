@@ -1,17 +1,24 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { connection } from "next/server";
-import { AccountSection, ComingSoon } from "@/components/account/AccountSection";
+import { Download, Trash2 } from "lucide-react";
+import { AccessLogList } from "@/components/account/AccessLogList";
+import { AccountSection } from "@/components/account/AccountSection";
 import { AuthUnavailable } from "@/components/account/AuthUnavailable";
+import { HouseholdSummary } from "@/components/account/HouseholdSummary";
 import { SignOutButton } from "@/components/account/SignOutButton";
 import { Term } from "@/components/ui/info-tip";
-import { AccountsSetupError, authConfigured, getAccount, requireUser } from "@/lib/auth";
+import { AccountsSetupError, authConfigured, currentStudent, getAccount, requireUser } from "@/lib/auth";
+import { myAccessLog, myHouseholds } from "@/lib/households";
+import { DELETE_GRACE_DAYS, shortDate } from "@/lib/household-rules";
+import { restoreAccount } from "./delete/actions";
 import { ProfileForm } from "./ProfileForm";
 
 export const metadata: Metadata = { title: "Your account", robots: { index: false } };
 
 /**
- * /account (specs/product/accounts.md): profile, then households, data export, and deletion. This shell is the
- * foundation's; the household, export, delete, and access-log sections are filled in by the households build.
+ * /account (specs/product/accounts.md): profile, households, who viewed your information, data export, and
+ * deletion. An account scheduled for deletion sees only the way back.
  */
 export default async function AccountPage() {
   await connection();
@@ -27,6 +34,12 @@ export default async function AccountPage() {
   }
   if (!account) return null;
   const { profile, user } = account;
+
+  if (profile.deleted_at) return <ScheduledForDeletion deletedAt={profile.deleted_at} />;
+
+  const [households, student] = await Promise.all([myHouseholds(), currentStudent()]);
+  const accessLog = student ? await myAccessLog() : [];
+  const defaultRole = profile.role_hint === "guardian" || profile.role_hint === "counselor" ? "guardian" : "student";
 
   return (
     <div className="mx-auto max-w-3xl space-y-6 px-4 py-10 sm:px-6 sm:py-14">
@@ -53,16 +66,67 @@ export default async function AccountPage() {
         title={<Term term="household">Household</Term>}
         description="Link a parent or guardian and the students they help. Students never see a guardian's finances."
       >
-        <ComingSoon>Households and invitations are coming soon.</ComingSoon>
+        <HouseholdSummary households={households} defaultRole={defaultRole} />
       </AccountSection>
+
+      {student && (
+        <AccountSection
+          id="access"
+          title={<Term term="access-log">Who viewed your information</Term>}
+          description="Guardians in your households use their own sign-in, so each time one looks at your list or profile, it shows up here."
+        >
+          <AccessLogList rows={accessLog} />
+        </AccountSection>
+      )}
 
       <AccountSection id="data" title="Your data" description="Download everything we keep about you as one file.">
-        <ComingSoon>Data export is coming soon.</ComingSoon>
+        <a
+          href="/account/export"
+          download
+          className="inline-flex h-10 items-center gap-2 rounded-full border px-4 text-sm font-semibold hover:bg-muted"
+        >
+          <Download className="size-4" />
+          Download my data (JSON)
+        </a>
+        <p className="mt-2 text-xs text-muted-foreground">
+          Your profile, households and their members&apos; names, the students you own or manage, invitations you sent, and who viewed your information.
+        </p>
       </AccountSection>
 
-      <AccountSection id="delete" title="Delete your account" description="Removes your profile and memberships. You can change your mind for 30 days.">
-        <ComingSoon>Account deletion is coming soon.</ComingSoon>
+      <AccountSection
+        id="delete"
+        title="Delete your account"
+        description={`Removes your profile and memberships. You can change your mind for ${DELETE_GRACE_DAYS} days.`}
+      >
+        <Link
+          href="/account/delete"
+          className="inline-flex h-10 items-center gap-2 rounded-full border border-destructive/40 px-4 text-sm font-semibold text-destructive hover:bg-destructive/10"
+        >
+          <Trash2 className="size-4" />
+          Delete my account…
+        </Link>
       </AccountSection>
+    </div>
+  );
+}
+
+function ScheduledForDeletion({ deletedAt }: { deletedAt: string }) {
+  const until = shortDate(new Date(new Date(deletedAt).getTime() + DELETE_GRACE_DAYS * 86_400_000).toISOString());
+  return (
+    <div className="mx-auto max-w-lg px-4 py-16 sm:py-20">
+      <h1 className="font-display text-3xl font-extrabold tracking-tight sm:text-4xl">Your account is scheduled for deletion</h1>
+      <p className="mt-3 text-muted-foreground">
+        It will be deleted for good on {until}. Until then you can restore it. Households you were in won&apos;t come back: ask for a new
+        invitation.
+      </p>
+      <div className="mt-8 flex flex-wrap gap-3">
+        <form action={restoreAccount}>
+          <button type="submit" className="inline-flex h-10 items-center rounded-full bg-primary px-5 text-sm font-semibold text-primary-foreground">
+            Restore my account
+          </button>
+        </form>
+        <SignOutButton className="h-10 rounded-full border px-4 text-sm font-semibold hover:bg-muted" />
+      </div>
     </div>
   );
 }

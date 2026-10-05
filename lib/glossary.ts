@@ -1362,6 +1362,27 @@ const entries = {
     category: "Your account",
     related: ["household", "guardian"],
   },
+  "household-invitation": {
+    term: "Household invitation",
+    short: "A link that lets one person join a household. It works once, for the email it was sent to, for 7 days.",
+    long: "The person signs in with that email and accepts. Anyone in the household can cancel an invitation that hasn't been used. We keep only a scrambled copy of the link, so it can't be shown again: if it's lost, cancel it and send a new one.",
+    category: "Your account",
+    related: ["household", "guardian"],
+  },
+  "edit-access": {
+    term: "Edit access",
+    short: "Lets a guardian change a student's list and profile, not just look at them. The student decides who gets it.",
+    long: "Guardians can view by default. A student can give or take back edit access at any time on the household page; for a managed student, the guardian who added them decides. Changes a guardian makes are marked with their name.",
+    category: "Your account",
+    related: ["guardian", "household"],
+  },
+  "access-log": {
+    term: "Access log",
+    short: "The list, on your account page, of when a guardian looked at your information (\"Mom viewed your list on Oct 2\").",
+    long: "Guardians use their own sign-in, never yours, so every look is recorded under their name. It's yours to see; guardians don't see each other's.",
+    category: "Your account",
+    related: ["guardian", "household"],
+  },
 } satisfies Record<string, GlossaryEntry>;
 
 export type TermKey = keyof typeof entries;

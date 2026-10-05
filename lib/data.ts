@@ -10,10 +10,12 @@ import {
   fetchHistoryVersion,
   fetchPublishedVersion,
   fetchSchoolHistory,
+  fetchTrendFile,
   supabaseClient,
   type HistoryFiles,
 } from "./supabase";
 import type { SchoolHistory } from "./history";
+import type { TrendFileName, TrendFiles } from "./trends";
 import type { SchoolDetail } from "./detail";
 import { fetchSchoolDetail } from "./supabase-detail";
 
@@ -143,6 +145,26 @@ export const getHistory = cache(async (unitId: string): Promise<SchoolHistory | 
     return await fetchSchoolHistory(supabaseClient("read"), unitId);
   } catch (err) {
     console.error(`Loading history for ${unitId} failed; the profile renders without it.`, err);
+    return null;
+  }
+});
+
+/* ------------------------------------------------------------------ */
+/* National trends (specs/national-trends.md)                          */
+/* ------------------------------------------------------------------ */
+
+/**
+ * One national trend file: data/history/trends/{name}.json (`npm run build-trends`), or in Supabase mode the
+ * history_files row `trends/{name}`. Null when it hasn't been built or published: pages render a quiet "not available
+ * yet" state, like history. Typed by name through `TrendFiles` (lib/trends.ts).
+ */
+export const getTrendFile = cache(async <N extends TrendFileName>(name: N): Promise<TrendFiles[N] | null> => {
+  if (!/^[a-z0-9-]+$/.test(name)) return null;
+  try {
+    if (dataSource() === "json") return readHistoryJson<TrendFiles[N]>(join("trends", `${name}.json`));
+    return (await fetchTrendFile(supabaseClient("read"), name)) as TrendFiles[N] | null;
+  } catch (err) {
+    console.error(`Loading trend file ${name} failed; the page renders without it.`, err);
     return null;
   }
 });

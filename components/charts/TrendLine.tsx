@@ -80,6 +80,8 @@ export function TrendLine({
   events = [],
   label,
   cadence = 1,
+  domain,
+  height: fixedHeight,
 }: {
   series: TrendSeries[];
   ranges?: TrendRange[];
@@ -102,10 +104,17 @@ export function TrendLine({
    * instead of breaking there, and hover steps between reported years. Default 1.
    */
   cadence?: number;
+  /**
+   * A fixed y-range instead of fitting the data: small multiples pass one domain to every panel so they share a
+   * scale (components/trends/SmallMultiples.tsx).
+   */
+  domain?: [number, number];
+  /** Fixed height in px (small multiples); otherwise 170 on narrow widths, 210 on wide. */
+  height?: number;
 }) {
   const [ref, width] = useWidth<HTMLDivElement>(560);
   const [hover, setHover] = useState<number | null>(null);
-  const height = width < 480 ? 170 : 210;
+  const height = fixedHeight ?? (width < 480 ? 170 : 210);
   const directLabels = width >= 480 && series.length + ranges.length <= 4;
   const m = { top: 14, right: directLabels ? 104 : 12, bottom: 24, left: 48 };
   const plotW = Math.max(40, width - m.left - m.right);
@@ -114,6 +123,10 @@ export function TrendLine({
   const tickFormat: FormatKind = axisFormat ?? (format === "money" ? "moneyCompact" : format === "pctSmart" ? "pct" : format);
 
   const { lo, hi, ticks } = useMemo(() => {
+    if (domain) {
+      const t = niceTicks(domain[0], domain[1], height < 150 ? 3 : 4);
+      return { lo: Math.min(domain[0], t[0]), hi: Math.max(domain[1], t[t.length - 1]), ticks: t };
+    }
     const vals: number[] = [];
     for (const y of years) {
       for (const s of series) {
@@ -138,7 +151,7 @@ export function TrendLine({
     if (min !== 0) min = min > 0 ? Math.max(0, min - pad) : min - pad;
     const t = niceTicks(min, max);
     return { lo: Math.min(min, t[0]), hi: Math.max(max, t[t.length - 1]), ticks: t };
-  }, [years, series, ranges, band]);
+  }, [years, series, ranges, band, domain, height]);
 
   const x = (year: number) => m.left + (to === from ? plotW / 2 : ((year - from) / (to - from)) * plotW);
   const y = (v: number) => m.top + plotH - ((v - lo) / (hi - lo || 1)) * plotH;

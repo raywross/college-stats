@@ -1,0 +1,35 @@
+{
+  "built": "2026-10-02",
+  "cards": [
+    {
+      "slug": "men-and-women",
+      "title": "Men and women in admissions",
+      "headline": {
+        "value": 0.4825,
+        "format": "pct",
+        "caption": "of colleges admit women at a notably higher rate than men"
+      },
+      "sentence": "In fall 2004, 13% of colleges admitted men at a rate 3 or more points higher than women; in fall 2024, 6% did, while 48% favored women by as much.",
+      "spark": {
+        "start": 2001,
+        "kind": "fall",
+        "format": "pct",
+        "series": [
+          {
+            "name": "Women admitted at a higher rate",
+            "values": [0.4897,0.4777,0.4476,0.4309,0.4291,0.4136,0.4336,0.4276,0.4059,0.42,0.4128,0.4255,0.4206,0.4377,0.4327,0.4377,0.452,0.4355,0.4346,0.4374,0.5443,0.4906,0.4973,0.4825]
+          },
+          {
+            "name": "Men admitted at a higher rate",
+            "values": [0.1126,0.1237,0.1297,0.1316,0.1327,0.1593,0.1442,0.1369,0.1251,0.1244,0.1421,0.131,0.1276,0.0992,0.106,0.1158,0.097,0.1191,0.1153,0.0864,0.071,0.0684,0.0626,0.0603]
+          }
+        ]
+      },
+      "yearKind": "fall",
+      "from": 2004,
+      "to": 2024,
+      "n": 912
+    }
+  ],
+  "files": ["men-and-women"]
+}

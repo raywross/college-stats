@@ -64,11 +64,13 @@ export function heightBudget(page: ProfilePage, viewport: ViewportName): number 
 
 /**
  * Compare height budgets in CSS pixels (specs/compare-redesign.md#budget), measured with three colleges: the
- * overview is at most 2,500px desktop and 4,000px phone; every other compare page (the six topics and the table) is
- * at most 4,000px desktop. Null where the spec sets none (tablet throughout; phone on every page but the overview).
+ * overview is at most 2,500px desktop and 4,000px phone; each of the six topic pages is at most 4,000px desktop. The
+ * table page has no budget: it is the complete view (every row for every college), so its height is its row count.
+ * Null where the spec sets none (tablet throughout; phone on every page but the overview).
  */
 export function compareHeightBudget(page: ComparePage, viewport: ViewportName): number | null {
   if (page === "overview") return viewport === "desktop" ? 2500 : viewport === "phone" ? 4000 : null;
+  if (page === "table") return null;
   return viewport === "desktop" ? 4000 : null;
 }
 

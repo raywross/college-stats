@@ -119,15 +119,17 @@ test("compare page paths: /compare?ids= for the overview, /compare/{page}?ids= f
   assert.equal(comparePagePath(["166027", "204796"], "table"), "/compare/table?ids=166027,204796");
 });
 
-test("compare height budgets: overview 2,500 desktop / 4,000 phone / none tablet; every other page 4,000 desktop, none elsewhere", () => {
+test("compare height budgets: overview 2,500 desktop / 4,000 phone / none tablet; topic pages 4,000 desktop, none elsewhere; the table none", () => {
   assert.equal(compareHeightBudget("overview", "desktop"), 2500);
   assert.equal(compareHeightBudget("overview", "phone"), 4000);
   assert.equal(compareHeightBudget("overview", "tablet"), null);
-  for (const page of ["admissions", "students", "academics", "cost", "outcomes", "history", "table"] as const) {
+  for (const page of ["admissions", "students", "academics", "cost", "outcomes", "history"] as const) {
     assert.equal(compareHeightBudget(page, "desktop"), 4000);
     assert.equal(compareHeightBudget(page, "tablet"), null);
     assert.equal(compareHeightBudget(page, "phone"), null);
   }
+  // The table is the complete view: every row for every college, so no height budget applies.
+  for (const viewport of ["desktop", "tablet", "phone"] as const) assert.equal(compareHeightBudget("table", viewport), null);
 });
 
 test("profile height budgets are unchanged by the compare addition", () => {

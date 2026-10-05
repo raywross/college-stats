@@ -85,6 +85,31 @@
       "n": 1432
     },
     {
+      "slug": "out-of-state",
+      "title": "Public colleges and students from other states",
+      "headline": {
+        "value": 0.1329,
+        "format": "pct",
+        "caption": "median public college's out-of-state share of first-years"
+      },
+      "sentence": "The median public college's out-of-state share rose from 11% in fall 2014 to 13% in fall 2024, and the share of publics that are 30%+ out-of-state rose from 17% to 22%.",
+      "spark": {
+        "start": 2004,
+        "kind": "fall",
+        "format": "pct",
+        "series": [
+          {
+            "name": "Median public's out-of-state share",
+            "values": [0.0855,null,0.0894,null,0.0921,null,0.0953,null,0.0979,null,0.1059,null,0.116,null,0.1213,null,0.119,null,0.1327,null,0.1329]
+          }
+        ]
+      },
+      "yearKind": "fall",
+      "from": 2014,
+      "to": 2024,
+      "n": 496
+    },
+    {
       "slug": "pell-gap",
       "title": "The Pell graduation gap",
       "headline": {
@@ -110,5 +135,5 @@
       "n": 1103
     }
   ],
-  "files": ["men-and-women","movers","pell-gap","price-gap","shrinking-colleges"]
+  "files": ["men-and-women","movers","out-of-state","pell-gap","price-gap","shrinking-colleges"]
 }

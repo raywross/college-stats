@@ -122,6 +122,64 @@ export interface MenAndWomenFile extends StudyFile<MenAndWomenValues> {
 }
 
 /* ------------------------------------------------------------------ */
+/* Study 5: public colleges and out-of-state students (out-of-state.json) */
+/* ------------------------------------------------------------------ */
+
+export interface OutOfStateValues {
+  /** Median public's out-of-state share of first-years, then and now. */
+  medianShare: ThenNow;
+  /** Share of public colleges 30%+ out-of-state, then and now. */
+  share30: ThenNow;
+  /** Students view: out-of-state share averaged with each college's first-years as the weight. */
+  weightedShare: ThenNow;
+  /** Yearly lines from the file's `lineFrom` to `to`, even years only (odd years null: `seriesStep`). */
+  lines: {
+    medianShare: (number | null)[];
+    share30: (number | null)[];
+    weightedShare: (number | null)[];
+  };
+}
+
+export interface OutOfStateFile extends StudyFile<OutOfStateValues> {
+  slug: "out-of-state";
+  /** Public colleges need this many enrolled first-years in the window's first fall to join the panel. */
+  minEnrolled: number;
+  /** "30%+ out-of-state" bar. */
+  threshold: number;
+  /** Context, not a fixed panel: private nonprofits' median out-of-state share, as a line (even years) and then/now. */
+  private: {
+    median: ThenNow;
+    line: (number | null)[];
+  };
+  /** Companion: the panel's median international share of first-years, then and now. */
+  internationalMedian: ThenNow;
+  /**
+   * The out-of-state premium: median public's full-price gap (out-of-state minus in-state), after inflation. Prices
+   * are an academic-year series (`lib/history.ts` kind "academic") and lag the fall residence data by a year, so this
+   * has its own `from`/`to` (both in `to`-year dollars via `real()`).
+   */
+  premium: {
+    from: number;
+    to: number;
+    lineFrom: number;
+    /** Median premium each academic year, in `to`-year dollars; null under 90% coverage. */
+    line: (number | null)[];
+    /** Then/now median premium, in `to`-year dollars. */
+    median: ThenNow;
+    /** Share of publics where the premium (in `to`-year dollars) exceeds $20,000, then and now. */
+    over20k: ThenNow;
+  };
+  /** Where out-of-state first-years at public colleges come from, summed from `detail.residence` in the newest even fall. */
+  sendingStates: {
+    year: number;
+    /** USPS code → out-of-state first-years from that state, across public colleges reporting the detail table. */
+    totals: Record<string, number>;
+    /** Public colleges summed (not the fixed panel: every public college with a home-states detail table). */
+    n: number;
+  };
+}
+
+/* ------------------------------------------------------------------ */
 /* Study 3: shrinking colleges (shrinking-colleges.json)                */
 /* ------------------------------------------------------------------ */
 
@@ -300,6 +358,7 @@ export interface TrendFiles {
   index: TrendIndex;
   "men-and-women": MenAndWomenFile;
   "shrinking-colleges": ShrinkingCollegesFile;
+  "out-of-state": OutOfStateFile;
   movers: MoversFile;
   "pell-gap": PellGapFile;
   "price-gap": PriceGapFile;

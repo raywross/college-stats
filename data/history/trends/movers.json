@@ -1,0 +1,4994 @@
+{
+  "name": "movers",
+  "built": "2026-10-02",
+  "yearKind": "fall",
+  "from": 2014,
+  "to": 2024,
+  "n": 1893,
+  "shown": 10,
+  "kept": 25,
+  "rules": {
+    "stillOpenMinUndergrads": 300,
+    "jumpFactor": 3,
+    "onlineFirst": 110,
+    "excludedCampuses": 42
+  },
+  "windows": [
+    {
+      "years": 10,
+      "lists": [
+        {
+          "key": "applications-surged",
+          "from": 2014,
+          "to": 2024,
+          "kind": "fall",
+          "floors": [
+            {
+              "series": "applicants",
+              "min": 2000,
+              "at": "start"
+            }
+          ],
+          "n": 885,
+          "median": 0.4167,
+          "excluded": {
+            "closed-or-merged": 6,
+            "under-300": 1,
+            "for-profit": 1,
+            "online-first": 8,
+            "reporting-jump": 2
+          },
+          "entries": [
+            {
+              "unit_id": "160621",
+              "name": "Southern University and A & M College",
+              "rank": 1,
+              "since": 2014,
+              "from": 3003,
+              "to": 24340,
+              "change": 7.1052
+            },
+            {
+              "unit_id": "138947",
+              "name": "Clark Atlanta University",
+              "rank": 2,
+              "since": 2014,
+              "from": 5140,
+              "to": 27245,
+              "change": 4.3006
+            },
+            {
+              "unit_id": "199102",
+              "name": "North Carolina A & T State University",
+              "rank": 3,
+              "since": 2014,
+              "from": 7075,
+              "to": 36496,
+              "change": 4.1584
+            },
+            {
+              "unit_id": "186371",
+              "name": "Rutgers University-Camden",
+              "rank": 4,
+              "since": 2014,
+              "from": 6550,
+              "to": 32840,
+              "change": 4.0137
+            },
+            {
+              "unit_id": "133526",
+              "name": "Edward Waters University",
+              "rank": 5,
+              "since": 2014,
+              "from": 2100,
+              "to": 10283,
+              "change": 3.8967
+            },
+            {
+              "unit_id": "163453",
+              "name": "Morgan State University",
+              "rank": 6,
+              "since": 2014,
+              "from": 4808,
+              "to": 23366,
+              "change": 3.8598
+            },
+            {
+              "unit_id": "199962",
+              "name": "Wingate University",
+              "rank": 7,
+              "since": 2014,
+              "from": 6601,
+              "to": 30339,
+              "change": 3.5961
+            },
+            {
+              "unit_id": "133650",
+              "name": "Florida Agricultural and Mechanical University",
+              "rank": 8,
+              "since": 2014,
+              "from": 5017,
+              "to": 22756,
+              "change": 3.5358
+            },
+            {
+              "unit_id": "220181",
+              "name": "Fisk University",
+              "rank": 9,
+              "since": 2014,
+              "from": 2544,
+              "to": 11421,
+              "change": 3.4894
+            },
+            {
+              "unit_id": "159009",
+              "name": "Grambling State University",
+              "rank": 10,
+              "since": 2014,
+              "from": 2894,
+              "to": 12976,
+              "change": 3.4838
+            },
+            {
+              "unit_id": "136215",
+              "name": "Nova Southeastern University",
+              "rank": 11,
+              "since": 2014,
+              "from": 4364,
+              "to": 17765,
+              "change": 3.0708
+            },
+            {
+              "unit_id": "232937",
+              "name": "Norfolk State University",
+              "rank": 12,
+              "since": 2014,
+              "from": 2817,
+              "to": 11247,
+              "change": 2.9925
+            },
+            {
+              "unit_id": "221759",
+              "name": "The University of Tennessee-Knoxville",
+              "rank": 13,
+              "since": 2014,
+              "from": 15442,
+              "to": 59764,
+              "change": 2.8702
+            },
+            {
+              "unit_id": "218733",
+              "name": "South Carolina State University",
+              "rank": 14,
+              "since": 2014,
+              "from": 2911,
+              "to": 11017,
+              "change": 2.7846
+            },
+            {
+              "unit_id": "101480",
+              "name": "Jacksonville State University",
+              "rank": 15,
+              "since": 2014,
+              "from": 2969,
+              "to": 11199,
+              "change": 2.772
+            },
+            {
+              "unit_id": "171146",
+              "name": "University of Michigan-Flint",
+              "rank": 16,
+              "since": 2014,
+              "from": 3160,
+              "to": 11873,
+              "change": 2.7573
+            },
+            {
+              "unit_id": "161086",
+              "name": "Colby College",
+              "rank": 17,
+              "since": 2014,
+              "from": 5148,
+              "to": 19187,
+              "change": 2.7271
+            },
+            {
+              "unit_id": "100706",
+              "name": "University of Alabama in Huntsville",
+              "rank": 18,
+              "since": 2014,
+              "from": 2104,
+              "to": 7630,
+              "change": 2.6264
+            },
+            {
+              "unit_id": "186399",
+              "name": "Rutgers University-Newark",
+              "rank": 19,
+              "since": 2014,
+              "from": 10332,
+              "to": 36793,
+              "change": 2.5611
+            },
+            {
+              "unit_id": "145725",
+              "name": "Illinois Institute of Technology",
+              "rank": 20,
+              "since": 2014,
+              "from": 3559,
+              "to": 12216,
+              "change": 2.4324
+            },
+            {
+              "unit_id": "202523",
+              "name": "Denison University",
+              "rank": 21,
+              "since": 2014,
+              "from": 4468,
+              "to": 15012,
+              "change": 2.3599
+            },
+            {
+              "unit_id": "228787",
+              "name": "The University of Texas at Dallas",
+              "rank": 22,
+              "since": 2014,
+              "from": 9587,
+              "to": 31789,
+              "change": 2.3158
+            },
+            {
+              "unit_id": "185828",
+              "name": "New Jersey Institute of Technology",
+              "rank": 23,
+              "since": 2014,
+              "from": 4777,
+              "to": 15607,
+              "change": 2.2671
+            },
+            {
+              "unit_id": "100858",
+              "name": "Auburn University",
+              "rank": 24,
+              "since": 2014,
+              "from": 16958,
+              "to": 55056,
+              "change": 2.2466
+            },
+            {
+              "unit_id": "175342",
+              "name": "Alcorn State University",
+              "rank": 25,
+              "since": 2014,
+              "from": 2078,
+              "to": 6532,
+              "change": 2.1434
+            }
+          ]
+        },
+        {
+          "key": "harder-to-get-into",
+          "from": 2014,
+          "to": 2024,
+          "kind": "fall",
+          "floors": [
+            {
+              "series": "applicants",
+              "min": 2000,
+              "at": "start"
+            }
+          ],
+          "n": 891,
+          "median": 0.0635,
+          "excluded": {
+            "closed-or-merged": 6,
+            "under-300": 1,
+            "reporting-jump": 5
+          },
+          "entries": [
+            {
+              "unit_id": "220181",
+              "name": "Fisk University",
+              "rank": 1,
+              "since": 2014,
+              "from": 0.8345,
+              "to": 0.3742,
+              "change": -0.4603
+            },
+            {
+              "unit_id": "129242",
+              "name": "Fairfield University",
+              "rank": 2,
+              "since": 2014,
+              "from": 0.7153,
+              "to": 0.3329,
+              "change": -0.3824
+            },
+            {
+              "unit_id": "202523",
+              "name": "Denison University",
+              "rank": 3,
+              "since": 2014,
+              "from": 0.5553,
+              "to": 0.1739,
+              "change": -0.3814
+            },
+            {
+              "unit_id": "100858",
+              "name": "Auburn University",
+              "rank": 4,
+              "since": 2014,
+              "from": 0.8347,
+              "to": 0.4592,
+              "change": -0.3755
+            },
+            {
+              "unit_id": "173124",
+              "name": "Bemidji State University",
+              "rank": 4,
+              "since": 2014,
+              "from": 0.9353,
+              "to": 0.5598,
+              "change": -0.3755
+            },
+            {
+              "unit_id": "200800",
+              "name": "University of Akron Main Campus",
+              "rank": 6,
+              "since": 2014,
+              "from": 0.9571,
+              "to": 0.5967,
+              "change": -0.3604
+            },
+            {
+              "unit_id": "176053",
+              "name": "Mississippi Christian University",
+              "rank": 7,
+              "since": 2014,
+              "from": 0.6304,
+              "to": 0.2911,
+              "change": -0.3393
+            },
+            {
+              "unit_id": "221759",
+              "name": "The University of Tennessee-Knoxville",
+              "rank": 8,
+              "since": 2014,
+              "from": 0.7483,
+              "to": 0.416,
+              "change": -0.3323
+            },
+            {
+              "unit_id": "175342",
+              "name": "Alcorn State University",
+              "rank": 9,
+              "since": 2014,
+              "from": 0.7844,
+              "to": 0.4533,
+              "change": -0.3311
+            },
+            {
+              "unit_id": "134097",
+              "name": "Florida State University",
+              "rank": 10,
+              "since": 2014,
+              "from": 0.5539,
+              "to": 0.2422,
+              "change": -0.3117
+            },
+            {
+              "unit_id": "141060",
+              "name": "Spelman College",
+              "rank": 11,
+              "since": 2014,
+              "from": 0.54,
+              "to": 0.2487,
+              "change": -0.2913
+            },
+            {
+              "unit_id": "107044",
+              "name": "Harding University",
+              "rank": 12,
+              "since": 2014,
+              "from": 0.9912,
+              "to": 0.7052,
+              "change": -0.286
+            },
+            {
+              "unit_id": "133650",
+              "name": "Florida Agricultural and Mechanical University",
+              "rank": 13,
+              "since": 2014,
+              "from": 0.4895,
+              "to": 0.2056,
+              "change": -0.2839
+            },
+            {
+              "unit_id": "167358",
+              "name": "Northeastern University",
+              "rank": 14,
+              "since": 2014,
+              "from": 0.3222,
+              "to": 0.0522,
+              "change": -0.27
+            },
+            {
+              "unit_id": "193900",
+              "name": "New York University",
+              "rank": 15,
+              "since": 2014,
+              "from": 0.3545,
+              "to": 0.0923,
+              "change": -0.2622
+            },
+            {
+              "unit_id": "218070",
+              "name": "Furman University",
+              "rank": 16,
+              "since": 2014,
+              "from": 0.6871,
+              "to": 0.4295,
+              "change": -0.2576
+            },
+            {
+              "unit_id": "166124",
+              "name": "College of the Holy Cross",
+              "rank": 17,
+              "since": 2014,
+              "from": 0.4334,
+              "to": 0.1761,
+              "change": -0.2573
+            },
+            {
+              "unit_id": "218973",
+              "name": "Wofford College",
+              "rank": 18,
+              "since": 2014,
+              "from": 0.7739,
+              "to": 0.5194,
+              "change": -0.2545
+            },
+            {
+              "unit_id": "174358",
+              "name": "Minnesota State University Moorhead",
+              "rank": 19,
+              "since": 2014,
+              "from": 0.8419,
+              "to": 0.5876,
+              "change": -0.2543
+            },
+            {
+              "unit_id": "232609",
+              "name": "University of Lynchburg",
+              "rank": 20,
+              "since": 2014,
+              "from": 0.6675,
+              "to": 0.4301,
+              "change": -0.2374
+            },
+            {
+              "unit_id": "164988",
+              "name": "Boston University",
+              "rank": 21,
+              "since": 2014,
+              "from": 0.3451,
+              "to": 0.1111,
+              "change": -0.234
+            },
+            {
+              "unit_id": "157447",
+              "name": "Northern Kentucky University",
+              "rank": 22,
+              "since": 2014,
+              "from": 0.9072,
+              "to": 0.6765,
+              "change": -0.2307
+            },
+            {
+              "unit_id": "229267",
+              "name": "Trinity University",
+              "rank": 23,
+              "since": 2014,
+              "from": 0.4842,
+              "to": 0.2592,
+              "change": -0.225
+            },
+            {
+              "unit_id": "216597",
+              "name": "Villanova University",
+              "rank": 24,
+              "since": 2014,
+              "from": 0.4933,
+              "to": 0.2698,
+              "change": -0.2235
+            },
+            {
+              "unit_id": "175421",
+              "name": "Belhaven University",
+              "rank": 25,
+              "since": 2014,
+              "from": 0.7169,
+              "to": 0.4975,
+              "change": -0.2194
+            }
+          ]
+        },
+        {
+          "key": "easier-to-get-into",
+          "from": 2014,
+          "to": 2024,
+          "kind": "fall",
+          "floors": [
+            {
+              "series": "applicants",
+              "min": 2000,
+              "at": "start"
+            }
+          ],
+          "n": 891,
+          "median": 0.0635,
+          "excluded": {
+            "closed-or-merged": 6,
+            "under-300": 1,
+            "reporting-jump": 5
+          },
+          "entries": [
+            {
+              "unit_id": "232557",
+              "name": "Liberty University",
+              "rank": 1,
+              "since": 2014,
+              "from": 0.2232,
+              "to": 0.9898,
+              "change": 0.7666
+            },
+            {
+              "unit_id": "234164",
+              "name": "Virginia Union University",
+              "rank": 2,
+              "since": 2014,
+              "from": 0.2389,
+              "to": 0.9799,
+              "change": 0.741
+            },
+            {
+              "unit_id": "140720",
+              "name": "Paine College",
+              "rank": 3,
+              "since": 2014,
+              "from": 0.3,
+              "to": 0.9543,
+              "change": 0.6543
+            },
+            {
+              "unit_id": "133979",
+              "name": "Florida Memorial University",
+              "rank": 4,
+              "since": 2014,
+              "from": 0.2054,
+              "to": 0.8526,
+              "change": 0.6472
+            },
+            {
+              "unit_id": "201690",
+              "name": "Central State University",
+              "rank": 5,
+              "since": 2014,
+              "from": 0.3772,
+              "to": 0.9861,
+              "change": 0.6089
+            },
+            {
+              "unit_id": "210331",
+              "name": "Corban University",
+              "rank": 6,
+              "since": 2014,
+              "from": 0.3738,
+              "to": 0.939,
+              "change": 0.5652
+            },
+            {
+              "unit_id": "197911",
+              "name": "Barton College",
+              "rank": 7,
+              "since": 2014,
+              "from": 0.3846,
+              "to": 0.942,
+              "change": 0.5574
+            },
+            {
+              "unit_id": "459949",
+              "name": "Texas A&M University-San Antonio",
+              "rank": 8,
+              "since": 2016,
+              "from": 0.3881,
+              "to": 0.928,
+              "change": 0.5399
+            },
+            {
+              "unit_id": "110547",
+              "name": "California State University-Dominguez Hills",
+              "rank": 9,
+              "since": 2014,
+              "from": 0.4234,
+              "to": 0.933,
+              "change": 0.5096
+            },
+            {
+              "unit_id": "117627",
+              "name": "La Sierra University",
+              "rank": 10,
+              "since": 2014,
+              "from": 0.4064,
+              "to": 0.915,
+              "change": 0.5086
+            },
+            {
+              "unit_id": "187985",
+              "name": "University of New Mexico-Main Campus",
+              "rank": 11,
+              "since": 2014,
+              "from": 0.4538,
+              "to": 0.9518,
+              "change": 0.498
+            },
+            {
+              "unit_id": "225399",
+              "name": "Houston Christian University",
+              "rank": 12,
+              "since": 2014,
+              "from": 0.3573,
+              "to": 0.8444,
+              "change": 0.4871
+            },
+            {
+              "unit_id": "157058",
+              "name": "Kentucky State University",
+              "rank": 13,
+              "since": 2014,
+              "from": 0.4769,
+              "to": 0.9608,
+              "change": 0.4839
+            },
+            {
+              "unit_id": "204617",
+              "name": "Ohio Dominican University",
+              "rank": 14,
+              "since": 2014,
+              "from": 0.4657,
+              "to": 0.9423,
+              "change": 0.4766
+            },
+            {
+              "unit_id": "242653",
+              "name": "Inter American University of Puerto Rico-Metro",
+              "rank": 15,
+              "since": 2014,
+              "from": 0.2249,
+              "to": 0.6972,
+              "change": 0.4723
+            },
+            {
+              "unit_id": "130776",
+              "name": "Western Connecticut State University",
+              "rank": 16,
+              "since": 2014,
+              "from": 0.4003,
+              "to": 0.8701,
+              "change": 0.4698
+            },
+            {
+              "unit_id": "110565",
+              "name": "California State University-Fullerton",
+              "rank": 17,
+              "since": 2014,
+              "from": 0.4447,
+              "to": 0.9052,
+              "change": 0.4605
+            },
+            {
+              "unit_id": "229063",
+              "name": "Texas Southern University",
+              "rank": 18,
+              "since": 2014,
+              "from": 0.5192,
+              "to": 0.9691,
+              "change": 0.4499
+            },
+            {
+              "unit_id": "168740",
+              "name": "Andrews University",
+              "rank": 19,
+              "since": 2014,
+              "from": 0.3688,
+              "to": 0.8185,
+              "change": 0.4497
+            },
+            {
+              "unit_id": "224554",
+              "name": "East Texas A&M University",
+              "rank": 20,
+              "since": 2014,
+              "from": 0.4784,
+              "to": 0.9224,
+              "change": 0.444
+            },
+            {
+              "unit_id": "100724",
+              "name": "Alabama State University",
+              "rank": 21,
+              "since": 2014,
+              "from": 0.5326,
+              "to": 0.9755,
+              "change": 0.4429
+            },
+            {
+              "unit_id": "139366",
+              "name": "Columbus State University",
+              "rank": 22,
+              "since": 2014,
+              "from": 0.5522,
+              "to": 0.9912,
+              "change": 0.439
+            },
+            {
+              "unit_id": "231581",
+              "name": "Bridgewater College",
+              "rank": 22,
+              "since": 2014,
+              "from": 0.4782,
+              "to": 0.9172,
+              "change": 0.439
+            },
+            {
+              "unit_id": "199157",
+              "name": "North Carolina Central University",
+              "rank": 24,
+              "since": 2014,
+              "from": 0.4322,
+              "to": 0.8696,
+              "change": 0.4374
+            },
+            {
+              "unit_id": "224226",
+              "name": "Dallas Baptist University",
+              "rank": 25,
+              "since": 2014,
+              "from": 0.4621,
+              "to": 0.8884,
+              "change": 0.4263
+            }
+          ]
+        },
+        {
+          "key": "grew-most",
+          "from": 2014,
+          "to": 2024,
+          "kind": "fall",
+          "floors": [
+            {
+              "series": "undergrads",
+              "min": 1000,
+              "at": "start"
+            }
+          ],
+          "n": 1189,
+          "median": -0.1212,
+          "excluded": {
+            "closed-or-merged": 30,
+            "under-300": 3,
+            "for-profit": 19,
+            "online-first": 48
+          },
+          "entries": [
+            {
+              "unit_id": "385619",
+              "name": "Everglades University",
+              "rank": 1,
+              "since": 2014,
+              "from": 1284,
+              "to": 2789,
+              "change": 1.1721
+            },
+            {
+              "unit_id": "178059",
+              "name": "Maryville University of Saint Louis",
+              "rank": 2,
+              "since": 2014,
+              "from": 2736,
+              "to": 5658,
+              "change": 1.068
+            },
+            {
+              "unit_id": "227863",
+              "name": "University of St Thomas",
+              "rank": 3,
+              "since": 2014,
+              "from": 1563,
+              "to": 3220,
+              "change": 1.0601
+            },
+            {
+              "unit_id": "436836",
+              "name": "University of Connecticut-Stamford",
+              "rank": 4,
+              "since": 2014,
+              "from": 1336,
+              "to": 2432,
+              "change": 0.8204
+            },
+            {
+              "unit_id": "459949",
+              "name": "Texas A&M University-San Antonio",
+              "rank": 5,
+              "since": 2015,
+              "from": 3630,
+              "to": 6599,
+              "change": 0.8179
+            },
+            {
+              "unit_id": "446604",
+              "name": "Uta Mesivta of Kiryas Joel",
+              "rank": 6,
+              "since": 2014,
+              "from": 1634,
+              "to": 2957,
+              "change": 0.8097
+            },
+            {
+              "unit_id": "219949",
+              "name": "Cumberland University",
+              "rank": 7,
+              "since": 2014,
+              "from": 1167,
+              "to": 2104,
+              "change": 0.8029
+            },
+            {
+              "unit_id": "140951",
+              "name": "Savannah College of Art and Design",
+              "rank": 8,
+              "since": 2014,
+              "from": 8846,
+              "to": 15243,
+              "change": 0.7232
+            },
+            {
+              "unit_id": "230603",
+              "name": "Southern Utah University",
+              "rank": 9,
+              "since": 2014,
+              "from": 5514,
+              "to": 9289,
+              "change": 0.6846
+            },
+            {
+              "unit_id": "137564",
+              "name": "Southeastern University",
+              "rank": 10,
+              "since": 2014,
+              "from": 2946,
+              "to": 4813,
+              "change": 0.6337
+            },
+            {
+              "unit_id": "104586",
+              "name": "Embry-Riddle Aeronautical University-Prescott",
+              "rank": 11,
+              "since": 2014,
+              "from": 1971,
+              "to": 3218,
+              "change": 0.6327
+            },
+            {
+              "unit_id": "193399",
+              "name": "University of Mount Saint Vincent",
+              "rank": 12,
+              "since": 2014,
+              "from": 1671,
+              "to": 2692,
+              "change": 0.611
+            },
+            {
+              "unit_id": "141060",
+              "name": "Spelman College",
+              "rank": 13,
+              "since": 2014,
+              "from": 2135,
+              "to": 3414,
+              "change": 0.5991
+            },
+            {
+              "unit_id": "133553",
+              "name": "Embry-Riddle Aeronautical University-Daytona Beach",
+              "rank": 14,
+              "since": 2014,
+              "from": 4954,
+              "to": 7860,
+              "change": 0.5866
+            },
+            {
+              "unit_id": "136215",
+              "name": "Nova Southeastern University",
+              "rank": 15,
+              "since": 2014,
+              "from": 4582,
+              "to": 7240,
+              "change": 0.5801
+            },
+            {
+              "unit_id": "164748",
+              "name": "Berklee College of Music",
+              "rank": 16,
+              "since": 2014,
+              "from": 4743,
+              "to": 7468,
+              "change": 0.5745
+            },
+            {
+              "unit_id": "137847",
+              "name": "The University of Tampa",
+              "rank": 17,
+              "since": 2014,
+              "from": 6811,
+              "to": 10572,
+              "change": 0.5522
+            },
+            {
+              "unit_id": "228787",
+              "name": "The University of Texas at Dallas",
+              "rank": 18,
+              "since": 2014,
+              "from": 14300,
+              "to": 21751,
+              "change": 0.521
+            },
+            {
+              "unit_id": "201690",
+              "name": "Central State University",
+              "rank": 19,
+              "since": 2014,
+              "from": 1728,
+              "to": 2620,
+              "change": 0.5162
+            },
+            {
+              "unit_id": "132657",
+              "name": "Lynn University",
+              "rank": 20,
+              "since": 2014,
+              "from": 1911,
+              "to": 2859,
+              "change": 0.4961
+            },
+            {
+              "unit_id": "183804",
+              "name": "Beth Medrash Govoha",
+              "rank": 21,
+              "since": 2014,
+              "from": 2703,
+              "to": 4027,
+              "change": 0.4898
+            },
+            {
+              "unit_id": "186867",
+              "name": "Stevens Institute of Technology",
+              "rank": 22,
+              "since": 2014,
+              "from": 2842,
+              "to": 4222,
+              "change": 0.4856
+            },
+            {
+              "unit_id": "243780",
+              "name": "Purdue University-Main Campus",
+              "rank": 23,
+              "since": 2014,
+              "from": 29977,
+              "to": 44503,
+              "change": 0.4846
+            },
+            {
+              "unit_id": "100654",
+              "name": "Alabama A & M University",
+              "rank": 24,
+              "since": 2014,
+              "from": 4206,
+              "to": 6124,
+              "change": 0.456
+            },
+            {
+              "unit_id": "131520",
+              "name": "Howard University",
+              "rank": 25,
+              "since": 2014,
+              "from": 6961,
+              "to": 10108,
+              "change": 0.4521
+            }
+          ]
+        },
+        {
+          "key": "shrank-most",
+          "from": 2014,
+          "to": 2024,
+          "kind": "fall",
+          "floors": [
+            {
+              "series": "undergrads",
+              "min": 1000,
+              "at": "start"
+            }
+          ],
+          "n": 1256,
+          "median": -0.1185,
+          "excluded": {
+            "closed-or-merged": 30,
+            "under-300": 3
+          },
+          "entries": [
+            {
+              "unit_id": "201964",
+              "name": "Ohio Christian University",
+              "rank": 1,
+              "since": 2014,
+              "from": 3306,
+              "to": 862,
+              "change": -0.7393
+            },
+            {
+              "unit_id": "241225",
+              "name": "Universidad Central de Bayamon",
+              "rank": 2,
+              "since": 2014,
+              "from": 1794,
+              "to": 539,
+              "change": -0.6996
+            },
+            {
+              "unit_id": "204848",
+              "name": "Ohio University-Lancaster Campus",
+              "rank": 3,
+              "since": 2014,
+              "from": 2256,
+              "to": 691,
+              "change": -0.6937
+            },
+            {
+              "unit_id": "436818",
+              "name": "University of Connecticut-Waterbury Campus",
+              "rank": 4,
+              "since": 2014,
+              "from": 2272,
+              "to": 733,
+              "change": -0.6774
+            },
+            {
+              "unit_id": "177065",
+              "name": "Columbia College",
+              "rank": 5,
+              "since": 2014,
+              "from": 15141,
+              "to": 4950,
+              "change": -0.6731
+            },
+            {
+              "unit_id": "161873",
+              "name": "University of Baltimore",
+              "rank": 6,
+              "since": 2014,
+              "from": 3444,
+              "to": 1133,
+              "change": -0.671
+            },
+            {
+              "unit_id": "189228",
+              "name": "Berkeley College-New York",
+              "rank": 7,
+              "since": 2014,
+              "from": 4388,
+              "to": 1449,
+              "change": -0.6698
+            },
+            {
+              "unit_id": "187046",
+              "name": "Thomas Edison State University",
+              "rank": 8,
+              "since": 2014,
+              "from": 20143,
+              "to": 6707,
+              "change": -0.667
+            },
+            {
+              "unit_id": "219718",
+              "name": "Bethel University",
+              "rank": 9,
+              "since": 2014,
+              "from": 4638,
+              "to": 1547,
+              "change": -0.6665
+            },
+            {
+              "unit_id": "189413",
+              "name": "Boricua College",
+              "rank": 10,
+              "since": 2014,
+              "from": 1104,
+              "to": 391,
+              "change": -0.6458
+            },
+            {
+              "unit_id": "144005",
+              "name": "Chicago State University",
+              "rank": 11,
+              "since": 2014,
+              "from": 3874,
+              "to": 1384,
+              "change": -0.6427
+            },
+            {
+              "unit_id": "108232",
+              "name": "Academy of Art University",
+              "rank": 12,
+              "since": 2014,
+              "from": 9885,
+              "to": 3587,
+              "change": -0.6371
+            },
+            {
+              "unit_id": "200846",
+              "name": "University of Akron Wayne College",
+              "rank": 13,
+              "since": 2014,
+              "from": 1233,
+              "to": 457,
+              "change": -0.6294
+            },
+            {
+              "unit_id": "238193",
+              "name": "Alverno College",
+              "rank": 14,
+              "since": 2014,
+              "from": 1689,
+              "to": 631,
+              "change": -0.6264
+            },
+            {
+              "unit_id": "203757",
+              "name": "Lourdes University",
+              "rank": 15,
+              "since": 2014,
+              "from": 1449,
+              "to": 543,
+              "change": -0.6253
+            },
+            {
+              "unit_id": "230807",
+              "name": "Westminster University",
+              "rank": 16,
+              "since": 2014,
+              "from": 2188,
+              "to": 823,
+              "change": -0.6239
+            },
+            {
+              "unit_id": "172334",
+              "name": "Spring Arbor University",
+              "rank": 17,
+              "since": 2014,
+              "from": 2632,
+              "to": 1010,
+              "change": -0.6163
+            },
+            {
+              "unit_id": "242653",
+              "name": "Inter American University of Puerto Rico-Metro",
+              "rank": 18,
+              "since": 2014,
+              "from": 6747,
+              "to": 2607,
+              "change": -0.6136
+            },
+            {
+              "unit_id": "220516",
+              "name": "King University",
+              "rank": 19,
+              "since": 2014,
+              "from": 2344,
+              "to": 908,
+              "change": -0.6126
+            },
+            {
+              "unit_id": "243586",
+              "name": "Pontifical Catholic University of Puerto Rico-Mayaguez",
+              "rank": 20,
+              "since": 2014,
+              "from": 1391,
+              "to": 555,
+              "change": -0.601
+            },
+            {
+              "unit_id": "363907",
+              "name": "Caribbean University-Ponce",
+              "rank": 21,
+              "since": 2014,
+              "from": 1037,
+              "to": 414,
+              "change": -0.6008
+            },
+            {
+              "unit_id": "183822",
+              "name": "Bloomfield College of Montclair State University",
+              "rank": 22,
+              "since": 2014,
+              "from": 1933,
+              "to": 781,
+              "change": -0.596
+            },
+            {
+              "unit_id": "198303",
+              "name": "Chowan University",
+              "rank": 23,
+              "since": 2014,
+              "from": 1478,
+              "to": 603,
+              "change": -0.592
+            },
+            {
+              "unit_id": "217235",
+              "name": "Johnson & Wales University-Providence",
+              "rank": 24,
+              "since": 2014,
+              "from": 8846,
+              "to": 3868,
+              "change": -0.5627
+            },
+            {
+              "unit_id": "251312",
+              "name": "South University-Columbia",
+              "rank": 25,
+              "since": 2014,
+              "from": 1022,
+              "to": 450,
+              "change": -0.5597
+            }
+          ]
+        },
+        {
+          "key": "pay-less",
+          "from": 2013,
+          "to": 2023,
+          "kind": "academic",
+          "floors": [
+            {
+              "series": "undergrads",
+              "min": 1000,
+              "at": "start"
+            },
+            {
+              "series": "avg_paid_all",
+              "min": 5000,
+              "at": "start"
+            }
+          ],
+          "n": 1149,
+          "median": -0.113,
+          "excluded": {
+            "closed-or-merged": 9,
+            "under-300": 1,
+            "reporting-jump": 1
+          },
+          "entries": [
+            {
+              "unit_id": "207971",
+              "name": "University of Tulsa",
+              "rank": 1,
+              "since": 2013,
+              "from": 42235,
+              "to": 14813,
+              "change": -0.6493
+            },
+            {
+              "unit_id": "229887",
+              "name": "Wiley University",
+              "rank": 2,
+              "since": 2013,
+              "from": 17813,
+              "to": 7959,
+              "change": -0.5532
+            },
+            {
+              "unit_id": "231581",
+              "name": "Bridgewater College",
+              "rank": 3,
+              "since": 2013,
+              "from": 26645,
+              "to": 12757,
+              "change": -0.5212
+            },
+            {
+              "unit_id": "168546",
+              "name": "Albion College",
+              "rank": 4,
+              "since": 2013,
+              "from": 32968,
+              "to": 16818,
+              "change": -0.4899
+            },
+            {
+              "unit_id": "234164",
+              "name": "Virginia Union University",
+              "rank": 5,
+              "since": 2013,
+              "from": 27251,
+              "to": 14082,
+              "change": -0.4833
+            },
+            {
+              "unit_id": "219718",
+              "name": "Bethel University",
+              "rank": 6,
+              "since": 2013,
+              "from": 27823,
+              "to": 14548,
+              "change": -0.4771
+            },
+            {
+              "unit_id": "106306",
+              "name": "Arkansas Baptist College",
+              "rank": 7,
+              "since": 2013,
+              "from": 20879,
+              "to": 11156,
+              "change": -0.4657
+            },
+            {
+              "unit_id": "207351",
+              "name": "Oklahoma Panhandle State University",
+              "rank": 7,
+              "since": 2013,
+              "from": 16390,
+              "to": 8757,
+              "change": -0.4657
+            },
+            {
+              "unit_id": "197018",
+              "name": "United Talmudical Seminary",
+              "rank": 9,
+              "since": 2013,
+              "from": 14580,
+              "to": 7881,
+              "change": -0.4594
+            },
+            {
+              "unit_id": "139719",
+              "name": "Fort Valley State University",
+              "rank": 10,
+              "since": 2013,
+              "from": 21191,
+              "to": 11504,
+              "change": -0.4571
+            },
+            {
+              "unit_id": "156745",
+              "name": "Georgetown College",
+              "rank": 11,
+              "since": 2013,
+              "from": 27940,
+              "to": 15362,
+              "change": -0.4502
+            },
+            {
+              "unit_id": "166018",
+              "name": "Hampshire College",
+              "rank": 12,
+              "since": 2013,
+              "from": 50675,
+              "to": 28129,
+              "change": -0.4449
+            },
+            {
+              "unit_id": "220701",
+              "name": "The University of Tennessee Southern",
+              "rank": 13,
+              "since": 2013,
+              "from": 31929,
+              "to": 17804,
+              "change": -0.4424
+            },
+            {
+              "unit_id": "446604",
+              "name": "Uta Mesivta of Kiryas Joel",
+              "rank": 14,
+              "since": 2013,
+              "from": 12645,
+              "to": 7202,
+              "change": -0.4305
+            },
+            {
+              "unit_id": "187648",
+              "name": "Eastern New Mexico University-Main Campus",
+              "rank": 15,
+              "since": 2013,
+              "from": 16913,
+              "to": 9911,
+              "change": -0.414
+            },
+            {
+              "unit_id": "207458",
+              "name": "Oklahoma City University",
+              "rank": 16,
+              "since": 2013,
+              "from": 41135,
+              "to": 24206,
+              "change": -0.4116
+            },
+            {
+              "unit_id": "147703",
+              "name": "Northern Illinois University",
+              "rank": 17,
+              "since": 2013,
+              "from": 26365,
+              "to": 15527,
+              "change": -0.4111
+            },
+            {
+              "unit_id": "240754",
+              "name": "University of Guam",
+              "rank": 18,
+              "since": 2013,
+              "from": 16543,
+              "to": 9766,
+              "change": -0.4096
+            },
+            {
+              "unit_id": "169910",
+              "name": "Ferris State University",
+              "rank": 19,
+              "since": 2013,
+              "from": 19956,
+              "to": 11793,
+              "change": -0.4091
+            },
+            {
+              "unit_id": "174251",
+              "name": "University of Minnesota-Morris",
+              "rank": 20,
+              "since": 2013,
+              "from": 20076,
+              "to": 11987,
+              "change": -0.4029
+            },
+            {
+              "unit_id": "132602",
+              "name": "Bethune-Cookman University",
+              "rank": 21,
+              "since": 2013,
+              "from": 21806,
+              "to": 13029,
+              "change": -0.4025
+            },
+            {
+              "unit_id": "178402",
+              "name": "University of Missouri-Kansas City",
+              "rank": 22,
+              "since": 2013,
+              "from": 35200,
+              "to": 21069,
+              "change": -0.4014
+            },
+            {
+              "unit_id": "178697",
+              "name": "College of the Ozarks",
+              "rank": 23,
+              "since": 2013,
+              "from": 19251,
+              "to": 11637,
+              "change": -0.3955
+            },
+            {
+              "unit_id": "144892",
+              "name": "Eastern Illinois University",
+              "rank": 24,
+              "since": 2013,
+              "from": 25402,
+              "to": 15379,
+              "change": -0.3946
+            },
+            {
+              "unit_id": "220604",
+              "name": "Le Moyne-Owen College",
+              "rank": 25,
+              "since": 2013,
+              "from": 13912,
+              "to": 8428,
+              "change": -0.3942
+            }
+          ]
+        },
+        {
+          "key": "pay-more",
+          "from": 2013,
+          "to": 2023,
+          "kind": "academic",
+          "floors": [
+            {
+              "series": "undergrads",
+              "min": 1000,
+              "at": "start"
+            },
+            {
+              "series": "avg_paid_all",
+              "min": 5000,
+              "at": "start"
+            }
+          ],
+          "n": 1149,
+          "median": -0.113,
+          "excluded": {
+            "closed-or-merged": 9,
+            "under-300": 1,
+            "reporting-jump": 1
+          },
+          "entries": [
+            {
+              "unit_id": "482149",
+              "name": "Augusta University",
+              "rank": 1,
+              "since": 2013,
+              "from": 11060,
+              "to": 18587,
+              "change": 0.6805
+            },
+            {
+              "unit_id": "221838",
+              "name": "Tennessee State University",
+              "rank": 2,
+              "since": 2013,
+              "from": 17776,
+              "to": 28852,
+              "change": 0.6231
+            },
+            {
+              "unit_id": "175856",
+              "name": "Jackson State University",
+              "rank": 3,
+              "since": 2013,
+              "from": 16735,
+              "to": 26256,
+              "change": 0.5689
+            },
+            {
+              "unit_id": "121150",
+              "name": "Pepperdine University",
+              "rank": 4,
+              "since": 2013,
+              "from": 45588,
+              "to": 69013,
+              "change": 0.5138
+            },
+            {
+              "unit_id": "133872",
+              "name": "AdventHealth University",
+              "rank": 5,
+              "since": 2013,
+              "from": 26782,
+              "to": 38765,
+              "change": 0.4474
+            },
+            {
+              "unit_id": "224554",
+              "name": "East Texas A&M University",
+              "rank": 6,
+              "since": 2013,
+              "from": 9689,
+              "to": 13952,
+              "change": 0.44
+            },
+            {
+              "unit_id": "241410",
+              "name": "Pontifical Catholic University of Puerto Rico-Ponce",
+              "rank": 7,
+              "since": 2013,
+              "from": 11360,
+              "to": 15917,
+              "change": 0.4012
+            },
+            {
+              "unit_id": "180692",
+              "name": "The University of Montana-Western",
+              "rank": 8,
+              "since": 2013,
+              "from": 16756,
+              "to": 23271,
+              "change": 0.3888
+            },
+            {
+              "unit_id": "107071",
+              "name": "Henderson State University",
+              "rank": 9,
+              "since": 2013,
+              "from": 15280,
+              "to": 21131,
+              "change": 0.3829
+            },
+            {
+              "unit_id": "228723",
+              "name": "Texas A&M University-College Station",
+              "rank": 10,
+              "since": 2013,
+              "from": 20529,
+              "to": 28113,
+              "change": 0.3694
+            },
+            {
+              "unit_id": "207263",
+              "name": "Northeastern State University",
+              "rank": 11,
+              "since": 2013,
+              "from": 11263,
+              "to": 15307,
+              "change": 0.359
+            },
+            {
+              "unit_id": "224545",
+              "name": "Texas A&M University-Texarkana",
+              "rank": 12,
+              "since": 2013,
+              "from": 12854,
+              "to": 17225,
+              "change": 0.3401
+            },
+            {
+              "unit_id": "160621",
+              "name": "Southern University and A & M College",
+              "rank": 13,
+              "since": 2013,
+              "from": 16142,
+              "to": 21536,
+              "change": 0.3341
+            },
+            {
+              "unit_id": "176053",
+              "name": "Mississippi Christian University",
+              "rank": 14,
+              "since": 2013,
+              "from": 21850,
+              "to": 28746,
+              "change": 0.3156
+            },
+            {
+              "unit_id": "228787",
+              "name": "The University of Texas at Dallas",
+              "rank": 15,
+              "since": 2013,
+              "from": 18731,
+              "to": 24553,
+              "change": 0.3108
+            },
+            {
+              "unit_id": "196592",
+              "name": "Touro University",
+              "rank": 16,
+              "since": 2013,
+              "from": 28021,
+              "to": 36660,
+              "change": 0.3083
+            },
+            {
+              "unit_id": "136330",
+              "name": "Palm Beach Atlantic University",
+              "rank": 17,
+              "since": 2013,
+              "from": 27359,
+              "to": 35776,
+              "change": 0.3076
+            },
+            {
+              "unit_id": "155520",
+              "name": "MidAmerica Nazarene University",
+              "rank": 18,
+              "since": 2013,
+              "from": 25969,
+              "to": 33898,
+              "change": 0.3053
+            },
+            {
+              "unit_id": "180814",
+              "name": "Bellevue University",
+              "rank": 19,
+              "since": 2015,
+              "from": 16045,
+              "to": 20909,
+              "change": 0.3031
+            },
+            {
+              "unit_id": "190761",
+              "name": "Dominican University New York",
+              "rank": 20,
+              "since": 2013,
+              "from": 30785,
+              "to": 40036,
+              "change": 0.3005
+            },
+            {
+              "unit_id": "102553",
+              "name": "University of Alaska Anchorage",
+              "rank": 21,
+              "since": 2013,
+              "from": 19898,
+              "to": 25727,
+              "change": 0.2929
+            },
+            {
+              "unit_id": "199157",
+              "name": "North Carolina Central University",
+              "rank": 22,
+              "since": 2013,
+              "from": 15183,
+              "to": 19590,
+              "change": 0.2903
+            },
+            {
+              "unit_id": "199999",
+              "name": "Winston-Salem State University",
+              "rank": 23,
+              "since": 2013,
+              "from": 12983,
+              "to": 16722,
+              "change": 0.288
+            },
+            {
+              "unit_id": "156125",
+              "name": "Wichita State University",
+              "rank": 24,
+              "since": 2013,
+              "from": 17964,
+              "to": 23096,
+              "change": 0.2857
+            },
+            {
+              "unit_id": "137564",
+              "name": "Southeastern University",
+              "rank": 25,
+              "since": 2013,
+              "from": 27984,
+              "to": 35884,
+              "change": 0.2823
+            }
+          ]
+        },
+        {
+          "key": "grad-rate-climbed",
+          "from": 2008,
+          "to": 2018,
+          "kind": "cohort",
+          "floors": [
+            {
+              "series": "undergrads",
+              "min": 1000,
+              "at": "start"
+            },
+            {
+              "series": "entering_class",
+              "min": 200,
+              "at": "both"
+            }
+          ],
+          "n": 1083,
+          "median": 0.0297,
+          "excluded": {
+            "closed-or-merged": 10
+          },
+          "entries": [
+            {
+              "unit_id": "196592",
+              "name": "Touro University",
+              "rank": 1,
+              "since": 2008,
+              "from": 0.4114,
+              "to": 0.7239,
+              "change": 0.3125
+            },
+            {
+              "unit_id": "101480",
+              "name": "Jacksonville State University",
+              "rank": 2,
+              "since": 2008,
+              "from": 0.3009,
+              "to": 0.5472,
+              "change": 0.2463
+            },
+            {
+              "unit_id": "142115",
+              "name": "Boise State University",
+              "rank": 3,
+              "since": 2008,
+              "from": 0.3571,
+              "to": 0.602,
+              "change": 0.2449
+            },
+            {
+              "unit_id": "172644",
+              "name": "Wayne State University",
+              "rank": 4,
+              "since": 2008,
+              "from": 0.3431,
+              "to": 0.5844,
+              "change": 0.2413
+            },
+            {
+              "unit_id": "190716",
+              "name": "D'Youville  University",
+              "rank": 5,
+              "since": 2008,
+              "from": 0.4398,
+              "to": 0.6749,
+              "change": 0.2351
+            },
+            {
+              "unit_id": "126669",
+              "name": "Colorado Christian University",
+              "rank": 6,
+              "since": 2008,
+              "from": 0.4226,
+              "to": 0.6441,
+              "change": 0.2215
+            },
+            {
+              "unit_id": "229027",
+              "name": "The University of Texas at San Antonio",
+              "rank": 7,
+              "since": 2008,
+              "from": 0.3111,
+              "to": 0.5264,
+              "change": 0.2153
+            },
+            {
+              "unit_id": "243443",
+              "name": "Universidad del Sagrado Corazon",
+              "rank": 8,
+              "since": 2008,
+              "from": 0.3107,
+              "to": 0.5207,
+              "change": 0.21
+            },
+            {
+              "unit_id": "200217",
+              "name": "University of Mary",
+              "rank": 9,
+              "since": 2008,
+              "from": 0.4611,
+              "to": 0.666,
+              "change": 0.2049
+            },
+            {
+              "unit_id": "133951",
+              "name": "Florida International University",
+              "rank": 10,
+              "since": 2008,
+              "from": 0.5419,
+              "to": 0.7443,
+              "change": 0.2024
+            },
+            {
+              "unit_id": "138558",
+              "name": "Abraham Baldwin Agricultural College",
+              "rank": 11,
+              "since": 2008,
+              "from": 0.1618,
+              "to": 0.3615,
+              "change": 0.1997
+            },
+            {
+              "unit_id": "240107",
+              "name": "Viterbo University",
+              "rank": 12,
+              "since": 2008,
+              "from": 0.4846,
+              "to": 0.6838,
+              "change": 0.1992
+            },
+            {
+              "unit_id": "237932",
+              "name": "West Liberty University",
+              "rank": 13,
+              "since": 2008,
+              "from": 0.4,
+              "to": 0.5953,
+              "change": 0.1953
+            },
+            {
+              "unit_id": "220215",
+              "name": "Freed-Hardeman University",
+              "rank": 14,
+              "since": 2008,
+              "from": 0.516,
+              "to": 0.7078,
+              "change": 0.1918
+            },
+            {
+              "unit_id": "156082",
+              "name": "Washburn University",
+              "rank": 15,
+              "since": 2008,
+              "from": 0.3402,
+              "to": 0.5296,
+              "change": 0.1894
+            },
+            {
+              "unit_id": "142461",
+              "name": "Northwest Nazarene University",
+              "rank": 16,
+              "since": 2008,
+              "from": 0.5183,
+              "to": 0.7076,
+              "change": 0.1893
+            },
+            {
+              "unit_id": "164748",
+              "name": "Berklee College of Music",
+              "rank": 17,
+              "since": 2008,
+              "from": 0.4874,
+              "to": 0.6731,
+              "change": 0.1857
+            },
+            {
+              "unit_id": "107983",
+              "name": "Southern Arkansas University Main Campus",
+              "rank": 18,
+              "since": 2008,
+              "from": 0.3061,
+              "to": 0.4882,
+              "change": 0.1821
+            },
+            {
+              "unit_id": "126182",
+              "name": "Adams State University",
+              "rank": 19,
+              "since": 2008,
+              "from": 0.2125,
+              "to": 0.3942,
+              "change": 0.1817
+            },
+            {
+              "unit_id": "100706",
+              "name": "University of Alabama in Huntsville",
+              "rank": 20,
+              "since": 2008,
+              "from": 0.4614,
+              "to": 0.6429,
+              "change": 0.1815
+            },
+            {
+              "unit_id": "149222",
+              "name": "Southern Illinois University-Carbondale",
+              "rank": 21,
+              "since": 2008,
+              "from": 0.4433,
+              "to": 0.6241,
+              "change": 0.1808
+            },
+            {
+              "unit_id": "151333",
+              "name": "Indiana University-Kokomo",
+              "rank": 22,
+              "since": 2008,
+              "from": 0.2786,
+              "to": 0.4561,
+              "change": 0.1775
+            },
+            {
+              "unit_id": "196291",
+              "name": "SUNY Maritime College",
+              "rank": 23,
+              "since": 2008,
+              "from": 0.4672,
+              "to": 0.6439,
+              "change": 0.1767
+            },
+            {
+              "unit_id": "122755",
+              "name": "San Jose State University",
+              "rank": 24,
+              "since": 2008,
+              "from": 0.516,
+              "to": 0.6922,
+              "change": 0.1762
+            },
+            {
+              "unit_id": "206695",
+              "name": "Youngstown State University",
+              "rank": 25,
+              "since": 2008,
+              "from": 0.3294,
+              "to": 0.5048,
+              "change": 0.1754
+            }
+          ]
+        },
+        {
+          "key": "more-out-of-state",
+          "from": 2014,
+          "to": 2024,
+          "kind": "fall",
+          "floors": [
+            {
+              "series": "enrolled",
+              "min": 500,
+              "at": "start"
+            }
+          ],
+          "n": 408,
+          "median": 0.0093,
+          "excluded": {
+            "closed-or-merged": 3
+          },
+          "entries": [
+            {
+              "unit_id": "175856",
+              "name": "Jackson State University",
+              "rank": 1,
+              "since": 2014,
+              "from": 0.3687,
+              "to": 0.7204,
+              "change": 0.3517
+            },
+            {
+              "unit_id": "482149",
+              "name": "Augusta University",
+              "rank": 2,
+              "since": 2014,
+              "from": 0.0503,
+              "to": 0.3315,
+              "change": 0.2812
+            },
+            {
+              "unit_id": "163453",
+              "name": "Morgan State University",
+              "rank": 3,
+              "since": 2014,
+              "from": 0.2412,
+              "to": 0.5036,
+              "change": 0.2624
+            },
+            {
+              "unit_id": "100654",
+              "name": "Alabama A & M University",
+              "rank": 4,
+              "since": 2014,
+              "from": 0.3057,
+              "to": 0.5391,
+              "change": 0.2334
+            },
+            {
+              "unit_id": "221759",
+              "name": "The University of Tennessee-Knoxville",
+              "rank": 5,
+              "since": 2014,
+              "from": 0.1293,
+              "to": 0.3548,
+              "change": 0.2255
+            },
+            {
+              "unit_id": "159391",
+              "name": "Louisiana State University and Agricultural & Mechanical College",
+              "rank": 6,
+              "since": 2014,
+              "from": 0.1795,
+              "to": 0.3937,
+              "change": 0.2142
+            },
+            {
+              "unit_id": "141264",
+              "name": "Valdosta State University",
+              "rank": 7,
+              "since": 2014,
+              "from": 0.0469,
+              "to": 0.2605,
+              "change": 0.2136
+            },
+            {
+              "unit_id": "130776",
+              "name": "Western Connecticut State University",
+              "rank": 8,
+              "since": 2014,
+              "from": 0.0445,
+              "to": 0.2578,
+              "change": 0.2133
+            },
+            {
+              "unit_id": "199102",
+              "name": "North Carolina A & T State University",
+              "rank": 9,
+              "since": 2014,
+              "from": 0.2196,
+              "to": 0.4123,
+              "change": 0.1927
+            },
+            {
+              "unit_id": "243780",
+              "name": "Purdue University-Main Campus",
+              "rank": 10,
+              "since": 2014,
+              "from": 0.2853,
+              "to": 0.4741,
+              "change": 0.1888
+            },
+            {
+              "unit_id": "209542",
+              "name": "Oregon State University",
+              "rank": 11,
+              "since": 2014,
+              "from": 0.2442,
+              "to": 0.4217,
+              "change": 0.1775
+            },
+            {
+              "unit_id": "199999",
+              "name": "Winston-Salem State University",
+              "rank": 12,
+              "since": 2014,
+              "from": 0.0694,
+              "to": 0.2406,
+              "change": 0.1712
+            },
+            {
+              "unit_id": "230764",
+              "name": "University of Utah",
+              "rank": 13,
+              "since": 2014,
+              "from": 0.2504,
+              "to": 0.4158,
+              "change": 0.1654
+            },
+            {
+              "unit_id": "160621",
+              "name": "Southern University and A & M College",
+              "rank": 14,
+              "since": 2014,
+              "from": 0.1485,
+              "to": 0.3125,
+              "change": 0.164
+            },
+            {
+              "unit_id": "133650",
+              "name": "Florida Agricultural and Mechanical University",
+              "rank": 15,
+              "since": 2014,
+              "from": 0.1386,
+              "to": 0.3011,
+              "change": 0.1625
+            },
+            {
+              "unit_id": "214704",
+              "name": "Pennsylvania State University-Penn State Berks",
+              "rank": 16,
+              "since": 2014,
+              "from": 0.0924,
+              "to": 0.2531,
+              "change": 0.1607
+            },
+            {
+              "unit_id": "214689",
+              "name": "Pennsylvania State University-Penn State Altoona",
+              "rank": 17,
+              "since": 2014,
+              "from": 0.1883,
+              "to": 0.3471,
+              "change": 0.1588
+            },
+            {
+              "unit_id": "156125",
+              "name": "Wichita State University",
+              "rank": 18,
+              "since": 2014,
+              "from": 0.0745,
+              "to": 0.2234,
+              "change": 0.1489
+            },
+            {
+              "unit_id": "176017",
+              "name": "University of Mississippi",
+              "rank": 19,
+              "since": 2014,
+              "from": 0.5475,
+              "to": 0.6941,
+              "change": 0.1466
+            },
+            {
+              "unit_id": "200004",
+              "name": "Western Carolina University",
+              "rank": 20,
+              "since": 2014,
+              "from": 0.074,
+              "to": 0.2203,
+              "change": 0.1463
+            },
+            {
+              "unit_id": "180461",
+              "name": "Montana State University",
+              "rank": 21,
+              "since": 2014,
+              "from": 0.461,
+              "to": 0.6055,
+              "change": 0.1445
+            },
+            {
+              "unit_id": "214801",
+              "name": "Pennsylvania State University-Penn State Abington",
+              "rank": 22,
+              "since": 2014,
+              "from": 0.0714,
+              "to": 0.214,
+              "change": 0.1426
+            },
+            {
+              "unit_id": "199157",
+              "name": "North Carolina Central University",
+              "rank": 23,
+              "since": 2014,
+              "from": 0.1362,
+              "to": 0.2772,
+              "change": 0.141
+            },
+            {
+              "unit_id": "219046",
+              "name": "Black Hills State University",
+              "rank": 24,
+              "since": 2014,
+              "from": 0.2998,
+              "to": 0.4367,
+              "change": 0.1369
+            },
+            {
+              "unit_id": "157951",
+              "name": "Western Kentucky University",
+              "rank": 25,
+              "since": 2014,
+              "from": 0.1983,
+              "to": 0.3329,
+              "change": 0.1346
+            }
+          ]
+        },
+        {
+          "key": "pell-gap-closed",
+          "from": 2008,
+          "to": 2018,
+          "kind": "cohort",
+          "floors": [
+            {
+              "series": "grad_cohort_pell",
+              "min": 100,
+              "at": "both"
+            },
+            {
+              "series": "grad_cohort_no_pell_no_loan",
+              "min": 100,
+              "at": "both"
+            }
+          ],
+          "n": 778,
+          "median": 0.0108,
+          "excluded": {
+            "closed-or-merged": 6
+          },
+          "entries": [
+            {
+              "unit_id": "214704",
+              "name": "Pennsylvania State University-Penn State Berks",
+              "rank": 1,
+              "since": 2010,
+              "from": 0.1476,
+              "to": -0.1896,
+              "change": -0.3372
+            },
+            {
+              "unit_id": "214713",
+              "name": "Pennsylvania State University-Penn State Harrisburg",
+              "rank": 2,
+              "since": 2010,
+              "from": 0.0742,
+              "to": -0.2595,
+              "change": -0.3337
+            },
+            {
+              "unit_id": "214801",
+              "name": "Pennsylvania State University-Penn State Abington",
+              "rank": 3,
+              "since": 2010,
+              "from": 0.0766,
+              "to": -0.2163,
+              "change": -0.2929
+            },
+            {
+              "unit_id": "144962",
+              "name": "Elmhurst University",
+              "rank": 4,
+              "since": 2010,
+              "from": 0.2176,
+              "to": -0.0716,
+              "change": -0.2892
+            },
+            {
+              "unit_id": "214591",
+              "name": "Pennsylvania State University-Penn State Erie-Behrend College",
+              "rank": 5,
+              "since": 2010,
+              "from": 0.1254,
+              "to": -0.1159,
+              "change": -0.2413
+            },
+            {
+              "unit_id": "204848",
+              "name": "Ohio University-Lancaster Campus",
+              "rank": 6,
+              "since": 2010,
+              "from": 0.2179,
+              "to": -0.0153,
+              "change": -0.2332
+            },
+            {
+              "unit_id": "214689",
+              "name": "Pennsylvania State University-Penn State Altoona",
+              "rank": 7,
+              "since": 2010,
+              "from": 0.1677,
+              "to": -0.0403,
+              "change": -0.208
+            },
+            {
+              "unit_id": "153384",
+              "name": "Grinnell College",
+              "rank": 8,
+              "since": 2010,
+              "from": 0.1523,
+              "to": -0.0538,
+              "change": -0.2061
+            },
+            {
+              "unit_id": "204006",
+              "name": "Miami University-Hamilton",
+              "rank": 9,
+              "since": 2010,
+              "from": 0.2856,
+              "to": 0.096,
+              "change": -0.1896
+            },
+            {
+              "unit_id": "212601",
+              "name": "Gannon University",
+              "rank": 10,
+              "since": 2010,
+              "from": 0.2445,
+              "to": 0.055,
+              "change": -0.1895
+            },
+            {
+              "unit_id": "139463",
+              "name": "Dalton State College",
+              "rank": 11,
+              "since": 2010,
+              "from": 0.1899,
+              "to": 0.0059,
+              "change": -0.184
+            },
+            {
+              "unit_id": "214731",
+              "name": "Pennsylvania State University-Penn State Brandywine",
+              "rank": 12,
+              "since": 2010,
+              "from": 0.0475,
+              "to": -0.1212,
+              "change": -0.1687
+            },
+            {
+              "unit_id": "219976",
+              "name": "Lipscomb University",
+              "rank": 13,
+              "since": 2010,
+              "from": 0.2686,
+              "to": 0.1007,
+              "change": -0.1679
+            },
+            {
+              "unit_id": "441937",
+              "name": "California State University-Channel Islands",
+              "rank": 14,
+              "since": 2010,
+              "from": 0.1801,
+              "to": 0.0154,
+              "change": -0.1647
+            },
+            {
+              "unit_id": "199999",
+              "name": "Winston-Salem State University",
+              "rank": 15,
+              "since": 2010,
+              "from": 0.1991,
+              "to": 0.0453,
+              "change": -0.1538
+            },
+            {
+              "unit_id": "146612",
+              "name": "Lewis University",
+              "rank": 16,
+              "since": 2010,
+              "from": 0.1663,
+              "to": 0.0142,
+              "change": -0.1521
+            },
+            {
+              "unit_id": "100830",
+              "name": "Auburn University at Montgomery",
+              "rank": 17,
+              "since": 2010,
+              "from": 0.2176,
+              "to": 0.0665,
+              "change": -0.1511
+            },
+            {
+              "unit_id": "161554",
+              "name": "University of Southern Maine",
+              "rank": 18,
+              "since": 2010,
+              "from": 0.2263,
+              "to": 0.0754,
+              "change": -0.1509
+            },
+            {
+              "unit_id": "202523",
+              "name": "Denison University",
+              "rank": 19,
+              "since": 2010,
+              "from": 0.103,
+              "to": -0.0401,
+              "change": -0.1431
+            },
+            {
+              "unit_id": "212054",
+              "name": "Drexel University",
+              "rank": 20,
+              "since": 2010,
+              "from": 0.1919,
+              "to": 0.0515,
+              "change": -0.1404
+            },
+            {
+              "unit_id": "132471",
+              "name": "Barry University",
+              "rank": 21,
+              "since": 2010,
+              "from": 0.16,
+              "to": 0.0226,
+              "change": -0.1374
+            },
+            {
+              "unit_id": "156125",
+              "name": "Wichita State University",
+              "rank": 22,
+              "since": 2010,
+              "from": 0.1846,
+              "to": 0.0481,
+              "change": -0.1365
+            },
+            {
+              "unit_id": "224323",
+              "name": "University of Dallas",
+              "rank": 23,
+              "since": 2010,
+              "from": 0.2173,
+              "to": 0.0859,
+              "change": -0.1314
+            },
+            {
+              "unit_id": "237969",
+              "name": "West Virginia Wesleyan College",
+              "rank": 24,
+              "since": 2010,
+              "from": 0.315,
+              "to": 0.1851,
+              "change": -0.1299
+            },
+            {
+              "unit_id": "204200",
+              "name": "Mount St. Joseph University",
+              "rank": 25,
+              "since": 2010,
+              "from": 0.2307,
+              "to": 0.1014,
+              "change": -0.1293
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "years": 5,
+      "lists": [
+        {
+          "key": "applications-surged",
+          "from": 2019,
+          "to": 2024,
+          "kind": "fall",
+          "floors": [
+            {
+              "series": "applicants",
+              "min": 2000,
+              "at": "start"
+            }
+          ],
+          "n": 945,
+          "median": 0.2002,
+          "excluded": {
+            "closed-or-merged": 2,
+            "under-300": 2,
+            "for-profit": 1,
+            "online-first": 16,
+            "reporting-jump": 3
+          },
+          "entries": [
+            {
+              "unit_id": "218733",
+              "name": "South Carolina State University",
+              "rank": 1,
+              "since": 2019,
+              "from": 2631,
+              "to": 11017,
+              "change": 3.1874
+            },
+            {
+              "unit_id": "159009",
+              "name": "Grambling State University",
+              "rank": 2,
+              "since": 2019,
+              "from": 3109,
+              "to": 12976,
+              "change": 3.1737
+            },
+            {
+              "unit_id": "220181",
+              "name": "Fisk University",
+              "rank": 3,
+              "since": 2019,
+              "from": 3034,
+              "to": 11421,
+              "change": 2.7643
+            },
+            {
+              "unit_id": "144005",
+              "name": "Chicago State University",
+              "rank": 4,
+              "since": 2019,
+              "from": 3126,
+              "to": 10638,
+              "change": 2.4031
+            },
+            {
+              "unit_id": "186371",
+              "name": "Rutgers University-Camden",
+              "rank": 5,
+              "since": 2019,
+              "from": 10451,
+              "to": 32840,
+              "change": 2.1423
+            },
+            {
+              "unit_id": "133526",
+              "name": "Edward Waters University",
+              "rank": 6,
+              "since": 2019,
+              "from": 3444,
+              "to": 10283,
+              "change": 1.9858
+            },
+            {
+              "unit_id": "141644",
+              "name": "Hawaii Pacific University",
+              "rank": 7,
+              "since": 2019,
+              "from": 4787,
+              "to": 14206,
+              "change": 1.9676
+            },
+            {
+              "unit_id": "214157",
+              "name": "Moravian University",
+              "rank": 8,
+              "since": 2019,
+              "from": 2127,
+              "to": 6192,
+              "change": 1.9111
+            },
+            {
+              "unit_id": "163453",
+              "name": "Morgan State University",
+              "rank": 9,
+              "since": 2019,
+              "from": 8155,
+              "to": 23366,
+              "change": 1.8652
+            },
+            {
+              "unit_id": "140553",
+              "name": "Morehouse College",
+              "rank": 10,
+              "since": 2019,
+              "from": 2030,
+              "to": 5733,
+              "change": 1.8241
+            },
+            {
+              "unit_id": "171146",
+              "name": "University of Michigan-Flint",
+              "rank": 11,
+              "since": 2019,
+              "from": 4254,
+              "to": 11873,
+              "change": 1.791
+            },
+            {
+              "unit_id": "237899",
+              "name": "West Virginia State University",
+              "rank": 12,
+              "since": 2019,
+              "from": 2242,
+              "to": 6163,
+              "change": 1.7489
+            },
+            {
+              "unit_id": "221759",
+              "name": "The University of Tennessee-Knoxville",
+              "rank": 13,
+              "since": 2019,
+              "from": 21764,
+              "to": 59764,
+              "change": 1.746
+            },
+            {
+              "unit_id": "100858",
+              "name": "Auburn University",
+              "rank": 14,
+              "since": 2019,
+              "from": 20205,
+              "to": 55056,
+              "change": 1.7249
+            },
+            {
+              "unit_id": "217819",
+              "name": "College of Charleston",
+              "rank": 15,
+              "since": 2019,
+              "from": 11783,
+              "to": 31680,
+              "change": 1.6886
+            },
+            {
+              "unit_id": "186399",
+              "name": "Rutgers University-Newark",
+              "rank": 16,
+              "since": 2019,
+              "from": 13732,
+              "to": 36793,
+              "change": 1.6794
+            },
+            {
+              "unit_id": "183910",
+              "name": "Caldwell University",
+              "rank": 17,
+              "since": 2019,
+              "from": 3527,
+              "to": 9364,
+              "change": 1.6549
+            },
+            {
+              "unit_id": "106458",
+              "name": "Arkansas State University",
+              "rank": 18,
+              "since": 2019,
+              "from": 4689,
+              "to": 12252,
+              "change": 1.6129
+            },
+            {
+              "unit_id": "145646",
+              "name": "Illinois Wesleyan University",
+              "rank": 19,
+              "since": 2019,
+              "from": 3719,
+              "to": 9558,
+              "change": 1.57
+            },
+            {
+              "unit_id": "178420",
+              "name": "University of Missouri-St Louis",
+              "rank": 20,
+              "since": 2019,
+              "from": 2452,
+              "to": 6193,
+              "change": 1.5257
+            },
+            {
+              "unit_id": "436836",
+              "name": "University of Connecticut-Stamford",
+              "rank": 21,
+              "since": 2019,
+              "from": 4373,
+              "to": 10937,
+              "change": 1.501
+            },
+            {
+              "unit_id": "100654",
+              "name": "Alabama A & M University",
+              "rank": 22,
+              "since": 2019,
+              "from": 9579,
+              "to": 23406,
+              "change": 1.4435
+            },
+            {
+              "unit_id": "199102",
+              "name": "North Carolina A & T State University",
+              "rank": 23,
+              "since": 2019,
+              "from": 15083,
+              "to": 36496,
+              "change": 1.4197
+            },
+            {
+              "unit_id": "145725",
+              "name": "Illinois Institute of Technology",
+              "rank": 24,
+              "since": 2019,
+              "from": 5049,
+              "to": 12216,
+              "change": 1.4195
+            },
+            {
+              "unit_id": "179894",
+              "name": "Webster University",
+              "rank": 25,
+              "since": 2019,
+              "from": 2173,
+              "to": 5206,
+              "change": 1.3958
+            }
+          ]
+        },
+        {
+          "key": "harder-to-get-into",
+          "from": 2019,
+          "to": 2024,
+          "kind": "fall",
+          "floors": [
+            {
+              "series": "applicants",
+              "min": 2000,
+              "at": "start"
+            }
+          ],
+          "n": 958,
+          "median": 0.0348,
+          "excluded": {
+            "closed-or-merged": 2,
+            "under-300": 2,
+            "reporting-jump": 7
+          },
+          "entries": [
+            {
+              "unit_id": "220181",
+              "name": "Fisk University",
+              "rank": 1,
+              "since": 2019,
+              "from": 0.9341,
+              "to": 0.3742,
+              "change": -0.5599
+            },
+            {
+              "unit_id": "140553",
+              "name": "Morehouse College",
+              "rank": 2,
+              "since": 2019,
+              "from": 0.998,
+              "to": 0.4396,
+              "change": -0.5584
+            },
+            {
+              "unit_id": "159009",
+              "name": "Grambling State University",
+              "rank": 3,
+              "since": 2019,
+              "from": 0.9723,
+              "to": 0.4486,
+              "change": -0.5237
+            },
+            {
+              "unit_id": "232609",
+              "name": "University of Lynchburg",
+              "rank": 4,
+              "since": 2019,
+              "from": 0.9104,
+              "to": 0.4301,
+              "change": -0.4803
+            },
+            {
+              "unit_id": "231651",
+              "name": "Regent University",
+              "rank": 5,
+              "since": 2019,
+              "from": 0.8554,
+              "to": 0.3812,
+              "change": -0.4742
+            },
+            {
+              "unit_id": "221759",
+              "name": "The University of Tennessee-Knoxville",
+              "rank": 6,
+              "since": 2019,
+              "from": 0.7885,
+              "to": 0.416,
+              "change": -0.3725
+            },
+            {
+              "unit_id": "164216",
+              "name": "Washington College",
+              "rank": 7,
+              "since": 2019,
+              "from": 0.9236,
+              "to": 0.5689,
+              "change": -0.3547
+            },
+            {
+              "unit_id": "100858",
+              "name": "Auburn University",
+              "rank": 8,
+              "since": 2019,
+              "from": 0.8067,
+              "to": 0.4592,
+              "change": -0.3475
+            },
+            {
+              "unit_id": "134945",
+              "name": "Jacksonville University",
+              "rank": 8,
+              "since": 2019,
+              "from": 0.9169,
+              "to": 0.5694,
+              "change": -0.3475
+            },
+            {
+              "unit_id": "100654",
+              "name": "Alabama A & M University",
+              "rank": 10,
+              "since": 2019,
+              "from": 0.9175,
+              "to": 0.5795,
+              "change": -0.338
+            },
+            {
+              "unit_id": "177968",
+              "name": "Lindenwood University",
+              "rank": 11,
+              "since": 2019,
+              "from": 0.8756,
+              "to": 0.5684,
+              "change": -0.3072
+            },
+            {
+              "unit_id": "224545",
+              "name": "Texas A&M University-Texarkana",
+              "rank": 12,
+              "since": 2019,
+              "from": 0.9356,
+              "to": 0.6354,
+              "change": -0.3002
+            },
+            {
+              "unit_id": "151263",
+              "name": "University of Indianapolis",
+              "rank": 13,
+              "since": 2019,
+              "from": 0.9279,
+              "to": 0.665,
+              "change": -0.2629
+            },
+            {
+              "unit_id": "175980",
+              "name": "Millsaps College",
+              "rank": 14,
+              "since": 2019,
+              "from": 0.6881,
+              "to": 0.4312,
+              "change": -0.2569
+            },
+            {
+              "unit_id": "220978",
+              "name": "Middle Tennessee State University",
+              "rank": 15,
+              "since": 2019,
+              "from": 0.9371,
+              "to": 0.6909,
+              "change": -0.2462
+            },
+            {
+              "unit_id": "243197",
+              "name": "University of Puerto Rico-Mayaguez",
+              "rank": 16,
+              "since": 2019,
+              "from": 0.804,
+              "to": 0.5652,
+              "change": -0.2388
+            },
+            {
+              "unit_id": "129242",
+              "name": "Fairfield University",
+              "rank": 17,
+              "since": 2019,
+              "from": 0.5713,
+              "to": 0.3329,
+              "change": -0.2384
+            },
+            {
+              "unit_id": "164492",
+              "name": "Anna Maria College",
+              "rank": 18,
+              "since": 2019,
+              "from": 0.7405,
+              "to": 0.503,
+              "change": -0.2375
+            },
+            {
+              "unit_id": "225575",
+              "name": "Huston-Tillotson University",
+              "rank": 19,
+              "since": 2019,
+              "from": 0.6251,
+              "to": 0.3909,
+              "change": -0.2342
+            },
+            {
+              "unit_id": "170675",
+              "name": "Lawrence Technological University",
+              "rank": 20,
+              "since": 2019,
+              "from": 0.7927,
+              "to": 0.559,
+              "change": -0.2337
+            },
+            {
+              "unit_id": "129941",
+              "name": "University of New Haven",
+              "rank": 21,
+              "since": 2019,
+              "from": 0.8299,
+              "to": 0.6038,
+              "change": -0.2261
+            },
+            {
+              "unit_id": "157447",
+              "name": "Northern Kentucky University",
+              "rank": 22,
+              "since": 2019,
+              "from": 0.9018,
+              "to": 0.6765,
+              "change": -0.2253
+            },
+            {
+              "unit_id": "156408",
+              "name": "Centre College",
+              "rank": 23,
+              "since": 2019,
+              "from": 0.7644,
+              "to": 0.5436,
+              "change": -0.2208
+            },
+            {
+              "unit_id": "183910",
+              "name": "Caldwell University",
+              "rank": 24,
+              "since": 2019,
+              "from": 0.9325,
+              "to": 0.7134,
+              "change": -0.2191
+            },
+            {
+              "unit_id": "145646",
+              "name": "Illinois Wesleyan University",
+              "rank": 25,
+              "since": 2019,
+              "from": 0.608,
+              "to": 0.3931,
+              "change": -0.2149
+            }
+          ]
+        },
+        {
+          "key": "easier-to-get-into",
+          "from": 2019,
+          "to": 2024,
+          "kind": "fall",
+          "floors": [
+            {
+              "series": "applicants",
+              "min": 2000,
+              "at": "start"
+            }
+          ],
+          "n": 958,
+          "median": 0.0348,
+          "excluded": {
+            "closed-or-merged": 2,
+            "under-300": 2,
+            "reporting-jump": 7
+          },
+          "entries": [
+            {
+              "unit_id": "145619",
+              "name": "Benedictine University",
+              "rank": 1,
+              "since": 2019,
+              "from": 0.4171,
+              "to": 0.9523,
+              "change": 0.5352
+            },
+            {
+              "unit_id": "224554",
+              "name": "East Texas A&M University",
+              "rank": 2,
+              "since": 2019,
+              "from": 0.4313,
+              "to": 0.9224,
+              "change": 0.4911
+            },
+            {
+              "unit_id": "459949",
+              "name": "Texas A&M University-San Antonio",
+              "rank": 3,
+              "since": 2019,
+              "from": 0.4386,
+              "to": 0.928,
+              "change": 0.4894
+            },
+            {
+              "unit_id": "197911",
+              "name": "Barton College",
+              "rank": 4,
+              "since": 2019,
+              "from": 0.4529,
+              "to": 0.942,
+              "change": 0.4891
+            },
+            {
+              "unit_id": "156189",
+              "name": "Alice Lloyd College",
+              "rank": 5,
+              "since": 2019,
+              "from": 0.2656,
+              "to": 0.7523,
+              "change": 0.4867
+            },
+            {
+              "unit_id": "169442",
+              "name": "College for Creative Studies",
+              "rank": 6,
+              "since": 2019,
+              "from": 0.4378,
+              "to": 0.9194,
+              "change": 0.4816
+            },
+            {
+              "unit_id": "232557",
+              "name": "Liberty University",
+              "rank": 7,
+              "since": 2019,
+              "from": 0.5106,
+              "to": 0.9898,
+              "change": 0.4792
+            },
+            {
+              "unit_id": "177144",
+              "name": "Culver-Stockton College",
+              "rank": 8,
+              "since": 2019,
+              "from": 0.5218,
+              "to": 0.991,
+              "change": 0.4692
+            },
+            {
+              "unit_id": "217688",
+              "name": "Charleston Southern University",
+              "rank": 9,
+              "since": 2019,
+              "from": 0.4965,
+              "to": 0.9646,
+              "change": 0.4681
+            },
+            {
+              "unit_id": "133979",
+              "name": "Florida Memorial University",
+              "rank": 10,
+              "since": 2019,
+              "from": 0.3999,
+              "to": 0.8526,
+              "change": 0.4527
+            },
+            {
+              "unit_id": "490805",
+              "name": "Purdue University Northwest",
+              "rank": 11,
+              "since": 2019,
+              "from": 0.2857,
+              "to": 0.7236,
+              "change": 0.4379
+            },
+            {
+              "unit_id": "199272",
+              "name": "William Peace University",
+              "rank": 12,
+              "since": 2019,
+              "from": 0.5049,
+              "to": 0.9425,
+              "change": 0.4376
+            },
+            {
+              "unit_id": "242653",
+              "name": "Inter American University of Puerto Rico-Metro",
+              "rank": 13,
+              "since": 2019,
+              "from": 0.2605,
+              "to": 0.6972,
+              "change": 0.4367
+            },
+            {
+              "unit_id": "110592",
+              "name": "California State University-Los Angeles",
+              "rank": 14,
+              "since": 2019,
+              "from": 0.4781,
+              "to": 0.9125,
+              "change": 0.4344
+            },
+            {
+              "unit_id": "137476",
+              "name": "St. Thomas University",
+              "rank": 15,
+              "since": 2019,
+              "from": 0.5463,
+              "to": 0.9791,
+              "change": 0.4328
+            },
+            {
+              "unit_id": "201690",
+              "name": "Central State University",
+              "rank": 16,
+              "since": 2019,
+              "from": 0.5679,
+              "to": 0.9861,
+              "change": 0.4182
+            },
+            {
+              "unit_id": "225502",
+              "name": "Texas A&M University-Victoria",
+              "rank": 17,
+              "since": 2019,
+              "from": 0.5553,
+              "to": 0.959,
+              "change": 0.4037
+            },
+            {
+              "unit_id": "228981",
+              "name": "Texas Lutheran University",
+              "rank": 18,
+              "since": 2019,
+              "from": 0.5575,
+              "to": 0.9571,
+              "change": 0.3996
+            },
+            {
+              "unit_id": "148405",
+              "name": "Rockford University",
+              "rank": 19,
+              "since": 2019,
+              "from": 0.5424,
+              "to": 0.9291,
+              "change": 0.3867
+            },
+            {
+              "unit_id": "218229",
+              "name": "Lander University",
+              "rank": 20,
+              "since": 2019,
+              "from": 0.4316,
+              "to": 0.8131,
+              "change": 0.3815
+            },
+            {
+              "unit_id": "110565",
+              "name": "California State University-Fullerton",
+              "rank": 21,
+              "since": 2019,
+              "from": 0.5269,
+              "to": 0.9052,
+              "change": 0.3783
+            },
+            {
+              "unit_id": "484905",
+              "name": "University of North Texas at Dallas",
+              "rank": 22,
+              "since": 2019,
+              "from": 0.4682,
+              "to": 0.8445,
+              "change": 0.3763
+            },
+            {
+              "unit_id": "127565",
+              "name": "Metropolitan State University of Denver",
+              "rank": 23,
+              "since": 2019,
+              "from": 0.613,
+              "to": 0.988,
+              "change": 0.375
+            },
+            {
+              "unit_id": "110556",
+              "name": "California State University-Fresno",
+              "rank": 24,
+              "since": 2019,
+              "from": 0.5794,
+              "to": 0.9526,
+              "change": 0.3732
+            },
+            {
+              "unit_id": "219833",
+              "name": "Christian Brothers University",
+              "rank": 25,
+              "since": 2019,
+              "from": 0.5015,
+              "to": 0.867,
+              "change": 0.3655
+            }
+          ]
+        },
+        {
+          "key": "grew-most",
+          "from": 2019,
+          "to": 2024,
+          "kind": "fall",
+          "floors": [
+            {
+              "series": "undergrads",
+              "min": 1000,
+              "at": "start"
+            }
+          ],
+          "n": 1155,
+          "median": -0.0757,
+          "excluded": {
+            "closed-or-merged": 17,
+            "for-profit": 23,
+            "online-first": 48
+          },
+          "entries": [
+            {
+              "unit_id": "137476",
+              "name": "St. Thomas University",
+              "rank": 1,
+              "since": 2019,
+              "from": 1373,
+              "to": 2214,
+              "change": 0.6125
+            },
+            {
+              "unit_id": "141060",
+              "name": "Spelman College",
+              "rank": 2,
+              "since": 2019,
+              "from": 2118,
+              "to": 3414,
+              "change": 0.6119
+            },
+            {
+              "unit_id": "385619",
+              "name": "Everglades University",
+              "rank": 3,
+              "since": 2019,
+              "from": 1757,
+              "to": 2789,
+              "change": 0.5874
+            },
+            {
+              "unit_id": "227863",
+              "name": "University of St Thomas",
+              "rank": 4,
+              "since": 2019,
+              "from": 2047,
+              "to": 3220,
+              "change": 0.573
+            },
+            {
+              "unit_id": "131520",
+              "name": "Howard University",
+              "rank": 5,
+              "since": 2019,
+              "from": 6461,
+              "to": 10108,
+              "change": 0.5645
+            },
+            {
+              "unit_id": "183804",
+              "name": "Beth Medrash Govoha",
+              "rank": 6,
+              "since": 2019,
+              "from": 2726,
+              "to": 4027,
+              "change": 0.4773
+            },
+            {
+              "unit_id": "446604",
+              "name": "Uta Mesivta of Kiryas Joel",
+              "rank": 7,
+              "since": 2019,
+              "from": 2016,
+              "to": 2957,
+              "change": 0.4668
+            },
+            {
+              "unit_id": "193399",
+              "name": "University of Mount Saint Vincent",
+              "rank": 8,
+              "since": 2019,
+              "from": 1841,
+              "to": 2692,
+              "change": 0.4622
+            },
+            {
+              "unit_id": "117751",
+              "name": "The Master's University and Seminary",
+              "rank": 9,
+              "since": 2019,
+              "from": 1134,
+              "to": 1622,
+              "change": 0.4303
+            },
+            {
+              "unit_id": "163453",
+              "name": "Morgan State University",
+              "rank": 10,
+              "since": 2019,
+              "from": 6449,
+              "to": 9019,
+              "change": 0.3985
+            },
+            {
+              "unit_id": "212133",
+              "name": "Eastern University",
+              "rank": 11,
+              "since": 2019,
+              "from": 1736,
+              "to": 2404,
+              "change": 0.3848
+            },
+            {
+              "unit_id": "218733",
+              "name": "South Carolina State University",
+              "rank": 12,
+              "since": 2019,
+              "from": 2122,
+              "to": 2934,
+              "change": 0.3827
+            },
+            {
+              "unit_id": "205957",
+              "name": "Franciscan University of Steubenville",
+              "rank": 13,
+              "since": 2019,
+              "from": 2138,
+              "to": 2901,
+              "change": 0.3569
+            },
+            {
+              "unit_id": "482936",
+              "name": "Florida Polytechnic University",
+              "rank": 14,
+              "since": 2019,
+              "from": 1263,
+              "to": 1689,
+              "change": 0.3373
+            },
+            {
+              "unit_id": "221759",
+              "name": "The University of Tennessee-Knoxville",
+              "rank": 15,
+              "since": 2019,
+              "from": 23152,
+              "to": 30418,
+              "change": 0.3138
+            },
+            {
+              "unit_id": "201690",
+              "name": "Central State University",
+              "rank": 16,
+              "since": 2019,
+              "from": 1999,
+              "to": 2620,
+              "change": 0.3107
+            },
+            {
+              "unit_id": "189088",
+              "name": "Bard College",
+              "rank": 17,
+              "since": 2019,
+              "from": 1844,
+              "to": 2414,
+              "change": 0.3091
+            },
+            {
+              "unit_id": "178059",
+              "name": "Maryville University of Saint Louis",
+              "rank": 18,
+              "since": 2019,
+              "from": 4351,
+              "to": 5658,
+              "change": 0.3004
+            },
+            {
+              "unit_id": "243780",
+              "name": "Purdue University-Main Campus",
+              "rank": 19,
+              "since": 2019,
+              "from": 34376,
+              "to": 44503,
+              "change": 0.2946
+            },
+            {
+              "unit_id": "159391",
+              "name": "Louisiana State University and Agricultural & Mechanical College",
+              "rank": 20,
+              "since": 2019,
+              "from": 23706,
+              "to": 30594,
+              "change": 0.2906
+            },
+            {
+              "unit_id": "136215",
+              "name": "Nova Southeastern University",
+              "rank": 21,
+              "since": 2019,
+              "from": 5618,
+              "to": 7240,
+              "change": 0.2887
+            },
+            {
+              "unit_id": "133872",
+              "name": "AdventHealth University",
+              "rank": 22,
+              "since": 2019,
+              "from": 1061,
+              "to": 1361,
+              "change": 0.2828
+            },
+            {
+              "unit_id": "140951",
+              "name": "Savannah College of Art and Design",
+              "rank": 23,
+              "since": 2019,
+              "from": 11992,
+              "to": 15243,
+              "change": 0.2711
+            },
+            {
+              "unit_id": "140553",
+              "name": "Morehouse College",
+              "rank": 24,
+              "since": 2019,
+              "from": 2238,
+              "to": 2844,
+              "change": 0.2708
+            },
+            {
+              "unit_id": "176017",
+              "name": "University of Mississippi",
+              "rank": 25,
+              "since": 2019,
+              "from": 16932,
+              "to": 21473,
+              "change": 0.2682
+            }
+          ]
+        },
+        {
+          "key": "shrank-most",
+          "from": 2019,
+          "to": 2024,
+          "kind": "fall",
+          "floors": [
+            {
+              "series": "undergrads",
+              "min": 1000,
+              "at": "start"
+            }
+          ],
+          "n": 1226,
+          "median": -0.0726,
+          "excluded": {
+            "closed-or-merged": 17
+          },
+          "entries": [
+            {
+              "unit_id": "201964",
+              "name": "Ohio Christian University",
+              "rank": 1,
+              "since": 2019,
+              "from": 2219,
+              "to": 862,
+              "change": -0.6115
+            },
+            {
+              "unit_id": "125763",
+              "name": "Whittier College",
+              "rank": 2,
+              "since": 2019,
+              "from": 1770,
+              "to": 764,
+              "change": -0.5684
+            },
+            {
+              "unit_id": "128744",
+              "name": "University of Bridgeport",
+              "rank": 3,
+              "since": 2019,
+              "from": 3233,
+              "to": 1534,
+              "change": -0.5255
+            },
+            {
+              "unit_id": "168847",
+              "name": "Baker College",
+              "rank": 4,
+              "since": 2019,
+              "from": 6343,
+              "to": 3026,
+              "change": -0.5229
+            },
+            {
+              "unit_id": "198303",
+              "name": "Chowan University",
+              "rank": 5,
+              "since": 2019,
+              "from": 1259,
+              "to": 603,
+              "change": -0.521
+            },
+            {
+              "unit_id": "230807",
+              "name": "Westminster University",
+              "rank": 6,
+              "since": 2019,
+              "from": 1716,
+              "to": 823,
+              "change": -0.5204
+            },
+            {
+              "unit_id": "438586",
+              "name": "American InterContinental University-Atlanta",
+              "rank": 7,
+              "since": 2019,
+              "from": 1527,
+              "to": 734,
+              "change": -0.5193
+            },
+            {
+              "unit_id": "183822",
+              "name": "Bloomfield College of Montclair State University",
+              "rank": 8,
+              "since": 2019,
+              "from": 1609,
+              "to": 781,
+              "change": -0.5146
+            },
+            {
+              "unit_id": "242653",
+              "name": "Inter American University of Puerto Rico-Metro",
+              "rank": 9,
+              "since": 2019,
+              "from": 5313,
+              "to": 2607,
+              "change": -0.5093
+            },
+            {
+              "unit_id": "107071",
+              "name": "Henderson State University",
+              "rank": 10,
+              "since": 2019,
+              "from": 2965,
+              "to": 1456,
+              "change": -0.5089
+            },
+            {
+              "unit_id": "178721",
+              "name": "Park University",
+              "rank": 11,
+              "since": 2019,
+              "from": 9133,
+              "to": 4555,
+              "change": -0.5013
+            },
+            {
+              "unit_id": "241225",
+              "name": "Universidad Central de Bayamon",
+              "rank": 12,
+              "since": 2019,
+              "from": 1074,
+              "to": 539,
+              "change": -0.4981
+            },
+            {
+              "unit_id": "492801",
+              "name": "Drury University-College of Continuing Professional Studies",
+              "rank": 13,
+              "since": 2019,
+              "from": 1236,
+              "to": 632,
+              "change": -0.4887
+            },
+            {
+              "unit_id": "189228",
+              "name": "Berkeley College-New York",
+              "rank": 14,
+              "since": 2019,
+              "from": 2810,
+              "to": 1449,
+              "change": -0.4843
+            },
+            {
+              "unit_id": "243586",
+              "name": "Pontifical Catholic University of Puerto Rico-Mayaguez",
+              "rank": 15,
+              "since": 2019,
+              "from": 1067,
+              "to": 555,
+              "change": -0.4799
+            },
+            {
+              "unit_id": "203757",
+              "name": "Lourdes University",
+              "rank": 16,
+              "since": 2019,
+              "from": 1029,
+              "to": 543,
+              "change": -0.4723
+            },
+            {
+              "unit_id": "114813",
+              "name": "Fresno Pacific University",
+              "rank": 17,
+              "since": 2019,
+              "from": 2872,
+              "to": 1544,
+              "change": -0.4624
+            },
+            {
+              "unit_id": "109785",
+              "name": "Azusa Pacific University",
+              "rank": 18,
+              "since": 2019,
+              "from": 5128,
+              "to": 2759,
+              "change": -0.462
+            },
+            {
+              "unit_id": "108232",
+              "name": "Academy of Art University",
+              "rank": 19,
+              "since": 2019,
+              "from": 6570,
+              "to": 3587,
+              "change": -0.454
+            },
+            {
+              "unit_id": "219718",
+              "name": "Bethel University",
+              "rank": 20,
+              "since": 2019,
+              "from": 2829,
+              "to": 1547,
+              "change": -0.4532
+            },
+            {
+              "unit_id": "213367",
+              "name": "La Salle University",
+              "rank": 21,
+              "since": 2019,
+              "from": 3552,
+              "to": 1953,
+              "change": -0.4502
+            },
+            {
+              "unit_id": "166452",
+              "name": "Lesley University",
+              "rank": 22,
+              "since": 2019,
+              "from": 2031,
+              "to": 1122,
+              "change": -0.4476
+            },
+            {
+              "unit_id": "182980",
+              "name": "New England College",
+              "rank": 23,
+              "since": 2019,
+              "from": 1849,
+              "to": 1022,
+              "change": -0.4473
+            },
+            {
+              "unit_id": "177065",
+              "name": "Columbia College",
+              "rank": 24,
+              "since": 2019,
+              "from": 8939,
+              "to": 4950,
+              "change": -0.4462
+            },
+            {
+              "unit_id": "161873",
+              "name": "University of Baltimore",
+              "rank": 25,
+              "since": 2019,
+              "from": 2038,
+              "to": 1133,
+              "change": -0.4441
+            }
+          ]
+        },
+        {
+          "key": "pay-less",
+          "from": 2018,
+          "to": 2023,
+          "kind": "academic",
+          "floors": [
+            {
+              "series": "undergrads",
+              "min": 1000,
+              "at": "start"
+            },
+            {
+              "series": "avg_paid_all",
+              "min": 5000,
+              "at": "start"
+            }
+          ],
+          "n": 1133,
+          "median": -0.1188,
+          "excluded": {
+            "closed-or-merged": 2,
+            "reporting-jump": 3
+          },
+          "entries": [
+            {
+              "unit_id": "229887",
+              "name": "Wiley University",
+              "rank": 1,
+              "since": 2018,
+              "from": 17380,
+              "to": 7959,
+              "change": -0.5421
+            },
+            {
+              "unit_id": "207971",
+              "name": "University of Tulsa",
+              "rank": 2,
+              "since": 2018,
+              "from": 32315,
+              "to": 14813,
+              "change": -0.5416
+            },
+            {
+              "unit_id": "446604",
+              "name": "Uta Mesivta of Kiryas Joel",
+              "rank": 3,
+              "since": 2018,
+              "from": 14996,
+              "to": 7202,
+              "change": -0.5198
+            },
+            {
+              "unit_id": "234164",
+              "name": "Virginia Union University",
+              "rank": 4,
+              "since": 2018,
+              "from": 27136,
+              "to": 14082,
+              "change": -0.4811
+            },
+            {
+              "unit_id": "231581",
+              "name": "Bridgewater College",
+              "rank": 5,
+              "since": 2018,
+              "from": 24453,
+              "to": 12757,
+              "change": -0.4783
+            },
+            {
+              "unit_id": "132602",
+              "name": "Bethune-Cookman University",
+              "rank": 6,
+              "since": 2018,
+              "from": 22576,
+              "to": 13029,
+              "change": -0.4229
+            },
+            {
+              "unit_id": "198862",
+              "name": "Livingstone College",
+              "rank": 7,
+              "since": 2018,
+              "from": 22278,
+              "to": 13077,
+              "change": -0.413
+            },
+            {
+              "unit_id": "219949",
+              "name": "Cumberland University",
+              "rank": 8,
+              "since": 2018,
+              "from": 33913,
+              "to": 20037,
+              "change": -0.4092
+            },
+            {
+              "unit_id": "187648",
+              "name": "Eastern New Mexico University-Main Campus",
+              "rank": 9,
+              "since": 2018,
+              "from": 16044,
+              "to": 9911,
+              "change": -0.3823
+            },
+            {
+              "unit_id": "157535",
+              "name": "University of Pikeville",
+              "rank": 10,
+              "since": 2018,
+              "from": 25377,
+              "to": 15829,
+              "change": -0.3763
+            },
+            {
+              "unit_id": "187967",
+              "name": "New Mexico Institute of Mining and Technology",
+              "rank": 11,
+              "since": 2018,
+              "from": 19756,
+              "to": 12349,
+              "change": -0.3749
+            },
+            {
+              "unit_id": "213020",
+              "name": "Indiana University of Pennsylvania",
+              "rank": 12,
+              "since": 2018,
+              "from": 29592,
+              "to": 18506,
+              "change": -0.3746
+            },
+            {
+              "unit_id": "128106",
+              "name": "Colorado State University Pueblo",
+              "rank": 13,
+              "since": 2018,
+              "from": 28122,
+              "to": 17739,
+              "change": -0.3692
+            },
+            {
+              "unit_id": "213367",
+              "name": "La Salle University",
+              "rank": 14,
+              "since": 2018,
+              "from": 35755,
+              "to": 22577,
+              "change": -0.3686
+            },
+            {
+              "unit_id": "139719",
+              "name": "Fort Valley State University",
+              "rank": 15,
+              "since": 2018,
+              "from": 18205,
+              "to": 11504,
+              "change": -0.3681
+            },
+            {
+              "unit_id": "207351",
+              "name": "Oklahoma Panhandle State University",
+              "rank": 16,
+              "since": 2018,
+              "from": 13769,
+              "to": 8757,
+              "change": -0.364
+            },
+            {
+              "unit_id": "166018",
+              "name": "Hampshire College",
+              "rank": 17,
+              "since": 2018,
+              "from": 44117,
+              "to": 28129,
+              "change": -0.3624
+            },
+            {
+              "unit_id": "156541",
+              "name": "University of the Cumberlands",
+              "rank": 18,
+              "since": 2018,
+              "from": 23247,
+              "to": 14923,
+              "change": -0.3581
+            },
+            {
+              "unit_id": "210401",
+              "name": "Willamette University",
+              "rank": 19,
+              "since": 2018,
+              "from": 45025,
+              "to": 29421,
+              "change": -0.3466
+            },
+            {
+              "unit_id": "157386",
+              "name": "Morehead State University",
+              "rank": 20,
+              "since": 2018,
+              "from": 16900,
+              "to": 11086,
+              "change": -0.344
+            },
+            {
+              "unit_id": "163462",
+              "name": "Mount St. Mary's University",
+              "rank": 21,
+              "since": 2018,
+              "from": 36734,
+              "to": 24121,
+              "change": -0.3434
+            },
+            {
+              "unit_id": "147703",
+              "name": "Northern Illinois University",
+              "rank": 22,
+              "since": 2018,
+              "from": 23538,
+              "to": 15527,
+              "change": -0.3403
+            },
+            {
+              "unit_id": "117140",
+              "name": "University of La Verne",
+              "rank": 23,
+              "since": 2018,
+              "from": 39281,
+              "to": 25931,
+              "change": -0.3399
+            },
+            {
+              "unit_id": "169910",
+              "name": "Ferris State University",
+              "rank": 24,
+              "since": 2018,
+              "from": 17580,
+              "to": 11793,
+              "change": -0.3292
+            },
+            {
+              "unit_id": "151324",
+              "name": "Indiana State University",
+              "rank": 25,
+              "since": 2018,
+              "from": 22254,
+              "to": 14940,
+              "change": -0.3287
+            }
+          ]
+        },
+        {
+          "key": "pay-more",
+          "from": 2018,
+          "to": 2023,
+          "kind": "academic",
+          "floors": [
+            {
+              "series": "undergrads",
+              "min": 1000,
+              "at": "start"
+            },
+            {
+              "series": "avg_paid_all",
+              "min": 5000,
+              "at": "start"
+            }
+          ],
+          "n": 1133,
+          "median": -0.1188,
+          "excluded": {
+            "closed-or-merged": 2,
+            "reporting-jump": 3
+          },
+          "entries": [
+            {
+              "unit_id": "133872",
+              "name": "AdventHealth University",
+              "rank": 1,
+              "since": 2018,
+              "from": 23320,
+              "to": 38765,
+              "change": 0.6623
+            },
+            {
+              "unit_id": "175856",
+              "name": "Jackson State University",
+              "rank": 2,
+              "since": 2018,
+              "from": 18590,
+              "to": 26256,
+              "change": 0.4124
+            },
+            {
+              "unit_id": "206914",
+              "name": "Cameron University",
+              "rank": 3,
+              "since": 2018,
+              "from": 12800,
+              "to": 17202,
+              "change": 0.3439
+            },
+            {
+              "unit_id": "183822",
+              "name": "Bloomfield College of Montclair State University",
+              "rank": 4,
+              "since": 2018,
+              "from": 26110,
+              "to": 34454,
+              "change": 0.3196
+            },
+            {
+              "unit_id": "190761",
+              "name": "Dominican University New York",
+              "rank": 5,
+              "since": 2018,
+              "from": 30401,
+              "to": 40036,
+              "change": 0.3169
+            },
+            {
+              "unit_id": "176053",
+              "name": "Mississippi Christian University",
+              "rank": 6,
+              "since": 2018,
+              "from": 22278,
+              "to": 28746,
+              "change": 0.2903
+            },
+            {
+              "unit_id": "446048",
+              "name": "Ave Maria University",
+              "rank": 7,
+              "since": 2018,
+              "from": 20137,
+              "to": 25781,
+              "change": 0.2803
+            },
+            {
+              "unit_id": "131520",
+              "name": "Howard University",
+              "rank": 8,
+              "since": 2018,
+              "from": 26658,
+              "to": 33612,
+              "change": 0.2608
+            },
+            {
+              "unit_id": "121150",
+              "name": "Pepperdine University",
+              "rank": 9,
+              "since": 2018,
+              "from": 54897,
+              "to": 69013,
+              "change": 0.2571
+            },
+            {
+              "unit_id": "176479",
+              "name": "William Carey University",
+              "rank": 10,
+              "since": 2018,
+              "from": 13272,
+              "to": 16519,
+              "change": 0.2447
+            },
+            {
+              "unit_id": "193399",
+              "name": "University of Mount Saint Vincent",
+              "rank": 11,
+              "since": 2018,
+              "from": 26596,
+              "to": 32571,
+              "change": 0.2247
+            },
+            {
+              "unit_id": "142461",
+              "name": "Northwest Nazarene University",
+              "rank": 12,
+              "since": 2018,
+              "from": 26262,
+              "to": 31752,
+              "change": 0.209
+            },
+            {
+              "unit_id": "229018",
+              "name": "The University of Texas Permian Basin",
+              "rank": 13,
+              "since": 2018,
+              "from": 17208,
+              "to": 20670,
+              "change": 0.2012
+            },
+            {
+              "unit_id": "107071",
+              "name": "Henderson State University",
+              "rank": 14,
+              "since": 2018,
+              "from": 17716,
+              "to": 21131,
+              "change": 0.1928
+            },
+            {
+              "unit_id": "178420",
+              "name": "University of Missouri-St Louis",
+              "rank": 15,
+              "since": 2018,
+              "from": 18878,
+              "to": 22047,
+              "change": 0.1678
+            },
+            {
+              "unit_id": "198543",
+              "name": "Fayetteville State University",
+              "rank": 16,
+              "since": 2018,
+              "from": 9679,
+              "to": 11288,
+              "change": 0.1662
+            },
+            {
+              "unit_id": "482158",
+              "name": "Middle Georgia State University",
+              "rank": 17,
+              "since": 2018,
+              "from": 13828,
+              "to": 16101,
+              "change": 0.1644
+            },
+            {
+              "unit_id": "228802",
+              "name": "The University of Texas at Tyler",
+              "rank": 18,
+              "since": 2018,
+              "from": 15282,
+              "to": 17737,
+              "change": 0.1606
+            },
+            {
+              "unit_id": "180814",
+              "name": "Bellevue University",
+              "rank": 19,
+              "since": 2018,
+              "from": 18088,
+              "to": 20909,
+              "change": 0.156
+            },
+            {
+              "unit_id": "127185",
+              "name": "Fort Lewis College",
+              "rank": 20,
+              "since": 2018,
+              "from": 24436,
+              "to": 28074,
+              "change": 0.1489
+            },
+            {
+              "unit_id": "241410",
+              "name": "Pontifical Catholic University of Puerto Rico-Ponce",
+              "rank": 21,
+              "since": 2018,
+              "from": 13863,
+              "to": 15917,
+              "change": 0.1481
+            },
+            {
+              "unit_id": "134097",
+              "name": "Florida State University",
+              "rank": 22,
+              "since": 2018,
+              "from": 17090,
+              "to": 19462,
+              "change": 0.1388
+            },
+            {
+              "unit_id": "233921",
+              "name": "Virginia Polytechnic Institute and State University",
+              "rank": 23,
+              "since": 2018,
+              "from": 35261,
+              "to": 40019,
+              "change": 0.1349
+            },
+            {
+              "unit_id": "217721",
+              "name": "Benedict College",
+              "rank": 24,
+              "since": 2018,
+              "from": 17010,
+              "to": 19287,
+              "change": 0.1339
+            },
+            {
+              "unit_id": "142328",
+              "name": "Lewis-Clark State College",
+              "rank": 25,
+              "since": 2018,
+              "from": 18971,
+              "to": 21464,
+              "change": 0.1314
+            }
+          ]
+        },
+        {
+          "key": "grad-rate-climbed",
+          "from": 2013,
+          "to": 2018,
+          "kind": "cohort",
+          "floors": [
+            {
+              "series": "undergrads",
+              "min": 1000,
+              "at": "start"
+            },
+            {
+              "series": "entering_class",
+              "min": 200,
+              "at": "both"
+            }
+          ],
+          "n": 1113,
+          "median": 0.0002,
+          "excluded": {
+            "closed-or-merged": 11
+          },
+          "entries": [
+            {
+              "unit_id": "141981",
+              "name": "University of Hawaii-West Oahu",
+              "rank": 1,
+              "since": 2013,
+              "from": 0.2757,
+              "to": 0.4955,
+              "change": 0.2198
+            },
+            {
+              "unit_id": "232557",
+              "name": "Liberty University",
+              "rank": 2,
+              "since": 2013,
+              "from": 0.474,
+              "to": 0.6533,
+              "change": 0.1793
+            },
+            {
+              "unit_id": "175342",
+              "name": "Alcorn State University",
+              "rank": 3,
+              "since": 2013,
+              "from": 0.4092,
+              "to": 0.5736,
+              "change": 0.1644
+            },
+            {
+              "unit_id": "208646",
+              "name": "Eastern Oregon University",
+              "rank": 4,
+              "since": 2013,
+              "from": 0.2743,
+              "to": 0.43,
+              "change": 0.1557
+            },
+            {
+              "unit_id": "214777",
+              "name": "Pennsylvania State University-Main Campus",
+              "rank": 5,
+              "since": 2013,
+              "from": 0.7089,
+              "to": 0.8609,
+              "change": 0.152
+            },
+            {
+              "unit_id": "198899",
+              "name": "Mars Hill University",
+              "rank": 6,
+              "since": 2013,
+              "from": 0.3022,
+              "to": 0.4487,
+              "change": 0.1465
+            },
+            {
+              "unit_id": "237932",
+              "name": "West Liberty University",
+              "rank": 7,
+              "since": 2013,
+              "from": 0.4491,
+              "to": 0.5953,
+              "change": 0.1462
+            },
+            {
+              "unit_id": "240107",
+              "name": "Viterbo University",
+              "rank": 8,
+              "since": 2013,
+              "from": 0.538,
+              "to": 0.6838,
+              "change": 0.1458
+            },
+            {
+              "unit_id": "243577",
+              "name": "Universidad Politecnica de Puerto Rico",
+              "rank": 9,
+              "since": 2013,
+              "from": 0.1379,
+              "to": 0.2808,
+              "change": 0.1429
+            },
+            {
+              "unit_id": "177065",
+              "name": "Columbia College",
+              "rank": 10,
+              "since": 2013,
+              "from": 0.2802,
+              "to": 0.4219,
+              "change": 0.1417
+            },
+            {
+              "unit_id": "149222",
+              "name": "Southern Illinois University-Carbondale",
+              "rank": 11,
+              "since": 2013,
+              "from": 0.4834,
+              "to": 0.6241,
+              "change": 0.1407
+            },
+            {
+              "unit_id": "204006",
+              "name": "Miami University-Hamilton",
+              "rank": 12,
+              "since": 2013,
+              "from": 0.109,
+              "to": 0.2494,
+              "change": 0.1404
+            },
+            {
+              "unit_id": "157535",
+              "name": "University of Pikeville",
+              "rank": 13,
+              "since": 2013,
+              "from": 0.2768,
+              "to": 0.4167,
+              "change": 0.1399
+            },
+            {
+              "unit_id": "205443",
+              "name": "Shawnee State University",
+              "rank": 14,
+              "since": 2013,
+              "from": 0.3453,
+              "to": 0.4811,
+              "change": 0.1358
+            },
+            {
+              "unit_id": "161217",
+              "name": "University of Maine at Augusta",
+              "rank": 15,
+              "since": 2013,
+              "from": 0.1341,
+              "to": 0.2698,
+              "change": 0.1357
+            },
+            {
+              "unit_id": "204015",
+              "name": "Miami University-Middletown",
+              "rank": 16,
+              "since": 2013,
+              "from": 0.1821,
+              "to": 0.3175,
+              "change": 0.1354
+            },
+            {
+              "unit_id": "101480",
+              "name": "Jacksonville State University",
+              "rank": 17,
+              "since": 2013,
+              "from": 0.4133,
+              "to": 0.5472,
+              "change": 0.1339
+            },
+            {
+              "unit_id": "220215",
+              "name": "Freed-Hardeman University",
+              "rank": 18,
+              "since": 2013,
+              "from": 0.5775,
+              "to": 0.7078,
+              "change": 0.1303
+            },
+            {
+              "unit_id": "228796",
+              "name": "The University of Texas at El Paso",
+              "rank": 19,
+              "since": 2013,
+              "from": 0.3715,
+              "to": 0.5017,
+              "change": 0.1302
+            },
+            {
+              "unit_id": "175856",
+              "name": "Jackson State University",
+              "rank": 20,
+              "since": 2013,
+              "from": 0.3805,
+              "to": 0.5091,
+              "change": 0.1286
+            },
+            {
+              "unit_id": "117627",
+              "name": "La Sierra University",
+              "rank": 21,
+              "since": 2013,
+              "from": 0.4724,
+              "to": 0.5973,
+              "change": 0.1249
+            },
+            {
+              "unit_id": "133669",
+              "name": "Florida Atlantic University",
+              "rank": 22,
+              "since": 2013,
+              "from": 0.5014,
+              "to": 0.6257,
+              "change": 0.1243
+            },
+            {
+              "unit_id": "138354",
+              "name": "University of West Florida",
+              "rank": 23,
+              "since": 2013,
+              "from": 0.4639,
+              "to": 0.588,
+              "change": 0.1241
+            },
+            {
+              "unit_id": "228802",
+              "name": "The University of Texas at Tyler",
+              "rank": 24,
+              "since": 2013,
+              "from": 0.4186,
+              "to": 0.5413,
+              "change": 0.1227
+            },
+            {
+              "unit_id": "168740",
+              "name": "Andrews University",
+              "rank": 25,
+              "since": 2013,
+              "from": 0.5928,
+              "to": 0.7153,
+              "change": 0.1225
+            }
+          ]
+        },
+        {
+          "key": "more-out-of-state",
+          "from": 2019,
+          "to": 2024,
+          "kind": "fall",
+          "floors": [
+            {
+              "series": "enrolled",
+              "min": 500,
+              "at": "start"
+            }
+          ],
+          "n": 410,
+          "median": 0.0034,
+          "excluded": {},
+          "entries": [
+            {
+              "unit_id": "482149",
+              "name": "Augusta University",
+              "rank": 1,
+              "since": 2020,
+              "from": 0.0535,
+              "to": 0.3315,
+              "change": 0.278
+            },
+            {
+              "unit_id": "209542",
+              "name": "Oregon State University",
+              "rank": 2,
+              "since": 2020,
+              "from": 0.268,
+              "to": 0.4217,
+              "change": 0.1537
+            },
+            {
+              "unit_id": "199102",
+              "name": "North Carolina A & T State University",
+              "rank": 3,
+              "since": 2020,
+              "from": 0.2729,
+              "to": 0.4123,
+              "change": 0.1394
+            },
+            {
+              "unit_id": "198543",
+              "name": "Fayetteville State University",
+              "rank": 4,
+              "since": 2020,
+              "from": 0.0693,
+              "to": 0.2065,
+              "change": 0.1372
+            },
+            {
+              "unit_id": "436836",
+              "name": "University of Connecticut-Stamford",
+              "rank": 5,
+              "since": 2020,
+              "from": 0.073,
+              "to": 0.2021,
+              "change": 0.1291
+            },
+            {
+              "unit_id": "176017",
+              "name": "University of Mississippi",
+              "rank": 6,
+              "since": 2020,
+              "from": 0.5651,
+              "to": 0.6941,
+              "change": 0.129
+            },
+            {
+              "unit_id": "129020",
+              "name": "University of Connecticut",
+              "rank": 7,
+              "since": 2020,
+              "from": 0.2915,
+              "to": 0.418,
+              "change": 0.1265
+            },
+            {
+              "unit_id": "107071",
+              "name": "Henderson State University",
+              "rank": 8,
+              "since": 2020,
+              "from": 0.1066,
+              "to": 0.2314,
+              "change": 0.1248
+            },
+            {
+              "unit_id": "159391",
+              "name": "Louisiana State University and Agricultural & Mechanical College",
+              "rank": 9,
+              "since": 2020,
+              "from": 0.2764,
+              "to": 0.3937,
+              "change": 0.1173
+            },
+            {
+              "unit_id": "159647",
+              "name": "Louisiana Tech University",
+              "rank": 10,
+              "since": 2020,
+              "from": 0.0064,
+              "to": 0.1194,
+              "change": 0.113
+            },
+            {
+              "unit_id": "230764",
+              "name": "University of Utah",
+              "rank": 11,
+              "since": 2020,
+              "from": 0.317,
+              "to": 0.4158,
+              "change": 0.0988
+            },
+            {
+              "unit_id": "216339",
+              "name": "Temple University",
+              "rank": 12,
+              "since": 2020,
+              "from": 0.2735,
+              "to": 0.37,
+              "change": 0.0965
+            },
+            {
+              "unit_id": "218724",
+              "name": "Coastal Carolina University",
+              "rank": 13,
+              "since": 2020,
+              "from": 0.5715,
+              "to": 0.666,
+              "change": 0.0945
+            },
+            {
+              "unit_id": "243780",
+              "name": "Purdue University-Main Campus",
+              "rank": 14,
+              "since": 2020,
+              "from": 0.3849,
+              "to": 0.4741,
+              "change": 0.0892
+            },
+            {
+              "unit_id": "233921",
+              "name": "Virginia Polytechnic Institute and State University",
+              "rank": 15,
+              "since": 2020,
+              "from": 0.2517,
+              "to": 0.3387,
+              "change": 0.087
+            },
+            {
+              "unit_id": "102614",
+              "name": "University of Alaska Fairbanks",
+              "rank": 16,
+              "since": 2020,
+              "from": 0.1138,
+              "to": 0.1998,
+              "change": 0.086
+            },
+            {
+              "unit_id": "106397",
+              "name": "University of Arkansas",
+              "rank": 17,
+              "since": 2020,
+              "from": 0.4744,
+              "to": 0.5595,
+              "change": 0.0851
+            },
+            {
+              "unit_id": "122409",
+              "name": "San Diego State University",
+              "rank": 18,
+              "since": 2020,
+              "from": 0.1465,
+              "to": 0.2308,
+              "change": 0.0843
+            },
+            {
+              "unit_id": "100654",
+              "name": "Alabama A & M University",
+              "rank": 19,
+              "since": 2020,
+              "from": 0.456,
+              "to": 0.5391,
+              "change": 0.0831
+            },
+            {
+              "unit_id": "100724",
+              "name": "Alabama State University",
+              "rank": 20,
+              "since": 2020,
+              "from": 0.4379,
+              "to": 0.5208,
+              "change": 0.0829
+            },
+            {
+              "unit_id": "157951",
+              "name": "Western Kentucky University",
+              "rank": 21,
+              "since": 2020,
+              "from": 0.2522,
+              "to": 0.3329,
+              "change": 0.0807
+            },
+            {
+              "unit_id": "186380",
+              "name": "Rutgers University-New Brunswick",
+              "rank": 22,
+              "since": 2020,
+              "from": 0.0548,
+              "to": 0.1344,
+              "change": 0.0796
+            },
+            {
+              "unit_id": "133669",
+              "name": "Florida Atlantic University",
+              "rank": 23,
+              "since": 2020,
+              "from": 0.1124,
+              "to": 0.1916,
+              "change": 0.0792
+            },
+            {
+              "unit_id": "155025",
+              "name": "Emporia State University",
+              "rank": 23,
+              "since": 2020,
+              "from": 0.0673,
+              "to": 0.1465,
+              "change": 0.0792
+            },
+            {
+              "unit_id": "104179",
+              "name": "University of Arizona",
+              "rank": 25,
+              "since": 2020,
+              "from": 0.3673,
+              "to": 0.4452,
+              "change": 0.0779
+            }
+          ]
+        },
+        {
+          "key": "pell-gap-closed",
+          "from": 2013,
+          "to": 2018,
+          "kind": "cohort",
+          "floors": [
+            {
+              "series": "grad_cohort_pell",
+              "min": 100,
+              "at": "both"
+            },
+            {
+              "series": "grad_cohort_no_pell_no_loan",
+              "min": 100,
+              "at": "both"
+            }
+          ],
+          "n": 792,
+          "median": 0.0033,
+          "excluded": {
+            "closed-or-merged": 10
+          },
+          "entries": [
+            {
+              "unit_id": "128744",
+              "name": "University of Bridgeport",
+              "rank": 1,
+              "since": 2013,
+              "from": 0.2405,
+              "to": -0.1048,
+              "change": -0.3453
+            },
+            {
+              "unit_id": "191533",
+              "name": "Hartwick College",
+              "rank": 2,
+              "since": 2013,
+              "from": 0.1536,
+              "to": -0.1367,
+              "change": -0.2903
+            },
+            {
+              "unit_id": "221838",
+              "name": "Tennessee State University",
+              "rank": 3,
+              "since": 2013,
+              "from": 0.2889,
+              "to": 0.0088,
+              "change": -0.2801
+            },
+            {
+              "unit_id": "217633",
+              "name": "Anderson University",
+              "rank": 4,
+              "since": 2013,
+              "from": 0.3991,
+              "to": 0.1315,
+              "change": -0.2676
+            },
+            {
+              "unit_id": "137564",
+              "name": "Southeastern University",
+              "rank": 5,
+              "since": 2013,
+              "from": 0.3292,
+              "to": 0.1146,
+              "change": -0.2146
+            },
+            {
+              "unit_id": "144962",
+              "name": "Elmhurst University",
+              "rank": 6,
+              "since": 2013,
+              "from": 0.1401,
+              "to": -0.0716,
+              "change": -0.2117
+            },
+            {
+              "unit_id": "209056",
+              "name": "Lewis & Clark College",
+              "rank": 7,
+              "since": 2013,
+              "from": 0.2095,
+              "to": 0.0269,
+              "change": -0.1826
+            },
+            {
+              "unit_id": "180948",
+              "name": "Chadron State College",
+              "rank": 8,
+              "since": 2013,
+              "from": 0.1448,
+              "to": -0.0275,
+              "change": -0.1723
+            },
+            {
+              "unit_id": "214777",
+              "name": "Pennsylvania State University-Main Campus",
+              "rank": 8,
+              "since": 2013,
+              "from": 0.2357,
+              "to": 0.0634,
+              "change": -0.1723
+            },
+            {
+              "unit_id": "195164",
+              "name": "St Bonaventure University",
+              "rank": 10,
+              "since": 2013,
+              "from": 0.2812,
+              "to": 0.1142,
+              "change": -0.167
+            },
+            {
+              "unit_id": "145725",
+              "name": "Illinois Institute of Technology",
+              "rank": 11,
+              "since": 2013,
+              "from": 0.1868,
+              "to": 0.0226,
+              "change": -0.1642
+            },
+            {
+              "unit_id": "134237",
+              "name": "Full Sail University",
+              "rank": 12,
+              "since": 2013,
+              "from": 0.2107,
+              "to": 0.0499,
+              "change": -0.1608
+            },
+            {
+              "unit_id": "206914",
+              "name": "Cameron University",
+              "rank": 13,
+              "since": 2013,
+              "from": 0.2107,
+              "to": 0.0521,
+              "change": -0.1586
+            },
+            {
+              "unit_id": "156082",
+              "name": "Washburn University",
+              "rank": 14,
+              "since": 2013,
+              "from": 0.2824,
+              "to": 0.1242,
+              "change": -0.1582
+            },
+            {
+              "unit_id": "240754",
+              "name": "University of Guam",
+              "rank": 15,
+              "since": 2013,
+              "from": 0.0341,
+              "to": -0.1213,
+              "change": -0.1554
+            },
+            {
+              "unit_id": "166656",
+              "name": "Massachusetts College of Pharmacy and Health Sciences",
+              "rank": 16,
+              "since": 2013,
+              "from": 0.1686,
+              "to": 0.0155,
+              "change": -0.1531
+            },
+            {
+              "unit_id": "214069",
+              "name": "Misericordia University",
+              "rank": 17,
+              "since": 2013,
+              "from": 0.2232,
+              "to": 0.0702,
+              "change": -0.153
+            },
+            {
+              "unit_id": "228343",
+              "name": "Southwestern University",
+              "rank": 18,
+              "since": 2013,
+              "from": 0.2184,
+              "to": 0.0655,
+              "change": -0.1529
+            },
+            {
+              "unit_id": "206862",
+              "name": "Southern Nazarene University",
+              "rank": 19,
+              "since": 2013,
+              "from": 0.2514,
+              "to": 0.1002,
+              "change": -0.1512
+            },
+            {
+              "unit_id": "226091",
+              "name": "Lamar University",
+              "rank": 20,
+              "since": 2013,
+              "from": 0.2292,
+              "to": 0.081,
+              "change": -0.1482
+            },
+            {
+              "unit_id": "243221",
+              "name": "University of Puerto Rico-Rio Piedras",
+              "rank": 21,
+              "since": 2014,
+              "from": 0.0904,
+              "to": -0.0552,
+              "change": -0.1456
+            },
+            {
+              "unit_id": "142328",
+              "name": "Lewis-Clark State College",
+              "rank": 22,
+              "since": 2013,
+              "from": 0.2556,
+              "to": 0.1126,
+              "change": -0.143
+            },
+            {
+              "unit_id": "164562",
+              "name": "Assumption University",
+              "rank": 23,
+              "since": 2013,
+              "from": 0.2131,
+              "to": 0.0714,
+              "change": -0.1417
+            },
+            {
+              "unit_id": "126827",
+              "name": "Colorado Technical University-Colorado Springs",
+              "rank": 24,
+              "since": 2013,
+              "from": 0.0988,
+              "to": -0.0416,
+              "change": -0.1404
+            },
+            {
+              "unit_id": "123554",
+              "name": "Saint Mary's College of California",
+              "rank": 25,
+              "since": 2013,
+              "from": 0.1794,
+              "to": 0.0419,
+              "change": -0.1375
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

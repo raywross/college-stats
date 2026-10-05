@@ -1,0 +1,266 @@
+[
+  {
+    "unit_id": "104151",
+    "name": "Arizona State University Campus Immersion",
+    "reason": "ASU's Downtown Phoenix, Polytechnic, and West campuses report under this ID from fall 2020 (44,038 → 62,633 undergraduates in one year); earlier years count Tempe only",
+    "added": "2026-10-04",
+    "before": 2020
+  },
+  {
+    "unit_id": "120184",
+    "name": "Notre Dame de Namur University",
+    "reason": "Stopped enrolling new undergraduates and became a graduate-only university; 33 undergraduates in the newest fall",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "138716",
+    "name": "Albany State University",
+    "reason": "Merged with Darton State College in 2017 (2,576 → 5,761 undergraduates in one year)",
+    "added": "2026-10-04",
+    "before": 2017
+  },
+  {
+    "unit_id": "139931",
+    "name": "Georgia Southern University",
+    "reason": "Merged with Armstrong State University in 2018 (17,062 → 22,239 undergraduates in one year)",
+    "added": "2026-10-04",
+    "before": 2018
+  },
+  {
+    "unit_id": "151290",
+    "name": "Indiana Institute of Technology",
+    "reason": "Its College of Professional Studies reports separately from fall 2018 (492962); earlier counts include it",
+    "added": "2026-10-04",
+    "before": 2018
+  },
+  {
+    "unit_id": "151801",
+    "name": "Indiana Wesleyan University-Marion",
+    "reason": "Its National & Global (adult and online) programs report separately from fall 2016 (488679); earlier counts include them",
+    "added": "2026-10-04",
+    "before": 2016
+  },
+  {
+    "unit_id": "168847",
+    "name": "Baker College",
+    "reason": "Baker's Michigan campuses consolidated under this ID in 2015 (3,684 → 24,023 undergraduates in one year)",
+    "added": "2026-10-04",
+    "before": 2015
+  },
+  {
+    "unit_id": "177214",
+    "name": "Drury University",
+    "reason": "Its College of Continuing Professional Studies reports separately from fall 2018 (492801); earlier counts include it",
+    "added": "2026-10-04",
+    "before": 2018
+  },
+  {
+    "unit_id": "192448",
+    "name": "Long Island University",
+    "reason": "LIU Post and LIU Brooklyn report as one university from fall 2018 (3,133 → 6,323 undergraduates in one year)",
+    "added": "2026-10-04",
+    "before": 2018
+  },
+  {
+    "unit_id": "214777",
+    "name": "Pennsylvania State University-Main Campus",
+    "reason": "Fall 2019 counts every Penn State campus (74,630 undergraduates); the years around it count University Park only",
+    "added": "2026-10-04",
+    "years": [2019]
+  },
+  {
+    "unit_id": "216366",
+    "name": "Thomas Jefferson University",
+    "reason": "Merged with Philadelphia University in 2017; the combined university reports from fall 2018 (731 → 3,495 undergraduates)",
+    "added": "2026-10-04",
+    "before": 2018
+  },
+  {
+    "unit_id": "227368",
+    "name": "The University of Texas Rio Grande Valley",
+    "reason": "Formed in 2015 from UT Pan American (this ID) and UT Brownsville (17,811 → 24,473 undergraduates in one year)",
+    "added": "2026-10-04",
+    "before": 2015
+  },
+  {
+    "unit_id": "231165",
+    "name": "Vermont State University",
+    "reason": "Formed in 2023 from Castleton, Northern Vermont, and Vermont Technical College (this ID; 1,112 → 3,567 undergraduates in one year)",
+    "added": "2026-10-04",
+    "before": 2023
+  },
+  {
+    "unit_id": "241739",
+    "name": "Universidad Ana G. Mendez-Cupey Campus",
+    "reason": "The system's online students moved to Ana G. Mendez University (483595) from fall 2019 on; campus counts before and after describe different students",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "243346",
+    "name": "Universidad Ana G. Mendez-Carolina Campus",
+    "reason": "The system's online students moved to Ana G. Mendez University (483595) from fall 2019 on; campus counts before and after describe different students",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "243601",
+    "name": "Universidad Ana G. Mendez-Gurabo Campus",
+    "reason": "The system's online students moved to Ana G. Mendez University (483595) from fall 2019 on; campus counts before and after describe different students",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "482413",
+    "name": "DeVry College of New York",
+    "reason": "DeVry's location IDs count students it assigns to them, not one campus; most were wound down to a few dozen students as reporting moved",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "482422",
+    "name": "DeVry University-Arizona",
+    "reason": "DeVry's location IDs count students it assigns to them, not one campus; most were wound down to a few dozen students as reporting moved",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "482459",
+    "name": "DeVry University-Florida",
+    "reason": "DeVry's location IDs count students it assigns to them, not one campus; most were wound down to a few dozen students as reporting moved",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "482468",
+    "name": "DeVry University-Georgia",
+    "reason": "DeVry's location IDs count students it assigns to them, not one campus; most were wound down to a few dozen students as reporting moved",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "482547",
+    "name": "DeVry University-Nevada",
+    "reason": "DeVry's location IDs count students it assigns to them, not one campus; most were wound down to a few dozen students as reporting moved",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "482556",
+    "name": "DeVry University-New Jersey",
+    "reason": "DeVry's location IDs count students it assigns to them, not one campus; most were wound down to a few dozen students as reporting moved",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "482574",
+    "name": "DeVry University-Ohio",
+    "reason": "DeVry's location IDs count students it assigns to them, not one campus; most were wound down to a few dozen students as reporting moved",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "482635",
+    "name": "DeVry University-Texas",
+    "reason": "DeVry's location IDs count students it assigns to them, not one campus; most were wound down to a few dozen students as reporting moved",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "482653",
+    "name": "DeVry University-Virginia",
+    "reason": "DeVry's location IDs count students it assigns to them, not one campus; most were wound down to a few dozen students as reporting moved",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "131803",
+    "name": "Strayer University-District of Columbia",
+    "reason": "Strayer's state IDs count online students it assigns to them, not one campus, and the assignments moved to Strayer University-Global Region (459994) over the years",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "233684",
+    "name": "Strayer University-Virginia",
+    "reason": "Strayer's state IDs count online students it assigns to them, not one campus, and the assignments moved to Strayer University-Global Region (459994) over the years",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "430184",
+    "name": "Strayer University-Maryland",
+    "reason": "Strayer's state IDs count online students it assigns to them, not one campus, and the assignments moved to Strayer University-Global Region (459994) over the years",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "443766",
+    "name": "Strayer University-Tennessee",
+    "reason": "Strayer's state IDs count online students it assigns to them, not one campus, and the assignments moved to Strayer University-Global Region (459994) over the years",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "443784",
+    "name": "Strayer University-Pennsylvania",
+    "reason": "Strayer's state IDs count online students it assigns to them, not one campus, and the assignments moved to Strayer University-Global Region (459994) over the years",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "449038",
+    "name": "Strayer University-Florida",
+    "reason": "Strayer's state IDs count online students it assigns to them, not one campus, and the assignments moved to Strayer University-Global Region (459994) over the years",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "450298",
+    "name": "Strayer University-Delaware",
+    "reason": "Strayer's state IDs count online students it assigns to them, not one campus, and the assignments moved to Strayer University-Global Region (459994) over the years",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "450377",
+    "name": "Strayer University-Alabama",
+    "reason": "Strayer's state IDs count online students it assigns to them, not one campus, and the assignments moved to Strayer University-Global Region (459994) over the years",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "453163",
+    "name": "Strayer University-North Carolina",
+    "reason": "Strayer's state IDs count online students it assigns to them, not one campus, and the assignments moved to Strayer University-Global Region (459994) over the years",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "453215",
+    "name": "Strayer University-New Jersey",
+    "reason": "Strayer's state IDs count online students it assigns to them, not one campus, and the assignments moved to Strayer University-Global Region (459994) over the years",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "456621",
+    "name": "Strayer University-West Virginia",
+    "reason": "Strayer's state IDs count online students it assigns to them, not one campus, and the assignments moved to Strayer University-Global Region (459994) over the years",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "458885",
+    "name": "Strayer University-Arkansas",
+    "reason": "Strayer's state IDs count online students it assigns to them, not one campus, and the assignments moved to Strayer University-Global Region (459994) over the years",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "458919",
+    "name": "Strayer University-Georgia",
+    "reason": "Strayer's state IDs count online students it assigns to them, not one campus, and the assignments moved to Strayer University-Global Region (459994) over the years",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "458955",
+    "name": "Strayer University-Mississippi",
+    "reason": "Strayer's state IDs count online students it assigns to them, not one campus, and the assignments moved to Strayer University-Global Region (459994) over the years",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "458964",
+    "name": "Strayer University-South Carolina",
+    "reason": "Strayer's state IDs count online students it assigns to them, not one campus, and the assignments moved to Strayer University-Global Region (459994) over the years",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "458973",
+    "name": "Strayer University-Texas",
+    "reason": "Strayer's state IDs count online students it assigns to them, not one campus, and the assignments moved to Strayer University-Global Region (459994) over the years",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "459994",
+    "name": "Strayer University-Global Region",
+    "reason": "Strayer's state IDs count online students it assigns to them, not one campus, and the assignments moved to Strayer University-Global Region (this ID) over the years",
+    "added": "2026-10-04"
+  }
+]

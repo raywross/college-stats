@@ -862,6 +862,25 @@ const entries = {
     category: "How we measure",
     related: ["fixed-panel", "median"],
   },
+  "biggest-movers": {
+    term: "Biggest movers",
+    short: "Ten colleges per measure that changed the most over the window, among colleges that cleared a size floor at its start. Colleges under 300 undergraduates today, closed or merged campuses, and figures that jumped more than threefold in a year are left out; growth lists also leave out online-first and for-profit colleges.",
+    why: "A percent change on a small base, a merger, or a typo in one year's report can top a naive list. The rules keep the lists to real campuses that really changed.",
+    category: "How we measure",
+    related: ["percentage-points", "fixed-panel", "inflation-adjusted"],
+  },
+  "percentage-points": {
+    term: "Percentage points",
+    short: "The difference between two percentages: an acceptance rate going from 60% to 40% fell 20 points (a third of its value, or 33%). Changes in rates and shares are shown in points.",
+    category: "How we measure",
+    related: ["biggest-movers"],
+  },
+  "online-first": {
+    term: "Online-first college",
+    short: "A college where more than half of undergraduates take all their courses online (IPEDS distance-education counts). Its enrollment can grow without a campus growing, so growth lists leave it out.",
+    category: "How we measure",
+    related: ["biggest-movers"],
+  },
   ipeds: {
     term: "IPEDS",
     short: "The Integrated Postsecondary Education Data System: annual surveys every federally funded U.S. college must complete.",

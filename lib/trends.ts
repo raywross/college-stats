@@ -363,6 +363,116 @@ export interface ConferencesFile extends TrendEnvelope {
   movesPerYear: { year: number; moves: number }[];
 }
 
+/* Trends by state (states.json; specs/trends/states.md)               */
+/* ------------------------------------------------------------------ */
+
+/** One state's measures over the window, over its fixed panel (or a group within it). */
+export interface StateMeasures {
+  /** Median college's % change in undergraduates. */
+  undergradsMedianChange: number;
+  /** Total undergraduates at each end of the panel. */
+  undergradsTotal: ThenNow;
+  /** Total undergraduates' % change ("students" view). */
+  undergradsTotalChange: number;
+  /** Median college's % change in applicants. */
+  applicantsMedianChange: number;
+  /** Median college's points change in acceptance rate. */
+  acceptanceRateMedianChange: number;
+  /** Median college's % change in average total cost, after inflation. */
+  avgPaidMedianChange: number;
+}
+
+/**
+ * Yearly medians from a state's (or the nation's) reporting colleges, for a stat tile's sparkline.
+ * `undergrads`/`applicants`/`acceptanceRate` span the file's `from` to `to` (fall); `avgPaid` is an academic-year
+ * series one year behind fall, so it spans `fromMoney` to `toMoney` instead (same length, different years).
+ */
+export interface StateSparkLines {
+  undergrads: (number | null)[];
+  applicants: (number | null)[];
+  acceptanceRate: (number | null)[];
+  avgPaid: (number | null)[];
+}
+
+export interface StateOutOfStateSide {
+  n: number;
+  /** Even-year median out-of-state share, `lineFrom` to `to`. */
+  line: (number | null)[];
+  thenNow: ThenNow;
+}
+
+export interface StateOutOfState {
+  from: number;
+  to: number;
+  lineFrom: number;
+  public: StateOutOfStateSide | null;
+  privateNonprofit: StateOutOfStateSide | null;
+}
+
+/** A top sending state to this state's colleges, aggregated from the residence detail. */
+export interface StateTopSendingState {
+  state: string;
+  count: number;
+  share: number;
+}
+
+export interface StateResearchUni {
+  unit_id: string;
+  name: string;
+  tier: "R1" | "R2";
+  from: number;
+  to: number;
+  /** % change in undergraduates over the window; null when either end isn't reported. */
+  change: number | null;
+}
+
+/** The index map's measure choices (specs/trends/states.md): null when the state is under the floor. */
+export interface StateMapMeasures {
+  undergradChange: number | null;
+  acceptanceRate: number | null;
+  avgCost: number | null;
+  outOfState: number | null;
+  testOptionalShare: number | null;
+}
+
+export interface StateEntry {
+  postal: string;
+  name: string;
+  territory: boolean;
+  /** Colleges on the site, by control (regardless of the panel). */
+  onSite: { total: number; public: number; privateNonprofit: number; privateForprofit: number };
+  /** Every on-site college, name order (the member list a tooFew state's page shows). */
+  members: { unit_id: string; name: string }[];
+  /** The fixed panel (300+ undergraduates both ends, as Study 3's floor). */
+  panel: { n: number; ids: string[] };
+  /** Under STATE_FLOOR on-site colleges: every field below except `movers` is omitted. */
+  tooFew?: true;
+  map: StateMapMeasures;
+  all?: GroupRow<StateMeasures>;
+  control?: GroupingResult<StateMeasures>;
+  sparkLines?: StateSparkLines;
+  outOfState?: StateOutOfState;
+  topSendingStates: StateTopSendingState[];
+  researchUnis: StateResearchUni[];
+  movers: MoversWindow[];
+}
+
+export interface StatesFile extends TrendEnvelope {
+  name: "states";
+  /** STATE_FLOOR: on-site colleges needed for a full page. */
+  floor: number;
+  lineFrom: number;
+  /** The window `avgPaid` sparklines use instead of `from`/`to` (academic year, one behind fall's latest). */
+  fromMoney: number;
+  toMoney: number;
+  /** National context lines, for every state page's "vs national" sparklines. */
+  national: {
+    sparkLines: StateSparkLines;
+    outOfStatePublicLine: (number | null)[];
+  };
+  states: StateEntry[];
+}
+
 /* ------------------------------------------------------------------ */
 /* Study 6: the Pell graduation gap (pell-gap.json)                     */
 /* ------------------------------------------------------------------ */
@@ -514,6 +624,7 @@ export interface TrendFiles {
   "out-of-state": OutOfStateFile;
   movers: MoversFile;
   conferences: ConferencesFile;
+  states: StatesFile;
   "pell-gap": PellGapFile;
   "price-gap": PriceGapFile;
   "test-optional": TestOptionalFile;

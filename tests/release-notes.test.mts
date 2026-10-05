@@ -4,7 +4,7 @@
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { readdirSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import {
   RELEASE_NOTES_DIR,
@@ -66,6 +66,8 @@ test("links between notes stay on the site and point at real notes; site links e
       const roadmap = path.match(/^\/roadmap\/(.+)$/)?.[1];
       if (target) assert.ok(slugs.has(target), `${n.slug}: links to missing note ${target}`);
       else if (roadmap) assert.ok(roadmapPages().some((p) => p.slug === roadmap), `${n.slug}: /roadmap/${roadmap}`);
+      // Static trends pages (a study, /trends/movers, the conference and state indexes) must exist as routes.
+      else if (/^\/trends(\/[a-z0-9-]+)?$/.test(path)) assert.ok(existsSync(join("app", path, "page.tsx")), `${n.slug}: links to ${path}`);
       else assert.ok(routes.has(path), `${n.slug}: links to ${path}`);
     }
     assert.ok(!html.includes('href="https://github.com/raywross/college-stats/blob/main/release-notes/'), n.slug);

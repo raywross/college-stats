@@ -13,6 +13,8 @@ import { pellGap } from "./studies/pell-gap.mts";
 import { movers } from "./movers.mts";
 import { conferences } from "./conferences.mts";
 
+import { states } from "./states.mts";
+
 export const BUILDERS: readonly TrendBuilder[] = [
   menAndWomen,
   testOptional,
@@ -22,5 +24,6 @@ export const BUILDERS: readonly TrendBuilder[] = [
   pellGap,
   movers,
   conferences,
+  states,
   // ↑ One line per unit: Studies 2–6 (scripts/trends/studies/<slug>.mts), movers, conferences, states.
 ];

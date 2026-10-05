@@ -248,6 +248,50 @@ export interface PellGapFile extends StudyFile<PellGapValues> {
   };
 }
 
+/* Study: the price gap (price-gap.json)                               */
+/* ------------------------------------------------------------------ */
+
+export interface PriceGapValues {
+  /** Panel median's change in full price, after inflation (the same median-of-year method as facts.priceGap). */
+  fullPriceChange: number;
+  avgPaidChange: number;
+  /** Median college's discount (1 − average paid ÷ full price), then and now. */
+  discount: ThenNow;
+  /** Median college's average total cost `to`, in `to`-year dollars (same-year, so no deflation needed). */
+  paidNow: number;
+  /** Median college's share of first-years with a grant, then and now. */
+  grantPct: ThenNow;
+  /** Median college's average grant, after inflation, then and now (`to`-year dollars). */
+  grantAvg: ThenNow;
+  /** Median net price by family income band ($0–30K … $110K+), after inflation, then and now. */
+  netPriceByBand: ThenNow[];
+  /** Yearly lines from `from` to `to` (the file's `lineFrom` equals `from`: both indexed to 100 there). */
+  lines: {
+    fullPriceIndex: (number | null)[];
+    avgPaidIndex: (number | null)[];
+    /** Median per-college discount, each year. */
+    discount: (number | null)[];
+  };
+}
+
+/** One college whose full price fell at least `resetThreshold` after inflation in a single year. */
+export interface PriceGapReset {
+  unitId: string;
+  name: string;
+  /** The year full price fell: `year` to `year + 1`. */
+  year: number;
+  /** The drop, after inflation (negative, e.g. −0.12). */
+  drop: number;
+}
+
+export interface PriceGapFile extends StudyFile<PriceGapValues> {
+  slug: "price-gap";
+  /** A college counts as a "tuition reset" when a single year's drop is at or below this (−0.10 = 10%). */
+  resetThreshold: number;
+  /** Panel colleges with a reset, biggest drop first (capped). */
+  resets: PriceGapReset[];
+}
+
 /* ------------------------------------------------------------------ */
 /* Every file, by name (one line per unit)                             */
 /* ------------------------------------------------------------------ */
@@ -258,6 +302,7 @@ export interface TrendFiles {
   "shrinking-colleges": ShrinkingCollegesFile;
   movers: MoversFile;
   "pell-gap": PellGapFile;
+  "price-gap": PriceGapFile;
 }
 
 export type TrendFileName = keyof TrendFiles;

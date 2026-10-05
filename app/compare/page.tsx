@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRight, Swords, Table2 } from "lucide-react";
+import { ArrowRight, ChevronDown, Swords, Table2 } from "lucide-react";
 import { getData, toIndexEntry } from "@/lib/data";
 import { RADAR_AXES, keyDifferences, radarProfile, similarSchools } from "@/lib/insights";
 import { SLOT_COLORS, crestBrand, shortName } from "@/lib/brand";
@@ -112,7 +112,22 @@ export default async function ComparePage({ searchParams }: Props) {
           </div>
 
           <div className="space-y-2">
-            <MultiSourceNote schools={schools} fields={COMPARE_OVERVIEW_FIELDS} />
+            {/* One sources block for the overview, collapsed as the profile's is: every number's own source is in
+                its (i) popover, so this is a reference, not something most readers need open. */}
+            <details className="group rounded-2xl border border-dashed bg-card/50 open:border-solid">
+              <summary className="flex cursor-pointer list-none items-center gap-3 px-4 py-3 [&::-webkit-details-marker]:hidden">
+                <span className="min-w-0 flex-1">
+                  <span className="block text-sm font-semibold text-primary">Sources for this comparison</span>
+                  <span className="block text-xs text-muted-foreground">
+                    Every dataset and year behind the numbers in this comparison; tap any ⓘ for one number&apos;s source
+                  </span>
+                </span>
+                <ChevronDown className="size-5 shrink-0 text-muted-foreground transition-transform group-open:rotate-180" />
+              </summary>
+              <div className="p-2 sm:p-3">
+                <MultiSourceNote schools={schools} fields={COMPARE_OVERVIEW_FIELDS} />
+              </div>
+            </details>
             <BaselineNote />
           </div>
         </div>

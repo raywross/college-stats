@@ -32,7 +32,10 @@ export async function ScoreCompare({ schools, test }: { schools: School[]; test:
         {schools.map((s, i) => {
           const r = ranges[i];
           return (
-            <div key={s.unit_id} className="grid grid-cols-[4.5rem_1fr_auto] items-center gap-3 sm:grid-cols-[6rem_1fr_5rem]">
+            // Value column fixed at every width (not `auto` below `sm`): each row is its own grid, and a row
+            // with no range ("–") would otherwise get a narrower auto column than a row with one ("1460–1570"),
+            // leaving the range-bar column inconsistent row to row (the same bug CompareMetric had).
+            <div key={s.unit_id} className="grid grid-cols-[4.5rem_1fr_5rem] items-center gap-3 sm:grid-cols-[6rem_1fr_5rem]">
               <span className="truncate text-xs font-semibold">{shortName(s)}</span>
               {r ? (
                 <RangeBar low={r[0]} high={r[1]} scale={[lo, hi]} color={SLOT_COLORS[i]} medianMid={median ?? undefined} compact />

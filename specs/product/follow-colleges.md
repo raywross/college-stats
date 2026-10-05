@@ -1,11 +1,8 @@
 # Follow Colleges: Update Emails When the Data Changes
 
-> Status: **planned**, fully built, pending the owner applying two migrations and setting up email. Built 2026-10-05:
-> change detection, the follows schema, the follow Server Actions, and the public What changed panel
-> ([unit D as built](#as-built-2026-10-05-change-detection-and-follows-data)); the Follow button, `/me/following`,
-> `/me/updates`, and the digest cron ([unit F as built](#as-built-2026-10-05-follow-ui-and-the-update-digest)). Stays
-> listed as planned on `/roadmap` until the whole accounts section merges and `lib/roadmap.ts` is updated. After
-> [accounts.md](accounts.md); becomes useful once the [scheduled data refresh](../backlog.md#data) runs on its own.
+> Status: **built** 2026-10-05 on `feature/accounts`: change detection at publish, follows, the public What
+> changed panel, the Follow button, `/me/following`, `/me/updates`, and the digest job. Update emails start sending
+> once the new domain's email is set up ([backlog](../backlog.md#platform)); until then the daily job does nothing.
 > Part of [product](README.md).
 
 ## Goal

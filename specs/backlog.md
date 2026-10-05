@@ -192,14 +192,14 @@ shared rules for user data are in that README. All user data lives only in Supab
 - [ ] **Telemetry** ([product/telemetry.md](product/telemetry.md)): PostHog (cookieless, no replay, typed event
   registry with a guard test) + Vercel Speed Insights; dashboards for traffic, engagement, funnels, retention,
   performance, errors. Build first so later features ship measured.
-- [ ] **Accounts and households** ([product/accounts.md](product/accounts.md)): Supabase Auth (magic link, Google),
+- [x] **Accounts and households** (built 2026-10-05; Google sign-in waits for the new domain, under Platform) ([product/accounts.md](product/accounts.md)): Supabase Auth (magic link, Google),
   server-side sessions, households (guardians and students, invitations), RLS privacy model where a guardian's
   finances are never readable by a student, export and delete, 13+ only.
-- [ ] **Student profile** ([product/student-profile.md](product/student-profile.md)): GPA (unweighted, with scale
+- [x] **Student profile** (built 2026-10-05) ([product/student-profile.md](product/student-profile.md)): GPA (unweighted, with scale
   conversion), scores, majors, state, preferences; prefilled ScoreChecker; Explore "fits my scores / preferences".
-- [ ] **Saved lists** ([product/saved-lists.md](product/saved-lists.md)): Reach / Target / Likely, status and
+- [x] **Saved lists** (built 2026-10-05) ([product/saved-lists.md](product/saved-lists.md)): Reach / Target / Likely, status and
   outcomes (Scoir vocabulary), notes, deadlines, guardian view, share link, CSV/PDF export.
-- [ ] **Follow colleges** ([product/follow-colleges.md](product/follow-colleges.md)): Follow button, list items
+- [x] **Follow colleges** (built 2026-10-05; emails start with the new domain) ([product/follow-colleges.md](product/follow-colleges.md)): Follow button, list items
   followed automatically; `publish-data` diffs the previous publish against the new one into a public
   `dataset_changes` table (new year / revised / appeared / disappeared, years from lineage, tolerances per field); a
   daily job emails one digest per user per publish (Resend, one-click unsubscribe, no tracking pixels);

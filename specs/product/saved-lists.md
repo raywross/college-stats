@@ -1,8 +1,8 @@
 # Saved Lists: Reach, Target, Likely
 
-> Status: **planned**, built 2026-10-05 (unit E of the accounts roadmap section; [below](#built-2026-10-05)). Part
-> of [product](README.md). Adds to, rather than replaces, the `localStorage` compare list: Compare still works
-> without an account; "Add to list" sits next to "Compare" everywhere Compare appears.
+> Status: **built** 2026-10-05 on `feature/accounts` ([below](#built-2026-10-05)). Standing (chances) and
+> tier limits come with [chances-and-fit.md](chances-and-fit.md) and [commercialization.md](commercialization.md).
+> Part of [product](README.md).
 
 ## Goal
 A student keeps the colleges they're considering, sorts them into **Reach / Target / Likely**, tracks where each

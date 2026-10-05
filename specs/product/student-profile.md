@@ -1,13 +1,8 @@
 # Student Profile: Your Numbers
 
-> Status: **planned**, built (2026-10-05, [below](#built-2026-10-05)): the form on `/me`, GPA normalization, a
-> completeness meter, signed-out localStorage with a one-time import offer, ScoreChecker and Compare "You" markers,
-> and Explore's `fit=` chips. Hooks (first-gen, legacy, Pell-likely) were left off the form per the open question
-> below. Kept as "planned" here (not "built") so `lib/roadmap.ts` — which still lists this spec — and
-> `tests/roadmap.test.mts` stay in sync; the lead flips this to "built" and removes the roadmap entry when
-> integrating every accounts unit, the same way [accounts.md](accounts.md) did for its own foundation. After
-> [accounts.md](accounts.md). Read by [chances-and-fit.md](chances-and-fit.md),
-> [saved-lists.md](saved-lists.md), [net-price-estimator.md](net-price-estimator.md), and
+> Status: **built** 2026-10-05 on `feature/accounts` ([below](#built-2026-10-05)): the form on `/me`, GPA
+> normalization, the prefilled ScoreChecker, Compare's "You" row, and Explore's fit filters. Read by
+> [chances-and-fit.md](chances-and-fit.md), [net-price-estimator.md](net-price-estimator.md), and
 > [scattergrams.md](scattergrams.md). Part of [product](README.md).
 
 ## Goal

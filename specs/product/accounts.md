@@ -1,9 +1,11 @@
 # Accounts and Households
 
-> Status: **planned**, foundation built (2026-10-05, [below](#built-foundation-2026-10-05)): email sign-in, the schema with
-> row-level security, the `/account` shell, and the header menu. Households, invitations, export, delete, and the
-> access log built the same day ([below](#built-households-2026-10-05)). Decided 2026-10-02: Supabase Auth, server-side sessions, households with guardian-only finances. Foundational for [saved-lists.md](saved-lists.md), the planning tools, and
-> [commercialization.md](commercialization.md). Part of [product](README.md).
+> Status: **built** 2026-10-05 on `feature/accounts` ([foundation](#built-foundation-2026-10-05),
+> [households](#built-households-2026-10-05)): email magic-link sign-in, the schema with row-level security,
+> `/account`, households and invitations, export, delete, and the access log. Google sign-in and a transactional email
+> provider wait for the new domain ([backlog](../backlog.md#platform)). Foundational for
+> [saved-lists.md](saved-lists.md), the planning tools, and [commercialization.md](commercialization.md). Part of
+> [product](README.md).
 
 ## Goal
 A person can sign in and keep their work: lists, their own numbers, estimates, and award letters. A **household**

@@ -69,7 +69,7 @@ export function StatesTable({ rows }: { rows: readonly StatesTableRow[] }) {
         <thead>
           <tr className="border-b bg-surface-2 text-xs text-muted-foreground">
             {COLUMNS.map((c) => (
-              <th key={c.key} scope="col" className={cn("px-3 py-2 font-semibold", c.align === "right" ? "text-right" : "text-left")}>
+              <th key={c.key} scope="col" className={cn("whitespace-nowrap px-3 py-2 font-semibold", c.align === "right" ? "text-right" : "text-left", c.key === COLUMNS[0].key && "sticky left-0 z-10 bg-surface-2")}>
                 <button
                   type="button"
                   onClick={() => onSort(c.key)}
@@ -85,8 +85,9 @@ export function StatesTable({ rows }: { rows: readonly StatesTableRow[] }) {
         </thead>
         <tbody>
           {sorted.map((r) => (
-            <tr key={r.postal} className="border-b last:border-0 hover:bg-surface-2">
-              <td className="px-3 py-2">
+            <tr key={r.postal} className="group border-b last:border-0 hover:bg-surface-2">
+              {/* The state stays put while the measures scroll sideways on a phone. */}
+              <td className="sticky left-0 z-10 bg-background px-3 py-2 group-hover:bg-surface-2">
                 <Link href={`/trends/states/${r.postal.toLowerCase()}`} className="font-semibold hover:text-primary hover:underline">
                   {r.name}
                 </Link>

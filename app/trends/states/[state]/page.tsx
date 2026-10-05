@@ -86,7 +86,26 @@ function StatTile({
           National median
         </li>
       </ul>
+      {gapNote(state, start, kind)}
     </div>
+  );
+}
+
+/**
+ * A line with interior gaps (years under MIN_YEAR_COVERAGE, e.g. Penn State's campuses reporting together in fall
+ * 2019–2021) says why it breaks, so the break doesn't read as a rendering glitch.
+ */
+function gapNote(values: readonly (number | null)[], start: number, kind: "fall" | "academic") {
+  const first = values.findIndex((v) => v !== null);
+  const last = values.findLastIndex((v) => v !== null);
+  const gaps = values.flatMap((v, i) => (v === null && i > first && i < last ? [start + i] : []));
+  if (first < 0 || !gaps.length) return null;
+  const label = (y: number) => historyYearLabel(y, kind).toLowerCase();
+  const span = gaps.length === 1 ? label(gaps[0]) : `${label(gaps[0])} to ${label(gaps[gaps.length - 1])}`;
+  return (
+    <p className="mt-1.5 text-[11px] text-muted-foreground">
+      No point for {span}: fewer than 90% of this state&apos;s colleges reported.
+    </p>
   );
 }
 

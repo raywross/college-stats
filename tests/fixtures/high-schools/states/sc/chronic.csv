@@ -1,0 +1,5 @@
+ReportCardYear,DistrictNm,SchoolNm,SCHOOLID,SCHOOLTYPECD,PctChronic_ALL,NChronic_ALL,NTotal_ALL
+2025,Abbeville County School District,Abbeville High,160001,H,23.3,104,447
+2025,Abbeville County School District,Dixie High School,160003,H,*,*,560
+2025,Abbeville County School District,John C. Calhoun Elementary School,160007,E,12.5,10,80
+2025,Abbeville County School District,John C. Calhoun Elementary School,160007,H,12.5,10,80

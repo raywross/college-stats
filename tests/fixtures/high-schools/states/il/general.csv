@@ -1,0 +1,8 @@
+DestinationTable,RCDTS,Level,School Name,District,School Type,Grades Served,% Graduates enrolled in a Postsecondary Institution within 12 months,Chronic Absenteeism,Total AP Exams Taken Grade 9,Total AP Exams Eligible to Earn College Credit Grade 9,Total AP Exams Taken Grade 10,Total AP Exams Eligible to Earn College Credit Grade 10,Total AP Exams Taken Grade 11,Total AP Exams Eligible to Earn College Credit Grade 11,Total AP Exams Taken Grade 12,Total AP Exams Eligible to Earn College Credit Grade 12
+General1,65-000-0000-80-0000,Statewide,,,,,70.1,28.0,,,,,,,,
+General1,01-009-2620-26-0000,District,,A-C Central CUSD 262,,,66.0,22.0,,,,,,,,
+General1,01-009-2620-26-0002,School,A-C Central High School,A-C Central CUSD 262,High School,9 - 12,67.9,25.3,,,*,,15,11,16,*
+General1,01-009-2620-26-2001,School,A-C Central Elementary School,A-C Central CUSD 262,Elementary School,PK - 5,,9.8,,,,,,,,
+General1,34-049-1250-13-0001,School,Adlai E Stevenson High School,Adlai E Stevenson HSD 125,High School,9 - 12,87.3,21.0,58,58,1512,1470,4126,3929,6152,5716
+General1,99-999-9999-26-0001,School,Fixture High Not In CCD,Fixture District,High School,9 - 12,*,30.0,,,,,,,,
+General1,99-999-9999-26-2002,School,Fixture Elementary Not In CCD,Fixture District,Elementary School,K - 5,,11.0,,,,,,,,

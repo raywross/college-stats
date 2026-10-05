@@ -154,6 +154,10 @@ export const HOUSEHOLD_ERRORS: Record<string, string> = {
   cannot_grant_self: "You can't give yourself edit access.",
   member_not_found: "That person isn't in this household any more.",
   account_deleted: "This account is scheduled for deletion.",
+  // reissue_invitation (a new link for a pending invitation)
+  invitation_not_found: "That invitation isn't pending any more.",
+  invitation_used: "That invitation was already accepted.",
+  invitation_revoked: "That invitation was cancelled. Invite them again instead.",
 };
 
 /** The message for a Supabase/PostgREST error raised by one of the functions above (or accept_invitation's). */

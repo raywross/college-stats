@@ -29,7 +29,32 @@
       "from": 2004,
       "to": 2024,
       "n": 912
+    },
+    {
+      "slug": "shrinking-colleges",
+      "title": "Shrinking colleges",
+      "headline": {
+        "value": 0.5101,
+        "format": "pct",
+        "caption": "of colleges have at least 10% fewer undergraduates than ten years ago"
+      },
+      "sentence": "Across 1,537 colleges, 51% have at least 10% fewer undergraduates than in fall 2014, while 23% grew that much; the median college's undergraduate count fell 11%.",
+      "spark": {
+        "start": 2014,
+        "kind": "fall",
+        "format": "pct",
+        "series": [
+          {
+            "name": "Smaller than at the window's start",
+            "values": [0,0.5329,0.525,0.5456,0.5517,0.5685,0.6243,0.6447,0.666,0.65,0.6409]
+          }
+        ]
+      },
+      "yearKind": "fall",
+      "from": 2014,
+      "to": 2024,
+      "n": 1537
     }
   ],
-  "files": ["men-and-women"]
+  "files": ["men-and-women","shrinking-colleges"]
 }

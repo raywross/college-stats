@@ -5,8 +5,10 @@
  */
 import type { TrendBuilder } from "./context.mts";
 import { menAndWomen } from "./studies/men-and-women.mts";
+import { shrinkingColleges } from "./studies/shrinking-colleges.mts";
 
 export const BUILDERS: readonly TrendBuilder[] = [
   menAndWomen,
+  shrinkingColleges,
   // ↑ One line per unit: Studies 2–6 (scripts/trends/studies/<slug>.mts), movers, conferences, states.
 ];

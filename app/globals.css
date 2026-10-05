@@ -249,8 +249,16 @@
   :root {
     /* Sticky header height; sticky sub-navs sit below it (see specs/mobile.md). */
     --header-h: 3.5rem;
+    /* Where the header currently ends: --header-h, or 0 on phones while it's slid away on scroll down
+       (components/layout/Header.tsx sets data-header-hidden). Sticky sub-navs shown on phones use this. */
+    --header-offset: var(--header-h);
     /* Bottom tab bar height on phones (0 from md, where it's hidden). */
     --tabbar-h: 4rem;
+  }
+  @media (max-width: 47.99rem) {
+    :root[data-header-hidden] {
+      --header-offset: 0rem;
+    }
   }
   @media (min-width: 48rem) {
     :root {

@@ -29,7 +29,7 @@ export function CompactHeader({ profile, current }: { profile: Profile; current:
     <div
       data-compact-header
       className="sticky z-30 -mx-4 border-b bg-background/85 px-4 backdrop-blur-xl sm:-mx-6 sm:px-6"
-      style={{ top: "calc(env(safe-area-inset-top, 0px) + var(--header-h))" }}
+      style={{ top: "calc(env(safe-area-inset-top, 0px) + var(--header-offset))", transition: "top 200ms ease" }}
     >
       <div className="flex h-12 items-center gap-3">
         <Link href={overviewHref(school.unit_id)} className="group flex min-w-0 flex-1 items-center gap-2.5" aria-label={`${school.name} overview`}>

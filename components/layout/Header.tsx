@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Search } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { AccountMenu } from "@/components/account/AccountMenu";
@@ -18,11 +18,59 @@ const NAV_ITEMS = [
   { label: "Data", href: "/data" },
 ];
 
-/** Top bar. On phones it's the logo and the account control: navigation, search, and theme live in BottomNav. */
+/** Scroll distance (px) that counts as a deliberate scroll, so a jittery finger doesn't flicker the header. */
+const SCROLL_SLOP = 6;
+
+/**
+ * Phones only: true while the page is scrolling down past the header, false as soon as it scrolls up (or is near the
+ * top). Mirrored onto <html data-header-hidden> so sticky sub-navs move up with it (--header-offset, globals.css).
+ */
+function useHiddenOnScroll(pathname: string): boolean {
+  const [hidden, setHidden] = useState(false);
+  // A new page starts with the header showing.
+  const [lastPath, setLastPath] = useState(pathname);
+  if (pathname !== lastPath) {
+    setLastPath(pathname);
+    setHidden(false);
+  }
+  useEffect(() => {
+    const phone = window.matchMedia("(max-width: 47.99rem)");
+    let lastY = window.scrollY;
+    let frame = 0;
+    const update = () => {
+      frame = 0;
+      const y = window.scrollY;
+      const delta = y - lastY;
+      if (!phone.matches || y < 64) setHidden(false);
+      else if (delta > SCROLL_SLOP) setHidden(true);
+      else if (delta < -SCROLL_SLOP) setHidden(false);
+      else return; // too small to count; keep measuring from the same point
+      lastY = y;
+    };
+    const onScroll = () => {
+      if (!frame) frame = requestAnimationFrame(update);
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    phone.addEventListener("change", update);
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      phone.removeEventListener("change", update);
+      if (frame) cancelAnimationFrame(frame);
+    };
+  }, [pathname]);
+  useEffect(() => {
+    document.documentElement.toggleAttribute("data-header-hidden", hidden);
+  }, [hidden]);
+  return hidden;
+}
+
+/** Top bar. On phones it's the logo and the account control (sliding away on scroll down): navigation, search, and
+ * theme live in BottomNav. */
 export function Header() {
   const pathname = usePathname();
   const compareIds = useCompareIds();
   const [searchOpen, setSearchOpen] = useState(false);
+  const hidden = useHiddenOnScroll(pathname);
 
   // Close the search row on navigation.
   const [lastPath, setLastPath] = useState(pathname);
@@ -37,7 +85,10 @@ export function Header() {
 
   return (
     <header
-      className="sticky top-0 z-40 border-b border-border/70 bg-background/75 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60"
+      className={cn(
+        "sticky top-0 z-40 border-b border-border/70 bg-background/75 backdrop-blur-xl transition-transform duration-200 ease-out supports-[backdrop-filter]:bg-background/60",
+        hidden && "-translate-y-full"
+      )}
       style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}
     >
       <div className="mx-auto flex h-(--header-h) max-w-7xl items-center gap-4 px-4 sm:px-6">

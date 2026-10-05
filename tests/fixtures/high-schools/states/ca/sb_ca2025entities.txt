@@ -1,0 +1,4 @@
+County Code^District Code^School Code^Type ID^Filler^Test Year^County Name^District Name^School Name^Zip Code
+01^10017^0130401^7^^2025^Alameda^Alameda County Office of Education^Alameda County Juvenile Hall/Court^94578
+01^10017^0130419^7^^2025^Alameda^Alameda County Office of Education^Alameda County Community^94544
+01^61119^0161119^7^^2025^Alameda^Alameda Unified^Alameda Unified District Level Program^94501

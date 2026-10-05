@@ -253,7 +253,8 @@ test("state sync guards: an invalid file is refused and nothing is written; stub
     const bad = fakeState({ sections: [{ key: "x", source: "state-ca", label: "x", year: "2024", url: "https://x.org", retrieved: "2026-11-02", fields: ["chronic_absence"] }], schools: { "480000200001": { chronic_absence: 14 } } });
     await assert.rejects(runStateSync({ root: ROOT, outDir: dir, adapter: bad, ...quiet }), (e: unknown) => e instanceof SyncError && e.problems.some((p) => /cites state-tx/.test(p)) && e.problems.some((p) => /0–1 share/.test(p)));
     assert.equal(readFileSync(join(dir, "state", "tx.json"), "utf8"), before);
-    await assert.rejects(runStateSync({ root: ROOT, outDir: dir, adapter: STATE_ADAPTERS.ca, ...quiet }), /isn't built yet/);
+    // A stub (built: false); the real CA adapter is built now (feature/high-school-states-a).
+    await assert.rejects(runStateSync({ root: ROOT, outDir: dir, adapter: { ...STATE_ADAPTERS.ca, built: false }, ...quiet }), /isn't built yet/);
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }

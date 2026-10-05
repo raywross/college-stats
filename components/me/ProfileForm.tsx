@@ -8,6 +8,7 @@ import { MAJOR_FAMILY_CODES, MAJOR_FAMILIES, type MajorFamily } from "@/lib/majo
 import { GPA_SCALES, MAX_INTENDED_MAJORS, OUTSIDE_US, gpaDisplay, type GpaScale, type StudentProfileData } from "@/lib/student-profile";
 import { saveStudentProfile, type ProfileSaveState } from "@/app/me/actions";
 import { Term } from "@/components/ui/info-tip";
+import { HighSchoolPicker } from "@/components/high-schools/HighSchoolPicker";
 
 const inputCls =
   "h-11 w-full rounded-xl border border-input bg-background px-3.5 text-base outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30 disabled:opacity-60";
@@ -135,8 +136,8 @@ export function ProfileForm({ studentId, data, canEdit }: { studentId: string; d
             ))}
           </select>
         </Field>
-        <Field label="High school" htmlFor="highSchool" hint="Free text for now.">
-          <input id="highSchool" name="highSchool" disabled={disabled} defaultValue={data.basics.highSchool ?? ""} maxLength={200} className={`${inputCls} mt-1.5`} placeholder="Your high school" />
+        <Field label="High school" htmlFor="highSchool" hint="Pick it from the list so your school's data can show up on your college pages; not listed yet? Keep typing and it still saves.">
+          <HighSchoolPicker idName="highSchoolId" nameName="highSchool" defaultId={data.basics.highSchoolId} defaultName={data.basics.highSchool} disabled={disabled} />
         </Field>
       </Group>
 

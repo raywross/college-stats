@@ -1548,6 +1548,35 @@ const entries = {
     category: "High schools",
     related: ["adjusted-cohort-graduation-rate", "college-going-rate"],
   },
+  "charter-school": {
+    term: "Charter school",
+    short: "A publicly funded school run independently of the local school district under a charter, usually renewed every few years.",
+    category: "High schools",
+    related: ["magnet-school"],
+  },
+  "magnet-school": {
+    term: "Magnet school",
+    short: "A public school built around a special focus (the arts, STEM, a language) meant to draw students from beyond its usual attendance zone.",
+    category: "High schools",
+    related: ["charter-school"],
+  },
+  "virtual-school": {
+    term: "Virtual school",
+    short: "A school where instruction is entirely or primarily online, as the Common Core of Data classifies it.",
+    category: "High schools",
+  },
+  "ib-program": {
+    term: "IB Diploma Programme",
+    short: "The International Baccalaureate's two-year course of study for the final two years of high school, assessed by exams set outside the school.",
+    category: "High schools",
+    related: ["ap-access", "dual-enrollment"],
+  },
+  "clearinghouse-completion": {
+    term: "College completion",
+    short: "Of a high school's graduates who enrolled in college, the share who went on to complete a degree, from National Student Clearinghouse records the state publishes.",
+    category: "High schools",
+    related: ["clearinghouse-persistence"],
+  },
   "suppressed-for-privacy": {
     term: "Suppressed for privacy",
     short: "A number the source left out because it describes so few students (fewer than 5 here) that it could identify someone.",

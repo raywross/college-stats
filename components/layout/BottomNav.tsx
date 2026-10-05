@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
-import { BookOpen, Compass, Database, Ellipsis, GitCompareArrows, Home, LineChart, LogIn, Map as MapIcon, Search, Sparkles, UserRound, X } from "lucide-react";
+import { BookOpen, Compass, Database, Ellipsis, GitCompareArrows, GraduationCap, Home, LineChart, LogIn, Map as MapIcon, Search, Sparkles, UserRound, X } from "lucide-react";
 import { ThemeSegmented } from "@/components/ThemeToggle";
 import { SchoolSearch } from "@/components/search/SchoolSearch";
 import { useMe } from "@/components/account/useMe";
@@ -40,7 +40,7 @@ export function BottomNav() {
 
   const isActive = (href: string) => (href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(`${href}/`));
   const compareHref = compareIds.length ? `/compare?ids=${compareIds.join(",")}` : "/compare";
-  const moreActive = isActive("/trends") || isActive("/glossary") || isActive("/data") || isActive("/sources") || isActive("/roadmap") || isActive("/release-notes") || isActive("/account") || isActive("/login");
+  const moreActive = isActive("/trends") || isActive("/high-schools") || isActive("/glossary") || isActive("/data") || isActive("/sources") || isActive("/roadmap") || isActive("/release-notes") || isActive("/account") || isActive("/login");
 
   return (
     <>
@@ -101,6 +101,7 @@ export function BottomNav() {
                 <MoreLink href={loginHref(pathname === "/login" ? undefined : pathname)} icon={<LogIn className="size-5" />} title="Sign in" sub="Save your colleges and plans" active={isActive("/login")} />
               ))}
               <MoreLink href="/trends" icon={<LineChart className="size-5" />} title="National trends" sub="How college is changing" active={isActive("/trends")} />
+              <MoreLink href="/high-schools" icon={<GraduationCap className="size-5" />} title="High schools" sub="Rigor, outcomes & where graduates go" active={isActive("/high-schools")} />
               <MoreLink href="/glossary" icon={<BookOpen className="size-5" />} title="Glossary" sub="Every term in plain English" active={isActive("/glossary")} />
               <MoreLink href="/data" icon={<Database className="size-5" />} title="Data" sub="Sources, years & updates" active={isActive("/data")} />
               <MoreLink href="/roadmap" icon={<MapIcon className="size-5" />} title="Roadmap" sub="What's coming next" active={isActive("/roadmap")} />

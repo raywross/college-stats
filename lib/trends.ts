@@ -122,6 +122,64 @@ export interface MenAndWomenFile extends StudyFile<MenAndWomenValues> {
 }
 
 /* ------------------------------------------------------------------ */
+/* Study 5: public colleges and out-of-state students (out-of-state.json) */
+/* ------------------------------------------------------------------ */
+
+export interface OutOfStateValues {
+  /** Median public's out-of-state share of first-years, then and now. */
+  medianShare: ThenNow;
+  /** Share of public colleges 30%+ out-of-state, then and now. */
+  share30: ThenNow;
+  /** Students view: out-of-state share averaged with each college's first-years as the weight. */
+  weightedShare: ThenNow;
+  /** Yearly lines from the file's `lineFrom` to `to`, even years only (odd years null: `seriesStep`). */
+  lines: {
+    medianShare: (number | null)[];
+    share30: (number | null)[];
+    weightedShare: (number | null)[];
+  };
+}
+
+export interface OutOfStateFile extends StudyFile<OutOfStateValues> {
+  slug: "out-of-state";
+  /** Public colleges need this many enrolled first-years in the window's first fall to join the panel. */
+  minEnrolled: number;
+  /** "30%+ out-of-state" bar. */
+  threshold: number;
+  /** Context, not a fixed panel: private nonprofits' median out-of-state share, as a line (even years) and then/now. */
+  private: {
+    median: ThenNow;
+    line: (number | null)[];
+  };
+  /** Companion: the panel's median international share of first-years, then and now. */
+  internationalMedian: ThenNow;
+  /**
+   * The out-of-state premium: median public's full-price gap (out-of-state minus in-state), after inflation. Prices
+   * are an academic-year series (`lib/history.ts` kind "academic") and lag the fall residence data by a year, so this
+   * has its own `from`/`to` (both in `to`-year dollars via `real()`).
+   */
+  premium: {
+    from: number;
+    to: number;
+    lineFrom: number;
+    /** Median premium each academic year, in `to`-year dollars; null under 90% coverage. */
+    line: (number | null)[];
+    /** Then/now median premium, in `to`-year dollars. */
+    median: ThenNow;
+    /** Share of publics where the premium (in `to`-year dollars) exceeds $20,000, then and now. */
+    over20k: ThenNow;
+  };
+  /** Where out-of-state first-years at public colleges come from, summed from `detail.residence` in the newest even fall. */
+  sendingStates: {
+    year: number;
+    /** USPS code → out-of-state first-years from that state, across public colleges reporting the detail table. */
+    totals: Record<string, number>;
+    /** Public colleges summed (not the fixed panel: every public college with a home-states detail table). */
+    n: number;
+  };
+}
+
+/* ------------------------------------------------------------------ */
 /* Study 3: shrinking colleges (shrinking-colleges.json)                */
 /* ------------------------------------------------------------------ */
 
@@ -304,6 +362,104 @@ export interface StatesFile extends TrendEnvelope {
 }
 
 /* ------------------------------------------------------------------ */
+/* Study 6: the Pell graduation gap (pell-gap.json)                     */
+/* ------------------------------------------------------------------ */
+
+export interface PellGapValues {
+  /** Median Pell recipients' 6-year graduation rate, then and now. */
+  pellRate: ThenNow;
+  /** Median rate for students with neither a Pell Grant nor a subsidized loan. */
+  neitherRate: ThenNow;
+  /** Median gap (share units), neither's rate minus Pell's. */
+  gap: ThenNow;
+  /** Share of colleges where the gap is 10 or more points. */
+  gap10Share: ThenNow;
+  /** The "students" view: each rate summed (graduates ÷ cohort) across the group, not averaged per college. */
+  weightedPellRate: ThenNow;
+  weightedNeitherRate: ThenNow;
+  weightedGap: ThenNow;
+  /** Median overall graduation rate (all students), same panel, as context. */
+  overallRate: ThenNow;
+  /** Yearly lines by entering class, from the file's `lineFrom` to `to` (null where under 90% of the group reported). */
+  lines: {
+    pellRate: (number | null)[];
+    neitherRate: (number | null)[];
+    gap: (number | null)[];
+    weightedGap: (number | null)[];
+    overallRate: (number | null)[];
+  };
+}
+
+/** One group's 8-year outcome-measures figures for the newest entering class (its own, separate year). */
+export interface PellGapOm8Row {
+  key: string;
+  label: string;
+  n: number;
+  tooFew?: true;
+  pell?: number | null;
+  nonPell?: number | null;
+}
+
+export interface PellGapFile extends StudyFile<PellGapValues> {
+  slug: "pell-gap";
+  /** Students a college needs in BOTH the Pell and "neither" groups, in both years, to join the panel. */
+  minCohort: number;
+  /** "10 or more points," the bar for `gap10Share` (0.10 in share units). */
+  gapThreshold: number;
+  /** The 8-year outcome-measures companion (specs/trends/pell-gap.md "Eight years, everyone"): a different measure,
+   * for the newest entering class the Outcome Measures survey covers (often earlier than `to`), with its own year. */
+  om8: {
+    year: number;
+    national: PellGapOm8Row;
+    byControl: PellGapOm8Row[];
+  };
+}
+
+/* Study: the price gap (price-gap.json)                               */
+/* ------------------------------------------------------------------ */
+
+export interface PriceGapValues {
+  /** Panel median's change in full price, after inflation (the same median-of-year method as facts.priceGap). */
+  fullPriceChange: number;
+  avgPaidChange: number;
+  /** Median college's discount (1 − average paid ÷ full price), then and now. */
+  discount: ThenNow;
+  /** Median college's average total cost `to`, in `to`-year dollars (same-year, so no deflation needed). */
+  paidNow: number;
+  /** Median college's share of first-years with a grant, then and now. */
+  grantPct: ThenNow;
+  /** Median college's average grant, after inflation, then and now (`to`-year dollars). */
+  grantAvg: ThenNow;
+  /** Median net price by family income band ($0–30K … $110K+), after inflation, then and now. */
+  netPriceByBand: ThenNow[];
+  /** Yearly lines from `from` to `to` (the file's `lineFrom` equals `from`: both indexed to 100 there). */
+  lines: {
+    fullPriceIndex: (number | null)[];
+    avgPaidIndex: (number | null)[];
+    /** Median per-college discount, each year. */
+    discount: (number | null)[];
+  };
+}
+
+/** One college whose full price fell at least `resetThreshold` after inflation in a single year. */
+export interface PriceGapReset {
+  unitId: string;
+  name: string;
+  /** The year full price fell: `year` to `year + 1`. */
+  year: number;
+  /** The drop, after inflation (negative, e.g. −0.12). */
+  drop: number;
+}
+
+export interface PriceGapFile extends StudyFile<PriceGapValues> {
+  slug: "price-gap";
+  /** A college counts as a "tuition reset" when a single year's drop is at or below this (−0.10 = 10%). */
+  resetThreshold: number;
+  /** Panel colleges with a reset, biggest drop first (capped). */
+  resets: PriceGapReset[];
+}
+
+/* ------------------------------------------------------------------ */
 /* Every file, by name (one line per unit)                             */
 /* ------------------------------------------------------------------ */
 
@@ -311,8 +467,11 @@ export interface TrendFiles {
   index: TrendIndex;
   "men-and-women": MenAndWomenFile;
   "shrinking-colleges": ShrinkingCollegesFile;
+  "out-of-state": OutOfStateFile;
   movers: MoversFile;
   states: StatesFile;
+  "pell-gap": PellGapFile;
+  "price-gap": PriceGapFile;
 }
 
 export type TrendFileName = keyof TrendFiles;

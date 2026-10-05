@@ -31,6 +31,31 @@
       "n": 912
     },
     {
+      "slug": "test-optional",
+      "title": "Test-optional went mainstream",
+      "headline": {
+        "value": 0.0516,
+        "format": "pct",
+        "caption": "of colleges still require the SAT or ACT"
+      },
+      "sentence": "In fall 2019, 66% of colleges required the SAT or ACT; in fall 2024, 5% did, while the median college's SAT submission share fell from 63% to 15%.",
+      "spark": {
+        "start": 2001,
+        "kind": "fall",
+        "format": "pct",
+        "series": [
+          {
+            "name": "Share of colleges requiring the SAT or ACT",
+            "values": [null,null,null,null,null,null,null,null,0.8324,0.8214,0.8081,0.8027,0.7961,0.7967,0.7777,0.7466,0.7211,0.6953,0.6559,0.3778,0.109,0.0751,0.057,0.0516]
+          }
+        ]
+      },
+      "yearKind": "fall",
+      "from": 2019,
+      "to": 2024,
+      "n": 1511
+    },
+    {
       "slug": "shrinking-colleges",
       "title": "Shrinking colleges",
       "headline": {
@@ -54,7 +79,86 @@
       "from": 2014,
       "to": 2024,
       "n": 1537
+    },
+    {
+      "slug": "price-gap",
+      "title": "The price gap, by who is discounting",
+      "headline": {
+        "value": -0.116,
+        "format": "pct",
+        "caption": "change in what students pay on average, after inflation"
+      },
+      "sentence": "At the median college, full price fell 1% after inflation over 10 years, while what students actually paid fell 12%, and the discount off the sticker price grew.",
+      "spark": {
+        "start": 2013,
+        "kind": "academic",
+        "format": "num",
+        "series": [
+          {
+            "name": "Full price, indexed",
+            "values": [100,102.3,104.6,105.2,105.3,105.8,106.7,106.5,101.8,98.2,98.8]
+          },
+          {
+            "name": "Average paid, indexed",
+            "values": [100,101.9,103.9,103.8,101.8,100.9,99.9,99.5,92.1,90.5,88.4]
+          }
+        ]
+      },
+      "yearKind": "academic",
+      "from": 2013,
+      "to": 2023,
+      "n": 1432
+    },
+    {
+      "slug": "out-of-state",
+      "title": "Public colleges and students from other states",
+      "headline": {
+        "value": 0.1329,
+        "format": "pct",
+        "caption": "median public college's out-of-state share of first-years"
+      },
+      "sentence": "The median public college's out-of-state share rose from 11% in fall 2014 to 13% in fall 2024, and the share of publics that are 30%+ out-of-state rose from 17% to 22%.",
+      "spark": {
+        "start": 2004,
+        "kind": "fall",
+        "format": "pct",
+        "series": [
+          {
+            "name": "Median public's out-of-state share",
+            "values": [0.0855,null,0.0894,null,0.0921,null,0.0953,null,0.0979,null,0.1059,null,0.116,null,0.1213,null,0.119,null,0.1327,null,0.1329]
+          }
+        ]
+      },
+      "yearKind": "fall",
+      "from": 2014,
+      "to": 2024,
+      "n": 496
+    },
+    {
+      "slug": "pell-gap",
+      "title": "The Pell graduation gap",
+      "headline": {
+        "value": 0.1115,
+        "format": "pts",
+        "caption": "point gap between Pell recipients and students with neither, at the median college"
+      },
+      "sentence": "At the median college, Pell recipients from the class entering fall 2010 graduated within six years 9 points less often than students with neither a Pell Grant nor a subsidized loan; for the class entering fall 2018 the gap was 11 points.",
+      "spark": {
+        "start": 2010,
+        "kind": "cohort",
+        "format": "pts",
+        "series": [
+          {
+            "name": "Median gap, points",
+            "values": [0.0887,0.1016,0.1018,0.1058,0.1039,0.1031,0.1039,0.1116,0.1115]
+          }
+        ]
+      },
+      "yearKind": "cohort",
+      "from": 2010,
+      "to": 2018,
+      "n": 1103
     }
   ],
-  "files": ["conferences","men-and-women","movers","shrinking-colleges"]
+  "files": ["conferences","men-and-women","movers","out-of-state","pell-gap","price-gap","shrinking-colleges","test-optional"]
 }

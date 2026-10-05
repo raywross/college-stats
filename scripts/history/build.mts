@@ -515,7 +515,9 @@ function testRequired(histories: readonly SchoolHistory[], to: number): TrendFac
   return { from, to, n: panel.length, requiredFrom: byYear[0]!, requiredTo: byYear[byYear.length - 1]!, byYear };
 }
 
-function priceGap(histories: readonly SchoolHistory[], [from, to]: [number, number], cpi: CpiTable): TrendFacts["priceGap"] {
+// Exported so scripts/trends/studies/price-gap.mts can reuse it verbatim for the national row (Study 4: the price
+// gap, specs/trends/price-gap.md): the test asserts the study's national row equals facts.priceGap exactly.
+export function priceGap(histories: readonly SchoolHistory[], [from, to]: [number, number], cpi: CpiTable): TrendFacts["priceGap"] {
   const panel = histories.filter((h) =>
     [from, to].every((y) => valueAt(h.series.full_price, y) !== null && valueAt(h.series.avg_paid_all, y) !== null)
   );

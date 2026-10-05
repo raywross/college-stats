@@ -127,7 +127,7 @@ export const ROADMAP: RoadmapSpec[] = [
     file: "specs/trends/where-students-go.md",
     group: "national-trends",
     summary:
-      "Where undergraduates went over ten years, as shares of all students then and now: toward the biggest campuses and research universities, toward publics and the Sun Belt, and not toward cheaper colleges.",
+      "Where undergraduates went over ten years, as shares of all students then and now: toward the biggest campuses and research universities, toward publics and the Sun Belt, and not toward cheaper colleges; and whether the pandemic sped that up or is reversing it.",
     complexity: 2,
     complexityNote:
       "One study on the existing trends machinery, but it classifies colleges as they were at the start of the window, adds a campus-based panel, a state map by share change, and a chart of price change against enrollment change.",

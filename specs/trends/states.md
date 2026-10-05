@@ -1,6 +1,7 @@
 # Trends by State
 
-> Status: **built** 2026-10-04 (PR pending, branch `feature/national-trends`). Specified 2026-10-03 as part of the national-trends family
+> Status: **built** 2026-10-04 (PR #80); an addition, first-years crossing state lines, was planned 2026-10-05
+> ([below](#planned-addition-2026-10-05-first-years-crossing-state-lines)). Specified 2026-10-03 as part of the national-trends family
 > ([hub](../national-trends.md)). First-look figures computed 2026-10-03.
 
 ## Why
@@ -86,23 +87,71 @@ it.
 4. Links in: Home's state tiles ("Trends in {state}" in the tile's hover card), the profile header's state link, and
    the Trends index.
 
+## Planned addition (2026-10-05): first-years crossing state lines
+Decided 2026-10-05 alongside [Study 7](where-students-go.md), whose question "toward certain states?" this answers in
+appetite terms rather than demographic ones. The residence tables (`tables.home_states` in the detail files, the
+newest even fall) give every college's first-years by home state, so each state has an **inflow** (first-years at its
+colleges from other states), an **outflow** (its residents who started at colleges in other states), and the **net**.
+
+### What readers see
+- **Index map, a sixth measure, "Net first-year inflow"**: the net as a share of all first-years at the state's
+  colleges (net ÷ (in-state + inflow)), on the diverging scale centered on zero; the tooltip gives inflow, outflow,
+  and net in students. The table gains the three columns, sortable.
+- **State page, section 4** ("Where the state's first-years come from") gains an in/out block: inflow, outflow, and
+  net; the ratio in words ("Alabama's colleges enroll 3.3 first-years from other states for every Alabamian who
+  starts college in another state"); and the five colleges taking the most of the inflow, each with its share of it,
+  linking to their profiles. Top sending states stay as they are.
+
+### Rules
+1. **Campus-based colleges only**, on both sides: an online-first college's first-years didn't move (Southern New
+   Hampshire University alone is 80% of New Hampshire's raw inflow), so online-first colleges, for-profits, and
+   merged campuses are left out, as in Study 7's panel. The rule is [online-share.md](../data-expansion/online-share.md)'s
+   field; until it exists, the movers' lists ([top-10-lists.md](top-10-lists.md), rule 2), and the method note says
+   which.
+2. **Only the site's colleges count.** A resident who starts at a community college, or at a college not on the site,
+   is invisible on both sides; every figure says "among four-year colleges on this site".
+3. **Home codes that aren't states** (foreign countries, unknown, outlying areas without a college on the site) are
+   left out of the flows and counted as "other" in the method note; territories with colleges on the site (Puerto
+   Rico, Guam, the U.S. Virgin Islands) are states for this purpose.
+4. **One fall**, the newest even fall, as the residence tables are a snapshot; no line until the biennial series
+   holds enough points to say something.
+5. **No floor**: the measure is a sum, not a median, so states under 10 colleges show it too, labeled with their
+   college count; a state with no college table shows nothing.
+
+### First look (2026-10-05; fall 2024 home-state tables, 1,803 colleges; online-first colleges not yet excluded)
+| State | Net | Inflow | Outflow | Colleges taking the most of the inflow (share of it) |
+|---|---|---|---|---|
+| Arizona | +16,000 | 22,000 | 6,000 | Phoenix 29%, Grand Canyon 24% (both online-first), Arizona State 19%, Arizona 19% |
+| New Hampshire | +15,700 | 19,900 | 4,200 | Southern New Hampshire 80% (online-first), UNH 7%, Dartmouth 5% |
+| Indiana | +9,600 | 16,900 | 7,300 | Purdue 32%, IU Bloomington 23%, Notre Dame 10% |
+| Alabama | +9,600 | 13,700 | 4,100 | Alabama 35%, Auburn 20%, Alabama A&M 8% |
+| Pennsylvania | +8,800 | 28,600 | 19,800 | Penn State 13%, Temple 6%, Penn 6%, Pitt 5% |
+| … 33 states and DC are net importers; 20 states and territories net exporters … | | | | |
+| Illinois | −21,000 | 11,000 | 32,000 | |
+| California | −23,100 | 16,100 | 39,200 | |
+| Texas | −25,900 | 9,300 | 35,200 | |
+| New Jersey | −27,000 | 5,000 | 32,000 | |
+
+In most importing states one or two public flagships take half to two thirds of the inflow (Arkansas 62%, Montana
+State 65%, West Virginia 57%, Vermont 55%, Mississippi 53%, Delaware 71%); Pennsylvania, Massachusetts, North Carolina,
+and New York take theirs broadly (top three under 30%). Texas and California grow fastest at home (Study 7) and export
+the most first-years: their growth is home-grown. The Arizona and New Hampshire rows show why rule 1 comes first.
+
+### Computation and tests
+- `buildStates()` gains, per state, `flows: { year, inflow, outflow, net, firstYears, netShare, receiving: { unit_id,
+  count, share }[] }`, summed from `ctx.detail(id)` home-state tables over campus-based colleges: `inflow` for state S
+  is the sum, over colleges in S, of first-years whose home state is another state; `outflow` is the sum, over
+  colleges outside S, of first-years whose home state is S; `firstYears` is in-state plus inflow. The map's sixth
+  measure reads `netShare`; the `StateMapMeasureDef` gains a `signedPct` diverging entry and the table three columns.
+- Tests: the sum of every state's inflow equals the sum of every state's outflow (each cross-state first-year is
+  counted once on each side); one state recomputed from the detail files without the helpers; no online-first,
+  for-profit, or merged college on either side; `flows` absent for a state with no college table; the `receiving`
+  shares sum to at most 1 and are ordered.
+
 ## Open questions
 1. Should the state page include **high school graduate projections** (WICHE's "Knocking at the College Door")? They
    would explain the enrollment trend but are a new external source with its own license. Recommendation: not now;
    note it for the high-school-data work.
 2. A **metro-area** version of these pages is what [metro-area.md](../data-expansion/metro-area.md) was deferred for.
    When the state pages exist, metro pages are the same template over a different grouping.
-3. **Net first-year flows** (added 2026-10-05, from Study 7's first look, [where-students-go.md](where-students-go.md)).
-   The residence tables give, for each state, first-years arriving at its colleges from other states and its own
-   residents enrolled at colleges elsewhere, so the page could show inflow, outflow, and the net, with the colleges
-   that take the inflow. Computed over the 1,803 colleges with a fall 2024 home-state table: 33 states and DC are net
-   importers (Arizona +16,000, New Hampshire +15,700, Indiana +9,600, Alabama +9,600, Pennsylvania +8,800, then DC,
-   Utah, South Carolina, Mississippi, Iowa), 20 are net exporters (New Jersey −27,000, Texas −25,900, California
-   −23,100, Illinois −21,000, then Minnesota, Maryland, Washington, New York, Georgia), and in most importing states
-   one or two flagships take half to two thirds of the inflow (Arkansas 62%, West Virginia 57%, Mississippi 53%,
-   Montana State 65%, Vermont 55%, Delaware 71%); only Pennsylvania, Massachusetts, North Carolina, and New York take
-   theirs broadly. It would be a sixth measure on the index map ("net first-year inflow") and an in/out block in
-   section 4 of each state page. Caveats to carry: only the site's four-year colleges count on either side; an
-   online-first college registers as inflow to its home state (Southern New Hampshire is 80% of New Hampshire's), so
-   the rule in [online-share.md](../data-expansion/online-share.md) applies first; it is one fall's first-years.
-   Recommendation: build it with Study 7, after the online-share field.
+3. ~~Net first-year flows between states~~: decided 2026-10-05, see the planned addition above.

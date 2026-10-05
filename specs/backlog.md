@@ -128,8 +128,13 @@ build-trends` writes `data/history/trends/`). What's left:
 - [ ] **Study 7: Where the students went** ([trends/where-students-go.md](trends/where-students-go.md), specified
   2026-10-05): the students view, each kind of college's share of all undergraduates then and now, by size and
   selectivity as of the window start, research tier, public or private, region and state, and price, over a
-  campus-based panel (first look: 20,000+ campuses 30% → 34% of students, rising every year; R1s 40% → 46%; the
-  colleges that cut prices most lost the most students).
+  campus-based panel, with the pandemic as a question inside the ten years (before · pandemic · after periods and
+  the pace of each shift). First look: 20,000+ campuses 30% → 34% of students, rising every year; R1s 40% → 46%; the
+  colleges that cut prices most lost the most students; the pandemic sped every shift up and since 2022 they've
+  slowed to their old pace, not reversed.
+- [ ] **First-years crossing state lines** ([trends/states.md](trends/states.md), planned addition 2026-10-05): each
+  state's inflow, outflow, and net of first-years from the residence tables, as a sixth measure on the states map and
+  an in/out block on state pages, over campus-based colleges; build with Study 7, after the online-share field.
 - [ ] Per-conference movers lists, and an Explore conference-filter chip linking to the conference page.
 - [x] **Trends page and shared breakdowns:** `/trends` with a card per study, `/trends/{study}` pages, the standard
   breakdowns (region, type, size, selectivity) computed by `sync-history`, and a test that recomputes each study.

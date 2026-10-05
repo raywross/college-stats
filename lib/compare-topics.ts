@@ -323,7 +323,18 @@ const TABLE_FIELDS: readonly FieldPath[] = [
 export const COMPARE_TOPIC_FIELDS: Record<CompareTopicKey, readonly FieldPath[]> = {
   // Getting in: app/compare/admissions/page.tsx.
   admissions: [
-    // The page's fields go here.
+    "admissions.acceptance_rate",
+    "admissions.applicants",
+    "admissions.admitted",
+    "derived.yield",
+    "derived.admit_rate_women",
+    "derived.admit_rate_men",
+    "derived.sat_total",
+    "admissions.act_composite_25_75",
+    "admissions.test_submission_rate_sat",
+    "admissions.test_submission_rate_act",
+    "admissions.test_policy",
+    "admissions.factors",
   ],
 
   // Students & campus: app/compare/students/page.tsx.

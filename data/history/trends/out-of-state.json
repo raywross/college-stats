@@ -1,0 +1,476 @@
+{
+  "name": "out-of-state",
+  "slug": "out-of-state",
+  "built": "2026-10-02",
+  "yearKind": "fall",
+  "from": 2014,
+  "to": 2024,
+  "n": 496,
+  "lineFrom": 2004,
+  "minEnrolled": 200,
+  "threshold": 0.3,
+  "private": {
+    "median": [0.3468,0.3333],
+    "line": [0.3445,null,0.3369,null,0.3402,null,0.3346,null,0.3496,null,0.3468,null,0.3464,null,0.3495,null,0.337,null,0.3453,null,0.3333]
+  },
+  "internationalMedian": [0.0138,0.0132],
+  "premium": {
+    "from": 2013,
+    "to": 2023,
+    "lineFrom": 2004,
+    "line": [null,null,null,null,12255,12776,13022,13004,13394,13929,14147,14195,14214,14361,14196,13990,13884,12777,12143,11684],
+    "median": [13929,11684],
+    "over20k": [0.1485,0.1447]
+  },
+  "sendingStates": {
+    "year": 2024,
+    "totals": {
+      "AK": 809,
+      "AL": 1746,
+      "AR": 1263,
+      "AS": 49,
+      "AZ": 2460,
+      "CA": 18900,
+      "CO": 6166,
+      "CT": 4627,
+      "DC": 1437,
+      "DE": 1240,
+      "FL": 7590,
+      "FM": 27,
+      "GA": 8073,
+      "GU": 102,
+      "HI": 1525,
+      "IA": 2022,
+      "ID": 1454,
+      "IL": 18896,
+      "IN": 3340,
+      "KS": 2140,
+      "KY": 2119,
+      "LA": 2046,
+      "MA": 7783,
+      "MD": 7770,
+      "ME": 777,
+      "MH": 5,
+      "MI": 3359,
+      "MN": 9917,
+      "MO": 4718,
+      "MP": 55,
+      "MS": 1138,
+      "MT": 714,
+      "NC": 4717,
+      "ND": 609,
+      "NE": 1569,
+      "NH": 1429,
+      "NJ": 13774,
+      "NM": 1309,
+      "NV": 1999,
+      "NY": 13850,
+      "OH": 5661,
+      "OK": 1504,
+      "OR": 2418,
+      "PA": 9485,
+      "PR": 291,
+      "PW": 25,
+      "RI": 943,
+      "SC": 2346,
+      "SD": 822,
+      "TN": 5378,
+      "TX": 18747,
+      "UT": 799,
+      "VA": 7499,
+      "VI": 99,
+      "VT": 637,
+      "WA": 6603,
+      "WI": 4673,
+      "WV": 571,
+      "WY": 520
+    },
+    "n": 565
+  },
+  "national": {
+    "key": "all",
+    "label": "All colleges",
+    "n": 496,
+    "values": {
+      "medianShare": [0.1059,0.1329],
+      "share30": [0.1673,0.2238],
+      "weightedShare": [0.1707,0.2035],
+      "lines": {
+        "medianShare": [0.0855,null,0.0894,null,0.0921,null,0.0953,null,0.0979,null,0.1059,null,0.116,null,0.1213,null,0.119,null,0.1327,null,0.1329],
+        "share30": [0.1366,null,0.1523,null,0.1373,null,0.1534,null,0.1612,null,0.1673,null,0.1815,null,0.1895,null,0.1913,null,0.2258,null,0.2238],
+        "weightedShare": [0.1494,null,0.1513,null,0.1557,null,0.1572,null,0.1662,null,0.1707,null,0.1776,null,0.1805,null,0.1816,null,0.2091,null,0.2035]
+      }
+    }
+  },
+  "groupings": [
+    {
+      "grouping": "region",
+      "label": "Region",
+      "floor": 30,
+      "groups": [
+        {
+          "key": "Northeast",
+          "label": "Northeast",
+          "n": 120,
+          "values": {
+            "medianShare": [0.0683,0.1158],
+            "share30": [0.1417,0.2167],
+            "weightedShare": [0.1785,0.1976],
+            "lines": {
+              "medianShare": [0.0737,null,0.0753,null,0.082,null,0.0734,null,0.0759,null,0.0683,null,0.0765,null,0.0784,null,null,null,0.1051,null,0.1158],
+              "share30": [0.1271,null,0.1525,null,0.1176,null,0.1513,null,0.125,null,0.1417,null,0.1333,null,0.15,null,null,null,0.2167,null,0.2167],
+              "weightedShare": [0.1717,null,0.1765,null,0.1787,null,0.1695,null,0.175,null,0.1785,null,0.1795,null,0.1773,null,null,null,0.2042,null,0.1976]
+            }
+          }
+        },
+        {
+          "key": "Southeast",
+          "label": "Southeast",
+          "n": 140,
+          "values": {
+            "medianShare": [0.1266,0.1662],
+            "share30": [0.1857,0.2786],
+            "weightedShare": [0.1914,0.2441],
+            "lines": {
+              "medianShare": [0.1185,null,0.126,null,0.1352,null,0.1073,null,0.117,null,0.1266,null,0.1334,null,0.1391,null,0.1408,null,0.1618,null,0.1662],
+              "share30": [0.1618,null,0.2059,null,0.1838,null,0.1838,null,0.1985,null,0.1857,null,0.2,null,0.2286,null,0.2143,null,0.2643,null,0.2786],
+              "weightedShare": [0.1685,null,0.1668,null,0.1768,null,0.1773,null,0.1863,null,0.1914,null,0.201,null,0.2033,null,0.2056,null,0.2489,null,0.2441]
+            }
+          }
+        },
+        {
+          "key": "Midwest",
+          "label": "Midwest",
+          "n": 103,
+          "values": {
+            "medianShare": [0.1469,0.1594],
+            "share30": [0.2039,0.2427],
+            "weightedShare": [0.2019,0.2427],
+            "lines": {
+              "medianShare": [0.0927,null,0.1121,null,0.1021,null,0.1213,null,0.1354,null,0.1469,null,0.1598,null,0.1655,null,0.1778,null,0.1736,null,0.1594],
+              "share30": [0.1569,null,0.1569,null,0.1667,null,0.1667,null,0.1863,null,0.2039,null,0.233,null,0.233,null,0.2427,null,0.233,null,0.2427],
+              "weightedShare": [0.16,null,0.1657,null,0.1658,null,0.1742,null,0.1912,null,0.2019,null,0.2135,null,0.2162,null,0.2243,null,0.2381,null,0.2427]
+            }
+          }
+        },
+        {
+          "key": "Southwest",
+          "label": "Southwest",
+          "n": 48,
+          "values": {
+            "medianShare": [0.0313,0.0321],
+            "share30": [0.125,0.1042],
+            "weightedShare": [0.1202,0.1278],
+            "lines": {
+              "medianShare": [0.0366,null,0.0329,null,0.0337,null,0.0315,null,0.034,null,0.0313,null,0.0376,null,0.0381,null,0.0416,null,0.0376,null,0.0321],
+              "share30": [0.087,null,0.087,null,0.0652,null,0.1064,null,0.1277,null,0.125,null,0.1458,null,0.1458,null,0.125,null,0.1042,null,0.1042],
+              "weightedShare": [null,null,null,null,null,null,0.1203,null,0.1294,null,0.1202,null,0.1243,null,0.1243,null,0.1243,null,0.1413,null,0.1278]
+            }
+          }
+        },
+        {
+          "key": "West",
+          "label": "West",
+          "n": 75,
+          "values": {
+            "medianShare": [0.1195,0.1189],
+            "share30": [0.1733,0.2133],
+            "weightedShare": [0.1357,0.167],
+            "lines": {
+              "medianShare": [0.0788,null,0.071,null,0.0749,null,0.0972,null,0.101,null,0.1195,null,0.1375,null,0.1549,null,0.1295,null,0.1363,null,0.1189],
+              "share30": [0.1268,null,0.1081,null,0.1067,null,0.1333,null,0.16,null,0.1733,null,0.2,null,0.1733,null,0.1867,null,0.2667,null,0.2133],
+              "weightedShare": [0.1135,null,0.1145,null,0.12,null,0.1236,null,0.127,null,0.1357,null,0.1417,null,0.1532,null,0.1526,null,0.1796,null,0.167]
+            }
+          }
+        },
+        {
+          "key": "Territories",
+          "label": "Territories",
+          "n": 10,
+          "tooFew": true
+        }
+      ]
+    },
+    {
+      "grouping": "control",
+      "label": "Public or private",
+      "floor": 30,
+      "groups": [
+        {
+          "key": "public",
+          "label": "Public",
+          "n": 496,
+          "values": {
+            "medianShare": [0.1059,0.1329],
+            "share30": [0.1673,0.2238],
+            "weightedShare": [0.1707,0.2035],
+            "lines": {
+              "medianShare": [0.0855,null,0.0894,null,0.0921,null,0.0953,null,0.0979,null,0.1059,null,0.116,null,0.1213,null,0.119,null,0.1327,null,0.1329],
+              "share30": [0.1366,null,0.1523,null,0.1373,null,0.1534,null,0.1612,null,0.1673,null,0.1815,null,0.1895,null,0.1913,null,0.2258,null,0.2238],
+              "weightedShare": [0.1494,null,0.1513,null,0.1557,null,0.1572,null,0.1662,null,0.1707,null,0.1776,null,0.1805,null,0.1816,null,0.2091,null,0.2035]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "grouping": "size",
+      "label": "Size",
+      "floor": 30,
+      "groups": [
+        {
+          "key": "small",
+          "label": "Under 2,000 undergrads",
+          "n": 64,
+          "values": {
+            "medianShare": [0.1718,0.2216],
+            "share30": [0.1719,0.3281],
+            "weightedShare": [0.1889,0.2504],
+            "lines": {
+              "medianShare": [0.1551,null,0.1783,null,0.1667,null,0.1718,null,0.1782,null,0.1718,null,0.1708,null,0.1936,null,null,null,0.2298,null,0.2216],
+              "share30": [0.1774,null,0.2419,null,0.1746,null,0.1746,null,0.1587,null,0.1719,null,0.2188,null,0.1719,null,null,null,0.3438,null,0.3281],
+              "weightedShare": [null,null,0.2021,null,0.1936,null,0.1931,null,0.194,null,0.1889,null,0.1953,null,0.1984,null,null,null,0.2536,null,0.2504]
+            }
+          }
+        },
+        {
+          "key": "medium",
+          "label": "2,000–9,999",
+          "n": 254,
+          "values": {
+            "medianShare": [0.0784,0.1139],
+            "share30": [0.1339,0.1811],
+            "weightedShare": [0.1432,0.1706],
+            "lines": {
+              "medianShare": [0.081,null,0.0737,null,0.0827,null,0.078,null,0.0801,null,0.0784,null,0.0895,null,0.0976,null,0.0973,null,0.1085,null,0.1139],
+              "share30": [0.123,null,0.1255,null,0.121,null,0.1365,null,0.132,null,0.1339,null,0.1496,null,0.1654,null,0.1606,null,0.1772,null,0.1811],
+              "weightedShare": [null,null,0.1392,null,0.1457,null,0.1424,null,0.1396,null,0.1432,null,0.1523,null,0.1572,null,0.1621,null,0.1766,null,0.1706]
+            }
+          }
+        },
+        {
+          "key": "large",
+          "label": "10,000+",
+          "n": 178,
+          "values": {
+            "medianShare": [0.116,0.1329],
+            "share30": [0.2135,0.2472],
+            "weightedShare": [0.182,0.2137],
+            "lines": {
+              "medianShare": [0.0845,null,0.0869,null,0.0901,null,0.0961,null,0.1027,null,0.116,null,0.1212,null,0.1299,null,0.1287,null,0.1436,null,0.1329],
+              "share30": [0.1412,null,0.1582,null,0.1469,null,0.1695,null,0.2034,null,0.2135,null,0.2135,null,0.2303,null,0.209,null,0.2528,null,0.2472],
+              "weightedShare": [0.1536,null,0.1549,null,0.1587,null,0.1626,null,0.1772,null,0.182,null,0.1879,null,0.1895,null,0.1878,null,0.2189,null,0.2137]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "grouping": "selectivity",
+      "label": "Selectivity",
+      "floor": 30,
+      "groups": [
+        {
+          "key": "most",
+          "label": "Under 25% admitted",
+          "n": 14,
+          "tooFew": true
+        },
+        {
+          "key": "more",
+          "label": "25–59% admitted",
+          "n": 74,
+          "values": {
+            "medianShare": [0.0849,0.1161],
+            "share30": [0.1351,0.2568],
+            "weightedShare": [0.1318,0.1878],
+            "lines": {
+              "medianShare": [0.0695,null,0.0606,null,0.0719,null,0.0735,null,0.0797,null,0.0849,null,0.0888,null,0.096,null,0.0991,null,0.1026,null,0.1161],
+              "share30": [0.1806,null,0.1528,null,0.1528,null,0.1806,null,0.1528,null,0.1351,null,0.1622,null,0.2027,null,0.1757,null,0.2297,null,0.2568],
+              "weightedShare": [null,null,0.1258,null,0.1294,null,0.1312,null,0.1286,null,0.1318,null,0.1361,null,0.1496,null,0.1577,null,0.1878,null,0.1878]
+            }
+          }
+        },
+        {
+          "key": "less",
+          "label": "60% or more",
+          "n": 397,
+          "values": {
+            "medianShare": [0.1068,0.1326],
+            "share30": [0.1637,0.2116],
+            "weightedShare": [0.1756,0.2041],
+            "lines": {
+              "medianShare": [0.0853,null,0.0919,null,0.0938,null,0.0968,null,0.0991,null,0.1068,null,0.117,null,0.121,null,0.1137,null,0.1331,null,0.1326],
+              "share30": [0.1166,null,0.1388,null,0.1279,null,0.1403,null,0.1527,null,0.1637,null,0.1738,null,0.1763,null,0.1832,null,0.2116,null,0.2116],
+              "weightedShare": [0.1479,null,0.1536,null,0.159,null,0.1592,null,0.1718,null,0.1756,null,0.1835,null,0.1835,null,0.1831,null,0.2114,null,0.2041]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "grouping": "research",
+      "label": "Research",
+      "floor": 30,
+      "groups": [
+        {
+          "key": "R1",
+          "label": "R1 universities",
+          "n": 125,
+          "values": {
+            "medianShare": [0.181,0.2242],
+            "share30": [0.32,0.368],
+            "weightedShare": [0.2232,0.2583],
+            "lines": {
+              "medianShare": [0.1595,null,0.1414,null,0.1586,null,0.1632,null,0.174,null,0.181,null,0.179,null,0.205,null,0.2061,null,0.2385,null,0.2242],
+              "share30": [0.2097,null,0.232,null,0.216,null,0.264,null,0.28,null,0.32,null,0.32,null,0.352,null,0.3145,null,0.384,null,0.368],
+              "weightedShare": [0.1853,null,0.1862,null,0.1944,null,0.1995,null,0.2136,null,0.2232,null,0.2277,null,0.2308,null,0.228,null,0.2644,null,0.2583]
+            }
+          }
+        },
+        {
+          "key": "R2",
+          "label": "R2 universities",
+          "n": 81,
+          "values": {
+            "medianShare": [0.0531,0.0835],
+            "share30": [0.0741,0.1852],
+            "weightedShare": [0.0916,0.1124],
+            "lines": {
+              "medianShare": [0.0551,null,0.0512,null,0.0572,null,0.0475,null,0.055,null,0.0531,null,0.0656,null,0.0582,null,0.07,null,0.0804,null,0.0835],
+              "share30": [0.0875,null,0.0875,null,0.0875,null,0.075,null,0.1125,null,0.0741,null,0.0988,null,0.1111,null,0.1111,null,0.1235,null,0.1852],
+              "weightedShare": [0.0929,null,0.0941,null,0.0918,null,0.0918,null,0.0941,null,0.0916,null,0.1004,null,0.1028,null,0.0995,null,0.1148,null,0.1124]
+            }
+          }
+        },
+        {
+          "key": "RCU",
+          "label": "Research college or university",
+          "n": 109,
+          "values": {
+            "medianShare": [0.0872,0.1149],
+            "share30": [0.1743,0.1927],
+            "weightedShare": [0.1393,0.1583],
+            "lines": {
+              "medianShare": [0.0809,null,0.0769,null,0.0783,null,0.0795,null,0.0902,null,0.0872,null,0.0856,null,0.1166,null,0.0997,null,0.114,null,0.1149],
+              "share30": [0.1604,null,0.1574,null,0.156,null,0.1743,null,0.156,null,0.1743,null,0.1743,null,0.1835,null,0.1869,null,0.1927,null,0.1927],
+              "weightedShare": [null,null,0.1405,null,0.1379,null,0.139,null,0.1411,null,0.1393,null,0.1481,null,0.1479,null,0.1571,null,0.1649,null,0.1583]
+            }
+          }
+        },
+        {
+          "key": "other",
+          "label": "Other colleges",
+          "n": 181,
+          "values": {
+            "medianShare": [0.0876,0.1266],
+            "share30": [0.0994,0.1602],
+            "weightedShare": [0.1156,0.1342],
+            "lines": {
+              "medianShare": [0.0835,null,0.0857,null,0.093,null,0.0797,null,0.0893,null,0.0876,null,0.0977,null,0.1017,null,0.1028,null,0.1192,null,0.1266],
+              "share30": [0.0925,null,0.1214,null,0.092,null,0.0971,null,0.1023,null,0.0994,null,0.1271,null,0.116,null,0.142,null,0.1823,null,0.1602],
+              "weightedShare": [null,null,0.1146,null,0.1224,null,0.1158,null,0.12,null,0.1156,null,0.1242,null,0.126,null,0.1287,null,0.1364,null,0.1342]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "grouping": "division",
+      "label": "Athletic division",
+      "floor": 30,
+      "groups": [
+        {
+          "key": "I-FBS",
+          "label": "D-I FBS",
+          "n": 116,
+          "values": {
+            "medianShare": [0.1896,0.2271],
+            "share30": [0.3103,0.3621],
+            "weightedShare": [0.2238,0.2664],
+            "lines": {
+              "medianShare": [0.1641,null,0.1425,null,0.1602,null,0.1671,null,0.1757,null,0.1896,null,0.1831,null,0.2183,null,0.2212,null,0.2426,null,0.2271],
+              "share30": [0.2155,null,0.2328,null,0.2155,null,0.25,null,0.2845,null,0.3103,null,0.3017,null,0.3362,null,0.3043,null,0.3707,null,0.3621],
+              "weightedShare": [0.1891,null,0.1922,null,0.198,null,0.203,null,0.2134,null,0.2238,null,0.2326,null,0.2364,null,0.2331,null,0.2689,null,0.2664]
+            }
+          }
+        },
+        {
+          "key": "I-FCS",
+          "label": "D-I FCS",
+          "n": 71,
+          "values": {
+            "medianShare": [0.1364,0.166],
+            "share30": [0.2817,0.3662],
+            "weightedShare": [0.1907,0.208],
+            "lines": {
+              "medianShare": [0.1445,null,0.1685,null,0.1367,null,0.1411,null,0.1468,null,0.1364,null,0.1569,null,0.1721,null,0.1974,null,0.1842,null,0.166],
+              "share30": [0.2535,null,0.2676,null,0.2535,null,0.2676,null,0.2535,null,0.2817,null,0.3239,null,0.338,null,0.3099,null,0.3662,null,0.3662],
+              "weightedShare": [0.1741,null,0.1722,null,0.1776,null,0.1757,null,0.1809,null,0.1907,null,0.2022,null,0.2048,null,0.2102,null,0.2283,null,0.208]
+            }
+          }
+        },
+        {
+          "key": "I",
+          "label": "D-I, no football",
+          "n": 44,
+          "values": {
+            "medianShare": [0.0703,0.0768],
+            "share30": [0.0682,0.1136],
+            "weightedShare": [0.0893,0.1009],
+            "lines": {
+              "medianShare": [0.0572,null,0.0476,null,0.0572,null,0.0517,null,0.0672,null,0.0703,null,0.0669,null,0.0681,null,0.0767,null,0.0844,null,0.0768],
+              "share30": [0.0455,null,0.0455,null,0.0682,null,0.0682,null,0.0682,null,0.0682,null,0.0455,null,0.0455,null,0.0682,null,0.0455,null,0.1136],
+              "weightedShare": [0.0794,null,0.0843,null,0.0917,null,0.0878,null,0.0937,null,0.0893,null,0.0887,null,0.0928,null,0.0956,null,0.1087,null,0.1009]
+            }
+          }
+        },
+        {
+          "key": "II",
+          "label": "D-II",
+          "n": 125,
+          "values": {
+            "medianShare": [0.0876,0.1305],
+            "share30": [0.088,0.16],
+            "weightedShare": [0.0985,0.1161],
+            "lines": {
+              "medianShare": [0.0825,null,0.0877,null,0.0893,null,0.0822,null,0.0865,null,0.0876,null,0.0977,null,0.1155,null,0.1088,null,0.117,null,0.1305],
+              "share30": [0.082,null,0.082,null,0.0902,null,0.0984,null,0.0902,null,0.088,null,0.12,null,0.112,null,0.136,null,0.144,null,0.16],
+              "weightedShare": [0.0982,null,0.1029,null,0.1034,null,0.1016,null,0.1038,null,0.0985,null,0.1055,null,0.1079,null,0.1089,null,0.1167,null,0.1161]
+            }
+          }
+        },
+        {
+          "key": "III",
+          "label": "D-III",
+          "n": 78,
+          "values": {
+            "medianShare": [0.0527,0.1057],
+            "share30": [0.0769,0.1538],
+            "weightedShare": [0.0983,0.1034],
+            "lines": {
+              "medianShare": [0.0456,null,0.0499,null,0.0584,null,0.0507,null,0.053,null,0.0527,null,0.0601,null,0.0736,null,0.0666,null,0.0811,null,0.1057],
+              "share30": [0.0897,null,0.1154,null,0.0769,null,0.0769,null,0.0769,null,0.0769,null,0.1026,null,0.1026,null,0.1389,null,0.1667,null,0.1538],
+              "weightedShare": [0.0906,null,0.0982,null,0.0995,null,0.0928,null,0.1019,null,0.0983,null,0.1039,null,0.1,null,0.0966,null,0.1076,null,0.1034]
+            }
+          }
+        },
+        {
+          "key": "none",
+          "label": "NAIA or none",
+          "n": 62,
+          "values": {
+            "medianShare": [0.0578,0.0757],
+            "share30": [0.1129,0.0968],
+            "weightedShare": [0.0751,0.0743],
+            "lines": {
+              "medianShare": [null,null,null,null,0.027,null,0.0408,null,0.0462,null,0.0578,null,0.0484,null,0.0408,null,null,null,0.0769,null,0.0757],
+              "share30": [null,null,null,null,0.0702,null,0.1034,null,0.1356,null,0.1129,null,0.1129,null,0.1129,null,null,null,0.1613,null,0.0968],
+              "weightedShare": [null,null,null,null,null,null,0.077,null,0.0838,null,0.0751,null,0.0736,null,0.0719,null,null,null,0.0808,null,0.0743]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

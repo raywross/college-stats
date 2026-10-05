@@ -1,0 +1,164 @@
+{
+  "built": "2026-10-02",
+  "cards": [
+    {
+      "slug": "men-and-women",
+      "title": "Men and women in admissions",
+      "headline": {
+        "value": 0.4825,
+        "format": "pct",
+        "caption": "of colleges admit women at a notably higher rate than men"
+      },
+      "sentence": "In fall 2004, 13% of colleges admitted men at a rate 3 or more points higher than women; in fall 2024, 6% did, while 48% favored women by as much.",
+      "spark": {
+        "start": 2001,
+        "kind": "fall",
+        "format": "pct",
+        "series": [
+          {
+            "name": "Women admitted at a higher rate",
+            "values": [0.4897,0.4777,0.4476,0.4309,0.4291,0.4136,0.4336,0.4276,0.4059,0.42,0.4128,0.4255,0.4206,0.4377,0.4327,0.4377,0.452,0.4355,0.4346,0.4374,0.5443,0.4906,0.4973,0.4825]
+          },
+          {
+            "name": "Men admitted at a higher rate",
+            "values": [0.1126,0.1237,0.1297,0.1316,0.1327,0.1593,0.1442,0.1369,0.1251,0.1244,0.1421,0.131,0.1276,0.0992,0.106,0.1158,0.097,0.1191,0.1153,0.0864,0.071,0.0684,0.0626,0.0603]
+          }
+        ]
+      },
+      "yearKind": "fall",
+      "from": 2004,
+      "to": 2024,
+      "n": 912
+    },
+    {
+      "slug": "test-optional",
+      "title": "Test-optional went mainstream",
+      "headline": {
+        "value": 0.0516,
+        "format": "pct",
+        "caption": "of colleges still require the SAT or ACT"
+      },
+      "sentence": "In fall 2019, 66% of colleges required the SAT or ACT; in fall 2024, 5% did, while the median college's SAT submission share fell from 63% to 15%.",
+      "spark": {
+        "start": 2001,
+        "kind": "fall",
+        "format": "pct",
+        "series": [
+          {
+            "name": "Share of colleges requiring the SAT or ACT",
+            "values": [null,null,null,null,null,null,null,null,0.8324,0.8214,0.8081,0.8027,0.7961,0.7967,0.7777,0.7466,0.7211,0.6953,0.6559,0.3778,0.109,0.0751,0.057,0.0516]
+          }
+        ]
+      },
+      "yearKind": "fall",
+      "from": 2019,
+      "to": 2024,
+      "n": 1511
+    },
+    {
+      "slug": "shrinking-colleges",
+      "title": "Shrinking colleges",
+      "headline": {
+        "value": 0.5101,
+        "format": "pct",
+        "caption": "of colleges have at least 10% fewer undergraduates than ten years ago"
+      },
+      "sentence": "Across 1,537 colleges, 51% have at least 10% fewer undergraduates than in fall 2014, while 23% grew that much; the median college's undergraduate count fell 11%.",
+      "spark": {
+        "start": 2014,
+        "kind": "fall",
+        "format": "pct",
+        "series": [
+          {
+            "name": "Smaller than at the window's start",
+            "values": [0,0.5329,0.525,0.5456,0.5517,0.5685,0.6243,0.6447,0.666,0.65,0.6409]
+          }
+        ]
+      },
+      "yearKind": "fall",
+      "from": 2014,
+      "to": 2024,
+      "n": 1537
+    },
+    {
+      "slug": "price-gap",
+      "title": "The price gap, by who is discounting",
+      "headline": {
+        "value": -0.116,
+        "format": "pct",
+        "caption": "change in what students pay on average, after inflation"
+      },
+      "sentence": "At the median college, full price fell 1% after inflation over 10 years, while what students actually paid fell 12%, and the discount off the sticker price grew.",
+      "spark": {
+        "start": 2013,
+        "kind": "academic",
+        "format": "num",
+        "series": [
+          {
+            "name": "Full price, indexed",
+            "values": [100,102.3,104.6,105.2,105.3,105.8,106.7,106.5,101.8,98.2,98.8]
+          },
+          {
+            "name": "Average paid, indexed",
+            "values": [100,101.9,103.9,103.8,101.8,100.9,99.9,99.5,92.1,90.5,88.4]
+          }
+        ]
+      },
+      "yearKind": "academic",
+      "from": 2013,
+      "to": 2023,
+      "n": 1432
+    },
+    {
+      "slug": "out-of-state",
+      "title": "Public colleges and students from other states",
+      "headline": {
+        "value": 0.1329,
+        "format": "pct",
+        "caption": "median public college's out-of-state share of first-years"
+      },
+      "sentence": "The median public college's out-of-state share rose from 11% in fall 2014 to 13% in fall 2024, and the share of publics that are 30%+ out-of-state rose from 17% to 22%.",
+      "spark": {
+        "start": 2004,
+        "kind": "fall",
+        "format": "pct",
+        "series": [
+          {
+            "name": "Median public's out-of-state share",
+            "values": [0.0855,null,0.0894,null,0.0921,null,0.0953,null,0.0979,null,0.1059,null,0.116,null,0.1213,null,0.119,null,0.1327,null,0.1329]
+          }
+        ]
+      },
+      "yearKind": "fall",
+      "from": 2014,
+      "to": 2024,
+      "n": 496
+    },
+    {
+      "slug": "pell-gap",
+      "title": "The Pell graduation gap",
+      "headline": {
+        "value": 0.1115,
+        "format": "pts",
+        "caption": "point gap between Pell recipients and students with neither, at the median college"
+      },
+      "sentence": "At the median college, Pell recipients from the class entering fall 2010 graduated within six years 9 points less often than students with neither a Pell Grant nor a subsidized loan; for the class entering fall 2018 the gap was 11 points.",
+      "spark": {
+        "start": 2010,
+        "kind": "cohort",
+        "format": "pts",
+        "series": [
+          {
+            "name": "Median gap, points",
+            "values": [0.0887,0.1016,0.1018,0.1058,0.1039,0.1031,0.1039,0.1116,0.1115]
+          }
+        ]
+      },
+      "yearKind": "cohort",
+      "from": 2010,
+      "to": 2018,
+      "n": 1103
+    }
+  ],
+  "files": ["conferences","men-and-women","movers","out-of-state","pell-gap","price-gap","shrinking-colleges","states","test-optional"]
+}

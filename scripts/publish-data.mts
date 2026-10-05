@@ -17,6 +17,8 @@
  *      shards are written straight into school_histories in batches (scripts/lib/publish-batches.mts; one swap of all
  *      of them timed out after wave 2), colleges no longer in the data are removed, the shared files are written, and
  *      it's all read back and compared. Not atomic: mid-publish, readers can see a mix of old and new shards.
+ *      National trend files (data/history/trends/, `npm run build-trends`) go into the same table as `trends/{name}` rows;
+ *      rows for files no longer built are removed, and they're read back too.
  *   5b. Per-college detail files (data/detail/, lib/detail.ts), if built: the same checks as check:lineage up front, then
  *      written into school_details the same way, and read back.
  *   6. If REVALIDATE_URL and REVALIDATE_SECRET are set, ask the site to regenerate its static pages.
@@ -31,7 +33,7 @@ import type { DatasetMeta, School } from "../lib/types";
 import type { ReleaseCalendar } from "../lib/releases";
 import type { AliasRow } from "../lib/identity-files.ts";
 import { validateLineage } from "../lib/lineage.ts";
-import { fetchAllSchoolHistories, fetchDatasetFiles, fetchHistoryFiles, supabaseClient } from "../lib/supabase.ts";
+import { fetchAllSchoolHistories, fetchAllTrendFiles, fetchDatasetFiles, fetchHistoryFiles, supabaseClient, trendRowName } from "../lib/supabase.ts";
 import { validateHistoryMeta, validateShard, type SchoolHistory } from "../lib/history.ts";
 import { detailFileProblems, detailTablesProblem, publishDetails, readDetails } from "./lib/publish-details.mts";
 import { replaceInBatches } from "./lib/publish-batches.mts";
@@ -46,6 +48,7 @@ const HISTORY_BATCH = 150;
 /** Colleges per staging call (~0.9 MB at 11 MB for 1,893); one call with all of them timed out on 2026-10-02. */
 const SCHOOL_BATCH = 150;
 const SCHOOL_STAGING_MIGRATION = "supabase/migrations/20261002140000_school_staging.sql";
+const TREND_FILES_MIGRATION = "supabase/migrations/20261004130000_trend_files.sql";
 
 const read = <T,>(name: string): T => JSON.parse(readFileSync(join(ROOT, "data", name), "utf8"));
 const schools = read<School[]>("schools.json");
@@ -83,11 +86,26 @@ const history = existsSync(join(HISTORY, "meta.json"))
         .filter((f) => f.endsWith(".json"))
         .sort()
         .map((f) => JSON.parse(readFileSync(join(HISTORY, "schools", f), "utf8")) as SchoolHistory),
+      // National trends (specs/national-trends.md), by file name without `.json`.
+      trends: existsSync(join(HISTORY, "trends"))
+        ? Object.fromEntries(
+            readdirSync(join(HISTORY, "trends"))
+              .filter((f) => f.endsWith(".json"))
+              .sort()
+              .map((f) => [f.replace(/\.json$/, ""), JSON.parse(readFileSync(join(HISTORY, "trends", f), "utf8")) as unknown])
+          )
+        : ({} as Record<string, unknown>),
     }
   : null;
 if (history) {
   const ids = new Set(schools.map((s) => s.unit_id));
   const hp = [...validateHistoryMeta(history.files.meta, meta), ...history.shards.flatMap((h) => validateShard(h, ids))];
+  for (const [name, file] of Object.entries(history.trends)) {
+    if (!/^[a-z0-9-]+$/.test(name)) hp.push(`trends/${name}.json: file names are lower-case words and hyphens`);
+    const f = file as { name?: string; built?: string };
+    if (name !== "index" && f.name !== name) hp.push(`trends/${name}.json: its name field is "${f.name}"`);
+    if (f.built !== history.files.meta.built) hp.push(`trends/${name}.json: built from history ${f.built}, not ${history.files.meta.built} (run npm run build-trends)`);
+  }
   if (hp.length) {
     for (const p of hp.slice(0, 20)) console.error(`  ${p}`);
     fail(`${hp.length} history problem(s); run npm run check:lineage.`);
@@ -219,6 +237,25 @@ if (history) {
   const local = { meta: history.files.meta, national: history.files.national, facts: history.files.facts, cpi: history.files.cpi };
   if (!same(back, local)) fail("history files differ after reading back.");
   console.log(`Published ${shardCount} college histories (built ${history.files.meta.built}); read back and verified.`);
+
+  // National trend files: `trends/{name}` rows in the same table, then rows for files no longer built are removed.
+  const trendNames = Object.keys(history.trends);
+  if (trendNames.length) {
+    const rows = trendNames.map((name) => ({ name: trendRowName(name), data: history.trends[name], published_at: publishedAt }));
+    const { error: tError } = await client.from("history_files").upsert(rows, { onConflict: "name" });
+    // 23514: the name check still allows only the four shared files.
+    if (tError) fail(`trend files: ${tError.message}${tError.code === "23514" ? `. Apply ${TREND_FILES_MIGRATION} first.` : ""}`);
+  }
+  const stale = Object.keys(await fetchAllTrendFiles(client)).filter((name) => !(name in history.trends));
+  if (stale.length) {
+    const { error: dError } = await client.from("history_files").delete().in("name", stale.map(trendRowName));
+    if (dError) fail(`removing old trend files: ${dError.message}`);
+  }
+  const backTrends = await fetchAllTrendFiles(client);
+  if (!same(Object.keys(backTrends).sort(), trendNames) || trendNames.some((n) => !same(backTrends[n], history.trends[n]))) {
+    fail("trend files differ after reading back.");
+  }
+  console.log(`Published ${trendNames.length} trend files${stale.length ? ` (removed ${stale.length} old)` : ""}; read back and verified.`);
 } else {
   console.log("No data/history/ (run npm run sync-history); history not published.");
 }

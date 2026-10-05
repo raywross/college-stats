@@ -1,6 +1,6 @@
 # Trends by Athletic Conference
 
-> Status: **planned** (not built). Specified 2026-10-03 as part of the national-trends family
+> Status: **built** 2026-10-04 (PR pending, branch `feature/national-trends`). Specified 2026-10-03 as part of the national-trends family
 > ([hub](../national-trends.md)). Conference membership and its history come from the campus-services build
 > ([campus-services.md](../data-expansion/campus-services.md)); first-look figures were computed 2026-10-03.
 

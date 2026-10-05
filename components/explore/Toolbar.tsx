@@ -230,6 +230,11 @@ export function ActiveFilters() {
       label: minEnroll && maxEnroll ? `${minEnroll}–${maxEnroll} undergrads` : minEnroll ? `${Number(minEnroll).toLocaleString()}+ undergrads` : `Up to ${Number(maxEnroll).toLocaleString()} undergrads`,
       onRemove: () => update({ minEnroll: null, maxEnroll: null }),
     });
+  // Floors at the start of the ten-year window, from Biggest movers' "See all in Explore" links.
+  for (const [key, what] of [["minApplicants", "applicants"], ["minUndergrads", "undergrads"]] as const) {
+    const v = Number(searchParams.get(key));
+    if (v > 0) chips.push({ key, label: `${v.toLocaleString("en-US")}+ ${what} ten years ago`, onRemove: () => update({ [key]: null }) });
+  }
 
   for (const t of getList("types")) chips.push({ key: `t-${t}`, label: typeLabel(t), onRemove: () => toggleInList("types", t) });
   for (const s of getList("sizes"))

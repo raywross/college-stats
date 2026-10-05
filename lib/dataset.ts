@@ -256,6 +256,9 @@ export function createDataset({ schools, meta, releaseCalendar, aliases = [] }: 
 
     if (filters.minEnroll !== undefined) results = results.filter((s) => s.demographics.undergrad_enrollment >= filters.minEnroll!);
     if (filters.maxEnroll !== undefined) results = results.filter((s) => s.demographics.undergrad_enrollment <= filters.maxEnroll!);
+    // At the start of the ten-year window (school.trends): colleges without that history are left out while set.
+    if (filters.minApplicants !== undefined) results = results.filter((s) => (s.trends?.applicants?.from ?? -1) >= filters.minApplicants!);
+    if (filters.minUndergrads !== undefined) results = results.filter((s) => (s.trends?.undergrads?.from ?? -1) >= filters.minUndergrads!);
     // Unreported ratios never match (a missing value isn't a small one).
     if (filters.maxRatio !== undefined) results = results.filter((s) => withinMaxRatio(s, filters.maxRatio!));
     if (filters.minFullTimeFaculty !== undefined) results = results.filter((s) => withinMinFullTimeFaculty(s, filters.minFullTimeFaculty!));

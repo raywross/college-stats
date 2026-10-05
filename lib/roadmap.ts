@@ -18,11 +18,11 @@ export const COMPLEXITY: Record<Complexity, { label: string; description: string
 // (the round-3 CDS pipeline and its nine display specs, group "college-reported") on 2026-10-03; see /release-notes.
 // Metro area, deferred from wave 2, is under "later". Campus life (religious, Greek, and LGBTQ+ life, group
 // "campus-life") was built 2026-10-03/04 (#72, #73, #75, #76); its remaining work is under "later":
-// campus-pilot-accuracy and campus-sources-later.
+// campus-pilot-accuracy and campus-sources-later. National trends (the /trends hub, Studies 1–6, movers, conferences,
+// states; group "national-trends") was built 2026-10-04 on feature/national-trends.
 export type RoadmapGroupKey =
   | "college-reported"
   | "campus-life"
-  | "national-trends"
   | "design"
   | "accounts"
   | "planning"
@@ -32,12 +32,6 @@ export type RoadmapGroupKey =
   | "later";
 
 export const ROADMAP_GROUPS: { key: RoadmapGroupKey; title: string; description: string }[] = [
-  {
-    key: "national-trends",
-    title: "National trends",
-    description:
-      "How college is changing across the country, not at one college: nationally, and by region, public or private, size, and selectivity.",
-  },
   {
     key: "design",
     title: "Design and usability",
@@ -110,97 +104,6 @@ export interface RoadmapSpec {
 
 /** In build order within each group (the backlog's order, specs/backlog.md). */
 export const ROADMAP: RoadmapSpec[] = [
-  {
-    slug: "national-trends",
-    file: "specs/national-trends.md",
-    group: "national-trends",
-    summary:
-      "Studies of how college is changing nationally, with where it's happening. First: men and women in admissions, by region, type, size, and selectivity.",
-    complexity: 3,
-    complexityNote: "A new Trends page and a shared way to compute and chart breakdowns; each later study reuses it.",
-    status: "planned",
-  },
-  {
-    slug: "trends-test-optional",
-    file: "specs/trends/test-optional.md",
-    group: "national-trends",
-    summary:
-      "How test requirements all but disappeared, who still submits scores, and why published SAT ranges rose where tests became optional.",
-    complexity: 1,
-    complexityNote: "Series already stored; one study page from the shared layout, plus Explore's test-policy filter.",
-    status: "planned",
-    after: ["national-trends"],
-  },
-  {
-    slug: "trends-shrinking-colleges",
-    file: "specs/trends/shrinking-colleges.md",
-    group: "national-trends",
-    summary: "Half of colleges have a tenth fewer undergraduates than ten years ago. Which kinds shrank, and which grew instead.",
-    complexity: 1,
-    complexityNote: "One series, the shared breakdowns, a histogram, and a colleges-or-students switch.",
-    status: "planned",
-    after: ["national-trends"],
-  },
-  {
-    slug: "trends-price-gap",
-    file: "specs/trends/price-gap.md",
-    group: "national-trends",
-    summary: "Full price versus what students actually pay, group by group: where discounting deepened and where prices simply rose.",
-    complexity: 2,
-    complexityNote: "Several money series after inflation, income-band net prices, and agreement with the Home fact to the number.",
-    status: "planned",
-    after: ["national-trends"],
-  },
-  {
-    slug: "trends-out-of-state",
-    file: "specs/trends/out-of-state.md",
-    group: "national-trends",
-    summary: "Public colleges enrolling more first-years from other states: how much, where, and what the out-of-state premium looks like.",
-    complexity: 1,
-    complexityNote: "A biennial series with the shared breakdowns, a premium companion, and a sending-state map from the detail file.",
-    status: "planned",
-    after: ["national-trends"],
-  },
-  {
-    slug: "trends-pell-gap",
-    file: "specs/trends/pell-gap.md",
-    group: "national-trends",
-    summary: "Pell Grant recipients graduate less often than classmates with neither Pell nor loans, and the gap has widened. Where, and where not.",
-    complexity: 1,
-    complexityNote: "Two graduation series by entering class, the shared breakdowns, and small-class floors.",
-    status: "planned",
-    after: ["national-trends"],
-  },
-  {
-    slug: "trends-top-10-lists",
-    file: "specs/trends/top-10-lists.md",
-    group: "national-trends",
-    summary: "Ten colleges per measure that changed most in ten years, with the floors and exclusions that keep online growth and closures from crowding the lists.",
-    complexity: 2,
-    complexityNote: "A list registry and build step, reviewed exclusion files, Explore floor params, and a new page; a data item for online share.",
-    status: "planned",
-    after: ["national-trends"],
-  },
-  {
-    slug: "trends-conferences",
-    file: "specs/trends/conferences.md",
-    group: "national-trends",
-    summary: "A page for every athletic conference: its members compared, how the conference changed over ten years, and who joined or left.",
-    complexity: 2,
-    complexityNote: "Per-conference medians under two membership rules, a realignment timeline from stored events, an index and 130 pages.",
-    status: "planned",
-    after: ["national-trends", "trends-top-10-lists"],
-  },
-  {
-    slug: "trends-states",
-    file: "specs/trends/states.md",
-    group: "national-trends",
-    summary: "A page for every state: how its colleges changed, publics against privates, where its students come from, and its biggest movers.",
-    complexity: 2,
-    complexityNote: "Per-state panels with a relaxed floor, the tile map colored by measure, and reuse of the movers lists.",
-    status: "planned",
-    after: ["national-trends", "trends-top-10-lists"],
-  },
   {
     slug: "compare-redesign",
     file: "specs/compare-redesign.md",

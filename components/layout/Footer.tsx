@@ -23,6 +23,7 @@ export function Footer() {
             <li><Link className="hover:text-foreground" href="/explore">All schools</Link></li>
             <li><Link className="hover:text-foreground" href="/explore?view=chart">Admissions landscape</Link></li>
             <li><Link className="hover:text-foreground" href="/compare">Compare side-by-side</Link></li>
+            <li><Link className="hover:text-foreground" href="/trends">National trends: how college is changing</Link></li>
             <li><Link className="hover:text-foreground" href="/glossary">Glossary of terms</Link></li>
             <li><Link className="hover:text-foreground" href="/data">Data: sources, years &amp; updates</Link></li>
             <li><Link className="hover:text-foreground" href="/roadmap">Roadmap: what&apos;s coming</Link></li>

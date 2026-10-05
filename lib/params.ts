@@ -58,6 +58,9 @@ export function parseFilters(params: Params): SearchFilters {
     maxACT: n(params.maxACT),
     minEnroll: n(params.minEnroll),
     maxEnroll: n(params.maxEnroll),
+    // Floors at the start of the ten-year window (Biggest movers' "See all in Explore" links).
+    minApplicants: ((v) => (v !== undefined && v > 0 ? v : undefined))(n(params.minApplicants)),
+    minUndergrads: ((v) => (v !== undefined && v > 0 ? v : undefined))(n(params.minUndergrads)),
     maxRatio: ((v) => (v !== undefined && v > 0 ? v : undefined))(n(params.maxRatio)),
     // Stored as a share (0–1); the URL holds a percent (minFullTimeFaculty=70).
     minFullTimeFaculty: ((v) => (v !== undefined && v > 0 ? v / 100 : undefined))(n(params.minFullTimeFaculty)),
@@ -147,6 +150,8 @@ export const FILTER_KEYS = [
   "maxACT",
   "minEnroll",
   "maxEnroll",
+  "minApplicants",
+  "minUndergrads",
   "maxRatio",
   "minFullTimeFaculty",
   "minCost",

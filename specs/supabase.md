@@ -43,7 +43,7 @@ back to JSON.
 | `dataset_files` | `meta` and `release_calendar` documents | Public read |
 | `dataset_publishes` | Log: time, college count, `retrieved`, git commit, who | Secret key only |
 | `school_histories` | `unit_id` (PK), `data` (one `SchoolHistory`, verbatim: data/history/schools/{id}.json) | Public read |
-| `history_files` | `meta`, `national`, `facts`, `cpi` from data/history/ | Public read |
+| `history_files` | `meta`, `national`, `facts`, `cpi` from data/history/, plus `trends/{name}` rows from data/history/trends/ (migration `20261004130000_trend_files.sql`; specs/national-trends.md) | Public read |
 | `school_details` | `unit_id` (PK), `data` (one `SchoolDetail`, verbatim: data/detail/schools/{id}.json; lib/detail.ts) | Public read |
 | `detail_staging` | Detail files mid-publish | Secret key only |
 

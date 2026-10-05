@@ -14,6 +14,7 @@ import { brandTint, crestBrand } from "@/lib/brand";
 import { Crest } from "@/components/school/Crest";
 import { StandoutChip } from "@/components/school/StandoutChip";
 import { CompareButton } from "@/components/compare/CompareButton";
+import { AddToListButton } from "@/components/lists/AddToListButton";
 import { DESIGNATION_LABELS, DESIGNATION_TERMS, SETTING_SHORT, designationsOf } from "@/lib/campus-profile";
 import { Term } from "@/components/ui/info-tip";
 import { Panel } from "@/components/profile/Panel";
@@ -112,7 +113,10 @@ export default async function SchoolPage({ params }: Props) {
                 ))}
               </div>
             </div>
-            <CompareButton id={school.unit_id} variant="large" className="w-full sm:w-auto sm:self-end" />
+            <div className="flex w-full flex-wrap gap-2 sm:w-auto sm:self-end">
+              <CompareButton id={school.unit_id} variant="large" className="flex-1 sm:flex-initial" />
+              <AddToListButton ids={school.unit_id} variant="large" className="flex-1 sm:flex-initial" />
+            </div>
           </div>
 
           {tags.length > 0 && (

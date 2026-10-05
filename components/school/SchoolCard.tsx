@@ -8,6 +8,7 @@ import type { CSSProperties } from "react";
 import { brandTint, crestBrand } from "@/lib/brand";
 import { Crest } from "@/components/school/Crest";
 import { CompareButton } from "@/components/compare/CompareButton";
+import { AddToListButton } from "@/components/lists/AddToListButton";
 import { StandoutChip } from "@/components/school/StandoutChip";
 import { TrendIndicatorGrid } from "@/components/trends/TrendIndicators";
 
@@ -63,7 +64,10 @@ export async function SchoolCard({ school, index = 0 }: { school: School; index?
             {school.location.city}, {school.location.state} · {typeShort(school.type)}
           </p>
         </div>
-        <CompareButton id={school.unit_id} variant="icon" />
+        <div className="flex flex-col gap-1.5">
+          <CompareButton id={school.unit_id} variant="icon" />
+          <AddToListButton ids={school.unit_id} variant="icon" />
+        </div>
       </div>
 
       <div className="relative mt-5 flex items-end justify-between gap-3">

@@ -1082,6 +1082,39 @@ const entries = {
     category: "Admissions",
     related: ["admitted", "yield"],
   },
+  "regular-decision": {
+    term: "Regular decision",
+    short: "The standard, non-binding application round, with a deadline usually in December or January and decisions by April.",
+    category: "Admissions",
+    related: ["early-decision", "early-action", "rolling-admission"],
+  },
+  "rolling-admission": {
+    term: "Rolling admission",
+    short: "A college reviews applications as they arrive, with no single deadline, and answers within a few weeks rather than all at once.",
+    why: "Applying earlier in a rolling window often means more spots are still open.",
+    category: "Admissions",
+    related: ["regular-decision"],
+  },
+  "reach-school": {
+    term: "Reach",
+    short: "A college where your profile is below what's typically admitted: a real chance, not a guarantee.",
+    category: "Admissions",
+    related: ["target-school", "likely-school"],
+  },
+  "target-school": {
+    term: "Target",
+    short: "A college where your profile matches what's typically admitted: a solid chance, though never certain.",
+    category: "Admissions",
+    related: ["reach-school", "likely-school"],
+  },
+  "likely-school": {
+    term: "Likely",
+    short: "A college where your profile is above what's typically admitted, and that you could afford and would attend.",
+    long: "Counselors use \"likely\" rather than the older \"safety\": no college is safe when it's unaffordable without aid, or when it rejects well-qualified applicants it expects to enroll elsewhere (\"yield protection\"). A likely school still needs checking, not just assuming.",
+    why: "A balanced list has some of each category, with at least a couple of Likely colleges you'd genuinely be glad to attend.",
+    category: "Admissions",
+    related: ["reach-school", "target-school"],
+  },
   // CDS financial aid (specs/data-expansion/cds-financial-aid.md).
   "css-profile": {
     term: "CSS Profile",

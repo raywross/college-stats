@@ -266,6 +266,9 @@ const GUARDED_FILES = [
   "lib/compare-topics.ts",
   "lib/compare-routes.ts",
   "lib/compare-data.ts",
+  // The compare overview's topic cards and their sentences.
+  "lib/compare-cards.ts",
+  "lib/compare-insights.ts",
   "app/page.tsx",
   "scripts/sync-history.mts",
 ];

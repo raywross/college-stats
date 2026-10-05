@@ -68,6 +68,11 @@ shares are covered as CDS supplements in [residence.md](residence.md) and [housi
 Items the inventory judged not worth a page (A, B3, I-1, J, most free-text policy items) are still stored by the run
 because template workbooks and fillable PDFs read for free.
 
+### Wave 5: one more NCES file, for the trends studies
+| Spec | Adds | Source |
+|---|---|---|
+| [online-share.md](online-share.md) | **Planned** 2026-10-05. Share of undergraduates studying entirely online, by fall since 2012; the online-first rule as a stored field (the movers' growth lists, Study 3's campus-based toggle, Study 7's panel); a profile line and an Explore filter | IPEDS EF part A, distance education (`EF{Y}A_DIST`) |
+
 ## Deciding on history
 Every spec answers **"Keep history?"** with one of three answers:
 

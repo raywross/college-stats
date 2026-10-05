@@ -204,11 +204,14 @@ test("sync guards: invalid rows, a shrink, and unknown adapters stop the run bef
   }
 });
 
-test("sync: the registered stub adapters run cleanly and change nothing", async () => {
+test("sync: stub adapters (nothing loaded) run cleanly and change nothing", async () => {
   const dir = tempCopy();
   try {
     const before = readFileSync(join(dir, "schools", "CA.json"), "utf8");
-    const res = await runHighSchoolSync({ root: ROOT, outDir: dir, adapters: ADAPTERS, dryRun: true, ...quiet });
+    // The registered adapters' contracts with stub results (the real federal adapters download NCES files; their own
+    // tests run on fixture extracts in tests/high-schools-federal.test.mts).
+    const stubs = ADAPTERS.map((a) => fake(a.info, { sources: {}, vintages: {}, notes: [`${a.info.key}: stub`] }));
+    const res = await runHighSchoolSync({ root: ROOT, outDir: dir, adapters: stubs, dryRun: true, ...quiet });
     assert.equal(res.written, false);
     assert.ok(res.report.every((r) => r.skipped));
     assert.equal(readFileSync(join(dir, "schools", "CA.json"), "utf8"), before);

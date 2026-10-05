@@ -14,6 +14,8 @@ import { openStudentAs } from "@/lib/households";
 import { getListWithItems, myLists, namesFor, notesForItems } from "@/lib/lists";
 import { getData } from "@/lib/data";
 import { deadlineFor, upcomingDeadlines, type ListRound } from "@/lib/list-rules";
+import { myHome } from "@/lib/home-store";
+import { DEFAULT_WITHIN, distanceFromHome, exploreNearHref } from "@/lib/home";
 
 export const metadata: Metadata = { title: "My list", robots: { index: false } };
 
@@ -39,7 +41,13 @@ export default async function ListPage({ params }: { params: Promise<{ id: strin
   const access = await openStudentAs(list.student_id, "lists");
   if (!access) notFound();
 
-  const [lists, { getSchoolById, citeField }, notesByItem] = await Promise.all([myLists(list.student_id), getData(), notesForItems(items.map((i) => i.id))]);
+  // The viewer's own home (a guardian's, when a guardian is looking): each person sees distances from where they live.
+  const [lists, { getSchoolById, citeField }, notesByItem, home] = await Promise.all([
+    myLists(list.student_id),
+    getData(),
+    notesForItems(items.map((i) => i.id)),
+    myHome(),
+  ]);
   const addedByIds = [...new Set(items.map((i) => i.added_by).filter((x): x is string => !!x))];
   const names = await namesFor(addedByIds);
 
@@ -63,6 +71,8 @@ export default async function ListPage({ params }: { params: Promise<{ id: strin
         admitRateCited: school ? citeField("admissions.acceptance_rate", school) : null,
         avgCost: school?.cost?.avg_paid_all ?? null,
         avgCostCited: school ? citeField("cost.avg_paid_all", school) : null,
+        distance: home && school ? distanceFromHome(school.location, home) : null,
+        distanceCited: school ? citeField("location.lat", school) : null,
         deadline,
       },
       notes: notesByItem[item.id] ?? [],
@@ -115,6 +125,33 @@ export default async function ListPage({ params }: { params: Promise<{ id: strin
       )}
 
       <ListBoard items={boardItems} canEdit={access.canEdit} viewerId={access.student.user_id ?? ""} />
+
+      {boardItems.length > 0 && (
+        <p className="text-xs text-muted-foreground print:hidden">
+          {home ? (
+            <>
+              Distances are from your home in {home.place}, <Term term="distance-from-home">as the crow flies</Term>.
+              {home.zip && (
+                <>
+                  {" "}
+                  <Link href={exploreNearHref(home.zip)} className="font-semibold text-primary hover:underline">
+                    Find more colleges within {DEFAULT_WITHIN} miles
+                  </Link>
+                  .
+                </>
+              )}
+            </>
+          ) : (
+            <>
+              Add your{" "}
+              <Link href="/account#home" className="font-semibold text-primary hover:underline">
+                home address
+              </Link>{" "}
+              to see how far each college is from home.
+            </>
+          )}
+        </p>
+      )}
 
       {access.canEdit && (
         <div className="space-y-3 print:hidden">

@@ -9,6 +9,7 @@ import { isPolicyBucket } from "./test-policy.ts";
 import { isFaithFilter } from "./religion.ts";
 import { isTradition } from "./directories.ts";
 import { isCouncil } from "./directories.ts";
+import { isWithinOption, parseZip } from "./home.ts";
 
 /** Unique values, or undefined when none remain. */
 const uniq = <T,>(v: T[] | undefined): T[] | undefined => (v?.length ? [...new Set(v)] : undefined);
@@ -29,6 +30,7 @@ const SORT_KEYS: SortKey[] = [
   "avg_cost_change", "admit_rate_change", "size_change", "apps_change", "diversity_change",
   "men_share", "part_time", "men_share_change", "admit_gap", "loan_rate", "loan_rate_change", "student_faculty", "completion_8yr", "completion_4yr",
   "pell_gap", "pell_gap_change", "full_time_faculty", "out_of_state", "transfer_share", "instruction_spending", "endowment_per_student", "bachelors",
+  "distance",
 ];
 const VIEWS: ExploreView[] = ["grid", "table", "chart", "map"];
 
@@ -126,6 +128,10 @@ export function parseFilters(params: Params): SearchFilters {
     lgbtqNondiscrimination: str(params.lgbtqNondiscrimination) === "1" || undefined,
     // Greek chapter directories (lib/directories.ts): council keys other than npc/nic; unknown keys are dropped.
     greekCouncils: uniq(list(params.greekCouncils)?.filter(isCouncil)),
+    // Distance from home (specs/product/home-and-distance.md): a five-digit ZIP and one of the offered radii; the
+    // page resolves the ZIP's center (lib/zip-centroids.ts resolveNear) before getSchools() sees it.
+    nearZip: parseZip(params.near) ?? undefined,
+    withinMiles: ((v) => (isWithinOption(v) ? v : undefined))(n(params.within)),
     sortBy: sortBy && SORT_KEYS.includes(sortBy) ? sortBy : "applicants",
     // Default direction: most-applied-to first; everything else ascending.
     sortDir: params.sortDir === "desc" || params.sortDir === "asc" ? params.sortDir : sortBy && sortBy !== "applicants" ? "asc" : "desc",
@@ -198,6 +204,8 @@ export const FILTER_KEYS = [
   "lgbtqHousing",
   "lgbtqNondiscrimination",
   "greekCouncils",
+  "near",
+  "within",
   ...INDICATOR_KEYS.map((k) => INDICATORS[k].param),
 ] as const;
 
@@ -210,5 +218,7 @@ export function countActiveFilters(params: Params): number {
   if (str(params.minCost) && str(params.maxCost)) count--;
   // "Fits my scores" is one filter even with both a saved SAT and ACT score.
   if (str(params.mySAT) && str(params.myACT)) count--;
+  // Distance from home is one filter (its radius), and a radius without a ZIP filters nothing.
+  if (str(params.within)) count--;
   return count;
 }

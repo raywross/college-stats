@@ -5,11 +5,13 @@ import { Download, Trash2 } from "lucide-react";
 import { AccessLogList } from "@/components/account/AccessLogList";
 import { AccountSection } from "@/components/account/AccountSection";
 import { AuthUnavailable } from "@/components/account/AuthUnavailable";
+import { HomeForm } from "@/components/account/HomeForm";
 import { HouseholdSummary } from "@/components/account/HouseholdSummary";
 import { SignOutButton } from "@/components/account/SignOutButton";
 import { Term } from "@/components/ui/info-tip";
 import { AccountsSetupError, authConfigured, currentStudent, getAccount, requireUser } from "@/lib/auth";
 import { myAccessLog, myHouseholds } from "@/lib/households";
+import { myHome } from "@/lib/home-store";
 import { DELETE_GRACE_DAYS, shortDate } from "@/lib/household-rules";
 import { restoreAccount } from "./delete/actions";
 import { ProfileForm } from "./ProfileForm";
@@ -37,7 +39,7 @@ export default async function AccountPage() {
 
   if (profile.deleted_at) return <ScheduledForDeletion deletedAt={profile.deleted_at} />;
 
-  const [households, student] = await Promise.all([myHouseholds(), currentStudent()]);
+  const [households, student, home] = await Promise.all([myHouseholds(), currentStudent(), myHome()]);
   const accessLog = student ? await myAccessLog() : [];
   const defaultRole = profile.role_hint === "guardian" || profile.role_hint === "counselor" ? "guardian" : "student";
 
@@ -59,6 +61,14 @@ export default async function AccountPage() {
 
       <AccountSection id="profile" title="Profile">
         <ProfileForm profile={profile} email={user.email} />
+      </AccountSection>
+
+      <AccountSection
+        id="home"
+        title={<Term term="home-address">Home</Term>}
+        description="So Explore and your lists can say how far each college is from home."
+      >
+        <HomeForm home={home} />
       </AccountSection>
 
       <AccountSection
@@ -95,7 +105,8 @@ export default async function AccountPage() {
           Download my data (JSON)
         </a>
         <p className="mt-2 text-xs text-muted-foreground">
-          Your profile, households and their members&apos; names, the students you own or manage, invitations you sent, and who viewed your information.
+          Your profile, your home address, households and their members&apos; names, the students you own or manage, invitations you sent, and who
+          viewed your information.
         </p>
       </AccountSection>
 

@@ -29,6 +29,7 @@
     "publish-data": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --env-file-if-exists=.env.local scripts/publish-data.mts",
     "publish-data:prod": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --env-file=.env.prod.local scripts/publish-data.mts",
     "build-cip": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/build-cip.mts",
+    "build-zcta": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/build-zcta.mts",
     "measure-profile": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/measure-profile.mts",
     "check:lineage": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/check-lineage.mts",
     "test": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test \"tests/**/*.test.mts\"",

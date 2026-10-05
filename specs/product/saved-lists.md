@@ -108,6 +108,11 @@ list_notes (item_id, author_id, body, private bool, created)
 - Glossary: `reach-school`, `target-school`, `likely-school` (explaining "Likely" over "Safety"), `regular-decision`,
   `rolling-admission` (`early-decision`/`early-action`/`restrictive-early-action` already existed).
 
+- **Distance from home** (2026-10-05, [home-and-distance.md](home-and-distance.md)): each row adds the straight-line
+  miles and a drive time from the viewer's own saved home (the student's, or the guardian's when a guardian opens
+  the list), citing the campus coordinates' source; a line under the board links to Explore within 100 miles, or
+  to the account page to add a home when none is saved.
+
 ### Deviations from the spec
 
 - **No standing/chances column.** "Chances and fit" isn't built yet (owner decision for this build); rows show

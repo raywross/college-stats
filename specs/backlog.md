@@ -252,7 +252,9 @@ moves into a section above.
 - [ ] **Cost to a degree** ([ideas/cost-to-a-degree.md](ideas/cost-to-a-degree.md)): the four-year plan beside the
   typical time to finish and the debt of those who leave.
 - [ ] **Near and far** ([ideas/near-and-far.md](ideas/near-and-far.md)): an Explore map view, distance and drive time
-  from a home ZIP, visit trips from the list, and the cost of getting home in the projection.
+  from a home ZIP, visit trips from the list, and the cost of getting home in the projection. *Built 2026-10-05:* the
+  home address, Explore's distance filter, and distance on lists ([product/home-and-distance.md](product/home-and-distance.md));
+  the map, airports, trips, and travel cost remain.
 - [ ] **Worst plausible spring** ([ideas/worst-plausible-spring.md](ideas/worst-plausible-spring.md)): a stress test
   of the saved list under three scenarios, with gaps as facts, instead of a grade.
 - [ ] **Colleges that would compete for you** ([ideas/would-compete-for-you.md](ideas/would-compete-for-you.md)):

@@ -90,6 +90,7 @@ Every user-data table has an **owner column** and a **visibility rule**, enforce
 | **Household finances** (AGI, assets, household size, number in college) ([net-price-estimator.md](net-price-estimator.md)) | **guardian** (per guardian user) | own only; another guardian in the same household sees nothing unless the owner shares | **never** | The student sees only an estimate the guardian chose to share, as a range per college, with no inputs |
 | Award letters ([award-letter-analyzer.md](award-letter-analyzer.md)) | whoever uploads, attached to a student | read | read | A letter is about the student, so both sides see it; the guardian's financial inputs used alongside it stay hidden |
 | Subscription ([commercialization.md](commercialization.md)) | the paying user | n/a | n/a | A guardian's plan covers the students in their households |
+| Home address ([home-and-distance.md](home-and-distance.md), built 2026-10-05) | the user | **never** | **never** | Own-row only: each household member sees distances from their own home. Not in the access log |
 
 - **Sharing an estimate** creates a `shared_estimates` row (student, college set, range, as-of date) that the
   student reads; the finances table itself has no policy that any other user can satisfy. A test proves a student

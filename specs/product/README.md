@@ -24,6 +24,7 @@ public data stays free ([commercialization.md](commercialization.md#what-stays-f
 | [student-profile.md](student-profile.md) | A student's own numbers (GPA, scores, major, state, preferences) that every tool reads | Medium |
 | [saved-lists.md](saved-lists.md) | Saved colleges with Reach / Target / Likely, status, notes, deadlines, sharing, export | Medium |
 | [follow-colleges.md](follow-colleges.md) | Follow colleges (lists follow automatically) and get one email per data release summarizing what changed, with years; a public "What changed" panel on profiles | Large |
+| [home-and-distance.md](home-and-distance.md) | A home address on the account, Explore's "Distance from home" filter with a nearest-first sort, and the distance to every college on a saved list, for students and guardians alike (built 2026-10-05) | Medium |
 
 ### Planning tools
 | Spec | Adds | Complexity |

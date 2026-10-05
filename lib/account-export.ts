@@ -132,6 +132,14 @@ export const ACCOUNT_EXPORTERS: AccountExporter[] = [
     },
   },
   {
+    key: "home",
+    description: "Your home address as we matched it, with its map location (specs/product/home-and-distance.md); null if none is saved.",
+    run: async ({ supabase, userId }) => {
+      const [home] = await rows("home_locations", supabase.from("home_locations").select("label, place, zip, lat, lng, updated_at").eq("user_id", userId));
+      return home ?? null;
+    },
+  },
+  {
     key: "follows",
     description: "Colleges you follow, and your update-email preference (specs/product/follow-colleges.md).",
     run: async ({ supabase, userId }) => {

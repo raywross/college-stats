@@ -129,3 +129,25 @@ The shared contracts every later unit builds on; the federal, private, state, UI
 - **Checks** `npm run check:lineage` validates `data/high-schools/` when it exists (shards, meta, fresh medians, state
   files, detail files with real college ids). Fixture: `tests/fixtures/high-schools/` (two states, a rich public school
   with a state report, profile detail, suppressed cells, and an EDFacts range; a sparse public school; a private school).
+
+## As built (federal sync, 2026-10-05)
+`npm run sync-high-schools` fills public rows from NCES and ED bulk files (cached in `.cache/high-schools/`):
+- **CCD 2024–25 final** (`ccd.mts`): directory (029), membership (052, streamed: 2.3 GB of CSV), staff (059: ratio =
+  membership ÷ FTE teachers, kept only between 1 and 100), school characteristics (129: virtual = exclusively or
+  primarily virtual), lunch (033: FRL share = free + reduced-price eligible ÷ membership, dropped when it exceeds
+  membership), and NCES EDGE geocodes (lat/lng, urban-centric locale). High school = open (Open, New, Added, Changed
+  Boundary/Agency, Reopened), highest grade 12 or 13, 50 states + DC: 27,815 schools (incl. alternative, special
+  education, career and technical, virtual, and K–12 schools). `state_school_id` is CCD's `ST_SCHID` as published
+  (e.g. `CA-1975309-1995786`: state prefix, state district id, state school id), for state crosswalks.
+- CCD stopped publishing **Title I** and **magnet** status after 2021–22: Title I comes from the 2021–22 school
+  characteristics file (lineage year 2021–22), magnet from the CRDC school characteristics file (lineage source CRDC).
+- **CRDC 2023–24** (`crdc.mts`, released August 2026): AP courses, AP enrollment, IB, dual enrollment, CRDC enrollment.
+  AP exam takers and passers are no longer collected (null for every school). AP/IB indicators of -9 are "not
+  reported", never zero; dual enrollment "No" is zero.
+- **EDFacts ACGR** (`edfacts.mts`): reads `acgr-sch-sy{YYYY}-{YY}-long.csv` (ALL students; ranges stay ranges). www.ed.gov
+  answers scripted downloads with a bot challenge, so the file must be downloaded in a browser into
+  `.cache/high-schools/` (or passed with `--edfacts-file`), then `npm run sync-high-schools -- --only edfacts`. Until
+  then graduation rates are null and `vintages.edfacts-acgr` is null.
+- Small cells: CCD "Suppressed" flags, CRDC codes -11/-12, EDFacts "PS", and student counts 1–4 → null + `suppressed`.
+  Tests on fixture extracts: `tests/high-schools-federal.test.mts` (`tests/fixtures/high-schools/federal/cache/` holds
+  directories named like the zips).

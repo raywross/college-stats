@@ -1,0 +1,8 @@
+AcademicYear	AggregateLevel	CountyCode	DistrictCode	SchoolCode	CountyName	DistrictName	SchoolName	CharterSchool	AlternativeSchoolAccountabilityStatus	ReportingCategory	CompleterType	High School Completers	Enrolled In College - Total (12 Months)	College Going Rate - Total (12 Months)	Enrolled In-State (12 Months)	Enrolled Out-of-State (12 Months)	Not Enrolled In College (12 Months)	Enrolled UC (12 Months)	Enrolled CSU (12 Months)	Enrolled CCC (12 Months)	Enrolled In-State Private (2 and 4 Year) (12 Months)	Enrolled Out-of-State 4-Year College (Public/Private) (12 Months)	Enrolled Out-of-State 2-Year College (Public/Private) (12 Months)
+2022-23	S	01	10017	0130401	Alameda	Alameda County Office of Education	Alameda County Juvenile Hall/Court	No 	Yes	TA	TA	14	8	57.1	8	0	6	0	0	8	0	0	0
+2022-23	S	01	10017	0130419	Alameda	Alameda County Office of Education	Alameda County Community	No 	Yes	TA	TA	16	8	50.0	6	2	8	0	0	6	0	2	0
+2022-23	S	01	61119	0000000	Alameda	Alameda Unified	District Office	No 	No 	TA	TA	*	*	*	*	*	*	*	*	*	*	*	*
+2022-23	S	01	61150	0130047	Alameda	Castro Valley Unified	Roy A. Johnson High	No 	No 	TA	TA	*	*	*	*	*	*	*	*	*	*	*	*
+2022-23	S	19	10199	0100776	Los Angeles	Los Angeles County Office of Education	North Valley Military Institute College Preparatory Academy	Yes	Yes	TA	TA	83	47	56.6	45	2	36	8	31	5	1	2	0
+2022-23	D	01	10017	0000000	Alameda	Alameda County Office of Education	District Office	Yes	All	GF	AGN	114	32	28.1	28	4	82	0	0	23	5	3	1
+2022-23	S	01	10017	0130625	Alameda	Alameda County Office of Education	Alternatives in Action	Yes	Yes	TA	TA	41	11	26.8	11	0	30	0	6	3	2	0	0

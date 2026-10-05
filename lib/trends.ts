@@ -195,6 +195,60 @@ export interface MoversFile extends TrendEnvelope {
 }
 
 /* ------------------------------------------------------------------ */
+/* Study 6: the Pell graduation gap (pell-gap.json)                     */
+/* ------------------------------------------------------------------ */
+
+export interface PellGapValues {
+  /** Median Pell recipients' 6-year graduation rate, then and now. */
+  pellRate: ThenNow;
+  /** Median rate for students with neither a Pell Grant nor a subsidized loan. */
+  neitherRate: ThenNow;
+  /** Median gap (share units), neither's rate minus Pell's. */
+  gap: ThenNow;
+  /** Share of colleges where the gap is 10 or more points. */
+  gap10Share: ThenNow;
+  /** The "students" view: each rate summed (graduates ÷ cohort) across the group, not averaged per college. */
+  weightedPellRate: ThenNow;
+  weightedNeitherRate: ThenNow;
+  weightedGap: ThenNow;
+  /** Median overall graduation rate (all students), same panel, as context. */
+  overallRate: ThenNow;
+  /** Yearly lines by entering class, from the file's `lineFrom` to `to` (null where under 90% of the group reported). */
+  lines: {
+    pellRate: (number | null)[];
+    neitherRate: (number | null)[];
+    gap: (number | null)[];
+    weightedGap: (number | null)[];
+    overallRate: (number | null)[];
+  };
+}
+
+/** One group's 8-year outcome-measures figures for the newest entering class (its own, separate year). */
+export interface PellGapOm8Row {
+  key: string;
+  label: string;
+  n: number;
+  tooFew?: true;
+  pell?: number | null;
+  nonPell?: number | null;
+}
+
+export interface PellGapFile extends StudyFile<PellGapValues> {
+  slug: "pell-gap";
+  /** Students a college needs in BOTH the Pell and "neither" groups, in both years, to join the panel. */
+  minCohort: number;
+  /** "10 or more points," the bar for `gap10Share` (0.10 in share units). */
+  gapThreshold: number;
+  /** The 8-year outcome-measures companion (specs/trends/pell-gap.md "Eight years, everyone"): a different measure,
+   * for the newest entering class the Outcome Measures survey covers (often earlier than `to`), with its own year. */
+  om8: {
+    year: number;
+    national: PellGapOm8Row;
+    byControl: PellGapOm8Row[];
+  };
+}
+
+/* ------------------------------------------------------------------ */
 /* Every file, by name (one line per unit)                             */
 /* ------------------------------------------------------------------ */
 
@@ -203,6 +257,7 @@ export interface TrendFiles {
   "men-and-women": MenAndWomenFile;
   "shrinking-colleges": ShrinkingCollegesFile;
   movers: MoversFile;
+  "pell-gap": PellGapFile;
 }
 
 export type TrendFileName = keyof TrendFiles;

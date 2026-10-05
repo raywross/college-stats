@@ -71,6 +71,22 @@ export const STUDIES = [
     spec: "specs/trends/shrinking-colleges.md",
     color: "var(--d-size)",
   },
+  {
+    slug: "pell-gap",
+    number: 6,
+    title: "The Pell graduation gap",
+    question: "Do students with Pell Grants graduate at the same rate as classmates who had neither a Pell Grant nor a subsidized loan, and has the gap changed?",
+    series: ["grad_rate_pell", "grad_rate_no_pell_no_loan", "grad_cohort_pell", "grad_cohort_no_pell_no_loan", "grad_rate", "om_award_pell", "om_award_non_pell"],
+    yearKind: "cohort",
+    window: 8,
+    groupings: ["region", "control", "size", "selectivity", "setting", "research", "division"],
+    panelRule: "Colleges reporting both groups' graduation rates, with at least 50 students in both the Pell and \"neither\" groups, in both entering classes",
+    fields: ["outcomes.grad_rate_pell", "outcomes.grad_rate_no_pell_no_loan", "outcomes.grad_cohorts", "outcomes.graduation_rate", "outcomes.eight_year"],
+    added: 20261004,
+    explore: { href: "/explore?sortBy=pell_gap", label: "Colleges by the Pell graduation gap" },
+    spec: "specs/trends/pell-gap.md",
+    color: "var(--d-access)",
+  },
   // ↑ One entry per study. Studies 2–6 add theirs here (copy Study 1's shape).
 ] as const satisfies readonly StudyDef[];
 

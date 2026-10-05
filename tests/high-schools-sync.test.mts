@@ -204,13 +204,16 @@ test("sync guards: invalid rows, a shrink, and unknown adapters stop the run bef
   }
 });
 
-test("sync: the registered stub adapters run cleanly and change nothing", async () => {
+test("sync: adapters still stubbed run cleanly and change nothing; a dry run writes nothing regardless", async () => {
+  // pss is built (the private-schools unit) and fetches the real NCES file even in a dry run, same as a live sync
+  // would; the rest are still stubs until their units land. pss's own parsing is covered network-free by
+  // tests/high-schools-pss.test.mts; this only checks that running it alongside stubs doesn't touch disk.
   const dir = tempCopy();
   try {
     const before = readFileSync(join(dir, "schools", "CA.json"), "utf8");
     const res = await runHighSchoolSync({ root: ROOT, outDir: dir, adapters: ADAPTERS, dryRun: true, ...quiet });
     assert.equal(res.written, false);
-    assert.ok(res.report.every((r) => r.skipped));
+    for (const r of res.report) if (r.key !== "pss") assert.ok(r.skipped, `${r.key} should still be a stub`);
     assert.equal(readFileSync(join(dir, "schools", "CA.json"), "utf8"), before);
   } finally {
     rmSync(dir, { recursive: true, force: true });

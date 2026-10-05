@@ -20,6 +20,7 @@ import { Panel } from "@/components/profile/Panel";
 import { TopicCards } from "@/components/profile/TopicCards";
 import { AnchorRedirect } from "@/components/profile/AnchorRedirect";
 import { HeroIdentity } from "@/components/school/HeroIdentity";
+import { ProfileChanges } from "@/components/profile/ProfileChanges";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -130,6 +131,9 @@ export default async function SchoolPage({ params }: Props) {
 
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
         <div className="space-y-14 pt-2 sm:space-y-16 sm:pt-4">
+          {/* ============================== WHAT CHANGED (nothing without a change in the last year) ============================== */}
+          <ProfileChanges school={school} data={data} />
+
           {/* ============================== TOPIC CARDS ============================== */}
           <section id="overview" className="scroll-mt-28 sm:scroll-mt-36" aria-label="At a glance">
             <TopicCards profile={p} />

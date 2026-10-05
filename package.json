@@ -39,6 +39,7 @@
     "archive-doc": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/archive-doc.mts",
     "campus-pilot": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --env-file-if-exists=.env.local scripts/campus-pilot.mts",
     "score-campus-pilot": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/score-campus-pilot.mts",
+    "purge-accounts": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --env-file-if-exists=.env.local scripts/purge-accounts.mts",
     "check-cds-records": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/check-cds-records.mts"
   },
   "dependencies": {

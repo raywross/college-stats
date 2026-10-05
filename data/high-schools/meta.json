@@ -18,6 +18,30 @@
       "publisher": "National Center for Education Statistics",
       "url": "https://nces.ed.gov/surveys/pss/pssdata.asp",
       "retrieved": "2026-10-05"
+    },
+    "state-ct": {
+      "name": "EdSight report exports",
+      "publisher": "Connecticut State Department of Education",
+      "url": "https://public-edsight.ct.gov/",
+      "retrieved": "2026-10-05"
+    },
+    "state-fl": {
+      "name": "Florida Department of Education school grades, attendance and FETPIP downloads",
+      "publisher": "Florida Department of Education",
+      "url": "https://www.fldoe.org/accountability/data-sys/edu-info-accountability-services/",
+      "retrieved": "2026-10-05"
+    },
+    "state-il": {
+      "name": "Illinois Report Card Public Data Set",
+      "publisher": "Illinois State Board of Education",
+      "url": "https://www.isbe.net/pages/illinois-state-report-card-data.aspx",
+      "retrieved": "2026-10-05"
+    },
+    "state-sc": {
+      "name": "South Carolina School Report Card data files",
+      "publisher": "South Carolina Department of Education and Education Oversight Committee",
+      "url": "https://screportcards.com/",
+      "retrieved": "2026-10-05"
     }
   },
   "vintages": {

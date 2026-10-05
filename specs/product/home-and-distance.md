@@ -61,9 +61,8 @@ household_homes (household_id pk → households, lat, lng, label, place, zip, se
   who set it and their name at the time ("Set by Mom on Oct 5"), the way list edits are attributed. Every member
   sees the same distances. A guardian viewing a managed student (no account yet) sees the household's home, the
   only one there is.
-- **Someone with no household yet** who saves a home gets a one-person household made for them, named after them
-  ("Alice's household"), so a home always belongs to a household and there is one code path. The word "household"
-  never appears until someone else joins. When they later accept an invitation, that one-person household is
+- **A home needs a household.** Someone with none starts one first (a name and a role, on the household page) and
+  sets the home inside it. When they later accept an invitation to join the family's, that one-person household is
   dissolved and its home carried over if the new household has none
   ([accounts.md](accounts.md#built-one-household-six-seats-2026-10-05)).
 - `label` is the matched address, tidied ("1600 Pennsylvania Ave NW, Washington, DC 20500"); `place` is "City, ST"
@@ -73,10 +72,12 @@ household_homes (household_id pk → households, lat, lng, label, place, zip, se
   includes it (`home`).
 
 ## Display
-- **`/account` → Home.** One field ("Street address, city, state, and ZIP, or just a ZIP code") → "Save home" looks
-  it up and shows the match back with who set it; then "Colleges within 100 miles" (Explore, nearest first),
-  "Change", and "Remove". The section says it is the household's home, what is kept, and that nobody outside the
-  household can see it.
+- **`/account/household` → Home address**, inside the household's card, under its members (owner, 2026-10-05: the
+  address is set where the household is managed, not in a section of its own). One field ("Street address, city,
+  state, and ZIP, or just a ZIP code") → "Save home" looks it up and shows the match back with who set it; then
+  "Colleges within 100 miles" (Explore, nearest first), "Change", and "Remove". The form says anyone in the
+  household can change it, what is kept, and that nobody outside the household can see it. `/account`'s household
+  summary shows the saved home (or "No home address yet") and links to the household page.
 - **Explore → "Distance from home"** (first section of the filter panel): a ZIP field, "Apply", "Use my home"
   (signed in: fills the ZIP from the household's home; signed out: a sign-in prompt), and radius chips 25 / 50 /
   100 / 200 / 300 / 500 miles. Applying from the default sort switches to **Distance from home (nearest)**, a sort
@@ -103,10 +104,10 @@ household_homes (household_id pk → households, lat, lng, label, place, zip, se
 | `lib/home.ts` (pure) | `HomeLocation`, `NearHome`, `milesBetween`, `distanceFromHome`, `isWithinHome`, `formatMiles`, `formatDriveTime`, `distanceLine`, `WITHIN_OPTIONS`/`DEFAULT_WITHIN`, `parseZip`, `zipIn`, `exploreNearHref`, `parseCensusGeocode`, `titleCaseAddress`, `zipHome`, `parseCentroidCsv` |
 | `lib/zip-centroids.ts` (server) | `zipCentroid(zip)` over `data/reference/zcta-centroids.csv`; `resolveNear(filters)` fills `SearchFilters.near` from `nearZip`/`withinMiles` |
 | `lib/geocode.ts` (server) | `geocodeAddress(text)`: the Census geocoder with an 8-second timeout, a bare ZIP or an unmatched address with a ZIP falling back to the ZIP's center |
-| `lib/home-store.ts` (`"use server"`) | `myHome()` (the household's home, via `my_household()`), `saveHomeAddress(text)` (creates the one-person household when needed), `clearHome()` |
+| `lib/home-store.ts` (`"use server"`) | `myHome()` (the household's home, via `my_household()`), `saveHomeAddress(householdId, text)`, `clearHome(householdId)` (the policies refuse a household the caller isn't in) |
 | `scripts/build-zcta.mts` | `npm run build-zcta`: downloads the Gazetteer ZCTA file and writes the reference CSV (needs `unzip`) |
 | `supabase/migrations/20261005170000_household_limits_and_home.sql` | `household_homes` and its member-only policies, with the household limits (accounts.md) |
-| `components/account/HomeForm.tsx`, `app/account/page.tsx` | The Home section |
+| `components/account/HomeForm.tsx` (inside `HouseholdCard.tsx`), `app/account/household/page.tsx`; `HouseholdSummary.tsx` on `/account` | The Home address block of the household card; the summary line |
 | `components/explore/FilterPanel.tsx` (`DistanceSection`), `components/explore/Toolbar.tsx` | The filter, its chip, the sort option |
 | `lib/params.ts`, `lib/types.ts`, `lib/dataset.ts` | `near`/`within` → `nearZip`/`withinMiles`; `SearchFilters.near`; the filter and `sortBy=distance` inside `getSchools()` |
 | `app/explore/page.tsx`, `components/school/SchoolCard.tsx`, `components/school/SchoolRow.tsx`, `components/explore/SchoolTable.tsx` | Resolving the ZIP, the unknown-ZIP note, distance on every result view |
@@ -125,6 +126,11 @@ household_homes (household_id pk → households, lat, lng, label, place, zip, se
 - **Any member sets it.** The home is household data, so a view-only guardian may set it (edit access concerns
   the student's own data). Attribution (`set_by`, `set_by_name`) keeps it honest; `set_by_name` is a snapshot
   because `profiles` is own-row only.
+- **Set inside household management** (owner, 2026-10-05, after seeing the first version): the form sits in the
+  household card on `/account/household`, and `/account` only shows the saved home in its household summary. The
+  first version had a Home section of its own on `/account` and made a one-person household on the fly when
+  someone with none saved a home; with the form inside a household's card there is always a household, so that
+  path went away.
 - **Explore measures from a ZIP center, lists from the address.** The filter radii start at 25 miles, so the
   ZIP's center (typically within a mile or two of the address) changes nothing a family would notice, and it
   means a shared Explore link never carries a home. The two figures for the same college can differ by a mile or

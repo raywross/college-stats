@@ -1127,7 +1127,7 @@ const entries = {
   "home-address": {
     term: "Home address",
     short: "The one address saved for your household so the site can say how far each college is from home. Anyone in the household can set it, everyone in it sees the same distances, and nobody outside it can see the address.",
-    long: "We look the address up once with the U.S. Census Bureau's public geocoder and keep the matched address and its map location, rounded to about 100 meters, with the name of whoever set it. A ZIP code alone works too, using the center of the ZIP code. Change or remove it any time from your account page.",
+    long: "We look the address up once with the U.S. Census Bureau's public geocoder and keep the matched address and its map location, rounded to about 100 meters, with the name of whoever set it. A ZIP code alone works too, using the center of the ZIP code. Change or remove it any time from your household page.",
     category: "Your account",
     related: ["distance-from-home", "household"],
   },

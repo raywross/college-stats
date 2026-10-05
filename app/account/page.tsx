@@ -5,7 +5,6 @@ import { Download, KeyRound, Trash2 } from "lucide-react";
 import { AccessLogList } from "@/components/account/AccessLogList";
 import { AccountSection } from "@/components/account/AccountSection";
 import { AuthUnavailable } from "@/components/account/AuthUnavailable";
-import { HomeForm } from "@/components/account/HomeForm";
 import { HouseholdSummary } from "@/components/account/HouseholdSummary";
 import { SignOutButton } from "@/components/account/SignOutButton";
 import { Term } from "@/components/ui/info-tip";
@@ -71,19 +70,11 @@ export default async function AccountPage() {
       </AccountSection>
 
       <AccountSection
-        id="home"
-        title={<Term term="home-address">Home</Term>}
-        description="Your household's home, so Explore and lists can say how far each college is from it."
-      >
-        <HomeForm home={home} />
-      </AccountSection>
-
-      <AccountSection
         id="household"
         title={<Term term="household">Household</Term>}
-        description="Parents or guardians and the students they help, up to six people in any mix. Students never see a guardian's finances."
+        description="Parents or guardians and the students they help, up to six people in any mix, sharing one home address for distances. Students never see a guardian's finances."
       >
-        <HouseholdSummary households={households} defaultRole={defaultRole} />
+        <HouseholdSummary households={households} home={home} defaultRole={defaultRole} />
       </AccountSection>
 
       <AccountSection id="following" title={<Term term="follow">Following</Term>} description="Colleges you follow, and your update-email setting.">

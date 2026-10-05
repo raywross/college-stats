@@ -11,11 +11,12 @@ const inputCls =
   "h-11 w-full rounded-xl border border-input bg-background px-3.5 text-base outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30";
 
 /**
- * The Home section on /account (specs/product/home-and-distance.md): the household's one address (or a ZIP code),
- * looked up with the Census geocoder by `saveHomeAddress` and saved as the match for everyone in the household.
- * Shows the saved match back with who set it, a link to Explore's nearest-first view, "Change", and "Remove".
+ * The household's home, inside its card on /account/household (specs/product/home-and-distance.md): one address
+ * (or a ZIP code), looked up with the Census geocoder by `saveHomeAddress` and saved as the match for everyone in
+ * the household. Shows the saved match back with who set it, a link to Explore's nearest-first view, "Change", and
+ * "Remove".
  */
-export function HomeForm({ home }: { home: HomeRow | null }) {
+export function HomeForm({ household, home }: { household: string; home: HomeRow | null }) {
   const router = useRouter();
   const [text, setText] = useState("");
   const [editing, setEditing] = useState(home === null);
@@ -25,7 +26,7 @@ export function HomeForm({ home }: { home: HomeRow | null }) {
   function save() {
     setMessage(null);
     startTransition(async () => {
-      const result = await saveHomeAddress(text);
+      const result = await saveHomeAddress(household, text);
       if (!result.ok) {
         setMessage({ kind: "error", text: result.message });
         return;
@@ -40,7 +41,7 @@ export function HomeForm({ home }: { home: HomeRow | null }) {
   function remove() {
     setMessage(null);
     startTransition(async () => {
-      const result = await clearHome();
+      const result = await clearHome(household);
       if (!result.ok) {
         setMessage({ kind: "error", text: "We couldn't remove it. Try again in a moment." });
         return;
@@ -56,8 +57,7 @@ export function HomeForm({ home }: { home: HomeRow | null }) {
         <div className="rounded-2xl border bg-background p-3.5">
           <p className="text-sm font-semibold">{home.label}</p>
           <p className="mt-0.5 text-xs text-muted-foreground">
-            Set by {home.set_by_name?.trim() || "someone in your household"} on {shortDate(home.updated_at)}. Distances on Explore and on lists count from here
-            for everyone in the household.
+            Set by {home.set_by_name?.trim() || "someone in this household"} on {shortDate(home.updated_at)}.
           </p>
           <div className="mt-3 flex flex-wrap gap-2">
             {home.zip && (
@@ -88,11 +88,11 @@ export function HomeForm({ home }: { home: HomeRow | null }) {
             save();
           }}
         >
-          <label className="block text-sm font-semibold" htmlFor="home-address">
+          <label className="block text-sm font-semibold" htmlFor={`home-address-${household}`}>
             Street address, city, state, and ZIP
           </label>
           <input
-            id="home-address"
+            id={`home-address-${household}`}
             value={text}
             onChange={(e) => setText(e.target.value)}
             maxLength={200}
@@ -131,9 +131,8 @@ export function HomeForm({ home }: { home: HomeRow | null }) {
       )}
 
       <p className="text-xs text-muted-foreground">
-        One home per household: anyone in it can set or change it, and everyone in it sees the same distances. We look the address up with the
-        U.S. Census Bureau&apos;s public geocoder and keep the matched address and its map location (to about 100 m), not what you typed. Nobody
-        outside your household can see it.
+        Anyone in the household can set or change it. We look the address up with the U.S. Census Bureau&apos;s public geocoder and keep the matched
+        address and its map location (to about 100 m), not what you typed. Nobody outside the household can see it.
       </p>
     </div>
   );

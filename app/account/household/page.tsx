@@ -10,14 +10,15 @@ import { CreateHouseholdForm } from "@/components/account/HouseholdForms";
 import { Term } from "@/components/ui/info-tip";
 import { AccountsSetupError, authConfigured, getAccount, requireUser } from "@/lib/auth";
 import { myHouseholds } from "@/lib/households";
+import { myHome } from "@/lib/home-store";
 import { HOUSEHOLD_MAX_MEMBERS } from "@/lib/household-rules";
 
 export const metadata: Metadata = { title: "Your household", robots: { index: false } };
 
 /**
  * /account/household (specs/product/accounts.md "Roles and households"): the user's household with its members,
- * seats, pending invitations, edit access, and managed students; or a form to start one. An account is in one
- * household at a time (an account from before that rule still sees each of its households here).
+ * seats, home address, pending invitations, edit access, and managed students; or a form to start one. An account
+ * is in one household at a time (an account from before that rule still sees each of its households here).
  */
 export default async function HouseholdPage() {
   await connection();
@@ -34,7 +35,7 @@ export default async function HouseholdPage() {
   if (!account) return null;
   if (account.profile.deleted_at) redirect("/account");
 
-  const households = await myHouseholds();
+  const [households, home] = await Promise.all([myHouseholds(), myHome()]);
   const defaultRole = account.profile.role_hint === "guardian" || account.profile.role_hint === "counselor" ? "guardian" : "student";
 
   return (
@@ -48,17 +49,21 @@ export default async function HouseholdPage() {
           Your <Term term="household">household</Term>
         </h1>
         <p className="mt-1 text-muted-foreground">
-          Up to {HOUSEHOLD_MAX_MEMBERS} people in any mix of parents and students. Guardians see their students&apos; lists and plans; students never see
-          a guardian&apos;s finances. Anyone can leave at any time.
+          Up to {HOUSEHOLD_MAX_MEMBERS} people in any mix of parents and students, sharing one home address. Guardians see their students&apos; lists and
+          plans; students never see a guardian&apos;s finances. Anyone can leave at any time.
         </p>
       </header>
 
       {households.map((h) => (
-        <HouseholdCard key={h.id} h={h} />
+        <HouseholdCard key={h.id} h={h} home={home && home.household_id === h.id ? home : null} />
       ))}
 
       {households.length === 0 && (
-        <AccountSection id="new" title="Start a household" description="Then invite the others with a link. If someone invited you, open the link they sent instead.">
+        <AccountSection
+          id="new"
+          title="Start a household"
+          description="Then invite the others with a link and set the home address distances count from. If someone invited you, open the link they sent instead."
+        >
           <CreateHouseholdForm defaultRole={defaultRole} />
         </AccountSection>
       )}

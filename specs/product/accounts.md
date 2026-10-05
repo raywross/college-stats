@@ -346,8 +346,8 @@ tests that drop the trigger, miscount the seats, and open `accept_invitation()` 
   gone; an account from before this rule still sees each of its households.
 - Refusals read in plain words: `HOUSEHOLD_ERRORS` and `INVITATION_ERRORS` gained `already_in_household` and
   `household_full`.
-- Saving a home with no household makes a one-person household named after the person ("Alice's household",
-  `lib/home-store.ts`); nothing on the page calls it a household until someone else joins.
+- The household's home address is set inside the household card on `/account/household` (owner decision
+  2026-10-05), and `/account`'s summary shows it. Someone with no household starts one first, then sets the home.
 
 ### SQL added
 `household_max_members()`, `household_of(user)`, `my_household()` (the caller's, for the app),

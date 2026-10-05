@@ -765,7 +765,7 @@ function DistanceSection() {
     startTransition(async () => {
       const home = await myHome();
       if (!home?.zip) {
-        setNote("No home address saved yet — add one on your account page.");
+        setNote("No home address saved yet — add one on your household page.");
         return;
       }
       setZip(home.zip);

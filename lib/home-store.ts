@@ -1,24 +1,23 @@
 "use server";
 /**
  * The household's home (public.household_homes; specs/product/home-and-distance.md). One home per household, set by
- * any active member and seen by all of them: a student's list and a guardian's view of it measure from the same
- * place. Every read and write runs with the signed-in user's own Supabase session, so the member-only policies in
- * supabase/migrations/20261005170000_household_limits_and_home.sql decide; nobody outside the household reads it.
- *
- * Someone with no household yet who saves a home gets a one-person household made for them here (the word never
- * appears until someone else joins); accepting an invitation later dissolves it and carries the home along.
+ * any active member from the household's card on /account/household and seen by all of them: a student's list and
+ * a guardian's view of it measure from the same place. Every read and write runs with the signed-in user's own
+ * Supabase session, so the member-only policies in supabase/migrations/20261005170000_household_limits_and_home.sql
+ * decide; nobody outside the household reads or writes it.
  *
  * Server Actions, so client components on otherwise-static pages (Explore's "Use my home" button) can call them
  * after the page has rendered, the way lib/student-profile-store.ts's myScores() works for the fit chips.
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { authConfigured, currentStudent, getAccount, getUser } from "@/lib/auth";
+import { authConfigured, getAccount, getUser } from "@/lib/auth";
 import { createServerSupabase } from "@/lib/supabase-server";
 import { geocodeAddress } from "@/lib/geocode";
-import { HOUSEHOLD_ERRORS, errorMessage } from "@/lib/household-rules";
+import { HOUSEHOLD_ERRORS } from "@/lib/household-rules";
 import type { HomeLocation } from "@/lib/home";
 
 const COLUMNS = "household_id, lat, lng, label, place, zip, set_by, set_by_name, updated_at";
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export interface HomeRow extends HomeLocation {
   household_id: string;
@@ -66,12 +65,13 @@ export async function myHome(): Promise<HomeRow | null> {
 
 /**
  * Geocodes the typed address (or ZIP code) and saves the match as the household's home, replacing any previous
- * one. A user with no household gets a one-person household first.
+ * one. The policies refuse a household the caller isn't an active member of.
  */
-export async function saveHomeAddress(input: string): Promise<HomeSaveResult> {
+export async function saveHomeAddress(householdId: string, input: string): Promise<HomeSaveResult> {
   const account = await getAccount().catch(() => null);
   if (!account) return { ok: false, message: "Sign in to save a home address." };
   if (account.profile.deleted_at) return { ok: false, message: HOUSEHOLD_ERRORS.account_deleted };
+  if (!UUID_RE.test(householdId)) return { ok: false, message: FAILED };
   const text = String(input ?? "").trim();
   if (!text) return { ok: false, message: "Enter a street address, or just a ZIP code." };
   if (text.length > 200) return { ok: false, message: "Keep the address under 200 characters." };
@@ -88,25 +88,8 @@ export async function saveHomeAddress(input: string): Promise<HomeSaveResult> {
   }
 
   const supabase = await createServerSupabase();
-  let household = await myHouseholdId(supabase);
-  if (!household) {
-    // Alone so far: a household of one, named after them, as a student when they have a student record.
-    const student = await currentStudent();
-    const name = account.profile.display_name?.trim();
-    const created = await supabase.rpc("create_household", {
-      p_name: (name ? `${name}'s household` : "My household").slice(0, 80),
-      p_role: student ? "student" : "guardian",
-    });
-    if (created.error) {
-      if (isMissing(created.error)) return { ok: false, message: NOT_SET_UP };
-      console.error(`home: create_household failed: ${created.error.message}`);
-      return { ok: false, message: errorMessage(created.error, HOUSEHOLD_ERRORS, FAILED) };
-    }
-    household = created.data as string;
-  }
-
   const row = {
-    household_id: household,
+    household_id: householdId,
     ...geo.home,
     set_by: account.user.id,
     set_by_name: account.profile.display_name?.trim().slice(0, 80) || null,
@@ -115,6 +98,7 @@ export async function saveHomeAddress(input: string): Promise<HomeSaveResult> {
   const { data, error } = await supabase.from("household_homes").upsert(row, { onConflict: "household_id" }).select(COLUMNS).single();
   if (error) {
     if (isMissing(error)) return { ok: false, message: NOT_SET_UP };
+    if (error.code === "42501") return { ok: false, message: HOUSEHOLD_ERRORS.not_a_member };
     console.error(`home: saving failed: ${error.message}`);
     return { ok: false, message: FAILED };
   }
@@ -122,13 +106,11 @@ export async function saveHomeAddress(input: string): Promise<HomeSaveResult> {
 }
 
 /** Removes the household's home (any member may). */
-export async function clearHome(): Promise<{ ok: boolean }> {
+export async function clearHome(householdId: string): Promise<{ ok: boolean }> {
   const user = await getUser();
-  if (!user) return { ok: false };
+  if (!user || !UUID_RE.test(householdId)) return { ok: false };
   const supabase = await createServerSupabase();
-  const household = await myHouseholdId(supabase);
-  if (!household) return { ok: true };
-  const { error } = await supabase.from("household_homes").delete().eq("household_id", household);
+  const { error } = await supabase.from("household_homes").delete().eq("household_id", householdId);
   if (error) {
     console.error(`home: removing failed: ${error.message}`);
     return { ok: false };

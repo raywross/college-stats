@@ -144,7 +144,7 @@ export default async function ListPage({ params }: { params: Promise<{ id: strin
           ) : (
             <>
               Add your household&apos;s{" "}
-              <Link href="/account#home" className="font-semibold text-primary hover:underline">
+              <Link href="/account/household#home" className="font-semibold text-primary hover:underline">
                 home address
               </Link>{" "}
               to see how far each college is from home.

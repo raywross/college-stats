@@ -10,10 +10,10 @@ summary: Save your household's home address once and the site says how far each 
 
 **How far is it?** was the first question the site couldn't answer. Now it can.
 
-**Your household's home** ([Your account](/account) → Home): enter a street address, or just a ZIP code, and we look
-it up once. Everyone in your household sees distances from that one home, whoever set it: a parent and a student
-looking at the same list see the same miles. If you don't have a household yet, saving a home starts one for you,
-and your home comes along when you later join your family's.
+**Your household's home** ([Your account](/account) → Household → Home address): enter a street address, or just a
+ZIP code, and we look it up once. Everyone in your household sees distances from that one home, whoever set it: a
+parent and a student looking at the same list see the same miles. On your own? Start a household first (it just
+needs a name); your home comes along when you later join your family's.
 
 **Explore within a distance** ([Explore](/explore) → "Distance from home", the first filter): type a ZIP code, or
 tap **Use my home** when you're signed in, then pick 25, 50, 100, 200, 300, or 500 miles. The results sort

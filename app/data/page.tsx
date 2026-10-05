@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { ArrowRight, BookMarked, Calculator, CalendarClock, ClipboardCheck, ExternalLink, Eye, Hourglass, RefreshCw, Scale, TriangleAlert } from "lucide-react";
+import { ArrowRight, BookMarked, Calculator, CalendarClock, ClipboardCheck, ExternalLink, Eye, GraduationCap, Hourglass, RefreshCw, Scale, TriangleAlert } from "lucide-react";
 import { getData } from "@/lib/data";
+import { getHighSchoolMeta } from "@/lib/high-schools";
 import type { SourceKey, Topic } from "@/lib/types";
 import { num } from "@/lib/format";
 import { FIELDS, type FieldDef, type FieldPath, type VintageKey } from "@/lib/fields";
@@ -109,6 +110,7 @@ export default async function DataPage() {
   const calendar = getReleaseCalendar();
   const now = new Date();
   const stale = isStale(calendar, now);
+  const hsMeta = await getHighSchoolMeta();
 
   /* ---- What's on the site now: one row per federal release (meta.json vintages) ---- */
   const rows: DataAgeRow[] = VINTAGE_KEYS.filter((v) => fieldsOf(v).length).map((v) => {
@@ -607,6 +609,29 @@ export default async function DataPage() {
           </p>
         </div>
       </Section>
+
+      {hsMeta && (
+        <Section id="high-schools" eyebrow="High schools" title="High school data" icon={<GraduationCap className="size-4" aria-hidden />}>
+          <p className="max-w-3xl text-sm text-muted-foreground">
+            <Link href="/high-schools" className="font-semibold text-primary hover:underline">
+              High school pages
+            </Link>{" "}
+            describe rigor, outcomes, grading, and where graduates go — never a score or rank, and compared only to a school&apos;s own state. {num(hsMeta.counts.public)} public and{" "}
+            {num(hsMeta.counts.private)} private high schools, generated {dateLabel(hsMeta.generated)}.
+          </p>
+          <div className="mt-4 grid gap-4 md:grid-cols-2">
+            {Object.entries(hsMeta.sources).map(([key, s]) => (
+              <article key={key} className="rounded-3xl border bg-card p-5">
+                <h3 className="font-display text-base font-bold">{s.name}</h3>
+                <p className="text-xs text-muted-foreground">{s.publisher}</p>
+                <ExtLink href={s.url} className="mt-3 text-sm">
+                  Get the data
+                </ExtLink>
+              </article>
+            ))}
+          </div>
+        </Section>
+      )}
 
       <Section id="method" eyebrow="Methods" title="How we calculate" icon={<Calculator className="size-4" aria-hidden />}>
         <div className="grid gap-3 md:grid-cols-2">

@@ -18,12 +18,19 @@ export function supabaseAuthEnv(): { url: string; key: string } | null {
   return url && key ? { url, key } : null;
 }
 
+/**
+ * The session cookies are httpOnly: only the server reads them (the browser never talks to Supabase), so page scripts
+ * have no reason to see the tokens. @supabase/ssr's default is readable by scripts. Shared with proxy.ts.
+ */
+export const AUTH_COOKIE_OPTIONS = { httpOnly: true, sameSite: "lax", path: "/", secure: process.env.NODE_ENV === "production" } as const;
+
 /** A new client per request (never shared). Throws when Supabase isn't configured; check authConfigured() first. */
 export async function createServerSupabase(): Promise<SupabaseClient> {
   const env = supabaseAuthEnv();
   if (!env) throw new Error("Sign-in isn't configured: set SUPABASE_URL and SUPABASE_PUBLISHABLE_KEY (specs/product/accounts.md).");
   const store = await cookies();
   return createServerClient(env.url, env.key, {
+    cookieOptions: AUTH_COOKIE_OPTIONS,
     cookies: {
       getAll() {
         return store.getAll();

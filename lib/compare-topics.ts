@@ -339,7 +339,20 @@ export const COMPARE_TOPIC_FIELDS: Record<CompareTopicKey, readonly FieldPath[]>
 
   // Students & campus: app/compare/students/page.tsx.
   students: [
-    // The page's fields go here.
+    "demographics.undergrad_enrollment",
+    "demographics.pell_grant_percent",
+    "demographics.first_gen_percent",
+    "derived.diversity_index",
+    "demographics.men_share",
+    "demographics.part_time_share",
+    "demographics.age_25_plus_share",
+    "demographics.racial_diversity",
+    "demographics.residence",
+    "demographics.transfer_in",
+    "campus.setting",
+    "campus.housing",
+    "campus.athletics",
+    "campus.programs",
   ],
 
   // Academics: app/compare/academics/page.tsx.

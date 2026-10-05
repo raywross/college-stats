@@ -263,7 +263,8 @@ set for its own "Known for" standout.
   a `ProgramChips` row (merges `reported.academics.programs` with the existing `campus.programs` study-abroad/
   undergrad-research chips into one cited list), a core-curriculum line, and the second student-faculty-ratio line
   on the existing ratio tile from [student-faculty-ratio.md](student-faculty-ratio.md).
-- **`app/compare/page.tsx`**: one new `TABLE_ROWS` entry, "Classes under 20 students."
+- **`lib/compare-topics.ts`**: one new `TABLE_GROUPS` entry (Academics), "Classes under 20 students," rendered by
+  `app/compare/table/page.tsx` since the 2026-10-05 compare redesign.
 - **`lib/params.ts` / Explore filter panel**: `honors=1`, positive-only (no corresponding "exclude" state).
 - **`lib/glossary.ts`**: `cds-student-faculty-ratio`, `class-section`, `class-subsection`, `open-curriculum`.
 - **Tests** (`tests/cds-academics.test.mts`), each guard shown to fail when broken:

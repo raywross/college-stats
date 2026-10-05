@@ -278,7 +278,9 @@ consumes the rate later.
   ({State})". A college without a grid shows "Not published", **never** its overall rate in this row (the overall rate
   is one row up).
 - Not in Key differences or the radar (percentile-based).
-- The planned [compare-redesign.md](../compare-redesign.md) moves these rows to its Admissions topic page unchanged.
+- The compare redesign ([compare-redesign.md](../compare-redesign.md), built 2026-10-05) kept these two rows in the
+  Admissions group of `/compare/table` rather than moving them to the Admissions topic page itself, which stops at
+  the funnel, admit rates by sex, test scores, and the factors grid.
 
 **Explore** ([search-and-filtering.md](../search-and-filtering.md)), a "Where applicants live" filter group with two
 boolean chips, each with its count ("of N colleges that publish this"):
@@ -466,7 +468,8 @@ studentState?)` with `RESIDENCY_NOTABLE_GAP` 0.05, `RESIDENCY_NOTABLE_RATIO` 1.5
   funnel when not notable; both `id="residency"`, listed in On this page when the rates exist. The "(you)" marker is
   wired (`studentState`) but no page passes a state until the student profile exists.
 - Students page: `components/school/Residence.tsx` adds the link line.
-- Compare, All the numbers: the two rows after "Acceptance rate, men / women" (`app/compare/page.tsx`).
+- Compare, All the numbers: the two rows after "Acceptance rate, men / women" (`lib/compare-topics.ts`, rendered by
+  `app/compare/table/page.tsx`; table-only since the 2026-10-05 compare redesign, not on the Admissions topic page).
 - Explore: "Where applicants live" chips in `FilterPanel` with counts, active-filter chips in `Toolbar`, `lib/params.ts`,
   `lib/dataset.ts`, and the facets in `app/explore/page.tsx`.
 - Glossary: `admit-rate-by-residency`, `yield-by-residency`, and the sentence on `in-state-student`.

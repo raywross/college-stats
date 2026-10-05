@@ -3,9 +3,11 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
-import { BookOpen, Compass, Database, Ellipsis, GitCompareArrows, Home, LineChart, Map as MapIcon, Search, Sparkles, X } from "lucide-react";
+import { BookOpen, Compass, Database, Ellipsis, GitCompareArrows, Home, LineChart, LogIn, Map as MapIcon, Search, Sparkles, UserRound, X } from "lucide-react";
 import { ThemeSegmented } from "@/components/ThemeToggle";
 import { SchoolSearch } from "@/components/search/SchoolSearch";
+import { useMe } from "@/components/account/useMe";
+import { loginHref } from "@/lib/accounts";
 import { useCompareIds } from "@/lib/compare";
 import { cn } from "@/lib/utils";
 
@@ -19,6 +21,7 @@ type Sheet = "search" | "more" | null;
 export function BottomNav() {
   const pathname = usePathname();
   const compareIds = useCompareIds();
+  const me = useMe();
   const [sheet, setSheet] = useState<Sheet>(null);
 
   // Close sheets on navigation.
@@ -37,7 +40,7 @@ export function BottomNav() {
 
   const isActive = (href: string) => (href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(`${href}/`));
   const compareHref = compareIds.length ? `/compare?ids=${compareIds.join(",")}` : "/compare";
-  const moreActive = isActive("/trends") || isActive("/glossary") || isActive("/data") || isActive("/sources") || isActive("/roadmap") || isActive("/release-notes");
+  const moreActive = isActive("/trends") || isActive("/glossary") || isActive("/data") || isActive("/sources") || isActive("/roadmap") || isActive("/release-notes") || isActive("/account") || isActive("/login");
 
   return (
     <>
@@ -92,6 +95,11 @@ export function BottomNav() {
               </button>
             </div>
             <div className="mt-3 grid gap-2">
+              {me?.configured && (me.signedIn ? (
+                <MoreLink href="/account" icon={<UserRound className="size-5" />} title="Account" sub={me.name ?? me.email ?? "Your profile and household"} active={isActive("/account")} />
+              ) : (
+                <MoreLink href={loginHref(pathname === "/login" ? undefined : pathname)} icon={<LogIn className="size-5" />} title="Sign in" sub="Save your colleges and plans" active={isActive("/login")} />
+              ))}
               <MoreLink href="/trends" icon={<LineChart className="size-5" />} title="National trends" sub="How college is changing" active={isActive("/trends")} />
               <MoreLink href="/glossary" icon={<BookOpen className="size-5" />} title="Glossary" sub="Every term in plain English" active={isActive("/glossary")} />
               <MoreLink href="/data" icon={<Database className="size-5" />} title="Data" sub="Sources, years & updates" active={isActive("/data")} />
@@ -165,9 +173,9 @@ function MoreLink({ href, icon, title, sub, active }: { href: string; icon: Reac
       className={cn("flex items-center gap-3 rounded-2xl px-4 py-3 transition-colors", active ? "bg-foreground text-background" : "bg-muted/60 hover:bg-muted")}
     >
       {icon}
-      <span>
+      <span className="min-w-0">
         <span className="block text-base font-semibold">{title}</span>
-        <span className={cn("block text-xs", active ? "text-background/70" : "text-muted-foreground")}>{sub}</span>
+        <span className={cn("block truncate text-xs", active ? "text-background/70" : "text-muted-foreground")}>{sub}</span>
       </span>
     </Link>
   );

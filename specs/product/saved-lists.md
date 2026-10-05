@@ -1,7 +1,8 @@
 # Saved Lists: Reach, Target, Likely
 
-> Status: **planned** (not built). After [accounts.md](accounts.md) and [student-profile.md](student-profile.md).
-> Part of [product](README.md). Replaces the `localStorage` compare list as the way to keep colleges.
+> Status: **built** 2026-10-05 on `feature/accounts` ([below](#built-2026-10-05)). Standing (chances) and
+> tier limits come with [chances-and-fit.md](chances-and-fit.md) and [commercialization.md](commercialization.md).
+> Part of [product](README.md).
 
 ## Goal
 A student keeps the colleges they're considering, sorts them into **Reach / Target / Likely**, tracks where each
@@ -73,3 +74,59 @@ list_notes (item_id, author_id, body, private bool, created)
 1. Should statuses and outcomes be a Plus feature or free? Recommendation: free; they are the raw material for the
    pooled scattergrams that make the paid tiers valuable later.
 2. Import from Common App or Scoir for a single student: no public API exists; CSV paste is enough for v1.
+
+## Built (2026-10-05)
+
+- **Migration**: `supabase/migrations/20261005150000_lists.sql` — `lists` (one `is_default` per student, a partial
+  unique index), `list_items` (category/status/outcome/round/position/added_by/decision_date/deadline
+  override/enrolling), `list_notes` (`private` hidden from everyone but its author, including a guardian). RLS uses
+  `can_read_student`/`can_edit_student` from the accounts migration, so a guardian with edit access manages a
+  student's lists exactly like the student does. A trigger on `list_items` insert/delete keeps `follows` in step
+  (adds a `list` follow for the student's own user, upgrades nothing, never downgrades `manual`, removes a `list`
+  follow only when the college is on none of that student's lists; a managed student has no user and so no
+  follows). The share link reuses the invitation pattern (SHA-256 hash only; `set_list_share`/`list_share_preview`),
+  and the anon preview function returns only `unit_id`, `category`, and `round` — never notes, status, or outcome.
+- **Policy tests**: `tests/lists-policies.test.mts` — owner read/write, a view-only guardian reads but can't edit, an
+  outsider sees nothing, private notes are author-only (including hidden from an editing guardian), the default
+  list can't be deleted, every follow-trigger case from the brief, the share function's redaction, and a guard case
+  that drops the notes policy and shows the leak the other test is checking for.
+- **`lib/list-rules.ts`** (pure): category/status/outcome/round types, `applyOutcome` (deferred → back to `applied`
+  with no outcome), the balance line with counselor guidance, `deadlineFor` (prefers the college's own CDS dates for
+  the chosen round, else the student's typed override, else nothing), `upcomingDeadlines`, and Scoir-compatible CSV
+  export/import (`toCsv`/`parseCsv`, tolerant of a header-less paste and unrecognized category/round/status text).
+  `lib/lists.ts` is the Server Actions/queries layer on top, all through the signed-in user's own session.
+- **Pages**: `/me/list` (creates the default list lazily, then redirects to it), `/me/lists/[id]` (grouped by
+  category, status/round/outcome pickers, notes with a private toggle, a "Next 30 days" strip, CSV export download
+  and paste-import, the share toggle, "Compare these" for the first four colleges, a print stylesheet via Tailwind's
+  `print:` variant), `/l/[token]` (public, read-only, `noindex`).
+- **"Add to list"** next to Compare on the profile hero (`app/schools/[id]/page.tsx`), Explore's `SchoolCard`,
+  `SchoolRow`, and `SchoolTable`, and the compare tray's "Save these to my list". `components/lists/AddToListButton.tsx`
+  is a client component calling Server Actions directly (`addToMyDefaultList`/`removeFromMyLists`/`isOnAnyList`), so
+  the pages around it stay static; signed out, it opens a `SignInPrompt` with `next` set to the current path.
+- Registered `lists` in `ACCOUNT_EXPORTERS` (`lib/account-export.ts`), added `/l/:path*` to `proxy.ts`'s matcher
+  (`/me/:path*` already covered `/me/list` and `/me/lists`), and a "My list" link in `ACCOUNT_MENU_LINKS`.
+- Glossary: `reach-school`, `target-school`, `likely-school` (explaining "Likely" over "Safety"), `regular-decision`,
+  `rolling-admission` (`early-decision`/`early-action`/`restrictive-early-action` already existed).
+
+### Deviations from the spec
+
+- **No standing/chances column.** "Chances and fit" isn't built yet (owner decision for this build); rows show
+  admit rate and average cost (cited) instead of a personal standing number.
+- **No PDF.** Export is CSV plus a print stylesheet (`print:` Tailwind classes hiding controls), per the owner's
+  decision to skip a PDF renderer for this build.
+- **Reordering is buttons, not drag-and-drop** (move up/move down per row), noted in the spec rather than built as
+  drag-and-drop, to keep the build inside this unit's scope.
+- **No tier cap.** Extra lists beyond the default are unrestricted (commercialization isn't built yet), matching the
+  owner's decision for this build.
+- **Deadlines**: only the regular round (`reported.admissions_logistics.regular_closing`) and early rounds
+  (`reported.admission_profile.early_decision`/`early_action`) resolve from the college's own data; rolling has no
+  fixed date and always falls back to the student's own note. Housing-deposit and reply-by dates from the same
+  spec section aren't surfaced on this page (they belong to the "admitted" status elsewhere, left for a later pass).
+- **Compare these** takes the list's first four colleges rather than offering a picker, to stay within Compare's
+  existing four-college cap.
+
+### Owner setup
+
+- Apply `supabase/migrations/20261005150000_lists.sql` in the Supabase SQL Editor (dev first, then prod), after
+  `20261005120000_accounts.sql`, `20261005125000_households.sql`, and `20261005140000_follows.sql`.
+- No new environment variables or dashboard settings beyond what accounts/households/follows already need.

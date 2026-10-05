@@ -1565,6 +1565,15 @@ export interface SearchFilters {
   maxSAT?: number;
   minACT?: number;
   maxACT?: number;
+  /**
+   * "Fits my scores" (specs/product/student-profile.md): the signed-in student's own saved SAT total and/or ACT
+   * composite (URL params `mySAT`/`myACT`, lib/params.ts), applied server-side with lib/student-profile.ts
+   * `fitsScoreRange` against `satComposite` (the sum of sections — the same range `minSAT`/`maxSAT` above use;
+   * never the college's own reported total) — "in" (within the college's middle 50%, or the college is
+   * test-blind) passes; "out" and "unknown" (no reported range for a score given) are both excluded. Either
+   * number may be null if the student saved only the other test.
+   */
+  fitScores?: { sat: number | null; act: number | null };
   minEnroll?: number;
   maxEnroll?: number;
   /**

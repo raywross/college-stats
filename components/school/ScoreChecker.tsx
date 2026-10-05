@@ -36,16 +36,28 @@ export function ScoreChecker({
   medians,
   color,
   bands,
+  initialTest,
+  initialValue,
+  fromProfile,
 }: {
   ranges: Ranges;
   medians?: Medians | null;
   color: string;
   /** SAT total and ACT composite score bands (CDS C9), for "Your score is in the … band" under the bar. */
   bands?: { sat: Bands6 | null; act: Bands6 | null } | null;
+  /**
+   * Prefills from the signed-in student's saved profile (specs/product/student-profile.md "Display"), fetched
+   * client-side by components/me/ScoreCheckerWithProfile.tsx — this component itself takes no server dependency.
+   * `fromProfile` shows "Using your saved score"; the input stays editable either way.
+   */
+  initialTest?: "sat" | "act";
+  initialValue?: number;
+  fromProfile?: boolean;
 }) {
   const available = (["sat", "act"] as const).filter((t) => (t === "sat" ? ranges.satTotal : ranges.act));
-  const [test, setTest] = useState<"sat" | "act">(available[0] ?? "sat");
-  const [raw, setRaw] = useState("");
+  const [test, setTest] = useState<"sat" | "act">(initialTest ?? available[0] ?? "sat");
+  const [raw, setRaw] = useState(initialValue !== undefined ? String(initialValue) : "");
+  const [usingProfile, setUsingProfile] = useState(fromProfile ?? false);
   const value = Number(raw);
   const valid =
     raw !== "" && Number.isFinite(value) && (test === "sat" ? value >= 400 && value <= 1600 : value >= 1 && value <= 36);
@@ -69,7 +81,18 @@ export function ScoreChecker({
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-3 rounded-2xl border border-dashed bg-surface-2 p-4 sm:flex-row sm:items-center">
-        <p className="text-sm font-semibold sm:mr-auto">Where would you land?</p>
+        <div className="sm:mr-auto">
+          <p className="text-sm font-semibold">Where would you land?</p>
+          {usingProfile && raw !== "" && (
+            <p className="text-xs text-muted-foreground">
+              Using your {test.toUpperCase()} {raw} from{" "}
+              <a href="/me" className="font-semibold underline-offset-2 hover:underline">
+                your profile
+              </a>{" "}
+              (edit below).
+            </p>
+          )}
+        </div>
         <div className="flex items-center gap-2">
           <div role="radiogroup" aria-label="Test" className="inline-flex rounded-full border bg-card p-0.5">
             {available.map((t) => (
@@ -81,6 +104,7 @@ export function ScoreChecker({
                 onClick={() => {
                   setTest(t);
                   setRaw("");
+                  setUsingProfile(false);
                 }}
                 className={cn(
                   "rounded-full px-3 py-1 text-xs font-bold uppercase",
@@ -96,7 +120,10 @@ export function ScoreChecker({
             aria-label={test === "sat" ? "Your SAT total (400–1600)" : "Your ACT composite (1–36)"}
             placeholder={test === "sat" ? "e.g. 1450" : "e.g. 32"}
             value={raw}
-            onChange={(e) => setRaw(e.target.value.replace(/[^0-9]/g, "").slice(0, 4))}
+            onChange={(e) => {
+              setRaw(e.target.value.replace(/[^0-9]/g, "").slice(0, 4));
+              setUsingProfile(false);
+            }}
             className="h-9 w-28 rounded-full border bg-card px-4 text-sm font-semibold tabular-nums outline-none focus:border-primary/50 focus:ring-4 focus:ring-primary/15"
           />
         </div>

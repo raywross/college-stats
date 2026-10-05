@@ -13,6 +13,7 @@ const CATEGORY_COLORS: Record<string, string> = {
   "School types": "var(--d-size)",
   "How we measure": "var(--d-diversity)",
   "Data sources": "var(--muted-foreground)",
+  "Your account": "var(--primary)",
 };
 
 export function GlossaryList() {
@@ -32,7 +33,7 @@ export function GlossaryList() {
   return (
     <div className="grid gap-8 lg:grid-cols-[14rem_1fr] lg:gap-12">
       {/* Below lg: search + category chips stick under the header as a compact bar. */}
-      <aside className="sticky top-[calc(env(safe-area-inset-top,0px)+var(--header-h))] z-20 -mx-4 border-b bg-background/85 px-4 py-2 backdrop-blur-xl sm:-mx-6 sm:px-6 lg:top-24 lg:mx-0 lg:self-start lg:border-0 lg:bg-transparent lg:p-0 lg:backdrop-blur-none">
+      <aside className="sticky top-[calc(env(safe-area-inset-top,0px)+var(--header-offset))] z-20 -mx-4 border-b bg-background/85 px-4 py-2 backdrop-blur-xl sm:-mx-6 sm:px-6 lg:top-24 lg:mx-0 lg:self-start lg:border-0 lg:bg-transparent lg:p-0 lg:backdrop-blur-none">
         <label className="flex h-10 items-center lg:h-11 gap-2 rounded-full border bg-card px-4 focus-within:border-primary/50 focus-within:ring-4 focus-within:ring-primary/15">
           <Search className="size-4 text-muted-foreground" />
           <input

@@ -6,6 +6,7 @@ import { ArrowRight, X } from "lucide-react";
 import { MAX_COMPARE, clearCompare, toggleCompare, useCompareIds } from "@/lib/compare";
 import { useSchoolEntries } from "@/lib/school-api";
 import { Crest } from "@/components/school/Crest";
+import { AddToListButton } from "@/components/lists/AddToListButton";
 
 /** Floating pill that follows you around while you build a comparison. Phones use the tab bar's Compare badge instead. */
 export function CompareTray() {
@@ -56,6 +57,7 @@ export function CompareTray() {
         >
           Clear
         </button>
+        <AddToListButton ids={ids} variant="pill" label="Save these to my list" className="hidden sm:inline-flex" />
         <Link
           href={`/compare?ids=${ids.join(",")}`}
           className="inline-flex h-10 items-center gap-1.5 rounded-full bg-primary px-4 text-sm font-semibold text-primary-foreground shadow-md transition-transform hover:scale-[1.03] active:scale-95"

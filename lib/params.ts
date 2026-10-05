@@ -56,6 +56,8 @@ export function parseFilters(params: Params): SearchFilters {
     maxSAT: n(params.maxSAT),
     minACT: n(params.minACT),
     maxACT: n(params.maxACT),
+    // "Fits my scores" (student-profile.md): plain numbers the student chose to apply, from mySAT/myACT.
+    fitScores: ((sat, act) => (sat !== undefined || act !== undefined ? { sat: sat ?? null, act: act ?? null } : undefined))(n(params.mySAT), n(params.myACT)),
     minEnroll: n(params.minEnroll),
     maxEnroll: n(params.maxEnroll),
     // Floors at the start of the ten-year window (Biggest movers' "See all in Explore" links).
@@ -148,6 +150,8 @@ export const FILTER_KEYS = [
   "maxSAT",
   "minACT",
   "maxACT",
+  "mySAT",
+  "myACT",
   "minEnroll",
   "maxEnroll",
   "minApplicants",
@@ -204,5 +208,7 @@ export function countActiveFilters(params: Params): number {
   if (str(params.minAR) && str(params.maxAR)) count--;
   if (str(params.minSAT) && str(params.maxSAT)) count--;
   if (str(params.minCost) && str(params.maxCost)) count--;
+  // "Fits my scores" is one filter even with both a saved SAT and ACT score.
+  if (str(params.mySAT) && str(params.myACT)) count--;
   return count;
 }

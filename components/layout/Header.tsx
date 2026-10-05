@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { Search } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { AccountMenu } from "@/components/account/AccountMenu";
 import { Logo } from "@/components/layout/Logo";
 import { SchoolSearch } from "@/components/search/SchoolSearch";
 import { useCompareIds } from "@/lib/compare";
@@ -17,7 +18,8 @@ const NAV_ITEMS = [
   { label: "Data", href: "/data" },
 ];
 
-/** Top bar. On phones it's just the logo: navigation, search, and theme live in BottomNav. */
+/** Top bar. On phones it's the logo and the account control, at the top of the page and scrolling away with it
+ * (navigation, search, and theme live in BottomNav); from md it stays pinned. */
 export function Header() {
   const pathname = usePathname();
   const compareIds = useCompareIds();
@@ -36,13 +38,18 @@ export function Header() {
 
   return (
     <header
-      className="sticky top-0 z-40 border-b border-border/70 bg-background/75 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60"
+      className="relative z-40 border-b border-border/70 bg-background/75 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60 md:sticky md:top-0"
       style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}
     >
       <div className="mx-auto flex h-(--header-h) max-w-7xl items-center gap-4 px-4 sm:px-6">
         <Link href="/" className="group shrink-0" aria-label="Quad home">
           <Logo />
         </Link>
+
+        {/* Phones: the account control sits opposite the logo; everything else lives in BottomNav. */}
+        <div className="ml-auto md:hidden">
+          <AccountMenu />
+        </div>
 
         <nav className="ml-4 hidden items-center gap-1 md:flex" aria-label="Main">
           {NAV_ITEMS.map((item) => {
@@ -84,6 +91,7 @@ export function Header() {
             <Search className="size-[18px]" />
           </button>
           <ThemeToggle />
+          <AccountMenu />
         </div>
       </div>
 

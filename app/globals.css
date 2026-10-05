@@ -249,12 +249,16 @@
   :root {
     /* Sticky header height; sticky sub-navs sit below it (see specs/mobile.md). */
     --header-h: 3.5rem;
+    /* How much of the top of the viewport the header keeps covered: 0 on phones, where it scrolls away with the
+       page; --header-h from md, where it's sticky. Sticky sub-navs and scroll offsets use this. */
+    --header-offset: 0rem;
     /* Bottom tab bar height on phones (0 from md, where it's hidden). */
     --tabbar-h: 4rem;
   }
   @media (min-width: 48rem) {
     :root {
       --header-h: 4rem;
+      --header-offset: var(--header-h);
       --tabbar-h: 0rem;
     }
   }
@@ -263,7 +267,7 @@
   }
   html {
     @apply font-sans;
-    scroll-padding-top: calc(var(--header-h) + 4rem);
+    scroll-padding-top: calc(var(--header-offset) + 4rem);
   }
   html,
   body {

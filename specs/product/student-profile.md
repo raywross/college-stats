@@ -67,13 +67,14 @@ Unit C of the accounts build (`feature/accounts-profile`, merged `feature/accoun
 ### Contracts (what later work uses)
 | File | Exports |
 |---|---|
-| `lib/student-profile.ts` (pure) | `StudentProfileData` and its five group types (`StudentProfileBasics`, `StudentProfileAcademics`, `StudentProfileTests`, `StudentProfilePlans`, `StudentProfilePreferences`); `emptyProfile()`, `sanitizeProfile(input)` (never throws; drops invalid/out-of-range fields rather than coercing to 0 or clamping); `unweightedGpa4(gpa, scale)`, `gpaDisplay(academics)`; `completeness(data)` → `CompletenessItem[]`, `completenessScore(data)`; **`fitsScores(school, profile): Fit`**, **`fitsPreferences(school, profile): Fit`** where `Fit = "in" \| "out" \| "unknown"` (see the `Fit` doc comment for exactly what "unknown" means and why Explore's chips drop it along with "out"); `OUTSIDE_US`, `LOCAL_PROFILE_KEY`, `GPA_SCALES`, `MAX_INTENDED_MAJORS` |
+| `lib/student-profile.ts` (pure) | `StudentProfileData` and its five group types (`StudentProfileBasics`, `StudentProfileAcademics`, `StudentProfileTests`, `StudentProfilePlans`, `StudentProfilePreferences`); `emptyProfile()`, `sanitizeProfile(input)` (never throws; drops invalid/out-of-range fields rather than coercing to 0 or clamping); `unweightedGpa4(gpa, scale)`, `gpaDisplay(academics)`; `completeness(data)` → `CompletenessItem[]`, `completenessScore(data)`; **`fitsScoreRange(satRange, actRange, testPolicy, {sat, act}): Fit`** (the low-level range check — `lib/dataset.ts`'s server-side Explore filter calls this directly with `satComposite()`, never `fitsScoreValues`, so ranks/filters never read a college's own reported SAT total; see the function's doc comment), **`fitsScoreValues(school, {sat, act}): Fit`** (the same check against the college's own displayed range, `satTotal()` — what ScoreChecker/Compare's "You" marker and `fitsScores` use), **`fitsScores(school, profile): Fit`** (full-profile convenience wrapper), **`fitsPreferences(school, profile): Fit`**, where `Fit = "in" \| "out" \| "unknown"` (see the `Fit` doc comment for exactly what "unknown" means and why Explore's filter drops it along with "out"); `OUTSIDE_US`, `LOCAL_PROFILE_KEY`, `GPA_SCALES`, `MAX_INTENDED_MAJORS` |
 | `lib/student-profile-store.ts` (`"use server"`) | `profilesICanSee(): Promise<ProfileAccess[]>` (every student the signed-in user can see, each with `{student, relation, canEdit, data, saved}`), `profileFor(studentId)`, `myOwnProfile()` (the signed-in user's own, not one they see as a guardian), `myScores(): Promise<MyScores>` (the minimal `{signedIn, satTotal, actComposite, plansTestOptional}` ScoreChecker/Compare prefill from), `saveProfile(studentId, raw)`, `importLocalProfile(studentId, localRaw)` (fills blanks only, never overwrites a saved value) |
 | `app/me/actions.ts` (`"use server"`) | `saveStudentProfile` and `importLocalProfileAction`, the `useActionState` actions `components/me/ProfileForm.tsx` and `ImportLocalProfile.tsx` call; FormData ↔ `StudentProfileData` mapping lives here, not in the store module |
 | `components/me/useLocalProfile.ts` | `useLocalProfile()`, `useShouldOfferImport()`, `getLocalProfile()`/`setLocalProfile()`, `markImportOffered()`, `clearLocalProfile()` — `useSyncExternalStore`-based (mirrors `lib/compare.ts`'s pattern), so there's no server/client hydration mismatch from reading `localStorage` |
 | `components/me/ScoreCheckerWithProfile.tsx` | Drop-in replacement for `components/school/ScoreChecker` on profile pages; fetches `myScores()` client-side after mount and remounts `ScoreChecker` with `initialTest`/`initialValue`/`fromProfile` once it resolves |
 | `components/me/YouScoreRow.tsx` | The "You" row under Compare's SAT/ACT middle-50% lists (`app/compare/page.tsx`'s `ScoreCompare`) |
-| `components/me/ExploreFitChips.tsx` + `app/api/me/explore-fit/route.ts` | The `fit=scores`/`fit=prefs` chips and the route they call |
+| `lib/explore-fit.ts` (pure) | `scoreParams(scores)`, `preferencesToExploreParams(preferences)` → `{params, unmapped}`, `hasAnyMappedPreference(mapping)`, `unmappedPreferencesNote(unmapped)` — the profile→Explore-params mapping, kept out of the component so it's testable without React |
+| `components/me/ExploreFitChips.tsx` | "Fits my scores"/"Fits my preferences": fetches the student's numbers client-side, then navigates to a plain Explore URL (`mySAT`/`myACT`, or the existing `sizes`/`setting`/`states`/`types`/`maxCost`) that Explore's own server-side pipeline filters on |
 
 ### Decisions made while building
 - **GPA conversion** (student-profile.md "GPA normalization") uses the standard College Board/NACAC 100-point band
@@ -88,16 +89,41 @@ Unit C of the accounts build (`feature/accounts-profile`, merged `feature/accoun
 - **`fitsPreferences` requires every preference the student set to match** (AND, not OR); with none set, every
   college is trivially "in". One definite "out" wins over an "unknown" elsewhere, so a single clear mismatch still
   excludes a college even when another preference can't be checked for it.
-- **Explore's fit chips are a client-side post-filter, not a server-side one** — the real deviation to flag. Explore
-  (`app/explore/page.tsx`) is public and must stay static/cookie-free (enforced by `tests/accounts.test.mts`'s
-  guard), so `lib/auth` can't run during its render. `components/me/ExploreFitChips.tsx` fetches the signed-in
-  student's matching `unit_id`s from `/api/me/explore-fit` (an account route, so it may read cookies) **against the
-  whole dataset**, then hides non-matching `[data-unit-id]` rows already in the server-rendered table/grid/list
-  (added that attribute to `SchoolTable`, `SchoolCard`, `SchoolRow`). It does **not** change which page of results
-  the server returns, so the "N colleges match" count above the table describes the filters before `fit` is
-  applied — the chip row says so. A cleaner version would thread `fit` through Explore's own filter pipeline
-  server-side, but that requires a way for a public page to learn the signed-in user without reading cookies during
-  render, which the current guard doesn't offer; left as a note for whoever revisits Explore's architecture.
+- **Explore's fit filters are plain navigations into Explore's own, server-side filter pipeline** — not a
+  client-side post-filter (an earlier version hid already-rendered `[data-unit-id]` rows by `unit_id`, which broke
+  under pagination: a page of 24 could drop to 3 visible rows, the "N colleges match" count was wrong, and chart/map
+  views ignored it entirely; that version is gone). `components/me/ExploreFitChips.tsx` still can't read the
+  signed-in student's profile itself (Explore is public and must stay static/cookie-free, enforced by
+  `tests/accounts.test.mts`'s guard), so it still fetches the student's numbers client-side (`myScores()`/
+  `myOwnProfile()`, Server Actions) — but instead of filtering anything itself, it just **navigates** to an Explore
+  URL with plain params the server already understands:
+  - *"Fits my scores"* sets `mySAT`/`myACT` (`lib/params.ts` → `SearchFilters.fitScores`); `lib/dataset.ts`'s
+    `getSchools()` applies `fitsScoreRange` as one more filter in its existing chain, against `satComposite()`
+    (the sum of sections) — **not** `fitsScoreValues`/`satTotal()`, which is right for display but which
+    `tests/cds-test-scores-and-policy.test.mts` forbids ranks/filters from reading: this tripped that guard on the
+    first pass (it scans `lib/dataset.ts`'s source for the literal text `satTotal`, among others) and is why
+    `fitsScoreRange` takes the ranges as plain values instead of computing them itself. "in" passes, "out" and
+    "unknown" are both excluded (the chip says so: "colleges that don't report scores aren't shown either way").
+    Counting (`schools.length`) and pagination (`paginate(schools, …)`) both run on this already-filtered list, so
+    they're correct on every page and in every view (grid, table, chart, map) — there's no separate code path to
+    keep in sync.
+  - *"Fits my preferences"* has no new filter at all: `lib/explore-fit.ts`'s `preferencesToExploreParams()` maps
+    the profile's preferences onto Explore's **existing** params (`sizes`→`sizes`, `settings`→`setting`,
+    `types`→`types`, `maxAverageCost`→`maxCost`, and `statesOrRegions` entries that are USPS codes →`states`).
+    The chip just pre-fills those filters and navigates; the student sees the normal filter chips afterward and
+    can adjust them like any other Explore filter. A `statesOrRegions` entry that isn't a state code (a region
+    name, or "Outside the U.S.") has no Explore equivalent — Explore's `regions` param matches live
+    `school.location.region` strings with no fixed enum a pure client module can validate against — so it's
+    listed in a note ("'New England' isn't a state Explore filters by, so it wasn't applied") instead of silently
+    dropped.
+  - Removed as part of this rework: `/api/me/explore-fit` (the route the old version fetched matching ids from),
+    the `data-unit-id` attribute on `SchoolTable`/`SchoolCard`/`SchoolRow`, and the `/api/me/:path*` proxy matcher
+    entry that route needed.
+  - Tests: `tests/explore-fit.test.mts` — the score filter's logic (in/out/unknown/test-blind, via
+    `fitsScoreRange`), the preferences→params mapping (including the unmapped-entry note), and two guards reading
+    `lib/dataset.ts`'s and `app/explore/page.tsx`'s own source to prove the filter runs inside `getSchools()` and
+    that counting/pagination use its result (not `getAllSchools()` or a page slice) — the second guard also
+    asserts `data-unit-id` is gone, so the old architecture can't quietly come back.
 - **ScoreChecker's and Compare's "You" prefill are also client-side fetches**, for the same reason (both pages are
   public/static). `ScoreCheckerWithProfile` renders the plain `ScoreChecker` (no prefill) until the fetch resolves,
   then remounts it with a `key` change so its internal `useState` picks up the new initial value — no hydration

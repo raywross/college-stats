@@ -176,7 +176,7 @@ export async function SchoolTable({ schools, params }: { schools: School[]; para
               const bachelors = s.academics?.bachelors_awarded ?? null;
               const topMajor = s.academics?.majors_top?.[0] ?? null;
               return (
-                <tr key={s.unit_id} data-unit-id={s.unit_id} className="group transition-colors hover:bg-muted/40">
+                <tr key={s.unit_id} className="group transition-colors hover:bg-muted/40">
                   <td className="sticky left-0 z-10 bg-card py-2.5 pr-3 pl-4 transition-colors group-hover:bg-muted">
                     <Link href={`/schools/${s.unit_id}`} className="flex items-center gap-2.5">
                       <Crest id={s.unit_id} name={s.name} size="sm" brand={crestBrand(s)} />

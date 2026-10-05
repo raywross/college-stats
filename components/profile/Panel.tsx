@@ -6,7 +6,7 @@ import { SourceNote } from "@/components/sources/SourceNote";
 import { cn } from "@/lib/utils";
 
 /** Blocks with ids land below the site header and the topic pages' sticky band when linked to. */
-export const BLOCK_SCROLL = "scroll-mt-[calc(env(safe-area-inset-top,0px)+var(--header-h)+6.5rem)]";
+export const BLOCK_SCROLL = "scroll-mt-[calc(env(safe-area-inset-top,0px)+var(--header-offset)+6.5rem)]";
 
 /**
  * A profile section: eyebrow with its domain color, title, the takeaway sentence, an optional "since" line

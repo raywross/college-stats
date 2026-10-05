@@ -204,14 +204,14 @@ shared rules for user data are in that README. All user data lives only in Supab
 - [ ] **Telemetry** ([product/telemetry.md](product/telemetry.md)): PostHog (cookieless, no replay, typed event
   registry with a guard test) + Vercel Speed Insights; dashboards for traffic, engagement, funnels, retention,
   performance, errors. Build first so later features ship measured.
-- [ ] **Accounts and households** ([product/accounts.md](product/accounts.md)): Supabase Auth (magic link, Google),
+- [x] **Accounts and households** (built 2026-10-05; Google sign-in waits for the new domain, under Platform) ([product/accounts.md](product/accounts.md)): Supabase Auth (magic link, Google),
   server-side sessions, households (guardians and students, invitations), RLS privacy model where a guardian's
   finances are never readable by a student, export and delete, 13+ only.
-- [ ] **Student profile** ([product/student-profile.md](product/student-profile.md)): GPA (unweighted, with scale
+- [x] **Student profile** (built 2026-10-05) ([product/student-profile.md](product/student-profile.md)): GPA (unweighted, with scale
   conversion), scores, majors, state, preferences; prefilled ScoreChecker; Explore "fits my scores / preferences".
-- [ ] **Saved lists** ([product/saved-lists.md](product/saved-lists.md)): Reach / Target / Likely, status and
+- [x] **Saved lists** (built 2026-10-05) ([product/saved-lists.md](product/saved-lists.md)): Reach / Target / Likely, status and
   outcomes (Scoir vocabulary), notes, deadlines, guardian view, share link, CSV/PDF export.
-- [ ] **Follow colleges** ([product/follow-colleges.md](product/follow-colleges.md)): Follow button, list items
+- [x] **Follow colleges** (built 2026-10-05; emails start with the new domain) ([product/follow-colleges.md](product/follow-colleges.md)): Follow button, list items
   followed automatically; `publish-data` diffs the previous publish against the new one into a public
   `dataset_changes` table (new year / revised / appeared / disappeared, years from lineage, tolerances per field); a
   daily job emails one digest per user per publish (Resend, one-click unsubscribe, no tracking pixels);
@@ -280,6 +280,12 @@ moves into a section above.
   prod, review before data merges, rollback). Optionally a custom domain. Choose the permanent address colleges use to
   ask for their mark to come down (`BRAND_REMOVAL_CONTACT` in `lib/brand.ts`, a GitHub issue link until then;
   [brand.md](school-identity/brand.md)).
+- [ ] **New domain, then Google sign-in and email** (owner registering a domain, 2026-10-05): once it's live, point
+  Vercel at it, update Supabase Auth's Site URL and redirect URLs, add **Google sign-in** (Google Cloud OAuth client
+  with the new domain as authorized origin, Supabase Google provider, a second button on `/login`), and verify a
+  sending subdomain in Resend (SPF/DKIM/DMARC) so magic links, invitations, and update digests leave Supabase's
+  rate-limited built-in mailer (`RESEND_API_KEY`, `EMAIL_FROM`; [accounts.md](product/accounts.md),
+  [follow-colleges.md](product/follow-colleges.md)). Accounts were built without either on purpose.
 - [ ] **Generic document collections** ([database-architecture.md](database-architecture.md#generalize-the-document-tables-do-this-before-the-detail-file)):
   replace the per-table publish functions (`publish_dataset`, `stage_history`, `publish_history_staged`) with
   `published_documents` / `publishes` / `stage_documents()` / `publish_collection()`, migrating `schools` and

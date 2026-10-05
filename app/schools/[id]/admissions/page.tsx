@@ -19,7 +19,7 @@ import { BenchmarkBar } from "@/components/charts/BenchmarkBar";
 import { DistributionStrip } from "@/components/charts/DistributionStrip";
 import { ScatterPlot } from "@/components/charts/ScatterPlot";
 import { AdmissionFactors } from "@/components/school/AdmissionFactors";
-import { ScoreChecker } from "@/components/school/ScoreChecker";
+import { ScoreCheckerWithProfile as ScoreChecker } from "@/components/me/ScoreCheckerWithProfile";
 import { ResidencyAdmissions } from "@/components/school/ResidencyAdmissions";
 import { publishesResidencyRates } from "@/lib/cds/residency-display";
 import { WaitListLine } from "@/components/school/WaitListLine";

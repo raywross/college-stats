@@ -15,7 +15,7 @@ a college newly reports. Nothing personal goes in the email, only the same publi
 unsubscribing is one click.
 
 Every profile also gains a public **What changed** panel, so visitors without an account can see that a college's
-numbers moved and when. Read the plan on the [roadmap](/roadmap/follow-colleges).
+numbers moved and when. It was built in October: see [Accounts](/release-notes/accounts).
 
 ## Behind the scenes
 

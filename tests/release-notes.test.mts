@@ -68,6 +68,8 @@ test("links between notes stay on the site and point at real notes; site links e
       else if (roadmap) assert.ok(roadmapPages().some((p) => p.slug === roadmap), `${n.slug}: /roadmap/${roadmap}`);
       // Static trends pages (a study, /trends/movers, the conference and state indexes) must exist as routes.
       else if (/^\/trends(\/[a-z0-9-]+)?$/.test(path)) assert.ok(existsSync(join("app", path, "page.tsx")), `${n.slug}: links to ${path}`);
+      // So must the signed-in pages (/me, /me/list, /account/household, …).
+      else if (/^\/(me|account)(\/[a-z0-9-]+)*$/.test(path)) assert.ok(existsSync(join("app", path, "page.tsx")), `${n.slug}: links to ${path}`);
       else assert.ok(routes.has(path), `${n.slug}: links to ${path}`);
     }
     assert.ok(!html.includes('href="https://github.com/raywross/college-stats/blob/main/release-notes/'), n.slug);

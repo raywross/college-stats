@@ -32,11 +32,18 @@ overflowing content, so root causes must be fixed. `clip` (unlike `hidden`) keep
   - Compare shows a lime count badge of picked schools. It replaces the floating `CompareTray` on phones (the
     tray still shows from `md`).
   - More is a sheet with Glossary, Data, Roadmap, Release notes, and the Light/Dark/System control.
-- **Header** on phones is just the logo, 56px tall (`--header-h: 3.5rem`, 4rem from `md`). Navigation, search,
+- **Header** on phones is the logo with the account control opposite it ("Sign in", or the avatar menu when signed in), 56px tall (`--header-h: 3.5rem`, 4rem from `md`). Navigation, search,
   and theme moved to the tab bar.
 - **Footer** drops its link column on phones and pads for the tab bar (`--tabbar-h`).
+  On phones it is the top of the page and scrolls away with it, not sticky (decided 2026-10-05 after trying
+  hide-on-scroll: a floating bar on a phone covered content and behaved unpredictably); the tab bar keeps
+  navigation in reach and More has Sign in. From `md` it stays pinned.
+- **No `viewport-fit=cover`** (removed 2026-10-05): with it, Chrome on iOS draws the page under its own top toolbar,
+  and the re-expanding toolbar covered the header on scroll up. `env(safe-area-inset-*)` uses keep their `0px`
+  fallbacks. The footer shows the deployment's short commit ("Build abc1234") so phone reports match a build.
 - **Sticky sub-navs** (the profile topic pages' `CompactHeader` with its pill row, `CompareHeader` with its chips
-  row and topic-pills row, glossary search bar) sit at `calc(env(safe-area-inset-top, 0px) + var(--header-h))`.
+  row and topic-pills row, glossary search bar) sit at `calc(env(safe-area-inset-top, 0px) + var(--header-offset))`:
+  `--header-offset` is 0 on phones and `--header-h` from `md`. Desktop-only sticky elements may use `--header-h`.
   Never hard-code the header height.
 
 ## Patterns

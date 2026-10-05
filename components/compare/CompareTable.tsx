@@ -30,7 +30,7 @@ export function CompareTable({ schools, citeField, groups }: { schools: School[]
     // `overflow-clip` from lg clips to the rounded corners without making a scroll box, so the header row can stick.
     <div className="overflow-x-auto rounded-3xl border bg-card lg:overflow-clip">
       <table className="w-full min-w-[480px] text-sm sm:min-w-[560px]">
-        <thead className="border-b bg-surface-2 lg:sticky lg:z-20" style={{ top: `calc(env(safe-area-inset-top, 0px) + var(--header-h) + ${COMPARE_BAND})` }}>
+        <thead className="border-b bg-surface-2 lg:sticky lg:z-20" style={{ top: `calc(env(safe-area-inset-top, 0px) + var(--header-offset) + ${COMPARE_BAND})` }}>
           <tr>
             {/* lg: a wider label column, so labels stay on one line beside the "On this page" column. */}
             <th className="sticky left-0 z-10 bg-surface-2 px-3 py-3 text-left text-xs font-semibold text-muted-foreground sm:px-4 lg:w-64 lg:shadow-[0_1px_0_var(--border)]">Metric</th>

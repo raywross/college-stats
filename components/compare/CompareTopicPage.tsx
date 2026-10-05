@@ -18,7 +18,7 @@ import { CompareTopicNav } from "./CompareTopicNav";
 export const COMPARE_BAND = "9.5rem";
 
 /** Blocks with ids land below the site header and the compare band when linked to: pass it to `Block` (in place of BLOCK_SCROLL). */
-export const COMPARE_BLOCK_SCROLL = "scroll-mt-[calc(env(safe-area-inset-top,0px)+var(--header-h)+9.5rem)]";
+export const COMPARE_BLOCK_SCROLL = "scroll-mt-[calc(env(safe-area-inset-top,0px)+var(--header-offset)+9.5rem)]";
 
 /** Key differences sentences with their gap bars, numbered in the metric's domain color (the overview's list). */
 export function KeyDifferenceList({ diffs }: { diffs: Difference[] }) {
@@ -95,7 +95,7 @@ export function CompareTopicPage({
         {hasList && (
           <div className="lg:order-last">
             {/* OnThisPage's own sticky column clears the profile's shorter band; this one clears the compare band. */}
-            <div className="lg:sticky" style={{ top: `calc(env(safe-area-inset-top, 0px) + var(--header-h) + ${COMPARE_BAND} + 1rem)` }}>
+            <div className="lg:sticky" style={{ top: `calc(env(safe-area-inset-top, 0px) + var(--header-offset) + ${COMPARE_BAND} + 1rem)` }}>
               <OnThisPage items={items} className="mb-5 lg:mb-0" />
             </div>
           </div>

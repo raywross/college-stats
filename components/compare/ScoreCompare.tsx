@@ -4,6 +4,7 @@ import { SLOT_COLORS, shortName } from "@/lib/brand";
 import type { School } from "@/lib/types";
 import { RangeBar } from "@/components/charts/RangeBar";
 import { Term } from "@/components/ui/info-tip";
+import { YouScoreRow } from "@/components/me/YouScoreRow";
 
 /** SAT total or ACT composite middle 50% per college on one shared axis, with the national median midpoint marked. */
 export async function ScoreCompare({ schools, test }: { schools: School[]; test: "sat" | "act" }) {
@@ -45,6 +46,7 @@ export async function ScoreCompare({ schools, test }: { schools: School[]; test:
             </div>
           );
         })}
+        <YouScoreRow test={test} lo={lo} hi={hi} />
       </div>
       <p className="mt-3 text-[11px] text-muted-foreground">
         Axis runs {lo}–{hi}. The dark tick marks the national median midpoint.

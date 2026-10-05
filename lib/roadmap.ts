@@ -20,13 +20,15 @@ export const COMPLEXITY: Record<Complexity, { label: string; description: string
 // "campus-life") was built 2026-10-03/04 (#72, #73, #75, #76); its remaining work is under "later":
 // campus-pilot-accuracy and campus-sources-later. National trends (the /trends hub, Studies 1–6, movers, conferences,
 // states) was built 2026-10-04 on feature/national-trends; Study 7 (where the students went) and the online-share
-// field it needs were specified 2026-10-05 and sit under "national-trends". The compare redesign, the only spec in
-// "Design and usability" (group "design"), was built 2026-10-05 (#84), so that group is gone until a new design spec.
+// field it needs were specified 2026-10-05 and sit under "national-trends".
+// Accounts and households (sign-in, households, student profile, saved lists, following colleges; group "accounts")
+// was built 2026-10-05 on feature/accounts; Google sign-in and email sending wait for the new domain (specs/backlog.md).
+// The compare redesign, the only spec in "Design and usability" (group "design"), was built 2026-10-05 (#84), so that
+// group is gone until a new design spec.
 export type RoadmapGroupKey =
   | "national-trends"
   | "college-reported"
   | "campus-life"
-  | "accounts"
   | "planning"
   | "high-school"
   | "business"
@@ -39,12 +41,6 @@ export const ROADMAP_GROUPS: { key: RoadmapGroupKey; title: string; description:
     title: "National trends",
     description:
       "Questions about the whole landscape of colleges, not one college: where students went over ten years, and the data that keeps online colleges from standing in for campuses.",
-  },
-  {
-    key: "accounts",
-    title: "Accounts and households",
-    description:
-      "Sign in to keep your work. A parent sees each child's list and planning; a child never sees the parent's finances.",
   },
   {
     key: "planning",
@@ -128,47 +124,6 @@ export const ROADMAP: RoadmapSpec[] = [
     status: "planned",
   },
   {
-    slug: "accounts",
-    file: "specs/product/accounts.md",
-    group: "accounts",
-    summary: "Sign in with email or Google; link a parent to one or more students; the parent's finances stay private.",
-    complexity: 3,
-    complexityNote: "Auth, households, and row-level privacy rules that every later feature depends on and tests prove.",
-    status: "planned",
-  },
-  {
-    slug: "student-profile",
-    file: "specs/product/student-profile.md",
-    group: "accounts",
-    summary: "Your GPA, scores, major, state, and preferences, entered once and used by every tool and filter.",
-    complexity: 2,
-    complexityNote: "One form and one table, but GPA scales and missing data need care, and Explore gains fit filters.",
-    status: "planned",
-    after: ["accounts"],
-  },
-  {
-    slug: "saved-lists",
-    file: "specs/product/saved-lists.md",
-    group: "accounts",
-    summary: "Keep your colleges as Reach, Target, or Likely, with status, notes, deadlines, sharing, and export.",
-    complexity: 2,
-    complexityNote: "A new section of the site with its own tables, a guardian view, and CSV and PDF export.",
-    status: "planned",
-    after: ["accounts", "student-profile"],
-  },
-  {
-    slug: "follow-colleges",
-    file: "specs/product/follow-colleges.md",
-    group: "accounts",
-    summary:
-      "Follow the colleges you care about and get one email when their numbers change, saying what moved and which years.",
-    complexity: 3,
-    complexityNote:
-      "Change detection at publish time, an email provider with unsubscribe handling, a daily send job, and a public What changed panel.",
-    status: "planned",
-    after: ["accounts"],
-  },
-  {
     slug: "chances-and-fit",
     file: "specs/product/chances-and-fit.md",
     group: "planning",
@@ -177,7 +132,6 @@ export const ROADMAP: RoadmapSpec[] = [
     complexityNote:
       "Published rules across several data sources, a pilot against real outcomes, and new views on profiles, lists, and Explore.",
     status: "planned",
-    after: ["student-profile", "saved-lists"],
   },
   {
     slug: "net-price-estimator",
@@ -188,7 +142,6 @@ export const ROADMAP: RoadmapSpec[] = [
     complexityNote:
       "The federal aid formula as versioned data, three grant estimates combined, and a hand-checked pilot against colleges' own calculators.",
     status: "planned",
-    after: ["accounts"],
   },
   {
     slug: "award-letter-analyzer",
@@ -198,7 +151,7 @@ export const ROADMAP: RoadmapSpec[] = [
     complexity: 3,
     complexityNote: "A standard offer model, four-year math, flags and questions, and later a document upload read by a model.",
     status: "planned",
-    after: ["net-price-estimator", "saved-lists"],
+    after: ["net-price-estimator"],
   },
   {
     slug: "early-decision-strategy",
@@ -230,7 +183,7 @@ export const ROADMAP: RoadmapSpec[] = [
     complexity: 3,
     complexityNote: "A counselor upload with client-side scrubbing, small-count thresholds, name matching, and a new chart.",
     status: "planned",
-    after: ["high-school-data", "accounts", "saved-lists"],
+    after: ["high-school-data"],
   },
   {
     slug: "telemetry",
@@ -249,7 +202,6 @@ export const ROADMAP: RoadmapSpec[] = [
     complexity: 3,
     complexityNote: "Stripe billing, webhooks, an entitlement map every gated feature reads, and the legal setup before launch.",
     status: "planned",
-    after: ["accounts", "saved-lists"],
   },
   {
     slug: "counselor-portal",
@@ -260,7 +212,7 @@ export const ROADMAP: RoadmapSpec[] = [
     complexity: 4,
     complexityNote: "A second kind of account with its own grants, dashboards, PDF reports, and data agreements for schools.",
     status: "planned",
-    after: ["accounts", "saved-lists", "commercialization"],
+    after: ["commercialization"],
   },
   {
     slug: "data-api",
@@ -303,7 +255,6 @@ export const ROADMAP: RoadmapSpec[] = [
       "A new kind of view (the map), a home ZIP on the profile with a reference file, and lines in lists, Compare, and the estimator.",
     status: "idea",
     // Also uses each college's visit link (specs/school-identity/links.md, built 2026-10-04).
-    after: ["student-profile"],
   },
   {
     slug: "worst-plausible-spring",
@@ -314,7 +265,6 @@ export const ROADMAP: RoadmapSpec[] = [
     complexity: 1,
     complexityNote: "One pure function over the saved list's rows and a panel; the figures come from the specs it builds on.",
     status: "idea",
-    after: ["saved-lists"],
   },
   {
     slug: "would-compete-for-you",
@@ -338,7 +288,6 @@ export const ROADMAP: RoadmapSpec[] = [
     complexityNote: "A change table built at publish from the agent's editions, one public page, a digest kind, and an email variant.",
     status: "idea",
     // Also needs the CDS policy, early-round, and logistics records, built 2026-10-03 and so no longer on the roadmap.
-    after: ["follow-colleges"],
   },
   {
     slug: "getting-into-the-major",
@@ -350,7 +299,6 @@ export const ROADMAP: RoadmapSpec[] = [
     complexityNote: "A new recipe type for the agent with checks and review, new fields, a profile block, two filters, and a pilot.",
     status: "idea",
     // Also needs the round-3 agent (college-reported-round-3), built 2026-10-03 and so no longer on the roadmap.
-    after: ["student-profile"],
   },
   {
     slug: "metro-area",

@@ -25,6 +25,7 @@ import { hasSmallPellGap } from "./graduation-groups.ts";
 import { drawsNationally } from "./residence.ts";
 import { matchesField } from "./majors.ts";
 import { noCssProfile, offersInternationalAid } from "./cds/financial-aid.ts";
+import { fitsScoreRange } from "./student-profile.ts";
 import {
   METRICS,
   SIZE_BUCKETS,
@@ -249,6 +250,12 @@ export function createDataset({ schools, meta, releaseCalendar, aliases = [] }: 
     const act = (s: School) => s.admissions.act_composite_25_75;
     if (filters.minACT !== undefined) results = results.filter((s) => (act(s)?.[1] ?? -1) >= filters.minACT!);
     if (filters.maxACT !== undefined) results = results.filter((s) => (act(s)?.[0] ?? Infinity) <= filters.maxACT!);
+
+    // "Fits my scores" (specs/product/student-profile.md): the signed-in student's own saved score(s), applied
+    // server-side so counting and pagination happen on the filtered set, not a client-side post-filter of one
+    // page. Uses satComposite (the sum of sections), same as minSAT/maxSAT just above — filters never read the
+    // college's own reported total (lib/score-bands.ts's satTotal doc comment).
+    if (filters.fitScores) results = results.filter((s) => fitsScoreRange(satComposite(s), act(s), s.admissions.test_policy, filters.fitScores!) === "in");
 
     const cost = (s: School) => s.cost?.avg_paid_all ?? null;
     if (filters.minCost !== undefined) results = results.filter((s) => cost(s) !== null && cost(s)! >= filters.minCost!);

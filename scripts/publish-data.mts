@@ -5,11 +5,17 @@
  *   npm run publish-data:prod         # the project in .env.prod.local
  *   npm run publish-data -- --dry-run # run the checks, write nothing
  *   npm run publish-data -- --allow-shrink
+ *   npm run publish-data -- --changes-only               # print what changed since the published dataset; write nothing
+ *   npm run publish-data -- --changes-only --prev <dir>  # the same against a local schools.json + meta.json; no network
  *
  * Git stays the reviewed source of truth; Supabase serves what was published from it. Steps:
  *   1. The same lineage check as `npm run check:lineage` (lib/lineage.ts). Nothing invalid is published.
  *   2. Refuse to drop more than 10% of the colleges already published (a broken sync, most likely)
  *      unless --allow-shrink.
+ *   2b. What changed (lib/changes.ts; specs/product/follow-colleges.md): the previously published colleges are read back and
+ *      diffed against the files. The changes are staged and publish_schools_staged_with_changes() writes them into
+ *      dataset_changes in the same transaction as the colleges, so a change record exists only if its data was published.
+ *      Without the follows migration on the project, the publish goes ahead without changes (a warning says so).
  *   3. stage_schools() takes the colleges in batches (one call with all of them exceeds the statement timeout), then
  *      publish_schools_staged() swaps them in with meta and the release calendar in one transaction.
  *   4. Read it all back and require an exact match with the local files.
@@ -39,10 +45,14 @@ import { detailFileProblems, detailTablesProblem, publishDetails, readDetails } 
 import { replaceInBatches } from "./lib/publish-batches.mts";
 import { aliasesTableProblem, publishAliases } from "./lib/publish-aliases.mts";
 import { aliasTableProblems } from "../lib/aliases.ts";
+import { FOLLOWS_MIGRATION, changeSummary, changeTablesState, computeChanges, formatChangeList, readSnapshotDir, stageChanges } from "./lib/publish-changes.mts";
+import type { DatasetChange } from "../lib/changes.ts";
 
 const ROOT = join(import.meta.dirname, "..");
 const DRY_RUN = process.argv.includes("--dry-run");
 const ALLOW_SHRINK = process.argv.includes("--allow-shrink");
+const CHANGES_ONLY = process.argv.includes("--changes-only");
+const PREV_DIR = process.argv.includes("--prev") ? (process.argv[process.argv.indexOf("--prev") + 1] ?? "") : null;
 /** History shards per staging call (~1 MB), well under the API's statement timeout. */
 const HISTORY_BATCH = 150;
 /** Colleges per staging call (~0.9 MB at 11 MB for 1,893); one call with all of them timed out on 2026-10-02. */
@@ -133,6 +143,25 @@ if (aliases) {
   }
 }
 
+/** --changes-only: the change list, college by college; nothing is written. */
+function printChanges(changes: DatasetChange[], against: string): never {
+  console.log(`Changes against ${against}: ${changeSummary(changes)}.`);
+  for (const line of formatChangeList(changes, schools)) console.log(line);
+  console.log("Nothing written (--changes-only).");
+  process.exit(0);
+}
+
+if (PREV_DIR !== null) {
+  if (!CHANGES_ONLY || !PREV_DIR) fail("--prev <dir> works only with --changes-only.");
+  let prev;
+  try {
+    prev = readSnapshotDir(PREV_DIR);
+  } catch (err) {
+    fail(err instanceof Error ? err.message : String(err));
+  }
+  printChanges(computeChanges(prev, { schools, meta }, releaseCalendar), PREV_DIR);
+}
+
 const client = supabaseClient("publish");
 const host = new URL(process.env.SUPABASE_URL!).host;
 console.log(`Publishing ${schools.length} colleges (retrieved ${meta.retrieved}) to ${host}${DRY_RUN ? " [dry run]" : ""}`);
@@ -179,6 +208,17 @@ if (aliases) {
   if (problem) fail(problem);
 }
 
+// 2b. What changed since the published dataset (read-only so far; staged and written with the colleges in step 3).
+const changeTables = await changeTablesState(client).catch((err: Error) => fail(err.message));
+const previous = count ? await fetchDatasetFiles(client).catch((err: Error) => fail(`reading the published dataset to diff: ${err.message}`)) : null;
+const changes = computeChanges(previous, { schools, meta }, releaseCalendar);
+if (CHANGES_ONLY) printChanges(changes, `the published dataset on ${host}`);
+if (changeTables === "missing") {
+  console.warn(`Warning: ${changeSummary(changes)} not recorded: dataset_changes isn't on this project. Apply ${FOLLOWS_MIGRATION} to record them.`);
+} else {
+  console.log(`What changed: ${changeSummary(changes)}.`);
+}
+
 if (DRY_RUN) {
   const ready = history ? `${history.shards.length} college histories ready; ` : "";
   console.log(`Checks passed. ${count ?? 0} colleges currently published; ${ready}nothing written.`);
@@ -191,14 +231,27 @@ for (let i = 0; i < schools.length; i += SCHOOL_BATCH) {
   const { error } = await client.rpc("stage_schools", { p_schools: schools.slice(i, i + SCHOOL_BATCH), p_offset: i, p_reset: i === 0 });
   if (error) fail(`staging colleges ${i}–${Math.min(i + SCHOOL_BATCH, schools.length)}: ${error.message}. Has ${SCHOOL_STAGING_MIGRATION} been applied?`);
 }
-const { data: written, error } = await client.rpc("publish_schools_staged", {
+const publishArgs = {
   p_meta: meta,
   p_release_calendar: releaseCalendar,
   p_expected: schools.length,
   p_git_commit: commit,
   p_published_by: process.env.GITHUB_ACTOR ?? userInfo().username,
-});
-if (error) fail(error.message);
+};
+let written: number;
+let publishId: number | null = null;
+if (changeTables === "ready") {
+  await stageChanges(client, changes).catch((err: Error) => fail(err.message));
+  const { data, error } = await client.rpc("publish_schools_staged_with_changes", { ...publishArgs, p_expected_changes: changes.length });
+  if (error) fail(error.message);
+  const result = data as { schools: number; publish_id: number; changes: number };
+  written = result.schools;
+  publishId = result.publish_id;
+} else {
+  const { data, error } = await client.rpc("publish_schools_staged", publishArgs);
+  if (error) fail(error.message);
+  written = data as number;
+}
 
 // 4. Round trip: what the app will read must equal the local files exactly.
 const back = await fetchDatasetFiles(client);
@@ -209,6 +262,13 @@ if (mismatched.length) fail(`${mismatched.length} colleges differ after reading 
 if (!same(back.meta, meta) || !same(back.releaseCalendar, releaseCalendar)) fail("meta or release calendar differs after reading back.");
 
 console.log(`Published ${written} colleges from ${commit ?? "an unknown commit"}; read back and verified.`);
+if (publishId !== null) {
+  const { count: changeCount, error: cError } = await client.from("dataset_changes").select("id", { count: "exact" }).eq("publish_id", publishId).limit(1);
+  if (cError || changeCount !== changes.length) {
+    fail(`dataset_changes for publish ${publishId}: read back ${changeCount ?? "?"} rows, expected ${changes.length}${cError ? ` (${cError.message})` : ""}.`);
+  }
+  console.log(`Recorded ${changeSummary(changes)} as publish ${publishId}; read back and verified.`);
+}
 
 // 5. History
 if (history) {

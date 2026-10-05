@@ -6,6 +6,7 @@ import { createDataset, type Dataset, type DatasetFiles } from "./dataset";
 import { createDatasetLoader } from "./dataset-loader";
 import {
   fetchDatasetFiles,
+  fetchSchoolChanges,
   fetchHistoryFiles,
   fetchHistoryVersion,
   fetchPublishedVersion,
@@ -18,6 +19,7 @@ import type { SchoolHistory } from "./history";
 import type { TrendFileName, TrendFiles } from "./trends";
 import type { SchoolDetail } from "./detail";
 import { fetchSchoolDetail } from "./supabase-detail";
+import type { StoredChange } from "./changes";
 
 export { paginate, toIndexEntry, type Dataset, type SchoolIndexEntry, type ScatterPointData } from "./dataset";
 
@@ -188,5 +190,37 @@ export const getDetail = cache(async (unitId: string): Promise<SchoolDetail | nu
   } catch (err) {
     console.error(`Loading details for ${unitId} failed; the profile renders without them.`, err);
     return null;
+  }
+});
+
+/* ------------------------------------------------------------------ */
+/* What changed (specs/product/follow-colleges.md; lib/changes.ts)     */
+/* ------------------------------------------------------------------ */
+
+let changesWarned = false;
+
+/**
+ * One college's recorded changes (`dataset_changes`, written by publish-data), newest first. Changes describe
+ * publishes, so they exist only in Supabase: with DATA_SOURCE=json there are none and the profile shows no panel.
+ * Fail-soft like getHistory(): a missing table (the follows migration isn't applied yet) or any error is logged once
+ * and the profile renders without the panel. Read with the publishable key, so it's fine in static pages.
+ *
+ * For local QA of the panel without Supabase, CHANGES_FIXTURE may name a JSON file of StoredChange rows (json mode only).
+ */
+export const getSchoolChanges = cache(async (unitId: string): Promise<StoredChange[]> => {
+  if (!/^\d+$/.test(unitId)) return [];
+  if (dataSource() === "json") {
+    const fixture = process.env.CHANGES_FIXTURE;
+    if (!fixture || !existsSync(fixture)) return [];
+    return (JSON.parse(readFileSync(fixture, "utf8")) as StoredChange[]).filter((c) => c.unit_id === unitId);
+  }
+  try {
+    return await fetchSchoolChanges(supabaseClient("read"), unitId);
+  } catch (err) {
+    if (!changesWarned) {
+      changesWarned = true;
+      console.error("Loading what changed failed; profiles render without it.", err);
+    }
+    return [];
   }
 });

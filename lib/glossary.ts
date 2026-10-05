@@ -10,7 +10,8 @@ export type GlossaryCategory =
   | "Cost & outcomes"
   | "School types"
   | "How we measure"
-  | "Data sources";
+  | "Data sources"
+  | "Your account";
 
 export interface GlossaryEntry {
   term: string;
@@ -33,6 +34,7 @@ export const GLOSSARY_CATEGORIES: GlossaryCategory[] = [
   "School types",
   "How we measure",
   "Data sources",
+  "Your account",
 ];
 
 const entries = {
@@ -980,6 +982,14 @@ const entries = {
     category: "Admissions",
     related: ["high-school-gpa"],
   },
+  "unweighted-gpa": {
+    term: "Unweighted GPA",
+    short: "A GPA on a flat 4.0 scale: an A is a 4.0 no matter how hard the course was. It's the scale colleges' GPA bands use, so it's the one comparable across different high schools.",
+    long: "A GPA reported on a 5.0 or 100-point scale is converted to this scale proportionally (5.0) or with the standard A/B/C band table (100-point), and shown back with both numbers, like \"about 3.7 unweighted (from 93/100)\".",
+    why: "High schools weight and scale grades differently, so only the unweighted, 4.0-scale number can be compared across schools or against a college's reported GPA bands.",
+    category: "Admissions",
+    related: ["weighted-gpa", "high-school-gpa"],
+  },
   "gpa-band": {
     term: "GPA band",
     short: "A range of high school GPAs (4.0, 3.75–3.99, 3.50–3.74, and so on) and the share of first-years whose GPA fell in it, on a 4.0 scale.",
@@ -1079,6 +1089,39 @@ const entries = {
     short: "A list of qualified applicants a college may admit later if spaces open. Applicants choose whether to accept a place on it; at many colleges few are admitted from it.",
     category: "Admissions",
     related: ["admitted", "yield"],
+  },
+  "regular-decision": {
+    term: "Regular decision",
+    short: "The standard, non-binding application round, with a deadline usually in December or January and decisions by April.",
+    category: "Admissions",
+    related: ["early-decision", "early-action", "rolling-admission"],
+  },
+  "rolling-admission": {
+    term: "Rolling admission",
+    short: "A college reviews applications as they arrive, with no single deadline, and answers within a few weeks rather than all at once.",
+    why: "Applying earlier in a rolling window often means more spots are still open.",
+    category: "Admissions",
+    related: ["regular-decision"],
+  },
+  "reach-school": {
+    term: "Reach",
+    short: "A college where your profile is below what's typically admitted: a real chance, not a guarantee.",
+    category: "Admissions",
+    related: ["target-school", "likely-school"],
+  },
+  "target-school": {
+    term: "Target",
+    short: "A college where your profile matches what's typically admitted: a solid chance, though never certain.",
+    category: "Admissions",
+    related: ["reach-school", "likely-school"],
+  },
+  "likely-school": {
+    term: "Likely",
+    short: "A college where your profile is above what's typically admitted, and that you could afford and would attend.",
+    long: "Counselors use \"likely\" rather than the older \"safety\": no college is safe when it's unaffordable without aid, or when it rejects well-qualified applicants it expects to enroll elsewhere (\"yield protection\"). A likely school still needs checking, not just assuming.",
+    why: "A balanced list has some of each category, with at least a couple of Likely colleges you'd genuinely be glad to attend.",
+    category: "Admissions",
+    related: ["reach-school", "target-school"],
   },
   // CDS financial aid (specs/data-expansion/cds-financial-aid.md).
   "css-profile": {
@@ -1331,6 +1374,87 @@ const entries = {
     long: "Shown only from the college's current document, never inferred from a religious affiliation, and only after a second model check confirms the quote and its meaning.",
     category: "Students & access",
     related: ["religious-affiliation"],
+  },
+  // Accounts and households (specs/product/accounts.md).
+  "magic-link": {
+    term: "Magic link",
+    short: "A one-time sign-in link we email you instead of asking for a password. Open it and you're signed in.",
+    long: "Each link works once and expires after an hour. With the standard setup, open it in the same browser where you asked for it.",
+    why: "There's no password to forget, reuse, or leak.",
+    category: "Your account",
+  },
+  household: {
+    term: "Household",
+    short: "A family group that links parents or guardians with the students they help. Guardians see each student's lists and plans; students never see a guardian's finances.",
+    long: "Nobody is added silently: each person joins by accepting an invitation. A student can be in two households (two homes), and a guardian can have several students. Anyone can leave at any time.",
+    category: "Your account",
+    related: ["guardian", "managed-student"],
+  },
+  guardian: {
+    term: "Guardian",
+    short: "A parent or other adult in a household. A guardian can see the students' lists and plans, and can edit them only if the student allows it.",
+    long: "A guardian's own financial details (income, assets) are never shown to students, even in the same household. When a guardian looks at a student's data, the student can see that they did.",
+    category: "Your account",
+    related: ["household", "managed-student"],
+  },
+  "managed-student": {
+    term: "Managed student",
+    short: "A student record a guardian creates for a child who doesn't have an account yet. When the child signs up through the guardian's invitation, the record becomes theirs.",
+    category: "Your account",
+    related: ["household", "guardian"],
+  },
+  "household-invitation": {
+    term: "Household invitation",
+    short: "A link that lets one person join a household. It works once, for the email it was sent to, for 7 days.",
+    long: "The person signs in with that email and accepts. Anyone in the household can cancel an invitation that hasn't been used. We keep only a scrambled copy of the link, so it can't be shown again: if it's lost, cancel it and send a new one.",
+    category: "Your account",
+    related: ["household", "guardian"],
+  },
+  "edit-access": {
+    term: "Edit access",
+    short: "Lets a guardian change a student's list and profile, not just look at them. The student decides who gets it.",
+    long: "Guardians can view by default. A student can give or take back edit access at any time on the household page; for a managed student, the guardian who added them decides. Changes a guardian makes are marked with their name.",
+    category: "Your account",
+    related: ["guardian", "household"],
+  },
+  "access-log": {
+    term: "Access log",
+    short: "The list, on your account page, of when a guardian looked at your information (\"Mom viewed your list on Oct 2\").",
+    long: "Guardians use their own sign-in, never yours, so every look is recorded under their name. It's yours to see; guardians don't see each other's.",
+    category: "Your account",
+    related: ["guardian", "household"],
+  },
+  // Student profile (specs/product/student-profile.md).
+  superscore: {
+    term: "Superscore",
+    short: "The best section scores a student earned across different test sittings, combined into one total — even if no single sitting produced that total.",
+    long: "Many colleges superscore the SAT or ACT automatically when they receive multiple score reports; some don't. Your profile's SAT or ACT total is marked as a superscore only when you say so.",
+    why: "A superscored total can be noticeably higher than any single test day's score, so it's worth knowing which one you're comparing against a college's range.",
+    category: "Your account",
+    related: ["middle-50"],
+  },
+  // Following colleges and the update digest (specs/product/follow-colleges.md).
+  follow: {
+    term: "Follow",
+    short: "Get an email when a college's own numbers change: a new year of data, a revision, or a figure reported for the first time.",
+    long: "Every college on one of your lists is followed automatically, so a family's list stays current without anyone checking back. One email covers everything that changed since the last one; you can turn update emails off at any time without unfollowing anything.",
+    why: "Federal and college data arrives in occasional releases, not continuously; a follow tells you the moment one of your colleges is in a new release.",
+    category: "Your account",
+    related: ["update-digest", "what-changed"],
+  },
+  "update-digest": {
+    term: "Update digest",
+    short: "The email you get when a college you follow changes: what changed, in plain language, with both years.",
+    long: "At most one email per data release, listing every followed college that changed, grouped by topic. A link at the bottom turns these emails off for good, with no sign-in needed.",
+    category: "Your account",
+    related: ["follow"],
+  },
+  "what-changed": {
+    term: "What changed",
+    short: "A college's recent revisions and new figures, each with its year and source, shown on its profile and in your update emails.",
+    long: "Visible to everyone, not just people who follow the college: it's about the dataset, not your account.",
+    category: "Your account",
+    related: ["follow"],
   },
 } satisfies Record<string, GlossaryEntry>;
 

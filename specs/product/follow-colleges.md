@@ -177,13 +177,22 @@ overview cards (17): `name` (`always`), `admissions.applicants`, `.admitted`, `.
   (`acceptance_rate`, `cost.sticker`, `cost.avg_paid_all`) count only when a stored input changed, recursively. The
   release is the calendar entry marked published between the two datasets' `retrieved` dates that `updates` the
   field's vintage; values with their own lineage record (a CDS, the college's page) name their document in `source`.
+- **Years, one style per sentence** (`periodLabel`, `periodStart`). A hand-imported CDS override cites its edition
+  ("2024-25"), not the period it reports, so it's written in the field's own style: for a fall field, edition YYYY–YY
+  is "Fall YYYY" (CDS B1, C1, C9); for retention, "Entered fall YYYY−1" (B22); other years are en-dashed ("2024–25").
+  Periods are then ordered (Sep 1 of a fall, Jul 1 of an academic year).
+- **Kind from the periods and the source**: `new_year` only when the new period is known to be later; the same period
+  from the same kind of source is `revised` (a college's CDS counts as one kind, whichever pipeline read it); a
+  different kind of source for the same or an earlier period, or periods that can't be ordered, is `updated`, with the
+  old source in `old_source`: "Fall 2024: 44,503 undergraduates from College Scorecard (was 44,819 from Purdue
+  University-Main Campus Common Data Set)". A figure never reads as newer than it is.
 - `describeChange(change, { formatText? })` writes the sentence with the site's format helpers and the test policy's
   own words; two shares that round to the same whole percent get a decimal.
 - `recentPublishes(rows, now)` groups stored rows for the panel: the last two publishes, nothing after a year.
-- Sample (the dataset of 2026-10-02 against today's, `--changes-only --prev`): 97 changes across 34 colleges, e.g.
-  "Fall 2025: 4.2% admitted (fall 2024: 3.6%)" (Harvard, from its own page), "Fall 2025: middle 50% SAT Math 560–660
-  (fall 2024: 570–670)" (Houston's CDS), "Fall 2027 applicants: Test scores required (fall 2024: Test-optional)"
-  (UNC's CDS).
+- Sample (the dataset of 2026-10-02 against today's, `--changes-only --prev`): 97 changes across 34 colleges
+  (new_year 85, updated 11, revised 1), e.g. "Fall 2025: 4.2% admitted (fall 2024: 3.6%)" (Harvard, from its own
+  page), "Fall 2025: middle 50% SAT Math 560–660 (fall 2024: 570–670)" (Houston's CDS), "Fall 2027 applicants: Test
+  scores required (fall 2024: Test-optional)" (UNC's CDS). Every `new_year` line pairs two falls, the newer first.
 
 ### Database (`supabase/migrations/20261005140000_follows.sql`)
 | Table | Who | Notes |
@@ -191,7 +200,7 @@ overview cards (17): `name` (`always`), `admissions.applicants`, `.admitted`, `.
 | `follows (user_id, unit_id, source manual\|list, created)` | owner only (select, insert, update `source`, delete) | pk (user_id, unit_id); no FK to `schools` (publishing replaces its rows). A guardian has no path to a student's follows |
 | `notification_prefs (user_id, email_updates, unsubscribe_token, updated)` | owner reads, creates, updates `email_updates` | created by a trigger on a user's first follow; token is 64 hex chars, stored as is (the digest puts it in every email) |
 | `digests (id, user_id, publish_id, published_at, sent_at, provider_message_id, unit_ids[], college_count, change_count)` | owner reads; only the secret key writes | unique (user_id, publish_id); `sent_at` null = recorded but not sent |
-| `dataset_changes (publish_id, published_at, unit_id, field, kind, old_value, new_value, old_year, new_year, source, release)` | anyone reads; only the publish writes | unique (publish_id, unit_id, field); values are `json` like the dataset |
+| `dataset_changes (publish_id, published_at, unit_id, field, kind, old_value, new_value, old_year, new_year, source, old_source, release)` | anyone reads; only the publish writes | unique (publish_id, unit_id, field); values are `json` like the dataset |
 | `dataset_change_staging` | secret key only | filled by `stage_dataset_changes()` |
 
 Functions: `unsubscribe_by_token(token) → bool` (anon may call; turns `email_updates` off),
@@ -225,8 +234,9 @@ isn't applied), the publish runs the old function and warns that changes weren't
   publish's lines have the ⓘ of the value shown today, and the section's footnote lists their sources.
 
 ### Deviations
-- A fifth kind, `updated`: a value from a source with no single year (College Scorecard's "most recent release")
-  changed, so it can't be called a new year or a revision honestly.
+- A fifth kind, `updated`: the value changed but can't honestly be called a new year or a revision: its source names
+  no single year (College Scorecard's "most recent release"), it now comes from a different kind of source, or its
+  period isn't later. A column the spec didn't have, `old_source`, names the previous source in that case.
 - `status` isn't a stored field (closures and mergers aren't in the dataset), so only `name` is an always-change.
   Colleges present in only one dataset are skipped.
 - History revisions ("NCES revised 2019–2023 cost figures") are not summarized yet: `sync-history` doesn't record a

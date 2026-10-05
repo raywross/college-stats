@@ -11,7 +11,7 @@ import type { DatasetMeta, School } from "../lib/types";
 import type { Release } from "../lib/releases";
 import type { ResidencyPrices } from "../lib/types";
 import { FIELDS, NOTIFY_FIELDS, type FieldPath } from "../lib/fields.ts";
-import { describeChange, diffSchools, formatChangeValue, recentPublishes, type DatasetChange, type StoredChange } from "../lib/changes.ts";
+import { describeChange, diffSchools, formatChangeValue, periodLabel, periodStart, recentPublishes, type DatasetChange, type StoredChange } from "../lib/changes.ts";
 import { changeSummary, changeTablesState, computeChanges, formatChangeList, stageChanges } from "../scripts/lib/publish-changes.mts";
 
 const ROOT = join(import.meta.dirname, "..");
@@ -132,6 +132,65 @@ test("derived fields are reported only when an input changed", () => {
   assert.deepEqual(diff(s0, s2), [], "in_district isn't one of the keys reported");
 });
 
+/** A college whose enrollment came from a hand-imported CDS override, cited to the edition "2024-25" (as Purdue's was). */
+function withCdsEnrollment(s: Full, edition: string, value: number): Full {
+  s.cds = { edition, url: "https://example.edu/CDS.xlsx" };
+  s.demographics.undergrad_enrollment = value;
+  s.lineage = { ...s.lineage, "demographics.undergrad_enrollment": { source: "cds", year: edition, url: "https://example.edu/CDS.xlsx", retrieved: "2026-09-27" } };
+  return s;
+}
+
+test("Purdue's case: a CDS edition replaced by Scorecard for the same fall is a source change, not a new year, in one label style", () => {
+  // Before: 44,819 from the college's CDS 2024-25 (which reports fall 2024). After: Scorecard's 44,503 for fall 2024.
+  const prev = withCdsEnrollment(base(), "2024-25", 44819);
+  const next = base();
+  next.demographics.undergrad_enrollment = 44503;
+  const meta = metaWith({ "scorecard-enrollment": "Fall 2024" });
+  const [c] = diff(prev, next, { prevMeta: meta, nextMeta: meta });
+  assert.equal(c.field, "demographics.undergrad_enrollment");
+  assert.equal(c.kind, "updated", "the same fall from a different source is not a new year");
+  assert.equal(c.old_year, "Fall 2024", "the CDS edition is written as the fall it reports");
+  assert.equal(c.new_year, "Fall 2024");
+  assert.equal(c.old_source, `${prev.name} Common Data Set`);
+  assert.equal(
+    describeChange(c),
+    `Fall 2024: 44,503 undergraduates from ${META.sources.scorecard!.label} (was 44,819 from ${prev.name} Common Data Set)`,
+  );
+});
+
+test("a newer fall is a new year whatever the old label style; an older one never is", () => {
+  const meta = metaWith({ "scorecard-enrollment": "Fall 2025" });
+  const prev = withCdsEnrollment(base(), "2024-25", 44819);
+  const next = base();
+  next.demographics.undergrad_enrollment = 45100;
+  const [later] = diff(prev, next, { prevMeta: meta, nextMeta: meta });
+  assert.equal(later.kind, "new_year");
+  assert.equal(describeChange(later), "Fall 2025: 45,100 undergraduates (fall 2024: 44,819)");
+  // Going back in time: CDS 2025-26 (fall 2025) replaced by Scorecard's fall 2024 figure.
+  const newer = withCdsEnrollment(base(), "2025-26", 46000);
+  const older = metaWith({ "scorecard-enrollment": "Fall 2024" });
+  const [back] = diff(newer, next, { prevMeta: older, nextMeta: older });
+  assert.equal(back.kind, "updated");
+  assert.equal(describeChange(back), `Fall 2024: 45,100 undergraduates from ${META.sources.scorecard!.label} (was 46,000 from ${newer.name} Common Data Set, fall 2025)`);
+  // The same CDS edition re-read: a revision, en-dashed if it stays an academic year.
+  const same = withCdsEnrollment(base(), "2024-25", 44819);
+  const reread = withCdsEnrollment(base(), "2024-25", 44700);
+  const [rev] = diff(same, reread, { prevMeta: older, nextMeta: older });
+  assert.equal(rev.kind, "revised");
+  assert.equal(describeChange(rev), "Revised fall 2024 figure: 44,700 undergraduates (was 44,819)");
+});
+
+test("periodLabel and periodStart: one style, ordered by period", () => {
+  assert.equal(periodLabel("cost.aided_net_price", { key: "cds", year: "2024-25" }, META), "2024–25");
+  assert.equal(periodLabel("outcomes.retention_rate", { key: "cds", year: "2025-26" }, metaWith({ "scorecard-retention": "Entered fall 2023" })), "Entered fall 2024");
+  assert.equal(periodLabel("admissions.applicants", { key: "ipeds-adm", year: "Fall 2024" }, META), "Fall 2024");
+  assert.ok(periodStart("Fall 2025")! > periodStart("Fall 2024")!);
+  assert.equal(periodStart("Entered fall 2024"), periodStart("Fall 2024"));
+  assert.equal(periodStart("Fall 2027 applicants"), periodStart("Fall 2027"));
+  assert.equal(periodStart("2024–25"), Date.UTC(2024, 6, 1));
+  assert.equal(periodStart("most recent release"), null);
+});
+
 test("years come from lineage before and after, not from meta alone", () => {
   const prev = base();
   const next = base();
@@ -193,7 +252,7 @@ test("NOTIFY_FIELDS: stored fields only, each with a unit, each present in the d
 
 test("recentPublishes: the last two publishes that touched a college, newest first; nothing after a year", () => {
   const c = (publish_id: number, published_at: string, field: FieldPath, release: string | null = null): StoredChange => ({
-    publish_id, published_at, field, unit_id: "1", kind: "revised", old_value: 1, new_value: 2, old_year: "Fall 2024", new_year: "Fall 2024", source: "IPEDS", release,
+    publish_id, published_at, field, unit_id: "1", kind: "revised", old_value: 1, new_value: 2, old_year: "Fall 2024", new_year: "Fall 2024", source: "IPEDS", old_source: null, release,
   });
   const rows = [
     c(1, "2026-01-01T00:00:00Z", "admissions.applicants"),

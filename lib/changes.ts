@@ -13,7 +13,7 @@
 import type { DatasetMeta, School } from "./types";
 import type { ReleaseCalendar } from "./releases";
 import { FIELDS, NOTIFY_FIELDS, NOTIFY_TOLERANCE, isFieldPath, type FieldDef, type FieldPath, type NotifyDef } from "./fields.ts";
-import { lineageFor } from "./lineage.ts";
+import { lineageFor, type CitedSource } from "./lineage.ts";
 import { formatBy, money, num, pct, pctSmart } from "./format.ts";
 import { POLICY_LABELS } from "./test-policy.ts";
 
@@ -21,11 +21,12 @@ import { POLICY_LABELS } from "./test-policy.ts";
 const TEXT_WORDS: Partial<Record<FieldPath, Readonly<Record<string, string>>>> = { "admissions.test_policy": POLICY_LABELS };
 
 /**
- * - `new_year`: the value's year moved and the value differs ("Fall 2025: … (fall 2024: …)").
- * - `revised`: same year, the value differs beyond the field's tolerance.
- * - `updated`: the value differs and its source names no single year (College Scorecard's "most recent release"),
- *   so whether it's a new year or a revision can't be told. Not in the spec's original four; added so a Scorecard
- *   refresh isn't mislabeled.
+ * - `new_year`: the value describes a later period than before ("Fall 2025: … (fall 2024: …)"); never for the same
+ *   or an earlier period, or for periods that can't be ordered.
+ * - `revised`: same period, same kind of source, the value differs beyond the field's tolerance.
+ * - `updated`: anything else that differs: a different kind of source (a college's Common Data Set replaced by
+ *   College Scorecard; `old_source` names the old one), a period that isn't later, or a source with no single year
+ *   (Scorecard's "most recent release"). Not in the spec's original four; added so none of these is mislabeled.
  * - `appeared` / `disappeared`: null before / null after. `disappeared` is shown on the panel, never emailed.
  */
 export type ChangeKind = "new_year" | "revised" | "updated" | "appeared" | "disappeared";
@@ -46,6 +47,8 @@ export interface DatasetChange {
   new_year: string | null;
   /** The source cited for the value (after; before for `disappeared`): "IPEDS Admissions", "Cornell University Common Data Set 2025–26". */
   source: string | null;
+  /** The source the old value was cited to, only when it's a different kind of source (Common Data Set → Scorecard). */
+  old_source: string | null;
   /** The release-calendar entry that brought it, when one was published between the two datasets. */
   release: string | null;
 }
@@ -116,6 +119,65 @@ function releaseFor(path: FieldPath, school: School, prev: DatasetMeta, next: Da
   return match?.label ?? null;
 }
 
+/* ------------------------------------------------------------------ */
+/* Years: one label style, ordered by the period they describe          */
+/* ------------------------------------------------------------------ */
+
+/** "2024-25" → "2024–25": the site writes academic years with an en dash. */
+function normalizeYear(year: string): string {
+  return year.replace(/\b(\d{4})\s*-\s*(\d{2}|\d{4})\b/g, "$1–$2");
+}
+
+/**
+ * The period a cited year describes, as the field's own label style. A hand-imported Common Data Set override
+ * (source `cds`) cites its edition ("2024-25"), not the period: for a field that describes a fall (the field's default
+ * citation is "Fall 2024"), edition YYYY–YY reports fall YYYY (CDS B1, C1, C9); for retention ("Entered fall 2023"),
+ * it reports the class that entered fall YYYY − 1 (CDS B22). Other years pass through, en-dashed.
+ */
+export function periodLabel(field: FieldPath, cited: Pick<CitedSource, "key" | "year">, meta: DatasetMeta): string | null {
+  if (cited.year === null) return null;
+  const year = normalizeYear(cited.year);
+  const edition = /^(\d{4})–(\d{2}|\d{4})$/.exec(year);
+  if (cited.key !== "cds" || !edition) return year;
+  const style = lineageFor(field, undefined, meta).year ?? "";
+  const first = Number(edition[1]);
+  if (/^fall \d{4}$/i.test(style)) return `Fall ${first}`;
+  if (/^entered fall \d{4}$/i.test(style)) return `Entered fall ${first - 1}`;
+  return year;
+}
+
+/** When a period began, for ordering two years: Sep 1 of a fall, Jul 1 of an academic year's first year. Null when unknown. */
+export function periodStart(label: string | null): number | null {
+  if (!label) return null;
+  const fall = /^(?:(?:students )?enter(?:ed|ing) )?fall (\d{4})(?: applicants)?$/i.exec(label.trim());
+  if (fall) return Date.UTC(Number(fall[1]), 8, 1);
+  const academic = /^(\d{4})\s*[–-]\s*(\d{2}|\d{4})(?: graduates)?$/.exec(label.trim());
+  if (academic) return Date.UTC(Number(academic[1]), 6, 1);
+  return null;
+}
+
+/** The kind of document a value came from: a college's Common Data Set, whichever pipeline read it, counts as one. */
+function sourceFamily(cited: Pick<CitedSource, "key"> & { cdsEdition?: string }): string {
+  return cited.key === "cds" || (cited.key === "college-site" && cited.cdsEdition) ? "cds" : cited.key;
+}
+
+/**
+ * Both values present and different: `new_year` only when the new period is known to be later; the same period from
+ * the same kind of source is `revised`; anything else (a different source for the same or an earlier period, or
+ * periods that can't be ordered) is `updated`, and the sentence names both sources.
+ */
+function kindFor(oldYear: string | null, newYear: string | null, sourceChanged: boolean): ChangeKind {
+  const a = periodStart(oldYear);
+  const b = periodStart(newYear);
+  if (a !== null && b !== null) {
+    if (b > a) return "new_year";
+    if (b === a && !sourceChanged) return "revised";
+    return "updated";
+  }
+  if (oldYear !== null && oldYear === newYear && !sourceChanged) return "revised";
+  return "updated";
+}
+
 /**
  * Every reportable change between two datasets, college by college in the new file's order, then field by field.
  * Colleges in only one of the two are skipped (a new college has no "before"; a removed one has no profile).
@@ -139,10 +201,10 @@ export function diffSchools(prev: DatasetSnapshot, next: DatasetSnapshot, fields
       if (!notify.always && a !== null && b !== null && isCalculated(field, old) && isCalculated(field, school) && !inputsChanged(field, old, school)) continue;
       const citedBefore = lineageFor(field, old, prev.meta);
       const citedAfter = lineageFor(field, school, next.meta);
-      const oldYear = a === null ? null : citedBefore.year;
-      const newYear = b === null ? null : citedAfter.year;
-      const kind: ChangeKind =
-        a === null ? "appeared" : b === null ? "disappeared" : oldYear !== newYear ? "new_year" : newYear === null ? "updated" : "revised";
+      const oldYear = a === null ? null : periodLabel(field, citedBefore, prev.meta);
+      const newYear = b === null ? null : periodLabel(field, citedAfter, next.meta);
+      const sourceChanged = a !== null && b !== null && sourceFamily(citedBefore) !== sourceFamily(citedAfter);
+      const kind: ChangeKind = a === null ? "appeared" : b === null ? "disappeared" : kindFor(oldYear, newYear, sourceChanged);
       out.push({
         unit_id: school.unit_id,
         field,
@@ -152,6 +214,7 @@ export function diffSchools(prev: DatasetSnapshot, next: DatasetSnapshot, fields
         old_year: oldYear,
         new_year: newYear,
         source: (b === null ? citedBefore : citedAfter).label,
+        old_source: sourceChanged ? citedBefore.label : null,
         release: kind === "disappeared" ? null : releaseFor(field, school, prev.meta, next.meta, options.calendar),
       });
     }
@@ -223,12 +286,17 @@ function formatPair(field: FieldPath, a: unknown, b: unknown, opts: DescribeOpti
  * One plain sentence with both years (follow-colleges.md#detecting-changes):
  * - new_year: "Fall 2025: 9.1% admitted (fall 2024: 9.8%)"
  * - revised: "Revised fall 2024 figure: 9.6% admitted (was 9.8%)"
- * - updated: "Most recent release: graduation rate 61% (was 59%)"
+ * - updated: "Most recent release: graduation rate 61% (was 59%)"; with a different kind of source:
+ *   "Fall 2024: 44,503 undergraduates from College Scorecard (was 44,819 from Purdue University Common Data Set)"
  * - appeared: "Now reported: median earnings 10 years after entry $55,736 (most recent release)"
  * - disappeared: "No longer reported: median debt at graduation (was $24,250, most recent release)"
  * - a rename (`always`): "Name changed: New College (was Old College)"
+ * Both years are written in the field's own style (periodLabel), so a sentence never mixes "Fall 2024" and "2024-25".
  */
-export function describeChange(c: Pick<DatasetChange, "field" | "kind" | "old_value" | "new_value" | "old_year" | "new_year">, opts: DescribeOptions = {}): string {
+export function describeChange(
+  c: Pick<DatasetChange, "field" | "kind" | "old_value" | "new_value" | "old_year" | "new_year"> & Partial<Pick<DatasetChange, "source" | "old_source">>,
+  opts: DescribeOptions = {},
+): string {
   const def = FIELDS[c.field] as FieldDef;
   const [was, now] = formatPair(c.field, c.old_value, c.new_value, opts);
   if (def.notify?.always && c.kind !== "appeared" && c.kind !== "disappeared") {
@@ -239,8 +307,11 @@ export function describeChange(c: Pick<DatasetChange, "field" | "kind" | "old_va
       return `${upperFirst(yearText(c.new_year))}: ${phrase(c.field, now)} (${lowerFirst(yearText(c.old_year))}: ${was})`;
     case "revised":
       return `Revised ${lowerFirst(yearText(c.new_year))} figure: ${phrase(c.field, now)} (was ${was})`;
-    case "updated":
-      return `${upperFirst(yearText(c.new_year))}: ${phrase(c.field, now)} (was ${was})`;
+    case "updated": {
+      const oldWhen = c.old_year !== c.new_year ? `, ${lowerFirst(yearText(c.old_year))}` : "";
+      if (c.old_source && c.source) return `${upperFirst(yearText(c.new_year))}: ${phrase(c.field, now)} from ${c.source} (was ${was} from ${c.old_source}${oldWhen})`;
+      return `${upperFirst(yearText(c.new_year))}: ${phrase(c.field, now)} (was ${was}${oldWhen})`;
+    }
     case "appeared":
       return `Now reported: ${phrase(c.field, now)} (${lowerFirst(yearText(c.new_year))})`;
     case "disappeared":

@@ -3,7 +3,7 @@ import { initialsFor } from "@/lib/accounts";
 import { canRemove, editAccessControl, memberName, shortDate, type HouseholdView, type RosterMember } from "@/lib/household-rules";
 import { leaveHousehold, removeMember, revokeInvitation, setMemberCanEdit } from "@/app/account/household/actions";
 import { HouseholdActionButton } from "./HouseholdActionButton";
-import { AddManagedStudentForm, InviteForm } from "./HouseholdForms";
+import { AddManagedStudentForm, InviteForm, LinkManagedStudent, ReissueInvitation } from "./HouseholdForms";
 
 function RoleBadge({ m }: { m: RosterMember }) {
   const cls = "inline-flex shrink-0 items-center rounded-full px-2 py-0.5 text-xs font-semibold";
@@ -49,6 +49,7 @@ function MemberRow({ m, h }: { m: RosterMember; h: HouseholdView }) {
         )}
       </div>
       <div className="flex flex-wrap items-start justify-end gap-2">
+        {m.managed_by_me && m.student_id && <LinkManagedStudent household={h.id} student={m.student_id} name={name} />}
         {m.role === "guardian" && !m.can_edit && edit.grant && (
           <HouseholdActionButton action={setMemberCanEdit} fields={{ member: m.member_id, can_edit: "true" }} label="Allow editing" />
         )}
@@ -120,7 +121,10 @@ export function HouseholdCard({ h }: { h: HouseholdView }) {
                     As {inv.side === "guardian" ? (inv.can_edit ? "a guardian who can edit" : "a guardian") : "a student"} · invited by {nameOf(inv.invited_by)} · expires {shortDate(inv.expires_at)}
                   </p>
                 </div>
-                <HouseholdActionButton action={revokeInvitation} fields={{ invitation: inv.id }} label="Cancel" confirm={`Cancel the invitation to ${inv.email}? The link stops working.`} />
+                <div className="flex flex-wrap items-start justify-end gap-2">
+                  <ReissueInvitation household={h.id} invitation={inv.id} />
+                  <HouseholdActionButton action={revokeInvitation} fields={{ invitation: inv.id }} label="Cancel" confirm={`Cancel the invitation to ${inv.email}? The link stops working.`} />
+                </div>
               </li>
             ))}
           </ul>

@@ -1,9 +1,11 @@
 "use server";
 
 import { cookies, headers } from "next/headers";
+import { redirect } from "next/navigation";
 import { authConfigured } from "@/lib/auth";
 import { createClient } from "@supabase/supabase-js";
-import { supabaseAuthEnv } from "@/lib/supabase-server";
+import { createServerSupabase, supabaseAuthEnv } from "@/lib/supabase-server";
+import { passwordProblems } from "@/lib/password";
 import { AGE_GATE_COOKIE, birthYearAllowed, isRoleHint, parseBirthYear, safeNextPath } from "@/lib/accounts";
 
 export type LoginState =
@@ -83,4 +85,141 @@ export async function requestMagicLink(_prev: LoginState, form: FormData): Promi
     return { status: "error", message: "We couldn't send the sign-in email. Try again in a moment.", email };
   }
   return { status: "sent", email };
+}
+
+/* ------------------------------------------------------------------ */
+/* Passwords (the default since 2026-10-05; the magic link stays as an */
+/* option)                                                             */
+/* ------------------------------------------------------------------ */
+
+export type PasswordState =
+  | { status: "idle" }
+  /** Account created; Supabase wants the email confirmed before the first sign-in. */
+  | { status: "confirm-email"; email: string }
+  /** A password-reset or confirmation email went out. */
+  | { status: "email-sent"; email: string; kind: "reset" | "confirm" }
+  /** Sign-in refused because the email isn't confirmed yet: offer to send the confirmation again. */
+  | { status: "unconfirmed"; email: string }
+  | { status: "refused" }
+  | { status: "error"; message: string; email?: string };
+
+async function originOf(): Promise<string> {
+  const h = await headers();
+  return h.get("origin") ?? `${h.get("x-forwarded-proto") ?? "http"}://${h.get("host")}`;
+}
+
+const rateLimited = (e: { status?: number; code?: string; message: string }) =>
+  e.status === 429 || /rate.?limit/i.test(`${e.code} ${e.message}`);
+const RATE_LIMITED = "Too many emails were sent recently. Wait a few minutes, then try again.";
+
+/** Email and password. Success sets the session cookies and goes on to ?next=. */
+export async function signInWithPassword(_prev: PasswordState, form: FormData): Promise<PasswordState> {
+  if (!authConfigured()) return { status: "error", message: "Sign-in isn't available here." };
+  const email = String(form.get("email") ?? "").trim().toLowerCase();
+  const password = String(form.get("password") ?? "");
+  const next = safeNextPath(form.get("next"), "/account");
+  if (!EMAIL_RE.test(email) || !password) return { status: "error", message: "Enter your email and password.", email };
+
+  const supabase = await createServerSupabase();
+  const { error } = await supabase.auth.signInWithPassword({ email, password });
+  if (error) {
+    if (error.code === "email_not_confirmed") return { status: "unconfirmed", email };
+    if (rateLimited(error)) return { status: "error", message: "Too many tries. Wait a few minutes, then try again.", email };
+    if (error.code !== "invalid_credentials") console.error(`login: signInWithPassword failed (${error.code ?? error.status}): ${error.message}`);
+    return {
+      status: "error",
+      message: "That email and password don't match. If you signed up with an emailed link, use “Forgot password” to set one.",
+      email,
+    };
+  }
+  redirect(next);
+}
+
+/**
+ * Creates an account with a password (checked against lib/password.ts here as well as in the form), the birth year
+ * and role going into user metadata for the sign-up trigger as with magic links. Sent with the implicit-flow client,
+ * so the confirmation email's link works in any browser and lands on /auth/confirm.
+ */
+export async function signUpWithPassword(_prev: PasswordState, form: FormData): Promise<PasswordState> {
+  if (!authConfigured()) return { status: "error", message: "Sign-in isn't available here." };
+  const store = await cookies();
+  if (store.get(AGE_GATE_COOKIE)?.value === "refused") return { status: "refused" };
+  const email = String(form.get("email") ?? "").trim().toLowerCase();
+  const password = String(form.get("password") ?? "");
+  const next = safeNextPath(form.get("next"), "/account");
+  if (!EMAIL_RE.test(email) || email.length > 254) return { status: "error", message: "Enter a valid email address.", email };
+  const problems = passwordProblems(password, email);
+  if (problems.length) return { status: "error", message: problems.join(" "), email };
+  const year = parseBirthYear(String(form.get("birth_year") ?? ""));
+  if (year === null || year > new Date().getFullYear()) return { status: "error", message: "Enter your birth year as four digits, like 2008.", email };
+  if (!birthYearAllowed(year)) {
+    store.set(AGE_GATE_COOKIE, "refused", { httpOnly: true, sameSite: "lax", secure: process.env.NODE_ENV === "production", maxAge: 60 * 60 * 24, path: "/" });
+    return { status: "refused" };
+  }
+  const role = form.get("role_hint");
+
+  const { data, error } = await magicLinkClient().auth.signUp({
+    email,
+    password,
+    options: {
+      emailRedirectTo: `${await originOf()}/auth/confirm?next=${encodeURIComponent(next)}`,
+      data: { birth_year: String(year), ...(isRoleHint(role) ? { role_hint: role } : {}) },
+    },
+  });
+  if (error) {
+    if (rateLimited(error)) return { status: "error", message: RATE_LIMITED, email };
+    if (error.code === "user_already_exists" || error.code === "email_exists") return alreadyExists(email);
+    if (error.code === "weak_password") return { status: "error", message: error.message, email };
+    console.error(`login: signUp failed (${error.code ?? error.status}): ${error.message}`);
+    return { status: "error", message: "We couldn't create the account. Try again in a moment.", email };
+  }
+  // With email confirmation on, an address that already has an account comes back as a user with no identities.
+  if (data.user && (data.user.identities?.length ?? 0) === 0) return alreadyExists(email);
+  if (data.session) {
+    // Email confirmation is off on this project: sign straight in.
+    const supabase = await createServerSupabase();
+    await supabase.auth.setSession({ access_token: data.session.access_token, refresh_token: data.session.refresh_token });
+    redirect(next);
+  }
+  return { status: "confirm-email", email };
+}
+
+function alreadyExists(email: string): PasswordState {
+  return { status: "error", message: "There's already an account for this email. Sign in instead, or use “Forgot password”.", email };
+}
+
+/** "Forgot password": emails a link that signs in and opens /account/password to choose a new one. */
+export async function requestPasswordReset(_prev: PasswordState, form: FormData): Promise<PasswordState> {
+  if (!authConfigured()) return { status: "error", message: "Sign-in isn't available here." };
+  const email = String(form.get("email") ?? "").trim().toLowerCase();
+  if (!EMAIL_RE.test(email)) return { status: "error", message: "Enter a valid email address.", email };
+  const { error } = await magicLinkClient().auth.resetPasswordForEmail(email, {
+    redirectTo: `${await originOf()}/auth/confirm?next=${encodeURIComponent("/account/password")}`,
+  });
+  if (error) {
+    if (rateLimited(error)) return { status: "error", message: RATE_LIMITED, email };
+    console.error(`login: resetPasswordForEmail failed (${error.code ?? error.status}): ${error.message}`);
+    return { status: "error", message: "We couldn't send the email. Try again in a moment.", email };
+  }
+  // The same answer whether or not the address has an account.
+  return { status: "email-sent", email, kind: "reset" };
+}
+
+/** Sends the sign-up confirmation email again. */
+export async function resendConfirmation(_prev: PasswordState, form: FormData): Promise<PasswordState> {
+  if (!authConfigured()) return { status: "error", message: "Sign-in isn't available here." };
+  const email = String(form.get("email") ?? "").trim().toLowerCase();
+  const next = safeNextPath(form.get("next"), "/account");
+  if (!EMAIL_RE.test(email)) return { status: "error", message: "Enter a valid email address.", email };
+  const { error } = await magicLinkClient().auth.resend({
+    type: "signup",
+    email,
+    options: { emailRedirectTo: `${await originOf()}/auth/confirm?next=${encodeURIComponent(next)}` },
+  });
+  if (error) {
+    if (rateLimited(error)) return { status: "error", message: RATE_LIMITED, email };
+    console.error(`login: resend failed (${error.code ?? error.status}): ${error.message}`);
+    return { status: "error", message: "We couldn't send the email. Try again in a moment.", email };
+  }
+  return { status: "email-sent", email, kind: "confirm" };
 }

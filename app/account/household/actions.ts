@@ -103,24 +103,58 @@ export async function inviteToHousehold(_prev: InviteState, form: FormData): Pro
     return { status: "error", message: errorMessage(error, HOUSEHOLD_ERRORS, FAILED) };
   }
   const { token, expires_at } = data as { id: string; token: string; expires_at: string };
+  const created = await deliverInvitation(supabase, { household, email, side, token, expiresAt: expires_at, inviter: account.profile.display_name });
+  refresh();
+  return created;
+}
 
+/**
+ * The link for a new or reissued invitation: shown on screen to copy, and emailed when email is set up ("not
+ * configured" is normal before the sending domain exists).
+ */
+async function deliverInvitation(
+  supabase: Awaited<ReturnType<typeof createServerSupabase>>,
+  inv: { household: string; email: string; side: "guardian" | "student"; token: string; expiresAt: string; inviter: string | null },
+): Promise<InviteState> {
   const h = await headers();
   const origin = h.get("origin") ?? `${h.get("x-forwarded-proto") ?? "http"}://${h.get("host")}`;
-  const link = `${origin}/invite/${token}`;
-  const expires = shortDate(expires_at);
-
-  const { data: hh } = await supabase.from("households").select("name").eq("id", household).maybeSingle();
+  const link = `${origin}/invite/${inv.token}`;
+  const expires = shortDate(inv.expiresAt);
+  const { data: hh } = await supabase.from("households").select("name").eq("id", inv.household).maybeSingle();
   const message = invitationEmail({
-    inviter: account.profile.display_name,
+    inviter: inv.inviter,
     household: (hh as { name: string } | null)?.name ?? "your family's",
-    side,
+    side: inv.side,
     link,
     siteName: SITE_NAME,
     expires,
   });
-  const sent = await sendEmail({ to: email, ...message });
+  const sent = await sendEmail({ to: inv.email, ...message });
+  return { status: "created", link, email: inv.email, emailed: sent.sent, expires };
+}
+
+/**
+ * "Send it again" for a pending invitation. Its link can't be shown twice (only a hash is stored), so this makes a
+ * new link with a fresh 7-day expiry (reissue_invitation); the old link stops working.
+ */
+export async function reissueInvitation(_prev: InviteState, form: FormData): Promise<InviteState> {
+  const account = await signedIn();
+  if (!account) return { status: "error", message: HOUSEHOLD_ERRORS.not_signed_in };
+  const invitation = id(form, "invitation");
+  const household = id(form, "household");
+  if (!invitation || !household) return { status: "error", message: FAILED };
+  const supabase = await createServerSupabase();
+  const { data, error } = await supabase.rpc("reissue_invitation", { p_invitation: invitation });
+  if (error) {
+    console.error(`household: reissue_invitation failed: ${error.message}`);
+    if (/function .*reissue_invitation/i.test(error.message))
+      return { status: "error", message: "New links need a database update that isn't applied yet." };
+    return { status: "error", message: errorMessage(error, HOUSEHOLD_ERRORS, FAILED) };
+  }
+  const re = data as { token: string; expires_at: string; email: string; side: "guardian" | "student" };
+  const created = await deliverInvitation(supabase, { household, email: re.email, side: re.side, token: re.token, expiresAt: re.expires_at, inviter: account.profile.display_name });
   refresh();
-  return { status: "created", link, email, emailed: sent.sent, expires };
+  return created;
 }
 
 /** Cancels a pending invitation (any active member of its household may). */

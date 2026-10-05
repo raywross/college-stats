@@ -35,9 +35,17 @@ federal number ([commercialization.md](commercialization.md#what-stays-free)).
   [counselor-portal.md](counselor-portal.md) and [scattergrams.md](scattergrams.md), not here.
 
 ## Sign-in
-- **Methods:** email magic link (no passwords to leak or reset). Google is deferred to the backlog (2026-10-05: the
-  owner is registering a new domain first); the login form has a marked slot for it. Apple sign-in when there is a
-  native app. Passkeys later.
+- **Methods:** email and **password** by default (owner decision 2026-10-05: simpler than a link for most people),
+  with an emailed **magic link** as the option under the form. Google is deferred to the backlog (the owner is
+  registering a new domain first); the login form has a marked slot for it. Apple sign-in when there is a native app.
+  Passkeys later.
+- **Passwords** (`lib/password.ts`, the same rule in the form and on the server): at least 10 characters, and three
+  of lowercase / uppercase / digits / symbols, or a passphrase of 16+; never the email's name part or a common
+  password; 72 at most (bcrypt). The sign-up form shows a three-step meter and keeps Create disabled until it passes.
+  Sign-up sends Supabase's confirmation email (implicit flow, lands on `/auth/confirm`); after confirming, people sign
+  in with email and password. "Forgot password" emails a link that signs in and opens `/account/password`, which is
+  also where anyone signed in sets or changes a password (an account made with a magic link has none until then).
+  Sign-in with an unconfirmed email offers to send the confirmation again.
 - **Routes:** `/login` (one form, both methods; `?next=` returns to the page that asked), `/auth/confirm` (where
   magic links land), `/auth/callback` (`?code=` / `?token_hash=` links, server-side), `/account` (name, email, birth
   year, households, subscription, export, delete).
@@ -73,6 +81,15 @@ auth.users ──1:1── profiles (display_name, birth_year, role_hint: studen
   the guardian keeps household access.
 - **Invitations** are by email with a signed link (7-day expiry). A student must accept a guardian's link, and a
   guardian must accept a student's; nobody is added to a household silently. Either side can leave at any time.
+  A pending invitation has **New link** (`reissue_invitation`, migration `20261005160000_invitation_links.sql`): the
+  link can't be shown twice because only its hash is stored, so this makes a new one with a fresh 7-day expiry, shows
+  it to copy, and emails it when email is set up; the old link stops working.
+- **Linking a managed student later:** each student a guardian added has **Link to their account**, an invitation
+  for that record to the student's email. If the student already has their own record (made the first time they
+  opened `/me`), accepting **merges** the managed record into it: its lists come over as extra lists (their own
+  default stays), profile values fill in where theirs are empty, their own record takes its place in each household,
+  the access log moves, and the managed record is soft-deleted (`merge_managed_student`). Before this, accepting left
+  the managed record's list and numbers behind.
 - A guardian's access to a student is **view by default**; `can_edit` lets the guardian add to lists and notes
   (set by the student, or by the guardian for a managed student). Edits are attributed ("Added by Mom").
 - One user can be a guardian in several households and a student in several (two homes). Counselor organizations

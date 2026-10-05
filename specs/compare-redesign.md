@@ -1,9 +1,9 @@
 # Compare Redesign: Overview Cards and a Page per Topic
 
-> Status: **planned** (not built). Decided 2026-10-02, the day the profile redesign shipped
+> Status: **built** 2026-10-05 (#84). Decided 2026-10-02, the day the profile redesign shipped
 > ([profile-redesign.md](profile-redesign.md)): the same review, the same four kinds of proposal, and the same
-> winner, so a comparison reads like the profiles it is built from. Replaces the single page in
-> [comparison.md](comparison.md).
+> winner, so a comparison reads like the profiles it is built from. Replaced the single compare page;
+> [comparison.md](comparison.md) describes the result.
 
 ## Why
 The compare page grew the way the profile did: every data wave added a group of metric cards and a few dozen rows

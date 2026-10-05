@@ -94,6 +94,39 @@ test("a publish landing mid-read is detected and the read repeated, so one load 
   await assert.rejects(fetchDatasetFiles(churning), /kept changing/);
 });
 
+test("a read that hits the statement timeout (a publish mid-swap) waits and retries, then gives up after the last wait", async () => {
+  const timeout = { data: null, error: { message: "canceling statement due to statement timeout" } };
+  const rows = [{ data: { unit_id: "1" } }];
+  // The first `failures` schools reads time out, as during the 2026-10-05 publish.
+  const timingOut = (failures: number) => {
+    const { client } = fakeClient(rows, files());
+    let calls = 0;
+    const from = client.from.bind(client);
+    (client as unknown as { from: (t: string) => unknown }).from = (table: string) =>
+      table === "schools"
+        ? { select: () => ({ order: () => ({ range: async (a: number, b: number) => (++calls <= failures ? timeout : { data: rows.slice(a, b + 1), error: null }) }) }) }
+        : from(table);
+    return client;
+  };
+  const waited: number[] = [];
+  const wait = async (ms: number) => void waited.push(ms);
+
+  const out = await fetchDatasetFiles(timingOut(2), { timeoutWaits: [1, 2, 3], wait });
+  assert.equal(out.schools.length, 1);
+  assert.deepEqual(waited, [1, 2], "waited once per timed-out read");
+
+  waited.length = 0;
+  await assert.rejects(fetchDatasetFiles(timingOut(9), { timeoutWaits: [1, 2, 3], wait }), /statement timeout/);
+  assert.deepEqual(waited, [1, 2, 3], "every wait used before giving up");
+
+  // Other errors still fail at once.
+  const { client: broken } = fakeClient(rows, files());
+  (broken as unknown as { from: (t: string) => unknown }).from = () => ({ select: async () => ({ data: null, error: { message: "permission denied" } }) });
+  waited.length = 0;
+  await assert.rejects(fetchDatasetFiles(broken, { timeoutWaits: [1], wait }), /permission denied/);
+  assert.deepEqual(waited, []);
+});
+
 /** A store whose version and contents the test controls, counting loads and version checks. */
 function fakeStore(version: string | null) {
   const store = { version, loads: 0, checks: 0, down: false };

@@ -34,7 +34,7 @@ import {
   validateStateFile,
   HS_STATES,
 } from "../lib/high-school-core.ts";
-import { HS_FIELDS, citeHsField, citeHsView, hsSourcesForFields, isHsSuppressed, registeredHsPathFor, validateHsRegistry } from "../lib/hs-fields.ts";
+import { HS_FIELDS, citeHsField, citeHsView, hsSourcesForFields, hsValueAt, isHsSuppressed, registeredHsPathFor, validateHsRegistry } from "../lib/hs-fields.ts";
 import { citesYear, yearLabel, type AnyCited } from "../lib/lineage.ts";
 import { createJsonHighSchoolStore, highSchoolsDir, readAllShards, readHsMeta, readStateFiles } from "../lib/high-school-store.ts";
 import { highSchoolFileProblems, readHighSchoolData } from "../scripts/lib/publish-high-schools.mts";
@@ -492,4 +492,13 @@ test("glossary: every high school term the UI uses exists", () => {
     assert.ok(t in GLOSSARY, `glossary term ${t}`);
     for (const r of (GLOSSARY as Record<string, { related?: string[] }>)[t].related ?? []) assert.ok(r in GLOSSARY, `${t} relates to unknown term ${r}`);
   }
+});
+
+test("hsValueAt: missing is null, never undefined (a leaf under a null block, no state report, no detail file)", () => {
+  const priv = rows().find((r) => r.kind === "private")!;
+  assert.equal(priv.rigor, null);
+  assert.equal(hsValueAt("rigor.ap_enrolled", priv), null);
+  assert.equal(hsValueAt("state.college_going_rate", priv), null);
+  assert.equal(hsValueAt("detail.class_size", priv), null);
+  assert.equal(hsValueAt("derived.ap_enrolled_share", priv), null);
 });

@@ -345,10 +345,12 @@ export const HS_DERIVED: Record<Extract<HsFieldPath, `derived.${string}`>, (row:
 
 /** The value at a path for one school (derived values computed), or undefined/null when it has none. */
 export function hsValueAt(path: HsFieldPath, row: HighSchool, extras: HsCiteExtras = {}): unknown {
-  if (path.startsWith("derived.")) return HS_DERIVED[path as keyof typeof HS_DERIVED](row);
-  if (path.startsWith("state.")) return extras.stateReport?.values[path.slice("state.".length) as HsStateField];
-  if (path.startsWith("detail.")) return extras.detail ? at(extras.detail, path.slice("detail.".length)) : undefined;
-  return at(row, path);
+  // Missing is null, never undefined (specs/data-lineage.md rule 5), including a leaf under a null block (a private
+  // school's `rigor`) or a state/detail field the school has no file for.
+  if (path.startsWith("derived.")) return HS_DERIVED[path as keyof typeof HS_DERIVED](row) ?? null;
+  if (path.startsWith("state.")) return extras.stateReport?.values[path.slice("state.".length) as HsStateField] ?? null;
+  if (path.startsWith("detail.")) return (extras.detail ? at(extras.detail, path.slice("detail.".length)) : null) ?? null;
+  return at(row, path) ?? null;
 }
 
 /** Whether the school's value at a path was suppressed (small cell or the source's own privacy rule). */

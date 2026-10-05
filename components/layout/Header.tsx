@@ -22,8 +22,16 @@ const NAV_ITEMS = [
 const SCROLL_SLOP = 6;
 
 /**
- * Phones only: true while the page is scrolling down past the header, false as soon as it scrolls up (or is near the
- * top). Mirrored onto <html data-header-hidden> so sticky sub-navs move up with it (--header-offset, globals.css).
+ * The header always shows above this many pixels of scroll: most of a phone's first screen, so a small flick near the
+ * top never hides it while the page's opening is still in view.
+ */
+const SHOW_NEAR_TOP = 320;
+
+/**
+ * Phones only: true while the page is scrolling down well past the top, false as soon as it scrolls up (or is near
+ * the top). Mirrored onto <html data-header-hidden> so sticky sub-navs move up with it (--header-offset, globals.css).
+ * scrollY is clamped at 0 because iOS reports negative values while the page bounces past the top, and the state is
+ * re-checked when scrolling ends, so the header settles correctly however the last momentum frames were delivered.
  */
 function useHiddenOnScroll(pathname: string): boolean {
   const [hidden, setHidden] = useState(false);
@@ -35,13 +43,14 @@ function useHiddenOnScroll(pathname: string): boolean {
   }
   useEffect(() => {
     const phone = window.matchMedia("(max-width: 47.99rem)");
-    let lastY = window.scrollY;
+    const scrollY = () => Math.max(0, window.scrollY);
+    let lastY = scrollY();
     let frame = 0;
     const update = () => {
       frame = 0;
-      const y = window.scrollY;
+      const y = scrollY();
       const delta = y - lastY;
-      if (!phone.matches || y < 64) setHidden(false);
+      if (!phone.matches || y < SHOW_NEAR_TOP) setHidden(false);
       else if (delta > SCROLL_SLOP) setHidden(true);
       else if (delta < -SCROLL_SLOP) setHidden(false);
       else return; // too small to count; keep measuring from the same point
@@ -50,10 +59,19 @@ function useHiddenOnScroll(pathname: string): boolean {
     const onScroll = () => {
       if (!frame) frame = requestAnimationFrame(update);
     };
+    // When scrolling stops, only the near-top rule applies (direction is meaningless at rest).
+    const onScrollEnd = () => {
+      lastY = scrollY();
+      if (!phone.matches || lastY < SHOW_NEAR_TOP) setHidden(false);
+    };
     window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("scrollend", onScrollEnd, { passive: true });
+    window.addEventListener("touchend", onScrollEnd, { passive: true });
     phone.addEventListener("change", update);
     return () => {
       window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("scrollend", onScrollEnd);
+      window.removeEventListener("touchend", onScrollEnd);
       phone.removeEventListener("change", update);
       if (frame) cancelAnimationFrame(frame);
     };

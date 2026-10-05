@@ -11,6 +11,7 @@
 import type { FormatKind } from "./format";
 import type { YearKind } from "./history";
 import type { GroupingKey } from "./trend-groups";
+import type { MoverResult, MoverWindow } from "./movers";
 
 /* ------------------------------------------------------------------ */
 /* Shared envelope                                                     */
@@ -121,12 +122,44 @@ export interface MenAndWomenFile extends StudyFile<MenAndWomenValues> {
 }
 
 /* ------------------------------------------------------------------ */
+/* Biggest movers (movers.json; specs/trends/top-10-lists.md)          */
+/* ------------------------------------------------------------------ */
+
+/** Every list for one window (10 or 5 years back from each list's newest year). */
+export interface MoversWindow {
+  years: MoverWindow;
+  lists: MoverResult[];
+}
+
+/**
+ * The envelope's `from`/`to` are the ten-year fall window and `n` the colleges considered; each list carries its own
+ * years and kind (cost lists are school years, graduation lists entering classes).
+ */
+export interface MoversFile extends TrendEnvelope {
+  name: "movers";
+  /** Entries shown before "Show 25", and kept per list (plus ties). */
+  shown: number;
+  kept: number;
+  rules: {
+    /** Every list leaves out colleges under this many undergraduates in the newest fall. */
+    stillOpenMinUndergrads: number;
+    /** An endpoint this many times the year next to it is a reporting jump. */
+    jumpFactor: number;
+    /** Entries in data/trends/online-first.json and data/trends/excluded-campuses.json. */
+    onlineFirst: number;
+    excludedCampuses: number;
+  };
+  windows: MoversWindow[];
+}
+
+/* ------------------------------------------------------------------ */
 /* Every file, by name (one line per unit)                             */
 /* ------------------------------------------------------------------ */
 
 export interface TrendFiles {
   index: TrendIndex;
   "men-and-women": MenAndWomenFile;
+  movers: MoversFile;
 }
 
 export type TrendFileName = keyof TrendFiles;

@@ -105,7 +105,7 @@ household_homes (household_id pk → households, lat, lng, label, place, zip, se
 | `lib/geocode.ts` (server) | `geocodeAddress(text)`: the Census geocoder with an 8-second timeout, a bare ZIP or an unmatched address with a ZIP falling back to the ZIP's center |
 | `lib/home-store.ts` (`"use server"`) | `myHome()` (the household's home, via `my_household()`), `saveHomeAddress(text)` (creates the one-person household when needed), `clearHome()` |
 | `scripts/build-zcta.mts` | `npm run build-zcta`: downloads the Gazetteer ZCTA file and writes the reference CSV (needs `unzip`) |
-| `supabase/migrations/20261005160000_household_limits_and_home.sql` | `household_homes` and its member-only policies, with the household limits (accounts.md) |
+| `supabase/migrations/20261005170000_household_limits_and_home.sql` | `household_homes` and its member-only policies, with the household limits (accounts.md) |
 | `components/account/HomeForm.tsx`, `app/account/page.tsx` | The Home section |
 | `components/explore/FilterPanel.tsx` (`DistanceSection`), `components/explore/Toolbar.tsx` | The filter, its chip, the sort option |
 | `lib/params.ts`, `lib/types.ts`, `lib/dataset.ts` | `near`/`within` → `nearZip`/`withinMiles`; `SearchFilters.near`; the filter and `sortBy=distance` inside `getSchools()` |
@@ -146,8 +146,8 @@ household_homes (household_id pk → households, lat, lng, label, place, zip, se
 
 ### Setup (owner)
 1. **Apply the migration** to the dev project: SQL Editor → paste
-   `supabase/migrations/20261005160000_household_limits_and_home.sql` → Run (after the accounts and households
-   migrations; prod at the formal release). It also drops the per-user `home_locations` table if the first draft of
+   `supabase/migrations/20261005170000_household_limits_and_home.sql` → Run (after the accounts, households, and
+   invitation-links migrations; prod at the formal release). It also drops the per-user `home_locations` table if the first draft of
    this migration was ever applied. Until then the Home section says "Home addresses aren't set up on this site yet"
    when saving, and lists and Explore simply show no distances.
 2. Nothing else: no new environment variables, and the geocoder needs no key. Vercel's functions can reach

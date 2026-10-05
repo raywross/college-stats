@@ -3,7 +3,7 @@ import { initialsFor } from "@/lib/accounts";
 import { canRemove, editAccessControl, householdSeats, memberName, shortDate, type HouseholdView, type RosterMember } from "@/lib/household-rules";
 import { leaveHousehold, removeMember, revokeInvitation, setMemberCanEdit } from "@/app/account/household/actions";
 import { HouseholdActionButton } from "./HouseholdActionButton";
-import { AddManagedStudentForm, InviteForm } from "./HouseholdForms";
+import { AddManagedStudentForm, InviteForm, LinkManagedStudent, ReissueInvitation } from "./HouseholdForms";
 
 function RoleBadge({ m }: { m: RosterMember }) {
   const cls = "inline-flex shrink-0 items-center rounded-full px-2 py-0.5 text-xs font-semibold";
@@ -49,6 +49,7 @@ function MemberRow({ m, h }: { m: RosterMember; h: HouseholdView }) {
         )}
       </div>
       <div className="flex flex-wrap items-start justify-end gap-2">
+        {m.managed_by_me && m.student_id && <LinkManagedStudent household={h.id} student={m.student_id} name={name} />}
         {m.role === "guardian" && !m.can_edit && edit.grant && (
           <HouseholdActionButton action={setMemberCanEdit} fields={{ member: m.member_id, can_edit: "true" }} label="Allow editing" />
         )}
@@ -122,7 +123,10 @@ export function HouseholdCard({ h }: { h: HouseholdView }) {
                     As {inv.side === "guardian" ? (inv.can_edit ? "a guardian who can edit" : "a guardian") : "a student"} · invited by {nameOf(inv.invited_by)} · expires {shortDate(inv.expires_at)}
                   </p>
                 </div>
-                <HouseholdActionButton action={revokeInvitation} fields={{ invitation: inv.id }} label="Cancel" confirm={`Cancel the invitation to ${inv.email}? The link stops working.`} />
+                <div className="flex flex-wrap items-start justify-end gap-2">
+                  <ReissueInvitation household={h.id} invitation={inv.id} />
+                  <HouseholdActionButton action={revokeInvitation} fields={{ invitation: inv.id }} label="Cancel" confirm={`Cancel the invitation to ${inv.email}? The link stops working.`} />
+                </div>
               </li>
             ))}
           </ul>
@@ -131,8 +135,8 @@ export function HouseholdCard({ h }: { h: HouseholdView }) {
 
       {seats.full ? (
         <p className="mt-6 rounded-2xl bg-muted/60 px-3.5 py-3 text-sm text-muted-foreground" role="status">
-          This household is full: {seats.max} seats, counting invitations waiting for an answer. Cancel an invitation or remove someone to make room
-          {managedHere.length > 0 && "; handing a student you added over to their own account takes no new seat"}.
+          This household is full: {seats.max} seats, counting invitations waiting for an answer. Cancel an invitation or remove someone to make room.
+          {managedHere.length > 0 && " Linking a student you added to their own account (on their row above) still works: it takes no new seat."}
         </p>
       ) : (
         <>
@@ -157,13 +161,6 @@ export function HouseholdCard({ h }: { h: HouseholdView }) {
             </div>
           )}
         </>
-      )}
-      {seats.full && managedHere.length > 0 && (
-        <div className="mt-6 border-t pt-5">
-          <h3 className="text-sm font-semibold">Hand over a student you added</h3>
-          <p className="mt-0.5 mb-3 text-xs text-muted-foreground">Their account takes the seat the record already holds.</p>
-          <InviteForm household={h.id} canInviteStudents={isGuardian} isStudent={isStudent} managedStudents={managedHere} handoverOnly />
-        </div>
       )}
     </section>
   );

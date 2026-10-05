@@ -1,14 +1,16 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import { Check, Copy } from "lucide-react";
+import { Check, Copy, Link2, RefreshCw } from "lucide-react";
 import {
   addManagedStudent,
   createHousehold,
   inviteToHousehold,
+  reissueInvitation,
   type HouseholdActionState,
   type InviteState,
 } from "@/app/account/household/actions";
+import { SITE_NAME } from "@/lib/brand";
 import { cn } from "@/lib/utils";
 
 /** Forms on /account and /account/household: create a household, add a managed student, invite someone. */
@@ -127,17 +129,14 @@ export function InviteForm({
   canInviteStudents,
   isStudent,
   managedStudents,
-  handoverOnly = false,
 }: {
   household: string;
   canInviteStudents: boolean;
   isStudent: boolean;
   managedStudents: { id: string; name: string }[];
-  /** A full household: only handing a managed student over to their own account (which takes no new seat). */
-  handoverOnly?: boolean;
 }) {
   const [state, action, pending] = useActionState<InviteState, FormData>(inviteToHousehold, { status: "idle" });
-  const [side, setSide] = useState<"guardian" | "student">(handoverOnly ? "student" : "guardian");
+  const [side, setSide] = useState<"guardian" | "student">("guardian");
   return (
     <div className="space-y-4">
       <form action={action} className="grid gap-3">
@@ -153,24 +152,7 @@ export function InviteForm({
             {pending ? "Creating link…" : "Create invitation"}
           </button>
         </div>
-        {handoverOnly ? (
-          <>
-            <input type="hidden" name="side" value="student" />
-            <div>
-              <label className="block text-sm font-semibold" htmlFor={`invite-student-${household}`}>
-                Which student
-              </label>
-              <select id={`invite-student-${household}`} name="student" required defaultValue={managedStudents[0]?.id ?? ""} className={`${inputCls} mt-1.5 sm:max-w-xs`}>
-                {managedStudents.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.name}
-                  </option>
-                ))}
-              </select>
-              <p className="mt-1.5 text-xs text-muted-foreground">When they accept, the record becomes theirs and you keep access through the household.</p>
-            </div>
-          </>
-        ) : canInviteStudents ? (
+        {canInviteStudents ? (
           <fieldset className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
             <legend className="sr-only">Invite them as</legend>
             <label className="inline-flex items-center gap-2">
@@ -185,7 +167,7 @@ export function InviteForm({
         ) : (
           <input type="hidden" name="side" value="guardian" />
         )}
-        {!handoverOnly && side === "student" && managedStudents.length > 0 && (
+        {side === "student" && managedStudents.length > 0 && (
           <div>
             <label className="block text-sm font-semibold" htmlFor={`invite-student-${household}`}>
               Hand over a student you added
@@ -212,19 +194,107 @@ export function InviteForm({
         <Message state={state} />
       </form>
 
+      {state.status === "created" && <InviteLinkPanel state={state} />}
+    </div>
+  );
+}
+
+/** The invitation link to copy (and whether it was also emailed), after creating or reissuing one. */
+function InviteLinkPanel({ state, reissued = false }: { state: Extract<InviteState, { status: "created" }>; reissued?: boolean }) {
+  return (
+    <div className="space-y-2 rounded-2xl border border-pop bg-pop/10 p-3.5 sm:p-4" role="status">
+      <p className="text-sm font-semibold">
+        {state.emailed
+          ? `We emailed ${reissued ? "a new invitation link" : "an invitation"} to ${state.email}.`
+          : `Send this ${reissued ? "new " : ""}link to ${state.email}.`}
+      </p>
+      <p className="text-xs text-muted-foreground">
+        {state.emailed
+          ? "You can also send them this link yourself."
+          : "Email isn't set up on this site yet, so send it by text or your own email."}{" "}
+        It works once, for {state.email} only, until {state.expires}.{reissued ? " Any earlier link for this invitation no longer works." : ""} Need it
+        again later? Use &ldquo;New link&rdquo; under Waiting for an answer.
+      </p>
+      <CopyLink link={state.link} />
+    </div>
+  );
+}
+
+/**
+ * "New link" on a pending invitation: makes a fresh link (the old one stops working), emails it when email is set up,
+ * and shows it to copy either way.
+ */
+export function ReissueInvitation({ household, invitation }: { household: string; invitation: string }) {
+  const [state, action, pending] = useActionState<InviteState, FormData>(reissueInvitation, { status: "idle" });
+  return (
+    <>
+      <form action={action}>
+        <input type="hidden" name="household" value={household} />
+        <input type="hidden" name="invitation" value={invitation} />
+        <button type="submit" disabled={pending} className="inline-flex h-9 items-center gap-1.5 rounded-full border px-3.5 text-sm font-semibold hover:bg-muted disabled:opacity-60">
+          <RefreshCw className={cn("size-3.5", pending && "animate-spin")} />
+          {pending ? "Making…" : "New link"}
+        </button>
+      </form>
+      {state.status === "error" && (
+        <p className="basis-full text-sm font-medium text-destructive" role="alert">
+          {state.message}
+        </p>
+      )}
       {state.status === "created" && (
-        <div className="space-y-2 rounded-2xl border border-pop bg-pop/10 p-3.5 sm:p-4" role="status">
-          <p className="text-sm font-semibold">
-            {state.emailed ? `We emailed an invitation to ${state.email}.` : `Send this link to ${state.email}.`}
-          </p>
-          <p className="text-xs text-muted-foreground">
-            {state.emailed
-              ? "You can also send them this link yourself."
-              : "Email isn't set up on this copy of the site yet, so send it by text or your own email."}{" "}
-            It works once, for {state.email} only, until {state.expires}. We won&apos;t show it again.
-          </p>
-          <CopyLink link={state.link} />
+        <div className="basis-full">
+          <InviteLinkPanel state={state} reissued />
         </div>
+      )}
+    </>
+  );
+}
+
+/**
+ * "Link to their account" on a managed student: invites the student's email to take over the record. If they already
+ * have an account and a record of their own, accepting merges this one into theirs (lists, numbers, household).
+ */
+export function LinkManagedStudent({ household, student, name }: { household: string; student: string; name: string }) {
+  const [open, setOpen] = useState(false);
+  const [state, action, pending] = useActionState<InviteState, FormData>(inviteToHousehold, { status: "idle" });
+  if (!open)
+    return (
+      <button type="button" onClick={() => setOpen(true)} className="inline-flex h-9 items-center gap-1.5 rounded-full border px-3.5 text-sm font-semibold hover:bg-muted">
+        <Link2 className="size-3.5" />
+        Link to their account
+      </button>
+    );
+  return (
+    <div className="basis-full space-y-3 rounded-2xl border bg-muted/40 p-3.5 sm:p-4">
+      {state.status === "created" ? (
+        <InviteLinkPanel state={state} />
+      ) : (
+        <form action={action} className="grid gap-3">
+          <input type="hidden" name="household" value={household} />
+          <input type="hidden" name="side" value="student" />
+          <input type="hidden" name="student" value={student} />
+          <p className="text-sm">
+            Enter the email {name} uses (or will use) for {SITE_NAME}. When they accept, everything you started for them becomes
+            theirs, and you keep access through the household. If they already have an account, it&apos;s added to theirs.
+          </p>
+          <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
+            <div>
+              <label className="block text-sm font-semibold" htmlFor={`link-email-${student}`}>
+                {name}&apos;s email
+              </label>
+              <input id={`link-email-${student}`} name="email" type="email" required autoComplete="off" placeholder="name@example.com" className={`${inputCls} mt-1.5`} />
+            </div>
+            <button type="submit" disabled={pending} className={primaryBtn}>
+              {pending ? "Creating link…" : "Create link"}
+            </button>
+          </div>
+          <div className="flex items-center gap-3">
+            <button type="button" onClick={() => setOpen(false)} className="text-sm font-semibold text-muted-foreground hover:text-foreground">
+              Cancel
+            </button>
+            <Message state={state} />
+          </div>
+        </form>
       )}
     </div>
   );

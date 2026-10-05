@@ -8,8 +8,18 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { affectedAsUser, asUser, createAuthDb, createUser, type AuthDb } from "./helpers/pg-auth.mts";
 
-// With the one-household rule and the seat cap (20261005160000) applied too: every flow here must still hold under them.
-const MIGRATIONS = ["20261005120000_accounts.sql", "20261005125000_households.sql", "20261005160000_household_limits_and_home.sql"];
+// With invitation links, the one-household rule, and the seat cap applied too: every flow here must still hold under them.
+const MIGRATIONS = [
+  "20260928000000_dataset.sql",
+  "20261002140000_school_staging.sql",
+  "20261005120000_accounts.sql",
+  "20261005125000_households.sql",
+  "20261005130000_student_profiles.sql",
+  "20261005140000_follows.sql",
+  "20261005150000_lists.sql",
+  "20261005160000_invitation_links.sql",
+  "20261005170000_household_limits_and_home.sql",
+];
 
 interface World {
   db: AuthDb;

@@ -167,6 +167,11 @@ export const HOUSEHOLD_ERRORS: Record<string, string> = {
   cannot_grant_self: "You can't give yourself edit access.",
   member_not_found: "That person isn't in this household any more.",
   account_deleted: "This account is scheduled for deletion.",
+  // reissue_invitation (a new link for a pending invitation)
+  invitation_not_found: "That invitation isn't pending any more.",
+  invitation_used: "That invitation was already accepted.",
+  invitation_revoked: "That invitation was cancelled. Invite them again instead.",
+  // One household per account, six seats (20261005170000_household_limits_and_home.sql)
   already_in_household: "You're already in a household. Leave it first to start or join another.",
   household_full: `This household is full: ${HOUSEHOLD_MAX_MEMBERS} people, counting invitations waiting for an answer. Cancel an invitation or remove someone to make room.`,
 };

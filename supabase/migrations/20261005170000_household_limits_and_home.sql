@@ -1,6 +1,7 @@
 -- One household per account, six seats, and the household's home (specs/product/accounts.md "Built: one household,
--- six seats"; specs/product/home-and-distance.md). Builds on 20261005120000_accounts.sql and
--- 20261005125000_households.sql; apply after both (SQL Editor, dev first, then prod).
+-- six seats"; specs/product/home-and-distance.md). Builds on 20261005120000_accounts.sql,
+-- 20261005125000_households.sql, and 20261005160000_invitation_links.sql (whose accept_invitation() and
+-- merge_managed_student() this replaces); apply after all three (SQL Editor, dev first, then prod).
 --
 -- What this adds:
 -- * Limits. An account is in at most one live household: as a guardian through its own membership, or as a student
@@ -336,9 +337,58 @@ begin
 end;
 $$;
 
--- As in 20261005120000_accounts.sql, plus the one-household rule: a caller already in a different live household is
--- refused (already_in_household), unless they are its only member, in which case that household is dissolved (its
--- home carried over when the new one has none) and they join. The trigger above also enforces the seat cap.
+-- merge_managed_student() as in 20261005160000_invitation_links.sql, except the managed record leaves each household
+-- before the student's own record takes its place, so the seat cap sees a swap, not a seventh member.
+create or replace function public.merge_managed_student(p_managed uuid, p_own uuid, p_user uuid) returns void
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_households uuid[];
+begin
+  -- Lists: the own record keeps its default list; the managed record's lists come over as extra lists.
+  if exists (select 1 from public.lists where student_id = p_own and is_default) then
+    update public.lists set is_default = false where student_id = p_managed and is_default;
+  end if;
+  update public.lists set student_id = p_own where student_id = p_managed;
+  -- Moved lists' colleges are now on the student's lists, so the student follows them (the list_items trigger only
+  -- runs on insert); a manual follow is left as it is.
+  insert into public.follows (user_id, unit_id, source)
+    select distinct p_user, li.unit_id, 'list'
+    from public.list_items li join public.lists l on l.id = li.list_id
+    where l.student_id = p_own
+  on conflict (user_id, unit_id) do nothing;
+
+  -- Profile: keys from both, the student's own values winning.
+  if exists (select 1 from public.student_profiles where student_id = p_managed) then
+    if exists (select 1 from public.student_profiles where student_id = p_own) then
+      update public.student_profiles o
+        set data = m.data || o.data, updated_at = now()
+        from public.student_profiles m
+        where o.student_id = p_own and m.student_id = p_managed;
+      delete from public.student_profiles where student_id = p_managed;
+    else
+      update public.student_profiles set student_id = p_own, updated_at = now() where student_id = p_managed;
+    end if;
+  end if;
+
+  -- Households: the own record takes the managed record's place in each, the managed one leaving first.
+  v_households := array(select m.household_id from public.household_members m where m.student_id = p_managed and m.status = 'active');
+  delete from public.household_members where student_id = p_managed;
+  insert into public.household_members (household_id, student_id, role, status, accepted_at)
+    select h, p_own, 'student', 'active', now() from unnest(v_households) as h
+  on conflict (household_id, student_id) do update set status = 'active';
+
+  update public.access_log set student_id = p_own where student_id = p_managed;
+  update public.students set deleted_at = now() where id = p_managed and user_id is null;
+end;
+$$;
+
+-- accept_invitation() as in 20261005160000_invitation_links.sql (claiming or merging a managed record), plus the
+-- one-household rule: a caller already in a different live household is refused (already_in_household), unless they
+-- are its only member, in which case that household is dissolved (its home carried over when the new one has none)
+-- and they join. The trigger above also enforces the seat cap.
 create or replace function public.accept_invitation(p_token text) returns uuid
 language plpgsql
 security definer
@@ -413,6 +463,9 @@ begin
       if v_claimed = 1 then
         v_student := v_inv.student_id;
       end if;
+    elsif v_student is not null and v_inv.student_id is not null and v_inv.student_id <> v_student
+      and exists (select 1 from public.students s where s.id = v_inv.student_id and s.user_id is null and s.deleted_at is null) then
+      perform public.merge_managed_student(v_inv.student_id, v_student, v_uid);
     end if;
     if v_student is null then
       insert into public.students (user_id, display_name)

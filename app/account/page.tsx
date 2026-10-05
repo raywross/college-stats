@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { connection } from "next/server";
-import { Download, Trash2 } from "lucide-react";
+import { Download, KeyRound, Trash2 } from "lucide-react";
 import { AccessLogList } from "@/components/account/AccessLogList";
 import { AccountSection } from "@/components/account/AccountSection";
 import { AuthUnavailable } from "@/components/account/AuthUnavailable";
@@ -61,6 +61,13 @@ export default async function AccountPage() {
 
       <AccountSection id="profile" title="Profile">
         <ProfileForm profile={profile} email={user.email} />
+      </AccountSection>
+
+      <AccountSection id="password" title="Password" description="Sign in with your email and a password, or with an emailed link.">
+        <Link href="/account/password" className="inline-flex h-10 items-center gap-2 rounded-full border px-4 text-sm font-semibold hover:bg-muted">
+          <KeyRound className="size-4" />
+          Set or change your password
+        </Link>
       </AccountSection>
 
       <AccountSection

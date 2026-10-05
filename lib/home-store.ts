@@ -3,7 +3,7 @@
  * The household's home (public.household_homes; specs/product/home-and-distance.md). One home per household, set by
  * any active member and seen by all of them: a student's list and a guardian's view of it measure from the same
  * place. Every read and write runs with the signed-in user's own Supabase session, so the member-only policies in
- * supabase/migrations/20261005160000_household_limits_and_home.sql decide; nobody outside the household reads it.
+ * supabase/migrations/20261005170000_household_limits_and_home.sql decide; nobody outside the household reads it.
  *
  * Someone with no household yet who saves a home gets a one-person household made for them here (the word never
  * appears until someone else joins); accepting an invitation later dissolves it and carries the home along.

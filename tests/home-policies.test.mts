@@ -1,5 +1,5 @@
 /**
- * Row-level security for the household's home (supabase/migrations/20261005160000_household_limits_and_home.sql;
+ * Row-level security for the household's home (supabase/migrations/20261005170000_household_limits_and_home.sql;
  * specs/product/home-and-distance.md), checked against real Postgres (PGlite + the auth stub,
  * tests/helpers/pg-auth.mts). The rule: every active member of the household reads, sets, and removes its one home;
  * nobody outside it can tell it exists. Every access assertion runs as a signed-in user or anon, never as the
@@ -9,7 +9,17 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { affectedAsUser, asUser, createAuthDb, createUser, type AuthDb } from "./helpers/pg-auth.mts";
 
-const MIGRATIONS = ["20261005120000_accounts.sql", "20261005125000_households.sql", "20261005160000_household_limits_and_home.sql"];
+const MIGRATIONS = [
+  "20260928000000_dataset.sql",
+  "20261002140000_school_staging.sql",
+  "20261005120000_accounts.sql",
+  "20261005125000_households.sql",
+  "20261005130000_student_profiles.sql",
+  "20261005140000_follows.sql",
+  "20261005150000_lists.sql",
+  "20261005160000_invitation_links.sql",
+  "20261005170000_household_limits_and_home.sql",
+];
 
 interface World {
   db: AuthDb;

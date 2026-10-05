@@ -1,5 +1,5 @@
 /**
- * One household per account and six seats (supabase/migrations/20261005160000_household_limits_and_home.sql;
+ * One household per account and six seats (supabase/migrations/20261005170000_household_limits_and_home.sql;
  * specs/product/accounts.md "Built: one household, six seats"), against real Postgres (PGlite + the auth stub in
  * tests/helpers/pg-auth.mts). Every assertion about access runs as a signed-in user; `db.query` is setup or a
  * stand-in for the service role. The guard tests break each rule on purpose and show what the checks would miss.
@@ -12,7 +12,18 @@ import { join } from "node:path";
 import { asUser, createAuthDb, createUser, type AuthDb } from "./helpers/pg-auth.mts";
 import { HOUSEHOLD_MAX_MEMBERS, householdSeats, type PendingInvitation, type RosterMember } from "../lib/household-rules.ts";
 
-const MIGRATIONS = ["20261005120000_accounts.sql", "20261005125000_households.sql", "20261005160000_household_limits_and_home.sql"];
+// The whole chain the limits sit on, including invitation links (whose accept_invitation this migration replaces).
+const MIGRATIONS = [
+  "20260928000000_dataset.sql",
+  "20261002140000_school_staging.sql",
+  "20261005120000_accounts.sql",
+  "20261005125000_households.sql",
+  "20261005130000_student_profiles.sql",
+  "20261005140000_follows.sql",
+  "20261005150000_lists.sql",
+  "20261005160000_invitation_links.sql",
+  "20261005170000_household_limits_and_home.sql",
+];
 
 async function one<T>(rows: Promise<T[]>): Promise<T> {
   const r = await rows;
@@ -138,11 +149,27 @@ test("six seats: members and pending invitations count; cancelled or expired inv
   await assert.rejects(db.query("insert into public.household_members (household_id, user_id, role, status) values ($1, $2, 'guardian', 'active')", [household, seventh]), /household_full/);
 });
 
+test("a full household: linking a managed student to an account that already has its own record merges the two in one seat", async () => {
+  const { db, mom, household } = await base();
+  for (const name of ["Ann", "Ben", "Cal", "Dee", "Eve"]) await rpc(db, mom, "public.add_managed_student($1, $2)", [household, name]); // 6 active
+  const ben = (await one(asUser<{ student_id: string }>(db, mom, "select student_id from public.household_roster($1) where display_name = 'Ben'", [household]))).student_id;
+  const handover = await invite(db, mom, household, "ben@example.com", "student", ben);
+  // Ben already has an account and his own record (made the first time he opened /me), in no household.
+  const benUser = await createUser(db, { email: "ben@example.com", birthYear: 2010, roleHint: "student", displayName: "Ben" });
+  const own = (await one(asUser<{ id: string }>(db, benUser, "insert into public.students (user_id, display_name) values ($1, 'Ben') returning id", [benUser]))).id;
+  await accept(db, benUser, handover.token);
+  const members = await asUser<{ student_id: string | null; display_name: string }>(db, mom, "select student_id, display_name from public.household_roster($1)", [household]);
+  assert.equal(members.length, 6, "a swap, not a seventh member");
+  assert.ok(members.some((m) => m.student_id === own), "Ben's own record took the managed record's seat");
+  assert.ok(!members.some((m) => m.student_id === ben), "the managed record is gone");
+  assert.equal(await rpc<string | null>(db, benUser, "public.my_household()"), household);
+});
+
 test("household_max_members() is six, and lib/household-rules.ts says the same", async () => {
   const { db, mom } = await base();
   assert.equal(await rpc<number>(db, mom, "public.household_max_members()"), HOUSEHOLD_MAX_MEMBERS);
   assert.equal(HOUSEHOLD_MAX_MEMBERS, 6);
-  const sql = readFileSync(join(import.meta.dirname, "..", "supabase", "migrations", "20261005160000_household_limits_and_home.sql"), "utf8");
+  const sql = readFileSync(join(import.meta.dirname, "..", "supabase", "migrations", "20261005170000_household_limits_and_home.sql"), "utf8");
   assert.match(sql, /create function public\.household_max_members\(\) returns integer\s+language sql\s+immutable\s+as \$\$ select 6 \$\$/);
 });
 

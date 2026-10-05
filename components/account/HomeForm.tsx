@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { clearHome, saveHomeAddress, type HomeRow } from "@/lib/home-store";
 import { DEFAULT_WITHIN, exploreNearHref } from "@/lib/home";
 import { shortDate } from "@/lib/household-rules";
+import { AddressField } from "./AddressField";
 
 const inputCls =
   "h-11 w-full rounded-xl border border-input bg-background px-3.5 text-base outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30";
@@ -91,13 +92,11 @@ export function HomeForm({ household, home }: { household: string; home: HomeRow
           <label className="block text-sm font-semibold" htmlFor={`home-address-${household}`}>
             Street address, city, state, and ZIP
           </label>
-          <input
+          <AddressField
             id={`home-address-${household}`}
             value={text}
-            onChange={(e) => setText(e.target.value)}
-            maxLength={200}
-            autoComplete="street-address"
-            placeholder="123 Main St, Springfield, IL 62701 — or just 62701"
+            onChange={setText}
+            placeholder="Start typing: 123 Main St, Springfield… or just a ZIP code"
             className={inputCls}
           />
           <div className="flex flex-wrap items-center gap-3">
@@ -131,8 +130,9 @@ export function HomeForm({ household, home }: { household: string; home: HomeRow
       )}
 
       <p className="text-xs text-muted-foreground">
-        Anyone in the household can set or change it. We look the address up with the U.S. Census Bureau&apos;s public geocoder and keep the matched
-        address and its map location (to about 100 m), not what you typed. Nobody outside the household can see it.
+        Anyone in the household can set or change it. Suggestions as you type come from Google; the address you save is matched with the U.S.
+        Census Bureau&apos;s public geocoder, and we keep that match and its map location (to about 100 m), not your keystrokes. Nobody outside the
+        household can see it.
       </p>
     </div>
   );

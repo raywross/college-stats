@@ -103,7 +103,8 @@ household_homes (household_id pk → households, lat, lng, label, place, zip, se
 |---|---|
 | `lib/home.ts` (pure) | `HomeLocation`, `NearHome`, `milesBetween`, `distanceFromHome`, `isWithinHome`, `formatMiles`, `formatDriveTime`, `distanceLine`, `WITHIN_OPTIONS`/`DEFAULT_WITHIN`, `parseZip`, `zipIn`, `exploreNearHref`, `parseCensusGeocode`, `titleCaseAddress`, `zipHome`, `parseCentroidCsv` |
 | `lib/zip-centroids.ts` (server) | `zipCentroid(zip)` over `data/reference/zcta-centroids.csv`; `resolveNear(filters)` fills `SearchFilters.near` from `nearZip`/`withinMiles` |
-| `lib/geocode.ts` (server) | `geocodeAddress(text)`: the Census geocoder with an 8-second timeout, a bare ZIP or an unmatched address with a ZIP falling back to the ZIP's center |
+| `lib/geocode.ts` (server) | `geocodeAddress(text)`: the Census geocoder with an 8-second timeout, a bare ZIP or an unmatched address with a ZIP falling back to the ZIP's center; `suggestAddresses(text, session)`: Google's Place Autocomplete (New) with `GOOGLE_MAPS_API_KEY`, empty without a key |
+| `lib/address-suggest.ts` (pure), `components/account/AddressField.tsx` | Suggestions as you type: `parseGoogleAutocomplete`, `normalizeAddressInput`, `shouldSuggest`, `isSessionToken`; the combobox field with the required Google logo ([Autocomplete](#autocomplete-2026-10-05)) |
 | `lib/home-store.ts` (`"use server"`) | `myHome()` (the household's home, via `my_household()`), `saveHomeAddress(householdId, text)`, `clearHome(householdId)` (the policies refuse a household the caller isn't in) |
 | `scripts/build-zcta.mts` | `npm run build-zcta`: downloads the Gazetteer ZCTA file and writes the reference CSV (needs `unzip`) |
 | `supabase/migrations/20261005170000_household_limits_and_home.sql` | `household_homes` and its member-only policies, with the household limits (accounts.md) |
@@ -150,7 +151,31 @@ household_homes (household_id pk → households, lat, lng, label, place, zip, se
   nearest airports, visit trips, and the travel-cost line ([near-and-far.md](../ideas/near-and-far.md)); a second
   home for a household; sorting a saved list by distance (rows keep the student's order).
 
+### Autocomplete (2026-10-05)
+The owner asked for the address to complete as you type, as on most sites. The field is a combobox
+(`components/account/AddressField.tsx`): after three characters and a 250 ms pause it calls the Server Action
+`suggestAddresses` (`lib/home-store.ts`, signed-in members only, so the site's quota isn't open to anyone), which
+asks **Google's Place Autocomplete (New)** from the server with the site's key (`GOOGLE_MAPS_API_KEY`, never sent to
+the browser), U.S. addresses only, one session token per field session so Google bills keystrokes as a session.
+Up to five suggestions show with a main line and a secondary line, arrow keys and Enter pick one, Escape closes,
+and the required "Powered by Google" logo sits under the list (light and dark variants in `public/attribution/`;
+`public/brand/` is reserved for college marks). Picking
+a suggestion only fills the field: **saving still matches the text with the Census geocoder**, so what the site
+stores comes from the federal service as before (and Google's rules about storing its content don't come into
+play). Without a key the field is a plain text field, and the page says nothing about suggestions.
+
+- **Why Google:** it is the autocomplete people recognize, has the best U.S. address coverage, and its per-request
+  tier is free up to 10,000 requests a month (then $2.83 per 1,000). Mapbox and Radar need keys and have terms
+  about storing results; the Census Bureau has no autocomplete; Nominatim's policy forbids it. Smarty (USPS-grade)
+  costs money from the first month. Switching providers later means one adapter in `lib/geocode.ts`.
+- **Privacy:** keystrokes after the third character go to Google, from the server (the visitor's IP and browser
+  aren't sent). The form says so. The saved match and coordinates still come from the Census geocoder.
+
 ### Setup (owner)
+0. **Address suggestions (optional):** in Google Cloud, create or pick a project, enable **Places API (New)**
+   only, create an API key restricted to that API (Application restrictions: none, since the server calls it; API
+   restrictions: Places API (New)), and set `GOOGLE_MAPS_API_KEY` in `.env.local` and in Vercel (all environments).
+   Google requires a billing account on the project even inside the free tier.
 1. **Apply the migration** to the dev project: SQL Editor → paste
    `supabase/migrations/20261005170000_household_limits_and_home.sql` → Run (after the accounts, households, and
    invitation-links migrations; prod at the formal release). It also drops the per-user `home_locations` table if the first draft of

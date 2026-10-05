@@ -12,8 +12,9 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { authConfigured, getAccount, getUser } from "@/lib/auth";
 import { createServerSupabase } from "@/lib/supabase-server";
-import { geocodeAddress } from "@/lib/geocode";
+import { geocodeAddress, suggestAddresses as suggestFromProvider } from "@/lib/geocode";
 import { HOUSEHOLD_ERRORS } from "@/lib/household-rules";
+import { isSessionToken, shouldSuggest, type SuggestResult } from "@/lib/address-suggest";
 import type { HomeLocation } from "@/lib/home";
 
 const COLUMNS = "household_id, lat, lng, label, place, zip, set_by, set_by_name, updated_at";
@@ -103,6 +104,19 @@ export async function saveHomeAddress(householdId: string, input: string): Promi
     return { ok: false, message: FAILED };
   }
   return { ok: true, home: data as HomeRow };
+}
+
+/**
+ * Address suggestions for the home field as the member types (lib/address-suggest.ts). Signed-in members only, so
+ * the site's quota isn't open to anyone; the field falls back to plain typing when there's no key.
+ */
+export async function suggestAddresses(input: string, sessionToken: string): Promise<SuggestResult> {
+  const none: SuggestResult = { suggestions: [], provider: null };
+  if (typeof input !== "string" || !shouldSuggest(input) || !isSessionToken(sessionToken)) return none;
+  if (!authConfigured()) return none;
+  const user = await getUser();
+  if (!user) return none;
+  return suggestFromProvider(input, sessionToken);
 }
 
 /** Removes the household's home (any member may). */

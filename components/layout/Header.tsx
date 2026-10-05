@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Search } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { AccountMenu } from "@/components/account/AccountMenu";
@@ -18,77 +18,12 @@ const NAV_ITEMS = [
   { label: "Data", href: "/data" },
 ];
 
-/** Scroll distance (px) that counts as a deliberate scroll, so a jittery finger doesn't flicker the header. */
-const SCROLL_SLOP = 6;
-
-/**
- * The header always shows above this many pixels of scroll: most of a phone's first screen, so a small flick near the
- * top never hides it while the page's opening is still in view.
- */
-const SHOW_NEAR_TOP = 320;
-
-/**
- * Phones only: true while the page is scrolling down well past the top, false as soon as it scrolls up (or is near
- * the top). Mirrored onto <html data-header-hidden> so sticky sub-navs move up with it (--header-offset, globals.css).
- * scrollY is clamped at 0 because iOS reports negative values while the page bounces past the top, and the state is
- * re-checked when scrolling ends, so the header settles correctly however the last momentum frames were delivered.
- */
-function useHiddenOnScroll(pathname: string): boolean {
-  const [hidden, setHidden] = useState(false);
-  // A new page starts with the header showing.
-  const [lastPath, setLastPath] = useState(pathname);
-  if (pathname !== lastPath) {
-    setLastPath(pathname);
-    setHidden(false);
-  }
-  useEffect(() => {
-    const phone = window.matchMedia("(max-width: 47.99rem)");
-    const scrollY = () => Math.max(0, window.scrollY);
-    let lastY = scrollY();
-    let frame = 0;
-    const update = () => {
-      frame = 0;
-      const y = scrollY();
-      const delta = y - lastY;
-      if (!phone.matches || y < SHOW_NEAR_TOP) setHidden(false);
-      else if (delta > SCROLL_SLOP) setHidden(true);
-      else if (delta < -SCROLL_SLOP) setHidden(false);
-      else return; // too small to count; keep measuring from the same point
-      lastY = y;
-    };
-    const onScroll = () => {
-      if (!frame) frame = requestAnimationFrame(update);
-    };
-    // When scrolling stops, only the near-top rule applies (direction is meaningless at rest).
-    const onScrollEnd = () => {
-      lastY = scrollY();
-      if (!phone.matches || lastY < SHOW_NEAR_TOP) setHidden(false);
-    };
-    window.addEventListener("scroll", onScroll, { passive: true });
-    window.addEventListener("scrollend", onScrollEnd, { passive: true });
-    window.addEventListener("touchend", onScrollEnd, { passive: true });
-    phone.addEventListener("change", update);
-    return () => {
-      window.removeEventListener("scroll", onScroll);
-      window.removeEventListener("scrollend", onScrollEnd);
-      window.removeEventListener("touchend", onScrollEnd);
-      phone.removeEventListener("change", update);
-      if (frame) cancelAnimationFrame(frame);
-    };
-  }, [pathname]);
-  useEffect(() => {
-    document.documentElement.toggleAttribute("data-header-hidden", hidden);
-  }, [hidden]);
-  return hidden;
-}
-
-/** Top bar. On phones it's the logo and the account control (sliding away on scroll down): navigation, search, and
- * theme live in BottomNav. */
+/** Top bar. On phones it's the logo and the account control, at the top of the page and scrolling away with it
+ * (navigation, search, and theme live in BottomNav); from md it stays pinned. */
 export function Header() {
   const pathname = usePathname();
   const compareIds = useCompareIds();
   const [searchOpen, setSearchOpen] = useState(false);
-  const hidden = useHiddenOnScroll(pathname);
 
   // Close the search row on navigation.
   const [lastPath, setLastPath] = useState(pathname);
@@ -103,10 +38,7 @@ export function Header() {
 
   return (
     <header
-      className={cn(
-        "sticky top-0 z-40 border-b border-border/70 bg-background/75 backdrop-blur-xl transition-transform duration-200 ease-out supports-[backdrop-filter]:bg-background/60",
-        hidden && "-translate-y-full"
-      )}
+      className="relative z-40 border-b border-border/70 bg-background/75 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60 md:sticky md:top-0"
       style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}
     >
       <div className="mx-auto flex h-(--header-h) max-w-7xl items-center gap-4 px-4 sm:px-6">

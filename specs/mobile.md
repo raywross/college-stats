@@ -35,11 +35,12 @@ overflowing content, so root causes must be fixed. `clip` (unlike `hidden`) keep
 - **Header** on phones is the logo with the account control opposite it ("Sign in", or the avatar menu when signed in), 56px tall (`--header-h: 3.5rem`, 4rem from `md`). Navigation, search,
   and theme moved to the tab bar.
 - **Footer** drops its link column on phones and pads for the tab bar (`--tabbar-h`).
-  On phones it slides away while scrolling down and returns on any scroll up (or near the top); `Header.tsx` sets
-  `<html data-header-hidden>`, which drops `--header-offset` to 0 below `md`.
-- **Sticky sub-navs** shown on phones (the profile topic pages' `CompactHeader` with its pill row, `CompareHeader`,
-  glossary search bar) sit at `calc(env(safe-area-inset-top, 0px) + var(--header-offset))`, so they move up when the
-  header hides. Desktop-only sticky elements may use `--header-h`. Never hard-code the header height.
+  On phones it is the top of the page and scrolls away with it, not sticky (decided 2026-10-05 after trying
+  hide-on-scroll: a floating bar on a phone covered content and behaved unpredictably); the tab bar keeps
+  navigation in reach and More has Sign in. From `md` it stays pinned.
+- **Sticky sub-navs** (the profile topic pages' `CompactHeader` with its pill row, `CompareHeader`, glossary search
+  bar) sit at `calc(env(safe-area-inset-top, 0px) + var(--header-offset))`: `--header-offset` is 0 on phones and
+  `--header-h` from `md`. Desktop-only sticky elements may use `--header-h`. Never hard-code the header height.
 
 ## Patterns
 | Pattern | How | Used on |

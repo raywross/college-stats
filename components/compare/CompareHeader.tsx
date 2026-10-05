@@ -110,7 +110,7 @@ export function CompareHeader({ schools }: { schools: SchoolIndexEntry[] }) {
   return (
     <div
       className="sticky z-30 -mx-4 border-b bg-background/85 px-4 py-2 backdrop-blur-xl sm:-mx-6 sm:px-6 md:py-3"
-      style={{ top: "calc(env(safe-area-inset-top, 0px) + var(--header-offset))", transition: "top 200ms ease" }}
+      style={{ top: "calc(env(safe-area-inset-top, 0px) + var(--header-offset))" }}
     >
       {/* Phones: one swipeable row of slim pills so the sticky bar stays ~56px tall. md+: a card per school. */}
       <div className="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4 md:mx-0 md:grid md:grid-cols-4 md:gap-3 md:overflow-visible md:px-0">

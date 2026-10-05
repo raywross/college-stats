@@ -92,3 +92,17 @@ it.
    note it for the high-school-data work.
 2. A **metro-area** version of these pages is what [metro-area.md](../data-expansion/metro-area.md) was deferred for.
    When the state pages exist, metro pages are the same template over a different grouping.
+3. **Net first-year flows** (added 2026-10-05, from Study 7's first look, [where-students-go.md](where-students-go.md)).
+   The residence tables give, for each state, first-years arriving at its colleges from other states and its own
+   residents enrolled at colleges elsewhere, so the page could show inflow, outflow, and the net, with the colleges
+   that take the inflow. Computed over the 1,803 colleges with a fall 2024 home-state table: 33 states and DC are net
+   importers (Arizona +16,000, New Hampshire +15,700, Indiana +9,600, Alabama +9,600, Pennsylvania +8,800, then DC,
+   Utah, South Carolina, Mississippi, Iowa), 20 are net exporters (New Jersey −27,000, Texas −25,900, California
+   −23,100, Illinois −21,000, then Minnesota, Maryland, Washington, New York, Georgia), and in most importing states
+   one or two flagships take half to two thirds of the inflow (Arkansas 62%, West Virginia 57%, Mississippi 53%,
+   Montana State 65%, Vermont 55%, Delaware 71%); only Pennsylvania, Massachusetts, North Carolina, and New York take
+   theirs broadly. It would be a sixth measure on the index map ("net first-year inflow") and an in/out block in
+   section 4 of each state page. Caveats to carry: only the site's four-year colleges count on either side; an
+   online-first college registers as inflow to its home state (Southern New Hampshire is 80% of New Hampshire's), so
+   the rule in [online-share.md](../data-expansion/online-share.md) applies first; it is one fall's first-years.
+   Recommendation: build it with Study 7, after the online-share field.

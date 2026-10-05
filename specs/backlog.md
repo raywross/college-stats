@@ -123,7 +123,13 @@ build-trends` writes `data/history/trends/`). What's left:
 - [ ] `applicants_men`/`applicants_women` history series, so Study 1 can use the 200-per-sex rule and weight by
   applicants by sex (it uses a 1,000-total-applicant floor and total-applicant weighting today).
 - [ ] Distance-education share (`EF{Y}A_DIST`) as `demographics.online_share`, replacing the reviewed
-  `data/trends/online-first.json` list the movers use.
+  `data/trends/online-first.json` list the movers use. Specified 2026-10-05:
+  [online-share.md](data-expansion/online-share.md) (two fields, one history series, an Explore filter).
+- [ ] **Study 7: Where the students went** ([trends/where-students-go.md](trends/where-students-go.md), specified
+  2026-10-05): the students view, each kind of college's share of all undergraduates then and now, by size and
+  selectivity as of the window start, research tier, public or private, region and state, and price, over a
+  campus-based panel (first look: 20,000+ campuses 30% → 34% of students, rising every year; R1s 40% → 46%; the
+  colleges that cut prices most lost the most students).
 - [ ] Per-conference movers lists, and an Explore conference-filter chip linking to the conference page.
 - [x] **Trends page and shared breakdowns:** `/trends` with a card per study, `/trends/{study}` pages, the standard
   breakdowns (region, type, size, selectivity) computed by `sync-history`, and a test that recomputes each study.

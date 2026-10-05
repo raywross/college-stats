@@ -9,6 +9,7 @@ import type { ReleaseCalendar } from "./releases";
 import type { DatasetFiles } from "./dataset";
 import type { CpiTable, HistoryMeta, NationalHistory, SchoolHistory, TrendFacts } from "./history";
 import type { AliasRow } from "./identity-files";
+import type { StoredChange } from "./changes";
 
 /** data/history/{meta,national,facts,cpi}.json */
 export interface HistoryFiles {
@@ -216,4 +217,26 @@ export async function fetchAllSchoolHistories(client: SupabaseClient): Promise<S
     if (data.length < PAGE_SIZE) break;
   }
   return out;
+}
+
+/* ------------------------------------------------------------------ */
+/* What changed (supabase/migrations/20261005140000_follows.sql; specs/product/follow-colleges.md) */
+/* ------------------------------------------------------------------ */
+
+/** Columns of a dataset_changes row as lib/changes.ts StoredChange names them. */
+export const CHANGE_COLUMNS = "publish_id, published_at, unit_id, field, kind, old_value, new_value, old_year, new_year, source, release";
+
+/**
+ * One college's recorded changes, newest first (at most `limit`). Throws on any failure, including a missing table
+ * (the follows migration not applied yet); callers decide whether that's fatal.
+ */
+export async function fetchSchoolChanges(client: SupabaseClient, unitId: string, limit = 200): Promise<StoredChange[]> {
+  const { data, error } = await client
+    .from("dataset_changes")
+    .select(CHANGE_COLUMNS)
+    .eq("unit_id", unitId)
+    .order("published_at", { ascending: false })
+    .limit(limit);
+  if (error) throw new Error(`Supabase: reading changes for ${unitId} failed: ${error.message}`);
+  return (data as StoredChange[]).map((c) => ({ ...c, publish_id: Number(c.publish_id) }));
 }

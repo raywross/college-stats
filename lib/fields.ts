@@ -55,7 +55,30 @@ export interface FieldDef {
   derived?: { formula: string; inputs: readonly string[] };
   /** Computed at render time (lib/metrics.ts), never stored in data/schools.json. */
   computed?: true;
+  /**
+   * Report changes to this field to followers and on the profile's "What changed" panel (specs/product/follow-colleges.md;
+   * lib/changes.ts). Only headline figures a family recognizes carry it: see NOTIFY_FIELDS below.
+   */
+  notify?: NotifyDef;
 }
+
+/** How a reported field's value is compared and written: a share (0–1), whole dollars, a count, a ratio, or words. */
+export type NotifyUnit = "percent" | "dollars" | "count" | "ratio" | "text";
+
+export interface NotifyDef {
+  unit: NotifyUnit;
+  /** Smallest difference that counts as a change (default NOTIFY_TOLERANCE[unit]); smaller ones are float noise. */
+  tolerance?: number;
+  /** Any change counts, whatever the tolerance or the derived-input rule (a rename). */
+  always?: true;
+  /** How the value reads in a sentence, with "{value}" for the formatted value ("{value} admitted"). */
+  phrase?: string;
+  /** For an object value: the keys compared and shown, with their words ("in-state"); other keys are ignored. */
+  keys?: Record<string, string>;
+}
+
+/** Default thresholds per unit (specs/product/follow-colleges.md#detecting-changes): 0.1 points, $50, 1, 0.01, any. */
+export const NOTIFY_TOLERANCE: Record<NotifyUnit, number> = { percent: 0.001, dollars: 50, count: 1, ratio: 0.01, text: 0 };
 
 const scorecard = (label: string, topic: Topic, vintage: VintageKey = "scorecard-latest"): FieldDef => ({
   label,
@@ -90,7 +113,7 @@ const brandDerived = (label: string, formula: string): FieldDef => ({ ...wikiped
 export const FIELDS = {
   /* ---- Institution ---- */
   unit_id: scorecard("IPEDS unit ID", "institution"),
-  name: scorecard("Name", "institution"),
+  name: { ...scorecard("Name", "institution"), notify: { unit: "text", always: true } },
   "location.city": scorecard("City", "institution"),
   "location.state": scorecard("State", "institution"),
   "location.zip": scorecard("ZIP code", "institution"),
@@ -138,22 +161,23 @@ export const FIELDS = {
 
   /* ---- Admissions (IPEDS ADM) ---- */
   "admissions.year": adm("Admissions year"),
-  "admissions.applicants": adm("Applicants"),
-  "admissions.admitted": adm("Admitted"),
+  "admissions.applicants": { ...adm("Applicants"), notify: { unit: "count", phrase: "{value} applied" } },
+  "admissions.admitted": { ...adm("Admitted"), notify: { unit: "count", phrase: "{value} admits" } },
   "admissions.enrolled": adm("Enrolled"),
   "admissions.acceptance_rate": {
     ...adm("Acceptance rate"),
     derived: { formula: "Admitted ÷ applicants (not calculated under 10 applicants)", inputs: ["admissions.admitted", "admissions.applicants"] },
+    notify: { unit: "percent", phrase: "{value} admitted" },
   },
   // The funnel a newer college-reported class replaced (specs/college-reported-round-2.md, Decision 1): stored only
   // then, shown in the tooltip as "Federal data, fall 2024: …", and used by yield when the shown pair mixes classes.
   "admissions.federal": adm("Federal admissions figures replaced by a newer college-reported class"),
-  "admissions.sat_reading_25_75": adm("SAT Reading & Writing, middle 50%"),
-  "admissions.sat_math_25_75": adm("SAT Math, middle 50%"),
-  "admissions.act_composite_25_75": adm("ACT composite, middle 50%"),
+  "admissions.sat_reading_25_75": { ...adm("SAT Reading & Writing, middle 50%"), notify: { unit: "count", phrase: "middle 50% SAT Reading & Writing {value}" } },
+  "admissions.sat_math_25_75": { ...adm("SAT Math, middle 50%"), notify: { unit: "count", phrase: "middle 50% SAT Math {value}" } },
+  "admissions.act_composite_25_75": { ...adm("ACT composite, middle 50%"), notify: { unit: "count", phrase: "middle 50% ACT composite {value}" } },
   "admissions.test_submission_rate_sat": adm("Share submitting SAT"),
   "admissions.test_submission_rate_act": adm("Share submitting ACT"),
-  "admissions.test_policy": adm("Test policy"),
+  "admissions.test_policy": { ...adm("Test policy"), notify: { unit: "text", phrase: "{value}" } },
   "admissions.by_sex": adm("Applicants, admits, and enrollees by sex"),
   "admissions.factors": adm("What's considered in admission (GPA, essay, legacy, and more)"),
   "admissions.sat_reading_median": adm("SAT Reading & Writing, median"),
@@ -163,7 +187,7 @@ export const FIELDS = {
   "admissions.act_math_25_75": adm("ACT Math, middle 50%"),
 
   /* ---- Students (Scorecard, from IPEDS fall enrollment) ---- */
-  "demographics.undergrad_enrollment": scorecard("Undergraduates", "enrollment", "scorecard-enrollment"),
+  "demographics.undergrad_enrollment": { ...scorecard("Undergraduates", "enrollment", "scorecard-enrollment"), notify: { unit: "count", phrase: "{value} undergraduates" } },
   "demographics.racial_diversity": scorecard("Race & ethnicity", "demographics", "scorecard-enrollment"),
   "demographics.pell_grant_percent": scorecard("Pell Grant recipients", "demographics"),
   "demographics.first_gen_percent": scorecard("First-generation students", "demographics"),
@@ -186,9 +210,10 @@ export const FIELDS = {
   "cost.sticker": {
     ...ic("Sticker price by residency"),
     derived: { formula: "Tuition & fees + books + on-campus room & board + other expenses", inputs: ["cost.tuition_fees", "cost.components"] },
+    notify: { unit: "dollars", phrase: "sticker price {value}", keys: { in_state: "in-state", out_of_state: "out-of-state" } },
   },
   "cost.residency": { ...sfa("First-years paying each residency rate"), topic: "prices" },
-  "cost.aided_net_price": { ...sfa("Net price, students with grants"), topic: "cost" },
+  "cost.aided_net_price": { ...sfa("Net price, students with grants"), topic: "cost", notify: { unit: "dollars", phrase: "net price after grants {value}" } },
   "cost.breakdown": {
     ...ic("Average cost breakdown"),
     derived: {
@@ -200,7 +225,7 @@ export const FIELDS = {
   "cost.promise_program": ic("Promise program"),
   "admissions.application_fee": { ...ic("Application fee"), topic: "admissions" },
   "campus.housing": { ...ic("Campus housing and meal plans"), topic: "campus" },
-  "academics.student_faculty_ratio": { label: "Students per faculty member", topic: "academics", source: "ipeds-ef", vintage: "ipeds-ef" },
+  "academics.student_faculty_ratio": { label: "Students per faculty member", topic: "academics", source: "ipeds-ef", vintage: "ipeds-ef", notify: { unit: "ratio", phrase: "student-to-faculty ratio {value}" } },
   // Faculty (specs/data-expansion/faculty.md): salary and headcount default to ipeds-sal; full-time share is
   // Scorecard, registered separately since it overrides this ancestor for that one leaf.
   "academics.faculty": { label: "Faculty salary (9-month equated, all ranks)", topic: "academics", source: "ipeds-sal", vintage: "ipeds-sal" },
@@ -268,14 +293,15 @@ export const FIELDS = {
     ...ic("Average cost, all students"),
     topic: "cost",
     derived: { formula: "Full price − grant dollars per first-year (students without grants count at full price)", inputs: ["cost.breakdown"] },
+    notify: { unit: "dollars", phrase: "average cost {value}" },
   },
 
   /* ---- Outcomes (Scorecard; each measures a past entering cohort) ---- */
-  "outcomes.median_earnings_10yr": scorecard("Median earnings, 10 years after entry", "outcomes"),
+  "outcomes.median_earnings_10yr": { ...scorecard("Median earnings, 10 years after entry", "outcomes"), notify: { unit: "dollars", phrase: "median earnings 10 years after entry {value}" } },
   "outcomes.median_earnings_6yr": scorecard("Median earnings, 6 years after entry", "outcomes"),
-  "outcomes.graduation_rate": scorecard("Graduation rate", "outcomes"),
-  "outcomes.retention_rate": scorecard("Retention rate", "outcomes", "scorecard-retention"),
-  "outcomes.median_debt": scorecard("Median debt at graduation", "outcomes"),
+  "outcomes.graduation_rate": { ...scorecard("Graduation rate", "outcomes"), notify: { unit: "percent", phrase: "graduation rate {value}" } },
+  "outcomes.retention_rate": { ...scorecard("Retention rate", "outcomes", "scorecard-retention"), notify: { unit: "percent", phrase: "{value} returned for a second year" } },
+  "outcomes.median_debt": { ...scorecard("Median debt at graduation", "outcomes"), notify: { unit: "dollars", phrase: "median debt at graduation {value}" } },
   "outcomes.monthly_loan_payment": scorecard("Monthly loan payment", "outcomes"),
   // Key N = the N-1–N academic year (matches IPEDS SFA UFLOANP; checked 2026-09-29), like net price.
   "outcomes.federal_loan_rate": scorecard("Undergraduates with a federal loan", "aid", "scorecard-cost"),
@@ -743,3 +769,14 @@ export const UNDATED_SOURCES: ReadonlySet<SourceKey> = new Set<SourceKey>(["wiki
 
 /** Every registered `reported.*` path: each stored one must have an `extracted` lineage record (lib/lineage.ts). */
 export const REPORTED_PATHS = (Object.keys(FIELDS) as FieldPath[]).filter((p) => p.startsWith("reported."));
+
+/**
+ * Fields whose changes are reported (specs/product/follow-colleges.md#detecting-changes): stored (never `computed`)
+ * and marked `notify`. Kept to the headline figures a family recognizes on the overview cards: name, the admissions
+ * funnel and middle-50% scores, test policy, undergraduates, sticker price, average cost, net price after grants,
+ * graduation and retention, earnings, debt, and the student-to-faculty ratio.
+ */
+export const NOTIFY_FIELDS: readonly FieldPath[] = (Object.keys(FIELDS) as FieldPath[]).filter((p) => {
+  const def: FieldDef = FIELDS[p];
+  return !!def.notify && !def.computed;
+});

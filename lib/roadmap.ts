@@ -19,8 +19,10 @@ export const COMPLEXITY: Record<Complexity, { label: string; description: string
 // Metro area, deferred from wave 2, is under "later". Campus life (religious, Greek, and LGBTQ+ life, group
 // "campus-life") was built 2026-10-03/04 (#72, #73, #75, #76); its remaining work is under "later":
 // campus-pilot-accuracy and campus-sources-later. National trends (the /trends hub, Studies 1–6, movers, conferences,
-// states; group "national-trends") was built 2026-10-04 on feature/national-trends.
+// states) was built 2026-10-04 on feature/national-trends; Study 7 (where the students went) and the online-share
+// field it needs were specified 2026-10-05 and sit under "national-trends".
 export type RoadmapGroupKey =
+  | "national-trends"
   | "college-reported"
   | "campus-life"
   | "design"
@@ -32,6 +34,12 @@ export type RoadmapGroupKey =
   | "later";
 
 export const ROADMAP_GROUPS: { key: RoadmapGroupKey; title: string; description: string }[] = [
+  {
+    key: "national-trends",
+    title: "National trends",
+    description:
+      "Questions about the whole landscape of colleges, not one college: where students went over ten years, and the data that keeps online colleges from standing in for campuses.",
+  },
   {
     key: "design",
     title: "Design and usability",
@@ -104,6 +112,27 @@ export interface RoadmapSpec {
 
 /** In build order within each group (the backlog's order, specs/backlog.md). */
 export const ROADMAP: RoadmapSpec[] = [
+  {
+    slug: "online-share",
+    file: "specs/data-expansion/online-share.md",
+    group: "national-trends",
+    summary:
+      "How much of each college's undergraduate enrollment is entirely online, from the federal distance-education counts: a line on the profile, an Explore filter, and the stored rule that keeps online colleges out of growth lists and campus-based trends.",
+    complexity: 1,
+    complexityNote: "One more IPEDS file the sync reads, two fields and one history series, and a filter; the online-first rule already exists as a reviewed list.",
+    status: "planned",
+  },
+  {
+    slug: "where-students-go",
+    file: "specs/trends/where-students-go.md",
+    group: "national-trends",
+    summary:
+      "Where undergraduates went over ten years, as shares of all students then and now: toward the biggest campuses and research universities, toward publics and the Sun Belt, and not toward cheaper colleges; and whether the pandemic sped that up or is reversing it.",
+    complexity: 2,
+    complexityNote:
+      "One study on the existing trends machinery, but it classifies colleges as they were at the start of the window, adds a campus-based panel, a state map by share change, and a chart of price change against enrollment change.",
+    status: "planned",
+  },
   {
     slug: "compare-redesign",
     file: "specs/compare-redesign.md",

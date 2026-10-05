@@ -1,6 +1,6 @@
 # Trends: Top-10 Lists (Biggest Movers)
 
-> Status: **planned** (not built). Specified 2026-10-03 as part of the national-trends family
+> Status: **built** 2026-10-04 (PR pending, branch `feature/national-trends`). Specified 2026-10-03 as part of the national-trends family
 > ([hub](../national-trends.md)). First-look lists below were computed from the committed history on 2026-10-03;
 > they exist to test the rules, not to be published as they stand.
 

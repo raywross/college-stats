@@ -118,23 +118,30 @@ published at `/roadmap` ([roadmap.md](roadmap.md)): add each new one to `lib/roa
 How college is changing across the country, not at one college: nationally, and by region, public or private, size,
 and selectivity ([national-trends.md](national-trends.md)). Each idea is a study in that spec; add new ones there and
 list them here.
-- [ ] **Trends page and shared breakdowns:** `/trends` with a card per study, `/trends/{study}` pages, the standard
+Built 2026-10-04 on `feature/national-trends`: the hub, Studies 1–6, movers, conferences, and states (`npm run
+build-trends` writes `data/history/trends/`). What's left:
+- [ ] `applicants_men`/`applicants_women` history series, so Study 1 can use the 200-per-sex rule and weight by
+  applicants by sex (it uses a 1,000-total-applicant floor and total-applicant weighting today).
+- [ ] Distance-education share (`EF{Y}A_DIST`) as `demographics.online_share`, replacing the reviewed
+  `data/trends/online-first.json` list the movers use.
+- [ ] Per-conference movers lists, and an Explore conference-filter chip linking to the conference page.
+- [x] **Trends page and shared breakdowns:** `/trends` with a card per study, `/trends/{study}` pages, the standard
   breakdowns (region, type, size, selectivity) computed by `sync-history`, and a test that recomputes each study.
-- [ ] **Study 1: Men and women in admissions.** Share of colleges admitting men vs women at a notably higher rate, 2001 to
+- [x] **Study 1: Men and women in admissions.** Share of colleges admitting men vs women at a notably higher rate, 2001 to
   now, and where the change is concentrated (first look: the Northeast and moderately selective colleges drive it; the
-  West moved the other way). Needs `applicants_men`/`applicants_women` history series first.
-- [ ] **Studies 2–6** (specified 2026-10-03 in [trends/](trends/), each one registry entry, one build function, one
+  West moved the other way).
+- [x] **Studies 2–6** (specified 2026-10-03 in [trends/](trends/), each one registry entry, one build function, one
   page once the hub exists): [test-optional](trends/test-optional.md) (66% → 5% requiring tests; needs the Explore
   test-policy filter), [shrinking colleges](trends/shrinking-colleges.md) (half of colleges 10%+ smaller),
   [price gap](trends/price-gap.md) (who is discounting), [out-of-state students](trends/out-of-state.md) (publics),
   [Pell graduation gap](trends/pell-gap.md) (widened 9 → 11 points).
-- [ ] **Top-10 lists** ([trends/top-10-lists.md](trends/top-10-lists.md)): `/trends/movers`, ten lists with floors and
+- [x] **Top-10 lists** ([trends/top-10-lists.md](trends/top-10-lists.md)): `/trends/movers`, ten lists with floors and
   reviewed exclusions (online-first, closed or merged); Explore `minApplicants`/`minUndergrads` params; later the
   distance-education share from `EF{Y}A_DIST` as `demographics.online_share`.
-- [ ] **By athletic conference** ([trends/conferences.md](trends/conferences.md)): index with the Power 4 side by side,
+- [x] **By athletic conference** ([trends/conferences.md](trends/conferences.md)): index with the Power 4 side by side,
   a page per conference (members, medians over time under today's-members and members-at-the-time rules, realignment
   timeline). Slugs added to `lib/conferences.ts`.
-- [ ] **By state** ([trends/states.md](trends/states.md)): tile map colored by measure, a page per state (10-college
+- [x] **By state** ([trends/states.md](trends/states.md)): tile map colored by measure, a page per state (10-college
   floor, public/private split, origins, movers, public research universities). Metro pages later reuse the template.
 - [ ] More ideas (HBCU applications, legacy and factors, majors by group, transfers, faculty, borrowing, an annual
   "year in college data") are listed in the hub; spec one before building it.

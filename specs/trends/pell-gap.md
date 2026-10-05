@@ -1,6 +1,6 @@
 # Study 6: The Pell Graduation Gap
 
-> Status: **planned** (not built). Specified 2026-10-03 as part of the national-trends family
+> Status: **built** 2026-10-04 (PR pending, branch `feature/national-trends`). Specified 2026-10-03 as part of the national-trends family
 > ([hub](../national-trends.md), which holds the study template and rules). First look computed 2026-10-03 from the
 > committed history; the underlying data was built 2026-10-02
 > ([graduation-by-group.md](../data-expansion/graduation-by-group.md)).

@@ -1,6 +1,6 @@
 # Study 5: Public Colleges and Students From Other States
 
-> Status: **planned** (not built). Specified 2026-10-03 as part of the national-trends family
+> Status: **built** 2026-10-04 (PR pending, branch `feature/national-trends`). Specified 2026-10-03 as part of the national-trends family
 > ([hub](../national-trends.md), which holds the study template and rules). First look computed 2026-10-03 from the
 > committed history; the residence data itself was built 2026-10-02 ([residence.md](../data-expansion/residence.md)).
 

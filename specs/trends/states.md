@@ -1,6 +1,6 @@
 # Trends by State
 
-> Status: **planned** (not built). Specified 2026-10-03 as part of the national-trends family
+> Status: **built** 2026-10-04 (PR pending, branch `feature/national-trends`). Specified 2026-10-03 as part of the national-trends family
 > ([hub](../national-trends.md)). First-look figures computed 2026-10-03.
 
 ## Why

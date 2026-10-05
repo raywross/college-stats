@@ -1,6 +1,6 @@
 # National Trends: How College Is Changing
 
-> Status: **planned** (not built). Opened 2026-09-29 with one study. Expanded 2026-10-03 into a family of specs: this
+> Status: **built** 2026-10-04 (PR pending, branch `feature/national-trends`). Opened 2026-09-29 with one study. Expanded 2026-10-03 into a family of specs: this
 > hub (the shared method, groups, routes, and computation), five more studies, top-10 lists, and pages by athletic
 > conference and by state, each in [specs/trends/](trends/). Uses the year-by-year history already on the site
 > ([how history is built](trends-data.md)). First-look numbers below and in the study specs were computed 2026-10-03

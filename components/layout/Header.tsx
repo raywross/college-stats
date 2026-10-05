@@ -18,7 +18,7 @@ const NAV_ITEMS = [
   { label: "Data", href: "/data" },
 ];
 
-/** Top bar. On phones it's just the logo: navigation, search, and theme live in BottomNav. */
+/** Top bar. On phones it's the logo and the account control: navigation, search, and theme live in BottomNav. */
 export function Header() {
   const pathname = usePathname();
   const compareIds = useCompareIds();
@@ -44,6 +44,11 @@ export function Header() {
         <Link href="/" className="group shrink-0" aria-label="Quad home">
           <Logo />
         </Link>
+
+        {/* Phones: the account control sits opposite the logo; everything else lives in BottomNav. */}
+        <div className="ml-auto md:hidden">
+          <AccountMenu />
+        </div>
 
         <nav className="ml-4 hidden items-center gap-1 md:flex" aria-label="Main">
           {NAV_ITEMS.map((item) => {

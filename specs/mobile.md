@@ -32,7 +32,7 @@ overflowing content, so root causes must be fixed. `clip` (unlike `hidden`) keep
   - Compare shows a lime count badge of picked schools. It replaces the floating `CompareTray` on phones (the
     tray still shows from `md`).
   - More is a sheet with Glossary, Data, Roadmap, Release notes, and the Light/Dark/System control.
-- **Header** on phones is just the logo, 56px tall (`--header-h: 3.5rem`, 4rem from `md`). Navigation, search,
+- **Header** on phones is the logo with the account control opposite it ("Sign in", or the avatar menu when signed in), 56px tall (`--header-h: 3.5rem`, 4rem from `md`). Navigation, search,
   and theme moved to the tab bar.
 - **Footer** drops its link column on phones and pads for the tab bar (`--tabbar-h`).
 - **Sticky sub-navs** (the profile topic pages' `CompactHeader` with its pill row, `CompareHeader`, glossary search bar) sit at

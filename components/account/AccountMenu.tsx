@@ -27,7 +27,7 @@ function returnPath(pathname: string): string | undefined {
 }
 
 /**
- * Desktop header: "Sign in" when signed out, an avatar menu when signed in, nothing where sign-in isn't configured.
+ * Header (desktop, and opposite the logo on phones): "Sign in" when signed out, an avatar menu when signed in, nothing where sign-in isn't configured.
  * State comes from /api/me in the browser (useMe), so the pages around it stay static.
  */
 export function AccountMenu() {
@@ -42,7 +42,7 @@ export function AccountMenu() {
     return (
       <Link
         href={loginHref(returnPath(pathname))}
-        className="inline-flex h-9 items-center rounded-full px-3.5 text-sm font-semibold text-muted-foreground hover:bg-muted hover:text-foreground"
+        className="inline-flex h-9 items-center rounded-full border border-border bg-background px-4 text-sm font-semibold text-foreground shadow-xs transition-colors hover:bg-muted"
       >
         Sign in
       </Link>

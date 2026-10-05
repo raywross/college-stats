@@ -55,6 +55,22 @@ export const STUDIES = [
     spec: "specs/national-trends.md",
     color: "var(--d-admissions)",
   },
+  {
+    slug: "out-of-state",
+    number: 5,
+    title: "Public colleges and students from other states",
+    question: "Are public colleges enrolling more first-years from other states, and which ones?",
+    series: ["out_of_state_share", "international_share", "enrolled", "sticker_in_state", "sticker_out_of_state"],
+    yearKind: "fall",
+    window: 10,
+    groupings: ["region", "control", "size", "selectivity", "research", "division"],
+    panelRule: "Public colleges reporting the out-of-state share in both years, with 200+ enrolled first-years at the window's start",
+    fields: ["demographics.residence", "admissions.enrolled", "cost.sticker", "detail.home_states"],
+    added: 20261004,
+    explore: { href: "/explore?sortBy=out_of_state", label: "Public colleges by out-of-state share" },
+    spec: "specs/trends/out-of-state.md",
+    color: "var(--d-diversity)",
+  },
   // ↑ One entry per study. Studies 2–6 add theirs here (copy Study 1's shape).
 ] as const satisfies readonly StudyDef[];
 

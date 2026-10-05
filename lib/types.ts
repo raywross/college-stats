@@ -1567,6 +1567,12 @@ export interface SearchFilters {
   maxACT?: number;
   minEnroll?: number;
   maxEnroll?: number;
+  /**
+   * At least this many applicants / undergraduates at the START of the ten-year window (school.trends `from`), the
+   * floors the Biggest movers lists use (specs/trends/top-10-lists.md), so "See all in Explore" shows the same colleges.
+   */
+  minApplicants?: number;
+  minUndergrads?: number;
   /** At most this many students per faculty member. */
   maxRatio?: number;
   /** At least this share of faculty are full-time (0–1; specs/data-expansion/faculty.md). */

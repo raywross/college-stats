@@ -1,0 +1,662 @@
+[
+  {
+    "unit_id": "100812",
+    "name": "Athens State University",
+    "reason": "67% of undergraduates (1,702 of 2,535) enrolled exclusively in distance education, IPEDS Fall Enrollment fall 2024 (EF2024A_DIST)",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "101453",
+    "name": "Heritage Christian University",
+    "reason": "81% of undergraduates (75 of 93) enrolled exclusively in distance education, IPEDS Fall Enrollment fall 2024 (EF2024A_DIST)",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "101587",
+    "name": "University of West Alabama",
+    "reason": "58% of undergraduates (1,745 of 2,983) enrolled exclusively in distance education, IPEDS Fall Enrollment fall 2024 (EF2024A_DIST)",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "102395",
+    "name": "United States Sports University",
+    "reason": "57% of undergraduates (134 of 234) enrolled exclusively in distance education, IPEDS Fall Enrollment fall 2024 (EF2024A_DIST)",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "104717",
+    "name": "Grand Canyon University",
+    "reason": "70% of undergraduates (53,376 of 75,936) enrolled exclusively in distance education, IPEDS Fall Enrollment fall 2024 (EF2024A_DIST)",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "105589",
+    "name": "Prescott College",
+    "reason": "50% of undergraduates (112 of 223) enrolled exclusively in distance education, IPEDS Fall Enrollment fall 2024 (EF2024A_DIST)",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "106263",
+    "name": "University of Arkansas for Medical Sciences",
+    "reason": "68% of undergraduates (1,085 of 1,589) enrolled exclusively in distance education, IPEDS Fall Enrollment fall 2024 (EF2024A_DIST)",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "110316",
+    "name": "California Institute of Integral Studies",
+    "reason": "100% of undergraduates (38 of 38) enrolled exclusively in distance education, IPEDS Fall Enrollment fall 2024 (EF2024A_DIST)",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "115083",
+    "name": "Golden Gate University",
+    "reason": "52% of undergraduates (140 of 271) enrolled exclusively in distance education, IPEDS Fall Enrollment fall 2024 (EF2024A_DIST)",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "115773",
+    "name": "Humphreys University",
+    "reason": "100% of undergraduates (172 of 172) enrolled exclusively in distance education, IPEDS Fall Enrollment fall 2024 (EF2024A_DIST)",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "117575",
+    "name": "Southern California Seminary",
+    "reason": "63% of undergraduates (20 of 32) enrolled exclusively in distance education, IPEDS Fall Enrollment fall 2024 (EF2024A_DIST)",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "119605",
+    "name": "National University",
+    "reason": "73% of undergraduates (8,245 of 11,237) enrolled exclusively in distance education, IPEDS Fall Enrollment fall 2024 (EF2024A_DIST)",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "120184",
+    "name": "Notre Dame de Namur University",
+    "reason": "100% of undergraduates (33 of 33) enrolled exclusively in distance education, IPEDS Fall Enrollment fall 2024 (EF2024A_DIST)",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "120698",
+    "name": "Palo Alto University",
+    "reason": "93% of undergraduates (13 of 14) enrolled exclusively in distance education, IPEDS Fall Enrollment fall 2024 (EF2024A_DIST)",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "120768",
+    "name": "Pacific Oaks College",
+    "reason": "53% of undergraduates (166 of 312) enrolled exclusively in distance education, IPEDS Fall Enrollment fall 2024 (EF2024A_DIST)",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "123280",
+    "name": "Shasta Bible College and Graduate School",
+    "reason": "57% of undergraduates (12 of 21) enrolled exclusively in distance education, IPEDS Fall Enrollment fall 2024 (EF2024A_DIST)",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "126669",
+    "name": "Colorado Christian University",
+    "reason": "56% of undergraduates (4,593 of 8,200) enrolled exclusively in distance education, IPEDS Fall Enrollment fall 2024 (EF2024A_DIST)",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "129534",
+    "name": "Holy Apostles College and Seminary",
+    "reason": "97% of undergraduates (259 of 267) enrolled exclusively in distance education, IPEDS Fall Enrollment fall 2024 (EF2024A_DIST)",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "131113",
+    "name": "Wilmington University",
+    "reason": "79% of undergraduates (7,039 of 8,858) enrolled exclusively in distance education, IPEDS Fall Enrollment fall 2024 (EF2024A_DIST)",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "132842",
+    "name": "Albizu University-Miami",
+    "reason": "68% of undergraduates (195 of 287) enrolled exclusively in distance education, IPEDS Fall Enrollment fall 2024 (EF2024A_DIST)",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "135364",
+    "name": "Luther Rice College & Seminary",
+    "reason": "100% of undergraduates (176 of 176) enrolled exclusively in distance education, IPEDS Fall Enrollment fall 2024 (EF2024A_DIST)",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "137032",
+    "name": "Saint Leo University",
+    "reason": "68% of undergraduates (5,081 of 7,516) enrolled exclusively in distance education, IPEDS Fall Enrollment fall 2024 (EF2024A_DIST)",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "138868",
+    "name": "Point University",
+    "reason": "64% of undergraduates (1,283 of 1,997) enrolled exclusively in distance education, IPEDS Fall Enrollment fall 2024 (EF2024A_DIST)",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "140340",
+    "name": "Herzing University-Atlanta",
+    "reason": "64% of undergraduates (249 of 387) enrolled exclusively in distance education, IPEDS Fall Enrollment fall 2024 (EF2024A_DIST)",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "140571",
+    "name": "Morris Brown College",
+    "reason": "65% of undergraduates (281 of 432) enrolled exclusively in distance education, IPEDS Fall Enrollment fall 2024 (EF2024A_DIST)",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "141185",
+    "name": "Toccoa Falls College",
+    "reason": "53% of undergraduates (1,582 of 3,013) enrolled exclusively in distance education, IPEDS Fall Enrollment fall 2024 (EF2024A_DIST)",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "141981",
+    "name": "University of Hawaii-West Oahu",
+    "reason": "53% of undergraduates (1,478 of 2,814) enrolled exclusively in distance education, IPEDS Fall Enrollment fall 2024 (EF2024A_DIST)",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "142832",
+    "name": "Adler University",
+    "reason": "100% of undergraduates (9 of 9) enrolled exclusively in distance education, IPEDS Fall Enrollment fall 2024 (EF2024A_DIST)",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "142957",
+    "name": "American Islamic College",
+    "reason": "67% of undergraduates (12 of 18) enrolled exclusively in distance education, IPEDS Fall Enrollment fall 2024 (EF2024A_DIST)",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "143978",
+    "name": "The Chicago School at Chicago",
+    "reason": "76% of undergraduates (16 of 21) enrolled exclusively in distance education, IPEDS Fall Enrollment fall 2024 (EF2024A_DIST)",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "147536",
+    "name": "National Louis University",
+    "reason": "56% of undergraduates (2,489 of 4,471) enrolled exclusively in distance education, IPEDS Fall Enrollment fall 2024 (EF2024A_DIST)",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "149514",
+    "name": "Trinity International University-Illinois",
+    "reason": "51% of undergraduates (28 of 55) enrolled exclusively in distance education, IPEDS Fall Enrollment fall 2024 (EF2024A_DIST)",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "151388",
+    "name": "Indiana University-East",
+    "reason": "70% of undergraduates (2,061 of 2,951) enrolled exclusively in distance education, IPEDS Fall Enrollment fall 2024 (EF2024A_DIST)",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "153861",
+    "name": "Maharishi International University",
+    "reason": "87% of undergraduates (798 of 922) enrolled exclusively in distance education, IPEDS Fall Enrollment fall 2024 (EF2024A_DIST)",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "154022",
+    "name": "The University of Arizona Global Campus",
+    "reason": "100% of undergraduates (21,113 of 21,113) enrolled exclusively in distance education, IPEDS Fall Enrollment fall 2024 (EF2024A_DIST)",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "154493",
+    "name": "Upper Iowa University",
+    "reason": "73% of undergraduates (2,226 of 3,054) enrolled exclusively in distance education, IPEDS Fall Enrollment fall 2024 (EF2024A_DIST)",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "154518",
+    "name": "Waldorf University",
+    "reason": "68% of undergraduates (1,247 of 1,834) enrolled exclusively in distance education, IPEDS Fall Enrollment fall 2024 (EF2024A_DIST)",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "155636",
+    "name": "Ottawa University-Kansas City",
+    "reason": "84% of undergraduates (186 of 221) enrolled exclusively in distance education, IPEDS Fall Enrollment fall 2024 (EF2024A_DIST)",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "156417",
+    "name": "Clear Creek Baptist Bible College",
+    "reason": "76% of undergraduates (121 of 160) enrolled exclusively in distance education, IPEDS Fall Enrollment fall 2024 (EF2024A_DIST)",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "156541",
+    "name": "University of the Cumberlands",
+    "reason": "66% of undergraduates (5,021 of 7,612) enrolled exclusively in distance education, IPEDS Fall Enrollment fall 2024 (EF2024A_DIST)",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "159382",
+    "name": "Louisiana State University at Alexandria",
+    "reason": "70% of undergraduates (4,740 of 6,815) enrolled exclusively in distance education, IPEDS Fall Enrollment fall 2024 (EF2024A_DIST)",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "161217",
+    "name": "University of Maine at Augusta",
+    "reason": "60% of undergraduates (2,573 of 4,313) enrolled exclusively in distance education, IPEDS Fall Enrollment fall 2024 (EF2024A_DIST)",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "161341",
+    "name": "University of Maine at Presque Isle",
+    "reason": "62% of undergraduates (1,717 of 2,758) enrolled exclusively in distance education, IPEDS Fall Enrollment fall 2024 (EF2024A_DIST)",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "161572",
+    "name": "Unity Environmental University",
+    "reason": "99% of undergraduates (6,425 of 6,507) enrolled exclusively in distance education, IPEDS Fall Enrollment fall 2024 (EF2024A_DIST)",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "163204",
+    "name": "University of Maryland Global Campus",
+    "reason": "89% of undergraduates (46,379 of 52,187) enrolled exclusively in distance education, IPEDS Fall Enrollment fall 2024 (EF2024A_DIST)",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "164614",
+    "name": "Boston Baptist College",
+    "reason": "56% of undergraduates (24 of 43) enrolled exclusively in distance education, IPEDS Fall Enrollment fall 2024 (EF2024A_DIST)",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "164632",
+    "name": "Bay Path University",
+    "reason": "61% of undergraduates (717 of 1,177) enrolled exclusively in distance education, IPEDS Fall Enrollment fall 2024 (EF2024A_DIST)",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "165167",
+    "name": "Cambridge College",
+    "reason": "81% of undergraduates (522 of 646) enrolled exclusively in distance education, IPEDS Fall Enrollment fall 2024 (EF2024A_DIST)",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "165802",
+    "name": "Fisher College",
+    "reason": "60% of undergraduates (918 of 1,536) enrolled exclusively in distance education, IPEDS Fall Enrollment fall 2024 (EF2024A_DIST)",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "166869",
+    "name": "MGH Institute of Health Professions",
+    "reason": "55% of undergraduates (199 of 363) enrolled exclusively in distance education, IPEDS Fall Enrollment fall 2024 (EF2024A_DIST)",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "168847",
+    "name": "Baker College",
+    "reason": "60% of undergraduates (2,145 of 3,595) enrolled exclusively in distance education, IPEDS Fall Enrollment fall 2024 (EF2024A_DIST)",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "170000",
+    "name": "Grace Christian University",
+    "reason": "51% of undergraduates (473 of 928) enrolled exclusively in distance education, IPEDS Fall Enrollment fall 2024 (EF2024A_DIST)",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "172608",
+    "name": "Walsh College",
+    "reason": "67% of undergraduates (302 of 448) enrolled exclusively in distance education, IPEDS Fall Enrollment fall 2024 (EF2024A_DIST)",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "174862",
+    "name": "Crown College",
+    "reason": "59% of undergraduates (891 of 1,523) enrolled exclusively in distance education, IPEDS Fall Enrollment fall 2024 (EF2024A_DIST)",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "176451",
+    "name": "Wesley Biblical Seminary",
+    "reason": "100% of undergraduates (24 of 24) enrolled exclusively in distance education, IPEDS Fall Enrollment fall 2024 (EF2024A_DIST)",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "177065",
+    "name": "Columbia College",
+    "reason": "70% of undergraduates (3,640 of 5,207) enrolled exclusively in distance education, IPEDS Fall Enrollment fall 2024 (EF2024A_DIST)",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "177986",
+    "name": "Logan University",
+    "reason": "100% of undergraduates (251 of 251) enrolled exclusively in distance education, IPEDS Fall Enrollment fall 2024 (EF2024A_DIST)",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "178721",
+    "name": "Park University",
+    "reason": "67% of undergraduates (3,130 of 4,657) enrolled exclusively in distance education, IPEDS Fall Enrollment fall 2024 (EF2024A_DIST)",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "180814",
+    "name": "Bellevue University",
+    "reason": "95% of undergraduates (10,519 of 11,037) enrolled exclusively in distance education, IPEDS Fall Enrollment fall 2024 (EF2024A_DIST)",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "183026",
+    "name": "Southern New Hampshire University",
+    "reason": "98% of undergraduates (160,747 of 164,423) enrolled exclusively in distance education, IPEDS Fall Enrollment fall 2024 (EF2024A_DIST)",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "187046",
+    "name": "Thomas Edison State University",
+    "reason": "98% of undergraduates (6,609 of 6,775) enrolled exclusively in distance education, IPEDS Fall Enrollment fall 2024 (EF2024A_DIST)",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "187648",
+    "name": "Eastern New Mexico University-Main Campus",
+    "reason": "54% of undergraduates (2,274 of 4,239) enrolled exclusively in distance education, IPEDS Fall Enrollment fall 2024 (EF2024A_DIST)",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "188304",
+    "name": "Western New Mexico University",
+    "reason": "56% of undergraduates (1,466 of 2,629) enrolled exclusively in distance education, IPEDS Fall Enrollment fall 2024 (EF2024A_DIST)",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "190114",
+    "name": "Metropolitan College of New York",
+    "reason": "100% of undergraduates (402 of 402) enrolled exclusively in distance education, IPEDS Fall Enrollment fall 2024 (EF2024A_DIST)",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "190576",
+    "name": "CUNY Graduate School and University Center",
+    "reason": "91% of undergraduates (3,183 of 3,486) enrolled exclusively in distance education, IPEDS Fall Enrollment fall 2024 (EF2024A_DIST)",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "196264",
+    "name": "Empire State University",
+    "reason": "90% of undergraduates (7,518 of 8,395) enrolled exclusively in distance education, IPEDS Fall Enrollment fall 2024 (EF2024A_DIST)",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "199069",
+    "name": "University of Mount Olive",
+    "reason": "52% of undergraduates (1,011 of 1,944) enrolled exclusively in distance education, IPEDS Fall Enrollment fall 2024 (EF2024A_DIST)",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "201964",
+    "name": "Ohio Christian University",
+    "reason": "58% of undergraduates (741 of 1,288) enrolled exclusively in distance education, IPEDS Fall Enrollment fall 2024 (EF2024A_DIST)",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "202806",
+    "name": "Franklin University",
+    "reason": "93% of undergraduates (5,757 of 6,188) enrolled exclusively in distance education, IPEDS Fall Enrollment fall 2024 (EF2024A_DIST)",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "208646",
+    "name": "Eastern Oregon University",
+    "reason": "51% of undergraduates (1,269 of 2,502) enrolled exclusively in distance education, IPEDS Fall Enrollment fall 2024 (EF2024A_DIST)",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "209296",
+    "name": "National University of Natural Medicine",
+    "reason": "66% of undergraduates (29 of 44) enrolled exclusively in distance education, IPEDS Fall Enrollment fall 2024 (EF2024A_DIST)",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "214883",
+    "name": "Peirce College",
+    "reason": "100% of undergraduates (799 of 799) enrolled exclusively in distance education, IPEDS Fall Enrollment fall 2024 (EF2024A_DIST)",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "219082",
+    "name": "Dakota State University",
+    "reason": "54% of undergraduates (1,658 of 3,066) enrolled exclusively in distance education, IPEDS Fall Enrollment fall 2024 (EF2024A_DIST)",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "219240",
+    "name": "Kairos University",
+    "reason": "100% of undergraduates (82 of 82) enrolled exclusively in distance education, IPEDS Fall Enrollment fall 2024 (EF2024A_DIST)",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "222628",
+    "name": "Amberton University",
+    "reason": "96% of undergraduates (113 of 118) enrolled exclusively in distance education, IPEDS Fall Enrollment fall 2024 (EF2024A_DIST)",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "223117",
+    "name": "Baptist Missionary Association Theological Seminary",
+    "reason": "93% of undergraduates (43 of 46) enrolled exclusively in distance education, IPEDS Fall Enrollment fall 2024 (EF2024A_DIST)",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "226587",
+    "name": "McMurry University",
+    "reason": "56% of undergraduates (1,784 of 3,167) enrolled exclusively in distance education, IPEDS Fall Enrollment fall 2024 (EF2024A_DIST)",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "227429",
+    "name": "Paul Quinn College",
+    "reason": "52% of undergraduates (324 of 620) enrolled exclusively in distance education, IPEDS Fall Enrollment fall 2024 (EF2024A_DIST)",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "228909",
+    "name": "University of North Texas Health Science Center",
+    "reason": "100% of undergraduates (41 of 41) enrolled exclusively in distance education, IPEDS Fall Enrollment fall 2024 (EF2024A_DIST)",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "231651",
+    "name": "Regent University",
+    "reason": "74% of undergraduates (3,757 of 5,049) enrolled exclusively in distance education, IPEDS Fall Enrollment fall 2024 (EF2024A_DIST)",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "232557",
+    "name": "Liberty University",
+    "reason": "74% of undergraduates (39,156 of 52,961) enrolled exclusively in distance education, IPEDS Fall Enrollment fall 2024 (EF2024A_DIST)",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "234915",
+    "name": "City University of Seattle",
+    "reason": "87% of undergraduates (1,030 of 1,187) enrolled exclusively in distance education, IPEDS Fall Enrollment fall 2024 (EF2024A_DIST)",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "237312",
+    "name": "University of Charleston",
+    "reason": "53% of undergraduates (1,252 of 2,348) enrolled exclusively in distance education, IPEDS Fall Enrollment fall 2024 (EF2024A_DIST)",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "245892",
+    "name": "Antioch University",
+    "reason": "100% of undergraduates (77 of 77) enrolled exclusively in distance education, IPEDS Fall Enrollment fall 2024 (EF2024A_DIST)",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "245953",
+    "name": "Mid-America Christian University",
+    "reason": "70% of undergraduates (1,264 of 1,806) enrolled exclusively in distance education, IPEDS Fall Enrollment fall 2024 (EF2024A_DIST)",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "262086",
+    "name": "University of Massachusetts Global",
+    "reason": "100% of undergraduates (5,090 of 5,090) enrolled exclusively in distance education, IPEDS Fall Enrollment fall 2024 (EF2024A_DIST)",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "388520",
+    "name": "College of Biblical Studies-Houston",
+    "reason": "98% of undergraduates (409 of 419) enrolled exclusively in distance education, IPEDS Fall Enrollment fall 2024 (EF2024A_DIST)",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "401223",
+    "name": "World Mission University",
+    "reason": "100% of undergraduates (207 of 207) enrolled exclusively in distance education, IPEDS Fall Enrollment fall 2024 (EF2024A_DIST)",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "414878",
+    "name": "Trine University-Regional/Non-Traditional Campuses",
+    "reason": "90% of undergraduates (672 of 745) enrolled exclusively in distance education, IPEDS Fall Enrollment fall 2024 (EF2024A_DIST)",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "426314",
+    "name": "Embry-Riddle Aeronautical University-Worldwide",
+    "reason": "91% of undergraduates (8,640 of 9,447) enrolled exclusively in distance education, IPEDS Fall Enrollment fall 2024 (EF2024A_DIST)",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "428259",
+    "name": "Ottawa University-Milwaukee",
+    "reason": "93% of undergraduates (38 of 41) enrolled exclusively in distance education, IPEDS Fall Enrollment fall 2024 (EF2024A_DIST)",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "439701",
+    "name": "The King's University",
+    "reason": "52% of undergraduates (131 of 251) enrolled exclusively in distance education, IPEDS Fall Enrollment fall 2024 (EF2024A_DIST)",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "443049",
+    "name": "Faith International University",
+    "reason": "75% of undergraduates (207 of 276) enrolled exclusively in distance education, IPEDS Fall Enrollment fall 2024 (EF2024A_DIST)",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "443058",
+    "name": "Family of Faith Christian University",
+    "reason": "80% of undergraduates (67 of 84) enrolled exclusively in distance education, IPEDS Fall Enrollment fall 2024 (EF2024A_DIST)",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "445267",
+    "name": "Central Methodist University-College of Graduate and Extended Studies",
+    "reason": "58% of undergraduates (2,013 of 3,465) enrolled exclusively in distance education, IPEDS Fall Enrollment fall 2024 (EF2024A_DIST)",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "447953",
+    "name": "SUM Bible College and Theological Seminary",
+    "reason": "98% of undergraduates (194 of 198) enrolled exclusively in distance education, IPEDS Fall Enrollment fall 2024 (EF2024A_DIST)",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "454582",
+    "name": "Ottawa University-Online",
+    "reason": "86% of undergraduates (292 of 339) enrolled exclusively in distance education, IPEDS Fall Enrollment fall 2024 (EF2024A_DIST)",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "455664",
+    "name": "The Chicago School at Los Angeles",
+    "reason": "99% of undergraduates (333 of 337) enrolled exclusively in distance education, IPEDS Fall Enrollment fall 2024 (EF2024A_DIST)",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "459727",
+    "name": "Touro University Worldwide",
+    "reason": "93% of undergraduates (435 of 469) enrolled exclusively in distance education, IPEDS Fall Enrollment fall 2024 (EF2024A_DIST)",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "459824",
+    "name": "Touro University Nevada",
+    "reason": "100% of undergraduates (22 of 22) enrolled exclusively in distance education, IPEDS Fall Enrollment fall 2024 (EF2024A_DIST)",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "475273",
+    "name": "Springfield College-Regional Online and Continuing Education",
+    "reason": "88% of undergraduates (154 of 176) enrolled exclusively in distance education, IPEDS Fall Enrollment fall 2024 (EF2024A_DIST)",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "479956",
+    "name": "Pennsylvania State University-World Campus",
+    "reason": "98% of undergraduates (7,921 of 8,051) enrolled exclusively in distance education, IPEDS Fall Enrollment fall 2024 (EF2024A_DIST)",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "480198",
+    "name": "Warner Pacific University Professional and Graduate Studies",
+    "reason": "51% of undergraduates (74 of 144) enrolled exclusively in distance education, IPEDS Fall Enrollment fall 2024 (EF2024A_DIST)",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "481401",
+    "name": "Grace School of Theology",
+    "reason": "51% of undergraduates (117 of 229) enrolled exclusively in distance education, IPEDS Fall Enrollment fall 2024 (EF2024A_DIST)",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "483036",
+    "name": "Texas A&M University-Central Texas",
+    "reason": "69% of undergraduates (1,216 of 1,755) enrolled exclusively in distance education, IPEDS Fall Enrollment fall 2024 (EF2024A_DIST)",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "483595",
+    "name": "Ana G. Mendez University",
+    "reason": "80% of undergraduates (3,823 of 4,780) enrolled exclusively in distance education, IPEDS Fall Enrollment fall 2024 (EF2024A_DIST)",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "488679",
+    "name": "Indiana Wesleyan University-National & Global",
+    "reason": "97% of undergraduates (6,690 of 6,901) enrolled exclusively in distance education, IPEDS Fall Enrollment fall 2024 (EF2024A_DIST)",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "490045",
+    "name": "California Prestige University",
+    "reason": "53% of undergraduates (29 of 55) enrolled exclusively in distance education, IPEDS Fall Enrollment fall 2024 (EF2024A_DIST)",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "492801",
+    "name": "Drury University-College of Continuing Professional Studies",
+    "reason": "60% of undergraduates (393 of 659) enrolled exclusively in distance education, IPEDS Fall Enrollment fall 2024 (EF2024A_DIST)",
+    "added": "2026-10-04"
+  },
+  {
+    "unit_id": "492962",
+    "name": "Indiana Institute of Technology-College of Professional Studies",
+    "reason": "99% of undergraduates (2,761 of 2,779) enrolled exclusively in distance education, IPEDS Fall Enrollment fall 2024 (EF2024A_DIST)",
+    "added": "2026-10-04"
+  }
+]

@@ -11,6 +11,7 @@
 import type { FormatKind } from "./format";
 import type { YearKind } from "./history";
 import type { GroupingKey } from "./trend-groups";
+import type { MoverResult, MoverWindow } from "./movers";
 
 /* ------------------------------------------------------------------ */
 /* Shared envelope                                                     */
@@ -179,13 +180,88 @@ export interface OutOfStateFile extends StudyFile<OutOfStateValues> {
 }
 
 /* ------------------------------------------------------------------ */
+/* Study 3: shrinking colleges (shrinking-colleges.json)                */
+/* ------------------------------------------------------------------ */
+
+/** One group's (or the nation's) measures over a window, colleges in the panel. */
+export interface ShrinkingValues {
+  /** Share of panel colleges whose undergraduates fell 10% or more over the window. */
+  shrank10: number;
+  /** Share whose undergraduates grew 10% or more. */
+  grew10: number;
+  /** Median college's % change in undergraduates over the window (−0.10 = −10%). */
+  medianChange: number;
+  /** Total undergraduates' % change over the window, summed across the group (the "students" view). */
+  totalChange: number;
+}
+
+/** One window's (ten- or five-year) results: the window's ends, panel size, and the measures. */
+export interface ShrinkingWindow {
+  from: number;
+  to: number;
+  n: number;
+  national: GroupRow<ShrinkingValues>;
+  groupings: GroupingResult<ShrinkingValues>[];
+}
+
+/** data/history/trends/shrinking-colleges.json: the ten-year window is the primary StudyFile; `five` is the owner-recommended second window (the segmented control on the page). */
+export interface ShrinkingCollegesFile extends StudyFile<ShrinkingValues> {
+  slug: "shrinking-colleges";
+  /** Colleges needed on both ends of a window to join its panel. */
+  minUndergrads: number;
+  /** The 10 percentage points that define "shrank" / "grew". */
+  threshold: number;
+  /** The five-year window (fall `to − 5` to `to`), same shape as the primary ten-year window. */
+  five: ShrinkingWindow;
+  /** National: share of the ten-year panel smaller than at the window's start, each fall from `from` to `to` (the headline sparkline). */
+  belowStart: (number | null)[];
+  /** National: ten-year % change across the panel, as a histogram (10-point bins), with the median marked. */
+  histogram: { binSize: number; min: number; max: number; counts: number[]; median: number; n: number };
+  /** Companion: median applicants and enrolled first-years, by fall, over the colleges that shrank 10%+ (a sub-panel of the ten-year panel). */
+  companion: { from: number; to: number; n: number; applicants: (number | null)[]; enrolled: (number | null)[] };
+}
+
+/* ------------------------------------------------------------------ */
+/* Biggest movers (movers.json; specs/trends/top-10-lists.md)          */
+/* ------------------------------------------------------------------ */
+
+/** Every list for one window (10 or 5 years back from each list's newest year). */
+export interface MoversWindow {
+  years: MoverWindow;
+  lists: MoverResult[];
+}
+
+/**
+ * The envelope's `from`/`to` are the ten-year fall window and `n` the colleges considered; each list carries its own
+ * years and kind (cost lists are school years, graduation lists entering classes).
+ */
+export interface MoversFile extends TrendEnvelope {
+  name: "movers";
+  /** Entries shown before "Show 25", and kept per list (plus ties). */
+  shown: number;
+  kept: number;
+  rules: {
+    /** Every list leaves out colleges under this many undergraduates in the newest fall. */
+    stillOpenMinUndergrads: number;
+    /** An endpoint this many times the year next to it is a reporting jump. */
+    jumpFactor: number;
+    /** Entries in data/trends/online-first.json and data/trends/excluded-campuses.json. */
+    onlineFirst: number;
+    excludedCampuses: number;
+  };
+  windows: MoversWindow[];
+}
+
+/* ------------------------------------------------------------------ */
 /* Every file, by name (one line per unit)                             */
 /* ------------------------------------------------------------------ */
 
 export interface TrendFiles {
   index: TrendIndex;
   "men-and-women": MenAndWomenFile;
+  "shrinking-colleges": ShrinkingCollegesFile;
   "out-of-state": OutOfStateFile;
+  movers: MoversFile;
 }
 
 export type TrendFileName = keyof TrendFiles;

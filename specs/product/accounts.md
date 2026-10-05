@@ -1,8 +1,8 @@
 # Accounts and Households
 
 > Status: **planned**, foundation built (2026-10-05, [below](#built-foundation-2026-10-05)): email sign-in, the schema with
-> row-level security, the `/account` shell, and the header menu. Households, invitations UI, export, and delete are
-> next. Decided 2026-10-02: Supabase Auth, server-side sessions, households with guardian-only finances. Foundational for [saved-lists.md](saved-lists.md), the planning tools, and
+> row-level security, the `/account` shell, and the header menu. Households, invitations, export, delete, and the
+> access log built the same day ([below](#built-households-2026-10-05)). Decided 2026-10-02: Supabase Auth, server-side sessions, households with guardian-only finances. Foundational for [saved-lists.md](saved-lists.md), the planning tools, and
 > [commercialization.md](commercialization.md). Part of [product](README.md).
 
 ## Goal
@@ -198,3 +198,84 @@ allowed; name, inviter, side, expiry, state; never the email), `log_access(stude
    (Authentication → Emails → SMTP) once the sending domain is verified, and set `RESEND_API_KEY` and `EMAIL_FROM` in
    Vercel for invitations and digests.
 5. Vercel needs nothing new: `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY` are already set.
+
+## Built: households (2026-10-05)
+Unit B of the accounts build, on the foundation above. Migration `supabase/migrations/20261005125000_households.sql`
+(apply after the accounts migration); tests `tests/households.test.mts` (PGlite, every assertion as a user, with
+guard tests that break the roster function and the remove policy), `tests/household-rules.test.mts`,
+`tests/purge-accounts.test.mts`.
+
+### What's there
+- **`/account`**: the household section lists each household's members (names and roles) with a link to manage, or a
+  "Start a household" form; **Who viewed your information** (students only) groups `access_log` into lines like "Mom
+  viewed your list on Oct 2"; **Download my data**; **Delete my account…**. An account scheduled for deletion sees only
+  "Restore my account" and Sign out.
+- **`/account/household`**: one card per household: members (name, role badge, view/edit), **Remove** (guardians),
+  **Allow editing / View only** (who may decide: below), **Leave**, pending invitations with **Cancel**, the invite form
+  (email; guardians pick guardian or student and may hand over a managed student; students tick "Let them edit my
+  list and profile"), and **Add a student without an account** (guardians). "Start another household" at the bottom.
+- **Invitations** show the link on screen once, to copy ("Send this link to …"), and are also emailed through
+  `sendEmail()` when `RESEND_API_KEY`/`EMAIL_FROM` are set. "Not configured" is the normal state today and isn't an
+  error. Only the token's hash is stored, so a lost link is cancelled and re-sent.
+- **`/invite/[token]`**: `invitation_preview()` (works signed out): household, inviter, side; used/expired/cancelled
+  states in plain words; signed out → `SignInPrompt` with `next` back to the invite; signed in → **Accept** →
+  `/account/household`. Refusals map through `INVITATION_ERRORS`. `referrer: no-referrer`, `noindex`.
+- **`/account/delete`** explains what goes and what stays (each managed student: "stays with Dad" or "removed too"),
+  then a typed "delete" confirmation. The action calls `delete_my_account()`, signs out everywhere (`scope: global`),
+  and lands on `/account/deleted`.
+- **`/account/export`** (GET route; a link with `download`): one JSON file, `quad-data-YYYY-MM-DD.json`.
+- Avatar menu gains **Household**. Glossary: `household-invitation`, `edit-access`, `access-log`.
+
+### Contracts for later units
+| What | Use |
+|---|---|
+| `components/account/GuardianBanner.tsx` | `<GuardianBanner studentName={string \| null} canEdit={boolean} className? />`: "Viewing as a guardian · You can (look but not change \| edit) Alice's information. Alice can see when you view it." Server component. |
+| `lib/households.ts` (server only) | `openStudentAs(studentId, table): Promise<StudentAccess \| null>`: resolves access via `studentsICanSee()` and, when `relation === "guardian"`, logs the read with `log_access`. Call it at the top of a page that shows one student's data; render `GuardianBanner` for guardians; `notFound()` on null. `logStudentRead(studentId, table)` logs alone (never throws). Also `myHouseholds()`, `myAccessLog()`, `deletionPreview()`. |
+| `lib/household-rules.ts` (pure) | Types (`RosterMember`, `HouseholdView`, `AccessLogRow`), `ACCESS_TABLE_LABELS` (add your table's wording: `lists` → "your list"), `HOUSEHOLD_ERRORS`, `errorMessage()`, `editAccessControl()`, `canRemove()`. |
+| `lib/account-export.ts` | `ACCOUNT_EXPORTERS`: append `{ key, description, run(ctx) }` for your tables (student profile, lists, follows…). `ctx` has `supabase` (the user's session), `userId`, `email`, `ownStudentId`, `studentIds` (own + managed students the user created). Keys must be unique (tested); a failing exporter fails the whole export. Don't export another person's private data (a student's private notes for a guardian; another guardian's finances). |
+
+### SQL added
+`household_roster(household)` (security definer: active co-members' names, roles, `can_edit`, managed flags; empty for
+non-members; never emails or birth years), `create_household(name, role)`, `add_managed_student(household, name,
+grad_year?)`, `leave_household(household)`, `set_member_can_edit(member, bool)`, `my_access_log(limit?)`,
+`account_deletion_preview()`, `delete_my_account()`, `restore_my_account()`; policy **"Members: guardians remove"**
+(an active guardian deletes any membership in their household). Internal, not granted to users:
+`household_has_actors`, `close_household_if_empty`, `managed_student_heir`.
+
+### Decisions made while building
+- **Who removes whom:** an active guardian may remove any other member (guardian or student). A student doesn't
+  remove guardians; they leave, or take away edit access. Everyone can leave.
+- **Edit access after joining** (`set_member_can_edit`): granted by a student of the household, or by a guardian when
+  every student there is a managed record that guardian created (at least one). Nobody grants themselves; a guardian
+  can give up their own. Because `can_edit` sits on the guardian's membership, it covers every student in that
+  household, so any student there can change it (a known limit of the per-household model; per-student grants would
+  need a new table).
+- **Leaving or deleting closes a household** when nobody who can act is left (no active guardian and no student with
+  an account): it's soft-deleted and its pending invitations are revoked. This also stops a creator who left from
+  still seeing an empty household.
+- **Delete** (`delete_my_account`, one `deleted_at` for everything): profile and own student record soft-deleted;
+  managed students pass to the longest-standing other active guardian in a shared household (who becomes
+  `managed_by`), else are soft-deleted with the account; the user's memberships are removed at once; unused
+  invitations they sent are revoked. **Restore** within 30 days brings back the profile, the own student record, and
+  managed students deleted with it, but not memberships (rejoin by invitation).
+- **Purge:** `npm run purge-accounts` (dry run unless `--apply`; `--days N`, never under 30) hard-deletes student
+  records, households, and then auth users (Auth admin API, cascading to profiles, memberships, access-log rows)
+  soft-deleted 30+ days ago. A soft-deleted student record whose own account still exists is never purged. Run by hand
+  with the secret key for now; scheduling it is a later step.
+- **Export** is a GET route rather than a Server Action, so a plain download link works; it only reads.
+- **Edit attribution** ("Added by Mom") belongs to the tables guardians edit (lists, notes: [saved-lists.md](saved-lists.md));
+  nothing this unit writes is a guardian edit of student data except creating managed students, which `managed_by` records.
+- **The invitation email** is a plain HTML string with escaped names and a text part (no React render), in
+  `invitationEmail()`.
+- **Not built:** changing your email address (Supabase `updateUser({ email })` with the `email_change` callback the
+  foundation already accepts), the 3-year idle-account warning, and a scheduled purge.
+
+### Setup (owner)
+1. **Apply the migration** after the accounts one: SQL Editor → paste
+   `supabase/migrations/20261005125000_households.sql` → Run (dev first; prod at the formal release).
+2. Nothing else is required. For emailed invitations, set `RESEND_API_KEY` and `EMAIL_FROM` once the sending domain is
+   verified; until then the link is shown to copy.
+3. **Purge** (monthly, by hand for now): `npm run purge-accounts` to see what would go, then
+   `npm run purge-accounts -- --apply`. It uses `SUPABASE_URL` + `SUPABASE_SECRET_KEY` from `.env.local` (dev) and must
+   never run in Vercel.
+

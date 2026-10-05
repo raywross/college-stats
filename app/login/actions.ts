@@ -2,7 +2,8 @@
 
 import { cookies, headers } from "next/headers";
 import { authConfigured } from "@/lib/auth";
-import { createServerSupabase } from "@/lib/supabase-server";
+import { createClient } from "@supabase/supabase-js";
+import { supabaseAuthEnv } from "@/lib/supabase-server";
 import { AGE_GATE_COOKIE, birthYearAllowed, isRoleHint, parseBirthYear, safeNextPath } from "@/lib/accounts";
 
 export type LoginState =
@@ -15,6 +16,21 @@ export type LoginState =
   | { status: "error"; message: string; email?: string };
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+/**
+ * The client that sends magic links, in Supabase's implicit flow: the link returns the session itself (in the URL
+ * fragment, read by /auth/confirm), so it works in whichever browser opens the email. The cookie-bound client
+ * (lib/supabase-server.ts) always uses PKCE, whose link only works in the browser that asked for it; on a phone the
+ * email app usually opens another one. Switching to PKCE + token_hash needs an edited email template, which Supabase's
+ * free plan allows only with custom SMTP (waits for the new domain, specs/backlog.md).
+ */
+function magicLinkClient() {
+  const env = supabaseAuthEnv();
+  if (!env) throw new Error("Sign-in isn't configured.");
+  return createClient(env.url, env.key, {
+    auth: { flowType: "implicit", persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+  });
+}
 
 /**
  * Sends a magic link (Supabase Auth's signInWithOtp, PKCE). Without a birth year it only signs in an existing account
@@ -47,12 +63,12 @@ export async function requestMagicLink(_prev: LoginState, form: FormData): Promi
 
   const h = await headers();
   const origin = h.get("origin") ?? `${h.get("x-forwarded-proto") ?? "http"}://${h.get("host")}`;
-  const supabase = await createServerSupabase();
+  const supabase = magicLinkClient();
   const { error } = await supabase.auth.signInWithOtp({
     email,
     options: {
       shouldCreateUser: signingUp,
-      emailRedirectTo: `${origin}/auth/callback?next=${encodeURIComponent(next)}`,
+      emailRedirectTo: `${origin}/auth/confirm?next=${encodeURIComponent(next)}`,
       ...(data ? { data } : {}),
     },
   });

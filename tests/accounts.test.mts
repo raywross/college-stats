@@ -11,6 +11,7 @@ import {
   birthYearAllowed,
   initialsFor,
   loginHref,
+  parseAuthFragment,
   parseBirthYear,
   resolveStudentAccess,
   safeNextPath,
@@ -60,6 +61,29 @@ test("parseBirthYear takes four digits only", () => {
 /* ------------------------------------------------------------------ */
 /* Redirects                                                           */
 /* ------------------------------------------------------------------ */
+
+test("parseAuthFragment: the session a magic link brings back, or Supabase's error, or nothing", () => {
+  assert.deepEqual(parseAuthFragment("#access_token=a.b.c&expires_in=3600&refresh_token=r1&token_type=bearer&type=magiclink"), {
+    ok: true,
+    accessToken: "a.b.c",
+    refreshToken: "r1",
+  });
+  assert.deepEqual(parseAuthFragment("#error=access_denied&error_code=otp_expired&error_description=Email+link+is+invalid+or+has+expired"), {
+    ok: false,
+    code: "otp_expired",
+    message: "Email link is invalid or has expired",
+  });
+  // An error wins over tokens; a fragment missing either token is nothing.
+  assert.equal(parseAuthFragment("#access_token=a&refresh_token=r&error=server_error")?.ok, false);
+  assert.equal(parseAuthFragment("#access_token=a"), null);
+  assert.equal(parseAuthFragment(""), null);
+});
+
+test("magic links are sent in the implicit flow and land on /auth/confirm (the default email works in any browser)", () => {
+  const src = readFileSync(join(ROOT, "app/login/actions.ts"), "utf8");
+  assert.match(src, /flowType: "implicit"/, "a PKCE link only works in the browser that asked for it");
+  assert.match(src, /emailRedirectTo: `\$\{origin\}\/auth\/confirm\?next=/);
+});
 
 test("safeNextPath keeps same-origin paths and refuses everything else", () => {
   assert.equal(safeNextPath("/schools/166027?x=1#cost"), "/schools/166027?x=1#cost");

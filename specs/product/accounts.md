@@ -38,10 +38,22 @@ federal number ([commercialization.md](commercialization.md#what-stays-free)).
 - **Methods:** email magic link (no passwords to leak or reset). Google is deferred to the backlog (2026-10-05: the
   owner is registering a new domain first); the login form has a marked slot for it. Apple sign-in when there is a
   native app. Passkeys later.
-- **Routes:** `/login` (one form, both methods; `?next=` returns to the page that asked), `/auth/callback` (code
-  exchange, server-side), `/account` (name, email, birth year, households, subscription, export, delete).
-- **Session:** `httpOnly` cookies via `@supabase/ssr`; `proxy.ts` (Next 16's name for middleware) refreshes the token; `getUser()` (not
-  `getSession()`) in every server read, because only `getUser()` verifies the token with Supabase.
+- **Routes:** `/login` (one form, both methods; `?next=` returns to the page that asked), `/auth/confirm` (where
+  magic links land), `/auth/callback` (`?code=` / `?token_hash=` links, server-side), `/account` (name, email, birth
+  year, households, subscription, export, delete).
+- **Sign-in links (fixed 2026-10-05).** Links are sent in Supabase's **implicit flow**: the link returns the session
+  in the URL fragment, `/auth/confirm` (a client page) hands it to a Server Action that stores it as cookies after
+  checking it with `getUser()`, removes it from the address bar, and moves on to `?next=`. The default PKCE link only
+  works in the browser that asked for it, and a phone's mail app usually opens another, so sign-ups confirmed the
+  email but never signed in. The cleaner fix (PKCE with a `token_hash` email template) needs an edited template, which
+  Supabase's free plan allows only with custom SMTP, so it waits for the new domain ([backlog](../backlog.md#platform)).
+  Tested end to end with an admin-generated link opened in a fresh WebKit iPhone browser.
+- **Redirect allow list.** Supabase silently replaces a return address it doesn't allow with the Site URL. The Site
+  URL must be the live site (`https://college-stats-nine.vercel.app`), with that host, the preview wildcard, and
+  localhost in Redirect URLs; a wrong Site URL sent the first live sign-ups to a Vercel login wall.
+- **Session:** `httpOnly` cookies via `@supabase/ssr` (`AUTH_COOKIE_OPTIONS` in `lib/supabase-server.ts`; the
+  library's default is script-readable); `proxy.ts` (Next 16's name for middleware) refreshes the token; `getUser()`
+  (not `getSession()`) in every server read, because only `getUser()` verifies the token with Supabase.
 - **Anonymous first.** Tools work signed out with state in `localStorage` (the compare list already does).
   On sign-in, local state is offered for import once ("Save these 4 colleges to your list?"), then cleared.
 - The header gains an avatar menu (desktop) and the phone More sheet gains "Account" ([mobile.md](../mobile.md)).

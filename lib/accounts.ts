@@ -137,6 +137,25 @@ export function parseBirthYear(input: unknown): number | null {
  * The `?next=` target after sign-in, only ever a same-origin relative path. Anything else (an absolute URL, a
  * protocol-relative `//host`, backslashes, control characters, or a loop back into /login or /auth) falls back.
  */
+/**
+ * What a magic link brings back to /auth/confirm in the URL fragment (Supabase's implicit flow, used because the
+ * default email template can't be changed on the free plan without custom SMTP): the session tokens, or Supabase's
+ * error for a stale or reused link. Null when the fragment has neither.
+ */
+export type AuthFragment =
+  | { ok: true; accessToken: string; refreshToken: string }
+  | { ok: false; code: string; message: string };
+
+export function parseAuthFragment(hash: string): AuthFragment | null {
+  const params = new URLSearchParams(hash.replace(/^#/, ""));
+  const error = params.get("error_code") ?? params.get("error");
+  if (error) return { ok: false, code: error, message: params.get("error_description") ?? error };
+  const accessToken = params.get("access_token");
+  const refreshToken = params.get("refresh_token");
+  if (accessToken && refreshToken) return { ok: true, accessToken, refreshToken };
+  return null;
+}
+
 export function safeNextPath(next: unknown, fallback = "/account"): string {
   if (typeof next !== "string" || next.length === 0 || next.length > 2048) return fallback;
   if (!next.startsWith("/") || next.startsWith("//") || next.includes("\\")) return fallback;

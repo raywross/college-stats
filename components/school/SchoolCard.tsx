@@ -44,6 +44,7 @@ export async function SchoolCard({ school, index = 0 }: { school: School; index?
 
   return (
     <article
+      data-unit-id={school.unit_id}
       className="group relative flex animate-rise flex-col overflow-hidden rounded-3xl border bg-card p-5 transition-all duration-300 hover:-translate-y-1 hover:border-primary/30 hover:shadow-xl hover:shadow-primary/10"
       style={{ animationDelay: `${Math.min(index, 8) * 50}ms` }}
     >

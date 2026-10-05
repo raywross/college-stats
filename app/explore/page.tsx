@@ -13,6 +13,7 @@ import { SchoolTable } from "@/components/explore/SchoolTable";
 import { FilterPanel, type FilterFacets } from "@/components/explore/FilterPanel";
 import { MobileFilterSheet } from "@/components/explore/MobileFilterSheet";
 import { ActiveFilters, ExploreSearchInput, SortControl, ViewToggle } from "@/components/explore/Toolbar";
+import { ExploreFitChips } from "@/components/me/ExploreFitChips";
 import { ScatterPlot } from "@/components/charts/ScatterPlot";
 import { DotMap } from "@/components/charts/DotMap";
 import { MAP_HEIGHT, MAP_WIDTH, mapPoints, usOutline } from "@/lib/us-map";
@@ -245,6 +246,7 @@ export default async function ExplorePage({
               <ViewToggle />
             </div>
             <ActiveFilters />
+            <ExploreFitChips />
           </Suspense>
 
           <p className="text-sm text-muted-foreground" aria-live="polite">

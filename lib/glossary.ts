@@ -982,6 +982,14 @@ const entries = {
     category: "Admissions",
     related: ["high-school-gpa"],
   },
+  "unweighted-gpa": {
+    term: "Unweighted GPA",
+    short: "A GPA on a flat 4.0 scale: an A is a 4.0 no matter how hard the course was. It's the scale colleges' GPA bands use, so it's the one comparable across different high schools.",
+    long: "A GPA reported on a 5.0 or 100-point scale is converted to this scale proportionally (5.0) or with the standard A/B/C band table (100-point), and shown back with both numbers, like \"about 3.7 unweighted (from 93/100)\".",
+    why: "High schools weight and scale grades differently, so only the unweighted, 4.0-scale number can be compared across schools or against a college's reported GPA bands.",
+    category: "Admissions",
+    related: ["weighted-gpa", "high-school-gpa"],
+  },
   "gpa-band": {
     term: "GPA band",
     short: "A range of high school GPAs (4.0, 3.75–3.99, 3.50–3.74, and so on) and the share of first-years whose GPA fell in it, on a 4.0 scale.",
@@ -1361,6 +1369,15 @@ const entries = {
     short: "A student record a guardian creates for a child who doesn't have an account yet. When the child signs up through the guardian's invitation, the record becomes theirs.",
     category: "Your account",
     related: ["household", "guardian"],
+  },
+  // Student profile (specs/product/student-profile.md).
+  superscore: {
+    term: "Superscore",
+    short: "The best section scores a student earned across different test sittings, combined into one total — even if no single sitting produced that total.",
+    long: "Many colleges superscore the SAT or ACT automatically when they receive multiple score reports; some don't. Your profile's SAT or ACT total is marked as a superscore only when you say so.",
+    why: "A superscored total can be noticeably higher than any single test day's score, so it's worth knowing which one you're comparing against a college's range.",
+    category: "Your account",
+    related: ["middle-50"],
   },
 } satisfies Record<string, GlossaryEntry>;
 

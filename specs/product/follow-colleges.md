@@ -194,7 +194,7 @@ overview cards (17): `name` (`always`), `admissions.applicants`, `.admitted`, `.
   page), "Fall 2025: middle 50% SAT Math 560–660 (fall 2024: 570–670)" (Houston's CDS), "Fall 2027 applicants: Test
   scores required (fall 2024: Test-optional)" (UNC's CDS). Every `new_year` line pairs two falls, the newer first.
 
-### Database (`supabase/migrations/20261005140000_follows.sql`)
+### Database (`supabase/migrations/20261005140000_follows.sql`, `20261005145000_change_old_source.sql`)
 | Table | Who | Notes |
 |---|---|---|
 | `follows (user_id, unit_id, source manual\|list, created)` | owner only (select, insert, update `source`, delete) | pk (user_id, unit_id); no FK to `schools` (publishing replaces its rows). A guardian has no path to a student's follows |
@@ -246,8 +246,9 @@ isn't applied), the publish runs the old function and warns that changes weren't
   "From Cornell's 2026–27 Common Data Set" wording is the digest's to write from that.
 
 ### Setup (owner)
-1. Apply `supabase/migrations/20261005140000_follows.sql` in the SQL Editor of the dev project (after
-   `20261005120000_accounts.sql`), then prod at release. Until then publishes succeed and warn that changes weren't
+1. Apply `supabase/migrations/20261005140000_follows.sql` and then `20261005145000_change_old_source.sql` (the
+   `old_source` column, split out because the first was already applied to dev) in the SQL Editor of the dev project
+   (after `20261005120000_accounts.sql`), then prod at release. Until then publishes succeed and warn that changes weren't
    recorded, the panel shows nothing, and the follow actions answer "Following isn't set up on this site yet".
 2. The first publish after applying it records changes from then on; nothing is backfilled.
 3. Pilot step 1 above: run `npm run publish-data -- --changes-only` before the next real publish and read the list.

@@ -290,6 +290,8 @@ test("publish-data: a missing change table skips changes; other errors stop the 
   assert.equal(await changeTablesState(fakeFrom(null)), "ready");
   assert.equal(await changeTablesState(fakeFrom({ code: "PGRST205", message: "not in schema cache" })), "missing");
   assert.equal(await changeTablesState(fakeFrom({ code: "42P01", message: "does not exist" })), "missing");
+  // Only the first migration applied (no old_source column yet): changes are skipped, not half-written.
+  assert.equal(await changeTablesState(fakeFrom({ code: "42703", message: "column dataset_change_staging.old_source does not exist" })), "missing");
   await assert.rejects(changeTablesState(fakeFrom({ message: "" })), /checking dataset_change_staging failed/);
 });
 

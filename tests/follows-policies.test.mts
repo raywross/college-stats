@@ -17,7 +17,7 @@ test("an explicit follow turns a list follow into a manual one and never duplica
   for (const bad of ["", "24374a", "1 or 1=1", "12345678901", 243744, null]) assert.equal(isUnitId(bad), false, String(bad));
 });
 
-const MIGRATIONS = ["20260928000000_dataset.sql", "20261002140000_school_staging.sql", "20261005120000_accounts.sql", "20261005140000_follows.sql"];
+const MIGRATIONS = ["20260928000000_dataset.sql", "20261002140000_school_staging.sql", "20261005120000_accounts.sql", "20261005140000_follows.sql", "20261005145000_change_old_source.sql"];
 
 /** Runs one statement with the secret key's role (service_role bypasses RLS), as publish-data and the digest job do. */
 async function asService<T = Record<string, unknown>>(db: AuthDb, sql: string, params: unknown[] = []): Promise<T[]> {

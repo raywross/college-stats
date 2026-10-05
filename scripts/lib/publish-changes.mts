@@ -14,7 +14,7 @@ import type { DatasetMeta, School } from "../../lib/types";
 import type { ReleaseCalendar } from "../../lib/releases";
 import { describeChange, diffSchools, type DatasetChange, type DatasetSnapshot } from "../../lib/changes.ts";
 
-export const FOLLOWS_MIGRATION = "supabase/migrations/20261005140000_follows.sql";
+export const FOLLOWS_MIGRATION = "supabase/migrations/20261005140000_follows.sql and 20261005145000_change_old_source.sql";
 /** Changes per staging call: rows are small (~300 bytes), so a big release (~20,000 rows) takes ten calls. */
 export const CHANGE_BATCH = 2000;
 
@@ -39,9 +39,10 @@ export function readSnapshotDir(dir: string): DatasetSnapshot {
  * `head: true` (PostgREST answers HEAD on a missing table with a bare 204).
  */
 export async function changeTablesState(client: Pick<SupabaseClient, "from">): Promise<"ready" | "missing"> {
-  const { error } = await client.from("dataset_change_staging").select("unit_id").limit(1);
+  // old_source comes from the second migration; a project with only the first counts as missing.
+  const { error } = await client.from("dataset_change_staging").select("unit_id, old_source").limit(1);
   if (!error) return "ready";
-  if (error.code === "42P01" || error.code === "PGRST205") return "missing";
+  if (error.code === "42P01" || error.code === "PGRST205" || error.code === "42703") return "missing";
   const what = [error.message, error.code].filter(Boolean).join(" · ") || "no error message";
   throw new Error(`checking dataset_change_staging failed: ${what}. Retry; if it keeps failing, check the project.`);
 }

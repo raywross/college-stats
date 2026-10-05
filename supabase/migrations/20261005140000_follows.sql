@@ -79,7 +79,6 @@ create table public.dataset_changes (
   old_year     text,
   new_year     text,
   source       text,
-  old_source   text,                            -- only when the old value came from a different kind of source
   release      text,
   constraint dataset_changes_once unique (publish_id, unit_id, field)
 );
@@ -98,7 +97,6 @@ create table public.dataset_change_staging (
   old_year  text,
   new_year  text,
   source    text,
-  old_source text,
   release   text,
   primary key (unit_id, field)
 );
@@ -188,11 +186,11 @@ begin
   if p_reset then
     delete from public.dataset_change_staging where true;
   end if;
-  insert into public.dataset_change_staging (unit_id, field, kind, old_value, new_value, old_year, new_year, source, old_source, release)
+  insert into public.dataset_change_staging (unit_id, field, kind, old_value, new_value, old_year, new_year, source, release)
   select e ->> 'unit_id', e ->> 'field', e ->> 'kind',
          case when json_typeof(e -> 'old_value') in ('null') or e -> 'old_value' is null then null else e -> 'old_value' end,
          case when json_typeof(e -> 'new_value') in ('null') or e -> 'new_value' is null then null else e -> 'new_value' end,
-         e ->> 'old_year', e ->> 'new_year', e ->> 'source', e ->> 'old_source', e ->> 'release'
+         e ->> 'old_year', e ->> 'new_year', e ->> 'source', e ->> 'release'
   from json_array_elements(p_changes) as t(e);
   get diagnostics n = row_count;
   return n;
@@ -228,8 +226,8 @@ begin
   v_schools := public.publish_schools_staged(p_meta, p_release_calendar, p_expected, p_git_commit, p_published_by);
   select max(id) into v_publish from public.dataset_publishes where published_at = now();
 
-  insert into public.dataset_changes (publish_id, published_at, unit_id, field, kind, old_value, new_value, old_year, new_year, source, old_source, release)
-  select v_publish, now(), unit_id, field, kind, old_value, new_value, old_year, new_year, source, old_source, release
+  insert into public.dataset_changes (publish_id, published_at, unit_id, field, kind, old_value, new_value, old_year, new_year, source, release)
+  select v_publish, now(), unit_id, field, kind, old_value, new_value, old_year, new_year, source, release
   from public.dataset_change_staging;
   get diagnostics v_changes = row_count;
 

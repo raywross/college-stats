@@ -105,22 +105,39 @@ function moveText(from: number, to: number, prefix = ""): string {
   return prefix ? `${prefix} ${t}` : t.charAt(0).toUpperCase() + t.slice(1);
 }
 
+/** One conference move: the college's main conference, or football's when it moved alone. */
+export interface ConferenceMove {
+  year: number;
+  from: number;
+  to: number;
+  football: boolean;
+}
+
 /**
- * Conference moves (specs/data-expansion/campus-services.md). A football move gets its own line only when the rest of
- * the college didn't make the same move that year.
+ * Conference moves (specs/data-expansion/campus-services.md), as codes: what the event sentences and the conference
+ * pages (specs/trends/conferences.md) both read. A football move counts only when the rest of the college didn't make
+ * the same move that year, and an independent first listing its home conference for football is a reporting fix.
  */
-function conferenceEvents(h: SchoolHistory): PolicyEvent[] {
+export function conferenceMoves(h: SchoolHistory): ConferenceMove[] {
   const main = changes(points(h, "conference"), () => true);
-  const events: PolicyEvent[] = main.map(({ year, from, to }) => ({ key: "conference", year, kind: "academic", text: moveText(from, to), area: "campus" }));
+  const moves: ConferenceMove[] = main.map(({ year, from, to }) => ({ year, from, to, football: false }));
   const mainByYear = new Map(points(h, "conference"));
   for (const c of changes(points(h, "football_conference"), () => true)) {
     if (main.some((m) => m.year === c.year && m.to === c.to)) continue;
     // A reporting fix, not a move: an independent (UConn, Notre Dame) first listed its home conference for football.
     const prevMain = mainByYear.get(c.year - 1);
     if (league(c.to) === null && prevMain === c.from) continue;
-    events.push({ key: "football_conference", year: c.year, kind: "academic", text: moveText(c.from, c.to, "Football"), area: "campus" });
+    moves.push({ year: c.year, from: c.from, to: c.to, football: true });
   }
-  return events;
+  return moves;
+}
+
+function conferenceEvents(h: SchoolHistory): PolicyEvent[] {
+  return conferenceMoves(h).map(({ year, from, to, football }): PolicyEvent =>
+    football
+      ? { key: "football_conference", year, kind: "academic", text: moveText(from, to, "Football"), area: "campus" }
+      : { key: "conference", year, kind: "academic", text: moveText(from, to), area: "campus" }
+  );
 }
 
 /** athletic_association: 1 NCAA, 2 NAIA only, 3 neither (lib/campus-services.ts associationCode). */

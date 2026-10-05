@@ -195,6 +195,117 @@ export interface MoversFile extends TrendEnvelope {
 }
 
 /* ------------------------------------------------------------------ */
+/* Trends by athletic conference (conferences.json)                    */
+/* specs/trends/conferences.md                                         */
+/* ------------------------------------------------------------------ */
+
+/** The measures a conference page draws over time (one at a time). */
+export type ConferenceMeasureKey = "applicants" | "acceptance_rate" | "undergrads" | "avg_paid_all" | "out_of_state_share";
+/** The at-a-glance strip: the over-time measures plus graduation and Pell share. */
+export type ConferenceGlanceKey = ConferenceMeasureKey | "grad_rate" | "pell";
+/** "today": today's members in every year (default); "atTheTime": whoever was a member that year. */
+export type MembershipRule = "today" | "atTheTime";
+
+/** One over-time measure's years and the national context line (shared by every conference). */
+export interface ConferenceMeasureMeta {
+  key: ConferenceMeasureKey;
+  kind: YearKind;
+  /** Ten years back from history's newest year of this kind. */
+  from: number;
+  to: number;
+  /** 2 for residence (even falls only); lines connect across the off years. */
+  cadence: number;
+  /** Money in this school year's dollars (CPI-U); absent for non-money measures. */
+  dollarsOf?: number;
+  /** Every college's median each year (data/history/national.json), same dollars. */
+  national: (number | null)[];
+}
+
+/** An at-a-glance measure's year, kind, and the national median that year. */
+export interface ConferenceGlanceMeta {
+  key: ConferenceGlanceKey;
+  /** History year (history measures); for "pell", null: today's snapshot, cited through lineage. */
+  year: number | null;
+  kind: YearKind | null;
+  national: number | null;
+}
+
+/** A conference's value of one at-a-glance measure: median member, range, members reporting. */
+export interface ConferenceGlance {
+  median: number;
+  min: number;
+  max: number;
+  n: number;
+}
+
+/** A conference's join or departure (from lib/events.ts conferenceMoves). */
+export interface ConferenceMove {
+  year: number;
+  unit_id: string;
+  /** The conference it came from (joined) or went to (left). */
+  other: number;
+  joined: boolean;
+  /** Football alone moved. */
+  football: boolean;
+}
+
+export interface ConferenceRow {
+  code: number;
+  name: string;
+  slug: string;
+  level: string;
+  /** Today's members on the site (main conference = this code), by unit ID. */
+  members: string[];
+  /** Football-only conference (Pioneer, …): no college lists it as its main conference; `footballMembers` play football in it. */
+  footballOnly?: true;
+  footballMembers?: string[];
+  /** Under the 8-member floor (or football only): listed without medians. */
+  tooFew?: true;
+  /** Members that joined after the conference series' first year: unit ID → the school year they joined. */
+  joined: Record<string, number>;
+  /** Members whose football conference differs: unit ID → its code. */
+  football: Record<string, number>;
+  /** Joins and departures since the series' first year, newest first. */
+  moves: ConferenceMove[];
+  /** At or over the floor only. */
+  lines?: Record<ConferenceMeasureKey, Record<MembershipRule, (number | null)[]>>;
+  /**
+   * Today's members, from → to of each measure: counts and money are the median member's own % change (money after
+   * inflation); rates are the median then and now. Null when under 80% of members report both years.
+   */
+  change?: {
+    applicants: number | null;
+    undergrads: number | null;
+    avg_paid_all: number | null;
+    acceptance_rate: ThenNow | null;
+    out_of_state_share: ThenNow | null;
+  };
+  /** Sums over the members reporting both ends of the window (spec rule 2: totals, labeled, for these two only). */
+  totals?: Record<"applicants" | "undergrads", { then: number; now: number; n: number } | null>;
+  glance?: Partial<Record<ConferenceGlanceKey, ConferenceGlance>>;
+  /** Each member's at-a-glance values in the file's `glance` order, null where not reported (the "members compared" bars). */
+  values?: Record<string, (number | null)[]>;
+}
+
+export interface ConferencesFile extends TrendEnvelope {
+  name: "conferences";
+  /** Members needed for medians. */
+  floor: number;
+  /** Share of members that must report a year for its median to be shown. */
+  coverage: number;
+  /** The conference series' years (school years): membership "at the time" exists for these only. */
+  membership: { from: number; to: number };
+  measures: ConferenceMeasureMeta[];
+  glance: ConferenceGlanceMeta[];
+  /** Every league with a member on the site today, plus football-only leagues, ordered by level then name. */
+  conferences: ConferenceRow[];
+  /** Independents, ECAC, "Other": not leagues (spec rule 5). */
+  unaffiliated: { code: number; name: string; members: number }[];
+  /** Conference moves per school year, every college on the site (main conference only). */
+  movesPerYear: { year: number; moves: number }[];
+}
+
+/* ------------------------------------------------------------------ */
 /* Every file, by name (one line per unit)                             */
 /* ------------------------------------------------------------------ */
 
@@ -203,6 +314,7 @@ export interface TrendFiles {
   "men-and-women": MenAndWomenFile;
   "shrinking-colleges": ShrinkingCollegesFile;
   movers: MoversFile;
+  conferences: ConferencesFile;
 }
 
 export type TrendFileName = keyof TrendFiles;

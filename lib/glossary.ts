@@ -856,6 +856,13 @@ const entries = {
     category: "How we measure",
     related: ["fixed-panel"],
   },
+  "conference-membership": {
+    term: "Today's members or members at the time",
+    short: "A conference's line over time can follow its members today in every year (the default), or whoever was a member that year. Today's members describe the same colleges throughout; members at the time describe the conference as it was, so a jump can come from who joined.",
+    why: "Conferences realign. When several colleges join at once, a median can change because the membership changed, not because any college did.",
+    category: "How we measure",
+    related: ["athletic-conference", "todays-classification"],
+  },
   "too-few-colleges": {
     term: "Too few colleges to say",
     short: "A group needs at least 30 colleges in a study's panel before it gets a number (10 for a state, 8 for an athletic conference). Below that, a few colleges can swing a share or median, so the group shows its count only.",

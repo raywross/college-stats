@@ -108,9 +108,9 @@ test("a year under 80% reporting, or under the floor at the time, has no median"
   for (const c of file.conferences) {
     if (!c.lines) continue;
     for (const meta of file.measures) {
-      const at = c.lines[meta.key].atTheTime;
+      const line: (number | null)[] = c.lines[meta.key].atTheTime;
       // Before the conference series starts, membership at the time is unknown.
-      for (let y = meta.from; y < file.membership.from; y++) assert.equal(at[y - meta.from], null, `${c.name} ${meta.key} ${y}`);
+      for (let y = meta.from; y < file.membership.from; y++) assert.equal(line[y - meta.from], null, `${c.name} ${meta.key} ${y}`);
     }
   }
   assert.equal(file.coverage, 0.8);

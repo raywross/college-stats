@@ -361,6 +361,9 @@ export interface ConferencesFile extends TrendEnvelope {
   unaffiliated: { code: number; name: string; members: number }[];
   /** Conference moves per school year, every college on the site (main conference only). */
   movesPerYear: { year: number; moves: number }[];
+}
+
+/* ------------------------------------------------------------------ */
 /* Study 6: the Pell graduation gap (pell-gap.json)                     */
 /* ------------------------------------------------------------------ */
 

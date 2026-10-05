@@ -15,7 +15,7 @@ import { CONFERENCES, CONFERENCE_LEVELS, conferenceName, isLeague } from "../../
 import { conferenceMoves } from "../../lib/events.ts";
 import { SERIES, real, seriesStep, valueAt, type CpiTable, type SeriesKey } from "../../lib/history.ts";
 import { CONFERENCE_FLOOR } from "../../lib/trend-groups.ts";
-import { at, medianBy, quantile, round4, yearly, type Member } from "../../lib/trend-panel.ts";
+import { at, quantile, round4, yearly, type Member } from "../../lib/trend-panel.ts";
 import type {
   ConferenceGlance,
   ConferenceGlanceKey,

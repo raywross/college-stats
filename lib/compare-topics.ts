@@ -338,7 +338,23 @@ export const COMPARE_TOPIC_FIELDS: Record<CompareTopicKey, readonly FieldPath[]>
 
   // Cost & aid: app/compare/cost/page.tsx.
   cost: [
-    // The page's fields go here.
+    "cost.avg_paid_all",
+    "derived.aid_generosity",
+    "cost.aided_net_price",
+    "aid.grant_pct",
+    "aid.grant_avg",
+    "aid.institutional_pct",
+    "cost.sticker",
+    "cost.tuition_fees",
+    "cost.residency",
+    "cost.net_price_by_income",
+    "cost.tuition_plans",
+    "cost.promise_program",
+    "reported.aid.forms",
+    "reported.aid.dates",
+    "reported.aid.first_years",
+    "derived.merit_dollar_share",
+    "reported.aid.international",
   ],
 
   // Outcomes: app/compare/outcomes/page.tsx.

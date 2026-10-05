@@ -29,7 +29,32 @@
       "from": 2004,
       "to": 2024,
       "n": 912
+    },
+    {
+      "slug": "pell-gap",
+      "title": "The Pell graduation gap",
+      "headline": {
+        "value": 0.1115,
+        "format": "pts",
+        "caption": "point gap between Pell recipients and students with neither, at the median college"
+      },
+      "sentence": "At the median college, Pell recipients from the class entering fall 2010 graduated within six years 9 points less often than students with neither a Pell Grant nor a subsidized loan; for the class entering fall 2018 the gap was 11 points.",
+      "spark": {
+        "start": 2010,
+        "kind": "cohort",
+        "format": "pts",
+        "series": [
+          {
+            "name": "Median gap, points",
+            "values": [0.0887,0.1016,0.1018,0.1058,0.1039,0.1031,0.1039,0.1116,0.1115]
+          }
+        ]
+      },
+      "yearKind": "cohort",
+      "from": 2010,
+      "to": 2018,
+      "n": 1103
     }
   ],
-  "files": ["men-and-women"]
+  "files": ["men-and-women","pell-gap"]
 }

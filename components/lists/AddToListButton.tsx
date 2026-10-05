@@ -60,11 +60,11 @@ export function AddToListButton({
     "focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-40 active:scale-95",
     variant === "icon" && "size-8 rounded-full border",
     variant === "pill" && "h-8 rounded-full border px-3 text-xs",
-    variant === "large" && "h-10 rounded-full border px-4 text-sm",
+    variant === "large" && "h-10 rounded-full border px-2.5 text-xs whitespace-nowrap sm:px-4 sm:text-sm",
     on ? "border-transparent bg-pop text-pop-foreground shadow-sm" : "border-border bg-card text-foreground hover:border-primary/40 hover:text-primary",
     className,
   );
-  const iconCls = variant === "large" ? "size-4" : "size-3.5";
+  const iconCls = variant === "large" ? "size-3.5 sm:size-4" : "size-3.5";
 
   if (!me.signedIn) {
     return (

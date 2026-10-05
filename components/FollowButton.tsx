@@ -110,7 +110,7 @@ function sizeClasses(variant: "pill" | "icon" | "large"): string {
 }
 
 function iconClasses(variant: "pill" | "icon" | "large"): string {
-  return variant === "large" ? "size-4" : "size-3.5";
+  return variant === "large" ? "size-3.5 sm:size-4" : "size-3.5";
 }
 
 function buttonClasses(variant: "pill" | "icon" | "large", active: boolean, className?: string): string {
@@ -119,7 +119,7 @@ function buttonClasses(variant: "pill" | "icon" | "large", active: boolean, clas
     "focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-40 active:scale-95",
     variant === "icon" && "size-8 rounded-full border",
     variant === "pill" && "h-8 rounded-full border px-3 text-xs",
-    variant === "large" && "h-10 rounded-full border px-4 text-sm",
+    variant === "large" && "h-10 rounded-full border px-2.5 text-xs whitespace-nowrap sm:px-4 sm:text-sm",
     active
       ? "border-transparent bg-primary text-primary-foreground shadow-sm"
       : "border-border bg-card text-foreground hover:border-primary/40 hover:text-primary",

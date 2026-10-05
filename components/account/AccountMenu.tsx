@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useRef, type ComponentType } from "react";
 import { Menu } from "@base-ui/react/menu";
-import { Bookmark, LogOut, UserRound, Users } from "lucide-react";
+import { Bell, Bookmark, GraduationCap, LogOut, UserRound, Users } from "lucide-react";
 import { initialsFor, loginHref } from "@/lib/accounts";
 import { cn } from "@/lib/utils";
 import { useMe } from "./useMe";
@@ -16,7 +16,9 @@ import { useMe } from "./useMe";
 const ACCOUNT_MENU_LINKS: { href: string; label: string; icon: ComponentType<{ className?: string }> }[] = [
   { href: "/account", label: "Your account", icon: UserRound },
   { href: "/account/household", label: "Household", icon: Users },
+  { href: "/me", label: "My numbers", icon: GraduationCap },
   { href: "/me/list", label: "My list", icon: Bookmark },
+  { href: "/me/following", label: "Following", icon: Bell },
 ];
 
 /** Paths where "Sign in" shouldn't send people back (they'd land on the login page again). */

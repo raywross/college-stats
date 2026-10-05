@@ -1,9 +1,12 @@
 # Follow Colleges: Update Emails When the Data Changes
 
-> Status: **planned**, partly built. Built 2026-10-05: change detection, the follows schema, the follow Server Actions, and the
-> public What changed panel ([As built](#as-built-2026-10-05-change-detection-and-follows-data)). Still to build: the
-> Follow button, `/me/following`, `/me/updates`, and the digest. After [accounts.md](accounts.md); becomes useful once
-> the [scheduled data refresh](../backlog.md#data) runs on its own. Part of [product](README.md).
+> Status: **planned**, fully built, pending the owner applying two migrations and setting up email. Built 2026-10-05:
+> change detection, the follows schema, the follow Server Actions, and the public What changed panel
+> ([unit D as built](#as-built-2026-10-05-change-detection-and-follows-data)); the Follow button, `/me/following`,
+> `/me/updates`, and the digest cron ([unit F as built](#as-built-2026-10-05-follow-ui-and-the-update-digest)). Stays
+> listed as planned on `/roadmap` until the whole accounts section merges and `lib/roadmap.ts` is updated. After
+> [accounts.md](accounts.md); becomes useful once the [scheduled data refresh](../backlog.md#data) runs on its own.
+> Part of [product](README.md).
 
 ## Goal
 A signed-in person **follows** the colleges they care about. Each time the site publishes new data, anyone following
@@ -252,6 +255,102 @@ isn't applied), the publish runs the old function and warns that changes weren't
    recorded, the panel shows nothing, and the follow actions answer "Following isn't set up on this site yet".
 2. The first publish after applying it records changes from then on; nothing is backfilled.
 3. Pilot step 1 above: run `npm run publish-data -- --changes-only` before the next real publish and read the list.
+
+## As built (2026-10-05): Follow UI and the update digest
+Unit F of the accounts build, on top of unit D's follows/changes data.
+
+### `components/FollowButton.tsx`
+Client component, next to `CompareButton` on the profile hero (`app/schools/[id]/page.tsx`) and each compare column
+header (`components/compare/CompareHeader.tsx`, an icon-sized button beside the remove ✕). Reads `getFollow(unitId)`
+on mount and calls `follow`/`unfollow` directly (both are Server Actions, callable from a client component without a
+form); renders nothing while `{available:false}`, a "Sign in to follow {name} and get an email…" popover
+(`SignInPrompt variant="inline"`) when signed out, and otherwise "Follow" / "Following" / "On your list"
+(`source: "list"`). No cookies are read while the public page itself renders — only the client component's own calls
+touch the session, after the page has already shipped.
+
+### `lib/digest.ts`
+Pure (no Supabase, no React/JSX — see deviations): `buildDigest(colleges, { siteUrl, unsubscribeToken }, { cutoff
+= 8 })`. Filters each college's changes to `EMAILED_KINDS`, sorts them by `NOTIFY_FIELDS`' own order (name,
+admissions, demographics, cost, outcomes, academics — already a sensible topic order, so no second registry was
+added), drops colleges left with nothing emailable, and returns `null` when that empties the whole list (nothing to
+send or record). Builds the subject ("{College}: new figures are in" for one; "Updates for N of your colleges"
+otherwise), both HTML and plain-text bodies, the `List-Unsubscribe` / `List-Unsubscribe-Post` headers, and the
+`reasons` sentence ("you follow these colleges" and/or "they're on one of your lists"). Every link (college profile,
+`/me/updates`, the unsubscribe URL) carries `utm_source=digest`; no tracking pixel. `eligiblePublishes(rows, now)`
+is the pure 14-day-backlog-cap / 24-hour-delay window the cron route filters publishes through.
+
+### `app/api/cron/digests/route.ts`
+`GET`/`POST`, bearer `CRON_SECRET` (reuses `lib/revalidate.ts` `isAuthorized`, same constant-time check as
+`/api/revalidate`). Uses `supabaseClient("publish")` (the secret key) because it reads and writes across every
+user's follows, not one session's own rows — same privilege level as `scripts/purge-accounts.mts`. For every
+eligible publish: reads its `dataset_changes`, groups by college, joins `follows` to find who's affected, skips
+users with `email_updates = false` or an existing `digests` row for that publish, builds each remaining user's
+digest, and — only on an actual send — records one `digests` row. When email isn't configured
+(`RESEND_API_KEY`/`EMAIL_FROM` unset), **nothing is recorded**, only a dry-run summary is logged; the 14-day cap is
+what keeps that safe once email is turned on (at most two weeks of backlog per user, never every publish since
+launch). A send that errors (not merely unconfigured) also isn't recorded, so it's retried the next day, still
+inside the 14-day window. College names and emails are both fetched with the secret-key client (`schools.name`;
+`auth.admin.getUserById` for the address, as `purge-accounts.mts` already does for deletion) — never run against
+the real dev/prod project from this build or test session.
+
+### `/me/following`, `/me/updates`, `/unsubscribe/[token]`
+- `/me/following`: every followed college, "On your list" vs "Followed", the date it last changed (from
+  `dataset_changes`, via the existing `getSchoolChanges`), an Unfollow button, and the email-updates toggle
+  (`lib/notification-prefs.ts`, upserts `notification_prefs` so it works even before a user's first follow creates
+  the row). Both mutations are plain `<form action>`s bound to inline Server Actions
+  (`.bind(null, unitId)` / `.bind(null, enabled)`) — no client component needed.
+- `/me/updates`: every `digests` row the user has, newest first, each rendered with the exact blocks `buildDigest`
+  built for that email (reconstructed from the public `dataset_changes` rows for that `publish_id` and the row's
+  `unit_ids`, so the page and the email can never drift apart), with no 8-college cutoff. A separate "Also noticed"
+  section lists `disappeared` changes for followed colleges — the one kind the digest never emails. Cards on phones,
+  per the mobile spec.
+- `/unsubscribe/[token]`: a route handler, not a page — the one-click `List-Unsubscribe-Post` mail clients send is a
+  bare POST to the URL in the email's `List-Unsubscribe` header, with no cookies, so the exact path needs a route
+  that answers both GET (a confirm button) and POST (person or mail client) the same way, calling
+  `unsubscribe_by_token` with the publishable key. No sign-in, no session.
+
+### Registries touched
+- `lib/account-export.ts`: `ACCOUNT_EXPORTERS` gained `"follows"` (followed colleges plus the email-updates
+  setting).
+- `components/account/AccountMenu.tsx`: `ACCOUNT_MENU_LINKS` gained "Following". `app/account/page.tsx` gained one
+  `AccountSection` linking to `/me/following` (no other change to that page).
+- `lib/glossary.ts`: `follow`, `update-digest`, `what-changed`.
+- `vercel.json` (new file): one daily cron at `/api/cron/digests`.
+
+### Deviations
+- **Plain string templates, not `emails/*.tsx` + react-dom/server.** This repo's tests run under plain `node --test`
+  with no JSX transform (confirmed: `node --test` cannot import a `.tsx` file — "Unknown file extension"), and
+  `lib/digest.ts` must be importable from `tests/digest.test.mts` the same way every other pure `lib/` module is.
+  The invitation email (`lib/household-rules.ts` `invitationEmail`) already uses the same plain-template-plus-
+  `escapeHtml` pattern, so this isn't a new convention. No `emails/` directory was created.
+- **No separate "topic" registry for the digest's grouping.** `NOTIFY_FIELDS`' own order already clusters by topic
+  (name, then every `admissions.*`, `demographics.*`, `cost.*`, `outcomes.*`, `academics.*` field in turn), so
+  `lib/digest.ts` sorts by that order directly rather than introducing a second ordering concept.
+- **Route handler, not a page, for `/unsubscribe/[token]`** — see above; Next can't serve a `page.tsx` and a
+  `route.ts` from the same segment, and the one-click mechanism needs a route.
+- **`app/api/cron/digests/route.ts` isn't unit-tested directly.** It imports with the `@/…` alias, which only Next's
+  bundler resolves; no route handler in this repo is imported under plain `node --test` for the same reason.
+  `tests/digest.test.mts` instead tests every pure piece the route calls (`buildDigest`, `eligiblePublishes`,
+  `isAuthorized`, `sendEmail`'s not-configured path) and the route is exercised by `next build` and will need manual
+  QA against a real `CRON_SECRET` once the owner sets one up.
+- `"On your list"` label only shows for `source: "list"` follows; a manual follow of a college that's also on a
+  list still reads "Following" (an explicit follow is the stronger signal, matching `followWrite`'s "a list follow
+  upgrades to manual, never the reverse").
+
+### Setup (owner)
+1. The follows migration (`20261005140000_follows.sql`) must already be applied (unit D's setup note) — it is, in
+   this build order, a prerequisite for everything here.
+2. **Set `CRON_SECRET`** (any long random string) in Vercel's project environment variables, in every environment
+   the cron will run in. Without it the cron route always answers 401 and nothing is ever sent, by design.
+3. `vercel.json`'s cron entry starts running once this is deployed; until `RESEND_API_KEY`/`EMAIL_FROM` are set
+   (Resend, after the sending domain is live — see accounts.md's email note), every run is a dry run: nothing sent,
+   nothing recorded, a log line with the would-be counts. Check Vercel's cron logs or the route's own JSON response
+   for that summary.
+4. Once Resend is configured, the **first live run can look back up to 14 days** (`DIGEST_MAX_AGE_DAYS`): if the
+   follows migration has been live and collecting changes for longer than that before email turns on, those older
+   publishes are quietly skipped (the cap, not a bug) — nobody gets a historical backlog, only whatever's inside the
+   most recent two weeks.
+5. No action needed for `/unsubscribe` or `/api/cron/digests` in Supabase Auth settings: neither reads a session.
 
 ## Open questions
 1. Should guardians be able to see which colleges their student follows? Recommendation: no; the list already

@@ -28,6 +28,13 @@ export function isUnitId(value: unknown): value is string {
   return typeof value === "string" && /^[0-9]{1,10}$/.test(value);
 }
 
+/** notification_prefs.unsubscribe_token: two UUIDs without dashes (supabase/migrations/20261005140000_follows.sql). */
+export const UNSUBSCRIBE_TOKEN_RE = /^[0-9a-f]{64}$/;
+
+export function isUnsubscribeToken(value: unknown): value is string {
+  return typeof value === "string" && UNSUBSCRIBE_TOKEN_RE.test(value);
+}
+
 /**
  * What an explicit Follow does to an existing row: none → insert `manual`; a `list` follow → becomes `manual`, so
  * taking the college off the list later never silently unfollows it; already `manual` → nothing.

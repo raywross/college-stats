@@ -11,6 +11,7 @@ import { searchSchoolsApi } from "@/lib/school-api";
 import { SLOT_COLORS, shortName } from "@/lib/brand";
 import { pctSmart } from "@/lib/format";
 import { Crest } from "@/components/school/Crest";
+import { FollowButton } from "@/components/FollowButton";
 
 /** Keeps the saved compare list in step with the URL being viewed. */
 function useSyncStorage(ids: string[]) {
@@ -116,7 +117,7 @@ export function CompareHeader({ schools }: { schools: SchoolIndexEntry[] }) {
         {schools.map((s, i) => (
           <div
             key={s.id}
-            className="relative flex min-w-0 shrink-0 items-center gap-2 rounded-full border bg-card py-1 pr-8 pl-1 md:shrink md:gap-2.5 md:rounded-2xl md:p-3 md:pr-9"
+            className="relative flex min-w-0 shrink-0 items-center gap-2 rounded-full border bg-card py-1 pr-16 pl-1 md:shrink md:gap-2.5 md:rounded-2xl md:p-3 md:pr-18"
           >
             <span className="absolute inset-x-3 top-0 hidden h-1 rounded-b-full md:block" style={{ backgroundColor: SLOT_COLORS[i] }} />
             <Crest id={s.id} name={s.name} size="sm" brand={s.brand} className="size-8 rounded-full text-[10px] md:size-9 md:rounded-lg md:text-[11px]" />
@@ -129,14 +130,17 @@ export function CompareHeader({ schools }: { schools: SchoolIndexEntry[] }) {
                 {s.city}, {s.state}
               </span>
             </Link>
-            <button
-              type="button"
-              onClick={() => go(ids.filter((x) => x !== s.id))}
-              aria-label={`Remove ${s.name}`}
-              className="absolute top-1/2 right-1.5 inline-flex size-6 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground md:top-2 md:right-2 md:translate-y-0"
-            >
-              <X className="size-3.5" />
-            </button>
+            <div className="absolute top-1/2 right-1.5 flex -translate-y-1/2 items-center gap-1 md:top-2 md:right-2 md:translate-y-0">
+              <FollowButton unitId={s.id} schoolName={s.name} variant="icon" className="size-6 border-none bg-transparent" />
+              <button
+                type="button"
+                onClick={() => go(ids.filter((x) => x !== s.id))}
+                aria-label={`Remove ${s.name}`}
+                className="inline-flex size-6 items-center justify-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground"
+              >
+                <X className="size-3.5" />
+              </button>
+            </div>
           </div>
         ))}
         {schools.length < MAX_COMPARE && (

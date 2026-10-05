@@ -1433,6 +1433,29 @@ const entries = {
     category: "Your account",
     related: ["middle-50"],
   },
+  // Following colleges and the update digest (specs/product/follow-colleges.md).
+  follow: {
+    term: "Follow",
+    short: "Get an email when a college's own numbers change: a new year of data, a revision, or a figure reported for the first time.",
+    long: "Every college on one of your lists is followed automatically, so a family's list stays current without anyone checking back. One email covers everything that changed since the last one; you can turn update emails off at any time without unfollowing anything.",
+    why: "Federal and college data arrives in occasional releases, not continuously; a follow tells you the moment one of your colleges is in a new release.",
+    category: "Your account",
+    related: ["update-digest", "what-changed"],
+  },
+  "update-digest": {
+    term: "Update digest",
+    short: "The email you get when a college you follow changes: what changed, in plain language, with both years.",
+    long: "At most one email per data release, listing every followed college that changed, grouped by topic. A link at the bottom turns these emails off for good, with no sign-in needed.",
+    category: "Your account",
+    related: ["follow"],
+  },
+  "what-changed": {
+    term: "What changed",
+    short: "A college's recent revisions and new figures, each with its year and source, shown on its profile and in your update emails.",
+    long: "Visible to everyone, not just people who follow the college: it's about the dataset, not your account.",
+    category: "Your account",
+    related: ["follow"],
+  },
 } satisfies Record<string, GlossaryEntry>;
 
 export type TermKey = keyof typeof entries;

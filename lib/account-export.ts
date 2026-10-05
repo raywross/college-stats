@@ -132,6 +132,17 @@ export const ACCOUNT_EXPORTERS: AccountExporter[] = [
     },
   },
   {
+    key: "follows",
+    description: "Colleges you follow, and your update-email preference (specs/product/follow-colleges.md).",
+    run: async ({ supabase, userId }) => {
+      const [follows, prefs] = await Promise.all([
+        rows("follows", supabase.from("follows").select("unit_id, source, created").eq("user_id", userId)),
+        rows("notification_prefs", supabase.from("notification_prefs").select("email_updates, updated").eq("user_id", userId)),
+      ]);
+      return { colleges: follows, email_updates: (prefs[0] as { email_updates?: boolean } | undefined)?.email_updates ?? true };
+    },
+  },
+  {
     key: "access_log",
     description: "When guardians viewed your information, and when you viewed a student's as a guardian.",
     run: async ({ supabase, userId }) => ({

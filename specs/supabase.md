@@ -92,6 +92,11 @@ which Next.js would load into every local `next build`/`next start` and point th
 
 1. Lineage check (same as `npm run check:lineage`). Any problem stops the publish.
 2. Shrink guard: refuses to drop more than 10% of the colleges already published unless `--allow-shrink`.
+   Then what changed: the published colleges are read back and diffed against the files (`lib/changes.ts`); the
+   changes are staged and written into `dataset_changes` in the same transaction as step 3
+   (`publish_schools_staged_with_changes()`), or skipped with a warning when the follows migration isn't applied
+   ([follow-colleges.md](product/follow-colleges.md#publishing-scriptspublish-datamts-scriptslibpublish-changesmts)).
+   `--changes-only` prints the list and writes nothing; add `--prev <dir>` to diff a local copy with no network.
 3. `stage_schools()` in batches of 150, then `publish_schools_staged()` in one transaction, recording the git commit
    (`+uncommitted` if `data/` has local changes).
 4. Reads everything back through the same code the app uses and requires an exact match with the files.

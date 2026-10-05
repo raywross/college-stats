@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { Search } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { AccountMenu } from "@/components/account/AccountMenu";
 import { Logo } from "@/components/layout/Logo";
 import { SchoolSearch } from "@/components/search/SchoolSearch";
 import { useCompareIds } from "@/lib/compare";
@@ -84,6 +85,7 @@ export function Header() {
             <Search className="size-[18px]" />
           </button>
           <ThemeToggle />
+          <AccountMenu />
         </div>
       </div>
 

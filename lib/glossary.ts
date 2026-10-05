@@ -10,7 +10,8 @@ export type GlossaryCategory =
   | "Cost & outcomes"
   | "School types"
   | "How we measure"
-  | "Data sources";
+  | "Data sources"
+  | "Your account";
 
 export interface GlossaryEntry {
   term: string;
@@ -33,6 +34,7 @@ export const GLOSSARY_CATEGORIES: GlossaryCategory[] = [
   "School types",
   "How we measure",
   "Data sources",
+  "Your account",
 ];
 
 const entries = {
@@ -1331,6 +1333,34 @@ const entries = {
     long: "Shown only from the college's current document, never inferred from a religious affiliation, and only after a second model check confirms the quote and its meaning.",
     category: "Students & access",
     related: ["religious-affiliation"],
+  },
+  // Accounts and households (specs/product/accounts.md).
+  "magic-link": {
+    term: "Magic link",
+    short: "A one-time sign-in link we email you instead of asking for a password. Open it and you're signed in.",
+    long: "Each link works once and expires after an hour. With the standard setup, open it in the same browser where you asked for it.",
+    why: "There's no password to forget, reuse, or leak.",
+    category: "Your account",
+  },
+  household: {
+    term: "Household",
+    short: "A family group that links parents or guardians with the students they help. Guardians see each student's lists and plans; students never see a guardian's finances.",
+    long: "Nobody is added silently: each person joins by accepting an invitation. A student can be in two households (two homes), and a guardian can have several students. Anyone can leave at any time.",
+    category: "Your account",
+    related: ["guardian", "managed-student"],
+  },
+  guardian: {
+    term: "Guardian",
+    short: "A parent or other adult in a household. A guardian can see the students' lists and plans, and can edit them only if the student allows it.",
+    long: "A guardian's own financial details (income, assets) are never shown to students, even in the same household. When a guardian looks at a student's data, the student can see that they did.",
+    category: "Your account",
+    related: ["household", "managed-student"],
+  },
+  "managed-student": {
+    term: "Managed student",
+    short: "A student record a guardian creates for a child who doesn't have an account yet. When the child signs up through the guardian's invitation, the record becomes theirs.",
+    category: "Your account",
+    related: ["household", "guardian"],
   },
 } satisfies Record<string, GlossaryEntry>;
 

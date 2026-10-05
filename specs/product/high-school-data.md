@@ -90,3 +90,42 @@ school profile PDFs ─────────► data/high-schools/detail/{nce
 2. Which metro areas for the profile pilot? Depends on where early users are ([telemetry.md](telemetry.md) will
    show state distribution of signed-in students).
 3. Private schools' profiles are often behind counselor-only pages; expect lower coverage.
+
+## As built (foundation, 2026-10-05)
+The shared contracts every later unit builds on; the federal, private, state, UI, and profile units fill them in.
+- **Types** `lib/high-school-types.ts` (types only): `HighSchool` rows (id = 12-digit `ncessch` or 8-character PSS
+  `ppin`), `HighSchoolShard`, `HighSchoolMeta`, `HighSchoolStateFile`, `StateMedians`, `HighSchoolDetail`,
+  `HighSchoolView`, `HighSchoolHit`, `PublishedHighSchool` (a row with its state report merged in). Beyond the brief:
+  `state_school_id` (CCD `ST_SCHID`, for state crosswalks) and `rigor.enrollment` (CRDC's own enrollment, so AP/IB/dual
+  shares never divide one year's count by another year's enrollment).
+- **Helpers** `lib/high-school-core.ts` (pure): ids and FIPS↔USPS (50 states + DC), grades (`offersGrade12`,
+  `gradeSpan`), `suppress` (counts 1–4 and source privacy codes → null + suppressed; zero is shown), `parseRateRange`
+  (EDFacts "GE80"/"90-94" stay ranges), `normalizeHighSchool` (canonical key order), `mergeStateReport`,
+  `computeStateMedians` (public schools only, at least 5 values; a graduation range no wider than 10 points counts at
+  its midpoint inside the median only, open ranges are left out), `searchRows`, and the validators
+  (`validateHighSchoolRow`, `validateShard`, `validateStateFile`, `validateHighSchoolDetail`, `validateHighSchoolMeta`,
+  `validateMedians`).
+- **Fields and citations** `lib/hs-fields.ts`: `HS_FIELDS` (stored paths, `derived.*` shares, `state.*` report fields
+  cited to their state file section, `detail.*` profile fields cited to the profile with its quote), `citeHsField` /
+  `citeHsView`, `hsSourcesForFields`. Private rows' directory fields cite PSS. `lib/lineage.ts` gained `AnyCited` /
+  `AnyCitedSource` (`Cited` and `CitedSource` are now generic with college defaults), and the ⓘ (`InfoTip`,
+  `MetricLabel`, `SourceTip`) and `SourceItem`/`SourceLine` accept either kind.
+- **Data access** `lib/high-schools.ts` (server only; `getHighSchool`, `searchHighSchools`, `getHighSchoolMeta`,
+  `getStateMedians`; fail-soft) over `lib/high-school-store.ts` (json mode, lazy per-state shards) and
+  `lib/supabase-high-schools.ts`. `HIGH_SCHOOLS_DIR` points json mode at another directory, e.g.
+  `HIGH_SCHOOLS_DIR=tests/fixtures/high-schools DATA_SOURCE=json npm run dev` for UI work before real data.
+- **Supabase** `supabase/migrations/20261005170000_high_schools.sql`: `high_schools` (trigram index on `search`),
+  `high_school_details`, `high_school_files` (meta, medians), staging tables and functions, and
+  `search_high_schools(p_q, p_state, p_limit)`. Tested on PGlite (`tests/high-schools-policies.test.mts`).
+  `publish-data` writes the live tables in batches and reads them back (like history: ~25 MB is too big for one
+  swap), and skips high schools with a message until the migration is applied.
+- **Syncs** `npm run sync-high-schools [-- --only ccd,pss --dry-run --offline --allow-shrink]` and
+  `npm run sync-hs-states -- --state ca`. Adapters in `scripts/lib/high-schools/` (contract `types.mts`, registries
+  `index.mts` and `states/index.mts` already list every adapter as a stub; units replace only their own file). Merge
+  rules (`merge.mts`): directory adapters (CCD public, PSS private) own their kind's rows and fields; enrichment
+  adapters (EDFacts `grad_rate`, CRDC `rigor`) fill their fields on existing rows; a rerun touches only the run
+  adapters' fields; a stub changes nothing. Shards are one school per line, sorted; a run refuses invalid rows or a
+  drop of more than 10% of a kind.
+- **Checks** `npm run check:lineage` validates `data/high-schools/` when it exists (shards, meta, fresh medians, state
+  files, detail files with real college ids). Fixture: `tests/fixtures/high-schools/` (two states, a rich public school
+  with a state report, profile detail, suppressed cells, and an EDFacts range; a sparse public school; a private school).

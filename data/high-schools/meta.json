@@ -1,0 +1,81 @@
+{
+  "generated": "2026-10-05",
+  "sources": {
+    "crdc": {
+      "name": "Civil Rights Data Collection 2023–24, public-use file",
+      "publisher": "U.S. Department of Education, Office for Civil Rights",
+      "url": "https://civilrightsdata.ed.gov/data",
+      "retrieved": "2026-10-05"
+    },
+    "nces-ccd": {
+      "name": "Common Core of Data 2024–25, public school files (directory, membership, staff, school characteristics, lunch) and EDGE school geocodes",
+      "publisher": "National Center for Education Statistics",
+      "url": "https://nces.ed.gov/ccd/files.asp",
+      "retrieved": "2026-10-05"
+    }
+  },
+  "vintages": {
+    "ccd-directory": "2024–25",
+    "ccd-enrollment": "2024–25",
+    "edfacts-acgr": null,
+    "crdc": "2023–24",
+    "pss": null
+  },
+  "counts": {
+    "public": 27815,
+    "private": 0,
+    "byState": {
+      "AK": 285,
+      "AL": 525,
+      "AR": 341,
+      "AZ": 930,
+      "CA": 2777,
+      "CO": 533,
+      "CT": 217,
+      "DC": 47,
+      "DE": 59,
+      "FL": 1278,
+      "GA": 521,
+      "HI": 67,
+      "IA": 354,
+      "ID": 281,
+      "IL": 1031,
+      "IN": 491,
+      "KS": 404,
+      "KY": 518,
+      "LA": 380,
+      "MA": 414,
+      "MD": 279,
+      "ME": 124,
+      "MI": 1288,
+      "MN": 1187,
+      "MO": 743,
+      "MS": 393,
+      "MT": 187,
+      "NC": 736,
+      "ND": 180,
+      "NE": 339,
+      "NH": 101,
+      "NJ": 531,
+      "NM": 246,
+      "NV": 174,
+      "NY": 1396,
+      "OH": 1010,
+      "OK": 468,
+      "OR": 365,
+      "PA": 771,
+      "RI": 71,
+      "SC": 323,
+      "SD": 203,
+      "TN": 498,
+      "TX": 2319,
+      "UT": 260,
+      "VA": 356,
+      "VT": 73,
+      "WA": 831,
+      "WI": 636,
+      "WV": 163,
+      "WY": 111
+    }
+  }
+}

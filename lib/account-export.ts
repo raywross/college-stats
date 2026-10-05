@@ -90,6 +90,12 @@ export const ACCOUNT_EXPORTERS: AccountExporter[] = [
       rows("invitations", supabase.from("invitations").select("household_id, email, side, can_edit, created, expires_at, accepted_at, revoked_at").eq("invited_by", userId)),
   },
   {
+    key: "student_profiles",
+    description: "Student profile data: GPA, test scores, intended majors, and preferences (specs/product/student-profile.md), for your own and managed students.",
+    run: ({ supabase, studentIds }) =>
+      rows("student_profiles", supabase.from("student_profiles").select("student_id, data, updated_at").in("student_id", inList(studentIds))),
+  },
+  {
     key: "access_log",
     description: "When guardians viewed your information, and when you viewed a student's as a guardian.",
     run: async ({ supabase, userId }) => ({

@@ -6,6 +6,7 @@ import { familiesOffered, fieldStat, type FieldStat } from "@/lib/field-compare"
 import { majorFamilyName } from "@/lib/majors";
 import { cipFamilyTitle, cipTitle } from "@/lib/cip";
 import { YourMajor } from "@/components/compare/YourMajor";
+import { YouScoreRow } from "@/components/me/YouScoreRow";
 import { RACE_SERIES, SERIES, WINDOW_YEARS, defaultWindow, historyYearLabel } from "@/lib/history";
 import { INDICATORS, INDICATOR_KEYS, indicatorsOf } from "@/lib/indicators";
 import { TrendIndicatorCell } from "@/components/trends/TrendIndicators";
@@ -780,6 +781,7 @@ async function ScoreCompare({ schools, test }: { schools: School[]; test: "sat" 
             </div>
           );
         })}
+        <YouScoreRow test={test} lo={lo} hi={hi} />
       </div>
       <p className="mt-3 text-[11px] text-muted-foreground">
         Axis runs {lo}–{hi}. The dark tick marks the national median midpoint.

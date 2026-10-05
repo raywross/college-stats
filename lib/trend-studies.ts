@@ -55,6 +55,22 @@ export const STUDIES = [
     spec: "specs/national-trends.md",
     color: "var(--d-admissions)",
   },
+  {
+    slug: "shrinking-colleges",
+    number: 3,
+    title: "Shrinking colleges",
+    question: "How many colleges are smaller than they were ten years ago, by how much, and which kinds grew instead?",
+    series: ["undergrads", "applicants", "enrolled"],
+    yearKind: "fall",
+    window: 10,
+    groupings: ["region", "control", "size", "selectivity", "setting", "research"],
+    panelRule: "Colleges with 300 or more undergraduates in both the window's first and last fall",
+    fields: ["demographics.undergrad_enrollment", "admissions.applicants", "admissions.enrolled"],
+    added: 20261004,
+    explore: { href: "/explore?sortBy=size_change", label: "Colleges by undergraduate change over 10 years" },
+    spec: "specs/trends/shrinking-colleges.md",
+    color: "var(--d-size)",
+  },
   // ↑ One entry per study. Studies 2–6 add theirs here (copy Study 1's shape).
 ] as const satisfies readonly StudyDef[];
 

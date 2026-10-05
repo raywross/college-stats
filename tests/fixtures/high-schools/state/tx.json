@@ -1,0 +1,24 @@
+{
+  "state": "TX",
+  "sections": [
+    {
+      "key": "tapr-ap",
+      "source": "state-tx",
+      "label": "Texas Academic Performance Reports, AP/IB results (fixture)",
+      "year": "2022–23",
+      "url": "https://tea.texas.gov/texas-schools/accountability/academic-accountability/performance-reporting/texas-academic-performance-reports",
+      "retrieved": "2026-10-05",
+      "fields": [
+        "ap_pass_rate",
+        "college_going_rate"
+      ]
+    }
+  ],
+  "schools": {
+    "480000200001": {"college_going_rate":0.61,"ap_pass_rate":0.52},
+    "480000200002": {"college_going_rate":0.55,"ap_pass_rate":null,"suppressed":["ap_pass_rate"]},
+    "480000200003": {"college_going_rate":0.58,"ap_pass_rate":0.47},
+    "480000200004": {"college_going_rate":0.5,"ap_pass_rate":0.39},
+    "480000200005": {"college_going_rate":0.66,"ap_pass_rate":0.61}
+  }
+}

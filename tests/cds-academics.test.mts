@@ -282,7 +282,8 @@ test("mergeAcademics is idempotent, removes a block whose record is gone, and le
 test("Compare: 'Classes under 20 students' is the profile's share, '–' (null) without a record", () => {
   assert.equal(compareClassesUnder20(school("221999")), "57%");
   assert.equal(compareClassesUnder20({} as School), null);
-  const compare = readFileSync(join(ROOT, "app", "compare", "page.tsx"), "utf8");
+  // The "All the numbers" rows live in lib/compare-topics.ts since the compare redesign (specs/compare-redesign.md).
+  const compare = readFileSync(join(ROOT, "lib", "compare-topics.ts"), "utf8");
   assert.match(compare, /\["Classes under 20 students", "class-section", "derived\.class_share_under_20", compareClassesUnder20\]/);
 });
 

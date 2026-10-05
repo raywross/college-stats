@@ -21,7 +21,7 @@ export function SchoolRow({ school }: { school: School }) {
   ].filter((f): f is { key: string; color: string; text: string } => f.text !== null);
 
   return (
-    <article data-unit-id={school.unit_id} className="relative flex items-center gap-3 rounded-2xl border bg-card p-3 transition-colors active:bg-muted/60">
+    <article className="relative flex items-center gap-3 rounded-2xl border bg-card p-3 transition-colors active:bg-muted/60">
       <Link href={`/schools/${school.unit_id}`} className="absolute inset-0 z-10 rounded-2xl" aria-label={`View ${school.name}`} />
       <Crest id={school.unit_id} name={school.name} size="sm" brand={crestBrand(school)} />
       <div className="min-w-0 flex-1">

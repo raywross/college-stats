@@ -351,21 +351,44 @@ export function completenessScore(data: StudentProfileData): number {
  */
 export type Fit = "in" | "out" | "unknown";
 
+/** A saved SAT total and/or ACT composite — plain numbers, not a full profile. */
+export interface ScoreValues {
+  sat: number | null;
+  act: number | null;
+}
+
 /**
- * Whether the student's SAT or ACT score falls in this college's reported middle 50%, or the college is test-blind
- * (never asks for scores, so every score "fits"). "unknown" when the student has a score but this college reports
- * no range for that test and isn't test-blind — see the Fit doc comment for why that's not "out".
+ * Whether a score fits a given SAT and ACT range, or the test policy is test-blind (never asks for scores, so
+ * every score "fits"). "unknown" when a score is given but no range for that test, and it isn't test-blind — see
+ * the Fit doc comment for why that's not "out". Takes the ranges as plain values rather than reading them from a
+ * `School` itself, because **which range to pass matters**: `fitsScoreValues` below passes `satTotal()` (the
+ * college's own displayed range — right for ScoreChecker/Compare's "You" marker) while lib/dataset.ts's Explore
+ * filter passes `satComposite()` (the sum of sections) instead, the same range its neighboring `minSAT`/`maxSAT`
+ * filters use — ranks, sorts, and filters never read the college's own reported total (lib/score-bands.ts's
+ * `satTotal` doc comment; enforced for lib/dataset.ts by tests/cds-test-scores-and-policy.test.mts).
  */
-export function fitsScores(school: Pick<School, "admissions" | "reported" | "lineage">, profile: StudentProfileData): Fit {
-  if (school.admissions.test_policy === "not-considered") return "in";
-  const { satTotal: sat, actComposite } = profile.tests;
-  const satRange = satTotal(school);
-  const actRange = school.admissions.act_composite_25_75;
+export function fitsScoreRange(satRange: [number, number] | null, actRange: [number, number] | null, testPolicy: School["admissions"]["test_policy"], scores: ScoreValues): Fit {
+  if (testPolicy === "not-considered") return "in";
   const checks: Fit[] = [];
-  if (sat !== null && satRange) checks.push(sat >= satRange[0] && sat <= satRange[1] ? "in" : "out");
-  if (actComposite !== null && actRange) checks.push(actComposite >= actRange[0] && actComposite <= actRange[1] ? "in" : "out");
+  if (scores.sat !== null && satRange) checks.push(scores.sat >= satRange[0] && scores.sat <= satRange[1] ? "in" : "out");
+  if (scores.act !== null && actRange) checks.push(scores.act >= actRange[0] && scores.act <= actRange[1] ? "in" : "out");
   if (checks.length === 0) return "unknown";
   return checks.includes("in") ? "in" : "out";
+}
+
+/**
+ * fitsScoreRange against the college's own displayed SAT range (`satTotal`, score-bands.ts) and reported ACT
+ * range — what ScoreChecker, Compare's "You" row, and `/me`'s own display logic want. Explore's server-side
+ * filter (lib/dataset.ts) calls `fitsScoreRange` directly with `satComposite()` instead; see that function's doc
+ * comment for why.
+ */
+export function fitsScoreValues(school: Pick<School, "admissions" | "reported" | "lineage">, scores: ScoreValues): Fit {
+  return fitsScoreRange(satTotal(school), school.admissions.act_composite_25_75, school.admissions.test_policy, scores);
+}
+
+/** Convenience wrapper over fitsScoreValues for callers that already have a full profile (e.g. `/me`'s own pages). */
+export function fitsScores(school: Pick<School, "admissions" | "reported" | "lineage">, profile: StudentProfileData): Fit {
+  return fitsScoreValues(school, { sat: profile.tests.satTotal, act: profile.tests.actComposite });
 }
 
 /** The average price this preference check compares against: the all-student estimate, else the sticker price. */

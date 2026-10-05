@@ -213,6 +213,15 @@ export function ActiveFilters() {
       onRemove: () => update({ minSAT: null, maxSAT: null }),
     });
 
+  const mySAT = searchParams.get("mySAT");
+  const myACT = searchParams.get("myACT");
+  if (mySAT || myACT)
+    chips.push({
+      key: "fit-scores",
+      label: `Fits your ${[mySAT && `SAT ${mySAT}`, myACT && `ACT ${myACT}`].filter(Boolean).join(" / ")}`,
+      onRemove: () => update({ mySAT: null, myACT: null }),
+    });
+
   const minCost = searchParams.get("minCost");
   const maxCost = searchParams.get("maxCost");
   if (minCost || maxCost)

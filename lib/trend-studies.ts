@@ -55,6 +55,24 @@ export const STUDIES = [
     spec: "specs/national-trends.md",
     color: "var(--d-admissions)",
   },
+  {
+    slug: "test-optional",
+    number: 2,
+    title: "Test-optional went mainstream",
+    question: "How many colleges still require the SAT or ACT, who dropped the requirement, how many students still submit scores, and what did that do to published score ranges?",
+    series: ["test_policy", "sat_submit", "act_submit", "sat_25", "sat_75"],
+    yearKind: "fall",
+    // Informational only: this study fixes "then" at PRE_PANDEMIC_FALL (scripts/history/build.mts), the same baseline
+    // as Home fact 3, rather than counting back `window` years from `to` (studyWindow isn't called for this study).
+    window: 5,
+    groupings: ["region", "control", "size", "selectivity", "research", "division"],
+    panelRule: "Colleges reporting a test policy both at the last fall before the pandemic (the same baseline Home's test-optional fact uses) and the newest fall",
+    fields: ["admissions.test_policy", "admissions.test_submission_rate_sat", "admissions.test_submission_rate_act", "derived.sat_composite"],
+    added: 20261004,
+    explore: { href: "/explore?policy=required", label: "Colleges that still require the SAT or ACT" },
+    spec: "specs/trends/test-optional.md",
+    color: "var(--d-admissions)",
+  },
   // ↑ One entry per study. Studies 2–6 add theirs here (copy Study 1's shape).
 ] as const satisfies readonly StudyDef[];
 

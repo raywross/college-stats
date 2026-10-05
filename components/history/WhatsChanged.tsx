@@ -69,7 +69,7 @@ export async function WhatsChanged({
   const fieldName = (f: string) => majorFamilyName(f) ?? f;
 
   return (
-    <section>
+    <section id="whats-changed">
       <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="mb-1.5 text-xs font-bold tracking-[0.18em] text-primary uppercase">Over time</p>
@@ -152,8 +152,8 @@ export async function WhatsChanged({
         {tr && (
           <FactCard
             big={`${Math.round(tr.requiredTo * 100)}%`}
-            href="/glossary#test-optional"
-            cta="What test-optional means"
+            href="/trends/test-optional"
+            cta="The full study"
             chart={
               <div className="space-y-2.5" role="img" aria-label={`Share of colleges requiring the SAT or ACT: ${Math.round(tr.requiredFrom * 100)}% in ${historyYearLabel(tr.from, "fall").toLowerCase()}, ${Math.round(tr.requiredTo * 100)}% in ${historyYearLabel(tr.to, "fall").toLowerCase()}`}>
                 {[

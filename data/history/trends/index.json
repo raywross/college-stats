@@ -29,7 +29,32 @@
       "from": 2004,
       "to": 2024,
       "n": 912
+    },
+    {
+      "slug": "test-optional",
+      "title": "Test-optional went mainstream",
+      "headline": {
+        "value": 0.0516,
+        "format": "pct",
+        "caption": "of colleges still require the SAT or ACT"
+      },
+      "sentence": "In fall 2019, 66% of colleges required the SAT or ACT; in fall 2024, 5% did, while the median college's SAT submission share fell from 63% to 15%.",
+      "spark": {
+        "start": 2001,
+        "kind": "fall",
+        "format": "pct",
+        "series": [
+          {
+            "name": "Share of colleges requiring the SAT or ACT",
+            "values": [null,null,null,null,null,null,null,null,0.8324,0.8214,0.8081,0.8027,0.7961,0.7967,0.7777,0.7466,0.7211,0.6953,0.6559,0.3778,0.109,0.0751,0.057,0.0516]
+          }
+        ]
+      },
+      "yearKind": "fall",
+      "from": 2019,
+      "to": 2024,
+      "n": 1511
     }
   ],
-  "files": ["men-and-women"]
+  "files": ["men-and-women","test-optional"]
 }

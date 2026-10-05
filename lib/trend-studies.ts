@@ -56,8 +56,26 @@ export const STUDIES = [
     color: "var(--d-admissions)",
   },
   {
-    slug: "shrinking-colleges",
+    slug: "test-optional",
     number: 2,
+    title: "Test-optional went mainstream",
+    question: "How many colleges still require the SAT or ACT, who dropped the requirement, how many students still submit scores, and what did that do to published score ranges?",
+    series: ["test_policy", "sat_submit", "act_submit", "sat_25", "sat_75"],
+    yearKind: "fall",
+    // Informational only: this study fixes "then" at PRE_PANDEMIC_FALL (scripts/history/build.mts), the same baseline
+    // as Home fact 3, rather than counting back `window` years from `to` (studyWindow isn't called for this study).
+    window: 5,
+    groupings: ["region", "control", "size", "selectivity", "research", "division"],
+    panelRule: "Colleges reporting a test policy both at the last fall before the pandemic (the same baseline Home's test-optional fact uses) and the newest fall",
+    fields: ["admissions.test_policy", "admissions.test_submission_rate_sat", "admissions.test_submission_rate_act", "derived.sat_composite"],
+    added: 20261004,
+    explore: { href: "/explore?policy=required", label: "Colleges that still require the SAT or ACT" },
+    spec: "specs/trends/test-optional.md",
+    color: "var(--d-admissions)",
+  },
+  {
+    slug: "shrinking-colleges",
+    number: 3,
     title: "Shrinking colleges",
     question: "How many colleges are smaller than they were ten years ago, by how much, and which kinds grew instead?",
     series: ["undergrads", "applicants", "enrolled"],
@@ -73,7 +91,7 @@ export const STUDIES = [
   },
   {
     slug: "price-gap",
-    number: 3,
+    number: 4,
     title: "The price gap, by who is discounting",
     question: "Full price held roughly steady after inflation while what students paid fell. Where, and for whom?",
     series: ["full_price", "avg_paid_all", "aid_generosity", "grant_pct", "grant_avg", "net_price_income_1", "net_price_income_2", "net_price_income_3", "net_price_income_4", "net_price_income_5"],
@@ -89,7 +107,7 @@ export const STUDIES = [
   },
   {
     slug: "out-of-state",
-    number: 4,
+    number: 5,
     title: "Public colleges and students from other states",
     question: "Are public colleges enrolling more first-years from other states, and which ones?",
     series: ["out_of_state_share", "international_share", "enrolled", "sticker_in_state", "sticker_out_of_state"],
@@ -105,7 +123,7 @@ export const STUDIES = [
   },
   {
     slug: "pell-gap",
-    number: 5,
+    number: 6,
     title: "The Pell graduation gap",
     question: "Do students with Pell Grants graduate at the same rate as classmates who had neither a Pell Grant nor a subsidized loan, and has the gap changed?",
     series: ["grad_rate_pell", "grad_rate_no_pell_no_loan", "grad_cohort_pell", "grad_cohort_no_pell_no_loan", "grad_rate", "om_award_pell", "om_award_non_pell"],

@@ -350,6 +350,48 @@ export interface PriceGapFile extends StudyFile<PriceGapValues> {
   resets: PriceGapReset[];
 }
 
+/* Study 2: test-optional (test-optional.json)                         */
+/* ------------------------------------------------------------------ */
+
+export interface TestOptionalValues {
+  /** Share of colleges requiring the SAT or ACT, then (fall 2019) and now. */
+  required: ThenNow;
+  /** Median college's share of enrolled first-years submitting an SAT, then and now. */
+  satSubmitMedian: ThenNow;
+  /** Median college's ACT submission share, then and now (the Midwest's ACT pattern). */
+  actSubmitMedian: ThenNow;
+  /** Yearly lines from the file's `lineFrom` to `to` (null where under 90% of the group reported). */
+  lines: {
+    required: (number | null)[];
+    /** Share test-blind ("not considered"); only from `blindFrom` on (TEST_BLIND_FROM), null before. */
+    blind: (number | null)[];
+    satSubmitMedian: (number | null)[];
+    actSubmitMedian: (number | null)[];
+  };
+}
+
+/** One policy group's published SAT range, then and now. Under the floor (or the "went back" group): no values. */
+export interface ScoreRangeRow {
+  key: "required-both" | "dropped" | "optional-both";
+  label: string;
+  n: number;
+  tooFew?: true;
+  p25?: ThenNow;
+  p75?: ThenNow;
+}
+
+export interface TestOptionalFile extends StudyFile<TestOptionalValues> {
+  slug: "test-optional";
+  /** Fall colleges' policy stopped meaning "not required or recommended" and started meaning "not considered". */
+  blindFrom: number;
+  /** Students view: SAT submission share averaged with each college's enrolled first-years as the weight. */
+  weightedSatSubmit: ThenNow;
+  /** The dumbbell: published SAT 25th/75th percentile, fall 2019 → newest, per policy group. */
+  scoreRanges: ScoreRangeRow[];
+  /** Colleges that required tests again by the newest fall after being optional or blind in fall 2022. */
+  wentBackToRequiring: { id: string; name: string; policyNow: string }[];
+}
+
 /* ------------------------------------------------------------------ */
 /* Every file, by name (one line per unit)                             */
 /* ------------------------------------------------------------------ */
@@ -362,6 +404,7 @@ export interface TrendFiles {
   movers: MoversFile;
   "pell-gap": PellGapFile;
   "price-gap": PriceGapFile;
+  "test-optional": TestOptionalFile;
 }
 
 export type TrendFileName = keyof TrendFiles;

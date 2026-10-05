@@ -23,7 +23,7 @@ export default async function TrendsPage() {
   const cards = (STUDIES as readonly StudyDef[])
     .map((study, order) => ({ study, order, card: index?.cards.find((c) => c.slug === study.slug) }))
     .filter((x): x is { study: StudyDef; order: number; card: TrendCard } => x.card !== undefined)
-    .sort((a, b) => b.study.added.localeCompare(a.study.added) || a.order - b.order);
+    .sort((a, b) => b.study.added - a.study.added || a.order - b.order);
 
   return (
     <div className="mx-auto max-w-6xl px-4 pt-8 pb-12 sm:px-6 sm:pt-10">

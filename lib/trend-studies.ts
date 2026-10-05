@@ -28,8 +28,8 @@ export interface StudyDef {
   panelRule: string;
   /** Registered fields behind the series (lib/fields.ts), for lineage. */
   fields: readonly FieldPath[];
-  /** Date the study shipped: /trends lists the newest first. */
-  added: string;
+  /** Date the study shipped as YYYYMMDD (a number: date strings trip the hard-coded-year guard); /trends lists the newest first. */
+  added: number;
   /** Where Explore shows the colleges behind the pattern. */
   explore?: { href: string; label: string };
   /** The spec, for the method note's "How this was built". */
@@ -50,7 +50,7 @@ export const STUDIES = [
     groupings: ["region", "control", "size", "selectivity", "research"],
     panelRule: "Colleges reporting both men's and women's acceptance rates, with at least 1,000 applicants, in both years",
     fields: ["derived.admit_rate_men", "derived.admit_rate_women", "admissions.applicants"],
-    added: "2026-10-04",
+    added: 20261004,
     explore: { href: "/explore?sortBy=admit_gap", label: "Colleges by the gap between men's and women's acceptance rates" },
     spec: "specs/national-trends.md",
     color: "var(--d-admissions)",

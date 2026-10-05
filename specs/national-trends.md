@@ -177,21 +177,53 @@ are already read) so the study can use the same rule and weight by applicants.
 | 6. The Pell graduation gap | Pell recipients graduate 11 points less often than peers with neither Pell nor loans; the gap widened from 9 | [pell-gap.md](trends/pell-gap.md) |
 
 ## Shared computation and tests
-All studies, lists, and group pages are computed by `npm run sync-history` and committed, so pages stay static and
-every number is reproducible from the shards in git.
+As built 2026-10-04 (`feature/national-trends-foundation`). Studies, lists, and group pages are computed by
+`npm run build-trends` from **committed files only** (`data/schools.json`, `data/history/{meta,cpi,national,facts}.json`,
+the shards in `data/history/schools/`, and `data/detail/schools/` on request), with no network, and committed. `npm run
+sync-history` runs the same step at its end, so a data release refreshes them. Output is deterministic (the files carry
+history's `built` date, not today's), so tests rebuild and compare byte for byte.
 
 | Piece | Where | Notes |
 |---|---|---|
-| Group definitions | `lib/trend-groups.ts` | One function per grouping (`region`, `control`, `size`, `selectivity`, `setting`, `division`, `research`, `designation`, `state`, `conference`) from a `School`; the 30-college floor (10 for states, 8 for conferences) as constants, read by the build and the pages |
-| Study registry | `lib/trend-studies.ts` | Slug, title, question, series used, year kind, window, which groupings it offers, and the panel rule; typed against `SeriesKey` so a study can't name a missing series |
-| Build | `scripts/history/studies.mts`, called from `build.mts` after facts | Shared helpers: `fixedPanel(series, from, to, floor)`, `medianBy(group)`, `shareBy(group, predicate)`, `weightedBy(group, weights)`, inflation through the CPI table |
-| Output | `data/history/studies.json` (studies), `movers.json`, `conferences.json`, `states.json` | Each entry records `from`, `to`, `n`, and per-group `n`, so pages print panel sizes from data, never from copy |
-| Tests | `tests/trend-studies.test.mts` | Recomputes each study's national row and one group from the committed shards (as `facts` are tested today); asserts floors are applied; asserts Study 2's fall 2019 share equals Home fact 3 and Study 4's national row equals Home fact 1 |
-| Lineage | `lib/fields.ts` | Study measures cite the series' registered fields; year labels come from `history/meta.json` through lineage helpers ([data-lineage.md](data-lineage.md)) |
+| Groups | `lib/trend-groups.ts` | One function per grouping from a `School`, today's classification: `region`, `control`, `size` (under 2,000 / 2,000–9,999 / 10,000+), `selectivity` (under 25% / 25–59% / 60%+; null without a rate), `setting`, `division` ("none" = NAIA or no NCAA), `research` ("other"), `designation` (several per college), `state`, `conference`. `GROUPINGS[key]` holds label, order, floor, registered field, glossary term; `GROUP_FLOOR` 30, `STATE_FLOOR` 10, `CONFERENCE_FLOOR` 8; `STANDARD_GROUPINGS`; `splitBy(items, grouping, schoolOf)`, `groupLabel()` |
+| Panel helpers | `lib/trend-panel.ts` (pure; builders and tests share it) | `Member = { school, h }`; `fixedPanel(members, years, ok)`, `medianBy(ms, value)`, `shareBy(ms, test)` (null = left out), `weightedBy(ms, value, weight)`, `totalBy(ms, value)`, `reporting(ms, ok)` (null under `MIN_YEAR_COVERAGE` 90%), `yearly(from, to, fn, step)` (step 2: odd years null), `nationalRow(ms, compute)`, `byGroup(ms, grouping, compute, floor?)` (under the floor: `n` + `tooFew`, no values), `at`, `reports`, `quantile`, `round4`. Inflation: `real()`/`cpiFor()` from `lib/history.ts` with `ctx.cpi` |
+| Study registry | `lib/trend-studies.ts` | `STUDIES`: slug, number, title, question, `series: SeriesKey[]`, `yearKind`, `window` (years back from history's newest), `groupings` (standard four first), `panelRule`, `fields: FieldPath[]`, `added` (index order), `explore` link, `spec`, `color`. `studyBySlug()`, `studyWindow(study, hmeta.latest)` |
+| Types | `lib/trends.ts` | Envelope `TrendEnvelope { name, built, yearKind, from, to, n }`; `GroupRow<V>`, `GroupingResult<V>`, `StudyFile<V>` (`slug`, `lineFrom`, `national`, `groupings`), `ThenNow`; `TrendCard`/`TrendIndex` (index.json); one interface per unit (`MenAndWomenFile`) and one line each in `TrendFiles`, which types `getTrendFile(name)` |
+| Builders | `scripts/trends/` | `context.mts` (`loadTrendContext(root)`: schools, `members` with shards sorted by id, hmeta, cpi, national, facts, `detail(id)`; `TrendBuilder { name, build(ctx) → { name, file, card? } }`), `index.mts` (`BUILDERS`, one line per unit), `build.mts` (`computeTrends`, `buildTrends(root)`, `formatTrendJson`, `trendFileText`), `studies/<slug>.mts`. CLI: `scripts/build-trends.mts` |
+| Output | `data/history/trends/{name}.json` + `index.json` | One file per unit (`men-and-women.json`; later `test-optional`, …, `movers`, `conferences`, `states`). `index.json`: `{ built, cards, files }`: each study's card (headline value and caption, one sentence with templated numbers, sparkline series, years, n) and every file written. Files no builder wrote are deleted |
+| Loading | `getTrendFile(name)` in `lib/data.ts` | JSON mode reads the file; Supabase mode reads the `history_files` row `trends/{name}` (`fetchTrendFile` in `lib/supabase.ts`; `fetchHistoryFiles` now reads only the four shared rows). Cached per request; null (logged) when missing, and pages show "not available yet" |
+| Publishing | `scripts/publish-data.mts`, `supabase/migrations/20261004130000_trend_files.sql` | Trend files are upserted as `trends/{name}` rows after the history files, rows for files no longer built are deleted, and all are read back. Checked up front: file names, `name` fields, and `built` equal to history's. The migration widens `history_files`' name check (`'^trends/[a-z0-9-]+$'`) and must be applied before the first publish |
+| Pages | `components/trends/` | `StudyPage` (layout: question, headline tiles, national chart, breakdowns, extra sections, takeaway, standard method note, links, `HistorySourceNote` over `study.series`), `SmallMultiples` (client; `views` of groupings → tiles on one shared scale, grouping switch, Colleges/Students switch when given two views, "too few colleges to say" tiles), `ViewSwitch` / `CollegesStudents`, `TrendStat` (then → now tile), `StudyCard`, `ComingSection`, `tiles.ts` (`groupingTiles(groupings, values → { series, summary })`, `direction(from, to)`). `SegmentedControl` in `components/ui/segmented-control.tsx`; `TrendLine` gained `domain` and `height` |
+| Tests | `tests/trends-foundation.test.mts`, `tests/trends-<unit>.test.mts` | Foundation: grouping boundaries and floors, panel helpers, every study has a builder, a committed file, a page and a card, `data/history/trends/` holds exactly the builders' files, envelopes (`built` = history's), groups under the floor have no values, registry fields cover each series' registered field, and **every committed file equals a fresh build**. Per unit: recompute the national row and one group straight from the shards (Study 1: national + Northeast) |
+| Lineage | `lib/fields.ts`, `history/meta.json` | Each study's `fields` must include `SERIES[k].field` for its series (tested). Sources print through `HistorySourceNote` with the years shown; every year label comes from the file's `from`/`to`/`lineFrom` via `historyYearLabel`, never typed |
+
+Study-specific facts tests (Study 2's fall 2019 share equals `facts.testRequired.requiredFrom`, Study 4's national row
+equals `facts.priceGap`) live in those units' tests.
 
 Build order for the area: the hub (groups, registry, build, `/trends`, Study 1) first, then Studies 2–6 in the order
 above (each is small once the hub exists: one registry entry, one build function, one page from the shared layout),
 then the Movers page, then conferences and states (which reuse the movers registry for their per-group lists).
+
+### Building a study in code (copy Study 1)
+1. **Registry:** add an entry to `STUDIES` in `lib/trend-studies.ts` (next `number`, `series`, `fields` covering each
+   series' `SERIES[k].field`, `window`, `groupings` with the standard four first).
+2. **Types:** in `lib/trends.ts`, add `interface <Name>Values` and `interface <Name>File extends StudyFile<<Name>Values>`
+   (plus any extra parts), and one line in `TrendFiles`.
+3. **Builder:** copy `scripts/trends/studies/men-and-women.mts` to `scripts/trends/studies/<slug>.mts`: a panel with
+   `fixedPanel`, a `values(ms, window, lineFrom)` that returns the group's measures and yearly lines, `nationalRow` +
+   `byGroup` per grouping, and a card (headline, one sentence with templated numbers, sparkline). Add one line to
+   `BUILDERS` in `scripts/trends/index.mts`, then `npm run build-trends` and commit the JSON.
+4. **Page:** copy `app/trends/men-and-women/page.tsx` to `app/trends/<slug>/page.tsx`: `getTrendFile("<slug>")`,
+   `TrendStat` tiles, a `TrendLine`, `SmallMultiples` from `groupingTiles(...)` (a second "Students" view when the study
+   has one), hand-written takeaway with numbers from the file, extra method lines.
+5. **Test:** `tests/trends-<slug>.test.mts`: recompute the national row and one group from the shards without the
+   helpers; assert the floors and exclusions. The foundation test then checks the registry, file, page, and card.
+6. `npm run verify`. The /trends card appears by itself (from `index.json`).
+
+### Adding a section to /trends (Movers, conferences, states)
+Write the builder (`scripts/trends/<unit>.mts`, one line in `BUILDERS`, its interface + `TrendFiles` line), then in
+`app/trends/page.tsx` replace the unit's `<ComingSection … />` line with one import and one component (e.g.
+`<MoversEntry />`) that reads `getTrendFile("<unit>")` and renders nothing when it's null.
 
 ## More ideas, not yet specified
 Candidates for later studies, each already possible from stored series. Add one by writing a spec in `specs/trends/`
@@ -208,8 +240,8 @@ and a row in the table above.
 - **The year in college data.** A generated annual page when each IPEDS release lands: what moved most since last
   year across every study, written from `studies.json` deltas. Editorial, so it waits until several studies exist.
 
-## Adding a study
-Copy this template into **Studies**, and add a line to the backlog's National trends section:
+## Adding a study (the spec)
+Copy this template into **Studies** (then build it with [the code checklist](#building-a-study-in-code-copy-study-1)), and add a line to the backlog's National trends section:
 
 ```md
 ### Study N: Title

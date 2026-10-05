@@ -155,7 +155,7 @@ test("registry: series exist, fields cover each series' registered field, window
       assert.ok((s.fields as readonly string[]).includes(SERIES[k].field), `${s.slug}: add ${SERIES[k].field} (series ${k}) to fields`);
     }
     for (const f of s.fields) assert.ok(isFieldPath(f), `${s.slug}: ${f} isn't registered in lib/fields.ts`);
-    assert.ok(/^\d{4}-\d{2}-\d{2}$/.test(s.added), s.slug);
+    assert.ok(Number.isInteger(s.added) && s.added > 20260000 && s.added < 21000000, `${s.slug}: added is YYYYMMDD`);
     assert.match(s.color, /^var\(--[a-z0-9-]+\)$/, s.slug);
   }
 });

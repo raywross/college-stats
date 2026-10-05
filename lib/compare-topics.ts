@@ -432,4 +432,11 @@ export const COMPARE_OVERVIEW_FIELDS: readonly FieldPath[] = [
   "derived.aid_generosity",
   "outcomes.median_earnings_10yr",
   "outcomes.graduation_rate",
+  // The topic cards (lib/compare-cards.ts#cardFields; tests/compare-cards.test.mts keeps this list covering them).
+  "derived.sat_total",
+  "admissions.act_composite_25_75",
+  "admissions.test_policy",
+  "academics.student_faculty_ratio",
+  "academics.majors_top",
+  "trends",
 ];

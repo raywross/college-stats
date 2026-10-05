@@ -161,6 +161,9 @@ export interface ShrinkingCollegesFile extends StudyFile<ShrinkingValues> {
   histogram: { binSize: number; min: number; max: number; counts: number[]; median: number; n: number };
   /** Companion: median applicants and enrolled first-years, by fall, over the colleges that shrank 10%+ (a sub-panel of the ten-year panel). */
   companion: { from: number; to: number; n: number; applicants: (number | null)[]; enrolled: (number | null)[] };
+}
+
+/* ------------------------------------------------------------------ */
 /* Biggest movers (movers.json; specs/trends/top-10-lists.md)          */
 /* ------------------------------------------------------------------ */
 

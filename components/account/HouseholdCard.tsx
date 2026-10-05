@@ -1,6 +1,6 @@
 import { Term } from "@/components/ui/info-tip";
 import { initialsFor } from "@/lib/accounts";
-import { canRemove, editAccessControl, memberName, shortDate, type HouseholdView, type RosterMember } from "@/lib/household-rules";
+import { canRemove, editAccessControl, householdSeats, memberName, shortDate, type HouseholdView, type RosterMember } from "@/lib/household-rules";
 import { leaveHousehold, removeMember, revokeInvitation, setMemberCanEdit } from "@/app/account/household/actions";
 import { HouseholdActionButton } from "./HouseholdActionButton";
 import { AddManagedStudentForm, InviteForm } from "./HouseholdForms";
@@ -69,10 +69,11 @@ function MemberRow({ m, h }: { m: RosterMember; h: HouseholdView }) {
   );
 }
 
-/** One household on /account/household: members, pending invitations, invite, add a student, leave. */
+/** One household on /account/household: members and seats, pending invitations, invite, add a student, leave. */
 export function HouseholdCard({ h }: { h: HouseholdView }) {
   const isGuardian = h.me.guardian !== null;
   const isStudent = h.me.student !== null;
+  const seats = householdSeats(h);
   const managedHere = h.members.filter((m) => m.managed_by_me && m.student_id).map((m) => ({ id: m.student_id as string, name: memberName(m) }));
   const nameOf = (userId: string | null) => {
     const m = h.members.find((x) => x.user_id === userId);
@@ -87,7 +88,8 @@ export function HouseholdCard({ h }: { h: HouseholdView }) {
             {h.name}
           </h2>
           <p className="mt-0.5 text-sm text-muted-foreground">
-            You&apos;re {isGuardian && isStudent ? "a guardian and a student" : isGuardian ? "a guardian" : "the student"} here.
+            You&apos;re {isGuardian && isStudent ? "a guardian and a student" : isGuardian ? "a guardian" : "a student"} here · {seats.taken} of {seats.max} seats taken
+            {h.invitations.length > 0 && ", counting invitations"}.
           </p>
         </div>
         <HouseholdActionButton
@@ -127,21 +129,40 @@ export function HouseholdCard({ h }: { h: HouseholdView }) {
         </>
       )}
 
-      <div className="mt-6 border-t pt-5">
-        <h3 className="text-sm font-semibold">
-          Invite someone <span className="font-normal text-muted-foreground">by <Term term="household-invitation">invitation</Term></span>
-        </h3>
-        <p className="mt-0.5 mb-3 text-xs text-muted-foreground">They join only when they accept, signed in with that email.</p>
-        <InviteForm household={h.id} canInviteStudents={isGuardian} isStudent={isStudent} managedStudents={managedHere} />
-      </div>
+      {seats.full ? (
+        <p className="mt-6 rounded-2xl bg-muted/60 px-3.5 py-3 text-sm text-muted-foreground" role="status">
+          This household is full: {seats.max} seats, counting invitations waiting for an answer. Cancel an invitation or remove someone to make room
+          {managedHere.length > 0 && "; handing a student you added over to their own account takes no new seat"}.
+        </p>
+      ) : (
+        <>
+          <div className="mt-6 border-t pt-5">
+            <h3 className="text-sm font-semibold">
+              Invite someone <span className="font-normal text-muted-foreground">by <Term term="household-invitation">invitation</Term></span>
+            </h3>
+            <p className="mt-0.5 mb-3 text-xs text-muted-foreground">
+              They join only when they accept, signed in with that email. Someone already in another household with other people can&apos;t accept until
+              they leave it.
+            </p>
+            <InviteForm household={h.id} canInviteStudents={isGuardian} isStudent={isStudent} managedStudents={managedHere} />
+          </div>
 
-      {isGuardian && (
+          {isGuardian && (
+            <div className="mt-6 border-t pt-5">
+              <h3 className="text-sm font-semibold">
+                Add a student without an account <span className="font-normal text-muted-foreground">(a <Term term="managed-student">managed student</Term>)</span>
+              </h3>
+              <p className="mt-0.5 mb-3 text-xs text-muted-foreground">Start their list now; invite them later to hand it over.</p>
+              <AddManagedStudentForm household={h.id} />
+            </div>
+          )}
+        </>
+      )}
+      {seats.full && managedHere.length > 0 && (
         <div className="mt-6 border-t pt-5">
-          <h3 className="text-sm font-semibold">
-            Add a student without an account <span className="font-normal text-muted-foreground">(a <Term term="managed-student">managed student</Term>)</span>
-          </h3>
-          <p className="mt-0.5 mb-3 text-xs text-muted-foreground">Start their list now; invite them later to hand it over.</p>
-          <AddManagedStudentForm household={h.id} />
+          <h3 className="text-sm font-semibold">Hand over a student you added</h3>
+          <p className="mt-0.5 mb-3 text-xs text-muted-foreground">Their account takes the seat the record already holds.</p>
+          <InviteForm household={h.id} canInviteStudents={isGuardian} isStudent={isStudent} managedStudents={managedHere} handoverOnly />
         </div>
       )}
     </section>

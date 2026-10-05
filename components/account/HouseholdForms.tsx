@@ -127,14 +127,17 @@ export function InviteForm({
   canInviteStudents,
   isStudent,
   managedStudents,
+  handoverOnly = false,
 }: {
   household: string;
   canInviteStudents: boolean;
   isStudent: boolean;
   managedStudents: { id: string; name: string }[];
+  /** A full household: only handing a managed student over to their own account (which takes no new seat). */
+  handoverOnly?: boolean;
 }) {
   const [state, action, pending] = useActionState<InviteState, FormData>(inviteToHousehold, { status: "idle" });
-  const [side, setSide] = useState<"guardian" | "student">("guardian");
+  const [side, setSide] = useState<"guardian" | "student">(handoverOnly ? "student" : "guardian");
   return (
     <div className="space-y-4">
       <form action={action} className="grid gap-3">
@@ -150,7 +153,24 @@ export function InviteForm({
             {pending ? "Creating link…" : "Create invitation"}
           </button>
         </div>
-        {canInviteStudents ? (
+        {handoverOnly ? (
+          <>
+            <input type="hidden" name="side" value="student" />
+            <div>
+              <label className="block text-sm font-semibold" htmlFor={`invite-student-${household}`}>
+                Which student
+              </label>
+              <select id={`invite-student-${household}`} name="student" required defaultValue={managedStudents[0]?.id ?? ""} className={`${inputCls} mt-1.5 sm:max-w-xs`}>
+                {managedStudents.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name}
+                  </option>
+                ))}
+              </select>
+              <p className="mt-1.5 text-xs text-muted-foreground">When they accept, the record becomes theirs and you keep access through the household.</p>
+            </div>
+          </>
+        ) : canInviteStudents ? (
           <fieldset className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
             <legend className="sr-only">Invite them as</legend>
             <label className="inline-flex items-center gap-2">
@@ -165,7 +185,7 @@ export function InviteForm({
         ) : (
           <input type="hidden" name="side" value="guardian" />
         )}
-        {side === "student" && managedStudents.length > 0 && (
+        {!handoverOnly && side === "student" && managedStudents.length > 0 && (
           <div>
             <label className="block text-sm font-semibold" htmlFor={`invite-student-${household}`}>
               Hand over a student you added

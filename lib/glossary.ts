@@ -1126,8 +1126,8 @@ const entries = {
   // Home and distance (specs/product/home-and-distance.md).
   "home-address": {
     term: "Home address",
-    short: "The address saved on your account so the site can say how far each college is from home. Only you can see it; the other people in your household see distances from their own homes.",
-    long: "We look the address up once with the U.S. Census Bureau's public geocoder and keep the matched address and its map location, rounded to about 100 meters. A ZIP code alone works too, using the center of the ZIP code. Remove it any time from your account page.",
+    short: "The one address saved for your household so the site can say how far each college is from home. Anyone in the household can set it, everyone in it sees the same distances, and nobody outside it can see the address.",
+    long: "We look the address up once with the U.S. Census Bureau's public geocoder and keep the matched address and its map location, rounded to about 100 meters, with the name of whoever set it. A ZIP code alone works too, using the center of the ZIP code. Change or remove it any time from your account page.",
     category: "Your account",
     related: ["distance-from-home", "household"],
   },
@@ -1402,7 +1402,7 @@ const entries = {
   household: {
     term: "Household",
     short: "A family group that links parents or guardians with the students they help. Guardians see each student's lists and plans; students never see a guardian's finances.",
-    long: "Nobody is added silently: each person joins by accepting an invitation. A student can be in two households (two homes), and a guardian can have several students. Anyone can leave at any time.",
+    long: "Nobody is added silently: each person joins by accepting an invitation. An account is in one household at a time, and a household holds up to six people in any mix of parents and students, counting invitations waiting for an answer. It shares one home address for distances. Anyone can leave at any time.",
     category: "Your account",
     related: ["guardian", "managed-student"],
   },

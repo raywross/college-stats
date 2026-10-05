@@ -245,4 +245,6 @@ export const INVITATION_ERRORS: Record<string, string> = {
   invitation_wrong_email: "This invitation was sent to a different email address. Sign in with that address to accept it.",
   invitation_own: "You can't accept your own invitation.",
   not_signed_in: "Sign in to accept this invitation.",
+  already_in_household: "You're already in a household with other people. Leave it from your account page first, then open this link again.",
+  household_full: "This household is full (six people, counting invitations waiting for an answer). Ask whoever invited you to make room.",
 };

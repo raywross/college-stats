@@ -41,7 +41,7 @@ export default async function ListPage({ params }: { params: Promise<{ id: strin
   const access = await openStudentAs(list.student_id, "lists");
   if (!access) notFound();
 
-  // The viewer's own home (a guardian's, when a guardian is looking): each person sees distances from where they live.
+  // The viewer's household's home: a student and the guardians who see their list measure from the same place.
   const [lists, { getSchoolById, citeField }, notesByItem, home] = await Promise.all([
     myLists(list.student_id),
     getData(),
@@ -130,7 +130,7 @@ export default async function ListPage({ params }: { params: Promise<{ id: strin
         <p className="text-xs text-muted-foreground print:hidden">
           {home ? (
             <>
-              Distances are from your home in {home.place}, <Term term="distance-from-home">as the crow flies</Term>.
+              Distances are from your household&apos;s home in {home.place}, <Term term="distance-from-home">as the crow flies</Term>.
               {home.zip && (
                 <>
                   {" "}
@@ -143,7 +143,7 @@ export default async function ListPage({ params }: { params: Promise<{ id: strin
             </>
           ) : (
             <>
-              Add your{" "}
+              Add your household&apos;s{" "}
               <Link href="/account#home" className="font-semibold text-primary hover:underline">
                 home address
               </Link>{" "}

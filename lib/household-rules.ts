@@ -47,6 +47,19 @@ export interface HouseholdView {
   me: { guardian: RosterMember | null; student: RosterMember | null };
 }
 
+/**
+ * Seats in a household (public.household_max_members(); a test checks the two agree): active members plus
+ * invitations still waiting for an answer, in any mix of guardians and students. An invitation handing a managed
+ * student over to their own account takes no seat (the record already holds one). An account is in one household
+ * at a time (specs/product/accounts.md "Built: one household, six seats").
+ */
+export const HOUSEHOLD_MAX_MEMBERS = 6;
+
+export function householdSeats(h: Pick<HouseholdView, "members" | "invitations">): { taken: number; max: number; full: boolean } {
+  const taken = h.members.length + h.invitations.filter((i) => !i.student_id).length;
+  return { taken, max: HOUSEHOLD_MAX_MEMBERS, full: taken >= HOUSEHOLD_MAX_MEMBERS };
+}
+
 export function viewerRoles(members: RosterMember[]): HouseholdView["me"] {
   return {
     guardian: members.find((m) => m.is_me && m.role === "guardian") ?? null,
@@ -154,6 +167,8 @@ export const HOUSEHOLD_ERRORS: Record<string, string> = {
   cannot_grant_self: "You can't give yourself edit access.",
   member_not_found: "That person isn't in this household any more.",
   account_deleted: "This account is scheduled for deletion.",
+  already_in_household: "You're already in a household. Leave it first to start or join another.",
+  household_full: `This household is full: ${HOUSEHOLD_MAX_MEMBERS} people, counting invitations waiting for an answer. Cancel an invitation or remove someone to make room.`,
 };
 
 /** The message for a Supabase/PostgREST error raised by one of the functions above (or accept_invitation's). */

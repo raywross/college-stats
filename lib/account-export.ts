@@ -133,9 +133,9 @@ export const ACCOUNT_EXPORTERS: AccountExporter[] = [
   },
   {
     key: "home",
-    description: "Your home address as we matched it, with its map location (specs/product/home-and-distance.md); null if none is saved.",
-    run: async ({ supabase, userId }) => {
-      const [home] = await rows("home_locations", supabase.from("home_locations").select("label, place, zip, lat, lng, updated_at").eq("user_id", userId));
+    description: "Your household's home address as we matched it, with its map location and who set it (specs/product/home-and-distance.md); null if none is saved.",
+    run: async ({ supabase }) => {
+      const [home] = await rows("household_homes", supabase.from("household_homes").select("household_id, label, place, zip, lat, lng, set_by_name, updated_at").limit(1));
       return home ?? null;
     },
   },

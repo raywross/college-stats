@@ -109,7 +109,7 @@ list_notes (item_id, author_id, body, private bool, created)
   `rolling-admission` (`early-decision`/`early-action`/`restrictive-early-action` already existed).
 
 - **Distance from home** (2026-10-05, [home-and-distance.md](home-and-distance.md)): each row adds the straight-line
-  miles and a drive time from the viewer's own saved home (the student's, or the guardian's when a guardian opens
+  miles and a drive time from the household's home (the same place for the student and for the guardians who see
   the list), citing the campus coordinates' source; a line under the board links to Explore within 100 miles, or
   to the account page to add a home when none is saved.
 

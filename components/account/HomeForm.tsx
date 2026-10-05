@@ -5,14 +5,15 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { clearHome, saveHomeAddress, type HomeRow } from "@/lib/home-store";
 import { DEFAULT_WITHIN, exploreNearHref } from "@/lib/home";
+import { shortDate } from "@/lib/household-rules";
 
 const inputCls =
   "h-11 w-full rounded-xl border border-input bg-background px-3.5 text-base outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30";
 
 /**
- * The Home section on /account (specs/product/home-and-distance.md): one address (or a ZIP code), looked up with
- * the Census geocoder by `saveHomeAddress` and saved as the match. Shows the saved match back, with a link to
- * Explore's nearest-first view, "Change", and "Remove".
+ * The Home section on /account (specs/product/home-and-distance.md): the household's one address (or a ZIP code),
+ * looked up with the Census geocoder by `saveHomeAddress` and saved as the match for everyone in the household.
+ * Shows the saved match back with who set it, a link to Explore's nearest-first view, "Change", and "Remove".
  */
 export function HomeForm({ home }: { home: HomeRow | null }) {
   const router = useRouter();
@@ -54,7 +55,10 @@ export function HomeForm({ home }: { home: HomeRow | null }) {
       {home && !editing && (
         <div className="rounded-2xl border bg-background p-3.5">
           <p className="text-sm font-semibold">{home.label}</p>
-          <p className="mt-0.5 text-xs text-muted-foreground">Distances on Explore and on lists count from here.</p>
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            Set by {home.set_by_name?.trim() || "someone in your household"} on {shortDate(home.updated_at)}. Distances on Explore and on lists count from here
+            for everyone in the household.
+          </p>
           <div className="mt-3 flex flex-wrap gap-2">
             {home.zip && (
               <Link href={exploreNearHref(home.zip)} className="inline-flex h-9 items-center rounded-full bg-primary px-4 text-sm font-semibold text-primary-foreground">
@@ -127,8 +131,9 @@ export function HomeForm({ home }: { home: HomeRow | null }) {
       )}
 
       <p className="text-xs text-muted-foreground">
-        We look the address up with the U.S. Census Bureau&apos;s public geocoder and keep the matched address and its map location (to about
-        100 m), not what you typed. Only you can see it: the other people in your household see distances from their own homes.
+        One home per household: anyone in it can set or change it, and everyone in it sees the same distances. We look the address up with the
+        U.S. Census Bureau&apos;s public geocoder and keep the matched address and its map location (to about 100 m), not what you typed. Nobody
+        outside your household can see it.
       </p>
     </div>
   );

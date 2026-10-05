@@ -10,12 +10,14 @@ import { CreateHouseholdForm } from "@/components/account/HouseholdForms";
 import { Term } from "@/components/ui/info-tip";
 import { AccountsSetupError, authConfigured, getAccount, requireUser } from "@/lib/auth";
 import { myHouseholds } from "@/lib/households";
+import { HOUSEHOLD_MAX_MEMBERS } from "@/lib/household-rules";
 
-export const metadata: Metadata = { title: "Your households", robots: { index: false } };
+export const metadata: Metadata = { title: "Your household", robots: { index: false } };
 
 /**
- * /account/household (specs/product/accounts.md "Roles and households"): every household the user is in, with its
- * members, pending invitations, edit access, and managed students; and a form to start another.
+ * /account/household (specs/product/accounts.md "Roles and households"): the user's household with its members,
+ * seats, pending invitations, edit access, and managed students; or a form to start one. An account is in one
+ * household at a time (an account from before that rule still sees each of its households here).
  */
 export default async function HouseholdPage() {
   await connection();
@@ -43,10 +45,11 @@ export default async function HouseholdPage() {
           Your account
         </Link>
         <h1 className="mt-3 font-display text-3xl font-extrabold tracking-tight sm:text-4xl">
-          Your <Term term="household">households</Term>
+          Your <Term term="household">household</Term>
         </h1>
         <p className="mt-1 text-muted-foreground">
-          Guardians see their students&apos; lists and plans; students never see a guardian&apos;s finances. Anyone can leave at any time.
+          Up to {HOUSEHOLD_MAX_MEMBERS} people in any mix of parents and students. Guardians see their students&apos; lists and plans; students never see
+          a guardian&apos;s finances. Anyone can leave at any time.
         </p>
       </header>
 
@@ -54,13 +57,11 @@ export default async function HouseholdPage() {
         <HouseholdCard key={h.id} h={h} />
       ))}
 
-      <AccountSection
-        id="new"
-        title={households.length ? "Start another household" : "Start a household"}
-        description={households.length ? "For a second home, or another family you help." : "Then invite the others with a link."}
-      >
-        <CreateHouseholdForm defaultRole={defaultRole} />
-      </AccountSection>
+      {households.length === 0 && (
+        <AccountSection id="new" title="Start a household" description="Then invite the others with a link. If someone invited you, open the link they sent instead.">
+          <CreateHouseholdForm defaultRole={defaultRole} />
+        </AccountSection>
+      )}
     </div>
   );
 }

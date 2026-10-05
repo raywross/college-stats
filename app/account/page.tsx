@@ -66,7 +66,7 @@ export default async function AccountPage() {
       <AccountSection
         id="home"
         title={<Term term="home-address">Home</Term>}
-        description="So Explore and your lists can say how far each college is from home."
+        description="Your household's home, so Explore and lists can say how far each college is from it."
       >
         <HomeForm home={home} />
       </AccountSection>
@@ -74,7 +74,7 @@ export default async function AccountPage() {
       <AccountSection
         id="household"
         title={<Term term="household">Household</Term>}
-        description="Link a parent or guardian and the students they help. Students never see a guardian's finances."
+        description="Parents or guardians and the students they help, up to six people in any mix. Students never see a guardian's finances."
       >
         <HouseholdSummary households={households} defaultRole={defaultRole} />
       </AccountSection>
@@ -105,8 +105,8 @@ export default async function AccountPage() {
           Download my data (JSON)
         </a>
         <p className="mt-2 text-xs text-muted-foreground">
-          Your profile, your home address, households and their members&apos; names, the students you own or manage, invitations you sent, and who
-          viewed your information.
+          Your profile, your household&apos;s home address and its members&apos; names, the students you own or manage, invitations you sent, and
+          who viewed your information.
         </p>
       </AccountSection>
 

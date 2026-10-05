@@ -4,6 +4,9 @@ import { ThemeSegmented } from "@/components/ThemeToggle";
 import { Term } from "@/components/ui/info-tip";
 import { SITE_TAGLINE } from "@/lib/brand";
 
+/** Short commit of this deployment (set by Vercel at build time); absent locally. */
+const BUILD = process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7);
+
 export function Footer() {
   return (
     <footer className="mt-16 border-t bg-surface-2 pb-[calc(var(--tabbar-h)+env(safe-area-inset-bottom,0px)+1rem)] sm:mt-24 md:pb-28">
@@ -42,6 +45,8 @@ export function Footer() {
           </p>
         </div>
       </div>
+      {/* Which build this is (Vercel's commit), so a report from a phone can be matched to the code. */}
+      {BUILD && <p className="mx-auto max-w-7xl px-4 text-[11px] text-muted-foreground/70 sm:px-6">Build {BUILD}</p>}
     </footer>
   );
 }

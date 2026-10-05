@@ -35,7 +35,8 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  viewportFit: "cover",
+  // No viewportFit "cover": with it, Chrome on iOS draws the page under its own top toolbar, which then covers the
+  // header when the toolbar re-expands on scroll up (specs/mobile.md). The browser keeps the page inside safe areas.
   themeColor: [
     { media: "(prefers-color-scheme: light)", color: "#f9f7f2" },
     { media: "(prefers-color-scheme: dark)", color: "#0f0d1f" },

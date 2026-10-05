@@ -38,6 +38,9 @@ overflowing content, so root causes must be fixed. `clip` (unlike `hidden`) keep
   On phones it is the top of the page and scrolls away with it, not sticky (decided 2026-10-05 after trying
   hide-on-scroll: a floating bar on a phone covered content and behaved unpredictably); the tab bar keeps
   navigation in reach and More has Sign in. From `md` it stays pinned.
+- **No `viewport-fit=cover`** (removed 2026-10-05): with it, Chrome on iOS draws the page under its own top toolbar,
+  and the re-expanding toolbar covered the header on scroll up. `env(safe-area-inset-*)` uses keep their `0px`
+  fallbacks. The footer shows the deployment's short commit ("Build abc1234") so phone reports match a build.
 - **Sticky sub-navs** (the profile topic pages' `CompactHeader` with its pill row, `CompareHeader`, glossary search
   bar) sit at `calc(env(safe-area-inset-top, 0px) + var(--header-offset))`: `--header-offset` is 0 on phones and
   `--header-h` from `md`. Desktop-only sticky elements may use `--header-h`. Never hard-code the header height.

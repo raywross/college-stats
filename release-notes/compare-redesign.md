@@ -21,7 +21,7 @@ now sits together on one Over time page.
 "Differences only" switch that hides rows where the colleges match. Links keep working: every page carries the same
 `?ids=` you share today, and the topic pills match the ones on college profiles, so the two read as one map.
 
-For three colleges the overview is about 2,500 pixels on a desktop instead of 10,000, and about 3,900 on a phone
+For three colleges the overview is about 2,500 pixels on a desktop instead of 10,000, and about 3,700 on a phone
 instead of 15,300. Nothing was removed, and every number keeps its ⓘ citation.
 
 ## Behind the scenes

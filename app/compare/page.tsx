@@ -47,10 +47,11 @@ export default async function ComparePage({ searchParams }: Props) {
   const table = compareTopicOf("table");
 
   return (
-    <div className="mx-auto max-w-7xl px-4 pt-5 pb-12 sm:px-6 sm:pt-10">
-      <header className="mb-3 sm:mb-6">
-        <p className="mb-2 hidden text-xs font-bold tracking-[0.18em] text-primary uppercase sm:block">Compare</p>
-        <h1 className="font-display text-3xl font-extrabold tracking-tight sm:text-5xl">
+    <div className="mx-auto max-w-7xl px-4 pt-4 pb-12 sm:px-6 sm:pt-6">
+      {/* A compact title: the school chips and pills are the page's header (the spec's mockup leads with them), and
+          the overview has a 2,500px desktop budget. */}
+      <header className="mb-3 sm:mb-4">
+        <h1 className="font-display text-2xl font-extrabold tracking-tight sm:text-3xl">
           {schools.length === 1 ? (
             <>Pick a <span className="highlight">rival</span></>
           ) : (

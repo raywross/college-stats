@@ -221,6 +221,9 @@ What differed from the design above, and why:
 - **Topic cards drop their eyebrow and footer on phones** (a domain-colored bar and an arrow sit beside the title
   instead) — the design didn't specify a phone treatment for the cards, and six full cards with both would have
   pushed the overview past its 4,000px phone budget.
+- **The overview's title is compact** ("Head-to-head" at heading size, no eyebrow, less top padding): the mockup
+  leads with the school chips and pills, and the title band was the difference between 2,526px and the 2,500px
+  desktop budget once the sources block was collapsed like the profile's.
 - **The Over time card is a text row, not a bar**: a direction icon, the direction word, and the signed ten-year
   change per college — the clearest way to show "grew" vs. "fell" side by side, where a bar would need its own
   scale per college and say less.
@@ -253,12 +256,12 @@ What differed from the design above, and why:
 
   | Page | Desktop 1440 | Tablet 810 | Phone 390 |
   |---|---|---|---|
-  | Overview | 2,474 | 3,085 | 3,941 |
-  | Getting in | 2,764 | 3,008 | 4,158 |
-  | Students & campus | 3,743 | 4,313 | 5,488 |
-  | Academics | 2,175 | 2,669 | 3,477 |
-  | Cost & aid | 2,939 | 3,399 | 3,760 |
-  | Outcomes | 2,219 | 2,690 | 3,251 |
+  | Overview | 2,466 | 3,036 | 3,721 |
+  | Getting in | 2,802 | 3,077 | 4,198 |
+  | Students & campus | 3,762 | 4,350 | 5,488 |
+  | Academics | 2,193 | 2,706 | 3,477 |
+  | Cost & aid | 2,976 | 3,454 | 3,780 |
+  | Outcomes | 2,256 | 2,727 | 3,311 |
   | Over time | 1,585 | 1,706 | 2,070 |
   | All the numbers | 7,328 | 9,416 | 10,433 |
 

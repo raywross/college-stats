@@ -1,6 +1,6 @@
 /**
- * Pure parts of `scripts/measure-profile.mts` (specs/profile-redesign.md#measurement): the pages and widths it loads,
- * the height budgets, the checks on each measurement, and the printed table. Tested in
+ * Pure parts of `scripts/measure-profile.mts` (specs/profile-redesign.md#measurement, specs/compare-redesign.md#budget):
+ * the pages and widths it loads, the height budgets, the checks on each measurement, and the printed table. Tested in
  * tests/profile-measure.test.mts.
  */
 import { existsSync, readFileSync } from "node:fs";
@@ -14,6 +14,16 @@ export const PROFILE_PAGES: readonly ProfilePage[] = ["overview", ...TOPIC_KEYS]
 
 /** Harvard, Ohio State, UCLA, a small test-blind college, an open-admission college (the redesign's pilot set). */
 export const DEFAULT_IDS = ["166027", "204796", "110662", "172866", "142832"] as const;
+
+/**
+ * The compare overview, its six topic pages (same keys as the profile's topics), and the table
+ * (specs/compare-redesign.md). String literals, not imported from `lib/compare-topics.ts`: that module is built by
+ * a parallel unit and may not exist on this branch, and this script only needs the route segment, not its types.
+ */
+export type ComparePage = "overview" | "admissions" | "students" | "academics" | "cost" | "outcomes" | "history" | "table";
+
+/** The compare overview, then each topic page, then the table, in pill order. */
+export const COMPARE_PAGES: readonly ComparePage[] = ["overview", "admissions", "students", "academics", "cost", "outcomes", "history", "table"];
 
 export type ViewportName = "desktop" | "tablet" | "phone";
 
@@ -37,6 +47,12 @@ export function pagePath(id: string, page: ProfilePage): string {
   return page === "overview" ? `/schools/${id}` : `/schools/${id}/${page}`;
 }
 
+/** `/compare?ids=a,b,c` or `/compare/{page}?ids=a,b,c` (ids comma-joined, in the given order). */
+export function comparePagePath(ids: readonly string[], page: ComparePage): string {
+  const query = `?ids=${ids.join(",")}`;
+  return page === "overview" ? `/compare${query}` : `/compare/${page}${query}`;
+}
+
 /**
  * Height budgets in CSS pixels (specs/profile-redesign.md): the overview is at most 3 desktop screens and 6 phone
  * screens; a topic page at most 6,000px on desktop. Null where the spec sets none.
@@ -46,9 +62,28 @@ export function heightBudget(page: ProfilePage, viewport: ViewportName): number 
   return viewport === "desktop" ? 6000 : null;
 }
 
+/**
+ * Compare height budgets in CSS pixels (specs/compare-redesign.md#budget), measured with three colleges: the
+ * overview is at most 2,500px desktop and 4,000px phone; each of the six topic pages is at most 4,000px desktop. The
+ * table page has no budget: it is the complete view (every row for every college), so its height is its row count.
+ * Null where the spec sets none (tablet throughout; phone on every page but the overview).
+ */
+export function compareHeightBudget(page: ComparePage, viewport: ViewportName): number | null {
+  if (page === "overview") return viewport === "desktop" ? 2500 : viewport === "phone" ? 4000 : null;
+  if (page === "table") return null;
+  return viewport === "desktop" ? 4000 : null;
+}
+
 export interface Measurement {
+  /** A college's unit id (a profile measurement), or the compare set's ids joined with "," (a compare one). */
   id: string;
-  page: ProfilePage;
+  /**
+   * The compared colleges' ids, in URL order; set (non-empty) for a compare measurement and absent for a profile
+   * one. `ProfilePage` and `ComparePage` share most of their literal strings, so this field, not `page`, is what
+   * tells `problems`/`formatTable` which budget and path-builder apply.
+   */
+  ids?: readonly string[];
+  page: ProfilePage | ComparePage;
   viewport: ViewportName;
   width: number;
   status: number;
@@ -59,8 +94,18 @@ export interface Measurement {
   /** window.innerWidth after hydration and load. */
   innerWidth: number;
   scrollWidth: number;
-  /** Profile links (pills, previous/next) on this page that didn't load. */
+  /** Profile or compare topic links (pills, previous/next) on this page that didn't load. */
   brokenLinks: string[];
+}
+
+/** The budget that applies to one measurement: `compareHeightBudget` for a compare row, `heightBudget` otherwise. */
+function budgetFor(m: Pick<Measurement, "page" | "viewport" | "ids">): number | null {
+  return m.ids && m.ids.length ? compareHeightBudget(m.page, m.viewport) : heightBudget(m.page as ProfilePage, m.viewport);
+}
+
+/** The printed table's row label: "compare a+b+c" for a compare measurement, the college id otherwise. */
+function rowLabel(m: Pick<Measurement, "id" | "ids">): string {
+  return m.ids && m.ids.length ? `compare ${m.ids.join("+")}` : m.id;
 }
 
 /**
@@ -71,7 +116,7 @@ export function problems(m: Measurement): string[] {
   if (m.status === 404) return [];
   const out: string[] = [];
   if (m.status >= 400 || m.status === 0) out.push(`HTTP ${m.status || "error"}`);
-  const budget = heightBudget(m.page, m.viewport);
+  const budget = budgetFor(m);
   if (budget !== null && m.height > budget) out.push(`${m.height - budget}px over budget`);
   if (m.innerWidthAtDcl !== m.width) out.push(`innerWidth ${m.innerWidthAtDcl} at load`);
   else if (m.innerWidth !== m.width) out.push(`innerWidth ${m.innerWidth} after hydration`);
@@ -84,11 +129,11 @@ export function problems(m: Measurement): string[] {
 export function formatTable(rows: readonly Measurement[]): string {
   const header = ["page", "width", "height", "budget", "iw@DCL", "iw", "scrollW", "result"];
   const body = rows.map((m) => {
-    const budget = heightBudget(m.page, m.viewport);
+    const budget = budgetFor(m);
     const issues = problems(m);
     const result = m.status === 404 ? "404 (no topic)" : issues.length ? `FAIL: ${issues.join("; ")}` : budget === null ? "ok" : "ok, within budget";
     return [
-      `${m.id} ${m.page}`,
+      `${rowLabel(m)} ${m.page}`,
       String(m.width),
       m.status === 404 ? "-" : m.height.toLocaleString("en-US"),
       budget === null ? "-" : budget.toLocaleString("en-US"),

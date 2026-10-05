@@ -105,7 +105,7 @@ export function admissionProfileCellField(label: string, s: School): FieldPath |
   return null;
 }
 
-/** The federal factor rows' labels in app/compare/page.tsx (FACTOR_ROWS), for the shared six. */
+/** The federal factor rows' labels in lib/compare-topics.ts (FACTOR_ROWS), for the shared six. */
 const FEDERAL_LABEL: Partial<Record<AdmissionFactor, string>> = {
   gpa: "High school GPA",
   class_rank: "Class rank",

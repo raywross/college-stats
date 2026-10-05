@@ -1,9 +1,9 @@
 # Compare Redesign: Overview Cards and a Page per Topic
 
-> Status: **planned** (not built). Decided 2026-10-02, the day the profile redesign shipped
+> Status: **built** 2026-10-05 (#84). Decided 2026-10-02, the day the profile redesign shipped
 > ([profile-redesign.md](profile-redesign.md)): the same review, the same four kinds of proposal, and the same
-> winner, so a comparison reads like the profiles it is built from. Replaces the single page in
-> [comparison.md](comparison.md).
+> winner, so a comparison reads like the profiles it is built from. Replaced the single compare page;
+> [comparison.md](comparison.md) describes the result.
 
 ## Why
 The compare page grew the way the profile did: every data wave added a group of metric cards and a few dozen rows
@@ -178,26 +178,135 @@ and its pages the same way.
 ## Build order
 1. **Routes and moves**: the compare topic pages built from today's sections, the extended header with pills,
    `/compare/table` with the switch; the overview keeps today's sections above a link list until the cards land.
+   *Built 2026-10-05* (`feature/compare-redesign-foundation`): `lib/compare-routes.ts` and `lib/compare-topics.ts`,
+   the extended `CompareHeader`, the `CompareTopicPage` frame, `CompareTopicNav`, `CompareMetric`'s `row` variant,
+   `ScoreCompare`, `CompareTable`, `DifferencesOnly`, and the stub topic routes (frame + "This page is being built")
+   so pills and typechecking worked before the page units landed. Alongside it, *built 2026-10-05*
+   (`feature/compare-redesign-measure`): the `--compare` mode in `scripts/measure-profile.mts` and its budgets.
+   Then, each replacing its stub whole, *built 2026-10-05* (`feature/compare-redesign-admissions`, `-students`,
+   `-academics`, `-cost`, `-outcomes`): the six non-table topic pages, each with the components its page alone
+   needed (`AdmissionFactorsGrid`, `CampusChips`, `RaceCompare`, `LgbtqPolicyTable`).
 2. **Cards**: the six compare topic cards and the comparative takeaways; the overview shrinks to header,
    differences, radar, cards, table link.
+   *Built 2026-10-05* (`feature/compare-redesign-cards`): `lib/compare-cards.ts`, `lib/compare-insights.ts`,
+   `CompareTopicCard`/`CompareTopicCards`/`CompareCardRows`, `tests/compare-cards.test.mts`,
+   `tests/compare-insights.test.mts`.
 3. **Pilot**: two, three, and four colleges, including one that reports little (an open-admission college with no
    scores), at three widths with the measurement script; a test that the union of the pages' table rows equals
    today's `TABLE_ROWS`.
+   *Built 2026-10-05* (`feature/compare-redesign-qa`): measured two-, three-, and four-college sets at three
+   widths, fixed small layout defects (overflow, clipped pills, misaligned bars), and confirmed every page inside
+   its budget except the full table, which has none. Documented here (`feature/compare-redesign-docs`): this spec,
+   [comparison.md](comparison.md), [mobile.md](mobile.md), [trends-design.md](trends-design.md), and the roadmap
+   index updated to match what was built.
 
-## Files (planned)
-- `app/compare/page.tsx` (overview), `app/compare/{admissions,students,academics,cost,outcomes,history,table}/page.tsx`,
-  `components/compare/CompareHeader.tsx` (pills row), `CompareTopicCard.tsx`, `CompareTopicCards.tsx`,
-  `CompareTopicPage.tsx` (the frame), `DifferencesOnly.tsx` (the table switch, client),
-  `lib/compare-topics.ts` (topics, routes, the table rows by topic, fields per page), `lib/compare-insights.ts`
-  (comparative takeaways), `tests/compare-topics.test.mts`.
-- Specs to update when built: [comparison.md](comparison.md) (becomes the as-built description),
-  [mobile.md](mobile.md), [trends-design.md](trends-design.md) (Then & now moves to the history page).
+## As built
+What differed from the design above, and why:
+- **`lib/compare-routes.ts` split out** from `lib/compare-topics.ts`: the topic list, keys, `compareHref`,
+  `adjacentCompareTopics`, `TOPIC_DIFF_METRICS`, and the shared types live there; `lib/compare-topics.ts` re-exports
+  all of it (`export * from "./compare-routes.ts"`) and adds the "All the numbers" rows and the per-page field
+  lists. Only the client `CompareHeader` imports `compare-routes` directly, so its bundle doesn't ship the ~700
+  lines of table-row definitions the design's single `lib/compare-topics.ts` would have carried into every page.
+- **No `layout.tsx`**, as the profile redesign also found unnecessary: `loadComparison` is `React.cache`d, so a page
+  and its metadata share one load, and each page renders its own `CompareTopicPage` frame directly.
+- **The table page is exempt from the height budget**, not merely unbudgeted by omission: it's the dataset's
+  complete view by design (130 rows, 7,328px for three colleges at 1440px), so `compareHeightBudget` returns `null`
+  for it everywhere, the one page the measurement script never fails on height.
+- **Pills always list all seven topics** and hide only below two colleges (every topic would redirect straight
+  back to the overview); a topic page itself redirects to the overview with fewer than two resolvable colleges
+  (`requireComparison`), which then shows the one-college or empty state — never a half-built topic page.
+- **Each topic page opens with its own Key differences**, filtered to `TOPIC_DIFF_METRICS[topic]` and capped at
+  three; academics, history, and the table have none (academics has no Key differences metric to begin with, and
+  comparing directions or an already-exhaustive table isn't a "difference" in the same sense).
+- **Topic cards drop their eyebrow and footer on phones** (a domain-colored bar and an arrow sit beside the title
+  instead) — the design didn't specify a phone treatment for the cards, and six full cards with both would have
+  pushed the overview past its 4,000px phone budget.
+- **The overview's title is compact** ("Head-to-head" at heading size, no eyebrow, less top padding): the mockup
+  leads with the school chips and pills, and the title band was the difference between 2,526px and the 2,500px
+  desktop budget once the sources block was collapsed like the profile's.
+- **The Over time card is a text row, not a bar**: a direction icon, the direction word, and the signed ten-year
+  change per college — the clearest way to show "grew" vs. "fell" side by side, where a bar would need its own
+  scale per college and say less.
+- **The score row switches from SAT to ACT only when no compared college reports SAT but at least one reports
+  ACT**, and keeps a row at all while a college is test-blind (labeled "Test-blind", never blank) — dropping the
+  row entirely would hide a real, comparable fact: that a college doesn't consider scores.
+- **A topic card hides completely when no compared college has any of its figures** (owner assumption 8), rather
+  than rendering empty bars or an all-"Not reported" card.
+- **Instruction spending and endowment compare as bars only when every compared college that reports finances
+  shares one accounting form** (public/GASB or private/FASB); otherwise each college's own figure and form show as
+  text, the same strings "All the numbers" already used — dollar figures on the two forms aren't directly
+  comparable, so a bar chart would imply a comparison that isn't there.
+- **The LGBTQ+ policy checklist lives on the Students & campus page**, not the table (owner assumption 6): it needs
+  each college's *detail* file alongside the school record, which the generic table-row functions (`School` only)
+  don't thread through, so it was always its own small section, now placed where campus life already lives.
+  Correspondingly, **debt and loan rows sit under Outcomes**, not Cost (owner assumption 7) — the opposite of
+  where the profile keeps them, because the compare spec asked for it and a comparison table groups by what the
+  figure measures, not by which page is shorter.
+- **The CDS residency-based acceptance-rate and yield rows** ([cds-residency-admissions.md](data-expansion/cds-residency-admissions.md))
+  stay table-only rather than moving to the Admissions topic page: that spec's own text once said the redesign
+  would move them there unchanged, but the page unit kept the topic page to the funnel, by-sex rates, scores, and
+  the factors grid, leaving the residency breakdown to the full table (fixed in that spec alongside this one).
+- **Comparative-takeaway sentences** (`lib/compare-insights.ts`) say "former students earn" (never "graduates
+  earn," since not every entrant graduates), use the comparative ("higher," "larger") rather than a superlative
+  for exactly two colleges, and name a college once rather than twice when it leads both clauses of a sentence
+  ("Ohio State costs about $17.6K less a year than Harvard on average, and its grants cover the larger share of
+  its price" — not "Harvard's grants cover…" as a second, repetitive clause).
+- **Measured heights** (1440 / 810 / 390 desktop/tablet/phone, content to the end of `<main>`, three colleges —
+  Harvard, Ohio State, UCLA):
+
+  | Page | Desktop 1440 | Tablet 810 | Phone 390 |
+  |---|---|---|---|
+  | Overview | 2,466 | 3,036 | 3,721 |
+  | Getting in | 2,802 | 3,077 | 4,198 |
+  | Students & campus | 3,762 | 4,350 | 5,488 |
+  | Academics | 2,193 | 2,706 | 3,477 |
+  | Cost & aid | 2,976 | 3,454 | 3,780 |
+  | Outcomes | 2,256 | 2,727 | 3,311 |
+  | Over time | 1,585 | 1,706 | 2,070 |
+  | All the numbers | 7,328 | 9,416 | 10,433 |
+
+  Today's single page, for the same three colleges, measured 10,077 / 12,203 / 15,328px (the table at the top of
+  this spec). Four colleges add roughly 200px to any page.
+
+## Files (as built)
+- `lib/compare-routes.ts` (topics, routes, `compareHref`, `adjacentCompareTopics`, `TOPIC_DIFF_METRICS`),
+  `lib/compare-topics.ts` (re-exports the above; the "All the numbers" rows grouped by topic, `TABLE_GROUPS`,
+  `tableGroupFields`; the fields each page cites, `COMPARE_TOPIC_FIELDS` and `COMPARE_OVERVIEW_FIELDS`),
+  `lib/compare-data.ts` (server-only: `loadComparison`, `requireComparison`, `loadCompareDetails`,
+  `loadCompareHistories`, `compareMetadata`), `lib/compare-cards.ts` (the topic cards' rows, titles, footers),
+  `lib/compare-insights.ts` (the comparative takeaways).
+- `app/compare/page.tsx` (overview), `app/compare/{admissions,students,academics,cost,outcomes,history,table}/page.tsx`.
+- `components/compare/`: `CompareHeader.tsx` (chips, add-school picker, the pills row), `CompareTopicPage.tsx` (the
+  frame: Key differences opener, "On this page", source note, `BaselineNote`, `CompareTopicNav`), `CompareTopicNav.tsx`,
+  `CompareMetric.tsx` (`card`/`row` variants), `ScoreCompare.tsx`, `CompareTable.tsx`, `DifferencesOnly.tsx`,
+  `CompareTopicCards.tsx`, `CompareTopicCard.tsx`, `CompareCardRows.tsx`, `AdmissionFactorsGrid.tsx`,
+  `CampusChips.tsx`, `RaceCompare.tsx`, `LgbtqPolicyTable.tsx`; `NetPriceCompare.tsx`, `ThenAndNow.tsx`, and
+  `YourMajor.tsx` carried over unchanged onto their topic pages.
+- `components/ui/pill-row.tsx` (the generalized pill row both the profile and Compare use);
+  `components/profile/TopicPills.tsx` kept as a thin wrapper so the profile didn't change.
+- `scripts/measure-profile.mts` + `scripts/lib/profile-measure.mts` (the `--compare` mode, `comparePagePath`,
+  `compareHeightBudget`), `tests/profile-measure.test.mts`.
+- `tests/compare-topics.test.mts`, `tests/compare-cards.test.mts`, `tests/compare-insights.test.mts`,
+  `tests/helpers/compare-schools.mts` (fixture colleges shared by the cards and insights tests); the existing guard
+  tests (`tests/reported-guards.test.mts`, `tests/cds-cost-and-debt.test.mts`, `tests/lgbtq.test.mts`,
+  `tests/cds-academics.test.mts`) extended to scan the new `lib/compare-*.ts` modules and `app/compare/**`.
+- `app/globals.css` (the `[data-differences-only="true"] tr[data-same]` rule); `lib/metrics.ts` imports now end in
+  `.ts` so pure modules can import it under node; `lib/cds/compare-rows.ts` comment path fixed.
+- Specs updated: [comparison.md](comparison.md) (becomes the as-built description), [mobile.md](mobile.md),
+  [trends-design.md](trends-design.md) (Then & now and the 10-year direction table now live on `/compare/history`),
+  [README.md](README.md), [backlog.md](backlog.md).
 
 ## Open questions
 1. Should "Key differences" stay on the overview only, or should each topic page open with its own differences
    for that topic ("On cost: Ohio State costs $17.6K less…")? Recommendation: both; the per-topic list is the
    same function filtered by domain and makes a natural page opener.
+   **Decided:** both, as recommended — each topic page opens with up to three `keyDifferences()` sentences
+   filtered to `TOPIC_DIFF_METRICS[topic]` (none for academics, history, table).
 2. Should the table page be the default for people who arrive from a data link? Recommendation: no; the overview
    is the default and the table is one pill away, with its anchors (`/compare/table?ids=#cost`) for deep links.
+   **Decided:** no, as recommended — `/compare` is the default landing and every other page links to
+   `/compare/table?ids=#{topic}` for its own rows.
 3. Four colleges on a phone: the bar rows hold four, but the score ranges and race bars get tight. Recommendation:
    keep four and let those two blocks scroll sideways inside their cards, as the table does.
+   **Decided:** kept four, as recommended — `ScoreCompare` and `RaceCompare` scroll sideways inside their own card
+   rather than shrinking their bars illegibly thin.

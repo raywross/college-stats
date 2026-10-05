@@ -36,6 +36,13 @@ const BANNED_FILES = [
   join(ROOT, "lib/compare.ts"),
   join(ROOT, "lib/insights.ts"),
   join(ROOT, "lib/indicators.ts"),
+  // Compare's rows and loaders, which lived in app/compare until the redesign (specs/compare-redesign.md).
+  join(ROOT, "lib/compare-topics.ts"),
+  join(ROOT, "lib/compare-routes.ts"),
+  join(ROOT, "lib/compare-data.ts"),
+  // The compare overview's topic cards and their sentences.
+  join(ROOT, "lib/compare-cards.ts"),
+  join(ROOT, "lib/compare-insights.ts"),
   join(ROOT, "app/page.tsx"),
 ];
 const BANNED_DIRS = [join(ROOT, "app/explore"), join(ROOT, "app/compare"), join(ROOT, "components/charts")];

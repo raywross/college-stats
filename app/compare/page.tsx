@@ -1,54 +1,22 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRight, ExternalLink, Swords } from "lucide-react";
-import { getData, getDetail, getHistory, getHistoryFiles, toIndexEntry } from "@/lib/data";
-import { familiesOffered, fieldStat, type FieldStat } from "@/lib/field-compare";
-import { majorFamilyName } from "@/lib/majors";
-import { cipFamilyTitle, cipTitle } from "@/lib/cip";
-import { YourMajor } from "@/components/compare/YourMajor";
-import { YouScoreRow } from "@/components/me/YouScoreRow";
-import { RACE_SERIES, SERIES, WINDOW_YEARS, defaultWindow, historyYearLabel } from "@/lib/history";
-import { INDICATORS, INDICATOR_KEYS, indicatorsOf } from "@/lib/indicators";
-import { TrendIndicatorCell } from "@/components/trends/TrendIndicators";
-import type { TrendKey } from "@/lib/types";
-import { ThenAndNow, type ThenAndNowMetric } from "@/components/compare/ThenAndNow";
-import { HistorySourceNote } from "@/components/sources/HistorySourceNote";
-import type { FieldPath } from "@/lib/fields";
-import type { TermKey } from "@/lib/glossary";
-import { DEMOGRAPHIC_CATEGORIES, DOMAINS, METRICS, TEST_POLICY_LABELS, admitRatesBySex, satTotal, type Domain } from "@/lib/metrics";
-import { TEST_ROWS } from "@/lib/compare-tests";
+import { ArrowRight, ChevronDown, Swords, Table2 } from "lucide-react";
+import { getData, toIndexEntry } from "@/lib/data";
 import { RADAR_AXES, keyDifferences, radarProfile, similarSchools } from "@/lib/insights";
 import { SLOT_COLORS, crestBrand, shortName } from "@/lib/brand";
-import { DESIGNATION_LABELS, RESEARCH_LABELS } from "@/lib/campus-profile";
-import { CALENDAR_LABELS, DIVISION_LABELS, ROTC_LABELS, divisionFilterOf } from "@/lib/campus-services";
-import { FORM_SHORT } from "@/lib/finances";
-import { compact, money, moneyCompact, num, pct, pctSmart } from "@/lib/format";
-import { MIN_GROUP_COHORT, gradRateCell } from "@/lib/graduation-groups";
-import { compareAidRows } from "@/lib/cds/financial-aid-compare";
+import { COMPARE_OVERVIEW_FIELDS, compareHref, compareTopicOf } from "@/lib/compare-topics";
+import { compareMetadata, loadComparison } from "@/lib/compare-data";
 import type { School } from "@/lib/types";
 import { CompareHeader } from "@/components/compare/CompareHeader";
-import { CompareMetric } from "@/components/compare/CompareMetric";
-import { NetPriceCompare } from "@/components/compare/NetPriceCompare";
+import { CompareTopicCards } from "@/components/compare/CompareTopicCards";
+import { KeyDifferenceList } from "@/components/compare/CompareTopicPage";
 import { MultiSourceNote } from "@/components/sources/MultiSourceNote";
 import { BaselineNote } from "@/components/ui/BaselineNote";
 import { Crest } from "@/components/school/Crest";
 import { RadarChart } from "@/components/charts/RadarChart";
-import { RangeBar } from "@/components/charts/RangeBar";
-import { StackedBar } from "@/components/charts/StackedBar";
-import { InfoTip, SourceTip, Term } from "@/components/ui/info-tip";
-import { linkHost } from "@/lib/links";
-import { compareAdmitRates, compareYields } from "@/lib/cds/residency-display";
-import { ADMISSION_PROFILE_ROWS, admissionProfileCellField, c7FactorCell } from "@/lib/cds/compare-rows";
-import { compareClassesUnder20 } from "@/lib/cds/academics-display";
-import { compareTransferAdmitRate } from "@/lib/cds/transfer-display";
-import { compareFratPct, compareGreekCouncils, compareSorPct } from "@/lib/cds/greek-display";
-import { compareDeadlines, compareGapYear } from "@/lib/cds/application-logistics-display";
-import { comparedChecklist } from "@/lib/lgbtq-policy";
+import { InfoTip } from "@/components/ui/info-tip";
 
-/** Compare rows from CDS C14–C18, hidden when no compared college has the data (cds-application-logistics.md). */
-const LOGISTICS_ROW_LABELS: ReadonlySet<string> = new Set(["Deadlines & deposit", "Gap year allowed"]);
-
-export const metadata: Metadata = { title: "Compare" };
+type Props = { searchParams: Promise<Record<string, string | string[] | undefined>> };
 
 const MATCHUPS = [
   ["166027", "243744"],
@@ -59,331 +27,31 @@ const MATCHUPS = [
   ["145637", "204796", "236948"],
 ];
 
-function Group({ domain, title, children }: { domain: Domain; title: string; children: React.ReactNode }) {
-  return (
-    <section className="space-y-4">
-      <h2 className="flex items-center gap-2 font-display text-xl font-extrabold tracking-tight sm:text-2xl">
-        <span className="h-6 w-1.5 rounded-full" style={{ backgroundColor: DOMAINS[domain].color }} />
-        {title}
-      </h2>
-      {children}
-    </section>
-  );
+export async function generateMetadata({ searchParams }: Props): Promise<Metadata> {
+  const params = await searchParams;
+  return compareMetadata(await loadComparison(typeof params.ids === "string" ? params.ids : ""), "overview");
 }
 
-/** One "All the numbers" row per admission factor (specs/data-expansion/admission-factors.md). */
-const FACTOR_USE_LABELS = { required: "Required", considered: "Considered", not_considered: "Not considered" } as const;
-const FACTOR_ROWS = (
-  [
-    ["gpa", "High school GPA"],
-    ["hs_record", "High school record"],
-    ["class_rank", "Class rank"],
-    ["college_prep", "College-prep program"],
-    ["recommendations", "Recommendations"],
-    ["essay", "Essay"],
-    ["legacy", "Legacy status"],
-    ["work_experience", "Work experience"],
-    ["competencies", "Demonstration of competencies"],
-    ["english_test", "English proficiency test"],
-    ["other_test", "Other tests"],
-  ] as const
-).map(
-  ([k, label]) =>
-    [
-      `Admission: ${label}`,
-      k === "legacy" ? "legacy-status" : "admission-factor",
-      "admissions.factors",
-      (s: School) => {
-        // The college's own C7 level where its CDS has one (cds-admissions.md), else the federal use.
-        const c7 = c7FactorCell(s, k);
-        if (c7) return c7;
-        const use = s.admissions.factors?.[k];
-        return use ? FACTOR_USE_LABELS[use] : null;
-      },
-    ] as const
-) satisfies readonly (readonly [string, TermKey, FieldPath, (s: School) => string | null])[];
-
-/** Finished within 4 and 5 years by aid group (`reported.outcomes.graduation`): "Not published" where the college's CDS doesn't say. */
-const ON_TIME_ROWS = (
-  [4, 5].flatMap((years) =>
-    (
-      [
-        ["Pell recipients", "pell"],
-        ["neither Pell nor subsidized loan", "no_pell_no_loan"],
-        ["all first-time full-time", "total"],
-      ] as const
-    ).map(
-      ([who, group]) =>
-        [
-          `Finished within ${years} years: ${who}`,
-          "on-time-graduation",
-          "reported.outcomes.graduation",
-          (s: School) => {
-            const g = s.reported?.outcomes?.graduation;
-            if (!g) return "Not published";
-            const v = (years === 4 ? g.within_4 : g.within_5)[group];
-            return v === null ? `Not shown: under ${MIN_GROUP_COHORT} students` : pct(v);
-          },
-        ] as const
-    )
-  )
-) satisfies readonly (readonly [string, TermKey, FieldPath, (s: School) => string | null])[];
-
 /**
- * "All the numbers" rows: label, glossary term, registered field (for its
- * citation and per-school source chips), and formatter.
+ * The compare overview (specs/compare-redesign.md#overview-page): the band with the topic pills, Key differences and
+ * the radar, a way into each topic page, and the table. Every other block lives on a topic page.
  */
-const TABLE_ROWS = (
-  [
-    // Sources differ by school (federal survey vs. a college's own CDS), so show which class each row describes.
-    ["Admissions data", "cds", "admissions.year", (s: School) => (s.admissions.year ? `Fall ${s.admissions.year}` : null)],
-    ["Acceptance rate", "acceptance-rate", "admissions.acceptance_rate", (s: School) => s.admissions.acceptance_rate === null ? null : pctSmart(s.admissions.acceptance_rate)],
-    ["Acceptance rate, men / women", "admit-rate-by-sex", "admissions.by_sex", (s: School) => {
-      const r = admitRatesBySex(s);
-      return r.men === null || r.women === null ? null : `${pctSmart(r.men)} / ${pctSmart(r.women)}`;
-    }],
-    // CDS C1 by residency (specs/data-expansion/cds-residency-admissions.md): "Not published" without a grid.
-    ["Acceptance rate, in-state / other states / international", "admit-rate-by-residency", "derived.admit_rate_in_state", compareAdmitRates],
-    ["Yield, in-state / other states / international", "yield-by-residency", "derived.yield_in_state", compareYields],
-    ["Applicants", "applicants", "admissions.applicants", (s: School) => opt(s.admissions.applicants, num)],
-    ["Admitted", "admitted", "admissions.admitted", (s: School) => opt(s.admissions.admitted, num)],
-    ["Enrolled", "enrolled", "admissions.enrolled", (s: School) => opt(s.admissions.enrolled, num)],
-    ["Yield", "yield", "derived.yield", (s: School) => opt(METRICS.yield.get(s), (v) => pct(v))],
-    ["SAT middle 50%", "middle-50", "derived.sat_total", (s: School) => satTotal(s)?.join("–") ?? null],
-    ["ACT middle 50%", "act", "admissions.act_composite_25_75", (s: School) => s.admissions.act_composite_25_75?.join("–") ?? null],
-    // CDS C9 (cds-test-scores-and-policy.md): counts and top bands, "–" where not reported; never ranked or in Key differences.
-    ...TEST_ROWS,
-    ...FACTOR_ROWS,
-    ...ADMISSION_PROFILE_ROWS,
-    ["Test policy", "test-policy", "admissions.test_policy", (s: School) => (s.admissions.test_policy ? TEST_POLICY_LABELS[s.admissions.test_policy] : null)],
-    ["Application fee", "application-fee", "admissions.application_fee", (s: School) =>
-      s.admissions.application_fee == null ? null : s.admissions.application_fee === 0 ? "None" : money(s.admissions.application_fee)],
-    // CDS C14–C18 (specs/data-expansion/cds-application-logistics.md): shown only when a compared college has the data.
-    ["Deadlines & deposit", "reply-by-date", "derived.application_deadlines", compareDeadlines],
-    ["Gap year allowed", "deferred-admission", "derived.gap_year_allowed", compareGapYear],
-    ["Setting", "locale", "campus.setting", (s: School) => s.campus?.setting?.label ?? null],
-    ["Carnegie class", "carnegie-classification", "campus.carnegie", (s: School) => s.campus?.carnegie?.ic ?? null],
-    ["Research activity", "r1", "campus.carnegie", (s: School) =>
-      !s.campus?.carnegie ? null : s.campus.carnegie.research ? RESEARCH_LABELS[s.campus.carnegie.research] : "Not a research tier"],
-    ["Student access & earnings", "student-access-and-earnings", "campus.carnegie", (s: School) => s.campus?.carnegie?.access_earnings ?? null],
-    ["HBCU, tribal, land-grant", "hbcu", "campus.designations", (s: School) =>
-      !s.campus?.designations ? null : s.campus.designations.map((d) => DESIGNATION_LABELS[d]).join(", ") || "None"],
-    ["Minority-serving, single-sex", "hsi", "campus.msi", (s: School) =>
-      !s.campus?.msi ? null : s.campus.msi.map((d) => DESIGNATION_LABELS[d]).join(", ") || "None"],
-    // IPEDS affiliation for every college ("None" = not applicable); the exact NCES label, not the Explore family.
-    ["Religious affiliation", "religious-affiliation", "religion.affiliation", (s: School) => (!s.religion ? null : s.religion.affiliation?.label ?? "None")],
-    ["Athletics", "ncaa-division", "campus.athletics", (s: School) => {
-      const d = divisionFilterOf(s);
-      return !s.campus?.athletics ? null : d ? DIVISION_LABELS[d] : "No NCAA or NAIA division";
-    }],
-    ["Conference", "athletic-conference", "campus.athletics", (s: School) => {
-      const a = s.campus?.athletics;
-      if (!a) return null;
-      if (!a.conference) return "None";
-      return a.football_conference ? `${a.conference.name}; football: ${a.football_conference.name}` : a.conference.name;
-    }],
-    ["ROTC", "rotc", "campus.programs", (s: School) =>
-      !s.campus?.programs ? null : s.campus.programs.rotc.map((b) => ROTC_LABELS[b]).join(", ") || "Not listed"],
-    ["Study abroad", "study-abroad", "campus.programs", (s: School) => (!s.campus?.programs ? null : s.campus.programs.study_abroad ? "Offered" : "Not listed")],
-    ["Undergraduate research program", "undergrad-research", "campus.programs", (s: School) =>
-      s.campus?.programs?.undergrad_research == null ? null : s.campus.programs.undergrad_research ? "Yes" : "Not listed"],
-    ["Calendar", "academic-calendar", "campus.calendar", (s: School) => (s.campus?.calendar ? CALENDAR_LABELS[s.campus.calendar] : null)],
-    ["Credit for AP exams", "ap-credit", "admissions.accepts_ap_credit", (s: School) =>
-      s.admissions.accepts_ap_credit == null ? null : s.admissions.accepts_ap_credit ? "Yes" : "Not listed"],
-    ["Undergrads", "undergrad-enrollment", "demographics.undergrad_enrollment", (s: School) => num(s.demographics.undergrad_enrollment)],
-    ["Students per faculty member", "student-faculty-ratio", "academics.student_faculty_ratio", (s: School) =>
-      s.academics?.student_faculty_ratio == null ? null : `${s.academics.student_faculty_ratio} to 1`],
-    // CDS I-3 (specs/data-expansion/cds-academics.md): class sections, not students; "–" without a record.
-    ["Classes under 20 students", "class-section", "derived.class_share_under_20", compareClassesUnder20],
-    ["Full-time faculty share", "full-time-faculty", "academics.faculty.full_time_share", (s: School) =>
-      s.academics?.faculty?.full_time_share == null ? null : pct(s.academics.faculty.full_time_share)],
-    ["Average faculty salary", "nine-month-equated-salary", "academics.faculty", (s: School) =>
-      s.academics?.faculty?.avg_salary_9mo == null ? null : money(s.academics.faculty.avg_salary_9mo)],
-    // Majors (specs/data-expansion/majors.md): first-major bachelor's, and the 3 largest programs by share of them.
-    ["Bachelor's degrees awarded", "first-major", "academics.bachelors_awarded", (s: School) => opt(s.academics?.bachelors_awarded ?? null, num)],
-    ["Most popular majors", "cip-code", "academics.majors_top", (s: School) =>
-      s.academics?.majors_top?.length ? s.academics.majors_top.slice(0, 3).map((m) => `${m.title} ${pct(m.share)}`).join(" · ") : null],
-    // Compared only within the same accounting form; the form is shown since figures otherwise look directly comparable.
-    ["Instruction spending per student", "instruction-expenses", "finances", (s: School) =>
-      s.finances?.instruction_per_student == null ? null : `${money(s.finances.instruction_per_student)} (${FORM_SHORT[s.finances.form]})`],
-    ["Endowment per student", "endowment", "finances", (s: School) =>
-      s.finances?.endowment_per_student == null ? null : `${money(s.finances.endowment_per_student)} (${FORM_SHORT[s.finances.form]})`],
-    ["Tuition share of core revenue", "gasb-fasb", "finances", (s: School) =>
-      s.finances?.tuition_share_of_revenue == null ? null : pct(s.finances.tuition_share_of_revenue)],
-    ["Beds in college housing", "housing-capacity", "campus.housing", (s: School) => {
-      const h = s.campus?.housing;
-      return !h ? null : !h.offered ? "No housing" : h.capacity == null ? null : num(h.capacity);
-    }],
-    ["First-years must live on campus", "live-on-requirement", "campus.housing", (s: School) => {
-      const r = s.campus?.housing?.first_years_required;
-      return r == null ? null : r ? "Yes" : "No";
-    }],
-    // CDS F1/F4 (specs/greek-life.md phase 1): undergrad percentages, each gender on its own; blank, never 0, without a CDS answer.
-    ["Men in a fraternity", "greek-life", "reported.greek.frat_pct_undergrad", compareFratPct],
-    ["Women in a sorority", "greek-life", "reported.greek.sor_pct_undergrad", compareSorPct],
-    ["Fraternity/sorority housing", "greek-life", "reported.greek.housing", (s: School) => {
-      const h = s.reported?.greek?.housing;
-      return h == null ? null : "Offered";
-    }],
-    // National chapter directories, phase 4 (specs/campus-directories.md): councils with a listed chapter, credited.
-    ["Greek councils present", "national-directory", "directories", compareGreekCouncils],
-    ["Pell Grant", "pell-grant", "demographics.pell_grant_percent", (s: School) => opt(s.demographics.pell_grant_percent, (v) => pct(v))],
-    ["First-gen", "first-gen", "demographics.first_gen_percent", (s: School) => opt(s.demographics.first_gen_percent, (v) => pct(v))],
-    ["Men / women", "gender-balance", "demographics.men_share", (s: School) =>
-      s.demographics.men_share == null || s.demographics.women_share == null ? null : `${pct(s.demographics.men_share)} / ${pct(s.demographics.women_share)}`],
-    ["Part-time students", "part-time-student", "demographics.part_time_share", (s: School) => opt(s.demographics.part_time_share ?? null, (v) => pct(v))],
-    ["Students 25 and older", "adult-students", "demographics.age_25_plus_share", (s: School) => opt(s.demographics.age_25_plus_share ?? null, (v) => pct(v))],
-    ["First-years from in state", "in-state-student", "demographics.residence", (s: School) => opt(s.demographics.residence?.in_state ?? null, (v) => pct(v))],
-    ["First-years from other states", "in-state-student", "demographics.residence", (s: School) => opt(s.demographics.residence?.out_of_state ?? null, (v) => pct(v))],
-    ["First-years from abroad", "in-state-student", "demographics.residence", (s: School) => opt(s.demographics.residence?.international ?? null, (v) => pct(v))],
-    ["New transfer students this fall", "transfer-in", "demographics.transfer_in", (s: School) => opt(s.demographics.transfer_in?.count ?? null, (v) => v.toLocaleString("en-US"))],
-    ["Transfers, share of new undergraduates", "transfer-in", "demographics.transfer_in", (s: School) => opt(s.demographics.transfer_in?.share_of_new ?? null, (v) => pct(v))],
-    // CDS D2 (specs/data-expansion/cds-transfer.md): blank, never 0, without a transfer funnel.
-    ["Transfer acceptance rate", "transfer-admission", "reported.transfer.admit_rate", compareTransferAdmitRate],
-    ["Diversity index", "diversity-index", "derived.diversity_index", (s: School) => opt(METRICS.diversity.get(s), (v) => v.toFixed(2))],
-    ["Average cost, all students (est.)", "average-cost", "cost.avg_paid_all", (s: School) => opt(s.cost?.avg_paid_all ?? null, money)],
-    ["Aid generosity (grants ÷ full price)", "aid-generosity", "derived.aid_generosity", (s: School) => opt(METRICS.aidGenerosity.get(s), (v) => pct(v))],
-    ["Net price, students with grants", "net-price", "cost.aided_net_price", (s: School) => opt(s.cost?.aided_net_price ?? null, money)],
-    ["Sticker price, in-state", "in-state-tuition", "cost.sticker", (s: School) => opt(s.cost?.sticker?.in_state ?? null, money)],
-    ["Sticker price, out-of-state", "in-state-tuition", "cost.sticker", (s: School) => opt(s.cost?.sticker?.out_of_state ?? null, money)],
-    ["Tuition guarantee", "tuition-guarantee", "cost.tuition_plans", (s: School) =>
-      s.cost?.tuition_plans == null ? null : s.cost.tuition_plans.includes("guarantee") ? "Yes" : "No"],
-    ["Promise program", "promise-program", "cost.promise_program", (s: School) =>
-      s.cost?.promise_program == null ? null : s.cost.promise_program ? "Yes" : "No"],
-    ["Tuition & fees, in-state", "in-state-tuition", "cost.tuition_fees", (s: School) => opt(s.cost?.tuition_fees?.in_state ?? null, money)],
-    ["Tuition & fees, out-of-state", "in-state-tuition", "cost.tuition_fees", (s: School) => opt(s.cost?.tuition_fees?.out_of_state ?? null, money)],
-    ["First-years paying out-of-state rates", "in-state-tuition", "cost.residency", (s: School) => (s.type === "public" ? opt(s.cost?.residency?.out_of_state ?? null, (v) => pct(v)) : null)],
-    ["Median earnings (10 yrs)", "median-earnings", "outcomes.median_earnings_10yr", (s: School) => opt(s.outcomes?.median_earnings_10yr ?? null, money)],
-    ["Graduation rate", "graduation-rate", "outcomes.graduation_rate", (s: School) => opt(s.outcomes?.graduation_rate ?? null, (v) => pct(v))],
-    // Graduation by group (specs/data-expansion/graduation-by-group.md): blank under 30 students, with the class size.
-    ["Graduated in 6 years, Pell Grant recipients", "pell-graduation-gap", "outcomes.grad_rate_pell", (s: School) =>
-      gradRateCell(s.outcomes?.grad_rate_pell, s.outcomes?.grad_cohorts?.pell)],
-    ["Graduated in 6 years, neither Pell nor subsidized loan", "pell-graduation-gap", "outcomes.grad_rate_no_pell_no_loan", (s: School) =>
-      gradRateCell(s.outcomes?.grad_rate_no_pell_no_loan, s.outcomes?.grad_cohorts?.no_pell_no_loan)],
-    ["Pell graduation gap", "pell-graduation-gap", "derived.pell_grad_gap", (s: School) => opt(METRICS.pellGap.get(s), METRICS.pellGap.format)],
-    // From the college's CDS, same class as the 6-year rates above (specs/data-expansion/cds-student-body-and-outcomes.md); no "Highest" flags.
-    ...ON_TIME_ROWS,
-    ["Graduated in 6 years, White students", "graduation-rate", "outcomes.grad_rate_by_race", (s: School) =>
-      gradRateCell(s.outcomes?.grad_rate_by_race?.white, s.outcomes?.grad_cohorts_by_race?.white)],
-    ["Graduated in 6 years, Asian students", "graduation-rate", "outcomes.grad_rate_by_race", (s: School) =>
-      gradRateCell(s.outcomes?.grad_rate_by_race?.asian, s.outcomes?.grad_cohorts_by_race?.asian)],
-    ["Graduated in 6 years, Hispanic/Latino students", "graduation-rate", "outcomes.grad_rate_by_race", (s: School) =>
-      gradRateCell(s.outcomes?.grad_rate_by_race?.hispanic, s.outcomes?.grad_cohorts_by_race?.hispanic)],
-    ["Graduated in 6 years, Black students", "graduation-rate", "outcomes.grad_rate_by_race", (s: School) =>
-      gradRateCell(s.outcomes?.grad_rate_by_race?.black, s.outcomes?.grad_cohorts_by_race?.black)],
-    ["Graduated in 6 years, students of two or more races", "graduation-rate", "outcomes.grad_rate_by_race", (s: School) =>
-      gradRateCell(s.outcomes?.grad_rate_by_race?.two_or_more, s.outcomes?.grad_cohorts_by_race?.two_or_more)],
-    ["Graduated in 6 years, international students", "graduation-rate", "outcomes.grad_rate_by_race", (s: School) =>
-      gradRateCell(s.outcomes?.grad_rate_by_race?.international, s.outcomes?.grad_cohorts_by_race?.international)],
-    ["Retention rate", "retention-rate", "outcomes.retention_rate", (s: School) => opt(s.outcomes?.retention_rate ?? null, (v) => pct(v))],
-    ["Credential within 4 years, all students", "time-to-degree", "outcomes.eight_year", (s: School) => opt(METRICS.completion4.get(s), (v) => pct(v))],
-    ["Credential within 8 years, all students", "outcome-measures", "outcomes.eight_year", (s: School) => opt(METRICS.completion8.get(s), (v) => pct(v))],
-    ["Enrolled at another college, 8 years on", "transfer-out", "outcomes.eight_year", (s: School) => opt(METRICS.transferOut.get(s), (v) => pct(v))],
-    ["Median debt", "median-debt", "outcomes.median_debt", (s: School) => opt(s.outcomes?.median_debt ?? null, money)],
-    ["Undergrads with a federal loan", "federal-loan-rate", "outcomes.federal_loan_rate", (s: School) => opt(s.outcomes?.federal_loan_rate ?? null, (v) => pct(v))],
-    ["Median debt, Pell Grant recipients", "median-debt", "outcomes.median_debt_pell", (s: School) => opt(s.outcomes?.median_debt_pell ?? null, money)],
-    ["First-years with grants", "grant-aid", "aid.grant_pct", (s: School) => opt(s.aid?.grant_pct ?? null, (v) => pct(v))],
-    ["Average grant", "grant-aid", "aid.grant_avg", (s: School) => opt(s.aid?.grant_avg ?? null, money)],
-    ["Aid from the college", "institutional-aid", "aid.institutional_pct", (s: School) => opt(s.aid?.institutional_pct ?? null, (v) => pct(v))],
-  ] as const
-) satisfies readonly (readonly [string, TermKey, FieldPath, (s: School) => string | null])[];
-
-const TABLE_FIELDS: readonly FieldPath[] = [...new Set(TABLE_ROWS.map((r) => r[2]))];
-
-const COST_FIELDS = [
-  "cost.avg_paid_all",
-  "derived.aid_generosity",
-  "cost.aided_net_price",
-  "outcomes.median_earnings_10yr",
-  "outcomes.graduation_rate",
-  "outcomes.median_debt",
-  "aid.grant_pct",
-  "aid.grant_avg",
-  "cost.net_price_by_income",
-] as const satisfies readonly FieldPath[];
-
-export default async function ComparePage({
-  searchParams,
-}: {
-  searchParams: Promise<Record<string, string | string[] | undefined>>;
-}) {
+export default async function ComparePage({ searchParams }: Props) {
   const params = await searchParams;
-  const data = await getData();
-  const { citeField, getSchoolsByIds } = data;
-  const ids = (typeof params.ids === "string" ? params.ids : "").split(",").filter(Boolean).slice(0, 4);
-  const schools = getSchoolsByIds([...new Set(ids)]);
+  const comparison = await loadComparison(typeof params.ids === "string" ? params.ids : "");
+  const { data, ids, schools } = comparison;
 
   if (schools.length === 0) return <EmptyState />;
 
   const diffs = keyDifferences(schools);
-  // CDS financial aid rows (specs/data-expansion/cds-financial-aid.md#compare), after the rest of "All the numbers".
-  const aidRows = compareAidRows(citeField("aid.cohort").year);
-  const tableRows = [...TABLE_ROWS, ...aidRows];
-  // "Website" closes the table as its own row (an actual link, not text), so its field isn't in TABLE_ROWS.
-  const tableFields: readonly FieldPath[] = [...new Set([...TABLE_FIELDS, ...aidRows.map((r) => r[2]), "links.website" as const])];
-  const historyFiles = await getHistoryFiles();
-
-  // "Your major" (specs/data-expansion/majors.md, field-of-study.md): broad fields (2-digit CIP families) that at
-  // least one compared college awards bachelor's in. Every offered field is computed here (lib/field-compare.ts), so
-  // the client section swaps fields in place; `?major=` picks the first one shown (an older 4-digit `11.07` link maps to
-  // its family).
-  const [details, histories] = await Promise.all([Promise.all(schools.map((s) => getDetail(s.unit_id))), Promise.all(schools.map((s) => getHistory(s.unit_id)))]);
-  // LGBTQ+ policy checklist (lib/lgbtq-policy.ts; specs/lgbtq-life.md "Where it appears"): never the gender-identity counts.
-  const lgbtqRows = comparedChecklist(schools, details);
-  const caFiles = historyFiles?.meta.files["c-a"];
-  const caEnd = caFiles?.length ? caFiles[caFiles.length - 1].year : null;
-  const caWindow: [number, number] | null = caEnd !== null ? [caEnd - WINDOW_YEARS, caEnd] : null;
-  const majorOptions = familiesOffered(schools)
-    .map((family) => ({ family, title: majorFamilyName(family) ?? cipFamilyTitle(family) ?? family }))
-    .sort((a, b) => a.title.localeCompare(b.title));
-  const majorStats: Record<string, FieldStat[]> = Object.fromEntries(
-    majorOptions.map(({ family }) => [
-      family,
-      schools.map((s, i) =>
-        fieldStat(family, s, details[i]?.tables.majors?.rows, details[i]?.tables.programs?.rows, histories[i]?.series ?? null, caWindow, cipTitle, (y) => historyYearLabel(y, "academic")),
-      ),
-    ]),
-  );
-  const rawMajor = (typeof params.major === "string" ? params.major : "").slice(0, 2);
-  const selectedMajor = majorStats[rawMajor] ? rawMajor : null;
-  // "Then & now" from school.trends (10-year changes written by sync-history); money is after inflation.
-  const THEN_AND_NOW: { key: TrendKey; label: string; format: "money" | "pctSmart" | "num" | "fixed2" }[] = [
-    { key: "avg_paid_all", label: "Avg total cost (after inflation)", format: "money" },
-    { key: "acceptance_rate", label: "Acceptance rate", format: "pctSmart" },
-    { key: "applicants", label: "Applicants", format: "num" },
-    { key: "undergrads", label: "Undergrads", format: "num" },
-    { key: "diversity", label: "Diversity index", format: "fixed2" },
-  ];
-  const thenAndNow: ThenAndNowMetric[] = historyFiles
-    ? THEN_AND_NOW.map((m) => {
-        // The diversity index comes from the race/ethnicity shares, a fall series.
-        const kind = m.key === "diversity" ? "fall" : m.key === "pell_gap" ? "cohort" : SERIES[m.key].kind;
-        const [from, to] = defaultWindow(historyFiles.meta, kind);
-        const withData = schools.map((sc, i) => ({ sc, i, t: sc.trends?.[m.key] })).filter((x) => x.t);
-        return {
-          key: m.key,
-          label: m.label,
-          format: m.format,
-          fromLabel: historyYearLabel(from, kind),
-          toLabel: historyYearLabel(to, kind),
-          rows: withData.map(({ sc, i, t }) => ({
-            id: sc.unit_id,
-            name: shortName(sc),
-            color: SLOT_COLORS[i],
-            from: t!.from,
-            to: t!.to,
-            ...(t!.since > from ? { lateStart: historyYearLabel(t!.since, kind) } : {}),
-          })),
-          missing: schools.filter((sc) => !sc.trends?.[m.key]).map(shortName),
-        };
-      })
-    : [];
+  const table = compareTopicOf("table");
 
   return (
-    <div className="mx-auto max-w-7xl px-4 pt-5 pb-12 sm:px-6 sm:pt-10">
-      <header className="mb-3 sm:mb-6">
-        <p className="mb-2 hidden text-xs font-bold tracking-[0.18em] text-primary uppercase sm:block">Compare</p>
-        <h1 className="font-display text-3xl font-extrabold tracking-tight sm:text-5xl">
+    <div className="mx-auto max-w-7xl px-4 pt-4 pb-12 sm:px-6 sm:pt-6">
+      {/* A compact title: the school chips and pills are the page's header (the spec's mockup leads with them), and
+          the overview has a 2,500px desktop budget. */}
+      <header className="mb-3 sm:mb-4">
+        <h1 className="font-display text-2xl font-extrabold tracking-tight sm:text-3xl">
           {schools.length === 1 ? (
             <>Pick a <span className="highlight">rival</span></>
           ) : (
@@ -394,7 +62,7 @@ export default async function ComparePage({
         </h1>
       </header>
 
-      <CompareHeader schools={schools.map(toIndexEntry)} />
+      <CompareHeader schools={schools.map(toIndexEntry)} current="overview" />
 
       {schools.length === 1 ? (
         <SinglePrompt school={schools[0]} />
@@ -405,33 +73,7 @@ export default async function ComparePage({
             <section className="rounded-3xl border bg-card p-4 sm:p-6">
               <h2 className="font-display text-xl font-extrabold tracking-tight sm:text-2xl">Key differences</h2>
               <p className="mb-5 text-sm text-muted-foreground">The biggest gaps between these schools, largest first.</p>
-              <ol className="space-y-3">
-                {diffs.slice(0, 6).map((d, i) => (
-                  <li key={d.metric} className="flex animate-rise gap-3" style={{ animationDelay: `${i * 60}ms` }}>
-                    <span
-                      className="mt-0.5 inline-flex size-7 shrink-0 items-center justify-center rounded-full text-xs font-extrabold text-white"
-                      style={{ backgroundColor: DOMAINS[METRICS[d.metric].domain].color }}
-                    >
-                      {i + 1}
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-semibold">{d.headline}</p>
-                      <div className="mt-1.5 flex items-center gap-2">
-                        <span className="h-1.5 flex-1 overflow-hidden rounded-full bg-muted">
-                          <span
-                            className="block h-full origin-left animate-grow-x rounded-full"
-                            style={{ width: `${Math.max(6, d.magnitude * 100)}%`, backgroundColor: DOMAINS[METRICS[d.metric].domain].color }}
-                          />
-                        </span>
-                        <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
-                          {METRICS[d.metric].label}
-                          <InfoTip term={METRICS[d.metric].term} />
-                        </span>
-                      </div>
-                    </div>
-                  </li>
-                ))}
-              </ol>
+              <KeyDifferenceList diffs={diffs.slice(0, 6)} />
             </section>
             <section className="rounded-3xl border bg-card p-4 sm:p-6">
               <h2 className="flex items-center gap-1 font-display text-xl font-extrabold tracking-tight sm:text-2xl">
@@ -453,287 +95,42 @@ export default async function ComparePage({
             </section>
           </div>
 
-          {schools.some((s) => indicatorsOf(s).length > 0) && (
-            <section className="space-y-4">
-              <h2 className="flex items-center gap-1 font-display text-xl font-extrabold tracking-tight sm:text-2xl">
-                10-year direction <InfoTip term="trend-direction" />
-              </h2>
-              <p className="max-w-3xl text-sm text-muted-foreground">
-                Four directions over each college&apos;s last 10 years of federal data. Cost is <Term term="inflation-adjusted">after inflation</Term>.
-              </p>
-              <div className="overflow-x-auto rounded-3xl border bg-card">
-                <table className="w-full min-w-[480px] text-sm sm:min-w-[560px]">
-                  <thead className="border-b bg-surface-2">
-                    <tr>
-                      <th className="sticky left-0 z-10 bg-surface-2 px-3 py-3 text-left text-xs font-semibold text-muted-foreground sm:px-4">Over 10 years</th>
-                      {schools.map((s, i) => (
-                        <th key={s.unit_id} className="px-4 py-3 text-left text-xs font-bold">
-                          <span className="inline-flex items-center gap-1.5">
-                            <span className="size-2 rounded-full" style={{ backgroundColor: SLOT_COLORS[i] }} />
-                            {shortName(s)}
-                          </span>
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {INDICATOR_KEYS.map((k) => (
-                      <tr key={k} className="border-b last:border-0">
-                        <th scope="row" className="sticky left-0 z-10 w-32 bg-card px-3 py-3 text-left align-top shadow-[1px_0_0_var(--border)] sm:w-auto sm:px-4 sm:shadow-none">
-                          <span className="block text-sm font-semibold">{INDICATORS[k].label}</span>
-                          <span className="block text-[11px] font-normal text-muted-foreground">{INDICATORS[k].question}</span>
-                        </th>
-                        {schools.map((s) => (
-                          <td key={s.unit_id} className="px-4 py-3 align-top">
-                            <TrendIndicatorCell school={s} indicator={k} />
-                          </td>
-                        ))}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+          <div className="space-y-4">
+            <CompareTopicCards comparison={comparison} />
+            <Link
+              href={compareHref(ids, "table")}
+              className="group flex items-center gap-4 rounded-3xl border bg-card p-4 transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-lg hover:shadow-primary/10 sm:p-5"
+            >
+              <span className="inline-flex size-11 shrink-0 items-center justify-center rounded-2xl bg-muted">
+                <Table2 className="size-5" aria-hidden />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block font-display text-lg font-bold group-hover:text-primary">{table.label}</span>
+                <span className="block text-sm text-muted-foreground">{table.description}</span>
+              </span>
+              <ArrowRight className="size-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-1 group-hover:text-primary" />
+            </Link>
+          </div>
+
+          <div className="space-y-2">
+            {/* One sources block for the overview, collapsed as the profile's is: every number's own source is in
+                its (i) popover, so this is a reference, not something most readers need open. */}
+            <details className="group rounded-2xl border border-dashed bg-card/50 open:border-solid">
+              <summary className="flex cursor-pointer list-none items-center gap-3 px-4 py-3 [&::-webkit-details-marker]:hidden">
+                <span className="min-w-0 flex-1">
+                  <span className="block text-sm font-semibold text-primary">Sources for this comparison</span>
+                  <span className="block text-xs text-muted-foreground">
+                    Every dataset and year behind the numbers in this comparison; tap any ⓘ for one number&apos;s source
+                  </span>
+                </span>
+                <ChevronDown className="size-5 shrink-0 text-muted-foreground transition-transform group-open:rotate-180" />
+              </summary>
+              <div className="p-2 sm:p-3">
+                <MultiSourceNote schools={schools} fields={COMPARE_OVERVIEW_FIELDS} />
               </div>
-              {historyFiles && (
-                <HistorySourceNote
-                  keys={["avg_paid_all", "applicants", "acceptance_rate", ...Object.values(RACE_SERIES)]}
-                  files={historyFiles}
-                  range={{ academic: defaultWindow(historyFiles.meta, "academic"), fall: defaultWindow(historyFiles.meta, "fall") }}
-                />
-              )}
-            </section>
-          )}
-
-          <Group domain="admissions" title="Admissions">
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-              <CompareMetric label="Acceptance rate" term="acceptance-rate" schools={schools} get={METRICS.acceptance.get} format={pctSmart} flag={{ which: "min", text: "Most selective" }} />
-              <CompareMetric label="Applicants" term="applicants" schools={schools} get={METRICS.applicants.get} format={compact} flag={{ which: "max", text: "Most" }} />
-              <CompareMetric label="Yield rate" term="yield" schools={schools} get={METRICS.yield.get} format={(v) => pct(v)} max={1} flag={{ which: "max", text: "Highest" }} />
-            </div>
-          </Group>
-
-          <Group domain="scores" title="Test scores">
-            <div className="grid gap-4 md:grid-cols-2">
-              <ScoreCompare schools={schools} test="sat" />
-              <ScoreCompare schools={schools} test="act" />
-            </div>
-            <div className="grid gap-4 md:grid-cols-2">
-              <CompareMetric label="Submitted SAT" term="test-submission" schools={schools} get={(s) => s.admissions.test_submission_rate_sat} format={(v) => pct(v)} max={1} />
-              <CompareMetric label="Submitted ACT" term="test-submission" schools={schools} get={(s) => s.admissions.test_submission_rate_act} format={(v) => pct(v)} max={1} />
-            </div>
-          </Group>
-
-          <Group domain="access" title="Students">
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-              <CompareMetric label="Undergrads" term="undergrad-enrollment" schools={schools} get={METRICS.enrollment.get} format={compact} flag={{ which: "max", text: "Largest" }} />
-              <CompareMetric label="Pell Grant share" term="pell-grant" schools={schools} get={METRICS.pell.get} format={(v) => pct(v)} max={1} flag={{ which: "max", text: "Highest" }} />
-              <CompareMetric label="First-gen share" term="first-gen" schools={schools} get={METRICS.firstGen.get} format={(v) => pct(v)} max={1} flag={{ which: "max", text: "Highest" }} />
-              <CompareMetric label="Diversity index" term="diversity-index" schools={schools} get={METRICS.diversity.get} format={(v) => v.toFixed(2)} max={1} flag={{ which: "max", text: "Most" }} />
-            </div>
-            {/* Descriptive, not better or worse, so no "Highest" flags. */}
-            <div className="grid gap-4 md:grid-cols-3">
-              <CompareMetric label="Men" term="gender-balance" schools={schools} get={METRICS.menShare.get} format={(v) => pct(v)} max={1} />
-              <CompareMetric label="Part-time students" term="part-time-student" schools={schools} get={METRICS.partTime.get} format={(v) => pct(v)} max={1} />
-              <CompareMetric label="Students 25 and older" term="adult-students" schools={schools} get={METRICS.adults.get} format={(v) => pct(v)} max={1} />
-            </div>
-            <div className="rounded-3xl border bg-card p-4 sm:p-6">
-              <h3 className="mb-5 flex items-center gap-1 font-display text-base font-bold">
-                Race & ethnicity <InfoTip term="race-ethnicity" />
-              </h3>
-              <div className="space-y-5">
-                {schools.map((s, i) => (
-                  <div key={s.unit_id} className="grid gap-2 sm:grid-cols-[8rem_1fr] sm:items-center">
-                    <span className="flex items-center gap-1.5 text-sm font-semibold">
-                      <span className="size-2.5 rounded-full" style={{ backgroundColor: SLOT_COLORS[i] }} />
-                      {shortName(s)}
-                    </span>
-                    {s.demographics.racial_diversity ? (
-                      <StackedBar data={s.demographics.racial_diversity} height="h-6" showLegend={false} label={s.name} />
-                    ) : (
-                      <span className="text-sm text-muted-foreground">Not reported</span>
-                    )}
-                  </div>
-                ))}
-              </div>
-              <ul className="mt-5 flex flex-wrap gap-x-4 gap-y-1.5 border-t pt-4 text-xs">
-                {DEMOGRAPHIC_CATEGORIES.map((c) => (
-                  <li key={c.key} className="flex items-center gap-1.5 text-muted-foreground">
-                    <span className="size-2.5 rounded-full" style={{ backgroundColor: c.color }} />
-                    {c.label}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </Group>
-
-          <Group domain="value" title="Cost & outcomes">
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-              <CompareMetric label="Average cost, all students" term="average-cost" schools={schools} get={METRICS.avgCost.get} format={moneyCompact} max={80000} flag={{ which: "min", text: "Lowest" }} />
-              <CompareMetric label="Aid generosity" term="aid-generosity" schools={schools} get={METRICS.aidGenerosity.get} format={(v) => pct(v)} max={1} flag={{ which: "max", text: "Most" }} />
-              <CompareMetric label="Net price, with grants" term="net-price" schools={schools} get={METRICS.netPrice.get} format={moneyCompact} max={80000} flag={{ which: "min", text: "Lowest" }} />
-              <CompareMetric label="Median earnings, 10 yrs" term="median-earnings" schools={schools} get={METRICS.earnings.get} format={moneyCompact} flag={{ which: "max", text: "Highest" }} />
-              <CompareMetric label="Graduation rate" term="graduation-rate" schools={schools} get={METRICS.gradRate.get} format={(v) => pct(v)} max={1} flag={{ which: "max", text: "Highest" }} />
-              <CompareMetric label="Median debt" term="median-debt" schools={schools} get={METRICS.debt.get} format={moneyCompact} flag={{ which: "min", text: "Lowest" }} />
-            </div>
-            <div className="grid gap-4 md:grid-cols-2">
-              <CompareMetric label="First-years receiving grants" term="grant-aid" schools={schools} get={(s) => s.aid?.grant_pct ?? null} format={(v) => pct(v)} max={1} flag={{ which: "max", text: "Most" }} />
-              <CompareMetric label="Average grant (recipients)" term="grant-aid" schools={schools} get={(s) => s.aid?.grant_avg ?? null} format={moneyCompact} flag={{ which: "max", text: "Largest" }} />
-            </div>
-            <NetPriceCompare schools={schools} year={citeField("cost.net_price_by_income").year} />
-            <MultiSourceNote schools={schools} fields={COST_FIELDS} />
-          </Group>
-
-          {majorOptions.length > 0 && (
-            <Group domain="value" title="Your major">
-              <p className="max-w-3xl text-sm text-muted-foreground">
-                Pick a field of study to see which of these colleges award bachelor&apos;s degrees in it, how many, and what graduates earn{" "}
-                <Term term="earnings-after-completion">after completion</Term>.
-              </p>
-              <YourMajor
-                ids={ids.join(",")}
-                schools={schools.map((s, i) => ({ id: s.unit_id, name: shortName(s), slot: i }))}
-                options={majorOptions}
-                stats={majorStats}
-                initial={selectedMajor}
-              />
-              <MultiSourceNote schools={schools} fields={["academics.bachelors_by_family", "detail.majors", "detail.programs"]} />
-              {historyFiles && caWindow && <HistorySourceNote keys={["bachelors"]} files={historyFiles} range={caWindow} />}
-            </Group>
-          )}
-
-          {historyFiles && thenAndNow.some((m) => m.rows.length > 0) && (
-            <section className="space-y-4">
-              <h2 className="flex items-center gap-2 font-display text-xl font-extrabold tracking-tight sm:text-2xl">
-                <span className="h-6 w-1.5 rounded-full bg-primary" />
-                Then &amp; now
-              </h2>
-              <p className="max-w-3xl text-sm text-muted-foreground">
-                How each college changed over the last 10 years of federal data. Money is <Term term="inflation-adjusted">after inflation</Term>.
-              </p>
-              <div className="rounded-3xl border bg-card p-4 sm:p-6">
-                <ThenAndNow metrics={thenAndNow} />
-              </div>
-              <HistorySourceNote keys={["avg_paid_all", "acceptance_rate", "applicants", "undergrads", ...Object.values(RACE_SERIES)]} files={historyFiles} range={{ academic: defaultWindow(historyFiles.meta, "academic"), fall: defaultWindow(historyFiles.meta, "fall") }} />
-            </section>
-          )}
-
-          {/* LGBTQ+ policy checklist (lib/lgbtq-policy.ts): national-directory leads and, once checked, the college's
-              own verified facts; never the gender-identity counts, which have no Compare row. */}
-          {lgbtqRows.length > 0 && (
-            <section className="space-y-4">
-              <h2 className="font-display text-xl font-extrabold tracking-tight sm:text-2xl">LGBTQ+ policies</h2>
-              <p className="max-w-3xl text-sm text-muted-foreground">
-                Each item is dated: either the college&apos;s own page, checked on that date, or a national list&apos;s claim, read on that date &mdash; never a plain
-                &ldquo;yes&rdquo; or &ldquo;no.&rdquo; A key missing for a college isn&apos;t shown as &ldquo;no&rdquo;: nothing was found for it.
-              </p>
-              <div className="overflow-x-auto rounded-3xl border bg-card">
-                <table className="w-full min-w-[480px] text-sm sm:min-w-[560px]">
-                  <thead className="border-b bg-surface-2">
-                    <tr>
-                      <th className="sticky left-0 z-10 bg-surface-2 px-3 py-3 text-left text-xs font-semibold text-muted-foreground sm:px-4">Policy</th>
-                      {schools.map((s, i) => (
-                        <th key={s.unit_id} className="px-4 py-3 text-left text-xs font-bold">
-                          <span className="inline-flex items-center gap-1.5">
-                            <span className="size-2 rounded-full" style={{ backgroundColor: SLOT_COLORS[i] }} />
-                            {shortName(s)}
-                          </span>
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y tabular-nums">
-                    {lgbtqRows.map((row) => (
-                      <tr key={row.key}>
-                        <td className="sticky left-0 z-10 max-w-36 bg-card px-3 py-2.5 text-muted-foreground shadow-[1px_0_0_var(--border)] sm:max-w-none sm:px-4 sm:shadow-none">
-                          {row.label}
-                        </td>
-                        {row.cells.map((item, i) => (
-                          <td key={schools[i].unit_id} className="px-4 py-2.5 font-normal">
-                            {item ? (
-                              item.url ? (
-                                <a href={item.url} target="_blank" rel="noopener noreferrer" className="underline decoration-dotted underline-offset-2 hover:text-primary">
-                                  {item.text}
-                                </a>
-                              ) : (
-                                item.text
-                              )
-                            ) : (
-                              <span className="text-muted-foreground">–</span>
-                            )}
-                          </td>
-                        ))}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </section>
-          )}
-
-          {/* Data table: every value in one place (also the accessible view) */}
-          <section className="space-y-4">
-            <h2 className="font-display text-xl font-extrabold tracking-tight sm:text-2xl">All the numbers</h2>
-            <div className="overflow-x-auto rounded-3xl border bg-card">
-              <table className="w-full min-w-[480px] text-sm sm:min-w-[560px]">
-                <thead className="border-b bg-surface-2">
-                  <tr>
-                    <th className="sticky left-0 z-10 bg-surface-2 px-3 py-3 text-left text-xs font-semibold text-muted-foreground sm:px-4">Metric</th>
-                    {schools.map((s, i) => (
-                      <th key={s.unit_id} className="px-4 py-3 text-left text-xs font-bold">
-                        <span className="inline-flex items-center gap-1.5">
-                          <span className="size-2 rounded-full" style={{ backgroundColor: SLOT_COLORS[i] }} />
-                          {shortName(s)}
-                        </span>
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody className="divide-y tabular-nums">
-                  {tableRows.filter(([label, , , fmt]) => !LOGISTICS_ROW_LABELS.has(label) || schools.some((s) => fmt(s) !== null)).map(([label, term, field, fmt]) => {
-                    const rowYear = citeField(field).year;
-                    return (
-                      <tr key={label}>
-                        <td className="sticky left-0 z-10 max-w-36 bg-card px-3 py-2.5 text-muted-foreground shadow-[1px_0_0_var(--border)] sm:max-w-none sm:px-4 sm:shadow-none">
-                          <span className="inline-flex items-center gap-1">
-                            {label} <InfoTip term={term} cited={citeField(field)} />
-                          </span>
-                        </td>
-                        {schools.map((s) => {
-                          const cellYear = citeField(admissionProfileCellField(label, s) ?? field, s).year;
-                          return (
-                            <td key={s.unit_id} className="px-4 py-2.5 font-semibold">
-                              {fmt(s) ?? <span className="font-normal text-muted-foreground">–</span>}
-                              {fmt(s) !== null && cellYear !== rowYear && <span className="ml-1.5 align-middle text-[11px] font-normal text-muted-foreground">{cellYear}</span>}
-                            </td>
-                          );
-                        })}
-                      </tr>
-                    );
-                  })}
-                  {/* An actual link per college, not text, so it isn't one of the generic string rows above (links.md). */}
-                  <tr>
-                    <td className="sticky left-0 z-10 max-w-36 bg-card px-3 py-2.5 text-muted-foreground shadow-[1px_0_0_var(--border)] sm:max-w-none sm:px-4 sm:shadow-none">
-                      <span className="inline-flex items-center gap-1">
-                        Website <SourceTip cited={citeField("links.website")} />
-                      </span>
-                    </td>
-                    {schools.map((s) => (
-                      <td key={s.unit_id} className="px-4 py-2.5 font-semibold">
-                        {s.links?.website ? (
-                          <a href={s.links.website} target="_blank" rel="noopener" className="inline-flex items-center gap-1 text-primary hover:underline">
-                            {linkHost(s.links.website)} <ExternalLink className="size-3 shrink-0" aria-hidden />
-                          </a>
-                        ) : (
-                          <span className="font-normal text-muted-foreground">–</span>
-                        )}
-                      </td>
-                    ))}
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-            <MultiSourceNote schools={schools} fields={tableFields} />
+            </details>
             <BaselineNote />
-          </section>
+          </div>
         </div>
       )}
     </div>
@@ -741,58 +138,6 @@ export default async function ComparePage({
 }
 
 /* ------------------------------------------------------------------ */
-
-async function ScoreCompare({ schools, test }: { schools: School[]; test: "sat" | "act" }) {
-  const { metricMedian } = await getData();
-  // The SAT total each college shows (derived.sat_total: its own CDS total when reported, else the sum of sections).
-  const ranges = schools.map((s) => (test === "sat" ? satTotal(s) : s.admissions.act_composite_25_75));
-  const present = ranges.filter((r): r is [number, number] => r !== null);
-  const title = test === "sat" ? "SAT total" : "ACT composite";
-  if (present.length === 0) {
-    return (
-      <div className="rounded-3xl border border-dashed p-5 text-sm text-muted-foreground">
-        None of these colleges report {title} ranges.
-      </div>
-    );
-  }
-  const minLo = Math.min(...present.map((r) => r[0]));
-  const lo = test === "sat" ? Math.floor((minLo - 60) / 100) * 100 : Math.max(1, minLo - 4);
-  const hi = test === "sat" ? 1600 : 36;
-  const median = metricMedian(test === "sat" ? "sat" : "act");
-  return (
-    <div className="rounded-3xl border bg-card p-5">
-      <h3 className="mb-4 flex items-center gap-1 font-display text-base font-bold">
-        {title}, <Term term="middle-50">middle 50%</Term>
-      </h3>
-      <div className="space-y-3">
-        {schools.map((s, i) => {
-          const r = ranges[i];
-          return (
-            <div key={s.unit_id} className="grid grid-cols-[4.5rem_1fr_auto] items-center gap-3 sm:grid-cols-[6rem_1fr_5rem]">
-              <span className="truncate text-xs font-semibold">{shortName(s)}</span>
-              {r ? (
-                <RangeBar low={r[0]} high={r[1]} scale={[lo, hi]} color={SLOT_COLORS[i]} medianMid={median ?? undefined} compact />
-              ) : (
-                <span className="text-xs text-muted-foreground">
-                  {s.admissions.test_policy === "not-considered" ? "Test-blind" : "Not reported"}
-                </span>
-              )}
-              <span className="text-right text-sm font-bold whitespace-nowrap tabular-nums">{r ? `${r[0]}–${r[1]}` : "–"}</span>
-            </div>
-          );
-        })}
-        <YouScoreRow test={test} lo={lo} hi={hi} />
-      </div>
-      <p className="mt-3 text-[11px] text-muted-foreground">
-        Axis runs {lo}–{hi}. The dark tick marks the national median midpoint.
-      </p>
-    </div>
-  );
-}
-
-function opt<T>(v: T | null, f: (v: T) => string): string | null {
-  return v === null ? null : f(v);
-}
 
 async function SinglePrompt({ school }: { school: School }) {
   const data = await getData();

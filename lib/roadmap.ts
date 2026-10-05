@@ -23,11 +23,12 @@ export const COMPLEXITY: Record<Complexity, { label: string; description: string
 // field it needs were specified 2026-10-05 and sit under "national-trends".
 // Accounts and households (sign-in, households, student profile, saved lists, following colleges; group "accounts")
 // was built 2026-10-05 on feature/accounts; Google sign-in and email sending wait for the new domain (specs/backlog.md).
+// The compare redesign, the only spec in "Design and usability" (group "design"), was built 2026-10-05 (#84), so that
+// group is gone until a new design spec.
 export type RoadmapGroupKey =
   | "national-trends"
   | "college-reported"
   | "campus-life"
-  | "design"
   | "planning"
   | "high-school"
   | "business"
@@ -40,12 +41,6 @@ export const ROADMAP_GROUPS: { key: RoadmapGroupKey; title: string; description:
     title: "National trends",
     description:
       "Questions about the whole landscape of colleges, not one college: where students went over ten years, and the data that keeps online colleges from standing in for campuses.",
-  },
-  {
-    key: "design",
-    title: "Design and usability",
-    description:
-      "Making what's already on the site easier to use: shorter pages, clearer paths to detail, and layouts that fit each device.",
   },
   {
     key: "planning",
@@ -126,17 +121,6 @@ export const ROADMAP: RoadmapSpec[] = [
     complexity: 2,
     complexityNote:
       "One study on the existing trends machinery, but it classifies colleges as they were at the start of the window, adds a campus-based panel, a state map by share change, and a chart of price change against enrollment change.",
-    status: "planned",
-  },
-  {
-    slug: "compare-redesign",
-    file: "specs/compare-redesign.md",
-    group: "design",
-    summary:
-      "Comparing colleges the way profiles now work: an overview of topic cards with a bar per college, and a page per topic, with the full table one tap away.",
-    complexity: 3,
-    complexityNote:
-      "Eight routes reusing the profile's frame and pills, comparative takeaways, and a table with a differences-only switch.",
     status: "planned",
   },
   {

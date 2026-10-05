@@ -94,9 +94,11 @@ cost ÷ median earnings: a deliberately rough comparison, explained by the `payb
 - **Explore**: net price meter on cards; net price, earnings, and grad rate table columns; sorts `net_price`
   (lowest first), `earnings`, `grad_rate`; net price range filter (`minNP`/`maxNP`, $0–80K); chart view tab
   `chart=value`.
-- **Compare**: "Cost & outcomes" group (net price, earnings, graduation, median debt), `NetPriceCompare` (each
-  income band, one bar per school), new rows in "All the numbers", new key differences ("X costs $3.3K less per
-  year than Y").
+- **Compare**: net price and `NetPriceCompare` (each income band, one bar per school) on the Cost & aid page;
+  earnings, graduation, and median debt on the Outcomes page — one merged "Cost & outcomes" group on the single
+  compare page until the 2026-10-05 redesign ([compare-redesign.md](compare-redesign.md)) split it, the way the
+  profile already had. Rows stay in "All the numbers" under their new groups (debt moved to the Outcomes group
+  there too); key differences unchanged ("X costs $3.3K less per year than Y").
 - **Home**: "Is it worth it?" cost-vs-earnings scatter (shaded corner = below-median price, above-median
   earnings), with "Highest earnings" and "Lowest net price" leaderboards; a "Low cost, high earnings" lens
   (`maxNP=20000&sortBy=earnings`).

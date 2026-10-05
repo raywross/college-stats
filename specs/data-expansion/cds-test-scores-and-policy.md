@@ -409,8 +409,10 @@ verify the dates before writing).
 - `lib/metrics.ts`: `TEST_POLICY_LABELS["required-some"]`, `satTotal(s)` for `derived.sat_total`; `lib/dataset.ts` and
   `lib/params.ts`: the `policy` filter; `components/explore/FilterPanel` chips with counts.
 - `components/school/ScoreChecker.tsx`, new `components/school/ScoreBands.tsx` and `TestPolicyBlock.tsx`;
-  `app/schools/[id]/admissions/page.tsx`, the overview card and hero, `app/compare/page.tsx` rows; `lib/events.ts`
-  reads `test_policy_events`; `lib/insights.ts` `scoresTakeaway` mentions a coming-cycle requirement.
+  `app/schools/[id]/admissions/page.tsx`, the overview card and hero, `lib/compare-topics.ts` rows (rendered by
+  `app/compare/table/page.tsx` and the Test scores block of `app/compare/admissions/page.tsx` since the 2026-10-05
+  compare redesign); `lib/events.ts` reads `test_policy_events`; `lib/insights.ts` `scoresTakeaway` mentions a
+  coming-cycle requirement.
 - `lib/glossary.ts` entries; `lib/history.ts` study computation for the "Announced" list.
 
 **Tests** (each guard shown to fail when broken), with fixtures cut from the sample: VU code table, HU field values

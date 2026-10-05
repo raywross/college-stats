@@ -53,10 +53,15 @@ links somewhere you can explore it; ties to a concept the site already explains.
   `size_change`) from the `trends` summary in `schools.json`, so no history files load.
 - Grid cards and the chart tabs are unchanged.
 
-## Compare: "Then & now"
-One section after the cost comparison: a **slope chart** (2 points per college, compare-slot colors, direct labels at
-both ends) for one metric at a time, chosen from a segmented control:
-*Avg total cost (after inflation)* · *Acceptance rate* · *Applicants* · *Undergrads*.
+## Compare: "Over time" (`/compare/history`)
+Its own topic page since the compare redesign ([compare-redesign.md](compare-redesign.md), built 2026-10-05), not a
+section of the single compare page: the "10-year direction" table (the four trend indicators per college,
+[trend-indicators.md](trend-indicators.md)) and "Then & now" below sit together here, where they used to be 2,000px
+apart on the old page.
+
+"Then & now" is a **slope chart** (2 points per college, compare-slot colors, direct labels at both ends) for one
+metric at a time, chosen from a segmented control:
+*Avg total cost (after inflation)* · *Acceptance rate* · *Applicants* · *Undergrads* · *Diversity index*.
 - Endpoints are the default window's; if a college lacks the start year, its line starts at its earliest year, and a
   note says so.
 - Slopes read at a glance for 2–4 colleges; a full multi-line chart would be clutter here.
@@ -218,8 +223,9 @@ Built 2026-09-28 (`feature/trends-phase-2-3`).
   sortable columns: average cost change (after inflation), admit rate then → now (points), undergrads change. The
   Sort menu gains the same three orders. Admit-rate change needs 200+ applicants at both ends and undergrad change
   300+ students, so tiny colleges don't top the lists.
-- **Compare "Then & now":** `SlopeChart` for average total cost, acceptance rate, applicants, or undergrads (from
-  `school.trends`), with a note for colleges that start late or lack both endpoints.
+- **Compare "Then & now":** `SlopeChart` for average total cost, acceptance rate, applicants, undergrads, or the
+  diversity index (from `school.trends`), with a note for colleges that start late or lack both endpoints. Moved
+  onto its own page, `/compare/history`, alongside the "10-year direction" table, in the 2026-10-05 compare redesign.
 - **Trend standouts:** at most one, profile only (Explore cards unchanged): applications or enrollment in the
   national top 5% of 10-year growth on a 1,000+ base ("Applications doubled since fall 2014"), or average cost in the
   bottom 5% ("Average cost down 30% since 2013–14").

@@ -1,13 +1,26 @@
 /**
- * The profile measurement script's pure parts (scripts/lib/profile-measure.mts): pages, budgets, the checks on each
- * measurement, the table, and where Playwright is looked for. `npm test`.
+ * The profile and compare measurement script's pure parts (scripts/lib/profile-measure.mts): pages, budgets, the
+ * checks on each measurement, the table, and where Playwright is looked for. `npm test`.
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { DEFAULT_IDS, PROFILE_PAGES, PROFILE_VIEWPORTS, findPlaywright, formatTable, heightBudget, pagePath, problems, type Measurement } from "../scripts/lib/profile-measure.mts";
+import {
+  COMPARE_PAGES,
+  DEFAULT_IDS,
+  PROFILE_PAGES,
+  PROFILE_VIEWPORTS,
+  comparePagePath,
+  compareHeightBudget,
+  findPlaywright,
+  formatTable,
+  heightBudget,
+  pagePath,
+  problems,
+  type Measurement,
+} from "../scripts/lib/profile-measure.mts";
 
 const ok: Measurement = {
   id: "166027",
@@ -78,4 +91,77 @@ test("Playwright is found in PLAYWRIGHT_DIR (an install folder or the package it
   // Some other package at that path doesn't count.
   writeFileSync(join(pkg, "package.json"), JSON.stringify({ name: "not-playwright" }));
   assert.equal(findPlaywright(dir, emptyRepo), null);
+});
+
+// --- Compare mode (specs/compare-redesign.md#budget) -----------------------------------------------------------
+
+const compareOk: Measurement = {
+  id: "166027,204796,110662",
+  ids: ["166027", "204796", "110662"],
+  page: "cost",
+  viewport: "desktop",
+  width: 1440,
+  status: 200,
+  height: 3000,
+  innerWidthAtDcl: 1440,
+  innerWidth: 1440,
+  scrollWidth: 1440,
+  brokenLinks: [],
+};
+
+test("compare pages: the overview, six topics, and the table, in pill order", () => {
+  assert.deepEqual([...COMPARE_PAGES], ["overview", "admissions", "students", "academics", "cost", "outcomes", "history", "table"]);
+});
+
+test("compare page paths: /compare?ids= for the overview, /compare/{page}?ids= for every other page", () => {
+  assert.equal(comparePagePath(["166027", "204796", "110662"], "overview"), "/compare?ids=166027,204796,110662");
+  assert.equal(comparePagePath(["166027", "204796"], "cost"), "/compare/cost?ids=166027,204796");
+  assert.equal(comparePagePath(["166027", "204796"], "table"), "/compare/table?ids=166027,204796");
+});
+
+test("compare height budgets: overview 2,500 desktop / 4,000 phone / none tablet; topic pages 4,000 desktop, none elsewhere; the table none", () => {
+  assert.equal(compareHeightBudget("overview", "desktop"), 2500);
+  assert.equal(compareHeightBudget("overview", "phone"), 4000);
+  assert.equal(compareHeightBudget("overview", "tablet"), null);
+  for (const page of ["admissions", "students", "academics", "cost", "outcomes", "history"] as const) {
+    assert.equal(compareHeightBudget(page, "desktop"), 4000);
+    assert.equal(compareHeightBudget(page, "tablet"), null);
+    assert.equal(compareHeightBudget(page, "phone"), null);
+  }
+  // The table is the complete view: every row for every college, so no height budget applies.
+  for (const viewport of ["desktop", "tablet", "phone"] as const) assert.equal(compareHeightBudget("table", viewport), null);
+});
+
+test("profile height budgets are unchanged by the compare addition", () => {
+  assert.equal(heightBudget("overview", "desktop"), 2700);
+  assert.equal(heightBudget("overview", "phone"), 5000);
+  assert.equal(heightBudget("outcomes", "desktop"), 6000);
+  assert.equal(heightBudget("history", "tablet"), null);
+});
+
+test("problems checks a compare measurement against the compare budget, not the profile one, via its ids", () => {
+  assert.deepEqual(problems(compareOk), []);
+  // 4,500 is under a profile topic page's 6,000 budget but over a compare page's 4,000: this proves the `ids`
+  // field, not the page name (both profile and compare have a "cost" page), selects compareHeightBudget.
+  assert.deepEqual(problems({ ...compareOk, height: 4500 }), ["500px over budget"]);
+  assert.deepEqual(problems({ ...compareOk, page: "overview", height: 2800 }), ["300px over budget"]);
+  assert.deepEqual(
+    problems({ ...compareOk, page: "overview", viewport: "phone", width: 390, innerWidthAtDcl: 390, innerWidth: 390, scrollWidth: 390, height: 4100 }),
+    ["100px over budget"]
+  );
+});
+
+test("table: a compare row's first column reads 'compare a+b+c page'", () => {
+  const out = formatTable([compareOk]);
+  const lines = out.split("\n");
+  assert.equal(lines.length, 3);
+  assert.match(lines[2], /^compare 166027\+204796\+110662 cost\s+1440\s+3,000\s+4,000\s+1440\s+1440\s+1440\s+ok, within budget$/);
+});
+
+test("table: profile and compare rows side by side keep their own labels and budgets", () => {
+  const out = formatTable([ok, compareOk]);
+  const lines = out.split("\n");
+  assert.equal(lines.length, 4);
+  assert.match(lines[2], /^166027 overview\s+390\s+4,100\s+5,000\s+390\s+390\s+390\s+ok, within budget$/);
+  assert.match(lines[3], /^compare 166027\+204796\+110662 cost\s+1440\s+3,000\s+4,000\s+1440\s+1440\s+1440\s+ok, within budget$/);
 });

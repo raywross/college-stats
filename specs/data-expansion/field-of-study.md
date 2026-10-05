@@ -151,7 +151,8 @@ null earnings/debt value as "Too few graduates to report" instead of a blank das
   (ranked by graduate count); at the wave 3 merge it went directly under that list in Academics, and each row of the
   list shows its 4-digit group's 4-year earnings ("Graduates in this field earn $X 4 years out", joined by `cip4`).
 - **Compare → "Your major"** (`components/compare/YourMajor.tsx`, a client component; numbers from
-  `lib/field-compare.ts`, wired into `app/compare/page.tsx`). Revised after the user's wave 3 review (2026-10-02):
+  `lib/field-compare.ts`, wired into `app/compare/academics/page.tsx` since the 2026-10-05 compare redesign moved it
+  there from the single compare page). Revised after the user's wave 3 review (2026-10-02):
   - **Broad fields, not 4-digit programs.** The picker lists 2-digit CIP families ("Computer science", "Biology"),
     because colleges name and split programs differently and the family compares like with like. Only families at
     least one compared college awards first-major bachelor's in (`familiesOffered`, from

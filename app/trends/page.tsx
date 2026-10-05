@@ -5,6 +5,7 @@ import type { TrendCard } from "@/lib/trends";
 import { ComingSection } from "@/components/trends/ComingSection";
 import { StudyCard } from "@/components/trends/StudyCard";
 import { MoversEntry } from "@/components/trends/movers/MoversEntry";
+import { ConferencesEntry } from "@/components/trends/conferences/ConferencesEntry";
 import { Term } from "@/components/ui/info-tip";
 
 export const metadata: Metadata = {
@@ -62,7 +63,7 @@ export default async function TrendsPage() {
         {/* ── Entry sections. Each unit replaces ITS placeholder line with one import + one component, e.g.
             <MoversEntry /> from components/trends/movers/MoversEntry.tsx. Keep this order: Movers, conferences, states. ── */}
         <MoversEntry />
-        <ComingSection id="conferences" title="By athletic conference" description="How each conference's members compare and changed, the Power 4 side by side, and who joined or left." />
+        <ConferencesEntry />
         <ComingSection id="states" title="By state" description="How each state's colleges changed: size, applications, cost, and where their students come from." />
       </div>
     </div>

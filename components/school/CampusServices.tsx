@@ -1,9 +1,10 @@
 import Link from "next/link";
-import { CalendarDays, ExternalLink, Globe, Medal, Microscope, Shield, Trophy } from "lucide-react";
+import { ArrowRight, CalendarDays, ExternalLink, Globe, Medal, Microscope, Shield, Trophy } from "lucide-react";
 import { getData } from "@/lib/data";
 import { pct } from "@/lib/format";
 import { DOMAINS } from "@/lib/metrics";
 import { CALENDAR_LABELS, DIVISION_LABELS, ROTC_LABELS, SPORT_LABELS, divisionFilterOf } from "@/lib/campus-services";
+import { CONFERENCES, isLeague } from "@/lib/conferences";
 import { eventYear, type PolicyEvent } from "@/lib/events";
 import type { School } from "@/lib/types";
 import { InfoTip } from "@/components/ui/info-tip";
@@ -82,6 +83,11 @@ export async function CampusServices({ school, recentMoves }: { school: School; 
                 </span>
               </p>
             ))}
+            {a.conference && isLeague(a.conference.code) && (
+              <Link href={`/trends/conferences/${CONFERENCES[a.conference.code].slug}`} className="mt-2 inline-flex items-center gap-1 text-xs font-bold text-primary hover:underline">
+                How the {a.conference.name.replace(/^The /, "")} compares <ArrowRight className="size-3.5" />
+              </Link>
+            )}
           </div>
         )}
         {p && (

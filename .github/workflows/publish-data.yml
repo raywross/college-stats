@@ -47,9 +47,11 @@ jobs:
           cache: npm
       - if: steps.secrets.outputs.ready == 'true'
         run: npm ci
-      # Lineage check, shrink guard, one-transaction publish, exact read-back, then revalidation.
+      # Lineage check, shrink guard, one-transaction publish, exact read-back, then revalidation. Re-run once after a
+      # minute on failure: a merge also starts Vercel's production build, whose reads can make the publish's statements
+      # time out (2026-10-05). Safe to repeat: the first staging batch resets the staging table.
       - if: steps.secrets.outputs.ready == 'true'
-        run: npm run publish-data
+        run: npm run publish-data || { echo "::warning::Publish failed; retrying once in 60 s."; sleep 60; npm run publish-data; }
 
   revalidate-after-deploy:
     # Vercel reports deployments to GitHub; its production environment is named "Production" (or

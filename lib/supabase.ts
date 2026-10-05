@@ -54,14 +54,37 @@ export type PublishedDataset = DatasetFiles & { version: string };
  * come back in several requests, so the version is read before and after; if a publish landed in between, the
  * read could mix two publishes, and it's repeated.
  */
-export async function fetchDatasetFiles(client: SupabaseClient, attempts = 3): Promise<PublishedDataset> {
-  for (let attempt = 1; ; attempt++) {
-    const before = await fetchPublishedVersion(client);
-    const read = await readDataset(client);
+export async function fetchDatasetFiles(
+  client: SupabaseClient,
+  { attempts = 3, timeoutWaits = TIMEOUT_WAITS_MS, wait = sleep }: { attempts?: number; timeoutWaits?: readonly number[]; wait?: (ms: number) => Promise<void> } = {},
+): Promise<PublishedDataset> {
+  let timeouts = 0;
+  for (let attempt = 1; ; ) {
+    let read: PublishedDataset;
+    let before: string | null;
+    try {
+      before = await fetchPublishedVersion(client);
+      read = await readDataset(client);
+    } catch (err) {
+      // A publish swapping the schools table makes reads time out for a while (the 2026-10-05 production build
+      // failed this way mid-publish); wait it out instead of failing the build or the page.
+      if (!isStatementTimeout(err) || timeouts >= timeoutWaits.length) throw err;
+      await wait(timeoutWaits[timeouts++]);
+      continue;
+    }
     if (read.version === before) return read;
-    if (attempt >= attempts) throw new Error("Supabase: the dataset kept changing while it was being read.");
+    if (++attempt > attempts) throw new Error("Supabase: the dataset kept changing while it was being read.");
   }
 }
+
+/** Waits between reads that hit Postgres's statement timeout: about a minute in all, longer than a publish's swap. */
+export const TIMEOUT_WAITS_MS: readonly number[] = [5_000, 10_000, 20_000, 30_000];
+
+export function isStatementTimeout(err: unknown): boolean {
+  return err instanceof Error && /statement timeout/i.test(err.message);
+}
+
+const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
 async function readDataset(client: SupabaseClient): Promise<PublishedDataset> {
   const schools: School[] = [];

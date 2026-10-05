@@ -148,6 +148,11 @@ showed the marker on the first visit. Published the original without revalidatin
 pages back. Unit tests (`tests/supabase.test.mts`) cover the reload, a publish landing mid-read, an unreachable
 store, and the auth check. They fail if the version check is removed.
 
+**Reads during a publish** (2026-10-05): while a publish swaps the schools table, reads can hit Postgres's statement
+timeout. The production build for #80 failed this way, reading colleges mid-publish. `fetchDatasetFiles` now waits
+and retries on a statement timeout (`TIMEOUT_WAITS_MS`, about a minute in all) and fails at once on any other error;
+`tests/supabase.test.mts` covers both.
+
 ## Keys
 
 | Variable | Where | Notes |
@@ -236,7 +241,9 @@ Found while setting it up:
 - **`publish`** runs `npm run publish-data` against prod when a push to `main` changes `data/**`, or when run by hand
   (Actions → Publish data → Run workflow). It only ever publishes `main`, even when started from another branch.
   Runs are serialized (a newer queued run replaces an older one). If `PROD_SUPABASE_URL` or
-  `PROD_SUPABASE_SECRET_KEY` isn't set, it logs a notice and skips, and the run stays green.
+  `PROD_SUPABASE_SECRET_KEY` isn't set, it logs a notice and skips, and the run stays green. A failed publish is
+  re-run once after 60 s, since the merge's production build can make its statements time out; repeating is safe
+  (the first staging batch resets the staging table).
 - **`revalidate-after-deploy`** runs on each successful Vercel production deploy (`deployment_status`) and POSTs to
   `/api/revalidate`, which closes the [deploy race](#revalidation). It skips when the `PROD_REVALIDATE_*` secrets
   aren't set.

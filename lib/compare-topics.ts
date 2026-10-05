@@ -343,13 +343,26 @@ export const COMPARE_TOPIC_FIELDS: Record<CompareTopicKey, readonly FieldPath[]>
 
   // Outcomes: app/compare/outcomes/page.tsx.
   outcomes: [
-    // The page's fields go here.
+    "outcomes.median_earnings_10yr",
+    "outcomes.graduation_rate",
+    "outcomes.retention_rate",
+    "outcomes.median_debt",
+    "outcomes.federal_loan_rate",
+    "outcomes.median_debt_pell",
+    "outcomes.eight_year",
+    "outcomes.grad_rate_pell",
+    "outcomes.grad_rate_no_pell_no_loan",
+    "outcomes.grad_cohorts",
+    "derived.pell_grad_gap",
+    "outcomes.grad_rate_by_race",
+    "outcomes.grad_cohorts_by_race",
+    "reported.outcomes.graduation",
   ],
 
   // Over time: app/compare/history/page.tsx.
-  history: [
-    // The page's fields go here.
-  ],
+  // Every chart cites its history editions in its own HistorySourceNote, not the snapshot registry (as the
+  // profile's TOPIC_FIELDS.history does).
+  history: [],
 
   // All the numbers: app/compare/table/page.tsx.
   table: TABLE_FIELDS,

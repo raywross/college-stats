@@ -1,5 +1,6 @@
 import type { School } from "@/lib/types";
 import type { TermKey } from "@/lib/glossary";
+import type { Cited } from "@/lib/lineage";
 import { SLOT_COLORS, shortName } from "@/lib/brand";
 import { MetricLabel } from "@/components/ui/info-tip";
 
@@ -7,6 +8,8 @@ import { MetricLabel } from "@/components/ui/info-tip";
  * One metric, one bar per school. Bars wear the school's slot color;
  * text stays in ink. The extreme value gets a neutral label (not a trophy):
  * "higher" isn't automatically "better" for things like selectivity.
+ * `variant="row"` drops the card (a compact row inside another card, as the compare topic cards use);
+ * `cited` adds the field's source to the label's (i).
  */
 export function CompareMetric({
   label,
@@ -16,6 +19,8 @@ export function CompareMetric({
   format,
   max,
   flag,
+  variant = "card",
+  cited,
 }: {
   label: string;
   term: TermKey;
@@ -24,16 +29,19 @@ export function CompareMetric({
   format: (v: number) => string;
   max?: number;
   flag?: { which: "max" | "min"; text: string };
+  variant?: "card" | "row";
+  cited?: Cited;
 }) {
   const values = schools.map(get);
   const present = values.filter((v): v is number => v !== null);
   const top = max ?? Math.max(1e-9, ...present);
   const target =
     flag && present.length > 1 ? (flag.which === "max" ? Math.max(...present) : Math.min(...present)) : null;
+  const row = variant === "row";
 
   return (
-    <div className="rounded-3xl border bg-card p-4 sm:p-5">
-      <MetricLabel term={term} className="mb-4 font-display text-base font-bold">
+    <div className={row ? undefined : "rounded-3xl border bg-card p-4 sm:p-5"}>
+      <MetricLabel term={term} cited={cited} className={row ? "mb-2 text-xs font-semibold text-muted-foreground" : "mb-4 font-display text-base font-bold"}>
         {label}
       </MetricLabel>
       <div className="space-y-2.5">
@@ -43,7 +51,7 @@ export function CompareMetric({
           return (
             <div key={s.unit_id} className="grid grid-cols-[4.5rem_1fr_auto] items-center gap-3 sm:grid-cols-[6rem_1fr_auto]">
               <span className="truncate text-xs font-semibold">{shortName(s)}</span>
-              <span className="h-3 overflow-hidden rounded-full bg-muted">
+              <span className={`${row ? "h-2.5" : "h-3"} overflow-hidden rounded-full bg-muted`}>
                 {v !== null && (
                   <span
                     className="block h-full origin-left animate-grow-x rounded-full"

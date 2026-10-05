@@ -329,6 +329,10 @@
   .no-scrollbar {
     scrollbar-width: none;
   }
+  /* Compare's "Differences only" switch (components/compare/DifferencesOnly.tsx): hide rows every college shares. */
+  [data-differences-only="true"] tr[data-same] {
+    display: none;
+  }
 
   /* Rendered spec markdown on /roadmap/{slug} (specs/roadmap.md) */
   .spec-prose {

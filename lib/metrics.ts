@@ -1,15 +1,15 @@
 import type { School, SizeBucket } from "./types";
 import type { TermKey } from "./glossary";
-import { ratioLabel } from "./academics";
-import { completion4, completion8, transferOut8 } from "./outcome-measures";
-import { NATIONAL_MIN_FIRST_YEARS } from "./residence";
-import { transferShare } from "./transfers";
+import { ratioLabel } from "./academics.ts";
+import { completion4, completion8, transferOut8 } from "./outcome-measures.ts";
+import { NATIONAL_MIN_FIRST_YEARS } from "./residence.ts";
+import { transferShare } from "./transfers.ts";
 import type { FieldPath } from "./fields";
-import { money, num, pct, pctSmart } from "./format";
-import { admitRatesBySex, sameClassYield, satMedian, simpsonIndex } from "./derive";
-import { bedsPer100 } from "./housing";
-import { pellGap } from "./graduation-groups";
-import { endowmentOnForm, instructionOnForm } from "./finances";
+import { money, num, pct, pctSmart } from "./format.ts";
+import { admitRatesBySex, sameClassYield, satMedian, simpsonIndex } from "./derive.ts";
+import { bedsPer100 } from "./housing.ts";
+import { pellGap } from "./graduation-groups.ts";
+import { endowmentOnForm, instructionOnForm } from "./finances.ts";
 
 /* ------------------------------------------------------------------ */
 /* Derived values (null when the underlying data isn't reported)       */

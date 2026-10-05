@@ -10,7 +10,12 @@ import type { SchoolIndexEntry } from "@/lib/data";
 import { searchSchoolsApi } from "@/lib/school-api";
 import { SLOT_COLORS, shortName } from "@/lib/brand";
 import { pctSmart } from "@/lib/format";
+import { DOMAINS } from "@/lib/metrics";
+// The light half of lib/compare-topics.ts (same exports), so this client bundle doesn't carry the table rows.
+import { COMPARE_TOPICS, compareHref, type ComparePage } from "@/lib/compare-routes";
+import { cn } from "@/lib/utils";
 import { Crest } from "@/components/school/Crest";
+import { PillRow, type PillItem } from "@/components/ui/pill-row";
 
 /** Keeps the saved compare list in step with the URL being viewed. */
 function useSyncStorage(ids: string[]) {
@@ -96,23 +101,41 @@ function SchoolPicker({ exclude, onPick }: { exclude: string[]; onPick: (id: str
   );
 }
 
-export function CompareHeader({ schools }: { schools: SchoolIndexEntry[] }) {
+/**
+ * The compare pages' sticky band (specs/compare-redesign.md): slot-colored school chips, the add-school picker, and,
+ * once two colleges are picked, the topic pills (Overview + seven). From `md` the band is exactly COMPARE_BAND
+ * (9.5rem, components/compare/CompareTopicPage.tsx) tall, so the table's sticky header row and the "On this page"
+ * column sit right under it; `data-compact-header` lets OnThisPage measure it.
+ */
+export function CompareHeader({ schools, current }: { schools: SchoolIndexEntry[]; current: ComparePage }) {
   const router = useRouter();
   const ids = schools.map((s) => s.id);
   useSyncStorage(ids);
+  // With one college every topic page redirects back here, so the pills wait for a second.
+  const pills = ids.length >= 2;
 
   const go = (next: string[]) => {
     setCompareIds(next);
-    router.replace(next.length ? `/compare?ids=${next.join(",")}` : "/compare", { scroll: false });
+    // A topic page keeps its topic while two or more colleges remain; otherwise the overview's states take over.
+    router.replace(next.length >= 2 && current !== "overview" ? compareHref(next, current) : next.length ? compareHref(next) : "/compare", { scroll: false });
   };
+
+  const items: PillItem[] = [
+    { key: "overview", label: "Overview", href: compareHref(ids) },
+    ...COMPARE_TOPICS.map((t) => ({ key: t.key, label: t.label, href: compareHref(ids, t.key), color: t.domain ? DOMAINS[t.domain].color : "var(--primary)" })),
+  ];
 
   return (
     <div
-      className="sticky z-30 -mx-4 border-b bg-background/85 px-4 py-2 backdrop-blur-xl sm:-mx-6 sm:px-6 md:py-3"
+      data-compact-header
+      className={cn(
+        "sticky z-30 -mx-4 border-b bg-background/85 px-4 pt-2 backdrop-blur-xl sm:-mx-6 sm:px-6 md:pt-3",
+        pills ? "md:flex md:h-[9.5rem] md:flex-col" : "pb-2 md:pb-3"
+      )}
       style={{ top: "calc(env(safe-area-inset-top, 0px) + var(--header-h))" }}
     >
-      {/* Phones: one swipeable row of slim pills so the sticky bar stays ~56px tall. md+: a card per school. */}
-      <div className="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4 md:mx-0 md:grid md:grid-cols-4 md:gap-3 md:overflow-visible md:px-0">
+      {/* Phones: one swipeable row of slim pills so the school row stays ~48px tall. md+: a card per school, 5rem tall. */}
+      <div className="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4 md:mx-0 md:grid md:h-20 md:shrink-0 md:grid-cols-4 md:gap-3 md:overflow-visible md:px-0">
         {schools.map((s, i) => (
           <div
             key={s.id}
@@ -143,6 +166,7 @@ export function CompareHeader({ schools }: { schools: SchoolIndexEntry[] }) {
           <SchoolPicker exclude={ids} onPick={(id) => go([...ids, id])} />
         )}
       </div>
+      {pills && <PillRow items={items} current={current} ariaLabel="Compare topics" className="flex h-11 items-center md:h-auto md:flex-1" />}
     </div>
   );
 }

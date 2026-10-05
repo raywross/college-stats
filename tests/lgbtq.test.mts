@@ -195,7 +195,7 @@ function sources(path: string): string[] {
  * lib/lgbtq.ts (gender, admissions) or name GenderDetail/GenderAdmissions/"another gender".
  */
 test("another-gender counts never feed rankings, medians, filters, Compare, or Known for", () => {
-  const files = ["lib/metrics.ts", "lib/params.ts", "lib/indicators.ts", "lib/dataset.ts", "lib/compare.ts", "lib/cds/compare-rows.ts", "lib/insights.ts", "app/explore", "app/compare", "components/explore", "app/page.tsx"].flatMap(sources);
+  const files = ["lib/metrics.ts", "lib/params.ts", "lib/indicators.ts", "lib/dataset.ts", "lib/compare.ts", "lib/cds/compare-rows.ts", "lib/insights.ts", "lib/compare-topics.ts", "lib/compare-routes.ts", "lib/compare-data.ts", "app/explore", "app/compare", "components/explore", "app/page.tsx"].flatMap(sources);
   for (const f of files) {
     const text = readFileSync(f, "utf8");
     assert.ok(!/another[-_ ]gender|GenderDetail|GenderAdmissions|lib\/lgbtq(?:\.ts)?["']|from ["']\.\.?\/.*\/lgbtq(?:\.ts)?["']/i.test(text), `${f.slice(ROOT.length + 1)} reads the another-gender counts`);

@@ -4,10 +4,11 @@ import { connection } from "next/server";
 import { AccountsSetupError, authConfigured, requireUser } from "@/lib/auth";
 import { profilesICanSee } from "@/lib/student-profile-store";
 import { AuthUnavailable } from "@/components/account/AuthUnavailable";
+import { GuardianBanner } from "@/components/account/GuardianBanner";
 import { CompletenessMeter } from "@/components/me/CompletenessMeter";
 import { ProfileForm } from "@/components/me/ProfileForm";
 import { ImportLocalProfile } from "@/components/me/ImportLocalProfile";
-import { ViewingAsGuardianBanner } from "@/components/me/ViewingAsGuardianBanner";
+import { logStudentRead } from "@/lib/households";
 import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = { title: "Your profile", robots: { index: false } };
@@ -42,6 +43,10 @@ export default async function MePage({ searchParams }: { searchParams: Promise<{
 
   const { student: studentParam } = await searchParams;
   const selected = profiles.find((p) => p.student.id === studentParam) ?? profiles[0];
+  // A guardian's own session reads the student's row (RLS decides); this records it so the student sees it in
+  // /account ("Mom viewed your profile on Oct 2") — lib/households.ts's pattern (openStudentAs), applied to just
+  // the student actually being viewed, not every student the picker lists.
+  if (selected.relation === "guardian") await logStudentRead(selected.student.id, "student_profiles");
 
   return (
     <div className="mx-auto max-w-3xl space-y-6 px-4 py-10 sm:px-6 sm:py-14">
@@ -68,7 +73,7 @@ export default async function MePage({ searchParams }: { searchParams: Promise<{
         </nav>
       )}
 
-      {selected.relation === "guardian" && <ViewingAsGuardianBanner studentName={selected.student.display_name} />}
+      {selected.relation === "guardian" && <GuardianBanner studentName={selected.student.display_name} canEdit={selected.canEdit} />}
 
       {selected.relation === "self" && <ImportLocalProfile studentId={selected.student.id} canEdit={selected.canEdit} />}
 

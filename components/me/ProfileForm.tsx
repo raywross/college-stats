@@ -86,7 +86,7 @@ function GpaField({ disabled, gpa, gpaScale }: { disabled?: boolean; gpa: number
           disabled={disabled}
           defaultValue={gpa ?? ""}
           onChange={(e) => setValue(e.currentTarget.value === "" ? null : Number(e.currentTarget.value))}
-          className={inputCls}
+          className={`${inputCls} min-w-0 flex-1`}
           placeholder="3.8"
         />
         <select
@@ -94,7 +94,7 @@ function GpaField({ disabled, gpa, gpaScale }: { disabled?: boolean; gpa: number
           disabled={disabled}
           defaultValue={gpaScale}
           onChange={(e) => setScale(e.currentTarget.value as GpaScale)}
-          className={`${inputCls} max-w-36`}
+          className={`${inputCls} w-auto max-w-32 min-w-0 shrink-0`}
           aria-label="GPA scale"
         >
           {GPA_SCALES.map((s) => (

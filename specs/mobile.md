@@ -35,8 +35,9 @@ overflowing content, so root causes must be fixed. `clip` (unlike `hidden`) keep
 - **Header** on phones is just the logo, 56px tall (`--header-h: 3.5rem`, 4rem from `md`). Navigation, search,
   and theme moved to the tab bar.
 - **Footer** drops its link column on phones and pads for the tab bar (`--tabbar-h`).
-- **Sticky sub-navs** (the profile topic pages' `CompactHeader` with its pill row, `CompareHeader`, glossary search bar) sit at
-  `calc(env(safe-area-inset-top, 0px) + var(--header-h))`. Never hard-code the header height.
+- **Sticky sub-navs** (the profile topic pages' `CompactHeader` with its pill row, `CompareHeader` with its chips
+  row and topic-pills row, glossary search bar) sit at `calc(env(safe-area-inset-top, 0px) + var(--header-h))`.
+  Never hard-code the header height.
 
 ## Patterns
 | Pattern | How | Used on |
@@ -44,8 +45,8 @@ overflowing content, so root causes must be fixed. `clip` (unlike `hidden`) keep
 | Swipe rail | `grid … max-sm:rail` (a Tailwind `@utility` in `globals.css`). Snaps, bleeds to the screen edge, next card peeks. Width per item: `max-sm:[--rail-item:72%]` (default 82%). Becomes the grid from `sm` | Home lenses, value leaderboards, What's changed, Who stands out, lingo; profile similar schools; compare suggestions |
 | Result row | `SchoolRow`: crest, name, city · type, three colored facts (SAT, undergrads, avg cost), admit rate on the right, compare button. ~90px vs. ~460px for a card | Explore (cards from `sm`) |
 | Chip row | `max-sm:overflow-x-auto max-sm:-mx-4 max-sm:px-4` + `shrink-0` children | Home "Try:" schools, profile "Known for" |
-| Pill bar | `CompareHeader` becomes one swipeable row of slim pills (~56px) instead of a 2×2 card grid | Compare |
-| Sticky first column | `sticky left-0 bg-card` on the label cell | Compare tables |
+| Pill bar | `CompareHeader`'s second row becomes one swipeable row of topic pills (Overview + seven), under a school-chips row that swipes the same way | Compare |
+| Sticky first column | `sticky left-0 bg-card` on the label cell; the header row of college names sticks too, from `lg`, under the compare band | Compare's full table (`/compare/table`) |
 
 ## Profile on phones
 The profile is an overview plus six topic pages ([school-profile.md](school-profile.md)). A topic page's sticky band
@@ -74,6 +75,23 @@ Harvard (2026-10-02, as built, content height to the end of `<main>`): overview 
 2,899 tablet); topic pages 2,564–4,981px on a phone and 1,755–3,847px on desktop, where the single page was
 19,061px / 23,285px. `npm run measure-profile` prints the table.
 Charts inside folded content keep their last real width (`useWidth` ignores 0) and re-measure when shown.
+
+## Compare on phones
+Compare is an overview plus seven topic pages too ([comparison.md](comparison.md)), so `CompareHeader` carries two
+swipeable rows instead of the profile's one: the slot-colored school chips, then the topic pills once two or more
+colleges are picked (hidden below two, since every topic would just redirect back to the overview). No compare
+page needed `ShowMore` folding — every page measured inside its phone budget as built, unlike the profile's Over
+time and Outcomes pages.
+
+Two blocks hold a fixed per-college width and scroll sideways *inside their own card* rather than shrinking, so four
+colleges stay readable: the SAT/ACT range bars (`ScoreCompare`, and the Getting-in card's score row) and the race &
+ethnicity bars (`RaceCompare`). This is deliberate, not the sideways-scroll-into-empty-space bug this file opened
+with — the card's outer width still matches the viewport; only its internal row scrolls.
+
+The full table (`/compare/table`) uses the same sticky-first-column pattern as other Compare tables below `lg`
+(1024px) — which includes the 810px tablet width this file measures at, so a tablet gets the same sideways-scrolling
+box as a phone. Only from `lg` does the box stop scrolling sideways, with the header row of college names sticking
+under the compare band instead. The **Differences only** switch works identically at every width.
 
 ## Type and spacing on phones
 - Page h1 `text-3xl` (home hero `text-[2.75rem]`), section h2 `text-2xl`; eyebrows hidden on page headers.

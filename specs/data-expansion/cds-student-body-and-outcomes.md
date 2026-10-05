@@ -542,7 +542,7 @@ Built 2026-10-03 on the round-3 foundation, from the four template-workbook reco
 | `lib/indicators.ts` | `Indicator.endFall`; `detailText` adds "(to fall 2024)" for diversity (and selectivity) when the shown value is newer |
 | `components/ui/info-tip.tsx` | "Reported by X in its Common Data Set 2025–26 (fall 2025)."; replaced race shares in the chart's order; percent formatting by path |
 | `components/charts/GroupDotPlot.tsx`, `components/school/GraduationByGroup.tsx` | `secondary` mark ("within 4 years"), the headline sentence, the legend with the `on-time-graduation` term, the race plot's overall line from `outcomes.federal.graduation` |
-| `app/compare/page.tsx`, `app/data/page.tsx`, `app/schools/[id]/students/page.tsx`, `lib/glossary.ts` | Six 4/5-year rows; counts per group; a cited ⓘ on Campus size; `on-time-graduation` and the three sentences |
+| `lib/compare-topics.ts`, `app/compare/outcomes/page.tsx`, `app/data/page.tsx`, `app/schools/[id]/students/page.tsx`, `lib/glossary.ts` | Six 4/5-year rows (moved to `lib/compare-topics.ts` and the Outcomes topic page in the 2026-10-05 compare redesign); counts per group; a cited ⓘ on Campus size; `on-time-graduation` and the three sentences |
 | `data/meta.json`, `data/release-calendar.json` | `scorecard-retention`: "Entered fall 2023" (the probe: Scorecard key 2024 equals `latest` at all 8 former override colleges) |
 | `tests/cds-student-body.test.mts` | Tests 1–6 of the plan in one file (plus the updated `lineage`, `merge-reported`, `profile-topics` tests) |
 

@@ -13,6 +13,7 @@ const CATEGORY_COLORS: Record<string, string> = {
   "School types": "var(--d-size)",
   "How we measure": "var(--d-diversity)",
   "Data sources": "var(--muted-foreground)",
+  "Your account": "var(--primary)",
 };
 
 export function GlossaryList() {

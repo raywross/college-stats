@@ -1,7 +1,8 @@
 # Accounts and Households
 
-> Status: **planned** (not built). Decided 2026-10-02: Supabase Auth, server-side sessions, households with
-> guardian-only finances. Foundational for [saved-lists.md](saved-lists.md), the planning tools, and
+> Status: **planned**, foundation built (2026-10-05, [below](#built-foundation-2026-10-05)): email sign-in, the schema with
+> row-level security, the `/account` shell, and the header menu. Households, invitations UI, export, and delete are
+> next. Decided 2026-10-02: Supabase Auth, server-side sessions, households with guardian-only finances. Foundational for [saved-lists.md](saved-lists.md), the planning tools, and
 > [commercialization.md](commercialization.md). Part of [product](README.md).
 
 ## Goal
@@ -32,11 +33,12 @@ federal number ([commercialization.md](commercialization.md#what-stays-free)).
   [counselor-portal.md](counselor-portal.md) and [scattergrams.md](scattergrams.md), not here.
 
 ## Sign-in
-- **Methods:** email magic link (no passwords to leak or reset) and Google. Apple sign-in when there is a native
-  app. Passkeys later.
+- **Methods:** email magic link (no passwords to leak or reset). Google is deferred to the backlog (2026-10-05: the
+  owner is registering a new domain first); the login form has a marked slot for it. Apple sign-in when there is a
+  native app. Passkeys later.
 - **Routes:** `/login` (one form, both methods; `?next=` returns to the page that asked), `/auth/callback` (code
   exchange, server-side), `/account` (name, email, birth year, households, subscription, export, delete).
-- **Session:** `httpOnly` cookies via `@supabase/ssr`; `middleware.ts` refreshes the token; `getUser()` (not
+- **Session:** `httpOnly` cookies via `@supabase/ssr`; `proxy.ts` (Next 16's name for middleware) refreshes the token; `getUser()` (not
   `getSession()`) in every server read, because only `getUser()` verifies the token with Supabase.
 - **Anonymous first.** Tools work signed out with state in `localStorage` (the compare list already does).
   On sign-in, local state is offered for import once ("Save these 4 colleges to your list?"), then cleared.
@@ -99,7 +101,7 @@ Every user-data table has an **owner column** and a **visibility rule**, enforce
   user-data queries use the signed-in user's token through the server client, so RLS applies to every query.
   Admin tasks (hard delete, migrations) run from scripts with the secret key.
 
-## Files (planned)
+## Files (as planned 2026-10-02; see [Built](#built-foundation-2026-10-05) for what exists)
 - `lib/auth.ts` (server-only: `getUser()`, `requireUser()`, `currentStudent()`), `lib/supabase-server.ts`
   (`@supabase/ssr` client bound to cookies), `middleware.ts` (token refresh).
 - `app/login/`, `app/auth/callback/route.ts`, `app/account/` (page, household, invitations, export, delete).
@@ -119,3 +121,80 @@ Every user-data table has an **owner column** and a **visibility rule**, enforce
    [follow-colleges.md](follow-colleges.md#research-2026-10-02): Resend, shared with the update emails.
 3. Counselor sign-in reuses this spec; whether school counselors sign in with Google Workspace SSO (and whether
    that requires district approval) is settled in [counselor-portal.md](counselor-portal.md).
+
+## Built: foundation (2026-10-05)
+Unit A of the accounts build. Everything below is in the code; households, invitations UI, export, delete, and the
+access-log view build on it.
+
+### Contracts (what later work uses)
+| File | Exports |
+|---|---|
+| `lib/supabase-server.ts` (server only) | `createServerSupabase(): Promise<SupabaseClient>` (new `@supabase/ssr` client per request, bound to `cookies()`; throws when unconfigured), `supabaseAuthEnv()` |
+| `lib/auth.ts` (server only) | `authConfigured(): boolean`, `getUser(): Promise<User \| null>` (`auth.getUser()`, per-request `cache`), `requireUser(next?): Promise<User>` (redirects to `/login?next=`), `getAccount(): Promise<Account \| null>`, `currentStudent(): Promise<StudentRecord \| null>`, `studentsICanSee(): Promise<StudentAccess[]>`, `AccountsSetupError` |
+| `lib/accounts.ts` (pure) | Types `Account` (`{ user: { id, email }, profile }`), `Profile`, `StudentRecord`, `Household`, `HouseholdMember`, `Invitation`, `StudentAccess` (`{ student, relation: "self" \| "guardian", canEdit }`), `RoleHint`, `MeState`; `birthYearAllowed(year, today?)`, `parseBirthYear`, `safeNextPath(next, fallback?)`, `loginHref(next?)`, `resolveStudentAccess`, `wantsOwnStudent`, `initialsFor`, `INVITATION_ERRORS`, `ROLE_HINTS`, `AGE_GATE_COOKIE` |
+| `lib/email.ts` | `sendEmail({ to, subject, html, text, headers }): Promise<SendResult>` (`{ sent: true, id }`, `{ sent: false, reason: "not-configured" }`, or `{ sent: false, reason: "error", error }`; never throws), `emailConfigured()` |
+| `components/account/` | `SignInPrompt` (`reason`, `next`, `variant: "card" \| "inline"`), `AccountMenu` (avatar menu; add links to its `ACCOUNT_MENU_LINKS`), `useMe()` (client hook over `/api/me`), `AccountSection` + `ComingSoon`, `SignOutButton`, `AuthUnavailable` |
+| `tests/helpers/pg-auth.mts` | `createAuthDb(migrations)`, `asUser(db, userId \| null, sql, params)`, `affectedAsUser(...)`, `createUser(db, { email, birthYear?, roleHint?, displayName? })` |
+
+SQL (`supabase/migrations/20261005120000_accounts.sql`): tables `profiles`, `households`, `household_members`,
+`students`, `invitations`, `access_log`, all with RLS. Helper functions (security definer, stable, `search_path = ''`)
+for later policies: `is_own_student(uuid)`, `can_read_student(uuid)`, `can_edit_student(uuid)`, plus
+`is_household_member(uuid)`, `is_household_guardian(uuid)`, `is_guardian_of(uuid, need_edit)`,
+`household_has_members(uuid)`, `birth_year_allowed(int)`. RPCs: `create_invitation(household, email, side, student?,
+can_edit?) → { id, token, expires_at }`, `accept_invitation(token) → household id`, `invitation_preview(token)` (anon
+allowed; name, inviter, side, expiry, state; never the email), `log_access(student, table)`.
+
+### Decisions made while building
+- **13+ from a birth year is conservative:** a year exactly 13 back is refused (that person may still be 12), so in
+  2026 the youngest allowed birth year is 2012. Checked in the login action, again by a trigger on `profiles` (the
+  sign-up trigger fails the sign-up), and on `/account` edits. A refusal sets a one-day `quad_age_gate` cookie so the
+  question can't simply be retried with another year. No guardian consent (owner decision 2026-10-05).
+- **Birth year only for new accounts:** the form first tries `signInWithOtp` with `shouldCreateUser: false`; if
+  Supabase says there's no such user, it asks for the birth year and "I'm a student / parent or guardian / counselor"
+  and sends them as user metadata, which the `on_auth_user_created` trigger copies into `profiles`. "New here? Create
+  an account" opens the same fields directly. (This tells a visitor whether an email has an account, as Supabase's own
+  API already does.)
+- **Header state comes from `GET /api/me`** (`private, no-store`) fetched by `useMe()` in the browser. A visitor
+  without an `sb-` auth cookie gets an answer without a call to Supabase. Public pages never read cookies, so they keep
+  their static/ISR rendering (checked with `next build`; a test fails if a page outside the account routes imports
+  `next/headers`, `lib/auth`, or `lib/supabase-server`).
+- **`proxy.ts` runs only on** `/login`, `/auth/*`, `/account/*`, `/me/*`, `/invite/*`, `/api/me`, and only when an
+  `sb-` cookie is present. Later account routes add their prefix to the matcher and to `ACCOUNT_ROUTES` in
+  `tests/accounts.test.mts`. Server Actions on public pages (Follow, Add to list) refresh the session themselves.
+- **Account pages call `connection()`**, so they're rendered per request even when built without keys.
+- **`currentStudent()` creates the user's own student record lazily** when their role hint is `student` or unset;
+  guardians and counselors get none.
+- **Guardian access requires both memberships to be `active`** and the household not deleted; `can_edit` lives on the
+  guardian's membership and covers that household's students. Only a student's invitation can grant `can_edit` (a
+  guardian inviting another guardian always gives view-only). `status = 'invited'` is reserved: pending invitations
+  live in `invitations` and never grant access.
+- **Memberships come only from `accept_invitation()`**, except a household's creator adding themselves and a guardian
+  adding a managed student they created. Invitation tokens are 64 hex characters; only their SHA-256 is stored.
+  Accepting checks expiry (7 days), revocation, reuse, the signed-in user's email, and that it isn't the inviter's own.
+- **Claiming a managed student** sets `user_id` and clears `managed_by`; the guardian keeps access through the
+  household. If the invitee already has a student record, theirs joins the household and the managed one is left
+  alone. Ownership columns can't be changed through the API (trigger).
+- **Soft delete:** `profiles`, `households`, `students` have `deleted_at`. A student's owner still sees a soft-deleted
+  record (Postgres checks updated rows against the select policy, and it allows restoring); guardians lose it at once.
+  App reads filter `deleted_at is null`.
+- **Not built here:** names of other household members (needs a function; the `profiles` policy is own-row only),
+  changing `can_edit` after joining, removing someone else from a household, export, delete, the access-log view.
+
+### Setup (owner)
+1. **Apply the migration** to the dev project: SQL Editor → paste `supabase/migrations/20261005120000_accounts.sql`
+   → Run. (Prod later, before the formal release.) Until then account pages show "Accounts aren't set up yet".
+2. **Supabase → Authentication → URL Configuration:**
+   - Site URL: `https://college-stats-nine.vercel.app` (later the new domain).
+   - Redirect URLs: `http://localhost:3000/**` through `http://localhost:3005/**` (each worktree's dev port),
+     `https://*-raywross-projects.vercel.app/**` (Vercel previews; adjust to the team slug in a preview URL), and
+     `https://college-stats-nine.vercel.app/**`. A redirect URL that isn't listed silently falls back to the Site URL.
+3. **Email templates (optional, recommended):** the default Magic Link and Confirm signup templates work with the
+   PKCE `?code=` flow, but only in the browser that asked for the link. To make links work when the email opens
+   elsewhere (a phone's mail app), change both templates' link to
+   `{{ .RedirectTo }}&token_hash={{ .TokenHash }}&type=email` (the app always sends a redirect with `?next=`, so the
+   `&` is right; `/auth/callback` accepts both forms).
+4. **Rate limit:** Supabase's built-in mailer sends only a few emails an hour per project; enough for testing. The
+   login form says "Too many sign-in emails" when it's hit. Before launch, point Supabase Auth's SMTP at Resend
+   (Authentication → Emails → SMTP) once the sending domain is verified, and set `RESEND_API_KEY` and `EMAIL_FROM` in
+   Vercel for invitations and digests.
+5. Vercel needs nothing new: `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY` are already set.

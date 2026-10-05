@@ -41,6 +41,7 @@ export function values(ms: readonly Member[], [from, to]: [number, number], line
   const ends = (f: (r: readonly Member[], y: number) => number | null): ThenNow => [round4(f(ms, from)!), round4(f(ms, to)!)];
   const hasShare = (m: Member, y: number) => shareAt(m, y) !== null;
   const hasWeight = (m: Member, y: number) => hasShare(m, y) && (at(m, "enrolled", y) ?? 0) > 0;
+  const r4 = (v: number | null) => (v === null ? null : round4(v));
   /** A yearly line over the members reporting that year (null under 90% coverage, and on odd years: step 2). */
   const line = (ok: (m: Member, y: number) => boolean, f: (r: readonly Member[], y: number) => number | null) =>
     yearly(
@@ -48,7 +49,7 @@ export function values(ms: readonly Member[], [from, to]: [number, number], line
       to,
       (y) => {
         const r = reporting(ms, (m) => ok(m, y));
-        return r ? round4(f(r, y)) : null;
+        return r ? r4(f(r, y)) : null;
       },
       2
     );

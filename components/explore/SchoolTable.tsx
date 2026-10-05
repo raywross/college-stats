@@ -8,6 +8,7 @@ import { getData } from "@/lib/data";
 import { Crest } from "@/components/school/Crest";
 import { crestBrand } from "@/lib/brand";
 import { CompareButton } from "@/components/compare/CompareButton";
+import { AddToListButton } from "@/components/lists/AddToListButton";
 import { InfoTip } from "@/components/ui/info-tip";
 import { cn } from "@/lib/utils";
 
@@ -342,7 +343,10 @@ export async function SchoolTable({ schools, params }: { schools: School[]; para
                     </>
                   )}
                   <td className="px-3 pr-4 text-right">
-                    <CompareButton id={s.unit_id} variant="icon" />
+                    <div className="inline-flex items-center gap-1.5">
+                      <CompareButton id={s.unit_id} variant="icon" />
+                      <AddToListButton ids={s.unit_id} variant="icon" />
+                    </div>
                   </td>
                 </tr>
               );

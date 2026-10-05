@@ -96,6 +96,42 @@ export const ACCOUNT_EXPORTERS: AccountExporter[] = [
       rows("student_profiles", supabase.from("student_profiles").select("student_id, data, updated_at").in("student_id", inList(studentIds))),
   },
   {
+    key: "lists",
+    description: "Your saved college lists: categories, rounds, statuses, outcomes, deadlines, and notes.",
+    run: async ({ supabase, studentIds }) => {
+      const lists = await rows<{ id: string; student_id: string; name: string; is_default: boolean; created: string }>(
+        "lists",
+        supabase.from("lists").select("id, student_id, name, is_default, created").in("student_id", inList(studentIds)),
+      );
+      return Promise.all(
+        lists.map(async (list) => {
+          const items = await rows<{ id: string; unit_id: string; category: string; status: string; outcome: string | null; round: string | null; position: number; added_at: string; decision_date: string | null; deadline_text: string | null; deadline_date: string | null; enrolling: boolean }>(
+            "list_items",
+            supabase
+              .from("list_items")
+              .select("id, unit_id, category, status, outcome, round, position, added_at, decision_date, deadline_text, deadline_date, enrolling")
+              .eq("list_id", list.id),
+          );
+          const notes = await rows("list_notes", supabase.from("list_notes").select("item_id, body, private, created").in("item_id", inList(items.map((i) => i.id))));
+          const itemsOut = items.map((i) => ({
+            unit_id: i.unit_id,
+            category: i.category,
+            status: i.status,
+            outcome: i.outcome,
+            round: i.round,
+            position: i.position,
+            added_at: i.added_at,
+            decision_date: i.decision_date,
+            deadline_text: i.deadline_text,
+            deadline_date: i.deadline_date,
+            enrolling: i.enrolling,
+          }));
+          return { ...list, items: itemsOut, notes };
+        }),
+      );
+    },
+  },
+  {
     key: "access_log",
     description: "When guardians viewed your information, and when you viewed a student's as a guardian.",
     run: async ({ supabase, userId }) => ({

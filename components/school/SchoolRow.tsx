@@ -5,6 +5,7 @@ import { compact, moneyCompact, pctSmart, range, typeShort } from "@/lib/format"
 import { Crest } from "@/components/school/Crest";
 import { crestBrand } from "@/lib/brand";
 import { CompareButton } from "@/components/compare/CompareButton";
+import { AddToListButton } from "@/components/lists/AddToListButton";
 
 /**
  * Phone result row (Explore, below sm): one headline number and three facts in ~90px, so a screen shows
@@ -45,7 +46,10 @@ export function SchoolRow({ school }: { school: School }) {
           </span>
           <span className="text-[10px] text-muted-foreground">{rate === null ? "no rate" : "admitted"}</span>
         </p>
-        <CompareButton id={school.unit_id} variant="icon" className="size-7" />
+        <div className="flex items-center gap-1">
+          <CompareButton id={school.unit_id} variant="icon" className="size-7" />
+          <AddToListButton ids={school.unit_id} variant="icon" className="size-7" />
+        </div>
       </div>
     </article>
   );

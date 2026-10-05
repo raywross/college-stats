@@ -842,6 +842,26 @@ const entries = {
     category: "How we measure",
     related: ["median"],
   },
+  "colleges-or-students": {
+    term: "Colleges or students",
+    short: "A share of colleges counts each college once and answers \"how common is this?\". A students figure weights each college by its size and answers \"how many people does this affect?\". Each national trend chart says which one it shows.",
+    long: "The two can tell different stories: a change at many small colleges moves the share of colleges a lot and the students figure a little, and one large university can move the students figure on its own.",
+    category: "How we measure",
+    related: ["fixed-panel", "median"],
+  },
+  "todays-classification": {
+    term: "Today's classification",
+    short: "National trend studies group each college by what it is today (its region, size, selectivity, and so on) at every point in the line. A college that grew past 10,000 undergraduates counts as 10,000+ throughout.",
+    why: "It keeps each group the same colleges from start to finish, but a group's change can partly reflect which colleges ended up in it.",
+    category: "How we measure",
+    related: ["fixed-panel"],
+  },
+  "too-few-colleges": {
+    term: "Too few colleges to say",
+    short: "A group needs at least 30 colleges in a study's panel before it gets a number (10 for a state, 8 for an athletic conference). Below that, a few colleges can swing a share or median, so the group shows its count only.",
+    category: "How we measure",
+    related: ["fixed-panel", "median"],
+  },
   ipeds: {
     term: "IPEDS",
     short: "The Integrated Postsecondary Education Data System: annual surveys every federally funded U.S. college must complete.",

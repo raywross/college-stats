@@ -56,7 +56,14 @@ export function typeShort(type: string): string {
 }
 
 /** Serializable formatter names, for passing formats into client components. */
-export type FormatKind = "pct" | "pctSmart" | "int" | "num" | "compact" | "fixed2" | "money" | "moneyCompact" | "ratio";
+export type FormatKind = "pct" | "pctSmart" | "int" | "num" | "compact" | "fixed2" | "money" | "moneyCompact" | "ratio" | "pts";
+
+/** A difference of two shares in percentage points, signed, one decimal: −0.023 → "−2.3 pts". */
+export function points(value: number): string {
+  const v = Math.round(value * 1000) / 10;
+  const sign = v > 0 ? "+" : v < 0 ? "−" : "";
+  return `${sign}${Math.abs(v).toFixed(1)} pts`;
+}
 
 export function formatBy(kind: FormatKind, value: number): string {
   switch (kind) {
@@ -74,6 +81,8 @@ export function formatBy(kind: FormatKind, value: number): string {
       return money(value);
     case "moneyCompact":
       return moneyCompact(value);
+    case "pts":
+      return points(value);
     case "ratio":
       // Student-to-faculty ratio: "8 to 1".
       return `${Math.round(value)} to 1`;

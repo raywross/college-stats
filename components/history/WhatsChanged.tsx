@@ -70,13 +70,18 @@ export async function WhatsChanged({
 
   return (
     <section>
-      <div className="mb-6">
-        <p className="mb-1.5 text-xs font-bold tracking-[0.18em] text-primary uppercase">Over time</p>
-        <h2 className="font-display text-2xl font-extrabold tracking-tight sm:text-4xl">What&apos;s changed</h2>
-        <p className="mt-2 max-w-3xl text-muted-foreground">
-          Ten years of federal data, measured over a <Term term="fixed-panel">fixed panel</Term> of the same colleges at both ends, with
-          money <Term term="inflation-adjusted">after inflation</Term>.
-        </p>
+      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="mb-1.5 text-xs font-bold tracking-[0.18em] text-primary uppercase">Over time</p>
+          <h2 className="font-display text-2xl font-extrabold tracking-tight sm:text-4xl">What&apos;s changed</h2>
+          <p className="mt-2 max-w-3xl text-muted-foreground">
+            Ten years of federal data, measured over a <Term term="fixed-panel">fixed panel</Term> of the same colleges at both ends, with
+            money <Term term="inflation-adjusted">after inflation</Term>.
+          </p>
+        </div>
+        <Link href="/trends" className="group inline-flex shrink-0 items-center gap-1 self-start text-sm font-bold text-primary hover:underline sm:self-auto">
+          All trends <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
+        </Link>
       </div>
       {/* Four facts sit 2 × 2 rather than three and an orphan. */}
       <div className={cn("grid gap-4 max-sm:gap-3 max-sm:rail md:grid-cols-2", count === 3 && "xl:grid-cols-3")}>

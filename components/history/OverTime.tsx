@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Table2, LineChart } from "lucide-react";
 import { formatBy, type FormatKind } from "@/lib/format";
@@ -845,6 +846,11 @@ export function OverTime(props: OverTimeProps) {
                   { key: "admit_rate_women", name: "Women", color: colors.admissions },
                   { key: "admit_rate_men", name: "Men", color: colors.admissions, dashed: true },
                 ]}
+                note={
+                  <Link href="/trends/men-and-women" className="font-semibold text-primary hover:underline">
+                    How does this compare nationally?
+                  </Link>
+                }
               />
             )}
           </div>

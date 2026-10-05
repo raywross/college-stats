@@ -56,6 +56,7 @@ import {
 import { buildCpi } from "./history/cpi.mts";
 import { COHORT_LAG, GRAD_RACE_FROM, fetchScorecardHistory, gradByRaceFields } from "./history/scorecard.mts";
 import { gradByGroupMismatches } from "./history/graduation-groups.mts";
+import { buildTrends } from "./trends/build.mts";
 
 const ROOT = join(import.meta.dirname, "..");
 const DATA = join(ROOT, "data");
@@ -477,6 +478,11 @@ async function main() {
   console.log(`  Admissions: IC ${count("ic-admissions")}, ADM ${count("adm")} · Prices ${count("prices")} · Aid ${count("sfa")}`);
   console.log(`  Scorecard: undergrads ${count("scorecard-enrollment")} · graduation (entering class) ${count("scorecard-completion")} · debt ${count("scorecard-debt")}`);
   console.log(`  Latest: fall ${latest.fall}, ${latest.academic}–${String(latest.academic + 1).slice(2)}. Provisional: ${Object.entries(provisional).map(([f, y]) => `${f} ${y}`).join(", ") || "none"}.`);
+
+  // National trend studies, lists, and group pages (specs/national-trends.md), from the files just written, so a data
+  // release refreshes them too. The same step as `npm run build-trends`.
+  console.log("\nNational trends (data/history/trends/):");
+  buildTrends(ROOT);
 }
 
 main().catch((err) => {

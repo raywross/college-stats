@@ -139,7 +139,8 @@ export async function fetchHistoryVersion(client: SupabaseClient): Promise<strin
 
 /** The shared history files, or null when history hasn't been published. */
 export async function fetchHistoryFiles(client: SupabaseClient): Promise<(HistoryFiles & { version: string }) | null> {
-  const { data, error } = await client.from("history_files").select("name, data, published_at");
+  // Only the four shared files: the table also holds the trend files (`trends/{name}`), read one at a time.
+  const { data, error } = await client.from("history_files").select("name, data, published_at").in("name", [...HISTORY_FILE_NAMES]);
   if (error) throw new Error(`Supabase: reading history_files failed: ${error.message}`);
   const file = (name: string) => data.find((f) => f.name === name);
   if (!file("meta")) return null;
@@ -150,6 +151,29 @@ export async function fetchHistoryFiles(client: SupabaseClient): Promise<(Histor
     cpi: file("cpi")!.data as CpiTable,
     version: file("meta")!.published_at as string,
   };
+}
+
+/** The shared history files' row names in history_files (data/history/{name}.json). */
+export const HISTORY_FILE_NAMES = ["meta", "national", "facts", "cpi"] as const;
+
+/**
+ * National trend files (data/history/trends/{name}.json; specs/national-trends.md) live in history_files as
+ * `trends/{name}` (supabase/migrations/20261004130000_trend_files.sql), published with the rest of history.
+ */
+export const trendRowName = (name: string) => `trends/${name}`;
+
+/** One trend file, or null when it hasn't been published. */
+export async function fetchTrendFile(client: SupabaseClient, name: string): Promise<unknown | null> {
+  const { data, error } = await client.from("history_files").select("data").eq("name", trendRowName(name)).maybeSingle();
+  if (error) throw new Error(`Supabase: reading trend file ${name} failed: ${error.message}`);
+  return data?.data ?? null;
+}
+
+/** Every published trend file by name (without the `trends/` prefix), for the publish script's read-back check. */
+export async function fetchAllTrendFiles(client: SupabaseClient): Promise<Record<string, unknown>> {
+  const { data, error } = await client.from("history_files").select("name, data").like("name", "trends/%");
+  if (error) throw new Error(`Supabase: reading trend files failed: ${error.message}`);
+  return Object.fromEntries(data.map((r) => [(r.name as string).slice("trends/".length), r.data]));
 }
 
 /** One college's history, or null when it has none. */

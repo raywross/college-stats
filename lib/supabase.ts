@@ -224,7 +224,7 @@ export async function fetchAllSchoolHistories(client: SupabaseClient): Promise<S
 /* ------------------------------------------------------------------ */
 
 /** Columns of a dataset_changes row as lib/changes.ts StoredChange names them. */
-export const CHANGE_COLUMNS = "publish_id, published_at, unit_id, field, kind, old_value, new_value, old_year, new_year, source, release";
+export const CHANGE_COLUMNS = "publish_id, published_at, unit_id, field, kind, old_value, new_value, old_year, new_year, source, old_source, release";
 
 /**
  * One college's recorded changes, newest first (at most `limit`). Throws on any failure, including a missing table

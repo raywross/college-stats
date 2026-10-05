@@ -333,7 +333,15 @@ export const COMPARE_TOPIC_FIELDS: Record<CompareTopicKey, readonly FieldPath[]>
 
   // Academics: app/compare/academics/page.tsx.
   academics: [
-    // The page's fields go here.
+    "academics.student_faculty_ratio",
+    "academics.faculty.full_time_share",
+    "academics.faculty",
+    "finances",
+    "academics.bachelors_awarded",
+    "academics.majors_top",
+    "academics.bachelors_by_family",
+    "detail.majors",
+    "detail.programs",
   ],
 
   // Cost & aid: app/compare/cost/page.tsx.

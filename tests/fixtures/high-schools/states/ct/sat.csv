@@ -1,0 +1,11 @@
+"CT School Day SAT, 2024-25"
+"All Districts, All Subjects, All Students"
+
+"",,,,,,,,,"Level 1Not Met",,"Level 2Approaching",,"Level 3Met",,"Level 4Exceeded",,"Level 3&4Met or Exceeded",,""
+"District","District Code","School","School Code","Subject","Total Numberof Students","Total NumberTested","CT School Day SATParticipationRate","Total Numberwith Scored Tests","Count","%","Count","%","Count","%","Count","%","Count","%","AverageScore"
+"Ansonia School District","=""0020011""","Ansonia High School","=""0026111""","ELA",143,141,98.6,141,57,40.4,"*","*",53,37.6,"*","*","*","*",445
+,,,,"Math",143,141,98.6,141,72,51.1,55,39.0,"*","*","*","*",14,9.9,417
+"Avon School District","=""0040011""","Avon High School","=""0046111""","ELA",214,212,99.1,212,20,9.4,11,5.2,85,40.1,96,45.3,181,85.4,593
+,,,,"Math",214,212,99.1,212,25,11.8,40,18.9,90,42.5,57,26.9,147,69.3,580
+"Greenwich School District","=""0570011""","Windrose","=""0571511""","ELA",12,8,"*",8,"*","*","*","*","*","*","*","*","*","*","*"
+,,,,"Math",12,8,"*",8,"*","*","*","*","*","*","*","*","*","*","*"

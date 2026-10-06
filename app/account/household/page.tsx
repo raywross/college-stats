@@ -37,6 +37,9 @@ export default async function HouseholdPage() {
 
   const [households, home] = await Promise.all([myHouseholds(), myHome()]);
   const defaultRole = account.profile.role_hint === "guardian" || account.profile.role_hint === "counselor" ? "guardian" : "student";
+  // Address suggestions as you type exist only once the site has its Google key (home-and-distance.md "Autocomplete");
+  // until then the field is a plain field and says nothing about suggestions.
+  const suggestions = Boolean(process.env.GOOGLE_MAPS_API_KEY);
 
   return (
     <div className="mx-auto max-w-3xl space-y-6 px-4 py-10 sm:px-6 sm:py-14">
@@ -55,7 +58,7 @@ export default async function HouseholdPage() {
       </header>
 
       {households.map((h) => (
-        <HouseholdCard key={h.id} h={h} home={home && home.household_id === h.id ? home : null} />
+        <HouseholdCard key={h.id} h={h} home={home && home.household_id === h.id ? home : null} suggestions={suggestions} />
       ))}
 
       {households.length === 0 && (

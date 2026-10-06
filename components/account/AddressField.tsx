@@ -19,6 +19,7 @@ export function AddressField({
   id,
   value,
   onChange,
+  enabled = true,
   placeholder,
   disabled = false,
   className,
@@ -26,6 +27,8 @@ export function AddressField({
   id: string;
   value: string;
   onChange: (value: string) => void;
+  /** Whether a provider is configured (the page knows); false makes this a plain text field. */
+  enabled?: boolean;
   placeholder?: string;
   disabled?: boolean;
   className?: string;
@@ -59,7 +62,7 @@ export function AddressField({
 
   function fetchSuggestions(text: string) {
     cancelPending();
-    if (!shouldSuggest(text)) {
+    if (!enabled || !shouldSuggest(text)) {
       setSuggestions([]);
       setOpen(false);
       return;
@@ -90,12 +93,13 @@ export function AddressField({
     <div className="relative">
       <input
         id={id}
-        role="combobox"
-        aria-autocomplete="list"
-        aria-expanded={open}
-        aria-controls={listId}
+        role={enabled ? "combobox" : undefined}
+        aria-autocomplete={enabled ? "list" : undefined}
+        aria-expanded={enabled ? open : undefined}
+        aria-controls={enabled ? listId : undefined}
         aria-activedescendant={open && active >= 0 ? `${listId}-${active}` : undefined}
-        autoComplete="off"
+        autoComplete={enabled ? "off" : "street-address"}
+        maxLength={200}
         value={value}
         disabled={disabled}
         placeholder={placeholder}

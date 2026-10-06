@@ -10,8 +10,8 @@ summary: Save your household's home address once and the site says how far each 
 
 **How far is it?** was the first question the site couldn't answer. Now it can.
 
-**Your household's home** ([Your account](/account) → Household → Home address): start typing a street address and
-pick it from the suggestions, or enter just a ZIP code, and we look it up once. Everyone in your household sees distances from that one home, whoever set it: a
+**Your household's home** ([Your account](/account) → Household → Home address): enter a street address, or just a
+ZIP code, and we look it up once. Everyone in your household sees distances from that one home, whoever set it: a
 parent and a student looking at the same list see the same miles. On your own? Start a household first (it just
 needs a name); your home comes along when you later join your family's.
 
@@ -34,10 +34,10 @@ at 55 mph on average), never a route. The glossary explains both under "Distance
 
 ## Behind the scenes
 
-- Suggestions as you type come from Google's address service, asked from our server so your browser never talks
-  to Google. The address you save is matched with the U.S. Census Bureau's public geocoder, a federal service that
-  needs no key and sets no commercial terms on the result. We keep that match and its coordinates rounded to about
-  100 m, and the name of whoever set it, not what was typed.
+- The address you save is matched with the U.S. Census Bureau's public geocoder, a federal service that needs no
+  key and sets no commercial terms on the result. We keep that match and its coordinates rounded to about 100 m,
+  and the name of whoever set it, not what was typed. Suggestions as you type (from Google, asked from our server so
+  your browser never talks to Google) are built and will switch on once the site has its key.
 - The home lives in its own table with row-level security that allows only the household's active members; a test
   opens that rule on purpose and shows the leak the real rule prevents.
 - The one-household rule and the six seats are enforced in the database functions that create households, add

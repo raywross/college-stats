@@ -76,7 +76,7 @@ function MemberRow({ m, h }: { m: RosterMember; h: HouseholdView }) {
  * One household on /account/household: members and seats, its home address (specs/product/home-and-distance.md),
  * pending invitations, invite, add a student, leave. `home` is this household's saved home, if any.
  */
-export function HouseholdCard({ h, home = null }: { h: HouseholdView; home?: HomeRow | null }) {
+export function HouseholdCard({ h, home = null, suggestions = false }: { h: HouseholdView; home?: HomeRow | null; suggestions?: boolean }) {
   const isGuardian = h.me.guardian !== null;
   const isStudent = h.me.student !== null;
   const seats = householdSeats(h);
@@ -119,7 +119,7 @@ export function HouseholdCard({ h, home = null }: { h: HouseholdView; home?: Hom
           <Term term="home-address">Home address</Term>
         </h3>
         <p className="mt-0.5 mb-3 text-xs text-muted-foreground">Explore and lists say how far each college is from here, for everyone in this household.</p>
-        <HomeForm household={h.id} home={home} />
+        <HomeForm household={h.id} home={home} suggestions={suggestions} />
       </div>
 
       {h.invitations.length > 0 && (

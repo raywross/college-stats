@@ -85,3 +85,14 @@ test("guard: the field shows Google's logo beside Google's suggestions, and the 
   const store = readFileSync(join(ROOT, "lib", "home-store.ts"), "utf8");
   assert.match(store, /export async function suggestAddresses[\s\S]*?getUser\(\)/, "suggestions require a signed-in user, so the quota isn't public");
 });
+
+test("guard: without the key the field is plain and the page says nothing about suggestions", () => {
+  const page = readFileSync(join(ROOT, "app", "account", "household", "page.tsx"), "utf8");
+  assert.match(page, /const suggestions = Boolean\(process\.env\.GOOGLE_MAPS_API_KEY\)/, "the page decides from the server environment");
+  assert.match(page, /suggestions=\{suggestions\}/, "and passes it down");
+  const form = readFileSync(join(ROOT, "components", "account", "HomeForm.tsx"), "utf8");
+  assert.match(form, /enabled=\{suggestions\}/, "the field only asks for suggestions when they're on");
+  assert.match(form, /\{suggestions \? "Suggestions as you type come from Google/, "the Google sentence is conditional");
+  const field = readFileSync(join(ROOT, "components", "account", "AddressField.tsx"), "utf8");
+  assert.match(field, /if \(!enabled \|\| !shouldSuggest\(text\)\)/, "a disabled field never calls the server");
+});

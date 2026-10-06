@@ -17,7 +17,7 @@ const inputCls =
  * the household. Shows the saved match back with who set it, a link to Explore's nearest-first view, "Change", and
  * "Remove".
  */
-export function HomeForm({ household, home }: { household: string; home: HomeRow | null }) {
+export function HomeForm({ household, home, suggestions = false }: { household: string; home: HomeRow | null; suggestions?: boolean }) {
   const router = useRouter();
   const [text, setText] = useState("");
   const [editing, setEditing] = useState(home === null);
@@ -96,7 +96,8 @@ export function HomeForm({ household, home }: { household: string; home: HomeRow
             id={`home-address-${household}`}
             value={text}
             onChange={setText}
-            placeholder="Start typing: 123 Main St, Springfield… or just a ZIP code"
+            enabled={suggestions}
+            placeholder={suggestions ? "Start typing: 123 Main St, Springfield… or just a ZIP code" : "123 Main St, Springfield, IL 62701 — or just 62701"}
             className={inputCls}
           />
           <div className="flex flex-wrap items-center gap-3">
@@ -130,9 +131,9 @@ export function HomeForm({ household, home }: { household: string; home: HomeRow
       )}
 
       <p className="text-xs text-muted-foreground">
-        Anyone in the household can set or change it. Suggestions as you type come from Google; the address you save is matched with the U.S.
-        Census Bureau&apos;s public geocoder, and we keep that match and its map location (to about 100 m), not your keystrokes. Nobody outside the
-        household can see it.
+        Anyone in the household can set or change it. {suggestions ? "Suggestions as you type come from Google; the address you save" : "The address you save"}{" "}
+        is matched with the U.S. Census Bureau&apos;s public geocoder, and we keep that match and its map location (to about 100 m), not what you
+        typed. Nobody outside the household can see it.
       </p>
     </div>
   );

@@ -169,7 +169,11 @@ play). Without a key the field is a plain text field, and the page says nothing 
   about storing results; the Census Bureau has no autocomplete; Nominatim's policy forbids it. Smarty (USPS-grade)
   costs money from the first month. Switching providers later means one adapter in `lib/geocode.ts`.
 - **Privacy:** keystrokes after the third character go to Google, from the server (the visitor's IP and browser
-  aren't sent). The form says so. The saved match and coordinates still come from the Census geocoder.
+  aren't sent). The form says so, but only while suggestions are on. The saved match and coordinates still come
+  from the Census geocoder.
+- **Shipped dormant** (owner, 2026-10-05): merged without the key, so the field is a plain field and says nothing
+  about suggestions (`/account/household` passes `suggestions = Boolean(process.env.GOOGLE_MAPS_API_KEY)` down to
+  the field). Setting the key is a [backlog item](../backlog.md#platform); nothing else changes when it arrives.
 
 ### Setup (owner)
 0. **Address suggestions (optional):** in Google Cloud, create or pick a project, enable **Places API (New)**

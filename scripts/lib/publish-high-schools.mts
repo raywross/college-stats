@@ -1,6 +1,6 @@
 /**
  * High school files: the checks check:lineage and publish-data share, and publish-data's high school step
- * (supabase/migrations/20261005170000_high_schools.sql; specs/product/high-school-data.md).
+ * (supabase/migrations/20261005180000_high_schools.sql; specs/product/high-school-data.md).
  *
  * Publishing writes the live tables in batches (like history and detail files: ~24,000 rows, ~25 MB, too big to swap
  * in one statement within the API's timeout), deletes rows no longer in the files, writes meta and medians last, and
@@ -15,7 +15,7 @@ import { validateHsRegistry } from "../../lib/hs-fields.ts";
 import { readAllHsDetails, readAllShards, readHsMedians, readHsMeta, readStateFiles } from "../../lib/high-school-store.ts";
 import { fetchAllHighSchoolDetails, fetchAllHighSchoolFiles, fetchAllHighSchoolRows, toHighSchoolTableRow, type HighSchoolTableRow } from "../../lib/supabase-high-schools.ts";
 
-export const HIGH_SCHOOLS_MIGRATION = "supabase/migrations/20261005170000_high_schools.sql";
+export const HIGH_SCHOOLS_MIGRATION = "supabase/migrations/20261005180000_high_schools.sql";
 /** Rows per upsert (~1–2 KB each). */
 const ROW_BATCH = 500;
 const DETAIL_BATCH = 200;

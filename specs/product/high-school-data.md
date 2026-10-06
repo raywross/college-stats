@@ -116,7 +116,7 @@ The shared contracts every later unit builds on; the federal, private, state, UI
   `getStateMedians`; fail-soft) over `lib/high-school-store.ts` (json mode, lazy per-state shards) and
   `lib/supabase-high-schools.ts`. `HIGH_SCHOOLS_DIR` points json mode at another directory, e.g.
   `HIGH_SCHOOLS_DIR=tests/fixtures/high-schools DATA_SOURCE=json npm run dev` for UI work before real data.
-- **Supabase** `supabase/migrations/20261005170000_high_schools.sql`: `high_schools` (trigram index on `search`),
+- **Supabase** `supabase/migrations/20261005180000_high_schools.sql`: `high_schools` (trigram index on `search`),
   `high_school_details`, `high_school_files` (meta, medians), staging tables and functions, and
   `search_high_schools(p_q, p_state, p_limit)`. Tested on PGlite (`tests/high-schools-policies.test.mts`).
   `publish-data` writes the live tables in batches and reads them back (like history: ~25 MB is too big for one

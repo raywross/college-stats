@@ -1,5 +1,5 @@
 /**
- * High school tables and search (supabase/migrations/20261005170000_high_schools.sql), checked against real Postgres
+ * High school tables and search (supabase/migrations/20261005180000_high_schools.sql), checked against real Postgres
  * (PGlite with pg_trgm + the auth stub from tests/helpers/pg-auth.mts): public read, no writes or staging calls through
  * the API, the staged swap, exact read-back of the fixture's published rows, and search_high_schools ranking and
  * filters. The last test breaks the read policy on purpose and proves the check notices. `npm test`.
@@ -14,7 +14,7 @@ import { AUTH_STUB_SQL, asUser, affectedAsUser } from "./helpers/pg-auth.mts";
 import { readHighSchoolData, highSchoolTableRows } from "../scripts/lib/publish-high-schools.mts";
 import { hsSearchKey, searchRows } from "../lib/high-school-core.ts";
 
-const MIGRATION = join(import.meta.dirname, "..", "supabase", "migrations", "20261005170000_high_schools.sql");
+const MIGRATION = join(import.meta.dirname, "..", "supabase", "migrations", "20261005180000_high_schools.sql");
 const FIXTURE = join(import.meta.dirname, "fixtures", "high-schools");
 
 async function db(): Promise<PGlite> {

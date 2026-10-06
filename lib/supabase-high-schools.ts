@@ -1,5 +1,5 @@
 /**
- * Supabase access for high schools (supabase/migrations/20261005170000_high_schools.sql; specs/product/high-school-data.md),
+ * Supabase access for high schools (supabase/migrations/20261005180000_high_schools.sql; specs/product/high-school-data.md),
  * shared by the app (lib/high-schools.ts) and the publish step (scripts/lib/publish-high-schools.mts). Plain module, no
  * Next.js imports. The app reads by id and through the search function, never every row.
  */

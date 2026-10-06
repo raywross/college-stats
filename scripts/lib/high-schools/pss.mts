@@ -20,7 +20,7 @@
  */
 import type { AdapterContext, AdapterInfo, AdapterResult } from "./types.mts";
 import type { GradeCode, HighSchool, HsRaceKey } from "../../../lib/high-school-types.ts";
-import { HS_RACES, blankHighSchool, isPrivateHighSchoolId, isUsps, normalizeHighSchool, offersGrade12 } from "../../../lib/high-school-core.ts";
+import { HS_RACES, blankHighSchool, isPrivateHighSchoolId, isUsps, normalizeHighSchool, offersGrade12, tidySchoolName, titleCaseName } from "../../../lib/high-school-core.ts";
 import { LOCALE_LABELS } from "../../../lib/campus-profile.ts";
 import { parseCsv } from "../ipeds.mts";
 
@@ -112,19 +112,6 @@ const RACE_COLUMN: Record<HsRaceKey, string> = {
   two_or_more: "P332",
 };
 
-const SMALL_WORDS = new Set(["and", "or", "of", "the", "in", "for", "to", "a", "an", "on", "at", "by"]);
-
-/** PSS names, cities, and addresses are all-caps; title-case them (division words stay lower unless first). */
-function titleCase(raw: string): string {
-  const s = raw.trim();
-  if (!s || s !== s.toUpperCase()) return s;
-  return s
-    .toLowerCase()
-    .split(/(\s+|-|\/)/)
-    .map((w, i) => (i > 0 && SMALL_WORDS.has(w) ? w : w.replace(/^[a-z]/, (c) => c.toUpperCase())))
-    .join("");
-}
-
 /** A non-negative whole number, or null for blank ("valid skip": the paired grade/question wasn't applicable). */
 function count(raw: string | undefined): number | null {
   const t = raw?.trim();
@@ -197,10 +184,10 @@ export function parsePssCsv(csvText: string): PssLoadResult {
       continue;
     }
 
-    const row = blankHighSchool(id, "private", titleCase(r.PINST ?? ""), state);
-    row.city = r.PCITY ? titleCase(r.PCITY) : null;
+    const row = blankHighSchool(id, "private", tidySchoolName(r.PINST ?? ""), state);
+    row.city = r.PCITY ? titleCaseName(r.PCITY) : null;
     row.zip = /^\d{5}$/.test((r.PZIP ?? "").trim()) ? r.PZIP.trim() : null;
-    row.address = r.PADDRS ? titleCase(r.PADDRS) : null;
+    row.address = r.PADDRS ? titleCaseName(r.PADDRS) : null;
     row.lat = float(r.LATITUDE24);
     row.lng = float(r.LONGITUDE24);
     const localeCode = Number((r.ULOCALE24 ?? "").trim());

@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-05",
+  "generated": "2026-10-06",
   "sources": {
     "crdc": {
       "name": "Civil Rights Data Collection 2023–24, public-use file",
@@ -17,7 +17,7 @@
       "name": "Private School Universe Survey (PSS), 2023–24 public-use data file",
       "publisher": "National Center for Education Statistics",
       "url": "https://nces.ed.gov/surveys/pss/pssdata.asp",
-      "retrieved": "2026-10-05"
+      "retrieved": "2026-10-06"
     },
     "state-ca": {
       "name": "California Department of Education downloads (College-Going Rate, CAASPP research files, chronic absenteeism)",

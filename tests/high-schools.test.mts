@@ -29,6 +29,8 @@ import {
   validateHighSchoolDetail,
   validateHighSchoolMeta,
   validateHighSchoolRow,
+  tidySchoolName,
+  titleCaseName,
   validateMedians,
   validateShard,
   validateStateFile,
@@ -492,6 +494,27 @@ test("glossary: every high school term the UI uses exists", () => {
     assert.ok(t in GLOSSARY, `glossary term ${t}`);
     for (const r of (GLOSSARY as Record<string, { related?: string[] }>)[t].related ?? []) assert.ok(r in GLOSSARY, `${t} relates to unknown term ${r}`);
   }
+});
+
+test("names: all-caps federal names are title-cased with 'H S' spelled out; mixed-case names are kept verbatim", () => {
+  const cases: [string, string][] = [
+    ["PLANO EAST SR H S", "Plano East Senior High School"],
+    ["WESTWOOD J H", "Westwood Junior High"],
+    ["IDEA COLLEGE PREP MCALLEN", "IDEA College Prep McAllen"],
+    ["KIPP SUNNYSIDE HS", "KIPP Sunnyside High School"],
+    ["FORT WORTH ISD DAEP", "Fort Worth ISD DAEP"],
+    ["MS/HS 223 THE LAB SCHOOL", "MS/High School 223 the Lab School"],
+    ["O'CONNELL HIGH", "O'Connell High"],
+    ["ESCUELA DE LA PAZ", "Escuela de la Paz"],
+    ["SCHOOL FOR THE ARTS II", "School for the Arts II"],
+    ["Westlake High School", "Westlake High School"],
+    ["PHS", "PHS"],
+    ["JAMES A GREEN JR-SR HIGH SCHOOL", "James A Green Junior-Senior High School"],
+  ];
+  for (const [raw, want] of cases) assert.equal(tidySchoolName(raw), want, raw);
+  assert.equal(titleCaseName("SAN ANTONIO"), "San Antonio");
+  assert.equal(titleCaseName("PLANO ISD"), "Plano ISD");
+  assert.equal(titleCaseName("McKinney"), "McKinney");
 });
 
 test("hsValueAt: missing is null, never undefined (a leaf under a null block, no state report, no detail file)", () => {

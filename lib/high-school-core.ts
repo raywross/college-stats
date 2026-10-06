@@ -305,6 +305,67 @@ export function blankHighSchool(id: string, kind: HighSchool["kind"], name: stri
   return normalizeHighSchool({ id, kind, name, state } as HighSchool);
 }
 
+/* ------------------------------------------------------------------ */
+/* Display names                                                       */
+/* ------------------------------------------------------------------ */
+
+const SMALL_WORDS = new Set(["and", "or", "of", "the", "in", "for", "to", "an", "on", "at", "by", "de", "del", "la"]);
+/** Acronyms that stay capitals in an all-caps name (federal and state files: "KIPP", "ISD", "PS 123"). */
+const ACRONYMS = new Set([
+  "ISD", "CISD", "USD", "DAEP", "JJAEP", "AEP", "KIPP", "IDEA", "STEM", "STEAM", "ROTC", "JROTC", "PS", "IS", "MS", "NYC",
+  "YES", "ESL", "GED", "AP", "IB", "II", "III", "IV", "VI", "VII", "VIII", "IX", "XI", "XII", "NE", "NW", "SE", "SW",
+  "CTE", "JHS", "UIL", "BOCES", "SAT", "AVID", "MST", "NJROTC", "US", "USA",
+]);
+
+const ABBREVIATIONS = new Set(["ST", "MT", "FT", "DR", "JR", "SR", "CTR", "BLVD", "HWY", "RD", "LN", "PKWY", "CT", "PL", "SQ", "TWP", "CNTY"]);
+
+function capWord(w: string): string {
+  if (/^mc[a-z]{2,}/.test(w)) return `Mc${w[2].toUpperCase()}${w.slice(3)}`;
+  if (/^o'[a-z]/.test(w)) return `O'${w[2].toUpperCase()}${w.slice(3)}`;
+  return w.replace(/^[a-z]/, (c) => c.toUpperCase());
+}
+
+/**
+ * Title-case a value the source printed in capitals ("SAN ANTONIO" → "San Antonio"); mixed-case text is the source's
+ * own styling and is returned as is. Known acronyms and Roman numerals stay capitals; short joining words stay lower
+ * unless first.
+ */
+export function titleCaseName(raw: string): string {
+  const s = raw.trim().replace(/\s+/g, " ");
+  if (!s || s !== s.toUpperCase() || !/[A-Z]/.test(s)) return s;
+  return s
+    .split(/(\s+|-|\/|\()/)
+    .map((tok, i) => {
+      if (/^(\s+|-|\/|\()$/.test(tok) || !tok) return tok;
+      const bare = tok.replace(/[.,]$/, "");
+      if (ACRONYMS.has(bare)) return tok;
+      // No vowels is an acronym ("PHS", "KMS"), except the usual abbreviations ("St.", "Mt.", "Blvd").
+      if (/^[B-DF-HJ-NP-TV-XZ]{2,5}$/.test(bare) && !ABBREVIATIONS.has(bare)) return tok;
+      const w = tok.toLowerCase();
+      return i > 0 && SMALL_WORDS.has(w) ? w : capWord(w);
+    })
+    .join("");
+}
+
+/**
+ * A school name for display: title-cased (above), with the abbreviations federal files use for "High School"
+ * spelled out ("PLANO EAST SR H S" → "Plano East Senior High School", "J H" → "Junior High"). Only applied to
+ * all-caps names; a mixed-case name is the school's own and kept verbatim.
+ */
+export function tidySchoolName(raw: string): string {
+  const s = raw.trim().replace(/\s+/g, " ");
+  if (!s || s !== s.toUpperCase()) return s;
+  const expanded = s
+    .replace(/\bJR\.?-SR\.?(?=\s+(?:H\.?\s?S\b|HIGH\b))/g, "JUNIOR-SENIOR")
+    .replace(/\bSR\.?\s+(?=H\.?\s?S\b|HIGH\b)/g, "SENIOR ")
+    .replace(/\bJR\.?\s+(?=H\.?\s?S\b|HIGH\b)/g, "JUNIOR ")
+    .replace(/\bH\.?\s?S\.?(?=$|[\s/,-])/g, "HIGH SCHOOL")
+    .replace(/\bJ\.?\s?H\.?(?=$|[\s/,-])/g, "JUNIOR HIGH")
+    .replace(/\bCTR\b\.?/g, "CENTER")
+    .replace(/\bACAD\b\.?/g, "ACADEMY");
+  return titleCaseName(expanded);
+}
+
 /** Lower-case, accent-free, punctuation-free "name city" key for search (the `search` column; json mode uses it too). */
 export function hsSearchKey(name: string, city?: string | null): string {
   return `${name} ${city ?? ""}`

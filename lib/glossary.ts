@@ -11,6 +11,7 @@ export type GlossaryCategory =
   | "School types"
   | "How we measure"
   | "Data sources"
+  | "High schools"
   | "Your account";
 
 export interface GlossaryEntry {
@@ -34,6 +35,7 @@ export const GLOSSARY_CATEGORIES: GlossaryCategory[] = [
   "School types",
   "How we measure",
   "Data sources",
+  "High schools",
   "Your account",
 ];
 
@@ -1471,6 +1473,131 @@ const entries = {
     long: "Visible to everyone, not just people who follow the college: it's about the dataset, not your account.",
     category: "Your account",
     related: ["follow"],
+  },
+
+  // High schools (specs/product/high-school-data.md)
+  ncessch: {
+    term: "NCES school ID",
+    short: "The 12-digit ID the National Center for Education Statistics gives every public school. The first two digits are the state's code.",
+    long: "Quad uses it to join a public high school's federal and state data. Private schools use the 8-character ID from the Private School Survey instead.",
+    category: "High schools",
+    related: ["adjusted-cohort-graduation-rate", "school-profile"],
+  },
+  "adjusted-cohort-graduation-rate": {
+    term: "Four-year graduation rate",
+    short: "The share of students who started 9th grade together and earned a regular diploma within four years, after adjusting for students who moved in or out.",
+    long: "Officially the adjusted cohort graduation rate (ACGR), reported by every state to the U.S. Department of Education (EDFacts). For small classes the department publishes a range, like 90–94% or \"80% or more\", instead of an exact number to protect privacy; Quad shows the range as published.",
+    why: "It's the one graduation measure calculated the same way in every state.",
+    category: "High schools",
+    related: ["adjusted-cohort", "hs-state-median"],
+  },
+  "ap-access": {
+    term: "AP access",
+    short: "How many Advanced Placement courses a high school offers, the share of its students taking at least one, and how many of those who took an AP exam passed one.",
+    long: "From the federal Civil Rights Data Collection (CRDC), which every public school answers every two years. Passing means a score of 3 or higher on at least one exam.",
+    why: "Colleges read a transcript against what the school offered: a student can only take the courses their school has.",
+    category: "High schools",
+    related: ["dual-enrollment", "ap-credit", "school-profile"],
+  },
+  "college-going-rate": {
+    term: "College-going rate",
+    short: "The share of a high school's graduates who enrolled in college, usually within a year of graduating, as the state reports it.",
+    long: "States measure it differently (some count only in-state colleges, some use National Student Clearinghouse records, some count within 12 or 16 months), so compare a school with its own state's median rather than across states.",
+    category: "High schools",
+    related: ["clearinghouse-persistence", "hs-state-median"],
+  },
+  "school-profile": {
+    term: "School profile",
+    short: "A one- or two-page document a high school sends with every college application: its grading scale, courses offered, GPA distribution, test scores, and where recent graduates enrolled.",
+    long: "Admissions officers read each application in the context of the school's profile. Quad reads profiles the schools post publicly and quotes them.",
+    category: "High schools",
+    related: ["weighted-gpa", "ap-access"],
+  },
+  "title-i": {
+    term: "Title I school",
+    short: "A public school that receives federal Title I funding because many of its students come from low-income families.",
+    category: "High schools",
+    related: ["free-reduced-lunch"],
+  },
+  "free-reduced-lunch": {
+    term: "Free or reduced-price lunch",
+    short: "The share of a school's students eligible for free or reduced-price meals under the National School Lunch Program, a common measure of family income at a school.",
+    long: "Schools that serve free meals to everyone (community eligibility) can report every student as eligible, so the share can overstate need at those schools.",
+    category: "High schools",
+    related: ["title-i"],
+  },
+  "dual-enrollment": {
+    term: "Dual enrollment",
+    short: "High school students taking college courses (often at a community college) that count for both high school and college credit.",
+    category: "High schools",
+    related: ["ap-access"],
+  },
+  "chronic-absence": {
+    term: "Chronic absence",
+    short: "The share of students who missed at least 10% of the school year (about 18 days), for any reason, as the state reports it.",
+    category: "High schools",
+    related: ["state-proficiency"],
+  },
+  "state-proficiency": {
+    term: "State test proficiency",
+    short: "The share of students who met the state's standard on its own reading (ELA) or math tests. Each state sets its own tests and cut scores, so compare only within a state.",
+    category: "High schools",
+    related: ["chronic-absence", "hs-state-median"],
+  },
+  "student-teacher-ratio": {
+    term: "Student-to-teacher ratio",
+    short: "Students enrolled for each full-time-equivalent classroom teacher at a high school. It is not the average class size.",
+    category: "High schools",
+    related: ["student-faculty-ratio"],
+  },
+  "clearinghouse-persistence": {
+    term: "College persistence",
+    short: "Of a high school's graduates who enrolled in college, the share still enrolled for a second year, from National Student Clearinghouse records the state publishes.",
+    long: "The Clearinghouse matches graduates to enrollment records at nearly every U.S. college. A few states (South Carolina and Connecticut among them) publish these reports for every public high school.",
+    category: "High schools",
+    related: ["college-going-rate"],
+  },
+  "hs-state-median": {
+    term: "State median (public high schools)",
+    short: "The middle value among the state's public high schools that report the measure: half are above it, half below. It's context, not a target or a grade.",
+    long: "Quad shows a median only when at least five public high schools in the state report the measure. Private schools never count toward it.",
+    category: "High schools",
+    related: ["adjusted-cohort-graduation-rate", "college-going-rate"],
+  },
+  "charter-school": {
+    term: "Charter school",
+    short: "A publicly funded school run independently of the local school district under a charter, usually renewed every few years.",
+    category: "High schools",
+    related: ["magnet-school"],
+  },
+  "magnet-school": {
+    term: "Magnet school",
+    short: "A public school built around a special focus (the arts, STEM, a language) meant to draw students from beyond its usual attendance zone.",
+    category: "High schools",
+    related: ["charter-school"],
+  },
+  "virtual-school": {
+    term: "Virtual school",
+    short: "A school where instruction is entirely or primarily online, as the Common Core of Data classifies it.",
+    category: "High schools",
+  },
+  "ib-program": {
+    term: "IB Diploma Programme",
+    short: "The International Baccalaureate's two-year course of study for the final two years of high school, assessed by exams set outside the school.",
+    category: "High schools",
+    related: ["ap-access", "dual-enrollment"],
+  },
+  "clearinghouse-completion": {
+    term: "College completion",
+    short: "Of a high school's graduates who enrolled in college, the share who went on to complete a degree, from National Student Clearinghouse records the state publishes.",
+    category: "High schools",
+    related: ["clearinghouse-persistence"],
+  },
+  "suppressed-for-privacy": {
+    term: "Suppressed for privacy",
+    short: "A number the source left out because it describes so few students (fewer than 5 here) that it could identify someone.",
+    category: "High schools",
+    related: ["hs-state-median"],
   },
 } satisfies Record<string, GlossaryEntry>;
 

@@ -1,0 +1,3 @@
+060000100101|0600001|Fixture Union High School|06|100 Main St|Fixtureville|CA|95000|06|06001|Fixture County|21|37.123456|-121.654321|41860|San Francisco-Oakland, CA|1|488|San Jose, CA|0612|06025|06010|2024-2025
+060000100102|0600001|Fixture Charter Academy, Upper School|06|200 Oak Ave|Fixtureville|CA|95001|06|06001|Fixture County|13|37.2|-121.7|41860|San Francisco-Oakland, CA|1|488|San Jose, CA|0612|06025|06010|2024-2025
+480000200201|4800002|Fixture Early College High|48|10 Ranch Rd|Fixture City|TX|75000|48|48113|Fixture County|43|||19100|Dallas, TX|1|206|Dallas, TX|4830|48100|48016|2024-2025

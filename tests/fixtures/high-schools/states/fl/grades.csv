@@ -1,0 +1,10 @@
+"2025-26 School Grades as of September 1, 2026"
+"Legend for School Types: 01=Elementary; 02=Middle; 03=High; 04=Combination"
+
+District Number,District Name,School Number,Virtual Provider Number,School Name,English Language Arts Achievement,Mathematics Achievement,School Type
+01,ALACHUA,0031,,CAROLYN BEATRICE PARKER ELEMENTARY,53,48,01
+01,ALACHUA,0052,,A.QUINN JONES CENTER,,,03
+01,ALACHUA,0151,,GAINESVILLE HIGH SCHOOL,58,50,03
+01,ALACHUA,0151,0071,GAINESVILLE HIGH SCHOOL (VIRTUAL PROVIDER),10,10,03
+01,ALACHUA,0421,,EASTSIDE HIGH SCHOOL,47,41,03
+99,FIXTURE,0001,,FIXTURE NEW HIGH SCHOOL,60,55,03

@@ -1,0 +1,129 @@
+{
+  "generated": "2026-10-06",
+  "sources": {
+    "crdc": {
+      "name": "Civil Rights Data Collection 2023–24, public-use file",
+      "publisher": "U.S. Department of Education, Office for Civil Rights",
+      "url": "https://civilrightsdata.ed.gov/data",
+      "retrieved": "2026-10-05"
+    },
+    "nces-ccd": {
+      "name": "Common Core of Data 2024–25, public school files (directory, membership, staff, school characteristics, lunch) and EDGE school geocodes",
+      "publisher": "National Center for Education Statistics",
+      "url": "https://nces.ed.gov/ccd/files.asp",
+      "retrieved": "2026-10-05"
+    },
+    "nces-pss": {
+      "name": "Private School Universe Survey (PSS), 2023–24 public-use data file",
+      "publisher": "National Center for Education Statistics",
+      "url": "https://nces.ed.gov/surveys/pss/pssdata.asp",
+      "retrieved": "2026-10-06"
+    },
+    "state-ca": {
+      "name": "California Department of Education downloads (College-Going Rate, CAASPP research files, chronic absenteeism)",
+      "publisher": "California Department of Education",
+      "url": "https://www.cde.ca.gov/ds/",
+      "retrieved": "2026-10-05"
+    },
+    "state-ct": {
+      "name": "EdSight report exports",
+      "publisher": "Connecticut State Department of Education",
+      "url": "https://public-edsight.ct.gov/",
+      "retrieved": "2026-10-05"
+    },
+    "state-fl": {
+      "name": "Florida Department of Education school grades, attendance and FETPIP downloads",
+      "publisher": "Florida Department of Education",
+      "url": "https://www.fldoe.org/accountability/data-sys/edu-info-accountability-services/",
+      "retrieved": "2026-10-05"
+    },
+    "state-il": {
+      "name": "Illinois Report Card Public Data Set",
+      "publisher": "Illinois State Board of Education",
+      "url": "https://www.isbe.net/pages/illinois-state-report-card-data.aspx",
+      "retrieved": "2026-10-05"
+    },
+    "state-ny": {
+      "name": "New York State Education Department data downloads (Report Card Database, AP/IB Assessment Database)",
+      "publisher": "New York State Education Department",
+      "url": "https://data.nysed.gov/downloads.php",
+      "retrieved": "2026-10-05"
+    },
+    "state-sc": {
+      "name": "South Carolina School Report Card data files",
+      "publisher": "South Carolina Department of Education and Education Oversight Committee",
+      "url": "https://screportcards.com/",
+      "retrieved": "2026-10-05"
+    },
+    "state-tx": {
+      "name": "Texas Academic Performance Reports (TAPR) data downloads",
+      "publisher": "Texas Education Agency",
+      "url": "https://tea.texas.gov/texas-schools/accountability/academic-accountability/performance-reporting/texas-academic-performance-reports",
+      "retrieved": "2026-10-05"
+    }
+  },
+  "vintages": {
+    "ccd-directory": "2024–25",
+    "ccd-enrollment": "2024–25",
+    "edfacts-acgr": null,
+    "crdc": "2023–24",
+    "pss": "2023–24"
+  },
+  "counts": {
+    "public": 27815,
+    "private": 7575,
+    "byState": {
+      "AK": 295,
+      "AL": 665,
+      "AR": 393,
+      "AZ": 1037,
+      "CA": 3412,
+      "CO": 618,
+      "CT": 328,
+      "DC": 70,
+      "DE": 81,
+      "FL": 2145,
+      "GA": 818,
+      "HI": 113,
+      "IA": 415,
+      "ID": 318,
+      "IL": 1288,
+      "IN": 626,
+      "KS": 457,
+      "KY": 615,
+      "LA": 502,
+      "MA": 597,
+      "MD": 466,
+      "ME": 178,
+      "MI": 1438,
+      "MN": 1281,
+      "MO": 897,
+      "MS": 495,
+      "MT": 226,
+      "NC": 1033,
+      "ND": 196,
+      "NE": 387,
+      "NH": 154,
+      "NJ": 778,
+      "NM": 285,
+      "NV": 201,
+      "NY": 1846,
+      "OH": 1242,
+      "OK": 523,
+      "OR": 440,
+      "PA": 1198,
+      "RI": 101,
+      "SC": 459,
+      "SD": 225,
+      "TN": 672,
+      "TX": 2774,
+      "UT": 325,
+      "VA": 602,
+      "VT": 112,
+      "WA": 966,
+      "WI": 782,
+      "WV": 199,
+      "WY": 116
+    }
+  }
+}

@@ -3,12 +3,12 @@ import Link from "next/link";
 import { BookMarked, ExternalLink } from "lucide-react";
 import type { School } from "@/lib/types";
 import type { FieldPath } from "@/lib/fields";
-import { citesYear, yearLabel, type CitedSource } from "@/lib/lineage";
+import { citesYear, yearLabel, type AnyCitedSource, type CitedSource } from "@/lib/lineage";
 import { getData } from "@/lib/data";
 import { cn } from "@/lib/utils";
 
 /** One linked source: "IPEDS Admissions survey, Fall 2024". */
-export function SourceItem({ s, last }: { s: CitedSource; last: boolean }) {
+export function SourceItem({ s, last }: { s: AnyCitedSource; last: boolean }) {
   return (
     <span>
       <a
@@ -47,7 +47,7 @@ export async function SourceNote({
   return <SourceLine sources={sources} prefix={prefix} className={className} />;
 }
 
-export async function SourceLine({ sources, prefix = "Source", className, extra }: { sources: CitedSource[]; prefix?: string; className?: string; extra?: ReactNode }) {
+export async function SourceLine({ sources, prefix = "Source", className, extra }: { sources: AnyCitedSource[]; prefix?: string; className?: string; extra?: ReactNode }) {
   const { getMeta } = await getData();
   return (
     <p className={cn("flex flex-wrap items-center gap-x-1.5 gap-y-1 text-[11px] leading-relaxed text-muted-foreground", className)}>

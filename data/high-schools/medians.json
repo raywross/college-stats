@@ -1,0 +1,464 @@
+{
+  "AK": {
+    "enrollment.total": 82.5,
+    "student_teacher_ratio": 12,
+    "frl_share": 0.7103,
+    "rigor.ap_courses": 5,
+    "derived.ap_enrolled_share": 0.1298,
+    "derived.dual_enrolled_share": 0
+  },
+  "AL": {
+    "enrollment.total": 526,
+    "student_teacher_ratio": 17.095,
+    "frl_share": 0.5551,
+    "rigor.ap_courses": 6,
+    "derived.ap_enrolled_share": 0.1262,
+    "derived.ib_enrolled_share": 0.0551,
+    "derived.dual_enrolled_share": 0.0842
+  },
+  "AR": {
+    "enrollment.total": 296.5,
+    "student_teacher_ratio": 7.82,
+    "frl_share": 0.6636,
+    "rigor.ap_courses": 8,
+    "derived.ap_enrolled_share": 0.151,
+    "derived.dual_enrolled_share": 0.0724
+  },
+  "AZ": {
+    "enrollment.total": 130.5,
+    "student_teacher_ratio": 17.415,
+    "rigor.ap_courses": 11,
+    "derived.ap_enrolled_share": 0.1475,
+    "derived.ib_enrolled_share": 0.1103,
+    "derived.dual_enrolled_share": 0
+  },
+  "CA": {
+    "enrollment.total": 349,
+    "student_teacher_ratio": 19.04,
+    "frl_share": 0.7317,
+    "rigor.ap_courses": 11,
+    "derived.ap_enrolled_share": 0.2272,
+    "derived.ib_enrolled_share": 0.1438,
+    "derived.dual_enrolled_share": 0.0041,
+    "state.college_going_rate": 0.5796,
+    "state.ela_proficiency": 0.5162,
+    "state.math_proficiency": 0.1943,
+    "state.chronic_absence": 0.2598
+  },
+  "CO": {
+    "enrollment.total": 322,
+    "student_teacher_ratio": 15.62,
+    "frl_share": 0.4943,
+    "rigor.ap_courses": 8,
+    "derived.ap_enrolled_share": 0.1928,
+    "derived.ib_enrolled_share": 0.1097,
+    "derived.dual_enrolled_share": 0.0491
+  },
+  "CT": {
+    "enrollment.total": 652,
+    "student_teacher_ratio": 11.48,
+    "frl_share": 0.4699,
+    "rigor.ap_courses": 13,
+    "derived.ap_enrolled_share": 0.2138,
+    "derived.ib_enrolled_share": 0.1244,
+    "derived.dual_enrolled_share": 0.1549,
+    "state.college_going_rate": 0.682,
+    "state.ela_proficiency": 0.6365,
+    "state.math_proficiency": 0.23,
+    "state.chronic_absence": 0.191,
+    "state.nsc_persisted": 0.87
+  },
+  "DC": {
+    "enrollment.total": 386,
+    "student_teacher_ratio": 10.28,
+    "rigor.ap_courses": 10.5,
+    "derived.ap_enrolled_share": 0.1934,
+    "derived.dual_enrolled_share": 0.0315
+  },
+  "DE": {
+    "enrollment.total": 951,
+    "student_teacher_ratio": 15.355,
+    "rigor.ap_courses": 12,
+    "derived.ap_enrolled_share": 0.1632,
+    "derived.dual_enrolled_share": 0.0584
+  },
+  "FL": {
+    "enrollment.total": 343,
+    "student_teacher_ratio": 20.55,
+    "frl_share": 0.4675,
+    "rigor.ap_courses": 12,
+    "derived.ap_enrolled_share": 0.1958,
+    "derived.ib_enrolled_share": 0.0815,
+    "derived.dual_enrolled_share": 0.0355,
+    "state.college_going_rate": 0.5959,
+    "state.ela_proficiency": 0.62,
+    "state.math_proficiency": 0.52,
+    "state.chronic_absence": 0.3618
+  },
+  "GA": {
+    "enrollment.total": 1037,
+    "student_teacher_ratio": 15.55,
+    "frl_share": 0.7497,
+    "rigor.ap_courses": 12,
+    "derived.ap_enrolled_share": 0.1702,
+    "derived.ib_enrolled_share": 0.0576,
+    "derived.dual_enrolled_share": 0.0699
+  },
+  "HI": {
+    "enrollment.total": 745,
+    "student_teacher_ratio": 14.47,
+    "frl_share": 0.5009,
+    "rigor.ap_courses": 9,
+    "derived.ap_enrolled_share": 0.1496,
+    "derived.dual_enrolled_share": 0.0731
+  },
+  "IA": {
+    "enrollment.total": 291,
+    "student_teacher_ratio": 13.83,
+    "frl_share": 0.3724,
+    "rigor.ap_courses": 4,
+    "derived.ap_enrolled_share": 0.0999,
+    "derived.dual_enrolled_share": 0.2465
+  },
+  "ID": {
+    "enrollment.total": 213,
+    "student_teacher_ratio": 15.365,
+    "frl_share": 0.4092,
+    "rigor.ap_courses": 7.5,
+    "derived.ap_enrolled_share": 0.1596,
+    "derived.ib_enrolled_share": 0.0351,
+    "derived.dual_enrolled_share": 0.1042
+  },
+  "IL": {
+    "enrollment.total": 223.5,
+    "student_teacher_ratio": 13.43,
+    "frl_share": 0.5121,
+    "rigor.ap_courses": 10,
+    "derived.ap_enrolled_share": 0.1835,
+    "derived.ib_enrolled_share": 0.1328,
+    "derived.dual_enrolled_share": 0.0822,
+    "state.college_going_rate": 0.61,
+    "state.ap_pass_rate": 0.739,
+    "state.ela_proficiency": 0.47,
+    "state.math_proficiency": 0.3025,
+    "state.chronic_absence": 0.281
+  },
+  "IN": {
+    "enrollment.total": 463,
+    "student_teacher_ratio": 14.385,
+    "frl_share": 0.4534,
+    "rigor.ap_courses": 7,
+    "derived.ap_enrolled_share": 0.1327,
+    "derived.ib_enrolled_share": 0.0405,
+    "derived.dual_enrolled_share": 0.2329
+  },
+  "KS": {
+    "enrollment.total": 183,
+    "student_teacher_ratio": 10.9,
+    "frl_share": 0.4568,
+    "rigor.ap_courses": 6,
+    "derived.ap_enrolled_share": 0.121,
+    "derived.ib_enrolled_share": 0.0389,
+    "derived.dual_enrolled_share": 0.1268
+  },
+  "KY": {
+    "enrollment.total": 128.5,
+    "student_teacher_ratio": 15.47,
+    "frl_share": 0.6433,
+    "rigor.ap_courses": 7,
+    "derived.ap_enrolled_share": 0.1739,
+    "derived.dual_enrolled_share": 0.1094
+  },
+  "LA": {
+    "enrollment.total": 498,
+    "student_teacher_ratio": 13.58,
+    "frl_share": 0.6856,
+    "rigor.ap_courses": 4,
+    "derived.ap_enrolled_share": 0.1336,
+    "derived.ib_enrolled_share": 0.0782,
+    "derived.dual_enrolled_share": 0.0758
+  },
+  "MA": {
+    "enrollment.total": 667,
+    "student_teacher_ratio": 11.18,
+    "rigor.ap_courses": 15,
+    "derived.ap_enrolled_share": 0.2106,
+    "derived.ib_enrolled_share": 0.0956,
+    "derived.dual_enrolled_share": 0.0098
+  },
+  "MD": {
+    "enrollment.total": 1059,
+    "student_teacher_ratio": 15.855,
+    "frl_share": 0.5167,
+    "rigor.ap_courses": 17,
+    "derived.ap_enrolled_share": 0.2387,
+    "derived.ib_enrolled_share": 0.1385,
+    "derived.dual_enrolled_share": 0.0477
+  },
+  "ME": {
+    "enrollment.total": 378.5,
+    "student_teacher_ratio": 11.725,
+    "frl_share": 0.4675,
+    "rigor.ap_courses": 8,
+    "derived.ap_enrolled_share": 0.1166,
+    "derived.dual_enrolled_share": 0.0933
+  },
+  "MI": {
+    "enrollment.total": 239,
+    "student_teacher_ratio": 17.46,
+    "frl_share": 0.5764,
+    "rigor.ap_courses": 7,
+    "derived.ap_enrolled_share": 0.143,
+    "derived.ib_enrolled_share": 0.1028,
+    "derived.dual_enrolled_share": 0.0177
+  },
+  "MN": {
+    "enrollment.total": 66,
+    "student_teacher_ratio": 13.48,
+    "frl_share": 0.4896,
+    "rigor.ap_courses": 7,
+    "derived.ap_enrolled_share": 0.1757,
+    "derived.ib_enrolled_share": 0.1909,
+    "derived.dual_enrolled_share": 0
+  },
+  "MO": {
+    "enrollment.total": 179.5,
+    "student_teacher_ratio": 11.825,
+    "frl_share": 0.4712,
+    "rigor.ap_courses": 7,
+    "derived.ap_enrolled_share": 0.1289,
+    "derived.ib_enrolled_share": 0.0974,
+    "derived.dual_enrolled_share": 0.0878
+  },
+  "MS": {
+    "enrollment.total": 293,
+    "student_teacher_ratio": 12.615,
+    "frl_share": 0.7538,
+    "rigor.ap_courses": 5,
+    "derived.ap_enrolled_share": 0.0998,
+    "derived.dual_enrolled_share": 0.0823
+  },
+  "MT": {
+    "enrollment.total": 80,
+    "student_teacher_ratio": 10.6,
+    "frl_share": 0.4662,
+    "rigor.ap_courses": 4,
+    "derived.ap_enrolled_share": 0.1454,
+    "derived.dual_enrolled_share": 0.1022
+  },
+  "NC": {
+    "enrollment.total": 606.5,
+    "student_teacher_ratio": 17.93,
+    "frl_share": 0.9764,
+    "rigor.ap_courses": 9,
+    "derived.ap_enrolled_share": 0.1186,
+    "derived.ib_enrolled_share": 0.0717,
+    "derived.dual_enrolled_share": 0.0805
+  },
+  "ND": {
+    "enrollment.total": 105,
+    "student_teacher_ratio": 10.05,
+    "frl_share": 0.2751,
+    "rigor.ap_courses": 4,
+    "derived.ap_enrolled_share": 0.1832,
+    "derived.dual_enrolled_share": 0.1102
+  },
+  "NE": {
+    "enrollment.total": 121,
+    "student_teacher_ratio": 10.09,
+    "frl_share": 0.3325,
+    "rigor.ap_courses": 4,
+    "derived.ap_enrolled_share": 0.1603,
+    "derived.dual_enrolled_share": 0.1298
+  },
+  "NH": {
+    "enrollment.total": 343,
+    "student_teacher_ratio": 11.495,
+    "frl_share": 0.2345,
+    "rigor.ap_courses": 8,
+    "derived.ap_enrolled_share": 0.1261,
+    "derived.dual_enrolled_share": 0.0966
+  },
+  "NJ": {
+    "enrollment.total": 751,
+    "student_teacher_ratio": 12.08,
+    "frl_share": 0.3867,
+    "rigor.ap_courses": 17,
+    "derived.ap_enrolled_share": 0.2001,
+    "derived.ib_enrolled_share": 0.1189,
+    "derived.dual_enrolled_share": 0.0716
+  },
+  "NM": {
+    "enrollment.total": 201,
+    "student_teacher_ratio": 12.67,
+    "frl_share": 0.9941,
+    "rigor.ap_courses": 8,
+    "derived.ap_enrolled_share": 0.185,
+    "derived.dual_enrolled_share": 0.108
+  },
+  "NV": {
+    "enrollment.total": 356,
+    "student_teacher_ratio": 21.21,
+    "frl_share": 1,
+    "rigor.ap_courses": 11,
+    "derived.ap_enrolled_share": 0.1454,
+    "derived.ib_enrolled_share": 0.0739,
+    "derived.dual_enrolled_share": 0.0658
+  },
+  "NY": {
+    "enrollment.total": 454,
+    "student_teacher_ratio": 10.61,
+    "frl_share": 0.6109,
+    "rigor.ap_courses": 8,
+    "derived.ap_enrolled_share": 0.1703,
+    "derived.ib_enrolled_share": 0.1539,
+    "derived.dual_enrolled_share": 0.1416,
+    "state.college_going_rate": 0.6871,
+    "state.ap_pass_rate": 0.6867,
+    "state.ela_proficiency": 0.8568,
+    "state.math_proficiency": 0.7,
+    "state.chronic_absence": 0.3105
+  },
+  "OH": {
+    "enrollment.total": 403,
+    "student_teacher_ratio": 15.91,
+    "frl_share": 0.4378,
+    "rigor.ap_courses": 5,
+    "derived.ap_enrolled_share": 0.0914,
+    "derived.ib_enrolled_share": 0.0844,
+    "derived.dual_enrolled_share": 0.087
+  },
+  "OK": {
+    "enrollment.total": 177,
+    "student_teacher_ratio": 14.38,
+    "frl_share": 0.6436,
+    "rigor.ap_courses": 4,
+    "derived.ap_enrolled_share": 0.1195,
+    "derived.dual_enrolled_share": 0.0843
+  },
+  "OR": {
+    "enrollment.total": 284.5,
+    "student_teacher_ratio": 17.52,
+    "frl_share": 0.7228,
+    "rigor.ap_courses": 6,
+    "derived.ap_enrolled_share": 0.1884,
+    "derived.ib_enrolled_share": 0.308,
+    "derived.dual_enrolled_share": 0.0317
+  },
+  "PA": {
+    "enrollment.total": 592,
+    "student_teacher_ratio": 13.61,
+    "rigor.ap_courses": 10,
+    "derived.ap_enrolled_share": 0.1215,
+    "derived.ib_enrolled_share": 0.1021,
+    "derived.dual_enrolled_share": 0.0454
+  },
+  "RI": {
+    "enrollment.total": 667.5,
+    "student_teacher_ratio": 12.325,
+    "frl_share": 0.6286,
+    "rigor.ap_courses": 10,
+    "derived.ap_enrolled_share": 0.2323,
+    "derived.dual_enrolled_share": 0.0136
+  },
+  "SC": {
+    "enrollment.total": 637,
+    "student_teacher_ratio": 15.4,
+    "rigor.ap_courses": 9,
+    "derived.ap_enrolled_share": 0.0973,
+    "derived.ib_enrolled_share": 0.0261,
+    "derived.dual_enrolled_share": 0.0682,
+    "state.ela_proficiency": 0.661,
+    "state.math_proficiency": 0.5,
+    "state.chronic_absence": 0.263,
+    "state.nsc_enrolled_fall": 0.537
+  },
+  "SD": {
+    "enrollment.total": 86,
+    "student_teacher_ratio": 11.74,
+    "frl_share": 0.2796,
+    "rigor.ap_courses": 3,
+    "derived.ap_enrolled_share": 0.1499,
+    "derived.dual_enrolled_share": 0.1354
+  },
+  "TN": {
+    "enrollment.total": 494.5,
+    "rigor.ap_courses": 8,
+    "derived.ap_enrolled_share": 0.1437,
+    "derived.ib_enrolled_share": 0.0474,
+    "derived.dual_enrolled_share": 0.1372
+  },
+  "TX": {
+    "enrollment.total": 356.5,
+    "student_teacher_ratio": 13.55,
+    "frl_share": 0.6339,
+    "rigor.ap_courses": 12,
+    "derived.ap_enrolled_share": 0.2233,
+    "derived.ib_enrolled_share": 0.0619,
+    "derived.dual_enrolled_share": 0.0786,
+    "state.college_going_rate": 0.4812,
+    "state.ap_pass_rate": 0.4653,
+    "state.ela_proficiency": 0.5566,
+    "state.math_proficiency": 0.3385,
+    "state.chronic_absence": 0.2154
+  },
+  "UT": {
+    "enrollment.total": 403,
+    "student_teacher_ratio": 19.8,
+    "frl_share": 0.2847,
+    "rigor.ap_courses": 11,
+    "derived.ap_enrolled_share": 0.1621,
+    "derived.ib_enrolled_share": 0.059,
+    "derived.dual_enrolled_share": 0.0871
+  },
+  "VA": {
+    "enrollment.total": 1136,
+    "student_teacher_ratio": 13.735,
+    "frl_share": 0.6842,
+    "rigor.ap_courses": 14,
+    "derived.ap_enrolled_share": 0.2085,
+    "derived.ib_enrolled_share": 0.0897,
+    "derived.dual_enrolled_share": 0.0937
+  },
+  "VT": {
+    "enrollment.total": 306,
+    "student_teacher_ratio": 10.05,
+    "frl_share": 0.5144,
+    "rigor.ap_courses": 7,
+    "derived.ap_enrolled_share": 0.1089,
+    "derived.dual_enrolled_share": 0.065
+  },
+  "WA": {
+    "enrollment.total": 165,
+    "student_teacher_ratio": 20.14,
+    "frl_share": 0.5211,
+    "rigor.ap_courses": 9,
+    "derived.ap_enrolled_share": 0.2039,
+    "derived.ib_enrolled_share": 0.1638,
+    "derived.dual_enrolled_share": 0.0551
+  },
+  "WI": {
+    "enrollment.total": 255,
+    "student_teacher_ratio": 13.84,
+    "frl_share": 0.3676,
+    "rigor.ap_courses": 7,
+    "derived.ap_enrolled_share": 0.1914,
+    "derived.ib_enrolled_share": 0.2485,
+    "derived.dual_enrolled_share": 0.2043
+  },
+  "WV": {
+    "enrollment.total": 520.5,
+    "student_teacher_ratio": 14.62,
+    "rigor.ap_courses": 8,
+    "derived.ap_enrolled_share": 0.0882,
+    "derived.dual_enrolled_share": 0.0999
+  },
+  "WY": {
+    "enrollment.total": 117,
+    "student_teacher_ratio": 10.8,
+    "frl_share": 0.4182,
+    "rigor.ap_courses": 3,
+    "derived.ap_enrolled_share": 0.1111,
+    "derived.dual_enrolled_share": 0.1097
+  }
+}

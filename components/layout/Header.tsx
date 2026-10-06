@@ -14,6 +14,7 @@ import { cn } from "@/lib/utils";
 const NAV_ITEMS = [
   { label: "Explore", href: "/explore" },
   { label: "Compare", href: "/compare" },
+  { label: "High schools", href: "/high-schools" },
   { label: "Glossary", href: "/glossary" },
   { label: "Data", href: "/data" },
 ];

@@ -5,13 +5,13 @@ import type { ReactNode } from "react";
 import { Popover } from "@base-ui/react/popover";
 import { Info, ArrowRight, BookMarked, ExternalLink } from "lucide-react";
 import { GLOSSARY, type TermKey } from "@/lib/glossary";
-import { citesYear, yearLabel, type Cited, type CitedSource } from "@/lib/lineage";
+import { citesYear, yearLabel, type AnyCited, type AnyCitedSource } from "@/lib/lineage";
 import { num, pctSmart } from "@/lib/format";
 import { DEMOGRAPHIC_CATEGORIES } from "@/lib/metrics";
 import { cn } from "@/lib/utils";
 
 // Inline, not inline-flex, so a long source name wraps like the sentence around it and its year stays beside it.
-function SourceLink({ s }: { s: CitedSource }) {
+function SourceLink({ s }: { s: AnyCitedSource }) {
   return (
     <>
       <a href={s.url} target="_blank" rel="noopener noreferrer" className="font-semibold text-foreground hover:text-primary hover:underline">
@@ -24,7 +24,7 @@ function SourceLink({ s }: { s: CitedSource }) {
 }
 
 /** Bare link, no trailing year (the year's already in the sentence above it). */
-function SourceLinkBare({ s }: { s: CitedSource }) {
+function SourceLinkBare({ s }: { s: AnyCitedSource }) {
   return (
     <a href={s.url} target="_blank" rel="noopener noreferrer" className="font-semibold text-foreground hover:text-primary hover:underline">
       {s.label}
@@ -37,7 +37,7 @@ function SourceLinkBare({ s }: { s: CitedSource }) {
  * "in its Common Data Set Fall 2026" / "in its class profile for the Fall 2026 class" / "on its own site", from
  * `cited.sourceKind` (lib/lineage.ts, from `school.reported.admissions.source_kind`) when it's known.
  */
-function sourceKindPhrase(cited: Cited): string {
+function sourceKindPhrase(cited: AnyCited): string {
   const year = yearLabel(cited);
   // A CDS record value names its edition, then the year it describes: "in its Common Data Set 2025–26 (fall 2025)".
   if (cited.sourceKind === "cds" && cited.cdsEdition) return `in its Common Data Set ${cited.cdsEdition} (${year.replace(/^(Fall|Entered)\b/, (w) => w.toLowerCase())})`;
@@ -47,7 +47,7 @@ function sourceKindPhrase(cited: Cited): string {
 }
 
 /** The federal (or previous) value a college-reported value replaced, formatted by field. */
-function formatReplaced(cited: Cited): string {
+function formatReplaced(cited: AnyCited): string {
   if (cited.replaces?.label) return cited.replaces.label;
   if (cited.replaces?.text) return cited.replaces.text;
   const value = cited.replaces?.value ?? null;
@@ -71,7 +71,7 @@ function imageHost(url: string): string {
 }
 
 /** Where a value came from: source, year, method, formula, inputs, and what it replaced, if anything. */
-function SourceBlock({ cited, heading = true }: { cited: Cited; heading?: boolean }) {
+function SourceBlock({ cited, heading = true }: { cited: AnyCited; heading?: boolean }) {
   const inputs = cited.inputs ?? [];
   const isCollegeSite = cited.key === "college-site";
   return (
@@ -159,7 +159,7 @@ function Popup({ title, children }: { title: ReactNode; children: ReactNode }) {
   );
 }
 
-function TermPopup({ term, cited }: { term: TermKey; cited?: Cited }) {
+function TermPopup({ term, cited }: { term: TermKey; cited?: AnyCited }) {
   const entry = GLOSSARY[term];
   return (
     <Popup title={entry.term}>
@@ -186,7 +186,7 @@ const triggerClass = cn(
  * Small (i) icon that explains a term on hover, focus, or tap. With `cited`, the
  * same popover also says where this value came from (see specs/data-lineage.md).
  */
-export function InfoTip({ term, cited, className }: { term: TermKey; cited?: Cited; className?: string }) {
+export function InfoTip({ term, cited, className }: { term: TermKey; cited?: AnyCited; className?: string }) {
   return (
     <Popover.Root>
       <Popover.Trigger
@@ -204,7 +204,7 @@ export function InfoTip({ term, cited, className }: { term: TermKey; cited?: Cit
 }
 
 /** Source-only (i) icon, for values without a glossary term. */
-export function SourceTip({ cited, className }: { cited: Cited; className?: string }) {
+export function SourceTip({ cited, className }: { cited: AnyCited; className?: string }) {
   return (
     <Popover.Root>
       <Popover.Trigger openOnHover delay={120} closeDelay={120} aria-label={`Source for ${cited.field}`} className={cn(triggerClass, className)}>
@@ -220,7 +220,7 @@ export function SourceTip({ cited, className }: { cited: Cited; className?: stri
 /** One source in a SourcesTip and the items it covers ("Website, Admissions, Apply"). */
 export interface SourceGroup {
   items: string[];
-  cited: Cited;
+  cited: AnyCited;
 }
 
 /**
@@ -248,7 +248,7 @@ export function SourcesTip({ title, groups, className }: { title: string; groups
 }
 
 /** Inline word with a dotted underline that opens the same explanation. */
-export function Term({ term, children, className, cited }: { term: TermKey; children?: ReactNode; className?: string; cited?: Cited }) {
+export function Term({ term, children, className, cited }: { term: TermKey; children?: ReactNode; className?: string; cited?: AnyCited }) {
   return (
     <Popover.Root>
       <Popover.Trigger
@@ -280,7 +280,7 @@ export function MetricLabel({
   className,
 }: {
   term?: TermKey;
-  cited?: Cited;
+  cited?: AnyCited;
   children: ReactNode;
   className?: string;
 }) {

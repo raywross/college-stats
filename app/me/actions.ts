@@ -40,6 +40,7 @@ function profileFromForm(form: FormData): unknown {
       gradYear: numField(form, "gradYear"),
       stateOfResidence: strField(form, "stateOfResidence"),
       highSchool: strField(form, "highSchool"),
+      highSchoolId: strField(form, "highSchoolId"),
     },
     academics: {
       gpa: numField(form, "gpa"),

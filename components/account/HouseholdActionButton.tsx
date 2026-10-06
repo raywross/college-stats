@@ -2,7 +2,7 @@
 
 import { useActionState } from "react";
 import { cn } from "@/lib/utils";
-import type { HouseholdActionState } from "@/app/account/household/actions";
+import type { HouseholdActionState } from "@/app/household/actions";
 
 type Action = (prev: HouseholdActionState, form: FormData) => Promise<HouseholdActionState>;
 

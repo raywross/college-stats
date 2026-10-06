@@ -195,7 +195,7 @@ One new file, `supabase/migrations/2026…_household_hub.sql`, applied to dev be
 | `components/account/Roster.tsx` | The one roster with status and actions; replaces the members list, the pending section, and `HouseholdSummary`'s member line |
 | `components/account/AddPersonForm.tsx` | Role first, then the role's fields; replaces `InviteForm`, `AddManagedStudentForm`, and `LinkManagedStudent` |
 | `app/household/actions.ts` | `addPerson` (branches on role), `copyInvitationLink` (reads the stored token), `resendInvitation`, the existing member actions |
-| `lib/supabase-admin.ts` (server only) | The one module that holds the secret-key client: `createInvitedUser()` and `inviteLink()`; see [owner decisions](#owner-decisions) |
+| `supabase/functions/invite-user/index.ts`, `lib/invite-function.ts` (server only) | The Edge Function holding the admin calls, and the typed client the Server Action uses (`inviteUser({ token }) → { link } \| { error }`); see [the Edge Function](#the-edge-function) |
 | `app/account/password/` | The `welcome` variant that accepts the invitation on save |
 | `lib/list-rules.ts`, `lib/lists.ts`, `components/lists/ListBoard.tsx` | Owner kinds, the tracking row, the three columns in CSV |
 | `lib/household-rules.ts` | Roster rows with status; `memberName()` never returns a role fallback when a name exists; `phone` formatting |
@@ -203,19 +203,49 @@ One new file, `supabase/migrations/2026…_household_hub.sql`, applied to dev be
 | `components/account/AccountMenu.tsx` | Three entries |
 | Glossary | `updates` (the per-college switch), `tracking` |
 
+## The Edge Function
+`supabase/functions/invite-user/` (Deno, deployed with `supabase functions deploy invite-user`, dev first, then
+prod). It is the only code outside the database that holds admin power, so it is small and documented in full in
+[supabase.md](../supabase.md) ("Edge Functions") with: what it does, its inputs and outputs, every secret it needs,
+how to deploy it, how to test it against dev, and how to roll it back (redeploy the previous commit).
+
+Contract:
+```
+POST {SUPABASE_URL}/functions/v1/invite-user
+Authorization: Bearer {SUPABASE_PUBLISHABLE_KEY}      -- Supabase's gateway requires a key
+X-Invite-Secret: {INVITE_FUNCTION_SECRET}             -- the site's shared secret; wrong or missing → 401
+{ "token": "<64 hex>", "redirectTo": "https://site/auth/confirm?next=/account/password?welcome=1" }
+
+200 { "link": "https://<project>.supabase.co/auth/v1/verify?token=…&type=invite&redirect_to=…" }
+409 { "error": "already_registered" }                 -- the address has an account: fall back to the signed-in accept flow
+404 { "error": "invitation_not_found" }               -- no pending, unexpired invitation for that token
+```
+Steps inside: hash the token (SHA-256, as `create_invitation` does), read the pending invitation with the service
+role, `auth.admin.createUser({ email, email_confirm: true, user_metadata: { display_name, role_hint, phone,
+invitation_id } })`, `auth.admin.generateLink({ type: "invite", email, options: { redirectTo } })`, write
+`invitations.accepted_by = user.id` (so `accept_invitation_by_id()` can insist on the same user later), return the
+link. Nothing else: the function never reads lists, profiles, or any other table. Secrets: `SUPABASE_URL` and
+`SUPABASE_SERVICE_ROLE_KEY` are provided by Supabase to every function; `INVITE_FUNCTION_SECRET` is set with
+`supabase secrets set` and in Vercel. `lib/invite-function.ts` is the only caller, and a test checks that no other
+module imports it or builds the URL by hand. The Server Action treats a network failure like email not being
+configured: the invitation still exists, and "Send again" retries.
+
 ## Owner decisions
-Decisions 2–4 were approved by the owner on 2026-10-06; decision 1 is open.
-1. **The secret key in Vercel** (open). Today an invited person has to sign up themselves and confirm their email
-   before accepting, because the site has no account for them. Creating the account for them, with the email already
-   marked verified, and minting the link that signs them in are **administrator actions** in Supabase Auth, allowed
-   only with the project's secret key, which bypasses row-level security. [supabase.md](../supabase.md#keys) keeps
-   that key off Vercel today (only the publish script and GitHub Actions hold it).
-   - **Option A (recommended):** set `SUPABASE_SECRET_KEY` in Vercel as a server-only variable, used by exactly one
-     module, `lib/supabase-admin.ts`, with a test that no other module imports it; update supabase.md. Simple and
-     the usual pattern; the cost is that a leak on Vercel would expose a key that can read every family's data.
-   - **Option B:** keep the key inside Supabase by putting the two admin calls in a Supabase Edge Function that the
-     Server Action calls with the invitation token. The key never leaves Supabase; the cost is a second runtime and
-     deploy step for two small functions.
+All four were decided by the owner on 2026-10-06.
+1. **Decided: the secret key stays inside Supabase (an Edge Function).** Today an invited person has to sign up
+   themselves and confirm their email before accepting, because the site has no account for them. Creating the
+   account for them, with the email already marked verified, and minting the link that signs them in are
+   **administrator actions** in Supabase Auth, allowed only with the project's secret key, which bypasses row-level
+   security. [supabase.md](../supabase.md#keys) keeps that key off Vercel, and the owner chose to keep it that way:
+   the two admin calls live in a **Supabase Edge Function**, `supabase/functions/invite-user/`, which runs inside
+   Supabase where the secret key is already available as `SUPABASE_SERVICE_ROLE_KEY`. The Server Action calls it
+   with the invitation token; the function checks the token against `invitations` (pending, unexpired), creates the
+   user (`email_confirm: true`, metadata with name, role hint, phone, and the invitation id), mints the invite link
+   (`generateLink({ type: "invite" })`), and returns the link. The function accepts only requests carrying the
+   site's `INVITE_FUNCTION_SECRET` (a shared secret set in Vercel and as a function secret), so the publishable key
+   alone can't call it. The rejected alternative put `SUPABASE_SECRET_KEY` in Vercel confined to one module: simpler,
+   but a leak on Vercel would expose a key that reads every family's data. The owner's condition: strong
+   documentation, since this is a second runtime touched rarely; see [the Edge Function](#the-edge-function).
 2. **Approved: store the invitation token in clear** for pending invitations so Copy link works (above). The
    alternative kept hash-only storage and made Copy mint a new link each time, silently killing the one sent earlier.
 3. **Approved: a guardian's list is visible to the household** (it's suggestions, and the student should see them).

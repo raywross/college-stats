@@ -152,3 +152,109 @@ The shared contracts every later unit builds on; the federal, private, state, UI
 - Small cells: CCD "Suppressed" flags, CRDC codes -11/-12, EDFacts "PS", and student counts 1–4 → null + `suppressed`.
   Tests on fixture extracts: `tests/high-schools-federal.test.mts` (`tests/fixtures/high-schools/federal/cache/` holds
   directories named like the zips).
+
+## Pilot results (profile PDFs, 2026-10-05)
+Phase 3's pipeline is built and its free half has run on the 100 pilot schools. **The model half has not run:** this
+environment has no `ANTHROPIC_API_KEY`, so no extraction, no paid search step, and no spend ($0.00 of the $30 cap).
+Findability below comes from a hand search standing in for the search step; extraction accuracy waits for one command
+(see "To finish the pilot").
+
+### What was built
+- `npm run sync-hs-profiles` (`scripts/sync-hs-profiles.mts`; modules in `scripts/lib/high-schools/profiles/`):
+  `select` (pilot choice), `discover` (finding the profile), `document` (PDF/HTML → numbered lines, the profile gate),
+  `extract` (the `hs-profile` schema and call), `checks` (answer → `HighSchoolDetail`), `match` (college names →
+  `unit_id`), `budget` (the spend cap), `run` (one run, measurements), `score` (accuracy vs the answer key), `store`.
+- **Discovery ladder** (CCD has no website column): 0 known recipe URL (conditional GET once a model has read it) → 1
+  scan the school's known site and pages, one level down to counseling/college pages, following a "School Website" link
+  from a district or NYC DOE directory page → 2 seeds (candidate URLs from the owner or a hand search, `--seeds`) → 3
+  search (Sonnet 5, web search only, ≤ 2 searches, no fetch; our code fetches the candidates) → 4 Haiku picks a link from
+  the pages fetched. Every request goes through the college-reported engine's `PoliteHttp` (robots.txt, ≥ 1 s per host
+  or the Crawl-delay, honest user agent `QuadCollegeData/1.0 (high school profiles; …)`, no retries past refusals).
+  Drive share links are rewritten to their direct download only where robots.txt allows; Docs export as PDF.
+- **Profile gate** before any model call: the document names the school (half its distinctive words) and carries three
+  of seven profile markers (profile, CEEB code, GPA, AP/IB, SAT/ACT, class of a year, college list); a web page needs
+  four including GPA and a class year, since navigation and news hit markers by chance.
+- **Extraction** (Haiku 4.5 by default, structured outputs): numbered layout lines in, every value back with the ids of
+  the lines it is printed on; our code builds quotes and pages from those lines and copies the school's GPA conversion
+  rule verbatim from its cited lines. One escalation re-read with Sonnet 5 only for fields that failed a check a re-read
+  can fix (quote, distribution sum, count bound, scale kind, names, range, plausibility), as the engine does.
+- **Checks**: document level (wrong school, missing or pre-2023–24 edition → nothing written); field level (a failing
+  field is withheld and queued, the rest publish): numbers on their cited lines, distribution sums to 1 ± 0.02 (counts
+  become shares of their total), matriculation counts ≤ class size (else CCD's 12th grade), scale kind agrees with its
+  maximum, SAT 400–1600 / ACT 1–36, AP/IB names must appear in the document, class size ≤ 3 × CCD 12th grade + 50.
+  `validateHighSchoolDetail` runs before any detail file is written.
+- **College matching** (`match.mts`): an official-name key (punctuation-blind, "&" = "and", leading "The" dropped), an
+  alias key (`data/aliases.json`), the name minus an IPEDS "-Main Campus", then name + "University"/"College". A state
+  hint ("Miami University (OH)") narrows candidates. Two or more colleges at the first rule that answers is ambiguous:
+  `unit_id` stays null and the review queue lists the candidates. Never a guess.
+- **Spend cap**: every call reserves its worst case (all input uncached, the whole output budget, its searches) and is
+  not started if that would pass the cap; the real cost replaces the reservation. `--cap` is the pilot's whole budget:
+  spend recorded by earlier runs (`spent_total_usd` in `profile-pilot.json`) counts toward it.
+- Files: `data/high-schools/profile-pilot.json` (rule, the 100 schools, latest run and measurements, `key_match`),
+  `profile-recipes.json`, `review-queue.json`, `detail/{id}.json` (passing schools only; none yet),
+  `data/reference/hs-profile-answer-key.json`; tests `tests/high-schools-profiles.test.mts` (34, each check proven to
+  fail on a broken extraction).
+
+### The pilot schools
+Rule (recorded in `profile-pilot.json`): circles of 40 km (Los Angeles), 55 km (Dallas–Fort Worth) and 30 km (New York)
+in CA, TX and NY; rows with 10+ students in grade 12; public schools regular and not virtual; per metro two thirds
+public and one third private, each split into three size bands; within a band a fixed sha256 shuffle. 34 + 33 + 33
+schools: 67 public (charters, magnets, NYC small schools, large comprehensives), 33 private (Catholic, Jewish day
+schools and yeshivas, independent day schools, Fusion Academy campuses). A test re-runs the rule on the shards.
+
+### Measurements
+| Measure | Result |
+|---|---|
+| Official URL found by hand search (1–2 searches per school, school or district domains only) | 75 / 100 |
+| **Profile found and fetchable** (findability) | **6 / 100** (5 distinct documents; all private) |
+| Profile located but robots.txt or a viewer forbids fetching it | 12 / 100 (7 public, 5 private) |
+| Profile located at all | 18 / 100 |
+| Public schools with a fetchable profile | 0 / 67 |
+| Requests / time, free discovery | 437 requests, 15 s per school (crawl delays; 6 in parallel) |
+| Extraction accuracy per field | **not measured** (no API key); answer key ready |
+| College-name match rate (hand-read lists, 635 names, 6 schools) | **87.2%** matched, 0.2% ambiguous, 12.6% unmatched |
+| Cost per school | $0 so far; estimate below |
+
+- **Where profiles live, and why most can't be fetched**: Google Drive (`/uc` downloads are disallowed by Drive's
+  robots.txt; Arcadia, Polytechnic, Notre Dame Sherman Oaks, Episcopal School of Dallas, Belmont Prep), Edlio's file host
+  `*.files.edl.io` (disallows all; El Dorado, Ferrahian, Townsend Harris, West End, New Utrecht), Blackbaud's
+  `myschoolcdn.com` (disallows all; Hockaday's PDFs), ParentSquare's file host (Hoover), Issuu (a viewer with no file;
+  St. Ann's). Fetchable ones sat on the school's own site (WordPress uploads, Finalsite resource manager, a plain PDF
+  folder) or were the profile page itself (Hockaday publishes its profile as an HTML page).
+- **Public schools**: none fetchable. LAUSD, Dallas ISD, Fort Worth ISD and NYC DOE schools mostly publish no profile
+  at a findable address; NYC schools that do use Edlio or Drive. Profiles are made for counselors to attach in Naviance /
+  Common App, not for the public web.
+- **Matching**: rule 1 (official name) carries 538 of 554 matches. Unmatched names are mostly correct "no": colleges
+  abroad (St Andrews, McGill, Bocconi), community colleges outside the 4-year set, and service academies' variants.
+  The fixable part is big universities whose IPEDS name carries a campus ("University of Michigan" → "-Ann Arbor",
+  "Texas A&M University" → "-College Station", "Columbia University" → "in the City of New York", "Arizona State
+  University" → "Campus Immersion", "University of Oklahoma", "University of Washington", "Tulane University", SUNY campuses): about 40
+  of the 80 unmatched. These want curated aliases (`data/aliases-curated.json`), not a looser rule: "University of
+  Michigan" is also a prefix of Dearborn and Flint.
+- **Answer key** (`data/reference/hs-profile-answer-key.json`): 12 profiles hand-read from their text layers (the brief
+  asked for 15; only 5 distinct pilot profiles were fetchable, so 7 come from other high schools in the three metros
+  found by hand search: Palos Verdes, Beverly Hills, Crespi, Poly Prep, Regis, Cistercian, Nolan Catholic). What they
+  print, which sizes the extraction's job: class size 9 / 12, a GPA scale 11 / 12 (two 100-point, one 4.5 base),
+  a real GPA distribution 3 / 12 (others print percentile cut-offs, a bar chart without numbers, or refuse to publish),
+  AP lists 8 / 12 (three schools offer no AP), SAT middle 50% 4 / 12 and ACT 5 / 12 (others print means), an
+  enrollment list 6 / 12 (four with counts; the rest list acceptances, and Cistercian marks enrollment in bold, which
+  the text layer drops).
+- **Cost estimate** (not measured): extraction of a 2–6 page profile ≈ 6–15 K input + 2–6 K output tokens on Haiku 4.5
+  ≈ $0.02–0.05 per found profile, plus a Sonnet re-read for perhaps a third ≈ $0.03; the search step ≈ $0.04–0.08 per
+  school (two searches + results). A full pilot run is about $6–10, inside the $30 cap.
+
+### To finish the pilot
+With `ANTHROPIC_API_KEY` in `.env.local`: `npm run sync-hs-profiles -- --pilot --cap 30` (search step for the 94
+schools without a fetchable profile, extraction for the 6 found), `npm run sync-hs-profiles -- --answer-key --cap 30` (extracts
+the 12 key profiles; recipes are known), `npm run sync-hs-profiles -- --score` (field accuracy into
+`profile-pilot.json`). The cap counts every run's spend. Then fill the accuracy row above.
+
+### Recommendation: demand-driven, and don't count on crawling
+- Expand only by signed-in students' high schools, as planned, but expect a fetchable public profile for roughly
+  1 school in 20 and a located-but-forbidden one for another 1 in 10. A crawl of all 24 K schools would find little and
+  cost mostly search calls.
+- Add an upload path: let a student or counselor upload their school's profile PDF (or paste its link when the host
+  forbids crawlers), then run the same gate, extraction and checks. This reaches the Drive, Edlio and Blackbaud profiles
+  without bypassing anyone's robots.txt, and fits the counselor portal.
+- Ask the owner whether to email schools whose profile sits behind a disallowing host; never fetch it another way.
+- Curate aliases for the ~40 big-campus names before matching at scale; the review queue lists them per school.

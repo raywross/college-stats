@@ -535,12 +535,18 @@ test("discovery: another school's profile is refused by the gate", async () => {
   assert.equal(nameCoverage("FORT HAMILTON HIGH SCHOOL", "Fort Hamilton H.S. profile"), 1);
 });
 
-test("discovery: an unchanged known profile skips the model (304 or same bytes)", async () => {
-  const recipe = { id: SCHOOL.id, name: SCHOOL.name, tried: [], profile: { url: "https://fhhs.example.org/p.html", format: "html" as const, hash: "h", etag: '"e1"', checked: "2026-01-01" } };
-  const http: DiscoverHttp = { get: async (_u, cond) => (cond?.etag === '"e1"' ? new Response(null, { status: 304 }) : new Response("x")) };
+test("discovery: an unchanged known profile skips the model (304 or same bytes), once a model has read it", async () => {
+  const recipe = { id: SCHOOL.id, name: SCHOOL.name, tried: [], profile: { url: "https://fhhs.example.org/p.html", format: "html" as const, hash: "h", etag: '"e1"', checked: "2026-01-01", extracted: "2026-01-01" } };
+  const http: DiscoverHttp = { get: async (_u, cond) => (cond?.etag === '"e1"' ? new Response(null, { status: 304 }) : new Response(PROFILE_HTML, { headers: { "content-type": "text/html" } })) };
   const r = await discoverProfile(SCHOOL, recipe, { http, log: () => {}, today: TODAY, free: true });
   assert.equal(r.unchanged, true);
   assert.equal(r.recipe.profile?.checked, TODAY);
+  // A copy no model has read yet (a discovery-only run set its hash) is fetched whole and returned for extraction.
+  const unread = structuredClone(recipe);
+  delete (unread.profile as { extracted?: string }).extracted;
+  const r2 = await discoverProfile(SCHOOL, unread, { http, log: () => {}, today: TODAY, free: true });
+  assert.equal(r2.unchanged, false);
+  assert.equal(r2.found?.via, "known");
 });
 
 test("discovery helpers: profile links, website links, embedded documents, host kinds", () => {

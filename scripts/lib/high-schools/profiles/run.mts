@@ -212,6 +212,7 @@ export async function runProfiles(schools: readonly RunSchool[], recipes: Record
       result.extracted = answerValues(answer);
       result.edition = a.edition;
       out.recipes[s.id].profile!.edition = a.edition;
+      out.recipes[s.id].profile!.extracted = deps.today;
       result.passed = a.passed;
       result.withheld = a.withheld;
       result.match = a.match;

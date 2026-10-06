@@ -47,6 +47,8 @@ export interface ProfileRecipe {
     hash: string;
     edition?: string | null;
     checked: string;
+    /** When a model last read this copy. Until then an unchanged copy is still read (discovery-only runs set the hash). */
+    extracted?: string;
   };
   /** The school's homepage, once known (a search result or the profile's own host). */
   site?: string;
@@ -270,7 +272,7 @@ export function embeddedDocuments(html: string, base: string): FoundLink[] {
 }
 
 /** Fetches a page and returns its links (also kept for the picker). */
-async function pageLinks(c: Ctx, url: string): Promise<{ links: FoundLink[]; embedded: FoundLink[] } | { error: string }> {
+async function pageLinks(c: Ctx, url: string): Promise<{ links: FoundLink[]; embedded: FoundLink[]; page?: { bytes: Uint8Array; res: Response } } | { error: string }> {
   if (c.seen.has(url)) return { links: [], embedded: [] };
   c.seen.add(url);
   const got = await fetchBytes(c, url);
@@ -281,7 +283,7 @@ async function pageLinks(c: Ctx, url: string): Promise<{ links: FoundLink[]; emb
   const base = got.res.url || url;
   const links = findLinks(html, base);
   c.links.push(...links);
-  return { links, embedded: embeddedDocuments(html, base) };
+  return { links, embedded: embeddedDocuments(html, base), page: { bytes: got.bytes, res: got.res } };
 }
 
 /**
@@ -320,8 +322,16 @@ export async function scanPages(c: Ctx, starts: readonly string[], o: { subpages
       continue;
     }
     const links = got.links;
-    // A page whose own address reads like a profile page: try the documents it embeds or links first.
+    // A page whose own address reads like a profile page: the page itself may be the profile (an HTML profile, gated
+    // like any document); else try the documents it embeds or links.
     if (isProfileLink({ url: page, text: "" })) {
+      if (got.page) {
+        const doc = await readProfileDocument(got.page.bytes, got.page.res.headers.get("content-type") ?? "").catch(() => null);
+        const gate = doc ? looksLikeProfile(doc, c.school.name) : null;
+        if (doc && gate?.ok) {
+          return { url: page, via, doc, bytes: got.page.bytes, hash: sha256(got.page.bytes), etag: got.page.res.headers.get("etag") ?? undefined, last_modified: got.page.res.headers.get("last-modified") ?? undefined, gate };
+        }
+      }
       for (const e of got.embedded.slice(0, 3)) {
         const r = await confirmProfile(c, e.url, via, page, `${e.text} ${page}`);
         if (!("error" in r)) return r;
@@ -499,7 +509,7 @@ export async function discoverProfile(school: DiscoverSchool, recipe: ProfileRec
         ...(found.etag ? { etag: found.etag } : {}),
         ...(found.last_modified ? { last_modified: found.last_modified } : {}),
         hash: found.hash,
-        edition: r.profile?.url === found.url ? r.profile.edition : null,
+        edition: r.profile?.url === found.url && r.profile.hash === found.hash ? r.profile.edition : null,
         checked: deps.today,
       };
       r.found_via = found.via === "known" ? (r.found_via ?? "known") : found.via;
@@ -516,7 +526,9 @@ export async function discoverProfile(school: DiscoverSchool, recipe: ProfileRec
 
   // 0. Known.
   if (r.profile?.url) {
-    const got = await fetchBytes(c, r.profile.url, { etag: r.profile.etag, last_modified: r.profile.last_modified });
+    // Conditional only once a model has read this copy: a discovery-only run's hash must not hide it from extraction.
+    const read = !!r.profile.extracted;
+    const got = await fetchBytes(c, r.profile.url, read ? { etag: r.profile.etag, last_modified: r.profile.last_modified } : {});
     c.seen.add(r.profile.url);
     if (!("error" in got) && got.res.status === 304) {
       row("known", "unchanged");
@@ -525,7 +537,7 @@ export async function discoverProfile(school: DiscoverSchool, recipe: ProfileRec
     }
     if (!("error" in got)) {
       const hash = sha256(got.bytes);
-      if (hash === r.profile.hash) {
+      if (read && hash === r.profile.hash) {
         row("known", "unchanged", "same bytes");
         r.profile.checked = deps.today;
         return done(null, true);
@@ -534,7 +546,7 @@ export async function discoverProfile(school: DiscoverSchool, recipe: ProfileRec
         const doc = await readProfileDocument(got.bytes, got.res.headers.get("content-type") ?? "");
         const gate = looksLikeProfile(doc, school.name);
         if (gate.ok) {
-          row("known", "found", "changed");
+          row("known", "found", read ? "changed" : "not read yet");
           return done({ url: r.profile.url, via: "known", doc, bytes: got.bytes, hash, etag: got.res.headers.get("etag") ?? undefined, last_modified: got.res.headers.get("last-modified") ?? undefined, gate });
         }
         row("known", "none", gate.reason);

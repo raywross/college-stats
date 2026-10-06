@@ -448,267 +448,267 @@
     },
     {
       "id": "481623012028",
-      "name": "KATHLYN JOY GILLIAM COLLEGIATE ACADEMY",
+      "name": "Kathlyn Joy Gilliam Collegiate Academy",
       "kind": "public",
       "metro": "dallas-fort-worth",
-      "city": "DALLAS",
+      "city": "Dallas",
       "state": "TX",
       "enrollment": 342,
       "grade12": 83,
       "size": "small",
-      "district": "DALLAS ISD"
+      "district": "Dallas ISD"
     },
     {
       "id": "481623005441",
-      "name": "ROSIE SORRELLS EDUCATION AND SOCIAL SERVICES H S",
+      "name": "Rosie Sorrells Education and Social Services High School",
       "kind": "public",
       "metro": "dallas-fort-worth",
-      "city": "DALLAS",
+      "city": "Dallas",
       "state": "TX",
       "enrollment": 168,
       "grade12": 54,
       "size": "small",
-      "district": "DALLAS ISD"
+      "district": "Dallas ISD"
     },
     {
       "id": "480003013197",
-      "name": "UPLIFT LUNA PREP H S",
+      "name": "Uplift Luna Prep High School",
       "kind": "public",
       "metro": "dallas-fort-worth",
-      "city": "DALLAS",
+      "city": "Dallas",
       "state": "TX",
       "enrollment": 472,
       "grade12": 90,
       "size": "small",
-      "district": "UPLIFT EDUCATION"
+      "district": "Uplift Education"
     },
     {
       "id": "481623005444",
-      "name": "JUDGE BAREFOOT SANDERS LAW MAGNET",
+      "name": "Judge Barefoot Sanders Law Magnet",
       "kind": "public",
       "metro": "dallas-fort-worth",
-      "city": "DALLAS",
+      "city": "Dallas",
       "state": "TX",
       "enrollment": 494,
       "grade12": 126,
       "size": "small",
-      "district": "DALLAS ISD"
+      "district": "Dallas ISD"
     },
     {
       "id": "483318012421",
-      "name": "JAMES M STEELE EARLY COLLEGE H S",
+      "name": "James M Steele Early College High School",
       "kind": "public",
       "metro": "dallas-fort-worth",
-      "city": "ROANOKE",
+      "city": "Roanoke",
       "state": "TX",
       "enrollment": 309,
       "grade12": 42,
       "size": "small",
-      "district": "NORTHWEST ISD"
+      "district": "Northwest ISD"
     },
     {
       "id": "481623001204",
-      "name": "NEW TECH H S AT B F DARRELL H S",
+      "name": "New Tech High School at B F Darrell High School",
       "kind": "public",
       "metro": "dallas-fort-worth",
-      "city": "DALLAS",
+      "city": "Dallas",
       "state": "TX",
       "enrollment": 407,
       "grade12": 78,
       "size": "small",
-      "district": "DALLAS ISD"
+      "district": "Dallas ISD"
     },
     {
       "id": "481623001273",
-      "name": "SCHOOL OF HEALTH PROFESSIONS",
+      "name": "School of Health Professions",
       "kind": "public",
       "metro": "dallas-fort-worth",
-      "city": "DALLAS",
+      "city": "Dallas",
       "state": "TX",
       "enrollment": 497,
       "grade12": 115,
       "size": "small",
-      "district": "DALLAS ISD"
+      "district": "Dallas ISD"
     },
     {
       "id": "481305009190",
-      "name": "RANCHVIEW H S",
+      "name": "Ranchview High School",
       "kind": "public",
       "metro": "dallas-fort-worth",
-      "city": "IRVING",
+      "city": "Irving",
       "state": "TX",
       "enrollment": 899,
       "grade12": 190,
       "size": "medium",
-      "district": "CARROLLTON-FARMERS BRANCH ISD"
+      "district": "Carrollton-Farmers Branch ISD"
     },
     {
       "id": "480007008503",
-      "name": "UNIVERSAL ACADEMY - COPPELL",
+      "name": "Universal Academy - Coppell",
       "kind": "public",
       "metro": "dallas-fort-worth",
-      "city": "COPPELL",
+      "city": "Coppell",
       "state": "TX",
       "enrollment": 1302,
       "grade12": 14,
       "size": "medium",
-      "district": "UNIVERSAL ACADEMY"
+      "district": "Universal Academy"
     },
     {
       "id": "481970001857",
-      "name": "EASTERN HILLS H S",
+      "name": "Eastern Hills High School",
       "kind": "public",
       "metro": "dallas-fort-worth",
-      "city": "FORT WORTH",
+      "city": "Fort Worth",
       "state": "TX",
       "enrollment": 1189,
       "grade12": 197,
       "size": "medium",
-      "district": "FORT WORTH ISD"
+      "district": "Fort Worth ISD"
     },
     {
       "id": "480144113888",
-      "name": "GREAT HEARTS IRVING UPPER",
+      "name": "Great Hearts Irving Upper",
       "kind": "public",
       "metro": "dallas-fort-worth",
-      "city": "IRVING",
+      "city": "Irving",
       "state": "TX",
       "enrollment": 937,
       "grade12": 43,
       "size": "medium",
-      "district": "GREAT HEARTS TEXAS"
+      "district": "Great Hearts Texas"
     },
     {
       "id": "480029213362",
-      "name": "HARMONY SCIENCE ACADEMY - CARROLLTON",
+      "name": "Harmony Science Academy - Carrollton",
       "kind": "public",
       "metro": "dallas-fort-worth",
-      "city": "CARROLLTON",
+      "city": "Carrollton",
       "state": "TX",
       "enrollment": 564,
       "grade12": 56,
       "size": "medium",
-      "district": "HARMONY PUBLIC SCHOOLS - NORTH TEXAS"
+      "district": "Harmony Public Schools - North Texas"
     },
     {
       "id": "481317000817",
-      "name": "CASTLEBERRY H S",
+      "name": "Castleberry High School",
       "kind": "public",
       "metro": "dallas-fort-worth",
-      "city": "FORT WORTH",
+      "city": "Fort Worth",
       "state": "TX",
       "enrollment": 1085,
       "grade12": 242,
       "size": "medium",
-      "district": "CASTLEBERRY ISD"
+      "district": "Castleberry ISD"
     },
     {
       "id": "481970001913",
-      "name": "SOUTHWEST H S",
+      "name": "Southwest High School",
       "kind": "public",
       "metro": "dallas-fort-worth",
-      "city": "FORT WORTH",
+      "city": "Fort Worth",
       "state": "TX",
       "enrollment": 1155,
       "grade12": 265,
       "size": "medium",
-      "district": "FORT WORTH ISD"
+      "district": "Fort Worth ISD"
     },
     {
       "id": "482034007256",
-      "name": "ROWLETT H S",
+      "name": "Rowlett High School",
       "kind": "public",
       "metro": "dallas-fort-worth",
-      "city": "ROWLETT",
+      "city": "Rowlett",
       "state": "TX",
       "enrollment": 2156,
       "grade12": 593,
       "size": "large",
-      "district": "GARLAND ISD"
+      "district": "Garland ISD"
     },
     {
       "id": "481970001830",
-      "name": "ARLINGTON HEIGHTS H S",
+      "name": "Arlington Heights High School",
       "kind": "public",
       "metro": "dallas-fort-worth",
-      "city": "FORT WORTH",
+      "city": "Fort Worth",
       "state": "TX",
       "enrollment": 1898,
       "grade12": 423,
       "size": "large",
-      "district": "FORT WORTH ISD"
+      "district": "Fort Worth ISD"
     },
     {
       "id": "480920000382",
-      "name": "AZLE H S",
+      "name": "Azle High School",
       "kind": "public",
       "metro": "dallas-fort-worth",
-      "city": "AZLE",
+      "city": "Azle",
       "state": "TX",
       "enrollment": 2192,
       "grade12": 459,
       "size": "large",
-      "district": "AZLE ISD"
+      "district": "Azle ISD"
     },
     {
       "id": "482001013003",
-      "name": "REEDY H S",
+      "name": "Reedy High School",
       "kind": "public",
       "metro": "dallas-fort-worth",
-      "city": "FRISCO",
+      "city": "Frisco",
       "state": "TX",
       "enrollment": 2201,
       "grade12": 566,
       "size": "large",
-      "district": "FRISCO ISD"
+      "district": "Frisco ISD"
     },
     {
       "id": "482730008195",
-      "name": "HEBRON H S",
+      "name": "Hebron High School",
       "kind": "public",
       "metro": "dallas-fort-worth",
-      "city": "CARROLLTON",
+      "city": "Carrollton",
       "state": "TX",
       "enrollment": 3668,
       "grade12": 960,
       "size": "large",
-      "district": "LEWISVILLE ISD"
+      "district": "Lewisville ISD"
     },
     {
       "id": "482892011022",
-      "name": "MANSFIELD TIMBERVIEW H S",
+      "name": "Mansfield Timberview High School",
       "kind": "public",
       "metro": "dallas-fort-worth",
-      "city": "ARLINGTON",
+      "city": "Arlington",
       "state": "TX",
       "enrollment": 1788,
       "grade12": 449,
       "size": "large",
-      "district": "MANSFIELD ISD"
+      "district": "Mansfield ISD"
     },
     {
       "id": "482034006552",
-      "name": "NAAMAN FOREST H S",
+      "name": "Naaman Forest High School",
       "kind": "public",
       "metro": "dallas-fort-worth",
-      "city": "GARLAND",
+      "city": "Garland",
       "state": "TX",
       "enrollment": 1949,
       "grade12": 516,
       "size": "large",
-      "district": "GARLAND ISD"
+      "district": "Garland ISD"
     },
     {
       "id": "481623001367",
-      "name": "SUNSET H S",
+      "name": "Sunset High School",
       "kind": "public",
       "metro": "dallas-fort-worth",
-      "city": "DALLAS",
+      "city": "Dallas",
       "state": "TX",
       "enrollment": 2164,
       "grade12": 494,
       "size": "large",
-      "district": "DALLAS ISD"
+      "district": "Dallas ISD"
     },
     {
       "id": "A1790494",
@@ -796,7 +796,7 @@
     },
     {
       "id": "Y1326178",
-      "name": "Episcopal School of Dallas Pk-12",
+      "name": "Episcopal School of Dallas PK-12",
       "kind": "private",
       "metro": "dallas-fort-worth",
       "city": "Dallas",
@@ -844,267 +844,267 @@
     },
     {
       "id": "360012205727",
-      "name": "FLUSHING INTERNATIONAL HIGH SCHOOL",
+      "name": "Flushing International High School",
       "kind": "public",
       "metro": "new-york",
-      "city": "FLUSHING",
+      "city": "Flushing",
       "state": "NY",
       "enrollment": 390,
       "grade12": 79,
       "size": "small",
-      "district": "NEW YORK CITY GEOGRAPHIC DISTRICT #25"
+      "district": "New York City Geographic District #25"
     },
     {
       "id": "360008605793",
-      "name": "MOTT HALL BRONX HIGH SCHOOL",
+      "name": "Mott Hall Bronx High School",
       "kind": "public",
       "metro": "new-york",
-      "city": "BRONX",
+      "city": "Bronx",
       "state": "NY",
       "enrollment": 315,
       "grade12": 73,
       "size": "small",
-      "district": "NEW YORK CITY GEOGRAPHIC DISTRICT # 9"
+      "district": "New York City Geographic District # 9"
     },
     {
       "id": "360008705676",
-      "name": "BRONX ENGINEERING AND TECHNOLOGY ACADEMY",
+      "name": "Bronx Engineering and Technology Academy",
       "kind": "public",
       "metro": "new-york",
-      "city": "BRONX",
+      "city": "Bronx",
       "state": "NY",
       "enrollment": 332,
       "grade12": 98,
       "size": "small",
-      "district": "NEW YORK CITY GEOGRAPHIC DISTRICT #10"
+      "district": "New York City Geographic District #10"
     },
     {
       "id": "360008705183",
-      "name": "FORDHAM HIGH SCHOOL FOR THE ARTS",
+      "name": "Fordham High School for the Arts",
       "kind": "public",
       "metro": "new-york",
-      "city": "BRONX",
+      "city": "Bronx",
       "state": "NY",
       "enrollment": 351,
       "grade12": 83,
       "size": "small",
-      "district": "NEW YORK CITY GEOGRAPHIC DISTRICT #10"
+      "district": "New York City Geographic District #10"
     },
     {
       "id": "360009006030",
-      "name": "PAN AMERICAN INTERNATIONAL HIGH SCHOOL AT MONROE",
+      "name": "Pan American International High School at Monroe",
       "kind": "public",
       "metro": "new-york",
-      "city": "BRONX",
+      "city": "Bronx",
       "state": "NY",
       "enrollment": 339,
       "grade12": 44,
       "size": "small",
-      "district": "NEW YORK CITY GEOGRAPHIC DISTRICT #12"
+      "district": "New York City Geographic District #12"
     },
     {
       "id": "360008705182",
-      "name": "BELMONT PREPARATORY HIGH SCHOOL",
+      "name": "Belmont Preparatory High School",
       "kind": "public",
       "metro": "new-york",
-      "city": "BRONX",
+      "city": "Bronx",
       "state": "NY",
       "enrollment": 334,
       "grade12": 68,
       "size": "small",
-      "district": "NEW YORK CITY GEOGRAPHIC DISTRICT #10"
+      "district": "New York City Geographic District #10"
     },
     {
       "id": "360007606296",
-      "name": "FORSYTHE SATELLITE ACADEMY",
+      "name": "Forsythe Satellite Academy",
       "kind": "public",
       "metro": "new-york",
-      "city": "NEW YORK",
+      "city": "New York",
       "state": "NY",
       "enrollment": 168,
       "grade12": 33,
       "size": "small",
-      "district": "NEW YORK CITY GEOGRAPHIC DISTRICT # 1"
+      "district": "New York City Geographic District # 1"
     },
     {
       "id": "360012204485",
-      "name": "TOWNSEND HARRIS HIGH SCHOOL",
+      "name": "Townsend Harris High School",
       "kind": "public",
       "metro": "new-york",
-      "city": "FLUSHING",
+      "city": "Flushing",
       "state": "NY",
       "enrollment": 1342,
       "grade12": 376,
       "size": "medium",
-      "district": "NEW YORK CITY GEOGRAPHIC DISTRICT #25"
+      "district": "New York City Geographic District #25"
     },
     {
       "id": "360009801791",
-      "name": "ROBERT F WAGNER JR SECONDARY SCHOOL FOR ARTS AND TECHNOLOGY",
+      "name": "Robert F Wagner Jr Secondary School for Arts and Technology",
       "kind": "public",
       "metro": "new-york",
-      "city": "LONG ISLAND CITY",
+      "city": "Long Island City",
       "state": "NY",
       "enrollment": 626,
       "grade12": 114,
       "size": "medium",
-      "district": "NEW YORK CITY GEOGRAPHIC DISTRICT #24"
+      "district": "New York City Geographic District #24"
     },
     {
       "id": "360014005777",
-      "name": "HARLEM CHILDREN'S ZONE PROMISE ACADEMY II CHARTER SCHOOL",
+      "name": "Harlem Children's Zone Promise Academy II Charter School",
       "kind": "public",
       "metro": "new-york",
-      "city": "NEW YORK",
+      "city": "New York",
       "state": "NY",
       "enrollment": 1053,
       "grade12": 48,
       "size": "medium",
-      "district": "HARLEM CHILDREN'S ZONE PROMISE ACADEMY II CHARTER SCHOOL"
+      "district": "Harlem Children's Zone Promise Academy II Charter School"
     },
     {
       "id": "360007806547",
-      "name": "WEST END SECONDARY SCHOOL",
+      "name": "West End Secondary School",
       "kind": "public",
       "metro": "new-york",
-      "city": "NEW YORK",
+      "city": "New York",
       "state": "NY",
       "enrollment": 722,
       "grade12": 108,
       "size": "medium",
-      "district": "NEW YORK CITY GEOGRAPHIC DISTRICT # 3"
+      "district": "New York City Geographic District # 3"
     },
     {
       "id": "360008305909",
-      "name": "WASHINGTON HEIGHTS EXPEDITIONARY LEARNING SCHOOL",
+      "name": "Washington Heights Expeditionary Learning School",
       "kind": "public",
       "metro": "new-york",
-      "city": "NEW YORK",
+      "city": "New York",
       "state": "NY",
       "enrollment": 908,
       "grade12": 80,
       "size": "medium",
-      "district": "NEW YORK CITY GEOGRAPHIC DISTRICT # 6"
+      "district": "New York City Geographic District # 6"
     },
     {
       "id": "360096606069",
-      "name": "BROOKLYN ASCEND CHARTER SCHOOL",
+      "name": "Brooklyn Ascend Charter School",
       "kind": "public",
       "metro": "new-york",
-      "city": "BROOKLYN",
+      "city": "Brooklyn",
       "state": "NY",
       "enrollment": 951,
       "grade12": 56,
       "size": "medium",
-      "district": "BROOKLYN ASCEND CHARTER SCHOOL"
+      "district": "Brooklyn Ascend Charter School"
     },
     {
       "id": "360010006283",
-      "name": "JAMAICA GATEWAY TO THE SCIENCES",
+      "name": "Jamaica Gateway to the Sciences",
       "kind": "public",
       "metro": "new-york",
-      "city": "JAMAICA",
+      "city": "Jamaica",
       "state": "NY",
       "enrollment": 531,
       "grade12": 129,
       "size": "medium",
-      "district": "NEW YORK CITY GEOGRAPHIC DISTRICT #28"
+      "district": "New York City Geographic District #28"
     },
     {
       "id": "360015302009",
-      "name": "JAMES MADISON HIGH SCHOOL",
+      "name": "James Madison High School",
       "kind": "public",
       "metro": "new-york",
-      "city": "BROOKLYN",
+      "city": "Brooklyn",
       "state": "NY",
       "enrollment": 3983,
       "grade12": 804,
       "size": "large",
-      "district": "NEW YORK CITY GEOGRAPHIC DISTRICT #22"
+      "district": "New York City Geographic District #22"
     },
     {
       "id": "360120306678",
-      "name": "KIPP BRONX CHARTER SCHOOL III",
+      "name": "KIPP Bronx Charter School III",
       "kind": "public",
       "metro": "new-york",
-      "city": "BRONX",
+      "city": "Bronx",
       "state": "NY",
       "enrollment": 2390,
       "grade12": 269,
       "size": "large",
-      "district": "KIPP BRONX CHARTER SCHOOL III"
+      "district": "KIPP Bronx Charter School III"
     },
     {
       "id": "360015101952",
-      "name": "FORT HAMILTON HIGH SCHOOL",
+      "name": "Fort Hamilton High School",
       "kind": "public",
       "metro": "new-york",
-      "city": "BROOKLYN",
+      "city": "Brooklyn",
       "state": "NY",
       "enrollment": 4044,
       "grade12": 874,
       "size": "large",
-      "district": "NEW YORK CITY GEOGRAPHIC DISTRICT #20"
+      "district": "New York City Geographic District #20"
     },
     {
       "id": "360015302032",
-      "name": "MIDWOOD HIGH SCHOOL",
+      "name": "Midwood High School",
       "kind": "public",
       "metro": "new-york",
-      "city": "BROOKLYN",
+      "city": "Brooklyn",
       "state": "NY",
       "enrollment": 3657,
       "grade12": 919,
       "size": "large",
-      "district": "NEW YORK CITY GEOGRAPHIC DISTRICT #22"
+      "district": "New York City Geographic District #22"
     },
     {
       "id": "360007804458",
-      "name": "FIORELLO H LAGUARDIA HIGH SCHOOL",
+      "name": "Fiorello H Laguardia High School",
       "kind": "public",
       "metro": "new-york",
-      "city": "NEW YORK",
+      "city": "New York",
       "state": "NY",
       "enrollment": 2251,
       "grade12": 457,
       "size": "large",
-      "district": "NEW YORK CITY GEOGRAPHIC DISTRICT # 3"
+      "district": "New York City Geographic District # 3"
     },
     {
       "id": "360015102036",
-      "name": "NEW UTRECHT HIGH SCHOOL",
+      "name": "New Utrecht High School",
       "kind": "public",
       "metro": "new-york",
-      "city": "BROOKLYN",
+      "city": "Brooklyn",
       "state": "NY",
       "enrollment": 3236,
       "grade12": 654,
       "size": "large",
-      "district": "NEW YORK CITY GEOGRAPHIC DISTRICT #20"
+      "district": "New York City Geographic District #20"
     },
     {
       "id": "360010202887",
-      "name": "WILLIAM CULLEN BRYANT HIGH SCHOOL",
+      "name": "William Cullen Bryant High School",
       "kind": "public",
       "metro": "new-york",
-      "city": "LONG ISLAND CITY",
+      "city": "Long Island City",
       "state": "NY",
       "enrollment": 1996,
       "grade12": 495,
       "size": "large",
-      "district": "NEW YORK CITY GEOGRAPHIC DISTRICT #30"
+      "district": "New York City Geographic District #30"
     },
     {
       "id": "360015204312",
-      "name": "JOHN DEWEY HIGH SCHOOL",
+      "name": "John Dewey High School",
       "kind": "public",
       "metro": "new-york",
-      "city": "BROOKLYN",
+      "city": "Brooklyn",
       "state": "NY",
       "enrollment": 2209,
       "grade12": 510,
       "size": "large",
-      "district": "NEW YORK CITY GEOGRAPHIC DISTRICT #21"
+      "district": "New York City Geographic District #21"
     },
     {
       "id": "A2301720",
@@ -1120,7 +1120,7 @@
     },
     {
       "id": "A9300617",
-      "name": "Rambam Mesivta Maimonides Hs",
+      "name": "Rambam Mesivta Maimonides High School",
       "kind": "private",
       "metro": "new-york",
       "city": "Lawrence",
@@ -1144,7 +1144,7 @@
     },
     {
       "id": "A1502509",
-      "name": "Stella K. Abraham H.s. for Girls",
+      "name": "Stella K. Abraham High School for Girls",
       "kind": "private",
       "metro": "new-york",
       "city": "Hewlett",
@@ -1204,7 +1204,7 @@
     },
     {
       "id": "00939094",
-      "name": "The Chapin School Ltd",
+      "name": "The Chapin School LTD",
       "kind": "private",
       "metro": "new-york",
       "city": "New York",
@@ -1241,9 +1241,9 @@
   ],
   "seeds_method": "Hand search on 2026-10-05: one or two web searches per school (name, city, 'school profile' / 'counseling'), the agent's search tool, standing in for the pipeline's search step (no ANTHROPIC_API_KEY in this environment); only the school's or district's own URLs kept, aggregators dropped; NYC DOE school pages (schools.nyc.gov/schools/<DBN>) used where the result named a DBN",
   "latest": {
-    "run": "2026-10-06T00:29:48Z",
-    "started": "2026-10-06T00:29:48.164Z",
-    "finished": "2026-10-06T00:34:39.985Z",
+    "run": "2026-10-06T02:27:32Z",
+    "started": "2026-10-06T02:27:32.145Z",
+    "finished": "2026-10-06T02:32:23.549Z",
     "cap_usd": 30,
     "spent_usd": 0,
     "stopped": null,
@@ -1257,15 +1257,15 @@
     "measurements": {
       "schools": 100,
       "attempted": 100,
-      "found": 5,
-      "findability": 0.05,
-      "blocked": 13,
+      "found": 6,
+      "findability": 0.06,
+      "blocked": 12,
       "located": 18,
       "found_by": {
-        "seed": 5
+        "seed": 6
       },
       "host_kinds": {
-        "school-site": 5
+        "school-site": 6
       },
       "by_kind": {
         "public": {
@@ -1275,7 +1275,7 @@
         },
         "private": {
           "schools": 33,
-          "found": 5,
+          "found": 6,
           "published": 0
         }
       },
@@ -1301,8 +1301,8 @@
       "cost_usd": 0,
       "cost_per_school": 0,
       "cost_per_found": 0,
-      "ms_per_school": 15008,
-      "requests": 446
+      "ms_per_school": 14974,
+      "requests": 437
     },
     "cost_by_job": {},
     "results": [
@@ -1310,49 +1310,49 @@
         "id": "060239807165",
         "status": "not-found",
         "cost_usd": 0,
-        "ms": 7179,
+        "ms": 7165,
         "requests": 7
       },
       {
         "id": "060247013741",
         "status": "not-found",
         "cost_usd": 0,
-        "ms": 35,
+        "ms": 20,
         "requests": 0
       },
       {
         "id": "062271012937",
         "status": "not-found",
         "cost_usd": 0,
-        "ms": 35,
+        "ms": 20,
         "requests": 0
       },
       {
         "id": "060153411628",
         "status": "not-found",
         "cost_usd": 0,
-        "ms": 35,
+        "ms": 20,
         "requests": 0
       },
       {
         "id": "060196813898",
         "status": "not-found",
         "cost_usd": 0,
-        "ms": 35,
+        "ms": 20,
         "requests": 0
       },
       {
         "id": "060161114040",
         "status": "not-found",
         "cost_usd": 0,
-        "ms": 2098,
+        "ms": 2136,
         "requests": 2
       },
       {
         "id": "060207608718",
         "status": "not-found",
         "cost_usd": 0,
-        "ms": 70087,
+        "ms": 70481,
         "requests": 7
       },
       {
@@ -1366,14 +1366,14 @@
         "id": "060191414083",
         "status": "not-found",
         "cost_usd": 0,
-        "ms": 16342,
+        "ms": 16597,
         "requests": 7
       },
       {
         "id": "060236211632",
         "status": "not-found",
         "cost_usd": 0,
-        "ms": 1171,
+        "ms": 3293,
         "requests": 1
       },
       {
@@ -1394,7 +1394,7 @@
         "id": "062271011653",
         "status": "not-found",
         "cost_usd": 0,
-        "ms": 1022,
+        "ms": 1019,
         "requests": 1
       },
       {
@@ -1415,7 +1415,7 @@
         "id": "060297000223",
         "status": "blocked",
         "cost_usd": 0,
-        "ms": 6590,
+        "ms": 6658,
         "requests": 3,
         "blocked": [
           "https://drive.google.com/file/d/11YeBDKWLywKyI79lmIVK8heDODONTdPb/preview"
@@ -1425,35 +1425,35 @@
         "id": "063942006576",
         "status": "not-found",
         "cost_usd": 0,
-        "ms": 80,
+        "ms": 81,
         "requests": 1
       },
       {
         "id": "062250002745",
         "status": "not-found",
         "cost_usd": 0,
-        "ms": 36099,
+        "ms": 36237,
         "requests": 7
       },
       {
         "id": "063375005207",
         "status": "not-found",
         "cost_usd": 0,
-        "ms": 20766,
+        "ms": 20632,
         "requests": 5
       },
       {
         "id": "062271003325",
         "status": "not-found",
         "cost_usd": 0,
-        "ms": 1244,
+        "ms": 1157,
         "requests": 1
       },
       {
         "id": "061524001933",
         "status": "blocked",
         "cost_usd": 0,
-        "ms": 40434,
+        "ms": 40352,
         "requests": 9,
         "blocked": [
           "https://files.smartsites.parentsquare.com/3194/hoover_hs_profile_26-27_2.pdf"
@@ -1463,7 +1463,7 @@
         "id": "063066004757",
         "status": "blocked",
         "cost_usd": 0,
-        "ms": 25718,
+        "ms": 25749,
         "requests": 8,
         "blocked": [
           "https://4.files.edl.io/e93f/01/30/26/233010-def34841-4ffa-4291-9dd8-75ba229955a1.pdf",
@@ -1475,21 +1475,21 @@
         "id": "061632502053",
         "status": "not-found",
         "cost_usd": 0,
-        "ms": 36215,
+        "ms": 36280,
         "requests": 7
       },
       {
         "id": "A1790055",
         "status": "not-found",
         "cost_usd": 0,
-        "ms": 7138,
+        "ms": 7156,
         "requests": 7
       },
       {
         "id": "A2300331",
         "status": "not-found",
         "cost_usd": 0,
-        "ms": 3023,
+        "ms": 3024,
         "requests": 3
       },
       {
@@ -1503,14 +1503,14 @@
         "id": "A2370474",
         "status": "not-found",
         "cost_usd": 0,
-        "ms": 36816,
+        "ms": 36556,
         "requests": 7
       },
       {
         "id": "A9100917",
         "status": "blocked",
         "cost_usd": 0,
-        "ms": 5047,
+        "ms": 4699,
         "requests": 6,
         "blocked": [
           "https://4.files.edl.io/1656/01/12/26/182214-6b5f6165-d6f7-4743-ab4d-cd965463a773.pdf",
@@ -1521,28 +1521,28 @@
         "id": "01612759",
         "status": "not-found",
         "cost_usd": 0,
-        "ms": 3118,
+        "ms": 3126,
         "requests": 3
       },
       {
         "id": "00070602",
         "status": "not-found",
         "cost_usd": 0,
-        "ms": 36444,
+        "ms": 36187,
         "requests": 7
       },
       {
         "id": "A1500310",
         "status": "not-found",
         "cost_usd": 0,
-        "ms": 1024,
+        "ms": 1021,
         "requests": 1
       },
       {
         "id": "00083655",
         "status": "blocked",
         "cost_usd": 0,
-        "ms": 7038,
+        "ms": 7049,
         "requests": 8,
         "blocked": [
           "https://drive.google.com/file/d/1qUuAGPsy_7gOeWgD5kuIm9Q_w7w8pYHz/view?usp=sharing"
@@ -1552,7 +1552,7 @@
         "id": "00071446",
         "status": "blocked",
         "cost_usd": 0,
-        "ms": 8124,
+        "ms": 8129,
         "requests": 10,
         "blocked": [
           "https://drive.google.com/file/d/16fpKJw8odUYABnNwdlcNLyza5amNwZhu/view?usp=sharing",
@@ -1563,7 +1563,7 @@
         "id": "00081476",
         "status": "not-run",
         "cost_usd": 0,
-        "ms": 10768,
+        "ms": 10931,
         "requests": 2,
         "found_via": "seed",
         "host_kind": "school-site",
@@ -1583,42 +1583,42 @@
         "id": "481623005441",
         "status": "not-found",
         "cost_usd": 0,
-        "ms": 46822,
+        "ms": 48329,
         "requests": 7
       },
       {
         "id": "480003013197",
         "status": "not-found",
         "cost_usd": 0,
-        "ms": 7175,
+        "ms": 7489,
         "requests": 7
       },
       {
         "id": "481623005444",
         "status": "not-found",
         "cost_usd": 0,
-        "ms": 36730,
+        "ms": 37236,
         "requests": 7
       },
       {
         "id": "483318012421",
         "status": "not-found",
         "cost_usd": 0,
-        "ms": 0,
+        "ms": 1,
         "requests": 0
       },
       {
         "id": "481623001204",
         "status": "not-found",
         "cost_usd": 0,
-        "ms": 28,
+        "ms": 26,
         "requests": 1
       },
       {
         "id": "481623001273",
         "status": "not-found",
         "cost_usd": 0,
-        "ms": 33423,
+        "ms": 33791,
         "requests": 7
       },
       {
@@ -1639,28 +1639,28 @@
         "id": "481970001857",
         "status": "not-found",
         "cost_usd": 0,
-        "ms": 19455,
+        "ms": 19652,
         "requests": 7
       },
       {
         "id": "480144113888",
         "status": "not-found",
         "cost_usd": 0,
-        "ms": 6919,
+        "ms": 7004,
         "requests": 7
       },
       {
         "id": "480029213362",
         "status": "not-found",
         "cost_usd": 0,
-        "ms": 33534,
+        "ms": 33632,
         "requests": 7
       },
       {
         "id": "481317000817",
         "status": "not-found",
         "cost_usd": 0,
-        "ms": 1022,
+        "ms": 1030,
         "requests": 1
       },
       {
@@ -1674,7 +1674,7 @@
         "id": "482034007256",
         "status": "not-found",
         "cost_usd": 0,
-        "ms": 52316,
+        "ms": 51635,
         "requests": 8
       },
       {
@@ -1688,56 +1688,56 @@
         "id": "480920000382",
         "status": "not-found",
         "cost_usd": 0,
-        "ms": 51,
+        "ms": 77,
         "requests": 1
       },
       {
         "id": "482001013003",
         "status": "not-found",
         "cost_usd": 0,
-        "ms": 2603,
+        "ms": 2814,
         "requests": 2
       },
       {
         "id": "482730008195",
         "status": "not-found",
         "cost_usd": 0,
-        "ms": 26763,
+        "ms": 26551,
         "requests": 6
       },
       {
         "id": "482892011022",
         "status": "not-found",
         "cost_usd": 0,
-        "ms": 36647,
+        "ms": 36474,
         "requests": 7
       },
       {
         "id": "482034006552",
         "status": "not-found",
         "cost_usd": 0,
-        "ms": 53745,
+        "ms": 53023,
         "requests": 8
       },
       {
         "id": "481623001367",
         "status": "not-found",
         "cost_usd": 0,
-        "ms": 0,
+        "ms": 2,
         "requests": 0
       },
       {
         "id": "A1790494",
         "status": "not-found",
         "cost_usd": 0,
-        "ms": 6158,
+        "ms": 6219,
         "requests": 7
       },
       {
         "id": "A2303025",
         "status": "not-found",
         "cost_usd": 0,
-        "ms": 70103,
+        "ms": 70142,
         "requests": 7
       },
       {
@@ -1751,7 +1751,7 @@
         "id": "A9503982",
         "status": "not-run",
         "cost_usd": 0,
-        "ms": 1106,
+        "ms": 1773,
         "requests": 1,
         "found_via": "seed",
         "host_kind": "school-site",
@@ -1764,7 +1764,7 @@
         "id": "A1399023",
         "status": "not-run",
         "cost_usd": 0,
-        "ms": 3064,
+        "ms": 3135,
         "requests": 1,
         "found_via": "seed",
         "host_kind": "school-site",
@@ -1777,7 +1777,7 @@
         "id": "A2400183",
         "status": "not-run",
         "cost_usd": 0,
-        "ms": 49,
+        "ms": 163,
         "requests": 1,
         "found_via": "seed",
         "host_kind": "school-site",
@@ -1790,14 +1790,14 @@
         "id": "01635302",
         "status": "not-found",
         "cost_usd": 0,
-        "ms": 1,
+        "ms": 0,
         "requests": 0
       },
       {
         "id": "Y1326178",
         "status": "blocked",
         "cost_usd": 0,
-        "ms": 8906,
+        "ms": 8007,
         "requests": 9,
         "blocked": [
           "https://drive.google.com/file/d/1e9mmCtS3FJwGIphFM5eJ1Cl3FGhDut4m/view?usp=sharing"
@@ -1812,21 +1812,22 @@
       },
       {
         "id": "A0109399",
-        "status": "blocked",
+        "status": "not-run",
         "cost_usd": 0,
-        "ms": 7026,
-        "requests": 10,
-        "blocked": [
-          "https://bbk12e1-cdn.myschoolcdn.com/ftpimages/90/misc/misc_240710.pdf",
-          "https://bbk12e1-cdn.myschoolcdn.com/ftpimages/90/misc/misc_243556.pdf",
-          "https://bbk12e1-cdn.myschoolcdn.com/ftpimages/90/misc/misc_237227.pdf"
-        ]
+        "ms": 1050,
+        "requests": 1,
+        "found_via": "seed",
+        "host_kind": "school-site",
+        "url": "https://www.hockaday.org/academics/school-profile",
+        "format": "html",
+        "pages": 1,
+        "error": "discovery only"
       },
       {
         "id": "A0109338",
         "status": "not-run",
         "cost_usd": 0,
-        "ms": 2092,
+        "ms": 2204,
         "requests": 2,
         "found_via": "seed",
         "host_kind": "school-site",
@@ -1839,42 +1840,42 @@
         "id": "360012205727",
         "status": "not-found",
         "cost_usd": 0,
-        "ms": 19099,
+        "ms": 17331,
         "requests": 9
       },
       {
         "id": "360008605793",
         "status": "not-found",
         "cost_usd": 0,
-        "ms": 18747,
+        "ms": 15197,
         "requests": 8
       },
       {
         "id": "360008705676",
         "status": "not-found",
         "cost_usd": 0,
-        "ms": 22117,
+        "ms": 26711,
         "requests": 8
       },
       {
         "id": "360008705183",
         "status": "not-found",
         "cost_usd": 0,
-        "ms": 30798,
+        "ms": 30014,
         "requests": 9
       },
       {
         "id": "360009006030",
         "status": "not-found",
         "cost_usd": 0,
-        "ms": 30046,
+        "ms": 28940,
         "requests": 8
       },
       {
         "id": "360008705182",
         "status": "blocked",
         "cost_usd": 0,
-        "ms": 32040,
+        "ms": 29923,
         "requests": 9,
         "blocked": [
           "https://drive.google.com/file/d/1Mfy0A9QgoQ7iBbdjrLYWXVD2blKa_9Nb/view?usp=drive_link"
@@ -1884,14 +1885,14 @@
         "id": "360007606296",
         "status": "not-found",
         "cost_usd": 0,
-        "ms": 33955,
+        "ms": 32160,
         "requests": 8
       },
       {
         "id": "360012204485",
         "status": "blocked",
         "cost_usd": 0,
-        "ms": 25032,
+        "ms": 22990,
         "requests": 12,
         "blocked": [
           "https://4.files.edl.io/8ad6/01/08/26/134308-4c0e9515-ffe6-41cc-bff9-de8e7ae5b842.pdf"
@@ -1901,21 +1902,21 @@
         "id": "360009801791",
         "status": "not-found",
         "cost_usd": 0,
-        "ms": 30037,
+        "ms": 31057,
         "requests": 8
       },
       {
         "id": "360014005777",
         "status": "not-found",
         "cost_usd": 0,
-        "ms": 5155,
+        "ms": 5165,
         "requests": 5
       },
       {
         "id": "360007806547",
         "status": "blocked",
         "cost_usd": 0,
-        "ms": 32890,
+        "ms": 34136,
         "requests": 10,
         "blocked": [
           "https://4.files.edl.io/bf31/09/22/26/201304-125889b4-7259-494b-93ed-053409dc202b.pdf"
@@ -1925,28 +1926,28 @@
         "id": "360008305909",
         "status": "not-found",
         "cost_usd": 0,
-        "ms": 34038,
+        "ms": 33930,
         "requests": 8
       },
       {
         "id": "360096606069",
         "status": "not-found",
         "cost_usd": 0,
-        "ms": 5038,
+        "ms": 5042,
         "requests": 5
       },
       {
         "id": "360010006283",
         "status": "not-found",
         "cost_usd": 0,
-        "ms": 40886,
+        "ms": 40317,
         "requests": 9
       },
       {
         "id": "360015302009",
         "status": "not-found",
         "cost_usd": 0,
-        "ms": 5414,
+        "ms": 5384,
         "requests": 5
       },
       {
@@ -1960,28 +1961,28 @@
         "id": "360015101952",
         "status": "not-found",
         "cost_usd": 0,
-        "ms": 35075,
+        "ms": 36126,
         "requests": 8
       },
       {
         "id": "360015302032",
         "status": "not-found",
         "cost_usd": 0,
-        "ms": 36630,
+        "ms": 38335,
         "requests": 10
       },
       {
         "id": "360007804458",
         "status": "not-found",
         "cost_usd": 0,
-        "ms": 74,
+        "ms": 95,
         "requests": 1
       },
       {
         "id": "360015102036",
         "status": "blocked",
         "cost_usd": 0,
-        "ms": 37999,
+        "ms": 34202,
         "requests": 12,
         "blocked": [
           "https://4.files.edl.io/8db2/10/28/25/125143-0918a9be-db98-4e69-a427-23b69f4bad01.pdf"
@@ -1991,28 +1992,28 @@
         "id": "360010202887",
         "status": "not-found",
         "cost_usd": 0,
-        "ms": 29050,
+        "ms": 32283,
         "requests": 9
       },
       {
         "id": "360015204312",
         "status": "not-found",
         "cost_usd": 0,
-        "ms": 28061,
+        "ms": 30278,
         "requests": 9
       },
       {
         "id": "A2301720",
         "status": "not-found",
         "cost_usd": 0,
-        "ms": 0,
+        "ms": 1,
         "requests": 0
       },
       {
         "id": "A9300617",
         "status": "not-found",
         "cost_usd": 0,
-        "ms": 2119,
+        "ms": 2077,
         "requests": 2
       },
       {
@@ -2026,21 +2027,21 @@
         "id": "A1502509",
         "status": "not-found",
         "cost_usd": 0,
-        "ms": 4308,
+        "ms": 4333,
         "requests": 4
       },
       {
         "id": "A1903096",
         "status": "not-found",
         "cost_usd": 0,
-        "ms": 70106,
+        "ms": 70185,
         "requests": 7
       },
       {
         "id": "00920232",
         "status": "not-found",
         "cost_usd": 0,
-        "ms": 9147,
+        "ms": 10422,
         "requests": 8
       },
       {
@@ -2054,7 +2055,7 @@
         "id": "A9300620",
         "status": "blocked",
         "cost_usd": 0,
-        "ms": 5051,
+        "ms": 5044,
         "requests": 5,
         "blocked": [
           "https://issuu.com/saintannsschool/docs/saint_ann_s_school_profile_2026-27?fr=sOWNiYzgzNTAzOTM"
@@ -2064,14 +2065,14 @@
         "id": "00939094",
         "status": "not-found",
         "cost_usd": 0,
-        "ms": 36263,
+        "ms": 36328,
         "requests": 7
       },
       {
         "id": "BB161870",
         "status": "not-found",
         "cost_usd": 0,
-        "ms": 2144,
+        "ms": 2152,
         "requests": 2
       },
       {
@@ -2083,17 +2084,102 @@
       }
     ]
   },
-  "accuracy": null,
+  "accuracy": {
+    "schools": 0,
+    "fields": {
+      "class_size": {
+        "scored": 0,
+        "correct": 0,
+        "both_null": 0,
+        "wrong": 0,
+        "missed": 0,
+        "spurious": 0,
+        "accuracy": null
+      },
+      "gpa_scale": {
+        "scored": 0,
+        "correct": 0,
+        "both_null": 0,
+        "wrong": 0,
+        "missed": 0,
+        "spurious": 0,
+        "accuracy": null
+      },
+      "gpa_distribution": {
+        "scored": 0,
+        "correct": 0,
+        "both_null": 0,
+        "wrong": 0,
+        "missed": 0,
+        "spurious": 0,
+        "accuracy": null
+      },
+      "ap_courses": {
+        "scored": 0,
+        "correct": 0,
+        "both_null": 0,
+        "wrong": 0,
+        "missed": 0,
+        "spurious": 0,
+        "accuracy": null
+      },
+      "ib_courses": {
+        "scored": 0,
+        "correct": 0,
+        "both_null": 0,
+        "wrong": 0,
+        "missed": 0,
+        "spurious": 0,
+        "accuracy": null
+      },
+      "sat_mid50": {
+        "scored": 0,
+        "correct": 0,
+        "both_null": 0,
+        "wrong": 0,
+        "missed": 0,
+        "spurious": 0,
+        "accuracy": null
+      },
+      "act_mid50": {
+        "scored": 0,
+        "correct": 0,
+        "both_null": 0,
+        "wrong": 0,
+        "missed": 0,
+        "spurious": 0,
+        "accuracy": null
+      },
+      "matriculation": {
+        "scored": 0,
+        "correct": 0,
+        "both_null": 0,
+        "wrong": 0,
+        "missed": 0,
+        "spurious": 0,
+        "accuracy": null
+      }
+    },
+    "overall": null,
+    "mean_f1": {
+      "ap_courses": null,
+      "ib_courses": null,
+      "matriculation": null
+    },
+    "per_school": [],
+    "scored": "2026-10-06",
+    "basis": "the model's extraction before checks (after escalation), against data/reference/hs-profile-answer-key.json"
+  },
   "key_match": {
     "measured": "2026-10-06",
     "overall": {
-      "listed": 525,
-      "matched": 454,
+      "listed": 635,
+      "matched": 554,
       "ambiguous": 1,
-      "unmatched": 70,
-      "match_rate": 0.865,
+      "unmatched": 80,
+      "match_rate": 0.872,
       "by_rule": {
-        "1": 438,
+        "1": 538,
         "2": 7,
         "3": 9
       }
@@ -2257,6 +2343,31 @@
           "SciencesPo - Menton",
           "Thomas Aquinas College–Northfield",
           "Columbia University"
+        ]
+      },
+      {
+        "id": "A0109399",
+        "name": "The Hockaday School",
+        "listed": 110,
+        "matched": 100,
+        "ambiguous": 0,
+        "unmatched": 10,
+        "match_rate": 0.909,
+        "by_rule": {
+          "1": 100
+        },
+        "ambiguous_names": [],
+        "unmatched_names": [
+          "Emory University-Oxford College",
+          "John Cabot University",
+          "Louisiana State University",
+          "Pratt Institute-Main Campus",
+          "The American University of Paris",
+          "The University of British Columbia",
+          "University College London",
+          "University of Glasgow",
+          "University of St Andrews",
+          "University of Washington-Seattle"
         ]
       }
     ]

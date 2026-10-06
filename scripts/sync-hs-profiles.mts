@@ -7,9 +7,12 @@
  *   npm run sync-hs-profiles -- --pilot --seeds f.json    # also try candidate URLs {id: [url, ...]} (discovery step 2)
  *   npm run sync-hs-profiles -- --only 060297000223,A1500310 --cap 2
  *   npm run sync-hs-profiles -- --dump 060297000223       # print a cached profile's numbered lines (for the answer key)
- *   npm run sync-hs-profiles -- --score                   # score the latest run against the answer key
+ *   npm run sync-hs-profiles -- --answer-key --cap 30     # extract the answer key's schools (recipes known), for scoring
+ *   npm run sync-hs-profiles -- --score                   # score the latest runs against the answer key
+ *   npm run sync-hs-profiles -- --match-key               # college-name match rate on the key's hand-read lists (free)
  *
- * Flags: --cap <usd> (default 30; the run stops before a model call that could pass it), --concurrency <n> (default 4),
+ * Flags: --cap <usd> (default 30: the pilot's whole budget; spend recorded by earlier runs in profile-pilot.json counts
+ * toward it, and a run stops before a model call that could pass what is left), --concurrency <n> (default 4),
  * --free (no paid discovery steps), --force (re-extract unchanged profiles), --dry-run (write nothing), --limit <n>.
  * Writes data/high-schools/{profile-recipes,profile-pilot,review-queue}.json and detail/{id}.json (passing schools
  * only); downloads are cached in .cache/hs-profiles/ (git-ignored). Every request goes through the college-reported
@@ -85,9 +88,10 @@ if (typeof flags.dump === "string") {
 /* --score ------------------------------------------------------------ */
 function score(pilot: PilotFile): PilotFile["accuracy"] {
   const key = readAnswerKey(P.answerKey);
-  if (!key || !pilot.latest) return null;
+  if (!key || !(pilot.latest || pilot.answer_key_run)) return null;
   const extracted = new Map<string, KeyValues>();
-  for (const r of pilot.latest.results) if (r.extracted) extracted.set(r.id, r.extracted);
+  for (const r of [...(pilot.latest?.results ?? []), ...(pilot.answer_key_run?.results ?? [])]) if (r.extracted) extracted.set(r.id, r.extracted);
+  if (!extracted.size) return null;
   const rep = scoreAgainstKey(key.schools, extracted);
   return { ...rep, scored: today, basis: "the model's extraction before checks (after escalation), against data/reference/hs-profile-answer-key.json" };
 }
@@ -135,10 +139,15 @@ const rows = shardRows();
 const byId = new Map(rows.map((r) => [r.id, r]));
 let ids: string[];
 if (typeof flags.only === "string") ids = flags.only.split(",").map((s) => s.trim()).filter(Boolean);
+else if (flags["answer-key"] === true) {
+  const key = readAnswerKey(P.answerKey);
+  if (!key) usage("no answer key");
+  ids = key.schools.map((s) => s.id);
+}
 else if (flags.pilot === true) {
   if (!pilot) usage("no profile-pilot.json; run --select first");
   ids = pilot.schools.map((s) => s.id);
-} else usage("pass --pilot, --only <ids>, --select, --dump <id>, or --score");
+} else usage("pass --pilot, --answer-key, --only <ids>, --select, --dump <id>, --match-key, or --score");
 if (flags.limit) ids = ids.slice(0, num("limit", ids.length));
 const schools: RunSchool[] = ids.map((id) => {
   const r = byId.get(id);
@@ -150,7 +159,10 @@ const index = collegeIndex();
 
 const seeds = typeof flags.seeds === "string" ? (JSON.parse(readFileSync(resolve(process.cwd(), flags.seeds), "utf8")) as Record<string, string[]>) : undefined;
 const recipes = readJson<RecipesFile>(P.recipes) ?? { updated: today, recipes: {} };
-const cap = new SpendCap(num("cap", 30));
+// The cap is the pilot's whole budget: what earlier runs already spent (recorded in profile-pilot.json) counts toward it.
+const spentBefore = pilot?.spent_total_usd ?? 0;
+const cap = new SpendCap(Math.max(0, num("cap", 30) - spentBefore));
+if (spentBefore > 0) console.log(`Earlier runs spent $${spentBefore.toFixed(4)}; $${cap.cap.toFixed(4)} of the cap is left.`);
 const http = new PoliteHttp({
   fetch: globalThis.fetch,
   now: () => Date.now(),
@@ -199,15 +211,17 @@ if (DRY) process.exit(0);
 writeRecipes(P.recipes, { updated: today, recipes: out.recipes });
 for (const d of out.details) writeDetail(P.detailDir, d);
 writeJson(P.queue, mergeQueue(readJson<HsReviewQueue>(P.queue), new Set(ids), out.review, today));
-if (pilot && flags.pilot === true) {
+if (pilot && (flags.pilot === true || flags["answer-key"] === true)) {
+  const slot = flags.pilot === true ? "latest" : "answer_key_run";
   const next: PilotFile = {
     ...pilot,
-    ...(seeds ? { seeds_method: typeof flags["seeds-method"] === "string" ? flags["seeds-method"] : pilot.seeds_method ?? "candidate URLs passed with --seeds" } : {}),
-    latest: {
+    ...(seeds && flags.pilot === true ? { seeds_method: typeof flags["seeds-method"] === "string" ? flags["seeds-method"] : pilot.seeds_method ?? "candidate URLs passed with --seeds" } : {}),
+    spent_total_usd: Math.round((spentBefore + cap.spent) * 1e6) / 1e6,
+    [slot]: {
       run: RUN,
       started,
       finished: new Date().toISOString(),
-      cap_usd: cap.cap,
+      cap_usd: num("cap", 30),
       spent_usd: cap.spent,
       stopped: out.stopped,
       models: { ...PROFILE_MODELS },

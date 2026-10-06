@@ -43,6 +43,10 @@ export interface PilotFile {
   /** How the seeds (step 2 candidates) were found, when a run used them. */
   seeds_method?: string;
   latest?: PilotRun;
+  /** The latest run over the answer key's schools (`--answer-key`), scored with the pilot's. */
+  answer_key_run?: PilotRun;
+  /** Every model dollar the pilot's runs have spent; the next run's cap is what is left of `--cap`. */
+  spent_total_usd?: number;
   accuracy?: (AccuracyReport & { scored: string; basis: string }) | null;
   /** College-name match rate on the answer key's hand-read matriculation lists (`--match-key`). */
   key_match?: unknown;

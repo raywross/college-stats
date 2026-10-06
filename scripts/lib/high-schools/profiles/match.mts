@@ -114,3 +114,35 @@ export function matchCollege(index: CollegeIndex, listed: string): NameMatch {
   }
   return { kind: "none" };
 }
+
+export interface ListMatch {
+  listed: number;
+  matched: number;
+  ambiguous: number;
+  unmatched: number;
+  match_rate: number | null;
+  by_rule: Partial<Record<1 | 2 | 3 | 4, number>>;
+  ambiguous_names: { name: string; candidates: string[] }[];
+  unmatched_names: string[];
+}
+
+/** Matches a list of names and summarizes it (the pilot's match rate on hand-read lists). */
+export function matchList(index: CollegeIndex, names: readonly string[]): ListMatch {
+  const out: ListMatch = { listed: 0, matched: 0, ambiguous: 0, unmatched: 0, match_rate: null, by_rule: {}, ambiguous_names: [], unmatched_names: [] };
+  for (const n of names) {
+    const r = matchCollege(index, n);
+    out.listed++;
+    if (r.kind === "matched") {
+      out.matched++;
+      out.by_rule[r.rule] = (out.by_rule[r.rule] ?? 0) + 1;
+    } else if (r.kind === "ambiguous") {
+      out.ambiguous++;
+      out.ambiguous_names.push({ name: n, candidates: r.candidates });
+    } else {
+      out.unmatched++;
+      out.unmatched_names.push(n);
+    }
+  }
+  out.match_rate = out.listed ? Math.round((out.matched / out.listed) * 1000) / 1000 : null;
+  return out;
+}

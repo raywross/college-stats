@@ -29,7 +29,7 @@ import { SpendCap } from "./lib/high-schools/profiles/budget.mts";
 import type { RecipesFile } from "./lib/high-schools/profiles/discover.mts";
 import { readProfileDocument, renderProfileLines } from "./lib/high-schools/profiles/document.mts";
 import { PROFILE_MODELS } from "./lib/high-schools/profiles/extract.mts";
-import { buildCollegeIndex } from "./lib/high-schools/profiles/match.mts";
+import { buildCollegeIndex, matchList } from "./lib/high-schools/profiles/match.mts";
 import { measure, runProfiles, type RunSchool } from "./lib/high-schools/profiles/run.mts";
 import { scoreAgainstKey, type KeyValues } from "./lib/high-schools/profiles/score.mts";
 import { PILOT_METROS, PILOT_SEED, selectPilot, selectionRule } from "./lib/high-schools/profiles/select.mts";
@@ -102,6 +102,29 @@ if (flags.score === true) {
   process.exit(0);
 }
 
+function collegeIndex() {
+  const colleges = JSON.parse(readFileSync(join(ROOT, "data", "schools.json"), "utf8")) as School[];
+  const aliases = JSON.parse(readFileSync(join(ROOT, "data", "aliases.json"), "utf8")) as AliasRow[];
+  return buildCollegeIndex(colleges.map((c) => ({ unit_id: c.unit_id, name: c.name, state: c.location.state })), aliases);
+}
+
+/* --match-key: college-name match rate on the answer key's hand-read lists (no model) */
+if (flags["match-key"] === true) {
+  const key = readAnswerKey(P.answerKey);
+  if (!key) usage("no answer key");
+  const index = collegeIndex();
+  const per = key.schools.filter((s) => s.matriculation?.entries.length).map((s) => ({ id: s.id, name: s.name, ...matchList(index, s.matriculation!.entries.map((e) => e.name)) }));
+  const all = matchList(index, key.schools.flatMap((s) => s.matriculation?.entries.map((e) => e.name) ?? []));
+  for (const p of per) console.log(`${p.id} ${p.name}: ${p.matched}/${p.listed} matched, ${p.ambiguous} ambiguous, ${p.unmatched} unmatched`);
+  console.log(`All: ${all.matched}/${all.listed} (${all.match_rate}); by rule ${JSON.stringify(all.by_rule)}`);
+  console.log(`Ambiguous: ${all.ambiguous_names.map((a) => `${a.name} -> ${a.candidates.join("/")}`).join("; ")}`);
+  console.log(`Unmatched: ${all.unmatched_names.join("; ")}`);
+  const pilot = readJson<PilotFile>(P.pilot);
+  const overall = { listed: all.listed, matched: all.matched, ambiguous: all.ambiguous, unmatched: all.unmatched, match_rate: all.match_rate, by_rule: all.by_rule };
+  if (pilot && !DRY) writeJson(P.pilot, { ...pilot, key_match: { measured: today, overall, per_school: per.map(({ ambiguous_names, unmatched_names, ...rest }) => ({ ...rest, ambiguous_names, unmatched_names })) } });
+  process.exit(0);
+}
+
 /* A run --------------------------------------------------------------- */
 const discoverOnly = flags["discover-only"] === true;
 if (!discoverOnly && !process.env.ANTHROPIC_API_KEY) usage("ANTHROPIC_API_KEY is not set (add it to .env.local), or pass --discover-only for a free discovery run.");
@@ -123,9 +146,7 @@ const schools: RunSchool[] = ids.map((id) => {
   return { id, name: r.name, city: r.city, state: r.state, district: r.district?.name ?? null, kind: r.kind, grade12: r.enrollment?.by_grade?.["12"] ?? null };
 });
 
-const colleges = JSON.parse(readFileSync(join(ROOT, "data", "schools.json"), "utf8")) as School[];
-const aliases = JSON.parse(readFileSync(join(ROOT, "data", "aliases.json"), "utf8")) as AliasRow[];
-const index = buildCollegeIndex(colleges.map((c) => ({ unit_id: c.unit_id, name: c.name, state: c.location.state })), aliases);
+const index = collegeIndex();
 
 const seeds = typeof flags.seeds === "string" ? (JSON.parse(readFileSync(resolve(process.cwd(), flags.seeds), "utf8")) as Record<string, string[]>) : undefined;
 const recipes = readJson<RecipesFile>(P.recipes) ?? { updated: today, recipes: {} };

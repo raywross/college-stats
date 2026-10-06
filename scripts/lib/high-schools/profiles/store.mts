@@ -44,6 +44,8 @@ export interface PilotFile {
   seeds_method?: string;
   latest?: PilotRun;
   accuracy?: (AccuracyReport & { scored: string; basis: string }) | null;
+  /** College-name match rate on the answer key's hand-read matriculation lists (`--match-key`). */
+  key_match?: unknown;
 }
 
 export function readJson<T>(file: string): T | null {

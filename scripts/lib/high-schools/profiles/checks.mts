@@ -222,7 +222,6 @@ export function assessProfile(answer: ProfileAnswer, ctx: AssessContext): Assess
     else if (max !== null && !onLines(max, lines, ids) && !onLines(max, lines, validIds(lines, g.rule_lines))) fail("gpa_scale", "quote", `max ${max} isn't on its cited lines`);
     const expect: Record<string, number> = { "unweighted-4": 4, "weighted-5": 5, "100-point": 100 };
     if (expect[g.kind] !== undefined && max !== null && max !== expect[g.kind]) fail("gpa_scale", "scale-kind", `kind ${g.kind} but max ${max}`);
-    if (g.kind === "unweighted-4" && g.weighted) fail("gpa_scale", "scale-kind", "kind unweighted-4 but weighted");
     if (failures.length === before) {
       const page = pageOf(lines, ids);
       detail.gpa_scale = {

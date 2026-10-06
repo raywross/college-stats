@@ -116,7 +116,7 @@ export interface ProfileGate {
 
 /** Whether a document is plausibly this school's profile (before any model call). */
 export function looksLikeProfile(doc: Pick<ProfileDocument, "lines" | "chars" | "pageCount"> & { format?: ProfileDocument["format"] }, schoolName: string): ProfileGate {
-  if (doc.chars < 200) return { ok: false, markers: [], name_coverage: 0, reason: doc.pageCount ? "no text layer (scanned PDF?)" : "empty document" };
+  if (doc.chars < 200) return { ok: false, markers: [], name_coverage: 0, reason: doc.format === "html" ? "almost no text on the page" : doc.pageCount ? "no text layer (scanned PDF?)" : "empty document" };
   const text = documentText(doc.lines);
   const markers = PROFILE_MARKERS.filter((m) => m.re.test(text)).map((m) => m.key);
   const name_coverage = nameCoverage(schoolName, text);

@@ -2083,5 +2083,182 @@
       }
     ]
   },
-  "accuracy": null
+  "accuracy": null,
+  "key_match": {
+    "measured": "2026-10-06",
+    "overall": {
+      "listed": 525,
+      "matched": 454,
+      "ambiguous": 1,
+      "unmatched": 70,
+      "match_rate": 0.865,
+      "by_rule": {
+        "1": 438,
+        "2": 7,
+        "3": 9
+      }
+    },
+    "per_school": [
+      {
+        "id": "A0109338",
+        "name": "Fort Worth Country Day",
+        "listed": 99,
+        "matched": 80,
+        "ambiguous": 0,
+        "unmatched": 19,
+        "match_rate": 0.808,
+        "by_rule": {
+          "1": 74,
+          "2": 1,
+          "3": 5
+        },
+        "ambiguous_names": [],
+        "unmatched_names": [
+          "Texas A&M University-Galveston",
+          "Arizona State University",
+          "Louisiana State University",
+          "Austin Community College",
+          "Tulane University",
+          "University of Washington-Seattle",
+          "Blinn College",
+          "Weatherford College",
+          "University of Michigan",
+          "Colorado State University",
+          "King’s College London - ENGLAND",
+          "University of St Andrews - SCOTLAND",
+          "Sewanee - The University of the South",
+          "York University - CANADA",
+          "University of Oklahoma",
+          "El Camino Community College",
+          "University of South Carolina",
+          "Hobart and William Smith",
+          "Texas A&M University"
+        ]
+      },
+      {
+        "id": "A9503982",
+        "name": "The Covenant School",
+        "listed": 20,
+        "matched": 18,
+        "ambiguous": 0,
+        "unmatched": 2,
+        "match_rate": 0.9,
+        "by_rule": {
+          "1": 18
+        },
+        "ambiguous_names": [],
+        "unmatched_names": [
+          "Texas A&M University",
+          "University of Oklahoma"
+        ]
+      },
+      {
+        "id": "00081476",
+        "name": "Brentwood School",
+        "listed": 126,
+        "matched": 108,
+        "ambiguous": 1,
+        "unmatched": 17,
+        "match_rate": 0.857,
+        "by_rule": {
+          "1": 103,
+          "2": 2,
+          "3": 3
+        },
+        "ambiguous_names": [
+          {
+            "name": "Mount Saint Mary’s University",
+            "candidates": [
+              "119173",
+              "163462"
+            ]
+          }
+        ],
+        "unmatched_names": [
+          "Aalto University",
+          "The American University of Paris",
+          "Arizona State University",
+          "Australian National University",
+          "Tulane University",
+          "McGill University",
+          "University of Michigan",
+          "Penn State University (Beaver)",
+          "Columbia University",
+          "University of St Andrews",
+          "Rutgers University",
+          "University of Texas",
+          "University of Washington",
+          "University of Wisconsin",
+          "Santa Monica College",
+          "Hobart and William Smith Colleges",
+          "Texas A&M University"
+        ]
+      },
+      {
+        "id": "00937803",
+        "name": "Poly Prep Country Day School",
+        "listed": 153,
+        "matched": 135,
+        "ambiguous": 0,
+        "unmatched": 18,
+        "match_rate": 0.882,
+        "by_rule": {
+          "1": 133,
+          "2": 2
+        },
+        "ambiguous_names": [],
+        "unmatched_names": [
+          "Trinity College Dublin",
+          "Louisiana State University",
+          "McGill University",
+          "University of Michigan",
+          "North Carolina State University",
+          "Columbia University",
+          "Oxford College of Emory University",
+          "University of St Andrews",
+          "Penn State University (University Park)",
+          "Durham University",
+          "Eugene Lang College of Liberal Arts at The New School",
+          "Fashion Institute of Technology",
+          "St. John’s College (Santa Fe)",
+          "SUNY College at Oswego",
+          "SUNY University at Buffalo",
+          "The American University of Paris",
+          "Hult International Business School (Boston)",
+          "IE University"
+        ]
+      },
+      {
+        "id": "00919963",
+        "name": "Regis High School",
+        "listed": 127,
+        "matched": 113,
+        "ambiguous": 0,
+        "unmatched": 14,
+        "match_rate": 0.89,
+        "by_rule": {
+          "1": 110,
+          "2": 2,
+          "3": 1
+        },
+        "ambiguous_names": [],
+        "unmatched_names": [
+          "The American University of Paris",
+          "Universita Bocconi",
+          "Arizona State University–Tempe",
+          "Indiana University",
+          "University of Cambridge",
+          "McGill University",
+          "University of Oxford",
+          "Pace University–Westchester Campus",
+          "University of Pittsburgh",
+          "The University of Tennessee",
+          "CUNY Macaulay Honors College",
+          "SciencesPo - Menton",
+          "Thomas Aquinas College–Northfield",
+          "Columbia University"
+        ]
+      }
+    ]
+  }
 }

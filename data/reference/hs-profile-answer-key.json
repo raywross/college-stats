@@ -1,0 +1,2603 @@
+{
+ "read": "2026-10-05",
+ "method": "Hand-read by the PIL agent from each document's text layer (npm run sync-hs-profiles -- --dump <id>), fetched politely by the pipeline. Four documents come from pilot schools whose profiles the pipeline could fetch (the only four); seven come from other high schools in the same three metros, found by hand search, because only four pilot profiles were fetchable (the rest are behind robots.txt rules or not published). Brief asked for 15; 11 fetchable current profiles were found. matriculation lists were transcribed with a small parser over the dumped lines and checked against the text by eye. Field rules: gpa_scale.kind is the base scale the school states (a 4.0 base with Honors/AP points added is unweighted-4 with weighted = true); class_size is the class the profile describes; scores only when a middle 50% is printed; matriculation only for enrollment lists, never acceptance lists.",
+ "schools": [
+  {
+   "id": "A0109338",
+   "name": "Fort Worth Country Day",
+   "url": "https://www.fwcd.org/userfiles/fwcdmvc/documents/2025-26/Profile%20for%20the%20Class%20of%202026_final.pdf",
+   "edition": "2025–26",
+   "class_size": 86,
+   "gpa_scale": {
+    "kind": "100-point",
+    "max": 100,
+    "weighted": true
+   },
+   "gpa_distribution": null,
+   "ap_courses": [
+    "Art History",
+    "Biology",
+    "Calculus AB",
+    "Calculus BC",
+    "Chemistry",
+    "Comparative Government and Politics",
+    "Computer Science A",
+    "English Language",
+    "English Literature",
+    "Environmental Science",
+    "French Language and Culture",
+    "Latin",
+    "Macroeconomics",
+    "Music Theory",
+    "Physics C: Electricity and Magnetism, Mechanics",
+    "Psychology",
+    "Spanish Language",
+    "Spanish Literature",
+    "Statistics",
+    "Studio Art (Drawing, 2-D, 3-D)",
+    "U.S. History"
+   ],
+   "ib_courses": null,
+   "sat_mid50": [
+    1185,
+    1390
+   ],
+   "act_mid50": [
+    24,
+    31
+   ],
+   "matriculation": {
+    "classes": "2022–2025",
+    "entries": [
+     {
+      "name": "Alabama A&M University",
+      "count": 1
+     },
+     {
+      "name": "Indiana University-Bloomington",
+      "count": 1
+     },
+     {
+      "name": "Texas A&M University-Galveston",
+      "count": 2
+     },
+     {
+      "name": "University of Texas at Arlington",
+      "count": 7
+     },
+     {
+      "name": "American University",
+      "count": 2
+     },
+     {
+      "name": "Lawrence University",
+      "count": 1
+     },
+     {
+      "name": "Texas Christian University",
+      "count": 35
+     },
+     {
+      "name": "University of Texas at Austin",
+      "count": 40
+     },
+     {
+      "name": "Arizona State University",
+      "count": 1
+     },
+     {
+      "name": "Lewis & Clark College",
+      "count": 1
+     },
+     {
+      "name": "Texas Tech University",
+      "count": 3
+     },
+     {
+      "name": "University of Tulsa",
+      "count": 1
+     },
+     {
+      "name": "Auburn University",
+      "count": 7
+     },
+     {
+      "name": "Louisiana State University",
+      "count": 1
+     },
+     {
+      "name": "Trinity University",
+      "count": 4
+     },
+     {
+      "name": "University of Utah",
+      "count": 1
+     },
+     {
+      "name": "Austin Community College",
+      "count": 9
+     },
+     {
+      "name": "Marymount Manhattan College",
+      "count": 1
+     },
+     {
+      "name": "Tulane University",
+      "count": 4
+     },
+     {
+      "name": "University of Vermont",
+      "count": 1
+     },
+     {
+      "name": "Baylor University",
+      "count": 3
+     },
+     {
+      "name": "Mississippi State University",
+      "count": 1
+     },
+     {
+      "name": "University of Arizona",
+      "count": 1
+     },
+     {
+      "name": "University of Virginia",
+      "count": 4
+     },
+     {
+      "name": "Belmont University",
+      "count": 1
+     },
+     {
+      "name": "New York University",
+      "count": 1
+     },
+     {
+      "name": "University of Arkansas",
+      "count": 7
+     },
+     {
+      "name": "University of Washington-Seattle",
+      "count": 2
+     },
+     {
+      "name": "Berklee College of Music",
+      "count": 1
+     },
+     {
+      "name": "Northwestern University",
+      "count": 1
+     },
+     {
+      "name": "University of California, Los Angeles",
+      "count": 2
+     },
+     {
+      "name": "Virginia Tech",
+      "count": 1
+     },
+     {
+      "name": "Berry College",
+      "count": 1
+     },
+     {
+      "name": "Ohio Wesleyan University",
+      "count": 1
+     },
+     {
+      "name": "University of Colorado Boulder",
+      "count": 5
+     },
+     {
+      "name": "Wake Forest University",
+      "count": 3
+     },
+     {
+      "name": "Blinn College",
+      "count": 4
+     },
+     {
+      "name": "Oklahoma State University",
+      "count": 3
+     },
+     {
+      "name": "University of Denver",
+      "count": 1
+     },
+     {
+      "name": "Washington and Lee University",
+      "count": 3
+     },
+     {
+      "name": "Carleton College",
+      "count": 1
+     },
+     {
+      "name": "Pace University",
+      "count": 2
+     },
+     {
+      "name": "University of Georgia",
+      "count": 4
+     },
+     {
+      "name": "Washington University in St. Louis",
+      "count": 2
+     },
+     {
+      "name": "Carnegie Mellon University",
+      "count": 2
+     },
+     {
+      "name": "Pomona College",
+      "count": 1
+     },
+     {
+      "name": "University of Kansas",
+      "count": 1
+     },
+     {
+      "name": "Weatherford College",
+      "count": 1
+     },
+     {
+      "name": "Case Western Reserve University",
+      "count": 1
+     },
+     {
+      "name": "Purdue University",
+      "count": 4
+     },
+     {
+      "name": "University of Kentucky",
+      "count": 1
+     },
+     {
+      "name": "William & Mary",
+      "count": 2
+     },
+     {
+      "name": "Clemson University",
+      "count": 3
+     },
+     {
+      "name": "Rhodes College",
+      "count": 1
+     },
+     {
+      "name": "University of Michigan",
+      "count": 1
+     },
+     {
+      "name": "Yale University",
+      "count": 1
+     },
+     {
+      "name": "College of Charleston",
+      "count": 1
+     },
+     {
+      "name": "Rice University",
+      "count": 4
+     },
+     {
+      "name": "University of Mississippi",
+      "count": 13
+     },
+     {
+      "name": "Colorado School of Mines",
+      "count": 4
+     },
+     {
+      "name": "Rutgers University-New Brunswick",
+      "count": 2
+     },
+     {
+      "name": "University of Missouri-Columbia",
+      "count": 2
+     },
+     {
+      "name": "Colorado State University",
+      "count": 2
+     },
+     {
+      "name": "Rutgers University-Newark",
+      "count": 1
+     },
+     {
+      "name": "University of New Hampshire",
+      "count": 1
+     },
+     {
+      "name": "King’s College London - ENGLAND",
+      "count": 1
+     },
+     {
+      "name": "Cornell University",
+      "count": 2
+     },
+     {
+      "name": "Savannah College of Art and Design",
+      "count": 2
+     },
+     {
+      "name": "University of New Mexico",
+      "count": 1
+     },
+     {
+      "name": "University of St Andrews - SCOTLAND",
+      "count": 3
+     },
+     {
+      "name": "Dartmouth College",
+      "count": 3
+     },
+     {
+      "name": "Seattle University",
+      "count": 1
+     },
+     {
+      "name": "University of North Carolina at Chapel Hill",
+      "count": 1
+     },
+     {
+      "name": "Davidson College",
+      "count": 2
+     },
+     {
+      "name": "Sewanee - The University of the South",
+      "count": 4
+     },
+     {
+      "name": "York University - CANADA",
+      "count": 1
+     },
+     {
+      "name": "Dordt University",
+      "count": 1
+     },
+     {
+      "name": "University of North Texas",
+      "count": 4
+     },
+     {
+      "name": "Duke University",
+      "count": 1
+     },
+     {
+      "name": "Southern Methodist University",
+      "count": 11
+     },
+     {
+      "name": "University of Oklahoma",
+      "count": 21
+     },
+     {
+      "name": "El Camino Community College",
+      "count": 1
+     },
+     {
+      "name": "Southwestern College",
+      "count": 1
+     },
+     {
+      "name": "University of Oregon",
+      "count": 1
+     },
+     {
+      "name": "The George Washington University",
+      "count": 3
+     },
+     {
+      "name": "Southwestern University",
+      "count": 3
+     },
+     {
+      "name": "University of Pennsylvania",
+      "count": 1
+     },
+     {
+      "name": "Harvard University",
+      "count": 2
+     },
+     {
+      "name": "Stanford University",
+      "count": 2
+     },
+     {
+      "name": "University of Richmond",
+      "count": 1
+     },
+     {
+      "name": "Hendrix College",
+      "count": 1
+     },
+     {
+      "name": "Stephen F. Austin State University",
+      "count": 1
+     },
+     {
+      "name": "University of South Carolina",
+      "count": 15
+     },
+     {
+      "name": "Hobart and William Smith",
+      "count": 1
+     },
+     {
+      "name": "Tarleton State University",
+      "count": 3
+     },
+     {
+      "name": "University of Southern California",
+      "count": 2
+     },
+     {
+      "name": "Howard University",
+      "count": 1
+     },
+     {
+      "name": "Texas A&M University",
+      "count": 33
+     },
+     {
+      "name": "University of Tennessee, Knoxville",
+      "count": 2
+     }
+    ]
+   },
+   "notes": "GPA distribution is a bar chart with no printed values (not extractable from text). Scores: the Class of 2026 column (the class the profile describes); the Class of 2025 column reads SAT 1190-1330, ACT 23-30. Matriculation: unnumbered entries count 1 per the profile (\"Numbers in parentheses indicate schools where more than one student enrolled\")."
+  },
+  {
+   "id": "A1399023",
+   "name": "Lakehill Preparatory School",
+   "url": "https://www.lakehillprep.org/wp-content/uploads/2024/08/2024-25-School-Profile-V4.pdf",
+   "edition": "2024–25",
+   "class_size": 19,
+   "gpa_scale": {
+    "kind": "unweighted-4",
+    "max": 4,
+    "weighted": true
+   },
+   "gpa_distribution": null,
+   "ap_courses": [
+    "Biology",
+    "Calculus AB",
+    "Calculus BC",
+    "Computer Science Principles",
+    "Drawing",
+    "English Language and Composition",
+    "English Literature and Composition",
+    "Environmental Science",
+    "Human Geography",
+    "Physics I",
+    "Physics C: Mechanics",
+    "Precalculus",
+    "U.S. Government and Politics",
+    "U.S. History",
+    "World History"
+   ],
+   "ib_courses": null,
+   "sat_mid50": null,
+   "act_mid50": null,
+   "matriculation": null,
+   "notes": "Official GPA unweighted on a 4.0 scale (A+ = 4.0); a weighted GPA (+1 for AP) is on the transcript for colleges, so weighted = true. Tests are averages only. The college list is acceptances, not enrollment."
+  },
+  {
+   "id": "A9503982",
+   "name": "The Covenant School",
+   "url": "https://covenantdallas.com/uploads/files/the-covenant-school-school-profile-2026-2027-2.pdf",
+   "edition": "2026–27",
+   "class_size": 47,
+   "gpa_scale": {
+    "kind": "other",
+    "max": 4.5,
+    "weighted": true
+   },
+   "gpa_distribution": null,
+   "ap_courses": [
+    "AP English Language & Composition",
+    "AP U.S. History",
+    "AP Latin",
+    "AP Statistics",
+    "AP English Literature & Composition",
+    "AP AB Calculus",
+    "AP BC Calculus",
+    "AP U.S. Government",
+    "AP Chemistry"
+   ],
+   "ib_courses": null,
+   "sat_mid50": [
+    1180,
+    1290
+   ],
+   "act_mid50": [
+    24,
+    32
+   ],
+   "matriculation": {
+    "classes": "unspecified",
+    "entries": [
+     {
+      "name": "Auburn University",
+      "count": null
+     },
+     {
+      "name": "Furman University",
+      "count": null
+     },
+     {
+      "name": "Savannah College of Art & Design",
+      "count": null
+     },
+     {
+      "name": "University of Texas at Austin",
+      "count": null
+     },
+     {
+      "name": "Baylor University",
+      "count": null
+     },
+     {
+      "name": "Pepperdine University",
+      "count": null
+     },
+     {
+      "name": "Texas A&M University",
+      "count": null
+     },
+     {
+      "name": "University of Oklahoma",
+      "count": null
+     },
+     {
+      "name": "Biola University",
+      "count": null
+     },
+     {
+      "name": "Princeton University",
+      "count": null
+     },
+     {
+      "name": "United States Military Academy",
+      "count": null
+     },
+     {
+      "name": "United States Naval Academy",
+      "count": null
+     },
+     {
+      "name": "Clemson University",
+      "count": null
+     },
+     {
+      "name": "Rice University",
+      "count": null
+     },
+     {
+      "name": "University of Arkansas",
+      "count": null
+     },
+     {
+      "name": "Wake Forest University",
+      "count": null
+     },
+     {
+      "name": "Duke University",
+      "count": null
+     },
+     {
+      "name": "Samford University",
+      "count": null
+     },
+     {
+      "name": "University of Georgia",
+      "count": null
+     },
+     {
+      "name": "Wheaton College",
+      "count": null
+     }
+    ]
+   },
+   "notes": "Base scale tops at A+ = 4.50, Advanced +.25, AP +.5. \"Due to small class size, we do not publish GPA distributions.\" AP courses from the course offerings (the AP testing line also names European History, Physics 1, Pre-Calculus exams). Matriculation: a representative list of institutions attended (undergraduate and graduate), no counts or years. The same document serves PSS duplicate A2400183."
+  },
+  {
+   "id": "00081476",
+   "name": "Brentwood School",
+   "url": "https://www.bwscampus.com/fs/resource-manager/view/5b9d8ab2-abb4-453a-81c0-0e756e3a93c5",
+   "edition": "2026–27",
+   "class_size": 142,
+   "gpa_scale": {
+    "kind": "unweighted-4",
+    "max": 4,
+    "weighted": true
+   },
+   "gpa_distribution": [
+    {
+     "band": "3.90 and above",
+     "share": 0.13
+    },
+    {
+     "band": "3.80-3.89",
+     "share": 0.2
+    },
+    {
+     "band": "3.70-3.79",
+     "share": 0.14
+    },
+    {
+     "band": "3.60-3.69",
+     "share": 0.18
+    },
+    {
+     "band": "3.50-3.59",
+     "share": 0.05
+    },
+    {
+     "band": "3.40-3.49",
+     "share": 0.09
+    },
+    {
+     "band": "3.30-3.39",
+     "share": 0.08
+    },
+    {
+     "band": "3.29 and below",
+     "share": 0.13
+    }
+   ],
+   "ap_courses": [
+    "English Language & Composition",
+    "English Literature & Composition",
+    "Calculus AB",
+    "Calculus BC",
+    "Statistics",
+    "Biology",
+    "Chemistry",
+    "Environmental Science",
+    "Physics 1",
+    "Physics C: Mechanics",
+    "U.S. History",
+    "Art History",
+    "Comparative Government & Politics",
+    "Human Geography",
+    "Macroeconomics",
+    "Microeconomics",
+    "United States Government & Politics",
+    "French Language & Culture",
+    "Spanish Language & Culture",
+    "Music Theory",
+    "Studio Art",
+    "Computer Science A",
+    "Computer Science Principles"
+   ],
+   "ib_courses": null,
+   "sat_mid50": null,
+   "act_mid50": null,
+   "matriculation": {
+    "classes": "last four years",
+    "entries": [
+     {
+      "name": "Aalto University",
+      "count": null
+     },
+     {
+      "name": "Johns Hopkins University",
+      "count": null
+     },
+     {
+      "name": "Texas Christian University",
+      "count": null
+     },
+     {
+      "name": "Amherst College",
+      "count": null
+     },
+     {
+      "name": "Kenyon College",
+      "count": null
+     },
+     {
+      "name": "The American University of Paris",
+      "count": null
+     },
+     {
+      "name": "Arizona State University",
+      "count": null
+     },
+     {
+      "name": "Lafayette College",
+      "count": null
+     },
+     {
+      "name": "The New School",
+      "count": null
+     },
+     {
+      "name": "Australian National University",
+      "count": null
+     },
+     {
+      "name": "Lehigh University",
+      "count": null
+     },
+     {
+      "name": "Tufts University",
+      "count": null
+     },
+     {
+      "name": "Barnard College",
+      "count": null
+     },
+     {
+      "name": "Loyola Marymount University",
+      "count": null
+     },
+     {
+      "name": "Tulane University",
+      "count": null
+     },
+     {
+      "name": "Bates College",
+      "count": null
+     },
+     {
+      "name": "Macalester College",
+      "count": null
+     },
+     {
+      "name": "United States Naval Academy",
+      "count": null
+     },
+     {
+      "name": "Bennington College",
+      "count": null
+     },
+     {
+      "name": "Massachusetts Institute of Technology",
+      "count": null
+     },
+     {
+      "name": "University of Arizona",
+      "count": null
+     },
+     {
+      "name": "Berklee College of Music",
+      "count": null
+     },
+     {
+      "name": "McGill University",
+      "count": null
+     },
+     {
+      "name": "University of California (Berkeley)",
+      "count": null
+     },
+     {
+      "name": "Boston College",
+      "count": null
+     },
+     {
+      "name": "Michigan State University",
+      "count": null
+     },
+     {
+      "name": "University of California (Davis)",
+      "count": null
+     },
+     {
+      "name": "Boston University",
+      "count": null
+     },
+     {
+      "name": "Middlebury College",
+      "count": null
+     },
+     {
+      "name": "University of California (Los Angeles)",
+      "count": null
+     },
+     {
+      "name": "Brandeis University",
+      "count": null
+     },
+     {
+      "name": "Morehouse College",
+      "count": null
+     },
+     {
+      "name": "University of California (Riverside)",
+      "count": null
+     },
+     {
+      "name": "Brown University",
+      "count": null
+     },
+     {
+      "name": "Mount Saint Mary’s University",
+      "count": null
+     },
+     {
+      "name": "University of California (San Diego)",
+      "count": null
+     },
+     {
+      "name": "Butler University",
+      "count": null
+     },
+     {
+      "name": "New York University",
+      "count": null
+     },
+     {
+      "name": "University of California (Santa Barbara)",
+      "count": null
+     },
+     {
+      "name": "California Institute of Technology",
+      "count": null
+     },
+     {
+      "name": "Northeastern University",
+      "count": null
+     },
+     {
+      "name": "University of California (Santa Cruz)",
+      "count": null
+     },
+     {
+      "name": "California Lutheran University",
+      "count": null
+     },
+     {
+      "name": "Northwestern University",
+      "count": null
+     },
+     {
+      "name": "University of Chicago",
+      "count": null
+     },
+     {
+      "name": "California State University (Fresno)",
+      "count": null
+     },
+     {
+      "name": "Oberlin College",
+      "count": null
+     },
+     {
+      "name": "University of Colorado (Boulder)",
+      "count": null
+     },
+     {
+      "name": "California State University (Fullerton)",
+      "count": null
+     },
+     {
+      "name": "Occidental College",
+      "count": null
+     },
+     {
+      "name": "University of Denver",
+      "count": null
+     },
+     {
+      "name": "California State University (Northridge)",
+      "count": null
+     },
+     {
+      "name": "Oklahoma State University",
+      "count": null
+     },
+     {
+      "name": "University of Florida",
+      "count": null
+     },
+     {
+      "name": "California State University (San Bernardino)",
+      "count": null
+     },
+     {
+      "name": "Pacific University",
+      "count": null
+     },
+     {
+      "name": "University of Miami",
+      "count": null
+     },
+     {
+      "name": "Carnegie Mellon University",
+      "count": null
+     },
+     {
+      "name": "Penn State University",
+      "count": null
+     },
+     {
+      "name": "University of Michigan",
+      "count": null
+     },
+     {
+      "name": "Chapman University",
+      "count": null
+     },
+     {
+      "name": "Penn State University (Beaver)",
+      "count": null
+     },
+     {
+      "name": "University of North Carolina (Chapel Hill)",
+      "count": null
+     },
+     {
+      "name": "Claremont McKenna College",
+      "count": null
+     },
+     {
+      "name": "Pepperdine University",
+      "count": null
+     },
+     {
+      "name": "University of Notre Dame",
+      "count": null
+     },
+     {
+      "name": "Colby College",
+      "count": null
+     },
+     {
+      "name": "Pitzer College",
+      "count": null
+     },
+     {
+      "name": "University of Oregon",
+      "count": null
+     },
+     {
+      "name": "Colgate University",
+      "count": null
+     },
+     {
+      "name": "Point Loma Nazarene University",
+      "count": null
+     },
+     {
+      "name": "University of Pennsylvania",
+      "count": null
+     },
+     {
+      "name": "College of Charleston",
+      "count": null
+     },
+     {
+      "name": "Princeton University",
+      "count": null
+     },
+     {
+      "name": "University of Richmond",
+      "count": null
+     },
+     {
+      "name": "Colorado College",
+      "count": null
+     },
+     {
+      "name": "Purdue University",
+      "count": null
+     },
+     {
+      "name": "University of San Francisco",
+      "count": null
+     },
+     {
+      "name": "Columbia University",
+      "count": null
+     },
+     {
+      "name": "Rhodes College",
+      "count": null
+     },
+     {
+      "name": "University of Southern California",
+      "count": null
+     },
+     {
+      "name": "Cornell University",
+      "count": null
+     },
+     {
+      "name": "Rice University",
+      "count": null
+     },
+     {
+      "name": "University of St Andrews",
+      "count": null
+     },
+     {
+      "name": "Dartmouth College",
+      "count": null
+     },
+     {
+      "name": "Rutgers University",
+      "count": null
+     },
+     {
+      "name": "University of Texas",
+      "count": null
+     },
+     {
+      "name": "Davidson College",
+      "count": null
+     },
+     {
+      "name": "Saint Mary’s College of California",
+      "count": null
+     },
+     {
+      "name": "University of Utah",
+      "count": null
+     },
+     {
+      "name": "Denison University",
+      "count": null
+     },
+     {
+      "name": "Saint Michael’s College",
+      "count": null
+     },
+     {
+      "name": "University of Vermont",
+      "count": null
+     },
+     {
+      "name": "DePaul University",
+      "count": null
+     },
+     {
+      "name": "San Diego State University",
+      "count": null
+     },
+     {
+      "name": "University of Virginia",
+      "count": null
+     },
+     {
+      "name": "Duke University",
+      "count": null
+     },
+     {
+      "name": "San Jose State University",
+      "count": null
+     },
+     {
+      "name": "University of Washington",
+      "count": null
+     },
+     {
+      "name": "Emerson College",
+      "count": null
+     },
+     {
+      "name": "Santa Clara University",
+      "count": null
+     },
+     {
+      "name": "University of Wisconsin",
+      "count": null
+     },
+     {
+      "name": "Fordham University",
+      "count": null
+     },
+     {
+      "name": "Santa Monica College",
+      "count": null
+     },
+     {
+      "name": "Vanderbilt University",
+      "count": null
+     },
+     {
+      "name": "George Washington University",
+      "count": null
+     },
+     {
+      "name": "Scripps College",
+      "count": null
+     },
+     {
+      "name": "Villanova University",
+      "count": null
+     },
+     {
+      "name": "Georgetown University",
+      "count": null
+     },
+     {
+      "name": "Southern Methodist University",
+      "count": null
+     },
+     {
+      "name": "Wake Forest University",
+      "count": null
+     },
+     {
+      "name": "Harvard University",
+      "count": null
+     },
+     {
+      "name": "Spelman College",
+      "count": null
+     },
+     {
+      "name": "Washington University in St. Louis",
+      "count": null
+     },
+     {
+      "name": "Hobart and William Smith Colleges",
+      "count": null
+     },
+     {
+      "name": "Stanford University",
+      "count": null
+     },
+     {
+      "name": "Wesleyan University",
+      "count": null
+     },
+     {
+      "name": "Holy Cross College",
+      "count": null
+     },
+     {
+      "name": "Swarthmore College",
+      "count": null
+     },
+     {
+      "name": "Williams College",
+      "count": null
+     },
+     {
+      "name": "Howard University",
+      "count": null
+     },
+     {
+      "name": "Syracuse University",
+      "count": null
+     },
+     {
+      "name": "Worcester Polytechnic Institute",
+      "count": null
+     },
+     {
+      "name": "Indiana University (Bloomington)",
+      "count": null
+     },
+     {
+      "name": "Texas A&M University",
+      "count": null
+     },
+     {
+      "name": "Yale University",
+      "count": null
+     }
+    ]
+   },
+   "notes": "Class of 2027 profile. Unweighted GPA; weighted GPA reported to colleges on the transcript. Distribution percentages interleave with the grading table in the layout. Tests are means only. Matriculation list has no counts."
+  },
+  {
+   "id": "062970010532",
+   "name": "Palos Verdes High",
+   "url": "https://futureseakings.com/wp-content/uploads/PVHS-school-profile-2025-2026.pdf",
+   "edition": "2025–26",
+   "class_size": null,
+   "gpa_scale": {
+    "kind": "unweighted-4",
+    "max": 4,
+    "weighted": true
+   },
+   "gpa_distribution": [
+    {
+     "band": "4.5–5.0",
+     "share": 0.2478
+    },
+    {
+     "band": "4.0–4.49",
+     "share": 0.292
+    },
+    {
+     "band": "3.5–3.99",
+     "share": 0.2006
+    },
+    {
+     "band": "3.0–3.49",
+     "share": 0.1386
+    },
+    {
+     "band": "2.51–2.99",
+     "share": 0.0855
+    },
+    {
+     "band": "2.5 and below",
+     "share": 0.0354
+    }
+   ],
+   "ap_courses": [
+    "AP Research",
+    "AP English Language",
+    "AP English Literature",
+    "AP World History",
+    "AP European History",
+    "AP U.S. History",
+    "AP American Government",
+    "AP Economics",
+    "AP Comparative Government",
+    "AP Human Geography",
+    "AP Psychology",
+    "AP Calculus AB",
+    "AP Calculus BC",
+    "AP Statistics",
+    "AP Computer Science Principles",
+    "AP Computer Science A",
+    "AP Biology 2",
+    "AP Chemistry 2",
+    "AP Environmental Science",
+    "AP Physics 1",
+    "AP Physics 2",
+    "AP Physics C",
+    "AP Music Theory",
+    "AP Art History",
+    "AP Studio Art 2D",
+    "AP Studio Art 3D",
+    "AP Studio Art Drawing",
+    "AP Chinese Language",
+    "AP French Language",
+    "AP Spanish Language",
+    "AP Spanish Literature"
+   ],
+   "ib_courses": null,
+   "sat_mid50": null,
+   "act_mid50": null,
+   "matriculation": null,
+   "notes": "No senior class size printed (the distribution counts total 339; not inferred). Weighted GPA = unweighted 4.0 plus 0.2 per weighted course; the distribution is of weighted GPAs (counts → shares). AP Seminar is listed as not offered in 2025-26 and left out. SAT is a 50th percentile, ACT means: no middle 50%."
+  },
+  {
+   "id": "060483000471",
+   "name": "Beverly Hills High",
+   "url": "https://www.bhusd.org/userfiles/bhusdmvc/02-BHHS-High-School/PDFs/BEVERLYHILLSHIGHSCHOOLPROFILE2024-20251.pdf",
+   "edition": "2024–25",
+   "class_size": 308,
+   "gpa_scale": {
+    "kind": "unweighted-4",
+    "max": 4,
+    "weighted": true
+   },
+   "gpa_distribution": null,
+   "ap_courses": [
+    "AP Language",
+    "AP Literature",
+    "AP Seminar",
+    "AP Pre-calculus",
+    "AP Statistics",
+    "AP Calculus AB",
+    "AP Calculus BC",
+    "AP Computer Science A",
+    "AP European History",
+    "AP U.S. History",
+    "AP Comparative Government",
+    "AP Government and Politics",
+    "AP Human Geography",
+    "AP French Language",
+    "AP Spanish Lanuage",
+    "AP Biology",
+    "AP Chemistry",
+    "AP Computer Science Principles",
+    "AP Physics",
+    "AP Environmental Science",
+    "AP 2D Art & Design",
+    "AP 3D Art & Design",
+    "AP Drawing",
+    "AP Music Theory",
+    "AP Psychology",
+    "AP Art History"
+   ],
+   "ib_courses": null,
+   "sat_mid50": null,
+   "act_mid50": null,
+   "matriculation": null,
+   "notes": "4-point scale with an extra point for Honors/AP (\"an A in an Honors or AP course is worth 5 points\"). The GPA table is percentile cut-offs (Top 5%, Top 10%...), not a distribution. Tests are means only. \"Spanish Lanuage\" is the profile's own spelling."
+  },
+  {
+   "id": "00937803",
+   "name": "Poly Prep Country Day School",
+   "url": "https://www.polyprep.org/files/25-26/2025-26_poly-prep-profile-tear-sheet_FINAL.pdf",
+   "edition": "2025–26",
+   "class_size": 138,
+   "gpa_scale": null,
+   "gpa_distribution": null,
+   "ap_courses": null,
+   "ib_courses": null,
+   "sat_mid50": null,
+   "act_mid50": null,
+   "matriculation": {
+    "classes": "2021–2025",
+    "entries": [
+     {
+      "name": "American University",
+      "count": 1
+     },
+     {
+      "name": "Indiana University (Bloomington)",
+      "count": 11
+     },
+     {
+      "name": "Trinity College Dublin",
+      "count": 2
+     },
+     {
+      "name": "Amherst College",
+      "count": 4
+     },
+     {
+      "name": "Johns Hopkins University",
+      "count": 1
+     },
+     {
+      "name": "Tufts University",
+      "count": 16
+     },
+     {
+      "name": "Bard College",
+      "count": 2
+     },
+     {
+      "name": "Kenyon College",
+      "count": 3
+     },
+     {
+      "name": "Tulane University of Louisiana",
+      "count": 24
+     },
+     {
+      "name": "Barnard College",
+      "count": 2
+     },
+     {
+      "name": "Lafayette College",
+      "count": 6
+     },
+     {
+      "name": "Union College",
+      "count": 2
+     },
+     {
+      "name": "Bates College",
+      "count": 5
+     },
+     {
+      "name": "Lehigh University",
+      "count": 21
+     },
+     {
+      "name": "United States Military Academy at West Point",
+      "count": 1
+     },
+     {
+      "name": "Binghamton University",
+      "count": 1
+     },
+     {
+      "name": "Loyola Marymount University",
+      "count": 2
+     },
+     {
+      "name": "United States Naval Academy",
+      "count": 1
+     },
+     {
+      "name": "Boston College",
+      "count": 4
+     },
+     {
+      "name": "Loyola University New Orleans",
+      "count": 1
+     },
+     {
+      "name": "University of California (Davis)",
+      "count": 1
+     },
+     {
+      "name": "Boston University",
+      "count": 1
+     },
+     {
+      "name": "Louisiana State University",
+      "count": 1
+     },
+     {
+      "name": "University of California (Los Angeles)",
+      "count": 6
+     },
+     {
+      "name": "Bowdoin College",
+      "count": 3
+     },
+     {
+      "name": "Marist University",
+      "count": 2
+     },
+     {
+      "name": "University of California (Santa Barbara)",
+      "count": 1
+     },
+     {
+      "name": "Brown University",
+      "count": 9
+     },
+     {
+      "name": "Marymount Manhattan College",
+      "count": 1
+     },
+     {
+      "name": "University of Chicago",
+      "count": 1
+     },
+     {
+      "name": "Bryn Mawr College",
+      "count": 1
+     },
+     {
+      "name": "Massachusetts Institute of Technology",
+      "count": 2
+     },
+     {
+      "name": "University of Colorado Boulder",
+      "count": 11
+     },
+     {
+      "name": "Bucknell University",
+      "count": 12
+     },
+     {
+      "name": "McGill University",
+      "count": 3
+     },
+     {
+      "name": "University of Connecticut",
+      "count": 3
+     },
+     {
+      "name": "Carleton College",
+      "count": 3
+     },
+     {
+      "name": "Michigan State University",
+      "count": 1
+     },
+     {
+      "name": "University of Florida",
+      "count": 1
+     },
+     {
+      "name": "Carnegie Mellon University",
+      "count": 5
+     },
+     {
+      "name": "Middlebury College",
+      "count": 4
+     },
+     {
+      "name": "University of Maryland (College Park)",
+      "count": 1
+     },
+     {
+      "name": "Catholic University of America",
+      "count": 1
+     },
+     {
+      "name": "Mount Holyoke College",
+      "count": 1
+     },
+     {
+      "name": "University of Massachusetts (Amherst)",
+      "count": 1
+     },
+     {
+      "name": "Chapman University",
+      "count": 2
+     },
+     {
+      "name": "Muhlenberg College",
+      "count": 1
+     },
+     {
+      "name": "University of Miami",
+      "count": 11
+     },
+     {
+      "name": "Claremont McKenna College",
+      "count": 4
+     },
+     {
+      "name": "New York University",
+      "count": 20
+     },
+     {
+      "name": "University of Michigan",
+      "count": 7
+     },
+     {
+      "name": "Clark University",
+      "count": 1
+     },
+     {
+      "name": "North Carolina State University",
+      "count": 1
+     },
+     {
+      "name": "University of North Carolina at Chapel Hill",
+      "count": 1
+     },
+     {
+      "name": "Colby College",
+      "count": 5
+     },
+     {
+      "name": "Northeastern University",
+      "count": 7
+     },
+     {
+      "name": "University of Notre Dame",
+      "count": 3
+     },
+     {
+      "name": "Colgate University",
+      "count": 18
+     },
+     {
+      "name": "Northwestern University",
+      "count": 4
+     },
+     {
+      "name": "University of Oregon",
+      "count": 1
+     },
+     {
+      "name": "College of the Holy Cross",
+      "count": 1
+     },
+     {
+      "name": "Nova Southeastern University",
+      "count": 1
+     },
+     {
+      "name": "University of Pennsylvania",
+      "count": 14
+     },
+     {
+      "name": "Colorado College",
+      "count": 2
+     },
+     {
+      "name": "Oberlin College",
+      "count": 4
+     },
+     {
+      "name": "University of Richmond",
+      "count": 3
+     },
+     {
+      "name": "Columbia University",
+      "count": 8
+     },
+     {
+      "name": "Occidental College",
+      "count": 4
+     },
+     {
+      "name": "University of Southern California",
+      "count": 7
+     },
+     {
+      "name": "Cornell University",
+      "count": 14
+     },
+     {
+      "name": "Oxford College of Emory University",
+      "count": 1
+     },
+     {
+      "name": "University of St Andrews",
+      "count": 2
+     },
+     {
+      "name": "CUNY Brooklyn College",
+      "count": 1
+     },
+     {
+      "name": "Penn State University (University Park)",
+      "count": 3
+     },
+     {
+      "name": "University of Vermont",
+      "count": 3
+     },
+     {
+      "name": "Dartmouth College",
+      "count": 8
+     },
+     {
+      "name": "Pepperdine University",
+      "count": 1
+     },
+     {
+      "name": "University of Wisconsin (Madison)",
+      "count": 20
+     },
+     {
+      "name": "Davidson College",
+      "count": 1
+     },
+     {
+      "name": "Pomona College",
+      "count": 2
+     },
+     {
+      "name": "Ursinus College",
+      "count": 1
+     },
+     {
+      "name": "Denison University",
+      "count": 3
+     },
+     {
+      "name": "Providence College",
+      "count": 1
+     },
+     {
+      "name": "Vanderbilt University",
+      "count": 5
+     },
+     {
+      "name": "Dominican University New York",
+      "count": 1
+     },
+     {
+      "name": "Rensselaer Polytechnic Institute",
+      "count": 1
+     },
+     {
+      "name": "Vassar College",
+      "count": 6
+     },
+     {
+      "name": "Drexel University",
+      "count": 1
+     },
+     {
+      "name": "Rhodes College",
+      "count": 1
+     },
+     {
+      "name": "Villanova University",
+      "count": 15
+     },
+     {
+      "name": "Duke University",
+      "count": 7
+     },
+     {
+      "name": "Rice University",
+      "count": 5
+     },
+     {
+      "name": "Durham University",
+      "count": 1
+     },
+     {
+      "name": "Rutgers University (New Brunswick)",
+      "count": 2
+     },
+     {
+      "name": "Virginia Polytechnic Institute and State University",
+      "count": 1
+     },
+     {
+      "name": "Eckerd College",
+      "count": 1
+     },
+     {
+      "name": "San Diego State University",
+      "count": 1
+     },
+     {
+      "name": "Wagner College",
+      "count": 1
+     },
+     {
+      "name": "Elon University",
+      "count": 1
+     },
+     {
+      "name": "Santa Clara University",
+      "count": 3
+     },
+     {
+      "name": "Wake Forest University",
+      "count": 12
+     },
+     {
+      "name": "Emerson College",
+      "count": 1
+     },
+     {
+      "name": "Sarah Lawrence College",
+      "count": 1
+     },
+     {
+      "name": "Washington and Lee University",
+      "count": 2
+     },
+     {
+      "name": "Emory University",
+      "count": 12
+     },
+     {
+      "name": "Scripps College",
+      "count": 3
+     },
+     {
+      "name": "Washington University in St. Louis",
+      "count": 10
+     },
+     {
+      "name": "Skidmore College",
+      "count": 10
+     },
+     {
+      "name": "Wellesley College",
+      "count": 1
+     },
+     {
+      "name": "Eugene Lang College of Liberal Arts at The New School",
+      "count": 1
+     },
+     {
+      "name": "Smith College",
+      "count": 2
+     },
+     {
+      "name": "Wesleyan University",
+      "count": 14
+     },
+     {
+      "name": "Fairfield University",
+      "count": 4
+     },
+     {
+      "name": "Southern Connecticut State University",
+      "count": 1
+     },
+     {
+      "name": "William & Mary",
+      "count": 1
+     },
+     {
+      "name": "Fashion Institute of Technology",
+      "count": 1
+     },
+     {
+      "name": "Southern Methodist University",
+      "count": 5
+     },
+     {
+      "name": "Williams College",
+      "count": 9
+     },
+     {
+      "name": "Florida Agricultural and Mechanical University",
+      "count": 1
+     },
+     {
+      "name": "Spelman College",
+      "count": 2
+     },
+     {
+      "name": "Yale University",
+      "count": 8
+     },
+     {
+      "name": "Fordham University",
+      "count": 3
+     },
+     {
+      "name": "Springfield College",
+      "count": 1
+     },
+     {
+      "name": "Franklin & Marshall College",
+      "count": 4
+     },
+     {
+      "name": "St. John’s College (Santa Fe)",
+      "count": 1
+     },
+     {
+      "name": "Furman University",
+      "count": 1
+     },
+     {
+      "name": "St. Lawrence University",
+      "count": 2
+     },
+     {
+      "name": "George Washington University",
+      "count": 6
+     },
+     {
+      "name": "Stanford University",
+      "count": 2
+     },
+     {
+      "name": "Georgetown University",
+      "count": 12
+     },
+     {
+      "name": "Stony Brook University",
+      "count": 1
+     },
+     {
+      "name": "Gettysburg College",
+      "count": 3
+     },
+     {
+      "name": "SUNY at Purchase College",
+      "count": 1
+     },
+     {
+      "name": "Grinnell College",
+      "count": 1
+     },
+     {
+      "name": "SUNY College at Oswego",
+      "count": 1
+     },
+     {
+      "name": "Hamilton College",
+      "count": 4
+     },
+     {
+      "name": "SUNY University at Buffalo",
+      "count": 1
+     },
+     {
+      "name": "Hampton University",
+      "count": 1
+     },
+     {
+      "name": "Swarthmore College",
+      "count": 5
+     },
+     {
+      "name": "Hartwick College",
+      "count": 1
+     },
+     {
+      "name": "Syracuse University",
+      "count": 20
+     },
+     {
+      "name": "Harvard University",
+      "count": 3
+     },
+     {
+      "name": "Temple University",
+      "count": 2
+     },
+     {
+      "name": "Harvey Mudd College",
+      "count": 1
+     },
+     {
+      "name": "Texas Christian University",
+      "count": 2
+     },
+     {
+      "name": "Haverford College",
+      "count": 5
+     },
+     {
+      "name": "The American University of Paris",
+      "count": 3
+     },
+     {
+      "name": "Howard University",
+      "count": 3
+     },
+     {
+      "name": "The Ohio State University",
+      "count": 1
+     },
+     {
+      "name": "Hult International Business School (Boston)",
+      "count": 1
+     },
+     {
+      "name": "The University of Texas at Austin",
+      "count": 3
+     },
+     {
+      "name": "IE University",
+      "count": 3
+     },
+     {
+      "name": "Trinity College",
+      "count": 10
+     }
+    ]
+   },
+   "notes": "No grading scale or conversion printed (unweighted averages only; highest 4.19). Poly stopped offering AP courses in 2022-23. Tests are average superscores. The \"Curricular Rigor Scale\" counts advanced courses, not GPA bands. Matriculation: students attending as of September 2025, classes 2021-2025, with counts."
+  },
+  {
+   "id": "A2390475",
+   "name": "Cistercian Preparatory School",
+   "url": "https://school.cistercian.org/wp-content/uploads/2025/10/20251022-school-profile.pdf",
+   "edition": "2025–26",
+   "class_size": 44,
+   "gpa_scale": {
+    "kind": "unweighted-4",
+    "max": 4,
+    "weighted": true
+   },
+   "gpa_distribution": null,
+   "ap_courses": null,
+   "ib_courses": null,
+   "sat_mid50": [
+    1380,
+    1480
+   ],
+   "act_mid50": [
+    30,
+    34
+   ],
+   "matriculation": null,
+   "notes": "Letter grades on a 4.0 scale; +1.0 for advanced honors courses in the GPA. No AP courses (AP exams are listed, taken on students' own). The college list is admissions with enrollment marked in bold, which the text layer does not carry: no matriculation can be read from text. PSS lists the school twice (A2390475, BB170357)."
+  },
+  {
+   "id": "00070577",
+   "name": "Crespi Carmelite High School",
+   "url": "https://www.crespi.org/uploads/files/About/2026-school-profile.pdf",
+   "edition": "2025–26",
+   "class_size": 92,
+   "gpa_scale": {
+    "kind": "unweighted-4",
+    "max": 4,
+    "weighted": true
+   },
+   "gpa_distribution": null,
+   "ap_courses": [
+    "AP World History",
+    "AP US Government & Politics",
+    "AP US History",
+    "AP Macroeconomics",
+    "AP Calculus AB",
+    "AP Calculus BC",
+    "AP Statistics",
+    "AP English Literature",
+    "AP Spanish Language",
+    "AP Art",
+    "AP Art 3D",
+    "AP Studio Art 2D",
+    "AP Biology",
+    "AP Physics C: Mechanics"
+   ],
+   "ib_courses": null,
+   "sat_mid50": null,
+   "act_mid50": null,
+   "matriculation": null,
+   "notes": "\"Profile for the Class of 2026\" (92 seniors). 4.0 scale, weighted for Honors & AP (weight not stated). SAT average only. The list is four-year college acceptances."
+  },
+  {
+   "id": "00919963",
+   "name": "Regis High School",
+   "url": "https://www.regis.org/downloads/SchoolProfile.pdf",
+   "edition": "2026–27",
+   "class_size": 127,
+   "gpa_scale": {
+    "kind": "unweighted-4",
+    "max": 4,
+    "weighted": false
+   },
+   "gpa_distribution": [
+    {
+     "band": "3.85–4.0",
+     "share": 0.1732
+    },
+    {
+     "band": "3.80–3.84",
+     "share": 0.2205
+    },
+    {
+     "band": "3.70–3.79",
+     "share": 0.2677
+    },
+    {
+     "band": "3.60–3.69",
+     "share": 0.189
+    },
+    {
+     "band": "<3.6",
+     "share": 0.1496
+    }
+   ],
+   "ap_courses": null,
+   "ib_courses": null,
+   "sat_mid50": [
+    1400,
+    1510
+   ],
+   "act_mid50": [
+    32,
+    34
+   ],
+   "matriculation": {
+    "classes": "2023–2026",
+    "entries": [
+     {
+      "name": "Adelphi University",
+      "count": 1
+     },
+     {
+      "name": "Harvey Mudd College",
+      "count": 1
+     },
+     {
+      "name": "United States Military Academy",
+      "count": 3
+     },
+     {
+      "name": "American University",
+      "count": 2
+     },
+     {
+      "name": "Haverford College",
+      "count": 1
+     },
+     {
+      "name": "United States Naval Academy",
+      "count": 3
+     },
+     {
+      "name": "The American University of Paris",
+      "count": 1
+     },
+     {
+      "name": "Hillsdale College",
+      "count": 1
+     },
+     {
+      "name": "Universita Bocconi",
+      "count": 1
+     },
+     {
+      "name": "Amherst College",
+      "count": 1
+     },
+     {
+      "name": "Hofstra University",
+      "count": 1
+     },
+     {
+      "name": "University at Buffalo",
+      "count": 1
+     },
+     {
+      "name": "Arizona State University–Tempe",
+      "count": 1
+     },
+     {
+      "name": "Holy Cross College",
+      "count": 1
+     },
+     {
+      "name": "The University of Alabama",
+      "count": 2
+     },
+     {
+      "name": "Auburn University",
+      "count": 1
+     },
+     {
+      "name": "Indiana University",
+      "count": 2
+     },
+     {
+      "name": "University of California–Berkeley",
+      "count": 2
+     },
+     {
+      "name": "Ave Maria University",
+      "count": 1
+     },
+     {
+      "name": "Johns Hopkins University",
+      "count": 4
+     },
+     {
+      "name": "University of Cambridge",
+      "count": 1
+     },
+     {
+      "name": "Bates College",
+      "count": 2
+     },
+     {
+      "name": "Lafayette College",
+      "count": 4
+     },
+     {
+      "name": "University of Central Florida",
+      "count": 1
+     },
+     {
+      "name": "Binghamton University",
+      "count": 18
+     },
+     {
+      "name": "Lehigh University",
+      "count": 4
+     },
+     {
+      "name": "University of Chicago",
+      "count": 9
+     },
+     {
+      "name": "Loyola Marymount University",
+      "count": 1
+     },
+     {
+      "name": "University of Colorado Boulder",
+      "count": 2
+     },
+     {
+      "name": "Boston University",
+      "count": 5
+     },
+     {
+      "name": "Loyola University Chicago",
+      "count": 1
+     },
+     {
+      "name": "University of Connecticut",
+      "count": 1
+     },
+     {
+      "name": "Brandeis University",
+      "count": 1
+     },
+     {
+      "name": "Loyola University Maryland",
+      "count": 5
+     },
+     {
+      "name": "University of Dallas",
+      "count": 1
+     },
+     {
+      "name": "Brown University",
+      "count": 7
+     },
+     {
+      "name": "Manhattan University",
+      "count": 2
+     },
+     {
+      "name": "University of Florida",
+      "count": 3
+     },
+     {
+      "name": "Bucknell University",
+      "count": 2
+     },
+     {
+      "name": "Massachusetts Institute of Technology",
+      "count": 3
+     },
+     {
+      "name": "University of Maryland–College Park",
+      "count": 1
+     },
+     {
+      "name": "Cal Poly–San Luis Obispo",
+      "count": 1
+     },
+     {
+      "name": "McGill University",
+      "count": 2
+     },
+     {
+      "name": "University of Miami",
+      "count": 1
+     },
+     {
+      "name": "California Institute of Technology",
+      "count": 2
+     },
+     {
+      "name": "Middlebury College",
+      "count": 4
+     },
+     {
+      "name": "University of Michigan–Ann Arbor",
+      "count": 6
+     },
+     {
+      "name": "Carleton College",
+      "count": 1
+     },
+     {
+      "name": "Montclair State University",
+      "count": 1
+     },
+     {
+      "name": "University of New Haven",
+      "count": 1
+     },
+     {
+      "name": "Carnegie Mellon University",
+      "count": 5
+     },
+     {
+      "name": "New Jersey Institute of Technology",
+      "count": 1
+     },
+     {
+      "name": "University of North Carolina at Chapel Hill",
+      "count": 2
+     },
+     {
+      "name": "Case Western Reserve University",
+      "count": 6
+     },
+     {
+      "name": "New York University",
+      "count": 4
+     },
+     {
+      "name": "University of Notre Dame",
+      "count": 27
+     },
+     {
+      "name": "The Catholic University of America",
+      "count": 1
+     },
+     {
+      "name": "Northeastern University",
+      "count": 7
+     },
+     {
+      "name": "University of Oxford",
+      "count": 1
+     },
+     {
+      "name": "Clemson University",
+      "count": 1
+     },
+     {
+      "name": "Northwestern University",
+      "count": 5
+     },
+     {
+      "name": "University of Pennsylvania",
+      "count": 14
+     },
+     {
+      "name": "College of the Holy Cross",
+      "count": 10
+     },
+     {
+      "name": "Pace University–Westchester Campus",
+      "count": 1
+     },
+     {
+      "name": "University of Pittsburgh",
+      "count": 1
+     },
+     {
+      "name": "Colorado School of Mines",
+      "count": 1
+     },
+     {
+      "name": "Pennsylvania State University–Main Campus",
+      "count": 4
+     },
+     {
+      "name": "University of Richmond",
+      "count": 1
+     },
+     {
+      "name": "Pomona College",
+      "count": 1
+     },
+     {
+      "name": "University of Rochester",
+      "count": 3
+     },
+     {
+      "name": "Princeton University",
+      "count": 11
+     },
+     {
+      "name": "University of Scranton",
+      "count": 2
+     },
+     {
+      "name": "CUNY City College",
+      "count": 2
+     },
+     {
+      "name": "Purdue University–Main Campus",
+      "count": 4
+     },
+     {
+      "name": "University of South Carolina–Columbia",
+      "count": 1
+     },
+     {
+      "name": "CUNY Hunter College",
+      "count": 1
+     },
+     {
+      "name": "Reed College",
+      "count": 1
+     },
+     {
+      "name": "The University of Tennessee",
+      "count": 1
+     },
+     {
+      "name": "CUNY Macaulay Honors College",
+      "count": 3
+     },
+     {
+      "name": "Rensselaer Polytechnic Institute",
+      "count": 12
+     },
+     {
+      "name": "The University of Texas at Austin",
+      "count": 3
+     },
+     {
+      "name": "Dartmouth College",
+      "count": 2
+     },
+     {
+      "name": "Rice University",
+      "count": 5
+     },
+     {
+      "name": "University of Utah",
+      "count": 1
+     },
+     {
+      "name": "Davidson College",
+      "count": 1
+     },
+     {
+      "name": "Rochester Institute of Technology",
+      "count": 2
+     },
+     {
+      "name": "University of Vermont",
+      "count": 1
+     },
+     {
+      "name": "Duke University",
+      "count": 5
+     },
+     {
+      "name": "Rutgers University–New Brunswick",
+      "count": 2
+     },
+     {
+      "name": "University of Virginia–Main Campus",
+      "count": 8
+     },
+     {
+      "name": "Emerson College",
+      "count": 1
+     },
+     {
+      "name": "Santa Clara University",
+      "count": 2
+     },
+     {
+      "name": "University of Wisconsin–Madison",
+      "count": 1
+     },
+     {
+      "name": "Emory University",
+      "count": 6
+     },
+     {
+      "name": "SciencesPo - Menton",
+      "count": 1
+     },
+     {
+      "name": "Vanderbilt University",
+      "count": 3
+     },
+     {
+      "name": "St. John's University",
+      "count": 5
+     },
+     {
+      "name": "Vassar College",
+      "count": 1
+     },
+     {
+      "name": "Florida State University",
+      "count": 1
+     },
+     {
+      "name": "Stanford University",
+      "count": 2
+     },
+     {
+      "name": "Villanova University",
+      "count": 7
+     },
+     {
+      "name": "Fordham University",
+      "count": 16
+     },
+     {
+      "name": "Stevens Institute of Technology",
+      "count": 6
+     },
+     {
+      "name": "Virginia Tech",
+      "count": 1
+     },
+     {
+      "name": "Franklin & Marshall College",
+      "count": 1
+     },
+     {
+      "name": "Stony Brook University",
+      "count": 8
+     },
+     {
+      "name": "Washington University in St. Louis",
+      "count": 1
+     },
+     {
+      "name": "The George Washington University",
+      "count": 2
+     },
+     {
+      "name": "Swarthmore College",
+      "count": 2
+     },
+     {
+      "name": "Wesleyan University",
+      "count": 4
+     },
+     {
+      "name": "Syracuse University",
+      "count": 3
+     },
+     {
+      "name": "William & Mary",
+      "count": 1
+     },
+     {
+      "name": "Georgia Institute of Technology",
+      "count": 1
+     },
+     {
+      "name": "Temple University",
+      "count": 1
+     },
+     {
+      "name": "Williams College",
+      "count": 11
+     },
+     {
+      "name": "Hamilton College",
+      "count": 2
+     },
+     {
+      "name": "Thomas Aquinas College–Northfield",
+      "count": 1
+     },
+     {
+      "name": "Worcester Polytechnic Institute",
+      "count": 1
+     },
+     {
+      "name": "Harvard University",
+      "count": 6
+     },
+     {
+      "name": "Tufts University",
+      "count": 3
+     },
+     {
+      "name": "Xavier University",
+      "count": 2
+     },
+     {
+      "name": "Yale University",
+      "count": 6
+     },
+     {
+      "name": "Boston College",
+      "count": 30
+     },
+     {
+      "name": "Columbia University",
+      "count": 19
+     },
+     {
+      "name": "Cornell University",
+      "count": 25
+     },
+     {
+      "name": "Fairfield University",
+      "count": 14
+     },
+     {
+      "name": "Georgetown University",
+      "count": 30
+     }
+    ]
+   },
+   "notes": "No weighting. Distribution given as counts of 127 students (→ shares). No AP classes offered. Matriculation table has a Class of 2026 column and a four-year total column; the key uses the four-year totals (classes 2023-2026)."
+  },
+  {
+   "id": "01324873",
+   "name": "Nolan Catholic High School",
+   "url": "https://nolancatholic.org/_files/ugd/fe7ff0_4e924ae5f00b424a86929221dbba27cd.pdf",
+   "edition": "2024–25",
+   "class_size": null,
+   "gpa_scale": {
+    "kind": "100-point",
+    "max": 100,
+    "weighted": true
+   },
+   "gpa_distribution": null,
+   "ap_courses": [
+    "English IV (AP)",
+    "European History (AP)",
+    "Psychology (AP)",
+    "Biology (AP)",
+    "French IV (AP)",
+    "Spanish IV (AP)",
+    "Calculus AB (AP)",
+    "Calculus BC (AP)",
+    "Spanish V (AP)",
+    "Studio Art Drawing (AP)",
+    "Chemistry (AP)",
+    "Latin IV (AP)",
+    "Macroeconomics (AP)",
+    "U.S. Government (AP)",
+    "Computer Science (AP)",
+    "Physics I (AP)",
+    "Physics C: Electricity & Magnetism (AP)",
+    "U.S. History (AP)",
+    "English III (AP)",
+    "Pre-Calculus (AP)",
+    "Probability & Statistics (AP)",
+    "World History (AP)"
+   ],
+   "ib_courses": null,
+   "sat_mid50": null,
+   "act_mid50": null,
+   "matriculation": null,
+   "notes": "100-point GPA, +8 for AP/Honors, +4 for dual credit. No senior class size. SAT means only. The list is acceptances 2020-2024."
+  }
+ ]
+}

@@ -10,7 +10,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { asUser, createAuthDb, createUser, type AuthDb } from "./helpers/pg-auth.mts";
-import { HOUSEHOLD_MAX_MEMBERS, householdSeats, type PendingInvitation, type RosterMember } from "../lib/household-rules.ts";
+import { HOUSEHOLD_MAX_MEMBERS, householdSeats, type RosterMember } from "../lib/household-rules.ts";
 
 // The whole chain the limits sit on, including invitation links (whose accept_invitation this migration replaces).
 const MIGRATIONS = [
@@ -173,14 +173,19 @@ test("household_max_members() is six, and lib/household-rules.ts says the same",
   assert.match(sql, /create function public\.household_max_members\(\) returns integer\s+language sql\s+immutable\s+as \$\$ select 6 \$\$/);
 });
 
-test("householdSeats counts members and pending invitations against the cap, but not hand-overs of managed students", () => {
-  const m = (n: number) => Array.from({ length: n }, (_, i) => ({ member_id: String(i) }) as RosterMember);
-  const inv = (n: number, student: string | null = null) => Array.from({ length: n }, (_, i) => ({ id: String(i), student_id: student }) as PendingInvitation);
-  assert.deepEqual(householdSeats({ members: m(2), invitations: [] }), { taken: 2, max: 6, full: false });
-  assert.deepEqual(householdSeats({ members: m(4), invitations: inv(2) }), { taken: 6, max: 6, full: true });
-  assert.deepEqual(householdSeats({ members: m(6), invitations: inv(1, "managed-record") }), { taken: 6, max: 6, full: true });
-  assert.deepEqual(householdSeats({ members: m(5), invitations: [...inv(1, "managed-record"), ...inv(1)] }), { taken: 6, max: 6, full: true });
-  assert.deepEqual(householdSeats({ members: m(0), invitations: inv(0) }), { taken: 0, max: 6, full: false });
+test("householdSeats counts members and pending invitations against the cap, but not hand-overs of managed students or expired invitations", () => {
+  // Roster rows (20261006150000_household_hub.sql): members have a member_id; a pending invitation is a row without
+  // one; a managed student's hand-over rides on the student's own (member) row.
+  const m = (n: number) => Array.from({ length: n }, (_, i) => ({ member_id: String(i), status: "active" }) as RosterMember);
+  const handOver = (n: number) => Array.from({ length: n }, (_, i) => ({ member_id: `h${i}`, student_id: `s${i}`, status: "invited", invitation_id: `i${i}` }) as RosterMember);
+  const inv = (n: number, status: "invited" | "expired" = "invited") =>
+    Array.from({ length: n }, (_, i) => ({ member_id: null, status, invitation_id: `p${i}` }) as RosterMember);
+  assert.deepEqual(householdSeats({ members: m(2) }), { taken: 2, max: 6, full: false });
+  assert.deepEqual(householdSeats({ members: [...m(4), ...inv(2)] }), { taken: 6, max: 6, full: true });
+  assert.deepEqual(householdSeats({ members: [...m(5), ...handOver(1)] }), { taken: 6, max: 6, full: true }, "a hand-over is the record's one seat");
+  assert.deepEqual(householdSeats({ members: [...m(4), ...handOver(1), ...inv(1)] }), { taken: 6, max: 6, full: true });
+  assert.deepEqual(householdSeats({ members: [...m(5), ...inv(2, "expired")] }), { taken: 5, max: 6, full: false }, "expired invitations hold no seat");
+  assert.deepEqual(householdSeats({ members: [] }), { taken: 0, max: 6, full: false });
 });
 
 /* ------------------------------------------------------------------ */

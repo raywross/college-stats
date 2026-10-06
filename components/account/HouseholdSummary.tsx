@@ -36,8 +36,7 @@ export function HouseholdSummary({ households, home, defaultRole }: { households
                 </span>
               </p>
               <p className="mt-0.5 text-sm text-muted-foreground">
-                {h.members.map((m) => `${memberName(m)}${m.is_me ? " (you)" : ""}`).join(" · ")}
-                {h.invitations.length > 0 && ` · ${h.invitations.length} invited`}
+                {h.members.map((m) => `${memberName(m)}${m.is_me ? " (you)" : m.status === "invited" ? " (invited)" : ""}`).join(" · ")}
               </p>
               <p className="mt-1 text-sm">
                 {itsHome ? (

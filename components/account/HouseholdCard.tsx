@@ -1,6 +1,5 @@
 import { Term } from "@/components/ui/info-tip";
-import { initialsFor } from "@/lib/accounts";
-import { canRemove, editAccessControl, householdSeats, memberName, shortDate, type HouseholdView, type RosterMember } from "@/lib/household-rules";
+import { canRemove, editAccessControl, householdSeats, isPending, memberInitial, memberName, shortDate, type HouseholdView, type RosterMember } from "@/lib/household-rules";
 import { leaveHousehold, removeMember, revokeInvitation, setMemberCanEdit } from "@/app/account/household/actions";
 import type { HomeRow } from "@/lib/home-store";
 import { HouseholdActionButton } from "./HouseholdActionButton";
@@ -30,7 +29,7 @@ function MemberRow({ m, h }: { m: RosterMember; h: HouseholdView }) {
   return (
     <li className="flex flex-wrap items-center gap-x-3 gap-y-2 py-3">
       <span aria-hidden className="inline-flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/12 text-xs font-bold text-primary">
-        {initialsFor(m.display_name, null)}
+        {memberInitial(m)}
       </span>
       <div className="min-w-0 flex-1">
         <p className="flex flex-wrap items-center gap-x-2 gap-y-1">
@@ -53,15 +52,15 @@ function MemberRow({ m, h }: { m: RosterMember; h: HouseholdView }) {
       <div className="flex flex-wrap items-start justify-end gap-2">
         {m.managed_by_me && m.student_id && <LinkManagedStudent household={h.id} student={m.student_id} name={name} />}
         {m.role === "guardian" && !m.can_edit && edit.grant && (
-          <HouseholdActionButton action={setMemberCanEdit} fields={{ member: m.member_id, can_edit: "true" }} label="Allow editing" />
+          <HouseholdActionButton action={setMemberCanEdit} fields={{ member: m.member_id ?? "", can_edit: "true" }} label="Allow editing" />
         )}
         {m.role === "guardian" && m.can_edit && edit.revoke && (
-          <HouseholdActionButton action={setMemberCanEdit} fields={{ member: m.member_id, can_edit: "false" }} label={m.is_me ? "Give up editing" : "View only"} />
+          <HouseholdActionButton action={setMemberCanEdit} fields={{ member: m.member_id ?? "", can_edit: "false" }} label={m.is_me ? "Give up editing" : "View only"} />
         )}
         {canRemove(h.me, m) && (
           <HouseholdActionButton
             action={removeMember}
-            fields={{ member: m.member_id }}
+            fields={{ member: m.member_id ?? "" }}
             label="Remove"
             tone="danger"
             confirm={`Remove ${name} from ${h.name}? ${m.role === "guardian" ? "They'll lose access to the students here right away." : "Guardians here will lose access to their information right away."}`}
@@ -80,11 +79,11 @@ export function HouseholdCard({ h, home = null, suggestions = false }: { h: Hous
   const isGuardian = h.me.guardian !== null;
   const isStudent = h.me.student !== null;
   const seats = householdSeats(h);
-  const managedHere = h.members.filter((m) => m.managed_by_me && m.student_id).map((m) => ({ id: m.student_id as string, name: memberName(m) }));
-  const nameOf = (userId: string | null) => {
-    const m = h.members.find((x) => x.user_id === userId);
-    return m ? memberName(m) : "a former member";
-  };
+  // The roster now carries pending invitations as rows (20261006150000_household_hub.sql); this page keeps showing
+  // them in their own section until the household hub replaces it.
+  const members = h.members.filter((m) => m.member_id !== null);
+  const invitations = h.members.filter((m) => m.invitation_id !== null && isPending(m));
+  const managedHere = members.filter((m) => m.managed_by_me && m.student_id).map((m) => ({ id: m.student_id as string, name: memberName(m) }));
 
   return (
     <section className="rounded-3xl border bg-card p-4 sm:p-6" aria-labelledby={`hh-${h.id}`}>
@@ -95,7 +94,7 @@ export function HouseholdCard({ h, home = null, suggestions = false }: { h: Hous
           </h2>
           <p className="mt-0.5 text-sm text-muted-foreground">
             You&apos;re {isGuardian && isStudent ? "a guardian and a student" : isGuardian ? "a guardian" : "a student"} here · {seats.taken} of {seats.max} seats taken
-            {h.invitations.length > 0 && ", counting invitations"}.
+            {invitations.length > 0 && ", counting invitations"}.
           </p>
         </div>
         <HouseholdActionButton
@@ -109,7 +108,7 @@ export function HouseholdCard({ h, home = null, suggestions = false }: { h: Hous
 
       <h3 className="mt-5 text-sm font-semibold">Members</h3>
       <ul className="divide-y">
-        {h.members.map((m) => (
+        {members.map((m) => (
           <MemberRow key={m.member_id} m={m} h={h} />
         ))}
       </ul>
@@ -122,26 +121,31 @@ export function HouseholdCard({ h, home = null, suggestions = false }: { h: Hous
         <HomeForm household={h.id} home={home} suggestions={suggestions} />
       </div>
 
-      {h.invitations.length > 0 && (
+      {invitations.length > 0 && (
         <>
           <h3 className="mt-5 text-sm font-semibold">
-            Waiting for an answer <span className="font-normal text-muted-foreground">({h.invitations.length})</span>
+            Waiting for an answer <span className="font-normal text-muted-foreground">({invitations.length})</span>
           </h3>
           <ul className="divide-y">
-            {h.invitations.map((inv) => (
-              <li key={inv.id} className="flex flex-wrap items-center gap-x-3 gap-y-2 py-3">
-                <div className="min-w-0 flex-1">
-                  <p className="truncate font-medium">{inv.email}</p>
-                  <p className="text-xs text-muted-foreground">
-                    As {inv.side === "guardian" ? (inv.can_edit ? "a guardian who can edit" : "a guardian") : "a student"} · invited by {nameOf(inv.invited_by)} · expires {shortDate(inv.expires_at)}
-                  </p>
-                </div>
-                <div className="flex flex-wrap items-start justify-end gap-2">
-                  <ReissueInvitation household={h.id} invitation={inv.id} />
-                  <HouseholdActionButton action={revokeInvitation} fields={{ invitation: inv.id }} label="Cancel" confirm={`Cancel the invitation to ${inv.email}? The link stops working.`} />
-                </div>
-              </li>
-            ))}
+            {invitations.map((inv) => {
+              const id = inv.invitation_id as string;
+              const who = inv.email ?? memberName(inv);
+              return (
+                <li key={id} className="flex flex-wrap items-center gap-x-3 gap-y-2 py-3">
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate font-medium">{inv.display_name?.trim() ? `${inv.display_name}${inv.email ? ` (${inv.email})` : ""}` : who}</p>
+                    <p className="text-xs text-muted-foreground">
+                      As {inv.role === "guardian" ? (inv.can_edit ? "a guardian who can edit" : "a guardian") : "a student"} ·{" "}
+                      {inv.status === "expired" ? "expired" : "expires"} {inv.expires_at ? shortDate(inv.expires_at) : ""}
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap items-start justify-end gap-2">
+                    <ReissueInvitation household={h.id} invitation={id} />
+                    <HouseholdActionButton action={revokeInvitation} fields={{ invitation: id }} label="Cancel" confirm={`Cancel the invitation to ${who}? The link stops working.`} />
+                  </div>
+                </li>
+              );
+            })}
           </ul>
         </>
       )}

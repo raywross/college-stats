@@ -37,13 +37,16 @@ export default async function ListPage({ params }: { params: Promise<{ id: strin
   const withItems = await getListWithItems((await params).id);
   if (!withItems) notFound();
   const { list, items } = withItems;
+  // A user's own list (a guardian's) has no student; its page arrives with the household hub.
+  const studentId = list.student_id;
+  if (!studentId) notFound();
 
-  const access = await openStudentAs(list.student_id, "lists");
+  const access = await openStudentAs(studentId, "lists");
   if (!access) notFound();
 
   // The viewer's household's home: a student and the guardians who see their list measure from the same place.
   const [lists, { getSchoolById, citeField }, notesByItem, home] = await Promise.all([
-    myLists(list.student_id),
+    myLists(studentId),
     getData(),
     notesForItems(items.map((i) => i.id)),
     myHome(),

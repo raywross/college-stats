@@ -73,11 +73,26 @@ export interface ListItem {
   deadline_text: string | null;
   deadline_date: string | null;
   enrolling: boolean;
+  /** "Tell me when this college's numbers change": the follows trigger keeps the owner's follow in step (default on). */
+  updates: boolean;
+  /** The day they visited, or null. */
+  visited_on: string | null;
+  /** They say they follow the college on social media. */
+  follows_social: boolean;
 }
+
+/**
+ * Whose list (20261006150000_household_hub.sql): a student record's, or a user's own (a guardian, who has no student
+ * record). Exactly one is set on every list.
+ */
+export type ListOwner = { kind: "student"; id: string } | { kind: "user"; id: string };
 
 export interface ListRecord {
   id: string;
-  student_id: string;
+  /** Set for a student's list. */
+  student_id: string | null;
+  /** Set for a user's own list (a guardian's). */
+  user_id: string | null;
   name: string;
   is_default: boolean;
   share_enabled: boolean;

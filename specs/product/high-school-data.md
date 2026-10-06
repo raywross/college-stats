@@ -1,8 +1,9 @@
 # High School Data: Rigor, Outcomes, and Where Graduates Go
 
-> Status: **planned** (not built). Independent of accounts; [scattergrams.md](scattergrams.md),
-> [student-profile.md](student-profile.md) (high school picker), and [counselor-portal.md](counselor-portal.md)
-> build on it. Expands the idea document's pipeline with verified public sources. Part of [product](README.md).
+> Status: **built** 2026-10-05 on `feature/high-school` (all four phases; see the "As built" sections at the end).
+> Graduation rates wait on one hand-downloaded EDFacts file ([below](#as-built-federal-sync-2026-10-05)).
+> [scattergrams.md](scattergrams.md) and [counselor-portal.md](counselor-portal.md) build on it; the
+> [student-profile.md](student-profile.md) high school picker now uses it. Part of [product](README.md).
 
 ## Goal
 Give every public high school (and later private ones) a page and a record the rest of the site can join to: how

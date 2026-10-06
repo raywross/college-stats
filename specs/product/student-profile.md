@@ -14,7 +14,7 @@ profile and forgets it.
 ## Fields
 | Group | Fields | Used by |
 |---|---|---|
-| **Basics** | graduation year; state of residence (including "Outside the U.S."); high school (NCES id, from [high-school-data.md](high-school-data.md); free text until then) | residency pricing, in-state rules, scattergrams, the admit rate for you ([cds-residency-admissions.md](../data-expansion/cds-residency-admissions.md): the profile card's "(you)" marker, Compare's "Acceptance rate for you", chances' base rate) |
+| **Basics** | graduation year; state of residence (including "Outside the U.S."); high school (NCES id from [high-school-data.md](high-school-data.md), picked by search on `/me`; free text when the school isn't listed) | residency pricing, in-state rules, scattergrams, the admit rate for you ([cds-residency-admissions.md](../data-expansion/cds-residency-admissions.md): the profile card's "(you)" marker, Compare's "Acceptance rate for you", chances' base rate) |
 | **Academics** | unweighted GPA (0–4.0) and the scale it's on (4.0, 5.0, 100-point) with a weighted GPA optional; class rank (percentile) optional; course rigor (count of AP/IB/dual-enrollment courses) optional | chances (GPA bands from [cds-admissions.md](../data-expansion/cds-admissions.md)) |
 | **Tests** | SAT total and sections; ACT composite and sections; superscore flag; "I plan to apply test-optional" | ScoreChecker, Explore fit filter, chances |
 | **Plans** | intended majors (up to 3, 2-digit CIP families from [majors.md](../data-expansion/majors.md)); early round interest (ED / EA / none) | majors and earnings-by-major views, [early-decision-strategy.md](early-decision-strategy.md) |

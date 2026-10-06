@@ -164,17 +164,6 @@ export const ROADMAP: RoadmapSpec[] = [
     status: "planned",
   },
   {
-    slug: "high-school-data",
-    file: "specs/product/high-school-data.md",
-    group: "high-school",
-    summary:
-      "A page for every public high school: AP access, graduation and college-going rates, grading scale, and where graduates go.",
-    complexity: 4,
-    complexityNote:
-      "A second dataset (24,000 schools) with federal, state, and crawled sources, its own sync, tables, pages, and a pilot.",
-    status: "planned",
-  },
-  {
     slug: "scattergrams",
     file: "specs/product/scattergrams.md",
     group: "high-school",
@@ -183,7 +172,6 @@ export const ROADMAP: RoadmapSpec[] = [
     complexity: 3,
     complexityNote: "A counselor upload with client-side scrubbing, small-count thresholds, name matching, and a new chart.",
     status: "planned",
-    after: ["high-school-data"],
   },
   {
     slug: "telemetry",

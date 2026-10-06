@@ -39,7 +39,11 @@
     "rigor.ap_courses": 11,
     "derived.ap_enrolled_share": 0.2272,
     "derived.ib_enrolled_share": 0.1438,
-    "derived.dual_enrolled_share": 0.0041
+    "derived.dual_enrolled_share": 0.0041,
+    "state.college_going_rate": 0.5796,
+    "state.ela_proficiency": 0.5162,
+    "state.math_proficiency": 0.1943,
+    "state.chronic_absence": 0.2598
   },
   "CO": {
     "enrollment.total": 322,
@@ -57,7 +61,12 @@
     "rigor.ap_courses": 13,
     "derived.ap_enrolled_share": 0.2138,
     "derived.ib_enrolled_share": 0.1244,
-    "derived.dual_enrolled_share": 0.1549
+    "derived.dual_enrolled_share": 0.1549,
+    "state.college_going_rate": 0.682,
+    "state.ela_proficiency": 0.6365,
+    "state.math_proficiency": 0.23,
+    "state.chronic_absence": 0.191,
+    "state.nsc_persisted": 0.87
   },
   "DC": {
     "enrollment.total": 386,
@@ -80,7 +89,11 @@
     "rigor.ap_courses": 12,
     "derived.ap_enrolled_share": 0.1958,
     "derived.ib_enrolled_share": 0.0815,
-    "derived.dual_enrolled_share": 0.0355
+    "derived.dual_enrolled_share": 0.0355,
+    "state.college_going_rate": 0.5959,
+    "state.ela_proficiency": 0.62,
+    "state.math_proficiency": 0.52,
+    "state.chronic_absence": 0.3618
   },
   "GA": {
     "enrollment.total": 1037,
@@ -123,7 +136,12 @@
     "rigor.ap_courses": 10,
     "derived.ap_enrolled_share": 0.1835,
     "derived.ib_enrolled_share": 0.1328,
-    "derived.dual_enrolled_share": 0.0822
+    "derived.dual_enrolled_share": 0.0822,
+    "state.college_going_rate": 0.61,
+    "state.ap_pass_rate": 0.739,
+    "state.ela_proficiency": 0.47,
+    "state.math_proficiency": 0.3025,
+    "state.chronic_absence": 0.281
   },
   "IN": {
     "enrollment.total": 463,
@@ -294,7 +312,12 @@
     "rigor.ap_courses": 8,
     "derived.ap_enrolled_share": 0.1703,
     "derived.ib_enrolled_share": 0.1539,
-    "derived.dual_enrolled_share": 0.1416
+    "derived.dual_enrolled_share": 0.1416,
+    "state.college_going_rate": 0.6871,
+    "state.ap_pass_rate": 0.6867,
+    "state.ela_proficiency": 0.8568,
+    "state.math_proficiency": 0.7,
+    "state.chronic_absence": 0.3105
   },
   "OH": {
     "enrollment.total": 403,
@@ -344,7 +367,11 @@
     "rigor.ap_courses": 9,
     "derived.ap_enrolled_share": 0.0973,
     "derived.ib_enrolled_share": 0.0261,
-    "derived.dual_enrolled_share": 0.0682
+    "derived.dual_enrolled_share": 0.0682,
+    "state.ela_proficiency": 0.661,
+    "state.math_proficiency": 0.5,
+    "state.chronic_absence": 0.263,
+    "state.nsc_enrolled_fall": 0.537
   },
   "SD": {
     "enrollment.total": 86,
@@ -368,7 +395,12 @@
     "rigor.ap_courses": 12,
     "derived.ap_enrolled_share": 0.2233,
     "derived.ib_enrolled_share": 0.0619,
-    "derived.dual_enrolled_share": 0.0786
+    "derived.dual_enrolled_share": 0.0786,
+    "state.college_going_rate": 0.4812,
+    "state.ap_pass_rate": 0.4653,
+    "state.ela_proficiency": 0.5566,
+    "state.math_proficiency": 0.3385,
+    "state.chronic_absence": 0.2154
   },
   "UT": {
     "enrollment.total": 403,

@@ -21,7 +21,7 @@
  * too. "Missing", "Not reported", and "Not applicable" are null without a suppressed flag.
  */
 import type { HighSchool, HsGrade, HsRaceKey, HsSourceInfo } from "../../../lib/high-school-types.ts";
-import { HS_GRADES, HS_RACES, blankHighSchool, fipsToUsps, normalizeGrade, normalizeHighSchool, round, suppress, type Suppressed } from "../../../lib/high-school-core.ts";
+import { HS_GRADES, HS_RACES, blankHighSchool, fipsToUsps, normalizeGrade, normalizeHighSchool, round, suppress, tidySchoolName, titleCaseName, type Suppressed } from "../../../lib/high-school-core.ts";
 import { CRDC_FILE, crdcSourceInfo, retrievedOf } from "./crdc.mts";
 import { readCsvRecords, schoolYearLabel } from "./federal-csv.mts";
 import type { AdapterContext, AdapterInfo, AdapterResult } from "./types.mts";
@@ -108,15 +108,16 @@ export function classifyDirectory(rec: Record<string, string>): DirectoryVerdict
   const low = normalizeGrade(rec.GSLO);
   const high = normalizeGrade(rec.GSHI);
   if (!low || !(high === "12" || high === "13")) return { keep: false, reason: "no grade 12" };
-  const name = clean(rec.SCH_NAME);
+  const rawName = clean(rec.SCH_NAME);
+  const name = rawName ? tidySchoolName(rawName) : null;
   if (!name) return { keep: false, reason: "bad id" };
   const row = blankHighSchool(id, "public", name, state);
   const street = [clean(rec.LSTREET1), clean(rec.LSTREET2)].filter(Boolean).join(", ");
   const zip = (rec.LZIP ?? "").trim();
-  row.city = clean(rec.LCITY);
+  row.city = clean(rec.LCITY) ? titleCaseName(clean(rec.LCITY)!) : null;
   row.zip = /^\d{5}$/.test(zip) ? zip : null;
-  row.address = street || null;
-  row.district = rec.LEAID && clean(rec.LEA_NAME) ? { id: rec.LEAID, name: clean(rec.LEA_NAME)! } : null;
+  row.address = street ? titleCaseName(street) : null;
+  row.district = rec.LEAID && clean(rec.LEA_NAME) ? { id: rec.LEAID, name: titleCaseName(clean(rec.LEA_NAME)!) } : null;
   row.state_school_id = clean(rec.ST_SCHID);
   row.grades = { low, high };
   row.status = { charter: yesNo(rec.CHARTER_TEXT), magnet: null, title_i: null, virtual: null };

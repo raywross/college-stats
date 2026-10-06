@@ -1,0 +1,8 @@
+Academic Year	Aggregate Level	County Code	District Code	School Code	County Name	District Name	School Name	Charter School	DASS	Reporting Category	ChronicAbsenteeismEligibleCumulativeEnrollment	ChronicAbsenteeismCount	ChronicAbsenteeismRate
+2024-25	S	01	10017	0130401	Alameda	Alameda County Office of Education	Alameda County Juvenile Hall/Court	No 	Yes	GR912	86	15	17.4
+2024-25	S	01	10017	0130401	Alameda	Alameda County Office of Education	Alameda County Juvenile Hall/Court	No 	Yes	TA	93	15	16.1
+2024-25	S	01	10017	0130419	Alameda	Alameda County Office of Education	Alameda County Community	No 	Yes	GR912	107	94	87.9
+2024-25	S	01	10017	0130419	Alameda	Alameda County Office of Education	Alameda County Community	No 	Yes	TA	121	104	86.0
+2024-25	S	01	61150	0130047	Alameda	Castro Valley Unified	Roy A. Johnson High	No 	No 	GR912	18	6	33.3
+2024-25	S	01	61150	0130047	Alameda	Castro Valley Unified	Roy A. Johnson High	No 	No 	TA	18	6	33.3
+2024-25	S	08	61820	0137729	Del Norte	Del Norte County Unified	Uncharted Shores Academy	Yes	No 	GR912	*	*	*

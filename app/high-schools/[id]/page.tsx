@@ -137,13 +137,16 @@ export default async function HighSchoolPage({ params }: Props) {
               value={shareText(value("derived.ap_enrolled_share") as number | null, suppressed("derived.ap_enrolled_share"))}
               median={median("derived.ap_enrolled_share", pctSmart)}
             />
-            <HsStat
-              label="AP exam takers who passed one"
-              term="ap-access"
-              cited={cite("derived.ap_pass_share")}
-              value={shareText(value("derived.ap_pass_share") as number | null, suppressed("derived.ap_pass_share"))}
-              median={median("derived.ap_pass_share", pctSmart)}
-            />
+            {/* The CRDC stopped collecting AP exam results after 2017–18: shown only when a school has the figure. */}
+            {(value("derived.ap_pass_share") !== null || suppressed("derived.ap_pass_share")) && (
+              <HsStat
+                label="AP exam takers who passed one"
+                term="ap-access"
+                cited={cite("derived.ap_pass_share")}
+                value={shareText(value("derived.ap_pass_share") as number | null, suppressed("derived.ap_pass_share"))}
+                median={median("derived.ap_pass_share", pctSmart)}
+              />
+            )}
             <HsStat
               label="Students in the IB Diploma Programme"
               term="ib-program"

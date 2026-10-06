@@ -1,8 +1,8 @@
 {
   "run": "20261005-211211-16",
   "started": "2026-10-05T21:12:40.695Z",
-  "finished": null,
-  "status": "running",
+  "finished": "2026-10-06T02:43:12.064Z",
+  "status": "finished",
   "attempted": 0,
   "documents_read": 38,
   "published": 32,
@@ -13,10 +13,13 @@
   "tripped": null,
   "usage": {
     "discovery": {
-      "calls": 0,
-      "input_tokens": 0,
-      "output_tokens": 0,
-      "cost_usd": 0
+      "calls": 81,
+      "input_tokens": 276882,
+      "output_tokens": 850,
+      "cost_usd": 0.140589,
+      "cache_read_input_tokens": 0,
+      "cache_creation_input_tokens": 0,
+      "web_searches": 0
     },
     "extraction": {
       "calls": 0,
@@ -32,7 +35,20 @@
     }
   },
   "round": 3,
-  "usage_rows": [],
+  "usage_rows": [
+    {
+      "job": "picker",
+      "model": "claude-haiku-4-5-20251001",
+      "mode": "batch",
+      "calls": 81,
+      "input_tokens": 276882,
+      "cache_write_tokens": 0,
+      "cache_read_tokens": 0,
+      "output_tokens": 850,
+      "searches": 0,
+      "cost_usd": 0.140589
+    }
+  ],
   "discovery": {
     "known": {
       "colleges": 51,
@@ -6753,14 +6769,14 @@
       "located": 32,
       "cds_found": 24,
       "published_c1": 1,
-      "cost_usd": 0
+      "cost_usd": 0.037692
     },
     "selective": {
       "colleges": 190,
       "located": 51,
       "cds_found": 31,
       "published_c1": 7,
-      "cost_usd": 0
+      "cost_usd": 0.102897
     },
     "less selective": {
       "colleges": 769,
@@ -6782,12 +6798,12 @@
       "id": "msgbatch_016QfXMUqtqnRjBXxA8BXe1W",
       "requests": 81,
       "submitted": "2026-10-06T02:25:21.893Z",
-      "ended": null,
-      "succeeded": 0,
+      "ended": "2026-10-06T02:27:57.055492+00:00",
+      "succeeded": 81,
       "errored": 0,
       "expired": 0,
       "reserved_usd": 0.182812,
-      "cost_usd": 0
+      "cost_usd": 0.140589
     }
   ],
   "projection": {
@@ -6798,6 +6814,6 @@
   "total": 1893,
   "unreachable": 28,
   "done": 1893,
-  "open_batches": 1,
+  "open_batches": 0,
   "guessed": 1
 }

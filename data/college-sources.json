@@ -1,5 +1,5 @@
 {
-  "updated": "2026-10-05",
+  "updated": "2026-10-06",
   "recipes": [
     {"unit_id":"100654","sources":[{"kind":"cds","url":"https://www.aamu.edu/campus-life/student-support/career-development/_documents/cds-2024-spring-career-guide-jrd.pdf","format":"pdf","checked":"2026-10-05","sha256":"97f19b5bd313ec239d36ec3e5c64d48a6afdd4b0200953e3a5e8bc60afd39dae"}],"index_urls":[],"learned":"2026-10-05","model":"probe-sitemap","discovery":{"path":"probe-sitemap","tried":[{"step":0,"via":"none","at":"2026-10-05","result":"none","cost_usd":0},{"step":1,"via":"probe-sitemap","at":"2026-10-05","result":"found","detail":"38 sitemap hit(s)","cost_usd":0}]}},
     {"unit_id":"100663","sources":[],"index_urls":[],"learned":"2026-10-05","model":"none","discovery":{"path":"none","tried":[{"step":0,"via":"none","at":"2026-10-05","result":"none","cost_usd":0},{"step":1,"via":"probe-sitemap","at":"2026-10-05","result":"none","detail":"1 sitemap(s), 0 hit(s)","cost_usd":0},{"step":1,"via":"probe-host","at":"2026-10-05","result":"none","detail":"0 IR host request(s)","cost_usd":0},{"step":1,"via":"probe-crawl","at":"2026-10-05","result":"none","detail":"2 page(s) crawled","cost_usd":0}]}},

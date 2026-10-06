@@ -19,6 +19,12 @@
       "url": "https://nces.ed.gov/surveys/pss/pssdata.asp",
       "retrieved": "2026-10-05"
     },
+    "state-ca": {
+      "name": "California Department of Education downloads (College-Going Rate, CAASPP research files, chronic absenteeism)",
+      "publisher": "California Department of Education",
+      "url": "https://www.cde.ca.gov/ds/",
+      "retrieved": "2026-10-05"
+    },
     "state-ct": {
       "name": "EdSight report exports",
       "publisher": "Connecticut State Department of Education",
@@ -37,10 +43,22 @@
       "url": "https://www.isbe.net/pages/illinois-state-report-card-data.aspx",
       "retrieved": "2026-10-05"
     },
+    "state-ny": {
+      "name": "New York State Education Department data downloads (Report Card Database, AP/IB Assessment Database)",
+      "publisher": "New York State Education Department",
+      "url": "https://data.nysed.gov/downloads.php",
+      "retrieved": "2026-10-05"
+    },
     "state-sc": {
       "name": "South Carolina School Report Card data files",
       "publisher": "South Carolina Department of Education and Education Oversight Committee",
       "url": "https://screportcards.com/",
+      "retrieved": "2026-10-05"
+    },
+    "state-tx": {
+      "name": "Texas Academic Performance Reports (TAPR) data downloads",
+      "publisher": "Texas Education Agency",
+      "url": "https://tea.texas.gov/texas-schools/accountability/academic-accountability/performance-reporting/texas-academic-performance-reports",
       "retrieved": "2026-10-05"
     }
   },

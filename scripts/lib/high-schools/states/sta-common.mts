@@ -17,8 +17,8 @@ import { SMALL_CELL, offersGrade12, round } from "../../../../lib/high-school-co
 import { forEachCsvRow } from "../../ipeds.mts";
 import type { StateContext } from "../types.mts";
 
-/** NCES CCD public school directory, 2024–25 (the newest release on 2026-10-05). `--ccd-url` overrides it. */
-export const CCD_DIRECTORY_URL = "https://nces.ed.gov/ccd/Data/zip/ccd_sch_029_2425_w_0a_051425.zip";
+/** NCES CCD public school directory, 2024–25 final (the file the federal sync reads). `--ccd-url` overrides it. */
+export const CCD_DIRECTORY_URL = "https://nces.ed.gov/ccd/Data/zip/ccd_sch_029_2425_w_1a_073025.zip";
 
 export interface CrosswalkSchool {
   ncessch: string;
@@ -74,13 +74,29 @@ export function crosswalkFromShards(ctx: Pick<StateContext, "crosswalk" | "rows"
   return { from: "shards", schools };
 }
 
+/**
+ * The CCD directory crosswalk, so rows for schools that aren't high schools (middle schools taking Algebra I, closed
+ * schools) are recognized and skipped rather than listed as unmatched. Once the shards exist they decide what counts
+ * as a high school: a CCD school in the shards is one, a CCD school missing from them isn't.
+ */
 export async function loadCrosswalk(ctx: StateContext, width: number): Promise<Crosswalk> {
-  if (ctx.crosswalk.size) return crosswalkFromShards(ctx, width);
   const url = typeof ctx.flags["ccd-url"] === "string" ? ctx.flags["ccd-url"] : CCD_DIRECTORY_URL;
   const zip = await ctx.fetchCached(url);
-  const xw = crosswalkFromCcd(ctx.readZipEntry(zip, /\.csv$/i), ctx.state, width);
-  ctx.log(`  crosswalk: ${xw.schools.size} ${ctx.state} schools from the CCD directory (shards not written yet)`);
-  return xw;
+  const ccd = crosswalkFromCcd(ctx.readZipEntry(zip, /\.csv$/i), ctx.state, width);
+  if (!ctx.crosswalk.size) {
+    ctx.log(`  crosswalk: ${ccd.schools.size} ${ctx.state} schools from the CCD directory (shards not written yet)`);
+    return ccd;
+  }
+  return mergeCrosswalks(ccd, crosswalkFromShards(ctx, width));
+}
+
+/** Shard entries win; CCD schools the shards don't hold are kept as known non-high schools. */
+export function mergeCrosswalks(ccd: Crosswalk, shards: Crosswalk): Crosswalk {
+  const inShards = new Set([...shards.schools.values()].map((s) => s.ncessch));
+  const schools = new Map<string, CrosswalkSchool>();
+  for (const [id, s] of ccd.schools) schools.set(id, inShards.has(s.ncessch) ? s : { ...s, highSchool: false });
+  for (const [id, s] of shards.schools) schools.set(id, s);
+  return { from: "shards", schools };
 }
 
 /* ------------------------------------------------------------------ */

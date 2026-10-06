@@ -17,6 +17,7 @@ import {
   crosswalkFromCcd,
   crosswalkFromShards,
   localSchoolId,
+  mergeCrosswalks,
   schoolYear,
   shareOf,
   springYear,
@@ -298,4 +299,15 @@ test("the committed CA, TX, and NY state files are valid and carry their section
     assert.ok(Object.keys(file.schools).length > 500, `${code}: a full state's high schools`);
     assert.ok(file.sections.some((s) => s.fields.includes("college_going_rate")), `${code}: college-going section`);
   }
+});
+
+test("mergeCrosswalks: shards decide what's a high school; other CCD schools stay known, so they're skipped, not unmatched", () => {
+  const school = (ncessch: string, highSchool: boolean) => ({ ncessch, name: ncessch, highSchool, open: true });
+  const ccd: Crosswalk = { from: "ccd", schools: new Map([["1", school("A", true)], ["2", school("B", false)], ["3", school("C", true)]]) };
+  const shards: Crosswalk = { from: "shards", schools: new Map([["1", school("A", true)]]) };
+  const xw = mergeCrosswalks(ccd, shards);
+  assert.equal(xw.schools.get("1")?.highSchool, true);
+  assert.equal(xw.schools.get("2")?.highSchool, false, "a CCD middle school is known and skipped");
+  assert.equal(xw.schools.get("3")?.highSchool, false, "a CCD school the shards dropped isn't a high school");
+  assert.equal(xw.schools.size, 3);
 });

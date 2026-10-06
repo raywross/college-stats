@@ -12,7 +12,7 @@ const inputCls =
   "h-11 w-full rounded-xl border border-input bg-background px-3.5 text-base outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30";
 
 /**
- * The household's home, inside its card on /account/household (specs/product/home-and-distance.md): one address
+ * The household's home, on the household page, /household (specs/product/home-and-distance.md): one address
  * (or a ZIP code), looked up with the Census geocoder by `saveHomeAddress` and saved as the match for everyone in
  * the household. Shows the saved match back with who set it, a link to Explore's nearest-first view, "Change", and
  * "Remove".

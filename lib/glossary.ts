@@ -1424,7 +1424,7 @@ const entries = {
   "household-invitation": {
     term: "Household invitation",
     short: "A link that lets one person join a household. It works once, for the email it was sent to, for 7 days.",
-    long: "The person signs in with that email and accepts. Anyone in the household can cancel an invitation that hasn't been used. We keep only a scrambled copy of the link, so it can't be shown again: if it's lost, cancel it and send a new one.",
+    long: "Someone new opens it and chooses a password, and they're in; someone who already has an account signs in with that email and accepts. Until then they're on the household's list as Invited, and anyone in the household can copy the link again, send a new one (the old one stops working), or cancel it.",
     category: "Your account",
     related: ["household", "guardian"],
   },

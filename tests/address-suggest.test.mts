@@ -87,7 +87,7 @@ test("guard: the field shows Google's logo beside Google's suggestions, and the 
 });
 
 test("guard: without the key the field is plain and the page says nothing about suggestions", () => {
-  const page = readFileSync(join(ROOT, "app", "account", "household", "page.tsx"), "utf8");
+  const page = readFileSync(join(ROOT, "app", "household", "page.tsx"), "utf8");
   assert.match(page, /const suggestions = Boolean\(process\.env\.GOOGLE_MAPS_API_KEY\)/, "the page decides from the server environment");
   assert.match(page, /suggestions=\{suggestions\}/, "and passes it down");
   const form = readFileSync(join(ROOT, "components", "account", "HomeForm.tsx"), "utf8");

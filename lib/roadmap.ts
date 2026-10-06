@@ -211,6 +211,17 @@ export const ROADMAP: RoadmapSpec[] = [
     complexityNote: "Versioned routes over the existing dataset, API keys with limits, and generated documentation.",
     status: "planned",
   },
+  {
+    slug: "manual-collection",
+    file: "specs/manual-collection.md",
+    group: "business",
+    summary:
+      "An inventory of public documents our crawlers can't read (sites that block automated reading), prioritized and paced, worked through in a supervised browser session that feeds the same extractors.",
+    complexity: 2,
+    complexityNote:
+      "An inventory built from the existing blocked lists, a wave scheduler with per-host pacing, from-file entry points for each extractor, and a Claude in Chrome skill; one access-rule decision for the owner.",
+    status: "planned",
+  },
   // Ideas (specs/ideas/README.md): not planned; in the order they could be built.
   {
     slug: "guides",

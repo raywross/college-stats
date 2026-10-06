@@ -168,8 +168,135 @@ and retries on a statement timeout (`TIMEOUT_WAITS_MS`, about a minute in all) a
 | `DATA_SOURCE` | `.env.local`, Vercel | `json` or `supabase` |
 | `REVALIDATE_SECRET` | Vercel (Production), `.env.prod.local`, GitHub secret `PROD_REVALIDATE_SECRET` | Random string; guards `/api/revalidate`. Unset = endpoint refuses everything |
 | `REVALIDATE_URL` | `.env.prod.local`, GitHub secret `PROD_REVALIDATE_URL` | `https://<production-domain>/api/revalidate` |
+| `INVITE_FUNCTION_SECRET` | `.env.local`, Vercel (every environment that invites), **and** a function secret on the matching Supabase project | Random string (`openssl rand -hex 32`); the only thing that lets the site call the `invite-user` [Edge Function](#edge-functions). Unset in the site = invitations use the plain `/invite/<token>` link; unset on the function = it refuses everything |
+| `INVITE_ALLOWED_ORIGINS` | Function secret only (not Vercel) | Comma-separated site origins an invite link may land on. Unset = any `https://*.vercel.app` and `http://localhost:*` (dev); **set it on prod** |
 
 None use the `NEXT_PUBLIC_` prefix: `lib/data.ts` is server-only, so the browser never talks to Supabase.
+
+## Edge Functions
+
+`supabase/functions/` holds code that runs **inside Supabase** (Deno), not on Vercel. There is one function,
+`invite-user`. It is the **only code outside the database with admin power** over the project: it holds the secret
+key that bypasses row-level security. Keep it that way: no other function, route, or script on Vercel gets admin
+power, and this one stays small (it touches auth users and one column of `invitations`, nothing else). It is touched
+rarely, so everything needed to change, deploy, test, or roll it back is written down here and in the header of
+`supabase/functions/invite-user/index.ts`.
+
+### invite-user: what it does and why
+When someone is invited to a household by email ([household-hub.md](product/household-hub.md#adding-a-person)), the
+site asks this function to create their account, with the email already confirmed and their name, role, and phone in
+the user metadata, and to mint a one-time link that signs them in. They open the link, land on `/auth/confirm`
+(implicit flow, [accounts.md](product/accounts.md#sign-in)), choose a password on `/account/password?welcome=<id>`, and
+that accepts the invitation (`accept_invitation_by_id()`). No sign-up form, no confirmation email.
+
+Creating a confirmed user and minting a sign-in link are Supabase Auth **admin** calls that need the secret key. The
+owner decided (2026-10-06, [household-hub.md](product/household-hub.md#owner-decisions) decision 1) that the key
+stays inside Supabase, where Edge Functions get it automatically, rather than going to Vercel ([Keys](#keys)). The site
+holds only `INVITE_FUNCTION_SECRET`, which can do exactly one thing: ask for a link for an invitation whose token it
+already has.
+
+| Piece | File |
+|---|---|
+| The function (wiring: env, Supabase client, `Deno.serve`) | `supabase/functions/invite-user/index.ts` |
+| Its logic, with no Deno or Supabase imports, so Node tests can run it | `supabase/functions/invite-user/handler.ts` |
+| The site's only caller | `lib/invite-function.ts` (`inviteFunctionConfigured()`, `inviteUser({ token, redirectTo })`) |
+| Gateway settings | `supabase/config.toml` (`[functions.invite-user] verify_jwt = false`) |
+| Tests | `tests/invite-function.test.mts` (every branch with fake dependencies; the client; guards) |
+
+`tsconfig.json` and `eslint.config.mjs` skip `supabase/functions/` (Deno code: `npm:` imports, `Deno` globals).
+`handler.ts` is still type-checked through the test that imports it.
+
+### Contract
+```
+POST {SUPABASE_URL}/functions/v1/invite-user
+Authorization: Bearer {SUPABASE_PUBLISHABLE_KEY}       -- and apikey: the same; the API gateway routes on it
+X-Invite-Secret: {INVITE_FUNCTION_SECRET}
+{ "token": "<64 hex>", "redirectTo": "https://<site>/auth/confirm?next=…" }
+
+200 { "link": "https://<ref>.supabase.co/auth/v1/verify?token=…&type=magiclink&redirect_to=…" }
+400 { "error": "bad_request" }             -- not JSON, token not 64 lowercase hex, or redirectTo's origin not allowed
+401 { "error": "unauthorized" }            -- X-Invite-Secret missing or wrong, or the function has no secret set
+404 { "error": "invitation_not_found" }    -- no pending (not accepted, not revoked), unexpired invitation
+405 { "error": "method_not_allowed" }      -- not POST
+409 { "error": "already_registered" }      -- the address already has an account: use the signed-in accept flow
+500 { "error": "internal_error" }          -- Auth or database failure (details in the function's logs)
+```
+Steps: compare `X-Invite-Secret` in constant time → validate the body → SHA-256 the token (hex, exactly like
+`create_invitation()`'s `encode(sha256(convert_to(token, 'UTF8')), 'hex')`) and read that invitation with the service
+role → `auth.admin.createUser({ email, email_confirm: true, user_metadata: { display_name, role_hint, phone,
+invitation_id } })` → `update invitations set accepted_by = <user>` (only while pending; if that fails the new user is
+deleted again) → `auth.admin.generateLink({ type: "magiclink", email, options: { redirectTo } })` → the link.
+
+- **Copy link / retries.** If `createUser` says the address is taken **and** `invitations.accepted_by` is that same
+  account (this function created it for this invitation), the function carries on and mints a fresh link. Any other
+  existing account → 409. Minting a new link makes the previous one stop working (Supabase keeps one per user).
+- **Why `magiclink`, not `invite`.** Supabase Auth refuses `generateLink({ type: "invite" })` for a user whose email is
+  already confirmed (`email_exists`, in supabase/auth `internal/api/mail.go`). The user is created confirmed, so the
+  function mints a magic link, which signs a confirmed user in the same way.
+- **Link lifetime.** The link expires with the project's **Email OTP expiration** (Authentication → Providers →
+  Email; one hour by default, 24 hours at most), not with the invitation's seven days. "Copy link" and "Send again"
+  mint a fresh one; `/auth/confirm` explains an expired link.
+- **Mapping in the site** (`lib/invite-function.ts`): 200 → `{ ok: true, link }`; 409 → `already_registered`; 404 with
+  `invitation_not_found` → `not_found`; unset variables → `not_configured`; anything else, a network error, or no
+  answer in 10 s → `error`. Nothing throws; the Server Action falls back to the plain `/invite/<token>` link.
+- **Logging.** Neither side logs the token, the link, the secret, or an email address; only invitation and user ids.
+- **Gateway JWT check is off** (`verify_jwt = false`). The gateway's check accepts only JWTs and the site's
+  `sb_publishable_` key isn't one; Supabase's docs say to authorize API-key callers in code
+  ([API keys, known limitations](https://supabase.com/docs/guides/api/api-keys)). The `X-Invite-Secret` check is that
+  authorization. Never deploy this function without `INVITE_FUNCTION_SECRET` set: it then refuses every request, which
+  is safe, but invitations fall back to sign-up.
+
+### Secrets
+| Name | Set by | Value |
+|---|---|---|
+| `SUPABASE_URL` | Supabase (injected) | The project URL |
+| `SUPABASE_SECRET_KEYS` | Supabase (injected) | JSON dictionary of the project's secret keys; the function uses `default` (else the first). Falls back to the legacy `SUPABASE_SERVICE_ROLE_KEY`, also injected |
+| `INVITE_FUNCTION_SECRET` | Us, twice: `npx supabase secrets set --project-ref <ref> INVITE_FUNCTION_SECRET=<value>` **and** Vercel → Settings → Environment Variables (Sensitive), plus `.env.local` for local dev against dev | `openssl rand -hex 32`. Use a different value for dev and prod |
+| `INVITE_ALLOWED_ORIGINS` | Us: `npx supabase secrets set --project-ref <ref> INVITE_ALLOWED_ORIGINS=https://college-stats-nine.vercel.app,https://<preview-or-other-origin>` | Comma-separated origins (no paths). Unset = `https://*.vercel.app` and `http://localhost:*`, acceptable on dev only. Supabase Auth's own Redirect URLs list must also allow the same hosts ([accounts.md](product/accounts.md#sign-in)) |
+
+`npx supabase secrets list --project-ref <ref>` shows the names (not the values). Changing a secret takes effect
+without redeploying.
+
+### Deploy
+From the repo root (the CLI runs through `npx`; nothing to install). Dev first, check it, then prod.
+```sh
+npx supabase login                                         # once per machine; opens the browser
+npx supabase link --project-ref <ref>                      # dev: gwusgmmionqxabifntgv (writes supabase/.temp/, git-ignored)
+npx supabase secrets set --project-ref <ref> INVITE_FUNCTION_SECRET=<value>
+npx supabase secrets set --project-ref <ref> INVITE_ALLOWED_ORIGINS=<origins>     # prod (optional on dev)
+npx supabase functions deploy invite-user --project-ref <ref> --no-verify-jwt
+```
+Then set the same `INVITE_FUNCTION_SECRET` in Vercel and redeploy the site (variables don't reach a running
+deployment). The function needs the household-hub migration (`invitations.display_name`, `phone`) applied first.
+If the CLI stops because Docker isn't running, add `--use-api` to the deploy command (it then bundles on Supabase's
+side).
+
+### Test against dev
+1. `npm test` runs `tests/invite-function.test.mts` (no network).
+2. Make a pending invitation on dev (Add someone on `/household` with `INVITE_FUNCTION_SECRET` unset locally, and copy
+   the token from the `/invite/<token>` link), then:
+```sh
+curl -i -X POST "$SUPABASE_URL/functions/v1/invite-user" \
+  -H "Authorization: Bearer $SUPABASE_PUBLISHABLE_KEY" -H "apikey: $SUPABASE_PUBLISHABLE_KEY" \
+  -H "X-Invite-Secret: $INVITE_FUNCTION_SECRET" -H "Content-Type: application/json" \
+  -d '{"token":"<64 hex>","redirectTo":"http://localhost:3000/auth/confirm?next=/account"}'
+```
+   Expect `200 {"link": …}`; the same call again also returns 200 (a fresh link); without `X-Invite-Secret`, 401; with a
+   made-up token, 404. Open the link in a private window: it should land signed in. Then delete the test user in the
+   dashboard (Authentication → Users).
+3. Logs: dashboard → Edge Functions → invite-user → Logs.
+
+### Roll back
+Redeploy the previous version from git:
+```sh
+git log --oneline -- supabase/functions/invite-user        # pick the commit before the bad one
+git checkout <sha> -- supabase/functions/invite-user
+npx supabase functions deploy invite-user --project-ref <ref> --no-verify-jwt
+git checkout HEAD -- supabase/functions/invite-user        # put the working tree back
+```
+To switch the feature off without a deploy, remove `INVITE_FUNCTION_SECRET` from Vercel and redeploy the site:
+invitations fall back to the `/invite/<token>` link. To remove the function entirely:
+`npx supabase functions delete invite-user --project-ref <ref>`.
 
 ## Environments: two projects
 

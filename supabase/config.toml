@@ -1,0 +1,8 @@
+# Supabase CLI settings. Only Edge Function settings live here today: migrations are applied by hand
+# (specs/supabase.md), and there is no local Supabase stack.
+
+[functions.invite-user]
+# Off on purpose: the gateway's JWT check accepts only JWTs, and the site calls with the sb_publishable_ key, which
+# isn't one. The function authorizes every request itself with X-Invite-Secret (supabase/functions/invite-user/index.ts,
+# specs/supabase.md "Edge Functions"). Deploy with --no-verify-jwt too.
+verify_jwt = false

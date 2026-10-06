@@ -25,6 +25,8 @@ public data stays free ([commercialization.md](commercialization.md#what-stays-f
 | [saved-lists.md](saved-lists.md) | Saved colleges with Reach / Target / Likely, status, notes, deadlines, sharing, export | Medium |
 | [follow-colleges.md](follow-colleges.md) | Follow colleges (lists follow automatically) and get one email per data release summarizing what changed, with years; a public "What changed" panel on profiles | Large |
 | [home-and-distance.md](home-and-distance.md) | A home address on the account, Explore's "Distance from home" filter with a nearest-first sort, and the distance to every college on a saved list, for students and guardians alike (built 2026-10-05) | Medium |
+| [household-hub.md](household-hub.md) | Add a parent or a student by role with only the details that role needs; everyone by name, invited people in the same roster with their link; the household page as the hub, one list per person with "updates" as a switch per college (planned 2026-10-06 from the owner's review) | Large |
+| [application-plan.md](application-plan.md) | The list as a plan: suggested steps and the college's published dates per college, grouped by month, with a parent's check-in view and nudges through the digest (planned 2026-10-06) | Large |
 
 ### Planning tools
 | Spec | Adds | Complexity |
@@ -78,6 +80,8 @@ accounts ─► student-profile ─► saved-lists ─► chances-and-fit       
     ├─► net-price-estimator ─► award-letter-analyzer
     │
     ├─► follow-colleges (lists follow automatically; pays off once the scheduled data refresh runs)
+    │
+    ├─► household-hub ─► application-plan   (2026-10-06: the review of the first build, then the plan on top)
     │
 high-school-data ─► scattergrams (also after saved-lists)
 cds-admissions (data expansion) ─► early-decision-strategy

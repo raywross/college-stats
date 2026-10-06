@@ -217,6 +217,16 @@ shared rules for user data are in that README. All user data lives only in Supab
   daily job emails one digest per user per publish (Resend, one-click unsubscribe, no tracking pixels);
   `/me/updates`, `/me/following`, and a public "What changed" panel on profiles. Added 2026-10-02; worth building
   as soon as accounts exist and the scheduled data refresh (above) is running.
+- [ ] **Household hub** (planned 2026-10-06 from the owner's review of the accounts build)
+  ([product/household-hub.md](product/household-hub.md)): add a person by role (parent: name, email, phone;
+  student: name, then optional email, phone, class year); invited people land on a password, not a sign-up; everyone
+  by name (no email initials, no "?"); invitations in the roster with Copy link; `/household` as the hub with a page
+  per person (list + numbers); one list per person, guardians included, with "updates" as a per-college switch
+  replacing Follow, plus visited and social tracking. Owner decisions: the secret key in Vercel, storing pending
+  tokens in clear, household-visible guardian lists.
+- [ ] **Application plan** (planned 2026-10-06, after the hub) ([product/application-plan.md](product/application-plan.md)):
+  suggested steps and the college's published dates per list item, grouped by month, a parent's check-in line, nudges
+  through the digest; `data/application-cycle.json` for cycle-wide dates.
 - [ ] **Chances and fit** ([product/chances-and-fit.md](product/chances-and-fit.md)): rules-based standing with
   reasons (never a probability), fit against preferences, a pilot against real outcomes before the chip ships.
 - [ ] **Net price estimator** ([product/net-price-estimator.md](product/net-price-estimator.md)): 2026–27 Student

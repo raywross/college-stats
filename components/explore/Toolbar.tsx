@@ -20,6 +20,7 @@ import { GREEK_COUNCIL_FILTERS } from "@/lib/cds/greek-display";
 import { TRADITIONS, isCouncil, isTradition } from "@/lib/directories";
 import { isMajorFamily, majorFamilyName } from "@/lib/majors";
 import { typeLabel } from "@/lib/format";
+import { DEFAULT_WITHIN } from "@/lib/home";
 import { useExploreParams } from "./useExploreParams";
 import { cn } from "@/lib/utils";
 
@@ -113,12 +114,15 @@ const SORTS = [
   { value: "loan_rate_change", label: "Borrowing change, 10 yrs (biggest drop)", dir: "asc" },
   { value: "pell_gap", label: "Pell graduation gap (lowest)", dir: "asc" },
   { value: "pell_gap_change", label: "Pell gap change, 10 yrs (most narrowed)", dir: "asc" },
+  // Only offered while the "Distance from home" filter (near=) is set: without a ZIP there is nothing to measure from.
+  { value: "distance", label: "Distance from home (nearest)", dir: "asc" },
 ] as const;
 
 export function SortControl() {
   const { searchParams, update } = useExploreParams();
   const sortBy = searchParams.get("sortBy") ?? "applicants";
   const sortDir = searchParams.get("sortDir") ?? (sortBy === "applicants" ? "desc" : "asc");
+  const sorts = SORTS.filter((s) => s.value !== "distance" || searchParams.get("near"));
 
   return (
     <div className="flex h-10 min-w-0 items-center rounded-full border bg-card pr-1 pl-3.5">
@@ -133,7 +137,7 @@ export function SortControl() {
           }}
           className="w-full min-w-0 cursor-pointer truncate bg-transparent py-1 pr-1 text-sm font-semibold text-foreground outline-none sm:w-auto"
         >
-          {SORTS.map((s) => (
+          {sorts.map((s) => (
             <option key={s.value} value={s.value}>
               {s.label}
             </option>
@@ -221,6 +225,18 @@ export function ActiveFilters() {
       label: `Fits your ${[mySAT && `SAT ${mySAT}`, myACT && `ACT ${myACT}`].filter(Boolean).join(" / ")}`,
       onRemove: () => update({ mySAT: null, myACT: null }),
     });
+
+  // Distance from home (specs/product/home-and-distance.md): one chip for ZIP + radius; removing it also drops a
+  // distance sort, which has nothing to measure from without the ZIP.
+  const near = searchParams.get("near");
+  if (near) {
+    const within = Number(searchParams.get("within")) || DEFAULT_WITHIN;
+    chips.push({
+      key: "near",
+      label: `Within ${within} mi of ${near}`,
+      onRemove: () => update({ near: null, within: null, ...(searchParams.get("sortBy") === "distance" ? { sortBy: null, sortDir: null } : {}) }),
+    });
+  }
 
   const minCost = searchParams.get("minCost");
   const maxCost = searchParams.get("maxCost");

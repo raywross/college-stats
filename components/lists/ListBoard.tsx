@@ -39,6 +39,7 @@ import {
   setRound,
 } from "@/lib/lists";
 import { CompareButton } from "@/components/compare/CompareButton";
+import { distanceLine } from "@/lib/home";
 import { cn } from "@/lib/utils";
 
 const CATEGORY_TERM: Record<ListCategory, TermKey | null> = { reach: "reach-school", target: "target-school", likely: "likely-school", unsorted: null };
@@ -53,6 +54,9 @@ export interface BoardSchoolInfo {
   admitRateCited: Cited | null;
   avgCost: number | null;
   avgCostCited: Cited | null;
+  /** Straight-line miles from the viewer's own home (specs/product/home-and-distance.md); null without one or without campus coordinates. */
+  distance: number | null;
+  distanceCited: Cited | null;
   deadline: { date: string | null; text: string | null; source: "reported" | "student" | null };
 }
 
@@ -132,6 +136,14 @@ function ItemRow({ item, canEdit, viewerId, isFirst, isLast }: { item: BoardItem
                 {" · "}
                 <MetricLabel cited={s.avgCostCited ?? undefined}>
                   <span>{moneyCompact(s.avgCost)}/yr</span>
+                </MetricLabel>
+              </>
+            )}
+            {s.distance !== null && (
+              <>
+                {" · "}
+                <MetricLabel term="distance-from-home" cited={s.distanceCited ?? undefined}>
+                  <span>{distanceLine(s.distance)}</span>
                 </MetricLabel>
               </>
             )}

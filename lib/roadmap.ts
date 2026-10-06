@@ -249,10 +249,10 @@ export const ROADMAP: RoadmapSpec[] = [
     file: "specs/ideas/near-and-far.md",
     group: "ideas",
     summary:
-      "A map view, how far each college is from home and what getting there costs, and the colleges on your list grouped into visit trips.",
+      "A map view with drive-time rings, nearest airports, what getting home costs, and the colleges on your list grouped into visit trips. The home address, Explore's distance filter, and distance on lists are already built (specs/product/home-and-distance.md).",
     complexity: 3,
     complexityNote:
-      "A new kind of view (the map), a home ZIP on the profile with a reference file, and lines in lists, Compare, and the estimator.",
+      "A new kind of view (the map), an airport table, and lines in Compare and the estimator; the home and the ZIP table exist now.",
     status: "idea",
     // Also uses each college's visit link (specs/school-identity/links.md, built 2026-10-04).
   },

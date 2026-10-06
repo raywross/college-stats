@@ -1123,6 +1123,22 @@ const entries = {
     category: "Admissions",
     related: ["reach-school", "target-school"],
   },
+  // Home and distance (specs/product/home-and-distance.md).
+  "home-address": {
+    term: "Home address",
+    short: "The one address saved for your household so the site can say how far each college is from home. Anyone in the household can set it, everyone in it sees the same distances, and nobody outside it can see the address.",
+    long: "We look the address up once with the U.S. Census Bureau's public geocoder and keep the matched address and its map location, rounded to about 100 meters, with the name of whoever set it. A ZIP code alone works too, using the center of the ZIP code. Change or remove it any time from your household page.",
+    category: "Your account",
+    related: ["distance-from-home", "household"],
+  },
+  "distance-from-home": {
+    term: "Distance from home",
+    short: "Straight-line miles between your home and the campus, with a rough driving time. Roads add about a quarter to the distance, and the time assumes 55 mph on average.",
+    long: "Each college's campus coordinates come from the federal IPEDS directory. The distance is the great-circle (\"as the crow flies\") figure, not a route; the drive time multiplies it by 1.25 and divides by 55 mph, rounded to the half hour. Explore's \"Distance from home\" filter measures from the center of a ZIP code, so a shared link carries a ZIP code, never an address.",
+    why: "Distance is the first filter most families apply: how often you could get home, and what each trip costs, differ a lot between a two-hour drive and a flight.",
+    category: "Your account",
+    related: ["home-address", "locale"],
+  },
   // CDS financial aid (specs/data-expansion/cds-financial-aid.md).
   "css-profile": {
     term: "CSS Profile",
@@ -1386,7 +1402,7 @@ const entries = {
   household: {
     term: "Household",
     short: "A family group that links parents or guardians with the students they help. Guardians see each student's lists and plans; students never see a guardian's finances.",
-    long: "Nobody is added silently: each person joins by accepting an invitation. A student can be in two households (two homes), and a guardian can have several students. Anyone can leave at any time.",
+    long: "Nobody is added silently: each person joins by accepting an invitation. An account is in one household at a time, and a household holds up to six people in any mix of parents and students, counting invitations waiting for an answer. It shares one home address for distances. Anyone can leave at any time.",
     category: "Your account",
     related: ["guardian", "managed-student"],
   },

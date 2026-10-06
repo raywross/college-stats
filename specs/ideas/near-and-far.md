@@ -3,6 +3,11 @@
 > Status: **idea** (2026-10-03). After [student-profile.md](../product/student-profile.md) (a home ZIP) and
 > [school-identity/links.md](../school-identity/links.md) (the campus-visit link); the travel-cost line waits for
 > [net-price-estimator.md](../product/net-price-estimator.md). Part of [ideas](README.md).
+>
+> **Built 2026-10-05** as [product/home-and-distance.md](../product/home-and-distance.md): the home (a full
+> address, not only a ZIP), Explore's "Distance from home" filter with a nearest-first sort, and distance with a
+> drive time on saved lists. What remains here: the map view and its drive-time rings, nearest airports, visit
+> trips, and the travel-cost line.
 
 ## Question it answers
 *How far is it? What does getting home for Thanksgiving cost? Which of these could we see in one trip?* Distance is

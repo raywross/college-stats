@@ -10,6 +10,7 @@ import { crestBrand } from "@/lib/brand";
 import { CompareButton } from "@/components/compare/CompareButton";
 import { AddToListButton } from "@/components/lists/AddToListButton";
 import { InfoTip } from "@/components/ui/info-tip";
+import { distanceFromHome, formatDriveTime, formatMiles, type NearHome } from "@/lib/home";
 import { cn } from "@/lib/utils";
 
 type Params = Record<string, string | string[] | undefined>;
@@ -102,7 +103,8 @@ function SortHeader({
   );
 }
 
-export async function SchoolTable({ schools, params }: { schools: School[]; params: Params }) {
+/** `home`: Explore's "Distance from home" filter, when set; the table then leads with a sortable distance column. */
+export async function SchoolTable({ schools, params, home = null }: { schools: School[]; params: Params; home?: NearHome | null }) {
   const { rankOf } = await getData();
   const sortBy = typeof params.sortBy === "string" ? params.sortBy : "applicants";
   const sortDir = typeof params.sortDir === "string" ? params.sortDir : sortBy === "applicants" ? "desc" : "asc";
@@ -110,6 +112,7 @@ export async function SchoolTable({ schools, params }: { schools: School[]; para
   const changes = params.changes === "1";
 
   const cols: { key: SortKey; label: string; term?: TermKey; className?: string }[] = [
+    ...(home ? [{ key: "distance" as const, label: "From home", term: "distance-from-home" as const, className: "min-w-28" }] : []),
     // Column order keeps same-looking domain hues apart.
     { key: "acceptance_rate", label: "Admit rate", term: "acceptance-rate" },
     { key: "admit_gap", label: "Admit rate, men / women", term: "admit-rate-by-sex", className: "min-w-32" },
@@ -175,6 +178,7 @@ export async function SchoolTable({ schools, params }: { schools: School[]; para
               const transfer = METRICS.transferShare.get(s);
               const bachelors = s.academics?.bachelors_awarded ?? null;
               const topMajor = s.academics?.majors_top?.[0] ?? null;
+              const miles = home ? distanceFromHome(s.location, home) : null;
               return (
                 <tr key={s.unit_id} className="group transition-colors hover:bg-muted/40">
                   <td className="sticky left-0 z-10 bg-card py-2.5 pr-3 pl-4 transition-colors group-hover:bg-muted">
@@ -188,6 +192,12 @@ export async function SchoolTable({ schools, params }: { schools: School[]; para
                       </span>
                     </Link>
                   </td>
+                  {home && (
+                    <td className="w-28 px-3 tabular-nums">
+                      <Value v={miles === null ? null : formatMiles(miles)} />
+                      {miles !== null && <span className="block text-[11px] text-muted-foreground">{formatDriveTime(miles)}</span>}
+                    </td>
+                  )}
                   <td className="w-28 px-3 tabular-nums">
                     <Value v={ar === null ? null : pctSmart(ar)} />
                     {ar !== null && <Bar value={ar} max={1} color={DOMAINS.admissions.color} />}

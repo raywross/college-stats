@@ -252,7 +252,9 @@ moves into a section above.
 - [ ] **Cost to a degree** ([ideas/cost-to-a-degree.md](ideas/cost-to-a-degree.md)): the four-year plan beside the
   typical time to finish and the debt of those who leave.
 - [ ] **Near and far** ([ideas/near-and-far.md](ideas/near-and-far.md)): an Explore map view, distance and drive time
-  from a home ZIP, visit trips from the list, and the cost of getting home in the projection.
+  from a home ZIP, visit trips from the list, and the cost of getting home in the projection. *Built 2026-10-05:* the
+  home address, Explore's distance filter, and distance on lists ([product/home-and-distance.md](product/home-and-distance.md));
+  the map, airports, trips, and travel cost remain.
 - [ ] **Worst plausible spring** ([ideas/worst-plausible-spring.md](ideas/worst-plausible-spring.md)): a stress test
   of the saved list under three scenarios, with gaps as facts, instead of a grade.
 - [ ] **Colleges that would compete for you** ([ideas/would-compete-for-you.md](ideas/would-compete-for-you.md)):
@@ -286,6 +288,12 @@ moves into a section above.
   sending subdomain in Resend (SPF/DKIM/DMARC) so magic links, invitations, and update digests leave Supabase's
   rate-limited built-in mailer (`RESEND_API_KEY`, `EMAIL_FROM`; [accounts.md](product/accounts.md),
   [follow-colleges.md](product/follow-colleges.md)). Accounts were built without either on purpose.
+- [ ] **Address suggestions as you type** (built 2026-10-05, dormant until the key exists;
+  [home-and-distance.md](product/home-and-distance.md#autocomplete-2026-10-05)): in Google Cloud, a project with a
+  billing account, **Places API (New)** enabled, and an API key restricted to it; set `GOOGLE_MAPS_API_KEY` in
+  Vercel (all environments) and `.env.local`. The household's home field then suggests U.S. addresses as you type,
+  with the required Google logo; free up to 10,000 requests a month. Until then the field is plain and says nothing
+  about suggestions.
 - [ ] **Generic document collections** ([database-architecture.md](database-architecture.md#generalize-the-document-tables-do-this-before-the-detail-file)):
   replace the per-table publish functions (`publish_dataset`, `stage_history`, `publish_history_staged`) with
   `published_documents` / `publishes` / `stage_documents()` / `publish_collection()`, migrating `schools` and

@@ -10,6 +10,7 @@ import { SignOutButton } from "@/components/account/SignOutButton";
 import { Term } from "@/components/ui/info-tip";
 import { AccountsSetupError, authConfigured, currentStudent, getAccount, requireUser } from "@/lib/auth";
 import { myAccessLog, myHouseholds } from "@/lib/households";
+import { myHome } from "@/lib/home-store";
 import { DELETE_GRACE_DAYS, shortDate } from "@/lib/household-rules";
 import { restoreAccount } from "./delete/actions";
 import { ProfileForm } from "./ProfileForm";
@@ -37,7 +38,7 @@ export default async function AccountPage() {
 
   if (profile.deleted_at) return <ScheduledForDeletion deletedAt={profile.deleted_at} />;
 
-  const [households, student] = await Promise.all([myHouseholds(), currentStudent()]);
+  const [households, student, home] = await Promise.all([myHouseholds(), currentStudent(), myHome()]);
   const accessLog = student ? await myAccessLog() : [];
   const defaultRole = profile.role_hint === "guardian" || profile.role_hint === "counselor" ? "guardian" : "student";
 
@@ -71,9 +72,9 @@ export default async function AccountPage() {
       <AccountSection
         id="household"
         title={<Term term="household">Household</Term>}
-        description="Link a parent or guardian and the students they help. Students never see a guardian's finances."
+        description="Parents or guardians and the students they help, up to six people in any mix, sharing one home address for distances. Students never see a guardian's finances."
       >
-        <HouseholdSummary households={households} defaultRole={defaultRole} />
+        <HouseholdSummary households={households} home={home} defaultRole={defaultRole} />
       </AccountSection>
 
       <AccountSection id="following" title={<Term term="follow">Following</Term>} description="Colleges you follow, and your update-email setting.">
@@ -102,7 +103,8 @@ export default async function AccountPage() {
           Download my data (JSON)
         </a>
         <p className="mt-2 text-xs text-muted-foreground">
-          Your profile, households and their members&apos; names, the students you own or manage, invitations you sent, and who viewed your information.
+          Your profile, your household&apos;s home address and its members&apos; names, the students you own or manage, invitations you sent, and
+          who viewed your information.
         </p>
       </AccountSection>
 

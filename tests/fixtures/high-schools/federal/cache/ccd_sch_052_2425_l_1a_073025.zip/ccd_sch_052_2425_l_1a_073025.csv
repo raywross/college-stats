@@ -1,0 +1,36 @@
+SCHOOL_YEAR,FIPST,ST,SCH_NAME,NCESSCH,GRADE,RACE_ETHNICITY,SEX,STUDENT_COUNT,TOTAL_INDICATOR,DMS_FLAG
+2024-2025,06,CA,Fixture Union High School,060000100101,No Category Codes,No Category Codes,No Category Codes,812,Derived - Education Unit Total minus Adult Education Count,Derived
+2024-2025,06,CA,Fixture Union High School,060000100101,No Category Codes,No Category Codes,No Category Codes,830,Education Unit Total,Reported
+2024-2025,06,CA,Fixture Union High School,060000100101,Grade 9,No Category Codes,No Category Codes,210,Subtotal 4 - By Grade,Reported
+2024-2025,06,CA,Fixture Union High School,060000100101,Grade 10,No Category Codes,No Category Codes,205,Subtotal 4 - By Grade,Reported
+2024-2025,06,CA,Fixture Union High School,060000100101,Grade 11,No Category Codes,No Category Codes,200,Subtotal 4 - By Grade,Reported
+2024-2025,06,CA,Fixture Union High School,060000100101,Grade 12,No Category Codes,No Category Codes,197,Subtotal 4 - By Grade,Reported
+2024-2025,06,CA,Fixture Union High School,060000100101,Adult Education,No Category Codes,No Category Codes,18,Subtotal 4 - By Grade,Reported
+2024-2025,06,CA,Fixture Union High School,060000100101,Grade 9,Hispanic/Latino,Female,80,Category Set A - By Race/Ethnicity; Sex; Grade,Reported
+2024-2025,06,CA,Fixture Union High School,060000100101,No Category Codes,Hispanic/Latino,Female,300,Derived - Subtotal by Race/Ethnicity and Sex minus Adult Education Count,Derived
+2024-2025,06,CA,Fixture Union High School,060000100101,No Category Codes,Hispanic/Latino,Male,310,Derived - Subtotal by Race/Ethnicity and Sex minus Adult Education Count,Derived
+2024-2025,06,CA,Fixture Union High School,060000100101,No Category Codes,White,Female,60,Derived - Subtotal by Race/Ethnicity and Sex minus Adult Education Count,Derived
+2024-2025,06,CA,Fixture Union High School,060000100101,No Category Codes,White,Male,62,Derived - Subtotal by Race/Ethnicity and Sex minus Adult Education Count,Derived
+2024-2025,06,CA,Fixture Union High School,060000100101,No Category Codes,Asian,Female,20,Derived - Subtotal by Race/Ethnicity and Sex minus Adult Education Count,Derived
+2024-2025,06,CA,Fixture Union High School,060000100101,No Category Codes,Asian,Male,18,Derived - Subtotal by Race/Ethnicity and Sex minus Adult Education Count,Derived
+2024-2025,06,CA,Fixture Union High School,060000100101,No Category Codes,Black or African American,Female,3,Derived - Subtotal by Race/Ethnicity and Sex minus Adult Education Count,Derived
+2024-2025,06,CA,Fixture Union High School,060000100101,No Category Codes,Black or African American,Male,4,Derived - Subtotal by Race/Ethnicity and Sex minus Adult Education Count,Derived
+2024-2025,06,CA,Fixture Union High School,060000100101,No Category Codes,American Indian or Alaska Native,Female,1,Derived - Subtotal by Race/Ethnicity and Sex minus Adult Education Count,Derived
+2024-2025,06,CA,Fixture Union High School,060000100101,No Category Codes,American Indian or Alaska Native,Male,1,Derived - Subtotal by Race/Ethnicity and Sex minus Adult Education Count,Derived
+2024-2025,06,CA,Fixture Union High School,060000100101,No Category Codes,Native Hawaiian or Other Pacific Islander,Female,0,Derived - Subtotal by Race/Ethnicity and Sex minus Adult Education Count,Derived
+2024-2025,06,CA,Fixture Union High School,060000100101,No Category Codes,Native Hawaiian or Other Pacific Islander,Male,0,Derived - Subtotal by Race/Ethnicity and Sex minus Adult Education Count,Derived
+2024-2025,06,CA,Fixture Union High School,060000100101,No Category Codes,Two or more races,Female,15,Derived - Subtotal by Race/Ethnicity and Sex minus Adult Education Count,Derived
+2024-2025,06,CA,Fixture Union High School,060000100101,No Category Codes,Two or more races,Male,16,Derived - Subtotal by Race/Ethnicity and Sex minus Adult Education Count,Derived
+2024-2025,06,CA,Fixture Union High School,060000100101,No Category Codes,Not Specified,Not Specified,0,Derived - Subtotal by Race/Ethnicity and Sex minus Adult Education Count,Derived
+2024-2025,06,CA,"Fixture Charter Academy, Upper School",060000100102,No Category Codes,No Category Codes,No Category Codes,,Derived - Education Unit Total minus Adult Education Count,Suppressed
+2024-2025,06,CA,"Fixture Charter Academy, Upper School",060000100102,Grade 12,No Category Codes,No Category Codes,3,Subtotal 4 - By Grade,Reported
+2024-2025,06,CA,"Fixture Charter Academy, Upper School",060000100102,No Category Codes,White,Female,2,Derived - Subtotal by Race/Ethnicity and Sex minus Adult Education Count,Derived
+2024-2025,06,CA,"Fixture Charter Academy, Upper School",060000100102,No Category Codes,White,Male,,Derived - Subtotal by Race/Ethnicity and Sex minus Adult Education Count,Suppressed
+2024-2025,06,CA,Closed Fixture High,060000100103,No Category Codes,No Category Codes,No Category Codes,500,Derived - Education Unit Total minus Adult Education Count,Derived
+2024-2025,48,TX,Fixture Early College High,480000200201,No Category Codes,No Category Codes,No Category Codes,450,Derived - Education Unit Total minus Adult Education Count,Derived
+2024-2025,48,TX,Fixture Early College High,480000200201,Grade 9,No Category Codes,No Category Codes,,Subtotal 4 - By Grade,Missing
+2024-2025,48,TX,Fixture Early College High,480000200201,Grade 12,No Category Codes,No Category Codes,0,Subtotal 4 - By Grade,Reported
+2024-2025,48,TX,Fixture Early College High,480000200201,No Category Codes,Asian,Female,,Derived - Subtotal by Race/Ethnicity and Sex minus Adult Education Count,Missing
+2024-2025,48,TX,Fixture Early College High,480000200201,No Category Codes,Asian,Male,12,Derived - Subtotal by Race/Ethnicity and Sex minus Adult Education Count,Derived
+2024-2025,48,TX,Fixture Early College High,480000200201,No Category Codes,Hispanic/Latino,Female,200,Derived - Subtotal by Race/Ethnicity and Sex minus Adult Education Count,Derived
+2024-2025,48,TX,Fixture Early College High,480000200201,No Category Codes,Hispanic/Latino,Male,190,Derived - Subtotal by Race/Ethnicity and Sex minus Adult Education Count,Derived

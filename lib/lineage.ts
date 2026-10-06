@@ -4,15 +4,23 @@
  * See specs/data-lineage.md.
  */
 import type { AdmissionFactor, DatasetMeta, FactorUse, FederalAdmissions, LineageRecord, ReportedSourceKind, School, SourceInfo, SourceKey } from "./types";
+import type { HsSourceKey } from "./high-school-types";
 import { validateAdmissionProfile } from "./cds/admissions.ts";
 import { FIELDS, METADATA_KEYS, PER_DOCUMENT_SOURCES, REPORTED_PATHS, UNDATED_SOURCES, isFieldPath, registeredPathFor, type FieldPath, type VintageKey } from "./fields.ts";
 import { NEWEST_TARGETS, newestGroupCitation, validateNewestGroups } from "./newest-groups.ts";
 import { replacedTest, satTotalInputs, validateTests } from "./cds/test-blocks.ts";
 import { financialAidProblems } from "./cds/financial-aid.ts";
 
-/** A source as cited for one value: plain data, safe to pass to client components. */
-export interface CitedSource {
-  key: SourceKey;
+/** Any source key a citation can carry: a college source (lib/fields.ts) or a high school source (lib/hs-fields.ts). */
+export type AnySourceKey = SourceKey | HsSourceKey;
+
+/**
+ * A source as cited for one value: plain data, safe to pass to client components. `K` defaults to the college
+ * sources; high school citations (lib/hs-fields.ts `citeHsField`) use `HsSourceKey`. Display code that serves both
+ * (the ⓘ popover, source footnotes) takes `AnyCitedSource` / `AnyCited`.
+ */
+export interface CitedSource<K extends AnySourceKey = SourceKey> {
+  key: K;
   label: string;
   publisher: string;
   /** Display year; null when the release has no single year (shown as "most recent release"). */
@@ -21,8 +29,8 @@ export interface CitedSource {
   retrieved: string;
 }
 
-export interface Cited extends CitedSource {
-  path: FieldPath;
+export interface Cited<K extends AnySourceKey = SourceKey, P extends string = FieldPath> extends CitedSource<K> {
+  path: P;
   /** Field label, e.g. "Acceptance rate". */
   field: string;
   method: NonNullable<LineageRecord["method"]>;
@@ -30,7 +38,7 @@ export interface Cited extends CitedSource {
   isDefault: boolean;
   formula?: string;
   /** Derived values: the distinct sources of their inputs. */
-  inputs?: CitedSource[];
+  inputs?: CitedSource<K>[];
   quote?: string;
   page?: number;
   /**
@@ -61,6 +69,10 @@ export interface Cited extends CitedSource {
   /** A freely licensed image shown beside the value (an organization's logo from Wikimedia Commons), credited as its license asks. */
   image?: { what: string; attribution: string; license: string; source: string };
 }
+
+/** A citation of either kind (college or high school), for display components that render both. */
+export type AnyCitedSource = CitedSource<AnySourceKey>;
+export type AnyCited = Cited<AnySourceKey, string>;
 
 /**
  * Identity values found on the college's own site (a visit link, a footer account, its icon; specs/school-identity/):
@@ -162,7 +174,7 @@ function sourceFor(path: FieldPath, school: School | undefined, meta: DatasetMet
 }
 
 /** "Fall 2024", or "most recent release" when a source has no single year. */
-export function yearLabel(s: Pick<CitedSource, "year">): string {
+export function yearLabel(s: Pick<AnyCitedSource, "year">): string {
   return s.year ?? "most recent release";
 }
 
@@ -170,8 +182,8 @@ export function yearLabel(s: Pick<CitedSource, "year">): string {
  * Whether a citation names a year at all. Undated references (UNDATED_SOURCES: Wikidata, Wikipedia) have no release
  * to name; the retrieval date shown with them dates them, so "Wikidata, most recent release" would only mislead.
  */
-export function citesYear(s: Pick<CitedSource, "key" | "year">): boolean {
-  return s.year !== null || !UNDATED_SOURCES.has(s.key);
+export function citesYear(s: Pick<AnyCitedSource, "key" | "year">): boolean {
+  return s.year !== null || !(UNDATED_SOURCES as ReadonlySet<string>).has(s.key);
 }
 
 /** Compact name for a chip: "CDS 2024-25", "IPEDS Fall 2024", "Scorecard". */

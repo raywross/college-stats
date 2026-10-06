@@ -27,6 +27,9 @@
  *      rows for files no longer built are removed, and they're read back too.
  *   5b. Per-college detail files (data/detail/, lib/detail.ts), if built: the same checks as check:lineage up front, then
  *      written into school_details the same way, and read back.
+ *   5d. High schools (data/high-schools/, scripts/lib/publish-high-schools.mts), if built: the same checks as
+ *      check:lineage up front, then rows (state reports merged in), profile details, meta and medians are written in
+ *      batches and read back. Skipped with a message when the high school tables aren't on the project yet.
  *   6. If REVALIDATE_URL and REVALIDATE_SECRET are set, ask the site to regenerate its static pages.
  * Needs SUPABASE_URL and SUPABASE_SECRET_KEY (environment variables win over the env file, which is how the
  * GitHub Action points it at prod). See specs/supabase.md.
@@ -44,6 +47,7 @@ import { validateHistoryMeta, validateShard, type SchoolHistory } from "../lib/h
 import { detailFileProblems, detailTablesProblem, publishDetails, readDetails } from "./lib/publish-details.mts";
 import { replaceInBatches } from "./lib/publish-batches.mts";
 import { aliasesTableProblem, publishAliases } from "./lib/publish-aliases.mts";
+import { highSchoolFileProblems, highSchoolTablesProblem, publishHighSchools, readHighSchoolData } from "./lib/publish-high-schools.mts";
 import { aliasTableProblems } from "../lib/aliases.ts";
 import { FOLLOWS_MIGRATION, changeSummary, changeTablesState, computeChanges, formatChangeList, readSnapshotDir, stageChanges } from "./lib/publish-changes.mts";
 import type { DatasetChange } from "../lib/changes.ts";
@@ -143,6 +147,16 @@ if (aliases) {
   }
 }
 
+// High schools (specs/product/high-school-data.md), when built: checked up front too.
+const highSchools = readHighSchoolData(join(ROOT, "data", "high-schools"));
+if (highSchools) {
+  const hsp = highSchoolFileProblems(highSchools, { collegeIds: new Set(schools.map((s) => s.unit_id)) });
+  if (hsp.length) {
+    for (const p of hsp.slice(0, 20)) console.error(`  ${p}`);
+    fail(`${hsp.length} high school file problem(s); run npm run check:lineage.`);
+  }
+}
+
 /** --changes-only: the change list, college by college; nothing is written. */
 function printChanges(changes: DatasetChange[], against: string): never {
   console.log(`Changes against ${against}: ${changeSummary(changes)}.`);
@@ -207,6 +221,9 @@ if (aliases) {
   const problem = await aliasesTableProblem(client);
   if (problem) fail(problem);
 }
+
+// High school tables: missing means the migration isn't applied yet; the rest of the publish goes ahead without them.
+const highSchoolsProblem = highSchools ? await highSchoolTablesProblem(client) : null;
 
 // 2b. What changed since the published dataset (read-only so far; staged and written with the colleges in step 3).
 const changeTables = await changeTablesState(client).catch((err: Error) => fail(err.message));
@@ -335,6 +352,16 @@ if (aliases) {
   console.log(`Published ${n} short names (school_aliases); read back and verified.`);
 } else {
   console.log("No data/aliases.json (run npm run sync-data); short names not published.");
+}
+
+// 5d. High schools (rows with state reports merged in, profile details, meta, medians).
+if (!highSchools) {
+  console.log("No data/high-schools/ (run npm run sync-high-schools); high schools not published.");
+} else if (highSchoolsProblem) {
+  console.warn(`Warning: high schools not published: ${highSchoolsProblem}`);
+} else {
+  const r = await publishHighSchools(client, highSchools).catch((err: Error) => fail(err.message));
+  console.log(`Published ${r.schools} high schools and ${r.details} profile details${r.removed ? ` (removed ${r.removed} old)` : ""}; read back and verified.`);
 }
 
 // 6. Revalidate the site's static pages.

@@ -1,0 +1,9 @@
+"School Year",State,"NCES LEA ID",LEA,School,"NCES SCH ID","Data Group","Data Description",Value,Numerator,Denominator,Population,Subgroup,Characteristics,Age/Grade,"Academic Subject",Outcome,"Program Type"
+2020-2021,CALIFORNIA,0600001,"Fixture Union High","Fixture Union High School",060000100101,695|696,"Four-Year Adjusted-Cohort Graduation Rate and Cohort Count",93%,,205,"All Students","All Students in School",,,,,
+2020-2021,CALIFORNIA,0600001,"Fixture Union High","Fixture Union High School",060000100101,695|696,"Four-Year Adjusted-Cohort Graduation Rate and Cohort Count",S,,1,"All Students","American Indian/Alaska Native/Native American",,,,,
+2020-2021,CALIFORNIA,0600001,"Fixture Union High","Fixture Union High School",060000100101,695|696,"Four-Year Adjusted-Cohort Graduation Rate and Cohort Count",50%,,205,"All Students","All Students in School",,,,,
+2020-2021,CALIFORNIA,0600001,"Fixture Union High","Fixture Charter Academy",060000100102,695|696,"Four-Year Adjusted-Cohort Graduation Rate and Cohort Count",S,,3,"All Students","All Students in School",,,,,
+2020-2021,TEXAS,4800002,"Fixture ISD","Fixture Early College High",480000200201,695|696,"Four-Year Adjusted-Cohort Graduation Rate and Cohort Count",>=90%,,30,"All Students","All Students in School",,,,,
+2020-2021,CALIFORNIA,0600001,"Fixture Union High","Fixture Small High",060000100103,695|696,"Four-Year Adjusted-Cohort Graduation Rate and Cohort Count",<=10%,,12,"All Students","All Students in School",,,,,
+2020-2021,CALIFORNIA,0600001,"Fixture Union High","Fixture Mid High",060000100104,695|696,"Four-Year Adjusted-Cohort Graduation Rate and Cohort Count",80-84%,,4,"All Students","All Students in School",,,,,
+2020-2021,CALIFORNIA,0600001,"Fixture Union High","Fixture Low High",060000100105,695|696,"Four-Year Adjusted-Cohort Graduation Rate and Cohort Count",<50%,,60,"All Students","All Students in School",,,,,

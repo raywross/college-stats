@@ -10,6 +10,7 @@
 import type { School, SchoolType, SettingGroup, SizeBucket } from "./types.ts";
 import { satTotal } from "./score-bands.ts";
 import { isMajorFamily, type MajorFamily } from "./majors.ts";
+import { isHighSchoolId } from "./high-school-core.ts";
 
 /**
  * Same boundaries as lib/metrics.ts SIZE_BUCKETS, duplicated here rather than imported: that module pulls in
@@ -38,8 +39,10 @@ export interface StudentProfileBasics {
   gradYear: number | null;
   /** USPS postal code (e.g. "TN"), or OUTSIDE_US. Null = not set. */
   stateOfResidence: string | null;
-  /** Free text until specs/product/high-school-data.md ships an NCES id lookup. */
+  /** Display name: filled in from the picker's pick, or typed free text when the student's school isn't listed. */
   highSchool: string | null;
+  /** The picked high school's id (ncessch or PSS ppin), from the /me combobox (lib/high-schools.ts); null for free text. */
+  highSchoolId: string | null;
 }
 
 /** The scale a GPA is reported on; chances and every other tool read the 4.0 unweighted conversion. */
@@ -113,7 +116,7 @@ export const LOCAL_PROFILE_KEY = "student-profile";
 
 export function emptyProfile(): StudentProfileData {
   return {
-    basics: { gradYear: null, stateOfResidence: null, highSchool: null },
+    basics: { gradYear: null, stateOfResidence: null, highSchool: null, highSchoolId: null },
     academics: { gpa: null, gpaScale: "4.0", weightedGpa: null, classRankPercentile: null, courseRigorCount: null },
     tests: {
       satTotal: null,
@@ -194,6 +197,7 @@ export function sanitizeProfile(input: unknown): StudentProfileData {
     gradYear: int(b.gradYear, GRAD_YEAR_MIN, GRAD_YEAR_MAX),
     stateOfResidence: str(b.stateOfResidence, 20),
     highSchool: str(b.highSchool, 200),
+    highSchoolId: typeof b.highSchoolId === "string" && isHighSchoolId(b.highSchoolId) ? b.highSchoolId : null,
   };
 
   const ac = isObj(input.academics) ? input.academics : {};

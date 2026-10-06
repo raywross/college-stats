@@ -1,0 +1,95 @@
+{
+  "id": "060000100001",
+  "profile": {
+    "url": "https://example.org/fixture-hills/profile-2025-26.pdf",
+    "retrieved": "2026-10-05",
+    "edition": "2025–26"
+  },
+  "class_size": {
+    "v": 515,
+    "quote": "Class of 2026: 515 seniors",
+    "page": 1
+  },
+  "gpa_scale": {
+    "kind": "weighted-5",
+    "max": 5,
+    "weighted": true,
+    "conversion": "Honors and AP courses earn one additional grade point (A = 5.0).",
+    "quote": "Weighted GPA on a 5.0 scale; honors and AP courses earn one additional point.",
+    "page": 1
+  },
+  "gpa_distribution": [
+    {
+      "band": "4.0 and above",
+      "share": 0.21
+    },
+    {
+      "band": "3.5–3.99",
+      "share": 0.29
+    },
+    {
+      "band": "3.0–3.49",
+      "share": 0.27
+    },
+    {
+      "band": "2.5–2.99",
+      "share": 0.15
+    },
+    {
+      "band": "Below 2.5",
+      "share": 0.08
+    }
+  ],
+  "ap_courses": [
+    "AP Biology",
+    "AP Calculus AB",
+    "AP Calculus BC",
+    "AP English Language",
+    "AP Spanish Language",
+    "AP U.S. History"
+  ],
+  "ib_courses": null,
+  "scores": {
+    "sat_mid50": [
+      1080,
+      1320
+    ],
+    "act_mid50": [
+      21,
+      29
+    ],
+    "quote": "SAT middle 50%: 1080–1320; ACT middle 50%: 21–29"
+  },
+  "matriculation": {
+    "classes": "2023–2025",
+    "entries": [
+      {
+        "name": "University of California, Los Angeles",
+        "unit_id": "110662",
+        "count": 14
+      },
+      {
+        "name": "University of California, Berkeley",
+        "unit_id": "110635",
+        "count": 9
+      },
+      {
+        "name": "University of Southern California",
+        "unit_id": "123961",
+        "count": 6
+      },
+      {
+        "name": "Stanford University",
+        "unit_id": "243744",
+        "count": 2
+      },
+      {
+        "name": "Fixture Community College",
+        "unit_id": null,
+        "count": 41
+      }
+    ],
+    "quote": "Recent graduates (classes of 2023–2025) enrolled at …",
+    "page": 2
+  }
+}

@@ -1,0 +1,7 @@
+ReportCardYear,DistrictNm,SchoolNm,SCHOOLID,SCHOOLTYPECD,E_PctABC,E_NbrTOT,M_PctABC,M_NbrTOT
+2025,Abbeville County School District,Abbeville County School District,0160000,D,70.1,190,71.2,250
+2025,Abbeville County School District,Abbeville High,160001,H,59.3,86,68.5,130
+2025,Abbeville County School District,Dixie High School,160003,H,83.8,105,*,99
+2025,Abbeville County School District,Dixie High School,160003,M,90.0,20,88.0,25
+2025,Fixture District,Fixture Academy Not In CCD,9999001,H,50.0,40,40.0,40
+2025,Fixture District,Fixture Suppressed Only,9999002,H,*,3,*,3

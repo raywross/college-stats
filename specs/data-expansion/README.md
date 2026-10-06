@@ -73,6 +73,11 @@ because template workbooks and fillable PDFs read for free.
 |---|---|---|
 | [online-share.md](online-share.md) | **Planned** 2026-10-05. Share of undergraduates studying entirely online, by fall since 2012; the online-first rule as a stored field (the movers' growth lists, Study 3's campus-based toggle, Study 7's panel); a profile line and an Explore filter | IPEDS EF part A, distance education (`EF{Y}A_DIST`) |
 
+### Wave 6: a non-federal source, once permitted
+| Spec | Adds | Source |
+|---|---|---|
+| [common-app.md](common-app.md) | **Planned** 2026-10-06, **waits on Common App's permission** (its terms of use forbid scraping and commercial reuse; the spec's first unit is the letter). Deadlines and early rounds, fees and fee waivers, essay, supplement, transcript and recommendation requirements, and this cycle's test policy for about 1,000 member colleges; aliases and an international-aid flag; national and state application trends from its reports, months before IPEDS | Common App Requirements Grid (PDF), Explore pages, research reports, Tableau state workbook |
+
 ## Deciding on history
 Every spec answers **"Keep history?"** with one of three answers:
 

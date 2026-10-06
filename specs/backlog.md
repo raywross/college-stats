@@ -69,6 +69,11 @@ published at `/roadmap` ([roadmap.md](roadmap.md)): add each new one to `lib/roa
     [next-year price and graduates' debt](data-expansion/cds-cost-and-debt.md). Every item each spec needs is in the
     round-3 extraction scope, so the one full run captures them all before any of these ships.
   - [ ] Graduation as a fifth trend indicator ([outcome-measures.md](data-expansion/outcome-measures.md#top-level-trend)).
+  - [ ] **Common App** ([data-expansion/common-app.md](data-expansion/common-app.md), planned 2026-10-06): deadlines
+    and early rounds, fees and waivers, essay, supplement and recommendation requirements, and this cycle's test
+    policy for about 1,000 member colleges from the Requirements Grid; aliases and an international-aid flag from the
+    Explore pages; national and state application trends from the research reports. **First step is the permission
+    letter**: the terms of use forbid scraping and commercial reuse, so nothing is built until Common App says yes.
 - [ ] **2024–25 sticker prices** from `COST1_2024` (`…AY3`), keeping same-year inputs for the all-student average
   ([data-page.md](data-page.md#research-findings-vintages-as-of-2026-09-28)). If the snapshot moves ahead, history's
   price series (`scripts/history/registry.mts`) must follow, or CI's latest-point check fails.

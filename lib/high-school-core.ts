@@ -13,6 +13,7 @@ import type {
   HighSchoolStateFile,
   HighSchoolView,
   HsGrade,
+  HsGradHistoryEntry,
   HsLineage,
   HsRaceKey,
   HsStateField,
@@ -189,13 +190,23 @@ export interface RateRange {
 /**
  * EDFacts-style rate cells (percent text) → 0–1. "87" → exact; "90-94" → 0.90–0.94; "GE80" → 0.80–1; "GT50" →
  * 0.51–1 (whole percents); "LE10" → 0–0.10; "LT50" → 0–0.49; "PS" / "*" → suppressed; blank, "N/A", "." → missing.
+ * ED Data Express spellings parse the same: "93%", "86.70%", "80-84%", ">=90%", ">50%", "<=10%", "<50%"; "S" → suppressed.
  * Ranges stay ranges: never a midpoint.
  */
 export function parseRateRange(raw: string | number | null | undefined, suppressedCodes: readonly string[] = ["PS", "*", "S"]): RateRange {
   const missing: RateRange = { value: null, low: null, high: null, suppressed: false };
   if (raw === null || raw === undefined) return missing;
-  const t = String(raw).trim().toUpperCase();
-  if (suppressedCodes.includes(t)) return { ...missing, suppressed: true };
+  const t0 = String(raw).trim().toUpperCase();
+  if (suppressedCodes.includes(t0)) return { ...missing, suppressed: true };
+  // ED Data Express (SY 2018–19 on) writes the same cells with symbols and a percent sign: ">=90%", "<=10%", "<50%",
+  // "80-84%", "93%", "86.70%". Map them onto the EDFacts codes above.
+  const t = t0
+    .replace(/%$/, "")
+    .replace(/^>=\s*/, "GE")
+    .replace(/^<=\s*/, "LE")
+    .replace(/^>\s*/, "GT")
+    .replace(/^<\s*/, "LT")
+    .replace(/^(\d{1,3})\s*%?\s*-\s*(\d{1,3})$/, "$1-$2");
   const pct = (s: string) => round(Number(s) / 100, 4);
   let m: RegExpExecArray | null;
   if ((m = /^(\d{1,3}(?:\.\d+)?)$/.exec(t)) && Number(m[1]) <= 100) return { value: pct(m[1]), low: null, high: null, suppressed: false };
@@ -241,6 +252,65 @@ function orderedLineage(rec: HsLineage): HsLineage {
   return out as unknown as HsLineage;
 }
 
+function orderedGradEntry(e: HsGradHistoryEntry): HsGradHistoryEntry {
+  const out: HsGradHistoryEntry = {
+    year: e.year,
+    value: roundOrNull(e.value, 4),
+    low: roundOrNull(e.low, 4),
+    high: roundOrNull(e.high, 4),
+    cohort: orNull(e.cohort),
+  };
+  if (e.suppressed !== undefined) out.suppressed = e.suppressed;
+  // Unknown keys survive (sorted) so the validator reports them.
+  for (const k of Object.keys(e).sort()) if (!(k in out)) (out as unknown as Record<string, unknown>)[k] = (e as unknown as Record<string, unknown>)[k];
+  return out;
+}
+
+/** 2021 for "Class of 2021"; null for anything else. */
+export function classYear(label: unknown): number | null {
+  const m = typeof label === "string" ? /^Class of (\d{4})$/.exec(label) : null;
+  return m ? Number(m[1]) : null;
+}
+
+/** Problems with a row's graduation-rate history (see HighSchool.grad_history). */
+export function validateGradHistory(row: Pick<HighSchool, "grad_rate" | "grad_history" | "suppressed">, where: string): string[] {
+  const h = row.grad_history;
+  if (h === null || h === undefined) return [];
+  const p: string[] = [];
+  if (!Array.isArray(h)) return [`${where}: grad_history must be a list or null`];
+  if (h.length < 2) p.push(`${where}: grad_history needs at least two classes (one would only repeat grad_rate); write null`);
+  let prev = -Infinity;
+  const allowed = new Set(["year", "value", "low", "high", "cohort", "suppressed"]);
+  for (const e of h) {
+    const ew = `${where}: grad_history ${JSON.stringify(e?.year)}`;
+    const y = classYear(e?.year);
+    if (y === null) {
+      p.push(`${ew}: year must read "Class of YYYY"`);
+      continue;
+    }
+    if (y === prev) p.push(`${ew}: listed twice`);
+    else if (y < prev) p.push(`${ew}: out of order (oldest → newest)`);
+    prev = Math.max(prev, y);
+    for (const k of Object.keys(e)) if (!allowed.has(k)) p.push(`${ew}: unknown key ${k}`);
+    for (const k of ["value", "low", "high"] as const) if (e[k] !== null && !isShare(e[k])) p.push(`${ew}: ${k} must be 0–1`);
+    if (e.value !== null && (e.low !== null || e.high !== null)) p.push(`${ew}: exact (value) or a range (low/high), not both`);
+    if ((e.low === null) !== (e.high === null)) p.push(`${ew}: a range needs both low and high`);
+    if (e.low !== null && e.high !== null && e.low > e.high) p.push(`${ew}: low > high`);
+    if (e.cohort !== null && !isCount(e.cohort)) p.push(`${ew}: cohort must be a whole number ≥ 0`);
+    if (e.suppressed !== undefined && e.suppressed !== true) p.push(`${ew}: suppressed is true or absent`);
+    if (e.suppressed && (e.value !== null || e.low !== null)) p.push(`${ew}: suppressed but has a rate`);
+    if (!e.suppressed && e.value === null && e.low === null) p.push(`${ew}: no rate and not suppressed (leave the class out)`);
+  }
+  const g = row.grad_rate;
+  const last = h[h.length - 1];
+  if (g && last) {
+    const same = last.value === g.value && last.low === g.low && last.high === g.high && last.cohort === g.cohort;
+    const gSuppressed = !!row.suppressed?.includes("grad_rate");
+    if (!same || !!last.suppressed !== gSuppressed) p.push(`${where}: grad_history's newest class (${last.year}) doesn't match grad_rate`);
+  }
+  return p;
+}
+
 /**
  * A row with every key in canonical order, missing keys filled with null, shares rounded to 4 places, ratios to 2,
  * coordinates to 6, `suppressed` sorted and de-duplicated, `lineage` sorted by path. The writer stores exactly this;
@@ -278,6 +348,7 @@ export function normalizeHighSchool(row: HighSchool): HighSchool {
     grad_rate: r.grad_rate
       ? { value: roundOrNull(r.grad_rate.value, 4), low: roundOrNull(r.grad_rate.low, 4), high: roundOrNull(r.grad_rate.high, 4), cohort: orNull(r.grad_rate.cohort) }
       : null,
+    grad_history: Array.isArray(r.grad_history) ? r.grad_history.map(orderedGradEntry) : null,
     rigor: r.rigor
       ? {
           ap_courses: orNull(r.rigor.ap_courses),
@@ -620,6 +691,7 @@ export function validateHighSchoolRow(row: HighSchool): string[] {
     if ((g.low === null) !== (g.high === null)) p.push(`${where}: grad_rate range needs both low and high`);
     if (g.low !== null && g.high !== null && g.low > g.high) p.push(`${where}: grad_rate low > high`);
   }
+  p.push(...validateGradHistory(row, where));
 
   // Kind-specific fields.
   if (kind === "public" && row.affiliation !== null) p.push(`${where}: affiliation is for private schools`);
@@ -627,6 +699,7 @@ export function validateHighSchoolRow(row: HighSchool): string[] {
     if (row.district !== null) p.push(`${where}: a private school has no district`);
     if (row.state_school_id !== null) p.push(`${where}: a private school has no state school id`);
     if (row.grad_rate !== null) p.push(`${where}: private schools have no federal graduation rate (null, not suppressed)`);
+    if (row.grad_history !== null) p.push(`${where}: private schools have no federal graduation rate history (null)`);
     if (row.rigor !== null) p.push(`${where}: private schools have no CRDC rigor data (null, not suppressed)`);
   }
 
@@ -766,7 +839,7 @@ export function validateHighSchoolDetail(
   return p;
 }
 
-export const HS_VINTAGE_KEYS: readonly HsVintageKey[] = ["ccd-directory", "ccd-enrollment", "edfacts-acgr", "crdc", "pss"];
+export const HS_VINTAGE_KEYS: readonly HsVintageKey[] = ["ccd-directory", "ccd-enrollment", "edfacts-acgr", "edfacts-acgr-history", "crdc", "pss"];
 
 /** meta.json: complete, counts match the rows, and every source the rows cite is described. */
 export function validateHighSchoolMeta(meta: HighSchoolMeta, rows: readonly HighSchool[]): string[] {
@@ -798,6 +871,18 @@ export function validateHighSchoolMeta(meta: HighSchoolMeta, rows: readonly High
     }
   }
   for (const s of used) if (!meta.sources?.[s as keyof HighSchoolMeta["sources"]]) p.push(`high-schools/meta.json: rows cite ${s}, which meta.sources doesn't describe`);
+  // A row's graduation rate is its history's newest class, which is the release's year.
+  const acgr = classYear(meta.vintages?.["edfacts-acgr"]);
+  let off = 0;
+  let example = "";
+  for (const r of rows) {
+    const last = r.grad_history?.[r.grad_history.length - 1];
+    if (r.grad_rate && last && classYear(last.year) !== acgr) {
+      off++;
+      example ||= r.id;
+    }
+  }
+  if (off) p.push(`high-schools/meta.json: ${off} rows (e.g. ${example}) have a graduation rate whose history ends in another class than vintages.edfacts-acgr (${meta.vintages?.["edfacts-acgr"]})`);
   return p;
 }
 

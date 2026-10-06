@@ -89,6 +89,7 @@ export const HS_FIELDS = {
 
   // Outcomes (EDFacts)
   grad_rate: { label: "Four-year graduation rate", topic: "outcomes", source: "edfacts", vintage: "edfacts-acgr" },
+  grad_history: { label: "Four-year graduation rate by class", topic: "outcomes", source: "edfacts", vintage: "edfacts-acgr-history" },
 
   // Rigor (CRDC)
   "rigor.ap_courses": crdc("AP courses offered"),

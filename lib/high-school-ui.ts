@@ -3,7 +3,7 @@
  * lib/high-school-core.ts (the data-layer helpers every unit shares) so this unit's own formatting and wording can
  * change without touching the shared contract. No React, no Next.js: safe for tests and the page alike.
  */
-import type { HighSchool, HighSchoolDetail } from "./high-school-types.ts";
+import type { HighSchool, HighSchoolDetail, HsGradHistoryEntry } from "./high-school-types.ts";
 import { pct, pctSmart } from "./format.ts";
 import { STATES } from "./states.ts";
 
@@ -106,6 +106,111 @@ export function matriculationSummaryLine(detail: Pick<HighSchoolDetail, "matricu
 /** AP/IB/dual-enrollment shares formatted as a percent, or a share's suppression text when the inputs were suppressed. */
 export function shareText(value: number | null, suppressed: boolean): string {
   return hsValueText(value, suppressed, pct, "share");
+}
+
+/* ------------------------------------------------------------------ */
+/* Graduation rate by class (grad_history)                             */
+/* ------------------------------------------------------------------ */
+
+/** One class on the graduation-rate trend. `kind` says how to draw it; a class missing from the files is a gap. */
+export interface GradTrendPoint {
+  /** 2021 for "Class of 2021". */
+  year: number;
+  label: string;
+  kind: "exact" | "range" | "suppressed" | "missing";
+  value: number | null;
+  low: number | null;
+  high: number | null;
+  cohort: number | null;
+}
+
+const classNum = (label: string): number | null => {
+  const m = /^Class of (\d{4})$/.exec(label);
+  return m ? Number(m[1]) : null;
+};
+
+/**
+ * Every class from the oldest to the newest in the history, one point each: classes the files skip come back as
+ * `missing` so the chart leaves a gap there instead of joining across it.
+ */
+export function gradTrendPoints(history: readonly HsGradHistoryEntry[] | null | undefined): GradTrendPoint[] {
+  const known = new Map<number, HsGradHistoryEntry>();
+  for (const e of history ?? []) {
+    const y = classNum(e.year);
+    if (y !== null) known.set(y, e);
+  }
+  if (!known.size) return [];
+  const years = [...known.keys()];
+  const out: GradTrendPoint[] = [];
+  for (let y = Math.min(...years); y <= Math.max(...years); y++) {
+    const e = known.get(y);
+    const label = `Class of ${y}`;
+    if (!e) out.push({ year: y, label, kind: "missing", value: null, low: null, high: null, cohort: null });
+    else {
+      const kind = e.suppressed ? "suppressed" : e.value !== null ? "exact" : e.low !== null && e.high !== null ? "range" : "missing";
+      out.push({ year: y, label, kind, value: e.value, low: e.low, high: e.high, cohort: e.cohort });
+    }
+  }
+  return out;
+}
+
+/** A trend is drawn only when at least two classes have a rate (exact or a range); otherwise the stat stands alone. */
+export function hasGradTrend(history: readonly HsGradHistoryEntry[] | null | undefined): boolean {
+  return gradTrendPoints(history).filter((p) => p.kind === "exact" || p.kind === "range").length >= 2;
+}
+
+/** A class's rate in words: "93%", "between 80% and 84%", "90% or higher", "10% or lower". */
+export function gradPointWords(p: Pick<GradTrendPoint, "kind" | "value" | "low" | "high">): string {
+  if (p.kind === "exact" && p.value !== null) return pctSmart(p.value);
+  if (p.kind === "range" && p.low !== null && p.high !== null) {
+    if (p.high >= 1) return `${Math.round(p.low * 100)}% or higher`;
+    if (p.low <= 0) return `${Math.round(p.high * 100)}% or lower`;
+    return `between ${Math.round(p.low * 100)}% and ${Math.round(p.high * 100)}%`;
+  }
+  if (p.kind === "suppressed") return "suppressed for privacy";
+  return "not reported";
+}
+
+/** A class's rate as a short mark label: "93%", "80–84%", "≥90%", "≤10%". */
+export function gradPointShort(p: Pick<GradTrendPoint, "kind" | "value" | "low" | "high">): string {
+  if (p.kind === "exact" && p.value !== null) return pctSmart(p.value);
+  if (p.kind === "range" && p.low !== null && p.high !== null) {
+    if (p.high >= 1) return `≥${Math.round(p.low * 100)}%`;
+    if (p.low <= 0) return `≤${Math.round(p.high * 100)}%`;
+    return formatRateRange(p.low, p.high);
+  }
+  return p.kind === "suppressed" ? "Suppressed" : "—";
+}
+
+const joinWords = (xs: string[]) => (xs.length <= 1 ? xs.join("") : `${xs.slice(0, -1).join(", ")} and ${xs[xs.length - 1]}`);
+
+/**
+ * The trend in one or two sentences, for screen readers and the caption: "From 86% (Class of 2019) to between 90% and
+ * 94% (Class of 2023). Suppressed for privacy: Class of 2020. Not reported: Class of 2021." Null without a trend.
+ */
+export function gradTrendSummary(history: readonly HsGradHistoryEntry[] | null | undefined): string | null {
+  if (!hasGradTrend(history)) return null;
+  const pts = gradTrendPoints(history);
+  const rated = pts.filter((p) => p.kind === "exact" || p.kind === "range");
+  const first = rated[0];
+  const last = rated[rated.length - 1];
+  const parts = [`From ${gradPointWords(first)} (${first.label}) to ${gradPointWords(last)} (${last.label}).`];
+  const sup = pts.filter((p) => p.kind === "suppressed").map((p) => p.label);
+  const miss = pts.filter((p) => p.kind === "missing").map((p) => p.label);
+  if (sup.length) parts.push(`Suppressed for privacy: ${joinWords(sup)}.`);
+  if (miss.length) parts.push(`Not reported: ${joinWords(miss)}.`);
+  return parts.join(" ");
+}
+
+/**
+ * The y-range for the trend: from the nearest 10% at or below the lowest bound shown (never above 50%, so a typical
+ * school isn't flattened against the top) up to 100%, the most any rate or open range can reach.
+ */
+export function gradTrendDomain(points: readonly GradTrendPoint[]): [number, number] {
+  const lows = points.flatMap((p) => (p.kind === "exact" ? [p.value!] : p.kind === "range" ? [p.low!] : []));
+  if (!lows.length) return [0.5, 1];
+  const lo = Math.floor(Math.min(...lows) * 10 + 1e-9) / 10;
+  return [Math.min(0.5, Math.max(0, lo)), 1];
 }
 
 export { pct, pctSmart };

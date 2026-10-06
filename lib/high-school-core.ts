@@ -16,6 +16,7 @@ import type {
   HsGradHistoryEntry,
   HsLineage,
   HsRaceKey,
+  HsSourceKey,
   HsStateField,
   HsStateReport,
   HsVintageKey,
@@ -561,14 +562,132 @@ export function buildHighSchoolView(
   school: HighSchool,
   parts: { stateReport: HsStateReport | null; detail: HighSchoolDetail | null; medians: StateMedians | null; meta: HighSchoolMeta },
 ): HighSchoolView {
-  return {
+  return applyProfileNewest({
     school,
     state_report: parts.stateReport,
     detail: parts.detail,
     // Medians are of the state's public high schools (labeled so); private pages may compare to them too.
     medians: parts.medians?.[school.state] ?? null,
     meta: parts.meta,
+  });
+}
+
+/* ------------------------------------------------------------------ */
+/* Newest figures: the school's own profile over older federal/state  */
+/* ------------------------------------------------------------------ */
+
+/**
+ * The year a label ends in, for ordering: "Class of 2026" → 2026, "2025–26" → 2026 (the spring), "2024" → 2024.
+ * Null when the label has no year.
+ */
+export function yearRank(label: string | null | undefined): number | null {
+  if (!label) return null;
+  const span = /(\d{4})\s*[–-]\s*(\d{2,4})\b(?!.*\d{4})/.exec(label);
+  if (span) {
+    const end = span[2].length === 2 ? Number(span[1].slice(0, 2) + span[2]) : Number(span[2]);
+    return end;
+  }
+  const years = label.match(/\d{4}/g);
+  return years ? Number(years[years.length - 1]) : null;
+}
+
+const pctText = (v: number) => `${round(v * 100, 1)}%`;
+
+/**
+ * Applies the site's newest-figures rule (specs/data-lineage.md rule 3) to one high school: where the school's own
+ * profile reports the same measure for a later year than the federal or state figure, the profile's value becomes
+ * the value (graduation rate, college-going rate, AP pass rate, enrollment), cited to the profile with its quote and
+ * page, and the replaced value is kept in `view.replaced` for the ⓘ. Medians stay as they are (they describe other
+ * schools). Never replaces with an older or undated figure. Pure; the input view is not modified.
+ */
+export function applyProfileNewest(view: HighSchoolView): HighSchoolView {
+  const d = view.detail;
+  if (!d) return view;
+  const school: HighSchool = { ...view.school, lineage: { ...(view.school.lineage ?? {}) }, suppressed: [...(view.school.suppressed ?? [])] };
+  let report = view.state_report;
+  const replaced: NonNullable<HighSchoolView["replaced"]> = { ...(view.replaced ?? {}) };
+  const rec = (year: string, quote: string, page?: number): HsLineage => ({
+    source: "hs-profile",
+    year,
+    url: d.profile.url,
+    retrieved: d.profile.retrieved,
+    method: "extracted",
+    quote,
+    ...(page !== undefined ? { page } : {}),
+  });
+  const newer = (profileYear: string, currentYear: string | null | undefined) => {
+    const p = yearRank(profileYear);
+    const c = yearRank(currentYear);
+    return p !== null && (c === null || p > c);
   };
+  const unsuppress = (path: string) => (school.suppressed = school.suppressed!.filter((s) => s !== path));
+
+  const o = d.school_outcomes;
+  if (o?.grad_rate !== null && o?.grad_rate !== undefined) {
+    const prevYear = school.lineage!.grad_rate?.year ?? view.meta.vintages["edfacts-acgr"];
+    if (newer(o.class, prevYear)) {
+      const g = school.grad_rate;
+      if (g && (g.value !== null || g.low !== null)) {
+        const display = g.value !== null ? pctText(g.value) : g.high === 1 && g.low !== null ? `${pctText(g.low)} or more`
+          : `${round(g.low! * 100, 1)}–${pctText(g.high ?? 1)}`;
+        replaced.grad_rate = { value: g.value, year: prevYear ?? null, label: hsSourceLabel(view.meta, "edfacts"), display };
+      }
+      school.grad_rate = { value: o.grad_rate, low: null, high: null, cohort: o.class_size };
+      school.lineage!.grad_rate = rec(o.class, o.quote, o.page);
+      unsuppress("grad_rate");
+      unsuppress("grad_rate.cohort");
+    }
+  }
+
+  const stateOverride = (field: HsStateField, value: number | null | undefined, year: string, quote: string, page?: number) => {
+    if (value === null || value === undefined) return;
+    const section = report?.sections.find((s) => s.fields.includes(field));
+    if (!newer(year, section?.year)) return;
+    const prev = report?.values[field];
+    if (prev !== null && prev !== undefined && section) {
+      replaced[`state.${field}`] = { value: prev, year: section.year, label: section.label, display: pctText(prev) };
+    }
+    report = {
+      values: { ...(report?.values ?? {}), [field]: value },
+      suppressed: (report?.suppressed ?? []).filter((f) => f !== field),
+      sections: report?.sections ?? [],
+    };
+    school.lineage![`state.${field}`] = rec(year, quote, page);
+  };
+  if (o) stateOverride("college_going_rate", o.college_going, o.class, o.quote, o.page);
+  const ap = d.ap_stats;
+  if (ap) stateOverride("ap_pass_rate", ap.pass_share, ap.year, ap.quote, ap.page);
+
+  // AP courses offered: the profile's own list (its edition) over the CRDC count.
+  if (d.ap_courses?.length && newer(d.profile.edition, school.lineage!["rigor.ap_courses"]?.year ?? view.meta.vintages.crdc)) {
+    const prev = school.rigor?.ap_courses ?? null;
+    if (prev !== null) replaced["rigor.ap_courses"] = { value: prev, year: view.meta.vintages.crdc ?? null, label: hsSourceLabel(view.meta, "crdc"), display: String(prev) };
+    const blank = { ap_courses: null, ap_enrolled: null, ap_exam_takers: null, ap_passed_some: null, ib_enrolled: null, dual_enrolled: null, enrollment: null };
+    school.rigor = { ...(school.rigor ?? blank), ap_courses: d.ap_courses.length };
+    school.lineage!["rigor.ap_courses"] = rec(d.profile.edition, `AP course offerings: ${d.ap_courses.slice(0, 3).join(", ")}, … (${d.ap_courses.length} listed)`);
+    unsuppress("rigor.ap_courses");
+  }
+
+  const e = d.enrollment;
+  if (e) {
+    const prevYear = school.lineage!["enrollment.total"]?.year ?? view.meta.vintages["ccd-enrollment"];
+    if (newer(e.year, prevYear)) {
+      const prev = school.enrollment.total;
+      if (prev !== null) replaced["enrollment.total"] = { value: prev, year: prevYear ?? null, label: hsSourceLabel(view.meta, school.kind === "private" ? "nces-pss" : "nces-ccd"), display: prev.toLocaleString("en-US") };
+      school.enrollment = { ...school.enrollment, total: e.total, by_grade: { ...school.enrollment.by_grade, ...e.by_grade } };
+      school.lineage!["enrollment.total"] = rec(e.year, e.quote, e.page);
+      school.lineage!["enrollment.by_grade"] = rec(e.year, e.quote, e.page);
+      unsuppress("enrollment.total");
+      for (const gr of Object.keys(e.by_grade)) unsuppress(`enrollment.by_grade.${gr}`);
+    }
+  }
+
+  if (!school.suppressed!.length) delete school.suppressed;
+  return { ...view, school, state_report: report, ...(Object.keys(replaced).length ? { replaced } : {}) };
+}
+
+function hsSourceLabel(meta: HighSchoolMeta, key: HsSourceKey): string {
+  return meta.sources[key]?.name ?? key;
 }
 
 /** Search over rows (json mode; the SQL function search_high_schools does the same in Supabase). */
@@ -826,6 +945,50 @@ export function validateHighSchoolDetail(
   };
   range(d.scores?.sat_mid50, 400, 1600, "sat_mid50");
   range(d.scores?.act_mid50, 1, 36, "act_mid50");
+  const sat = d.scores?.sat_mean;
+  if (sat && !(sat.erw >= 200 && sat.erw <= 800 && sat.math >= 200 && sat.math <= 800)) p.push(`${where}: scores.sat_mean sections must be 200–800`);
+  const act = d.scores?.act_mean;
+  if (act !== null && act !== undefined && !(act >= 1 && act <= 36)) p.push(`${where}: scores.act_mean must be 1–36`);
+  if (d.scores && (sat || (act !== null && act !== undefined) || d.scores.sat_mid50 || d.scores.act_mid50) && !d.scores.quote?.trim()) p.push(`${where}: scores have no quote`);
+  if (d.admitted) {
+    if (!d.admitted.classes?.trim()) p.push(`${where}: admitted.classes is empty`);
+    if (!d.admitted.quote?.trim()) p.push(`${where}: admitted has no quote`);
+    const seen = new Set<string>();
+    for (const e of d.admitted.entries ?? []) {
+      if (!e.name?.trim()) p.push(`${where}: an admitted entry has no name`);
+      if (seen.has(e.name)) p.push(`${where}: admitted lists ${e.name} twice`);
+      seen.add(e.name);
+      if (e.unit_id !== null && !/^\d{6}$/.test(e.unit_id)) p.push(`${where}: admitted ${e.name} unit_id ${e.unit_id} isn't an IPEDS id`);
+      else if (e.unit_id !== null && opts.collegeIds && !opts.collegeIds.has(e.unit_id)) p.push(`${where}: admitted ${e.name} unit_id ${e.unit_id} isn't in data/schools.json`);
+    }
+  }
+  if (d.school_outcomes) {
+    const o = d.school_outcomes;
+    if (!/^Class of \d{4}$/.test(o.class ?? "")) p.push(`${where}: school_outcomes.class must read "Class of YYYY"`);
+    if (!o.quote?.trim()) p.push(`${where}: school_outcomes has no quote`);
+    if (o.class_size !== null && !(Number.isInteger(o.class_size) && o.class_size > 0)) p.push(`${where}: school_outcomes.class_size must be a whole number > 0`);
+    for (const k of ["grad_rate", "college_going", "four_year", "two_year"] as const) {
+      if (o[k] !== null && !isShare(o[k])) p.push(`${where}: school_outcomes.${k} must be 0–1`);
+    }
+    if (o.four_year !== null && o.two_year !== null && o.college_going !== null && Math.abs(o.four_year + o.two_year - o.college_going) > 0.015) {
+      p.push(`${where}: school_outcomes four-year + two-year (${round(o.four_year + o.two_year, 3)}) doesn't add up to college-going (${o.college_going})`);
+    }
+  }
+  if (d.ap_stats) {
+    const a = d.ap_stats;
+    if (!a.year?.trim() || !a.quote?.trim()) p.push(`${where}: ap_stats needs a year and a quote`);
+    if (a.pass_share !== null && !isShare(a.pass_share)) p.push(`${where}: ap_stats.pass_share must be 0–1`);
+    for (const k of ["students", "exams"] as const) if (a[k] !== null && !isCount(a[k])) p.push(`${where}: ap_stats.${k} must be a whole number ≥ 0`);
+    if (a.students !== null && a.exams !== null && a.exams < a.students) p.push(`${where}: ap_stats has fewer exams (${a.exams}) than students (${a.students})`);
+  }
+  if (d.enrollment) {
+    const e = d.enrollment;
+    if (!e.year?.trim() || !e.quote?.trim()) p.push(`${where}: enrollment needs a year and a quote`);
+    if (!(Number.isInteger(e.total) && e.total > 0)) p.push(`${where}: enrollment.total must be a whole number > 0`);
+    const grades = Object.values(e.by_grade ?? {});
+    if (grades.some((n) => !isCount(n))) p.push(`${where}: enrollment.by_grade counts must be whole numbers ≥ 0`);
+    if (grades.length === 4 && grades.reduce((a, b) => a + b, 0) !== e.total) p.push(`${where}: enrollment by grade doesn't sum to the total ${e.total}`);
+  }
   if (d.matriculation) {
     if (!d.matriculation.classes?.trim()) p.push(`${where}: matriculation.classes is empty`);
     for (const e of d.matriculation.entries ?? []) {

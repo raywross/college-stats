@@ -19,6 +19,11 @@ summary: A page for every U.S. high school, public and private, with AP and dual
   Depending on the state, that means the share of graduates who go on to college, test proficiency, chronic absence,
   AP pass rates, and (in South Carolina and Connecticut) college enrollment and persistence from the National
   Student Clearinghouse.
+- **The school's own profile, where we have it.** Roslyn High School (New York) is the first. Its page shows the
+  grading scale and course weights, mean SAT and ACT, its AP courses, and the 144 colleges that admitted members of
+  the Class of 2026, each linked to its college page. Where the profile is newer than the federal or state figure
+  (graduation rate, college-going rate, AP results, enrollment), the school's figure is the one shown, and its ⓘ
+  says what it replaced.
 - **Search** by name and state at **High schools** in the menu.
 - **Your high school on your profile.** On **Me**, the high school field now searches this list. A typed name still
   works when your school isn't listed.

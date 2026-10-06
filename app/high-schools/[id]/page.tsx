@@ -8,6 +8,8 @@ import { gradeSpan } from "@/lib/high-school-core";
 import { citeHsView, hsValueAt, isHsSuppressed, type HsFieldPath } from "@/lib/hs-fields";
 import type { HsStateField } from "@/lib/high-school-types";
 import {
+  admittedSummary,
+  scoresDisplay,
   gpaScaleLabel,
   gradRateText,
   gradTrendPoints,
@@ -80,9 +82,13 @@ export default async function HighSchoolPage({ params }: Props) {
   const stateSuppressed = (f: HsStateField) => !!state_report?.suppressed.includes(f);
 
   const rigorFields: HsFieldPath[] = ["rigor.ap_courses", "derived.ap_enrolled_share", "derived.ap_pass_share", "derived.ib_enrolled_share", "derived.dual_enrolled_share"];
-  const hasRigor = rigorFields.some((p) => value(p) !== null || suppressed(p));
-  const hasOutcomes = school.grad_rate !== null || (["college_going_rate", "ela_proficiency", "math_proficiency", "chronic_absence"] as HsStateField[]).some((f) => stateVal(f) !== null || stateSuppressed(f));
-  const hasWhereGo = !!detail?.matriculation || (["nsc_enrolled_fall", "nsc_persisted", "nsc_completed"] as HsStateField[]).some((f) => stateVal(f) !== null);
+  const hasRigor = rigorFields.some((p) => value(p) !== null || suppressed(p)) || stateVal("ap_pass_rate") !== null;
+  const scores = scoresDisplay(detail?.scores ?? null);
+  const hasOutcomes = school.grad_rate !== null || !!scores || (["college_going_rate", "ela_proficiency", "math_proficiency", "chronic_absence"] as HsStateField[]).some((f) => stateVal(f) !== null || stateSuppressed(f));
+  const hasWhereGo = !!detail?.matriculation || !!detail?.admitted?.entries.length || (["nsc_enrolled_fall", "nsc_persisted", "nsc_completed"] as HsStateField[]).some((f) => stateVal(f) !== null);
+  // The school's own newer figures (applyProfileNewest) describe their measure in the school's words.
+  const fromProfile = (path: string) => school.lineage?.[path]?.source === "hs-profile";
+  const outcomes = detail?.school_outcomes ?? null;
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-10 sm:px-6 sm:py-14">
@@ -175,7 +181,7 @@ export default async function HighSchoolPage({ params }: Props) {
             />
             {stateVal("ap_pass_rate") !== null && (
               <HsStat
-                label="AP pass rate (state report)"
+                label="AP exams scored 3 or higher"
                 term="ap-access"
                 cited={cite("state.ap_pass_rate")}
                 value={pctSmart(stateVal("ap_pass_rate")!)}
@@ -184,6 +190,15 @@ export default async function HighSchoolPage({ params }: Props) {
             )}
           </div>
         )}
+        {detail?.ap_courses?.length ? (
+          <details className="mt-3 rounded-2xl border bg-card p-4">
+            <summary className="flex cursor-pointer items-center gap-1 text-sm font-semibold">
+              The school&apos;s AP courses
+              <InfoTip term="ap-access" cited={cite("detail.ap_courses")} />
+            </summary>
+            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{detail.ap_courses.join(" · ")}</p>
+          </details>
+        ) : null}
       </Section>
 
       {/* ============================== OUTCOMES ============================== */}
@@ -192,8 +207,8 @@ export default async function HighSchoolPage({ params }: Props) {
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {(school.grad_rate !== null || isPublic) && (
               <HsStat
-                label="Four-year graduation rate"
-                term="adjusted-cohort-graduation-rate"
+                label={fromProfile("grad_rate") ? "Graduation rate" : "Four-year graduation rate"}
+                term={fromProfile("grad_rate") ? undefined : "adjusted-cohort-graduation-rate"}
                 cited={cite("grad_rate")}
                 value={gradRateText(school.grad_rate, suppressed("grad_rate"))}
                 median={median("grad_rate", pctSmart)}
@@ -206,7 +221,15 @@ export default async function HighSchoolPage({ params }: Props) {
                 cited={cite("state.college_going_rate")}
                 value={hsValueText(stateVal("college_going_rate"), stateSuppressed("college_going_rate"), pctSmart)}
                 median={median("state.college_going_rate", pctSmart)}
+                sub={
+                  fromProfile("state.college_going_rate") && outcomes?.four_year !== null && outcomes?.two_year !== null && outcomes
+                    ? `${Math.round(outcomes.four_year! * 100)}% to four-year colleges, ${Math.round(outcomes.two_year! * 100)}% to two-year`
+                    : undefined
+                }
               />
+            )}
+            {scores && (
+              <HsStat label={scores.label} cited={cite("detail.scores")} value={scores.value} sub={scores.sub ?? undefined} />
             )}
             {(stateVal("ela_proficiency") !== null || stateSuppressed("ela_proficiency")) && (
               <HsStat
@@ -321,6 +344,28 @@ export default async function HighSchoolPage({ params }: Props) {
                 <p className="border-t bg-muted/40 px-4 py-2 text-xs text-muted-foreground">{matriculationSummaryLine(detail)}</p>
               </div>
             )}
+            {detail?.admitted?.entries.length ? (
+              <details className="rounded-2xl border bg-card p-4">
+                <summary className="flex cursor-pointer items-center gap-1 text-sm font-semibold">
+                  Admitted to: {detail.admitted.entries.length.toLocaleString("en-US")} colleges
+                  <InfoTip term="school-profile" cited={cite("detail.admitted")} />
+                </summary>
+                <p className="mt-2 text-xs text-muted-foreground">{admittedSummary(detail.admitted)}</p>
+                <ul className="mt-3 grid gap-x-4 gap-y-1.5 text-sm sm:grid-cols-2 lg:grid-cols-3">
+                  {detail.admitted.entries.map((e) => (
+                    <li key={e.name} className="min-w-0 truncate">
+                      {e.unit_id ? (
+                        <Link href={`/schools/${e.unit_id}`} className="text-primary hover:underline">
+                          {e.name}
+                        </Link>
+                      ) : (
+                        <span className="text-muted-foreground">{e.name}</span>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </details>
+            ) : null}
             <div className="grid gap-3 sm:grid-cols-3">
               {(["nsc_enrolled_fall", "nsc_persisted", "nsc_completed"] as const).map((f) => {
                 const v = stateVal(f);
@@ -370,7 +415,10 @@ export default async function HighSchoolPage({ params }: Props) {
             "state.nsc_completed",
             "detail.gpa_scale",
             "detail.gpa_distribution",
+            "detail.ap_courses",
+            "detail.scores",
             "detail.matriculation",
+            "detail.admitted",
           ]}
           view={view}
         />

@@ -97,5 +97,20 @@
   { "unit_id": "179867", "alias": "WashU" },
   { "unit_id": "236939", "alias": "WSU" },
   { "unit_id": "156125", "alias": "WSU" },
-  { "unit_id": "238032", "alias": "WVU" }
+  { "unit_id": "238032", "alias": "WVU" },
+  { "unit_id": "104151", "alias": "Arizona State University" },
+  { "unit_id": "190150", "alias": "Columbia University" },
+  { "unit_id": "190512", "alias": "Baruch College" },
+  { "unit_id": "139755", "alias": "Georgia Institute of Technology" },
+  { "unit_id": "151351", "alias": "Indiana University" },
+  { "unit_id": "204024", "alias": "Miami University" },
+  { "unit_id": "196219", "alias": "Purchase College" },
+  { "unit_id": "186380", "alias": "Rutgers University" },
+  { "unit_id": "221759", "alias": "University of Tennessee" },
+  { "unit_id": "160755", "alias": "Tulane University" },
+  { "unit_id": "145637", "alias": "University of Illinois" },
+  { "unit_id": "163286", "alias": "University of Maryland" },
+  { "unit_id": "174066", "alias": "University of Minnesota" },
+  { "unit_id": "215293", "alias": "University of Pittsburgh" },
+  { "unit_id": "218663", "alias": "University of South Carolina" }
 ]

@@ -29,6 +29,9 @@ import {
   validateHighSchoolDetail,
   validateHighSchoolMeta,
   validateHighSchoolRow,
+  applyProfileNewest,
+  buildHighSchoolView,
+  yearRank,
   tidySchoolName,
   titleCaseName,
   validateMedians,
@@ -524,4 +527,101 @@ test("hsValueAt: missing is null, never undefined (a leaf under a null block, no
   assert.equal(hsValueAt("state.college_going_rate", priv), null);
   assert.equal(hsValueAt("detail.class_size", priv), null);
   assert.equal(hsValueAt("derived.ap_enrolled_share", priv), null);
+});
+
+/* ------------------------------------------------------------------ */
+/* School-reported figures from the profile                            */
+/* ------------------------------------------------------------------ */
+
+const withSchoolFigures = (): HighSchoolDetail => ({
+  ...detail(),
+  scores: { sat_mid50: null, act_mid50: null, sat_mean: { erw: 641, math: 657 }, act_mean: 31, year: "2025–26", quote: "Mean SAT ERW 641, Math 657; ACT 31", page: 3 },
+  admitted: { classes: "Class of 2026", entries: [{ name: "UCLA", unit_id: "110662" }, { name: "McGill University", unit_id: null }], quote: "Admitted to the following", page: 4 },
+  school_outcomes: { class: "Class of 2026", class_size: 259, grad_rate: 0.96, college_going: 0.98, four_year: 0.95, two_year: 0.03, quote: "96% graduation rate … 98% attend college", page: 2 },
+  ap_stats: { year: "2025–26", students: 613, exams: 1901, pass_share: 0.87, quote: "613 students, 1,901 exams, 87%", page: 3 },
+  enrollment: { year: "2026–27", total: 1115, by_grade: { "9": 294, "10": 266, "11": 263, "12": 292 }, quote: "Total 1,115", page: 2 },
+});
+
+test("profile figures: a complete detail validates; each new rule fails when broken", () => {
+  assert.deepEqual(validateHighSchoolDetail(withSchoolFigures()), []);
+  const broken: [string, (d: HighSchoolDetail) => void][] = [
+    ["sat_mean", (d) => (d.scores!.sat_mean = { erw: 900, math: 600 })],
+    ["act_mean", (d) => (d.scores!.act_mean = 40)],
+    ["scores have no quote", (d) => (d.scores!.quote = "")],
+    ["admitted lists UCLA twice", (d) => d.admitted!.entries.push({ name: "UCLA", unit_id: "110662" })],
+    ["admitted has no quote", (d) => (d.admitted!.quote = "")],
+    ["isn't an IPEDS id", (d) => (d.admitted!.entries[0].unit_id = "12")],
+    ['must read "Class of YYYY"', (d) => (d.school_outcomes!.class = "2026")],
+    ["doesn't add up to college-going", (d) => (d.school_outcomes!.four_year = 0.8)],
+    ["grad_rate must be 0–1", (d) => (d.school_outcomes!.grad_rate = 96)],
+    ["fewer exams", (d) => (d.ap_stats!.exams = 10)],
+    ["pass_share must be 0–1", (d) => (d.ap_stats!.pass_share = 87)],
+    ["doesn't sum to the total", (d) => (d.enrollment!.total = 1200)],
+  ];
+  for (const [msg, breakIt] of broken) {
+    const d = withSchoolFigures();
+    breakIt(d);
+    const problems = validateHighSchoolDetail(d);
+    assert.ok(problems.some((p) => p.includes(msg)), `expected "${msg}" in ${JSON.stringify(problems)}`);
+  }
+});
+
+test("yearRank: classes, school years, and plain years order by their last year", () => {
+  assert.equal(yearRank("Class of 2026"), 2026);
+  assert.equal(yearRank("2025–26"), 2026);
+  assert.equal(yearRank("2024-25"), 2025);
+  assert.equal(yearRank("Fall 2024"), 2024);
+  assert.equal(yearRank(null), null);
+  assert.equal(yearRank("most recent"), null);
+});
+
+test("applyProfileNewest: newer school figures replace older federal/state ones, cite the profile, and keep what they replaced", () => {
+  const school = row(RICH);
+  const m = meta();
+  const report = mergeStateReport(school, stateFiles());
+  const view = buildHighSchoolView(school, { stateReport: report, detail: withSchoolFigures(), medians: null, meta: m });
+
+  // Graduation rate: Class of 2026 beats the federal class.
+  assert.deepEqual(view.school.grad_rate, { value: 0.96, low: null, high: null, cohort: 259 });
+  assert.equal(view.school.lineage?.grad_rate?.source, "hs-profile");
+  const grad = citeHsView("grad_rate", view);
+  assert.equal(grad.key, "hs-profile");
+  assert.equal(grad.year, "Class of 2026");
+  assert.equal(grad.page, 2);
+  assert.ok(grad.quote?.includes("96%"));
+  if (school.grad_rate && (school.grad_rate.value !== null || school.grad_rate.low !== null)) assert.ok(grad.replaces?.display, "the federal rate it replaced is kept");
+
+  // College-going (a state field) and enrollment.
+  assert.equal(view.state_report?.values.college_going_rate, 0.98);
+  assert.equal(citeHsView("state.college_going_rate", view).key, "hs-profile");
+  assert.equal(view.school.enrollment.total, 1115);
+  assert.equal(view.school.enrollment.by_grade["12"], 292);
+  assert.equal(citeHsView("enrollment.total", view).year, "2026–27");
+  assert.equal(view.replaced?.["enrollment.total"]?.value, school.enrollment.total);
+
+  // AP courses offered: the profile's list (its edition) over the CRDC count.
+  assert.equal(view.school.rigor?.ap_courses, withSchoolFigures().ap_courses!.length);
+  assert.equal(citeHsView("rigor.ap_courses", view).key, "hs-profile");
+
+  // The input row is untouched.
+  assert.notEqual(school.enrollment.total, 1115);
+
+  // Detail fields cite their own year, not the edition.
+  assert.equal(citeHsView("detail.scores", view).year, "2025–26");
+  assert.equal(citeHsView("detail.admitted", view).year, "Class of 2026");
+});
+
+test("applyProfileNewest: an older or undated profile figure never replaces a newer one", () => {
+  const school = row(RICH);
+  const old = withSchoolFigures();
+  old.school_outcomes!.class = "Class of 2015";
+  old.enrollment!.year = "2010–11";
+  const view = buildHighSchoolView(school, { stateReport: mergeStateReport(school, stateFiles()), detail: old, medians: null, meta: meta() });
+  assert.deepEqual(view.school.grad_rate, school.grad_rate);
+  assert.equal(view.school.enrollment.total, school.enrollment.total);
+  assert.notEqual(view.school.lineage?.grad_rate?.source, "hs-profile");
+  assert.equal(view.replaced?.grad_rate, undefined);
+  // Without a detail file nothing changes at all.
+  const plain = { school, state_report: null, detail: null, medians: null, meta: meta() };
+  assert.equal(applyProfileNewest(plain), plain);
 });

@@ -8,6 +8,8 @@ import {
   compareToMedian,
   enrollmentText,
   formatRateRange,
+  admittedSummary,
+  scoresDisplay,
   gpaScaleLabel,
   gradRateText,
   hsStateName,
@@ -134,6 +136,22 @@ test("sanitizeProfile keeps the free-text high school name independent of the id
   const out = sanitizeProfile({ basics: { highSchool: "My Local High", highSchoolId: null } });
   assert.equal(out.basics.highSchool, "My Local High");
   assert.equal(out.basics.highSchoolId, null);
+});
+
+test("scoresDisplay: means read as means with sections underneath; ranges as middle 50%; nothing → null", () => {
+  assert.deepEqual(scoresDisplay({ sat_mean: { erw: 641, math: 657 }, act_mean: 31, quote: "q" }), {
+    label: "Mean SAT and ACT",
+    value: "SAT 1298 · ACT 31",
+    sub: "Reading and writing 641, math 657",
+  });
+  assert.deepEqual(scoresDisplay({ sat_mid50: [1080, 1320], act_mid50: [21, 29], quote: "q" }), { label: "SAT and ACT, middle 50%", value: "SAT 1080–1320 · ACT 21–29", sub: null });
+  assert.equal(scoresDisplay({ quote: "q" }), null);
+  assert.equal(scoresDisplay(null), null);
+});
+
+test("admittedSummary: says it's admissions, not enrollment", () => {
+  const s = admittedSummary({ classes: "Class of 2026", entries: [{ name: "A", unit_id: null }, { name: "B", unit_id: "110662" }], quote: "q" });
+  assert.equal(s, "2 colleges admitted at least one member of the class of 2026. This is where students were admitted, not where they enrolled.");
 });
 
 test("gpaScaleLabel: base scale in words; never '100.0 scale'", () => {

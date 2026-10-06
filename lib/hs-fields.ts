@@ -21,6 +21,7 @@ import type {
   HighSchoolDetail,
   HighSchoolMeta,
   HighSchoolView,
+  HsReplaced,
   HsSourceInfo,
   HsSourceKey,
   HsStateField,
@@ -146,8 +147,12 @@ export const HS_FIELDS = {
   "detail.gpa_distribution": profile("GPA distribution", "grading"),
   "detail.ap_courses": profile("AP courses listed", "rigor"),
   "detail.ib_courses": profile("IB courses listed", "rigor"),
-  "detail.scores": profile("SAT/ACT middle 50%", "outcomes"),
+  "detail.scores": profile("SAT/ACT scores", "outcomes"),
   "detail.matriculation": profile("Where graduates enrolled", "where-go"),
+  "detail.admitted": profile("Colleges that admitted graduates", "where-go"),
+  "detail.school_outcomes": profile("Graduating class outcomes (school-reported)", "outcomes"),
+  "detail.ap_stats": profile("AP exam results (school-reported)", "rigor"),
+  "detail.enrollment": profile("Enrollment (school-reported)", "enrollment"),
 } as const satisfies Record<string, HsFieldDef>;
 
 export type HsFieldPath = keyof typeof HS_FIELDS;
@@ -208,6 +213,8 @@ export type HsCited = Cited<HsSourceKey, HsFieldPath>;
 export interface HsCiteExtras {
   stateReport?: HsStateReport | null;
   detail?: HighSchoolDetail | null;
+  /** What the school's newer profile replaced (HighSchoolView.replaced). */
+  replaced?: Partial<Record<string, HsReplaced>> | null;
 }
 
 /** A source's entry in meta, or a neutral placeholder (code can ship before the data that adds the source). */
@@ -233,6 +240,20 @@ const QUOTED_DETAIL: Partial<Record<HsFieldPath, (d: HighSchoolDetail) => { quot
   "detail.gpa_scale": (d) => d.gpa_scale,
   "detail.scores": (d) => d.scores,
   "detail.matriculation": (d) => d.matriculation,
+  "detail.admitted": (d) => d.admitted,
+  "detail.school_outcomes": (d) => d.school_outcomes,
+  "detail.ap_stats": (d) => d.ap_stats,
+  "detail.enrollment": (d) => d.enrollment,
+};
+
+/** Profile values that describe a year other than the profile's edition (last year's scores, the graduating class). */
+const DETAIL_YEAR: Partial<Record<HsFieldPath, (d: HighSchoolDetail) => string | null | undefined>> = {
+  "detail.scores": (d) => d.scores?.year,
+  "detail.admitted": (d) => d.admitted?.classes,
+  "detail.matriculation": (d) => d.matriculation?.classes,
+  "detail.school_outcomes": (d) => d.school_outcomes?.class,
+  "detail.ap_stats": (d) => d.ap_stats?.year,
+  "detail.enrollment": (d) => d.enrollment?.year,
 };
 
 function placeholder(row: Pick<HighSchool, "state">, path: HsFieldPath, meta: HighSchoolMeta, what: string): HsCitedSource {
@@ -243,6 +264,19 @@ function placeholder(row: Pick<HighSchool, "state">, path: HsFieldPath, meta: Hi
 /** The source behind one non-derived path for one school. */
 function hsSourceFor(path: HsFieldPath, row: HighSchool, meta: HighSchoolMeta, extras: HsCiteExtras): HsCitedSource {
   const def: HsFieldDef = HS_FIELDS[path];
+  // A newer figure from the school's own profile (applyProfileNewest) cites the profile, with the figure's own year.
+  const fromProfile = row.lineage?.[path];
+  if (fromProfile?.source === "hs-profile" && extras.detail) {
+    const d = extras.detail;
+    return {
+      key: "hs-profile",
+      label: `${row.name} school profile ${d.profile.edition}`,
+      publisher: row.name,
+      year: fromProfile.year ?? d.profile.edition,
+      url: fromProfile.url ?? d.profile.url,
+      retrieved: fromProfile.retrieved ?? d.profile.retrieved,
+    };
+  }
   if (def.source === "state-report") {
     const section = stateSection(path, extras.stateReport);
     if (!section) return placeholder(row, path, meta, "Not reported by the state");
@@ -256,7 +290,7 @@ function hsSourceFor(path: HsFieldPath, row: HighSchool, meta: HighSchoolMeta, e
       key: "hs-profile",
       label: `${row.name} school profile ${d.profile.edition}`,
       publisher: row.name,
-      year: d.profile.edition,
+      year: DETAIL_YEAR[path]?.(d) || d.profile.edition,
       url: d.profile.url,
       retrieved: d.profile.retrieved,
     };
@@ -302,8 +336,12 @@ export function citeHsField(path: HsFieldPath, row: HighSchool, meta: HighSchool
     const top = inputs.length === 1 ? inputs[0] : hsSourceFor(path, row, meta, extras);
     return { ...top, path, field: def.label, method: "derived", isDefault: def.derived.inputs.every((i) => !row.lineage?.[i]), formula: def.derived.formula, inputs };
   }
-  const rec = def.source === "state-report" || def.source === "hs-profile" ? undefined : row.lineage?.[path];
+  const own = row.lineage?.[path];
+  // State and profile paths take their source from the state file / profile, unless a newer profile figure replaced
+  // the value (then its lineage record, source "hs-profile", is the citation).
+  const rec = def.source === "state-report" || def.source === "hs-profile" ? (own?.source === "hs-profile" ? own : undefined) : own;
   const quoted = def.source === "hs-profile" && extras.detail ? QUOTED_DETAIL[path]?.(extras.detail) : undefined;
+  const replaces = extras.replaced?.[path];
   return {
     ...hsSourceFor(path, row, meta, extras),
     path,
@@ -312,12 +350,13 @@ export function citeHsField(path: HsFieldPath, row: HighSchool, meta: HighSchool
     isDefault: !rec,
     ...(rec?.quote ? { quote: rec.quote } : quoted?.quote ? { quote: quoted.quote } : {}),
     ...(rec?.page !== undefined ? { page: rec.page } : quoted?.page !== undefined ? { page: quoted.page } : {}),
+    ...(replaces ? { replaces: { value: replaces.value, year: replaces.year, label: replaces.label, display: replaces.display } } : {}),
   };
 }
 
 /** citeHsField with everything a page has. */
-export function citeHsView(path: HsFieldPath, view: Pick<HighSchoolView, "school" | "state_report" | "detail" | "meta">): HsCited {
-  return citeHsField(path, view.school, view.meta, { stateReport: view.state_report, detail: view.detail });
+export function citeHsView(path: HsFieldPath, view: Pick<HighSchoolView, "school" | "state_report" | "detail" | "meta" | "replaced">): HsCited {
+  return citeHsField(path, view.school, view.meta, { stateReport: view.state_report, detail: view.detail, replaced: view.replaced });
 }
 
 /* ------------------------------------------------------------------ */

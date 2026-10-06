@@ -315,3 +315,28 @@ the 12 key profiles; recipes are known), `npm run sync-hs-profiles -- --score` (
   without bypassing anyone's robots.txt, and fits the counselor portal.
 - Ask the owner whether to email schools whose profile sits behind a disallowing host; never fetch it another way.
 - Curate aliases for the ~40 big-campus names before matching at scale; the review queue lists them per school.
+
+## As built (school-reported figures, 2026-10-06)
+The first real profile on the site: **Roslyn High School** (`362505003470`), from its 2026–27 profile.
+- **Fetching:** the profile sits under `hs.roslynschools.org/fs/…`, which the school's robots.txt disallows, so the
+  crawler never fetches it. The owner asked for this one document to be downloaded once by hand (2026-10-06), the same
+  way the EDFacts files were; it was read by hand into `data/high-schools/detail/362505003470.json`, every value with
+  its quote and page.
+- **New optional `HighSchoolDetail` fields** (older files stay valid): `admitted` (colleges that admitted members of a
+  class: most profiles print this instead of where students enrolled, so it never goes in `matriculation`),
+  `school_outcomes` (the graduating class's graduation rate, college-going, four-year and two-year shares),
+  `ap_stats` (AP students, exams, share scoring 3+), `enrollment` (by grade, the profile's year), and mean scores
+  (`scores.sat_mean`, `scores.act_mean`, `scores.year`). Validators check each (shares 0–1, four-year + two-year =
+  college-going ± 1.5 points, exams ≥ students, grades sum to the total, no duplicate admitted names) and tests prove
+  each fails when broken.
+- **Newest figures** (`applyProfileNewest` in `lib/high-school-core.ts`, run by `buildHighSchoolView`): where the
+  profile reports the same measure for a later year, its value is the value: graduation rate, college-going rate,
+  AP pass rate, AP courses offered, enrollment. The ⓘ cites the profile (year, page, quote) and shows the replaced
+  federal or state figure. An older or undated profile figure never replaces anything. Medians are unchanged.
+- **Display:** "Admitted to: N colleges" (collapsed list, linked to college pages, labeled as admissions, not
+  enrollment) under Where graduates go; "Mean SAT and ACT" under Outcomes; the AP course list under Rigor; profile
+  fields cite their own year (scores 2025–26, outcomes Class of 2026), not the edition.
+- **Matching:** 141 of Roslyn's 144 colleges link to a college page. 15 full-name aliases for big campuses were added
+  to `data/aliases-curated.json` ("Columbia University", "Rutgers University", "University of Maryland", …); "USC"
+  and "RPI" stay ambiguous for the matcher (never a guess) and were resolved from the list's own context; McGill,
+  the University of Amsterdam, and CUNY Macaulay Honors have no page.

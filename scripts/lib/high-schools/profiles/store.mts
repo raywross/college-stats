@@ -94,6 +94,10 @@ export function writeDetail(dir: string, d: HighSchoolDetail): void {
     ib_courses: d.ib_courses,
     scores: d.scores,
     matriculation: d.matriculation,
+    ...(d.admitted !== undefined ? { admitted: d.admitted } : {}),
+    ...(d.school_outcomes !== undefined ? { school_outcomes: d.school_outcomes } : {}),
+    ...(d.ap_stats !== undefined ? { ap_stats: d.ap_stats } : {}),
+    ...(d.enrollment !== undefined ? { enrollment: d.enrollment } : {}),
   };
   writeJson(join(dir, `${d.id}.json`), ordered);
 }

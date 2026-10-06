@@ -227,4 +227,29 @@ export function gpaScaleLabel(scale: NonNullable<HighSchoolDetail["gpa_scale"]>)
   return scale.weighted && scale.kind !== "weighted-5" ? `${base}, weighted GPA reported` : base;
 }
 
+/**
+ * The profile's test scores as a label and value: means when the school prints means ("Mean SAT and ACT",
+ * "SAT 1298 · ACT 31", with the sections underneath), middle-50% ranges otherwise. Null when it prints neither.
+ */
+export function scoresDisplay(scores: HighSchoolDetail["scores"]): { label: string; value: string; sub: string | null } | null {
+  if (!scores) return null;
+  const parts: string[] = [];
+  const subs: string[] = [];
+  const mean = !!(scores.sat_mean || (scores.act_mean !== null && scores.act_mean !== undefined));
+  if (scores.sat_mean) {
+    parts.push(`SAT ${scores.sat_mean.erw + scores.sat_mean.math}`);
+    subs.push(`Reading and writing ${scores.sat_mean.erw}, math ${scores.sat_mean.math}`);
+  } else if (scores.sat_mid50) parts.push(`SAT ${scores.sat_mid50[0]}–${scores.sat_mid50[1]}`);
+  if (scores.act_mean !== null && scores.act_mean !== undefined) parts.push(`ACT ${scores.act_mean}`);
+  else if (scores.act_mid50) parts.push(`ACT ${scores.act_mid50[0]}–${scores.act_mid50[1]}`);
+  if (!parts.length) return null;
+  return { label: mean ? "Mean SAT and ACT" : "SAT and ACT, middle 50%", value: parts.join(" · "), sub: subs.length ? subs.join("; ") : null };
+}
+
+/** "141 of 144 link to their college pages" style summary for the admitted list. */
+export function admittedSummary(admitted: NonNullable<HighSchoolDetail["admitted"]>): string {
+  const n = admitted.entries.length;
+  return `${n.toLocaleString("en-US")} ${n === 1 ? "college" : "colleges"} admitted at least one member of the ${admitted.classes.replace(/^Class/, "class")}. This is where students were admitted, not where they enrolled.`;
+}
+
 export { pct, pctSmart };

@@ -219,7 +219,18 @@ export interface HighSchoolDetail {
   gpa_distribution: { band: string; share: number }[] | null;
   ap_courses: string[] | null;
   ib_courses: string[] | null;
-  scores: { sat_mid50?: [number, number] | null; act_mid50?: [number, number] | null; quote?: string } | null;
+  scores: {
+    sat_mid50?: [number, number] | null;
+    act_mid50?: [number, number] | null;
+    /** Mean section scores, when the profile prints means instead of ranges. */
+    sat_mean?: { erw: number; math: number } | null;
+    act_mean?: number | null;
+    /** The year the scores describe ("2025–26"); defaults to the edition. */
+    year?: string;
+    quote?: string;
+    page?: number;
+  } | null;
+  /** Where graduates enrolled. Never an admitted list: that's `admitted`. */
   matriculation: {
     /** "2023–2025". */
     classes: string;
@@ -227,6 +238,29 @@ export interface HighSchoolDetail {
     quote?: string;
     page?: number;
   } | null;
+  /** Colleges that admitted members of a class (most profiles print this instead of enrollment). Optional: older files lack it. */
+  admitted?: {
+    /** "Class of 2026". */
+    classes: string;
+    entries: { name: string; unit_id: string | null }[];
+    quote: string;
+    page?: number;
+  } | null;
+  /** The school's own figures for its latest graduating class; shares 0–1. */
+  school_outcomes?: {
+    class: string;
+    class_size: number | null;
+    grad_rate: number | null;
+    college_going: number | null;
+    four_year: number | null;
+    two_year: number | null;
+    quote: string;
+    page?: number;
+  } | null;
+  /** The school's AP results for one year. */
+  ap_stats?: { year: string; students: number | null; exams: number | null; pass_share: number | null; quote: string; page?: number } | null;
+  /** Enrollment as the profile prints it (the profile's own year, usually the edition). */
+  enrollment?: { year: string; total: number; by_grade: Partial<Record<"9" | "10" | "11" | "12", number>>; quote: string; page?: number } | null;
 }
 
 /** A school's state report values, merged by mergeStateReport. */
@@ -247,6 +281,20 @@ export interface HighSchoolView {
   detail: HighSchoolDetail | null;
   medians: StateMedians[string] | null;
   meta: HighSchoolMeta;
+  /**
+   * Values the school's own newer profile replaced (applyProfileNewest), by field path: what was there before and
+   * whose it was, for the ⓘ ("NCES Common Core of Data, 2024–25: 1,086").
+   */
+  replaced?: Partial<Record<string, HsReplaced>>;
+}
+
+/** A value a newer school-reported figure replaced. */
+export interface HsReplaced {
+  value: number | null;
+  year: string | null;
+  label: string;
+  /** Already formatted ("99–100%", "1,086"). */
+  display: string;
 }
 
 /** A search result / picker entry. */

@@ -7,6 +7,7 @@ import { AccountSection } from "@/components/account/AccountSection";
 import { AuthUnavailable } from "@/components/account/AuthUnavailable";
 import { HouseholdSummary } from "@/components/account/HouseholdSummary";
 import { SignOutButton } from "@/components/account/SignOutButton";
+import { UpdateEmailsSection } from "@/components/me/UpdateEmailsSection";
 import { Term } from "@/components/ui/info-tip";
 import { AccountsSetupError, authConfigured, currentStudent, getAccount, requireUser } from "@/lib/auth";
 import { myAccessLog, myHouseholds } from "@/lib/households";
@@ -77,11 +78,7 @@ export default async function AccountPage() {
         <HouseholdSummary households={households} home={home} defaultRole={defaultRole} />
       </AccountSection>
 
-      <AccountSection id="following" title={<Term term="follow">Following</Term>} description="Colleges you follow, and your update-email setting.">
-        <Link href="/me/following" className="inline-flex h-10 items-center gap-2 rounded-full border px-4 text-sm font-semibold hover:bg-muted">
-          Manage what you follow
-        </Link>
-      </AccountSection>
+      <UpdateEmailsSection />
 
       {student && (
         <AccountSection

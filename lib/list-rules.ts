@@ -135,6 +135,89 @@ export function setStatus(current: { status: ListStatus; outcome: ListOutcome | 
 }
 
 /* ------------------------------------------------------------------ */
+/* Owner                                                               */
+/* ------------------------------------------------------------------ */
+
+/** A list row's owner, from whichever owner column is set (the database's one-owner check guarantees exactly one). */
+export function listOwner(list: Pick<ListRecord, "student_id" | "user_id">): ListOwner {
+  if (list.student_id) return { kind: "student", id: list.student_id };
+  if (list.user_id) return { kind: "user", id: list.user_id };
+  throw new Error("A list without an owner");
+}
+
+/** The owner column and value a query filters by (`.eq(column, id)`). */
+export function ownerColumn(owner: ListOwner): { column: "student_id" | "user_id"; id: string } {
+  return { column: owner.kind === "student" ? "student_id" : "user_id", id: owner.id };
+}
+
+/* ------------------------------------------------------------------ */
+/* Tracking row                                                        */
+/* ------------------------------------------------------------------ */
+
+/**
+ * The tracking row under each college (specs/product/household-hub.md "Display"), always in this order. Applying
+ * and Accepted aren't columns of their own: they read and write `status` and `outcome`, so the Scoir-compatible
+ * export is unchanged.
+ */
+export type TrackingKey = "updates" | "applying" | "visited" | "social" | "accepted";
+export const TRACKING_ORDER: TrackingKey[] = ["updates", "applying", "visited", "social", "accepted"];
+export const TRACKING_LABELS: Record<TrackingKey, string> = {
+  updates: "Updates",
+  applying: "Applying",
+  visited: "Visited",
+  social: "Following on social",
+  accepted: "Accepted",
+};
+
+export interface TrackingChip {
+  key: TrackingKey;
+  on: boolean;
+  /** Shown on but not switchable from the row: Applying once the status has moved past it (applied, decided). */
+  locked: boolean;
+}
+
+type TrackedItem = Pick<ListItem, "updates" | "status" | "outcome" | "visited_on" | "follows_social">;
+
+export function trackingChips(item: TrackedItem): TrackingChip[] {
+  const pastApplying = item.status === "applied" || item.status === "decided";
+  const on: Record<TrackingKey, boolean> = {
+    updates: item.updates,
+    applying: item.status !== "considering",
+    visited: item.visited_on !== null,
+    social: item.follows_social,
+    accepted: item.outcome === "admitted",
+  };
+  return TRACKING_ORDER.map((key) => ({ key, on: on[key], locked: key === "applying" && pastApplying }));
+}
+
+/** The write a toggle makes, for the Server Action of the same name in lib/lists.ts. `today` is yyyy-mm-dd. */
+export type TrackingWrite =
+  | { action: "setUpdates"; value: boolean }
+  | { action: "setItemStatus"; status: ListStatus }
+  | { action: "setVisited"; date: string | null }
+  | { action: "setFollowsSocial"; value: boolean }
+  | { action: "setOutcome"; outcome: "admitted"; date: string };
+
+/**
+ * Applying on → status `applying`, off → `considering`. Accepted on → outcome `admitted` decided today, off → back
+ * to `applied` with no outcome (owner assumption, 2026-10-06). Visited on → today.
+ */
+export function trackingWrite(key: TrackingKey, turnOn: boolean, today: string): TrackingWrite {
+  switch (key) {
+    case "updates":
+      return { action: "setUpdates", value: turnOn };
+    case "applying":
+      return { action: "setItemStatus", status: turnOn ? "applying" : "considering" };
+    case "visited":
+      return { action: "setVisited", date: turnOn ? today : null };
+    case "social":
+      return { action: "setFollowsSocial", value: turnOn };
+    case "accepted":
+      return turnOn ? { action: "setOutcome", outcome: "admitted", date: today } : { action: "setItemStatus", status: "applied" };
+  }
+}
+
+/* ------------------------------------------------------------------ */
 /* Balance line                                                        */
 /* ------------------------------------------------------------------ */
 
@@ -241,7 +324,14 @@ export function upcomingDeadlines<T extends { deadline: ResolvedDeadline }>(item
 /* CSV export / import (Scoir-compatible columns)                      */
 /* ------------------------------------------------------------------ */
 
-export const CSV_COLUMNS = ["College", "Category", "Round", "Status", "Outcome", "Deadline", "Enrolling", "Notes"] as const;
+/**
+ * The Scoir-compatible columns first, then the tracking row's three (specs/product/household-hub.md "Display"):
+ * `updates` ("Yes"/"No"), `visited_on` (yyyy-mm-dd or blank), `follows_social` ("Yes" or blank). Import treats the
+ * last three as optional, so a Scoir or Common App export still pastes.
+ */
+export const SCOIR_COLUMNS = ["College", "Category", "Round", "Status", "Outcome", "Deadline", "Enrolling", "Notes"] as const;
+export const TRACKING_COLUMNS = ["updates", "visited_on", "follows_social"] as const;
+export const CSV_COLUMNS = [...SCOIR_COLUMNS, ...TRACKING_COLUMNS] as const;
 
 export interface CsvRow {
   name: string;
@@ -252,6 +342,18 @@ export interface CsvRow {
   deadline: string | null;
   enrolling: boolean;
   notes: string;
+  updates: boolean;
+  visited_on: string | null;
+  follows_social: boolean;
+}
+
+const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+/** A yyyy-mm-dd that is a real calendar date, else null (visited_on from the tracking row and CSV import). */
+export function isoDateOrNull(value: unknown): string | null {
+  if (typeof value !== "string" || !ISO_DATE_RE.test(value)) return null;
+  const d = new Date(`${value}T00:00:00Z`);
+  return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === value ? value : null;
 }
 
 function escapeCsv(value: string): string {
@@ -272,6 +374,9 @@ export function toCsv(rows: CsvRow[]): string {
         r.deadline ?? "",
         r.enrolling ? "Yes" : "",
         r.notes,
+        r.updates ? "Yes" : "No",
+        r.visited_on ?? "",
+        r.follows_social ? "Yes" : "",
       ]
         .map(escapeCsv)
         .join(","),
@@ -316,17 +421,22 @@ export interface ParsedCsvRow {
   deadline: string | null;
   enrolling: boolean;
   notes: string;
+  /** On unless the cell says no (a paste without the column keeps the default). */
+  updates: boolean;
+  visited_on: string | null;
+  follows_social: boolean;
 }
 
 /**
  * Parses a pasted CSV (the exported format, or a close match — headers in any order, a subset of columns).
  * Unrecognized category/status/round/outcome text falls back to a safe default rather than failing the whole
- * paste; "College" is the only required column, by position or header name.
+ * paste; "College" is the only required column, by position or header name. Without the tracking columns (a Scoir
+ * export), updates stays on, visited_on empty, follows_social off: the defaults of a college added by hand.
  */
 export function parseCsv(text: string): ParsedCsvRow[] {
   const lines = text.split(/\r\n|\n|\r/).filter((l) => l.trim().length > 0);
   if (lines.length === 0) return [];
-  const header = parseCsvLine(lines[0]).map((h) => h.trim().toLowerCase());
+  const header = parseCsvLine(lines[0]).map((h) => h.trim().toLowerCase().replace(/\s+/g, "_"));
   const hasHeader = header.includes("college");
   const col = (name: string) => header.indexOf(name.toLowerCase());
   const rows = hasHeader ? lines.slice(1) : lines;
@@ -339,6 +449,9 @@ export function parseCsv(text: string): ParsedCsvRow[] {
     deadline: hasHeader ? col("deadline") : 5,
     enrolling: hasHeader ? col("enrolling") : 6,
     notes: hasHeader ? col("notes") : 7,
+    updates: hasHeader ? col("updates") : 8,
+    visited_on: hasHeader ? col("visited_on") : 9,
+    follows_social: hasHeader ? col("follows_social") : 10,
   };
   const get = (cells: string[], i: number) => (i >= 0 && i < cells.length ? cells[i].trim() : "");
   return rows
@@ -353,6 +466,9 @@ export function parseCsv(text: string): ParsedCsvRow[] {
       deadline: get(cells, idx.deadline) || null,
       enrolling: /^y(es)?$/i.test(get(cells, idx.enrolling)),
       notes: get(cells, idx.notes),
+      updates: !/^(n|no|false|0|off)$/i.test(get(cells, idx.updates)),
+      visited_on: isoDateOrNull(get(cells, idx.visited_on)),
+      follows_social: /^(y|yes|true|1)$/i.test(get(cells, idx.follows_social)),
     }));
 }
 

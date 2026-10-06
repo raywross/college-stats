@@ -8,6 +8,7 @@ import { gradeSpan } from "@/lib/high-school-core";
 import { citeHsView, hsValueAt, isHsSuppressed, type HsFieldPath } from "@/lib/hs-fields";
 import type { HsStateField } from "@/lib/high-school-types";
 import {
+  gpaScaleLabel,
   gradRateText,
   gradTrendPoints,
   gradTrendSummary,
@@ -269,7 +270,7 @@ export default async function HighSchoolPage({ params }: Props) {
                 <InfoTip term="weighted-gpa" cited={cite("detail.gpa_scale")} />
               </p>
               <p className="mt-1 font-display text-lg font-bold">
-                {detail.gpa_scale.weighted ? "Weighted" : "Unweighted"} {detail.gpa_scale.max ? `(${detail.gpa_scale.max}.0 scale)` : ""}
+                {gpaScaleLabel(detail.gpa_scale)}
               </p>
               {detail.gpa_scale.conversion && <p className="mt-1 text-sm text-muted-foreground">{detail.gpa_scale.conversion}</p>}
             </div>

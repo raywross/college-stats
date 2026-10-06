@@ -8,6 +8,7 @@ import {
   compareToMedian,
   enrollmentText,
   formatRateRange,
+  gpaScaleLabel,
   gradRateText,
   hsStateName,
   hsTypeBadges,
@@ -133,4 +134,16 @@ test("sanitizeProfile keeps the free-text high school name independent of the id
   const out = sanitizeProfile({ basics: { highSchool: "My Local High", highSchoolId: null } });
   assert.equal(out.basics.highSchool, "My Local High");
   assert.equal(out.basics.highSchoolId, null);
+});
+
+test("gpaScaleLabel: base scale in words; never '100.0 scale'", () => {
+  const s = (kind: "unweighted-4" | "weighted-5" | "100-point" | "other", max: number | null, weighted: boolean) =>
+    ({ kind, max, weighted, conversion: null, quote: "" });
+  assert.equal(gpaScaleLabel(s("100-point", 100, false)), "100-point scale");
+  assert.equal(gpaScaleLabel(s("unweighted-4", 4, false)), "4.0 scale");
+  assert.equal(gpaScaleLabel(s("unweighted-4", 4, true)), "4.0 scale, weighted GPA reported");
+  assert.equal(gpaScaleLabel(s("weighted-5", 5, true)), "5.0 weighted scale");
+  assert.equal(gpaScaleLabel(s("other", 4.5, false)), "4.5 scale");
+  assert.equal(gpaScaleLabel(s("other", 6, false)), "6.0 scale");
+  assert.equal(gpaScaleLabel(s("other", null, false)), "School's own scale");
 });

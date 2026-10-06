@@ -1,0 +1,92 @@
+# Runs the high school profile pilot (scripts/sync-hs-profiles.mts; specs/product/high-school-data.md "Pilot results")
+# where the Anthropic key lives (the repository secret ANTHROPIC_API_KEY; there is no key in local .env files).
+# Dispatch it on the branch that should carry the results ("Use workflow from": a data branch, never main): it runs the
+# pilot's 100 schools (data/high-schools/profile-pilot.json), extracts the answer key's schools, scores the extraction
+# against data/reference/hs-profile-answer-key.json, checks lineage, and commits the data back to that same branch for
+# review. Never auto-merges; never runs on a schedule (the spec: demand-driven expansion, never all high schools).
+# The spend cap counts spend recorded by earlier runs in profile-pilot.json.
+name: High school profile pilot
+
+on:
+  workflow_dispatch:
+    inputs:
+      cap:
+        description: Total pilot spend cap in US dollars (earlier runs count toward it)
+        type: string
+        default: "30"
+      only:
+        description: School ids to run, comma-separated (overrides the pilot list when set)
+        type: string
+        default: ""
+      answer_key:
+        description: Also extract the answer key's schools and score against the key
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+
+concurrency:
+  group: hs-profile-pilot
+  cancel-in-progress: false
+
+jobs:
+  pilot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Refuse to run on main
+        if: github.ref_name == 'main'
+        run: |
+          echo "::error::Dispatch this on a data branch; the run commits its results to the branch it runs on."
+          exit 1
+
+      - name: Check the API key
+        run: |
+          if [ -z "${{ secrets.ANTHROPIC_API_KEY }}" ]; then
+            echo "::error::ANTHROPIC_API_KEY is not set (repository secret)."
+            exit 1
+          fi
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+
+      - name: Run the pilot
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          CAP: ${{ inputs.cap }}
+          ONLY: ${{ inputs.only }}
+        run: |
+          if [ -n "$ONLY" ]; then
+            npm run sync-hs-profiles -- --only "$ONLY" --cap "${CAP:-30}"
+          else
+            npm run sync-hs-profiles -- --pilot --cap "${CAP:-30}"
+          fi
+
+      - name: Extract the answer key's schools and score
+        if: inputs.answer_key
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          CAP: ${{ inputs.cap }}
+        run: |
+          npm run sync-hs-profiles -- --answer-key --cap "${CAP:-30}"
+          npm run sync-hs-profiles -- --score
+
+      - name: Check lineage
+        run: npm run check:lineage
+
+      - name: Commit the results to this branch
+        run: |
+          git add data specs/product/high-school-data.md
+          if git diff --cached --quiet; then
+            echo "No data changes."
+            exit 0
+          fi
+          printf 'Data: high school profile pilot run\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n' > /tmp/hs-pilot-msg.txt
+          git -c user.name="hs-profile-pilot-bot" -c user.email="noreply@anthropic.com" commit -F /tmp/hs-pilot-msg.txt
+          git push origin "HEAD:${GITHUB_REF_NAME}"

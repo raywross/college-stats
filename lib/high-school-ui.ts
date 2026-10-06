@@ -213,4 +213,18 @@ export function gradTrendDomain(points: readonly GradTrendPoint[]): [number, num
   return [Math.min(0.5, Math.max(0, lo)), 1];
 }
 
+/**
+ * The school's grading scale in words. `kind` is the base scale; `weighted` means the school also reports a weighted
+ * GPA (honors/AP points), so a 4.0 base with honors points reads "4.0 scale, weighted GPA reported".
+ */
+export function gpaScaleLabel(scale: NonNullable<HighSchoolDetail["gpa_scale"]>): string {
+  const base =
+    scale.kind === "100-point" ? "100-point scale"
+    : scale.kind === "unweighted-4" ? "4.0 scale"
+    : scale.kind === "weighted-5" ? "5.0 weighted scale"
+    : scale.max ? `${scale.max % 1 === 0 ? scale.max.toFixed(1) : scale.max} scale`
+    : "School's own scale";
+  return scale.weighted && scale.kind !== "weighted-5" ? `${base}, weighted GPA reported` : base;
+}
+
 export { pct, pctSmart };

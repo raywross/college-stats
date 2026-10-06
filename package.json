@@ -33,6 +33,7 @@
     "measure-profile": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/measure-profile.mts",
     "sync-high-schools": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --env-file-if-exists=.env.local scripts/sync-high-schools.mts",
     "sync-hs-states": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --env-file-if-exists=.env.local scripts/sync-hs-states.mts",
+    "sync-hs-profiles": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --env-file-if-exists=.env.local scripts/sync-hs-profiles.mts",
     "check:lineage": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/check-lineage.mts",
     "test": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test \"tests/**/*.test.mts\"",
     "typecheck": "next typegen && tsc --noEmit",

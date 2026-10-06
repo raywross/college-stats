@@ -2,9 +2,15 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { GuardianBanner } from "@/components/account/GuardianBanner";
 import type { PersonPage } from "@/lib/households";
+import type { ListOwner } from "@/lib/list-rules";
 import { cn } from "@/lib/utils";
 
 export type PersonTab = "list" | "numbers";
+
+/** Whose lists a person's page shows: a student's record, or a guardian's own (lists.user_id). */
+export function personOwner(person: PersonPage): ListOwner {
+  return person.kind === "student" ? { kind: "student", id: person.access.student.id } : { kind: "user", id: person.user_id };
+}
 
 /** The person's name as their page's title: their own words, never an email. */
 export function personTitle(person: PersonPage): string {

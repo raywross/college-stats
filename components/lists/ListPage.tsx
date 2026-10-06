@@ -215,7 +215,7 @@ export async function ListPage({
           ) : (
             <>
               Add your household&apos;s{" "}
-              <Link href="/account/household#home" className="font-semibold text-primary hover:underline">
+              <Link href="/household#home" className="font-semibold text-primary hover:underline">
                 home address
               </Link>{" "}
               to see how far each college is from home.

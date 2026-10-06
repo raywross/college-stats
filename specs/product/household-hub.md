@@ -204,16 +204,22 @@ One new file, `supabase/migrations/2026…_household_hub.sql`, applied to dev be
 | Glossary | `updates` (the per-college switch), `tracking` |
 
 ## Owner decisions
-1. **The secret key in Vercel.** The invite-to-a-password flow needs Supabase's admin API from a Server Action.
-   Recommendation: allow it, confined to `lib/supabase-admin.ts`, with `SUPABASE_SECRET_KEY` set in Vercel as a
-   server-only variable and a test that no other module imports that client; update [supabase.md](../supabase.md#keys).
-   The alternative keeps the key in Supabase by putting the two calls in a Supabase Edge Function the action calls
-   with the invitation token; it adds a deploy step and a second runtime for two functions.
-2. **Storing the invitation token in clear** for pending invitations so Copy link works (above). The alternative keeps
-   hash-only storage and makes Copy mint a new link each time, which silently kills the one sent earlier.
-3. **A guardian's list is visible to the household.** Recommendation: yes (it's suggestions, and the student should see
-   them). The alternative is owner-only until shared.
-4. **Phone now, use later.** Collected on the form as asked; nothing sends to it until
+Decisions 2–4 were approved by the owner on 2026-10-06; decision 1 is open.
+1. **The secret key in Vercel** (open). Today an invited person has to sign up themselves and confirm their email
+   before accepting, because the site has no account for them. Creating the account for them, with the email already
+   marked verified, and minting the link that signs them in are **administrator actions** in Supabase Auth, allowed
+   only with the project's secret key, which bypasses row-level security. [supabase.md](../supabase.md#keys) keeps
+   that key off Vercel today (only the publish script and GitHub Actions hold it).
+   - **Option A (recommended):** set `SUPABASE_SECRET_KEY` in Vercel as a server-only variable, used by exactly one
+     module, `lib/supabase-admin.ts`, with a test that no other module imports it; update supabase.md. Simple and
+     the usual pattern; the cost is that a leak on Vercel would expose a key that can read every family's data.
+   - **Option B:** keep the key inside Supabase by putting the two admin calls in a Supabase Edge Function that the
+     Server Action calls with the invitation token. The key never leaves Supabase; the cost is a second runtime and
+     deploy step for two small functions.
+2. **Approved: store the invitation token in clear** for pending invitations so Copy link works (above). The
+   alternative kept hash-only storage and made Copy mint a new link each time, silently killing the one sent earlier.
+3. **Approved: a guardian's list is visible to the household** (it's suggestions, and the student should see them).
+4. **Approved: phone now, use later.** Collected on the form as asked; nothing sends to it until
    [application-plan.md](application-plan.md) and its consent step.
 
 ## Out of scope

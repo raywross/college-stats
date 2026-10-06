@@ -2,38 +2,47 @@
 
 import { useState, useTransition } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Copy, Trash2 } from "lucide-react";
 import { createList, deleteList, importListCsv, renameList, setListShare, type CsvImportResult } from "@/lib/lists";
-import type { ListRecord } from "@/lib/list-rules";
+import { listOwner, type ListRecord } from "@/lib/list-rules";
 import { cn } from "@/lib/utils";
 
 const btn = "inline-flex h-9 items-center gap-1.5 rounded-full border px-3.5 text-sm font-semibold hover:bg-muted disabled:opacity-50";
 const primaryBtn = "inline-flex h-9 items-center gap-1.5 rounded-full bg-primary px-3.5 text-sm font-semibold text-primary-foreground disabled:opacity-50";
 
-/** Switch between a student's lists, with a form to start another (no tier cap yet: specs/product/saved-lists.md). */
-export function ListSwitcher({ lists, currentId }: { lists: ListRecord[]; currentId: string }) {
+/**
+ * Switch between one person's lists, with a form to start another (no tier cap yet: specs/product/saved-lists.md)
+ * when the viewer can edit them. `basePath` prefixes each list's link: `/me/lists` by default, or
+ * `/household/<person>/lists` on a person's page.
+ */
+export function ListSwitcher({ lists, currentId, basePath = "/me/lists", canEdit = true }: { lists: ListRecord[]; currentId: string; basePath?: string; canEdit?: boolean }) {
   const [adding, setAdding] = useState(false);
   const [pending, startTransition] = useTransition();
+  const router = useRouter();
   return (
     <div className="flex flex-wrap items-center gap-2">
       {lists.map((l) => (
         <Link
           key={l.id}
-          href={`/me/lists/${l.id}`}
+          href={`${basePath}/${l.id}`}
           className={cn("inline-flex h-8 items-center rounded-full border px-3 text-sm font-medium", l.id === currentId ? "bg-primary text-primary-foreground" : "hover:bg-muted")}
         >
           {l.name}
         </Link>
       ))}
-      {adding ? (
+      {!canEdit ? null : adding ? (
         <form
           className="flex items-center gap-1.5"
           onSubmit={(e) => {
             e.preventDefault();
             const name = String(new FormData(e.currentTarget).get("name") ?? "");
             startTransition(async () => {
-              const student = lists[0]?.student_id;
-              if (student && name.trim()) await createList(student, name);
+              // Every list here has the same owner (the page reads one person's lists).
+              if (lists[0] && name.trim()) {
+                const result = await createList(listOwner(lists[0]), name);
+                if (result.ok) router.refresh();
+              }
               setAdding(false);
             });
           }}
@@ -52,10 +61,14 @@ export function ListSwitcher({ lists, currentId }: { lists: ListRecord[]; curren
   );
 }
 
-/** Rename this list, and delete it if it isn't the default (the server refuses the default's deletion either way). */
-export function ListMeta({ list }: { list: ListRecord }) {
+/**
+ * Rename this list, and delete it if it isn't the default (the server refuses the default's deletion either way).
+ * Just the name, as the page heading, for a viewer who can't edit it.
+ */
+export function ListMeta({ list, canEdit = true }: { list: ListRecord; canEdit?: boolean }) {
   const [name, setName] = useState(list.name);
   const [pending, startTransition] = useTransition();
+  if (!canEdit) return <h2 className="font-display text-lg font-bold">{list.name}</h2>;
   const run = (fn: () => Promise<unknown>) =>
     startTransition(async () => {
       await fn();

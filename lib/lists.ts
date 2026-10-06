@@ -1,12 +1,15 @@
 "use server";
 /**
- * Server Actions and queries for saved lists (specs/product/saved-lists.md). Every read and write runs with the
- * signed-in user's own Supabase session, so the lists policies (supabase/migrations/20261005150000_lists.sql)
- * decide: a student (or a guardian with edit access) sees and changes only the lists of students they can reach.
- * Pure types and rules (CSV, balance line, deadlines, transitions) live in lib/list-rules.ts.
+ * Server Actions and queries for saved lists (specs/product/saved-lists.md, specs/product/household-hub.md "One list
+ * per person"). Every read and write runs with the signed-in user's own Supabase session, so the lists policies
+ * (supabase/migrations/20261006150000_household_hub.sql) decide: a student's list is changed by the student or a
+ * guardian with edit access; a user's own list (a guardian's) is read by their household and changed by them only.
+ * Pure types and rules (owners, CSV, balance line, deadlines, transitions, the tracking row) live in
+ * lib/list-rules.ts.
  *
- * Public pages (profile, Explore, compare tray) call addToList/removeFromList/isOnAnyList from a client component
- * (AddToListButton); they never read cookies during render.
+ * Public pages (profile, Explore, compare tray) call addToMyDefaultList/removeFromMyLists/isOnAnyList from a client
+ * component (AddToListButton); they never read cookies during render. "My" lists are the signed-in person's own:
+ * their student record's, or, for someone without one (a guardian), the lists they own as a user.
  */
 import { getUser, authConfigured, currentStudent, studentsICanSee } from "@/lib/auth";
 import { createServerSupabase } from "@/lib/supabase-server";
@@ -15,6 +18,8 @@ import { isUnitId } from "@/lib/follow-state";
 import {
   DEFAULT_LIST_NAME,
   applyOutcome,
+  isoDateOrNull,
+  ownerColumn,
   parseCsv,
   setStatus as setStatusPure,
   toCsv,
@@ -23,6 +28,7 @@ import {
   type ListItem,
   type ListNote,
   type ListOutcome,
+  type ListOwner,
   type ListRecord,
   type ListRound,
   type ListStatus,
@@ -32,8 +38,9 @@ import {
   isListStatus,
 } from "@/lib/list-rules";
 
-const ITEM_COLUMNS = "id, list_id, unit_id, category, status, outcome, round, position, added_by, added_at, decision_date, deadline_text, deadline_date, enrolling";
-const LIST_COLUMNS = "id, student_id, name, is_default, share_enabled, created_by, created";
+const ITEM_COLUMNS =
+  "id, list_id, unit_id, category, status, outcome, round, position, added_by, added_at, decision_date, deadline_text, deadline_date, enrolling, updates, visited_on, follows_social";
+const LIST_COLUMNS = "id, student_id, user_id, name, is_default, share_enabled, created_by, created";
 
 export type ListActionResult = { ok: true } | { ok: false; message: string };
 
@@ -57,15 +64,41 @@ async function ready(): Promise<Ready | null> {
   return { userId: user.id, supabase: await createServerSupabase() };
 }
 
+/**
+ * The signed-in person's own owner: their student record when they have one (currentStudent() creates it for a
+ * student), else themselves as a user (a guardian). Null when signed out or unconfigured.
+ */
+async function myOwner(): Promise<ListOwner | null> {
+  if (!authConfigured()) return null;
+  const student = await currentStudent();
+  if (student) return { kind: "student", id: student.id };
+  const user = await getUser();
+  return user ? { kind: "user", id: user.id } : null;
+}
+
+/** The ids of every list `owner` has (the reader's RLS still applies). */
+async function listIdsOf(supabase: Ready["supabase"], owner: ListOwner): Promise<{ ids: string[] } | { error: { code?: string; message?: string } }> {
+  const { column, id } = ownerColumn(owner);
+  const { data, error } = await supabase.from("lists").select("id").eq(column, id);
+  if (error) return { error };
+  return { ids: (data as { id: string }[]).map((l) => l.id) };
+}
+
+/** Accepts a bare student id, the call shape from before lists had two owner kinds. */
+function asOwner(owner: ListOwner | string): ListOwner {
+  return typeof owner === "string" ? { kind: "student", id: owner } : owner;
+}
+
 /* ------------------------------------------------------------------ */
 /* Reads                                                                */
 /* ------------------------------------------------------------------ */
 
-/** Every list the signed-in user can read for `studentId` (own, or a student they can see as a guardian). */
-export async function myLists(studentId: string): Promise<ListRecord[]> {
+/** Every list the signed-in user can read for `owner` (a student they can see, or a user in their household), default first. */
+export async function myLists(owner: ListOwner): Promise<ListRecord[]> {
   const r = await ready();
   if (!r) return [];
-  const { data, error } = await r.supabase.from("lists").select(LIST_COLUMNS).eq("student_id", studentId).order("is_default", { ascending: false }).order("created");
+  const { column, id } = ownerColumn(owner);
+  const { data, error } = await r.supabase.from("lists").select(LIST_COLUMNS).eq(column, id).order("is_default", { ascending: false }).order("created");
   if (error) {
     if (isMissingTable(error)) return [];
     throw new Error(`Reading lists failed: ${error.message}`);
@@ -73,17 +106,22 @@ export async function myLists(studentId: string): Promise<ListRecord[]> {
   return data as ListRecord[];
 }
 
-/** The student's default list, created lazily on first visit to /me/list. Null when signed out/unconfigured. */
-export async function getOrCreateDefaultList(studentId: string): Promise<ListRecord | null> {
+/**
+ * The owner's default list, created lazily (first "Add to list", first visit to the person's page). A user's own
+ * default can only be created by that user (RLS). Null when signed out/unconfigured. A bare string is a student id
+ * (the call shape from before user-owned lists).
+ */
+export async function getOrCreateDefaultList(ownerOrStudentId: ListOwner | string): Promise<ListRecord | null> {
   const r = await ready();
   if (!r) return null;
-  const existing = await r.supabase.from("lists").select(LIST_COLUMNS).eq("student_id", studentId).eq("is_default", true).maybeSingle();
+  const { column, id } = ownerColumn(asOwner(ownerOrStudentId));
+  const existing = await r.supabase.from("lists").select(LIST_COLUMNS).eq(column, id).eq("is_default", true).maybeSingle();
   if (existing.error && !isMissingTable(existing.error)) throw new Error(`Reading your list failed: ${existing.error.message}`);
   if (existing.data) return existing.data as ListRecord;
-  const inserted = await r.supabase.from("lists").insert({ student_id: studentId, name: DEFAULT_LIST_NAME, is_default: true }).select(LIST_COLUMNS).single();
+  const inserted = await r.supabase.from("lists").insert({ [column]: id, name: DEFAULT_LIST_NAME, is_default: true }).select(LIST_COLUMNS).single();
   if (inserted.error) {
     // Two requests racing to create it: the partial unique index lost one insert; read the winner.
-    const again = await r.supabase.from("lists").select(LIST_COLUMNS).eq("student_id", studentId).eq("is_default", true).maybeSingle();
+    const again = await r.supabase.from("lists").select(LIST_COLUMNS).eq(column, id).eq("is_default", true).maybeSingle();
     if (again.data) return again.data as ListRecord;
     throw new Error(`Creating your list failed: ${inserted.error.message}`);
   }
@@ -95,7 +133,7 @@ export interface ListWithItems {
   items: ListItem[];
 }
 
-/** A list and its items, newest-position order, for whoever can read the student. Null when not found/visible. */
+/** A list and its items, in position order, for whoever can read the list. Null when not found/visible. */
 export async function getListWithItems(listId: string): Promise<ListWithItems | null> {
   const r = await ready();
   if (!r) return null;
@@ -134,20 +172,20 @@ export async function namesFor(userIds: string[]): Promise<Record<string, string
   return Object.fromEntries((data as { id: string; display_name: string | null }[]).map((p) => [p.id, p.display_name]));
 }
 
-/** Whether the signed-in user's own college list(s) include `unitId` (for the Add-to-list button's initial state). */
+/** Whether the signed-in person's own college list(s) include `unitId` (for the Add-to-list button's initial state). */
 export async function isOnAnyList(unitId: string): Promise<boolean> {
   if (!isUnitId(unitId)) return false;
-  const student = await currentStudent();
-  if (!student) return false;
+  const owner = await myOwner();
+  if (!owner) return false;
   const r = await ready();
   if (!r) return false;
-  const lists = await r.supabase.from("lists").select("id").eq("student_id", student.id);
-  if (lists.error) {
+  const lists = await listIdsOf(r.supabase, owner);
+  if ("error" in lists) {
     if (isMissingTable(lists.error)) return false;
     console.error(`lists: isOnAnyList failed: ${lists.error.message}`);
     return false;
   }
-  const listIds = (lists.data as { id: string }[]).map((l) => l.id);
+  const listIds = lists.ids;
   if (listIds.length === 0) return false;
   const { data, error } = await r.supabase.from("list_items").select("id").eq("unit_id", unitId).in("list_id", listIds).limit(1);
   if (error) {
@@ -161,12 +199,15 @@ export async function isOnAnyList(unitId: string): Promise<boolean> {
 /* Writes: lists                                                       */
 /* ------------------------------------------------------------------ */
 
-export async function createList(studentId: string, name: string): Promise<ListActionResult> {
+/** Another (non-default) list for `owner`: a student the user can edit, or the user themselves (RLS decides). */
+export async function createList(owner: ListOwner, name: string): Promise<ListActionResult> {
+  if (owner?.kind !== "student" && owner?.kind !== "user") return { ok: false, message: FAILED };
   const r = await ready();
   if (!r) return { ok: false, message: "Sign in to create a list." };
   const trimmed = name.trim().slice(0, 80);
   if (!trimmed) return { ok: false, message: "Give the list a name." };
-  const { error } = await r.supabase.from("lists").insert({ student_id: studentId, name: trimmed });
+  const { column, id } = ownerColumn(owner);
+  const { error } = await r.supabase.from("lists").insert({ [column]: id, name: trimmed });
   if (error) return fail(error, "createList");
   return { ok: true };
 }
@@ -223,11 +264,15 @@ export async function addToList(listId: string, unitId: string): Promise<ListAct
   return { ok: true };
 }
 
-/** Adds one or more colleges to the signed-in user's own default list, creating it if needed. For AddToListButton. */
+/**
+ * Adds one or more colleges to the signed-in person's own default list, creating it if needed: a student's on their
+ * record, a guardian's as a list they own (household-hub.md: a guardian's "Add to list" goes to their own list).
+ * For AddToListButton.
+ */
 export async function addToMyDefaultList(unitIds: string[]): Promise<ListActionResult> {
-  const student = await currentStudent();
-  if (!student) return { ok: false, message: "Sign in to save colleges to a list." };
-  const list = await getOrCreateDefaultList(student.id);
+  const owner = await myOwner();
+  if (!owner) return { ok: false, message: "Sign in to save colleges to a list." };
+  const list = await getOrCreateDefaultList(owner);
   if (!list) return { ok: false, message: FAILED };
   for (const unitId of unitIds) {
     const result = await addToList(list.id, unitId);
@@ -236,16 +281,16 @@ export async function addToMyDefaultList(unitIds: string[]): Promise<ListActionR
   return { ok: true };
 }
 
-/** Removes a college from every one of the signed-in user's own lists that has it (the Add-to-list button's "remove"). */
+/** Removes a college from every one of the signed-in person's own lists that has it (the Add-to-list button's "remove"). */
 export async function removeFromMyLists(unitId: string): Promise<ListActionResult> {
   if (!isUnitId(unitId)) return { ok: false, message: "We couldn't find that college." };
-  const student = await currentStudent();
-  if (!student) return { ok: false, message: "Sign in first." };
+  const owner = await myOwner();
+  if (!owner) return { ok: false, message: "Sign in first." };
   const r = await ready();
   if (!r) return { ok: false, message: "Sign in first." };
-  const lists = await r.supabase.from("lists").select("id").eq("student_id", student.id);
-  if (lists.error) return fail(lists.error, "removeFromMyLists");
-  const listIds = (lists.data as { id: string }[]).map((l) => l.id);
+  const lists = await listIdsOf(r.supabase, owner);
+  if ("error" in lists) return fail(lists.error, "removeFromMyLists");
+  const listIds = lists.ids;
   if (listIds.length === 0) return { ok: true };
   const { error } = await r.supabase.from("list_items").delete().eq("unit_id", unitId).in("list_id", listIds);
   if (error) return fail(error, "removeFromMyLists");
@@ -306,6 +351,37 @@ export async function setDeadlineOverride(itemId: string, text: string | null, d
   if (!r) return { ok: false, message: "Sign in first." };
   const { error } = await r.supabase.from("list_items").update({ deadline_text: text?.slice(0, 200) || null, deadline_date: date || null }).eq("id", itemId);
   if (error) return fail(error, "setDeadlineOverride");
+  return { ok: true };
+}
+
+/** The tracking row's Updates switch; the follows trigger adds or removes the owner's follow to match. */
+export async function setUpdates(itemId: string, updates: boolean): Promise<ListActionResult> {
+  if (typeof updates !== "boolean") return { ok: false, message: FAILED };
+  const r = await ready();
+  if (!r) return { ok: false, message: "Sign in first." };
+  const { error } = await r.supabase.from("list_items").update({ updates }).eq("id", itemId);
+  if (error) return fail(error, "setUpdates");
+  return { ok: true };
+}
+
+/** The tracking row's Visited: a yyyy-mm-dd, or null to clear it. */
+export async function setVisited(itemId: string, date: string | null): Promise<ListActionResult> {
+  const visited_on = date === null ? null : isoDateOrNull(date);
+  if (date !== null && visited_on === null) return { ok: false, message: "That isn't a date." };
+  const r = await ready();
+  if (!r) return { ok: false, message: "Sign in first." };
+  const { error } = await r.supabase.from("list_items").update({ visited_on }).eq("id", itemId);
+  if (error) return fail(error, "setVisited");
+  return { ok: true };
+}
+
+/** The tracking row's "Following on social": the person's own say-so, nothing more. */
+export async function setFollowsSocial(itemId: string, followsSocial: boolean): Promise<ListActionResult> {
+  if (typeof followsSocial !== "boolean") return { ok: false, message: FAILED };
+  const r = await ready();
+  if (!r) return { ok: false, message: "Sign in first." };
+  const { error } = await r.supabase.from("list_items").update({ follows_social: followsSocial }).eq("id", itemId);
+  if (error) return fail(error, "setFollowsSocial");
   return { ok: true };
 }
 
@@ -381,6 +457,9 @@ export async function exportListCsv(listId: string): Promise<string | null> {
     deadline: item.deadline_date ?? item.deadline_text,
     enrolling: item.enrolling,
     notes: (notes[item.id] ?? []).filter((n) => !n.private).map((n) => n.body).join(" / "),
+    updates: item.updates,
+    visited_on: item.visited_on,
+    follows_social: item.follows_social,
   }));
   return toCsv(rows);
 }
@@ -416,6 +495,9 @@ export async function importListCsv(listId: string, csvText: string): Promise<Cs
       status: row.status,
       outcome: row.outcome,
       enrolling: row.enrolling,
+      updates: row.updates,
+      visited_on: row.visited_on,
+      follows_social: row.follows_social,
     });
     if (!error) added++;
     else if (error.code !== "23505") unmatched.push(row.name);

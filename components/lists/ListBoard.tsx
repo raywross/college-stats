@@ -39,6 +39,7 @@ import {
   setRound,
 } from "@/lib/lists";
 import { CompareButton } from "@/components/compare/CompareButton";
+import { TrackingRow } from "@/components/lists/TrackingRow";
 import { distanceLine } from "@/lib/home";
 import { cn } from "@/lib/utils";
 
@@ -68,9 +69,10 @@ export interface BoardItem extends ListItem {
 }
 
 /**
- * The interactive body of /me/list and /me/lists/[id] (specs/product/saved-lists.md "Display"): colleges grouped
- * by category, with status/round/outcome pickers, notes, reordering (buttons, not drag — the spec's noted
- * deviation), and removal. Read-only when `canEdit` is false (a guardian without edit access).
+ * The interactive body of a list page (components/lists/ListPage.tsx; specs/product/saved-lists.md "Display"):
+ * colleges grouped by category, with status/round/outcome pickers, the tracking row (components/lists/
+ * TrackingRow.tsx), notes, reordering (buttons, not drag — the spec's noted deviation), and removal. Read-only when
+ * `canEdit` is false (a guardian without edit access, or someone else's own list).
  */
 export function ListBoard({ items, canEdit, viewerId }: { items: BoardItem[]; canEdit: boolean; viewerId: string }) {
   const sorted = [...items].sort((a, b) => a.position - b.position);
@@ -241,6 +243,9 @@ function ItemRow({ item, canEdit, viewerId, isFirst, isLast }: { item: BoardItem
           </div>
         )}
       </div>
+
+      {/* Under the name line, full width (indented past the crest from sm up) so the five chips wrap to two lines at most on a phone. */}
+      <TrackingRow item={item} canEdit={canEdit} className="sm:pl-12" />
 
       {notesOpen && <NotesPanel item={item} canEdit={canEdit} viewerId={viewerId} />}
     </article>

@@ -1,0 +1,1448 @@
+{
+  "updated": "2026-10-06",
+  "recipes": {
+    "00070577": {
+      "id": "00070577",
+      "name": "Crespi Carmelite High School",
+      "tried": [
+        {
+          "step": "seed",
+          "at": "2026-10-06",
+          "result": "found",
+          "detail": "https://www.crespi.org/uploads/files/About/2026-school-profile.pdf"
+        }
+      ],
+      "profile": {
+        "url": "https://www.crespi.org/uploads/files/About/2026-school-profile.pdf",
+        "format": "pdf",
+        "etag": "\"6aa1ae24-44163\"",
+        "last_modified": "Wed, 09 Sep 2026 19:06:12 GMT",
+        "hash": "7b932c48a050f4368594e706ecfeeb82222b15643b616c5c333740868c8bf7fb",
+        "edition": null,
+        "checked": "2026-10-06"
+      },
+      "found_via": "seed",
+      "host_kind": "school-site"
+    },
+    "00070602": {
+      "id": "00070602",
+      "name": "St Anthony High School",
+      "tried": [
+        {
+          "step": "seed",
+          "at": "2026-10-06",
+          "result": "none",
+          "detail": "https://www.longbeachsaints.org/academics/counseling/college-counseling"
+        }
+      ],
+      "site": "https://www.longbeachsaints.org/",
+      "none_found": true
+    },
+    "00070985": {
+      "id": "00070985",
+      "name": "St Lucys Priory High School",
+      "tried": [],
+      "none_found": true
+    },
+    "00071446": {
+      "id": "00071446",
+      "name": "Notre Dame High School",
+      "tried": [
+        {
+          "step": "seed",
+          "at": "2026-10-06",
+          "result": "none",
+          "detail": "https://ndhs.org/counseling/for-college-admissionsofficers https://ndhs.org/counseling"
+        }
+      ],
+      "site": "https://ndhs.org/",
+      "none_found": true,
+      "notes": "robots.txt disallows the profile candidate(s): https://drive.google.com/file/d/16fpKJw8odUYABnNwdlcNLyza5amNwZhu/view?usp=sharing https://drive.google.com/file/d/1zL6m5kGH3pcRy03Pn50Ku15j7RJ-aTZp/view?usp=sharing"
+    },
+    "00081476": {
+      "id": "00081476",
+      "name": "Brentwood School",
+      "tried": [
+        {
+          "step": "seed",
+          "at": "2026-10-06",
+          "result": "found",
+          "detail": "https://www.bwscampus.com/fs/resource-manager/view/5b9d8ab2-abb4-453a-81c0-0e756e3a93c5"
+        }
+      ],
+      "site": "https://www.bwscampus.com/",
+      "profile": {
+        "url": "https://www.bwscampus.com/fs/resource-manager/view/5b9d8ab2-abb4-453a-81c0-0e756e3a93c5",
+        "format": "pdf",
+        "etag": "\"ef3d6f5ba2e30b75a82a2055dc69bf52\"",
+        "last_modified": "Wed, 30 Sep 2026 17:12:53 GMT",
+        "hash": "74ecb7d1d231ffeb22b16e2103df1abbcf8497613d673411a250ed15e338b763",
+        "edition": null,
+        "checked": "2026-10-06"
+      },
+      "found_via": "seed",
+      "pages": [
+        "https://www.bwscampus.com/academics/college-counseling"
+      ],
+      "host_kind": "school-site"
+    },
+    "00083655": {
+      "id": "00083655",
+      "name": "Polytechnic School",
+      "tried": [
+        {
+          "step": "seed",
+          "at": "2026-10-06",
+          "result": "none",
+          "detail": "https://www.polytechnic.org/academics/college-counseling"
+        }
+      ],
+      "site": "https://www.polytechnic.org/",
+      "none_found": true,
+      "notes": "robots.txt disallows the profile candidate(s): https://drive.google.com/file/d/1qUuAGPsy_7gOeWgD5kuIm9Q_w7w8pYHz/view?usp=sharing"
+    },
+    "00919963": {
+      "id": "00919963",
+      "name": "Regis High School",
+      "tried": [
+        {
+          "step": "seed",
+          "at": "2026-10-06",
+          "result": "found",
+          "detail": "https://www.regis.org/downloads/SchoolProfile.pdf"
+        }
+      ],
+      "profile": {
+        "url": "https://www.regis.org/downloads/SchoolProfile.pdf",
+        "format": "pdf",
+        "etag": "\"396ece8f5e4fdd1:0\"",
+        "last_modified": "Mon, 28 Sep 2026 15:32:24 GMT",
+        "hash": "61a83eebebc2aa5083b1dd2d9cffd0ab7f6be8f006d3739e7ccd87137578bebf",
+        "edition": null,
+        "checked": "2026-10-06"
+      },
+      "found_via": "seed",
+      "host_kind": "school-site"
+    },
+    "00920232": {
+      "id": "00920232",
+      "name": "Notre Dame Academy High School",
+      "tried": [
+        {
+          "step": "seed",
+          "at": "2026-10-06",
+          "result": "none",
+          "detail": "https://ndapandas.org/2020-2021-nda-school-profile https://www.ndapandas.org/"
+        }
+      ],
+      "site": "https://ndapandas.org/",
+      "none_found": true
+    },
+    "00937803": {
+      "id": "00937803",
+      "name": "Poly Prep Country Day School",
+      "tried": [
+        {
+          "step": "seed",
+          "at": "2026-10-06",
+          "result": "found",
+          "detail": "https://www.polyprep.org/files/25-26/2025-26_poly-prep-profile-tear-sheet_FINAL.pdf"
+        }
+      ],
+      "profile": {
+        "url": "https://www.polyprep.org/files/25-26/2025-26_poly-prep-profile-tear-sheet_FINAL.pdf",
+        "format": "pdf",
+        "etag": "\"68e6ab2b-59585\"",
+        "last_modified": "Wed, 08 Oct 2025 18:19:23 GMT",
+        "hash": "71843a23b1a2be75cabf2f06b4c7524353dfb0f45fcc19f9588a3cb710fb3851",
+        "edition": null,
+        "checked": "2026-10-06"
+      },
+      "found_via": "seed",
+      "host_kind": "school-site"
+    },
+    "00939094": {
+      "id": "00939094",
+      "name": "The Chapin School Ltd",
+      "tried": [
+        {
+          "step": "seed",
+          "at": "2026-10-06",
+          "result": "none",
+          "detail": "https://www.chapin.edu/academics/upper-school/college-guidance"
+        }
+      ],
+      "site": "https://www.chapin.edu/",
+      "none_found": true
+    },
+    "01324873": {
+      "id": "01324873",
+      "name": "Nolan Catholic High School",
+      "tried": [
+        {
+          "step": "seed",
+          "at": "2026-10-06",
+          "result": "found",
+          "detail": "https://nolancatholic.org/_files/ugd/fe7ff0_4e924ae5f00b424a86929221dbba27cd.pdf"
+        }
+      ],
+      "profile": {
+        "url": "https://nolancatholic.org/_files/ugd/fe7ff0_4e924ae5f00b424a86929221dbba27cd.pdf",
+        "format": "pdf",
+        "etag": "\"5cb7a98a859c334742f26624a602a53b\"",
+        "last_modified": "Mon, 13 Jan 2025 16:38:13 GMT",
+        "hash": "891c2961997430ba3802207ec3bade043f2bcade4065ba04676f355d0e772d34",
+        "edition": null,
+        "checked": "2026-10-06"
+      },
+      "found_via": "seed",
+      "host_kind": "school-site"
+    },
+    "01612759": {
+      "id": "01612759",
+      "name": "Calvary Chapel Christian School",
+      "tried": [
+        {
+          "step": "seed",
+          "at": "2026-10-06",
+          "result": "none",
+          "detail": "https://cccsdowney.org/who-we-are"
+        }
+      ],
+      "site": "https://cccsdowney.org/",
+      "none_found": true
+    },
+    "01635302": {
+      "id": "01635302",
+      "name": "Burton Adventist Academy",
+      "tried": [],
+      "none_found": true
+    },
+    "01657916": {
+      "id": "01657916",
+      "name": "Ezra Academy",
+      "tried": [],
+      "none_found": true
+    },
+    "060153411628": {
+      "id": "060153411628",
+      "name": "Los Angeles Academy of Arts and Enterprise",
+      "tried": [],
+      "none_found": true
+    },
+    "060161114040": {
+      "id": "060161114040",
+      "name": "Orange County Workforce Innovation High",
+      "tried": [
+        {
+          "step": "seed",
+          "at": "2026-10-06",
+          "result": "none",
+          "detail": "https://innovationhigh.org/"
+        }
+      ],
+      "site": "https://innovationhigh.org/",
+      "none_found": true
+    },
+    "060168312119": {
+      "id": "060168312119",
+      "name": "Lifeline Education Charter",
+      "tried": [],
+      "none_found": true
+    },
+    "060179914104": {
+      "id": "060179914104",
+      "name": "Ednovate - Brio College Prep",
+      "tried": [],
+      "none_found": true
+    },
+    "060191414083": {
+      "id": "060191414083",
+      "name": "California School of the Arts - San Gabriel Valley",
+      "tried": [
+        {
+          "step": "seed",
+          "at": "2026-10-06",
+          "result": "none",
+          "detail": "https://sgv.csarts.net/"
+        }
+      ],
+      "site": "https://sgv.csarts.net/",
+      "none_found": true
+    },
+    "060196813898": {
+      "id": "060196813898",
+      "name": "Ednovate - East College Prep",
+      "tried": [],
+      "none_found": true
+    },
+    "060207608718": {
+      "id": "060207608718",
+      "name": "Environmental Charter High - Lawndale",
+      "tried": [
+        {
+          "step": "seed",
+          "at": "2026-10-06",
+          "result": "none",
+          "detail": "https://ecsonline.org/echs-lawndale/about/"
+        }
+      ],
+      "site": "https://ecsonline.org/",
+      "none_found": true
+    },
+    "060236211632": {
+      "id": "060236211632",
+      "name": "Alliance Patti And Peter Neuwirth Leadership Academy",
+      "tried": [
+        {
+          "step": "seed",
+          "at": "2026-10-06",
+          "result": "none",
+          "detail": "https://laalliance.org/?p=4390"
+        }
+      ],
+      "site": "https://laalliance.org/",
+      "none_found": true
+    },
+    "060239807165": {
+      "id": "060239807165",
+      "name": "Options for Youth San Gabriel",
+      "tried": [
+        {
+          "step": "seed",
+          "at": "2026-10-06",
+          "result": "none",
+          "detail": "https://ofy.org/"
+        }
+      ],
+      "site": "https://ofy.org/",
+      "none_found": true
+    },
+    "060247013741": {
+      "id": "060247013741",
+      "name": "TEACH Tech Charter High",
+      "tried": [],
+      "none_found": true
+    },
+    "060297000223": {
+      "id": "060297000223",
+      "name": "Arcadia High",
+      "tried": [
+        {
+          "step": "seed",
+          "at": "2026-10-06",
+          "result": "none",
+          "detail": "https://ahs.ausd.net/"
+        }
+      ],
+      "site": "https://ahs.ausd.net/",
+      "none_found": true,
+      "notes": "robots.txt disallows the profile candidate(s): https://drive.google.com/file/d/11YeBDKWLywKyI79lmIVK8heDODONTdPb/preview"
+    },
+    "060483000471": {
+      "id": "060483000471",
+      "name": "Beverly Hills High",
+      "tried": [
+        {
+          "step": "seed",
+          "at": "2026-10-06",
+          "result": "found",
+          "detail": "https://www.bhusd.org/userfiles/bhusdmvc/02-BHHS-High-School/PDFs/BEVERLYHILLSHIGHSCHOOLPROFILE2024-20251.pdf"
+        }
+      ],
+      "profile": {
+        "url": "https://www.bhusd.org/userfiles/bhusdmvc/02-BHHS-High-School/PDFs/BEVERLYHILLSHIGHSCHOOLPROFILE2024-20251.pdf",
+        "format": "pdf",
+        "etag": "\"b2aeb34e6dc1:0\"",
+        "last_modified": "Tue, 05 Aug 2025 21:15:05 GMT",
+        "hash": "3b36afaefaad8c366062ee41f6353d54ee1e8abab23a9e236f0749e7d7c1255c",
+        "edition": null,
+        "checked": "2026-10-06"
+      },
+      "found_via": "seed",
+      "host_kind": "district-site"
+    },
+    "060819000801": {
+      "id": "060819000801",
+      "name": "Charter Oak High",
+      "tried": [],
+      "none_found": true
+    },
+    "061524001933": {
+      "id": "061524001933",
+      "name": "Herbert Hoover High",
+      "tried": [
+        {
+          "step": "seed",
+          "at": "2026-10-06",
+          "result": "none",
+          "detail": "https://hooverhs.gusd.net/"
+        }
+      ],
+      "site": "https://hooverhs.gusd.net/",
+      "none_found": true,
+      "notes": "robots.txt disallows the profile candidate(s): https://files.smartsites.parentsquare.com/3194/hoover_hs_profile_26-27_2.pdf"
+    },
+    "061632502053": {
+      "id": "061632502053",
+      "name": "Los Altos High",
+      "tried": [
+        {
+          "step": "seed",
+          "at": "2026-10-06",
+          "result": "none",
+          "detail": "https://lahs.hlpschools.org/"
+        }
+      ],
+      "site": "https://lahs.hlpschools.org/",
+      "none_found": true
+    },
+    "062250002745": {
+      "id": "062250002745",
+      "name": "Millikan High",
+      "tried": [
+        {
+          "step": "seed",
+          "at": "2026-10-06",
+          "result": "none",
+          "detail": "https://millikan.lbschools.net/counseling/counseling-home"
+        }
+      ],
+      "site": "https://millikan.lbschools.net/",
+      "none_found": true
+    },
+    "062271002998": {
+      "id": "062271002998",
+      "name": "Fairfax Senior High",
+      "tried": [],
+      "none_found": true
+    },
+    "062271003325": {
+      "id": "062271003325",
+      "name": "San Fernando Senior High",
+      "tried": [
+        {
+          "step": "seed",
+          "at": "2026-10-06",
+          "result": "none",
+          "detail": "https://sanfernandohs.com/"
+        }
+      ],
+      "site": "https://sanfernandohs.com/",
+      "none_found": true
+    },
+    "062271011653": {
+      "id": "062271011653",
+      "name": "Panorama High",
+      "tried": [
+        {
+          "step": "seed",
+          "at": "2026-10-06",
+          "result": "none",
+          "detail": "https://panoramahs.lausd.org/"
+        }
+      ],
+      "site": "https://panoramahs.lausd.org/",
+      "none_found": true
+    },
+    "062271012898": {
+      "id": "062271012898",
+      "name": "Rancho Dominguez Preparatory",
+      "tried": [],
+      "none_found": true
+    },
+    "062271012937": {
+      "id": "062271012937",
+      "name": "Diego Rivera Learning Complex Green Design STEAM Academy",
+      "tried": [],
+      "none_found": true
+    },
+    "062970010532": {
+      "id": "062970010532",
+      "name": "Palos Verdes High",
+      "tried": [
+        {
+          "step": "seed",
+          "at": "2026-10-06",
+          "result": "found",
+          "detail": "https://futureseakings.com/wp-content/uploads/PVHS-school-profile-2025-2026.pdf"
+        }
+      ],
+      "profile": {
+        "url": "https://futureseakings.com/wp-content/uploads/PVHS-school-profile-2025-2026.pdf",
+        "format": "pdf",
+        "etag": "\"68e433db-11f283\"",
+        "last_modified": "Mon, 06 Oct 2025 21:25:47 GMT",
+        "hash": "2cc50d04e243148c8f69d6662467a7c11461a081968df797a413599e530a1977",
+        "edition": null,
+        "checked": "2026-10-06"
+      },
+      "found_via": "seed",
+      "host_kind": "school-site"
+    },
+    "063066004757": {
+      "id": "063066004757",
+      "name": "El Dorado High",
+      "tried": [
+        {
+          "step": "seed",
+          "at": "2026-10-06",
+          "result": "none",
+          "detail": "https://www.edhs.org/"
+        }
+      ],
+      "site": "https://www.edhs.org/",
+      "none_found": true,
+      "notes": "robots.txt disallows the profile candidate(s): https://4.files.edl.io/e93f/01/30/26/233010-def34841-4ffa-4291-9dd8-75ba229955a1.pdf https://4.files.edl.io/1d4f/11/19/24/203153-1f35a9be-394a-4c15-bc87-be800fe7a9c8.pdf https://4.files.edl.io/9224/11/03/20/165757-4c0b047d-965a-4c98-9f6b-432793bee9f1.pdf"
+    },
+    "063375005207": {
+      "id": "063375005207",
+      "name": "Nogales High",
+      "tried": [
+        {
+          "step": "seed",
+          "at": "2026-10-06",
+          "result": "none",
+          "detail": "https://www.nogaleshs.org/"
+        }
+      ],
+      "site": "https://www.nogaleshs.org/",
+      "none_found": true
+    },
+    "063942006576": {
+      "id": "063942006576",
+      "name": "Torrance High",
+      "tried": [
+        {
+          "step": "seed",
+          "at": "2026-10-06",
+          "result": "none",
+          "detail": "https://www.tusd.org/schools/torrance-high-school"
+        }
+      ],
+      "site": "https://www.tusd.org/",
+      "none_found": true
+    },
+    "360007606296": {
+      "id": "360007606296",
+      "name": "FORSYTHE SATELLITE ACADEMY",
+      "tried": [
+        {
+          "step": "seed",
+          "at": "2026-10-06",
+          "result": "none",
+          "detail": "https://www.schools.nyc.gov/schools/M458"
+        }
+      ],
+      "site": "https://www.schools.nyc.gov/",
+      "none_found": true
+    },
+    "360007804458": {
+      "id": "360007804458",
+      "name": "FIORELLO H LAGUARDIA HIGH SCHOOL",
+      "tried": [
+        {
+          "step": "seed",
+          "at": "2026-10-06",
+          "result": "none",
+          "detail": "https://www.laguardiahs.org/"
+        }
+      ],
+      "site": "https://www.laguardiahs.org/",
+      "none_found": true
+    },
+    "360007806547": {
+      "id": "360007806547",
+      "name": "WEST END SECONDARY SCHOOL",
+      "tried": [
+        {
+          "step": "seed",
+          "at": "2026-10-06",
+          "result": "none",
+          "detail": "https://www.schools.nyc.gov/schools/M291"
+        }
+      ],
+      "site": "https://www.schools.nyc.gov/",
+      "none_found": true,
+      "notes": "robots.txt disallows the profile candidate(s): https://4.files.edl.io/bf31/09/22/26/201304-125889b4-7259-494b-93ed-053409dc202b.pdf"
+    },
+    "360008305909": {
+      "id": "360008305909",
+      "name": "WASHINGTON HEIGHTS EXPEDITIONARY LEARNING SCHOOL",
+      "tried": [
+        {
+          "step": "seed",
+          "at": "2026-10-06",
+          "result": "none",
+          "detail": "https://www.schools.nyc.gov/schools/M348"
+        }
+      ],
+      "site": "https://www.schools.nyc.gov/",
+      "none_found": true
+    },
+    "360008605793": {
+      "id": "360008605793",
+      "name": "MOTT HALL BRONX HIGH SCHOOL",
+      "tried": [
+        {
+          "step": "seed",
+          "at": "2026-10-06",
+          "result": "none",
+          "detail": "https://www.schools.nyc.gov/schools/X252"
+        }
+      ],
+      "site": "https://www.schools.nyc.gov/",
+      "none_found": true
+    },
+    "360008705182": {
+      "id": "360008705182",
+      "name": "BELMONT PREPARATORY HIGH SCHOOL",
+      "tried": [
+        {
+          "step": "seed",
+          "at": "2026-10-06",
+          "result": "none",
+          "detail": "https://www.schools.nyc.gov/schools/X434"
+        }
+      ],
+      "site": "https://www.schools.nyc.gov/",
+      "none_found": true,
+      "notes": "robots.txt disallows the profile candidate(s): https://drive.google.com/file/d/1Mfy0A9QgoQ7iBbdjrLYWXVD2blKa_9Nb/view?usp=drive_link"
+    },
+    "360008705183": {
+      "id": "360008705183",
+      "name": "FORDHAM HIGH SCHOOL FOR THE ARTS",
+      "tried": [
+        {
+          "step": "seed",
+          "at": "2026-10-06",
+          "result": "none",
+          "detail": "https://www.schools.nyc.gov/schools/X437"
+        }
+      ],
+      "site": "https://www.schools.nyc.gov/",
+      "none_found": true
+    },
+    "360008705676": {
+      "id": "360008705676",
+      "name": "BRONX ENGINEERING AND TECHNOLOGY ACADEMY",
+      "tried": [
+        {
+          "step": "seed",
+          "at": "2026-10-06",
+          "result": "none",
+          "detail": "https://www.schools.nyc.gov/schools/X213"
+        }
+      ],
+      "site": "https://www.schools.nyc.gov/",
+      "none_found": true
+    },
+    "360009006030": {
+      "id": "360009006030",
+      "name": "PAN AMERICAN INTERNATIONAL HIGH SCHOOL AT MONROE",
+      "tried": [
+        {
+          "step": "seed",
+          "at": "2026-10-06",
+          "result": "none",
+          "detail": "https://www.schools.nyc.gov/schools/X388"
+        }
+      ],
+      "site": "https://www.schools.nyc.gov/",
+      "none_found": true
+    },
+    "360009801791": {
+      "id": "360009801791",
+      "name": "ROBERT F WAGNER JR SECONDARY SCHOOL FOR ARTS AND TECHNOLOGY",
+      "tried": [
+        {
+          "step": "seed",
+          "at": "2026-10-06",
+          "result": "none",
+          "detail": "https://www.schools.nyc.gov/schools/Q560"
+        }
+      ],
+      "site": "https://www.schools.nyc.gov/",
+      "none_found": true
+    },
+    "360010006283": {
+      "id": "360010006283",
+      "name": "JAMAICA GATEWAY TO THE SCIENCES",
+      "tried": [
+        {
+          "step": "seed",
+          "at": "2026-10-06",
+          "result": "none",
+          "detail": "https://www.schools.nyc.gov/schools/Q350"
+        }
+      ],
+      "site": "https://www.schools.nyc.gov/",
+      "none_found": true
+    },
+    "360010202887": {
+      "id": "360010202887",
+      "name": "WILLIAM CULLEN BRYANT HIGH SCHOOL",
+      "tried": [
+        {
+          "step": "seed",
+          "at": "2026-10-06",
+          "result": "none",
+          "detail": "https://www.schools.nyc.gov/schools/Q445"
+        }
+      ],
+      "site": "https://www.schools.nyc.gov/",
+      "none_found": true
+    },
+    "360012204485": {
+      "id": "360012204485",
+      "name": "TOWNSEND HARRIS HIGH SCHOOL",
+      "tried": [
+        {
+          "step": "seed",
+          "at": "2026-10-06",
+          "result": "none",
+          "detail": "https://www.thhs.qc.edu/ https://www.schools.nyc.gov/schools/Q525"
+        }
+      ],
+      "site": "https://www.thhs.qc.edu/",
+      "none_found": true,
+      "notes": "robots.txt disallows the profile candidate(s): https://4.files.edl.io/8ad6/01/08/26/134308-4c0e9515-ffe6-41cc-bff9-de8e7ae5b842.pdf"
+    },
+    "360012205727": {
+      "id": "360012205727",
+      "name": "FLUSHING INTERNATIONAL HIGH SCHOOL",
+      "tried": [
+        {
+          "step": "seed",
+          "at": "2026-10-06",
+          "result": "none",
+          "detail": "https://www.fihsnyc.org/ https://www.schools.nyc.gov/schools/Q263"
+        }
+      ],
+      "site": "https://www.fihsnyc.org/",
+      "none_found": true
+    },
+    "360014005777": {
+      "id": "360014005777",
+      "name": "HARLEM CHILDREN'S ZONE PROMISE ACADEMY II CHARTER SCHOOL",
+      "tried": [
+        {
+          "step": "seed",
+          "at": "2026-10-06",
+          "result": "none",
+          "detail": "https://hcz.org/our-programs/promise-academy-high-schools/"
+        }
+      ],
+      "site": "https://hcz.org/",
+      "none_found": true
+    },
+    "360015101952": {
+      "id": "360015101952",
+      "name": "FORT HAMILTON HIGH SCHOOL",
+      "tried": [
+        {
+          "step": "seed",
+          "at": "2026-10-06",
+          "result": "none",
+          "detail": "https://www.fthhs.org/ https://www.schools.nyc.gov/schools/K490"
+        }
+      ],
+      "site": "https://www.fthhs.org/",
+      "none_found": true
+    },
+    "360015102036": {
+      "id": "360015102036",
+      "name": "NEW UTRECHT HIGH SCHOOL",
+      "tried": [
+        {
+          "step": "seed",
+          "at": "2026-10-06",
+          "result": "none",
+          "detail": "https://www.schools.nyc.gov/schools/K445"
+        }
+      ],
+      "site": "https://www.schools.nyc.gov/",
+      "none_found": true,
+      "notes": "robots.txt disallows the profile candidate(s): https://4.files.edl.io/8db2/10/28/25/125143-0918a9be-db98-4e69-a427-23b69f4bad01.pdf"
+    },
+    "360015204312": {
+      "id": "360015204312",
+      "name": "JOHN DEWEY HIGH SCHOOL",
+      "tried": [
+        {
+          "step": "seed",
+          "at": "2026-10-06",
+          "result": "none",
+          "detail": "https://www.schools.nyc.gov/schools/K540"
+        }
+      ],
+      "site": "https://www.schools.nyc.gov/",
+      "none_found": true
+    },
+    "360015302009": {
+      "id": "360015302009",
+      "name": "JAMES MADISON HIGH SCHOOL",
+      "tried": [
+        {
+          "step": "seed",
+          "at": "2026-10-06",
+          "result": "none",
+          "detail": "https://madisonhs.org/"
+        }
+      ],
+      "site": "https://madisonhs.org/",
+      "none_found": true
+    },
+    "360015302032": {
+      "id": "360015302032",
+      "name": "MIDWOOD HIGH SCHOOL",
+      "tried": [
+        {
+          "step": "seed",
+          "at": "2026-10-06",
+          "result": "none",
+          "detail": "https://www.schools.nyc.gov/schools/K405"
+        }
+      ],
+      "site": "https://www.schools.nyc.gov/",
+      "none_found": true
+    },
+    "360096606069": {
+      "id": "360096606069",
+      "name": "BROOKLYN ASCEND CHARTER SCHOOL",
+      "tried": [
+        {
+          "step": "seed",
+          "at": "2026-10-06",
+          "result": "none",
+          "detail": "https://www.ascendlearning.org/schools/high-schools"
+        }
+      ],
+      "site": "https://www.ascendlearning.org/",
+      "none_found": true
+    },
+    "360120306678": {
+      "id": "360120306678",
+      "name": "KIPP BRONX CHARTER SCHOOL III",
+      "tried": [],
+      "none_found": true
+    },
+    "480003013197": {
+      "id": "480003013197",
+      "name": "UPLIFT LUNA PREP H S",
+      "tried": [
+        {
+          "step": "seed",
+          "at": "2026-10-06",
+          "result": "none",
+          "detail": "https://uplifteducation.org/uplift-luna"
+        }
+      ],
+      "site": "https://uplifteducation.org/",
+      "none_found": true
+    },
+    "480007008503": {
+      "id": "480007008503",
+      "name": "UNIVERSAL ACADEMY - COPPELL",
+      "tried": [],
+      "none_found": true
+    },
+    "480029213362": {
+      "id": "480029213362",
+      "name": "HARMONY SCIENCE ACADEMY - CARROLLTON",
+      "tried": [
+        {
+          "step": "seed",
+          "at": "2026-10-06",
+          "result": "none",
+          "detail": "https://hsacarrollton.harmonytx.org/"
+        }
+      ],
+      "site": "https://hsacarrollton.harmonytx.org/",
+      "none_found": true
+    },
+    "480144113888": {
+      "id": "480144113888",
+      "name": "GREAT HEARTS IRVING UPPER",
+      "tried": [
+        {
+          "step": "seed",
+          "at": "2026-10-06",
+          "result": "none",
+          "detail": "https://irving.greatheartsamerica.org/collegecounseling/"
+        }
+      ],
+      "site": "https://irving.greatheartsamerica.org/",
+      "none_found": true
+    },
+    "480920000382": {
+      "id": "480920000382",
+      "name": "AZLE H S",
+      "tried": [
+        {
+          "step": "seed",
+          "at": "2026-10-06",
+          "result": "none",
+          "detail": "https://azleisd.net/o/ahs/page/about-us-ahs"
+        }
+      ],
+      "site": "https://azleisd.net/",
+      "none_found": true
+    },
+    "481305009190": {
+      "id": "481305009190",
+      "name": "RANCHVIEW H S",
+      "tried": [],
+      "none_found": true
+    },
+    "481317000817": {
+      "id": "481317000817",
+      "name": "CASTLEBERRY H S",
+      "tried": [
+        {
+          "step": "seed",
+          "at": "2026-10-06",
+          "result": "none",
+          "detail": "https://chs.castleberryisd.net/students/CounselingServices/meet_the_counseling_office_staff"
+        }
+      ],
+      "site": "https://chs.castleberryisd.net/",
+      "none_found": true
+    },
+    "481623001204": {
+      "id": "481623001204",
+      "name": "NEW TECH H S AT B F DARRELL H S",
+      "tried": [
+        {
+          "step": "seed",
+          "at": "2026-10-06",
+          "result": "none",
+          "detail": "https://newtech.dallasisd.org/academics"
+        }
+      ],
+      "site": "https://newtech.dallasisd.org/",
+      "none_found": true
+    },
+    "481623001273": {
+      "id": "481623001273",
+      "name": "SCHOOL OF HEALTH PROFESSIONS",
+      "tried": [
+        {
+          "step": "seed",
+          "at": "2026-10-06",
+          "result": "none",
+          "detail": "https://www.dallasisd.org/healthmagnet"
+        }
+      ],
+      "site": "https://www.dallasisd.org/",
+      "none_found": true
+    },
+    "481623001367": {
+      "id": "481623001367",
+      "name": "SUNSET H S",
+      "tried": [],
+      "none_found": true
+    },
+    "481623005441": {
+      "id": "481623005441",
+      "name": "ROSIE SORRELLS EDUCATION AND SOCIAL SERVICES H S",
+      "tried": [
+        {
+          "step": "seed",
+          "at": "2026-10-06",
+          "result": "none",
+          "detail": "https://essm.dallasisd.org/"
+        }
+      ],
+      "site": "https://essm.dallasisd.org/",
+      "none_found": true
+    },
+    "481623005444": {
+      "id": "481623005444",
+      "name": "JUDGE BAREFOOT SANDERS LAW MAGNET",
+      "tried": [
+        {
+          "step": "seed",
+          "at": "2026-10-06",
+          "result": "none",
+          "detail": "https://lawmagnet.dallasisd.org/"
+        }
+      ],
+      "site": "https://lawmagnet.dallasisd.org/",
+      "none_found": true
+    },
+    "481623012028": {
+      "id": "481623012028",
+      "name": "KATHLYN JOY GILLIAM COLLEGIATE ACADEMY",
+      "tried": [],
+      "none_found": true
+    },
+    "481970001830": {
+      "id": "481970001830",
+      "name": "ARLINGTON HEIGHTS H S",
+      "tried": [],
+      "none_found": true
+    },
+    "481970001857": {
+      "id": "481970001857",
+      "name": "EASTERN HILLS H S",
+      "tried": [
+        {
+          "step": "seed",
+          "at": "2026-10-06",
+          "result": "none",
+          "detail": "https://www.fwisd.org/EasternHills"
+        }
+      ],
+      "site": "https://www.fwisd.org/",
+      "none_found": true
+    },
+    "481970001913": {
+      "id": "481970001913",
+      "name": "SOUTHWEST H S",
+      "tried": [],
+      "none_found": true
+    },
+    "482001013003": {
+      "id": "482001013003",
+      "name": "REEDY H S",
+      "tried": [
+        {
+          "step": "seed",
+          "at": "2026-10-06",
+          "result": "none",
+          "detail": "https://www.friscoisd.org/o/rhs"
+        }
+      ],
+      "site": "https://www.friscoisd.org/",
+      "none_found": true
+    },
+    "482034006552": {
+      "id": "482034006552",
+      "name": "NAAMAN FOREST H S",
+      "tried": [
+        {
+          "step": "seed",
+          "at": "2026-10-06",
+          "result": "none",
+          "detail": "https://www.garlandisdschools.net/nfhs/counseling"
+        }
+      ],
+      "site": "https://www.garlandisdschools.net/",
+      "none_found": true
+    },
+    "482034007256": {
+      "id": "482034007256",
+      "name": "ROWLETT H S",
+      "tried": [
+        {
+          "step": "seed",
+          "at": "2026-10-06",
+          "result": "none",
+          "detail": "https://www.garlandisdschools.net/rhs/counseling"
+        }
+      ],
+      "site": "https://www.garlandisdschools.net/",
+      "none_found": true
+    },
+    "482730008195": {
+      "id": "482730008195",
+      "name": "HEBRON H S",
+      "tried": [
+        {
+          "step": "seed",
+          "at": "2026-10-06",
+          "result": "none",
+          "detail": "https://www.lisd.net/cms/lib/TX01918037/Centricity/Domain/4426/2021-2022%20School%20Profile.pdf https://hhs.lisd.net/"
+        }
+      ],
+      "site": "https://hhs.lisd.net/",
+      "none_found": true
+    },
+    "482892011022": {
+      "id": "482892011022",
+      "name": "MANSFIELD TIMBERVIEW H S",
+      "tried": [
+        {
+          "step": "seed",
+          "at": "2026-10-06",
+          "result": "none",
+          "detail": "https://timberview.mansfieldisd.org/fs/pages/8135"
+        }
+      ],
+      "site": "https://timberview.mansfieldisd.org/",
+      "none_found": true
+    },
+    "483318012421": {
+      "id": "483318012421",
+      "name": "JAMES M STEELE EARLY COLLEGE H S",
+      "tried": [],
+      "none_found": true
+    },
+    "483510008150": {
+      "id": "483510008150",
+      "name": "PLANO WEST SENIOR H S",
+      "tried": [
+        {
+          "step": "seed",
+          "at": "2026-10-06",
+          "result": "none",
+          "detail": "https://www.pisd.edu/cms/lib/TX02215173/Centricity/Domain/459/PWSH%20school%20profile%202024%20-%2025b.pdf"
+        },
+        {
+          "step": "seed",
+          "at": "2026-10-06",
+          "result": "none",
+          "detail": "https://www.pisd.edu/cms/lib/TX02215173/Centricity/Domain/459/school%20profile%202023-24.pdf"
+        }
+      ],
+      "none_found": true
+    },
+    "A0109338": {
+      "id": "A0109338",
+      "name": "Fort Worth Country Day",
+      "tried": [
+        {
+          "step": "seed",
+          "at": "2026-10-06",
+          "result": "found",
+          "detail": "https://www.fwcd.org/userfiles/fwcdmvc/documents/2025-26/Profile%20for%20the%20Class%20of%202026_final.pdf"
+        }
+      ],
+      "profile": {
+        "url": "https://www.fwcd.org/userfiles/fwcdmvc/documents/2025-26/Profile%20for%20the%20Class%20of%202026_final.pdf",
+        "format": "pdf",
+        "etag": "\"e27ee5801e2edc1:0\"",
+        "last_modified": "Thu, 25 Sep 2025 13:15:46 GMT",
+        "hash": "266ece7e704d93d298c0c13e12c7c770668566acef3c0f17bee65d27067d6f21",
+        "edition": null,
+        "checked": "2026-10-06"
+      },
+      "found_via": "seed",
+      "host_kind": "school-site"
+    },
+    "A0109399": {
+      "id": "A0109399",
+      "name": "The Hockaday School",
+      "tried": [
+        {
+          "step": "seed",
+          "at": "2026-10-06",
+          "result": "none",
+          "detail": "https://www.hockaday.org/academics/school-profile"
+        }
+      ],
+      "site": "https://www.hockaday.org/",
+      "none_found": true,
+      "notes": "robots.txt disallows the profile candidate(s): https://bbk12e1-cdn.myschoolcdn.com/ftpimages/90/misc/misc_240710.pdf https://bbk12e1-cdn.myschoolcdn.com/ftpimages/90/misc/misc_243556.pdf https://bbk12e1-cdn.myschoolcdn.com/ftpimages/90/misc/misc_237227.pdf"
+    },
+    "A1399023": {
+      "id": "A1399023",
+      "name": "Lakehill Preparatory School",
+      "tried": [
+        {
+          "step": "seed",
+          "at": "2026-10-06",
+          "result": "found",
+          "detail": "https://www.lakehillprep.org/wp-content/uploads/2024/08/2024-25-School-Profile-V4.pdf"
+        }
+      ],
+      "site": "https://www.lakehillprep.org/",
+      "profile": {
+        "url": "https://www.lakehillprep.org/wp-content/uploads/2024/08/2024-25-School-Profile-V4.pdf",
+        "format": "pdf",
+        "etag": "\"66c77370-1bf0a\"",
+        "last_modified": "Thu, 22 Aug 2024 17:20:48 GMT",
+        "hash": "b159e02e0a3f472798baaa5f2cdff99796b59ba342d8a1b7bfd23524eeac018a",
+        "edition": null,
+        "checked": "2026-10-06"
+      },
+      "found_via": "seed",
+      "host_kind": "school-site"
+    },
+    "A1500310": {
+      "id": "A1500310",
+      "name": "Harvard-Westlake",
+      "tried": [
+        {
+          "step": "seed",
+          "at": "2026-10-06",
+          "result": "none",
+          "detail": "https://students.hw.com/usdeans/"
+        }
+      ],
+      "site": "https://students.hw.com/",
+      "none_found": true
+    },
+    "A1502509": {
+      "id": "A1502509",
+      "name": "Stella K. Abraham H.s. for Girls",
+      "tried": [
+        {
+          "step": "seed",
+          "at": "2026-10-06",
+          "result": "none",
+          "detail": "https://www.skahalb.org/"
+        }
+      ],
+      "site": "https://www.skahalb.org/",
+      "none_found": true
+    },
+    "A1703584": {
+      "id": "A1703584",
+      "name": "Texas Torah Institute",
+      "tried": [],
+      "none_found": true
+    },
+    "A1790055": {
+      "id": "A1790055",
+      "name": "Fusion Academy Miracle Mile",
+      "tried": [
+        {
+          "step": "seed",
+          "at": "2026-10-06",
+          "result": "none",
+          "detail": "https://www.fusionacademy.com/?p=4079"
+        }
+      ],
+      "site": "https://www.fusionacademy.com/",
+      "none_found": true
+    },
+    "A1790494": {
+      "id": "A1790494",
+      "name": "Fusion Academy Slk: Southlake",
+      "tried": [
+        {
+          "step": "seed",
+          "at": "2026-10-06",
+          "result": "none",
+          "detail": "https://www.fusionacademy.com/?p=54251"
+        }
+      ],
+      "site": "https://www.fusionacademy.com/",
+      "none_found": true
+    },
+    "A1903096": {
+      "id": "A1903096",
+      "name": "Nazareth Regional High School",
+      "tried": [
+        {
+          "step": "seed",
+          "at": "2026-10-06",
+          "result": "none",
+          "detail": "https://nazarethrhs.org/admissions/"
+        }
+      ],
+      "site": "https://nazarethrhs.org/",
+      "none_found": true
+    },
+    "A1904356": {
+      "id": "A1904356",
+      "name": "Red Comet",
+      "tried": [],
+      "none_found": true
+    },
+    "A2300331": {
+      "id": "A2300331",
+      "name": "Marianne Frostig Center of Educational Therapy",
+      "tried": [
+        {
+          "step": "seed",
+          "at": "2026-10-06",
+          "result": "none",
+          "detail": "https://frostigschool.org/about/"
+        }
+      ],
+      "site": "https://frostigschool.org/",
+      "none_found": true
+    },
+    "A2301720": {
+      "id": "A2301720",
+      "name": "Mesivta Kesser Yisroel-Willowbrook",
+      "tried": [],
+      "none_found": true
+    },
+    "A2301776": {
+      "id": "A2301776",
+      "name": "Yeshiva Mesifta Vyoel Moshe",
+      "tried": [],
+      "none_found": true
+    },
+    "A2303025": {
+      "id": "A2303025",
+      "name": "The Westwood School Corp",
+      "tried": [
+        {
+          "step": "seed",
+          "at": "2026-10-06",
+          "result": "none",
+          "detail": "https://www.westwoodschool.org/academics/college-counseling/"
+        }
+      ],
+      "site": "https://www.westwoodschool.org/",
+      "none_found": true
+    },
+    "A2370474": {
+      "id": "A2370474",
+      "name": "Southlands Christian Schools",
+      "tried": [
+        {
+          "step": "seed",
+          "at": "2026-10-06",
+          "result": "none",
+          "detail": "https://www.southlandscs.com/about"
+        }
+      ],
+      "site": "https://www.southlandscs.com/",
+      "none_found": true
+    },
+    "A2390475": {
+      "id": "A2390475",
+      "name": "Cistercian Preparatory School",
+      "tried": [
+        {
+          "step": "seed",
+          "at": "2026-10-06",
+          "result": "found",
+          "detail": "https://school.cistercian.org/wp-content/uploads/2025/10/20251022-school-profile.pdf"
+        }
+      ],
+      "profile": {
+        "url": "https://school.cistercian.org/wp-content/uploads/2025/10/20251022-school-profile.pdf",
+        "format": "pdf",
+        "etag": "\"2ba484-642292056b6e7\"",
+        "last_modified": "Mon, 27 Oct 2025 19:44:23 GMT",
+        "hash": "f1847e37f464cf1975021096b813d2dbd673062266b64a44f8dc8f93d7362f9a",
+        "edition": null,
+        "checked": "2026-10-06"
+      },
+      "found_via": "seed",
+      "host_kind": "school-site"
+    },
+    "A2400183": {
+      "id": "A2400183",
+      "name": "The Covenant School of Dallas",
+      "tried": [
+        {
+          "step": "seed",
+          "at": "2026-10-06",
+          "result": "found",
+          "detail": "https://covenantdallas.com/uploads/files/the-covenant-school-school-profile-2026-2027-2.pdf"
+        }
+      ],
+      "profile": {
+        "url": "https://covenantdallas.com/uploads/files/the-covenant-school-school-profile-2026-2027-2.pdf",
+        "format": "pdf",
+        "etag": "\"6a7350b5-57c79\"",
+        "last_modified": "Wed, 05 Aug 2026 15:03:17 GMT",
+        "hash": "1714f075d5d86f36ac25623a1da21154f92ecef7b92d9d1f571880aba037be88",
+        "edition": null,
+        "checked": "2026-10-06"
+      },
+      "found_via": "seed",
+      "host_kind": "school-site"
+    },
+    "A9100917": {
+      "id": "A9100917",
+      "name": "Holy Martyrs Armenian Ferrahian School",
+      "tried": [
+        {
+          "step": "seed",
+          "at": "2026-10-06",
+          "result": "none",
+          "detail": "https://ferrahian.com/"
+        }
+      ],
+      "site": "https://ferrahian.com/",
+      "none_found": true,
+      "notes": "robots.txt disallows the profile candidate(s): https://4.files.edl.io/1656/01/12/26/182214-6b5f6165-d6f7-4743-ab4d-cd965463a773.pdf https://4.files.edl.io/fa75/04/01/22/204639-2da3e057-8ffa-450f-8056-531a8fe80817.pdf"
+    },
+    "A9300617": {
+      "id": "A9300617",
+      "name": "Rambam Mesivta Maimonides Hs",
+      "tried": [
+        {
+          "step": "seed",
+          "at": "2026-10-06",
+          "result": "none",
+          "detail": "https://www.rambam.org/mission"
+        }
+      ],
+      "site": "https://www.rambam.org/",
+      "none_found": true
+    },
+    "A9300620": {
+      "id": "A9300620",
+      "name": "St Ann's School",
+      "tried": [
+        {
+          "step": "seed",
+          "at": "2026-10-06",
+          "result": "none",
+          "detail": "https://saintannsny.org/"
+        }
+      ],
+      "site": "https://saintannsny.org/",
+      "none_found": true,
+      "notes": "robots.txt disallows the profile candidate(s): https://issuu.com/saintannsschool/docs/saint_ann_s_school_profile_2026-27?fr=sOWNiYzgzNTAzOTM"
+    },
+    "A9503982": {
+      "id": "A9503982",
+      "name": "The Covenant School",
+      "tried": [
+        {
+          "step": "seed",
+          "at": "2026-10-06",
+          "result": "found",
+          "detail": "https://covenantdallas.com/uploads/files/the-covenant-school-school-profile-2026-2027-2.pdf"
+        }
+      ],
+      "profile": {
+        "url": "https://covenantdallas.com/uploads/files/the-covenant-school-school-profile-2026-2027-2.pdf",
+        "format": "pdf",
+        "etag": "\"6a7350b5-57c79\"",
+        "last_modified": "Wed, 05 Aug 2026 15:03:17 GMT",
+        "hash": "1714f075d5d86f36ac25623a1da21154f92ecef7b92d9d1f571880aba037be88",
+        "edition": null,
+        "checked": "2026-10-06"
+      },
+      "found_via": "seed",
+      "host_kind": "school-site"
+    },
+    "A9903137": {
+      "id": "A9903137",
+      "name": "Yeshiva Ateret Torah",
+      "tried": [],
+      "none_found": true
+    },
+    "BB161870": {
+      "id": "BB161870",
+      "name": "Beth Rivhak School",
+      "tried": [
+        {
+          "step": "seed",
+          "at": "2026-10-06",
+          "result": "none",
+          "detail": "https://www.bethrivkah.edu/our-history"
+        }
+      ],
+      "site": "https://www.bethrivkah.edu/",
+      "none_found": true
+    },
+    "Y1326178": {
+      "id": "Y1326178",
+      "name": "Episcopal School of Dallas Pk-12",
+      "tried": [
+        {
+          "step": "seed",
+          "at": "2026-10-06",
+          "result": "none",
+          "detail": "https://esdallas.org/for-college-representatives"
+        }
+      ],
+      "site": "https://esdallas.org/",
+      "none_found": true,
+      "notes": "robots.txt disallows the profile candidate(s): https://drive.google.com/file/d/1e9mmCtS3FJwGIphFM5eJ1Cl3FGhDut4m/view?usp=sharing"
+    }
+  }
+}

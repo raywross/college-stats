@@ -16,7 +16,6 @@ import { COMPARE_TOPICS, compareHref, type ComparePage } from "@/lib/compare-rou
 import { cn } from "@/lib/utils";
 import { Crest } from "@/components/school/Crest";
 import { PillRow, type PillItem } from "@/components/ui/pill-row";
-import { FollowButton } from "@/components/FollowButton";
 
 /** Keeps the saved compare list in step with the URL being viewed. */
 function useSyncStorage(ids: string[]) {
@@ -154,7 +153,6 @@ export function CompareHeader({ schools, current }: { schools: SchoolIndexEntry[
               </span>
             </Link>
             <div className="absolute top-1/2 right-1.5 flex -translate-y-1/2 items-center gap-1 md:top-2 md:right-2 md:translate-y-0">
-              <FollowButton unitId={s.id} schoolName={s.name} variant="icon" className="size-6 border-none bg-transparent" />
               <button
                 type="button"
                 onClick={() => go(ids.filter((x) => x !== s.id))}

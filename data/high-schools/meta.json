@@ -7,6 +7,12 @@
       "url": "https://civilrightsdata.ed.gov/data",
       "retrieved": "2026-10-05"
     },
+    "edfacts": {
+      "name": "ED Data Express, four-year adjusted-cohort graduation rate and cohort count (EDFacts FS150/FS151), school level, 2020–21 school year",
+      "publisher": "U.S. Department of Education, ED Data Express (EDFacts)",
+      "url": "https://eddataexpress.ed.gov/download/data-library",
+      "retrieved": "2026-10-05"
+    },
     "nces-ccd": {
       "name": "Common Core of Data 2024–25, public school files (directory, membership, staff, school characteristics, lunch) and EDGE school geocodes",
       "publisher": "National Center for Education Statistics",
@@ -65,7 +71,8 @@
   "vintages": {
     "ccd-directory": "2024–25",
     "ccd-enrollment": "2024–25",
-    "edfacts-acgr": null,
+    "edfacts-acgr": "Class of 2021",
+    "edfacts-acgr-history": "Class of 2021",
     "crdc": "2023–24",
     "pss": "2023–24"
   },

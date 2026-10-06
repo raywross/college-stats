@@ -7,12 +7,23 @@ import { getHighSchool } from "@/lib/high-schools";
 import { gradeSpan } from "@/lib/high-school-core";
 import { citeHsView, hsValueAt, isHsSuppressed, type HsFieldPath } from "@/lib/hs-fields";
 import type { HsStateField } from "@/lib/high-school-types";
-import { gradRateText, hsStateName, hsValueText, matriculationSummaryLine, shareText } from "@/lib/high-school-ui";
+import {
+  gradRateText,
+  gradTrendPoints,
+  gradTrendSummary,
+  gradPointWords,
+  hasGradTrend,
+  hsStateName,
+  hsValueText,
+  matriculationSummaryLine,
+  shareText,
+} from "@/lib/high-school-ui";
+import { ClassTrend } from "@/components/charts/ClassTrend";
 import { num, pctSmart } from "@/lib/format";
 import { HsBadges } from "@/components/high-schools/HsBadges";
 import { HsStat } from "@/components/high-schools/HsStat";
 import { HsSourceLine } from "@/components/high-schools/HsSourceLine";
-import { InfoTip, Term } from "@/components/ui/info-tip";
+import { InfoTip, MetricLabel, Term } from "@/components/ui/info-tip";
 import type { TermKey } from "@/lib/glossary";
 
 type Props = { params: Promise<{ id: string }> };
@@ -225,6 +236,27 @@ export default async function HighSchoolPage({ params }: Props) {
             )}
           </div>
         )}
+        {/* Graduation rate by class: only with two or more rated classes; one class is just the stat above. */}
+        {hasGradTrend(school.grad_history) && (
+          <figure className="mt-3 rounded-2xl border bg-card p-4">
+            <MetricLabel term="adjusted-cohort-graduation-rate" cited={cite("grad_history")} className="text-xs font-semibold text-muted-foreground">
+              Four-year graduation rate by class
+            </MetricLabel>
+            <div className="mt-3">
+              <ClassTrend points={gradTrendPoints(school.grad_history)} label={`Four-year graduation rate by class. ${gradTrendSummary(school.grad_history)}`} />
+            </div>
+            <figcaption className="mt-2 text-xs text-muted-foreground">
+              {gradTrendSummary(school.grad_history)}
+              {gradTrendPoints(school.grad_history).some((p) => p.kind === "range") && " Bars are ranges the source published instead of an exact rate."}
+              <span className="sr-only">
+                {gradTrendPoints(school.grad_history)
+                  .map((p) => `${p.label}: ${gradPointWords(p)}`)
+                  .join(". ")}
+                .
+              </span>
+            </figcaption>
+          </figure>
+        )}
       </Section>
 
       {/* ============================== GRADING ============================== */}
@@ -321,6 +353,7 @@ export default async function HighSchoolPage({ params }: Props) {
             "student_teacher_ratio",
             "frl_share",
             "grad_rate",
+            "grad_history",
             "rigor.ap_courses",
             "derived.ap_enrolled_share",
             "derived.ap_pass_share",

@@ -1,7 +1,8 @@
 # High School Data: Rigor, Outcomes, and Where Graduates Go
 
 > Status: **built** 2026-10-05 on `feature/high-school` (all four phases; see the "As built" sections at the end).
-> Graduation rates wait on one hand-downloaded EDFacts file ([below](#as-built-federal-sync-2026-10-05)).
+> Graduation rates come from ED Data Express school-level files (Class of 2021 for now; see
+> [graduation rates and history](#as-built-graduation-rates-and-history-2026-10-05)).
 > [scattergrams.md](scattergrams.md) and [counselor-portal.md](counselor-portal.md) build on it; the
 > [student-profile.md](student-profile.md) high school picker now uses it. Part of [product](README.md).
 
@@ -145,10 +146,66 @@ The shared contracts every later unit builds on; the federal, private, state, UI
 - **CRDC 2023–24** (`crdc.mts`, released August 2026): AP courses, AP enrollment, IB, dual enrollment, CRDC enrollment.
   AP exam takers and passers are no longer collected (null for every school). AP/IB indicators of -9 are "not
   reported", never zero; dual enrollment "No" is zero.
-- **EDFacts ACGR** (`edfacts.mts`): reads `acgr-sch-sy{YYYY}-{YY}-long.csv` (ALL students; ranges stay ranges). www.ed.gov
-  answers scripted downloads with a bot challenge, so the file must be downloaded in a browser into
-  `.cache/high-schools/` (or passed with `--edfacts-file`), then `npm run sync-high-schools -- --only edfacts`. Until
-  then graduation rates are null and `vintages.edfacts-acgr` is null.
+- **EDFacts ACGR** (`edfacts.mts`): ed.gov's EDFacts data-files page is gone; the school files now come from ED Data
+  Express, hand-downloaded into `.cache/high-schools/`. See
+  [graduation rates and history](#as-built-graduation-rates-and-history-2026-10-05). The old
+  `acgr-sch-sy{YYYY}-{YY}-long.csv` layout is still read when no Data Express folder is cached.
 - Small cells: CCD "Suppressed" flags, CRDC codes -11/-12, EDFacts "PS", and student counts 1–4 → null + `suppressed`.
   Tests on fixture extracts: `tests/high-schools-federal.test.mts` (`tests/fixtures/high-schools/federal/cache/` holds
   directories named like the zips).
+
+## As built (graduation rates and history, 2026-10-05)
+Branch `feature/high-school-grad`. `npm run sync-high-schools -- --only edfacts --offline` fills `grad_rate` and
+`grad_history` on public rows.
+
+**Source.** ed.gov's EDFacts data-files page is gone. Since SY 2021–22 the files live on ED Data Express
+(<https://eddataexpress.ed.gov/download/data-library>), which `meta.sources.edfacts` cites (publisher "U.S. Department
+of Education, ED Data Express (EDFacts)"; retrieved = the day the folders were unzipped, on the local calendar, or
+`--edfacts-retrieved YYYY-MM-DD`).
+
+**File naming.** Each download is a folder `SY{code}_FS150_FS151_DG695_DG696_{level}_data_files/` with
+`…_{level}.csv`, a README, and a `…_data_notes.csv`. `{level}` is `SCH` (school), `LEA` (district) or `SEA` (state):
+only `_SCH_` files are read. `{code}` is the school year (`SY2021` = 2020–21 = Class of 2021) or a span (`SY1018` =
+2010–11 to 2017–18 in one file); the "School Year" column, not the name, decides. Where two files hold the same school
+year, the file whose name sorts last (the later release) wins, and repeats are counted in the run's notes. Flags:
+`--edfacts-file <csv>` (either layout, told apart by its header) and `--edfacts-dir <folder>`.
+
+**Reading.** Subgroup "All Students in School" (older files: "All Students"), Population "All Students", Data Group
+695. Value is the rate, Denominator the cohort. Value spellings: `93%`, `86.70%`, `80-84%`, `>=90%`, `>50%`, `<=10%`,
+`<50%`, and `S` (suppressed); older files use the EDFacts codes `GE90`, `LT50`, `PS` and whole numbers, and (in the
+SY1018 district file at least) spreadsheet-mangled ranges like `14-Oct` (= 10–14), which `repairRateCell` restores.
+`parseRateRange` takes every spelling; ranges stay ranges (low/high), never midpoints; cohorts under 5 are suppressed.
+
+**Newest class and history.** The newest school year across all files becomes `grad_rate` (`vintages.edfacts-acgr`,
+e.g. "Class of 2021"). A school missing from that year has no current rate, even if an older class has one. Every
+class a school has becomes `grad_history`: `{ year: "Class of 2019", value, low, high, cohort, suppressed?: true }[]`,
+oldest → newest, written only with two or more classes (one would repeat `grad_rate`; null otherwise).
+`vintages.edfacts-acgr-history` is the span ("Classes of 2011–2021"), which the history's ⓘ cites. Guards
+(`validateGradHistory`, `validateHighSchoolMeta`; tests in `tests/high-schools-grad.test.mts`): "Class of YYYY" years,
+oldest → newest, no repeats, shares 0–1, exact or a range, suppressed entries without a rate, newest entry equal to
+`grad_rate`, newest class equal to `vintages.edfacts-acgr`, private rows null.
+
+**Page.** Under the Outcomes stats, a "Four-year graduation rate by class" card (`components/charts/ClassTrend.tsx`)
+appears only when two or more classes have a rate: exact rates are dots (joined only between neighbouring exact
+classes), ranges are interval bars, suppressed classes a hollow ring on the floor, skipped classes gaps; hover or tap a
+column for its class, rate and cohort. The caption is the summary sentence (`gradTrendSummary`: "From 86% (Class of
+2019) to between 90% and 94% (Class of 2023). Suppressed for privacy: Class of 2020. …") plus a screen-reader list of
+every class.
+
+**Coverage (first run, SY2021 only: the Data Library has one school-level set today).** 22,066 schools in the file;
+21,141 matched a CCD 2024–25 high school (925 didn't: closed since, or no longer a grade-12 school). Of 27,815 public
+rows: 5,900 exact rates, 14,301 ranges (10,660 no wider than 10 points, which count toward medians at their midpoint;
+3,641 open, like ≥90%), 940 suppressed, 6,674 none. No school has two classes yet, so every `grad_history` is null and
+no trend is drawn: each page shows the Class of 2021 rate as the graduation rate, with its year in the ⓘ. Medians
+cover 48 states + DC (Illinois and Washington have no 2020–21 school rates, see below).
+
+**How to add a year.** Download the school-level FS150/FS151 file from ED Data Express (Data Library, or the Data
+Download Tool), unzip its `SY…_SCH_data_files` folder into `.cache/high-schools/`, and rerun
+`npm run sync-high-schools -- --only edfacts --offline`. History and the trend appear on their own; commit the
+regenerated `data/high-schools/**`.
+
+**State caveats in the 2020–21 data notes.** Illinois suppressed its ACGR at LEA and school level for 2018–19 and at
+all levels for 2019–20 and 2020–21 (data quality); Washington did not report 2020–21; the Bureau of Indian Education's
+2020–21 rates are suppressed; states could change diploma requirements for COVID-19, so ED advises caution comparing
+2019–20 and 2020–21 with earlier classes; Massachusetts sent rates without cohort counts for 141 schools (cohort null);
+Delaware, Massachusetts and New Mexico report rates that differ from rates computed from their counts for some schools.

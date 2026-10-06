@@ -27,7 +27,7 @@ export type HsSourceKey =
   | "state-ct";
 
 /** Release years written by the sync to meta.json `vintages`. State report years live in each state file's sections. */
-export type HsVintageKey = "ccd-directory" | "ccd-enrollment" | "edfacts-acgr" | "crdc" | "pss";
+export type HsVintageKey = "ccd-directory" | "ccd-enrollment" | "edfacts-acgr" | "edfacts-acgr-history" | "crdc" | "pss";
 
 /** Page sections of a high school page; every registered field belongs to one. */
 export type HsTopic = "basics" | "enrollment" | "rigor" | "outcomes" | "grading" | "where-go";
@@ -80,6 +80,13 @@ export interface HighSchool {
    * publishes instead ("GE80", "90-94") is `low`/`high` with `value` null. Never a midpoint.
    */
   grad_rate: { value: number | null; low: number | null; high: number | null; cohort: number | null } | null;
+  /**
+   * The same rate for every class in the school-level ED Data Express files, oldest → newest ("Class of 2015" …), each
+   * exact (`value`) or a published range (`low`/`high`), never a midpoint. `suppressed: true` marks a class whose rate
+   * the source suppressed (a gap in the trend). Null when the files hold fewer than two classes for the school (one
+   * entry would only repeat `grad_rate`). When `grad_rate` is set, the newest entry is that same figure.
+   */
+  grad_history: HsGradHistoryEntry[] | null;
   /** CRDC: AP/IB/dual enrollment counts (students). `enrollment` is CRDC's own school enrollment, the denominator for its shares. */
   rigor: {
     ap_courses: number | null;
@@ -94,6 +101,16 @@ export interface HighSchool {
   suppressed?: string[];
   /** Only where a value's source or year differs from its HS_FIELDS default. Keys are registered HsFieldPaths. */
   lineage?: Record<string, HsLineage>;
+}
+
+export interface HsGradHistoryEntry {
+  /** "Class of 2021": the cohort that graduated at the end of the 2020–21 school year. */
+  year: string;
+  value: number | null;
+  low: number | null;
+  high: number | null;
+  cohort: number | null;
+  suppressed?: true;
 }
 
 export interface HsLineage {

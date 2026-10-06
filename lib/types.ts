@@ -1549,7 +1549,9 @@ export type SortKey =
   | "pell_gap_change"
   | "full_time_faculty"
   | "out_of_state"
-  | "transfer_share";
+  | "transfer_share"
+  /** Straight-line miles from the `near` filter's ZIP center (specs/product/home-and-distance.md); nothing without it. */
+  | "distance";
 
 export type ExploreView = "grid" | "table" | "chart" | "map";
 
@@ -1655,6 +1657,16 @@ export interface SearchFilters {
   lgbtqNondiscrimination?: boolean;
   /** National chapter directories (specs/campus-directories.md, specs/greek-life.md phase 4): has a listed chapter in any of these councils. */
   greekCouncils?: Council[];
+  /**
+   * Distance from home (specs/product/home-and-distance.md): URL params `near` (a five-digit ZIP code) and `within`
+   * (a radius from lib/home.ts WITHIN_OPTIONS), parsed by lib/params.ts into `nearZip`/`withinMiles`. The page
+   * resolves the ZIP to its center with lib/zip-centroids.ts `resolveNear()`, which fills `near`; getSchools()
+   * applies only `near` (straight-line miles to `location.lat`/`location.lng`; colleges without coordinates are
+   * excluded while set). An unknown ZIP leaves `near` unset, so nothing is filtered and the page says so.
+   */
+  nearZip?: string;
+  withinMiles?: number;
+  near?: { zip: string; lat: number; lng: number; miles: number };
   sortBy?: SortKey;
   sortDir?: "asc" | "desc";
 }

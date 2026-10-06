@@ -26,6 +26,7 @@ import { drawsNationally } from "./residence.ts";
 import { matchesField } from "./majors.ts";
 import { noCssProfile, offersInternationalAid } from "./cds/financial-aid.ts";
 import { fitsScoreRange } from "./student-profile.ts";
+import { distanceFromHome, isWithinHome } from "./home.ts";
 import {
   METRICS,
   SIZE_BUCKETS,
@@ -148,6 +149,8 @@ const SORTERS: Record<SortKey, (s: School) => number | string | null> = {
   instruction_spending: METRICS.financesInstruction.get,
   endowment_per_student: METRICS.endowmentFasb.get,
   bachelors: (s) => s.academics?.bachelors_awarded ?? null,
+  // Needs the request's `near` filter, so getSchools() substitutes the real getter; without one nothing sorts.
+  distance: () => null,
 };
 
 function mode(values: number[]): number | null {
@@ -313,10 +316,15 @@ export function createDataset({ schools, meta, releaseCalendar, aliases = [] }: 
     // CDS financial aid: colleges without the college's own report never match.
     if (filters.aidForms === "no-css") results = results.filter(noCssProfile);
     if (filters.intlAid) results = results.filter(offersInternationalAid);
+    // Distance from home (specs/product/home-and-distance.md): straight-line miles from a ZIP code's center to the
+    // campus coordinates; colleges without reported coordinates are left out while set.
+    const near = filters.near;
+    const miles = (s: School) => (near ? distanceFromHome(s.location, near) : null);
+    if (near) results = results.filter((s) => isWithinHome(s.location, near));
 
     const sortBy: SortKey = filters.sortBy && filters.sortBy in SORTERS ? filters.sortBy : "applicants";
     const multiplier = (filters.sortDir ?? (sortBy === "applicants" ? "desc" : "asc")) === "asc" ? 1 : -1;
-    const get = SORTERS[sortBy];
+    const get = sortBy === "distance" ? miles : SORTERS[sortBy];
 
     return [...results].sort((a, b) => {
       const av = get(a);

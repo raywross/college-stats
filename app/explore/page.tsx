@@ -4,6 +4,7 @@ import { SearchX } from "lucide-react";
 import Link from "next/link";
 import { getData, paginate, type Dataset } from "@/lib/data";
 import { parseFilters, parseView, countActiveFilters } from "@/lib/params";
+import { resolveNear } from "@/lib/zip-centroids";
 import { METRICS, SIZE_BUCKETS, median, satMid, sizeBucket } from "@/lib/metrics";
 import { pctSmart, compact, num, typeLabel } from "@/lib/format";
 import { Pagination } from "@/components/explore/Pagination";
@@ -175,7 +176,10 @@ export default async function ExplorePage({
   const params = await searchParams;
   const data = await getData();
   const { getAllSchools, getSchools, landscapeEligibleCount, landscapePoints, metricMedian, stickerEligibleCount, stickerPoints, valueEligibleCount, valuePoints } = data;
-  const filters = parseFilters(params);
+  // Distance from home: the ZIP in `near` becomes a center here (lib/zip-centroids.ts), so getSchools() filters
+  // and sorts by it like any other filter, and the cards, rows, and table show each college's distance.
+  const filters = resolveNear(parseFilters(params));
+  const home = filters.near ?? null;
   const view = parseView(params);
   const schools = getSchools(filters);
   const perPage = view === "table" ? 50 : 24;
@@ -249,6 +253,13 @@ export default async function ExplorePage({
             <ExploreFitChips />
           </Suspense>
 
+          {filters.nearZip && !filters.near && (
+            <p className="text-sm text-muted-foreground" role="status">
+              We don&apos;t have a location for ZIP code {filters.nearZip}, so the distance filter isn&apos;t applied. Check the digits, or try a
+              neighboring ZIP code.
+            </p>
+          )}
+
           <p className="text-sm text-muted-foreground" aria-live="polite">
             <span className="font-bold text-foreground">{num(schools.length)}</span> of {num(all.length)} colleges match
             {paged.pages > 1 && view !== "chart" && view !== "map" && <> · page {paged.page} of {paged.pages}</>}
@@ -268,7 +279,7 @@ export default async function ExplorePage({
               </Link>
             </div>
           ) : view === "table" ? (
-            <SchoolTable schools={paged.items} params={params} />
+            <SchoolTable schools={paged.items} params={params} home={home} />
           ) : view === "map" ? (
             (() => {
               const map = mapPoints(schools);
@@ -365,13 +376,13 @@ export default async function ExplorePage({
               <ul className="space-y-2 sm:hidden">
                 {paged.items.map((s) => (
                   <li key={s.unit_id}>
-                    <SchoolRow school={s} />
+                    <SchoolRow school={s} home={home} />
                   </li>
                 ))}
               </ul>
               <div className="hidden gap-4 sm:grid sm:grid-cols-2 2xl:grid-cols-3">
                 {paged.items.map((s, i) => (
-                  <SchoolCard key={s.unit_id} school={s} index={i} />
+                  <SchoolCard key={s.unit_id} school={s} index={i} home={home} />
                 ))}
               </div>
             </>
@@ -381,7 +392,15 @@ export default async function ExplorePage({
             <Pagination params={params} page={paged.page} pages={paged.pages} total={paged.total} perPage={perPage} />
           )}
 
-          <MultiSourceNote schools={schools} fields={[...Object.values(METRICS).map((m) => m.field), "academics.majors_top", ...(view === "map" ? (["location.lat", "campus.setting"] as const) : [])]} className="pt-2" />
+          <MultiSourceNote
+            schools={schools}
+            fields={[
+              ...Object.values(METRICS).map((m) => m.field),
+              "academics.majors_top",
+              ...(view === "map" ? (["location.lat", "campus.setting"] as const) : home ? (["location.lat"] as const) : []),
+            ]}
+            className="pt-2"
+          />
           <BaselineNote className="pt-1" />
 
           {schools.length > 0 && (

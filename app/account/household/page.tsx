@@ -10,12 +10,15 @@ import { CreateHouseholdForm } from "@/components/account/HouseholdForms";
 import { Term } from "@/components/ui/info-tip";
 import { AccountsSetupError, authConfigured, getAccount, requireUser } from "@/lib/auth";
 import { myHouseholds } from "@/lib/households";
+import { myHome } from "@/lib/home-store";
+import { HOUSEHOLD_MAX_MEMBERS } from "@/lib/household-rules";
 
-export const metadata: Metadata = { title: "Your households", robots: { index: false } };
+export const metadata: Metadata = { title: "Your household", robots: { index: false } };
 
 /**
- * /account/household (specs/product/accounts.md "Roles and households"): every household the user is in, with its
- * members, pending invitations, edit access, and managed students; and a form to start another.
+ * /account/household (specs/product/accounts.md "Roles and households"): the user's household with its members,
+ * seats, home address, pending invitations, edit access, and managed students; or a form to start one. An account
+ * is in one household at a time (an account from before that rule still sees each of its households here).
  */
 export default async function HouseholdPage() {
   await connection();
@@ -32,8 +35,11 @@ export default async function HouseholdPage() {
   if (!account) return null;
   if (account.profile.deleted_at) redirect("/account");
 
-  const households = await myHouseholds();
+  const [households, home] = await Promise.all([myHouseholds(), myHome()]);
   const defaultRole = account.profile.role_hint === "guardian" || account.profile.role_hint === "counselor" ? "guardian" : "student";
+  // Address suggestions as you type exist only once the site has its Google key (home-and-distance.md "Autocomplete");
+  // until then the field is a plain field and says nothing about suggestions.
+  const suggestions = Boolean(process.env.GOOGLE_MAPS_API_KEY);
 
   return (
     <div className="mx-auto max-w-3xl space-y-6 px-4 py-10 sm:px-6 sm:py-14">
@@ -43,24 +49,27 @@ export default async function HouseholdPage() {
           Your account
         </Link>
         <h1 className="mt-3 font-display text-3xl font-extrabold tracking-tight sm:text-4xl">
-          Your <Term term="household">households</Term>
+          Your <Term term="household">household</Term>
         </h1>
         <p className="mt-1 text-muted-foreground">
-          Guardians see their students&apos; lists and plans; students never see a guardian&apos;s finances. Anyone can leave at any time.
+          Up to {HOUSEHOLD_MAX_MEMBERS} people in any mix of parents and students, sharing one home address. Guardians see their students&apos; lists and
+          plans; students never see a guardian&apos;s finances. Anyone can leave at any time.
         </p>
       </header>
 
       {households.map((h) => (
-        <HouseholdCard key={h.id} h={h} />
+        <HouseholdCard key={h.id} h={h} home={home && home.household_id === h.id ? home : null} suggestions={suggestions} />
       ))}
 
-      <AccountSection
-        id="new"
-        title={households.length ? "Start another household" : "Start a household"}
-        description={households.length ? "For a second home, or another family you help." : "Then invite the others with a link."}
-      >
-        <CreateHouseholdForm defaultRole={defaultRole} />
-      </AccountSection>
+      {households.length === 0 && (
+        <AccountSection
+          id="new"
+          title="Start a household"
+          description="Then invite the others with a link and set the home address distances count from. If someone invited you, open the link they sent instead."
+        >
+          <CreateHouseholdForm defaultRole={defaultRole} />
+        </AccountSection>
+      )}
     </div>
   );
 }

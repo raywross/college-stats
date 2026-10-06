@@ -105,7 +105,7 @@ function BackLinks({ signedIn }: { signedIn: boolean }) {
   return (
     <div className="mt-8 flex flex-wrap gap-3">
       <Link href={signedIn ? "/account/household" : "/"} className="rounded-full border px-5 py-2.5 text-sm font-semibold hover:bg-muted">
-        {signedIn ? "Your households" : "Home"}
+        {signedIn ? "Your household" : "Home"}
       </Link>
     </div>
   );

@@ -5,7 +5,8 @@ const nextConfig: NextConfig = {
   // runtime, so make sure it ships with every server route when deployed (e.g. to Vercel).
   outputFileTracingIncludes: {
     // organizations.json: names, sites, and logos of the campus directories' organizations (lib/organizations.ts).
-    "/*": ["./data/*.json", "./data/history/**/*.json", "./data/detail/**/*.json", "./data/directories/organizations.json"],
+    // zcta-centroids.csv: ZIP code centers for the distance-from-home filter (lib/zip-centroids.ts).
+    "/*": ["./data/*.json", "./data/history/**/*.json", "./data/detail/**/*.json", "./data/directories/organizations.json", "./data/reference/zcta-centroids.csv"],
     // /roadmap pages are prerendered from specs/*.md; ship the specs too in case a page is ever rendered on demand.
     "/roadmap/*": ["./specs/**/*.md"],
     // Same for /release-notes, prerendered from release-notes/*.md.

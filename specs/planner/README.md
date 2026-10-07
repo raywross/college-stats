@@ -136,6 +136,10 @@ From the owner's review of the first draft:
 - **Letters: form first.** The owner has no letters to pilot a reader on; the form is the first release and asks
   families whether they'd share the letter, which builds the set for the reader later ([offers.md](offers.md#letters)).
 - **Common App screenshot import**: later, not this pass.
+- **Twilio** is the text provider ([timeline.md](timeline.md#texts)); number registration starts before the
+  timeline unit is built.
+- **Thirty shared letters** across several colleges, admission letters included, is the threshold for building the
+  letter reader as its own roadmap item ([offers.md](offers.md#letters)).
 
 ## Build order
 ```
@@ -170,9 +174,5 @@ In addition to the [product rules for user data](../product/README.md#shared-rul
   ([telemetry.md](../product/telemetry.md#privacy)).
 
 ## Open questions for the owner
-1. **The text provider and its cost.** Twilio is the likely provider (a toll-free or 10DLC number, registration
-   takes a few weeks, about a cent a message); the timeline spec budgets at most one text a day per person. Confirm
-   before the timeline unit is built, since registration is the long pole.
-2. **How many shared letters before the reader is built?** The form asks families to share; a reader pilot needs
-   roughly 30 letters across several colleges, including admission letters. Recommendation: build the reader when
-   that many exist, as its own roadmap item then.
+None at the overview level as of 2026-10-07; each spec keeps its own small ones. The two that were here (the text
+provider, the letter threshold) were decided the same day and are recorded above.

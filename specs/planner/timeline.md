@@ -151,10 +151,12 @@ trials, where texts about one concrete, dated task moved enrollment ([README.md]
   Never a personal number, never a note, never a decision outcome.
 - **Limits.** At most one text a day per person, none between 9 pm and 8 am in the household's time zone (from the
   home address when there is one, else the phone's area code), and the week's text is skipped when nothing is due.
-- **Provider.** Twilio Programmable Messaging is the likely choice (a toll-free number verified for this use, or a
-  registered 10DLC number; about a cent per segment; registration takes weeks, so it starts before the build). The
-  sending code sits behind one small interface (`lib/sms.ts`: `send`, `handleInbound`) so the provider can change.
-  Cost at a thousand opted-in people texting twice a week is tens of dollars a month.
+- **Provider: Twilio** Programmable Messaging (owner decision 2026-10-07): a toll-free number verified for this
+  use, or a registered 10DLC number; about a cent per segment; registration takes weeks, so it starts before the
+  timeline unit is built. The sending code sits behind one small interface (`lib/sms.ts`: `send`, `handleInbound`)
+  so the provider could still change. Cost at a thousand opted-in people texting twice a week is tens of dollars a
+  month. Owner setup, when built: a Twilio account, the number and its registration, the inbound webhook pointed at
+  the site, and the three env values below in Vercel.
 - **Email stays the default.** Texts are an addition for people who turn them on; everything a text says is also in
   the plan and the email.
 

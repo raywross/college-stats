@@ -60,7 +60,8 @@ release**, and the form asks families to share their letters so a reader can be 
    with the account, revocable from the offer, with a note that a person at Quad will read it, names covered, to
    check the reader's work; it is never shown to anyone else and never used for anything but that. The shared set is
    counted on the Data page's methods section once it exists.
-3. **Upload and read** (later, its own roadmap item once about 30 letters are shared): a model with structured
+3. **Upload and read** (later, its own roadmap item once **30 letters** are shared across several colleges,
+   admission letters included; owner decision 2026-10-07): a model with structured
    output classifies the document (`admission | aid | other`) and extracts with a verbatim quote per value, the same
    pattern as [college-reported-data.md](../college-reported-data.md#how-it-works); the family confirms every field
    before anything is written or computed. Extraction runs server-side and the document is never sent to analytics
@@ -158,9 +159,9 @@ standard letter entered through the form). Later, with the reader: `lib/planner/
 classification, schema, quotes) and its fixtures.
 
 ## Open questions
-1. When enough letters are shared, the reader's pilot measures per-field accuracy and cost per letter the way the
-   college-reported pilot does, before any family sees an extracted field. How many is enough: about 30 across
-   several colleges, including admission letters ([README.md](README.md#open-questions-for-the-owner)).
+1. When 30 letters are shared ([README.md](README.md#owner-decisions-2026-10-07)), the reader's pilot measures
+   per-field accuracy and cost per letter the way the college-reported pilot does, before any family sees an
+   extracted field. The Data page's methods section should show the running count so the threshold is visible.
 2. Should "I'm going to" be shareable publicly (a page like the share link)? Recommendation: an image, not a page;
    a public page would be a place for strangers to see a minor's college.
 3. A Common App dashboard screenshot read by the same reader to seed statuses is noted for later, not this pass

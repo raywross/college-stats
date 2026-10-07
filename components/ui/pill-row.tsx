@@ -16,7 +16,20 @@ export interface PillItem {
  * A row of page pills, the current one filled (the profile's topic pills, the compare header's). One swipeable row
  * on phones with the active pill scrolled into view (scrolling the row only, never the page).
  */
-export function PillRow({ items, current, ariaLabel, className }: { items: PillItem[]; current: string; ariaLabel: string; className?: string }) {
+export function PillRow({
+  items,
+  current,
+  ariaLabel,
+  className,
+  onSelect,
+}: {
+  items: PillItem[];
+  current: string;
+  ariaLabel: string;
+  className?: string;
+  /** Called with the pill's key when it's clicked (usage measurement, specs/product/telemetry.md); the link still navigates. */
+  onSelect?: (key: string) => void;
+}) {
   const listRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -38,6 +51,7 @@ export function PillRow({ items, current, ariaLabel, className }: { items: PillI
               data-key={p.key}
               href={p.href}
               aria-current={active ? "page" : undefined}
+              onClick={() => onSelect?.(p.key)}
               className={cn(
                 "inline-flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-[13px] font-semibold transition-colors sm:px-3.5 sm:text-sm",
                 active ? "bg-foreground text-background" : "text-muted-foreground hover:bg-muted hover:text-foreground"

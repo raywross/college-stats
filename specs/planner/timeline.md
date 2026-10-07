@@ -119,7 +119,7 @@ A student can see every task at any time; the grade only decides the fold and wh
   hashed, revocable from the same menu) with every dated task and visit, titles only ("Michigan: apply (ED I)"), no
   notes, no personal numbers; works in Apple, Google, and Outlook calendars. A one-time `.ics` download covers people
   who don't want a subscription.
-- **Print**: the college view with the household name, the date, and a sources line; the Pro dossier
+- **Print**: the college view with the household name, the date, and a sources line; the family dossier
   ([offers.md](offers.md#display)) reuses it.
 - **Phones**: one column; the month heading is sticky; the toggle is a segmented control; the nudge and snooze are in
   a row's bottom sheet.
@@ -129,11 +129,34 @@ A student can see every task at any time; the grade only decides the fold and wh
   adds a line to the next digest; during the season (August to May) a weekly digest goes out even when no college's
   data changed, only to people with a task due. The line is the task, the college, and the date; never a note or a
   number.
-- **"Your week"** (new, Plus): one email on Sunday evening to the student with This week's tasks and the first
-  overdue one, one line each, and a link; nothing else. Off by default for juniors before spring; on by default for
-  seniors in season; a switch on the account page beside the updates switch.
+- **"Your week"** (new): one email on Sunday evening to the student with This week's tasks and the first overdue
+  one, one line each, and a link; nothing else. Off by default for juniors before spring; on by default for seniors
+  in season; a switch on the account page beside the updates switch.
 - **Parents** get the summary email in [parents.md](parents.md#the-weekly-summary), not a copy of the student's.
-- **Texts** wait for the owner's decision ([README.md](README.md#open-questions-for-the-owner)).
+- **Texts**, below.
+
+### Texts
+The owner's decision (2026-10-07): reminders reach the phone. The research behind it is Castleman and Page's
+trials, where texts about one concrete, dated task moved enrollment ([README.md](README.md#research-2026-10-07)).
+- **Consent first.** A phone number already sits on the household record for students and guardians
+  ([household-hub.md](../product/household-hub.md#adding-a-person)). Texts start only after an explicit opt-in on
+  the account page: the person's own for an adult, a guardian's for a student under 18 (the guardian ticks it on the
+  student's page, and the student sees that it's on and who turned it on). The first text is a confirmation with the
+  STOP wording; a STOP reply sets the opt-out through the provider's webhook and nothing more is sent
+  (`sms_consents`, [model.md](model.md#tables)).
+- **What's sent.** Two kinds, both plain text, no links to anything but the plan: the **week** on Sunday evening
+  (the same content as Your week, trimmed to the first three tasks: "Quad · This week: Michigan essay (Nov 1),
+  FAFSA (Mom), Tufts visit Sat") and a **day-before** text for a dated task with a hard deadline (application,
+  reply, deposit). A guardian's nudge can go by text when the student has texts on ([parents.md](parents.md#nudges)).
+  Never a personal number, never a note, never a decision outcome.
+- **Limits.** At most one text a day per person, none between 9 pm and 8 am in the household's time zone (from the
+  home address when there is one, else the phone's area code), and the week's text is skipped when nothing is due.
+- **Provider.** Twilio Programmable Messaging is the likely choice (a toll-free number verified for this use, or a
+  registered 10DLC number; about a cent per segment; registration takes weeks, so it starts before the build). The
+  sending code sits behind one small interface (`lib/sms.ts`: `send`, `handleInbound`) so the provider can change.
+  Cost at a thousand opted-in people texting twice a week is tens of dollars a month.
+- **Email stays the default.** Texts are an addition for people who turn them on; everything a text says is also in
+  the plan and the email.
 
 ## Rules
 - Every date names its source and edition; a typed date says "your date"; a last-cycle date says so.
@@ -147,9 +170,12 @@ A student can see every task at any time; the grade only decides the fold and wh
 `data/application-cycle.json` (+ `scripts/check-cycle.mts` in verify), `lib/planner/cycle.ts`, the `college` and
 `cycle` generators in `lib/planner/tasks.ts`, `lib/ics.ts`, `app/api/plan/[token]/route.ts`,
 `components/planner/MonthView.tsx`, `CollegeView.tsx`, `ThisWeek.tsx`, `TaskRow.tsx`, the digest's task lines and
-the Your week email (`emails/your-week.tsx`), `tests/planner-timeline.test.mts` (every generator against a college
-with full data and one with none; a round change that moves a date and keeps a tick; a last-cycle edition's wording;
-the feed's `.ics` has titles only; the fold by grade at four dates).
+the Your week email (`emails/your-week.tsx`), `lib/sms.ts` with `app/api/sms/inbound/route.ts` (the STOP webhook)
+and the consent controls on the account and person pages, `tests/planner-timeline.test.mts` (every generator
+against a college with full data and one with none; a round change that moves a date and keeps a tick; a last-cycle
+edition's wording; the feed's `.ics` has titles only; the fold by grade at four dates; a text is never composed for
+a person without an active consent, never at night, never twice a day, and never with a number from the profile).
+Env: `SMS_PROVIDER_SID`, `SMS_PROVIDER_TOKEN`, `SMS_FROM_NUMBER`.
 
 ## Open questions
 1. Should a task the family adds be free text only, or pick from the site's kinds? Recommendation: free text with a

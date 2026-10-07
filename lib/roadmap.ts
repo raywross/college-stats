@@ -172,10 +172,10 @@ export const ROADMAP: RoadmapSpec[] = [
     file: "specs/planner/timeline.md",
     group: "planner",
     summary:
-      "The project plan: every dated task from the college's published dates, the cycle's dates, and the stage the student is in, with an owner, grouped by month or by college, in a calendar feed and a weekly email.",
+      "The project plan: every dated task from the college's published dates, the cycle's dates, and the stage the student is in, with an owner, grouped by month or by college, in a calendar feed, a weekly email, and texts for those who turn them on.",
     complexity: 3,
     complexityNote:
-      "Task generators from the college-reported dates, a versioned cycle file with windows and the summer list, a grade-aware fold, a calendar feed, and reminders through the existing digest plus a new weekly email.",
+      "Task generators from the college-reported dates, a versioned cycle file with windows and the summer list, a grade-aware fold, a calendar feed, reminders through the existing digest plus a new weekly email, and text messages with consent, quiet hours, and a provider behind one interface.",
     status: "planned",
     after: ["planner-model", "early-rounds"],
   },
@@ -195,10 +195,10 @@ export const ROADMAP: RoadmapSpec[] = [
     file: "specs/planner/offers.md",
     group: "planner",
     summary:
-      "Record each decision in a tap or an upload, see every aid offer in one standard layout with four-year totals beside your estimate and the college's outcomes, compare the admits, choose, and get the deposit, withdrawal, and summer tasks.",
+      "Record each decision in a tap, enter every aid offer in one standard layout with four-year totals beside your estimate and the college's outcomes, compare the admits, choose, and get the deposit, withdrawal, and summer tasks.",
     complexity: 3,
     complexityNote:
-      "A standard offer model, four-year math, flags and questions, one document upload read by a model for admission and aid letters, the choice's generated tasks, and a pilot on real letters.",
+      "A standard offer model, four-year math, flags and questions, the choice's generated tasks, and a share-your-letter step that collects the set a later upload-and-read path is built on.",
     status: "planned",
     after: ["applications", "net-price-estimator"],
   },

@@ -37,7 +37,7 @@ stages are a map, not a gate. Stage 0, the student's numbers, is already built (
 | 3 | [actions.md](actions.md) | Follows the admissions office, requests information, books and logs visits, keeps notes | One click where a network allows it, a visit log with prompts and a calendar file, and says where interest is counted | Medium |
 | 4 | [timeline.md](timeline.md) | Works through dated tasks, adds their own | Generates the tasks from the college's dates, the cycle's dates, and the stage the student is in; month and college views; calendar feed; reminders | Large |
 | 5 | [applications.md](applications.md) | Marks what's submitted and complete, handles deferrals and wait lists | Lists what each college needs (fee, waiver, test policy, aid forms), tracks the portal, generates the follow-ups | Medium |
-| 6 | [offers.md](offers.md) | Records decisions, adds offers (form or upload), compares, **chooses** | Reads admission and aid letters, puts offers in one layout with four-year totals, sets them beside the estimate and the college's outcomes, then turns the choice into deposit and withdrawal tasks | Large |
+| 6 | [offers.md](offers.md) | Records decisions, enters offers in a short form, shares the letter if willing, compares, **chooses** | Puts offers in one layout with four-year totals, sets them beside the estimate and the college's outcomes, turns the choice into deposit and withdrawal tasks, and collects shared letters for a reader built later | Large |
 | all | [parents.md](parents.md) | A parent checks in, nudges, and takes the parent's tasks | A summary per student, the same plan read-only, a nudge that doesn't nag, a weekly email, the stuck signals | Medium |
 | — | [model.md](model.md) | | The shared model: stages, tasks, visits, offers, the Plan tab, the cycle year, entitlements | Large |
 
@@ -95,7 +95,7 @@ stages are a map, not a gate. Stage 0, the student's numbers, is already built (
 | Moved here | From | What changed |
 |---|---|---|
 | [timeline.md](timeline.md) | `product/application-plan.md` (planned 2026-10-06) | Becomes stage 4: tasks have an assignee (student or parent), the cycle file gains windows and the summer list, the plan knows the student's grade, and there is a calendar feed. The suggested steps split out into stages 2, 3, and 5 |
-| [offers.md](offers.md) | `product/award-letter-analyzer.md` (planned 2026-10-02) | Becomes stage 6: decision entry first, one upload for admission and aid letters, "compare my admits", the choice and what it generates, the summer list, and the opt-in outcome share |
+| [offers.md](offers.md) | `product/award-letter-analyzer.md` (planned 2026-10-02) | Becomes stage 6: decision entry first, the form before any upload (with a share-your-letter step that collects the set a reader is built on later), "compare my admits", the choice and what it generates, the summer list, and the opt-in outcome share |
 
 New: [model.md](model.md), [list-building.md](list-building.md), [early-rounds.md](early-rounds.md),
 [actions.md](actions.md), [applications.md](applications.md), [parents.md](parents.md).
@@ -116,31 +116,26 @@ Each is argued in its spec.
    publish moves a date without losing a tick. Parent tasks (FAFSA, CSS Profile, deposits) show on the parent's own page.
 5. **Do the action where the network allows; record it everywhere.** A real follow intent on X and YouTube; a
    deep link plus "did you follow?" elsewhere. What's stored is the fact and the date, never a token or a login.
-6. **Letters are read, then confirmed.** One upload path for admission and aid letters: a model classifies and
-   extracts with a quote per value, the family confirms, nothing is computed from an unconfirmed field.
+6. **Offers start as a form; letters are read later.** The family enters each offer in the College Financing Plan
+   layout and is asked whether they'd share the letter itself. The shared letters become the set that a later
+   upload-and-read path is built and measured on; until then nothing is extracted by a model.
 7. **Parents see, nudge, and own their tasks; they don't grade.** No scores, no "behind", no comparisons between
    siblings. A nudge is one line about one task, rate-limited, and the student sees who sent it.
-8. **The free tier keeps the list and the facts; the paid tiers sell the organizing.** See the tiers below.
+8. **Reminders reach the phone.** Email and text, each with its own switch, texts with explicit consent; one task,
+   one date, one link.
+9. **The commercial model comes after the build.** The planner is meant to be the primary paid feature, but these
+   specs name no tier and gate nothing; once the stages exist the owner draws the paid line in
+   [commercialization.md](../product/commercialization.md) and the stages pick it up through one hook
+   ([model.md](model.md#entitlements)).
 
-## Tiers (proposal; see the open questions)
-The owner's brief makes the planner the main paid feature. The split below keeps the site's rule that nothing
-derived from public data is gated ([commercialization.md](../product/commercialization.md#what-stays-free)): every
-date and rate shows on the free list; what Plus adds is the organizing on top.
-
-| Capability | Free | Plus | Pro |
-|---|---|---|---|
-| List, categories, Dream, sort, balance line, the college's dates on each row | ✓ | ✓ | ✓ |
-| Outcomes and statuses | ✓ | ✓ | ✓ |
-| The Plan tab: stages, generated tasks, month and college views, "This week" | 14-day trial, then read-only | ✓ | ✓ |
-| Early-rounds planner (proposal, conflicts, money question) | availability and dates only | ✓ | ✓ |
-| Actions: follow, request information, visit log and notes, calendar files | follow and request | ✓ | ✓ |
-| Calendar feed, reminders in the digest, the weekly "Your week" email | | ✓ | ✓ |
-| Parent view, nudges, parent tasks, weekly parent summary | summary line | ✓ (one student) | ✓ (every student in the household) |
-| Offers by form and one comparison | ✓ (March–May) | ✓ | ✓ |
-| Letter upload, four-year totals, appeal summary, the family dossier | | | ✓ |
-
-The free trial is of the Plan tab itself, not a time-limited account, so a junior who tries it in March and comes
-back as a senior starts the trial again (once per student, reset by graduation year).
+## Owner decisions (2026-10-07)
+From the owner's review of the first draft:
+- **No commercial model in the specs.** Decide tiers once things are built; the tier table that was here is gone.
+- **Texts are in scope.** Reminders and nudges by SMS as well as email ([timeline.md](timeline.md#texts)).
+- **No photos** on visits.
+- **Letters: form first.** The owner has no letters to pilot a reader on; the form is the first release and asks
+  families whether they'd share the letter, which builds the set for the reader later ([offers.md](offers.md#letters)).
+- **Common App screenshot import**: later, not this pass.
 
 ## Build order
 ```
@@ -168,23 +163,16 @@ In addition to the [product rules for user data](../product/README.md#shared-rul
   the college says it isn't, the step is optional and says why.
 - **A parent sees what the privacy model allows and nothing more**: lists, plans, tasks, visits, offers; never
   private notes, hooks, or the finances of another guardian.
-- **Minors and messaging.** Reminders go to the account's email; texts wait for explicit consent and a provider
-  decision. No reminder carries a personal number (GPA, scores, income, award amounts): "Michigan: essay due Nov 1".
+- **Minors and messaging.** Reminders go to the account's email and, with explicit consent (a guardian's for a
+  student under 18), by text to the phone on the household record. No reminder or text carries a personal number
+  (GPA, scores, income, award amounts): "Michigan: essay due Nov 1".
 - **Telemetry** records that a stage was used and which college, never the content
   ([telemetry.md](../product/telemetry.md#privacy)).
 
 ## Open questions for the owner
-1. **The paid line.** Is the Plan tab Plus (with Pro for decision season), as proposed, or is the whole planner
-   one product at one price (the $49 season pass), with Plus retired? Recommendation: keep both tiers; the pass is
-   what a senior's family buys in August, Plus is what a junior's family buys in March.
-2. **Texts.** Reminders by SMS are the most-asked-for thing in every comparable tool and the research says they
-   work. They need a provider (Twilio), consent from a minor's guardian, and cost per message. Build in the first
-   release, or email first and texts in the spring? Recommendation: email first; texts as a Pro addition once the
-   weekly email has run one season.
-3. **Photos on visits.** A visit log without photos feels incomplete; photos mean a storage bucket per family and a
-   moderation question. Recommendation: notes and a rating first; photos with the Pro dossier.
-4. **Letter upload cost.** The offers stage's upload pilot (about 30 real letters) decides whether extraction is
-   accurate enough to ship; the same pilot should include admission letters now that one upload reads both.
-5. **Common App import.** There is no API; the student's "My Colleges" list can be pasted or exported as a
-   screenshot. Should the upload path read a screenshot of that dashboard to seed statuses? Cheap to add to the same
-   extractor; recommendation: yes, after the letters pilot.
+1. **The text provider and its cost.** Twilio is the likely provider (a toll-free or 10DLC number, registration
+   takes a few weeks, about a cent a message); the timeline spec budgets at most one text a day per person. Confirm
+   before the timeline unit is built, since registration is the long pole.
+2. **How many shared letters before the reader is built?** The form asks families to share; a reader pilot needs
+   roughly 30 letters across several colleges, including admission letters. Recommendation: build the reader when
+   that many exist, as its own roadmap item then.

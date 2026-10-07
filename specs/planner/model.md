@@ -81,7 +81,8 @@ plan_letters (id, item_id, kind: 'admission' | 'aid' | 'other', storage_path, up
 
 plan_nudges  (id, task_id, from_user, to_student, note text null, sent_at, channel: 'email' | 'sms')
 plan_calendar_tokens (id, list_id, token_hash, created_by, created_at, revoked_at null)
-plan_trials  (student_id, grad_year, started_at)   -- the free Plan-tab trial, once per student per cycle
+sms_consents (id, user_id null, student_id null, phone, consented_by uuid, consented_at, revoked_at null,
+              provider_opt_out_at null)   -- one active row per person; a guardian consents for a student under 18
 ```
 
 Rules:
@@ -90,7 +91,9 @@ Rules:
   `committed_on` requires `enrolling`; `enrolling` on one item clears it on the others in the same list (as today).
 - Tasks for an item cascade with it. A task's `item_id` is null for student-wide tasks (FAFSA, test registration).
 - A guardian's own list ([household-hub.md](../product/household-hub.md#one-list-per-person)) gets `college` and
-  `stage` tasks and visits, no student-wide `cycle` tasks, no offers, no trial: the planner is the student's.
+  `stage` tasks and visits, no student-wide `cycle` tasks, no offers: the planner is the student's.
+- `sms_consents` is written only by the consent flow ([timeline.md](timeline.md#texts)); a provider STOP reply
+  sets `provider_opt_out_at` through the webhook, and no text goes to a row with either timestamp set.
 - Private notes stay in `list_notes` with the existing `private` flag; `plan_visits.notes` is never private (a visit
   is a family event); a student who wants private visit thoughts writes a private list note.
 - Policy tests (`tests/planner-policies.test.mts`, PGlite): owner read/write; view-only guardian reads, can't tick;
@@ -114,12 +117,13 @@ Rules:
 - **`/me/plan`** redirects to the viewer's own Plan tab, like `/me/list`.
 
 ## Entitlements
-`lib/entitlements.ts` ([commercialization.md](../product/commercialization.md#feature-map)) gains one feature key per
-stage capability from the [tiers table](README.md#tiers-proposal-see-the-open-questions): `planner.tab`,
-`planner.rounds`, `planner.actions.visits`, `planner.calendar`, `planner.reminders`, `planner.parents.nudge`,
-`planner.offers.upload`. Until commercialization is built, every key returns allowed (today's rule for lists), and
-the trial table is written but not enforced. The Plan tab's read-only state after the trial shows the same page with
-ticks disabled and one "Plus" chip at the top, nothing blurred: the plan is the family's data and stays readable.
+The commercial model is decided after the planner is built ([README.md](README.md#owner-decisions-2026-10-07)), so
+nothing in these specs is gated and no tier is named. What the model provides is one hook so gating can be added
+later without touching the stages: every Server Action in `lib/planner/store.ts` calls `allowed(user, capability)`
+from `lib/entitlements.ts` with a capability name (`planner.tab`, `planner.rounds`, `planner.actions.visits`,
+`planner.calendar`, `planner.reminders`, `planner.texts`, `planner.parents.nudge`, `planner.offers`), and that
+function returns true for everything today, as it does for lists. When [commercialization.md](../product/commercialization.md)
+is built it fills in the map; the capability names are the planner's contribution to it.
 
 ## Shared code (contracts for the stage units)
 | Module | Exports |
@@ -133,8 +137,8 @@ ticks disabled and one "Plus" chip at the top, nothing blurred: the plan is the 
 
 ## Telemetry
 Events (registered per [telemetry.md](../product/telemetry.md#event-registry)): `plan_opened {stage}`,
-`plan_task_ticked {kind, source, assignee}`, `plan_stage_done {stage}`, `plan_nudge_sent`, `plan_trial_started`,
-`plan_trial_ended`. Never a title, a date, a college's count, or a note.
+`plan_task_ticked {kind, source, assignee}`, `plan_stage_done {stage}`, `plan_nudge_sent {channel}`,
+`plan_text_consented`, `plan_text_opted_out`. Never a title, a date, a phone number, a college's count, or a note.
 
 ## Files (planned)
 Migration `supabase/migrations/…_planner.sql`; `lib/planner/{stage,tasks,cycle,store}.ts`;

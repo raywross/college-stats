@@ -48,8 +48,8 @@ Two guardians in a household see the same plan; their own tasks and nudges are t
 A nudge is the parent's "hey" delivered by the site instead of across the kitchen table, so the student gets it
 when they open the plan or their email, attached to the task it's about.
 - One line, optional ("Dad: the Michigan essay is the one I'd do first"), on one task. Sent by email to the
-  student's account address (and later by text, when texts exist), and shown on the task in the student's plan as
-  "Nudged by Dad, Tue".
+  student's account address, by text when the student has texts on ([timeline.md](timeline.md#texts)), and shown
+  on the task in the student's plan as "Nudged by Dad, Tue".
 - **Rate-limited by design**: one nudge per task per three days, and at most three a week per student from one
   guardian; the button says "Nudged Tuesday" and greys out. The limit is the feature: a parent can't flood, and the
   student knows a nudge means something.
@@ -84,15 +84,15 @@ judgment, and each only when true:
 Signals stay off for juniors except the Likely one in spring.
 
 ## The weekly summary
-One email on Sunday evening to each guardian who turns it on (off by default; on by default for Pro during the
-season), per student they can see: the summary line, Your part (at most five), the stuck signals, and what the
+One email on Sunday evening to each guardian who turns it on (off by default; suggested once when the season
+starts), per student they can see: the summary line, Your part (at most five), the stuck signals, and what the
 student ticked this week (titles only), with one link to the plan. No notes, no numbers, no other household member's
-content. Renders with the digest's components; one-click unsubscribe; sent by the same daily job as the digest.
+content. Renders with the digest's components; one-click unsubscribe; sent by the same daily job as the digest. A
+guardian with texts on ([timeline.md](timeline.md#texts)) can also get the week's Your part as one text.
 
-## Pro: every student, and the dossier
-With one student, Plus covers all of this. Pro ([commercialization.md](../product/commercialization.md#tiers))
-covers every student in the guardian's household in one view: the household page lists each student's summary
-line, Your part merges across them, and the weekly email covers all. The family dossier
+## Several students, and the dossier
+Everything here covers every student the guardian can see, in one view: the household page lists each student's
+summary line, Your part merges across them, and the weekly email covers all. The family dossier
 ([offers.md](offers.md#display)) is the printed version for a family meeting or a counselor.
 
 ## Display

@@ -114,7 +114,7 @@ informational. No scheduling; the college's own process differs everywhere.
   application.
 - Visit notes are the list's; a guardian who can read the list reads them; a student who wants private thoughts
   uses a private list note (the built flag), and the visit form links to that.
-- No photos in v1 ([README.md](README.md#open-questions-for-the-owner)).
+- No photos (owner decision, [README.md](README.md#owner-decisions-2026-10-07)): notes and a rating are the record.
 
 ## Files (planned)
 `lib/planner/actions.ts` (pure: follow URLs per network incl. intents and deep links, the interest line from C7,

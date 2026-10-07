@@ -93,7 +93,7 @@ applied sets status; deferred generates the ED II line only when an ED II colleg
 complete).
 
 ## Open questions
-1. Screenshot import of the Common App dashboard to seed statuses ([README.md](README.md#open-questions-for-the-owner)):
-   worth it after the letters extractor exists; recommendation: yes, as a follow-up.
+1. Screenshot import of the Common App dashboard to seed statuses: later, not this pass (owner decision 2026-10-07,
+   [README.md](README.md#owner-decisions-2026-10-07)); it would ride on the letter reader when that exists.
 2. Should the transcript request be one shared task by default? High schools differ (some send to every college at
    once, some per college); recommendation: shared by default, with "per college" as a switch.

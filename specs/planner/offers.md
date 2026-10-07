@@ -47,16 +47,24 @@ returns to applied). Recording:
 - **Denied** closes the college's tasks and says nothing else.
 Decisions are the student's; a guardian with edit access can record one and it's attributed.
 
-## Letters: one upload for admission and aid
-Two paths end in the same structured data:
-1. **Form** (first): a short form per offer with the College Financing Plan categories. Fast for standard letters.
-2. **Upload** (Pro): PDF, photo, or screenshot. A model with structured output **classifies** the document
-   (`admission | aid | other`) and extracts with a verbatim quote per value, the same pattern as
-   [college-reported-data.md](../college-reported-data.md#how-it-works); the family **confirms** every field before
-   anything is written or computed. An admission letter yields the outcome, the reply date, any scholarship line,
-   and the deposit amount; an aid letter yields the offer below; a letter with both yields both. Files live in a
-   private Supabase Storage bucket under the uploader's id, deleted with the account; extraction runs server-side
-   and the document is never sent to analytics or kept by the model provider beyond the request.
+## Letters
+The owner's decision (2026-10-07): there are no letters to build a reader on yet, so the **form is the first
+release**, and the form asks families to share their letters so a reader can be built and measured later.
+1. **Form** (this pass): a short form per offer with the College Financing Plan categories, one screen, with the
+   traps above surfaced as it's filled ("you listed a loan under grants; move it?"). An admission letter's facts
+   (the outcome, the reply date, a scholarship line, the deposit amount) are the same few fields on the decision
+   entry. Fast for standard letters; fine for messy ones.
+2. **Share the letter** (this pass): after saving an offer or a decision, one question: "Would you share the letter
+   itself? It helps us build a reader that fills this form from a photo." Yes stores the file (PDF or photo) in a
+   private Supabase Storage bucket under the uploader's id (`plan_letters`, [model.md](model.md#tables)), deleted
+   with the account, revocable from the offer, with a note that a person at Quad will read it, names covered, to
+   check the reader's work; it is never shown to anyone else and never used for anything but that. The shared set is
+   counted on the Data page's methods section once it exists.
+3. **Upload and read** (later, its own roadmap item once about 30 letters are shared): a model with structured
+   output classifies the document (`admission | aid | other`) and extracts with a verbatim quote per value, the same
+   pattern as [college-reported-data.md](../college-reported-data.md#how-it-works); the family confirms every field
+   before anything is written or computed. Extraction runs server-side and the document is never sent to analytics
+   or kept by the model provider beyond the request. The shape below is what both the form and the reader produce.
 
 ```ts
 offer: {
@@ -86,7 +94,7 @@ offer: {
   visit rating and notes from [actions.md](actions.md#visits); the Dream star.
 - **Questions to ask**, generated from flags: renewal conditions missing; COA omitted; a gap filled by PLUS; a
   need-based grant named "scholarship"; an outside scholarship that may displace college aid.
-- **Appeal support** (Pro): when another offer or the estimate is better, a short cited summary the family can send
+- **Appeal support**: when another offer or the estimate is better, a short cited summary the family can send
   ("College B offered $X more in grants; our estimated need at your college is $Y"). Not a letter generator.
 
 ## Comparing the admits
@@ -94,7 +102,7 @@ offer: {
   four-year total, monthly payment, earnings, graduation rate, distance, visit rating; a `SlopeChart`-style view of
   four-year cost per offer. Admits without an offer yet appear with their published average cost and "add the offer".
 - **Compare my admits**: one button opens the site's compare pages ([comparison.md](../comparison.md)) with the
-  admitted colleges (four free, ten with Plus in the table view), so the family's comparison of the colleges
+  admitted colleges (four on the topic pages, the rest in the table view), so the family's comparison of the colleges
   themselves uses the pages that already exist, and this stage stays about the offers and the choice.
 - **Pros and cons**: a free-text pair per admitted college, the student's; shown beside the numbers, never scored.
 - Nothing is ranked. The table is sortable by any column, and the sort says which.
@@ -129,7 +137,7 @@ leaves the household.
 - **List row**: the outcome picker already there; "Offer: $X net" once an offer exists.
 - **Parent's view**: the same panel; the family-estimate context line shows only to the guardian who owns the
   estimate; the appeal summary is drafted for whoever opens it.
-- **The family dossier** (Pro): one PDF with the list, standing, the rounds plan, visits and notes, offers side by
+- **The family dossier**: one PDF with the list, standing, the rounds plan, visits and notes, offers side by
   side, the four-year totals, and a sources page; the same renderer the counselor portal will use.
 - **Phones**: offers as cards in a swipe rail; the table scrolls sideways inside its wrapper.
 - **Glossary:** `cost-of-attendance`, `gift-aid`, `net-cost`, `work-study`, `parent-plus`, `renewable-award`,
@@ -142,17 +150,18 @@ for a college and year, with income bands no finer than the Scorecard five. Opt-
 including names, amounts under $500 granularity, or free text. Separate decision when offers exist.
 
 ## Files (planned)
-`lib/planner/offers.ts`, `lib/planner/letters-extract.ts` (model call, classification, schema, quotes),
-`components/planner/OffersStage.tsx`, `OfferCard.tsx`, `OffersTable.tsx`, `ChooseButton.tsx`, the Storage bucket in
-the planner migration, `lib/pdf/dossier.tsx`, `tests/planner-offers.test.mts` (CFP mapping, four-year math, flags,
-the choice's generated tasks, ED withdraw rule; fixtures: one CFP letter, one messy letter, one New York standard
-letter, one admission letter with a reply date and a scholarship line).
+`lib/planner/offers.ts`, `components/planner/OffersStage.tsx`, `OfferForm.tsx`, `OfferCard.tsx`, `OffersTable.tsx`,
+`ShareLetter.tsx`, `ChooseButton.tsx`, the Storage bucket in the planner migration, `lib/pdf/dossier.tsx`,
+`tests/planner-offers.test.mts` (CFP mapping, four-year math, flags, the choice's generated tasks, the ED withdraw
+rule, a shared letter readable only by its uploader; fixtures: one CFP letter, one messy letter, one New York
+standard letter entered through the form). Later, with the reader: `lib/planner/letters-extract.ts` (model call,
+classification, schema, quotes) and its fixtures.
 
 ## Open questions
-1. Upload extraction cost and accuracy: pilot with about 30 real letters (volunteers, redacted), now including
-   admission letters, before launch; measure per-field accuracy and cost per letter the way the college-reported
-   pilot does.
-2. Tier: the form and one comparison free in March–May (when it matters and word of mouth is strongest), the
-   four-year projection, upload, appeal summary, and dossier with Pro ([README.md](README.md#tiers-proposal-see-the-open-questions)).
-3. Should "I'm going to" be shareable publicly (a page like the share link)? Recommendation: an image, not a page;
+1. When enough letters are shared, the reader's pilot measures per-field accuracy and cost per letter the way the
+   college-reported pilot does, before any family sees an extracted field. How many is enough: about 30 across
+   several colleges, including admission letters ([README.md](README.md#open-questions-for-the-owner)).
+2. Should "I'm going to" be shareable publicly (a page like the share link)? Recommendation: an image, not a page;
    a public page would be a place for strangers to see a minor's college.
+3. A Common App dashboard screenshot read by the same reader to seed statuses is noted for later, not this pass
+   (owner decision 2026-10-07).

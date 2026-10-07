@@ -4,7 +4,7 @@ import { headers } from "next/headers";
 import { ArrowLeft, CalendarClock, Eye } from "lucide-react";
 import { GuardianBanner } from "@/components/account/GuardianBanner";
 import { ListBoard, type BoardItem } from "@/components/lists/ListBoard";
-import { ListMeta, ListSwitcher, CsvControls, ShareToggle } from "@/components/lists/ListControls";
+import { ListActionsMenu, ListMeta, ListSwitcher } from "@/components/lists/ListControls";
 import { UpdatesSection } from "@/components/me/UpdatesSection";
 import { Term } from "@/components/ui/info-tip";
 import { crestBrand } from "@/lib/brand";
@@ -58,9 +58,10 @@ async function resolveAccess(list: ListRecord, viewerId: string): Promise<ListAc
 
 /**
  * One list's page body (specs/product/saved-lists.md, household-hub.md "Display"): the colleges grouped by category
- * with deadlines resolved from the college's own reported data where the site has it, the tracking row, the balance
- * line, "Next 30 days", notes, share link, CSV export/import, and, for the list's owner, the Updates section filtered
- * to the list's colleges. Read-only for a guardian without edit access (GuardianBanner) and for another household
+ * with deadlines resolved from the college's own reported data where the site has it, the balance line, "Next 30
+ * days", and one decluttered row per college (ListBoard: the tracking row, notes, and pickers behind each row's
+ * "More"); the share link and CSV export/import sit in the header's "⋯" (ListActionsMenu); and, for the list's owner,
+ * the Updates section filtered to the list's colleges (household-hub.md "Redesign (2026-10-06)"). Read-only for a guardian without edit access (GuardianBanner) and for another household
  * member's own list. A server component; the route around it handles sign-in.
  *
  * Rendered by /me/lists/[id] (basePath "/me/lists") and the household hub's /household/[person]/lists/[id] (basePath
@@ -168,11 +169,14 @@ export async function ListPage({
 
       <header className="flex flex-wrap items-center justify-between gap-3 print:block">
         <ListMeta list={list} canEdit={access.canEdit} />
-        {boardItems.length > 0 && (
-          <Link href={`/compare?ids=${compareIds.join(",")}`} className="inline-flex h-9 items-center rounded-full border px-3.5 text-sm font-semibold hover:bg-muted print:hidden">
-            Compare these
-          </Link>
-        )}
+        <div className="flex items-center gap-2 print:hidden">
+          {boardItems.length > 0 && (
+            <Link href={`/compare?ids=${compareIds.join(",")}`} className="inline-flex h-9 items-center rounded-full border px-3.5 text-sm font-semibold hover:bg-muted">
+              Compare these
+            </Link>
+          )}
+          {access.canEdit && <ListActionsMenu list={list} />}
+        </div>
       </header>
 
       <div className="print:hidden">
@@ -215,28 +219,24 @@ export async function ListPage({
           ) : (
             <>
               Add your household&apos;s{" "}
-              <Link href="/household#home" className="font-semibold text-primary hover:underline">
+              {/* A plain anchor either way: in the hub, "#home" opens Household settings in place (HouseholdSettings
+                  listens for hashchange); elsewhere a full load keeps the hash through /household's redirect. */}
+              <a href={embedded ? "#home" : "/household#home"} className="font-semibold text-primary hover:underline">
                 home address
-              </Link>{" "}
+              </a>{" "}
               to see how far each college is from home.
             </>
           )}
         </p>
       )}
 
-      {access.canEdit && (
-        <div className="space-y-3 print:hidden">
-          <CsvControls listId={list.id} />
-          <ShareToggle list={list} />
-        </div>
+      {boardItems.length > 0 && (
+        <p className="text-xs text-muted-foreground print:hidden">
+          <Term term="reach-school">Reach</Term>, <Term term="target-school">Target</Term>, and <Term term="likely-school">Likely</Term> are a starting point,
+          not a verdict. Each college&apos;s More holds its <Term term="tracking">tracking</Term>, round, status, and notes;{" "}
+          <Term term="updates">Updates</Term> (on by default) puts it in your update emails.
+        </p>
       )}
-
-      <p className="text-xs text-muted-foreground print:hidden">
-        Categories are a starting point, not a verdict: <Term term="reach-school">Reach</Term>, <Term term="target-school">Target</Term>, and{" "}
-        <Term term="likely-school">Likely</Term> are about fit and chance, together with cost and your own list. The{" "}
-        <Term term="tracking">tracking row</Term> under each college keeps the rest: <Term term="updates">Updates</Term> (on by default) is what puts a
-        college in your update emails.
-      </p>
 
       {access.isOwner && (
         <section id="updates" className="scroll-mt-24 space-y-3 print:hidden">

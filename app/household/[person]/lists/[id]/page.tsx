@@ -12,7 +12,7 @@ export const metadata: Metadata = { title: "Their list", robots: { index: false 
 
 /**
  * /household/[person]/lists/[id] (specs/product/household-hub.md "A person's page"): one of the person's lists,
- * reached from the list switcher, under the same header and tabs as their default list. A list that isn't this
+ * reached from the list switcher, under the same person area (List selected) as their default list. A list that isn't this
  * person's is a 404.
  */
 export default async function PersonExtraListPage({ params }: { params: Promise<{ person: string; id: string }> }) {
@@ -32,11 +32,11 @@ export default async function PersonExtraListPage({ params }: { params: Promise<
   }
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6 px-4 py-10 sm:px-6 sm:py-14 print:px-0">
+    <div className="space-y-6">
       <div className="print:hidden">
         <PersonHeader id={personId} person={person} active="list" />
       </div>
-      <ListPage listId={id} basePath={`/household/${personId}/lists`} backHref={`/household/${personId}`} backLabel="Their list" showGuardianBanner={false} embedded />
+      <ListPage listId={id} basePath={`/household/${personId}/lists`} showGuardianBanner={false} embedded />
     </div>
   );
 }

@@ -305,6 +305,69 @@ Built the same day it was planned, with the build-roadmap-section method: four u
   preview test is the first visual check. Specs `accounts.md`, `saved-lists.md`, `follow-colleges.md`, and
   `home-and-distance.md` carry a short note pointing here rather than rewritten "Built" sections.
 
+### Redesign (2026-10-06)
+The owner's verdict on the first preview: "The look and feel is awful… Clean and neat. No big screen transitions where
+you need to hit a back crumb. Functions we won't use a lot (deleting users, resending a link) can be simple clean
+icons. What the user primarily does is review and change the lists and look at and change the numbers." So the hub
+became **one screen** built around those two jobs, and everything rare moved behind a "⋯" or a collapsed section.
+
+```
+The Ross household                         ← app/household/layout.tsx (server), never changes
+3 of 6 seats
+[A Alexandra    ] [J Jordan       ] [T Tracy        ] [P Pat    ] [+ Add]   ← people strip
+ Student · 2028    No account yet    You · Guardian    Invited
+──────────────────────────────────────────────────────────────
+Alexandra Ross  [Student] Class of 2028 (call)        [⋯]   ← person area (PersonHeader)
+[ List | Numbers ]                                            ← segmented links (students only)
+  the list (ListPage) or the numbers (StudentNumbers)
+▸ Household settings                                          ← <details>, closed: home address, Leave
+```
+
+- **One frame.** `app/household/layout.tsx` renders the household name, a seats line, the people strip, and Household
+  settings around `{children}`. Next.js keeps a layout mounted across client navigation, so moving between people
+  swaps only the person's content: no back link, no page transition. `/household` itself has no content once there is
+  a household: it redirects to the viewer's own page (their student record's if they have one), else the first
+  student's (`hubLanding()` in `lib/household-hub.ts`). With no household yet it shows "Start your household" with
+  **Add the first person** under a strip of just the viewer and the "+" (their own chip still opens their list).
+- **People strip** (`components/account/PeopleStrip.tsx`, client for `usePathname()`): one chip per roster row with the
+  avatar letter (dashed while someone hasn't joined), first name, and a caption from `chipCaption()` ("Student · Class
+  of 2028", "You · Guardian", "Invited", "Invite expired", "No account yet"). The chip for the page shown is ink-filled
+  (`chipActive()`: the person's page and anything under it). Anyone with a page links to it; a pending invitation has
+  no page, so its chip opens a popover with the expiry and Copy link · Send again · Cancel. The last chip is "+ Add"
+  (`AddPersonDialog`, unchanged form) or, at six seats, "Full" with the reason in a popover. Replaces `Roster.tsx`.
+- **Person area** (`components/account/PersonHeader.tsx`, rewritten): the name line (full name, "(you)", role badge,
+  Class of, a status while not joined, a guardian's view/edit line, the phone as a call icon), the guardian banner when
+  a guardian looks at a student, and `SegmentedLinks` (List | Numbers, students only; full width with 44 px pills on
+  phones). The **"⋯" menu** (`PersonMenu.tsx`, base-ui `Menu`) holds the rare actions `personActions()` allows, in a
+  fixed order: Copy invitation link, Send the link again, Cancel the invitation (a managed student's hand-over), Invite
+  them (managed student you added; the form opens in a dialog), Allow editing / View only (Give up editing on your
+  own), Edit your profile (→ `/account`, on your own page, student or guardian), Remove from household, Leave
+  household. Remove and Leave confirm, then go to `/household`, which lands on whoever is left.
+- **Household settings** (`HouseholdSettings.tsx`): a `<details>` at the bottom of every hub page, closed by default,
+  with the home address (`HomeForm`) and a Leave household line. It opens itself and scrolls into view when the hash
+  is `#home`, on load or on `hashchange`; so a list's "add your home address" link is a plain `<a href="#home">` inside
+  the hub (the router's own hash changes fire no `hashchange`), and `/household#home` elsewhere (a full load keeps the
+  hash through the redirect).
+- **List rows** (`ListBoard.tsx`, also on `/me/lists/[id]`): crest · name · one facts line (city, admit rate, average
+  cost, distance, each cited) · a trash icon (confirms) · **More**. More (closed by default; open rows are component
+  state only, kept in `ListBoard` so a row that changes category stays open) holds category, round, status, outcome,
+  enrolling, deadline, compare, move up/down, the tracking row, "Added by", and notes. Category headers and the
+  balance line stay (they are the list's structure); a list with only unsorted colleges has no header
+  (`showCategoryHeaders()` in `lib/list-rules.ts`). "Next 30 days" stays.
+- **List header**: name, Compare these, and a "⋯" (`ListActionsMenu` in `ListControls.tsx`) with Export CSV, Import CSV,
+  and Share a read-only link; the last two open in a dialog (`components/ui/sheet-dialog.tsx`, the bottom sheet on
+  phones / centered card from `sm` that Add someone also uses). The row of CSV and share controls under the list is
+  gone, and the footnote is one sentence.
+- **Phones (390 px)**: the strip is one sideways row that snaps chip by chip and bleeds to the screen edge
+  ([mobile.md](../mobile.md) "People strip"); chips are 46 px tall; the segmented control is full width; list rows are a
+  single column. Measured with Playwright on a harness page built from these components with sample data (a signed-in
+  hub needs the database): `window.innerWidth` 390 at DOMContentLoaded and after, `scrollWidth` 390 with a row's More
+  open and settings open; 1280 likewise.
+- **Kept as built**: every action (copy link, send again, cancel, remove, allow editing / view only, leave, invite a
+  managed student, home address), the Add someone form, `HouseholdSummary` on `/account` (names line + link), the
+  routes and redirects. Tests: `tests/household-hub-pages.test.mts` (chip name and caption, active chip, landing,
+  ⋯ menu actions, unsorted-only headers); `tests/address-suggest.test.mts` now reads the layout.
+
 ### Owner setup
 1. Apply `supabase/migrations/20261005170000_household_limits_and_home.sql` to dev if it isn't there yet (as of
    2026-10-06 it wasn't: no `household_homes` table, no `household_of()`), then `20261006150000_household_hub.sql`.

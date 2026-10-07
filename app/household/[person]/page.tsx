@@ -11,9 +11,10 @@ import { getOrCreateDefaultList, myLists } from "@/lib/lists";
 export const metadata: Metadata = { title: "Their list", robots: { index: false } };
 
 /**
- * /household/[person] (specs/product/household-hub.md "A person's page"): the person's name, the guardian banner when
- * a guardian is looking at a student, and the List tab (the default): their default list, with the tracking row and,
- * on your own, the Updates section (components/lists/ListPage.tsx). `person` is a student id for a student and a user
+ * /household/[person] (specs/product/household-hub.md "A person's page", "Redesign (2026-10-06)"): inside the hub's
+ * frame (app/household/layout.tsx: header, people strip, settings), the person area (PersonHeader: name line, "⋯"
+ * menu, guardian banner, List | Numbers) and List, the default: their default list, with the tracking row under each
+ * college's "More" and, on your own, the Updates section (components/lists/ListPage.tsx). `person` is a student id for a student and a user
  * id for a guardian (personHref() builds both); anyone outside the viewer's household is a 404.
  */
 export default async function PersonListPage({ params }: { params: Promise<{ person: string }> }) {
@@ -42,12 +43,12 @@ export default async function PersonListPage({ params }: { params: Promise<{ per
   const own = person.kind === "student" ? person.access.relation === "self" : person.is_me;
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6 px-4 py-10 sm:px-6 sm:py-14 print:px-0">
+    <div className="space-y-6">
       <div className="print:hidden">
         <PersonHeader id={id} person={person} active="list" />
       </div>
       {listId ? (
-        <ListPage listId={listId} basePath={`/household/${id}/lists`} backHref="/household" backLabel="Household" showGuardianBanner={false} embedded />
+        <ListPage listId={listId} basePath={`/household/${id}/lists`} showGuardianBanner={false} embedded />
       ) : (
         <section className="rounded-3xl border bg-card p-5 sm:p-6">
           <h2 className="font-display text-xl font-bold">No list yet</h2>

@@ -11,7 +11,8 @@ import { profileFor } from "@/lib/student-profile-store";
 export const metadata: Metadata = { title: "Their numbers", robots: { index: false } };
 
 /**
- * /household/[person]/numbers (specs/product/household-hub.md "A person's page"): a student's profile form and
+ * /household/[person]/numbers (specs/product/household-hub.md "A person's page", "Redesign (2026-10-06)"): inside the
+ * hub's frame (app/household/layout.tsx), the person area with Numbers selected, then a student's profile form and
  * completeness meter (what /me was). Students only; a guardian's page has just the List tab. A guardian's view is
  * logged, so the student sees it in /account.
  */
@@ -37,7 +38,7 @@ export default async function PersonNumbersPage({ params }: { params: Promise<{ 
   if (profile.relation === "guardian") await logStudentRead(profile.student.id, "student_profiles");
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6 px-4 py-10 sm:px-6 sm:py-14">
+    <div className="space-y-6">
       <PersonHeader id={id} person={person} active="numbers" />
       <StudentNumbers profile={profile} />
     </div>

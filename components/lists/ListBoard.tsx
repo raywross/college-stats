@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, type ReactNode } from "react";
 import Link from "next/link";
 import { ArrowDown, ArrowUp, ChevronDown, Lock, Trash2 } from "lucide-react";
 import { Crest } from "@/components/school/Crest";
@@ -18,6 +18,7 @@ import {
   ROUND_LABELS,
   STATUS_LABELS,
   balanceLine,
+  showCategoryHeaders,
   type ListCategory,
   type ListItem,
   type ListNote,
@@ -69,31 +70,60 @@ export interface BoardItem extends ListItem {
 }
 
 /**
- * The interactive body of a list page (components/lists/ListPage.tsx; specs/product/saved-lists.md "Display"):
- * colleges grouped by category, with status/round/outcome pickers, the tracking row (components/lists/
- * TrackingRow.tsx), notes, reordering (buttons, not drag — the spec's noted deviation), and removal. Read-only when
- * `canEdit` is false (a guardian without edit access, or someone else's own list).
+ * The interactive body of a list page (components/lists/ListPage.tsx; specs/product/saved-lists.md "Display",
+ * household-hub.md "Redesign (2026-10-06)"). Decluttered after the owner's first preview: each row is
+ *
+ *   [crest] College name (link)                               [trash] [More v]
+ *           City, ST · 12% admit · $28k/yr · 240 mi
+ *
+ * and everything else sits behind that row's "More" (closed by default): category, round, status, outcome,
+ * enrolling, deadline, compare, move up/down, the tracking row (components/lists/TrackingRow.tsx), who added it, and
+ * notes. Which rows are open is component state only, held here so a row that changes category stays open. Rows are
+ * grouped under category headers with the balance line above; a list of only unsorted colleges has no header
+ * (showCategoryHeaders()). Read-only when `canEdit` is false (a guardian without edit access, or someone else's own
+ * list): no trash, and More shows the details with its controls disabled. One column at every width, so a phone
+ * row is the same row.
  */
 export function ListBoard({ items, canEdit, viewerId }: { items: BoardItem[]; canEdit: boolean; viewerId: string }) {
+  const [open, setOpen] = useState<ReadonlySet<string>>(() => new Set());
   const sorted = [...items].sort((a, b) => a.position - b.position);
   const groups = LIST_CATEGORIES.map((category) => ({ category, items: sorted.filter((i) => i.category === category) }));
+  const headers = showCategoryHeaders(items);
+  const toggle = (id: string) =>
+    setOpen((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
 
   return (
-    <div className="space-y-6">
-      <p className="text-sm font-semibold text-muted-foreground">{balanceLine(items)}</p>
+    <div className="space-y-5">
+      {items.length > 0 && <p className="text-sm font-semibold text-muted-foreground">{balanceLine(items)}</p>}
       {groups.map(
         (g) =>
           g.items.length > 0 && (
-            <section key={g.category}>
-              <h2 className="mb-2 flex items-center gap-1.5 font-display text-lg font-bold">
-                {CATEGORY_TERM[g.category] ? <Term term={CATEGORY_TERM[g.category]!}>{CATEGORY_LABELS[g.category]}</Term> : CATEGORY_LABELS[g.category]}
-                <span className="text-sm font-medium text-muted-foreground">({g.items.length})</span>
-              </h2>
-              <div className="space-y-2">
+            <section key={g.category} aria-label={headers ? undefined : "Colleges"}>
+              {headers && (
+                <h2 className="mb-2 flex items-center gap-1.5 font-display text-lg font-bold">
+                  {CATEGORY_TERM[g.category] ? <Term term={CATEGORY_TERM[g.category]!}>{CATEGORY_LABELS[g.category]}</Term> : CATEGORY_LABELS[g.category]}
+                  <span className="text-sm font-medium text-muted-foreground">({g.items.length})</span>
+                </h2>
+              )}
+              <ul className="divide-y rounded-2xl border bg-card">
                 {g.items.map((item, i) => (
-                  <ItemRow key={item.id} item={item} canEdit={canEdit} viewerId={viewerId} isFirst={i === 0} isLast={i === g.items.length - 1} />
+                  <ItemRow
+                    key={item.id}
+                    item={item}
+                    canEdit={canEdit}
+                    viewerId={viewerId}
+                    isFirst={i === 0}
+                    isLast={i === g.items.length - 1}
+                    open={open.has(item.id)}
+                    onToggle={() => toggle(item.id)}
+                  />
                 ))}
-              </div>
+              </ul>
             </section>
           ),
       )}
@@ -106,10 +136,63 @@ export function ListBoard({ items, canEdit, viewerId }: { items: BoardItem[]; ca
   );
 }
 
-function ItemRow({ item, canEdit, viewerId, isFirst, isLast }: { item: BoardItem; canEdit: boolean; viewerId: string; isFirst: boolean; isLast: boolean }) {
+/** The one facts line under a college's name: city, admit rate, average cost, distance from home (each cited). */
+function FactsLine({ s }: { s: BoardSchoolInfo }) {
+  const facts: ReactNode[] = [];
+  if (s.city && s.state) facts.push(`${s.city}, ${s.state}`);
+  if (s.admitRate !== null)
+    facts.push(
+      <MetricLabel cited={s.admitRateCited ?? undefined}>
+        <span>{pctSmart(s.admitRate)} admit</span>
+      </MetricLabel>,
+    );
+  if (s.avgCost !== null)
+    facts.push(
+      <MetricLabel cited={s.avgCostCited ?? undefined}>
+        <span>{moneyCompact(s.avgCost)}/yr</span>
+      </MetricLabel>,
+    );
+  if (s.distance !== null)
+    facts.push(
+      <MetricLabel term="distance-from-home" cited={s.distanceCited ?? undefined}>
+        <span>{distanceLine(s.distance)}</span>
+      </MetricLabel>,
+    );
+  if (facts.length === 0) return null;
+  return (
+    <p className="mt-0.5 text-xs text-muted-foreground">
+      {facts.map((f, i) => (
+        <span key={i}>
+          {i > 0 && " · "}
+          {f}
+        </span>
+      ))}
+    </p>
+  );
+}
+
+const selectCls = "h-9 rounded-full border bg-background px-2.5 text-xs disabled:opacity-60";
+
+function ItemRow({
+  item,
+  canEdit,
+  viewerId,
+  isFirst,
+  isLast,
+  open,
+  onToggle,
+}: {
+  item: BoardItem;
+  canEdit: boolean;
+  viewerId: string;
+  isFirst: boolean;
+  isLast: boolean;
+  open: boolean;
+  onToggle: () => void;
+}) {
   const [pending, startTransition] = useTransition();
-  const [notesOpen, setNotesOpen] = useState(false);
   const s = item.school;
+  const detailsId = `item-more-${item.id}`;
 
   const run = (fn: () => Promise<unknown>) => {
     if (!canEdit) return;
@@ -119,136 +202,125 @@ function ItemRow({ item, canEdit, viewerId, isFirst, isLast }: { item: BoardItem
   };
 
   return (
-    <article className={cn("rounded-2xl border bg-card p-3", pending && "opacity-70")}>
-      <div className="flex flex-wrap items-center gap-3">
+    <li className={cn("p-3 sm:px-4", pending && "opacity-70")}>
+      <div className="flex items-start gap-3">
         <Crest id={s.unit_id} name={s.name} size="sm" brand={s.brand} />
         <div className="min-w-0 flex-1">
-          <Link href={`/schools/${s.unit_id}`} className="font-display font-bold hover:text-primary">
+          <Link href={`/schools/${s.unit_id}`} className="font-display font-bold break-words hover:text-primary">
             {s.name}
           </Link>
-          <p className="text-xs text-muted-foreground">
-            {s.city && s.state ? `${s.city}, ${s.state} · ` : ""}
-            {s.admitRate !== null && (
-              <MetricLabel cited={s.admitRateCited ?? undefined}>
-                <span>{pctSmart(s.admitRate)} admit</span>
-              </MetricLabel>
-            )}
-            {s.avgCost !== null && (
-              <>
-                {" · "}
-                <MetricLabel cited={s.avgCostCited ?? undefined}>
-                  <span>{moneyCompact(s.avgCost)}/yr</span>
-                </MetricLabel>
-              </>
-            )}
-            {s.distance !== null && (
-              <>
-                {" · "}
-                <MetricLabel term="distance-from-home" cited={s.distanceCited ?? undefined}>
-                  <span>{distanceLine(s.distance)}</span>
-                </MetricLabel>
-              </>
-            )}
-          </p>
-          <p className="mt-0.5 text-xs text-muted-foreground">{addedByLabel(item.addedByName, item.addedBySelf)}</p>
+          <FactsLine s={s} />
         </div>
-
-        <select
-          value={item.category}
-          disabled={!canEdit}
-          onChange={(e) => run(() => setCategory(item.id, e.target.value as ListCategory))}
-          className="h-8 rounded-full border bg-background px-2 text-xs font-semibold disabled:opacity-60"
-          aria-label="Category"
-        >
-          {LIST_CATEGORIES.map((c) => (
-            <option key={c} value={c}>
-              {CATEGORY_LABELS[c]}
-            </option>
-          ))}
-        </select>
-
-        <select
-          value={item.round ?? ""}
-          disabled={!canEdit}
-          onChange={(e) => run(() => setRound(item.id, (e.target.value || null) as ListRound | null))}
-          className="h-8 rounded-full border bg-background px-2 text-xs disabled:opacity-60"
-          aria-label="Application round"
-        >
-          <option value="">Round</option>
-          {LIST_ROUNDS.map((rnd) => (
-            <option key={rnd} value={rnd}>
-              {ROUND_LABELS[rnd]}
-            </option>
-          ))}
-        </select>
-
-        <select
-          value={item.status}
-          disabled={!canEdit}
-          onChange={(e) => run(() => setItemStatus(item.id, e.target.value as ListStatus))}
-          className="h-8 rounded-full border bg-background px-2 text-xs disabled:opacity-60"
-          aria-label="Status"
-        >
-          {LIST_STATUSES.map((st) => (
-            <option key={st} value={st}>
-              {STATUS_LABELS[st]}
-            </option>
-          ))}
-        </select>
-
-        {item.status === "decided" && (
-          <select
-            value={item.outcome ?? ""}
-            disabled={!canEdit}
-            onChange={(e) => e.target.value && run(() => setOutcome(item.id, e.target.value as ListOutcome, null))}
-            className="h-8 rounded-full border bg-background px-2 text-xs disabled:opacity-60"
-            aria-label="Outcome"
+        <div className="flex shrink-0 items-center gap-0.5">
+          {canEdit && (
+            <button
+              type="button"
+              onClick={() => {
+                if (window.confirm(`Remove ${s.name} from this list? Its notes and tracking go with it.`)) run(() => removeFromList(item.id));
+              }}
+              className="inline-flex size-9 items-center justify-center rounded-full text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+              aria-label={`Remove ${s.name} from the list`}
+              title="Remove from list"
+            >
+              <Trash2 className="size-4" />
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={onToggle}
+            aria-expanded={open}
+            aria-controls={detailsId}
+            aria-label={`More about ${s.name} on this list`}
+            className="inline-flex h-9 items-center gap-0.5 rounded-full pr-1.5 pl-2.5 text-xs font-semibold text-muted-foreground hover:bg-muted hover:text-foreground"
           >
-            <option value="">Outcome</option>
-            {LIST_OUTCOMES.map((o) => (
-              <option key={o} value={o}>
-                {OUTCOME_LABELS[o]}
-              </option>
-            ))}
-          </select>
-        )}
-
-        {item.outcome === "admitted" && (
-          <label className="inline-flex items-center gap-1.5 text-xs font-medium">
-            <input type="checkbox" checked={item.enrolling} disabled={!canEdit} onChange={(e) => run(() => setEnrolling(item.id, e.target.checked))} className="size-3.5 accent-primary" />
-            Enrolling here
-          </label>
-        )}
-
-        <DeadlineCell item={item} canEdit={canEdit} />
-
-        <CompareButton id={s.unit_id} variant="icon" />
-
-        <button type="button" onClick={() => setNotesOpen((v) => !v)} className="inline-flex h-8 items-center gap-1 rounded-full border px-2 text-xs text-muted-foreground hover:text-foreground">
-          <ChevronDown className={cn("size-3.5 transition-transform", notesOpen && "rotate-180")} />
-          Notes ({item.notes.length})
-        </button>
-
-        {canEdit && (
-          <div className="flex items-center gap-1">
-            <button type="button" disabled={isFirst} onClick={() => run(() => reorderItem(item.id, "up"))} className="rounded-full border p-1.5 disabled:opacity-30" aria-label="Move up">
-              <ArrowUp className="size-3.5" />
-            </button>
-            <button type="button" disabled={isLast} onClick={() => run(() => reorderItem(item.id, "down"))} className="rounded-full border p-1.5 disabled:opacity-30" aria-label="Move down">
-              <ArrowDown className="size-3.5" />
-            </button>
-            <button type="button" onClick={() => run(() => removeFromList(item.id))} className="rounded-full border p-1.5 text-destructive" aria-label="Remove from list">
-              <Trash2 className="size-3.5" />
-            </button>
-          </div>
-        )}
+            More
+            <ChevronDown className={cn("size-4 transition-transform", open && "rotate-180")} aria-hidden />
+          </button>
+        </div>
       </div>
 
-      {/* Under the name line, full width (indented past the crest from sm up) so the five chips wrap to two lines at most on a phone. */}
-      <TrackingRow item={item} canEdit={canEdit} className="sm:pl-12" />
+      {open && (
+        <div id={detailsId} className="mt-3 space-y-3 border-t pt-3 sm:ml-12">
+          <div className="flex flex-wrap items-center gap-2">
+            <select value={item.category} disabled={!canEdit} onChange={(e) => run(() => setCategory(item.id, e.target.value as ListCategory))} className={cn(selectCls, "font-semibold")} aria-label="Category">
+              {LIST_CATEGORIES.map((c) => (
+                <option key={c} value={c}>
+                  {CATEGORY_LABELS[c]}
+                </option>
+              ))}
+            </select>
 
-      {notesOpen && <NotesPanel item={item} canEdit={canEdit} viewerId={viewerId} />}
-    </article>
+            <select
+              value={item.round ?? ""}
+              disabled={!canEdit}
+              onChange={(e) => run(() => setRound(item.id, (e.target.value || null) as ListRound | null))}
+              className={selectCls}
+              aria-label="Application round"
+            >
+              <option value="">Round</option>
+              {LIST_ROUNDS.map((rnd) => (
+                <option key={rnd} value={rnd}>
+                  {ROUND_LABELS[rnd]}
+                </option>
+              ))}
+            </select>
+
+            <select value={item.status} disabled={!canEdit} onChange={(e) => run(() => setItemStatus(item.id, e.target.value as ListStatus))} className={selectCls} aria-label="Status">
+              {LIST_STATUSES.map((st) => (
+                <option key={st} value={st}>
+                  {STATUS_LABELS[st]}
+                </option>
+              ))}
+            </select>
+
+            {item.status === "decided" && (
+              <select
+                value={item.outcome ?? ""}
+                disabled={!canEdit}
+                onChange={(e) => e.target.value && run(() => setOutcome(item.id, e.target.value as ListOutcome, null))}
+                className={selectCls}
+                aria-label="Outcome"
+              >
+                <option value="">Outcome</option>
+                {LIST_OUTCOMES.map((o) => (
+                  <option key={o} value={o}>
+                    {OUTCOME_LABELS[o]}
+                  </option>
+                ))}
+              </select>
+            )}
+
+            {item.outcome === "admitted" && (
+              <label className="inline-flex items-center gap-1.5 text-xs font-medium">
+                <input type="checkbox" checked={item.enrolling} disabled={!canEdit} onChange={(e) => run(() => setEnrolling(item.id, e.target.checked))} className="size-3.5 accent-primary" />
+                Enrolling here
+              </label>
+            )}
+
+            <DeadlineCell item={item} canEdit={canEdit} />
+
+            <CompareButton id={s.unit_id} variant="icon" />
+
+            {canEdit && (
+              <span className="inline-flex items-center gap-1">
+                <button type="button" disabled={isFirst} onClick={() => run(() => reorderItem(item.id, "up"))} className="inline-flex size-9 items-center justify-center rounded-full border disabled:opacity-30" aria-label="Move up">
+                  <ArrowUp className="size-3.5" />
+                </button>
+                <button type="button" disabled={isLast} onClick={() => run(() => reorderItem(item.id, "down"))} className="inline-flex size-9 items-center justify-center rounded-full border disabled:opacity-30" aria-label="Move down">
+                  <ArrowDown className="size-3.5" />
+                </button>
+              </span>
+            )}
+          </div>
+
+          <TrackingRow item={item} canEdit={canEdit} className="mt-0" />
+
+          <p className="text-xs text-muted-foreground">{addedByLabel(item.addedByName, item.addedBySelf)}</p>
+
+          <NotesPanel item={item} canEdit={canEdit} viewerId={viewerId} />
+        </div>
+      )}
+    </li>
   );
 }
 
@@ -294,7 +366,8 @@ function DeadlineCell({ item, canEdit }: { item: BoardItem; canEdit: boolean }) 
 function NotesPanel({ item, canEdit, viewerId }: { item: BoardItem; canEdit: boolean; viewerId: string }) {
   const [pending, startTransition] = useTransition();
   return (
-    <div className="mt-3 space-y-2 border-t pt-3">
+    <div className="space-y-2">
+      <h3 className="text-xs font-bold tracking-wide text-muted-foreground uppercase">Notes</h3>
       {item.notes.map((note) => (
         <div key={note.id} className="flex items-start justify-between gap-2 rounded-xl bg-muted/50 p-2 text-sm">
           <p className="flex-1">
@@ -332,7 +405,7 @@ function NotesPanel({ item, canEdit, viewerId }: { item: BoardItem; canEdit: boo
             e.currentTarget.reset();
           }}
         >
-          <textarea name="body" rows={2} placeholder="Add a note…" className="flex-1 rounded-xl border bg-background p-2 text-sm" />
+          <textarea name="body" rows={2} placeholder="Add a note…" className="min-w-0 flex-1 rounded-xl border bg-background p-2 text-sm" />
           <label className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
             <input type="checkbox" name="private" className="size-3.5 accent-primary" />
             Private

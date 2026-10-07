@@ -189,6 +189,17 @@ function best(candidates: readonly (SchoolMatch | null)[]): SchoolMatch | null {
   return out;
 }
 
+/** A query's two normalized forms: trimmed lower case, and the alias key. */
+export interface QueryForms {
+  q: string;
+  qKey: string;
+}
+
+/** The forms `scoreSchool` needs; a caller scoring many schools against one query computes them once and passes them in. */
+export function queryForms(query: string): QueryForms {
+  return { q: query.trim().toLowerCase(), qKey: aliasKey(query) };
+}
+
 /**
  * Scores one school against a query, per specs/school-identity/aliases.md's table: an alias key equal to the
  * query's key (5 + the alias' weight); the official name starting with the query (3); an alias key starting with
@@ -196,11 +207,16 @@ function best(candidates: readonly (SchoolMatch | null)[]): SchoolMatch | null {
  * the name containing the query (1); the city starting with the query or the state equaling it (0.5). Null when
  * nothing matches. The query is normalized the same way alias keys are, so "U of A", "u-of-a", and "uofa" are one
  * query; a query with spaces is also tried as a name/word prefix, so "Georgia Tech" still matches the name's words.
+ * `precomputed` (from `queryForms(query)`) skips re-normalizing the query for each school of a scan.
  */
-export function scoreSchool(school: ScorableSchool, query: string, aliases: readonly AliasLookupRow[] = []): SchoolMatch | null {
-  const q = query.trim().toLowerCase();
+export function scoreSchool(
+  school: ScorableSchool,
+  query: string,
+  aliases: readonly AliasLookupRow[] = [],
+  precomputed?: QueryForms,
+): SchoolMatch | null {
+  const { q, qKey } = precomputed ?? queryForms(query);
   if (!q) return null;
-  const qKey = aliasKey(query);
   const name = school.name.toLowerCase();
   const city = school.location.city.toLowerCase();
   const state = school.location.state.toLowerCase();

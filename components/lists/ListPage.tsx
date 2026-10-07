@@ -84,22 +84,25 @@ export async function ListPage({
   showGuardianBanner?: boolean;
   embedded?: boolean;
 }) {
-  const viewer = await getUser();
+  // One round of independent reads: the list, the dataset, the household's home (a student and the guardians who see
+  // their list measure from the same place), and who is looking. myHome, myLists, and getListWithItems are memoized
+  // per request, so the hub's layout and page may already have paid for some of them.
+  const [viewer, withItems, { getSchoolById, citeField }, home] = await Promise.all([getUser(), getListWithItems(listId), getData(), myHome()]);
   if (!viewer) notFound();
-  const withItems = await getListWithItems(listId);
   if (!withItems) notFound();
   const { list, items } = withItems;
 
-  const access = await resolveAccess(list, viewer.id);
-  if (!access) notFound();
-
-  // The viewer's household's home: a student and the guardians who see their list measure from the same place.
-  const [lists, { getSchoolById, citeField }, notesByItem, home] = await Promise.all([
+  // Needs the list: access (which also schedules a guardian's audit line), the owner's lists, and the notes. They don't
+  // depend on each other, so they run together; a viewer without access still gets a 404 and nothing else shows.
+  const [access, ownerLists, notesByItem] = await Promise.all([
+    resolveAccess(list, viewer.id),
     myLists(listOwner(list)),
-    getData(),
     notesForItems(items.map((i) => i.id)),
-    myHome(),
   ]);
+  if (!access) notFound();
+  // A page that has just created the default list (app/household/[person]/page.tsx) read the owner's lists before it
+  // existed, and that read is memoized: put this list back in the switcher.
+  const lists = ownerLists.some((l) => l.id === list.id) ? ownerLists : [list, ...ownerLists];
   const addedByIds = [...new Set(items.map((i) => i.added_by).filter((x): x is string => !!x))];
   const names = await namesFor(addedByIds);
 

@@ -6,6 +6,8 @@ import "server-only";
  * live in lib/household-rules.ts.
  */
 import { cache } from "react";
+import { after } from "next/server";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { getAccount, studentsICanSee } from "@/lib/auth";
 import { createServerSupabase } from "@/lib/supabase-server";
 import type { StudentAccess } from "@/lib/accounts";
@@ -51,8 +53,11 @@ export type PersonPage =
  * record, or one they reach as a guardian). A guardian: an active guardian in the viewer's household, or the viewer
  * themselves (also before they have a household). Null for anyone else, so the page can 404. Doesn't log the read:
  * a page that then shows a student's data as a guardian calls logStudentRead() (or uses openStudentAs()).
+ *
+ * Memoized per request (React `cache`, keyed by the id string): the layout, the page, and ListPage share one result.
+ * Read-only, so safe to memoize; the viewer cannot change between its calls within one request.
  */
-export async function personPage(id: string): Promise<PersonPage | null> {
+export const personPage = cache(async (id: string): Promise<PersonPage | null> => {
   const account = await getAccount();
   if (!account) return null;
   const students = await studentsICanSee();
@@ -66,7 +71,7 @@ export async function personPage(id: string): Promise<PersonPage | null> {
     return { kind: "guardian", user_id: id, display_name: account.profile.display_name, is_me: true };
   }
   return null;
-}
+});
 
 /** Who viewed the signed-in student's information (my_access_log), newest first. Empty for non-students. */
 export async function myAccessLog(limit = 200): Promise<AccessLogRow[]> {
@@ -84,6 +89,16 @@ export async function deletionPreview(): Promise<DeletionPreview> {
   return (data as DeletionPreview | null) ?? { own_student: false, managed: [] };
 }
 
+/** The log_access call itself, on a client the caller already built. Never throws: errors are reported server-side. */
+async function writeAccessLog(supabase: SupabaseClient, studentId: string, table: string): Promise<void> {
+  try {
+    const { error } = await supabase.rpc("log_access", { p_student: studentId, p_table: table });
+    if (error) console.error(`households: log_access(${table}) failed: ${error.message}`);
+  } catch (err) {
+    console.error(`households: log_access(${table}) failed: ${err instanceof Error ? err.message : String(err)}`);
+  }
+}
+
 /**
  * Records that the signed-in user read one of a student's tables (public.log_access). The database ignores a
  * student's reads of their own data and reads by anyone without access, so callers needn't check. Never throws:
@@ -91,11 +106,31 @@ export async function deletionPreview(): Promise<DeletionPreview> {
  */
 export async function logStudentRead(studentId: string, table: string): Promise<void> {
   try {
-    const supabase = await createServerSupabase();
-    const { error } = await supabase.rpc("log_access", { p_student: studentId, p_table: table });
-    if (error) console.error(`households: log_access(${table}) failed: ${error.message}`);
+    await writeAccessLog(await createServerSupabase(), studentId, table);
   } catch (err) {
     console.error(`households: log_access(${table}) failed: ${err instanceof Error ? err.message : String(err)}`);
+  }
+}
+
+/**
+ * The same log line, off the critical path: scheduled with `after()` so it runs once the response has been sent,
+ * every time, with the same error logging (never throws). `after()` cannot read cookies once the render is over
+ * (Server Components), so the Supabase client, which holds the request's session, is built here, before it. In a
+ * Server Action or Route Handler `after()` works the same way. Outside any request (a script or test) `after()`
+ * throws; the line is then written inline so it is never dropped.
+ */
+async function scheduleStudentReadLog(studentId: string, table: string): Promise<void> {
+  let supabase: SupabaseClient;
+  try {
+    supabase = await createServerSupabase();
+  } catch (err) {
+    console.error(`households: log_access(${table}) failed: ${err instanceof Error ? err.message : String(err)}`);
+    return;
+  }
+  try {
+    after(() => writeAccessLog(supabase, studentId, table));
+  } catch {
+    await writeAccessLog(supabase, studentId, table);
   }
 }
 
@@ -110,6 +145,7 @@ export async function logStudentRead(studentId: string, table: string): Promise<
  */
 export async function openStudentAs(studentId: string, table: string): Promise<StudentAccess | null> {
   const access = (await studentsICanSee()).find((a) => a.student.id === studentId) ?? null;
-  if (access?.relation === "guardian") await logStudentRead(studentId, table);
+  // A guardian's read is logged for the student (their access log), after the response: the page doesn't wait on it.
+  if (access?.relation === "guardian") await scheduleStudentReadLog(studentId, table);
   return access;
 }

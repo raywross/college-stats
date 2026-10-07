@@ -8,12 +8,12 @@ import { InfoTip } from "@/components/ui/info-tip";
  * "Admission: <factor>" rows from the admissions TABLE_GROUPS group (lib/compare-topics.ts FACTOR_ROWS): the
  * federal survey's use (Required/Considered/Not considered), or the college's own Common Data Set C7 level when it
  * has one, exactly as the "All the numbers" table shows it. Excludes the CDS-only C7 factors (the extra rows
- * ADMISSION_PROFILE_ROWS adds, term "factor-importance"): those never carry a federal use and stay in the full
- * table only.
+ * ADMISSION_PROFILE_ROWS adds, field `reported.admission_profile.factors.*`): those never carry a federal use and stay
+ * in the full table only.
  */
 const FACTOR_LABEL = /^Admission: (.+)$/;
 const FACTOR_ROWS: readonly CompareRow[] = TABLE_GROUPS.find((g) => g.topic === "admissions")!.rows.filter(
-  ([label, term]) => FACTOR_LABEL.test(label) && term !== "factor-importance"
+  ([label, , field]) => FACTOR_LABEL.test(label) && !field.startsWith("reported.admission_profile.factors.")
 );
 
 /** Whether any compared college has a value for at least one admission factor (the page's empty-state check). */

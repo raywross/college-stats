@@ -1010,7 +1010,15 @@ const entries = {
     short: "In its Common Data Set, a college marks each part of an application as very important, important, considered, or not considered when it decides whom to admit.",
     long: "\"Very important\" parts weigh most; \"considered\" parts can help but weigh less; \"not considered\" parts aren't used, even if you send them. The federal survey asks a simpler question (required, considered, or not considered).",
     category: "Admissions",
-    related: ["admission-factor", "legacy-status"],
+    related: ["admission-factor", "legacy-status", "demonstrated-interest"],
+  },
+  "demonstrated-interest": {
+    term: "Demonstrated interest",
+    short: "The signs that an applicant really wants to attend: visiting campus, opening emails, going to info sessions, interviewing, or applying early. In its Common Data Set, a college marks how much the \"level of applicant's interest\" counts in admission.",
+    long: "Colleges that count it want to admit students who will enroll, because a high yield keeps the class full and predictable. They track things like campus visits, virtual events, contact with admissions officers, and whether an applicant opened their emails or applied through an early plan. Many colleges, including most of the largest and most selective, mark it not considered: they get more interest than they can use and judge the application on its own.",
+    why: "If a college marks it important or very important, showing up matters: visit if you can, attend its online sessions, write a specific \"why us\" essay, and consider its early plan. If it's not considered, none of that moves the decision, so spend the time on the application itself.",
+    category: "Admissions",
+    related: ["factor-importance", "admission-factor", "early-decision", "early-action", "yield"],
   },
   "religious-affiliation": {
     term: "Religious affiliation",

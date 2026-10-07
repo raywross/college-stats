@@ -1,7 +1,9 @@
 # Telemetry: Measuring How the Site Is Used
 
-> Status: **planned** (not built). Independent; build first so every later feature ships with its measurements.
-> Part of [product](README.md). Detailed design added 2026-10-07 for the build.
+> Status: **built** 2026-10-07 on `feature/telemetry`: the event registry, the PostHog provider and server client,
+> the `/ingest` proxy, instrumentation of search, Explore, compare, the score checker, profiles, citations, glossary
+> terms, Over-time groups, sign-ups and errors, and the `/privacy` page. The dashboards are built by hand in PostHog
+> from [Setup](#setup-owner) once the production project has a key. Part of [product](README.md).
 
 ## Goal
 Know how the site is used and report on it: visits and where they come from, which pages and features get used,

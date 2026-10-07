@@ -18,7 +18,8 @@ export function CompareViewed({ ids }: { ids: string[] }) {
   useEffect(() => {
     if (reported.current === key) return;
     reported.current = key;
-    track("compare_viewed", { count: key ? key.split(",").length : 0, preset: isPresetCompare(getCompareIds(), ids) });
+    const urlIds = key ? key.split(",") : [];
+    track("compare_viewed", { count: urlIds.length, preset: isPresetCompare(getCompareIds(), urlIds) });
   }, [key]);
   return null;
 }

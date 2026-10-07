@@ -45,7 +45,7 @@ public data stays free ([commercialization.md](commercialization.md#what-stays-f
 ### Platform, measurement, and business
 | Spec | Adds | Complexity |
 |---|---|---|
-| [telemetry.md](telemetry.md) | Product analytics with a typed event registry, privacy rules for minors, and usage reports | Medium |
+| [telemetry.md](telemetry.md) | Product analytics with a typed event registry, privacy rules for minors, and usage reports (built 2026-10-07) | Medium |
 | [commercialization.md](commercialization.md) | Free / Plus / Pro tiers, what each gates, Stripe billing, entitlements, the pricing page | Large |
 | [counselor-portal.md](counselor-portal.md) | Organization accounts for counselors and consultants: caseloads, reports, scattergram uploads | Extra large |
 | [data-api.md](data-api.md) | A keyed public API over the dataset, history, and lineage, with a paid tier | Medium |

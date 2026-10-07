@@ -99,7 +99,11 @@ export default async function AccountPage() {
         </a>
         <p className="mt-2 text-xs text-muted-foreground">
           Your profile, your household&apos;s home address and its members&apos; names, the students you own or manage, invitations you sent, and
-          who viewed your information.
+          who viewed your information. How we count visits to the site, and what we never record, is on the{" "}
+          <Link href="/privacy" className="font-semibold text-primary hover:underline">
+            privacy page
+          </Link>
+          .
         </p>
       </AccountSection>
 

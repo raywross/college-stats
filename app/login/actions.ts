@@ -6,6 +6,7 @@ import { authConfigured } from "@/lib/auth";
 import { createClient } from "@supabase/supabase-js";
 import { createServerSupabase, supabaseAuthEnv } from "@/lib/supabase-server";
 import { passwordProblems } from "@/lib/password";
+import { trackServer } from "@/lib/analytics-server";
 import { AGE_GATE_COOKIE, birthYearAllowed, isRoleHint, parseBirthYear, safeNextPath } from "@/lib/accounts";
 
 export type LoginState =
@@ -83,6 +84,14 @@ export async function requestMagicLink(_prev: LoginState, form: FormData): Promi
     }
     console.error(`login: signInWithOtp failed (${error.code ?? error.status}): ${error.message}`);
     return { status: "error", message: "We couldn't send the sign-in email. Try again in a moment.", email };
+  }
+  // Counts the sign-up, not the person: no email, birth year, or next path (specs/product/telemetry.md).
+  if (signingUp) {
+    await trackServer("signup_started", {
+      method: "magic_link",
+      role_hint: isRoleHint(data?.role_hint) ? data.role_hint : "none",
+      has_invite: next.startsWith("/invite"),
+    });
   }
   return { status: "sent", email };
 }
@@ -175,6 +184,12 @@ export async function signUpWithPassword(_prev: PasswordState, form: FormData): 
   }
   // With email confirmation on, an address that already has an account comes back as a user with no identities.
   if (data.user && (data.user.identities?.length ?? 0) === 0) return alreadyExists(email);
+  // Counts the sign-up, not the person: no email, birth year, or next path (specs/product/telemetry.md).
+  await trackServer("signup_started", {
+    method: "password",
+    role_hint: isRoleHint(role) ? role : "none",
+    has_invite: next.startsWith("/invite"),
+  });
   if (data.session) {
     // Email confirmation is off on this project: sign straight in.
     const supabase = await createServerSupabase();

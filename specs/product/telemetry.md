@@ -155,9 +155,129 @@ Instrumented components keep their own tests where they have them; the privacy p
 lineage guards (no literal data years).
 
 ## Setup (owner)
-Filled in by the build: creating the two PostHog projects, the project settings that enforce the privacy rules
-(discard IP, retention, replay off), the Vercel environment variables, and the insight recipes behind each
-dashboard.
+Done once by hand; nothing here runs in CI. Until step 2 is done the site sends nothing (no key means every call is a
+no-op), so it's safe to merge first.
+
+### 1. PostHog projects
+1. Sign up at `https://us.posthog.com` (US cloud) and create one organization. Create **two projects**: `quad-dev`
+   (local work and Vercel previews) and `quad-prod`. Each has its own project API key.
+2. In **each** project, Settings → Project (and the sections named below):
+   1. **Session replay**: off (Replay → Settings → "Record user sessions" off). Minors use the site; replay stays
+      off for good.
+   2. **Surveys**: off (Surveys → Settings → disable).
+   3. **Autocapture**: off (Settings → Project → Autocapture: turn off "Enable autocapture", "Capture clicks and
+      taps", and "Capture rageclicks"). The code also sets `autocapture: false`; this is the second lock.
+   4. **Discard client IP data**: on (Settings → Project → IP data capture configuration). PostHog still derives
+      country and region from the IP, then drops it.
+   5. **Data retention**: 12 months (Settings → Project → Data retention, if the plan offers a choice; on the free
+      plan the retention may be fixed, in which case write the actual period into `/privacy` before launch,
+      since the page promises 12 months).
+   6. **Group analytics**: leave off (nothing sends groups).
+   7. **Cookieless / persistence**: nothing to set; the client uses `persistence: "memory"`.
+3. Copy each project's **Project API key** (Settings → Project → Project API key, starts `phc_`).
+
+### 2. Environment variables
+| Where | `NEXT_PUBLIC_POSTHOG_KEY` | `NEXT_PUBLIC_POSTHOG_HOST` |
+|---|---|---|
+| `.env.local` (each developer; copied into worktrees by `.worktreeinclude`) | dev key (optional: leave unset to send nothing) | `https://us.i.posthog.com` |
+| Vercel → Settings → Environment Variables → **Preview** | dev key | `https://us.i.posthog.com` |
+| Vercel → same page → **Production** | prod key | `https://us.i.posthog.com` |
+The host line is optional (it's the default); set it only if the project is on another region (the EU host is
+`https://eu.i.posthog.com`). Both are read at build time for the `/ingest` rewrites, so **redeploy** after changing
+either. Never put the key in `data/*.json` or the repo.
+
+### 3. Vercel Speed Insights
+Vercel project → **Speed Insights** tab → Enable. The `<SpeedInsights />` component in `app/layout.tsx` starts
+reporting on the next production deployment; data appears after a few visits. Its free allowance depends on the Vercel plan; the tab shows
+the current limit.
+
+### 4. Build the dashboards
+In PostHog, create one **dashboard** per Reports heading below, and add each **insight** as listed (New insight → the
+type named → set the event, breakdown, and filter → Save → Add to dashboard). Common settings: date range "Last 30
+days" unless stated; **filter out internal traffic** by adding the property filter `$host` is not `localhost` to
+every insight (the dev project receives preview and local events; the prod project only gets the real site, so this
+matters mostly in dev). "Unique users" counts a visitor per session while anonymous and an account once signed in.
+
+**Traffic** (dashboard "Traffic")
+1. *Visits* (Trends): event `$pageview`, math "Unique sessions", interval day.
+2. *Visitors* (Trends): `$pageview`, math "Unique users", interval week.
+3. *Top entry pages* (Trends, table): `$pageview`, math "Unique sessions", breakdown by the **session property**
+   `$entry_pathname` (Breakdown → Session properties). PostHog's Web analytics tab shows the same as "Paths".
+4. *Referrers* (Trends, table): `$pageview`, math "Unique sessions", breakdown `$referring_domain`.
+5. *Countries* (Trends, world map or table): `$pageview`, "Unique sessions", breakdown `$geoip_country_code`.
+   Signed-in users have no country by design, so this undercounts them.
+6. *Devices* (Trends, pie): `$pageview`, "Unique sessions", breakdown `$device_type`.
+
+**Engagement** (dashboard "Engagement")
+1. *Colleges viewed per visit* (Trends): `school_viewed`, math "Total count" divided by `$pageview` "Unique
+   sessions" (formula `A / B`), interval week.
+2. *Blocks read* (Trends, table): `profile_block_viewed`, "Total count", breakdown `block`, filter `topic` equals
+   the topic of interest, or breakdown by `topic` first.
+3. *Compare rate* (Trends): formula `A / B` with A = `compare_changed` where `action` = `add` (unique sessions) and
+   B = `school_viewed` (unique sessions).
+4. *Search success* (Trends): `search_performed`, "Total count", breakdown `picked`; the share of `true` is the
+   success rate. Second series breakdown `result_count` to see how often searches return `0`.
+5. *Explore views* (Trends, bar): `explore_view_changed`, breakdown `view`.
+6. *Score checker use* (Trends): `score_checked`, breakdown `in_range`.
+
+**Funnels** (dashboard "Funnels")
+1. *Search → profile → compare* (Funnel): steps `search_performed` (filter `picked` = true) → `school_viewed` →
+   `compare_changed` (filter `action` = `add`); conversion window 1 day; "Unique sessions".
+2. *Profile → list* (Funnel): `school_viewed` → the list-add event. That event (`list_item_added`) doesn't exist
+   yet; add this insight when the feature ships (see the event table).
+3. *Visit → sign-up* (Trends, not a funnel): anonymous visitors have no id that matches the server-side sign-up
+   events, so a funnel would break after step one. Chart `signup_started` and `signup_completed` (both "Total count",
+   interval week, breakdown `method`) beside *Visits* from the Traffic dashboard, and read completed ÷ started and
+   started ÷ visits by hand.
+4. *Sign-up → paid* (Funnel): `signup_completed` → `subscribe_completed`; added with
+   [commercialization.md](commercialization.md).
+
+**Retention** (dashboard "Retention")
+1. *Weekly return rate by role* (Retention): cohortizing event `signup_completed`, returning event `$pageview`,
+   period Week, breakdown `role_hint` (student / guardian / counselor / none). It works because `signup_completed` is
+   sent with the account id as its distinct id, and signed-in page views are identified with the same id. It only
+   covers accounts created since this build shipped; earlier accounts have no `signup_completed`.
+2. *Signed-in return rate* (Retention): cohortizing and returning event `$pageview`, both filtered to the event
+   property `$is_identified` = true (posthog-js sets it on every event after identify; if your PostHog version lacks
+   it, use the cohort of people who did `signup_completed`); period Week.
+
+**Content** (dashboard "Content")
+1. *Most viewed colleges* (Trends, table): `school_viewed`, "Total count", breakdown `unit_id`, top 25 (map the id to a
+   name in the monthly report from `data/schools.json`).
+2. *How people reach a college* (Trends, stacked bar): `school_viewed`, breakdown `from`.
+3. *Filters used* (Trends, table): `explore_filtered`, breakdown `filter`.
+4. *Glossary terms* (Trends, table): `term_opened`, breakdown `term`.
+5. *Citations read* (Trends, table): `citation_opened`, breakdown `field`.
+6. *Topic pages opened from the overview* (Trends): `profile_card_opened`, breakdown `topic`, second breakdown
+   `from`.
+7. *Over-time groups* (Trends, table): `trend_group_opened`, breakdown `group`.
+8. *Roadmap interest* (Trends, table): `roadmap_viewed`, breakdown `slug`.
+
+**Performance** (no PostHog dashboard)
+Vercel project → Speed Insights: view by Route, switch the device filter between Mobile and Desktop, and read LCP,
+INP, CLS (the "Real Experience Score" is the headline). Copy the p75 values into the monthly report.
+
+**Errors** (dashboard "Errors")
+1. *Errors by page* (Trends, table): `error_shown`, "Total count", breakdown `route`, second breakdown `kind`.
+2. *Errors over time* (Trends): `error_shown`, interval day, breakdown `kind`.
+3. Outside PostHog: Vercel project → Logs, filter to level Error, for server-side failures that never reach a
+   browser.
+
+### 5. Check it works
+1. Put the **dev** key in `.env.local` and run `DATA_SOURCE=json npm run dev -- -p 3000` (any free port).
+2. Open the site in a browser **without** Do Not Track or Global Privacy Control and with no ad blocker. Visit the home
+   page, search for a college and open it.
+3. In PostHog (dev project) → Activity (live events), within about a minute you should see `$pageview` for each page and
+   `school_viewed` with a `unit_id` and a `from`. Click an event and check its properties: only the fields in the event
+   table above, with `$current_url` the only URL-like value.
+4. Confirm there is **no `$autocapture`** event no matter how much you click, and **no person profiles** for the
+   anonymous events (People → the list is empty until someone signs in; each event's distinct id is random).
+5. Turn on Do Not Track (or open the site with Global Privacy Control, as Brave or Firefox with the setting on does)
+   and reload: no new events, and no request to `/ingest/` in the browser's Network tab.
+6. Sign in: the next events carry your account id as the distinct id, and `$geoip_country_code` is absent. Create a
+   test account to see `signup_started` and, after confirming the email, `signup_completed`.
+7. Stop the dev server. For production, repeat steps 3 and 4 against the prod project after the first deploy with its
+   key.
 
 ## Files
 - `lib/analytics.ts` (registry, `track()`, `identify()`, `resetIdentity()`, `markNextViewFrom()`,

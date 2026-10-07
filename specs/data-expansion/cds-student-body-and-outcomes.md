@@ -417,7 +417,7 @@ students graduate at the same rate") use the newest values, as admissions do sin
 
 **Planning tools**: none consume these in this build. The four-year totals in
 [net-price-estimator.md](../product/net-price-estimator.md) and
-[award-letter-analyzer.md](../product/award-letter-analyzer.md) could later cite the 4-year share by Pell group
+[offers.md](../planner/offers.md) could later cite the 4-year share by Pell group
 ("{n} of 100 Pell Grant recipients here finish in four years").
 
 **Data page**: "Newer figures from colleges" counts colleges with a newer enrollment, race, retention, and graduation

@@ -327,7 +327,13 @@ moves into a section above.
   replace the per-table publish functions (`publish_dataset`, `stage_history`, `publish_history_staged`) with
   `published_documents` / `publishes` / `stage_documents()` / `publish_collection()`, migrating `schools` and
   `school_histories` in. Do it before the per-college detail file or the high school dataset adds a third copy.
-- [ ] **Decide how production serves the public dataset** before the formal release: bundle the JSON into the build
+- [ ] **Serving architecture** (decided 2026-10-07 in [serving-architecture.md](serving-architecture.md), after the
+  owner's review of failed deploys, database outages, and slow search): production reads the dataset from the files
+  it deploys with (`DATA_SOURCE=json`), the dataset publish becomes a small change-log action after each deploy, search
+  moves into the browser over a build-time index, Explore's render gets its facets memoized, the dataset tables are
+  retired a cycle later, and Supabase moves to Pro with a prod project now. Owner steps and open questions in the spec.
+  This closes the item below.
+- [ ] ~~**Decide how production serves the public dataset**~~ before the formal release: bundle the JSON into the build
   (every data change deploys anyway) or keep Supabase and read one gzipped object per collection
   ([database-architecture.md](database-architecture.md#serving-the-public-dataset-an-open-decision)). Measure
   cold-start counts with telemetry first.

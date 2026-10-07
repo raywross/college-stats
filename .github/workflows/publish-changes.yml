@@ -1,0 +1,108 @@
+# The change log and the high school tables, written to the PRODUCTION Supabase project
+# (specs/serving-architecture.md section 2). The site's dataset ships with the deploy; nothing here uploads it.
+# - changes: after each successful Vercel production deploy, records what changed in data/schools.json between the
+#   last recorded commit and the deployed one (npm run publish-changes), so the What changed panel and the update
+#   digest never announce a change before the site shows it. Safe to re-run: a commit already recorded writes nothing.
+# - high-schools: when a push to main changes data/high-schools/**, publishes the high school tables
+#   (npm run publish-high-schools).
+# - Run workflow (by hand, from main): either or both.
+# Skips cleanly while the PROD_* repository secrets aren't set. See specs/supabase.md#production.
+name: Publish changes
+
+on:
+  deployment_status:
+  push:
+    branches: [main]
+    paths: ["data/high-schools/**"]
+  workflow_dispatch:
+    inputs:
+      what:
+        description: What to publish
+        type: choice
+        options: [both, changes, high-schools]
+        default: both
+
+permissions:
+  contents: read
+
+jobs:
+  changes:
+    # Vercel reports deployments to GitHub; its production environment is named "Production" (or
+    # "Production – <project>"). By hand: only from main.
+    if: >-
+      (github.event_name == 'deployment_status' &&
+       github.event.deployment_status.state == 'success' &&
+       startsWith(github.event.deployment.environment, 'Production')) ||
+      (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && inputs.what != 'high-schools')
+    runs-on: ubuntu-latest
+    # One at a time. A newer queued run replacing an older queued one loses nothing: each run diffs from the last
+    # recorded commit, so the newer one covers both.
+    concurrency:
+      group: publish-changes
+      cancel-in-progress: false
+    env:
+      SUPABASE_URL: ${{ secrets.PROD_SUPABASE_URL }}
+      SUPABASE_SECRET_KEY: ${{ secrets.PROD_SUPABASE_SECRET_KEY }}
+      SHA: ${{ github.event_name == 'deployment_status' && github.event.deployment.sha || github.sha }}
+    steps:
+      - name: Check for prod secrets
+        id: secrets
+        run: |
+          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_SECRET_KEY" ]; then
+            echo "::notice::PROD_SUPABASE_URL or PROD_SUPABASE_SECRET_KEY is not set; skipping the change log."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+      - if: steps.secrets.outputs.ready == 'true'
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.SHA }}
+          # The base commit's data files are read with git show, so the history must be there.
+          fetch-depth: 0
+      - if: steps.secrets.outputs.ready == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - if: steps.secrets.outputs.ready == 'true'
+        run: npm ci
+      # Re-run once after a minute on failure (a paused project waking up, a dropped connection). Safe to repeat: the
+      # first staging call resets the staging table, and a commit already recorded is reused, not written twice.
+      - if: steps.secrets.outputs.ready == 'true'
+        run: npm run publish-changes -- --head "$SHA" || { echo "::warning::Publish changes failed; retrying once in 60 s."; sleep 60; npm run publish-changes -- --head "$SHA"; }
+
+  high-schools:
+    if: >-
+      (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
+      (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && inputs.what != 'changes')
+    runs-on: ubuntu-latest
+    # Its own group, so a queued high school publish never replaces a queued change log (or the reverse).
+    concurrency:
+      group: publish-high-schools
+      cancel-in-progress: false
+    env:
+      SUPABASE_URL: ${{ secrets.PROD_SUPABASE_URL }}
+      SUPABASE_SECRET_KEY: ${{ secrets.PROD_SUPABASE_SECRET_KEY }}
+    steps:
+      - name: Check for prod secrets
+        id: secrets
+        run: |
+          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_SECRET_KEY" ]; then
+            echo "::notice::PROD_SUPABASE_URL or PROD_SUPABASE_SECRET_KEY is not set; skipping the high school publish."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+      - if: steps.secrets.outputs.ready == 'true'
+        uses: actions/checkout@v4
+      - if: steps.secrets.outputs.ready == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - if: steps.secrets.outputs.ready == 'true'
+        run: npm ci
+      # File checks, batched writes, exact read-back. Re-run once after a minute on failure; safe to repeat (upserts).
+      - if: steps.secrets.outputs.ready == 'true'
+        run: npm run publish-high-schools || { echo "::warning::Publish failed; retrying once in 60 s."; sleep 60; npm run publish-high-schools; }

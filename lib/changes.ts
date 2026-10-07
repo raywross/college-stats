@@ -4,7 +4,7 @@
  *   const changes = diffSchools({ schools: before, meta: beforeMeta }, { schools, meta }, NOTIFY_FIELDS, { calendar });
  *   describeChange(changes[0]) // "Fall 2025: 9.1% admitted (fall 2024: 9.8%)"
  *
- * Computed once per publish by `npm run publish-data` and stored in `dataset_changes`; the profile's "What changed"
+ * Computed once per deploy by `npm run publish-changes` and stored in `dataset_changes`; the profile's "What changed"
  * panel and the follow digest read the stored rows. Pure module (type-only imports plus pure helpers) so the publish
  * script, tests, and the app share it.
  *

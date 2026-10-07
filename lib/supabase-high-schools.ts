@@ -16,7 +16,7 @@ export interface HighSchoolFiles {
   medians: StateMedians;
 }
 
-/** A row of `high_schools` as publish-data writes it. */
+/** A row of `high_schools` as publish-high-schools writes it. */
 export interface HighSchoolTableRow {
   id: string;
   state: string;

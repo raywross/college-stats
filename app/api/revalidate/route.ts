@@ -4,7 +4,7 @@ import { isAuthorized } from "@/lib/revalidate";
 
 /**
  * Marks every page stale after a publish, so static pages (/, prerendered profiles, /data) regenerate from the new
- * data on their next visit without a redeploy. Called by `npm run publish-data` and the GitHub Action.
+ * data on their next visit without a redeploy. Kept for use by hand (specs/serving-architecture.md); nothing calls it automatically.
  *
  *   curl -X POST -H "Authorization: Bearer $REVALIDATE_SECRET" https://<site>/api/revalidate
  *

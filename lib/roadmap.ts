@@ -324,6 +324,8 @@ export const ROADMAP: RoadmapSpec[] = [
       "An inventory built from the existing blocked lists, a wave scheduler with per-host pacing, from-file entry points for each extractor, and a Claude in Chrome skill; one access-rule decision for the owner.",
     status: "planned",
   },
+  // The serving architecture (specs/serving-architecture.md) was planned and built on 2026-10-07 (#98), so it is
+  // no longer listed.
   // Ideas (specs/ideas/README.md): not planned; in the order they could be built.
   {
     slug: "guides",

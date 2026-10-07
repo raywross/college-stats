@@ -8,6 +8,7 @@ import { Plus, Search, X } from "lucide-react";
 import { MAX_COMPARE, getCompareIds, setCompareIds } from "@/lib/compare";
 import type { SchoolIndexEntry } from "@/lib/data";
 import { searchSchoolsApi } from "@/lib/school-api";
+import { loadSearchIndex, searchIndexReady } from "@/lib/search-client";
 import { SLOT_COLORS, shortName } from "@/lib/brand";
 import { pctSmart } from "@/lib/format";
 import { DOMAINS } from "@/lib/metrics";
@@ -28,17 +29,22 @@ function useSyncStorage(ids: string[]) {
 function SchoolPicker({ exclude, onPick }: { exclude: string[]; onPick: (id: string) => void }) {
   const [q, setQ] = useState("");
   const [options, setOptions] = useState<SchoolIndexEntry[]>([]);
+  // The search index (lib/search-client.ts) loads once per page; until it has, an empty list means "not yet".
+  const [ready, setReady] = useState(searchIndexReady);
   const excludeKey = exclude.join(",");
 
   useEffect(() => {
     const query = q.trim();
     if (!query) return;
     const controller = new AbortController();
+    // Matching is local, so there is no debounce; the zero-delay timer only batches the keystroke with its state.
     const t = setTimeout(() => {
       searchSchoolsApi(query, { limit: 10, exclude: excludeKey.split(","), signal: controller.signal })
-        .then(setOptions)
+        .then((rows) => {
+          if (!controller.signal.aborted) setOptions(rows);
+        })
         .catch(() => {});
-    }, 120);
+    }, 0);
     return () => {
       clearTimeout(t);
       controller.abort();
@@ -58,6 +64,12 @@ function SchoolPicker({ exclude, onPick }: { exclude: string[]; onPick: (id: str
               <Search className="size-4 text-muted-foreground" />
               <input
                 autoFocus
+                onFocus={() => {
+                  // Start the index fetch now so the first keystroke is answered from memory.
+                  loadSearchIndex()
+                    .then(() => setReady(true))
+                    .catch(() => {});
+                }}
                 value={q}
                 onChange={(e) => {
                   setQ(e.target.value);
@@ -71,7 +83,7 @@ function SchoolPicker({ exclude, onPick }: { exclude: string[]; onPick: (id: str
             <div className="mt-1.5 max-h-72 overflow-y-auto">
               {options.length === 0 && (
                 <p className="p-3 text-sm text-muted-foreground">
-                  {q.trim() ? "No matches yet. Keep typing." : "Type a college name, city, or state."}
+                  {q.trim() ? (ready ? "No matches yet. Keep typing." : "Loading colleges…") : "Type a college name, city, or state."}
                 </p>
               )}
               {options.map((s) => (

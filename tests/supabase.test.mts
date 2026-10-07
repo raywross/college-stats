@@ -191,9 +191,9 @@ test("guard: DATA_SOURCE appears in app code only in the one warning that says i
   assert.ok(mentions[0].line.includes(IGNORED), "and that one line is the warning");
 });
 
-test("guard: lib/ and components/ never read the retired dataset tables from Supabase", () => {
+test("guard: lib/, components/, and app/ never read the retired dataset tables from Supabase", () => {
   const RETIRED = ["schools", "school_staging", "dataset_files", "school_aliases", "history_files", "history_staging", "school_histories", "school_details", "detail_staging"];
-  const reads = ["lib", "components"].flatMap(sourceFiles).flatMap((file) =>
+  const reads = ["lib", "components", "app"].flatMap(sourceFiles).flatMap((file) =>
     [...readFileSync(join(ROOT, file), "utf8").matchAll(/\.from\(\s*["'`]([a-z_]+)["'`]\s*\)/g)]
       .filter((m) => RETIRED.includes(m[1]))
       .map((m) => `${file}: from("${m[1]}")`),

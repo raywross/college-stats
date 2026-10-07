@@ -324,17 +324,8 @@ export const ROADMAP: RoadmapSpec[] = [
       "An inventory built from the existing blocked lists, a wave scheduler with per-host pacing, from-file entry points for each extractor, and a Claude in Chrome skill; one access-rule decision for the owner.",
     status: "planned",
   },
-  {
-    slug: "serving-architecture",
-    file: "specs/serving-architecture.md",
-    group: "business",
-    summary:
-      "Fewer failed deploys and a search box that answers as fast as you type: the site reads its college data from the files it deploys with instead of downloading them from the database, the database keeps only people's data, and search runs in the browser over a small index.",
-    complexity: 3,
-    complexityNote:
-      "An environment switch and a tracing fix first, then a build-time search index with a client matcher, a smaller change-log action in place of the dataset publish, cheaper Explore renders, and the retirement of the dataset tables a cycle later; stays on the free plans.",
-    status: "planned",
-  },
+  // The serving architecture (specs/serving-architecture.md) was planned and built on 2026-10-07 (#98), so it is
+  // no longer listed.
   // Ideas (specs/ideas/README.md): not planned; in the order they could be built.
   {
     slug: "guides",

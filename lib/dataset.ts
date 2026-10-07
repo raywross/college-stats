@@ -375,7 +375,7 @@ export function createDataset({ schools, meta, releaseCalendar, aliases = [] }: 
   }
 
   /* ---------------------------------------------------------------- */
-  /* Search (typeahead + compare picker, served by /api/schools)       */
+  /* Search: Explore's q filter here; the typeahead matches the same way in the browser (lib/search-index.ts) */
   /* ---------------------------------------------------------------- */
 
   /**

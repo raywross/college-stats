@@ -1,9 +1,9 @@
 # Serving the Dataset From the Deploy: Deployment, Database, and Search
 
-> Status: **planned** 2026-10-07, from the owner's review of deployment failures, database outages, and slow search.
-> Decides the open question in [database-architecture.md](database-architecture.md#serving-the-public-dataset-an-open-decision)
-> and reshapes [supabase.md](supabase.md)'s serving path. Keeps [data-layer.md](data-layer.md)'s in-memory query
-> layer. Platform work ([backlog](backlog.md#platform)).
+> Status: **built** 2026-10-07 ([below](#built-2026-10-07)), the same day it was planned from the owner's review of
+> deployment failures, database outages, and slow search. Decides the open question in
+> [database-architecture.md](database-architecture.md#serving-the-public-dataset-an-open-decision) and reshapes
+> [supabase.md](supabase.md)'s serving path. Keeps [data-layer.md](data-layer.md)'s in-memory query layer.
 
 ## The question
 The owner's review (2026-10-07) raised four things: deploys fail often; the database "crashes"; the school search is
@@ -181,11 +181,12 @@ change:
 ### 3. Search in the browser
 A **search index** is built at deploy time and shipped as a static file; the browser fetches it once and matches
 locally with the same scorer the server uses today.
-- **Build step** `scripts/build-search-index.mts`, run from `prebuild` (and `npm run verify` checks it's current):
-  writes `public/search/index-<hash>.json` and `lib/search-index.generated.ts` exporting the file name. One entry
-  per college: `id, name, city, state, type, acceptance, applicants, brand (two colors or null), keys (the alias keys
-  and the normalized name, from lib/aliases.ts)`. About 1,893 × 100 bytes ≈ 200 KB; roughly 50 KB gzipped, served
-  immutable from the CDN with `Cache-Control: public, max-age=31536000, immutable` (the hash changes with the data).
+- **A static route**, `GET /search-index.json` (`app/search-index.json/route.ts`, `dynamic = "force-static"`),
+  built from the dataset at deploy time and so versioned by the deploy: no generated files in git. One entry per
+  college: `id, name, city, state, type, acceptance, applicants, brand (the crest's colors or null), aliases
+  ([display form, weight] pairs; the key is recomputed in the browser)`. As built: 1,893 entries, 522 KB raw, 99 KB
+  gzipped (the crest brand and the alias rows are about 115 KB and 100 KB of the raw size), served with
+  `Cache-Control: public, max-age=3600, stale-while-revalidate=86400`.
 - **Client** `lib/search-client.ts`: fetches the index on first focus of a search box (or on idle after load for the
   header), keeps it in module memory, and runs `scoreSchool` / `compareMatches` from `lib/aliases.ts` (pure
   functions; the file loses nothing by being imported on the client). Results are instant; typing never calls a
@@ -233,9 +234,9 @@ fixture dataset.
 ### 6. Cold starts: measure, then decide
 The change above makes a cold start "read 17 MB from local disk and parse it", about 300 ms, plus Next's own start,
 which bytecode caching already shortens. That is acceptable. Two cheap things make it visible:
-- `instrumentation.ts` logs one line per instance start with the dataset load time, and the Vercel runtime log's
-  "start type" field says whether a request was cold. A weekly look at those two answers "how many cold starts,
-  how slow" with no telemetry dependency.
+- `lib/data.ts` logs one line per instance on its first load (`[data] loaded 1893 colleges from data/ in 220 ms`),
+  and the Vercel runtime log's "start type" field says whether a request was cold. A weekly look at those two
+  answers "how many cold starts, how slow" with no telemetry dependency.
 - If cold starts turn out frequent on a Hobby plan, Pro's Scale to One is the switch; if the 300 ms itself matters,
   the later options below apply.
 
@@ -337,4 +338,68 @@ by redeploying; search empty, then fast a minute later) and the plans (stay free
 1. **Regions.** Which region the Vercel project and the Supabase project run in. If they differ, every signed-in
    query pays the distance; it is worth knowing before the prod project is created at the formal release, since a
    project's region can't be changed afterwards.
-2. Keep `/api/revalidate`? Recommendation: yes, unused in the normal path, handy by hand; it costs nothing.
+2. Keep `/api/revalidate`? Built as kept: unused in the normal path, handy by hand; it costs nothing.
+
+## Built (2026-10-07)
+Built the same day with the `build-roadmap-section` method: four units on sub-branches (`feature/serving-data`,
+`feature/serving-search`, `feature/serving-publish`, `feature/serving-explore`), merged into
+`feature/serving-architecture`, PR #98 with the spec.
+
+**Unit A, the deploy carries the dataset.** `lib/data.ts` reads `data/` only: `getData`, `getHistoryFiles`,
+`getHistory`, `getTrendFile`, `getDetail` are file reads (fail-soft where they were), the first load logs
+`[data] loaded <n> colleges from data/ in <ms> ms`, and a set `DATA_SOURCE` draws one warning and is otherwise
+ignored. `lib/dataset-loader.ts` is `createDatasetLoader(load)`: load once, serve forever, a failed first load
+throws and the next call retries. `lib/supabase.ts` keeps `supabaseClient`, `fetchSchoolChanges`, `CHANGE_COLUMNS`,
+and the `HistoryFiles` type; every dataset reader is gone, and `lib/supabase-detail.ts` with them. High schools get
+`highSchoolsSource()` in `lib/high-schools.ts` (`HIGH_SCHOOLS_SOURCE` wins when set; else `supabase` when both
+Supabase keys are set, else `json`; any other value throws inside the readers' try, so a bad value logs and the page
+renders without high-school data). `next.config.ts` traces exactly the nine paths in [section 4](#4-fewer-bytes-per-function);
+`tests/tracing.test.mts` checks the list, that each path exists, that every `join(…, "data", …)` in `lib/`, `app/`,
+`components/`, and `proxy.ts` names its folder or file literally, and that the two agree both ways. That literal rule
+exists because Next's own tracer ships the whole `data/` folder when a read is built from a variable; spelling the
+paths out cut `/explore`'s trace to the listed files (plus `data/state-laws.json`, read elsewhere). `tests/supabase.test.mts`
+now covers the loader, the warning, `highSchoolsSource()` for its env combinations, revalidation auth, and two
+guards (`DATA_SOURCE` appears only in the warning; `lib/`, `components/`, and `app/` never read a retired table).
+
+**Unit B, search in the browser.** `lib/search-index.ts` (pure) builds the index and matches it with the same
+`scoreSchool` / `compareMatches` as the server (`scoreSchool` gained an optional precomputed query so a scan
+normalizes the query once; `queryForms()` exported). `app/search-index.json/route.ts` is the static route; the
+handler reads `data/aliases.json` itself so `lib/data.ts` stayed untouched. `lib/search-client.ts` loads the index
+once per page (`fetch` with `force-cache`, a module-level promise) and `lib/school-api.ts` keeps its names
+(`searchSchoolsApi`, `useSchoolEntries`) over the index, so `SchoolSearch`, `CompareHeader`, and `CompareTray` changed
+little: the boxes start the index load on focus, show the loading state until it's there (never "no matches"), and
+answer with no debounce. `app/api/schools/` is gone. Explore's text box pushes its URL after 500 ms or on Enter.
+`tests/search-index.test.mts`: every college once; size under 600,000 bytes raw and 150,000 gzipped; `matchIndex`
+returns the same ids in the same order as `searchSchools` for seven queries; the route exports `force-static` and
+imports nothing that reads the session.
+
+**Unit C, the publish pipeline.** Migration `20261007120000_publish_changes.sql`: `publish_changes(school_count,
+retrieved, git_commit, published_by, expected_changes)` takes a share-row-exclusive lock on `dataset_publishes`,
+returns the existing row with `reused: true` for a commit already recorded (clearing staging), else inserts the
+publish row and copies staging into `dataset_changes` stamped with the row's time; service_role only. Migration
+`20261007130000_retire_dataset_tables.sql` drops, if they exist, ten functions and nine tables (listed in
+[supabase.md](supabase.md#schema-supabasemigrations)); a PGlite test compares the catalog before and after and
+checks that exactly those go and the high-school, change-log, and user tables stay. `scripts/publish-changes.mts`
+(`--head`, `--base`, `--dry-run`; reads the three files at two commits with `git show` through an injected reader;
+the default base is the newest recorded commit that is plain hex and exists in the repo; skips with a notice without
+keys) and `scripts/publish-high-schools.mts` replace `publish-data.mts`, `publish-aliases.mts`, `publish-batches.mts`
+and their tests; `publish-details.mts` keeps only its two file helpers, which `check:lineage` and the merge scripts
+use. `.github/workflows/publish-changes.yml`: `changes` on a successful Production `deployment_status` (checkout of
+the deployed sha with full history), `high-schools` on pushes to `main` touching `data/high-schools/**`, and
+`workflow_dispatch` with `what: both | changes | high-schools`; both jobs skip cleanly without the `PROD_*`
+secrets and retry once after 60 s; two concurrency groups so one job's queue never cancels the other's. The digest
+cron takes college names from `getData()`.
+
+**Unit D, Explore render cost.** `lib/explore-facets.ts` holds `buildFacets` (moved verbatim); `data.facets()`
+computes it once per dataset; `sourcesForSchoolsFast(paths, list)` keeps, per field list, a `WeakMap` from school to
+its sources and merges them in the same order as `sourcesForSchools`; `MultiSourceNote` uses it. Measured: the
+unfiltered `getSchools({})` + `facets()` + sources round went from about 450 ms cold to under 10 ms on the second
+call. `/explore?q=boston&view=table` and warm `/explore` renders are byte-identical before and after (the dev
+server's first render differs only in Flight row numbering).
+
+**Deviations from the spec.** Explore's typing keeps its server render (500 ms debounce plus Enter) instead of
+the client-side pre-filter: the memos make the render cheap, and the pre-filter would have duplicated the filter
+logic in the browser. The search index is larger than the spec's estimate (522 KB raw, 99 KB gzipped, against
+"about 200 KB"): the crest brand and the alias display forms are most of it; a one-time cached fetch, so kept. The
+load-time log line lives in `lib/data.ts`, not `instrumentation.ts`. Dropping the dataset tables waits for the
+owner's hand (the migration is in the repo; see the owner steps), not a cycle.

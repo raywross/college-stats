@@ -1,39 +1,35 @@
 ---
-title: A plan for fewer failed deploys and faster search
+title: Faster search, and site updates that can't fail on the database
 pr: 98
 date: 2026-10-07
-kind: plans
-summary: A plan to have the site read its college data from the files it deploys with, keep the database for people's data, and run the search box in the browser, so deploys stop failing and search answers as you type.
+kind: improvement
+summary: The search box now answers as you type from a small index in your browser, and the site reads its college data from the files it ships with, so an update is live when it's deployed and a busy or paused database can't take the public pages down.
 ---
 
-## What's planned
+## What's new
 
-Three things have been going wrong behind the scenes: site updates sometimes failed, the database sometimes gave
-out, and the search box was slow. They share a cause. The live site has been downloading its whole college dataset
-from the database, once when a new version is built and again every time the host starts a fresh copy of the site,
-even though the same data is already shipped with every update. Updates and data publishes ran at the same moment
-and got in each other's way. And every letter typed into a search box went to the server for an answer.
+- **Search answers as you type.** The college search box in the header, on the home page, and in Compare's picker
+  used to send every letter to the server, and on a fresh visit the first letters could come back with no matches
+  until the server had warmed up. Now a small index of college names, nicknames, and places loads once in your
+  browser, and every keystroke matches locally. The first letter is as fast as the hundredth.
+- **Explore's text filter waits for you.** It now refreshes half a second after you stop typing, or when you press
+  Enter, instead of after every few letters, and each refresh is cheaper on the server.
+- **Updates can't fail on the database.** The site reads its college data from the files it deploys with, rather
+  than downloading them from the database when it builds and again every time the host starts a fresh copy. A data
+  update is live when its deploy is; nothing else has to succeed. If the database is ever paused or busy, every
+  college page, Explore, Compare, the trends, and search keep working; only signing in waits.
 
-The plan:
-- **The site reads its college data from its own files.** Every update carries the data; nothing is downloaded from
-  the database to show a college. An update is live when it's deployed, with nothing else that can fail.
-- **The database keeps what it should:** accounts, households, lists, the planner, high schools, and the record of
-  what changed that feeds the update emails. If it is ever paused or busy, the public pages and search keep working;
-  only signing in waits. The free plans stay for now.
-- **Search runs in your browser.** A small index of college names, nicknames, and places loads once; typing matches
-  against it instantly, on the first visit as well as later. Explore's text filter stops reloading the page on every
-  pause in typing.
-- **Measure, then decide more.** Cold-start counts and page times are logged, and further steps (precomputing more at
-  build time, a warm instance) are listed with the numbers that would justify each.
-
-Nothing changes in what the pages show or in where any number comes from.
+Nothing changed in what the pages show or in where any number comes from.
 
 ## Behind the scenes
 
-The spec is `specs/serving-architecture.md`, on the roadmap under Platform. It records the measurements (the dataset
-is 16.7 MB now, parsed in about 300 ms from disk; a cold load from the database is about nine sequential requests;
-every dynamic request ran a version query; the publish swapped the colleges table under a running build), weighs the
-client-server alternative, and lays out four phases: the environment switch and tracing fix, the browser search
-index, cheaper Explore renders, and the retirement of the dataset tables a cycle later. The open decision in
-`specs/database-architecture.md` is now decided, and `specs/supabase.md` carries a note that its serving section
-describes the state until this lands.
+The plan and the measurements are in `specs/serving-architecture.md` (built the same day it was written, from the
+owner's review). The dataset is 16.7 MB and parses from disk in about 300 ms once per server instance; before, a cold
+instance made about nine sequential database requests for the same data and every dynamic page ran a version query
+first. The dataset tables in Supabase (`schools`, `school_histories`, `school_details`, `school_aliases`, and their
+publish functions) are retired by a migration; Supabase keeps people's data, the high-school table, and the record
+of what changed between deploys, which a small GitHub job now writes after each production deploy (`npm run
+publish-changes`, diffing two commits' files) so the update emails and the What changed panel keep working. The
+search index is a static route, `/search-index.json` (522 KB, 99 KB compressed), matched with the same scorer the
+server uses. Explore's filter facets and sources are computed once per dataset instead of on every render. The
+`DATA_SOURCE` setting is gone; high schools have their own, `HIGH_SCHOOLS_SOURCE`.

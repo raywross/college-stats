@@ -5,7 +5,7 @@
  *
  * Each table carries its own source, release ("vintage"), and year, and maps to a registered field in lib/fields.ts
  * (DETAIL_TABLES), so it's cited like any other value. `npm run sync-data` writes every file whole (it owns all the
- * tables); `npm run check:lineage` and `npm run publish-data` validate every file with validateDetail().
+ * tables); `npm run check:lineage` and the merge scripts validate every file with validateDetail().
  *
  * Adding a table: add it to DetailTables and DETAIL_TABLES (a field and a row check), register the field in
  * lib/fields.ts, and have the sync fill it. Node scripts, tests, and server code load it; it reads the CIP 2020 table

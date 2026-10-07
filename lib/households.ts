@@ -119,7 +119,7 @@ export async function logStudentRead(studentId: string, table: string): Promise<
  * Server Action or Route Handler `after()` works the same way. Outside any request (a script or test) `after()`
  * throws; the line is then written inline so it is never dropped.
  */
-async function scheduleStudentReadLog(studentId: string, table: string): Promise<void> {
+export async function scheduleStudentReadLog(studentId: string, table: string): Promise<void> {
   let supabase: SupabaseClient;
   try {
     supabase = await createServerSupabase();

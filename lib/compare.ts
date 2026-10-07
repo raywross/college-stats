@@ -1,6 +1,8 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
+import { track } from "@/lib/analytics";
+import { toggledCompare } from "@/lib/discovery-events";
 
 /**
  * Compare list lives in localStorage so it survives navigation and reloads.
@@ -53,16 +55,16 @@ export function setCompareIds(ids: string[]) {
 }
 
 export function toggleCompare(id: string): string[] {
-  const ids = [...read()];
-  const i = ids.indexOf(id);
-  if (i >= 0) ids.splice(i, 1);
-  else if (ids.length < MAX_COMPARE) ids.push(id);
+  const { ids, action } = toggledCompare(read(), id, MAX_COMPARE);
   write(ids);
+  // A full list refuses the add: nothing changed, so nothing is reported.
+  if (action) track("compare_changed", { action, count: ids.length });
   return ids;
 }
 
 export function clearCompare() {
   write([]);
+  track("compare_changed", { action: "clear", count: 0 });
 }
 
 function subscribe(cb: () => void) {

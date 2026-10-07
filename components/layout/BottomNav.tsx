@@ -67,7 +67,7 @@ export function BottomNav() {
       {sheet === "search" && (
         <div className="fixed inset-0 z-[45] flex flex-col bg-background md:hidden" role="dialog" aria-modal="true" aria-label="Search schools">
           <div className="flex items-center gap-2 border-b px-4 py-3" style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 0.75rem)" }}>
-            <SchoolSearch size="compact" autoFocus className="flex-1" onNavigate={() => setSheet(null)} />
+            <SchoolSearch source="tabbar" size="compact" autoFocus className="flex-1" onNavigate={() => setSheet(null)} />
             <button type="button" onClick={() => setSheet(null)} className="shrink-0 px-2 text-sm font-semibold text-primary">
               Cancel
             </button>

@@ -57,8 +57,8 @@ knowing before the first scheduled run shows up in your activity feed.
    the required checks list.
 
 No database or Supabase change is needed for this feature: `school.reported` lives inside the same per-college
-document that `data/schools.json` already holds, and `npm run publish-data` (and the existing
-`publish-data.yml` workflow) uploads it exactly as it uploads every other field, after the data PR merges to `main`.
+document that `data/schools.json` already holds, and a merge to `main` deploys it like every other field
+([serving-architecture.md](serving-architecture.md)); the `publish-changes.yml` workflow then records what changed.
 
 ## 4. Run it locally first
 1. Add `ANTHROPIC_API_KEY=sk-ant-…` to `.env.local` (git-ignored).
@@ -132,8 +132,8 @@ document that `data/schools.json` already holds, and `npm run publish-data` (and
   would — does "What's new" make sense without the internal jargon?
 - Let CI (`Verify`) run. If `COLLEGE_REPORTED_TOKEN` isn't set up correctly, CI won't start on this PR at all —
   that's the tell that step 2 above needs fixing.
-- Merge it by hand once you're satisfied. `publish-data.yml` already runs on any merge to `main` that touches
-  `data/**`, so nothing else to trigger — `data/schools.json` rode along in this same PR.
+- Merge it by hand once you're satisfied. The merge deploys, and `publish-changes.yml` records the changes after
+  the deploy, so nothing else to trigger — `data/schools.json` rode along in this same PR.
 
 ## 6. Resolving a review-queue item
 Each item names the college, the failed check(s), and the source URL. Typical fixes:

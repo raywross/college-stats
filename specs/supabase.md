@@ -1,183 +1,125 @@
 # Supabase
 
-How the dataset moves from JSON files to a Supabase (PostgreSQL) database, and how development and production
-stay separate. For whether this shape fits the whole roadmap, and the rules for user-data tables, see
+What the site keeps in its Supabase (PostgreSQL) project, how it gets there, and how development and production
+stay separate. Since 2026-10-07 ([serving-architecture.md](serving-architecture.md)) Supabase holds **people's data,
+the high-school table, and the record of what changed**; the college dataset itself ships with every deploy and is
+read from the function's own files. For the rules that decide what belongs in a table, see
 [database-architecture.md](database-architecture.md).
 
-> **Planned change (2026-10-07):** [serving-architecture.md](serving-architecture.md) moves production to
-> `DATA_SOURCE=json` (the dataset ships with the deploy), shrinks the publish Action to the digest's change log and
-> the high-school table, and retires the dataset tables a cycle later. The serving design below describes the current
-> state until that lands; the account, household, and high-school parts of this page are unaffected. Note that the
-> sizes below (3.6 MB) are from 2026-09-28; `data/schools.json` is 16.7 MB today.
-
-## Design: git is the source, Supabase serves it
+## Design: git is the source, the deploy serves it
 
 ```
-npm run sync-data ──► data/*.json ──► PR (CI: lineage, tests, build) ──► main ──► npm run publish-data ──► Supabase ──► app
+npm run sync-data ──► data/*.json ──► PR (CI: lineage, tests, build) ──► main ──► Vercel build ──► the site
+                                                                                 │
+                                                             deployment succeeds ─┴─► npm run publish-changes ──► dataset_changes ──► update emails
+data/high-schools/** changes on main ──────────────────────────────────────────────► npm run publish-high-schools ──► high_schools
 ```
 
-- **`data/*.json` stay in git as the reviewed source of truth.** Everything already built around them keeps
-  working: `npm run verify` checks lineage on every PR, diffs show what a sync changed, and the planned
-  college-reported pipeline ([college-reported-data.md](college-reported-data.md)) auto-merges through CI.
-- **Supabase is the serving copy.** `npm run publish-data` uploads exactly what is in the files: nothing is published
-  that didn't pass the checks.
-- **The app loads the whole dataset into memory either way** (~1,900 colleges, 3.6 MB) and queries it there
-  ([data-layer.md](data-layer.md)). Ranks, medians, and similar schools need every college, so row-by-row SQL
-  queries would be slower and harder to keep identical. Move queries into SQL only if the dataset grows past what
-  fits in memory.
-- **Data created by users** (accounts, saved lists; [backlog.md](backlog.md)) will live only in Supabase, with no
-  JSON counterpart. That is when Supabase becomes necessary, not just convenient.
+- **`data/*.json` stay in git as the reviewed source of truth**, and are the serving copy too: `next.config.ts`
+  traces them into every server function, and `lib/data.ts` reads them from disk once per instance (about 300 ms
+  for the 16.7 MB snapshot). Prerendered pages are built from the same files. A data change is live when its
+  deploy is; nothing else has to succeed.
+- **The app loads the whole college dataset into memory** (~1,900 colleges) and queries it there
+  ([data-layer.md](data-layer.md)). Ranks, medians, facets, and similar colleges need every college, so row-by-row
+  SQL would be slower and harder to keep identical. Per-college history, detail, and trend files are read from disk
+  per request.
+- **High schools are the one dataset that belongs in a table** (35,000 rows searched by trigram): they are
+  published to Supabase and read row by row, with the files as the fallback ([Where the app reads](#where-the-app-reads)).
+- **What changed between two deploys** is computed from git, not from the database, and written to
+  `dataset_changes` after each production deploy, so the digest ([follow-colleges.md](product/follow-colleges.md))
+  and the profile's What changed panel keep working.
+- **Data created by users** (accounts, households, lists, the planner) lives only in Supabase, with no JSON counterpart.
 
-## Switch: `DATA_SOURCE`
+The serving design this replaced (the dataset in Supabase tables, a per-request version check, a publish Action
+racing the Vercel build) is summarized in [History](#history) for the record.
 
-| Value | Reads from | Use |
+## Where the app reads
+
+| Data | Read from | Switch |
 |---|---|---|
-| `json` (default) | `data/schools.json`, `meta.json`, `release-calendar.json` | Offline work, CI builds, fallback |
-| `supabase` | The project in `SUPABASE_URL`, with `SUPABASE_PUBLISHABLE_KEY` | Local dev against the dev project; Vercel |
+| Colleges, meta, release calendar, aliases | `data/*.json` on disk, once per server instance (`lib/data.ts`) | none |
+| Per-college history and detail, trend files, history's shared files | `data/history/**`, `data/detail/**` on disk, per request | none |
+| High schools | the `high_schools*` tables (`lib/supabase-high-schools.ts`) or `data/high-schools/**` (`lib/high-school-store.ts`) | `HIGH_SCHOOLS_SOURCE=supabase\|json`; default `supabase` when `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY` are set, else `json` |
+| What changed (profile panel, digest) | `dataset_changes` when `SUPABASE_URL` is set; otherwise nothing | none |
+| Accounts, households, lists, planner | their tables, through row-level security | none |
+| Search index (`/search-index.json`) | built from the files at deploy time; matched in the browser | none |
 
-`lib/data.ts` keeps one copy in memory per server instance. From Supabase, each request first checks which publish
-the project serves and reloads if it's newer ([Revalidation](#revalidation)). If Supabase can't be reached, the copy
-in memory keeps serving. `getData()` is wrapped in React `cache()`, so one request always sees one publish. Missing
-keys or an empty project fail loudly on the first load, with a pointer to this page. The app never silently falls
-back to JSON.
+`DATA_SOURCE`, the old switch, is ignored; `lib/data.ts` logs one warning if it is still set. The build never
+contacts Supabase: CI builds with no keys, and a Preview without keys reads the high-school files, which are traced
+into the deploy for that reason.
 
 ## Schema (`supabase/migrations/`)
 
 | Table | Contents | Access |
 |---|---|---|
-| `schools` | `unit_id` (PK), `position` (order in schools.json), `name`, `state`, `data` (one `School`, verbatim) | Public read |
-| `dataset_files` | `meta` and `release_calendar` documents | Public read |
-| `dataset_publishes` | Log: time, college count, `retrieved`, git commit, who | Secret key only |
-| `school_histories` | `unit_id` (PK), `data` (one `SchoolHistory`, verbatim: data/history/schools/{id}.json) | Public read |
-| `history_files` | `meta`, `national`, `facts`, `cpi` from data/history/, plus `trends/{name}` rows from data/history/trends/ (migration `20261004130000_trend_files.sql`; specs/national-trends.md) | Public read |
-| `school_details` | `unit_id` (PK), `data` (one `SchoolDetail`, verbatim: data/detail/schools/{id}.json; lib/detail.ts) | Public read |
-| `detail_staging` | Detail files mid-publish | Secret key only |
+| `dataset_publishes` | One row per recorded publish: time, college count, `retrieved`, git commit, who | Secret key only |
+| `dataset_changes` | One row per college × field × publish (lib/changes.ts); the What changed panel and the digest read it | Public read |
+| `dataset_change_staging` | Staged changes between `stage_dataset_changes()` and `publish_changes()` | Secret key only |
+| `high_schools`, `high_school_details`, `high_school_files`, `search_high_schools()` | The high-school dataset and its trigram search ([high-school-data.md](product/high-school-data.md)) | Public read |
+| Accounts, households, invitations, student profiles, lists, follows, notification prefs, digests, and the rest | [accounts.md](product/accounts.md), [household-hub.md](product/household-hub.md), [saved-lists.md](product/saved-lists.md), [follow-colleges.md](product/follow-colleges.md) | Per policy |
 
-- **Detail files** (migration `20261002120000_school_details.sql`, added 2026-10-02 with
-  [residence.md](data-expansion/residence.md)): published like history, written straight into `school_details` 200 at a
-  time (scripts/lib/publish-batches.mts), then read back. `stage_details()`/`publish_details_staged()` exist but aren't
-  used.
-  `publish-data` stops if the tables are missing, so **apply the migration to dev (and prod) before the next publish**.
-  The app's `getDetail()` is fail-soft: without the table, profiles render without home states.
-- **The dataset in batches** (migration `20261002140000_school_staging.sql`, added 2026-10-02): wave 2 took
-  `data/schools.json` past 11 MB, and one `publish_dataset()` call (the whole file as one argument) hit the statement
-  timeout. `stage_schools(p_schools, p_offset, p_reset)` now takes 150 colleges per call, keeping each one's position,
-  and `publish_schools_staged(p_meta, p_release_calendar, p_expected, …)` swaps them in with meta and the release
-  calendar in one transaction. `publish_dataset()` remains for older checkouts. `publish-data` checks the staging table
-  first and stops with the migration's name if it's missing.
+**Retired on 2026-10-07** by `supabase/migrations/20261007130000_retire_dataset_tables.sql`: `schools`,
+`school_staging`, `dataset_files`, `school_histories`, `history_staging`, `history_files`, `school_details`,
+`detail_staging`, `school_aliases`, and the functions `publish_dataset`, `stage_schools`, `publish_schools_staged`,
+`publish_schools_staged_with_changes`, `stage_history`, `publish_history`, `publish_history_staged`, `stage_details`,
+`publish_details_staged`, `publish_aliases`. Their migrations stay in the folder (the PGlite tests apply every
+migration in order, so the end state is what the tests prove).
 
-- Documents are **`json`, not `jsonb`**: jsonb reorders object keys (e.g. race/ethnicity shares come back as
-  asian, black, other, white, …), and the UI iterates some objects in key order.
-- Row-level security is on for every table. Anyone may `select` the dataset tables. There are no write policies.
-- **`publish_dataset(p_schools, p_meta, p_release_calendar, p_git_commit, p_published_by)`** replaces everything in
-  one transaction, so readers never see half a publish and colleges dropped from the sync disappear. Only
-  `service_role` (the secret key) may call it.
-- **History is published in batches, not atomically** (2026-10-02): once scores, students, and outcomes were added
-  (~13 MB), one call exceeded the API's statement timeout, so shards were staged in batches and swapped in with one
-  transaction (`stage_history()`/`publish_history_staged()`, migration `20260928180000_history_staging.sql`). After wave
-  2 (20 MB) the swap itself timed out, so `publish-data` now upserts 150 shards per call straight into
-  `school_histories`, deletes colleges no longer in the data, then writes `history_files`
-  (scripts/lib/publish-batches.mts). **Trade-off, accepted 2026-10-02:** while a publish runs, readers can see a mix of
-  old and new shards. Each shard is a complete file either way, and everything is read back and compared at the end.
-  Detail files work the same way. The staging functions and the single-call `publish_history()` below still exist but
-  aren't used.
-- **`publish_history(p_schools, p_files)`** (migration `20260928120000_history.sql`) does the same for history
-  ([trends-data.md](trends-data.md)): `npm run publish-data` calls it after the dataset when data/history/ exists, then
-  reads every shard back. The app reads one shard per profile and the shared files once per publish; if the tables
-  are missing, pages render without history (so code can merge before the migration, but apply it before publishing).
-- Migrations follow the Supabase CLI layout (`<timestamp>_<name>.sql`), so they can later be applied with
-  `supabase db push`. The first one is pasted into the SQL Editor. To switch to the CLI later, mark it applied with
-  `supabase migration repair --status applied 20260928000000`.
+- Row-level security is on for every table. Nothing public is writable through the API.
+- Migrations follow the Supabase CLI layout (`<timestamp>_<name>.sql`); each is pasted into the SQL Editor, dev
+  first, then prod. They must stay backward-compatible with the running app (add, don't rename), because the app and
+  the database deploy separately.
 
-## Publishing (`npm run publish-data`)
+## Publishing
 
-`scripts/publish-data.mts`. `npm run publish-data` uses `.env.local` (dev) if it exists; environment variables win
-over the file, which is how the GitHub Action points it at prod. `npm run publish-data:prod` uses `.env.prod.local`
-(prod; git-ignored, copied into worktrees by `.worktreeinclude`). It's deliberately not `.env.production.local`,
-which Next.js would load into every local `next build`/`next start` and point them at prod.
+### The change log: `npm run publish-changes`
+`scripts/publish-changes.mts`. Runs after each successful production deploy
+([workflow](#the-workflow-githubworkflowspublish-changesyml)), or by hand.
+1. Takes `--head <sha>` (default `HEAD`) and `--base <sha>` (default: the newest `dataset_publishes.git_commit`
+   that exists in the repo; none → a first publish with no changes).
+2. Reads `data/schools.json`, `data/meta.json`, and `data/release-calendar.json` at both commits with `git show`,
+   with no network read of any old dataset, and diffs them (`lib/changes.ts`).
+3. Stages the changes (`stage_dataset_changes()`, 2,000 per call) and calls `publish_changes()`, which inserts the
+   `dataset_publishes` row and moves the changes in, in one transaction. A re-run for the same commit is a no-op
+   (`reused: true`).
+4. `--dry-run` prints the summary and writes nothing. Without `SUPABASE_URL` and `SUPABASE_SECRET_KEY` it logs a
+   notice and exits 0.
 
-1. Lineage check (same as `npm run check:lineage`). Any problem stops the publish.
-2. Shrink guard: refuses to drop more than 10% of the colleges already published unless `--allow-shrink`.
-   Then what changed: the published colleges are read back and diffed against the files (`lib/changes.ts`); the
-   changes are staged and written into `dataset_changes` in the same transaction as step 3
-   (`publish_schools_staged_with_changes()`), or skipped with a warning when the follows migration isn't applied
-   ([follow-colleges.md](product/follow-colleges.md#publishing-scriptspublish-datamts-scriptslibpublish-changesmts)).
-   `--changes-only` prints the list and writes nothing; add `--prev <dir>` to diff a local copy with no network.
-3. `stage_schools()` in batches of 150, then `publish_schools_staged()` in one transaction, recording the git commit
-   (`+uncommitted` if `data/` has local changes).
-4. Reads everything back through the same code the app uses and requires an exact match with the files.
-5. If `REVALIDATE_URL` and `REVALIDATE_SECRET` are set, POSTs to the site so static pages regenerate
-   ([Revalidation](#revalidation)). A failure here exits non-zero but says the data is already published.
+### High schools: `npm run publish-high-schools`
+`scripts/publish-high-schools.mts`: validates `data/high-schools/**` against the colleges, then writes the
+`high_schools*` tables in batches and reads them back (not atomic, as before). Runs when a merge to `main` changes
+`data/high-schools/**`, or by hand. `--dry-run` checks only.
 
-`--dry-run` runs steps 1–2 and writes nothing. Tested against real Postgres (PGlite): all 1,893 colleges read back
-byte for byte, republishing replaces instead of duplicating, an empty publish is rejected, and `anon` can read
-but can't write or call the function.
+### The workflow: `.github/workflows/publish-changes.yml`
+- **`changes`** runs on each successful Vercel production deploy (`deployment_status`, environment `Production…`):
+  checks out the deployed commit with full history, runs `publish-changes --head <sha>`. So a change is recorded
+  only after the site shows it; a dropped push event means a missing digest line, never a broken site.
+- **`high-schools`** runs on a push to `main` that changes `data/high-schools/**`.
+- **Run workflow** by hand with `what: changes | high-schools | both`.
+- Both skip with a notice while `PROD_SUPABASE_URL` / `PROD_SUPABASE_SECRET_KEY` aren't set. CI's `verify` job
+  needs no secrets.
 
 ## Revalidation
-
-`/`, `/data` and the 50 prerendered profiles (plus every other profile, once visited) are static pages. With
-Supabase they must be regenerated after a publish, without a redeploy.
-
-**Trigger:** `POST /api/revalidate` with `Authorization: Bearer $REVALIDATE_SECRET` calls
-`revalidatePath("/", "layout")`, which marks every page stale; each regenerates on its next visit. The route returns
-401 for a missing or wrong secret, and when `REVALIDATE_SECRET` isn't set at all. `lib/revalidate.ts` compares
-digests in constant time. Callers: `publish-data` (step 5) and the GitHub Action.
-
-```sh
-curl -X POST -H "Authorization: Bearer $REVALIDATE_SECRET" https://<site>/api/revalidate
-```
-
-**The stale-instance problem:** each server instance (a Vercel function instance, or `next start`) holds the
-dataset in memory. The regeneration runs on whichever instance takes the next visit, and that instance may have
-loaded its copy before the publish. With the old design (re-read in the background every `DATA_TTL_SECONDS`), it
-would render the old copy into the page, and that stale page would then be cached until the next publish.
-
-**Choice: check the version on every request.** `publish_dataset()` stamps `dataset_files.published_at` with the
-transaction time. `getData()` (via `lib/dataset-loader.ts`) reads that one timestamp per request and, if it differs
-from the copy in memory, waits for a full reload before rendering. A render can therefore never be older than the
-publish Supabase is serving, whichever instance runs it.
-- Cost: one small query (two rows, no documents) per request that calls `getData()`, plus a full reload (~1 s) only
-  after a publish. Static pages call it only when they regenerate. `/explore`, `/compare` and `/api/schools` call
-  it on every request, and in exchange they show a new publish at once instead of after 10 minutes.
-- Alternatives rejected: reloading inside `/api/revalidate` only refreshes the instance that handled that request.
-  A shorter TTL only narrows the window. Next's data cache with `revalidateTag` works but can't be tested faithfully
-  with `next start`, and it serves one stale read after the tag is invalidated.
-- Consistent reads: the full read takes three requests (colleges come in pages of 1,000). `fetchDatasetFiles`
-  compares the version before and after; if a publish landed in between, it reads again (up to 3 times).
-- If Supabase is unreachable, the copy in memory keeps serving (logged). A page regenerated at that moment could
-  keep an old copy, so `/` and profiles also have `revalidate = 86400` (like `/data`) as a daily fallback.
-
-**Deploy race:** a merge that changes `data/**` starts both a Vercel production build (which prerenders from
-Supabase) and the publish Action. If the build reads Supabase before the publish lands, the new deployment's static
-pages hold the old data. The Action therefore also revalidates after every successful Vercel production deploy
-(`deployment_status`). Whichever finishes last, publish or deploy, triggers a revalidation that sees the new data.
-
-**Tested locally** (2026-09-28, `next build && next start` against the dev project): warmed the server, then
-published a marked copy (a renamed UCLA and release label) with revalidation. `/`, `/schools/110662` and `/data`
-showed the marker on the first visit. Published the original without revalidating: static pages kept the marker
-(cached), `/explore` switched back at once (version check). A curl to `/api/revalidate` then brought the static
-pages back. Unit tests (`tests/supabase.test.mts`) cover the reload, a publish landing mid-read, an unreachable
-store, and the auth check. They fail if the version check is removed.
-
-**Reads during a publish** (2026-10-05): while a publish swaps the schools table, reads can hit Postgres's statement
-timeout. The production build for #80 failed this way, reading colleges mid-publish. `fetchDatasetFiles` now waits
-and retries on a statement timeout (`TIMEOUT_WAITS_MS`, about a minute in all) and fails at once on any other error;
-`tests/supabase.test.mts` covers both.
+Static pages (`/`, `/data`, profiles, trends) carry `revalidate = 86400` and are rebuilt by every deploy, which is
+also when the data changes. `POST /api/revalidate` with `Authorization: Bearer $REVALIDATE_SECRET` still marks every
+page stale (`revalidatePath("/", "layout")`) for use by hand; nothing calls it automatically any more. It returns
+401 for a missing or wrong secret, and when `REVALIDATE_SECRET` isn't set at all.
 
 ## Keys
 
 | Variable | Where | Notes |
 |---|---|---|
-| `SUPABASE_URL` | `.env.local`, `.env.prod.local`, Vercel, GitHub secret `PROD_SUPABASE_URL` | `https://<project-ref>.supabase.co` |
-| `SUPABASE_PUBLISHABLE_KEY` | `.env.local`, `.env.prod.local`, Vercel | `sb_publishable_…`. Read-only through RLS. Replaces the legacy `anon` key |
-| `SUPABASE_SECRET_KEY` | `.env.local`, `.env.prod.local`, GitHub secret `PROD_SUPABASE_SECRET_KEY` | `sb_secret_…`. Bypasses RLS. Only the publish script uses it. Never in Vercel, never `NEXT_PUBLIC_` |
-| `DATA_SOURCE` | `.env.local`, Vercel | `json` or `supabase` |
-| `REVALIDATE_SECRET` | Vercel (Production), `.env.prod.local`, GitHub secret `PROD_REVALIDATE_SECRET` | Random string; guards `/api/revalidate`. Unset = endpoint refuses everything |
-| `REVALIDATE_URL` | `.env.prod.local`, GitHub secret `PROD_REVALIDATE_URL` | `https://<production-domain>/api/revalidate` |
+| `SUPABASE_URL` | `.env.local`, Vercel, GitHub secret `PROD_SUPABASE_URL` | `https://<project-ref>.supabase.co` |
+| `SUPABASE_PUBLISHABLE_KEY` | `.env.local`, Vercel | `sb_publishable_…`. Read-only through RLS. Replaces the legacy `anon` key |
+| `SUPABASE_SECRET_KEY` | `.env.local`, GitHub secret `PROD_SUPABASE_SECRET_KEY`; Vercel only once the digest emails are set up (the cron route needs it) | `sb_secret_…`. Bypasses RLS. Used by `publish-changes`, `publish-high-schools`, and `/api/cron/digests`. Never `NEXT_PUBLIC_` |
+| `HIGH_SCHOOLS_SOURCE` | `.env.local` (optional), Vercel (optional) | `supabase` or `json`; unset = `supabase` when the two keys above are set, else `json` |
+| `REVALIDATE_SECRET` | Vercel (Production), optional | Random string; guards `/api/revalidate`. Unset = endpoint refuses everything |
+| `CRON_SECRET` | Vercel | Bearer token for Vercel Cron's daily `/api/cron/digests` ([follow-colleges.md](product/follow-colleges.md#setup-owner)) |
 | `INVITE_FUNCTION_SECRET` | `.env.local`, Vercel (every environment that invites), **and** a function secret on the matching Supabase project | Random string (`openssl rand -hex 32`); the only thing that lets the site call the `invite-user` [Edge Function](#edge-functions). Unset in the site = invitations use the plain `/invite/<token>` link; unset on the function = it refuses everything |
 | `INVITE_ALLOWED_ORIGINS` | Function secret only (not Vercel) | Comma-separated site origins an invite link may land on. Unset = any `https://*.vercel.app` and `http://localhost:*` (dev); **set it on prod** |
 
-None use the `NEXT_PUBLIC_` prefix: `lib/data.ts` is server-only, so the browser never talks to Supabase.
+None use the `NEXT_PUBLIC_` prefix: `lib/data.ts` and the high-school readers are server-only, so the browser never
+talks to Supabase directly except through Supabase Auth's own flows.
 
 ## Edge Functions
 
@@ -308,131 +250,72 @@ invitations fall back to the `/invite/<token>` link. To remove the function enti
 
 | Project | Used by | Data changes when |
 |---|---|---|
-| **dev** (`quad-dev`) | Local dev servers (every worktree); for now also Vercel Production ([current state](#current-state-pre-release-dev-only)) | Anyone runs `npm run publish-data` |
-| **prod** (`quad-prod`, not created yet) | Vercel Production | Only a merge to `main` that changes `data/**` ([GitHub Action](#production)), or a deliberate `publish-data:prod` |
+| **dev** (`quad-dev`) | Local dev servers (every worktree); for now also Vercel Production ([current state](#current-state-pre-release-dev-only)) | A production deploy records its changes; a merge that changes `data/high-schools/**` republishes high schools; people use the site |
+| **prod** (`quad-prod`, not created yet) | Vercel Production, at the formal release | Same, pointed at prod |
 
 - **Two projects, not two schemas in one.** Supabase keys, RLS, backups and pausing are per project. Separate
   projects mean a local experiment, a new migration, or a leaked dev key can't touch production.
-- **Free plan:** two free projects per organization, which covers dev and prod. Free projects **pause after about a
-  week without traffic**. Dev may pause while you work on JSON; restore it from the dashboard (about a minute).
-  Production traffic keeps prod awake.
-- **Not needed:** Supabase Branching (paid, per-PR databases; overkill for a read-only public dataset) or a local
-  Supabase in Docker (`supabase start`; useful only once there are user tables to experiment with offline).
-- New migrations: apply to dev first, then prod, then merge the code that needs them. Migrations must stay
-  backward-compatible with the running app (add, don't rename) because the app and database deploy separately.
-
-## Transition plan
-
-| Phase | What | Status |
-|---|---|---|
-| 0. Code | `DATA_SOURCE` loader, `lib/dataset.ts` factory, schema, `publish-data`, tests | ✅ Done (`feature/supabase-migration`) |
-| 1. Dev project | Apply migration, add keys to `.env.local`, `npm run publish-data`, run locally with `DATA_SOURCE=supabase`, compare pages with `json` | ✅ Done 2026-09-28 (see below) |
-| 2. Default locally | Set `DATA_SOURCE=supabase` in `.env.local`; `json` stays for offline work and CI | After phase 1 checks out |
-| 3. Production | Create prod project, apply migration, `publish-data:prod`; Vercel env vars (Production → prod, Preview → JSON); GitHub Action publishes to prod on merges that change `data/**`; on-demand revalidation so static pages (`/`, top 50 profiles, `/data`) pick up a publish without a redeploy | Code done 2026-09-28 (`feature/supabase-prod`): `.env.prod.local`, Action, `/api/revalidate`, per-request version check, tested locally. Deployed to Vercel 2026-09-28 as a pre-release site on the dev project; the prod project comes with the formal release ([Current state](#current-state-pre-release-dev-only)) |
-| 4. Later | Scheduled sync opens PRs ([backlog.md](backlog.md)); user tables (accounts, saved lists) as new migrations; decide whether `schools.json` leaves git | As needed |
-
-**Rollback at any phase:** set `DATA_SOURCE=json` (and restart). The files are always there.
-
-### Phase 1 steps (dev project)
-1. **SQL Editor** → New query → paste `supabase/migrations/20260928000000_dataset.sql` → Run.
-2. **Project Settings → API Keys**: copy the publishable key and create/copy a secret key. **Project Settings →
-   Data API**: copy the project URL. Add them to `.env.local` (see `.env.example`), keeping `DATA_SOURCE=json`.
-3. `npm run publish-data -- --dry-run`, then `npm run publish-data`. It should end with "read back and verified".
-4. Set `DATA_SOURCE=supabase`, restart the dev server, and check `/`, `/explore`, a profile, `/compare`, `/data`.
-   Numbers must match the `json` run exactly.
-
-**Phase 1 result (dev project `gwusgmmionqxabifntgv`, 2026-09-28):**
-- Migration applied in the SQL Editor. Verified over a direct connection: RLS is on for all three tables; `anon`
-  can `select` `schools` and `dataset_files` only; `publish_dataset` is executable by `service_role` only.
-- Through the API, the publishable key can read, and its insert and RPC calls are refused.
-- `npm run publish-data` published 1,893 colleges in about 2.5 s, and the read-back matched exactly.
-- Built the app twice (`json` and `supabase`) and diffed 17 URLs (home, Explore views and filters, four profiles,
-  Compare, Data, `/api/schools`). 15 matched exactly, ignoring build hashes. `/explore` had byte-identical visible
-  HTML; only the order of React's streamed rows differed. `/data` differed only in the timeline's "today" marker,
-  which uses `new Date()` at build time.
+- **Free plan** (owner decision 2026-10-07: stay on it for now): two free projects per organization; a Nano instance
+  (0.5 GB); free projects **pause after about a week** of low database activity. Since the dataset no longer comes
+  from Supabase, a pause leaves every public page and search working; only sign-in, lists, and the planner wait for
+  the project to wake (about a minute). The upgrade triggers are in
+  [serving-architecture.md](serving-architecture.md#2-supabase-holds-peoples-data-and-the-searchable-tables).
+- **Not needed:** Supabase Branching or a local Supabase in Docker.
+- New migrations: apply to dev first, then prod, then merge the code that needs them.
 
 ## Production
 
 ### Current state: pre-release, dev only
 The site is still being built, so there is only the **dev** project (`gwusgmmionqxabifntgv`). Vercel's Production
-environment, at **https://college-stats-nine.vercel.app** since 2026-09-28, is a pre-release dev site that reads it.
-The prod project, the dev/prod split and the control procedures around publishing come with the formal release, once
-the planned features are in and the site is circulated more widely ([backlog.md](backlog.md#platform)).
-- Vercel Production has `DATA_SOURCE=supabase` and the dev project's `SUPABASE_URL` / `SUPABASE_PUBLISHABLE_KEY`.
-  Preview has `DATA_SOURCE=json`. No `REVALIDATE_SECRET` and no GitHub `PROD_*` secrets yet, so the Action's jobs
-  skip.
-- **`npm run publish-data` updates the deployed site.** Dynamic pages (`/explore`, `/compare`, `/api/schools`) show a
-  publish on their next request; static ones (`/`, profiles, `/data`) at their daily regeneration or the next deploy.
-- At the formal release, follow [Setup](#setup-phase-3) (steps 1, 2, 4 and 5; in step 3 only point
-  Production at prod) and update this section.
+environment, at **https://college-stats-nine.vercel.app** since 2026-09-28, is a pre-release dev site. The prod
+project and the dev/prod split come with the formal release ([backlog.md](backlog.md#platform)).
+- Vercel Production has `SUPABASE_URL` / `SUPABASE_PUBLISHABLE_KEY` for the dev project (accounts and high
+  schools); Preview may have them or not (without them, high schools come from the files). A `DATA_SOURCE` variable
+  left over from before 2026-10-07 is ignored and can be deleted.
+- A merge to `main` deploys; the build reads only the files in the repo.
+- Once the `PROD_SUPABASE_*` GitHub secrets exist, each production deploy is followed by a `publish-changes` run that
+  records what changed for the digest.
 
-Found while setting it up:
+Found while setting it up (2026-09-28):
 - The Vercel–Supabase integration adds its own variables (`SUPABASE_ANON_KEY`, `NEXT_PUBLIC_SUPABASE_*`,
-  `POSTGRES_*`, …). The app reads none of them; `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY` had to be added by
-  hand. The build fails with "Supabase is not configured" without them.
-- A `DATA_SOURCE` that exists but is empty is treated as unset (`json`).
+  `POSTGRES_*`, …). The app reads none of them; `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY` are added by hand.
 - **Settings → Git → Production Branch** must be `main`. Per-deployment URLs and `*-<team>.vercel.app` aliases sit
   behind Vercel Deployment Protection (302 to a login); the production domain is public.
 - Vercel runs Node 24.x (`engines` in `package.json`), matching CI.
 
-### Publishing to prod: `.github/workflows/publish-data.yml`
-- **`publish`** runs `npm run publish-data` against prod when a push to `main` changes `data/**`, or when run by hand
-  (Actions → Publish data → Run workflow). It only ever publishes `main`, even when started from another branch.
-  Runs are serialized (a newer queued run replaces an older one). If `PROD_SUPABASE_URL` or
-  `PROD_SUPABASE_SECRET_KEY` isn't set, it logs a notice and skips, and the run stays green. A failed publish is
-  re-run once after 60 s, since the merge's production build can make its statements time out; repeating is safe
-  (the first staging batch resets the staging table).
-- **`revalidate-after-deploy`** runs on each successful Vercel production deploy (`deployment_status`) and POSTs to
-  `/api/revalidate`, which closes the [deploy race](#revalidation). It skips when the `PROD_REVALIDATE_*` secrets
-  aren't set.
-- CI's `verify` job keeps using JSON and needs no secrets.
-- A deliberate publish from a laptop: `npm run publish-data:prod -- --dry-run`, then `npm run publish-data:prod`.
-
-### Setup (phase 3)
-
-**1. Publish to prod first,** so the first Vercel build has data. Put the prod project's values in
-`.env.prod.local` in the main checkout (same variable names as `.env.local`: `SUPABASE_URL`,
-`SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY`), then run `npm run publish-data:prod -- --dry-run` and
-`npm run publish-data:prod`. It should end with "read back and verified".
-
-**2. Create a revalidation secret:** `openssl rand -hex 32`. Keep it for steps 3 and 4.
-
-**3. Vercel environment variables** (Project → Settings → Environment Variables; for each, pick the environments
-it applies to; mark keys **Sensitive**):
+### Setup at the formal release
+1. Create the prod project (same region as the Vercel project), apply every migration under `supabase/migrations/`
+   in order in the SQL Editor, deploy the `invite-user` Edge Function with its secrets ([Deploy](#deploy)).
+2. Put the prod project's values in `.env.prod.local` (git-ignored) and run `npm run publish-high-schools` against
+   it (`--env-file=.env.prod.local`), then `npm run publish-changes` once to record the first publish.
+3. Vercel environment variables (Project → Settings → Environment Variables; mark keys **Sensitive**):
 
 | Name | Production | Preview | Development |
 |---|---|---|---|
-| `DATA_SOURCE` | `supabase` | `json` | – |
-| `SUPABASE_URL` | prod project URL | – | – |
-| `SUPABASE_PUBLISHABLE_KEY` | prod publishable key | – | – |
-| `REVALIDATE_SECRET` | the secret from step 2 | – | – |
+| `SUPABASE_URL` | prod project URL | dev project URL (optional) | – |
+| `SUPABASE_PUBLISHABLE_KEY` | prod publishable key | dev key (optional) | – |
+| `REVALIDATE_SECRET` | optional | – | – |
+| `CRON_SECRET`, `INVITE_FUNCTION_SECRET`, `SUPABASE_SECRET_KEY`, `RESEND_API_KEY`, `EMAIL_FROM` | per [follow-colleges.md](product/follow-colleges.md#setup-owner) and [Edge Functions](#edge-functions) | – | – |
 
-- **No `SUPABASE_SECRET_KEY` in Vercel.** The site only reads.
-- The build prerenders from Supabase, so these are needed at build time too. Vercel provides them to both.
-- Changing variables doesn't touch the running deployment: **Deployments → latest production → Redeploy**.
-- Development stays empty: local dev uses `.env.local`, not `vercel env pull`.
-- Preview deploys read their branch's own `data/*.json`, so a data PR's preview shows exactly the data in the PR
-  (the shared dev project holds whatever was last published to it), and Preview needs no database keys.
+   Changing variables doesn't touch the running deployment: **Deployments → latest production → Redeploy**.
+4. GitHub repository secrets `PROD_SUPABASE_URL` and `PROD_SUPABASE_SECRET_KEY` pointing at prod.
+5. Point Vercel Production at prod and redeploy; check sign-in, a list, a high-school page, and that the next
+   deploy's `publish-changes` run goes green.
 
-**4. GitHub repository secrets** (repo → Settings → Secrets and variables → Actions → New repository secret):
-
-| Secret | Value |
-|---|---|
-| `PROD_SUPABASE_URL` | prod project URL |
-| `PROD_SUPABASE_SECRET_KEY` | prod secret key (`sb_secret_…`) |
-| `PROD_REVALIDATE_URL` | `https://<production-domain>/api/revalidate` |
-| `PROD_REVALIDATE_SECRET` | the secret from step 2 |
-
-Optionally add `REVALIDATE_URL` and `REVALIDATE_SECRET` to `.env.prod.local` too, so `publish-data:prod` from a
-laptop also revalidates.
-
-**5. Verify the deployed site:**
-1. Open `/`, a profile such as `/schools/110662`, `/explore`, `/compare?ids=110662,243744`, and `/data`. They
-   should match the local JSON build. A 500 with "Supabase is not configured" or "no published dataset" means step
-   1 or 3 is incomplete.
-2. `curl -i -X POST https://<domain>/api/revalidate` returns 401. The same request with
-   `-H "Authorization: Bearer <secret>"` returns `{"revalidated":true,…}`.
-3. Actions → Publish data → Run workflow (on `main`). `publish` should end with "read back and verified" and
-   "Revalidated <domain>".
-4. After the next production deploy, Actions shows a `revalidate-after-deploy` run. If none appears, check the
-   environment name Vercel reports (repo → Environments) against the job's `if:` condition.
+## History
+How the dataset was served from 2026-09-28 to 2026-10-07, kept for the record (the full text is in git before the
+serving-architecture merge):
+- `DATA_SOURCE=supabase` made `lib/data.ts` page the `schools` table (1,000 rows a request), `dataset_files`, and
+  `school_aliases` into memory per server instance, and check `dataset_files.published_at` before every render so no
+  instance served an older publish. History, details, and trend files were rows read per request.
+- `npm run publish-data` staged colleges 150 at a time and swapped them in one transaction
+  (`stage_schools()` / `publish_schools_staged()`, after a single call exceeded the statement timeout at 11 MB);
+  history, details, and high schools were upserted into the live tables in batches, not atomically, after their
+  swaps timed out too; aliases went in one call; everything was read back and compared; then `/api/revalidate` was
+  called.
+- `.github/workflows/publish-data.yml` ran the publish on every `data/**` merge, alongside the Vercel build the
+  same merge started. The build's reads timed out while the swap held the table (#80, 2026-10-05); fixes were a
+  retrying reader, one publish retry after 60 s, and a second job that revalidated after every deploy. Measured on
+  2026-10-07: a cold instance made about nine sequential requests for 16.7 MB; every dynamic request paid a version
+  query; the search box called a function per keystroke. [serving-architecture.md](serving-architecture.md) has the
+  measurements and the decision.

@@ -7,46 +7,42 @@ This document tracks everything that needs to change when moving from local deve
 | Item | Current (Local) | Target (Vercel) | Files Affected |
 |---|---|---|---|
 | Hosting | `npm run dev` | ✅ Pre-release dev site at https://college-stats-nine.vercel.app (auto-deploy from GitHub) | `vercel.json` holds only the digest cron; Node 24.x via `engines`; the serving path changes per [serving-architecture.md](serving-architecture.md) |
-| Env vars | `.env.local` | ✅ Pre-release: Production → dev project, Preview → JSON. At the formal release: Production → prod, `REVALIDATE_SECRET` | [supabase.md](supabase.md#setup-phase-3) |
-| Build | `npm run build` | Vercel CI/CD | No code changes |
-| Fresh data | Rebuild | ✅ `/api/revalidate` after each publish and each production deploy | `app/api/revalidate/route.ts`, `.github/workflows/publish-data.yml` |
+| Env vars | `.env.local` | ✅ Pre-release: Production → dev project for accounts and high schools. At the formal release: Production → prod | [supabase.md](supabase.md#setup-at-the-formal-release) |
+| Build | `npm run build` | Vercel CI/CD; the build reads only the repo's files | No code changes |
+| Fresh data | Rebuild | ✅ Every data merge deploys; the deploy carries the data (since 2026-10-07) | [serving-architecture.md](serving-architecture.md) |
 | Domain | localhost:3000 | Custom domain or .vercel.app | Vercel dashboard |
 
 **Changes needed:** Minimal. Next.js deploys to Vercel with zero config. The settings to enter are in
-[supabase.md](supabase.md#setup-phase-3).
+[supabase.md](supabase.md#setup-at-the-formal-release).
 
 ---
 
 ## 2. Supabase Database
 
-Design, environments, keys and the phased transition are in [supabase.md](supabase.md). In short, `data/*.json`
-stay in git as the reviewed source, `npm run publish-data` uploads them to Supabase, and `DATA_SOURCE=supabase`
-makes the app read from there.
+Design, environments and keys are in [supabase.md](supabase.md). In short, `data/*.json` stay in git as the
+reviewed source and ship with every deploy; Supabase holds people's data, the high-school table, and the change log
+([serving-architecture.md](serving-architecture.md), 2026-10-07).
 
-| Item | Current (Local) | Target (Supabase) | Files Affected |
+| Item | Current (Local) | Target | Files Affected |
 |---|---|---|---|
-| Data source | ✅ `DATA_SOURCE=json` (default) or `supabase` | `supabase` in Vercel | `lib/data.ts`, `lib/supabase.ts` |
-| Data access | ✅ Async `getData()`, in-memory queries on either source | Same | `lib/dataset.ts`, pages, components |
-| Auth | None | Supabase Auth (when accounts are built) | New files |
+| College data | ✅ `data/*.json` read from disk once per instance | Same (traced into every function) | `lib/data.ts`, `next.config.ts` |
+| Data access | ✅ Async `getData()`, in-memory queries | Same | `lib/dataset.ts`, pages, components |
+| High schools | ✅ `HIGH_SCHOOLS_SOURCE`: the table when keys are set, else the files | The table | `lib/high-schools.ts` |
+| Auth | ✅ Supabase Auth | Same | [accounts.md](product/accounts.md) |
 | Env vars | ✅ `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY` (`.env.example`) | Vercel: URL + publishable key | `.env.local` |
 
 ### Code
 - [x] Install `@supabase/supabase-js`
-- [x] Supabase client and dataset reader in `lib/supabase.ts`
 - [x] Query functions in `lib/dataset.ts` (`createDataset`), loaded by `getData()` in `lib/data.ts`
 - [x] Pages and components `await getData()`; insight functions take the dataset as their first argument
-- [x] `npm run publish-data`: lineage check, shrink guard, one-transaction publish, exact read-back
+- [x] `npm run publish-changes` (the change log after each deploy) and `npm run publish-high-schools`
+- [x] The dataset tables and `npm run publish-data` retired (2026-10-07)
 
 ### Database schema
-- [x] `schools`, `dataset_files`, `dataset_publishes` with RLS, and `publish_dataset()`
-  (`supabase/migrations/20260928000000_dataset.sql`)
-- [x] Apply to the dev project and publish (phase 1 in [supabase.md](supabase.md#transition-plan))
+- [x] `dataset_publishes`, `dataset_changes`, `publish_changes()`; the high-school tables; the user tables
 - [ ] Prod project created and migrated (at the formal release; [backlog.md](backlog.md#platform))
-- [x] Publish on merge (`.github/workflows/publish-data.yml`), on-demand revalidation (`/api/revalidate`), and a
-  per-request version check so no instance renders an older publish (phase 3; [supabase.md](supabase.md#revalidation))
-- [x] Vercel deployed and verified against the dev project ([current state](supabase.md#current-state-pre-release-dev-only))
-- [ ] First prod publish (`npm run publish-data:prod`), point Vercel Production at prod, GitHub secrets
-  ([setup](supabase.md#setup-phase-3))
+- [x] Vercel deployed against the dev project ([current state](supabase.md#current-state-pre-release-dev-only))
+- [ ] Point Vercel Production at prod, GitHub secrets ([setup](supabase.md#setup-at-the-formal-release))
 
 ---
 
@@ -54,7 +50,7 @@ makes the app read from there.
 
 | Item | Current (Local) | Target (API) | Files Affected |
 |---|---|---|---|
-| Data source | ✅ `data/schools.json` from Scorecard + IPEDS | Same files, published to Supabase | `scripts/sync-data.mts`, `scripts/publish-data.mts` |
+| Data source | ✅ `data/schools.json` from Scorecard + IPEDS | Same files, deployed with the site | `scripts/sync-data.mts` |
 | API key | ✅ `COLLEGE_SCORECARD_API_KEY` in `.env.local` | Same, in Vercel env vars | `.env.local` |
 | Data freshness | Manual `npm run sync-data` | Scheduled sync (weekly/monthly) | Vercel Cron or GitHub Action |
 
@@ -64,7 +60,7 @@ makes the app read from there.
 - [x] Add IPEDS Admissions (ADM) bulk file as second source for counts, scores, submission rates
 - [x] Manual overrides layer (`data/overrides.json`)
 - [x] Write `data/schools.json` and log stats (with rate, with SAT, skipped)
-- [x] Publish to Supabase from the JSON files (`npm run publish-data`); the sync keeps writing JSON for review
+- [x] The sync writes JSON for review; a merge deploys it (no publish step since 2026-10-07)
 - [ ] Set up Vercel Cron or GitHub Action for periodic sync
 
 ### Field mapping
@@ -87,11 +83,11 @@ source supplies each field.
 
 | File | Change Type | Priority |
 |---|---|---|
-| `lib/data.ts` | ✅ Loader: JSON or Supabase (`DATA_SOURCE`) | High |
-| `lib/dataset.ts`, `lib/supabase.ts` | ✅ New | High |
-| `scripts/publish-data.mts`, `supabase/migrations/` | ✅ New | High |
-| `scripts/sync-data.mts` | ✅ Unchanged: writes JSON, which is then published | High |
+| `lib/data.ts` | ✅ Loader: the files on disk, once per instance | High |
+| `lib/dataset.ts`, `lib/supabase.ts` | ✅ Queries; the Supabase client and change-log reader | High |
+| `scripts/publish-changes.mts`, `scripts/publish-high-schools.mts`, `supabase/migrations/` | ✅ The change log and the high-school table | High |
+| `scripts/sync-data.mts` | ✅ Unchanged: writes JSON, which a merge deploys | High |
 | Pages and data-reading components | ✅ `await getData()` | Medium |
 | `.env.local` | Add Supabase keys ([supabase.md](supabase.md#keys)) | High |
-| `app/api/revalidate/route.ts`, `lib/revalidate.ts`, `lib/dataset-loader.ts` | ✅ New: revalidation and version check | Medium |
-| `.github/workflows/publish-data.yml` | ✅ New: publish to prod on merge, revalidate after deploys | Medium |
+| `app/api/revalidate/route.ts`, `lib/revalidate.ts` | ✅ Manual revalidation (unused in the normal path) | Low |
+| `.github/workflows/publish-changes.yml` | ✅ Record changes after each production deploy; publish high schools on their merges | Medium |

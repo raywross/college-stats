@@ -1,9 +1,14 @@
 # Database Architecture
 
-> Status: **guide** (reviewed 2026-10-02). Not a work item: the rules here apply as the roadmap specs are built.
-> Companion to [supabase.md](supabase.md) (how the dataset is published and served today) and
-> [product/README.md](product/README.md) (the user-data rules). Two decisions it leaves open are in
-> [backlog.md](backlog.md#platform).
+> Status: **guide** (reviewed 2026-10-02; revised 2026-10-07). Not a work item: the rules here apply as the roadmap
+> specs are built. Companion to [supabase.md](supabase.md) (what Supabase holds and how it's published) and
+> [product/README.md](product/README.md) (the user-data rules).
+>
+> **Revised 2026-10-07** ([serving-architecture.md](serving-architecture.md)): the college dataset, history, details,
+> and aliases are no longer Supabase tables. They ship with the deploy and are read from the function's own files.
+> The "published artifacts" column below now describes only the high-school dataset; the sections on document tables
+> and on generalizing them are kept as the record of why that shape was chosen and why it was retired for the
+> college data (it duplicated what the deploy already carried, and the publish raced the build).
 
 ## The question
 Today Supabase holds simple tables with one JSON document per row (`schools.data`, `school_histories.data`), replaced
@@ -15,11 +20,11 @@ households, saved lists, finances, award letters, scattergrams, counselor organi
 
 | | Published artifacts | Application data |
 |---|---|---|
-| What | The college dataset, history, detail tables, high school dataset: public data built by scripts | Accounts, households, profiles, lists, finances, offers, scattergram points, organizations, API keys |
+| What | The high-school dataset (since 2026-10-07 the only published collection in Postgres; the college dataset ships with the deploy) and the change log | Accounts, households, profiles, lists, finances, offers, scattergram points, organizations, API keys |
 | Source of truth | Git (`data/**`), reviewed in PRs | Supabase only; no JSON counterpart |
-| Shape | One `json` document per row, verbatim | Typed columns; `jsonb` only for loose groups |
-| Writes | Whole collection replaced in one transaction by `publish-data` | Row by row, by the signed-in user through RLS |
-| Reads | Whole collection into memory per server instance, or one row by key | Indexed queries per user |
+| Shape | Typed columns for what's searched, a `json` document for the rest | Typed columns; `jsonb` only for loose groups |
+| Writes | Batches by `publish-high-schools`; the change log by `publish-changes` in one transaction | Row by row, by the signed-in user through RLS |
+| Reads | One row by key, or a trigram search | Indexed queries per user |
 | Who may read | Everyone | Owner, household, organization, per the policy |
 | Backup | Reproducible from git | Supabase backups; the real backup need |
 
@@ -47,7 +52,10 @@ assumption and must not be loaded into memory:
   the per-college detail document serves profiles, and a `programs(unit_id, cip4, …)` table with an index on `cip4`
   serves "colleges by earnings for one major" and the API.
 
-## Generalize the document tables (do this before the detail file)
+## Generalize the document tables (not done; retired 2026-10-07)
+> The college collections left Postgres before this was built ([serving-architecture.md](serving-architecture.md)),
+> so there is nothing left to generalize; high schools keep their own typed table. Kept as written for the record.
+
 Each document collection has grown its own tables and publish functions (`publish_dataset`, `publish_history`,
 `stage_history` + `publish_history_staged`), and history needed staging because one call exceeded the API's
 statement timeout. The detail file and the high school dataset would repeat both. Replace the per-collection

@@ -223,6 +223,9 @@ export interface MeState {
   /** Sign-in is available on this deployment. */
   configured: boolean;
   signedIn: boolean;
+  /** The opaque account id (`auth.users.id`), the analytics distinct id when signed in (specs/product/telemetry.md);
+   * null when signed out. */
+  id: string | null;
   name: string | null;
   email: string | null;
 }

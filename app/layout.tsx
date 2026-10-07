@@ -65,8 +65,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             <Suspense fallback={null}>
               <AnalyticsProvider />
             </Suspense>
-            {/* Core Web Vitals; reports only from Vercel deployments. */}
-            <SpeedInsights />
+            {/* Core Web Vitals; its script exists only on Vercel deployments, so elsewhere it would 404 on every page. */}
+            {process.env.VERCEL === "1" && <SpeedInsights />}
           </TooltipProvider>
         </ThemeProvider>
       </body>

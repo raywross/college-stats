@@ -212,6 +212,7 @@ test("unitIdFromPath and roadmapSlugFromPath read only their own routes", () => 
   assert.equal(unitIdFromPath("/schools/166027/"), "166027");
   assert.equal(unitIdFromPath("/schools/166027/admissions"), "166027");
   assert.equal(unitIdFromPath("/schools/166027/admissions/extra"), null);
+  assert.equal(unitIdFromPath("/schools/nope"), null, "unit ids are digits; a 404's slug isn't one");
   assert.equal(unitIdFromPath("/schools"), null);
   assert.equal(unitIdFromPath("/schools/"), null);
   assert.equal(unitIdFromPath("/compare"), null);

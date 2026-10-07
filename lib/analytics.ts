@@ -232,9 +232,20 @@ export function resultCountBucket(n: number): ResultCountBucket {
   return "6+";
 }
 
-/** `/schools/{id}` or `/schools/{id}/{topic}` → id, else null. */
+/** `/schools/{id}` or `/schools/{id}/{topic}` → id (IPEDS unit ids are digits), else null. */
 export function unitIdFromPath(pathname: string): string | null {
-  return /^\/schools\/([^/]+)(?:\/[^/]+)?\/?$/.exec(pathname)?.[1] ?? null;
+  return /^\/schools\/(\d+)(?:\/[^/]+)?\/?$/.exec(pathname)?.[1] ?? null;
+}
+
+let notFoundPath: string | null = null;
+
+/** The not-found page marks its path so the provider doesn't count `/schools/{unknown id}` as a college view. */
+export function markNotFound(pathname: string): void {
+  notFoundPath = pathname;
+}
+
+export function wasNotFound(pathname: string): boolean {
+  return notFoundPath === pathname;
 }
 
 /** `/roadmap/{slug}` → slug, else null. */

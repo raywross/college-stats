@@ -13,6 +13,7 @@ import {
   takeNextViewFrom,
   track,
   unitIdFromPath,
+  wasNotFound,
   type AnalyticsSink,
 } from "@/lib/analytics";
 
@@ -157,8 +158,8 @@ export function AnalyticsProvider() {
       // Never let analytics break navigation.
     }
     const unitId = unitIdFromPath(pathname);
-    // Moving between topic pages of the same college is not a new view.
-    if (unitId && unitId !== (previous && unitIdFromPath(previous))) {
+    // Moving between topic pages of the same college is not a new view; an unknown id's 404 isn't a view at all.
+    if (unitId && unitId !== (previous && unitIdFromPath(previous)) && !wasNotFound(pathname)) {
       track("school_viewed", { unit_id: unitId, from: marked ?? navigationSourceFromPath(previous) });
     }
     const slug = roadmapSlugFromPath(pathname);

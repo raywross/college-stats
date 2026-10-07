@@ -43,6 +43,12 @@ export function Footer() {
               See all sources
             </Link>
           </p>
+          <p className="mt-3 text-sm text-muted-foreground">
+            <Link href="/privacy" className="font-semibold text-foreground hover:text-primary">
+              Privacy
+            </Link>
+            : how we count visits, and what we never record.
+          </p>
         </div>
       </div>
       {/* Which build this is (Vercel's commit), so a report from a phone can be matched to the code. */}

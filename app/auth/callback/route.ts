@@ -3,6 +3,7 @@ import type { EmailOtpType } from "@supabase/supabase-js";
 import { authConfigured } from "@/lib/auth";
 import { createServerSupabase } from "@/lib/supabase-server";
 import { safeNextPath } from "@/lib/accounts";
+import { trackSignupIfNew } from "@/lib/signup-events";
 
 const OTP_TYPES: EmailOtpType[] = ["email", "magiclink", "signup", "invite", "email_change"];
 
@@ -41,6 +42,13 @@ export async function GET(request: NextRequest) {
   } else {
     // Supabase redirects here with ?error=…&error_code=otp_expired when a link is stale or reused.
     return failed();
+  }
+  // A first confirmation counts as a sign-up (specs/product/telemetry.md); a failure here never reaches the visitor.
+  try {
+    const { data } = await supabase.auth.getUser();
+    if (data.user) await trackSignupIfNew(data.user, type === "signup" ? "password" : "magic_link", next);
+  } catch (error) {
+    console.error("auth/callback: sign-up event failed", error);
   }
   return to(next);
 }

@@ -332,7 +332,7 @@ export const ROADMAP: RoadmapSpec[] = [
       "Fewer failed deploys and a search box that answers as fast as you type: the site reads its college data from the files it deploys with instead of downloading them from the database, the database keeps only people's data, and search runs in the browser over a small index.",
     complexity: 3,
     complexityNote:
-      "An environment switch and a tracing fix first, then a build-time search index with a client matcher, a smaller change-log action in place of the dataset publish, cheaper Explore renders, and the retirement of the dataset tables a cycle later; owner steps for the Supabase plan and prod project.",
+      "An environment switch and a tracing fix first, then a build-time search index with a client matcher, a smaller change-log action in place of the dataset publish, cheaper Explore renders, and the retirement of the dataset tables a cycle later; stays on the free plans.",
     status: "planned",
   },
   // Ideas (specs/ideas/README.md): not planned; in the order they could be built.

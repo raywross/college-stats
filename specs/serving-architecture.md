@@ -20,10 +20,26 @@ and the way search reaches the data, are wrong for a serverless host and change.
 |---|---|---|
 | "We take a ton of data from Supabase and store it at Vercel" | Yes, twice over. Production runs with `DATA_SOURCE=supabase`, so the **build** downloads the whole dataset from Supabase to prerender 50 profiles, the home page, `/data`, and the trends pages, and then **every new function instance** downloads it again on its first request: about 9 sequential requests moving 16.7 MB, parsed into about 57 MB of heap. The same 16.7 MB is already in the deploy (git has it; `outputFileTracingIncludes` ships it with every function). The copy from Supabase is redundant | **Change.** The deploy carries the dataset; production reads it from disk like CI and Preview already do |
 | "Deploys fail" | Every merge that touches `data/**` starts a Vercel build *and* a publish Action at the same moment. The publish deletes and re-inserts the whole `schools` table; the build's reads hit Postgres's statement timeout mid-swap (#80 failed this way; the Action now retries once after 60 s and the reader waits up to a minute). GitHub has also dropped push events twice, skipping deploys | **Change.** With the data in the deploy there is no publish of the dataset and no race. The Action shrinks to writing the small change log the digest needs |
-| "The database crashes" | The live site reads the **dev** project: Supabase's free plan, a Nano instance (0.5 GB RAM, shared CPU), a 3-second statement timeout for public reads, 5 GB of egress a month, and automatic pausing after seven days of low activity. Each cold instance pulls 16.7 MB through it; each publish pushes about 100 MB through it (colleges, history, details, high schools, two full read-backs). The high-school search already hit the 3-second limit once when the table was cold | **Change.** Supabase stops serving the dataset and holds only people's data and the searchable tables. Move it to the Pro plan now, not at the formal release: it already holds real households |
+| "The database crashes" | The live site reads the **dev** project: Supabase's free plan, a Nano instance (0.5 GB RAM, shared CPU), a 3-second statement timeout for public reads, 5 GB of egress a month, and automatic pausing after seven days of low activity. Each cold instance pulls 16.7 MB through it; each publish pushes about 100 MB through it (colleges, history, details, high schools, two full read-backs). The high-school search already hit the 3-second limit once when the table was cold | **Change.** Supabase stops serving the dataset and holds only people's data and the searchable tables. The public pages then work even while the project is paused or busy; the free plan stays ([owner decision](#owner-decisions-2026-10-07)) |
 | "Search is slow" | Both search boxes go to the server on every keystroke. The header typeahead calls `/api/schools` after 120 ms; that function calls `getData()`, which in Supabase mode runs a version query against Supabase before every answer and, on a cold instance, the full 9-request download first. Explore's text filter is worse: it pushes a new URL every 250 ms, and each one is a full server render of `/explore` that recomputes about 50 facet passes and a sources note over every matched college. The matching itself costs 2–4 ms | **Change.** Search runs in the browser over a small index built at deploy time (about 200 KB, a quarter of that gzipped). Zero server work per keystroke. Explore's render gets its facets cached |
 | "Vercel shuts instances down and we pay the warm-up again" | Right in substance. Vercel's Fluid compute reuses instances and caches bytecode, but instances still start cold after idleness or on scale-up, and a cold start here is the Supabase download, not the JavaScript. Reading the same files from the function's own disk takes about 300 ms (measured: 81 ms read, 217 ms parse) | **Change the cost, keep the model.** After the change a cold start is 300 ms of local parse; later phases can cut that further if measured cold starts justify it |
 | "Should it be client-server, with small calls to Supabase?" | For **people's data**, yes, and it already is (row-level security, one query per page). For **high schools** (35,000 rows), yes, and it already is (a trigram-indexed table). For the **college dataset**, no: Explore, Compare, ranks, medians, similar colleges, and every citation need all 1,893 rows at once; it is 17 MB that changes monthly; it is a static asset, not a live table | **Defend.** Keep the in-memory layer. Put the asset where static assets go: in the deploy |
+
+## Owner decisions (2026-10-07)
+From the owner's review of the first draft:
+- **Stay on the free plans** of Vercel and Supabase for now. The changes here take the pressure off; upgrading later
+  makes a sound design stronger rather than propping up a weak one. The spec's owner steps assume the free plans and
+  the existing dev project; [when to upgrade](#2-supabase-holds-peoples-data-and-the-searchable-tables) is stated as
+  a trigger, not a date.
+- **The deploy failures were all cleared by redeploying.** That matches the race diagnosis: a second build with no
+  publish running beside it reads a settled table. Nothing was wrong with the code.
+- **The search symptom**: no matches at all, then, about a minute later, fast and responsive. That is the cold path
+  exactly. The first keystrokes reach a function instance that has no dataset yet; it starts the nine-request
+  download from Supabase, waits through statement-timeout retries if the database is busy or waking from a pause,
+  and the browser's request is aborted by the next keystroke or returns an error, which the search box shows as an
+  empty list (`searchSchoolsApi` returns `[]` on any failure). A minute later the instance holds the data in memory
+  and every search is a 2–4 ms scan. Phase 1 removes the download; phase 2 removes the server from the keystroke
+  path altogether, so the first letter typed is as fast as the hundredth.
 
 ## How it works today
 Facts, with where they live. Measured 2026-10-07 unless cited.
@@ -144,10 +160,19 @@ splits:
   `data/high-schools/**` changes.
 - `publish-data` itself is retired with the tables (phase 4). Until then it still works for the `supabase` fallback.
 
-**Plan and project.** Move to Supabase Pro now and create the prod project (the formal-release checklist in
-[backlog.md](backlog.md#platform), pulled forward): the site already stores households and lists, and a paused or
-memory-starved free project is the most likely reading of "the database crashes". With the dataset out of Supabase,
-the Micro instance that Pro includes is more than enough; egress drops to user queries.
+**Plan and project.** The free plan and the existing dev project stay (owner decision). What that means after the
+change:
+- The free plan's limits stop touching the public site. Egress falls from 17 MB per cold instance to a few kilobytes
+  per signed-in request; the 3-second public statement timeout applies only to the high-school search (already
+  indexed) and the What changed panel (one indexed query, fail-soft); a **paused project no longer takes the site
+  down**: every college page, Explore, Compare, trends, and search work from the deploy, and only sign-in, lists,
+  and the planner wait for the project to wake (about a minute, or sooner if the daily digest cron's query keeps it
+  active).
+- A Nano instance is enough for the per-user queries the site makes today.
+- **Upgrade triggers**, to revisit rather than decide now: the formal release (daily backups of real households are
+  worth $25 a month on their own); a week in which the pause actually hits a signed-in user; the planner's texts
+  and nudges going live (writes from a cron every day); or the Supabase dashboard showing memory pressure during the
+  high-school publish. The prod project comes with the formal release as the backlog already says.
 
 ### 3. Search in the browser
 A **search index** is built at deploy time and shipped as a static file; the browser fetches it once and matches
@@ -225,6 +250,7 @@ Not built now; listed so the next step is a decision, not a search.
 - Supabase's dashboard shows user queries and the high-school search, nothing else; egress is a fraction of today's;
   a pause is impossible on Pro.
 - The build no longer needs Supabase at all: a Supabase outage can't fail a deploy, and a deploy can't hurt Supabase.
+- A paused or slow Supabase project leaves every public page, and search, untouched; only signed-in features wait.
 
 ## Measurement
 Before the change (one week, from Vercel's logs and Supabase's reports) and after each phase:
@@ -264,13 +290,15 @@ path.
   `scripts/publish-data.mts` removed; `tests/supabase.test.mts` reduced to the loader.
 
 ## Owner steps (phase 1)
-1. Supabase: upgrade the organization to Pro; create the prod project; apply every migration under
-   `supabase/migrations/` to it; run the high-school publish and the first change-log run against it.
-2. Vercel, Production environment: set `DATA_SOURCE=json`; point `SUPABASE_URL` / `SUPABASE_PUBLISHABLE_KEY` at
-   prod (the app still needs them for accounts); keep `REVALIDATE_SECRET`.
-3. GitHub secrets: `PROD_SUPABASE_URL`, `PROD_SUPABASE_SECRET_KEY` for the change-log Action; the `PROD_REVALIDATE_*`
-   pair becomes unused.
-4. Redeploy `main` once by hand (Vercel → Redeploy) so the first production build runs in `json` mode.
+Free plans, existing dev project (owner decision 2026-10-07).
+1. Vercel, Production environment: set `DATA_SOURCE=json`. Leave `SUPABASE_URL` / `SUPABASE_PUBLISHABLE_KEY` as they
+   are (the app still needs them for accounts and high schools) and keep `REVALIDATE_SECRET` if set.
+2. GitHub secrets: `PROD_SUPABASE_URL` and `PROD_SUPABASE_SECRET_KEY` pointing at the dev project, so the change-log
+   Action can write `dataset_changes` (today it skips because they're unset, which is why the update emails have
+   nothing to say); the `PROD_REVALIDATE_*` pair becomes unused.
+3. Redeploy `main` once by hand (Vercel → Redeploy) so the first production build runs in `json` mode. Check
+   `/explore`, a profile, and the search box; then check that signing in still works.
+4. Nothing to do in Supabase. The dataset tables keep their last publish until phase 4 drops them.
 
 ## Risks
 - **Function size.** Each function already carries about 64 MB of data; the tracing fix makes it about 62 MB plus
@@ -281,14 +309,16 @@ path.
   Fine.
 - **A stale digest** if the change-log Action fails: a missed email, nothing on the site. It retries like today.
 - **The `supabase` branch rots** between phases 1 and 4; it is covered by tests until removed.
+- **Cold starts remain**, at about 300 ms of local parse plus Next's own start. Vercel's Hobby plan has no Scale to
+  One, so a quiet site will still start cold for its first visitor of the hour; the difference is that the cold
+  start no longer depends on Supabase, and search no longer waits for it at all. If the 300 ms shows up in the
+  measurements, the precomputed files in [section 7](#7-later-options-with-their-triggers) are the next step, not a
+  plan change.
 
 ## Open questions for the owner
-1. **What did the failures look like?** A Vercel build failing (statement timeout in the build log), 500s on the
-   live site, or Supabase's dashboard showing a paused or restarted project? Each matches a cause above; knowing
-   which were seen most tells us whether phase 1 alone clears the owner's list.
-2. **Vercel plan and region**, and the Supabase project's region: if they differ (say Vercel `iad1` and Supabase in
-   another region), every remaining user query pays the distance; the prod project should be created in the
-   region closest to Vercel's.
-3. **Supabase Pro now** ($25 a month) rather than at the formal release: recommendation yes, for the reasons in
-   [section 2](#2-supabase-holds-peoples-data-and-the-searchable-tables).
-4. Keep `/api/revalidate`? Recommendation: yes, unused in the normal path, handy by hand; it costs nothing.
+Answered 2026-10-07 and recorded [above](#owner-decisions-2026-10-07): what the failures looked like (deploys fixed
+by redeploying; search empty, then fast a minute later) and the plans (stay free). Still open:
+1. **Regions.** Which region the Vercel project and the Supabase project run in. If they differ, every signed-in
+   query pays the distance; it is worth knowing before the prod project is created at the formal release, since a
+   project's region can't be changed afterwards.
+2. Keep `/api/revalidate`? Recommendation: yes, unused in the normal path, handy by hand; it costs nothing.

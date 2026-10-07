@@ -18,7 +18,8 @@ The plan:
 - **The site reads its college data from its own files.** Every update carries the data; nothing is downloaded from
   the database to show a college. An update is live when it's deployed, with nothing else that can fail.
 - **The database keeps what it should:** accounts, households, lists, the planner, high schools, and the record of
-  what changed that feeds the update emails. It moves to a paid plan so it can't be paused for inactivity.
+  what changed that feeds the update emails. If it is ever paused or busy, the public pages and search keep working;
+  only signing in waits. The free plans stay for now.
 - **Search runs in your browser.** A small index of college names, nicknames, and places loads once; typing matches
   against it instantly, on the first visit as well as later. Explore's text filter stops reloading the page on every
   pause in typing.

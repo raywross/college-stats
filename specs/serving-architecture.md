@@ -130,10 +130,14 @@ already covers ("JSON loads once and is never checked").
   built from them. **There is no publish step for the dataset, so there is no deploy race, no revalidation after
   deploy, and no mid-swap timeout.** `/api/revalidate` and the `revalidate = 86400` fallbacks stay (harmless, and
   useful by hand); the `revalidate-after-deploy` job goes.
-- `lib/data.ts` and `lib/dataset-loader.ts` keep the `supabase` branch for now (local comparison, rollback), marked
-  deprecated; it is removed with the tables in phase 4.
-- **Rollback** is the same switch in the other direction: set `DATA_SOURCE=supabase` in Vercel and redeploy, as long
-  as the tables still hold a current publish (phase 4 waits a full release cycle for that reason).
+- **The `DATA_SOURCE` switch goes away.** Colleges, history, details, trend files, and aliases always come from the
+  files; `lib/data.ts` loses its Supabase branch and `lib/supabase.ts` its dataset readers. A `DATA_SOURCE` left set
+  in an environment is ignored with one warning, so the production cutover needs no environment change.
+- **High schools get their own switch**, because they are the one dataset that belongs in a table (35,000 rows,
+  searched by trigram): `HIGH_SCHOOLS_SOURCE=json|supabase`, defaulting to `supabase` when `SUPABASE_URL` and
+  `SUPABASE_PUBLISHABLE_KEY` are set and to `json` otherwise. Production therefore keeps reading the table; CI and a
+  keyless Preview read the shards, which are traced into the deploy for that reason.
+- **Rollback** is reverting the pull request (owner decision 2026-10-07: pre-MVP, one build, no staged cutover).
 
 ### 2. Supabase holds people's data and the searchable tables
 | Stays in Supabase | Why |
@@ -207,10 +211,11 @@ locally with the same scorer the server uses today.
 ]
 ```
 That drops about 10 MB of working files (`site-probe.json`, `review-queue.json`, `link-issues.json`, `wikidata.json`,
-brand files) and adds the high-school shards that `json` mode needs. A guard test reads `next.config.ts` and
-`lib/` and fails when a `data/` path the code reads isn't traced, or a traced path isn't read. The high-school store
-also stops loading all 51 shards for a stateless search: in `json` mode it reads a small name index built by the same
-prebuild step, and in production high schools stay on their table anyway.
+brand files) and adds the high-school shards that `HIGH_SCHOOLS_SOURCE=json` needs (CI, a keyless Preview). A guard
+test fails when the list and the paths `lib/` reads drift apart, or a listed path doesn't exist. In production the
+high schools stay on their table ([section 1](#1-the-deploy-carries-the-dataset)), so the shards cost deploy size
+only, never a cold start. (Correction 2026-10-07: an earlier draft said high schools would "stay on their table in
+production" while still sharing the colleges' switch; they need their own, above.)
 
 ### 5. Explore render cost
 `/explore` stays a server-rendered dynamic page (its URL is the filter state, and that is right). Three changes make
@@ -263,17 +268,21 @@ Before the change (one week, from Vercel's logs and Supabase's reports) and afte
 | Supabase egress, CPU, memory, statement timeouts | Supabase reports |
 | Publish Action duration and failures | the Actions tab (should become seconds, then disappear) |
 
-## Phases
-```
-1. Switch production to the deploy      ─► 2. Search in the browser  ─► 3. Explore render cost
-   (env change, tracing fix, change-log       (index build, client,          (facets memo, sources memo,
-    Action, Pro plan + prod project)           Explore typing)                 scorer fix)
-                                                                       ─► 4. Retire the dataset tables and the
-                                                                            supabase data branch (one cycle later)
-```
-Phase 1 is one PR plus owner steps and removes the failures; it changes no page. Phase 2 removes the slowness.
-Phase 3 is a follow-up measured by the fixture test. Phase 4 is cleanup after a full data cycle has run on the new
-path.
+## Build plan: one pull request
+Owner decision (2026-10-07): the site isn't live, so nothing requires a deploy between stages; everything below
+lands in one PR, built as four units on sub-branches by the `build-roadmap-section` method and merged together.
+
+| Unit | Branch | Owns | Model |
+|---|---|---|---|
+| A. The deploy carries the dataset | `feature/serving-data` | `lib/data.ts`, `lib/dataset-loader.ts`, `lib/supabase.ts` (dataset readers out), `lib/supabase-detail.ts` (gone), `lib/high-schools.ts` (its own switch), `next.config.ts` tracing + guard test, `tests/supabase.test.mts`, `.env.example` | opus |
+| B. Search in the browser | `feature/serving-search` | `lib/search-index.ts`, `app/search-index.json/route.ts`, `lib/search-client.ts`, `lib/school-api.ts`, `components/search/SchoolSearch.tsx`, `components/compare/CompareHeader.tsx`, `components/explore/Toolbar.tsx`, `lib/aliases.ts` (query key hoisted), `app/api/schools/` (gone), `tests/search-index.test.mts` | sonnet |
+| C. The publish pipeline | `feature/serving-publish` | `scripts/publish-changes.mts`, `scripts/publish-high-schools.mts`, `scripts/publish-data.mts` and its helpers (gone), two migrations (`publish_changes()`; retire the dataset tables), `.github/workflows/publish-data.yml` → `publish-changes.yml`, `app/api/cron/digests/route.ts` (names from the files), `tests/follows-policies.test.mts`, `tests/publish-changes.test.mts`, `package.json` scripts | opus |
+| D. Explore render cost | `feature/serving-explore` | `lib/dataset.ts` (facets and per-school source memos, additive), `app/explore/page.tsx`, `components/sources/MultiSourceNote.tsx`, `tests/explore-cost.test.mts` | sonnet |
+| E. Docs and finish | integration branch | `specs/supabase.md`, `database-architecture.md`, `data-layer.md`, `architecture.md`, `migration-plan.md`, `college-reported-setup.md`, `follow-colleges.md`, `high-school-data.md`, `CLAUDE.md`, this spec's Built section, the roadmap entry, the release note | the integrator |
+
+The four units have disjoint files and run in one wave; E follows the merge. Two orderings still matter at cutover
+and are in the owner steps: the `publish_changes()` migration is applied before the first Action run, and the
+retire migration only after the new build is live.
 
 ## Files (planned)
 - Phase 1: `next.config.ts` (tracing list), `tests/tracing.test.mts` (the guard), `scripts/publish-changes.mts` +
@@ -289,16 +298,23 @@ path.
 - Phase 4: a migration that drops the dataset tables and functions; `lib/data.ts` without the `supabase` branch;
   `scripts/publish-data.mts` removed; `tests/supabase.test.mts` reduced to the loader.
 
-## Owner steps (phase 1)
-Free plans, existing dev project (owner decision 2026-10-07).
-1. Vercel, Production environment: set `DATA_SOURCE=json`. Leave `SUPABASE_URL` / `SUPABASE_PUBLISHABLE_KEY` as they
-   are (the app still needs them for accounts and high schools) and keep `REVALIDATE_SECRET` if set.
-2. GitHub secrets: `PROD_SUPABASE_URL` and `PROD_SUPABASE_SECRET_KEY` pointing at the dev project, so the change-log
-   Action can write `dataset_changes` (today it skips because they're unset, which is why the update emails have
-   nothing to say); the `PROD_REVALIDATE_*` pair becomes unused.
-3. Redeploy `main` once by hand (Vercel → Redeploy) so the first production build runs in `json` mode. Check
-   `/explore`, a profile, and the search box; then check that signing in still works.
-4. Nothing to do in Supabase. The dataset tables keep their last publish until phase 4 drops them.
+## Owner steps
+Free plans, existing dev project (owner decision 2026-10-07). Nothing is needed **before** the merge: the code
+ignores `DATA_SOURCE`, and `SUPABASE_URL` / `SUPABASE_PUBLISHABLE_KEY` stay for accounts and high schools.
+1. **Test the Preview** of the PR (Vercel comments its URL on the PR): Explore, a profile, the search box on a fresh
+   load, Compare's picker, a high-school page, sign-in.
+2. **Merge.** Vercel builds and deploys `main`; the build no longer touches Supabase.
+3. **Supabase SQL Editor**, after the deploy is live: run `supabase/migrations/20261007120000_publish_changes.sql`
+   (the change-log function), then `supabase/migrations/20261007130000_retire_dataset_tables.sql` (drops the
+   dataset tables and functions the site no longer reads).
+4. **GitHub secrets**: `PROD_SUPABASE_URL` and `PROD_SUPABASE_SECRET_KEY` (the dev project's URL and secret key) so
+   the change-log Action can write `dataset_changes` after each production deploy; `PROD_REVALIDATE_URL` and
+   `PROD_REVALIDATE_SECRET` can be deleted. Then Actions → "Publish changes" → Run workflow once, to record the first
+   publish.
+5. **Vercel**: delete the `DATA_SOURCE` variable from every environment (it's ignored; deleting it avoids confusion).
+   Keep `REVALIDATE_SECRET` if set.
+6. Check the live site the same way as the Preview, then watch the next data merge: the deploy goes green, the
+   "Publish changes" run follows it, and the What changed panel shows the publish.
 
 ## Risks
 - **Function size.** Each function already carries about 64 MB of data; the tracing fix makes it about 62 MB plus

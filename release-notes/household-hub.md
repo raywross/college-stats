@@ -1,32 +1,33 @@
 ---
-title: A plan for the household page, one list per person, and an application plan
-pr: 93
+title: Your household, by name, with one list each
+pr: 94
 date: 2026-10-06
-kind: plans
-summary: Two plans from the first weeks with accounts: a household page where everyone appears by name with one list each, and a plan of steps and dates for every college on that list.
+kind: feature
+summary: The household page is now the family's home base: add a parent or a student by name, see everyone by name, open each person's list and numbers, and switch updates on or off per college instead of following.
 ---
 
-## What's planned
+## What's new
 
-**The household page becomes the family's home base.** Adding someone starts with one question, parent or student,
-and then asks only what that role needs: a parent's name and email (phone optional); a student's name, with email,
-phone, and graduation year optional. A parent who gets the link just chooses a password; there is no separate
-sign-up or confirmation email. Everyone shows up by name, in the header and in the household, and someone who hasn't
-finished joining sits in the same list marked "Invited", with the link right there to copy or send again.
+**Add someone in two steps.** On your household page, say whether you're adding a parent or a student, then fill in
+only what that role needs: a parent's name and email (phone optional); a student's name, with email, phone, and
+graduation year optional. A student without an email is added right away and you can start their list; with an email,
+they get a link that makes the list theirs.
 
-**One list, for everyone.** "My list" and "Following" were two names for the same thing, so they become one list,
-and parents get one of their own alongside their students'. On each college you switch on or off: updates when its
-numbers change (on by default), applying, visited, following on social media, and accepted. Clicking a person in the
-household opens their list and, for a student, their numbers.
+**Everyone by name.** The person you added shows up in the household at once, by name, with "Invited" until they
+finish joining, and the link to copy or send again sits right there on their row. The avatar in the header uses the
+first letter of your first name, never your email address.
 
-**Then, a plan.** A second spec turns the list into a plan: for each college, the steps worth taking (decide the
-round, visit, follow the admissions office, aid forms, apply, reply) and the dates the college itself published,
-grouped by month with the next one on top. A parent can see how it's going at a glance. Nudges come in the same
-email as data updates.
+**Set a password, nothing else.** Someone you invite opens the link and chooses a password. No separate sign-up, no
+confirmation email.
+
+**One list, for everyone.** "My list" and "Following" are now one thing. Each person in the household, parents
+included, has a list, and each college on it has five switches: Updates (on by default: an email when its numbers
+change), Applying, Visited, Following on social, and Accepted. Click a person in the household to open their list and,
+for a student, their numbers. The old addresses still work and take you to the right place.
 
 ## Behind the scenes
 
-The specs are `specs/product/household-hub.md` and `specs/product/application-plan.md`, both on the roadmap under
-"Accounts and households". The hub spec leaves four decisions to the owner: Supabase's secret key on Vercel for the
-invite-to-password flow, storing pending invitation tokens in clear so Copy link works, whether a parent's list is
-visible to the household, and collecting phone numbers before anything uses them.
+The spec is `specs/product/household-hub.md`; a follow-on plan, `specs/product/application-plan.md`, turns the list
+into steps and dates. Invited accounts are created by a small function that runs inside Supabase, so the project's
+secret key never leaves it. Follows are now kept by the database from the list's Updates switch; the old Follow button
+and its page are gone.

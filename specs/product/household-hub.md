@@ -1,6 +1,7 @@
 # Household Hub: People by Name, One List Each
 
-> Status: **planned** 2026-10-06 from the owner's review of the first accounts build. Reshapes what
+> Status: **built** 2026-10-06 on `feature/household-hub` ([below](#built-2026-10-06)); planned the same day from the
+> owner's review of the first accounts build. Reshapes what
 > [accounts.md](accounts.md), [saved-lists.md](saved-lists.md), [follow-colleges.md](follow-colleges.md), and
 > [student-profile.md](student-profile.md) built: the household page becomes the one place a family works from, every
 > person is shown by name, and "my list" and "following" become a single list that each person, parent or student,
@@ -255,3 +256,55 @@ All four were decided by the owner on 2026-10-06.
 ## Out of scope
 Suggested steps, important dates as a plan, nudges, and the parent's check-in view: [application-plan.md](application-plan.md).
 Per-student edit grants (today `can_edit` covers every student in the household) stay as built.
+
+## Built (2026-10-06)
+Built the same day it was planned, with the build-roadmap-section method: four units on sub-branches
+(`feature/household-hub-schema`, `-invite`, `-lists`, `-pages`), merged into `feature/household-hub`.
+
+- **Migration** `supabase/migrations/20261006150000_household_hub.sql` (apply after `20261005170000_household_limits_and_home.sql`,
+  which must be in place first: it defines `household_of()`): phones, invitation name/phone/grad year/clear token,
+  lists with a user owner and the `can_read_list()`/`can_edit_list()` helpers, the three tracking columns, the follows
+  trigger rewritten around `updates` (follows can no longer be written through the API; a one-time statement moves
+  `manual` follows into default lists), `household_roster()` with pending rows and statuses, the 8-argument
+  `create_invitation()` (inviting a student by name creates the managed record and links the hand-over),
+  `accept_invitation_by_id()`, a `lists_guard_owner` trigger, and re-sync triggers when a list or student record
+  changes hands. Tests: `tests/household-hub-policies.test.mts` (every rule, three guard tests).
+- **Edge Function** `supabase/functions/invite-user/` ([the Edge Function](#the-edge-function); documented in
+  `specs/supabase.md` "Edge Functions"). Two findings changed the flow: Supabase refuses an *invite* link for a user
+  whose email is already confirmed, so the function returns a **magic link**; and such links last about an hour, so
+  the link that is emailed, shown, and copied is always the site's own seven-day `/invite/<token>`. The function is
+  called when the invited person opens that link and presses **Continue**, and sends them straight to the password
+  page. `verify_jwt` is off (the publishable key isn't a JWT); the shared `X-Invite-Secret` is the authorization.
+  Deploy with `npx supabase functions deploy invite-user --no-verify-jwt` after setting `INVITE_FUNCTION_SECRET`
+  (function secret and Vercel) and `INVITE_ALLOWED_ORIGINS`.
+- **Pages**: `/household` (roster, home, Add someone; a solo viewer starts the household by adding the first person),
+  `/household/[person]` (List tab, `components/lists/ListPage.tsx` embedded), `/household/[person]/lists/[id]`,
+  `/household/[person]/numbers`. Redirects: `/account/household` → `/household`; `/me` → own Numbers tab;
+  `/me/list` and `/me/following` → own person page. Avatar menu: Household · Your account · Sign out.
+  `components/account/Roster.tsx`, `AddPersonForm.tsx`, `InvitationControls.tsx`, `PersonHeader.tsx`;
+  `app/household/actions.ts` (`addPerson`, `inviteManagedStudent`, `copyInvitationLink`, `resendInvitation`);
+  `/account/password?welcome=1` accepts the invitation on save.
+- **Lists**: `lib/lists.ts` owner-aware (`ListOwner`); `components/lists/TrackingRow.tsx` (Updates · Applying · Visited ·
+  Following on social · Accepted); CSV gains `updates`, `visited_on`, `follows_social`; `components/me/UpdatesSection.tsx`
+  under a list its owner views; the email-updates switch is on `/account#updates`. Removed: `components/FollowButton.tsx`,
+  `/me/following`, the `manual` follow source. Glossary: `updates`, `tracking`.
+
+### Deviations and decisions made while building
+- Seats count every member row plus **unexpired** pending invitations (the database's `household_seats_taken` rule),
+  including a managed student's hand-over row.
+- The welcome step can't carry an invitation id (a signed-out visitor can't read `invitations`); the password page
+  finds the newest pending invitation whose `accepted_by` is the signed-in user.
+- A solo viewer chooses their own side when adding the first person; a student starting a household may add only
+  guardians.
+- "Added by you" compares against the signed-in user, not the student's account.
+- Another guardian reading a guardian's list sees "<Name>'s list · shared with the household to read"; those reads
+  aren't logged (the access log covers students' information).
+- Not done: browser QA needs a signed-in session against a database with the migration applied, so the owner's
+  preview test is the first visual check. Specs `accounts.md`, `saved-lists.md`, `follow-colleges.md`, and
+  `home-and-distance.md` carry a short note pointing here rather than rewritten "Built" sections.
+
+### Owner setup
+1. Apply `supabase/migrations/20261005170000_household_limits_and_home.sql` to dev if it isn't there yet (as of
+   2026-10-06 it wasn't: no `household_homes` table, no `household_of()`), then `20261006150000_household_hub.sql`.
+2. Deploy the Edge Function and set its secrets (`specs/supabase.md` "Edge Functions"); set `INVITE_FUNCTION_SECRET`
+   in Vercel. Until then, invited people see the sign-in prompt and the earlier accept flow still works.

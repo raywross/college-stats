@@ -189,3 +189,10 @@ play). Without a key the field is a plain text field, and the page says nothing 
    `geocoding.geo.census.gov`; if the Bureau's service is down, saving says so and a ZIP code still works offline.
 3. **Refresh the ZIP table yearly** (optional): `npm run build-zcta` after the Census Bureau posts the next
    Gazetteer vintage (update `VINTAGE` in the script), then commit the CSV.
+
+## Superseded in part (2026-10-06)
+[household-hub.md](household-hub.md) reshaped what this spec built: `/account/household` is now `/household`, the
+household page is the hub with a page per person, every person (guardians included) owns a list, the Follow button and
+`/me/following` are gone (an **Updates** switch on each list item feeds the digest), and the roster shows pending
+invitations by name with a copyable link. Paths and component names above that no longer match are historical; the
+hub spec's "Built" section is current.

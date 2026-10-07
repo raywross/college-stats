@@ -363,3 +363,10 @@ A step-parent with children in two different households picks one. Two separated
 household can't: they share one, and their finances stay private from each other as before. Both are rare, and the
 simplicity is worth it.
 
+
+## Superseded in part (2026-10-06)
+[household-hub.md](household-hub.md) reshaped what this spec built: `/account/household` is now `/household`, the
+household page is the hub with a page per person, every person (guardians included) owns a list, the Follow button and
+`/me/following` are gone (an **Updates** switch on each list item feeds the digest), and the roster shows pending
+invitations by name with a copyable link. Paths and component names above that no longer match are historical; the
+hub spec's "Built" section is current.

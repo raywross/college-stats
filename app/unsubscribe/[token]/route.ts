@@ -27,7 +27,7 @@ ${body}
 }
 
 function confirmForm(): string {
-  return `<p style="margin:0 0 20px;">Turn off update emails from ${escapeHtml(SITE_NAME)} for this account? You'll keep following any colleges on your list — you just won't be emailed about them.</p>
+  return `<p style="margin:0 0 20px;">Turn off update emails from ${escapeHtml(SITE_NAME)} for this account? Your list stays as it is — you just won't be emailed about its colleges.</p>
 <form method="post"><button type="submit" style="background:#5b3df5;color:#ffffff;border:none;border-radius:999px;font-weight:600;font-size:15px;padding:12px 24px;cursor:pointer;">Unsubscribe</button></form>`;
 }
 
@@ -45,7 +45,7 @@ async function unsubscribe(token: string): Promise<boolean> {
 export async function GET(_request: NextRequest, { params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;
   if (!isUnsubscribeToken(token)) {
-    return page(`<p style="margin:0;">That unsubscribe link isn't valid. If you still want to stop update emails, sign in and turn them off on <a href="/me/following">your following page</a>.</p>`);
+    return page(`<p style="margin:0;">That unsubscribe link isn't valid. If you still want to stop update emails, sign in and turn them off on <a href="/account#updates">your account page</a>.</p>`);
   }
   return page(confirmForm());
 }
@@ -56,11 +56,11 @@ export async function POST(_request: NextRequest, { params }: { params: Promise<
     const ok = await unsubscribe(token);
     return page(
       ok
-        ? `<p style="margin:0;font-weight:600;">You're unsubscribed.</p><p style="margin:12px 0 0;color:#57516b;font-size:14px;">You won't get update emails from ${escapeHtml(SITE_NAME)} again. To turn them back on, sign in and use the switch on <a href="/me/following">your following page</a>.</p>`
-        : `<p style="margin:0;">That link isn't valid, or has already been used. If you still want to stop update emails, sign in and turn them off on <a href="/me/following">your following page</a>.</p>`,
+        ? `<p style="margin:0;font-weight:600;">You're unsubscribed.</p><p style="margin:12px 0 0;color:#57516b;font-size:14px;">You won't get update emails from ${escapeHtml(SITE_NAME)} again. To turn them back on, sign in and use the switch on <a href="/account#updates">your account page</a>.</p>`
+        : `<p style="margin:0;">That link isn't valid, or has already been used. If you still want to stop update emails, sign in and turn them off on <a href="/account#updates">your account page</a>.</p>`,
     );
   } catch (err) {
     console.error(`unsubscribe: ${err instanceof Error ? err.message : err}`);
-    return page(`<p style="margin:0;">Something went wrong. Try again in a moment, or sign in and turn off update emails on <a href="/me/following">your following page</a>.</p>`);
+    return page(`<p style="margin:0;">Something went wrong. Try again in a moment, or sign in and turn off update emails on <a href="/account#updates">your account page</a>.</p>`);
   }
 }

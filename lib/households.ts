@@ -14,41 +14,59 @@ import {
   type AccessLogRow,
   type DeletionPreview,
   type HouseholdView,
-  type PendingInvitation,
   type RosterMember,
 } from "@/lib/household-rules";
 
-/** Households the signed-in user is an active member of, each with its roster and pending invitations. */
+/**
+ * Households the signed-in user is an active member of, each with its roster: members and pending invitations in
+ * one list (household_roster(), 20261006150000_household_hub.sql), students first.
+ */
 export const myHouseholds = cache(async (): Promise<HouseholdView[]> => {
   const account = await getAccount();
   if (!account) return [];
   const supabase = await createServerSupabase();
   const { data, error } = await supabase.from("households").select("id, name, created").is("deleted_at", null).order("created");
   if (error) throw new Error(`Reading your households failed: ${error.message}`);
-  const now = new Date().toISOString();
   const views = await Promise.all(
     (data as { id: string; name: string; created: string }[]).map(async (h): Promise<HouseholdView | null> => {
-      const [roster, invitations] = await Promise.all([
-        supabase.rpc("household_roster", { p_household: h.id }),
-        supabase
-          .from("invitations")
-          .select("id, email, side, student_id, can_edit, invited_by, created, expires_at")
-          .eq("household_id", h.id)
-          .is("accepted_at", null)
-          .is("revoked_at", null)
-          .gt("expires_at", now)
-          .order("created", { ascending: false }),
-      ]);
+      const roster = await supabase.rpc("household_roster", { p_household: h.id });
       if (roster.error) throw new Error(`Reading a household's members failed: ${roster.error.message}`);
-      if (invitations.error) throw new Error(`Reading invitations failed: ${invitations.error.message}`);
       const members = roster.data as RosterMember[];
       // The creator of a household that's still empty can read it, but isn't in it: skip.
       if (!members.some((m) => m.is_me)) return null;
-      return { ...h, members, invitations: invitations.data as PendingInvitation[], me: viewerRoles(members) };
+      return { ...h, members, me: viewerRoles(members) };
     }),
   );
   return views.filter((v): v is HouseholdView => v !== null);
 });
+
+/** What a `/household/[person]` id resolves to for the signed-in viewer. */
+export type PersonPage =
+  | { kind: "student"; access: StudentAccess }
+  | { kind: "guardian"; user_id: string; display_name: string | null; is_me: boolean };
+
+/**
+ * Resolves a `/household/[person]` id (a student id for a student, a user id for a guardian; personHref() builds
+ * them) against the viewer's household. A student: any student the viewer can see (their own record, a managed
+ * record, or one they reach as a guardian). A guardian: an active guardian in the viewer's household, or the viewer
+ * themselves (also before they have a household). Null for anyone else, so the page can 404. Doesn't log the read:
+ * a page that then shows a student's data as a guardian calls logStudentRead() (or uses openStudentAs()).
+ */
+export async function personPage(id: string): Promise<PersonPage | null> {
+  const account = await getAccount();
+  if (!account) return null;
+  const students = await studentsICanSee();
+  const access = students.find((a) => a.student.id === id);
+  if (access) return { kind: "student", access };
+  const guardian = (await myHouseholds()).flatMap((h) => h.members).find((m) => m.role === "guardian" && m.member_id !== null && m.user_id === id);
+  if (guardian) return { kind: "guardian", user_id: id, display_name: guardian.display_name, is_me: guardian.is_me };
+  // The viewer's own page before they're in a household: by user id, unless they're a student (whose page is their
+  // student record's).
+  if (id === account.user.id && !students.some((a) => a.relation === "self")) {
+    return { kind: "guardian", user_id: id, display_name: account.profile.display_name, is_me: true };
+  }
+  return null;
+}
 
 /** Who viewed the signed-in student's information (my_access_log), newest first. Empty for non-students. */
 export async function myAccessLog(limit = 200): Promise<AccessLogRow[]> {

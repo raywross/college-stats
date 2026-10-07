@@ -46,3 +46,6 @@ next-env.d.ts
 
 # Downloaded NCES files, reused between history builds (npm run sync-history)
 /.cache/
+
+# Supabase CLI state (written by `supabase link`)
+supabase/.temp/

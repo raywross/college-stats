@@ -14,8 +14,9 @@ import { cn } from "@/lib/utils";
  * list"; specs/product/saved-lists.md). A client component calling Server Actions, so the public pages around it
  * (profiles, Explore, compare) stay static: signed out, it shows SignInPrompt instead of hitting the database.
  *
- * `ids`: one college (the usual case) or several (the compare tray's "Save these"); all go to the student's
- * default list, created on first use.
+ * `ids`: one college (the usual case) or several (the compare tray's "Save these"); all go to the signed-in
+ * person's own default list, created on first use: a student's on their record, a guardian's as a list they own
+ * (lib/lists.ts addToMyDefaultList; specs/product/household-hub.md "One list per person").
  */
 export function AddToListButton({
   ids,

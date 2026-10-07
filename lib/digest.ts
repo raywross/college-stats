@@ -1,17 +1,17 @@
 /**
  * Builds one update-digest email (specs/product/follow-colleges.md#the-digest): groups one publish's emailable
- * changes for one user's followed colleges, in the site's topic order, cuts off at 8 colleges, and renders both the
- * HTML and a plain-text alternative. Pure: no Supabase, no Next.js/React import, so app/api/cron/digests/route.ts
+ * changes for the colleges a user follows (those on their list with Updates on), in the site's topic order, cuts off
+ * at 8 colleges, and renders both the HTML and a plain-text alternative. Pure: no Supabase, no Next.js/React import,
+ * so app/api/cron/digests/route.ts
  * (which gathers the rows with the secret key) and tests/digest.test.mts can both call it directly under plain
  * `node --test` (no JSX transform is configured for that runner, hence plain string templates rather than a
  * react-dom/server-rendered emails/*.tsx component).
  *
  * One call = one user's digest for one publish. The cron route decides who gets one and records `digests`;
- * app/me/updates reuses buildDigest to render a received digest with the exact same blocks.
+ * components/me/UpdatesSection.tsx reuses buildDigest to render a received digest with the exact same blocks.
  */
 import { describeChange, EMAILED_KINDS, type StoredChange } from "./changes.ts";
 import { NOTIFY_FIELDS } from "./fields.ts";
-import type { FollowSource } from "./follow-state.ts";
 
 export const DIGEST_CUTOFF = 8;
 /** Only a publish older than this gets a digest (follow-colleges.md#the-digest): revalidation has finished, and a same-day rollback sends nothing. */
@@ -49,10 +49,15 @@ export function eligiblePublishes(
 export interface DigestCollegeInput {
   unit_id: string;
   name: string;
-  /** How the user follows it; the footer's "why you got this" names both reasons when the set is mixed. */
-  source: FollowSource;
   changes: readonly StoredChange[];
 }
+
+/**
+ * The footer's "why you got this": every follow comes from a list with Updates on (household-hub.md "What goes"), so
+ * there is one reason. (A guardian notified for a managed student's list hears the same line; naming whose list is
+ * left for later, as the build brief decided.)
+ */
+export const DIGEST_REASON = "these colleges are on your list";
 
 export interface DigestContext {
   /** Origin only, no trailing slash ("https://quad.example"). */
@@ -102,15 +107,6 @@ function subjectFor(colleges: readonly { name: string }[]): string {
   return `Updates for ${colleges.length} of your colleges`;
 }
 
-/** "you follow these colleges" / "they're on one of your lists", one or both depending on the set's sources. */
-export function reasonsFor(colleges: readonly { source: FollowSource }[]): string[] {
-  const manual = colleges.some((c) => c.source === "manual");
-  const list = colleges.some((c) => c.source === "list");
-  const out: string[] = [];
-  if (manual) out.push("you follow these colleges");
-  if (list) out.push("they're on one of your lists");
-  return out.length ? out : ["you follow these colleges"];
-}
 
 /** Same sentence shown on the profile's What changed panel, with its source line appended. */
 function describeLine(change: StoredChange): string {
@@ -161,7 +157,7 @@ export function renderDigestHtml(d: Pick<BuiltDigest, "colleges" | "moreCount" |
         <a href="${escapeHtml(d.dataHref)}" style="color:${COLORS.link};">Data page</a>.
       </p>
       <p style="color:${COLORS.muted};font-size:12px;margin:0;">
-        <a href="${escapeHtml(d.updatesHref)}" style="color:${COLORS.link};">Manage what you follow</a> ·
+        <a href="${escapeHtml(d.updatesHref)}" style="color:${COLORS.link};">All your updates</a> ·
         <a href="${escapeHtml(d.unsubscribeHref)}" style="color:${COLORS.link};">Unsubscribe</a>
       </p>
     </div>
@@ -179,7 +175,7 @@ export function renderDigestText(d: Pick<BuiltDigest, "colleges" | "moreCount" |
   }
   if (d.moreCount > 0) lines.push(`…and ${d.moreCount} more on your updates page: ${d.updatesHref}`, "");
   lines.push(`You got this because ${d.reasons.join(" and ")}. Figures here are usually a year or more behind a college's current class: ${d.dataHref}`, "");
-  lines.push(`Manage what you follow: ${d.updatesHref}`, `Unsubscribe: ${d.unsubscribeHref}`);
+  lines.push(`All your updates: ${d.updatesHref}`, `Unsubscribe: ${d.unsubscribeHref}`);
   return lines.join("\n");
 }
 
@@ -199,7 +195,7 @@ export function buildDigest(colleges: readonly DigestCollegeInput[], ctx: Digest
   const updatesHref = utmDigest(`${ctx.siteUrl}/me/updates`);
   const unsubscribeHref = utmDigest(`${ctx.siteUrl}/unsubscribe/${ctx.unsubscribeToken}`);
   const dataHref = utmDigest(`${ctx.siteUrl}/data`);
-  const reasons = reasonsFor(prepared);
+  const reasons = [DIGEST_REASON];
 
   const emailColleges: DigestCollege[] = shown.map((c) => ({
     unit_id: c.unit_id,

@@ -10,7 +10,8 @@ import { setPassword, type SetPasswordState } from "./actions";
 const inputCls =
   "h-11 w-full rounded-xl border border-input bg-background px-3.5 text-base outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30";
 
-export function SetPasswordForm({ email }: { email: string }) {
+/** `welcome`: an invited person's first visit; saving also joins the household (setPassword) and opens it. */
+export function SetPasswordForm({ email, welcome }: { email: string; welcome?: string }) {
   const [state, action, pending] = useActionState<SetPasswordState, FormData>(setPassword, { status: "idle" });
   const [password, setPw] = useState("");
   const [confirm, setConfirm] = useState("");
@@ -22,8 +23,16 @@ export function SetPasswordForm({ email }: { email: string }) {
         </span>
         <h2 className="mt-4 font-display text-2xl font-bold">Password saved</h2>
         <p className="mt-2 text-muted-foreground">Next time, sign in with your email and this password.</p>
-        <Link href="/account" className="mt-5 inline-flex rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground">
-          Back to your account
+        {state.joinError && (
+          <p className="mt-3 text-sm font-medium text-destructive" role="alert">
+            {state.joinError}
+          </p>
+        )}
+        <Link
+          href={welcome ? "/household" : "/account"}
+          className="mt-5 inline-flex rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground"
+        >
+          {welcome ? "Go to your household" : "Back to your account"}
         </Link>
       </div>
     );
@@ -34,6 +43,7 @@ export function SetPasswordForm({ email }: { email: string }) {
     <form action={action} className="rounded-3xl border bg-card p-5 sm:p-8">
       {/* Lets password managers save it against the right account. */}
       <input type="email" name="username" autoComplete="username" value={email} readOnly hidden />
+      {welcome && <input type="hidden" name="welcome" value={welcome} />}
       <label className="block text-sm font-semibold" htmlFor="new-password">
         New password
       </label>
@@ -87,7 +97,7 @@ export function SetPasswordForm({ email }: { email: string }) {
         disabled={pending || !ok}
         className="mt-5 inline-flex h-11 w-full items-center justify-center rounded-full bg-primary px-5 text-sm font-semibold text-primary-foreground transition-opacity disabled:opacity-60"
       >
-        {pending ? "Saving…" : "Save password"}
+        {pending ? "Saving…" : welcome ? "Save and join" : "Save password"}
       </button>
     </form>
   );

@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import type { Metadata, Viewport } from "next";
 import { Bricolage_Grotesque, Geist, Geist_Mono } from "next/font/google";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -6,6 +7,8 @@ import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { CompareTray } from "@/components/compare/CompareTray";
+import { AnalyticsProvider } from "@/components/analytics/AnalyticsProvider";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import { SITE_NAME, SITE_TAGLINE } from "@/lib/brand";
 import "./globals.css";
 
@@ -58,6 +61,12 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             <Footer />
             <CompareTray />
             <BottomNav />
+            {/* Product analytics (specs/product/telemetry.md): a no-op without NEXT_PUBLIC_POSTHOG_KEY. */}
+            <Suspense fallback={null}>
+              <AnalyticsProvider />
+            </Suspense>
+            {/* Core Web Vitals; reports only from Vercel deployments. */}
+            <SpeedInsights />
           </TooltipProvider>
         </ThemeProvider>
       </body>

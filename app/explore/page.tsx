@@ -2,16 +2,16 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { SearchX } from "lucide-react";
 import Link from "next/link";
-import { getData, paginate, type Dataset } from "@/lib/data";
+import { getData, paginate } from "@/lib/data";
 import { parseFilters, parseView, countActiveFilters } from "@/lib/params";
 import { resolveNear } from "@/lib/zip-centroids";
-import { METRICS, SIZE_BUCKETS, median, satMid, sizeBucket } from "@/lib/metrics";
-import { pctSmart, compact, num, typeLabel } from "@/lib/format";
+import { METRICS, SIZE_BUCKETS, median, satMid } from "@/lib/metrics";
+import { pctSmart, compact, num } from "@/lib/format";
 import { Pagination } from "@/components/explore/Pagination";
 import { SchoolCard } from "@/components/school/SchoolCard";
 import { SchoolRow } from "@/components/school/SchoolRow";
 import { SchoolTable } from "@/components/explore/SchoolTable";
-import { FilterPanel, type FilterFacets } from "@/components/explore/FilterPanel";
+import { FilterPanel } from "@/components/explore/FilterPanel";
 import { MobileFilterSheet } from "@/components/explore/MobileFilterSheet";
 import { ActiveFilters, ExploreSearchInput, SortControl, ViewToggle } from "@/components/explore/Toolbar";
 import { ExploreFitChips } from "@/components/me/ExploreFitChips";
@@ -20,153 +20,11 @@ import { DotMap } from "@/components/charts/DotMap";
 import { MAP_HEIGHT, MAP_WIDTH, mapPoints, usOutline } from "@/lib/us-map";
 import { LANDSCAPE_X, LANDSCAPE_Y, LANDSCAPE_ZONE, STICKER_X, STICKER_Y, VALUE_X, VALUE_Y, valueZone } from "@/lib/chart-configs";
 import { cn } from "@/lib/utils";
-import { INDICATOR_KEYS, indicatorOf, type Direction } from "@/lib/indicators";
-import { genderBalanceOf, isMostlyFullTime } from "@/lib/student-body";
-import { hasFewLoans } from "@/lib/repayment";
-import { hasSmallPellGap } from "@/lib/graduation-groups";
-import { HOUSING_FILTERS } from "@/lib/housing";
-import { FACTOR_FILTERS } from "@/lib/factors";
-import { RESIDENCY_FILTERS } from "@/lib/cds/residency-display";
-import { hasHonorsProgram } from "@/lib/cds/academics-display";
-import { TRANSFER_FILTER } from "@/lib/cds/transfer-display";
-import { GREEK_COUNCIL_FILTERS, MIN_GREEK_OPTIONS, hasGreekCouncil, meetsGreekThreshold } from "@/lib/cds/greek-display";
-import { LOGISTICS_FILTERS } from "@/lib/cds/application-logistics-display";
-import { DESIGNATION_KEYS, RESEARCH_TIERS, SETTING_GROUPS, designationsOf, isOpportunityCollege } from "@/lib/campus-profile";
-import { DIVISION_FILTERS, ROTC_BRANCHES, divisionFilterOf } from "@/lib/campus-services";
-import { MAX_RATIO_OPTIONS, MIN_FULL_TIME_FACULTY_OPTIONS } from "@/lib/academics";
-import { drawsNationally } from "@/lib/residence";
-import { noCssProfile, offersInternationalAid } from "@/lib/cds/financial-aid";
-import { fieldFacets } from "@/lib/majors";
-import { policyBucket } from "@/lib/test-policy";
-import { FAITH_FILTERS, faithFilterOf } from "@/lib/religion";
-import { TRADITIONS } from "@/lib/directories";
-import { hasLgbtqCenter, policyIsYes } from "@/lib/lgbtq-policy";
 import { InfoTip } from "@/components/ui/info-tip";
 import { BaselineNote } from "@/components/ui/BaselineNote";
 import { MultiSourceNote } from "@/components/sources/MultiSourceNote";
 
 export const metadata: Metadata = { title: "Explore colleges" };
-
-function buildFacets({ getAllSchools, histogram }: Dataset): FilterFacets {
-  const all = getAllSchools();
-  const tally = (get: (s: (typeof all)[number]) => string) =>
-    all.reduce<Record<string, number>>((acc, s) => ((acc[get(s)] = (acc[get(s)] ?? 0) + 1), acc), {});
-
-  const states = tally((s) => s.location.state);
-  const regions = tally((s) => s.location.region);
-  const types = tally((s) => s.type);
-  const sizes = tally((s) => sizeBucket(s.demographics.undergrad_enrollment).key);
-
-  const trends = Object.fromEntries(
-    INDICATOR_KEYS.map((k) => {
-      const counts: Record<Direction, number> = { up: 0, steady: 0, down: 0 };
-      for (const s of all) {
-        const i = indicatorOf(s, k);
-        if (i) counts[i.direction]++;
-      }
-      return [k, counts];
-    })
-  ) as FilterFacets["trends"];
-
-  const balance: FilterFacets["balance"] = { women: 0, balanced: 0, men: 0 };
-  for (const s of all) {
-    const b = genderBalanceOf(s);
-    if (b) balance[b]++;
-  }
-
-  // Test policy (lib/test-policy.ts): each college's newest policy.
-  const policy: FilterFacets["policy"] = { required: 0, optional: 0, blind: 0 };
-  for (const s of all) {
-    const b = policyBucket(s.admissions.test_policy);
-    if (b) policy[b]++;
-  }
-
-  const campus: FilterFacets["campus"] = {
-    setting: Object.fromEntries(SETTING_GROUPS.map((g) => [g.key, 0])) as FilterFacets["campus"]["setting"],
-    research: Object.fromEntries(RESEARCH_TIERS.map((r) => [r, 0])) as FilterFacets["campus"]["research"],
-    designation: Object.fromEntries(DESIGNATION_KEYS.map((d) => [d, 0])) as FilterFacets["campus"]["designation"],
-    opportunity: all.filter(isOpportunityCollege).length,
-  };
-  for (const s of all) {
-    if (s.campus?.setting) campus.setting[s.campus.setting.group]++;
-    if (s.campus?.carnegie?.research) campus.research[s.campus.carnegie.research]++;
-    for (const d of designationsOf(s)) campus.designation[d]++;
-  }
-
-  // Religious affiliation (lib/religion.ts): colleges per faith family, and with none.
-  const faith = Object.fromEntries(FAITH_FILTERS.map((f) => [f.key, 0])) as FilterFacets["faith"];
-  for (const s of all) {
-    const f = faithFilterOf(s);
-    if (f) faith[f]++;
-  }
-
-  // Faith communities (specs/campus-directories.md): colleges with a named group of this tradition.
-  const faithGroup = Object.fromEntries(Object.keys(TRADITIONS).map((t) => [t, 0])) as FilterFacets["faithGroup"];
-  for (const s of all) for (const t of s.directories?.faith ?? []) if (t in faithGroup) faithGroup[t as keyof typeof faithGroup]++;
-  // LGBTQ+ policy facts only (lib/lgbtq-policy.ts); the gender-identity counts are never a facet.
-  const lgbtq: FilterFacets["lgbtq"] = {
-    center: all.filter(hasLgbtqCenter).length,
-    housing: all.filter((s) => policyIsYes(s, "inclusive_housing")).length,
-    nondiscrimination: all.filter((s) => policyIsYes(s, "nondiscrimination_identity")).length,
-  };
-
-  const ratios = all.map((s) => s.academics?.student_faculty_ratio).filter((v): v is number => v != null);
-  const maxRatio = Object.fromEntries(MAX_RATIO_OPTIONS.map((n) => [n, ratios.filter((v) => v <= n).length]));
-
-  const ftShares = all.map((s) => s.academics?.faculty?.full_time_share).filter((v): v is number => v != null);
-  const minFullTimeFaculty = Object.fromEntries(MIN_FULL_TIME_FACULTY_OPTIONS.map((n) => [n, ftShares.filter((v) => v >= n).length]));
-
-  const services: FilterFacets["services"] = {
-    division: Object.fromEntries(DIVISION_FILTERS.map((d) => [d, 0])) as FilterFacets["services"]["division"],
-    football: all.filter((s) => s.campus?.athletics?.sports.includes("football")).length,
-    rotc: Object.fromEntries(ROTC_BRANCHES.map((b) => [b, all.filter((s) => s.campus?.programs?.rotc.includes(b)).length])) as FilterFacets["services"]["rotc"],
-    ugResearch: all.filter((s) => s.campus?.programs?.undergrad_research).length,
-    studyAbroad: all.filter((s) => s.campus?.programs?.study_abroad).length,
-  };
-  for (const s of all) {
-    const d = divisionFilterOf(s);
-    if (d) services.division[d]++;
-  }
-
-  const satRange: [number, number] = [800, 1600];
-  return {
-    maxRatio,
-    medianRatio: median(ratios),
-    minFullTimeFaculty,
-    medianFullTimeFaculty: median(ftShares),
-    services,
-    balance,
-    policy,
-    fullTime: all.filter(isMostlyFullTime).length,
-    fewLoans: all.filter(hasFewLoans).length,
-    pellGap: all.filter(hasSmallPellGap).length,
-    national: all.filter(drawsNationally).length,
-    aidNoCss: all.filter(noCssProfile).length,
-    intlAid: all.filter(offersInternationalAid).length,
-    fields: fieldFacets(all),
-    housing: Object.fromEntries(HOUSING_FILTERS.map((f) => [f.param, all.filter(f.test).length])) as FilterFacets["housing"],
-    factors: Object.fromEntries(FACTOR_FILTERS.map((f) => [f.param, all.filter(f.test).length])) as FilterFacets["factors"],
-    residency: Object.fromEntries(RESIDENCY_FILTERS.map((f) => [f.param, all.filter(f.test).length])) as FilterFacets["residency"],
-    honors: all.filter(hasHonorsProgram).length,
-    transfers: all.filter(TRANSFER_FILTER.test).length,
-    minGreek: Object.fromEntries(MIN_GREEK_OPTIONS.map((n) => [n, all.filter((s) => meetsGreekThreshold(s, n)).length])),
-    greekCouncils: Object.fromEntries(GREEK_COUNCIL_FILTERS.map((f) => [f.key, all.filter((s) => hasGreekCouncil(s, f.key)).length])) as FilterFacets["greekCouncils"],
-    logistics: Object.fromEntries(LOGISTICS_FILTERS.map((f) => [f.param, all.filter(f.test).length])) as FilterFacets["logistics"],
-    campus,
-    faith,
-    faithGroup,
-    lgbtq,
-    states: Object.keys(states).sort().map((value) => ({ value, count: states[value] })),
-    regions: Object.keys(regions).sort().map((value) => ({ value, count: regions[value] })),
-    types: Object.keys(types).map((value) => ({ value, label: typeLabel(value), count: types[value] })),
-    sizes,
-    arBins: histogram("acceptance", 20, [0, 1]),
-    satBins: histogram("sat", 32, satRange),
-    costBins: histogram("avgCost", 32, [0, 80000]),
-    satRange,
-    trends,
-  };
-}
 
 export default async function ExplorePage({
   searchParams,
@@ -188,7 +46,7 @@ export default async function ExplorePage({
   const CHART_LIMIT = 600;
   const chart = typeof params.chart === "string" ? params.chart : "admissions";
   const all = getAllSchools();
-  const facets = buildFacets(data);
+  const facets = data.facets();
   const activeCount = countActiveFilters(params);
 
   const medAR = median(schools.map((s) => s.admissions.acceptance_rate));

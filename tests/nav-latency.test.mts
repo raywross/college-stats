@@ -72,8 +72,8 @@ test("the Explore skeleton has the toolbar, the filter rail, and six cards (rows
   const html = await renderLoading("app/explore/loading.tsx");
   assert.match(html, /<aside class="hidden w-72 shrink-0 lg:block">/);
   assert.match(html, /grid-cols-\[minmax\(0,1fr\)_auto\]/); // the toolbar row's phone layout, as in app/explore/page.tsx
-  assert.equal((html.match(/h-\[26rem\]/g) ?? []).length, 6);
-  assert.equal((html.match(/h-\[74px\]/g) ?? []).length, 6);
+  assert.equal((html.match(/h-\[27rem\]/g) ?? []).length, 6);
+  assert.equal((html.match(/h-\[104px\]/g) ?? []).length, 6);
   assert.match(html, /<ul class="space-y-2 sm:hidden">/);
   assert.match(html, /hidden gap-4 sm:grid sm:grid-cols-2 2xl:grid-cols-3/);
 });

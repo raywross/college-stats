@@ -59,7 +59,7 @@ export default function ExploreLoading() {
 
           <ul className="space-y-2 sm:hidden">
             {[0, 1, 2, 3, 4, 5].map((i) => (
-              <li key={i} className="flex h-[74px] items-center gap-3 rounded-2xl border bg-card p-3">
+              <li key={i} className="flex h-[104px] items-center gap-3 rounded-2xl border bg-card p-3">
                 <div className="min-w-0 flex-1 space-y-2">
                   <div className={`${block} h-4 w-4/5 rounded-full`} />
                   <div className={`${block} h-3 w-1/2 rounded-full`} />
@@ -70,7 +70,7 @@ export default function ExploreLoading() {
           </ul>
           <div className="hidden gap-4 sm:grid sm:grid-cols-2 2xl:grid-cols-3">
             {[0, 1, 2, 3, 4, 5].map((i) => (
-              <div key={i} className="flex h-[26rem] flex-col rounded-3xl border bg-card p-5">
+              <div key={i} className="flex h-[27rem] flex-col rounded-3xl border bg-card p-5">
                 <div className="flex items-start gap-3">
                   <div className={`${block} size-12 shrink-0 rounded-xl`} />
                   <div className="min-w-0 flex-1 space-y-2">

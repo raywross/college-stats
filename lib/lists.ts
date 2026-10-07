@@ -11,6 +11,7 @@
  * component (AddToListButton); they never read cookies during render. "My" lists are the signed-in person's own:
  * their student record's, or, for someone without one (a guardian), the lists they own as a user.
  */
+import { cache } from "react";
 import { getUser, authConfigured, currentStudent, studentsICanSee } from "@/lib/auth";
 import { createServerSupabase } from "@/lib/supabase-server";
 import { getData } from "@/lib/data";
@@ -93,17 +94,27 @@ function asOwner(owner: ListOwner | string): ListOwner {
 /* Reads                                                                */
 /* ------------------------------------------------------------------ */
 
-/** Every list the signed-in user can read for `owner` (a student they can see, or a user in their household), default first. */
-export async function myLists(owner: ListOwner): Promise<ListRecord[]> {
+/**
+ * One owner's lists, memoized per request (React `cache`) so a page and the components under it share a single
+ * query. `cache` compares arguments by identity and every caller builds a fresh `owner` object, so this takes the
+ * owner's two strings (kind, id) and `myLists` unpacks it. A read only: the write path (getOrCreateDefaultList) is
+ * not cached, so a page that has just created the default list must not expect it here (ListPage adds it).
+ */
+const listsOfOwner = cache(async (kind: ListOwner["kind"], ownerId: string): Promise<ListRecord[]> => {
   const r = await ready();
   if (!r) return [];
-  const { column, id } = ownerColumn(owner);
+  const { column, id } = ownerColumn({ kind, id: ownerId });
   const { data, error } = await r.supabase.from("lists").select(LIST_COLUMNS).eq(column, id).order("is_default", { ascending: false }).order("created");
   if (error) {
     if (isMissingTable(error)) return [];
     throw new Error(`Reading lists failed: ${error.message}`);
   }
   return data as ListRecord[];
+});
+
+/** Every list the signed-in user can read for `owner` (a student they can see, or a user in their household), default first. */
+export async function myLists(owner: ListOwner): Promise<ListRecord[]> {
+  return listsOfOwner(owner.kind, owner.id);
 }
 
 /**
@@ -133,8 +144,8 @@ export interface ListWithItems {
   items: ListItem[];
 }
 
-/** A list and its items, in position order, for whoever can read the list. Null when not found/visible. */
-export async function getListWithItems(listId: string): Promise<ListWithItems | null> {
+/** The list and its items for one id, memoized per request (React `cache`, keyed by the id string). A read only. */
+const readListWithItems = cache(async (listId: string): Promise<ListWithItems | null> => {
   const r = await ready();
   if (!r) return null;
   const list = await r.supabase.from("lists").select(LIST_COLUMNS).eq("id", listId).maybeSingle();
@@ -146,6 +157,11 @@ export async function getListWithItems(listId: string): Promise<ListWithItems | 
   const items = await r.supabase.from("list_items").select(ITEM_COLUMNS).eq("list_id", listId).order("position");
   if (items.error) throw new Error(`Reading that list's colleges failed: ${items.error.message}`);
   return { list: list.data as ListRecord, items: items.data as ListItem[] };
+});
+
+/** A list and its items, in position order, for whoever can read the list. Null when not found/visible. */
+export async function getListWithItems(listId: string): Promise<ListWithItems | null> {
+  return readListWithItems(listId);
 }
 
 /** Notes for a set of items, grouped by item id (private notes the reader can't see are already filtered by RLS). */

@@ -88,8 +88,9 @@ function prepare(index: SearchIndex): Prepared[] {
 }
 
 /** The entry without the fields only the scorer needs: the shape `searchSchools` returns. */
-export function toSchoolEntry({ applicants: _applicants, aliases: _aliases, ...rest }: SearchIndexEntry): SchoolIndexEntry {
-  return rest;
+export function toSchoolEntry(e: SearchIndexEntry): SchoolIndexEntry {
+  const { id, name, city, state, type, acceptance } = e;
+  return { id, name, city, state, type, acceptance, ...(e.brand ? { brand: e.brand } : {}) };
 }
 
 /**

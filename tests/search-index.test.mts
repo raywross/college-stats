@@ -47,7 +47,8 @@ test("every college appears exactly once, in dataset order", () => {
 test("each entry's display fields are exactly toIndexEntry's", () => {
   const all = dataset.getAllSchools();
   index.schools.forEach((e, i) => {
-    const { applicants, aliases: _aliases, ...display } = e;
+    const { applicants, ...rest } = e;
+    const display = Object.fromEntries(Object.entries(rest).filter(([k]) => k !== "aliases"));
     assert.deepEqual(display, toIndexEntry(all[i]));
     assert.equal(applicants, all[i].admissions.applicants);
   });

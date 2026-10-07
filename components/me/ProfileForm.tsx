@@ -5,7 +5,7 @@ import { STATES } from "@/lib/states";
 import { SETTING_GROUPS } from "@/lib/campus-profile";
 import { SIZE_BUCKETS } from "@/lib/metrics";
 import { MAJOR_FAMILY_CODES, MAJOR_FAMILIES, type MajorFamily } from "@/lib/majors";
-import { GPA_SCALES, MAX_INTENDED_MAJORS, OUTSIDE_US, gpaDisplay, type GpaScale, type StudentProfileData } from "@/lib/student-profile";
+import { GPA_SCALES, MAX_INTENDED_MAJORS, OUTSIDE_US, effectiveGradYear, gpaDisplay, type GpaScale, type StudentProfileData } from "@/lib/student-profile";
 import { saveStudentProfile, type ProfileSaveState } from "@/app/me/actions";
 import { Term } from "@/components/ui/info-tip";
 import { HighSchoolPicker } from "@/components/high-schools/HighSchoolPicker";
@@ -88,7 +88,6 @@ function GpaField({ disabled, gpa, gpaScale }: { disabled?: boolean; gpa: number
           defaultValue={gpa ?? ""}
           onChange={(e) => setValue(e.currentTarget.value === "" ? null : Number(e.currentTarget.value))}
           className={`${inputCls} min-w-0 flex-1`}
-          placeholder="3.8"
         />
         <select
           name="gpaScale"
@@ -111,22 +110,56 @@ function GpaField({ disabled, gpa, gpaScale }: { disabled?: boolean; gpa: number
 
 /**
  * The /me form (student-profile.md "Display"): grouped, each group collapsible, one Server Action that sanitizes
- * and saves whatever's filled in. `canEdit=false` (a view-only guardian) renders every field disabled.
+ * and saves whatever's filled in. `canEdit=false` (a view-only guardian) renders every field disabled. No field
+ * shows a sample value as its placeholder (student-profile.md "Changes (2026-10-06)"): empty stays visibly empty,
+ * and a muted hint under a field gives its range instead.
  */
-export function ProfileForm({ studentId, data, canEdit }: { studentId: string; data: StudentProfileData; canEdit: boolean }) {
+export function ProfileForm({
+  studentId,
+  data,
+  canEdit,
+  studentGradYear,
+}: {
+  studentId: string;
+  data: StudentProfileData;
+  canEdit: boolean;
+  /** `students.grad_year` (set when the student was invited or added to the household): the default shown when
+   * the profile itself has no graduation year yet. */
+  studentGradYear: number | null;
+}) {
   const [state, action, pending] = useActionState<ProfileSaveState, FormData>(saveStudentProfile, { status: "idle" });
   const disabled = !canEdit || pending;
+  const defaultGradYear = effectiveGradYear(data.basics, studentGradYear);
+
+  // Controlled only so a high school pick can fill it in (see HighSchoolPicker's onSelect below); the student can
+  // still change it freely afterward, same as any other select.
+  const [residenceState, setResidenceState] = useState(data.basics.stateOfResidence ?? "");
+  const [residenceFromSchool, setResidenceFromSchool] = useState(false);
 
   return (
     <form action={action} className="space-y-4">
       <input type="hidden" name="student_id" value={studentId} />
 
       <Group title="Basics" defaultOpen>
-        <Field label="Graduation year" htmlFor="gradYear">
-          <input id="gradYear" name="gradYear" type="number" inputMode="numeric" min={2000} max={2035} disabled={disabled} defaultValue={data.basics.gradYear ?? ""} className={`${inputCls} mt-1.5`} placeholder="2027" />
+        <Field label="Graduation year" htmlFor="gradYear" hint="2000–2035">
+          <input id="gradYear" name="gradYear" type="number" inputMode="numeric" min={2000} max={2035} disabled={disabled} defaultValue={defaultGradYear ?? ""} className={`${inputCls} mt-1.5`} />
         </Field>
-        <Field label="State of residence" htmlFor="stateOfResidence">
-          <select id="stateOfResidence" name="stateOfResidence" disabled={disabled} defaultValue={data.basics.stateOfResidence ?? ""} className={`${inputCls} mt-1.5`}>
+        <Field
+          label="State of residence"
+          htmlFor="stateOfResidence"
+          hint={residenceFromSchool ? "Set from your high school; change it if you live elsewhere." : undefined}
+        >
+          <select
+            id="stateOfResidence"
+            name="stateOfResidence"
+            disabled={disabled}
+            value={residenceState}
+            onChange={(e) => {
+              setResidenceState(e.target.value);
+              setResidenceFromSchool(false);
+            }}
+            className={`${inputCls} mt-1.5`}
+          >
             <option value="">Not set</option>
             <option value={OUTSIDE_US}>Outside the U.S.</option>
             {[...STATES.values()].map((s) => (
@@ -137,29 +170,42 @@ export function ProfileForm({ studentId, data, canEdit }: { studentId: string; d
           </select>
         </Field>
         <Field label="High school" htmlFor="highSchool" hint="Pick it from the list so your school's data can show up on your college pages; not listed yet? Keep typing and it still saves.">
-          <HighSchoolPicker idName="highSchoolId" nameName="highSchool" defaultId={data.basics.highSchoolId} defaultName={data.basics.highSchool} disabled={disabled} />
+          <HighSchoolPicker
+            idName="highSchoolId"
+            nameName="highSchool"
+            defaultId={data.basics.highSchoolId}
+            defaultName={data.basics.highSchool}
+            disabled={disabled}
+            onSelect={(hit) => {
+              // Only fills a blank state; a student who already set one (or typed over it) keeps their own answer.
+              if (!residenceState && hit.state) {
+                setResidenceState(hit.state);
+                setResidenceFromSchool(true);
+              }
+            }}
+          />
         </Field>
       </Group>
 
       <Group title="Academics">
         <GpaField disabled={disabled} gpa={data.academics.gpa} gpaScale={data.academics.gpaScale} />
-        <Field label="Weighted GPA (optional)" htmlFor="weightedGpa">
-          <input id="weightedGpa" name="weightedGpa" type="number" step="0.01" min={0} max={6} disabled={disabled} defaultValue={data.academics.weightedGpa ?? ""} className={`${inputCls} mt-1.5`} placeholder="4.3" />
+        <Field label="Weighted GPA (optional)" htmlFor="weightedGpa" hint="0–120: some high schools weight courses above 100.">
+          <input id="weightedGpa" name="weightedGpa" type="number" step="0.01" min={0} max={120} disabled={disabled} defaultValue={data.academics.weightedGpa ?? ""} className={`${inputCls} mt-1.5`} />
         </Field>
         <Field label="Class rank percentile (optional)" htmlFor="classRankPercentile" hint='"Top 10%" is 10.'>
-          <input id="classRankPercentile" name="classRankPercentile" type="number" min={1} max={100} disabled={disabled} defaultValue={data.academics.classRankPercentile ?? ""} className={`${inputCls} mt-1.5`} placeholder="10" />
+          <input id="classRankPercentile" name="classRankPercentile" type="number" min={1} max={100} disabled={disabled} defaultValue={data.academics.classRankPercentile ?? ""} className={`${inputCls} mt-1.5`} />
         </Field>
-        <Field label="AP/IB/dual-enrollment courses (optional)" htmlFor="courseRigorCount">
-          <input id="courseRigorCount" name="courseRigorCount" type="number" min={0} max={40} disabled={disabled} defaultValue={data.academics.courseRigorCount ?? ""} className={`${inputCls} mt-1.5`} placeholder="6" />
+        <Field label="AP/IB/dual-enrollment courses (optional)" htmlFor="courseRigorCount" hint="0–40">
+          <input id="courseRigorCount" name="courseRigorCount" type="number" min={0} max={40} disabled={disabled} defaultValue={data.academics.courseRigorCount ?? ""} className={`${inputCls} mt-1.5`} />
         </Field>
       </Group>
 
       <Group title="Tests">
-        <Field label="SAT total" htmlFor="satTotal">
-          <input id="satTotal" name="satTotal" type="number" min={400} max={1600} disabled={disabled} defaultValue={data.tests.satTotal ?? ""} className={`${inputCls} mt-1.5`} placeholder="1450" />
+        <Field label="SAT total" htmlFor="satTotal" hint="400–1600">
+          <input id="satTotal" name="satTotal" type="number" min={400} max={1600} disabled={disabled} defaultValue={data.tests.satTotal ?? ""} className={`${inputCls} mt-1.5`} />
         </Field>
-        <Field label="ACT composite" htmlFor="actComposite">
-          <input id="actComposite" name="actComposite" type="number" min={1} max={36} disabled={disabled} defaultValue={data.tests.actComposite ?? ""} className={`${inputCls} mt-1.5`} placeholder="32" />
+        <Field label="ACT composite" htmlFor="actComposite" hint="1–36">
+          <input id="actComposite" name="actComposite" type="number" min={1} max={36} disabled={disabled} defaultValue={data.tests.actComposite ?? ""} className={`${inputCls} mt-1.5`} />
         </Field>
         <Field label="SAT Reading & Writing (optional)" htmlFor="satReading">
           <input id="satReading" name="satReading" type="number" min={200} max={800} disabled={disabled} defaultValue={data.tests.satReading ?? ""} className={`${inputCls} mt-1.5`} />
@@ -225,18 +271,17 @@ export function ProfileForm({ studentId, data, canEdit }: { studentId: string; d
             <CheckboxGroup name="types" disabled={disabled} defaultValues={data.preferences.types} options={SCHOOL_TYPES} />
           </div>
         </div>
-        <Field label="States or regions (comma-separated, optional)" htmlFor="statesOrRegionsText" hint="USPS codes like TN, CA.">
+        <Field label="States or regions (comma-separated, optional)" htmlFor="statesOrRegionsText" hint="USPS codes (e.g. TN, CA) or region names, comma-separated.">
           <input
             id="statesOrRegionsText"
             name="statesOrRegionsText"
             disabled={disabled}
             defaultValue={data.preferences.statesOrRegions.join(", ")}
             className={`${inputCls} mt-1.5`}
-            placeholder="TN, CA, New England"
           />
         </Field>
-        <Field label="Max average cost (optional)" htmlFor="maxAverageCost" hint="Compared against a college's average paid price, not sticker.">
-          <input id="maxAverageCost" name="maxAverageCost" type="number" min={0} max={400000} step={1000} disabled={disabled} defaultValue={data.preferences.maxAverageCost ?? ""} className={`${inputCls} mt-1.5`} placeholder="30000" />
+        <Field label="Max average cost (optional)" htmlFor="maxAverageCost" hint="Compared against a college's average paid price, not sticker; $0–400,000.">
+          <input id="maxAverageCost" name="maxAverageCost" type="number" min={0} max={400000} step={1000} disabled={disabled} defaultValue={data.preferences.maxAverageCost ?? ""} className={`${inputCls} mt-1.5`} />
         </Field>
       </Group>
 

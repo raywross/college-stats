@@ -13,6 +13,10 @@ const inputCls =
  * `/api/high-schools` that fills a hidden id (`basics.highSchoolId`) when the student picks a result, alongside the
  * free-text display name the form already saves (`basics.highSchool`). Typing without picking anything keeps the id
  * blank — the school isn't in the directory yet, or hasn't loaded — so the free-text fallback still saves.
+ *
+ * `onSelect` (student-profile.md "Changes (2026-10-06)") fires with the full picked hit — including its `state` —
+ * so a caller can default another field from it (ProfileForm sets State of residence from the school's state when
+ * that field is still blank); the picker itself has no opinion about what, if anything, a caller does with it.
  */
 export function HighSchoolPicker({
   idName,
@@ -20,12 +24,14 @@ export function HighSchoolPicker({
   defaultId,
   defaultName,
   disabled,
+  onSelect,
 }: {
   idName: string;
   nameName: string;
   defaultId: string | null;
   defaultName: string | null;
   disabled?: boolean;
+  onSelect?: (hit: HighSchoolHit) => void;
 }) {
   const listId = useId();
   const [query, setQuery] = useState(defaultName ?? "");
@@ -58,6 +64,7 @@ export function HighSchoolPicker({
     setQuery(hit.name);
     setOpen(false);
     inputRef.current?.blur();
+    onSelect?.(hit);
   };
 
   const showList = open && query.trim().length >= 2 && results.length > 0;

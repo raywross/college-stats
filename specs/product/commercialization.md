@@ -43,9 +43,15 @@ Each feature's own spec says what's free; this table is the single list the enti
 | CSV and PDF export of a list | | ✓ | ✓ |
 | SAI and Pell estimate ([net-price-estimator.md](net-price-estimator.md)) | ✓ | ✓ | ✓ |
 | Per-college price ranges and 4-year projection | 3 colleges | 3 colleges | whole list |
-| Award letter form and one comparison ([award-letter-analyzer.md](award-letter-analyzer.md)) | ✓ (Mar–May) | ✓ | ✓ |
+| Award letter form and one comparison ([offers.md](../planner/offers.md)) | ✓ (Mar–May) | ✓ | ✓ |
 | Award letter upload, 4-year totals, appeal summary | | | ✓ |
 | Family PDF dossier (list, standing, estimates, offers) | | | ✓ |
+| **The planner** ([planner/README.md](../planner/README.md), proposed 2026-10-07; the owner decides the line) | | | |
+| Dream, sorts, suggested categories, the college's dates on each row ([list-building.md](../planner/list-building.md)) | ✓ | ✓ | ✓ |
+| The Plan tab: stages, generated tasks, month and college views ([model.md](../planner/model.md), [timeline.md](../planner/timeline.md)) | 14-day trial, then read-only | ✓ | ✓ |
+| Early-rounds proposal, conflicts, money question ([early-rounds.md](../planner/early-rounds.md)) | availability and dates | ✓ | ✓ |
+| Visit log and notes, calendar files and feed, reminders, the weekly email ([actions.md](../planner/actions.md), [timeline.md](../planner/timeline.md)) | follow and request only | ✓ | ✓ |
+| Parent view, nudges, parent tasks, weekly parent summary ([parents.md](../planner/parents.md)) | summary line | one student | every student |
 | Scattergrams from your high school ([scattergrams.md](scattergrams.md)) | counts | ✓ | ✓ |
 | Multiple students under one plan | | | ✓ |
 

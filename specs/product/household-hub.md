@@ -6,7 +6,7 @@
 > [student-profile.md](student-profile.md) built: the household page becomes the one place a family works from, every
 > person is shown by name, and "my list" and "following" become a single list that each person, parent or student,
 > owns. The plan that helps a student work through that list is its own spec,
-> [application-plan.md](application-plan.md). Part of [product](README.md).
+> [timeline.md](../planner/timeline.md). Part of [product](README.md).
 
 ## Goal
 A parent adds the family in two steps: **who they are** (a parent or a student), then the few details that role needs.
@@ -67,7 +67,7 @@ then shows only what that role needs.
 | Student | first name (and last, optional) | email, phone, high school graduation year | Without an email: a managed student record, as today ([accounts.md](accounts.md#built-households-2026-10-05)), shown by name. With an email: the same record **plus** an invitation to claim it, so the parent can start the list now and the student finds it theirs when they set a password. |
 
 - Phone is stored (`profiles.phone`, `students.phone`, E.164 after `libphonenumber-js` parsing, US default) and shown
-  on the person's row to the household. It is not used for anything yet; [application-plan.md](application-plan.md)
+  on the person's row to the household. It is not used for anything yet; [timeline.md](../planner/timeline.md)
   proposes text reminders, which would need consent at that point. Never shown outside the household, never exported
   to anyone but its owner.
 - A student invites a parent the same way (the role question defaults to "parent" for them and "student" for a
@@ -151,7 +151,7 @@ follows     (user_id, unit_id, source: 'list', created)                 -- maint
 - **`visited_on`**: a date (or null). The tracking row shows it as "Visited" with the date on hover; ticking it without
   a date stores today.
 - **`follows_social`**: the person says they follow the college on social media. A tick, nothing more; the plan spec
-  suggests which accounts ([application-plan.md](application-plan.md#suggested-steps)) from the college's
+  suggests which accounts ([timeline.md](../planner/timeline.md#generators)) from the college's
   `social` object ([social-accounts.md](../school-identity/social-accounts.md)).
 - **"Applying" and "Accepted"** are the existing `status` and `outcome`: the tracking row writes `status = applying`
   (or back to `considering`) and `outcome = admitted` through the same `setItemStatus`/`setOutcome` actions.
@@ -251,10 +251,10 @@ All four were decided by the owner on 2026-10-06.
    alternative kept hash-only storage and made Copy mint a new link each time, silently killing the one sent earlier.
 3. **Approved: a guardian's list is visible to the household** (it's suggestions, and the student should see them).
 4. **Approved: phone now, use later.** Collected on the form as asked; nothing sends to it until
-   [application-plan.md](application-plan.md) and its consent step.
+   [timeline.md](../planner/timeline.md) and its consent step.
 
 ## Out of scope
-Suggested steps, important dates as a plan, nudges, and the parent's check-in view: [application-plan.md](application-plan.md).
+Suggested steps, important dates as a plan, nudges, and the parent's check-in view: [timeline.md](../planner/timeline.md).
 Per-student edit grants (today `can_edit` covers every student in the household) stay as built.
 
 ## Built (2026-10-06)

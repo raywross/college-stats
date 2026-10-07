@@ -109,7 +109,7 @@ Every user-data table has an **owner column** and a **visibility rule**, enforce
 | Saved lists, notes, statuses ([saved-lists.md](saved-lists.md)) | student | read; write if `can_edit` | read/write | Notes have a `private` flag the guardian can't read |
 | Chances results ([chances-and-fit.md](chances-and-fit.md)) | student | read | read | Derived from the profile |
 | **Household finances** (AGI, assets, household size, number in college) ([net-price-estimator.md](net-price-estimator.md)) | **guardian** (per guardian user) | own only; another guardian in the same household sees nothing unless the owner shares | **never** | The student sees only an estimate the guardian chose to share, as a range per college, with no inputs |
-| Award letters ([award-letter-analyzer.md](award-letter-analyzer.md)) | whoever uploads, attached to a student | read | read | A letter is about the student, so both sides see it; the guardian's financial inputs used alongside it stay hidden |
+| Award letters ([offers.md](../planner/offers.md)) | whoever uploads, attached to a student | read | read | A letter is about the student, so both sides see it; the guardian's financial inputs used alongside it stay hidden |
 | Subscription ([commercialization.md](commercialization.md)) | the paying user | n/a | n/a | A guardian's plan covers the students in their households |
 | Home address ([home-and-distance.md](home-and-distance.md), built 2026-10-05) | the household | read, set, remove | read, set, remove | One per household, seen by its active members and nobody else, with who set it. Not in the access log |
 

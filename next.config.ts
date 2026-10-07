@@ -13,9 +13,14 @@ const nextConfig: NextConfig = {
     "/release-notes": ["./release-notes/*.md"],
     "/release-notes/*": ["./release-notes/*.md"],
   },
-  // /sources grew into the Data tab (specs/data-page.md).
   async redirects() {
-    return [{ source: "/sources", destination: "/data", permanent: true }];
+    return [
+      // /sources grew into the Data tab (specs/data-page.md).
+      { source: "/sources", destination: "/data", permanent: true },
+      // Following became the Updates switch on each college on your list (specs/product/household-hub.md "What
+      // goes"); /me/list sends the person on to their own list. Not permanent: /me/list's own target may move.
+      { source: "/me/following", destination: "/me/list", permanent: false },
+    ];
   },
 };
 

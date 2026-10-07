@@ -1,0 +1,375 @@
+# Household Hub: People by Name, One List Each
+
+> Status: **built** 2026-10-06 on `feature/household-hub` ([below](#built-2026-10-06)); planned the same day from the
+> owner's review of the first accounts build. Reshapes what
+> [accounts.md](accounts.md), [saved-lists.md](saved-lists.md), [follow-colleges.md](follow-colleges.md), and
+> [student-profile.md](student-profile.md) built: the household page becomes the one place a family works from, every
+> person is shown by name, and "my list" and "following" become a single list that each person, parent or student,
+> owns. The plan that helps a student work through that list is its own spec,
+> [application-plan.md](application-plan.md). Part of [product](README.md).
+
+## Goal
+A parent adds the family in two steps: **who they are** (a parent or a student), then the few details that role needs.
+Everyone appears by **name**, everywhere: the roster, the avatar in the header, the "Added by" line on a list. Someone
+who hasn't accepted yet sits in the same roster with a plain status and the link to copy or send again. From the
+roster, clicking a person opens **their** page: their list and, for a student, their numbers. There is one kind of list,
+and every person has one; "follow" is a switch on each college on it, on by default.
+
+What the owner found in the first build (2026-10-06):
+- Adding a person asked for an email first and a role second, and a student added without an account took a
+  different form from one invited with an email.
+- A parent who accepted an invitation showed as **E** in the header (the first letter of her email) and as "A guardian"
+  with a **?** avatar in the roster, because nothing had asked for her name.
+- Pending invitations sat in a separate "Waiting for an answer" section, apart from the people they'll become.
+- "My numbers", "My list", and "Following" were three menu entries for what a family thinks of as one thing: each
+  person's colleges. "Follow" and "add to my list" looked like two ways to do the same thing.
+
+## Research and decisions (2026-10-06)
+- **Invite to a password, not to a sign-up.** Supabase Auth's admin API can create a user whose email is already
+  marked confirmed (`auth.admin.createUser({ email_confirm: true })`) and can mint an **invite link**
+  (`auth.admin.generateLink({ type: "invite" })`) that lands the person signed in, so the only thing left to do is
+  choose a password. The link itself proves they own the address, which is what email confirmation is for. The site
+  already lands links on `/auth/confirm` in the implicit flow ([accounts.md](accounts.md#sign-in)), so the invite
+  link reuses that page. The catch: the admin API needs the **secret key** on the server, and
+  [supabase.md](../supabase.md#keys) keeps that key out of Vercel. See [owner decisions](#owner-decisions).
+- **Why not just turn email confirmation off?** Then anyone could sign up with someone else's address and the invite
+  flow would accept whoever got there first. Confirmation stays on for ordinary sign-up; invited people skip it
+  because the token in their hands already did the job.
+- **Copying a pending link.** Today only the token's **hash** is stored, so a link can't be shown twice; "New link"
+  makes a fresh one and the old one dies. The owner wants Copy to work from the roster. Decision: store the token
+  itself for a pending invitation (`invitations.token`, cleared on accept, cancel, or expiry). It is a 7-day,
+  single-use secret readable only by the household's own members, who are the people who'd forward it anyway. The
+  hash column stays for the lookup.
+- **One list per person, parents included.** The list hangs off a `students` row today, and a guardian has no row.
+  Rather than a new "person" table, a list gets an **owner**: a student record **or** a user (the guardian).
+  Guardian lists are visible to the whole household and editable by the owner only; the privacy model stays about
+  finances, not about which colleges Mom likes ([accounts.md](accounts.md#privacy-model)).
+- **Follow is a column, not a feature.** `follows` keeps working as the digest's input, but it becomes a table a
+  trigger maintains from `list_items.updates`; nothing in the interface says "follow" any more, and the profile's
+  Follow button goes. Google, Apple, and Scoir all use one "saved" verb with notification settings per item; two
+  verbs for one gesture was the confusion.
+- **Status and outcome already track "plan to apply" and "accepted"**: status `applying` and outcome `admitted`
+  ([saved-lists.md](saved-lists.md#model)). The new tracking row shows them as checks beside the new ones (visited,
+  following on social media, updates) rather than adding parallel columns; ticking "Applying" sets the status, and
+  "Accepted" sets the outcome, so the Scoir-compatible export is unchanged.
+- **Names, not logins.** Every place that shows a person reads `display_name` first and never an email. The header's
+  avatar uses the first letter of the first name; `initialsFor()` already does that when a name exists, so the fix is
+  to make sure every account **has** a name: the invitation carries it, acceptance writes it, and `/account`'s
+  profile form asks for it before anything else.
+
+## Adding a person
+On the household page, **Add someone** asks one question first: **a parent or guardian**, or **a student**. The form
+then shows only what that role needs.
+
+| Role | Asked | Optional | What happens |
+|---|---|---|---|
+| Parent or guardian | first name (and last, optional), email | phone | An invitation with the name attached. They get a link; opening it signs them in and asks for a password, nothing else. They appear in the roster at once, by name, marked **Invited**. |
+| Student | first name (and last, optional) | email, phone, high school graduation year | Without an email: a managed student record, as today ([accounts.md](accounts.md#built-households-2026-10-05)), shown by name. With an email: the same record **plus** an invitation to claim it, so the parent can start the list now and the student finds it theirs when they set a password. |
+
+- Phone is stored (`profiles.phone`, `students.phone`, E.164 after `libphonenumber-js` parsing, US default) and shown
+  on the person's row to the household. It is not used for anything yet; [application-plan.md](application-plan.md)
+  proposes text reminders, which would need consent at that point. Never shown outside the household, never exported
+  to anyone but its owner.
+- A student invites a parent the same way (the role question defaults to "parent" for them and "student" for a
+  guardian). The edit-access tick for a parent stays as it is.
+- The **inviter can't invite themselves** and the roles a person may add stay as built: students add guardians;
+  guardians add either.
+- Seats: a student with an email takes one seat, not two (the invitation hands over the record, which already holds
+  it), as the six-seat rule already says ([accounts.md](accounts.md#rules)).
+
+### The invited person's first visit
+1. The link opens `/auth/confirm` signed in (Supabase's invite link, implicit flow), which sends them to
+   `/account/password?welcome=1` with a one-line explanation: "Tracy added you to the Ross household. Choose a password
+   to finish." Name and role hint are already on their profile from the invitation's user metadata (the sign-up trigger
+   copies them, as it copies them from ordinary sign-up today).
+2. Setting the password calls `accept_invitation()` with the invitation id carried in the user's metadata, so the
+   membership activates in the same step. No second "Accept" click.
+3. They land on the household page, in the roster by name, with their own empty list.
+4. Someone who **already has an account** with that email gets the existing flow instead: the email says to sign in and
+   accept; `/invite/[token]` works as today. The invite form notices this when `createUser` reports the address taken.
+5. Expiry stays seven days. An expired invitation shows **Expired** on the row with "Send again", which mints a new
+   link to the same name and email.
+
+## The roster: everyone by name
+One list on the household page, in this order: students, then guardians, each row with:
+- **Avatar** with the first letter of the first name (`initialsFor(name, null)`; never the email, and never **?**: a
+  row with no name at all, which only old data can produce, shows the role's first letter).
+- **Name**, "(you)", the role badge, grad year for a student ("Class of 2028"), and for a guardian the view/edit line.
+- **Status**, when the person hasn't finished joining: **Invited** (with "expires Oct 13"), **Expired**, and for a
+  student added without an email, **No account yet**. Active members show nothing.
+- **Actions** on the right: for an invited person **Copy link**, **Send again** (emails it when email is configured;
+  otherwise copies), **Cancel**; for a managed student **Invite them** (the email form); the existing Remove, Allow
+  editing / View only, and Leave.
+- The whole row (name and avatar) links to the person's page, below.
+
+The separate "Waiting for an answer" section goes. The data for it is the same `invitations` rows, now joined into the
+roster by `household_roster()` returning pending invitations as rows with `status: "invited" | "expired"` and
+`display_name` from the invitation. `/account`'s household summary lists names the same way ("Alex, Tracy (you),
+Jordan (invited)").
+
+## The household page as the hub
+`/account/household` becomes **`/household`** (the old path redirects), and it is where the avatar menu's first entry
+goes. It holds, top to bottom: the roster, the home address (as built), and **Add someone**. The menu loses "My
+numbers", "My list", and "Following"; it reads **Household · Your account · Sign out**. Someone with no household yet
+sees the same page with just themselves in the roster and "Add someone" inviting them to start a household (the
+name-the-household step folds into adding the first other person: "The ___ household", prefilled from their last
+name when there is one).
+
+### A person's page: `/household/[person]`
+`person` is the student id for students and the user id for guardians. The page has the person's name as its title,
+the guardian banner when a guardian is viewing a student ([accounts.md](accounts.md#contracts-for-later-units)), and
+two tabs:
+- **List** (default): the person's list, exactly `/me/lists/[id]` as built (categories, status, round, notes, deadlines,
+  distance, share, CSV), plus the tracking row below. Extra lists stay reachable from the list switcher.
+- **Numbers** (students only): the profile form and completeness meter from `/me`.
+
+`/me`, `/me/list`, `/me/lists/[id]`, `/me/following`, and `/me/updates` keep working as redirects to the signed-in
+person's own page (and `/me/updates` becomes the **Updates** section on that page, under the list), so nothing linked
+from a digest email breaks. The `Add to list` button on profiles, Explore, and Compare is unchanged for a student; for
+a guardian it now adds to **their own** list (today a guardian has none and the button does nothing useful).
+
+## One list per person
+### Model
+```
+lists       (id, student_id null, user_id null, name, is_default, share_enabled, created_by, created)
+             check ((student_id is null) <> (user_id is null))       -- exactly one owner
+list_items  (… as built …, updates bool default true, visited_on date null, follows_social bool default false)
+follows     (user_id, unit_id, source: 'list', created)                 -- maintained by trigger only
+```
+- **Owner.** `student_id` for a student's list (as today); `user_id` for a guardian's. `is_default` is unique per
+  owner, so the partial unique index gains a twin on `user_id`.
+- **Reading a guardian's list**: every active member of the guardian's household (the new policy uses
+  `is_household_member(household_of(user_id))`). **Writing**: the owner only. A student's list keeps its rules
+  (student, or a guardian with edit access).
+- **`updates`** (default on): "tell me when this college's numbers change." The follows trigger, which today adds a
+  `list` follow for the student's own user when an item is inserted, now fires on insert, delete, **and** `updates`
+  changes, and resolves the user to notify as the list owner's user: the student's `user_id`, or the guardian's. A
+  managed student has no user, so the guardian who manages them (`managed_by`) is notified for that list, labelled in
+  the digest "on Alex's list". The `manual` source is retired: `follows.source` is always `list`, and the Follow button
+  is removed from the profile hero and Compare. Existing `manual` follows are migrated into the user's default list as
+  items with category `unsorted` and `updates = true`, so nobody loses an update.
+- **`visited_on`**: a date (or null). The tracking row shows it as "Visited" with the date on hover; ticking it without
+  a date stores today.
+- **`follows_social`**: the person says they follow the college on social media. A tick, nothing more; the plan spec
+  suggests which accounts ([application-plan.md](application-plan.md#suggested-steps)) from the college's
+  `social` object ([social-accounts.md](../school-identity/social-accounts.md)).
+- **"Applying" and "Accepted"** are the existing `status` and `outcome`: the tracking row writes `status = applying`
+  (or back to `considering`) and `outcome = admitted` through the same `setItemStatus`/`setOutcome` actions.
+
+### Display
+Each list row gains a **tracking row** under the name, five small toggles in one order everywhere:
+**Updates · Applying · Visited · Following on social · Accepted**. On, each reads as a filled chip; off, an outline.
+On phones they wrap to two lines. A guardian without edit access sees them read-only. The CSV export gains `updates`,
+`visited_on`, and `follows_social` columns after the Scoir ones, which import ignores if absent.
+
+The list page keeps the balance line and "Next 30 days" strip. The **Updates** section below the list replaces
+`/me/updates`: the digests this person received and the changes that didn't warrant one, filtered to this list's
+colleges.
+
+### What goes
+- The Follow button (`components/FollowButton.tsx`) and `/me/following`.
+- The `manual` follow source and `followWrite()`'s upgrade rule.
+- The "Update emails" switch moves to `/account` (it is per account, not per list) with the same one-click
+  unsubscribe behind it.
+
+## Migration
+One new file, `supabase/migrations/2026…_household_hub.sql`, applied to dev before prod:
+1. `profiles.phone`, `students.phone` (text, E.164, checked by a regex), `invitations.display_name`, `invitations.phone`,
+   `invitations.grad_year`, `invitations.token` (nullable; set by `create_invitation`, cleared by accept/revoke).
+2. `lists.user_id` with the one-owner check, the second partial unique index, and the read policy for household
+   members; `list_items.updates`, `visited_on`, `follows_social`.
+3. `household_roster()` returns pending invitations as rows (`status`, `display_name`, `invitation_id`, `expires_at`).
+4. `create_invitation()` takes the name, phone, and grad year; `accept_invitation()` writes `display_name` to the
+   profile when it is empty (and to the student record for a claimed one); a new `accept_invitation_by_id()` for the
+   password-setting step, callable only by the invited user (`auth.uid()` must match the invitation's `accepted_by`
+   pre-set at `createUser` time).
+5. The follows trigger rewritten for `updates` and for guardian-owned lists; a one-time statement moving `manual`
+   follows into default lists; `follows.source` constrained to `'list'`.
+6. Tests in `tests/household-hub-policies.test.mts` (PGlite, as the other policy tests): a guardian's list is readable
+   by the household and writable by nobody else; a student's list rules are unchanged; the trigger adds, removes, and
+   re-points follows for every owner kind; a guard test that drops the one-owner check and shows a list with two owners.
+
+## Files
+| File | Change |
+|---|---|
+| `app/household/page.tsx`, `app/household/[person]/page.tsx` | The hub and a person's page (list and numbers tabs); `/account/household`, `/me*` redirect here |
+| `components/account/Roster.tsx` | The one roster with status and actions; replaces the members list, the pending section, and `HouseholdSummary`'s member line |
+| `components/account/AddPersonForm.tsx` | Role first, then the role's fields; replaces `InviteForm`, `AddManagedStudentForm`, and `LinkManagedStudent` |
+| `app/household/actions.ts` | `addPerson` (branches on role), `copyInvitationLink` (reads the stored token), `resendInvitation`, the existing member actions |
+| `supabase/functions/invite-user/index.ts`, `lib/invite-function.ts` (server only) | The Edge Function holding the admin calls, and the typed client the Server Action uses (`inviteUser({ token }) → { link } \| { error }`); see [the Edge Function](#the-edge-function) |
+| `app/account/password/` | The `welcome` variant that accepts the invitation on save |
+| `lib/list-rules.ts`, `lib/lists.ts`, `components/lists/ListBoard.tsx` | Owner kinds, the tracking row, the three columns in CSV |
+| `lib/household-rules.ts` | Roster rows with status; `memberName()` never returns a role fallback when a name exists; `phone` formatting |
+| `lib/accounts.ts` | `initialsFor()` first-name-only; `MeState.name` always set when the profile has one |
+| `components/account/AccountMenu.tsx` | Three entries |
+| Glossary | `updates` (the per-college switch), `tracking` |
+
+## The Edge Function
+`supabase/functions/invite-user/` (Deno, deployed with `supabase functions deploy invite-user`, dev first, then
+prod). It is the only code outside the database that holds admin power, so it is small and documented in full in
+[supabase.md](../supabase.md) ("Edge Functions") with: what it does, its inputs and outputs, every secret it needs,
+how to deploy it, how to test it against dev, and how to roll it back (redeploy the previous commit).
+
+Contract:
+```
+POST {SUPABASE_URL}/functions/v1/invite-user
+Authorization: Bearer {SUPABASE_PUBLISHABLE_KEY}      -- Supabase's gateway requires a key
+X-Invite-Secret: {INVITE_FUNCTION_SECRET}             -- the site's shared secret; wrong or missing → 401
+{ "token": "<64 hex>", "redirectTo": "https://site/auth/confirm?next=/account/password?welcome=1" }
+
+200 { "link": "https://<project>.supabase.co/auth/v1/verify?token=…&type=invite&redirect_to=…" }
+409 { "error": "already_registered" }                 -- the address has an account: fall back to the signed-in accept flow
+404 { "error": "invitation_not_found" }               -- no pending, unexpired invitation for that token
+```
+Steps inside: hash the token (SHA-256, as `create_invitation` does), read the pending invitation with the service
+role, `auth.admin.createUser({ email, email_confirm: true, user_metadata: { display_name, role_hint, phone,
+invitation_id } })`, `auth.admin.generateLink({ type: "invite", email, options: { redirectTo } })`, write
+`invitations.accepted_by = user.id` (so `accept_invitation_by_id()` can insist on the same user later), return the
+link. Nothing else: the function never reads lists, profiles, or any other table. Secrets: `SUPABASE_URL` and
+`SUPABASE_SERVICE_ROLE_KEY` are provided by Supabase to every function; `INVITE_FUNCTION_SECRET` is set with
+`supabase secrets set` and in Vercel. `lib/invite-function.ts` is the only caller, and a test checks that no other
+module imports it or builds the URL by hand. The Server Action treats a network failure like email not being
+configured: the invitation still exists, and "Send again" retries.
+
+## Owner decisions
+All four were decided by the owner on 2026-10-06.
+1. **Decided: the secret key stays inside Supabase (an Edge Function).** Today an invited person has to sign up
+   themselves and confirm their email before accepting, because the site has no account for them. Creating the
+   account for them, with the email already marked verified, and minting the link that signs them in are
+   **administrator actions** in Supabase Auth, allowed only with the project's secret key, which bypasses row-level
+   security. [supabase.md](../supabase.md#keys) keeps that key off Vercel, and the owner chose to keep it that way:
+   the two admin calls live in a **Supabase Edge Function**, `supabase/functions/invite-user/`, which runs inside
+   Supabase where the secret key is already available as `SUPABASE_SERVICE_ROLE_KEY`. The Server Action calls it
+   with the invitation token; the function checks the token against `invitations` (pending, unexpired), creates the
+   user (`email_confirm: true`, metadata with name, role hint, phone, and the invitation id), mints the invite link
+   (`generateLink({ type: "invite" })`), and returns the link. The function accepts only requests carrying the
+   site's `INVITE_FUNCTION_SECRET` (a shared secret set in Vercel and as a function secret), so the publishable key
+   alone can't call it. The rejected alternative put `SUPABASE_SECRET_KEY` in Vercel confined to one module: simpler,
+   but a leak on Vercel would expose a key that reads every family's data. The owner's condition: strong
+   documentation, since this is a second runtime touched rarely; see [the Edge Function](#the-edge-function).
+2. **Approved: store the invitation token in clear** for pending invitations so Copy link works (above). The
+   alternative kept hash-only storage and made Copy mint a new link each time, silently killing the one sent earlier.
+3. **Approved: a guardian's list is visible to the household** (it's suggestions, and the student should see them).
+4. **Approved: phone now, use later.** Collected on the form as asked; nothing sends to it until
+   [application-plan.md](application-plan.md) and its consent step.
+
+## Out of scope
+Suggested steps, important dates as a plan, nudges, and the parent's check-in view: [application-plan.md](application-plan.md).
+Per-student edit grants (today `can_edit` covers every student in the household) stay as built.
+
+## Built (2026-10-06)
+Built the same day it was planned, with the build-roadmap-section method: four units on sub-branches
+(`feature/household-hub-schema`, `-invite`, `-lists`, `-pages`), merged into `feature/household-hub`.
+
+- **Migration** `supabase/migrations/20261006150000_household_hub.sql` (apply after `20261005170000_household_limits_and_home.sql`,
+  which must be in place first: it defines `household_of()`): phones, invitation name/phone/grad year/clear token,
+  lists with a user owner and the `can_read_list()`/`can_edit_list()` helpers, the three tracking columns, the follows
+  trigger rewritten around `updates` (follows can no longer be written through the API; a one-time statement moves
+  `manual` follows into default lists), `household_roster()` with pending rows and statuses, the 8-argument
+  `create_invitation()` (inviting a student by name creates the managed record and links the hand-over),
+  `accept_invitation_by_id()`, a `lists_guard_owner` trigger, and re-sync triggers when a list or student record
+  changes hands. Tests: `tests/household-hub-policies.test.mts` (every rule, three guard tests).
+- **Edge Function** `supabase/functions/invite-user/` ([the Edge Function](#the-edge-function); documented in
+  `specs/supabase.md` "Edge Functions"). Two findings changed the flow: Supabase refuses an *invite* link for a user
+  whose email is already confirmed, so the function returns a **magic link**; and such links last about an hour, so
+  the link that is emailed, shown, and copied is always the site's own seven-day `/invite/<token>`. The function is
+  called when the invited person opens that link and presses **Continue**, and sends them straight to the password
+  page. `verify_jwt` is off (the publishable key isn't a JWT); the shared `X-Invite-Secret` is the authorization.
+  Deploy with `npx supabase functions deploy invite-user --no-verify-jwt` after setting `INVITE_FUNCTION_SECRET`
+  (function secret and Vercel) and `INVITE_ALLOWED_ORIGINS`.
+- **Pages**: `/household` (roster with List and Numbers links on every row, home, and Add someone behind a "+" in the
+  People card's corner that opens a dialog (owner request after the first preview); a solo viewer starts the
+  household by adding the first person),
+  `/household/[person]` (List tab, `components/lists/ListPage.tsx` embedded), `/household/[person]/lists/[id]`,
+  `/household/[person]/numbers`. Redirects: `/account/household` → `/household`; `/me` → own Numbers tab;
+  `/me/list` and `/me/following` → own person page. Avatar menu: Household · Your account · Sign out.
+  `components/account/Roster.tsx`, `AddPersonForm.tsx`, `InvitationControls.tsx`, `PersonHeader.tsx`;
+  `app/household/actions.ts` (`addPerson`, `inviteManagedStudent`, `copyInvitationLink`, `resendInvitation`);
+  `/account/password?welcome=1` accepts the invitation on save.
+- **Lists**: `lib/lists.ts` owner-aware (`ListOwner`); `components/lists/TrackingRow.tsx` (Updates · Applying · Visited ·
+  Following on social · Accepted); CSV gains `updates`, `visited_on`, `follows_social`; `components/me/UpdatesSection.tsx`
+  under a list its owner views; the email-updates switch is on `/account#updates`. Removed: `components/FollowButton.tsx`,
+  `/me/following`, the `manual` follow source. Glossary: `updates`, `tracking`.
+
+### Deviations and decisions made while building
+- Seats count every member row plus **unexpired** pending invitations (the database's `household_seats_taken` rule),
+  including a managed student's hand-over row.
+- The welcome step can't carry an invitation id (a signed-out visitor can't read `invitations`); the password page
+  finds the newest pending invitation whose `accepted_by` is the signed-in user.
+- A solo viewer chooses their own side when adding the first person; a student starting a household may add only
+  guardians.
+- "Added by you" compares against the signed-in user, not the student's account.
+- Another guardian reading a guardian's list sees "<Name>'s list · shared with the household to read"; those reads
+  aren't logged (the access log covers students' information).
+- Not done: browser QA needs a signed-in session against a database with the migration applied, so the owner's
+  preview test is the first visual check. Specs `accounts.md`, `saved-lists.md`, `follow-colleges.md`, and
+  `home-and-distance.md` carry a short note pointing here rather than rewritten "Built" sections.
+
+### Redesign (2026-10-06)
+The owner's verdict on the first preview: "The look and feel is awful… Clean and neat. No big screen transitions where
+you need to hit a back crumb. Functions we won't use a lot (deleting users, resending a link) can be simple clean
+icons. What the user primarily does is review and change the lists and look at and change the numbers." So the hub
+became **one screen** built around those two jobs, and everything rare moved behind a "⋯" or a collapsed section.
+
+```
+The Ross household                         ← app/household/layout.tsx (server), never changes
+3 of 6 seats
+[A Alexandra    ] [J Jordan       ] [T Tracy        ] [P Pat    ] [+ Add]   ← people strip
+ Student · 2028    No account yet    You · Guardian    Invited
+──────────────────────────────────────────────────────────────
+Alexandra Ross  [Student] Class of 2028 (call)        [⋯]   ← person area (PersonHeader)
+[ List | Numbers ]                                            ← segmented links (students only)
+  the list (ListPage) or the numbers (StudentNumbers)
+▸ Household settings                                          ← <details>, closed: home address, Leave
+```
+
+- **One frame.** `app/household/layout.tsx` renders the household name, a seats line, the people strip, and Household
+  settings around `{children}`. Next.js keeps a layout mounted across client navigation, so moving between people
+  swaps only the person's content: no back link, no page transition. `/household` itself has no content once there is
+  a household: it redirects to the viewer's own page (their student record's if they have one), else the first
+  student's (`hubLanding()` in `lib/household-hub.ts`). With no household yet it shows "Start your household" with
+  **Add the first person** under a strip of just the viewer and the "+" (their own chip still opens their list).
+- **People strip** (`components/account/PeopleStrip.tsx`, client for `usePathname()`): one chip per roster row with the
+  avatar letter (dashed while someone hasn't joined), first name, and a caption from `chipCaption()` ("Student · Class
+  of 2028", "You · Guardian", "Invited", "Invite expired", "No account yet"). The chip for the page shown is ink-filled
+  (`chipActive()`: the person's page and anything under it). Anyone with a page links to it; a pending invitation has
+  no page, so its chip opens a popover with the expiry and Copy link · Send again · Cancel. The last chip is "+ Add"
+  (`AddPersonDialog`, unchanged form) or, at six seats, "Full" with the reason in a popover. Replaces `Roster.tsx`.
+- **Person area** (`components/account/PersonHeader.tsx`, rewritten): the name line (full name, "(you)", role badge,
+  Class of, a status while not joined, a guardian's view/edit line, the phone as a call icon), the guardian banner when
+  a guardian looks at a student, and `SegmentedLinks` (List | Numbers, students only; full width with 44 px pills on
+  phones). The **"⋯" menu** (`PersonMenu.tsx`, base-ui `Menu`) holds the rare actions `personActions()` allows, in a
+  fixed order: Copy invitation link, Send the link again, Cancel the invitation (a managed student's hand-over), Invite
+  them (managed student you added; the form opens in a dialog), Allow editing / View only (Give up editing on your
+  own), Edit your profile (→ `/account`, on your own page, student or guardian), Remove from household, Leave
+  household. Remove and Leave confirm, then go to `/household`, which lands on whoever is left.
+- **Household settings** (`HouseholdSettings.tsx`): a `<details>` at the bottom of every hub page, closed by default,
+  with the home address (`HomeForm`) and a Leave household line. It opens itself and scrolls into view when the hash
+  is `#home`, on load or on `hashchange`; so a list's "add your home address" link is a plain `<a href="#home">` inside
+  the hub (the router's own hash changes fire no `hashchange`), and `/household#home` elsewhere (a full load keeps the
+  hash through the redirect).
+- **List rows** (`ListBoard.tsx`, also on `/me/lists/[id]`): crest · name · one facts line (city, admit rate, average
+  cost, distance, each cited) · a trash icon (confirms) · **More**. More (closed by default; open rows are component
+  state only, kept in `ListBoard` so a row that changes category stays open) holds category, round, status, outcome,
+  enrolling, deadline, compare, move up/down, the tracking row, "Added by", and notes. Category headers and the
+  balance line stay (they are the list's structure); a list with only unsorted colleges has no header
+  (`showCategoryHeaders()` in `lib/list-rules.ts`). "Next 30 days" stays.
+- **List header**: name, Compare these, and a "⋯" (`ListActionsMenu` in `ListControls.tsx`) with Export CSV, Import CSV,
+  and Share a read-only link; the last two open in a dialog (`components/ui/sheet-dialog.tsx`, the bottom sheet on
+  phones / centered card from `sm` that Add someone also uses). The row of CSV and share controls under the list is
+  gone, and the footnote is one sentence.
+- **Phones (390 px)**: the strip is one sideways row that snaps chip by chip and bleeds to the screen edge
+  ([mobile.md](../mobile.md) "People strip"); chips are 46 px tall; the segmented control is full width; list rows are a
+  single column. Measured with Playwright on a harness page built from these components with sample data (a signed-in
+  hub needs the database): `window.innerWidth` 390 at DOMContentLoaded and after, `scrollWidth` 390 with a row's More
+  open and settings open; 1280 likewise.
+- **Kept as built**: every action (copy link, send again, cancel, remove, allow editing / view only, leave, invite a
+  managed student, home address), the Add someone form, `HouseholdSummary` on `/account` (names line + link), the
+  routes and redirects. Tests: `tests/household-hub-pages.test.mts` (chip name and caption, active chip, landing,
+  ⋯ menu actions, unsorted-only headers); `tests/address-suggest.test.mts` now reads the layout.
+
+### Owner setup
+1. Apply `supabase/migrations/20261005170000_household_limits_and_home.sql` to dev if it isn't there yet (as of
+   2026-10-06 it wasn't: no `household_homes` table, no `household_of()`), then `20261006150000_household_hub.sql`.
+2. Deploy the Edge Function and set its secrets (`specs/supabase.md` "Edge Functions"); set `INVITE_FUNCTION_SECRET`
+   in Vercel. Until then, invited people see the sign-in prompt and the earlier accept flow still works.

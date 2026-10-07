@@ -57,7 +57,11 @@ export interface StudentProfileAcademics {
   /** On `gpaScale`; never pre-converted, so the original number is always shown back to the student. */
   gpa: number | null;
   gpaScale: GpaScale;
-  /** Weighted GPA, informational only (glossary "weighted-gpa"): never converted or compared across schools. */
+  /**
+   * Weighted GPA, informational only (glossary "weighted-gpa"): never converted or compared across schools. 0–120,
+   * not 0–4.0/5.0: many high schools weight a 100-point scale above 100 for honors/AP courses (e.g. 108/100), so the
+   * cap has to clear that, not just the unweighted scale's own max.
+   */
   weightedGpa: number | null;
   /** 0–100; "top 10%" is stored as 10. */
   classRankPercentile: number | null;
@@ -106,6 +110,15 @@ export interface StudentProfileData {
   tests: StudentProfileTests;
   plans: StudentProfilePlans;
   preferences: StudentProfilePreferences;
+}
+
+/**
+ * The graduation year the /me form should default to (student-profile.md "Changes (2026-10-06)"): the profile's
+ * own saved value when there is one, else the `students.grad_year` set when the student was invited or added to a
+ * household. Null when neither is on file. Pure so it's testable without a profile form or a Supabase round trip.
+ */
+export function effectiveGradYear(basics: Pick<StudentProfileBasics, "gradYear">, studentGradYear: number | null): number | null {
+  return basics.gradYear ?? studentGradYear;
 }
 
 export const PROFILE_GROUPS = ["basics", "academics", "tests", "plans", "preferences"] as const;
@@ -205,7 +218,7 @@ export function sanitizeProfile(input: unknown): StudentProfileData {
   const academics: StudentProfileAcademics = {
     gpa: num(ac.gpa, 0, gpaMaxFor(gpaScale)),
     gpaScale,
-    weightedGpa: num(ac.weightedGpa, 0, 6),
+    weightedGpa: num(ac.weightedGpa, 0, 120),
     classRankPercentile: int(ac.classRankPercentile, 1, 100),
     courseRigorCount: int(ac.courseRigorCount, 0, 40),
   };

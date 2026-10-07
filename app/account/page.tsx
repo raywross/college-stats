@@ -7,10 +7,10 @@ import { AccountSection } from "@/components/account/AccountSection";
 import { AuthUnavailable } from "@/components/account/AuthUnavailable";
 import { HouseholdSummary } from "@/components/account/HouseholdSummary";
 import { SignOutButton } from "@/components/account/SignOutButton";
+import { UpdateEmailsSection } from "@/components/me/UpdateEmailsSection";
 import { Term } from "@/components/ui/info-tip";
 import { AccountsSetupError, authConfigured, currentStudent, getAccount, requireUser } from "@/lib/auth";
 import { myAccessLog, myHouseholds } from "@/lib/households";
-import { myHome } from "@/lib/home-store";
 import { DELETE_GRACE_DAYS, shortDate } from "@/lib/household-rules";
 import { restoreAccount } from "./delete/actions";
 import { ProfileForm } from "./ProfileForm";
@@ -38,9 +38,8 @@ export default async function AccountPage() {
 
   if (profile.deleted_at) return <ScheduledForDeletion deletedAt={profile.deleted_at} />;
 
-  const [households, student, home] = await Promise.all([myHouseholds(), currentStudent(), myHome()]);
+  const [households, student] = await Promise.all([myHouseholds(), currentStudent()]);
   const accessLog = student ? await myAccessLog() : [];
-  const defaultRole = profile.role_hint === "guardian" || profile.role_hint === "counselor" ? "guardian" : "student";
 
   return (
     <div className="mx-auto max-w-3xl space-y-6 px-4 py-10 sm:px-6 sm:py-14">
@@ -72,16 +71,12 @@ export default async function AccountPage() {
       <AccountSection
         id="household"
         title={<Term term="household">Household</Term>}
-        description="Parents or guardians and the students they help, up to six people in any mix, sharing one home address for distances. Students never see a guardian's finances."
+        description="Parents or guardians and the students they help, by name. Each person's list, the home address, and invitations live on the household page."
       >
-        <HouseholdSummary households={households} home={home} defaultRole={defaultRole} />
+        <HouseholdSummary households={households} />
       </AccountSection>
 
-      <AccountSection id="following" title={<Term term="follow">Following</Term>} description="Colleges you follow, and your update-email setting.">
-        <Link href="/me/following" className="inline-flex h-10 items-center gap-2 rounded-full border px-4 text-sm font-semibold hover:bg-muted">
-          Manage what you follow
-        </Link>
-      </AccountSection>
+      <UpdateEmailsSection />
 
       {student && (
         <AccountSection

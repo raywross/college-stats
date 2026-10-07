@@ -1,7 +1,7 @@
 "use server";
 /**
  * The household's home (public.household_homes; specs/product/home-and-distance.md). One home per household, set by
- * any active member from the household's card on /account/household and seen by all of them: a student's list and
+ * any active member from the household page (/household) and seen by all of them: a student's list and
  * a guardian's view of it measure from the same place. Every read and write runs with the signed-in user's own
  * Supabase session, so the member-only policies in supabase/migrations/20261005170000_household_limits_and_home.sql
  * decide; nobody outside the household reads or writes it.

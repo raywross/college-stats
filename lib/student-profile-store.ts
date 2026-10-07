@@ -9,6 +9,7 @@
  * Compare's "You" column, Explore's fit chips): the fetch happens after the page has already rendered, in the
  * browser, so the public page itself never reads a cookie (tests/accounts.test.mts's guard).
  */
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { getAccount, getUser, studentsICanSee } from "@/lib/auth";
 import { createServerSupabase } from "@/lib/supabase-server";
 import type { StudentAccess, StudentRecord } from "@/lib/accounts";
@@ -92,7 +93,25 @@ export async function saveProfile(studentId: string, raw: unknown): Promise<Save
     if (error.code === "42501" || /row-level security/i.test(error.message)) return { ok: false, message: "You don't have permission to edit this profile." };
     return { ok: false, message: "We couldn't save that. Try again in a moment." };
   }
+  // Keep students.grad_year in step with what the student just saved (student-profile.md "Changes (2026-10-06)"):
+  // the roster, invite flow, and anything else that reads the student record directly should see the same year as
+  // the profile form, not whatever was set when the record was created. Best-effort and silent on failure — the
+  // student_profiles row above is the field's source of truth for every tool that reads the profile itself, so a
+  // denied or failed sync here (e.g. a view-only guardian's stale write, which can_edit_student already should have
+  // blocked before this point) never fails the profile save the student is waiting on.
+  if (data.basics.gradYear !== null) await syncStudentGradYear(supabase, studentId, data.basics.gradYear);
   return { ok: true };
+}
+
+async function syncStudentGradYear(supabase: SupabaseClient, studentId: string, gradYear: number): Promise<void> {
+  try {
+    const { data: row } = await supabase.from("students").select("grad_year").eq("id", studentId).maybeSingle();
+    if (row && row.grad_year !== gradYear) {
+      await supabase.from("students").update({ grad_year: gradYear }).eq("id", studentId);
+    }
+  } catch {
+    // Best-effort sync; see the call site's comment.
+  }
 }
 
 /**

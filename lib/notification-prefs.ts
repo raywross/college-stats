@@ -1,8 +1,8 @@
 "use server";
 /**
- * Whether the signed-in user gets update-digest emails (specs/product/follow-colleges.md#the-digest). The switch on
- * /me/following and the one the digest's own unsubscribe link flips (app/unsubscribe/[token]/route.ts, by token, no
- * sign-in). Every follower has a notification_prefs row from their first follow (the follows_ensure_prefs trigger);
+ * Whether the signed-in user gets update-digest emails (specs/product/follow-colleges.md#the-digest). The switch in
+ * /account's "Update emails" section (components/me/UpdateEmailsSection.tsx) and the one the digest's own unsubscribe
+ * link flips (app/unsubscribe/[token]/route.ts, by token, no sign-in). Every follower has a notification_prefs row from their first follow (the follows_ensure_prefs trigger);
  * upsert so toggling still works for the rare case it's missing (e.g. a row deleted out of band).
  */
 import { authConfigured, getUser } from "@/lib/auth";

@@ -8,6 +8,7 @@ import type { School } from "../lib/types.ts";
 import {
   completeness,
   completenessScore,
+  effectiveGradYear,
   emptyProfile,
   fitsPreferences,
   fitsScores,
@@ -113,6 +114,29 @@ test("sanitizeProfile drops out-of-range and wrongly typed values instead of coe
 test("sanitizeProfile caps intended majors at 3 and preferences at their lists", () => {
   const out = sanitizeProfile({ plans: { intendedMajors: ["11", "52", "42", "26"] } });
   assert.deepEqual(out.plans.intendedMajors, ["11", "52", "42"]);
+});
+
+test("sanitizeProfile allows a weighted GPA up to 120 (some high schools weight a 100-point scale above 100)", () => {
+  assert.equal(sanitizeProfile({ academics: { weightedGpa: 108 } }).academics.weightedGpa, 108);
+  assert.equal(sanitizeProfile({ academics: { weightedGpa: 120 } }).academics.weightedGpa, 120);
+  assert.equal(sanitizeProfile({ academics: { weightedGpa: 121 } }).academics.weightedGpa, null, "over 120 dropped, not clamped");
+  assert.equal(sanitizeProfile({ academics: { weightedGpa: -1 } }).academics.weightedGpa, null);
+});
+
+/* ------------------------------------------------------------------ */
+/* effectiveGradYear                                                   */
+/* ------------------------------------------------------------------ */
+
+test("effectiveGradYear: the student record's grad_year fills in when the profile has none", () => {
+  assert.equal(effectiveGradYear({ gradYear: null }, 2028), 2028);
+});
+
+test("effectiveGradYear: a saved profile value wins over the student record", () => {
+  assert.equal(effectiveGradYear({ gradYear: 2027 }, 2028), 2027);
+});
+
+test("effectiveGradYear: null when neither is on file", () => {
+  assert.equal(effectiveGradYear({ gradYear: null }, null), null);
 });
 
 /* ------------------------------------------------------------------ */

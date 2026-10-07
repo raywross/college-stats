@@ -6,7 +6,11 @@
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { affectedAsUser, asUser, createAuthDb, createUser, type AuthDb } from "./helpers/pg-auth.mts";
+import { readdirSync, readFileSync } from "node:fs";
+import { join } from "node:path";
+import { PGlite } from "@electric-sql/pglite";
+import { pg_trgm } from "@electric-sql/pglite/contrib/pg_trgm";
+import { AUTH_STUB_SQL, affectedAsUser, asUser, createAuthDb, createUser, type AuthDb } from "./helpers/pg-auth.mts";
 
 const MIGRATIONS = [
   "20260928000000_dataset.sql",
@@ -225,4 +229,50 @@ test("guard: a list_notes policy that drops the private check lets a guardian re
   await db.exec(`drop policy "Notes: read" on public.list_notes; create policy "broken" on public.list_notes for select to authenticated using (true);`);
   const leaked = await asUser<{ body: string }>(db, mom, "select body from public.list_notes where item_id = $1", [item.id]);
   assert.deepEqual(leaked, [{ body: "secret plan" }], "with the policy dropped, the leak the test above is guarding against actually happens");
+});
+
+/* ------------------------------------------------------------------ */
+/* The tracking columns (20261006150000_household_hub.sql)             */
+/* ------------------------------------------------------------------ */
+
+const DIR = join(import.meta.dirname, "..", "supabase", "migrations");
+
+/** PGlite with the auth stub and every migration, in order (as tests/household-hub-policies.test.mts boots it). */
+async function bootAll(): Promise<AuthDb> {
+  const db = await PGlite.create({ extensions: { pg_trgm } });
+  await db.exec(AUTH_STUB_SQL);
+  for (const name of readdirSync(DIR).filter((f) => f.endsWith(".sql")).sort()) await db.exec(readFileSync(join(DIR, name), "utf8"));
+  await db.exec("grant usage on schema extensions to anon, authenticated, service_role");
+  return db;
+}
+
+test("tracking columns: defaults on a new item; the student and an edit-access guardian set them, a view-only guardian can't", async () => {
+  const db = await bootAll();
+  const mom = await createUser(db, { email: "mom@example.com", birthYear: 1978, roleHint: "guardian" });
+  const dad = await createUser(db, { email: "dad@example.com", birthYear: 1976, roleHint: "guardian" });
+  const alice = await createUser(db, { email: "alice@example.com", birthYear: 2009, roleHint: "student" });
+  const [{ household }] = await asUser<{ household: string }>(db, mom, "select public.create_household('The Smiths', 'guardian') as household");
+  for (const [who, email, side] of [[dad, "dad@example.com", "guardian"], [alice, "alice@example.com", "student"]] as const) {
+    const [{ inv }] = await asUser<{ inv: { token: string } }>(db, mom, "select public.create_invitation($1, $2, $3) as inv", [household, email, side]);
+    await asUser(db, who, "select public.accept_invitation($1)", [inv.token]);
+  }
+  const [momMember] = await asUser<{ id: string }>(db, alice, "select id from public.household_members where household_id = $1 and user_id = $2", [household, mom]);
+  await asUser(db, alice, "select public.set_member_can_edit($1, true)", [momMember.id]);
+  const [{ id: student }] = await asUser<{ id: string }>(db, alice, "select id from public.students where user_id = $1", [alice]);
+  const [{ id: list }] = await asUser<{ id: string }>(db, alice, "insert into public.lists (student_id, name, is_default) values ($1, 'My list', true) returning id", [student]);
+  const [item] = await asUser<{ id: string; updates: boolean; visited_on: string | null; follows_social: boolean }>(
+    db,
+    alice,
+    "insert into public.list_items (list_id, unit_id) values ($1, '243744') returning id, updates, visited_on, follows_social",
+    [list],
+  );
+  assert.deepEqual({ updates: item.updates, visited_on: item.visited_on, follows_social: item.follows_social }, { updates: true, visited_on: null, follows_social: false });
+
+  const set = "update public.list_items set updates = false, visited_on = '2026-09-20', follows_social = true where id = $1";
+  assert.equal(await affectedAsUser(db, dad, set, [item.id]), 0, "a view-only guardian can't change the tracking row");
+  assert.equal(await affectedAsUser(db, mom, set, [item.id]), 1, "an edit-access guardian can");
+  assert.equal(await affectedAsUser(db, alice, "update public.list_items set visited_on = null, follows_social = false where id = $1", [item.id]), 1, "and so can the student");
+  const [after] = await asUser<{ updates: boolean; visited_on: string | null; follows_social: boolean }>(db, dad, "select updates, visited_on, follows_social from public.list_items where id = $1", [item.id]);
+  assert.deepEqual({ ...after }, { updates: false, visited_on: null, follows_social: false }, "the view-only guardian still reads the row");
+  await assert.rejects(asUser(db, alice, "update public.list_items set visited_on = 'last spring' where id = $1", [item.id]), /invalid input syntax for type date/);
 });

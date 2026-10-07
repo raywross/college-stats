@@ -53,6 +53,7 @@ overflowing content, so root causes must be fixed. `clip` (unlike `hidden`) keep
 | Result row | `SchoolRow`: crest, name, city · type, three colored facts (SAT, undergrads, avg cost), admit rate on the right, compare button. ~90px vs. ~460px for a card | Explore (cards from `sm`) |
 | Chip row | `max-sm:overflow-x-auto max-sm:-mx-4 max-sm:px-4` + `shrink-0` children | Home "Try:" schools, profile "Known for" |
 | Pill bar | `CompareHeader`'s second row becomes one swipeable row of topic pills (Overview + seven), under a school-chips row that swipes the same way | Compare |
+| People strip | A `<ul>` of 44px+ chips: `max-sm:overflow-x-auto max-sm:snap-x max-sm:snap-mandatory max-sm:-mx-4 max-sm:px-4 max-sm:scroll-px-4`, `snap-start shrink-0` items, `sm:flex-wrap` from `sm`. The active chip (`aria-current="page"`) is scrolled into view by changing the row's `scrollLeft`, never `scrollIntoView` (which would scroll the page too) | Household hub (`PeopleStrip`, [household-hub.md](product/household-hub.md#redesign-2026-10-06)) |
 | Sticky first column | `sticky left-0 bg-card` on the label cell; the header row of college names sticks too, from `lg`, under the compare band | Compare's full table (`/compare/table`) |
 
 ## Profile on phones

@@ -4,6 +4,7 @@ import { TOPIC_FIELDS, topicOf, type TopicKey } from "@/lib/profile-topics";
 import { loadProfile, type Profile } from "@/lib/profile-data";
 import { SourceNote } from "@/components/sources/SourceNote";
 import { CompactHeader } from "./CompactHeader";
+import { BlockViews } from "./BlockViews";
 import { OnThisPage, type PageItem } from "./OnThisPage";
 import { TopicNav } from "./TopicNav";
 
@@ -45,6 +46,7 @@ export function TopicPage({
   return (
     <div className="mx-auto max-w-6xl px-4 sm:px-6">
       <CompactHeader profile={profile} current={topic} />
+      {items.length > 0 && <BlockViews unitId={school.unit_id} topic={topic} ids={items.map((i) => i.id)} />}
       <div className={hasList ? "pt-5 sm:pt-8 lg:grid lg:grid-cols-[minmax(0,1fr)_11rem] lg:gap-10" : "pt-5 sm:pt-8"}>
         {aside !== undefined ? <div className="lg:order-last">{aside}</div> : hasList && <OnThisPage items={items} className="mb-5 lg:order-last lg:mb-0" />}
         <div className="min-w-0 lg:order-first">

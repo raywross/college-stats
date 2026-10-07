@@ -8,6 +8,7 @@ import { GLOSSARY, type TermKey } from "@/lib/glossary";
 import { citesYear, yearLabel, type AnyCited, type AnyCitedSource } from "@/lib/lineage";
 import { num, pctSmart } from "@/lib/format";
 import { DEMOGRAPHIC_CATEGORIES } from "@/lib/metrics";
+import { track } from "@/lib/analytics";
 import { cn } from "@/lib/utils";
 
 // Inline, not inline-flex, so a long source name wraps like the sentence around it and its year stays beside it.
@@ -176,6 +177,23 @@ function TermPopup({ term, cited }: { term: TermKey; cited?: AnyCited }) {
   );
 }
 
+/**
+ * A Popover.Root `onOpenChange` that runs `cb` when the popover opens (not when it closes). Every popover here counts
+ * its openings through this one helper (specs/product/telemetry.md): the glossary term and the citation's field path,
+ * never anything the visitor typed.
+ */
+function onOpen(cb: () => void): (open: boolean) => void {
+  return (open) => {
+    if (open) cb();
+  };
+}
+
+/** What opening a term popover reports: the term, and the cited field when the popover carries a source. */
+function trackTermOpened(term: TermKey, cited?: AnyCited): void {
+  track("term_opened", { term });
+  if (cited) track("citation_opened", { field: cited.path });
+}
+
 const triggerClass = cn(
   "relative inline-flex size-4 shrink-0 items-center justify-center rounded-full align-middle text-muted-foreground/80 transition-colors",
   "hover:text-primary focus-visible:text-primary focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:outline-none data-[popup-open]:text-primary",
@@ -188,7 +206,7 @@ const triggerClass = cn(
  */
 export function InfoTip({ term, cited, className }: { term: TermKey; cited?: AnyCited; className?: string }) {
   return (
-    <Popover.Root>
+    <Popover.Root onOpenChange={onOpen(() => trackTermOpened(term, cited))}>
       <Popover.Trigger
         openOnHover
         delay={120}
@@ -206,7 +224,7 @@ export function InfoTip({ term, cited, className }: { term: TermKey; cited?: Any
 /** Source-only (i) icon, for values without a glossary term. */
 export function SourceTip({ cited, className }: { cited: AnyCited; className?: string }) {
   return (
-    <Popover.Root>
+    <Popover.Root onOpenChange={onOpen(() => track("citation_opened", { field: cited.path }))}>
       <Popover.Trigger openOnHover delay={120} closeDelay={120} aria-label={`Source for ${cited.field}`} className={cn(triggerClass, className)}>
         <BookMarked className="size-3" />
       </Popover.Trigger>
@@ -229,7 +247,7 @@ export interface SourceGroup {
  */
 export function SourcesTip({ title, groups, className }: { title: string; groups: SourceGroup[]; className?: string }) {
   return (
-    <Popover.Root>
+    <Popover.Root onOpenChange={onOpen(() => groups[0] && track("citation_opened", { field: groups[0].cited.path }))}>
       <Popover.Trigger openOnHover delay={120} closeDelay={120} aria-label={title} className={cn(triggerClass, className)}>
         <Info className="size-3.5" />
       </Popover.Trigger>
@@ -250,7 +268,7 @@ export function SourcesTip({ title, groups, className }: { title: string; groups
 /** Inline word with a dotted underline that opens the same explanation. */
 export function Term({ term, children, className, cited }: { term: TermKey; children?: ReactNode; className?: string; cited?: AnyCited }) {
   return (
-    <Popover.Root>
+    <Popover.Root onOpenChange={onOpen(() => trackTermOpened(term, cited))}>
       <Popover.Trigger
         openOnHover
         delay={150}

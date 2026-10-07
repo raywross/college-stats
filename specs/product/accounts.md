@@ -61,8 +61,18 @@ federal number ([commercialization.md](commercialization.md#what-stays-free)).
   URL must be the live site (`https://college-stats-nine.vercel.app`), with that host, the preview wildcard, and
   localhost in Redirect URLs; a wrong Site URL sent the first live sign-ups to a Vercel login wall.
 - **Session:** `httpOnly` cookies via `@supabase/ssr` (`AUTH_COOKIE_OPTIONS` in `lib/supabase-server.ts`; the
-  library's default is script-readable); `proxy.ts` (Next 16's name for middleware) refreshes the token; `getUser()`
-  (not `getSession()`) in every server read, because only `getUser()` verifies the token with Supabase.
+  library's default is script-readable); `proxy.ts` (Next 16's name for middleware) refreshes the token; every server
+  read verifies it with `auth.getClaims()`, never `getSession()`, which trusts the cookie unchecked.
+- **Verifying the session (2026-10-07).** `getUser()` in `lib/auth.ts` and `proxy.ts` call `auth.getClaims()` instead
+  of `auth.getUser()`, which asked Supabase Auth on every request (twice per page: once in the proxy, once in the
+  render). Per the auth-js `getClaims` doc comment, it refreshes a token that is about to expire, rejects an expired
+  one, and checks the signature against the project's signing keys (`/auth/v1/.well-known/jwks.json`, cached in memory
+  for 10 minutes): locally with WebCrypto when the project signs with an asymmetric key, and with the same server
+  check as `getUser()` when it still uses a symmetric secret. Identity is as trustworthy as before, since row-level
+  security accepts the same signed token, with no round trip in the common case. What changes: a session revoked
+  elsewhere (sign-out on another device) still reads as signed in until its access token expires (an hour at most),
+  as Supabase's own RLS already allowed, and the email comes from the token, so a changed address shows after the
+  next refresh. `getUser()` returns `SessionUser` (`{ id, email }`, from `sub` and `email`); nothing reads more.
 - **Anonymous first.** Tools work signed out with state in `localStorage` (the compare list already does).
   On sign-in, local state is offered for import once ("Save these 4 colleges to your list?"), then cleared.
 - The header gains an avatar menu (desktop) and the phone More sheet gains "Account" ([mobile.md](../mobile.md)).
@@ -166,7 +176,7 @@ access-log view build on it.
 | File | Exports |
 |---|---|
 | `lib/supabase-server.ts` (server only) | `createServerSupabase(): Promise<SupabaseClient>` (new `@supabase/ssr` client per request, bound to `cookies()`; throws when unconfigured), `supabaseAuthEnv()` |
-| `lib/auth.ts` (server only) | `authConfigured(): boolean`, `getUser(): Promise<User \| null>` (`auth.getUser()`, per-request `cache`), `requireUser(next?): Promise<User>` (redirects to `/login?next=`), `getAccount(): Promise<Account \| null>`, `currentStudent(): Promise<StudentRecord \| null>`, `studentsICanSee(): Promise<StudentAccess[]>`, `AccountsSetupError` |
+| `lib/auth.ts` (server only) | `authConfigured(): boolean`, `getUser(): Promise<SessionUser \| null>` (`auth.getClaims()`, per-request `cache`; `SessionUser` is `{ id, email }`), `requireUser(next?): Promise<SessionUser>` (redirects to `/login?next=`), `getAccount(): Promise<Account \| null>`, `currentStudent(): Promise<StudentRecord \| null>`, `studentsICanSee(): Promise<StudentAccess[]>`, `AccountsSetupError` |
 | `lib/accounts.ts` (pure) | Types `Account` (`{ user: { id, email }, profile }`), `Profile`, `StudentRecord`, `Household`, `HouseholdMember`, `Invitation`, `StudentAccess` (`{ student, relation: "self" \| "guardian", canEdit }`), `RoleHint`, `MeState`; `birthYearAllowed(year, today?)`, `parseBirthYear`, `safeNextPath(next, fallback?)`, `loginHref(next?)`, `resolveStudentAccess`, `wantsOwnStudent`, `initialsFor`, `INVITATION_ERRORS`, `ROLE_HINTS`, `AGE_GATE_COOKIE` |
 | `lib/email.ts` | `sendEmail({ to, subject, html, text, headers }): Promise<SendResult>` (`{ sent: true, id }`, `{ sent: false, reason: "not-configured" }`, or `{ sent: false, reason: "error", error }`; never throws), `emailConfigured()` |
 | `components/account/` | `SignInPrompt` (`reason`, `next`, `variant: "card" \| "inline"`), `AccountMenu` (avatar menu; add links to its `ACCOUNT_MENU_LINKS`), `useMe()` (client hook over `/api/me`), `AccountSection` + `ComingSoon`, `SignOutButton`, `AuthUnavailable` |

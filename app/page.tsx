@@ -109,7 +109,7 @@ export default async function HomePage() {
               of spreadsheets.<span className="hidden sm:inline"> Every term is explained in plain English.</span>
             </p>
             <div className="mt-6 max-w-xl animate-rise [animation-delay:180ms] sm:mt-8">
-              <SchoolSearch />
+              <SchoolSearch source="hero" />
               <div className="no-scrollbar mt-3 flex items-center gap-1.5 text-xs max-sm:-mx-4 max-sm:overflow-x-auto max-sm:px-4 sm:flex-wrap">
                 <span className="text-muted-foreground">Try:</span>
                 {getSchoolsByIds(["166027", "110662", "170976", "131520", "221999"]).map((s) => (

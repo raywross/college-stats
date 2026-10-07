@@ -8,6 +8,7 @@ import { COMPARE_OVERVIEW_FIELDS, compareHref, compareTopicOf } from "@/lib/comp
 import { compareMetadata, loadComparison } from "@/lib/compare-data";
 import type { School } from "@/lib/types";
 import { CompareHeader } from "@/components/compare/CompareHeader";
+import { CompareViewed } from "@/components/compare/CompareViewed";
 import { CompareTopicCards } from "@/components/compare/CompareTopicCards";
 import { KeyDifferenceList } from "@/components/compare/CompareTopicPage";
 import { MultiSourceNote } from "@/components/sources/MultiSourceNote";
@@ -62,6 +63,8 @@ export default async function ComparePage({ searchParams }: Props) {
         </h1>
       </header>
 
+      {/* Before the header: it reads the saved list to tell a shared link from the tray, then the header syncs it. */}
+      <CompareViewed ids={ids} />
       <CompareHeader schools={schools.map(toIndexEntry)} current="overview" />
 
       {schools.length === 1 ? (

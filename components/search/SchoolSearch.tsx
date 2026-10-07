@@ -7,16 +7,20 @@ import type { SchoolIndexEntry } from "@/lib/data";
 import { searchSchoolsApi } from "@/lib/school-api";
 import { Crest } from "@/components/school/Crest";
 import { pctSmart } from "@/lib/format";
+import { markNextViewFrom, resultCountBucket, track } from "@/lib/analytics";
 import { cn } from "@/lib/utils";
 
 /** Typeahead that jumps straight to a school, or to Explore with the query. */
 export function SchoolSearch({
+  source,
   size = "hero",
   placeholder = "Search a college, city, or state…",
   autoFocus,
   className,
   onNavigate,
 }: {
+  /** Which box this is, for usage measurement (specs/product/telemetry.md). */
+  source: "hero" | "header" | "tabbar";
   size?: "hero" | "compact";
   placeholder?: string;
   autoFocus?: boolean;
@@ -53,7 +57,13 @@ export function SchoolSearch({
     };
   }, [query]);
 
-  const go = (href: string) => {
+  /** `picked`: a result was chosen (a school page follows); otherwise the query went to Explore. Never the query. */
+  const go = (href: string, picked: boolean) => {
+    // An empty submit just opens Explore: no search happened, so nothing is reported.
+    if (picked || query.trim()) {
+      track("search_performed", { source, result_count: resultCountBucket(results.length), picked });
+    }
+    if (picked) markNextViewFrom("search");
     setOpen(false);
     setQuery("");
     inputRef.current?.blur();
@@ -62,9 +72,9 @@ export function SchoolSearch({
   };
 
   const submit = () => {
-    if (results[active]) go(`/schools/${results[active].id}`);
-    else if (query.trim()) go(`/explore?q=${encodeURIComponent(query.trim())}`);
-    else go("/explore");
+    if (results[active]) go(`/schools/${results[active].id}`, true);
+    else if (query.trim()) go(`/explore?q=${encodeURIComponent(query.trim())}`, false);
+    else go("/explore", false);
   };
 
   const showList = open && query.trim().length > 0;
@@ -165,7 +175,7 @@ export function SchoolSearch({
                 type="button"
                 onMouseDown={(e) => e.preventDefault()}
                 onMouseEnter={() => setActive(i)}
-                onClick={() => go(`/schools/${s.id}`)}
+                onClick={() => go(`/schools/${s.id}`, true)}
                 className={cn(
                   "flex w-full items-center gap-3 rounded-xl px-2.5 py-2 text-left transition-colors",
                   i === active ? "bg-accent" : "hover:bg-muted"

@@ -2,6 +2,8 @@
 
 import { useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { track } from "@/lib/analytics";
+import { exploreChangeEvents } from "@/lib/discovery-events";
 
 /** Read and update Explore's URL state without scrolling to top. */
 export function useExploreParams() {
@@ -15,6 +17,13 @@ export function useExploreParams() {
       for (const [key, value] of Object.entries(changes)) {
         if (value === null || value === undefined || value === "") params.delete(key);
         else params.set(key, value);
+      }
+      // Telemetry (specs/product/telemetry.md): which URL keys changed (names only, never values) and the resulting
+      // view; `page` is paging, not a change to what's asked for.
+      for (const e of exploreChangeEvents(Object.keys(changes), Object.fromEntries(params))) {
+        // Two calls, one per event, so `track()` sees each event's own property type.
+        if (e.event === "explore_view_changed") track(e.event, e.properties);
+        else track(e.event, e.properties);
       }
       const qs = params.toString();
       router.push(qs ? `/explore?${qs}` : "/explore", { scroll: false });

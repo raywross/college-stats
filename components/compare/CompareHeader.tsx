@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Popover } from "@base-ui/react/popover";
 import { Plus, Search, X } from "lucide-react";
+import { track } from "@/lib/analytics";
 import { MAX_COMPARE, getCompareIds, setCompareIds } from "@/lib/compare";
 import type { SchoolIndexEntry } from "@/lib/data";
 import { searchSchoolsApi } from "@/lib/school-api";
@@ -114,8 +115,10 @@ export function CompareHeader({ schools, current }: { schools: SchoolIndexEntry[
   // With one college every topic page redirects back here, so the pills wait for a second.
   const pills = ids.length >= 2;
 
-  const go = (next: string[]) => {
+  const go = (next: string[], action: "add" | "remove") => {
     setCompareIds(next);
+    // setCompareIds is the URL sync, not a user action, so the chip's remove and the picker's add report here.
+    track("compare_changed", { action, count: next.length });
     // A topic page keeps its topic while two or more colleges remain; otherwise the overview's states take over.
     router.replace(next.length >= 2 && current !== "overview" ? compareHref(next, current) : next.length ? compareHref(next) : "/compare", { scroll: false });
   };
@@ -155,7 +158,7 @@ export function CompareHeader({ schools, current }: { schools: SchoolIndexEntry[
             <div className="absolute top-1/2 right-1.5 flex -translate-y-1/2 items-center gap-1 md:top-2 md:right-2 md:translate-y-0">
               <button
                 type="button"
-                onClick={() => go(ids.filter((x) => x !== s.id))}
+                onClick={() => go(ids.filter((x) => x !== s.id), "remove")}
                 aria-label={`Remove ${s.name}`}
                 className="inline-flex size-6 items-center justify-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground"
               >
@@ -165,7 +168,7 @@ export function CompareHeader({ schools, current }: { schools: SchoolIndexEntry[
           </div>
         ))}
         {schools.length < MAX_COMPARE && (
-          <SchoolPicker exclude={ids} onPick={(id) => go([...ids, id])} />
+          <SchoolPicker exclude={ids} onPick={(id) => go([...ids, id], "add")} />
         )}
       </div>
       {pills && <PillRow items={items} current={current} ariaLabel="Compare topics" className="flex h-11 items-center md:h-auto md:flex-1" />}

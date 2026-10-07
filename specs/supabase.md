@@ -4,6 +4,12 @@ How the dataset moves from JSON files to a Supabase (PostgreSQL) database, and h
 stay separate. For whether this shape fits the whole roadmap, and the rules for user-data tables, see
 [database-architecture.md](database-architecture.md).
 
+> **Planned change (2026-10-07):** [serving-architecture.md](serving-architecture.md) moves production to
+> `DATA_SOURCE=json` (the dataset ships with the deploy), shrinks the publish Action to the digest's change log and
+> the high-school table, and retires the dataset tables a cycle later. The serving design below describes the current
+> state until that lands; the account, household, and high-school parts of this page are unaffected. Note that the
+> sizes below (3.6 MB) are from 2026-09-28; `data/schools.json` is 16.7 MB today.
+
 ## Design: git is the source, Supabase serves it
 
 ```

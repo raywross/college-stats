@@ -6,7 +6,7 @@ This document tracks everything that needs to change when moving from local deve
 
 | Item | Current (Local) | Target (Vercel) | Files Affected |
 |---|---|---|---|
-| Hosting | `npm run dev` | ✅ Pre-release dev site at https://college-stats-nine.vercel.app (auto-deploy from GitHub) | No `vercel.json`; Node 24.x via `engines` |
+| Hosting | `npm run dev` | ✅ Pre-release dev site at https://college-stats-nine.vercel.app (auto-deploy from GitHub) | `vercel.json` holds only the digest cron; Node 24.x via `engines`; the serving path changes per [serving-architecture.md](serving-architecture.md) |
 | Env vars | `.env.local` | ✅ Pre-release: Production → dev project, Preview → JSON. At the formal release: Production → prod, `REVALIDATE_SECRET` | [supabase.md](supabase.md#setup-phase-3) |
 | Build | `npm run build` | Vercel CI/CD | No code changes |
 | Fresh data | Rebuild | ✅ `/api/revalidate` after each publish and each production deploy | `app/api/revalidate/route.ts`, `.github/workflows/publish-data.yml` |

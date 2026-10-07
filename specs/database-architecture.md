@@ -71,6 +71,10 @@ publish_collection(p_collection, p_files json, p_expected integer)       -- one 
   document or as a column so `schools` lists in the file's order.
 
 ## Serving the public dataset: an open decision
+> **Decided 2026-10-07:** option 1, bundle the JSON, with search moved into the browser and the dataset tables
+> retired a cycle later. The reasons, measurements, phases, and owner steps are in
+> [serving-architecture.md](serving-architecture.md). The text below is the question as it stood.
+
 Every data change reaches production as a merge to `main`, which already triggers a Vercel build. Serving the
 dataset from Supabase therefore buys little that bundling the JSON into the build wouldn't, and it costs:
 - a full download per cold function instance (Vercel recycles instances often, so Supabase egress follows cold

@@ -23,9 +23,12 @@ export const COMPLEXITY: Record<Complexity, { label: string; description: string
 // field it needs were specified 2026-10-05 and sit under "national-trends".
 // Accounts and households (sign-in, households, student profile, saved lists, following colleges; group "accounts")
 // was built 2026-10-05 on feature/accounts; Google sign-in and email sending wait for the new domain (specs/backlog.md).
+// The group came back on 2026-10-06 with the owner's review of that build: the household hub (people by name, one
+// list each) and the application plan on top of it.
 // The compare redesign, the only spec in "Design and usability" (group "design"), was built 2026-10-05 (#84), so that
 // group is gone until a new design spec.
 export type RoadmapGroupKey =
+  | "accounts"
   | "national-trends"
   | "college-reported"
   | "campus-life"
@@ -37,6 +40,12 @@ export type RoadmapGroupKey =
   | "later";
 
 export const ROADMAP_GROUPS: { key: RoadmapGroupKey; title: string; description: string }[] = [
+  {
+    key: "accounts",
+    title: "Accounts and households",
+    description:
+      "The family's own page: everyone by name, one list each with a switch for updates, and a plan of steps and dates for every college on it.",
+  },
   {
     key: "national-trends",
     title: "National trends",
@@ -109,6 +118,20 @@ export interface RoadmapSpec {
 
 /** In build order within each group (the backlog's order, specs/backlog.md). */
 export const ROADMAP: RoadmapSpec[] = [
+  // Accounts and households: the household hub (people by name, one list each) was built 2026-10-06 on
+  // feature/household-hub; the application plan builds on it.
+  {
+    slug: "application-plan",
+    file: "specs/product/application-plan.md",
+    group: "accounts",
+    summary:
+      "Every college on the list becomes a short plan: the steps worth taking (visit, follow, aid forms, apply, reply) and the dates the college published, grouped by month with the next one on top, which a parent can check in on.",
+    complexity: 3,
+    complexityNote:
+      "Step generators from the college-reported dates, a versioned file of cycle-wide dates, a new table with policies, a plan tab, and nudges through the existing digest.",
+    status: "planned",
+    // Builds on the household hub (specs/product/household-hub.md), built 2026-10-06 and so no longer on the roadmap.
+  },
   {
     slug: "online-share",
     file: "specs/data-expansion/online-share.md",

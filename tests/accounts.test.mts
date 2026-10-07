@@ -179,8 +179,10 @@ test("wantsOwnStudent: students (and people who didn't say) get a student record
 });
 
 test("initialsFor", () => {
-  assert.equal(initialsFor("Ada Lovelace", "a@b.c"), "AL");
-  assert.equal(initialsFor("Ada", null), "AD");
+  // One letter: the first name's (household-hub.md "Names, not logins").
+  assert.equal(initialsFor("Ada Lovelace", "a@b.c"), "A");
+  assert.equal(initialsFor("ada", null), "A");
+  assert.equal(initialsFor("  Émile Zola", "z@b.c"), "É");
   assert.equal(initialsFor(null, "zed@example.com"), "Z");
   assert.equal(initialsFor("  ", null), "?");
 });
@@ -245,7 +247,7 @@ test("sendEmail posts to Resend when configured, and reports failures without th
  * Route prefixes (under app/) that may read cookies or the session. Account features add theirs here. Anything
  * else is a public page that must stay static/ISR.
  */
-const ACCOUNT_ROUTES = ["/account", "/login", "/auth", "/api/me", "/me", "/invite", "/l", "/unsubscribe", "/api/cron"];
+const ACCOUNT_ROUTES = ["/account", "/household", "/login", "/auth", "/api/me", "/me", "/invite", "/l", "/unsubscribe", "/api/cron"];
 
 function underAccountRoute(path: string): boolean {
   return ACCOUNT_ROUTES.some((r) => path === r || path.startsWith(`${r}/`));

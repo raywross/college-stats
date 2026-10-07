@@ -4,21 +4,19 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useRef, type ComponentType } from "react";
 import { Menu } from "@base-ui/react/menu";
-import { Bell, Bookmark, GraduationCap, LogOut, UserRound, Users } from "lucide-react";
+import { LogOut, UserRound, Users } from "lucide-react";
 import { initialsFor, loginHref } from "@/lib/accounts";
 import { cn } from "@/lib/utils";
 import { useMe } from "./useMe";
 
 /**
- * Links in the avatar menu, in order. Account features add theirs here (households, your profile, lists, following),
- * never to the main navigation (specs/product/accounts.md).
+ * Links in the avatar menu, in order, then Sign out: Household · Your account (specs/product/household-hub.md). Each
+ * person's list and numbers are on their page, reached from the household; account features link from there or from
+ * /account, never from the main navigation (specs/product/accounts.md).
  */
 const ACCOUNT_MENU_LINKS: { href: string; label: string; icon: ComponentType<{ className?: string }> }[] = [
+  { href: "/household", label: "Household", icon: Users },
   { href: "/account", label: "Your account", icon: UserRound },
-  { href: "/account/household", label: "Household", icon: Users },
-  { href: "/me", label: "My numbers", icon: GraduationCap },
-  { href: "/me/list", label: "My list", icon: Bookmark },
-  { href: "/me/following", label: "Following", icon: Bell },
 ];
 
 /** Paths where "Sign in" shouldn't send people back (they'd land on the login page again). */

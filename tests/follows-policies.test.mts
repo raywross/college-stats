@@ -3,16 +3,21 @@
  * specs/product/follow-colleges.md), checked against real Postgres (PGlite + a stub of Supabase's auth schema,
  * tests/helpers/pg-auth.mts). Access assertions run as a signed-in user, anon, or service_role (the secret key),
  * never as the superuser. The last tests break a policy on purpose and prove these checks notice. `npm test`.
+ *
+ * Most tests apply the migrations up to follows (the rules as first built). The "since the household hub" section
+ * applies every migration: since 20261006150000_household_hub.sql signed-in users can't write follows at all, and
+ * the list's Updates switch (list_items.updates, through the database's trigger) is the only way in or out.
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { affectedAsUser, asUser, createAuthDb, createUser, type AuthDb } from "./helpers/pg-auth.mts";
-import { followWrite, isUnitId } from "../lib/follow-state.ts";
+import { readdirSync, readFileSync } from "node:fs";
+import { join } from "node:path";
+import { PGlite } from "@electric-sql/pglite";
+import { pg_trgm } from "@electric-sql/pglite/contrib/pg_trgm";
+import { AUTH_STUB_SQL, affectedAsUser, asUser, createAuthDb, createUser, type AuthDb } from "./helpers/pg-auth.mts";
+import { isUnitId } from "../lib/follow-state.ts";
 
-test("an explicit follow turns a list follow into a manual one and never duplicates; ids are digits only", () => {
-  assert.equal(followWrite(null), "insert");
-  assert.equal(followWrite("list"), "upgrade");
-  assert.equal(followWrite("manual"), "none");
+test("unit ids are digits only", () => {
   assert.ok(isUnitId("243744"));
   for (const bad of ["", "24374a", "1 or 1=1", "12345678901", 243744, null]) assert.equal(isUnitId(bad), false, String(bad));
 });
@@ -213,4 +218,59 @@ test("guard: a write grant on dataset_changes for anon is caught by the no-user-
     asUser(db, null, "insert into public.dataset_changes (publish_id, published_at, unit_id, field, kind) values ($1, now(), '1', 'name', 'revised')", [publish_id]),
     "with the grant, the insert the policy test expects to be refused goes through",
   );
+});
+
+/* ------------------------------------------------------------------ */
+/* Since the household hub: the database is the only writer            */
+/* ------------------------------------------------------------------ */
+
+const DIR = join(import.meta.dirname, "..", "supabase", "migrations");
+
+/** PGlite with the auth stub and every migration, in order (as tests/household-hub-policies.test.mts boots it). */
+async function bootAll(): Promise<AuthDb> {
+  const db = await PGlite.create({ extensions: { pg_trgm } });
+  await db.exec(AUTH_STUB_SQL);
+  for (const name of readdirSync(DIR).filter((f) => f.endsWith(".sql")).sort()) await db.exec(readFileSync(join(DIR, name), "utf8"));
+  await db.exec("grant usage on schema extensions to anon, authenticated, service_role");
+  return db;
+}
+
+/** Alice, a student with her own account, and her default list with Stanford on it (so she follows it). */
+async function hubWorld(): Promise<{ db: AuthDb; alice: string; list: string }> {
+  const db = await bootAll();
+  const alice = await createUser(db, { email: "alice@example.com", birthYear: 2009, roleHint: "student" });
+  const [{ id: student }] = await asUser<{ id: string }>(db, alice, "insert into public.students (user_id) values ($1) returning id", [alice]);
+  const [{ id: list }] = await asUser<{ id: string }>(db, alice, "insert into public.lists (student_id, name, is_default) values ($1, 'My list', true) returning id", [student]);
+  await asUser(db, alice, "insert into public.list_items (list_id, unit_id) values ($1, '243744')", [list]);
+  return { db, alice, list };
+}
+
+/** The rule since the household hub: a signed-in user can read their follows but not insert, update, or delete one. */
+async function assertNoFollowWrites(db: AuthDb, who: string) {
+  await assert.rejects(asUser(db, who, "insert into public.follows (unit_id) values ('166683')"), /permission denied/, "a signed-in insert must fail");
+  await assert.rejects(asUser(db, who, "update public.follows set created = now()"), /permission denied/, "a signed-in update must fail");
+  await assert.rejects(asUser(db, who, "delete from public.follows"), /permission denied/, "a signed-in delete must fail");
+}
+
+const myFollowIds = async (db: AuthDb, who: string) => (await asUser<{ unit_id: string }>(db, who, "select unit_id from public.follows order by unit_id")).map((r) => r.unit_id);
+
+test("since the household hub: a signed-in user can't write follows; the list's Updates switch adds and removes them", async () => {
+  const { db, alice, list } = await hubWorld();
+  assert.deepEqual(await myFollowIds(db, alice), ["243744"], "on the list with updates on (the default): followed");
+  await assertNoFollowWrites(db, alice);
+  assert.deepEqual(await myFollowIds(db, alice), ["243744"], "nothing the refused writes tried stuck");
+
+  await asUser(db, alice, "update public.list_items set updates = false where list_id = $1", [list]);
+  assert.deepEqual(await myFollowIds(db, alice), [], "updates off: unfollowed");
+  await asUser(db, alice, "update public.list_items set updates = true where list_id = $1", [list]);
+  assert.deepEqual(await myFollowIds(db, alice), ["243744"]);
+
+  // The retired source can't come back, even from the service role.
+  await assert.rejects(db.query("insert into public.follows (user_id, unit_id, source) values ($1, '110635', 'manual')", [alice]), /check constraint/);
+});
+
+test("guard: re-granting insert on follows to signed-in users is caught by the no-writes check", async () => {
+  const { db, alice } = await hubWorld();
+  await db.exec("grant insert on public.follows to authenticated");
+  await assert.rejects(assertNoFollowWrites(db, alice), /a signed-in insert must fail/);
 });

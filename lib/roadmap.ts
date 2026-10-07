@@ -32,6 +32,7 @@ export type RoadmapGroupKey =
   | "planning"
   | "high-school"
   | "business"
+  | "apps"
   | "ideas"
   | "later";
 
@@ -59,6 +60,12 @@ export const ROADMAP_GROUPS: { key: RoadmapGroupKey; title: string; description:
     title: "Platform, measurement, and business",
     description:
       "Usage measurement that respects minors, paid tiers that keep public data free, counselor accounts, and a developer API.",
+  },
+  {
+    key: "apps",
+    title: "Native apps",
+    description:
+      "Quad as an iPhone app with everything the site does: a screen API computed by the same code as the pages, a native SwiftUI app that never computes a number itself, and a page-by-page parity map.",
   },
   {
     key: "ideas",
@@ -340,6 +347,42 @@ export const ROADMAP: RoadmapSpec[] = [
     complexityNote: "Built and tested behind a flag; left are one paid run (about $1.50), keeping its finds through the monthly refresh, and a look at its picks.",
     status: "deferred",
   },
+  // Native apps (specs/iphone-app/, 2026-10-06): the API first, then the app, measured against the screen map.
+  {
+    slug: "app-api",
+    file: "specs/iphone-app/api.md",
+    group: "apps",
+    summary:
+      "Every screen of the site as JSON for the iPhone app, computed by the same code as the pages, with a citation on every value.",
+    complexity: 3,
+    complexityNote:
+      "About forty public endpoints and the signed-in ones built over existing lib code, a fixed block catalog, an OpenAPI document the Swift models are generated from, and the Server Actions' logic moved into lib so both clients share it.",
+    status: "planned",
+  },
+  {
+    slug: "ios-app",
+    file: "specs/iphone-app/app.md",
+    group: "apps",
+    summary:
+      "A native iPhone app with everything the site does: the same charts, words, and citations, plus Face ID sign-in, offline reading, and share links that open the site.",
+    complexity: 4,
+    complexityNote:
+      "A SwiftUI codebase with a renderer per block kind, Supabase Auth with Sign in with Apple, universal links, an offline cache, design tokens generated from the site's CSS, and an App Store release with its own tests and CI job.",
+    status: "planned",
+    after: ["app-api"],
+  },
+  {
+    slug: "ios-screens",
+    file: "specs/iphone-app/screens.md",
+    group: "apps",
+    summary:
+      "The page-by-page map of what each part of the site becomes in the app, so nothing the site does is left out.",
+    complexity: 3,
+    complexityNote:
+      "Every route and control of the site mapped to a screen and an API call in two phases, and a check that a new site route must be added to the map in the same change.",
+    status: "planned",
+    after: ["app-api", "ios-app"],
+  },
 ];
 
 /** Readable background pages that aren't work items themselves (linked from the roadmap, not ranked). */
@@ -348,6 +391,7 @@ export const ROADMAP_OVERVIEWS: { slug: string; file: string; title: string }[] 
   { slug: "product", file: "specs/product/README.md", title: "Product overview: accounts, planning tools, high schools, business" },
   { slug: "school-identity", file: "specs/school-identity/README.md", title: "School identity overview: links, accounts, short names, colors and marks" },
   { slug: "ideas", file: "specs/ideas/README.md", title: "Ideas overview: the research and the smaller additions proposed for existing specs" },
+  { slug: "iphone-app", file: "specs/iphone-app/README.md", title: "iPhone app overview: the app API, the native app, and the screen-by-screen parity map" },
 ];
 
 export function roadmapSpec(slug: string): RoadmapSpec | undefined {

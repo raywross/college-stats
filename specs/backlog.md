@@ -242,6 +242,17 @@ shared rules for user data are in that README. All user data lives only in Supab
 - [ ] **Data API** ([product/data-api.md](product/data-api.md)): `/api/v1` with keys, limits, lineage and history
   endpoints, bulk downloads, `/developers` docs; free and paid tiers.
 
+## iPhone app
+Specs in [iphone-app/](iphone-app/README.md) (2026-10-06): every feature and function of the site as a native iPhone app.
+- [ ] **App API** ([iphone-app/api.md](iphone-app/api.md)): `/api/app/v1` screen documents built from the same `lib/`
+  code as the pages, a citation on every value, a fixed block catalog, OpenAPI document for the Swift models, bearer-token
+  user routes that reuse the Server Actions' logic once it moves into `lib/`.
+- [ ] **The app** ([iphone-app/app.md](iphone-app/app.md)): native SwiftUI, server-described screens, Supabase Auth with
+  Sign in with Apple, universal links for every site URL, offline document cache, the design tokens generated from
+  `globals.css`, accessibility, telemetry, App Store release, test plan; phase 1 signed-out parity, phase 2 accounts.
+- [ ] **Screens** ([iphone-app/screens.md](iphone-app/screens.md)): the parity map every phase is checked against, and a
+  `check-app-parity` script so a new site route must be added to the map in the same PR.
+
 ## Ideas
 Not planned work: directions from the 2026-10-03 competitive analysis (CollegeIQ, College Kickstart) and a survey of
 guide-and-advisor sites in other verticals (travel, real estate, camps, cars, measured product reviews), each written

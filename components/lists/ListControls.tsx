@@ -3,12 +3,13 @@
 import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Copy, Trash2 } from "lucide-react";
+import { Menu } from "@base-ui/react/menu";
+import { Copy, Download, MoreHorizontal, Share2, Trash2, Upload } from "lucide-react";
+import { SheetDialog } from "@/components/ui/sheet-dialog";
 import { createList, deleteList, importListCsv, renameList, setListShare, type CsvImportResult } from "@/lib/lists";
 import { listOwner, type ListRecord } from "@/lib/list-rules";
 import { cn } from "@/lib/utils";
 
-const btn = "inline-flex h-9 items-center gap-1.5 rounded-full border px-3.5 text-sm font-semibold hover:bg-muted disabled:opacity-50";
 const primaryBtn = "inline-flex h-9 items-center gap-1.5 rounded-full bg-primary px-3.5 text-sm font-semibold text-primary-foreground disabled:opacity-50";
 
 /**
@@ -159,44 +160,88 @@ export function ShareToggle({ list }: { list: ListRecord }) {
   );
 }
 
-/** Download as CSV (Scoir-compatible columns) and paste-import a CSV from Scoir/Common App/a spreadsheet. */
-export function CsvControls({ listId }: { listId: string }) {
-  const [pasting, setPasting] = useState(false);
+/** Paste-import a CSV from Scoir, Common App, or a spreadsheet (the list header's "⋯" → Import CSV opens it in a dialog). */
+export function CsvImportForm({ listId }: { listId: string }) {
   const [result, setResult] = useState<CsvImportResult | null>(null);
   const [pending, startTransition] = useTransition();
-
   return (
-    <div className="flex flex-wrap items-center gap-2">
-      <a href={`/me/lists/${listId}/export`} className={btn} download>
-        Export CSV
-      </a>
-      <button type="button" onClick={() => setPasting((v) => !v)} className={btn}>
-        Import CSV
+    <form
+      className="space-y-2"
+      onSubmit={(e) => {
+        e.preventDefault();
+        const text = String(new FormData(e.currentTarget).get("csv") ?? "");
+        startTransition(async () => {
+          const r = await importListCsv(listId, text);
+          setResult(r);
+          if (r.added > 0) window.location.reload();
+        });
+      }}
+    >
+      <textarea
+        name="csv"
+        rows={6}
+        aria-label="CSV text"
+        placeholder="Paste CSV text (College, Category, Round, Status, Outcome, Deadline, Enrolling, Notes)"
+        className="w-full rounded-xl border bg-background p-2 text-xs"
+      />
+      <button type="submit" disabled={pending} className={primaryBtn}>
+        {pending ? "Importing…" : "Add to list"}
       </button>
-      {pasting && (
-        <form
-          className="w-full space-y-2"
-          onSubmit={(e) => {
-            e.preventDefault();
-            const text = String(new FormData(e.currentTarget).get("csv") ?? "");
-            startTransition(async () => {
-              const r = await importListCsv(listId, text);
-              setResult(r);
-              if (r.added > 0) window.location.reload();
-            });
-          }}
-        >
-          <textarea name="csv" rows={5} placeholder="Paste CSV text (College, Category, Round, Status, Outcome, Deadline, Enrolling, Notes)" className="w-full rounded-xl border bg-background p-2 text-xs" />
-          <button type="submit" disabled={pending} className={primaryBtn}>
-            {pending ? "Importing…" : "Add to list"}
-          </button>
-          {result && (
-            <p className="text-xs text-muted-foreground">
-              Added {result.added}. {result.unmatched.length > 0 && `Couldn't match: ${result.unmatched.join(", ")}.`}
-            </p>
-          )}
-        </form>
+      {result && (
+        <p className="text-xs text-muted-foreground">
+          Added {result.added}. {result.unmatched.length > 0 && `Couldn't match: ${result.unmatched.join(", ")}.`}
+        </p>
       )}
-    </div>
+    </form>
+  );
+}
+
+/**
+ * The list header's "⋯" (specs/product/household-hub.md "Redesign (2026-10-06)"): the occasional list chores in one
+ * menu instead of a row of buttons under the list. Export CSV (Scoir-compatible columns) downloads; Import CSV and
+ * "Share a read-only link" open their forms (CsvImportForm, ShareToggle) in a dialog, a bottom sheet on phones. Only
+ * for a viewer who can edit the list.
+ */
+export function ListActionsMenu({ list }: { list: ListRecord }) {
+  const [panel, setPanel] = useState<"import" | "share" | null>(null);
+  const itemCls = "flex cursor-pointer items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm font-medium outline-none data-[highlighted]:bg-muted";
+  return (
+    <>
+      <Menu.Root>
+        <Menu.Trigger
+          aria-label="More for this list"
+          className="inline-flex size-9 items-center justify-center rounded-full border text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none data-[popup-open]:bg-muted print:hidden"
+        >
+          <MoreHorizontal className="size-5" />
+        </Menu.Trigger>
+        <Menu.Portal>
+          <Menu.Positioner side="bottom" align="end" sideOffset={6} collisionPadding={12} className="z-50">
+            <Menu.Popup className="w-60 origin-(--transform-origin) rounded-2xl border bg-popover p-1.5 text-popover-foreground shadow-xl outline-none transition-opacity data-[ending-style]:opacity-0 data-[starting-style]:opacity-0">
+              <Menu.LinkItem closeOnClick render={<a href={`/me/lists/${list.id}/export`} download />} className={itemCls}>
+                <Download className="size-4" />
+                Export CSV
+              </Menu.LinkItem>
+              <Menu.Item onClick={() => setPanel("import")} className={itemCls}>
+                <Upload className="size-4" />
+                Import CSV
+              </Menu.Item>
+              <Menu.Item onClick={() => setPanel("share")} className={itemCls}>
+                <Share2 className="size-4" />
+                Share a read-only link
+              </Menu.Item>
+            </Menu.Popup>
+          </Menu.Positioner>
+        </Menu.Portal>
+      </Menu.Root>
+      <SheetDialog
+        open={panel !== null}
+        onOpenChange={(open) => !open && setPanel(null)}
+        title={panel === "import" ? "Import a CSV" : "Share a read-only link"}
+        description={panel === "import" ? "From Scoir, Common App, or a spreadsheet. Colleges are matched by name." : undefined}
+      >
+        {panel === "import" && <CsvImportForm listId={list.id} />}
+        {panel === "share" && <ShareToggle list={list} />}
+      </SheetDialog>
+    </>
   );
 }

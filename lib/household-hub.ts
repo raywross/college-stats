@@ -5,7 +5,7 @@
  * client components can all import it. Server reads live in lib/households.ts; shared rules in lib/household-rules.ts.
  */
 import type { MemberRole } from "./accounts.ts";
-import { EMAIL_RE, HOUSEHOLD_ERRORS, memberName, normalizePhone, shortDate, type RosterMember } from "./household-rules.ts";
+import { EMAIL_RE, HOUSEHOLD_ERRORS, canRemove, editAccessControl, isPending, memberName, normalizePhone, shortDate, type RosterMember } from "./household-rules.ts";
 
 export const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -197,4 +197,81 @@ export function rosterLine(members: Pick<RosterMember, "display_name" | "role" |
   return members
     .map((m) => `${memberName(m)}${m.is_me ? " (you)" : m.status === "invited" ? " (invited)" : m.status === "expired" ? " (invitation expired)" : ""}`)
     .join(" · ");
+}
+
+/* ------------------------------------------------------------------ */
+/* The hub's layout (household-hub.md "Redesign (2026-10-06)")         */
+/* ------------------------------------------------------------------ */
+
+/** A person's first name for their chip in the people strip: the first word of their name, or the role fallback. */
+export function chipName(m: Pick<RosterMember, "display_name" | "role" | "managed">): string {
+  return memberName(m).split(/\s+/)[0];
+}
+
+/**
+ * The small line under a chip's name in the people strip: "Invited", "Invite expired", "No account yet" while someone
+ * hasn't finished joining; otherwise their role ("Student · Class of 2028", "Guardian"), with "You" in front on the
+ * viewer's own chip ("You · Class of 2028").
+ */
+export function chipCaption(m: Pick<RosterMember, "role" | "status" | "grad_year" | "is_me">): string {
+  if (m.status === "invited") return "Invited";
+  if (m.status === "expired") return "Invite expired";
+  if (m.status === "managed") return m.grad_year ? `No account yet · ${m.grad_year}` : "No account yet";
+  if (m.role === "guardian") return m.is_me ? "You · Guardian" : "Guardian";
+  const year = m.grad_year ? `Class of ${m.grad_year}` : null;
+  if (m.is_me) return year ? `You · ${year}` : "You · Student";
+  return year ? `Student · ${year}` : "Student";
+}
+
+/** Whether a chip is the page being shown: its person page, or any page under it (Numbers, another list). */
+export function chipActive(pathname: string, href: string | null): boolean {
+  if (!href) return false;
+  return pathname === href || pathname.startsWith(`${href}/`);
+}
+
+/**
+ * Where /household lands (it has no content of its own any more): the viewer's own person page (their student
+ * record's when they have one, as ownPersonPath() prefers), else the first student in the household, else null for
+ * the "add the first person" state (no household yet, or nobody with a page).
+ */
+export function hubLanding(
+  households: { members: Pick<RosterMember, "is_me" | "role" | "member_id" | "student_id" | "user_id">[] }[],
+): string | null {
+  const h = households[0];
+  if (!h) return null;
+  const ownStudent = h.members.find((m) => m.is_me && m.role === "student" && m.student_id);
+  if (ownStudent) return `/household/${ownStudent.student_id}`;
+  const ownGuardian = h.members.find((m) => m.is_me && m.role === "guardian" && m.member_id !== null && m.user_id);
+  if (ownGuardian) return `/household/${ownGuardian.user_id}`;
+  const student = h.members.find((m) => m.role === "student" && m.student_id);
+  return student ? `/household/${student.student_id}` : null;
+}
+
+/**
+ * The rare actions on a person, in the order the person area's "⋯" menu (and a pending chip's popover) lists them.
+ * Mirrors the rules the roster used: invitation controls on a pending row, Invite them on a managed student the viewer
+ * added, edit access as editAccessControl() allows, Remove for a guardian removing someone else, Leave on the viewer's
+ * own membership, and Edit profile (/account) on the viewer's own page.
+ */
+export type PersonAction = "copy-link" | "send-again" | "cancel-invite" | "invite" | "allow-edit" | "view-only" | "edit-profile" | "remove" | "leave";
+
+export function personActions(
+  viewer: { guardian: RosterMember | null; student: RosterMember | null },
+  row: RosterMember | null,
+  members: RosterMember[],
+  opts: { householdId: string; isSelf: boolean },
+): PersonAction[] {
+  const out: PersonAction[] = [];
+  if (row) {
+    if (row.invitation_id && row.status === "invited") out.push("copy-link");
+    if (row.invitation_id && isPending(row)) out.push("send-again", "cancel-invite");
+    if (row.status === "managed" && row.managed_by_me && row.student_id) out.push("invite");
+    const edit = editAccessControl(viewer, row, members);
+    if (row.role === "guardian" && row.member_id && !row.can_edit && edit.grant) out.push("allow-edit");
+    if (row.role === "guardian" && row.member_id && row.can_edit && edit.revoke) out.push("view-only");
+  }
+  if (opts.isSelf) out.push("edit-profile");
+  if (row?.member_id && canRemove(viewer, row)) out.push("remove");
+  if (row?.is_me && row.member_id && opts.householdId) out.push("leave");
+  return out;
 }

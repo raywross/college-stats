@@ -87,9 +87,12 @@ test("guard: the field shows Google's logo beside Google's suggestions, and the 
 });
 
 test("guard: without the key the field is plain and the page says nothing about suggestions", () => {
-  const page = readFileSync(join(ROOT, "app", "household", "page.tsx"), "utf8");
+  // The home address sits in Household settings, which the hub's layout renders on every /household page.
+  const page = readFileSync(join(ROOT, "app", "household", "layout.tsx"), "utf8");
   assert.match(page, /const suggestions = Boolean\(process\.env\.GOOGLE_MAPS_API_KEY\)/, "the page decides from the server environment");
   assert.match(page, /suggestions=\{suggestions\}/, "and passes it down");
+  const settings = readFileSync(join(ROOT, "components", "account", "HouseholdSettings.tsx"), "utf8");
+  assert.match(settings, /<HomeForm [^>]*suggestions=\{suggestions\}/, "through Household settings to the form");
   const form = readFileSync(join(ROOT, "components", "account", "HomeForm.tsx"), "utf8");
   assert.match(form, /enabled=\{suggestions\}/, "the field only asks for suggestions when they're on");
   assert.match(form, /\{suggestions \? "Suggestions as you type come from Google/, "the Google sentence is conditional");

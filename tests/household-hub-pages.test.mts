@@ -6,6 +6,11 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import {
+  chipActive,
+  chipCaption,
+  chipName,
+  hubLanding,
+  personActions,
   defaultAddRole,
   defaultHouseholdName,
   invitationLink,
@@ -20,6 +25,7 @@ import {
 } from "../lib/household-hub.ts";
 import { HOUSEHOLD_ERRORS, type RosterMember } from "../lib/household-rules.ts";
 import { safeNextPath } from "../lib/accounts.ts";
+import { showCategoryHeaders } from "../lib/list-rules.ts";
 
 const HH = "6f1c2a9e-4b7d-4c1e-9a2b-3d4e5f6a7b8c";
 const INV = "0a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d";
@@ -209,6 +215,79 @@ test("the /account summary lists names only, with (you) and (invited)", () => {
   ]);
   assert.equal(line, "Alex · Tracy (you) · Jordan (invited) · A guardian (invitation expired)");
   assert.ok(!line.includes("@"));
+});
+
+/* ------------------------------------------------------------------ */
+/* The one-screen layout (household-hub.md "Redesign (2026-10-06)")    */
+/* ------------------------------------------------------------------ */
+
+test("a chip shows the first name and a tiny role or status caption", () => {
+  assert.equal(chipName(row({ display_name: "Alex Ross" })), "Alex");
+  assert.equal(chipName(row({ role: "guardian", display_name: null })), "A");
+  assert.equal(chipCaption(row({ grad_year: 2028 })), "Student · Class of 2028");
+  assert.equal(chipCaption(row({})), "Student");
+  assert.equal(chipCaption(row({ grad_year: 2028, is_me: true })), "You · Class of 2028");
+  assert.equal(chipCaption(row({ role: "guardian" })), "Guardian");
+  assert.equal(chipCaption(row({ role: "guardian", is_me: true })), "You · Guardian");
+  assert.equal(chipCaption(row({ status: "invited", grad_year: 2028 })), "Invited");
+  assert.equal(chipCaption(row({ status: "expired" })), "Invite expired");
+  assert.equal(chipCaption(row({ status: "managed" })), "No account yet");
+  assert.equal(chipCaption(row({ status: "managed", grad_year: 2029 })), "No account yet · 2029");
+});
+
+test("a chip is active on its person's page and every page under it, and nowhere else", () => {
+  assert.ok(chipActive("/household/s1", "/household/s1"));
+  assert.ok(chipActive("/household/s1/numbers", "/household/s1"));
+  assert.ok(chipActive("/household/s1/lists/l2", "/household/s1"));
+  assert.ok(!chipActive("/household/s10", "/household/s1"));
+  assert.ok(!chipActive("/household", "/household/s1"));
+  assert.ok(!chipActive("/household/s1", null));
+});
+
+test("/household lands on the viewer's own page, else the first student's, else nowhere", () => {
+  const alex = row({ student_id: "s-alex", display_name: "Alex" });
+  const tracy = row({ role: "guardian", student_id: null, user_id: "u-tracy", is_me: true });
+  assert.equal(hubLanding([]), null);
+  assert.equal(hubLanding([{ members: [alex, tracy] }]), "/household/u-tracy");
+  // A student's own page is their record's, even when they're a guardian too (ownPersonPath's rule).
+  const selfStudent = row({ student_id: "s-me", is_me: true });
+  assert.equal(hubLanding([{ members: [alex, tracy, selfStudent] }]), "/household/s-me");
+  // No row of the viewer's own with a page: the first student.
+  assert.equal(hubLanding([{ members: [row({ role: "guardian", user_id: "u-x" }), alex] }]), "/household/s-alex");
+  // A pending guardian invitation isn't a page.
+  assert.equal(hubLanding([{ members: [row({ role: "guardian", member_id: null, student_id: null, user_id: null, status: "invited", is_me: false })] }]), null);
+});
+
+test("the ⋯ menu offers what the database would allow, in a fixed order", () => {
+  const me = row({ role: "guardian", user_id: "u-me", student_id: null, is_me: true, member_id: "m-me" });
+  const viewer = { guardian: me, student: null };
+  const managed = row({ student_id: "s1", status: "managed", managed: true, managed_by_me: true, member_id: "m-s1" });
+  const members = [me, managed];
+  const opts = { householdId: HH, isSelf: false };
+  assert.deepEqual(personActions(viewer, managed, members, opts), ["invite", "remove"]);
+  // A managed student's hand-over waiting: copy, send again, cancel; no second invite.
+  const handover = { ...managed, status: "invited" as const, invitation_id: INV };
+  assert.deepEqual(personActions(viewer, handover, [me, handover], opts), ["copy-link", "send-again", "cancel-invite", "remove"]);
+  // Your own page: edit your profile and leave; never remove yourself.
+  assert.deepEqual(personActions(viewer, me, members, { householdId: HH, isSelf: true }), ["edit-profile", "leave"]);
+  // A guardian with edit access may always give it up on their own page.
+  const meEditing = { ...me, can_edit: true };
+  assert.deepEqual(personActions({ guardian: meEditing, student: null }, meEditing, [meEditing, managed], { householdId: HH, isSelf: true }), ["view-only", "edit-profile", "leave"]);
+  // Another guardian, when every student is a managed record you made: you decide their edit access.
+  const other = row({ role: "guardian", user_id: "u-o", student_id: null, member_id: "m-o" });
+  assert.deepEqual(personActions(viewer, other, [me, managed, other], opts), ["allow-edit", "remove"]);
+  assert.deepEqual(personActions(viewer, { ...other, can_edit: true }, [me, managed, other], opts), ["view-only", "remove"]);
+  // A student viewer: grants edit access, removes nobody.
+  const student = row({ student_id: "s-me", is_me: true, member_id: "m-st" });
+  assert.deepEqual(personActions({ guardian: null, student }, other, [student, other], opts), ["allow-edit"]);
+  // The solo view (no household, no row): only Edit your profile.
+  assert.deepEqual(personActions({ guardian: null, student: null }, null, [], { householdId: "", isSelf: true }), ["edit-profile"]);
+});
+
+test("a list of only unsorted colleges shows no category header", () => {
+  assert.equal(showCategoryHeaders([]), false);
+  assert.equal(showCategoryHeaders([{ category: "unsorted" }, { category: "unsorted" }]), false);
+  assert.equal(showCategoryHeaders([{ category: "unsorted" }, { category: "reach" }]), true);
 });
 
 /* ------------------------------------------------------------------ */

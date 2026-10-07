@@ -57,7 +57,8 @@ function applyLocally(item: Tracked, w: TrackingWrite): Tracked {
 }
 
 /**
- * The tracking row under a college on a list (specs/product/household-hub.md "Display"): Updates · Applying ·
+ * The tracking row for a college on a list, inside the row's "More" since the redesign (specs/product/household-hub.md
+ * "Display", "Redesign (2026-10-06)"): Updates · Applying ·
  * Visited · Following on social · Accepted, filled when on and outlined when off, wrapping to two lines on a phone.
  * Applying and Accepted write `status`/`outcome` through the list's own actions (lib/list-rules.ts trackingWrite);
  * Applying stays on, and can't be switched off here, once the status is Applied or Decided. Read-only without edit

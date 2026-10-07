@@ -7,8 +7,9 @@ import { SITE_NAME } from "@/lib/brand";
 import { cn } from "@/lib/utils";
 
 /**
- * The invitation pieces of the household hub (specs/product/household-hub.md "The roster"): the link panel shown after
- * adding or re-sending, and the roster row's Copy link, Send again, and Invite them controls.
+ * The invitation pieces of the household hub (specs/product/household-hub.md "The roster", "Redesign (2026-10-06)"):
+ * the link panel shown after adding or re-sending; Copy link and Send again in a pending chip's popover (PeopleStrip);
+ * and the Invite them form, which a managed student's "⋯" menu (PersonMenu) opens in a dialog.
  */
 
 export const inputCls =
@@ -17,7 +18,7 @@ export const primaryBtn =
   "inline-flex h-10 shrink-0 items-center justify-center rounded-full bg-primary px-5 text-sm font-semibold text-primary-foreground disabled:opacity-60";
 const rowBtn = "inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border px-3.5 text-sm font-semibold hover:bg-muted disabled:opacity-60";
 
-async function writeClipboard(text: string): Promise<boolean> {
+export async function writeClipboard(text: string): Promise<boolean> {
   try {
     await navigator.clipboard.writeText(text);
     return true;
@@ -137,8 +138,22 @@ export function ResendInvitationButton({ household, invitation, name }: { househ
  * "Invite them" on a managed student's row: their email, then a link that hands the record over when they set a
  * password. If they already have an account, accepting adds this record to theirs.
  */
-export function InviteManagedStudent({ household, student, name }: { household: string; student: string; name: string }) {
-  const [open, setOpen] = useState(false);
+export function InviteManagedStudent({
+  household,
+  student,
+  name,
+  startOpen = false,
+  onClose,
+}: {
+  household: string;
+  student: string;
+  name: string;
+  /** Start on the form (inside a dialog) rather than behind its own "Invite them" button. */
+  startOpen?: boolean;
+  /** The form's Cancel calls this (to close the dialog) instead of folding back to the button. */
+  onClose?: () => void;
+}) {
+  const [open, setOpen] = useState(startOpen);
   const [state, action, pending] = useActionState<AddPersonState, FormData>(inviteManagedStudent, { status: "idle" });
   if (!open)
     return (
@@ -172,7 +187,7 @@ export function InviteManagedStudent({ household, student, name }: { household: 
             </button>
           </div>
           <div className="flex flex-wrap items-center gap-3">
-            <button type="button" onClick={() => setOpen(false)} className="text-sm font-semibold text-muted-foreground hover:text-foreground">
+            <button type="button" onClick={() => (onClose ? onClose() : setOpen(false))} className="text-sm font-semibold text-muted-foreground hover:text-foreground">
               Cancel
             </button>
             {state.status === "error" && <ErrorLine message={state.message} />}

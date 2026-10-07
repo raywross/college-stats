@@ -1469,7 +1469,7 @@ const entries = {
   },
   tracking: {
     term: "Tracking row",
-    short: "The row of switches under each college on your list: Updates, Applying, Visited, Following on social, and Accepted.",
+    short: "The row of switches for each college on your list, under its More: Updates, Applying, Visited, Following on social, and Accepted.",
     long: "Applying and Accepted are the same status and outcome the list already keeps, so ticking one changes the other and the spreadsheet export stays the same. Visited records the day you ticked it (hover to see it). Following on social is just your own note that you follow the college's accounts. Only someone who can edit the list can change them; everyone else sees them read-only.",
     category: "Your account",
     related: ["updates"],

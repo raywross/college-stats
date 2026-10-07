@@ -239,6 +239,15 @@ export function countByCategory(items: Pick<ListItem, "category">[]): BalanceCou
  * saved-lists.md "Display"). Zero-count categories are omitted from the tally; unsorted colleges aren't counted
  * toward the guidance (they haven't been placed yet).
  */
+/**
+ * Whether a list shows its category headers (Reach, Target, Likely, Unsorted): only once something is sorted. A list of
+ * nothing but unsorted colleges is one plain list, without an "Unsorted" header over all of it
+ * (household-hub.md "Redesign (2026-10-06)").
+ */
+export function showCategoryHeaders(items: Pick<ListItem, "category">[]): boolean {
+  return items.some((i) => i.category !== "unsorted");
+}
+
 export function balanceLine(items: Pick<ListItem, "category">[]): string {
   const c = countByCategory(items);
   const parts = (["reach", "target", "likely"] as const).filter((k) => c[k] > 0).map((k) => `${c[k]} ${CATEGORY_LABELS[k]}`);

@@ -52,9 +52,10 @@ function filesUnder(dir: string): string[] {
 }
 
 /**
- * The data paths app code reads with fs: the literal leading segments of `dataPath("a", "b", …)` (lib/data.ts) and of
- * `join(<root>, "data", "a", …)` (one level of nested calls, like `process.cwd()`, is fine). A segment built at run time (`${id}.json`) ends the path, so a per-college read
- * shows up as its directory (data/history/schools).
+ * The data paths app code reads with fs: the literal segments after "data" in `join(<root>, "data", "a", …)` (one level
+ * of nested calls, like `process.cwd()`, is fine). A segment built at run time (`${id}.json`) ends the path, so a
+ * per-college read shows up as its directory (data/history/schools); a read with no literal segment after "data"
+ * shows up as "data" itself.
  */
 function dataPathsRead(): { path: string; where: string }[] {
   const literal = (arg: string) => arg.trim().match(/^"([^"$]*)"$/)?.[1];
@@ -73,16 +74,11 @@ function dataPathsRead(): { path: string; where: string }[] {
   const found: { path: string; where: string }[] = [];
   for (const file of files) {
     const text = readFileSync(join(ROOT, file), "utf8");
-    for (const m of text.matchAll(/\bdataPath\(((?:[^()]|\([^()]*\))*)\)/g)) {
-      const segments = leadingLiterals(m[1].split(","));
-      if (segments.length) found.push({ path: ["data", ...segments].join("/"), where: file });
-    }
     for (const m of text.matchAll(/\bjoin\(((?:[^()]|\([^()]*\))*)\)/g)) {
       const args = m[1].split(",");
       const at = args.findIndex((a) => literal(a) === "data");
       if (at < 0) continue;
-      const segments = leadingLiterals(args.slice(at + 1));
-      if (segments.length) found.push({ path: ["data", ...segments].join("/"), where: file });
+      found.push({ path: ["data", ...leadingLiterals(args.slice(at + 1))].join("/"), where: file });
     }
   }
   return found;
@@ -106,9 +102,15 @@ test("every traced path exists (a glob's root is a directory holding matching fi
   }
 });
 
+test("every read under data/ names its folder or file literally, so the bundler doesn't trace all of data/", () => {
+  // e.g. join(process.cwd(), "data", name) lets Next's file tracer ship every working file in data/ with each function.
+  const vague = dataPathsRead().filter((r) => r.path === "data");
+  assert.deepEqual(vague, [], 'spell out the folder or file after "data" at the read');
+});
+
 test("the list and the paths app code reads haven't drifted apart", () => {
   const includes = tracedForAllRoutes();
-  const reads = dataPathsRead();
+  const reads = dataPathsRead().filter((r) => r.path !== "data");
   assert.ok(reads.some((r) => r.path === "data/schools.json"), "the scan finds lib/data.ts's reads (sanity check)");
   const untraced = reads.filter((r) => !includes.some((i) => covers(i, r.path)));
   assert.deepEqual(untraced, [], "read at runtime but not traced into the deploy: add it to next.config.ts");

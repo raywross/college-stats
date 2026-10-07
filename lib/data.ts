@@ -23,10 +23,10 @@ export { paginate, toIndexEntry, type Dataset, type SchoolIndexEntry, type Scatt
  *   const { getSchoolById, rankOf } = await getData();
  */
 
-/** A path under data/. Every file read here must be listed in next.config.ts (tests/tracing.test.mts checks). */
-function dataPath(...parts: string[]): string {
-  return join(process.cwd(), "data", ...parts);
-}
+// Each read below spells out its path from process.cwd() with literal folder and file names (only a college's ID or a
+// trend's name varies), never through a helper taking the segments as variables: the bundler's file tracer then adds
+// just those files (a path it can't resolve pulls all of data/, working files included, into every function), and
+// tests/tracing.test.mts can check them against next.config.ts's list.
 
 function readJson<T>(path: string): T {
   return JSON.parse(readFileSync(path, "utf8")) as T;
@@ -39,11 +39,11 @@ function readOptionalJson<T>(path: string): T | null {
 
 function readDatasetFiles(): DatasetFiles {
   return {
-    schools: readJson(dataPath("schools.json")),
-    meta: readJson(dataPath("meta.json")),
-    releaseCalendar: readJson(dataPath("release-calendar.json")),
+    schools: readJson(join(process.cwd(), "data", "schools.json")),
+    meta: readJson(join(process.cwd(), "data", "meta.json")),
+    releaseCalendar: readJson(join(process.cwd(), "data", "release-calendar.json")),
     // Short names and nicknames (specs/school-identity/aliases.md).
-    aliases: readOptionalJson<DatasetFiles["aliases"]>(dataPath("aliases.json")) ?? [],
+    aliases: readOptionalJson<DatasetFiles["aliases"]>(join(process.cwd(), "data", "aliases.json")) ?? [],
   };
 }
 
@@ -77,13 +77,13 @@ export const getData = cache(async (): Promise<Dataset> => loadDataset());
 /* ------------------------------------------------------------------ */
 
 function readHistoryFiles(): HistoryFiles | null {
-  const meta = readOptionalJson<HistoryFiles["meta"]>(dataPath("history", "meta.json"));
+  const meta = readOptionalJson<HistoryFiles["meta"]>(join(process.cwd(), "data", "history", "meta.json"));
   if (!meta) return null;
   return {
     meta,
-    national: readJson(dataPath("history", "national.json")),
-    facts: readJson(dataPath("history", "facts.json")),
-    cpi: readJson(dataPath("history", "cpi.json")),
+    national: readJson(join(process.cwd(), "data", "history", "national.json")),
+    facts: readJson(join(process.cwd(), "data", "history", "facts.json")),
+    cpi: readJson(join(process.cwd(), "data", "history", "cpi.json")),
   };
 }
 
@@ -109,7 +109,7 @@ export const getHistoryFiles = cache(async (): Promise<HistoryFiles | null> => {
 export const getHistory = cache(async (unitId: string): Promise<SchoolHistory | null> => {
   if (!/^\d+$/.test(unitId)) return null;
   try {
-    return readOptionalJson<SchoolHistory>(dataPath("history", "schools", `${unitId}.json`));
+    return readOptionalJson<SchoolHistory>(join(process.cwd(), "data", "history", "schools", `${unitId}.json`));
   } catch (err) {
     console.error(`Loading history for ${unitId} failed; the profile renders without it.`, err);
     return null;
@@ -127,7 +127,7 @@ export const getHistory = cache(async (unitId: string): Promise<SchoolHistory | 
 export const getTrendFile = cache(async <N extends TrendFileName>(name: N): Promise<TrendFiles[N] | null> => {
   if (!/^[a-z0-9-]+$/.test(name)) return null;
   try {
-    return readOptionalJson<TrendFiles[N]>(dataPath("history", "trends", `${name}.json`));
+    return readOptionalJson<TrendFiles[N]>(join(process.cwd(), "data", "history", "trends", `${name}.json`));
   } catch (err) {
     console.error(`Loading trend file ${name} failed; the page renders without it.`, err);
     return null;
@@ -145,7 +145,7 @@ export const getTrendFile = cache(async <N extends TrendFileName>(name: N): Prom
 export const getDetail = cache(async (unitId: string): Promise<SchoolDetail | null> => {
   if (!/^\d+$/.test(unitId)) return null;
   try {
-    return readOptionalJson<SchoolDetail>(dataPath("detail", "schools", `${unitId}.json`));
+    return readOptionalJson<SchoolDetail>(join(process.cwd(), "data", "detail", "schools", `${unitId}.json`));
   } catch (err) {
     console.error(`Loading details for ${unitId} failed; the profile renders without them.`, err);
     return null;

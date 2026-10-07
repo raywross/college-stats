@@ -200,7 +200,8 @@ export default function PrivacyPage() {
             <b>Supabase</b> stores accounts and what an account holds.
           </li>
           <li>
-            <b>Resend</b> sends the emails you ask for: sign-in links, invitations, and update emails you opt into.
+            <b>Supabase</b> also sends sign-in links; <b>Resend</b> sends the other emails you ask for: invitations and update emails you
+            opt into.
           </li>
         </ul>
         <p>

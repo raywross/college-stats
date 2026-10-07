@@ -1,6 +1,6 @@
 ---
 title: Your household, by name, with one list each
-pr: 94
+pr: 95
 date: 2026-10-06
 kind: feature
 summary: The household page is now the family's home base: add a parent or a student by name, see everyone by name, open each person's list and numbers, and switch updates on or off per college instead of following.

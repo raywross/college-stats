@@ -1,7 +1,7 @@
 /**
  * Change detection (lib/changes.ts; specs/product/follow-colleges.md#detecting-changes): every change kind, tolerances
  * (float noise that must not count, a null that must), the derived-field rule, years from lineage, release names, the
- * sentences, the profile panel's grouping, and publish-data's change helpers. `npm test`.
+ * sentences, the profile panel's grouping, and publish-changes' helpers. `npm test`.
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -269,10 +269,10 @@ test("recentPublishes: the last two publishes that touched a college, newest fir
 });
 
 /* ------------------------------------------------------------------ */
-/* publish-data's change step (scripts/lib/publish-changes.mts)        */
+/* publish-changes' helpers (scripts/lib/publish-changes.mts)         */
 /* ------------------------------------------------------------------ */
 
-test("publish-data: no changes on a first publish; the list prints college by college", () => {
+test("publish-changes: no changes on a first publish; the list prints college by college", () => {
   const prev = base();
   const next = base();
   next.admissions.applicants = 1100;
@@ -285,17 +285,17 @@ test("publish-data: no changes on a first publish; the list prints college by co
   assert.match(lines[1], /^ {2}· Fall 2025: 1,100 applied \(fall 2024: 1,000\) {3}\[new_year · /);
 });
 
-test("publish-data: a missing change table skips changes; other errors stop the publish", async () => {
+test("publish-changes: the change-table check tells a missing migration from other errors", async () => {
   const fakeFrom = (error: { code?: string; message?: string } | null) => ({ from: () => ({ select: () => ({ limit: async () => ({ error }) }) }) }) as never;
   assert.equal(await changeTablesState(fakeFrom(null)), "ready");
   assert.equal(await changeTablesState(fakeFrom({ code: "PGRST205", message: "not in schema cache" })), "missing");
   assert.equal(await changeTablesState(fakeFrom({ code: "42P01", message: "does not exist" })), "missing");
-  // Only the first migration applied (no old_source column yet): changes are skipped, not half-written.
+  // Only the first migration applied (no old_source column yet) counts as missing, so nothing is half-written.
   assert.equal(await changeTablesState(fakeFrom({ code: "42703", message: "column dataset_change_staging.old_source does not exist" })), "missing");
   await assert.rejects(changeTablesState(fakeFrom({ message: "" })), /checking dataset_change_staging failed/);
 });
 
-test("publish-data: staging always resets on its first call, even with no changes, and batches the rest", async () => {
+test("publish-changes: staging always resets on its first call, even with no changes, and batches the rest", async () => {
   const calls: { reset: boolean; n: number }[] = [];
   const client = { rpc: async (_fn: string, args: { p_changes: unknown[]; p_reset: boolean }) => (calls.push({ reset: args.p_reset, n: args.p_changes.length }), { error: null }) } as never;
   await stageChanges(client, []);

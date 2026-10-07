@@ -127,7 +127,7 @@ async function FourLevelGrid({ school }: { school: School }) {
               return (
                 <tr key={r.key}>
                   <td className="py-1.5">
-                    <MetricLabel cited={cite(r.key)}>{r.label}</MetricLabel>
+                    <MetricLabel term={r.term} cited={cite(r.key)}>{r.label}</MetricLabel>
                   </td>
                   <td className="py-1.5 text-right text-xs font-semibold sm:hidden">{IMPORTANCE_LABELS[level]}</td>
                   {IMPORTANCE_LEVELS.map((l) => (

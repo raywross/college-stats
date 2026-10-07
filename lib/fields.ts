@@ -419,7 +419,7 @@ export const FIELDS = {
   "reported.admission_profile.factors.religious": reported("How much it counts: religious affiliation"),
   "reported.admission_profile.factors.volunteer_work": reported("How much it counts: volunteer work"),
   "reported.admission_profile.factors.work_experience": reported("How much it counts: work experience"),
-  "reported.admission_profile.factors.interest": reported("How much it counts: level of applicant's interest"),
+  "reported.admission_profile.factors.interest": reported("How much it counts: demonstrated interest (level of applicant's interest)"),
   "reported.admission_profile.wait_list.policy": reported("Wait list: uses one"),
   "reported.admission_profile.wait_list.offered": reported("Wait list: offered a place"),
   "reported.admission_profile.wait_list.accepted": reported("Wait list: accepted a place"),

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Phone } from "lucide-react";
+import { Bookmark, GraduationCap, Phone } from "lucide-react";
 import { Term } from "@/components/ui/info-tip";
 import { leaveHousehold, removeMember, revokeInvitation, setMemberCanEdit } from "@/app/household/actions";
 import { canRemove, editAccessControl, formatPhone, isPending, memberInitial, memberName, personHref, type HouseholdView, type RosterMember } from "@/lib/household-rules";
@@ -9,6 +9,8 @@ import { HouseholdActionButton } from "./HouseholdActionButton";
 import { CopyInvitationButton, InviteManagedStudent, ResendInvitationButton } from "./InvitationControls";
 
 const badgeCls = "inline-flex shrink-0 items-center rounded-full px-2 py-0.5 text-xs font-semibold";
+/** The List / Numbers links on a row: the person's pages, filled so they read as the row's main action. */
+const pageLinkCls = "inline-flex h-9 items-center gap-1.5 rounded-full bg-primary/10 px-3.5 text-sm font-semibold text-primary hover:bg-primary/20";
 
 function RoleBadge({ m }: { m: RosterMember }) {
   if (m.role === "guardian")
@@ -117,6 +119,18 @@ function MemberRow({ m, h, leaveHere }: { m: RosterMember; h: HouseholdView; lea
       </div>
 
       <div className="flex flex-wrap items-start justify-end gap-2 max-sm:w-full max-sm:justify-start max-sm:pl-13">
+        {href && (
+          <Link href={href} className={pageLinkCls}>
+            <Bookmark className="size-3.5" aria-hidden />
+            List
+          </Link>
+        )}
+        {href && m.role === "student" && (
+          <Link href={`${href}/numbers`} className={pageLinkCls}>
+            <GraduationCap className="size-3.5" aria-hidden />
+            Numbers
+          </Link>
+        )}
         {m.invitation_id && m.status === "invited" && <CopyInvitationButton invitation={m.invitation_id} />}
         {m.invitation_id && isPending(m) && <ResendInvitationButton household={h.id} invitation={m.invitation_id} name={name} />}
         {m.invitation_id && isPending(m) && (

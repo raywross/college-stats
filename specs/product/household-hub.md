@@ -277,7 +277,9 @@ Built the same day it was planned, with the build-roadmap-section method: four u
   page. `verify_jwt` is off (the publishable key isn't a JWT); the shared `X-Invite-Secret` is the authorization.
   Deploy with `npx supabase functions deploy invite-user --no-verify-jwt` after setting `INVITE_FUNCTION_SECRET`
   (function secret and Vercel) and `INVITE_ALLOWED_ORIGINS`.
-- **Pages**: `/household` (roster, home, Add someone; a solo viewer starts the household by adding the first person),
+- **Pages**: `/household` (roster with List and Numbers links on every row, home, and Add someone behind a "+" in the
+  People card's corner that opens a dialog (owner request after the first preview); a solo viewer starts the
+  household by adding the first person),
   `/household/[person]` (List tab, `components/lists/ListPage.tsx` embedded), `/household/[person]/lists/[id]`,
   `/household/[person]/numbers`. Redirects: `/account/household` → `/household`; `/me` → own Numbers tab;
   `/me/list` and `/me/following` → own person page. Avatar menu: Household · Your account · Sign out.

@@ -41,7 +41,7 @@ async function world(): Promise<World> {
   const [{ id: household }] = await asUser<{ id: string }>(db, mom, "insert into public.households (name) values ('Smiths') returning id");
   await asUser(db, mom, "insert into public.household_members (household_id, user_id, role) values ($1, $2, 'guardian')", [household, mom]);
 
-  const [{ inv: invDad }] = await asUser<{ inv: { token: string } }>(db, mom, "select public.create_invitation($1, 'dad@example.com', 'guardian') as inv", [household]);
+  const [{ inv: invDad }] = await asUser<{ inv: { token: string } }>(db, mom, "select public.create_invitation($1, 'dad@example.com', 'guardian', null, false) as inv", [household]); // view only on purpose: editing is the default since 20261008150000
   await asUser(db, dad, "select public.accept_invitation($1)", [invDad.token]);
 
   const [{ inv: invMom }] = await asUser<{ inv: { token: string } }>(db, mom, "select public.create_invitation($1, 'alice@example.com', 'student') as inv", [household]);
@@ -253,7 +253,7 @@ test("tracking columns: defaults on a new item; the student and an edit-access g
   const alice = await createUser(db, { email: "alice@example.com", birthYear: 2009, roleHint: "student" });
   const [{ household }] = await asUser<{ household: string }>(db, mom, "select public.create_household('The Smiths', 'guardian') as household");
   for (const [who, email, side] of [[dad, "dad@example.com", "guardian"], [alice, "alice@example.com", "student"]] as const) {
-    const [{ inv }] = await asUser<{ inv: { token: string } }>(db, mom, "select public.create_invitation($1, $2, $3) as inv", [household, email, side]);
+    const [{ inv }] = await asUser<{ inv: { token: string } }>(db, mom, "select public.create_invitation($1, $2, $3, null, false) as inv", [household, email, side]); // view only: editing is the default since 20261008150000
     await asUser(db, who, "select public.accept_invitation($1)", [inv.token]);
   }
   const [momMember] = await asUser<{ id: string }>(db, alice, "select id from public.household_members where household_id = $1 and user_id = $2", [household, mom]);

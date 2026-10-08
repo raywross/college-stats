@@ -59,6 +59,20 @@ export interface DigestCollegeInput {
  */
 export const DIGEST_REASON = "these colleges are on your list";
 
+/**
+ * A plan task due within seven days (specs/planner/timeline.md "Reminders"): adds a line to the digest. Only the
+ * task's title, its college, and its date; never a note or a number. The cron gathers them for the user's lists.
+ */
+export interface DigestTaskLine {
+  /** "Michigan: apply (ED I)" (lib/planner/timeline.ts outsideTitle). */
+  title: string;
+  /** "Nov 1". */
+  when: string;
+}
+
+/** At most this many plan lines in a digest (the plan has the rest). */
+export const DIGEST_TASK_MAX = 5;
+
 export interface DigestContext {
   /** Origin only, no trailing slash ("https://quad.example"). */
   siteUrl: string;
@@ -88,6 +102,8 @@ export interface BuiltDigest {
   unitIds: string[];
   collegeCount: number;
   changeCount: number;
+  /** Plan tasks due within seven days shown in "Coming up" (at most DIGEST_TASK_MAX). */
+  tasks: DigestTaskLine[];
 }
 
 /** First-appearance order of NOTIFY_FIELDS' topics: the registry already groups fields by topic (name, admissions, demographics, cost, outcomes, academics). */
@@ -121,7 +137,7 @@ function escapeHtml(s: string): string {
 const COLORS = { text: "#1c1f26", muted: "#6b7280", border: "#e4e4e7", bg: "#ffffff", card: "#fafafa", link: "#5b4bda" };
 
 /** The digest's HTML, light colors only (email clients disagree on dark mode), no tracking pixel, table-free. */
-export function renderDigestHtml(d: Pick<BuiltDigest, "colleges" | "moreCount" | "updatesHref" | "unsubscribeHref" | "reasons"> & { dataHref: string }): string {
+export function renderDigestHtml(d: Pick<BuiltDigest, "colleges" | "moreCount" | "updatesHref" | "unsubscribeHref" | "reasons"> & { dataHref: string; tasks?: DigestTaskLine[] }): string {
   const cards = d.colleges
     .map(
       (c) => `
@@ -144,11 +160,21 @@ export function renderDigestHtml(d: Pick<BuiltDigest, "colleges" | "moreCount" |
     d.moreCount > 0
       ? `<p style="margin:0 0 20px;">…and ${d.moreCount} more on your <a href="${escapeHtml(d.updatesHref)}" style="color:${COLORS.link};">updates page</a>.</p>`
       : "";
+  const tasks = d.tasks?.length
+    ? `
+    <div style="border:1px solid ${COLORS.border};border-radius:16px;padding:16px 18px;margin-bottom:14px;">
+      <div style="font-weight:700;font-size:16px;">Coming up on your plan</div>
+      <ul style="margin:10px 0 0;padding-left:20px;">
+        ${d.tasks.map((t) => `<li style="margin-bottom:6px;">${escapeHtml(t.title)} · ${escapeHtml(t.when)}</li>`).join("")}
+      </ul>
+    </div>`
+    : "";
   return `<!doctype html>
 <html>
   <head><meta charset="utf-8" /></head>
   <body style="margin:0;padding:0;background:${COLORS.bg};">
     <div style="font-family:Arial,Helvetica,sans-serif;color:${COLORS.text};font-size:14px;line-height:1.55;max-width:600px;margin:0 auto;padding:24px 20px;">
+      ${tasks}
       ${cards}
       ${more}
       <hr style="border:none;border-top:1px solid ${COLORS.border};margin:20px 0 16px;" />
@@ -166,8 +192,13 @@ export function renderDigestHtml(d: Pick<BuiltDigest, "colleges" | "moreCount" |
 }
 
 /** The plain-text alternative, same content and order as the HTML. */
-export function renderDigestText(d: Pick<BuiltDigest, "colleges" | "moreCount" | "updatesHref" | "unsubscribeHref" | "reasons"> & { dataHref: string }): string {
+export function renderDigestText(d: Pick<BuiltDigest, "colleges" | "moreCount" | "updatesHref" | "unsubscribeHref" | "reasons"> & { dataHref: string; tasks?: DigestTaskLine[] }): string {
   const lines: string[] = [];
+  if (d.tasks?.length) {
+    lines.push("Coming up on your plan", "");
+    for (const t of d.tasks) lines.push(`- ${t.title} · ${t.when}`);
+    lines.push("");
+  }
   for (const college of d.colleges) {
     lines.push(college.name, college.href, "");
     for (const change of college.changes) lines.push(`- ${describeLine(change)}`);
@@ -183,7 +214,11 @@ export function renderDigestText(d: Pick<BuiltDigest, "colleges" | "moreCount" |
  * Builds one user's digest for one publish, or null when none of the input colleges has an emailable change (the
  * cron route shouldn't send or record anything then; /me/updates shows nothing for that publish either).
  */
-export function buildDigest(colleges: readonly DigestCollegeInput[], ctx: DigestContext, { cutoff = DIGEST_CUTOFF }: { cutoff?: number } = {}): BuiltDigest | null {
+export function buildDigest(
+  colleges: readonly DigestCollegeInput[],
+  ctx: DigestContext,
+  { cutoff = DIGEST_CUTOFF, tasks = [] }: { cutoff?: number; tasks?: readonly DigestTaskLine[] } = {},
+): BuiltDigest | null {
   const prepared = colleges
     .map((c) => ({ ...c, changes: [...c.changes].filter((ch) => EMAILED_KINDS.has(ch.kind)).sort(byTopicOrder) }))
     .filter((c) => c.changes.length > 0)
@@ -204,7 +239,8 @@ export function buildDigest(colleges: readonly DigestCollegeInput[], ctx: Digest
     href: utmDigest(`${ctx.siteUrl}/schools/${c.unit_id}`),
   }));
 
-  const shared = { colleges: emailColleges, moreCount, updatesHref, unsubscribeHref, reasons, dataHref };
+  const taskLines = tasks.slice(0, DIGEST_TASK_MAX);
+  const shared = { colleges: emailColleges, moreCount, updatesHref, unsubscribeHref, reasons, dataHref, tasks: taskLines };
 
   return {
     subject: subjectFor(prepared),
@@ -222,5 +258,6 @@ export function buildDigest(colleges: readonly DigestCollegeInput[], ctx: Digest
     unitIds: prepared.map((c) => c.unit_id),
     collegeCount: prepared.length,
     changeCount: prepared.reduce((n, c) => n + c.changes.length, 0),
+    tasks: taskLines,
   };
 }

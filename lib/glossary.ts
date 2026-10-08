@@ -1526,6 +1526,20 @@ const entries = {
     category: "Your account",
     related: ["plan", "guardian"],
   },
+  "calendar-feed": {
+    term: "Calendar link",
+    short: "A private web address your calendar app subscribes to, so the plan's dated steps and visits show up beside everything else and update on their own.",
+    long: "It carries titles and dates only (\"Michigan: apply (ED I)\"), never notes or numbers. Anyone with the link sees those titles, so treat it like a key: stop it from the Plan menu and make a new one if it gets shared.",
+    category: "Your account",
+    related: ["plan"],
+  },
+  "your-week": {
+    term: "Your week",
+    short: "A Sunday-evening email with the plan's steps due in the next seven days and the first overdue one, one line each.",
+    long: "On by default for seniors in season and off for juniors until spring. Texts, when someone turns them on, carry the first three of the same steps, at most one a day and never at night.",
+    category: "Your account",
+    related: ["plan", "calendar-feed"],
+  },
 
   // High schools (specs/product/high-school-data.md)
   ncessch: {

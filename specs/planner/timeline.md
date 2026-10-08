@@ -186,3 +186,77 @@ Env: `SMS_PROVIDER_SID`, `SMS_PROVIDER_TOKEN`, `SMS_FROM_NUMBER`.
    digest line is for people still ahead of the date.
 3. The calendar feed shows the household's plan to any calendar the URL is pasted into; the token is the only
    secret. Recommendation: titles only, revocable, and shown with that sentence.
+
+## Built (2026-10-08, unit U5 on `feature/planner-timeline`)
+What exists:
+- **Generators.** `lib/planner/generators/college.ts`: the six college tasks, one key per college and kind
+  (`{item}:{kind}:-`, so a round change moves the apply and decision dates and keeps the tick). Apply by round (C21
+  ED I/II, C22 EA/REA, C14 regular closing, C14 priority date for rolling) with the fee (federal) and the C13 waiver
+  in the detail and an ⓘ for the fee in the views; decision expected (the round's notification); aid forms (H8 forms
+  by name, the earliest of the priority date and the deadline, else the application date); reply by (C17, once
+  admitted); housing deposit (C17 date, amount, refund rule, once enrolling); for an ED II college beside an ED I one,
+  `ed2_conditional` ("Apply ED II, only if Michigan isn't a yes (expected Dec 15)") in place of a plain apply. Nothing
+  without data. Every task carries `source_field` and `source_edition` (the citation's CDS edition, else the block's);
+  an edition older than the student's cycle sets `date_note: "last_cycle"`. `lib/planner/generators/cycle.ts`: the
+  cycle file's entries that `applies()`, once per student, assignee from the file; a test date with a registration
+  deadline becomes "Register for the SAT (test day Nov 7)" due on the deadline.
+- **The cycle file** `data/application-cycle.json`: 2026–27, 2027–28, 2028–29 with the fixed dates, five windows (ask
+  recommenders, personal essay, supplements, portal checks, thank recommenders), SAT and ACT dates with registration
+  deadlines from College Board and ACT as published on 2026-10-08 (dates the publishers list as projected or
+  anticipated are labeled so, with no deadline; dates not yet published are left out), and the summer list
+  (`applies: "committed"`: final transcript, orientation, health forms, accepting aid).
+- **Views.** `components/planner/stages/TimelineStage.tsx` (server): `MonthView` (overdue first in the warning color,
+  done folded under a count per month, windows as bars via `WindowBar`, the month heading sticky on phones, "Later"
+  for tasks past the grade's horizon) and `CollegeView` ("For every college" first, a card per college with a
+  progress count, colleges without dates listed with "add your own"), a By month | By college toggle
+  (`TimelineViews`), print styles (the college view prints, with a printed line and a sources line), a "Changed" line
+  for orphaned tasks with "Got it" (`OrphanNotice`), "Add a step" and Edit/Delete for own tasks (`OwnTaskControls`),
+  and the Plan menu (`PlanMenu`: calendar link, one-time .ics, print, texts). Rows are U1's `TaskRow` through
+  `TimelineTaskRow`.
+- **Pure rules** in `lib/planner/timeline.ts`: `FOLD_DAYS`/`isFolded`/`splitFold`, `windowBar`, `orphansToShow`,
+  `scrubNumbers`, `outsideTitle`, `feedEvents`, `dueSoon`, `dueTomorrow`, `HARD_DEADLINE_KINDS`, `yourWeekDefault`.
+- **Calendar feed** `app/api/plan/[token]/route.ts` (`/api/plan/{token}.ics`, sha256 hash looked up with
+  `plan_for_calendar_token` and the secret-key client): open dated tasks and visits, titles only.
+  `lib/planner/store-timeline.ts`: `createCalendarToken` (one live link per person and list; shown once),
+  `revokeCalendarToken`, `planIcsOnce`, `editOwnTask`, `deleteOwnTask`, `setYourWeek`, `myYourWeek`, `consentView`,
+  `setSmsConsent`, `revokeSmsConsent`.
+- **Reminders.** `lib/digest.ts` `buildDigest(..., { tasks })` adds "Coming up on your plan" (at most five lines);
+  the digests cron gathers them per user (`lib/planner/reminders-server.ts digestTaskLines`). `lib/emails/your-week.ts`
+  and `app/api/cron/weekly/route.ts` (Sunday 23:00 UTC; Bearer `CRON_SECRET`; returns early when neither email nor
+  texts are configured; a marked extension point for U8's parent summary). One-click unsubscribe:
+  `/unsubscribe/{token}/week`. The account page's "Plan reminders" section (`components/account/RemindersSection.tsx`)
+  has the Your week switch (null = default by grade) and the texts switch.
+- **Texts.** `lib/sms.ts` (`send`, `handleInbound`, `composeWeekText`, `composeDayBeforeText`, `composeConfirmText`,
+  `quietHours`, `canText`, `timeZonesFor`, `consentBy`, Twilio signature check) over Twilio's REST API with fetch;
+  dormant without the env. `lib/planner/reminders-server.ts deliverText` applies every rule and claims the day in
+  `sms_sends` before sending. `app/api/sms/inbound/route.ts`: STOP sets `provider_opt_out_at`. The week's text goes
+  from the weekly job; the day-before text from `app/api/cron/day-before/route.ts` (Monday to Saturday, 23:00 UTC).
+- **Migration** `supabase/migrations/20261008130000_planner_timeline.sql`: `notification_prefs.your_week`,
+  `unsubscribe_your_week_by_token()`, and `sms_sends` (the unique (consent, day) index is the one-a-day rule).
+- **Glossary** `calendar-feed`, `your-week`. **Tests** `tests/planner-timeline.test.mts`, `tests/sms.test.mts`,
+  `tests/planner-timeline-policies.test.mts`.
+
+Decisions the build made:
+- The apply task's key has no round suffix (`{item}:apply:-`), so changing the round keeps the tick (the brief's test).
+- Summer-list entries (`applies: "committed"`) aren't generated by the cycle generator: they are U7's `summer` tasks.
+- A cycle entry whose date passed more than 30 days ago isn't generated, so a senior who joins in October doesn't
+  start with last spring's steps overdue; an orphan whose date has passed is hidden without a "Changed" line.
+- Generated tasks aren't ticked by the generator: marking a college applied (U6) or recording a decision (U7) doesn't
+  tick the apply or decision task; those units can tick them.
+- Day-before texts need an evening run every day, so a second cron (`/api/cron/day-before`, Monday to Saturday) sits
+  beside the Sunday one. At 23:00 UTC it's 6–7 pm Eastern and 3–4 pm Pacific: inside the allowed hours everywhere in
+  the continental US.
+- Texts for a student always use a `student_id` consent (the student's phone from the household record); an adult's
+  own consent (a guardian) is a `user_id` row, for U8's parent texts. A student is treated as under 18 unless their
+  birth year says otherwise (a guardian's view reads it with the secret key when that's configured).
+- The digest still goes only when a college changed; the weekly "tasks only" mail is Your week.
+- Your week goes to students only; parents get U8's summary.
+
+Owner setup for texts:
+1. A Twilio account; buy a toll-free number and submit its toll-free verification for this use (or register a 10DLC
+   brand and campaign); verification takes weeks.
+2. Turn on Advanced Opt-Out on the Messaging Service or number (Twilio answers STOP/HELP with the required wording).
+3. Point the number's "A message comes in" webhook (HTTP POST) at `https://{site}/api/sms/inbound`.
+4. In Vercel (Production): `SMS_PROVIDER_SID` (the Account SID), `SMS_PROVIDER_TOKEN` (the Auth Token; also used to
+   check the webhook signature), `SMS_FROM_NUMBER` (E.164), plus `SUPABASE_SECRET_KEY` and `CRON_SECRET` if not set.
+5. Apply `20261008130000_planner_timeline.sql` to the database; redeploy so the new crons register.

@@ -397,6 +397,36 @@ unfiltered `getSchools({})` + `facets()` + sources round went from about 450 ms 
 call. `/explore?q=boston&view=table` and warm `/explore` renders are byte-identical before and after (the dev
 server's first render differs only in Flight row numbering).
 
+## Follow-up (2026-10-07): navigation latency
+The owner's test of the Preview found two delays the serving change didn't touch: switching people in the
+household took "a few heartbeats", and opening Explore had a slight pause before anything appeared. Both were
+navigation costs, not data costs. A person switch is a dynamic render that made eight to ten **sequential**
+round trips to Supabase (the middleware verifying the session over the network, the layout verifying it again,
+then account, households, home, student, person, lists, the list's items, notes, names, and an awaited audit
+write), with nothing on screen until the last returned because the segment had no `loading.tsx`; Explore's render
+was already cheap but also painted nothing until its payload arrived. Built the same day as two units on
+`feature/nav-latency-auth` and `feature/nav-latency-pages`:
+- **The session is verified locally.** `getUser()` in `lib/auth.ts` and `proxy.ts` call `supabase.auth.getClaims()`
+  instead of `auth.getUser()`: the token's signature is checked against the project's JSON Web Key Set, cached in
+  the process for ten minutes, with a refresh when the token is within 90 seconds of expiry and a server check only
+  when a project still signs with a symmetric secret. Identity rests on the same signature row-level security
+  trusts. `getUser()` now returns `SessionUser { id, email }`, the only fields the app read. A guard test keeps
+  `auth.getUser(` and `getSession(` out of both files. Two behavior changes are recorded in
+  [accounts.md](product/accounts.md): a session revoked elsewhere reads as signed in until its token expires (an
+  hour at most, as RLS already allowed), and the email shown comes from the token.
+- **Loading boundaries.** `app/household/[person]/loading.tsx` (the person area's skeleton inside the hub frame,
+  which stays mounted) and `app/explore/loading.tsx` (the toolbar, filter rail, and six card placeholders; one
+  column on phones). A click now paints the skeleton at once, and Link's default prefetch reaches the boundary.
+- **One read per request.** `personPage`, `myLists` (keyed by owner kind and id), `getListWithItems`, and `myHome`
+  are wrapped in React `cache`, so the layout, the page, and `ListPage` share results; `ListPage` starts its
+  independent reads together (viewer, list, dataset, home; then access, lists, notes; then names). The guardian's
+  audit write (`log_access`) runs after the response through `after()` from `next/server`, on the list and numbers
+  pages, with the same error logging. Guards in `tests/nav-latency.test.mts` keep each of these in place.
+- Measured locally: Explore's server time is unchanged (about 100 ms warm), as expected; the person switch could
+  not be measured without a Supabase project. The owner should confirm the project signs tokens with an
+  asymmetric key (Supabase → Project Settings → JWT Keys); with a legacy shared secret the code is correct but the
+  verification still makes a round trip.
+
 **Deviations from the spec.** Explore's typing keeps its server render (500 ms debounce plus Enter) instead of
 the client-side pre-filter: the memos make the render cheap, and the pre-filter would have duplicated the filter
 logic in the browser. The search index is larger than the spec's estimate (522 KB raw, 99 KB gzipped, against

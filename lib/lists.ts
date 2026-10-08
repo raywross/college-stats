@@ -42,7 +42,8 @@ import {
 // The planner's columns (20261008120000_planner.sql) ride along so every list read is a PlanItem.
 const ITEM_COLUMNS =
   "id, list_id, unit_id, category, status, outcome, round, position, added_by, added_at, decision_date, deadline_text, deadline_date, enrolling, updates, visited_on, follows_social, dream, priority, followed_networks, info_requested_on, application_platform, applied_on, complete_on, portal_url, committed_on, withdrawn_on, recommendations_count, supplements_count, transcript_shared";
-const LIST_COLUMNS = "id, student_id, user_id, name, is_default, share_enabled, created_by, created";
+// "sort" rides along (specs/planner/list-building.md "Sorting") like the planner's item columns above.
+const LIST_COLUMNS = "id, student_id, user_id, name, is_default, share_enabled, created_by, created, sort";
 
 export type ListActionResult = { ok: true } | { ok: false; message: string };
 
@@ -433,6 +434,35 @@ export async function reorderItem(itemId: string, direction: "up" | "down"): Pro
   return { ok: true };
 }
 
+/**
+ * Drag-and-drop ordering (specs/planner/list-building.md "Sorting": "My order" — drag and drop here, keyboard
+ * via `reorderItem`): moves `itemId` to sit where `targetItemId` is, renumbering the whole list's `position` so the
+ * order is dense (0..n-1). Both items must be on the same list. A pointer drop calls this once per move; `reorderItem`
+ * (one swap) still serves the keyboard Move up/down buttons.
+ */
+export async function moveItem(itemId: string, targetItemId: string): Promise<ListActionResult> {
+  if (itemId === targetItemId) return { ok: true };
+  const r = await ready();
+  if (!r) return { ok: false, message: "Sign in first." };
+  const rows = await r.supabase.from("list_items").select("id, list_id, position").in("id", [itemId, targetItemId]);
+  if (rows.error) return fail(rows.error, "moveItem");
+  const pair = rows.data as { id: string; list_id: string; position: number }[];
+  const dragged = pair.find((x) => x.id === itemId);
+  const target = pair.find((x) => x.id === targetItemId);
+  if (!dragged || !target || dragged.list_id !== target.list_id) return { ok: false, message: FAILED };
+  const all = await r.supabase.from("list_items").select("id").eq("list_id", dragged.list_id).order("position");
+  if (all.error) return fail(all.error, "moveItem");
+  const ids = (all.data as { id: string }[]).map((x) => x.id);
+  const from = ids.indexOf(itemId);
+  const to = ids.indexOf(targetItemId);
+  if (from === -1 || to === -1) return { ok: false, message: FAILED };
+  ids.splice(to, 0, ids.splice(from, 1)[0]);
+  const results = await Promise.all(ids.map((id, position) => r.supabase.from("list_items").update({ position }).eq("id", id)));
+  const err = results.find((x) => x.error);
+  if (err) return fail(err.error, "moveItem");
+  return { ok: true };
+}
+
 /* ------------------------------------------------------------------ */
 /* Notes                                                                */
 /* ------------------------------------------------------------------ */
@@ -477,6 +507,8 @@ export async function exportListCsv(listId: string): Promise<string | null> {
     updates: item.updates,
     visited_on: item.visited_on,
     follows_social: item.follows_social,
+    dream: item.dream ?? false,
+    priority: item.priority ?? null,
   }));
   return toCsv(rows);
 }
@@ -515,6 +547,8 @@ export async function importListCsv(listId: string, csvText: string): Promise<Cs
       updates: row.updates,
       visited_on: row.visited_on,
       follows_social: row.follows_social,
+      dream: row.dream,
+      priority: row.priority,
     });
     if (!error) added++;
     else if (error.code !== "23505") unmatched.push(row.name);

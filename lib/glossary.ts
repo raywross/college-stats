@@ -1540,6 +1540,14 @@ const entries = {
     category: "Your account",
     related: ["reach-school", "target-school", "plan"],
   },
+  "suggested-category": {
+    term: "Suggested category",
+    short: "The site's own guess at Reach, Target, or Likely for a college, shown beside your chosen category with a one-line reason.",
+    long: "From the admit rate and, when you've saved a score, where it falls in the college's own reported range — the same facts chances-and-fit will refine later. It never changes your category by itself; \"Accept all suggestions\" is your click, and a row can show both (\"Likely · Suggested Target\") with no color that reads as a warning.",
+    why: "A second opinion from the numbers, without pretending to know more than it does: a college with no reported scores or admit rate gets no suggestion at all.",
+    category: "Your account",
+    related: ["reach-school", "target-school", "likely-school", "plan"],
+  },
   "task-assignee": {
     term: "Whose step",
     short: "Who a step in the plan belongs to: the student, a parent, or either. Parents' steps (the FAFSA, deposits) also show on their own page.",

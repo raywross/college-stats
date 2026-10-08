@@ -69,7 +69,15 @@ export interface PlanSchool { unit_id: string; name: string; city: string | null
   /** U3 (additive): public or private (a public university's EA stays beside a restrictive EA plan). */
   type?: import("../types").SchoolType | null;
   /** U3 (additive): C1 totals from the same CDS document as the ED counts (lib/early.ts sameDocumentTotals), for the ED advantage. */
-  edTotals?: { applicants: number | null; admitted: number | null; enrolled: number | null } | null }
+  edTotals?: { applicants: number | null; admitted: number | null; enrolled: number | null } | null;
+  /**
+   * U2 addition (list-building.md "Suggested category"): the college's own SAT total and ACT composite middle 50%,
+   * when it reports one, for `lib/planner/suggest.ts`'s position check. The citation lives in `cites` (`derived.sat_total`,
+   * `admissions.act_composite_25_75`), never a separate field, per model.md's "add fields additively".
+   */
+  satRange: [number, number] | null;
+  actRange: [number, number] | null;
+}
 
 /* ------------------------------------------------------------------ */
 /* Additions (U1, beyond the brief's list; additive)                   */

@@ -113,6 +113,8 @@ const ROWS: CsvRow[] = [
     updates: true,
     visited_on: "2026-09-20",
     follows_social: true,
+    dream: true,
+    priority: 1,
   },
   {
     name: "A College, Inc.",
@@ -126,12 +128,14 @@ const ROWS: CsvRow[] = [
     updates: false,
     visited_on: null,
     follows_social: false,
+    dream: false,
+    priority: null,
   },
 ];
 
-test("toCsv / parseCsv round-trip the Scoir-compatible columns and the three tracking columns after them", () => {
+test("toCsv / parseCsv round-trip the Scoir-compatible columns, the tracking columns, and the planner's dream/priority columns after them", () => {
   const csv = toCsv(ROWS);
-  assert.ok(csv.startsWith("College,Category,Round,Status,Outcome,Deadline,Enrolling,Notes,updates,visited_on,follows_social\n"));
+  assert.ok(csv.startsWith("College,Category,Round,Status,Outcome,Deadline,Enrolling,Notes,updates,visited_on,follows_social,dream,priority\n"));
   assert.deepEqual(CSV_COLUMNS.slice(0, 8), [...SCOIR_COLUMNS], "the Scoir columns stay first and in order");
   const parsed = parseCsv(csv);
   assert.equal(parsed.length, 2);

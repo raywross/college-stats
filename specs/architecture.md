@@ -10,8 +10,9 @@
 | Theming | next-themes | System/light/dark mode switching |
 | Charts | Custom SVG/CSS components (`components/charts`) | Full design control, theme-token colors |
 | Data (source) | `data/schools.json` built from College Scorecard + IPEDS, reviewed in git | ~1,900 4-year colleges |
-| Data (serving) | Supabase (PostgreSQL) when `DATA_SOURCE=supabase`; the JSON files otherwise | See [supabase.md](supabase.md) |
-| Data sync | `npm run sync-data` (Scorecard API + IPEDS bulk CSV), then `npm run publish-data` | Rebuilds and publishes the dataset |
+| Data (serving) | The JSON files, shipped with every deploy and read from disk once per server instance | [serving-architecture.md](serving-architecture.md) |
+| Data (people, high schools, change log) | Supabase (PostgreSQL) | [supabase.md](supabase.md) |
+| Data sync | `npm run sync-data` (Scorecard API + IPEDS bulk CSV); a merge deploys the result | `npm run publish-changes` records what changed after each deploy; `npm run publish-high-schools` fills the high-school table |
 
 ## Project Structure
 
@@ -25,7 +26,7 @@ college-stats/
 │   ├── schools/[id]/           # Profile: page.tsx overview (SSG, topic cards) + six topic pages (admissions, students, academics, cost, outcomes, history)
 │   ├── compare/page.tsx        # Head-to-head for up to 4 schools
 │   ├── glossary/page.tsx       # Searchable glossary
-│   ├── api/schools/route.ts    # Search (?q=) and lookup (?ids=) for client components
+│   ├── search-index.json/route.ts  # Static search index for the browser-side typeahead
 │   └── not-found.tsx
 ├── components/
 │   ├── ui/                     # shadcn/base-ui primitives + info-tip.tsx (InfoTip, Term, MetricLabel)
@@ -41,10 +42,11 @@ college-stats/
 │   ├── types.ts                # School, LineageRecord, SearchFilters, SortKey, SizeBucket, ExploreView
 │   ├── fields.ts               # Field registry: every value's source, release year, formula (specs/data-lineage.md)
 │   ├── lineage.ts              # Pure citation resolution + validation (used by app, sync, tests)
-│   ├── data.ts                 # server-only: getData() loads the dataset from JSON or Supabase (DATA_SOURCE)
-│   ├── dataset.ts              # createDataset(): all queries, cached ranks/medians (pure)
-│   ├── supabase.ts             # Supabase client + dataset reader (app and publish script)
-│   ├── school-api.ts           # Client fetch helpers for /api/schools
+│   ├── data.ts                 # server-only: getData() reads the dataset from data/*.json once per instance
+│   ├── dataset.ts              # createDataset(): all queries, cached ranks/medians/facets (pure)
+│   ├── supabase.ts             # Supabase client; the change log reader (people's data and high schools have their own modules)
+│   ├── search-index.ts         # The search index's shape, builder, and matcher (pure)
+│   ├── school-api.ts           # Client helpers: typeahead and id lookup over /search-index.json
 │   ├── metrics.ts              # Derived metrics, tiers, METRICS registry, domains, stats helpers
 │   ├── insights.ts             # Standouts, takeaways, similar schools, key differences, radar
 │   ├── glossary.ts             # All term definitions
@@ -58,7 +60,8 @@ college-stats/
 │   └── overrides.json          # Hand-verified patches (e.g. CDS figures)
 ├── scripts/sync-data.mts       # College Scorecard + IPEDS → data/schools.json (see specs/data-sync.md)
 ├── scripts/check-lineage.mts   # npm run check:lineage
-├── scripts/publish-data.mts    # npm run publish-data: data/*.json → Supabase (see specs/supabase.md)
+├── scripts/publish-changes.mts # npm run publish-changes: what changed between two deploys → dataset_changes (specs/supabase.md)
+├── scripts/publish-high-schools.mts # npm run publish-high-schools: data/high-schools → the high_schools tables
 ├── supabase/migrations/        # Database schema (SQL, Supabase CLI layout)
 ├── tests/                      # node:test (npm test): lineage behavior + citation guards
 ├── .github/workflows/verify.yml # CI: npm run verify + next build

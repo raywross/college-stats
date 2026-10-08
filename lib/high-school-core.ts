@@ -1,6 +1,6 @@
 /**
  * High school helpers (specs/product/high-school-data.md): ids, states, grades, suppression, ranges, canonical row
- * order, state report merging, state medians, views, search, and the validators the sync, check:lineage, publish-data,
+ * order, state report merging, state medians, views, search, and the validators the sync, check:lineage, publish-high-schools,
  * and tests run. Pure: no node:fs, no Next.js imports, so the app, scripts, and tests share it.
  */
 import type {

@@ -222,14 +222,32 @@ shared rules for user data are in that README. All user data lives only in Supab
   daily job emails one digest per user per publish (Resend, one-click unsubscribe, no tracking pixels);
   `/me/updates`, `/me/following`, and a public "What changed" panel on profiles. Added 2026-10-02; worth building
   as soon as accounts exist and the scheduled data refresh (above) is running.
+- [ ] **Household hub** (planned 2026-10-06 from the owner's review of the accounts build)
+  ([product/household-hub.md](product/household-hub.md)): add a person by role (parent: name, email, phone;
+  student: name, then optional email, phone, class year); invited people land on a password, not a sign-up; everyone
+  by name (no email initials, no "?"); invitations in the roster with Copy link; `/household` as the hub with a page
+  per person (list + numbers); one list per person, guardians included, with "updates" as a per-college switch
+  replacing Follow, plus visited and social tracking. Owner decisions: the secret key in Vercel, storing pending
+  tokens in clear, household-visible guardian lists.
+- [ ] **The planner** (specified 2026-10-07 in [planner/](planner/README.md); the primary paid feature; the application
+  plan of 2026-10-06 became its timeline stage). Build with the `build-roadmap-section` skill, one unit per spec:
+  [model](planner/model.md) (tables, stage machine, the Plan tab, entitlement hooks), [list](planner/list-building.md)
+  (suggested categories, a Dream, sorts), [early rounds](planner/early-rounds.md) (ED I / ED II / EA / REA proposal with
+  advantage, conflicts, money), [actions](planner/actions.md) (one-click follows, information requests, visit log),
+  [timeline](planner/timeline.md) (`data/application-cycle.json`, generators, month and college views, calendar feed,
+  weekly email), [applications](planner/applications.md) (requirements, submitted/complete, deferrals, wait lists),
+  [offers](planner/offers.md) (decisions, letter upload, offers side by side, the choice), and
+  [parents](planner/parents.md) (summary line, nudges, Your part, weekly summary). Owner questions in the README: the
+  paid line, texts, photos, the letters pilot, Common App screenshot import.
 - [ ] **Chances and fit** ([product/chances-and-fit.md](product/chances-and-fit.md)): rules-based standing with
   reasons (never a probability), fit against preferences, a pilot against real outcomes before the chip ships.
 - [ ] **Net price estimator** ([product/net-price-estimator.md](product/net-price-estimator.md)): 2026–27 Student
   Aid Index and Pell as versioned reference data; per-college range from income-band net price, CDS need met, and
   H2A merit; 4-year projection from history; pilot of 20 colleges × 5 scenarios against their own calculators.
-- [ ] **Award letter analyzer** ([product/award-letter-analyzer.md](product/award-letter-analyzer.md)): College
-  Financing Plan layout, form first and upload later, loans separated, renewability flags, 4-year totals, questions
-  to ask, appeal summary; pooled anonymized offers as a later decision.
+- [ ] **Award letter analyzer**: moved 2026-10-07 into the planner as its decisions-and-offers stage
+  ([planner/offers.md](planner/offers.md)): College Financing Plan layout, form first and upload with Pro, one upload
+  for admission and aid letters, loans separated, renewability flags, 4-year totals, questions to ask, appeal summary,
+  the choice and its tasks; pooled anonymized offers as a later decision.
 - [ ] **Early decision strategy** ([product/early-decision-strategy.md](product/early-decision-strategy.md)): ED
   vs non-ED admit rates and share of class filled early from CDS C21/C22 (after
   [cds-admissions.md](data-expansion/cds-admissions.md)); a three-question checklist for signed-in students.
@@ -246,6 +264,17 @@ shared rules for user data are in that README. All user data lives only in Supab
   schools with a data agreement), caseload dashboard, co-branded PDF dossiers, scattergram uploads, seats.
 - [ ] **Data API** ([product/data-api.md](product/data-api.md)): `/api/v1` with keys, limits, lineage and history
   endpoints, bulk downloads, `/developers` docs; free and paid tiers.
+
+## iPhone app
+Specs in [iphone-app/](iphone-app/README.md) (2026-10-06): every feature and function of the site as a native iPhone app.
+- [ ] **App API** ([iphone-app/api.md](iphone-app/api.md)): `/api/app/v1` screen documents built from the same `lib/`
+  code as the pages, a citation on every value, a fixed block catalog, OpenAPI document for the Swift models, bearer-token
+  user routes that reuse the Server Actions' logic once it moves into `lib/`.
+- [ ] **The app** ([iphone-app/app.md](iphone-app/app.md)): native SwiftUI, server-described screens, Supabase Auth with
+  Sign in with Apple, universal links for every site URL, offline document cache, the design tokens generated from
+  `globals.css`, accessibility, telemetry, App Store release, test plan; phase 1 signed-out parity, phase 2 accounts.
+- [ ] **Screens** ([iphone-app/screens.md](iphone-app/screens.md)): the parity map every phase is checked against, and a
+  `check-app-parity` script so a new site route must be added to the map in the same PR.
 
 ## Ideas
 Not planned work: directions from the 2026-10-03 competitive analysis (CollegeIQ, College Kickstart) and a survey of
@@ -303,7 +332,13 @@ moves into a section above.
   replace the per-table publish functions (`publish_dataset`, `stage_history`, `publish_history_staged`) with
   `published_documents` / `publishes` / `stage_documents()` / `publish_collection()`, migrating `schools` and
   `school_histories` in. Do it before the per-college detail file or the high school dataset adds a third copy.
-- [ ] **Decide how production serves the public dataset** before the formal release: bundle the JSON into the build
+- [ ] **Serving architecture** (decided 2026-10-07 in [serving-architecture.md](serving-architecture.md), after the
+  owner's review of failed deploys, database outages, and slow search): production reads the dataset from the files
+  it deploys with (`DATA_SOURCE=json`), the dataset publish becomes a small change-log action after each deploy, search
+  moves into the browser over a build-time index, Explore's render gets its facets memoized, the dataset tables are
+  retired a cycle later, and Supabase moves to Pro with a prod project now. Owner steps and open questions in the spec.
+  This closes the item below.
+- [ ] ~~**Decide how production serves the public dataset**~~ before the formal release: bundle the JSON into the build
   (every data change deploys anyway) or keep Supabase and read one gzipped object per collection
   ([database-architecture.md](database-architecture.md#serving-the-public-dataset-an-open-decision)). Measure
   cold-start counts with telemetry first.

@@ -9,7 +9,9 @@ import { authConfigured, getUser } from "@/lib/auth";
 import { createServerSupabase } from "@/lib/supabase-server";
 import { INVITATION_ERRORS } from "@/lib/accounts";
 import { isInvitationToken, shortDate } from "@/lib/household-rules";
+import { inviteFunctionConfigured } from "@/lib/invite-function";
 import { AcceptInvitationForm } from "./AcceptInvitationForm";
+import { ContinueInvitationForm } from "./ContinueInvitationForm";
 
 // The token is a credential: keep it out of search engines and out of Referer headers to other sites.
 export const metadata: Metadata = { title: "Household invitation", robots: { index: false }, referrer: "no-referrer" };
@@ -29,8 +31,11 @@ const STATE_MESSAGES: Record<Exclude<Preview["state"], "pending">, string> = {
 };
 
 /**
- * /invite/[token] (specs/product/accounts.md "Roles and households"): what the invitation is (invitation_preview(),
- * which works signed out), then sign in or accept. Every refusal is a plain sentence.
+ * /invite/[token] (specs/product/accounts.md "Roles and households"; specs/product/household-hub.md "The invited
+ * person's first visit"): what the invitation is (invitation_preview(), which works signed out), then: signed in,
+ * Accept; signed out, Continue, which signs a new person in through the invite Edge Function to choose a password
+ * (or, without the function, or for someone who already has an account, sign in and accept). Every refusal is a
+ * plain sentence.
  */
 export default async function InvitePage({ params }: { params: Promise<{ token: string }> }) {
   await connection();
@@ -92,6 +97,10 @@ export default async function InvitePage({ params }: { params: Promise<{ token: 
               </p>
               <AcceptInvitationForm token={token} />
             </div>
+          ) : inviteFunctionConfigured() ? (
+            <div className="mt-6">
+              <ContinueInvitationForm token={token} path={path} />
+            </div>
           ) : (
             <SignInPrompt className="mt-6" reason="accept this invitation" next={path} />
           )}
@@ -104,7 +113,7 @@ export default async function InvitePage({ params }: { params: Promise<{ token: 
 function BackLinks({ signedIn }: { signedIn: boolean }) {
   return (
     <div className="mt-8 flex flex-wrap gap-3">
-      <Link href={signedIn ? "/account/household" : "/"} className="rounded-full border px-5 py-2.5 text-sm font-semibold hover:bg-muted">
+      <Link href={signedIn ? "/household" : "/"} className="rounded-full border px-5 py-2.5 text-sm font-semibold hover:bg-muted">
         {signedIn ? "Your household" : "Home"}
       </Link>
     </div>

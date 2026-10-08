@@ -114,7 +114,7 @@ Eighteen rows, one mark each in Very important / Important / Considered / Not co
 | `C.715` | Religious affiliation/commitment | `religious` | Nonacademic | `Q112_9` | — (shared with [religious-life.md](../religious-life.md)) |
 | `C.716` | Volunteer work | `volunteer_work` | Nonacademic | `Q112_11` | — |
 | `C.717` | Work experience | `work_experience` | Nonacademic | `Q112_12` | `work_experience` (ADMCON10) |
-| `C.718` | Level of applicant's interest | `interest` | Nonacademic | `Q112_13` | — |
+| `C.718` | Level of applicant's interest | `interest` | Nonacademic | `Q112_13` | — (shown as "Demonstrated interest", glossary `demonstrated-interest`) |
 | `C.719` | Additional information if the importance of any factor differs by academic program | store only | — | `CDS_ACAD_NONACAD_FACTORS_TEXT` | — |
 
 The skeleton said 19 factors; the 2025–26 template has 18 (Howard's form skips `Q112_10`).
@@ -424,6 +424,9 @@ New and changed blocks, in page order:
    college-prep program required; English proficiency test considered"). The legacy line stays, from `alumni_relation`
    ("Considers whether an applicant's parent attended (legacy status)"). The existing "Recent change" line (IPEDS
    events) is unchanged. The religious row also feeds [religious-life.md](../religious-life.md)'s campus-life line.
+   The `interest` row (C.718 "Level of applicant's interest") is labeled **Demonstrated interest**, the term students
+   and counselors use, and carries its own glossary term (`demonstrated-interest`, also on its Compare row) explaining
+   what colleges count as interest and why some weigh it; a row without a `term` keeps the grid's `factor-importance`.
 4. **High school record** (new h2 `Panel`, `#gpa`, before Test scores `#scores`; eyebrow "{class year} first-years"):
    - Title "First-years' high school GPA". (The skeleton called it "Admitted students' GPA"; C11 and C12 describe
      **enrolled** first-years, so the title says that.)
@@ -653,8 +656,8 @@ Pure; Node tests and the client `GpaChecker` load it.
   their muted year from the C7 item (`admissionProfileCellField`).
 - Explore: `gpa=1` "Publishes first-years' GPA" in `FACTOR_FILTERS` (`hasGpaData`), so it sits in "What they look at"
   with its count. No sort, column, or tile.
-- Glossary: `high-school-gpa`, `weighted-gpa`, `gpa-band`, `class-rank`, `factor-importance`, `early-decision`,
-  `early-action`, `restrictive-early-action`, `wait-list`.
+- Glossary: `high-school-gpa`, `weighted-gpa`, `gpa-band`, `class-rank`, `factor-importance`, `demonstrated-interest`,
+  `early-decision`, `early-action`, `restrictive-early-action`, `wait-list`.
 
 **Not built.** The two history series (`cds_gpa_average`, ED admit rate): `scripts/sync-history.mts` reads only
 federal files, and a CDS series needs a new college-site family, scale breaks, and two editions per college (the

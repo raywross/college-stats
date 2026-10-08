@@ -18,7 +18,8 @@ date), or **not checked** (recon never got to it).
 **Candidate fix** picks from four kinds, consistent with the access rules (`campus-life-2-brief.md`, owner decision
 1: never bypass a challenge or login automatically):
 - **Hand reading** — a person (or a future session with a real browser) reads the page once and records the fact,
-  same as the pilot's blocked colleges.
+  same as the pilot's blocked colleges. [manual-collection.md](manual-collection.md) (2026-10-06) specifies that
+  session: an inventory these tables seed, pacing rules, and the extractors it feeds.
 - **Partnership** — ask the organization for its own data or an API; needed wherever the block is a login or a
   robots disallow, since no crawler fix respects those.
 - **Headless-browser renderer** — a tool that executes the page's own JavaScript and reads what it renders. This is

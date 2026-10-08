@@ -4,7 +4,7 @@ import { supabaseClient, CHANGE_COLUMNS } from "@/lib/supabase";
 import { buildDigest, eligiblePublishes, type DigestCollegeInput, type PublishRow } from "@/lib/digest";
 import { EMAILED_KINDS, type StoredChange } from "@/lib/changes";
 import { emailConfigured, sendEmail } from "@/lib/email";
-import type { FollowSource } from "@/lib/follow-state";
+import { getData } from "@/lib/data";
 
 /**
  * The daily update-digest job (specs/product/follow-colleges.md#the-digest). Vercel Cron issues a GET with
@@ -71,17 +71,16 @@ async function processPublish(
   const changesByUnit = new Map<string, StoredChange[]>();
   for (const c of emailable) changesByUnit.set(c.unit_id, [...(changesByUnit.get(c.unit_id) ?? []), c]);
 
-  const [followsRes, namesRes] = await Promise.all([
-    client.from("follows").select("user_id, unit_id, source").in("unit_id", changedUnitIds),
-    client.from("schools").select("unit_id, name").in("unit_id", changedUnitIds),
-  ]);
-  if (followsRes.error) throw new Error(`digests: reading follows failed: ${followsRes.error.message}`);
-  if (namesRes.error) throw new Error(`digests: reading school names failed: ${namesRes.error.message}`);
-  const names = new Map((namesRes.data as { unit_id: string; name: string }[]).map((r) => [r.unit_id, r.name]));
+  const followsRes = await client.from("follows").select("user_id, unit_id").in("unit_id", changedUnitIds);  if (followsRes.error) throw new Error(`digests: reading follows failed: ${followsRes.error.message}`);
+  // College names come from the dataset the deploy carries (lib/data.ts), not the database.
+  const { getSchoolsByIds } = await getData();
+  const names = new Map(getSchoolsByIds(changedUnitIds).map((s) => [s.unit_id, s.name]));
 
-  const byUser = new Map<string, { unit_id: string; source: FollowSource }[]>();
-  for (const row of followsRes.data as { user_id: string; unit_id: string; source: FollowSource }[]) {
-    byUser.set(row.user_id, [...(byUser.get(row.user_id) ?? []), { unit_id: row.unit_id, source: row.source }]);
+  // Follows are kept by the database from list_items.updates (20261006150000_household_hub.sql): one row per user
+  // and college while it's on a list resolving to that user with Updates on.
+  const byUser = new Map<string, string[]>();
+  for (const row of followsRes.data as { user_id: string; unit_id: string }[]) {
+    byUser.set(row.user_id, [...(byUser.get(row.user_id) ?? []), row.unit_id]);
   }
   const userIds = [...byUser.keys()];
   if (!userIds.length) return { changedColleges: changedUnitIds.length, candidates: 0, sent: 0, recorded: 0, skipped: 0, errors: 0 };
@@ -113,9 +112,8 @@ async function processPublish(
     }
     candidates++;
 
-    const inputs: DigestCollegeInput[] = byUser.get(userId)!.map(({ unit_id, source }) => ({
+    const inputs: DigestCollegeInput[] = byUser.get(userId)!.map((unit_id) => ({
       unit_id,
-      source,
       name: names.get(unit_id) ?? unit_id,
       changes: changesByUnit.get(unit_id) ?? [],
     }));

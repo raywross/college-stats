@@ -11,6 +11,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import {
+  C7_FACTORS,
   applyNewestFactors,
   buildAdmissionProfile,
   classRankSentence,
@@ -22,6 +23,8 @@ import {
   withAdmissionProfile,
 } from "../lib/cds/admissions.ts";
 import { restoreFederal } from "../lib/newest.ts";
+import { ADMISSION_PROFILE_ROWS } from "../lib/cds/compare-rows.ts";
+import { GLOSSARY } from "../lib/glossary.ts";
 import { mergeReported } from "../lib/reported-merge.ts";
 import type { ReportedFile } from "../lib/reported.ts";
 import { FACTOR_FILTERS } from "../lib/factors.ts";
@@ -298,4 +301,23 @@ test("each block comes from the newest edition where it passed, at most two edit
   assert.equal(p?.gpa?.average, 3.7, "GPA from the older edition where it passed");
   const stale = doc({ "C.1201": passed(3.6) }, { edition: "2022-23" });
   assert.equal(profileOf(newest, stale)?.gpa, undefined, "three editions back is too old");
+});
+
+/* ---- Demonstrated interest ---- */
+
+test("C7 'level of applicant's interest' shows as Demonstrated interest with its own glossary term, on the profile and in Compare", () => {
+  const row = C7_FACTORS.find((f) => f.key === "interest")!;
+  assert.equal(row.label, "Demonstrated interest");
+  assert.equal(row.term, "demonstrated-interest");
+  assert.ok(row.term! in GLOSSARY, "glossary entry exists");
+  assert.match(GLOSSARY["demonstrated-interest"].short, /level of applicant's interest/, "ties the plain term to the CDS wording");
+  const compare = ADMISSION_PROFILE_ROWS.find(([label]) => label === "Admission: Demonstrated interest")!;
+  assert.equal(compare[1], "demonstrated-interest");
+  assert.equal(compare[2], "reported.admission_profile.factors.interest");
+  // Rows without their own term keep the grid's shared one.
+  assert.equal(ADMISSION_PROFILE_ROWS.find(([label]) => label === "Admission: Interview")![1], "factor-importance");
+  // The real records: William & Mary reports this row ("considered").
+  const wm = schools.find((s) => s.unit_id === WM)!;
+  assert.equal(wm.reported?.admission_profile?.factors?.interest, "considered");
+  assert.equal(compare[3](wm), "Considered");
 });

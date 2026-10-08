@@ -43,9 +43,13 @@ Each feature's own spec says what's free; this table is the single list the enti
 | CSV and PDF export of a list | | ✓ | ✓ |
 | SAI and Pell estimate ([net-price-estimator.md](net-price-estimator.md)) | ✓ | ✓ | ✓ |
 | Per-college price ranges and 4-year projection | 3 colleges | 3 colleges | whole list |
-| Award letter form and one comparison ([award-letter-analyzer.md](award-letter-analyzer.md)) | ✓ (Mar–May) | ✓ | ✓ |
+| Award letter form and one comparison ([offers.md](../planner/offers.md)) | ✓ (Mar–May) | ✓ | ✓ |
 | Award letter upload, 4-year totals, appeal summary | | | ✓ |
 | Family PDF dossier (list, standing, estimates, offers) | | | ✓ |
+
+The planner ([planner/README.md](../planner/README.md), 2026-10-07) is meant to be the primary paid feature, but
+its line is drawn here only after it is built (owner decision); its specs name no tier and expose capability names
+through one hook ([model.md](../planner/model.md#entitlements)) for this map to fill in then.
 | Scattergrams from your high school ([scattergrams.md](scattergrams.md)) | counts | ✓ | ✓ |
 | Multiple students under one plan | | | ✓ |
 

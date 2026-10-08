@@ -14,13 +14,15 @@ import { AUTH_STUB_SQL, asUser, affectedAsUser } from "./helpers/pg-auth.mts";
 import { readHighSchoolData, highSchoolTableRows } from "../scripts/lib/publish-high-schools.mts";
 import { hsSearchKey, searchRows } from "../lib/high-school-core.ts";
 
-const MIGRATION = join(import.meta.dirname, "..", "supabase", "migrations", "20261005180000_high_schools.sql");
+const MIGRATIONS = ["20261005180000_high_schools.sql", "20261006120000_high_school_search.sql"].map((f) =>
+  join(import.meta.dirname, "..", "supabase", "migrations", f),
+);
 const FIXTURE = join(import.meta.dirname, "fixtures", "high-schools");
 
 async function db(): Promise<PGlite> {
   const pg = await PGlite.create({ extensions: { pg_trgm } });
   await pg.exec(AUTH_STUB_SQL);
-  await pg.exec(readFileSync(MIGRATION, "utf8"));
+  for (const m of MIGRATIONS) await pg.exec(readFileSync(m, "utf8"));
   // Supabase grants this on its own `extensions` schema; PGlite's is new.
   await pg.exec("grant usage on schema extensions to anon, authenticated, service_role");
   return pg;
@@ -139,4 +141,28 @@ test("guard: without the read policy, the checks above notice (anon sees nothing
   await pg.exec('drop policy "High schools are public" on public.high_schools');
   assert.equal((await asUser(pg, null, "select id from public.high_schools")).length, 0);
   assert.equal((await asUser<Hit>(pg, null, "select * from public.search_high_schools('fixture', null, 20)")).length, 0);
+});
+
+/** How search_high_schools is defined: a generic plan reads the whole table (the anon role's 3 s timeout, cold). */
+async function searchDefinition(pg: PGlite): Promise<{ lang: string; src: string }> {
+  const [r] = (
+    await pg.query<{ lang: string; src: string }>(
+      "select l.lanname as lang, p.prosrc as src from pg_proc p join pg_language l on l.oid = p.prolang where p.proname = 'search_high_schools'",
+    )
+  ).rows;
+  return r;
+}
+
+const plannedPerCall = ({ lang, src }: { lang: string; src: string }) => lang === "plpgsql" && /return query execute/i.test(src);
+
+test("search_high_schools plans each call with its values (EXECUTE), so the trigram index is used", async () => {
+  const pg = await db();
+  assert.ok(plannedPerCall(await searchDefinition(pg)), "the latest migration's search must be plpgsql with RETURN QUERY EXECUTE");
+});
+
+test("guard: the original SQL search (generic plan, whole-table read) fails the check", async () => {
+  const pg = await PGlite.create({ extensions: { pg_trgm } });
+  await pg.exec(AUTH_STUB_SQL);
+  await pg.exec(readFileSync(MIGRATIONS[0], "utf8"));
+  assert.equal(plannedPerCall(await searchDefinition(pg)), false);
 });

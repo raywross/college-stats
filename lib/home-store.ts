@@ -1,7 +1,7 @@
 "use server";
 /**
  * The household's home (public.household_homes; specs/product/home-and-distance.md). One home per household, set by
- * any active member from the household's card on /account/household and seen by all of them: a student's list and
+ * any active member from the household page (/household) and seen by all of them: a student's list and
  * a guardian's view of it measure from the same place. Every read and write runs with the signed-in user's own
  * Supabase session, so the member-only policies in supabase/migrations/20261005170000_household_limits_and_home.sql
  * decide; nobody outside the household reads or writes it.
@@ -9,6 +9,7 @@
  * Server Actions, so client components on otherwise-static pages (Explore's "Use my home" button) can call them
  * after the page has rendered, the way lib/student-profile-store.ts's myScores() works for the fit chips.
  */
+import { cache } from "react";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { authConfigured, getAccount, getUser } from "@/lib/auth";
 import { createServerSupabase } from "@/lib/supabase-server";
@@ -48,8 +49,12 @@ async function myHouseholdId(supabase: SupabaseClient): Promise<string | null> {
   return (data as string | null) ?? null;
 }
 
-/** The home of the signed-in user's household, or null: signed out, no household or no home yet, or not set up. */
-export async function myHome(): Promise<HomeRow | null> {
+/**
+ * One request's read of the household home, memoized (React `cache`) so the hub's layout and the list under it share
+ * it: two queries (my_household(), then household_homes). A read only; saving or clearing the address are separate,
+ * uncached actions. This file is "use server", so its exports must be async functions: `myHome` below wraps this.
+ */
+const readHome = cache(async (): Promise<HomeRow | null> => {
   if (!authConfigured()) return null;
   const user = await getUser();
   if (!user) return null;
@@ -62,6 +67,11 @@ export async function myHome(): Promise<HomeRow | null> {
     return null;
   }
   return (data as HomeRow | null) ?? null;
+});
+
+/** The home of the signed-in user's household, or null: signed out, no household or no home yet, or not set up. */
+export async function myHome(): Promise<HomeRow | null> {
+  return readHome();
 }
 
 /**

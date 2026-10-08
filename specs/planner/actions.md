@@ -129,3 +129,61 @@ fields; `visited_on` set by the first past visit).
    link from here, so the idea has a reason to be planned.
 2. The request-information URL: extend the links probe now (cheap: one more pattern over the admissions page) or wait
    for the planner build? Recommendation: now, as a small identity follow-up, so the button lands on the form.
+
+## Built (2026-10-08, unit U4 on `feature/planner-actions`)
+What exists:
+- **Pure** `lib/planner/actions.ts`: `followUrl` (X's follow Web Intent, YouTube's `sub_confirmation`, else the
+  plain profile URL), `hasFollowIntent`, `appDeepLink` (Instagram's documented `instagram://user?username=` only —
+  TikTok, Facebook, and LinkedIn have none), `orderForActions` (Dream first), `actionsProgress`, `interestLine` and
+  `actionsOptional` from C7 `factors.interest` (every value and null), `interviewImportanceLine` from
+  `factors.interview`, `VISIT_KINDS`/`VISIT_KIND_LABELS`, `VISIT_NOTE_PROMPTS`, `hasVisitNotes`,
+  `BEFORE_YOU_GO_QUESTIONS`, and `firstPastVisitOn` (the pure rule behind `visited_on`: the earliest visit date at
+  or before today).
+- **Generator** `lib/planner/generators/actions.ts`: `follow` and `request_info`, undated, per live college (not
+  `decided`, not withdrawn) while the plan is in season (`inSeason(grade)`); `follow` only when the college has
+  social accounts and none are followed yet; `write_visit_notes` once per past visit with no notes (keyed by the
+  visit's id, so several separately logged visits each get their own prompt).
+- **Server** `lib/planner/store-actions.ts` ("use server", the `ready(capability)` pattern): `recordFollow` (only
+  the student's own account — checked against `students.user_id`, not just edit access — ticks the generated
+  `follow` task when it turns one on, then regenerates), `markInfoRequested` (any editor; ticks `request_info`),
+  `logVisit`/`updateVisit`/`deleteVisit` (any editor with `can_edit_item`; each recomputes `visited_on` from every
+  visit on the item via `firstPastVisitOn` and regenerates), `addVisitQuestion` (appends a "before you go" question
+  to the visit's own notes). A calendar download, `app/api/plan/visits/[visitId]/ics/route.ts` (session-gated by
+  `can_read_item`, titles and address only, a 24-hour `VALARM`).
+- **UI**: `components/planner/stages/ActionsStage.tsx` (one card per college, Dream first; the interest line with
+  its ⓘ; the follow row; "Request information" (`row/actions.tsx`'s `InfoRequestButton`); the visit log; the
+  interview importance line; "n of m done" per card), `FollowRow.tsx` (44 px icons; X/YouTube record on click;
+  the rest open in a new tab and ask "Did you follow?" in a bottom sheet on window focus), `FollowEveryoneButton.tsx`
+  (queues every college's unfollowed accounts; intents fire immediately, the rest wait for the sheet one at a
+  time), `VisitForm.tsx` (one column; rating and the notes prompts only once the visit's in the past; interviewer
+  fields for the Interview kind), `VisitLog.tsx` (future then past visits; "Add to calendar"; before-you-go
+  questions and the drive time from home under a future visit), `components/planner/row/actions.tsx`
+  (`ActionsRowControls`, the list row's follow row plus "Log a visit" in "More", shown only to an editor).
+  `components/lists/TrackingRow.tsx` drops its Visited and Following chips (moved here) — a minimal, additive
+  change, not a rewrite. `components/school/SocialIcons.tsx` exports `SOCIAL_GLYPHS` so `FollowRow` reuses the same
+  per-network marks. Glossary: `virtual-tour`, `information-session` (`demonstrated-interest` already existed).
+- **Tests** `tests/planner-actions.test.mts`: follow/intent URLs and handle shape per network, the deep link rule,
+  the interest and interview lines for every C7 value and null, `hasVisitNotes`, `firstPastVisitOn`, two `icsEvent`
+  shapes (timed and all-day), and the generator's three task kinds across in-season/out-of-season,
+  decided/withdrawn, and followed/unfollowed, has-accounts/no-accounts, and past/future/noted-visit fixtures.
+
+Deviations and decisions the brief didn't cover:
+- **Request information isn't a one-click action with a confirm sheet.** Unlike follow, "marking done" is a plain
+  checkbox beside the admissions-page link (`InfoRequestButton`): the spec only asks that marking it done set
+  `info_requested_on`, and a focus-return prompt for every admissions-page visit seemed more intrusive than useful
+  here (there's no network "follow" to confirm, just a form the site never sees).
+- **The links probe's request-information URL (open question 2) wasn't extended.** The button opens
+  `links.admissions ?? links.website` today; a follow-up to `links.md` can add a more specific URL additively
+  without changing this unit's code.
+- **The "family car" trip planner (open question 1) wasn't built.** `VisitLog` shows one college's visits only, as
+  planned; `near-and-far.md` is still the right home for a shared multi-college trip.
+- **The list row's "Log a visit" is add-only.** `RowControlProps` has no visit list to show, so the row opens
+  `VisitForm` to log a new visit; editing or deleting an existing one happens in the Plan tab's Actions stage, which
+  has the full log. The row's "who's going" picker is free text only there (no household roster lookup) for the
+  same reason — the roster names are fetched once, server-side, for the whole Actions stage instead.
+- **Unfollowing a network doesn't reopen a completed `follow` task.** Recording a follow ticks the generated task;
+  if every network is later unfollowed, `regenerate()` will generate a fresh `follow` task (a new row, since the
+  old one stays done), which seemed the simpler behavior than reaching back into a ticked task's `done_at`.
+- **`tests/accounts.test.mts`'s `ACCOUNT_ROUTES` gained `/api/plan`** (additive, per its own comment "Account
+  features add theirs here"), so the visit `.ics` route may read the session without failing the "public pages
+  stay static" guard.

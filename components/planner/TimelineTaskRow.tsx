@@ -3,8 +3,10 @@ import { MetricLabel } from "@/components/ui/info-tip";
 import { TaskRow } from "@/components/planner/TaskRow";
 import { WindowBar } from "@/components/planner/WindowBar";
 import { OwnTaskControls } from "@/components/planner/OwnTaskControls";
+import { NudgeButton } from "@/components/planner/parents/NudgeButton";
 import { schoolOf } from "@/components/planner/ThisWeek";
 import { entryForTask } from "@/lib/planner/generators/cycle";
+import { isOpen } from "@/lib/planner/tasks";
 import type { AnyCited } from "@/lib/lineage";
 import type { PlanContext, PlanTask } from "@/lib/planner/types";
 
@@ -52,6 +54,19 @@ export function TimelineTaskRow({ task, ctx, showCollege = true }: { task: PlanT
           colleges={ctx.items.map((i) => ({ id: i.id, name: ctx.schools[i.unit_id]?.name ?? "A college" }))}
         />
       )}
+      <NudgeButton
+        taskId={task.id}
+        taskTitle={task.title}
+        nudges={ctx.nudges.filter((n) => n.task_id === task.id)}
+        viewerIsGuardian={ctx.viewer.isGuardian}
+        viewerUserId={ctx.viewer.userId}
+        viewerFirstName={ctx.viewer.firstName}
+        studentFirstName={studentFirst}
+        studentHasAccount={ctx.student?.user_id != null}
+        studentNudgeEmailsOff={false}
+        taskOpen={isOpen(task, ctx.today)}
+        today={ctx.today}
+      />
     </TaskRow>
   );
 }

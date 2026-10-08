@@ -7,11 +7,15 @@ import { profileFor } from "@/lib/student-profile-store";
 import { effectiveGradYear } from "@/lib/student-profile";
 import { generatorInputFor, planContextFrom, PlannerSetupError, readPlan, readTasks, todayIso, writeMerge } from "@/lib/planner/context";
 import { generateTasks, mergeTasks } from "@/lib/planner/tasks";
+import { addDays } from "@/lib/planner/stage";
+import { NO_MONEY, stuckSignals, summaryLine } from "@/lib/planner/summary";
 import type { PlanContext, Stage } from "@/lib/planner/types";
 import { GradYearPrompt } from "@/components/planner/GradYearPrompt";
 import { PlanOpened } from "@/components/planner/PlanOpened";
 import { StageStrip } from "@/components/planner/StageStrip";
 import { ThisWeek } from "@/components/planner/ThisWeek";
+import { StuckSignals } from "@/components/planner/parents/StuckSignals";
+import { WhatParentsSee } from "@/components/planner/parents/WhatParentsSee";
 import { Term } from "@/components/ui/info-tip";
 import ListStage from "@/components/planner/stages/ListStage";
 import RoundsStage from "@/components/planner/stages/RoundsStage";
@@ -102,6 +106,26 @@ export async function PlanPage({ personId, person, stage }: { personId: string; 
   const Panel = PANELS[open];
   const thisYear = Number(today.slice(0, 4));
 
+  // The summary line and stuck signals (specs/planner/parents.md): computed, never stored, same for the guardian
+  // and the student. No net-price estimate exists yet (NO_MONEY), so the ED-with-no-estimate signal always reads
+  // that way until the estimator fills `rounds.ts`'s MoneyInput seam.
+  const summary = summaryLine({ current: ctx.current, stages: ctx.stages, tasks: ctx.tasks, items: ctx.items, schools: ctx.schools, visits: ctx.visits, today });
+  const signals = stuckSignals({ items: ctx.items, tasks: ctx.tasks, visits: ctx.visits, schools: ctx.schools, money: NO_MONEY, cycle: ctx.cycle, grade: ctx.grade, today });
+  const weekAgo = addDays(today, -7);
+  const tickedThisWeek = ctx.tasks.filter((t) => t.done_at !== null && t.done_at.slice(0, 10) >= weekAgo).map((t) => t.title);
+
+  // Whether the student has turned off nudge emails (specs/planner/parents.md's "Alex reads nudges in the plan"),
+  // read through the security-definer function so a guardian never reads the student's own preferences row.
+  let nudgeEmailsOff = false;
+  if (relation === "guardian") {
+    try {
+      const { data } = await supabase.rpc("student_nudge_emails_off", { p_student: student.id });
+      nudgeEmailsOff = data === true;
+    } catch {
+      nudgeEmailsOff = false;
+    }
+  }
+
   return (
     <div className="space-y-6">
       <PlanOpened stage={open} />
@@ -113,10 +137,15 @@ export async function PlanPage({ personId, person, stage }: { personId: string; 
           {relation === "self" ? "Your" : first ? `${first}'s` : "The"} <Term term="plan">plan</Term>, in six <Term term="stage">stages</Term>. Open any of
           them; they&apos;re a map, not a gate.
         </p>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="text-sm font-semibold">{summary}</p>
+          {relation === "self" && <WhatParentsSee summary={summary} stuckSignals={signals.map((s) => s.text)} tickedThisWeek={tickedThisWeek} />}
+        </div>
         <StageStrip ctx={ctx} open={open} basePath={`/household/${personId}/plan`} />
       </div>
+      <StuckSignals signals={signals} />
       <Panel ctx={ctx} />
-      <ThisWeek ctx={ctx} />
+      <ThisWeek ctx={ctx} nudgeEmailsOff={nudgeEmailsOff} />
       {open !== 4 && <TimelineStage ctx={ctx} />}
     </div>
   );

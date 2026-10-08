@@ -1570,6 +1570,23 @@ const entries = {
     related: ["plan", "calendar-feed"],
   },
 
+  // Parents (specs/planner/parents.md)
+  nudge: {
+    term: "Nudge",
+    short: "A parent's one-line, optional note on one step of the plan, delivered by the site instead of across the kitchen table.",
+    long: "Rate-limited by design: once per step every three days, and at most three a week from one guardian to one student. The student sees who sent it and can tick the step, snooze it, or send back a one-line reply that closes it. Another guardian sees that a nudge was sent, never its text.",
+    why: "A parent can help without turning into a second stream of reminders: the site reminds, the parent nudges, and the limit is the feature.",
+    category: "Your account",
+    related: ["your-part", "task-assignee", "plan"],
+  },
+  "your-part": {
+    term: "Your part",
+    short: "Every open step assigned to a guardian or either, across every student they can see, in one place on their own page.",
+    long: "The FAFSA and CSS Profile, priority dates, fees a parent said they'd pay, deposits once a choice is made, and visits they're booking — with the same ticks and dates as the plan itself. The weekly summary email leads with it.",
+    category: "Your account",
+    related: ["task-assignee", "nudge", "your-week"],
+  },
+
   // Stage 3, actions (specs/planner/actions.md)
   "virtual-tour": {
     term: "Virtual tour",

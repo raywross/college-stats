@@ -4,9 +4,13 @@ import { connection } from "next/server";
 import { AuthUnavailable } from "@/components/account/AuthUnavailable";
 import { PersonHeader, personOwner } from "@/components/account/PersonHeader";
 import { ListPage } from "@/components/lists/ListPage";
+import { YourPart } from "@/components/planner/parents/YourPart";
 import { AccountsSetupError, authConfigured, requireUser } from "@/lib/auth";
 import { personPage } from "@/lib/households";
 import { getOrCreateDefaultList, myLists } from "@/lib/lists";
+import { myYourPart } from "@/lib/planner/store-parents";
+import { yourPart } from "@/lib/planner/summary";
+import { todayIso } from "@/lib/planner/context";
 
 export const metadata: Metadata = { title: "Their list", robots: { index: false } };
 
@@ -42,11 +46,16 @@ export default async function PersonListPage({ params }: { params: Promise<{ per
   const first = (person.kind === "student" ? person.access.student.display_name : person.display_name)?.trim().split(/\s+/)[0] || null;
   const own = person.kind === "student" ? person.access.relation === "self" : person.is_me;
 
+  // "Your part" above a guardian's own list (specs/planner/parents.md "The parent's tasks").
+  const today = todayIso();
+  const yourPartGroups = person.kind === "guardian" && person.is_me ? yourPart(await myYourPart(), today) : [];
+
   return (
     <div className="space-y-6">
       <div className="print:hidden">
         <PersonHeader id={id} person={person} active="list" />
       </div>
+      {yourPartGroups.length > 0 && <YourPart groups={yourPartGroups} today={today} />}
       {listId ? (
         <ListPage listId={listId} basePath={`/household/${id}/lists`} showGuardianBanner={false} embedded planner />
       ) : (

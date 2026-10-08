@@ -123,3 +123,75 @@ stage; each signal on and off; the rate limit; the email has titles only; a mana
    list field; recommendation: no special case; the student can simply not set it.
 2. Should nudges exist for counselors ([counselor-portal.md](../product/counselor-portal.md))? Same mechanism, the
    portal's grant; recommendation: yes when the portal is built, with the same limits.
+
+## Built (2026-10-08, unit U8 on `feature/planner-parents-2`)
+What exists:
+- **Pure** `lib/planner/summary.ts`: `summaryLine(input)` (the stage caption, then the next dated task's college,
+  date, and round when one exists, else the count of future visits, then the Dream when set; never a score, a
+  standing, or an overdue count), `stuckSignals(input)` (the six checks, gated by grade: off for
+  junior_fall/earlier/unknown, only the no-Likely one in junior_spring, all six from the summer before senior year
+  on), `yourPart(students, today)` (open `guardian`/`either` tasks grouped by student, students with none left
+  out). Reuses `rounds.ts`'s `Estimate`/`MoneyInput`/`NO_MONEY` for the ED-with-no-estimate signal, so the
+  net-price estimator fills the same seam later.
+- **Server**: `lib/planner/store-parents.ts` (`"use server"`): `sendNudge` (calls `send_nudge()`, maps its error
+  codes to the button's copy, then best-effort email — unless the student turned nudge emails off
+  — and text delivery through `reminders-server.ts`'s `deliverText`), `replyToNudge`, `reassignTask`,
+  `setParentSummaryEmail`, `setNudgeEmails`, `myParentSummary`, `myNudgeEmails`, `myYourPart`. `lib/planner/hub.ts`
+  gained `summaryLines(students)` beside `stageCaptions`.
+- **Migration** `supabase/migrations/20261008142000_planner_parents.sql` (additive; a schema addition was needed):
+  `notification_prefs.parent_summary` (the weekly email switch, off by default) and `.nudge_emails` (on by
+  default), `unsubscribe_parent_summary_by_token()`, and `student_nudge_emails_off(student)` (security definer, so
+  a guardian learns the one bit they need — "Alex reads nudges in the plan" — without reading the student's own
+  preferences row).
+- **UI**: the summary line under each student's chip on the household page and at the top of their Plan tab
+  (`WhatParentsSee` beside it for the student's own view); `components/planner/parents/{NudgeButton,YourPart,
+  StuckSignals,WhatParentsSee,AccountSwitches}.tsx`. `NudgeButton` sits in `TaskRow`'s `children` slot (wired into
+  `ThisWeek.tsx` and `TimelineTaskRow.tsx`): a guardian sees a bottom-sheet composer (one field) that greys out to
+  "Nudged {weekday}" for three days after sending and says up front when the student has no account; the student
+  sees every nudge on the task ("Nudged by a parent, {weekday}") with a one-line reply that closes it. `YourPart`
+  renders above a guardian's own list (`app/household/[person]/page.tsx`) with the same ticks as the plan.
+  `AccountSwitches` on `/account`: the weekly-summary switch for a guardian, the nudge-emails switch for a student.
+- **Email** `lib/emails/parent-summary.ts` (pure, like `your-week.ts`): per student, the summary line, Your part
+  (at most five), the stuck signals, and what was ticked this week, titles only; one link (to the household, since
+  one email can cover several students); one-click unsubscribe. Its branch in
+  `app/api/cron/weekly/route.ts`'s marked extension point: every guardian with `parent_summary` on, for every
+  student visible through their active guardian memberships (read with the secret-key client, so no RLS session is
+  needed); a guardian with texts on also gets the week's Your part as one text (`composeWeekText`, the existing
+  `sms_sends` kind `'parent'`).
+- **Account export**: `lib/account-export.ts` gained the `planner` exporter — tasks, visits, offers, letter
+  metadata (the storage path, not the file), nudges sent and received, and text consents, additively.
+- **Glossary** `nudge`, `your-part`. **Telemetry**: `plan_nudge_sent {channel}` was already registered by U1; the
+  client fires it after a successful `sendNudge()` (channel is whichever delivery actually went: email, sms, or
+  `app` when neither did).
+- **Tests** `tests/planner-parents.test.mts`: the summary line per stage situation (building the list with a visit
+  planned, applying with the next task's round and the Dream, never a score or an overdue count), each signal on
+  and off, `yourPart`'s grouping, the parent-summary email (titles only, one link's worth of URLs, one-click
+  unsubscribe, null when nothing to say), and, against real Postgres (PGlite, every migration): the per-task and
+  per-week nudge limits, a managed student's `nudge_no_account`, and the nudge-emails-off lookup (a guardian reads
+  it, the student themself can't through this function).
+
+Decisions the brief didn't cover:
+- `sendNudge` always records the nudge with channel `'app'` as far as `send_nudge()` itself knows (a nudge is
+  always visible in the plan); the email/text delivery attempts are best-effort and separate from that stored
+  value. The client learns which channel actually delivered from `sendNudge`'s return and fires
+  `plan_nudge_sent {channel}` with that value, since `track()` only works in the browser (there is no
+  `plan_nudge_sent` entry in `ServerAnalyticsEvent`, and shouldn't be one just for this).
+- "No activity for 14 days" has no dedicated activity log, so it's read from what the tables already carry: a
+  task's `done_at`, an own task's `created_at`, and a visit's `created_at`/`updated_at`. The most recent of those,
+  compared against 14 days back; nothing recorded at all reads as stale.
+- `reassignTask` has no separate "changed by" column (the model doesn't have one); the edit is attributed the way
+  every other plan edit is, through the list's edit policy and the session that made it.
+- The timeline's full month/college view (`TimelineTaskRow`) doesn't look up the student's nudge-emails-off bit
+  (that would be an extra query per page render beyond the one already made for This week); its `NudgeButton` is
+  passed `studentNudgeEmailsOff={false}`, so the "{name} reads nudges in the plan" line only shows in This week.
+  The button and the rate limit work either way.
+- The household page's summary line renders in a line under the people strip (one per visible student), not
+  squeezed into the chip's own caption span: the chip caption (`chipCaption`) stays the short stage phrase U1
+  built, since the full summary line ("… · next: …, … · Dream: …") would overflow that fixed-width, single-line
+  slot.
+- "What your parents see" shows the summary line, the stuck signals, and what the student ticked this week — not
+  a literal per-guardian inbox (Your part differs by guardian, and the student has no one guardian in view to
+  render it for); a note says their own Your part is additionally included in what each guardian actually
+  receives.
+- Account-export's `planner` key is additive per the brief; it does not touch the `lists` exporter U1 already
+  shipped (which doesn't carry the planner columns on `list_items` — out of scope for this unit to extend).

@@ -181,3 +181,10 @@ Deviations and decisions:
 - Not done here: `chances-and-fit.md`'s row in the suggestion table (not built yet — the admit-rate/score rules
   stand in, per the README); a private per-guardian suggestion inbox (Scoir's pattern, decided against in the
   model); photos or a richer finding rail beyond similar colleges and the fit chips.
+
+### Owner feedback, first pass (2026-10-08)
+- **Sorting must feel instant.** The category chips on the Stage 1 panel now flip the moment they're tapped
+  (`ListStageRow` keeps the chosen category locally, writes it, and flips back only if the write is refused) and stay
+  enabled while a write is in flight, so a family can sort a list as a run of taps. The balance line and the stage
+  counts are server-rendered, so the row refreshes the page after the write lands; that refresh never blocks the next
+  tap. Before this, the chip didn't change until something else re-rendered the page, which read as a wait of seconds.

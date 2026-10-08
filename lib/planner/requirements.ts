@@ -47,6 +47,34 @@ export const PLATFORM_LABELS: Record<NonNullable<PlanItem["application_platform"
   other: "Other",
 };
 
+export type Platform = NonNullable<PlanItem["application_platform"]>;
+
+function applyHost(url: string | null | undefined): string | null {
+  if (!url) return null;
+  try {
+    return new URL(url).hostname.toLowerCase();
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * The platforms a college can be applied through, from what the site knows (applications.md "Platforms"): the
+ * University of California takes only its own application; ApplyTexas is for Texas public colleges (and anyone
+ * whose apply link points there); every other college may take the Common App or the Coalition (the site has no
+ * member list yet, so neither is ruled out), its own site, or "other". The picker offers only these; a platform
+ * already saved that isn't in the list stays selectable, marked "(not offered)".
+ */
+export function platformsFor(school: Pick<PlanSchool, "state" | "type" | "name" | "links"> | null | undefined): Platform[] {
+  const host = applyHost(school?.links?.apply);
+  const uc = (school?.state === "CA" && /^University of California\b/i.test(school.name ?? "")) || host?.endsWith("universityofcalifornia.edu") === true;
+  if (uc) return ["uc", "other"];
+  const out: Platform[] = ["common_app", "coalition"];
+  if ((school?.state === "TX" && school.type === "public") || host?.endsWith("applytexas.org") === true) out.push("apply_texas");
+  out.push("own", "other");
+  return out;
+}
+
 /** The order "By platform" groups colleges in (applications.md "Display"). */
 export const PLATFORM_ORDER: readonly (PlanItem["application_platform"] | null)[] = ["common_app", "coalition", "uc", "apply_texas", "own", "other", null];
 

@@ -1,7 +1,8 @@
 "use client";
 
-import { useTransition } from "react";
+import { useState, useTransition } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Crest } from "@/components/school/Crest";
 import { DreamStar } from "@/components/lists/DreamStar";
 import { SourceTip, Term } from "@/components/ui/info-tip";
@@ -46,7 +47,26 @@ export function ListStageRow({
   suggestion: SuggestResult;
   canEdit: boolean;
 }) {
-  const [pending, startTransition] = useTransition();
+  const router = useRouter();
+  const [, startTransition] = useTransition();
+  // Optimistic: the chip flips at once and the write follows; a refused write flips it back. The buttons stay
+  // enabled while a write is in flight so sorting a list is a run of quick taps, not a wait per college.
+  const [shown, setShown] = useState<ListCategory>(category);
+  const [error, setError] = useState<string | null>(null);
+  const pick = (c: ListCategory) => {
+    const before = shown;
+    setShown(c);
+    setError(null);
+    startTransition(async () => {
+      const result = await setCategory(itemId, c);
+      if (!result.ok) {
+        setShown(before);
+        setError(result.message);
+        return;
+      }
+      router.refresh(); // the balance line and stage counts are server-rendered
+    });
+  };
   const facts = [admitRate !== null && `${pctSmart(admitRate)} admit`, avgCost !== null && `${moneyCompact(avgCost)}/yr`, distanceMiles !== null && distanceLine(distanceMiles)].filter(Boolean);
 
   return (
@@ -73,22 +93,19 @@ export function ListStageRow({
             key={c}
             type="button"
             role="radio"
-            aria-checked={category === c}
-            disabled={!canEdit || pending}
-            onClick={() =>
-              startTransition(async () => {
-                await setCategory(itemId, c);
-              })
-            }
+            aria-checked={shown === c}
+            disabled={!canEdit}
+            onClick={() => pick(c)}
             className={cn(
               "h-8 rounded-full border px-2.5 text-xs font-semibold disabled:opacity-60",
-              category === c ? "bg-foreground text-background" : "text-muted-foreground hover:bg-muted",
+              shown === c ? "bg-foreground text-background" : "text-muted-foreground hover:bg-muted",
             )}
           >
             {CATEGORY_LABELS[c]}
           </button>
         ))}
       </div>
+      {error && <p className="basis-full text-xs text-destructive">{error}</p>}
     </li>
   );
 }

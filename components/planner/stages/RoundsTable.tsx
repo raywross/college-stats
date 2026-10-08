@@ -115,16 +115,7 @@ export function RoundsTable({
         </p>
       )}
 
-      <div className="space-y-3 lg:space-y-0" role="list" aria-label="Rounds by college">
-        <div aria-hidden className="hidden gap-3 border-b px-3 pb-2 text-xs font-bold tracking-wide text-muted-foreground uppercase lg:grid lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)_minmax(0,1.2fr)_minmax(0,1.4fr)_minmax(0,1fr)_minmax(0,1.1fr)_9rem]">
-          <span>College</span>
-          <span>Rounds offered</span>
-          <span>Dates</span>
-          <span>Early advantage</span>
-          <span>Interest · standing</span>
-          <span>Money</span>
-          <span>Round</span>
-        </div>
+      <div className="space-y-3" role="list" aria-label="Rounds by college">
         {drafted.map((item) => {
           const s = schools[item.unit_id];
           const offered = roundsOffered(s);
@@ -137,31 +128,57 @@ export function RoundsTable({
           const interest = interestLabel(s);
           const est = money.estimates[item.id] ?? null;
           return (
-            <div key={item.id} role="listitem" className="rounded-2xl border p-3 lg:rounded-none lg:border-0 lg:border-b lg:py-3">
-              <div className="grid gap-3 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)_minmax(0,1.2fr)_minmax(0,1.4fr)_minmax(0,1fr)_minmax(0,1.1fr)_9rem]">
-                <div className="min-w-0">
-                  {s ? <CollegeChip school={s} link /> : <span className="text-sm font-semibold">{item.unit_id}</span>}
-                  {item.dream && <p className="mt-0.5 text-xs font-semibold text-primary">Dream</p>}
-                </div>
-
-                <Cell label="Rounds offered">
-                  {offered.published ? (
-                    offered.offered.length > 0 ? (
-                      <span className="flex flex-wrap gap-1">
-                        {offered.offered.map((r) => (
-                          <span key={r} className="rounded-full border px-2 py-0.5 text-xs font-semibold">
-                            <Term term={ROUND_TERM[r]}>{ROUND_SHORT[r]}</Term>
-                          </span>
-                        ))}
-                      </span>
+            <div key={item.id} role="listitem" className="rounded-2xl border p-3 sm:p-4">
+              {/* Top line: the college and the rounds it offers, with the round picker at the right. The facts that
+                  inform the pick sit in four labelled cells underneath, so nothing shares a cramped column. */}
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div className="min-w-0 flex-1 basis-56">
+                  {s ? <CollegeChip school={s} link className="text-base" /> : <span className="text-sm font-semibold">{item.unit_id}</span>}
+                  {item.dream && <span className="ml-2 text-xs font-semibold text-primary">Dream</span>}
+                  <div className="mt-1.5 text-sm">
+                    {offered.published ? (
+                      offered.offered.length > 0 ? (
+                        <span className="flex flex-wrap items-center gap-1">
+                          <span className="mr-1 text-xs font-bold tracking-wide text-muted-foreground uppercase">Offers</span>
+                          {offered.offered.map((r) => (
+                            <span key={r} className="rounded-full border px-2 py-0.5 text-xs font-semibold">
+                              <Term term={ROUND_TERM[r]}>{ROUND_SHORT[r]}</Term>
+                            </span>
+                          ))}
+                        </span>
+                      ) : (
+                        <span className="text-muted-foreground">No rounds listed</span>
+                      )
                     ) : (
-                      <span className="text-muted-foreground">None listed</span>
-                    )
-                  ) : (
-                    <span className="text-muted-foreground">The college hasn&apos;t published its rounds</span>
-                  )}
-                </Cell>
+                      <span className="text-muted-foreground">The college hasn&apos;t published its rounds</span>
+                    )}
+                  </div>
+                </div>
+                <div className="w-full sm:w-44">
+                  <Cell label="Round">
+                  <select
+                    value={item.round ?? ""}
+                    disabled={!canEdit || fixed || pending}
+                    onChange={(e) => {
+                      setSaved(false);
+                      setDraft((d) => ({ ...d, [item.id]: (e.target.value || null) as ListRound | null }));
+                    }}
+                    aria-label={`Round for ${s?.name ?? "this college"}`}
+                    className="h-11 w-full rounded-full border bg-background px-3 text-sm font-semibold disabled:opacity-70"
+                  >
+                    <option value="">No round yet</option>
+                    {offered.pickable.map((r) => (
+                      <option key={r} value={r}>
+                        {ROUND_SHORT[r]}
+                      </option>
+                    ))}
+                    {item.round && !offered.pickable.includes(item.round) && <option value={item.round}>{ROUND_SHORT[item.round]} (not offered)</option>}
+                  </select>
+                  </Cell>
+                </div>
+              </div>
 
+              <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                 <Cell label="Dates">
                   {datesFor.length === 0 ? (
                     <span className="text-muted-foreground">Not published</span>
@@ -237,26 +254,6 @@ export function RoundsTable({
                   </span>
                 </Cell>
 
-                <Cell label="Round">
-                  <select
-                    value={item.round ?? ""}
-                    disabled={!canEdit || fixed || pending}
-                    onChange={(e) => {
-                      setSaved(false);
-                      setDraft((d) => ({ ...d, [item.id]: (e.target.value || null) as ListRound | null }));
-                    }}
-                    aria-label={`Round for ${s?.name ?? "this college"}`}
-                    className="h-11 w-full rounded-full border bg-background px-3 text-sm font-semibold disabled:opacity-70 lg:h-9"
-                  >
-                    <option value="">No round yet</option>
-                    {offered.pickable.map((r) => (
-                      <option key={r} value={r}>
-                        {ROUND_SHORT[r]}
-                      </option>
-                    ))}
-                    {item.round && !offered.pickable.includes(item.round) && <option value={item.round}>{ROUND_SHORT[item.round]} (not offered)</option>}
-                  </select>
-                </Cell>
               </div>
               {line && (
                 <p className="mt-2 text-xs text-muted-foreground">
@@ -356,11 +353,11 @@ export function RoundsTable({
   );
 }
 
-/** A cell with its column name shown on phones (the table's header row shows it from lg). */
+/** A fact cell with its name above it (the same on every width). */
 function Cell({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="min-w-0 text-sm">
-      <span className="mb-0.5 block text-xs font-bold tracking-wide text-muted-foreground uppercase lg:sr-only">{label}</span>
+      <span className="mb-0.5 block text-xs font-bold tracking-wide text-muted-foreground uppercase">{label}</span>
       {children}
     </div>
   );

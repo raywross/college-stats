@@ -183,3 +183,11 @@ Decisions and deviations:
 - The profile line loads through a Server Action after the page renders, so the profile stays static (ISR).
 - Not done: hooks ("legacy is considered here") wait for profile hooks; open question 2 (merit share in the money
   column) not shown.
+
+### Owner feedback, first pass (2026-10-08)
+- **The rounds table was unreadable on desktop**: seven columns in one grid row squeezed the college name under the
+  rounds chips. Each college is now a card on every width: the college and the rounds it offers on the top line with
+  the round picker at the right, then four labelled cells underneath (Dates, Early advantage, Interest · standing,
+  Money), two across on tablets and four across from `lg`. The column header row is gone; every cell carries its name.
+- **Ranking must feel instant.** The priority list's move buttons and drag handle stay enabled while a save is in
+  flight (the order was already optimistic); only "Back to the proposal" waits.

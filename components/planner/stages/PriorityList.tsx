@@ -105,7 +105,7 @@ export function PriorityList({
         {movable.map((r, i) => (
           <li
             key={r.id}
-            draggable={canEdit && !pending}
+            draggable={canEdit}
             onDragStart={() => setDragging(r.id)}
             onDragEnd={() => setDragging(null)}
             onDragOver={(e) => canEdit && e.preventDefault()}
@@ -128,7 +128,7 @@ export function PriorityList({
               <span className="flex shrink-0 gap-1">
                 <button
                   type="button"
-                  disabled={i === 0 || pending}
+                  disabled={i === 0}
                   onClick={() => move(r.id, i - 1)}
                   aria-label={`Move ${r.school.name} up`}
                   className="inline-flex size-11 items-center justify-center rounded-full border disabled:opacity-30 sm:size-9"
@@ -137,7 +137,7 @@ export function PriorityList({
                 </button>
                 <button
                   type="button"
-                  disabled={i === movable.length - 1 || pending}
+                  disabled={i === movable.length - 1}
                   onClick={() => move(r.id, i + 1)}
                   aria-label={`Move ${r.school.name} down`}
                   className="inline-flex size-11 items-center justify-center rounded-full border disabled:opacity-30 sm:size-9"

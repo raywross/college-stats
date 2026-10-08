@@ -75,7 +75,7 @@ export function CollegeApplyCard({
           </ul>
 
           <div className="mt-3">
-            <ApplyCardControls item={item} canEdit={canEdit} />
+            <ApplyCardControls item={item} school={school} canEdit={canEdit} />
           </div>
 
           {subtasks.length > 0 && (

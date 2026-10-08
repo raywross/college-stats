@@ -159,3 +159,11 @@ Deviations and decisions the brief didn't name:
   rare case where that leaves the tasks stale for a moment.
 - Not done here: a per-recommender name field (the spec keeps names out of the task text and telemetry by design,
   "asked"/"submitted" has no name field yet in this pass); screenshot import, as the spec already deferred it.
+
+### Owner feedback, first pass (2026-10-08)
+- **The platform picker offers only platforms the college can take** (`platformsFor` in `lib/planner/requirements.ts`,
+  used by the Apply card and the list row): the University of California takes only its own application; ApplyTexas
+  appears only for Texas public colleges and for any college whose apply link points at applytexas.org; everyone
+  else may take the Common App or the Coalition (the site has no member list yet, so neither is ruled out until the
+  [Common App data](../data-expansion/common-app.md) arrives), its own site, or "other". A platform saved earlier that
+  the rule no longer offers stays selectable as "(not offered)". Tested in `tests/planner-apply.test.mts`.

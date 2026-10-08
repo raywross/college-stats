@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { ExternalLink } from "lucide-react";
 import type { RowControlProps } from "@/components/planner/row/props";
-import { PLATFORM_LABELS } from "@/lib/planner/requirements";
+import { PLATFORM_LABELS, platformsFor } from "@/lib/planner/requirements";
 import { markApplied, setPlatform, setPortalUrl, unmarkApplied } from "@/lib/planner/store-apply";
 
 /**
@@ -12,7 +12,8 @@ import { markApplied, setPlatform, setPortalUrl, unmarkApplied } from "@/lib/pla
  * button that opens the saved portal link (or a small field to paste one). Rendered by RowControls in the order
  * list → rounds → actions → apply → offers.
  */
-export default function ApplyRowControls({ item, canEdit }: RowControlProps) {
+export default function ApplyRowControls({ item, school, canEdit }: RowControlProps) {
+  const platforms = platformsFor(school);
   const [applied, setAppliedLocal] = useState(item.applied_on ?? null);
   const [platform, setPlatformLocal] = useState(item.application_platform ?? "");
   const [portalUrl, setPortalLocal] = useState(item.portal_url ?? "");
@@ -69,11 +70,14 @@ export default function ApplyRowControls({ item, canEdit }: RowControlProps) {
         aria-label="Application platform"
       >
         <option value="">Platform</option>
-        {Object.entries(PLATFORM_LABELS).map(([value, label]) => (
+        {platforms.map((value) => (
           <option key={value} value={value}>
-            {label}
+            {PLATFORM_LABELS[value]}
           </option>
         ))}
+        {item.application_platform && !platforms.includes(item.application_platform) && (
+          <option value={item.application_platform}>{PLATFORM_LABELS[item.application_platform]} (not offered)</option>
+        )}
       </select>
 
       {editingPortal ? (

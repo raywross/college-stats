@@ -7,7 +7,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { generate } from "../lib/planner/generators/apply.ts";
-import { deadlineRequirement, groupByPlatform, orderForApply, requirementsFor, sendScoreAdvice } from "../lib/planner/requirements.ts";
+import { deadlineRequirement, groupByPlatform, orderForApply, platformsFor, requirementsFor, sendScoreAdvice } from "../lib/planner/requirements.ts";
 import { setStatus } from "../lib/list-rules.ts";
 import type { GeneratorInput, PlanItem, PlanSchool } from "../lib/planner/types.ts";
 import type { StudentProfileData } from "../lib/student-profile.ts";
@@ -311,4 +311,20 @@ test("generate: wait-list tasks appear only once the outcome is waitlisted", () 
 test("generate: a withdrawn college gets no sub-tasks", () => {
   const tasks = generate(input({ items: [item({ status: "applied", withdrawn_on: "2026-10-01" })] }));
   assert.deepEqual(tasks, []);
+});
+
+test("platformsFor offers only the platforms a college can take", () => {
+  const school = (over: Partial<Pick<PlanSchool, "state" | "type" | "name" | "links">>) => ({ state: "FL", type: "public" as const, name: "University of Florida", links: null, ...over });
+  // Florida's public flagship: no ApplyTexas, no UC application.
+  assert.deepEqual(platformsFor(school({})), ["common_app", "coalition", "own", "other"]);
+  // A Texas public college gets ApplyTexas; so does anyone whose apply link points there.
+  assert.deepEqual(platformsFor(school({ state: "TX", name: "The University of Texas at Austin" })), ["common_app", "coalition", "apply_texas", "own", "other"]);
+  assert.ok(platformsFor(school({ links: { apply: "https://www.applytexas.org/" } as PlanSchool["links"] })).includes("apply_texas"));
+  // A Texas private college doesn't.
+  assert.ok(!platformsFor(school({ state: "TX", type: "private-nonprofit", name: "Rice University" })).includes("apply_texas"));
+  // The University of California takes only its own application.
+  assert.deepEqual(platformsFor(school({ state: "CA", name: "University of California-Berkeley" })), ["uc", "other"]);
+  assert.deepEqual(platformsFor(school({ state: "CA", name: "Stanford University", type: "private-nonprofit" })), ["common_app", "coalition", "own", "other"]);
+  // No school at all: the general set.
+  assert.deepEqual(platformsFor(null), ["common_app", "coalition", "own", "other"]);
 });

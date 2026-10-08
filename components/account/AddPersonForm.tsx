@@ -171,9 +171,9 @@ export function AddPersonForm({
 
         {effectiveRole === "guardian" && studentInviting && (
           <label className="inline-flex items-start gap-2 text-sm">
-            <input type="checkbox" name="can_edit" className="mt-0.5 size-4 accent-primary" />
+            <input type="checkbox" name="can_edit" defaultChecked className="mt-0.5 size-4 accent-primary" />
             <span>
-              Let them edit my list and profile <span className="text-muted-foreground">(otherwise they can only look)</span>
+              Let them edit my list, plan, and numbers <span className="text-muted-foreground">(untick it and they can only look; you can change this later)</span>
             </span>
           </label>
         )}

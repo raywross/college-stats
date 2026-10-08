@@ -3,9 +3,9 @@
 import { useState, useTransition } from "react";
 import { ExternalLink } from "lucide-react";
 import { Term } from "@/components/ui/info-tip";
-import { PLATFORM_LABELS } from "@/lib/planner/requirements";
+import { PLATFORM_LABELS, platformsFor } from "@/lib/planner/requirements";
 import { markComplete, markWithdrawn, setCounts, setPlatform, setPortalUrl, setTranscriptShared } from "@/lib/planner/store-apply";
-import type { PlanItem } from "@/lib/planner/types";
+import type { PlanItem, PlanSchool } from "@/lib/planner/types";
 
 /**
  * The rest of an Apply-stage card's controls (specs/planner/applications.md "Display"): platform, the portal link
@@ -13,7 +13,8 @@ import type { PlanItem } from "@/lib/planner/types";
  * college's transcript request is shared, "the portal shows everything" (complete), and withdraw. Status and
  * outcome are `ApplyStatusControl`'s job. Each field saves itself on change or blur; no save-all button.
  */
-export function ApplyCardControls({ item, canEdit }: { item: PlanItem; canEdit: boolean }) {
+export function ApplyCardControls({ item, school, canEdit }: { item: PlanItem; school: Pick<PlanSchool, "state" | "type" | "name" | "links"> | null; canEdit: boolean }) {
+  const platforms = platformsFor(school);
   const [platform, setPlatformLocal] = useState(item.application_platform ?? "");
   const [portalUrl, setPortalLocal] = useState(item.portal_url ?? "");
   const [portalError, setPortalError] = useState<string | null>(null);
@@ -41,11 +42,14 @@ export function ApplyCardControls({ item, canEdit }: { item: PlanItem; canEdit: 
           className="h-9 rounded-full border bg-background px-2.5 font-semibold disabled:opacity-70"
         >
           <option value="">Not set</option>
-          {Object.entries(PLATFORM_LABELS).map(([value, label]) => (
+          {platforms.map((value) => (
             <option key={value} value={value}>
-              {label}
+              {PLATFORM_LABELS[value]}
             </option>
           ))}
+          {item.application_platform && !platforms.includes(item.application_platform) && (
+            <option value={item.application_platform}>{PLATFORM_LABELS[item.application_platform]} (not offered)</option>
+          )}
         </select>
       </label>
 

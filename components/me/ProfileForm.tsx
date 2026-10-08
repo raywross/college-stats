@@ -185,6 +185,17 @@ export function ProfileForm({
             }}
           />
         </Field>
+        <Field
+          label="Fee-waiver eligible?"
+          htmlFor="feeWaiverEligible"
+          hint="The Common App/NACAC criteria (Pell-likely, first-generation, and others); asked once so the plan's fee line can say so."
+        >
+          <select id="feeWaiverEligible" name="feeWaiverEligible" disabled={disabled} defaultValue={data.basics.feeWaiverEligible === null ? "" : data.basics.feeWaiverEligible ? "yes" : "no"} className={`${inputCls} mt-1.5`}>
+            <option value="">Not set</option>
+            <option value="yes">Yes</option>
+            <option value="no">No</option>
+          </select>
+        </Field>
       </Group>
 
       <Group title="Academics">

@@ -64,6 +64,11 @@ function applyLocally(item: Tracked, w: TrackingWrite): Tracked {
  * Applying stays on, and can't be switched off here, once the status is Applied or Decided. Read-only without edit
  * access. Each chip is a label around a visually hidden checkbox, so a glossary <Term> inside it opens its tip
  * without toggling the chip.
+ *
+ * Visited and Following on social move to the planner's own controls (components/planner/row/actions.tsx:
+ * the follow row and "Log a visit", specs/planner/actions.md "Display": "the tracking row's Visited and Following
+ * switches become these, so there is one place"), so this row drops those two chips and keeps Updates, Applying,
+ * and Accepted.
  */
 export function TrackingRow({ item, canEdit, className }: { item: Tracked; canEdit: boolean; className?: string }) {
   const router = useRouter();
@@ -98,7 +103,9 @@ export function TrackingRow({ item, canEdit, className }: { item: Tracked; canEd
   return (
     <div className={cn("mt-2", className)}>
       <ul className={cn("flex flex-wrap items-center gap-1.5", pending && "opacity-70")} aria-label="Tracking">
-        {trackingChips(local).map((chip) => {
+        {trackingChips(local)
+          .filter((chip) => chip.key !== "visited" && chip.key !== "social")
+          .map((chip) => {
           const term = CHIP_TERM[chip.key];
           const label = TRACKING_LABELS[chip.key];
           const disabled = !canEdit || chip.locked || pending;

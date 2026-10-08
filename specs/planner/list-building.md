@@ -1,6 +1,6 @@
 # Stage 1, The List: Groups by the Numbers, a Dream, and Sorting
 
-> Status: **planned** 2026-10-07. After [model.md](model.md). Better with [chances-and-fit.md](../product/chances-and-fit.md)
+> Status: **built** 2026-10-08 on `feature/planner` ([below](#built-2026-10-08-unit-u2-on-featureplanner-list)); planned 2026-10-07. After [model.md](model.md). Better with [chances-and-fit.md](../product/chances-and-fit.md)
 > (the site's suggested category with reasons); works without it from the admit rate alone. Extends the built list
 > ([saved-lists.md](../product/saved-lists.md), [household-hub.md](../product/household-hub.md#one-list-per-person)).
 > Part of the [planner](README.md).
@@ -113,3 +113,78 @@ The stage panel is also where a thin list gets thicker, without leaving the page
 1. Allow two Dreams ("a dream public and a dream private")? Recommendation: one; stage 2 needs one answer to "where
    would you go if you could", and a second favorite is `priority = 2`.
 2. Should "Accept all suggestions" also set the Dream's category? It does, like any row; the star stays.
+
+## Built (2026-10-08, unit U2 on `feature/planner-list`)
+What exists:
+- **`lib/planner/suggest.ts`** (pure): `suggestCategory(school: PlanSchool, profile)` over the rule table (minus
+  `chances-and-fit`, not built: README "Dependencies not built"), with `REACH_ADMIT_RATE_MAX` (0.2) and
+  `LIKELY_ADMIT_RATE_MIN` (0.5) as exported constants. A reason's year always comes from the citation on the value
+  it's about (`admitRateCite`, or `cites["derived.sat_total"]` / `cites["admissions.act_composite_25_75"]`), never a
+  literal in this file. Also: `sortItems` (every row in "Sorting"'s table, missing fields sort last),
+  `extendedBalanceLines` (the balance line's new facts), and `SORT_OPTIONS` (the sort menu's list, with each
+  option's `needs` hint).
+- **`components/planner/stages/ListStage.tsx`** (server component): the balance line extended, "Dream: none yet" or
+  the Dream's name, "Accept all suggestions" while anything's unsorted, the rows grouped by category or the chosen
+  sort (`ListStageRow.tsx`: facts, suggestion with its reason and source, the Dream star, a category picker), and
+  the finding rail — colleges like the ones already on the list (`lib/insights.ts` `similarSchools`), the built
+  Explore fit chips, and an Add (or Suggest, for a view-only guardian) button (`ListStageControls.tsx`).
+- **`components/planner/row/list.tsx`**: the Dream star and, when it differs from the student's own category, the
+  suggestion line, inside the list row's "More" (the brief's file map, not list-building.md's "Display" wording,
+  which reads as the star sitting in the plain row; see "Deviations" below).
+- **`components/lists/{DreamStar,SortMenu}.tsx`**: the Dream toggle (44px, confirms before taking the star from
+  another college) and the sort picker (`SheetDialog`: a bottom sheet on phones, a centered dialog from `sm`,
+  per `specs/mobile.md` "sheets for pickers"). Both wired into the List tab's header (`ListPage.tsx`) and the Stage
+  1 panel.
+- **Drag-and-drop in `ListBoard.tsx`**: pointer (HTML5 drag-and-drop, including touch-drag where the browser
+  supports it) alongside the existing Move up/down buttons, which stay as the keyboard path. `ListBoard` also grew a
+  `sort` prop: "Category" and "My order" keep the category headers; every other sort is one flat list (headers
+  would otherwise describe a grouping that isn't what's shown).
+- **Server**: `lib/planner/store-list.ts` (`"use server"`, `ready(capability)` copied from `lib/planner/store.ts`):
+  `setSort`, `acceptAllSuggestions` (fills every unsorted row with its suggestion, skips rows with no suggestion,
+  leaves categorized rows alone), `suggestCollege` (a view-only guardian's row, `unsorted`, note "Suggested by
+  {name}"). `lib/lists.ts` gained `moveItem` (pointer drag's write: renumbers the whole list's `position`).
+- **Migration** `supabase/migrations/20261008130000_planner_list.sql` (not in the brief's file map; told to the
+  lead): `suggest_college(list, unit_id)`, security definer, checking `can_read_list` — not `can_edit_list` — since
+  a view-only guardian is exactly who needs to call it; everyone else already has `addToList`.
+- **CSV**: `dream` and `priority` columns after the tracking ones in `lib/list-rules.ts` (`CsvRow`, `toCsv`,
+  `parseCsv`) and `lib/lists.ts` (`exportListCsv`, `importListCsv`); import accepts them, missing or malformed
+  values default to off/unset.
+- **Glossary**: `suggested-category`.
+- **Tests**: `tests/planner-suggest.test.mts` — every rule row (including the ACT fallback and the threshold's own
+  edge), a profile with no numbers at all (and a guardian's own list, no profile), "not reported" sorting last in
+  every one of the eight sorts, the extended balance line's four new facts, and the CSV round-trip (including a
+  plain Scoir export without the new columns, and a malformed priority cell).
+
+Deviations and decisions:
+- **`PlanSchool` grew two fields** (`satRange`, `actRange`), additive, in `lib/planner/types.ts` and filled in
+  `lib/planner/context.ts`'s `planSchoolFor` — the file U1 built says to add fields to `PlanSchool` additively, so
+  this unit did, rather than re-deriving the SAT/ACT range from the full `School` object a second time. The
+  citations for those two fields live in `PlanSchool.cites` (`derived.sat_total`, `admissions.act_composite_25_75`)
+  like every other cited value, not a second `...Cite` field.
+- **Where the Dream star and suggestion line show.** The spec's "Display" section reads as the star sitting in the
+  plain row on both the List tab and the Stage 1 panel; the brief's file map puts it in `row/list.tsx`, which only
+  renders inside `ListBoard`'s "More". This build follows the brief: the List tab's row keeps the star and
+  suggestion behind "More" (consistent with every other stage's row controls, and with the row's decluttered
+  design), while the Stage 1 panel — which is its own component, not `ListBoard` — shows both directly, which is
+  where a family actually sorts the list.
+- **`ListStage` doesn't reuse `ListBoard`.** "The same rows (it is the same component)" is read as the Dream
+  star, the sort menu, and the suggestion logic being shared, not the literal row markup: `ListBoard`'s row is
+  built around "More"-first tracking and notes, which the Stage panel doesn't need, so it gets its own compact row
+  (`ListStageRow.tsx`) instead of carrying unused tracking/notes UI into the stage view.
+- **`lists.sort` needed a column in the List tab's own read** (`LIST_COLUMNS` in `lib/lists.ts`, `ListRecord` in
+  `lib/list-rules.ts`), since it wasn't there before this unit and the List tab (not just the Plan tab) needs it for
+  the sort menu.
+- **Sorts gated by what's loadable**: "Distance" needs a home address; "Next date" and "Where I stand" need the
+  planner's tasks and the student's numbers, which the List tab (`ListPage.tsx`) only loads when `planner` is true
+  (the household hub). Outside the hub (`/me/lists`), those two options show disabled with their "needs" hint rather
+  than silently vanishing.
+- Not done here: `chances-and-fit.md`'s row in the suggestion table (not built yet — the admit-rate/score rules
+  stand in, per the README); a private per-guardian suggestion inbox (Scoir's pattern, decided against in the
+  model); photos or a richer finding rail beyond similar colleges and the fit chips.
+
+### Owner feedback, first pass (2026-10-08)
+- **Sorting must feel instant.** The category chips on the Stage 1 panel now flip the moment they're tapped
+  (`ListStageRow` keeps the chosen category locally, writes it, and flips back only if the write is refused) and stay
+  enabled while a write is in flight, so a family can sort a list as a run of taps. The balance line and the stage
+  counts are server-rendered, so the row refreshes the page after the write lands; that refresh never blocks the next
+  tap. Before this, the chip didn't change until something else re-rendered the page, which read as a wait of seconds.

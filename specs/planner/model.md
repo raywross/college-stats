@@ -1,6 +1,6 @@
 # Planner Model: Stages, Tasks, Visits, Offers, and the Plan Tab
 
-> Status: **planned** 2026-10-07. The foundation unit of the [planner](README.md): the shared tables, the stage
+> Status: **built** 2026-10-08 on `feature/planner` ([below](#built-2026-10-08-unit-u1-on-featureplanner-model)); planned 2026-10-07. The foundation unit of the [planner](README.md): the shared tables, the stage
 > machine, the Plan tab's frame on the person's page, the cycle year, and the entitlement hooks every stage reads.
 > Builds on [household-hub.md](../product/household-hub.md) and [saved-lists.md](../product/saved-lists.md). Part of
 > the planner.
@@ -152,3 +152,60 @@ Migration `supabase/migrations/…_planner.sql`; `lib/planner/{stage,tasks,cycle
    part")? Recommendation: not in v1; the assignee is "guardian", and either can tick.
 2. Should a counselor ([counselor-portal.md](../product/counselor-portal.md)) be able to add tasks to a student's
    plan? The model allows it (`source: 'own'`, `created_by` the counselor); the grant is the portal's question.
+
+## Built (2026-10-08, unit U1 on `feature/planner-model`)
+The foundation the stage units fill. What exists:
+- **Migration** `supabase/migrations/20261008120000_planner.sql`: the columns on `lists` (`sort`,
+  `rounds_plan_accepted_at`) and `list_items` (the table above plus `recommendations_count`, `supplements_count`,
+  `transcript_shared`); `plan_tasks` (plus `date_note`, `orphaned`), `plan_visits`, `plan_offers` (plus `pros`,
+  `cons`), `plan_letters`, `plan_nudges` (plus `reply`, `replied_at`, channel `app`), `plan_calendar_tokens`,
+  `sms_consents`. Policies through `can_read_list`/`can_edit_list`, and `can_read_item`/`can_edit_item` for tables
+  hanging off an item. One trigger on `list_items` keeps the Dream, applied_on ↔ status, committed_on ↔ enrolling, and
+  one-enrolling rules (each backed by a partial unique index or check); `plan_tasks_rules` keeps a task's item on its
+  list, refuses `cycle` tasks on a guardian's own list, freezes `list_id`, and sets `done_by`/`created_by` from the
+  session. `send_nudge(task, note, channel)` (security definer) enforces one nudge per task per three days and three
+  per week per student from one guardian (`nudge_limit`), only from a guardian of a student with an account.
+  `plan_for_calendar_token(hash)` (anon-callable) returns the list id for a live token. Nothing references the
+  storage schema; the letters bucket is `supabase/storage/planner-letters.sql` (U7, owner-run).
+- **Pure modules**: `lib/planner/types.ts` (every row type, PlanContext, PlanSchool, plus `GeneratorInput` and
+  `Generator`), `stage.ts` (`STAGES`, `stageCounts`, `stageOf`, `stageCaption`, `redConflicts`, `parseStage`,
+  `addDays`), `cycle.ts` (`cycleFor`, `currentCycle`, `cycleStartFromEntering`, `loadCycle`, `gradeOf`, `inSeason`,
+  `APPLIES`, `applies`, `validateCycleFile`), `tasks.ts` (`taskKey`, `generateTasks`, `mergeTasks`, `applyMerge`,
+  `nextTask`, `nextTaskByItem`, `thisWeek`, `groupByMonth`, `groupByCollege`, labels), `generators/index.ts` and six
+  stub generators, `lib/ics.ts`, `lib/entitlements.ts`.
+- **Server**: `lib/planner/context.ts` (server-only: `readPlan`, `planSchoolFor`/`planSchools` with citations
+  resolved only for fields the college has, `generatorInputFor`, `planContextFrom`, `writeMerge`, `todayIso`),
+  `lib/planner/store.ts` (Server Actions: `planFor`, `regenerate`, `tick`, `untick`, `snooze`, `dismiss`,
+  `addOwnTask`, `setDream`, `setPriority`, `setRound`, `setGradYear`), `lib/planner/hub.ts` (`stageCaptions`).
+- **UI**: the Plan tab (List | Plan | Numbers, students only) at `/household/[person]/plan` with the stage strip,
+  the open stage's panel, This week, and the timeline below; every panel is a "Coming in this build" stub
+  (`components/planner/stages/*`) until its unit fills it. `RowControls` renders the five `row/*` stubs in each list
+  row's More (the hub's List tab), whose facts line now ends with the next plan step and its date. The people strip
+  shows a student's stage in season ("Applying · 3 of 8 in"). The class-year prompt asks once when it's missing.
+  `/me/plan` redirects to the viewer's own Plan tab (a guardian's own page).
+- **Data**: `data/application-cycle.json` with the 2026–27 and 2027–28 cycles' fixed dates (Common App opens, FAFSA
+  and CSS Profile open, the reply date), checked by `npm run check:cycle` in `verify`.
+- **Glossary** `plan`, `stage`, `dream-school`, `task-assignee`; **telemetry** every planner event.
+- **Tests**: `tests/planner-policies.test.mts` (every rule above, with guards that break the Dream rule, the task
+  write policy, one-enrolling, token privacy, the nudge limits, and the letters policy), `planner-stage`,
+  `planner-tasks` (merge idempotence, a moved date keeps its tick, orphans, ics), `planner-cycle` (lookup, grade at
+  the turning points, `applies`, the file check rejecting an unknown `applies`).
+
+Deviations and decisions:
+- `mergeTasks(existing, generated)` returns upserts without `list_id` (the writer adds it); `applyMerge` shows the
+  stored result for tests. `registerGenerator` became the fixed list in `generators/index.ts`.
+- `nextTask(tasks, today, itemId?)` and `nextTaskByItem(items, tasks, today)` instead of `nextTask(items, tasks)`.
+- The current stage prefers List, Rounds, Apply, Offers; the Timeline leads only when none of those is open, and
+  Actions only when nothing else is. Rounds counts every live college without a round as "to decide" (the
+  early-offering filter waits for U3's `conflicts`/`roundsOffered`, which can pass `conflicts` in).
+- The one-enrolling rule wasn't in the database before; the migration adds it (a trigger plus a partial unique index,
+  after clearing extra enrolling rows, keeping the one highest on the list).
+- `plan_text_consented` carries `by_guardian` and `plan_text_opted_out` carries `via` (the registry needs at least one
+  property per event); both are server events.
+- A nudge's three-day limit is per task from anyone (the student hears about a task once), the weekly limit per
+  guardian.
+- ListPage's regular-round deadline now resolves against the cycle the entering class applies in ("Fall 2027" →
+  November 2026), which it had a year late.
+- The list's new columns are on `ListItem` as optional fields (`PlanItem` makes them required), so rows built before
+  the planner still type-check. Every list read now selects them: apply the migration before deploying.
+- The account export got the planner tables in U8 (`lib/account-export.ts`).

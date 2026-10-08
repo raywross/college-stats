@@ -5,6 +5,7 @@ import { num, pctSmart } from "@/lib/format";
 import type { MonthDayValue, School } from "@/lib/types";
 import { Block } from "@/components/profile/Panel";
 import { MetricLabel } from "@/components/ui/info-tip";
+import { OnYourPlan } from "@/components/planner/OnYourPlan";
 
 const dates = (closing: MonthDayValue | null, notification: MonthDayValue | null) =>
   [closing && `apply by ${monthDayLabel(closing)}`, notification && `decisions by ${monthDayLabel(notification)}`].filter(Boolean).join("; ");
@@ -97,6 +98,8 @@ export async function EarlyRounds({ school, id }: { school: School; id?: string 
           )}
           {ed?.offered === false && ea?.offered && <p className="text-sm text-muted-foreground">No early decision plan.</p>}
           {ea?.offered === false && ed?.offered && <p className="text-sm text-muted-foreground">No early action plan.</p>}
+          {/* The planner's line for a signed-in student with this college on their list (early-rounds.md "Display"). */}
+          <OnYourPlan unitId={school.unit_id} />
         </div>
       )}
     </Block>

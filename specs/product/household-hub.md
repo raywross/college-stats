@@ -373,3 +373,17 @@ Alexandra Ross  [Student] Class of 2028 (call)        [⋯]   ← person area (P
    2026-10-06 it wasn't: no `household_homes` table, no `household_of()`), then `20261006150000_household_hub.sql`.
 2. Deploy the Edge Function and set its secrets (`specs/supabase.md` "Edge Functions"); set `INVITE_FUNCTION_SECRET`
    in Vercel. Until then, invited people see the sign-in prompt and the earlier accept flow still works.
+
+## Parents can edit: the student's switch (owner decision 2026-10-08)
+The owner's first pass at the planner: *a parent should be able to make changes to a student's information*, and
+*it should be on by default when a student is added, so they'd have to choose to turn it off; these are minors.*
+- **On by default.** `20261008150000_parents_edit_by_default.sql`: the guardian who creates a household is an
+  editor; an invited guardian joins as an editor unless the inviter unticks "Let them edit" (the student's invite
+  form starts with it ticked; a guardian inviting another guardian no longer forces view-only); every active guardian
+  row at the time of the migration became an editor. `can_edit` stays per guardian membership underneath.
+- **The student's switch.** On the student's own Numbers page (their profile), a "Parents can edit" switch
+  (`components/account/ParentsCanEdit.tsx`, action `setParentsCanEdit`) turns every guardian in their household to
+  view-only or back, through `set_member_can_edit` for each guardian (the function still checks the caller is the
+  household's student). The per-guardian choice in the person menu remains for finer control.
+- **Unchanged:** a managed student (no account) is edited by whoever manages them; the student's own account, text
+  consent, and follows stay the student's alone.

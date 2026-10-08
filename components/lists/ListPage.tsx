@@ -15,10 +15,65 @@ import { getData } from "@/lib/data";
 import { deadlineFor, listOwner, upcomingDeadlines, type ListRecord, type ListRound } from "@/lib/list-rules";
 import { myHome } from "@/lib/home-store";
 import { DEFAULT_WITHIN, distanceFromHome, exploreNearHref } from "@/lib/home";
+import { createServerSupabase } from "@/lib/supabase-server";
+import { studentsICanSee } from "@/lib/auth";
+import { RowControls } from "@/components/planner/RowControls";
+import { planSchools, readTasks, todayIso } from "@/lib/planner/context";
+import { cycleStartFromEntering, cycleStartOf, currentCycle, cycleFor } from "@/lib/planner/cycle";
+import { dayLabel, isOverdue, nextTaskByItem, taskDate } from "@/lib/planner/tasks";
+import type { PlanItem, PlanSchool, PlanTask, ListSort } from "@/lib/planner/types";
+import { profileFor } from "@/lib/student-profile-store";
+import type { StudentProfileData } from "@/lib/student-profile";
+import { suggestCategory } from "@/lib/planner/suggest";
+import { SortMenu } from "@/components/lists/SortMenu";
+import type { Cited } from "@/lib/lineage";
+import { cfpView, isEnteredOffer } from "@/lib/planner/offers";
+import type { PlanOffer } from "@/lib/planner/types";
 
-function cycleStartYear(cycle: string | undefined): number {
-  const match = cycle?.match(/\d{4}/);
-  return match ? Number(match[0]) : new Date().getFullYear();
+/**
+ * The cycle a college's regular-round dates belong to: its logistics block names the entering class ("Fall 2027"),
+ * whose applications go out in the fall before (the cycle starting in 2026). Without one, the cycle under way.
+ */
+function cycleStartYear(entering: string | undefined): number {
+  return cycleStartFromEntering(entering) ?? cycleStartOf(currentCycle(todayIso()))!;
+}
+
+/**
+ * The planner's additions to a list on the hub (specs/planner/model.md "Where it lives"): each row's next task for
+ * the facts line and its stage controls for "More". Fails soft: a database without the planner's tables shows the
+ * plain list.
+ */
+async function plannerExtras(
+  list: ListRecord,
+  items: PlanItem[],
+  home: Awaited<ReturnType<typeof myHome>>,
+): Promise<{ tasks: PlanTask[]; schools: Record<string, PlanSchool>; profile: StudentProfileData | null; offers: Record<string, { net: number | null; gift: number }> } | null> {
+  try {
+    const supabase = await createServerSupabase();
+    const student = list.student_id ? ((await studentsICanSee()).find((a) => a.student.id === list.student_id)?.student ?? null) : null;
+    const today = todayIso();
+    const start = cycleStartOf(student?.grad_year ? cycleFor(student.grad_year) : currentCycle(today))!;
+    // U2 (list-building.md "Suggested category"): the student's own numbers, for the row's suggestion line and the
+    // "Where I stand" sort. Null for a guardian's own list (no student) or a student with no numbers saved.
+    const [tasks, schools, profile, offerRows] = await Promise.all([
+      readTasks(supabase, list.id),
+      planSchools(items.map((i) => i.unit_id), start, home),
+      student ? profileFor(student.id) : Promise.resolve(null),
+      // U7 (offers.md "List row"): "Offer: $X net" once an offer is entered. Fails soft to none.
+      items.length
+        ? supabase.from("plan_offers").select("item_id, coa, gift, work_study, loans, confirmed_at").in("item_id", items.map((i) => i.id))
+        : Promise.resolve({ data: [] as unknown[] }),
+    ]);
+    const offers: Record<string, { net: number | null; gift: number }> = {};
+    for (const o of ((offerRows.data ?? []) as Pick<PlanOffer, "item_id" | "coa" | "gift" | "work_study" | "loans" | "confirmed_at">[]).filter(isEnteredOffer)) {
+      const v = cfpView(o, null);
+      offers[o.item_id] = { net: v.coa.source === "none" ? null : v.netCost, gift: v.gifts.total };
+    }
+    return { tasks, schools, profile: profile?.data ?? null, offers };
+  } catch (err) {
+    console.error(`lists: planner extras unavailable: ${err instanceof Error ? err.message : String(err)}`);
+    return null;
+  }
 }
 
 /** Who is looking at the list, and what they may do with it. */
@@ -76,6 +131,7 @@ export async function ListPage({
   backLabel = "Your account",
   showGuardianBanner = true,
   embedded = false,
+  planner = false,
 }: {
   listId: string;
   basePath?: string;
@@ -83,6 +139,8 @@ export async function ListPage({
   backLabel?: string;
   showGuardianBanner?: boolean;
   embedded?: boolean;
+  /** The household hub's list: each row's next plan step in its facts line and its stage controls in "More". */
+  planner?: boolean;
 }) {
   // One round of independent reads: the list, the dataset, the household's home (a student and the guardians who see
   // their list measure from the same place), and who is looking. myHome, myLists, and getListWithItems are memoized
@@ -104,16 +162,20 @@ export async function ListPage({
   // existed, and that read is memoized: put this list back in the switcher.
   const lists = ownerLists.some((l) => l.id === list.id) ? ownerLists : [list, ...ownerLists];
   const addedByIds = [...new Set(items.map((i) => i.added_by).filter((x): x is string => !!x))];
-  const names = await namesFor(addedByIds);
+  const [names, plan] = await Promise.all([namesFor(addedByIds), planner ? plannerExtras(list, items as PlanItem[], home) : Promise.resolve(null)]);
+  const today = todayIso();
+  const nextByItem = plan ? nextTaskByItem(items, plan.tasks, today) : {};
 
   const boardItems: BoardItem[] = items.map((item) => {
     const school = getSchoolById(item.unit_id);
     const logistics = school?.reported?.admissions_logistics ?? null;
-    const profile = school?.reported?.admission_profile ?? null;
-    const deadline = deadlineFor(item.round as ListRound | null, logistics, profile, cycleStartYear(logistics?.cycle), {
+    const admissionProfile = school?.reported?.admission_profile ?? null;
+    const deadline = deadlineFor(item.round as ListRound | null, logistics, admissionProfile, cycleStartYear(logistics?.cycle), {
       text: item.deadline_text,
       date: item.deadline_date,
     });
+    const nextTask = nextByItem[item.id] ?? null;
+    const planSchool = plan?.schools[item.unit_id] ?? null;
     return {
       ...item,
       school: {
@@ -129,15 +191,28 @@ export async function ListPage({
         distance: home && school ? distanceFromHome(school.location, home) : null,
         distanceCited: school ? citeField("location.lat", school) : null,
         deadline,
+        next: nextLine(nextTask, planSchool, today),
       },
       notes: notesByItem[item.id] ?? [],
       addedByName: item.added_by ? names[item.added_by] ?? null : null,
       addedBySelf: item.added_by === viewer.id,
+      // U2 (list-building.md "Sorting"): raw fields SortMenu's options need beyond the facts line.
+      nextDateRaw: nextTask ? taskDate(nextTask) : null,
+      standing: planSchool ? suggestCategory(planSchool, plan?.profile ?? null).category : null,
     };
   });
 
   const upcoming = upcomingDeadlines(boardItems.map((i) => ({ id: i.id, name: i.school.name, deadline: i.school.deadline })), new Date());
   const compareIds = boardItems.slice(0, 4).map((i) => i.unit_id);
+
+  // U2 (list-building.md "Sorting"): "mine" sentinel for a sort's own menu item ("My order"); the column default is
+  // null, read as "Category". Distance needs a home address; "Next date" and "Where I stand" need the planner's
+  // tasks and the student's numbers, which only load when `planner` is true (the household hub's List tab).
+  const sort: ListSort = (list.sort as ListSort | null) ?? "category";
+  const unavailableSorts: ListSort[] = [];
+  if (!home) unavailableSorts.push("distance");
+  if (!plan) unavailableSorts.push("next_date", "standing");
+  else if (!plan.profile) unavailableSorts.push("standing");
 
   let siteUrl = "";
   if (access.isOwner) {
@@ -173,6 +248,7 @@ export async function ListPage({
       <header className="flex flex-wrap items-center justify-between gap-3 print:block">
         <ListMeta list={list} canEdit={access.canEdit} />
         <div className="flex items-center gap-2 print:hidden">
+          {boardItems.length > 1 && <SortMenu listId={list.id} value={sort} canEdit={access.canEdit} unavailable={unavailableSorts} />}
           {boardItems.length > 0 && (
             <Link href={`/compare?ids=${compareIds.join(",")}`} className="inline-flex h-9 items-center rounded-full border px-3.5 text-sm font-semibold hover:bg-muted">
               Compare these
@@ -202,7 +278,33 @@ export async function ListPage({
         </section>
       )}
 
-      <ListBoard items={boardItems} canEdit={access.canEdit} viewerId={viewer.id} />
+      <ListBoard
+        items={boardItems}
+        canEdit={access.canEdit}
+        viewerId={viewer.id}
+        sort={sort}
+        rowExtras={
+          plan
+            ? Object.fromEntries(
+                (items as PlanItem[])
+                  .filter((item) => plan.schools[item.unit_id])
+                  .map((item) => [
+                    item.id,
+                    <RowControls
+                      key={item.id}
+                      item={item}
+                      school={plan.schools[item.unit_id]}
+                      canEdit={access.canEdit}
+                      today={today}
+                      viewerIsGuardian={access.guardianOf !== null}
+                      profile={plan.profile}
+                      offer={plan.offers[item.id] ?? null}
+                    />,
+                  ]),
+              )
+            : undefined
+        }
+      />
 
       {boardItems.length > 0 && (
         <p className="text-xs text-muted-foreground print:hidden">
@@ -251,4 +353,12 @@ export async function ListPage({
       )}
     </div>
   );
+}
+
+/** The facts line's "Next: …" for a row, with the citation of the field its date came from. */
+function nextLine(task: PlanTask | null, school: PlanSchool | null, today: string) {
+  const date = task?.due_on ?? task?.window_end ?? null;
+  if (!task || !date) return null;
+  const cited = task.source_field && school ? ((school.cites[task.source_field] as Cited | undefined) ?? null) : null;
+  return { title: task.title, date: dayLabel(date, today), cited, overdue: isOverdue(task, today) };
 }

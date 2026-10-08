@@ -79,6 +79,30 @@ export interface ListItem {
   visited_on: string | null;
   /** They say they follow the college on social media. */
   follows_social: boolean;
+  /*
+   * The planner's columns (supabase/migrations/20261008120000_planner.sql; specs/planner/model.md "Tables"). Optional
+   * here so rows built before the planner (tests, CSV import) still type-check; lib/lists.ts reads them all, and
+   * lib/planner/types.ts PlanItem makes them required.
+   */
+  /** The one college the student would pick today (one per list; a trigger moves it). */
+  dream?: boolean;
+  /** The student's own rank, 1 = would go first (stage 2). */
+  priority?: number | null;
+  /** Which of the six networks they follow (stage 3). */
+  followed_networks?: ("instagram" | "youtube" | "tiktok" | "x" | "facebook" | "linkedin")[];
+  info_requested_on?: string | null;
+  application_platform?: "common_app" | "coalition" | "own" | "uc" | "apply_texas" | "other" | null;
+  /** Setting it moves the status to applied (trigger); setting the status back clears it. */
+  applied_on?: string | null;
+  complete_on?: string | null;
+  /** A URL only, never credentials. */
+  portal_url?: string | null;
+  /** Requires enrolling (trigger clears it when enrolling goes off). */
+  committed_on?: string | null;
+  withdrawn_on?: string | null;
+  recommendations_count?: number | null;
+  supplements_count?: number | null;
+  transcript_shared?: boolean;
 }
 
 /**
@@ -98,6 +122,11 @@ export interface ListRecord {
   share_enabled: boolean;
   created_by: string | null;
   created: string;
+  /**
+   * The planner's columns (supabase/migrations/20261008120000_planner.sql). Optional here (U1's PlanList in
+   * lib/planner/types.ts makes `sort` a typed `ListSort | null`) so a list read before the migration still type-checks.
+   */
+  sort?: string | null;
 }
 
 export interface ListNote {
@@ -340,7 +369,9 @@ export function upcomingDeadlines<T extends { deadline: ResolvedDeadline }>(item
  */
 export const SCOIR_COLUMNS = ["College", "Category", "Round", "Status", "Outcome", "Deadline", "Enrolling", "Notes"] as const;
 export const TRACKING_COLUMNS = ["updates", "visited_on", "follows_social"] as const;
-export const CSV_COLUMNS = [...SCOIR_COLUMNS, ...TRACKING_COLUMNS] as const;
+/** The planner's own columns (specs/planner/list-building.md "Rules": "CSV gains dream and priority columns; import accepts them"). */
+export const PLANNER_CSV_COLUMNS = ["dream", "priority"] as const;
+export const CSV_COLUMNS = [...SCOIR_COLUMNS, ...TRACKING_COLUMNS, ...PLANNER_CSV_COLUMNS] as const;
 
 export interface CsvRow {
   name: string;
@@ -354,6 +385,10 @@ export interface CsvRow {
   updates: boolean;
   visited_on: string | null;
   follows_social: boolean;
+  /** The one Dream college ("Yes" or blank). */
+  dream: boolean;
+  /** The student's own rank, 1 = would go first; blank when unset. */
+  priority: number | null;
 }
 
 const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
@@ -386,6 +421,8 @@ export function toCsv(rows: CsvRow[]): string {
         r.updates ? "Yes" : "No",
         r.visited_on ?? "",
         r.follows_social ? "Yes" : "",
+        r.dream ? "Yes" : "",
+        r.priority != null ? String(r.priority) : "",
       ]
         .map(escapeCsv)
         .join(","),
@@ -434,6 +471,8 @@ export interface ParsedCsvRow {
   updates: boolean;
   visited_on: string | null;
   follows_social: boolean;
+  dream: boolean;
+  priority: number | null;
 }
 
 /**
@@ -461,6 +500,8 @@ export function parseCsv(text: string): ParsedCsvRow[] {
     updates: hasHeader ? col("updates") : 8,
     visited_on: hasHeader ? col("visited_on") : 9,
     follows_social: hasHeader ? col("follows_social") : 10,
+    dream: hasHeader ? col("dream") : 11,
+    priority: hasHeader ? col("priority") : 12,
   };
   const get = (cells: string[], i: number) => (i >= 0 && i < cells.length ? cells[i].trim() : "");
   return rows
@@ -478,6 +519,11 @@ export function parseCsv(text: string): ParsedCsvRow[] {
       updates: !/^(n|no|false|0|off)$/i.test(get(cells, idx.updates)),
       visited_on: isoDateOrNull(get(cells, idx.visited_on)),
       follows_social: /^(y|yes|true|1)$/i.test(get(cells, idx.follows_social)),
+      dream: /^(y|yes|true|1)$/i.test(get(cells, idx.dream)),
+      priority: (() => {
+        const n = Number(get(cells, idx.priority));
+        return Number.isInteger(n) && n >= 1 && n <= 100 ? n : null;
+      })(),
     }));
 }
 

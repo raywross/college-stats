@@ -4,6 +4,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { refresh } from "next/cache";
 import { getAccount } from "@/lib/auth";
+import { myHouseholds } from "@/lib/households";
 import { createServerSupabase } from "@/lib/supabase-server";
 import { sendEmail } from "@/lib/email";
 import { SITE_NAME } from "@/lib/brand";
@@ -265,6 +266,28 @@ export async function leaveHousehold(_prev: HouseholdActionState, form: FormData
   const { error } = await supabase.rpc("leave_household", { p_household: household });
   if (error) return failed(error, "leave_household");
   refresh();
+  return { status: "done" };
+}
+
+/**
+ * The student's one switch over every guardian's edit access (specs/product/household-hub.md "Parents can edit: the
+ * student's switch"): flips can_edit on each active guardian membership in the households where the caller is the
+ * student, through set_member_can_edit (which checks the caller is that household's student).
+ */
+export async function setParentsCanEdit(on: boolean): Promise<HouseholdActionState> {
+  if (!(await signedIn())) return SESSION_ENDED;
+  const supabase = await createServerSupabase();
+  const households = (await myHouseholds()).filter((h) => h.members.some((m) => m.is_me && m.role === "student"));
+  let flipped = 0;
+  for (const h of households) {
+    for (const m of h.members) {
+      if (m.role !== "guardian" || !m.member_id || m.can_edit === on) continue;
+      const { error } = await supabase.rpc("set_member_can_edit", { p_member: m.member_id, p_can_edit: on });
+      if (error) return failed(error, "set_member_can_edit (all guardians)");
+      flipped++;
+    }
+  }
+  if (flipped > 0) refresh();
   return { status: "done" };
 }
 

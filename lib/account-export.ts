@@ -159,6 +159,50 @@ export const ACCOUNT_EXPORTERS: AccountExporter[] = [
     },
   },
   {
+    key: "planner",
+    description:
+      "The plan for your own and managed students' lists, and lists you own yourself: tasks, visits, offers, letter metadata (not the files), nudges you sent or received, and text consents (specs/planner/model.md; specs/planner/parents.md).",
+    run: async ({ supabase, studentIds, userId }) => {
+      type ListRow = { id: string; student_id: string | null; user_id: string | null };
+      const [studentLists, ownLists] = await Promise.all([
+        rows<ListRow>("lists", supabase.from("lists").select("id, student_id, user_id").in("student_id", inList(studentIds))),
+        rows<ListRow>("lists", supabase.from("lists").select("id, student_id, user_id").eq("user_id", userId)),
+      ]);
+      const listIds = [...studentLists, ...ownLists].map((l) => l.id);
+      if (listIds.length === 0) return { tasks: [], visits: [], offers: [], letters: [], nudges_sent: [], nudges_received: [], sms_consents: [] };
+      const [tasks, items] = await Promise.all([
+        rows(
+          "plan_tasks",
+          supabase
+            .from("plan_tasks")
+            .select("id, list_id, item_id, key, kind, title, detail, due_on, window_start, window_end, assignee, source, source_field, source_edition, date_note, done_at, snoozed_until, dismissed, orphaned, created_at")
+            .in("list_id", listIds),
+        ),
+        rows<{ id: string }>("list_items", supabase.from("list_items").select("id").in("list_id", listIds)),
+      ]);
+      const itemIds = items.map((i) => i.id);
+      const [visits, offers, letters, nudgesSent, nudgesReceived, consentsSelf, consentsStudent] = await Promise.all([
+        itemIds.length ? rows("plan_visits", supabase.from("plan_visits").select("id, item_id, kind, on_date, at_time, registered, who, rating, notes, created_at").in("item_id", inList(itemIds))) : Promise.resolve([]),
+        itemIds.length ? rows("plan_offers", supabase.from("plan_offers").select("id, item_id, award_year, letter_date, source, coa, gift, work_study, loans, pros, cons, confirmed_at, created_at").in("item_id", inList(itemIds))) : Promise.resolve([]),
+        // Metadata only: the storage path, not the file itself.
+        itemIds.length ? rows("plan_letters", supabase.from("plan_letters").select("id, item_id, kind, storage_path, created_at").in("item_id", inList(itemIds))) : Promise.resolve([]),
+        rows("plan_nudges", supabase.from("plan_nudges").select("id, task_id, note, sent_at, channel, reply, replied_at").eq("from_user", userId)),
+        rows("plan_nudges", supabase.from("plan_nudges").select("id, task_id, note, sent_at, channel, reply, replied_at").in("to_student", inList(studentIds))),
+        rows("sms_consents", supabase.from("sms_consents").select("id, phone, consented_at, revoked_at, provider_opt_out_at").eq("user_id", userId)),
+        rows("sms_consents", supabase.from("sms_consents").select("id, phone, consented_at, revoked_at, provider_opt_out_at").in("student_id", inList(studentIds))),
+      ]);
+      return {
+        tasks,
+        visits,
+        offers,
+        letters,
+        nudges_sent: nudgesSent,
+        nudges_received: nudgesReceived,
+        sms_consents: [...consentsSelf, ...consentsStudent],
+      };
+    },
+  },
+  {
     key: "access_log",
     description: "When guardians viewed your information, and when you viewed a student's as a guardian.",
     run: async ({ supabase, userId }) => ({

@@ -112,6 +112,10 @@ has a denied token (`gpa`, `sat`, `act`, `score`, `income`, `agi`, `asset`, `ema
 | `signup_started` (server) | `method`: magic_link / password; `role_hint`: student / guardian / counselor / none; `has_invite`: bool | `requestMagicLink` and `signUpWithPassword` when creating an account | Accounts |
 | `signup_completed` (server) | same, with the new user's id as distinct id | The auth callback and `completeSignIn`, when the email was confirmed in the last two minutes | Accounts |
 | `error_shown` | `route` (the pathname), `kind`: error / not_found | `app/error.tsx`, `app/global-error.tsx`, `app/not-found.tsx` | Errors users see |
+| `plan_opened` | `stage`: 1–6 | `PlanOpened` on the Plan tab, once per stage shown | Planner ([planner/model.md](../planner/model.md#telemetry)) |
+| `plan_task_ticked` | `kind` (the task kind), `source`: college / cycle / stage / own, `assignee`: student / guardian / either | `TaskRow` after a tick succeeds | Planner |
+| `plan_stage_done`, `plan_nudge_sent` (`channel`), `plan_rounds_accepted` (`ed`, `ed2`: bool), `plan_offer_added`, `plan_choice_made` (`unit_id`) | as listed | The stage units, when built | Planner |
+| `plan_text_consented` (server, `by_guardian`: bool), `plan_text_opted_out` (server, `via`: stop / account) | as listed | The text consent flow and the STOP webhook ([planner/timeline.md](../planner/timeline.md#texts)) | Planner |
 | `list_item_added`, `standing_viewed`, `estimate_run`, `offer_added`, `scattergram_viewed` | `unit_id` and coarse flags only | Later features, each defined in its spec and added to the registry then | |
 | `subscribe_started`, `subscribe_completed`, `subscription_cancelled` (server) | `tier`, `interval` | [commercialization.md](commercialization.md) | Commercial |
 | `api_request` (server) | key id, endpoint, status | [data-api.md](data-api.md) | |

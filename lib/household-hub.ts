@@ -213,9 +213,11 @@ export function chipName(m: Pick<RosterMember, "display_name" | "role" | "manage
  * hasn't finished joining; otherwise their role ("Student · Class of 2028", "Guardian"), with "You" in front on the
  * viewer's own chip ("You · Class of 2028").
  */
-export function chipCaption(m: Pick<RosterMember, "role" | "status" | "grad_year" | "is_me">): string {
+export function chipCaption(m: Pick<RosterMember, "role" | "status" | "grad_year" | "is_me">, stage?: string | null): string {
   if (m.status === "invited") return "Invited";
   if (m.status === "expired") return "Invite expired";
+  // A student in season: their plan's stage instead (specs/planner/model.md "Where it lives"; lib/planner/hub.ts).
+  if (stage && m.role === "student") return stage;
   if (m.status === "managed") return m.grad_year ? `No account yet · ${m.grad_year}` : "No account yet";
   if (m.role === "guardian") return m.is_me ? "You · Guardian" : "Guardian";
   const year = m.grad_year ? `Class of ${m.grad_year}` : null;

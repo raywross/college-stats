@@ -1092,7 +1092,28 @@ const entries = {
     term: "Restrictive early action",
     short: "Non-binding early action where you agree not to apply early to other colleges' early plans, with exceptions the college sets. Also called single-choice early action.",
     category: "Admissions",
-    related: ["early-action", "early-decision"],
+    related: ["early-action", "early-decision", "single-choice-early-action"],
+  },
+  "early-decision-ii": {
+    term: "Early decision II",
+    short: "A second binding early round, with a January deadline and a February decision, after the first round's December answers. About 30 colleges offer it.",
+    long: "A student deferred or denied in early decision I is released from that commitment and may apply ED II somewhere else, so ED II works as the fallback for a first early choice. If admitted in ED II, you commit to enroll, just as in ED I.",
+    category: "Admissions",
+    related: ["early-decision", "binding", "early-action"],
+  },
+  "single-choice-early-action": {
+    term: "Single-choice early action",
+    short: "Another name for restrictive early action: a non-binding early round where you agree not to apply early elsewhere, except where the college allows it.",
+    long: "Most such colleges allow early applications to public universities and to colleges with non-binding rolling admission; some allow other early action; all forbid early decision elsewhere. The Common Data Set only says whether the plan is restrictive, so check the college's own page for what it allows.",
+    category: "Admissions",
+    related: ["restrictive-early-action", "early-action", "early-decision"],
+  },
+  binding: {
+    term: "Binding",
+    short: "An application you commit to: if admitted, you enroll and withdraw your other applications. Early decision (I and II) is binding; early action isn't.",
+    long: "The accepted exception is money: a student may be released when the aid offer makes attending impossible, but families shouldn't plan on it. An admitted ED student can't compare aid offers, so get an estimate, or run the college's net price calculator, before applying.",
+    category: "Admissions",
+    related: ["early-decision", "early-decision-ii", "early-action"],
   },
   "wait-list": {
     term: "Wait list",
@@ -1497,6 +1518,114 @@ const entries = {
     related: ["follow"],
   },
 
+  // The planner (specs/planner/model.md)
+  plan: {
+    term: "Plan",
+    short: "A student's college plan: their list seen as six stages, from building the list to choosing a college, with the dated steps each college and the season call for.",
+    long: "The Plan tab sits beside List and Numbers on a student's page. It reads the same list (one college, one row), so ticking a step in the plan and changing the row on the list are the same fact. Steps come from each college's own published dates, the dates every applicant shares (the FAFSA, the reply date), and the stage the student is in; the family can add their own. Parents see the same plan under the household's rules.",
+    category: "Your account",
+    related: ["stage", "task-assignee", "dream-school"],
+  },
+  stage: {
+    term: "Stage",
+    short: "Where a student is in the plan: List, Rounds, Actions, Timeline, Apply, or Offers. Worked out from the list itself, never set by hand.",
+    long: "A stage is open while it has work (colleges to sort, rounds to choose, applications not yet in) and done once that work is finished. The stages are a map, not a gate: any of them can be opened at any time. Actions (following and visiting) is always open, and the Timeline stays open once its first step's date arrives.",
+    category: "Your account",
+    related: ["plan"],
+  },
+  "dream-school": {
+    term: "Dream school",
+    short: "The one college on a list the student would pick today over every other. A star on the row, not a category: a Dream can be a Reach or a Target.",
+    long: "One per list: marking another college moves the star. The Dream is where the rounds stage looks first, and the only college a parent's summary names. No Dream is fine.",
+    category: "Your account",
+    related: ["reach-school", "target-school", "plan"],
+  },
+  "suggested-category": {
+    term: "Suggested category",
+    short: "The site's own guess at Reach, Target, or Likely for a college, shown beside your chosen category with a one-line reason.",
+    long: "From the admit rate and, when you've saved a score, where it falls in the college's own reported range — the same facts chances-and-fit will refine later. It never changes your category by itself; \"Accept all suggestions\" is your click, and a row can show both (\"Likely · Suggested Target\") with no color that reads as a warning.",
+    why: "A second opinion from the numbers, without pretending to know more than it does: a college with no reported scores or admit rate gets no suggestion at all.",
+    category: "Your account",
+    related: ["reach-school", "target-school", "likely-school", "plan"],
+  },
+  "task-assignee": {
+    term: "Whose step",
+    short: "Who a step in the plan belongs to: the student, a parent, or either. Parents' steps (the FAFSA, deposits) also show on their own page.",
+    long: "Steps that need a payment or a parent's tax information default to a parent; essays and asks default to the student. Anyone who can edit the plan can tick a step, and the tick says who did it.",
+    category: "Your account",
+    related: ["plan", "guardian"],
+  },
+  "calendar-feed": {
+    term: "Calendar link",
+    short: "A private web address your calendar app subscribes to, so the plan's dated steps and visits show up beside everything else and update on their own.",
+    long: "It carries titles and dates only (\"Michigan: apply (ED I)\"), never notes or numbers. Anyone with the link sees those titles, so treat it like a key: stop it from the Plan menu and make a new one if it gets shared.",
+    category: "Your account",
+    related: ["plan"],
+  },
+  "your-week": {
+    term: "Your week",
+    short: "A Sunday-evening email with the plan's steps due in the next seven days and the first overdue one, one line each.",
+    long: "On by default for seniors in season and off for juniors until spring. Texts, when someone turns them on, carry the first three of the same steps, at most one a day and never at night.",
+    category: "Your account",
+    related: ["plan", "calendar-feed"],
+  },
+
+  // Parents (specs/planner/parents.md)
+  nudge: {
+    term: "Nudge",
+    short: "A parent's one-line, optional note on one step of the plan, delivered by the site instead of across the kitchen table.",
+    long: "Rate-limited by design: once per step every three days, and at most three a week from one guardian to one student. The student sees who sent it and can tick the step, snooze it, or send back a one-line reply that closes it. Another guardian sees that a nudge was sent, never its text.",
+    why: "A parent can help without turning into a second stream of reminders: the site reminds, the parent nudges, and the limit is the feature.",
+    category: "Your account",
+    related: ["your-part", "task-assignee", "plan"],
+  },
+  "your-part": {
+    term: "Your part",
+    short: "Every open step assigned to a guardian or either, across every student they can see, in one place on their own page.",
+    long: "The FAFSA and CSS Profile, priority dates, fees a parent said they'd pay, deposits once a choice is made, and visits they're booking — with the same ticks and dates as the plan itself. The weekly summary email leads with it.",
+    category: "Your account",
+    related: ["task-assignee", "nudge", "your-week"],
+  },
+
+  // Stage 3, actions (specs/planner/actions.md)
+  "virtual-tour": {
+    term: "Virtual tour",
+    short: "A video or interactive walk-through of campus, for a family that can't visit in person. A visit kind in the plan, logged like any other visit.",
+    long: "Most colleges' own visit pages link one, often hosted by CampusReel or YouVisit; a real visit still tells you more (how the dining hall smells, how far the walk to class actually is), but a virtual tour is better than nothing for a long-distance college on the list.",
+    category: "Your account",
+    related: ["demonstrated-interest"],
+  },
+  "information-session": {
+    term: "Information session",
+    short: "A presentation by an admissions officer, in person or online, about the college and how it admits students. A visit kind in the plan.",
+    long: "Usually followed by questions; some colleges log attendance as a sign of interest. An open house folds one or more sessions into a bigger on-campus event.",
+    category: "Your account",
+    related: ["demonstrated-interest"],
+  },
+
+  // Stage 5, applications (specs/planner/applications.md)
+  "application-portal": {
+    term: "Application portal",
+    short: "The college's own website for checking an application's status, once it's submitted. You paste its link here; the site never logs in.",
+    long: "Each college gives applicants a separate account, usually by email a week or two after submitting. The plan stores the link you paste, nothing more, and reminds you to check it weekly until you confirm everything's received.",
+    category: "Your account",
+    related: ["plan"],
+  },
+  "letter-of-continued-interest": {
+    term: "Letter of continued interest",
+    short: "A short, optional note to a college that deferred or wait-listed you: new grades, an award, or why you're still interested.",
+    long: "Not every college wants one — some say so directly — so send it only where the college accepts updates. It's never a second essay: a few sentences, addressed to the admissions office that reviewed the application.",
+    category: "Your account",
+    related: ["plan"],
+  },
+  "fee-waiver": {
+    term: "Fee waiver",
+    short: "Skipping a college's application fee because you meet criteria most colleges and the Common App recognize (Pell-likely, first-generation, and others).",
+    long: "You answer the question once on your profile; the plan's fee line then says so for every college that lists a waiver. The site never applies for one on your behalf — most colleges grant it automatically once you check the box on their own application.",
+    category: "Your account",
+    related: ["plan"],
+  },
+
   // High schools (specs/product/high-school-data.md)
   ncessch: {
     term: "NCES school ID",
@@ -1620,6 +1749,53 @@ const entries = {
     short: "A number the source left out because it describes so few students (fewer than 5 here) that it could identify someone.",
     category: "High schools",
     related: ["hs-state-median"],
+  },
+  // Offers (specs/planner/offers.md "Display", U7).
+  "gift-aid": {
+    term: "Gift aid",
+    short: "The part of an aid offer you never pay back: grants and scholarships from the government, the state, the college, or outside groups.",
+    long: "An offer's gift aid is the number to compare. Loans and work-study are often listed beside it as \"aid\", but a loan is repaid with interest and work-study is a paycheck earned during the year.",
+    category: "Cost & outcomes",
+    related: ["grant-aid", "net-cost", "renewable-award"],
+  },
+  "net-cost": {
+    term: "Net cost",
+    short: "An offer's cost of attendance minus its gift aid: what the year costs before loans and work-study, which are ways to pay it, not discounts.",
+    why: "Two offers with the same \"total aid\" can have very different net costs once loans are taken out.",
+    category: "Cost & outcomes",
+    related: ["cost-of-attendance", "gift-aid", "net-price"],
+  },
+  "work-study": {
+    term: "Work-study",
+    short: "A part-time campus job the aid offer makes room for. The money is paid as a paycheck while the student works, so it can't cover a bill due in August.",
+    category: "Cost & outcomes",
+    related: ["net-cost"],
+  },
+  "parent-plus": {
+    term: "Parent PLUS loan",
+    short: "A federal loan a parent takes out in their own name for a student's costs, at a higher rate than the student's own loans. It's debt, not aid.",
+    long: "For loans made from July 1, 2026 it's capped at $20,000 a year and $65,000 in all per student. An offer that fills its gap with Parent PLUS is asking the family to borrow the difference.",
+    category: "Cost & outcomes",
+    related: ["net-cost", "gift-aid"],
+  },
+  "renewable-award": {
+    term: "Renewable award",
+    short: "A grant or scholarship that comes back each year, usually if the student keeps a GPA, a full course load, or, for need-based aid, files the aid forms again.",
+    why: "A first-year-only award makes the next three years cost more; ask what keeps each award.",
+    category: "Cost & outcomes",
+    related: ["gift-aid"],
+  },
+  "award-displacement": {
+    term: "Award displacement",
+    short: "When an outside scholarship lowers the aid a college gives, because the total can't exceed the student's need or the cost. Colleges differ in whether they cut loans first or grants.",
+    category: "Cost & outcomes",
+    related: ["gift-aid"],
+  },
+  "summer-melt": {
+    term: "Summer melt",
+    short: "When a student who chose a college over the spring doesn't show up in the fall, often because a summer step (a form, a bill, orientation) slipped. A short summer checklist and reminders help.",
+    category: "Your account",
+    related: ["plan"],
   },
 } satisfies Record<string, GlossaryEntry>;
 

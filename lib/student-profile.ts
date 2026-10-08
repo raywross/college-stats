@@ -43,6 +43,12 @@ export interface StudentProfileBasics {
   highSchool: string | null;
   /** The picked high school's id (ncessch or PSS ppin), from the /me combobox (lib/high-schools.ts); null for free text. */
   highSchoolId: string | null;
+  /**
+   * The Common App/NACAC fee-waiver criteria (Pell-likely, first-generation, etc.): asked once, its own yes/no,
+   * null until answered (specs/planner/applications.md "Rules"). Read by `lib/planner/requirements.ts` and the
+   * `apply` generator's fee/waiver sub-task.
+   */
+  feeWaiverEligible: boolean | null;
 }
 
 /** The scale a GPA is reported on; chances and every other tool read the 4.0 unweighted conversion. */
@@ -129,7 +135,7 @@ export const LOCAL_PROFILE_KEY = "student-profile";
 
 export function emptyProfile(): StudentProfileData {
   return {
-    basics: { gradYear: null, stateOfResidence: null, highSchool: null, highSchoolId: null },
+    basics: { gradYear: null, stateOfResidence: null, highSchool: null, highSchoolId: null, feeWaiverEligible: null },
     academics: { gpa: null, gpaScale: "4.0", weightedGpa: null, classRankPercentile: null, courseRigorCount: null },
     tests: {
       satTotal: null,
@@ -167,6 +173,13 @@ function int(v: unknown, lo: number, hi: number): number | null {
 
 function bool(v: unknown): boolean {
   return v === true;
+}
+
+/** Yes/No/not set (the fee-waiver question, student-profile.md-style additive field): null unless the value is clearly one or the other. */
+function nullableBool(v: unknown): boolean | null {
+  if (v === true || v === "true" || v === "yes") return true;
+  if (v === false || v === "false" || v === "no") return false;
+  return null;
 }
 
 function str(v: unknown, maxLen = 200): string | null {
@@ -211,6 +224,7 @@ export function sanitizeProfile(input: unknown): StudentProfileData {
     stateOfResidence: str(b.stateOfResidence, 20),
     highSchool: str(b.highSchool, 200),
     highSchoolId: typeof b.highSchoolId === "string" && isHighSchoolId(b.highSchoolId) ? b.highSchoolId : null,
+    feeWaiverEligible: nullableBool(b.feeWaiverEligible),
   };
 
   const ac = isObj(input.academics) ? input.academics : {};

@@ -162,7 +162,9 @@ test("accept_invitation refuses unknown, expired, revoked, used, own, and wrong-
   const good = await invite("EVE@example.com");
   await accept(eve, good.token);
   await assert.rejects(accept(eve, good.token), /invitation_used/);
-  // A refused token left nothing behind; the good one made Eve a view-only guardian.
+  // A refused token left nothing behind; the good one made Eve a view-only guardian (this file applies only the
+  // first accounts migration; 20261008150000_parents_edit_by_default.sql later made editing the default, tested in
+  // household-hub-policies.test.mts).
   const rows = await db.query<{ status: string; can_edit: boolean }>("select status, can_edit from public.household_members where household_id = $1 and user_id = $2", [household, eve]);
   assert.deepEqual(rows.rows, [{ status: "active", can_edit: false }]);
   // Only the hash is stored.

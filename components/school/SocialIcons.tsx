@@ -102,6 +102,9 @@ const GLYPH: Record<SocialNetwork, () => ReactNode> = {
   linkedin: LinkedInGlyph,
 };
 
+/** The same per-network marks, for callers that build their own buttons around them (the planner's FollowRow). */
+export const SOCIAL_GLYPHS: Record<SocialNetwork, () => ReactNode> = GLYPH;
+
 /**
  * The college's social accounts as small round icon buttons, in SOCIAL_NETWORKS order
  * (specs/school-identity/social-accounts.md, Display). Self-contained (one inline-flex group), so HeroIdentity's

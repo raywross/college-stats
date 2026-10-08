@@ -1,6 +1,6 @@
 # Stage 6, Decisions and Offers: Outcomes, Letters Side by Side, and the Choice
 
-> Status: **planned** 2026-10-07; the award letter analyzer of 2026-10-02 (`product/award-letter-analyzer.md`) moved
+> Status: **built** 2026-10-08 on `feature/planner` ([below](#built-2026-10-08-unit-u7-on-featureplanner-offers-2)); planned 2026-10-07; the award letter analyzer of 2026-10-02 (`product/award-letter-analyzer.md`) moved
 > here and extended into the planner's last stage. After [applications.md](applications.md) and
 > [net-price-estimator.md](../product/net-price-estimator.md) (shares cost of attendance, loan rates, and the
 > four-year projection). Part of the [planner](README.md).
@@ -166,3 +166,82 @@ classification, schema, quotes) and its fixtures.
    a public page would be a place for strangers to see a minor's college.
 3. A Common App dashboard screenshot read by the same reader to seed statuses is noted for later, not this pass
    (owner decision 2026-10-07).
+
+## Built (2026-10-08, unit U7 on `feature/planner-offers-2`)
+What exists:
+- **Pure math** `lib/planner/offers.ts`: `cfpView` (the CFP mapping: the letter's cost, else the sum of its lines, else
+  the site's full price `cost.sticker` for the student's residency, flagged "cost added from IPEDS" with its year from
+  lineage; gifts by source; net cost; out of pocket = net − work-study; loans by kind, Parent PLUS and private as "not
+  aid", outside the headline), `offerFlags` → `questionsToAsk` (COA missing or without housing, a loan typed under
+  grants, PLUS filling the gap, a private loan, renewal unknown or unwritten, first-year-only awards, a need grant
+  called a scholarship, outside-scholarship displacement, work-study), `fourYears` (tuition and living costs at the
+  college's own nominal trend, a total-only cost at the full-price trend; gifts per their flag, unknown shown both
+  ways; the student's federal loans step up with the annual limits when year 1 is at the limit; Parent PLUS inside its
+  annual and aggregate caps; the **10-year standard payment** at the award year's rate, labelled as such, with the
+  tiered term the balance would get beside it), `growthRate`, `sortOffers` + `OFFER_SORTS` (the sort is named; unknown
+  values last), `appealSummary`, `normalizeDraft` (the form's and the server's parser), `waitListLine`/`waitListOdds`,
+  `validateLoanReference`, `ratesFor` (an award year not announced yet uses the newest published rate and says so).
+- **Reference** `data/reference/federal-loans.json`: undergraduate and Parent PLUS rates for the 2023–24 to 2026–27
+  award years, dependent undergraduate annual limits, the Parent PLUS limits from July 2026 ($20,000 a year, $65,000 per
+  student), and the Tiered Standard terms for loans made from July 2026 (10/15/20/25 years by balance), each with its
+  source URL (FSA electronic announcements, the Federal Register's fixed-rate notice, FSA's loan-limits FAQ of May 2026,
+  and the RISE final rule, 34 CFR 685.208(c)(1)). Loan fees weren't confirmed at an official source, so they're left out.
+- **Server facts** `lib/planner/offers-server.ts`: `offerFacts` (admitted colleges only: the full price by residency,
+  the cost trend from history, average cost, aid generosity tier, earnings, debt, graduation rate, each cited),
+  `waitListFacts` (C2, cited), `offerColumns`. History has no housing series: housing is full price − tuition, year by
+  year, nominal.
+- **Generator** `lib/planner/generators/offers.ts`: `add_offer` per admit; after the choice (`enrolling` and
+  `committed_on`), `deposit` by the chosen college's C17 reply date (the same rule as the college generator's
+  `reply_by`), `withdraw` per other admitted or pending college ("Tell {College} you won't attend; it frees a place"),
+  after an ED admit "ED is binding: withdraw your application to {College} now" for every other application,
+  wait lists included and dated the day of the choice; `waitlist_decide` per wait list otherwise; the summer list from
+  the cycle file's `committed` entries as `summer` tasks keyed `{list}:summer:{entry key}`. `reply_by` and
+  `housing_deposit` stay the college generator's; the store ticks them. A guardian's own list gets nothing.
+- **Store** `lib/planner/store-offers.ts`: `recordDecision` (`applyOutcome` + date; ticks `{item}:decision_expected:-`
+  except for a deferral; a denial dismisses the college's open steps), `saveOffer` (one per college; ticks
+  `add_offer`), `deleteOffer`, `setProsCons`, `shareLetter` / `revokeLetter`, `choose` (ticks `reply_by`), `unchoose`,
+  `withdrawCollege` (sets `withdrawn_on`, ticks the withdraw step), `consentOutcomeShare`; each regenerates.
+- **UI**: `components/planner/stages/OffersStage.tsx` (decisions row with "Decisions start arriving {date}" and each
+  college's date cited; wait lists with their C2 history cited; `OffersTable` with the slope view; per college the
+  context lines, flags, questions to ask, the appeal summary with Copy, shared letters, pros and cons; Compare my
+  admits; the choice; the household card; the after-the-choice steps with "I've withdrawn"; the summer list; the
+  opt-in), `OffersTable.tsx` (cards in a swipe rail on phones, the table from `sm` scrolling inside its wrapper),
+  `OfferForm.tsx` (one screen, traps inline, live net cost), `ShareLetter.tsx`, `ChooseButton.tsx`, `OutcomePicker.tsx`,
+  `OfferControls.tsx`, `row/offers.tsx` (outcome picker; "Offer: $X net"), and the dossier
+  `app/household/[person]/plan/print/page.tsx` (linked from the stage and the Plan menu).
+- **Migration** `supabase/migrations/20261008141000_planner_offers.sql`: `lists.outcome_share_consented_at` and
+  `outcome_share_consented_by`, changed only by the student's own account, or by a guardian who can edit a student
+  without an account (trigger + `can_consent_outcome_share`); the signed-in user and the database's clock are recorded.
+- **Glossary** `gift-aid`, `net-cost`, `work-study`, `parent-plus`, `renewable-award`, `award-displacement`,
+  `summer-melt` (`cost-of-attendance` and `wait-list` already existed). **Telemetry** `plan_offer_added` (first save
+  of a college's offer) and `plan_choice_made`, from the client.
+- **Tests** `tests/planner-offers.test.mts` (CFP mapping over a CFP letter, a messy letter, and a New York standard
+  letter typed through the form's parser; four-year math; flags; the reference file and a guard; the choice's tasks;
+  the ED rule; wait lists; summer keys; sorting; the appeal line) and `tests/planner-offers-policies.test.mts` (PGlite:
+  a letter row readable only by its uploader and the list's readers; the consent rules; guards that break each).
+
+Decisions the build made:
+- The table's headline borrowing is the student's federal loans plus the college's own; Parent PLUS and private loans
+  are shown on their own line as "not aid".
+- An offer for an award year whose rates aren't announced (rates come each May) uses the newest published rate and the
+  table says which year's.
+- Pros and cons live on the college's offer row; an admit without an offer gets a notes-only row (not confirmed), which
+  the table doesn't count as an offer.
+- Compare my admits opens `/compare?ids=` with the first four admits; beyond four, "All the numbers" links open
+  `/compare/table?ids=` for each further group of four (the compare routes take at most four).
+- Deferred: `applyOutcome` stores a deferral as Applied with no outcome; the decision date is kept, and the decisions
+  row reads that as "Deferred {date}: waiting". The ED II line after an ED I deferral is U6's generator's.
+- The share image ("Alex chose Michigan" with the crest and class year) is deferred: the household card says so.
+- Withdraw tasks are generated for a college after it's withdrawn too, so ticking one doesn't orphan it.
+- Shared letters are at most 4 MB (`experimental.serverActions.bodySizeLimit` is 4.4 MB in `next.config.ts`, under
+  Vercel's request cap).
+
+Owner setup:
+1. Apply `supabase/migrations/20261008141000_planner_offers.sql` (SQL Editor, dev first, then prod). Until it's
+   applied, the opt-in checkbox is hidden.
+2. Run `supabase/storage/planner-letters.sql` in the SQL Editor (not a migration): it creates the private
+   `plan-letters` bucket and its storage.objects policies (upload, read, and delete only in the uploader's own folder;
+   the service role reads everything). Until it runs, "Share the letter" answers "Sharing letters isn't set up yet."
+3. Follow-up: the account purge deletes `plan_letters` rows (they cascade with the user) but not the files; remove the
+   purged user's folder from the bucket with the service role.
+4. Each late May, add the new award year's rates to `data/reference/federal-loans.json` from FSA's announcement.

@@ -25,6 +25,12 @@ export function posthogRewrites(host: string) {
 const nextConfig: NextConfig = {
   // PostHog's API paths end in a slash (/e/, /flags/); a redirect to strip it would break the /ingest proxy.
   skipTrailingSlashRedirect: true,
+  experimental: {
+    // A shared award letter (a PDF or a phone photo, at most 4 MB: lib/planner/store-offers.ts shareLetter) goes
+    // through a Server Action as multipart form data; the default 1 MB limit is too small for a photo. Kept under
+    // Vercel's 4.5 MB request cap.
+    serverActions: { bodySizeLimit: "4.4mb" },
+  },
   // The deploy carries the dataset (specs/serving-architecture.md): lib/ reads these files with fs at runtime, so they
   // ship with every server route when deployed (e.g. to Vercel). List exactly what the runtime reads and nothing else
   // (working files such as data/site-probe.json stay out); tests/tracing.test.mts checks this list against lib/.

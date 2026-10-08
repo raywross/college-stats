@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useTransition, type ReactNode } from "react";
+import { useRef, useState, useTransition, type ReactNode } from "react";
 import Link from "next/link";
-import { ArrowDown, ArrowUp, ChevronDown, Lock, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, ChevronDown, GripVertical, Lock, Trash2 } from "lucide-react";
 import { Crest } from "@/components/school/Crest";
 import { MetricLabel, Term } from "@/components/ui/info-tip";
 import { pctSmart, moneyCompact } from "@/lib/format";
@@ -30,6 +30,7 @@ import {
 import {
   addNote,
   deleteNote,
+  moveItem,
   removeFromList,
   reorderItem,
   setCategory,
@@ -43,6 +44,8 @@ import { CompareButton } from "@/components/compare/CompareButton";
 import { TrackingRow } from "@/components/lists/TrackingRow";
 import { distanceLine } from "@/lib/home";
 import { cn } from "@/lib/utils";
+import { sortItems as sortPlanItems, type Suggestion } from "@/lib/planner/suggest";
+import type { ListSort } from "@/lib/planner/types";
 
 const CATEGORY_TERM: Record<ListCategory, TermKey | null> = { reach: "reach-school", target: "target-school", likely: "likely-school", unsorted: null };
 
@@ -60,6 +63,11 @@ export interface BoardSchoolInfo {
   distance: number | null;
   distanceCited: Cited | null;
   deadline: { date: string | null; text: string | null; source: "reported" | "student" | null };
+  /**
+   * The plan's next dated step for this college (specs/planner/model.md "Where it lives": "Apply by Jan 5 · ED II"),
+   * shown at the end of the facts line; its citation when the date came from the college's data. Absent off the hub.
+   */
+  next?: { title: string; date: string; cited: Cited | null; overdue: boolean } | null;
 }
 
 export interface BoardItem extends ListItem {
@@ -67,6 +75,13 @@ export interface BoardItem extends ListItem {
   notes: ListNote[];
   addedByName: string | null;
   addedBySelf: boolean;
+  /**
+   * U2 additions for the sort menu (specs/planner/list-building.md "Sorting"): the row's next step's raw date
+   * (yyyy-mm-dd, for ordering — `school.next.date` is already a display label) and its suggested category
+   * ("Where I stand"). Absent off the hub, or without the student's numbers.
+   */
+  nextDateRaw?: string | null;
+  standing?: Suggestion | null;
 }
 
 /**
@@ -84,11 +99,47 @@ export interface BoardItem extends ListItem {
  * list): no trash, and More shows the details with its controls disabled. One column at every width, so a phone
  * row is the same row.
  */
-export function ListBoard({ items, canEdit, viewerId }: { items: BoardItem[]; canEdit: boolean; viewerId: string }) {
+/** `BoardItem` → `lib/planner/suggest.ts`'s generic sort shape. */
+function sortable(i: BoardItem) {
+  return {
+    id: i.id,
+    category: i.category,
+    position: i.position,
+    dream: i.dream,
+    priority: i.priority,
+    admitRate: i.school.admitRate,
+    avgCost: i.school.avgCost,
+    distanceMiles: i.school.distance,
+    nextDate: i.nextDateRaw ?? null,
+    standing: i.standing ?? null,
+  };
+}
+
+export function ListBoard({
+  items,
+  canEdit,
+  viewerId,
+  rowExtras,
+  sort = "category",
+}: {
+  items: BoardItem[];
+  canEdit: boolean;
+  viewerId: string;
+  /** Server-rendered planner controls per item id (components/planner/RowControls.tsx), shown in that row's More. */
+  rowExtras?: Record<string, ReactNode>;
+  /**
+   * The list's remembered sort (specs/planner/list-building.md "Sorting"; `lists.sort`, `SortMenu`). "Category"
+   * (today's default) and "My order" keep the category headers; every other sort is one flat list in that order,
+   * since the headers would otherwise lie about what's being shown.
+   */
+  sort?: ListSort;
+}) {
   const [open, setOpen] = useState<ReadonlySet<string>>(() => new Set());
-  const sorted = [...items].sort((a, b) => a.position - b.position);
-  const groups = LIST_CATEGORIES.map((category) => ({ category, items: sorted.filter((i) => i.category === category) }));
-  const headers = showCategoryHeaders(items);
+  const byId = new Map(items.map((i) => [i.id, i]));
+  const ordered = sortPlanItems(items.map(sortable), sort).map((s) => byId.get(s.id)!);
+  const grouped = sort === "category" || sort === "mine";
+  const groups = grouped ? LIST_CATEGORIES.map((category) => ({ category, items: ordered.filter((i) => i.category === category) })) : [{ category: null as ListCategory | null, items: ordered }];
+  const headers = grouped && showCategoryHeaders(items);
   const toggle = (id: string) =>
     setOpen((prev) => {
       const next = new Set(prev);
@@ -97,16 +148,31 @@ export function ListBoard({ items, canEdit, viewerId }: { items: BoardItem[]; ca
       return next;
     });
 
+  // Drag-and-drop (pointer): the dragged row's id, so dropping on another row moves it there (lib/lists.ts moveItem).
+  // Keyboard users keep the existing Move up/down buttons — dragging never replaces them.
+  const draggingId = useRef<string | null>(null);
+  const [dragOverId, setDragOverId] = useState<string | null>(null);
+  const [, startMoveTransition] = useTransition();
+  const onDrop = (targetId: string) => {
+    const id = draggingId.current;
+    draggingId.current = null;
+    setDragOverId(null);
+    if (!id || id === targetId || !canEdit) return;
+    startMoveTransition(async () => {
+      await moveItem(id, targetId);
+    });
+  };
+
   return (
     <div className="space-y-5">
       {items.length > 0 && <p className="text-sm font-semibold text-muted-foreground">{balanceLine(items)}</p>}
       {groups.map(
         (g) =>
           g.items.length > 0 && (
-            <section key={g.category} aria-label={headers ? undefined : "Colleges"}>
+            <section key={g.category ?? "sorted"} aria-label={headers ? undefined : "Colleges"}>
               {headers && (
                 <h2 className="mb-2 flex items-center gap-1.5 font-display text-lg font-bold">
-                  {CATEGORY_TERM[g.category] ? <Term term={CATEGORY_TERM[g.category]!}>{CATEGORY_LABELS[g.category]}</Term> : CATEGORY_LABELS[g.category]}
+                  {CATEGORY_TERM[g.category!] ? <Term term={CATEGORY_TERM[g.category!]!}>{CATEGORY_LABELS[g.category!]}</Term> : CATEGORY_LABELS[g.category!]}
                   <span className="text-sm font-medium text-muted-foreground">({g.items.length})</span>
                 </h2>
               )}
@@ -121,6 +187,18 @@ export function ListBoard({ items, canEdit, viewerId }: { items: BoardItem[]; ca
                     isLast={i === g.items.length - 1}
                     open={open.has(item.id)}
                     onToggle={() => toggle(item.id)}
+                    extras={rowExtras?.[item.id]}
+                    draggable={canEdit && g.items.length > 1}
+                    draggedOver={dragOverId === item.id}
+                    onDragStart={() => {
+                      draggingId.current = item.id;
+                    }}
+                    onDragOverRow={() => setDragOverId(item.id)}
+                    onDragEnd={() => {
+                      draggingId.current = null;
+                      setDragOverId(null);
+                    }}
+                    onDrop={() => onDrop(item.id)}
                   />
                 ))}
               </ul>
@@ -158,6 +236,14 @@ function FactsLine({ s }: { s: BoardSchoolInfo }) {
         <span>{distanceLine(s.distance)}</span>
       </MetricLabel>,
     );
+  if (s.next)
+    facts.push(
+      <MetricLabel cited={s.next.cited ?? undefined} className={cn("font-semibold", s.next.overdue ? "text-destructive" : "text-foreground")}>
+        <span>
+          Next: {s.next.title}, {s.next.date}
+        </span>
+      </MetricLabel>,
+    );
   if (facts.length === 0) return null;
   return (
     <p className="mt-0.5 text-xs text-muted-foreground">
@@ -181,6 +267,13 @@ function ItemRow({
   isLast,
   open,
   onToggle,
+  extras,
+  draggable = false,
+  draggedOver = false,
+  onDragStart,
+  onDragOverRow,
+  onDragEnd,
+  onDrop,
 }: {
   item: BoardItem;
   canEdit: boolean;
@@ -189,6 +282,14 @@ function ItemRow({
   isLast: boolean;
   open: boolean;
   onToggle: () => void;
+  extras?: ReactNode;
+  /** Pointer drag-and-drop ordering (list-building.md "Files (planned)": "keyboard: move up/down stays"), desktop and touch; the Move up/down buttons below stay for keyboard users. */
+  draggable?: boolean;
+  draggedOver?: boolean;
+  onDragStart?: () => void;
+  onDragOverRow?: () => void;
+  onDragEnd?: () => void;
+  onDrop?: () => void;
 }) {
   const [pending, startTransition] = useTransition();
   const s = item.school;
@@ -202,8 +303,30 @@ function ItemRow({
   };
 
   return (
-    <li className={cn("p-3 sm:px-4", pending && "opacity-70")}>
+    <li
+      className={cn("p-3 sm:px-4", pending && "opacity-70", draggedOver && "bg-primary/5")}
+      draggable={draggable}
+      onDragStart={(e) => {
+        e.dataTransfer.effectAllowed = "move";
+        onDragStart?.();
+      }}
+      onDragOver={(e) => {
+        if (!draggable) return;
+        e.preventDefault();
+        onDragOverRow?.();
+      }}
+      onDrop={(e) => {
+        e.preventDefault();
+        onDrop?.();
+      }}
+      onDragEnd={onDragEnd}
+    >
       <div className="flex items-start gap-3">
+        {draggable && (
+          <span className="mt-1 hidden shrink-0 cursor-grab touch-none text-muted-foreground/60 sm:block" aria-hidden title="Drag to reorder">
+            <GripVertical className="size-4" />
+          </span>
+        )}
         <Crest id={s.unit_id} name={s.name} size="sm" brand={s.brand} />
         <div className="min-w-0 flex-1">
           <Link href={`/schools/${s.unit_id}`} className="font-display font-bold break-words hover:text-primary">
@@ -314,6 +437,8 @@ function ItemRow({
           </div>
 
           <TrackingRow item={item} canEdit={canEdit} className="mt-0" />
+
+          {extras}
 
           <p className="text-xs text-muted-foreground">{addedByLabel(item.addedByName, item.addedBySelf)}</p>
 

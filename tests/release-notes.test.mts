@@ -58,7 +58,7 @@ test("notes sort newest first, then by PR number", () => {
 
 test("links between notes stay on the site and point at real notes; site links exist", () => {
   const slugs = new Set(notes.map((n) => n.slug));
-  const routes = new Set(["/roadmap", "/release-notes", "/explore", "/compare", "/glossary", "/data", "/"]);
+  const routes = new Set(["/roadmap", "/release-notes", "/explore", "/compare", "/glossary", "/data", "/privacy", "/"]);
   for (const n of notes) {
     const { html } = renderSpec(linkReleaseNotes(n.body), n.file);
     for (const [, path] of html.matchAll(/href="(\/[^"#]*)/g)) {

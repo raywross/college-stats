@@ -11,7 +11,7 @@ import { myHome } from "@/lib/home-store";
 import { addPersonProps, soloRole as soloRoleFor } from "@/components/account/addPersonProps";
 import { householdSeats, viewerRoles, type HouseholdView, type RosterMember } from "@/lib/household-rules";
 import { defaultHouseholdName } from "@/lib/household-hub";
-import { stageCaptions } from "@/lib/planner/hub";
+import { stageCaptions, summaryLines } from "@/lib/planner/hub";
 import type { Account, MemberRole } from "@/lib/accounts";
 
 /**
@@ -38,6 +38,7 @@ export default async function HouseholdLayout({ children }: { children: React.Re
   let home: Awaited<ReturnType<typeof myHome>>;
   let ownStudentId: string | null;
   let captions: Record<string, string> = {};
+  let summaries: Record<string, string> = {};
   try {
     account = await getAccount();
     if (!account) return children;
@@ -50,7 +51,7 @@ export default async function HouseholdLayout({ children }: { children: React.Re
     const students = hs.flatMap((x) => x.members).filter((m) => m.role === "student" && m.student_id && m.member_id !== null);
     const forCaptions = students.map((m) => ({ id: m.student_id!, gradYear: m.grad_year }));
     if (hs.length === 0 && own) forCaptions.push({ id: own.id, gradYear: own.grad_year });
-    captions = await stageCaptions(forCaptions);
+    [captions, summaries] = await Promise.all([stageCaptions(forCaptions), summaryLines(forCaptions)]);
   } catch (err) {
     if (err instanceof AccountsSetupError) return <AuthUnavailable title="Accounts aren't set up yet" />;
     throw err;
@@ -90,6 +91,14 @@ export default async function HouseholdLayout({ children }: { children: React.Re
               label={strips.length > 1 ? `People in ${h.name}` : undefined}
               captions={captions}
             />
+            {/* The summary line under each student's chip (specs/planner/parents.md "The summary line"). */}
+            {h.members
+              .filter((m) => m.role === "student" && m.student_id && summaries[m.student_id])
+              .map((m) => (
+                <p key={m.student_id} className="pl-1 text-xs text-muted-foreground">
+                  <span className="font-semibold text-foreground">{m.display_name?.trim().split(/\s+/)[0] ?? "Student"}</span> · {summaries[m.student_id!]}
+                </p>
+              ))}
           </div>
         ))}
       </header>

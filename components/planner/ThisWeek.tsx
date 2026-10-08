@@ -1,6 +1,7 @@
 import { CalendarCheck } from "lucide-react";
 import { TaskRow } from "@/components/planner/TaskRow";
-import { thisWeek } from "@/lib/planner/tasks";
+import { NudgeButton } from "@/components/planner/parents/NudgeButton";
+import { isOpen, thisWeek } from "@/lib/planner/tasks";
 import type { PlanContext } from "@/lib/planner/types";
 
 /**
@@ -8,7 +9,7 @@ import type { PlanContext } from "@/lib/planner/types";
  * or overdue, overdue first, at most eight, then "and 4 more". Stays on screen whichever stage panel is open. A
  * server component; each row is a client TaskRow.
  */
-export function ThisWeek({ ctx }: { ctx: PlanContext }) {
+export function ThisWeek({ ctx, nudgeEmailsOff = false }: { ctx: PlanContext; nudgeEmailsOff?: boolean }) {
   const { tasks, more } = thisWeek(ctx.tasks, ctx.today);
   const studentFirst = ctx.student?.display_name?.trim().split(/\s+/)[0] ?? null;
   return (
@@ -33,7 +34,21 @@ export function ThisWeek({ ctx }: { ctx: PlanContext }) {
                 today={ctx.today}
                 viewer={ctx.viewer}
                 studentFirstName={studentFirst}
-              />
+              >
+                <NudgeButton
+                  taskId={t.id}
+                  taskTitle={t.title}
+                  nudges={ctx.nudges.filter((n) => n.task_id === t.id)}
+                  viewerIsGuardian={ctx.viewer.isGuardian}
+                  viewerUserId={ctx.viewer.userId}
+                  viewerFirstName={ctx.viewer.firstName}
+                  studentFirstName={studentFirst}
+                  studentHasAccount={ctx.student?.user_id != null}
+                  studentNudgeEmailsOff={nudgeEmailsOff}
+                  taskOpen={isOpen(t, ctx.today)}
+                  today={ctx.today}
+                />
+              </TaskRow>
             );
           })}
         </ul>

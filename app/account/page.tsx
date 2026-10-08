@@ -9,6 +9,7 @@ import { HouseholdSummary } from "@/components/account/HouseholdSummary";
 import { SignOutButton } from "@/components/account/SignOutButton";
 import { UpdateEmailsSection } from "@/components/me/UpdateEmailsSection";
 import { RemindersSection } from "@/components/account/RemindersSection";
+import { AccountSwitches } from "@/components/planner/parents/AccountSwitches";
 import { Term } from "@/components/ui/info-tip";
 import { AccountsSetupError, authConfigured, currentStudent, getAccount, requireUser } from "@/lib/auth";
 import { myAccessLog, myHouseholds } from "@/lib/households";
@@ -80,6 +81,8 @@ export default async function AccountPage() {
       <UpdateEmailsSection />
 
       <RemindersSection student={student} />
+
+      <AccountSwitches isGuardian={households.some((h) => h.me.guardian !== null)} hasStudent={student !== null} />
 
       {student && (
         <AccountSection

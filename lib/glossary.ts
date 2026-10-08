@@ -1497,6 +1497,36 @@ const entries = {
     related: ["follow"],
   },
 
+  // The planner (specs/planner/model.md)
+  plan: {
+    term: "Plan",
+    short: "A student's college plan: their list seen as six stages, from building the list to choosing a college, with the dated steps each college and the season call for.",
+    long: "The Plan tab sits beside List and Numbers on a student's page. It reads the same list (one college, one row), so ticking a step in the plan and changing the row on the list are the same fact. Steps come from each college's own published dates, the dates every applicant shares (the FAFSA, the reply date), and the stage the student is in; the family can add their own. Parents see the same plan under the household's rules.",
+    category: "Your account",
+    related: ["stage", "task-assignee", "dream-school"],
+  },
+  stage: {
+    term: "Stage",
+    short: "Where a student is in the plan: List, Rounds, Actions, Timeline, Apply, or Offers. Worked out from the list itself, never set by hand.",
+    long: "A stage is open while it has work (colleges to sort, rounds to choose, applications not yet in) and done once that work is finished. The stages are a map, not a gate: any of them can be opened at any time. Actions (following and visiting) is always open, and the Timeline stays open once its first step's date arrives.",
+    category: "Your account",
+    related: ["plan"],
+  },
+  "dream-school": {
+    term: "Dream school",
+    short: "The one college on a list the student would pick today over every other. A star on the row, not a category: a Dream can be a Reach or a Target.",
+    long: "One per list: marking another college moves the star. The Dream is where the rounds stage looks first, and the only college a parent's summary names. No Dream is fine.",
+    category: "Your account",
+    related: ["reach-school", "target-school", "plan"],
+  },
+  "task-assignee": {
+    term: "Whose step",
+    short: "Who a step in the plan belongs to: the student, a parent, or either. Parents' steps (the FAFSA, deposits) also show on their own page.",
+    long: "Steps that need a payment or a parent's tax information default to a parent; essays and asks default to the student. Anyone who can edit the plan can tick a step, and the tick says who did it.",
+    category: "Your account",
+    related: ["plan", "guardian"],
+  },
+
   // High schools (specs/product/high-school-data.md)
   ncessch: {
     term: "NCES school ID",

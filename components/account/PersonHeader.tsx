@@ -9,7 +9,7 @@ import type { ListOwner } from "@/lib/list-rules";
 import { cn } from "@/lib/utils";
 import { PersonMenu } from "./PersonMenu";
 
-export type PersonTab = "list" | "numbers";
+export type PersonTab = "list" | "plan" | "numbers";
 
 /** Whose lists a person's page shows: a student's record, or a guardian's own (lists.user_id). */
 export function personOwner(person: PersonPage): ListOwner {
@@ -41,7 +41,7 @@ const badgeCls = "inline-flex shrink-0 items-center rounded-full px-2 py-0.5 tex
  * (2026-10-06)"). One name line: first and last name, "(you)", the role badge, "Class of 2028", a status while they
  * haven't finished joining, and their phone as a call icon; the "⋯" menu (PersonMenu) at the right holds the rare
  * actions (personActions() decides which). Under it, the guardian banner when a guardian is looking at a student,
- * then the List | Numbers segmented control (Numbers for students only), which links between the two routes. No back
+ * then the List | Plan | Numbers segmented control (students only; specs/planner/model.md "Where it lives"), which links between the routes. No back
  * link and no tabs row: the strip above is how you move between people, and it never changes.
  *
  * A server component: it reads the roster (myHouseholds(), cached per request, the same read the layout makes).
@@ -108,6 +108,7 @@ export async function PersonHeader({ id, person, active }: { id: string; person:
           value={active}
           options={[
             { value: "list", label: "List", href: `/household/${id}` },
+            { value: "plan", label: "Plan", href: `/household/${id}/plan` },
             { value: "numbers", label: "Numbers", href: `/household/${id}/numbers` },
           ]}
         />

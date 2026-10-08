@@ -48,7 +48,7 @@ export default async function PersonListPage({ params }: { params: Promise<{ per
         <PersonHeader id={id} person={person} active="list" />
       </div>
       {listId ? (
-        <ListPage listId={listId} basePath={`/household/${id}/lists`} showGuardianBanner={false} embedded />
+        <ListPage listId={listId} basePath={`/household/${id}/lists`} showGuardianBanner={false} embedded planner />
       ) : (
         <section className="rounded-3xl border bg-card p-5 sm:p-6">
           <h2 className="font-display text-xl font-bold">No list yet</h2>

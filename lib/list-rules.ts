@@ -79,6 +79,30 @@ export interface ListItem {
   visited_on: string | null;
   /** They say they follow the college on social media. */
   follows_social: boolean;
+  /*
+   * The planner's columns (supabase/migrations/20261008120000_planner.sql; specs/planner/model.md "Tables"). Optional
+   * here so rows built before the planner (tests, CSV import) still type-check; lib/lists.ts reads them all, and
+   * lib/planner/types.ts PlanItem makes them required.
+   */
+  /** The one college the student would pick today (one per list; a trigger moves it). */
+  dream?: boolean;
+  /** The student's own rank, 1 = would go first (stage 2). */
+  priority?: number | null;
+  /** Which of the six networks they follow (stage 3). */
+  followed_networks?: ("instagram" | "youtube" | "tiktok" | "x" | "facebook" | "linkedin")[];
+  info_requested_on?: string | null;
+  application_platform?: "common_app" | "coalition" | "own" | "uc" | "apply_texas" | "other" | null;
+  /** Setting it moves the status to applied (trigger); setting the status back clears it. */
+  applied_on?: string | null;
+  complete_on?: string | null;
+  /** A URL only, never credentials. */
+  portal_url?: string | null;
+  /** Requires enrolling (trigger clears it when enrolling goes off). */
+  committed_on?: string | null;
+  withdrawn_on?: string | null;
+  recommendations_count?: number | null;
+  supplements_count?: number | null;
+  transcript_shared?: boolean;
 }
 
 /**

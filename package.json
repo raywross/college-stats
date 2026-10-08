@@ -37,14 +37,15 @@
     "check:lineage": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/check-lineage.mts",
     "test": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test \"tests/**/*.test.mts\"",
     "typecheck": "next typegen && tsc --noEmit",
-    "verify": "npm run typecheck && npm run lint && npm test && npm run check:lineage",
+    "verify": "npm run typecheck && npm run lint && npm test && npm run check:lineage && npm run check:cycle",
     "build-cds-template": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/build-cds-template.mts",
     "cds-records-from-workbooks": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/cds-records-from-workbooks.mts",
     "archive-doc": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/archive-doc.mts",
     "campus-pilot": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --env-file-if-exists=.env.local scripts/campus-pilot.mts",
     "score-campus-pilot": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/score-campus-pilot.mts",
     "purge-accounts": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --env-file-if-exists=.env.local scripts/purge-accounts.mts",
-    "check-cds-records": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/check-cds-records.mts"
+    "check-cds-records": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/check-cds-records.mts",
+    "check:cycle": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/check-cycle.mts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.131.0",

@@ -40,10 +40,23 @@ export interface AnalyticsEvents {
   signup_started: { method: SignupMethod; role_hint: RoleHint; has_invite: boolean };
   signup_completed: { method: SignupMethod; role_hint: RoleHint; has_invite: boolean };
   error_shown: { route: string; kind: "error" | "not_found" };
+  /* The planner (specs/planner/model.md "Telemetry"): that a stage was used and which college, never a title, a
+   * date, a phone number, a count, or a note. */
+  plan_opened: { stage: number };
+  plan_task_ticked: { kind: string; source: "college" | "cycle" | "stage" | "own"; assignee: "student" | "guardian" | "either" };
+  plan_stage_done: { stage: number };
+  plan_nudge_sent: { channel: "email" | "sms" | "app" };
+  /** A text consent recorded; `by_guardian` when a guardian turned it on for a student. */
+  plan_text_consented: { by_guardian: boolean };
+  /** Texts turned off: a provider STOP reply or the account switch. */
+  plan_text_opted_out: { via: "stop" | "account" };
+  plan_rounds_accepted: { ed: boolean; ed2: boolean };
+  plan_offer_added: { unit_id: string };
+  plan_choice_made: { unit_id: string };
 }
 export type AnalyticsEvent = keyof AnalyticsEvents;
 /** Events sent from Server Actions and Route Handlers with `trackServer()` (lib/analytics-server.ts). */
-export type ServerAnalyticsEvent = "signup_started" | "signup_completed";
+export type ServerAnalyticsEvent = "signup_started" | "signup_completed" | "plan_text_consented" | "plan_text_opted_out";
 
 type EventSpec<K extends AnalyticsEvent> = {
   properties: readonly (keyof AnalyticsEvents[K] & string)[];
@@ -93,6 +106,15 @@ export const EVENTS = {
     why: "Accounts: sign-ups confirmed",
   },
   error_shown: { properties: ["route", "kind"], side: "client", why: "Errors people see, by page" },
+  plan_opened: { properties: ["stage"], side: "client", why: "Planner: which stage the Plan tab opens on" },
+  plan_task_ticked: { properties: ["kind", "source", "assignee"], side: "client", why: "Planner: which kinds of tasks get done, and by whom" },
+  plan_stage_done: { properties: ["stage"], side: "client", why: "Planner: how far families get" },
+  plan_nudge_sent: { properties: ["channel"], side: "client", why: "Planner: do parents nudge, and how" },
+  plan_text_consented: { properties: ["by_guardian"], side: "server", why: "Planner: text reminders turned on" },
+  plan_text_opted_out: { properties: ["via"], side: "server", why: "Planner: text reminders turned off" },
+  plan_rounds_accepted: { properties: ["ed", "ed2"], side: "client", why: "Planner: rounds plans accepted, with or without a binding round" },
+  plan_offer_added: { properties: ["unit_id"], side: "client", why: "Planner: offers entered, by college" },
+  plan_choice_made: { properties: ["unit_id"], side: "client", why: "Planner: the college chosen" },
 } as const satisfies { readonly [K in AnalyticsEvent]: EventSpec<K> };
 
 type AssertTrue<T extends true> = T;

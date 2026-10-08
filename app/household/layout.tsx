@@ -11,6 +11,7 @@ import { myHome } from "@/lib/home-store";
 import { addPersonProps, soloRole as soloRoleFor } from "@/components/account/addPersonProps";
 import { householdSeats, viewerRoles, type HouseholdView, type RosterMember } from "@/lib/household-rules";
 import { defaultHouseholdName } from "@/lib/household-hub";
+import { stageCaptions } from "@/lib/planner/hub";
 import type { Account, MemberRole } from "@/lib/accounts";
 
 /**
@@ -36,6 +37,7 @@ export default async function HouseholdLayout({ children }: { children: React.Re
   let households: HouseholdView[];
   let home: Awaited<ReturnType<typeof myHome>>;
   let ownStudentId: string | null;
+  let captions: Record<string, string> = {};
   try {
     account = await getAccount();
     if (!account) return children;
@@ -44,6 +46,11 @@ export default async function HouseholdLayout({ children }: { children: React.Re
     households = hs;
     home = h;
     ownStudentId = own?.id ?? null;
+    // The plan's stage under each student in season (one query for all of them; empty on any error).
+    const students = hs.flatMap((x) => x.members).filter((m) => m.role === "student" && m.student_id && m.member_id !== null);
+    const forCaptions = students.map((m) => ({ id: m.student_id!, gradYear: m.grad_year }));
+    if (hs.length === 0 && own) forCaptions.push({ id: own.id, gradYear: own.grad_year });
+    captions = await stageCaptions(forCaptions);
   } catch (err) {
     if (err instanceof AccountsSetupError) return <AuthUnavailable title="Accounts aren't set up yet" />;
     throw err;
@@ -76,7 +83,13 @@ export default async function HouseholdLayout({ children }: { children: React.Re
         {strips.map((h, i) => (
           <div key={h.id || "solo"} className="space-y-1.5">
             {strips.length > 1 && <h2 className="text-sm font-semibold text-muted-foreground">{h.name}</h2>}
-            <PeopleStrip householdId={h.id} members={h.members} add={i === 0 ? addChip : null} label={strips.length > 1 ? `People in ${h.name}` : undefined} />
+            <PeopleStrip
+              householdId={h.id}
+              members={h.members}
+              add={i === 0 ? addChip : null}
+              label={strips.length > 1 ? `People in ${h.name}` : undefined}
+              captions={captions}
+            />
           </div>
         ))}
       </header>

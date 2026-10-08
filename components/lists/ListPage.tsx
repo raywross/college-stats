@@ -15,10 +15,44 @@ import { getData } from "@/lib/data";
 import { deadlineFor, listOwner, upcomingDeadlines, type ListRecord, type ListRound } from "@/lib/list-rules";
 import { myHome } from "@/lib/home-store";
 import { DEFAULT_WITHIN, distanceFromHome, exploreNearHref } from "@/lib/home";
+import { createServerSupabase } from "@/lib/supabase-server";
+import { studentsICanSee } from "@/lib/auth";
+import { RowControls } from "@/components/planner/RowControls";
+import { planSchools, readTasks, todayIso } from "@/lib/planner/context";
+import { cycleStartFromEntering, cycleStartOf, currentCycle, cycleFor } from "@/lib/planner/cycle";
+import { dayLabel, isOverdue, nextTaskByItem } from "@/lib/planner/tasks";
+import type { PlanItem, PlanSchool, PlanTask } from "@/lib/planner/types";
+import type { Cited } from "@/lib/lineage";
 
-function cycleStartYear(cycle: string | undefined): number {
-  const match = cycle?.match(/\d{4}/);
-  return match ? Number(match[0]) : new Date().getFullYear();
+/**
+ * The cycle a college's regular-round dates belong to: its logistics block names the entering class ("Fall 2027"),
+ * whose applications go out in the fall before (the cycle starting in 2026). Without one, the cycle under way.
+ */
+function cycleStartYear(entering: string | undefined): number {
+  return cycleStartFromEntering(entering) ?? cycleStartOf(currentCycle(todayIso()))!;
+}
+
+/**
+ * The planner's additions to a list on the hub (specs/planner/model.md "Where it lives"): each row's next task for
+ * the facts line and its stage controls for "More". Fails soft: a database without the planner's tables shows the
+ * plain list.
+ */
+async function plannerExtras(
+  list: ListRecord,
+  items: PlanItem[],
+  home: Awaited<ReturnType<typeof myHome>>,
+): Promise<{ tasks: PlanTask[]; schools: Record<string, PlanSchool> } | null> {
+  try {
+    const supabase = await createServerSupabase();
+    const student = list.student_id ? ((await studentsICanSee()).find((a) => a.student.id === list.student_id)?.student ?? null) : null;
+    const today = todayIso();
+    const start = cycleStartOf(student?.grad_year ? cycleFor(student.grad_year) : currentCycle(today))!;
+    const [tasks, schools] = await Promise.all([readTasks(supabase, list.id), planSchools(items.map((i) => i.unit_id), start, home)]);
+    return { tasks, schools };
+  } catch (err) {
+    console.error(`lists: planner extras unavailable: ${err instanceof Error ? err.message : String(err)}`);
+    return null;
+  }
 }
 
 /** Who is looking at the list, and what they may do with it. */
@@ -76,6 +110,7 @@ export async function ListPage({
   backLabel = "Your account",
   showGuardianBanner = true,
   embedded = false,
+  planner = false,
 }: {
   listId: string;
   basePath?: string;
@@ -83,6 +118,8 @@ export async function ListPage({
   backLabel?: string;
   showGuardianBanner?: boolean;
   embedded?: boolean;
+  /** The household hub's list: each row's next plan step in its facts line and its stage controls in "More". */
+  planner?: boolean;
 }) {
   // One round of independent reads: the list, the dataset, the household's home (a student and the guardians who see
   // their list measure from the same place), and who is looking. myHome, myLists, and getListWithItems are memoized
@@ -104,7 +141,9 @@ export async function ListPage({
   // existed, and that read is memoized: put this list back in the switcher.
   const lists = ownerLists.some((l) => l.id === list.id) ? ownerLists : [list, ...ownerLists];
   const addedByIds = [...new Set(items.map((i) => i.added_by).filter((x): x is string => !!x))];
-  const names = await namesFor(addedByIds);
+  const [names, plan] = await Promise.all([namesFor(addedByIds), planner ? plannerExtras(list, items as PlanItem[], home) : Promise.resolve(null)]);
+  const today = todayIso();
+  const nextByItem = plan ? nextTaskByItem(items, plan.tasks, today) : {};
 
   const boardItems: BoardItem[] = items.map((item) => {
     const school = getSchoolById(item.unit_id);
@@ -129,6 +168,7 @@ export async function ListPage({
         distance: home && school ? distanceFromHome(school.location, home) : null,
         distanceCited: school ? citeField("location.lat", school) : null,
         deadline,
+        next: nextLine(nextByItem[item.id] ?? null, plan?.schools[item.unit_id] ?? null, today),
       },
       notes: notesByItem[item.id] ?? [],
       addedByName: item.added_by ? names[item.added_by] ?? null : null,
@@ -202,7 +242,30 @@ export async function ListPage({
         </section>
       )}
 
-      <ListBoard items={boardItems} canEdit={access.canEdit} viewerId={viewer.id} />
+      <ListBoard
+        items={boardItems}
+        canEdit={access.canEdit}
+        viewerId={viewer.id}
+        rowExtras={
+          plan
+            ? Object.fromEntries(
+                (items as PlanItem[])
+                  .filter((item) => plan.schools[item.unit_id])
+                  .map((item) => [
+                    item.id,
+                    <RowControls
+                      key={item.id}
+                      item={item}
+                      school={plan.schools[item.unit_id]}
+                      canEdit={access.canEdit}
+                      today={today}
+                      viewerIsGuardian={access.guardianOf !== null}
+                    />,
+                  ]),
+              )
+            : undefined
+        }
+      />
 
       {boardItems.length > 0 && (
         <p className="text-xs text-muted-foreground print:hidden">
@@ -251,4 +314,12 @@ export async function ListPage({
       )}
     </div>
   );
+}
+
+/** The facts line's "Next: …" for a row, with the citation of the field its date came from. */
+function nextLine(task: PlanTask | null, school: PlanSchool | null, today: string) {
+  const date = task?.due_on ?? task?.window_end ?? null;
+  if (!task || !date) return null;
+  const cited = task.source_field && school ? ((school.cites[task.source_field] as Cited | undefined) ?? null) : null;
+  return { title: task.title, date: dayLabel(date, today), cited, overdue: isOverdue(task, today) };
 }

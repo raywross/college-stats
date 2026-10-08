@@ -1,0 +1,87 @@
+{
+  "description": "Dates that apply to every applicant in a cycle (specs/planner/timeline.md \"The cycle file\"). One object per cycle, named by the academic year in which students apply. Reviewed in a data PR each spring when the next cycle's dates are published; checked by scripts/check-cycle.mts (npm run verify). Fixed federal and national dates first; windows, test dates, and the summer list are added by the timeline unit.",
+  "cycles": [
+    {
+      "cycle": "2026-27",
+      "entries": [
+        {
+          "key": "common_app_opens",
+          "label": "Common App opens for the new season",
+          "date": "2026-08-01",
+          "applies": "has_common_app",
+          "assignee": "student",
+          "source": "https://www.commonapp.org/",
+          "detail": "Accounts roll over; the essay prompts and each college's questions are live from today."
+        },
+        {
+          "key": "fafsa_opens",
+          "label": "FAFSA opens",
+          "date": "2026-10-01",
+          "applies": "all",
+          "assignee": "guardian",
+          "source": "https://studentaid.gov/h/apply-for-aid/fafsa",
+          "detail": "File early: some state and college aid is first come, first served."
+        },
+        {
+          "key": "css_profile_opens",
+          "label": "CSS Profile opens",
+          "date": "2026-10-01",
+          "applies": "has_css_college",
+          "assignee": "guardian",
+          "source": "https://cssprofile.collegeboard.org/",
+          "detail": "Needed only by the colleges on your list that ask for it."
+        },
+        {
+          "key": "reply_date",
+          "label": "National reply date",
+          "date": "2027-05-01",
+          "applies": "uses_may1",
+          "assignee": "either",
+          "source": "https://www.nacacnet.org/",
+          "detail": "The deposit date at most colleges that admit in the regular round; check each college's own date."
+        }
+      ]
+    },
+    {
+      "cycle": "2027-28",
+      "entries": [
+        {
+          "key": "common_app_opens",
+          "label": "Common App opens for the new season",
+          "date": "2027-08-01",
+          "applies": "has_common_app",
+          "assignee": "student",
+          "source": "https://www.commonapp.org/",
+          "detail": "Accounts roll over; the essay prompts and each college's questions are live from today."
+        },
+        {
+          "key": "fafsa_opens",
+          "label": "FAFSA opens",
+          "date": "2027-10-01",
+          "applies": "all",
+          "assignee": "guardian",
+          "source": "https://studentaid.gov/h/apply-for-aid/fafsa",
+          "detail": "File early: some state and college aid is first come, first served."
+        },
+        {
+          "key": "css_profile_opens",
+          "label": "CSS Profile opens",
+          "date": "2027-10-01",
+          "applies": "has_css_college",
+          "assignee": "guardian",
+          "source": "https://cssprofile.collegeboard.org/",
+          "detail": "Needed only by the colleges on your list that ask for it."
+        },
+        {
+          "key": "reply_date",
+          "label": "National reply date",
+          "date": "2028-05-01",
+          "applies": "uses_may1",
+          "assignee": "either",
+          "source": "https://www.nacacnet.org/",
+          "detail": "The deposit date at most colleges that admit in the regular round; check each college's own date."
+        }
+      ]
+    }
+  ]
+}

@@ -60,6 +60,11 @@ export interface BoardSchoolInfo {
   distance: number | null;
   distanceCited: Cited | null;
   deadline: { date: string | null; text: string | null; source: "reported" | "student" | null };
+  /**
+   * The plan's next dated step for this college (specs/planner/model.md "Where it lives": "Apply by Jan 5 · ED II"),
+   * shown at the end of the facts line; its citation when the date came from the college's data. Absent off the hub.
+   */
+  next?: { title: string; date: string; cited: Cited | null; overdue: boolean } | null;
 }
 
 export interface BoardItem extends ListItem {
@@ -84,7 +89,18 @@ export interface BoardItem extends ListItem {
  * list): no trash, and More shows the details with its controls disabled. One column at every width, so a phone
  * row is the same row.
  */
-export function ListBoard({ items, canEdit, viewerId }: { items: BoardItem[]; canEdit: boolean; viewerId: string }) {
+export function ListBoard({
+  items,
+  canEdit,
+  viewerId,
+  rowExtras,
+}: {
+  items: BoardItem[];
+  canEdit: boolean;
+  viewerId: string;
+  /** Server-rendered planner controls per item id (components/planner/RowControls.tsx), shown in that row's More. */
+  rowExtras?: Record<string, ReactNode>;
+}) {
   const [open, setOpen] = useState<ReadonlySet<string>>(() => new Set());
   const sorted = [...items].sort((a, b) => a.position - b.position);
   const groups = LIST_CATEGORIES.map((category) => ({ category, items: sorted.filter((i) => i.category === category) }));
@@ -121,6 +137,7 @@ export function ListBoard({ items, canEdit, viewerId }: { items: BoardItem[]; ca
                     isLast={i === g.items.length - 1}
                     open={open.has(item.id)}
                     onToggle={() => toggle(item.id)}
+                    extras={rowExtras?.[item.id]}
                   />
                 ))}
               </ul>
@@ -158,6 +175,14 @@ function FactsLine({ s }: { s: BoardSchoolInfo }) {
         <span>{distanceLine(s.distance)}</span>
       </MetricLabel>,
     );
+  if (s.next)
+    facts.push(
+      <MetricLabel cited={s.next.cited ?? undefined} className={cn("font-semibold", s.next.overdue ? "text-destructive" : "text-foreground")}>
+        <span>
+          Next: {s.next.title}, {s.next.date}
+        </span>
+      </MetricLabel>,
+    );
   if (facts.length === 0) return null;
   return (
     <p className="mt-0.5 text-xs text-muted-foreground">
@@ -181,6 +206,7 @@ function ItemRow({
   isLast,
   open,
   onToggle,
+  extras,
 }: {
   item: BoardItem;
   canEdit: boolean;
@@ -189,6 +215,7 @@ function ItemRow({
   isLast: boolean;
   open: boolean;
   onToggle: () => void;
+  extras?: ReactNode;
 }) {
   const [pending, startTransition] = useTransition();
   const s = item.school;
@@ -314,6 +341,8 @@ function ItemRow({
           </div>
 
           <TrackingRow item={item} canEdit={canEdit} className="mt-0" />
+
+          {extras}
 
           <p className="text-xs text-muted-foreground">{addedByLabel(item.addedByName, item.addedBySelf)}</p>
 

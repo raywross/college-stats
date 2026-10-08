@@ -25,7 +25,20 @@ import { CopyInvitationButton, ResendInvitationButton } from "./InvitationContro
  * Phones: one sideways-scrolling row that bleeds to the screen edge and snaps chip by chip (specs/mobile.md "People
  * strip"), with the active chip scrolled into view; chips are 44px tall. From `sm` the chips wrap instead.
  */
-export function PeopleStrip({ householdId, members, add, label = "People in the household" }: { householdId: string; members: RosterMember[]; add: ReactNode; label?: string }) {
+export function PeopleStrip({
+  householdId,
+  members,
+  add,
+  label = "People in the household",
+  captions,
+}: {
+  householdId: string;
+  members: RosterMember[];
+  add: ReactNode;
+  label?: string;
+  /** A student's plan stage by student id ("Applying · 3 of 8 in"), in place of the plain caption (lib/planner/hub.ts). */
+  captions?: Record<string, string>;
+}) {
   const pathname = usePathname();
   const listRef = useRef<HTMLUListElement>(null);
 
@@ -46,7 +59,7 @@ export function PeopleStrip({ householdId, members, add, label = "People in the 
       >
         {members.map((m) => (
           <li key={m.member_id ?? m.invitation_id ?? m.user_id ?? m.student_id} className="flex shrink-0 snap-start">
-            <PersonChip m={m} householdId={householdId} active={chipActive(pathname, personHref(m))} />
+            <PersonChip m={m} householdId={householdId} active={chipActive(pathname, personHref(m))} caption={m.student_id ? captions?.[m.student_id] : undefined} />
           </li>
         ))}
         <li className="flex shrink-0 snap-start">{add}</li>
@@ -58,7 +71,7 @@ export function PeopleStrip({ householdId, members, add, label = "People in the 
 const chipCls =
   "inline-flex min-h-11 items-center gap-2 rounded-full border py-1 pr-4 pl-1 text-left transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none";
 
-function ChipBody({ m, active }: { m: RosterMember; active: boolean }) {
+function ChipBody({ m, active, caption }: { m: RosterMember; active: boolean; caption?: string }) {
   return (
     <>
       <span
@@ -76,13 +89,13 @@ function ChipBody({ m, active }: { m: RosterMember; active: boolean }) {
       </span>
       <span className="flex min-w-0 flex-col">
         <span className="max-w-36 truncate text-sm leading-tight font-semibold">{chipName(m)}</span>
-        <span className={cn("text-[11px] leading-tight whitespace-nowrap", active ? "text-background/75" : "text-muted-foreground")}>{chipCaption(m)}</span>
+        <span className={cn("text-[11px] leading-tight whitespace-nowrap", active ? "text-background/75" : "text-muted-foreground")}>{chipCaption(m, caption)}</span>
       </span>
     </>
   );
 }
 
-function PersonChip({ m, householdId, active }: { m: RosterMember; householdId: string; active: boolean }) {
+function PersonChip({ m, householdId, active, caption }: { m: RosterMember; householdId: string; active: boolean; caption?: string }) {
   const href = personHref(m);
   if (href) {
     return (
@@ -92,7 +105,7 @@ function PersonChip({ m, householdId, active }: { m: RosterMember; householdId: 
         title={memberName(m)}
         className={cn(chipCls, active ? "border-foreground bg-foreground text-background" : "bg-card hover:border-primary/40 hover:bg-muted/60")}
       >
-        <ChipBody m={m} active={active} />
+        <ChipBody m={m} active={active} caption={caption} />
       </Link>
     );
   }

@@ -39,8 +39,9 @@ import {
   isListStatus,
 } from "@/lib/list-rules";
 
+// The planner's columns (20261008120000_planner.sql) ride along so every list read is a PlanItem.
 const ITEM_COLUMNS =
-  "id, list_id, unit_id, category, status, outcome, round, position, added_by, added_at, decision_date, deadline_text, deadline_date, enrolling, updates, visited_on, follows_social";
+  "id, list_id, unit_id, category, status, outcome, round, position, added_by, added_at, decision_date, deadline_text, deadline_date, enrolling, updates, visited_on, follows_social, dream, priority, followed_networks, info_requested_on, application_platform, applied_on, complete_on, portal_url, committed_on, withdrawn_on, recommendations_count, supplements_count, transcript_shared";
 const LIST_COLUMNS = "id, student_id, user_id, name, is_default, share_enabled, created_by, created";
 
 export type ListActionResult = { ok: true } | { ok: false; message: string };

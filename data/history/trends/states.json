@@ -3223,10 +3223,10 @@
       },
       "map": {
         "undergradChange": -0.0333,
-        "acceptanceRate": 0.8616,
+        "acceptanceRate": 0.8523,
         "avgCost": 29971,
         "outOfState": 0.2909,
-        "testOptionalShare": 0.7143
+        "testOptionalShare": 0.6667
       },
       "all": {
         "key": "all",
@@ -4176,7 +4176,7 @@
         "acceptanceRate": 0.5806,
         "avgCost": 35573,
         "outOfState": null,
-        "testOptionalShare": 0.5
+        "testOptionalShare": 0.4
       },
       "all": {
         "key": "all",
@@ -7959,7 +7959,7 @@
       },
       "map": {
         "undergradChange": -0.1599,
-        "acceptanceRate": 0.7676,
+        "acceptanceRate": 0.7589,
         "avgCost": 24775,
         "outOfState": 0.0819,
         "testOptionalShare": 0.8551
@@ -8642,7 +8642,7 @@
       },
       "map": {
         "undergradChange": -0.1278,
-        "acceptanceRate": 0.7723,
+        "acceptanceRate": 0.7791,
         "avgCost": 23837,
         "outOfState": 0.1018,
         "testOptionalShare": 0.9091
@@ -11620,7 +11620,7 @@
         "acceptanceRate": 0.7557,
         "avgCost": 24766,
         "outOfState": 0.218,
-        "testOptionalShare": 0.875
+        "testOptionalShare": 0.8438
       },
       "all": {
         "key": "all",
@@ -15515,7 +15515,7 @@
         "acceptanceRate": 0.749,
         "avgCost": 22310,
         "outOfState": 0.1506,
-        "testOptionalShare": 0.8814
+        "testOptionalShare": 0.8475
       },
       "all": {
         "key": "all",

@@ -27,6 +27,8 @@ import type { StudentProfileData } from "@/lib/student-profile";
 import { suggestCategory } from "@/lib/planner/suggest";
 import { SortMenu } from "@/components/lists/SortMenu";
 import type { Cited } from "@/lib/lineage";
+import { cfpView, isEnteredOffer } from "@/lib/planner/offers";
+import type { PlanOffer } from "@/lib/planner/types";
 
 /**
  * The cycle a college's regular-round dates belong to: its logistics block names the entering class ("Fall 2027"),
@@ -45,7 +47,7 @@ async function plannerExtras(
   list: ListRecord,
   items: PlanItem[],
   home: Awaited<ReturnType<typeof myHome>>,
-): Promise<{ tasks: PlanTask[]; schools: Record<string, PlanSchool>; profile: StudentProfileData | null } | null> {
+): Promise<{ tasks: PlanTask[]; schools: Record<string, PlanSchool>; profile: StudentProfileData | null; offers: Record<string, { net: number | null; gift: number }> } | null> {
   try {
     const supabase = await createServerSupabase();
     const student = list.student_id ? ((await studentsICanSee()).find((a) => a.student.id === list.student_id)?.student ?? null) : null;
@@ -53,12 +55,21 @@ async function plannerExtras(
     const start = cycleStartOf(student?.grad_year ? cycleFor(student.grad_year) : currentCycle(today))!;
     // U2 (list-building.md "Suggested category"): the student's own numbers, for the row's suggestion line and the
     // "Where I stand" sort. Null for a guardian's own list (no student) or a student with no numbers saved.
-    const [tasks, schools, profile] = await Promise.all([
+    const [tasks, schools, profile, offerRows] = await Promise.all([
       readTasks(supabase, list.id),
       planSchools(items.map((i) => i.unit_id), start, home),
       student ? profileFor(student.id) : Promise.resolve(null),
+      // U7 (offers.md "List row"): "Offer: $X net" once an offer is entered. Fails soft to none.
+      items.length
+        ? supabase.from("plan_offers").select("item_id, coa, gift, work_study, loans, confirmed_at").in("item_id", items.map((i) => i.id))
+        : Promise.resolve({ data: [] as unknown[] }),
     ]);
-    return { tasks, schools, profile: profile?.data ?? null };
+    const offers: Record<string, { net: number | null; gift: number }> = {};
+    for (const o of ((offerRows.data ?? []) as Pick<PlanOffer, "item_id" | "coa" | "gift" | "work_study" | "loans" | "confirmed_at">[]).filter(isEnteredOffer)) {
+      const v = cfpView(o, null);
+      offers[o.item_id] = { net: v.coa.source === "none" ? null : v.netCost, gift: v.gifts.total };
+    }
+    return { tasks, schools, profile: profile?.data ?? null, offers };
   } catch (err) {
     console.error(`lists: planner extras unavailable: ${err instanceof Error ? err.message : String(err)}`);
     return null;
@@ -287,6 +298,7 @@ export async function ListPage({
                       today={today}
                       viewerIsGuardian={access.guardianOf !== null}
                       profile={plan.profile}
+                      offer={plan.offers[item.id] ?? null}
                     />,
                   ]),
               )

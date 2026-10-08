@@ -16,4 +16,9 @@ export interface RowControlProps {
    * caller hasn't loaded it; optional so the other row/* modules that don't need it can ignore it.
    */
   profile?: StudentProfileData | null;
+  /**
+   * U7 addition (offers.md "List row"): the college's entered offer, for "Offer: $X net". `net` is the letter's cost
+   * minus its gift aid (null when the letter stated no cost); optional so the other row modules can ignore it.
+   */
+  offer?: { net: number | null; gift: number } | null;
 }

@@ -1548,6 +1548,22 @@ const entries = {
     related: ["plan", "guardian"],
   },
 
+  // Stage 3, actions (specs/planner/actions.md)
+  "virtual-tour": {
+    term: "Virtual tour",
+    short: "A video or interactive walk-through of campus, for a family that can't visit in person. A visit kind in the plan, logged like any other visit.",
+    long: "Most colleges' own visit pages link one, often hosted by CampusReel or YouVisit; a real visit still tells you more (how the dining hall smells, how far the walk to class actually is), but a virtual tour is better than nothing for a long-distance college on the list.",
+    category: "Your account",
+    related: ["demonstrated-interest"],
+  },
+  "information-session": {
+    term: "Information session",
+    short: "A presentation by an admissions officer, in person or online, about the college and how it admits students. A visit kind in the plan.",
+    long: "Usually followed by questions; some colleges log attendance as a sign of interest. An open house folds one or more sessions into a bigger on-campus event.",
+    category: "Your account",
+    related: ["demonstrated-interest"],
+  },
+
   // High schools (specs/product/high-school-data.md)
   ncessch: {
     term: "NCES school ID",

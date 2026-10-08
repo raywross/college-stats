@@ -12,7 +12,8 @@ import { aidGenerosity, generosityTier } from "@/lib/metrics";
 import { historySources, historyYearLabel, type SchoolHistory, type Series, type SeriesKey } from "@/lib/history";
 import type { School } from "@/lib/types";
 import type { StudentProfileData } from "@/lib/student-profile";
-import { growthRate, type OfferFacts, type OfferTrend, type WaitListFacts } from "./offers";
+import { cfpView, fourYears, growthRate, isEnteredOffer, offerFlags, type CfpView, type FourYears, type OfferDraft, type OfferFacts, type OfferFlag, type OfferTrend, type WaitListFacts } from "./offers";
+import type { PlanContext, PlanItem, PlanOffer, PlanSchool } from "./types";
 
 /** Which price applies to this student at this college. */
 export function residencyFor(school: Pick<School, "type" | "location" | "cost">, profile: StudentProfileData | null): OfferFacts["residency"] {
@@ -113,6 +114,56 @@ export async function waitListFacts(unitIds: string[]): Promise<Record<string, W
         admitted: w.admitted !== null ? citeField("reported.admission_profile.wait_list.admitted", school) : undefined,
       },
     };
+  }
+  return out;
+}
+
+/* ------------------------------------------------------------------ */
+/* The stage's and the dossier's columns                               */
+/* ------------------------------------------------------------------ */
+
+/** Everything the offers table and the dossier show for one admitted college. */
+export interface OfferColumnData {
+  item: PlanItem;
+  school: PlanSchool;
+  offer: PlanOffer | null;
+  notes: { pros: string | null; cons: string | null };
+  draft: OfferDraft | null;
+  view: CfpView | null;
+  four: FourYears | null;
+  flags: OfferFlag[];
+  facts: OfferFacts | null;
+  visitRating: number | null;
+}
+
+/**
+ * One column per admitted college (list order): its entered offer mapped onto the CFP layout with four years and
+ * flags, or none yet; its pros and cons (on a notes-only row when there's no offer); its facts; the best visit rating.
+ */
+export function offerColumns(ctx: Pick<PlanContext, "items" | "schools" | "offers" | "visits">, facts: Record<string, OfferFacts>): OfferColumnData[] {
+  const out: OfferColumnData[] = [];
+  for (const item of ctx.items) {
+    if (item.outcome !== "admitted") continue;
+    const school = ctx.schools[item.unit_id];
+    if (!school) continue;
+    const rows = ctx.offers.filter((o) => o.item_id === item.id);
+    const offer = rows.find(isEnteredOffer) ?? null;
+    const notesRow = offer ?? rows[0] ?? null;
+    const f = facts[item.unit_id] ?? null;
+    const view = offer ? cfpView(offer, f?.fullPrice ?? null) : null;
+    const ratings = ctx.visits.filter((v) => v.item_id === item.id && v.rating !== null).map((v) => v.rating!);
+    out.push({
+      item,
+      school,
+      offer,
+      notes: { pros: notesRow?.pros ?? null, cons: notesRow?.cons ?? null },
+      draft: offer ? { award_year: offer.award_year, letter_date: offer.letter_date, coa: offer.coa, gift: offer.gift, work_study: offer.work_study, loans: offer.loans } : null,
+      view,
+      four: offer && view ? fourYears(offer, view, f?.trend ?? null) : null,
+      flags: offer && view ? offerFlags(offer, view, school.name) : [],
+      facts: f,
+      visitRating: ratings.length ? Math.max(...ratings) : null,
+    });
   }
   return out;
 }

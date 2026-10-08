@@ -452,7 +452,7 @@ function input(items: PlanItem[], over: Partial<GeneratorInput> = {}): Generator
   };
 }
 
-const kinds = (tasks: { kind: string }[], kind: string) => tasks.filter((t) => t.kind === kind);
+const kinds = <T extends { kind: string }>(tasks: T[], kind: string): T[] => tasks.filter((t) => t.kind === kind);
 
 test("before a choice: Add the aid offer for each admit only; no choice tasks, no summer list", () => {
   const tasks = offersGen(

@@ -42,7 +42,7 @@ export default async function TimelineStage({ ctx }: { ctx: PlanContext }) {
       actions={
         <div className="flex items-center gap-2">
           {ctx.viewer.canEdit && <AddOwnTask listId={ctx.list.id} colleges={colleges} />}
-          <PlanMenu listId={ctx.list.id} hasLink={hasLink} consent={consent} studentId={ctx.student?.id ?? null} studentName={studentFirst} />
+          <PlanMenu listId={ctx.list.id} hasLink={hasLink} consent={consent} studentId={ctx.student?.id ?? null} studentName={studentFirst} dossierHref={ctx.student ? `/household/${ctx.student.id}/plan/print` : null} />
         </div>
       }
     >

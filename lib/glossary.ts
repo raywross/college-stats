@@ -1710,6 +1710,53 @@ const entries = {
     category: "High schools",
     related: ["hs-state-median"],
   },
+  // Offers (specs/planner/offers.md "Display", U7).
+  "gift-aid": {
+    term: "Gift aid",
+    short: "The part of an aid offer you never pay back: grants and scholarships from the government, the state, the college, or outside groups.",
+    long: "An offer's gift aid is the number to compare. Loans and work-study are often listed beside it as \"aid\", but a loan is repaid with interest and work-study is a paycheck earned during the year.",
+    category: "Cost & outcomes",
+    related: ["grant-aid", "net-cost", "renewable-award"],
+  },
+  "net-cost": {
+    term: "Net cost",
+    short: "An offer's cost of attendance minus its gift aid: what the year costs before loans and work-study, which are ways to pay it, not discounts.",
+    why: "Two offers with the same \"total aid\" can have very different net costs once loans are taken out.",
+    category: "Cost & outcomes",
+    related: ["cost-of-attendance", "gift-aid", "net-price"],
+  },
+  "work-study": {
+    term: "Work-study",
+    short: "A part-time campus job the aid offer makes room for. The money is paid as a paycheck while the student works, so it can't cover a bill due in August.",
+    category: "Cost & outcomes",
+    related: ["net-cost"],
+  },
+  "parent-plus": {
+    term: "Parent PLUS loan",
+    short: "A federal loan a parent takes out in their own name for a student's costs, at a higher rate than the student's own loans. It's debt, not aid.",
+    long: "For loans made from July 1, 2026 it's capped at $20,000 a year and $65,000 in all per student. An offer that fills its gap with Parent PLUS is asking the family to borrow the difference.",
+    category: "Cost & outcomes",
+    related: ["net-cost", "gift-aid"],
+  },
+  "renewable-award": {
+    term: "Renewable award",
+    short: "A grant or scholarship that comes back each year, usually if the student keeps a GPA, a full course load, or, for need-based aid, files the aid forms again.",
+    why: "A first-year-only award makes the next three years cost more; ask what keeps each award.",
+    category: "Cost & outcomes",
+    related: ["gift-aid"],
+  },
+  "award-displacement": {
+    term: "Award displacement",
+    short: "When an outside scholarship lowers the aid a college gives, because the total can't exceed the student's need or the cost. Colleges differ in whether they cut loans first or grants.",
+    category: "Cost & outcomes",
+    related: ["gift-aid"],
+  },
+  "summer-melt": {
+    term: "Summer melt",
+    short: "When a student who chose a college over the spring doesn't show up in the fall, often because a summer step (a form, a bill, orientation) slipped. A short summer checklist and reminders help.",
+    category: "Your account",
+    related: ["plan"],
+  },
 } satisfies Record<string, GlossaryEntry>;
 
 export type TermKey = keyof typeof entries;

@@ -2,7 +2,8 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { CalendarPlus, Copy, Download, Menu, Printer } from "lucide-react";
+import Link from "next/link";
+import { CalendarPlus, Copy, Download, FileText, Menu, Printer } from "lucide-react";
 import { SheetDialog } from "@/components/ui/sheet-dialog";
 import { Term } from "@/components/ui/info-tip";
 import { TextConsent } from "@/components/planner/TextConsent";
@@ -21,8 +22,11 @@ export function PlanMenu({
   consent,
   studentId,
   studentName,
+  dossierHref,
 }: {
   listId: string;
+  /** U7: the family dossier, a print view ("Save as PDF") of the list, rounds, visits, and offers. */
+  dossierHref?: string | null;
   /** This person already has a live calendar link for the list (its address isn't kept, so it can't be shown again). */
   hasLink: boolean;
   consent: ConsentView | null;
@@ -135,6 +139,11 @@ export function PlanMenu({
             >
               <Printer className="size-4" aria-hidden /> Print by college
             </button>
+            {dossierHref && (
+              <Link href={dossierHref} className={row}>
+                <FileText className="size-4" aria-hidden /> Family dossier (print or save as PDF)
+              </Link>
+            )}
           </div>
         </section>
 

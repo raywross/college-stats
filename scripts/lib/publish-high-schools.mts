@@ -1,5 +1,5 @@
 /**
- * High school files: the checks check:lineage and publish-data share, and publish-data's high school step
+ * High school files: the checks check:lineage and publish-high-schools share, and the publish itself
  * (supabase/migrations/20261005180000_high_schools.sql; specs/product/high-school-data.md).
  *
  * Publishing writes the live tables in batches (like history and detail files: ~24,000 rows, ~25 MB, too big to swap

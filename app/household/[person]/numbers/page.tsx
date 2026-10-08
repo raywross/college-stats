@@ -5,7 +5,7 @@ import { AuthUnavailable } from "@/components/account/AuthUnavailable";
 import { PersonHeader } from "@/components/account/PersonHeader";
 import { StudentNumbers } from "@/components/me/StudentNumbers";
 import { AccountsSetupError, authConfigured, requireUser } from "@/lib/auth";
-import { logStudentRead, personPage } from "@/lib/households";
+import { personPage, scheduleStudentReadLog } from "@/lib/households";
 import { profileFor } from "@/lib/student-profile-store";
 
 export const metadata: Metadata = { title: "Their numbers", robots: { index: false } };
@@ -35,7 +35,7 @@ export default async function PersonNumbersPage({ params }: { params: Promise<{ 
     throw err;
   }
   if (!profile) notFound();
-  if (profile.relation === "guardian") await logStudentRead(profile.student.id, "student_profiles");
+  if (profile.relation === "guardian") await scheduleStudentReadLog(profile.student.id, "student_profiles");
 
   return (
     <div className="space-y-6">

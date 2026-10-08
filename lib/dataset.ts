@@ -27,6 +27,7 @@ import { matchesField } from "./majors.ts";
 import { noCssProfile, offersInternationalAid } from "./cds/financial-aid.ts";
 import { fitsScoreRange } from "./student-profile.ts";
 import { distanceFromHome, isWithinHome } from "./home.ts";
+import { buildFacets } from "./explore-facets.ts";
 import {
   METRICS,
   SIZE_BUCKETS,
@@ -200,6 +201,29 @@ export function createDataset({ schools, meta, releaseCalendar, aliases = [] }: 
     return [...out.values()];
   }
 
+  /**
+   * `sourcesForSchools` for a page that cites every matching college (Explore): each school's sources for a field list
+   * are worked out once and kept (the WeakMap holds them only while the dataset holds the school), so a render
+   * merges precomputed arrays instead of walking every school's fields. Same sources in the same first-seen order.
+   */
+  const schoolSourcesMemo = new Map<string, WeakMap<School, [id: string, source: CitedSource][]>>();
+
+  function sourcesForSchoolsFast(paths: readonly FieldPath[], list: School[]): CitedSource[] {
+    const listKey = paths.join("|");
+    let perSchool = schoolSourcesMemo.get(listKey);
+    if (!perSchool) schoolSourcesMemo.set(listKey, (perSchool = new WeakMap()));
+    const out = new Map<string, CitedSource>();
+    for (const s of list) {
+      let entries = perSchool.get(s);
+      if (!entries) {
+        entries = sourcesForFieldsPure(paths, s, meta).map((src) => [`${src.key}|${src.url}|${src.year ?? ""}`, src] as [string, CitedSource]);
+        perSchool.set(s, entries);
+      }
+      for (const [id, src] of entries) out.set(id, src);
+    }
+    return [...out.values()];
+  }
+
   /** When each source is expected to publish newer data (data/release-calendar.json; see lib/releases.ts). */
   function getReleaseCalendar(): ReleaseCalendar {
     return releaseCalendar;
@@ -351,7 +375,7 @@ export function createDataset({ schools, meta, releaseCalendar, aliases = [] }: 
   }
 
   /* ---------------------------------------------------------------- */
-  /* Search (typeahead + compare picker, served by /api/schools)       */
+  /* Search: Explore's q filter here; the typeahead matches the same way in the browser (lib/search-index.ts) */
   /* ---------------------------------------------------------------- */
 
   /**
@@ -468,6 +492,16 @@ export function createDataset({ schools, meta, releaseCalendar, aliases = [] }: 
       counts[i]++;
     }
     return counts;
+  }
+
+  /**
+   * Explore's filter-panel counts (lib/explore-facets.ts): they cover the whole dataset whatever the filter, so they
+   * are computed on the first call and the same object comes back after that. Treat it as read-only.
+   */
+  let facetsCache: ReturnType<typeof buildFacets> | undefined;
+
+  function facets(): ReturnType<typeof buildFacets> {
+    return (facetsCache ??= buildFacets({ getAllSchools, histogram }));
   }
 
   /* ---------------------------------------------------------------- */
@@ -588,6 +622,7 @@ export function createDataset({ schools, meta, releaseCalendar, aliases = [] }: 
     citeField,
     sourcesForFields,
     sourcesForSchools,
+    sourcesForSchoolsFast,
     getReleaseCalendar,
     cdsSchools,
     getAllSchools,
@@ -605,6 +640,7 @@ export function createDataset({ schools, meta, releaseCalendar, aliases = [] }: 
     countByState,
     topBy,
     histogram,
+    facets,
     landscapePoints,
     valuePoints,
     stickerPoints,

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { ArrowDownWideNarrow, ArrowUpNarrowWide, LayoutGrid, Map as MapIcon, ScatterChart, Search, Table2, X } from "lucide-react";
 import { SIZE_BUCKETS } from "@/lib/metrics";
 import { INDICATORS, INDICATOR_KEYS, isDirection } from "@/lib/indicators";
@@ -42,14 +42,20 @@ export function ExploreSearchInput({ className }: { className?: string }) {
     }
   }
 
+  // Each push is one server render of /explore, so wait for a pause in typing (500 ms), or push at once on Enter.
+  const push = useCallback(
+    (value: string) => {
+      setPushed(value);
+      update({ q: value.trim() || null });
+    },
+    [update],
+  );
+
   useEffect(() => {
     if (q === pushed) return;
-    const t = setTimeout(() => {
-      setPushed(q);
-      update({ q: q.trim() || null });
-    }, 250);
+    const t = setTimeout(() => push(q), 500);
     return () => clearTimeout(t);
-  }, [q, pushed, update]);
+  }, [q, pushed, push]);
 
   return (
     <label
@@ -64,6 +70,12 @@ export function ExploreSearchInput({ className }: { className?: string }) {
         type="search"
         value={q}
         onChange={(e) => setQ(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" && q !== pushed) {
+            e.preventDefault();
+            push(q);
+          }
+        }}
         placeholder="Filter by name, city, or state"
         className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground [&::-webkit-search-cancel-button]:hidden"
       />

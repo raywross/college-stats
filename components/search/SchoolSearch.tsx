@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { ArrowRight, CornerDownLeft, Search } from "lucide-react";
 import type { SchoolIndexEntry } from "@/lib/data";
 import { searchSchoolsApi } from "@/lib/school-api";
+import { loadSearchIndex } from "@/lib/search-client";
 import { Crest } from "@/components/school/Crest";
 import { pctSmart } from "@/lib/format";
 import { markNextViewFrom, resultCountBucket, track } from "@/lib/analytics";
@@ -41,16 +42,22 @@ export function SchoolSearch({
     const q = query.trim();
     if (!q) return;
     const controller = new AbortController();
+    // Matching is local (lib/search-client.ts), so there is no debounce to wait out; the zero-delay timer only
+    // batches the keystroke with the state it sets. Until the index has loaded, results stay empty and `loading`
+    // shows "Searching…", never "No direct match".
     const t = setTimeout(() => {
       setLoading(true);
       searchSchoolsApi(q, { limit: 6, signal: controller.signal })
         .then((rows) => {
+          if (controller.signal.aborted) return;
           setResults(rows);
           setActive(0);
         })
         .catch(() => {})
-        .finally(() => setLoading(false));
-    }, 120);
+        .finally(() => {
+          if (!controller.signal.aborted) setLoading(false);
+        });
+    }, 0);
     return () => {
       clearTimeout(t);
       controller.abort();
@@ -108,10 +115,16 @@ export function SchoolSearch({
           onChange={(e) => {
             setQuery(e.target.value);
             if (!e.target.value.trim()) setResults([]);
+            // Searching from the first keystroke, so the list never flashes "No direct match" before the result lands.
+            setLoading(!!e.target.value.trim());
             setActive(0);
             setOpen(true);
           }}
-          onFocus={() => setOpen(true)}
+          onFocus={() => {
+            setOpen(true);
+            // Start the index fetch now so the first keystroke is answered from memory.
+            loadSearchIndex().catch(() => {});
+          }}
           onBlur={() => setTimeout(() => setOpen(false), 150)}
           onKeyDown={(e) => {
             if (e.key === "ArrowDown") {

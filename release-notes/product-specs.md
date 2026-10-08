@@ -18,7 +18,7 @@ The [roadmap](/roadmap) gains four themes beyond college data:
   what your family would likely pay, as a range over four years; real aid offers side by side in one standard
   layout; and whether applying early helps. ([chances and fit](../specs/product/chances-and-fit.md),
   [net price estimator](../specs/product/net-price-estimator.md),
-  [award letter analyzer](../specs/product/award-letter-analyzer.md),
+  [award letter analyzer](../specs/planner/offers.md),
   [early decision](../specs/product/early-decision-strategy.md))
 - **High school context.** A page for every public high school and, where a counselor shares them, past
   applicants from your school drawn over each college's ranges.

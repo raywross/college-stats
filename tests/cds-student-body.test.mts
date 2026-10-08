@@ -127,6 +127,24 @@ test("B4–B11: the subsidized-loan group of 29 has no rates (cohort kept); 4 �
   assert.equal(checkGrid(bad).value, null);
 });
 
+test("B4–B11: a grid whose cohort lines are zeros and whose completer lines are blank is empty, not a class of nobody", () => {
+  // The Citadel's 2025–26 workbook prints 0 on line C (B.409–B.412) and leaves every other line blank.
+  const CITADEL = "217864";
+  const d = doc(CITADEL);
+  assert.equal(d.items["B.412"]?.v, 0);
+  assert.equal(d.items["B.416"]?.status, "blank");
+  const r = checkGrid(d, baseline(CITADEL).outcomes);
+  assert.equal(r.value, null);
+  assert.deepEqual(r.problems.map((p) => p.check), ["missing"]);
+  // The record's value set has no graduation group and no 4- and 5-year shares, and reading it throws nothing.
+  const found = studentBodyFromRecord(records.get(CITADEL)!, baseline(CITADEL)).found;
+  assert.equal(found.groups.graduation, undefined);
+  assert.equal(found.graduation, undefined);
+  // The same grid with a real total cohort is read as before.
+  const filled = doc(CORNELL);
+  assert.ok(checkGrid(filled).value);
+});
+
 test("B4–B11: a current grid equal to the previous one holds the previous cohort, so it's not newer and replaces nothing", () => {
   const d = doc(WM);
   for (let i = 0; i < 32; i++) d.items[`B.${401 + i}` as CdsCode] = { ...d.items[`B.${501 + i}` as CdsCode] };

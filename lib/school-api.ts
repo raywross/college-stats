@@ -2,34 +2,33 @@
 
 import { useEffect, useState } from "react";
 import type { SchoolIndexEntry } from "@/lib/data";
+import { entriesByIds, loadSearchIndex, searchIndexReady, searchLocal } from "@/lib/search-client";
 
-/** Client helpers for /api/schools, with a small in-memory cache. */
+/**
+ * Client helpers for finding colleges, backed by the static search index (lib/search-client.ts): no request per
+ * keystroke, and nothing after the index's one fetch.
+ */
 
-const byId = new Map<string, SchoolIndexEntry>();
-
-export async function searchSchoolsApi(q: string, opts: { limit?: number; exclude?: string[]; signal?: AbortSignal } = {}) {
-  const params = new URLSearchParams({ q, limit: String(opts.limit ?? 8) });
-  if (opts.exclude?.length) params.set("exclude", opts.exclude.join(","));
-  const res = await fetch(`/api/schools?${params}`, { signal: opts.signal });
-  if (!res.ok) return [];
-  const results = (await res.json()) as SchoolIndexEntry[];
-  for (const r of results) byId.set(r.id, r);
-  return results;
+/**
+ * Matches `q` against the index, waiting for it to load first. `signal` skips a stale result: an aborted search
+ * resolves to nothing rather than overwriting the newer one.
+ */
+export async function searchSchoolsApi(q: string, opts: { limit?: number; exclude?: string[]; signal?: AbortSignal } = {}): Promise<SchoolIndexEntry[]> {
+  await loadSearchIndex();
+  if (opts.signal?.aborted) return [];
+  return searchLocal(q, { limit: opts.limit ?? 8, exclude: opts.exclude });
 }
 
-/** Resolve ids to display entries, fetching any we haven't seen yet. */
+/** Resolve ids to display entries from the index (they appear once it has loaded). */
 export function useSchoolEntries(ids: string[]): SchoolIndexEntry[] {
   const key = ids.join(",");
   const [, setVersion] = useState(0);
 
   useEffect(() => {
-    const missing = key.split(",").filter((id) => id && !byId.has(id));
-    if (!missing.length) return;
+    if (!key || searchIndexReady()) return;
     let cancelled = false;
-    fetch(`/api/schools?ids=${missing.join(",")}`)
-      .then((r) => (r.ok ? r.json() : []))
-      .then((rows: SchoolIndexEntry[]) => {
-        for (const r of rows) byId.set(r.id, r);
+    loadSearchIndex()
+      .then(() => {
         if (!cancelled) setVersion((v) => v + 1);
       })
       .catch(() => {});
@@ -38,5 +37,5 @@ export function useSchoolEntries(ids: string[]): SchoolIndexEntry[] {
     };
   }, [key]);
 
-  return ids.map((id) => byId.get(id)).filter((e): e is SchoolIndexEntry => !!e);
+  return entriesByIds(key ? key.split(",") : []);
 }

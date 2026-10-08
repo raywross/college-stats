@@ -114,13 +114,15 @@ The shared contracts every later unit builds on; the federal, private, state, UI
   `MetricLabel`, `SourceTip`) and `SourceItem`/`SourceLine` accept either kind.
 - **Data access** `lib/high-schools.ts` (server only; `getHighSchool`, `searchHighSchools`, `getHighSchoolMeta`,
   `getStateMedians`; fail-soft) over `lib/high-school-store.ts` (json mode, lazy per-state shards) and
-  `lib/supabase-high-schools.ts`. `HIGH_SCHOOLS_DIR` points json mode at another directory, e.g.
-  `HIGH_SCHOOLS_DIR=tests/fixtures/high-schools DATA_SOURCE=json npm run dev` for UI work before real data.
+  `lib/supabase-high-schools.ts`. `HIGH_SCHOOLS_SOURCE=json|supabase` picks the store (default `supabase` when
+  the Supabase keys are set, else `json`; [supabase.md](../supabase.md#where-the-app-reads)); `HIGH_SCHOOLS_DIR`
+  points json mode at another directory, e.g. `HIGH_SCHOOLS_DIR=tests/fixtures/high-schools HIGH_SCHOOLS_SOURCE=json
+  npm run dev` for UI work before real data.
 - **Supabase** `supabase/migrations/20261005180000_high_schools.sql`: `high_schools` (trigram index on `search`),
   `high_school_details`, `high_school_files` (meta, medians), staging tables and functions, and
   `search_high_schools(p_q, p_state, p_limit)`. Tested on PGlite (`tests/high-schools-policies.test.mts`).
-  `publish-data` writes the live tables in batches and reads them back (like history: ~25 MB is too big for one
-  swap), and skips high schools with a message until the migration is applied.
+  `npm run publish-high-schools` (its own script since 2026-10-07) writes the live tables in batches and reads them
+  back (~25 MB is too big for one swap), and stops with a message until the migration is applied.
 - **Syncs** `npm run sync-high-schools [-- --only ccd,pss --dry-run --offline --allow-shrink]` and
   `npm run sync-hs-states -- --state ca`. Adapters in `scripts/lib/high-schools/` (contract `types.mts`, registries
   `index.mts` and `states/index.mts` already list every adapter as a stub; units replace only their own file). Merge

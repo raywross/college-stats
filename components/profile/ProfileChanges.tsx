@@ -10,7 +10,7 @@ import { SourceTip } from "@/components/ui/info-tip";
  * The profile overview's public "What changed" panel (specs/product/follow-colleges.md#in-the-app): this college's
  * changes from the last two publishes that touched it, read from `dataset_changes` (lib/data.ts getSchoolChanges),
  * each one sentence with both years, under its publish date and release. Renders nothing when the college hasn't
- * changed in a year, and always with DATA_SOURCE=json (changes are recorded by publishes, which only Supabase has).
+ * changed in a year, and always when Supabase isn't configured (changes are recorded by publishes in Supabase).
  *
  * Not to be confused with components/history/WhatsChanged.tsx, Home's national trend facts.
  */

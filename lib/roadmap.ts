@@ -24,11 +24,13 @@ export const COMPLEXITY: Record<Complexity, { label: string; description: string
 // Accounts and households (sign-in, households, student profile, saved lists, following colleges; group "accounts")
 // was built 2026-10-05 on feature/accounts; Google sign-in and email sending wait for the new domain (specs/backlog.md).
 // The group came back on 2026-10-06 with the owner's review of that build: the household hub (people by name, one
-// list each) and the application plan on top of it.
+// list each), built the same day. The application plan written then became the planner's timeline on 2026-10-07,
+// when the planner (group "planner", specs/planner/) was specified: six stages from the first list to the deposit,
+// with the award-letter analyzer moved in as its last stage. So the "accounts" group is gone until a new spec.
 // The compare redesign, the only spec in "Design and usability" (group "design"), was built 2026-10-05 (#84), so that
 // group is gone until a new design spec.
 export type RoadmapGroupKey =
-  | "accounts"
+  | "planner"
   | "national-trends"
   | "college-reported"
   | "campus-life"
@@ -41,10 +43,10 @@ export type RoadmapGroupKey =
 
 export const ROADMAP_GROUPS: { key: RoadmapGroupKey; title: string; description: string }[] = [
   {
-    key: "accounts",
-    title: "Accounts and households",
+    key: "planner",
+    title: "The planner: from the first list to the deposit",
     description:
-      "The family's own page: everyone by name, one list each with a switch for updates, and a plan of steps and dates for every college on it.",
+      "Six stages for a family: build and sort the list with a Dream, decide who gets the early application, follow and visit, work a timeline of dated tasks, track every application, then read the offers and choose; with a parent's view throughout.",
   },
   {
     key: "national-trends",
@@ -56,7 +58,7 @@ export const ROADMAP_GROUPS: { key: RoadmapGroupKey; title: string; description:
     key: "planning",
     title: "Planning tools",
     description:
-      "Where your numbers stand, what your family would pay, aid offers side by side, and whether applying early helps.",
+      "Where your numbers stand, what your family would pay, and whether applying early helps; the planner builds on all three.",
   },
   {
     key: "high-school",
@@ -118,19 +120,98 @@ export interface RoadmapSpec {
 
 /** In build order within each group (the backlog's order, specs/backlog.md). */
 export const ROADMAP: RoadmapSpec[] = [
-  // Accounts and households: the household hub (people by name, one list each) was built 2026-10-06 on
-  // feature/household-hub; the application plan builds on it.
+  // The planner (specs/planner/, 2026-10-07): the model first, then the six stages in the order a family meets them,
+  // then the parent's view over all of it. Builds on the household hub (built 2026-10-06, no longer on the roadmap).
   {
-    slug: "application-plan",
-    file: "specs/product/application-plan.md",
-    group: "accounts",
+    slug: "planner-model",
+    file: "specs/planner/model.md",
+    group: "planner",
     summary:
-      "Every college on the list becomes a short plan: the steps worth taking (visit, follow, aid forms, apply, reply) and the dates the college published, grouped by month with the next one on top, which a parent can check in on.",
+      "The plan's foundation: a Plan tab on each student's page, the six stages computed from the list itself, and one set of tasks, visits, and offers that every stage reads and writes.",
     complexity: 3,
     complexityNote:
-      "Step generators from the college-reported dates, a versioned file of cycle-wide dates, a new table with policies, a plan tab, and nudges through the existing digest.",
+      "New tables with policies around the existing list, a stage machine, idempotent task generation with lineage on every date, the Plan tab's frame, and the entitlement hooks the stages share.",
     status: "planned",
-    // Builds on the household hub (specs/product/household-hub.md), built 2026-10-06 and so no longer on the roadmap.
+  },
+  {
+    slug: "list-building",
+    file: "specs/planner/list-building.md",
+    group: "planner",
+    summary:
+      "Sort the list by the numbers: the site's suggested Reach, Target, or Likely beside the student's choice with the reason shown, one Dream, sorts by what matters, and a balance line that says what's missing.",
+    complexity: 2,
+    complexityNote: "A suggestion rule over fields the site has, a Dream flag with its trigger, a sort menu, drag ordering, and a finding rail; standing plugs in when chances is built.",
+    status: "planned",
+    after: ["planner-model"],
+  },
+  {
+    slug: "early-rounds",
+    file: "specs/planner/early-rounds.md",
+    group: "planner",
+    summary:
+      "Who gets the one binding early application: each college's rounds and dates, last year's early-round advantage with its caveats, the conflicts between rounds, what a binding offer would cost this family, and a proposed plan the student edits.",
+    complexity: 3,
+    complexityNote:
+      "A ranking step, a proposal with published rules, live conflict checks across rounds, the money question from the estimator, and tasks written for the timeline.",
+    status: "planned",
+    after: ["planner-model", "list-building", "early-decision-strategy"],
+  },
+  {
+    slug: "planner-actions",
+    file: "specs/planner/actions.md",
+    group: "planner",
+    summary:
+      "Follow the admissions office in one click where a network allows it, request information, book and log visits with notes that are useful in April, and know at which colleges interest is counted.",
+    complexity: 2,
+    complexityNote: "Follow intents and deep links per network, a visit log with prompts and calendar files, the interest line from CDS C7, and a small links follow-up for request-information pages.",
+    status: "planned",
+    after: ["planner-model"],
+  },
+  {
+    slug: "timeline",
+    file: "specs/planner/timeline.md",
+    group: "planner",
+    summary:
+      "The project plan: every dated task from the college's published dates, the cycle's dates, and the stage the student is in, with an owner, grouped by month or by college, in a calendar feed, a weekly email, and texts for those who turn them on.",
+    complexity: 3,
+    complexityNote:
+      "Task generators from the college-reported dates, a versioned cycle file with windows and the summer list, a grade-aware fold, a calendar feed, reminders through the existing digest plus a new weekly email, and text messages with consent, quiet hours, and a provider behind one interface.",
+    status: "planned",
+    after: ["planner-model", "early-rounds"],
+  },
+  {
+    slug: "applications",
+    file: "specs/planner/applications.md",
+    group: "planner",
+    summary:
+      "One checklist across every application: what the college requires (fee and waiver, test policy, aid forms), what's submitted and complete, the portal link, and the follow-ups a deferral or a wait list creates.",
+    complexity: 2,
+    complexityNote: "A requirements list from fields the site has, a status progression with dates on the existing columns, generated sub-tasks, and the deferral and wait-list rules.",
+    status: "planned",
+    after: ["timeline"],
+  },
+  {
+    slug: "offers",
+    file: "specs/planner/offers.md",
+    group: "planner",
+    summary:
+      "Record each decision in a tap, enter every aid offer in one standard layout with four-year totals beside your estimate and the college's outcomes, compare the admits, choose, and get the deposit, withdrawal, and summer tasks.",
+    complexity: 3,
+    complexityNote:
+      "A standard offer model, four-year math, flags and questions, the choice's generated tasks, and a share-your-letter step that collects the set a later upload-and-read path is built on.",
+    status: "planned",
+    after: ["applications", "net-price-estimator"],
+  },
+  {
+    slug: "planner-parents",
+    file: "specs/planner/parents.md",
+    group: "planner",
+    summary:
+      "What a parent sees without asking: a summary line per student, the same plan read-only, a nudge on any task that can't turn into nagging, the parent's own tasks in one place, and a weekly email.",
+    complexity: 2,
+    complexityNote: "Views over the stages under the existing household grants, a rate-limited nudge with its table, the parent's task list, stuck signals, and one more email on the digest job.",
+    status: "planned",
+    after: ["planner-model", "timeline"],
   },
   {
     slug: "online-share",
@@ -173,16 +254,7 @@ export const ROADMAP: RoadmapSpec[] = [
       "The federal aid formula as versioned data, three grant estimates combined, and a hand-checked pilot against colleges' own calculators.",
     status: "planned",
   },
-  {
-    slug: "award-letter-analyzer",
-    file: "specs/product/award-letter-analyzer.md",
-    group: "planning",
-    summary: "Real aid offers in one standard layout: what you pay, what you borrow, and the four-year total, side by side.",
-    complexity: 3,
-    complexityNote: "A standard offer model, four-year math, flags and questions, and later a document upload read by a model.",
-    status: "planned",
-    after: ["net-price-estimator"],
-  },
+  // The award-letter analyzer moved into the planner on 2026-10-07 as its last stage (slug "offers").
   {
     slug: "early-decision-strategy",
     file: "specs/product/early-decision-strategy.md",
@@ -191,6 +263,17 @@ export const ROADMAP: RoadmapSpec[] = [
       "Early decision and early action admit rates against regular decision, how much of the class is filled early, and a checklist before you commit.",
     complexity: 2,
     complexityNote: "Measures from Common Data Set numbers the agent already collects, plus a profile section and filters.",
+    status: "planned",
+  },
+  {
+    slug: "common-app",
+    file: "specs/data-expansion/common-app.md",
+    group: "planning",
+    summary:
+      "Deadlines, fees, essays, recommendations, and this cycle's test policy for the thousand colleges that take the Common App, plus how the application season is going nationally months before federal data, once Common App agrees to the use.",
+    complexity: 2,
+    complexityNote:
+      "A PDF grid parsed by column, a name-to-id join, a block of fields and a source, one profile card, six filters, and a permission letter that sets the start date.",
     status: "planned",
   },
   {
@@ -243,6 +326,8 @@ export const ROADMAP: RoadmapSpec[] = [
       "An inventory built from the existing blocked lists, a wave scheduler with per-host pacing, from-file entry points for each extractor, and a Claude in Chrome skill; one access-rule decision for the owner.",
     status: "planned",
   },
+  // The serving architecture (specs/serving-architecture.md) was planned and built on 2026-10-07 (#98), so it is
+  // no longer listed.
   // Ideas (specs/ideas/README.md): not planned; in the order they could be built.
   {
     slug: "guides",
@@ -401,6 +486,7 @@ export const ROADMAP: RoadmapSpec[] = [
 
 /** Readable background pages that aren't work items themselves (linked from the roadmap, not ranked). */
 export const ROADMAP_OVERVIEWS: { slug: string; file: string; title: string }[] = [
+  { slug: "planner", file: "specs/planner/README.md", title: "Planner overview: the six stages from the first list to the deposit, the research, the tiers, and the build order" },
   { slug: "data-expansion", file: "specs/data-expansion/README.md", title: "Data expansion overview" },
   { slug: "product", file: "specs/product/README.md", title: "Product overview: accounts, planning tools, high schools, business" },
   { slug: "school-identity", file: "specs/school-identity/README.md", title: "School identity overview: links, accounts, short names, colors and marks" },

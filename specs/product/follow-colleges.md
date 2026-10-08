@@ -59,10 +59,11 @@ digests             (id, user_id, publish_id, sent_at, provider_message_id, coll
   reads it anonymously. It lives next to the published collections and is written in the same publish.
 
 ## Detecting changes
-Computed once per publish, never per user. `publish-data` already reads the previous version back before swapping
-([supabase.md](../supabase.md#publishing-npm-run-publish-data)); the diff runs there, between the previous published
-documents and the new files, and is written in the same transaction, so a change record exists if and only if the
-data it describes was published.
+Computed once per deploy, never per user. Since 2026-10-07 the dataset ships with the deploy
+([serving-architecture.md](../serving-architecture.md)), so `npm run publish-changes` diffs the data files at the
+deployed commit against the files at the previously recorded commit, both read from git, and writes the result in
+one transaction with the `dataset_publishes` row ([supabase.md](../supabase.md#the-change-log-npm-run-publish-changes)).
+It runs after the production deploy succeeds, so a change record exists only once the site shows the data.
 
 For each college and each field in `lib/fields.ts` that is **stored** (not `computed`) and marked `notify`:
 | Case | Kind | How it's told |
@@ -133,7 +134,7 @@ Rules:
   cards with the college as the header.
 
 ## Pilot before launch
-1. Run the diff against the next real publish in dry-run mode (`npm run publish-data -- --changes-only`) and read the
+1. Run the diff for the next real data merge in dry-run mode (`npm run publish-changes -- --dry-run`) and read the
    change list for a dozen colleges by hand: does every line make sense, and is anything missing or noisy?
 2. Send the first digest only to the owner's address for one publish; then to all followers.
 3. Watch bounce and complaint webhooks from Resend for the first three publishes; a complaint rate above 0.1% pauses
@@ -147,8 +148,8 @@ unsubscribe rate under 1%, and return visits in the week after a release.
 
 ## Files (planned)
 - `lib/changes.ts` (`diffSchools`, tolerances, sentence rendering), `lib/fields.ts` (`notify` with a unit on each
-  field that should be reported), `scripts/publish-data.mts` (diff and write `dataset_changes` in the publish
-  transaction; `--changes-only` dry run), `lib/follows.ts` (server actions and queries), `lib/email.ts` (Resend
+  field that should be reported), `scripts/publish-changes.mts` (since 2026-10-07: diff two commits' files and write
+  `dataset_changes` in one transaction; `--dry-run`), `lib/follows.ts` (server actions and queries), `lib/email.ts` (Resend
   client, templates in `emails/`), `app/api/cron/digests/route.ts`, `app/me/updates/`, `app/me/following/`,
   `components/profile/WhatChanged.tsx` (built as `ProfileChanges.tsx`, so it isn't confused with Home's
   `components/history/WhatsChanged.tsx`), `components/FollowButton.tsx`.
@@ -204,23 +205,19 @@ overview cards (17): `name` (`always`), `admissions.applicants`, `.admitted`, `.
 | `dataset_change_staging` | secret key only | filled by `stage_dataset_changes()` |
 
 Functions: `unsubscribe_by_token(token) → bool` (anon may call; turns `email_updates` off),
-`stage_dataset_changes(changes, reset)` and `publish_schools_staged_with_changes(meta, calendar, expected,
-expected_changes, commit, by) → {schools, publish_id, changes}` (secret key only).
+`stage_dataset_changes(changes, reset)` and, since 2026-10-07, `publish_changes(school_count, retrieved, commit, by,
+expected_changes) → {publish_id, changes, reused}` (secret key only; `publish_schools_staged_with_changes` was retired
+with the dataset tables, `supabase/migrations/20261007130000_retire_dataset_tables.sql`).
 
-**Publish id.** `dataset_publishes.id`, the row every publish already records. Each change row also carries the
-publish's time, the same transaction time as `dataset_files.published_at`, which is the dataset version the app reads.
+**Publish id.** `dataset_publishes.id`, one row per recorded deploy. Each change row also carries the publish's time.
 
-### Publishing (`scripts/publish-data.mts`, `scripts/lib/publish-changes.mts`)
-Before writing, publish-data reads the published colleges back (`fetchDatasetFiles`) and diffs them against the files;
-none on a first publish. The changes are staged, then `publish_schools_staged_with_changes()` checks the count and
-runs `publish_schools_staged()` and moves the changes in, **in one transaction**, so a change exists only if its data
-was published; the publish then reads the row count back. Staging (not one big call) because a large release can
-produce ~20,000 rows, the same reason colleges are staged. If `dataset_change_staging` doesn't exist (the migration
-isn't applied), the publish runs the old function and warns that changes weren't recorded.
-- `npm run publish-data -- --changes-only` prints the change list against the published dataset and writes nothing
-  (reads only).
-- `npm run publish-data -- --changes-only --prev <dir>` does the same against a local `schools.json` + `meta.json`
-  (e.g. from `git show <ref>:data/schools.json`), with no network.
+### Publishing (`scripts/publish-changes.mts`, `scripts/lib/publish-changes.mts`)
+After each successful production deploy, `publish-changes` reads `data/schools.json`, `meta.json`, and
+`release-calendar.json` at the deployed commit and at the previously recorded commit (`git show`), diffs them
+(`lib/changes.ts`), stages the rows (2,000 per call), and calls `publish_changes()`, which records the publish and
+moves the changes in **in one transaction**. A re-run for the same commit is a no-op (`reused: true`); a first
+publish records zero changes.
+- `npm run publish-changes -- --dry-run [--base <sha>] [--head <sha>]` prints the change list and writes nothing.
 
 ### App
 - `lib/follows.ts` (Server Actions): `getFollow(unitId) → FollowState`, `follow(unitId)` and `unfollow(unitId) →
@@ -229,8 +226,8 @@ isn't applied), the publish runs the old function and warns that changes weren't
   instead of throwing.
 - `components/profile/ProfileChanges.tsx`: the What changed panel, between the hero and the topic cards. Reads
   `getSchoolChanges(unitId)` (`lib/data.ts`, publishable key, fail-soft), so profiles stay static and regenerate with
-  the publish's revalidation. With `DATA_SOURCE=json` there are no changes (they belong to publishes, so they aren't
-  committed); `CHANGES_FIXTURE=<file of rows>` shows the panel locally for QA. Each sentence has its source; the newest
+  the deploy. Without `SUPABASE_URL` (CI, a keyless Preview, local work) there are no changes (they belong to
+  recorded publishes, so they aren't committed); `CHANGES_FIXTURE=<file of rows>` shows the panel locally for QA. Each sentence has its source; the newest
   publish's lines have the ⓘ of the value shown today, and the section's footnote lists their sources.
 
 ### Deviations
@@ -251,7 +248,7 @@ isn't applied), the publish runs the old function and warns that changes weren't
    (after `20261005120000_accounts.sql`), then prod at release. Until then publishes succeed and warn that changes weren't
    recorded, the panel shows nothing, and the follow actions answer "Following isn't set up on this site yet".
 2. The first publish after applying it records changes from then on; nothing is backfilled.
-3. Pilot step 1 above: run `npm run publish-data -- --changes-only` before the next real publish and read the list.
+3. Pilot step 1 above: run `npm run publish-changes -- --dry-run` before the next real data merge and read the list.
 
 ## As built (2026-10-05): Follow UI and the update digest
 Unit F of the accounts build, on top of unit D's follows/changes data.

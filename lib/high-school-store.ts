@@ -1,6 +1,6 @@
 /**
  * High school files on disk (data/high-schools/, or the directory in HIGH_SCHOOLS_DIR): readers shared by the app's
- * json mode (lib/high-schools.ts), check:lineage, publish-data, the syncs, and tests. Plain Node module (node:fs, no
+ * json mode (lib/high-schools.ts), check:lineage, publish-high-schools, the syncs, and tests. Plain Node module (node:fs, no
  * Next.js or server-only imports) so scripts and tests load it directly.
  *
  *   const store = createJsonHighSchoolStore(highSchoolsDir());

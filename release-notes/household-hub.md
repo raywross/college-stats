@@ -27,7 +27,7 @@ for a student, their numbers. The old addresses still work and take you to the r
 
 ## Behind the scenes
 
-The spec is `specs/product/household-hub.md`; a follow-on plan, `specs/product/application-plan.md`, turns the list
+The spec is `specs/product/household-hub.md`; a follow-on plan, `specs/planner/timeline.md`, turns the list
 into steps and dates. Invited accounts are created by a small function that runs inside Supabase, so the project's
 secret key never leaves it. Follows are now kept by the database from the list's Updates switch; the old Follow button
 and its page are gone.

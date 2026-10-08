@@ -83,7 +83,8 @@ test("an override's links/social/brand part is applied with its lineage; the res
   assert.equal(school.links?.website, before.links?.website, "other links stay");
   assert.equal(school.lineage?.["links.visit"]?.source, "college-site");
   assert.equal(school.admissions.applicants, before.admissions.applicants, "non-identity paths are sync-data's");
-  assert.equal(school.lineage?.["admissions.applicants"], before.lineage?.["admissions.applicants"]);
+  // UGA's applicants may carry a college-reported record; whatever it is, the override leaves it as it was.
+  assert.deepEqual(school.lineage?.["admissions.applicants"], before.lineage?.["admissions.applicants"]);
 });
 
 test("a link or account found on the college's site isn't credited to its admissions document", () => {

@@ -248,9 +248,10 @@ test("rates: none under 10 applicants; yields none under 10 admits; Unknown is n
   assert.deepEqual(yieldsByResidency(s), { in_state: null, out_of_state: 0.225, international: null });
   assert.ok(!("unknown" in admitRatesByResidency(s)));
   assert.equal(sameClassAdmitRate(s), Math.round((454 / 659) * 10000) / 10000);
-  // Illinois's headline funnel is the federal fall 2024 class; the tick uses the grid's own fall 2025 totals.
+  // Illinois: whichever class the headline funnel shows (federal fall 2024, or the college's own fall 2025 once its
+  // C1 is published), the tick uses the residency grid's own fall 2025 totals.
   const il = schools.find((x) => x.unit_id === "145637")!;
-  assert.notEqual(il.admissions.year, il.reported!.admissions_by_residency!.year);
+  assert.equal(il.reported!.admissions_by_residency!.year, 2025);
   assert.equal(sameClassAdmitRate(il), Math.round((30384 / 83045) * 10000) / 10000);
 });
 

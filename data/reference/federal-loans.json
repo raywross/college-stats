@@ -1,0 +1,156 @@
+{
+  "description": "Federal Direct Loan figures the offers stage (specs/planner/offers.md \"Computation\") and, later, the net price estimator use: fixed interest rates by award year, dependent undergraduate annual limits, Parent PLUS limits, and the standard repayment terms. An award year is named by the July it starts (2026 = loans first disbursed July 1, 2026 to June 30, 2027). Every figure carries the URL it was read from; a figure that couldn't be confirmed at an official source is left out, never guessed. Checked by lib/planner/offers.ts validateLoanReference (tests/planner-offers.test.mts). Read 2026-10-08. Each spring, add the new award year's rates when Federal Student Aid announces them (late May).",
+  "rates": [
+    {
+      "award_year": 2023,
+      "first_disbursed": [
+        "2023-07-01",
+        "2024-06-30"
+      ],
+      "undergraduate": 0.055,
+      "parent_plus": 0.0805,
+      "source": "https://public-inspection.federalregister.gov/2026-04065.pdf",
+      "source_note": "Federal Register annual notice of fixed rates (2026-04065, published March 2, 2026), table of earlier rates."
+    },
+    {
+      "award_year": 2024,
+      "first_disbursed": [
+        "2024-07-01",
+        "2025-06-30"
+      ],
+      "undergraduate": 0.0653,
+      "parent_plus": 0.0908,
+      "source": "https://public-inspection.federalregister.gov/2026-04065.pdf",
+      "source_note": "Federal Register annual notice of fixed rates (2026-04065), table of earlier rates (89 FR 68878)."
+    },
+    {
+      "award_year": 2025,
+      "first_disbursed": [
+        "2025-07-01",
+        "2026-06-30"
+      ],
+      "undergraduate": 0.0639,
+      "parent_plus": 0.0894,
+      "source": "https://fsapartners.ed.gov/knowledge-center/library/electronic-announcements/2025-05-30/interest-rates-direct-loans-first-disbursed-between-july-1-2025-and-june-30-2026",
+      "source_note": "Electronic announcement DL-25-03 (May 30, 2025)."
+    },
+    {
+      "award_year": 2026,
+      "first_disbursed": [
+        "2026-07-01",
+        "2027-06-30"
+      ],
+      "undergraduate": 0.0652,
+      "parent_plus": 0.0907,
+      "source": "https://fsapartners.ed.gov/knowledge-center/library/electronic-announcements/2026-06-04/interest-rates-federal-direct-loans-first-disbursed-between-july-1-2026-and-june-30-2027",
+      "source_note": "Electronic announcement of June 4, 2026: 10-year Treasury 4.468% plus 2.05% (undergraduate) and 4.60% (PLUS)."
+    }
+  ],
+  "dependent_limits": [
+    {
+      "from_award_year": 2026,
+      "years": [
+        {
+          "year": 1,
+          "total": 5500,
+          "subsidized": 3500
+        },
+        {
+          "year": 2,
+          "total": 6500,
+          "subsidized": 4500
+        },
+        {
+          "year": 3,
+          "total": 7500,
+          "subsidized": 5500
+        },
+        {
+          "year": 4,
+          "total": 7500,
+          "subsidized": 5500
+        }
+      ],
+      "aggregate": {
+        "total": 31000,
+        "subsidized": 23000
+      },
+      "source": "https://fsapartners.ed.gov/sites/default/files/2026-05/FrequentlyAskedQuestionsLoanLimits.pdf",
+      "source_note": "Federal Student Aid, Frequently Asked Questions – Loan Limits (May 20, 2026), \"Loan Limits Effective July 1, 2026\": undergraduate limits unchanged. Year 4 is \"third year and beyond\"."
+    },
+    {
+      "from_award_year": 2025,
+      "years": [
+        {
+          "year": 1,
+          "total": 5500,
+          "subsidized": 3500
+        },
+        {
+          "year": 2,
+          "total": 6500,
+          "subsidized": 4500
+        },
+        {
+          "year": 3,
+          "total": 7500,
+          "subsidized": 5500
+        },
+        {
+          "year": 4,
+          "total": 7500,
+          "subsidized": 5500
+        }
+      ],
+      "aggregate": {
+        "total": 31000,
+        "subsidized": 23000
+      },
+      "source": "https://fsapartners.ed.gov/knowledge-center/fsa-handbook/2025-2026/vol8/ch4-annual-and-aggregate-loan-limits",
+      "source_note": "FSA Handbook 2025–26, Volume 8, Chapter 4, Table 1A."
+    }
+  ],
+  "parent_plus_limits": [
+    {
+      "from_award_year": 2026,
+      "annual": 20000,
+      "aggregate": 65000,
+      "source": "https://fsapartners.ed.gov/sites/default/files/2026-05/FrequentlyAskedQuestionsLoanLimits.pdf",
+      "source_note": "PPLL-Q2: \"The Parent PLUS limit is $20,000 annually ($65,000 in aggregate) per dependent student\", for loans first disbursed on or after July 1, 2026 (parents already borrowing for the student before then may keep the legacy limit under the interim exception)."
+    },
+    {
+      "from_award_year": 2025,
+      "annual": null,
+      "aggregate": null,
+      "source": "https://fsapartners.ed.gov/sites/default/files/2026-05/FrequentlyAskedQuestionsLoanLimits.pdf",
+      "source_note": "Legacy limits: up to the cost of attendance minus other aid, no aggregate limit."
+    }
+  ],
+  "repayment": [
+    {
+      "from_award_year": 2026,
+      "plan": "Tiered Standard",
+      "terms": [
+        {
+          "below": 25000,
+          "years": 10
+        },
+        {
+          "below": 50000,
+          "years": 15
+        },
+        {
+          "below": 100000,
+          "years": 20
+        },
+        {
+          "below": null,
+          "years": 25
+        }
+      ],
+      "source": "https://www.govinfo.gov/content/pkg/FR-2026-05-01/html/2026-08556.htm",
+      "source_note": "Final regulations (91 FR 23768, May 1, 2026), 34 CFR 685.208(c)(1): loans made on or after July 1, 2026 repay over 10 years under $25,000, 15 under $50,000, 20 under $100,000, else 25, at least $50 a month."
+    }
+  ],
+  "comparison_term_years": 10
+}

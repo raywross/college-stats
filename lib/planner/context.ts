@@ -14,6 +14,8 @@ import type { School } from "@/lib/types";
 import type { StudentProfileData } from "@/lib/student-profile";
 import { currentCycle, cycleFor, cycleStartFromEntering, gradeOf, loadCycle } from "./cycle";
 import { stageOf } from "./stage";
+import { sameDocumentTotals } from "@/lib/early";
+import { redConflictCount } from "./rounds";
 import type { MergeResult } from "./tasks";
 import type { GeneratorInput, ListSort, PlanContext, PlanItem, PlanNudge, PlanOffer, PlanSchool, PlanTask, PlanVisit } from "./types";
 import type { ListRecord } from "@/lib/list-rules";
@@ -192,6 +194,8 @@ export function planSchoolFor(
     cycleStartYear: opts.studentCycleStart,
     editionIsLastCycle: dataStart !== null && dataStart < opts.studentCycleStart,
     cites,
+    type: school.type ?? null,
+    edTotals: sameDocumentTotals(school),
   };
 }
 
@@ -282,7 +286,7 @@ export function planContextFrom(
   plan: PlanData,
   extra: { student: PlanStudent | null; home: HomeLocation | null; viewer: PlanContext["viewer"] },
 ): PlanContext {
-  const { current, stages } = stageOf({ items: plan.items, tasks: plan.tasks, today: input.today });
+  const { current, stages } = stageOf({ items: plan.items, tasks: plan.tasks, today: input.today, conflicts: redConflictCount(plan.items, input.schools) });
   return {
     ...input,
     tasks: plan.tasks,

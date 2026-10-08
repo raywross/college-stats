@@ -65,7 +65,11 @@ export interface PlanContext {
 }
 /** The college facts stages read, cut from School on the server with citations already resolved
  *  (`citeField` → the serializable Citation the InfoTip takes). U1 defines and fills it; add fields additively. */
-export interface PlanSchool { unit_id: string; name: string; city: string | null; state: string | null; brand?: unknown; admitRate: number | null; admitRateCite: unknown; avgCost: number | null; avgCostCite: unknown; sticker: unknown; distanceMiles: number | null; links: import("../types").SchoolLinks | null; social: unknown; profile: import("../types").ReportedAdmissionProfile | null; logistics: import("../types").ReportedLogistics | null; aid: import("../types").ReportedAid | null; testPolicy: unknown; cycleStartYear: number; editionIsLastCycle: boolean; cites: Record<string, unknown> }
+export interface PlanSchool { unit_id: string; name: string; city: string | null; state: string | null; brand?: unknown; admitRate: number | null; admitRateCite: unknown; avgCost: number | null; avgCostCite: unknown; sticker: unknown; distanceMiles: number | null; links: import("../types").SchoolLinks | null; social: unknown; profile: import("../types").ReportedAdmissionProfile | null; logistics: import("../types").ReportedLogistics | null; aid: import("../types").ReportedAid | null; testPolicy: unknown; cycleStartYear: number; editionIsLastCycle: boolean; cites: Record<string, unknown>;
+  /** U3 (additive): public or private (a public university's EA stays beside a restrictive EA plan). */
+  type?: import("../types").SchoolType | null;
+  /** U3 (additive): C1 totals from the same CDS document as the ED counts (lib/early.ts sameDocumentTotals), for the ED advantage. */
+  edTotals?: { applicants: number | null; admitted: number | null; enrolled: number | null } | null }
 
 /* ------------------------------------------------------------------ */
 /* Additions (U1, beyond the brief's list; additive)                   */

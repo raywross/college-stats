@@ -376,6 +376,9 @@ export function checkGrid(doc: DocumentRecord, federal?: FederalGrad): { value: 
     return { value: null, problems: [{ group: "graduation", check: "item-failed", detail: e.message }] };
   }
   if (!cur || start === null) return { value: null, problems: [{ group: "graduation", check: "missing", detail: "no current grid" }] };
+  // Cohort lines printed as zeros with the completer lines blank (the Citadel's 2025–26 workbook) are an empty grid,
+  // not a class of nobody: nothing to publish, and no printed figure to cite the 4- and 5-year shares to.
+  if (cur.C[COLUMNS.length - 1] <= 0) return { value: null, problems: [{ group: "graduation", check: "missing", detail: "current grid is empty (final cohort 0)" }] };
   problems.push(...gridArithmetic(cur, "current grid"));
   if (prev) problems.push(...gridArithmetic(prev, "previous grid"));
   const fc = federal?.grad_cohorts ?? null;

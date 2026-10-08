@@ -7,9 +7,7 @@ const host = process.env.NEXT_PUBLIC_POSTHOG_HOST;
 
 function missingConfiguration(variable: "NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN" | "NEXT_PUBLIC_POSTHOG_HOST") {
   if (process.env.NODE_ENV === "development") {
-    throw new Error(
-      `${variable} variable required by PostHog is missing or un-configured, this causes events to be silently missed. This error stops appearing once ${variable} is configured`,
-    );
+    console.warn(`${variable} is not set, so PostHog server logs are off. Add it to .env.local to turn them on.`);
   }
   return null;
 }

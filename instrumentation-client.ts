@@ -3,18 +3,16 @@ import posthog from "posthog-js";
 const projectToken = process.env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN;
 const host = process.env.NEXT_PUBLIC_POSTHOG_HOST;
 
+function warnMissing(variable: "NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN" | "NEXT_PUBLIC_POSTHOG_HOST") {
+  if (process.env.NODE_ENV === "development") {
+    console.warn(`${variable} is not set, so PostHog is off and no events are sent. Add it to .env.local to turn it on.`);
+  }
+}
+
 if (!projectToken) {
-  if (process.env.NODE_ENV === "development") {
-    throw new Error(
-      "NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN variable required by PostHog is missing or un-configured, this causes events to be silently missed. This error stops appearing once NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN is configured",
-    );
-  }
+  warnMissing("NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN");
 } else if (!host) {
-  if (process.env.NODE_ENV === "development") {
-    throw new Error(
-      "NEXT_PUBLIC_POSTHOG_HOST variable required by PostHog is missing or un-configured, this causes events to be silently missed. This error stops appearing once NEXT_PUBLIC_POSTHOG_HOST is configured",
-    );
-  }
+  warnMissing("NEXT_PUBLIC_POSTHOG_HOST");
 } else {
   posthog.init(projectToken, {
     api_host: host,

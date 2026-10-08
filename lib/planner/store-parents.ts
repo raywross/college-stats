@@ -41,7 +41,7 @@ const FAILED = "That didn't work. Try again in a moment.";
 const SIGN_IN = "Sign in first.";
 
 /** The button copy for each reason (parents.md "Nudges"). */
-export const NUDGE_REASON_MESSAGE: Record<NudgeReason, string> = {
+const NUDGE_REASON_MESSAGE: Record<NudgeReason, string> = {
   not_signed_in: SIGN_IN,
   invalid_channel: FAILED,
   invalid_note: "That note is too long.",

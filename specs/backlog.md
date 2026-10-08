@@ -206,9 +206,10 @@ section on `/roadmap`.
 ## Product: accounts, planning tools, high schools, business
 Specified 2026-10-02 in [product/](product/README.md) from three idea documents plus research; build order and
 shared rules for user data are in that README. All user data lives only in Supabase (new migrations, dev first).
-- [ ] **Telemetry** ([product/telemetry.md](product/telemetry.md)): PostHog (cookieless, no replay, typed event
-  registry with a guard test) + Vercel Speed Insights; dashboards for traffic, engagement, funnels, retention,
-  performance, errors. Build first so later features ship measured.
+- [x] **Telemetry** (built 2026-10-07; dashboards and the PostHog projects are the owner's setup steps)
+  ([product/telemetry.md](product/telemetry.md)): PostHog (cookieless, no replay, typed event registry with a guard
+  test) + Vercel Speed Insights; `/privacy` page; dashboards for traffic, engagement, funnels, retention, performance,
+  errors. Built first so later features ship measured.
 - [x] **Accounts and households** (built 2026-10-05; Google sign-in waits for the new domain, under Platform) ([product/accounts.md](product/accounts.md)): Supabase Auth (magic link, Google),
   server-side sessions, households (guardians and students, invitations), RLS privacy model where a guardian's
   finances are never readable by a student, export and delete, 13+ only.

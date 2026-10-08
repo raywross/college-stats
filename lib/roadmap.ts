@@ -287,15 +287,6 @@ export const ROADMAP: RoadmapSpec[] = [
     status: "planned",
   },
   {
-    slug: "telemetry",
-    file: "specs/product/telemetry.md",
-    group: "business",
-    summary: "Measure how the site is used, without cookies and without ever recording a student's numbers, and report on it.",
-    complexity: 2,
-    complexityNote: "One analytics provider, a typed event registry with a guard test, and a set of dashboards.",
-    status: "planned",
-  },
-  {
     slug: "commercialization",
     file: "specs/product/commercialization.md",
     group: "business",

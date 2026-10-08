@@ -36,6 +36,7 @@ import { Dumbbell } from "@/components/charts/Dumbbell";
 import { InfoTip } from "@/components/ui/info-tip";
 import { cn } from "@/lib/utils";
 import { historyEvents } from "@/lib/events";
+import { track } from "@/lib/analytics";
 import { publishHistoryGroup, readHistoryGroup, subscribeHistoryGroup } from "@/lib/history-group-store";
 import { GRAD_RACE_SERIES } from "@/lib/history";
 import { rollingRate } from "@/lib/graduation-groups";
@@ -679,7 +680,16 @@ export function OverTime(props: OverTimeProps) {
             </span>
           )}
         </div>
-        <GroupPills groups={groups} value={active} onChange={ui.setGroup} colors={groupColors} />
+        <GroupPills
+          groups={groups}
+          value={active}
+          onChange={(g) => {
+            // The phone/inline picker's pick; the desktop side list tracks its own (HistoryGroupNav), so not in setGroup.
+            if (g !== active) track("trend_group_opened", { unit_id: history.unit_id, group: g });
+            ui.setGroup(g);
+          }}
+          colors={groupColors}
+        />
       </div>
 
       {active === "cost" && (

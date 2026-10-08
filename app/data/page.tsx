@@ -694,6 +694,13 @@ export default async function DataPage() {
           </Link>
           .
         </p>
+        <p className="text-sm">
+          How we measure the use of the site itself (never anything you enter) is described on the{" "}
+          <Link href="/privacy" className="font-semibold text-primary hover:underline">
+            privacy page
+          </Link>
+          .
+        </p>
 
         <div className="grid gap-4 pt-4 md:grid-cols-2">
           <div className="rounded-3xl border bg-card p-5 sm:p-6">

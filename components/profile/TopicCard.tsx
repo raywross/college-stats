@@ -1,4 +1,3 @@
-import Link from "next/link";
 import type { ReactNode } from "react";
 import { ArrowRight } from "lucide-react";
 import { DOMAINS } from "@/lib/metrics";
@@ -7,6 +6,7 @@ import { CARD_FOOTERS } from "@/lib/profile-cards";
 import type { Cited } from "@/lib/lineage";
 import type { TermKey } from "@/lib/glossary";
 import { MetricLabel } from "@/components/ui/info-tip";
+import { TrackedLink } from "@/components/analytics/TrackedLink";
 import { cn } from "@/lib/utils";
 
 /**
@@ -43,7 +43,13 @@ export function TopicCard({
         className
       )}
     >
-      <Link href={href} className="absolute inset-0 z-10 rounded-3xl" aria-label={`${t.label}, in detail`} />
+      <TrackedLink
+        href={href}
+        event="profile_card_opened"
+        properties={{ unit_id: unitId, topic, from: "card" }}
+        className="absolute inset-0 z-10 rounded-3xl"
+        aria-label={`${t.label}, in detail`}
+      />
       <div className="pointer-events-none relative z-20 flex flex-1 flex-col [&_[data-live]]:pointer-events-auto [&_a]:pointer-events-auto [&_button]:pointer-events-auto">
         <p className="flex items-center gap-2 text-[11px] font-bold tracking-[0.18em] uppercase" style={{ color }}>
           <span className="h-1.5 w-5 shrink-0 rounded-full" style={{ backgroundColor: color }} />

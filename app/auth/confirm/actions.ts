@@ -2,6 +2,7 @@
 
 import { authConfigured } from "@/lib/auth";
 import { createServerSupabase } from "@/lib/supabase-server";
+import { trackSignupIfNew } from "@/lib/signup-events";
 
 /**
  * Finishes a magic-link sign-in (app/auth/confirm): stores the session the link brought back as the site's httpOnly
@@ -21,5 +22,7 @@ export async function completeSignIn(accessToken: string, refreshToken: string):
     await supabase.auth.signOut({ scope: "local" });
     return { ok: false };
   }
+  // A first confirmation counts as a sign-up. The link's own next path isn't known here, so has_invite is false.
+  await trackSignupIfNew(data.user, "magic_link", "");
   return { ok: true };
 }

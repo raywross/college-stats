@@ -7,7 +7,6 @@ import { MAX_COMPARE, clearCompare, toggleCompare, useCompareIds } from "@/lib/c
 import { useSchoolEntries } from "@/lib/school-api";
 import { Crest } from "@/components/school/Crest";
 import { AddToListButton } from "@/components/lists/AddToListButton";
-import posthog from "posthog-js";
 
 /** Floating pill that follows you around while you build a comparison. Phones use the tab bar's Compare badge instead. */
 export function CompareTray() {
@@ -28,10 +27,7 @@ export function CompareTray() {
               <button
                 key={s.id}
                 type="button"
-                onClick={() => {
-                  const compareIds = toggleCompare(s.id);
-                  posthog.capture("compare_school_removed", { compare_count: compareIds.length });
-                }}
+                onClick={() => toggleCompare(s.id)}
                 className="group relative rounded-lg ring-2 ring-popover transition-transform hover:z-10 hover:-translate-y-0.5"
                 aria-label={`Remove ${s.name} from compare`}
                 title={`Remove ${s.name}`}
@@ -56,10 +52,7 @@ export function CompareTray() {
         </div>
         <button
           type="button"
-          onClick={() => {
-            posthog.capture("compare_cleared", { compare_count: ids.length });
-            clearCompare();
-          }}
+          onClick={clearCompare}
           className="rounded-full px-2 py-1 text-xs font-medium text-muted-foreground hover:text-foreground"
         >
           Clear
@@ -67,7 +60,6 @@ export function CompareTray() {
         <AddToListButton ids={ids} variant="pill" label="Save these to my list" className="hidden sm:inline-flex" />
         <Link
           href={`/compare?ids=${ids.join(",")}`}
-          onClick={() => posthog.capture("comparison_opened", { compare_count: ids.length })}
           className="inline-flex h-10 items-center gap-1.5 rounded-full bg-primary px-4 text-sm font-semibold text-primary-foreground shadow-md transition-transform hover:scale-[1.03] active:scale-95"
         >
           Compare{ids.length > 1 ? ` ${ids.length}` : ""}

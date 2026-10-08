@@ -1,6 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { track } from "@/lib/analytics";
+import { scoreInRange } from "@/lib/discovery-events";
 import { RangeBar } from "@/components/charts/RangeBar";
 import { InfoTip } from "@/components/ui/info-tip";
 import { scoreScale } from "@/lib/score-scale";
@@ -62,6 +64,24 @@ export function ScoreChecker({
   const valid =
     raw !== "" && Number.isFinite(value) && (test === "sat" ? value >= 400 && value <= 1600 : value >= 1 && value <= 36);
   const you = valid ? Math.round(value) : null;
+
+  // Telemetry (specs/product/telemetry.md): that the checker was used and whether the entry fell in this college's
+  // middle 50%, never the score. Only typed entries count (`typed`), not a value prefilled from the profile; the
+  // debounce waits out a number being typed, and each distinct entry is reported once.
+  const [typed, setTyped] = useState(false);
+  const reported = useRef(new Set<string>());
+  const rangeLow = (test === "sat" ? ranges.satTotal : ranges.act)?.[0];
+  const rangeHigh = (test === "sat" ? ranges.satTotal : ranges.act)?.[1];
+  useEffect(() => {
+    if (!typed || you === null || rangeLow === undefined || rangeHigh === undefined) return;
+    const entry = `${test}:${you}`;
+    if (reported.current.has(entry)) return;
+    const timer = setTimeout(() => {
+      reported.current.add(entry);
+      track("score_checked", { test, in_range: scoreInRange(you, [rangeLow, rangeHigh]) === true });
+    }, 800);
+    return () => clearTimeout(timer);
+  }, [typed, test, you, rangeLow, rangeHigh]);
   const satAxis = scoreScale("sat", ranges.satTotal?.[0], test === "sat" ? you : null);
   const sectionAxis = scoreScale("sat-section", ranges.satReading?.[0], ranges.satMath?.[0]);
   const actAxis = scoreScale("act", ranges.act?.[0], test === "act" ? you : null);
@@ -123,6 +143,7 @@ export function ScoreChecker({
             onChange={(e) => {
               setRaw(e.target.value.replace(/[^0-9]/g, "").slice(0, 4));
               setUsingProfile(false);
+              setTyped(true);
             }}
             className="h-9 w-28 rounded-full border bg-card px-4 text-sm font-semibold tabular-nums outline-none focus:border-primary/50 focus:ring-4 focus:ring-primary/15"
           />

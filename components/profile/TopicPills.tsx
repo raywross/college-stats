@@ -1,6 +1,7 @@
 "use client";
 
-import { overviewHref, topicHref, type TopicKey } from "@/lib/profile-topics";
+import { isTopicKey, overviewHref, topicHref, type TopicKey } from "@/lib/profile-topics";
+import { track } from "@/lib/analytics";
 import { PillRow, type PillItem } from "@/components/ui/pill-row";
 
 export interface TopicPill {
@@ -18,5 +19,9 @@ export function TopicPills({ unitId, current, pills, className }: { unitId: stri
     { key: "overview", label: "Overview", href: overviewHref(unitId) },
     ...pills.map((t) => ({ key: t.key, label: t.label, href: topicHref(unitId, t.key), color: t.color })),
   ];
-  return <PillRow items={items} current={current} ariaLabel="Profile topics" className={className} />;
+  // Overview isn't a card; picking the page you're already on isn't an opening either.
+  const onSelect = (key: string) => {
+    if (key !== current && isTopicKey(key)) track("profile_card_opened", { unit_id: unitId, topic: key, from: "pill" });
+  };
+  return <PillRow items={items} current={current} ariaLabel="Profile topics" className={className} onSelect={onSelect} />;
 }

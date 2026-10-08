@@ -19,7 +19,7 @@ function load() {
     .catch(() => null)
     .then((me) => {
       // A failed check shows "Sign in" rather than nothing; the account pages decide for real.
-      current = me ?? { configured: true, signedIn: false, name: null, email: null };
+      current = me ?? { configured: true, signedIn: false, id: null, name: null, email: null };
       listeners.forEach((l) => l());
     })
     .finally(() => {

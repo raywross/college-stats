@@ -57,7 +57,7 @@ export default async function HistoryPage({ params, searchParams }: Props) {
       profile={p}
       topic={TOPIC}
       items={[]}
-      aside={<HistoryGroupNav groups={groups} colors={colors} initial={initialGroup} />}
+      aside={<HistoryGroupNav unitId={school.unit_id} groups={groups} colors={colors} initial={initialGroup} />}
       sources={<HistorySourceNote keys={HISTORY_SERIES} files={history.files} className="mt-6" />}
     >
       <Panel level={1} domain={null} eyebrow="Over time" title="How it's changed" takeaway={historyTakeaway(history.history, history.files)} school={school} fields={[]}>

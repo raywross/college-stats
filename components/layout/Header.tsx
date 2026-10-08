@@ -78,7 +78,7 @@ export function Header() {
 
         <div className="ml-auto hidden items-center gap-1.5 md:flex">
           {showHeaderSearch && (
-            <SchoolSearch size="compact" placeholder="Jump to a school…" className="hidden w-64 lg:block" />
+            <SchoolSearch source="header" size="compact" placeholder="Jump to a school…" className="hidden w-64 lg:block" />
           )}
           <button
             type="button"
@@ -99,7 +99,7 @@ export function Header() {
       {/* Tablet search row (phones search from the tab bar) */}
       {searchOpen && (
         <div className="hidden border-t px-4 py-3 md:block lg:hidden">
-          <SchoolSearch size="compact" autoFocus onNavigate={() => setSearchOpen(false)} />
+          <SchoolSearch source="header" size="compact" autoFocus onNavigate={() => setSearchOpen(false)} />
         </div>
       )}
     </header>

@@ -66,7 +66,7 @@ server action ──trackServer("signup_completed", {…}, userId)──► lib/
   name against the registry, drops any property not registered for that event, and does nothing when no sink is
   installed.
 - **`components/analytics/AnalyticsProvider.tsx`** (client, rendered once in `app/layout.tsx` inside `<Suspense>`)
-  loads `posthog-js` with a dynamic import only when `NEXT_PUBLIC_POSTHOG_KEY` is set and the browser sends no
+  loads `posthog-js` with a dynamic import only when `NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN` is set and the browser sends no
   GPC/DNT signal, initializes it with the privacy configuration, installs the sink, captures `$pageview` on every
   pathname change (not on query-string changes: Explore's filters are their own event), derives `school_viewed` and
   `roadmap_viewed` from the path, and identifies the signed-in user from `/api/me` (which gains the opaque user id).
@@ -106,6 +106,7 @@ has a denied token (`gpa`, `sat`, `act`, `score`, `income`, `agi`, `asset`, `ema
 | `term_opened` | `term` (glossary key) | `InfoTip`, `Term` when opened | Glossary value |
 | `compare_changed` | `action`: add / remove / clear; `count` (after the change) | `toggleCompare()`, `clearCompare()` in `lib/compare.ts` | Compare use |
 | `compare_viewed` | `count`, `preset`: bool (the URL's colleges differed from the saved list: a link from a profile or the home page) | `CompareViewed` on `/compare`, once per set of ids | |
+| `major_compared` | `field` (the public 2-digit CIP family), `count` | Compare's "Your major" form, on submit | Which fields get compared; never a student's own major |
 | `trend_group_opened` | `unit_id`, `group` | The Over-time page's group pickers (side list and phone picker), not the store | Over-time charts |
 | `roadmap_viewed` | `slug` | Provider, from `/roadmap/{slug}` | Interest in planned features (a useful signal for prioritizing) |
 | `signup_started` (server) | `method`: magic_link / password; `role_hint`: student / guardian / counselor / none; `has_invite`: bool | `requestMagicLink` and `signUpWithPassword` when creating an account | Accounts |
@@ -132,7 +133,7 @@ observations) is written into `data/reports/usage-{month}.md` by hand from `data
 now; a scheduled job could draft it from PostHog's API later.
 
 ## Environments
-- Separate PostHog projects for **dev** and **production**; the key comes from `NEXT_PUBLIC_POSTHOG_KEY` and
+- Separate PostHog projects for **dev** and **production**; the key comes from `NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN` and
   `NEXT_PUBLIC_POSTHOG_HOST` (default `https://us.i.posthog.com`; the first `NEXT_PUBLIC_` variables: the project
   key is a public write-only token, fine to expose). Unset → analytics code is a no-op, so CI, previews without the
   variable, and local work send nothing. The server client reads the same two variables.
@@ -179,7 +180,7 @@ no-op), so it's safe to merge first.
 3. Copy each project's **Project API key** (Settings → Project → Project API key, starts `phc_`).
 
 ### 2. Environment variables
-| Where | `NEXT_PUBLIC_POSTHOG_KEY` | `NEXT_PUBLIC_POSTHOG_HOST` |
+| Where | `NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN` | `NEXT_PUBLIC_POSTHOG_HOST` |
 |---|---|---|
 | `.env.local` (each developer; copied into worktrees by `.worktreeinclude`) | dev key (optional: leave unset to send nothing) | `https://us.i.posthog.com` |
 | Vercel → Settings → Environment Variables → **Preview** | dev key | `https://us.i.posthog.com` |
@@ -288,6 +289,10 @@ INP, CLS (the "Real Experience Score" is the headline). Copy the p75 values into
   components), `components/analytics/ErrorTracker.tsx`, `lib/analytics-server.ts` (`posthog-node`),
   `next.config.ts` rewrites for `/ingest`, `app/layout.tsx` (provider + `@vercel/speed-insights`), `app/error.tsx`,
   `app/global-error.tsx`, `app/privacy/page.tsx`, `tests/analytics.test.mts`, `data/reports/usage-template.md`.
+- From the PostHog wizard install (#100, kept): `instrumentation.ts` (server-side log export to PostHog over
+  OpenTelemetry, used by `app/api/revalidate/route.ts`), and the SDK's exception capture (`capture_exceptions`), now
+  set in the provider's init. Its `instrumentation-client.ts` and inline `posthog.capture` calls were replaced by the
+  provider and registry (decision 5).
 
 ## Build order
 1. **Foundation:** registry, provider, server client, rewrites, layout, error pages, `/api/me` id, tests.
@@ -305,3 +310,9 @@ INP, CLS (the "Real Experience Score" is the headline). Copy the p75 values into
    dropped rather than sent without a result count.
 4. Identified users' events disable GeoIP entirely rather than trimming it to country and region: PostHog's GeoIP
    fields can't be reduced per event, and a signed-in minor's location is worth less than the rule's simplicity.
+5. (2026-10-08) The PostHog wizard's install (#100) reached main first, with the SDK defaults (cookie, autocapture) and
+   five inline events. Reconciled in favor of this spec: one init, in the provider, with the privacy settings above; the
+   wizard's events map to the registry (`search_performed`, `compare_changed`, `compare_viewed`, and a new
+   `major_compared`); its exception capture and server log export stay; and the variable names it introduced
+   (`NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN`, `NEXT_PUBLIC_POSTHOG_HOST`) are the ones the code reads, since Vercel already
+   has them.

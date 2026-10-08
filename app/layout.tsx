@@ -61,7 +61,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             <Footer />
             <CompareTray />
             <BottomNav />
-            {/* Product analytics (specs/product/telemetry.md): a no-op without NEXT_PUBLIC_POSTHOG_KEY. */}
+            {/* Product analytics (specs/product/telemetry.md): a no-op without NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN. */}
             <Suspense fallback={null}>
               <AnalyticsProvider />
             </Suspense>

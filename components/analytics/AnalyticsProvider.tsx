@@ -21,7 +21,7 @@ import {
  * Loads posthog-js and connects it to lib/analytics.ts (specs/product/telemetry.md "Architecture"). Rendered once in
  * app/layout.tsx (and in app/global-error.tsx, which replaces the layout). Renders nothing.
  *
- * Without NEXT_PUBLIC_POSTHOG_KEY, or when the browser sends Global Privacy Control or Do Not Track, nothing is
+ * Without NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN, or when the browser sends Global Privacy Control or Do Not Track, nothing is
  * loaded and nothing is sent. Otherwise: page views on every pathname change (not query changes), `school_viewed` and
  * `roadmap_viewed` from the path, and the signed-in account's opaque id. The only file that may import posthog-js.
  */
@@ -37,7 +37,7 @@ declare global {
 
 /** The project key when analytics may run in this browser, else null. */
 function allowedKey(): string | null {
-  const key = process.env.NEXT_PUBLIC_POSTHOG_KEY;
+  const key = process.env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN;
   if (!key || typeof window === "undefined") return null;
   if (navigator.globalPrivacyControl === true || navigator.doNotTrack === "1" || window.doNotTrack === "1") return null;
   return key;
@@ -77,7 +77,9 @@ function loadPostHog(key: string): Promise<AnalyticsSink | null> {
         rageclick: false,
         capture_heatmaps: false,
         capture_dead_clicks: false,
-        capture_exceptions: false,
+        // Unhandled errors go to PostHog's error tracking as $exception (message and stack, no form values), beside
+        // the registry's error_shown; it came in with the wizard install (#100) and is kept.
+        capture_exceptions: true,
         capture_pageview: false,
         capture_pageleave: true,
         disable_session_recording: true,

@@ -6,6 +6,7 @@ import { SLOT_COLORS } from "@/lib/brand";
 import { money, num, pct } from "@/lib/format";
 import { MetricLabel, Term } from "@/components/ui/info-tip";
 import type { TermKey } from "@/lib/glossary";
+import { track } from "@/lib/analytics";
 
 /**
  * Compare "Your major" (specs/data-expansion/majors.md, field-of-study.md): pick a broad field (2-digit CIP family)
@@ -32,6 +33,8 @@ export function YourMajor({ ids, schools, options, stats, initial }: YourMajorPr
     e.preventDefault();
     if (!draft || !stats[draft]) return;
     setSelected(draft);
+    // The field is a public 2-digit CIP family, never a student's own major (specs/product/telemetry.md).
+    track("major_compared", { field: draft, count: schools.length });
     const url = new URL(window.location.href);
     url.searchParams.set("major", draft);
     window.history.replaceState(null, "", url);

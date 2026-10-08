@@ -11,13 +11,13 @@ import type { AnalyticsEvents, ServerAnalyticsEvent } from "./analytics.ts";
 
 let client: PostHog | null = null;
 
-/** NEXT_PUBLIC_POSTHOG_KEY is set: events are sent. Unset (CI, previews, local work): every call is a no-op. */
+/** NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN is set: events are sent. Unset (CI, previews, local work): every call is a no-op. */
 export function analyticsConfigured(): boolean {
-  return Boolean(process.env.NEXT_PUBLIC_POSTHOG_KEY);
+  return Boolean(process.env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN);
 }
 
 function getClient(): PostHog | null {
-  const key = process.env.NEXT_PUBLIC_POSTHOG_KEY;
+  const key = process.env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN;
   if (!key) return null;
   // flushAt 1 / flushInterval 0: serverless functions end right after the response, so nothing may wait in a batch.
   client ??= new PostHog(key, {

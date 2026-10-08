@@ -316,7 +316,7 @@ async function loadServerModule() {
 
 test("trackServer() without a key resolves without creating a client or touching the network", async () => {
   const { analyticsConfigured, trackServer } = await loadServerModule();
-  const saved = process.env.NEXT_PUBLIC_POSTHOG_KEY;
+  const saved = process.env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN;
   const realFetch = globalThis.fetch;
   let fetched = 0;
   globalThis.fetch = (async () => {
@@ -324,14 +324,14 @@ test("trackServer() without a key resolves without creating a client or touching
     throw new Error("no network in tests");
   }) as typeof fetch;
   try {
-    delete process.env.NEXT_PUBLIC_POSTHOG_KEY;
+    delete process.env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN;
     assert.equal(analyticsConfigured(), false);
     await trackServer("signup_started", { method: "password", role_hint: "none", has_invite: false });
     assert.equal(g.__fakePostHog!.constructed, 0);
     assert.equal(fetched, 0);
 
     // With a key: registered properties only; anonymous events get a random id and no person profile.
-    process.env.NEXT_PUBLIC_POSTHOG_KEY = "phc_test";
+    process.env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN = "phc_test";
     assert.equal(analyticsConfigured(), true);
     const props = { method: "magic_link", role_hint: "student", has_invite: true, email: "a@b.c" } as unknown as {
       method: "magic_link";
@@ -359,7 +359,7 @@ test("trackServer() without a key resolves without creating a client or touching
     warn.mock.restore();
   } finally {
     globalThis.fetch = realFetch;
-    if (saved === undefined) delete process.env.NEXT_PUBLIC_POSTHOG_KEY;
-    else process.env.NEXT_PUBLIC_POSTHOG_KEY = saved;
+    if (saved === undefined) delete process.env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN;
+    else process.env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN = saved;
   }
 });

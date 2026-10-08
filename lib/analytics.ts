@@ -33,6 +33,8 @@ export interface AnalyticsEvents {
   term_opened: { term: string };
   compare_changed: { action: "add" | "remove" | "clear"; count: number };
   compare_viewed: { count: number; preset: boolean };
+  /** Compare's "Your major": `field` is the public 2-digit CIP family picked, never a student's own major. */
+  major_compared: { field: string; count: number };
   trend_group_opened: { unit_id: string; group: string };
   roadmap_viewed: { slug: string };
   signup_started: { method: SignupMethod; role_hint: RoleHint; has_invite: boolean };
@@ -81,6 +83,7 @@ export const EVENTS = {
   term_opened: { properties: ["term"], side: "client", why: "Glossary value" },
   compare_changed: { properties: ["action", "count"], side: "client", why: "Compare use" },
   compare_viewed: { properties: ["count", "preset"], side: "client", why: "Compare views, from links or the saved list" },
+  major_compared: { properties: ["field", "count"], side: "client", why: "Which fields get compared in Your major" },
   trend_group_opened: { properties: ["unit_id", "group"], side: "client", why: "Which Over-time charts get opened" },
   roadmap_viewed: { properties: ["slug"], side: "client", why: "Interest in planned features" },
   signup_started: { properties: ["method", "role_hint", "has_invite"], side: "server", why: "Accounts: sign-ups begun" },

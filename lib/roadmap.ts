@@ -266,6 +266,17 @@ export const ROADMAP: RoadmapSpec[] = [
     status: "planned",
   },
   {
+    slug: "common-app",
+    file: "specs/data-expansion/common-app.md",
+    group: "planning",
+    summary:
+      "Deadlines, fees, essays, recommendations, and this cycle's test policy for the thousand colleges that take the Common App, plus how the application season is going nationally months before federal data, once Common App agrees to the use.",
+    complexity: 2,
+    complexityNote:
+      "A PDF grid parsed by column, a name-to-id join, a block of fields and a source, one profile card, six filters, and a permission letter that sets the start date.",
+    status: "planned",
+  },
+  {
     slug: "scattergrams",
     file: "specs/product/scattergrams.md",
     group: "high-school",

@@ -554,3 +554,26 @@ test("guard: a follows trigger that ignores updates keeps following, and the che
   await asUser(db, alice, "update public.list_items set updates = false where list_id = $1", [aliceList]);
   assert.deepEqual(await follows(db, alice), ["243744"], "broken: the follow stays after updates is turned off");
 });
+
+test("parents edit by default (20261008150000): the creator and an invited guardian can edit; the student's switch turns it off and back on", async () => {
+  const { db, mom, alice, eve, household, aliceStudent } = await world();
+  const canEdit = async (who: string) => (await one(asUser<{ v: boolean }>(db, who, "select public.can_edit_student($1) as v", [aliceStudent]))).v;
+  // Mom created the household: an editor from the start.
+  assert.equal(await canEdit(mom), true);
+  // Eve, invited by a guardian with no explicit choice (the short signature), joins as an editor too.
+  await accept(db, eve, (await rpc<Inv>(db, mom, "public.create_invitation($1, 'eve@example.com', 'guardian')", [household])).token);
+  assert.equal(await canEdit(eve), true);
+  // The student's switch: off for every guardian, then on again (what setParentsCanEdit does per guardian).
+  const guardians = await asUser<{ id: string }>(db, alice, "select id from public.household_members where household_id = $1 and role = 'guardian' and status = 'active'", [household]);
+  for (const g of guardians) await asUser(db, alice, "select public.set_member_can_edit($1, false)", [g.id]);
+  assert.equal(await canEdit(mom), false);
+  assert.equal(await canEdit(eve), false);
+  for (const g of guardians) await asUser(db, alice, "select public.set_member_can_edit($1, true)", [g.id]);
+  assert.equal(await canEdit(mom), true);
+  // Guard: the migration is what makes the creator an editor; without it, Mom would start view-only.
+  const before = await boot("20261008150000_parents_edit_by_default.sql");
+  const m2 = await createUser(before, { email: "m2@example.com", birthYear: 1978, roleHint: "guardian" });
+  const h2 = await rpc<string>(before, m2, "public.create_household('Before', 'guardian')");
+  const row = await one(asUser<{ can_edit: boolean }>(before, m2, "select can_edit from public.household_members where household_id = $1 and user_id = $2", [h2, m2]));
+  assert.equal(row.can_edit, false);
+});

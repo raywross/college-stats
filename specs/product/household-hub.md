@@ -374,11 +374,16 @@ Alexandra Ross  [Student] Class of 2028 (call)        [⋯]   ← person area (P
 2. Deploy the Edge Function and set its secrets (`specs/supabase.md` "Edge Functions"); set `INVITE_FUNCTION_SECRET`
    in Vercel. Until then, invited people see the sign-in prompt and the earlier accept flow still works.
 
-## Guardians and editing (owner feedback 2026-10-08)
-The owner's first pass at the planner: *a parent should be able to make changes to a student's information.* Today a
-guardian can edit a student's list, plan, and numbers only when they manage the student (added by name, no account)
-or the student granted it (`can_edit`, the student's switch in the person menu); a guardian who creates the household
-or is invited by another guardian starts view-only. Done now: when a student invites a guardian, the "Let them edit"
-box starts ticked. Proposed, pending the owner's go-ahead (it is a permission change, so it was not written without
-one): a migration that makes the household's creating guardian an editor, makes an invited guardian an editor unless
-the inviter unticks it (whoever invites), and backfills today's guardian rows; the student keeps the switch to revoke.
+## Parents can edit: the student's switch (owner decision 2026-10-08)
+The owner's first pass at the planner: *a parent should be able to make changes to a student's information*, and
+*it should be on by default when a student is added, so they'd have to choose to turn it off; these are minors.*
+- **On by default.** `20261008150000_parents_edit_by_default.sql`: the guardian who creates a household is an
+  editor; an invited guardian joins as an editor unless the inviter unticks "Let them edit" (the student's invite
+  form starts with it ticked; a guardian inviting another guardian no longer forces view-only); every active guardian
+  row at the time of the migration became an editor. `can_edit` stays per guardian membership underneath.
+- **The student's switch.** On the student's own Numbers page (their profile), a "Parents can edit" switch
+  (`components/account/ParentsCanEdit.tsx`, action `setParentsCanEdit`) turns every guardian in their household to
+  view-only or back, through `set_member_can_edit` for each guardian (the function still checks the caller is the
+  household's student). The per-guardian choice in the person menu remains for finer control.
+- **Unchanged:** a managed student (no account) is edited by whoever manages them; the student's own account, text
+  consent, and follows stay the student's alone.

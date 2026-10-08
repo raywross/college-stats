@@ -4,8 +4,9 @@ import { connection } from "next/server";
 import { AuthUnavailable } from "@/components/account/AuthUnavailable";
 import { PersonHeader } from "@/components/account/PersonHeader";
 import { StudentNumbers } from "@/components/me/StudentNumbers";
+import { ParentsCanEdit } from "@/components/account/ParentsCanEdit";
 import { AccountsSetupError, authConfigured, requireUser } from "@/lib/auth";
-import { personPage, scheduleStudentReadLog } from "@/lib/households";
+import { myHouseholds, personPage, scheduleStudentReadLog } from "@/lib/households";
 import { profileFor } from "@/lib/student-profile-store";
 
 export const metadata: Metadata = { title: "Their numbers", robots: { index: false } };
@@ -36,10 +37,13 @@ export default async function PersonNumbersPage({ params }: { params: Promise<{ 
   }
   if (!profile) notFound();
   if (profile.relation === "guardian") await scheduleStudentReadLog(profile.student.id, "student_profiles");
+  // The student's own page carries the switch over their parents' edit access (on by default; they can turn it off).
+  const guardians = profile.relation === "self" ? (await myHouseholds()).flatMap((h) => h.members.filter((m) => m.role === "guardian" && m.member_id !== null)) : [];
 
   return (
     <div className="space-y-6">
       <PersonHeader id={id} person={person} active="numbers" />
+      {guardians.length > 0 && <ParentsCanEdit on={guardians.every((g) => g.can_edit)} guardians={guardians.length} />}
       <StudentNumbers profile={profile} />
     </div>
   );

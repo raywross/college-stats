@@ -75,8 +75,8 @@ export interface PlanSchool { unit_id: string; name: string; city: string | null
    * when it reports one, for `lib/planner/suggest.ts`'s position check. The citation lives in `cites` (`derived.sat_total`,
    * `admissions.act_composite_25_75`), never a separate field, per model.md's "add fields additively".
    */
-  satRange: [number, number] | null;
-  actRange: [number, number] | null;
+  satRange?: [number, number] | null;
+  actRange?: [number, number] | null;
 }
 
 /* ------------------------------------------------------------------ */

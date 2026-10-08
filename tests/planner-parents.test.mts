@@ -20,7 +20,7 @@ import type { PlanTask } from "../lib/planner/types.ts";
 /* Fixtures                                                            */
 /* ------------------------------------------------------------------ */
 
-type Item = StageInput["items"][number] & { unit_id: string; dream: boolean; committed_on: string | null };
+type Item = StageInput["items"][number] & { unit_id: string; dream: boolean; committed_on: string | null; added_at?: string | null };
 
 let n = 0;
 const item = (over: Partial<Item> = {}): Item => ({
@@ -148,6 +148,11 @@ test("stuckSignals: no activity for 14 days in season, off with recent activity"
   assert.ok(stale.find((s) => s.id === "no_activity"));
   const fresh = signalsFor({ items: [item({ category: "likely" })], tasks: [task({ done_at: "2026-10-05T00:00:00Z" })] });
   assert.ok(!fresh.find((s) => s.id === "no_activity"));
+  // A college added this week is activity too: a brand-new plan isn't "stuck" on day one.
+  const justAdded = signalsFor({ items: [item({ category: "likely", added_at: "2026-10-06T12:00:00Z" })], tasks: [] });
+  assert.ok(!justAdded.find((s) => s.id === "no_activity"));
+  const addedLongAgo = signalsFor({ items: [item({ category: "likely", added_at: "2026-08-01T12:00:00Z" })], tasks: [] });
+  assert.ok(addedLongAgo.find((s) => s.id === "no_activity"));
 });
 
 test("stuckSignals: an ED college with no shared estimate, off once one's shared", () => {

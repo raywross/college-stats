@@ -41,7 +41,9 @@ function yearOf(cite: unknown): string | null {
 
 function fallYear(cite: unknown): string {
   const y = yearOf(cite);
-  return y ? ` (fall ${y})` : "";
+  if (!y) return "";
+  // Lineage years are usually labels already ("Fall 2024"); only a bare year gets the season word.
+  return /^\d{4}$/.test(y) ? ` (fall ${y})` : ` (${y.charAt(0).toLowerCase()}${y.slice(1)})`;
 }
 
 interface ScoreCheck {

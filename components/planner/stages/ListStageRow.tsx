@@ -52,7 +52,8 @@ export function ListStageRow({
   return (
     <li className="flex flex-wrap items-center gap-2 p-3 sm:px-4">
       <Crest id={unitId} name={name} size="sm" brand={brand} />
-      <div className="min-w-0 flex-1">
+      {/* basis-48: on phones the name block keeps a readable width and the chips wrap under it instead of squeezing it */}
+      <div className="min-w-0 flex-1 basis-48">
         <Link href={`/schools/${unitId}`} className="font-display font-bold break-words hover:text-primary">
           {name}
         </Link>

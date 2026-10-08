@@ -59,7 +59,8 @@ function nextTaskLine(input: SummaryInput): string | null {
   const t = nextTask(input.tasks as PlanTask[], input.today);
   if (!t) return null;
   const item = t.item_id ? input.items.find((i) => i.id === t.item_id) : null;
-  const name = item ? input.schools[item.unit_id]?.name ?? "a college" : "shared";
+  // A college task names the college; a list-wide task (the cycle's or the stage's) names itself.
+  const name = item ? (input.schools[item.unit_id]?.name ?? "a college") : t.title;
   const date = dayLabel(taskDate(t)!, input.today);
   const round = item?.round ? ROUND_SHORT[item.round] : null;
   return `next: ${name}, ${date}${round ? ` (${round})` : ""}`;
@@ -78,7 +79,8 @@ export interface StuckSignal {
   link?: string | null;
 }
 
-export type StuckItem = Pick<PlanItem, "id" | "unit_id" | "category" | "status" | "outcome" | "round" | "committed_on">;
+/** `added_at` is optional so callers with older rows still compile; when present, adding a college counts as activity. */
+export type StuckItem = Pick<PlanItem, "id" | "unit_id" | "category" | "status" | "outcome" | "round" | "committed_on"> & { added_at?: string | null };
 export type StuckTask = Pick<PlanTask, "id" | "item_id" | "kind" | "due_on" | "window_start" | "window_end" | "done_at" | "dismissed" | "snoozed_until" | "source" | "created_at" | "title" | "orphaned">;
 export type StuckVisit = Pick<PlanVisit, "created_at" | "updated_at">;
 
@@ -128,6 +130,7 @@ function noActivitySignal(input: StuckSignalsInput): StuckSignal | null {
     if (t.source === "own" && t.created_at) stamps.push(t.created_at);
   }
   for (const v of input.visits) stamps.push(v.updated_at ?? v.created_at);
+  for (const i of input.items) if (i.added_at) stamps.push(i.added_at); // a college added this week is activity too
   const last = stamps.sort().at(-1) ?? null;
   const cutoff = addDaysIso(input.today, -14);
   if (last !== null && last.slice(0, 10) > cutoff) return null;

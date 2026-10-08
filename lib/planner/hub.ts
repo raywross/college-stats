@@ -65,7 +65,10 @@ type SummaryRow = {
   list_items: (Pick<PlanItem, "id" | "unit_id" | "category" | "status" | "outcome" | "round" | "enrolling" | "visited_on" | "dream"> & {
     plan_visits: Pick<PlanVisit, "on_date">[];
   })[];
-  plan_tasks: Pick<PlanTask, "item_id" | "kind" | "due_on" | "window_start" | "window_end" | "done_at" | "dismissed" | "snoozed_until" | "orphaned">[];
+  plan_tasks: Pick<
+    PlanTask,
+    "id" | "item_id" | "key" | "kind" | "title" | "due_on" | "window_start" | "window_end" | "assignee" | "done_at" | "dismissed" | "snoozed_until" | "orphaned" | "position" | "created_at"
+  >[];
 };
 
 /**
@@ -82,7 +85,7 @@ export async function summaryLines(students: { id: string; gradYear: number | nu
     const { data, error } = await supabase
       .from("lists")
       .select(
-        "student_id, list_items!list_items_list_id_fkey(id, unit_id, category, status, outcome, round, enrolling, visited_on, dream, plan_visits!plan_visits_item_id_fkey(on_date)), plan_tasks!plan_tasks_list_id_fkey(item_id, kind, due_on, window_start, window_end, done_at, dismissed, snoozed_until, orphaned)",
+        "student_id, list_items!list_items_list_id_fkey(id, unit_id, category, status, outcome, round, enrolling, visited_on, dream, plan_visits!plan_visits_item_id_fkey(on_date)), plan_tasks!plan_tasks_list_id_fkey(id, item_id, key, kind, title, due_on, window_start, window_end, assignee, done_at, dismissed, snoozed_until, orphaned, position, created_at)",
       )
       .in(
         "student_id",

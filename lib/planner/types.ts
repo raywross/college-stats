@@ -65,7 +65,15 @@ export interface PlanContext {
 }
 /** The college facts stages read, cut from School on the server with citations already resolved
  *  (`citeField` → the serializable Citation the InfoTip takes). U1 defines and fills it; add fields additively. */
-export interface PlanSchool { unit_id: string; name: string; city: string | null; state: string | null; brand?: unknown; admitRate: number | null; admitRateCite: unknown; avgCost: number | null; avgCostCite: unknown; sticker: unknown; distanceMiles: number | null; links: import("../types").SchoolLinks | null; social: unknown; profile: import("../types").ReportedAdmissionProfile | null; logistics: import("../types").ReportedLogistics | null; aid: import("../types").ReportedAid | null; testPolicy: unknown; cycleStartYear: number; editionIsLastCycle: boolean; cites: Record<string, unknown> }
+export interface PlanSchool { unit_id: string; name: string; city: string | null; state: string | null; brand?: unknown; admitRate: number | null; admitRateCite: unknown; avgCost: number | null; avgCostCite: unknown; sticker: unknown; distanceMiles: number | null; links: import("../types").SchoolLinks | null; social: unknown; profile: import("../types").ReportedAdmissionProfile | null; logistics: import("../types").ReportedLogistics | null; aid: import("../types").ReportedAid | null; testPolicy: unknown; cycleStartYear: number; editionIsLastCycle: boolean; cites: Record<string, unknown>;
+  /**
+   * U2 addition (list-building.md "Suggested category"): the college's own SAT total and ACT composite middle 50%,
+   * when it reports one, for `lib/planner/suggest.ts`'s position check. The citation lives in `cites` (`derived.sat_total`,
+   * `admissions.act_composite_25_75`), never a separate field, per model.md's "add fields additively".
+   */
+  satRange: [number, number] | null;
+  actRange: [number, number] | null;
+}
 
 /* ------------------------------------------------------------------ */
 /* Additions (U1, beyond the brief's list; additive)                   */

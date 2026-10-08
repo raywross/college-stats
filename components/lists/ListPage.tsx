@@ -20,8 +20,12 @@ import { studentsICanSee } from "@/lib/auth";
 import { RowControls } from "@/components/planner/RowControls";
 import { planSchools, readTasks, todayIso } from "@/lib/planner/context";
 import { cycleStartFromEntering, cycleStartOf, currentCycle, cycleFor } from "@/lib/planner/cycle";
-import { dayLabel, isOverdue, nextTaskByItem } from "@/lib/planner/tasks";
-import type { PlanItem, PlanSchool, PlanTask } from "@/lib/planner/types";
+import { dayLabel, isOverdue, nextTaskByItem, taskDate } from "@/lib/planner/tasks";
+import type { PlanItem, PlanSchool, PlanTask, ListSort } from "@/lib/planner/types";
+import { profileFor } from "@/lib/student-profile-store";
+import type { StudentProfileData } from "@/lib/student-profile";
+import { suggestCategory } from "@/lib/planner/suggest";
+import { SortMenu } from "@/components/lists/SortMenu";
 import type { Cited } from "@/lib/lineage";
 
 /**
@@ -41,14 +45,20 @@ async function plannerExtras(
   list: ListRecord,
   items: PlanItem[],
   home: Awaited<ReturnType<typeof myHome>>,
-): Promise<{ tasks: PlanTask[]; schools: Record<string, PlanSchool> } | null> {
+): Promise<{ tasks: PlanTask[]; schools: Record<string, PlanSchool>; profile: StudentProfileData | null } | null> {
   try {
     const supabase = await createServerSupabase();
     const student = list.student_id ? ((await studentsICanSee()).find((a) => a.student.id === list.student_id)?.student ?? null) : null;
     const today = todayIso();
     const start = cycleStartOf(student?.grad_year ? cycleFor(student.grad_year) : currentCycle(today))!;
-    const [tasks, schools] = await Promise.all([readTasks(supabase, list.id), planSchools(items.map((i) => i.unit_id), start, home)]);
-    return { tasks, schools };
+    // U2 (list-building.md "Suggested category"): the student's own numbers, for the row's suggestion line and the
+    // "Where I stand" sort. Null for a guardian's own list (no student) or a student with no numbers saved.
+    const [tasks, schools, profile] = await Promise.all([
+      readTasks(supabase, list.id),
+      planSchools(items.map((i) => i.unit_id), start, home),
+      student ? profileFor(student.id) : Promise.resolve(null),
+    ]);
+    return { tasks, schools, profile: profile?.data ?? null };
   } catch (err) {
     console.error(`lists: planner extras unavailable: ${err instanceof Error ? err.message : String(err)}`);
     return null;
@@ -148,11 +158,13 @@ export async function ListPage({
   const boardItems: BoardItem[] = items.map((item) => {
     const school = getSchoolById(item.unit_id);
     const logistics = school?.reported?.admissions_logistics ?? null;
-    const profile = school?.reported?.admission_profile ?? null;
-    const deadline = deadlineFor(item.round as ListRound | null, logistics, profile, cycleStartYear(logistics?.cycle), {
+    const admissionProfile = school?.reported?.admission_profile ?? null;
+    const deadline = deadlineFor(item.round as ListRound | null, logistics, admissionProfile, cycleStartYear(logistics?.cycle), {
       text: item.deadline_text,
       date: item.deadline_date,
     });
+    const nextTask = nextByItem[item.id] ?? null;
+    const planSchool = plan?.schools[item.unit_id] ?? null;
     return {
       ...item,
       school: {
@@ -168,16 +180,28 @@ export async function ListPage({
         distance: home && school ? distanceFromHome(school.location, home) : null,
         distanceCited: school ? citeField("location.lat", school) : null,
         deadline,
-        next: nextLine(nextByItem[item.id] ?? null, plan?.schools[item.unit_id] ?? null, today),
+        next: nextLine(nextTask, planSchool, today),
       },
       notes: notesByItem[item.id] ?? [],
       addedByName: item.added_by ? names[item.added_by] ?? null : null,
       addedBySelf: item.added_by === viewer.id,
+      // U2 (list-building.md "Sorting"): raw fields SortMenu's options need beyond the facts line.
+      nextDateRaw: nextTask ? taskDate(nextTask) : null,
+      standing: planSchool ? suggestCategory(planSchool, plan?.profile ?? null).category : null,
     };
   });
 
   const upcoming = upcomingDeadlines(boardItems.map((i) => ({ id: i.id, name: i.school.name, deadline: i.school.deadline })), new Date());
   const compareIds = boardItems.slice(0, 4).map((i) => i.unit_id);
+
+  // U2 (list-building.md "Sorting"): "mine" sentinel for a sort's own menu item ("My order"); the column default is
+  // null, read as "Category". Distance needs a home address; "Next date" and "Where I stand" need the planner's
+  // tasks and the student's numbers, which only load when `planner` is true (the household hub's List tab).
+  const sort: ListSort = (list.sort as ListSort | null) ?? "category";
+  const unavailableSorts: ListSort[] = [];
+  if (!home) unavailableSorts.push("distance");
+  if (!plan) unavailableSorts.push("next_date", "standing");
+  else if (!plan.profile) unavailableSorts.push("standing");
 
   let siteUrl = "";
   if (access.isOwner) {
@@ -213,6 +237,7 @@ export async function ListPage({
       <header className="flex flex-wrap items-center justify-between gap-3 print:block">
         <ListMeta list={list} canEdit={access.canEdit} />
         <div className="flex items-center gap-2 print:hidden">
+          {boardItems.length > 1 && <SortMenu listId={list.id} value={sort} canEdit={access.canEdit} unavailable={unavailableSorts} />}
           {boardItems.length > 0 && (
             <Link href={`/compare?ids=${compareIds.join(",")}`} className="inline-flex h-9 items-center rounded-full border px-3.5 text-sm font-semibold hover:bg-muted">
               Compare these
@@ -246,6 +271,7 @@ export async function ListPage({
         items={boardItems}
         canEdit={access.canEdit}
         viewerId={viewer.id}
+        sort={sort}
         rowExtras={
           plan
             ? Object.fromEntries(
@@ -260,6 +286,7 @@ export async function ListPage({
                       canEdit={access.canEdit}
                       today={today}
                       viewerIsGuardian={access.guardianOf !== null}
+                      profile={plan.profile}
                     />,
                   ]),
               )

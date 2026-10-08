@@ -9,6 +9,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { getData } from "@/lib/data";
 import { crestBrand } from "@/lib/brand";
 import { distanceFromHome, type HomeLocation } from "@/lib/home";
+import { satTotal } from "@/lib/score-bands";
 import type { FieldPath } from "@/lib/fields";
 import type { School } from "@/lib/types";
 import type { StudentProfileData } from "@/lib/student-profile";
@@ -143,6 +144,10 @@ export const PLAN_CITE_PATHS = [
   "reported.aid.forms",
   "reported.aid.dates",
   "reported.test_policy",
+  "admissions.act_composite_25_75",
+  // U2 (list-building.md "Suggested category"): the SAT total shown, resolved from the CDS when it reports one else
+  // the sum of sections (lib/score-bands.ts). Not a real dot path on School, so planSchoolFor resolves it by hand.
+  "derived.sat_total",
 ] as const satisfies readonly FieldPath[];
 
 function valueAt(obj: unknown, path: string): unknown {
@@ -168,9 +173,14 @@ export function planSchoolFor(
   const dataStart = cycleStartFromEntering(logistics?.cycle);
   const cites: Record<string, unknown> = {};
   for (const path of PLAN_CITE_PATHS) {
+    if (path === "derived.sat_total") continue; // not a real dot path; resolved below
     const v = valueAt(school, path);
     if (v !== undefined && v !== null) cites[path] = citeField(path, school);
   }
+  // U2: the SAT total shown (satTotal, lib/score-bands.ts), cited only when the college reports one.
+  const satRange = satTotal(school);
+  if (satRange) cites["derived.sat_total"] = citeField("derived.sat_total", school);
+  const actRange = school.admissions.act_composite_25_75 ?? null;
   return {
     unit_id: school.unit_id,
     name: school.name,
@@ -192,6 +202,8 @@ export function planSchoolFor(
     cycleStartYear: opts.studentCycleStart,
     editionIsLastCycle: dataStart !== null && dataStart < opts.studentCycleStart,
     cites,
+    satRange,
+    actRange,
   };
 }
 

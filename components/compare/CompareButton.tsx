@@ -3,6 +3,7 @@
 import { Check, Plus } from "lucide-react";
 import { MAX_COMPARE, toggleCompare, useCompareIds } from "@/lib/compare";
 import { cn } from "@/lib/utils";
+import posthog from "posthog-js";
 
 export function CompareButton({
   id,
@@ -28,7 +29,10 @@ export function CompareButton({
       onClick={(e) => {
         e.preventDefault();
         e.stopPropagation();
-        toggleCompare(id);
+        const compareIds = toggleCompare(id);
+        posthog.capture(active ? "compare_school_removed" : "compare_school_added", {
+          compare_count: compareIds.length,
+        });
       }}
       className={cn(
         "relative z-20 inline-flex shrink-0 items-center justify-center gap-1.5 font-semibold transition-all outline-none select-none",

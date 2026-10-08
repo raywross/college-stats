@@ -9,6 +9,7 @@ import { loadSearchIndex } from "@/lib/search-client";
 import { Crest } from "@/components/school/Crest";
 import { pctSmart } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import posthog from "posthog-js";
 
 /** Typeahead that jumps straight to a school, or to Explore with the query. */
 export function SchoolSearch({
@@ -60,7 +61,12 @@ export function SchoolSearch({
     };
   }, [query]);
 
-  const go = (href: string) => {
+  const go = (href: string, destination: "school_profile" | "explore_results" | "explore") => {
+    posthog.capture("school_search_navigated", {
+      destination,
+      result_count: results.length,
+      search_surface: size,
+    });
     setOpen(false);
     setQuery("");
     inputRef.current?.blur();
@@ -69,9 +75,9 @@ export function SchoolSearch({
   };
 
   const submit = () => {
-    if (results[active]) go(`/schools/${results[active].id}`);
-    else if (query.trim()) go(`/explore?q=${encodeURIComponent(query.trim())}`);
-    else go("/explore");
+    if (results[active]) go(`/schools/${results[active].id}`, "school_profile");
+    else if (query.trim()) go(`/explore?q=${encodeURIComponent(query.trim())}`, "explore_results");
+    else go("/explore", "explore");
   };
 
   const showList = open && query.trim().length > 0;
@@ -178,7 +184,7 @@ export function SchoolSearch({
                 type="button"
                 onMouseDown={(e) => e.preventDefault()}
                 onMouseEnter={() => setActive(i)}
-                onClick={() => go(`/schools/${s.id}`)}
+                onClick={() => go(`/schools/${s.id}`, "school_profile")}
                 className={cn(
                   "flex w-full items-center gap-3 rounded-xl px-2.5 py-2 text-left transition-colors",
                   i === active ? "bg-accent" : "hover:bg-muted"

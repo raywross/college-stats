@@ -25,12 +25,12 @@ export const COMPLEXITY: Record<Complexity, { label: string; description: string
 // was built 2026-10-05 on feature/accounts; Google sign-in and email sending wait for the new domain (specs/backlog.md).
 // The group came back on 2026-10-06 with the owner's review of that build: the household hub (people by name, one
 // list each), built the same day. The application plan written then became the planner's timeline on 2026-10-07,
-// when the planner (group "planner", specs/planner/) was specified: six stages from the first list to the deposit,
-// with the award-letter analyzer moved in as its last stage. So the "accounts" group is gone until a new spec.
+// when the planner (specs/planner/) was specified: six stages from the first list to the deposit, with the
+// award-letter analyzer moved in as its last stage. The planner was built 2026-10-08 on feature/planner (eight units
+// on sub-branches), so the "planner" group is gone too; its overview page stays under ROADMAP_OVERVIEWS.
 // The compare redesign, the only spec in "Design and usability" (group "design"), was built 2026-10-05 (#84), so that
 // group is gone until a new design spec.
 export type RoadmapGroupKey =
-  | "planner"
   | "national-trends"
   | "college-reported"
   | "campus-life"
@@ -42,12 +42,6 @@ export type RoadmapGroupKey =
   | "later";
 
 export const ROADMAP_GROUPS: { key: RoadmapGroupKey; title: string; description: string }[] = [
-  {
-    key: "planner",
-    title: "The planner: from the first list to the deposit",
-    description:
-      "Six stages for a family: build and sort the list with a Dream, decide who gets the early application, follow and visit, work a timeline of dated tasks, track every application, then read the offers and choose; with a parent's view throughout.",
-  },
   {
     key: "national-trends",
     title: "National trends",
@@ -120,99 +114,6 @@ export interface RoadmapSpec {
 
 /** In build order within each group (the backlog's order, specs/backlog.md). */
 export const ROADMAP: RoadmapSpec[] = [
-  // The planner (specs/planner/, 2026-10-07): the model first, then the six stages in the order a family meets them,
-  // then the parent's view over all of it. Builds on the household hub (built 2026-10-06, no longer on the roadmap).
-  {
-    slug: "planner-model",
-    file: "specs/planner/model.md",
-    group: "planner",
-    summary:
-      "The plan's foundation: a Plan tab on each student's page, the six stages computed from the list itself, and one set of tasks, visits, and offers that every stage reads and writes.",
-    complexity: 3,
-    complexityNote:
-      "New tables with policies around the existing list, a stage machine, idempotent task generation with lineage on every date, the Plan tab's frame, and the entitlement hooks the stages share.",
-    status: "planned",
-  },
-  {
-    slug: "list-building",
-    file: "specs/planner/list-building.md",
-    group: "planner",
-    summary:
-      "Sort the list by the numbers: the site's suggested Reach, Target, or Likely beside the student's choice with the reason shown, one Dream, sorts by what matters, and a balance line that says what's missing.",
-    complexity: 2,
-    complexityNote: "A suggestion rule over fields the site has, a Dream flag with its trigger, a sort menu, drag ordering, and a finding rail; standing plugs in when chances is built.",
-    status: "planned",
-    after: ["planner-model"],
-  },
-  {
-    slug: "early-rounds",
-    file: "specs/planner/early-rounds.md",
-    group: "planner",
-    summary:
-      "Who gets the one binding early application: each college's rounds and dates, last year's early-round advantage with its caveats, the conflicts between rounds, what a binding offer would cost this family, and a proposed plan the student edits.",
-    complexity: 3,
-    complexityNote:
-      "A ranking step, a proposal with published rules, live conflict checks across rounds, the money question from the estimator, and tasks written for the timeline.",
-    status: "planned",
-    after: ["planner-model", "list-building", "early-decision-strategy"],
-  },
-  {
-    slug: "planner-actions",
-    file: "specs/planner/actions.md",
-    group: "planner",
-    summary:
-      "Follow the admissions office in one click where a network allows it, request information, book and log visits with notes that are useful in April, and know at which colleges interest is counted.",
-    complexity: 2,
-    complexityNote: "Follow intents and deep links per network, a visit log with prompts and calendar files, the interest line from CDS C7, and a small links follow-up for request-information pages.",
-    status: "planned",
-    after: ["planner-model"],
-  },
-  {
-    slug: "timeline",
-    file: "specs/planner/timeline.md",
-    group: "planner",
-    summary:
-      "The project plan: every dated task from the college's published dates, the cycle's dates, and the stage the student is in, with an owner, grouped by month or by college, in a calendar feed, a weekly email, and texts for those who turn them on.",
-    complexity: 3,
-    complexityNote:
-      "Task generators from the college-reported dates, a versioned cycle file with windows and the summer list, a grade-aware fold, a calendar feed, reminders through the existing digest plus a new weekly email, and text messages with consent, quiet hours, and a provider behind one interface.",
-    status: "planned",
-    after: ["planner-model", "early-rounds"],
-  },
-  {
-    slug: "applications",
-    file: "specs/planner/applications.md",
-    group: "planner",
-    summary:
-      "One checklist across every application: what the college requires (fee and waiver, test policy, aid forms), what's submitted and complete, the portal link, and the follow-ups a deferral or a wait list creates.",
-    complexity: 2,
-    complexityNote: "A requirements list from fields the site has, a status progression with dates on the existing columns, generated sub-tasks, and the deferral and wait-list rules.",
-    status: "planned",
-    after: ["timeline"],
-  },
-  {
-    slug: "offers",
-    file: "specs/planner/offers.md",
-    group: "planner",
-    summary:
-      "Record each decision in a tap, enter every aid offer in one standard layout with four-year totals beside your estimate and the college's outcomes, compare the admits, choose, and get the deposit, withdrawal, and summer tasks.",
-    complexity: 3,
-    complexityNote:
-      "A standard offer model, four-year math, flags and questions, the choice's generated tasks, and a share-your-letter step that collects the set a later upload-and-read path is built on.",
-    status: "planned",
-    after: ["applications", "net-price-estimator"],
-  },
-  {
-    slug: "planner-parents",
-    file: "specs/planner/parents.md",
-    group: "planner",
-    summary:
-      "What a parent sees without asking: a summary line per student, the same plan read-only, a nudge on any task that can't turn into nagging, the parent's own tasks in one place, and a weekly email.",
-    complexity: 2,
-    complexityNote: "Views over the stages under the existing household grants, a rate-limited nudge with its table, the parent's task list, stuck signals, and one more email on the digest job.",
-    status: "planned",
-    after: ["planner-model", "timeline"],
-  },
   {
     slug: "online-share",
     file: "specs/data-expansion/online-share.md",

@@ -1,6 +1,6 @@
 # Stage 1, The List: Groups by the Numbers, a Dream, and Sorting
 
-> Status: **planned** 2026-10-07. After [model.md](model.md). Better with [chances-and-fit.md](../product/chances-and-fit.md)
+> Status: **built** 2026-10-08 on `feature/planner` ([below](#built-2026-10-08-unit-u2-on-featureplanner-list)); planned 2026-10-07. After [model.md](model.md). Better with [chances-and-fit.md](../product/chances-and-fit.md)
 > (the site's suggested category with reasons); works without it from the admit rate alone. Extends the built list
 > ([saved-lists.md](../product/saved-lists.md), [household-hub.md](../product/household-hub.md#one-list-per-person)).
 > Part of the [planner](README.md).

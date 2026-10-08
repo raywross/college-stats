@@ -1,6 +1,6 @@
 # Stage 6, Decisions and Offers: Outcomes, Letters Side by Side, and the Choice
 
-> Status: **planned** 2026-10-07; the award letter analyzer of 2026-10-02 (`product/award-letter-analyzer.md`) moved
+> Status: **built** 2026-10-08 on `feature/planner` ([below](#built-2026-10-08-unit-u7-on-featureplanner-offers-2)); planned 2026-10-07; the award letter analyzer of 2026-10-02 (`product/award-letter-analyzer.md`) moved
 > here and extended into the planner's last stage. After [applications.md](applications.md) and
 > [net-price-estimator.md](../product/net-price-estimator.md) (shares cost of attendance, loan rates, and the
 > four-year projection). Part of the [planner](README.md).

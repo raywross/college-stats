@@ -1,6 +1,6 @@
 # Planner Model: Stages, Tasks, Visits, Offers, and the Plan Tab
 
-> Status: **planned** 2026-10-07. The foundation unit of the [planner](README.md): the shared tables, the stage
+> Status: **built** 2026-10-08 on `feature/planner` ([below](#built-2026-10-08-unit-u1-on-featureplanner-model)); planned 2026-10-07. The foundation unit of the [planner](README.md): the shared tables, the stage
 > machine, the Plan tab's frame on the person's page, the cycle year, and the entitlement hooks every stage reads.
 > Builds on [household-hub.md](../product/household-hub.md) and [saved-lists.md](../product/saved-lists.md). Part of
 > the planner.
@@ -208,4 +208,4 @@ Deviations and decisions:
   November 2026), which it had a year late.
 - The list's new columns are on `ListItem` as optional fields (`PlanItem` makes them required), so rows built before
   the planner still type-check. Every list read now selects them: apply the migration before deploying.
-- Not done here: the account export doesn't include the planner tables yet.
+- The account export got the planner tables in U8 (`lib/account-export.ts`).

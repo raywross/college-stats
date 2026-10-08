@@ -1,6 +1,6 @@
 # Stage 4, The Timeline: Key Dates and Tasks That Keep the Plan Moving
 
-> Status: **planned** 2026-10-07; the application plan of 2026-10-06 (`product/application-plan.md`) moved here and
+> Status: **built** 2026-10-08 on `feature/planner` ([below](#built-2026-10-08-unit-u5-on-featureplanner-timeline)); planned 2026-10-07; the application plan of 2026-10-06 (`product/application-plan.md`) moved here and
 > rewritten as the planner's stage 4. After [model.md](model.md) and [early-rounds.md](early-rounds.md) (a task's
 > date follows the chosen round). Builds on [cds-application-logistics.md](../data-expansion/cds-application-logistics.md),
 > [cds-admissions.md](../data-expansion/cds-admissions.md), [cds-financial-aid.md](../data-expansion/cds-financial-aid.md),

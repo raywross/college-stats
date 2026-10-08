@@ -1,6 +1,6 @@
 # Parents: Visibility and a Way to Help Without Nagging
 
-> Status: **planned** 2026-10-07. After [model.md](model.md) and [timeline.md](timeline.md); the summary line ships
+> Status: **built** 2026-10-08 on `feature/planner` ([below](#built-2026-10-08-unit-u8-on-featureplanner-parents-2)); planned 2026-10-07. After [model.md](model.md) and [timeline.md](timeline.md); the summary line ships
 > with the model. Builds on the household's grants ([accounts.md](../product/accounts.md#privacy-model),
 > [household-hub.md](../product/household-hub.md)). Part of the [planner](README.md).
 

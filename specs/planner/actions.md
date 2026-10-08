@@ -1,6 +1,6 @@
 # Stage 3, Actions: Follow, Ask, Visit, and Keep Notes
 
-> Status: **planned** 2026-10-07. After [model.md](model.md). Uses the built social accounts
+> Status: **built** 2026-10-08 on `feature/planner` ([below](#built-2026-10-08-unit-u4-on-featureplanner-actions)); planned 2026-10-07. After [model.md](model.md). Uses the built social accounts
 > ([social-accounts.md](../school-identity/social-accounts.md)), official links ([links.md](../school-identity/links.md)),
 > interest from CDS C7 ([cds-admissions.md](../data-expansion/cds-admissions.md)), and the home address
 > ([home-and-distance.md](../product/home-and-distance.md)). Part of the [planner](README.md).

@@ -1,6 +1,6 @@
 # Stage 2, Priorities and Rounds: Who Gets the Early Application
 
-> Status: **planned** 2026-10-07. After [model.md](model.md), [list-building.md](list-building.md), and
+> Status: **built** 2026-10-08 on `feature/planner` ([below](#built-2026-10-08-unit-u3-on-featureplanner-rounds)); planned 2026-10-07. After [model.md](model.md), [list-building.md](list-building.md), and
 > [early-decision-strategy.md](../product/early-decision-strategy.md) (the per-college early-round measures). Better
 > with [net-price-estimator.md](../product/net-price-estimator.md) (the money question) and
 > [chances-and-fit.md](../product/chances-and-fit.md) (standing). Part of the [planner](README.md).

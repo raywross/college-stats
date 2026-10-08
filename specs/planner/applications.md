@@ -1,6 +1,6 @@
 # Stage 5, Applying: What Each College Needs and Whether It's In
 
-> Status: **planned** 2026-10-07. After [timeline.md](timeline.md). Uses CDS C8 and C13 via
+> Status: **built** 2026-10-08 on `feature/planner` ([below](#built-2026-10-08-unit-u6-on-featureplanner-apply-2)); planned 2026-10-07. After [timeline.md](timeline.md). Uses CDS C8 and C13 via
 > [cds-test-scores-and-policy.md](../data-expansion/cds-test-scores-and-policy.md) and
 > [cds-application-logistics.md](../data-expansion/cds-application-logistics.md), H8 via
 > [cds-financial-aid.md](../data-expansion/cds-financial-aid.md). Part of the [planner](README.md).

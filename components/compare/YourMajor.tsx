@@ -6,6 +6,7 @@ import { SLOT_COLORS } from "@/lib/brand";
 import { money, num, pct } from "@/lib/format";
 import { MetricLabel, Term } from "@/components/ui/info-tip";
 import type { TermKey } from "@/lib/glossary";
+import posthog from "posthog-js";
 
 /**
  * Compare "Your major" (specs/data-expansion/majors.md, field-of-study.md): pick a broad field (2-digit CIP family)
@@ -32,6 +33,10 @@ export function YourMajor({ ids, schools, options, stats, initial }: YourMajorPr
     e.preventDefault();
     if (!draft || !stats[draft]) return;
     setSelected(draft);
+    posthog.capture("major_comparison_selected", {
+      compared_school_count: schools.length,
+      field_family: draft,
+    });
     const url = new URL(window.location.href);
     url.searchParams.set("major", draft);
     window.history.replaceState(null, "", url);

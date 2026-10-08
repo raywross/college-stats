@@ -1586,6 +1586,29 @@ const entries = {
     related: ["demonstrated-interest"],
   },
 
+  // Stage 5, applications (specs/planner/applications.md)
+  "application-portal": {
+    term: "Application portal",
+    short: "The college's own website for checking an application's status, once it's submitted. You paste its link here; the site never logs in.",
+    long: "Each college gives applicants a separate account, usually by email a week or two after submitting. The plan stores the link you paste, nothing more, and reminds you to check it weekly until you confirm everything's received.",
+    category: "Your account",
+    related: ["plan"],
+  },
+  "letter-of-continued-interest": {
+    term: "Letter of continued interest",
+    short: "A short, optional note to a college that deferred or wait-listed you: new grades, an award, or why you're still interested.",
+    long: "Not every college wants one — some say so directly — so send it only where the college accepts updates. It's never a second essay: a few sentences, addressed to the admissions office that reviewed the application.",
+    category: "Your account",
+    related: ["plan"],
+  },
+  "fee-waiver": {
+    term: "Fee waiver",
+    short: "Skipping a college's application fee because you meet criteria most colleges and the Common App recognize (Pell-likely, first-generation, and others).",
+    long: "You answer the question once on your profile; the plan's fee line then says so for every college that lists a waiver. The site never applies for one on your behalf — most colleges grant it automatically once you check the box on their own application.",
+    category: "Your account",
+    related: ["plan"],
+  },
+
   // High schools (specs/product/high-school-data.md)
   ncessch: {
     term: "NCES school ID",

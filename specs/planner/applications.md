@@ -97,3 +97,65 @@ complete).
    [README.md](README.md#owner-decisions-2026-10-07)); it would ride on the letter reader when that exists.
 2. Should the transcript request be one shared task by default? High schools differ (some send to every college at
    once, some per college); recommendation: shared by default, with "per college" as a switch.
+
+## Built (2026-10-08, unit U6 on `feature/planner-apply-2`)
+What exists:
+- **Requirements** `lib/planner/requirements.ts` (pure): `requirementsFor(item, school, profile)` returns the
+  table's eight lines (deadline, fee, test policy, aid forms, interest, interview, platform, essays/recommendations),
+  each with a `cite` key into `PlanSchool.cites` and a `published` flag; a college with no CDS record falls back to
+  the student's own deadline (`deadline_text`/`deadline_date`) and the federal application fee, and marks the rest
+  unpublished rather than inventing it. `sendScoreAdvice` is the built `fitsScoreValues` wording ("Your SAT is above
+  this college's middle 50%: consider sending"), shown only at a test-optional college with a saved score.
+  `orderForApply` (deadline order, undated last) and `groupByPlatform` ("By platform") back the stage panel.
+- **Generator** `lib/planner/generators/apply.ts`: the eight sub-tasks once a college is `applying` or later
+  (`fee`, `send_scores`, `transcript`, `recommendation` × `recommendations_count`, `supplement` ×
+  `supplements_count`, `submit`, `portal_setup`; `aid_forms` is college.ts's own task, already generated). The
+  transcript request is one list-wide shared task by default (`transcript_shared !== false` on every applying
+  college), or a per-college task for any college that switched it off. Common App colleges share one personal-essay
+  task (`supplement`, suffix `essay`). `portal_check` runs weekly from `applied_on`: each week is its own key
+  (`{item}:portal_check:{n}`), so a finished week's task is replaced by the next week's rather than reopened
+  (`mergeTasks` never resets `done_at`); it stops being generated once `complete_on` is set. Deferral
+  (`continued_interest`, plus the ED II pointer only when an ED II college exists on the list) and wait-list tasks
+  (`waitlist_accept`, `waitlist_deposit_elsewhere`, `continued_interest`) generate only once the outcome is recorded.
+  A withdrawn college gets none of this.
+- **Views.** `components/planner/stages/ApplyStage.tsx`: the header line ("N of M in · next: College, date"), any
+  shared tasks first, then a card per college in deadline order (`CollegeApplyCard.tsx`: the requirements list with
+  its ⓘs, the status/outcome picker, the fee and portal controls, and the sub-tasks folded under "What's left" in a
+  `<details>`); `ApplyPlatformToggle` regroups the same cards "By platform". `ApplyStatusControl` is the status (and
+  outcome) picker: an inline `<select>` from `sm`, a button opening a bottom sheet of big rows on phones — picking
+  "Applied" calls `markApplied` (not the bare status write) so the date is recorded with it.
+  `components/planner/row/apply.tsx` adds the Applied checkbox, the platform chip, and the portal button/field to
+  the list row's "More".
+- **Server** `lib/planner/store-apply.ts` (`"use server"`, the `ready(capability)` pattern, `planner.tab`):
+  `markApplied`/`unmarkApplied` (ties `applied_on` to the timeline's `apply`/`ed2_conditional` task, per Wave 1's
+  note that the unit setting `applied_on` ticks it), `markComplete`, `setPlatform`, `setPortalUrl` (rejects anything
+  that isn't `http(s)://`), `setCounts`, `setTranscriptShared`, `markWithdrawn`. Every write calls `regenerate(listId)`.
+- **Profile** `feeWaiverEligible: boolean | null` on `StudentProfileBasics` (the `plansTestOptional` pattern, but
+  tri-state: not set / yes / no), asked once on `/me` (a "Not set / Yes / No" select in Basics); the apply
+  generator's fee task and `requirements.ts`'s fee line read it.
+- **Glossary** `application-portal`, `letter-of-continued-interest`, `fee-waiver`.
+- **Tests** `tests/planner-apply.test.mts`: requirements for a college with full CDS data (every line published)
+  and one with none (the rest says "hasn't published", with the student's own date and the federal fee still
+  showing); `sendScoreAdvice`'s three cases; `orderForApply`/`groupByPlatform`; the pure status rule `markApplied`
+  relies on; the generator's sub-tasks, the shared transcript and Common App essay, the portal check opening and
+  stopping at complete, the ED II pointer appearing only with an ED II college on the list, and wait-list tasks
+  appearing only once recorded.
+
+Deviations and decisions the brief didn't name:
+- No new migration: every column and `plan_tasks.kind` value U6 needs was already in U1's migration
+  (`20261008120000_planner.sql`), so there is no `20261008140000_planner_apply.sql`.
+- The sub-tasks' `source` is `'stage'` (not `'college'`): they come from the student's own counts and choices, not
+  the college's published dates, even though some (fee, test policy wording) read college data for their text.
+- `send_scores`'s title comes from the test policy's headline answer (required/required-some/recommended/
+  considered/not-considered), whichever shape `PlanSchool.testPolicy` is in (the full CDS grid or just the federal
+  answer); `isReportedTestPolicy`/`testPolicyAnswer` in `requirements.ts` tell them apart once, for both the
+  requirements line and the generator.
+- `markComplete`'s default parameter is `todayIso()`, so `markComplete(itemId)` records today and
+  `markComplete(itemId, null)` clears it (one function, not a separate clear action).
+- Recommendation and supplement counts are capped at 20 for validation and generate at most 12 sub-tasks each
+  (`MAX_SUBITEMS`), so a typo (200) can't flood the plan with tasks.
+- Status is set through `lib/lists.ts`'s existing `setItemStatus`/`setOutcome` for every status except "applied"
+  (which goes through `markApplied` so the date is recorded); the Plan tab's own regeneration-on-open covers the
+  rare case where that leaves the tasks stale for a moment.
+- Not done here: a per-recommender name field (the spec keeps names out of the task text and telemetry by design,
+  "asked"/"submitted" has no name field yet in this pass); screenshot import, as the spec already deferred it.

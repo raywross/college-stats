@@ -23,6 +23,14 @@ function boolField(form: FormData, name: string): boolean {
   return form.get(name) === "on" || form.get(name) === "1" || form.get(name) === "true";
 }
 
+/** Yes/No/not set, from a <select>'s "", "yes", "no" (lib/student-profile.ts's feeWaiverEligible pattern). */
+function nullableBoolField(form: FormData, name: string): boolean | null {
+  const v = form.get(name);
+  if (v === "yes") return true;
+  if (v === "no") return false;
+  return null;
+}
+
 function arrField(form: FormData, name: string): string[] {
   return form.getAll(name).map(String).filter(Boolean);
 }
@@ -41,6 +49,7 @@ function profileFromForm(form: FormData): unknown {
       stateOfResidence: strField(form, "stateOfResidence"),
       highSchool: strField(form, "highSchool"),
       highSchoolId: strField(form, "highSchoolId"),
+      feeWaiverEligible: nullableBoolField(form, "feeWaiverEligible"),
     },
     academics: {
       gpa: numField(form, "gpa"),

@@ -65,8 +65,11 @@ Several Claude chats work on this repo at once, so each works in its own git wor
 - Data: `data/schools.json` (~1,900 4-year colleges) built by `npm run sync-data` from College Scorecard + IPEDS; see `specs/data-sync.md`. API key lives in `.env.local` (git-ignored). Add a college's Common Data Set with `npm run import-cds` (see `specs/sources-and-citations.md`); cite any new data with `<SourceNote>`
 
 ### Supabase and deployment
-- `DATA_SOURCE=json|supabase` picks where the app reads the dataset; `data/*.json` in git stay the reviewed source and
-  `npm run publish-data` uploads them. Two Supabase projects: dev (local + Vercel previews) and prod. See `specs/supabase.md`
+- The college dataset ships with every deploy: `lib/data.ts` reads `data/*.json` from disk once per server instance,
+  and the search boxes match in the browser over `/search-index.json`. Supabase holds only people's data, the
+  high-school table (`HIGH_SCHOOLS_SOURCE=supabase|json`), and the change log that `npm run publish-changes` records
+  after each production deploy. See `specs/serving-architecture.md` and `specs/supabase.md`. Two Supabase projects
+  are planned: dev (now, for everything) and prod (at the formal release)
 - Schema changes are new files in `supabase/migrations/`, applied to dev before prod
 - Will deploy to Vercel; see `specs/migration-plan.md`
 

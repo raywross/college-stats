@@ -7,7 +7,9 @@
  * record is complete, every release has a year, and the registry's derivations are sound (lib/lineage.ts). For
  * history (lib/history.ts): every series is registered in SERIES, every shard belongs to a college in the dataset,
  * values are possible, and every file family cites a known source. For CDS records (data/cds-records/, lib/cds-records.ts):
- * every passed value is located and quoted and every document is in data/college-docs.json.
+ * every passed value is located and quoted and every document is in data/college-docs.json. For high schools
+ * (data/high-schools/, when built; lib/high-school-core.ts): every shard row, state report file, and profile detail
+ * file is valid and cited, meta matches the shards, and medians.json equals a fresh computation.
  */
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
@@ -19,6 +21,7 @@ import { validateCdsRecords } from "../lib/cds-records.ts";
 import { CDS_TEMPLATE } from "../lib/cds-template.ts";
 import { readManifest, readRecords } from "./lib/college-reported/records.mts";
 import { orphanSummaries } from "./lib/directories/merge.mts";
+import { highSchoolFileProblems, readHighSchoolData } from "./lib/publish-high-schools.mts";
 
 const ROOT = join(import.meta.dirname, "..");
 const schools: School[] = JSON.parse(readFileSync(join(ROOT, "data", "schools.json"), "utf8"));
@@ -57,6 +60,10 @@ problems.push(...validateCdsRecords(records, readManifest(join(ROOT, "data", "co
 const OVERRIDES = join(ROOT, "data", "overrides.json");
 if (existsSync(OVERRIDES)) problems.push(...validateOverrides(JSON.parse(readFileSync(OVERRIDES, "utf8"))));
 
+// High schools (specs/product/high-school-data.md), when built.
+const highSchools = readHighSchoolData(join(ROOT, "data", "high-schools"));
+if (highSchools) problems.push(...highSchoolFileProblems(highSchools, { collegeIds: new Set(schools.map((s) => s.unit_id)) }));
+
 if (problems.length) {
   console.error(`Lineage check failed: ${problems.length} problem${problems.length === 1 ? "" : "s"}`);
   for (const p of problems.slice(0, 50)) console.error(`  ${p}`);
@@ -68,5 +75,7 @@ console.log(
   `Lineage OK: ${schools.length} colleges, ${overridden} with values from a non-default source` +
     (shards ? `; ${shards} college histories` : "") +
     (details ? `; ${details.length} detail files` : "") +
-    `; ${records.length} CDS records.`
+    `; ${records.length} CDS records` +
+    (highSchools ? `; ${highSchools.rows.length} high schools, ${highSchools.stateFiles.length} state report files, ${highSchools.details.length} profile details` : "") +
+    "."
 );

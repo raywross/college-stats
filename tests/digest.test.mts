@@ -8,7 +8,7 @@
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { buildDigest, eligiblePublishes, DIGEST_CUTOFF, type DigestCollegeInput } from "../lib/digest.ts";
+import { buildDigest, eligiblePublishes, DIGEST_CUTOFF, DIGEST_REASON, type DigestCollegeInput } from "../lib/digest.ts";
 import type { ChangeKind, StoredChange } from "../lib/changes.ts";
 import { isAuthorized } from "../lib/revalidate.ts";
 import { emailConfigured, sendEmail } from "../lib/email.ts";
@@ -30,7 +30,6 @@ function change(over: Partial<StoredChange> & { unit_id: string; field: FieldPat
 }
 
 const college = (over: Partial<DigestCollegeInput> & { unit_id: string; name: string }): DigestCollegeInput => ({
-  source: "manual",
   changes: [change({ unit_id: over.unit_id, field: "admissions.acceptance_rate", kind: "new_year" })],
   ...over,
 });
@@ -42,7 +41,7 @@ test("buildDigest: groups one college's changes, in topic order, and names the s
     change({ unit_id: "1", field: "outcomes.graduation_rate", kind: "revised", old_value: 0.6, new_value: 0.62, old_year: "2024", new_year: "2024" }),
     change({ unit_id: "1", field: "admissions.acceptance_rate", kind: "new_year" }),
   ];
-  const built = buildDigest([{ unit_id: "1", name: "Example University", source: "manual", changes }], CTX)!;
+  const built = buildDigest([{ unit_id: "1", name: "Example University", changes }], CTX)!;
   assert.ok(built);
   assert.equal(built.colleges.length, 1);
   // admissions.acceptance_rate (an earlier NOTIFY_FIELDS entry) is listed before outcomes.graduation_rate, matching
@@ -101,12 +100,13 @@ test("buildDigest: every sentence names both years, and the college link carries
   assert.equal(built.colleges[0].href, "https://quad.example/schools/166027?utm_source=digest");
 });
 
-test("buildDigest: reasons name both a manual follow and a list follow when the set is mixed", () => {
-  const built = buildDigest(
-    [college({ unit_id: "1", name: "A", source: "manual" }), college({ unit_id: "2", name: "B", source: "list" })],
-    CTX,
-  )!;
-  assert.deepEqual(built.reasons, ["you follow these colleges", "they're on one of your lists"]);
+test("buildDigest: the 'why you got this' line is always about the list (follows come only from lists now)", () => {
+  const built = buildDigest([college({ unit_id: "1", name: "A" }), college({ unit_id: "2", name: "B" })], CTX)!;
+  assert.deepEqual(built.reasons, [DIGEST_REASON]);
+  assert.equal(DIGEST_REASON, "these colleges are on your list");
+  assert.match(built.text, /You got this because these colleges are on your list\./);
+  assert.match(built.html, /You got this because these colleges are on your list\./);
+  assert.doesNotMatch(built.text, /you follow these colleges/);
 });
 
 test("guard: feeding the changes in reverse still sorts them (proves the topic sort runs, not just input order)", () => {
@@ -114,7 +114,7 @@ test("guard: feeding the changes in reverse still sorts them (proves the topic s
     change({ unit_id: "1", field: "outcomes.graduation_rate", kind: "revised", old_value: 0.6, new_value: 0.62, old_year: "2024", new_year: "2024" }),
     change({ unit_id: "1", field: "admissions.acceptance_rate", kind: "new_year" }),
   ];
-  const built = buildDigest([{ unit_id: "1", name: "Example University", source: "manual", changes }], CTX)!;
+  const built = buildDigest([{ unit_id: "1", name: "Example University", changes }], CTX)!;
   assert.deepEqual(
     built.colleges[0].changes.map((c) => c.field),
     ["admissions.acceptance_rate", "outcomes.graduation_rate"],

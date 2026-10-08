@@ -6,15 +6,18 @@ import { Crest } from "@/components/school/Crest";
 import { crestBrand } from "@/lib/brand";
 import { CompareButton } from "@/components/compare/CompareButton";
 import { AddToListButton } from "@/components/lists/AddToListButton";
+import { distanceFromHome, formatMiles, type NearHome } from "@/lib/home";
 
 /**
  * Phone result row (Explore, below sm): one headline number and three facts in ~90px, so a screen shows
  * five or six schools instead of one card. The full SchoolCard (meters, trends, standouts) takes over from sm.
+ * With Explore's distance filter set (`home`), the location line adds the straight-line miles.
  */
-export function SchoolRow({ school }: { school: School }) {
+export function SchoolRow({ school, home = null }: { school: School; home?: NearHome | null }) {
   const rate = school.admissions.acceptance_rate;
   const sat = satComposite(school);
   const cost = school.cost?.avg_paid_all ?? null;
+  const distance = home ? distanceFromHome(school.location, home) : null;
   const facts = [
     { key: "sat", color: DOMAINS.scores.color, text: sat ? `SAT ${range(sat)}` : null },
     { key: "size", color: DOMAINS.size.color, text: `${compact(school.demographics.undergrad_enrollment)} undergrads` },
@@ -29,6 +32,7 @@ export function SchoolRow({ school }: { school: School }) {
         <h3 className="line-clamp-2 font-display text-[15px] leading-snug font-bold">{school.name}</h3>
         <p className="truncate text-xs text-muted-foreground">
           {school.location.city}, {school.location.state} · {typeShort(school.type)}
+          {distance !== null && <> · {formatMiles(distance)} away</>}
         </p>
         <p className="mt-1.5 flex flex-wrap gap-x-2.5 gap-y-0.5 text-[11px] font-medium tabular-nums">
           {facts.map((f) => (

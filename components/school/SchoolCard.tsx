@@ -11,6 +11,7 @@ import { CompareButton } from "@/components/compare/CompareButton";
 import { AddToListButton } from "@/components/lists/AddToListButton";
 import { StandoutChip } from "@/components/school/StandoutChip";
 import { TrendIndicatorGrid } from "@/components/trends/TrendIndicators";
+import { distanceFromHome, distanceLine, type NearHome } from "@/lib/home";
 
 /** Nomad List-style meter: fill = where this school ranks among all colleges. */
 function Meter({ label, value, rank, color }: { label: string; value: string | null; rank: number | null; color: string }) {
@@ -32,9 +33,11 @@ function Meter({ label, value, rank, color }: { label: string; value: string | n
   );
 }
 
-export async function SchoolCard({ school, index = 0 }: { school: School; index?: number }) {
+/** `home`: Explore's "Distance from home" filter, when set; the card then shows the straight-line miles and a drive time. */
+export async function SchoolCard({ school, index = 0, home = null }: { school: School; index?: number; home?: NearHome | null }) {
   const data = await getData();
   const { rankOf } = data;
+  const distance = home ? distanceFromHome(school.location, home) : null;
   const rate = school.admissions.acceptance_rate;
   const tier = selectivityTier(rate);
   const tags = standouts(data, school).slice(0, 2);
@@ -63,6 +66,7 @@ export async function SchoolCard({ school, index = 0 }: { school: School; index?
           <p className="text-xs text-muted-foreground">
             {school.location.city}, {school.location.state} · {typeShort(school.type)}
           </p>
+          {distance !== null && <p className="mt-0.5 text-xs font-semibold">{distanceLine(distance)}</p>}
         </div>
         <div className="flex flex-col gap-1.5">
           <CompareButton id={school.unit_id} variant="icon" />

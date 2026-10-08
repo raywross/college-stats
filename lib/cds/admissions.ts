@@ -13,6 +13,7 @@
  * components (GpaChecker) can load it.
  */
 import type { FieldPath } from "../fields";
+import type { TermKey } from "../glossary";
 import type {
   AdmissionFactor,
   C7Factor,
@@ -41,8 +42,8 @@ export const MAX_EDITIONS_BACK = 2;
 /* Codes                                                               */
 /* ------------------------------------------------------------------ */
 
-/** C7 rows in template order, with the page's label and the template's group. */
-export const C7_FACTORS: readonly { key: C7Factor; code: CdsCode; label: string; group: "academic" | "personal" }[] = [
+/** C7 rows in template order, with the page's label, the template's group, and a glossary term when the row has its own. */
+export const C7_FACTORS: readonly { key: C7Factor; code: CdsCode; label: string; group: "academic" | "personal"; term?: TermKey }[] = [
   { key: "rigor", code: "C.701", label: "Rigor of high school record", group: "academic" },
   { key: "class_rank", code: "C.702", label: "Class rank", group: "academic" },
   { key: "gpa", code: "C.703", label: "Academic GPA", group: "academic" },
@@ -60,7 +61,7 @@ export const C7_FACTORS: readonly { key: C7Factor; code: CdsCode; label: string;
   { key: "religious", code: "C.715", label: "Religious affiliation", group: "personal" },
   { key: "volunteer_work", code: "C.716", label: "Volunteer work", group: "personal" },
   { key: "work_experience", code: "C.717", label: "Work experience", group: "personal" },
-  { key: "interest", code: "C.718", label: "Level of interest", group: "personal" },
+  { key: "interest", code: "C.718", label: "Demonstrated interest", group: "personal", term: "demonstrated-interest" },
 ];
 
 export const IMPORTANCE_LEVELS: readonly FactorImportance[] = ["very_important", "important", "considered", "not_considered"];

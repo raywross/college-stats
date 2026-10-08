@@ -1,8 +1,12 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useState, useTransition, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { RotateCcw } from "lucide-react";
+import { useMe } from "@/components/account/useMe";
+import { SignInPrompt } from "@/components/account/SignInPrompt";
+import { myHome } from "@/lib/home-store";
+import { DEFAULT_WITHIN, WITHIN_OPTIONS, parseZip } from "@/lib/home";
 import { HistogramSlider } from "@/components/charts/HistogramSlider";
 import { InfoTip } from "@/components/ui/info-tip";
 import type { TermKey } from "@/lib/glossary";
@@ -179,6 +183,7 @@ export function FilterPanel({ facets, onDone }: { facets: FilterFacets; onDone?:
     ...["q", "types", "sizes", "regions", "states", "minAR", "maxAR", "minSAT", "maxSAT", "minCost", "maxCost", "minEnroll", "maxEnroll", "minApplicants", "minUndergrads", "balance", "fullTime", "fewLoans", "liveOn", "noFee", "guarantee", "noLegacy", "noEssay", "gpaRequired", "setting", "research", "designation", "opportunity", "division", "conference", "football", "rotc", "ugResearch", "studyAbroad", "maxRatio", "pellGap", "minFullTimeFaculty", "national", "field", "byRes", "oosEven", "gpa", "aidForms", "intlAid", "honors", "transfers", "minGreek", "gapYear", "faith", "faithGroup", "lgbtqCenter", "lgbtqHousing", "lgbtqNondiscrimination", "greekCouncils"],
     ...INDICATOR_KEYS.map((k) => INDICATORS[k].param),
     "policy",
+    "near",
   ].some((k) => searchParams.get(k));
 
   const clearAll = () => {
@@ -186,6 +191,11 @@ export function FilterPanel({ facets, onDone }: { facets: FilterFacets; onDone?:
     for (const k of ["sortBy", "sortDir", "view"]) {
       const v = searchParams.get(k);
       if (v) keep.set(k, v);
+    }
+    // Sorting by distance means nothing once the home ZIP is gone.
+    if (keep.get("sortBy") === "distance") {
+      keep.delete("sortBy");
+      keep.delete("sortDir");
     }
     router.push(`/explore${keep.size ? `?${keep}` : ""}`, { scroll: false });
     onDone?.();
@@ -205,6 +215,9 @@ export function FilterPanel({ facets, onDone }: { facets: FilterFacets; onDone?:
           </button>
         )}
       </div>
+
+      {/* Keyed by the URL's ZIP so the field starts over when a chip or Reset removes the filter. */}
+      <DistanceSection key={searchParams.get("near") ?? ""} />
 
       <Section title="Acceptance rate" term="acceptance-rate">
         <HistogramSlider
@@ -714,5 +727,92 @@ export function FilterPanel({ facets, onDone }: { facets: FilterFacets; onDone?:
         </div>
       </Section>
     </div>
+  );
+}
+
+/**
+ * "Distance from home" (specs/product/home-and-distance.md): a ZIP code and a radius, as plain URL params
+ * (`near`, `within`) the server-side pipeline filters on, like every other filter here. Works signed out with any
+ * ZIP; "Use my home" fetches the signed-in user's saved ZIP once (a Server Action, after the page rendered, so
+ * Explore stays static) and applies it. Applying from the default sort switches to nearest-first.
+ */
+function DistanceSection() {
+  const { searchParams, update } = useExploreParams();
+  const me = useMe();
+  const near = searchParams.get("near") ?? "";
+  const within = Number(searchParams.get("within")) || DEFAULT_WITHIN;
+  // Initial value only: the parent remounts this section (key = the URL's ZIP) whenever the filter changes.
+  const [zip, setZip] = useState(near);
+  const [note, setNote] = useState<string | null>(null);
+  const [pending, startTransition] = useTransition();
+
+  const apply = (value: string, miles: number) => {
+    const parsed = parseZip(value);
+    if (!parsed) {
+      setNote("Enter a five-digit ZIP code.");
+      return;
+    }
+    setNote(null);
+    update({ near: parsed, within: String(miles), ...(searchParams.get("sortBy") ? {} : { sortBy: "distance", sortDir: null }) });
+  };
+
+  const useHome = () => {
+    setNote(null);
+    if (!me?.signedIn) {
+      setNote("sign-in");
+      return;
+    }
+    startTransition(async () => {
+      const home = await myHome();
+      if (!home?.zip) {
+        setNote("No home address saved yet — add one on your household page.");
+        return;
+      }
+      setZip(home.zip);
+      apply(home.zip, within);
+    });
+  };
+
+  return (
+    <Section title="Distance from home" term="distance-from-home">
+      <form
+        className="flex flex-wrap items-center gap-1.5"
+        onSubmit={(e) => {
+          e.preventDefault();
+          apply(zip, within);
+        }}
+      >
+        <input
+          value={zip}
+          onChange={(e) => setZip(e.target.value)}
+          inputMode="numeric"
+          maxLength={10}
+          placeholder="ZIP code"
+          aria-label="Home ZIP code"
+          className="h-9 w-24 rounded-xl border bg-card px-3 text-sm font-semibold outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        />
+        <button type="submit" className="inline-flex h-9 items-center rounded-full border px-3 text-xs font-semibold hover:border-foreground/40">
+          Apply
+        </button>
+        <button type="button" onClick={useHome} disabled={pending} className="inline-flex h-9 items-center rounded-full border px-3 text-xs font-semibold hover:border-foreground/40 disabled:opacity-60">
+          Use my home
+        </button>
+      </form>
+      <div role="group" aria-label="Within this many miles" className="flex flex-wrap gap-1.5">
+        {WITHIN_OPTIONS.map((m) => (
+          <Chip key={m} active={near !== "" && within === m} onClick={() => (near ? update({ within: String(m) }) : apply(zip, m))}>
+            {m} mi
+          </Chip>
+        ))}
+      </div>
+      <p className="text-[11px] text-muted-foreground">
+        Straight-line miles from the center of the ZIP code. Colleges without a reported location are hidden while this is set.
+      </p>
+      {note === "sign-in" ? (
+        <SignInPrompt reason="use your home address" next="/explore" variant="inline" />
+      ) : (
+        note && <p className="text-[11px] text-muted-foreground">{note}</p>
+      )}
+    </Section>
   );
 }

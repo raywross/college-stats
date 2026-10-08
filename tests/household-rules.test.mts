@@ -6,13 +6,18 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
   canRemove,
+  E164_RE,
   editAccessControl,
   errorMessage,
+  formatPhone,
   groupAccessLog,
   HOUSEHOLD_ERRORS,
   invitationEmail,
   isInvitationToken,
+  memberInitial,
   memberName,
+  normalizePhone,
+  personHref,
   viewerRoles,
   type RosterMember,
 } from "../lib/household-rules.ts";
@@ -30,6 +35,12 @@ const m = (over: Partial<RosterMember>): RosterMember => ({
   managed_by_me: false,
   is_me: false,
   joined: "2026-10-05T00:00:00Z",
+  status: "active",
+  invitation_id: null,
+  expires_at: null,
+  grad_year: null,
+  phone: null,
+  email: null,
   ...over,
 });
 
@@ -74,6 +85,60 @@ test("memberName never falls back to an email", () => {
   assert.equal(memberName(m({ display_name: "  Dad " })), "Dad");
   assert.equal(memberName(m({})), "A guardian");
   assert.equal(memberName(m({ role: "student" })), "A student");
+});
+
+test("pending invitation rows: never removable, never given edit access, and don't stop a guardian deciding for managed students", () => {
+  const momMe = m({ display_name: "Mom", is_me: true });
+  const invitedDad = m({ display_name: "Dad", member_id: null, status: "invited", invitation_id: "i1" });
+  const ben = m({ role: "student", display_name: "Ben", managed: true, managed_by_me: true, status: "managed" });
+  const invitedStudent = m({ role: "student", display_name: "Zoe", member_id: null, status: "invited", invitation_id: "i2" });
+  const dad = m({ display_name: "Dad 2" });
+  const members = [momMe, invitedDad, ben, invitedStudent, dad];
+  const me = viewerRoles(members);
+  assert.equal(canRemove(me, invitedDad), false, "cancel the invitation instead");
+  assert.deepEqual(editAccessControl(me, invitedDad, members), { grant: false, revoke: false });
+  assert.deepEqual(editAccessControl(me, dad, members), { grant: true, revoke: true }, "only member rows count as the household's students");
+});
+
+test("memberInitial: the first name's first letter, else the role's; never an email's or '?'", () => {
+  assert.equal(memberInitial(m({ display_name: "tracy ross" })), "T");
+  assert.equal(memberInitial(m({ display_name: "  Émile " })), "É");
+  assert.equal(memberInitial(m({ display_name: null })), "G");
+  assert.equal(memberInitial(m({ role: "student", display_name: "   " })), "S");
+});
+
+test("personHref: a student's page by student id, a guardian's by user id, none for an invitation", () => {
+  assert.equal(personHref(m({ role: "student", student_id: "s1" })), "/household/s1");
+  assert.equal(personHref(m({ user_id: "u1" })), "/household/u1");
+  assert.equal(personHref(m({ member_id: null, status: "invited" })), null);
+});
+
+test("normalizePhone: US numbers as typed become E.164; '+' numbers are taken as is; anything else is null", () => {
+  assert.equal(normalizePhone("(615) 555-0100"), "+16155550100");
+  assert.equal(normalizePhone("615.555.0100"), "+16155550100");
+  assert.equal(normalizePhone("1 615 555 0100"), "+16155550100");
+  assert.equal(normalizePhone("+44 7700 900123"), "+447700900123");
+  assert.equal(normalizePhone("+1 (615) 555-0100"), "+16155550100");
+  for (const bad of ["", "  ", "555-0100", "615-555-01000", "+0123456789", "+123456", "+1234567890123456", "615-CALL-NOW", "+1+615", "61+55550100", null, 6155550100]) {
+    assert.equal(normalizePhone(bad), null, String(bad));
+  }
+  assert.equal(normalizePhone("6155550100", "GB"), null, "only the US is known without a '+'");
+  // Whatever it returns, the database accepts (the same regex as the check constraints).
+  for (const ok of ["(615) 555-0100", "+447700900123", "+1234567"]) assert.match(normalizePhone(ok)!, E164_RE);
+});
+
+test("formatPhone: US numbers readable, others as stored", () => {
+  assert.equal(formatPhone("+16155550100"), "(615) 555-0100");
+  assert.equal(formatPhone("+447700900123"), "+447700900123");
+});
+
+test("invitationEmail's two modes: choose a password (the Edge Function's link) or sign in to accept", () => {
+  const base = { inviter: "Tracy", household: "Ross", side: "guardian" as const, link: "https://x.test/l", siteName: "Quad", expires: "Oct 13, 2026" };
+  const password = invitationEmail({ ...base, mode: "password" });
+  assert.ok(password.text.includes("Open this link to choose a password") && password.html.includes("Choose a password"));
+  const accept = invitationEmail(base);
+  assert.ok(accept.text.includes("sign in to accept") && accept.html.includes("Accept the invitation"));
+  assert.ok(!accept.text.includes("password"));
 });
 
 test("groupAccessLog: one line per viewer, thing, and day, newest first", () => {

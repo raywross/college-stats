@@ -8,7 +8,18 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { affectedAsUser, asUser, createAuthDb, createUser, type AuthDb } from "./helpers/pg-auth.mts";
 
-const MIGRATIONS = ["20261005120000_accounts.sql", "20261005125000_households.sql"];
+// With invitation links, the one-household rule, and the seat cap applied too: every flow here must still hold under them.
+const MIGRATIONS = [
+  "20260928000000_dataset.sql",
+  "20261002140000_school_staging.sql",
+  "20261005120000_accounts.sql",
+  "20261005125000_households.sql",
+  "20261005130000_student_profiles.sql",
+  "20261005140000_follows.sql",
+  "20261005150000_lists.sql",
+  "20261005160000_invitation_links.sql",
+  "20261005170000_household_limits_and_home.sql",
+];
 
 interface World {
   db: AuthDb;
@@ -98,9 +109,12 @@ test("household_roster: a non-member sees nothing; signed-out visitors can't cal
 
 test("create_household and add_managed_student: atomic, and only guardians add managed students", async () => {
   const { db, alice, eve, household } = await world();
-  const solo = await rpc<string>(db, alice, "public.create_household('Alice''s dorm', 'student')");
-  const r = await roster(db, alice, solo);
-  assert.deepEqual(r.map((m) => [m.role, m.display_name, m.is_me]), [["student", "Alice", true]]);
+  const zed = await createUser(db, { email: "zed@example.com", birthYear: 2009, roleHint: "student", displayName: "Zed" });
+  const solo = await rpc<string>(db, zed, "public.create_household('Zed''s dorm', 'student')");
+  const r = await roster(db, zed, solo);
+  assert.deepEqual(r.map((m) => [m.role, m.display_name, m.is_me]), [["student", "Zed", true]]);
+  // Alice is already in the Smiths: one household per account (tests/household-limits.test.mts has the rest).
+  await assert.rejects(rpc(db, alice, "public.create_household('Alice''s dorm', 'student')"), /already_in_household/);
   await assert.rejects(rpc(db, alice, "public.add_managed_student($1, 'Sib')", [household]), /only_guardians_add_students/);
   await assert.rejects(rpc(db, eve, "public.add_managed_student($1, 'Sib')", [household]), /only_guardians_add_students/);
   await assert.rejects(rpc(db, eve, "public.create_household('   ', 'guardian')"), /invalid_name/);

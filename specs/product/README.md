@@ -24,14 +24,20 @@ public data stays free ([commercialization.md](commercialization.md#what-stays-f
 | [student-profile.md](student-profile.md) | A student's own numbers (GPA, scores, major, state, preferences) that every tool reads | Medium |
 | [saved-lists.md](saved-lists.md) | Saved colleges with Reach / Target / Likely, status, notes, deadlines, sharing, export | Medium |
 | [follow-colleges.md](follow-colleges.md) | Follow colleges (lists follow automatically) and get one email per data release summarizing what changed, with years; a public "What changed" panel on profiles | Large |
+| [home-and-distance.md](home-and-distance.md) | A home address on the account, Explore's "Distance from home" filter with a nearest-first sort, and the distance to every college on a saved list, for students and guardians alike (built 2026-10-05) | Medium |
+| [household-hub.md](household-hub.md) | Add a parent or a student by role with only the details that role needs; everyone by name, invited people in the same roster with their link; the household page as the hub, one list per person with "updates" as a switch per college (built 2026-10-06 from the owner's review) | Large |
+
+The application plan written on 2026-10-06 became the timeline stage of the **planner** on 2026-10-07
+([planner/README.md](../planner/README.md)): six stages from the first list to the deposit, in their own section of
+the roadmap, with the award-letter analyzer as the last stage.
 
 ### Planning tools
 | Spec | Adds | Complexity |
 |---|---|---|
 | [chances-and-fit.md](chances-and-fit.md) | "Where you stand" at each college from the student's numbers; a transparent rules-based classification, never a probability | Large |
 | [net-price-estimator.md](net-price-estimator.md) | What *this* family would pay: federal Student Aid Index plus each college's aid pattern, as a range, with a 4-year projection | Large |
-| [award-letter-analyzer.md](award-letter-analyzer.md) | Real aid offers side by side, standardized the way the federal College Financing Plan does, with loans and 4-year totals made visible | Large |
 | [early-decision-strategy.md](early-decision-strategy.md) | Early decision and early action admit rates vs regular decision, from Common Data Sets, with the caveats | Medium |
+| [../planner/offers.md](../planner/offers.md) | Real aid offers side by side, standardized the way the federal College Financing Plan does, with loans and 4-year totals made visible; moved into the planner on 2026-10-07 as its decisions-and-offers stage | Large |
 
 ### High school context
 | Spec | Adds | Complexity |
@@ -55,7 +61,7 @@ public data stays free ([commercialization.md](commercialization.md#what-stays-f
 | Commercialization strategy: Niche-style high school integration | [high-school-data.md](high-school-data.md) (data), [scattergrams.md](scattergrams.md) (feeder and scattergram use) |
 | Feature roadmap A: real cost and aid estimator | [net-price-estimator.md](net-price-estimator.md) |
 | Feature roadmap B: localized scattergrams | [scattergrams.md](scattergrams.md) |
-| Feature roadmap C: award letter evaluator | [award-letter-analyzer.md](award-letter-analyzer.md) |
+| Feature roadmap C: award letter evaluator | [../planner/offers.md](../planner/offers.md) (the planner's last stage, since 2026-10-07) |
 | Feature roadmap D: major-level ROI | Already planned: [field-of-study.md](../data-expansion/field-of-study.md) (Scorecard Field of Study). The Pro tier gates its deeper views ([commercialization.md](commercialization.md#feature-map)) |
 | Feature roadmap E: ED/EA strategy engine | [early-decision-strategy.md](early-decision-strategy.md), on top of [cds-admissions.md](../data-expansion/cds-admissions.md) |
 | High school data spec: sources, pipeline, use cases A–C | [high-school-data.md](high-school-data.md) |
@@ -74,9 +80,11 @@ accounts ─► student-profile ─► saved-lists ─► chances-and-fit       
     │                             │                                  │
     │                             ├─► commercialization ─► counselor-portal
     │                             │
-    ├─► net-price-estimator ─► award-letter-analyzer
+    ├─► net-price-estimator ─► planner/offers (the award-letter analyzer, now the planner's last stage)
     │
     ├─► follow-colleges (lists follow automatically; pays off once the scheduled data refresh runs)
+    │
+    ├─► household-hub ─► the planner (planner/README.md: model, list, rounds, actions, timeline, applications, offers, parents)
     │
 high-school-data ─► scattergrams (also after saved-lists)
 cds-admissions (data expansion) ─► early-decision-strategy

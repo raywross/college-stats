@@ -97,19 +97,24 @@ export const ACCOUNT_EXPORTERS: AccountExporter[] = [
   },
   {
     key: "lists",
-    description: "Your saved college lists: categories, rounds, statuses, outcomes, deadlines, and notes.",
-    run: async ({ supabase, studentIds }) => {
-      const lists = await rows<{ id: string; student_id: string; name: string; is_default: boolean; created: string }>(
-        "lists",
-        supabase.from("lists").select("id, student_id, name, is_default, created").in("student_id", inList(studentIds)),
-      );
+    description:
+      "Your saved college lists (your own, and those of the students you own or manage): categories, rounds, statuses, outcomes, deadlines, the tracking row (updates, visited, following on social), and notes.",
+    run: async ({ supabase, studentIds, userId }) => {
+      type ListRow = { id: string; student_id: string | null; user_id: string | null; name: string; is_default: boolean; created: string };
+      const cols = "id, student_id, user_id, name, is_default, created";
+      // Student records' lists, plus the lists the user owns themselves (a guardian's, household-hub.md).
+      const [studentLists, ownLists] = await Promise.all([
+        rows<ListRow>("lists", supabase.from("lists").select(cols).in("student_id", inList(studentIds))),
+        rows<ListRow>("lists", supabase.from("lists").select(cols).eq("user_id", userId)),
+      ]);
+      const lists = [...studentLists, ...ownLists];
       return Promise.all(
         lists.map(async (list) => {
-          const items = await rows<{ id: string; unit_id: string; category: string; status: string; outcome: string | null; round: string | null; position: number; added_at: string; decision_date: string | null; deadline_text: string | null; deadline_date: string | null; enrolling: boolean }>(
+          const items = await rows<{ id: string; unit_id: string; category: string; status: string; outcome: string | null; round: string | null; position: number; added_at: string; decision_date: string | null; deadline_text: string | null; deadline_date: string | null; enrolling: boolean; updates: boolean; visited_on: string | null; follows_social: boolean }>(
             "list_items",
             supabase
               .from("list_items")
-              .select("id, unit_id, category, status, outcome, round, position, added_at, decision_date, deadline_text, deadline_date, enrolling")
+              .select("id, unit_id, category, status, outcome, round, position, added_at, decision_date, deadline_text, deadline_date, enrolling, updates, visited_on, follows_social")
               .eq("list_id", list.id),
           );
           const notes = await rows("list_notes", supabase.from("list_notes").select("item_id, body, private, created").in("item_id", inList(items.map((i) => i.id))));
@@ -125,10 +130,21 @@ export const ACCOUNT_EXPORTERS: AccountExporter[] = [
             deadline_text: i.deadline_text,
             deadline_date: i.deadline_date,
             enrolling: i.enrolling,
+            updates: i.updates,
+            visited_on: i.visited_on,
+            follows_social: i.follows_social,
           }));
           return { ...list, items: itemsOut, notes };
         }),
       );
+    },
+  },
+  {
+    key: "home",
+    description: "Your household's home address as we matched it, with its map location and who set it (specs/product/home-and-distance.md); null if none is saved.",
+    run: async ({ supabase }) => {
+      const [home] = await rows("household_homes", supabase.from("household_homes").select("household_id, label, place, zip, lat, lng, set_by_name, updated_at").limit(1));
+      return home ?? null;
     },
   },
   {

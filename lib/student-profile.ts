@@ -10,6 +10,7 @@
 import type { School, SchoolType, SettingGroup, SizeBucket } from "./types.ts";
 import { satTotal } from "./score-bands.ts";
 import { isMajorFamily, type MajorFamily } from "./majors.ts";
+import { isHighSchoolId } from "./high-school-core.ts";
 
 /**
  * Same boundaries as lib/metrics.ts SIZE_BUCKETS, duplicated here rather than imported: that module pulls in
@@ -38,8 +39,10 @@ export interface StudentProfileBasics {
   gradYear: number | null;
   /** USPS postal code (e.g. "TN"), or OUTSIDE_US. Null = not set. */
   stateOfResidence: string | null;
-  /** Free text until specs/product/high-school-data.md ships an NCES id lookup. */
+  /** Display name: filled in from the picker's pick, or typed free text when the student's school isn't listed. */
   highSchool: string | null;
+  /** The picked high school's id (ncessch or PSS ppin), from the /me combobox (lib/high-schools.ts); null for free text. */
+  highSchoolId: string | null;
 }
 
 /** The scale a GPA is reported on; chances and every other tool read the 4.0 unweighted conversion. */
@@ -54,7 +57,11 @@ export interface StudentProfileAcademics {
   /** On `gpaScale`; never pre-converted, so the original number is always shown back to the student. */
   gpa: number | null;
   gpaScale: GpaScale;
-  /** Weighted GPA, informational only (glossary "weighted-gpa"): never converted or compared across schools. */
+  /**
+   * Weighted GPA, informational only (glossary "weighted-gpa"): never converted or compared across schools. 0–120,
+   * not 0–4.0/5.0: many high schools weight a 100-point scale above 100 for honors/AP courses (e.g. 108/100), so the
+   * cap has to clear that, not just the unweighted scale's own max.
+   */
   weightedGpa: number | null;
   /** 0–100; "top 10%" is stored as 10. */
   classRankPercentile: number | null;
@@ -105,6 +112,15 @@ export interface StudentProfileData {
   preferences: StudentProfilePreferences;
 }
 
+/**
+ * The graduation year the /me form should default to (student-profile.md "Changes (2026-10-06)"): the profile's
+ * own saved value when there is one, else the `students.grad_year` set when the student was invited or added to a
+ * household. Null when neither is on file. Pure so it's testable without a profile form or a Supabase round trip.
+ */
+export function effectiveGradYear(basics: Pick<StudentProfileBasics, "gradYear">, studentGradYear: number | null): number | null {
+  return basics.gradYear ?? studentGradYear;
+}
+
 export const PROFILE_GROUPS = ["basics", "academics", "tests", "plans", "preferences"] as const;
 export type ProfileGroup = (typeof PROFILE_GROUPS)[number];
 
@@ -113,7 +129,7 @@ export const LOCAL_PROFILE_KEY = "student-profile";
 
 export function emptyProfile(): StudentProfileData {
   return {
-    basics: { gradYear: null, stateOfResidence: null, highSchool: null },
+    basics: { gradYear: null, stateOfResidence: null, highSchool: null, highSchoolId: null },
     academics: { gpa: null, gpaScale: "4.0", weightedGpa: null, classRankPercentile: null, courseRigorCount: null },
     tests: {
       satTotal: null,
@@ -194,6 +210,7 @@ export function sanitizeProfile(input: unknown): StudentProfileData {
     gradYear: int(b.gradYear, GRAD_YEAR_MIN, GRAD_YEAR_MAX),
     stateOfResidence: str(b.stateOfResidence, 20),
     highSchool: str(b.highSchool, 200),
+    highSchoolId: typeof b.highSchoolId === "string" && isHighSchoolId(b.highSchoolId) ? b.highSchoolId : null,
   };
 
   const ac = isObj(input.academics) ? input.academics : {};
@@ -201,7 +218,7 @@ export function sanitizeProfile(input: unknown): StudentProfileData {
   const academics: StudentProfileAcademics = {
     gpa: num(ac.gpa, 0, gpaMaxFor(gpaScale)),
     gpaScale,
-    weightedGpa: num(ac.weightedGpa, 0, 6),
+    weightedGpa: num(ac.weightedGpa, 0, 120),
     classRankPercentile: int(ac.classRankPercentile, 1, 100),
     courseRigorCount: int(ac.courseRigorCount, 0, 40),
   };

@@ -179,8 +179,10 @@ test("wantsOwnStudent: students (and people who didn't say) get a student record
 });
 
 test("initialsFor", () => {
-  assert.equal(initialsFor("Ada Lovelace", "a@b.c"), "AL");
-  assert.equal(initialsFor("Ada", null), "AD");
+  // One letter: the first name's (household-hub.md "Names, not logins").
+  assert.equal(initialsFor("Ada Lovelace", "a@b.c"), "A");
+  assert.equal(initialsFor("ada", null), "A");
+  assert.equal(initialsFor("  Émile Zola", "z@b.c"), "É");
   assert.equal(initialsFor(null, "zed@example.com"), "Z");
   assert.equal(initialsFor("  ", null), "?");
 });
@@ -245,7 +247,7 @@ test("sendEmail posts to Resend when configured, and reports failures without th
  * Route prefixes (under app/) that may read cookies or the session. Account features add theirs here. Anything
  * else is a public page that must stay static/ISR.
  */
-const ACCOUNT_ROUTES = ["/account", "/login", "/auth", "/api/me", "/me", "/invite", "/l", "/unsubscribe", "/api/cron"];
+const ACCOUNT_ROUTES = ["/account", "/household", "/login", "/auth", "/api/me", "/me", "/invite", "/l", "/unsubscribe", "/api/cron"];
 
 function underAccountRoute(path: string): boolean {
   return ACCOUNT_ROUTES.some((r) => path === r || path.startsWith(`${r}/`));
@@ -274,6 +276,36 @@ test("proxy.ts refreshes sessions on account routes only", () => {
 
 test("guard: the matcher check flags a catch-all or a public route", () => {
   assert.deepEqual(matcherProblems(["/account/:path*", "/((?!_next/static).*)", "/schools/:path*", "/"]), ["/((?!_next/static).*)", "/schools/:path*", "/"]);
+});
+
+/* ------------------------------------------------------------------ */
+/* The session is verified, locally                                    */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Problems with how a file establishes who is signed in: it must call auth.getClaims() (verifies the token's
+ * signature, locally against the cached JWKS) and never auth.getUser( (a round trip to Supabase Auth per request) or
+ * getSession( (trusts the cookie unchecked). Comments are ignored, so the doc comments may name what not to use.
+ */
+function sessionCheckProblems(file: string, src: string): string[] {
+  const code = src.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/.*$/gm, "$1");
+  const problems: string[] = [];
+  if (!/\.auth\.getClaims\(/.test(code)) problems.push(`${file}: doesn't call auth.getClaims()`);
+  if (/\bauth\.getUser\(/.test(code)) problems.push(`${file}: calls auth.getUser()`);
+  if (/\bgetSession\(/.test(code)) problems.push(`${file}: calls getSession()`);
+  return problems;
+}
+
+test("lib/auth.ts and proxy.ts verify the session with getClaims(), never auth.getUser() or getSession()", () => {
+  const problems = ["lib/auth.ts", "proxy.ts"].flatMap((file) => sessionCheckProblems(file, readFileSync(join(ROOT, file), "utf8")));
+  assert.deepEqual(problems, []);
+});
+
+test("guard: the session check flags auth.getUser(), getSession(), and a missing getClaims()", () => {
+  assert.deepEqual(sessionCheckProblems("a.ts", "await supabase.auth.getClaims();"), []);
+  assert.deepEqual(sessionCheckProblems("a.ts", "/** never getSession() or auth.getUser() */\n// auth.getUser() was slow\nawait supabase.auth.getClaims();"), []);
+  assert.deepEqual(sessionCheckProblems("a.ts", "await supabase.auth.getUser();"), ["a.ts: doesn't call auth.getClaims()", "a.ts: calls auth.getUser()"]);
+  assert.deepEqual(sessionCheckProblems("a.ts", "await supabase.auth.getClaims();\nconst { data } = await supabase.auth.getSession();"), ["a.ts: calls getSession()"]);
 });
 
 const SESSION_READ = /from\s+["'](next\/headers|@\/lib\/auth|@\/lib\/supabase-server)["']|\bconnection\(\)/;

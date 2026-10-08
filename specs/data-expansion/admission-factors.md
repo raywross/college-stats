@@ -99,7 +99,8 @@ Registered as one field `admissions.factors` (source `ipeds-adm`, vintage `ipeds
   popover (decided in cds-admissions.md, 2026-10-03); the Explore filters follow the newest value.
 - **Explore filters:** "Doesn't consider legacy", "Essay not required", "GPA required".
 - **Compare:** one row per factor in "All the numbers".
-- **Glossary:** `admission-factor`, `legacy-status`, `secondary-school-record`, `college-prep-program`.
+- **Glossary:** `admission-factor`, `legacy-status`, `secondary-school-record`, `college-prep-program`; the C7 grid's
+  demonstrated-interest row adds `demonstrated-interest` ([cds-admissions.md](cds-admissions.md)).
 
 ## Keep history?
 **Events, plus a national series.** The events log built here also takes the policy events that

@@ -1,0 +1,39 @@
+{
+  "state": "CA",
+  "sections": [
+    {
+      "key": "college-going",
+      "source": "state-ca",
+      "label": "California Department of Education, College-Going Rate (fixture)",
+      "year": "Class of 2022",
+      "url": "https://www.cde.ca.gov/ds/ad/filescgr12.asp",
+      "retrieved": "2026-10-05",
+      "fields": [
+        "college_going_rate"
+      ]
+    },
+    {
+      "key": "dashboard",
+      "source": "state-ca",
+      "label": "California School Dashboard downloads (fixture)",
+      "year": "2023–24",
+      "url": "https://www.cde.ca.gov/ta/ac/cm/",
+      "retrieved": "2026-10-05",
+      "fields": [
+        "ela_proficiency",
+        "math_proficiency",
+        "chronic_absence"
+      ]
+    }
+  ],
+  "schools": {
+    "060000100001": {"college_going_rate":0.71,"ela_proficiency":0.58,"math_proficiency":null,"chronic_absence":0.19,"suppressed":["math_proficiency"]},
+    "060000100003": {"college_going_rate":0.64,"ela_proficiency":0.49,"math_proficiency":0.31,"chronic_absence":0.22},
+    "060000100004": {"college_going_rate":0.68,"ela_proficiency":0.55,"math_proficiency":0.36,"chronic_absence":0.17},
+    "060000100005": {"college_going_rate":0.73,"ela_proficiency":0.61,"math_proficiency":0.42,"chronic_absence":0.14},
+    "060000100006": {"college_going_rate":0.59,"ela_proficiency":0.44,"math_proficiency":0.27,"chronic_absence":0.26}
+  },
+  "unmatched": [
+    {"stateId":"19-99999-0000000","name":"Fixture School Not In CCD"}
+  ]
+}

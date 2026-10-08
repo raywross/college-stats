@@ -1,0 +1,63 @@
+{
+  "generated": "2026-10-05",
+  "sources": {
+    "crdc": {
+      "name": "Civil Rights Data Collection (fixture)",
+      "publisher": "U.S. Department of Education, Office for Civil Rights",
+      "url": "https://civilrightsdata.ed.gov/data",
+      "retrieved": "2026-10-05"
+    },
+    "edfacts": {
+      "name": "EDFacts adjusted cohort graduation rates (fixture)",
+      "publisher": "U.S. Department of Education",
+      "url": "https://www.ed.gov/data/edfacts-initiative",
+      "retrieved": "2026-10-05"
+    },
+    "hs-profile": {
+      "name": "High school profiles (fixture)",
+      "publisher": "Each high school",
+      "url": "https://example.org/profiles",
+      "retrieved": "2026-10-05"
+    },
+    "nces-ccd": {
+      "name": "NCES Common Core of Data (fixture)",
+      "publisher": "National Center for Education Statistics",
+      "url": "https://nces.ed.gov/ccd/files.asp",
+      "retrieved": "2026-10-05"
+    },
+    "nces-pss": {
+      "name": "NCES Private School Survey (fixture)",
+      "publisher": "National Center for Education Statistics",
+      "url": "https://nces.ed.gov/surveys/pss/pssdata.asp",
+      "retrieved": "2026-10-05"
+    },
+    "state-ca": {
+      "name": "California school report card data (fixture)",
+      "publisher": "California Department of Education",
+      "url": "https://www.cde.ca.gov/ds/",
+      "retrieved": "2026-10-05"
+    },
+    "state-tx": {
+      "name": "Texas school report card data (fixture)",
+      "publisher": "Texas Education Agency",
+      "url": "https://tea.texas.gov/",
+      "retrieved": "2026-10-05"
+    }
+  },
+  "vintages": {
+    "ccd-directory": "2024–25",
+    "ccd-enrollment": "2024–25",
+    "edfacts-acgr": "Class of 2023",
+    "edfacts-acgr-history": "Classes of 2019–2023",
+    "crdc": "2021–22",
+    "pss": "2021–22"
+  },
+  "counts": {
+    "public": 12,
+    "private": 1,
+    "byState": {
+      "CA": 7,
+      "TX": 6
+    }
+  }
+}

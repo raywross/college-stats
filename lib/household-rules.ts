@@ -1,18 +1,32 @@
 /**
  * Households, pure parts (specs/product/accounts.md "Built: households"): the shapes the household functions in
  * supabase/migrations/20261005125000_households.sql return, the rules the UI mirrors (who may remove whom, who may
- * change edit access), the access-log wording, error messages, and the invitation email. No server or browser APIs,
+ * change edit access), the access-log wording, error messages, and the invitation email; plus, for the household
+ * hub (specs/product/household-hub.md; 20261006150000_household_hub.sql), roster statuses, avatar letters, person
+ * links, and phone numbers. No server or browser APIs,
  * so tests, server code, and client components can all import it. Server reads live in lib/households.ts.
  */
 import type { MemberRole } from "@/lib/accounts";
 
-/** One row of household_roster(): a co-member's name and role, nothing more. */
+/**
+ * Where a roster row stands (specs/product/household-hub.md "The roster"): an active member; a managed student with
+ * no account and no invitation ("No account yet"); or someone invited who hasn't accepted, before or after the
+ * seven days run out.
+ */
+export type RosterStatus = "active" | "invited" | "expired" | "managed";
+
+/**
+ * One row of household_roster() (supabase/migrations/20261006150000_household_hub.sql): everyone in the household by
+ * name, members and pending invitations alike. A pending invitation is a row with `member_id` null and the name the
+ * inviter typed; a managed student's hand-over invitation is carried on that student's own row instead.
+ */
 export interface RosterMember {
-  member_id: string;
+  /** household_members.id; null for a pending invitation's row. */
+  member_id: string | null;
   role: MemberRole;
   /** Guardians. */
   user_id: string | null;
-  /** Students. */
+  /** Students (including a managed record waiting to be handed over). */
   student_id: string | null;
   display_name: string | null;
   can_edit: boolean;
@@ -21,30 +35,50 @@ export interface RosterMember {
   /** A managed student the viewer created. */
   managed_by_me: boolean;
   is_me: boolean;
+  /** When they joined, or for an invitation, when it was sent. */
   joined: string;
+  status: RosterStatus;
+  /** The pending invitation on this row (an invited person, or a managed student's hand-over). */
+  invitation_id: string | null;
+  expires_at: string | null;
+  /** Students: high school graduation year. */
+  grad_year: number | null;
+  /** E.164, shown to the household only (formatPhone). */
+  phone: string | null;
+  /** Only on invitations the viewer sent; null everywhere else. */
+  email: string | null;
 }
 
-/** A pending invitation as members see it (the token itself is never stored, so the link can't be shown again). */
-export interface PendingInvitation {
-  id: string;
-  email: string;
-  side: MemberRole;
-  student_id: string | null;
-  can_edit: boolean;
-  invited_by: string | null;
-  created: string;
-  expires_at: string;
-}
-
-/** A household the viewer belongs to, with its roster and pending invitations. */
+/** A household the viewer belongs to, with its roster (members and pending invitations, in one list). */
 export interface HouseholdView {
   id: string;
   name: string;
   created: string;
   members: RosterMember[];
-  invitations: PendingInvitation[];
   /** The viewer's own rows: as a guardian and/or through their own student record. */
   me: { guardian: RosterMember | null; student: RosterMember | null };
+}
+
+/**
+ * Seats in a household (public.household_max_members(); a test checks the two agree): active members plus
+ * invitations still waiting for an answer, in any mix of guardians and students. An invitation handing a managed
+ * student over to their own account takes no seat (the record already holds one), and neither does an expired one.
+ * An account is in one household at a time (specs/product/accounts.md "Built: one household, six seats").
+ */
+export const HOUSEHOLD_MAX_MEMBERS = 6;
+
+/**
+ * Mirrors public.household_seats_taken(): every member row (active members and managed students, whether or not a
+ * hand-over is pending on it) plus invitation rows that are still open.
+ */
+export function householdSeats(h: Pick<HouseholdView, "members">): { taken: number; max: number; full: boolean } {
+  const taken = h.members.filter((m) => m.member_id !== null || m.status === "invited").length;
+  return { taken, max: HOUSEHOLD_MAX_MEMBERS, full: taken >= HOUSEHOLD_MAX_MEMBERS };
+}
+
+/** Pending invitation rows (someone invited who isn't a member yet), and hand-overs waiting on a managed student. */
+export function isPending(m: Pick<RosterMember, "status">): boolean {
+  return m.status === "invited" || m.status === "expired";
 }
 
 export function viewerRoles(members: RosterMember[]): HouseholdView["me"] {
@@ -61,9 +95,60 @@ export function memberName(m: Pick<RosterMember, "display_name" | "role" | "mana
   return m.role === "guardian" ? "A guardian" : "A student";
 }
 
+/**
+ * The roster avatar's letter: the first letter of the first name, else the role's ("G" or "S"). Never an email's,
+ * and never "?".
+ */
+export function memberInitial(m: Pick<RosterMember, "display_name" | "role">): string {
+  const first = m.display_name?.trim().split(/\s+/)[0] ?? "";
+  const letter = Array.from(first)[0];
+  if (letter) return letter.toLocaleUpperCase("en-US");
+  return m.role === "guardian" ? "G" : "S";
+}
+
+/** The person's page: `/household/<student id>` for a student, `/household/<user id>` for a guardian. */
+export function personHref(m: Pick<RosterMember, "student_id" | "user_id">): string | null {
+  const id = m.student_id ?? m.user_id;
+  return id ? `/household/${id}` : null;
+}
+
+/* ------------------------------------------------------------------ */
+/* Phones                                                              */
+/* ------------------------------------------------------------------ */
+
+/** What the database accepts (profiles.phone, students.phone, invitations.phone): E.164. */
+export const E164_RE = /^\+[1-9][0-9]{6,14}$/;
+
+/**
+ * A phone number as typed, in E.164, or null when it can't be one. Punctuation and spaces are dropped; ten digits
+ * (or eleven starting with 1) are a US number; a leading "+" with 7 to 15 digits is taken as is. Only the US is
+ * known as a default country; anything else needs the "+".
+ */
+export function normalizePhone(input: unknown, defaultCountry: "US" | string = "US"): string | null {
+  if (typeof input !== "string") return null;
+  const trimmed = input.trim();
+  if (!trimmed || /[^0-9+\s().\-]/.test(trimmed)) return null;
+  const digits = trimmed.replace(/[^0-9]/g, "");
+  if (trimmed.startsWith("+")) {
+    if (trimmed.indexOf("+", 1) !== -1) return null;
+    const e164 = `+${digits}`;
+    return E164_RE.test(e164) ? e164 : null;
+  }
+  if (trimmed.includes("+") || defaultCountry !== "US") return null;
+  if (digits.length === 10) return `+1${digits}`;
+  if (digits.length === 11 && digits.startsWith("1")) return `+${digits}`;
+  return null;
+}
+
+/** "(615) 555-0100" for a US number; any other E.164 number as stored. */
+export function formatPhone(e164: string): string {
+  const us = /^\+1(\d{3})(\d{3})(\d{4})$/.exec(e164);
+  return us ? `(${us[1]}) ${us[2]}-${us[3]}` : e164;
+}
+
 /** Mirrors the "Members: guardians remove" policy: an active guardian removes anyone else (leaving is separate). */
 export function canRemove(viewer: HouseholdView["me"], target: RosterMember): boolean {
-  return viewer.guardian !== null && !target.is_me;
+  return viewer.guardian !== null && !target.is_me && target.member_id !== null;
 }
 
 /**
@@ -72,8 +157,9 @@ export function canRemove(viewer: HouseholdView["me"], target: RosterMember): bo
  * themselves; a guardian may always drop their own.
  */
 export function editAccessControl(viewer: HouseholdView["me"], target: RosterMember, members: RosterMember[]): { grant: boolean; revoke: boolean } {
-  if (target.role !== "guardian") return { grant: false, revoke: false };
-  const students = members.filter((m) => m.role === "student");
+  if (target.role !== "guardian" || target.member_id === null) return { grant: false, revoke: false };
+  // Only member rows count (the SQL looks at active memberships, not invitations).
+  const students = members.filter((m) => m.role === "student" && m.member_id !== null);
   const managesAll = viewer.guardian !== null && students.length > 0 && students.every((s) => s.managed_by_me);
   const decides = viewer.student !== null || managesAll;
   return { grant: decides && !target.is_me, revoke: decides || target.is_me };
@@ -154,6 +240,16 @@ export const HOUSEHOLD_ERRORS: Record<string, string> = {
   cannot_grant_self: "You can't give yourself edit access.",
   member_not_found: "That person isn't in this household any more.",
   account_deleted: "This account is scheduled for deletion.",
+  // reissue_invitation (a new link for a pending invitation)
+  invitation_not_found: "That invitation isn't pending any more.",
+  invitation_used: "That invitation was already accepted.",
+  invitation_revoked: "That invitation was cancelled. Invite them again instead.",
+  // One household per account, six seats (20261005170000_household_limits_and_home.sql)
+  already_in_household: "You're already in a household. Leave it first to start or join another.",
+  household_full: `This household is full: ${HOUSEHOLD_MAX_MEMBERS} people, counting invitations waiting for an answer. Cancel an invitation or remove someone to make room.`,
+  // The household hub (20261006150000_household_hub.sql)
+  invalid_phone: "Enter a phone number like (615) 555-0100, or one starting with + and the country code.",
+  invite_self: "That's your own email. Enter theirs.",
 };
 
 /** The message for a Supabase/PostgREST error raised by one of the functions above (or accept_invitation's). */
@@ -182,7 +278,9 @@ function escapeHtml(s: string): string {
 
 /**
  * The invitation email: plain HTML (light colors, no images, no tracking) and a text alternative. Names come from
- * users, so they're escaped.
+ * users, so they're escaped. `mode` is which link it carries: "password" for the invite Edge Function's link, which
+ * signs a new person in so all that's left is choosing a password; "accept" (the default) for the plain
+ * /invite/<token> link, which someone who already has an account opens and signs in to accept.
  */
 export function invitationEmail({
   inviter,
@@ -191,6 +289,7 @@ export function invitationEmail({
   link,
   siteName,
   expires,
+  mode = "accept",
 }: {
   inviter: string | null;
   household: string;
@@ -198,6 +297,7 @@ export function invitationEmail({
   link: string;
   siteName: string;
   expires: string;
+  mode?: "password" | "accept";
 }): { subject: string; html: string; text: string } {
   const who = inviter?.trim() || "Someone";
   const as = side === "guardian" ? "a parent or guardian" : "a student";
@@ -207,14 +307,17 @@ export function invitationEmail({
     side === "guardian"
       ? "Guardians can see the students' college lists and plans. Students never see a guardian's finances."
       : "Your guardians will be able to see your college list and plans. You can leave the household at any time.",
-    `Open this link to accept (it works until ${expires}):`,
+    mode === "password"
+      ? `Open this link to choose a password (it works until ${expires}):`
+      : `Open this link and sign in to accept (it works until ${expires}):`,
   ];
+  const button = mode === "password" ? "Choose a password" : "Accept the invitation";
   const text = `${lines.join("\n\n")}\n${link}\n\nIf you weren't expecting this, ignore this email.`;
   const html = `<!doctype html><html><body style="margin:0;padding:24px;background:#faf8f4;color:#1c1830;font-family:-apple-system,Segoe UI,Helvetica,Arial,sans-serif;font-size:16px;line-height:1.5">
 <div style="max-width:520px;margin:0 auto;background:#ffffff;border:1px solid #e7e2d8;border-radius:16px;padding:24px">
 <p style="margin:0 0 16px">${escapeHtml(lines[0])}</p>
 <p style="margin:0 0 16px;color:#57516b">${escapeHtml(lines[1])}</p>
-<p style="margin:0 0 24px"><a href="${escapeHtml(link)}" style="display:inline-block;background:#5b3df5;color:#ffffff;text-decoration:none;font-weight:600;padding:10px 20px;border-radius:999px">Accept the invitation</a></p>
+<p style="margin:0 0 24px"><a href="${escapeHtml(link)}" style="display:inline-block;background:#5b3df5;color:#ffffff;text-decoration:none;font-weight:600;padding:10px 20px;border-radius:999px">${button}</a></p>
 <p style="margin:0;color:#57516b;font-size:13px">This link works until ${escapeHtml(expires)}. If you weren't expecting it, ignore this email.</p>
 </div></body></html>`;
   return { subject, html, text };

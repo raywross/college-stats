@@ -1,18 +1,24 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
-import { memberName, type HouseholdView } from "@/lib/household-rules";
-import { CreateHouseholdForm } from "./HouseholdForms";
+import type { HouseholdView } from "@/lib/household-rules";
+import { rosterLine } from "@/lib/household-hub";
 
-/** The household section on /account: who's in each household, a link to manage them, or a form to start one. */
-export function HouseholdSummary({ households, defaultRole }: { households: HouseholdView[]; defaultRole: "guardian" | "student" }) {
+/**
+ * The household section on /account (specs/product/household-hub.md): who's in it, by name ("Alex · Tracy (you) ·
+ * Jordan (invited)"), and the way to the household page, where everything else lives. Someone without a household is
+ * pointed there to start one. `households` is a list only for accounts from before the one-household rule.
+ */
+export function HouseholdSummary({ households }: { households: HouseholdView[] }) {
   if (households.length === 0) {
     return (
-      <div className="space-y-4">
+      <div className="space-y-3">
         <p className="text-sm text-muted-foreground">
-          You&apos;re not in a household yet. Start one, then invite {defaultRole === "student" ? "a parent or guardian" : "your student"} with a link.
-          If someone invited you, open the link they sent.
+          You&apos;re not in a household yet. Add a parent, guardian, or student to start one. If someone invited you, open the link they sent.
         </p>
-        <CreateHouseholdForm defaultRole={defaultRole} compact />
+        <Link href="/household" className="inline-flex h-10 items-center gap-2 rounded-full bg-primary px-4 text-sm font-semibold text-primary-foreground">
+          Start your household
+          <ArrowRight className="size-4" />
+        </Link>
       </div>
     );
   }
@@ -22,15 +28,12 @@ export function HouseholdSummary({ households, defaultRole }: { households: Hous
         {households.map((h) => (
           <li key={h.id} className="rounded-2xl border px-3.5 py-3">
             <p className="font-semibold break-words">{h.name}</p>
-            <p className="mt-0.5 text-sm text-muted-foreground">
-              {h.members.map((m) => `${memberName(m)}${m.is_me ? " (you)" : ""}`).join(" · ")}
-              {h.invitations.length > 0 && ` · ${h.invitations.length} invited`}
-            </p>
+            <p className="mt-0.5 text-sm text-muted-foreground">{rosterLine(h.members)}</p>
           </li>
         ))}
       </ul>
-      <Link href="/account/household" className="inline-flex h-10 items-center gap-2 rounded-full border px-4 text-sm font-semibold hover:bg-muted">
-        Manage households, invitations, and edit access
+      <Link href="/household" className="inline-flex h-10 items-center gap-2 rounded-full border px-4 text-sm font-semibold hover:bg-muted">
+        Open your household
         <ArrowRight className="size-4" />
       </Link>
     </div>

@@ -53,7 +53,7 @@ When unsure between two, pick the stronger one for anything that writes data oth
 
 ## 4. The agent prompt
 Each agent gets: the path to `brief.md`, its unit section, the spec files to read, the files it owns, and these rules:
-- Run `npm ci` first; start any dev server with `DATA_SOURCE=json` on a free port and stop it before finishing.
+- Run `npm ci` first; start any dev server on a free port and stop it before finishing.
 - Follow the repo's conventions (CLAUDE.md, data lineage, glossary terms for every term, mobile rules, charts spec).
 - Add tests for its unit; prove each new guard fails when its rule is broken.
 - Run `npm run verify` and fix everything before the final commit; commit on its own branch; don't push, open PRs, or

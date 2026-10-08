@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { connection } from "next/server";
-import { Download, Trash2 } from "lucide-react";
+import { Download, KeyRound, Trash2 } from "lucide-react";
 import { AccessLogList } from "@/components/account/AccessLogList";
 import { AccountSection } from "@/components/account/AccountSection";
 import { AuthUnavailable } from "@/components/account/AuthUnavailable";
 import { HouseholdSummary } from "@/components/account/HouseholdSummary";
 import { SignOutButton } from "@/components/account/SignOutButton";
+import { UpdateEmailsSection } from "@/components/me/UpdateEmailsSection";
 import { Term } from "@/components/ui/info-tip";
 import { AccountsSetupError, authConfigured, currentStudent, getAccount, requireUser } from "@/lib/auth";
 import { myAccessLog, myHouseholds } from "@/lib/households";
@@ -39,7 +40,6 @@ export default async function AccountPage() {
 
   const [households, student] = await Promise.all([myHouseholds(), currentStudent()]);
   const accessLog = student ? await myAccessLog() : [];
-  const defaultRole = profile.role_hint === "guardian" || profile.role_hint === "counselor" ? "guardian" : "student";
 
   return (
     <div className="mx-auto max-w-3xl space-y-6 px-4 py-10 sm:px-6 sm:py-14">
@@ -61,19 +61,22 @@ export default async function AccountPage() {
         <ProfileForm profile={profile} email={user.email} />
       </AccountSection>
 
+      <AccountSection id="password" title="Password" description="Sign in with your email and a password, or with an emailed link.">
+        <Link href="/account/password" className="inline-flex h-10 items-center gap-2 rounded-full border px-4 text-sm font-semibold hover:bg-muted">
+          <KeyRound className="size-4" />
+          Set or change your password
+        </Link>
+      </AccountSection>
+
       <AccountSection
         id="household"
         title={<Term term="household">Household</Term>}
-        description="Link a parent or guardian and the students they help. Students never see a guardian's finances."
+        description="Parents or guardians and the students they help, by name. Each person's list, the home address, and invitations live on the household page."
       >
-        <HouseholdSummary households={households} defaultRole={defaultRole} />
+        <HouseholdSummary households={households} />
       </AccountSection>
 
-      <AccountSection id="following" title={<Term term="follow">Following</Term>} description="Colleges you follow, and your update-email setting.">
-        <Link href="/me/following" className="inline-flex h-10 items-center gap-2 rounded-full border px-4 text-sm font-semibold hover:bg-muted">
-          Manage what you follow
-        </Link>
-      </AccountSection>
+      <UpdateEmailsSection />
 
       {student && (
         <AccountSection
@@ -95,7 +98,8 @@ export default async function AccountPage() {
           Download my data (JSON)
         </a>
         <p className="mt-2 text-xs text-muted-foreground">
-          Your profile, households and their members&apos; names, the students you own or manage, invitations you sent, and who viewed your information.
+          Your profile, your household&apos;s home address and its members&apos; names, the students you own or manage, invitations you sent, and
+          who viewed your information.
         </p>
       </AccountSection>
 

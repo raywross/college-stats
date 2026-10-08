@@ -8,7 +8,6 @@ import "server-only";
  */
 import { cache } from "react";
 import { redirect } from "next/navigation";
-import type { User } from "@supabase/supabase-js";
 import { createServerSupabase, supabaseAuthEnv } from "@/lib/supabase-server";
 import {
   loginHref,
@@ -38,17 +37,33 @@ function isMissingTable(error: { code?: string; message?: string }): boolean {
   return error.code === "42P01" || error.code === "PGRST205" || /does not exist|schema cache/i.test(error.message ?? "");
 }
 
-/** The signed-in user, verified with Supabase (getUser(), never getSession()). Null when signed out or unconfigured. */
-export const getUser = cache(async (): Promise<User | null> => {
+/** Who is signed in: the verified token's subject and email. Every caller reads only these two fields. */
+export type SessionUser = { id: string; email: string | null };
+
+/**
+ * The signed-in user, verified (getClaims(), never getSession()). Null when signed out or unconfigured.
+ *
+ * getSession() only reads the cookie, which the browser can forge. getClaims() verifies the access token before
+ * trusting it (@supabase/auth-js GoTrueClient.getClaims): it refreshes a token within 90 seconds of expiry, rejects
+ * an expired one, and checks the signature against the project's published signing keys (JWKS, fetched from
+ * /auth/v1/.well-known/jwks.json and cached in memory for 10 minutes). With an asymmetric key (RS256/ES256) that check
+ * is local, so there's no round trip to Supabase Auth on most requests; with a symmetric secret (HS256), or without
+ * WebCrypto, it asks the Auth server exactly as auth.getUser() did. Postgres row-level security checks the same
+ * signature, so a token this accepts is one every query would accept too.
+ */
+export const getUser = cache(async (): Promise<SessionUser | null> => {
   if (!authConfigured()) return null;
   const supabase = await createServerSupabase();
-  const { data, error } = await supabase.auth.getUser();
-  if (error || !data.user) return null;
-  return data.user;
+  // A malformed token (an unknown alg, a key that won't import) can throw instead of returning an error: signed out.
+  const { data, error } = await supabase.auth.getClaims().catch(() => ({ data: null, error: true }));
+  if (error || !data) return null;
+  const { sub, email } = data.claims;
+  if (typeof sub !== "string" || sub === "") return null;
+  return { id: sub, email: typeof email === "string" && email !== "" ? email : null };
 });
 
 /** The signed-in user, or a redirect to /login?next=… (the path to come back to). */
-export async function requireUser(next?: string): Promise<User> {
+export async function requireUser(next?: string): Promise<SessionUser> {
   const user = await getUser();
   if (!user) redirect(loginHref(next));
   return user;
@@ -76,7 +91,7 @@ export const getAccount = cache(async (): Promise<Account | null> => {
     if (inserted.error) throw new Error(`Creating your profile failed: ${inserted.error.message}`);
     profile = inserted.data as Profile;
   }
-  return { user: { id: user.id, email: user.email ?? null }, profile };
+  return { user: { id: user.id, email: user.email }, profile };
 });
 
 /**

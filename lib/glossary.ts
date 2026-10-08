@@ -11,6 +11,7 @@ export type GlossaryCategory =
   | "School types"
   | "How we measure"
   | "Data sources"
+  | "High schools"
   | "Your account";
 
 export interface GlossaryEntry {
@@ -34,6 +35,7 @@ export const GLOSSARY_CATEGORIES: GlossaryCategory[] = [
   "School types",
   "How we measure",
   "Data sources",
+  "High schools",
   "Your account",
 ];
 
@@ -1008,7 +1010,15 @@ const entries = {
     short: "In its Common Data Set, a college marks each part of an application as very important, important, considered, or not considered when it decides whom to admit.",
     long: "\"Very important\" parts weigh most; \"considered\" parts can help but weigh less; \"not considered\" parts aren't used, even if you send them. The federal survey asks a simpler question (required, considered, or not considered).",
     category: "Admissions",
-    related: ["admission-factor", "legacy-status"],
+    related: ["admission-factor", "legacy-status", "demonstrated-interest"],
+  },
+  "demonstrated-interest": {
+    term: "Demonstrated interest",
+    short: "The signs that an applicant really wants to attend: visiting campus, opening emails, going to info sessions, interviewing, or applying early. In its Common Data Set, a college marks how much the \"level of applicant's interest\" counts in admission.",
+    long: "Colleges that count it want to admit students who will enroll, because a high yield keeps the class full and predictable. They track things like campus visits, virtual events, contact with admissions officers, and whether an applicant opened their emails or applied through an early plan. Many colleges, including most of the largest and most selective, mark it not considered: they get more interest than they can use and judge the application on its own.",
+    why: "If a college marks it important or very important, showing up matters: visit if you can, attend its online sessions, write a specific \"why us\" essay, and consider its early plan. If it's not considered, none of that moves the decision, so spend the time on the application itself.",
+    category: "Admissions",
+    related: ["factor-importance", "admission-factor", "early-decision", "early-action", "yield"],
   },
   "religious-affiliation": {
     term: "Religious affiliation",
@@ -1122,6 +1132,22 @@ const entries = {
     why: "A balanced list has some of each category, with at least a couple of Likely colleges you'd genuinely be glad to attend.",
     category: "Admissions",
     related: ["reach-school", "target-school"],
+  },
+  // Home and distance (specs/product/home-and-distance.md).
+  "home-address": {
+    term: "Home address",
+    short: "The one address saved for your household so the site can say how far each college is from home. Anyone in the household can set it, everyone in it sees the same distances, and nobody outside it can see the address.",
+    long: "We look the address up once with the U.S. Census Bureau's public geocoder and keep the matched address and its map location, rounded to about 100 meters, with the name of whoever set it. A ZIP code alone works too, using the center of the ZIP code. Change or remove it any time from your household page.",
+    category: "Your account",
+    related: ["distance-from-home", "household"],
+  },
+  "distance-from-home": {
+    term: "Distance from home",
+    short: "Straight-line miles between your home and the campus, with a rough driving time. Roads add about a quarter to the distance, and the time assumes 55 mph on average.",
+    long: "Each college's campus coordinates come from the federal IPEDS directory. The distance is the great-circle (\"as the crow flies\") figure, not a route; the drive time multiplies it by 1.25 and divides by 55 mph, rounded to the half hour. Explore's \"Distance from home\" filter measures from the center of a ZIP code, so a shared link carries a ZIP code, never an address.",
+    why: "Distance is the first filter most families apply: how often you could get home, and what each trip costs, differ a lot between a two-hour drive and a flight.",
+    category: "Your account",
+    related: ["home-address", "locale"],
   },
   // CDS financial aid (specs/data-expansion/cds-financial-aid.md).
   "css-profile": {
@@ -1386,7 +1412,7 @@ const entries = {
   household: {
     term: "Household",
     short: "A family group that links parents or guardians with the students they help. Guardians see each student's lists and plans; students never see a guardian's finances.",
-    long: "Nobody is added silently: each person joins by accepting an invitation. A student can be in two households (two homes), and a guardian can have several students. Anyone can leave at any time.",
+    long: "Nobody is added silently: each person joins by accepting an invitation. An account is in one household at a time, and a household holds up to six people in any mix of parents and students, counting invitations waiting for an answer. It shares one home address for distances. Anyone can leave at any time.",
     category: "Your account",
     related: ["guardian", "managed-student"],
   },
@@ -1406,7 +1432,7 @@ const entries = {
   "household-invitation": {
     term: "Household invitation",
     short: "A link that lets one person join a household. It works once, for the email it was sent to, for 7 days.",
-    long: "The person signs in with that email and accepts. Anyone in the household can cancel an invitation that hasn't been used. We keep only a scrambled copy of the link, so it can't be shown again: if it's lost, cancel it and send a new one.",
+    long: "Someone new opens it and chooses a password, and they're in; someone who already has an account signs in with that email and accepts. Until then they're on the household's list as Invited, and anyone in the household can copy the link again, send a new one (the old one stops working), or cancel it.",
     category: "Your account",
     related: ["household", "guardian"],
   },
@@ -1437,17 +1463,31 @@ const entries = {
   follow: {
     term: "Follow",
     short: "Get an email when a college's own numbers change: a new year of data, a revision, or a figure reported for the first time.",
-    long: "Every college on one of your lists is followed automatically, so a family's list stays current without anyone checking back. One email covers everything that changed since the last one; you can turn update emails off at any time without unfollowing anything.",
+    long: "There's no separate Follow button: every college on your list with Updates on is followed, so a family's list stays current without anyone checking back. One email covers everything that changed since the last one; you can turn update emails off at any time from your account page without taking anything off your list.",
     why: "Federal and college data arrives in occasional releases, not continuously; a follow tells you the moment one of your colleges is in a new release.",
     category: "Your account",
-    related: ["update-digest", "what-changed"],
+    related: ["updates", "update-digest", "what-changed"],
+  },
+  updates: {
+    term: "Updates",
+    short: "A switch on each college on your list, on by default, that tells us to let you know when that college's numbers change.",
+    long: "With it on, the college is in your update emails and on your Updates section whenever a new year of data, a revision, or a first-time figure arrives for it. Turning it off keeps the college on your list and stops the news about it. A guardian is told about colleges on their own list, and on the list of a student they manage who has no account yet.",
+    category: "Your account",
+    related: ["tracking", "update-digest", "follow"],
+  },
+  tracking: {
+    term: "Tracking row",
+    short: "The row of switches for each college on your list, under its More: Updates, Applying, Visited, Following on social, and Accepted.",
+    long: "Applying and Accepted are the same status and outcome the list already keeps, so ticking one changes the other and the spreadsheet export stays the same. Visited records the day you ticked it (hover to see it). Following on social is just your own note that you follow the college's accounts. Only someone who can edit the list can change them; everyone else sees them read-only.",
+    category: "Your account",
+    related: ["updates"],
   },
   "update-digest": {
     term: "Update digest",
-    short: "The email you get when a college you follow changes: what changed, in plain language, with both years.",
-    long: "At most one email per data release, listing every followed college that changed, grouped by topic. A link at the bottom turns these emails off for good, with no sign-in needed.",
+    short: "The email you get when a college on your list changes: what changed, in plain language, with both years.",
+    long: "At most one email per data release, listing every college on your list with Updates on that changed, grouped by topic. A link at the bottom turns these emails off for good, with no sign-in needed; the switch on your account page turns them back on.",
     category: "Your account",
-    related: ["follow"],
+    related: ["updates", "follow"],
   },
   "what-changed": {
     term: "What changed",
@@ -1455,6 +1495,131 @@ const entries = {
     long: "Visible to everyone, not just people who follow the college: it's about the dataset, not your account.",
     category: "Your account",
     related: ["follow"],
+  },
+
+  // High schools (specs/product/high-school-data.md)
+  ncessch: {
+    term: "NCES school ID",
+    short: "The 12-digit ID the National Center for Education Statistics gives every public school. The first two digits are the state's code.",
+    long: "Quad uses it to join a public high school's federal and state data. Private schools use the 8-character ID from the Private School Survey instead.",
+    category: "High schools",
+    related: ["adjusted-cohort-graduation-rate", "school-profile"],
+  },
+  "adjusted-cohort-graduation-rate": {
+    term: "Four-year graduation rate",
+    short: "The share of students who started 9th grade together and earned a regular diploma within four years, after adjusting for students who moved in or out.",
+    long: "Officially the adjusted cohort graduation rate (ACGR), reported by every state to the U.S. Department of Education (EDFacts). For small classes the department publishes a range, like 90–94% or \"80% or more\", instead of an exact number to protect privacy; Quad shows the range as published.",
+    why: "It's the one graduation measure calculated the same way in every state.",
+    category: "High schools",
+    related: ["adjusted-cohort", "hs-state-median"],
+  },
+  "ap-access": {
+    term: "AP access",
+    short: "How many Advanced Placement courses a high school offers, the share of its students taking at least one, and how many of those who took an AP exam passed one.",
+    long: "From the federal Civil Rights Data Collection (CRDC), which every public school answers every two years. Passing means a score of 3 or higher on at least one exam.",
+    why: "Colleges read a transcript against what the school offered: a student can only take the courses their school has.",
+    category: "High schools",
+    related: ["dual-enrollment", "ap-credit", "school-profile"],
+  },
+  "college-going-rate": {
+    term: "College-going rate",
+    short: "The share of a high school's graduates who enrolled in college, usually within a year of graduating, as the state reports it.",
+    long: "States measure it differently (some count only in-state colleges, some use National Student Clearinghouse records, some count within 12 or 16 months), so compare a school with its own state's median rather than across states.",
+    category: "High schools",
+    related: ["clearinghouse-persistence", "hs-state-median"],
+  },
+  "school-profile": {
+    term: "School profile",
+    short: "A one- or two-page document a high school sends with every college application: its grading scale, courses offered, GPA distribution, test scores, and where recent graduates enrolled.",
+    long: "Admissions officers read each application in the context of the school's profile. Quad reads profiles the schools post publicly and quotes them.",
+    category: "High schools",
+    related: ["weighted-gpa", "ap-access"],
+  },
+  "title-i": {
+    term: "Title I school",
+    short: "A public school that receives federal Title I funding because many of its students come from low-income families.",
+    category: "High schools",
+    related: ["free-reduced-lunch"],
+  },
+  "free-reduced-lunch": {
+    term: "Free or reduced-price lunch",
+    short: "The share of a school's students eligible for free or reduced-price meals under the National School Lunch Program, a common measure of family income at a school.",
+    long: "Schools that serve free meals to everyone (community eligibility) can report every student as eligible, so the share can overstate need at those schools.",
+    category: "High schools",
+    related: ["title-i"],
+  },
+  "dual-enrollment": {
+    term: "Dual enrollment",
+    short: "High school students taking college courses (often at a community college) that count for both high school and college credit.",
+    category: "High schools",
+    related: ["ap-access"],
+  },
+  "chronic-absence": {
+    term: "Chronic absence",
+    short: "The share of students who missed at least 10% of the school year (about 18 days), for any reason, as the state reports it.",
+    category: "High schools",
+    related: ["state-proficiency"],
+  },
+  "state-proficiency": {
+    term: "State test proficiency",
+    short: "The share of students who met the state's standard on its own reading (ELA) or math tests. Each state sets its own tests and cut scores, so compare only within a state.",
+    category: "High schools",
+    related: ["chronic-absence", "hs-state-median"],
+  },
+  "student-teacher-ratio": {
+    term: "Student-to-teacher ratio",
+    short: "Students enrolled for each full-time-equivalent classroom teacher at a high school. It is not the average class size.",
+    category: "High schools",
+    related: ["student-faculty-ratio"],
+  },
+  "clearinghouse-persistence": {
+    term: "College persistence",
+    short: "Of a high school's graduates who enrolled in college, the share still enrolled for a second year, from National Student Clearinghouse records the state publishes.",
+    long: "The Clearinghouse matches graduates to enrollment records at nearly every U.S. college. A few states (South Carolina and Connecticut among them) publish these reports for every public high school.",
+    category: "High schools",
+    related: ["college-going-rate"],
+  },
+  "hs-state-median": {
+    term: "State median (public high schools)",
+    short: "The middle value among the state's public high schools that report the measure: half are above it, half below. It's context, not a target or a grade.",
+    long: "Quad shows a median only when at least five public high schools in the state report the measure. Private schools never count toward it.",
+    category: "High schools",
+    related: ["adjusted-cohort-graduation-rate", "college-going-rate"],
+  },
+  "charter-school": {
+    term: "Charter school",
+    short: "A publicly funded school run independently of the local school district under a charter, usually renewed every few years.",
+    category: "High schools",
+    related: ["magnet-school"],
+  },
+  "magnet-school": {
+    term: "Magnet school",
+    short: "A public school built around a special focus (the arts, STEM, a language) meant to draw students from beyond its usual attendance zone.",
+    category: "High schools",
+    related: ["charter-school"],
+  },
+  "virtual-school": {
+    term: "Virtual school",
+    short: "A school where instruction is entirely or primarily online, as the Common Core of Data classifies it.",
+    category: "High schools",
+  },
+  "ib-program": {
+    term: "IB Diploma Programme",
+    short: "The International Baccalaureate's two-year course of study for the final two years of high school, assessed by exams set outside the school.",
+    category: "High schools",
+    related: ["ap-access", "dual-enrollment"],
+  },
+  "clearinghouse-completion": {
+    term: "College completion",
+    short: "Of a high school's graduates who enrolled in college, the share who went on to complete a degree, from National Student Clearinghouse records the state publishes.",
+    category: "High schools",
+    related: ["clearinghouse-persistence"],
+  },
+  "suppressed-for-privacy": {
+    term: "Suppressed for privacy",
+    short: "A number the source left out because it describes so few students (fewer than 5 here) that it could identify someone.",
+    category: "High schools",
+    related: ["hs-state-median"],
   },
 } satisfies Record<string, GlossaryEntry>;
 

@@ -12,8 +12,8 @@ const MAX_LISTED = 3;
  * union of every shown school's sources for these fields.
  */
 export async function MultiSourceNote({ schools, fields, className }: { schools: School[]; fields: readonly FieldPath[]; className?: string }) {
-  const { sourcesForSchools } = await getData();
-  const all = sourcesForSchools(fields, schools);
+  const { sourcesForSchoolsFast } = await getData();
+  const all = sourcesForSchoolsFast(fields, schools);
   const federal = all.filter((s) => s.key !== "cds");
   const cds = all.filter((s) => s.key === "cds");
   if (cds.length <= MAX_LISTED) return <SourceLine sources={all} className={className} />;

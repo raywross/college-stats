@@ -10,8 +10,9 @@
 ## Goal
 A person can sign in and keep their work: lists, their own numbers, estimates, and award letters. A **household**
 links a parent or guardian to one or more students. The guardian sees each student's lists and planning; the
-student never sees the guardian's income, assets, or any other financial input. A student can belong to more than
-one household (two parents in different homes), and a guardian can have several students.
+student never sees the guardian's income, assets, or any other financial input. A household holds up to six people
+in any mix of guardians and students, shares one home address for distances, and an account is in one household at
+a time ([one household, six seats](#built-one-household-six-seats-2026-10-05)).
 
 Everything on the site today keeps working without an account. Signing in adds memory and tools; it never gates a
 federal number ([commercialization.md](commercialization.md#what-stays-free)).
@@ -35,9 +36,17 @@ federal number ([commercialization.md](commercialization.md#what-stays-free)).
   [counselor-portal.md](counselor-portal.md) and [scattergrams.md](scattergrams.md), not here.
 
 ## Sign-in
-- **Methods:** email magic link (no passwords to leak or reset). Google is deferred to the backlog (2026-10-05: the
-  owner is registering a new domain first); the login form has a marked slot for it. Apple sign-in when there is a
-  native app. Passkeys later.
+- **Methods:** email and **password** by default (owner decision 2026-10-05: simpler than a link for most people),
+  with an emailed **magic link** as the option under the form. Google is deferred to the backlog (the owner is
+  registering a new domain first); the login form has a marked slot for it. Apple sign-in when there is a native app.
+  Passkeys later.
+- **Passwords** (`lib/password.ts`, the same rule in the form and on the server): at least 10 characters, and three
+  of lowercase / uppercase / digits / symbols, or a passphrase of 16+; never the email's name part or a common
+  password; 72 at most (bcrypt). The sign-up form shows a three-step meter and keeps Create disabled until it passes.
+  Sign-up sends Supabase's confirmation email (implicit flow, lands on `/auth/confirm`); after confirming, people sign
+  in with email and password. "Forgot password" emails a link that signs in and opens `/account/password`, which is
+  also where anyone signed in sets or changes a password (an account made with a magic link has none until then).
+  Sign-in with an unconfirmed email offers to send the confirmation again.
 - **Routes:** `/login` (one form, both methods; `?next=` returns to the page that asked), `/auth/confirm` (where
   magic links land), `/auth/callback` (`?code=` / `?token_hash=` links, server-side), `/account` (name, email, birth
   year, households, subscription, export, delete).
@@ -52,8 +61,18 @@ federal number ([commercialization.md](commercialization.md#what-stays-free)).
   URL must be the live site (`https://college-stats-nine.vercel.app`), with that host, the preview wildcard, and
   localhost in Redirect URLs; a wrong Site URL sent the first live sign-ups to a Vercel login wall.
 - **Session:** `httpOnly` cookies via `@supabase/ssr` (`AUTH_COOKIE_OPTIONS` in `lib/supabase-server.ts`; the
-  library's default is script-readable); `proxy.ts` (Next 16's name for middleware) refreshes the token; `getUser()`
-  (not `getSession()`) in every server read, because only `getUser()` verifies the token with Supabase.
+  library's default is script-readable); `proxy.ts` (Next 16's name for middleware) refreshes the token; every server
+  read verifies it with `auth.getClaims()`, never `getSession()`, which trusts the cookie unchecked.
+- **Verifying the session (2026-10-07).** `getUser()` in `lib/auth.ts` and `proxy.ts` call `auth.getClaims()` instead
+  of `auth.getUser()`, which asked Supabase Auth on every request (twice per page: once in the proxy, once in the
+  render). Per the auth-js `getClaims` doc comment, it refreshes a token that is about to expire, rejects an expired
+  one, and checks the signature against the project's signing keys (`/auth/v1/.well-known/jwks.json`, cached in memory
+  for 10 minutes): locally with WebCrypto when the project signs with an asymmetric key, and with the same server
+  check as `getUser()` when it still uses a symmetric secret. Identity is as trustworthy as before, since row-level
+  security accepts the same signed token, with no round trip in the common case. What changes: a session revoked
+  elsewhere (sign-out on another device) still reads as signed in until its access token expires (an hour at most),
+  as Supabase's own RLS already allowed, and the email comes from the token, so a changed address shows after the
+  next refresh. `getUser()` returns `SessionUser` (`{ id, email }`, from `sub` and `email`); nothing reads more.
 - **Anonymous first.** Tools work signed out with state in `localStorage` (the compare list already does).
   On sign-in, local state is offered for import once ("Save these 4 colleges to your list?"), then cleared.
 - The header gains an avatar menu (desktop) and the phone More sheet gains "Account" ([mobile.md](../mobile.md)).
@@ -73,10 +92,22 @@ auth.users ──1:1── profiles (display_name, birth_year, role_hint: studen
   the guardian keeps household access.
 - **Invitations** are by email with a signed link (7-day expiry). A student must accept a guardian's link, and a
   guardian must accept a student's; nobody is added to a household silently. Either side can leave at any time.
+  A pending invitation has **New link** (`reissue_invitation`, migration `20261005160000_invitation_links.sql`): the
+  link can't be shown twice because only its hash is stored, so this makes a new one with a fresh 7-day expiry, shows
+  it to copy, and emails it when email is set up; the old link stops working.
+- **Linking a managed student later:** each student a guardian added has **Link to their account**, an invitation
+  for that record to the student's email. If the student already has their own record (made the first time they
+  opened `/me`), accepting **merges** the managed record into it: its lists come over as extra lists (their own
+  default stays), profile values fill in where theirs are empty, their own record takes its place in each household,
+  the access log moves, and the managed record is soft-deleted (`merge_managed_student`). Before this, accepting left
+  the managed record's list and numbers behind.
 - A guardian's access to a student is **view by default**; `can_edit` lets the guardian add to lists and notes
   (set by the student, or by the guardian for a managed student). Edits are attributed ("Added by Mom").
-- One user can be a guardian in several households and a student in several (two homes). Counselor organizations
-  are a separate structure ([counselor-portal.md](counselor-portal.md)) that reuses `students` and the same grants.
+- An account is in **one household at a time** (as a guardian, or as a student through its own record), and a
+  household has **six seats** in any mix of guardians and students, counting invitations waiting for an answer
+  (decided 2026-10-05 after the research in [home-and-distance.md](home-and-distance.md#research-2026-10-05);
+  [built below](#built-one-household-six-seats-2026-10-05)). Counselor organizations are a separate structure
+  ([counselor-portal.md](counselor-portal.md)) that reuses `students` and the same grants.
 
 ## Privacy model
 Every user-data table has an **owner column** and a **visibility rule**, enforced with RLS policies that use
@@ -88,8 +119,9 @@ Every user-data table has an **owner column** and a **visibility rule**, enforce
 | Saved lists, notes, statuses ([saved-lists.md](saved-lists.md)) | student | read; write if `can_edit` | read/write | Notes have a `private` flag the guardian can't read |
 | Chances results ([chances-and-fit.md](chances-and-fit.md)) | student | read | read | Derived from the profile |
 | **Household finances** (AGI, assets, household size, number in college) ([net-price-estimator.md](net-price-estimator.md)) | **guardian** (per guardian user) | own only; another guardian in the same household sees nothing unless the owner shares | **never** | The student sees only an estimate the guardian chose to share, as a range per college, with no inputs |
-| Award letters ([award-letter-analyzer.md](award-letter-analyzer.md)) | whoever uploads, attached to a student | read | read | A letter is about the student, so both sides see it; the guardian's financial inputs used alongside it stay hidden |
+| Award letters ([offers.md](../planner/offers.md)) | whoever uploads, attached to a student | read | read | A letter is about the student, so both sides see it; the guardian's financial inputs used alongside it stay hidden |
 | Subscription ([commercialization.md](commercialization.md)) | the paying user | n/a | n/a | A guardian's plan covers the students in their households |
+| Home address ([home-and-distance.md](home-and-distance.md), built 2026-10-05) | the household | read, set, remove | read, set, remove | One per household, seen by its active members and nobody else, with who set it. Not in the access log |
 
 - **Sharing an estimate** creates a `shared_estimates` row (student, college set, range, as-of date) that the
   student reads; the finances table itself has no policy that any other user can satisfy. A test proves a student
@@ -144,7 +176,7 @@ access-log view build on it.
 | File | Exports |
 |---|---|
 | `lib/supabase-server.ts` (server only) | `createServerSupabase(): Promise<SupabaseClient>` (new `@supabase/ssr` client per request, bound to `cookies()`; throws when unconfigured), `supabaseAuthEnv()` |
-| `lib/auth.ts` (server only) | `authConfigured(): boolean`, `getUser(): Promise<User \| null>` (`auth.getUser()`, per-request `cache`), `requireUser(next?): Promise<User>` (redirects to `/login?next=`), `getAccount(): Promise<Account \| null>`, `currentStudent(): Promise<StudentRecord \| null>`, `studentsICanSee(): Promise<StudentAccess[]>`, `AccountsSetupError` |
+| `lib/auth.ts` (server only) | `authConfigured(): boolean`, `getUser(): Promise<SessionUser \| null>` (`auth.getClaims()`, per-request `cache`; `SessionUser` is `{ id, email }`), `requireUser(next?): Promise<SessionUser>` (redirects to `/login?next=`), `getAccount(): Promise<Account \| null>`, `currentStudent(): Promise<StudentRecord \| null>`, `studentsICanSee(): Promise<StudentAccess[]>`, `AccountsSetupError` |
 | `lib/accounts.ts` (pure) | Types `Account` (`{ user: { id, email }, profile }`), `Profile`, `StudentRecord`, `Household`, `HouseholdMember`, `Invitation`, `StudentAccess` (`{ student, relation: "self" \| "guardian", canEdit }`), `RoleHint`, `MeState`; `birthYearAllowed(year, today?)`, `parseBirthYear`, `safeNextPath(next, fallback?)`, `loginHref(next?)`, `resolveStudentAccess`, `wantsOwnStudent`, `initialsFor`, `INVITATION_ERRORS`, `ROLE_HINTS`, `AGE_GATE_COOKIE` |
 | `lib/email.ts` | `sendEmail({ to, subject, html, text, headers }): Promise<SendResult>` (`{ sent: true, id }`, `{ sent: false, reason: "not-configured" }`, or `{ sent: false, reason: "error", error }`; never throws), `emailConfigured()` |
 | `components/account/` | `SignInPrompt` (`reason`, `next`, `variant: "card" \| "inline"`), `AccountMenu` (avatar menu; add links to its `ACCOUNT_MENU_LINKS`), `useMe()` (client hook over `/api/me`), `AccountSection` + `ComingSoon`, `SignOutButton`, `AuthUnavailable` |
@@ -227,7 +259,8 @@ guard tests that break the roster function and the remove policy), `tests/househ
 - **`/account/household`**: one card per household: members (name, role badge, view/edit), **Remove** (guardians),
   **Allow editing / View only** (who may decide: below), **Leave**, pending invitations with **Cancel**, the invite form
   (email; guardians pick guardian or student and may hand over a managed student; students tick "Let them edit my
-  list and profile"), and **Add a student without an account** (guardians). "Start another household" at the bottom.
+  list and profile"), and **Add a student without an account** (guardians). (The "Start another household" form that
+  followed went away on 2026-10-05: one household per account.)
 - **Invitations** show the link on screen once, to copy ("Send this link to …"), and are also emailed through
   `sendEmail()` when `RESEND_API_KEY`/`EMAIL_FROM` are set. "Not configured" is the normal state today and isn't an
   error. Only the token's hash is stored, so a lost link is cancelled and re-sent.
@@ -293,3 +326,57 @@ grad_year?)`, `leave_household(household)`, `set_member_can_edit(member, bool)`,
    `npm run purge-accounts -- --apply`. It uses `SUPABASE_URL` + `SUPABASE_SECRET_KEY` from `.env.local` (dev) and must
    never run in Vercel.
 
+## Built: one household, six seats (2026-10-05)
+Decided with the home address ([home-and-distance.md](home-and-distance.md#research-2026-10-05) has the research:
+Apple, Google, Spotify, and Amazon all cap a family at six and allow one group at a time; the college-planning tools
+have no household object at all). Migration `supabase/migrations/20261005170000_household_limits_and_home.sql`
+(apply after the accounts, households, and invitation-links migrations); tests `tests/household-limits.test.mts` (every rule, and guard
+tests that drop the trigger, miscount the seats, and open `accept_invitation()` to show what each check catches).
+
+### Rules
+- **One household per account.** An account is in at most one live household, as a guardian through its own
+  membership or as a student through its own student record. `create_household()` refuses (`already_in_household`)
+  for anyone already in one; `accept_invitation()` refuses the same way, **except** when the invitee is alone in a
+  one-person household: that household is dissolved (closed, its pending invitations revoked) and its home carried
+  over if the new household has none. A trigger on `household_members` (`household_members_check_limits`) is the
+  backstop for every other path, including direct inserts and the service role.
+- **Six seats** (`household_max_members()`; `HOUSEHOLD_MAX_MEMBERS` in `lib/household-rules.ts`, a test keeps them
+  equal), in any mix of guardians and students: 2 and 4, 1 and 5, 4 and 2. Active members and invitations still
+  waiting for an answer both take a seat; cancelled, expired, and accepted invitations don't, and neither does an
+  invitation handing a managed student over to their own account (the record already holds the seat), so a
+  hand-over stays possible in a full household. `create_invitation()` and `add_managed_student()` refuse
+  (`household_full`) at the cap, and the trigger refuses a seventh active member however it arrives.
+- **No switching lockout.** Apple and Google limit switching to once a year to stop paid-plan sharing; the site has
+  no paid plan yet, and a lockout can come with one ([commercialization.md](commercialization.md)).
+
+### What changed on the pages
+- `/account` shows the one household with "N of 6 seats"; "Start a household" appears only when the account has
+  none. `/account/household` is "Your household": the card shows seats taken, and at six it replaces the invite and
+  add-student forms with a note (and keeps a hand-over form for managed students). "Start another household" is
+  gone; an account from before this rule still sees each of its households.
+- Refusals read in plain words: `HOUSEHOLD_ERRORS` and `INVITATION_ERRORS` gained `already_in_household` and
+  `household_full`.
+- The household's home address is set inside the household card on `/account/household` (owner decision
+  2026-10-05), and `/account`'s summary shows it. Someone with no household starts one first, then sets the home.
+
+### SQL added
+`household_max_members()`, `household_of(user)`, `my_household()` (the caller's, for the app),
+`household_seats_taken(household)`, `is_solo_household(household, user)`, the trigger function
+`household_members_check_limits()`, and replaced bodies for `create_household()`, `add_managed_student()`,
+`create_invitation()`, `accept_invitation()` (on the invitation-links version, so a claim still merges a managed
+record), and `merge_managed_student()` (the managed record leaves each household before the student's own record
+takes its place, so the cap sees a swap, not a seventh member). Same signatures, so their grants stand. Nothing about
+existing data is rewritten: an account already in several households keeps them and can't add more.
+
+### Given up, knowingly
+A step-parent with children in two different households picks one. Two separated parents who each want their own
+household can't: they share one, and their finances stay private from each other as before. Both are rare, and the
+simplicity is worth it.
+
+
+## Superseded in part (2026-10-06)
+[household-hub.md](household-hub.md) reshaped what this spec built: `/account/household` is now `/household`, the
+household page is the hub with a page per person, every person (guardians included) owns a list, the Follow button and
+`/me/following` are gone (an **Updates** switch on each list item feeds the digest), and the roster shows pending
+invitations by name with a copyable link. Paths and component names above that no longer match are historical; the
+hub spec's "Built" section is current.

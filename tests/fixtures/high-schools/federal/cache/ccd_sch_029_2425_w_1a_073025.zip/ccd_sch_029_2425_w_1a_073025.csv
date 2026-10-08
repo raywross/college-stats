@@ -1,0 +1,9 @@
+SCHOOL_YEAR,FIPST,ST,SCH_NAME,LEA_NAME,LEAID,ST_SCHID,NCESSCH,LSTREET1,LSTREET2,LCITY,LSTATE,LZIP,UPDATED_STATUS,UPDATED_STATUS_TEXT,SCH_TYPE_TEXT,CHARTER_TEXT,GSLO,GSHI
+2024-2025,06,CA,Fixture Union High School,Fixture Union High,0600001,CA-0000001-0000101,060000100101,100 Main St,,Fixtureville,CA,95000,1,Open,Regular School,No,09,12
+2024-2025,06,CA,"Fixture Charter Academy, Upper School",Fixture Union High,0600001,CA-0000001-0000102,060000100102,200 Oak Ave,Suite 4,Fixtureville,CA,95001,3,New,Alternative School,Yes,KG,12
+2024-2025,06,CA,Closed Fixture High,Fixture Union High,0600001,CA-0000001-0000103,060000100103,300 Pine St,,Fixtureville,CA,95002,2,Closed,Regular School,No,09,12
+2024-2025,06,CA,Fixture Middle School,Fixture Union High,0600001,CA-0000001-0000104,060000100104,400 Elm St,,Fixtureville,CA,95003,1,Open,Regular School,No,06,08
+2024-2025,06,CA,Future Fixture High,Fixture Union High,0600001,CA-0000001-0000105,060000100105,500 Ash St,,Fixtureville,CA,95004,7,Future,Regular School,No,09,12
+2024-2025,06,CA,Fixture Ungraded Program,Fixture Union High,0600001,CA-0000001-0000106,060000100106,600 Fir St,,Fixtureville,CA,95005,1,Open,Special Education School,No,M,M
+2024-2025,48,TX,Fixture Early College High,Fixture ISD,4800002,TX-000002-000201,480000200201,10 Ranch Rd,,Fixture City,TX,7500,1,Open,Career and Technical School,Not applicable,07,13
+2024-2025,72,PR,Escuela Fixture,Fixture PR,7200003,PR-01-0301,720000300301,1 Calle,,San Juan,PR,00901,1,Open,Regular School,No,09,12

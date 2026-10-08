@@ -74,7 +74,7 @@ export const ADMISSION_PROFILE_ROWS: readonly Row[] = [
     (f) =>
       [
         `Admission: ${f.label}`,
-        "factor-importance",
+        f.term ?? "factor-importance",
         `${P}.factors.${f.key}` as FieldPath,
         (s: School) => {
           const level = admissionProfile(s)?.factors?.[f.key];

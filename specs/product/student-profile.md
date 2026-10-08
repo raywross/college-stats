@@ -14,7 +14,7 @@ profile and forgets it.
 ## Fields
 | Group | Fields | Used by |
 |---|---|---|
-| **Basics** | graduation year; state of residence (including "Outside the U.S."); high school (NCES id, from [high-school-data.md](high-school-data.md); free text until then) | residency pricing, in-state rules, scattergrams, the admit rate for you ([cds-residency-admissions.md](../data-expansion/cds-residency-admissions.md): the profile card's "(you)" marker, Compare's "Acceptance rate for you", chances' base rate) |
+| **Basics** | graduation year; state of residence (including "Outside the U.S."); high school (NCES id from [high-school-data.md](high-school-data.md), picked by search on `/me`; free text when the school isn't listed) | residency pricing, in-state rules, scattergrams, the admit rate for you ([cds-residency-admissions.md](../data-expansion/cds-residency-admissions.md): the profile card's "(you)" marker, Compare's "Acceptance rate for you", chances' base rate) |
 | **Academics** | unweighted GPA (0–4.0) and the scale it's on (4.0, 5.0, 100-point) with a weighted GPA optional; class rank (percentile) optional; course rigor (count of AP/IB/dual-enrollment courses) optional | chances (GPA bands from [cds-admissions.md](../data-expansion/cds-admissions.md)) |
 | **Tests** | SAT total and sections; ACT composite and sections; superscore flag; "I plan to apply test-optional" | ScoreChecker, Explore fit filter, chances |
 | **Plans** | intended majors (up to 3, 2-digit CIP families from [majors.md](../data-expansion/majors.md)); early round interest (ED / EA / none) | majors and earnings-by-major views, [early-decision-strategy.md](early-decision-strategy.md) |
@@ -151,3 +151,43 @@ Unit C of the accounts build (`feature/accounts-profile`, merged `feature/accoun
    yet" and the ScoreChecker/Compare/Explore integrations just render with nothing to prefill (they catch the
    missing-table error and fall back silently).
 2. Nothing else: this migration reuses accounts' helper functions and env vars, and needs no new ones.
+
+### Changes (2026-10-06)
+Owner feedback on the household hub's first preview (R2 of the redesign, `feature/household-hub-numbers`), fixing
+four rough edges in `ProfileForm`/`StudentNumbers` found once real data replaced the mocked-up form:
+
+1. **No sample-value placeholders.** Every `placeholder` that looked like a filled-in answer (3.8, 2027, 4.3, 10,
+   6, 1450, 32, 30000, "TN, CA, New England") is gone — an empty field now reads as empty, not as a pre-answered
+   one a student might leave unedited by mistake. A muted hint under the field gives the valid range instead (e.g.
+   "400–1600" under SAT total, "0–120: some high schools weight courses above 100" under weighted GPA); the GPA
+   field's existing live readout ("about 3.7 unweighted (from 93/100)") already served as its hint and needed no
+   placeholder either.
+2. **Graduation year defaults from the student record.** `lib/student-profile.ts` gained
+   `effectiveGradYear(basics, studentGradYear)`: the saved profile value if there is one, else `students.grad_year`
+   (set when the student was invited or added to the household by a guardian who often *does* know the grade).
+   `StudentNumbers` passes `profile.student.grad_year` to `ProfileForm` as `studentGradYear`, and the form's
+   graduation-year input defaults to `effectiveGradYear(data.basics, studentGradYear)`. On save,
+   `saveProfile` (`lib/student-profile-store.ts`) now also writes `students.grad_year` when the saved value differs
+   from the record's own — through the same Supabase client and session as the profile upsert, so it's still
+   `can_edit_student` (via the existing "Students: edit" RLS policy, `supabase/migrations/20261005120000_accounts.sql`)
+   that decides whether the write is allowed; a managing guardian or the student themself can both update it, no
+   migration change needed. The sync is best-effort: a failure there never fails the profile save itself, since
+   `student_profiles` stays the source of truth for every other tool that reads the profile.
+3. **State of residence defaults from the chosen high school.** `HighSchoolPicker` takes an optional `onSelect(hit)`
+   callback, fired with the full picked result (including `hit.state`, already part of `HighSchoolHit`) when a
+   student picks a school from the list. `ProfileForm` made "State of residence" a controlled field so it can react:
+   picking a school fills the state in **only when the field is still blank** (a student who already set one, or
+   who edits the dropdown directly afterward, keeps their own answer — editing it by hand also clears the "set from
+   your school" hint). The hint under the field then reads "Set from your high school; change it if you live
+   elsewhere." Free-typing a school that never resolves to a picked `id` leaves the state field untouched, same as
+   before.
+4. **Weighted GPA now allows 0–120, not 0–6.** Some high schools weight a 100-point scale above 100 for honors/AP
+   courses (108/100 isn't unusual), so `sanitizeProfile`'s old 0–6 clamp was silently dropping real values — it's
+   a different scale from the unweighted GPA's own max, which is unchanged (0–4.0/5.0/100 depending on
+   `academics.gpaScale`). The form input's `max` moved from 6 to 120 to match; `tests/student-profile.test.mts` adds
+   cases for 108 (kept), 120 (kept, the boundary), 121 (dropped), and -1 (dropped).
+
+No RLS or migration changes: the "Students: edit" policy already covers a guardian or student updating `grad_year`
+directly (`user_id = auth.uid() or managed_by = auth.uid() or can_edit_student(id)`), so point 2 needed no new
+policy, confirmed by reading the policy rather than adding a test for it (an RLS test belongs with the accounts
+migration's own suite, not here).

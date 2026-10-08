@@ -9,10 +9,13 @@
  * Compare's "You" column, Explore's fit chips): the fetch happens after the page has already rendered, in the
  * browser, so the public page itself never reads a cookie (tests/accounts.test.mts's guard).
  */
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { getAccount, getUser, studentsICanSee } from "@/lib/auth";
 import { createServerSupabase } from "@/lib/supabase-server";
 import type { StudentAccess, StudentRecord } from "@/lib/accounts";
 import { emptyProfile, sanitizeProfile, type StudentProfileData } from "@/lib/student-profile";
+import { getHighSchool } from "@/lib/high-schools";
+import { matriculationLine } from "@/lib/high-school-ui";
 
 function isMissingTable(error: { code?: string; message?: string }): boolean {
   return error.code === "42P01" || error.code === "PGRST205" || /does not exist|schema cache/i.test(error.message ?? "");
@@ -90,7 +93,25 @@ export async function saveProfile(studentId: string, raw: unknown): Promise<Save
     if (error.code === "42501" || /row-level security/i.test(error.message)) return { ok: false, message: "You don't have permission to edit this profile." };
     return { ok: false, message: "We couldn't save that. Try again in a moment." };
   }
+  // Keep students.grad_year in step with what the student just saved (student-profile.md "Changes (2026-10-06)"):
+  // the roster, invite flow, and anything else that reads the student record directly should see the same year as
+  // the profile form, not whatever was set when the record was created. Best-effort and silent on failure — the
+  // student_profiles row above is the field's source of truth for every tool that reads the profile itself, so a
+  // denied or failed sync here (e.g. a view-only guardian's stale write, which can_edit_student already should have
+  // blocked before this point) never fails the profile save the student is waiting on.
+  if (data.basics.gradYear !== null) await syncStudentGradYear(supabase, studentId, data.basics.gradYear);
   return { ok: true };
+}
+
+async function syncStudentGradYear(supabase: SupabaseClient, studentId: string, gradYear: number): Promise<void> {
+  try {
+    const { data: row } = await supabase.from("students").select("grad_year").eq("id", studentId).maybeSingle();
+    if (row && row.grad_year !== gradYear) {
+      await supabase.from("students").update({ grad_year: gradYear }).eq("id", studentId);
+    }
+  } catch {
+    // Best-effort sync; see the call site's comment.
+  }
 }
 
 /**
@@ -124,5 +145,37 @@ function mergeProfiles(base: StudentProfileData, incoming: StudentProfileData): 
     tests: pick(base.tests, incoming.tests),
     plans: pick(base.plans, incoming.plans),
     preferences: pick(base.preferences, incoming.preferences),
+  };
+}
+
+/** The signed-in student's high school's matriculation line for one college, when it has one (specs/product/high-school-data.md "Display"). */
+export interface MyHighSchoolMatriculation {
+  schoolId: string;
+  schoolName: string;
+  /** "6 enrolled in 2023–2025 (school profile, 2025–26)" (lib/high-school-ui.ts matriculationLine), built here so the
+   * profile's own edition is read in lib/, not in the UI component (tests/citation-guards.test.mts). */
+  line: string;
+}
+
+/**
+ * "From your high school: 6 enrolled in 2023–2025 (school profile, 2025–26)" (components/high-schools/MyHighSchoolLine.tsx):
+ * the signed-in student's own high school (never a guardian's view of a student, and never another student's), when
+ * it has a profile detail file that lists this college among its matriculation entries with a count. Same pattern as
+ * myScores(): a Server Action called from a client component mounted on the otherwise-static college profile, so the
+ * page itself never reads cookies while rendering (tests/accounts.test.mts).
+ */
+export async function myHighSchoolMatriculation(collegeUnitId: string): Promise<MyHighSchoolMatriculation | null> {
+  const profile = await myOwnProfile().catch(() => null);
+  const hsId = profile?.basics.highSchoolId;
+  if (!hsId) return null;
+  const view = await getHighSchool(hsId).catch(() => null);
+  const matriculation = view?.detail?.matriculation;
+  if (!matriculation) return null;
+  const entry = matriculation.entries.find((e) => e.unit_id === collegeUnitId);
+  if (!entry || entry.count === null) return null;
+  return {
+    schoolId: view.school.id,
+    schoolName: view.school.name,
+    line: matriculationLine(entry.count, matriculation.classes, view.detail!.profile.edition),
   };
 }

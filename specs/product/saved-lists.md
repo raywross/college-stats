@@ -108,6 +108,11 @@ list_notes (item_id, author_id, body, private bool, created)
 - Glossary: `reach-school`, `target-school`, `likely-school` (explaining "Likely" over "Safety"), `regular-decision`,
   `rolling-admission` (`early-decision`/`early-action`/`restrictive-early-action` already existed).
 
+- **Distance from home** (2026-10-05, [home-and-distance.md](home-and-distance.md)): each row adds the straight-line
+  miles and a drive time from the household's home (the same place for the student and for the guardians who see
+  the list), citing the campus coordinates' source; a line under the board links to Explore within 100 miles, or
+  to the account page to add a home when none is saved.
+
 ### Deviations from the spec
 
 - **No standing/chances column.** "Chances and fit" isn't built yet (owner decision for this build); rows show
@@ -130,3 +135,10 @@ list_notes (item_id, author_id, body, private bool, created)
 - Apply `supabase/migrations/20261005150000_lists.sql` in the Supabase SQL Editor (dev first, then prod), after
   `20261005120000_accounts.sql`, `20261005125000_households.sql`, and `20261005140000_follows.sql`.
 - No new environment variables or dashboard settings beyond what accounts/households/follows already need.
+
+## Superseded in part (2026-10-06)
+[household-hub.md](household-hub.md) reshaped what this spec built: `/account/household` is now `/household`, the
+household page is the hub with a page per person, every person (guardians included) owns a list, the Follow button and
+`/me/following` are gone (an **Updates** switch on each list item feeds the digest), and the roster shows pending
+invitations by name with a copyable link. Paths and component names above that no longer match are historical; the
+hub spec's "Built" section is current.

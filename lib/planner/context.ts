@@ -201,6 +201,7 @@ export function planSchoolFor(
     logistics,
     aid: school.reported?.aid ?? null,
     testPolicy: school.reported?.test_policy ?? school.admissions?.test_policy ?? null,
+    applicationFee: school.admissions?.application_fee ?? null,
     cycleStartYear: opts.studentCycleStart,
     editionIsLastCycle: dataStart !== null && dataStart < opts.studentCycleStart,
     cites,

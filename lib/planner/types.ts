@@ -77,6 +77,8 @@ export interface PlanSchool { unit_id: string; name: string; city: string | null
    */
   satRange?: [number, number] | null;
   actRange?: [number, number] | null;
+  /** Federal application fee (U5, additive): shown with the apply task. */
+  applicationFee?: number | null;
 }
 
 /* ------------------------------------------------------------------ */

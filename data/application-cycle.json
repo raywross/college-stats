@@ -1,9 +1,33 @@
 {
-  "description": "Dates that apply to every applicant in a cycle (specs/planner/timeline.md \"The cycle file\"). One object per cycle, named by the academic year in which students apply. Reviewed in a data PR each spring when the next cycle's dates are published; checked by scripts/check-cycle.mts (npm run verify). Fixed federal and national dates first; windows, test dates, and the summer list are added by the timeline unit.",
+  "description": "Dates that apply to every applicant in a cycle (specs/planner/timeline.md \"The cycle file\"). One object per cycle, named by the academic year in which students apply. Reviewed in a data PR each spring when the next cycle's dates are published; checked by scripts/check-cycle.mts (npm run verify). Fixed federal and national dates, the counselors' windows, SAT and ACT dates as College Board and ACT publish them (a test date without register_by is a projected date with no registration yet; dates not yet published are left out, never guessed), and the summer list (applies: committed). SAT and ACT dates read 2026-10-08.",
   "cycles": [
     {
       "cycle": "2026-27",
       "entries": [
+        {
+          "key": "ask_recommenders",
+          "label": "Ask two teachers for recommendations",
+          "window": [
+            "2026-04-15",
+            "2026-06-10"
+          ],
+          "applies": "all",
+          "assignee": "student",
+          "source": "https://bigfuture.collegeboard.org/plan-for-college/apply-to-college/letters-of-recommendation",
+          "detail": "Before summer, while they remember your work. Give them at least a month before your first deadline."
+        },
+        {
+          "key": "personal_essay_draft",
+          "label": "Draft the personal essay",
+          "window": [
+            "2026-06-15",
+            "2026-08-31"
+          ],
+          "applies": "has_common_app",
+          "assignee": "student",
+          "source": "https://www.commonapp.org/apply/essay-prompts",
+          "detail": "The Common App prompts rarely change from year to year, so you can start before applications open."
+        },
         {
           "key": "common_app_opens",
           "label": "Common App opens for the new season",
@@ -14,6 +38,18 @@
           "detail": "Accounts roll over; the essay prompts and each college's questions are live from today."
         },
         {
+          "key": "supplements",
+          "label": "Write each college's supplement essays",
+          "window": [
+            "2026-08-01",
+            "2026-10-25"
+          ],
+          "applies": "all",
+          "assignee": "student",
+          "source": "https://www.commonapp.org/apply/first-year-students",
+          "detail": "Start with the colleges whose deadlines come first."
+        },
+        {
           "key": "fafsa_opens",
           "label": "FAFSA opens",
           "date": "2026-10-01",
@@ -32,19 +68,165 @@
           "detail": "Needed only by the colleges on your list that ask for it."
         },
         {
+          "key": "portal_checks",
+          "label": "Check each college's applicant portal for missing items",
+          "window": [
+            "2026-11-01",
+            "2027-03-31"
+          ],
+          "applies": "all",
+          "assignee": "student",
+          "source": "https://bigfuture.collegeboard.org/plan-for-college/apply-to-college/after-youve-applied",
+          "detail": "A week or two after you apply, and then every couple of weeks until it says complete."
+        },
+        {
+          "key": "thank_recommenders",
+          "label": "Thank your recommenders",
+          "window": [
+            "2026-11-15",
+            "2027-01-31"
+          ],
+          "applies": "all",
+          "assignee": "student",
+          "source": "https://bigfuture.collegeboard.org/plan-for-college/apply-to-college/letters-of-recommendation",
+          "detail": "A short note once your applications are in, and tell them where you get in."
+        },
+        {
           "key": "reply_date",
           "label": "National reply date",
           "date": "2027-05-01",
           "applies": "uses_may1",
           "assignee": "either",
-          "source": "https://www.nacacnet.org/",
+          "source": "https://bigfuture.collegeboard.org/plan-for-college/apply-to-college/college-application-timeline-12th-grade",
           "detail": "The deposit date at most colleges that admit in the regular round; check each college's own date."
+        },
+        {
+          "key": "final_transcript",
+          "label": "Ask your school to send the final transcript",
+          "window": [
+            "2027-05-15",
+            "2027-06-30"
+          ],
+          "applies": "committed",
+          "assignee": "student",
+          "source": "https://bigfuture.collegeboard.org/plan-for-college/apply-to-college/college-application-timeline-12th-grade",
+          "detail": "To the college you chose only."
+        },
+        {
+          "key": "orientation",
+          "label": "Sign up for orientation",
+          "window": [
+            "2027-05-15",
+            "2027-07-31"
+          ],
+          "applies": "committed",
+          "assignee": "student",
+          "source": "https://bigfuture.collegeboard.org/plan-for-college/apply-to-college/after-youve-applied",
+          "detail": "Sessions fill up; the college's admitted-student portal has the dates."
+        },
+        {
+          "key": "health_forms",
+          "label": "Send health and immunization forms",
+          "window": [
+            "2027-06-01",
+            "2027-07-31"
+          ],
+          "applies": "committed",
+          "assignee": "either",
+          "source": "https://bigfuture.collegeboard.org/plan-for-college/apply-to-college/after-youve-applied",
+          "detail": "The college's health center lists what it needs before move-in."
+        },
+        {
+          "key": "accept_aid",
+          "label": "Accept the parts of the aid offer you'll use",
+          "window": [
+            "2027-05-15",
+            "2027-07-15"
+          ],
+          "applies": "committed",
+          "assignee": "guardian",
+          "source": "https://bigfuture.collegeboard.org/plan-for-college/apply-to-college/after-youve-applied",
+          "detail": "Accept grants first; take only the loans you need."
+        },
+        {
+          "key": "sat_2026_10",
+          "label": "SAT",
+          "date": "2026-10-03",
+          "register_by": "2026-09-18",
+          "applies": "plans_tests",
+          "assignee": "student",
+          "source": "https://satsuite.collegeboard.org/sat/dates-deadlines",
+          "detail": "Skip any date you won't test on; register before the deadline to avoid the late fee."
+        },
+        {
+          "key": "act_2026_10",
+          "label": "ACT",
+          "date": "2026-10-17",
+          "register_by": "2026-09-11",
+          "applies": "plans_tests",
+          "assignee": "student",
+          "source": "https://www.act.org/content/act/en/products-and-services/the-act/registration/test-dates.html",
+          "detail": "Skip any date you won't test on; register before the deadline to avoid the late fee."
+        },
+        {
+          "key": "sat_2026_11",
+          "label": "SAT",
+          "date": "2026-11-07",
+          "register_by": "2026-10-23",
+          "applies": "plans_tests",
+          "assignee": "student",
+          "source": "https://satsuite.collegeboard.org/sat/dates-deadlines",
+          "detail": "Skip any date you won't test on; register before the deadline to avoid the late fee."
+        },
+        {
+          "key": "sat_2026_12",
+          "label": "SAT",
+          "date": "2026-12-05",
+          "register_by": "2026-11-20",
+          "applies": "plans_tests",
+          "assignee": "student",
+          "source": "https://satsuite.collegeboard.org/sat/dates-deadlines",
+          "detail": "Skip any date you won't test on; register before the deadline to avoid the late fee."
+        },
+        {
+          "key": "act_2026_12",
+          "label": "ACT",
+          "date": "2026-12-12",
+          "register_by": "2026-11-06",
+          "applies": "plans_tests",
+          "assignee": "student",
+          "source": "https://www.act.org/content/act/en/products-and-services/the-act/registration/test-dates.html",
+          "detail": "Skip any date you won't test on; register before the deadline to avoid the late fee."
         }
       ]
     },
     {
       "cycle": "2027-28",
       "entries": [
+        {
+          "key": "ask_recommenders",
+          "label": "Ask two teachers for recommendations",
+          "window": [
+            "2027-04-15",
+            "2027-06-10"
+          ],
+          "applies": "all",
+          "assignee": "student",
+          "source": "https://bigfuture.collegeboard.org/plan-for-college/apply-to-college/letters-of-recommendation",
+          "detail": "Before summer, while they remember your work. Give them at least a month before your first deadline."
+        },
+        {
+          "key": "personal_essay_draft",
+          "label": "Draft the personal essay",
+          "window": [
+            "2027-06-15",
+            "2027-08-31"
+          ],
+          "applies": "has_common_app",
+          "assignee": "student",
+          "source": "https://www.commonapp.org/apply/essay-prompts",
+          "detail": "The Common App prompts rarely change from year to year, so you can start before applications open."
+        },
         {
           "key": "common_app_opens",
           "label": "Common App opens for the new season",
@@ -55,6 +237,18 @@
           "detail": "Accounts roll over; the essay prompts and each college's questions are live from today."
         },
         {
+          "key": "supplements",
+          "label": "Write each college's supplement essays",
+          "window": [
+            "2027-08-01",
+            "2027-10-25"
+          ],
+          "applies": "all",
+          "assignee": "student",
+          "source": "https://www.commonapp.org/apply/first-year-students",
+          "detail": "Start with the colleges whose deadlines come first."
+        },
+        {
           "key": "fafsa_opens",
           "label": "FAFSA opens",
           "date": "2027-10-01",
@@ -73,13 +267,561 @@
           "detail": "Needed only by the colleges on your list that ask for it."
         },
         {
+          "key": "portal_checks",
+          "label": "Check each college's applicant portal for missing items",
+          "window": [
+            "2027-11-01",
+            "2028-03-31"
+          ],
+          "applies": "all",
+          "assignee": "student",
+          "source": "https://bigfuture.collegeboard.org/plan-for-college/apply-to-college/after-youve-applied",
+          "detail": "A week or two after you apply, and then every couple of weeks until it says complete."
+        },
+        {
+          "key": "thank_recommenders",
+          "label": "Thank your recommenders",
+          "window": [
+            "2027-11-15",
+            "2028-01-31"
+          ],
+          "applies": "all",
+          "assignee": "student",
+          "source": "https://bigfuture.collegeboard.org/plan-for-college/apply-to-college/letters-of-recommendation",
+          "detail": "A short note once your applications are in, and tell them where you get in."
+        },
+        {
           "key": "reply_date",
           "label": "National reply date",
           "date": "2028-05-01",
           "applies": "uses_may1",
           "assignee": "either",
-          "source": "https://www.nacacnet.org/",
+          "source": "https://bigfuture.collegeboard.org/plan-for-college/apply-to-college/college-application-timeline-12th-grade",
           "detail": "The deposit date at most colleges that admit in the regular round; check each college's own date."
+        },
+        {
+          "key": "final_transcript",
+          "label": "Ask your school to send the final transcript",
+          "window": [
+            "2028-05-15",
+            "2028-06-30"
+          ],
+          "applies": "committed",
+          "assignee": "student",
+          "source": "https://bigfuture.collegeboard.org/plan-for-college/apply-to-college/college-application-timeline-12th-grade",
+          "detail": "To the college you chose only."
+        },
+        {
+          "key": "orientation",
+          "label": "Sign up for orientation",
+          "window": [
+            "2028-05-15",
+            "2028-07-31"
+          ],
+          "applies": "committed",
+          "assignee": "student",
+          "source": "https://bigfuture.collegeboard.org/plan-for-college/apply-to-college/after-youve-applied",
+          "detail": "Sessions fill up; the college's admitted-student portal has the dates."
+        },
+        {
+          "key": "health_forms",
+          "label": "Send health and immunization forms",
+          "window": [
+            "2028-06-01",
+            "2028-07-31"
+          ],
+          "applies": "committed",
+          "assignee": "either",
+          "source": "https://bigfuture.collegeboard.org/plan-for-college/apply-to-college/after-youve-applied",
+          "detail": "The college's health center lists what it needs before move-in."
+        },
+        {
+          "key": "accept_aid",
+          "label": "Accept the parts of the aid offer you'll use",
+          "window": [
+            "2028-05-15",
+            "2028-07-15"
+          ],
+          "applies": "committed",
+          "assignee": "guardian",
+          "source": "https://bigfuture.collegeboard.org/plan-for-college/apply-to-college/after-youve-applied",
+          "detail": "Accept grants first; take only the loans you need."
+        },
+        {
+          "key": "sat_2026_10",
+          "label": "SAT",
+          "date": "2026-10-03",
+          "register_by": "2026-09-18",
+          "applies": "plans_tests",
+          "assignee": "student",
+          "source": "https://satsuite.collegeboard.org/sat/dates-deadlines",
+          "detail": "Skip any date you won't test on; register before the deadline to avoid the late fee."
+        },
+        {
+          "key": "act_2026_10",
+          "label": "ACT",
+          "date": "2026-10-17",
+          "register_by": "2026-09-11",
+          "applies": "plans_tests",
+          "assignee": "student",
+          "source": "https://www.act.org/content/act/en/products-and-services/the-act/registration/test-dates.html",
+          "detail": "Skip any date you won't test on; register before the deadline to avoid the late fee."
+        },
+        {
+          "key": "sat_2026_11",
+          "label": "SAT",
+          "date": "2026-11-07",
+          "register_by": "2026-10-23",
+          "applies": "plans_tests",
+          "assignee": "student",
+          "source": "https://satsuite.collegeboard.org/sat/dates-deadlines",
+          "detail": "Skip any date you won't test on; register before the deadline to avoid the late fee."
+        },
+        {
+          "key": "sat_2026_12",
+          "label": "SAT",
+          "date": "2026-12-05",
+          "register_by": "2026-11-20",
+          "applies": "plans_tests",
+          "assignee": "student",
+          "source": "https://satsuite.collegeboard.org/sat/dates-deadlines",
+          "detail": "Skip any date you won't test on; register before the deadline to avoid the late fee."
+        },
+        {
+          "key": "act_2026_12",
+          "label": "ACT",
+          "date": "2026-12-12",
+          "register_by": "2026-11-06",
+          "applies": "plans_tests",
+          "assignee": "student",
+          "source": "https://www.act.org/content/act/en/products-and-services/the-act/registration/test-dates.html",
+          "detail": "Skip any date you won't test on; register before the deadline to avoid the late fee."
+        },
+        {
+          "key": "act_2027_02",
+          "label": "ACT",
+          "date": "2027-02-27",
+          "register_by": "2027-01-22",
+          "applies": "plans_tests",
+          "assignee": "student",
+          "source": "https://www.act.org/content/act/en/products-and-services/the-act/registration/test-dates.html",
+          "detail": "Skip any date you won't test on; register before the deadline to avoid the late fee."
+        },
+        {
+          "key": "sat_2027_03",
+          "label": "SAT",
+          "date": "2027-03-06",
+          "register_by": "2027-02-19",
+          "applies": "plans_tests",
+          "assignee": "student",
+          "source": "https://satsuite.collegeboard.org/sat/dates-deadlines",
+          "detail": "Skip any date you won't test on; register before the deadline to avoid the late fee."
+        },
+        {
+          "key": "act_2027_04",
+          "label": "ACT",
+          "date": "2027-04-10",
+          "register_by": "2027-03-05",
+          "applies": "plans_tests",
+          "assignee": "student",
+          "source": "https://www.act.org/content/act/en/products-and-services/the-act/registration/test-dates.html",
+          "detail": "Skip any date you won't test on; register before the deadline to avoid the late fee."
+        },
+        {
+          "key": "sat_2027_05",
+          "label": "SAT",
+          "date": "2027-05-01",
+          "register_by": "2027-04-16",
+          "applies": "plans_tests",
+          "assignee": "student",
+          "source": "https://satsuite.collegeboard.org/sat/dates-deadlines",
+          "detail": "Skip any date you won't test on; register before the deadline to avoid the late fee."
+        },
+        {
+          "key": "sat_2027_06",
+          "label": "SAT",
+          "date": "2027-06-05",
+          "register_by": "2027-05-21",
+          "applies": "plans_tests",
+          "assignee": "student",
+          "source": "https://satsuite.collegeboard.org/sat/dates-deadlines",
+          "detail": "Skip any date you won't test on; register before the deadline to avoid the late fee."
+        },
+        {
+          "key": "act_2027_06",
+          "label": "ACT",
+          "date": "2027-06-12",
+          "register_by": "2027-05-07",
+          "applies": "plans_tests",
+          "assignee": "student",
+          "source": "https://www.act.org/content/act/en/products-and-services/the-act/registration/test-dates.html",
+          "detail": "Skip any date you won't test on; register before the deadline to avoid the late fee."
+        },
+        {
+          "key": "act_2027_07",
+          "label": "ACT",
+          "date": "2027-07-10",
+          "register_by": "2027-06-04",
+          "applies": "plans_tests",
+          "assignee": "student",
+          "source": "https://www.act.org/content/act/en/products-and-services/the-act/registration/test-dates.html",
+          "detail": "Skip any date you won't test on; register before the deadline to avoid the late fee."
+        },
+        {
+          "key": "sat_2027_08",
+          "label": "SAT (projected date)",
+          "date": "2027-08-28",
+          "applies": "plans_tests",
+          "assignee": "student",
+          "source": "https://satsuite.collegeboard.org/sat/dates-deadlines",
+          "detail": "College Board lists this date as projected; registration opens later and the date may change."
+        },
+        {
+          "key": "act_2027_09",
+          "label": "ACT (projected date)",
+          "date": "2027-09-11",
+          "applies": "plans_tests",
+          "assignee": "student",
+          "source": "https://www.act.org/content/act/en/products-and-services/the-act/registration/test-dates.html",
+          "detail": "ACT lists this date as projected; registration opens later and the date may change."
+        },
+        {
+          "key": "sat_2027_09",
+          "label": "SAT (projected date)",
+          "date": "2027-09-18",
+          "applies": "plans_tests",
+          "assignee": "student",
+          "source": "https://satsuite.collegeboard.org/sat/dates-deadlines",
+          "detail": "College Board lists this date as projected; registration opens later and the date may change."
+        },
+        {
+          "key": "sat_2027_10",
+          "label": "SAT (projected date)",
+          "date": "2027-10-09",
+          "applies": "plans_tests",
+          "assignee": "student",
+          "source": "https://satsuite.collegeboard.org/sat/dates-deadlines",
+          "detail": "College Board lists this date as projected; registration opens later and the date may change."
+        },
+        {
+          "key": "act_2027_10",
+          "label": "ACT (projected date)",
+          "date": "2027-10-16",
+          "applies": "plans_tests",
+          "assignee": "student",
+          "source": "https://www.act.org/content/act/en/products-and-services/the-act/registration/test-dates.html",
+          "detail": "ACT lists this date as projected; registration opens later and the date may change."
+        },
+        {
+          "key": "sat_2027_11",
+          "label": "SAT (projected date)",
+          "date": "2027-11-06",
+          "applies": "plans_tests",
+          "assignee": "student",
+          "source": "https://satsuite.collegeboard.org/sat/dates-deadlines",
+          "detail": "College Board lists this date as projected; registration opens later and the date may change."
+        },
+        {
+          "key": "sat_2027_12",
+          "label": "SAT (projected date)",
+          "date": "2027-12-04",
+          "applies": "plans_tests",
+          "assignee": "student",
+          "source": "https://satsuite.collegeboard.org/sat/dates-deadlines",
+          "detail": "College Board lists this date as projected; registration opens later and the date may change."
+        },
+        {
+          "key": "act_2027_12",
+          "label": "ACT (projected date)",
+          "date": "2027-12-11",
+          "applies": "plans_tests",
+          "assignee": "student",
+          "source": "https://www.act.org/content/act/en/products-and-services/the-act/registration/test-dates.html",
+          "detail": "ACT lists this date as projected; registration opens later and the date may change."
+        }
+      ]
+    },
+    {
+      "cycle": "2028-29",
+      "entries": [
+        {
+          "key": "ask_recommenders",
+          "label": "Ask two teachers for recommendations",
+          "window": [
+            "2028-04-15",
+            "2028-06-10"
+          ],
+          "applies": "all",
+          "assignee": "student",
+          "source": "https://bigfuture.collegeboard.org/plan-for-college/apply-to-college/letters-of-recommendation",
+          "detail": "Before summer, while they remember your work. Give them at least a month before your first deadline."
+        },
+        {
+          "key": "personal_essay_draft",
+          "label": "Draft the personal essay",
+          "window": [
+            "2028-06-15",
+            "2028-08-31"
+          ],
+          "applies": "has_common_app",
+          "assignee": "student",
+          "source": "https://www.commonapp.org/apply/essay-prompts",
+          "detail": "The Common App prompts rarely change from year to year, so you can start before applications open."
+        },
+        {
+          "key": "common_app_opens",
+          "label": "Common App opens for the new season",
+          "date": "2028-08-01",
+          "applies": "has_common_app",
+          "assignee": "student",
+          "source": "https://www.commonapp.org/",
+          "detail": "Accounts roll over; the essay prompts and each college's questions are live from today."
+        },
+        {
+          "key": "supplements",
+          "label": "Write each college's supplement essays",
+          "window": [
+            "2028-08-01",
+            "2028-10-25"
+          ],
+          "applies": "all",
+          "assignee": "student",
+          "source": "https://www.commonapp.org/apply/first-year-students",
+          "detail": "Start with the colleges whose deadlines come first."
+        },
+        {
+          "key": "fafsa_opens",
+          "label": "FAFSA opens",
+          "date": "2028-10-01",
+          "applies": "all",
+          "assignee": "guardian",
+          "source": "https://studentaid.gov/h/apply-for-aid/fafsa",
+          "detail": "File early: some state and college aid is first come, first served."
+        },
+        {
+          "key": "css_profile_opens",
+          "label": "CSS Profile opens",
+          "date": "2028-10-01",
+          "applies": "has_css_college",
+          "assignee": "guardian",
+          "source": "https://cssprofile.collegeboard.org/",
+          "detail": "Needed only by the colleges on your list that ask for it."
+        },
+        {
+          "key": "portal_checks",
+          "label": "Check each college's applicant portal for missing items",
+          "window": [
+            "2028-11-01",
+            "2029-03-31"
+          ],
+          "applies": "all",
+          "assignee": "student",
+          "source": "https://bigfuture.collegeboard.org/plan-for-college/apply-to-college/after-youve-applied",
+          "detail": "A week or two after you apply, and then every couple of weeks until it says complete."
+        },
+        {
+          "key": "thank_recommenders",
+          "label": "Thank your recommenders",
+          "window": [
+            "2028-11-15",
+            "2029-01-31"
+          ],
+          "applies": "all",
+          "assignee": "student",
+          "source": "https://bigfuture.collegeboard.org/plan-for-college/apply-to-college/letters-of-recommendation",
+          "detail": "A short note once your applications are in, and tell them where you get in."
+        },
+        {
+          "key": "reply_date",
+          "label": "National reply date",
+          "date": "2029-05-01",
+          "applies": "uses_may1",
+          "assignee": "either",
+          "source": "https://bigfuture.collegeboard.org/plan-for-college/apply-to-college/college-application-timeline-12th-grade",
+          "detail": "The deposit date at most colleges that admit in the regular round; check each college's own date."
+        },
+        {
+          "key": "final_transcript",
+          "label": "Ask your school to send the final transcript",
+          "window": [
+            "2029-05-15",
+            "2029-06-30"
+          ],
+          "applies": "committed",
+          "assignee": "student",
+          "source": "https://bigfuture.collegeboard.org/plan-for-college/apply-to-college/college-application-timeline-12th-grade",
+          "detail": "To the college you chose only."
+        },
+        {
+          "key": "orientation",
+          "label": "Sign up for orientation",
+          "window": [
+            "2029-05-15",
+            "2029-07-31"
+          ],
+          "applies": "committed",
+          "assignee": "student",
+          "source": "https://bigfuture.collegeboard.org/plan-for-college/apply-to-college/after-youve-applied",
+          "detail": "Sessions fill up; the college's admitted-student portal has the dates."
+        },
+        {
+          "key": "health_forms",
+          "label": "Send health and immunization forms",
+          "window": [
+            "2029-06-01",
+            "2029-07-31"
+          ],
+          "applies": "committed",
+          "assignee": "either",
+          "source": "https://bigfuture.collegeboard.org/plan-for-college/apply-to-college/after-youve-applied",
+          "detail": "The college's health center lists what it needs before move-in."
+        },
+        {
+          "key": "accept_aid",
+          "label": "Accept the parts of the aid offer you'll use",
+          "window": [
+            "2029-05-15",
+            "2029-07-15"
+          ],
+          "applies": "committed",
+          "assignee": "guardian",
+          "source": "https://bigfuture.collegeboard.org/plan-for-college/apply-to-college/after-youve-applied",
+          "detail": "Accept grants first; take only the loans you need."
+        },
+        {
+          "key": "sat_2027_08",
+          "label": "SAT (projected date)",
+          "date": "2027-08-28",
+          "applies": "plans_tests",
+          "assignee": "student",
+          "source": "https://satsuite.collegeboard.org/sat/dates-deadlines",
+          "detail": "College Board lists this date as projected; registration opens later and the date may change."
+        },
+        {
+          "key": "act_2027_09",
+          "label": "ACT (projected date)",
+          "date": "2027-09-11",
+          "applies": "plans_tests",
+          "assignee": "student",
+          "source": "https://www.act.org/content/act/en/products-and-services/the-act/registration/test-dates.html",
+          "detail": "ACT lists this date as projected; registration opens later and the date may change."
+        },
+        {
+          "key": "sat_2027_09",
+          "label": "SAT (projected date)",
+          "date": "2027-09-18",
+          "applies": "plans_tests",
+          "assignee": "student",
+          "source": "https://satsuite.collegeboard.org/sat/dates-deadlines",
+          "detail": "College Board lists this date as projected; registration opens later and the date may change."
+        },
+        {
+          "key": "sat_2027_10",
+          "label": "SAT (projected date)",
+          "date": "2027-10-09",
+          "applies": "plans_tests",
+          "assignee": "student",
+          "source": "https://satsuite.collegeboard.org/sat/dates-deadlines",
+          "detail": "College Board lists this date as projected; registration opens later and the date may change."
+        },
+        {
+          "key": "act_2027_10",
+          "label": "ACT (projected date)",
+          "date": "2027-10-16",
+          "applies": "plans_tests",
+          "assignee": "student",
+          "source": "https://www.act.org/content/act/en/products-and-services/the-act/registration/test-dates.html",
+          "detail": "ACT lists this date as projected; registration opens later and the date may change."
+        },
+        {
+          "key": "sat_2027_11",
+          "label": "SAT (projected date)",
+          "date": "2027-11-06",
+          "applies": "plans_tests",
+          "assignee": "student",
+          "source": "https://satsuite.collegeboard.org/sat/dates-deadlines",
+          "detail": "College Board lists this date as projected; registration opens later and the date may change."
+        },
+        {
+          "key": "sat_2027_12",
+          "label": "SAT (projected date)",
+          "date": "2027-12-04",
+          "applies": "plans_tests",
+          "assignee": "student",
+          "source": "https://satsuite.collegeboard.org/sat/dates-deadlines",
+          "detail": "College Board lists this date as projected; registration opens later and the date may change."
+        },
+        {
+          "key": "act_2027_12",
+          "label": "ACT (projected date)",
+          "date": "2027-12-11",
+          "applies": "plans_tests",
+          "assignee": "student",
+          "source": "https://www.act.org/content/act/en/products-and-services/the-act/registration/test-dates.html",
+          "detail": "ACT lists this date as projected; registration opens later and the date may change."
+        },
+        {
+          "key": "act_2028_02",
+          "label": "ACT (projected date)",
+          "date": "2028-02-26",
+          "applies": "plans_tests",
+          "assignee": "student",
+          "source": "https://www.act.org/content/act/en/products-and-services/the-act/registration/test-dates.html",
+          "detail": "ACT lists this date as projected; registration opens later and the date may change."
+        },
+        {
+          "key": "sat_2028_03",
+          "label": "SAT (projected date)",
+          "date": "2028-03-04",
+          "applies": "plans_tests",
+          "assignee": "student",
+          "source": "https://satsuite.collegeboard.org/sat/dates-deadlines",
+          "detail": "College Board lists this date as projected; registration opens later and the date may change."
+        },
+        {
+          "key": "act_2028_04",
+          "label": "ACT (projected date)",
+          "date": "2028-04-08",
+          "applies": "plans_tests",
+          "assignee": "student",
+          "source": "https://www.act.org/content/act/en/products-and-services/the-act/registration/test-dates.html",
+          "detail": "ACT lists this date as projected; registration opens later and the date may change."
+        },
+        {
+          "key": "sat_2028_05",
+          "label": "SAT (projected date)",
+          "date": "2028-05-06",
+          "applies": "plans_tests",
+          "assignee": "student",
+          "source": "https://satsuite.collegeboard.org/sat/dates-deadlines",
+          "detail": "College Board lists this date as projected; registration opens later and the date may change."
+        },
+        {
+          "key": "sat_2028_06",
+          "label": "SAT (projected date)",
+          "date": "2028-06-03",
+          "applies": "plans_tests",
+          "assignee": "student",
+          "source": "https://satsuite.collegeboard.org/sat/dates-deadlines",
+          "detail": "College Board lists this date as projected; registration opens later and the date may change."
+        },
+        {
+          "key": "act_2028_06",
+          "label": "ACT (projected date)",
+          "date": "2028-06-10",
+          "applies": "plans_tests",
+          "assignee": "student",
+          "source": "https://www.act.org/content/act/en/products-and-services/the-act/registration/test-dates.html",
+          "detail": "ACT lists this date as projected; registration opens later and the date may change."
+        },
+        {
+          "key": "act_2028_07",
+          "label": "ACT (projected date)",
+          "date": "2028-07-15",
+          "applies": "plans_tests",
+          "assignee": "student",
+          "source": "https://www.act.org/content/act/en/products-and-services/the-act/registration/test-dates.html",
+          "detail": "ACT lists this date as projected; registration opens later and the date may change."
         }
       ]
     }

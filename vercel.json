@@ -4,6 +4,14 @@
     {
       "path": "/api/cron/digests",
       "schedule": "0 13 * * *"
+    },
+    {
+      "path": "/api/cron/weekly",
+      "schedule": "0 23 * * 0"
+    },
+    {
+      "path": "/api/cron/day-before",
+      "schedule": "0 23 * * 1-6"
     }
   ]
 }

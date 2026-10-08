@@ -5,6 +5,8 @@ import { buildDigest, eligiblePublishes, type DigestCollegeInput, type PublishRo
 import { EMAILED_KINDS, type StoredChange } from "@/lib/changes";
 import { emailConfigured, sendEmail } from "@/lib/email";
 import { getData } from "@/lib/data";
+import { todayIso } from "@/lib/planner/context";
+import { digestTaskLines } from "@/lib/planner/reminders-server";
 
 /**
  * The daily update-digest job (specs/product/follow-colleges.md#the-digest). Vercel Cron issues a GET with
@@ -125,7 +127,13 @@ async function processPublish(
       errors++;
       continue;
     }
-    const built = buildDigest(inputs, { siteUrl, unsubscribeToken });
+    // Plan tasks due within seven days add a "Coming up" line each (specs/planner/timeline.md "Reminders"). A plan
+    // that can't be read (the planner migration not applied yet) just adds nothing.
+    const tasks = await digestTaskLines(client, userId, todayIso()).catch((err: unknown) => {
+      console.warn(`digests: plan tasks for ${userId} skipped: ${err instanceof Error ? err.message : err}`);
+      return [];
+    });
+    const built = buildDigest(inputs, { siteUrl, unsubscribeToken }, { tasks });
     if (!built) {
       skipped++;
       continue;

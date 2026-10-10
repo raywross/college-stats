@@ -1,21 +1,27 @@
 /**
  * A college's cost as a curve over family income (specs/product/cost-by-income.md "The model"): the published federal
- * net price bands up to $110K, then a labeled estimate that ramps from the published part to the full price, and the
+ * net price bands up to $110K, then a labeled estimate that rises from the published part to the full price, and the
  * income where need-based aid ends (the break point). Pure: safe in server and client code and in tests, except
  * `estimatesShown`, which reads the deployment environment and belongs on the server.
  *
- * For the reference family (two parents, two children, one in college, typical assets), the price at income I:
+ * For the reference family (two parents, two children, one in college, typical assets), up to $110K the price is the
+ * published federal band's (cited). Above it, one of two estimates, both continuous everywhere:
  *
- *   price(I) = federal band price                 for I ≤ $110K   (published, cited)
- *   price(I) = min(COA, max(P110, r × (I − P)))    for I > $110K   (estimate)
- *
- * - COA: the full price (in-state at publics).
- * - P110: the published curve's last step, so the estimate joins it without a jump.
- * - P: where the family starts paying more than the bottom bands: the college's published "no contribution" line,
- *   else DEFAULT_RAMP_START. A published free-tuition line L adds price(L) ≤ COA − tuition, which moves P right.
- * - r: cents of each extra dollar the family pays, calibrated per college so the model's average over the reference
- *   incomes above $110K (data/reference/income-above-110k.json) equals the college's published $110K+ band. Bounded
- *   to R_MIN–R_MAX; outside, no estimate ("data_ends").
+ * 1. Anchored on a published promise, when the college publishes a free-tuition line L above $110K (and we know its
+ *    tuition): flat at the last published step (P110) up to S = max($110K, its no-contribution line N), a straight
+ *    rise to A = COA − tuition at L (the promise: no tuition, so the family pays at most the rest), then
+ *      price(I) = min(COA, A + r × (I − L))     for I > L
+ *    with r the sector default PROMISE_R (range PROMISE_R_LO–PROMISE_R_HI). Break point L + tuition / r. The $110K+
+ *    band isn't used to fit it: that band includes full payers who only took federal loans and families richer than
+ *    the national reference, so it can't be reconciled with a promise. It only flags a promise it sits far below.
+ * 2. Calibrated, otherwise:
+ *      price(I) = min(COA, max(P110, r × (I − P)))
+ *    - P: where the family starts paying more than the bottom bands: the college's published no-contribution line,
+ *      else DEFAULT_RAMP_START (moved right if needed so the ramp joins P110 at $110K without a jump).
+ *    - r: cents of each extra dollar the family pays, calibrated per college so the model's average over the
+ *      reference incomes above $110K (data/reference/income-above-110k.json) equals the college's published $110K+
+ *      band. Bounded to R_MIN–R_MAX; at or outside a bound (within BOUND_MARGIN), no estimate ("data_ends").
+ * COA is the full price, in-state at publics.
  */
 import type { School } from "./types";
 import { aidPolicyFor, type AidPolicy } from "./aid-policies.ts";
@@ -54,6 +60,29 @@ export const BAND_SPREAD = 1_000;
 /** Bounds on r: outside them the college's figures don't fit the model, so it gets no estimate. */
 export const R_MIN = 0.15;
 export const R_MAX = 0.6;
+/**
+ * A calibrated r this close to a bound is treated as outside it ("data_ends"): it means the bound, not the college's
+ * figures, set the ramp. Typical cases: a public whose $110K+ band is lowered by state merit aid (r pinned at the
+ * floor), or a band no ramp under R_MAX reproduces.
+ */
+export const BOUND_MARGIN = 0.01;
+/**
+ * Above a published free-tuition line, the share of each extra dollar of income a family is expected to pay: a
+ * sector default, not calibrated per college. 0.30 is the federal formula's top assessment rate on parents'
+ * available income (47%, net-price-estimator.md Research) applied to the roughly two-thirds of an extra pre-tax
+ * dollar left after federal, state, and payroll taxes (0.47 × ~0.65 ≈ 0.31), rounded down for institutional formulas
+ * that protect more. The range spans the owner's source document's two readings (cost-by-income.md "The source
+ * document"): its rule of thumb's low end, 22 cents per dollar, and the roughly 40 cents its own table implies. The
+ * accuracy pilot is what tunes it.
+ */
+export const PROMISE_R = 0.3;
+export const PROMISE_R_LO = 0.22;
+export const PROMISE_R_HI = 0.4;
+/**
+ * A promise-anchored curve whose average over the reference incomes is more than this above the published $110K+
+ * band gets its promise flagged (`disagrees`) for the pilot. The flag doesn't change the curve.
+ */
+export const PROMISE_BAND_GAP = 10_000;
 /** Need met below this (CDS H2 line i) means aid thins out unevenly ("gapping"): no clean break point. */
 export const NEED_MET_FULL = 0.9;
 /** Without need-met data, a $110K+ band at or above this share of the full price means little aid above $110K. */
@@ -81,18 +110,21 @@ export interface CostCurve {
   /** Steps 0–110K; a band the college has no figure for is left out. */
   published: { lo: number; hi: number; price: number }[];
   /**
-   * The estimate's parameters (status "break_point" only). `pin`, when a free-tuition promise constrains the ramp:
-   * at `pin.income` the price can't exceed `pin.price` (COA − tuition), so a steeper r starts later.
+   * The estimate's parameters (status "break_point" only). With `pin`, the curve is anchored on a published promise:
+   * flat at the last published step to `P`, a straight rise to `pin.price` (COA − tuition) at `pin.income` (the
+   * free-tuition line), then `r` (the sector default; `rLo`–`rHi` its range) of each extra dollar to the full price.
+   * Without `pin`, calibrated: the ramp `r × (income − P)` above the last published step, `rLo`–`rHi` the r values
+   * that still reproduce the $110K+ band within its rounding and P's uncertainty.
    */
   ramp: { P: number; r: number; rLo: number; rHi: number; pin?: { income: number; price: number } } | null;
   /** Rounded to $10K. */
   breakIncome: { mid: number; lo: number; hi: number } | null;
   /**
-   * The college's published income lines, as markers. `disagrees`: the published $110K+ band can't be reproduced
-   * with the ramp held to this promise (a free-tuition pin, or a no-contribution line as P), so the estimate was
-   * calibrated without it. The promise wins where they disagree: `priceAt` holds estimates at and below its income to
-   * `cap` (the full price minus tuition for free tuition; the $75–110K price for no contribution), so the curve steps
-   * up at the promise's income. The disagreement is for the pilot to settle.
+   * The college's published income lines, as markers. `cap` (free tuition only): the most the promise lets the
+   * reference family pay at its income, the full price minus tuition; an anchored curve passes through it.
+   * `disagrees`: the published $110K+ band sits far below the anchored curve's average (more than PROMISE_BAND_GAP),
+   * or a no-contribution line couldn't be used as the calibrated ramp's start; a flag for the pilot, not a change to
+   * the curve.
    */
   promises: { income: number; kind: "free_tuition" | "no_contribution"; label: string; disagrees?: true; cap?: number }[];
 }
@@ -159,31 +191,42 @@ const SAMPLES = referenceSamples();
 const round10k = (x: number) => Math.round(x / 10_000) * 10_000;
 const isNum = (x: unknown): x is number => typeof x === "number" && Number.isFinite(x);
 
-type Pin = { income: number; price: number } | undefined;
+type Pin = { income: number; price: number };
+type Ramp = NonNullable<CostCurve["ramp"]>;
 
-/**
- * Where the ramp starts for slope r: P, moved right when the ramp would otherwise already be above the last published
- * step at $110K (so it joins the published part without a jump) or break a free-tuition pin.
- */
-function rampStart(P: number, r: number, pin: Pin, floor: number): number {
-  const joined = Math.max(P, FEDERAL_TOP - floor / r);
-  return pin ? Math.max(joined, pin.income - pin.price / r) : joined;
+/** Where a calibrated ramp starts for slope r: P, moved right if the ramp would already be above P110 at $110K. */
+function rampStart(P: number, r: number, floor: number): number {
+  return Math.max(P, FEDERAL_TOP - floor / r);
 }
 
-function rampPrice(income: number, coa: number, floor: number, start: number, r: number): number {
+function calibratedPrice(income: number, coa: number, floor: number, start: number, r: number): number {
   return Math.min(coa, Math.max(floor, r * (income - start)));
 }
 
-function averagePrice(coa: number, floor: number, P: number, r: number, pin: Pin, samples = SAMPLES): number {
-  const start = rampStart(P, r, pin, floor);
+/** The anchored curve at an income above $110K, with slope r above the promise. Continuous by construction. */
+function anchoredPrice(income: number, coa: number, floor: number, S: number, pin: Pin, r: number): number {
+  if (income <= S) return floor;
+  if (income <= pin.income) return floor + ((pin.price - floor) * (income - S)) / (pin.income - S);
+  return Math.min(coa, pin.price + r * (income - pin.income));
+}
+
+/** The middle of the curve at an income above $110K (r, not the range). */
+function centralPrice(curve: CostCurve, ramp: Ramp, income: number): number {
+  const floor = lastStep(curve);
+  return ramp.pin ? anchoredPrice(income, curve.coa, floor, ramp.P, ramp.pin, ramp.r) : calibratedPrice(income, curve.coa, floor, ramp.P, ramp.r);
+}
+
+const lastStep = (curve: Pick<CostCurve, "published">) => curve.published[curve.published.length - 1].price;
+
+function average(price: (income: number) => number, samples = SAMPLES): number {
   let sum = 0;
-  for (let i = 0; i < samples.income.length; i++) sum += samples.weight[i] * rampPrice(samples.income[i], coa, floor, start, r);
+  for (let i = 0; i < samples.income.length; i++) sum += samples.weight[i] * price(samples.income[i]);
   return sum;
 }
 
-/** r that makes the average equal `target`, or the bound it falls outside ("low" / "high"). */
-function solveR(target: number, coa: number, floor: number, P: number, pin: Pin): number | "low" | "high" {
-  const f = (r: number) => averagePrice(coa, floor, P, r, pin) - target;
+/** r that makes the calibrated average equal `target`, or the bound it falls outside ("low" / "high"). */
+function solveR(target: number, coa: number, floor: number, P: number): number | "low" | "high" {
+  const f = (r: number) => average((i) => calibratedPrice(i, coa, floor, rampStart(P, r, floor), r)) - target;
   if (f(R_MIN) > 0) return "low";
   if (f(R_MAX) < 0) return "high";
   let lo = R_MIN;
@@ -197,6 +240,8 @@ function solveR(target: number, coa: number, floor: number, P: number, pin: Pin)
 }
 
 const clampR = (r: number | "low" | "high") => (r === "low" ? R_MIN : r === "high" ? R_MAX : r);
+/** Inside the bounds by more than the margin: the college's figures, not a bound, set r. */
+const fits = (r: number | "low" | "high"): r is number => typeof r === "number" && r - R_MIN >= BOUND_MARGIN && R_MAX - r >= BOUND_MARGIN;
 
 const kDollars = (x: number) => `$${Math.round(x / 1000)}K`;
 
@@ -247,60 +292,68 @@ export function costCurve(input: CostCurveInput): CostCurve | null {
   const promises = promisesOf(input.policy);
   const base = { coa, published, promises };
   const none = (status: NeedAidStatus): CostCurve => ({ ...base, status, ramp: null, breakIncome: null });
-
+  if (!published.length) return none("data_ends");
+  const floor = lastStep(base);
   const band110 = bands[4];
-  if (!isNum(band110) || !published.length) return none("data_ends");
+  const policy = input.policy;
+
+  // 1. Anchored on a published free-tuition line above $110K. An in-state line counts only on a public's (in-state) curve.
+  const L = policy?.free_tuition_under;
+  const tuition = input.tuition;
+  const lineApplies = policy?.applies_to !== "in_state" || input.type === "public";
+  if (isNum(L) && L > FEDERAL_TOP && isNum(tuition) && tuition > 0 && tuition < coa && lineApplies) {
+    const pin: Pin = { income: L, price: coa - tuition };
+    const N = policy?.no_contribution_under ?? null;
+    // The rise starts at the no-contribution line (never before $110K), and always before L so it stays continuous.
+    const S = Math.min(Math.max(N ?? FEDERAL_TOP, FEDERAL_TOP), L - 10_000);
+    const ramp: Ramp = { P: Math.max(S, FEDERAL_TOP), r: PROMISE_R, rLo: PROMISE_R_LO, rHi: PROMISE_R_HI, pin };
+    const breakAt = (r: number) => round10k(L + tuition / r);
+    const curve: CostCurve = { ...base, status: "break_point", ramp, breakIncome: { mid: breakAt(PROMISE_R), lo: breakAt(PROMISE_R_HI), hi: breakAt(PROMISE_R_LO) } };
+    for (const p of promises) if (p.kind === "free_tuition") p.cap = pin.price;
+    if (isNum(band110) && band110 < average((i) => centralPrice(curve, ramp, i)) - PROMISE_BAND_GAP)
+      for (const p of promises) if (p.kind === "free_tuition") p.disagrees = true;
+    return curve;
+  }
+
+  // 2. Calibrated to the $110K+ band.
+  if (!isNum(band110)) return none("data_ends");
   const needMet = input.needMet;
   if (isNum(needMet) ? needMet < NEED_MET_FULL : band110 >= LITTLE_AID_BAND_SHARE * coa) return none("little_above_110k");
 
-  const floor = published[published.length - 1].price;
-  const ftu = input.policy?.free_tuition_under;
-  const wantedPin: Pin = isNum(ftu) && ftu > FEDERAL_TOP && isNum(input.tuition) && input.tuition > 0 ? { income: ftu, price: coa - input.tuition } : undefined;
-  const policyP = input.policy?.no_contribution_under ?? null;
-
-  // The promises and the band may not all hold over the reference incomes. Try the ramp held to every promise, then
-  // without the free-tuition pin, then without the no-contribution line; flag what was dropped (it wins on display).
-  const attempts: { P: number; pin: Pin; dropped: CostCurve["promises"][number]["kind"][] }[] = [{ P: policyP ?? DEFAULT_RAMP_START, pin: wantedPin, dropped: [] }];
-  if (wantedPin) attempts.push({ P: policyP ?? DEFAULT_RAMP_START, pin: undefined, dropped: ["free_tuition"] });
-  if (policyP !== null && policyP !== DEFAULT_RAMP_START) {
-    if (wantedPin) attempts.push({ P: DEFAULT_RAMP_START, pin: wantedPin, dropped: ["no_contribution"] });
-    attempts.push({ P: DEFAULT_RAMP_START, pin: undefined, dropped: wantedPin ? ["free_tuition", "no_contribution"] : ["no_contribution"] });
-  }
-  let chosen: (typeof attempts)[number] | null = null;
-  let r: number | "low" | "high" = "high";
-  for (const a of attempts) {
-    r = solveR(band110, coa, floor, a.P, a.pin);
-    if (typeof r === "number") {
-      chosen = a;
-      break;
+  const policyP = policy?.no_contribution_under ?? null;
+  let P = policyP ?? DEFAULT_RAMP_START;
+  let r = solveR(band110, coa, floor, P);
+  if (!fits(r) && policyP !== null && policyP !== DEFAULT_RAMP_START) {
+    // The no-contribution line and the band don't fit together: start from the default and flag the line.
+    const fallback = solveR(band110, coa, floor, DEFAULT_RAMP_START);
+    if (fits(fallback)) {
+      P = DEFAULT_RAMP_START;
+      r = fallback;
+      for (const p of promises) if (p.kind === "no_contribution") p.disagrees = true;
     }
   }
-  if (!chosen || typeof r !== "number") return none("data_ends");
-  const { P, pin } = chosen;
-  for (const p of promises) {
-    if (!chosen.dropped.includes(p.kind)) continue;
-    p.disagrees = true;
-    const cap = p.kind === "free_tuition" ? wantedPin?.price : floor;
-    if (cap !== undefined) p.cap = cap;
-  }
+  if (!fits(r)) return none("data_ends");
   const corners = [r];
-  for (const dB of [-BAND_SPREAD, BAND_SPREAD]) for (const dP of [-RAMP_START_SPREAD, 0, RAMP_START_SPREAD]) corners.push(clampR(solveR(band110 + dB, coa, floor, P + dP, pin)));
+  for (const dB of [-BAND_SPREAD, BAND_SPREAD]) for (const dP of [-RAMP_START_SPREAD, 0, RAMP_START_SPREAD]) corners.push(clampR(solveR(band110 + dB, coa, floor, P + dP)));
   const rLo = Math.min(...corners);
   const rHi = Math.max(...corners);
-  const start = rampStart(P, r, pin, floor);
+  const start = rampStart(P, r, floor);
   const breakIncome = {
     mid: round10k(start + coa / r),
-    lo: round10k(rampStart(start, rHi, pin, floor) + coa / rHi),
+    lo: round10k(rampStart(start, rHi, floor) + coa / rHi),
     hi: round10k(start + coa / rLo),
   };
-  return { ...base, status: "break_point", ramp: { P: start, r, rLo, rHi, ...(pin ? { pin } : {}) }, breakIncome };
+  return { ...base, status: "break_point", ramp: { P: start, r, rLo, rHi }, breakIncome };
 }
 
-/** The model's own average price over the reference incomes above $110K (what calibration matched), or null. */
+/**
+ * The model's own average price over the reference incomes above $110K, or null without an estimate: for a calibrated
+ * curve, what the calibration matched to the $110K+ band; for an anchored curve, what the flag compares with it.
+ */
 export function calibrationAverage(curve: CostCurve): number | null {
-  if (!curve.ramp) return null;
-  const floor = curve.published[curve.published.length - 1].price;
-  return averagePrice(curve.coa, floor, curve.ramp.P, curve.ramp.r, undefined);
+  const ramp = curve.ramp;
+  if (!ramp) return null;
+  return average((i) => centralPrice(curve, ramp, i));
 }
 
 /**
@@ -318,13 +371,13 @@ export function priceAt(curve: CostCurve, income: number, showEstimates: boolean
   }
   const ramp = curve.ramp;
   if (!showEstimates || curve.status !== "break_point" || !ramp) return unknown;
-  const floor = curve.published[curve.published.length - 1].price;
-  const a = rampPrice(income, curve.coa, floor, ramp.P, ramp.rLo);
-  const b = rampPrice(income, curve.coa, floor, rampStart(ramp.P, ramp.rHi, ramp.pin, floor), ramp.rHi);
-  // A promise the estimate disagrees with wins at and below its income.
-  const cap = Math.min(...curve.promises.filter((p) => p.disagrees && p.cap !== undefined && income <= p.income).map((p) => p.cap!));
-  const lo = Math.min(a, b, cap);
-  const hi = Math.min(Math.max(a, b), cap);
+  const floor = lastStep(curve);
+  const at = (r: number, start: number) =>
+    ramp.pin ? anchoredPrice(income, curve.coa, floor, ramp.P, ramp.pin, r) : calibratedPrice(income, curve.coa, floor, start, r);
+  const a = at(ramp.rLo, ramp.P);
+  const b = at(ramp.rHi, rampStart(ramp.P, ramp.rHi, floor));
+  const lo = Math.min(a, b);
+  const hi = Math.max(a, b);
   return lo >= curve.coa ? { lo: curve.coa, hi: curve.coa, kind: "full_price" } : { lo, hi, kind: "estimate" };
 }
 

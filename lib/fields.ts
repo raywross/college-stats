@@ -725,7 +725,7 @@ export const FIELDS = {
     computed: true,
     derived: {
       formula:
-        "Full price (in-state at publics) ÷ r + P, rounded to $10K: the income where the estimated price reaches the full price. r (the share of each extra dollar a family pays, 0.15–0.60) is calibrated so the model's average price over the Census reference incomes above $110K equals the college's published $110K+ net price; P is the college's published no-contribution line, else about $90K (the federal need analysis's protected income). A published free-tuition line holds the price at that income to the full price minus tuition. The range varies the $110K+ figure by ±$1K and P by ±$10K",
+        "The income where the estimated price reaches the full price (in-state at publics), rounded to $10K. With a published free-tuition line L: L + tuition ÷ r, where the price rises to the full price minus tuition at L and then by r = 0.30 of each extra dollar (a sector default; range 0.22–0.40). Otherwise P + full price ÷ r, with r (0.15–0.60) calibrated so the model's average price over the Census reference incomes above $110K equals the college's published $110K+ net price, and P the college's no-contribution line, else about $90K (the federal need analysis's protected income); the range varies the $110K+ figure by ±$1K and P by ±$10K, and an r at a bound gives no estimate",
       inputs: ["cost.net_price_by_income", "cost.breakdown", "cost.sticker", "cost.cost_of_attendance", "cost.tuition_fees", "aid_policy.no_contribution_under", "aid_policy.free_tuition_under"],
     },
   },
@@ -743,7 +743,7 @@ export const FIELDS = {
     computed: true,
     derived: {
       formula:
-        "Up to $110K, the published net price for the family's income band; above it, the smaller of the full price and the larger of the $75–110K price and r × (income − P), shown as the range r takes within its uncertainty (see where need-based aid ends)",
+        "Up to $110K, the published net price for the family's income band; above it, the smaller of the full price and the larger of the $75–110K price and the rising estimate (from a published free-tuition promise, or calibrated to the $110K+ figure), shown as the range r takes within its uncertainty (see where need-based aid ends)",
       inputs: ["cost.net_price_by_income", "derived.need_aid_break_income"],
     },
   },
@@ -752,8 +752,8 @@ export const FIELDS = {
     computed: true,
     derived: {
       formula:
-        "From the strongest source: the college's Common Data Set (H2A line n, students without need who got merit aid: none is need-only, any is merit), else its published need-only policy, else the federal proxy (grants without federal aid to at least 2% of first-years is merit, under 2% need-only)",
-      inputs: ["reported.aid.first_years", "aid.cds", "aid_policy.need_only", "derived.merit_proxy"],
+        "From the strongest source: the college's Common Data Set (H2A line n, students without need who got merit aid: none is need-only, any is merit), else its published need-only policy, else the federal proxy (grants without federal aid to at least 2% of first-years is merit, under 2% need-only), which isn't used at colleges that say they meet full need or use their own need formula (many aided families there file no FAFSA)",
+      inputs: ["reported.aid.first_years", "aid.cds", "aid_policy.need_only", "aid_policy.meets_full_need", "derived.aid_methodology", "derived.merit_proxy"],
     },
   },
   "derived.merit_proxy": {

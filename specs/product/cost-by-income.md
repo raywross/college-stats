@@ -98,6 +98,20 @@ price(I) = min(COA, max(P110, r × (I − P)))  for I > $110K   (estimate)
 - A free-tuition line adds a second constraint (at that income the price can't exceed COA − tuition), which pins the
   ramp more tightly where a college publishes one.
 
+*As built (2026-10-10).* Two changes after the first build, both in `lib/cost-curve.ts`:
+- **A published free-tuition line L above $110K anchors the curve instead of the calibration.** The $110K+ band
+  includes full payers who took only federal loans and families richer than the national reference, so at the
+  colleges with promises it can't be reconciled with them (calibrating with the promise as a constraint failed at
+  Harvard, MIT, Princeton, Stanford and Penn). The anchored curve: the published steps to $110K; flat at the last
+  step to the no-contribution line N (or $110K); a straight rise to COA − tuition at L; then *r* of each extra dollar
+  to the full price, with *r* a sector default of **0.30** (range 0.22–0.40): the federal formula's top 47% assessment
+  rate on the roughly two-thirds of an extra pre-tax dollar left after taxes, with the source document's two readings
+  (22 and about 40 cents per dollar) as the range. Break point `L + tuition / r`. Continuous everywhere. A line for
+  in-state families anchors only a public's in-state curve. The band only flags the promise (`disagrees`) when it sits
+  more than $10K below the anchored curve's average.
+- **A calibrated *r* within 0.01 of a bound gives no estimate** ("The federal data end at $110K"): the bound, not the
+  college's figures, set the ramp (Florida, whose $110K+ band reflects state merit aid, is the typical case).
+
 **The break point** is where the ramp meets the cost: `I* = P + COA / r`, rounded to $10K and shown as a range from
 the calibration's uncertainty (*r* at the bounds that still reproduce the band within its rounding, and *P* across
 its plausible range): "about $290K–$330K".

@@ -11,9 +11,14 @@ import { dirname, join, resolve as resolvePath } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import {
   BAND_SPREAD,
+  BOUND_MARGIN,
   DEFAULT_RAMP_START,
   FEDERAL_TOP,
   INCOME_MAX,
+  PROMISE_BAND_GAP,
+  PROMISE_R,
+  PROMISE_R_HI,
+  PROMISE_R_LO,
   R_MAX,
   R_MIN,
   calibrationAverage,
@@ -26,7 +31,7 @@ import {
   type CostCurve,
   type CostCurveInput,
 } from "../lib/cost-curve.ts";
-import type { AidPolicy } from "../lib/aid-policies.ts";
+import { allAidPolicies, type AidPolicy } from "../lib/aid-policies.ts";
 import type { School } from "../lib/types.ts";
 import { countActiveFilters, parseFilters } from "../lib/params.ts";
 import pilot from "../data/reference/cost-curve-pilot.json" with { type: "json" };
@@ -153,47 +158,107 @@ test("the range comes from the band's ±$1K and P's ±$10K, and the starting inc
   assert.deepEqual(withLine.promises.map((p) => p.kind), ["no_contribution"]);
 });
 
-test("a free-tuition promise constrains the ramp: the price at its income stays at or under the full price minus tuition", () => {
-  const free = policy({ free_tuition_under: 150_000 });
-  const figures = { bands: [2_000, 3_000, 6_000, 14_000, 40_000], tuition: 70_000 };
-  const cap = PRIVATE.coa! - figures.tuition;
-  const pinned = curve({ policy: free, ...figures });
-  assert.equal(pinned.status, "break_point");
-  assert.deepEqual(pinned.ramp!.pin, { income: 150_000, price: cap }, "the promise pins the ramp");
-  assert.ok(pinned.ramp!.P > DEFAULT_RAMP_START, "the ramp starts later");
-  for (const income of [120_000, 150_000]) {
-    const at = priceAt(pinned, income, true);
-    assert.ok(at.hi <= cap + 1, `${income}: ${at.hi} ≤ ${cap}`);
-  }
-  assert.ok(Math.abs(calibrationAverage(pinned)! - 40_000) <= 50, "still reproduces the band");
-  assert.deepEqual(pinned.promises, [{ income: 150_000, kind: "free_tuition", label: "No tuition under $150K" }]);
-  // Without the promise the same figures start at P and break the promise.
-  const unpinned = curve(figures);
-  assert.equal(unpinned.ramp!.pin, undefined);
-  assert.ok(priceAt(unpinned, 150_000, true).hi > cap);
-  // A line for in-state families applies to the curve (in-state at publics) and says so.
-  const inState = curve({ policy: policy({ free_tuition_under: 150_000, applies_to: "in_state" }), ...figures, type: "public" });
-  assert.deepEqual(inState.ramp!.pin, { income: 150_000, price: cap });
-  assert.equal(inState.promises[0].label, "No tuition under $150K (in-state)");
-  // A promise at or under $110K, or without tuition, doesn't pin anything.
-  assert.equal(curve({ policy: policy({ free_tuition_under: 100_000 }), ...figures }).ramp!.pin, undefined);
-  assert.equal(curve({ policy: free, ...figures, tuition: null }).ramp!.pin, undefined);
-  // A promise the band can't agree with: the estimate is calibrated on the band alone and the promise is flagged.
-  const clash = curve({ policy: policy({ free_tuition_under: 250_000 }) });
-  assert.equal(clash.status, "break_point");
-  assert.equal(clash.ramp!.pin, undefined);
-  assert.equal(clash.promises[0].disagrees, true);
-  // …and wins at and below its income: the estimate is held to the full price minus tuition there, then steps up.
-  const capped = PRIVATE.coa! - PRIVATE.tuition!;
-  assert.equal(clash.promises[0].cap, capped);
-  assert.ok(priceAt(clash, 240_000, true).hi <= capped);
-  assert.ok(priceAt(clash, 260_000, true).lo > capped);
-  // A no-contribution line the band can't agree with: calibrated from the default start, held to the last step below it.
+test("a free-tuition promise anchors the curve: flat, a straight rise to the full price minus tuition at the line, then r to the full price", () => {
+  const free = policy({ free_tuition_under: 200_000, no_contribution_under: 130_000 });
+  const c = curve({ policy: free });
+  const A = PRIVATE.coa! - PRIVATE.tuition!;
+  assert.equal(c.status, "break_point");
+  assert.deepEqual(c.ramp, { P: 130_000, r: PROMISE_R, rLo: PROMISE_R_LO, rHi: PROMISE_R_HI, pin: { income: 200_000, price: A } });
+  // Flat at the last published step up to the no-contribution line, then a straight rise.
+  assert.deepEqual(priceAt(c, 120_000, true), { lo: 14_000, hi: 14_000, kind: "estimate" });
+  assert.deepEqual(priceAt(c, 130_000, true), { lo: 14_000, hi: 14_000, kind: "estimate" });
+  assert.ok(Math.abs(priceAt(c, 165_000, true).lo - (14_000 + A) / 2) < 1, "halfway up the rise");
+  assert.ok(Math.abs(priceAt(c, 200_000, true).hi - A) < 1, "the promise's own price at its line");
+  // Above the line, the range from rLo and rHi.
+  const at250 = priceAt(c, 250_000, true);
+  assert.ok(Math.abs(at250.lo - (A + PROMISE_R_LO * 50_000)) < 1 && Math.abs(at250.hi - (A + PROMISE_R_HI * 50_000)) < 1);
+  // Break point L + tuition / r, its range from the r range.
+  const brk = (r: number) => Math.round((200_000 + PRIVATE.tuition! / r) / 10_000) * 10_000;
+  assert.deepEqual(c.breakIncome, { mid: brk(PROMISE_R), lo: brk(PROMISE_R_HI), hi: brk(PROMISE_R_LO) });
+  assert.deepEqual(c.promises, [
+    { income: 130_000, kind: "no_contribution", label: "Families pay nothing toward cost under $130K" },
+    { income: 200_000, kind: "free_tuition", label: "No tuition under $200K", cap: A },
+  ]);
+  // Without a no-contribution line (or one under $110K), the rise starts at $110K.
+  assert.equal(curve({ policy: policy({ free_tuition_under: 200_000, no_contribution_under: 75_000 }) }).ramp!.P, FEDERAL_TOP);
+  assert.equal(curve({ policy: policy({ free_tuition_under: 200_000 }) }).ramp!.P, FEDERAL_TOP);
+  // The anchored curve doesn't need the $110K+ band, nor CDS need met (the promise is the college's own word).
+  assert.equal(curve({ policy: free, bands: [2_000, 3_000, 6_000, 14_000, null] }).status, "break_point");
+  assert.equal(curve({ policy: free, needMet: 0.8 }).status, "break_point");
+});
+
+test("which promises anchor: above $110K, with tuition known, and an in-state line only on a public's curve", () => {
+  const figures = { tuition: 64_000 };
+  assert.equal(curve({ policy: policy({ free_tuition_under: 100_000 }), ...figures }).ramp!.pin, undefined, "at or under $110K: calibrated");
+  assert.equal(curve({ policy: policy({ free_tuition_under: 200_000 }), tuition: null }).ramp!.pin, undefined, "no tuition: calibrated");
+  const inState = policy({ free_tuition_under: 150_000, applies_to: "in_state" });
+  const pub = curve({ policy: inState, type: "public", coa: 35_000, tuition: 17_000, bands: [1_000, 2_000, 5_000, 11_000, 26_000] });
+  assert.deepEqual(pub.ramp!.pin, { income: 150_000, price: 18_000 });
+  assert.equal(pub.promises[0].label, "No tuition under $150K (in-state)");
+  assert.equal(curve({ policy: inState }).ramp!.pin, undefined, "an in-state line at a private doesn't anchor its curve");
+});
+
+test("a promise the $110K+ band sits far below is flagged, and the curve is unchanged", () => {
+  const free = policy({ free_tuition_under: 200_000 });
+  const agrees = curve({ policy: free });
+  const avg = calibrationAverage(agrees)!;
+  assert.equal(agrees.promises[0].disagrees, undefined);
+  const below = curve({ policy: free, bands: [2_000, 3_000, 6_000, 14_000, avg - PROMISE_BAND_GAP - 1_000] });
+  assert.equal(below.promises[0].disagrees, true);
+  assert.deepEqual(below.ramp, agrees.ramp);
+  assert.deepEqual(curvePoints(below, true), curvePoints(agrees, true));
+  // A no-contribution line that doesn't fit the calibration: calibrated from the default start, the line flagged.
   const nc = curve({ policy: policy({ no_contribution_under: 150_000 }), bands: [2_000, 3_000, 6_000, 14_000, 52_000] });
   assert.equal(nc.status, "break_point");
   assert.equal(nc.ramp!.P, DEFAULT_RAMP_START);
-  assert.deepEqual(nc.promises[0], { income: 150_000, kind: "no_contribution", label: "Families pay nothing toward cost under $150K", disagrees: true, cap: 14_000 });
-  assert.equal(priceAt(nc, 150_000, true).hi, 14_000);
+  assert.deepEqual(nc.promises[0], { income: 150_000, kind: "no_contribution", label: "Families pay nothing toward cost under $150K", disagrees: true });
+});
+
+/**
+ * The largest jump between adjacent $1K steps from $75K up (the published steps below differ as published). At $1K
+ * a steep but continuous stretch moves little (calibrated ramps at most r = 0.60, so $600; the steepest anchored rise,
+ * a free-tuition line $10K above a no-contribution line, about $1.1K), while a step keeps its full size.
+ */
+function biggestJump(c: CostCurve): { at: number; jump: number } {
+  const pts = curvePoints(c, true, 1_000).filter((p) => p.income >= 75_000 && p.kind !== "unknown");
+  let worst = { at: 0, jump: 0 };
+  for (let i = 1; i < pts.length; i++)
+    for (const k of ["lo", "hi"] as const) {
+      const jump = Math.abs(pts[i][k] - pts[i - 1][k]);
+      if (jump > worst.jump) worst = { at: pts[i].income, jump };
+    }
+  return worst;
+}
+
+test("the curve is continuous for every curated college: no jump over $2K between adjacent $1K steps", () => {
+  const byId = new Map(schools.map((s) => [s.unit_id, s]));
+  let checked = 0;
+  for (const p of allAidPolicies()) {
+    const s = byId.get(p.unit_id);
+    const c = s ? costCurve(costCurveInput(s)) : null;
+    if (!c || c.status !== "break_point") continue;
+    checked++;
+    const { at, jump } = biggestJump(c);
+    assert.ok(jump <= 2_000, `${s!.name}: $${Math.round(jump)} jump at $${at}`);
+  }
+  assert.ok(checked >= 20, `${checked} curated colleges have a curve`);
+  // The check isn't vacuous: a curve with a step in it fails.
+  const c = curve({ policy: policy({ free_tuition_under: 200_000 }) });
+  const stepped: CostCurve = { ...c, ramp: { ...c.ramp!, pin: { income: 200_000, price: c.ramp!.pin!.price + 10_000 } }, published: c.published };
+  stepped.ramp!.P = 195_000;
+  assert.ok(biggestJump(stepped).jump > 2_000);
+});
+
+test("a calibrated r at a bound means no estimate", () => {
+  // Between the bound and the margin: data_ends; just inside the margin, a break point.
+  for (const band of [24_000, 30_000, 36_000, 44_000, 48_000, 52_000, 54_000, 56_000]) {
+    const input = { ...PRIVATE, bands: [2_000, 3_000, 6_000, 14_000, band] };
+    const c = curve(input);
+    if (c.status === "break_point") assert.ok(c.ramp!.r - R_MIN >= BOUND_MARGIN && R_MAX - c.ramp!.r >= BOUND_MARGIN, `${band}: r ${c.ramp!.r}`);
+  }
+  // Florida: a public whose $110K+ band is lowered by state merit aid, calibrated at the floor.
+  const uf = schools.find((s) => s.unit_id === "134130")!;
+  assert.equal(costCurve(costCurveInput(uf, null))!.status, "data_ends");
 });
 
 test("a college that doesn't meet full need gets 'little need-based aid above $110K'", () => {

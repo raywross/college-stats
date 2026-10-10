@@ -11,6 +11,7 @@ import type { School, SchoolType, SettingGroup, SizeBucket } from "./types.ts";
 import { satTotal } from "./score-bands.ts";
 import { isMajorFamily, type MajorFamily } from "./majors.ts";
 import { isHighSchoolId } from "./high-school-core.ts";
+import type { StandingStudent } from "./planner/standing.ts";
 
 /**
  * Same boundaries as lib/metrics.ts SIZE_BUCKETS, duplicated here rather than imported: that module pulls in
@@ -88,6 +89,30 @@ export interface StudentProfileTests {
   superscore: boolean;
   /** "I plan to apply test-optional" even where scores are on file. */
   plansTestOptional: boolean;
+  /**
+   * The one test the plan uses (specs/planner/redesign/standing.md "The numbers"): SAT, ACT, "none" (not testing:
+   * the plan uses GPA alone), or null (not asked yet). Switching keeps both stored scores.
+   */
+  focus: TestFocus | null;
+  /** The score in the focus test is a practice score (a PSAT or practice test); shown once, in the plan's header card. */
+  practice: boolean;
+  /**
+   * Test dates the student picked with "I'll take it" (scores.md "Test dates"): cycle-file entry keys such as
+   * `sat_2026_10` (data/application-cycle.json); the cycle generator makes register and test-day tasks only for these.
+   */
+  plannedDates: string[];
+}
+
+export type TestFocus = "sat" | "act" | "none";
+const TEST_FOCUS_VALUES: TestFocus[] = ["sat", "act", "none"];
+/** Most test dates a student can pick at once. */
+export const PLANNED_DATES_MAX = 6;
+/** A test-date key in the cycle file: `sat_YYYY_MM` or `act_YYYY_MM` (tests/planner-redesign-profile.test.mts checks every test date in the cycle file has this shape). */
+const TEST_DATE_KEY = /^(sat|act)_\d{4}_(0[1-9]|1[0-2])$/;
+
+/** Whether a value is a cycle-file test-date key (`sat_2026_10`). */
+export function isTestDateKey(v: unknown): v is string {
+  return typeof v === "string" && TEST_DATE_KEY.test(v);
 }
 
 export type EarlyRoundInterest = "ed" | "ea" | "none";
@@ -148,6 +173,9 @@ export function emptyProfile(): StudentProfileData {
       actScience: null,
       superscore: false,
       plansTestOptional: false,
+      focus: null,
+      practice: false,
+      plannedDates: [],
     },
     plans: { intendedMajors: [], earlyRoundInterest: null },
     preferences: { sizes: [], settings: [], statesOrRegions: [], maxAverageCost: null, types: [] },
@@ -249,6 +277,9 @@ export function sanitizeProfile(input: unknown): StudentProfileData {
     actScience: int(t.actScience, 1, 36),
     superscore: bool(t.superscore),
     plansTestOptional: bool(t.plansTestOptional),
+    focus: TEST_FOCUS_VALUES.includes(t.focus as TestFocus) ? (t.focus as TestFocus) : null,
+    practice: bool(t.practice),
+    plannedDates: arr(t.plannedDates, (x) => (isTestDateKey(x) ? x : null), PLANNED_DATES_MAX),
   };
 
   const pl = isObj(input.plans) ? input.plans : {};
@@ -329,6 +360,31 @@ export function gpaDisplay(academics: Pick<StudentProfileAcademics, "gpa" | "gpa
 
 function trimTrailingZero(n: number): string {
   return Number(n.toFixed(2)).toString();
+}
+
+/* ------------------------------------------------------------------ */
+/* The plan's numbers (specs/planner/redesign/standing.md)             */
+/* ------------------------------------------------------------------ */
+
+/**
+ * The one test the plan uses (standing.md "The numbers"): the focus test's score when the student picked one; with
+ * no focus yet and exactly one score on file, that one; "Not testing", no score, or two scores and no pick: null.
+ */
+export function planTest(profile: Pick<StudentProfileData, "tests"> | null): { kind: "sat" | "act"; score: number } | null {
+  if (!profile) return null;
+  const t = profile.tests;
+  if (t.focus === "none") return null;
+  if (t.focus === "sat") return t.satTotal !== null ? { kind: "sat", score: t.satTotal } : null;
+  if (t.focus === "act") return t.actComposite !== null ? { kind: "act", score: t.actComposite } : null;
+  if (t.satTotal !== null && t.actComposite === null) return { kind: "sat", score: t.satTotal };
+  if (t.actComposite !== null && t.satTotal === null) return { kind: "act", score: t.actComposite };
+  return null;
+}
+
+/** The student as the standing model reads them: unweighted GPA on 4.0 (unweightedGpa4) and the one test. */
+export function planStudent(profile: Pick<StudentProfileData, "tests" | "academics"> | null): StandingStudent {
+  if (!profile) return { gpa: null, test: null };
+  return { gpa: unweightedGpa4(profile.academics.gpa, profile.academics.gpaScale), test: planTest(profile) };
 }
 
 /* ------------------------------------------------------------------ */

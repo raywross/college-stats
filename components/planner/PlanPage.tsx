@@ -1,12 +1,7 @@
-import { getAccount } from "@/lib/auth";
-import { scheduleStudentReadLog, type PersonPage } from "@/lib/households";
-import { myHome } from "@/lib/home-store";
-import { getOrCreateDefaultList, myLists } from "@/lib/lists";
+import type { PersonPage } from "@/lib/households";
 import { createServerSupabase } from "@/lib/supabase-server";
-import { profileFor } from "@/lib/student-profile-store";
-import { effectiveGradYear } from "@/lib/student-profile";
-import { generatorInputFor, planContextFrom, PlannerSetupError, readPlan, readTasks, todayIso, writeMerge } from "@/lib/planner/context";
-import { generateTasks, mergeTasks } from "@/lib/planner/tasks";
+import { loadPlanFor } from "@/lib/planner/load";
+import { tabForStage } from "@/lib/planner/plan-tabs";
 import { addDays } from "@/lib/planner/stage";
 import { NO_MONEY, stuckSignals, summaryLine } from "@/lib/planner/summary";
 import type { PlanContext, Stage } from "@/lib/planner/types";
@@ -49,14 +44,13 @@ type StudentPerson = Extract<PersonPage, { kind: "student" }>;
  * A guardian's view is logged for the student, like their list and numbers.
  */
 export async function PlanPage({ personId, person, stage }: { personId: string; person: StudentPerson; stage: Stage | null }) {
-  const { student, canEdit, relation } = person.access;
-  const owner = { kind: "student" as const, id: student.id };
-  const lists = await myLists(owner);
-  let listId: string | null = lists.find((l) => l.is_default)?.id ?? lists[0]?.id ?? null;
-  if (!listId && canEdit) listId = (await getOrCreateDefaultList(owner))?.id ?? null;
+  const { student, relation } = person.access;
   const first = student.display_name?.trim().split(/\s+/)[0] || null;
 
-  if (!listId) {
+  // The read, the suggested groups and rounds, the task regeneration, and the context (lib/planner/load.ts).
+  const loaded = await loadPlanFor(student.id, person.access);
+  if (loaded.kind === "not-found") return null;
+  if (loaded.kind === "empty") {
     return (
       <section className="rounded-3xl border bg-card p-5 sm:p-6">
         <h2 className="font-display text-xl font-bold">No list yet</h2>
@@ -64,44 +58,19 @@ export async function PlanPage({ personId, person, stage }: { personId: string; 
       </section>
     );
   }
-
+  if (loaded.kind === "setup-missing") {
+    return (
+      <section className="rounded-3xl border bg-card p-5 sm:p-6">
+        <h2 className="font-display text-xl font-bold">The plan isn&apos;t set up yet</h2>
+        <p className="mt-1 text-sm text-muted-foreground">The planner&apos;s tables haven&apos;t been added to the database. The list still works.</p>
+      </section>
+    );
+  }
+  const { ctx } = loaded;
+  const { canEdit } = ctx.viewer;
+  const gradYear = ctx.student?.grad_year ?? null;
+  const today = ctx.today;
   const supabase = await createServerSupabase();
-  const [account, profile, home] = await Promise.all([getAccount(), profileFor(student.id), myHome()]);
-  if (relation === "guardian") await scheduleStudentReadLog(student.id, "plan_tasks");
-  const gradYear = profile ? effectiveGradYear(profile.data.basics, student.grad_year) : student.grad_year;
-  const today = todayIso();
-
-  let plan;
-  try {
-    plan = await readPlan(supabase, listId);
-  } catch (err) {
-    if (err instanceof PlannerSetupError) {
-      return (
-        <section className="rounded-3xl border bg-card p-5 sm:p-6">
-          <h2 className="font-display text-xl font-bold">The plan isn&apos;t set up yet</h2>
-          <p className="mt-1 text-sm text-muted-foreground">The planner&apos;s tables haven&apos;t been added to the database. The list still works.</p>
-        </section>
-      );
-    }
-    throw err;
-  }
-  if (!plan) return null;
-
-  const input = await generatorInputFor(plan, { gradYear, profile: profile?.data ?? null, home, today });
-  if (canEdit && (await writeMerge(supabase, listId, mergeTasks(plan.tasks, generateTasks(input))))) {
-    plan = { ...plan, tasks: await readTasks(supabase, listId) };
-  }
-  const ctx = planContextFrom(input, plan, {
-    student: { id: student.id, display_name: student.display_name, grad_year: gradYear, user_id: student.user_id },
-    home,
-    viewer: {
-      userId: account?.user.id ?? "",
-      firstName: account?.profile.display_name?.trim().split(/\s+/)[0] || null,
-      canEdit,
-      relation: relation === "self" ? "self" : "guardian",
-      isGuardian: relation === "guardian",
-    },
-  });
   const open = stage ?? ctx.current;
   const Panel = PANELS[open];
   const thisYear = Number(today.slice(0, 4));
@@ -128,7 +97,7 @@ export async function PlanPage({ personId, person, stage }: { personId: string; 
 
   return (
     <div className="space-y-6">
-      <PlanOpened stage={open} />
+      <PlanOpened tab={tabForStage(open)} viewer={relation === "self" ? "student" : "guardian"} everyone={false} />
       {gradYear === null && (
         <GradYearPrompt studentId={student.id} years={[0, 1, 2, 3, 4, 5].map((n) => thisYear + n)} canEdit={canEdit} firstName={relation === "self" ? null : first} />
       )}

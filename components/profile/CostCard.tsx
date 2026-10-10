@@ -1,25 +1,27 @@
 import { ExternalLink } from "lucide-react";
 import type { Profile } from "@/lib/profile-data";
 import { topicHref, topicOf } from "@/lib/profile-topics";
-import { CARD_TITLES, MIDDLE_INCOME_BAND, middleBand, tenYear } from "@/lib/profile-cards";
-import type { FieldPath } from "@/lib/fields";
-import type { TermKey } from "@/lib/glossary";
-import { DOMAINS, INCOME_BANDS, aidGenerosity, generosityTier } from "@/lib/metrics";
+import { CARD_TITLES, tenYear } from "@/lib/profile-cards";
+import { DOMAINS, aidGenerosity, generosityTier } from "@/lib/metrics";
+import { estimatesShown } from "@/lib/cost-curve";
 import { costTakeaway } from "@/lib/insights";
 import { indicatorOf } from "@/lib/indicators";
 import { moneyCompact, pct } from "@/lib/format";
 import { Ring } from "@/components/charts/Ring";
+import { CostCurve } from "@/components/charts/CostCurve";
+import { CostFacts } from "@/components/school/CostFacts";
 import { MetricLabel, Term } from "@/components/ui/info-tip";
 import { CardHeadline, CardStat, CardStats, TopicCard } from "./TopicCard";
 import { TenYearLine } from "./TenYearLine";
 
 /**
- * What it costs: the average total cost against the national median with the aid-generosity ring, full price vs.
- * net price with grants vs. the middle income band as three bars, the generosity tier, the share with a federal
- * loan, the net price calculator link, and average cost over ten years.
+ * What it costs: the average total cost against the national median with the aid-generosity ring, a small cost curve
+ * over family income with its three facts (full price, where need-based aid ends, merit aid;
+ * specs/product/cost-by-income.md), the generosity tier, the share with a federal loan, the net price calculator
+ * link, and average cost over ten years.
  */
 export async function CostCard({ profile: p }: { profile: Profile }) {
-  const { data, school, history, avgCost, byIncome } = p;
+  const { data, school, history, avgCost } = p;
   const { citeField, metricMedian } = data;
   const c = school.cost;
   const color = DOMAINS.value.color;
@@ -30,18 +32,10 @@ export async function CostCard({ profile: p }: { profile: Profile }) {
   const tier = generosityTier(generosity);
   const median = metricMedian("avgCost");
   const vsMedian = avgCost !== null && median !== null ? (Math.abs(avgCost - median) < 1000 ? "about the national median" : `${moneyCompact(Math.abs(avgCost - median))} ${avgCost < median ? "below" : "above"} the national median`) : null;
-  // Net price by income covers in-state students at publics, so the full-price bar uses the in-state sticker.
-  const full = c?.sticker?.in_state ?? c?.sticker?.in_district ?? null;
   const aided = c?.aided_net_price ?? null;
-  const mid = middleBand(byIncome);
-  const bars = (
-    [
-      full !== null && { label: school.type === "public" ? "Full price, in-state" : "Full price", value: full, field: "cost.sticker", term: "cost-of-attendance" },
-      aided !== null && { label: "With grants", value: aided, field: "cost.aided_net_price", term: "net-price" },
-      mid !== null && { label: `${INCOME_BANDS[MIDDLE_INCOME_BAND]} income`, value: mid, field: "cost.net_price_by_income", term: "net-price-by-income" },
-    ] as const
-  ).filter((b): b is Exclude<typeof b, false> => b !== false) as { label: string; value: number; field: FieldPath; term: TermKey }[];
-  const scale = Math.max(1, ...bars.map((b) => b.value));
+  const showEstimates = estimatesShown();
+  const curve = data.costCurveFor(school);
+  const merit = data.meritInfoFor(school);
   const loanRate = school.outcomes?.federal_loan_rate ?? null;
   const loanMedian = metricMedian("loanRate");
   const cost = history ? tenYear("avg_paid_all", history.history, history.files) : null;
@@ -87,19 +81,10 @@ export async function CostCard({ profile: p }: { profile: Profile }) {
         </div>
       )}
 
-      {bars.length > 1 && (
-        <div className="mt-4 grid grid-cols-[auto_1fr_auto] items-center gap-x-3 gap-y-1.5 text-xs">
-          {bars.map((b) => (
-            <div key={b.field} className="contents">
-              <MetricLabel term={b.term} cited={citeField(b.field, school)} className="text-muted-foreground">
-                {b.label}
-              </MetricLabel>
-              <span className="h-2 overflow-hidden rounded-full" style={{ backgroundColor: `color-mix(in oklch, ${color} 16%, transparent)` }}>
-                <span className="block h-full origin-left animate-grow-x rounded-full" style={{ width: `${Math.max(1.5, (Math.max(0, b.value) / scale) * 100)}%`, backgroundColor: color }} />
-              </span>
-              <span className="font-semibold tabular-nums">{moneyCompact(b.value)}</span>
-            </div>
-          ))}
+      {curve && (
+        <div className="mt-4 space-y-3">
+          <CostCurve curve={curve} merit={merit} showEstimates={showEstimates} mini />
+          <CostFacts school={school} showEstimates={showEstimates} compact />
         </div>
       )}
 

@@ -1,0 +1,4 @@
+{
+  "description": "Colleges' published aid promises and rules (specs/product/cost-by-income.md \"Published promises\"). One entry per college, each checked against the college's own page; verified_via says whether it was read on the page or quoted from it in a search result. Checked by scripts/check-aid-policies.mts (npm run verify). Re-checked each spring in a data PR.",
+  "policies": []
+}

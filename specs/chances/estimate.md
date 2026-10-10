@@ -1,23 +1,25 @@
-# Quad's Estimate: Interface, Private Model, and What Families See
+# Quad's Estimate: Interface, Server-Side Model, and What Families See
 
 > Status: **planned** 2026-10-10. Part 4 of [admission chances](README.md). After
 > [rigor-in-context.md](rigor-in-context.md), [base-rates.md](base-rates.md), and
 > [major-and-grades.md](major-and-grades.md) (the inputs), and after PR #105 (the planner redesign, whose
-> `standingFor` in `lib/planner/standing.ts` this moves behind the interface). The method itself is confidential and
-> specified in the private model repository, not here ([README](README.md#quads-estimate-is-proprietary)).
+> `standingFor` in `lib/planner/standing.ts` this moves behind the interface). The method is
+> [method/standing.md](method/standing.md); it is never shown on the site, and moves to a private repository at launch
+> ([README](README.md#quads-estimate-is-proprietary)).
 
 ## Goal
 One function the profile, the planner, Compare, Explore, and the iPhone API all call for Reach, Target, or Likely,
-computed on the server by a private model package that can improve without changes to this repository, and shown
+computed on the server by a model that can improve without changing what any page says, and shown
 with enough about its inputs that a family understands what it rests on, without disclosing how it is calculated.
 
 ## Architecture
 ```
-page / planner / API ──► POST /api/estimate (server) ──► lib/chances/estimate.ts (interface, public)
+page / planner / API ──► POST /api/estimate (server) ──► lib/chances/estimate.ts (interface)
                                                             │
-                                     @quad/chances-model (private package)  ── or ──  open baseline (public)
+                                         lib/chances/model.ts (the method, server-only)
+                                         falls back to lib/chances/baseline.ts (the open baseline)
 ```
-- **`lib/chances/estimate.ts`** (public, server-only) defines the contract and nothing else:
+- **`lib/chances/estimate.ts`** (server-only) defines the contract and nothing else:
   ```
   estimate(input: EstimateInput): EstimateResult
   EstimateInput  = { student: { gpa, gpaScale, test, sections, classRank, courses, subjectGpa, state, majors, round,
@@ -30,18 +32,26 @@ page / planner / API ──► POST /api/estimate (server) ──► lib/chances
                      notes: NoteKey[],             // fixed, reviewed sentences from a public catalog (below)
                      modelVersion: string }
   ```
-- **`@quad/chances-model`** lives in a private repository (owner to create; recommended name
-  `raywross/quad-model`), with its own spec, tests, and history. Vercel installs it at build time from GitHub
-  Packages with a read-only token stored as a Vercel environment variable. It exports one function matching the
-  contract.
-- **The open baseline** (`lib/chances/baseline.ts`, public) implements the same contract with the rules already
-  published in [chances-and-fit.md](../product/chances-and-fit.md) and the planner redesign. It runs in local
-  development, CI, forks, and preview deployments without the token.
-- **Production must run the private model.** `next build` with `VERCEL_ENV=production` fails if the package can't be
-  resolved, so the baseline can never silently serve production.
-- **Server only.** The interface imports `server-only`; nothing from the package reaches a client bundle (a test
-  scans the built client chunks for the package name). The planner's numbers form, which today re-sorts in the
+- **`lib/chances/model.ts`** (server-only) implements [method/standing.md](method/standing.md),
+  [method/rigor-reading.md](method/rigor-reading.md), and [method/major-effects.md](method/major-effects.md) behind
+  that contract, with its tests in `tests/chances-model.test.mts`.
+- **The open baseline** (`lib/chances/baseline.ts`) implements the same contract with the rules already published in
+  [chances-and-fit.md](../product/chances-and-fit.md) and the planner redesign.
+- **Server only.** The interface and the model import `server-only`; nothing from them reaches a client bundle (a
+  test scans the built client chunks for the model's module). The planner's numbers form, which today re-sorts in the
   browser, calls the endpoint with a short debounce instead.
+
+### At launch: move the method private
+A short checklist, done once, when the owner locks the site down:
+1. Create a private repository (recommended `raywross/quad-model`) and move `lib/chances/model.ts`, its tests, and
+   `specs/chances/method/` into it as a package (`@quad/chances-model`) exporting the same contract.
+2. Install it at build from GitHub Packages with a read-only token stored as a Vercel environment variable; the
+   estimate interface imports it and falls back to the baseline when it can't be resolved (development, CI, forks).
+3. Make `next build` with `VERCEL_ENV=production` fail if the package can't be resolved, so the baseline never
+   silently serves production.
+4. Delete the method files from this repository, and either make this repository private or accept that its history
+   holds the pre-launch method (owner decision, 2026-10-10: deal with it at launch).
+5. Update the rule in `CLAUDE.md` to "never commit the method here".
 
 ## Protecting the method
 - **No bulk or probing access.** `/api/estimate` takes one student and up to 25 colleges per call, requires a session
@@ -94,25 +104,23 @@ Compare's "Where you stand" row and Explore's standing facet call the endpoint f
 pages of 25). The iPhone API returns the same `EstimateResult`.
 
 ## Changing the method
-- Method changes ship as new versions of the private package; each result carries `modelVersion`, and outcome
-  snapshots record it ([calibration.md](calibration.md)).
-- A version reaches production only after it passes the private repository's own release checks against held-out
-  outcomes; the public accuracy summary is updated each season.
+- Method changes are changes to the method files and `lib/chances/model.ts` (after launch, new versions of the
+  private package); each result carries `modelVersion`, and outcome snapshots record it ([calibration.md](calibration.md)).
+- A version reaches production only after it passes the release checks in [method/outcomes.md](method/outcomes.md);
+  the accuracy summary on the site is updated each season.
 - A change that would alter what the site *says* (a new note, a new input kind, a new label) is a public change here:
   the catalog, the input contract, or the display.
 
 ## Files (planned)
-Public: `lib/chances/estimate.ts` (contract, server-only), `lib/chances/baseline.ts` (the open baseline: the
-existing published rules moved out of `lib/planner/standing.ts`), `lib/chances/notes.ts` (the sentence catalog),
-`app/api/estimate/route.ts` (session, limits, batching), `components/chances/WhatWentIn.tsx`, the production build
-check, `tests/chances-estimate.test.mts` (the contract, the baseline against the published examples, the build check,
-no package code in client chunks, rate limits, notes only from the catalog).
-Private (`raywross/quad-model`): the method's spec, implementation, tests, and release checks.
+`lib/chances/estimate.ts` (contract, server-only), `lib/chances/model.ts` (the method, server-only),
+`lib/chances/baseline.ts` (the open baseline: the existing published rules moved out of `lib/planner/standing.ts`),
+`lib/chances/notes.ts` (the sentence catalog), `app/api/estimate/route.ts` (session, limits, batching),
+`components/chances/WhatWentIn.tsx`, `tests/chances-estimate.test.mts` (the contract, the baseline against the
+published examples, no model code in client chunks, rate limits, notes only from the catalog),
+`tests/chances-model.test.mts` (the method's pinned examples).
 
 ## Open questions
-1. Private package or a separate service (a Supabase Edge Function or a small API)? Recommendation: a private package
-   now (one deploy, no network hop); a service later if the model grows heavy or needs its own data.
-2. Should preview deployments get the private model? Recommendation: yes, for the owner's previews only (the token in
-   the Preview environment), so a change can be checked before production; forks and CI keep the baseline.
-3. Should the open baseline stay public at all? Recommendation: yes; it is already published, lets contributors run
-   the site, and gives the private model a fixed yardstick to beat.
+1. At launch, private package or a separate service (a Supabase Edge Function or a small API)? Recommendation: a
+   private package (one deploy, no network hop); a service later if the model grows heavy or needs its own data.
+2. Should the open baseline stay after launch? Recommendation: yes; it is already published, lets contributors run
+   the site, and gives the model a fixed yardstick to beat.

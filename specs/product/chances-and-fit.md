@@ -4,7 +4,7 @@
 > better with [cds-admissions.md](../data-expansion/cds-admissions.md) (GPA bands) and
 > [scattergrams.md](scattergrams.md) (local outcomes). Part of [product](README.md).
 > *2026-10-10:* the rules below became the planner's `standingFor` (planner redesign, PR #105). They are now the
-> **open baseline** only: production uses Quad's proprietary estimate, whose method is not published
+> **open baseline** only: production uses Quad's proprietary estimate, whose method is never shown on the site
 > ([chances/README.md](../chances/README.md#quads-estimate-is-proprietary), [chances/estimate.md](../chances/estimate.md)).
 > The pilot became [chances/calibration.md](../chances/calibration.md). The **Display**, **Fit**, and **Caveats** here
 > remain this spec's work.

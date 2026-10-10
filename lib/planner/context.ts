@@ -18,82 +18,25 @@ import { stageOf } from "./stage";
 import { sameDocumentTotals } from "@/lib/early";
 import { redConflictCount } from "./rounds";
 import type { MergeResult } from "./tasks";
-import type { GeneratorInput, ListSort, PlanContext, PlanItem, PlanNudge, PlanOffer, PlanSchool, PlanTask, PlanVisit } from "./types";
-import type { ListRecord } from "@/lib/list-rules";
+import type { GeneratorInput, PlanContext, PlanSchool, PlanTask } from "./types";
+import type { ListCategory, ListRound } from "@/lib/list-rules";
+import type { StandingSchool } from "./standing";
+import { autoWriteBatches } from "./plan-writes";
+import { PLAN_TASK_COLUMNS, type PlanData } from "./read-plan";
 
-export const PLAN_LIST_COLUMNS = "id, student_id, user_id, name, is_default, share_enabled, created_by, created, sort, rounds_plan_accepted_at";
-export const PLAN_ITEM_COLUMNS =
-  "id, list_id, unit_id, category, status, outcome, round, position, added_by, added_at, decision_date, deadline_text, deadline_date, enrolling, updates, visited_on, follows_social, dream, priority, followed_networks, info_requested_on, application_platform, applied_on, complete_on, portal_url, committed_on, withdrawn_on, recommendations_count, supplements_count, transcript_shared";
-export const PLAN_TASK_COLUMNS =
-  "id, list_id, item_id, key, kind, title, detail, due_on, window_start, window_end, assignee, source, source_field, source_edition, date_note, done_at, done_by, snoozed_until, dismissed, orphaned, position, created_by, created_at";
-const VISIT_COLUMNS = "id, item_id, kind, on_date, at_time, registered, registration_url, who, rating, notes, created_by, created_at, updated_at";
-const OFFER_COLUMNS = "id, item_id, award_year, letter_date, source, coa, gift, work_study, loans, quotes, pros, cons, confirmed_at, created_by, created_at";
-const NUDGE_COLUMNS = "id, task_id, from_user, to_student, note, sent_at, channel, reply, replied_at";
-
-export type PlanList = ListRecord & { sort: ListSort | null; rounds_plan_accepted_at: string | null };
-
-/** One list's plan: the list, its colleges, and everything hanging off them that the reader may see. */
-export interface PlanData {
-  list: PlanList;
-  items: PlanItem[];
-  tasks: PlanTask[];
-  visits: PlanVisit[];
-  offers: PlanOffer[];
-  nudges: PlanNudge[];
-}
-
-function isMissing(error: { code?: string; message?: string }): boolean {
-  return error.code === "42P01" || error.code === "42703" || error.code === "PGRST205" || error.code === "PGRST204" || /does not exist|schema cache/i.test(error.message ?? "");
-}
-
-/**
- * Reads a list's plan in one round after the list (items, tasks, visits, offers, nudges in parallel). Null when the
- * list isn't visible. Throws `PlannerSetupError` when the planner migration isn't applied yet, so a page can say so.
- */
-export async function readPlan(supabase: SupabaseClient, listId: string): Promise<PlanData | null> {
-  const list = await supabase.from("lists").select(PLAN_LIST_COLUMNS).eq("id", listId).maybeSingle();
-  if (list.error) {
-    if (isMissing(list.error)) throw new PlannerSetupError(list.error.message);
-    throw new Error(`Reading the plan's list failed: ${list.error.message}`);
-  }
-  if (!list.data) return null;
-  const [items, tasks] = await Promise.all([
-    supabase.from("list_items").select(PLAN_ITEM_COLUMNS).eq("list_id", listId).order("position"),
-    supabase.from("plan_tasks").select(PLAN_TASK_COLUMNS).eq("list_id", listId).order("due_on", { nullsFirst: false }).order("position"),
-  ]);
-  for (const r of [items, tasks]) {
-    if (r.error) {
-      if (isMissing(r.error)) throw new PlannerSetupError(r.error.message);
-      throw new Error(`Reading the plan failed: ${r.error.message}`);
-    }
-  }
-  const itemIds = (items.data as PlanItem[]).map((i) => i.id);
-  const taskIds = (tasks.data as PlanTask[]).map((t) => t.id);
-  const [visits, offers, nudges] = await Promise.all([
-    itemIds.length ? supabase.from("plan_visits").select(VISIT_COLUMNS).in("item_id", itemIds).order("on_date") : Promise.resolve({ data: [], error: null }),
-    itemIds.length ? supabase.from("plan_offers").select(OFFER_COLUMNS).in("item_id", itemIds).order("created_at") : Promise.resolve({ data: [], error: null }),
-    taskIds.length ? supabase.from("plan_nudges").select(NUDGE_COLUMNS).in("task_id", taskIds).order("sent_at", { ascending: false }) : Promise.resolve({ data: [], error: null }),
-  ]);
-  for (const r of [visits, offers, nudges]) {
-    if (r.error) throw new Error(`Reading the plan failed: ${r.error.message}`);
-  }
-  return {
-    list: list.data as PlanList,
-    items: items.data as PlanItem[],
-    tasks: tasks.data as PlanTask[],
-    visits: (visits.data ?? []) as PlanVisit[],
-    offers: (offers.data ?? []) as PlanOffer[],
-    nudges: (nudges.data ?? []) as PlanNudge[],
-  };
-}
-
-/** The planner's tables aren't in the database yet (the migration hasn't been applied). */
-export class PlannerSetupError extends Error {
-  constructor(message: string) {
-    super(`The planner's tables aren't set up yet: ${message}`);
-    this.name = "PlannerSetupError";
-  }
-}
+export {
+  isMissing,
+  PLAN_ITEM_BASE_COLUMNS,
+  PLAN_ITEM_COLUMNS,
+  PLAN_ITEM_SOURCE_COLUMNS,
+  PLAN_LIST_COLUMNS,
+  PLAN_TASK_COLUMNS,
+  PlannerSetupError,
+  readItems,
+  readPlan,
+  type PlanData,
+  type PlanList,
+} from "./read-plan";
 
 /* ------------------------------------------------------------------ */
 /* PlanSchool                                                          */
@@ -124,6 +67,8 @@ export const PLAN_CITE_PATHS = [
   "social.facebook",
   "social.linkedin",
   "reported.admission_profile.factors.interest",
+  // Redesign (standing.md "The rules"): the average first-year GPA the standing model compares with.
+  "reported.admission_profile.gpa.average",
   "reported.admission_profile.factors.interview",
   "reported.admission_profile.wait_list.policy",
   "reported.admission_profile.early_decision.offered",
@@ -183,6 +128,14 @@ export function planSchoolFor(
   const satRange = satTotal(school);
   if (satRange) cites["derived.sat_total"] = citeField("derived.sat_total", school);
   const actRange = school.admissions.act_composite_25_75 ?? null;
+  const gpaAverage = standingGpaAverage(school);
+  const standing: StandingSchool = {
+    admitRate: school.admissions?.acceptance_rate ?? null,
+    sat: satRange,
+    act: actRange,
+    gpaAverage,
+    testPolicy: school.admissions?.test_policy ?? null,
+  };
   return {
     unit_id: school.unit_id,
     name: school.name,
@@ -209,7 +162,18 @@ export function planSchoolFor(
     edTotals: sameDocumentTotals(school),
     satRange,
     actRange,
+    gpaAverage,
+    standing,
   };
+}
+
+/**
+ * The college's average first-year GPA as the standing model reads it (standing.md "The rules"; the same rule as the
+ * design preview): only an unweighted average on the 4.0 scale (CDS C12), else null.
+ */
+export function standingGpaAverage(school: Pick<School, "reported">): number | null {
+  const gpa = school.reported?.admission_profile?.gpa;
+  return gpa?.average != null && gpa.average <= 4 && gpa.scale !== "weighted" ? gpa.average : null;
 }
 
 /** PlanSchool for every college on the list, by unit id (a college no longer in the dataset is left out). */
@@ -243,6 +207,25 @@ export async function writeMerge(supabase: SupabaseClient, listId: string, merge
     if (error) console.error(`planner: marking orphaned tasks failed: ${error.message}`);
   }
   return true;
+}
+
+/**
+ * Writes the auto groups and rounds the model wants (lib/planner/plan-view.ts autoWrites) with the caller's session,
+ * one update per distinct value (lib/planner/plan-writes.ts autoWriteBatches). Every update is also filtered on its
+ * source column still being `auto`, so a pick the student made a moment ago is never overwritten. Returns how many
+ * rows changed; a reader who can't edit writes nothing (RLS), and errors are logged, never thrown.
+ */
+export async function writeAutoWrites(supabase: SupabaseClient, writes: { id: string; category?: ListCategory; round?: ListRound }[]): Promise<number> {
+  let changed = 0;
+  for (const batch of autoWriteBatches(writes)) {
+    const { data, error } = await supabase.from("list_items").update(batch.patch).in("id", batch.ids).eq(batch.sourceColumn, "auto").select("id");
+    if (error) {
+      console.error(`planner: writing suggested ${batch.sourceColumn === "category_source" ? "groups" : "rounds"} failed: ${error.message}`);
+      continue;
+    }
+    changed += data?.length ?? 0;
+  }
+  return changed;
 }
 
 /** Re-reads only a list's tasks (after writeMerge). */

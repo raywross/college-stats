@@ -1,6 +1,6 @@
 ---
 title: "Fix: data updates no longer stop on a page with an unusual character"
-pr: 111
+pr: 112
 date: 2026-10-10
 kind: fix
 summary: The automated college data update no longer stops when a college's web page has an unusual character (such as an emoji cut off mid-symbol), so one odd page can no longer block an entire update.

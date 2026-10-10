@@ -117,6 +117,41 @@ The owner decides the spend. Recommended order: the colleges families add to lis
 profiles, then the rest. Every new CDS also retrains the model automatically, because the model is fitted from the
 dataset.
 
+### 7. The GPA curve: a middle 50%, like the test scores (owner, 2026-10-10)
+The owner asked whether the SAT and ACT percentile ranges could give a GPA curve around the average.
+
+**What the data says** (42 colleges with GPA bands, after data run 1):
+- Each college's C11 bands give its GPA percentiles directly: walk up the bands, assuming even spread inside each
+  band. Examples: Elon 3.62–4.00, Houston 3.23–3.75, Rhodes 3.62–3.96.
+- **The curve is squashed against 4.0.** At almost every college the 75th percentile is 3.9 to 4.0. Test scores
+  predict it no better than a constant: leave-one-out miss 0.078 against 0.079. So "above the middle 50%" on GPA is
+  rare by nature.
+- **The 25th percentile is predictable.** `p25 ≈ 2.73 + 0.087 × (SAT 25th ÷ 100) − 0.51 × admit rate`. The typical
+  miss is 0.13 against 0.22 for a flat guess; 90% of misses are under 0.28.
+
+**The rule.** GPA uses the college's middle 50% wherever there is one, the same way scores do:
+| College's curve | 25th percentile | 75th percentile |
+|---|---|---|
+| Has C11 bands (not a weighted reporter) | From the bands (exact) | From the bands (exact) |
+| Estimated | The p25 model, ± its 90th-percentile miss | The p75 model (near-constant), ± its miss |
+| Only a reported average, no bands | Not used: the average rule in section 4 applies | |
+
+- **below** when the student's range is entirely under the 25th percentile's low end;
+- **above** when it is entirely over the 75th percentile's high end;
+- **in** otherwise when the student's range is at most 0.4 wide;
+- **can't tell** otherwise, which only happens with a weighted student GPA.
+
+This leans toward "in" when an estimate is uncertain, in line with "encourage, don't grade". A low GPA is still named
+when it is clearly low.
+
+Sentences: "Your GPA (3.82) is inside the middle 50% of first-years' GPAs here (3.62–4.00)." For an estimate, the same
+sentence, followed by "estimated from colleges with similar test scores; this college doesn't publish its GPA spread."
+Exact percentiles cite `derived.gpa_middle_half`; estimated ones cite `derived.gpa_estimate`.
+
+The p25 and p75 models are fitted on the server alongside the average model, with the same guard: at least 25
+training colleges and a 90th-percentile miss of at most 0.30. If either fails the guard, estimated colleges fall back
+to the average rule.
+
 ## Files
 - `lib/planner/gpa-model.ts` (pure): band midpoints, `bandMean`, `satMidpoint`, `fitGpaModel(rows)` with
   leave-one-out error, `predictGpa`, `collegeGpa`, `compareGpaRanges`.

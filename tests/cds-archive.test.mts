@@ -225,7 +225,9 @@ test("awaitingFirstRead: a known document with no read tied to it (record by sha
   assert.equal(awaitingFirstRead(entry(), undefined), true, "a model-read document with an edition and no record");
   assert.equal(awaitingFirstRead(entry(), { reads: {} }), true);
   assert.equal(awaitingFirstRead(entry(), { reads: read }), false, "read once: a later schema bump is callsNeedingRead's job");
-  assert.equal(awaitingFirstRead(entry({ edition: null }), undefined), false, "no edition: not sent to a model");
+  assert.equal(awaitingFirstRead(entry({ edition: null }), undefined), true, "no edition yet: looked for again and read once (an assumed edition)");
+  assert.equal(awaitingFirstRead(entry({ edition: null, edition_from: "none" }), undefined), false, "looked for, none, too little text: left alone");
+  assert.equal(awaitingFirstRead(entry({ edition: "2025-26", edition_from: "assumed" }), { reads: read }), false, "read once under an assumed edition: not again");
   assert.equal(awaitingFirstRead(entry({ type: "pdf-scanned", edition: "2025-26" }), undefined), false, "scanned PDFs aren't read yet");
   assert.equal(awaitingFirstRead(entry({ type: "xlsx-template" }), undefined), true, "a deterministic type with no record");
   assert.equal(awaitingFirstRead(entry({ type: "class-profile", kind: "class-profile", edition: null }), undefined, {}), true, "extraction undefined: never extracted");

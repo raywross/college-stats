@@ -62,19 +62,42 @@ export function callsNeedingRead(
  * and at least one read, deterministic or a model call), and by the recipe source that names it for class-profile pages
  * (round 2's `extraction`: undefined until the extractor has run; null when it ran and found nothing).
  *
- * Documents no reader takes yet are never awaiting a read: a model-read type that states no edition (it is not sent to
- * a model) and scanned PDFs. A document read before at an older schema or reader version is not awaiting its first read
+ * A model-read document with no edition is awaiting a read too: the pipeline looks for its edition again (cover, item
+ * text, file name) and, failing that, reads it once under an assumed one (`edition_from: "assumed"`). Only when that
+ * look found nothing worth reading (`edition_from: "none"`) is it left alone, so it isn't looked at every run. Scanned
+ * PDFs aren't read yet. A document read before at an older schema or reader version is not awaiting its first read
  * either; those re-reads come from the archive (`callsNeedingRead`, `--reextract`).
  */
 export function awaitingFirstRead(
-  entry: Pick<ManifestEntry, "type" | "edition">,
+  entry: Pick<ManifestEntry, "type" | "edition"> & Partial<Pick<ManifestEntry, "edition_from">>,
   doc: Pick<DocumentRecord, "reads"> | undefined,
-  profile?: { extraction?: unknown }
+  profile?: { extraction?: unknown; format?: string; read_as?: string }
 ): boolean {
-  if (entry.type === "class-profile") return !!profile && profile.extraction === undefined;
+  if (entry.type === "class-profile") return !!profile && (profile.extraction === undefined || profileMisread(profile));
   if (doc && Object.keys(doc.reads).length) return false;
   if (READER_VERSIONS[entry.type] !== undefined) return true;
-  return MODEL_TYPES.has(entry.type) && entry.type !== "pdf-scanned" && !!entry.edition;
+  if (!MODEL_TYPES.has(entry.type) || entry.type === "pdf-scanned") return false;
+  return !!entry.edition || entry.edition_from !== "none";
+}
+
+/**
+ * A class-profile PDF whose extraction came from decoding it as HTML (round 3 before 2026-10-10): the model saw
+ * compressed bytes, so its answer is not a read (nothing, or figures that aren't in the file). Read it again.
+ */
+export function profileMisread(profile: { extraction?: unknown; format?: string; read_as?: string }): boolean {
+  return profile.format === "pdf" && profile.extraction !== undefined && profile.read_as !== "pdf";
+}
+
+/** Least body text (characters) a document with no stated edition needs to be read under an assumed one. */
+export const MIN_ASSUMED_BODY_CHARS = 8000;
+
+/**
+ * The CDS edition current on a date: "2026-10-05" → "2025-26". Edition YYYY–YY describes the fall of YYYY and is posted
+ * through the next year, so on any day of year Y the newest a college can have published is (Y-1)–Y.
+ */
+export function editionCurrentOn(iso: string): string {
+  const y = Number(iso.slice(0, 4));
+  return `${y - 1}-${String(y % 100).padStart(2, "0")}`;
 }
 
 /* ------------------------------------------------------------------ */

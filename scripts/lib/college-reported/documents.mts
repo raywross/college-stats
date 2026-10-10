@@ -160,12 +160,25 @@ export function findLinks(html: string, base: string): FoundLink[] {
   return out;
 }
 
+/**
+ * `decodeURIComponent` that never throws: a link with a stray "%" or a non-UTF-8 escape ("%E9") is read as written.
+ * A raw decode threw "URI malformed" out of the whole probe step for 38 colleges in the October 2026 runs (Western
+ * Carolina among them), failing their discovery over one odd link.
+ */
+export function safeDecodeUri(s: string): string {
+  try {
+    return decodeURIComponent(s);
+  } catch {
+    return s;
+  }
+}
+
 const CDS_LINK = /common[\s_-]*data[\s_-]*set|(^|[^a-z])cds([^a-z]|$)/i;
 const PROFILE_LINK = /class[\s_-]*of[\s_-]*20\d\d|class[\s_-]*profile|first[\s_-]*year[\s_-]*profile|incoming[\s_-]*class|entering[\s_-]*class|admissions[\s_-]*statistics/i;
 
 /** What kind of admissions document a link points to, if any. CDS links must be a file (PDF or Excel). */
 export function linkKind(link: FoundLink): ReportedSourceKind | null {
-  const hay = `${decodeURIComponent(link.url)} ${link.text}`;
+  const hay = `${safeDecodeUri(link.url)} ${link.text}`;
   if (CDS_LINK.test(hay) && /\.(pdf|xlsx)($|\?)/i.test(link.url)) return "cds";
   if (PROFILE_LINK.test(hay)) return "class-profile";
   return null;
@@ -176,7 +189,7 @@ export function linkKind(link: FoundLink): ReportedSourceKind | null {
  * years before graduation); a lone "Fall 2026" → 2026. Null when it names no year.
  */
 export function entryYearOf(text: string): number | null {
-  const t = decodeURIComponent(text);
+  const t = safeDecodeUri(text);
   // The file name first: a URL's folders often hold an upload date ("…/uploads/2026/09/CDS_2025-2026.xlsx") that
   // isn't the edition. Then the whole text.
   const name = t.split(/[?#]/)[0].split("/").pop() ?? "";

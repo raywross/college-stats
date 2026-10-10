@@ -1713,3 +1713,45 @@ could not:
   first three fail. `tests/cds-archive.test.mts` covers `awaitingFirstRead`.
 - **Workflow.** Both jobs run `npm run build-trends` right after `npm run merge-reported`, so a data PR's
   `data/history/trends/` matches the merged `data/schools.json` (`tests/trends-foundation.test.mts`).
+
+### Documents found but not read (2026-10-10, branch `fix/college-reported-reads`)
+From run `20261010-192937-41` (GitHub run 38080003159) and the committed manifest.
+- **A CDS with no detected edition was never read.** 41 flattened PDFs and 9 HTML pages in `data/college-docs.json`
+  had `edition: null`: `editionFromBody` takes the edition only from a first-page "Common Data Set 2025-2026" or the
+  item text, and `awaitingFirstRead` and `pendingDocs` skip a model-read document without one. Marquette's cover prints
+  only "2025-2026" (its "Common Data Set" is an image), and most of the rest name the edition only in the file name.
+  Now: a first-page line that is only a year range is the cover (`layout.mts` COVER); else `editionFromUrl` reads the
+  file name (`cds-2025-2026_final.pdf`, `CDS_2024-25`, `CDS-25-26`, `cds2526`, `CDS_202526`; consecutive years only,
+  never a folder date or a lone year; `edition_from: "url"`); else a document with at least 8,000 characters of body
+  text is read once under the edition current when it was retrieved (`editionCurrentOn`, 2025-26 in October 2026;
+  `edition_from: "assumed"`). An assumed edition's items fail `edition-mismatch` until an item's own text (B22's
+  falls, H4's class, I-2's fall) names the year it implies, and fail on any that names another (`applyChecks`'
+  `editionAssumed`), so nothing publishes under a wrong year. Too little text: `edition_from: "none"`, recorded so it is
+  never looked at again. Documents archived before the fix (edition null, no `edition_from`) are awaiting a read and go
+  through `readKnown`, which looks for the edition again from the archived lines.
+- **Class profiles.** Every profile the run fetched was read in the same run; the ones left without an extraction had
+  not been fetched: a model named a page that answered 404 (Missouri, Iowa, RIT, Hofstra, NJIT, Adelphi, Oneonta and
+  Baruch from the search step), 300 (North Florida), or robots.txt disallowed it. Two real faults: (1) the extractor
+  decoded every profile as HTML, so a PDF profile was sent as compressed bytes (UCLA's found nothing; Georgia Tech's
+  "figures" are not in its file's text). `profileInput` now reads a PDF's pages (a scanned one as the PDF), and the
+  source records `read_as: "pdf"`; a PDF profile without it is read again once (`profileMisread`). (2) Links a model
+  names (picker, search, full discovery) are now requested before they count (`checkLink`): a 404 or 410 is dropped,
+  so the ladder keeps climbing; a page that answers is handed on as prefetched bytes. Anything else (robots.txt, 403,
+  a timeout) is left to the fetch step as before.
+- **"URI malformed".** `linkKind` and `entryYearOf` called `decodeURIComponent` on every link; a template placeholder
+  (`{%=o.guid %}` on Western Carolina's home page) or a non-UTF-8 escape threw out of the whole probe step, failing
+  discovery for 38 colleges, which then backed off to 2027-02-01. `safeDecodeUri` reads such a link as written.
+- **Santa Clara.** Full discovery returned `.../fampf/common-data-set/rba13-Common_Data_Set_2025-2026.pdf`; the real
+  file is under `.../ff/...` on the index page it also returned. The typo answered 404 every run, and since the recipe
+  had sources it was never rediscovered. Now step 4's CDS links are checked, a dead one replaced from its index pages,
+  and on every run `replaceUnlisted` swaps a CDS link that was never fetched and that the index page doesn't list for
+  the page's link to the same edition.
+- **Re-runs.** `node scripts/college-reported-rerun-ids.mts --artifact <dir> --out <file>` lists the colleges these
+  fixes affect, by reason; `uri-malformed` ones carry a back-off date and need `--rediscover`.
+- **Tests** (`tests/college-reported-reads.test.mts`): editions from file names and from a years-only cover; a CDS
+  named by its file name is read in the run that finds it; a CDS stating no edition is read once, held, and not read
+  again; an assumed edition confirmed by I-2 publishes; a pre-fix no-edition entry is read from the archive; a short
+  one is left alone; a PDF profile is read as a PDF, and a misread one again once; a picker's profile is read in the
+  same run and a 404 one dropped; a malformed link doesn't fail discovery; Santa Clara's link is repaired. With the
+  edition fix off the four no-edition pipeline tests fail; with the PDF reader off the profile test fails; with the 404
+  check off the picker test fails.

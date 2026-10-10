@@ -708,6 +708,53 @@ export const FIELDS = {
     computed: true,
     derived: { formula: "4 × average cost ÷ median earnings 10 years after entry", inputs: ["cost.avg_paid_all", "outcomes.median_earnings_10yr"] },
   },
+  // Cost by income (specs/product/cost-by-income.md; lib/cost-curve.ts, lib/merit.ts): computed at load, never stored.
+  // The default source is the federal net price by income, the curve's published part and the calibration target.
+  "derived.need_aid_break_income": {
+    ...scorecard("Where need-based aid ends (estimate)", "cost", "scorecard-cost"),
+    computed: true,
+    derived: {
+      formula:
+        "Full price (in-state at publics) ÷ r + P, rounded to $10K: the income where the estimated price reaches the full price. r (the share of each extra dollar a family pays, 0.15–0.60) is calibrated so the model's average price over the Census reference incomes above $110K equals the college's published $110K+ net price; P is the college's published no-contribution line, else about $90K (the federal need analysis's protected income). A published free-tuition line holds the price at that income to the full price minus tuition. The range varies the $110K+ figure by ±$1K and P by ±$10K",
+      inputs: ["cost.net_price_by_income", "cost.breakdown", "cost.sticker", "cost.cost_of_attendance", "cost.tuition_fees"],
+    },
+  },
+  "derived.need_aid_status": {
+    ...scorecard("Need-based aid above $110K", "cost", "scorecard-cost"),
+    computed: true,
+    derived: {
+      formula:
+        "Break point when the model fits; little need-based aid above $110K when the college's average share of need met (Common Data Set H2 line i) is under 90%, or, without it, when the published $110K+ net price is at least 85% of the full price; otherwise the federal data end at $110K",
+      inputs: ["derived.need_aid_break_income", "cost.net_price_by_income", "reported.aid.first_years", "aid.cds"],
+    },
+  },
+  "derived.cost_estimate": {
+    ...scorecard("Price at a family income (estimate above $110K)", "cost", "scorecard-cost"),
+    computed: true,
+    derived: {
+      formula:
+        "Up to $110K, the published net price for the family's income band; above it, the smaller of the full price and the larger of the $75–110K price and r × (income − P), shown as the range r takes within its uncertainty (see where need-based aid ends)",
+      inputs: ["cost.net_price_by_income", "derived.need_aid_break_income"],
+    },
+  },
+  "derived.merit_class": {
+    ...sfa("Merit aid for students without need"),
+    computed: true,
+    derived: {
+      formula:
+        "From the strongest source: the college's Common Data Set (H2A line n, students without need who got merit aid: none is need-only, any is merit), else its published need-only policy, else the federal proxy (grants without federal aid to at least 2% of first-years is merit, under 2% need-only)",
+      inputs: ["reported.aid.first_years", "aid.cds", "derived.merit_proxy"],
+    },
+  },
+  "derived.merit_proxy": {
+    ...sfa("First-years with a grant but no federal aid"),
+    computed: true,
+    derived: {
+      formula:
+        "(Grant recipients − federal-aid recipients with grants) ÷ first-years in the aid cohort; average (grant dollars − federal-aid recipients' grant dollars) ÷ those students. At most colleges that's merit aid",
+      inputs: ["aid.grant_count", "aid.grant_total", "aid.by_income", "aid.cohort"],
+    },
+  },
   // CDS cost and debt (specs/data-expansion/cds-cost-and-debt.md): computed on the cost page only, never ranked.
   "derived.next_year_price": {
     ...reported("Next year's price before aid (college-reported)", "cost"),

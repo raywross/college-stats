@@ -30,7 +30,7 @@ const SORT_KEYS: SortKey[] = [
   "avg_cost_change", "admit_rate_change", "size_change", "apps_change", "diversity_change",
   "men_share", "part_time", "men_share_change", "admit_gap", "loan_rate", "loan_rate_change", "student_faculty", "completion_8yr", "completion_4yr",
   "pell_gap", "pell_gap_change", "full_time_faculty", "out_of_state", "transfer_share", "instruction_spending", "endowment_per_student", "bachelors",
-  "distance",
+  "distance", "price_at",
 ];
 const VIEWS: ExploreView[] = ["grid", "table", "chart", "map"];
 
@@ -132,6 +132,10 @@ export function parseFilters(params: Params): SearchFilters {
     // page resolves the ZIP's center (lib/zip-centroids.ts resolveNear) before getSchools() sees it.
     nearZip: parseZip(params.near) ?? undefined,
     withinMiles: ((v) => (isWithinOption(v) ? v : undefined))(n(params.within)),
+    // Cost by income (specs/product/cost-by-income.md): whole dollars a year; non-positive values are ignored.
+    minAidIncome: ((v) => (v !== undefined && v > 0 ? v : undefined))(n(params.minAidIncome)),
+    merit: str(params.merit) === "1" || undefined,
+    income: ((v) => (v !== undefined && v >= 0 ? v : undefined))(n(params.income)),
     sortBy: sortBy && SORT_KEYS.includes(sortBy) ? sortBy : "applicants",
     // Default direction: most-applied-to first; everything else ascending.
     sortDir: params.sortDir === "desc" || params.sortDir === "asc" ? params.sortDir : sortBy && sortBy !== "applicants" ? "asc" : "desc",
@@ -206,6 +210,9 @@ export const FILTER_KEYS = [
   "greekCouncils",
   "near",
   "within",
+  // Cost by income. `income` isn't here: it prices the `price_at` sort and the cards' line, it narrows nothing.
+  "minAidIncome",
+  "merit",
   ...INDICATOR_KEYS.map((k) => INDICATORS[k].param),
 ] as const;
 

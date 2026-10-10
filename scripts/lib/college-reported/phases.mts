@@ -34,21 +34,21 @@ import { DEFAULT_ANCHORS, REPORTED_MODELS, ROUND3_MODELS, enqueueItems, fallYear
 import type { School } from "../../../lib/types";
 import { CALL_KEYS, SCHEMA_VERSIONS, codesFor, normalizeValue, yearsForEdition, type CallKey, type CdsCode, type CollegeDocsFile, type CollegeRecord, type DocumentRecord, type DocumentType, type ItemResult, type ManifestEntry, type TemplateTable } from "../../../lib/cds-sections.ts";
 import { compareDocuments } from "../../../lib/cds-records.ts";
-import { awaitingFirstRead, callsNeedingRead, fetchOutcome, manifestEntryFor, needsFetch } from "../../../lib/cds-reads.ts";
+import { MIN_ASSUMED_BODY_CHARS, awaitingFirstRead, callsNeedingRead, editionCurrentOn, fetchOutcome, manifestEntryFor, needsFetch } from "../../../lib/cds-reads.ts";
 import { citeAnswer, type NumberedLine } from "../../../lib/cds-quotes.ts";
 import { applyChecks, circuitBreakerV3, dropPassed, escalationFor, failedC1Count, itemFailureShares, reviewItemsFor } from "../../../lib/cds-checks.ts";
 import { runChecks, toReportedEntry } from "../../../lib/reported-checks.ts";
 import { recordFromTemplate } from "../cds-xlsx.mts";
 import { readFormPdf } from "./form-pdf.mts";
-import { layoutDocument, type CDSplit, type EditionFound, type LineRange } from "./layout.mts";
+import { editionFromBody, editionFromUrl, layoutDocument, type CDSplit, type EditionFound, type LineRange } from "./layout.mts";
 import { typeOfDocument } from "./doctype.mts";
 import { extOf } from "./archive-doc.mts";
 import { priorEditionLinks, type Archive } from "./archive.mts";
-import { detectFormat, findLinks, htmlToText, newSourcesFromIndex, windowAround } from "./documents.mts";
+import { SCANNED_TEXT_CHARS, detectFormat, findLinks, htmlToText, newSourcesFromIndex, pagesText, pdfPages, selectPages, windowAround } from "./documents.mts";
 import { PoliteHttp, sha256, type FetchFn } from "./http.mts";
 import { recordBlocked } from "./blocked.mts";
-import { confirmDocument, freeSteps, sourcesFromPage, type Prefetched, type ProbePage, type StepFind } from "./probe.mts";
-import { STEP_ESTIMATE_USD, ladder, orderColleges, retireSuperseded, shouldRetry, stepsFor, type LadderCollege, type LadderDeps, type LadderResult, type LadderState, type PaidFind } from "./discovery.mts";
+import { confirmDocument, freeSteps, magicFormat, sourcesFromPage, type Prefetched, type ProbePage, type StepFind } from "./probe.mts";
+import { STEP_ESTIMATE_USD, ladder, orderColleges, replaceUnlisted, retireSuperseded, shouldRetry, stepsFor, type LadderCollege, type LadderDeps, type LadderResult, type LadderState, type PaidFind } from "./discovery.mts";
 import { buildEscalationRequests, buildPickerRequests, buildRequests, collect, customId, openReservations, parseCustomId, projection, projectionGuard, resubmitOnce, submit, trimToCap, type BatchApi, type BatchRequest, type Collected, type PendingDocument } from "./batch.mts";
 import { discover, extract, parsePickerResponse, pickLinks, searchOnly, type CallContext, type LlmContext, type PageLink, type PickResult } from "./llm.mts";
 import { callLogRow, callRecorder, emptyUsage, memoryCallLogWriter, roundUsd, summaryCost, type CallLogWriter, type ModelClient } from "./models.mts";
@@ -297,6 +297,43 @@ function entryForCustomId(manifest: CollegeDocsFile, id: string): ManifestEntry 
 
 const errText = (err: unknown) => (err instanceof Error ? err.message : String(err)).slice(0, 300);
 
+/**
+ * What the class-profile extractor reads from a page's archived bytes, as round 2 read them: a PDF's pages around the
+ * anchor (a scanned one, under 100 pages, as the PDF itself), an HTML page's text around it. Empty when the anchor
+ * isn't there: the extraction is then recorded as null without a model call. Round 3 at first decoded every profile as
+ * HTML, so a PDF profile (UCLA's, Georgia Tech's) was read as its compressed bytes and found nothing.
+ */
+export async function profileInput(bytes: Uint8Array, anchor: string, hint?: number[]): Promise<{ text?: string; pdfBase64?: string }> {
+  if (magicFormat(bytes) === "pdf") {
+    const pages = await pdfPages(bytes);
+    const chars = pages.reduce((n, p) => n + p.trim().length, 0);
+    if (chars < SCANNED_TEXT_CHARS) return pages.length <= 100 ? { pdfBase64: Buffer.from(bytes).toString("base64") } : {};
+    const which = selectPages(pages, hint, anchor);
+    return which.length ? { text: pagesText(pages, which) } : {};
+  }
+  const text = htmlToText(new TextDecoder().decode(bytes));
+  return text.toLowerCase().includes(anchor.toLowerCase()) ? { text: windowAround(text, anchor) } : {};
+}
+
+/**
+ * A model-read document's edition: what its body states (the cover, item text), else its file name (editionFromUrl),
+ * else, when it has enough text to be worth a read, the edition current when it was retrieved, `assumed` (read once;
+ * its items publish only if their own text confirms it). Otherwise `none`: recorded so it isn't looked at every run.
+ */
+export function resolveEdition(
+  found: EditionFound | null,
+  urls: readonly (string | undefined | null)[],
+  o: { bodyChars: number; retrieved: string; type: DocumentType }
+): { edition: string | null; edition_from: NonNullable<ManifestEntry["edition_from"]> } {
+  if (found) return { edition: found.edition, edition_from: found.from };
+  for (const u of urls) {
+    const named = u ? editionFromUrl(u) : null;
+    if (named) return { edition: named.edition, edition_from: "url" };
+  }
+  if (o.type !== "pdf-scanned" && o.bodyChars >= MIN_ASSUMED_BODY_CHARS) return { edition: editionCurrentOn(o.retrieved), edition_from: "assumed" };
+  return { edition: null, edition_from: "none" };
+}
+
 /* ------------------------------------------------------------------ */
 /* The pipeline                                                        */
 /* ------------------------------------------------------------------ */
@@ -411,9 +448,9 @@ export function createRound3(deps: Round3Deps) {
       state.queue = { updated: today, items: enqueueItems(state.queue.items, [item]) };
     }
     /** Checks a document against the college's federal baseline and its other documents, then stores and queues it. */
-    function judgeDoc(school: School | undefined, unitId: string, doc: DocumentRecord, o: { lines?: string[]; codes?: Iterable<CdsCode> } = {}): DocumentRecord {
+    function judgeDoc(school: School | undefined, unitId: string, doc: DocumentRecord, o: { lines?: string[]; codes?: Iterable<CdsCode>; editionAssumed?: boolean } = {}): DocumentRecord {
       const others = docsOf(unitId).filter((d) => d.sha256 !== doc.sha256);
-      let checked = applyChecks(doc, { table, school: school ?? null, ...(o.lines ? { lines: o.lines } : {}), others });
+      let checked = applyChecks(doc, { table, school: school ?? null, ...(o.lines ? { lines: o.lines } : {}), others, ...(o.editionAssumed ? { editionAssumed: true } : {}) });
       checked = failUnlocated(checked, table);
       upsertDoc(unitId, checked);
       countItems(checked, o.codes ?? Object.keys(checked.items));
@@ -514,7 +551,21 @@ export function createRound3(deps: Round3Deps) {
           summary.documents[entry.type].archived++;
           if (location !== entry.archive) upsertEntry({ ...entry, archive: location });
         }
-        const current = state.manifest.documents.find((d) => d.sha256 === entry.sha256) ?? entry;
+        let current = state.manifest.documents.find((d) => d.sha256 === entry.sha256) ?? entry;
+        if (MODEL_READ.has(current.type) && !current.edition) {
+          // Archived before its edition could be found (a cover that prints only "2025-2026", an edition only in the
+          // file name): look again, and read it once under an assumed edition when it still states none.
+          const arch = await loadLines(current);
+          if (!arch) throw new Error(`${current.sha256.slice(0, 8)}: no lines`);
+          const ed = resolveEdition(editionFromBody(arch.lines, arch.pages), [current.final_url, current.url], { bodyChars: arch.lines.reduce((n, l) => n + l.length + 1, 0), retrieved: current.retrieved, type: current.type });
+          current = { ...current, edition: ed.edition, edition_from: ed.edition_from };
+          upsertEntry(current);
+          if (!ed.edition) {
+            log(`  ${school.name}: ${current.type} states no edition and has too little text to read; left unread`);
+            attempted.add(school.unit_id);
+            return { state: "read", entry: current };
+          }
+        }
         if (current.type === "xlsx-template" || current.type === "pdf-form") {
           const doc = await readDeterministic(school, current, bytes);
           log(`  ${school.name}: ${current.type} ${doc.edition} archived earlier but never read; read by code now`);
@@ -615,11 +666,12 @@ export function createRound3(deps: Round3Deps) {
           const arch: ArchivedLines = { lines: lay.lines, pages: lay.pages, split: lay.split, edition: lay.edition };
           if (type !== "pdf-scanned") await deps.archive.putLines(sha, arch);
           if (lay.split?.fallback) counts.split_fallback++;
+          const ed = resolveEdition(lay.edition, [finalUrl, src.url], { bodyChars: lay.bodyChars, retrieved: today, type });
           upsertEntry(
             manifestEntryFor({
               ...base,
-              edition: lay.edition?.edition ?? null,
-              ...(lay.edition ? { edition_from: lay.edition.from } : {}),
+              edition: ed.edition,
+              edition_from: ed.edition_from,
               pages: lay.pageCount || null,
               body_chars: lay.bodyChars,
               definitions_from_page: lay.definitionsFrom,
@@ -627,8 +679,8 @@ export function createRound3(deps: Round3Deps) {
             })
           );
           if (type === "pdf-scanned") log(`  ${school.name}: scanned PDF archived; whole-document reads aren't wired yet (none in the sample)`);
-          else if (!lay.edition) log(`  ${school.name}: ${type} archived, but it states no edition; not sent to a model`);
-          else log(`  ${school.name}: ${type} ${lay.edition.edition} archived and laid out (${lay.lines.length} lines${lay.split?.fallback ? ", no C/D split" : ""}); waiting for the extraction batch`);
+          else if (!ed.edition) log(`  ${school.name}: ${type} archived, but it states no edition and has too little text to read; not sent to a model`);
+          else log(`  ${school.name}: ${type} ${ed.edition}${ed.edition_from === "assumed" ? " (assumed: it states none)" : ed.edition_from === "url" ? " (from the file name)" : ""} archived and laid out (${lay.lines.length} lines${lay.split?.fallback ? ", no C/D split" : ""}); waiting for the extraction batch`);
         }
         attempted.add(school.unit_id);
         return { state: "read", entry: state.manifest.documents.find((d) => d.sha256 === sha)! };
@@ -719,6 +771,12 @@ export function createRound3(deps: Round3Deps) {
             }
             if (!res.ok) continue;
             const html = new TextDecoder().decode(new Uint8Array(await res.arrayBuffer()));
+            const fixed = replaceUnlisted(recipe.sources, findLinks(html, res.url || idx), (u) => state.manifest.documents.some((d) => d.url === u || d.final_url === u));
+            for (const [from, to] of fixed.replaced) log(`  ${school.name}: ${from} was never fetched and ${idx} doesn't list it; using ${to}, the same edition there`);
+            if (fixed.replaced.length) {
+              recipe.sources = fixed.sources;
+              indexChanged = true;
+            }
             const fresh = newSourcesFromIndex(html, idx, recipe.sources);
             if (fresh.length) {
               const { keep, retire } = retireSuperseded(recipe, fresh);
@@ -820,6 +878,29 @@ export function createRound3(deps: Round3Deps) {
         return null;
       }
     }
+    /**
+     * GETs a link a model named (a model can name a page that doesn't exist: Missouri's, Iowa's, and RIT's "class
+     * profile" pages and Santa Clara's CDS in the October 2026 run all answered 404). Only a 404 or 410 makes it `dead`;
+     * anything else (robots.txt, a refusal, a timeout) is left to the fetch step, as before. A page that answered is
+     * handed on as prefetched bytes, so the run that found it reads it.
+     */
+    async function checkLink(url: string): Promise<{ dead: boolean; got?: Prefetched }> {
+      let res: Response | null;
+      try {
+        res = await http.get(url);
+      } catch {
+        return { dead: false };
+      }
+      if (!res) return { dead: false };
+      if (res.status === 404 || res.status === 410) {
+        log(`  ${url}: HTTP ${res.status}; a model named it, but it isn't there`);
+        return { dead: true };
+      }
+      if (!res.ok) return { dead: false };
+      const bytes = new Uint8Array(await res.arrayBuffer());
+      return { dead: false, got: { bytes, format: detectFormat(bytes, res.headers.get("content-type"), url) } };
+    }
+
     /** Follows URLs a model named: files confirmed by their bytes, pages scanned for CDS links (our code, not the model). */
     async function follow(cands: { kind: "cds" | "cds-index" | "class-profile"; url: string }[]): Promise<Pick<StepFind, "sources" | "index_urls" | "prefetched">> {
       const sources: RecipeSource[] = [];
@@ -827,7 +908,11 @@ export function createRound3(deps: Round3Deps) {
       const prefetched = new Map<string, Prefetched>();
       for (const c of cands) {
         if (c.kind === "class-profile") {
-          if (!sources.some((s) => s.kind === "class-profile")) sources.push({ kind: "class-profile", url: c.url, format: "html" });
+          if (sources.some((s) => s.kind === "class-profile")) continue;
+          const link = await checkLink(c.url);
+          if (link.dead) continue;
+          if (link.got) prefetched.set(c.url, link.got);
+          sources.push({ kind: "class-profile", url: c.url, format: link.got?.format === "pdf" ? "pdf" : "html" });
           continue;
         }
         if (sources.some((s) => s.kind === "cds")) continue;
@@ -929,7 +1014,27 @@ export function createRound3(deps: Round3Deps) {
         discover: async (c) => {
           const before = costBy.get(c.school.unit_id) ?? 0;
           const r = await discover(llm, c.school, { model: REPORTED_MODELS.discovery, job: "discovery", effort: "low" });
-          const find: PaidFind = { path: "full", sources: r.sources, index_urls: r.index_urls, cost_usd: paidCost(c.school.unit_id, before), model: r.model, ...(r.notes ? { notes: r.notes } : {}), ...(r.none_found ? { none_found: true } : {}) };
+          // The links it named are checked like the other steps' (Santa Clara's CDS came back with a mistyped folder
+          // and answered 404 while the index page it also named links the real file): a dead link is dropped, and a
+          // dead CDS is looked for on the named index pages.
+          const prefetched = new Map<string, Prefetched>();
+          const sources: RecipeSource[] = [];
+          let deadCds = false;
+          for (const s of r.sources) {
+            const link = await checkLink(s.url);
+            if (link.dead) {
+              deadCds ||= s.kind === "cds";
+              continue;
+            }
+            if (link.got) prefetched.set(s.url, link.got);
+            sources.push(s);
+          }
+          if (deadCds && !sources.some((s) => s.kind === "cds")) {
+            const got = await follow(r.index_urls.map((url) => ({ kind: "cds-index" as const, url })));
+            sources.unshift(...got.sources.filter((s) => s.kind === "cds" && !sources.some((x) => x.url === s.url)));
+            for (const [u, p] of got.prefetched ?? []) prefetched.set(u, p);
+          }
+          const find: PaidFind = { path: "full", sources, index_urls: r.index_urls, prefetched, cost_usd: paidCost(c.school.unit_id, before), model: r.model, ...(r.notes ? { notes: r.notes } : {}), ...(r.none_found || (r.sources.length && !sources.length) ? { none_found: true } : {}) };
           return find;
         },
       };
@@ -1028,11 +1133,23 @@ export function createRound3(deps: Round3Deps) {
           }
           const bytes = await deps.archive.get(src.sha256!);
           if (!bytes) continue;
-          const text = htmlToText(new TextDecoder().decode(bytes));
           const anchor = src.anchor ?? DEFAULT_ANCHORS[src.kind];
-          if (!text.toLowerCase().includes(anchor.toLowerCase())) {
+          let input: { text?: string; pdfBase64?: string };
+          try {
+            input = await profileInput(bytes, anchor, src.pages);
+          } catch (err) {
+            log(`  ${school.name}: class profile ${src.url}: ${errText(err)}`);
+            continue;
+          }
+          // Recorded so a PDF read as a PDF isn't read again (lib/cds-reads.ts profileMisread).
+          if (magicFormat(bytes) === "pdf") {
+            src.format = "pdf";
+            src.read_as = "pdf";
+          } else if (src.format === "pdf") src.format = "html";
+          if (!input.text && !input.pdfBase64) {
             src.extraction = null;
             src.processed = today;
+            progress();
             continue;
           }
           const recording: ModelClient = {
@@ -1046,7 +1163,7 @@ export function createRound3(deps: Round3Deps) {
             },
           };
           try {
-            src.extraction = await extract({ client: recording, usage: emptyUsage(), today, log }, school, { kind: "class-profile", url: src.url, text: windowAround(text, anchor) }, { model: REPORTED_MODELS.extraction, job: "extraction" });
+            src.extraction = await extract({ client: recording, usage: emptyUsage(), today, log }, school, { kind: "class-profile", url: src.url, ...input }, { model: REPORTED_MODELS.extraction, job: "extraction" });
             src.processed = today;
             summary.documents_read++;
             attempted.add(school.unit_id);
@@ -1155,7 +1272,7 @@ export function createRound3(deps: Round3Deps) {
           if (!it.failures?.some((f) => f.check === "aid-year")) doc.items[code] = { ...it, status: "failed", failures: [...(it.failures ?? []), { check: "aid-year", detail: `H.101 is ${aid === undefined ? "blank" : `"${aid}"`}, which names no aid year` }] };
         }
       }
-      return judgeDoc(school, entry.unit_id, doc, { lines: arch.lines, codes });
+      return judgeDoc(school, entry.unit_id, doc, { lines: arch.lines, codes, editionAssumed: entry.edition_from === "assumed" });
     }
 
     /** Collects every open batch that has ended (waiting until the deadline), then resubmits, escalates, publishes. */

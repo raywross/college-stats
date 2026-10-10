@@ -123,6 +123,11 @@ export interface CheckContext {
   lines?: readonly string[];
   /** The college's other documents (C1's "two sources agree" check, same edition only). */
   others?: readonly DocumentRecord[];
+  /**
+   * The document states no edition and was filed under an assumed one (manifest `edition_from: "assumed"`): its items
+   * publish only when an item's own text confirms that edition (B22's falls, H4's class, I-2's fall).
+   */
+  editionAssumed?: boolean;
 }
 
 /** One failure, naming the template codes it applies to. */
@@ -314,6 +319,7 @@ interface Ctx {
   others: readonly DocumentRecord[];
   lines: readonly string[] | undefined;
   derived: Record<CdsCode, DerivedTotal>;
+  editionAssumed: boolean;
   fail(check: CheckId, codes: CdsCode[], detail: string): void;
 }
 
@@ -1225,6 +1231,9 @@ function universalChecks(x: Ctx, resolved: ReadonlySet<CdsCode>) {
   const { doc, table, lines } = x;
   const tableStart = parseEdition(table.edition)?.start;
   const docStart = parseEdition(doc.edition)?.start;
+  /** For an assumed edition: whether some item's own text named the year the edition implies, or another year. */
+  let confirmed = false;
+  let contradicted = false;
   for (const [code, it] of Object.entries(x.items)) {
     const item = table.byCode.get(code);
     const v = x.v.get(code);
@@ -1254,8 +1263,15 @@ function universalChecks(x: Ctx, resolved: ReadonlySet<CdsCode>) {
       const want = Number(/\b(20\d{2})\b/.exec(item.question)?.[1]) - tableStart + docStart;
       const label = it.quote?.includes(" | ") ? it.quote.slice(0, it.quote.lastIndexOf(" | ")) : (it.quote ?? "");
       const said = /\b(20\d{2})\b/.exec(label)?.[1];
-      if (said && Number(said) !== want) x.fail("edition-mismatch", [code], `the item's text names ${said}; the ${doc.edition} edition's is ${want}`);
+      if (said && Number(said) !== want) {
+        x.fail("edition-mismatch", [code], `the item's text names ${said}; the ${doc.edition} edition's is ${want}`);
+        contradicted = true;
+      } else if (said) confirmed = true;
     }
+  }
+  if (x.editionAssumed && (!confirmed || contradicted)) {
+    const valued = Object.keys(x.items).filter((k) => x.v.get(k) !== undefined);
+    if (valued.length) x.fail("edition-mismatch", valued, `the document states no edition; filed as ${doc.edition} until an item's text (B22, H4, I-2) confirms it`);
   }
   if (lines) {
     const stated = coverEdition(lines);
@@ -1323,6 +1339,7 @@ function runAll(
     others: ctx.others ?? [],
     lines: ctx.lines,
     derived,
+    editionAssumed: !!ctx.editionAssumed,
     fail(check, codes, detail) {
       failures.push({ check, detail, codes: [...new Set(codes)] });
     },

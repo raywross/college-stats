@@ -33,6 +33,7 @@ Structured documentation for the Higher Education Data Explorer ("Quad").
 | [trends-design.md](trends-design.md) | How trends appear, from Home facts to the profile's "Over time" charts, Explore, and Compare. Built (phases 1–3) |
 | [religious-life.md](religious-life.md) | *Planned:* religious affiliation, faith intensity, faith communities on campus; source tiers and per-school crawl |
 | [greek-life.md](greek-life.md) | *Planned:* fraternity/sorority participation, councils, housing, recruitment; CDS F1 and FSL office reports |
+| [greek-known-for.md](greek-known-for.md) | *Planned:* a "Known for: Big Greek life" badge, now that greek-life.md's 50-reporter threshold was met (102, 2026-10-10) |
 | [campus-directories.md](campus-directories.md) | National directories of campus chapters and groups: adapter contract, polite crawler, matcher, merge, credited display (shared by the three campus-life specs) |
 | [lgbtq-life.md](lgbtq-life.md) | *Phase 1 built:* IPEDS "another gender" counts and the Texas SB 17 line. *Planned:* LGBTQ+ centers and groups, inclusive policies, conduct rules, other states' laws; rules for sensitive facts |
 | [campus-pilot-accuracy.md](campus-pilot-accuracy.md) | *Deferred:* what the campus-life pilot must fix (policies, centers, membership tables, recall) before a full run over every college, from three scored rounds |

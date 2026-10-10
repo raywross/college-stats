@@ -286,8 +286,8 @@ an hour, but one may take up to 24, so a run can end before its batches do.
   **collect**). It exits at once unless an open **draft** PR from a `data/college-reported-<run>` branch exists whose
   `data/college-batches.json` lists open batches. Otherwise it checks out that branch and runs
   `npm run sync-college-reported -- --phase collect --run <run>` (collect, settle reservations, resubmit errored or
-  expired requests once, submit escalations), then `npm run merge-reported` and `npm run build-trends`, commits, and
-  pushes. When no batch is
+  expired requests once, submit escalations), then `npm run merge-reported`, `npm run merge-directories`, and
+  `npm run build-trends`, commits, and pushes. When no batch is
   left open it rewrites the release note and the PR body, marks the PR **ready**, and applies the same merge rules as
   the run job (the run's `auto_merge` choice is kept in a hidden `<!-- college-reported: auto_merge=… -->` line of the
   PR body). While batches remain (an escalation batch, or resubmitted requests) the PR stays a draft and the next

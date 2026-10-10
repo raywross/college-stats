@@ -36,9 +36,10 @@ record (F1: the document's fall; F4: the edition) and is registered in `lib/fiel
   fraternity columns); if one side is more than 20× the other, it's a likely units mix-up and both values are
   dropped (not merged), rather than guessed at. A real near-zero first-year share next to a normal undergrad share
   (deferred recruitment) is allowed — the check only fires when both sides are nonzero.
-- **"Known for: Big Greek life" is not built.** Only 8 colleges carry a Greek-life block in the current round-3
-  pilot (7 report an undergrad percentage), far short of a meaningful top decile. `KNOWN_FOR_MIN_REPORTERS = 50`
-  (`lib/cds/greek-display.ts`) is the threshold the profile and tests check against; revisit once the pilot scales.
+- **"Known for: Big Greek life" is not built.** `KNOWN_FOR_MIN_REPORTERS = 50` (`lib/cds/greek-display.ts`) is the
+  threshold the profile and tests check against. The threshold was met 2026-10-10, with 102 colleges reporting an
+  undergrad percentage; whether to build "Known for: Big Greek life" now is the owner's decision
+  ([backlog.md](backlog.md)), not automatic from the count alone.
 - **Explore's filter** is "Fraternity or sorority participation ≥ X%" at 10/20/30%, matching at least one of the two
   undergrad percentages (never summed, per spec Rules); a college that reports neither never matches, however low
   the floor.
@@ -228,7 +229,7 @@ school.greek = {
 - **Glossary (built in phase 4):** `npc`, `nic`, `nphc`, `nalfo`, `napa`, `nmgc`, `colony`, cross-linked from
   `greek-life` and `national-directory`.
 - **"Known for" (not built):** "Big Greek life" waits for `KNOWN_FOR_MIN_REPORTERS` (50) colleges to report an
-  undergrad percentage — 7 do in the current round-3 pilot.
+  undergrad percentage. The threshold was met 2026-10-10, with 102 reporting; building it is the owner's decision.
 
 ## Phase 2 as built (pilot)
 Built 2026-10-04 on the shared pilot engine ([college-reported-data.md](college-reported-data.md#campus-life-pilot-as-built-2026-10-04)).

@@ -203,6 +203,8 @@ const item = (over: Partial<PlanItem> = {}): PlanItem => ({
   recommendations_count: null,
   supplements_count: null,
   transcript_shared: true,
+  category_source: "auto",
+  round_source: "auto",
   ...over,
 });
 
@@ -226,6 +228,8 @@ const school = (over: Partial<PlanSchool> = {}): PlanSchool => ({
   cycleStartYear: 2026,
   editionIsLastCycle: false,
   cites: {},
+  gpaAverage: null,
+  standing: { admitRate: 0.2, sat: null, act: null, gpaAverage: null, testPolicy: null },
   ...over,
 });
 

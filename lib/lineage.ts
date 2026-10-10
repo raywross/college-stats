@@ -9,6 +9,7 @@ import { validateAdmissionProfile } from "./cds/admissions.ts";
 import { FIELDS, METADATA_KEYS, PER_DOCUMENT_SOURCES, REPORTED_PATHS, UNDATED_SOURCES, isFieldPath, registeredPathFor, type FieldPath, type VintageKey } from "./fields.ts";
 import { NEWEST_TARGETS, newestGroupCitation, validateNewestGroups } from "./newest-groups.ts";
 import { replacedTest, satTotalInputs, validateTests } from "./cds/test-blocks.ts";
+import { satTotal } from "./score-bands.ts";
 import { financialAidProblems } from "./cds/financial-aid.ts";
 
 /** Any source key a citation can carry: a college source (lib/fields.ts) or a high school source (lib/hs-fields.ts). */
@@ -237,9 +238,26 @@ function underlyingSources(path: FieldPath, school: School | undefined, meta: Da
  */
 function inputsUsed(path: FieldPath, inputs: readonly string[], school: School | undefined): readonly string[] {
   if (path === "derived.sat_total") return satTotalInputs(school);
+  if (path === "derived.gpa_estimate" && school) return gpaEstimateInputs(school);
   if (path !== "derived.yield") return inputs;
   const sameClass = school?.lineage?.["admissions.enrolled"]?.year === school?.lineage?.["admissions.admitted"]?.year;
   return sameClass || !school?.admissions?.federal ? inputs.filter((i) => i !== "admissions.federal") : ["admissions.federal"];
+}
+
+/**
+ * The inputs `derived.gpa_estimate` used at this college (lib/planner/gpa-model.ts satMidpoint, collegeGpa): its SAT
+ * total, else its ACT composite; its admit rate; and the weighted average that bounded it, when it publishes one.
+ */
+function gpaEstimateInputs(school: School): FieldPath[] {
+  const out: FieldPath[] = [];
+  if (satTotal(school)) out.push("derived.sat_total");
+  else if (school.admissions?.act_composite_25_75) out.push("admissions.act_composite_25_75");
+  // The middle-50% models (gpa.md section 7) read the Reading & Writing + Math ends, else the ACT composite ends.
+  if (school.admissions?.sat_reading_25_75 && school.admissions?.sat_math_25_75) out.push("admissions.sat_reading_25_75", "admissions.sat_math_25_75");
+  else if (school.admissions?.act_composite_25_75 && !out.includes("admissions.act_composite_25_75")) out.push("admissions.act_composite_25_75");
+  out.push("admissions.acceptance_rate");
+  if (school.reported?.admission_profile?.gpa?.average != null) out.push("reported.admission_profile.gpa.average");
+  return out;
 }
 
 /** True when a value and everything it's calculated from use their fields' default sources. */

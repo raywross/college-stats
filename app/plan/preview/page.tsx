@@ -5,7 +5,9 @@ import { crestBrand } from "@/lib/brand";
 import { satTotal } from "@/lib/score-bands";
 import { LIST_ROUNDS, type ListRound } from "@/lib/list-rules";
 import { cycleFor, loadCycle } from "@/lib/planner/cycle";
-import { todayIso } from "@/lib/planner/context";
+import { standingGpaAverage, todayIso } from "@/lib/planner/context";
+import { collegeGpa, gpaCites } from "@/lib/planner/gpa-model";
+import { gpaCurve, gpaModel } from "@/lib/planner/gpa-model-server";
 import { roundDates, type RoundsSchool } from "@/lib/planner/rounds";
 import type { AnyCited } from "@/lib/lineage";
 import { PlanPreview, type PreviewEntry, type PreviewKid, type PreviewSchool } from "@/components/plan-preview/PlanPreview";
@@ -46,6 +48,8 @@ const FAMILY: { id: string; name: string; gradYear: number; gpa: number; test: {
 export default async function PlanPreviewPage() {
   if (process.env.VERCEL_ENV === "production") notFound();
   const { getSchoolById, citeField } = await getData();
+  const model = await gpaModel();
+  const curve = await gpaCurve();
   const today = todayIso(); // the build's day; the client moves it to the visitor's (PlanPreview)
 
   const kids: PreviewKid[] = FAMILY.map((k) => {
@@ -80,8 +84,10 @@ export default async function PlanPreviewPage() {
       }
       const sat = satTotal(s);
       const act = s.admissions?.act_composite_25_75 ?? null;
-      const gpa = profile?.gpa;
-      const gpaAverage = gpa?.average != null && gpa.average <= 4 && gpa.scale !== "weighted" ? gpa.average : null;
+      const gpaAverage = standingGpaAverage(s);
+      // The college's GPA, best source first, and the citation its sentence's ⓘ shows (specs/planner/redesign/gpa.md).
+      const gpa = collegeGpa(s, model, curve);
+      const gpaCite = Object.values(gpaCites(s, gpa, model, citeField, curve))[0] ?? null;
       schools.push({
         id: s.unit_id,
         name: s.name,
@@ -89,11 +95,12 @@ export default async function PlanPreviewPage() {
         type: s.type ?? null,
         profile,
         logistics,
-        standing: { admitRate: s.admissions?.acceptance_rate ?? null, sat, act, gpaAverage, testPolicy: s.admissions?.test_policy ?? null },
+        standing: { admitRate: s.admissions?.acceptance_rate ?? null, sat, act, gpaAverage, gpa, testPolicy: s.admissions?.test_policy ?? null },
         cites: {
           sat: sat ? (citeField("derived.sat_total", s) as AnyCited) : null,
           act: act ? (citeField("admissions.act_composite_25_75", s) as AnyCited) : null,
           policy: s.admissions?.test_policy ? (citeField("admissions.test_policy", s) as AnyCited) : null,
+          gpa: gpaCite as AnyCited | null,
         },
         dates,
       });

@@ -62,16 +62,20 @@ test("with the redesign's columns: one read, sources as stored", async () => {
   assert.match(PLAN_ITEM_COLUMNS, /category_source, round_source$/);
 });
 
-test("without them: retried without the two columns, and every row is the student's", async () => {
+test("without them: retried without the two columns, sources as the migration's backfill sets them, and flagged so nothing is written", async () => {
+  const UNSORTED = { ...ROW, id: "item-2", category: "unsorted", round: null };
   const { client, selects } = fakeClient(
-    tables((q) => (q.columns.includes("category_source") ? { data: null, error: MISSING_COLUMN } : { data: [ROW], error: null })),
+    tables((q) => (q.columns.includes("category_source") ? { data: null, error: MISSING_COLUMN } : { data: [ROW, UNSORTED], error: null })),
   );
   const plan = await readPlan(client, "list-1");
   assert.ok(plan);
-  assert.equal(plan.items.length, 1);
+  assert.equal(plan.sourcesMissing, true);
+  assert.equal(plan.items.length, 2);
   assert.equal(plan.items[0].category, "reach");
   assert.equal(plan.items[0].category_source, "student");
   assert.equal(plan.items[0].round_source, "student");
+  assert.equal(plan.items[1].category_source, "auto");
+  assert.equal(plan.items[1].round_source, "auto");
   const itemReads = selects.filter((s) => s.table === "list_items").map((s) => s.columns);
   assert.deepEqual(itemReads, [PLAN_ITEM_COLUMNS, PLAN_ITEM_BASE_COLUMNS]);
   assert.doesNotMatch(PLAN_ITEM_BASE_COLUMNS, /category_source|round_source/);

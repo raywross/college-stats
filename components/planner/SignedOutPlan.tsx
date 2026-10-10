@@ -38,6 +38,9 @@ import { emptyProfile } from "@/lib/student-profile";
 import { cn } from "@/lib/utils";
 
 const TODAY = () => new Date().toISOString().slice(0, 10);
+/** The server snapshot must be the same object every call, or React warns of an infinite loop (browser QA 2026-10-10). */
+const EMPTY_LOCAL_PLAN: LocalPlan = { unitIds: [], dream: null, groups: {}, rounds: {} };
+const emptyLocalPlan = (): LocalPlan => EMPTY_LOCAL_PLAN;
 
 /* ------------------------------------------------------------------ */
 /* The pitch's looping re-sort (decorative; prefers-reduced-motion     */
@@ -268,7 +271,7 @@ function LocalRow({
 export default function SignedOutPlan() {
   const { data: profile, save: saveProfile } = useLocalProfile();
   const draft = useNumbersDraft(profile);
-  const localPlan = useSyncExternalStore(subscribeLocalPlan, getLocalPlan, (): LocalPlan => ({ unitIds: [], dream: null, groups: {}, rounds: {} }));
+  const localPlan = useSyncExternalStore(subscribeLocalPlan, getLocalPlan, emptyLocalPlan);
   const [schools, setSchools] = useState<Record<string, PlanSchool>>({});
   const startedRef = useRef(false);
   const lastSavedNumbers = useRef<string | null>(null);

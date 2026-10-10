@@ -4,13 +4,13 @@ import { connection } from "next/server";
 import { ArrowLeft } from "lucide-react";
 import { AuthUnavailable } from "@/components/account/AuthUnavailable";
 import { PrintButton } from "@/components/planner/PrintButton";
-import { authConfigured, currentStudent, requireUser } from "@/lib/auth";
+import { authConfigured, requireUser } from "@/lib/auth";
 import { ROUND_LABELS, type ListRound } from "@/lib/list-rules";
 import type { AnyCited } from "@/lib/lineage";
 import { dayLabel, schoolYearOf, type CalendarCite, type CalendarEvent } from "@/lib/planner/calendar";
 import { KID_VARS, MONEY_VAR, ROUND_VAR, STRIPED, TEST_VAR } from "@/lib/planner/colors";
 import { todayIso } from "@/lib/planner/context";
-import { loadPlanFor, myPlanChildren, type PlanLoad } from "@/lib/planner/load";
+import { loadPlanFor, planViewer, type PlanLoad } from "@/lib/planner/load";
 import { planHref } from "@/lib/planner/plan-tabs";
 import { printSections, yearEvents, type PrintLayout } from "@/lib/planner/print";
 import type { PlanContext } from "@/lib/planner/types";
@@ -66,10 +66,11 @@ export default async function PlanPrintPage({ searchParams }: { searchParams: Pr
   const range = schoolYearOf(today);
   const yearLabel = `${range.startYear}–${String((range.startYear + 1) % 100).padStart(2, "0")}`;
 
-  const self = await currentStudent();
+  const viewer = await planViewer();
+  const self = viewer.kind === "self" ? viewer.student : null;
   let candidates: { studentId: string; name: string | null; colorSlot: 0 | 1 | 2 }[];
   if (self) candidates = [{ studentId: self.id, name: self.display_name, colorSlot: 0 }];
-  else candidates = (await myPlanChildren()).map((c) => ({ studentId: c.studentId, name: c.name, colorSlot: c.colorSlot }));
+  else candidates = viewer.kind === "guardian" ? viewer.children.map((c) => ({ studentId: c.studentId, name: c.name, colorSlot: c.colorSlot })) : [];
 
   const back = (
     <Link href={planHref({ person: self ? null : forId, tab: "calendar" })} className="inline-flex min-h-11 items-center gap-1 text-sm font-semibold text-muted-foreground hover:text-foreground print:hidden">

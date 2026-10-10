@@ -7,7 +7,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { autoWrites, balanceLineFor, BALANCE_LINES, MAX_NOTICES, planView, type PlanView } from "../lib/planner/plan-view.ts";
-import { withStudentSources } from "../lib/planner/read-plan.ts";
+import { withBackfillSources } from "../lib/planner/read-plan.ts";
 import { emptyProfile, type StudentProfileData } from "../lib/student-profile.ts";
 import type { PlanItem, PlanSchool } from "../lib/planner/types.ts";
 import type { ListCategory, ListRound } from "../lib/list-rules.ts";
@@ -227,21 +227,27 @@ test("starting rounds: the Dream offering ED starts in ED; others take EA; a pic
   assert.ok(!writes.some((w) => w.id === "item-P" && w.round));
 });
 
-test("a row with student source is never in autoWrites, even with nothing stored (the pre-migration fallback)", () => {
-  const schools = by([ps("1", "A", { ea: true, admitRate: 0.8, sat: [1000, 1200] }), ps("2", "B", { ed: true })]);
+test("the pre-migration fallback shows suggestions for unsorted rows and keeps chosen ones (the backfill's rule)", () => {
+  const schools = by([ps("1", "A", { ea: true, admitRate: 0.8, sat: [1000, 1200] }), ps("2", "B", { ed: true }), ps("3", "C", { ea: true, admitRate: 0.8, sat: [1000, 1200] })]);
   // Rows as read before the migration: no source columns at all.
-  const bare = [item("1"), item("2", { dream: true })].map((i) => {
+  const bare = [item("1"), item("2", { dream: true }), item("3", { category: "reach", round: "rd" })].map((i) => {
     const copy: Partial<PlanItem> = { ...i };
     delete copy.category_source;
     delete copy.round_source;
     return copy as Omit<PlanItem, "category_source" | "round_source">;
   });
-  const rows = withStudentSources(bare);
+  const rows = withBackfillSources(bare);
   const v = planView({ items: rows, schools, profile: numbers({ sat: 1400, focus: "sat" }), today: TODAY });
-  assert.deepEqual(autoWrites(v), []);
-  // The page still shows the stored values as the student's.
-  assert.equal(row(v, "1").group, "unsorted");
-  assert.equal(row(v, "1").groupAuto, false);
+  // An unsorted row shows the model's group as a suggestion (browser QA 2026-10-10: it used to read "Add a number").
+  assert.equal(row(v, "1").group, "likely");
+  assert.equal(row(v, "1").groupAuto, true);
+  // A group and round the student stored stay theirs.
+  assert.equal(row(v, "3").group, "reach");
+  assert.equal(row(v, "3").groupAuto, false);
+  assert.equal(row(v, "3").round, "rd");
+  assert.equal(row(v, "3").roundAuto, false);
+  // autoWrites never lists the student's rows; load.ts and store-plan.ts skip writing entirely while sources are missing.
+  assert.ok(!autoWrites(v).some((w) => w.id === "3"));
 });
 
 test("an applied or decided college's round is never rewritten", () => {

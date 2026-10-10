@@ -7,7 +7,7 @@ import "server-only";
  *
  * Server only (not a "use server" module): the Plan pages call it while rendering; the browser never does.
  */
-import { getAccount, studentsICanSee } from "@/lib/auth";
+import { currentStudent, getAccount, studentsICanSee } from "@/lib/auth";
 import type { StudentAccess } from "@/lib/accounts";
 import { myHouseholds, scheduleStudentReadLog } from "@/lib/households";
 import { myHome } from "@/lib/home-store";
@@ -68,7 +68,8 @@ export async function loadPlanFor(studentId: string, viewer?: StudentAccess | nu
 
   // Suggested until changed: store the model's group and round on every `auto` row that differs (syncAuto).
   if (canEdit) {
-    const writes = autoWrites(planView({ items: plan.items, schools: input.schools, profile: profileData, today }));
+    // Before the redesign migration the source columns don't exist: show the suggestions, write none of them.
+    const writes = plan.sourcesMissing ? [] : autoWrites(planView({ items: plan.items, schools: input.schools, profile: profileData, today }));
     if (writes.length > 0 && (await writeAutoWrites(supabase, writes)) > 0) {
       const fresh = await readItems(supabase, listId);
       if (fresh.data) {
@@ -131,4 +132,23 @@ export async function myPlanChildren(): Promise<PlanChild[]> {
     colorSlot: (i % 3) as 0 | 1 | 2,
     canEdit: a.canEdit,
   }));
+}
+
+export type PlanViewer =
+  | { kind: "guardian"; children: PlanChild[] }
+  | { kind: "self"; student: { id: string; display_name: string | null } }
+  | { kind: "none" };
+
+/**
+ * Who /plan is for. A guardian of any student gets the family view first: `currentStudent()` creates an empty student
+ * record for an account whose role hint is missing or "student" (lib/accounts.ts wantsOwnStudent), and the sign-up
+ * form defaults to "student", so a parent who never switched it would otherwise land on their own empty plan (found
+ * in browser QA 2026-10-10). Only someone who is nobody's guardian gets their own plan, and only then is
+ * `currentStudent()` called.
+ */
+export async function planViewer(): Promise<PlanViewer> {
+  const children = await myPlanChildren();
+  if (children.length > 0) return { kind: "guardian", children };
+  const self = await currentStudent();
+  return self ? { kind: "self", student: { id: self.id, display_name: self.display_name } } : { kind: "none" };
 }

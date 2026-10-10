@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { currentStudent, getUser } from "@/lib/auth";
-import { loadPlanFor, myPlanChildren } from "@/lib/planner/load";
+import { getUser } from "@/lib/auth";
+import { loadPlanFor, planViewer } from "@/lib/planner/load";
 import { todayIso } from "@/lib/planner/context";
 import { hasDueSoon } from "@/lib/planner/plan-frame";
 
@@ -18,8 +18,8 @@ export async function GET() {
   try {
     const user = await getUser();
     if (!user) return json(false);
-    const self = await currentStudent();
-    const studentIds = self ? [self.id] : (await myPlanChildren()).map((c) => c.studentId);
+    const viewer = await planViewer();
+    const studentIds = viewer.kind === "self" ? [viewer.student.id] : viewer.kind === "guardian" ? viewer.children.map((c) => c.studentId) : [];
     if (studentIds.length === 0) return json(false);
     const today = todayIso();
     const loads = await Promise.all(studentIds.map((id) => loadPlanFor(id)));

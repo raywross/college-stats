@@ -47,7 +47,7 @@ function refresh() {
 /** The suggestion sync for one list, with a session the caller already built. Returns rows changed. */
 async function syncWith(supabase: Supabase, listId: string): Promise<number> {
   const plan = await readPlan(supabase, listId);
-  if (!plan || plan.items.length === 0) return 0;
+  if (!plan || plan.items.length === 0 || plan.sourcesMissing) return 0;
   let gradYear: number | null = null;
   let profile = null;
   if (plan.list.student_id) {

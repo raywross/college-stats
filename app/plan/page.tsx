@@ -9,9 +9,9 @@ import { PlanFrame } from "@/components/planner/PlanFrame";
 import { PlanOpened } from "@/components/planner/PlanOpened";
 import SignedOutPlan from "@/components/planner/SignedOutPlan";
 import type { CalendarChild } from "@/components/planner/tabs/types";
-import { authConfigured, currentStudent, getUser } from "@/lib/auth";
+import { authConfigured, getUser } from "@/lib/auth";
 import { KID_VARS } from "@/lib/planner/colors";
-import { type PlanLoad, loadPlanFor, myPlanChildren, type PlanChild } from "@/lib/planner/load";
+import { type PlanLoad, loadPlanFor, planViewer, type PlanChild } from "@/lib/planner/load";
 import { resolveSelectedChild, shortSummaryLine } from "@/lib/planner/plan-frame";
 import { defaultTab, parseTab } from "@/lib/planner/plan-tabs";
 import { summaryLine } from "@/lib/planner/summary";
@@ -67,9 +67,9 @@ export default async function PlanPage({ searchParams }: { searchParams: Promise
   const user = await getUser();
   if (!user) return <SignedOutPlan />;
 
-  const self = await currentStudent();
-  if (self) {
-    const loaded = await loadPlanFor(self.id);
+  const viewer = await planViewer();
+  if (viewer.kind === "self") {
+    const loaded = await loadPlanFor(viewer.student.id);
     const fallback = planFallback(loaded, null);
     if (fallback || loaded.kind !== "ready") return fallback;
     return (
@@ -86,8 +86,7 @@ export default async function PlanPage({ searchParams }: { searchParams: Promise
     );
   }
 
-  const children = await myPlanChildren();
-  if (children.length === 0) {
+  if (viewer.kind === "none") {
     return (
       <section className="rounded-3xl border bg-card p-5 text-sm text-muted-foreground sm:p-6">
         No student yet. Add one from <Link href="/household" className="font-semibold text-primary hover:underline">Household</Link> to start a plan.
@@ -95,6 +94,7 @@ export default async function PlanPage({ searchParams }: { searchParams: Promise
     );
   }
 
+  const { children } = viewer;
   const forExplicit = typeof forParam === "string" && children.some((c) => c.studentId === forParam);
   const selected = resolveSelectedChild({ forParam: forParam ?? null, children });
   const loads = await Promise.all(children.map((c) => loadPlanFor(c.studentId)));

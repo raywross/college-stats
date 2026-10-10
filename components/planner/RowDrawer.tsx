@@ -49,7 +49,7 @@ export function RowDrawer({
       <div className="space-y-2">
         <p>
           <span className="font-semibold">{group === "unsorted" ? "No group yet" : `${group[0].toUpperCase()}${group.slice(1)}`}:</span>{" "}
-          {groupAuto ? standing?.reasons.join(" ") || "Add a GPA or a score to sort this one." : "You picked this group."}{" "}
+          {groupAuto || group === "unsorted" ? standing?.reasons.join(" ") || "Add a GPA or a score to sort this one." : "You picked this group."}{" "}
           {!groupAuto && group !== "unsorted" && (
             <button type="button" onClick={onUseGroupSuggestion} disabled={!ctx.viewer.canEdit} className="inline-flex items-center gap-1 font-semibold text-primary hover:underline disabled:opacity-60">
               <RotateCcw className="size-3" aria-hidden /> Use the suggestion

@@ -36,6 +36,8 @@ export interface PlanData {
   visits: PlanVisit[];
   offers: PlanOffer[];
   nudges: PlanNudge[];
+  /** The database doesn't have the redesign's source columns yet: show suggestions, but write none. */
+  sourcesMissing?: boolean;
 }
 
 type PgError = { code?: string; message?: string };
@@ -58,19 +60,29 @@ export class PlannerSetupError extends Error {
   }
 }
 
-/** Items read without the source columns: every value is treated as the student's, so the site never rewrites it. */
-export function withStudentSources(rows: Omit<PlanItem, "category_source" | "round_source">[]): PlanItem[] {
-  return rows.map((r) => ({ ...r, category_source: "student", round_source: "student" }));
+/**
+ * Items read without the source columns get the sources the migration's own backfill would give them: a chosen group
+ * (anything but "unsorted") and a stored round are the student's; the rest are suggestions. So the page shows the same
+ * suggestions before and after the migration. Nothing is written while the columns are missing: `readItems` reports
+ * `sourcesMissing` and the callers skip their auto writes (browser QA 2026-10-10 found every group showing "Add a
+ * number" when every row was treated as the student's).
+ */
+export function withBackfillSources(rows: Omit<PlanItem, "category_source" | "round_source">[]): PlanItem[] {
+  return rows.map((r) => ({
+    ...r,
+    category_source: r.category !== "unsorted" ? "student" : "auto",
+    round_source: r.round !== null ? "student" : "auto",
+  }));
 }
 
 /** The list's items, retrying without the redesign's columns when the database doesn't have them yet. */
-export async function readItems(supabase: SupabaseClient, listId: string): Promise<{ data: PlanItem[] | null; error: PgError | null }> {
+export async function readItems(supabase: SupabaseClient, listId: string): Promise<{ data: PlanItem[] | null; error: PgError | null; sourcesMissing: boolean }> {
   const first = await supabase.from("list_items").select(PLAN_ITEM_COLUMNS).eq("list_id", listId).order("position");
-  if (!first.error) return { data: (first.data ?? []) as unknown as PlanItem[], error: null };
-  if (!isMissingSourceColumn(first.error)) return { data: null, error: first.error };
+  if (!first.error) return { data: (first.data ?? []) as unknown as PlanItem[], error: null, sourcesMissing: false };
+  if (!isMissingSourceColumn(first.error)) return { data: null, error: first.error, sourcesMissing: false };
   const retry = await supabase.from("list_items").select(PLAN_ITEM_BASE_COLUMNS).eq("list_id", listId).order("position");
-  if (retry.error) return { data: null, error: retry.error };
-  return { data: withStudentSources((retry.data ?? []) as unknown as PlanItem[]), error: null };
+  if (retry.error) return { data: null, error: retry.error, sourcesMissing: true };
+  return { data: withBackfillSources((retry.data ?? []) as unknown as PlanItem[]), error: null, sourcesMissing: true };
 }
 
 /**
@@ -113,5 +125,6 @@ export async function readPlan(supabase: SupabaseClient, listId: string): Promis
     visits: (visits.data ?? []) as PlanVisit[],
     offers: (offers.data ?? []) as PlanOffer[],
     nudges: (nudges.data ?? []) as PlanNudge[],
+    ...(items.sourcesMissing ? { sourcesMissing: true } : {}),
   };
 }

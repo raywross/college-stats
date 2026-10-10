@@ -45,16 +45,16 @@ export default function ScoreRow({ row, kind, score }: { row: PlanRowView; kind:
         <span className={cn("rounded-full px-2 py-0.5 text-[11px] font-bold", GROUP_CLASS[row.group])}>{CATEGORY_LABELS[row.group]}</span>
       </div>
       {range ? (
-        <div className="relative h-6" aria-label={`Middle 50% ${range[0]} to ${range[1]}; your score ${score}`}>
-          <div className="absolute inset-x-0 top-1/2 h-px bg-border" />
-          <div className="absolute top-1/2 h-2 -translate-y-1/2 rounded-full bg-muted-foreground/30" style={{ left: pct(range[0]), width: `calc(${pct(range[1])} - ${pct(range[0])})` }} />
-          <span className="absolute top-full text-[10px] text-muted-foreground tabular-nums" style={{ left: pct(range[0]) }}>
-            {range[0]}
-          </span>
-          <span className="absolute top-full -translate-x-full text-[10px] text-muted-foreground tabular-nums" style={{ left: pct(range[1]) }}>
-            {range[1]}
-          </span>
-          <span className="absolute top-1/2 size-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-foreground ring-2 ring-card" style={{ left: pct(score) }} />
+        <div>
+          <div className="relative h-6" aria-label={`Middle 50% ${range[0]} to ${range[1]}; your score ${score}`}>
+            <div className="absolute inset-x-0 top-1/2 h-px bg-border" />
+            <div className="absolute top-1/2 h-2 -translate-y-1/2 rounded-full bg-muted-foreground/30" style={{ left: pct(range[0]), width: `calc(${pct(range[1])} - ${pct(range[0])})` }} />
+            <span className="absolute top-1/2 size-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-foreground ring-2 ring-card" style={{ left: pct(score) }} />
+          </div>
+          {/* The range as one line under the bar, not two positioned labels: those collided on a phone (browser QA 2026-10-10). */}
+          <p className="text-[11px] text-muted-foreground tabular-nums">
+            Middle 50%: {range[0]}–{range[1]}
+          </p>
         </div>
       ) : (
         <p className="text-xs text-muted-foreground">{send === "not-used" ? "Test-blind: scores aren't read." : "No score range on record."}</p>

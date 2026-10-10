@@ -328,3 +328,21 @@ test("planGpaRange: unweighted, above 4.0 on the 4.0 scale, weighted, 100-point"
   assert.equal(unweightedGpa4(4.4, "4.0"), 4.0);
   assert.equal(unweightedGpa4(4.5, "5.0"), 3.6);
 });
+
+test("an estimated college (about ±0.17) can be 'close'; a clear gap is above or below; in between can't be told", () => {
+  const est: [number, number] = [3.6 - 0.165, 3.6 + 0.165];
+  // The student's GPA at the estimate: close (the first rule could never say this for an estimate).
+  assert.equal(compareGpaRanges([3.62, 3.62], est, 0.15), "in");
+  assert.equal(compareGpaRanges([3.48, 3.48], est, 0.15), "in");
+  // Far enough above even the estimate's top end.
+  assert.equal(compareGpaRanges([3.95, 3.95], est, 0.15), "above");
+  assert.equal(compareGpaRanges([3.2, 3.2], est, 0.15), "below");
+  // Between: above the middle by more than the band, but not clear of the estimate's range.
+  assert.equal(compareGpaRanges([3.82, 3.82], est, 0.15), null);
+});
+
+test("a weighted student's wide range is never 'close', only clearly above or below", () => {
+  // Weighted 4.4 → unweighted somewhere in 3.4–4.0.
+  assert.equal(compareGpaRanges([3.4, 4.0], [3.7, 3.7], 0.15), null);
+  assert.equal(compareGpaRanges([3.4, 4.0], [3.1, 3.1], 0.15), "above");
+});

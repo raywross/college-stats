@@ -1,6 +1,8 @@
 # GPA in the Plan: Weighted vs. Unweighted, Filling the Gaps, and Saying What We Used
 
-> Status: **in progress** 2026-10-10 on feature/plan-redesign (PR #105). Extends [standing.md](standing.md)'s GPA
+> Status: **built** 2026-10-10 on feature/plan-redesign (PR #105). Fitted on the real data that day:
+> GPA ≈ 3.10 + 0.057 × (SAT midpoint ÷ 100) − 0.32 × admit rate, from 32 colleges, typical miss 0.095 (90% under
+> 0.165). Sources: 36 colleges reported, 972 estimated, 4 estimated within a weighted average's limits, 881 none. Extends [standing.md](standing.md)'s GPA
 > rule. Asked for by the owner after reviewing the preview: "we have commentary on ACT or SAT scores, but there is
 > nothing about GPAs".
 
@@ -78,10 +80,17 @@ estimate the number of colleges it was fitted on.
 With the student's range `[s0, s1]`, the college's `[c0, c1]`, and the band of 0.15:
 - **above** when `s0 − c1 > 0.15`
 - **below** when `c0 − s1 > 0.15`
-- **in** when `s0 − c1 ≥ −0.15` and `s1 − c0 ≤ 0.15`
+- **in** when the two ranges' middles are within 0.15 of each other, and the student's range is at most 0.4 wide
+  (`STUDENT_RANGE_FOR_CLOSE`; an unweighted GPA is a point, a weighted one can span a full point)
 - otherwise **can't tell**: GPA isn't used for that college, and the row says so.
 
 For two points this is today's rule exactly, so the pinned examples in standing.md still hold.
+
+*Changed during the build (2026-10-10):* the first version required the whole college range to sit within 0.15 of
+the student's, so "in" demanded a college range at most 0.30 wide. An estimate is about ±0.17 (0.33 wide), so no
+estimated college could ever be "close", and the preview's student got "can't tell" at all five estimated colleges.
+Comparing the middles fixes that. With the fitted model, a student with a 3.82 and a 1390 SAT is now compared at all
+eight colleges on the preview list.
 
 An estimated GPA is used like a reported one, but its range is wider, so it more often lands on "in" or "can't
 tell". Not every college gets a group from GPA alone; the admit-rate rules are unchanged.

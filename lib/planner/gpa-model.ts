@@ -239,11 +239,19 @@ export type GpaPosition = "below" | "in" | "above";
 export function compareGpaRanges(student: [number, number], college: [number, number], band: number): GpaPosition | null {
   const [s0, s1] = student;
   const [c0, c1] = college;
+  // Clearly apart: even the closest ends of the two ranges are more than the band apart.
   if (s0 - c1 > band) return "above";
   if (c0 - s1 > band) return "below";
-  if (s0 - c1 >= -band && s1 - c0 <= band) return "in";
+  // Close: the middles are within the band, and the student's own GPA is known well enough (an unweighted number,
+  // not a weighted one spread over up to a point). Requiring the whole range inside the band (the first rule,
+  // 2026-10-10) made an estimated college, about ±0.17 wide, never "close" to anyone; the middles carry the estimate.
+  const mid = (a: number, b: number) => (a + b) / 2;
+  if (Math.abs(mid(s0, s1) - mid(c0, c1)) <= band && s1 - s0 <= STUDENT_RANGE_FOR_CLOSE) return "in";
   return null;
 }
+
+/** The widest student GPA range that can still be "close to" a college's (a weighted GPA's range is up to 1.0). */
+export const STUDENT_RANGE_FOR_CLOSE = 0.4;
 
 /**
  * The citation behind a college's GPA, keyed by the field its sentence's ⓘ cites (standing.ts GpaCite): the C12

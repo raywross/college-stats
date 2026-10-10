@@ -1,6 +1,6 @@
 ---
 title: "A list of colleges whose own figures we couldn't get"
-pr: 0
+pr: 116
 date: 2026-10-10
 kind: infra
 summary: "We now keep a list of every college whose own published figures we couldn't read yet, with the reason, so we can look into them and fix the gaps."

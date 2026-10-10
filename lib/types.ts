@@ -1551,7 +1551,9 @@ export type SortKey =
   | "out_of_state"
   | "transfer_share"
   /** Straight-line miles from the `near` filter's ZIP center (specs/product/home-and-distance.md); nothing without it. */
-  | "distance";
+  | "distance"
+  /** The price at the `income` filter's family income (lib/cost-curve.ts priceAt, the range's middle); nothing without it. */
+  | "price_at";
 
 export type ExploreView = "grid" | "table" | "chart" | "map";
 
@@ -1667,6 +1669,20 @@ export interface SearchFilters {
   nearZip?: string;
   withinMiles?: number;
   near?: { zip: string; lat: number; lng: number; miles: number };
+  /**
+   * Cost by income (specs/product/cost-by-income.md; lib/cost-curve.ts, lib/merit.ts). `minAidIncome`: need-based aid
+   * reaches families earning at least this much (the college's estimated break point, status "break_point" only).
+   * `merit`: offers merit aid (reported or proxy). `income`: the family income the `price_at` sort prices at.
+   */
+  minAidIncome?: number;
+  merit?: boolean;
+  income?: number;
+  /**
+   * Whether estimates are shown (lib/cost-curve.ts estimatesShown(), set by the page, never from the URL). Without it
+   * `minAidIncome` filters nothing and `price_at` knows only the published prices up to $110K, so estimated break
+   * points and prices never leak past the accuracy pilot's gate.
+   */
+  showEstimates?: boolean;
   sortBy?: SortKey;
   sortDir?: "asc" | "desc";
 }

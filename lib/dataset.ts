@@ -28,6 +28,8 @@ import { noCssProfile, offersInternationalAid } from "./cds/financial-aid.ts";
 import { fitsScoreRange } from "./student-profile.ts";
 import { distanceFromHome, isWithinHome } from "./home.ts";
 import { buildFacets } from "./explore-facets.ts";
+import { costCurve, costCurveInput, priceAt, type CostCurve } from "./cost-curve.ts";
+import { meritFor, offersMerit, type MeritInfo } from "./merit.ts";
 import {
   METRICS,
   SIZE_BUCKETS,
@@ -152,6 +154,8 @@ const SORTERS: Record<SortKey, (s: School) => number | string | null> = {
   bachelors: (s) => s.academics?.bachelors_awarded ?? null,
   // Needs the request's `near` filter, so getSchools() substitutes the real getter; without one nothing sorts.
   distance: () => null,
+  // Needs the request's `income`, so getSchools() substitutes the real getter (the dataset's memoized curves).
+  price_at: () => null,
 };
 
 function mode(values: number[]): number | null {
@@ -175,6 +179,27 @@ export function createDataset({ schools, meta, releaseCalendar, aliases = [] }: 
   /** The alias key index beside the school index (specs/school-identity/aliases.md#store): each school's own rows. */
   const aliasesByUnitId = new Map<string, AliasRow[]>();
   for (const row of aliases) aliasesByUnitId.set(row.unit_id, [...(aliasesByUnitId.get(row.unit_id) ?? []), row]);
+
+  /* ---------------------------------------------------------------- */
+  /* Cost by income (specs/product/cost-by-income.md)                  */
+  /* ---------------------------------------------------------------- */
+
+  // Computed at load, not in the sync, and kept per school (the WeakMaps hold them only while the dataset holds it).
+  const curveMemo = new WeakMap<School, CostCurve | null>();
+  const meritMemo = new WeakMap<School, MeritInfo>();
+
+  /** The college's cost curve over family income (lib/cost-curve.ts), with its published policy; null without a full price. */
+  function costCurveFor(school: School): CostCurve | null {
+    if (!curveMemo.has(school)) curveMemo.set(school, costCurve(costCurveInput(school)));
+    return curveMemo.get(school)!;
+  }
+
+  /** The college's merit class (lib/merit.ts). */
+  function meritInfoFor(school: School): MeritInfo {
+    let m = meritMemo.get(school);
+    if (!m) meritMemo.set(school, (m = meritFor(school)));
+    return m;
+  }
 
   /* ---------------------------------------------------------------- */
   /* Sources & citations                                               */
@@ -345,10 +370,25 @@ export function createDataset({ schools, meta, releaseCalendar, aliases = [] }: 
     const near = filters.near;
     const miles = (s: School) => (near ? distanceFromHome(s.location, near) : null);
     if (near) results = results.filter((s) => isWithinHome(s.location, near));
+    // Cost by income: the break point is an estimate, so it filters only while estimates are shown (the pilot's gate).
+    const minAid = filters.minAidIncome;
+    if (minAid !== undefined && filters.showEstimates)
+      results = results.filter((s) => {
+        const c = costCurveFor(s);
+        return c?.status === "break_point" && c.breakIncome !== null && c.breakIncome.mid >= minAid;
+      });
+    if (filters.merit) results = results.filter((s) => offersMerit(meritInfoFor(s)));
+    const income = filters.income;
+    const priceAtIncome = (s: School) => {
+      const c = income === undefined ? null : costCurveFor(s);
+      if (!c) return null;
+      const p = priceAt(c, income!, filters.showEstimates ?? false);
+      return p.kind === "unknown" ? null : (p.lo + p.hi) / 2;
+    };
 
     const sortBy: SortKey = filters.sortBy && filters.sortBy in SORTERS ? filters.sortBy : "applicants";
     const multiplier = (filters.sortDir ?? (sortBy === "applicants" ? "desc" : "asc")) === "asc" ? 1 : -1;
-    const get = sortBy === "distance" ? miles : SORTERS[sortBy];
+    const get = sortBy === "price_at" ? priceAtIncome : sortBy === "distance" ? miles : SORTERS[sortBy];
 
     return [...results].sort((a, b) => {
       const av = get(a);
@@ -625,6 +665,8 @@ export function createDataset({ schools, meta, releaseCalendar, aliases = [] }: 
     sourcesForSchoolsFast,
     getReleaseCalendar,
     cdsSchools,
+    costCurveFor,
+    meritInfoFor,
     getAllSchools,
     getSchools,
     getSchoolById,

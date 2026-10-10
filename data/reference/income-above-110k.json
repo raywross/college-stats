@@ -1,0 +1,34 @@
+{
+  "description": "Reference distribution of family incomes for the cost curve's calibration (specs/product/cost-by-income.md \"The model\"). lib/cost-curve.ts averages the modeled price over the incomes above $110K in these brackets and solves for each college's ramp so the average equals the college's published $110K+ net price band. Closed brackets are sampled uniformly; the open top bracket is a Pareto tail with `pareto_alpha`, truncated at `cap`.",
+  "source": "https://www.census.gov/library/publications/2025/demo/p60-286.html",
+  "table": "U.S. Census Bureau, Current Population Reports P60-286, Income in the United States: 2024 (CPS ASEC 2025), households by total money income: percent distribution",
+  "year": "2024 incomes (CPS ASEC 2025)",
+  "verified_via": "search",
+  "retrieved": "2026-10-10",
+  "population": "all households",
+  "brackets": [
+    { "lo": 0, "hi": 15000, "share": 0.071 },
+    { "lo": 15000, "hi": 25000, "share": 0.064 },
+    { "lo": 25000, "hi": 35000, "share": 0.068 },
+    { "lo": 35000, "hi": 50000, "share": 0.099 },
+    { "lo": 50000, "hi": 75000, "share": 0.151 },
+    { "lo": 75000, "hi": 100000, "share": 0.12 },
+    { "lo": 100000, "hi": 150000, "share": 0.167 },
+    { "lo": 150000, "hi": 200000, "share": 0.101 },
+    { "lo": 200000, "hi": null, "share": 0.16 }
+  ],
+  "pareto_alpha": 2.1,
+  "cap": 1000000,
+  "checks": {
+    "median": 83730,
+    "p80": 175700,
+    "p90_approx": 250000
+  },
+  "notes": [
+    "census.gov is not reachable from the environment this file was built in. The bracket shares were read from a web search result quoting the report's table (Statista, 'Share of households by income in the U.S. 2024', https://www.statista.com/statistics/203183/percentage-distribution-of-household-income-in-the-us/, citing the U.S. Census Bureau). Before relying on them, open P60-286 (or CPS table HINC-06 for 2024, https://www.census.gov/data/tables/2025/demo/cps/hinc-06.html) and confirm the nine shares.",
+    "Consistency checks against figures quoted from the same report: the shares sum to 100.1% (rounding); the interpolated median is about $84.8K against the published $83,730; the interpolated 80th percentile is about $180K against the published top of the fourth quintile, $175,700 (Center for Retirement Research at Boston College, quoting P60-286).",
+    "Population: these are all households, not families with a college-age child as the spec asks. Bracket shares for families with a child aged 18-24, or for householders aged 45-54 (CPS HINC-02), could not be found through search; the 45-54 median ($116,800 in 2024, P60-286) is well above the all-household median ($83,730), so this distribution understates high incomes among parents of college students. Within the incomes above $110K the shape matters more than the level; swapping in HINC-02 (45-54) shares is the first tuning step if the accuracy pilot fails (cost-by-income.md 'If it fails').",
+    "The $100K-$150K bracket is split at $110K assuming incomes are uniform within it, so 40/50 of its share lies above $110K.",
+    "pareto_alpha is derived, not published: with 16.0% of households above $200,000 and the 90th percentile at about $250,000 (Center for Retirement Research at Boston College: 'only those at the 90th percentile and above have incomes in excess of $250,000', quoting P60-286 Table A-4a; a secondary source puts the 90th percentile at about $251,000), alpha = ln(0.160 / 0.100) / ln(250000 / 200000) = 2.1. The tail is truncated at $1M (cap): every college's price reaches full price well below that, so incomes above it change nothing."
+  ]
+}

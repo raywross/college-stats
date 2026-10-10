@@ -10,7 +10,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { gunzipSync } from "node:zlib";
 import type { CallRead, CollegeDocsFile, DocumentRecord, ManifestEntry } from "../lib/cds-sections.ts";
-import { addMonth, callsNeedingRead, documentsOf, fetchOutcome, findBySha, manifestEntryFor, needsFetch } from "../lib/cds-reads.ts";
+import { addMonth, awaitingFirstRead, callsNeedingRead, documentsOf, fetchOutcome, findBySha, manifestEntryFor, needsFetch } from "../lib/cds-reads.ts";
 import { CDS_TEMPLATE } from "../lib/cds-template.ts";
 import { validateCdsRecords } from "../lib/cds-records.ts";
 import { createArchive, priorEditionLinks, LocalArchive } from "../scripts/lib/college-reported/archive.mts";
@@ -218,6 +218,18 @@ const entry = (over: Partial<ManifestEntry> = {}): ManifestEntry => ({
   bytes: 1000,
   archive: "local:x.pdf",
   ...over,
+});
+
+test("awaitingFirstRead: a known document with no read tied to it (record by sha256, or the profile's extraction)", () => {
+  const read = { C: { schema_version: 1, read_by: "m", mode: "batch", extracted: "2026-10-06" } as CallRead };
+  assert.equal(awaitingFirstRead(entry(), undefined), true, "a model-read document with an edition and no record");
+  assert.equal(awaitingFirstRead(entry(), { reads: {} }), true);
+  assert.equal(awaitingFirstRead(entry(), { reads: read }), false, "read once: a later schema bump is callsNeedingRead's job");
+  assert.equal(awaitingFirstRead(entry({ edition: null }), undefined), false, "no edition: not sent to a model");
+  assert.equal(awaitingFirstRead(entry({ type: "pdf-scanned", edition: "2025-26" }), undefined), false, "scanned PDFs aren't read yet");
+  assert.equal(awaitingFirstRead(entry({ type: "xlsx-template" }), undefined), true, "a deterministic type with no record");
+  assert.equal(awaitingFirstRead(entry({ type: "class-profile", kind: "class-profile", edition: null }), undefined, {}), true, "extraction undefined: never extracted");
+  assert.equal(awaitingFirstRead(entry({ type: "class-profile", kind: "class-profile", edition: null }), undefined, { extraction: null }), false, "extracted, nothing found");
 });
 
 test("needsFetch: new → fetch; known → conditional GET only when the index changed or a month passed", () => {

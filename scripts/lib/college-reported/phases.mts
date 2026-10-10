@@ -34,7 +34,7 @@ import { DEFAULT_ANCHORS, REPORTED_MODELS, ROUND3_MODELS, enqueueItems, fallYear
 import type { School } from "../../../lib/types";
 import { CALL_KEYS, SCHEMA_VERSIONS, codesFor, normalizeValue, yearsForEdition, type CallKey, type CdsCode, type CollegeDocsFile, type CollegeRecord, type DocumentRecord, type DocumentType, type ItemResult, type ManifestEntry, type TemplateTable } from "../../../lib/cds-sections.ts";
 import { compareDocuments } from "../../../lib/cds-records.ts";
-import { callsNeedingRead, fetchOutcome, manifestEntryFor, needsFetch } from "../../../lib/cds-reads.ts";
+import { awaitingFirstRead, callsNeedingRead, fetchOutcome, manifestEntryFor, needsFetch } from "../../../lib/cds-reads.ts";
 import { citeAnswer, type NumberedLine } from "../../../lib/cds-quotes.ts";
 import { applyChecks, circuitBreakerV3, dropPassed, escalationFor, failedC1Count, itemFailureShares, reviewItemsFor } from "../../../lib/cds-checks.ts";
 import { runChecks, toReportedEntry } from "../../../lib/reported-checks.ts";
@@ -493,7 +493,48 @@ export function createRound3(deps: Round3Deps) {
 
     type SourceRead = { state: "unchanged" } | { state: "read"; entry: ManifestEntry } | { state: "unreachable"; detail: string } | { state: "problem"; detail: string };
 
-    /** One source: fetch only when new or changed, then archive, type, and read what code can read. */
+    /** Whether a manifest document has never been read (lib/cds-reads.ts awaitingFirstRead): its record by sha256, or this source's extraction. */
+    const unread = (entry: ManifestEntry, src: RecipeSource) => awaitingFirstRead(entry, docsOf(entry.unit_id).find((d) => d.sha256 === entry.sha256), src);
+
+    /**
+     * A known document that was archived but never read (a run stopped between prepare and submit, say): read now from
+     * these bytes, as a new document would be. Template workbooks and forms are read by code; a model-read document's
+     * lines are archived for the submit phase; a class profile is left for round 2's extractor. Bytes that came from a
+     * fetch are archived again first, so the submit and collect phases find them.
+     */
+    async function readKnown(school: School, src: RecipeSource, entry: ManifestEntry, bytes: Uint8Array, fetched: boolean): Promise<SourceRead> {
+      try {
+        src.sha256 = entry.sha256;
+        if (fetched) {
+          const location = await deps.archive.put(entry.sha256, bytes, extOf(entry.type));
+          summary.documents[entry.type].fetched++;
+          summary.documents[entry.type].archived++;
+          if (location !== entry.archive) upsertEntry({ ...entry, archive: location });
+        }
+        const current = state.manifest.documents.find((d) => d.sha256 === entry.sha256) ?? entry;
+        if (current.type === "xlsx-template" || current.type === "pdf-form") {
+          const doc = await readDeterministic(school, current, bytes);
+          log(`  ${school.name}: ${current.type} ${doc.edition} archived earlier but never read; read by code now`);
+        } else if (current.type === "class-profile") {
+          src.extraction = undefined;
+          delete src.processed;
+          log(`  ${school.name}: class profile archived earlier but never read; waiting for the extractor`);
+        } else {
+          if (!(await loadLines(current))) throw new Error(`${current.sha256.slice(0, 8)}: no lines`);
+          log(`  ${school.name}: ${current.type} ${current.edition} archived earlier but never read; waiting for the extraction batch`);
+        }
+        attempted.add(school.unit_id);
+        return { state: "read", entry: current };
+      } catch (err) {
+        return { state: "problem", detail: `${src.url}: ${errText(err)}` };
+      }
+    }
+
+    /**
+     * One source: fetch only when new or changed, then archive, type, and read what code can read. A known document
+     * counts as unchanged only once it has been read; one that never was is read from the archive, or fetched again
+     * when the archive doesn't hold its bytes.
+     */
     async function acquireSource(school: School, src: RecipeSource, o: { prefetched: Map<string, Prefetched>; indexChanged: boolean }): Promise<SourceRead> {
       const known = state.manifest.documents.filter((d) => d.url === src.url || d.final_url === src.url).sort((a, b) => b.retrieved.localeCompare(a.retrieved))[0];
       let bytes: Uint8Array;
@@ -504,7 +545,13 @@ export function createRound3(deps: Round3Deps) {
         o.prefetched.delete(src.url);
         src.checked = today;
       } else {
-        const d = needsFetch(known, { etag: src.etag, last_modified: src.last_modified, lastChecked: src.checked ?? null, today, indexChanged: o.indexChanged });
+        const pending = !!known && unread(known, src);
+        if (pending) {
+          const stored = await deps.archive.get(known.sha256);
+          if (stored) return readKnown(school, src, known, stored, false);
+        }
+        // Never read and not in the archive: fetch it in full (a conditional GET could answer 304 with no bytes).
+        const d: { fetch: boolean; conditional?: { etag?: string; last_modified?: string } } = pending ? { fetch: true, conditional: {} } : needsFetch(known, { etag: src.etag, last_modified: src.last_modified, lastChecked: src.checked ?? null, today, indexChanged: o.indexChanged });
         if (!d.fetch) {
           if (known) summary.documents[known.type].unchanged++;
           return { state: "unchanged" };
@@ -535,6 +582,7 @@ export function createRound3(deps: Round3Deps) {
       src.sha256 = sha;
       if (fetchOutcome(state.manifest, { status: 200, sha256: sha }) === "unchanged") {
         const was = state.manifest.documents.find((d) => d.sha256 === sha)!;
+        if (unread(was, src)) return readKnown(school, src, was, bytes, true);
         summary.documents[was.type].unchanged++;
         return { state: "unchanged" };
       }

@@ -131,7 +131,7 @@ test("calibration reproduces the published $110K+ band within $50, here and at e
     assert.ok(Math.abs(avg - input.bands![4]!) <= 50, `${s.name}: ${avg} vs ${input.bands![4]}`);
     assert.ok(c.ramp!.r >= R_MIN && c.ramp!.r <= R_MAX);
   }
-  assert.ok(checked > 300, `${checked} colleges get an estimate`);
+  assert.ok(checked > 200, `${checked} colleges get an estimate`);
 });
 
 test("the break point moves the right way with the full price and with r", () => {

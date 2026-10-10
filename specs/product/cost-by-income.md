@@ -94,7 +94,7 @@ price(I) = min(COA, max(P110, r × (I − P)))  for I > $110K   (estimate)
   reproduces that college's published $110K+ band. That band is the average price paid by FAFSA filers above $110K,
   so the model averages `price(I)` over a reference distribution of incomes above $110K among families with a
   college-age child (Census CPS ASEC, stored as `data/reference/income-above-110k.json` with its year) and solves
-  for *r*. The result is bounded to 0.15–0.60; outside that, the college gets no estimate.
+  for *r*. The result is bounded to 0.22–0.60 (raised from 0.15 when built: a gentler rise than 22 cents per dollar is a band lowered by discounts nearly everyone gets, not need aid phasing out); outside that, the college gets no estimate.
 - A free-tuition line adds a second constraint (at that income the price can't exceed COA − tuition), which pins the
   ramp more tightly where a college publishes one.
 

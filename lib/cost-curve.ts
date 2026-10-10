@@ -57,8 +57,15 @@ export const DEFAULT_RAMP_START = 90_000;
 export const RAMP_START_SPREAD = 10_000;
 /** The published $110K+ band is rounded and a sample average: the range reproduces it within ± this. */
 export const BAND_SPREAD = 1_000;
-/** Bounds on r: outside them the college's figures don't fit the model, so it gets no estimate. */
-export const R_MIN = 0.15;
+/**
+ * Bounds on r: outside them the college's figures don't fit the model, so it gets no estimate. The floor is 0.22, the
+ * low reading of how much of each extra dollar need formulas take (the owner's source document's rule of thumb, and
+ * about the federal formula's lowest bracket after taxes): a gentler rise than that isn't need aid phasing out, it's a
+ * band lowered by discounts nearly everyone gets (state grants, tuition discounting, merit), so a break point read from
+ * it would be wrong. Raised from the spec's 0.15 by the integrator (2026-10-10) after the Explore filter returned
+ * hundreds of low-cost colleges with break points above $250K for that reason.
+ */
+export const R_MIN = 0.22;
 export const R_MAX = 0.6;
 /**
  * A calibrated r this close to a bound is treated as outside it ("data_ends"): it means the bound, not the college's

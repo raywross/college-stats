@@ -93,9 +93,9 @@ test("the three rows are registered, cited, and on the Cost & aid page's and the
 });
 
 test("Need-based aid up to: a range with 'estimate' while estimates are shown, 'Published data end at $110K' when not", () => {
-  assert.equal(cell(true, BREAK_POINT_LABEL, HARVARD), "About $240K (estimate, $240K–$250K)");
-  assert.equal(cell(true, BREAK_POINT_LABEL, VANDERBILT), "About $300K (estimate, $280K–$330K)");
-  assert.equal(cell(true, BREAK_POINT_LABEL, MICHIGAN), "About $190K (estimate, $160K–$220K)");
+  assert.equal(cell(true, BREAK_POINT_LABEL, HARVARD), "About $350K (estimate, $320K–$400K)");
+  assert.equal(cell(true, BREAK_POINT_LABEL, VANDERBILT), "About $310K (estimate, $280K–$360K)");
+  assert.equal(cell(true, BREAK_POINT_LABEL, MICHIGAN), "About $170K (estimate, $160K–$180K)");
   for (const id of [HARVARD, VANDERBILT, MICHIGAN]) assert.equal(cell(false, BREAK_POINT_LABEL, id), DATA_END_MESSAGE);
   assert.equal(DATA_END_MESSAGE, "Published data end at $110K");
 });
@@ -211,9 +211,9 @@ test("the card and row line: 'About $41K at $200K', 'estimate' flagged, why when
   assert.equal(priceLine(null, 200_000, true).text, "No full price reported");
   // Real colleges: published at $60K whatever the gate; estimated at $150K only with it.
   const h = costCurve(costCurveInput(byId(HARVARD)));
-  assert.equal(priceLine(h, 150_000, true).text, "About $28K at $150K");
+  assert.equal(priceLine(h, 150_000, true).text, "About $18K at $150K");
   assert.equal(priceLine(h, 150_000, false).text, DATA_END_MESSAGE);
-  assert.equal(priceLine(h, 250_000, true).text, "Full price, $87K, at $250K");
+  assert.equal(priceLine(h, 250_000, true).text, "About $43K–$53K at $250K");
 });
 
 test("the incomes: rounded to $1K, '$400K or more' at the chart's edge; the table lists the bands then the pilot's incomes", () => {
@@ -315,7 +315,7 @@ test("Explore's lines read the dataset's memoized curves, and the sort matches t
   });
   assert.deepEqual(mids, [...mids].sort((a, b) => a - b));
   const h = data.getSchoolById(HARVARD)!;
-  assert.equal(priceLine(data.costCurveFor(h), 150_000, true).text, "About $28K at $150K");
+  assert.equal(priceLine(data.costCurveFor(h), 150_000, true).text, "About $18K at $150K");
 });
 
 /* ------------------------------------------------------------------ */

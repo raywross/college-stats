@@ -1,6 +1,6 @@
 ---
 title: Reading the college documents we found
-pr: 0
+pr: 114
 date: 2026-10-10
 kind: fix
 summary: Common Data Sets that don't print their year on the cover, class profiles posted as PDFs, and colleges whose sites have one odd link are now read instead of skipped.

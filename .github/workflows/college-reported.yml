@@ -217,6 +217,13 @@ jobs:
         if: always() && steps.secret.outputs.ready == 'true'
         run: npm run build-trends
 
+      # The research list of colleges where the pipeline failed (specs/college-data-failures.md), rebuilt from the
+      # state files this run wrote, so the PR carries it and the next production deploy loads it. No network; it is
+      # under data/, so the PR step commits it with the rest.
+      - name: Rebuild the college data failures list
+        if: always() && steps.secret.outputs.ready == 'true'
+        run: npm run college-failures
+
       # The draft signal: data/college-batches.json lists the batches still open when the script exits (it is written
       # after every submit and collect). Any open batch → the PR opens as a draft and waits for the collect job.
       - name: Check for open batches
@@ -238,6 +245,7 @@ jobs:
             data/college-reported.json
             data/review-queue.json
             data/college-batches.json
+            data/college-failures.json
             data/reports/college-reported-run-${{ steps.run_id.outputs.id }}.json
             data/reports/college-reported-calls-${{ steps.run_id.outputs.id }}.jsonl
           if-no-files-found: ignore
@@ -440,6 +448,11 @@ jobs:
       - name: Rebuild the national trends
         if: always() && steps.secret.outputs.ready == 'true'
         run: npm run build-trends
+
+      # As in the run job: the failures list follows the collected state (committed below with the rest of data/).
+      - name: Rebuild the college data failures list
+        if: always() && steps.secret.outputs.ready == 'true'
+        run: npm run college-failures
 
       - name: Check for open batches
         id: batches

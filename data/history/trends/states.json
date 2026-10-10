@@ -2668,7 +2668,7 @@
         "acceptanceRate": 0.7445,
         "avgCost": 31319,
         "outOfState": 0.0147,
-        "testOptionalShare": 0.7536
+        "testOptionalShare": 0.7464
       },
       "all": {
         "key": "all",
@@ -6874,7 +6874,7 @@
         "acceptanceRate": 0.8013,
         "avgCost": 23986,
         "outOfState": 0.4261,
-        "testOptionalShare": 0.8438
+        "testOptionalShare": 0.8125
       },
       "all": {
         "key": "all",
@@ -12748,7 +12748,7 @@
         "acceptanceRate": 0.7944,
         "avgCost": 21273,
         "outOfState": 0.0754,
-        "testOptionalShare": 0.9348
+        "testOptionalShare": 0.913
       },
       "all": {
         "key": "all",

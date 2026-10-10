@@ -427,7 +427,7 @@
       "host": "ira.okstate.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-10",
       "unit_ids": [
         "207388"
       ]
@@ -1109,6 +1109,12 @@
       ]
     },
     {
+      "host": "scholarsjunction.msstate.edu",
+      "status": "challenge",
+      "first_seen": "2026-10-10",
+      "last_seen": "2026-10-10"
+    },
+    {
       "host": "schuylkill.psu.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
@@ -1334,7 +1340,7 @@
       "host": "www.american.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-10",
       "unit_ids": [
         "131159"
       ]
@@ -1352,7 +1358,7 @@
       "host": "www.appstate.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-10",
       "unit_ids": [
         "197869"
       ]
@@ -1433,7 +1439,7 @@
       "host": "www.bsu.edu",
       "status": 403,
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-10",
       "unit_ids": [
         "150136"
       ]
@@ -1496,7 +1502,7 @@
       "host": "www.colby.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-10",
       "unit_ids": [
         "161086"
       ]
@@ -1585,7 +1591,7 @@
       "host": "www.ecu.edu",
       "status": 403,
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-10",
       "unit_ids": [
         "198464"
       ]
@@ -1603,7 +1609,7 @@
       "host": "www.emich.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-10",
       "unit_ids": [
         "169798"
       ]
@@ -1825,6 +1831,12 @@
       ]
     },
     {
+      "host": "www.memphis.edu",
+      "status": 403,
+      "first_seen": "2026-10-10",
+      "last_seen": "2026-10-10"
+    },
+    {
       "host": "www.midlandu.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
@@ -1846,7 +1858,7 @@
       "host": "www.montana.edu",
       "status": 403,
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-10",
       "unit_ids": [
         "180461"
       ]
@@ -1873,7 +1885,7 @@
       "host": "www.newpaltz.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-10",
       "unit_ids": [
         "196176"
       ]
@@ -1924,10 +1936,16 @@
       "host": "www.okstate.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-10",
       "unit_ids": [
         "207388"
       ]
+    },
+    {
+      "host": "www.oswego.edu",
+      "status": 403,
+      "first_seen": "2026-10-10",
+      "last_seen": "2026-10-10"
     },
     {
       "host": "www.pba.edu",
@@ -2023,7 +2041,7 @@
       "host": "www.scad.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-10",
       "unit_ids": [
         "140951"
       ]
@@ -2068,7 +2086,7 @@
       "host": "www.subr.edu",
       "status": 403,
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-10",
       "unit_ids": [
         "160621"
       ]
@@ -2272,7 +2290,7 @@
       "host": "www.williams.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-10",
       "unit_ids": [
         "168342"
       ]
@@ -2308,7 +2326,7 @@
       "host": "www.wvu.edu",
       "status": 403,
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-10",
       "unit_ids": [
         "238032"
       ]

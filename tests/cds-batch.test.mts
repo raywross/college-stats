@@ -84,6 +84,31 @@ test("escalation and picker requests: Sonnet 5 with -x ids; Haiku pickers", () =
   assert.equal(pick[0].params.model, "claude-haiku-4-5");
 });
 
+test("submit: a lone surrogate in page text (cut mid-emoji by buildPickerRequest's own 120-char slice) reaches the fake API as valid JSON", async () => {
+  // "a" × 119 then a 2-code-unit emoji: slicing at 120 keeps the emoji's high surrogate and drops its low half,
+  // exactly the "cut mid-emoji" case the real crash (GitHub Actions run 38078117810) was traced to.
+  const linkText = `${"a".repeat(119)}\u{1F600} more link text after the emoji`;
+  assert.ok(linkText.slice(0, 120).endsWith("\ud83d"), "the slice does leave a lone high surrogate, as assumed");
+  const [pick] = buildPickerRequests([{ tag: "deadbeef", priority: 0, input: { college: { unit_id: "7", name: "Seven" }, links: [{ text: linkText, url: "https://x.edu/cds" }] } }]);
+  const api = fakeBatchApi();
+  await submit(api, [pick], emptyBatchesFile(), { run: "r1", phase: "picker", now: NOW });
+  const sent = api.created.flat();
+  assert.equal(sent.length, 1);
+  // What actually reached `api.create` must be valid JSON start to finish: every string well-formed, and a
+  // JSON.stringify/JSON.parse round trip (what the real SDK does to build the HTTP body) must not throw or lose
+  // the lone surrogate's escape.
+  const json = JSON.stringify(sent[0]);
+  const parsed = JSON.parse(json) as { params: { messages: Array<{ content: string }> } };
+  const strings: string[] = [];
+  (function collect(v: unknown) {
+    if (typeof v === "string") strings.push(v);
+    else if (Array.isArray(v)) v.forEach(collect);
+    else if (v && typeof v === "object") Object.values(v).forEach(collect);
+  })(parsed);
+  assert.ok(strings.length > 0);
+  for (const s of strings) assert.ok(s.isWellFormed(), `lone surrogate reached the API in: ${JSON.stringify(s).slice(0, 60)}`);
+});
+
 /* ------------------------------------------------------------------ */
 /* Test 10: batch collect                                              */
 /* ------------------------------------------------------------------ */

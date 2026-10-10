@@ -55,6 +55,7 @@ import { callLogRow, callRecorder, emptyUsage, memoryCallLogWriter, roundUsd, su
 import { parseExtractResponse } from "./llm.mts";
 import { tierOf } from "./pilot.mts";
 import { fatalApiError } from "./pipeline.mts";
+import { toWellFormedDeep } from "./well-formed.mts";
 
 /* ------------------------------------------------------------------ */
 /* Shapes                                                              */
@@ -353,10 +354,12 @@ export function createRound3(deps: Round3Deps) {
         throw err;
       }
     }
+    // Well-form every string before it leaves this process: page text sliced mid-emoji (or a malformed page) can
+    // carry a lone surrogate, which breaks the request body's JSON and the API rejects outright.
     const client: ModelClient = {
       messages: {
-        create: (body) => guarded(() => deps.client.messages.create(body)),
-        stream: (body, o) => ({ finalMessage: () => guarded(() => deps.client.messages.stream(body, o).finalMessage()) }),
+        create: (body) => guarded(() => deps.client.messages.create(toWellFormedDeep(body))),
+        stream: (body, o) => ({ finalMessage: () => guarded(() => deps.client.messages.stream(toWellFormedDeep(body), o).finalMessage()) }),
       },
     };
     const api: BatchApi = {

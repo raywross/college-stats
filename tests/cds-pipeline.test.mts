@@ -19,7 +19,7 @@ import { createRound3, callLines, type Round3Options, type Round3State } from ".
 import { emptySummaryV3, memoryCallLogWriter, type ModelClient } from "../scripts/lib/college-reported/models.mts";
 import { parseCustomId } from "../scripts/lib/college-reported/batch.mts";
 import { pagesFromLayoutText } from "../scripts/lib/college-reported/layout.mts";
-import { sha256 } from "../scripts/lib/college-reported/http.mts";
+import { PoliteHttp, USER_AGENT, sha256 } from "../scripts/lib/college-reported/http.mts";
 import { fakeBatchApi, type FakeBatchOptions } from "./fixtures/fake-batch-api.mts";
 import { memoryArchive } from "./fixtures/memory-archive.mts";
 import { tinyPdf, type TinyText } from "./helpers/tiny-pdf.mts";
@@ -668,4 +668,64 @@ test("the projection counts a known document that was never read (it is read thi
   assert.match(state.summary.projection!.basis, /^1 pdf-flat × \$0\.05/);
   assert.equal(out.exit, 3, "and the guard holds it to the cap");
   assert.equal(api.created.length, 0);
+});
+
+/* ------------------------------------------------------------------ */
+/* robots.txt and the CDS file (owner decision 2026-10-10)             */
+/* ------------------------------------------------------------------ */
+
+const ROBOTS_ID = "190007";
+const robotsSite = `https://c${ROBOTS_ID}.edu`;
+const robotsTxt = { [`${robotsSite}/robots.txt`]: "User-agent: *\nDisallow: /ir/\n" };
+const robotsCds = `${robotsSite}/ir/CDS_2025-26.xlsx`;
+
+test("robots.txt: a CDS file it disallows is fetched (honest user agent) and read", async () => {
+  const f = fakeFetch({ ...robotsTxt, [robotsCds]: XLSX });
+  const lines: string[] = [];
+  const state = freshState([recipe(ROBOTS_ID, [{ kind: "cds", url: robotsCds, format: "xlsx" }])]);
+  await createRound3({ client: fakeClient().client, batches: batchApi(), fetch: f.fn, now: () => OCT, sleep: async () => {}, minDelayMs: 0, archive: memoryArchive(), table: CDS_TEMPLATE, callLog: memoryCallLogWriter(), log: (m) => lines.push(m), pollIntervalMs: 1 }).run(state, runOpts([school(ROBOTS_ID)]));
+  const got = f.docs().filter((c) => c.url === robotsCds);
+  assert.equal(got.length, 1, "the CDS file was requested once");
+  assert.equal(got[0].headers["User-Agent"], USER_AGENT);
+  assert.ok(lines.some((l) => l.includes(`robots.txt disallows ${robotsCds}; fetched anyway`)), "and the log says so");
+  assert.equal(state.records.get(ROBOTS_ID)!.documents[0].reads.deterministic?.read_by, "xlsx-template");
+  assert.equal(state.reported.entries[0].admissions.applicants, 45409);
+  assert.equal(state.queue.items.length, 0);
+});
+
+test("robots.txt: a class profile and an index page it disallows are still skipped", async () => {
+  const profile = `${robotsSite}/ir/class-profile`;
+  const index = `${robotsSite}/ir/cds`;
+  const f = fakeFetch({ ...robotsTxt, [robotsCds]: XLSX, [profile]: "<p>48,000 students applied</p>", [index]: `<a href="/ir/CDS_2026-27.pdf">Common Data Set 2026-2027</a>` });
+  const { client, calls } = fakeClient({ cohort: "first-year", scope: "all-rounds", entering_term: "Fall 2025", applicants: 48000, admitted: null, enrolled: null, acceptance_rate: null, quotes: { applicants: "48,000 students applied" }, page: null });
+  const state = freshState([recipe(ROBOTS_ID, [{ kind: "cds", url: robotsCds, format: "xlsx" }, { kind: "class-profile", url: profile, format: "html" }], [index])]);
+  await pipeline({ fetch: f.fn, batches: batchApi(), archive: memoryArchive(), client }).run(state, runOpts([school(ROBOTS_ID)]));
+  assert.deepEqual(f.docs().map((c) => c.url), [robotsCds], "only the CDS file: neither the class profile nor the index page");
+  assert.equal(calls.length, 0, "the class profile never reached the extractor");
+
+  // The client itself: without `cdsDocument`, a disallowed URL is still skipped with no request.
+  const f2 = fakeFetch({ ...robotsTxt, [robotsCds]: XLSX });
+  const http = new PoliteHttp({ fetch: f2.fn, now: () => 0, sleep: async () => {}, minDelayMs: 0, log: () => {} });
+  assert.equal(await http.get(robotsCds), null);
+  assert.equal(await http.get(index), null);
+  assert.equal(f2.docs().length, 0);
+});
+
+test("robots.txt: a CDS file that answers 403 is not worked around (one request, same user agent, queued unreachable)", async () => {
+  const f = fakeFetch({ ...robotsTxt, [robotsCds]: () => new Response("Forbidden", { status: 403 }) });
+  const state = freshState([recipe(ROBOTS_ID, [{ kind: "cds", url: robotsCds, format: "xlsx" }])]);
+  await pipeline({ fetch: f.fn, batches: batchApi(), archive: memoryArchive() }).run(state, runOpts([school(ROBOTS_ID)]));
+  const got = f.docs().filter((c) => c.url === robotsCds);
+  assert.equal(got.length, 1, "no retry");
+  assert.equal(got[0].headers["User-Agent"], USER_AGENT, "no other user agent");
+  assert.equal(state.records.get(ROBOTS_ID), undefined, "nothing read");
+  assert.equal(state.reported.entries.length, 0);
+  const q = state.queue.items.find((i) => i.unit_id === ROBOTS_ID);
+  assert.ok(q?.failures.some((x) => x.check === "unreachable" && x.detail === `HTTP 403 at ${robotsCds}`));
+
+  // The client records the refusal for data/reference/blocked-hosts.json, as for any other request.
+  const http = new PoliteHttp({ fetch: f.fn, now: () => 0, sleep: async () => {}, minDelayMs: 0, log: () => {} });
+  const res = await http.get(robotsCds, {}, {}, { cdsDocument: true });
+  assert.equal(res?.status, 403);
+  assert.deepEqual(http.blockedSeen().map((b) => [b.host, b.url]), [[`c${ROBOTS_ID}.edu`, robotsCds]]);
 });

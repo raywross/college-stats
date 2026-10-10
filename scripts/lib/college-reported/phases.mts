@@ -612,7 +612,8 @@ export function createRound3(deps: Round3Deps) {
         }
         let res: Response | null;
         try {
-          res = await http.get(src.url, d.conditional);
+          // A CDS file is fetched even where robots.txt disallows it (owner decision 2026-10-10); class profiles aren't.
+          res = await http.get(src.url, d.conditional, {}, { cdsDocument: src.kind === "cds" });
         } catch (err) {
           return { state: "unreachable", detail: `${src.url}: ${errText(err)}` };
         }

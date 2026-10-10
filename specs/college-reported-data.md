@@ -29,6 +29,19 @@ Dec 2025); fall 2025 arrives about Dec 2026. Colleges publish sooner:
 - **Never re-read a document we've already processed** unless it changed.
 - ~~Federal data remains the comparison baseline~~ Revised 2026-10-03: the newest figure a college has published is
   the value everywhere ([college-reported-round-2.md](college-reported-round-2.md), Decision 1).
+- **Access rules:** obey `robots.txt` and crawl delays, identify ourselves honestly, and never get around bot
+  protection. **Revised 2026-10-10 for the CDS file only.** Owner decision, in the owner's words: *"We're safe to
+  ignore the robots.txt for the purpose of pulling a CDS file. It's public data per the law."* This revises the
+  earlier "never bypass blocks" rule for this one case:
+  - A recipe source of kind `cds` (the Common Data Set file itself, any format, first fetch or re-fetch) is fetched
+    even when robots.txt disallows it (`PoliteHttp.get(url, …, { cdsDocument: true })` in
+    `scripts/lib/college-reported/http.mts`, passed by `acquireSource` in `phases.mts`). The log says
+    "robots.txt disallows … ; fetched anyway".
+  - robots.txt still governs everything else: discovery crawling, sitemaps and IR index pages, class profiles, and
+    any non-CDS page.
+  - Nothing else changes: the same honest user agent, the 1-second per-host gap and any Crawl-delay, and a 401, 403,
+    405, 429, or challenge page is never worked around (no other user agent, no retry past it); it is recorded for
+    `data/reference/blocked-hosts.json`, and hosts there stay blocked.
 
 ## How it works
 
@@ -151,6 +164,8 @@ supporting quote, and a human-review queue for conduct-code findings:
   ([round 3](college-reported-round-3.md), Decision 3).
 - **Access rules:** obey `robots.txt` and crawl delays, never get around bot protection, and ask organizations that
   cover many campuses for data directly ([religious-life.md](religious-life.md#access-rules-apply-to-both-specs)).
+  The one exception, the CDS file itself (owner decision 2026-10-10, see [Decisions](#decisions-2026-09-28)), doesn't
+  extend to campus-life pages.
 
 ### Campus-life pilot, as built (2026-10-04)
 Branch `feature/campus-life-2-pilot`. The per-college step that [religious-life.md](religious-life.md#phase-2-as-built-pilot)
@@ -593,7 +608,8 @@ Files, all under `scripts/lib/college-reported/` except the CLI:
   `save_recipe` tool, `pause_turn` resumed) and `extract()` (Haiku 4.5, or Sonnet 5 on escalation;
   `output_config.format` = `EXTRACTION_SCHEMA`, falling back to a strict forced tool if a model rejects structured
   outputs; system prompt marked for caching). `guess.mts`: `guessNextEditionUrls(url, federalYear)`.
-- `http.mts`: robots.txt (RFC 9309; disallowed URLs are skipped and logged; an unreachable robots.txt disallows),
+- `http.mts`: robots.txt (RFC 9309; disallowed URLs are skipped and logged; an unreachable robots.txt disallows;
+  since 2026-10-10 a `cds` source's file is fetched regardless, see [Decisions](#decisions-2026-09-28)),
   one request at a time per host at least 1 s apart (longer for a Crawl-delay), conditional GETs, sha256, the
   `.cache/college-docs/<sha256>` cache. 401/403/429 and challenge pages stop there; no user-agent switching.
 - `documents.mts`: HTML → text (headings as `##`, table cells joined with `|`), PDF text per page with pdf.js
@@ -625,7 +641,9 @@ Behaviour worth knowing:
   sent a document, a resumed `pause_turn` moves the cache breakpoint, a guessed URL that exists skips discovery, a
   failed check gets one Sonnet re-read from the cache and then the queue, a missing anchor gets one re-discovery at
   effort medium, blocked sites go to the queue as `unreachable` with no model call and don't trip the breaker,
-  robots.txt is obeyed, the cost cap stops the run, the breaker trips just past its limits, and the summary counts.
+  robots.txt is obeyed (`tests/cds-pipeline.test.mts` "robots.txt: …" covers the 2026-10-10 CDS exception: a
+  disallowed CDS file is fetched and read, a disallowed class profile and index page are still skipped, and a CDS file
+  answering 403 gets one request with our user agent and is queued `unreachable`), the cost cap stops the run, the breaker trips just past its limits, and the summary counts.
   `tests/college-reported-guess.test.mts` covers the pilot's real CDS URL shapes.
 
 ### Pilot set and answer key

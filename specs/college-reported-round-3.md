@@ -794,7 +794,9 @@ Found while reading the current code and from the inventory.
 - The lineage guard on `data/schools.json` and `extracted` records.
 - `data/college-reported.json` as C1's published file.
 - `merge-reported`, and the data PR carrying `schools.json`.
-- robots.txt, the 1-second per-host gap, the honest user agent, and never getting around bot protection.
+- robots.txt, the 1-second per-host gap, the honest user agent, and never getting around bot protection. (Revised
+  2026-10-10 by owner decision: robots.txt is no longer consulted for the CDS file itself; see
+  [college-reported-data.md](college-reported-data.md#decisions-2026-09-28).)
 - The schedule: weekly Aug–Nov, monthly Dec–Jul.
 - Exit codes 0/1/2/3.
 - The PR body, release note, and auto-merge rules.
@@ -1676,7 +1678,8 @@ could not:
     workbook measured 201,379 tokens);
   - the instructions explain the tag words and how H.101's year is marked; a text value's digits found on its cited
     line count (the aid year read from a column heading).
-  - Ohio State's robots.txt disallows its CDS PDF: an owner's-list entry (`data/reference/cds-urls.json`).
+  - Ohio State's robots.txt disallows its CDS PDF: an owner's-list entry (`data/reference/cds-urls.json`). (Since
+    2026-10-10 a CDS file is fetched despite robots.txt; see college-reported-data.md "Decisions".)
 - **Fifth run (`20261004-011421-7`): the first run worth publishing.** Grid confusion was gone (UC San Diego 4 failures,
   Michigan State 3, Houston 1). A spot check against the colleges' published figures found one display bug: G.101/G.102
   are the private-college tuition cells but read only "Tuition", and the model filled them at Florida and UC San Diego

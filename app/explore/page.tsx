@@ -5,6 +5,8 @@ import Link from "next/link";
 import { getData, paginate } from "@/lib/data";
 import { parseFilters, parseView, countActiveFilters } from "@/lib/params";
 import { resolveNear } from "@/lib/zip-centroids";
+import { estimatesShown } from "@/lib/cost-curve";
+import { priceLine } from "@/lib/cost-at-income";
 import { METRICS, SIZE_BUCKETS, median, satMid } from "@/lib/metrics";
 import { pctSmart, compact, num } from "@/lib/format";
 import { Pagination } from "@/components/explore/Pagination";
@@ -36,7 +38,11 @@ export default async function ExplorePage({
   const { getAllSchools, getSchools, landscapeEligibleCount, landscapePoints, metricMedian, stickerEligibleCount, stickerPoints, valueEligibleCount, valuePoints } = data;
   // Distance from home: the ZIP in `near` becomes a center here (lib/zip-centroids.ts), so getSchools() filters
   // and sorts by it like any other filter, and the cards, rows, and table show each college's distance.
+  // Cost by income (specs/product/cost-by-income.md): the break-point filter and prices above $110K are estimates, so they
+  // follow the accuracy pilot's gate; the page decides here, on the server, and the dataset honors it.
+  const showEstimates = estimatesShown();
   const filters = resolveNear(parseFilters(params));
+  filters.showEstimates = showEstimates;
   const home = filters.near ?? null;
   const view = parseView(params);
   const schools = getSchools(filters);
@@ -47,7 +53,13 @@ export default async function ExplorePage({
   const chart = typeof params.chart === "string" ? params.chart : "admissions";
   const all = getAllSchools();
   const facets = data.facets();
-  const activeCount = countActiveFilters(params);
+  // A break-point filter in the URL does nothing while estimates are hidden, so it doesn't count (or show a chip) either.
+  const activeCount = countActiveFilters(showEstimates ? params : { ...params, minAidIncome: undefined });
+  // With a family income set, cards and rows show each college's price at it instead of the average cost.
+  const income = filters.income;
+  const priceLines = new Map(
+    income === undefined ? [] : paged.items.map((s) => [s.unit_id, priceLine(data.costCurveFor(s), income, showEstimates)] as const)
+  );
 
   const medAR = median(schools.map((s) => s.admissions.acceptance_rate));
   const medSat = median(schools.map(satMid));
@@ -93,7 +105,7 @@ export default async function ExplorePage({
         <aside className="hidden w-72 shrink-0 lg:block">
           <div className="sticky top-24 max-h-[calc(100dvh-7rem)] overflow-y-auto rounded-3xl border bg-card p-5 no-scrollbar">
             <Suspense>
-              <FilterPanel facets={facets} />
+              <FilterPanel facets={facets} estimates={showEstimates} />
             </Suspense>
           </div>
         </aside>
@@ -103,11 +115,11 @@ export default async function ExplorePage({
             {/* Phones: two rows that always fit: Search · Filters, then Sort · View. */}
             <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 sm:flex sm:flex-wrap">
               <ExploreSearchInput />
-              <MobileFilterSheet facets={facets} activeCount={activeCount} resultCount={schools.length} />
+              <MobileFilterSheet facets={facets} estimates={showEstimates} activeCount={activeCount} resultCount={schools.length} />
               <SortControl />
               <ViewToggle />
             </div>
-            <ActiveFilters />
+            <ActiveFilters showEstimates={showEstimates} />
             <ExploreFitChips />
           </Suspense>
 
@@ -234,13 +246,13 @@ export default async function ExplorePage({
               <ul className="space-y-2 sm:hidden">
                 {paged.items.map((s) => (
                   <li key={s.unit_id}>
-                    <SchoolRow school={s} home={home} />
+                    <SchoolRow school={s} home={home} priceAt={priceLines.get(s.unit_id)} />
                   </li>
                 ))}
               </ul>
               <div className="hidden gap-4 sm:grid sm:grid-cols-2 2xl:grid-cols-3">
                 {paged.items.map((s, i) => (
-                  <SchoolCard key={s.unit_id} school={s} index={i} home={home} />
+                  <SchoolCard key={s.unit_id} school={s} index={i} home={home} priceAt={priceLines.get(s.unit_id)} />
                 ))}
               </div>
             </>
@@ -255,6 +267,9 @@ export default async function ExplorePage({
             fields={[
               ...Object.values(METRICS).map((m) => m.field),
               "academics.majors_top",
+              ...(income !== undefined ? (["cost.net_price_by_income", "derived.cost_estimate"] as const) : []),
+              ...(filters.minAidIncome !== undefined && showEstimates ? (["derived.need_aid_break_income"] as const) : []),
+              ...(filters.merit ? (["derived.merit_class", "derived.merit_proxy"] as const) : []),
               ...(view === "map" ? (["location.lat", "campus.setting"] as const) : home ? (["location.lat"] as const) : []),
             ]}
             className="pt-2"

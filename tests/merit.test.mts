@@ -6,7 +6,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { MERIT_PROXY_MIN, meritFor, meritProxy, offersMerit } from "../lib/merit.ts";
+import { MERIT_PROXY_MIN, meritFor, meritProxy, offersMerit, proxyMisleads } from "../lib/merit.ts";
 import type { AidPolicy } from "../lib/aid-policies.ts";
 import type { H2Headline, School } from "../lib/types.ts";
 
@@ -111,4 +111,31 @@ test("real colleges: Vanderbilt and Georgia report merit in their CDS; the proxy
   const aid = usc.aid!;
   const fedGranted = aid.by_income!.granted!.reduce<number>((a, b) => a + (b ?? 0), 0);
   assert.equal(meritProxy(usc)!.share, (aid.grant_count! - fedGranted) / aid.cohort!);
+});
+
+test("the proxy isn't used where it misleads: full-need colleges (unless need_only is false) and their own need formula", () => {
+  const proxied = school({ aid: proxyAid(100) });
+  const fullNeed = { meets_full_need: true, need_only: null } as AidPolicy;
+  assert.deepEqual(meritFor(proxied, fullNeed), { cls: "unknown", share: null, avg: null, source: null });
+  assert.equal(proxyMisleads(proxied, fullNeed), true);
+  assert.equal(meritFor(proxied, { meets_full_need: true, need_only: false } as AidPolicy).cls, "merit_proxy", "says it gives merit: the proxy stands");
+  assert.equal(meritFor(proxied, { meets_full_need: true, need_only: true } as AidPolicy).cls, "need_only", "says need-only: need-only");
+  assert.equal(meritFor(proxied, { meets_full_need: false, need_only: null } as AidPolicy).cls, "merit_proxy");
+  // Its own formula: the CSS Profile required (derived.aid_methodology institutional, inferred), or stated.
+  const css = { ...proxied, reported: { aid: { methodology: null, forms: { fafsa: true, css_profile: true, own_form: false } } } } as unknown as School;
+  assert.equal(meritFor(css, null).cls, "unknown");
+  const stated = { ...proxied, reported: { aid: { methodology: "institutional", forms: null } } } as unknown as School;
+  assert.equal(meritFor(stated, null).cls, "unknown");
+  const federal = { ...proxied, reported: { aid: { methodology: "federal", forms: null } } } as unknown as School;
+  assert.equal(meritFor(federal, null).cls, "merit_proxy");
+  // The college's own CDS still wins over all of this.
+  assert.equal(meritFor(school({ firstYears: { a: 1_000, n: 50, o: 9_000 }, aid: proxyAid(100) }), fullNeed).cls, "merit_reported");
+});
+
+test("real full-need colleges never show merit_proxy: Princeton, Stanford, Yale, Duke (with their curated policies)", () => {
+  for (const id of ["186131", "243744", "130794", "198419"]) {
+    const s = schools.find((x) => x.unit_id === id)!;
+    assert.notEqual(meritFor(s).cls, "merit_proxy", s.name);
+    assert.equal(meritFor(s, null).cls, "merit_proxy", `${s.name}: without the policy the proxy would have said merit`);
+  }
 });

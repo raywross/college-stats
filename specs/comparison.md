@@ -103,10 +103,21 @@ before the first).
 - **Cost & aid** (`/compare/cost`): average cost, aid generosity, and net price with grants on one shared scale
   ("Lowest"/"Most"/"Lowest"); grants (first-years with grants, average grant, aid from the college); sticker price
   and tuition & fees (in-state/out-of-state) as rows on a second shared scale, plus the public-only "first-years
-  paying out-of-state rates"; `NetPriceCompare` by family income; tuition guarantee and Promise program as a small
-  text table; the colleges' own CDS aid-process rows ([cds-financial-aid.md](data-expansion/cds-financial-aid.md),
+  paying out-of-state rates"; `NetPriceCompare` by family income (an income slider, $0–$400K in $5K steps, default
+  $150K and remembered in this browser only, with each college's price at that income on one shared scale: solid bars
+  where the federal data publish it, hatched bars with the word "estimate" where it is the model's estimate, "Full
+  price" past the break point, a "Merit possible" note above $110K where the college offers merit, and a Bars | Table
+  switch; with estimates hidden, incomes above $110K read "Published data end at $110K"); **Where need-based aid ends,
+  merit, and published promises**, a small text table of three rows built by `costByIncomeRows(showEstimates)`
+  (`lib/compare-cost-rows.ts`; wording in `lib/cost-at-income.ts`): *Need-based aid up to* (the break point's range with
+  "estimate", "Little need-based aid above $110K", or "Published data end at $110K"), *Merit for students without need*
+  ("No merit aid", "18% got merit aid, averaging $22K", or the IPEDS proxy labeled "(proxy)"), and *Published promise*
+  (the college's income lines with "(in-state)" where they apply to residents only, and the award year); tuition
+  guarantee and Promise program as a small text table; the colleges' own CDS aid-process rows ([cds-financial-aid.md](data-expansion/cds-financial-aid.md),
   `compareAidRows`) as another small text table, when any compared college has them — the same strings and rows the
-  full table appends to its Cost & aid group.
+  full table appends to its Cost & aid group, after the same three cost-by-income rows (built at render time because they
+  take the accuracy pilot's gate, `estimatesShown()`; the table adds each cell's own year, so the promise row leaves the
+  award year out there).
 - **Outcomes** (`/compare/outcomes`): median earnings, graduation, and retention (all flagged "Highest"); median
   debt ("Lowest"), federal loan rate, median debt of Pell recipients; credential within 4 and 8 years and enrolled
   elsewhere 8 years on; graduation by group — Pell vs. neither, the Pell gap, and by race & ethnicity (blank, never

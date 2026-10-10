@@ -14,6 +14,7 @@ import type { AidPolicy } from "./aid-policies";
 import { FEDERAL_BANDS, FEDERAL_TOP, INCOME_MAX, priceAt, type CostCurve, type PriceKind } from "./cost-curve.ts";
 import type { MeritInfo } from "./merit";
 import { money, pctSmart } from "./format.ts";
+import { DATA_END_MESSAGE, LITTLE_AID_MESSAGE, dollarsK } from "./cost-at-income.ts";
 
 /** The word that must sit beside every modeled figure. */
 export const ESTIMATE_WORD = "estimate";
@@ -48,7 +49,7 @@ export const roundedIncomeLabel = (x: number): string => incomeLabel(roundIncome
 
 /** "$38K" (rounded to $1K); under $1,000 the exact figure, so a small price never reads as $0. */
 export function priceLabel(x: number): string {
-  return Math.abs(x) < 1_000 ? money(x) : `$${Math.round(x / 1_000)}K`;
+  return Math.abs(x) < 1_000 ? money(x) : dollarsK(x);
 }
 
 /** "$38K–$47K", or "$38K" when both ends round alike. */
@@ -64,7 +65,7 @@ export function priceRangeLabel(lo: number, hi: number): string {
 
 /** The reason a figure is missing, in the college's terms. */
 function missing(income: number, showEstimates: boolean): string {
-  return income > FEDERAL_TOP ? (showEstimates ? "no estimate for this college" : `published data end at ${incomeLabel(FEDERAL_TOP)}`) : "no published figure for this income";
+  return income > FEDERAL_TOP ? (showEstimates ? "no estimate for this college" : DATA_END_MESSAGE) : "no published figure for this income";
 }
 
 /** One price as a phrase: published as is, modeled with "about", a range, and "(estimate)". */
@@ -99,7 +100,7 @@ export function partOfCurve(curve: CostCurve, income: number, showEstimates: boo
   }
   if (p.kind === "estimate") return { text: `Our ${ESTIMATE_WORD}: need-based aid is phasing out here, so the price climbs toward the full price.`, estimate: true };
   if (p.kind === "full_price") return { text: `Past where need-based aid ends (${ESTIMATE_WORD}): families here are expected to pay the full price.`, estimate: true };
-  if (income > FEDERAL_TOP) return { text: `Published data end at ${incomeLabel(FEDERAL_TOP)}; use the college's net price calculator for a number.`, estimate: false };
+  if (income > FEDERAL_TOP) return { text: `${DATA_END_MESSAGE}; use the college's net price calculator for a number.`, estimate: false };
   return { text: "The federal data have no figure for this income band.", estimate: false };
 }
 
@@ -228,7 +229,7 @@ export function costFacts(args: {
       label: "Need-based aid",
       term: "break-point",
       field: "derived.need_aid_status",
-      value: `Little above ${incomeLabel(FEDERAL_TOP)}`,
+      value: LITTLE_AID_MESSAGE,
       sub: "aid thins out for families above that income",
       estimate: false,
     });
@@ -238,7 +239,7 @@ export function costFacts(args: {
       label: "Need-based aid",
       term: "break-point",
       field: "cost.net_price_by_income",
-      value: `Published data end at ${incomeLabel(FEDERAL_TOP)}`,
+      value: DATA_END_MESSAGE,
       sub: "use the college's net price calculator for higher incomes",
       estimate: false,
     });
@@ -319,8 +320,8 @@ export function chartSummary(curve: CostCurve, merit: MeritInfo | null, showEsti
   const need = needAidView(curve, showEstimates);
   const parts = [`Price per year by family income. Published figures up to ${incomeLabel(FEDERAL_TOP)}, from ${priceRangeLabel(Math.min(...curve.published.map((s) => s.price)), Math.max(...curve.published.map((s) => s.price)))}.`];
   if (need.kind === "break_point") parts.push(`Need-based aid ends ${breakIncomeLabel(need.mid)} (${ESTIMATE_WORD}); the full price is ${priceLabel(curve.coa)}.`);
-  else if (need.kind === "little_above_110k") parts.push(`Little need-based aid above ${incomeLabel(FEDERAL_TOP)}.`);
-  else parts.push(`Published data end at ${incomeLabel(FEDERAL_TOP)}.`);
+  else if (need.kind === "little_above_110k") parts.push(`${LITTLE_AID_MESSAGE}.`);
+  else parts.push(`${DATA_END_MESSAGE}.`);
   const floor = meritFloorLabel(curve, merit);
   if (floor) parts.push(`${floor}.`);
   return { text: parts.join(" "), estimate: need.kind === "break_point" };

@@ -9,15 +9,16 @@
  * 3. The IPEDS proxy: first-years with a grant but no federal aid (grant recipients − the federal-aid recipients who
  *    got grants, the "Grants, no federal aid" row of AidBreakdown) ÷ the aid cohort. At least MERIT_PROXY_MIN is
  *    merit_proxy, averaging (grant dollars − federal-aid recipients' grant dollars) ÷ those students; under it,
- *    need-only. At colleges with large need-based aid many aided families file no FAFSA, so the proxy can read
- *    need-based grants as merit there: a published need-only policy (step 2) outranks it.
+ *    need-only. Not used where it misleads (`proxyMisleads`): at full-need colleges (policy meets_full_need, unless
+ *    it says need_only false) and colleges with their own need formula (derived.aid_methodology institutional), many
+ *    aided families file no FAFSA, so their need-based grants read as "no federal aid". Those are unknown.
  * 4. Otherwise unknown.
  * Pure: safe in server and client code and in tests.
  */
 import type { School } from "./types";
 import type { AidPolicy } from "./aid-policies";
 import { aidPolicyFor } from "./aid-policies.ts";
-import { h2Shares } from "./cds/financial-aid.ts";
+import { aidMethodology, h2Shares } from "./cds/financial-aid.ts";
 
 export type MeritClass = "need_only" | "merit_reported" | "merit_proxy" | "unknown";
 export interface MeritInfo {
@@ -48,6 +49,16 @@ export function meritProxy(school: Pick<School, "aid">): { share: number; avg: n
   return { share: others / cohort, avg: avg !== null && avg > 0 ? avg : null };
 }
 
+/**
+ * True where "grants without federal aid" is mostly need-based aid: at a college that says it meets full need (and
+ * doesn't say it gives merit), or that figures need with its own formula (CSS Profile or its own form), many aided
+ * families never file the FAFSA, so their need-based grants count as "no federal aid".
+ */
+export function proxyMisleads(school: Pick<School, "reported">, policy: AidPolicy | null): boolean {
+  if (policy?.meets_full_need === true && policy.need_only !== false) return true;
+  return aidMethodology(school.reported?.aid)?.value === "institutional";
+}
+
 /** The college's merit class (policy looked up when not passed; null for none). */
 export function meritFor(school: School, policy?: AidPolicy | null): MeritInfo {
   const pol = policy === undefined ? aidPolicyFor(school.unit_id) : policy;
@@ -64,6 +75,7 @@ export function meritFor(school: School, policy?: AidPolicy | null): MeritInfo {
   }
 
   if (pol?.need_only === true) return { cls: "need_only", share: null, avg: null, source: "policy" };
+  if (proxyMisleads(school, pol)) return { cls: "unknown", share: null, avg: null, source: null };
 
   const proxy = meritProxy(school);
   if (proxy) {

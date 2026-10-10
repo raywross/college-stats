@@ -94,9 +94,24 @@ price(I) = min(COA, max(P110, r × (I − P)))  for I > $110K   (estimate)
   reproduces that college's published $110K+ band. That band is the average price paid by FAFSA filers above $110K,
   so the model averages `price(I)` over a reference distribution of incomes above $110K among families with a
   college-age child (Census CPS ASEC, stored as `data/reference/income-above-110k.json` with its year) and solves
-  for *r*. The result is bounded to 0.15–0.60; outside that, the college gets no estimate.
+  for *r*. The result is bounded to 0.22–0.60 (raised from 0.15 when built: a gentler rise than 22 cents per dollar is a band lowered by discounts nearly everyone gets, not need aid phasing out); outside that, the college gets no estimate.
 - A free-tuition line adds a second constraint (at that income the price can't exceed COA − tuition), which pins the
   ramp more tightly where a college publishes one.
+
+*As built (2026-10-10).* Two changes after the first build, both in `lib/cost-curve.ts`:
+- **A published free-tuition line L above $110K anchors the curve instead of the calibration.** The $110K+ band
+  includes full payers who took only federal loans and families richer than the national reference, so at the
+  colleges with promises it can't be reconciled with them (calibrating with the promise as a constraint failed at
+  Harvard, MIT, Princeton, Stanford and Penn). The anchored curve: the published steps to $110K; flat at the last
+  step to the no-contribution line N (or $110K); a straight rise to COA − tuition at L; then *r* of each extra dollar
+  to the full price, with *r* a sector default of **0.40** (range 0.30–0.50): what the owner's source document's
+  phase-out table implies at these colleges (contribution from about $0 at $110K to the full cost near $340K), chosen
+  over the federal formula's ~0.30 (its top 47% rate on the roughly two-thirds of a pre-tax dollar left after taxes)
+  because institutional formulas assess high incomes more steeply; 0.30 is the range's low end. Break point `L + tuition / r`. Continuous everywhere. A line for
+  in-state families anchors only a public's in-state curve. The band only flags the promise (`disagrees`) when it sits
+  more than $10K below the anchored curve's average.
+- **A calibrated *r* within 0.01 of a bound gives no estimate** ("The federal data end at $110K"): the bound, not the
+  college's figures, set the ramp (Florida, whose $110K+ band reflects state merit aid, is the typical case).
 
 **The break point** is where the ramp meets the cost: `I* = P + COA / r`, rounded to $10K and shown as a range from
 the calibration's uncertainty (*r* at the bounds that still reproduce the band within its rounding, and *P* across

@@ -35,6 +35,7 @@ import {
   tableRows,
   type Phrase,
 } from "../lib/cost-display.ts";
+import { DATA_END_MESSAGE, LITTLE_AID_MESSAGE } from "../lib/cost-at-income.ts";
 import type { AidPolicy } from "../lib/aid-policies.ts";
 import type { School } from "../lib/types.ts";
 
@@ -89,7 +90,7 @@ test("the readout reads 'At $240K: about $38K–$47K a year (estimate)', and nev
   assert.match(r.text, /^At \$240K: about \$\d+K(–\$\d+K)? a year \(estimate\)$|^At \$240K: the full price, about \$88K a year \(estimate\)$/);
   assert.equal(r.estimate, true);
   assert.equal(readout(curve, 50_000, true).text, "At $50K: $6K a year");
-  assert.equal(readout(curve, 240_000, false).text, "At $240K: published data end at $110K", "estimates hidden: the published part only");
+  assert.equal(readout(curve, 240_000, false).text, "At $240K: Published data end at $110K", "estimates hidden: the published part only");
   assert.ok(!/NaN/.test(readout(curve, 240_000, false).text));
   assert.equal(readout(curve, 240_000, false).estimate, false);
   assert.equal(readout(curve, 400_000, true).estimate, true, "the full price past the break point is still modeled");
@@ -130,12 +131,12 @@ test("the need-based aid fact by status, and with the pilot's gate closed", () =
   const needFact = (c: CostCurve, show: boolean) => costFacts({ school: school("private-nonprofit"), curve: c, merit: null, showEstimates: show })[1];
   assert.match(needFact(curve, true).value, /^about \$\d+K$/);
   const closed = needFact(curve, false);
-  assert.equal(closed.value, "Published data end at $110K");
+  assert.equal(closed.value, DATA_END_MESSAGE, "the same sentence Compare uses");
   assert.equal(closed.estimate, false);
   assert.ok(!/\$\d+K/.test(closed.value.replace("$110K", "")), "no break point leaks through the gate");
   const little = costCurve({ ...PRIVATE, bands: [2_000, 3_000, 6_000, 14_000, 80_000] })!;
   assert.equal(little.status, "little_above_110k");
-  assert.equal(needFact(little, true).value, "Little above $110K");
+  assert.equal(needFact(little, true).value, LITTLE_AID_MESSAGE, "the same sentence Compare uses");
   assert.equal(needFact(little, true).estimate, false);
   assert.equal(needFact(little, true).field, "derived.need_aid_status");
   const ends = costCurve({ ...PRIVATE, bands: [2_000, 3_000, 6_000, 14_000, null] })!;

@@ -104,9 +104,10 @@ price(I) = min(COA, max(P110, r × (I − P)))  for I > $110K   (estimate)
   colleges with promises it can't be reconciled with them (calibrating with the promise as a constraint failed at
   Harvard, MIT, Princeton, Stanford and Penn). The anchored curve: the published steps to $110K; flat at the last
   step to the no-contribution line N (or $110K); a straight rise to COA − tuition at L; then *r* of each extra dollar
-  to the full price, with *r* a sector default of **0.30** (range 0.22–0.40): the federal formula's top 47% assessment
-  rate on the roughly two-thirds of an extra pre-tax dollar left after taxes, with the source document's two readings
-  (22 and about 40 cents per dollar) as the range. Break point `L + tuition / r`. Continuous everywhere. A line for
+  to the full price, with *r* a sector default of **0.40** (range 0.30–0.50): what the owner's source document's
+  phase-out table implies at these colleges (contribution from about $0 at $110K to the full cost near $340K), chosen
+  over the federal formula's ~0.30 (its top 47% rate on the roughly two-thirds of a pre-tax dollar left after taxes)
+  because institutional formulas assess high incomes more steeply; 0.30 is the range's low end. Break point `L + tuition / r`. Continuous everywhere. A line for
   in-state families anchors only a public's in-state curve. The band only flags the promise (`disagrees`) when it sits
   more than $10K below the anchored curve's average.
 - **A calibrated *r* within 0.01 of a bound gives no estimate** ("The federal data end at $110K"): the bound, not the

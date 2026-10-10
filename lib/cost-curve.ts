@@ -68,16 +68,16 @@ export const R_MAX = 0.6;
 export const BOUND_MARGIN = 0.01;
 /**
  * Above a published free-tuition line, the share of each extra dollar of income a family is expected to pay: a
- * sector default, not calibrated per college. 0.30 is the federal formula's top assessment rate on parents'
- * available income (47%, net-price-estimator.md Research) applied to the roughly two-thirds of an extra pre-tax
- * dollar left after federal, state, and payroll taxes (0.47 × ~0.65 ≈ 0.31), rounded down for institutional formulas
- * that protect more. The range spans the owner's source document's two readings (cost-by-income.md "The source
- * document"): its rule of thumb's low end, 22 cents per dollar, and the roughly 40 cents its own table implies. The
- * accuracy pilot is what tunes it.
+ * sector default, not calibrated per college. 0.40 is what the owner's source document's phase-out table implies for
+ * the colleges these promises come from (cost-by-income.md "The source document": contribution rising from about $0 at
+ * $110K to the full cost near $340K), chosen by the integrator (2026-10-10) over the federal formula's ~0.30 (its top
+ * 47% rate on the roughly two-thirds of a pre-tax dollar left after taxes) because institutional formulas at these
+ * colleges assess high incomes more steeply than the federal one. The range runs from that federal reading (0.30) to
+ * 0.50. The accuracy pilot is what tunes it.
  */
-export const PROMISE_R = 0.3;
-export const PROMISE_R_LO = 0.22;
-export const PROMISE_R_HI = 0.4;
+export const PROMISE_R = 0.4;
+export const PROMISE_R_LO = 0.3;
+export const PROMISE_R_HI = 0.5;
 /**
  * A promise-anchored curve whose average over the reference incomes is more than this above the published $110K+
  * band gets its promise flagged (`disagrees`) for the pilot. The flag doesn't change the curve.

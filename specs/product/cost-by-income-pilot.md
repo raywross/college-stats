@@ -47,8 +47,8 @@ checked before the pilot runs (`estimatesShown()`).
 ## What to watch for
 - **Promise-anchored colleges.** The script scores the model as the site shows it, with each college's curated policy
   (`data/aid-policies.json`). Where a college publishes a free-tuition line above $110K, the curve above that line
-  uses the sector default r (`PROMISE_R`, 0.30; range 0.22–0.40), not the college's own figures: the pilot is what
-  tells whether 0.30 is right, so compare those colleges' $250K–$400K prices closely and tune `PROMISE_R` if they
+  uses the sector default r (`PROMISE_R`, 0.40; range 0.30–0.50), not the college's own figures: the pilot is what
+  tells whether 0.40 is right, so compare those colleges' $250K–$400K prices closely and tune `PROMISE_R` if they
   miss together. A promise whose curve sits far above the published $110K+ figure is flagged
   (`promises[].disagrees`); note those colleges in the PR.
 - **Publics with state merit programs** (for example, scholarships for in-state students at any income) have low

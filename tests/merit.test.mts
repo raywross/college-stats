@@ -136,6 +136,9 @@ test("real full-need colleges never show merit_proxy: Princeton, Stanford, Yale,
   for (const id of ["186131", "243744", "130794", "198419"]) {
     const s = schools.find((x) => x.unit_id === id)!;
     assert.notEqual(meritFor(s).cls, "merit_proxy", s.name);
-    assert.equal(meritFor(s, null).cls, "merit_proxy", `${s.name}: without the policy the proxy would have said merit`);
+    // Without the policy the proxy would say merit, unless the college's own CDS already marks its methodology as
+    // institutional (Yale's record has had one since the 2026-10-10 college-reported run), which also skips it.
+    const bare = meritFor(s, null).cls;
+    assert.ok(bare === "merit_proxy" || (bare === "unknown" && proxyMisleads(s, null)), `${s.name}: ${bare}`);
   }
 });

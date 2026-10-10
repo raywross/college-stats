@@ -1,6 +1,7 @@
 import type { CalendarChild } from "@/components/planner/tabs/types";
 import FirstTimeSetup from "@/components/planner/FirstTimeSetup";
 import { GradYearPrompt } from "@/components/planner/GradYearPrompt";
+import { ImportLocalPlan } from "@/components/planner/ImportLocalPlan";
 import { NextUp } from "@/components/planner/NextUp";
 import { PlanHeaderCard } from "@/components/planner/PlanHeaderCard";
 import { PlanTabs } from "@/components/planner/PlanTabs";
@@ -80,6 +81,7 @@ export function PlanFrame({
         <NextUp view={view} today={today} cycleStartYear={ctx.cycle.startYear} />
       </div>
       <StuckSignals signals={signals} />
+      {relation === "self" && <ImportLocalPlan studentId={studentId} canEdit={ctx.viewer.canEdit} />}
       {relation === "self" && <WhatParentsSee summary={summary} stuckSignals={signals.map((s) => s.text)} tickedThisWeek={tickedThisWeek} />}
       {firstTimeNeeded(view) ? (
         <FirstTimeSetup ctx={ctx} view={view} />

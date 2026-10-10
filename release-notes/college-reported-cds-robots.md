@@ -1,6 +1,6 @@
 ---
 title: "More colleges' own Common Data Sets can be read"
-pr: 99999
+pr: 115
 date: 2026-10-10
 kind: improvement
 summary: Our reader now opens a college's published Common Data Set file even when the college's site asks automated readers to stay away, so more colleges can show figures from their own report.

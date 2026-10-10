@@ -56,7 +56,8 @@ export interface StudentProfileBasics {
 export type GpaScale = "4.0" | "5.0" | "100";
 export const GPA_SCALES: { value: GpaScale; label: string }[] = [
   { value: "4.0", label: "4.0 scale" },
-  { value: "5.0", label: "5.0 scale" },
+  // Stored as "5.0" (unchanged); a weighted GPA, read as a range by the plan (planGpaRange; planner/redesign/gpa.md).
+  { value: "5.0", label: "Weighted (honors/AP count extra)" },
   { value: "100", label: "100-point scale" },
 ];
 
@@ -233,8 +234,12 @@ const SCHOOL_TYPE_VALUES: SchoolType[] = ["public", "private-nonprofit", "privat
 const EARLY_ROUND_VALUES: EarlyRoundInterest[] = ["ed", "ea", "none"];
 const GPA_SCALE_VALUES: GpaScale[] = ["4.0", "5.0", "100"];
 
-function gpaMaxFor(scale: GpaScale): number {
-  return scale === "4.0" ? 4.0 : scale === "5.0" ? 5.0 : 100;
+/**
+ * The highest GPA kept on each scale. A 4.0-scale GPA may run to 5.0: above 4.0 it is weighted by definition, and the
+ * plan reads it as a range (planGpaRange; specs/planner/redesign/gpa.md "The design" 3). unweightedGpa4 still caps it.
+ */
+export function gpaMaxFor(scale: GpaScale): number {
+  return scale === "100" ? 100 : 5.0;
 }
 
 /**
@@ -385,6 +390,41 @@ export function planTest(profile: Pick<StudentProfileData, "tests"> | null): { k
 export function planStudent(profile: Pick<StudentProfileData, "tests" | "academics"> | null): StandingStudent {
   if (!profile) return { gpa: null, test: null };
   return { gpa: unweightedGpa4(profile.academics.gpa, profile.academics.gpaScale), test: planTest(profile) };
+}
+
+/** A GPA is weighted when it's on the weighted scale, or on the 4.0 scale but above 4.0. */
+function isWeightedGpa(a: Pick<StudentProfileAcademics, "gpa" | "gpaScale">): boolean {
+  return a.gpa !== null && (a.gpaScale === "5.0" || (a.gpaScale === "4.0" && a.gpa > 4));
+}
+
+/**
+ * The unweighted range the plan reads the student's GPA as (specs/planner/redesign/gpa.md "The design" 3). An
+ * unweighted 4.0-scale GPA is itself; a weighted one (the weighted scale, or above 4.0 on the 4.0 scale) lies in
+ * [w − 1, min(4, w)], since weighting adds at most a point per class; a 100-point GPA is the band table's value.
+ * Null when no GPA is on file. Only the plan reads this; other tools keep unweightedGpa4.
+ */
+export function planGpaRange(profile: Pick<StudentProfileData, "academics"> | null): [number, number] | null {
+  const a = profile?.academics;
+  if (!a || a.gpa === null) return null;
+  if (isWeightedGpa(a)) return [Math.max(0, a.gpa - 1), Math.min(4, a.gpa)];
+  if (a.gpaScale === "100") {
+    const g = gpaFrom100(a.gpa);
+    return [g, g];
+  }
+  return [a.gpa, a.gpa];
+}
+
+/**
+ * How the plan's reasons show the student's GPA: "3.82"; "about 3.4–4.0 unweighted (from a weighted 4.4)"; "about 3.7
+ * unweighted (from 93/100)". Null when no GPA is on file.
+ */
+export function planGpaLabel(profile: Pick<StudentProfileData, "academics"> | null): string | null {
+  const a = profile?.academics;
+  const range = planGpaRange(profile ?? null);
+  if (!a || a.gpa === null || !range) return null;
+  if (isWeightedGpa(a)) return `about ${range[0].toFixed(1)}–${range[1].toFixed(1)} unweighted (from a weighted ${trimTrailingZero(a.gpa)})`;
+  if (a.gpaScale === "100") return `about ${range[0].toFixed(1)} unweighted (from ${trimTrailingZero(a.gpa)}/100)`;
+  return a.gpa.toFixed(2);
 }
 
 /* ------------------------------------------------------------------ */

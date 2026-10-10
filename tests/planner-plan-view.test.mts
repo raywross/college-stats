@@ -378,7 +378,8 @@ test("season: no status chip before; within 30 days of the first deadline, statu
 
 test("the view's student comes from the profile through planStudent (one test, GPA on 4.0)", () => {
   const v = planView({ items: [], schools: {}, profile: numbers({ sat: 1390, act: 30, gpa: 3.82, focus: "act" }), today: TODAY });
-  assert.deepEqual(v.student, { gpa: 3.8, test: { kind: "act", score: 30 } });
+  // gpa.md "The design" 3: the GPA also travels as the range the plan compares and the label its sentences show.
+  assert.deepEqual(v.student, { gpa: 3.8, gpaRange: [3.82, 3.82], gpaLabel: "3.82", test: { kind: "act", score: 30 } });
   const rounds: ListRound[] = v.rows.map((r) => r.round);
   assert.deepEqual(rounds, []);
 });

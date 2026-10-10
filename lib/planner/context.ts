@@ -21,6 +21,8 @@ import type { MergeResult } from "./tasks";
 import type { GeneratorInput, PlanContext, PlanSchool, PlanTask } from "./types";
 import type { ListCategory, ListRound } from "@/lib/list-rules";
 import type { StandingSchool } from "./standing";
+import { collegeGpa, gpaCites, type GpaModel } from "./gpa-model";
+import { gpaModel as fittedGpaModel } from "./gpa-model-server";
 import { autoWriteBatches } from "./plan-writes";
 import { PLAN_TASK_COLUMNS, type PlanData } from "./read-plan";
 
@@ -95,7 +97,14 @@ export const PLAN_CITE_PATHS = [
   // U2 (list-building.md "Suggested category"): the SAT total shown, resolved from the CDS when it reports one else
   // the sum of sections (lib/score-bands.ts). Not a real dot path on School, so planSchoolFor resolves it by hand.
   "derived.sat_total",
+  // GPA (specs/planner/redesign/gpa.md): the band mean or the estimate behind the GPA sentence, cited only when that is
+  // the college's GPA source. Computed, so planSchoolFor resolves them by hand.
+  "derived.gpa_band_mean",
+  "derived.gpa_estimate",
 ] as const satisfies readonly FieldPath[];
+
+/** Cited by hand in planSchoolFor: not real dot paths on School. */
+const HAND_CITED: ReadonlySet<string> = new Set(["derived.sat_total", "derived.gpa_band_mean", "derived.gpa_estimate"]);
 
 function valueAt(obj: unknown, path: string): unknown {
   let cur: unknown = obj;
@@ -114,13 +123,13 @@ function valueAt(obj: unknown, path: string): unknown {
 export function planSchoolFor(
   school: School,
   citeField: (path: FieldPath, school?: School) => unknown,
-  opts: { studentCycleStart: number; home: HomeLocation | null },
+  opts: { studentCycleStart: number; home: HomeLocation | null; gpaModel?: GpaModel | null },
 ): PlanSchool {
   const logistics = school.reported?.admissions_logistics ?? null;
   const dataStart = cycleStartFromEntering(logistics?.cycle);
   const cites: Record<string, unknown> = {};
   for (const path of PLAN_CITE_PATHS) {
-    if (path === "derived.sat_total") continue; // not a real dot path; resolved below
+    if (HAND_CITED.has(path)) continue; // not real dot paths; resolved below
     const v = valueAt(school, path);
     if (v !== undefined && v !== null) cites[path] = citeField(path, school);
   }
@@ -129,11 +138,16 @@ export function planSchoolFor(
   if (satRange) cites["derived.sat_total"] = citeField("derived.sat_total", school);
   const actRange = school.admissions.act_composite_25_75 ?? null;
   const gpaAverage = standingGpaAverage(school);
+  // The college's GPA, best source first (gpa.md "The design" 1), cited by the field its sentence names.
+  const gpaModel = opts.gpaModel ?? null;
+  const gpa = collegeGpa(school, gpaModel);
+  Object.assign(cites, gpaCites(school, gpa, gpaModel, citeField as (path: FieldPath, school?: School) => object));
   const standing: StandingSchool = {
     admitRate: school.admissions?.acceptance_rate ?? null,
     sat: satRange,
     act: actRange,
     gpaAverage,
+    gpa,
     testPolicy: school.admissions?.test_policy ?? null,
   };
   return {
@@ -179,10 +193,11 @@ export function standingGpaAverage(school: Pick<School, "reported">): number | n
 /** PlanSchool for every college on the list, by unit id (a college no longer in the dataset is left out). */
 export async function planSchools(unitIds: string[], studentCycleStart: number, home: HomeLocation | null): Promise<Record<string, PlanSchool>> {
   const { getSchoolById, citeField } = await getData();
+  const gpaModel = await fittedGpaModel();
   const out: Record<string, PlanSchool> = {};
   for (const id of unitIds) {
     const school = getSchoolById(id);
-    if (school) out[id] = planSchoolFor(school, citeField, { studentCycleStart, home });
+    if (school) out[id] = planSchoolFor(school, citeField, { studentCycleStart, home, gpaModel });
   }
   return out;
 }

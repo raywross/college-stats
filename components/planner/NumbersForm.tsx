@@ -14,7 +14,8 @@ import { setNumbers } from "@/lib/planner/store-plan";
 import { TEST_LABEL, TEST_MAX, TEST_MIN, TEST_STEP } from "@/lib/planner/standing";
 import { emptyProfile, GPA_SCALES, type GpaScale, type StudentProfileData, type TestFocus } from "@/lib/student-profile";
 
-const GPA_MAX: Record<GpaScale, number> = { "4.0": 4, "5.0": 5, "100": 100 };
+/** The input's max: a 4.0-scale GPA above 4.0 is weighted, and the plan reads it as a range (gpa.md "The design" 3). */
+const GPA_MAX: Record<GpaScale, number> = { "4.0": 5, "5.0": 5, "100": 100 };
 
 /** The numbers form's own state, shared with FirstTimeSetup's first step. */
 export function useNumbersDraft(profile: StudentProfileData | null) {
@@ -49,7 +50,7 @@ export function NumbersFields({ draft }: { draft: NumbersDraft }) {
     <div className="space-y-4">
       <div className="space-y-1.5">
         <label htmlFor="plan-gpa" className="text-sm font-semibold">
-          <Term term="unweighted-gpa">Unweighted GPA</Term>
+          {gpaScale === "5.0" ? <Term term="weighted-gpa">Weighted GPA</Term> : <Term term="unweighted-gpa">Unweighted GPA</Term>}
         </label>
         <div className="flex items-center gap-3">
           <Input id="plan-gpa" type="number" step="0.01" min={0} max={GPA_MAX[gpaScale]} value={gpa} onChange={(e) => setGpa(e.target.value)} className="w-24" />
@@ -67,6 +68,9 @@ export function NumbersFields({ draft }: { draft: NumbersDraft }) {
             options={GPA_SCALES.map((s) => ({ value: s.value, label: s.label }))}
           />
         )}
+        <p className="text-xs text-muted-foreground">
+          Use the unweighted GPA from your transcript if you can. A <Term term="weighted-gpa">weighted GPA</Term> can only be placed roughly.
+        </p>
       </div>
 
       <div className="space-y-1.5">

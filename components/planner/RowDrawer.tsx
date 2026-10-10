@@ -3,7 +3,7 @@
 import { useEffect, useState, useTransition } from "react";
 import Link from "next/link";
 import { Lock, RotateCcw } from "lucide-react";
-import { MetricLabel } from "@/components/ui/info-tip";
+import { InfoTip, MetricLabel } from "@/components/ui/info-tip";
 import ActionsRowControls from "@/components/planner/row/actions";
 import ApplyRowControls from "@/components/planner/row/apply";
 import type { RowControlProps } from "@/components/planner/row/props";
@@ -37,6 +37,7 @@ export function RowDrawer({
   const { item, school, standing, group, groupAuto, roundWhy, roundAuto, decision } = row;
   const scoreLine = scoreDrawerLine(row);
   const cite = (field: string | null) => (school && field ? (school.cites[field] as AnyCited | undefined) : undefined);
+  const gpaCited = cite(standing?.gpaNote?.cite ?? null);
 
   const controlProps: RowControlProps | null = school ? { item, school, canEdit: ctx.viewer.canEdit, today: ctx.today, viewerIsGuardian: ctx.viewer.isGuardian, profile: ctx.profile } : null;
   const interest = school?.profile?.factors?.interest ?? null;
@@ -49,7 +50,9 @@ export function RowDrawer({
       <div className="space-y-2">
         <p>
           <span className="font-semibold">{group === "unsorted" ? "No group yet" : `${group[0].toUpperCase()}${group.slice(1)}`}:</span>{" "}
-          {groupAuto || group === "unsorted" ? standing?.reasons.join(" ") || "Add a GPA or a score to sort this one." : "You picked this group."}{" "}
+          {groupAuto || group === "unsorted" ? standing?.reasons.join(" ") || "Add a GPA or a score to sort this one." : "You picked this group."}
+          {/* The GPA sentence ends the reasons; its ⓘ cites the figure it used (gpa.md "Saying what was used"). */}
+          {(groupAuto || group === "unsorted") && gpaCited && <InfoTip term={standing!.gpaNote!.cite === "derived.gpa_estimate" ? "gpa-estimate" : "high-school-gpa"} cited={gpaCited} className="ml-1 align-middle" />}{" "}
           {!groupAuto && group !== "unsorted" && (
             <button type="button" onClick={onUseGroupSuggestion} disabled={!ctx.viewer.canEdit} className="inline-flex items-center gap-1 font-semibold text-primary hover:underline disabled:opacity-60">
               <RotateCcw className="size-3" aria-hidden /> Use the suggestion

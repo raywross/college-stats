@@ -22,12 +22,15 @@ import {
   gpaMiddle,
   gpaModelFormula,
   gpaPercentile,
+  passesGuard,
   predictGpa,
   satMidpoint,
   satQuartiles,
   STUDENT_RANGE_FOR_CLOSE,
+  testSubmitShare,
   trainingRow,
   trainingRows,
+  type GpaCoef,
   type GpaCurve,
   type GpaModel,
   type GpaRow,
@@ -38,24 +41,34 @@ import type { GpaBands, School } from "../lib/types.ts";
 
 /* Fixtures */
 
-/** A deterministic spread of colleges: SAT 1000–1500, admit rate 10%–95%. */
-function synthetic(n: number, coef: [number, number, number], noise: (i: number) => number): GpaRow[] {
+/** A deterministic spread of colleges: SAT 1000–1500, admit rate 10%–95%, test-submission share 20%–90%. */
+function synthetic(n: number, coef: GpaCoef, noise: (i: number) => number): GpaRow[] {
   return Array.from({ length: n }, (_, i) => {
     const sat = 1000 + ((i * 137) % 500);
     const rate = 0.1 + ((i * 61) % 85) / 100;
-    return { sat, rate, gpa: coef[0] + coef[1] * (sat / 100) + coef[2] * rate + noise(i) };
+    const submit = 0.2 + ((i * 29) % 71) / 100;
+    return { sat, rate, submit, gpa: coef[0] + coef[1] * (sat / 100) + coef[2] * rate + coef[3] * submit + noise(i) };
   });
 }
 
-const MODEL: GpaModel = { coef: [3.0, 0.067, -0.35], n: 36, meanError: 0.1, p90Error: 0.18 };
+const MODEL: GpaModel = { coef: [3.0, 0.067, -0.35, 0.1], n: 36, meanError: 0.1, p90Error: 0.18, flatMeanError: 0.17 };
+/** The test-submission share the fixture colleges report (college() below). */
+const SUBMIT = 0.6;
 
 type GpaBlock = NonNullable<NonNullable<NonNullable<School["reported"]>["admission_profile"]>["gpa"]>;
 const bands9 = (...shares: number[]) => shares as GpaBands;
 /** A college with optional SAT sections, ACT, admit rate, and C11/C12 GPA. */
-function college(o: { sat?: [number, number]; act?: [number, number]; rate?: number | null; gpa?: Partial<GpaBlock> } = {}): School {
+function college(o: { sat?: [number, number]; act?: [number, number]; rate?: number | null; submit?: number | null; gpa?: Partial<GpaBlock> } = {}): School {
   const half = o.sat ? ([o.sat[0] / 2, o.sat[1] / 2] as [number, number]) : null;
   return {
-    admissions: { sat_reading_25_75: half, sat_math_25_75: half, act_composite_25_75: o.act ?? null, acceptance_rate: o.rate === undefined ? 0.5 : o.rate },
+    admissions: {
+      sat_reading_25_75: half,
+      sat_math_25_75: half,
+      act_composite_25_75: o.act ?? null,
+      acceptance_rate: o.rate === undefined ? 0.5 : o.rate,
+      test_submission_rate_sat: o.submit === undefined ? SUBMIT : o.submit,
+      test_submission_rate_act: null,
+    },
     reported: o.gpa
       ? { admission_profile: { gpa: { average: null, scale: "not_stated", submitted_share: null, bands: { all: null, with_test: null, without_test: null }, ...o.gpa } } }
       : undefined,
@@ -66,37 +79,58 @@ function college(o: { sat?: [number, number]; act?: [number, number]; rate?: num
 /* The model */
 
 test("the fit recovers the coefficients of synthetic data", () => {
-  const rows = synthetic(40, [3.0, 0.067, -0.35], (i) => ((i % 5) - 2) * 0.01);
+  const rows = synthetic(40, [3.0, 0.067, -0.35, 0.2], (i) => ((i % 5) - 2) * 0.01);
   const m = fitGpaModel(rows);
   assert.ok(m);
   assert.ok(Math.abs(m.coef[0] - 3.0) < 0.05, `intercept ${m.coef[0]}`);
   assert.ok(Math.abs(m.coef[1] - 0.067) < 0.005, `SAT ${m.coef[1]}`);
   assert.ok(Math.abs(m.coef[2] + 0.35) < 0.03, `admit rate ${m.coef[2]}`);
+  assert.ok(Math.abs(m.coef[3] - 0.2) < 0.05, `submission share ${m.coef[3]}`);
   assert.equal(m.n, 40);
   assert.ok(m.meanError < 0.03 && m.p90Error < 0.04);
+  assert.ok(m.flatMeanError > 0.1, "the flat guess misses by the spread of the colleges");
   // Exact data: no miss at all.
-  const exact = fitGpaModel(synthetic(30, [2.5, 0.08, -0.2], () => 0))!;
+  const exact = fitGpaModel(synthetic(30, [2.5, 0.08, -0.2, 0.1], () => 0))!;
   assert.ok(exact.p90Error < 1e-9);
-  assert.ok(Math.abs(predictGpa(exact, 1300, 0.4) - (2.5 + 0.08 * 13 - 0.2 * 0.4)) < 1e-9);
+  assert.ok(Math.abs(predictGpa(exact, 1300, 0.4, 0.5) - (2.5 + 0.08 * 13 - 0.2 * 0.4 + 0.1 * 0.5)) < 1e-9);
 });
 
 test("predictions are clamped to 2.0–4.0", () => {
-  assert.equal(predictGpa(MODEL, 2400, 0), 4);
-  assert.equal(predictGpa(MODEL, 0, 5), 2);
+  assert.equal(predictGpa(MODEL, 2400, 0, 1), 4);
+  assert.equal(predictGpa(MODEL, 0, 5, 0), 2);
 });
 
-test("the guard: fewer than 25 rows, or a 90th-percentile miss above 0.25, gives no model", () => {
-  assert.deepEqual(GPA_MODEL_GUARD, { minRows: 25, maxP90: 0.25 });
-  const clean = (n: number) => synthetic(n, [3.0, 0.067, -0.35], (i) => ((i % 3) - 1) * 0.01);
+test("testSubmitShare: the larger of the SAT and ACT shares; null when neither is reported", () => {
+  const s = (sat: number | null, act: number | null) => ({ admissions: { test_submission_rate_sat: sat, test_submission_rate_act: act } }) as unknown as School;
+  assert.equal(testSubmitShare(s(0.4, 0.6)), 0.6);
+  assert.equal(testSubmitShare(s(0.7, null)), 0.7);
+  assert.equal(testSubmitShare(s(null, 0.2)), 0.2);
+  assert.equal(testSubmitShare(s(null, null)), null);
+  // A college without a share gets no estimate and trains nothing.
+  assert.equal(collegeGpa(college({ sat: [1200, 1400], submit: null }), MODEL).kind, "none");
+  assert.equal(trainingRow(college({ sat: [1200, 1400], submit: null, gpa: { average: 3.6, scale: "unweighted" } })), null);
+});
+
+/** A guard that refuses nothing: breaking each rule on purpose shows it is the guard, not the fit, that refuses. */
+const OPEN = { minRows: 0, maxP90: Infinity, minGain: -Infinity };
+
+test("the guard: fewer than 25 rows, a 90th-percentile miss above 0.25, or no gain over a flat guess gives no model", () => {
+  assert.deepEqual(GPA_MODEL_GUARD, { minRows: 25, maxP90: 0.25, minGain: 0.1 });
+  const clean = (n: number) => synthetic(n, [3.0, 0.067, -0.35, 0.2], (i) => ((i % 3) - 1) * 0.01);
   assert.equal(fitGpaModel(clean(24)), null, "24 rows");
   assert.ok(fitGpaModel(clean(25)), "25 rows");
-  const noisy = synthetic(40, [3.0, 0.067, -0.35], (i) => (i % 2 ? 0.6 : -0.6) * ((i % 7) / 6));
+  const noisy = synthetic(40, [3.0, 0.067, -0.35, 0.2], (i) => (i % 2 ? 0.6 : -0.6) * ((i % 7) / 6));
   assert.equal(fitGpaModel(noisy), null, "a large miss");
-  // Breaking the guard on purpose lets both through, so it is the guard (not the fit) that refuses them.
-  const open = { minRows: 0, maxP90: Infinity };
-  assert.ok(fitGpaModel(clean(24), open));
-  const loose = fitGpaModel(noisy, open);
+  // GPAs that don't follow the predictors at all: small misses, but no better than guessing the average.
+  const flat = synthetic(40, [3.6, 0, 0, 0], (i) => (((i * 7) % 11) - 5) * 0.02);
+  assert.equal(fitGpaModel(flat), null, "no gain over a flat guess");
+  assert.ok(fitGpaModel(clean(24), OPEN));
+  const loose = fitGpaModel(noisy, OPEN);
   assert.ok(loose && loose.p90Error > GPA_MODEL_GUARD.maxP90);
+  const useless = fitGpaModel(flat, OPEN);
+  assert.ok(useless && useless.p90Error <= GPA_MODEL_GUARD.maxP90, "its misses are under the cap");
+  assert.ok(useless.meanError > (1 - GPA_MODEL_GUARD.minGain) * useless.flatMeanError, "but it isn't better than the flat guess");
+  assert.equal(passesGuard(useless, GPA_MODEL_GUARD), false);
 });
 
 test("the real dataset: the model passes its guard and never trains on weighted reporters", () => {
@@ -105,7 +139,11 @@ test("the real dataset: the model passes its guard and never trains on weighted 
   const m = fitGpaModel(rows);
   assert.ok(m, "the guard refused the real fit");
   assert.ok(m.n >= 25, `n = ${m.n}`);
-  assert.ok(m.p90Error <= 0.25, `p90 = ${m.p90Error}`);
+  assert.ok(m.p90Error <= GPA_MODEL_GUARD.maxP90, `p90 = ${m.p90Error}`);
+  assert.ok(m.meanError <= 0.9 * m.flatMeanError, `mean ${m.meanError} vs flat ${m.flatMeanError}`);
+  // A broken model (the GPAs shuffled across colleges) is refused on the same data.
+  const shuffled = rows.map((r, i) => ({ ...r, gpa: rows[(i * 37 + 11) % rows.length].gpa }));
+  assert.equal(fitGpaModel(shuffled), null, "shuffled GPAs pass the guard");
   const weighted = schools.filter((s) => {
     const g = s.reported?.admission_profile?.gpa;
     return g && (g.scale === "weighted" || (g.average ?? 0) > 4);
@@ -141,7 +179,7 @@ test("satMidpoint: the SAT total's middle, else the ACT's through the concordanc
 test("collegeGpa: reported, then bands, then the bounded estimate, then the estimate, then none", () => {
   const bands = { all: bands9(0, 0.5, 0.5, 0, 0, 0, 0, 0, 0), with_test: null, without_test: null };
   const scores = { sat: [1200, 1400] as [number, number], rate: 0.5 };
-  const est = predictGpa(MODEL, 1300, 0.5);
+  const est = predictGpa(MODEL, 1300, 0.5, SUBMIT);
 
   // 1. Unweighted, or not stated and at most 4.0: the value as a point.
   const { middle, ...reported } = collegeGpa(college({ ...scores, gpa: { average: 3.88, scale: "unweighted", bands } }), MODEL);
@@ -187,7 +225,7 @@ test("gpaCites: the field each source's sentence cites; an estimate carries the 
   assert.deepEqual(Object.keys(gpaCites(c, collegeGpa(c, MODEL), MODEL, cite)), ["derived.gpa_estimate"]);
   const formula = (gpaCites(c, collegeGpa(c, MODEL), MODEL, cite)["derived.gpa_estimate"] as { formula: string }).formula;
   assert.equal(formula, gpaModelFormula(MODEL));
-  assert.match(formula, /3\.00 \+ 0\.067 × \(SAT midpoint ÷ 100\) − 0\.35 × admit rate/);
+  assert.match(formula, /3\.00 \+ 0\.067 × \(SAT midpoint ÷ 100\) − 0\.35 × admit rate \+ 0\.10 × share sending scores/);
   assert.match(formula, /36 colleges/);
   assert.match(formula, /0\.10 .*0\.18/);
   const r = college({ gpa: { average: 3.7 } });
@@ -365,8 +403,8 @@ test("a weighted student's wide range is never 'close', only clearly above or be
 /* The GPA curve: a middle 50% (gpa.md "The design" 7) */
 
 const CURVE: GpaCurve = {
-  p25: { coef: [2.73, 0.087, -0.51], n: 30, meanError: 0.13, p90Error: 0.28 },
-  p75: { coef: [3.7, 0.02, -0.05], n: 30, meanError: 0.09, p90Error: 0.18 },
+  p25: { coef: [2.73, 0.087, -0.51, 0.2], n: 30, meanError: 0.13, p90Error: 0.28, flatMeanError: 0.25 },
+  p75: { coef: [3.7, 0.02, -0.05, 0.05], n: 30, meanError: 0.09, p90Error: 0.18, flatMeanError: 0.1 },
 };
 const near = (a: number | null | undefined, b: number, what = "") => assert.ok(a != null && Math.abs(a - b) < 1e-9, `${what} ${a} ≠ ${b}`);
 
@@ -412,8 +450,8 @@ test("the college's middle 50%: exact from the bands, else estimated, never for 
 
   // Estimated: each model's prediction ± its 90th-percentile miss, from the SAT 25th and 75th and the admit rate.
   const e = collegeGpa(college(scores), MODEL, CURVE).middle!;
-  const a = predictGpa(CURVE.p25, 1200, 0.5);
-  const b = predictGpa(CURVE.p75, 1400, 0.5);
+  const a = predictGpa(CURVE.p25, 1200, 0.5, SUBMIT);
+  const b = predictGpa(CURVE.p75, 1400, 0.5, SUBMIT);
   assert.equal(e.kind, "estimated");
   assert.deepEqual(e.shown, [a, b]);
   near(e.p25[0], a - 0.28);
@@ -422,12 +460,12 @@ test("the college's middle 50%: exact from the bands, else estimated, never for 
   near(e.p75[1], Math.min(4, b + 0.18));
   // The ACT's ends through the concordance when there is no SAT.
   assert.deepEqual(satQuartiles(college({ act: [27, 32] })), [1280, 1430]);
-  assert.deepEqual(gpaMiddle(college({ act: [27, 32], rate: 0.5 }), CURVE)!.shown, [predictGpa(CURVE.p25, 1280, 0.5), predictGpa(CURVE.p75, 1430, 0.5)]);
+  assert.deepEqual(gpaMiddle(college({ act: [27, 32], rate: 0.5 }), CURVE)!.shown, [predictGpa(CURVE.p25, 1280, 0.5, SUBMIT), predictGpa(CURVE.p75, 1430, 0.5, SUBMIT)]);
 
   // Clamped to [2.0, 4.0], and the 75th never under the 25th.
   const top = gpaMiddle(college({ sat: [1550, 1600], rate: 0.03 }), CURVE)!;
   assert.ok(top.p25[1] <= 4 && top.p75[1] <= 4 && top.shown[1] <= 4);
-  const flipped: GpaCurve = { p25: { ...CURVE.p25, coef: [3.9, 0, 0] }, p75: { ...CURVE.p75, coef: [3.5, 0, 0] } };
+  const flipped: GpaCurve = { p25: { ...CURVE.p25, coef: [3.9, 0, 0, 0] }, p75: { ...CURVE.p75, coef: [3.5, 0, 0, 0] } };
   const m = gpaMiddle(college(scores), flipped)!;
   assert.ok(m.shown[1] >= m.shown[0] && m.p75[0] >= m.p25[0] && m.p75[1] >= m.p25[1], JSON.stringify(m));
   const low = gpaMiddle(college({ sat: [400, 500], rate: 1 }), CURVE)!;
@@ -440,24 +478,26 @@ test("the college's middle 50%: exact from the bands, else estimated, never for 
   assert.equal(collegeGpa(college({ sat: [1200, 1400], rate: null }), MODEL, CURVE).middle, null);
 });
 
-test("the guard for each curve model: at least 25 colleges and a 90th-percentile miss at most 0.30", () => {
-  assert.deepEqual(GPA_CURVE_GUARD, { minRows: 25, maxP90: 0.3 });
-  const clean = (n: number, coef: [number, number, number]) => synthetic(n, coef, (i) => ((i % 3) - 1) * 0.01);
-  const p25 = clean(30, [2.73, 0.087, -0.51]);
-  const p75 = clean(30, [3.7, 0.02, -0.05]);
-  const noisy = (coef: [number, number, number]) => synthetic(30, coef, (i) => (i % 2 ? 0.6 : -0.6) * ((i % 7) / 6));
+test("the guard for each curve model: at least 25 colleges, a 90th-percentile miss at most 0.35, and a gain over a flat guess", () => {
+  assert.deepEqual(GPA_CURVE_GUARD, { minRows: 25, maxP90: 0.35, minGain: 0.1 });
+  const clean = (n: number, coef: GpaCoef) => synthetic(n, coef, (i) => ((i % 3) - 1) * 0.01);
+  const p25 = clean(30, [2.73, 0.087, -0.51, 0.2]);
+  const p75 = clean(30, [3.7, 0.02, -0.05, 0.05]);
+  const noisy = (coef: GpaCoef) => synthetic(30, coef, (i) => (i % 2 ? 0.9 : -0.9) * ((i % 7) / 6));
   const fit = fitGpaCurve({ p25, p75 });
   assert.ok(fit);
   assert.ok(Math.abs(fit.p25.coef[1] - 0.087) < 0.005 && Math.abs(fit.p75.coef[0] - 3.7) < 0.05);
   // Either model failing its guard takes the curve away.
   assert.equal(fitGpaCurve({ p25: p25.slice(0, 24), p75 }), null, "p25: 24 rows");
   assert.equal(fitGpaCurve({ p25, p75: p75.slice(0, 24) }), null, "p75: 24 rows");
-  assert.equal(fitGpaCurve({ p25: noisy([2.73, 0.087, -0.51]), p75 }), null, "p25: a large miss");
-  assert.equal(fitGpaCurve({ p25, p75: noisy([3.7, 0.02, -0.05]) }), null, "p75: a large miss");
+  assert.equal(fitGpaCurve({ p25: noisy([2.73, 0.087, -0.51, 0.2]), p75 }), null, "p25: a large miss");
+  assert.equal(fitGpaCurve({ p25, p75: noisy([3.7, 0.02, -0.05, 0.05]) }), null, "p75: a large miss");
+  const flat = synthetic(30, [3.9, 0, 0, 0], (i) => (((i * 7) % 11) - 5) * 0.01);
+  assert.equal(fitGpaCurve({ p25, p75: flat }), null, "p75: no gain over a flat guess");
   // Breaking the guard on purpose lets them through, so it is the guard (not the fit) that refuses them.
-  const open = { minRows: 0, maxP90: Infinity };
-  assert.ok(fitGpaCurve({ p25: p25.slice(0, 24), p75: p75.slice(0, 24) }, open));
-  const loose = fitGpaCurve({ p25: noisy([2.73, 0.087, -0.51]), p75: noisy([3.7, 0.02, -0.05]) }, open);
+  assert.ok(fitGpaCurve({ p25: p25.slice(0, 24), p75: p75.slice(0, 24) }, OPEN));
+  assert.ok(fitGpaCurve({ p25, p75: flat }, OPEN));
+  const loose = fitGpaCurve({ p25: noisy([2.73, 0.087, -0.51, 0.2]), p75: noisy([3.7, 0.02, -0.05, 0.05]) }, OPEN);
   assert.ok(loose && loose.p25.p90Error > GPA_CURVE_GUARD.maxP90 && loose.p75.p90Error > GPA_CURVE_GUARD.maxP90);
 });
 
@@ -523,22 +563,24 @@ test("gpaCites: an exact middle cites derived.gpa_middle_half; an estimated one 
   assert.deepEqual(Object.keys(est), ["derived.gpa_estimate"]);
   const formula = (est["derived.gpa_estimate"] as { formula: string }).formula;
   assert.equal(formula, gpaModelFormula(MODEL, CURVE));
-  assert.match(formula, /25th-percentile GPA ≈ 2\.73 \+ 0\.087 × \(SAT 25th ÷ 100\) − 0\.51 × admit rate \(typical miss 0\.13, 90% of misses under 0\.28\)/);
-  assert.match(formula, /75th-percentile GPA ≈ 3\.70 \+ 0\.020 × \(SAT 75th ÷ 100\) − 0\.05 × admit rate \(typical miss 0\.09, 90% of misses under 0\.18\)/);
+  assert.match(formula, /25th-percentile GPA ≈ 2\.73 \+ 0\.087 × \(SAT 25th ÷ 100\) − 0\.51 × admit rate \+ 0\.20 × share sending scores \(typical miss 0\.13, 90% of misses under 0\.28\)/);
+  assert.match(formula, /75th-percentile GPA ≈ 3\.70 \+ 0\.020 × \(SAT 75th ÷ 100\) − 0\.05 × admit rate \+ 0\.05 × share sending scores \(typical miss 0\.09, 90% of misses under 0\.18\)/);
   assert.match(formula, /30 colleges/);
   // Without the curve, the average model's line as before.
   assert.equal((gpaCites(c, collegeGpa(c, MODEL), MODEL, cite)["derived.gpa_estimate"] as { formula: string }).formula, gpaModelFormula(MODEL));
 });
 
-test("the real dataset: the p25 model passes its guard, the p75 model's p90 miss is at most 0.30", () => {
+test("the real dataset: both curve models pass their guard, and shuffled GPAs are refused", () => {
   const schools = JSON.parse(readFileSync(new URL("../data/schools.json", import.meta.url), "utf8")) as School[];
   const rows = curveRows(schools);
   assert.equal(rows.p25.length, rows.p75.length);
-  const p25 = fitGpaModel(rows.p25, GPA_CURVE_GUARD);
-  assert.ok(p25, "the guard refused the real p25 fit");
-  assert.ok(p25.n >= 25 && p25.p90Error <= 0.3, JSON.stringify(p25));
-  const p75 = fitGpaModel(rows.p75, { minRows: 0, maxP90: Infinity })!;
-  assert.ok(p75.p90Error <= 0.3, `p75 p90 = ${p75.p90Error}`);
+  for (const end of ["p25", "p75"] as const) {
+    const m = fitGpaModel(rows[end], GPA_CURVE_GUARD);
+    assert.ok(m, `the guard refused the real ${end} fit`);
+    assert.ok(m.n >= 25 && m.p90Error <= GPA_CURVE_GUARD.maxP90 && m.meanError <= 0.9 * m.flatMeanError, JSON.stringify(m));
+    const shuffled = rows[end].map((r, i) => ({ ...r, gpa: rows[end][(i * 37 + 11) % rows[end].length].gpa }));
+    assert.equal(fitGpaModel(shuffled, GPA_CURVE_GUARD), null, `${end}: shuffled GPAs pass the guard`);
+  }
   assert.ok(fitGpaCurve(rows), "both pass");
   // Never trained on a weighted reporter's bands.
   for (const s of schools) {

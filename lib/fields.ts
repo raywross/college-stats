@@ -473,8 +473,15 @@ export const FIELDS = {
     computed: true,
     derived: {
       formula:
-        "Estimated from colleges with similar test scores and admit rates: a least-squares fit of first-year GPA on the SAT midpoint (ACT through the 2018 concordance) and the admit rate, over colleges that publish an unweighted GPA; a college that publishes only a weighted average is kept between that average minus 1 and 4.0. Never the college's own figure",
-      inputs: ["derived.sat_total", "admissions.act_composite_25_75", "admissions.acceptance_rate", "reported.admission_profile.gpa.average"],
+        "Estimated from colleges with similar test scores, admit rates, and shares sending scores: a least-squares fit of first-year GPA on the SAT midpoint (ACT through the 2018 concordance), the admit rate, and the share of first-years who sent a score, over colleges that publish an unweighted GPA; a college that publishes only a weighted average is kept between that average minus 1 and 4.0. Never the college's own figure",
+      inputs: [
+        "derived.sat_total",
+        "admissions.act_composite_25_75",
+        "admissions.acceptance_rate",
+        "admissions.test_submission_rate_sat",
+        "admissions.test_submission_rate_act",
+        "reported.admission_profile.gpa.average",
+      ],
     },
   },
   // CDS C8/C9 (specs/data-expansion/cds-test-scores-and-policy.md): records → school.reported (lib/cds/test-scores.ts).

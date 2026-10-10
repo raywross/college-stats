@@ -247,7 +247,8 @@ shared rules for user data are in that README. All user data lives only in Supab
   [list](planner/redesign/list.md) (one row per college, ranking removed), [rounds](planner/redesign/rounds.md)
   (started from the Dream, one-line conflicts, ED II offer, parent cost check), [scores](planner/redesign/scores.md)
   (where the score stands, retake only when it would move a college), and [calendar](planner/redesign/calendar.md)
-  (the family timeline). Owner decisions in the README: the phone tab bar, signed-out Plan, the retake threshold.
+  (the family timeline). Owner decisions (2026-10-10): every recommendation accepted, including the phone tab bar, signed-out Plan,
+  and the retake threshold.
 - [ ] **Chances and fit** ([product/chances-and-fit.md](product/chances-and-fit.md)): rules-based standing with
   reasons (never a probability), fit against preferences, a pilot against real outcomes before the chip ships.
 - [ ] **Net price estimator** ([product/net-price-estimator.md](product/net-price-estimator.md)): 2026–27 Student

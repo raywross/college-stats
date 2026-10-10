@@ -123,11 +123,14 @@ In addition to the planner's [shared rules](../README.md#shared-rules):
 - **Nothing here is a verdict**: groups are a classification with published rules, the retake suggestion says how
   many points and which colleges, never "you should."
 
-## Owner decisions needed
-1. **Phone tab bar.** Today: Home, Explore, Search, Compare, More. Proposal: Explore, Search, **Plan**, Compare, More
-   (Home is the logo). Alternative: keep Home and move Compare under More ([page.md](page.md#navigation)).
-2. **Signed-out Plan.** Proposal: `/plan` signed out is a short pitch plus the numbers step; a visitor can enter
-   numbers and add colleges (kept in the browser like the signed-out profile today) and is asked to sign up to save,
-   share with a parent, and get reminders ([page.md](page.md#signed-out)).
-3. **Retake threshold.** Proposal: suggest another test when 60 SAT points or 2 ACT points would move a college up a
-   group ([scores.md](scores.md#when-to-suggest-another-test)). Lower is more cautious; higher suggests more retakes.
+## Owner decisions (2026-10-10)
+The owner reviewed the spec and the preview and accepted every recommendation, including the three put to them:
+1. **Phone tab bar**: Explore, Search, **Plan**, Compare, More; Home is the logo ([page.md](page.md#navigation)).
+2. **Signed-out Plan**: `/plan` signed out is a short pitch plus the numbers step; a visitor can enter numbers and add
+   colleges (kept in the browser like the signed-out profile today) and is asked to sign up to save, share with a
+   parent, and get reminders ([page.md](page.md#signed-out)).
+3. **Retake threshold**: suggest another test when 60 SAT points or 2 ACT points would move a college up a group
+   ([scores.md](scores.md#when-to-suggest-another-test)).
+
+The recommendations in each part's open questions stand as decided too, unless a build finds a reason to raise one
+again.

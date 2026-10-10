@@ -13,10 +13,9 @@ A student opens Plan and sees their colleges; a parent opens Plan and sees the f
 - **Desktop header** (`components/layout/Header.tsx`): `Explore · Plan · Compare · High schools · Glossary · Data`.
   Plan is second, right after Explore. When the signed-in student or any child of a signed-in parent has a deadline
   in the next 7 days, a small dot sits on the link (the same `bg-pop` dot as the Compare count).
-- **Phone tab bar** (`components/layout/BottomNav.tsx`): five tabs stay five. Proposal: **Explore, Search, Plan,
-  Compare, More**; Home moves to the logo in the header (it already links home). Plan's icon is `ListChecks`.
-  Alternative if the owner wants Home kept: Home, Explore, Plan, Search, More, with Compare under More (its count
-  badge moves onto More). Decision needed (README).
+- **Phone tab bar** (`components/layout/BottomNav.tsx`): five tabs stay five: **Explore, Search, Plan, Compare,
+  More**; Home moves to the logo in the header (it already links home). Plan's icon is `ListChecks`. (Owner,
+  2026-10-10.)
 - **Account menu**: "Household" stays for managing people (add, invite, roles, who can edit); the plan is no longer
   reached through it. `/household/[person]/plan` redirects to `/plan?for=[person]`; `/me/plan` redirects to `/plan`.
 
@@ -98,7 +97,7 @@ sentence, `ThisWeek` as its own section (its content is Next up plus the Calenda
 fallback for Everyone, `?stage=` redirects).
 
 ## Open questions
-1. The phone tab bar (README decision 1).
+1. ~~The phone tab bar~~: decided 2026-10-10 ([above](#navigation)).
 2. Should a parent with edit access see the numbers form in the header card? Recommendation: yes, the same switch
    that lets parents edit the list ([household-hub.md](../../product/household-hub.md)) covers it, and the change is
    attributed like any other edit.

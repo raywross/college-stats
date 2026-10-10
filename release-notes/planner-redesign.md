@@ -1,7 +1,7 @@
 ---
 title: "The planner, redesigned: a plan"
 pr: 104
-date: 2026-10-09
+date: 2026-10-10
 kind: plans
 summary: A plan to make the planner simpler and easier to find, with Plan in the main menu, your colleges sorted from your numbers, a coach that says when another test would help, and a color-coded calendar for parents.
 ---

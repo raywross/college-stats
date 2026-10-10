@@ -97,6 +97,6 @@ generator in `lib/planner/generators/cycle.ts` changes from every date to the pi
 `superscore` (built), `concordance`, `test-optional`.
 
 ## Open questions
-1. The retake threshold (README decision 3).
+1. ~~The retake threshold~~: 60 SAT / 2 ACT, decided 2026-10-10.
 2. Should the suggestion also count GPA-only colleges where a score would *start* counting (test-optional, no GPA
    data)? Recommendation: no; keep the card about colleges whose group a score already decides.

@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { connection } from "next/server";
 import { getData } from "@/lib/data";
 import { crestBrand } from "@/lib/brand";
 import { satTotal } from "@/lib/score-bands";
@@ -46,9 +45,8 @@ const FAMILY: { id: string; name: string; gradYear: number; gpa: number; test: {
 
 export default async function PlanPreviewPage() {
   if (process.env.VERCEL_ENV === "production") notFound();
-  await connection(); // "today" is the visit's day, not the build's
   const { getSchoolById, citeField } = await getData();
-  const today = todayIso();
+  const today = todayIso(); // the build's day; the client moves it to the visitor's (PlanPreview)
 
   const kids: PreviewKid[] = FAMILY.map((k) => {
     const cycle = loadCycle(cycleFor(k.gradYear));

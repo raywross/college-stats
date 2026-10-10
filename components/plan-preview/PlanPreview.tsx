@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useSyncExternalStore } from "react";
 import { CalendarDays, Heart, ListChecks, Pencil, Sparkles, Target } from "lucide-react";
 import { SegmentedControl } from "@/components/ui/segmented-control";
 import { TEST_LABEL, TEST_MAX, TEST_MIN, type TestKind } from "@/lib/planner/standing";
@@ -15,6 +15,13 @@ import { ROUND_SHORT } from "@/lib/planner/rounds";
 
 export type { PreviewEntry, PreviewKid, PreviewSchool } from "./types";
 
+const noSubscribe = () => () => {};
+/** The visitor's local date as yyyy-mm-dd (a string, so the snapshot is stable between renders). */
+function localToday(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
 type Viewer = string; // a kid's id, or "parent"
 type Tab = "list" | "scores" | "calendar";
 
@@ -23,7 +30,9 @@ type Tab = "list" | "scores" | "calendar";
  * student or as their parent; change a score, the Dream, a group, or a round and everything downstream re-runs.
  * Nothing is saved.
  */
-export function PlanPreview({ kids, entries, today }: { kids: PreviewKid[]; entries: PreviewEntry[]; today: string }) {
+export function PlanPreview({ kids, entries, today: builtOn }: { kids: PreviewKid[]; entries: PreviewEntry[]; today: string }) {
+  // The page is static, so the server's "today" is the build's day; the browser counts from the visitor's own.
+  const today = useSyncExternalStore(noSubscribe, localToday, () => builtOn);
   const [viewer, setViewer] = useState<Viewer>(kids[0].id);
   const [parentKid, setParentKid] = useState<string>("all");
   const [tab, setTab] = useState<Tab>("list");

@@ -168,6 +168,14 @@ const entries = {
     category: "Test scores",
     related: ["sat", "middle-50"],
   },
+  concordance: {
+    term: "Concordance",
+    short: "The official table that converts an SAT score to the ACT score (or back) that students with similar ability tend to earn.",
+    long: "College Board and ACT published the current table in 2018, before the digital SAT and the enhanced ACT existed. When a college reports a range only for the other test, we convert your score through this table and say so.",
+    why: "It lets a one-test student compare against a college that reports only the other test's range, without taking a second test.",
+    category: "Test scores",
+    related: ["sat", "act", "middle-50"],
+  },
   "test-optional": {
     term: "Test-optional",
     short: "A policy that lets applicants decide whether to submit SAT/ACT scores. Students who don't submit aren't penalized.",

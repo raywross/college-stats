@@ -1,0 +1,195 @@
+{
+  "run": "20261010-190118-40",
+  "started": "2026-10-10T19:01:47.711Z",
+  "finished": null,
+  "status": "running",
+  "attempted": 0,
+  "documents_read": 0,
+  "published": 0,
+  "changed": 0,
+  "failed": 0,
+  "discovered": 0,
+  "escalated": 0,
+  "tripped": null,
+  "usage": {
+    "discovery": {
+      "calls": 0,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "cost_usd": 0
+    },
+    "extraction": {
+      "calls": 0,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "cost_usd": 0
+    },
+    "escalation": {
+      "calls": 0,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "cost_usd": 0
+    }
+  },
+  "round": 3,
+  "usage_rows": [],
+  "discovery": {
+    "known": {
+      "colleges": 4,
+      "cost_usd": 0
+    },
+    "guessed": {
+      "colleges": 0,
+      "cost_usd": 0
+    },
+    "manual": {
+      "colleges": 0,
+      "cost_usd": 0
+    },
+    "probe-sitemap": {
+      "colleges": 0,
+      "cost_usd": 0
+    },
+    "probe-host": {
+      "colleges": 0,
+      "cost_usd": 0
+    },
+    "probe-crawl": {
+      "colleges": 0,
+      "cost_usd": 0
+    },
+    "picker": {
+      "colleges": 0,
+      "cost_usd": 0
+    },
+    "search": {
+      "colleges": 0,
+      "cost_usd": 0
+    },
+    "full": {
+      "colleges": 0,
+      "cost_usd": 0
+    },
+    "blocked": {
+      "colleges": 0,
+      "cost_usd": 0
+    },
+    "none": {
+      "colleges": 0,
+      "cost_usd": 0
+    }
+  },
+  "documents": {
+    "xlsx-template": {
+      "fetched": 0,
+      "unchanged": 0,
+      "archived": 0,
+      "model_calls": 0,
+      "split_fallback": 0,
+      "grid_rows_undecided": 0,
+      "vision": 0,
+      "cost_usd": 0
+    },
+    "xlsx-classic": {
+      "fetched": 0,
+      "unchanged": 0,
+      "archived": 0,
+      "model_calls": 0,
+      "split_fallback": 0,
+      "grid_rows_undecided": 0,
+      "vision": 0,
+      "cost_usd": 0
+    },
+    "pdf-form": {
+      "fetched": 0,
+      "unchanged": 0,
+      "archived": 0,
+      "model_calls": 0,
+      "split_fallback": 0,
+      "grid_rows_undecided": 0,
+      "vision": 0,
+      "cost_usd": 0
+    },
+    "pdf-flat": {
+      "fetched": 0,
+      "unchanged": 1,
+      "archived": 0,
+      "model_calls": 0,
+      "split_fallback": 0,
+      "grid_rows_undecided": 0,
+      "vision": 0,
+      "cost_usd": 0
+    },
+    "pdf-scanned": {
+      "fetched": 0,
+      "unchanged": 0,
+      "archived": 0,
+      "model_calls": 0,
+      "split_fallback": 0,
+      "grid_rows_undecided": 0,
+      "vision": 0,
+      "cost_usd": 0
+    },
+    "html": {
+      "fetched": 0,
+      "unchanged": 1,
+      "archived": 0,
+      "model_calls": 0,
+      "split_fallback": 0,
+      "grid_rows_undecided": 0,
+      "vision": 0,
+      "cost_usd": 0
+    },
+    "class-profile": {
+      "fetched": 0,
+      "unchanged": 0,
+      "archived": 0,
+      "model_calls": 0,
+      "split_fallback": 0,
+      "grid_rows_undecided": 0,
+      "vision": 0,
+      "cost_usd": 0
+    }
+  },
+  "items": {},
+  "tiers": {
+    "very selective": {
+      "colleges": 3,
+      "located": 0,
+      "cds_found": 0,
+      "published_c1": 0,
+      "cost_usd": 0
+    },
+    "selective": {
+      "colleges": 10,
+      "located": 1,
+      "cds_found": 0,
+      "published_c1": 0,
+      "cost_usd": 0
+    },
+    "less selective": {
+      "colleges": 52,
+      "located": 3,
+      "cds_found": 2,
+      "published_c1": 0,
+      "cost_usd": 0
+    },
+    "open admission": {
+      "colleges": 25,
+      "located": 0,
+      "cds_found": 0,
+      "published_c1": 0,
+      "cost_usd": 0
+    }
+  },
+  "batches": [],
+  "projection": {
+    "full_run_usd": 149.55,
+    "run_usd": 7.11,
+    "basis": "86 picker × $0.005 + 61 search × $0.08 + 12 full × $0.15, × 21.03 to the full run (high end of each estimate)"
+  },
+  "total": 90,
+  "done": 90,
+  "open_batches": 0,
+  "unreachable": 2
+}

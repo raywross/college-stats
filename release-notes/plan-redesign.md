@@ -1,6 +1,6 @@
 ---
 title: "Plan: your colleges sorted for you, and a calendar for the family"
-pr: 0
+pr: 105
 date: 2026-10-10
 kind: feature
 summary: Plan is now in the main menu, sorts your colleges from your numbers, starts every round from your Dream, says when another test would help, and gives parents a color-coded calendar across their children.

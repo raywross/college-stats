@@ -203,6 +203,13 @@ jobs:
         if: always() && steps.secret.outputs.ready == 'true'
         run: npm run merge-reported
 
+      # Some national trends group colleges by the current dataset (data/schools.json), so the merge above changes them;
+      # tests/trends-foundation.test.mts fails a PR whose data/history/trends/ isn't what build-trends makes. No network.
+      # The rebuilt files are under data/, so the PR step's `git add data` commits them.
+      - name: Rebuild the national trends
+        if: always() && steps.secret.outputs.ready == 'true'
+        run: npm run build-trends
+
       # The draft signal: data/college-batches.json lists the batches still open when the script exits (it is written
       # after every submit and collect). Any open batch → the PR opens as a draft and waits for the collect job.
       - name: Check for open batches
@@ -415,6 +422,11 @@ jobs:
       - name: Merge the published figures into schools.json
         if: always() && steps.secret.outputs.ready == 'true'
         run: npm run merge-reported
+
+      # As in the run job: the trends follow the merged schools.json (committed below with `git add data`).
+      - name: Rebuild the national trends
+        if: always() && steps.secret.outputs.ready == 'true'
+        run: npm run build-trends
 
       - name: Check for open batches
         id: batches

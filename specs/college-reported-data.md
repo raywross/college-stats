@@ -506,7 +506,10 @@ on) is its own doc: [college-reported-setup.md](college-reported-setup.md).
 - **Data in the PR:** a step right after the pipeline runs (`npm run merge-reported`, `if: always()` so a stopped
   or cancelled run still merges what it kept) rewrites `data/schools.json` to match the fresh
   `data/college-reported.json`, before the PR's `git add data` — see "Data in the PR" under
-  [college-reported-round-2.md](college-reported-round-2.md)'s As built.
+  [college-reported-round-2.md](college-reported-round-2.md)'s As built. Then `npm run build-trends` (no network)
+  rebuilds `data/history/trends/`: some national trends group colleges by the current dataset, and
+  `tests/trends-foundation.test.mts` fails a PR whose trend files aren't what the build makes. The PR's `git add data`
+  commits them; the collect job does the same after its merge.
 - **PR body and release note:** generated from the run summary, `data/review-queue.json`, `data/college-reported.json`,
   and `data/schools.json` (for college names) by `scripts/college-reported-pr-body.mts` (`prBody`, `releaseNote`;
   unit-tested against fixtures in `tests/college-reported-pr-body.test.mts`): counts, cost, circuit-breaker status,

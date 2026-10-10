@@ -496,7 +496,7 @@ deterministic reads (which say the college's file is wrong, not our pipeline). I
 |---|---|---|
 | Discovery | Ladder for every college without a working link | Only colleges with no link, a broken index page (404 or 410), or `next_attempt` reached; starts again at step 0 |
 | Index pages | Fetched and scanned | Conditional GET monthly, weekly Aug–Nov for class-profile pages. "Changed" means the **set of document links** changed, not the HTML; pages with timestamps would otherwise look new every time ([setup](college-reported-setup.md#7-reading-the-cost)). An index page that blocks us (Michigan, Baylor) falls back to next-edition guessing |
-| Known documents | Fetched, archived | Conditional GET only when their index changed or a month has passed; a 304 or the same sha256 ends it |
+| Known documents | Fetched, archived | Conditional GET only when their index changed or a month has passed; a 304 or the same sha256 ends it, but only for a document already read. One archived and never read (no record with its sha256; for a class profile, no extraction on its source) is read now: from the archive, or fetched in full when the archive lacks its bytes (fixed 2026-10-10; see As built) |
 | Next edition | — | Guessed from the file name in the college's usual publication month (from `retrieved` dates), `.xlsx` first |
 | Deterministic reads | Every template workbook and form PDF | Re-run from the archive for $0 whenever a reader changes |
 | Model extraction | Both calls of every model-read document | Only new sha256s, and calls whose `schema_version` went up, read from the archive |
@@ -1683,3 +1683,33 @@ could not:
   too. `tuitionSector` now picks the G1 cells by the college's federal sector, and the code table labels G.101/G.102
   private-only. Found, not fixed: Washington University's search step returned its 2024–25 CDS though a 2025–26 one
   exists (the fourth run found it), so its "next year" price is 2025–26.
+
+### Documents archived but never read (2026-10-10, branch `fix/college-reported-unread-docs`)
+- **What happened.** The full run `20261005-211211-16` spent its 330-minute job limit in prepare: it fetched, archived,
+  typed, and laid out about 310 documents (the manifest, and each recipe source's `checked`, ETag, Last-Modified, and
+  sha256), submitted its picker batch, and was cancelled before the submit phase. No document of that run was read by
+  a model. A cancelled job doesn't save its `actions/cache` entry, so later runners don't hold those bytes either.
+- **Why later runs never read them.** `acquireSource` (`scripts/lib/college-reported/phases.mts`) asked
+  `needsFetch(known, …)` and, with no fetch due (checked this month), counted the document unchanged; after a month a
+  304 or the same sha256 ended it the same way. Nothing asked whether the document had ever been read. The submit
+  phase lists every model-read document with a call due (`pendingDocs`), but `pendingDocument` skips one whose bytes
+  aren't in the archive, and class profiles without archived bytes are skipped the same way; template workbooks and
+  forms are read only inside `acquireSource`. So a document archived on a runner whose cache was lost stayed unread.
+- **The rule now.** A known document counts as unchanged only once it has been read (`awaitingFirstRead` in
+  `lib/cds-reads.ts`). The tie to its read is the strongest one stored: for a CDS file, a record document in
+  `data/cds-records/<unit_id>.json` with the same sha256 and at least one read; for a class-profile page, the
+  recipe source's `extraction` (undefined until round 2's extractor ran; null when it ran and found nothing). A
+  model-read document with no edition and a scanned PDF are never awaiting a read (nothing reads them yet). A document
+  awaiting its first read is read from the archive when the bytes are there (no request to the college), otherwise
+  fetched in full (no conditional headers: a 304 brings no bytes) and archived again; then it goes the way a new
+  document does (`readKnown`): template workbooks and forms are read by code, a model-read document's lines are
+  archived for the submit phase, a class profile waits for the extractor. A document read before still costs nothing:
+  no request inside the month, a conditional GET after it. The projection already counted these documents (it lists
+  every model-read document with a call due, and every class profile with no extraction); now they are also submitted.
+- **Tests** (`tests/cds-pipeline.test.mts`): an archived, never-read PDF is fetched again and read when the archive
+  lost its bytes; a never-read template workbook is read from the archive with no request; a never-extracted class
+  profile is fetched again and extracted; a read, unchanged document is skipped even with its bytes gone; a changed
+  document is read; the projection counts the never-read document. With the guard broken (`unread` always false) the
+  first three fail. `tests/cds-archive.test.mts` covers `awaitingFirstRead`.
+- **Workflow.** Both jobs run `npm run build-trends` right after `npm run merge-reported`, so a data PR's
+  `data/history/trends/` matches the merged `data/schools.json` (`tests/trends-foundation.test.mts`).

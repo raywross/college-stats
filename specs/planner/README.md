@@ -1,5 +1,9 @@
 # The Planner: From the First List to the Deposit
 
+> **Being redesigned (2026-10-09):** the owner's review of the build moved the plan to the main navigation, cut the six
+> stages to three tabs, removed the ranking, and added numbers-first sorting, a scores coach, and a family calendar.
+> See [redesign/](redesign/README.md); the stage specs below describe what was built in PR #103.
+>
 > Overview of the planner specs (not a work item itself). Written 2026-10-07 from the owner's brief ("help students
 > get organized and stay on track, with parents able to see how they're tracking"), the built accounts, household, and
 > list work, the planned planning tools, and new research. Each spec below is a separate work item on the

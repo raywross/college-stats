@@ -35,7 +35,7 @@ the roadmap, with the award-letter analyzer as the last stage.
 | Spec | Adds | Complexity |
 |---|---|---|
 | [chances-and-fit.md](chances-and-fit.md) | "Where you stand" at each college from the student's numbers; a transparent rules-based classification, never a probability | Large |
-| [cost-by-income.md](cost-by-income.md) | Cost as a curve over family income: published prices to $110K, a calibrated estimate above, where need-based aid ends for each college, and what merit aid can still do; replaces the average-first cost display | Large |
+| [cost-by-income.md](cost-by-income.md) | *Built 2026-10-10* (estimates gated until the pilot): cost as a curve over family income: published prices to $110K, a calibrated estimate above, where need-based aid ends for each college, and what merit aid can still do; replaces the average-first cost display | Large |
 | [net-price-estimator.md](net-price-estimator.md) | What *this* family would pay: federal Student Aid Index plus each college's aid pattern, as a range, with a 4-year projection | Large |
 | [early-decision-strategy.md](early-decision-strategy.md) | Early decision and early action admit rates vs regular decision, from Common Data Sets, with the caveats | Medium |
 | [../planner/offers.md](../planner/offers.md) | Real aid offers side by side, standardized the way the federal College Financing Plan does, with loans and 4-year totals made visible; moved into the planner on 2026-10-07 as its decisions-and-offers stage | Large |

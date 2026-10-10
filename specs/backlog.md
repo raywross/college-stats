@@ -251,7 +251,7 @@ shared rules for user data are in that README. All user data lives only in Supab
   and the retake threshold.
 - [ ] **Chances and fit** ([product/chances-and-fit.md](product/chances-and-fit.md)): rules-based standing with
   reasons (never a probability), fit against preferences, a pilot against real outcomes before the chip ships.
-- [ ] **Cost by income** (planned 2026-10-10, [product/cost-by-income.md](product/cost-by-income.md)): each college's
+- [x] **Cost by income** (built 2026-10-10; estimates gated until the pilot passes; [product/cost-by-income.md](product/cost-by-income.md)): each college's
   cost as a curve over family income to $400K+, published to $110K and calibrated above it from the $110K+ band;
   the break point where need-based aid ends; merit classes from CDS H2A or the IPEDS grants-without-federal-aid proxy;
   curated published promises (`data/aid-policies.json`); a 25-college pilot against net price calculators gates every

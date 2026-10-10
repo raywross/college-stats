@@ -1,6 +1,6 @@
 # Cost by Income: The Aid Curve, the Break Point, and Merit
 
-> Status: **planned** 2026-10-10. Redesigns how the site shows a college's total cost: as a curve over family income
+> Status: **built** 2026-10-10 on `feature/cost-by-income` ([below](#built-2026-10-10)); planned the same day. Redesigns how the site shows a college's total cost: as a curve over family income
 > rather than one average, with the income where need-based aid ends (the **break point**) and what merit aid can
 > still do above it. Written from the owner's brief and a document they supplied ("Financial Aid Specification &
 > Phase-Out Model for High-Income Households", generated with Gemini, kept as background, not as data). Builds on
@@ -294,3 +294,43 @@ replaces the three bars (full price, with grants, "$48–75K income").
    those say "above $400K".
 4. **Curation load.** About 100 colleges a year at roughly 10 minutes each. Recommendation: do it with the spring data
    PR, and let the college-reported pipeline flag policy pages when it fetches a college's CDS.
+
+## Built (2026-10-10)
+Built in four units on sub-branches of `feature/cost-by-income`:
+
+| Unit | Branch | Model | What |
+|---|---|---|---|
+| U1 Model, merit, dataset | `feature/cost-by-income-curve` | opus | `lib/cost-curve.ts`, `lib/merit.ts`, the reference incomes, the pilot template and scorer, dataset filters and sort, derived fields, glossary |
+| U2 Published promises | `feature/cost-by-income-policies` | sonnet | `data/aid-policies.json` (54 colleges), the validator and `check:aid-policies`, the `aid_policy.*` citation hook |
+| U3 Profile | `feature/cost-by-income-profile` | sonnet | `CostFacts`, `CostCurve`, `CostAtIncome`, `CostByIncome`, the Cost page and the overview card, `lib/cost-display.ts`, the estimate-wording guard |
+| U4 Compare and Explore | `feature/cost-by-income-compare` | sonnet | the three Compare rows, `NetPriceAtIncome` (slider, bars, table), Explore's "Cost by family income" filters, price-at-income sort, card and row lines, `lib/cost-at-income.ts` |
+
+What differs from the plan above:
+- **Estimates are gated, not yet live.** The pilot needs each college's own net price calculator, which this build's
+  environment couldn't reach. `estimatesShown()` is true on preview and development deployments and false in
+  production until `data/reference/cost-curve-pilot.json` records `"passed": true`. With the gate closed, pages show
+  the published curve to $110K, merit, and promises, and "Published data end at $110K" with the college's calculator.
+  How to run the pilot: [cost-by-income-pilot.md](cost-by-income-pilot.md).
+- **Promise-anchored curves.** Calibrating to the $110K+ band couldn't be reconciled with published promises at the
+  colleges that have them (see "As built" under [The model](#the-model)); those curves are built from the promise with a
+  sector ramp of 0.40 (range 0.30–0.50).
+- **Ramp floor 0.22, not 0.15**, and an *r* within 0.01 of a bound gives no estimate. Result across 1,893 colleges: 297
+  break points, 262 "little need-based aid above $110K", 1,199 "published data end at $110K", 135 with no full price.
+- **Merit proxy skipped at full-need colleges** (CSS Profile or a full-need policy), where grants without federal aid
+  are mostly need aid; those read "unknown" unless the college reports H2A or a need-only policy.
+- **Promises are from search results.** Every entry in `data/aid-policies.json` cites the college's own page but was
+  read from a search result quoting it (`verified_via: "search"`); 11 targets were left out where results conflicted
+  (WashU, Case Western, CMU, NYU, Miami, Wisconsin, Ohio State, Arizona State, Florida, Georgia, Claremont McKenna).
+  A public's promise to its own residents carries `applies_to: "in_state"`.
+- **The reference incomes** are all-household Census brackets as quoted in a search result (P60-286), not families
+  with a college-age child; the file says so.
+- **Computed at load, not in sync**: the same pure functions, memoized in the dataset.
+
+Not built yet:
+- The pilot itself (owner task; the template and `scripts/score-cost-pilot.mts` are ready).
+- The personal layer (saved household income, SAI, Pell, siblings and assets as inputs):
+  [net-price-estimator.md](net-price-estimator.md). The slider is in memory only.
+- The planner tie-ins (the drawer's Cost line, the cost-check task's link): after the planner redesign.
+- Explore's table view still shows the average cost when an income is set (cards and rows show the price at it).
+- A client-safe split of `lib/cost-curve.ts`, so the chart doesn't ship the policies and reference JSON to the browser.
+

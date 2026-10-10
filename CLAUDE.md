@@ -22,14 +22,13 @@ Higher Education Data Explorer - an interactive web app for visualizing U.S. col
 - Run `npm run verify` (typecheck, lint, tests incl. lineage guards, dataset lineage check) before committing; CI runs
   it plus `next build`
 
-### Quad's estimate is confidential (see `specs/chances/README.md`)
-- How Quad computes Reach / Target / Likely is a trade secret, and this repository is public. Never commit the
-  method here: no weights, thresholds, cutoffs, rules, model parameters, training details, or worked examples that
-  reveal them, in specs, code, tests, comments, release notes, or PR text
-- Public specs describe the estimate's kinds of inputs, its outputs and labels, the displays, data collection, and
-  privacy. The method's spec and code live in the private model repository and reach the site as a private package
-  through `lib/chances/estimate.ts`; `lib/chances/baseline.ts` holds only the already-published open baseline
-- The estimate runs on the server only, and its sentences come from the public note catalog
+### Quad's estimate is proprietary (see `specs/chances/README.md`)
+- How Quad computes Reach / Target / Likely is never shown on the site: pages, the glossary, release notes, and the
+  estimate's API responses describe its kinds of inputs and its outputs, not weights, thresholds, or rules
+- Until launch the method lives here, in `specs/chances/method/` and server-only code (`lib/chances/model.ts`); the
+  repository stays public for now (owner decision, 2026-10-10). At launch it moves to a private repository per the
+  checklist in `specs/chances/estimate.md`
+- The estimate runs on the server only, through `lib/chances/estimate.ts`, and its sentences come from the note catalog
 
 ### One worktree per session
 Several Claude chats work on this repo at once, so each works in its own git worktree, never in the main checkout

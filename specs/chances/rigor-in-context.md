@@ -84,9 +84,8 @@ From the linked high school's record ([high-school-data.md](../product/high-scho
 ## The reading
 `rigorReading(student, highSchool)` in `lib/chances/rigor.ts` places the schedule against the school's offering and
 returns one of five readings, each with its sentence. Which schedules land in which reading (how many courses, the
-core-subject answers, the grades) is part of the confidential method and lives with it in the private model
-repository ([estimate.md](estimate.md#architecture)); this repository holds the labels, the sentences, and the
-interface, and the open baseline uses a simple published rule.
+core-subject answers, the grades) is part of the estimate's method, in
+[method/rigor-reading.md](method/rigor-reading.md); the site shows only the labels and the sentences.
 
 | Reading | Sentence |
 |---|---|
@@ -134,13 +133,13 @@ taken or planned 6 of these." Nothing for anyone else.
 ## Lineage
 - The school's offering cites CRDC 2023–24 or the profile (year, page) through `HS_FIELDS` (built).
 - The student's values say "your numbers" with the date entered, as the built profile values do.
-- The glossary's `course-rigor` term explains what the readings mean in words; their thresholds are not published.
+- The glossary's `course-rigor` term explains what the readings mean in words; their thresholds are not shown on the site.
 
 ## Pilot
 Before the reading is shown: take the pilot high schools that have a school profile (the 100 in
 `data/high-schools/profile-pilot.json`) and check that the CRDC count and the profile's AP list agree within two
 courses for at least 80% of them (they measure the same thing a year apart). How much the reading should count in the
-estimate is decided in the private repository from outcomes ([calibration.md](calibration.md)).
+estimate is decided from outcomes ([method/outcomes.md](method/outcomes.md)).
 
 ## Later: a recalculated GPA
 Some colleges recalculate GPA by a published method (the University of California's: 10th and 11th grade a–g
@@ -157,7 +156,7 @@ IB list with a schema check in `npm run verify`, `lib/chances/rigor.ts` (pure: `
 `/me`, Numbers, the plan's sheet, and signed out), `components/school/RigorLine.tsx`, the You column in `HsPrepBox`,
 the Scores tab's Courses section, the CRDC "No" → 0 change and its test, `tests/chances-rigor.test.mts` (the
 sentences for each reading, can't-place, planned vs taken wording, honors shown, unnamed placeholder rows, the grade
-and exam sentences; the reading's thresholds are tested in the private repository).
+and exam sentences); the thresholds are tested with the model (`tests/chances-model.test.mts`).
 
 ## Open questions
 1. Should the core-subject question come before the list? Recommendation: the list first (students know their

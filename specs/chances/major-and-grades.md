@@ -61,7 +61,8 @@ reported.major_admission[].review: {
 Where a unit's `review` says the major is considered, [Quad's estimate](estimate.md) takes into account what the
 college says it reads for that unit: the unit's own pool and admit rate, the student's math and science grades and
 math section score where the college names those subjects, the required courses on the student's list, and any score
-requirement. How much each counts is part of the confidential method. Where a college says the major doesn't matter,
+requirement. How much each counts is part of the method ([method/major-effects.md](method/major-effects.md)), never
+shown on the site. Where a college says the major doesn't matter,
 or has no statement, the major doesn't change the estimate.
 
 What the student sees is public and the same everywhere, from the note catalog ([estimate.md](estimate.md#protecting-the-method)):
@@ -118,7 +119,7 @@ required-course checking against the course list, subject GPAs, and the notes ab
 `lib/chances/reading.ts`, the regular math/science rows in the course picker, the course-plan and Scores hooks,
 `tests/chances-major-review.test.mts` (each `review` kind's notes; a gate met by an exam, by a section score, not yet
 met, closed; a missing required course; "no" quoted; undecided; no review at all). How the estimate weighs these is
-tested in the private repository.
+tested with the model (`tests/chances-model.test.mts`).
 
 ## Open questions
 1. Should the math section score be shown as evidence where no math grades are entered? Recommendation: yes, beside

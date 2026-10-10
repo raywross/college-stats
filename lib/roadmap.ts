@@ -65,7 +65,7 @@ export const ROADMAP_GROUPS: { key: RoadmapGroupKey; title: string; description:
       "Where your numbers stand, what your family would pay, and whether applying early helps; the planner builds on all three.",
   },
   // Admission chances (specs/chances/, 2026-10-10): the inputs, displays, and outcome collection around Quad's estimate,
-  // whose method is proprietary and kept in a private repository.
+  // whose method is proprietary (never shown on the site; in specs/chances/method/ until launch).
   {
     key: "chances",
     title: "Admission chances",
@@ -243,8 +243,8 @@ export const ROADMAP: RoadmapSpec[] = [
       "The federal aid formula as versioned data, three grant estimates combined, and a hand-checked pilot against colleges' own calculators.",
     status: "planned",
   },
-  // Admission chances (specs/chances/): inputs and displays here; the estimate's method is confidential and lives in a
-  // private repository (specs/chances/README.md "Quad's estimate is proprietary").
+  // Admission chances (specs/chances/): the method behind the estimate is in specs/chances/method/, which has no roadmap
+  // pages; it moves to a private repository at launch (specs/chances/README.md "Quad's estimate is proprietary").
   {
     slug: "chances-how-colleges-read",
     file: "specs/chances/how-colleges-read.md",
@@ -297,7 +297,7 @@ export const ROADMAP: RoadmapSpec[] = [
       "Quad's estimate of Reach, Target, or Likely, computed on the server by our own model from your numbers, your courses, your pool, and each college's filings, with a panel showing what went into it and never a percentage.",
     complexity: 2,
     complexityNote:
-      "A public interface, a private model package installed at build, an open baseline for development, a rate-limited endpoint, a sentence catalog, and the profile's standing card.",
+      "A server-only interface and model, an open baseline, a rate-limited endpoint, a sentence catalog, the profile's standing card, and a short checklist to move the method private at launch.",
     status: "planned",
     after: ["chances-how-colleges-read", "chances-rigor", "chances-base-rates", "chances-major-and-grades"],
   },

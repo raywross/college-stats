@@ -253,7 +253,8 @@ shared rules for user data are in that README. All user data lives only in Supab
 - [ ] **Chances and fit** ([product/chances-and-fit.md](product/chances-and-fit.md)): rules-based standing with
   reasons (never a probability), fit against preferences, a pilot against real outcomes before the chip ships.
 - [ ] **Admission chances** (planned 2026-10-10 in [chances/](chances/README.md)). Quad's estimate is proprietary: these
-  specs cover inputs, displays, and outcome collection; the method lives in a private repository. Seven units:
+  site shows inputs and outputs only; the method is in [chances/method/](chances/method/standing.md) until launch, then
+  moves private. Seven units:
   [how colleges read a record](chances/how-colleges-read.md), [rigor in context](chances/rigor-in-context.md) (a course
   list with grades), [the admit rate for your pool](chances/base-rates.md), [major and grades](chances/major-and-grades.md),
   [the estimate](chances/estimate.md) (after PR #105), [outcomes and accuracy](chances/calibration.md), and the

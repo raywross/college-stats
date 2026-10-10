@@ -4,7 +4,7 @@
 > planner's opt-in outcome share (built in [../planner/offers.md](../planner/offers.md), consent on `lists`) and
 > [scattergrams.md](../product/scattergrams.md) (planned); replaces the pilot section of
 > [chances-and-fit.md](../product/chances-and-fit.md#pilot). How outcomes are used to improve the estimate is part of
-> the confidential method and is specified in the private model repository.
+> the method: [method/outcomes.md](method/outcomes.md).
 
 ## Goal
 Quad's estimate gets better with outcomes: what happened to students with given inputs at given colleges. There is
@@ -62,7 +62,7 @@ similar position, without any model:
 > were admitted."
 
 - Shown only when a cell has at least **50 outcomes** in the last three seasons, and suppressed below 10 in any
-  sub-count (the scattergram threshold). How "numbers like yours" is defined is part of the confidential method.
+  sub-count (the scattergram threshold). How "numbers like yours" is defined is part of the method.
 - A count, worded as what happened, never "your chance"; the estimate stays the headline.
 - On the profile standing card under the "what went into it" panel, and in the planner row's ⓘ.
 
@@ -76,8 +76,8 @@ similar position, without any model:
 ## Privacy
 - Minors: snapshots are academic facts the student entered; consent is the student's own (or the guardian's for a
   student without an account, as the built consent rule allows).
-- Row-level data never leaves Supabase except to the private model repository's training job, which reads it with a
-  dedicated role and writes back only model versions and aggregates.
+- Row-level data never leaves Supabase; the season measurements read it with a dedicated role and write back only
+  aggregates and model versions.
 - Snapshot tables have row-level security mirroring `list_items`; a student can export and delete their snapshots.
 
 ## Files (planned)
@@ -86,7 +86,8 @@ Public: migration `…_application_snapshots.sql` (table, policies, the season-e
 built applied transition, the Data page section reading a published summary table, the "students like you" query
 with its suppression, `tests/chances-snapshot.test.mts` (binning, no name or high school id, consent and cleanup,
 suppression thresholds).
-Private (`raywross/quad-model`): how outcomes are used, the season measurements behind the summary, and release checks.
+The season measurements (`scripts/chances-calibration.mts`, per [method/outcomes.md](method/outcomes.md)) write the
+summary table the Data page reads.
 
 ## Open questions
 1. Should snapshots be taken for students who haven't consented (kept private, deleted at season's end) so a later

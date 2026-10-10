@@ -726,7 +726,7 @@ export const FIELDS = {
     derived: {
       formula:
         "Full price (in-state at publics) ÷ r + P, rounded to $10K: the income where the estimated price reaches the full price. r (the share of each extra dollar a family pays, 0.15–0.60) is calibrated so the model's average price over the Census reference incomes above $110K equals the college's published $110K+ net price; P is the college's published no-contribution line, else about $90K (the federal need analysis's protected income). A published free-tuition line holds the price at that income to the full price minus tuition. The range varies the $110K+ figure by ±$1K and P by ±$10K",
-      inputs: ["cost.net_price_by_income", "cost.breakdown", "cost.sticker", "cost.cost_of_attendance", "cost.tuition_fees"],
+      inputs: ["cost.net_price_by_income", "cost.breakdown", "cost.sticker", "cost.cost_of_attendance", "cost.tuition_fees", "aid_policy.no_contribution_under", "aid_policy.free_tuition_under"],
     },
   },
   "derived.need_aid_status": {
@@ -753,7 +753,7 @@ export const FIELDS = {
     derived: {
       formula:
         "From the strongest source: the college's Common Data Set (H2A line n, students without need who got merit aid: none is need-only, any is merit), else its published need-only policy, else the federal proxy (grants without federal aid to at least 2% of first-years is merit, under 2% need-only)",
-      inputs: ["reported.aid.first_years", "aid.cds", "derived.merit_proxy"],
+      inputs: ["reported.aid.first_years", "aid.cds", "aid_policy.need_only", "derived.merit_proxy"],
     },
   },
   "derived.merit_proxy": {

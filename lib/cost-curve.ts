@@ -89,10 +89,12 @@ export interface CostCurve {
   breakIncome: { mid: number; lo: number; hi: number } | null;
   /**
    * The college's published income lines, as markers. `disagrees`: the published $110K+ band can't be reproduced
-   * with the ramp held to this promise, so the estimate was calibrated without it; the promise wins where they
-   * disagree (show the promise, not the estimate, at and below its income), and the disagreement is for the pilot.
+   * with the ramp held to this promise (a free-tuition pin, or a no-contribution line as P), so the estimate was
+   * calibrated without it. The promise wins where they disagree: `priceAt` holds estimates at and below its income to
+   * `cap` (the full price minus tuition for free tuition; the $75–110K price for no contribution), so the curve steps
+   * up at the promise's income. The disagreement is for the pilot to settle.
    */
-  promises: { income: number; kind: "free_tuition" | "no_contribution"; label: string; disagrees?: true }[];
+  promises: { income: number; kind: "free_tuition" | "no_contribution"; label: string; disagrees?: true; cap?: number }[];
 }
 
 export type PriceKind = "published" | "estimate" | "full_price" | "unknown";
@@ -198,15 +200,25 @@ const clampR = (r: number | "low" | "high") => (r === "low" ? R_MIN : r === "hig
 
 const kDollars = (x: number) => `$${Math.round(x / 1000)}K`;
 
+/**
+ * The policy's income lines as markers. The curve is the in-state curve at publics (costCurveInput), so a line that
+ * applies only to in-state families (`applies_to: "in_state"`) belongs on it, labeled so; an out-of-state view must not
+ * use these promises or this curve's ramp.
+ */
 function promisesOf(policy: AidPolicy | null): CostCurve["promises"] {
   const out: CostCurve["promises"] = [];
-  if (policy?.free_tuition_under) out.push({ income: policy.free_tuition_under, kind: "free_tuition", label: `No tuition under ${kDollars(policy.free_tuition_under)}` });
+  const who = policy?.applies_to === "in_state" ? " (in-state)" : "";
+  if (policy?.free_tuition_under) out.push({ income: policy.free_tuition_under, kind: "free_tuition", label: `No tuition under ${kDollars(policy.free_tuition_under)}${who}` });
   if (policy?.no_contribution_under)
-    out.push({ income: policy.no_contribution_under, kind: "no_contribution", label: `Families pay nothing toward cost under ${kDollars(policy.no_contribution_under)}` });
+    out.push({ income: policy.no_contribution_under, kind: "no_contribution", label: `Families pay nothing toward cost under ${kDollars(policy.no_contribution_under)}${who}` });
   return out.sort((a, b) => a.income - b.income);
 }
 
-/** The model's inputs from a school record and its published policy (looked up when not passed; null for none). */
+/**
+ * The model's inputs from a school record and its published policy (looked up when not passed; null for none). At
+ * publics everything is in-state (full price, tuition, and the federal net price, which covers in-state students), so
+ * a policy line for in-state families applies as stated.
+ */
 export function costCurveInput(school: School, policy?: AidPolicy | null): CostCurveInput {
   const c = school.cost;
   const isPublic = school.type === "public";
@@ -242,21 +254,35 @@ export function costCurve(input: CostCurveInput): CostCurve | null {
   if (isNum(needMet) ? needMet < NEED_MET_FULL : band110 >= LITTLE_AID_BAND_SHARE * coa) return none("little_above_110k");
 
   const floor = published[published.length - 1].price;
-  const P = input.policy?.no_contribution_under ?? DEFAULT_RAMP_START;
   const ftu = input.policy?.free_tuition_under;
-  let pin: Pin = isNum(ftu) && ftu > FEDERAL_TOP && isNum(input.tuition) && input.tuition > 0 ? { income: ftu, price: coa - input.tuition } : undefined;
+  const wantedPin: Pin = isNum(ftu) && ftu > FEDERAL_TOP && isNum(input.tuition) && input.tuition > 0 ? { income: ftu, price: coa - input.tuition } : undefined;
+  const policyP = input.policy?.no_contribution_under ?? null;
 
-  let r = solveR(band110, coa, floor, P, pin);
-  if (pin && typeof r !== "number") {
-    // The promise and the band can't both hold over the reference incomes: calibrate on the band alone and flag it.
-    const unpinned = solveR(band110, coa, floor, P, undefined);
-    if (typeof unpinned === "number") {
-      r = unpinned;
-      pin = undefined;
-      for (const p of promises) if (p.kind === "free_tuition") p.disagrees = true;
+  // The promises and the band may not all hold over the reference incomes. Try the ramp held to every promise, then
+  // without the free-tuition pin, then without the no-contribution line; flag what was dropped (it wins on display).
+  const attempts: { P: number; pin: Pin; dropped: CostCurve["promises"][number]["kind"][] }[] = [{ P: policyP ?? DEFAULT_RAMP_START, pin: wantedPin, dropped: [] }];
+  if (wantedPin) attempts.push({ P: policyP ?? DEFAULT_RAMP_START, pin: undefined, dropped: ["free_tuition"] });
+  if (policyP !== null && policyP !== DEFAULT_RAMP_START) {
+    if (wantedPin) attempts.push({ P: DEFAULT_RAMP_START, pin: wantedPin, dropped: ["no_contribution"] });
+    attempts.push({ P: DEFAULT_RAMP_START, pin: undefined, dropped: wantedPin ? ["free_tuition", "no_contribution"] : ["no_contribution"] });
+  }
+  let chosen: (typeof attempts)[number] | null = null;
+  let r: number | "low" | "high" = "high";
+  for (const a of attempts) {
+    r = solveR(band110, coa, floor, a.P, a.pin);
+    if (typeof r === "number") {
+      chosen = a;
+      break;
     }
   }
-  if (typeof r !== "number") return none("data_ends");
+  if (!chosen || typeof r !== "number") return none("data_ends");
+  const { P, pin } = chosen;
+  for (const p of promises) {
+    if (!chosen.dropped.includes(p.kind)) continue;
+    p.disagrees = true;
+    const cap = p.kind === "free_tuition" ? wantedPin?.price : floor;
+    if (cap !== undefined) p.cap = cap;
+  }
   const corners = [r];
   for (const dB of [-BAND_SPREAD, BAND_SPREAD]) for (const dP of [-RAMP_START_SPREAD, 0, RAMP_START_SPREAD]) corners.push(clampR(solveR(band110 + dB, coa, floor, P + dP, pin)));
   const rLo = Math.min(...corners);
@@ -295,8 +321,10 @@ export function priceAt(curve: CostCurve, income: number, showEstimates: boolean
   const floor = curve.published[curve.published.length - 1].price;
   const a = rampPrice(income, curve.coa, floor, ramp.P, ramp.rLo);
   const b = rampPrice(income, curve.coa, floor, rampStart(ramp.P, ramp.rHi, ramp.pin, floor), ramp.rHi);
-  const lo = Math.min(a, b);
-  const hi = Math.max(a, b);
+  // A promise the estimate disagrees with wins at and below its income.
+  const cap = Math.min(...curve.promises.filter((p) => p.disagrees && p.cap !== undefined && income <= p.income).map((p) => p.cap!));
+  const lo = Math.min(a, b, cap);
+  const hi = Math.min(Math.max(a, b), cap);
   return lo >= curve.coa ? { lo: curve.coa, hi: curve.coa, kind: "full_price" } : { lo, hi, kind: "estimate" };
 }
 

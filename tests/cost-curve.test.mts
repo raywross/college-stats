@@ -171,6 +171,10 @@ test("a free-tuition promise constrains the ramp: the price at its income stays 
   const unpinned = curve(figures);
   assert.equal(unpinned.ramp!.pin, undefined);
   assert.ok(priceAt(unpinned, 150_000, true).hi > cap);
+  // A line for in-state families applies to the curve (in-state at publics) and says so.
+  const inState = curve({ policy: policy({ free_tuition_under: 150_000, applies_to: "in_state" }), ...figures, type: "public" });
+  assert.deepEqual(inState.ramp!.pin, { income: 150_000, price: cap });
+  assert.equal(inState.promises[0].label, "No tuition under $150K (in-state)");
   // A promise at or under $110K, or without tuition, doesn't pin anything.
   assert.equal(curve({ policy: policy({ free_tuition_under: 100_000 }), ...figures }).ramp!.pin, undefined);
   assert.equal(curve({ policy: free, ...figures, tuition: null }).ramp!.pin, undefined);
@@ -179,6 +183,17 @@ test("a free-tuition promise constrains the ramp: the price at its income stays 
   assert.equal(clash.status, "break_point");
   assert.equal(clash.ramp!.pin, undefined);
   assert.equal(clash.promises[0].disagrees, true);
+  // …and wins at and below its income: the estimate is held to the full price minus tuition there, then steps up.
+  const capped = PRIVATE.coa! - PRIVATE.tuition!;
+  assert.equal(clash.promises[0].cap, capped);
+  assert.ok(priceAt(clash, 240_000, true).hi <= capped);
+  assert.ok(priceAt(clash, 260_000, true).lo > capped);
+  // A no-contribution line the band can't agree with: calibrated from the default start, held to the last step below it.
+  const nc = curve({ policy: policy({ no_contribution_under: 150_000 }), bands: [2_000, 3_000, 6_000, 14_000, 52_000] });
+  assert.equal(nc.status, "break_point");
+  assert.equal(nc.ramp!.P, DEFAULT_RAMP_START);
+  assert.deepEqual(nc.promises[0], { income: 150_000, kind: "no_contribution", label: "Families pay nothing toward cost under $150K", disagrees: true, cap: 14_000 });
+  assert.equal(priceAt(nc, 150_000, true).hi, 14_000);
 });
 
 test("a college that doesn't meet full need gets 'little need-based aid above $110K'", () => {

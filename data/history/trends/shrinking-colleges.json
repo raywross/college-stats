@@ -193,23 +193,23 @@
         {
           "key": "more",
           "label": "25–59% admitted",
-          "n": 243,
+          "n": 244,
           "values": {
-            "shrank10": 0.3827,
-            "grew10": 0.3251,
-            "medianChange": -0.0056,
-            "totalChange": 0.0795
+            "shrank10": 0.3811,
+            "grew10": 0.3279,
+            "medianChange": -0.0021,
+            "totalChange": 0.0817
           }
         },
         {
           "key": "less",
           "label": "60% or more",
-          "n": 1064,
+          "n": 1063,
           "values": {
-            "shrank10": 0.5695,
-            "grew10": 0.1936,
-            "medianChange": -0.1391,
-            "totalChange": -0.0349
+            "shrank10": 0.5701,
+            "grew10": 0.1929,
+            "medianChange": -0.1393,
+            "totalChange": -0.036
           }
         }
       ]
@@ -505,23 +505,23 @@
           {
             "key": "more",
             "label": "25–59% admitted",
-            "n": 245,
+            "n": 246,
             "values": {
-              "shrank10": 0.3143,
-              "grew10": 0.2245,
-              "medianChange": -0.0159,
-              "totalChange": 0.0308
+              "shrank10": 0.313,
+              "grew10": 0.2276,
+              "medianChange": -0.0139,
+              "totalChange": 0.032
             }
           },
           {
             "key": "less",
             "label": "60% or more",
-            "n": 1062,
+            "n": 1061,
             "values": {
-              "shrank10": 0.4661,
-              "grew10": 0.1394,
-              "medianChange": -0.0887,
-              "totalChange": -0.0397
+              "shrank10": 0.4665,
+              "grew10": 0.1385,
+              "medianChange": -0.0888,
+              "totalChange": -0.0403
             }
           }
         ]

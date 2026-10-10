@@ -709,7 +709,7 @@
       },
       "map": {
         "undergradChange": -0.1441,
-        "acceptanceRate": 0.7482,
+        "acceptanceRate": 0.7212,
         "avgCost": 20150,
         "outOfState": 0.2139,
         "testOptionalShare": 0.7931
@@ -5942,7 +5942,7 @@
         "acceptanceRate": 0.7314,
         "avgCost": 21561,
         "outOfState": 0.0705,
-        "testOptionalShare": 0.7407
+        "testOptionalShare": 0.7222
       },
       "all": {
         "key": "all",
@@ -16624,7 +16624,7 @@
         "acceptanceRate": 0.8754,
         "avgCost": 29907,
         "outOfState": 0.4931,
-        "testOptionalShare": 0.9167
+        "testOptionalShare": 0.8333
       },
       "all": {
         "key": "all",
@@ -20990,7 +20990,7 @@
         "acceptanceRate": 0.8674,
         "avgCost": 30116,
         "outOfState": 0.3064,
-        "testOptionalShare": 0.92
+        "testOptionalShare": 0.88
       },
       "all": {
         "key": "all",

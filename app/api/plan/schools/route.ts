@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getData } from "@/lib/data";
 import { planSchoolFor } from "@/lib/planner/context";
-import { gpaModel } from "@/lib/planner/gpa-model-server";
+import { gpaCurve, gpaModel } from "@/lib/planner/gpa-model-server";
 import { currentCycle, cycleStartOf } from "@/lib/planner/cycle";
 import type { PlanSchool } from "@/lib/planner/types";
 import { isUnitId } from "@/lib/follow-state";
@@ -26,13 +26,14 @@ export async function GET(request: Request) {
 
   const { getSchoolById, citeField } = await getData();
   const model = await gpaModel();
+  const curve = await gpaCurve();
   const today = new Date().toISOString().slice(0, 10);
   const studentCycleStart = cycleStartOf(currentCycle(today)) ?? Number(today.slice(0, 4));
 
   const schools: Record<string, PlanSchool> = {};
   for (const id of ids) {
     const school = getSchoolById(id);
-    if (school) schools[id] = planSchoolFor(school, citeField, { studentCycleStart, home: null, gpaModel: model });
+    if (school) schools[id] = planSchoolFor(school, citeField, { studentCycleStart, home: null, gpaModel: model, gpaCurve: curve });
   }
   // Cached per id set: the data behind it (CDS scores, admit rate, round dates) changes at most once a day.
   return NextResponse.json({ schools }, { headers: { "Cache-Control": "public, max-age=3600, stale-while-revalidate=86400" } });

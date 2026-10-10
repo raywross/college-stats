@@ -152,6 +152,19 @@ The p25 and p75 models are fitted on the server alongside the average model, wit
 training colleges and a 90th-percentile miss of at most 0.30. If either fails the guard, estimated colleges fall back
 to the average rule.
 
+*Built 2026-10-10* (`gpaPercentile`, `bandMiddle`, `curveRows`, `fitGpaCurve`, `gpaMiddle`, `compareGpaMiddle` in
+lib/planner/gpa-model.ts; `CollegeGpa.middle`; `gpaCurve()` in gpa-model-server.ts). Fitted on the real data that day,
+from 30 colleges: `p25 ≈ 2.55 + 0.094 × (SAT 25th ÷ 100) − 0.42 × admit rate` (typical miss 0.13, 90% under 0.24) and
+`p75 ≈ 3.68 + 0.021 × (SAT 75th ÷ 100) − 0.05 × admit rate` (typical miss 0.09, 90% under 0.18). 33 colleges get an
+exact middle 50%, 976 an estimated one. Details settled in the build:
+- An estimated middle applies only to colleges with no unweighted C12 average of their own (no CDS GPA, half-blank
+  bands, or a weighted reporter, whose sentence names its weighted average instead of "doesn't publish its GPA spread").
+- Exact ends are shown to two decimals ("3.62–4.00"), estimated ones to one ("3.8–4.0"), the two predictions.
+- The plan cites `derived.gpa_middle_half` with its own method line (percentiles within the bands), because the
+  college page's GPA checker still shows the bands holding the 25th and 75th percentiles.
+- With bands, the middle 50% replaces the band mean in the sentence, so `derived.gpa_band_mean` is cited only when no
+  middle exists.
+
 ## Files
 - `lib/planner/gpa-model.ts` (pure): band midpoints, `bandMean`, `satMidpoint`, `fitGpaModel(rows)` with
   leave-one-out error, `predictGpa`, `collegeGpa`, `compareGpaRanges`.

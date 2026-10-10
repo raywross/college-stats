@@ -21,8 +21,8 @@ import type { MergeResult } from "./tasks";
 import type { GeneratorInput, PlanContext, PlanSchool, PlanTask } from "./types";
 import type { ListCategory, ListRound } from "@/lib/list-rules";
 import type { StandingSchool } from "./standing";
-import { collegeGpa, gpaCites, type GpaModel } from "./gpa-model";
-import { gpaModel as fittedGpaModel } from "./gpa-model-server";
+import { collegeGpa, gpaCites, type GpaCurve, type GpaModel } from "./gpa-model";
+import { gpaCurve as fittedGpaCurve, gpaModel as fittedGpaModel } from "./gpa-model-server";
 import { autoWriteBatches } from "./plan-writes";
 import { PLAN_TASK_COLUMNS, type PlanData } from "./read-plan";
 
@@ -97,14 +97,15 @@ export const PLAN_CITE_PATHS = [
   // U2 (list-building.md "Suggested category"): the SAT total shown, resolved from the CDS when it reports one else
   // the sum of sections (lib/score-bands.ts). Not a real dot path on School, so planSchoolFor resolves it by hand.
   "derived.sat_total",
-  // GPA (specs/planner/redesign/gpa.md): the band mean or the estimate behind the GPA sentence, cited only when that is
-  // the college's GPA source. Computed, so planSchoolFor resolves them by hand.
+  // GPA (specs/planner/redesign/gpa.md): the band mean, the middle 50%, or the estimate behind the GPA sentence, cited
+  // only when that is what the sentence names. Computed, so planSchoolFor resolves them by hand.
   "derived.gpa_band_mean",
+  "derived.gpa_middle_half",
   "derived.gpa_estimate",
 ] as const satisfies readonly FieldPath[];
 
 /** Cited by hand in planSchoolFor: not real dot paths on School. */
-const HAND_CITED: ReadonlySet<string> = new Set(["derived.sat_total", "derived.gpa_band_mean", "derived.gpa_estimate"]);
+const HAND_CITED: ReadonlySet<string> = new Set(["derived.sat_total", "derived.gpa_band_mean", "derived.gpa_middle_half", "derived.gpa_estimate"]);
 
 function valueAt(obj: unknown, path: string): unknown {
   let cur: unknown = obj;
@@ -123,7 +124,7 @@ function valueAt(obj: unknown, path: string): unknown {
 export function planSchoolFor(
   school: School,
   citeField: (path: FieldPath, school?: School) => unknown,
-  opts: { studentCycleStart: number; home: HomeLocation | null; gpaModel?: GpaModel | null },
+  opts: { studentCycleStart: number; home: HomeLocation | null; gpaModel?: GpaModel | null; gpaCurve?: GpaCurve | null },
 ): PlanSchool {
   const logistics = school.reported?.admissions_logistics ?? null;
   const dataStart = cycleStartFromEntering(logistics?.cycle);
@@ -140,8 +141,9 @@ export function planSchoolFor(
   const gpaAverage = standingGpaAverage(school);
   // The college's GPA, best source first (gpa.md "The design" 1), cited by the field its sentence names.
   const gpaModel = opts.gpaModel ?? null;
-  const gpa = collegeGpa(school, gpaModel);
-  Object.assign(cites, gpaCites(school, gpa, gpaModel, citeField as (path: FieldPath, school?: School) => object));
+  const gpaCurve = opts.gpaCurve ?? null;
+  const gpa = collegeGpa(school, gpaModel, gpaCurve);
+  Object.assign(cites, gpaCites(school, gpa, gpaModel, citeField as (path: FieldPath, school?: School) => object, gpaCurve));
   const standing: StandingSchool = {
     admitRate: school.admissions?.acceptance_rate ?? null,
     sat: satRange,
@@ -194,10 +196,11 @@ export function standingGpaAverage(school: Pick<School, "reported">): number | n
 export async function planSchools(unitIds: string[], studentCycleStart: number, home: HomeLocation | null): Promise<Record<string, PlanSchool>> {
   const { getSchoolById, citeField } = await getData();
   const gpaModel = await fittedGpaModel();
+  const gpaCurve = await fittedGpaCurve();
   const out: Record<string, PlanSchool> = {};
   for (const id of unitIds) {
     const school = getSchoolById(id);
-    if (school) out[id] = planSchoolFor(school, citeField, { studentCycleStart, home, gpaModel });
+    if (school) out[id] = planSchoolFor(school, citeField, { studentCycleStart, home, gpaModel, gpaCurve });
   }
   return out;
 }

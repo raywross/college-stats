@@ -7,7 +7,7 @@ import { LIST_ROUNDS, type ListRound } from "@/lib/list-rules";
 import { cycleFor, loadCycle } from "@/lib/planner/cycle";
 import { standingGpaAverage, todayIso } from "@/lib/planner/context";
 import { collegeGpa, gpaCites } from "@/lib/planner/gpa-model";
-import { gpaModel } from "@/lib/planner/gpa-model-server";
+import { gpaCurve, gpaModel } from "@/lib/planner/gpa-model-server";
 import { roundDates, type RoundsSchool } from "@/lib/planner/rounds";
 import type { AnyCited } from "@/lib/lineage";
 import { PlanPreview, type PreviewEntry, type PreviewKid, type PreviewSchool } from "@/components/plan-preview/PlanPreview";
@@ -49,6 +49,7 @@ export default async function PlanPreviewPage() {
   if (process.env.VERCEL_ENV === "production") notFound();
   const { getSchoolById, citeField } = await getData();
   const model = await gpaModel();
+  const curve = await gpaCurve();
   const today = todayIso(); // the build's day; the client moves it to the visitor's (PlanPreview)
 
   const kids: PreviewKid[] = FAMILY.map((k) => {
@@ -85,8 +86,8 @@ export default async function PlanPreviewPage() {
       const act = s.admissions?.act_composite_25_75 ?? null;
       const gpaAverage = standingGpaAverage(s);
       // The college's GPA, best source first, and the citation its sentence's ⓘ shows (specs/planner/redesign/gpa.md).
-      const gpa = collegeGpa(s, model);
-      const gpaCite = Object.values(gpaCites(s, gpa, model, citeField))[0] ?? null;
+      const gpa = collegeGpa(s, model, curve);
+      const gpaCite = Object.values(gpaCites(s, gpa, model, citeField, curve))[0] ?? null;
       schools.push({
         id: s.unit_id,
         name: s.name,

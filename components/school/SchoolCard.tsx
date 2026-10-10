@@ -12,6 +12,7 @@ import { AddToListButton } from "@/components/lists/AddToListButton";
 import { StandoutChip } from "@/components/school/StandoutChip";
 import { TrendIndicatorGrid } from "@/components/trends/TrendIndicators";
 import { distanceFromHome, distanceLine, type NearHome } from "@/lib/home";
+import type { PriceLine } from "@/lib/cost-at-income";
 
 /** Nomad List-style meter: fill = where this school ranks among all colleges. */
 function Meter({ label, value, rank, color }: { label: string; value: string | null; rank: number | null; color: string }) {
@@ -33,8 +34,21 @@ function Meter({ label, value, rank, color }: { label: string; value: string | n
   );
 }
 
-/** `home`: Explore's "Distance from home" filter, when set; the card then shows the straight-line miles and a drive time. */
-export async function SchoolCard({ school, index = 0, home = null }: { school: School; index?: number; home?: NearHome | null }) {
+/**
+ * `home`: Explore's "Distance from home" filter, when set; the card then shows the straight-line miles and a drive time.
+ * `priceAt`: Explore's family income, when set (specs/product/cost-by-income.md): "About $41K at $200K" replaces the average cost.
+ */
+export async function SchoolCard({
+  school,
+  index = 0,
+  home = null,
+  priceAt = null,
+}: {
+  school: School;
+  index?: number;
+  home?: NearHome | null;
+  priceAt?: PriceLine | null;
+}) {
   const data = await getData();
   const { rankOf } = data;
   const distance = home ? distanceFromHome(school.location, home) : null;
@@ -122,12 +136,23 @@ export async function SchoolCard({ school, index = 0, home = null }: { school: S
           rank={rankOf(school, "pell")}
           color={DOMAINS.access.color}
         />
-        <Meter
-          label="Avg cost"
-          value={school.cost?.avg_paid_all == null ? null : moneyCompact(school.cost.avg_paid_all)}
-          rank={rankOf(school, "avgCost")}
-          color={DOMAINS.value.color}
-        />
+        {priceAt ? (
+          <div className="grid grid-cols-[5.25rem_1fr] items-baseline gap-2.5 text-xs">
+            <span className="text-muted-foreground">Price</span>
+            <span className={`font-semibold tabular-nums ${priceAt.kind === "unknown" || priceAt.kind === "none" ? "font-normal text-muted-foreground" : ""}`}>
+              <span className="mr-1.5 inline-block size-1.5 rounded-full align-middle" style={{ backgroundColor: DOMAINS.value.color }} aria-hidden />
+              {priceAt.text}
+              {priceAt.estimate && <span className="ml-1.5 font-normal text-muted-foreground">estimate</span>}
+            </span>
+          </div>
+        ) : (
+          <Meter
+            label="Avg cost"
+            value={school.cost?.avg_paid_all == null ? null : moneyCompact(school.cost.avg_paid_all)}
+            rank={rankOf(school, "avgCost")}
+            color={DOMAINS.value.color}
+          />
+        )}
       </div>
 
       <TrendIndicatorGrid school={school} className="relative mt-4 border-t pt-3" />

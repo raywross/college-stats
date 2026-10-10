@@ -541,7 +541,7 @@ export function createDataset({ schools, meta, releaseCalendar, aliases = [] }: 
   let facetsCache: ReturnType<typeof buildFacets> | undefined;
 
   function facets(): ReturnType<typeof buildFacets> {
-    return (facetsCache ??= buildFacets({ getAllSchools, histogram }));
+    return (facetsCache ??= buildFacets({ getAllSchools, histogram, meritInfoFor }));
   }
 
   /* ---------------------------------------------------------------- */

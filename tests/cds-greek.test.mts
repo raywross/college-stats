@@ -212,9 +212,14 @@ test("Explore \"Fraternity or sorority participation\": either undergrad percent
   assert.equal(countActiveFilters({ minGreek: "20" }), 1);
 });
 
-test("\"Known for: Big Greek life\" waits for enough reporters (spec Open questions): not yet met in the round-3 pilot", () => {
-  const reporters = greekReporters(schools);
-  assert.ok(reporters.length < KNOWN_FOR_MIN_REPORTERS, `${reporters.length} colleges report an undergrad percentage so far`);
+test("\"Known for: Big Greek life\" stays unbuilt regardless of reporter count: lib/insights.ts (where Known For badges are computed) never names a Greek field", () => {
+  // KNOWN_FOR_MIN_REPORTERS (spec Open questions) only records when building "Known for: Big Greek life" would be
+  // meaningful; reaching it doesn't build the feature by itself (specs/greek-life.md, specs/backlog.md track that
+  // decision separately). This guard holds regardless of how many colleges report, unlike the old tripwire that
+  // asserted the count stayed below threshold.
+  assert.equal(typeof KNOWN_FOR_MIN_REPORTERS, "number");
+  const insights = readFileSync(join(ROOT, "lib", "insights.ts"), "utf8");
+  assert.ok(!/reported\??\.greek|reported\.greek|cds\/greek/.test(insights), "lib/insights.ts uses a CDS Greek-life field");
 });
 
 /* ------------------------------------------------------------------ */

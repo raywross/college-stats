@@ -105,6 +105,7 @@ published at `/roadmap` ([roadmap.md](roadmap.md)): add each new one to `lib/roa
     into `matches.json`.
   - [ ] State laws (nine states built, Ohio, Tennessee, and North Carolina as general DEI bans): hand-read Indiana
     SEA 289; re-check after each legislative session and the Mississippi and New Hampshire injunctions.
+- [ ] Build "Known for: Big Greek life": the threshold (50 reporters) was met 2026-10-10 with 102.
 - [ ] **Watch ACTS** (IPEDS admissions supplement): adopt if NCES publishes institution-level files. See
   [data-page.md](data-page.md#watching-acts).
 - [ ] **Scheduled data refresh** (`chore/scheduled-data-sync`): monthly GitHub Action runs `npm run sync-all`

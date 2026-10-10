@@ -343,7 +343,7 @@
       "host": "ir.mit.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-10",
       "unit_ids": [
         "166683"
       ]
@@ -352,7 +352,7 @@
       "host": "ir.olemiss.edu",
       "status": 403,
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-10",
       "unit_ids": [
         "176017"
       ]
@@ -394,7 +394,7 @@
       "host": "ir.web.baylor.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05"
+      "last_seen": "2026-10-10"
     },
     {
       "host": "ira.calvary.edu",
@@ -745,7 +745,7 @@
       "host": "obp.umich.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05"
+      "last_seen": "2026-10-10"
     },
     {
       "host": "obu.edu",
@@ -755,6 +755,12 @@
       "unit_ids": [
         "107512"
       ]
+    },
+    {
+      "host": "oem.umn.edu",
+      "status": "challenge",
+      "first_seen": "2026-10-10",
+      "last_seen": "2026-10-10"
     },
     {
       "host": "oie.calvary.edu",
@@ -787,7 +793,7 @@
       "host": "oie.jhu.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-10",
       "unit_ids": [
         "162928"
       ]
@@ -859,7 +865,7 @@
       "host": "oir.jhu.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-10",
       "unit_ids": [
         "162928"
       ]
@@ -877,7 +883,7 @@
       "host": "oir.umn.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-10",
       "unit_ids": [
         "174066",
         "174233",
@@ -916,7 +922,7 @@
       "host": "oira.jhu.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-10",
       "unit_ids": [
         "162928"
       ]
@@ -970,7 +976,7 @@
       "host": "oirds.rutgers.edu",
       "status": 403,
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-10",
       "unit_ids": [
         "186371",
         "186399"
@@ -1025,7 +1031,7 @@
       "host": "open.clemson.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05"
+      "last_seen": "2026-10-10"
     },
     {
       "host": "opir.calvary.edu",
@@ -1040,7 +1046,7 @@
       "host": "opir.columbia.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05"
+      "last_seen": "2026-10-10"
     },
     {
       "host": "opir.eu.edu",
@@ -1082,7 +1088,7 @@
       "host": "record.umich.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05"
+      "last_seen": "2026-10-10"
     },
     {
       "host": "ripon.edu",
@@ -1205,7 +1211,7 @@
       "host": "undergrad.admissions.columbia.edu",
       "status": 403,
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05"
+      "last_seen": "2026-10-10"
     },
     {
       "host": "ussa.edu",
@@ -1472,7 +1478,7 @@
       "host": "www.ccny.cuny.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-10",
       "unit_ids": [
         "190567"
       ]
@@ -1606,7 +1612,7 @@
       "host": "www.ferris.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-10",
       "unit_ids": [
         "169910"
       ]
@@ -1732,7 +1738,7 @@
       "host": "www.jhu.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-10",
       "unit_ids": [
         "162928"
       ]
@@ -2275,7 +2281,7 @@
       "host": "www.wingate.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-10",
       "unit_ids": [
         "199962"
       ]

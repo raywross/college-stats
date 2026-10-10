@@ -20,6 +20,8 @@ import { mergeReported, stripReported } from "../lib/reported-merge.ts";
 import { CDS_TEMPLATE } from "../lib/cds-template.ts";
 import { validateLineage } from "../lib/lineage.ts";
 import { readRecords } from "../scripts/lib/college-reported/records.mts";
+import { readDirectoryFiles } from "../scripts/lib/directories/files.mts";
+import { applyCccuMembership, stripCccuMembership } from "../scripts/lib/directories/merge.mts";
 
 const ROOT = join(import.meta.dirname, "..");
 const SCRIPT = join(ROOT, "scripts", "merge-reported.mts");
@@ -138,6 +140,34 @@ test("a hand-imported CDS college: admissions.federal holds the override's value
   assert.deepEqual(validateLineage([merged], meta), []);
   const dropped = mergeReported([merged], { updated: "2026-10-04", entries: [] }).schools[0];
   assert.equal(JSON.stringify(dropped), JSON.stringify(before));
+});
+
+// A real CCCU voting member (data/directories/cccu.json), chosen only for already carrying `school.religion`
+// (applyCccuMembership's condition for setting the flag at all).
+const CCCU_COLLEGE = "110361"; // California Baptist University
+
+test("merge-reported and merge-directories' CCCU membership step agree on lineage key order, whichever runs first", () => {
+  const files = readDirectoryFiles(ROOT);
+  // Start from a clean slate (the committed fixture is already a flagged CCCU member): stripCccuMembership removes
+  // the flag and its lineage the same way a fresh re-merge does, so both orders below start from the same place.
+  const base = stripCccuMembership(school(CCCU_COLLEGE));
+  assert.ok(base.religion, "fixture must already carry a religion object");
+  assert.equal(base.religion?.cccu_member, undefined, "stripCccuMembership should have cleared the flag");
+  const reported: ReportedFile = { updated: "2026-10-03", entries: [entryFor(CCCU_COLLEGE)] };
+
+  // Order A: college-reported data merges in first (as a data run's merge-reported step does), then the directory
+  // merge re-applies CCCU membership (as the college-reported workflow's new merge-directories step does).
+  const reportedFirst = mergeReported([base], reported).schools[0];
+  const a = applyCccuMembership([reportedFirst], files)[0];
+
+  // Order B: the directory merge runs first, then college-reported data merges in (as a full `npm run sync-data`
+  // orders them, or a second merge-directories pass over already-reported data).
+  const cccuFirst = applyCccuMembership([base], files)[0];
+  const b = mergeReported([cccuFirst], reported).schools[0];
+
+  assert.ok(a.religion?.cccu_member, "the fixture must actually be a CCCU match, or this proves nothing");
+  assert.equal(JSON.stringify(a), JSON.stringify(b), "byte-identical (key order included) regardless of merge order");
+  assert.deepEqual(validateLineage([a], meta), []);
 });
 
 test("the committed data/schools.json is exactly what merging data/college-reported.json and data/cds-records/ produces (re-merge changes nothing)", () => {

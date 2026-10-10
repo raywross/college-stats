@@ -417,6 +417,17 @@ export const ROADMAP: RoadmapSpec[] = [
     status: "deferred",
   },
   {
+    slug: "greek-known-for",
+    file: "specs/greek-known-for.md",
+    group: "later",
+    summary:
+      "Colleges where fraternity and sorority life is a big part of campus get a \"Known for: Big Greek life\" tag, now that 102 colleges report it.",
+    complexity: 1,
+    complexityNote:
+      "The display module and the partial-coverage guard already exist; left are the top-decile rule, the Known for wiring, and lifting the guard for this one use.",
+    status: "planned",
+  },
+  {
     slug: "identity-follow-ups",
     file: "specs/school-identity/follow-ups.md",
     group: "later",

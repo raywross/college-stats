@@ -56,6 +56,27 @@ export function callsNeedingRead(
   });
 }
 
+/**
+ * Whether a document already in the manifest has never been read, so a run must read it rather than count it unchanged.
+ * "Read" is tied to the document by its sha256 for CDS files (a record document in data/cds-records/ with that sha256
+ * and at least one read, deterministic or a model call), and by the recipe source that names it for class-profile pages
+ * (round 2's `extraction`: undefined until the extractor has run; null when it ran and found nothing).
+ *
+ * Documents no reader takes yet are never awaiting a read: a model-read type that states no edition (it is not sent to
+ * a model) and scanned PDFs. A document read before at an older schema or reader version is not awaiting its first read
+ * either; those re-reads come from the archive (`callsNeedingRead`, `--reextract`).
+ */
+export function awaitingFirstRead(
+  entry: Pick<ManifestEntry, "type" | "edition">,
+  doc: Pick<DocumentRecord, "reads"> | undefined,
+  profile?: { extraction?: unknown }
+): boolean {
+  if (entry.type === "class-profile") return !!profile && profile.extraction === undefined;
+  if (doc && Object.keys(doc.reads).length) return false;
+  if (READER_VERSIONS[entry.type] !== undefined) return true;
+  return MODEL_TYPES.has(entry.type) && entry.type !== "pdf-scanned" && !!entry.edition;
+}
+
 /* ------------------------------------------------------------------ */
 /* Fetch only when new or the server says it changed (Decision 10)     */
 /* ------------------------------------------------------------------ */

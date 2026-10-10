@@ -505,6 +505,16 @@ export const FIELDS = {
   "reported.aid.institutional_grants": reported("College grant dollars, need-based and not (CDS H1)", "aid"),
   "detail.cds_aid": { label: "Financial aid, all of CDS section H with quotes", topic: "aid", source: "college-site", vintage: null },
   "aid.cds_previous": { label: "Need-based and merit aid a newer Common Data Set replaced (CDS H2/H2A)", topic: "aid", source: "cds", vintage: null },
+  // The college's published aid promises and rules (specs/product/cost-by-income.md "Published promises"). They live in
+  // data/aid-policies.json, not on the school record, so no lineage record carries them: lib/lineage.ts resolves the
+  // citation from the entry's own page (`source`), award year (`as_of`) and check date (`checked`).
+  "aid_policy.free_tuition_under": reported("Family income under which the college covers tuition (published promise)", "aid"),
+  "aid_policy.no_contribution_under": reported("Family income under which the college asks no family contribution (published promise)", "aid"),
+  "aid_policy.meets_full_need": reported("Whether the college says it meets full demonstrated need", "aid"),
+  "aid_policy.no_loans": reported("Whether the college's aid packages include loans", "aid"),
+  "aid_policy.need_only": reported("Whether the college gives no merit aid (all grants are need-based)", "aid"),
+  "aid_policy.home_equity": reported("How the college treats home equity in its need analysis", "aid"),
+  "aid_policy.siblings": reported("How the college adjusts for siblings in college", "aid"),
   "derived.merit_dollar_share": {
     ...reported("College grant dollars given without regard to need", "aid"),
     computed: true,

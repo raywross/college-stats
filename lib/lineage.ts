@@ -10,6 +10,7 @@ import { FIELDS, METADATA_KEYS, PER_DOCUMENT_SOURCES, REPORTED_PATHS, UNDATED_SO
 import { NEWEST_TARGETS, newestGroupCitation, validateNewestGroups } from "./newest-groups.ts";
 import { replacedTest, satTotalInputs, validateTests } from "./cds/test-blocks.ts";
 import { financialAidProblems } from "./cds/financial-aid.ts";
+import { aidPolicyFor, aidYearLabel } from "./aid-policies.ts";
 
 /** Any source key a citation can carry: a college source (lib/fields.ts) or a high school source (lib/hs-fields.ts). */
 export type AnySourceKey = SourceKey | HsSourceKey;
@@ -135,8 +136,24 @@ export function sourceInfo(meta: DatasetMeta, key: SourceKey): SourceInfo {
   );
 }
 
+/**
+ * The citation for a published aid promise or rule (`aid_policy.*`, specs/product/cost-by-income.md): these values
+ * live in data/aid-policies.json rather than on the school record, so no lineage record carries them. The entry's own
+ * page is the source, its award year (`as_of`) the year, and the day it was checked the retrieval date. Null for any
+ * other field, and for a college with no entry.
+ */
+function aidPolicyCitation(path: FieldPath, school: School | undefined): CitedSource | null {
+  if (!path.startsWith("aid_policy.") || !school) return null;
+  const policy = aidPolicyFor(school.unit_id);
+  if (!policy) return null;
+  const year = aidYearLabel(policy.as_of);
+  return { key: "college-site", label: `${school.name} (${year})`, publisher: school.name, year, url: policy.source, retrieved: policy.checked };
+}
+
 function sourceFor(path: FieldPath, school: School | undefined, meta: DatasetMeta): CitedSource {
   const def = FIELDS[path];
+  const policyCited = aidPolicyCitation(path, school);
+  if (policyCited) return policyCited;
   const rec = school?.lineage?.[path];
   const key = rec?.source ?? def.source;
   const info = sourceInfo(meta, key);
@@ -217,7 +234,7 @@ const PER_COLLEGE_ONLY: ReadonlySet<SourceKey> = new Set<SourceKey>(["college-si
 /** Distinct sources behind a value: a derived value cites its inputs, recursively. */
 function underlyingSources(path: FieldPath, school: School | undefined, meta: DatasetMeta, seen = new Set<string>()): CitedSource[] {
   const def = FIELDS[path] as (typeof FIELDS)[FieldPath];
-  const overridden = !!school?.lineage?.[path];
+  const overridden = !!school?.lineage?.[path] || !!aidPolicyCitation(path, school);
   // A college-reported field or state law this college has no value for (no lineage record) has nothing to cite.
   if (school && !overridden && PER_COLLEGE_ONLY.has(def.source) && !("derived" in def && def.derived)) return [];
   if (!("derived" in def) || !def.derived || overridden || seen.has(path)) return [sourceFor(path, school, meta)];

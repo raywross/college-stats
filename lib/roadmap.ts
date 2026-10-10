@@ -225,6 +225,17 @@ export const ROADMAP: RoadmapSpec[] = [
     status: "planned",
   },
   {
+    slug: "cost-by-income",
+    file: "specs/product/cost-by-income.md",
+    group: "planning",
+    summary:
+      "Each college's cost as a curve over family income: what families pay at each income, the income where need-based aid ends, and what merit aid can still do above it.",
+    complexity: 3,
+    complexityNote:
+      "A per-college model calibrated to the federal $110K+ figure, a curated file of colleges' published income promises, a merit classification, a 25-college pilot against the colleges' own calculators, and a new chart across the Cost page, Compare, and Explore.",
+    status: "planned",
+  },
+  {
     slug: "net-price-estimator",
     file: "specs/product/net-price-estimator.md",
     group: "planning",

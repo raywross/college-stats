@@ -12,7 +12,8 @@
 -- student's; everything else becomes 'auto' and is filled in on the next plan open.
 --
 -- No policy changes: the list_items row policies already cover every column. Until this file is applied, the app
--- reads lists without these columns and treats every row as the student's (lib/planner/read-plan.ts).
+-- reads lists without these columns, gives each row the source this backfill would, and writes no suggestions
+-- (lib/planner/read-plan.ts withBackfillSources, `sourcesMissing`).
 
 alter table public.list_items add column category_source text not null default 'auto' check (category_source in ('auto','student'));
 alter table public.list_items add column round_source    text not null default 'auto' check (round_source in ('auto','student'));

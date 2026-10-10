@@ -22,7 +22,7 @@ export const metadata: Metadata = {
 const LEVELS: Complexity[] = [1, 2, 3, 4];
 
 /** Groups whose section links to a readable overview page (one of ROADMAP_OVERVIEWS). */
-const GROUP_OVERVIEWS: Partial<Record<RoadmapGroupKey, string>> = { "college-reported": "data-expansion", ideas: "ideas" };
+const GROUP_OVERVIEWS: Partial<Record<RoadmapGroupKey, string>> = { "college-reported": "data-expansion", chances: "chances", ideas: "ideas" };
 
 export default function RoadmapPage() {
   const planned = ROADMAP.filter((s) => s.status !== "idea");

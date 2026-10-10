@@ -21,7 +21,7 @@ import {
 } from "@/lib/planner/calendar";
 import { KID_VARS, MONEY_VAR, ROUND_VAR, STRIPED, TEST_VAR } from "@/lib/planner/colors";
 import { ROUND_LABELS, type ListRound } from "@/lib/list-rules";
-import { createCalendarToken } from "@/lib/planner/store-timeline";
+import { createCalendarToken, createViewerCalendarToken } from "@/lib/planner/store-timeline";
 import { track } from "@/lib/analytics";
 import type { PlanContext } from "@/lib/planner/types";
 
@@ -130,7 +130,12 @@ export default function FamilyCalendar({ children, viewer, everyone }: CalendarT
         </div>
         <div className="flex gap-2">
           <PrintLink everyone={everyone} studentId={children.length === 1 ? children[0].studentId : null} />
-          {children.length === 1 && <AddToCalendar listId={children[0].ctx.list.id} everyone={everyone} />}
+          {/* A guardian subscribes once to every child they can see (the per-viewer feed); a student keeps their list's. */}
+          {viewer === "guardian" ? (
+            <AddToCalendar feed={{ kind: "viewer" }} everyone={everyone} />
+          ) : (
+            children.length === 1 && <AddToCalendar feed={{ kind: "list", listId: children[0].ctx.list.id }} everyone={everyone} />
+          )}
         </div>
       </div>
 
@@ -155,7 +160,6 @@ export default function FamilyCalendar({ children, viewer, everyone }: CalendarT
                 <div className="flex items-center gap-2 border-b bg-muted/40 px-3 py-1.5 text-xs font-bold sm:px-4">
                   <span className="size-3 rounded-full" style={{ background: kidColor(child.colorSlot) }} aria-hidden />
                   {child.name} · class of {child.gradYear ?? "—"}
-                  {children.length === 1 ? null : <AddToCalendarSmall listId={child.ctx.list.id} />}
                 </div>
               )}
               {lanes.length === 0 ? (
@@ -204,9 +208,9 @@ function PrintLink({ everyone, studentId }: { everyone: boolean; studentId: stri
   );
 }
 
-/** "Add to my calendar" for one child's list, reusing the existing per-list feed (lib/planner/store-timeline.ts)
- *  until the per-viewer feed (specs/planner/redesign/calendar.md "Feed, print, share") lands. */
-function AddToCalendar({ listId, everyone }: { listId: string; everyone: boolean }) {
+/** "Add to my calendar": a guardian's per-viewer feed (every child they can see, each title starting with the child's
+ *  name; specs/planner/redesign/calendar.md "Feed, print, share"), or a student's own list's feed. */
+function AddToCalendar({ feed, everyone }: { feed: { kind: "viewer" } | { kind: "list"; listId: string }; everyone: boolean }) {
   const [url, setUrl] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -214,12 +218,13 @@ function AddToCalendar({ listId, everyone }: { listId: string; everyone: boolean
   const subscribe = () =>
     startTransition(async () => {
       setMessage(null);
-      const r = await createCalendarToken(listId);
+      const r = feed.kind === "viewer" ? await createViewerCalendarToken() : await createCalendarToken(feed.listId);
       if (!r.ok) {
         setMessage(r.message);
         return;
       }
-      setUrl(`webcal://${window.location.host}/api/plan/${r.token}.ics`);
+      const path = feed.kind === "viewer" ? `/api/plan/feed/${r.token}.ics` : `/api/plan/${r.token}.ics`;
+      setUrl(`webcal://${window.location.host}${path}`);
       track("plan_calendar_feed_added", { everyone });
     });
 
@@ -234,33 +239,6 @@ function AddToCalendar({ listId, everyone }: { listId: string; everyone: boolean
     <button type="button" disabled={pending} onClick={subscribe} className="inline-flex h-9 items-center gap-1.5 rounded-full border bg-card px-3 text-xs font-semibold hover:bg-muted disabled:opacity-60">
       <CalendarPlus className="size-4" /> Add to my calendar
       {message && <span className="sr-only">{message}</span>}
-    </button>
-  );
-}
-
-/** The same control, compact, beside a child's header row in Everyone. */
-function AddToCalendarSmall({ listId }: { listId: string }) {
-  const [pending, startTransition] = useTransition();
-  const [done, setDone] = useState(false);
-  const [url, setUrl] = useState<string | null>(null);
-  const subscribe = () =>
-    startTransition(async () => {
-      const r = await createCalendarToken(listId);
-      if (!r.ok) return;
-      setUrl(`webcal://${window.location.host}/api/plan/${r.token}.ics`);
-      setDone(true);
-      track("plan_calendar_feed_added", { everyone: true });
-    });
-  if (done && url) {
-    return (
-      <a href={url} className="ml-auto inline-flex h-6 items-center gap-1 rounded-full border bg-card px-2 text-[11px] font-semibold hover:bg-muted">
-        <CalendarPlus className="size-3" /> Open
-      </a>
-    );
-  }
-  return (
-    <button type="button" disabled={pending} onClick={subscribe} className="ml-auto inline-flex h-6 items-center gap-1 rounded-full border bg-card px-2 text-[11px] font-semibold hover:bg-muted disabled:opacity-60">
-      <CalendarPlus className="size-3" /> Add to my calendar
     </button>
   );
 }

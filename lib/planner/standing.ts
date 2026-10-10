@@ -10,7 +10,7 @@
  */
 import type { TestPolicy } from "../types.ts";
 import { actToSat, satToAct } from "./concordance.ts";
-import { compareGpaRanges, type CollegeGpa } from "./gpa-model.ts";
+import { compareGpaMiddle, compareGpaRanges, type CollegeGpa, type GpaMiddle } from "./gpa-model.ts";
 
 export type TestKind = "sat" | "act";
 export type Fit = "reach" | "target" | "likely";
@@ -49,7 +49,7 @@ export interface StandingSchool {
 }
 
 /** The field a GPA sentence's ⓘ cites. */
-export type GpaCite = "reported.admission_profile.gpa.average" | "derived.gpa_band_mean" | "derived.gpa_estimate";
+export type GpaCite = "reported.admission_profile.gpa.average" | "derived.gpa_band_mean" | "derived.gpa_middle_half" | "derived.gpa_estimate";
 
 export interface StandingResult {
   fit: Fit | null;
@@ -158,6 +158,7 @@ function gpaStanding(student: StandingStudent, school: StandingSchool, testLabel
   const yours = /^[\d.]+$/.test(label) ? `Your GPA (${label})` : `Your GPA, ${label},`;
   const college = schoolGpa(school);
   const onlyTest = testLabel ? `only your ${testLabel} is used` : "your GPA isn't used here";
+  if (college.middle) return middleStanding(own, yours, college.middle, college.weighted, testLabel);
 
   if (college.kind === "none" || !college.range || college.point === null) {
     const text =
@@ -184,6 +185,35 @@ function gpaStanding(student: StandingStudent, school: StandingSchool, testLabel
       ? `This college publishes only a weighted average (${trimGpa(college.weighted)}), so this is an estimate.`
       : "This college doesn't publish an unweighted average, so this is an estimate.";
   return { position, note: { text: `${yours} is ${where} the ${gpaSpan(college.range)} typical of colleges with similar test scores and admit rates. ${why}`, cite } };
+}
+
+/** A middle 50% as shown: two decimals when exact ("3.62–4.00"), one when estimated ("3.4–3.9"). */
+function middleSpan(m: GpaMiddle): string {
+  const digits = m.kind === "bands" ? 2 : 1;
+  return `${m.shown[0].toFixed(digits)}–${m.shown[1].toFixed(digits)}`;
+}
+
+/**
+ * The GPA position and sentence against the college's middle 50% (gpa.md "The design" 7): "Your GPA (3.82) is
+ * inside the middle 50% of first-years' GPAs here (3.62–4.00).", with an estimate saying so.
+ */
+function middleStanding(own: [number, number], yours: string, middle: GpaMiddle, weighted: number | null, testLabel: string | null): { position: Position | null; note: StandingResult["gpaNote"] } {
+  const cite: GpaCite = middle.kind === "bands" ? "derived.gpa_middle_half" : "derived.gpa_estimate";
+  const span = middleSpan(middle);
+  const estimate =
+    middle.kind === "estimated"
+      ? `, estimated from colleges with similar test scores; ${weighted !== null ? `this college publishes only a weighted average (${trimGpa(weighted)})` : "this college doesn't publish its GPA spread"}`
+      : "";
+  const position = compareGpaMiddle(own, middle);
+  if (position === null) {
+    const decides = testLabel ? `Your ${testLabel} decides the group here.` : "There's no score to go on here either.";
+    return {
+      position: null,
+      note: { text: `Your GPA can't be placed against this college's: yours (${ownSpan(own)}) spans its middle 50% of first-years' GPAs (${span}${estimate}). ${decides}`, cite },
+    };
+  }
+  const where = position === "in" ? "inside" : position;
+  return { position, note: { text: `${yours} is ${where} the middle 50% of first-years' GPAs here (${span})${estimate}.`, cite } };
 }
 
 /** Reach / Target / Likely for one college (specs/planner/redesign/standing.md "The rules"). */

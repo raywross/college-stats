@@ -252,6 +252,9 @@ function gpaEstimateInputs(school: School): FieldPath[] {
   const out: FieldPath[] = [];
   if (satTotal(school)) out.push("derived.sat_total");
   else if (school.admissions?.act_composite_25_75) out.push("admissions.act_composite_25_75");
+  // The middle-50% models (gpa.md section 7) read the Reading & Writing + Math ends, else the ACT composite ends.
+  if (school.admissions?.sat_reading_25_75 && school.admissions?.sat_math_25_75) out.push("admissions.sat_reading_25_75", "admissions.sat_math_25_75");
+  else if (school.admissions?.act_composite_25_75 && !out.includes("admissions.act_composite_25_75")) out.push("admissions.act_composite_25_75");
   out.push("admissions.acceptance_rate");
   if (school.reported?.admission_profile?.gpa?.average != null) out.push("reported.admission_profile.gpa.average");
   return out;

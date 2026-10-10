@@ -86,7 +86,8 @@ export interface PlanNumbers {
   practice: boolean;
 }
 
-const SCALE_MAX: Record<GpaScale, number> = { "4.0": 4, "5.0": 5, "100": 100 };
+/** A 4.0-scale GPA may run to 5.0: above 4.0 it is weighted, read by the plan as a range (gpa.md "The design" 3). */
+const SCALE_MAX: Record<GpaScale, number> = { "4.0": 5, "5.0": 5, "100": 100 };
 const SCORE_RANGE = { sat: [400, 1600], act: [1, 36] } as const;
 
 const finite = (v: unknown): number | null => {

@@ -16,7 +16,7 @@ import type { ListCategory, ListRound } from "../list-rules.ts";
 import { isOffered, roundDates, roundsOffered } from "./rounds.ts";
 import { autoRounds, edTwoSuggestion, roundProblems, type AutoRound, type AutoRoundsItem } from "./auto-rounds.ts";
 import { balance, retakeSuggestion, scoreToMoveUp, standingFor, type Fit, type MoveUp, type RetakeSuggestion, type StandingResult, type StandingStudent } from "./standing.ts";
-import { planStudent, type StudentProfileData } from "../student-profile.ts";
+import { planGpaLabel, planGpaRange, planStudent, type StudentProfileData } from "../student-profile.ts";
 import type { PlanItem, PlanSchool } from "./types.ts";
 
 export type SeasonStatus = "not_started" | "working" | "submitted" | "decision";
@@ -152,7 +152,8 @@ function amberProblems(rows: { item: PlanItem; school: PlanSchool | null; round:
 /** The plan's whole view (build-plan.md "The view model"). */
 export function planView(input: PlanViewInput): PlanView {
   const { items, schools, profile, today } = input;
-  const student = planStudent(profile);
+  // The GPA as a range, so a weighted GPA is placed only as roughly as it allows (gpa.md "The design" 3).
+  const student: StandingStudent = { ...planStudent(profile), gpaRange: planGpaRange(profile), gpaLabel: planGpaLabel(profile) };
   const schoolOf = (i: PlanItem): PlanSchool | null => schools[i.unit_id] ?? null;
   const bySchool: Record<string, PlanSchool | undefined> = Object.fromEntries(items.map((i) => [i.id, schools[i.unit_id]]));
 

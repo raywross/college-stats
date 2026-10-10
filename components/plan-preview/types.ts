@@ -21,7 +21,8 @@ export interface PreviewSchool {
   profile: AutoRoundsSchool["profile"];
   logistics: AutoRoundsSchool["logistics"];
   standing: StandingSchool;
-  cites: { sat: AnyCited | null; act: AnyCited | null; policy: AnyCited | null };
+  /** `gpa`: the figure the GPA sentence used (the C12 average, the band mean, or the estimate). */
+  cites: { sat: AnyCited | null; act: AnyCited | null; policy: AnyCited | null; gpa: AnyCited | null };
   dates: Record<ListRound, { closing: PreviewDate | null; notification: PreviewDate | null }>;
 }
 

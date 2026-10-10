@@ -42,7 +42,9 @@ test("parseNumbers: in-range values pass; anything out of range refuses the whol
   assert.deepEqual(parseNumbers({ gpa: 3.82, gpaScale: "4.0", focus: "sat", score: 1390, practice: true }), { gpa: 3.82, gpaScale: "4.0", focus: "sat", score: 1390, practice: true });
   assert.deepEqual(parseNumbers({ gpa: "92", gpaScale: "100", focus: "act", score: "31", practice: false }), { gpa: 92, gpaScale: "100", focus: "act", score: 31, practice: false });
   assert.deepEqual(parseNumbers({ gpa: null, focus: "none", score: 1500 }), { gpa: null, gpaScale: "4.0", focus: "none", score: null, practice: false });
-  assert.equal(parseNumbers({ gpa: 4.3, gpaScale: "4.0", focus: "sat", score: 1300 }), null);
+  assert.equal(parseNumbers({ gpa: 5.3, gpaScale: "4.0", focus: "sat", score: 1300 }), null);
+  // Above 4.0 on the 4.0 scale is a weighted GPA, kept and read by the plan as a range (gpa.md "The design" 3).
+  assert.equal(parseNumbers({ gpa: 4.3, gpaScale: "4.0", focus: "sat", score: 1300 })?.gpa, 4.3);
   assert.equal(parseNumbers({ gpa: 3.5, focus: "sat", score: 1700 }), null);
   assert.equal(parseNumbers({ gpa: 3.5, focus: "act", score: 40 }), null);
   assert.equal(parseNumbers({ gpa: 3.5, focus: "psat", score: 1000 }), null);

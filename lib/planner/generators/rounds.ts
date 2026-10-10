@@ -1,52 +1,49 @@
 /**
- * The `rounds` generator (U3; specs/planner/early-rounds.md, timeline.md "Generators" → `stage`): one student-wide
- * `decide_rounds` step, due six weeks before the earliest early-round deadline on the list, while the plan is in season
- * and some college offers an early round. Its date carries the deadline's lineage (field, edition, last-cycle note).
- * Accepting the rounds plan ticks it (lib/planner/store-rounds.ts).
+ * The `rounds` generator (U6; specs/planner/redesign/rounds.md "Money"; timeline.md "Generators" → `stage`): a
+ * `cost_check` task per non-withdrawn, not-yet-applied/decided row sitting in ED or ED II, due 21 days before that
+ * round's closing date, assigned to the guardian ("Check the cost of Wake Forest together before applying ED I").
+ * Keyed by item and round, so moving the round off ED/ED II (or applying/withdrawing/deciding) orphans it through
+ * mergeTasks — the point of a new proposal-era `decide_rounds` step is gone (build-plan.md "Review notes" #6), so
+ * this generator no longer emits it.
  *
- * Contract (lib/planner/tasks.ts): pure, no I/O; key `{list_id}:decide_rounds:-`.
+ * Nothing without a published closing date; nothing on a guardian's own list. Pure, no I/O.
  */
-import { inSeason } from "../cycle.ts";
-import { addDays } from "../stage.ts";
 import { taskKey } from "../tasks.ts";
-import { earliestEarlyDeadline, ROUND_SHORT } from "../rounds.ts";
+import { ROUND_SHORT, roundDates } from "../rounds.ts";
+import { addDays } from "../stage.ts";
 import type { GeneratedTask, GeneratorInput } from "../types.ts";
 
-/** How long before the earliest early deadline the decision is due. */
-export const DECIDE_ROUNDS_LEAD_DAYS = 42;
-
-const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-const day = (iso: string) => `${MONTHS[Number(iso.slice(5, 7)) - 1]} ${Number(iso.slice(8, 10))}`;
+/** How long before the round's closing date the cost check is due. */
+export const COST_CHECK_LEAD_DAYS = 21;
 
 export function generate(input: GeneratorInput): GeneratedTask[] {
-  if (!inSeason(input.grade)) return [];
-  const earliest = earliestEarlyDeadline(input.items, input.schools);
-  if (!earliest) return [];
-  const item = input.items.find((i) => i.id === earliest.itemId)!;
-  const school = input.schools[item.unit_id];
-  const round = earliest.date.field.includes("early_decision.first")
-    ? "ed"
-    : earliest.date.field.includes("early_decision.other")
-      ? "ed2"
-      : school?.profile?.early_action?.restrictive
-        ? "rea"
-        : "ea";
-  return [
-    {
-      key: taskKey(input.list.id, "decide_rounds"),
-      item_id: null,
-      kind: "decide_rounds",
-      title: "Decide your application rounds",
-      detail: `Who gets ED, EA, or REA, before the first early deadline: ${school?.name ?? "a college"} ${ROUND_SHORT[round]}, ${day(earliest.date.iso)}. Open Rounds to see the proposal.`,
-      due_on: addDays(earliest.date.iso, -DECIDE_ROUNDS_LEAD_DAYS),
+  if (input.list.student_id === null) return [];
+  const out: GeneratedTask[] = [];
+  for (const item of input.items) {
+    if (item.withdrawn_on) continue;
+    if (item.round !== "ed" && item.round !== "ed2") continue;
+    if (item.status === "applied" || item.status === "decided") continue;
+    const school = input.schools[item.unit_id];
+    const dates = roundDates(school, item.round);
+    if (!dates.closing) continue;
+    out.push({
+      key: taskKey(input.list.id, "cost_check", `${item.id}:${item.round}`),
+      item_id: item.id,
+      kind: "cost_check",
+      title: `Check the cost of ${school?.name ?? "the college"} together before applying ${ROUND_SHORT[item.round]}`,
+      detail: school?.links?.price_calculator
+        ? `ED and ED II are binding, except for aid that makes attending impossible: use the net price calculator before applying. ${school.links.price_calculator}`
+        : "ED and ED II are binding, except for aid that makes attending impossible: check together what it would really cost before applying.",
+      due_on: addDays(dates.closing.iso, -COST_CHECK_LEAD_DAYS),
       window_start: null,
       window_end: null,
-      assignee: "student",
+      assignee: "guardian",
       source: "stage",
-      source_field: earliest.date.field,
-      source_edition: earliest.dates.edition,
-      date_note: earliest.dates.lastCycle ? "last_cycle" : null,
+      source_field: dates.closing.field,
+      source_edition: dates.edition,
+      date_note: dates.lastCycle ? "last_cycle" : null,
       position: 0,
-    },
-  ];
+    });
+  }
+  return out;
 }

@@ -34,7 +34,8 @@ import {
   type RoundsSchool,
   type Standing,
 } from "../lib/planner/rounds.ts";
-import { DECIDE_ROUNDS_LEAD_DAYS, generate } from "../lib/planner/generators/rounds.ts";
+import { COST_CHECK_LEAD_DAYS, generate } from "../lib/planner/generators/rounds.ts";
+import { applyMerge, mergeTasks, taskKey } from "../lib/planner/tasks.ts";
 import { stageOf } from "../lib/planner/stage.ts";
 import type { GeneratorInput, PlanSchool } from "../lib/planner/types.ts";
 import type { ReportedAdmissionProfile, ReportedLogistics } from "../lib/types.ts";
@@ -391,7 +392,7 @@ test("summary line: ED I and ED II by name, EA and RD counted", () => {
 });
 
 /* ------------------------------------------------------------------ */
-/* The decide-rounds step                                              */
+/* The cost_check step (redesign U6; specs/planner/redesign/rounds.md "Money")                        */
 /* ------------------------------------------------------------------ */
 
 function genInput(items: RoundsItem[], schools: Record<string, RoundsSchool>, grade: GeneratorInput["grade"] = "senior_fall"): GeneratorInput {
@@ -408,33 +409,71 @@ function genInput(items: RoundsItem[], schools: Record<string, RoundsSchool>, gr
   };
 }
 
-test("decide_rounds: six weeks before the earliest early deadline, student-assigned, with the deadline's lineage", () => {
+test("earliestEarlyDeadline still finds the earliest early closing date across the list", () => {
   const schools = by([
     school("a", "A", { early_decision: ED({ first: { closing: md(11, 15), notification: md(12, 15) } }), early_action: NO_EA }),
     school("b", "Bee", { early_decision: NO_ED, early_action: EA(false, { closing: md(11, 1) }) }, { editionIsLastCycle: true }),
   ]);
-  const tasks = generate(genInput([item("a"), item("b")], schools));
-  assert.equal(tasks.length, 1);
-  const t = tasks[0];
-  assert.equal(t.key, "list-1:decide_rounds:-");
-  assert.equal(t.kind, "decide_rounds");
-  assert.equal(t.item_id, null);
-  assert.equal(DECIDE_ROUNDS_LEAD_DAYS, 42);
-  assert.equal(t.due_on, "2026-09-20", "Nov 1 minus 42 days");
-  assert.equal(t.assignee, "student");
-  assert.equal(t.source, "stage");
-  assert.equal(t.source_field, "reported.admission_profile.early_action.closing");
-  assert.equal(t.date_note, "last_cycle");
-  assert.match(t.detail!, /Bee EA, Nov 1/);
   assert.equal(earliestEarlyDeadline([item("a"), item("b")], schools)?.date.iso, "2026-11-01");
 });
 
-test("decide_rounds: nothing out of season, and nothing without an early round", () => {
-  const schools = by([school("a", "A", { early_decision: ED(), early_action: NO_EA }), school("r", "R", { early_decision: NO_ED, early_action: NO_EA })]);
-  assert.deepEqual(generate(genInput([item("a")], schools, "earlier")), []);
-  assert.deepEqual(generate(genInput([item("a")], schools, "graduated")), []);
-  assert.deepEqual(generate(genInput([item("r")], schools)), []);
-  assert.deepEqual(generate(genInput([item("a", { status: "decided", outcome: "admitted" })], schools)), [], "a decided college's deadline doesn't count");
+test("cost_check: 21 days before the ED closing date, guardian-assigned, with the deadline's lineage and the net price calculator", () => {
+  const schools = by([school("a", "A", { early_decision: ED({ first: { closing: md(11, 15), notification: md(12, 15) } }), early_action: NO_EA }, { editionIsLastCycle: true })]);
+  const i = item("a", { round: "ed" });
+  const tasks = generate(genInput([i], schools));
+  assert.equal(tasks.length, 1);
+  const t = tasks[0];
+  assert.equal(t.key, taskKey("list-1", "cost_check", `${i.id}:ed`));
+  assert.equal(t.kind, "cost_check");
+  assert.equal(t.item_id, i.id);
+  assert.equal(COST_CHECK_LEAD_DAYS, 21);
+  assert.equal(t.due_on, "2026-10-25", "Nov 15 minus 21 days");
+  assert.equal(t.title, "Check the cost of A together before applying ED I");
+  assert.equal(t.assignee, "guardian");
+  assert.equal(t.source, "stage");
+  assert.equal(t.source_field, "reported.admission_profile.early_decision.first.closing");
+  assert.equal(t.date_note, "last_cycle");
+  assert.match(t.detail!, /net price calculator.*https:\/\/a\.edu\/npc/);
+});
+
+test("cost_check: ED II gets its own key and title", () => {
+  const schools = by([school("a", "A", { early_decision: ED({ other: { closing: md(1, 5), notification: md(2, 15) } }), early_action: NO_EA })]);
+  const i = item("a", { round: "ed2" });
+  const t = generate(genInput([i], schools))[0];
+  assert.equal(t.key, taskKey("list-1", "cost_check", `${i.id}:ed2`));
+  assert.equal(t.title, "Check the cost of A together before applying ED II");
+});
+
+test("cost_check: nothing without a published closing date, without a link, without a binding round, once applied or withdrawn, or on a guardian's own list", () => {
+  const noLink = school("a", "A", { early_decision: ED(), early_action: NO_EA }, { links: { website: "https://a.edu", price_calculator: null, admissions: "https://a.edu/admissions" } });
+  const noDate = school("n", "N", { early_decision: NO_ED, early_action: NO_EA });
+  const schools = by([noLink, noDate]);
+  assert.doesNotMatch(generate(genInput([item("a", { round: "ed" })], schools))[0].detail!, /https:\/\//, "no calculator link: no URL in the detail");
+  assert.deepEqual(generate(genInput([item("n", { round: "ed" })], schools)), [], "no closing date on record");
+  assert.deepEqual(generate(genInput([item("a", { round: "ea" })], schools)), [], "not a binding round");
+  assert.deepEqual(generate(genInput([item("a", { round: "ed", status: "applied" })], schools)), [], "already applied");
+  assert.deepEqual(generate(genInput([item("a", { round: "ed", status: "decided", outcome: "admitted" })], schools)), [], "already decided");
+  assert.deepEqual(generate(genInput([{ ...item("a", { round: "ed" }), withdrawn_on: "2026-09-01" } as RoundsItem], schools)), [], "withdrawn");
+  const guardianList = { ...genInput([item("a", { round: "ed" })], schools), list: { ...genInput([], schools).list, student_id: null } };
+  assert.deepEqual(generate(guardianList), [], "a guardian's own list gets no cost checks");
+});
+
+test("cost_check: moving the round off ED orphans the task through mergeTasks", () => {
+  const schools = by([school("a", "A", { early_decision: ED({ first: { closing: md(11, 15), notification: md(12, 15) } }), early_action: EA() })]);
+  const i = item("a", { round: "ed" });
+  const edInput = genInput([i], schools);
+  const first = generate(edInput);
+  const stored = applyMerge("list-1", [], mergeTasks([], first), "2026-08-15T12:00:00Z", (k) => `id:${k}`);
+  const key = taskKey("list-1", "cost_check", `${i.id}:ed`);
+  assert.ok(stored.some((t) => t.key === key && !t.orphaned));
+
+  const eaInput = genInput([{ ...i, round: "ea" }], schools);
+  const second = generate(eaInput);
+  assert.ok(!second.some((t) => t.key === key), "an EA row generates no cost_check");
+  const merge = mergeTasks(stored, second);
+  assert.ok(merge.orphans.includes(stored.find((t) => t.key === key)!.id));
+  const after = applyMerge("list-1", stored, merge, "2026-08-15T12:00:00Z");
+  assert.equal(after.find((t) => t.key === key)!.orphaned, true);
 });
 
 /* ------------------------------------------------------------------ */

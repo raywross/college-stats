@@ -9,7 +9,7 @@ import { buildYourWeek, type WeekLine } from "@/lib/emails/your-week";
 import { buildParentSummary, type ParentSummaryStudent } from "@/lib/emails/parent-summary";
 import { gradeOf, loadCycle } from "@/lib/planner/cycle";
 import { NO_MONEY, stuckSignals, summaryLine } from "@/lib/planner/summary";
-import { PLAN_ITEM_COLUMNS, PLAN_TASK_COLUMNS, planCycleKey, todayIso } from "@/lib/planner/context";
+import { PLAN_TASK_COLUMNS, planCycleKey, readItems, todayIso } from "@/lib/planner/context";
 import { shortDay } from "@/lib/planner/generators/college";
 import { CONSENT_COLUMNS, deliverText, readListTasks, type ConsentRow, type ListTasks } from "@/lib/planner/reminders-server";
 import { addDays, stageOf } from "@/lib/planner/stage";
@@ -198,7 +198,7 @@ async function parentSummaryStudent(client: SupabaseClient, s: { id: string; dis
   const listId = (list.data as { id: string } | null)?.id;
   if (!listId) return null;
   const [items, tasks] = await Promise.all([
-    client.from("list_items").select(PLAN_ITEM_COLUMNS).eq("list_id", listId),
+    readItems(client, listId),
     client.from("plan_tasks").select(PLAN_TASK_COLUMNS).eq("list_id", listId),
   ]);
   const itemRows = (items.data ?? []) as PlanItem[];

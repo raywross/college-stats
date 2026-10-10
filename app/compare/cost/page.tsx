@@ -6,6 +6,8 @@ import type { School } from "@/lib/types";
 import { METRICS } from "@/lib/metrics";
 import { moneyCompact, pct } from "@/lib/format";
 import { compareAidRows } from "@/lib/cds/financial-aid-compare";
+import { costByIncomeRows } from "@/lib/compare-cost-rows";
+import { estimatesShown } from "@/lib/cost-curve";
 import { SLOT_COLORS, shortName } from "@/lib/brand";
 import { compareHref, compareTopicOf, type CompareRow } from "@/lib/compare-topics";
 import { compareMetadata, loadComparison, requireComparison } from "@/lib/compare-data";
@@ -112,6 +114,12 @@ export default async function CompareCostPage({ searchParams }: Props) {
   const aidRows = compareAidRows(citeField("aid.cohort").year);
   const hasAidRows = aidRows.some((r) => schools.some((s) => r[3](s) !== null));
 
+  // Cost by income (specs/product/cost-by-income.md): estimates are shown on previews and once the accuracy pilot has
+  // passed; the break point and the price above $110K are estimates, so the gate decides what these rows and the slider say.
+  const showEstimates = estimatesShown();
+  const curveRows = costByIncomeRows(showEstimates);
+  const hasCurveRows = curveRows.some((r) => schools.some((s) => r[3](s) !== null));
+
   const hasCostData =
     hasAidRows ||
     schools.some(
@@ -149,6 +157,7 @@ export default async function CompareCostPage({ searchParams }: Props) {
     { id: "grants", label: "Grants" },
     { id: "sticker", label: "Sticker prices" },
     { id: "by-income", label: "By family income" },
+    ...(hasCurveRows ? [{ id: "aid-end", label: "Where aid ends & merit" }] : []),
     { id: "guarantee", label: "Tuition guarantee & Promise" },
     { id: "cds", label: "Common Data Sets" },
   ];
@@ -287,8 +296,18 @@ export default async function CompareCostPage({ searchParams }: Props) {
             </Block>
 
             <div id="by-income" className={COMPARE_BLOCK_SCROLL}>
-              <NetPriceCompare schools={schools} year={citeField("cost.net_price_by_income").year} />
+              <NetPriceCompare schools={schools} year={citeField("cost.net_price_by_income").year} showEstimates={showEstimates} />
             </div>
+
+            {hasCurveRows && (
+              <Block id="aid-end" title="Where need-based aid ends, merit, and published promises" className={COMPARE_BLOCK_SCROLL}>
+                <TextTable rows={curveRows} schools={schools} citeField={citeField} />
+                <p className="mt-3 text-xs text-muted-foreground">
+                  A college&apos;s own promise is stated for a typical family and changes yearly; where a promise and our estimate disagree, the promise
+                  wins. Merit has no income limit, so it can lower the price above the point where need-based aid ends.
+                </p>
+              </Block>
+            )}
 
             <Block id="guarantee" title="Tuition guarantee & Promise program" className={COMPARE_BLOCK_SCROLL}>
               <TextTable rows={GUARANTEE_ROWS} schools={schools} citeField={citeField} nullLabel="Not reported" />

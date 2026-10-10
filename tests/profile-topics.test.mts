@@ -253,6 +253,23 @@ function sourceFiles(dir: string): string[] {
   });
 }
 
+/** Fields the profile began showing after the single-page profile (cost by income, specs/product/cost-by-income.md). */
+const ADDED_FIELDS = [
+  "cost.breakdown",
+  "cost.cost_of_attendance",
+  "derived.need_aid_break_income",
+  "derived.need_aid_status",
+  "derived.cost_estimate",
+  "derived.merit_class",
+  "derived.merit_proxy",
+  "derived.aid_methodology",
+  "aid_policy.free_tuition_under",
+  "aid_policy.no_contribution_under",
+  "aid_policy.need_only",
+  "aid_policy.home_equity",
+  "aid_policy.siblings",
+] as const;
+
 test("every topic has a route file and a fields list", () => {
   for (const t of PROFILE_TOPICS) {
     assert.ok(existsSync(join(ROOT, "app/schools/[id]", t.key, "page.tsx")), `app/schools/[id]/${t.key}/page.tsx`);
@@ -263,7 +280,7 @@ test("every topic has a route file and a fields list", () => {
 });
 
 test("the overview and topic pages together show every field the single-page profile showed", () => {
-  const legacy = new Set<string>(Object.values(LEGACY_FIELDS).flat());
+  const legacy = new Set<string>([...Object.values(LEGACY_FIELDS).flat(), ...ADDED_FIELDS]);
   const now = new Set<string>([...OVERVIEW_FIELDS, ...Object.values(TOPIC_FIELDS).flat()]);
   assert.deepEqual([...legacy].filter((f) => !now.has(f)), [], "fields no page shows any more");
   assert.deepEqual([...now].filter((f) => !legacy.has(f)), [], "fields the single-page profile didn't show (add them to LEGACY_FIELDS deliberately)");

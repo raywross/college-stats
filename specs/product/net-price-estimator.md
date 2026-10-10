@@ -1,6 +1,9 @@
 # Net Price Estimator: What This Family Would Pay
 
-> Status: **planned** (not built). After [accounts.md](accounts.md) (guardian-only finances). Reuses
+> Status: **planned** (not built). After [accounts.md](accounts.md) (guardian-only finances). Since 2026-10-10 the
+> school-level half (each college's cost curve over income, where need-based aid ends, merit) is its own spec,
+> [cost-by-income.md](cost-by-income.md); this estimator becomes the personal layer on that curve (SAI, Pell, the
+> household's own inputs) and replaces its band anchor below with the curve. Reuses
 > [cost-outcomes.md](../cost-outcomes.md) and history ([trends-data.md](../trends-data.md)). Part of [product](README.md).
 
 ## Goal

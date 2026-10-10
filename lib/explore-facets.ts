@@ -1,4 +1,5 @@
 import type { School } from "./types";
+import { offersMerit, type MeritInfo } from "./merit.ts";
 import type { FilterFacets } from "../components/explore/FilterPanel";
 import { INDICATOR_KEYS, indicatorOf, type Direction } from "./indicators.ts";
 import { median, sizeBucket, type MetricKey } from "./metrics.ts";
@@ -34,9 +35,11 @@ import { hasLgbtqCenter, policyIsYes } from "./lgbtq-policy.ts";
 export interface FacetSource {
   getAllSchools(): School[];
   histogram(key: MetricKey, bins: number, range: [number, number]): number[];
+  /** The college's merit class (lib/merit.ts), memoized by the dataset. */
+  meritInfoFor(school: School): MeritInfo;
 }
 
-export function buildFacets({ getAllSchools, histogram }: FacetSource): FilterFacets {
+export function buildFacets({ getAllSchools, histogram, meritInfoFor }: FacetSource): FilterFacets {
   const all = getAllSchools();
   const tally = (get: (s: (typeof all)[number]) => string) =>
     all.reduce<Record<string, number>>((acc, s) => ((acc[get(s)] = (acc[get(s)] ?? 0) + 1), acc), {});
@@ -141,6 +144,7 @@ export function buildFacets({ getAllSchools, histogram }: FacetSource): FilterFa
     minGreek: Object.fromEntries(MIN_GREEK_OPTIONS.map((n) => [n, all.filter((s) => meetsGreekThreshold(s, n)).length])),
     greekCouncils: Object.fromEntries(GREEK_COUNCIL_FILTERS.map((f) => [f.key, all.filter((s) => hasGreekCouncil(s, f.key)).length])) as FilterFacets["greekCouncils"],
     logistics: Object.fromEntries(LOGISTICS_FILTERS.map((f) => [f.param, all.filter(f.test).length])) as FilterFacets["logistics"],
+    merit: all.filter((s) => offersMerit(meritInfoFor(s))).length,
     campus,
     faith,
     faithGroup,

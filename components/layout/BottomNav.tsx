@@ -3,13 +3,38 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
-import { BookOpen, Compass, Database, Ellipsis, GitCompareArrows, GraduationCap, Home, LineChart, LogIn, Map as MapIcon, Search, Sparkles, UserRound, X } from "lucide-react";
+import { BookOpen, Compass, Database, Ellipsis, GitCompareArrows, GraduationCap, LineChart, ListChecks, LogIn, Map as MapIcon, Search, Sparkles, UserRound, X } from "lucide-react";
 import { ThemeSegmented } from "@/components/ThemeToggle";
 import { SchoolSearch } from "@/components/search/SchoolSearch";
 import { useMe } from "@/components/account/useMe";
 import { loginHref } from "@/lib/accounts";
 import { useCompareIds } from "@/lib/compare";
 import { cn } from "@/lib/utils";
+
+/**
+ * Whether a deadline is due within a week, fetched client-side after mount from `/api/plan/next` (page.md
+ * "Navigation"): never computed on the server, so public pages stay static. Signed-out visitors and any fetch
+ * error read as false.
+ */
+function usePlanDueSoon(signedIn: boolean | undefined): boolean {
+  const [fetched, setFetched] = useState(false);
+  useEffect(() => {
+    if (!signedIn) return;
+    let active = true;
+    fetch("/api/plan/next", { cache: "no-store", credentials: "same-origin" })
+      .then((r) => (r.ok ? (r.json() as Promise<{ dueSoon: boolean }>) : null))
+      .then((data) => {
+        if (active) setFetched(Boolean(data?.dueSoon));
+      })
+      .catch(() => {
+        if (active) setFetched(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [signedIn]);
+  return Boolean(signedIn) && fetched;
+}
 
 type Sheet = "search" | "more" | null;
 
@@ -22,6 +47,7 @@ export function BottomNav() {
   const pathname = usePathname();
   const compareIds = useCompareIds();
   const me = useMe();
+  const planDueSoon = usePlanDueSoon(me?.signedIn);
   const [sheet, setSheet] = useState<Sheet>(null);
 
   // Close sheets on navigation.
@@ -50,9 +76,9 @@ export function BottomNav() {
         style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
       >
         <ul className="mx-auto grid h-16 max-w-md grid-cols-5">
-          <Tab href="/" label="Home" icon={<Home />} active={isActive("/") && !sheet} />
           <Tab href="/explore" label="Explore" icon={<Compass />} active={isActive("/explore") && !sheet} />
           <Tab label="Search" icon={<Search />} active={sheet === "search"} onClick={() => setSheet(sheet === "search" ? null : "search")} />
+          <Tab href="/plan" label="Plan" icon={<ListChecks />} active={isActive("/plan") && !sheet} dot={planDueSoon} />
           <Tab
             href={compareHref}
             label="Compare"
@@ -124,6 +150,7 @@ function Tab({
   icon,
   active,
   badge,
+  dot,
   onClick,
 }: {
   href?: string;
@@ -131,6 +158,8 @@ function Tab({
   icon: ReactNode;
   active: boolean;
   badge?: number;
+  /** A plain dot (no count), for the Plan tab's "a deadline is due soon" (page.md "Navigation"). */
+  dot?: boolean;
   onClick?: () => void;
 }) {
   const inner = (
@@ -147,6 +176,7 @@ function Tab({
             {badge}
           </span>
         )}
+        {dot && <span className="absolute top-0.5 right-1.5 inline-flex size-2 animate-pop-in rounded-full bg-pop ring-2 ring-background" aria-label="A deadline in the next 7 days" />}
       </span>
       <span className={cn("text-[11px] font-semibold", active ? "text-foreground" : "text-muted-foreground")}>{label}</span>
     </>

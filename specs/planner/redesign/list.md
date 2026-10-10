@@ -1,6 +1,6 @@
 # The List Is the Plan: One Row per College
 
-> Status: **planned** 2026-10-09. Part 3 of the [planner redesign](README.md). Replaces the Colleges side of stage 1
+> Status: **built** 2026-10-10 on feature/plan-redesign ([build plan](build-plan.md)). Part 3 of the [planner redesign](README.md). Replaces the Colleges side of stage 1
 > ([../list-building.md](../list-building.md)) and the Rounds stage's table ([../early-rounds.md](../early-rounds.md))
 > with one list. After [standing.md](standing.md); rounds come from [rounds.md](rounds.md).
 

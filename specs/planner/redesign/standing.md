@@ -1,6 +1,6 @@
 # Standing: Numbers First, One Test, and Groups Sorted for the Student
 
-> Status: **planned** 2026-10-09. Part 2 of the [planner redesign](README.md). Implements the rules of
+> Status: **built** 2026-10-10 on feature/plan-redesign ([build plan](build-plan.md)). Part 2 of the [planner redesign](README.md). Implements the rules of
 > [chances-and-fit.md](../../product/chances-and-fit.md) (planned since 2026-10-02) in the form the planner needs, and
 > replaces stage 1's "Suggested" chip ([../list-building.md](../list-building.md#suggested-category)) with groups that
 > start sorted. The pure model is drafted in `lib/planner/standing.ts` with tests in

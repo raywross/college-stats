@@ -459,6 +459,24 @@ export const FIELDS = {
     computed: true,
     derived: { formula: "The GPA bands holding the 25th and 75th percentiles of the \"all\" column", inputs: ["reported.admission_profile.gpa.bands.all"] },
   },
+  // The plan's GPA (specs/planner/redesign/gpa.md; lib/planner/gpa-model.ts): never ranked, shown only in the plan.
+  "derived.gpa_band_mean": {
+    ...reported("Average first-year GPA, figured from the GPA bands"),
+    computed: true,
+    derived: {
+      formula: "Each GPA band's share of first-years times the band's midpoint (4.0 for the top band), added up and divided by the shares' total; the \"all\" column, else the column for students who sent test scores",
+      inputs: ["reported.admission_profile.gpa.bands.all", "reported.admission_profile.gpa.bands.with_test"],
+    },
+  },
+  "derived.gpa_estimate": {
+    ...adm("Estimated unweighted first-year GPA"),
+    computed: true,
+    derived: {
+      formula:
+        "Estimated from colleges with similar test scores and admit rates: a least-squares fit of first-year GPA on the SAT midpoint (ACT through the 2018 concordance) and the admit rate, over colleges that publish an unweighted GPA; a college that publishes only a weighted average is kept between that average minus 1 and 4.0. Never the college's own figure",
+      inputs: ["derived.sat_total", "admissions.act_composite_25_75", "admissions.acceptance_rate", "reported.admission_profile.gpa.average"],
+    },
+  },
   // CDS C8/C9 (specs/data-expansion/cds-test-scores-and-policy.md): records → school.reported (lib/cds/test-scores.ts).
   "reported.test_policy": reported("Test policy for the coming application cycle (CDS C8)"),
   "reported.test_policy_note": reported("Test policy note (CDS C8F)"),

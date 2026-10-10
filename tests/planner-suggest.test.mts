@@ -50,6 +50,8 @@ function school(over: Partial<PlanSchool> = {}): PlanSchool {
     cites: {},
     satRange: null,
     actRange: null,
+    gpaAverage: null,
+    standing: { admitRate: null, sat: null, act: null, gpaAverage: null, testPolicy: null },
     ...over,
   };
 }

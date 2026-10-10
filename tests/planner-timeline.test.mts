@@ -267,10 +267,9 @@ test("cycle generator: entries that apply, once per student, assignee from the f
   const portal = tasks.find((t) => t.key.endsWith(":portal_checks"))!;
   assert.equal(portal.due_on, null);
   assert.ok(portal.window_start && portal.window_end);
-  // A test date with a deadline is a registration step due on the deadline.
-  const sat = tasks.find((t) => t.key.endsWith(":sat_2026_11"))!;
-  assert.equal(sat.title, "Register for the SAT (test day Nov 7)");
-  assert.equal(sat.due_on, "2026-10-23");
+  // A national test date is no longer a task for everyone (redesign; scores.md "Test dates"): untapped, it
+  // produces nothing at all, register or test day.
+  assert.ok(!tasks.some((t) => /:(sat|act)_/.test(t.key)), "no plannedDates on this profile: no test-date tasks");
   // Summer-list entries belong to the offers unit; steps long past aren't generated.
   assert.ok(!tasks.some((t) => t.key.endsWith(":final_transcript")));
   assert.ok(!tasks.some((t) => t.key.endsWith(":ask_recommenders")), `ended more than ${STALE_DAYS} days ago`);
@@ -278,12 +277,28 @@ test("cycle generator: entries that apply, once per student, assignee from the f
   assert.deepEqual(cycleGen(input({ list: { ...input().list, student_id: null } })), []);
 });
 
+test("cycle generator: a picked test date ('I'll take it') becomes a register task and a test-day task", () => {
+  const profile = { tests: { plansTestOptional: false, plannedDates: ["sat_2026_11"] } } as unknown as StudentProfileData;
+  const tasks = cycleGen(input({ items: [item()], schools: { "100": fullSchool() }, profile }));
+  const register = tasks.find((t) => t.key === taskKey(LIST, "test_register", "sat_2026_11"))!;
+  assert.equal(register.kind, "test_register");
+  assert.equal(register.title, "Register for the SAT on Nov 7");
+  assert.equal(register.due_on, "2026-10-23");
+  assert.equal(register.assignee, "student");
+  const day = tasks.find((t) => t.key === taskKey(LIST, "test_day", "sat_2026_11"))!;
+  assert.equal(day.kind, "test_day");
+  assert.equal(day.title, "SAT test day");
+  assert.equal(day.due_on, "2026-11-07");
+  // Every other national date stays untapped: no tasks for it.
+  assert.ok(!tasks.some((t) => t.key.endsWith(":sat_2026_10") || t.key.endsWith(":act_2026_10")));
+});
+
 test("cycle generator: rules that don't hold leave their entries out", () => {
   const school = fullSchool({ aid: null });
-  const profile = { tests: { plansTestOptional: true }, basics: { stateOfResidence: "MI" } } as unknown as StudentProfileData;
+  const profile = { tests: { plansTestOptional: true, plannedDates: ["sat_2026_11"] }, basics: { stateOfResidence: "MI" } } as unknown as StudentProfileData;
   const tasks = cycleGen(input({ schools: { "100": school }, profile }));
   assert.ok(!tasks.some((t) => t.key.endsWith(":css_profile_opens")), "no CSS college");
-  assert.ok(!tasks.some((t) => /:(sat|act)_/.test(t.key)), "test-optional: no test dates");
+  assert.ok(!tasks.some((t) => /:(sat|act)_/.test(t.key)), "test-optional: no test dates even when one was picked before opting out");
   assert.ok(tasks.some((t) => t.key.endsWith(":fafsa_opens")));
 });
 

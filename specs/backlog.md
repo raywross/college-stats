@@ -252,6 +252,12 @@ shared rules for user data are in that README. All user data lives only in Supab
   and the retake threshold.
 - [ ] **Chances and fit** ([product/chances-and-fit.md](product/chances-and-fit.md)): rules-based standing with
   reasons (never a probability), fit against preferences, a pilot against real outcomes before the chip ships.
+- [ ] **Admission chances** (planned 2026-10-10 in [chances/](chances/README.md)). Quad's estimate is proprietary: these
+  specs cover inputs, displays, and outcome collection; the method lives in a private repository. Seven units:
+  [how colleges read a record](chances/how-colleges-read.md), [rigor in context](chances/rigor-in-context.md) (a course
+  list with grades), [the admit rate for your pool](chances/base-rates.md), [major and grades](chances/major-and-grades.md),
+  [the estimate](chances/estimate.md) (after PR #105), [outcomes and accuracy](chances/calibration.md), and the
+  [course plan](chances/course-plan.md). Never a percentage.
 - [x] **Cost by income** (built 2026-10-10; estimates gated until the pilot passes; [product/cost-by-income.md](product/cost-by-income.md)): each college's
   cost as a curve over family income to $400K+, published to $110K and calibrated above it from the $110K+ band;
   the break point where need-based aid ends; merit classes from CDS H2A or the IPEDS grants-without-federal-aid proxy;

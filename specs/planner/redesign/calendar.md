@@ -1,6 +1,6 @@
 # The Family Calendar: Every Child's Year on One Color-Coded Timeline
 
-> Status: **planned** 2026-10-09. Part 6 of the [planner redesign](README.md). After [rounds.md](rounds.md) and
+> Status: **built** 2026-10-10 on feature/plan-redesign ([build plan](build-plan.md)). Part 6 of the [planner redesign](README.md). After [rounds.md](rounds.md) and
 > [page.md](page.md). Replaces the timeline stage's month and college views ([../timeline.md](../timeline.md#display));
 > the generated tasks, the cycle file, the calendar feed, reminders, and texts all stay.
 

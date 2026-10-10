@@ -29,11 +29,11 @@ export const COMPLEXITY: Record<Complexity, { label: string; description: string
 // award-letter analyzer moved in as its last stage. The planner was built 2026-10-08 on feature/planner (eight units
 // on sub-branches), so the "planner" group is gone too; its overview page stays under ROADMAP_OVERVIEWS.
 // The planner came back on 2026-10-09 as group "planner": the owner's review of the build (too much on the screen,
-// buried in the profile menu, the ranking hated) became the redesign in specs/planner/redesign/, six parts.
+// buried in the profile menu, the ranking hated) became the redesign in specs/planner/redesign/, six parts, built
+// 2026-10-10 on feature/plan-redesign (nine units on sub-branches), so the group is gone again.
 // The compare redesign, the only spec in "Design and usability" (group "design"), was built 2026-10-05 (#84), so that
 // group is gone until a new design spec.
 export type RoadmapGroupKey =
-  | "planner"
   | "national-trends"
   | "college-reported"
   | "campus-life"
@@ -45,12 +45,6 @@ export type RoadmapGroupKey =
   | "later";
 
 export const ROADMAP_GROUPS: { key: RoadmapGroupKey; title: string; description: string }[] = [
-  {
-    key: "planner",
-    title: "The planner, redesigned",
-    description:
-      "Plan in the main navigation; numbers first, with your colleges sorted and their rounds started for you; one row per college; a scores coach that says when another test would help; and a color-coded family calendar with a switch between children.",
-  },
   {
     key: "national-trends",
     title: "National trends",
@@ -123,76 +117,6 @@ export interface RoadmapSpec {
 
 /** In build order within each group (the backlog's order, specs/backlog.md). */
 export const ROADMAP: RoadmapSpec[] = [
-  // The planner redesign (specs/planner/redesign/, 2026-10-09): standing first, the page alongside, then the rest.
-  {
-    slug: "plan-standing",
-    file: "specs/planner/redesign/standing.md",
-    group: "planner",
-    summary:
-      "Enter your GPA and the one test you're taking, and every college on your list is sorted into Reach, Target, or Likely for you, with the reasons a tap away; change any of them and it stays yours.",
-    complexity: 2,
-    complexityNote:
-      "A pure rules module (drafted and tested) with the ACT/SAT concordance, two new profile fields, a source column so suggestions never overwrite a choice, and the two-step first-time setup.",
-    status: "planned",
-  },
-  {
-    slug: "plan-page",
-    file: "specs/planner/redesign/page.md",
-    group: "planner",
-    summary:
-      "Plan becomes a main link beside Explore, with one page for students and parents: your numbers, the next deadline, and three tabs, plus a switch between children for parents.",
-    complexity: 2,
-    complexityNote:
-      "New routes and redirects, the header and phone tab bar, a frame that replaces the six-stage strip, the child switcher, and a signed-out start that saves on sign-up.",
-    status: "planned",
-  },
-  {
-    slug: "plan-list",
-    file: "specs/planner/redesign/list.md",
-    group: "planner",
-    summary:
-      "Your list is your plan: one row per college with the Dream, its group, its round, and its deadline; everything else one tap away, and the ranking gone.",
-    complexity: 1,
-    complexityNote: "A new row and drawer over data the planner already stores, absorbing the actions and applications controls.",
-    status: "planned",
-    after: ["plan-standing"],
-  },
-  {
-    slug: "plan-rounds",
-    file: "specs/planner/redesign/rounds.md",
-    group: "planner",
-    summary:
-      "Every college starts in a round chosen from your Dream (early decision there if it offers it, early action wherever it's free), with a one-tap change, conflicts in one sentence, and a cost check for parents before any binding round.",
-    complexity: 2,
-    complexityNote:
-      "Starting-round rules (drafted and tested), a source column, a cost-check task generator, and removing the ranking, proposal table, and checklist.",
-    status: "planned",
-    after: ["plan-list"],
-  },
-  {
-    slug: "plan-scores",
-    file: "specs/planner/redesign/scores.md",
-    group: "planner",
-    summary:
-      "Where your one test score stands at each college, whether to send it, and, only when a typical retake would move a college up a group, how many points and which test dates arrive in time.",
-    complexity: 2,
-    complexityNote:
-      "Score-to-move-up and retake rules on the standing model, score-timing against each round's deadline, a new tab, and test tasks generated only for a date the student picks.",
-    status: "planned",
-    after: ["plan-standing"],
-  },
-  {
-    slug: "plan-calendar",
-    file: "specs/planner/redesign/calendar.md",
-    group: "planner",
-    summary:
-      "A color-coded timeline of the school year for each child or the whole family: application bars ending in deadlines, decisions, test dates, and the money dates that are a parent's part, with a calendar feed and print.",
-    complexity: 2,
-    complexityNote:
-      "A pure lanes-and-marks module over the tasks and cycle file the planner already generates, a timeline component with a validated palette, a per-viewer feed, and a print view.",
-    status: "planned",
-    after: ["plan-rounds", "plan-page"],
-  },
   {
     slug: "online-share",
     file: "specs/data-expansion/online-share.md",

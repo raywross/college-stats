@@ -240,7 +240,7 @@ shared rules for user data are in that README. All user data lives only in Supab
   [offers](planner/offers.md) (decisions, letter upload, offers side by side, the choice), and
   [parents](planner/parents.md) (summary line, nudges, Your part, weekly summary). Owner questions in the README: the
   paid line, texts, photos, the letters pilot, Common App screenshot import.
-- [ ] **The planner, redesigned** (planned 2026-10-09 in [planner/redesign/](planner/redesign/README.md) from the
+- [x] **The planner, redesigned** (built 2026-10-10 on feature/plan-redesign, [build plan](planner/redesign/build-plan.md); planned 2026-10-09 in [planner/redesign/](planner/redesign/README.md) from the
   owner's review of the build and student feedback; preview at `/plan/preview`). Six units:
   [standing](planner/redesign/standing.md) (numbers first, one test, groups sorted for the student),
   [page](planner/redesign/page.md) (Plan in the main navigation, `/plan`, three tabs, the child switcher),
@@ -248,7 +248,8 @@ shared rules for user data are in that README. All user data lives only in Supab
   (started from the Dream, one-line conflicts, ED II offer, parent cost check), [scores](planner/redesign/scores.md)
   (where the score stands, retake only when it would move a college), and [calendar](planner/redesign/calendar.md)
   (the family timeline). Owner decisions (2026-10-10): every recommendation accepted, including the phone tab bar, signed-out Plan,
-  and the retake threshold.
+  and the retake threshold. Follow-ups: delete `/plan/preview` once approved; drop `list_items.priority` and
+  `lists.rounds_plan_accepted_at` once no release reads them; the share image; the old family dossier print.
 - [ ] **Chances and fit** ([product/chances-and-fit.md](product/chances-and-fit.md)): rules-based standing with
   reasons (never a probability), fit against preferences, a pilot against real outcomes before the chip ships.
 - [ ] **Net price estimator** ([product/net-price-estimator.md](product/net-price-estimator.md)): 2026–27 Student

@@ -1,6 +1,6 @@
 ---
 title: "College-reported data runs stay in sync with directory listings"
-pr: 0
+pr: 110
 date: 2026-10-10
 kind: infra
 summary: "Fixed two automatic-check gaps a growing college-reported dataset had exposed: a stale reporter-count tripwire, and data runs that skipped re-merging directory listings."

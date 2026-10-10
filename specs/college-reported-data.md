@@ -5,6 +5,9 @@
 > is the next step ([college-reported-setup.md](college-reported-setup.md)). Decided 2026-09-28. Depends on
 > [data-lineage.md](data-lineage.md). Absorbs the backlog items "Read Common Data Set PDFs" and "Expand Common Data Set
 > coverage".
+>
+> Where it fails: [college-data-failures.md](college-data-failures.md) lists every college the pipeline tried without
+> reaching published figures, one row per college and reason code (built 2026-10-10).
 
 ## Why
 Federal data lags by design. As of 2026-09-28 the newest federal admissions data is **fall 2024** (IPEDS ADM2024, released

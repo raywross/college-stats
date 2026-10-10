@@ -278,3 +278,21 @@ Merge waves in order (U1; then U6, U3, U4, U5, U2; then U8, U7; then U9) with `-
 each, `npx next build` after each wave. Then browser QA (sample accounts on dev once the migration is applied, else
 the read-only fallback), mark specs built, remove the roadmap entries and the emptied group, one release note, push,
 and open the PR for the owner's review on the Vercel preview. Not merged into `main` until the owner approves.
+
+## As built by U1 (read this; it overrides the contracts above where they differ)
+- `loadPlanFor(studentId, viewer?)` returns `{ kind: "ready"; ctx; view; access } | { kind: "empty"; access } |
+  { kind: "setup-missing"; access } | { kind: "not-found" }`.
+- `myPlanChildren()` returns `{ studentId; name; gradYear; colorSlot: 0|1|2; canEdit }[]` (guardian relations only,
+  roster order); a student gets `[]`.
+- `store-plan.ts` also exports `syncAuto(listId)`; every action returns `{ ok: true } | { ok: false; message }`.
+  `setNumbers` takes `PlanNumbers = { gpa, gpaScale, focus, score, practice }` (null score keeps the stored one).
+  Pure helpers live in `lib/planner/plan-writes.ts`; `readPlan` and the column lists live in `lib/planner/read-plan.ts`
+  (re-exported from `context.ts`), including `PLAN_ITEM_BASE_COLUMNS` (without the two source columns).
+- `NumbersForm`/`FirstTimeSetup` props type is `NumbersFormProps` in `components/planner/tabs/types.ts`.
+- Telemetry events that had no properties gained one: `plan_switch_child {to}`, `plan_signed_out_started {from}`,
+  `plan_signed_out_saved {has_numbers}`, `plan_dream_set {on}`, `plan_drawer_opened {in_season}`,
+  `plan_ed2_offer_used {dream_round}`, `plan_calendar_feed_added {everyone}`, `plan_calendar_printed {everyone}`.
+- Notices order: problems → edTwo → balance → retake, cut to three. `plannedDates` keys match `^(sat|act)_YYYY_MM$`.
+- Colors: `lib/planner/colors.ts` exports `ROUND_VAR`, `TEST_VAR`, `MONEY_VAR`, `KID_VARS`, `GROUP_CLASS`, `STRIPED`.
+- Open item assigned to U6: `app/api/cron/weekly/route.ts` selects `PLAN_ITEM_COLUMNS` directly and breaks before the
+  migration is applied; switch it to the fallback read.

@@ -160,6 +160,14 @@ New curated file `data/aid-policies.json`, one entry per college that publishes 
 ```
 - First pass: about 100 colleges, the most selective privates and the flagships with honors merit, each checked on
   the college's own page (no aggregator sources).
+- Built 2026-10-10: 54 colleges, each quoted from a result on the college's own domain (`verified_via: "search"`; the
+  page itself not yet opened, so the next pass with network access flips these to `"page"`). Entries record only
+  what the college states, with `null` for the rest; an income line that conflicts between two of the college's own
+  pages, or that starts in a later award year (e.g. Swarthmore, Wellesley, Davidson, Middlebury, Rice, UChicago's
+  $250K line), is left out until it applies. A public's promise to its own residents (Go Blue Guarantee, Texas
+  Advance Commitment) carries `applies_to: "in_state"`; absent means everyone.
+- `as_of` is the award year the page states, written `YYYY-YY` and shown with an en dash; the citation (ⓘ) of every
+  `aid_policy.*` value is that entry's `source`, `as_of`, and `checked` (`lib/lineage.ts`).
 - Checked by `scripts/check-aid-policies.mts` in `npm run verify` (every entry has a source and `checked` date;
   thresholds are positive and ordered), registered in `lib/fields.ts` as `aid_policy.*` with source `college-site`,
   and cited like any college-published value ([data-lineage.md](../data-lineage.md)).

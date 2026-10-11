@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Heart, Search } from "lucide-react";
 import { useLocalProfile } from "@/components/me/useLocalProfile";
 import { useNumbersDraft, NumbersFields } from "@/components/planner/NumbersForm";
+import { useEstimates } from "@/components/planner/useEstimates";
 import { LocalCoursesSheet } from "@/components/profile/LocalCoursesSheet";
 import { Crest } from "@/components/school/Crest";
 import { Term, SourceTip } from "@/components/ui/info-tip";
@@ -264,8 +265,9 @@ function LocalRow({
 /**
  * `/plan` signed out (specs/planner/redesign/page.md "Signed out"): the pitch, the numbers form (kept in the
  * existing local profile, `lib/student-profile.ts` LOCAL_PROFILE_KEY), add-from-search colleges kept under a new
- * key (`lib/planner/local-plan.ts`), and live group/round chips computed the same way the signed-in plan computes
- * them (`planView`) — every tap only changes local state; nothing is a Server Action. "Save your plan" sends the
+ * key (`lib/planner/local-plan.ts`), and live group/round chips built the same way the signed-in plan builds them
+ * (`planView`, with Quad's estimate fetched from `/api/estimate` as the numbers change) — every tap only changes local
+ * state; nothing is a Server Action. "Save your plan" sends the
  * visitor to sign up; `components/planner/ImportLocalPlan.tsx` moves this onto their real list on the next
  * signed-in `/plan` open.
  */
@@ -313,7 +315,11 @@ export default function SignedOutPlan() {
   }, [localPlan.unitIds]);
 
   const items = useMemo(() => planItemsFor(localPlan, TODAY), [localPlan]);
-  const view = useMemo(() => planView({ items, schools, profile, today: TODAY() }), [items, schools, profile]);
+  // Quad's estimate from the server (POST /api/estimate), asked shortly after the numbers or the list change; the
+  // previous groups stay until the answer arrives.
+  const knownIds = useMemo(() => localPlan.unitIds.filter((id) => schools[id]), [localPlan.unitIds, schools]);
+  const { results: estimates } = useEstimates(profile, knownIds);
+  const view = useMemo(() => planView({ items, schools, profile, estimates, today: TODAY() }), [items, schools, profile, estimates]);
 
   const update = (next: LocalPlan) => setLocalPlan(next);
 

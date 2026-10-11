@@ -176,7 +176,53 @@ export const NOTES: Record<NoteKey, Note> = {
   "course_plan.reading_moves": (v) => `It would make your schedule ${s(v, "label")}.`,
   /** The You column's line on the college profile. */
   "course_plan.profile_line": (v) => `${s(v, "subject")}: ${s(v, "recommended")} recommended, you're on track for ${s(v, "have")}. See next year's options in your plan.`,
+
+  /* Added by the estimate core (lib/chances/baseline.ts, model.ts): the published sentences of the planner's standing
+   * rules (specs/planner/redesign/standing.md, gpa.md), so an estimate carries only catalog sentences. */
+  /** "Your SAT 1390 is inside the middle 50% of enrolled students." `concorded` names the other test when compared through the concordance. */
+  "estimate.score_position": (v) =>
+    `Your ${s(v, "test")} ${s(v, "score")} is ${s(v, "where")} the middle 50% of enrolled students${v.concorded ? ` (compared with its ${s(v, "concorded")} range through the official concordance)` : ""}.`,
+  "estimate.test_blind": () => "This college doesn't look at test scores.",
+  "estimate.gpa.reported": (v) => `${yourGpa(v)} is ${s(v, "where")} the ${s(v, "avg")} average of enrolled students.`,
+  "estimate.gpa.bands": (v) => `${yourGpa(v)} is ${s(v, "where")} the ${s(v, "avg")} average of enrolled students, figured from the college's GPA ranges.`,
+  "estimate.gpa.estimated": (v) =>
+    `${yourGpa(v)} is ${s(v, "where")} the ${s(v, "span")} typical of colleges with similar test scores and admit rates. ${
+      v.weighted ? `This college publishes only a weighted average (${s(v, "weighted")}), so this is an estimate.` : "This college doesn't publish an unweighted average, so this is an estimate."
+    }`,
+  "estimate.gpa.middle": (v) => `${yourGpa(v)} is ${s(v, "where")} the middle 50% of first-years' GPAs here (${s(v, "span")}).`,
+  "estimate.gpa.middle_estimated": (v) =>
+    `${yourGpa(v)} is ${s(v, "where")} the middle 50% of first-years' GPAs here (${s(v, "span")})${middleEstimate(v)}.`,
+  "estimate.gpa.cant_place_average": (v) =>
+    `Your GPA can't be placed against this college's: yours (${s(v, "own")}) and its average (${s(v, "avg")}) overlap too much to say which is higher. ${decides(v)}`,
+  "estimate.gpa.cant_place_estimate": (v) =>
+    `Your GPA can't be placed against this college's: yours (${s(v, "own")}) and its estimate (${s(v, "span")}) overlap too much to say which is higher. ${decides(v)}`,
+  "estimate.gpa.cant_place_middle": (v) =>
+    `Your GPA can't be placed against this college's: yours (${s(v, "own")}) spans its middle 50% of first-years' GPAs (${s(v, "span")}${Number(v.estimated) ? middleEstimate(v) : ""}). ${decides(v)}`,
+  "estimate.gpa.none": (v) => `This college doesn't publish a GPA average, and there aren't enough test scores to estimate one, so ${onlyTest(v)}.`,
+  "estimate.gpa.weighted_only": (v) =>
+    `This college publishes only a weighted average (${s(v, "weighted")}), which can't be compared with yours, and there aren't enough test scores to estimate an unweighted one, so ${onlyTest(v)}.`,
+  /** The class-rank position (method/standing.md "The class-rank position"), in words only. */
+  "estimate.rank_above": (v) => `Your class rank (${s(v, "rank")}) is higher than most first-years' whose high school reported a rank.`,
+  "estimate.rank_in": (v) => `Your class rank (${s(v, "rank")}) is in the middle of first-years whose high school reported a rank.`,
+  "estimate.rank_below": (v) => `Your class rank (${s(v, "rank")}) is lower than most first-years' whose high school reported a rank.`,
+  "estimate.rank_reason_quarter": (v) => `Of the first-years whose high school reported a rank, ${s(v, "share")} were in the top quarter.`,
 };
+
+/** "Your GPA (3.82)", or a described range set off by commas: "Your GPA, about 3.4–4.0 unweighted (from a weighted 4.4),". */
+function yourGpa(v: NoteValues): string {
+  return Number(v.described) ? `Your GPA, ${s(v, "gpa")},` : `Your GPA (${s(v, "gpa")})`;
+}
+/** The estimated middle 50%'s tail: where the estimate comes from and why. */
+function middleEstimate(v: NoteValues): string {
+  return `, estimated from colleges with similar test scores; ${v.weighted ? `this college publishes only a weighted average (${s(v, "weighted")})` : "this college doesn't publish its GPA spread"}`;
+}
+/** What decides the group when the GPA can't be placed. */
+function decides(v: NoteValues): string {
+  return v.test ? `Your ${s(v, "test")} decides the group here.` : "There's no score to go on here either.";
+}
+function onlyTest(v: NoteValues): string {
+  return v.test ? `only your ${s(v, "test")} is used` : "your GPA isn't used here";
+}
 
 /** The input kinds in words, for "Adding your … could change this estimate" and the "what went into it" panel. */
 export const INPUT_WORDS: Record<string, string> = {

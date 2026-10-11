@@ -12,6 +12,9 @@
  * their student record's, or, for someone without one (a guardian), the lists they own as a user.
  */
 import { cache } from "react";
+import { after } from "next/server";
+import { snapshotOnApplied } from "@/lib/chances/snapshot-write";
+import { snapshotDeps } from "@/lib/chances/snapshot-deps";
 import { getUser, authConfigured, currentStudent, studentsICanSee } from "@/lib/auth";
 import { createServerSupabase } from "@/lib/supabase-server";
 import { getData } from "@/lib/data";
@@ -350,6 +353,12 @@ export async function setItemStatus(itemId: string, status: ListStatus): Promise
   const next = setStatusPure(current.data as { status: ListStatus; outcome: ListOutcome | null }, status);
   const { error } = await r.supabase.from("list_items").update(next).eq("id", itemId);
   if (error) return fail(error, "setItemStatus");
+  // The other "applied" path (the planner's markApplied is the first): record the inputs as of today with the
+  // estimate the student saw (specs/chances/calibration.md; best-effort, never fails or slows the action).
+  if (status === "applied" && (current.data as { status: ListStatus }).status !== "applied") {
+    const supabase = r.supabase;
+    after(() => snapshotOnApplied(itemId, snapshotDeps(supabase)));
+  }
   return { ok: true };
 }
 

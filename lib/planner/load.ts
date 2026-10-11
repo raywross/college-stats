@@ -20,6 +20,7 @@ import { rigorViewFor } from "@/lib/chances/rigor-server";
 import { coursePlanViewFor } from "@/lib/chances/course-plan-server";
 import { generatorInputFor, planContextFrom, PlannerSetupError, readItems, readPlan, readTasks, todayIso, writeAutoWrites, writeMerge } from "./context";
 import { autoWrites, planView, type PlanView } from "./plan-view";
+import { planEstimates } from "./plan-estimates";
 import { generateTasks, mergeTasks } from "./tasks";
 import type { PlanContext } from "./types";
 
@@ -68,11 +69,15 @@ export async function loadPlanFor(studentId: string, viewer?: StudentAccess | nu
   if (!plan) return { kind: "empty", access };
 
   let input = await generatorInputFor(plan, { gradYear, profile: profileData, home, today });
+  // Quad's estimate for every college, on the server (specs/chances/estimate.md "In the planner"). A guardian's copy
+  // never reads AP exam scores the student keeps private.
+  const hideExams = relation === "guardian" && profileData?.academics.apExamsPrivate === true;
+  const estimates = await planEstimates(profileData, plan.items.map((i) => i.unit_id), { gradYear, today, hideExams });
 
   // Suggested until changed: store the model's group and round on every `auto` row that differs (syncAuto).
   if (canEdit) {
     // Before the redesign migration the source columns don't exist: show the suggestions, write none of them.
-    const writes = plan.sourcesMissing ? [] : autoWrites(planView({ items: plan.items, schools: input.schools, profile: profileData, today }));
+    const writes = plan.sourcesMissing ? [] : autoWrites(planView({ items: plan.items, schools: input.schools, profile: profileData, estimates, today }));
     if (writes.length > 0 && (await writeAutoWrites(supabase, writes)) > 0) {
       const fresh = await readItems(supabase, listId);
       if (fresh.data) {
@@ -96,7 +101,7 @@ export async function loadPlanFor(studentId: string, viewer?: StudentAccess | nu
       isGuardian: relation === "guardian",
     },
   });
-  const view = planView({ items: ctx.items, schools: ctx.schools, profile: ctx.profile, today });
+  const view = planView({ items: ctx.items, schools: ctx.schools, profile: ctx.profile, estimates, today });
   return { kind: "ready", ctx: await withCoursePlan(await withRigor(ctx, relation, gradYear), gradYear), view, access };
 }
 

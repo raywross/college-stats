@@ -494,8 +494,8 @@ test("the row drawer shows the stage lines and the panel from the row's estimate
   assert.match(read("lib", "planner", "plan-view.ts"), /estimate: school \? est : null/);
 });
 
-test("the numbers card and the signed-out plan show the most useful missing input", () => {
-  assert.match(read("components", "planner", "PlanHeaderCard.tsx"), /<MostUsefulInput estimates=\{view\.estimates\}/);
+test("the signed-out plan shows the most useful missing input; the header card no longer does (redesign 2026-10-11: it moved to the Scores tab)", () => {
+  assert.doesNotMatch(read("components", "planner", "PlanHeaderCard.tsx"), /MostUsefulInput/);
   assert.match(read("components", "planner", "SignedOutPlan.tsx"), /<MostUsefulInput estimates=\{estimates\}/);
   assert.match(read("components", "chances", "MostUsefulInput.tsx"), /mostUsefulMissing\(Object\.values\(estimates\)\)/);
 });

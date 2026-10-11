@@ -12,9 +12,9 @@ test("parseTab keeps the four tabs and nothing else", () => {
   for (const v of ["", "Colleges", "list", null, undefined, 3, ["scores"]]) assert.equal(parseTab(v), null);
 });
 
-test("a student opens on Colleges, a parent on the Calendar, Everyone on the Calendar", () => {
+test("a student opens on Colleges; a guardian does too now that a guardian always lands on one child (no more Everyone); the deferred family view (everyone) is still the Calendar", () => {
   assert.equal(defaultTab("student", false), "colleges");
-  assert.equal(defaultTab("guardian", false), "calendar");
+  assert.equal(defaultTab("guardian", false), "colleges");
   assert.equal(defaultTab("guardian", true), "calendar");
   assert.equal(defaultTab("student", true), "calendar");
 });

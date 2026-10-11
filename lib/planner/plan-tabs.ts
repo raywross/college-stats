@@ -14,10 +14,15 @@ export function parseTab(v: unknown): PlanTab | null {
   return typeof v === "string" && (PLAN_TABS as readonly string[]).includes(v) ? (v as PlanTab) : null;
 }
 
-/** The tab a view opens on: a student's Colleges, a parent's Calendar; Everyone is only the calendar. */
+/**
+ * The tab a view opens on: Colleges for a student and, since the redesign's frame (decision 2026-10-11, no more
+ * Everyone), for a guardian too — a guardian always lands on one child's plan now, so there's no calendar-first
+ * family view to default to. `everyone` is kept for the family plan this defers to (`FamilyCalendar`'s `everyone`
+ * mode): that view is still only the calendar.
+ */
 export function defaultTab(viewer: "student" | "guardian", everyone: boolean): PlanTab {
   if (everyone) return "calendar";
-  return viewer === "student" ? "colleges" : "calendar";
+  return "colleges";
 }
 
 /** The tabs a view shows, in order. Everyone → the calendar only; Offers only once a decision is recorded. */

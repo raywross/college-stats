@@ -1,9 +1,9 @@
 /**
  * The Plan's intake guide (lib/planner/intake.ts; specs/planner/redesign/intake.md): class-year chips, GPA scale
- * detection and its hints, the score and target checks, step validity, the "When?" term chips and labels, the AP
- * search with its aliases, the draft read from a profile and the profile the save writes (non-AP rows kept, unchanged
- * rows kept as saved), the guardian merge that keeps private exam scores, the server's refusal of bad input, and when
- * the intake shows. Pure. `npm test`.
+ * detection and its hints, the score and target checks, step validity, the "Which year?" chips and the status they
+ * derive, the AP search with its aliases, the draft read from a profile and the profile the save writes (non-AP rows
+ * kept, unchanged rows kept as saved), the high-school pick, the guardian merge that keeps a private saved score
+ * unless the guardian picks a new one, the server's refusal of bad input, and when the intake shows. Pure. `npm test`.
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -26,12 +26,12 @@ import {
   searchAp,
   stepValid,
   targetCheck,
-  termLabel,
-  termOptions,
+  yearOptions,
+  yearStatus,
   type IntakeDraft,
   type IntakeSave,
 } from "../lib/planner/intake.ts";
-import { mergeCoursesForSave, withoutExams } from "../lib/chances/courses.ts";
+import { mergeCoursesForSave } from "../lib/chances/courses.ts";
 import { isCatalogKeyFor } from "../lib/chances/catalog.ts";
 import { emptyProfile, gpaMaxFor, sanitizeProfile, type StudentProfileData } from "../lib/student-profile.ts";
 import type { CourseEntry } from "../lib/chances/types.ts";
@@ -46,6 +46,8 @@ const draft = (over: Partial<IntakeDraft> = {}): IntakeDraft => ({
   score: "1390",
   practice: false,
   target: "",
+  highSchool: null,
+  highSchoolId: null,
   courses: [],
   ...over,
 });
@@ -149,7 +151,7 @@ test("stepValid: grades need a class and a valid GPA; the test step a choice, a 
   assert.equal(stepValid(draft({ test: "none", score: "" }), 1), true);
   assert.equal(stepValid(draft({ score: "" }), 1), false);
   assert.equal(stepValid(draft({ target: "1700" }), 1), false);
-  assert.equal(stepValid(draft({ courses: [{ id: "x", key: "ap_biology", status: null, exam: null, term: null }] }), 2), true, "AP courses never block");
+  assert.equal(stepValid(draft({ courses: [{ id: "x", key: "ap_biology", year: null, exam: null }] }), 2), true, "AP courses never block");
   assert.equal(stepValid(draft(), 3), true);
   assert.equal(stepValid(draft({ gpa: "" }), 3), false);
   assert.equal(stepValid(draft(), 4), true);
@@ -159,36 +161,37 @@ test("stepValid: grades need a class and a valid GPA; the test step a choice, a 
 /* Terms                                                               */
 /* ------------------------------------------------------------------ */
 
-test("termOptions: from this school year until graduation; this year's full year is just 'Full year'", () => {
-  assert.deepEqual(termOptions(2027, TODAY), [
-    { value: "2026-27:full", label: "Full year" },
-    { value: "2026-27:fall", label: "Fall 2026" },
-    { value: "2026-27:spring", label: "Spring 2027" },
+test("yearOptions and yearStatus: the four chips' school years, and whether each is over, current, or ahead — owner feedback 2026-10-11, class of 2028 on 2026-10-11", () => {
+  assert.deepEqual(yearOptions(2028), [
+    { year: 9, label: "Freshman", sub: "24–25" },
+    { year: 10, label: "Sophomore", sub: "25–26" },
+    { year: 11, label: "Junior", sub: "26–27" },
+    { year: 12, label: "Senior", sub: "27–28" },
   ]);
+  // Without a class year, grade names only.
   assert.deepEqual(
-    termOptions(2029, TODAY).map((o) => o.label),
-    ["Full year", "Fall 2026", "Spring 2027", "Full year 27–28", "Fall 2027", "Spring 2028", "Full year 28–29", "Fall 2028", "Spring 2029"],
+    yearOptions(null).map((o) => o.sub),
+    [null, null, null, null],
   );
-  // A class already graduating still gets this year's three.
-  assert.equal(termOptions(2026, TODAY).length, 3);
-  // Before August, the school year is still last year's.
-  assert.equal(termOptions(2027, "2026-06-01")[0].value, "2025-26:full");
+  assert.equal(yearStatus(9, 2028, TODAY), "taken");
+  assert.equal(yearStatus(10, 2028, TODAY), "taken");
+  assert.equal(yearStatus(11, 2028, TODAY), "in_progress");
+  assert.equal(yearStatus(12, 2028, TODAY), "planned");
 });
 
-test("termLabel and courseSummary", () => {
-  assert.equal(termLabel("2026-27:full", TODAY), "Full year");
-  assert.equal(termLabel("2027-28:full", TODAY), "Full year 27–28");
-  assert.equal(termLabel("2026-27:spring", TODAY), "Spring 2027");
-  assert.equal(termLabel("2026-28:fall", TODAY), "");
-  assert.equal(termLabel("junk", TODAY), "");
+test("courseSummary: the pill text for a taken, current, future, and unpicked year, and the guardian's hidden-score state", () => {
+  // For a class of 2028 on 2026-10-11 (see the test above): Freshman and Sophomore are over, Junior is this year,
+  // Senior is still ahead.
   const c = { id: "x", key: "ap_biology" };
-  assert.deepEqual(courseSummary({ ...c, status: "took", exam: "4", term: null }, TODAY), { text: "Score 4", incomplete: false });
-  assert.deepEqual(courseSummary({ ...c, status: "took", exam: "pending", term: null }, TODAY), { text: "Score pending", incomplete: false });
-  assert.deepEqual(courseSummary({ ...c, status: "took", exam: null, term: null }, TODAY), { text: "Choose", incomplete: true });
-  assert.deepEqual(courseSummary({ ...c, status: "took", exam: null, term: null }, TODAY, { examsHidden: true }), { text: "Score hidden", incomplete: false });
-  assert.deepEqual(courseSummary({ ...c, status: "plan", exam: null, term: "2026-27:spring" }, TODAY), { text: "Spring 2027", incomplete: false });
-  assert.deepEqual(courseSummary({ ...c, status: "plan", exam: null, term: null }, TODAY), { text: "Choose", incomplete: true });
-  assert.deepEqual(courseSummary({ ...c, status: null, exam: null, term: null }, TODAY), { text: "Choose", incomplete: true });
+  assert.deepEqual(courseSummary({ ...c, year: 10, exam: "4" }, 2028, TODAY), { text: "Sophomore · Score 4", incomplete: false });
+  assert.deepEqual(courseSummary({ ...c, year: 9, exam: "pending" }, 2028, TODAY), { text: "Freshman · Score pending", incomplete: false });
+  assert.deepEqual(courseSummary({ ...c, year: 12, exam: null }, 2028, TODAY), { text: "Senior year", incomplete: false });
+  assert.deepEqual(courseSummary({ ...c, year: 11, exam: null }, 2028, TODAY), { text: "Taking now", incomplete: false });
+  assert.deepEqual(courseSummary({ ...c, year: 10, exam: null }, 2028, TODAY), { text: "Choose", incomplete: true });
+  assert.deepEqual(courseSummary({ ...c, year: null, exam: null }, 2028, TODAY), { text: "Choose", incomplete: true });
+  // A guardian who can't see a private saved score sees it's there but not what it is, until they pick one themselves.
+  assert.deepEqual(courseSummary({ ...c, year: 10, exam: null }, 2028, TODAY, { examsHidden: true }), { text: "Score saved (hidden)", incomplete: false });
+  assert.deepEqual(courseSummary({ ...c, year: 10, exam: "5" }, 2028, TODAY, { examsHidden: true }), { text: "Sophomore · Score 5", incomplete: false });
 });
 
 /* ------------------------------------------------------------------ */
@@ -261,7 +264,18 @@ function sampleProfile(): StudentProfileData {
 }
 
 test("draftFromProfile: an empty profile opens empty; a saved one opens filled, AP rows only", () => {
-  assert.deepEqual(draftFromProfile(null, 2028, TODAY), { classYear: 2028, gpa: "", scaleOverride: null, test: null, score: "", practice: false, target: "", courses: [] });
+  assert.deepEqual(draftFromProfile(null, 2028, TODAY), {
+    classYear: 2028,
+    gpa: "",
+    scaleOverride: null,
+    test: null,
+    score: "",
+    practice: false,
+    target: "",
+    highSchool: null,
+    highSchoolId: null,
+    courses: [],
+  });
   const d = draftFromProfile(sampleProfile(), 2027, TODAY);
   assert.equal(d.classYear, 2027);
   assert.equal(d.gpa, "3.82");
@@ -269,16 +283,33 @@ test("draftFromProfile: an empty profile opens empty; a saved one opens filled, 
   assert.equal(d.test, "sat");
   assert.equal(d.score, "1390");
   assert.equal(d.target, "1450");
+  assert.equal(d.highSchool, null);
+  // The saved year carries over directly; status (taken vs taking/planned) is derived, not stored.
   assert.deepEqual(d.courses, [
-    { id: "lang", key: "ap_english_language", status: "took", exam: "4", term: null },
-    { id: "calc", key: "ap_calculus_ab", status: "plan", exam: null, term: "2026-27:full" },
+    { id: "lang", key: "ap_english_language", year: 11, exam: "4" },
+    { id: "calc", key: "ap_calculus_ab", year: 12, exam: null },
   ]);
   assert.deepEqual(reviewLines(d, TODAY), [
     { step: 0, label: "Class", value: "Class of 2027" },
     { step: 0, label: "GPA", value: "3.82 · 4.0 scale" },
+    { step: 0, label: "School", value: "Not set" },
     { step: 1, label: "Test", value: "SAT 1390 · aiming for 1450" },
     { step: 2, label: "AP courses", value: "1 taken · 1 taking or planned" },
   ]);
+});
+
+test("draftFromProfile and reviewLines: the high school pick round-trips and shows on the Class line", () => {
+  const p = sampleProfile();
+  p.basics.highSchool = "Lincoln High School";
+  p.basics.highSchoolId = "010000500870";
+  const d = draftFromProfile(p, 2027, TODAY);
+  assert.equal(d.highSchool, "Lincoln High School");
+  assert.equal(d.highSchoolId, "010000500870");
+  assert.equal(reviewLines(d, TODAY).find((l) => l.label === "School")?.value, "Lincoln High School");
+  const saved = intakeToSave(d);
+  assert.equal(saved?.highSchool, "Lincoln High School");
+  assert.equal(saved?.highSchoolId, "010000500870");
+  assert.deepEqual(applyIntake(p, saved!, TODAY).basics, p.basics);
 });
 
 test("draftFromProfile: a scale that differs from detection becomes the override; a weighted 4.0 opens on 5.0 weighted", () => {
@@ -307,7 +338,7 @@ test("round trip: the draft of a saved profile saves back to the same profile (n
   assert.deepEqual(applyIntake(p, save, TODAY), p);
 });
 
-test("applyIntake: maps took / taking / planned onto the course list and the numbers onto the profile", () => {
+test("applyIntake: the picked year and score land on the course list; the numbers land on the profile", () => {
   const p = sampleProfile();
   const d = draftFromProfile(p, 2027, TODAY);
   d.gpa = "95";
@@ -317,9 +348,9 @@ test("applyIntake: maps took / taking / planned onto the course list and the num
   d.practice = true;
   d.courses = [
     { ...d.courses[0], exam: "5" },
-    { id: "bio", key: "ap_biology", status: "took", exam: "pending", term: null },
-    { id: "stats", key: "ap_statistics", status: "plan", exam: null, term: "2026-27:spring" },
-    { id: "skip", key: "ap_psychology", status: null, exam: null, term: null },
+    { id: "bio", key: "ap_biology", year: 11, exam: "pending" },
+    { id: "stats", key: "ap_statistics", year: 12, exam: null },
+    { id: "skip", key: "ap_psychology", year: null, exam: null },
   ];
   const s = intakeToSave(d)!;
   assert.equal(s.gpaScale, "100");
@@ -343,23 +374,23 @@ test("applyIntake: maps took / taking / planned onto the course list and the num
   assert.equal(by.lang.grades.final, "A");
   // Calculus was dropped from the list.
   assert.equal(by.calc, undefined);
-  // A new taken course: the most recently finished grade (a senior → 11th), score pending.
+  // A new taken course (11th, for a senior): score pending.
   assert.equal(by.bio.status, "taken");
   assert.equal(by.bio.year, 11);
   assert.equal(by.bio.exam, null);
   assert.equal(by.bio.subject, "science");
-  // This school year's spring: in progress, 12th grade for the class of 2027.
+  // 12th grade for the class of 2027 is this school year: in progress.
   assert.equal(by.stats.status, "in_progress");
   assert.equal(by.stats.year, 12);
-  assert.equal(by.stats.term, "spring");
-  // A course with nothing chosen isn't saved.
+  assert.equal(by.stats.term, undefined, "sanitizeProfile drops a null term key (CourseEntry.term test)");
+  // A course with no year picked isn't saved.
   assert.equal(by.skip, undefined);
   // The count follows the list (lang, bio, stats, the IB course, the placeholder); no placeholder is re-added for calc.
   assert.equal(out.academics.courseRigorCount, 5);
   assert.equal(out.academics.courses.length, 6);
 });
 
-test("applyIntake: a later school year is planned; years follow the class; a 9th grader's taken course is 9th", () => {
+test("applyIntake: status always derives from the picked year, the class, and today — never stored, never inferred from 'taken'", () => {
   const p = emptyProfile();
   const save: IntakeSave = {
     classYear: 2029,
@@ -369,41 +400,53 @@ test("applyIntake: a later school year is planned; years follow the class; a 9th
     score: null,
     practice: false,
     target: null,
+    highSchool: null,
+    highSchoolId: null,
     courses: [
-      { id: "a", key: "ap_calculus_bc", status: "plan", exam: null, term: "2028-29:full" },
-      { id: "b", key: "ap_chemistry", status: "plan", exam: null, term: "2027-28:fall" },
-      { id: "c", key: "ap_human_geography", status: "took", exam: "3", term: null },
+      { id: "a", key: "ap_calculus_bc", year: 12, exam: null },
+      { id: "b", key: "ap_chemistry", year: 11, exam: null },
+      { id: "c", key: "ap_human_geography", year: 9, exam: "3" },
     ],
   };
   const out = applyIntake(p, save, TODAY);
   const by = Object.fromEntries(out.academics.courses.map((c) => [c.id, c]));
   assert.equal(by.a.status, "planned");
   assert.equal(by.a.year, 12);
-  assert.equal(by.a.term, "full");
   assert.equal(by.b.status, "planned");
   assert.equal(by.b.year, 11);
-  assert.equal(by.b.term, "fall");
-  assert.equal(by.c.year, 9, "a 10th grader's most recently finished grade is 9th");
-  const fresh: IntakeSave = { ...save, classYear: 2030, courses: [{ id: "c", key: "ap_human_geography", status: "took", exam: "3", term: null }] };
-  assert.equal(applyIntake(p, fresh, TODAY).academics.courses[0].year, 9, "9th for a student in 9th");
+  assert.equal(by.c.status, "taken");
+  assert.equal(by.c.year, 9);
+  assert.equal(by.c.exam, 3);
+  // The same pick (9th) for a class of 2030 is this year, in progress — not "taken" just because it was chosen;
+  // the exam a caller sent for it is dropped, since it isn't a taken year.
+  const freshman: IntakeSave = { ...save, classYear: 2030, courses: [{ id: "c", key: "ap_human_geography", year: 9, exam: "3" }] };
+  const freshOut = applyIntake(p, freshman, TODAY).academics.courses[0];
+  assert.equal(freshOut.status, "in_progress");
+  assert.equal(freshOut.exam, null);
   assert.equal(out.tests.focus, "none");
   assert.equal(out.tests.target, null);
 });
 
-test("a guardian's save keeps exam scores the student keeps private (mergeCoursesForSave)", () => {
+test("mergeCoursesForSave: a guardian's non-null exam wins; a null keeps the student's private saved score", () => {
   const p = sampleProfile();
   assert.equal(p.academics.apExamsPrivate, true);
-  // The guardian's copy has no exam scores (load.ts strips them), so the draft shows the taken course as pending.
-  const guardianView = { ...p, academics: { ...p.academics, courses: withoutExams(p.academics.courses) } };
+  // The guardian's copy has no exam scores (load.ts strips them), so the draft shows the taken course's score hidden.
+  const guardianView = { ...p, academics: { ...p.academics, courses: p.academics.courses.map((c) => ({ ...c, exam: null })) } };
   const d = draftFromProfile(guardianView, 2027, TODAY);
   assert.equal(d.courses[0].exam, "pending");
-  d.courses.push({ id: "bio", key: "ap_biology", status: "took", exam: "5", term: null });
+  // The guardian picks a new score for the already-taken course, and adds one of their own.
+  d.courses[0] = { ...d.courses[0], exam: "5" };
+  d.courses.push({ id: "bio", key: "ap_biology", year: 11, exam: "5" });
   const next = applyIntake(p, intakeToSave(d)!, TODAY);
   const merged = mergeCoursesForSave(p.academics, next.academics, "guardian");
   const by = Object.fromEntries(merged.courses.map((c) => [c.id, c]));
-  assert.equal(by.lang.exam, 4, "the private score survives");
-  assert.equal(by.bio.exam, null, "a guardian can't set a score while scores are private");
-  assert.equal(merged.apExamsPrivate, true);
+  assert.equal(by.lang.exam, 5, "the guardian's pick replaces the private saved score");
+  assert.equal(by.bio.exam, 5, "a guardian can set a score for a course the student hadn't scored at all");
+  assert.equal(merged.apExamsPrivate, true, "a guardian still can't flip the privacy switch");
+  // Leaving a taken course's score untouched (still "pending" in the guardian's view) keeps the saved one.
+  const untouched = applyIntake(p, intakeToSave(draftFromProfile(guardianView, 2027, TODAY))!, TODAY);
+  const mergedUntouched = mergeCoursesForSave(p.academics, untouched.academics, "guardian");
+  assert.equal(Object.fromEntries(mergedUntouched.courses.map((c) => [c.id, c])).lang.exam, 4, "nothing picked keeps the saved score");
 });
 
 /* ------------------------------------------------------------------ */
@@ -418,7 +461,9 @@ const GOOD: IntakeSave = {
   score: 1390,
   practice: false,
   target: 1450,
-  courses: [{ id: "c1", key: "ap_biology", status: "took", exam: "4", term: null }],
+  highSchool: "Lincoln High School",
+  highSchoolId: "010000500870",
+  courses: [{ id: "c1", key: "ap_biology", year: 11, exam: "4" }],
 };
 
 test("intakeToSave: null while the grades or test step is invalid; testing fields cleared for Not testing", () => {
@@ -453,16 +498,23 @@ test("parseIntakeSave: accepts a good save and refuses anything off", () => {
     { ...GOOD, focus: "none", score: null, target: 1450 },
     { ...GOOD, practice: "yes" },
     { ...GOOD, courses: "none" },
-    { ...GOOD, courses: [{ id: "c1", key: "ib_biology_hl", status: "took", exam: "4", term: null }] },
-    { ...GOOD, courses: [{ id: "c1", key: "ap_nope", status: "took", exam: "4", term: null }] },
-    { ...GOOD, courses: [{ id: "c1", key: "ap_biology", status: "maybe", exam: null, term: null }] },
-    { ...GOOD, courses: [{ id: "c1", key: "ap_biology", status: "took", exam: "6", term: null }] },
-    { ...GOOD, courses: [{ id: "c1", key: "ap_biology", status: "plan", exam: null, term: "2026-28:full" }] },
-    { ...GOOD, courses: [{ id: "", key: "ap_biology", status: "took", exam: "4", term: null }] },
+    { ...GOOD, courses: [{ id: "c1", key: "ib_biology_hl", year: 11, exam: "4" }] },
+    { ...GOOD, courses: [{ id: "c1", key: "ap_nope", year: 11, exam: "4" }] },
+    { ...GOOD, courses: [{ id: "c1", key: "ap_biology", year: 13, exam: null }] },
+    { ...GOOD, courses: [{ id: "c1", key: "ap_biology", year: 11, exam: "6" }] },
+    { ...GOOD, courses: [{ id: "", key: "ap_biology", year: 11, exam: "4" }] },
     { ...GOOD, courses: [GOOD.courses[0], { ...GOOD.courses[0], id: "c2" }] },
     { ...GOOD, courses: [GOOD.courses[0], { ...GOOD.courses[0], key: "ap_chemistry" }] },
+    { ...GOOD, highSchoolId: "not-an-id" },
+    { ...GOOD, highSchoolId: 12345 },
   ];
   for (const b of bad) assert.equal(parseIntakeSave(b), null, JSON.stringify(b));
+  // An overlong free-typed name is dropped, not a reason to refuse the whole save (student-profile.ts's own
+  // sanitizer treats basics.highSchool the same way). A private high school id (8 upper-case letters/digits) is as
+  // good as a public one; a free-typed name with no pick is fine too.
+  assert.equal(parseIntakeSave({ ...GOOD, highSchool: "x".repeat(201) })?.highSchool, null);
+  assert.equal(parseIntakeSave({ ...GOOD, highSchool: "Not Listed Yet", highSchoolId: null })?.highSchoolId, null);
+  assert.equal(parseIntakeSave({ ...GOOD, highSchoolId: "A9106383" })?.highSchoolId, "A9106383");
 });
 
 /* ------------------------------------------------------------------ */

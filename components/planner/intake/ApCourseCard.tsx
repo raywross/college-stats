@@ -5,9 +5,9 @@ import {
   apName,
   courseSummary,
   INTAKE_EXAMS,
-  termOptions,
+  yearOptions,
+  yearStatus,
   type IntakeCourse,
-  type IntakeCourseStatus,
   type IntakeExam,
 } from "@/lib/planner/intake";
 import { cn } from "@/lib/utils";
@@ -15,13 +15,14 @@ import { cn } from "@/lib/utils";
 const EXAM_LABEL: Record<IntakeExam, string> = { "5": "5", "4": "4", "3": "3", "2": "2", "1": "1", pending: "Not back yet" };
 
 /**
- * One AP course card (intake.md "AP courses"): collapsed shows "AP {name}" and a summary pill; open shows the
- * "Took it / Taking or planned" choice, then the exam-score chips or the "When?" term chips. Picking a value
- * collapses it again (the parent decides open-ness from `forceOpen`).
+ * One AP course card (intake.md "AP courses"): collapsed shows "AP {name}" and a summary pill; open shows the four
+ * "Which year?" chips (freshman through senior, with the school year once a class is picked), then the exam-score
+ * chips once the picked year is over. Picking a value collapses it again (the parent decides open-ness).
  */
 export function ApCourseCard({
   course,
   classYear,
+  rawClassYear,
   today,
   open,
   examsHidden,
@@ -30,7 +31,10 @@ export function ApCourseCard({
   onRemove,
 }: {
   course: IntakeCourse;
+  /** The class year to reckon status against (a fallback when the student hasn't set one yet, step 0). */
   classYear: number;
+  /** The student's actual pick, or null: without one, the chips show grade names only (no school year). */
+  rawClassYear: number | null;
   today: string;
   open: boolean;
   examsHidden: boolean;
@@ -38,12 +42,14 @@ export function ApCourseCard({
   onChange: (next: IntakeCourse) => void;
   onRemove: () => void;
 }) {
-  const summary = courseSummary(course, today, { examsHidden });
-  const terms = termOptions(classYear, today);
+  const summary = courseSummary(course, classYear, today, { examsHidden });
+  const years = yearOptions(rawClassYear);
+  const askScore = course.year !== null && yearStatus(course.year, classYear, today) === "taken";
 
-  const pickStatus = (status: IntakeCourseStatus) => {
-    if (status === "took") onChange({ ...course, status: "took", term: null });
-    else onChange({ ...course, status: "plan", exam: null });
+  const pickYear = (year: 9 | 10 | 11 | 12) => {
+    // A year that no longer asks for a score drops whatever was chosen for a previous (past) year.
+    const stillTaken = yearStatus(year, classYear, today) === "taken";
+    onChange({ ...course, year, exam: stillTaken ? course.exam : null });
   };
 
   return (
@@ -80,34 +86,29 @@ export function ApCourseCard({
 
       {open && (
         <div className="mt-3 space-y-3 border-t pt-3">
-          <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Status">
-            <button
-              type="button"
-              role="radio"
-              aria-checked={course.status === "took"}
-              onClick={() => pickStatus("took")}
-              className={cn(
-                "min-h-9 rounded-full border px-3.5 text-sm font-semibold",
-                course.status === "took" ? "border-foreground bg-foreground text-background" : "text-muted-foreground hover:bg-muted",
-              )}
-            >
-              Took it
-            </button>
-            <button
-              type="button"
-              role="radio"
-              aria-checked={course.status === "plan"}
-              onClick={() => pickStatus("plan")}
-              className={cn(
-                "min-h-9 rounded-full border px-3.5 text-sm font-semibold",
-                course.status === "plan" ? "border-foreground bg-foreground text-background" : "text-muted-foreground hover:bg-muted",
-              )}
-            >
-              Taking / planned
-            </button>
+          <div className="space-y-1.5">
+            <p className="text-xs font-semibold text-muted-foreground">Which year?</p>
+            <div className="flex flex-wrap gap-1.5" role="radiogroup" aria-label="Which year">
+              {years.map((y) => (
+                <button
+                  key={y.year}
+                  type="button"
+                  role="radio"
+                  aria-checked={course.year === y.year}
+                  onClick={() => pickYear(y.year)}
+                  className={cn(
+                    "flex min-h-9 flex-col items-start justify-center rounded-full border px-3.5 py-1 text-left text-sm font-semibold",
+                    course.year === y.year ? "border-foreground bg-foreground text-background" : "text-muted-foreground hover:bg-muted",
+                  )}
+                >
+                  {y.label}
+                  {y.sub && <span className={cn("text-[11px] font-normal", course.year === y.year ? "text-background/70" : "text-muted-foreground/80")}>{y.sub}</span>}
+                </button>
+              ))}
+            </div>
           </div>
 
-          {course.status === "took" && !examsHidden && (
+          {askScore && !examsHidden && (
             <div className="space-y-1.5">
               <p className="text-xs font-semibold text-muted-foreground">Your exam score</p>
               <div className="flex flex-wrap gap-1.5" role="radiogroup" aria-label="Exam score">
@@ -129,25 +130,23 @@ export function ApCourseCard({
               </div>
             </div>
           )}
-          {course.status === "took" && examsHidden && <p className="text-sm text-muted-foreground">Score hidden.</p>}
-
-          {course.status === "plan" && (
+          {askScore && examsHidden && (
             <div className="space-y-1.5">
-              <p className="text-xs font-semibold text-muted-foreground">When?</p>
-              <div className="flex flex-wrap gap-1.5" role="radiogroup" aria-label="When">
-                {terms.map((t) => (
+              <p className="text-xs font-semibold text-muted-foreground">Your exam score · {course.exam ? "chosen this visit" : "score saved (hidden)"}</p>
+              <div className="flex flex-wrap gap-1.5" role="radiogroup" aria-label="Exam score">
+                {INTAKE_EXAMS.map((e) => (
                   <button
-                    key={t.value}
+                    key={e}
                     type="button"
                     role="radio"
-                    aria-checked={course.term === t.value}
-                    onClick={() => onChange({ ...course, term: t.value })}
+                    aria-checked={course.exam === e}
+                    onClick={() => onChange({ ...course, exam: e })}
                     className={cn(
                       "min-h-9 rounded-full border px-3 text-sm font-semibold",
-                      course.term === t.value ? "border-foreground bg-foreground text-background" : "text-muted-foreground hover:bg-muted",
+                      course.exam === e ? "border-foreground bg-foreground text-background" : "text-muted-foreground hover:bg-muted",
                     )}
                   >
-                    {t.label}
+                    {EXAM_LABEL[e]}
                   </button>
                 ))}
               </div>

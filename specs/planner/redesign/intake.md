@@ -5,6 +5,11 @@
 > header card's grad-year prompt. Rules live in `lib/planner/intake.ts` (pure); the one save is `saveIntake` in
 > `lib/planner/store-plan.ts`; the UI is `components/planner/intake/PlanIntake.tsx`. Tests:
 > `tests/planner-intake.test.mts`.
+>
+> **Updated 2026-10-11 (owner feedback on the built guide):** the high school picker moved onto the Grades step
+> (it only lived on `/me` before); the AP step asks one question — which of the student's four high-school years —
+> instead of a status pick plus a separate "When?"; a guardian can now pick an AP exam score for a taken course even
+> while the student keeps scores private (`mergeCoursesForSave`).
 
 ## When it shows
 - **First run**: `/plan` shows the guide instead of the plan (tabs and all) when `intakeNeeded(ctx)`: the student has
@@ -20,9 +25,9 @@ One question per screen, four steps and a Done screen (`IntakeStep` 0–4). Noth
 
 | Step | Headline | Asks |
 |---|---|---|
-| 0 Grades | "Start with your grades" | Class of (chips), GPA (one field, scale detected) |
+| 0 Grades | "Start with your grades" | Class of (chips), GPA (one field, scale detected), high school (optional) |
 | 1 Test | "Your test score" | SAT or ACT or neither; the score; practice; an optional target |
-| 2 AP courses | "Your AP courses" | Courses taken, taking now, or planned; Skip jumps to Review |
+| 2 AP courses | "Your AP courses" | Which year for each AP course (a score once that year is over); Skip jumps to Review |
 | 3 Review | "Look right?" | One row per answer with Edit (jumps to its step); "Save and show my plan" |
 | 4 Done | "Your numbers are in." | First run only: "Add your first college" |
 
@@ -41,6 +46,10 @@ One question per screen, four steps and a Done screen (`IntakeStep` 0–4). Noth
   Default (empty), Detected, or Scale (picked).
 - `gpaMaxFor("100")` is 120 everywhere a GPA is checked: the profile's sanitizer and the numbers form's `parseNumbers`.
   The estimate's request takes the GPA already converted to 4.0, so its bound doesn't change.
+- **High school** (owner feedback, 2026-10-11): the same picker as `/me` (`components/high-schools/HighSchoolPicker`),
+  under "Class of"; optional, prefilled from `basics.highSchool`/`highSchoolId`. Picking a result fills both; typing
+  without picking saves the free-text name and clears a previous pick, same as the picker's own behavior inside the
+  `/me` form. Review shows a "School" line (Edit → Grades).
 
 ### Test
 - One test (the plan's rule): SAT, ACT, or "I'm not taking either test" (`tests.focus` `"none"`). Switching tests
@@ -63,43 +72,60 @@ One question per screen, four steps and a Done screen (`IntakeStep` 0–4). Noth
   ambiguous ("calc", "gov", "physics" name more than one course), and the catalog's aliases map a printed course name
   to exactly one course (`apKeysForName`). Courses already added never appear. Names are the design's short ones
   (`apName`: "US History", "Physics C: E&M"); the UI prefixes "AP".
-- **Each course asks one thing**: Took it → the exam score (5, 4, 3, 2, 1, Not back yet); Taking / planned → when
-  (`termOptions`): for each school year from this one until graduation, "Full year" (this year) or "Full year 27–28",
-  "Fall 2026", "Spring 2027". Picking collapses the card; its pill reads "Score 4", "Score pending", "Spring 2027",
-  or "Choose" while incomplete (`courseSummary`).
-- A guardian looking at a student who keeps AP scores private (`apExamsPrivate`) sees "Score hidden" instead of the
-  score chips for a taken course (`courseSummary(…, { examsHidden: true })`).
-- AP courses never block Continue. A course with nothing picked isn't saved.
+- **Each course asks one thing** (owner feedback, 2026-10-11 — "Might be easier to just list as freshman, sophomore,
+  junior, and senior then store as years behind the scenes"): "Which year?" — four chips, Freshman through Senior,
+  the school year under each once a class is picked (`yearOptions`; "24–25" from `classYear`; grade names only
+  without one). Picking a year collapses the card unless it also asks for a score (below) and none is chosen yet.
+  AP exams are scored 1–5, so a year whose school year is already over then asks "Your exam score": 5, 4, 3, 2, 1,
+  or "Not back yet". `IntakeCourse` stores the pick directly — `year: 9 | 10 | 11 | 12 | null` and `exam` — never a
+  status or a term: whether a year reads as taken, in progress, or planned always derives from the year, the class,
+  and today (`yearStatus`), so it can't drift from what was actually picked. The card's pill (`courseSummary`):
+  "Junior · Score 4", "Sophomore · Score pending" (a past year), "Senior year" (a future one), "Taking now" (this
+  year), or "Choose" (incomplete).
+- A guardian looking at a student who keeps AP scores private (`apExamsPrivate`) sees "Score saved (hidden)" instead
+  of "Choose" once a past year is picked but nothing's chosen this session (`courseSummary(…, { examsHidden: true
+  })`) — the chips still show, unselected, and picking one sets a new score (see "A guardian's save" below), unlike
+  the first build's "Score hidden" (no chips at all).
+- AP courses never block Continue. A course with no year picked isn't saved.
 
 ### Review and saving
 - Review lists Class, GPA ("3.82 · 4.0 scale"), Test ("SAT 1390 (practice) · aiming for 1450" / "Not testing"), and
   AP courses ("2 taken · 1 taking or planned" / "None") (`reviewLines`). Save needs the grades and test steps valid.
 - **One save** (`intakeToSave` → `saveIntake`): the server checks everything again (`parseIntakeSave` refuses the
   whole save on any bad value: a class year outside the profile's window, a GPA outside its scale, a missing or
-  out-of-range score, a target without a test or out of range, a course that isn't an AP catalog course, an unknown
-  exam or term, a course listed twice), then `applyIntake` and the usual profile save.
+  out-of-range score, a target without a test or out of range, a bad high-school id, a course that isn't an AP
+  catalog course, an unknown exam or year, a course listed twice), then `applyIntake` and the usual profile save.
 
 ## Mapping to the profile (`applyIntake`)
 - `basics.gradYear` = the class. `saveProfile` keeps `students.grad_year` in step (the column `setGradYear` writes),
-  and the follow-up regenerates every list's tasks.
+  and the follow-up regenerates every list's tasks. `basics.highSchool`/`highSchoolId` = the picker's pick (or the
+  free-typed name), checked by `parseIntakeSave` the way the profile's own sanitizer checks them (a string up to 200
+  characters; an id that's a real NCES or PSS id, `isHighSchoolId`) — a bad id refuses the whole save, like a bad
+  GPA; an overlong free-typed name is just dropped, the sanitizer's own leniency for free text.
 - `academics.gpa` and `gpaScale`; `tests.focus`, the focus test's score (`satTotal` or `actComposite`; the other
   test's score is kept), `practice`, `target`.
 - **AP courses** replace the profile's AP rows that have a catalog key; every other row (IB, dual enrollment, honors,
-  regular, and unnamed placeholder AP rows from the count-only entry) is kept untouched, in place:
-  - **Took it** → `status: "taken"`, `exam` 1–5 or null ("Not back yet"), `year` = the most recently finished grade
-    (current grade − 1, clamped 9–12; 9 for a student in 9th). A row that was already taken keeps its year.
-  - **Taking / planned** → a term chip for school year Y–Y+1: `year` = 12 − (class − (Y+1)), clamped 9–12;
-    `status` = `"in_progress"` for this school year, `"planned"` for a later one; `CourseEntry.term` = `"full"`,
-    `"fall"`, or `"spring"` (an optional field; absent means null).
+  regular, and unnamed placeholder AP rows from the count-only entry) is kept untouched, in place. The picked year
+  (`IntakeCourse.year`) becomes `CourseEntry.year` directly, and `status` is always `yearStatus(year, class, today)`
+  — `"taken"` (that school year's over), `"in_progress"` (this one), or `"planned"` (later) — worked out fresh on
+  every save, never carried over from what the row used to say. `exam` is kept only when the row comes out `"taken"`
+  (1–5, or null for "Not back yet"); a year that doesn't drops whatever exam was chosen for a previous pick.
+  `CourseEntry.term` is always cleared now that there's no term chip; the sanitizer drops a null `term` key
+  entirely, so a row the intake writes never carries one.
   - A course the student didn't change keeps its saved row exactly (grades and all); a changed one keeps its grades
     (a planned course drops its final grade, as the sanitizer always does).
   - `courseRigorCount` follows the list (never re-adds placeholder rows for removed courses).
-- **A guardian's save** goes through `mergeCoursesForSave`: their copy of the profile has no exam scores while the
-  student keeps them private, so the saved scores are put back by course id and the privacy switch stays as saved.
-- `draftFromProfile` reads it back: AP rows with a key become courses (taken → its score or "pending"; in progress or
-  planned → its year's term chip), a GPA's saved scale becomes the override only when detection would pick another (a
-  GPA above 4.0 saved on the 4.0 scale is weighted by definition and opens on 5.0 weighted), and with no focus test
-  but one score on file, that test. Saving an unchanged draft gives back the same profile.
+- **A guardian's save** goes through `mergeCoursesForSave` (owner feedback, 2026-10-11): a taken course a guardian
+  didn't touch (still "pending" in their draft, since their copy carries no exam scores while the student keeps them
+  private) keeps its saved score, put back by course id. A guardian *can* now pick a new score for a taken course in
+  the AP step — a non-null exam they post wins over the saved one. The privacy switch itself always stays as saved;
+  a guardian never flips it.
+- `draftFromProfile` reads it back: AP rows with a key become courses, the saved `year` carried over as-is and, for
+  an already-taken one, its score (its exam, or "pending"). Status is never read off the saved row — the card works
+  it out the same way `applyIntake` will, from the year, the class, and today. A GPA's saved scale becomes the
+  override only when detection would pick another (a GPA above 4.0 saved on the 4.0 scale is weighted by definition
+  and opens on 5.0 weighted), and with no focus test but one score on file, that test. Saving an unchanged draft
+  gives back the same profile.
 
 ## Groups
 Groups are Quad's only (owner, 2026-10-11; the design's "no group override"): `planView` ignores

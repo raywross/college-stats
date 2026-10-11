@@ -69,7 +69,6 @@ export function TestStep({ draft, setDraft }: { draft: IntakeDraft; setDraft: (n
               id="intake-score"
               type="text"
               inputMode="numeric"
-              placeholder={CARD_COPY[test].placeholder}
               value={draft.score}
               onChange={(e) => setDraft({ ...draft, score: e.target.value })}
               className="h-[72px] w-full max-w-48 rounded-2xl border px-4 font-display text-4xl font-extrabold outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"

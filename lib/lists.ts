@@ -17,6 +17,7 @@ import { after } from "next/server";
 import { snapshotOnApplied } from "@/lib/chances/snapshot-write";
 import { snapshotDeps } from "@/lib/chances/snapshot-deps";
 import { getUser, authConfigured, currentStudent, studentsICanSee } from "@/lib/auth";
+import { householdChildren } from "@/lib/households";
 import { createServerSupabase } from "@/lib/supabase-server";
 import { getData } from "@/lib/data";
 import { isUnitId } from "@/lib/follow-state";
@@ -87,18 +88,17 @@ async function myOwner(): Promise<ListOwner | null> {
 export type SaveTarget = { studentId: string; name: string | null };
 
 /**
- * The students a guardian's "Add to list" saves to: every student they reach as a guardian with edit access, oldest
- * record first (owner decision 2026-10-11, household-hub.md "One list per person": a parent saves to their child's
+ * The students a guardian's "Add to list" saves to: every student in their household (householdChildren, as the plan's
+ * switcher lists them) they can edit, in the order they joined it (owner decision 2026-10-11, household-hub.md "One list per person": a parent saves to their child's
  * list, not a list of their own the plan never shows). Empty for a student and for a guardian without edit access,
  * who save to their own list as before.
  */
 export async function mySaveTargets(): Promise<SaveTarget[]> {
   if (!authConfigured() || !(await getUser())) return [];
-  const access = await studentsICanSee();
-  return access
-    .filter((a) => a.relation === "guardian" && a.canEdit)
-    .sort((a, b) => a.student.created.localeCompare(b.student.created) || a.student.id.localeCompare(b.student.id))
-    .map((a) => ({ studentId: a.student.id, name: a.student.display_name }));
+  return (await householdChildren())
+    .filter((c) => c.access.canEdit)
+    .sort((a, b) => a.joined.localeCompare(b.joined) || a.access.student.id.localeCompare(b.access.student.id))
+    .map(({ access: a }) => ({ studentId: a.student.id, name: a.student.display_name }));
 }
 
 /**

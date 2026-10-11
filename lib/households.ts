@@ -42,6 +42,25 @@ export const myHouseholds = cache(async (): Promise<HouseholdView[]> => {
   return views.filter((v): v is HouseholdView => v !== null);
 });
 
+/**
+ * The students the viewer reaches as a guardian through a household they're in: on one of their households' rosters,
+ * each with the date they joined it. A student record the viewer can read only because they once created it (a
+ * managed record no longer in any household, e.g. one left behind when the child joined with their own account) is
+ * not one of them: the household page doesn't show it, so the plan and "Add to list" don't either (found in owner
+ * testing 2026-10-11: the plan's switcher listed "Maya" and "Maya Ross").
+ */
+export async function householdChildren(): Promise<{ access: StudentAccess; joined: string }[]> {
+  const [access, households] = await Promise.all([studentsICanSee(), myHouseholds()]);
+  const joined = new Map<string, string>();
+  for (const m of households.flatMap((h) => h.members)) {
+    if (m.role === "student" && m.student_id && !joined.has(m.student_id)) joined.set(m.student_id, m.joined);
+  }
+  return access.flatMap((a) => {
+    const at = joined.get(a.student.id);
+    return a.relation === "guardian" && at !== undefined ? [{ access: a, joined: at }] : [];
+  });
+}
+
 /** What a `/household/[person]` id resolves to for the signed-in viewer. */
 export type PersonPage =
   | { kind: "student"; access: StudentAccess }

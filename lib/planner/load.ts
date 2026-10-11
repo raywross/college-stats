@@ -9,7 +9,7 @@ import "server-only";
  */
 import { currentStudent, getAccount, studentsICanSee } from "@/lib/auth";
 import type { StudentAccess } from "@/lib/accounts";
-import { myHouseholds, scheduleStudentReadLog } from "@/lib/households";
+import { householdChildren, scheduleStudentReadLog } from "@/lib/households";
 import { myHome } from "@/lib/home-store";
 import { getOrCreateDefaultList, myLists } from "@/lib/lists";
 import { createServerSupabase } from "@/lib/supabase-server";
@@ -152,22 +152,13 @@ export interface PlanChild {
 }
 
 /**
- * The students the signed-in user can see as a guardian, in the order they were added to the household (the roster's
- * join date), each with a color slot. A student viewing their own plan gets none (they aren't anyone's guardian).
+ * The students the signed-in user can see as a guardian through their household (householdChildren: on its roster),
+ * in the order they were added to it (the roster's join date), each with a color slot. A student viewing their own plan gets none (they aren't anyone's guardian).
  */
 export async function myPlanChildren(): Promise<PlanChild[]> {
-  const [access, households] = await Promise.all([studentsICanSee(), myHouseholds()]);
-  const asGuardian = access.filter((a) => a.relation === "guardian");
-  if (asGuardian.length === 0) return [];
-  const joined = new Map<string, string>();
-  for (const m of households.flatMap((h) => h.members)) {
-    if (m.role === "student" && m.student_id && !joined.has(m.student_id)) joined.set(m.student_id, m.joined);
-  }
-  const sorted = [...asGuardian].sort((a, b) => {
-    const ja = joined.get(a.student.id) ?? a.student.created;
-    const jb = joined.get(b.student.id) ?? b.student.created;
-    return ja.localeCompare(jb) || a.student.id.localeCompare(b.student.id);
-  });
+  const sorted = (await householdChildren())
+    .sort((a, b) => a.joined.localeCompare(b.joined) || a.access.student.id.localeCompare(b.access.student.id))
+    .map((c) => c.access);
   return sorted.map((a, i) => ({
     studentId: a.student.id,
     name: a.student.display_name,

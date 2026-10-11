@@ -16,8 +16,8 @@ import * as nodeModule from "node:module";
 const ROOT = join(import.meta.dirname, "..");
 
 type Access = { student: { id: string; display_name: string | null; created: string }; relation: "self" | "guardian"; canEdit: boolean };
-type Fake = { user: { id: string } | null; access: Access[]; own: { id: string } | null; writes: string[] };
-const fake: Fake = { user: null, access: [], own: null, writes: [] };
+type Fake = { user: { id: string } | null; access: Access[]; own: { id: string } | null; roster: Record<string, string>; writes: string[] };
+const fake: Fake = { user: null, access: [], own: null, roster: {}, writes: [] };
 (globalThis as unknown as { __listsFake: Fake }).__listsFake = fake;
 
 // lib/auth.ts and lib/supabase-server.ts need a request; stand-ins read the fake above. A query records
@@ -28,6 +28,13 @@ export const authConfigured = () => true;
 export const getUser = async () => f().user;
 export const currentStudent = async () => f().own;
 export const studentsICanSee = async () => f().access;
+`;
+// lib/households.ts householdChildren, over the fake's roster (student id → joined date).
+const HOUSEHOLDS = `
+const f = () => globalThis.__listsFake;
+export async function householdChildren() {
+  return f().access.filter((a) => a.relation === "guardian" && a.student.id in f().roster).map((a) => ({ access: a, joined: f().roster[a.student.id] }));
+}
 `;
 const SUPABASE = `
 const f = () => globalThis.__listsFake;
@@ -72,6 +79,7 @@ registerHooks({
     if (specifier === "server-only") return { url: "data:text/javascript,export {}", shortCircuit: true };
     if (specifier === "next/server") return { url: "data:text/javascript,export function after(){}", shortCircuit: true };
     if (specifier === "@/lib/auth") return { url: `data:text/javascript,${encodeURIComponent(AUTH)}`, shortCircuit: true };
+    if (specifier === "@/lib/households") return { url: `data:text/javascript,${encodeURIComponent(HOUSEHOLDS)}`, shortCircuit: true };
     if (specifier === "@/lib/supabase-server") return { url: `data:text/javascript,${encodeURIComponent(SUPABASE)}`, shortCircuit: true };
     let spec = specifier;
     if (spec.startsWith("@/")) spec = pathToFileURL(join(ROOT, spec.slice(2))).href;
@@ -93,6 +101,8 @@ function as(o: Partial<Fake>) {
   fake.user = "user" in o ? (o.user ?? null) : { id: "parent" };
   fake.access = o.access ?? [];
   fake.own = o.own ?? null;
+  // Every student is on the household's roster, joined when their record was made, unless the test says otherwise.
+  fake.roster = o.roster ?? Object.fromEntries(fake.access.map((a) => [a.student.id, a.student.created]));
   fake.writes = [];
 }
 
@@ -113,7 +123,7 @@ test("a guardian with one editable child: Add to list saves to the child's list,
 
 test("a guardian of several editable children names one; a student it can't edit is refused", async () => {
   as({ access: [kid("sam", "Sam", "2026-10-05"), kid("maya", "Maya", "2026-10-01")] });
-  assert.deepEqual((await mySaveTargets()).map((t) => t.studentId), ["maya", "sam"], "oldest record first");
+  assert.deepEqual((await mySaveTargets()).map((t) => t.studentId), ["maya", "sam"], "in the order they joined");
   assert.deepEqual(await addToMyDefaultList([PURDUE]), { ok: false, message: "Pick whose list to add it to." });
   assert.equal(fake.writes.length, 0, "no guess");
   assert.deepEqual(await addToMyDefaultList([PURDUE], "sam"), { ok: true });
@@ -122,6 +132,20 @@ test("a guardian of several editable children names one; a student it can't edit
   assert.deepEqual(await addToMyDefaultList([PURDUE], "stranger"), { ok: false, message: "You can't change that list." });
   assert.equal(await isOnAnyList(PURDUE, "stranger"), false);
   assert.equal(fake.writes.length, 0);
+});
+
+test("a record the guardian made that's no longer in the household is not a target (the owner's \"Maya\" and \"Maya Ross\")", async () => {
+  // The parent created "Maya" from Household; Maya later joined with her own account ("Maya Ross"), and the old
+  // record stayed readable to the parent (managed_by) but left the household.
+  as({ access: [kid("maya-old", "Maya", "2026-10-01"), kid("maya", "Maya Ross", "2026-10-06")], roster: { maya: "2026-10-06" } });
+  assert.deepEqual(await mySaveTargets(), [{ studentId: "maya", name: "Maya Ross" }]);
+  assert.deepEqual(await addToMyDefaultList([PURDUE]), { ok: true }, "one child left, so no question");
+  assert.ok(fake.writes.includes("insert list_items list-maya"), fake.writes.join(" | "));
+  assert.deepEqual(await addToMyDefaultList([PURDUE], "maya-old"), { ok: false, message: "You can't change that list." });
+  // The plan's switcher reads the same helper.
+  const load = read("lib", "planner", "load.ts");
+  assert.match(load, /export async function myPlanChildren[\s\S]*?await householdChildren\(\)/);
+  assert.doesNotMatch(load.slice(load.indexOf("export async function myPlanChildren")), /^\s*const \[access, households\] = await Promise\.all\(\[studentsICanSee\(\)/m);
 });
 
 test("a guardian without edit access, and a student, save to their own list as before", async () => {

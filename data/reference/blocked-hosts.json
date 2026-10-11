@@ -4,7 +4,7 @@
       "host": "abington.psu.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-11",
       "unit_ids": [
         "214801"
       ]
@@ -70,7 +70,7 @@
       "host": "altoona.psu.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-11",
       "unit_ids": [
         "214689"
       ]
@@ -151,7 +151,7 @@
       "host": "behrend.psu.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-11",
       "unit_ids": [
         "214591"
       ]
@@ -265,7 +265,7 @@
       "host": "harrisburg.psu.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-11",
       "unit_ids": [
         "214713"
       ]
@@ -535,7 +535,7 @@
       "host": "iris.pacific.edu",
       "status": 403,
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-11",
       "unit_ids": [
         "120883"
       ]
@@ -661,7 +661,7 @@
       "host": "new.unca.edu",
       "status": 403,
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-11",
       "unit_ids": [
         "199111"
       ]
@@ -832,7 +832,7 @@
       "host": "oie.unomaha.edu",
       "status": 403,
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-11",
       "unit_ids": [
         "181394"
       ]
@@ -895,7 +895,7 @@
       "host": "oir.umn.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-10",
+      "last_seen": "2026-10-11",
       "unit_ids": [
         "174066",
         "174233",
@@ -1322,7 +1322,7 @@
       "host": "www.abington.psu.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-11",
       "unit_ids": [
         "214801"
       ]
@@ -1672,7 +1672,7 @@
       "host": "www.fredonia.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-11",
       "unit_ids": [
         "196158"
       ]
@@ -1717,7 +1717,7 @@
       "host": "www.gonzaga.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-11",
       "unit_ids": [
         "235316"
       ]
@@ -1762,7 +1762,7 @@
       "host": "www.haverford.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-11",
       "unit_ids": [
         "212911"
       ]
@@ -1771,7 +1771,7 @@
       "host": "www.hc.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-11",
       "unit_ids": [
         "225399"
       ]
@@ -1825,7 +1825,7 @@
       "host": "www.laverne.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-11",
       "unit_ids": [
         "117140"
       ]
@@ -1843,7 +1843,7 @@
       "host": "www.lynn.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-11",
       "unit_ids": [
         "132657"
       ]
@@ -2005,7 +2005,7 @@
       "host": "www.plattsburgh.edu",
       "status": 403,
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-11",
       "unit_ids": [
         "196246"
       ]
@@ -2140,7 +2140,7 @@
       "host": "www.suno.edu",
       "status": 403,
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-11",
       "unit_ids": [
         "160630"
       ]

@@ -1,6 +1,6 @@
 # How This College Reads a Record: Rigor, Crowded GPAs, and What Counts
 
-> Status: **planned** 2026-10-10. Part 1 of [admission chances, revisited](README.md). Profile only; needs no account
+> Status: **built** 2026-10-11 on `feature/chances` (see "As built"; planned 2026-10-10). Part 1 of [admission chances, revisited](README.md). Profile only; needs no account
 > and no student numbers. Builds on the C7 grid already on the admissions page
 > ([admission-factors.md](../data-expansion/admission-factors.md), [cds-admissions.md](../data-expansion/cds-admissions.md)),
 > the C11 GPA bands (`GpaChecker`), C10 class rank, C8 course units (`HsPrepBox`), and the test policy block

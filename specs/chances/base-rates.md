@@ -1,6 +1,6 @@
 # The Admit Rate for Your Pool: Automatic Admission, Major, and Residency
 
-> Status: **planned** 2026-10-10. Part 3 of [admission chances](README.md). Builds on the residency grid
+> Status: **built** 2026-10-11 on `feature/chances` (see "As built"; planned 2026-10-10). Part 3 of [admission chances](README.md). Builds on the residency grid
 > ([cds-residency-admissions.md](../data-expansion/cds-residency-admissions.md), built: `rateForStudent`), early rounds
 > ([cds-admissions.md](../data-expansion/cds-admissions.md), built: C21/C22), and promotes part of the
 > [getting into the major](../ideas/getting-into-the-major.md) idea. An input to [Quad's estimate](estimate.md).

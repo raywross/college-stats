@@ -1,6 +1,6 @@
 # Outcomes and Accuracy: What Students Share, and How Well the Estimate Did
 
-> Status: **planned** 2026-10-10. Part 5 of [admission chances](README.md). After [estimate.md](estimate.md); uses the
+> Status: **built** 2026-10-11 on `feature/chances` (see "As built"; planned 2026-10-10). Part 5 of [admission chances](README.md). After [estimate.md](estimate.md); uses the
 > planner's opt-in outcome share (built in [../planner/offers.md](../planner/offers.md), consent on `lists`) and
 > [scattergrams.md](../product/scattergrams.md) (planned); replaces the pilot section of
 > [chances-and-fit.md](../product/chances-and-fit.md#pilot). How outcomes are used to improve the estimate is part of

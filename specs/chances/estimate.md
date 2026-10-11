@@ -1,6 +1,6 @@
 # Quad's Estimate: Interface, Server-Side Model, and What Families See
 
-> Status: **planned** 2026-10-10. Part 4 of [admission chances](README.md). After
+> Status: **built** 2026-10-11 on `feature/chances` (see "As built"; planned 2026-10-10). Part 4 of [admission chances](README.md). After
 > [rigor-in-context.md](rigor-in-context.md), [base-rates.md](base-rates.md), and
 > [major-and-grades.md](major-and-grades.md) (the inputs), and after PR #105 (the planner redesign, whose
 > `standingFor` in `lib/planner/standing.ts` this moves behind the interface). The method is

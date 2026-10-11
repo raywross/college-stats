@@ -253,7 +253,7 @@ shared rules for user data are in that README. All user data lives only in Supab
   `lists.rounds_plan_accepted_at` once no release reads them; the share image; the old family dossier print.
 - [ ] **Chances and fit** ([product/chances-and-fit.md](product/chances-and-fit.md)): rules-based standing with
   reasons (never a probability), fit against preferences, a pilot against real outcomes before the chip ships.
-- [ ] **Admission chances** (planned 2026-10-10 in [chances/](chances/README.md)). Quad's estimate is proprietary: these
+- [x] **Admission chances** (built 2026-10-11 on `feature/chances`; planned 2026-10-10 in [chances/](chances/README.md)). Quad's estimate is proprietary: these
   site shows inputs and outputs only; the method is in [chances/method/](chances/method/standing.md) until launch, then
   moves private. Seven units:
   [how colleges read a record](chances/how-colleges-read.md), [rigor in context](chances/rigor-in-context.md) (a course

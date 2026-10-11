@@ -1,6 +1,6 @@
 # Course Plan: Which Advanced Courses to Take Next
 
-> Status: **planned** 2026-10-10 (built by unit U6 on `feature/chances-course-plan`; see [as built](#as-built); the roadmap entry is flipped when the section merges). Part 6 of [admission chances, revisited](README.md). After
+> Status: **built** 2026-10-11 on `feature/chances` (see [as built](#as-built); planned 2026-10-10). Part 6 of [admission chances, revisited](README.md). After
 > [rigor-in-context.md](rigor-in-context.md) (the course list with grades, the AP catalog, the reading); better with
 > [estimate.md](estimate.md) (whether a course would change the estimate). Planner first; one line on the college
 > profile. Asked for by the owner after reading the first draft: "make recommendations on adding APs as part of the

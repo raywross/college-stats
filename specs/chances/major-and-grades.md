@@ -1,6 +1,6 @@
 # When the Major Changes How Grades Are Read
 
-> Status: **planned** 2026-10-10. Part 7 of [admission chances, revisited](README.md). After
+> Status: **built** 2026-10-11 on `feature/chances` (see "As built"; planned 2026-10-10). Part 7 of [admission chances, revisited](README.md). After
 > [base-rates.md](base-rates.md) (it extends the same first wave of `reported.major_admission`) and
 > [rigor-in-context.md](rigor-in-context.md) (the course list); an input to [Quad's estimate](estimate.md) and feeds
 > [course-plan.md](course-plan.md). Asked for by the owner: "Does the major a student selects impact how their grades

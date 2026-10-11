@@ -1,6 +1,6 @@
 # Rigor in Context: Your Courses Against What Your School Offers
 
-> Status: **planned** 2026-10-10. Part 2 of [admission chances, revisited](README.md). After
+> Status: **built** 2026-10-11 on `feature/chances` (see "As built"; planned 2026-10-10). Part 2 of [admission chances, revisited](README.md). After
 > [student-profile.md](../product/student-profile.md) (built: `courseRigorCount`, `classRankPercentile`, the linked
 > `highSchoolId`) and [high-school-data.md](../product/high-school-data.md) (built: CRDC AP course counts for 13,191
 > high schools, school-profile AP lists for the pilot schools). An input to [Quad's estimate](estimate.md).

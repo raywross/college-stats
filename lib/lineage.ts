@@ -246,7 +246,8 @@ function inputsUsed(path: FieldPath, inputs: readonly string[], school: School |
 
 /**
  * The inputs `derived.gpa_estimate` used at this college (lib/planner/gpa-model.ts satMidpoint, collegeGpa): its SAT
- * total, else its ACT composite; its admit rate; and the weighted average that bounded it, when it publishes one.
+ * total, else its ACT composite; its admit rate, graduation rate, and SAT/ACT submission shares; and the weighted
+ * average that bounded it, when it publishes one.
  */
 function gpaEstimateInputs(school: School): FieldPath[] {
   const out: FieldPath[] = [];
@@ -256,6 +257,10 @@ function gpaEstimateInputs(school: School): FieldPath[] {
   if (school.admissions?.sat_reading_25_75 && school.admissions?.sat_math_25_75) out.push("admissions.sat_reading_25_75", "admissions.sat_math_25_75");
   else if (school.admissions?.act_composite_25_75 && !out.includes("admissions.act_composite_25_75")) out.push("admissions.act_composite_25_75");
   out.push("admissions.acceptance_rate");
+  // Every model also reads the graduation rate and the test-submission share (SAT plus ACT senders; gpa.md section 2).
+  out.push("outcomes.graduation_rate");
+  if (school.admissions?.test_submission_rate_sat != null) out.push("admissions.test_submission_rate_sat");
+  if (school.admissions?.test_submission_rate_act != null) out.push("admissions.test_submission_rate_act");
   if (school.reported?.admission_profile?.gpa?.average != null) out.push("reported.admission_profile.gpa.average");
   return out;
 }

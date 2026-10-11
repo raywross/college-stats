@@ -1,8 +1,8 @@
 /**
  * A college's first-year GPA as the plan reads it (specs/planner/redesign/gpa.md): its own unweighted average when it
- * publishes one, else the mean of its GPA bands, else an estimate from colleges with similar test scores and admit
- * rates (bounded by a weighted average when that is all it publishes), else nothing. Every source comes back as a
- * range, and `compareGpaRanges` places the student's range against it. Where the college has a middle 50% of
+ * publishes one, else the mean of its GPA bands, else an estimate from colleges with similar test scores, admit rates,
+ * graduation rates, and test-submission shares (bounded by a weighted average when that is all it publishes), else
+ * nothing. Every source comes back as a range, and `compareGpaRanges` places the student's range against it. Where the college has a middle 50% of
  * first-year GPAs (its own from the GPA bands, else estimated by the p25/p75 models), `compareGpaMiddle` places the
  * student against that instead, the way the test scores are read.
  *
@@ -85,18 +85,51 @@ export function satQuartiles(school: Pick<School, "admissions">): [number, numbe
   return lo === null || hi === null ? null : [lo, hi];
 }
 
-export interface GpaRow {
-  /** SAT midpoint (satMidpoint). */
-  sat: number;
+/** The share of first-years who sent an SAT plus the share who sent an ACT (a missing one counts 0); null for both. */
+export function submissionShare(school: Pick<School, "admissions">): number | null {
+  const sat = school.admissions?.test_submission_rate_sat ?? null;
+  const act = school.admissions?.test_submission_rate_act ?? null;
+  return sat === null && act === null ? null : (sat ?? 0) + (act ?? 0);
+}
+
+/** What every model reads besides the SAT (gpa.md "The design" 2): admit rate, graduation rate, submission share. */
+export interface GpaPredictors {
   /** Admit rate, 0–1. */
   rate: number;
+  /** Graduation rate (`outcomes.graduation_rate`), 0–1. */
+  grad: number;
+  /** Test-submission share (submissionShare): the SAT and ACT submitters' shares added up, 0–2. */
+  submit: number;
+}
+
+/** A college's predictors, or null when any is missing (it then gets no estimate and trains no model). */
+export function gpaPredictors(school: Pick<School, "admissions" | "outcomes">): GpaPredictors | null {
+  const rate = school.admissions?.acceptance_rate ?? null;
+  const grad = school.outcomes?.graduation_rate ?? null;
+  const submit = submissionShare(school);
+  return rate === null || grad === null || submit === null ? null : { rate, grad, submit };
+}
+
+/** A model's inputs: the SAT it reads and the other predictors. */
+export interface GpaInputs extends GpaPredictors {
+  /** The SAT midpoint (satMidpoint) for the average model; the SAT 25th or 75th (satQuartiles) for the curve models. */
+  sat: number;
+}
+
+export interface GpaRow extends GpaInputs {
   /** The college's unweighted GPA: its band mean when it has bands, else its C12 average. */
   gpa: number;
 }
 
+/** Fitted coefficients, in the order `[1, SAT ÷ 100, admit rate, graduation rate, test-submission share]`. */
+export type GpaCoef = [number, number, number, number, number];
+
 export interface GpaModel {
-  /** GPA ≈ coef[0] + coef[1] × (SAT midpoint ÷ 100) + coef[2] × admit rate. */
-  coef: [number, number, number];
+  /**
+   * GPA ≈ coef[0] + coef[1] × (SAT ÷ 100) + coef[2] × admit rate + coef[3] × graduation rate + coef[4] × test-submission
+   * share.
+   */
+  coef: GpaCoef;
   /** Training colleges. */
   n: number;
   /** Leave-one-out absolute error: the mean, and the 90th percentile. */
@@ -104,40 +137,37 @@ export interface GpaModel {
   p90Error: number;
 }
 
-const features = (r: Pick<GpaRow, "sat" | "rate">) => [1, r.sat / 100, r.rate];
+const K = 5;
+const features = (r: GpaInputs) => [1, r.sat / 100, r.rate, r.grad, r.submit];
 
-/** Least squares on [1, sat/100, rate] through the normal equations; null when they're singular. */
-function leastSquares(rows: GpaRow[]): [number, number, number] | null {
-  const a = [
-    [0, 0, 0],
-    [0, 0, 0],
-    [0, 0, 0],
-  ];
-  const b = [0, 0, 0];
+/** Least squares on [1, sat/100, rate, grad, submit] through the normal equations; null when they're singular. */
+function leastSquares(rows: GpaRow[]): GpaCoef | null {
+  const a = Array.from({ length: K }, () => new Array<number>(K).fill(0));
+  const b = new Array<number>(K).fill(0);
   for (const r of rows) {
     const x = features(r);
-    for (let i = 0; i < 3; i++) {
+    for (let i = 0; i < K; i++) {
       b[i] += x[i] * r.gpa;
-      for (let j = 0; j < 3; j++) a[i][j] += x[i] * x[j];
+      for (let j = 0; j < K; j++) a[i][j] += x[i] * x[j];
     }
   }
   // Gaussian elimination with partial pivoting.
   const m = a.map((row, i) => [...row, b[i]]);
-  for (let col = 0; col < 3; col++) {
+  for (let col = 0; col < K; col++) {
     let pivot = col;
-    for (let r = col + 1; r < 3; r++) if (Math.abs(m[r][col]) > Math.abs(m[pivot][col])) pivot = r;
+    for (let r = col + 1; r < K; r++) if (Math.abs(m[r][col]) > Math.abs(m[pivot][col])) pivot = r;
     if (Math.abs(m[pivot][col]) < 1e-12) return null;
     [m[col], m[pivot]] = [m[pivot], m[col]];
-    for (let r = 0; r < 3; r++) {
+    for (let r = 0; r < K; r++) {
       if (r === col) continue;
       const f = m[r][col] / m[col][col];
-      for (let c = col; c < 4; c++) m[r][c] -= f * m[col][c];
+      for (let c = col; c <= K; c++) m[r][c] -= f * m[col][c];
     }
   }
-  return [m[0][3] / m[0][0], m[1][3] / m[1][1], m[2][3] / m[2][2]];
+  return m.map((row, i) => row[K] / row[i]) as GpaCoef;
 }
 
-const predictRaw = (coef: [number, number, number], sat: number, rate: number) => coef[0] + coef[1] * (sat / 100) + coef[2] * rate;
+const predictRaw = (coef: GpaCoef, x: GpaInputs) => features(x).reduce((sum, v, i) => sum + coef[i] * v, 0);
 
 /** The nearest-rank percentile of a list of numbers. */
 function percentile(values: number[], p: number): number {
@@ -157,7 +187,7 @@ export function fitGpaModel(rows: GpaRow[], guard: { minRows: number; maxP90: nu
   for (let i = 0; i < rows.length; i++) {
     const rest = leastSquares(rows.filter((_, j) => j !== i));
     if (!rest) return null;
-    errors.push(Math.abs(predictRaw(rest, rows[i].sat, rows[i].rate) - rows[i].gpa));
+    errors.push(Math.abs(predictRaw(rest, rows[i]) - rows[i].gpa));
   }
   const meanError = errors.reduce((a, b) => a + b, 0) / errors.length;
   const p90Error = percentile(errors, 0.9);
@@ -166,12 +196,12 @@ export function fitGpaModel(rows: GpaRow[], guard: { minRows: number; maxP90: nu
 }
 
 /** The model's prediction, clamped to [2.0, 4.0]. */
-export function predictGpa(model: GpaModel, sat: number, rate: number): number {
+export function predictGpa(model: GpaModel, x: GpaInputs): number {
   const [lo, hi] = GPA_PREDICT_RANGE;
-  return Math.min(hi, Math.max(lo, predictRaw(model.coef, sat, rate)));
+  return Math.min(hi, Math.max(lo, predictRaw(model.coef, x)));
 }
 
-type GpaSchool = Pick<School, "admissions" | "reported" | "lineage">;
+type GpaSchool = Pick<School, "admissions" | "reported" | "lineage" | "outcomes">;
 
 /** The college's C12 average when the rule may use it as is: unweighted, or scale not stated and at most 4.0. */
 function usableAverage(school: GpaSchool): number | null {
@@ -189,14 +219,14 @@ function weightedAverage(school: GpaSchool): number | null {
   return gpa!.scale === "weighted" || avg > 4 ? avg : null;
 }
 
-/** A training row for the college, when its GPA comes from source 1 or 2 and it has an SAT midpoint and admit rate. */
+/** A training row for the college, when its GPA comes from source 1 or 2 and it has an SAT midpoint and every predictor. */
 export function trainingRow(school: GpaSchool): GpaRow | null {
   const gpa = school.reported?.admission_profile?.gpa;
   if (!gpa || weightedAverage(school) !== null) return null;
   const target = bandMean(gpa.bands) ?? usableAverage(school);
   const sat = satMidpoint(school);
-  const rate = school.admissions?.acceptance_rate ?? null;
-  return target === null || sat === null || rate === null ? null : { sat, rate, gpa: target };
+  const x = gpaPredictors(school);
+  return target === null || sat === null || x === null ? null : { sat, ...x, gpa: target };
 }
 
 /** Training rows from every college in the dataset (never weighted reporters). */
@@ -255,23 +285,26 @@ export function bandMiddle(school: GpaSchool): { p25: number; p75: number } | nu
   return p25 === null || p75 === null ? null : { p25, p75 };
 }
 
-/** The two percentile models: p25 on [1, SAT 25th ÷ 100, admit rate], p75 on [1, SAT 75th ÷ 100, admit rate]. */
+/**
+ * The two percentile models: p25 on [1, SAT 25th ÷ 100, admit rate, graduation rate, test-submission share], p75 the
+ * same with the SAT 75th.
+ */
 export interface GpaCurve {
   p25: GpaModel;
   p75: GpaModel;
 }
 
-/** Training rows for the curve models: colleges with an exact middle 50%, SAT/ACT quartiles, and an admit rate. */
+/** Training rows for the curve models: colleges with an exact middle 50%, SAT/ACT quartiles, and every predictor. */
 export function curveRows(schools: GpaSchool[]): { p25: GpaRow[]; p75: GpaRow[] } {
   const p25: GpaRow[] = [];
   const p75: GpaRow[] = [];
   for (const s of schools) {
     const mid = bandMiddle(s);
     const sat = satQuartiles(s);
-    const rate = s.admissions?.acceptance_rate ?? null;
-    if (!mid || !sat || rate === null) continue;
-    p25.push({ sat: sat[0], rate, gpa: mid.p25 });
-    p75.push({ sat: sat[1], rate, gpa: mid.p75 });
+    const x = gpaPredictors(s);
+    if (!mid || !sat || !x) continue;
+    p25.push({ sat: sat[0], ...x, gpa: mid.p25 });
+    p75.push({ sat: sat[1], ...x, gpa: mid.p75 });
   }
   return { p25, p75 };
 }
@@ -303,12 +336,12 @@ export function gpaMiddle(school: GpaSchool, curve: GpaCurve | null): GpaMiddle 
   if (exact) return { p25: [exact.p25, exact.p25], p75: [exact.p75, exact.p75], shown: [exact.p25, exact.p75], kind: "bands" };
   if (!curve || usableAverage(school) !== null) return null;
   const sat = satQuartiles(school);
-  const rate = school.admissions?.acceptance_rate ?? null;
-  if (!sat || rate === null) return null;
+  const x = gpaPredictors(school);
+  if (!sat || !x) return null;
   const [min, max] = GPA_PREDICT_RANGE;
   const clamp = (v: number) => Math.min(max, Math.max(min, v));
-  const a = predictGpa(curve.p25, sat[0], rate);
-  const b = Math.max(a, predictGpa(curve.p75, sat[1], rate));
+  const a = predictGpa(curve.p25, { sat: sat[0], ...x });
+  const b = Math.max(a, predictGpa(curve.p75, { sat: sat[1], ...x }));
   const p25: [number, number] = [clamp(a - curve.p25.p90Error), clamp(a + curve.p25.p90Error)];
   const p75: [number, number] = [Math.max(p25[0], clamp(b - curve.p75.p90Error)), Math.max(p25[1], clamp(b + curve.p75.p90Error))];
   return { p25, p75, shown: [a, b], kind: "estimated" };
@@ -353,9 +386,9 @@ function averageGpa(school: GpaSchool, model: GpaModel | null): CollegeGpa {
   }
 
   const sat = satMidpoint(school);
-  const rate = school.admissions?.acceptance_rate ?? null;
-  if (!model || sat === null || rate === null) return none(weighted);
-  const est = predictGpa(model, sat, rate);
+  const x = gpaPredictors(school);
+  if (!model || sat === null || x === null) return none(weighted);
+  const est = predictGpa(model, { sat, ...x });
   let range = clampRange(est - model.p90Error, est + model.p90Error);
   let point = est;
   if (weighted !== null) {
@@ -434,28 +467,39 @@ export const GPA_MIDDLE_FORMULA =
 
 const signed = (v: number, digits: number) => `${v < 0 ? "−" : "+"} ${Math.abs(v).toFixed(digits)}`;
 
+/** A model's right-hand side in plain words: "3.00 + 0.067 × (SAT midpoint ÷ 100) − 0.35 × admit rate + …". */
+const terms = (m: GpaModel, sat: string) => {
+  const [b0, b1, b2, b3, b4] = m.coef;
+  return `${b0.toFixed(2)} ${signed(b1, 3)} × (${sat} ÷ 100) ${signed(b2, 2)} × admit rate ${signed(b3, 2)} × graduation rate ${signed(b4, 2)} × share who sent test scores`;
+};
+
+/** What "share who sent test scores" means, and why it is there (gpa.md "The design" 2, changed 2026-10-11). */
+const SUBMISSION_NOTE =
+  "Rates and shares are fractions (0 to 1); the share who sent test scores adds the SAT and ACT senders' shares, because at a test-optional college the SAT range describes only the students who sent one.";
+
 /**
  * The fitted models as plain lines, for `derived.gpa_estimate`'s ⓘ (each formula, its colleges, its typical miss):
  * the average model, and the two middle-50% models when the estimate is a middle 50%.
  */
 export function gpaModelFormula(model: GpaModel | null, curve: GpaCurve | null = null): string {
   const parts: string[] = [];
+  const intro = `Estimated from colleges with similar test scores, admit rates, graduation rates, and shares of first-years who sent test scores:`;
   if (curve) {
     const line = (m: GpaModel, sat: string) =>
-      `≈ ${m.coef[0].toFixed(2)} ${signed(m.coef[1], 3)} × (${sat} ÷ 100) ${signed(m.coef[2], 2)} × admit rate (typical miss ${m.meanError.toFixed(2)}, 90% of misses under ${m.p90Error.toFixed(2)})`;
+      `≈ ${terms(m, sat)} (typical miss ${m.meanError.toFixed(2)}, 90% of misses under ${m.p90Error.toFixed(2)})`;
     parts.push(
-      `Estimated from colleges with similar test scores and admit rates: 25th-percentile GPA ${line(curve.p25, "SAT 25th")}; ` +
+      `${intro} 25th-percentile GPA ${line(curve.p25, "SAT 25th")}; ` +
         `75th-percentile GPA ${line(curve.p75, "SAT 75th")}. ` +
         `Fitted on ${curve.p25.n} colleges whose GPA bands give their middle 50%; each end is shown with its 90th-percentile miss either side.`,
     );
   }
   if (model) {
-    const [b0, b1, b2] = model.coef;
     parts.push(
-      `${curve ? "The average" : "Estimated from colleges with similar test scores and admit rates:"} GPA ≈ ${b0.toFixed(2)} ${signed(b1, 3)} × (SAT midpoint ÷ 100) ${signed(b2, 2)} × admit rate, ` +
+      `${curve ? "The average" : intro} GPA ≈ ${terms(model, "SAT midpoint")}, ` +
         `fitted on ${model.n} colleges that publish an unweighted GPA. Its typical miss is ${model.meanError.toFixed(2)} GPA points (90% of misses under ${model.p90Error.toFixed(2)}). ` +
         "A college that publishes only a weighted average is kept between that average minus 1 and 4.0.",
     );
   }
+  if (parts.length) parts.push(SUBMISSION_NOTE);
   return parts.join(" ");
 }

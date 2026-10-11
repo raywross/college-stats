@@ -39,4 +39,8 @@ test("planHref builds /plan with the person and the tab, leaving out what's miss
   assert.equal(planHref({ person: "6b0f1c1e-0000-4000-8000-000000000001" }), "/plan?for=6b0f1c1e-0000-4000-8000-000000000001");
   assert.equal(planHref({ person: "abc", tab: "calendar" }), "/plan?for=abc&tab=calendar");
   assert.equal(planHref({ person: "a b&c" }), "/plan?for=a+b%26c");
+  // The intake's edit mode (the ✎ on the numbers line).
+  assert.equal(planHref({ person: "abc", setup: true }), "/plan?for=abc&setup=1");
+  assert.equal(planHref({ setup: true }), "/plan?setup=1");
+  assert.equal(planHref({ person: "abc", setup: false }), "/plan?for=abc");
 });

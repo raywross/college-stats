@@ -12,7 +12,7 @@ import { addToList, removeFromList } from "@/lib/lists";
 import { track } from "@/lib/analytics";
 import { searchSchoolsApi } from "@/lib/school-api";
 import type { SchoolIndexEntry } from "@/lib/dataset";
-import { setGroup, setPlanDream, setPlanRound } from "@/lib/planner/store-plan";
+import { setPlanDream, setPlanRound } from "@/lib/planner/store-plan";
 import type { PickedGroup } from "@/lib/planner/plan-writes";
 import { roundDates } from "@/lib/planner/rounds";
 import type { PlanRowView } from "@/lib/planner/plan-view";
@@ -68,18 +68,11 @@ export default function PlanList({ ctx, view }: PlanTabProps) {
     router.refresh();
   }
 
-  async function handleGroup(row: PlanRowView, group: PickedGroup | null) {
-    const before = rows;
-    setRowError(row.item.id, null);
-    patch(row.item.id, { group: group ?? row.standing?.fit ?? "unsorted", groupAuto: group === null });
-    track("plan_group_changed", { from_auto: row.groupAuto });
-    const result = await setGroup(row.item.id, group);
-    if (!result.ok) {
-      setRows(before);
-      setRowError(row.item.id, result.message);
-      return;
-    }
-    router.refresh();
+  // Groups are Quad's only (specs/planner/redesign/intake.md "Groups"): the setGroup action is gone. A no-op until
+  // the list redesign (U3) removes the group chip and this handler.
+  function handleGroup(row: PlanRowView, group: PickedGroup | null) {
+    void row;
+    void group;
   }
 
   async function handleRound(row: PlanRowView, round: ListRound | null) {

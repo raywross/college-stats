@@ -10,9 +10,11 @@
  * computed on the server (lib/chances/estimate.ts) and passed in as `estimates` (the server loader computes them with
  * estimateMany; the numbers form and the signed-out plan ask POST /api/estimate). Nothing here runs the estimate.
  *
- * Suggested until changed (standing.md, rounds.md): a row's group and round follow the model while their source is
- * `auto` and are the student's own once `student`. `autoWrites` lists what the model would store for the `auto`
- * rows; it never includes a `student` row, and never rewrites the round of an applied or decided college.
+ * Groups are Quad's only (specs/planner/redesign/intake.md "Groups"; owner, 2026-10-11): a row's group is always the
+ * model's, whatever `category_source` says, and `autoWrites` rewrites a stored `student` group to the model's (the
+ * write also sets the source back to `auto`, plan-writes.ts autoWriteBatches) so stored data converges. Rounds are
+ * still suggested until changed (rounds.md): the student's own once `round_source` is `student`; `autoWrites` never
+ * rewrites a `student` round, nor the round of an applied or decided college.
  */
 import type { ListCategory, ListRound } from "../list-rules.ts";
 import { isOffered, roundDates, roundsOffered } from "./rounds.ts";
@@ -52,9 +54,9 @@ export interface PlanRowView {
   standing: RowStanding | null;
   /** The estimate behind `standing`, for the drawer's "What went into this estimate" (null when there is none). */
   estimate?: EstimateResult | null;
-  /** The group shown: the student's pick, else the model's suggestion ("unsorted" when the model has none). */
+  /** The group shown: always the model's ("unsorted" when the model has none; the stored group until an estimate arrives). */
   group: ListCategory;
-  /** True while the group is the suggestion (✦). */
+  /** Always true: groups are Quad's only (kept so older readers still compile). */
   groupAuto: boolean;
   /** The round shown: the student's pick, the stored round of an applied or decided college, else the starting round. */
   round: ListRound;
@@ -232,9 +234,10 @@ export function planView(input: PlanViewInput): PlanView {
     const school = schoolOf(item);
     const est = school ? (estimates[item.unit_id] ?? null) : null;
     const standing = est && school ? rowStanding(est, student, school.standing) : null;
-    const groupAuto = item.category_source !== "student";
-    // Without an estimate yet, an auto row keeps the group it has (nothing is rewritten until one arrives).
-    const group: ListCategory = groupAuto ? (standing ? (standing.fit ?? "unsorted") : school ? item.category : "unsorted") : item.category;
+    // Groups are Quad's only: a stored `student` group is ignored. Without an estimate yet, a row keeps the group it
+    // has (nothing is rewritten until one arrives).
+    const groupAuto = true;
+    const group: ListCategory = standing ? (standing.fit ?? "unsorted") : school ? item.category : "unsorted";
     const r = roundById.get(item.id)!;
     const locked = isLocked(item);
     const why = locked && item.round_source !== "student" ? "Your application is in, so the round stays as it is." : r.why;
@@ -315,17 +318,18 @@ export function planView(input: PlanViewInput): PlanView {
 }
 
 /**
- * Rows whose stored auto category or round differs from the model: what a sync writes (store-plan.ts syncAuto). Never
- * a row with `student` source for that value, never the round of an applied or decided college, never a college
- * that's no longer in the dataset (nothing to judge it by), never a group without an estimate behind it, and never a
- * round the college's record rules out.
+ * What a sync writes (store-plan.ts syncAuto): a row's group when it differs from the model's or is still stored as the
+ * student's pick (the write sets `category_source` back to `auto`), and a row's `auto` round when it differs from the
+ * starting round. Never a `student` round, never the round of an applied or decided college, never a college that's
+ * no longer in the dataset (nothing to judge it by), never a group without an estimate behind it, and never a round
+ * the college's record rules out.
  */
 export function autoWrites(view: PlanView): { id: string; category?: ListCategory; round?: ListRound }[] {
   const out: { id: string; category?: ListCategory; round?: ListRound }[] = [];
   for (const r of view.rows) {
     if (!r.school) continue;
     const w: { id: string; category?: ListCategory; round?: ListRound } = { id: r.item.id };
-    if (r.item.category_source === "auto" && r.groupAuto && r.standing && r.item.category !== r.group) w.category = r.group;
+    if (r.standing && (r.item.category !== r.group || r.item.category_source === "student")) w.category = r.group;
     if (r.item.round_source === "auto" && r.roundAuto && !isLocked(r.item) && r.item.round !== r.round && isOffered(r.school, r.round) !== false) w.round = r.round;
     if (w.category !== undefined || w.round !== undefined) out.push(w);
   }

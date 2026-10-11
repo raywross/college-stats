@@ -200,12 +200,19 @@ test("order: the Dream first, then Reach, Target, Likely, unsorted, then the lis
 /* Suggested until changed                                             */
 /* ------------------------------------------------------------------ */
 
-test("a group the student picked is kept and never written; Use the suggestion (auto) follows the model", () => {
+test("groups are Quad's only: a stored student group is ignored, and autoWrites converts it to the model's", () => {
   const s = ps("1", "A", { admitRate: 0.1, sat: [1450, 1550] });
   const mine = planView({ items: [item("1", { category: "likely", category_source: "student" })], schools: by([s]), profile: numbers({ sat: 1400, focus: "sat" }), today: TODAY });
-  assert.equal(mine.rows[0].group, "likely");
-  assert.equal(mine.rows[0].groupAuto, false);
-  assert.ok(autoWrites(mine).every((w) => w.category === undefined));
+  assert.equal(mine.rows[0].group, "reach");
+  assert.equal(mine.rows[0].groupAuto, true);
+  assert.equal(autoWrites(mine)[0].category, "reach");
+  // Even when the stored pick already matches the model, the row is written so its source goes back to auto.
+  const same = planView({ items: [item("1", { category: "reach", category_source: "student" })], schools: by([s]), profile: numbers({ sat: 1400, focus: "sat" }), today: TODAY });
+  assert.equal(autoWrites(same)[0].category, "reach");
+  // Without an estimate there's nothing to judge by: the stored group shows and nothing is written.
+  const none = planViewOf({ items: [item("1", { category: "likely", category_source: "student" })], schools: by([s]), profile: numbers({ sat: 1400, focus: "sat" }), estimates: {}, today: TODAY });
+  assert.equal(none.rows[0].group, "likely");
+  assert.ok(autoWrites(none).every((w) => w.category === undefined));
 
   const auto = planView({ items: [item("1", { category: "likely", category_source: "auto" })], schools: by([s]), profile: numbers({ sat: 1400, focus: "sat" }), today: TODAY });
   assert.equal(auto.rows[0].group, "reach");
@@ -239,7 +246,7 @@ test("starting rounds: the Dream offering ED starts in ED; others take EA; a pic
   assert.ok(!writes.some((w) => w.id === "item-P" && w.round));
 });
 
-test("the pre-migration fallback shows suggestions for unsorted rows and keeps chosen ones (the backfill's rule)", () => {
+test("the pre-migration fallback shows the model's groups for every row and keeps chosen rounds (the backfill's rule)", () => {
   const schools = by([ps("1", "A", { ea: true, admitRate: 0.8, sat: [1000, 1200] }), ps("2", "B", { ed: true }), ps("3", "C", { ea: true, admitRate: 0.8, sat: [1000, 1200] })]);
   // Rows as read before the migration: no source columns at all.
   const bare = [item("1"), item("2", { dream: true }), item("3", { category: "reach", round: "rd" })].map((i) => {
@@ -253,13 +260,13 @@ test("the pre-migration fallback shows suggestions for unsorted rows and keeps c
   // An unsorted row shows the model's group as a suggestion (browser QA 2026-10-10: it used to read "Add a number").
   assert.equal(row(v, "1").group, "likely");
   assert.equal(row(v, "1").groupAuto, true);
-  // A group and round the student stored stay theirs.
-  assert.equal(row(v, "3").group, "reach");
-  assert.equal(row(v, "3").groupAuto, false);
+  // A stored group is the model's anyway (groups are Quad's only); a round the student stored stays theirs.
+  assert.equal(row(v, "3").group, "likely");
+  assert.equal(row(v, "3").groupAuto, true);
   assert.equal(row(v, "3").round, "rd");
   assert.equal(row(v, "3").roundAuto, false);
-  // autoWrites never lists the student's rows; load.ts and store-plan.ts skip writing entirely while sources are missing.
-  assert.ok(!autoWrites(v).some((w) => w.id === "3"));
+  // autoWrites never rewrites the student's round (load.ts and store-plan.ts skip writing entirely while sources are missing).
+  assert.ok(!autoWrites(v).some((w) => w.id === "item-3" && w.round !== undefined));
 });
 
 test("an applied or decided college's round is never rewritten", () => {

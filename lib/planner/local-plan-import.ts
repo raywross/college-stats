@@ -2,15 +2,16 @@
 /**
  * Importing a signed-out plan once the visitor signs up (specs/planner/redesign/page.md "Signed out" step 3): the
  * colleges go on the student's default list (the existing list actions in lib/lists.ts), the Dream is set, and only
- * the groups/rounds the visitor actually picked themselves become `student` source — an `auto` one is left for the
- * model to keep sorting (lib/planner/plan-view.ts `autoWrites` runs on the next plan open either way). The numbers
+ * the rounds the visitor actually picked themselves become `student` source — an `auto` one is left for the model
+ * (lib/planner/plan-view.ts `autoWrites` runs on the next plan open either way). Groups are Quad's only
+ * (specs/planner/redesign/intake.md "Groups"), so a group picked on the signed-out plan isn't imported. The numbers
  * import separately, through the existing `ImportLocalProfile` flow (components/me/ImportLocalProfile.tsx); this
  * only moves colleges. `components/planner/ImportLocalPlan.tsx` is the one caller.
  */
 import { getUser } from "@/lib/auth";
 import { addToList, getListWithItems, getOrCreateDefaultList } from "@/lib/lists";
 import { localImportPlan, sanitizeLocalPlan } from "./local-plan";
-import { setGroup, setPlanDream, setPlanRound } from "./store-plan";
+import { setPlanDream, setPlanRound } from "./store-plan";
 
 export type LocalPlanImportResult = { ok: true; imported: number } | { ok: false; message: string };
 
@@ -31,7 +32,7 @@ export async function importLocalPlan(studentId: string, local: unknown): Promis
   for (const unitId of toImport.toAdd) {
     await addToList(list.id, unitId);
   }
-  if (toImport.toAdd.length === 0 && toImport.dreamUnitId === null && toImport.groupWrites.length === 0 && toImport.roundWrites.length === 0) {
+  if (toImport.toAdd.length === 0 && toImport.dreamUnitId === null && toImport.roundWrites.length === 0) {
     return { ok: true, imported: 0 };
   }
 
@@ -41,10 +42,6 @@ export async function importLocalPlan(studentId: string, local: unknown): Promis
   if (toImport.dreamUnitId) {
     const itemId = itemIdByUnit.get(toImport.dreamUnitId);
     if (itemId) await setPlanDream(itemId, true);
-  }
-  for (const w of toImport.groupWrites) {
-    const itemId = itemIdByUnit.get(w.unitId);
-    if (itemId) await setGroup(itemId, w.group);
   }
   for (const w of toImport.roundWrites) {
     const itemId = itemIdByUnit.get(w.unitId);

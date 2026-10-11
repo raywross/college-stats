@@ -48,7 +48,8 @@
     "check:cycle": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/check-cycle.mts",
     "check:aid-policies": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/check-aid-policies.mts",
     "college-failures": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/college-failures.mts",
-    "publish-college-failures": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --env-file-if-exists=.env.local scripts/publish-college-failures.mts"
+    "publish-college-failures": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --env-file-if-exists=.env.local scripts/publish-college-failures.mts",
+    "fix-fraction-rates": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/fix-fraction-rates.mts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.131.0",

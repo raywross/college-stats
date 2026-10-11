@@ -27,8 +27,9 @@ export function CoreSubjects({
 
   return (
     <fieldset className="rounded-2xl border bg-card p-3 sm:p-4">
-      <legend className="px-1 text-sm font-semibold">Were your core classes the most advanced your school offered?</legend>
-      <p className="mb-2 text-xs text-muted-foreground">
+      {/* Floated so the legend sits inside the box as a heading; a legend straddles the border and, wrapped to two lines on a phone, clips the rounded corners. */}
+      <legend className="float-left mb-1 w-full p-0 text-sm font-semibold">Were your core classes the most advanced your school offered?</legend>
+      <p className="mb-2 clear-both text-xs text-muted-foreground">
         For 11th and 12th grade. Checked from your list where it has an AP, IB, or dual-enrollment course; uncheck a year when your school had something more advanced, or check one it doesn&apos;t show.
       </p>
       <div className="grid grid-cols-[1fr_auto_auto] items-center gap-x-4 gap-y-1">

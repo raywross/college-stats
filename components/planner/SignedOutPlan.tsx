@@ -180,7 +180,7 @@ function LocalRow({
   const deadlineCite = deadline ? school?.cites[deadline.field] : undefined;
 
   return (
-    <li className="grid grid-cols-[auto_1fr] items-center gap-x-2 gap-y-1.5 p-3 sm:grid-cols-[auto_minmax(0,1fr)_auto_auto_auto_auto] sm:px-4">
+    <li className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-2 gap-y-1.5 p-3 sm:grid-cols-[auto_minmax(0,1fr)_auto_auto_auto_auto] sm:px-4">
       <button
         type="button"
         onClick={onToggleDream}
@@ -193,7 +193,7 @@ function LocalRow({
       </button>
 
       <div className="min-w-0">
-        <span className="inline-flex min-w-0 items-center gap-1.5 text-sm font-semibold">
+        <span className="flex min-w-0 max-w-full items-center gap-1.5 text-sm font-semibold">
           {school && <Crest id={school.unit_id} name={school.name} size="xs" brand={school.brand as CrestBrand | undefined} />}
           <span className="min-w-0 truncate">{name}</span>
         </span>

@@ -27,8 +27,6 @@ export interface StandingCardProps {
   majorCites: MajorCites;
   /** Families of majors the college admits by (its schools or majors), with their names. */
   families: { family: string; name: string }[];
-  /** The college has a statement of how it treats the major (lib/chances/major-admission.ts). */
-  hasStatement: boolean;
 }
 
 const CAVEATS = ["estimate.caveat.holistic", "estimate.caveat.enrolled", "estimate.caveat.hooked", "estimate.caveat.afford"] as const;
@@ -58,7 +56,7 @@ function useReportShown(result: EstimateResult | null) {
  * The numbers come from the signed-in profile, else the one kept in the browser; the college page is static, so the
  * estimate is asked of POST /api/estimate after mount. The existing score checker and GPA checker stay where they are.
  */
-export function StandingCard({ unitId, college, cites, majorCites, families, hasStatement }: StandingCardProps) {
+export function StandingCard({ unitId, college, cites, majorCites, families }: StandingCardProps) {
   const s = useStanding(unitId, { likeYou: true });
   useReportShown(s.status === "ready" ? s.result : null);
 
@@ -101,7 +99,7 @@ export function StandingCard({ unitId, college, cites, majorCites, families, has
           ))}
         </ul>
         {!s.signedIn && <SaveYourScores unitId={unitId} />}
-        {!s.signedIn && <SignedOutMajor unitId={unitId} college={college} families={families} hasStatement={hasStatement} majorCites={majorCites} />}
+        {!s.signedIn && <SignedOutMajor unitId={unitId} college={college} families={families} majorCites={majorCites} />}
       </div>
     );
   }
@@ -122,7 +120,7 @@ export function StandingCard({ unitId, college, cites, majorCites, families, has
         )}
       </p>
       {!s.signedIn && <SaveYourScores unitId={unitId} />}
-      {!s.signedIn && <SignedOutMajor unitId={unitId} college={college} families={families} hasStatement={hasStatement} majorCites={majorCites} />}
+      {!s.signedIn && <SignedOutMajor unitId={unitId} college={college} families={families} majorCites={majorCites} />}
     </div>
   );
 }
@@ -140,33 +138,30 @@ function SaveYourScores({ unitId }: { unitId: string }) {
 /**
  * The signed-out major picker (major-and-grades.md "Where it shows"): pick an intended major, as the score checker lets
  * a visitor type a score, and see how this college reads it. The pick is kept with the profile in the browser, so the
- * estimate and the college's course requirements use it too.
+ * estimate and the college's course requirements use it too. A college with only a university-level statement has
+ * nothing to pick, and "How X reads a record" on the same page already carries that statement, so it shows nothing here.
  */
-function SignedOutMajor({ unitId, college, families, hasStatement, majorCites }: Pick<StandingCardProps, "unitId" | "college" | "families" | "hasStatement" | "majorCites">) {
+export function SignedOutMajor({ unitId, college, families, majorCites }: Pick<StandingCardProps, "unitId" | "college" | "families" | "majorCites">) {
   const { data, save } = useLocalProfile();
-  if (families.length === 0 && !hasStatement) return null;
+  if (families.length === 0) return null;
   const pick = (family: string) => save({ ...data, plans: { ...data.plans, intendedMajors: isMajorFamily(family) ? [family] : [] } });
   const chosen = data.plans.intendedMajors[0] ?? "";
-  // A college that only says how it treats majors in general has no family to pick; its line shows as it stands.
-  const askFamily = families.length === 0 ? "52" : chosen;
-  const reading = askFamily
-    ? majorReviewFor({ majors: [askFamily], courses: data.academics.courses, satMath: data.tests.satMath, actMath: data.tests.actMath }, { unit_id: unitId, name: college })
+  const reading = chosen
+    ? majorReviewFor({ majors: [chosen], courses: data.academics.courses, satMath: data.tests.satMath, actMath: data.tests.actMath }, { unit_id: unitId, name: college })
     : null;
   return (
     <div className="space-y-2 border-t pt-4">
-      {families.length > 0 && (
-        <label className="flex w-full min-w-0 flex-col gap-1 text-sm sm:w-auto sm:max-w-sm">
-          <span className="font-medium">{noteText({ key: "major.pick_label", values: {} })}</span>
-          <select value={chosen} onChange={(e) => pick(e.target.value)} className="w-full min-w-0 rounded-xl border bg-card px-3 py-2 text-sm">
-            <option value="">Choose a major…</option>
-            {families.map((f) => (
-              <option key={f.family} value={f.family}>
-                {f.name}
-              </option>
-            ))}
-          </select>
-        </label>
-      )}
+      <label className="flex w-full min-w-0 flex-col gap-1 text-sm sm:w-auto sm:max-w-sm">
+        <span className="font-medium">{noteText({ key: "major.pick_label", values: {} })}</span>
+        <select value={chosen} onChange={(e) => pick(e.target.value)} className="w-full min-w-0 rounded-xl border bg-card px-3 py-2 text-sm">
+          <option value="">Choose a major…</option>
+          {families.map((f) => (
+            <option key={f.family} value={f.family}>
+              {f.name}
+            </option>
+          ))}
+        </select>
+      </label>
       {reading === null ? (
         <p className="text-sm text-muted-foreground">{noteText({ key: "major.pick_prompt", values: {} })}</p>
       ) : reading.notes.length > 0 ? (

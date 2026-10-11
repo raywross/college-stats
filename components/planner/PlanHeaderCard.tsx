@@ -5,6 +5,7 @@ import { Pencil } from "lucide-react";
 import NumbersForm from "@/components/planner/NumbersForm";
 import { Term } from "@/components/ui/info-tip";
 import { TEST_LABEL } from "@/lib/planner/standing";
+import { gpaAsEntered } from "@/lib/student-profile";
 import type { PlanContext } from "@/lib/planner/types";
 import type { PlanView } from "@/lib/planner/plan-view";
 
@@ -35,9 +36,11 @@ export function PlanHeaderCard({
   const initial = (relation === "self" ? "Y" : firstName?.[0]?.toUpperCase()) ?? "S";
   const gradYear = ctx.student?.grad_year ?? null;
   const practice = Boolean(ctx.profile?.tests.practice) && view.student.test !== null;
+  // The GPA as entered ("4.4 weighted"), not the unweighted conversion the rules read.
+  const enteredGpa = ctx.profile ? gpaAsEntered(ctx.profile.academics) : null;
   const numbersLine = (
     <>
-      <span className="font-semibold">{view.student.gpa !== null ? `GPA ${view.student.gpa.toFixed(2)}` : "No GPA yet"}</span>
+      <span className="font-semibold">{enteredGpa ? `GPA ${enteredGpa}` : view.student.gpa !== null ? `GPA ${view.student.gpa.toFixed(2)}` : "No GPA yet"}</span>
       <span className="text-muted-foreground">·</span>
       <span className="font-semibold">
         {view.student.test ? `${TEST_LABEL[view.student.test.kind]} ${view.student.test.score}${practice ? " · practice" : ""}` : "Not testing"}

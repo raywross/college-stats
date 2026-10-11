@@ -12,6 +12,7 @@ import {
   emptyProfile,
   fitsPreferences,
   fitsScores,
+  gpaAsEntered,
   gpaDisplay,
   sanitizeProfile,
   unweightedGpa4,
@@ -82,8 +83,19 @@ test("unweightedGpa4: the 100-point table matches the worked example (93 -> 3.7)
 test("gpaDisplay shows the conversion only when the scale isn't already 4.0", () => {
   assert.equal(gpaDisplay({ gpa: 3.8, gpaScale: "4.0" }), "3.8 unweighted");
   assert.equal(gpaDisplay({ gpa: 93, gpaScale: "100" }), "about 3.7 unweighted (from 93/100)");
-  assert.equal(gpaDisplay({ gpa: 4.5, gpaScale: "5.0" }), "about 3.6 unweighted (from 4.5/5.0)");
+  // A weighted GPA shows as entered (owner, 2026-10-11), never converted down: on the weighted scale, or above 4.0.
+  assert.equal(gpaDisplay({ gpa: 4.5, gpaScale: "5.0" }), "4.5 weighted");
+  assert.equal(gpaDisplay({ gpa: 4.4, gpaScale: "4.0" }), "4.4 weighted");
+  assert.equal(gpaDisplay({ gpa: 4.0, gpaScale: "4.0" }), "4.0 unweighted");
   assert.equal(gpaDisplay({ gpa: null, gpaScale: "4.0" }), null);
+});
+
+test("gpaAsEntered: the plan's header shows the GPA as entered", () => {
+  assert.equal(gpaAsEntered({ gpa: 3.82, gpaScale: "4.0" }), "3.82");
+  assert.equal(gpaAsEntered({ gpa: 4.4, gpaScale: "4.0" }), "4.4 weighted");
+  assert.equal(gpaAsEntered({ gpa: 4.4, gpaScale: "5.0" }), "4.4 weighted");
+  assert.equal(gpaAsEntered({ gpa: 93, gpaScale: "100" }), "93/100");
+  assert.equal(gpaAsEntered({ gpa: null, gpaScale: "4.0" }), null);
 });
 
 /* ------------------------------------------------------------------ */

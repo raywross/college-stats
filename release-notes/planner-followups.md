@@ -1,6 +1,6 @@
 ---
 title: "Plan: weighted GPAs show as entered"
-pr: 0
+pr: 128
 date: 2026-10-11
 kind: improvement
 summary: A weighted GPA such as 4.4 now shows as 4.4 on your profile and your plan, instead of being converted down to 4.0.

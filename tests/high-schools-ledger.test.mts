@@ -244,9 +244,16 @@ test("matchLedgerSchools: exact by zip or city, weaker names need the zip, subse
     row("480000200009", "Basis Tucson North", { city: "Tucson", zip: "85750" }),
     row("480000200010", "Har-Ber High School", { city: "Springdale", zip: "72765" }),
     row("480000200011", "Pea Ridge Junior High School", { city: "Pea Ridge", zip: "72751" }),
+    row("480000200012", "Los Angeles Senior High", { city: "Los Angeles", zip: "90019" }),
+    row("480000200013", "The School of Los Angeles", { city: "Los Angeles", zip: "90038" }),
     row("A9900001", "Saint Anthony High School", { city: "Long Beach", zip: "90813" }),
+    row("A9900004", "Marymount High School Los Angeles", { city: "Los Angeles", zip: "90077" }),
+    row("A9900005", "Rise Academy", { city: "San Jose", zip: "95134" }),
+    row("A9900006", "Rise Academy", { city: "San Jose", zip: "95134" }),
     row("A9900002", "Jefferson Academy", { city: "Dallas", zip: "75201" }),
     row("A9900003", "Jefferson Academy", { city: "Dallas", zip: "75201" }),
+    row("480000200014", "Haas Hall Academy", { city: "Springdale", zip: "72764" }),
+    row("480000200015", "Dothan High School", { city: "Dothan", zip: "36301" }),
   ];
   const ledger = [
     rec("000001", "Azle High School", "Azle", "76020"),
@@ -270,6 +277,16 @@ test("matchLedgerSchools: exact by zip or city, weaker names need the zip, subse
     rec("000016", "Springdale Har Ber High School", "Springdale", "72762"),
     // Only the high school is in the Ledger: the junior high row stays unmatched rather than taking it.
     rec("000017", "Pea Ridge High School", "Pea Ridge", "72751"),
+    // A name that is its city's: only the row with the same words beyond "school" takes it, not "The School of Los
+    // Angeles" or "Marymount High School Los Angeles".
+    rec("000018", "Los Angeles Senior High School", "Los Angeles", "90019"),
+    // One school the directory lists twice: both rows take it.
+    rec("000019", "Rise Academy", "San Jose", "95134"),
+    // Two Ledger records with one name, one ZIP, and the same courses: nothing tells them apart.
+    rec("000020", "Dothan High School", "Dothan", "36301"),
+    rec("000021", "Dothan High School", "Dothan", "36301"),
+    // One name inside the other at 0.6, same city, different ZIP.
+    rec("000022", "Haas Hall Academy Jones Center Annex", "Springdale", "72762"),
   ];
   const r = matchLedgerSchools(rows, ledger);
   assert.deepEqual(
@@ -279,17 +296,25 @@ test("matchLedgerSchools: exact by zip or city, weaker names need the zip, subse
       ["480000200002", "000003", "exact"],
       ["480000200003", "000004", "subset"],
       ["480000200004", "000005", "subset"],
+      // "Lincoln High School" and "Lincoln Senior High" in one ZIP: the whole name decides.
+      ["480000200005", "000006", "exact"],
       ["480000200007", "000011", "city"],
       ["480000200008", "000013", "exact"],
       ["480000200009", "000015", "exact"],
-      ["480000200010", "000016", "subset-city"],
+      // The Ledger prefixed the city: "Springdale Har Ber" is "Har-Ber" once the city's words are set aside.
+      ["480000200010", "000016", "exact"],
+      ["480000200012", "000018", "exact"],
+      ["480000200014", "000022", "subset-city"],
       ["A9900001", "000008", "exact"],
+      ["A9900002", "000009", "exact"],
+      ["A9900003", "000009", "exact"],
+      ["A9900005", "000019", "exact"],
+      ["A9900006", "000019", "exact"],
     ],
   );
-  // Two Lincoln High Schools in one zip tie; two private rows with one name claim one Ledger school equally.
-  assert.deepEqual(r.ambiguousRows.map((a) => a.id), ["480000200005", "A9900002", "A9900003"]);
-  assert.deepEqual(r.unmatchedRows, ["480000200006", "480000200011"]);
-  assert.deepEqual(r.unusedLedger, ["000002", "000006", "000007", "000009", "000010", "000012", "000014", "000017"]);
+  assert.deepEqual(r.ambiguousRows.map((a) => a.id), ["480000200015"]);
+  assert.deepEqual(r.unmatchedRows, ["480000200006", "480000200011", "480000200013", "A9900004"]);
+  assert.deepEqual(r.unusedLedger, ["000002", "000007", "000010", "000012", "000014", "000017", "000020", "000021"]);
 });
 
 /* ------------------------------------------------------------------ */

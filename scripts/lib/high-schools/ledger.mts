@@ -143,6 +143,42 @@ export function nameScore(a: string, b: string): number {
 
 const isSubset = (a: Set<string>, b: Set<string>) => [...a].every((t) => b.has(t));
 const normCity = (city: string | null | undefined) => (city ?? "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+const jaccard = (a: Set<string>, b: Set<string>) => {
+  if (!a.size || !b.size) return 0;
+  let both = 0;
+  for (const t of a) if (b.has(t)) both++;
+  return both / (a.size + b.size - both);
+};
+const minus = (a: Set<string>, b: Set<string>) => new Set([...a].filter((t) => !b.has(t)));
+
+/** Words that say nothing about which school it is, even in a name that is otherwise its city's ("The School of Los Angeles"). */
+const GENERIC = new Set(["school", "schools", "the", "of", "and", "at", "for", "a", "an", "campus", "program"]);
+
+/**
+ * How alike two names are once the words they share with their cities are set aside: "Marymount High School Los
+ * Angeles" has nothing in common with "Los Angeles Senior High School" but the city. When a name is nothing but its
+ * city ("Los Angeles Senior High"), it matches only a name with the same words beyond the generic ones.
+ */
+function compareNames(row: NameInfo, ledger: NameInfo, cityTokens: Set<string>): { score: number; subset: boolean; exact: boolean } {
+  const rd = minus(row.core, cityTokens);
+  const ld = minus(ledger.core, cityTokens);
+  if (!rd.size || !ld.size) {
+    const rs = minus(row.tokens, GENERIC);
+    const ls = minus(ledger.tokens, GENERIC);
+    const exact = rs.size === ls.size && isSubset(rs, ls);
+    return { score: exact ? 1 : 0, subset: false, exact };
+  }
+  const score = jaccard(rd, ld);
+  return { score, subset: isSubset(rd, ld) || isSubset(ld, rd), exact: score >= 0.999 };
+}
+
+interface NameInfo {
+  tokens: Set<string>;
+  core: Set<string>;
+  level: string;
+}
+
+const nameInfo = (name: string): NameInfo => ({ tokens: new Set(nameTokens(name)), core: coreTokens(name), level: levelOf(name) });
 
 export type LedgerMatchRule = "exact" | "zip" | "subset" | "city" | "subset-city";
 
@@ -164,14 +200,13 @@ export interface LedgerMatchResult {
 }
 
 /** The rule a candidate satisfies, or null. A different level word (junior high against high school) never matches. */
-function ruleFor(score: number, sameZip: boolean, sameCity: boolean, rowCore: Set<string>, ledgerCore: Set<string>, sameLevel: boolean): LedgerMatchRule | null {
+function ruleFor(cmp: { score: number; subset: boolean; exact: boolean }, sameZip: boolean, sameCity: boolean, sameLevel: boolean): LedgerMatchRule | null {
   if (!sameLevel || (!sameZip && !sameCity)) return null;
-  const subset = isSubset(rowCore, ledgerCore) || isSubset(ledgerCore, rowCore);
-  if (score >= 0.999) return "exact";
-  if (sameZip && score >= 0.75) return "zip";
-  if (sameZip && score >= 0.5 && subset) return "subset";
-  if (sameCity && score >= 0.75) return "city";
-  if (sameCity && score >= 0.6 && subset) return "subset-city";
+  if (cmp.exact) return "exact";
+  if (sameZip && cmp.score >= 0.75) return "zip";
+  if (sameZip && cmp.score >= 0.5 && cmp.subset) return "subset";
+  if (sameCity && cmp.score >= 0.75) return "city";
+  if (sameCity && cmp.score >= 0.6 && cmp.subset) return "subset-city";
   return null;
 }
 
@@ -185,27 +220,27 @@ const RULE_RANK: Record<LedgerMatchRule, number> = { exact: 5, zip: 4, subset: 3
 export function matchLedgerSchools(rows: readonly HighSchool[], ledger: readonly LedgerSchoolRecord[]): LedgerMatchResult {
   const byZip = new Map<string, LedgerSchoolRecord[]>();
   const byCity = new Map<string, LedgerSchoolRecord[]>();
-  const ledgerCore = new Map<string, Set<string>>();
-  const ledgerLevel = new Map<string, string>();
+  const ledgerInfo = new Map<string, NameInfo>();
   const ledgerCourses = new Map<string, number>();
   for (const s of ledger) {
-    ledgerCore.set(s.ai, coreTokens(s.name));
-    ledgerLevel.set(s.ai, levelOf(s.name));
+    ledgerInfo.set(s.ai, nameInfo(s.name));
     ledgerCourses.set(s.ai, s.courses.length + s.other.length);
     if (s.zip) (byZip.get(s.zip) ?? byZip.set(s.zip, []).get(s.zip)!).push(s);
     const c = normCity(s.city);
     if (c) (byCity.get(c) ?? byCity.set(c, []).get(c)!).push(s);
   }
 
-  type Cand = { ai: string; score: number; rule: LedgerMatchRule };
+  /** `whole` is how alike the full names are (stop words included), the tie-breaker between equal claims. */
+  type Cand = { ai: string; score: number; rule: LedgerMatchRule; whole: number };
   const same = (a: Cand, b: Cand) => a.rule === b.rule && Math.abs(a.score - b.score) < 1e-9;
   const chosen = new Map<string, Cand>();
+  const rowInfo = new Map<string, NameInfo>();
   const unmatchedRows: string[] = [];
   const ambiguousRows: { id: string; candidates: string[] }[] = [];
 
   for (const row of rows) {
-    const rowCore = coreTokens(row.name);
-    const rowLevel = levelOf(row.name);
+    const info = nameInfo(row.name);
+    rowInfo.set(row.id, info);
     const seen = new Set<string>();
     const cands: Cand[] = [];
     const zip = row.zip;
@@ -213,38 +248,48 @@ export function matchLedgerSchools(rows: readonly HighSchool[], ledger: readonly
     for (const s of [...(zip ? byZip.get(zip) ?? [] : []), ...(city ? byCity.get(city) ?? [] : [])]) {
       if (seen.has(s.ai)) continue;
       seen.add(s.ai);
-      const score = nameScore(row.name, s.name);
-      const rule = ruleFor(score, !!zip && s.zip === zip, !!city && normCity(s.city) === city, rowCore, ledgerCore.get(s.ai)!, ledgerLevel.get(s.ai) === rowLevel);
-      if (rule) cands.push({ ai: s.ai, score, rule });
+      const li = ledgerInfo.get(s.ai)!;
+      const cityTokens = new Set([...nameTokens(row.city ?? ""), ...nameTokens(s.city ?? "")]);
+      const cmp = compareNames(info, li, cityTokens);
+      const rule = ruleFor(cmp, !!zip && s.zip === zip, !!city && normCity(s.city) === city, li.level === info.level);
+      if (rule) cands.push({ ai: s.ai, score: cmp.score, rule, whole: jaccard(info.tokens, li.tokens) });
     }
     if (!cands.length) {
       unmatchedRows.push(row.id);
       continue;
     }
-    cands.sort((a, b) => RULE_RANK[b.rule] - RULE_RANK[a.rule] || b.score - a.score || ledgerCourses.get(b.ai)! - ledgerCourses.get(a.ai)!);
+    cands.sort((a, b) => RULE_RANK[b.rule] - RULE_RANK[a.rule] || b.score - a.score || ledgerCourses.get(b.ai)! - ledgerCourses.get(a.ai)! || b.whole - a.whole);
     const [best, second] = cands;
-    if (second && same(best, second) && ledgerCourses.get(best.ai) === ledgerCourses.get(second.ai)) {
+    if (second && same(best, second) && ledgerCourses.get(best.ai) === ledgerCourses.get(second.ai) && Math.abs(best.whole - second.whole) < 1e-9) {
       ambiguousRows.push({ id: row.id, candidates: cands.filter((c) => same(c, best)).map((c) => c.ai) });
       continue;
     }
     chosen.set(row.id, best);
   }
 
-  // One Ledger school per row: the stronger claim wins; equal claims are ambiguous.
+  // One Ledger school per row: the stronger claim wins (rule, score, then the whole name). Equal claims from rows
+  // that are the same school listed twice (same words and level) all take it; equal claims from different schools
+  // are ambiguous.
   const claims = new Map<string, { id: string; cand: Cand }[]>();
   for (const [id, cand] of chosen) (claims.get(cand.ai) ?? claims.set(cand.ai, []).get(cand.ai)!).push({ id, cand });
   const matches: LedgerMatch[] = [];
   const used = new Set<string>();
   for (const [ai, list] of claims) {
-    list.sort((a, b) => RULE_RANK[b.cand.rule] - RULE_RANK[a.cand.rule] || b.cand.score - a.cand.score);
-    const [top, next] = list;
-    if (next && next.cand.rule === top.cand.rule && Math.abs(next.cand.score - top.cand.score) < 1e-9) {
+    list.sort((a, b) => RULE_RANK[b.cand.rule] - RULE_RANK[a.cand.rule] || b.cand.score - a.cand.score || b.cand.whole - a.cand.whole);
+    const top = list[0];
+    const tied = list.filter(({ cand }) => same(cand, top.cand) && Math.abs(cand.whole - top.cand.whole) < 1e-9);
+    const sameSchool = (id: string) => {
+      const a = rowInfo.get(id)!;
+      const b = rowInfo.get(top.id)!;
+      return a.level === b.level && a.core.size === b.core.size && isSubset(a.core, b.core);
+    };
+    if (tied.length > 1 && !tied.every(({ id }) => sameSchool(id))) {
       for (const { id } of list) ambiguousRows.push({ id, candidates: [ai] });
       continue;
     }
-    matches.push({ id: top.id, ai, score: Math.round(top.cand.score * 1000) / 1000, rule: top.cand.rule });
+    for (const { id, cand } of tied) matches.push({ id, ai, score: Math.round(cand.score * 1000) / 1000, rule: cand.rule });
     used.add(ai);
-    for (const { id } of list.slice(1)) unmatchedRows.push(id);
+    for (const { id } of list.slice(tied.length)) unmatchedRows.push(id);
   }
   matches.sort((a, b) => (a.id < b.id ? -1 : 1));
   return {

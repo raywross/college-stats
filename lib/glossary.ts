@@ -1005,7 +1005,7 @@ const entries = {
   "gpa-estimate": {
     term: "Estimated GPA",
     short: "For a college that doesn't publish an unweighted GPA average, the range typical of colleges with similar test scores and admit rates. It's an estimate, never the college's own figure.",
-    long: "Colleges' average GPAs follow their test scores and admit rates closely, so the plan fits that relationship on the colleges that publish an unweighted average and applies it to the rest. The range is as wide as the fit's usual miss, and a college that publishes only a weighted average is kept within what that average allows. The ⓘ beside it names the formula, how many colleges it was fitted on, and how far off it typically is.",
+    long: "Colleges' average GPAs follow their test scores and admit rates closely, so the plan fits that relationship on the colleges that publish an unweighted average and applies it to the rest. The fit also reads each college's graduation rate and the share of first-years who sent test scores, because at a test-optional college the test scores describe only the students who sent them. The range is as wide as the fit's usual miss, and a college that publishes only a weighted average is kept within what that average allows. The ⓘ beside it names the formula, how many colleges it was fitted on, and how far off it typically is.",
     category: "Admissions",
     related: ["unweighted-gpa", "weighted-gpa", "high-school-gpa"],
   },

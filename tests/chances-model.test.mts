@@ -287,6 +287,9 @@ test("crowding: above the GPA middle only meets the bar at a crowded college; be
   assert.equal(crowded.group, "target", "60% at 3.75+: meets the bar, in");
   assert.ok(crowded.facts.includes("derived.gpa_top_share"));
   assert.equal(run(mk([0.4, 0.2]), student({ gpa: 3.1 })).group, "reach", "a low GPA is still low");
+  const weighted = mk([0.4, 0.2]);
+  weighted.school.reported!.admission_profile!.gpa!.scale = "weighted";
+  assert.equal(run(weighted, student({ gpa: 3.95 })).group, "likely", "a weighted reporter's bands can't show crowding");
   assert.equal(STANDING_V2.crowdedShare, 0.5);
 });
 

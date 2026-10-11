@@ -119,6 +119,25 @@ pages of 25). The iPhone API returns the same `EstimateResult`.
 published examples, no model code in client chunks, rate limits, notes only from the catalog),
 `tests/chances-model.test.mts` (the method's pinned examples).
 
+## As built (2026-10-11, the estimate core)
+- `lib/chances/baseline.ts` (pure) holds the published rules moved out of `lib/planner/standing.ts` (which re-exports
+  them) with `baselineEstimate` behind the contract; the design preview still runs it in the browser.
+- `lib/chances/model.ts` (server-only, `MODEL_VERSION` `20261011.1`) implements the method; `modelEstimateWithDetail`
+  also returns the outcome snapshot's detail, which never leaves the server. With no new inputs and no new college
+  evidence its group, label, send advice, and move-up equal the baseline's (`tests/chances-model.test.mts` runs the
+  baseline's table through it); its notes add the two stage lines.
+- `lib/chances/estimate.ts` (server-only): `estimateContext(student)`, `estimate`, `estimateWithDetail`,
+  `estimateMany`, `appliedEstimator` (the snapshot's default in `snapshot-deps.ts`); the baseline answers, logged, only
+  when the model throws.
+- `POST /api/estimate`: validation and the response shape in `lib/chances/estimate-request.ts` (20 colleges signed
+  out, 25 signed in; more is refused), the per-IP and per-user token buckets in `lib/chances/rate-limit.ts` (a request
+  costs one token per five colleges), `Cache-Control: no-store`.
+- The planner: `planView` takes `estimates` (the loader and the suggestion sync compute them with
+  `lib/planner/plan-estimates.ts`; a guardian's copy reads no private exam scores); the numbers form and the signed-out
+  plan fetch them through `components/planner/useEstimates.ts` (400 ms debounce, previous results kept while loading).
+  A row without an estimate keeps its stored group and is never rewritten. The retake card is built from the
+  estimates' move-ups. The session is read only to pick the limit; the profile's single-college check needs none.
+
 ## Open questions
 1. At launch, private package or a separate service (a Supabase Edge Function or a small API)? Recommendation: a
    private package (one deploy, no network hop); a service later if the model grows heavy or needs its own data.

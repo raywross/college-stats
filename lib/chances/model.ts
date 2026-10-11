@@ -38,7 +38,7 @@ import {
 import { majorMatters, majorReviewFor, type MajorReviewReading } from "./major-review.ts";
 import { noteText } from "./notes.ts";
 import { poolRateFor, type PoolReading } from "./pool-rate.ts";
-import { gpaTopShare } from "./reading.ts";
+import { gpaTopShare, isWeightedReporter } from "./reading.ts";
 import { rigorReading, type RigorResult } from "./rigor.ts";
 import type { EstimateNote, EstimateResult, EstimateStudent, InputKind, RigorReading, SchoolOffering } from "./types.ts";
 import type { AblationInput, SnapshotDetail } from "./snapshot.ts";
@@ -235,7 +235,8 @@ function fixedPart(input: ModelInput, student: StandingStudent, without: Without
   const gpaWeighs = weighsGpa(school);
   const gpaRead = gpaStanding(student, input.standing, null);
   const gpaPosition = gpaWeighs.counts ? gpaRead.position : null;
-  const topShare = gpaTopShare(school);
+  // A weighted reporter's bands pile everyone into the top band, so they can't show crowding (how-colleges-read.md).
+  const topShare = isWeightedReporter(school) ? null : gpaTopShare(school);
   const crowded = !without.crowding && topShare !== null && topShare >= STANDING_V2.crowdedShare && gpaPosition !== null;
 
   // Rigor (method/standing.md "The rigor position").

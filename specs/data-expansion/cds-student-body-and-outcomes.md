@@ -586,7 +586,107 @@ says the 2025–26 third column is "Unknown"; the round-3, student-body, graduat
 time-to-degree, and trend-indicators notes are left for the coordinator's spec pass.
 
 **Open question 6 (new).** Keep ±10% for each shown group's cohort against federal, or check the total cohort only
-(±10%) when the previous grid matches IPEDS GR? Today only Cornell's graduation class publishes.
+(±10%) when the previous grid matches IPEDS GR? Today only Cornell's graduation class publishes. **Resolved 2026-10-11**
+(below): when the previous grid was compared with IPEDS GR, the newer class isn't held to the older one at all.
+
+## As built / findings: the graduation-rate grid against federal data (2026-10-11)
+Every model-read run tripped the circuit breaker on the B4–B21 grid (run 20261011-012103-45: "B.405 failed in 19 of 21
+model-read documents; B.406 in 18 of 20; B.408 in 18 of 21"; run 20261010-180040-39: B.402 33 of 44, B.406 28 of 36,
+B.410 30 of 41, B.422 36 of 52). The committed review queue held 3,743 grid values (B.401–B.532). The extraction was
+mostly right; the federal comparison was wrong.
+
+**What failed.** Of the 58 model-read documents holding B.405 (line B, Pell exclusions), 43 failed
+`previous-cohort-disagrees` and 34 `federal-disagrees`, and only 4 `number-on-line` and 2 `parts-sum`: B.405 isn't in
+any comparison, but `previous-cohort-disagrees` fails all 32 current codes (the grid publishes all or nothing) and
+`federal-disagrees` a group's whole column. Matching each grid's final cohorts against IPEDS GR by cohort year, the
+model read the fall 2018 class correctly in 50 of 56 model-read grids (44 equal the total cohort, 6 the bachelor's
+subcohort); the other 6 are genuine source differences or misreads (below).
+
+**Evidence** (each document re-fetched and laid out with `scripts/lib/college-reported/layout.mts`; IPEDS
+GR2024_PELL_SSL and GR2023_PELL_SSL rows by PSGRTYPE):
+
+| College, edition | Code(s) | Document | Extracted | Federal compared | Whose error |
+|---|---|---|---|---|---|
+| Loyola Chicago 2025–26 | B.509 (B5 Pell final cohort) | 649 (line 337) | 649 | 776 (PSGRTYPE 1: 127 Pell associate/certificate seekers; PSGRTYPE 2 = 649, completers 428 = 428) | Check: wrong population |
+| Troy 2025–26 | B.509–B.512 | 737 / 251 / 665 / 1,653 | same | 765 / 257 / 668 / 1,690 (type 2 = 737 / 251 / 665 / 1,653) | Check: wrong population |
+| Rhode Island 2025–26 | B.509 | 789 | 789 | 820 (type 2 = 788): the brief's "789 vs IPEDS GR 820" | Check: wrong population |
+| CU Denver 2024–25 | B4 = fall 2018 class | 650 / 230 / 719 / 1,599 | same | B5 (fall 2017: 605 / 185 / 618 / 1,408) compared with fall 2018 IPEDS 650 / 230 / 717 / 1,597, failing 32 codes | Check: wrong cohort (the edition decides which grid is federal's class) |
+| Colorado School of Mines 2022–23 | grids = fall 2016 / 2015 | 111 / 289 / 647 / 1,047 | same | fall 2018 IPEDS 145 / 246 / 801 / 1,192 | Check: no federal class to compare |
+| Iowa State 2025–26 | B.410 (B4 loan final cohort) | 986 (B5: 1,604) | 986 | 1,604 one class older (">25% apart"): the brief's example; B5 equals IPEDS to the student | Check: a newer class held to the older one after the previous grid proved the reading |
+| Pepperdine 2025–26 | B.429 | 75% (B5: 84%) | 0.75 | 83.92% one class older; B5 143 / 173 / 483 / 799 = IPEDS | Check: same |
+| Yale 2025–26 | B.429–B.432, B.529–B.532 | "0.945 \| 1 \| 0.967 \| 0.963" | 0.00945 / 0.01 / … | ratio-matches and IPEDS 95.51% | Ours: normalization (printed numbers were always points) |
+| Colorado School of Mines 2022–23; Georgia, Regis, Howard, Bates forms | line H | "0.774774775"; form field "0.844253491" | 0.0077…; 0.0084… | — | Ours: normalization |
+| North Alabama 2025–26 | B.405–B.408 | line B 3 / 1 / 1 / 5 | 363 / 137 / 520 / 1,020 (line A) | parts-sum | Model misread (line H also prints two decimals in one layout cell: "0.573529411764706 0.662813102119461") |
+| FAMU 2025–26 | B.429 | 57.7% (fall 2018 grid unfilled: "C or t") | 0.577 | 49.58% one class older: the brief's "57.7% vs 49.58%" | Neither: nothing proves the reading; stays review |
+| Arkansas 2025–26 | B.510–B.511 | 1,436 / 2,596 (Pell 938 and total 4,970 = IPEDS) | same | 774 / 3,258 | Genuine source disagreement: the college's two reports split loan vs neither differently; stays review |
+| UCF 2024–25 | B4 = fall 2018 class | Pell 2,130 (total 7,052 = IPEDS) | same | 2,196 | Genuine; newly caught by the like-with-like comparison |
+
+**Causes in code** (before this change):
+1. `lib/cds-checks.ts` `checkGrid` compared the previous grid (B.501–B.532) with IPEDS GR whatever the edition, and the
+   current grid with federal "one cohort older". That is true only of a 2025–26 edition: a 2024–25 edition's *current*
+   grid is federal's class, and older editions have none. 36 of the 88 documents with `previous-cohort-disagrees`
+   in the queue are 2017–18 to 2024–25 editions. `lib/cds/student-body.ts` `checkGrid` had the same assumption, and its `holds-previous-cohort`
+   test would have labeled a 2024–25 grid that equals IPEDS as one class older.
+2. `federalBaseline` (and `sync-data`'s `GR{Y}_PELL_SSL` read) used PSGRTYPE 1, the total cohort (bachelor's plus other
+   degree/certificate seekers). The CDS grid is "first-time, full-time, bachelor's (or equivalent) degree-seeking":
+   PSGRTYPE 2. They differ at 502 of 1,767 site colleges.
+3. The loose comparison of the current grid with the class one older (±5 points, ±25% record / ±10% publish) ran even
+   when the previous grid had just matched IPEDS exactly, failing real changes between entering classes (Iowa State,
+   Pepperdine; and at publish, Vanderbilt, W&M, and Illinois, open question 6).
+4. `lib/cds-sections.ts` `percentShare` read every printed percent as points ("0.5" = 0.5%), so a line H or B22 rate
+   printed as a fraction became a hundredth of itself. The spec's "Percent forms" said a number from 0 to 1 is a
+   fraction there; the generic reader never applied it.
+5. `applyChecks` without the archived lines (`npm run check-cds-records`) dropped earlier `number-on-line`,
+   `line-in-document`, and cover `edition-mismatch` failures, passing values whose number isn't on their line (a dry
+   run re-judged 1,096 B1 and 823 C1 values to passed that way).
+
+Not the cause: the code table's descriptors (the tags' INIT / EXCLUDE / ADJUST / 4YR / 5YR / 6YR words, explained in the
+instructions) and the numbered lines (one line per grid row, `@x` cells under the column headings, as at Loyola, Iowa
+State, Troy, Pepperdine, Yale) carry the grid; the per-code schema is unchanged.
+
+**What changed**
+- `CheckContext.gradYear` / `FederalBaseline.grad_entering_year`: the federal class's entering fall
+  (`meta.vintages["ipeds-gr"]` via `scripts/lib/college-reported/files.mts#federalGradYear`, passed by the pipeline,
+  `check-cds-records`, `archive-doc`, `cds-records-from-workbooks`; `mergeReported` passes `federalYears(meta)`). The
+  grid whose cohort is that fall is compared tightly (cohort ±2%, rate ±1 point, unchanged tolerances): the previous grid
+  → `previous-cohort-disagrees` on the current grid; the current grid (2024–25) → `federal-disagrees` on that group's
+  column. The loose bound against the class one older runs only when the current grid is that next class and no
+  previous grid was compared. Older editions: no federal comparison. Without `gradYear`: none.
+- The comparison's rate is the grid's own completers ÷ final cohort when printed (counts beat stated rates); a previous
+  grid whose final cohorts are all 0 or blank (fillable forms' computed totals: Howard, Earlham, Valparaiso) isn't
+  compared.
+- `outcomes.grad_bachelor` (new, not displayed; `lib/fields.ts`): GR{Y}_PELL_SSL PSGRTYPE 2 rates and cohorts, stored
+  only where they differ from the total cohort (502 colleges, ~100 KB). `bachelorGrad(o)` gives the CDS population to
+  both check layers. Written by `sync-data` (`addGradByGroup`) and added to `data/schools.json` from the same
+  GR2024_PELL_SSL file.
+- `QUOTIENT_RATE_CODES` (B.429–B.432, B.529–B.532, B.2203): a printed bare number from 0 to 1 is a fraction. The
+  ratio check (±0.5 point against the counts) still catches a misread either way. Other percents keep the points rule.
+- `applyChecks` keeps the line checks' verdicts when it has no lines (`keptVerdict`).
+- No tolerance changed. `MIN_GROUP` (30) still skips small groups in the loose bound only.
+
+**Effect** (the committed records re-judged in memory with the archived failures kept):
+- Held grid values (B.401–B.532 and B22) in `data/review-queue.json`: 1,176 of 2,565 model-read and 550 of 1,404
+  deterministic would pass with no model call; with the fraction-printed rates re-read, 1,267 and 694.
+- Per breaker code, 2025–26 model reads: B.405 failed 23 of 41 → 11; B.406 26 of 39 → 10; B.408 18 of 40 → 9; B.402
+  29 of 48 → 12; B.410 28 of 47 → 14; B.422 31 of 56 → 15. The rest are model misreads, layout merges, genuine source
+  differences, and fraction-printed rates awaiting a re-read.
+- Published now (records unchanged, `npm run merge-reported`): 14 colleges' fall 2019 graduation classes, whose previous
+  grids match IPEDS GR but whose newer class moved more than ±10% / 5 points (Vanderbilt, William & Mary, Illinois,
+  Michigan, UNC, Pittsburgh, Tufts, UC Riverside, Wake Forest, Oregon State, GW, Radford, Sewanee, Central Connecticut).
+- After re-judging the records ($0: `npm run check-cds-records` then `npm run merge-reported`, or the next run): about
+  25 more fall 2019 classes (Iowa State, Loyola Chicago, Pepperdine, Rice, Villanova, Syracuse, Rhode Island, …); 29
+  with the fraction re-reads.
+
+**Re-extraction.** Not needed for the check changes (they re-judge stored values). The fraction-printed rates need a
+re-read because the stored value lost the printed one: pdf-form documents (Georgia, Regis, Howard, Bates, …) re-read for
+$0 with `--reextract` (deterministic readers re-run from the archive); 9 model-read documents (Yale 2025–26, Colorado
+School of Mines, and 7 others) need their `rest` call again, about $0.03 each on Haiku plus about $0.05 per escalation
+on Sonnet 5 (run 20261011-012103-45's rates): under $1 if read alone. `--reextract --call rest` only sends calls that
+are due, and `SCHEMA_VERSIONS.rest` isn't bumped here: bumping it would re-read all 206 rest-read documents (about $6
+on Haiku plus $2–4 of escalations, ~$10) for these 9. Until the owner chooses, they re-read on their next new file.
+
+**Left open.** North Alabama's line H cell merges two long decimals (cells closer than `CELL_GAP`); the count lines
+publish regardless (counts beat stated rates), but its ratio check fails until the layout splits them.
 
 ## Roadmap entry
 - slug: cds-student-body-and-outcomes

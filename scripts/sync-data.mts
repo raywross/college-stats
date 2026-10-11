@@ -37,7 +37,7 @@ import { MSI_FIELDS, campusProfileFrom, directoryIssues, msiFrom } from "../lib/
 import { facultySalaryFrom, fullTimeFacultyShareFrom, studentFacultyRatioFrom } from "../lib/academics.ts";
 import { OM_COLUMNS, OM_LAG, OM_PIVOT, eightYearFrom, timeToDegreeCoverage } from "../lib/outcome-measures.ts";
 import { fetchPivotedTable } from "./lib/om.mts";
-import { GR_PELL_COHORT_TYPE, GR_PELL_COLUMNS, RACE_GROUPS, aidGroupGradFrom, raceGradFrom, scorecardRaceCohortField, scorecardRaceRateField } from "../lib/graduation-groups.ts";
+import { GR_PELL_BACHELOR_TYPE, GR_PELL_COHORT_TYPE, GR_PELL_COLUMNS, bachelorSubcohortFrom, RACE_GROUPS, aidGroupGradFrom, raceGradFrom, scorecardRaceCohortField, scorecardRaceRateField } from "../lib/graduation-groups.ts";
 import { residenceFrom } from "../lib/residence.ts";
 import { addResidenceMeta, buildDetails, crossCheckDerived, detailProblems, fetchResidence, writeDetails } from "./lib/residence-sync.mts";
 import { addTransferMeta, checkTransfers, fetchTransfers } from "./lib/transfers-sync.mts";
@@ -649,7 +649,7 @@ function addServices(school: School, row: Record<string, string> | undefined) {
 }
 
 /** Graduation by Pell/loan status (IPEDS GR{Y}_PELL_SSL) and by race/ethnicity (Scorecard); lib/graduation-groups.ts. */
-function addGradByGroup(school: School, row: Record<string, string> | undefined, sc: ScorecardRow) {
+function addGradByGroup(school: School, row: Record<string, string> | undefined, bachelorRow: Record<string, string> | undefined, sc: ScorecardRow) {
   if (!school.outcomes) return;
   const aid = aidGroupGradFrom(row);
   school.outcomes.grad_rate_pell = aid?.rates.pell ?? null;
@@ -657,6 +657,9 @@ function addGradByGroup(school: School, row: Record<string, string> | undefined,
   school.outcomes.grad_rate_no_pell_no_loan = aid?.rates.no_pell_no_loan ?? null;
   school.outcomes.grad_rate_ftft = aid?.rates.total ?? null;
   school.outcomes.grad_cohorts = aid?.cohorts ?? null;
+  const bachelor = bachelorSubcohortFrom(aid, bachelorRow);
+  if (bachelor) school.outcomes.grad_bachelor = bachelor;
+  else delete school.outcomes.grad_bachelor;
   const race = raceGradFrom((f) => numOrNull(sc[`latest.${f}`]));
   school.outcomes.grad_rate_by_race = race?.rates ?? null;
   school.outcomes.grad_cohorts_by_race = race?.cohorts ?? null;
@@ -805,6 +808,8 @@ async function main() {
   const grPell = await fetchIpeds(GR_PELL_NAMES, (r) => r.PSGRTYPE === GR_PELL_COHORT_TYPE);
   const grMissing = GR_PELL_COLUMNS.filter((c) => ![...grPell.rows.values()].some((r) => c in r));
   if (grMissing.length || grPell.rows.size < 1000) throw new Error(`${grPell.name}: missing ${grMissing.join(", ") || "rows"} (cohort type ${GR_PELL_COHORT_TYPE})`);
+  // The same file's bachelor's-seeking rows (PSGRTYPE 2): what a CDS B4–B21 grid describes, for its checks.
+  const grBachelor = await fetchIpeds([grPell.name], (r) => r.PSGRTYPE === GR_PELL_BACHELOR_TYPE);
   // Faculty salary (specs/data-expansion/faculty.md): only the all-ranks row (ARANK 7); facultySalaryFrom asserts it.
   const sal = await fetchIpeds(SAL_NAMES, (r) => r.ARANK === "7");
   if (![...sal.rows.values()].some((r) => "ARANK" in r && "SAEQ9AT" in r)) throw new Error(`${sal.name} has no ARANK/SAEQ9AT columns`);
@@ -879,7 +884,7 @@ async function main() {
       };
     }
     if (school?.outcomes) school.outcomes.eight_year = eightYearFrom(om.rows.get(school.unit_id), omEntering);
-    if (school) addGradByGroup(school, grPell.rows.get(school.unit_id), row);
+    if (school) addGradByGroup(school, grPell.rows.get(school.unit_id), grBachelor.rows.get(school.unit_id), row);
     if (school) school.demographics.residence = residenceFrom(efc.table.rows.get(school.unit_id), school.location.state);
     if (school) school.demographics.transfer_in = transferInFrom(efa.table.rows.get(school.unit_id));
     if (school) school.finances = financesFrom(drvf.rows.get(school.unit_id), drvfFiscalYear);

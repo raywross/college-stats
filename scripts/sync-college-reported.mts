@@ -42,7 +42,7 @@ import type { BlockedHostsFile, CdsUrlsFile, RunSummaryV3 } from "../lib/reporte
 import type { CallKey } from "../lib/cds-sections.ts";
 import { CDS_TEMPLATE } from "../lib/cds-template.ts";
 import { restoreFederal } from "../lib/newest.ts";
-import { dataPaths, readQueue, readReported, readSources, writeQueue, writeReported, writeRunSummary, writeSources } from "./lib/college-reported/files.mts";
+import { dataPaths, federalGradYear, readQueue, readReported, readSources, writeQueue, writeReported, writeRunSummary, writeSources } from "./lib/college-reported/files.mts";
 import { UnpricedModelError, assertPriced, emptySummaryV3, fileCallLogWriter, memoryCallLogWriter, summaryCost, type ModelClient } from "./lib/college-reported/models.mts";
 import { readJsonFile } from "./lib/college-reported/pipeline.mts";
 import { createRound3, PHASES, type Phase, type Round3State } from "./lib/college-reported/phases.mts";
@@ -214,6 +214,7 @@ async function main() {
     phase: PHASE,
     schools: targets,
     allSchools: schools,
+    gradYear: federalGradYear(ROOT),
     rediscover: REDISCOVER,
     ...(REEXTRACT ? { reextract: CALL } : {}),
     maxCost: MAX_COST,

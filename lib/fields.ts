@@ -317,6 +317,8 @@ export const FIELDS = {
   "outcomes.grad_rate_loan_no_pell": gr("Graduated within 6 years, subsidized loan without a Pell Grant"),
   "outcomes.grad_rate_no_pell_no_loan": gr("Graduated within 6 years, neither Pell Grant nor subsidized loan"),
   "outcomes.grad_rate_ftft": gr("Graduated within 6 years, all first-time full-time students"),
+  // The bachelor's-seeking subcohort (PSGRTYPE 2), only where it differs from the total; checks CDS B4–B21, not shown.
+  "outcomes.grad_bachelor": { label: "Graduation by Pell and loan status, bachelor's-seeking students", topic: "outcomes", source: "ipeds-gr", vintage: "ipeds-gr" },
   "outcomes.grad_cohorts_by_race": scorecard("Students in the graduation cohort, by race and ethnicity", "outcomes"),
   "outcomes.grad_rate_by_race": scorecard("Graduated within 6 years, by race and ethnicity", "outcomes"),
 

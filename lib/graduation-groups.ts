@@ -18,6 +18,14 @@ export const MIN_GROUP_COHORT = 30;
  */
 export const GR_PELL_COHORT_TYPE = "1";
 
+/**
+ * PSGRTYPE 2 is the bachelor's-degree-seeking subcohort, the population of the CDS B4–B21 grids ("first-time,
+ * full-time, bachelor's (or equivalent) degree-seeking"). It differs from type 1 at 502 of the 1,767 site colleges in
+ * GR2024 (those with associate or certificate seekers): Loyola Chicago's Pell cohort is 649 bachelor's seekers of 776,
+ * exactly what its CDS prints (specs/data-expansion/cds-student-body-and-outcomes.md, "As built / findings").
+ */
+export const GR_PELL_BACHELOR_TYPE = "2";
+
 export type AidGroup = "pell" | "loan_no_pell" | "no_pell_no_loan" | "total";
 /** Column prefixes: PG Pell recipients, SS subsidized loan without Pell, NR neither, TT all students. */
 export const AID_GROUP_PREFIX: Record<AidGroup, string> = { pell: "PG", loan_no_pell: "SS", no_pell_no_loan: "NR", total: "TT" };
@@ -68,9 +76,9 @@ export interface AidGroupGrad {
   cohorts: Record<AidGroup, number | null>;
 }
 
-/** Rates and cohorts from a college's PSGRTYPE 1 row; null when it has none or reports no cohort at all. */
-export function aidGroupGradFrom(row: Row): AidGroupGrad | null {
-  if (!row || row.PSGRTYPE !== GR_PELL_COHORT_TYPE) return null;
+/** Rates and cohorts from a college's PSGRTYPE 1 row (or `type`); null when it has none or reports no cohort at all. */
+export function aidGroupGradFrom(row: Row, type: string = GR_PELL_COHORT_TYPE): AidGroupGrad | null {
+  if (!row || row.PSGRTYPE !== type) return null;
   const rates = {} as AidGroupGrad["rates"];
   const cohorts = {} as AidGroupGrad["cohorts"];
   for (const g of AID_GROUPS) {
@@ -79,6 +87,26 @@ export function aidGroupGradFrom(row: Row): AidGroupGrad | null {
     rates[g] = groupRate(count(row, `${p}CMTOT`), cohorts[g]);
   }
   return cohorts.total === null || cohorts.total === 0 ? null : { rates, cohorts };
+}
+
+/**
+ * The bachelor's-seeking subcohort (PSGRTYPE 2) stored beside the total cohort, or null when it's the same students
+ * (1,256 of 1,767 colleges) or missing: `outcomes.grad_bachelor` exists only where the two populations differ.
+ */
+export function bachelorSubcohortFrom(total: AidGroupGrad | null, bachelorRow: Row): AidGroupGrad | null {
+  const b = aidGroupGradFrom(bachelorRow, GR_PELL_BACHELOR_TYPE);
+  if (!b || !total) return null;
+  const same = AID_GROUPS.every((g) => b.cohorts[g] === total.cohorts[g] && b.rates[g] === total.rates[g]);
+  return same ? null : b;
+}
+
+/** The federal graduation class at the CDS grid's population: the bachelor's subcohort where stored, else the total. */
+export function bachelorGrad(o: Pick<NonNullable<School["outcomes"]>, "grad_rate_pell" | "grad_rate_loan_no_pell" | "grad_rate_no_pell_no_loan" | "grad_rate_ftft" | "grad_cohorts" | "grad_bachelor"> | null | undefined): AidGroupGrad | null {
+  if (!o) return null;
+  if (o.grad_bachelor) return o.grad_bachelor;
+  const rates = { pell: o.grad_rate_pell ?? null, loan_no_pell: o.grad_rate_loan_no_pell ?? null, no_pell_no_loan: o.grad_rate_no_pell_no_loan ?? null, total: o.grad_rate_ftft ?? null };
+  if (!o.grad_cohorts && AID_GROUPS.every((g) => rates[g] === null)) return null;
+  return { rates, cohorts: o.grad_cohorts ?? { pell: null, loan_no_pell: null, no_pell_no_loan: null, total: null } };
 }
 
 /** College Scorecard completion suffix per stored group (scripts/history/scorecard.mts uses the same map). */

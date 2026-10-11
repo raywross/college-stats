@@ -199,6 +199,15 @@ export interface School {
     grad_rate_ftft?: number | null;
     /** Adjusted cohort sizes behind those rates. */
     grad_cohorts?: Record<"pell" | "loan_no_pell" | "no_pell_no_loan" | "total", number | null> | null;
+    /**
+     * The same class's bachelor's-degree-seeking subcohort (GR{Y}_PELL_SSL PSGRTYPE 2), present only where it differs
+     * from the total cohort above. Not displayed: it's what a CDS B4–B21 grid describes, so the CDS checks compare
+     * with it (lib/cds-checks.ts, lib/cds/student-body.ts).
+     */
+    grad_bachelor?: {
+      rates: Record<"pell" | "loan_no_pell" | "no_pell_no_loan" | "total", number | null>;
+      cohorts: Record<"pell" | "loan_no_pell" | "no_pell_no_loan" | "total", number | null>;
+    } | null;
     /** By race/ethnicity (College Scorecard `completion_rate_4yr_150_*`), null under 30 students; and the cohorts. */
     grad_rate_by_race?: Record<GradRaceGroup, number | null> | null;
     grad_cohorts_by_race?: Record<GradRaceGroup, number | null> | null;

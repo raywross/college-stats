@@ -5,6 +5,9 @@
 import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import type { ReportedFile, ReviewQueueFile, RunSummary, SourcesFile } from "../../../lib/reported.ts";
+import { federalYears } from "../../../lib/newest-groups.ts";
+import type { VintageKey } from "../../../lib/fields.ts";
+import type { DatasetMeta } from "../../../lib/types";
 
 export interface DataPaths {
   sources: string;
@@ -61,4 +64,14 @@ export function writeRunSummary(dir: string, summary: RunSummary): string {
   const file = join(dir, `college-reported-run-${summary.run.replace(/[:]/g, "-")}.json`);
   write(file, `${JSON.stringify(summary, null, 2)}\n`);
   return file;
+}
+
+/**
+ * The entering fall of the federal graduation class (`meta.vintages["ipeds-gr"]`, "Entered fall 2018" → 2018), which
+ * the CDS checks need to know which B4–B21 grid holds that class (lib/cds-checks.ts `CheckContext.gradYear`). Null
+ * when data/meta.json is missing or names no year: the grids are then not compared with federal data.
+ */
+export function federalGradYear(root: string): number | null {
+  const meta = readJson<{ vintages?: Partial<Record<VintageKey, string>> }>(join(root, "data", "meta.json"), {});
+  return federalYears({ vintages: meta.vintages ?? {} } as Pick<DatasetMeta, "vintages">).graduation;
 }

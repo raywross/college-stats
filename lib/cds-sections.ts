@@ -438,14 +438,25 @@ export function parseNumber(raw: unknown): number | null {
 /** Dividing by 100 leaves float noise (27.4 / 100 = 0.27399999999999997); shares never need more than 10 places. */
 const per100 = (n: number) => Math.round(n * 1e8) / 1e10;
 
+/**
+ * Rates the template defines as a quotient of printed counts (B4–B21 line H, "G divided by C"; B22's retention rate),
+ * which colleges print as fractions as often as percents: Yale's 2025–26 line H reads "0.945 | 1 | 0.967 | 0.963",
+ * Colorado School of Mines' "0.774774775", Georgia's form field "0.844253491", next to Loyola's "63.73" and Troy's
+ * "40%". A bare number up to 1 here is a fraction (specs/data-expansion/cds-student-body-and-outcomes.md, "Percent
+ * forms"); a rate of 1% or less is no real six-year or retention rate, and the counts check every stated rate (±0.5
+ * point), so a misread either way still fails `ratio-matches`.
+ */
+export const QUOTIENT_RATE_CODES: ReadonlySet<CdsCode> = new Set(["B.429", "B.430", "B.431", "B.432", "B.529", "B.530", "B.531", "B.532", "B.2203"]);
+
 /** A percent as a 0–1 share: 0.274, 27.4, "27.4%", "1%%", "0.61%" → 0.0061. Null when it isn't one. */
-function percentShare(raw: unknown, points = false): number | null {
+function percentShare(raw: unknown, points = false, quotient = false): number | null {
   if (typeof raw === "string" && /%/.test(raw)) {
     const n = parseNumber(raw.replace(/%+/g, ""));
     return n === null ? null : per100(n);
   }
   const n = parseNumber(raw);
   if (n === null) return null;
+  if (quotient && n >= 0 && n <= 1) return n;
   // Printed numbers (a model's answer, a PDF form field) are always percent points: "0.5" is 0.5%, never 50%. The first
   // live run read small score bands as shares, so band columns summed to 149–199%.
   if (points) return per100(n);
@@ -512,7 +523,7 @@ const NUMERIC: ReadonlySet<ValueType> = new Set(["count", "currency", "decimal",
  * bare integer in a date cell is a serial date. `percentPoints`: the value is a printed number (a model's answer, a PDF
  * form field), so a percent is always points ("0.5" is 0.5%); without it, a workbook's fraction (0.274) is kept.
  */
-export function normalizeValue(item: Pick<TemplateItem, "value_type">, raw: unknown, opts: { excel?: boolean; percentPoints?: boolean } = {}): Normalized {
+export function normalizeValue(item: Pick<TemplateItem, "value_type"> & { code?: CdsCode }, raw: unknown, opts: { excel?: boolean; percentPoints?: boolean } = {}): Normalized {
   if (raw === null || raw === undefined) return BLANK;
   if (typeof raw === "string") {
     const s = raw.replace(/\s+/g, " ").trim();
@@ -528,7 +539,7 @@ export function normalizeValue(item: Pick<TemplateItem, "value_type">, raw: unkn
   }
   switch (t) {
     case "percent": {
-      const n = percentShare(raw, opts.percentPoints);
+      const n = percentShare(raw, opts.percentPoints, item.code !== undefined && QUOTIENT_RATE_CODES.has(item.code));
       return n === null ? text() : { status: "value", v: n };
     }
     case "month": {

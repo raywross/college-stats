@@ -20,6 +20,7 @@ import { applyChecks } from "../lib/cds-checks.ts";
 import { restoreFederal } from "../lib/newest.ts";
 import { isTemplateWorkbook, readWorkbook, recordFromTemplate, workbookEdition } from "./lib/cds-xlsx.mts";
 import { upsertDocument, upsertManifest } from "./lib/college-reported/records.mts";
+import { federalGradYear } from "./lib/college-reported/files.mts";
 
 const ROOT = join(import.meta.dirname, "..");
 const RECORDS = join(ROOT, "data", "cds-records");
@@ -48,7 +49,7 @@ const book = readWorkbook(values.workbook);
 if (!isTemplateWorkbook(book)) throw new Error(`${values.workbook} isn't a 2025–26 template workbook; it needs the model path`);
 const read = recordFromTemplate(book, { unit_id: values.unit, url: values.url, sha256, retrieved: values.retrieved, table: CDS_TEMPLATE, edition: values.edition });
 // Every round-3 check, on this deterministic read too (lib/cds-checks.ts), against the federal baseline.
-const doc = applyChecks(read, { table: CDS_TEMPLATE, school: restoreFederal(school) });
+const doc = applyChecks(read, { table: CDS_TEMPLATE, school: restoreFederal(school), gradYear: federalGradYear(ROOT) });
 
 upsertDocument(RECORDS, values.unit, doc);
 upsertManifest(

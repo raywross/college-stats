@@ -99,14 +99,14 @@ test("B22: Vanderbilt's 0.97 in the cohort cell fails count-not-integer; Cornell
 
 test("B4–B11: Vanderbilt's previous grid matches its IPEDS GR class; a perturbed one fails previous-cohort-disagrees", () => {
   const fed = baseline(VANDERBILT).outcomes;
-  const r = checkGrid(doc(VANDERBILT), fed);
+  const r = checkGrid(doc(VANDERBILT), fed, { gradYear: years.graduation });
   assert.ok(!r.problems.some((p) => p.check === "previous-cohort-disagrees"));
   const broken = doc(VANDERBILT);
   setCell(broken, "B.509", 200); // previous grid, Pell final cohort (was 244 = IPEDS GR)
   setCell(broken, "B.501", 203);
   setCell(broken, "B.512", 1550);
   setCell(broken, "B.504", 1557);
-  assert.ok(checkGrid(broken, fed).problems.some((p) => p.check === "previous-cohort-disagrees"));
+  assert.ok(checkGrid(broken, fed, { gradYear: years.graduation }).problems.some((p) => p.check === "previous-cohort-disagrees"));
 });
 
 test("B4–B11: the subsidized-loan group of 29 has no rates (cohort kept); 4 ≤ 5 ≤ 6 years", () => {
@@ -159,12 +159,15 @@ test("B4–B11: a current grid equal to the previous one holds the previous coho
 });
 
 test("the value sets of the four colleges: what passes and what goes to review", () => {
-  const got = Object.fromEntries([VANDERBILT, CORNELL, WM, ILLINOIS].map((id) => [id, Object.keys(studentBodyFromRecord(records.get(id)!, baseline(id)).found.groups).sort()]));
+  const got = Object.fromEntries([VANDERBILT, CORNELL, WM, ILLINOIS].map((id) => [id, Object.keys(studentBodyFromRecord(records.get(id)!, baseline(id), { gradYear: years.graduation }).found.groups).sort()]));
   assert.deepEqual(got, {
-    [VANDERBILT]: ["enrollment", "race"], // B22 count-not-integer; Pell cohort 270 vs federal 244 (> 10%): review
+    // B22 count-not-integer. Graduation: each previous grid (fall 2018) equals IPEDS GR to the student, so the fall
+    // 2019 class isn't held to the older one (until 2026-10-11 Vanderbilt's Pell cohort 270 vs 244, W&M's loan group
+    // 178 vs 229, and Illinois's Pell cohort 2,160 vs 1,913 sent all three to review).
+    [VANDERBILT]: ["enrollment", "graduation", "race"],
     [CORNELL]: ["enrollment", "graduation", "race", "retention"],
-    [WM]: ["enrollment", "race", "retention"], // loan group cohort 178 vs federal 229: review
-    [ILLINOIS]: ["enrollment", "race", "retention"], // Pell cohort 2,160 vs federal 1,913: review
+    [WM]: ["enrollment", "graduation", "race", "retention"],
+    [ILLINOIS]: ["enrollment", "graduation", "race", "retention"],
   });
   const v = studentBodyFromRecord(records.get(VANDERBILT)!, baseline(VANDERBILT)).found.groups.enrollment!;
   assert.deepEqual(v.values, { "demographics.undergrad_enrollment": 7355, "demographics.men_share": 0.4714, "demographics.women_share": 0.5286, "demographics.part_time_share": 0.0068 });
@@ -253,7 +256,7 @@ test("restoreFederal (and restoreNewestGroups) put back exactly what was there, 
     assert.equal(r.demographics.undergrad_enrollment, merged.demographics.federal!.undergrad_enrollment);
     // deepEqual, not a string comparison: the committed college also carries the wave-4 blocks the later record steps
     // add (lib/reported-merge.ts RECORD_STEPS), so re-applying the groups alone moves keys without changing values.
-    assert.deepEqual(applyNewestGroups(r, studentBodyFromRecord(records.get(id)!, restoreFederal(r)).found, years), merged, id);
+    assert.deepEqual(applyNewestGroups(r, studentBodyFromRecord(records.get(id)!, restoreFederal(r), { gradYear: years.graduation }).found, years), merged, id);
   }
 });
 

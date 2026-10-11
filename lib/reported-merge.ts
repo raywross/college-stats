@@ -117,7 +117,7 @@ export function mergeReported(schools: School[], reported: ReportedFile, cds?: C
   const withTests = (s: School): School => (cds ? mergeTestScores(s, byRecord.get(s.unit_id), federalPolicyYear) : s);
   const groups = (s: School, baseline: School): School => {
     const record = byRecord.get(s.unit_id);
-    return record && years ? applyNewestGroups(s, studentBodyFromRecord(record, baseline).found, years) : s;
+    return record && years ? applyNewestGroups(s, studentBodyFromRecord(record, baseline, { gradYear: years.graduation }).found, years) : s;
   };
   const fromRecords = (s: School): School => {
     const record = byRecord.get(s.unit_id);

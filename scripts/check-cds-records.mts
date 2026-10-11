@@ -16,19 +16,21 @@ import { CDS_TEMPLATE } from "../lib/cds-template.ts";
 import { applyChecks } from "../lib/cds-checks.ts";
 import { restoreFederal } from "../lib/newest.ts";
 import { readRecords, serializeRecord, writeRecord } from "./lib/college-reported/records.mts";
+import { federalGradYear } from "./lib/college-reported/files.mts";
 
 const ROOT = join(import.meta.dirname, "..");
 const RECORDS = join(ROOT, "data", "cds-records");
 
 const { values } = parseArgs({ options: { unit: { type: "string" }, "dry-run": { type: "boolean", default: false } } });
 const schools = new Map((JSON.parse(readFileSync(join(ROOT, "data", "schools.json"), "utf8")) as School[]).map((s) => [s.unit_id, s]));
+const gradYear = federalGradYear(ROOT);
 
 for (const record of readRecords(RECORDS)) {
   if (values.unit && record.unit_id !== values.unit) continue;
   const school = schools.get(record.unit_id);
   const federal = school ? restoreFederal(school) : null;
   const before = serializeRecord(record);
-  const documents = record.documents.map((doc) => applyChecks(doc, { table: CDS_TEMPLATE, school: federal, others: record.documents }));
+  const documents = record.documents.map((doc) => applyChecks(doc, { table: CDS_TEMPLATE, school: federal, gradYear, others: record.documents }));
   const next = { ...record, documents };
   const name = school?.name ?? record.unit_id;
   for (let i = 0; i < documents.length; i++) {

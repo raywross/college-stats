@@ -18,7 +18,8 @@
  * Federal comparisons must use the college as federal data has it: pass `restoreFederal(school)` (lib/newest.ts), so
  * a re-run never compares a college with its own earlier CDS value.
  *
- * Pure module: type-only imports plus lib/cds-sections.ts, lib/reported.ts and lib/reported-checks.ts (all pure).
+ * Pure module: type-only imports plus lib/cds-sections.ts, lib/reported.ts, lib/reported-checks.ts, lib/cds-quotes.ts and
+ * lib/graduation-groups.ts (all pure).
  */
 import type { School } from "./types";
 import {
@@ -39,6 +40,7 @@ import {
 import { REPORTED_MODELS, type CheckFailure, type CheckId, type Extraction, type ReviewItem } from "./reported.ts";
 import { runChecks } from "./reported-checks.ts";
 import { stripLayoutTags } from "./cds-quotes.ts";
+import { bachelorGrad } from "./graduation-groups.ts";
 
 /* ------------------------------------------------------------------ */
 /* Inputs and outputs                                                  */
@@ -67,9 +69,14 @@ export interface FederalBaseline {
   /** New transfer-ins (D2). */
   transfer_in: number | null;
   retention_rate: number | null;
-  /** IPEDS GR six-year rates and cohorts by Pell/loan group (B4–B11). */
+  /**
+   * IPEDS GR six-year rates and cohorts by Pell/loan group (B4–B11), for the population the CDS grid describes: the
+   * bachelor's-seeking subcohort (`outcomes.grad_bachelor`) where it differs from the total cohort, else the total.
+   */
   grad_rate: Record<GradGroup, number | null> | null;
   grad_cohorts: Record<GradGroup, number | null> | null;
+  /** The fall that federal class entered (meta.vintages["ipeds-gr"]: 2018). Null: the grids aren't compared. */
+  grad_entering_year: number | null;
   /** Scorecard median federal debt of completers (H5). */
   median_debt: number | null;
   /** Scorecard tuition and fees (G1), and cost of attendance (H2A, H6 bounds). */
@@ -80,13 +87,17 @@ export interface FederalBaseline {
   ncaa_division: string | null;
 }
 
-/** The federal baseline of a college. Pass `restoreFederal(school)`, never a school with CDS values applied. */
-export function federalBaseline(school: School): FederalBaseline {
+/**
+ * The federal baseline of a college. Pass `restoreFederal(school)`, never a school with CDS values applied, and the
+ * entering fall of the federal graduation class (`gradYear`, from meta.vintages["ipeds-gr"]): without it the B4–B21
+ * grids have no federal comparison, since which grid is federal's cohort depends on the edition.
+ */
+export function federalBaseline(school: School, opts: { gradYear?: number | null } = {}): FederalBaseline {
   const a = school.admissions;
   const d = school.demographics;
   const o = school.outcomes;
   const r = d.residence;
-  const hasGrad = o && [o.grad_rate_pell, o.grad_rate_loan_no_pell, o.grad_rate_no_pell_no_loan, o.grad_rate_ftft].some((x) => x != null);
+  const grad = bachelorGrad(o);
   return {
     admissions_year: a.year,
     applicants: a.applicants,
@@ -101,10 +112,9 @@ export function federalBaseline(school: School): FederalBaseline {
     residence: r ? { in_state: r.in_state, out_of_state: r.out_of_state, international: r.international } : null,
     transfer_in: d.transfer_in?.count ?? null,
     retention_rate: o?.retention_rate ?? null,
-    grad_rate: hasGrad
-      ? { pell: o!.grad_rate_pell ?? null, loan_no_pell: o!.grad_rate_loan_no_pell ?? null, no_pell_no_loan: o!.grad_rate_no_pell_no_loan ?? null, total: o!.grad_rate_ftft ?? null }
-      : null,
-    grad_cohorts: o?.grad_cohorts ?? null,
+    grad_rate: grad && Object.values(grad.rates).some((x) => x != null) ? grad.rates : null,
+    grad_cohorts: grad && Object.values(grad.cohorts).some((x) => x != null) ? grad.cohorts : null,
+    grad_entering_year: opts.gradYear ?? null,
     median_debt: o?.median_debt ?? null,
     tuition_in_state: school.cost?.tuition_in_state ?? null,
     tuition_out_of_state: school.cost?.tuition_out_of_state ?? null,
@@ -117,8 +127,13 @@ export interface CheckContext {
   table: TemplateTable;
   /** The college as federal data has it (`restoreFederal(school)`); null when the college isn't in the dataset. */
   school?: School | null;
-  /** Defaults to `federalBaseline(school)`. */
+  /** Defaults to `federalBaseline(school, { gradYear })`. */
   federal?: FederalBaseline | null;
+  /**
+   * The entering fall of the federal graduation class (`labelYear(meta.vintages["ipeds-gr"])`, 2018 today). The B4–B21
+   * grid whose cohort is that fall is compared with it tightly; without it no grid is compared with federal data.
+   */
+  gradYear?: number | null;
   /** A model-read document's archived numbered line text: line n is `lines[n - 1]`. Without it, line checks are skipped. */
   lines?: readonly string[];
   /** The college's other documents (C1's "two sources agree" check, same edition only). */
@@ -445,7 +460,10 @@ const GRID_GROUPS: GradGroup[] = ["pell", "loan_no_pell", "no_pell_no_loan", "to
 /** Graduation groups smaller than this have no rate shown (graduation-by-group.md), so no federal comparison. */
 const MIN_GROUP = 30;
 
-/** B4–B11: lines add up, completers ≤ final, rate = completers ÷ final; previous grid vs IPEDS GR; current vs federal. */
+/**
+ * B4–B11: lines add up, completers ≤ final, rate = completers ÷ final; the grid holding federal's entering class (by
+ * edition) vs IPEDS GR, tightly; the current grid vs the class one older only when no previous grid proves the reading.
+ */
 function checkGrid(x: Ctx) {
   for (const s of GRID_SUMS) checkSum(x, s);
   for (const base of [401, 501]) {
@@ -459,27 +477,58 @@ function checkGrid(x: Ctx) {
       }
     }
   }
+  // Federal comparisons, like with like (specs/data-expansion/cds-student-body-and-outcomes.md, "As built / findings,
+  // 2026-10-11"). IPEDS GR describes one entering class (`grad_entering_year`, fall 2018 today), and which grid holds
+  // that class depends on the edition: the previous grid (B.501–B.532) in a 2025–26 edition, the current one in a
+  // 2024–25 edition, neither in older ones. The comparison is with the bachelor's-seeking subcohort, the grid's own
+  // population (`federalBaseline`).
   const f = x.federal;
-  if (!f?.grad_rate && !f?.grad_cohorts) return;
+  const fy = f?.grad_entering_year ?? null;
+  const ed = parseEdition(x.doc.edition);
+  if (!f || fy === null || !ed || (!f.grad_rate && !f.grad_cohorts)) return;
   const current = run("B", 401, 432);
+  const column = (base: number, k: number) => Array.from({ length: 8 }, (_, line) => gridCode(base, line, k));
+  /** The same class on both sides: final cohort within 2%, six-year rate (from the counts when printed) within 1 point. */
+  const sameClass = (base: number, k: number): string[] => {
+    const g = GRID_GROUPS[k];
+    const which = base === 401 ? "B4" : "B5";
+    const out: string[] = [];
+    const fedCohort = f.grad_cohorts?.[g] ?? null;
+    const fedRate = f.grad_rate?.[g] ?? null;
+    const final = x.v.num(gridCode(base, 2, k));
+    const done = x.v.num(gridCode(base, 6, k));
+    const rate = final && done !== null ? done / final : x.v.num(gridCode(base, 7, k));
+    if (final !== null && fedCohort && relOff(final, fedCohort) > 0.02) out.push(`${which} ${g} final cohort ${fmt(final)} vs IPEDS GR ${fmt(fedCohort)}, both the fall ${fy} class (more than 2% apart)`);
+    if (rate !== null && fedRate !== null && Math.abs(rate - fedRate) > 0.01) out.push(`${which} ${g} six-year rate ${pct(round6(rate))} vs IPEDS GR ${pct(fedRate)}, both the fall ${fy} class (more than 1 point)`);
+    return out;
+  };
+  const curYear = ed.start - 6;
+  // The previous grid holds federal's class: tight agreement proves the reading, or the current grid goes to review.
+  // A previous grid whose final cohorts are all blank or 0 wasn't filled: fillable forms (Howard, Earlham, Valparaiso,
+  // Bellarmine, Bowdoin 2025–26) compute 0 into its total cells, which isn't a class of nobody to compare.
+  const prevCompared = ed.start - 7 === fy && [0, 1, 2, 3].some((k) => (x.v.num(gridCode(501, 2, k)) ?? 0) > 0);
+  if (prevCompared) {
+    for (let k = 0; k < 4; k++) for (const d of sameClass(501, k)) x.fail("previous-cohort-disagrees", current, d);
+  }
+  if (curYear === fy) {
+    // The current grid is federal's class itself (a 2024–25 edition): the same tight bounds, failing that group's column.
+    for (let k = 0; k < 4; k++) for (const d of sameClass(401, k)) x.fail("federal-disagrees", column(401, k), d);
+    return;
+  }
+  // The current grid is one class newer. When the previous grid was compared, that like-with-like check stands for
+  // the reading, and the newer class isn't held to the older one (Iowa State's subsidized-loan cohort went 1,604 →
+  // 986 and Pepperdine's Pell rate 84% → 75% between the fall 2018 and 2019 classes; both previous grids equal IPEDS
+  // to the student). Older editions' grids describe no class federal data has: no comparison.
+  if (curYear !== fy + 1 || prevCompared) return;
   for (let k = 0; k < 4; k++) {
     const g = GRID_GROUPS[k];
     const fedRate = f.grad_rate?.[g] ?? null;
     const fedCohort = f.grad_cohorts?.[g] ?? null;
-    // The previous grid describes the cohort IPEDS GR has: tight agreement, or the current grid goes to review.
-    const prevFinal = x.v.num(gridCode(501, 2, k));
-    const prevRate = x.v.num(gridCode(501, 7, k));
-    if (prevFinal !== null && fedCohort && relOff(prevFinal, fedCohort) > 0.02) {
-      x.fail("previous-cohort-disagrees", current, `B5 ${g} final cohort ${fmt(prevFinal)} vs IPEDS GR ${fmt(fedCohort)} (more than 2% apart)`);
-    }
-    if (prevRate !== null && fedRate !== null && Math.abs(prevRate - fedRate) > 0.01) {
-      x.fail("previous-cohort-disagrees", current, `B5 ${g} six-year rate ${pct(prevRate)} vs IPEDS GR ${pct(fedRate)} (more than 1 point)`);
-    }
-    // The current grid is one cohort newer than federal: a loose plausibility bound. Groups under 30 students are
-    // skipped (their rates aren't shown: graduation-by-group.md), and cohorts may move ±25% between entering classes
-    // (the spec's ±10% failed three of the four real workbooks: Illinois's Pell cohort grew 13%, W&M's loan group
-    // shrank 22%).
-    const col = Array.from({ length: 8 }, (_, line) => gridCode(401, line, k));
+    // No previous grid proves the reading: a loose plausibility bound against the class one older. Groups under 30
+    // students are skipped (their rates aren't shown: graduation-by-group.md), and cohorts may move ±25% between
+    // entering classes (the spec's ±10% failed three of the four real workbooks: Illinois's Pell cohort grew 13%,
+    // W&M's loan group shrank 22%).
+    const col = column(401, k);
     const rate = x.v.num(gridCode(401, 7, k));
     const final = x.v.num(gridCode(401, 2, k));
     if (final !== null && final < MIN_GROUP) continue;
@@ -1294,7 +1343,18 @@ const OWN_CHECKS = new Set<string>([
   "not-a-url", "out-of-range", "quote-present", "funnel-order", "plausible-change", "sources-agree", "aid-year",
 ]);
 
-function reset(items: Record<CdsCode, ItemResult>): Record<CdsCode, ItemResult> {
+/**
+ * Failures a re-check can't redo, so they keep their last verdict: the line checks without the archived lines
+ * (`npm run check-cds-records` has none), and the assumed-edition failure without `editionAssumed`. Before 2026-10-11
+ * a re-check without lines dropped them, passing values whose number isn't on their cited line.
+ */
+function keptVerdict(ctx: Pick<CheckContext, "lines" | "editionAssumed">): (f: ItemFailure) => boolean {
+  return (f) =>
+    (!ctx.lines && (f.check === "number-on-line" || f.check === "line-in-document" || (f.check === "edition-mismatch" && f.detail.startsWith("the cover says")))) ||
+    (ctx.editionAssumed === undefined && f.check === "edition-mismatch" && f.detail.startsWith("the document states no edition"));
+}
+
+function reset(items: Record<CdsCode, ItemResult>, keep: (f: ItemFailure) => boolean = () => false): Record<CdsCode, ItemResult> {
   const out: Record<CdsCode, ItemResult> = {};
   for (const [code, it0] of Object.entries(items)) {
     let it: ItemResult = { ...it0 };
@@ -1310,7 +1370,7 @@ function reset(items: Record<CdsCode, ItemResult>): Record<CdsCode, ItemResult> 
       if (quote) it.quote = quote;
     }
     if (it.method === "derived") it = { status: "blank" };
-    const kept = (it.failures ?? []).filter((f) => !OWN_CHECKS.has(f.check));
+    const kept = (it.failures ?? []).filter((f) => !OWN_CHECKS.has(f.check) || keep(f));
     if (kept.length) it.failures = kept;
     else delete it.failures;
     if (it.status === "failed" || it.status === "passed") it.status = kept.length ? "failed" : it.v !== undefined ? "passed" : it.form ? "failed" : "blank";
@@ -1357,7 +1417,7 @@ function runAll(
  */
 export function runItemChecks(doc: DocumentRecord, ctx: CheckContext): ItemCheckResult {
   const items = reset(doc.items);
-  const federal = ctx.federal !== undefined ? ctx.federal : ctx.school ? federalBaseline(ctx.school) : null;
+  const federal = ctx.federal !== undefined ? ctx.federal : ctx.school ? federalBaseline(ctx.school, { gradYear: ctx.gradYear }) : null;
   const m = valuesOf(items);
   const derived = deriveTotals(m, items);
   let failures = runAll(doc, items, m, ctx, federal, new Set(), derived);
@@ -1416,7 +1476,7 @@ function quoteFor(label: string, v: Value | null): string {
  */
 export function applyChecks(doc: DocumentRecord, ctx: CheckContext): DocumentRecord {
   const result = runItemChecks(doc, ctx);
-  const items = reset(doc.items);
+  const items = reset(doc.items, keptVerdict(ctx));
   const resolved = new Set(result.resolved);
   for (const [code, it] of Object.entries(items)) {
     const item = ctx.table.byCode.get(code);

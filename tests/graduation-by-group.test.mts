@@ -27,12 +27,19 @@ import {
 import { countActiveFilters, parseFilters } from "../lib/params.ts";
 import { lastYear, pellGapChange, valueAt, type HistoryMeta, type SchoolHistory } from "../lib/history.ts";
 import { gradByGroupMismatches } from "../scripts/history/graduation-groups.mts";
+import { restoreFederal } from "../lib/newest.ts";
 
 const ROOT = join(import.meta.dirname, "..");
 const schools: School[] = JSON.parse(readFileSync(join(ROOT, "data", "schools.json"), "utf8"));
 const meta: DatasetMeta = JSON.parse(readFileSync(join(ROOT, "data", "meta.json"), "utf8"));
 const hmeta: HistoryMeta = JSON.parse(readFileSync(join(ROOT, "data", "history", "meta.json"), "utf8"));
 const byId = (id: string) => schools.find((s) => s.unit_id === id)!;
+/**
+ * A college as federal data has it. Vanderbilt's fall 2019 CDS class replaces its IPEDS GR values in the snapshot
+ * since 2026-10-11 (its previous grid matches IPEDS GR exactly: specs/data-expansion/cds-student-body-and-outcomes.md),
+ * so the federal checks here read the restored values.
+ */
+const federalOf = (id: string) => restoreFederal(structuredClone(byId(id)));
 const shard = (id: string): SchoolHistory => JSON.parse(readFileSync(join(ROOT, "data", "history", "schools", `${id}.json`), "utf8"));
 
 /** Vanderbilt's GR2024_PELL_SSL total-cohort row (PSGRTYPE 1), as published. */
@@ -108,7 +115,7 @@ test("3-class rolling average is weighted by class size and needs two classes", 
 });
 
 test("stored values: Vanderbilt, the 30-student rule, the vintage, and the cohort type (matches Scorecard's 150% rate)", () => {
-  const o = byId("221999").outcomes!;
+  const o = federalOf("221999").outcomes!;
   assert.equal(o.grad_rate_pell, 0.8934);
   assert.equal(o.grad_rate_no_pell_no_loan, 0.9422);
   assert.equal(o.grad_rate_ftft, 0.9354);
@@ -136,9 +143,11 @@ test("stored values: Vanderbilt, the 30-student rule, the vintage, and the cohor
   for (const s of withPell) {
     const h = shard(s.unit_id);
     const v = valueAt(h.series.grad_rate, 2018);
-    if (v === null || s.outcomes!.grad_rate_ftft == null) continue;
+    // The federal value, where a newer CDS class replaced it (outcomes.federal.graduation).
+    const ftft = s.outcomes!.federal?.graduation ? s.outcomes!.federal.graduation.grad_rate_ftft : s.outcomes!.grad_rate_ftft;
+    if (v === null || ftft == null) continue;
     compared++;
-    if (Math.abs(v - s.outcomes!.grad_rate_ftft) < 1e-4) same++;
+    if (Math.abs(v - ftft) < 1e-4) same++;
   }
   assert.ok(compared > 1000 && same / compared > 0.99, `${same} of ${compared} match`);
 });
@@ -154,10 +163,10 @@ test("history: Pell series from the class of 2010, race from 2005, and the lates
   const histories = new Map(files.map((id) => [id, shard(id)]));
   assert.deepEqual(gradByGroupMismatches(schools, histories), []);
   // Broken on purpose: a changed snapshot value is caught.
-  const broken = structuredClone(byId("221999"));
+  const broken = federalOf("221999");
   broken.outcomes!.grad_rate_pell = 0.5;
   assert.equal(gradByGroupMismatches([broken], histories).length, 1);
-  const brokenRace = structuredClone(byId("221999"));
+  const brokenRace = federalOf("221999");
   brokenRace.outcomes!.grad_cohorts_by_race!.black = 1;
   assert.equal(gradByGroupMismatches([brokenRace], histories).length, 1);
 });

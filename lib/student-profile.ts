@@ -649,6 +649,8 @@ export function unweightedGpa4(gpa: number | null, scale: GpaScale): number | nu
  * was converted (student-profile.md "GPA normalization"). Null when no GPA is on file.
  */
 export function gpaDisplay(academics: Pick<StudentProfileAcademics, "gpa" | "gpaScale">): string | null {
+  // A weighted GPA shows as entered (owner, 2026-10-11: "it should show as 4.4"), never converted down to a 4.0.
+  if (isWeightedGpa(academics)) return `${trimTrailingZero(academics.gpa!)} weighted`;
   const unweighted = unweightedGpa4(academics.gpa, academics.gpaScale);
   if (unweighted === null || academics.gpa === null) return null;
   const formatted = unweighted.toFixed(1);
@@ -659,6 +661,23 @@ export function gpaDisplay(academics: Pick<StudentProfileAcademics, "gpa" | "gpa
 
 function trimTrailingZero(n: number): string {
   return Number(n.toFixed(2)).toString();
+}
+
+/** A weighted GPA: entered on the weighted scale ("5.0"), or above 4.0 on the 4.0 scale (weighted by definition). */
+export function isWeightedGpa(academics: Pick<StudentProfileAcademics, "gpa" | "gpaScale">): boolean {
+  if (academics.gpa === null) return false;
+  return academics.gpaScale === "5.0" || (academics.gpaScale === "4.0" && academics.gpa > 4);
+}
+
+/**
+ * The GPA as the student entered it, for a one-line summary such as the plan's header card: "3.82", "4.4 weighted",
+ * or "93/100". Null when none is on file. The plan's rules still read the unweighted range (planGpaRange).
+ */
+export function gpaAsEntered(academics: Pick<StudentProfileAcademics, "gpa" | "gpaScale">): string | null {
+  if (academics.gpa === null) return null;
+  if (isWeightedGpa(academics)) return `${trimTrailingZero(academics.gpa)} weighted`;
+  if (academics.gpaScale === "100") return `${trimTrailingZero(academics.gpa)}/100`;
+  return academics.gpa.toFixed(2);
 }
 
 /* ------------------------------------------------------------------ */
@@ -686,10 +705,6 @@ export function planStudent(profile: Pick<StudentProfileData, "tests" | "academi
   return { gpa: unweightedGpa4(profile.academics.gpa, profile.academics.gpaScale), test: planTest(profile) };
 }
 
-/** A GPA is weighted when it's on the weighted scale, or on the 4.0 scale but above 4.0. */
-function isWeightedGpa(a: Pick<StudentProfileAcademics, "gpa" | "gpaScale">): boolean {
-  return a.gpa !== null && (a.gpaScale === "5.0" || (a.gpaScale === "4.0" && a.gpa > 4));
-}
 
 /**
  * The unweighted range the plan reads the student's GPA as (specs/planner/redesign/gpa.md "The design" 3). An

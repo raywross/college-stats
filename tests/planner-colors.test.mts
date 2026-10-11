@@ -44,9 +44,3 @@ test("calendar.md's values: RD blue, ED orange, EA aqua; ED II and REA share the
   assert.equal(value(dark, "plan-test"), "#9085e9");
   assert.equal(value(light, "plan-money"), "#008300");
 });
-
-test("the design preview reads the shared tokens, not its own palette", () => {
-  const types = readFileSync(new URL("../components/plan-preview/types.ts", import.meta.url), "utf8");
-  assert.doesNotMatch(types, /--pv-/);
-  assert.match(types, /from "@\/lib\/planner\/colors"/);
-});

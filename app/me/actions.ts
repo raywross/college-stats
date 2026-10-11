@@ -42,7 +42,7 @@ function csvField(form: FormData, name: string): string[] {
   return raw ? raw.split(/[,\n/]/).map((s) => s.trim()).filter(Boolean) : [];
 }
 
-type CourseFields = { courses?: unknown; apExamsPrivate?: unknown; coreAtTopLevel?: unknown };
+type CourseFields = { courses?: unknown; apExamsPrivate?: unknown; coreAtTopLevel?: unknown; coursePlan?: unknown; schoolOffers?: unknown };
 
 function jsonField(form: FormData, name: string): unknown {
   try {
@@ -61,15 +61,17 @@ function jsonField(form: FormData, name: string): unknown {
 async function coursesFor(form: FormData, studentId: string): Promise<CourseFields> {
   const saved = await profileFor(studentId);
   const kept = saved?.saved ? saved.data.academics : null;
+  // The course plan's dismissals and the student's school marks live in the same group; the form never carries them.
+  const plan = kept ? { coursePlan: kept.coursePlan, schoolOffers: kept.schoolOffers } : {};
   if (!form.has("courses")) {
-    return kept ? { courses: kept.courses, apExamsPrivate: kept.apExamsPrivate, coreAtTopLevel: kept.coreAtTopLevel } : {};
+    return kept ? { courses: kept.courses, apExamsPrivate: kept.apExamsPrivate, coreAtTopLevel: kept.coreAtTopLevel, ...plan } : {};
   }
   const posted = jsonField(form, "courses");
-  if (posted === undefined) return {};
+  if (posted === undefined) return { ...plan };
   const incoming = { courses: sanitizeCourses(posted), apExamsPrivate: form.get("apExamsPrivate") !== "false" };
   const merged = kept && saved ? mergeCoursesForSave({ courses: kept.courses, apExamsPrivate: kept.apExamsPrivate }, incoming, saved.relation) : incoming;
   const core = form.has("coreAtTopLevel") ? jsonField(form, "coreAtTopLevel") : kept?.coreAtTopLevel;
-  return { courses: merged.courses, apExamsPrivate: merged.apExamsPrivate, coreAtTopLevel: core };
+  return { courses: merged.courses, apExamsPrivate: merged.apExamsPrivate, coreAtTopLevel: core, ...plan };
 }
 
 /** The form's fields back into the raw shape sanitizeProfile() expects; it drops anything out of range itself. */

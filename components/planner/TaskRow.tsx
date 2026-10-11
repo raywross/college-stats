@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState, useTransition, type ReactNode } from "react";
 import { AlarmClockOff, Check } from "lucide-react";
 import { MetricLabel, Term } from "@/components/ui/info-tip";
@@ -105,6 +106,11 @@ export function TaskRow({
           {note && <span>{note}</span>}
         </div>
         {task.detail && <p className="mt-1 text-xs text-muted-foreground">{task.detail}</p>}
+        {task.kind === "cycle" && !viewer.isGuardian && task.key?.includes(":cycle:choose_courses") && (
+          <Link href="/plan?tab=scores#plan-courses" className="mt-1 inline-block text-xs font-semibold text-primary hover:underline">
+            See next year&apos;s options
+          </Link>
+        )}
         {error && (
           <p role="alert" className="mt-1 text-xs text-destructive">
             {error}

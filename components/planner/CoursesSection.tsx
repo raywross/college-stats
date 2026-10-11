@@ -31,7 +31,9 @@ export default function CoursesSection({ ctx, view }: { ctx: PlanContext; view: 
   const isGuardian = ctx.viewer.isGuardian;
   const first = ctx.student?.display_name?.trim().split(/\s+/)[0] ?? null;
   const name = isGuardian ? first : null;
-  if (courses.length === 0 && !rigor) return null;
+  // A 9th or 10th grader with no courses yet still gets the path to next year's courses (course-plan.md).
+  const hasCard = ctx.coursePlan != null && (ctx.coursePlan.kind !== "none" || ctx.coursePlan.askOffering !== null);
+  if (courses.length === 0 && !rigor && !hasCard) return null;
 
   const say = (t: string) => (isGuardian ? thirdPerson(t, first) : t);
   const offering = rigor?.offering ?? null;

@@ -73,6 +73,12 @@ export interface PlanContext {
    * student has entered nothing. A guardian's copy carries no AP exam scores while the student keeps them private.
    */
   rigor?: import("../chances/rigor-view").RigorView | null;
+  /**
+   * Chances (additive, course-plan.md): next year's course suggestions, guardrail messages, or the 9th–10th grade path,
+   * written on the server (lib/chances/course-plan-server.ts; the rules never reach the browser). Absent for a
+   * signed-out plan and when the student has no profile.
+   */
+  coursePlan?: import("../chances/course-plan-view").CoursePlanView | null;
 }
 /** The college facts stages read, cut from School on the server with citations already resolved
  *  (`citeField` → the serializable Citation the InfoTip takes). U1 defines and fills it; add fields additively. */
@@ -90,6 +96,8 @@ export interface PlanSchool { unit_id: string; name: string; city: string | null
   actRange?: [number, number] | null;
   /** Federal application fee (U5, additive): shown with the apply task. */
   applicationFee?: number | null;
+  /** Course plan (additive): the college gives credit for AP exams (`admissions.accepts_ap_credit`); cited at `cites["admissions.accepts_ap_credit"]` when true. */
+  acceptsApCredit?: boolean | null;
   /**
    * Redesign (additive): the average unweighted first-year GPA (CDS C12, `reported.admission_profile.gpa`), only when
    * the college reports it on a 4.0 unweighted scale; else null. Cited at `cites["reported.admission_profile.gpa.average"]`.

@@ -1,5 +1,5 @@
 {
-  "description": "Dates that apply to every applicant in a cycle (specs/planner/timeline.md \"The cycle file\"). One object per cycle, named by the academic year in which students apply. Reviewed in a data PR each spring when the next cycle's dates are published; checked by scripts/check-cycle.mts (npm run verify). Fixed federal and national dates, the counselors' windows, SAT and ACT dates as College Board and ACT publish them (a test date without register_by is a projected date with no registration yet; dates not yet published are left out, never guessed), and the summer list (applies: committed). SAT and ACT dates read 2026-10-08.",
+  "description": "Dates that apply to every applicant in a cycle (specs/planner/timeline.md \"The cycle file\"). One object per cycle, named by the academic year in which students apply. Reviewed in a data PR each spring when the next cycle's dates are published; checked by scripts/check-cycle.mts (npm run verify). Fixed federal and national dates, the counselors' windows, SAT and ACT dates as College Board and ACT publish them (a test date without register_by is a projected date with no registration yet; dates not yet published are left out, never guessed), the AP calendar (ordering deadline, the May exams, scores out; College Board, read 2026-10-11), the usual course-request window, and the summer list (applies: committed). SAT and ACT dates read 2026-10-08.",
   "cycles": [
     {
       "cycle": "2026-27",
@@ -197,6 +197,39 @@
           "assignee": "student",
           "source": "https://www.act.org/content/act/en/products-and-services/the-act/registration/test-dates.html",
           "detail": "Skip any date you won't test on; register before the deadline to avoid the late fee."
+        },
+        {
+          "key": "ap_order_deadline",
+          "label": "Sign up for AP exams by your school's deadline",
+          "date": "2026-11-13",
+          "applies": "ap_in_progress",
+          "assignee": "student",
+          "source": "https://apcentral.collegeboard.org/about-ap/ap-coordinators/calendar-deadlines",
+          "detail": "The College Board's final ordering deadline for fall and full-year AP courses is November 13, 2026; orders after it cost $40 more per exam, through March 12, 2027. Your AP coordinator's date is usually earlier."
+        },
+        {
+          "key": "ap_exams_2027",
+          "label": "AP exams",
+          "window": [
+            "2027-05-03",
+            "2027-05-14"
+          ],
+          "applies": "ap_in_progress",
+          "assignee": "student",
+          "source": "https://apcentral.collegeboard.org/exam-administration-ordering-scores/exam-dates",
+          "detail": "Two weeks in May, as the College Board publishes them. Your AP coordinator sets your days and room."
+        },
+        {
+          "key": "ap_scores_2027",
+          "label": "AP scores out (projected)",
+          "window": [
+            "2027-07-01",
+            "2027-07-10"
+          ],
+          "applies": "has_ap_course",
+          "assignee": "student",
+          "source": "https://apcentral.collegeboard.org/about-ap/ap-coordinators/calendar-deadlines",
+          "detail": "Early July: the 2026 scores reached students on July 6. The College Board hasn't published the 2027 date yet, so this window is projected."
         }
       ]
     },
@@ -538,6 +571,51 @@
           "assignee": "student",
           "source": "https://www.act.org/content/act/en/products-and-services/the-act/registration/test-dates.html",
           "detail": "ACT lists this date as projected; registration opens later and the date may change."
+        },
+        {
+          "key": "choose_courses_2027",
+          "label": "Choose next year's courses",
+          "window": [
+            "2027-02-01",
+            "2027-04-30"
+          ],
+          "applies": "all",
+          "assignee": "student",
+          "source": "https://bigfuture.collegeboard.org/plan-for-college/stand-out-in-high-school/how-to-start-planning-for-college-in-11th-grade",
+          "detail": "Most schools take course requests between February and April; check your school's dates. The Courses card on the Scores tab shows what fits next year."
+        },
+        {
+          "key": "ap_order_deadline",
+          "label": "Sign up for AP exams by your school's deadline",
+          "date": "2026-11-13",
+          "applies": "ap_in_progress",
+          "assignee": "student",
+          "source": "https://apcentral.collegeboard.org/about-ap/ap-coordinators/calendar-deadlines",
+          "detail": "The College Board's final ordering deadline for fall and full-year AP courses is November 13, 2026; orders after it cost $40 more per exam, through March 12, 2027. Your AP coordinator's date is usually earlier."
+        },
+        {
+          "key": "ap_exams_2027",
+          "label": "AP exams",
+          "window": [
+            "2027-05-03",
+            "2027-05-14"
+          ],
+          "applies": "ap_in_progress",
+          "assignee": "student",
+          "source": "https://apcentral.collegeboard.org/exam-administration-ordering-scores/exam-dates",
+          "detail": "Two weeks in May, as the College Board publishes them. Your AP coordinator sets your days and room."
+        },
+        {
+          "key": "ap_scores_2027",
+          "label": "AP scores out (projected)",
+          "window": [
+            "2027-07-01",
+            "2027-07-10"
+          ],
+          "applies": "has_ap_course",
+          "assignee": "student",
+          "source": "https://apcentral.collegeboard.org/about-ap/ap-coordinators/calendar-deadlines",
+          "detail": "Early July: the 2026 scores reached students on July 6. The College Board hasn't published the 2027 date yet, so this window is projected."
         }
       ]
     },
@@ -822,6 +900,63 @@
           "assignee": "student",
           "source": "https://www.act.org/content/act/en/products-and-services/the-act/registration/test-dates.html",
           "detail": "ACT lists this date as projected; registration opens later and the date may change."
+        },
+        {
+          "key": "choose_courses_2027",
+          "label": "Choose next year's courses",
+          "window": [
+            "2027-02-01",
+            "2027-04-30"
+          ],
+          "applies": "all",
+          "assignee": "student",
+          "source": "https://bigfuture.collegeboard.org/plan-for-college/stand-out-in-high-school/how-to-start-planning-for-college-in-11th-grade",
+          "detail": "Most schools take course requests between February and April; check your school's dates. The Courses card on the Scores tab shows what fits next year."
+        },
+        {
+          "key": "choose_courses_2028",
+          "label": "Choose next year's courses",
+          "window": [
+            "2028-02-01",
+            "2028-04-30"
+          ],
+          "applies": "all",
+          "assignee": "student",
+          "source": "https://bigfuture.collegeboard.org/plan-for-college/stand-out-in-high-school/how-to-start-planning-for-college-in-11th-grade",
+          "detail": "Most schools take course requests between February and April; check your school's dates. The Courses card on the Scores tab shows what fits next year."
+        },
+        {
+          "key": "ap_order_deadline",
+          "label": "Sign up for AP exams by your school's deadline",
+          "date": "2026-11-13",
+          "applies": "ap_in_progress",
+          "assignee": "student",
+          "source": "https://apcentral.collegeboard.org/about-ap/ap-coordinators/calendar-deadlines",
+          "detail": "The College Board's final ordering deadline for fall and full-year AP courses is November 13, 2026; orders after it cost $40 more per exam, through March 12, 2027. Your AP coordinator's date is usually earlier."
+        },
+        {
+          "key": "ap_exams_2027",
+          "label": "AP exams",
+          "window": [
+            "2027-05-03",
+            "2027-05-14"
+          ],
+          "applies": "ap_in_progress",
+          "assignee": "student",
+          "source": "https://apcentral.collegeboard.org/exam-administration-ordering-scores/exam-dates",
+          "detail": "Two weeks in May, as the College Board publishes them. Your AP coordinator sets your days and room."
+        },
+        {
+          "key": "ap_scores_2027",
+          "label": "AP scores out (projected)",
+          "window": [
+            "2027-07-01",
+            "2027-07-10"
+          ],
+          "applies": "has_ap_course",
+          "assignee": "student",
+          "source": "https://apcentral.collegeboard.org/about-ap/ap-coordinators/calendar-deadlines",
+          "detail": "Early July: the 2026 scores reached students on July 6. The College Board hasn't published the 2027 date yet, so this window is projected."
         }
       ]
     }

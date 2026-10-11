@@ -96,6 +96,43 @@ export interface StudentProfileAcademics {
    * answer the student gave, yes or no, is kept as given.
    */
   coreAtTopLevel: CoreAtTopLevel;
+  /**
+   * The course plan's own state for this student (specs/chances/course-plan.md): the suggestions they dismissed for
+   * this season, and whether they marked next year's schedule done. Null until one is set.
+   */
+  coursePlan: CoursePlanState | null;
+  /**
+   * "Which of these does your school offer?": AP catalog keys the student marked, kept for a school whose course list
+   * isn't on record (course-plan.md "The school's course list" 3). Never shared with other students.
+   */
+  schoolOffers: string[];
+}
+
+/** The course plan's saved choices; `season` is the school year they were made in ("2026-27"), after which they lapse. */
+export interface CoursePlanState {
+  season: string;
+  /** Suggestion ids ("ap_calculus_ab", or "subject:science" for a suggestion that names no course). */
+  dismissed: string[];
+  done: boolean;
+}
+
+/** Most dismissed suggestions and school marks a profile keeps. */
+export const COURSE_PLAN_DISMISSED_MAX = 40;
+export const SCHOOL_OFFERS_MAX = 60;
+const SEASON_RE = /^\d{4}-\d{2}$/;
+const SUGGESTION_ID_RE = /^(ap|ib)_[a-z0-9_]{1,60}$|^subject:[a-z]{2,10}$/;
+
+/** Untrusted input as the course plan's state; null when it holds nothing worth keeping. */
+export function sanitizeCoursePlan(input: unknown): CoursePlanState | null {
+  if (!isObj(input) || typeof input.season !== "string" || !SEASON_RE.test(input.season)) return null;
+  const dismissed = arr(input.dismissed, (x) => (typeof x === "string" && SUGGESTION_ID_RE.test(x) ? x : null), COURSE_PLAN_DISMISSED_MAX);
+  const done = input.done === true;
+  return dismissed.length === 0 && !done ? null : { season: input.season, dismissed, done };
+}
+
+/** Untrusted input as marked AP course keys: only keys in the AP catalog, each once. */
+export function sanitizeSchoolOffers(input: unknown): string[] {
+  return arr(input, (x) => (typeof x === "string" && isCatalogKeyFor("ap", x) ? x : null), SCHOOL_OFFERS_MAX);
 }
 
 /** The five subjects the counselor's "most demanding" question asks about. */
@@ -218,7 +255,7 @@ export const LOCAL_PROFILE_KEY = "student-profile";
 export function emptyProfile(): StudentProfileData {
   return {
     basics: { gradYear: null, stateOfResidence: null, highSchool: null, highSchoolId: null, feeWaiverEligible: null },
-    academics: { gpa: null, gpaScale: "4.0", weightedGpa: null, classRankPercentile: null, courseRigorCount: null, courses: [], apExamsPrivate: true, coreAtTopLevel: emptyCoreAtTopLevel() },
+    academics: { gpa: null, gpaScale: "4.0", weightedGpa: null, classRankPercentile: null, courseRigorCount: null, courses: [], apExamsPrivate: true, coreAtTopLevel: emptyCoreAtTopLevel(), coursePlan: null, schoolOffers: [] },
     tests: {
       satTotal: null,
       satReading: null,
@@ -331,6 +368,8 @@ export function sanitizeProfile(input: unknown): StudentProfileData {
     courses,
     apExamsPrivate: ac.apExamsPrivate !== false,
     coreAtTopLevel: sanitizeCoreAtTopLevel(ac.coreAtTopLevel),
+    coursePlan: sanitizeCoursePlan(ac.coursePlan),
+    schoolOffers: sanitizeSchoolOffers(ac.schoolOffers),
   };
 
   const t = isObj(input.tests) ? input.tests : {};

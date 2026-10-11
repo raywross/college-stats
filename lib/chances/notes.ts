@@ -138,6 +138,44 @@ export const NOTES: Record<NoteKey, Note> = {
   "estimate.move_up": (v) => `A ${s(v, "score")} on the ${s(v, "test")} would make ${s(v, "college")} a ${s(v, "group")}.`,
   "estimate.group_change": (v) => `At ${s(v, "college")}: ${s(v, "from")} → ${s(v, "to")}, if your grades stay strong.`,
   "estimate.balance_guaranteed": (v) => `including ${plural(v, "count", "guaranteed college")}`,
+
+  /* ---- The course plan (course-plan.md "The rules"), added by the course-plan unit ---- */
+  /** A college's unit requires a course level ("Cornell Engineering requires physics."). */
+  "course_plan.required": (v) => `${s(v, "who")} requires ${s(v, "level")}. ${s(v, "course")} is offered at your school and fits next year.`,
+  /** A college's unit asks for a score a course's exam can give. */
+  "course_plan.gate": (v) => `${s(v, "who")} asks applicants for a ${s(v, "what")} score. ${s(v, "course")} is offered at your school and fits next year, and its exam is one way to show it.`,
+  "course_plan.recommended": (v) =>
+    `${s(v, "count")} of your ${s(v, "total")} colleges recommend ${plural(v, "years", "year")} of ${s(v, "subject")}; you're on track for ${s(v, "have")}. ${s(v, "course")} would make it ${s(v, "years")}.`,
+  /** The same with no course named: a fourth year of the subject. */
+  "course_plan.recommended_subject": (v) =>
+    `${s(v, "count")} of your ${s(v, "total")} colleges recommend ${plural(v, "years", "year")} of ${s(v, "subject")}; you're on track for ${s(v, "have")}. ${s(v, "ordinal")} year of ${s(v, "subject")} would make it ${s(v, "years")}.`,
+  /** One college on the list (the Dream) recommends it. */
+  "course_plan.recommended_dream": (v) =>
+    `${s(v, "college")} recommends ${plural(v, "years", "year")} of ${s(v, "subject")}; you're on track for ${s(v, "have")}. ${s(v, "course")} would make it ${s(v, "years")}.`,
+  "course_plan.recommended_dream_subject": (v) =>
+    `${s(v, "college")} recommends ${plural(v, "years", "year")} of ${s(v, "subject")}; you're on track for ${s(v, "have")}. ${s(v, "ordinal")} year of ${s(v, "subject")} would make it ${s(v, "years")}.`,
+  "course_plan.top_level": (v) => `${s(v, "course")} would put your ${s(v, "subject")} at your school's top level next year.`,
+  "course_plan.next_step": (v) => `${s(v, "course")} is the next advanced ${s(v, "subject")} course at your school.`,
+  /** The school's count is known but not which courses. */
+  "course_plan.top_level_subject": (v) =>
+    `Your school offers AP courses. A course in ${s(v, "subject")} at its top level would be an advanced choice next year; your counselor can tell you which one.`,
+  /** `tail`: "is next in your science sequence" or "fits next year". */
+  "course_plan.major": (v) => `${s(v, "major")} programs commonly expect ${s(v, "expects")}; ${s(v, "course")} ${s(v, "tail")}.`,
+  "course_plan.weak_grades": (v) => `Strong grades in the advanced courses you have count for more than adding another. Your grades in them: ${s(v, "gpa")}.`,
+  "course_plan.weak_grades_recent": () => "Strong grades in the advanced courses you have count for more than adding another.",
+  "course_plan.already": () => "Your schedule is already about as demanding as your school allows. Keep the grades up.",
+  "course_plan.full_load": () => "Next year already has a full load of advanced courses. Depth in a few counts for more than another.",
+  "course_plan.late": () => "Senior grades still count: colleges see midyear grades, and an offer can depend on finishing the year well.",
+  "course_plan.set": () => "Nothing to add for next year. Your schedule looks set.",
+  "course_plan.dismissed": () => "You've set these aside for this season.",
+  "course_plan.not_offered": () => "If your school doesn't offer it, colleges know. Dual enrollment or an online course is an option, not an expectation.",
+  "course_plan.no_school": () => "Add your high school to see which advanced courses are offered there.",
+  "course_plan.no_list": () => "We don't have your school's course list yet. Mark the courses it offers to see suggestions.",
+  "course_plan.path": (v) => `To take ${s(v, "course")} as a ${s(v, "senior")}, take ${s(v, "steps")}.`,
+  /** "It would make your schedule most of what your school offers." */
+  "course_plan.reading_moves": (v) => `It would make your schedule ${s(v, "label")}.`,
+  /** The You column's line on the college profile. */
+  "course_plan.profile_line": (v) => `${s(v, "subject")}: ${s(v, "recommended")} recommended, you're on track for ${s(v, "have")}. See next year's options in your plan.`,
 };
 
 /** The input kinds in words, for "Adding your … could change this estimate" and the "what went into it" panel. */

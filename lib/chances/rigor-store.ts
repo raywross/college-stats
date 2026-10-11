@@ -48,6 +48,8 @@ export type MyCourseState =
       courses: CourseEntry[];
       coreAtTopLevel: CoreAtTopLevel;
       highSchoolId: string | null;
+      /** The class year, so a static page can tell whether a year of choosing remains (the You column's line). */
+      gradYear: number | null;
       majors: string[];
       view: RigorView | null;
     };
@@ -57,11 +59,11 @@ export async function myCourseState(): Promise<MyCourseState> {
   const user = await getUser().catch(() => null);
   if (!user) return { signedIn: false };
   const profile = await myOwnProfile().catch(() => null);
-  if (!profile) return { signedIn: true, courses: [], coreAtTopLevel: sanitizeProfile(null).academics.coreAtTopLevel, highSchoolId: null, majors: [], view: null };
+  if (!profile) return { signedIn: true, courses: [], coreAtTopLevel: sanitizeProfile(null).academics.coreAtTopLevel, highSchoolId: null, gradYear: null, majors: [], view: null };
   const { courses, coreAtTopLevel } = profile.academics;
   const hasAny = courses.length > 0 || hasCore(coreAtTopLevel);
-  const view = hasAny ? await rigorViewFor({ courses, coreAtTopLevel, highSchoolId: profile.basics.highSchoolId, grade: gradeNow(profile.basics.gradYear, today()) }) : null;
-  return { signedIn: true, courses, coreAtTopLevel, highSchoolId: profile.basics.highSchoolId, majors: profile.plans.intendedMajors, view };
+  const view = hasAny ? await rigorViewFor({ courses, coreAtTopLevel, highSchoolId: profile.basics.highSchoolId, grade: gradeNow(profile.basics.gradYear, today()), studentMarks: profile.academics.schoolOffers }) : null;
+  return { signedIn: true, courses, coreAtTopLevel, highSchoolId: profile.basics.highSchoolId, gradYear: profile.basics.gradYear, majors: profile.plans.intendedMajors, view };
 }
 
 /** A school's offering for the picker's chips; null without a record. */

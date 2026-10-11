@@ -2668,7 +2668,7 @@
         "acceptanceRate": 0.7445,
         "avgCost": 31319,
         "outOfState": 0.0147,
-        "testOptionalShare": 0.7464
+        "testOptionalShare": 0.7391
       },
       "all": {
         "key": "all",
@@ -11049,7 +11049,7 @@
         "acceptanceRate": 0.7068,
         "avgCost": 33912,
         "outOfState": 0.1141,
-        "testOptionalShare": 0.8451
+        "testOptionalShare": 0.8169
       },
       "all": {
         "key": "all",
@@ -21965,7 +21965,7 @@
         "acceptanceRate": 0.8205,
         "avgCost": 28858,
         "outOfState": 0.1446,
-        "testOptionalShare": 0.9402
+        "testOptionalShare": 0.9316
       },
       "all": {
         "key": "all",
@@ -25556,7 +25556,7 @@
         "acceptanceRate": 0.8387,
         "avgCost": 20587,
         "outOfState": 0.0188,
-        "testOptionalShare": 0.73
+        "testOptionalShare": 0.72
       },
       "all": {
         "key": "all",
@@ -27637,7 +27637,7 @@
         "acceptanceRate": 0.833,
         "avgCost": 28253,
         "outOfState": 0.1016,
-        "testOptionalShare": 0.7241
+        "testOptionalShare": 0.7586
       },
       "all": {
         "key": "all",

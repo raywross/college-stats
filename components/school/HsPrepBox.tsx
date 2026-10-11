@@ -4,6 +4,7 @@ import type { FieldPath } from "@/lib/fields";
 import { collegePrepSentence, completionSentence, showsHsPrep, unitRows } from "@/lib/cds/application-logistics-display";
 import { Block } from "@/components/profile/Panel";
 import { InfoTip, MetricLabel } from "@/components/ui/info-tip";
+import { majorUnitCites } from "@/lib/chances/fact-cites";
 import { HsPrepTable } from "./HsPrepTable";
 
 /**
@@ -50,6 +51,9 @@ export function HsPrepBox({ school, cite, id }: { school: School; cite: (path: F
         recommended={{ total: rec?.total ?? null, summed: !!rec?.total_summed }}
         citedRequired={cite("reported.admissions_hs_prep.units_required", school)}
         citedRecommended={cite("reported.admissions_hs_prep.units_recommended", school)}
+        unitId={school.unit_id}
+        college={school.name}
+        majorCites={majorUnitCites(school, cite)}
       />
       <p className="mt-2 text-xs text-muted-foreground">
         A unit is a year of the subject; lab science is part of science.

@@ -8,8 +8,12 @@ import "server-only";
 import { estimateContext, estimateMany } from "@/lib/chances/estimate";
 import { gradeNow, withoutExams } from "@/lib/chances/courses";
 import { estimateInputFromProfile } from "@/lib/chances/snapshot";
+import { citedPaths, isEstimateFactPath } from "@/lib/chances/what-went-in";
 import type { EstimateResult } from "@/lib/chances/types";
+import { getData } from "@/lib/data";
+import type { FieldPath } from "@/lib/fields";
 import type { StudentProfileData } from "@/lib/student-profile";
+import type { PlanSchool } from "./types";
 
 export async function planEstimates(
   profile: StudentProfileData | null,
@@ -27,4 +31,24 @@ export async function planEstimates(
     console.error(`planner: estimates failed: ${err instanceof Error ? err.message : String(err)}`);
     return {};
   }
+}
+
+/**
+ * The plan's colleges with the citations their estimates name added to `cites`, so the row drawer's "What went into
+ * this estimate" can show a source beside each fact (the plan page resolves them here because the browser has no
+ * dataset). Only the fields an estimate cites, only where the estimate cites them; a college without an estimate is
+ * unchanged.
+ */
+export async function withFactCites(schools: Record<string, PlanSchool>, estimates: Record<string, EstimateResult>): Promise<Record<string, PlanSchool>> {
+  const { getSchoolById, citeField } = await getData();
+  const out = { ...schools };
+  for (const [id, est] of Object.entries(estimates)) {
+    const planSchool = schools[id];
+    const school = getSchoolById(id);
+    if (!planSchool || !school) continue;
+    const cites = { ...planSchool.cites };
+    for (const path of citedPaths(est)) if (isEstimateFactPath(path) && !(path in cites)) cites[path] = citeField(path as FieldPath, school);
+    out[id] = { ...planSchool, cites };
+  }
+  return out;
 }

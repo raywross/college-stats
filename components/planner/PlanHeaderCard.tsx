@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Pencil } from "lucide-react";
+import { MostUsefulInput } from "@/components/chances/MostUsefulInput";
 import NumbersForm from "@/components/planner/NumbersForm";
 import { PlanCoursesSheet } from "@/components/planner/PlanCoursesSheet";
 import { Term } from "@/components/ui/info-tip";
@@ -80,6 +81,7 @@ export function PlanHeaderCard({
       ) : (
         <p className="mt-4 flex flex-wrap items-center gap-2 rounded-2xl bg-muted/60 px-3 py-2 text-sm">{numbersLine}</p>
       )}
+      {!editing && <MostUsefulInput estimates={view.estimates} className="mt-2 px-3" />}
       {!editing && ctx.viewer.canEdit && (
         <>
           <button

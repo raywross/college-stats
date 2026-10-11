@@ -138,6 +138,32 @@ published examples, no model code in client chunks, rate limits, notes only from
   A row without an estimate keeps its stored group and is never rewritten. The retake card is built from the
   estimates' move-ups. The session is read only to pick the limit; the profile's single-college check needs none.
 
+## As built (2026-10-11, the estimate on the site)
+- `lib/chances/what-went-in.ts` (pure) sorts a result's notes into the label, the two stage lines, the college's facts,
+  "not used", and one prompt; lists the student's entries the estimate used; names the rate kind for Compare
+  (`rateKindText`); and picks the numbers card's most useful missing input (`mostUsefulMissing`: the input most
+  estimates ask for and also list as missing, so the line never appears where no group could change).
+  `components/chances/WhatWentIn.tsx` renders only `noteText` of result notes, the student's entries, and an (i) per
+  cited fact; a note key the catalog lacks renders nothing.
+- Citations: the college page resolves every field an estimate can cite (`ESTIMATE_FACT_PATHS`,
+  `lib/chances/fact-cites.ts`) on the server; the plan loader resolves the ones its estimates name
+  (`withFactCites`). A test sweeps real estimates and fails if one cites a field outside the list.
+- Profile: `StandingChip` (hero, overview admissions card) and `StandingSection`/`StandingCard` (admissions page,
+  `#standing`, before "What they look at"). The page is static, so the card asks `myStandingInput` (a Server Action:
+  the signed-in student's numbers, nothing else) or reads the browser-kept profile, then `POST /api/estimate` with
+  `likeYou: true` for the one college. Signed out keeps the score checker, adds "Save your scores to see this
+  everywhere" and a major picker that keeps its pick in the browser profile.
+- `POST /api/estimate` also takes `context: { coreAtTopLevel, grade }` (what the server load passes besides the
+  student; the numbers form and the signed-out plan send it too) and `likeYou` (single college; returns
+  `likeYou: { n, admitted, seasons, residency } | null`, picked inside `estimateWithLikeYou` so the method's details
+  stay in the estimate module). `/api/estimate` is in the session-refresh matcher.
+- Planner: the row drawer shows the label and stage lines, `WhatWentIn`, and a link to "How X reads a record"
+  (`/schools/{id}/admissions#factors`); the header card and the signed-out plan show the most useful missing input.
+- Compare: a "Where you stand" block on the Getting in page for a signed-in student with numbers, naming the rate
+  kind under each estimate. Explore's facet stays deferred.
+- Telemetry: `estimate_shown` (`group`, `label`, `model_version`; snake_case like every registered property) from the
+  card and the drawer.
+
 ## Open questions
 1. At launch, private package or a separate service (a Supabase Edge Function or a small API)? Recommendation: a
    private package (one deploy, no network hop); a service later if the model grows heavy or needs its own data.

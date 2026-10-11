@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { Heart, Search } from "lucide-react";
+import { MostUsefulInput } from "@/components/chances/MostUsefulInput";
 import { useLocalProfile } from "@/components/me/useLocalProfile";
 import { useNumbersDraft, NumbersFields } from "@/components/planner/NumbersForm";
 import { useEstimates } from "@/components/planner/useEstimates";
@@ -343,6 +344,8 @@ export default function SignedOutPlan() {
       </section>
 
       <NumbersFields draft={draft} />
+
+      <MostUsefulInput estimates={estimates} />
 
       <div>
         <button

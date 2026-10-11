@@ -206,6 +206,39 @@ export const NOTES: Record<NoteKey, Note> = {
   "estimate.rank_in": (v) => `Your class rank (${s(v, "rank")}) is in the middle of first-years whose high school reported a rank.`,
   "estimate.rank_below": (v) => `Your class rank (${s(v, "rank")}) is lower than most first-years' whose high school reported a rank.`,
   "estimate.rank_reason_quarter": (v) => `Of the first-years whose high school reported a rank, ${s(v, "share")} were in the top quarter.`,
+
+  /* Added by the estimate display (components/chances/, specs/chances/estimate.md "What families see"). */
+  /** The panel's headings. */
+  "estimate.panel_yours": () => "Your numbers",
+  "estimate.panel_college": (v) => `${s(v, "college")}'s numbers`,
+  "estimate.panel_also": () => "Also looked at",
+  "estimate.panel_not_used": () => "Not used here",
+  /** The two labels as chips say them. */
+  "estimate.label.reach_for_everyone": () => "Reach for everyone",
+  "estimate.label.guaranteed": () => "Guaranteed for you",
+  /** The profile card's heading and the chip's accessible name. */
+  "estimate.card_title": () => "Where you stand",
+  "estimate.card_chip": (v) => `Quad's estimate: ${s(v, "group")}`,
+  /** Signed out, under the score checker. */
+  "estimate.save_prompt": () => "Save your scores to see this everywhere.",
+  /** Signed in without a GPA or a test. */
+  "estimate.add_numbers": () => "Add a GPA or a test score to see Quad's estimate for this college.",
+  "estimate.unavailable": () => "Quad's estimate isn't available right now. Try again in a moment.",
+  /** Students like you (calibration.md): `from` is " from Indiana" for a residency rate, else empty. */
+  "estimate.like_you": (v) =>
+    `Of ${s(v, "n")} students on Quad with numbers like yours who applied to ${s(v, "college")}${s(v, "from")} in the last three seasons, ${s(v, "admitted")} were admitted.`,
+  /** The caveats shown with every estimate (chances-and-fit.md "Caveats shown every time"). */
+  "estimate.caveat.holistic": () =>
+    "Colleges read essays, recommendations, courses, and context; numbers alone don't decide. Target means your numbers are typical of admitted students, not that you're likely to be admitted.",
+  "estimate.caveat.enrolled": () => "Ranges describe enrolled students, who are a subset of admitted ones.",
+  "estimate.caveat.hooked": () => "Recruited athletes, legacies, and other hooked applicants are inside the ranges; unhooked applicants may need to be higher.",
+  "estimate.caveat.afford": () => "If a college is unaffordable it isn't a Likely, whatever the estimate says. Check what it would cost your family.",
+  /** Compare's row: the rate behind the estimate, under it. */
+  "estimate.compare_none": () => "Add a number to see",
+  /** The signed-out major picker on the admissions page. */
+  "major.pick_prompt": () => "Pick an intended major to see how this college reads it.",
+  "major.pick_label": () => "Intended major",
+  "major.no_statement": (v) => `${s(v, "college")} hasn't said how it treats this major.`,
 };
 
 /** "Your GPA (3.82)", or a described range set off by commas: "Your GPA, about 3.4–4.0 unweighted (from a weighted 4.4),". */

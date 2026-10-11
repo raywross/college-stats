@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { useMyCourses } from "@/components/me/useMyCourses";
 import { LocalCoursesSheet } from "@/components/profile/LocalCoursesSheet";
-import { MetricLabel, Term } from "@/components/ui/info-tip";
+import { MetricLabel, SourceTip, Term } from "@/components/ui/info-tip";
 import { noteText } from "@/lib/chances/notes";
 import type { AnyCited } from "@/lib/lineage";
 
@@ -15,7 +15,16 @@ import type { AnyCited } from "@/lib/lineage";
  * kept in the browser, then the same sentence. The college profile is static, so the list arrives after mount
  * (useMyCourses) and the reading's sentences come from the server: nothing here knows how a reading is decided.
  */
-export function RigorLine({ college, rating }: { college: string; rating: { label: string; cited: AnyCited } | null }) {
+export function RigorLine({
+  college,
+  rating,
+  gpaShare,
+}: {
+  college: string;
+  rating: { label: string; cited: AnyCited } | null;
+  /** The share of first-years with a 3.75 or higher, formatted ("71%"), with its citation (derived.gpa_top_share); null where unknown or the college reports weighted GPAs. */
+  gpaShare?: { value: string; cited: AnyCited } | null;
+}) {
   const mine = useMyCourses();
   const [open, setOpen] = useState(false);
   if (mine.status !== "ready") return null;
@@ -41,7 +50,16 @@ export function RigorLine({ college, rating }: { college: string; rating: { labe
           ))}
           {rating && (
             <p className="mt-2 text-muted-foreground">
-              <MetricLabel cited={rating.cited}>{noteText({ key: "rigor.college_rating", values: { college, rating: rating.label } })}</MetricLabel>
+              {gpaShare ? (
+                // The college's rating tied to how common a high GPA is there: the two facts that make the courses behind a GPA matter.
+                <>
+                  {noteText({ key: "rigor.college_tie", values: { college, rating: rating.label, share: gpaShare.value } })}
+                  <SourceTip cited={rating.cited} className="ml-1 align-middle" />
+                  <SourceTip cited={gpaShare.cited} className="ml-0.5 align-middle" />
+                </>
+              ) : (
+                <MetricLabel cited={rating.cited}>{noteText({ key: "rigor.college_rating", values: { college, rating: rating.label } })}</MetricLabel>
+              )}
             </p>
           )}
           <p className="mt-2">

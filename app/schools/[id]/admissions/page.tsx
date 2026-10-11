@@ -20,6 +20,7 @@ import { DistributionStrip } from "@/components/charts/DistributionStrip";
 import { ScatterPlot } from "@/components/charts/ScatterPlot";
 import { AdmissionFactors } from "@/components/school/AdmissionFactors";
 import { ReadingTheRecord } from "@/components/school/ReadingTheRecord";
+import { StandingSection } from "@/components/chances/StandingSection";
 import { readingWithMajor } from "@/lib/chances/reading-major";
 import { shortName } from "@/lib/brand";
 import { ScoreCheckerWithProfile as ScoreChecker } from "@/components/me/ScoreCheckerWithProfile";
@@ -111,6 +112,7 @@ export default async function AdmissionsPage({ params }: Props) {
     ...(publishesResidencyRates(school) ? [{ id: "residency", label: "Where applicants live" }] : []),
     { id: "yield", label: "Yield" },
     ...(hasEarly ? [{ id: "early", label: "Applying early" }] : []),
+    { id: "standing", label: "Where you stand" },
     { id: "factors", label: "What they look at" },
     ...(transferCard(school) ? [{ id: "transfer", label: "Transferring in" }] : []),
     ...(applyingLines(school).length ? [{ id: "applying", label: "Applying" }] : []),
@@ -257,6 +259,8 @@ export default async function AdmissionsPage({ params }: Props) {
             <EarlyRounds school={school} id="early" />
           </div>
         )}
+        {/* Quad's estimate for a visitor with numbers, and the major picker for one without an account (the card fills in after mount). */}
+        <StandingSection school={school} id="standing" className="mt-4" />
         {(a.factors || cdsProfile?.factors || reading) && (
           <div id="factors" className={`mt-4 ${BLOCK_SCROLL}`}>
             {reading && <ReadingTheRecord school={school} block={reading} className="mb-4" />}

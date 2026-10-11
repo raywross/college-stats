@@ -39,6 +39,10 @@ async function rows<T>(table: string, query: PromiseLike<{ data: T[] | null; err
 
 const inList = (ids: string[]) => (ids.length ? ids : ["00000000-0000-0000-0000-000000000000"]);
 
+/** The student's own inputs and the estimate they saw; the measurement-only columns (position, groups without an input) are the method's and stay out. */
+const SNAPSHOT_EXPORT_COLUMNS =
+  "student_id, unit_id, season, applied_on, round, gpa, gpa_low, gpa_high, gpa_scale, test_kind, test_score, sat_math, act_math, class_rank_pct, state, majors, practice, advanced_courses, advanced_planned, honors_courses, advanced_gpa, math_gpa, science_gpa, hs_ap_band, hs_ib, hs_dual, estimate_group, estimate_label, model_version, student_group, group_changed, consented, created_at";
+
 /** The registry. Later units append their tables here (keep keys unique; tests check). */
 export const ACCOUNT_EXPORTERS: AccountExporter[] = [
   {
@@ -200,6 +204,22 @@ export const ACCOUNT_EXPORTERS: AccountExporter[] = [
         nudges_received: nudgesReceived,
         sms_consents: [...consentsSelf, ...consentsStudent],
       };
+    },
+  },
+  {
+    key: "application_snapshots",
+    description:
+      "Your numbers as of the day each college was marked applied (rounded), the group Quad's estimate gave, the group you picked, and whether you share outcomes (specs/chances/calibration.md), for your own and managed students.",
+    run: async ({ supabase, studentIds }) => {
+      const { data, error } = await supabase
+        .from("application_snapshots")
+        .select(SNAPSHOT_EXPORT_COLUMNS)
+        .in("student_id", inList(studentIds))
+        .order("applied_on");
+      // Before the snapshot migration is applied there's nothing to export.
+      if (error && (error.code === "42P01" || error.code === "PGRST205" || /does not exist|schema cache/i.test(error.message))) return [];
+      if (error) throw new Error(`export: reading application_snapshots failed: ${error.message}`);
+      return data ?? [];
     },
   },
   {

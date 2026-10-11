@@ -6,7 +6,7 @@ import { Copy, Pencil, Plus } from "lucide-react";
 import { OfferForm } from "@/components/planner/OfferForm";
 import { SheetDialog } from "@/components/ui/sheet-dialog";
 import type { FallbackCoa, OfferDraft } from "@/lib/planner/offers";
-import { consentOutcomeShare, setProsCons, withdrawCollege } from "@/lib/planner/store-offers";
+import { consentOutcomeShare, deleteApplicationSnapshots, setProsCons, withdrawCollege } from "@/lib/planner/store-offers";
 import { cn } from "@/lib/utils";
 
 const pill = "inline-flex min-h-11 items-center gap-1.5 rounded-full border px-4 text-sm font-semibold hover:bg-muted disabled:opacity-60 sm:min-h-9";
@@ -172,9 +172,31 @@ export function OutcomeShareConsent({ listId, consented, canChange, studentName 
         <span>
           Add where {studentName ?? "I"} went to the site&apos;s pooled results (the college, the round, the outcome, whether you enrolled, a broad standing band, and your state; no name, no money, no notes), so
           next year&apos;s families see real outcomes. You can turn this off any time.
+          <span className="mt-1 block text-xs text-muted-foreground">
+            This also shares the numbers saved the day each college was marked applied (GPA, scores, and course counts, rounded, with the group Quad&apos;s
+            estimate gave), which measure how well the estimate did. Without this, they stay private and are deleted when the season ends.
+          </span>
           {!canChange && <span className="block text-xs text-muted-foreground">Only {studentName ?? "the student"} can change this.</span>}
         </span>
       </label>
+      {canChange && (
+        <button
+          type="button"
+          disabled={pending}
+          className="ml-6 text-xs font-semibold text-muted-foreground underline underline-offset-2 hover:text-foreground disabled:opacity-60"
+          onClick={() => {
+            if (!window.confirm("Delete the numbers saved when each college was marked applied? This can't be undone.")) return;
+            startTransition(async () => {
+              setMessage(null);
+              const r = await deleteApplicationSnapshots(listId);
+              if (!r.ok) return setMessage(r.message);
+              router.refresh();
+            });
+          }}
+        >
+          Delete the numbers saved when you applied
+        </button>
+      )}
       {message && (
         <p role="alert" className="text-xs text-destructive">
           {message}

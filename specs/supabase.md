@@ -57,6 +57,8 @@ into the deploy for that reason.
 | `dataset_change_staging` | Staged changes between `stage_dataset_changes()` and `publish_changes()` | Secret key only |
 | `college_data_failures` | Colleges where the college-reported pipeline failed, one row per college and reason code, with `resolved_at` ([college-data-failures.md](college-data-failures.md)) | Secret key only |
 | `high_schools`, `high_school_details`, `high_school_files`, `search_high_schools()` | The high-school dataset and its trigram search ([high-school-data.md](product/high-school-data.md)) | Public read |
+| `application_snapshots`, `record_application_snapshot()`, `chances_like_you()`, `chances_outcome_rows()`, `delete_unconsented_snapshots()` | The student's binned inputs and estimate the day a college is marked applied ([calibration.md](chances/calibration.md#as-built)) | The list's readers read; written through the function; the summary's read and the cleanup are secret key only |
+| `chances_summary` | The season accuracy summary the Data page shows: counts and intervals only | Public read; secret key writes |
 | Accounts, households, invitations, student profiles, lists, follows, notification prefs, digests, and the rest | [accounts.md](product/accounts.md), [household-hub.md](product/household-hub.md), [saved-lists.md](product/saved-lists.md), [follow-colleges.md](product/follow-colleges.md) | Per policy |
 
 **Retired on 2026-10-07** by `supabase/migrations/20261007130000_retire_dataset_tables.sql`: `schools`,

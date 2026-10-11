@@ -1,0 +1,29 @@
+{
+  "description": "Published automatic-admission programs (specs/chances/base-rates.md \"Automatic admission\"): one entry per program and entering fall, each checked against the college's, system's, or state agency's own page or notice, with its words quoted. `fall` lists the entering falls the rule is published for; the file's `cycle` is the fall the current application season enters. Checked by scripts/check-guaranteed-admission.mts (npm run verify): an entry whose falls are all past fails. Re-verified each August in a data PR.",
+  "cycle": 2027,
+  "checked": "2026-10-11",
+  "programs": [
+    {
+      "id": "tx-auto-ut-austin-2027",
+      "name": "Texas automatic admission, UT Austin",
+      "unit_ids": ["228778"],
+      "state": "TX",
+      "rule": {
+        "class_rank_top_pct": 5,
+        "gpa_min": null,
+        "resident": true,
+        "curriculum": "Distinguished level of achievement under the Foundation High School Program"
+      },
+      "scope": "campus",
+      "major_guaranteed": false,
+      "fall": [2027],
+      "source": {
+        "publisher": "Texas Education Agency (notice from The University of Texas at Austin)",
+        "url": "https://tea.texas.gov/sites/default/files/taa-2025-12-18-the-university-of-texas-at-austin-automatic-admission-policy.pdf",
+        "retrieved": "2026-10-11",
+        "quote": "The University has determined that it will automatically admit all eligible summer/fall 2027 and spring 2028 freshman applicants who rank within the top 5% of their high school graduating classes.",
+        "verified_via": "search"
+      }
+    }
+  ]
+}

@@ -2,7 +2,7 @@
 
 import { refresh } from "next/cache";
 import { requireUser } from "@/lib/auth";
-import { importLocalProfile, saveProfile } from "@/lib/student-profile-store";
+import { importLocalProfile, profileFor, saveProfile } from "@/lib/student-profile-store";
 import type { StudentProfileData } from "@/lib/student-profile";
 
 export type ProfileSaveState = { status: "idle" } | { status: "saved" } | { status: "error"; message: string };
@@ -41,8 +41,26 @@ function csvField(form: FormData, name: string): string[] {
   return raw ? raw.split(/[,\n/]/).map((s) => s.trim()).filter(Boolean) : [];
 }
 
+/**
+ * The course list (specs/chances/rigor-in-context.md): from a "courses" JSON field when the form carries one (the
+ * course picker), else the list already saved, so a form without the picker never erases it. The courseRigorCount
+ * field then adds or removes only unnamed rows (sanitizeProfile).
+ */
+async function coursesFor(form: FormData, studentId: string): Promise<{ courses?: unknown; apExamsPrivate?: unknown }> {
+  if (form.has("courses")) {
+    try {
+      return { courses: JSON.parse(String(form.get("courses"))), apExamsPrivate: form.get("apExamsPrivate") !== "false" };
+    } catch {
+      return {};
+    }
+  }
+  const saved = await profileFor(studentId);
+  if (!saved?.saved) return {};
+  return { courses: saved.data.academics.courses, apExamsPrivate: saved.data.academics.apExamsPrivate };
+}
+
 /** The form's fields back into the raw shape sanitizeProfile() expects; it drops anything out of range itself. */
-function profileFromForm(form: FormData): unknown {
+function profileFromForm(form: FormData, courses: { courses?: unknown; apExamsPrivate?: unknown } = {}): unknown {
   return {
     basics: {
       gradYear: numField(form, "gradYear"),
@@ -57,6 +75,7 @@ function profileFromForm(form: FormData): unknown {
       weightedGpa: numField(form, "weightedGpa"),
       classRankPercentile: numField(form, "classRankPercentile"),
       courseRigorCount: numField(form, "courseRigorCount"),
+      ...courses,
     },
     tests: {
       satTotal: numField(form, "satTotal"),
@@ -89,7 +108,7 @@ export async function saveStudentProfile(_prev: ProfileSaveState, form: FormData
   await requireUser("/me");
   const studentId = String(form.get("student_id") ?? "");
   if (!studentId) return { status: "error", message: "Missing student." };
-  const result = await saveProfile(studentId, profileFromForm(form));
+  const result = await saveProfile(studentId, profileFromForm(form, await coursesFor(form, studentId)));
   if (!result.ok) return { status: "error", message: result.message };
   refresh();
   return { status: "saved" };

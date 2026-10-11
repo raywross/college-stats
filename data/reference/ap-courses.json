@@ -1,0 +1,1098 @@
+{
+  "cycle": "2026-27",
+  "source": {
+    "publisher": "College Board",
+    "url": "https://apstudents.collegeboard.org/courses",
+    "retrieved": "2026-10-11",
+    "note": "Course names, subjects, and pages are the College Board's: the 40 courses offered in 2025-26 plus the two AP Career Kickstart courses new for 2026-27 (AP Business with Personal Finance, AP Cybersecurity), 42 in all. The College Board site couldn't be opened from the build environment; names and pages were checked through web search results from collegeboard.org on 2026-10-11. `confirmed: true` marks a course whose name and page appeared there; `confirmed: false` marks a page address that follows the site's pattern but wasn't seen, to recheck in the next data PR. AP Networking (pilot 2026-27, national launch fall 2027) isn't listed yet."
+  },
+  "editorial": "Editorial, not the College Board's: `core` (counts toward a core subject: English, math, science, history and social science, or world language), `grades` (the usual grade levels), `prereqs` (every entry is usually needed first: a catalog key, or a course level such as \"level:Algebra II\" that a non-AP course meets), `next` (the usual next courses in the sequence), `majors` (two-digit CIP families from lib/majors.ts the course relates to), and `aliases` (how school profiles commonly print the course). Written from the College Board's course descriptions and common high school sequences; reviewed in data PRs. Read by the course picker and the course plan (specs/chances/rigor-in-context.md, course-plan.md).",
+  "courses": [
+    {
+      "key": "ap_2d_art_and_design",
+      "name": "AP 2-D Art and Design",
+      "subject": "arts",
+      "core": false,
+      "grades": [
+        10,
+        11,
+        12
+      ],
+      "prereqs": [
+        "level:Art I"
+      ],
+      "next": [],
+      "majors": [
+        "50"
+      ],
+      "url": "https://apstudents.collegeboard.org/courses/ap-2-d-art-and-design",
+      "confirmed": false,
+      "aliases": [
+        "2D Art and Design",
+        "2-D Design",
+        "Studio Art 2-D",
+        "2D Art and Design (Photo)",
+        "Studio Art: 2-D Design"
+      ]
+    },
+    {
+      "key": "ap_3d_art_and_design",
+      "name": "AP 3-D Art and Design",
+      "subject": "arts",
+      "core": false,
+      "grades": [
+        10,
+        11,
+        12
+      ],
+      "prereqs": [
+        "level:Art I"
+      ],
+      "next": [],
+      "majors": [
+        "50",
+        "04"
+      ],
+      "url": "https://apstudents.collegeboard.org/courses/ap-3-d-art-and-design",
+      "confirmed": false,
+      "aliases": [
+        "3D Art and Design",
+        "3-D Design",
+        "Studio Art 3-D",
+        "Studio Art: 3-D Design"
+      ]
+    },
+    {
+      "key": "ap_drawing",
+      "name": "AP Drawing",
+      "subject": "arts",
+      "core": false,
+      "grades": [
+        10,
+        11,
+        12
+      ],
+      "prereqs": [
+        "level:Art I"
+      ],
+      "next": [],
+      "majors": [
+        "50",
+        "04"
+      ],
+      "url": "https://apstudents.collegeboard.org/courses/ap-drawing",
+      "confirmed": false,
+      "aliases": [
+        "Studio Art Drawing",
+        "Studio Art: Drawing"
+      ]
+    },
+    {
+      "key": "ap_art_history",
+      "name": "AP Art History",
+      "subject": "arts",
+      "core": false,
+      "grades": [
+        10,
+        11,
+        12
+      ],
+      "prereqs": [],
+      "next": [],
+      "majors": [
+        "50",
+        "54"
+      ],
+      "url": "https://apstudents.collegeboard.org/courses/ap-art-history",
+      "confirmed": false
+    },
+    {
+      "key": "ap_music_theory",
+      "name": "AP Music Theory",
+      "subject": "arts",
+      "core": false,
+      "grades": [
+        10,
+        11,
+        12
+      ],
+      "prereqs": [],
+      "next": [],
+      "majors": [
+        "50"
+      ],
+      "url": "https://apstudents.collegeboard.org/courses/ap-music-theory",
+      "confirmed": false
+    },
+    {
+      "key": "ap_english_language",
+      "name": "AP English Language and Composition",
+      "subject": "english",
+      "core": true,
+      "grades": [
+        11
+      ],
+      "prereqs": [],
+      "next": [
+        "ap_english_literature"
+      ],
+      "majors": [
+        "23",
+        "09",
+        "22"
+      ],
+      "url": "https://apstudents.collegeboard.org/courses/ap-english-language-and-composition",
+      "confirmed": false,
+      "aliases": [
+        "English Language",
+        "English Lang",
+        "Language and Composition",
+        "English Language & Composition"
+      ]
+    },
+    {
+      "key": "ap_english_literature",
+      "name": "AP English Literature and Composition",
+      "subject": "english",
+      "core": true,
+      "grades": [
+        12
+      ],
+      "prereqs": [],
+      "next": [],
+      "majors": [
+        "23",
+        "38"
+      ],
+      "url": "https://apstudents.collegeboard.org/courses/ap-english-literature-and-composition",
+      "confirmed": false,
+      "aliases": [
+        "English Literature",
+        "English Lit",
+        "Literature and Composition",
+        "English Literature & Composition"
+      ]
+    },
+    {
+      "key": "ap_african_american_studies",
+      "name": "AP African American Studies",
+      "subject": "history",
+      "core": true,
+      "grades": [
+        10,
+        11,
+        12
+      ],
+      "prereqs": [],
+      "next": [],
+      "majors": [
+        "05",
+        "54",
+        "45"
+      ],
+      "url": "https://apstudents.collegeboard.org/courses/ap-african-american-studies",
+      "confirmed": true
+    },
+    {
+      "key": "ap_comparative_government",
+      "name": "AP Comparative Government and Politics",
+      "subject": "history",
+      "core": true,
+      "grades": [
+        11,
+        12
+      ],
+      "prereqs": [],
+      "next": [],
+      "majors": [
+        "45",
+        "22",
+        "44"
+      ],
+      "url": "https://apstudents.collegeboard.org/courses/ap-comparative-government-and-politics",
+      "confirmed": false,
+      "aliases": [
+        "Comparative Government",
+        "Comparative Government & Politics",
+        "Comparative Gov"
+      ]
+    },
+    {
+      "key": "ap_european_history",
+      "name": "AP European History",
+      "subject": "history",
+      "core": true,
+      "grades": [
+        10,
+        11,
+        12
+      ],
+      "prereqs": [],
+      "next": [],
+      "majors": [
+        "54",
+        "45"
+      ],
+      "url": "https://apstudents.collegeboard.org/courses/ap-european-history",
+      "confirmed": false,
+      "aliases": [
+        "European History",
+        "Euro"
+      ]
+    },
+    {
+      "key": "ap_human_geography",
+      "name": "AP Human Geography",
+      "subject": "history",
+      "core": true,
+      "grades": [
+        9,
+        10
+      ],
+      "prereqs": [],
+      "next": [
+        "ap_world_history_modern"
+      ],
+      "majors": [
+        "45",
+        "03"
+      ],
+      "url": "https://apstudents.collegeboard.org/courses/ap-human-geography",
+      "confirmed": false,
+      "aliases": [
+        "Human Geography",
+        "Human Geo"
+      ]
+    },
+    {
+      "key": "ap_macroeconomics",
+      "name": "AP Macroeconomics",
+      "subject": "history",
+      "core": true,
+      "grades": [
+        11,
+        12
+      ],
+      "prereqs": [],
+      "next": [],
+      "majors": [
+        "45",
+        "52"
+      ],
+      "url": "https://apstudents.collegeboard.org/courses/ap-macroeconomics",
+      "confirmed": false,
+      "aliases": [
+        "Macroeconomics",
+        "Economics: Macro",
+        "Macro Economics"
+      ]
+    },
+    {
+      "key": "ap_microeconomics",
+      "name": "AP Microeconomics",
+      "subject": "history",
+      "core": true,
+      "grades": [
+        11,
+        12
+      ],
+      "prereqs": [],
+      "next": [],
+      "majors": [
+        "45",
+        "52"
+      ],
+      "url": "https://apstudents.collegeboard.org/courses/ap-microeconomics",
+      "confirmed": false,
+      "aliases": [
+        "Microeconomics",
+        "Economics: Micro",
+        "Micro Economics"
+      ]
+    },
+    {
+      "key": "ap_psychology",
+      "name": "AP Psychology",
+      "subject": "history",
+      "core": false,
+      "grades": [
+        10,
+        11,
+        12
+      ],
+      "prereqs": [],
+      "next": [],
+      "majors": [
+        "42",
+        "51"
+      ],
+      "url": "https://apstudents.collegeboard.org/courses/ap-psychology",
+      "confirmed": false,
+      "aliases": [
+        "Psychology"
+      ]
+    },
+    {
+      "key": "ap_us_government",
+      "name": "AP United States Government and Politics",
+      "subject": "history",
+      "core": true,
+      "grades": [
+        11,
+        12
+      ],
+      "prereqs": [],
+      "next": [],
+      "majors": [
+        "45",
+        "22",
+        "44"
+      ],
+      "url": "https://apstudents.collegeboard.org/courses/ap-united-states-government-and-politics",
+      "confirmed": false,
+      "aliases": [
+        "U.S. Government and Politics",
+        "US Government and Politics",
+        "Government & Politics",
+        "Government and Politics",
+        "US Government",
+        "U.S. Government",
+        "Government & Politics: United States",
+        "American Government"
+      ]
+    },
+    {
+      "key": "ap_us_history",
+      "name": "AP United States History",
+      "subject": "history",
+      "core": true,
+      "grades": [
+        10,
+        11
+      ],
+      "prereqs": [],
+      "next": [
+        "ap_us_government"
+      ],
+      "majors": [
+        "54",
+        "22"
+      ],
+      "url": "https://apstudents.collegeboard.org/courses/ap-united-states-history",
+      "confirmed": false,
+      "aliases": [
+        "United States History",
+        "U.S. History",
+        "US History",
+        "APUSH",
+        "American History"
+      ]
+    },
+    {
+      "key": "ap_world_history_modern",
+      "name": "AP World History: Modern",
+      "subject": "history",
+      "core": true,
+      "grades": [
+        10,
+        11
+      ],
+      "prereqs": [],
+      "next": [
+        "ap_us_history",
+        "ap_european_history"
+      ],
+      "majors": [
+        "54",
+        "45"
+      ],
+      "url": "https://apstudents.collegeboard.org/courses/ap-world-history-modern",
+      "confirmed": true,
+      "aliases": [
+        "World History",
+        "World History: Modern",
+        "World History Modern"
+      ]
+    },
+    {
+      "key": "ap_precalculus",
+      "name": "AP Precalculus",
+      "subject": "math",
+      "core": true,
+      "grades": [
+        10,
+        11
+      ],
+      "prereqs": [
+        "level:Algebra II"
+      ],
+      "next": [
+        "ap_calculus_ab",
+        "ap_calculus_bc"
+      ],
+      "majors": [
+        "11",
+        "14",
+        "15",
+        "27",
+        "40",
+        "52"
+      ],
+      "url": "https://apstudents.collegeboard.org/courses/ap-precalculus",
+      "confirmed": true,
+      "aliases": [
+        "Precalculus",
+        "Pre-Calculus",
+        "Pre Calculus"
+      ]
+    },
+    {
+      "key": "ap_calculus_ab",
+      "name": "AP Calculus AB",
+      "subject": "math",
+      "core": true,
+      "grades": [
+        11,
+        12
+      ],
+      "prereqs": [
+        "level:Precalculus"
+      ],
+      "next": [
+        "ap_calculus_bc",
+        "ap_physics_c_mechanics"
+      ],
+      "majors": [
+        "11",
+        "14",
+        "15",
+        "27",
+        "40",
+        "26",
+        "52"
+      ],
+      "url": "https://apstudents.collegeboard.org/courses/ap-calculus-ab",
+      "confirmed": false,
+      "aliases": [
+        "Calculus AB",
+        "Calc AB"
+      ]
+    },
+    {
+      "key": "ap_calculus_bc",
+      "name": "AP Calculus BC",
+      "subject": "math",
+      "core": true,
+      "grades": [
+        11,
+        12
+      ],
+      "prereqs": [
+        "level:Precalculus"
+      ],
+      "next": [
+        "ap_physics_c_mechanics",
+        "ap_physics_c_electricity_and_magnetism"
+      ],
+      "majors": [
+        "11",
+        "14",
+        "15",
+        "27",
+        "40",
+        "26",
+        "52"
+      ],
+      "url": "https://apstudents.collegeboard.org/courses/ap-calculus-bc",
+      "confirmed": false,
+      "aliases": [
+        "Calculus BC",
+        "Calc BC"
+      ]
+    },
+    {
+      "key": "ap_statistics",
+      "name": "AP Statistics",
+      "subject": "math",
+      "core": true,
+      "grades": [
+        10,
+        11,
+        12
+      ],
+      "prereqs": [
+        "level:Algebra II"
+      ],
+      "next": [],
+      "majors": [
+        "27",
+        "42",
+        "45",
+        "52",
+        "51",
+        "26"
+      ],
+      "url": "https://apstudents.collegeboard.org/courses/ap-statistics",
+      "confirmed": false,
+      "aliases": [
+        "Statistics",
+        "Stats"
+      ]
+    },
+    {
+      "key": "ap_computer_science_a",
+      "name": "AP Computer Science A",
+      "subject": "cs",
+      "core": false,
+      "grades": [
+        10,
+        11,
+        12
+      ],
+      "prereqs": [
+        "level:Algebra I"
+      ],
+      "next": [],
+      "majors": [
+        "11",
+        "14",
+        "27"
+      ],
+      "url": "https://apstudents.collegeboard.org/courses/ap-computer-science-a",
+      "confirmed": false,
+      "aliases": [
+        "Computer Science A",
+        "Computer Science",
+        "Comp Sci A",
+        "CSA"
+      ]
+    },
+    {
+      "key": "ap_computer_science_principles",
+      "name": "AP Computer Science Principles",
+      "subject": "cs",
+      "core": false,
+      "grades": [
+        9,
+        10,
+        11,
+        12
+      ],
+      "prereqs": [
+        "level:Algebra I"
+      ],
+      "next": [
+        "ap_computer_science_a",
+        "ap_cybersecurity"
+      ],
+      "majors": [
+        "11",
+        "10"
+      ],
+      "url": "https://apstudents.collegeboard.org/courses/ap-computer-science-principles",
+      "confirmed": false,
+      "aliases": [
+        "Computer Science Principles",
+        "CSP",
+        "Comp Sci Principles"
+      ]
+    },
+    {
+      "key": "ap_cybersecurity",
+      "name": "AP Cybersecurity",
+      "subject": "cs",
+      "core": false,
+      "grades": [
+        10,
+        11,
+        12
+      ],
+      "prereqs": [],
+      "next": [],
+      "majors": [
+        "11",
+        "43"
+      ],
+      "url": "https://apstudents.collegeboard.org/courses/ap-cybersecurity",
+      "confirmed": true,
+      "aliases": [
+        "Cybersecurity"
+      ]
+    },
+    {
+      "key": "ap_biology",
+      "name": "AP Biology",
+      "subject": "science",
+      "core": true,
+      "grades": [
+        11,
+        12
+      ],
+      "prereqs": [
+        "level:Biology",
+        "level:Chemistry"
+      ],
+      "next": [
+        "ap_environmental_science"
+      ],
+      "majors": [
+        "26",
+        "51",
+        "03",
+        "01"
+      ],
+      "url": "https://apstudents.collegeboard.org/courses/ap-biology",
+      "confirmed": false,
+      "aliases": [
+        "Biology"
+      ]
+    },
+    {
+      "key": "ap_chemistry",
+      "name": "AP Chemistry",
+      "subject": "science",
+      "core": true,
+      "grades": [
+        11,
+        12
+      ],
+      "prereqs": [
+        "level:Chemistry",
+        "level:Algebra II"
+      ],
+      "next": [
+        "ap_biology",
+        "ap_physics_c_mechanics"
+      ],
+      "majors": [
+        "26",
+        "40",
+        "51",
+        "14"
+      ],
+      "url": "https://apstudents.collegeboard.org/courses/ap-chemistry",
+      "confirmed": false,
+      "aliases": [
+        "Chemistry"
+      ]
+    },
+    {
+      "key": "ap_environmental_science",
+      "name": "AP Environmental Science",
+      "subject": "science",
+      "core": true,
+      "grades": [
+        10,
+        11,
+        12
+      ],
+      "prereqs": [
+        "level:Biology"
+      ],
+      "next": [],
+      "majors": [
+        "03",
+        "26",
+        "40",
+        "01"
+      ],
+      "url": "https://apstudents.collegeboard.org/courses/ap-environmental-science",
+      "confirmed": false,
+      "aliases": [
+        "Environmental Science",
+        "APES",
+        "Enviro Science"
+      ]
+    },
+    {
+      "key": "ap_physics_1",
+      "name": "AP Physics 1: Algebra-Based",
+      "subject": "science",
+      "core": true,
+      "grades": [
+        10,
+        11,
+        12
+      ],
+      "prereqs": [
+        "level:Geometry"
+      ],
+      "next": [
+        "ap_physics_2",
+        "ap_physics_c_mechanics"
+      ],
+      "majors": [
+        "14",
+        "15",
+        "40",
+        "04"
+      ],
+      "url": "https://apstudents.collegeboard.org/courses/ap-physics-1-algebra-based",
+      "confirmed": true,
+      "aliases": [
+        "Physics 1",
+        "Physics 1: Algebra-Based",
+        "Physics I"
+      ]
+    },
+    {
+      "key": "ap_physics_2",
+      "name": "AP Physics 2: Algebra-Based",
+      "subject": "science",
+      "core": true,
+      "grades": [
+        11,
+        12
+      ],
+      "prereqs": [
+        "ap_physics_1"
+      ],
+      "next": [
+        "ap_physics_c_electricity_and_magnetism"
+      ],
+      "majors": [
+        "14",
+        "15",
+        "40",
+        "51"
+      ],
+      "url": "https://apstudents.collegeboard.org/courses/ap-physics-2-algebra-based",
+      "confirmed": true,
+      "aliases": [
+        "Physics 2",
+        "Physics 2: Algebra-Based",
+        "Physics II"
+      ]
+    },
+    {
+      "key": "ap_physics_c_mechanics",
+      "name": "AP Physics C: Mechanics",
+      "subject": "science",
+      "core": true,
+      "grades": [
+        11,
+        12
+      ],
+      "prereqs": [
+        "level:Calculus"
+      ],
+      "next": [
+        "ap_physics_c_electricity_and_magnetism"
+      ],
+      "majors": [
+        "14",
+        "40",
+        "27"
+      ],
+      "url": "https://apstudents.collegeboard.org/courses/ap-physics-c-mechanics",
+      "confirmed": false,
+      "aliases": [
+        "Physics C: Mechanics",
+        "Physics C Mechanics",
+        "Physics C"
+      ]
+    },
+    {
+      "key": "ap_physics_c_electricity_and_magnetism",
+      "name": "AP Physics C: Electricity and Magnetism",
+      "subject": "science",
+      "core": true,
+      "grades": [
+        11,
+        12
+      ],
+      "prereqs": [
+        "ap_physics_c_mechanics",
+        "level:Calculus"
+      ],
+      "next": [],
+      "majors": [
+        "14",
+        "40",
+        "27"
+      ],
+      "url": "https://apstudents.collegeboard.org/courses/ap-physics-c-electricity-and-magnetism",
+      "confirmed": false,
+      "aliases": [
+        "Physics C: Electricity and Magnetism",
+        "Physics C E & M",
+        "Physics C E&M",
+        "Physics C: E&M",
+        "Physics C Electricity and Magnetism"
+      ]
+    },
+    {
+      "key": "ap_chinese",
+      "name": "AP Chinese Language and Culture",
+      "subject": "language",
+      "core": true,
+      "grades": [
+        11,
+        12
+      ],
+      "prereqs": [
+        "level:Chinese III"
+      ],
+      "next": [],
+      "majors": [
+        "16"
+      ],
+      "url": "https://apstudents.collegeboard.org/courses/ap-chinese-language-and-culture",
+      "confirmed": false,
+      "aliases": [
+        "Chinese",
+        "Chinese Language",
+        "Chinese Language and Culture",
+        "Chinese Language & Culture",
+        "Mandarin"
+      ]
+    },
+    {
+      "key": "ap_french",
+      "name": "AP French Language and Culture",
+      "subject": "language",
+      "core": true,
+      "grades": [
+        11,
+        12
+      ],
+      "prereqs": [
+        "level:French III"
+      ],
+      "next": [],
+      "majors": [
+        "16"
+      ],
+      "url": "https://apstudents.collegeboard.org/courses/ap-french-language-and-culture",
+      "confirmed": false,
+      "aliases": [
+        "French",
+        "French Language",
+        "French Language and Culture",
+        "French Language & Culture"
+      ]
+    },
+    {
+      "key": "ap_german",
+      "name": "AP German Language and Culture",
+      "subject": "language",
+      "core": true,
+      "grades": [
+        11,
+        12
+      ],
+      "prereqs": [
+        "level:German III"
+      ],
+      "next": [],
+      "majors": [
+        "16"
+      ],
+      "url": "https://apstudents.collegeboard.org/courses/ap-german-language-and-culture",
+      "confirmed": false,
+      "aliases": [
+        "German",
+        "German Language",
+        "German Language and Culture",
+        "German Language & Culture"
+      ]
+    },
+    {
+      "key": "ap_italian",
+      "name": "AP Italian Language and Culture",
+      "subject": "language",
+      "core": true,
+      "grades": [
+        11,
+        12
+      ],
+      "prereqs": [
+        "level:Italian III"
+      ],
+      "next": [],
+      "majors": [
+        "16"
+      ],
+      "url": "https://apstudents.collegeboard.org/courses/ap-italian-language-and-culture",
+      "confirmed": false,
+      "aliases": [
+        "Italian",
+        "Italian Language",
+        "Italian Language and Culture",
+        "Italian Language & Culture"
+      ]
+    },
+    {
+      "key": "ap_japanese",
+      "name": "AP Japanese Language and Culture",
+      "subject": "language",
+      "core": true,
+      "grades": [
+        11,
+        12
+      ],
+      "prereqs": [
+        "level:Japanese III"
+      ],
+      "next": [],
+      "majors": [
+        "16"
+      ],
+      "url": "https://apstudents.collegeboard.org/courses/ap-japanese-language-and-culture",
+      "confirmed": false,
+      "aliases": [
+        "Japanese",
+        "Japanese Language",
+        "Japanese Language and Culture",
+        "Japanese Language & Culture"
+      ]
+    },
+    {
+      "key": "ap_latin",
+      "name": "AP Latin",
+      "subject": "language",
+      "core": true,
+      "grades": [
+        11,
+        12
+      ],
+      "prereqs": [
+        "level:Latin III"
+      ],
+      "next": [],
+      "majors": [
+        "16",
+        "38"
+      ],
+      "url": "https://apstudents.collegeboard.org/courses/ap-latin",
+      "confirmed": false,
+      "aliases": [
+        "Latin",
+        "Latin: Vergil"
+      ]
+    },
+    {
+      "key": "ap_spanish_language",
+      "name": "AP Spanish Language and Culture",
+      "subject": "language",
+      "core": true,
+      "grades": [
+        10,
+        11,
+        12
+      ],
+      "prereqs": [
+        "level:Spanish III"
+      ],
+      "next": [
+        "ap_spanish_literature"
+      ],
+      "majors": [
+        "16"
+      ],
+      "url": "https://apstudents.collegeboard.org/courses/ap-spanish-language-and-culture",
+      "confirmed": false,
+      "aliases": [
+        "Spanish",
+        "Spanish Language",
+        "Spanish Language and Culture",
+        "Spanish Language & Culture"
+      ]
+    },
+    {
+      "key": "ap_spanish_literature",
+      "name": "AP Spanish Literature and Culture",
+      "subject": "language",
+      "core": true,
+      "grades": [
+        11,
+        12
+      ],
+      "prereqs": [
+        "ap_spanish_language"
+      ],
+      "next": [],
+      "majors": [
+        "16",
+        "23"
+      ],
+      "url": "https://apstudents.collegeboard.org/courses/ap-spanish-literature-and-culture",
+      "confirmed": false,
+      "aliases": [
+        "Spanish Literature",
+        "Spanish Literature and Culture",
+        "Spanish Literature & Culture",
+        "Spanish Lit"
+      ]
+    },
+    {
+      "key": "ap_seminar",
+      "name": "AP Seminar",
+      "subject": "other",
+      "core": false,
+      "grades": [
+        10,
+        11
+      ],
+      "prereqs": [],
+      "next": [
+        "ap_research"
+      ],
+      "majors": [
+        "24",
+        "30"
+      ],
+      "url": "https://apstudents.collegeboard.org/courses/ap-seminar",
+      "confirmed": false,
+      "aliases": [
+        "Seminar"
+      ]
+    },
+    {
+      "key": "ap_research",
+      "name": "AP Research",
+      "subject": "other",
+      "core": false,
+      "grades": [
+        11,
+        12
+      ],
+      "prereqs": [
+        "ap_seminar"
+      ],
+      "next": [],
+      "majors": [
+        "24",
+        "30"
+      ],
+      "url": "https://apstudents.collegeboard.org/courses/ap-research",
+      "confirmed": false,
+      "aliases": [
+        "Research"
+      ]
+    },
+    {
+      "key": "ap_business_personal_finance",
+      "name": "AP Business with Personal Finance",
+      "subject": "other",
+      "core": false,
+      "grades": [
+        10,
+        11,
+        12
+      ],
+      "prereqs": [],
+      "next": [],
+      "majors": [
+        "52"
+      ],
+      "url": "https://apcentral.collegeboard.org/courses/ap-business-personal-finance",
+      "confirmed": true,
+      "aliases": [
+        "Business with Personal Finance",
+        "Business and Personal Finance",
+        "AP Business"
+      ]
+    }
+  ]
+}

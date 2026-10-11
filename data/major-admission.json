@@ -1,0 +1,29 @@
+{
+  "description": "How colleges admit by school or major and how they say the intended major is reviewed (specs/chances/base-rates.md \"Major\", major-and-grades.md \"Data\"). One entry per admitting unit: the university itself (unit_id is its IPEDS id) or a school or major within it (\"{unit_id}:{slug}\"). Every value is quoted from the college's own page; nothing is inferred, so a unit without a statement has major_considered null. verified_via says whether the page was read or quoted from it in a search result. Checked by scripts/check-major-admission.mts (npm run verify).",
+  "checked": "2026-10-11",
+  "units": [
+    {
+      "unit_id": "190415:engineering",
+      "unit": "school",
+      "name": "Cornell Duffield College of Engineering",
+      "cip_families": ["14"],
+      "direct_admit": true,
+      "admit_rate": null,
+      "review": {
+        "major_considered": null,
+        "emphasis": [],
+        "required_courses": [
+          { "subject": "math", "level": "calculus", "quote": "4 units of mathematics, including one of calculus" },
+          { "subject": "science", "level": "physics", "quote": "1 unit of physics" },
+          { "subject": "science", "level": "chemistry", "quote": "1 unit of chemistry" }
+        ],
+        "gate": null,
+        "quote": "4 units of mathematics, including one of calculus",
+        "source_url": "https://admissions.cornell.edu/first-year-duffield-engineering-applicants",
+        "fetched": "2026-10-11",
+        "edition": null
+      },
+      "verified_via": "search"
+    }
+  ]
+}

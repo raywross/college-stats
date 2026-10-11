@@ -12,6 +12,8 @@ import { replacedTest, satTotalInputs, validateTests } from "./cds/test-blocks.t
 import { satTotal } from "./score-bands.ts";
 import { financialAidProblems } from "./cds/financial-aid.ts";
 import { aidPolicyFor, aidYearLabel } from "./aid-policies.ts";
+import { programsFor } from "./chances/guaranteed.ts";
+import { majorUnitsFor, universityStatement, type CuratedMajorUnit } from "./chances/major-admission.ts";
 
 /** Any source key a citation can carry: a college source (lib/fields.ts) or a high school source (lib/hs-fields.ts). */
 export type AnySourceKey = SourceKey | HsSourceKey;
@@ -151,10 +153,70 @@ function aidPolicyCitation(path: FieldPath, school: School | undefined): CitedSo
   return { key: "college-site", label: `${school.name} (${year})`, publisher: school.name, year, url: policy.source, retrieved: policy.checked };
 }
 
+/**
+ * The citation for an automatic-admission program (`reference.guaranteed_admission.*`, specs/chances/base-rates.md):
+ * the first program in data/guaranteed-admission.json that admits to this college for the file's cycle. Its page or
+ * notice is the source, its entering fall the year, and the day it was read the retrieval date.
+ */
+function guaranteedCitation(path: FieldPath, school: School | undefined): { source: CitedSource; quote: string } | null {
+  if (!path.startsWith("reference.guaranteed_admission.") || !school) return null;
+  const program = programsFor(school.unit_id)[0];
+  if (!program) return null;
+  const year = `Fall ${Math.min(...program.fall)}`;
+  return {
+    source: { key: "college-site", label: `${program.name} (${year})`, publisher: program.source.publisher, year, url: program.source.url, retrieved: program.source.retrieved },
+    quote: program.source.quote,
+  };
+}
+
+/** The part of a major-admission unit a field path cites: its admit rate, its review, or (direct admission) the review's page. */
+function majorUnitHas(path: string, u: CuratedMajorUnit): boolean {
+  if (path === "reported.major_admission.admit_rate") return u.admit_rate !== null;
+  if (path === "reported.major_admission.direct_admit") return u.direct_admit !== null && (u.review !== null || u.admit_rate !== null);
+  return u.review !== null;
+}
+
+/**
+ * The citation for one unit's major-admission value (`reported.major_admission.*`; data/major-admission.json): the
+ * admit rate cites its own page, year, and quote; the review's values cite the review's page, edition, and the date it
+ * was read. For a page that shows one unit (the Major line, the unit's required courses), call this with that unit.
+ */
+export function majorUnitCitation(path: string, unit: CuratedMajorUnit, school: Pick<School, "name">): { source: CitedSource; quote: string } | null {
+  if (!path.startsWith("reported.major_admission.") || !majorUnitHas(path, unit)) return null;
+  const label = (year: string | null) => `${unit.name}${year ? ` (${year})` : ""}`;
+  if ((path === "reported.major_admission.admit_rate" || !unit.review) && unit.admit_rate) {
+    const a = unit.admit_rate;
+    return { source: { key: "college-site", label: label(a.year), publisher: school.name, year: a.year, url: a.source_url, retrieved: unit.review?.fetched ?? a.year }, quote: a.quote };
+  }
+  const r = unit.review!;
+  return { source: { key: "college-site", label: label(r.edition), publisher: school.name, year: r.edition, url: r.source_url, retrieved: r.fetched }, quote: r.quote };
+}
+
+/**
+ * The citation for a college's major-admission value when the page doesn't name a unit: its first school or major
+ * that has the value, else its university-level statement.
+ */
+function majorAdmissionCitation(path: FieldPath, school: School | undefined): { source: CitedSource; quote: string } | null {
+  if (!path.startsWith("reported.major_admission.") || !school) return null;
+  const statement = universityStatement(school.unit_id);
+  for (const u of [...majorUnitsFor(school.unit_id), ...(statement ? [statement] : [])]) {
+    const c = majorUnitCitation(path, u, school);
+    if (c) return c;
+  }
+  return null;
+}
+
+/** A value kept in a curated file rather than on the school record (aid policies, programs, major admission), with its quote. */
+function curatedCitation(path: FieldPath, school: School | undefined): { source: CitedSource; quote?: string } | null {
+  const policy = aidPolicyCitation(path, school);
+  if (policy) return { source: policy };
+  return guaranteedCitation(path, school) ?? majorAdmissionCitation(path, school);
+}
+
 function sourceFor(path: FieldPath, school: School | undefined, meta: DatasetMeta): CitedSource {
   const def = FIELDS[path];
-  const policyCited = aidPolicyCitation(path, school);
-  if (policyCited) return policyCited;
+  const curated = curatedCitation(path, school);
+  if (curated) return curated.source;
   const rec = school?.lineage?.[path];
   const key = rec?.source ?? def.source;
   const info = sourceInfo(meta, key);
@@ -235,7 +297,7 @@ const PER_COLLEGE_ONLY: ReadonlySet<SourceKey> = new Set<SourceKey>(["college-si
 /** Distinct sources behind a value: a derived value cites its inputs, recursively. */
 function underlyingSources(path: FieldPath, school: School | undefined, meta: DatasetMeta, seen = new Set<string>()): CitedSource[] {
   const def = FIELDS[path] as (typeof FIELDS)[FieldPath];
-  const overridden = !!school?.lineage?.[path] || !!aidPolicyCitation(path, school);
+  const overridden = !!school?.lineage?.[path] || !!curatedCitation(path, school);
   // A college-reported field or state law this college has no value for (no lineage record) has nothing to cite.
   if (school && !overridden && PER_COLLEGE_ONLY.has(def.source) && !("derived" in def && def.derived)) return [];
   if (!("derived" in def) || !def.derived || overridden || seen.has(path)) return [sourceFor(path, school, meta)];
@@ -303,7 +365,7 @@ export function lineageFor(path: FieldPath, school: School | undefined, meta: Da
     // A derived value from non-default inputs (e.g. yield from a CDS's counts) is non-default too.
     isDefault: usesDefaults(path, school),
     ...(derived ? { formula: derived.formula, inputs } : {}),
-    ...(rec?.quote ? { quote: rec.quote } : {}),
+    ...(rec?.quote ? { quote: rec.quote } : curatedQuote(path, school)),
     ...(rec?.page !== undefined ? { page: rec.page } : {}),
     ...replacedBy(path, school, meta),
     // A round-3 record value names its CDS edition (its year is the item's own, e.g. next year's price); the
@@ -317,6 +379,12 @@ export function lineageFor(path: FieldPath, school: School | undefined, meta: Da
     ...replacedFactor(path, school, meta),
     ...replacedTestBy(path, school, meta),
   };
+}
+
+/** The quote behind a curated value (a program's or a major-admission unit's own words), when there is one. */
+function curatedQuote(path: FieldPath, school: School | undefined): Pick<Cited, "quote"> {
+  const quote = curatedCitation(path, school)?.quote;
+  return quote ? { quote } : {};
 }
 
 /** The previous test value a newer CDS block replaced (`admissions.federal_tests`; lib/cds/test-blocks.ts). */

@@ -12,6 +12,8 @@ import { satTotal } from "./score-bands.ts";
 import { isMajorFamily, type MajorFamily } from "./majors.ts";
 import { isHighSchoolId } from "./high-school-core.ts";
 import type { StandingStudent } from "./planner/standing.ts";
+import type { CourseEntry, CourseKind, CourseStatus, CourseSubject, Mark } from "./chances/types.ts";
+import { catalogCourse, COURSE_SUBJECTS, isCatalogKeyFor } from "./chances/catalog.ts";
 
 /**
  * Same boundaries as lib/metrics.ts SIZE_BUCKETS, duplicated here rather than imported: that module pulls in
@@ -73,8 +75,20 @@ export interface StudentProfileAcademics {
   weightedGpa: number | null;
   /** 0–100; "top 10%" is stored as 10. */
   classRankPercentile: number | null;
-  /** Count of AP/IB/dual-enrollment courses taken. */
+  /**
+   * Count of AP/IB/dual-enrollment courses: derived from `courses` on every save (courseRigorCountOf), kept for the
+   * readers that predate the list. On input, a number that differs from the list's count adds or removes unnamed
+   * placeholder AP rows to match (the count-only entry, specs/chances/rigor-in-context.md); send null to leave the
+   * rows as they are.
+   */
   courseRigorCount: number | null;
+  /**
+   * The student's courses, at most COURSES_MAX (specs/chances/rigor-in-context.md "The student's courses"). A profile
+   * saved before the list existed (no `courses` key) turns its courseRigorCount into that many unnamed AP rows.
+   */
+  courses: CourseEntry[];
+  /** AP exam scores are the student's own: hidden from guardians unless the student shares them. Default true. */
+  apExamsPrivate: boolean;
 }
 
 export interface StudentProfileTests {
@@ -162,7 +176,7 @@ export const LOCAL_PROFILE_KEY = "student-profile";
 export function emptyProfile(): StudentProfileData {
   return {
     basics: { gradYear: null, stateOfResidence: null, highSchool: null, highSchoolId: null, feeWaiverEligible: null },
-    academics: { gpa: null, gpaScale: "4.0", weightedGpa: null, classRankPercentile: null, courseRigorCount: null },
+    academics: { gpa: null, gpaScale: "4.0", weightedGpa: null, classRankPercentile: null, courseRigorCount: null, courses: [], apExamsPrivate: true },
     tests: {
       satTotal: null,
       satReading: null,
@@ -262,12 +276,18 @@ export function sanitizeProfile(input: unknown): StudentProfileData {
 
   const ac = isObj(input.academics) ? input.academics : {};
   const gpaScale = GPA_SCALE_VALUES.includes(ac.gpaScale as GpaScale) ? (ac.gpaScale as GpaScale) : "4.0";
+  const countIn = int(ac.courseRigorCount, 0, COURSES_MAX);
+  // A profile saved before the list existed: its count becomes that many unnamed AP rows (rigor-in-context.md).
+  const rows = Array.isArray(ac.courses) ? sanitizeCourses(ac.courses) : [];
+  const courses = countIn !== null ? reconcileCourseCount(rows, countIn) : rows;
   const academics: StudentProfileAcademics = {
     gpa: num(ac.gpa, 0, gpaMaxFor(gpaScale)),
     gpaScale,
     weightedGpa: num(ac.weightedGpa, 0, 120),
     classRankPercentile: int(ac.classRankPercentile, 1, 100),
-    courseRigorCount: int(ac.courseRigorCount, 0, 40),
+    courseRigorCount: courses.length > 0 || countIn !== null ? courseRigorCountOf(courses) : null,
+    courses,
+    apExamsPrivate: ac.apExamsPrivate !== false,
   };
 
   const t = isObj(input.tests) ? input.tests : {};
@@ -303,6 +323,198 @@ export function sanitizeProfile(input: unknown): StudentProfileData {
   };
 
   return { basics, academics, tests, plans, preferences };
+}
+
+/* ------------------------------------------------------------------ */
+/* Courses (specs/chances/rigor-in-context.md "The student's courses")  */
+/* ------------------------------------------------------------------ */
+
+/** Most rows a course list keeps. */
+export const COURSES_MAX = 40;
+/** Longest name kept for a dual-enrollment, honors, or regular course. */
+export const COURSE_NAME_MAX = 60;
+export const COURSE_KINDS: readonly CourseKind[] = ["ap", "ib_hl", "ib_sl", "dual", "honors", "regular"];
+export const COURSE_STATUSES: readonly CourseStatus[] = ["taken", "in_progress", "planned"];
+export const MARKS: readonly Mark[] = ["A+", "A", "A-", "B+", "B", "B-", "C+", "C", "C-", "D+", "D", "D-", "F", "P"];
+/** The kinds that count as advanced: AP, IB, and dual enrollment (honors is listed, never counted). */
+export const ADVANCED_KINDS: readonly CourseKind[] = ["ap", "ib_hl", "ib_sl", "dual"];
+/** The year an unnamed placeholder row gets: the list doesn't know it, and 11th grade is the most common AP year. */
+const PLACEHOLDER_YEAR = 11;
+
+/** Unweighted 4.0-scale points for a mark: A+ and A 4.0, A− 3.7, B+ 3.3 … D− 0.7, F 0; P (pass) has none. */
+export const MARK_POINTS: Readonly<Record<Exclude<Mark, "P">, number>> = {
+  "A+": 4.0,
+  A: 4.0,
+  "A-": 3.7,
+  "B+": 3.3,
+  B: 3.0,
+  "B-": 2.7,
+  "C+": 2.3,
+  C: 2.0,
+  "C-": 1.7,
+  "D+": 1.3,
+  D: 1.0,
+  "D-": 0.7,
+  F: 0,
+};
+
+export function isMark(v: unknown): v is Mark {
+  return typeof v === "string" && (MARKS as readonly string[]).includes(v);
+}
+
+/** The points a mark is worth, or null for P (pass) and no mark. */
+export function markPoints(mark: Mark | null): number | null {
+  return mark === null || mark === "P" ? null : MARK_POINTS[mark];
+}
+
+/** The grade a course is read by: its final grade, else the latest semester's (s2, then s1); null when none. */
+export function courseMark(c: Pick<CourseEntry, "grades">): Mark | null {
+  return c.grades.final ?? c.grades.s2 ?? c.grades.s1 ?? null;
+}
+
+export function isAdvancedKind(kind: CourseKind): boolean {
+  return ADVANCED_KINDS.includes(kind);
+}
+
+/** An unnamed row from the count-only entry or a pre-list profile: AP with neither key nor name. */
+export function isPlaceholderCourse(c: Pick<CourseEntry, "kind" | "key" | "name">): boolean {
+  return c.kind === "ap" && c.key === null && c.name === null;
+}
+
+/** The derived `courseRigorCount`: AP, IB, and dual-enrollment rows, any status. */
+export function courseRigorCountOf(courses: readonly CourseEntry[]): number {
+  return courses.filter((c) => isAdvancedKind(c.kind)).length;
+}
+
+function average(points: number[]): number | null {
+  if (points.length === 0) return null;
+  return Math.round((points.reduce((a, b) => a + b, 0) / points.length) * 100) / 100;
+}
+
+/**
+ * `advancedGpa`: the unweighted 4.0-scale average of the AP, IB, and dual-enrollment rows' grades (courseMark: final,
+ * else the latest semester), P ignored, to two decimals. Null when none of them has a letter grade yet. Shown to the
+ * student, never compared with any college's figure.
+ */
+export function advancedGpa(courses: readonly CourseEntry[]): number | null {
+  return average(
+    courses
+      .filter((c) => isAdvancedKind(c.kind))
+      .map((c) => markPoints(courseMark(c)))
+      .filter((p): p is number => p !== null),
+  );
+}
+
+/**
+ * `subjectGpa` (specs/chances/major-and-grades.md "The student's side"): the unweighted average of every row in the
+ * subject, advanced, honors, and regular together, read the same way as advancedGpa. Null without a graded row.
+ */
+export function subjectGpa(courses: readonly CourseEntry[], subject: CourseSubject): number | null {
+  return average(
+    courses
+      .filter((c) => c.subject === subject)
+      .map((c) => markPoints(courseMark(c)))
+      .filter((p): p is number => p !== null),
+  );
+}
+
+/** An unnamed placeholder AP row (isPlaceholderCourse). */
+export function placeholderCourse(id: string): CourseEntry {
+  return { id, kind: "ap", key: null, name: null, subject: "other", year: PLACEHOLDER_YEAR, status: "taken", grades: { s1: null, s2: null, final: null }, exam: null };
+}
+
+/**
+ * The list matched to a count (the count-only entry): unnamed placeholder rows added, or removed from the end, until
+ * the advanced rows number `count` (capped at COURSES_MAX). Named rows are never removed, so a count below them leaves
+ * the named rows as they are.
+ */
+export function reconcileCourseCount(courses: readonly CourseEntry[], count: number): CourseEntry[] {
+  const out = [...courses];
+  let have = courseRigorCountOf(out);
+  for (let i = out.length - 1; i >= 0 && have > count; i--) {
+    if (isPlaceholderCourse(out[i])) {
+      out.splice(i, 1);
+      have--;
+    }
+  }
+  const ids = new Set(out.map((c) => c.id));
+  let n = 1;
+  while (have < count && out.length < COURSES_MAX) {
+    while (ids.has(`placeholder-${n}`)) n++;
+    ids.add(`placeholder-${n}`);
+    out.push(placeholderCourse(`placeholder-${n}`));
+    have++;
+  }
+  return out;
+}
+
+function markOrNull(v: unknown): Mark | null {
+  return isMark(v) ? v : null;
+}
+
+/**
+ * One untrusted course row as a CourseEntry, or null to drop it. AP and IB rows keep a key only when it is in the
+ * catalog for that kind (an unknown key drops the row; no key at all is an unnamed placeholder) and take the
+ * catalog's subject; dual, honors, and regular rows need a name of at most COURSE_NAME_MAX characters (regular: math
+ * or science only). A planned course has no final grade and no exam score; an exam score is for AP only.
+ */
+function sanitizeCourse(v: unknown, index: number): CourseEntry | null {
+  if (!isObj(v)) return null;
+  const kind = COURSE_KINDS.includes(v.kind as CourseKind) ? (v.kind as CourseKind) : null;
+  const year = int(v.year, 9, 12) as CourseEntry["year"] | null;
+  const status = COURSE_STATUSES.includes(v.status as CourseStatus) ? (v.status as CourseStatus) : null;
+  if (!kind || year === null || status === null) return null;
+  let key: string | null = null;
+  let name: string | null = null;
+  let subject: CourseSubject | null = COURSE_SUBJECTS.includes(v.subject as CourseSubject) ? (v.subject as CourseSubject) : null;
+  if (kind === "ap" || kind === "ib_hl" || kind === "ib_sl") {
+    if (v.key !== null && v.key !== undefined) {
+      if (typeof v.key !== "string" || !isCatalogKeyFor(kind, v.key)) return null;
+      key = v.key;
+      subject = catalogCourse(v.key)!.subject;
+    }
+  } else {
+    name = str(v.name, COURSE_NAME_MAX);
+    if (!name) return null;
+    if (kind === "regular" && subject !== "math" && subject !== "science") return null;
+  }
+  const g = isObj(v.grades) ? v.grades : {};
+  const planned = status === "planned";
+  const exam = kind === "ap" && !planned ? (int(v.exam, 1, 5) as CourseEntry["exam"]) : null;
+  const id = typeof v.id === "string" && v.id.trim() && v.id.length <= 40 ? v.id.trim() : `course-${index + 1}`;
+  return {
+    id,
+    kind,
+    key,
+    name,
+    subject: subject ?? "other",
+    year,
+    status,
+    grades: { s1: markOrNull(g.s1), s2: markOrNull(g.s2), final: planned ? null : markOrNull(g.final) },
+    exam,
+  };
+}
+
+/** A list of untrusted rows as at most COURSES_MAX CourseEntries: invalid rows dropped, a catalog course listed once, ids unique. */
+export function sanitizeCourses(input: unknown): CourseEntry[] {
+  if (!Array.isArray(input)) return [];
+  const out: CourseEntry[] = [];
+  const keys = new Set<string>();
+  const ids = new Set<string>();
+  input.forEach((raw, i) => {
+    if (out.length >= COURSES_MAX) return;
+    const c = sanitizeCourse(raw, i);
+    if (!c) return;
+    if (c.key !== null) {
+      if (keys.has(c.key)) return;
+      keys.add(c.key);
+    }
+    let id = c.id;
+    for (let n = 2; ids.has(id); n++) id = `${c.id}-${n}`;
+    ids.add(id);
+    out.push({ ...c, id });
+  });
+  return out;
 }
 
 /* ------------------------------------------------------------------ */

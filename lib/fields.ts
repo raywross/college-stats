@@ -473,8 +473,15 @@ export const FIELDS = {
     computed: true,
     derived: {
       formula:
-        "Estimated from colleges with similar test scores and admit rates: a least-squares fit of first-year GPA on the SAT midpoint (ACT through the 2018 concordance) and the admit rate, over colleges that publish an unweighted GPA; a college that publishes only a weighted average is kept between that average minus 1 and 4.0. Never the college's own figure",
-      inputs: ["derived.sat_total", "admissions.act_composite_25_75", "admissions.acceptance_rate", "reported.admission_profile.gpa.average"],
+        "Estimated from colleges with similar test scores, admit rates, and shares sending scores: a least-squares fit of first-year GPA on the SAT midpoint (ACT through the 2018 concordance), the admit rate, and the share of first-years who sent a score, over colleges that publish an unweighted GPA; a college that publishes only a weighted average is kept between that average minus 1 and 4.0. Never the college's own figure",
+      inputs: [
+        "derived.sat_total",
+        "admissions.act_composite_25_75",
+        "admissions.acceptance_rate",
+        "admissions.test_submission_rate_sat",
+        "admissions.test_submission_rate_act",
+        "reported.admission_profile.gpa.average",
+      ],
     },
   },
   // CDS C8/C9 (specs/data-expansion/cds-test-scores-and-policy.md): records → school.reported (lib/cds/test-scores.ts).
@@ -533,6 +540,20 @@ export const FIELDS = {
   "aid_policy.need_only": reported("Whether the college gives no merit aid (all grants are need-based)", "aid"),
   "aid_policy.home_equity": reported("How the college treats home equity in its need analysis", "aid"),
   "aid_policy.siblings": reported("How the college adjusts for siblings in college", "aid"),
+  // Published automatic-admission programs (specs/chances/base-rates.md "Automatic admission"). They live in
+  // data/guaranteed-admission.json, not on the school record: lib/lineage.ts resolves the citation from the program's
+  // own source (its page or notice, the entering fall, and the date read), like aid_policy.*.
+  "reference.guaranteed_admission.rule": reported("Automatic admission rule (published program)"),
+  "reference.guaranteed_admission.scope": reported("Whether the program admits to the campus or only to the system"),
+  "reference.guaranteed_admission.major_guaranteed": reported("Whether automatic admission includes the major"),
+  // How the college admits by school or major (specs/chances/base-rates.md "Major", major-and-grades.md "Data"), from
+  // data/major-admission.json: each value quoted from the unit's own page; lib/lineage.ts resolves the citation to it.
+  "reported.major_admission.direct_admit": reported("Whether first-years are admitted directly to the school or major"),
+  "reported.major_admission.admit_rate": reported("Admit rate for the school or major (college-reported)"),
+  "reported.major_admission.review.major_considered": reported("Whether the intended major affects admission (college's statement)"),
+  "reported.major_admission.review.emphasis": reported("Subjects the school or major looks at more closely (college's statement)"),
+  "reported.major_admission.review.required_courses": reported("High school courses the school or major requires (college's statement)"),
+  "reported.major_admission.review.gate": reported("Score requirement for the school or major (college's statement)"),
   "derived.merit_dollar_share": {
     ...reported("College grant dollars given without regard to need", "aid"),
     computed: true,

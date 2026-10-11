@@ -265,10 +265,12 @@ test("major: applicants compared within the college, with the extra look at math
 });
 
 test("the curated file's Major lines are all quoted statements about the major", () => {
+  const byId = new Map(allMajorUnits().map((u) => [u.unit_id, u]));
   for (const u of allMajorUnits()) {
     const colleges = u.unit_id.split(":")[0];
     const l = majorLine({ unit_id: colleges });
-    if (l) assert.ok(u.review?.quote, `${u.unit_id}: a Major line needs a quoted review`);
+    // Every unit the line cites must carry a quoted review (a unit with only a published rate adds nothing to it).
+    for (const c of l?.unitCites ?? []) assert.ok(byId.get(c.unitId)?.review?.quote, `${c.unitId}: a Major line needs a quoted review`);
   }
   const src: MajorSource = curatedMajorSource("190415");
   assert.ok(src.units.every((u) => u.unit !== "university"));

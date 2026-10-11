@@ -53,7 +53,8 @@
     "check:major-admission": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/check-major-admission.mts",
     "college-failures": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/college-failures.mts",
     "publish-college-failures": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --env-file-if-exists=.env.local scripts/publish-college-failures.mts",
-    "chances-calibration": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --env-file-if-exists=.env.local scripts/chances-calibration.mts"
+    "chances-calibration": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --env-file-if-exists=.env.local scripts/chances-calibration.mts",
+    "fix-fraction-rates": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/fix-fraction-rates.mts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.131.0",

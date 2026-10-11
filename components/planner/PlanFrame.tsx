@@ -1,5 +1,4 @@
 import type { CalendarChild } from "@/components/planner/tabs/types";
-import FirstTimeSetup from "@/components/planner/FirstTimeSetup";
 import { GradYearPrompt } from "@/components/planner/GradYearPrompt";
 import { ImportLocalPlan } from "@/components/planner/ImportLocalPlan";
 import { NextUp } from "@/components/planner/NextUp";
@@ -7,7 +6,7 @@ import { PlanHeaderCard } from "@/components/planner/PlanHeaderCard";
 import { PlanTabs } from "@/components/planner/PlanTabs";
 import { StuckSignals } from "@/components/planner/parents/StuckSignals";
 import { WhatParentsSee } from "@/components/planner/parents/WhatParentsSee";
-import { firstTimeNeeded, seasonWords } from "@/lib/planner/plan-frame";
+import { seasonWords } from "@/lib/planner/plan-frame";
 import { defaultTab, tabsFor, type PlanTab } from "@/lib/planner/plan-tabs";
 import type { PlanView } from "@/lib/planner/plan-view";
 import { addDays } from "@/lib/planner/stage";
@@ -83,11 +82,8 @@ export function PlanFrame({
       <StuckSignals signals={signals} />
       {relation === "self" && <ImportLocalPlan studentId={studentId} canEdit={ctx.viewer.canEdit} />}
       {relation === "self" && <WhatParentsSee summary={summary} stuckSignals={signals.map((s) => s.text)} tickedThisWeek={tickedThisWeek} />}
-      {firstTimeNeeded(view) ? (
-        <FirstTimeSetup ctx={ctx} view={view} />
-      ) : (
-        <PlanTabs ctx={ctx} view={view} tabs={tabs} tab={openTab} person={personId} hasRetake={view.retake !== null} calendarChild={calendarChild} viewer={viewer} />
-      )}
+      {/* TODO(U5 Frame + parents): wire intakeNeeded(ctx)/?setup=1 → <PlanIntake> here; firstTimeNeeded is gone with FirstTimeSetup. */}
+      <PlanTabs ctx={ctx} view={view} tabs={tabs} tab={openTab} person={personId} hasRetake={view.retake !== null} calendarChild={calendarChild} viewer={viewer} />
     </div>
   );
 }

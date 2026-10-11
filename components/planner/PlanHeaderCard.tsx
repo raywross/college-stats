@@ -1,11 +1,12 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { Pencil } from "lucide-react";
 import { MostUsefulInput } from "@/components/chances/MostUsefulInput";
-import NumbersForm from "@/components/planner/NumbersForm";
 import { PlanCoursesSheet } from "@/components/planner/PlanCoursesSheet";
 import { Term } from "@/components/ui/info-tip";
+import { planHref } from "@/lib/planner/plan-tabs";
 import { TEST_LABEL } from "@/lib/planner/standing";
 import { gpaAsEntered } from "@/lib/student-profile";
 import type { PlanContext } from "@/lib/planner/types";
@@ -33,9 +34,9 @@ export function PlanHeaderCard({
   season: string;
   color: string;
 }) {
-  const [editing, setEditing] = useState(false);
   const [coursesOpen, setCoursesOpen] = useState(false);
   const courseCount = ctx.profile?.academics.courses.length ?? 0;
+  const person = relation === "guardian" ? (ctx.student?.id ?? null) : null;
   const title = relation === "self" ? "Your plan" : `${firstName ?? "Their"}'s plan`;
   const initial = (relation === "self" ? "Y" : firstName?.[0]?.toUpperCase()) ?? "S";
   const gradYear = ctx.student?.grad_year ?? null;
@@ -68,24 +69,19 @@ export function PlanHeaderCard({
           </p>
         </div>
       </div>
-      {editing ? (
-        <div className="mt-4">
-          <NumbersForm ctx={ctx} view={view} onClose={() => setEditing(false)} />
-        </div>
-      ) : ctx.viewer.canEdit ? (
-        <button
-          type="button"
-          onClick={() => setEditing(true)}
+      {ctx.viewer.canEdit ? (
+        <Link
+          href={planHref({ person, setup: true })}
           className="mt-4 flex min-h-11 flex-wrap items-center gap-2 rounded-2xl bg-muted/60 px-3 py-2 text-left text-sm hover:bg-muted"
         >
           {numbersLine}
           <Pencil className="ml-1 size-3.5 text-muted-foreground" aria-hidden />
-        </button>
+        </Link>
       ) : (
         <p className="mt-4 flex flex-wrap items-center gap-2 rounded-2xl bg-muted/60 px-3 py-2 text-sm">{numbersLine}</p>
       )}
-      {!editing && <MostUsefulInput estimates={view.estimates} className="mt-2 px-3" />}
-      {!editing && ctx.viewer.canEdit && (
+      <MostUsefulInput estimates={view.estimates} className="mt-2 px-3" />
+      {ctx.viewer.canEdit && (
         <>
           <button
             type="button"

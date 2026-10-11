@@ -2,17 +2,44 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Search } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { AccountMenu } from "@/components/account/AccountMenu";
+import { useMe } from "@/components/account/useMe";
 import { Logo } from "@/components/layout/Logo";
 import { SchoolSearch } from "@/components/search/SchoolSearch";
 import { useCompareIds } from "@/lib/compare";
 import { cn } from "@/lib/utils";
 
+/**
+ * Whether a deadline is due within a week, fetched client-side after mount from `/api/plan/next` (page.md
+ * "Navigation"): never computed on the server, so public pages stay static. Signed-out visitors and any fetch
+ * error read as false.
+ */
+function usePlanDueSoon(signedIn: boolean | undefined): boolean {
+  const [fetched, setFetched] = useState(false);
+  useEffect(() => {
+    if (!signedIn) return;
+    let active = true;
+    fetch("/api/plan/next", { cache: "no-store", credentials: "same-origin" })
+      .then((r) => (r.ok ? (r.json() as Promise<{ dueSoon: boolean }>) : null))
+      .then((data) => {
+        if (active) setFetched(Boolean(data?.dueSoon));
+      })
+      .catch(() => {
+        if (active) setFetched(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [signedIn]);
+  return Boolean(signedIn) && fetched;
+}
+
 const NAV_ITEMS = [
   { label: "Explore", href: "/explore" },
+  { label: "Plan", href: "/plan" },
   { label: "Compare", href: "/compare" },
   { label: "High schools", href: "/high-schools" },
   { label: "Glossary", href: "/glossary" },
@@ -24,6 +51,8 @@ const NAV_ITEMS = [
 export function Header() {
   const pathname = usePathname();
   const compareIds = useCompareIds();
+  const me = useMe();
+  const planDueSoon = usePlanDueSoon(me?.signedIn);
   const [searchOpen, setSearchOpen] = useState(false);
 
   // Close the search row on navigation.
@@ -70,6 +99,9 @@ export function Header() {
                   <span className="inline-flex size-5 animate-pop-in items-center justify-center rounded-full bg-pop text-[11px] font-bold text-pop-foreground">
                     {compareIds.length}
                   </span>
+                )}
+                {item.href === "/plan" && planDueSoon && (
+                  <span className="inline-flex size-2 animate-pop-in rounded-full bg-pop" aria-label="A deadline in the next 7 days" />
                 )}
               </Link>
             );

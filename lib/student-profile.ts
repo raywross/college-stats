@@ -11,6 +11,7 @@ import type { School, SchoolType, SettingGroup, SizeBucket } from "./types.ts";
 import { satTotal } from "./score-bands.ts";
 import { isMajorFamily, type MajorFamily } from "./majors.ts";
 import { isHighSchoolId } from "./high-school-core.ts";
+import type { StandingStudent } from "./planner/standing.ts";
 
 /**
  * Same boundaries as lib/metrics.ts SIZE_BUCKETS, duplicated here rather than imported: that module pulls in
@@ -55,7 +56,8 @@ export interface StudentProfileBasics {
 export type GpaScale = "4.0" | "5.0" | "100";
 export const GPA_SCALES: { value: GpaScale; label: string }[] = [
   { value: "4.0", label: "4.0 scale" },
-  { value: "5.0", label: "5.0 scale" },
+  // Stored as "5.0" (unchanged); a weighted GPA, read as a range by the plan (planGpaRange; planner/redesign/gpa.md).
+  { value: "5.0", label: "Weighted (honors/AP count extra)" },
   { value: "100", label: "100-point scale" },
 ];
 
@@ -88,6 +90,30 @@ export interface StudentProfileTests {
   superscore: boolean;
   /** "I plan to apply test-optional" even where scores are on file. */
   plansTestOptional: boolean;
+  /**
+   * The one test the plan uses (specs/planner/redesign/standing.md "The numbers"): SAT, ACT, "none" (not testing:
+   * the plan uses GPA alone), or null (not asked yet). Switching keeps both stored scores.
+   */
+  focus: TestFocus | null;
+  /** The score in the focus test is a practice score (a PSAT or practice test); shown once, in the plan's header card. */
+  practice: boolean;
+  /**
+   * Test dates the student picked with "I'll take it" (scores.md "Test dates"): cycle-file entry keys such as
+   * `sat_2026_10` (data/application-cycle.json); the cycle generator makes register and test-day tasks only for these.
+   */
+  plannedDates: string[];
+}
+
+export type TestFocus = "sat" | "act" | "none";
+const TEST_FOCUS_VALUES: TestFocus[] = ["sat", "act", "none"];
+/** Most test dates a student can pick at once. */
+export const PLANNED_DATES_MAX = 6;
+/** A test-date key in the cycle file: `sat_YYYY_MM` or `act_YYYY_MM` (tests/planner-redesign-profile.test.mts checks every test date in the cycle file has this shape). */
+const TEST_DATE_KEY = /^(sat|act)_\d{4}_(0[1-9]|1[0-2])$/;
+
+/** Whether a value is a cycle-file test-date key (`sat_2026_10`). */
+export function isTestDateKey(v: unknown): v is string {
+  return typeof v === "string" && TEST_DATE_KEY.test(v);
 }
 
 export type EarlyRoundInterest = "ed" | "ea" | "none";
@@ -148,6 +174,9 @@ export function emptyProfile(): StudentProfileData {
       actScience: null,
       superscore: false,
       plansTestOptional: false,
+      focus: null,
+      practice: false,
+      plannedDates: [],
     },
     plans: { intendedMajors: [], earlyRoundInterest: null },
     preferences: { sizes: [], settings: [], statesOrRegions: [], maxAverageCost: null, types: [] },
@@ -205,8 +234,12 @@ const SCHOOL_TYPE_VALUES: SchoolType[] = ["public", "private-nonprofit", "privat
 const EARLY_ROUND_VALUES: EarlyRoundInterest[] = ["ed", "ea", "none"];
 const GPA_SCALE_VALUES: GpaScale[] = ["4.0", "5.0", "100"];
 
-function gpaMaxFor(scale: GpaScale): number {
-  return scale === "4.0" ? 4.0 : scale === "5.0" ? 5.0 : 100;
+/**
+ * The highest GPA kept on each scale. A 4.0-scale GPA may run to 5.0: above 4.0 it is weighted by definition, and the
+ * plan reads it as a range (planGpaRange; specs/planner/redesign/gpa.md "The design" 3). unweightedGpa4 still caps it.
+ */
+export function gpaMaxFor(scale: GpaScale): number {
+  return scale === "100" ? 100 : 5.0;
 }
 
 /**
@@ -249,6 +282,9 @@ export function sanitizeProfile(input: unknown): StudentProfileData {
     actScience: int(t.actScience, 1, 36),
     superscore: bool(t.superscore),
     plansTestOptional: bool(t.plansTestOptional),
+    focus: TEST_FOCUS_VALUES.includes(t.focus as TestFocus) ? (t.focus as TestFocus) : null,
+    practice: bool(t.practice),
+    plannedDates: arr(t.plannedDates, (x) => (isTestDateKey(x) ? x : null), PLANNED_DATES_MAX),
   };
 
   const pl = isObj(input.plans) ? input.plans : {};
@@ -329,6 +365,66 @@ export function gpaDisplay(academics: Pick<StudentProfileAcademics, "gpa" | "gpa
 
 function trimTrailingZero(n: number): string {
   return Number(n.toFixed(2)).toString();
+}
+
+/* ------------------------------------------------------------------ */
+/* The plan's numbers (specs/planner/redesign/standing.md)             */
+/* ------------------------------------------------------------------ */
+
+/**
+ * The one test the plan uses (standing.md "The numbers"): the focus test's score when the student picked one; with
+ * no focus yet and exactly one score on file, that one; "Not testing", no score, or two scores and no pick: null.
+ */
+export function planTest(profile: Pick<StudentProfileData, "tests"> | null): { kind: "sat" | "act"; score: number } | null {
+  if (!profile) return null;
+  const t = profile.tests;
+  if (t.focus === "none") return null;
+  if (t.focus === "sat") return t.satTotal !== null ? { kind: "sat", score: t.satTotal } : null;
+  if (t.focus === "act") return t.actComposite !== null ? { kind: "act", score: t.actComposite } : null;
+  if (t.satTotal !== null && t.actComposite === null) return { kind: "sat", score: t.satTotal };
+  if (t.actComposite !== null && t.satTotal === null) return { kind: "act", score: t.actComposite };
+  return null;
+}
+
+/** The student as the standing model reads them: unweighted GPA on 4.0 (unweightedGpa4) and the one test. */
+export function planStudent(profile: Pick<StudentProfileData, "tests" | "academics"> | null): StandingStudent {
+  if (!profile) return { gpa: null, test: null };
+  return { gpa: unweightedGpa4(profile.academics.gpa, profile.academics.gpaScale), test: planTest(profile) };
+}
+
+/** A GPA is weighted when it's on the weighted scale, or on the 4.0 scale but above 4.0. */
+function isWeightedGpa(a: Pick<StudentProfileAcademics, "gpa" | "gpaScale">): boolean {
+  return a.gpa !== null && (a.gpaScale === "5.0" || (a.gpaScale === "4.0" && a.gpa > 4));
+}
+
+/**
+ * The unweighted range the plan reads the student's GPA as (specs/planner/redesign/gpa.md "The design" 3). An
+ * unweighted 4.0-scale GPA is itself; a weighted one (the weighted scale, or above 4.0 on the 4.0 scale) lies in
+ * [w − 1, min(4, w)], since weighting adds at most a point per class; a 100-point GPA is the band table's value.
+ * Null when no GPA is on file. Only the plan reads this; other tools keep unweightedGpa4.
+ */
+export function planGpaRange(profile: Pick<StudentProfileData, "academics"> | null): [number, number] | null {
+  const a = profile?.academics;
+  if (!a || a.gpa === null) return null;
+  if (isWeightedGpa(a)) return [Math.max(0, a.gpa - 1), Math.min(4, a.gpa)];
+  if (a.gpaScale === "100") {
+    const g = gpaFrom100(a.gpa);
+    return [g, g];
+  }
+  return [a.gpa, a.gpa];
+}
+
+/**
+ * How the plan's reasons show the student's GPA: "3.82"; "about 3.4–4.0 unweighted (from a weighted 4.4)"; "about 3.7
+ * unweighted (from 93/100)". Null when no GPA is on file.
+ */
+export function planGpaLabel(profile: Pick<StudentProfileData, "academics"> | null): string | null {
+  const a = profile?.academics;
+  const range = planGpaRange(profile ?? null);
+  if (!a || a.gpa === null || !range) return null;
+  if (isWeightedGpa(a)) return `about ${range[0].toFixed(1)}–${range[1].toFixed(1)} unweighted (from a weighted ${trimTrailingZero(a.gpa)})`;
+  if (a.gpaScale === "100") return `about ${range[0].toFixed(1)} unweighted (from ${trimTrailingZero(a.gpa)}/100)`;
+  return a.gpa.toFixed(2);
 }
 
 /* ------------------------------------------------------------------ */

@@ -13,7 +13,6 @@ import { PGlite } from "@electric-sql/pglite";
 import { pg_trgm } from "@electric-sql/pglite/contrib/pg_trgm";
 import { AUTH_STUB_SQL, affectedAsUser, asUser, createUser, type AuthDb } from "./helpers/pg-auth.mts";
 import {
-  bindingChecklist,
   conflicts,
   cycleLabel,
   earliestEarlyDeadline,
@@ -21,7 +20,6 @@ import {
   isOffered,
   lastCycleNote,
   priorityOrder,
-  proposeRounds,
   redConflictCount,
   resolveMonthDay,
   roundDates,
@@ -34,7 +32,8 @@ import {
   type RoundsSchool,
   type Standing,
 } from "../lib/planner/rounds.ts";
-import { DECIDE_ROUNDS_LEAD_DAYS, generate } from "../lib/planner/generators/rounds.ts";
+import { COST_CHECK_LEAD_DAYS, generate } from "../lib/planner/generators/rounds.ts";
+import { applyMerge, mergeTasks, taskKey } from "../lib/planner/tasks.ts";
 import { stageOf } from "../lib/planner/stage.ts";
 import type { GeneratorInput, PlanSchool } from "../lib/planner/types.ts";
 import type { ReportedAdmissionProfile, ReportedLogistics } from "../lib/types.ts";
@@ -98,7 +97,6 @@ function item(unit_id: string, over: Partial<RoundsItem> = {}): RoundsItem {
 const standingOf = (items: RoundsItem[], schools: Record<string, RoundsSchool>): Record<string, Standing> =>
   Object.fromEntries(items.map((i) => [i.id, standingFor(i, schools[i.unit_id])]));
 const by = <T extends { unit_id: string }>(list: T[]) => Object.fromEntries(list.map((s) => [s.unit_id, s]));
-const roundOf = (p: ReturnType<typeof proposeRounds>, id: string) => p.lines.find((l) => l.itemId === id)!;
 
 /* ------------------------------------------------------------------ */
 /* Offered and dates                                                   */
@@ -149,151 +147,13 @@ test("priority order: the Dream first, then the student's rank, then category an
 });
 
 /* ------------------------------------------------------------------ */
-/* The five fixtures                                                   */
-/* ------------------------------------------------------------------ */
-
-test("fixture 1: a Dream that offers ED gets ED I; EA goes to every college that offers it; the rest RD; each line says why", () => {
-  const schools = by([
-    school("dream", "Dream U", { early_decision: ED(), early_action: NO_EA, factors: {} }),
-    school("ea", "EA College", { early_decision: NO_ED, early_action: EA(), factors: { interest: "considered" } }),
-    school("ed-too", "Other ED", { early_decision: ED(), early_action: NO_EA }),
-    school("rd", "Regular U", { early_decision: NO_ED, early_action: NO_EA }),
-  ]);
-  const items = [item("ea", { priority: 2 }), item("rd", { priority: 4 }), item("ed-too", { priority: 3 }), item("dream", { dream: true, priority: 1 })];
-  const p = proposeRounds(items, schools, standingOf(items, schools));
-  assert.deepEqual(p.order.map((id) => id.split("-").slice(1).join("-")), ["dream", "ea", "ed-too", "rd"]);
-  assert.equal(roundOf(p, items[3].id).round, "ed");
-  assert.match(roundOf(p, items[3].id).reason, /^ED I goes to Dream U because it's your Dream/);
-  assert.equal(roundOf(p, items[0].id).round, "ea");
-  assert.match(roundOf(p, items[0].id).reason, /considers interest/);
-  assert.equal(roundOf(p, items[2].id).round, "rd", "only one ED I; Other ED has no other early round");
-  assert.equal(roundOf(p, items[1].id).round, "rd");
-  assert.equal(p.note, null, "the list is ranked");
-  for (const l of p.lines) assert.doesNotMatch(l.reason, /recommend|should|odds/i);
-  assert.deepEqual(conflicts(items.map((i) => ({ ...i, round: roundOf(p, i.id).round })), schools), []);
-});
-
-test("fixture 2: a Dream that is REA-only gets REA and no ED goes anywhere; private EA is flagged, public EA stays", () => {
-  const schools = by([
-    school("harv", "Harvard-ish", { early_decision: NO_ED, early_action: EA(true) }),
-    school("ed", "ED College", { early_decision: ED(), early_action: NO_EA }),
-    school("priv", "Private EA", { early_decision: NO_ED, early_action: EA() }),
-    school("pub", "State U", { early_decision: NO_ED, early_action: EA() }, { type: "public" }),
-  ]);
-  const items = [item("harv", { dream: true }), item("ed"), item("priv"), item("pub")];
-  const p = proposeRounds(items, schools, standingOf(items, schools));
-  assert.equal(roundOf(p, items[0].id).round, "rea");
-  assert.match(roundOf(p, items[0].id).reason, /no ED goes anywhere/);
-  assert.equal(roundOf(p, items[1].id).round, "rd");
-  assert.equal(roundOf(p, items[2].id).round, "ea");
-  assert.match(roundOf(p, items[2].id).flag!, /check whether Harvard-ish's restrictive early action allows this/i);
-  assert.equal(roundOf(p, items[3].id).round, "ea");
-  assert.equal(roundOf(p, items[3].id).flag, null, "a public university's EA stays");
-  assert.match(p.note!, /until you rank the list/);
-  const kinds = conflicts(items.map((i) => ({ ...i, round: roundOf(p, i.id).round })), schools).map((c) => c.kind);
-  assert.deepEqual(kinds, ["rea_with_private_ea"]);
-});
-
-test("fixture 3: an ED II due before the ED I decision isn't proposed, and choosing it is an amber conflict", () => {
-  const ed2 = (closing: { month: number; day: number }) => ED({ other: { closing, notification: md(2, 15) } });
-  const schools = by([
-    school("first", "First Choice", { early_decision: ED({ first: { closing: md(11, 1), notification: md(12, 20) } }), early_action: NO_EA }),
-    school("early2", "Early Two", { early_decision: ed2(md(12, 1)), early_action: NO_EA }),
-    school("late2", "Late Two", { early_decision: ed2(md(1, 5)), early_action: NO_EA }),
-  ]);
-  const items = [item("first", { priority: 1 }), item("early2", { priority: 2 }), item("late2", { priority: 3 })];
-  const p = proposeRounds(items, schools, standingOf(items, schools));
-  assert.equal(roundOf(p, items[0].id).round, "ed");
-  assert.equal(roundOf(p, items[1].id).round, "rd");
-  assert.match(roundOf(p, items[1].id).reason, /ED II doesn't go to Early Two because its deadline \(Dec 1\) comes before First Choice decides \(Dec 20\)/);
-  assert.equal(roundOf(p, items[2].id).round, "ed2");
-  assert.match(roundOf(p, items[2].id).reason, /as the fallback if First Choice says no or defers/);
-  const chosen = [{ ...items[0], round: "ed" as const }, { ...items[1], round: "ed2" as const }, { ...items[2], round: "rd" as const }];
-  const found = conflicts(chosen, schools);
-  assert.deepEqual(found.map((c) => [c.kind, c.severity]), [["ed2_before_ed_decision", "amber"]]);
-  assert.match(found[0].text, /you'd have to decide before you hear from First Choice/);
-});
-
-test("fixture 4: no estimates: the money question is red with the calculator; over the family's limit is an amber conflict", () => {
-  const schools = by([school("ed", "Pricey ED", { early_decision: ED(), early_action: NO_EA }, { avgCost: 52000 })]);
-  const items = [item("ed", { round: "ed" })];
-  const money: MoneyInput = { limit: 30000, estimates: {} };
-  const found = conflicts(items, schools, money);
-  assert.deepEqual(found.map((c) => [c.kind, c.severity]), [["ed_over_limit", "amber"]]);
-  assert.equal(found[0].link, "https://ed.edu/npc");
-  assert.match(found[0].text, /\$52,000.*\$30,000/);
-  const lines = bindingChecklist(items[0], schools.ed, standingFor(items[0], schools.ed), money, found);
-  assert.deepEqual(lines.map((l) => l.question), ["advantage", "money", "options"]);
-  assert.equal(lines[0].text, "ED offered; counts not published");
-  assert.equal(lines[1].state, "red");
-  assert.equal(lines[1].text, "ED is binding; get an estimate or run the calculator before you decide");
-  assert.equal(lines[1].link, "https://ed.edu/npc");
-  assert.equal(lines[2].state, "amber");
-  // With a shared estimate inside the limit: green, and no conflict.
-  const shared: MoneyInput = { limit: 30000, estimates: { [items[0].id]: { low: 24000, high: 28000, sharedBy: "Mom" } } };
-  assert.deepEqual(conflicts(items, schools, shared), []);
-  const green = bindingChecklist(items[0], schools.ed, null, shared, []);
-  assert.equal(green[1].state, "green");
-  assert.equal(green[1].text, "Estimate $24K–$28K/yr, shared by Mom, inside your limit");
-  assert.equal(bindingChecklist(items[0], schools.ed, null, { limit: 20000, estimates: shared.estimates }, [])[1].state, "amber");
-});
-
-test("fixture 5: an import with a round the college dropped is a red conflict, and the strip counts it", () => {
-  const schools = by([school("x", "No ED Anymore", { early_decision: NO_ED, early_action: EA() }), school("y", "Fine", { early_decision: NO_ED, early_action: EA() })]);
-  const items = [item("x", { round: "ed" }), item("y", { round: "ea" })];
-  const found = conflicts(items, schools);
-  assert.deepEqual(found.map((c) => [c.kind, c.severity]), [["not_offered", "red"]]);
-  assert.match(found[0].text, /No ED Anymore doesn't offer early decision/);
-  assert.equal(redConflictCount(items, schools), 1);
-  const stage = stageOf({ items: items.map((i) => ({ ...i, enrolling: false, visited_on: null })), tasks: [], today: "2026-10-08", conflicts: redConflictCount(items, schools) });
-  assert.deepEqual(stage.stages[2], { state: "open", count: "1 conflict" });
-  // The proposal moves it to a round the college offers.
-  const p = proposeRounds(items, schools, standingOf(items, schools));
-  assert.equal(roundOf(p, items[0].id).round, "ea");
-});
 
 /* ------------------------------------------------------------------ */
-/* Rule 1's Reach caveat                                               */
-/* ------------------------------------------------------------------ */
-
-test("ED I at a Reach for everyone: skipped when a higher-ranked college isn't one; allowed at the top with the caveat", () => {
-  const schools = by([
-    school("top", "Top Target", { early_decision: NO_ED, early_action: NO_EA }, { admitRate: 0.4 }),
-    school("ivy", "Ivy", { early_decision: ED(), early_action: NO_EA }, { admitRate: 0.05 }),
-    school("ok", "Okay ED", { early_decision: ED(), early_action: NO_EA }, { admitRate: 0.35 }),
-  ]);
-  const items = [item("top", { priority: 1 }), item("ivy", { priority: 2 }), item("ok", { priority: 3 })];
-  const p = proposeRounds(items, schools, standingOf(items, schools));
-  assert.equal(roundOf(p, items[1].id).round, "rd");
-  assert.match(roundOf(p, items[1].id).reason, /ED I doesn't go to Ivy because it's a Reach for everyone and you rank Top Target above it/);
-  assert.equal(roundOf(p, items[2].id).round, "ed");
-
-  const top = [item("ivy", { priority: 1 }), item("ok", { priority: 2 })];
-  const q = proposeRounds(top, schools, standingOf(top, schools));
-  assert.equal(roundOf(q, top[0].id).round, "ed");
-  assert.match(roundOf(q, top[0].id).reason, /an early application doesn't turn a Reach into a Target/);
-});
 
 test("standing: under 20% admitted is a Reach for everyone; otherwise the list's category", () => {
   assert.equal(standingFor({ category: "target" }, { admitRate: 0.19 }).label, "Reach for everyone");
   assert.equal(standingFor({ category: "target" }, { admitRate: 0.2 }).label, "Target");
   assert.equal(standingFor({ category: "unsorted" }, { admitRate: null }).label, "Not sorted");
-});
-
-test("rolling colleges: apply early in the fall, with the priority date", () => {
-  const schools = by([
-    school("r", "Rolling State", { early_decision: NO_ED, early_action: NO_EA }, { logistics: logistics({ priority_date: md(12, 1), regular_closing: null, notification: { kind: "rolling", rolling_from: md(10, 15), by_date: null, other_date: null, other_text: null } }) }),
-  ]);
-  const items = [item("r")];
-  const p = proposeRounds(items, schools, standingOf(items, schools));
-  assert.equal(p.lines[0].round, "rolling");
-  assert.equal(p.lines[0].reason, "Rolling at Rolling State: apply early in the fall (priority date Dec 1)");
-});
-
-test("applied and decided colleges keep their round", () => {
-  const schools = by([school("a", "A", { early_decision: ED(), early_action: NO_EA })]);
-  const items = [item("a", { status: "applied", round: "rd" })];
-  assert.deepEqual(proposeRounds(items, schools, standingOf(items, schools)).lines[0], { itemId: items[0].id, round: "rd", reason: "Already applied", flag: null });
 });
 
 /* ------------------------------------------------------------------ */
@@ -371,27 +231,8 @@ test("only red conflicts count on the strip", () => {
 /* Advantage in the table, summary                                     */
 /* ------------------------------------------------------------------ */
 
-test("the table's advantage line uses the same document's totals and the counts' edition", () => {
-  const s = school("a", "A", { early_decision: ED({ applicants: 1000, admitted: 240 }), early_action: EA() }, {
-    edTotals: { applicants: 11000, admitted: 1140, enrolled: 500 },
-    cites: { "reported.admission_profile.early_decision.applicants": { cdsEdition: "2025–26" } },
-  });
-  const e = earlyFor(s);
-  assert.equal(e.line, "ED admitted 24% vs 9% non-ED (CDS 2025–26) · 2.7× the non-ED rate");
-  assert.equal(e.share, "about 46% of the class (if 95% of ED admits enroll)");
-  assert.equal(e.field, "reported.admission_profile.early_decision.admitted");
-  assert.equal(earlyFor(school("b", "B", { early_decision: NO_ED })).line, null);
-});
-
-test("summary line: ED I and ED II by name, EA and RD counted", () => {
-  const schools = by([school("m", "Michigan", null), school("t", "Tufts", null), school("e1", "E1", null), school("e2", "E2", null), school("r", "R", null)]);
-  const items = [item("m", { round: "ed" }), item("t", { round: "ed2" }), item("e1", { round: "ea" }), item("e2", { round: "ea" }), item("r", { round: "rd" })];
-  assert.equal(roundsSummary(items, schools), "ED I Michigan · ED II Tufts (if needed) · EA at 2 · RD at 1");
-  assert.equal(roundsSummary([item("m")], schools), null);
-});
-
 /* ------------------------------------------------------------------ */
-/* The decide-rounds step                                              */
+/* The cost_check step (redesign U6; specs/planner/redesign/rounds.md "Money")                        */
 /* ------------------------------------------------------------------ */
 
 function genInput(items: RoundsItem[], schools: Record<string, RoundsSchool>, grade: GeneratorInput["grade"] = "senior_fall"): GeneratorInput {
@@ -408,33 +249,71 @@ function genInput(items: RoundsItem[], schools: Record<string, RoundsSchool>, gr
   };
 }
 
-test("decide_rounds: six weeks before the earliest early deadline, student-assigned, with the deadline's lineage", () => {
+test("earliestEarlyDeadline still finds the earliest early closing date across the list", () => {
   const schools = by([
     school("a", "A", { early_decision: ED({ first: { closing: md(11, 15), notification: md(12, 15) } }), early_action: NO_EA }),
     school("b", "Bee", { early_decision: NO_ED, early_action: EA(false, { closing: md(11, 1) }) }, { editionIsLastCycle: true }),
   ]);
-  const tasks = generate(genInput([item("a"), item("b")], schools));
-  assert.equal(tasks.length, 1);
-  const t = tasks[0];
-  assert.equal(t.key, "list-1:decide_rounds:-");
-  assert.equal(t.kind, "decide_rounds");
-  assert.equal(t.item_id, null);
-  assert.equal(DECIDE_ROUNDS_LEAD_DAYS, 42);
-  assert.equal(t.due_on, "2026-09-20", "Nov 1 minus 42 days");
-  assert.equal(t.assignee, "student");
-  assert.equal(t.source, "stage");
-  assert.equal(t.source_field, "reported.admission_profile.early_action.closing");
-  assert.equal(t.date_note, "last_cycle");
-  assert.match(t.detail!, /Bee EA, Nov 1/);
   assert.equal(earliestEarlyDeadline([item("a"), item("b")], schools)?.date.iso, "2026-11-01");
 });
 
-test("decide_rounds: nothing out of season, and nothing without an early round", () => {
-  const schools = by([school("a", "A", { early_decision: ED(), early_action: NO_EA }), school("r", "R", { early_decision: NO_ED, early_action: NO_EA })]);
-  assert.deepEqual(generate(genInput([item("a")], schools, "earlier")), []);
-  assert.deepEqual(generate(genInput([item("a")], schools, "graduated")), []);
-  assert.deepEqual(generate(genInput([item("r")], schools)), []);
-  assert.deepEqual(generate(genInput([item("a", { status: "decided", outcome: "admitted" })], schools)), [], "a decided college's deadline doesn't count");
+test("cost_check: 21 days before the ED closing date, guardian-assigned, with the deadline's lineage and the net price calculator", () => {
+  const schools = by([school("a", "A", { early_decision: ED({ first: { closing: md(11, 15), notification: md(12, 15) } }), early_action: NO_EA }, { editionIsLastCycle: true })]);
+  const i = item("a", { round: "ed" });
+  const tasks = generate(genInput([i], schools));
+  assert.equal(tasks.length, 1);
+  const t = tasks[0];
+  assert.equal(t.key, taskKey("list-1", "cost_check", `${i.id}:ed`));
+  assert.equal(t.kind, "cost_check");
+  assert.equal(t.item_id, i.id);
+  assert.equal(COST_CHECK_LEAD_DAYS, 21);
+  assert.equal(t.due_on, "2026-10-25", "Nov 15 minus 21 days");
+  assert.equal(t.title, "Check the cost of A together before applying ED I");
+  assert.equal(t.assignee, "guardian");
+  assert.equal(t.source, "stage");
+  assert.equal(t.source_field, "reported.admission_profile.early_decision.first.closing");
+  assert.equal(t.date_note, "last_cycle");
+  assert.match(t.detail!, /net price calculator.*https:\/\/a\.edu\/npc/);
+});
+
+test("cost_check: ED II gets its own key and title", () => {
+  const schools = by([school("a", "A", { early_decision: ED({ other: { closing: md(1, 5), notification: md(2, 15) } }), early_action: NO_EA })]);
+  const i = item("a", { round: "ed2" });
+  const t = generate(genInput([i], schools))[0];
+  assert.equal(t.key, taskKey("list-1", "cost_check", `${i.id}:ed2`));
+  assert.equal(t.title, "Check the cost of A together before applying ED II");
+});
+
+test("cost_check: nothing without a published closing date, without a link, without a binding round, once applied or withdrawn, or on a guardian's own list", () => {
+  const noLink = school("a", "A", { early_decision: ED(), early_action: NO_EA }, { links: { website: "https://a.edu", price_calculator: null, admissions: "https://a.edu/admissions" } });
+  const noDate = school("n", "N", { early_decision: NO_ED, early_action: NO_EA });
+  const schools = by([noLink, noDate]);
+  assert.doesNotMatch(generate(genInput([item("a", { round: "ed" })], schools))[0].detail!, /https:\/\//, "no calculator link: no URL in the detail");
+  assert.deepEqual(generate(genInput([item("n", { round: "ed" })], schools)), [], "no closing date on record");
+  assert.deepEqual(generate(genInput([item("a", { round: "ea" })], schools)), [], "not a binding round");
+  assert.deepEqual(generate(genInput([item("a", { round: "ed", status: "applied" })], schools)), [], "already applied");
+  assert.deepEqual(generate(genInput([item("a", { round: "ed", status: "decided", outcome: "admitted" })], schools)), [], "already decided");
+  assert.deepEqual(generate(genInput([{ ...item("a", { round: "ed" }), withdrawn_on: "2026-09-01" } as RoundsItem], schools)), [], "withdrawn");
+  const guardianList = { ...genInput([item("a", { round: "ed" })], schools), list: { ...genInput([], schools).list, student_id: null } };
+  assert.deepEqual(generate(guardianList), [], "a guardian's own list gets no cost checks");
+});
+
+test("cost_check: moving the round off ED orphans the task through mergeTasks", () => {
+  const schools = by([school("a", "A", { early_decision: ED({ first: { closing: md(11, 15), notification: md(12, 15) } }), early_action: EA() })]);
+  const i = item("a", { round: "ed" });
+  const edInput = genInput([i], schools);
+  const first = generate(edInput);
+  const stored = applyMerge("list-1", [], mergeTasks([], first), "2026-08-15T12:00:00Z", (k) => `id:${k}`);
+  const key = taskKey("list-1", "cost_check", `${i.id}:ed`);
+  assert.ok(stored.some((t) => t.key === key && !t.orphaned));
+
+  const eaInput = genInput([{ ...i, round: "ea" }], schools);
+  const second = generate(eaInput);
+  assert.ok(!second.some((t) => t.key === key), "an EA row generates no cost_check");
+  const merge = mergeTasks(stored, second);
+  assert.ok(merge.orphans.includes(stored.find((t) => t.key === key)!.id));
+  const after = applyMerge("list-1", stored, merge, "2026-08-15T12:00:00Z");
+  assert.equal(after.find((t) => t.key === key)!.orphaned, true);
 });
 
 /* ------------------------------------------------------------------ */

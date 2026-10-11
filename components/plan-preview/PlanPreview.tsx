@@ -10,7 +10,7 @@ import { derive, initialState, type KidState } from "./derive";
 import { ListView } from "./ListView";
 import { ScoresView } from "./ScoresView";
 import { CalendarView } from "./CalendarView";
-import { KID_VARS, PALETTE_CSS, ROUND_VAR, dayLabel, daysBetween, type PreviewEntry, type PreviewKid } from "./types";
+import { KID_VARS, ROUND_VAR, dayLabel, daysBetween, type PreviewEntry, type PreviewKid } from "./types";
 import { ROUND_SHORT } from "@/lib/planner/rounds";
 
 export type { PreviewEntry, PreviewKid, PreviewSchool } from "./types";
@@ -57,8 +57,6 @@ export function PlanPreview({ kids, entries, today: builtOn }: { kids: PreviewKi
 
   return (
     <div className="pv mx-auto max-w-5xl space-y-6">
-      <style>{PALETTE_CSS}</style>
-
       {/* Preview chrome: what this page is, the proposed navigation, and who you're looking as. */}
       <div className="space-y-3 rounded-3xl border border-dashed bg-muted/40 p-4 text-sm">
         <p>

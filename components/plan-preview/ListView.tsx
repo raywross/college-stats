@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { ChevronDown, Heart, Info, RotateCcw, Sparkles, TrendingUp } from "lucide-react";
 import { CollegeChip } from "@/components/planner/CollegeChip";
-import { SourceTip } from "@/components/ui/info-tip";
+import { InfoTip, SourceTip } from "@/components/ui/info-tip";
 import { ROUND_SHORT } from "@/lib/planner/rounds";
 import { TEST_LABEL, type Fit } from "@/lib/planner/standing";
 import type { ListRound } from "@/lib/list-rules";
@@ -211,7 +211,10 @@ function ListRow({
         <div className="space-y-2 bg-muted/40 px-4 py-3 pl-16 text-sm">
           <p>
             <span className="font-semibold">{fit ? FIT_LABEL[fit] : "No group yet"}:</span>{" "}
-            {row.fitAuto ? row.standing.reasons.join(" ") || "Add a GPA or a score to sort this one." : "You picked this group."}{" "}
+            {row.fitAuto ? row.standing.reasons.join(" ") || "Add a GPA or a score to sort this one." : "You picked this group."}
+            {row.fitAuto && row.standing.gpaNote?.cite && school.cites.gpa && (
+              <InfoTip term={row.standing.gpaNote.cite === "derived.gpa_estimate" ? "gpa-estimate" : "high-school-gpa"} cited={school.cites.gpa} className="ml-1 align-middle" />
+            )}{" "}
             {!row.fitAuto && (
               <button type="button" onClick={onFitReset} className="inline-flex items-center gap-1 font-semibold text-primary hover:underline">
                 <RotateCcw className="size-3" /> Use the suggestion

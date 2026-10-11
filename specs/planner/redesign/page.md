@@ -1,6 +1,6 @@
 # Plan Page: A Top-Level Link, Three Tabs, and the Child Switcher
 
-> Status: **planned** 2026-10-09. Part 1 of the [planner redesign](README.md). Replaces the Plan tab's frame
+> Status: **built** 2026-10-10 on feature/plan-redesign ([build plan](build-plan.md)). Part 1 of the [planner redesign](README.md). Replaces the Plan tab's frame
 > ([../model.md](../model.md#where-it-lives)): the six-stage strip, the stage panels, and the route under the household
 > page. Builds on [household-hub.md](../../product/household-hub.md) and [parents.md](../parents.md).
 

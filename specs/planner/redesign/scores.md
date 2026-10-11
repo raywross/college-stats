@@ -1,6 +1,6 @@
 # Scores: Where You Stand, and Whether Another Test Would Help
 
-> Status: **planned** 2026-10-09. Part 5 of the [planner redesign](README.md). After [standing.md](standing.md).
+> Status: **built** 2026-10-10 on feature/plan-redesign ([build plan](build-plan.md)). Part 5 of the [planner redesign](README.md). After [standing.md](standing.md).
 > Replaces the SAT and ACT dates the timeline generated for everyone ([../timeline.md](../timeline.md)) with a coach
 > for the one test the student is taking.
 

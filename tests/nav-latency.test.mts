@@ -21,7 +21,7 @@ const read = (rel: string) => readFileSync(join(ROOT, rel), "utf8");
 /* Loading boundaries                                                   */
 /* ------------------------------------------------------------------ */
 
-const LOADING_FILES = ["app/household/[person]/loading.tsx", "app/explore/loading.tsx"] as const;
+const LOADING_FILES = ["app/household/[person]/loading.tsx", "app/explore/loading.tsx", "app/plan/loading.tsx"] as const;
 
 /** What a loading file must not use: anything that reads the request or the session, and anything that fetches. */
 const REQUEST_READS = /\b(cookies|headers)\s*\(|\bgetUser\b|@\/lib\/(auth|supabase-server|households|lists|home-store)|["']next\/headers["']|\bawait\b/;

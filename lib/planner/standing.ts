@@ -9,6 +9,8 @@
  * concordance, and the result says so.
  */
 import type { TestPolicy } from "../types.ts";
+import { actToSat, satToAct } from "./concordance.ts";
+import { compareGpaMiddle, compareGpaRanges, type CollegeGpa, type GpaMiddle } from "./gpa-model.ts";
 
 export type TestKind = "sat" | "act";
 export type Fit = "reach" | "target" | "likely";
@@ -19,6 +21,13 @@ export type SendAdvice = "send" | "consider-not-sending" | "required-missing" | 
 export interface StandingStudent {
   /** Unweighted GPA on the 4.0 scale (lib/student-profile.ts normalizes other scales). */
   gpa: number | null;
+  /**
+   * The unweighted range the student's GPA allows (planGpaRange, specs/planner/redesign/gpa.md "The design" 3): a
+   * point for an unweighted GPA, wider for a weighted one. Absent: the point `gpa`.
+   */
+  gpaRange?: [number, number] | null;
+  /** How the reasons show the student's GPA ("3.82", "about 3.4–4.0 unweighted (from a weighted 4.4)"). */
+  gpaLabel?: string | null;
   /** The one test the student is taking, with their best (or practice) score. */
   test: { kind: TestKind; score: number } | null;
 }
@@ -31,8 +40,16 @@ export interface StandingSchool {
   act: [number, number] | null;
   /** Average unweighted GPA of first-years; null when unreported or the college reports a weighted average. */
   gpaAverage: number | null;
+  /**
+   * The college's GPA, best source first (collegeGpa, lib/planner/gpa-model.ts). Absent: `gpaAverage` as a reported
+   * point, else none.
+   */
+  gpa?: CollegeGpa | null;
   testPolicy: TestPolicy;
 }
+
+/** The field a GPA sentence's ⓘ cites. */
+export type GpaCite = "reported.admission_profile.gpa.average" | "derived.gpa_band_mean" | "derived.gpa_middle_half" | "derived.gpa_estimate";
 
 export interface StandingResult {
   fit: Fit | null;
@@ -41,6 +58,11 @@ export interface StandingResult {
   /** Where the score sits in the college's middle 50%, when the college reports a range the score can be read against. */
   test: { position: Position; used: boolean; kind: TestKind; range: [number, number]; concorded: boolean } | null;
   gpa: Position | null;
+  /**
+   * The one GPA sentence (gpa.md "Saying what was used"), whenever the student gave a GPA; it is also the last of
+   * `reasons`. `cite` is the field its ⓘ cites (null when the college has no GPA to cite).
+   */
+  gpaNote: { text: string; cite: GpaCite | null } | null;
   send: SendAdvice | null;
   /** Short sentences, no years (the caller cites the values with their editions). */
   reasons: string[];
@@ -68,33 +90,8 @@ export const TEST_MIN = { sat: 400, act: 1 } as const;
 export const TEST_STEP = { sat: 10, act: 1 } as const;
 export const TEST_LABEL = { sat: "SAT", act: "ACT" } as const;
 
-/**
- * ACT composite → SAT total, the 2018 concordance (College Board and ACT, "Guide to the 2018 ACT/SAT Concordance").
- * Index = ACT composite; below 9 the tables stop.
- */
-const ACT_TO_SAT: Record<number, number> = {
-  36: 1590, 35: 1540, 34: 1500, 33: 1460, 32: 1430, 31: 1400, 30: 1370, 29: 1340, 28: 1310, 27: 1280, 26: 1240,
-  25: 1210, 24: 1180, 23: 1140, 22: 1110, 21: 1080, 20: 1040, 19: 1010, 18: 970, 17: 930, 16: 890, 15: 850, 14: 800,
-  13: 760, 12: 710, 11: 670, 10: 630, 9: 590,
-};
-
-export function actToSat(act: number): number | null {
-  return ACT_TO_SAT[Math.round(act)] ?? null;
-}
-
-/** SAT total → the ACT composite whose concorded SAT is nearest (ties go to the lower ACT). */
-export function satToAct(sat: number): number | null {
-  let best: number | null = null;
-  let gap = Infinity;
-  for (const [act, s] of Object.entries(ACT_TO_SAT)) {
-    const d = Math.abs(s - sat);
-    if (d < gap || (d === gap && Number(act) < (best ?? Infinity))) {
-      best = Number(act);
-      gap = d;
-    }
-  }
-  return gap <= 40 ? best : null;
-}
+/** The 2018 ACT/SAT concordance now lives in ./concordance.ts (shared with the GPA model); re-exported here. */
+export { actToSat, satToAct };
 
 function positionIn(score: number, range: [number, number]): Position {
   if (score > range[1]) return "above";
@@ -119,6 +116,105 @@ function readScore(test: NonNullable<StandingStudent["test"]>, school: StandingS
 
 const optional = (p: TestPolicy) => p === null || p === "considered";
 const required = (p: TestPolicy) => p === "required" || p === "required-some" || p === "recommended";
+
+/** A GPA to two decimals ("3.82"). */
+export const gpaPoint = (g: number) => g.toFixed(2);
+/** A GPA range to one decimal ("3.7–3.9"), or one number when both ends round alike. */
+export function gpaSpan([lo, hi]: [number, number]): string {
+  const a = lo.toFixed(1);
+  const b = hi.toFixed(1);
+  return a === b ? a : `${a}–${b}`;
+}
+/** A published GPA as printed, up to two decimals ("4.17", "4.3"). */
+const trimGpa = (g: number) => String(Number(g.toFixed(2)));
+/** The student's own span: one number for a point ("3.82"), else the range ("3.4–4.0"). */
+const ownSpan = (r: [number, number]) => (r[0] === r[1] ? gpaPoint(r[0]) : gpaSpan(r));
+
+/** The college's GPA as the standing model reads it: `gpa` when given, else `gpaAverage` as a reported point. */
+function schoolGpa(school: StandingSchool): CollegeGpa {
+  if (school.gpa) return school.gpa;
+  const avg = school.gpaAverage;
+  return avg !== null
+    ? { kind: "reported", range: [avg, avg], point: avg, weighted: null, n: null }
+    : { kind: "none", range: null, point: null, weighted: null, n: null };
+}
+
+const GPA_CITE: Record<Exclude<CollegeGpa["kind"], "none">, GpaCite> = {
+  reported: "reported.admission_profile.gpa.average",
+  bands: "derived.gpa_band_mean",
+  estimated: "derived.gpa_estimate",
+};
+
+/**
+ * Where the student's GPA sits at this college, and the one sentence that says what was used (gpa.md "The design" 4
+ * and 5). `testLabel` names the student's score when the college reads it ("SAT"), for the sentences that fall back
+ * on it. No GPA from the student: no position and no sentence.
+ */
+function gpaStanding(student: StandingStudent, school: StandingSchool, testLabel: string | null): { position: Position | null; note: StandingResult["gpaNote"] } {
+  const own: [number, number] | null = student.gpaRange ?? (student.gpa !== null ? [student.gpa, student.gpa] : null);
+  if (!own) return { position: null, note: null };
+  const label = student.gpaLabel ?? gpaPoint(student.gpa ?? own[0]);
+  // "Your GPA (3.82) is …"; a described range ("about 3.4–4.0 unweighted (from a weighted 4.4)") is set off by commas.
+  const yours = /^[\d.]+$/.test(label) ? `Your GPA (${label})` : `Your GPA, ${label},`;
+  const college = schoolGpa(school);
+  const onlyTest = testLabel ? `only your ${testLabel} is used` : "your GPA isn't used here";
+  if (college.middle) return middleStanding(own, yours, college.middle, college.weighted, testLabel);
+
+  if (college.kind === "none" || !college.range || college.point === null) {
+    const text =
+      college.weighted !== null
+        ? `This college publishes only a weighted average (${trimGpa(college.weighted)}), which can't be compared with yours, and there aren't enough test scores to estimate an unweighted one, so ${onlyTest}.`
+        : `This college doesn't publish a GPA average, and there aren't enough test scores to estimate one, so ${onlyTest}.`;
+    return { position: null, note: { text, cite: null } };
+  }
+
+  const cite = GPA_CITE[college.kind];
+  const position = compareGpaRanges(own, college.range, STANDING.gpaBand);
+  if (position === null) {
+    const theirs = college.kind === "estimated" ? `its estimate (${gpaSpan(college.range)})` : `its average (${gpaPoint(college.point)})`;
+    const decides = testLabel ? `Your ${testLabel} decides the group here.` : "There's no score to go on here either.";
+    return { position: null, note: { text: `Your GPA can't be placed against this college's: yours (${ownSpan(own)}) and ${theirs} overlap too much to say which is higher. ${decides}`, cite } };
+  }
+  const where = position === "in" ? "close to" : position;
+  if (college.kind === "reported") return { position, note: { text: `${yours} is ${where} the ${gpaPoint(college.point)} average of enrolled students.`, cite } };
+  if (college.kind === "bands") {
+    return { position, note: { text: `${yours} is ${where} the ${gpaPoint(college.point)} average of enrolled students, figured from the college's GPA ranges.`, cite } };
+  }
+  const why =
+    college.weighted !== null
+      ? `This college publishes only a weighted average (${trimGpa(college.weighted)}), so this is an estimate.`
+      : "This college doesn't publish an unweighted average, so this is an estimate.";
+  return { position, note: { text: `${yours} is ${where} the ${gpaSpan(college.range)} typical of colleges with similar test scores and admit rates. ${why}`, cite } };
+}
+
+/** A middle 50% as shown: two decimals when exact ("3.62–4.00"), one when estimated ("3.4–3.9"). */
+function middleSpan(m: GpaMiddle): string {
+  const digits = m.kind === "bands" ? 2 : 1;
+  return `${m.shown[0].toFixed(digits)}–${m.shown[1].toFixed(digits)}`;
+}
+
+/**
+ * The GPA position and sentence against the college's middle 50% (gpa.md "The design" 7): "Your GPA (3.82) is
+ * inside the middle 50% of first-years' GPAs here (3.62–4.00).", with an estimate saying so.
+ */
+function middleStanding(own: [number, number], yours: string, middle: GpaMiddle, weighted: number | null, testLabel: string | null): { position: Position | null; note: StandingResult["gpaNote"] } {
+  const cite: GpaCite = middle.kind === "bands" ? "derived.gpa_middle_half" : "derived.gpa_estimate";
+  const span = middleSpan(middle);
+  const estimate =
+    middle.kind === "estimated"
+      ? `, estimated from colleges with similar test scores; ${weighted !== null ? `this college publishes only a weighted average (${trimGpa(weighted)})` : "this college doesn't publish its GPA spread"}`
+      : "";
+  const position = compareGpaMiddle(own, middle);
+  if (position === null) {
+    const decides = testLabel ? `Your ${testLabel} decides the group here.` : "There's no score to go on here either.";
+    return {
+      position: null,
+      note: { text: `Your GPA can't be placed against this college's: yours (${ownSpan(own)}) spans its middle 50% of first-years' GPAs (${span}${estimate}). ${decides}`, cite },
+    };
+  }
+  const where = position === "in" ? "inside" : position;
+  return { position, note: { text: `${yours} is ${where} the middle 50% of first-years' GPAs here (${span})${estimate}.`, cite } };
+}
 
 /** Reach / Target / Likely for one college (specs/planner/redesign/standing.md "The rules"). */
 export function standingFor(student: StandingStudent, school: StandingSchool): StandingResult {
@@ -147,14 +243,10 @@ export function standingFor(student: StandingStudent, school: StandingSchool): S
   }
   if (!student.test && required(school.testPolicy)) send = "required-missing";
 
-  let gpa: Position | null = null;
-  if (student.gpa !== null && school.gpaAverage !== null) {
-    const d = student.gpa - school.gpaAverage;
-    gpa = d > STANDING.gpaBand ? "above" : d < -STANDING.gpaBand ? "below" : "in";
-    reasons.push(`Your GPA is ${gpa === "in" ? "close to" : gpa} the average of enrolled students.`);
-  }
+  const { position: gpa, note: gpaNote } = gpaStanding(student, school, test && student.test ? TEST_LABEL[student.test.kind] : null);
+  if (gpaNote) reasons.push(gpaNote.text);
 
-  const result = (fit: Fit | null, reachForEveryone = false): StandingResult => ({ fit, reachForEveryone, test, gpa, send, reasons });
+  const result = (fit: Fit | null, reachForEveryone = false): StandingResult => ({ fit, reachForEveryone, test, gpa, gpaNote, send, reasons });
 
   if (school.admitRate === null) {
     reasons.unshift("Admits everyone who applies.");

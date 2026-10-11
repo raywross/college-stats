@@ -46,7 +46,7 @@ test("every topic has its rows, a title, a footer, and a registered field for it
   assert.deepEqual(
     Object.fromEntries(TOPIC_KEYS.map((k) => [k, labels(CARD_ROWS[k])])),
     {
-      admissions: ["Acceptance rate", "SAT middle 50%"],
+      admissions: ["Acceptance rate", "SAT middle 50%", "How they read a record"],
       students: ["Undergrads", "Pell Grant share"],
       academics: ["Students per faculty member", "Most popular major"],
       cost: ["Average cost, all students", "Aid generosity"],

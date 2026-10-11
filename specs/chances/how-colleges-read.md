@@ -78,6 +78,21 @@ in `lib/compare-cards.ts`, `derived.gpa_top_share` in `lib/fields.ts`, glossary 
 (each line with and without its data, the weighted-reporter case, the crowding sentence with rigor rated low, a
 college with IPEDS factors only, the block hidden below two lines).
 
+## As built (2026-10-11)
+- `lib/chances/reading.ts` (pure, client-safe) holds the lines and the display rules (`CROWDED_SHARE` 0.5, `RANK_MIN_SUBMITTED`
+  0.15); `lib/chances/reading-major.ts` holds the Major line, kept apart so the curated major file stays out of bundles that
+  only need the other lines (Compare). `components/school/ReadingTheRecord.tsx` renders it above the C7 grid;
+  `components/compare/CompareReading.tsx` is the Getting in page's "How they read a record" block, and the Getting in card
+  carries a one-line row (`READING_ROW`: a short emphasis phrase and the 3.75+ share).
+- GPA share column: `all`, else the students who sent scores, else those who didn't, and the sentence says which
+  (`derived.gpa_top_share` uses the same order).
+- "Most first-years were admitted without scores" is said only when the SAT and ACT shares add to under half (a student can
+  send both, so two shares under half don't prove it).
+- The class-rank line (both forms) needs the college's own C7 rating; the federal yes/no never stands in for it.
+- The Major line reads only a quoted statement in `data/major-admission.json` (a university-level "doesn't affect
+  admission", or a unit that says applicants are compared within it, with the subjects it names); hidden otherwise.
+- The iPhone API block is not built (no block registry exists yet); `readingWithMajor(school)` is the function it will call.
+
 ## Open questions
 1. Should the crowding sentence use 50% or a comparison with all colleges ("more crowded than 8 in 10 colleges that
    report")? Recommendation: 50% now, in one constant; a percentile reads as a ranking, which the site avoids.

@@ -53,10 +53,12 @@ function row(o: Record<string, unknown> = {}): Record<string, unknown> {
 /* ---- Types ---- */
 
 test("lib/chances/types.ts is types only: nothing runs, nothing ships but types", () => {
-  // With every export erased, Node loads the file as an empty CommonJS module: only an empty `default`.
+  // With every export erased, Node loads the file as an empty CommonJS module: only an empty `default` (and, from
+  // Node 23 on, the same empty object under the interop name `module.exports`).
   const mod = typesModule as Record<string, unknown>;
-  assert.deepEqual(Object.keys(mod).filter((k) => k !== "default"), []);
-  assert.deepEqual(Object.keys((mod.default as object | undefined) ?? {}), []);
+  const interop = new Set(["default", "module.exports"]);
+  assert.deepEqual(Object.keys(mod).filter((k) => !interop.has(k)), []);
+  for (const k of interop) assert.deepEqual(Object.keys((mod[k] as object | undefined) ?? {}), [], `${k} is empty`);
 });
 
 /* ---- The course list: sanitizing ---- */

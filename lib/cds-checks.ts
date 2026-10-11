@@ -1505,6 +1505,12 @@ export function applyChecks(doc: DocumentRecord, ctx: CheckContext): DocumentRec
         if (lines.length) next.lines = lines;
       }
       const kept = (it.failures ?? []).filter((f) => f.check !== "overflow-total");
+      // A total summed from parts that carry no line or cell can't be located, so it stays held exactly as the first
+      // read leaves it (phases.mts failUnlocated). Without this a re-check (no archived lines) passed such totals with
+      // only a page, which the records validator rightly refuses (2026-10-11, check-cds-records after #123).
+      if (!next.cell && !next.lines?.length && !kept.some((f) => f.check === "line-in-document")) {
+        kept.push({ check: "line-in-document", detail: "no cited line in the document" });
+      }
       if (kept.length) next.failures = kept;
       items[code] = next;
     }

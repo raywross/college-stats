@@ -481,3 +481,24 @@ test("18: one code failing in more than 20% of 20+ model-read documents trips th
   assert.match(circuitBreakerV3({ attempted: 100, failedC1: 11, itemFailureShares: [], changed: 0, priorValues: 0 })!, /11 of 100 colleges failed C1/);
   assert.match(circuitBreakerV3({ attempted: 10, failedC1: 0, itemFailureShares: [], changed: 26, priorValues: 100 })!, /26 of 100 published values changed/);
 });
+
+test("a total summed from parts with no line or cell stays held (a re-check without lines never passes it)", () => {
+  const d = doc(WM);
+  const parts = d.items["C.513"].quote!.replace(/^Sum of /, "").split(" | ")[0].split(" + ");
+  assert.ok(parts.length > 1, "W&M's recommended units are summed from their subjects");
+  // The parts as a PDF read with a page but no line would leave them: no cell, no line.
+  for (const k of parts) {
+    const { v } = d.items[k];
+    d.items[k] = { v, status: "passed", page: 3, quote: `${k} | ${String(v)}` };
+  }
+  d.items["C.513"] = { status: "blank" };
+  const unlocated = applyChecks(d, ctx(WM)).items["C.513"];
+  assert.equal(unlocated.method, "derived");
+  assert.equal(unlocated.status, "failed");
+  assert.equal(unlocated.failures?.[0].check, "line-in-document");
+  // With lines on its parts, the same total is located and passes.
+  for (const [i, k] of parts.entries()) d.items[k] = { ...d.items[k], line: 10 + i };
+  const located = applyChecks(d, ctx(WM)).items["C.513"];
+  assert.equal(located.status, "passed");
+  assert.ok(located.lines?.length);
+});

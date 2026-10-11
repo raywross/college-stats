@@ -8,8 +8,8 @@
  *   npm run sync-ap-ledger -- --all --merge              # every state, then the shards (several hours; resumable)
  *   npm run sync-ap-ledger -- --merge                    # only the merge, from the files already fetched
  *
- * Flags: --concurrency 2, --delay 600 (ms per worker between requests; the site rate-limits above about two a
- * second and the client waits out a 429), --refresh (refetch schools already in a
+ * Flags: --concurrency 2, --delay 800 (ms per worker between requests; the site allows 124 requests a minute and
+ * the client waits out a 429), --refresh (refetch schools already in a
  * file), --dir <out dir> (default data/high-schools or HIGH_SCHOOLS_DIR). A rerun fetches only schools not yet in the
  * file for the Ledger's current year, so an interrupted run picks up where it stopped. After a merge, commit the
  * shards and meta.json and publish as usual (npm run publish-high-schools).
@@ -55,7 +55,7 @@ if (states.length) {
         log: (m) => console.log(m),
         limit: typeof flags.limit === "string" ? Number(flags.limit) : undefined,
         concurrency: num("concurrency", 2),
-        delayMs: num("delay", 600),
+        delayMs: num("delay", 800),
         refresh: flags.refresh === true,
       });
       const withCourses = r.file.schools.filter((s) => s.courses.length + s.other.length > 0).length;

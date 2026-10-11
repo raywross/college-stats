@@ -361,9 +361,10 @@ for the whole Ledger (2026-10-11).
   download; the bulk download needs a school's own coordinator code). A search returns a whole state's schools in one
   call (`POST /api/ledger/search {institution:"S", country:"US", state}`); a school's AP subjects by audit year come
   from `POST /api/ledger/school {type:"ai", identifier}` (or `type:"org"` for the few schools listed without an AI
-  code). Both need the page's `csrf-token` and session cookie. Two workers, 400 ms apart, an identifying
-  User-Agent, retries with backoff and a session renewal on 419; about 23,000 requests in roughly three hours, and a
-  rerun fetches only schools not yet in the file, so an interrupted run resumes. The site's robots.txt allows
+  code). Both need the page's `csrf-token` and session cookie. Two workers, 800 ms apart (the site allows 124
+  requests a minute, its `X-RateLimit-Limit`, and answers 429 above it; the client waits out the window), an
+  identifying User-Agent, retries with backoff and a session renewal on 419; about 23,000 requests in three to four
+  hours, and a rerun fetches only schools not yet in the file, so an interrupted run resumes. The site's robots.txt allows
   `/ledger/` and disallows the rest, which covers the endpoints the page itself calls; the owner decided to run it
   (2026-10-11) at this rate, once a year after the fall republish, and to stop if College Board objects.
 - **Files** `data/high-schools/ledger/{XX}.json` (one per state, one school per line: AI code, name, address, city,

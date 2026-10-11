@@ -7,8 +7,9 @@
  * ./ledger.mts matches those files to the shards. specs/product/high-school-data.md "AP Course Ledger".
  *
  * The site's robots.txt allows /ledger/ and disallows the rest, which includes the endpoints the page itself calls;
- * the sync keeps to about two requests a second with an identifying User-Agent, keeps every answer so a rerun fetches
- * only new schools, and is meant to run once a year after the fall republish.
+ * the sync keeps under the site's limit of 124 requests a minute (its X-RateLimit-Limit header; 429 above it) with
+ * an identifying User-Agent, keeps every answer so a rerun fetches only new schools, and is meant to run once a year
+ * after the fall republish.
  *
  * Counting rule (specs/chances/rigor-in-context.md "Pilot"): a subject counts once in a year it has an authorization
  * (`authorized_count` counts teachers); AP Seminar and AP Research count; Pre-AP is listed separately and left out.
@@ -317,7 +318,7 @@ export interface FetchLedgerStateOptions {
   limit?: number;
   /** Parallel requests; default 2. */
   concurrency?: number;
-  /** Pause after each request per worker, in ms; default 600 (the site answers 429 above roughly two requests a second). */
+  /** Pause after each request per worker, in ms; default 800 (the site allows 124 requests a minute, X-RateLimit-Limit, and answers 429 above it). */
   delayMs?: number;
   /** Refetch schools already in the file. Default: keep them (a rerun fetches only new schools). */
   refresh?: boolean;
@@ -365,7 +366,7 @@ export async function fetchLedgerState(opts: FetchLedgerStateOptions): Promise<{
   let next = 0;
   let sinceWrite = 0;
   const concurrency = Math.max(1, opts.concurrency ?? 2);
-  const delayMs = opts.delayMs ?? 600;
+  const delayMs = opts.delayMs ?? 800;
   const worker = async () => {
     while (next < limited.length) {
       const row = limited[next++];

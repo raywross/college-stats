@@ -1145,6 +1145,15 @@
       ]
     },
     {
+      "host": "search.unt.edu",
+      "status": "challenge",
+      "first_seen": "2026-10-11",
+      "last_seen": "2026-10-11",
+      "unit_ids": [
+        "227216"
+      ]
+    },
+    {
       "host": "shenango.psu.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",

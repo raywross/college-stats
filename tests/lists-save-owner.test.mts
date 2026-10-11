@@ -2,9 +2,9 @@
  * Where "Add to list" saves (lib/lists.ts mySaveTargets, saveOwner; specs/product/household-hub.md, changed
  * 2026-10-11): a guardian with edit access saves to their child's list (one child: straight there; several: they must
  * name one), a guardian without edit access and a student to their own. Found in owner testing: a parent's saves went
- * to a list of their own the plan never shows. Also the plan row's remove control (PlanRow ×, PlanList.handleRemove;
- * specs/planner/redesign/list.md "Removing a college"). Auth and Supabase are stand-ins: every write records the list
- * owner it went to. `npm test`.
+ * to a list of their own the plan never shows. Auth and Supabase are stand-ins: every write records the list owner it
+ * went to. Also the plan row's remove control, moved into the row's drawer in the list redesign (RowDrawer "Remove
+ * from the list", PlanList.handleRemove; specs/planner/redesign/list.md "The drawer", 2026-10-11). `npm test`.
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -165,10 +165,12 @@ test("a guardian without edit access, and a student, save to their own list as b
   assert.deepEqual(await addToMyDefaultList([PURDUE]), { ok: false, message: "Sign in to save colleges to a list." });
 });
 
-test("the plan row: × for editors only, asks first, and the list removes the item and rolls back on a refusal", () => {
+test("the plan row's remove control: editors only, inside the drawer, asks first, and the list removes the item and rolls back on a refusal", () => {
+  const drawer = read("components", "planner", "RowDrawer.tsx");
+  assert.match(drawer, /\{ctx\.viewer\.canEdit && \(\s*<button[\s\S]*?Remove from the list/, "an editor-only remove control in the drawer");
+  assert.match(drawer, /window\.confirm\(`Remove \$\{name\} from the list\? Its notes, visits, and any offer go with it\.`\)\) onRemove\(\)/);
   const row = read("components", "planner", "PlanRow.tsx");
-  assert.match(row, /\{canEdit && \(\s*<button[\s\S]*?aria-label=\{`Remove \$\{name\} from the list`\}/, "an editor-only × with a name in its label");
-  assert.match(row, /window\.confirm\(`Remove \$\{name\} from the list\? Its notes, visits, and any offer go with it\.`\)\) onRemove\(row\)/);
+  assert.match(row, /onRemove=\{\(\) => onRemove\(row\)\}/, "PlanRow wires the drawer's remove back up to its own onRemove prop");
   const list = read("components", "planner", "PlanList.tsx");
   assert.match(list, /async function handleRemove[\s\S]*?removeFromList\(row\.item\.id\)[\s\S]*?setRows\(before\)/);
   assert.match(list, /onRemove=\{handleRemove\}/);

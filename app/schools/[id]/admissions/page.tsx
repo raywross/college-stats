@@ -19,6 +19,9 @@ import { BenchmarkBar } from "@/components/charts/BenchmarkBar";
 import { DistributionStrip } from "@/components/charts/DistributionStrip";
 import { ScatterPlot } from "@/components/charts/ScatterPlot";
 import { AdmissionFactors } from "@/components/school/AdmissionFactors";
+import { ReadingTheRecord } from "@/components/school/ReadingTheRecord";
+import { readingWithMajor } from "@/lib/chances/reading-major";
+import { shortName } from "@/lib/brand";
 import { ScoreCheckerWithProfile as ScoreChecker } from "@/components/me/ScoreCheckerWithProfile";
 import { ResidencyAdmissions } from "@/components/school/ResidencyAdmissions";
 import { publishesResidencyRates } from "@/lib/cds/residency-display";
@@ -100,6 +103,8 @@ export default async function AdmissionsPage({ params }: Props) {
   const ea = cdsProfile?.early_action;
   const hasEarly = !!(ed?.offered || ea?.offered || (ed?.offered === false && ea?.offered === false));
   const hasGpa = !!(cdsProfile?.gpa || cdsProfile?.class_rank);
+  // How this college reads a record (specs/chances/how-colleges-read.md): first under "What they look at".
+  const reading = readingWithMajor(school, { name: shortName(school) });
 
   const items = [
     { id: "funnel", label: "The funnel" },
@@ -252,9 +257,10 @@ export default async function AdmissionsPage({ params }: Props) {
             <EarlyRounds school={school} id="early" />
           </div>
         )}
-        {(a.factors || cdsProfile?.factors) && (
+        {(a.factors || cdsProfile?.factors || reading) && (
           <div id="factors" className={`mt-4 ${BLOCK_SCROLL}`}>
-            <AdmissionFactors school={school} />
+            {reading && <ReadingTheRecord school={school} block={reading} className="mb-4" />}
+            {(a.factors || cdsProfile?.factors) && <AdmissionFactors school={school} />}
           </div>
         )}
         <TransferringInCard id="transfer" className="mt-4" school={school} cite={citeField} color={DOMAINS.admissions.color} />

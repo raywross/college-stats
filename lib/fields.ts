@@ -459,6 +459,16 @@ export const FIELDS = {
     computed: true,
     derived: { formula: "The GPA bands holding the 25th and 75th percentiles of the \"all\" column", inputs: ["reported.admission_profile.gpa.bands.all"] },
   },
+  // How this college reads a record (specs/chances/how-colleges-read.md; lib/chances/reading.ts gpaTopShare): never ranked.
+  "derived.gpa_top_share": {
+    ...reported("Share of first-years with a 3.75 or higher GPA"),
+    computed: true,
+    derived: {
+      formula:
+        "First-years in the top two GPA bands (4.0 and 3.75–3.99), added up from the college's reported bands: the \"all\" column, else the column for students who sent test scores, else the column for those who didn't",
+      inputs: ["reported.admission_profile.gpa.bands.all", "reported.admission_profile.gpa.bands.with_test", "reported.admission_profile.gpa.bands.without_test"],
+    },
+  },
   // The plan's GPA (specs/planner/redesign/gpa.md; lib/planner/gpa-model.ts): never ranked, shown only in the plan.
   "derived.gpa_band_mean": {
     ...reported("Average first-year GPA, figured from the GPA bands"),

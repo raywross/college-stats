@@ -441,6 +441,11 @@ export const COMPARE_OVERVIEW_FIELDS: readonly FieldPath[] = [
   "derived.sat_total",
   "admissions.act_composite_25_75",
   "admissions.test_policy",
+  // "How they read a record" (specs/chances/how-colleges-read.md).
+  "derived.gpa_top_share",
+  "reported.admission_profile.factors.rigor",
+  "admissions.factors",
+  "reported.admission_profile.gpa.average",
   "academics.student_faculty_ratio",
   "academics.majors_top",
   "trends",

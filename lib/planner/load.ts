@@ -17,6 +17,7 @@ import { profileFor } from "@/lib/student-profile-store";
 import { coreAnswered, effectiveGradYear } from "@/lib/student-profile";
 import { gradeNow, withoutExams } from "@/lib/chances/courses";
 import { rigorViewFor } from "@/lib/chances/rigor-server";
+import { coursePlanViewFor } from "@/lib/chances/course-plan-server";
 import { generatorInputFor, planContextFrom, PlannerSetupError, readItems, readPlan, readTasks, todayIso, writeAutoWrites, writeMerge } from "./context";
 import { autoWrites, planView, type PlanView } from "./plan-view";
 import { generateTasks, mergeTasks } from "./tasks";
@@ -96,7 +97,7 @@ export async function loadPlanFor(studentId: string, viewer?: StudentAccess | nu
     },
   });
   const view = planView({ items: ctx.items, schools: ctx.schools, profile: ctx.profile, today });
-  return { kind: "ready", ctx: await withRigor(ctx, relation, gradYear), view, access };
+  return { kind: "ready", ctx: await withCoursePlan(await withRigor(ctx, relation, gradYear), gradYear), view, access };
 }
 
 /**
@@ -117,8 +118,19 @@ async function withRigor(ctx: PlanContext, relation: "self" | "guardian", gradYe
     coreAtTopLevel: profile.academics.coreAtTopLevel,
     highSchoolId: profile.basics.highSchoolId,
     grade: gradeNow(gradYear, ctx.today),
+    studentMarks: profile.academics.schoolOffers,
   }).catch(() => null);
   return { ...ctx, profile: safeProfile, rigor };
+}
+
+/**
+ * The context with next year's course suggestions (course-plan.md), computed from the profile the viewer may see (a
+ * guardian's copy has no exam scores while private, which the plan never reads). Never throws: a failure is no card.
+ */
+async function withCoursePlan(ctx: PlanContext, gradYear: number | null): Promise<PlanContext> {
+  if (!ctx.profile) return ctx;
+  const coursePlan = await coursePlanViewFor({ profile: ctx.profile, gradYear, items: ctx.items, today: ctx.today, canEdit: ctx.viewer.canEdit }).catch(() => null);
+  return { ...ctx, coursePlan };
 }
 
 /** A child a parent can switch to (page.md "The child switcher"). */

@@ -12,7 +12,7 @@ import type { Assignee, PlanItem, PlanSchool } from "./types.ts";
 import type { StudentProfileData } from "../student-profile.ts";
 
 /** The `applies` vocabulary: an entry is a task for a student only when its rule holds. Unknown values fail the check. */
-export const APPLIES = ["all", "has_css_college", "has_common_app", "plans_tests", "uses_may1", "has_ed", "committed", "international", "noncustodial"] as const;
+export const APPLIES = ["all", "has_css_college", "has_common_app", "plans_tests", "uses_may1", "has_ed", "committed", "international", "noncustodial", "ap_in_progress", "has_ap_course"] as const;
 export type Applies = (typeof APPLIES)[number];
 
 export const ASSIGNEES: readonly Assignee[] = ["student", "guardian", "either"];
@@ -211,6 +211,11 @@ export function applies(entry: Pick<CycleEntry, "applies">, facts: AppliesFacts)
       return facts.items.some((i) => i.enrolling);
     case "international":
       return facts.profile?.basics.stateOfResidence === "OUTSIDE_US";
+    // Course plan: AP exam dates are for students with an AP course now (ordering and the May exams) or one behind them (scores).
+    case "ap_in_progress":
+      return facts.profile?.academics?.courses?.some((c) => c.kind === "ap" && c.status === "in_progress") === true;
+    case "has_ap_course":
+      return facts.profile?.academics?.courses?.some((c) => c.kind === "ap" && c.status !== "planned") === true;
   }
 }
 
@@ -231,8 +236,8 @@ function isIsoDate(v: unknown): v is string {
  * Every problem with a cycle file, as lines ("2027-28 fafsa_opens: applies 'everyone' is not one of …"); empty when
  * it's valid. Checks: cycles named "YYYY-YY" with consecutive years, once each; entries with a unique snake_case key,
  * a label, exactly one of `date` or `window` (real ISO dates, the window in order), `register_by` on or before the
- * date, `applies` from APPLIES, an assignee, an https source, and dates inside the cycle's span (January of the year
- * before it starts, for junior-year steps, through December of the year it ends).
+ * date, `applies` from APPLIES, an assignee, an https source, and dates inside the cycle's span (August two years
+ * before it starts, for sophomore-year steps such as the AP ordering deadline, through December of the year it ends).
  */
 export function validateCycleFile(raw: unknown): string[] {
   const problems: string[] = [];
@@ -251,7 +256,7 @@ export function validateCycleFile(raw: unknown): string[] {
       problems.push(`${name}: entries must be an array`);
       continue;
     }
-    const from = `${start - 1}-01-01`;
+    const from = `${start - 2}-08-01`;
     const to = `${start + 1}-12-31`;
     const keys = new Set<string>();
     for (const [ei, e] of c.entries.entries()) {

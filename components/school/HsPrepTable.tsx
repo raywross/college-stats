@@ -5,11 +5,12 @@ import { useState } from "react";
 import { useMyCourses } from "@/components/me/useMyCourses";
 import { LocalCoursesSheet } from "@/components/profile/LocalCoursesSheet";
 import { MetricLabel } from "@/components/ui/info-tip";
-import { HS_ROW_SUBJECT, youText, youYears } from "@/lib/chances/courses";
+import { gradeNow, HS_ROW_SUBJECT, youText, youYears } from "@/lib/chances/courses";
 import { noteText } from "@/lib/chances/notes";
 import { HS_SUBJECT_ROWS } from "@/lib/cds/application-logistics-display";
 import type { AnyCited } from "@/lib/lineage";
-import { coreAnswered, emptyCoreAtTopLevel } from "@/lib/student-profile";
+import type { CourseEntry } from "@/lib/chances/types";
+import { coreAnswered, emptyCoreAtTopLevel, type CoreAtTopLevel } from "@/lib/student-profile";
 
 export interface HsPrepTableRow {
   label: string;
@@ -19,6 +20,28 @@ export interface HsPrepTableRow {
 }
 
 const units = (v: number | null) => (v === null ? "–" : String(v));
+
+/**
+ * Subjects where the college recommends more years than the visitor's list shows and a year of choosing remains
+ * (course-plan.md "On the college profile"): "Science: 4 recommended, you're on track for 3." then a link to the plan.
+ * The suggestions themselves live in the planner; nothing about them is decided here.
+ */
+function fallShort(rows: HsPrepTableRow[], courses: CourseEntry[], core: CoreAtTopLevel, gradYear: number | null): { subject: string; before: string; link: string }[] {
+  const grade = gradeNow(gradYear, new Date().toISOString().slice(0, 10));
+  if (grade === null || grade > 11) return [];
+  const out: { subject: string; before: string; link: string }[] = [];
+  for (const r of rows) {
+    const key = HS_SUBJECT_ROWS.find((x) => x.label === r.label)?.key;
+    const subject = key ? HS_ROW_SUBJECT[key] : undefined;
+    if (!subject || r.recommended === null) continue;
+    const you = youYears(courses, core, subject);
+    if (!you || you.years >= r.recommended) continue;
+    const text = noteText({ key: "course_plan.profile_line", values: { subject: r.label, recommended: r.recommended, have: you.years } });
+    const tail = " See next year's options in your plan.";
+    out.push({ subject: r.label, before: text.endsWith(tail) ? `${text.slice(0, -tail.length)} ` : text, link: text.endsWith(tail) ? tail.trim() : "" });
+  }
+  return out;
+}
 
 /**
  * The years-of-each-subject table in "What you'll need in high school", with a **You** column counted from the
@@ -49,6 +72,7 @@ export function HsPrepTable({
   const core = mine.coreAtTopLevel ?? emptyCoreAtTopLevel();
   const hasList = mine.status === "ready" && (mine.courses.length > 0 || coreAnswered(core));
   const unknown = noteText({ key: "rigor.you_unknown", values: {} });
+  const shortLines = hasList && showRec ? fallShort(rows, mine.courses, core, mine.gradYear) : [];
 
   return (
     <>
@@ -116,6 +140,22 @@ export function HsPrepTable({
         </tbody>
       </table>
       {hasList && <p className="mt-1 text-xs text-muted-foreground">You: the years your course list and core-subject answers show, not a transcript.</p>}
+      {shortLines.length > 0 && (
+        <ul className="mt-1.5 space-y-0.5 text-xs">
+          {shortLines.map((l) => (
+            <li key={l.subject}>
+              {l.before}
+              {mine.signedIn ? (
+                <Link href="/plan?tab=scores#plan-courses" className="font-semibold text-primary hover:underline">
+                  {l.link}
+                </Link>
+              ) : (
+                l.link
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
       {mine.status === "ready" && !hasList && (
         <p className="mt-2 text-xs">
           {mine.signedIn ? (

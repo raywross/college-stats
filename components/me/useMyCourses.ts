@@ -19,6 +19,8 @@ export interface MyCourses {
   courses: CourseEntry[];
   coreAtTopLevel: CoreAtTopLevel | null;
   highSchoolId: string | null;
+  /** The class year, signed in or kept in the browser; null when not given. */
+  gradYear: number | null;
   majors: string[];
   /** The reading with its sentences; null until it arrives or when there is nothing to read. */
   view: RigorView | null;
@@ -74,9 +76,9 @@ export function useMyCourses(): MyCourses {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [signedOut, key]);
 
-  if (server === null) return { status: "loading", signedIn: false, courses: [], coreAtTopLevel: null, highSchoolId: null, majors: [], view: null };
+  if (server === null) return { status: "loading", signedIn: false, courses: [], coreAtTopLevel: null, highSchoolId: null, gradYear: null, majors: [], view: null };
   if (server.signedIn) {
-    return { status: "ready", signedIn: true, courses: server.courses, coreAtTopLevel: server.coreAtTopLevel, highSchoolId: server.highSchoolId, majors: server.majors, view: server.view };
+    return { status: "ready", signedIn: true, courses: server.courses, coreAtTopLevel: server.coreAtTopLevel, highSchoolId: server.highSchoolId, gradYear: server.gradYear, majors: server.majors, view: server.view };
   }
   return {
     status: "ready",
@@ -84,6 +86,7 @@ export function useMyCourses(): MyCourses {
     courses: local.academics.courses,
     coreAtTopLevel: local.academics.coreAtTopLevel,
     highSchoolId: local.basics.highSchoolId,
+    gradYear: local.basics.gradYear,
     majors: local.plans.intendedMajors,
     view: localRead?.key === key ? localRead.view : null,
   };

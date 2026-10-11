@@ -73,6 +73,10 @@ export interface AnalyticsEvents {
   plan_calendar_opened: { everyone: boolean; color_by: "child" | "round" };
   plan_calendar_feed_added: { everyone: boolean };
   plan_calendar_printed: { everyone: boolean };
+  /* The course plan (specs/chances/course-plan.md "Rules"): which reasons were shown, never a course name, a grade, or a score. */
+  course_plan_shown: { reasons: string; guardrail: string };
+  course_plan_added: { reason: string };
+  course_plan_dismissed: { reason: string };
 }
 export type AnalyticsEvent = keyof AnalyticsEvents;
 /** Events sent from Server Actions and Route Handlers with `trackServer()` (lib/analytics-server.ts). */
@@ -151,6 +155,9 @@ export const EVENTS = {
   plan_calendar_opened: { properties: ["everyone", "color_by"], side: "client", why: "Planner: calendar views, per child or for everyone" },
   plan_calendar_feed_added: { properties: ["everyone"], side: "client", why: "Planner: calendar feeds added" },
   plan_calendar_printed: { properties: ["everyone"], side: "client", why: "Planner: calendars printed" },
+  course_plan_shown: { properties: ["reasons", "guardrail"], side: "client", why: "Course plan: which reasons and guardrails the Next year card shows" },
+  course_plan_added: { properties: ["reason"], side: "client", why: "Course plan: do suggestions get added, by reason" },
+  course_plan_dismissed: { properties: ["reason"], side: "client", why: "Course plan: do suggestions get set aside, by reason" },
 } as const satisfies { readonly [K in AnalyticsEvent]: EventSpec<K> };
 
 type AssertTrue<T extends true> = T;

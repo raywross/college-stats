@@ -557,3 +557,26 @@
     transition-duration: 0.001ms !important;
   }
 }
+
+/*
+ * iOS Safari zooms in when a text field under 16px gets focus and doesn't zoom back out, so the page looks wider than
+ * the screen until the user pinches (owner report, 2026-10-11; specs/mobile.md "Form fields"). On phone widths every
+ * text field, select, and textarea is at least 16px. Unlayered on purpose, so it outranks Tailwind's text-xs/text-sm
+ * utilities; fields already sized 16px or larger (text-base and up, or an arbitrary text-[…]) keep their own size.
+ * `1em` here is the parent's size, so a field that inherits a larger size keeps it.
+ */
+@media (max-width: 767px) {
+  :is(input:not([type="checkbox"], [type="radio"], [type="range"], [type="color"], [type="file"], [type="hidden"]), select, textarea):not(
+      [class*="text-base"],
+      [class*="text-lg"],
+      [class*="text-xl"],
+      [class*="text-2xl"],
+      [class*="text-3xl"],
+      [class*="text-4xl"],
+      [class*="text-5xl"],
+      [class*="text-6xl"],
+      [class*="text-["]
+    ) {
+    font-size: max(16px, 1em);
+  }
+}

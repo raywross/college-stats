@@ -1,7 +1,8 @@
 "use server";
 /**
- * The redesigned plan's Server Actions (specs/planner/redesign/build-plan.md "Server actions"): a group or round the
- * student picks (or hands back to the suggestion), the Dream, the numbers, and a picked test date. Each one: sign in
+ * The redesigned plan's Server Actions (specs/planner/redesign/build-plan.md "Server actions"): a round the student
+ * picks (or hands back to the suggestion), the Dream, the numbers, the intake guide's one save, and a picked test date.
+ * Groups are Quad's only (specs/planner/redesign/intake.md "Groups"), so there's no group action. Each one: sign in
  * and the entitlement check (`planner.tab`), the write with the caller's own session so row-level security decides,
  * then `syncAuto` (store the model's group and round on every `auto` row that changed) and `regenerate` (tasks follow
  * rounds and test dates). Returns `{ ok: true } | { ok: false; message }`.
@@ -20,7 +21,9 @@ import type { ListRound } from "@/lib/list-rules";
 import { generatorInputFor, readPlan, todayIso, writeAutoWrites } from "./context";
 import { autoWrites, planView } from "./plan-view";
 import { planEstimates } from "./plan-estimates";
-import { applyNumbers, groupPatch, isUuid, parseNumbers, roundPatch, togglePlannedDate, type PickedGroup, type PlanNumbers } from "./plan-writes";
+import { applyNumbers, isUuid, parseNumbers, roundPatch, togglePlannedDate, type PlanNumbers } from "./plan-writes";
+import { applyIntake, parseIntakeSave, type IntakeSave } from "./intake";
+import { mergeCoursesForSave } from "@/lib/chances/courses";
 import { regenerate, setDream } from "./store";
 
 export type PlanWriteResult = { ok: true } | { ok: false; message: string };
@@ -108,13 +111,6 @@ async function updateItem(itemId: string, patch: Record<string, unknown>, what: 
   return { ok: true };
 }
 
-/** A group the student picks (theirs from then on), or null: "Use the suggestion" (back to the model's group). */
-export async function setGroup(itemId: string, group: PickedGroup | null): Promise<PlanWriteResult> {
-  const patch = groupPatch(group);
-  if (!patch) return { ok: false, message: FAILED };
-  return updateItem(itemId, patch, "setGroup");
-}
-
 /** A round the student picks (theirs from then on), or null: "Use the starting round". Tasks follow the round. */
 export async function setPlanRound(itemId: string, round: ListRound | null): Promise<PlanWriteResult> {
   const patch = roundPatch(round);
@@ -171,6 +167,28 @@ export async function setNumbers(studentId: string, numbers: PlanNumbers): Promi
   const parsed = parseNumbers(numbers);
   if (!parsed) return { ok: false, message: "Check the numbers: one of them is out of range." };
   return saveTheirProfile(studentId, (p) => ({ ok: true, data: applyNumbers(p.data, parsed) }));
+}
+
+/**
+ * The intake guide's one save (specs/planner/redesign/intake.md "Saving"): the class year, GPA and scale, the test, its
+ * score, practice flag, and target, and the AP courses. Validated again here (parseIntakeSave). The class year goes on
+ * the profile (`basics.gradYear`), and saveProfile keeps `students.grad_year` in step (the same column setGradYear
+ * writes); the follow-up regenerates every list's tasks, as setGradYear does. A guardian's courses go through
+ * mergeCoursesForSave, so exam scores the student keeps private survive and the privacy switch stays as saved.
+ */
+export async function saveIntake(studentId: string, input: IntakeSave): Promise<PlanWriteResult> {
+  const parsed = parseIntakeSave(input);
+  if (!parsed) return { ok: false, message: "Check your answers: one of them is out of range." };
+  const today = todayIso();
+  return saveTheirProfile(studentId, (p) => {
+    const next = applyIntake(p.data, parsed, today);
+    const merged = mergeCoursesForSave(
+      { courses: p.data.academics.courses, apExamsPrivate: p.data.academics.apExamsPrivate },
+      { courses: next.academics.courses, apExamsPrivate: next.academics.apExamsPrivate },
+      p.relation,
+    );
+    return { ok: true, data: { ...next, academics: { ...next.academics, ...merged } } };
+  });
 }
 
 /** "I'll take it" on a test date (scores.md "Test dates"), or undoing it; the cycle generator follows. */

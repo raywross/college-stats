@@ -38,8 +38,6 @@ export function LocalCoursesSheet({ open, onOpenChange }: { open: boolean; onOpe
           highSchoolId={data.basics.highSchoolId}
           gradYear={data.basics.gradYear}
           majors={data.plans.intendedMajors}
-          showExams
-          canSetPrivacy={false}
         />
         <button type="button" onClick={() => onOpenChange(false)} className="inline-flex h-11 items-center rounded-full bg-primary px-5 text-sm font-semibold text-primary-foreground">
           Done

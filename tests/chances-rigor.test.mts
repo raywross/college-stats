@@ -357,33 +357,28 @@ test("new rows open on the course's usual year and a status that follows from th
 
 /* ---- Who sees what ---- */
 
-test("a parent sees the list and grades, and exam scores only when the student shares them", () => {
+test("a parent sees the list, grades, and AP exam scores, whatever the privacy switch says (owner, 2026-10-11)", () => {
   const list = aps(3, { final: "A", exam: 5 });
   assert.ok(withoutExams(list).every((c) => c.exam === null));
   assert.equal(withoutExams(list)[0].grades.final, "A", "grades stay");
-  assert.equal(withoutExams(list).length, 3);
-  const load = read("lib/planner/load.ts");
-  assert.match(load, /relation === "guardian" && profile\.academics\.apExamsPrivate/, "the plan's loader strips a guardian's copy while private");
-  assert.match(load, /withoutExams\(/);
-  const numbers = read("components/me/StudentNumbers.tsx");
-  assert.match(numbers, /profile\.relation === "guardian" && profile\.data\.academics\.apExamsPrivate/);
+  // No path strips a guardian's copy any more: the plan loader, its estimates, the Numbers tab, and the course sheets.
+  for (const f of ["lib/planner/load.ts", "lib/planner/plan-estimates.ts", "components/me/StudentNumbers.tsx"]) {
+    assert.doesNotMatch(read(f), /withoutExams\(|hideExams/, f);
+  }
+  for (const f of ["components/me/ProfileForm.tsx", "components/planner/PlanCoursesSheet.tsx", "components/planner/intake/PlanIntake.tsx"]) {
+    assert.doesNotMatch(read(f), /apExamsPrivate[^\n]*(showExams|examsHidden)|(showExams|examsHidden)[^\n]*apExamsPrivate/, f);
+  }
 });
 
-test("saving as a guardian keeps the student's exam scores and privacy; the student's own post is taken as sent", () => {
+test("saving as a guardian takes their scores as sent; only the student sets the privacy switch", () => {
   const saved = { courses: aps(2, { final: "A", exam: 5 }), apExamsPrivate: true };
-  const posted = { courses: withoutExams(saved.courses), apExamsPrivate: false };
-  const asGuardian = mergeCoursesForSave(saved, posted, "guardian");
-  assert.deepEqual(asGuardian.courses.map((c) => c.exam), [5, 5], "exam scores put back");
+  const asGuardian = mergeCoursesForSave(saved, { courses: [{ ...saved.courses[0], exam: 3 }, saved.courses[1]], apExamsPrivate: false }, "guardian");
+  assert.deepEqual(asGuardian.courses.map((c) => c.exam), [3, 5], "a parent's score is saved");
   assert.equal(asGuardian.apExamsPrivate, true, "a parent can't flip the switch");
-  const removed = mergeCoursesForSave(saved, { courses: posted.courses.slice(1), apExamsPrivate: true }, "guardian");
-  assert.deepEqual(removed.courses.map((c) => c.exam), [5]);
-  const added = mergeCoursesForSave(saved, { courses: [...posted.courses, course({ key: AP_KEYS[9] })], apExamsPrivate: true }, "guardian");
-  assert.equal(added.courses[2].exam, null, "a parent can't add an exam score");
+  const added = mergeCoursesForSave(saved, { courses: [...saved.courses, course({ key: AP_KEYS[9], exam: 4 })], apExamsPrivate: true }, "guardian");
+  assert.equal(added.courses[2].exam, 4, "a parent can add an exam score");
   const own = mergeCoursesForSave(saved, { courses: [{ ...saved.courses[0], exam: 2 }], apExamsPrivate: false }, "self");
   assert.deepEqual([own.courses[0].exam, own.apExamsPrivate], [2, false]);
-  // Shared by the student: a guardian's post is taken as sent.
-  const shared = mergeCoursesForSave({ ...saved, apExamsPrivate: false }, { courses: [{ ...saved.courses[0], exam: 3 }], apExamsPrivate: false }, "guardian");
-  assert.equal(shared.courses[0].exam, 3);
   // The save paths use it.
   assert.match(read("app/me/actions.ts"), /mergeCoursesForSave\(/);
   assert.match(read("lib/chances/courses-store.ts"), /mergeCoursesForSave\(/);

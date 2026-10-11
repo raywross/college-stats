@@ -3,11 +3,12 @@
 import { useEffect, useState, useTransition } from "react";
 import { CalendarClock, PartyPopper, TrendingUp } from "lucide-react";
 import type { PlanTabProps } from "@/components/planner/tabs/types";
+import { MostUsefulInput } from "@/components/chances/MostUsefulInput";
 import CoursesSection from "@/components/planner/CoursesSection";
 import ScoreRow from "@/components/planner/ScoreRow";
 import { CATEGORY_LABELS } from "@/lib/list-rules";
 import { GROUP_CLASS } from "@/lib/planner/colors";
-import { datesFor, dayLabel, daysBetween, inTimeRow, inTimeText, registerByText, type InTimeRow } from "@/lib/planner/scores";
+import { datesFor, dayLabel, daysBetween, inTimeRow, inTimeText, registerByText, targetMoves, type InTimeRow, type TargetMove } from "@/lib/planner/scores";
 import { setPlannedDate } from "@/lib/planner/store-plan";
 import type { PlanRowView } from "@/lib/planner/plan-view";
 import { TEST_LABEL, type TestKind } from "@/lib/planner/standing";
@@ -42,6 +43,7 @@ export default function ScoresTab({ ctx, view }: PlanTabProps) {
   if (!test) {
     return (
       <div className="space-y-4">
+        <MostUsefulInput estimates={view.estimates} />
         <section className="rounded-3xl border bg-card p-5 text-sm">
           <h2 className="font-display text-xl font-bold">{focus === "none" ? "Not testing" : "No score yet"}</h2>
           <p className="mt-1 text-muted-foreground">
@@ -64,9 +66,12 @@ export default function ScoresTab({ ctx, view }: PlanTabProps) {
     ? retake.moves.map((m) => view.rows.find((r) => r.item.id === m.id)).filter((r): r is PlanRowView => r !== undefined)
     : [];
   const inTimeRows = moveRows.map(inTimeRow);
+  const target = ctx.profile?.tests.target ?? null;
+  const targetMoveRows = target !== null ? targetMoves(target, view.rows) : [];
 
   return (
     <div className="space-y-4">
+      <MostUsefulInput estimates={view.estimates} />
       <section className="rounded-3xl border bg-card p-5">
         <p className="text-xs font-bold tracking-wide text-muted-foreground uppercase">
           {isGuardian ? `${name} is taking the ${label}` : `You're taking the ${label}`}
@@ -85,6 +90,8 @@ export default function ScoresTab({ ctx, view }: PlanTabProps) {
           </p>
         )}
       </section>
+
+      {target !== null && <TargetScoreCard target={target} moves={targetMoveRows} />}
 
       {retake ? (
         <section className="rounded-3xl bg-pop p-5 text-pop-foreground">
@@ -131,6 +138,37 @@ export default function ScoresTab({ ctx, view }: PlanTabProps) {
 
       <CoursesSection ctx={ctx} view={view} />
     </div>
+  );
+}
+
+/**
+ * The target-score line (scores.md "Target score"; decision 5, owner 2026-10-11): which colleges the score the
+ * student is aiming for (`tests.target`, set in the intake) would move up a group, from each row's own move-up.
+ * Separate from the retake suggestion above it — a target is the student's own guess, never Quad's.
+ */
+function TargetScoreCard({ target, moves }: { target: number; moves: TargetMove[] }) {
+  return (
+    <section className="rounded-3xl border bg-card p-5">
+      {moves.length > 0 ? (
+        <>
+          <p className="font-display text-xl font-bold">
+            A {target} would move {moves.length === 1 ? "one college" : `${moves.length} colleges`} up a group
+          </p>
+          <ul className="mt-2 space-y-1 text-sm">
+            {moves.map((m) => (
+              <li key={m.id} className="flex flex-wrap items-center gap-2">
+                <span className="font-semibold">{m.name}</span>
+                <span className={cn("rounded-full px-2 py-0.5 text-[11px] font-bold", GROUP_CLASS[m.from])}>{CATEGORY_LABELS[m.from]}</span>→
+                <span className={cn("rounded-full px-2 py-0.5 text-[11px] font-bold", GROUP_CLASS[m.to])}>{CATEGORY_LABELS[m.to]}</span>
+                <span className="text-muted-foreground">with {m.needed}</span>
+              </li>
+            ))}
+          </ul>
+        </>
+      ) : (
+        <p className="text-sm">A {target} wouldn&apos;t move any of these colleges to a new group.</p>
+      )}
+    </section>
   );
 }
 

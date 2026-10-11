@@ -6,6 +6,7 @@
 import { isListRound, type ListCategory, type ListRound } from "../list-rules.ts";
 import {
   GPA_SCALES,
+  gpaMaxFor,
   isTestDateKey,
   PLANNED_DATES_MAX,
   sanitizeProfile,
@@ -28,13 +29,21 @@ export interface AutoWrite {
 }
 
 export interface AutoWriteBatch {
-  /** The update is filtered on this column still being 'auto', so a fresh pick by the student is never overwritten. */
+  /** The source column the batch concerns. */
   sourceColumn: "category_source" | "round_source";
-  patch: { category: ListCategory } | { round: ListRound };
+  /**
+   * Filter the update on `sourceColumn` still being 'auto', so a fresh pick by the student is never overwritten. True
+   * for rounds; false for groups, which are Quad's only (a stored `student` group is converted back to `auto`).
+   */
+  onlyAuto: boolean;
+  patch: { category: ListCategory; category_source: "auto" } | { round: ListRound };
   ids: string[];
 }
 
-/** autoWrites grouped into one update per distinct value (rows that move to the same group share one update). */
+/**
+ * autoWrites grouped into one update per distinct value (rows that move to the same group share one update). A group
+ * write also sets `category_source` to `auto`: groups are Quad's only (specs/planner/redesign/intake.md "Groups").
+ */
 export function autoWriteBatches(writes: AutoWrite[]): AutoWriteBatch[] {
   const categories = new Map<ListCategory, string[]>();
   const rounds = new Map<ListRound, string[]>();
@@ -43,8 +52,8 @@ export function autoWriteBatches(writes: AutoWrite[]): AutoWriteBatch[] {
     if (w.round !== undefined) rounds.set(w.round, [...(rounds.get(w.round) ?? []), w.id]);
   }
   return [
-    ...[...categories].map(([category, ids]): AutoWriteBatch => ({ sourceColumn: "category_source", patch: { category }, ids })),
-    ...[...rounds].map(([round, ids]): AutoWriteBatch => ({ sourceColumn: "round_source", patch: { round }, ids })),
+    ...[...categories].map(([category, ids]): AutoWriteBatch => ({ sourceColumn: "category_source", onlyAuto: false, patch: { category, category_source: "auto" }, ids })),
+    ...[...rounds].map(([round, ids]): AutoWriteBatch => ({ sourceColumn: "round_source", onlyAuto: true, patch: { round }, ids })),
   ];
 }
 
@@ -52,18 +61,8 @@ export function autoWriteBatches(writes: AutoWrite[]): AutoWriteBatch[] {
 /* Group and round                                                     */
 /* ------------------------------------------------------------------ */
 
+/** A sorted group. Groups are Quad's only (intake.md "Groups"); the signed-out plan's local chip still uses this. */
 export type PickedGroup = "reach" | "target" | "likely";
-const PICKED_GROUPS: readonly PickedGroup[] = ["reach", "target", "likely"];
-
-/**
- * setGroup's patch: a group the student picked (theirs from then on), or null for "Use the suggestion" (back to
- * auto; the next sync writes the model's group). Null for anything else (refused).
- */
-export function groupPatch(group: unknown): { category: PickedGroup; category_source: "student" } | { category_source: "auto" } | null {
-  if (group === null) return { category_source: "auto" };
-  if (typeof group === "string" && (PICKED_GROUPS as readonly string[]).includes(group)) return { category: group as PickedGroup, category_source: "student" };
-  return null;
-}
 
 /** setPlanRound's patch: a round the student picked, or null for "Use the starting round". Null when refused. */
 export function roundPatch(round: unknown): { round: ListRound; round_source: "student" } | { round_source: "auto" } | null {
@@ -86,8 +85,6 @@ export interface PlanNumbers {
   practice: boolean;
 }
 
-/** A 4.0-scale GPA may run to 5.0: above 4.0 it is weighted, read by the plan as a range (gpa.md "The design" 3). */
-const SCALE_MAX: Record<GpaScale, number> = { "4.0": 5, "5.0": 5, "100": 100 };
 const SCORE_RANGE = { sat: [400, 1600], act: [1, 36] } as const;
 
 const finite = (v: unknown): number | null => {
@@ -104,7 +101,7 @@ export function parseNumbers(input: unknown): PlanNumbers | null {
   let gpa: number | null = null;
   if (v.gpa !== null && v.gpa !== undefined && v.gpa !== "") {
     gpa = finite(v.gpa);
-    if (gpa === null || gpa < 0 || gpa > SCALE_MAX[gpaScale]) return null;
+    if (gpa === null || gpa < 0 || gpa > gpaMaxFor(gpaScale)) return null;
   }
   const focus = v.focus ?? null;
   if (focus !== null && focus !== "sat" && focus !== "act" && focus !== "none") return null;
@@ -122,7 +119,8 @@ export function parseNumbers(input: unknown): PlanNumbers | null {
 
 /** The profile with the numbers form applied: GPA and scale, the focus test and its score, the practice flag. */
 export function applyNumbers(profile: StudentProfileData, n: PlanNumbers): StudentProfileData {
-  const tests = { ...profile.tests, focus: n.focus, practice: n.practice };
+  // The target score belongs to one test: a new focus clears it (intake.md "Test").
+  const tests = { ...profile.tests, focus: n.focus, practice: n.practice, target: n.focus === profile.tests.focus ? profile.tests.target : null };
   if (n.focus === "sat" && n.score !== null) tests.satTotal = n.score;
   if (n.focus === "act" && n.score !== null) tests.actComposite = n.score;
   return sanitizeProfile({ ...profile, academics: { ...profile.academics, gpa: n.gpa, gpaScale: n.gpaScale }, tests });

@@ -5,8 +5,11 @@
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { datesFor, inTimeText, registerByText, type InTimeRow } from "../lib/planner/scores.ts";
+import { datesFor, inTimeText, registerByText, targetMoves, type InTimeRow } from "../lib/planner/scores.ts";
 import type { Cycle, CycleEntry } from "../lib/planner/cycle.ts";
+import type { MoveUp } from "../lib/chances/baseline.ts";
+import type { PlanItem, PlanSchool } from "../lib/planner/types.ts";
+import type { PlanRowView } from "../lib/planner/plan-view.ts";
 
 const entry = (key: string, date: string, registerBy: string): CycleEntry => ({
   key,
@@ -105,4 +108,51 @@ test("registerByText: closed registration says so without implying the date stil
 
 test("registerByText: no registration date on file yet", () => {
   assert.equal(registerByText(null, "2026-09-01"), "Registration not open yet");
+});
+
+/* ------------------------------------------------------------------ */
+/* targetMoves (scores.md "Target score"; decision 5, owner 2026-10-11) */
+/* ------------------------------------------------------------------ */
+
+/** Just the fields `targetMoves` reads (`Pick<PlanRowView, "item" | "school" | "moveUp">`). */
+function targetRow(id: string, name: string, moveUp: MoveUp | null): Pick<PlanRowView, "item" | "school" | "moveUp"> {
+  return {
+    item: { id } as PlanItem,
+    school: name ? ({ name } as PlanSchool) : null,
+    moveUp,
+  };
+}
+
+test("targetMoves: null target moves nothing", () => {
+  assert.deepEqual(targetMoves(null, [targetRow("1", "A", { score: 1420, delta: 30, from: "reach", to: "target" })]), []);
+});
+
+test("targetMoves: only rows whose move-up needs no more than the target", () => {
+  const rows = [
+    targetRow("1", "Needs 1420", { score: 1420, delta: 30, from: "reach", to: "target" }),
+    targetRow("2", "Needs 1500", { score: 1500, delta: 110, from: "reach", to: "target" }),
+    targetRow("3", "No move-up", null),
+  ];
+  const moves = targetMoves(1420, rows);
+  assert.deepEqual(
+    moves.map((m) => m.id),
+    ["1"],
+  );
+  assert.equal(moves[0].name, "Needs 1420");
+  assert.equal(moves[0].from, "reach");
+  assert.equal(moves[0].to, "target");
+  assert.equal(moves[0].needed, 1420);
+});
+
+test("targetMoves: a target at or above every move-up's score moves all of them", () => {
+  const rows = [
+    targetRow("1", "A", { score: 1420, delta: 30, from: "reach", to: "target" }),
+    targetRow("2", "B", { score: 1420, delta: 30, from: "target", to: "likely" }),
+  ];
+  assert.equal(targetMoves(1600, rows).length, 2);
+});
+
+test("targetMoves: falls back to 'A college' when the school isn't in the dataset", () => {
+  const moves = targetMoves(1420, [targetRow("1", "", { score: 1400, delta: 10, from: "reach", to: "target" })]);
+  assert.equal(moves[0].name, "A college");
 });

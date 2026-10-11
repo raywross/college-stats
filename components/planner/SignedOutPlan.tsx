@@ -24,16 +24,14 @@ import {
   planItemsFor,
   removeLocalCollege,
   setLocalDream,
-  setLocalGroup,
   setLocalPlan,
   setLocalRound,
   subscribeLocalPlan,
 } from "@/lib/planner/local-plan";
-import { dayLabel, isPastDeadline, nextGroup, roundOptionLabel } from "@/lib/planner/list-row";
+import { dayLabel, isPastDeadline, roundOptionLabel } from "@/lib/planner/list-row";
 import { planView, type PlanRowView } from "@/lib/planner/plan-view";
 import { applyNumbers } from "@/lib/planner/plan-writes";
 import { roundDates } from "@/lib/planner/rounds";
-import type { PickedGroup } from "@/lib/planner/plan-writes";
 import type { PlanSchool } from "@/lib/planner/types";
 import { searchSchoolsApi } from "@/lib/school-api";
 import type { SchoolIndexEntry } from "@/lib/dataset";
@@ -162,14 +160,12 @@ function LocalRow({
   row,
   today,
   onToggleDream,
-  onGroup,
   onRound,
   onRemove,
 }: {
   row: PlanRowView;
   today: string;
   onToggleDream: () => void;
-  onGroup: (group: PickedGroup | null) => void;
   onRound: (round: ListRound | null) => void;
   onRemove: () => void;
 }) {
@@ -208,15 +204,8 @@ function LocalRow({
         {row.group === "unsorted" ? (
           <span className="inline-flex h-8 shrink-0 items-center rounded-full bg-muted px-3 text-xs font-semibold text-muted-foreground">Add a number</span>
         ) : (
-          <button
-            type="button"
-            onClick={() => onGroup(nextGroup(row.group))}
-            title={row.groupAuto ? "Sorted for you; tap to change" : "You picked this group"}
-            aria-label={`${CATEGORY_LABELS[row.group]}${row.groupAuto ? ", sorted for you; tap to change" : ", your pick"}`}
-            className={cn("inline-flex h-8 shrink-0 items-center gap-1 rounded-full px-3 text-xs font-bold", GROUP_CLASS[row.group])}
-          >
-            {CATEGORY_LABELS[row.group]}
-          </button>
+          // Groups are Quad's only (specs/planner/redesign/intake.md "Groups"): no chip to cycle, just the label.
+          <span className={cn("inline-flex h-8 shrink-0 items-center gap-1 rounded-full px-3 text-xs font-bold", GROUP_CLASS[row.group])}>{CATEGORY_LABELS[row.group]}</span>
         )}
 
         <label className="relative inline-flex h-11 shrink-0 items-center">
@@ -370,7 +359,6 @@ export default function SignedOutPlan() {
                 row={row}
                 today={TODAY()}
                 onToggleDream={() => update(setLocalDream(localPlan, localPlan.dream === row.item.unit_id ? null : row.item.unit_id))}
-                onGroup={(group) => update(setLocalGroup(localPlan, row.item.unit_id, group))}
                 onRound={(round) => update(setLocalRound(localPlan, row.item.unit_id, round))}
                 onRemove={() => update(removeLocalCollege(localPlan, row.item.unit_id))}
               />

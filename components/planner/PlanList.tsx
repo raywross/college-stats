@@ -6,33 +6,32 @@ import { useRouter } from "next/navigation";
 import { Search, Sparkles } from "lucide-react";
 import { Crest } from "@/components/school/Crest";
 import { PlanRow } from "@/components/planner/PlanRow";
-import { ListNotices } from "@/components/planner/ListNotices";
+import { PlanNotice } from "@/components/planner/PlanNotice";
 import type { PlanTabProps } from "@/components/planner/tabs/types";
 import { addToList, removeFromList } from "@/lib/lists";
 import { track } from "@/lib/analytics";
 import { searchSchoolsApi } from "@/lib/school-api";
 import type { SchoolIndexEntry } from "@/lib/dataset";
-import { setGroup, setPlanDream, setPlanRound } from "@/lib/planner/store-plan";
-import type { PickedGroup } from "@/lib/planner/plan-writes";
+import { setPlanDream, setPlanRound } from "@/lib/planner/store-plan";
 import { roundDates } from "@/lib/planner/rounds";
 import type { PlanRowView } from "@/lib/planner/plan-view";
-import { anySuggested, headerCountsLine, ROW_SORT_OPTIONS, sortRows, type RowSort } from "@/lib/planner/list-row";
-import type { ListRound } from "@/lib/list-rules";
+import { anySuggestedRound, GROUP_HEADING, groupedRows, headerCountsLine } from "@/lib/planner/list-row";
+import { GROUP_CLASS } from "@/lib/planner/colors";
+import type { ListCategory, ListRound } from "@/lib/list-rules";
 import { cn } from "@/lib/utils";
 
 /**
- * The Colleges tab: the list as the plan (specs/planner/redesign/list.md). Owns its own copy of the rows so every
- * tap (the Dream, the group chip, the round chip, ×) updates at once; a refused write rolls the row back and shows an
- * inline message, and a successful one refreshes the server page so the notices, balance line, and tasks that
+ * The Colleges tab: the list as the plan (specs/planner/redesign/list.md). Grouped by Reach / Target / Likely, then
+ * "Not sorted yet" — Quad's groups only, no chip to cycle and no sort menu. Owns its own copy of the rows so every
+ * tap (the Dream, the round chip, the drawer's remove) updates at once; a refused write rolls the row back and shows
+ * an inline message, and a successful one refreshes the server page so the notices, balance line, and tasks that
  * depend on more than one row stay correct.
  */
 export default function PlanList({ ctx, view }: PlanTabProps) {
   const router = useRouter();
   const [rows, setRows] = useState<PlanRowView[]>(view.rows);
   const [viewSeen, setViewSeen] = useState(view);
-  const [sort, setSort] = useState<RowSort>("default");
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [edTwoPending, startEdTwo] = useTransition();
   const canEdit = ctx.viewer.canEdit;
 
   // The server's view (a refresh, a different child, a data publish) replaces whatever's local. Resetting state
@@ -60,20 +59,6 @@ export default function PlanList({ ctx, view }: PlanTabProps) {
     setRows((rs) => rs.map((r) => (r.item.id === row.item.id ? { ...r, dream: next } : next && r.dream ? { ...r, dream: false } : r)));
     track("plan_dream_set", { on: next });
     const result = await setPlanDream(row.item.id, next);
-    if (!result.ok) {
-      setRows(before);
-      setRowError(row.item.id, result.message);
-      return;
-    }
-    router.refresh();
-  }
-
-  async function handleGroup(row: PlanRowView, group: PickedGroup | null) {
-    const before = rows;
-    setRowError(row.item.id, null);
-    patch(row.item.id, { group: group ?? row.standing?.fit ?? "unsorted", groupAuto: group === null });
-    track("plan_group_changed", { from_auto: row.groupAuto });
-    const result = await setGroup(row.item.id, group);
     if (!result.ok) {
       setRows(before);
       setRowError(row.item.id, result.message);
@@ -122,21 +107,15 @@ export default function PlanList({ ctx, view }: PlanTabProps) {
     router.refresh();
   }
 
-  function handleUseEdTwo(itemId: string) {
-    const dreamRound = rows.find((r) => r.dream)?.round === "rea" ? "rea" : "ed";
-    startEdTwo(async () => {
-      track("plan_ed2_offer_used", { dream_round: dreamRound });
-      const result = await setPlanRound(itemId, "ed2");
-      if (result.ok) router.refresh();
-    });
-  }
-
-  const ordered = sortRows(rows, sort);
+  const groups = groupedRows(rows);
   const dreamRow = rows.find((r) => r.dream) ?? null;
+  const suggestedRound = anySuggestedRound(rows);
+  const firstName = ctx.student?.display_name?.trim().split(/\s+/)[0] || null;
+  const addLabel = ctx.viewer.isGuardian && firstName ? `Add a college for ${firstName}` : "Add a college";
 
   return (
     <div className="space-y-4">
-      <ListNotices view={view} onUseEdTwo={handleUseEdTwo} edTwoPending={edTwoPending} />
+      <PlanNotice ctx={ctx} view={view} className="lg:hidden" />
 
       {rows.length === 0 ? (
         <div className="rounded-2xl border bg-card p-6 text-center text-sm text-muted-foreground">
@@ -145,8 +124,8 @@ export default function PlanList({ ctx, view }: PlanTabProps) {
             // A record the parent made that no account has claimed: colleges saved on the student's own account sit
             // on that account's list until the student accepts the household invitation (found in owner testing).
             <p className="mx-auto mt-2 max-w-md">
-              {ctx.student.display_name?.trim().split(/\s+/)[0] || "Your student"} hasn&apos;t joined your household yet, so colleges saved on
-              their own account don&apos;t show here. Send an invitation from{" "}
+              {firstName || "Your student"} hasn&apos;t joined your household yet, so colleges saved on their own
+              account don&apos;t show here. Send an invitation from{" "}
               <Link href="/household" className="font-semibold text-primary hover:underline">
                 Household
               </Link>
@@ -156,26 +135,19 @@ export default function PlanList({ ctx, view }: PlanTabProps) {
         </div>
       ) : (
         <section className="overflow-hidden rounded-3xl border bg-card">
-          <div className="flex flex-wrap items-center justify-between gap-2 border-b px-4 py-3">
-            <p className="text-sm font-semibold">{headerCountsLine(rows)}</p>
-            <div className="flex items-center gap-3">
-              {anySuggested(rows) && (
-                <p className="inline-flex items-center gap-1 text-xs text-muted-foreground">
-                  <Sparkles className="size-3.5" aria-hidden /> = sorted for you; tap to change
-                </p>
+          <div className="hidden items-center justify-between gap-2 border-b px-4 py-3 lg:flex">
+            <p className="inline-flex items-center gap-2 text-sm font-semibold">
+              {headerCountsLine(rows)}
+              {suggestedRound && (
+                <span className="inline-flex items-center gap-1 text-xs font-normal text-muted-foreground">
+                  <Sparkles className="size-3.5" aria-hidden /> suggested round
+                </span>
               )}
-              {rows.length > 1 && (
-                <label className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
-                  Sort
-                  <select value={sort} onChange={(e) => setSort(e.target.value as RowSort)} className="h-8 rounded-full border bg-background px-2 text-xs font-semibold text-foreground">
-                    {ROW_SORT_OPTIONS.map((o) => (
-                      <option key={o.value} value={o.value}>
-                        {o.label}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-              )}
+            </p>
+            <div className="flex items-center gap-10 pr-11 text-xs font-semibold text-muted-foreground">
+              <span>Round</span>
+              <span>Deadline</span>
+              <span>Status</span>
             </div>
           </div>
           {!dreamRow && (
@@ -183,32 +155,49 @@ export default function PlanList({ ctx, view }: PlanTabProps) {
               Mark a Dream if one college is your clear first choice; if it has early decision, your plan starts it there.
             </p>
           )}
-          <ul className="divide-y">
-            {ordered.map((row) => (
-              <PlanRow
-                key={row.item.id}
-                row={row}
-                ctx={ctx}
-                dreamName={dreamRow && dreamRow.item.id !== row.item.id ? (dreamRow.school?.name ?? null) : null}
-                error={errors[row.item.id] ?? null}
-                onToggleDream={handleDream}
-                onGroup={handleGroup}
-                onRound={handleRound}
-                onRemove={handleRemove}
-              />
-            ))}
-          </ul>
+          {groups.map(({ group, rows: groupRows }) => (
+            <div key={group}>
+              <div className="border-b px-4 py-3">
+                <GroupHeading group={group} count={groupRows.length} />
+              </div>
+              <ul className="divide-y">
+                {groupRows.map((row) => (
+                  <PlanRow
+                    key={row.item.id}
+                    row={row}
+                    ctx={ctx}
+                    dreamName={dreamRow && dreamRow.item.id !== row.item.id ? (dreamRow.school?.name ?? null) : null}
+                    error={errors[row.item.id] ?? null}
+                    onToggleDream={handleDream}
+                    onRound={handleRound}
+                    onRemove={handleRemove}
+                  />
+                ))}
+              </ul>
+            </div>
+          ))}
         </section>
       )}
 
-      {canEdit && <AddCollegeBox listId={ctx.list.id} excludeIds={rows.map((r) => r.item.unit_id)} onAdded={() => router.refresh()} />}
+      {canEdit && <AddCollegeBox listId={ctx.list.id} excludeIds={rows.map((r) => r.item.unit_id)} label={addLabel} onAdded={() => router.refresh()} />}
     </div>
   );
 }
 
-/** list.md "Around the list": the search box at the bottom; a new college arrives with its group and round already
- * filled (planView computes them live, and the next plan open stores them). */
-function AddCollegeBox({ listId, excludeIds, onAdded }: { listId: string; excludeIds: string[]; onAdded: () => void }) {
+/** list.md "Grouped by Reach / Target / Likely": the section heading pill, Reach violet, Target sky, Likely
+ * emerald, "Not sorted yet" muted — calm tints, never a warning, with the group's count. */
+function GroupHeading({ group, count }: { group: ListCategory; count: number }) {
+  return (
+    <p className={cn("inline-flex h-8 items-center rounded-full px-3 text-xs font-bold", GROUP_CLASS[group])}>
+      {GROUP_HEADING[group]} · {count}
+    </p>
+  );
+}
+
+/** list.md "Around the list": a collapsed pill that expands into the search box; a new college arrives with its
+ * group and round already filled (planView computes them live, and the next plan open stores them). */
+function AddCollegeBox({ listId, excludeIds, label, onAdded }: { listId: string; excludeIds: string[]; label: string; onAdded: () => void }) {
+  const [expanded, setExpanded] = useState(false);
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SchoolIndexEntry[]>([]);
   const [open, setOpen] = useState(false);
@@ -242,11 +231,25 @@ function AddCollegeBox({ listId, excludeIds, onAdded }: { listId: string; exclud
     });
   };
 
+  if (!expanded) {
+    return (
+      <button
+        id="add-college"
+        type="button"
+        onClick={() => setExpanded(true)}
+        className="flex h-11 w-full items-center justify-center rounded-full border border-dashed bg-card text-sm font-semibold text-primary hover:bg-muted/60"
+      >
+        + {label}
+      </button>
+    );
+  }
+
   return (
-    <div className="relative">
+    <div id="add-college" className="relative">
       <label className="flex h-11 items-center gap-2 rounded-full border bg-card px-4">
         <Search className="size-4 shrink-0 text-muted-foreground" aria-hidden />
         <input
+          autoFocus
           value={query}
           onChange={(e) => {
             setQuery(e.target.value);
@@ -256,7 +259,7 @@ function AddCollegeBox({ listId, excludeIds, onAdded }: { listId: string; exclud
           onBlur={() => setTimeout(() => setOpen(false), 150)}
           placeholder="Add a college…"
           className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
-          aria-label="Add a college to your list"
+          aria-label={label}
         />
         {pending && <span className="text-xs text-muted-foreground">Adding…</span>}
       </label>

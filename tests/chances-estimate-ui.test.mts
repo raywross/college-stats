@@ -345,12 +345,15 @@ test("the request carries the core answers and the grade, sanitized, and likeYou
   assert.ok(none.ok && none.request.context.grade === null && none.request.context.coreAtTopLevel === null && none.request.likeYou === false);
 });
 
-test("NumbersForm's live preview sends the core answers and the student's grade, as the server load does", () => {
+test("the live-preview hook sends the core answers and the student's grade, as the server load does", () => {
+  // NumbersForm's own live preview is gone with the intake redesign (specs/planner/redesign/intake.md): numbers are
+  // edited through the intake guide, which saves once rather than previewing the list client-side. SignedOutPlan is
+  // the hook's one remaining caller.
   const hook = read("components", "planner", "useEstimates.ts");
   assert.match(hook, /JSON\.stringify\(\{ student, unitIds, context \}\)/);
   assert.match(hook, /gradeNow\(gradYear/);
   assert.match(hook, /coreAtTopLevel: profile\?\.academics\.coreAtTopLevel/);
-  assert.match(read("components", "planner", "NumbersForm.tsx"), /useEstimates\(draftProfile, unitIds, view\.estimates, \{ gradYear: ctx\.student\?\.grad_year/);
+  assert.match(read("components", "planner", "SignedOutPlan.tsx"), /useEstimates\(/);
   assert.match(read("app", "api", "estimate", "route.ts"), /estimateContext\(student, context\)/);
   // The route and the loader pass the same two extras to the same function.
   assert.match(read("lib", "planner", "plan-estimates.ts"), /estimateContext\(input, \{ coreAtTopLevel: profile\?\.academics\.coreAtTopLevel \?\? null, grade: gradeNow\(/);
@@ -494,8 +497,8 @@ test("the row drawer shows the stage lines and the panel from the row's estimate
   assert.match(read("lib", "planner", "plan-view.ts"), /estimate: school \? est : null/);
 });
 
-test("the numbers card and the signed-out plan show the most useful missing input", () => {
-  assert.match(read("components", "planner", "PlanHeaderCard.tsx"), /<MostUsefulInput estimates=\{view\.estimates\}/);
+test("the signed-out plan shows the most useful missing input; the header card no longer does (redesign 2026-10-11: it moved to the Scores tab)", () => {
+  assert.doesNotMatch(read("components", "planner", "PlanHeaderCard.tsx"), /MostUsefulInput/);
   assert.match(read("components", "planner", "SignedOutPlan.tsx"), /<MostUsefulInput estimates=\{estimates\}/);
   assert.match(read("components", "chances", "MostUsefulInput.tsx"), /mostUsefulMissing\(Object\.values\(estimates\)\)/);
 });

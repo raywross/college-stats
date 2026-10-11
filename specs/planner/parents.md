@@ -2,7 +2,9 @@
 
 > Status: **built** 2026-10-08 on `feature/planner` ([below](#built-2026-10-08-unit-u8-on-featureplanner-parents-2)); planned 2026-10-07. After [model.md](model.md) and [timeline.md](timeline.md); the summary line ships
 > with the model. Builds on the household's grants ([accounts.md](../product/accounts.md#privacy-model),
-> [household-hub.md](../product/household-hub.md)). Part of the [planner](README.md).
+> [household-hub.md](../product/household-hub.md)). Part of the [planner](README.md). **Updated 2026-10-11** on
+> feature/plan-intake-redesign-frame for the redesigned plan page ([redesign/page.md](redesign/page.md)): see "The
+> redesigned plan page" below.
 
 ## Goal
 The owner's brief: *all along the way, give parents visibility and tools to see how the kids are tracking and help
@@ -117,6 +119,24 @@ summary line, Your part merges across them, and the weekly email covers all. The
 `YourPart.tsx`, `StuckSignals.tsx`, `WhatParentsSee.tsx`, `emails/parent-summary.tsx`, the nudge Server Actions with
 the rate limit in SQL (a check against `plan_nudges`), `tests/planner-parents.test.mts` (the summary line per
 stage; each signal on and off; the rate limit; the email has titles only; a managed student can't be nudged).
+
+## The redesigned plan page (2026-10-11)
+[redesign/page.md](redesign/page.md) replaced the six-stage frame with three tabs and, for a parent, dropped the
+family/"Everyone" calendar as the default (deferred with the rest of the family plan): `/plan` now always resolves
+to one child, Colleges first (`lib/planner/plan-frame.ts` `resolveSelectedChild`). Two parts of this file moved into
+that page rather than staying only on the household page:
+- **A one-line "Your part"** (`components/planner/parents/YourPartLine.tsx`): the guardian's own *first* open task
+  for the child whose plan they're looking at, right on the plan — a white card, a lime "Your part" tag, the task
+  and its date, and an "Open" link when the task has a URL (a `cost_check` task's net price calculator). This reads
+  the same `yourPart()` as the full list below; it shows only the soonest one, since the plan already has its own
+  Next up card. The full cross-child list stays the household page's job.
+- **The stuck signals** still render inside the plan (`StuckSignals.tsx`), but the redesigned frame no longer calls
+  it from `PlanFrame.tsx` — the owner's 2026-10-11 review called the pre-tabs stack too busy. The component and its
+  pure source (`lib/planner/summary.ts` `stuckSignals`) are unchanged and ready to be re-wired (e.g. into a tab or a
+  notice) rather than dropped; the same is true of `WhatParentsSee.tsx`.
+`NothingDue` (`components/planner/parents/NothingDue.tsx`) is new: when a child (most often a younger one who
+hasn't picked rounds) has no open deadline, it takes Next up's place with "Nothing due this year" instead of an
+empty-looking dated card.
 
 ## Open questions
 1. Should a student be able to hide the Dream from parents? The list is visible under the grant and the Dream is a

@@ -14,54 +14,57 @@ import { cn } from "@/lib/utils";
 const ICONS: Record<PlanTab, typeof ListChecks> = { colleges: ListChecks, scores: Target, calendar: CalendarDays, offers: FileCheck2 };
 
 /**
- * The open tabs and the one currently shown (specs/planner/redesign/page.md "The page"): links, so back and
- * forward work; a dot on Scores when a retake suggestion is live; Colleges, Scores, Calendar, and Offers once any
- * college has a decision, each handed the same `ctx`/`view` every tab reads.
+ * The tab pills alone (specs/planner/redesign/page.md "The page"): a segmented control, ink fill on the active tab,
+ * a coral dot on Scores when a retake suggestion is live. Split from the tab body so the desktop frame
+ * (`PlanFrame.tsx`) can place it beside the title while a phone keeps it below Next up, above the list.
+ */
+export function PlanTabPills({ tabs, tab, person, hasRetake }: { tabs: readonly PlanTab[]; tab: PlanTab; person: string | null; hasRetake: boolean }) {
+  return (
+    <div className="flex flex-wrap items-center gap-2" role="tablist" aria-label="Plan views">
+      {tabs.map((t) => {
+        const Icon = ICONS[t];
+        const active = t === tab;
+        return (
+          <Link
+            key={t}
+            href={planHref({ person, tab: t })}
+            role="tab"
+            aria-selected={active}
+            className={cn(
+              "inline-flex min-h-11 items-center gap-2 rounded-full px-4 text-sm font-semibold transition-colors",
+              active ? "bg-foreground text-background" : "bg-card text-muted-foreground ring-1 ring-border hover:text-foreground",
+            )}
+          >
+            <Icon className="size-4" aria-hidden />
+            {TAB_LABELS[t]}
+            {t === "scores" && hasRetake && <span className="size-2 rounded-full bg-coral" aria-label="A retake suggestion is ready" />}
+          </Link>
+        );
+      })}
+    </div>
+  );
+}
+
+/**
+ * The open tab's content (specs/planner/redesign/page.md "The page"): every tab reads the same `ctx`/`view`; the
+ * pills that choose among them are `PlanTabPills`, rendered separately by `PlanFrame.tsx`.
  */
 export function PlanTabs({
   ctx,
   view,
-  tabs,
   tab,
-  person,
-  hasRetake,
   calendarChild,
   viewer,
 }: {
   ctx: PlanContext;
   view: PlanView;
-  tabs: readonly PlanTab[];
   tab: PlanTab;
-  person: string | null;
-  hasRetake: boolean;
   calendarChild: CalendarChild;
   viewer: "student" | "guardian";
 }) {
   return (
     <div className="space-y-4">
       <PlanOpened tab={tab} viewer={viewer} everyone={false} />
-      <div className="flex flex-wrap items-center gap-2" role="tablist" aria-label="Plan views">
-        {tabs.map((t) => {
-          const Icon = ICONS[t];
-          const active = t === tab;
-          return (
-            <Link
-              key={t}
-              href={planHref({ person, tab: t })}
-              role="tab"
-              aria-selected={active}
-              className={cn(
-                "inline-flex min-h-11 items-center gap-2 rounded-full px-4 text-sm font-semibold transition-colors",
-                active ? "bg-foreground text-background" : "bg-card text-muted-foreground ring-1 ring-border hover:text-foreground",
-              )}
-            >
-              <Icon className="size-4" aria-hidden />
-              {TAB_LABELS[t]}
-              {t === "scores" && hasRetake && <span className="size-2 rounded-full bg-pop" aria-label="A retake suggestion is ready" />}
-            </Link>
-          );
-        })}
-      </div>
       {tab === "colleges" && <PlanList ctx={ctx} view={view} />}
       {tab === "scores" && <ScoresTab ctx={ctx} view={view} />}
       {

@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-06",
+  "generated": "2026-10-11",
   "sources": {
     "crdc": {
       "name": "Civil Rights Data Collection 2023–24, public-use file",
@@ -74,7 +74,8 @@
     "edfacts-acgr": "Class of 2021",
     "edfacts-acgr-history": "Class of 2021",
     "crdc": "2023–24",
-    "pss": "2023–24"
+    "pss": "2023–24",
+    "ap-ledger": null
   },
   "counts": {
     "public": 27815,

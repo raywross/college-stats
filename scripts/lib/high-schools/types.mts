@@ -18,7 +18,7 @@ import type { HighSchool, HighSchoolStateFile, HsLineage, HsSourceInfo, HsSource
 /** Top-level row fields an adapter can own. `id` and `kind` come from the id; `suppressed`/`lineage` follow the fields. */
 export type HsOwnedKey = Exclude<keyof HighSchool, "id" | "kind" | "suppressed" | "lineage">;
 
-export type AdapterKey = "ccd" | "edfacts" | "crdc" | "pss";
+export type AdapterKey = "ccd" | "edfacts" | "crdc" | "pss" | "ap-ledger";
 
 export interface AdapterInfo {
   key: AdapterKey;
@@ -29,7 +29,8 @@ export interface AdapterInfo {
    *   it doesn't patch get those fields reset to null (the source didn't report them this time).
    */
   role: "directory" | "enrichment";
-  rowKind: HighSchool["kind"];
+  /** The rows the adapter creates or fills. "any" (enrichment only): public and private rows alike (the AP Course Ledger). */
+  rowKind: HighSchool["kind"] | "any";
   /** The top-level fields this adapter writes. A run changes only these; every other field keeps its current value. */
   owns: readonly HsOwnedKey[];
   /** meta.json sources and vintages this adapter supplies. */

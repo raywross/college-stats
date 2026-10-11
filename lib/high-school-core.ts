@@ -361,6 +361,15 @@ export function normalizeHighSchool(row: HighSchool): HighSchool {
           enrollment: orNull(r.rigor.enrollment),
         }
       : null,
+    ap_ledger: r.ap_ledger
+      ? {
+          year: r.ap_ledger.year,
+          ledger_id: r.ap_ledger.ledger_id,
+          ledger_name: r.ap_ledger.ledger_name,
+          courses: [...new Set(r.ap_ledger.courses ?? [])].sort(),
+          other: [...new Set(r.ap_ledger.other ?? [])].sort(),
+        }
+      : null,
   };
   const known = new Set(Object.keys(out).concat(["suppressed", "lineage"]));
   // Unknown top-level keys survive (sorted) so validateHighSchoolRow names them rather than the writer losing data.
@@ -812,6 +821,22 @@ export function validateHighSchoolRow(row: HighSchool): string[] {
   }
   p.push(...validateGradHistory(row, where));
 
+  // AP Course Ledger: a year, the Ledger's six-digit AI code and name, and sorted, distinct catalog keys.
+  const l = row.ap_ledger;
+  if (l) {
+    if (typeof l.year !== "string" || !/^\d{4}–\d{2}$/.test(l.year)) p.push(`${where}: ap_ledger.year must be a school year (YYYY–YY)`);
+    if (typeof l.ledger_id !== "string" || !/^(\d{6}|org-\d+)$/.test(l.ledger_id)) p.push(`${where}: ap_ledger.ledger_id must be the Ledger's six-digit AI code (or org-<id> for a school listed without one)`);
+    if (typeof l.ledger_name !== "string" || !l.ledger_name.trim()) p.push(`${where}: ap_ledger.ledger_name is empty`);
+    for (const [k, list] of [["courses", l.courses], ["other", l.other]] as const) {
+      if (!Array.isArray(list) || list.some((c) => typeof c !== "string" || !c.trim())) p.push(`${where}: ap_ledger.${k} must be a list of strings`);
+      else {
+        if (new Set(list).size !== list.length) p.push(`${where}: ap_ledger.${k} lists a course twice`);
+        if (list.some((c, i) => i > 0 && c < list[i - 1])) p.push(`${where}: ap_ledger.${k} isn't sorted`);
+        if (k === "courses" && list.some((c) => !/^ap_[a-z0-9_]+$/.test(c))) p.push(`${where}: ap_ledger.courses must be AP catalog keys (ap_…)`);
+      }
+    }
+  }
+
   // Kind-specific fields.
   if (kind === "public" && row.affiliation !== null) p.push(`${where}: affiliation is for private schools`);
   if (kind === "private") {
@@ -1002,7 +1027,7 @@ export function validateHighSchoolDetail(
   return p;
 }
 
-export const HS_VINTAGE_KEYS: readonly HsVintageKey[] = ["ccd-directory", "ccd-enrollment", "edfacts-acgr", "edfacts-acgr-history", "crdc", "pss"];
+export const HS_VINTAGE_KEYS: readonly HsVintageKey[] = ["ccd-directory", "ccd-enrollment", "edfacts-acgr", "edfacts-acgr-history", "crdc", "pss", "ap-ledger"];
 
 /** meta.json: complete, counts match the rows, and every source the rows cite is described. */
 export function validateHighSchoolMeta(meta: HighSchoolMeta, rows: readonly HighSchool[]): string[] {

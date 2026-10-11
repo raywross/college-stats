@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { ArrowRight, MapPin } from "lucide-react";
 import { getHighSchool } from "@/lib/high-schools";
 import { gradeSpan } from "@/lib/high-school-core";
+import { catalogCourse } from "@/lib/chances/catalog";
 import { citeHsView, hsValueAt, isHsSuppressed, type HsFieldPath } from "@/lib/hs-fields";
 import type { HsStateField } from "@/lib/high-school-types";
 import {
@@ -83,7 +84,11 @@ export default async function HighSchoolPage({ params }: Props) {
   const stateSuppressed = (f: HsStateField) => !!state_report?.suppressed.includes(f);
 
   const rigorFields: HsFieldPath[] = ["rigor.ap_courses", "derived.ap_enrolled_share", "derived.ap_pass_share", "derived.ib_enrolled_share", "derived.dual_enrolled_share"];
-  const hasRigor = rigorFields.some((p) => value(p) !== null || suppressed(p)) || stateVal("ap_pass_rate") !== null;
+  const hasRigorStats = rigorFields.some((p) => value(p) !== null || suppressed(p)) || stateVal("ap_pass_rate") !== null;
+  // College Board's AP Course Ledger: the named list, public and private schools alike.
+  const ledger = school.ap_ledger;
+  const ledgerNames = ledger ? [...ledger.courses.map((k) => catalogCourse(k)?.name ?? k), ...ledger.other] : [];
+  const hasRigor = hasRigorStats || !!ledger;
   const scores = scoresDisplay(detail?.scores ?? null);
   const hasOutcomes = school.grad_rate !== null || !!scores || (["college_going_rate", "ela_proficiency", "math_proficiency", "chronic_absence"] as HsStateField[]).some((f) => stateVal(f) !== null || stateSuppressed(f));
   const hasWhereGo = !!detail?.matriculation || !!detail?.admitted?.entries.length || (["nsc_enrolled_fall", "nsc_persisted", "nsc_completed"] as HsStateField[]).some((f) => stateVal(f) !== null);
@@ -139,8 +144,8 @@ export default async function HighSchoolPage({ params }: Props) {
       </div>
 
       {/* ============================== RIGOR ============================== */}
-      <Section id="rigor" title="Rigor" note={!isPublic && !hasRigor ? "Private schools don't report AP/IB access through the federal Civil Rights Data Collection." : !hasRigor ? "Not yet reported for this school." : undefined}>
-        {hasRigor && (
+      <Section id="rigor" title="Rigor" note={!isPublic && !hasRigor ? "Private schools don't report AP/IB access through the federal Civil Rights Data Collection, and College Board's AP Course Ledger doesn't list this school." : !hasRigor ? "Not yet reported for this school." : undefined}>
+        {hasRigorStats && (
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             <HsStat
               label="AP courses offered"
@@ -191,6 +196,20 @@ export default async function HighSchoolPage({ params }: Props) {
             )}
           </div>
         )}
+        {ledger ? (
+          <details className="mt-3 rounded-2xl border bg-card p-4" open={ledgerNames.length > 0 && !detail?.ap_courses?.length}>
+            <summary className="flex cursor-pointer items-center gap-1 text-sm font-semibold">
+              {ledgerNames.length === 0
+                ? "No AP courses authorized by College Board this year"
+                : `${ledgerNames.length} AP ${ledgerNames.length === 1 ? "course" : "courses"} authorized by College Board`}
+              <InfoTip term="ap-access" cited={cite("ap_ledger")} />
+            </summary>
+            {ledgerNames.length > 0 && <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{ledgerNames.join(" · ")}</p>}
+            <p className="mt-2 text-xs text-muted-foreground">
+              The courses College Board lists for {ledger.ledger_name} in {ledger.year}; a school that missed renewing a course that year isn&apos;t listed for it.
+            </p>
+          </details>
+        ) : null}
         {detail?.ap_courses?.length ? (
           <details className="mt-3 rounded-2xl border bg-card p-4">
             <summary className="flex cursor-pointer items-center gap-1 text-sm font-semibold">
@@ -403,6 +422,7 @@ export default async function HighSchoolPage({ params }: Props) {
             "grad_rate",
             "grad_history",
             "rigor.ap_courses",
+            "ap_ledger",
             "derived.ap_enrolled_share",
             "derived.ap_pass_share",
             "derived.ib_enrolled_share",

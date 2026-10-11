@@ -300,7 +300,7 @@ test("parseFlags", () => {
 });
 
 test("registries list every adapter, each with a sound contract", () => {
-  assert.deepEqual(ADAPTERS.map((a) => a.info.key), ["ccd", "pss", "edfacts", "crdc"]);
+  assert.deepEqual(ADAPTERS.map((a) => a.info.key), ["ccd", "pss", "edfacts", "crdc", "ap-ledger"]);
   for (const a of ADAPTERS) {
     assert.equal(typeof a.load, "function");
     assert.ok(a.info.owns.length);
@@ -308,7 +308,7 @@ test("registries list every adapter, each with a sound contract", () => {
   }
   // Ownership doesn't overlap within a kind (two adapters writing one field would fight on every rerun).
   for (const kind of ["public", "private"] as const) {
-    const owned = ADAPTERS.filter((a) => a.info.rowKind === kind).flatMap((a) => a.info.owns);
+    const owned = ADAPTERS.filter((a) => a.info.rowKind === kind || a.info.rowKind === "any").flatMap((a) => a.info.owns);
     assert.equal(new Set(owned).size, owned.length, `${kind}: overlapping owns`);
   }
   assert.deepEqual(Object.keys(STATE_ADAPTERS).sort(), ["ca", "ct", "fl", "il", "ny", "sc", "tx"]);

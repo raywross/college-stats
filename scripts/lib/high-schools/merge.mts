@@ -105,9 +105,10 @@ export function applyAdapterResults(existing: readonly HighSchool[], runs: reado
         continue;
       }
       const byId = new Map(result.patches.map((p) => [p.id, p]));
-      for (const p of result.patches) if (!rows.has(p.id) || rows.get(p.id)!.kind !== info.rowKind) rep.unmatched++;
+      const applies = (row: HighSchool) => info.rowKind === "any" || row.kind === info.rowKind;
+      for (const p of result.patches) if (!rows.has(p.id) || !applies(rows.get(p.id)!)) rep.unmatched++;
       for (const [id, prev] of rows) {
-        if (prev.kind !== info.rowKind) continue;
+        if (!applies(prev)) continue;
         const patch = byId.get(id);
         const { row, stray } = applyOwned(prev, info.owns, patch?.values ?? {}, patch?.suppressed, patch?.lineage);
         rep.stray += stray;

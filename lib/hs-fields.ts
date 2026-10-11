@@ -101,6 +101,9 @@ export const HS_FIELDS = {
   "rigor.dual_enrolled": crdc("Students in dual enrollment"),
   "rigor.enrollment": crdc("Enrollment (CRDC)"),
 
+  // College Board's AP Course Ledger (the AP courses the school is authorized to offer this year, by name)
+  ap_ledger: { label: "AP courses authorized by College Board", topic: "rigor", source: "ap-ledger", vintage: "ap-ledger" },
+
   // Derived (computed at render time and for medians; never stored)
   "derived.ap_enrolled_share": {
     label: "Share of students in an AP course",
@@ -181,6 +184,7 @@ export const HS_SOURCE_VINTAGE: Record<HsSourceKey, HsVintageKey | null> = {
   crdc: "crdc",
   "nces-pss": "pss",
   "hs-profile": null,
+  "ap-ledger": "ap-ledger",
   "state-ca": null,
   "state-tx": null,
   "state-ny": null,

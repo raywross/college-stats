@@ -248,7 +248,7 @@ test("meta: a row whose history ends in another class than the release year fail
       edfacts: { name: "ED Data Express", publisher: "U.S. Department of Education", url: "https://eddataexpress.ed.gov/download/data-library", retrieved: "2026-10-05" },
       "nces-ccd": { name: "Common Core of Data", publisher: "NCES", url: "https://nces.ed.gov/ccd/files.asp", retrieved: "2026-10-05" },
     },
-    vintages: { "ccd-directory": null, "ccd-enrollment": null, "edfacts-acgr": "Class of 2021", "edfacts-acgr-history": "Classes of 2019–2021", crdc: null, pss: null },
+    vintages: { "ccd-directory": null, "ccd-enrollment": null, "edfacts-acgr": "Class of 2021", "edfacts-acgr-history": "Classes of 2019–2021", crdc: null, pss: null, "ap-ledger": null },
     counts: { public: 1, private: 0, byState: { CA: 1 } },
   };
   assert.deepEqual(validateHighSchoolMeta(meta, [row]), []);

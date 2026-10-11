@@ -34,12 +34,12 @@ export type RigorReading = "most" | "much" | "some" | "few_offered" | "cant_plac
 export interface SchoolOffering {
   /** How many different AP courses; 0 when the school says it offers none; null when unknown. */
   apCount: number | null;
-  /** Catalog keys of the AP courses, when a list is known (profile, pooled, or the student's marks); else null. */
+  /** Catalog keys of the AP courses, when a list is known (profile, the AP Course Ledger, pooled, or the student's marks); else null. */
   apKeys: string[] | null;
   ib: boolean | null;
   dual: boolean | null;
-  source: "profile" | "pooled" | "student" | "crdc" | null;
-  /** The high school field path the offering cites (HS_FIELDS), e.g. "detail.ap_courses" or "rigor.ap_courses"; null for pooled, student, or nothing. */
+  source: "profile" | "ledger" | "pooled" | "student" | "crdc" | null;
+  /** The high school field path the offering cites (HS_FIELDS), e.g. "detail.ap_courses", "ap_ledger", or "rigor.ap_courses"; null for pooled, student, or nothing. */
   field: string | null;
 }
 

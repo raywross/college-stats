@@ -55,6 +55,8 @@ export const NOTES: Record<NoteKey, Note> = {
 
   /* ---- The school's offering (rigor-in-context.md "The school's offering") ---- */
   "offering.profile": (v) => `Your school's profile lists ${plural(v, "count", "AP course")}.`,
+  "offering.ledger": (v) => `College Board lists ${plural(v, "count", "AP course")} your school is authorized to offer.`,
+  "offering.ledger_none": () => "College Board lists no AP courses for your school this year.",
   "offering.pooled": () => "Students at your school have listed these.",
   "offering.student": () => "The courses you marked as offered at your school.",
   "offering.crdc": (v) => `Your school offers ${plural(v, "count", "AP course")}.`,

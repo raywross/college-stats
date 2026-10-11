@@ -81,12 +81,13 @@ From the linked high school's record ([high-school-data.md](../product/high-scho
    missing. *Change in this part:* `scripts/lib/high-schools/crdc.mts` stores an explicit `0` for a "No" (never for -9,
    which stays missing), so a school without AP reads "Your school doesn't offer AP courses" rather than nothing.
 
-*Proposed from the pilot (2026-10-11), as source 1.5 between the profile and CRDC:* **College Board's AP Course
-Ledger**, the courses each school is authorized to call AP this year, by name, public and private
-([apcourseaudit.inflexion.org/ledger/](https://apcourseaudit.inflexion.org/ledger/); the lookup is recorded in
-`data/high-schools/ap-ledger-pilot.json`). It listed 41 of the 42 CRDC pilot schools and 21 of the 33 private ones,
-and gives the picker a named list where CRDC gives a count. It is a record of renewals, so a school's list can drop in
-a year its coordinator missed; show it as "authorized to offer" and keep CRDC's count beside it. Proposal only; not built.
+*Built 2026-10-11 (from the pilot), as source 1.5 between the profile and CRDC:* **College Board's AP Course
+Ledger** (`ap_ledger` on the row; [high-school-data.md](../product/high-school-data.md#as-built-ap-course-ledger-2026-10-11)),
+the courses each school is authorized to call AP this year, by name, public and private. It gives the picker a named
+list where CRDC gives a count, and covers private schools. It is a record of renewals, so a school's list can drop in
+a year its coordinator missed; the site says "authorized by College Board", keeps CRDC's count beside it, and reads
+a school the Ledger doesn't list as "not listed", never as "offers none". Order in `lib/chances/offering.ts`: profile,
+Ledger, pooled list, the student's marks, CRDC count.
 
 ## The reading
 `rigorReading(student, highSchool)` in `lib/chances/rigor.ts` places the schedule against the school's offering and
@@ -231,6 +232,9 @@ and exam sentences); the thresholds are tested with the model (`tests/chances-mo
   while `apExamsPrivate` holds, and a parent's save puts the saved scores back and can't change the switch.
 - **Pilot (2026-10-11): fail.** The CRDC count against College Board's AP Course Ledger: 24 of 41 matched pilot schools
   within two courses (59%; 66% on the Ledger's 2023–24 year) against the 80% bar ("Pilot" above;
-  `data/high-schools/ap-ledger-pilot.json`). The reading's behavior is unchanged until the owner picks among the
-  options listed there.
+  `data/high-schools/ap-ledger-pilot.json`). **What followed (same day):** the owner chose the Ledger's named list
+  for every high school. `npm run sync-ap-ledger` fetches it and the `ap-ledger` adapter fills `ap_ledger` on public
+  and private rows; the offering takes it after the profile and before the pooled list, marks, and CRDC
+  (`offering.ts`); the sentence reads "College Board lists 14 AP courses your school is authorized to offer." CRDC's
+  count stays as the fallback and on the high school page beside the list.
 - **Not done:** the college-tie line's first-year GPA share (`rigor.college_tie`) waits for `derived.gpa_top_share`.

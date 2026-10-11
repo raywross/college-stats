@@ -2,10 +2,12 @@
  * What a student's high school offers (specs/chances/rigor-in-context.md "The school's offering", course-plan.md
  * "The school's course list"), best source first:
  * 1. the school profile's AP list (`detail.ap_courses`, pilot schools), matched to catalog keys;
- * 2. courses other students at the school have listed (the pooled list, already held to the three-student threshold
+ * 2. College Board's AP Course Ledger (`ap_ledger`): the courses the school is authorized to offer this year, by
+ *    name, public and private; an empty list is a school listed with none;
+ * 3. courses other students at the school have listed (the pooled list, already held to the three-student threshold
  *    by the server; never shown below it);
- * 3. the student's own marks ("Which of these does your school offer?");
- * 4. the CRDC count (`rigor.ap_courses`): how many, not which; 0 when the school said it offers none.
+ * 4. the student's own marks ("Which of these does your school offer?");
+ * 5. the CRDC count (`rigor.ap_courses`): how many, not which; 0 when the school said it offers none.
  * IB and dual enrollment come from the profile's IB list, else CRDC's enrollment counts (> 0 offered, 0 not).
  * Pure and client-safe.
  */
@@ -14,8 +16,8 @@ import { apKeysForName, catalogCourse } from "./catalog.ts";
 import type { SchoolOffering } from "./types.ts";
 
 export interface OfferingInput {
-  /** The high school's row (CRDC counts in `rigor`); null when not on record. */
-  school: Pick<HighSchool, "rigor"> | null;
+  /** The high school's row (CRDC counts in `rigor`, the Ledger's list in `ap_ledger`); null when not on record. */
+  school: (Pick<HighSchool, "rigor"> & Partial<Pick<HighSchool, "ap_ledger">>) | null;
   /** The school's own profile, when collected (pilot schools). */
   detail?: Pick<HighSchoolDetail, "ap_courses" | "ib_courses"> | null;
   /** Catalog keys the student marked as offered at the school. */
@@ -55,6 +57,12 @@ export function schoolOffering(highSchool: OfferingInput | null, pooled?: readon
   if (printed && printed.length > 0) {
     const { keys, count } = profileApList(printed);
     return { ...base, apCount: count, apKeys: keys, source: "profile", field: "detail.ap_courses" };
+  }
+  const ledger = highSchool.school?.ap_ledger ?? null;
+  if (ledger) {
+    // Courses the catalog lacks (`other`) count but can't be picked; the keys are the pickable list.
+    const keys = apOnly(ledger.courses);
+    return { ...base, apCount: keys.length + ledger.other.length, apKeys: keys, source: "ledger", field: "ap_ledger" };
   }
   const pooledKeys = pooled ? apOnly(pooled) : [];
   if (pooledKeys.length > 0) return { ...base, apCount: pooledKeys.length, apKeys: pooledKeys, source: "pooled", field: null };

@@ -56,6 +56,7 @@ const note = (key: string, values: EstimateNote["values"] = {}): EstimateNote =>
 export function offeringLines(o: SchoolOffering): string[] {
   const lines: EstimateNote[] = [];
   if (o.source === "profile") lines.push(note("offering.profile", { count: o.apCount ?? 0 }));
+  else if (o.source === "ledger") lines.push(o.apCount === 0 ? note("offering.ledger_none") : note("offering.ledger", { count: o.apCount ?? 0 }));
   else if (o.source === "pooled") lines.push(note("offering.pooled"));
   else if (o.source === "student") lines.push(note("offering.student"));
   else if (o.source === "crdc") lines.push(o.apCount === 0 ? note("offering.none") : note("offering.crdc", { count: o.apCount ?? 0 }));

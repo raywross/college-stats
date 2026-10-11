@@ -5,15 +5,19 @@
  * `lib/planner/store.ts`'s `ready(capability)` pattern (signed in, the user's own session, `allowed()`), then writes
  * with that session so row-level security decides. Every write that can change which tasks should exist calls
  * `regenerate(listId)` afterward; `markApplied` also ticks the matching `apply`/`ed2_conditional` task (Wave 1's
- * note: U5 left that tick to the unit that sets `applied_on`).
+ * note: U5 left that tick to the unit that sets `applied_on`), and records the application snapshot after the response
+ * (specs/chances/calibration.md; lib/chances/snapshot-write.ts: best-effort, never fails the action).
  */
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
 import { authConfigured, getUser } from "@/lib/auth";
 import { allowed, NOT_ALLOWED_MESSAGE, type Capability } from "@/lib/entitlements";
 import { createServerSupabase } from "@/lib/supabase-server";
 import { isoDateOrNull } from "@/lib/list-rules";
 import { todayIso } from "./context";
 import { regenerate } from "./store";
+import { snapshotOnApplied } from "@/lib/chances/snapshot-write";
+import { snapshotDeps } from "@/lib/chances/snapshot-deps";
 import type { PlanItem } from "./types";
 
 export type PlanActionResult = { ok: true } | { ok: false; message: string };
@@ -84,6 +88,9 @@ export async function markApplied(itemId: string, appliedOn?: string | null): Pr
   await completeGeneratedTask(r.supabase, itemId, "ed2_conditional");
   await regenerate(listId);
   refresh();
+  // The inputs as of today, with the estimate the student saw (never fails or slows the action).
+  const supabase = r.supabase;
+  after(() => snapshotOnApplied(itemId, snapshotDeps(supabase)));
   return { ok: true };
 }
 

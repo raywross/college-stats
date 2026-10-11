@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { ArrowRight, BookMarked, Calculator, CalendarClock, ClipboardCheck, ExternalLink, Eye, GraduationCap, Hourglass, RefreshCw, Scale, TriangleAlert } from "lucide-react";
+import { ArrowRight, BookMarked, Calculator, CalendarClock, ClipboardCheck, ExternalLink, Eye, GraduationCap, Hourglass, RefreshCw, Scale, Target, TriangleAlert } from "lucide-react";
 import { getData } from "@/lib/data";
 import { getHighSchoolMeta } from "@/lib/high-schools";
 import type { SourceKey, Topic } from "@/lib/types";
@@ -26,6 +26,10 @@ import { Crest } from "@/components/school/Crest";
 import { BRAND_REMOVAL_CONTACT, brandMarksOn, crestBrand } from "@/lib/brand";
 import { Term } from "@/components/ui/info-tip";
 import { cn } from "@/lib/utils";
+import { ChancesAccuracy } from "@/components/data/ChancesAccuracy";
+import { getChancesSummary } from "@/lib/chances/summary";
+import { summaryView } from "@/lib/chances/calibration";
+import { snapshotSeason } from "@/lib/chances/snapshot";
 
 export const metadata: Metadata = { title: "Data" };
 
@@ -111,6 +115,8 @@ export default async function DataPage() {
   const now = new Date();
   const stale = isStale(calendar, now);
   const hsMeta = await getHighSchoolMeta();
+  // How well Quad's estimate did (specs/chances/calibration.md): the published season summary, or the empty state.
+  const accuracy = summaryView(await getChancesSummary());
 
   /* ---- What's on the site now: one row per federal release (meta.json vintages) ---- */
   const rows: DataAgeRow[] = VINTAGE_KEYS.filter((v) => fieldsOf(v).length).map((v) => {
@@ -220,6 +226,7 @@ export default async function DataPage() {
     ["upcoming", "Upcoming releases"],
     ["compare", "How we compare"],
     ["college-reported", "Newer figures from colleges"],
+    ["estimate-accuracy", "How well the estimate did"],
     ["watching", "Watching"],
     ["sources", "Sources"],
     ["method", "How we calculate"],
@@ -472,6 +479,11 @@ export default async function DataPage() {
             </p>
           </div>
         </div>
+      </Section>
+
+      {/* How well Quad's estimate did (specs/chances/calibration.md) */}
+      <Section id="estimate-accuracy" eyebrow="Accuracy" title="How well Quad's estimate did" icon={<Target className="size-4" aria-hidden />}>
+        <ChancesAccuracy view={accuracy} seasonInProgress={snapshotSeason(now.toISOString().slice(0, 10))} />
       </Section>
 
       {/* 5. Watching */}

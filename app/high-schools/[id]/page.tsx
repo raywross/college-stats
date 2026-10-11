@@ -24,6 +24,7 @@ import {
 import { ClassTrend } from "@/components/charts/ClassTrend";
 import { num, pctSmart } from "@/lib/format";
 import { HsBadges } from "@/components/high-schools/HsBadges";
+import { MyCoursesLine } from "@/components/high-schools/MyCoursesLine";
 import { HsStat } from "@/components/high-schools/HsStat";
 import { HsSourceLine } from "@/components/high-schools/HsSourceLine";
 import { InfoTip, MetricLabel, Term } from "@/components/ui/info-tip";
@@ -199,6 +200,7 @@ export default async function HighSchoolPage({ params }: Props) {
             <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{detail.ap_courses.join(" · ")}</p>
           </details>
         ) : null}
+        <MyCoursesLine schoolId={school.id} />
       </Section>
 
       {/* ============================== OUTCOMES ============================== */}

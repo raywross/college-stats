@@ -3,6 +3,7 @@
 import { useEffect, useState, useTransition } from "react";
 import { CalendarClock, PartyPopper, TrendingUp } from "lucide-react";
 import type { PlanTabProps } from "@/components/planner/tabs/types";
+import CoursesSection from "@/components/planner/CoursesSection";
 import ScoreRow from "@/components/planner/ScoreRow";
 import { CATEGORY_LABELS } from "@/lib/list-rules";
 import { GROUP_CLASS } from "@/lib/planner/colors";
@@ -40,14 +41,17 @@ export default function ScoresTab({ ctx, view }: PlanTabProps) {
 
   if (!test) {
     return (
-      <section className="rounded-3xl border bg-card p-5 text-sm">
-        <h2 className="font-display text-xl font-bold">{focus === "none" ? "Not testing" : "No score yet"}</h2>
-        <p className="mt-1 text-muted-foreground">
-          {focus === "none"
-            ? `The groups use ${isGuardian ? `${name}'s` : "your"} GPA alone.`
-            : `Add ${isGuardian ? `${name}'s` : "your"} SAT or ACT score in the numbers form to see where it stands.`}
-        </p>
-      </section>
+      <div className="space-y-4">
+        <section className="rounded-3xl border bg-card p-5 text-sm">
+          <h2 className="font-display text-xl font-bold">{focus === "none" ? "Not testing" : "No score yet"}</h2>
+          <p className="mt-1 text-muted-foreground">
+            {focus === "none"
+              ? `The groups use ${isGuardian ? `${name}'s` : "your"} GPA alone.`
+              : `Add ${isGuardian ? `${name}'s` : "your"} SAT or ACT score in the numbers form to see where it stands.`}
+          </p>
+        </section>
+        <CoursesSection ctx={ctx} view={view} />
+      </div>
     );
   }
 
@@ -124,6 +128,8 @@ export default function ScoresTab({ ctx, view }: PlanTabProps) {
           ))}
         </ul>
       </section>
+
+      <CoursesSection ctx={ctx} view={view} />
     </div>
   );
 }

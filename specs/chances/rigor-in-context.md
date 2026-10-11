@@ -166,3 +166,23 @@ and exam sentences); the thresholds are tested with the model (`tests/chances-mo
    sometimes says how honors is weighted, and that can be shown as context.
 3. Semester grades or final grades only? Recommendation: both, as above; a junior applying in the fall has only last
    year's finals and this year's first semester, which is exactly what colleges see.
+
+## As built (2026-10-11, unit U2 on feature/chances-rigor)
+- **Reading:** `lib/chances/rigor.ts` (`rigorReading`, server-only) places the list against the school's offering; the
+  rules and constants are `lib/chances/rigor-rules.ts` (server-only). Pages and Server Actions compute the reading on
+  the server (`rigor-server.ts`, `rigor-store.ts`) and pass down only its sentences (`rigor-view.ts`, from
+  `notes.ts` keys). `tests/chances-rigor.test.mts` fails if any client code reaches the rules.
+- **Sentence counts:** the count in a reading's sentence is AP courses against the school's AP courses; IB, dual
+  enrollment, planned courses (a senior's read "scheduled"), and honors are named in the same sentence. IB and dual
+  enrollment still count toward the share the rules use.
+- **Core-subject answers:** `academics.coreAtTopLevel` (11th and 12th grade × five subjects). An unanswered cell reads
+  as the list suggests; an answer the student gave is kept as given.
+- **Places:** the picker (`components/profile/CoursePicker.tsx`) is on `/me` and the household Numbers page (one form),
+  in the plan's "Add your courses (optional)" sheet, and signed out (kept in the browser). The college profile's
+  `RigorLine` sits under the GPA checker and the **You** column is in the "What you'll need in high school" table; the
+  Scores tab has a Courses section (with an empty `CoursesNextYearSlot` for the course plan); the high school page
+  says "You've taken or planned 6 of these." for the student's own school.
+- **Parents** get the list and grades in the third person; the plan loader and the Numbers page strip AP exam scores
+  while `apExamsPrivate` holds, and a parent's save puts the saved scores back and can't change the switch.
+- **Not done:** the pilot check (CRDC count against the profile AP list, 80% within two courses) before the reading is
+  shown to everyone; the college-tie line's first-year GPA share (`rigor.college_tie`) waits for `derived.gpa_top_share`.

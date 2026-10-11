@@ -67,6 +67,12 @@ export interface PlanContext {
   grade: import("./cycle").Grade;
   stages: Record<Stage, { state: StageState; count: string }>;
   current: Stage;
+  /**
+   * Chances (additive, rigor-in-context.md): the student's courses read against their high school, computed on the
+   * server by lib/planner/load.ts (the rules never reach the browser). Absent for a signed-out plan and when the
+   * student has entered nothing. A guardian's copy carries no AP exam scores while the student keeps them private.
+   */
+  rigor?: import("../chances/rigor-view").RigorView | null;
 }
 /** The college facts stages read, cut from School on the server with citations already resolved
  *  (`citeField` → the serializable Citation the InfoTip takes). U1 defines and fills it; add fields additively. */

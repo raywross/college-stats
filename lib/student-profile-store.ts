@@ -13,7 +13,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { getAccount, getUser, studentsICanSee } from "@/lib/auth";
 import { createServerSupabase } from "@/lib/supabase-server";
 import type { StudentAccess, StudentRecord } from "@/lib/accounts";
-import { emptyProfile, sanitizeProfile, type StudentProfileData } from "@/lib/student-profile";
+import { coreAnswered, emptyProfile, sanitizeProfile, type StudentProfileData } from "@/lib/student-profile";
 import { getHighSchool } from "@/lib/high-schools";
 import { matriculationLine } from "@/lib/high-school-ui";
 
@@ -141,7 +141,11 @@ function mergeProfiles(base: StudentProfileData, incoming: StudentProfileData): 
   };
   return {
     basics: pick(base.basics, incoming.basics),
-    academics: pick(base.academics, incoming.academics),
+    academics: {
+      ...pick(base.academics, incoming.academics),
+      // The core-subject answers are an object of nulls, never "empty" to pick(): the saved ones win once any is answered.
+      coreAtTopLevel: coreAnswered(base.academics.coreAtTopLevel) ? base.academics.coreAtTopLevel : incoming.academics.coreAtTopLevel,
+    },
     tests: pick(base.tests, incoming.tests),
     plans: pick(base.plans, incoming.plans),
     preferences: pick(base.preferences, incoming.preferences),

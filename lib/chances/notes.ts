@@ -18,12 +18,12 @@ const plural = (v: NoteValues, k: string, word: string): string => `${s(v, k)} $
 
 export const NOTES: Record<NoteKey, Note> = {
   /* ---- The rigor reading (rigor-in-context.md "The reading") ---- */
-  "rigor.most": (v) => `You've taken or planned ${s(v, "taken")} of the ${plural(v, "offered", "AP course")} your school offers, about as demanding a schedule as it allows.`,
-  "rigor.much": (v) => `You've taken or planned ${s(v, "taken")} of your school's ${plural(v, "offered", "AP course")}.`,
+  "rigor.most": (v) => `You've taken or planned ${s(v, "taken")} of the ${plural(v, "offered", "AP course")} your school offers${s(v, "extra")}, about as demanding a schedule as it allows.`,
+  "rigor.much": (v) => `You've taken or planned ${s(v, "taken")} of your school's ${plural(v, "offered", "AP course")}${s(v, "extra")}.`,
   "rigor.much_weak_grades": (v) =>
-    `You've taken or planned ${s(v, "taken")} of your school's ${plural(v, "offered", "AP course")}; colleges look for strong grades in demanding courses, and your grades in them (${s(v, "gpa")}) matter as much as how many you take.`,
+    `You've taken or planned ${s(v, "taken")} of your school's ${plural(v, "offered", "AP course")}${s(v, "extra")}; colleges look for strong grades in demanding courses, and your grades in them (${s(v, "gpa")}) matter as much as how many you take.`,
   "rigor.some": (v) =>
-    `You've taken or planned ${s(v, "taken")} of your school's ${plural(v, "offered", "AP course")}. At colleges that rate rigor very important, the courses behind a GPA matter as much as the GPA.`,
+    `You've taken or planned ${s(v, "taken")} of your school's ${plural(v, "offered", "AP course")}${s(v, "extra")}. At colleges that rate rigor very important, the courses behind a GPA matter as much as the GPA.`,
   "rigor.few_offered": (v) =>
     `Your school offers ${plural(v, "offered", "AP course")} and you've taken ${Number(v.offered) === 2 ? "both" : Number(v.offered) === 1 ? "it" : "them all"}. Colleges read rigor against what your school offers; your counselor's report says so.`,
   "rigor.none_offered": () => "Your school doesn't offer AP courses. Colleges read rigor against what your school offers; your counselor's report says so.",
@@ -37,6 +37,21 @@ export const NOTES: Record<NoteKey, Note> = {
   "rigor.exams": (v) => `4s or 5s on ${s(v, "high")} of the ${plural(v, "taken", "AP exam")} you've taken.`,
   "rigor.college_tie": (v) => `${s(v, "college")} rates course rigor ${s(v, "rating")}, and ${s(v, "share")} of its first-years had a 3.75 or higher.`,
   "rigor.on_hs_page": (v) => `You've taken or planned ${s(v, "taken")} of these.`,
+  /* Added by the rigor unit (additive). Fragments join the lead sentence; the rest are sentences of their own. */
+  /** Fragment: IB and dual enrollment named beside AP ("along with 2 dual-enrollment courses"). */
+  "rigor.plus_kinds": (v) => `along with ${s(v, "list")}`,
+  /** Fragment, in parentheses after the count: how many of the advanced courses are only planned. */
+  "rigor.planned_count": (v) => `${s(v, "count")} planned`,
+  /** Fragment: the same for a senior, whose planned courses are already on the schedule. */
+  "rigor.scheduled_count": (v) => `${s(v, "count")} scheduled`,
+  "rigor.counts": (v) => `You've listed ${plural(v, "count", "advanced course")}, taken or planned.`,
+  "rigor.no_courses": () => "Add your courses to see them against what your school offers.",
+  "rigor.no_offering_data": () => "We don't have your school's course list yet, so we can't place your courses against it.",
+  "rigor.grades_avg": (v) => `Your ${plural(v, "finished", "finished advanced course")} average ${s(v, "gpa")}.`,
+  "rigor.college_rating": (v) => `${s(v, "college")} rates course rigor ${s(v, "rating")}.`,
+  "rigor.prompt_signed_out": () => "Check your courses against what your school offers.",
+  "rigor.prompt_signed_in": () => "Add your courses to see them against what your school offers.",
+  "rigor.you_unknown": () => "add your courses to compare",
 
   /* ---- The school's offering (rigor-in-context.md "The school's offering") ---- */
   "offering.profile": (v) => `Your school's profile lists ${plural(v, "count", "AP course")}.`,
@@ -44,6 +59,9 @@ export const NOTES: Record<NoteKey, Note> = {
   "offering.student": () => "The courses you marked as offered at your school.",
   "offering.crdc": (v) => `Your school offers ${plural(v, "count", "AP course")}.`,
   "offering.none": () => "Your school doesn't offer AP courses.",
+  /** The other kinds of advanced course the school offers, after the AP line: "IB and dual enrollment are offered too." */
+  "offering.also": (v) => `${s(v, "list")} ${Number(v.count) === 1 ? "is" : "are"} offered too.`,
+  "offering.unknown": () => "We don't have a course list for your school yet.",
   "offering.pick_prompt": (v) => `Your school offers these ${plural(v, "count", "AP course")}. Tap the ones you've taken, are taking, or plan to take.`,
 
   /* ---- The pool's rate (base-rates.md) ---- */

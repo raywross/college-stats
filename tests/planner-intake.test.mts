@@ -189,9 +189,6 @@ test("courseSummary: the pill text for a taken, current, future, and unpicked ye
   assert.deepEqual(courseSummary({ ...c, year: 11, exam: null }, 2028, TODAY), { text: "Taking now", incomplete: false });
   assert.deepEqual(courseSummary({ ...c, year: 10, exam: null }, 2028, TODAY), { text: "Choose", incomplete: true });
   assert.deepEqual(courseSummary({ ...c, year: null, exam: null }, 2028, TODAY), { text: "Choose", incomplete: true });
-  // A guardian who can't see a private saved score sees it's there but not what it is, until they pick one themselves.
-  assert.deepEqual(courseSummary({ ...c, year: 10, exam: null }, 2028, TODAY, { examsHidden: true }), { text: "Score saved (hidden)", incomplete: false });
-  assert.deepEqual(courseSummary({ ...c, year: 10, exam: "5" }, 2028, TODAY, { examsHidden: true }), { text: "Sophomore · Score 5", incomplete: false });
 });
 
 /* ------------------------------------------------------------------ */
@@ -427,26 +424,29 @@ test("applyIntake: status always derives from the picked year, the class, and to
   assert.equal(out.tests.target, null);
 });
 
-test("mergeCoursesForSave: a guardian's non-null exam wins; a null keeps the student's private saved score", () => {
+test("mergeCoursesForSave: a guardian sees, keeps, changes, and clears scores like the student (owner, 2026-10-11)", () => {
   const p = sampleProfile();
   assert.equal(p.academics.apExamsPrivate, true);
-  // The guardian's copy has no exam scores (load.ts strips them), so the draft shows the taken course's score hidden.
-  const guardianView = { ...p, academics: { ...p.academics, courses: p.academics.courses.map((c) => ({ ...c, exam: null })) } };
-  const d = draftFromProfile(guardianView, 2027, TODAY);
-  assert.equal(d.courses[0].exam, "pending");
-  // The guardian picks a new score for the already-taken course, and adds one of their own.
+  // A guardian's draft carries the real saved score, even while apExamsPrivate is on.
+  const d = draftFromProfile(p, 2027, TODAY);
+  assert.equal(d.courses[0].exam, "4");
+  // Saving untouched keeps it.
+  const untouched = mergeCoursesForSave(p.academics, applyIntake(p, intakeToSave(d)!, TODAY).academics, "guardian");
+  assert.equal(Object.fromEntries(untouched.courses.map((c) => [c.id, c])).lang.exam, 4);
+  // The guardian changes it, and adds a scored course of their own.
   d.courses[0] = { ...d.courses[0], exam: "5" };
   d.courses.push({ id: "bio", key: "ap_biology", year: 11, exam: "5" });
-  const next = applyIntake(p, intakeToSave(d)!, TODAY);
-  const merged = mergeCoursesForSave(p.academics, next.academics, "guardian");
+  const merged = mergeCoursesForSave(p.academics, applyIntake(p, intakeToSave(d)!, TODAY).academics, "guardian");
   const by = Object.fromEntries(merged.courses.map((c) => [c.id, c]));
-  assert.equal(by.lang.exam, 5, "the guardian's pick replaces the private saved score");
-  assert.equal(by.bio.exam, 5, "a guardian can set a score for a course the student hadn't scored at all");
-  assert.equal(merged.apExamsPrivate, true, "a guardian still can't flip the privacy switch");
-  // Leaving a taken course's score untouched (still "pending" in the guardian's view) keeps the saved one.
-  const untouched = applyIntake(p, intakeToSave(draftFromProfile(guardianView, 2027, TODAY))!, TODAY);
-  const mergedUntouched = mergeCoursesForSave(p.academics, untouched.academics, "guardian");
-  assert.equal(Object.fromEntries(mergedUntouched.courses.map((c) => [c.id, c])).lang.exam, 4, "nothing picked keeps the saved score");
+  assert.equal(by.lang.exam, 5);
+  assert.equal(by.bio.exam, 5);
+  // "Not back yet" from a guardian clears it, as it would from the student.
+  d.courses[0] = { ...d.courses[0], exam: "pending" };
+  const cleared = mergeCoursesForSave(p.academics, applyIntake(p, intakeToSave(d)!, TODAY).academics, "guardian");
+  assert.equal(Object.fromEntries(cleared.courses.map((c) => [c.id, c])).lang.exam, null);
+  // Only the student sets the household-privacy switch.
+  assert.equal(mergeCoursesForSave(p.academics, { ...merged, apExamsPrivate: false }, "guardian").apExamsPrivate, true);
+  assert.equal(mergeCoursesForSave(p.academics, { ...merged, apExamsPrivate: false }, "self").apExamsPrivate, false);
 });
 
 /* ------------------------------------------------------------------ */

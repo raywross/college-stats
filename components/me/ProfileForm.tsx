@@ -120,13 +120,10 @@ export function ProfileForm({
   data,
   canEdit,
   studentGradYear,
-  relation = "self",
 }: {
   studentId: string;
   data: StudentProfileData;
   canEdit: boolean;
-  /** Whose profile this is to the viewer: a guardian never sees AP exam scores while they're private. */
-  relation?: "self" | "guardian";
   /** `students.grad_year` (set when the student was invited or added to the household): the default shown when
    * the profile itself has no graduation year yet. */
   studentGradYear: number | null;
@@ -223,8 +220,6 @@ export function ProfileForm({
             highSchoolId={highSchoolId}
             gradYear={defaultGradYear}
             majors={data.plans.intendedMajors}
-            showExams={relation === "self" || !data.academics.apExamsPrivate}
-            canSetPrivacy={relation === "self"}
             disabled={disabled}
           />
         </div>

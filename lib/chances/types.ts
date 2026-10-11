@@ -25,7 +25,7 @@ export interface CourseEntry {
   year: 9 | 10 | 11 | 12;
   status: CourseStatus;
   grades: { s1: Mark | null; s2: Mark | null; final: Mark | null };
-  /** AP exam score, optional; student-private by default (`apExamsPrivate`). */
+  /** AP exam score, optional. Guardians see it; `apExamsPrivate` hides it only from other students in the household. */
   exam: 1 | 2 | 3 | 4 | 5 | null;
   /** Optional (additive, intake.md): the term within `year` a course in progress or planned runs; absent means null. */
   term?: CourseTerm | null;

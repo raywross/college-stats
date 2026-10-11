@@ -25,7 +25,6 @@ export function PlanCoursesSheet({ ctx, open, onOpenChange, name }: { ctx: PlanC
 
 function Body({ ctx, onDone }: { ctx: PlanContext; onDone: () => void }) {
   const profile = ctx.profile ?? emptyProfile();
-  const own = ctx.viewer.relation === "self";
   const [value, setValue] = useState<CoursePickerValue>({
     courses: profile.academics.courses,
     coreAtTopLevel: profile.academics.coreAtTopLevel,
@@ -70,8 +69,6 @@ function Body({ ctx, onDone }: { ctx: PlanContext; onDone: () => void }) {
         highSchoolId={school?.id ?? profile.basics.highSchoolId}
         gradYear={ctx.student?.grad_year ?? profile.basics.gradYear}
         majors={profile.plans.intendedMajors}
-        showExams={own || !profile.academics.apExamsPrivate}
-        canSetPrivacy={own}
         disabled={pending}
       />
       {error && <p className="text-sm text-destructive">{error}</p>}

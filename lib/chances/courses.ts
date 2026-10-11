@@ -206,25 +206,21 @@ export function thirdPerson(text: string, name: string | null): string {
     .replace(/\byou\b/g, "they");
 }
 
-/** The list without AP exam scores: what a guardian sees while `apExamsPrivate` holds. */
+/** The list without AP exam scores (the rigor reading's "scores not counted" case). */
 export function withoutExams(courses: readonly CourseEntry[]): CourseEntry[] {
   return courses.map((c) => (c.exam === null ? c : { ...c, exam: null }));
 }
 
 /**
- * The list and privacy flag to save when `relation` edits a profile that already holds `saved`. A guardian whose
- * student keeps exam scores private posts a copy with none on the rows they can't see (`apExamsPrivate`), so the
- * saved scores are put back on those; a guardian *can* now pick a new score for a taken AP course in the intake
- * guide (specs/planner/redesign/intake.md "AP courses"), and a non-null one they post wins over the saved one. A
- * guardian still can't flip the privacy switch itself. The student's own post is taken as sent.
+ * The list and privacy flag to save when `relation` edits a profile that already holds `saved`. A guardian sees and
+ * edits AP exam scores like the student (owner, 2026-10-11: scores are never private from parents), so both posts
+ * are taken as sent; only the student sets `apExamsPrivate`, which hides scores from other students in the
+ * household (specs/chances/rigor-in-context.md), so a guardian's save keeps the saved value.
  */
 export function mergeCoursesForSave(
   saved: { courses: readonly CourseEntry[]; apExamsPrivate: boolean },
   incoming: { courses: readonly CourseEntry[]; apExamsPrivate: boolean },
   relation: "self" | "guardian",
 ): { courses: CourseEntry[]; apExamsPrivate: boolean } {
-  if (relation === "self") return { courses: [...incoming.courses], apExamsPrivate: incoming.apExamsPrivate };
-  if (!saved.apExamsPrivate) return { courses: [...incoming.courses], apExamsPrivate: false };
-  const byId = new Map(saved.courses.map((c) => [c.id, c.exam]));
-  return { courses: incoming.courses.map((c) => ({ ...c, exam: c.exam ?? byId.get(c.id) ?? null })), apExamsPrivate: true };
+  return { courses: [...incoming.courses], apExamsPrivate: relation === "self" ? incoming.apExamsPrivate : saved.apExamsPrivate };
 }

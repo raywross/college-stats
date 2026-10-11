@@ -68,7 +68,6 @@ export default function PlanIntake({
   const studentId = ctx.student?.id ?? null;
   const storedGradYear = ctx.student?.grad_year ?? null;
   const person = relation === "guardian" ? studentId : null;
-  const examsHidden = relation === "guardian" && Boolean(ctx.profile?.academics.apExamsPrivate);
 
   const [draft, setDraft] = useState<IntakeDraft>(() => draftFromProfile(ctx.profile, storedGradYear, today));
   const [step, setStep] = useState<IntakeStep>(done ? 4 : mode === "edit" ? 3 : 0);
@@ -219,7 +218,7 @@ export default function PlanIntake({
         <div className="px-5 py-6 lg:px-0 lg:py-2">
           {step === 0 && <GradesStep draft={draft} setDraft={setDraft} today={today} storedGradYear={storedGradYear} />}
           {step === 1 && <TestStep draft={draft} setDraft={setDraft} />}
-          {step === 2 && <ApStep draft={draft} setDraft={setDraft} today={today} examsHidden={examsHidden} />}
+          {step === 2 && <ApStep draft={draft} setDraft={setDraft} today={today} />}
           {step === 3 && <ReviewStep draft={draft} today={today} onEdit={(s) => go(3, s)} />}
 
           {error && <p className="mt-4 text-sm text-amber-700 dark:text-amber-400">{error}</p>}

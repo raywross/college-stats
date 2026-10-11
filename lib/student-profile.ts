@@ -87,7 +87,11 @@ export interface StudentProfileAcademics {
    * saved before the list existed (no `courses` key) turns its courseRigorCount into that many unnamed AP rows.
    */
   courses: CourseEntry[];
-  /** AP exam scores are the student's own: hidden from guardians unless the student shares them. Default true. */
+  /**
+   * Hide AP exam scores from other students in the household (default true). Never from guardians, who see and edit
+   * them (owner, 2026-10-11). No student can read a sibling's profile yet, so nothing reads this today and no switch
+   * is shown; saves keep it as stored.
+   */
   apExamsPrivate: boolean;
   /**
    * "Were your English, math, science, history, and language classes the most advanced your school offered?" for 11th

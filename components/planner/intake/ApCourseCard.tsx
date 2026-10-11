@@ -25,7 +25,6 @@ export function ApCourseCard({
   rawClassYear,
   today,
   open,
-  examsHidden,
   onToggleOpen,
   onChange,
   onRemove,
@@ -37,12 +36,11 @@ export function ApCourseCard({
   rawClassYear: number | null;
   today: string;
   open: boolean;
-  examsHidden: boolean;
   onToggleOpen: () => void;
   onChange: (next: IntakeCourse) => void;
   onRemove: () => void;
 }) {
-  const summary = courseSummary(course, classYear, today, { examsHidden });
+  const summary = courseSummary(course, classYear, today);
   const years = yearOptions(rawClassYear);
   const askScore = course.year !== null && yearStatus(course.year, classYear, today) === "taken";
 
@@ -108,31 +106,9 @@ export function ApCourseCard({
             </div>
           </div>
 
-          {askScore && !examsHidden && (
+          {askScore && (
             <div className="space-y-1.5">
               <p className="text-xs font-semibold text-muted-foreground">Your exam score</p>
-              <div className="flex flex-wrap gap-1.5" role="radiogroup" aria-label="Exam score">
-                {INTAKE_EXAMS.map((e) => (
-                  <button
-                    key={e}
-                    type="button"
-                    role="radio"
-                    aria-checked={course.exam === e}
-                    onClick={() => onChange({ ...course, exam: e })}
-                    className={cn(
-                      "min-h-9 rounded-full border px-3 text-sm font-semibold",
-                      course.exam === e ? "border-foreground bg-foreground text-background" : "text-muted-foreground hover:bg-muted",
-                    )}
-                  >
-                    {EXAM_LABEL[e]}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-          {askScore && examsHidden && (
-            <div className="space-y-1.5">
-              <p className="text-xs font-semibold text-muted-foreground">Your exam score · {course.exam ? "chosen this visit" : "score saved (hidden)"}</p>
               <div className="flex flex-wrap gap-1.5" role="radiogroup" aria-label="Exam score">
                 {INTAKE_EXAMS.map((e) => (
                   <button

@@ -11,19 +11,17 @@ export function ApStep({
   draft,
   setDraft,
   today,
-  examsHidden,
 }: {
   draft: IntakeDraft;
   setDraft: (next: IntakeDraft) => void;
   today: string;
-  examsHidden: boolean;
 }) {
   const [query, setQuery] = useState("");
   const [openIds, setOpenIds] = useState<Set<string>>(new Set());
   const classYear = draft.classYear ?? Number(today.slice(0, 4));
 
   const isOpen = (id: string, course: IntakeDraft["courses"][number]) =>
-    course.year === null || courseSummary(course, classYear, today, { examsHidden }).incomplete || openIds.has(id);
+    course.year === null || courseSummary(course, classYear, today).incomplete || openIds.has(id);
 
   const toggleOpen = (id: string) => {
     setOpenIds((prev) => {
@@ -37,7 +35,7 @@ export function ApStep({
   const updateCourse = (id: string, next: IntakeDraft["courses"][number]) => {
     setDraft({ ...draft, courses: draft.courses.map((c) => (c.id === id ? next : c)) });
     // A completed pick collapses the card unless the student explicitly reopened it.
-    if (!courseSummary(next, classYear, today, { examsHidden }).incomplete) {
+    if (!courseSummary(next, classYear, today).incomplete) {
       setOpenIds((prev) => {
         if (!prev.has(id)) return prev;
         const copy = new Set(prev);
@@ -81,7 +79,6 @@ export function ApStep({
               rawClassYear={draft.classYear}
               today={today}
               open={isOpen(c.id, c)}
-              examsHidden={examsHidden}
               onToggleOpen={() => toggleOpen(c.id)}
               onChange={(next) => updateCourse(c.id, next)}
               onRemove={() => removeCourse(c.id)}

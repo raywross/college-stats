@@ -82,10 +82,8 @@ One question per screen, four steps and a Done screen (`IntakeStep` 0–4). Noth
   and today (`yearStatus`), so it can't drift from what was actually picked. The card's pill (`courseSummary`):
   "Junior · Score 4", "Sophomore · Score pending" (a past year), "Senior year" (a future one), "Taking now" (this
   year), or "Choose" (incomplete).
-- A guardian looking at a student who keeps AP scores private (`apExamsPrivate`) sees "Score saved (hidden)" instead
-  of "Choose" once a past year is picked but nothing's chosen this session (`courseSummary(…, { examsHidden: true
-  })`) — the chips still show, unselected, and picking one sets a new score (see "A guardian's save" below), unlike
-  the first build's "Score hidden" (no chips at all).
+- A guardian sees the saved scores and picks them exactly like the student (owner, 2026-10-11: scores are never
+  private from parents).
 - AP courses never block Continue. A course with no year picked isn't saved.
 
 ### Review and saving
@@ -115,11 +113,8 @@ One question per screen, four steps and a Done screen (`IntakeStep` 0–4). Noth
   - A course the student didn't change keeps its saved row exactly (grades and all); a changed one keeps its grades
     (a planned course drops its final grade, as the sanitizer always does).
   - `courseRigorCount` follows the list (never re-adds placeholder rows for removed courses).
-- **A guardian's save** goes through `mergeCoursesForSave` (owner feedback, 2026-10-11): a taken course a guardian
-  didn't touch (still "pending" in their draft, since their copy carries no exam scores while the student keeps them
-  private) keeps its saved score, put back by course id. A guardian *can* now pick a new score for a taken course in
-  the AP step — a non-null exam they post wins over the saved one. The privacy switch itself always stays as saved;
-  a guardian never flips it.
+- **A guardian's save** goes through `mergeCoursesForSave`: their courses and scores are taken as sent, like the
+  student's; only `apExamsPrivate` (hidden from other students in the household) stays as saved.
 - `draftFromProfile` reads it back: AP rows with a key become courses, the saved `year` carried over as-is and, for
   an already-taken one, its score (its exam, or "pending"). Status is never read off the saved row — the card works
   it out the same way `applyIntake` will, from the year, the class, and today. A GPA's saved scale becomes the

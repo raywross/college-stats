@@ -238,18 +238,15 @@ export function yearOptions(classYear: number | null): YearOption[] {
 
 /**
  * The pill in a course card's header: "Junior · Score 4", "Sophomore · Score pending" (a past year), "Senior year" (a
- * future one), "Taking now" (this year), or "Choose" (incomplete). A guardian who can't see a private saved score
- * sees "Score saved (hidden)" instead of "Choose" once a past year is picked but nothing's chosen this session yet;
- * picking a score here replaces the saved one (`mergeCoursesForSave`).
+ * future one), "Taking now" (this year), or "Choose" (incomplete). A guardian sees and picks scores like the student.
  */
-export function courseSummary(c: IntakeCourse, classYear: number, today: string, opts: { examsHidden?: boolean } = {}): { text: string; incomplete: boolean } {
+export function courseSummary(c: IntakeCourse, classYear: number, today: string): { text: string; incomplete: boolean } {
   if (c.year === null) return { text: "Choose", incomplete: true };
   const label = GRADE_LABEL[c.year];
   const status = yearStatus(c.year, classYear, today);
   if (status === "planned") return { text: `${label} year`, incomplete: false };
   if (status === "in_progress") return { text: "Taking now", incomplete: false };
   if (c.exam) return { text: `${label} · Score ${c.exam === "pending" ? "pending" : c.exam}`, incomplete: false };
-  if (opts.examsHidden) return { text: "Score saved (hidden)", incomplete: false };
   return { text: "Choose", incomplete: true };
 }
 

@@ -1,10 +1,12 @@
 /**
- * The Scores tab's pure logic (specs/planner/redesign/scores.md "Score timing", "Test dates"): which upcoming test
- * dates to show for the student's own test, and whether a date's scores would arrive in time for the rounds a
- * retake could still move. No I/O; tested directly (tests/planner-scores.test.mts). `lib/planner/standing.ts`
- * (`scoreToMoveUp`, `retakeSuggestion`, `RETAKE_REACH`) already covers "when to suggest another test"; this module
- * covers only the dates.
+ * The Scores tab's pure logic (specs/planner/redesign/scores.md "Score timing", "Test dates", "Target score"): which
+ * upcoming test dates to show for the student's own test, whether a date's scores would arrive in time for the
+ * rounds a retake could still move, and which colleges a target score (decision 5, owner 2026-10-11) would move up a
+ * group. No I/O; tested directly (tests/planner-scores.test.mts). `lib/planner/standing.ts` (`scoreToMoveUp`,
+ * `retakeSuggestion`, `RETAKE_REACH`) already covers "when to suggest another test"; this module covers only the
+ * dates and the target score, which never feeds the estimate itself (intake.md "Test").
  */
+import type { Fit } from "../chances/baseline.ts";
 import type { ListRound } from "../list-rules.ts";
 import { ROUND_SHORT, roundDates } from "./rounds.ts";
 import type { Cycle, CycleEntry, Grade } from "./cycle.ts";
@@ -101,4 +103,32 @@ export function inTimeText(dateIso: string, rows: readonly InTimeRow[]): string 
   }
   if (later.length > 0) return `Too late for the round you picked; in time for ${later.join(", ")}.`;
   return "Scores arrive after these deadlines.";
+}
+
+/* ------------------------------------------------------------------ */
+/* Target score (intake.md "Test"; decision 5, owner 2026-10-11)       */
+/* ------------------------------------------------------------------ */
+
+/** One college a target score would move up a group: its current and new group, and the lowest score that does it. */
+export interface TargetMove {
+  id: string;
+  name: string;
+  from: Fit;
+  to: Fit;
+  needed: number;
+}
+
+/**
+ * The colleges `target` would move up a group (scores.md "Target score"): every row whose existing move-up
+ * (`row.moveUp`, from `scoreToMoveUp`) needs no more than `target`. The target never changes `moveUp` itself or
+ * feeds the estimate; this only reads it. Null `target` (not set) returns nothing.
+ */
+export function targetMoves(target: number | null, rows: readonly Pick<PlanRowView, "item" | "school" | "moveUp">[]): TargetMove[] {
+  if (target === null) return [];
+  const moved: TargetMove[] = [];
+  for (const r of rows) {
+    if (!r.moveUp || r.moveUp.score > target) continue;
+    moved.push({ id: r.item.id, name: r.school?.name ?? "A college", from: r.moveUp.from, to: r.moveUp.to, needed: r.moveUp.score });
+  }
+  return moved;
 }

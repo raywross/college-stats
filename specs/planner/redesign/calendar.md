@@ -72,7 +72,31 @@ From the dataviz reference palette, validated with its checker (2026-10-09):
 Below the timeline, the same events as a list (and the first thing a phone shows): the next 12 from today, each with
 the date, the mark's shape in its color, the child's name chip (Everyone), the text ("University of Georgia EA due",
 "Cost check with a parent before Wake Forest ED I", "SAT test date (register by Oct 23)"), and days to go. This is
-the accessible table view of the chart, and it's what "This week" used to be.
+the accessible table view of the chart, and it's what "This week" used to be. ("Coming up" here is the original,
+`ComingUp.tsx`'s accessible table of the chart; the Calendar tab's own default view, below, is a different,
+newer component with the same name and a dated-card look.)
+
+## The Calendar tab's default view: 8 weeks, then Full year (intake redesign, owner 2026-10-11)
+A single child (the only case today — family plan/Everyone stays deferred) opens the Calendar tab on the next 8
+weeks as a dated list, not the chart: a date column (weekday, or **BY** when every item on that date is a money/task
+due-by marker rather than a fixed-day event) beside a card per date listing that date's items — ◆ in the round's
+color, the college's short name, the round's short name, ⓘ; a lime **"In N days"** tag on a card within 7 days; a ♥
+beside the Dream's name; money/parent-task items use the green MONEY_VAR circle instead of the diamond. A footer
+below the list, "Then N in {Month} · Show", names the first month with anything past the 8 weeks and re-groups
+everything from today on when tapped (no server round-trip). A segmented **8 weeks | Full year** toggle (local
+component state, not a URL param) switches to the existing chart above, unchanged; tapping "8 weeks" there switches
+back. Everyone's view always opens on the chart.
+
+- `lib/planner/calendar.ts`: `upcomingDays(events, today, weeks = 8)` groups `eventsFor`'s events by date within the
+  window; `laterSummary(events, today, weeks = 8)` returns `{ count, month }` for the footer (just the first month
+  past the window, not every later event) or null once nothing is left. `CalendarEvent` gained two optional fields
+  for this view only: `label` (the college/task name alone, so a card can badge the round separately from the name;
+  falls back to `text` where an older caller hasn't set it) and `dream`.
+- `components/planner/calendar/UpcomingList.tsx` reads both functions and renders the dated-card list in two
+  variants: `"tab"` (the Calendar tab's full view, above) and `"aside"` (the desktop plan's right-column card,
+  titled "Coming up" with a "Full year" link, no footer or "In N days" tag — it stays quiet beside Next up).
+  `components/planner/calendar/CalendarRangeToggle.tsx` is the 8-weeks/Full-year segmented control; `FamilyCalendar`
+  owns the toggle's state and renders the toggle and the "Coming up" heading above whichever view is showing.
 
 ## Phones
 Coming up leads; the timeline sits below it in a horizontally scrolling card (it needs about 760px) that opens

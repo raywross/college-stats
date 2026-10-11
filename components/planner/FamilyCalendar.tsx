@@ -6,6 +6,8 @@ import { CalendarPlus, ChevronLeft, ChevronRight, Printer } from "lucide-react";
 import { SegmentedControl } from "@/components/ui/segmented-control";
 import type { CalendarChild, CalendarTabProps } from "@/components/planner/tabs/types";
 import { CalendarLane, type MarkStyle } from "@/components/planner/CalendarLane";
+import { CalendarRangeToggle, type CalendarRange } from "@/components/planner/calendar/CalendarRangeToggle";
+import { UpcomingList } from "@/components/planner/calendar/UpcomingList";
 import { ComingUp } from "@/components/planner/ComingUp";
 import {
   calendarFor,
@@ -39,6 +41,10 @@ export default function FamilyCalendar({ children, viewer, everyone }: CalendarT
   const [range, setRange] = useState<YearRange>(() => schoolYearOf(today));
   const [colorBy, setColorBy] = useState<ColorBy>(everyone ? "child" : "round");
   const byChild = everyone && colorBy === "child";
+  // The 8-weeks/Full-year toggle (calendar.md "Coming up"): a single child (the redesign's only case today, since
+  // Everyone/family plan is deferred) opens on the 8-week dated list; the chart below is unchanged and reachable
+  // from "Full year". Everyone always shows the chart, as before.
+  const [calRange, setCalRange] = useState<CalendarRange>("weeks");
 
   useEffect(() => {
     track("plan_calendar_opened", { everyone, color_by: byChild ? "child" : "round" });
@@ -106,8 +112,28 @@ export default function FamilyCalendar({ children, viewer, everyone }: CalendarT
     );
   }
 
+  // The default view for a single child: the 8-week dated list, not the chart (calendar.md "Coming up").
+  if (!everyone && calRange === "weeks") {
+    const child = children[0];
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center justify-between gap-2">
+          <h2 className="font-display text-xl font-bold sm:text-2xl">Coming up</h2>
+          <CalendarRangeToggle value={calRange} onChange={setCalRange} />
+        </div>
+        <UpcomingList ctx={child.ctx} view={child.view} studentId={child.studentId} variant="tab" />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4">
+      {!everyone && (
+        <div className="flex items-center justify-between gap-2">
+          <h2 className="font-display text-xl font-bold sm:text-2xl">Coming up</h2>
+          <CalendarRangeToggle value={calRange} onChange={setCalRange} />
+        </div>
+      )}
       {/* Coming up leads on phones (specs/mobile.md); the chart leads from sm. */}
       <div className="sm:hidden">
         <ComingUpForEvents events={events} everyone={everyone} today={today} names={names} colorForAnyEvent={colorForAnyEvent} resolveCite={resolveCite} />

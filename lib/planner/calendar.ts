@@ -133,6 +133,13 @@ export interface CalendarEvent {
   shape: "bar" | "test" | "money" | "decision";
   round?: ListRound;
   text: string;
+  /** Short label for the dated-card list (calendar.md "Coming up", the 8-week default): the college or task name
+   *  alone, with the round (when there is one) shown separately so a card can put it in its own badge. `text` stays
+   *  the full sentence the accessible ComingUp table reads. Optional (a few other builders of CalendarEvent, e.g.
+   *  app/plan/print/page.tsx, don't set it yet); `UpcomingList` falls back to `text` when it's missing. */
+  label?: string;
+  /** The college is the student's Dream (college events only). */
+  dream?: boolean;
   cite: CalendarCite;
   daysAway: number;
 }
@@ -350,6 +357,7 @@ export function eventsFor(ctx: PlanContext, view: PlanView, today: string, stude
         studentId,
         shape: "test",
         text: `${t.label} test date${t.registerBy && t.registerBy >= today ? ` (register by ${dayLabel(t.registerBy)})` : ""}`,
+        label: `${t.label} test date`,
         cite: t.cite,
         daysAway: daysBetween(today, t.date),
       });
@@ -359,7 +367,7 @@ export function eventsFor(ctx: PlanContext, view: PlanView, today: string, stude
   if (applying) {
     for (const m of rawMoney(ctx)) {
       if (m.date < today) continue;
-      out.push({ date: m.date, studentId, shape: "money", text: m.tip, cite: m.cite, daysAway: daysBetween(today, m.date) });
+      out.push({ date: m.date, studentId, shape: "money", text: m.tip, label: m.tip, cite: m.cite, daysAway: daysBetween(today, m.date) });
     }
   }
 
@@ -371,6 +379,8 @@ export function eventsFor(ctx: PlanContext, view: PlanView, today: string, stude
         shape: "bar",
         round: c.round,
         text: `${c.schoolName} ${ROUND_SHORT[c.round]} due`,
+        label: c.schoolName,
+        dream: c.dream,
         cite: { kind: "field", unitId: c.unitId, field: c.deadline.field },
         daysAway: daysBetween(today, c.deadline.iso),
       });
@@ -382,6 +392,8 @@ export function eventsFor(ctx: PlanContext, view: PlanView, today: string, stude
         shape: "decision",
         round: c.round,
         text: `${c.schoolName} decision expected`,
+        label: c.schoolName,
+        dream: c.dream,
         cite: { kind: "field", unitId: c.unitId, field: c.decision.field },
         daysAway: daysBetween(today, c.decision.iso),
       });
@@ -398,4 +410,50 @@ export function comingUp(children: { studentId: string; ctx: PlanContext; view: 
     .flatMap((c) => eventsFor(c.ctx, c.view, today, c.studentId))
     .sort((a, b) => a.date.localeCompare(b.date) || a.text.localeCompare(b.text))
     .slice(0, max);
+}
+
+/* ------------------------------------------------------------------ */
+/* Dated-card list (the Calendar tab's 8-week default, and the aside)  */
+/* ------------------------------------------------------------------ */
+
+export interface UpcomingDay {
+  date: string;
+  events: CalendarEvent[];
+}
+
+/**
+ * `events` grouped by date, from `today` through `weeks` out (calendar.md "Coming up", the 8-week default):
+ * `UpcomingList`'s dated-card list, both as the Calendar tab's full view and the desktop aside's compact one.
+ * `events` need not be pre-sorted or pre-filtered to today's window — `eventsFor`'s own output already is, but a
+ * caller can pass a wider list (e.g. to re-group a "Show more" expansion) and this still only keeps what's in range.
+ */
+export function upcomingDays(events: readonly CalendarEvent[], today: string, weeks = 8): UpcomingDay[] {
+  const cutoff = addDaysIso(today, weeks * 7);
+  const byDate = new Map<string, CalendarEvent[]>();
+  for (const e of events) {
+    if (e.date < today || e.date > cutoff) continue;
+    const existing = byDate.get(e.date);
+    if (existing) existing.push(e);
+    else byDate.set(e.date, [e]);
+  }
+  return [...byDate.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([date, dayEvents]) => ({ date, events: dayEvents }));
+}
+
+export interface LaterSummary {
+  /** How many of the events past the window fall in `month` (the first month after it with anything in it). */
+  count: number;
+  month: string;
+}
+
+/**
+ * The footer past the `weeks`-out window ("Then 2 in January · Show"): how many events land in the first month
+ * after the cutoff. Null once nothing is left to show (no footer).
+ */
+export function laterSummary(events: readonly CalendarEvent[], today: string, weeks = 8): LaterSummary | null {
+  const cutoff = addDaysIso(today, weeks * 7);
+  const later = events.filter((e) => e.date > cutoff);
+  if (later.length === 0) return null;
+  const firstMonth = Number(later[0].date.slice(5, 7)) - 1;
+  const count = later.filter((e) => Number(e.date.slice(5, 7)) - 1 === firstMonth).length;
+  return { count, month: monthLabel(firstMonth) };
 }

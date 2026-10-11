@@ -3,8 +3,11 @@
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { Heart, Search } from "lucide-react";
+import { MostUsefulInput } from "@/components/chances/MostUsefulInput";
 import { useLocalProfile } from "@/components/me/useLocalProfile";
 import { useNumbersDraft, NumbersFields } from "@/components/planner/NumbersForm";
+import { useEstimates } from "@/components/planner/useEstimates";
+import { LocalCoursesSheet } from "@/components/profile/LocalCoursesSheet";
 import { Crest } from "@/components/school/Crest";
 import { Term, SourceTip } from "@/components/ui/info-tip";
 import { track } from "@/lib/analytics";
@@ -177,7 +180,7 @@ function LocalRow({
   const deadlineCite = deadline ? school?.cites[deadline.field] : undefined;
 
   return (
-    <li className="grid grid-cols-[auto_1fr] items-center gap-x-2 gap-y-1.5 p-3 sm:grid-cols-[auto_minmax(0,1fr)_auto_auto_auto_auto] sm:px-4">
+    <li className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-2 gap-y-1.5 p-3 sm:grid-cols-[auto_minmax(0,1fr)_auto_auto_auto_auto] sm:px-4">
       <button
         type="button"
         onClick={onToggleDream}
@@ -190,7 +193,7 @@ function LocalRow({
       </button>
 
       <div className="min-w-0">
-        <span className="inline-flex min-w-0 items-center gap-1.5 text-sm font-semibold">
+        <span className="flex min-w-0 max-w-full items-center gap-1.5 text-sm font-semibold">
           {school && <Crest id={school.unit_id} name={school.name} size="xs" brand={school.brand as CrestBrand | undefined} />}
           <span className="min-w-0 truncate">{name}</span>
         </span>
@@ -263,14 +266,16 @@ function LocalRow({
 /**
  * `/plan` signed out (specs/planner/redesign/page.md "Signed out"): the pitch, the numbers form (kept in the
  * existing local profile, `lib/student-profile.ts` LOCAL_PROFILE_KEY), add-from-search colleges kept under a new
- * key (`lib/planner/local-plan.ts`), and live group/round chips computed the same way the signed-in plan computes
- * them (`planView`) — every tap only changes local state; nothing is a Server Action. "Save your plan" sends the
+ * key (`lib/planner/local-plan.ts`), and live group/round chips built the same way the signed-in plan builds them
+ * (`planView`, with Quad's estimate fetched from `/api/estimate` as the numbers change) — every tap only changes local
+ * state; nothing is a Server Action. "Save your plan" sends the
  * visitor to sign up; `components/planner/ImportLocalPlan.tsx` moves this onto their real list on the next
  * signed-in `/plan` open.
  */
 export default function SignedOutPlan() {
   const { data: profile, save: saveProfile } = useLocalProfile();
   const draft = useNumbersDraft(profile);
+  const [coursesOpen, setCoursesOpen] = useState(false);
   const localPlan = useSyncExternalStore(subscribeLocalPlan, getLocalPlan, emptyLocalPlan);
   const [schools, setSchools] = useState<Record<string, PlanSchool>>({});
   const startedRef = useRef(false);
@@ -311,7 +316,11 @@ export default function SignedOutPlan() {
   }, [localPlan.unitIds]);
 
   const items = useMemo(() => planItemsFor(localPlan, TODAY), [localPlan]);
-  const view = useMemo(() => planView({ items, schools, profile, today: TODAY() }), [items, schools, profile]);
+  // Quad's estimate from the server (POST /api/estimate), asked shortly after the numbers or the list change; the
+  // previous groups stay until the answer arrives.
+  const knownIds = useMemo(() => localPlan.unitIds.filter((id) => schools[id]), [localPlan.unitIds, schools]);
+  const { results: estimates } = useEstimates(profile, knownIds);
+  const view = useMemo(() => planView({ items, schools, profile, estimates, today: TODAY() }), [items, schools, profile, estimates]);
 
   const update = (next: LocalPlan) => setLocalPlan(next);
 
@@ -335,6 +344,20 @@ export default function SignedOutPlan() {
       </section>
 
       <NumbersFields draft={draft} />
+
+      <MostUsefulInput estimates={estimates} />
+
+      <div>
+        <button
+          type="button"
+          onClick={() => setCoursesOpen(true)}
+          className="flex min-h-11 w-full flex-wrap items-center gap-x-2 rounded-2xl border bg-card px-4 py-2 text-left text-sm hover:bg-muted/60"
+        >
+          <span className="font-semibold">{profile.academics.courses.length > 0 ? `Your courses (${profile.academics.courses.length})` : "Add your courses (optional)"}</span>
+          <span className="text-muted-foreground">{profile.academics.courses.length > 0 ? "Edit" : "Helps at colleges where most students have top GPAs."}</span>
+        </button>
+        <LocalCoursesSheet open={coursesOpen} onOpenChange={setCoursesOpen} />
+      </div>
 
       <section className="space-y-4">
         {view.rows.length === 0 ? (

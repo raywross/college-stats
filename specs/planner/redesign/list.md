@@ -44,6 +44,13 @@ Opened by (i), inline under the row (no modal), each line only when it has conte
 6. **Notes** (built).
 
 ## Around the list
+- **Removing a college**: × at the end of the row, beside (i), for anyone who can edit (the student, or a guardian with
+  edit access). It asks first, because the college's notes, visits, tasks, and offer are deleted with it (added
+  2026-10-11; the first version of this spec had no way to remove one from the plan). Telemetry
+  `plan_college_removed {dream}`.
+- **A child who hasn't joined**: a guardian opening an empty list for a student record no account has claimed (the
+  child was added from Household and hasn't accepted the invitation) is told why it's empty: colleges the child saves
+  on their own account stay on that account's list until they accept, and the invitation is sent from Household.
 - **Header line**: "8 colleges · 2 Reach · 4 Target · 2 Likely", and "✦ = sorted for you; tap to change" while
   anything is still a suggestion.
 - **Order**: Dream first, then Reach, Target, Likely, then the student's own order within each group. The sort menu

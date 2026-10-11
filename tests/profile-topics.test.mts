@@ -268,6 +268,15 @@ const ADDED_FIELDS = [
   "aid_policy.need_only",
   "aid_policy.home_equity",
   "aid_policy.siblings",
+  // "How this college reads a record" (specs/chances/how-colleges-read.md), above the factor grid.
+  "derived.gpa_top_share",
+  "reported.admission_profile.factors.gpa",
+  "reported.admission_profile.factors.class_rank",
+  "reported.admission_profile.factors.test_scores",
+  "reported.admission_profile.class_rank.top_tenth",
+  "reported.admission_profile.class_rank.top_quarter",
+  "reported.major_admission.review.major_considered",
+  "reported.major_admission.review.emphasis",
 ] as const;
 
 test("every topic has a route file and a fields list", () => {

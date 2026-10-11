@@ -1171,6 +1171,58 @@ const entries = {
     category: "Admissions",
     related: ["reach-school", "target-school"],
   },
+  // Admission chances (specs/chances/). Inputs and meanings only: never how Quad's estimate combines them.
+  "gpa-crowding": {
+    term: "GPA crowding",
+    short: "When most admitted students have nearly the same top GPA, the GPA can't tell them apart, so colleges read the courses behind it, the tests, and the rest of the file.",
+    long: "A college's Common Data Set reports the share of first-years in each GPA band. Where most of them had a 3.75 or higher, a high GPA is common and rarely sets an applicant apart on its own.",
+    category: "Admissions",
+    related: ["course-rigor", "gpa-band", "holistic-admission"],
+  },
+  "course-rigor": {
+    term: "Course rigor",
+    short: "How demanding a student's classes are compared with what the high school offers; the counselor's report rates it.",
+    long: "Colleges don't read \"7 AP classes\" as a number: they read it against the school. Five AP courses at a school that offers six is nearly everything; five at a school that offers thirty is a modest share. The school profile the counselor sends lists what's offered.",
+    why: "It's why the site asks for your courses and your high school: the same schedule reads differently at different schools.",
+    category: "Admissions",
+    related: ["secondary-school-record", "gpa-crowding", "ap-access", "holistic-admission"],
+  },
+  "major-review": {
+    term: "How the major is reviewed",
+    short: "At some universities you apply to a specific college or major and are compared with other applicants to it; some also look harder at the grades that matter for it. Others say the major you list doesn't affect admission.",
+    long: "Some units also require particular high school courses (calculus and physics for engineering, for example) or a minimum score. The site shows each college's own words for each unit, and says nothing where a college hasn't said.",
+    category: "Admissions",
+    related: ["direct-admit", "holistic-admission"],
+  },
+  "direct-admit": {
+    term: "Direct admission to a major",
+    short: "Being admitted as a first-year straight into a school or major, such as engineering or nursing, instead of entering the university first and applying to the major later.",
+    why: "Where a major admits directly, getting into the university and getting into the major are the same decision, and that major's own admit rate is the one that applies to you.",
+    category: "Admissions",
+    related: ["major-review"],
+  },
+  "quads-estimate": {
+    term: "Quad's estimate",
+    short: "The site's own Reach, Target, or Likely for a college, from your inputs and the college's published figures. It's our assessment, never a percentage and never the college's prediction.",
+    long: "It can use your GPA, test score and sections, class rank, courses and their grades, state, intended major, and application round, with the college's admit rates, ranges, and the factors it says it weighs. Each estimate lists which of your inputs it used and the college facts it looked at, each cited. How the inputs are combined is Quad's own and isn't published; how often it was right is published each season once students share their results.",
+    why: "Holistic admission weighs things no estimate can see: essays, recommendations, and the college's needs that year. Use it to balance a list, not to decide where you belong.",
+    category: "Admissions",
+    related: ["reach-school", "target-school", "likely-school", "holistic-admission"],
+  },
+  "automatic-admission": {
+    term: "Automatic admission",
+    short: "Admission by a published rule: a student who meets it, such as being in the top of their high school class in Texas, is admitted. It usually covers the campus or the system, not a particular major.",
+    long: "Texas admits residents in the top 10% of their class at most of its public universities, and UT Austin sets a smaller cut each year. The University of California's Eligibility in the Local Context guarantees a place somewhere in the UC system, not at a campus you choose. Each program is quoted from its own page.",
+    category: "Admissions",
+    related: ["class-rank", "major-review"],
+  },
+  "holistic-admission": {
+    term: "Holistic admission",
+    short: "Admission that reads the whole application, not a formula: grades and the courses behind them, tests where they're used, essays, recommendations, activities, and what the college needs that year.",
+    why: "It's why no site can give an honest percentage chance at a selective college: much of what decides it isn't in any profile.",
+    category: "Admissions",
+    related: ["course-rigor", "gpa-crowding", "quads-estimate", "admission-factor"],
+  },
   // Home and distance (specs/product/home-and-distance.md).
   "home-address": {
     term: "Home address",

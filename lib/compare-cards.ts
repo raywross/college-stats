@@ -12,6 +12,7 @@ import type { TopicKey } from "./profile-topics";
 import { METRICS, satTotal } from "./metrics.ts";
 import { changeText, indicatorOf, type IndicatorKey } from "./indicators.ts";
 import { sinceLabel } from "./profile-cards.ts";
+import { readingSummary } from "./chances/reading.ts";
 import { compact, moneyCompact, pct, pctSmart } from "./format.ts";
 
 /** A card per profile topic; "All the numbers" has its own link card on the overview. */
@@ -156,11 +157,37 @@ const MAJOR_ROW: TextRow = {
   hint: "share of graduates",
 };
 
+/**
+ * "How they read a record" (specs/chances/how-colleges-read.md): what the college says matters most, in a few words,
+ * and the share of first-years at a 3.75 or higher (`derived.gpa_top_share`); a weighted reporter says so instead of a
+ * share. The sentences are on the Getting in page; this is the glance.
+ */
+export const READING_ROW: TextRow = {
+  kind: "text",
+  label: "How they read a record",
+  term: "gpa-crowding",
+  field: "derived.gpa_top_share",
+  get: (s) => {
+    const r = readingSummary(s);
+    return r ? (r.emphasis ?? (r.weighted ? "Weighted GPAs reported" : "Emphasis not reported")) : null;
+  },
+  value: (s) => {
+    const r = readingSummary(s);
+    return r?.topShare != null ? pct(r.topShare) : null;
+  },
+  note: (s) => {
+    const r = readingSummary(s);
+    return r?.weighted && r.emphasis ? "weighted GPAs" : null;
+  },
+  hint: "first-years at 3.75+",
+};
+
 /** Every card's rows, before `cardRows` fits them to the colleges compared. Same labels, terms, and bars as the topic pages. */
 export const CARD_ROWS: Record<CardTopic, readonly CardRow[]> = {
   admissions: [
     { kind: "bar", label: "Acceptance rate", term: "acceptance-rate", field: "admissions.acceptance_rate", get: METRICS.acceptance.get, format: pctSmart, flag: { which: "min", text: "Most selective" } },
     SAT_ROW,
+    READING_ROW,
   ],
   students: [
     { kind: "bar", label: "Undergrads", term: "undergrad-enrollment", field: "demographics.undergrad_enrollment", get: METRICS.enrollment.get, format: compact, flag: { which: "max", text: "Largest" } },
@@ -185,7 +212,14 @@ export const CARD_ROWS: Record<CardTopic, readonly CardRow[]> = {
  * Fields the cards show besides their rows': the test policy behind "Test-blind", and yield, which the Getting in
  * sentence names. Selectivity's direction (Over time's sentence) is `trends`, the history row's own field.
  */
-export const CARD_EXTRA_FIELDS: readonly FieldPath[] = ["admissions.test_policy", "derived.yield"];
+export const CARD_EXTRA_FIELDS: readonly FieldPath[] = [
+  "admissions.test_policy",
+  "derived.yield",
+  // The reading row's emphasis phrase (the college's C7 rating, else the federal factors) and a weighted reporter's average.
+  "reported.admission_profile.factors.rigor",
+  "admissions.factors",
+  "reported.admission_profile.gpa.average",
+];
 
 /** Every field a card can show (each row, the ACT fallback, and CARD_EXTRA_FIELDS): the overview cites them all. */
 export function cardFields(): FieldPath[] {

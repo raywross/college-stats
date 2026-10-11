@@ -2,8 +2,9 @@
 
 import { refresh } from "next/cache";
 import { requireUser } from "@/lib/auth";
-import { importLocalProfile, saveProfile } from "@/lib/student-profile-store";
-import type { StudentProfileData } from "@/lib/student-profile";
+import { importLocalProfile, profileFor, saveProfile } from "@/lib/student-profile-store";
+import { sanitizeCourses, type StudentProfileData } from "@/lib/student-profile";
+import { mergeCoursesForSave } from "@/lib/chances/courses";
 
 export type ProfileSaveState = { status: "idle" } | { status: "saved" } | { status: "error"; message: string };
 
@@ -41,8 +42,40 @@ function csvField(form: FormData, name: string): string[] {
   return raw ? raw.split(/[,\n/]/).map((s) => s.trim()).filter(Boolean) : [];
 }
 
+type CourseFields = { courses?: unknown; apExamsPrivate?: unknown; coreAtTopLevel?: unknown; coursePlan?: unknown; schoolOffers?: unknown };
+
+function jsonField(form: FormData, name: string): unknown {
+  try {
+    return JSON.parse(String(form.get(name)));
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * The course list (specs/chances/rigor-in-context.md): from a "courses" JSON field when the form carries one (the
+ * course picker), else the list already saved, so a form without the picker never erases it. The courseRigorCount
+ * field then adds or removes only unnamed rows (sanitizeProfile). A guardian's post carries no exam scores while
+ * they're private, so the saved ones are put back (mergeCoursesForSave) and the privacy switch stays as saved.
+ */
+async function coursesFor(form: FormData, studentId: string): Promise<CourseFields> {
+  const saved = await profileFor(studentId);
+  const kept = saved?.saved ? saved.data.academics : null;
+  // The course plan's dismissals and the student's school marks live in the same group; the form never carries them.
+  const plan = kept ? { coursePlan: kept.coursePlan, schoolOffers: kept.schoolOffers } : {};
+  if (!form.has("courses")) {
+    return kept ? { courses: kept.courses, apExamsPrivate: kept.apExamsPrivate, coreAtTopLevel: kept.coreAtTopLevel, ...plan } : {};
+  }
+  const posted = jsonField(form, "courses");
+  if (posted === undefined) return { ...plan };
+  const incoming = { courses: sanitizeCourses(posted), apExamsPrivate: form.get("apExamsPrivate") !== "false" };
+  const merged = kept && saved ? mergeCoursesForSave({ courses: kept.courses, apExamsPrivate: kept.apExamsPrivate }, incoming, saved.relation) : incoming;
+  const core = form.has("coreAtTopLevel") ? jsonField(form, "coreAtTopLevel") : kept?.coreAtTopLevel;
+  return { courses: merged.courses, apExamsPrivate: merged.apExamsPrivate, coreAtTopLevel: core, ...plan };
+}
+
 /** The form's fields back into the raw shape sanitizeProfile() expects; it drops anything out of range itself. */
-function profileFromForm(form: FormData): unknown {
+function profileFromForm(form: FormData, courses: CourseFields = {}): unknown {
   return {
     basics: {
       gradYear: numField(form, "gradYear"),
@@ -57,6 +90,7 @@ function profileFromForm(form: FormData): unknown {
       weightedGpa: numField(form, "weightedGpa"),
       classRankPercentile: numField(form, "classRankPercentile"),
       courseRigorCount: numField(form, "courseRigorCount"),
+      ...courses,
     },
     tests: {
       satTotal: numField(form, "satTotal"),
@@ -89,7 +123,7 @@ export async function saveStudentProfile(_prev: ProfileSaveState, form: FormData
   await requireUser("/me");
   const studentId = String(form.get("student_id") ?? "");
   if (!studentId) return { status: "error", message: "Missing student." };
-  const result = await saveProfile(studentId, profileFromForm(form));
+  const result = await saveProfile(studentId, profileFromForm(form, await coursesFor(form, studentId)));
   if (!result.ok) return { status: "error", message: result.message };
   refresh();
   return { status: "saved" };

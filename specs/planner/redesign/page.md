@@ -60,6 +60,12 @@ an account) has one plan; both see it, as today.
   still works so groups appear the moment a college is added.
 
 ## The child switcher (parents)
+*Who is on it (fixed 2026-10-11, owner testing):* the children on the parent's household roster, the same people
+the Household page shows (`lib/households.ts` `householdChildren`). A student record the parent can still read only
+because they created it, but that is no longer in the household (left behind when the child joined with their own
+account), is not a child here; the first version listed every readable record, so "Maya" and "Maya Ross" both
+appeared and only one had the list. The parent's "Add to list" picks from the same children.
+
 A row of pills under the page title: each child as their initial in their household color, name, and class year,
 then **Everyone** (a stack of the children's color dots). The selected pill is filled. Each pill's second line is
 the child's summary line from [parents.md](../parents.md#the-summary-line), shortened ("Applying · 3 of 8 in · next

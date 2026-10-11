@@ -1,13 +1,14 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Search, Sparkles } from "lucide-react";
 import { Crest } from "@/components/school/Crest";
 import { PlanRow } from "@/components/planner/PlanRow";
 import { ListNotices } from "@/components/planner/ListNotices";
 import type { PlanTabProps } from "@/components/planner/tabs/types";
-import { addToList } from "@/lib/lists";
+import { addToList, removeFromList } from "@/lib/lists";
 import { track } from "@/lib/analytics";
 import { searchSchoolsApi } from "@/lib/school-api";
 import type { SchoolIndexEntry } from "@/lib/dataset";
@@ -21,7 +22,7 @@ import { cn } from "@/lib/utils";
 
 /**
  * The Colleges tab: the list as the plan (specs/planner/redesign/list.md). Owns its own copy of the rows so every
- * tap (the Dream, the group chip, the round chip) updates at once; a refused write rolls the row back and shows an
+ * tap (the Dream, the group chip, the round chip, ×) updates at once; a refused write rolls the row back and shows an
  * inline message, and a successful one refreshes the server page so the notices, balance line, and tasks that
  * depend on more than one row stay correct.
  */
@@ -107,6 +108,20 @@ export default function PlanList({ ctx, view }: PlanTabProps) {
     router.refresh();
   }
 
+  async function handleRemove(row: PlanRowView) {
+    const before = rows;
+    setRowError(row.item.id, null);
+    setRows((rs) => rs.filter((r) => r.item.id !== row.item.id));
+    track("plan_college_removed", { dream: row.dream });
+    const result = await removeFromList(row.item.id);
+    if (!result.ok) {
+      setRows(before);
+      setRowError(row.item.id, result.message);
+      return;
+    }
+    router.refresh();
+  }
+
   function handleUseEdTwo(itemId: string) {
     const dreamRound = rows.find((r) => r.dream)?.round === "rea" ? "rea" : "ed";
     startEdTwo(async () => {
@@ -124,7 +139,21 @@ export default function PlanList({ ctx, view }: PlanTabProps) {
       <ListNotices view={view} onUseEdTwo={handleUseEdTwo} edTwoPending={edTwoPending} />
 
       {rows.length === 0 ? (
-        <p className="rounded-2xl border bg-card p-6 text-center text-sm text-muted-foreground">No colleges here yet. Add one below.</p>
+        <div className="rounded-2xl border bg-card p-6 text-center text-sm text-muted-foreground">
+          <p>No colleges here yet.{canEdit ? " Add one below." : ""}</p>
+          {ctx.viewer.isGuardian && ctx.student && ctx.student.user_id === null && (
+            // A record the parent made that no account has claimed: colleges saved on the student's own account sit
+            // on that account's list until the student accepts the household invitation (found in owner testing).
+            <p className="mx-auto mt-2 max-w-md">
+              {ctx.student.display_name?.trim().split(/\s+/)[0] || "Your student"} hasn&apos;t joined your household yet, so colleges saved on
+              their own account don&apos;t show here. Send an invitation from{" "}
+              <Link href="/household" className="font-semibold text-primary hover:underline">
+                Household
+              </Link>
+              ; once it&apos;s accepted, their colleges appear here.
+            </p>
+          )}
+        </div>
       ) : (
         <section className="overflow-hidden rounded-3xl border bg-card">
           <div className="flex flex-wrap items-center justify-between gap-2 border-b px-4 py-3">
@@ -165,6 +194,7 @@ export default function PlanList({ ctx, view }: PlanTabProps) {
                 onToggleDream={handleDream}
                 onGroup={handleGroup}
                 onRound={handleRound}
+                onRemove={handleRemove}
               />
             ))}
           </ul>

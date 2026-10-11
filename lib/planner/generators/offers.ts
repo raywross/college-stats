@@ -8,6 +8,7 @@
  * | withdraw         | each other admitted or pending college; after an ED admit, every other application, required | `{item}:withdraw:-` |
  * | waitlist_decide  | each waitlisted college (not after an ED admit: those are withdrawn) | `{item}:waitlist_decide:-` |
  * | summer           | the cycle file's `committed` entries, once committed_on is set | `{list}:summer:{entry key}` |
+ * | summer (AP)      | "Send your AP scores for credit": the chosen college gives AP credit (`admissions.accepts_ap_credit`) and the student isn't known to have no AP course | `{chosen}:summer:send_ap_scores` |
  *
  * The reply-by and housing-deposit tasks are the college generator's (generators/college.ts): this module doesn't
  * emit them again; the store ticks the reply-by task when the student chooses. Withdraw tasks keep being generated
@@ -69,6 +70,32 @@ function task(
     source_edition: f.date?.edition ?? null,
     date_note: f.date && school && isLastCycle(f.date.edition, school) ? "last_cycle" : null,
     position: item.position * 10 + offset,
+  };
+}
+
+/** Not known to have no AP course: a list with no AP rows that aren't merely planned says the student took none. */
+function mayHaveAp(profile: GeneratorInput["profile"]): boolean {
+  const courses = profile?.academics?.courses ?? [];
+  return courses.length === 0 || courses.some((c) => c.kind === "ap" && c.status !== "planned");
+}
+
+/** "Send your AP scores to {college} for credit": after the scores are out (early July) and the college's credit policy is known. */
+function sendApScores(chosen: PlanItem, name: string): GeneratedTask {
+  return {
+    key: taskKey(chosen.id, "summer", "send_ap_scores"),
+    item_id: chosen.id,
+    kind: "summer",
+    title: `Send your AP scores to ${name} for credit`.slice(0, 200),
+    detail: "Your scores come out in early July. Order the score report to the college from your College Board account, and check which scores earn credit or placement on the college's AP credit page.",
+    due_on: null,
+    window_start: null,
+    window_end: null,
+    assignee: "student",
+    source: "college",
+    source_field: "admissions.accepts_ap_credit",
+    source_edition: null,
+    date_note: null,
+    position: chosen.position * 10 + 9,
   };
 }
 
@@ -182,6 +209,9 @@ export function generate(input: GeneratorInput): GeneratedTask[] {
       );
     }
   }
+
+  // Send the AP scores for credit (course-plan.md "Calendar"), when the chosen college awards it.
+  if (chosenSchool?.acceptsApCredit === true && mayHaveAp(input.profile)) out.push(sendApScores(chosen, chosenName));
 
   // The summer list, from the cycle file.
   const facts = { items: input.items.filter((i) => !i.withdrawn_on), schools: input.schools, profile: input.profile };

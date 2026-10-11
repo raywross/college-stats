@@ -27,6 +27,12 @@ links. Also explains the federal-baseline rule and how college-reported figures 
 5. **Newer figures from colleges.** What the ingestion agent collects, the automated checks, what happens when a check
    fails, and the latest accuracy report ([college-reported-data.md](college-reported-data.md)). Count of colleges with
    newer figures. Profiles show the newest figure as the headline, with the federal figure one line below.
+5a. **How well Quad's estimate did** (`#estimate-accuracy`, added 2026-10-11 by
+   [chances/calibration.md](chances/calibration.md#as-built)). The latest season in `chances_summary`: per admit-rate
+   band, each group's shared outcomes and share admitted with a 90% range ("Not enough outcomes yet" for thin cells);
+   students' own group changes beside the estimate's groups; the sharers' mix; the estimate version(s) and the next
+   summary's date. Results only, never the method. Read with the publishable key (`lib/chances/summary.ts`), fail-soft
+   to the empty state; rendered by `components/data/ChancesAccuracy.tsx`.
 6. **Sources.** Today's `/sources` content: each dataset, edition, coverage, link; colleges with CDS / college-reported
    data; "How we calculate"; suggested citation.
 7. **Watching.** Sources not used yet, with status (ACTS, below).

@@ -2,7 +2,9 @@
 
 import { useState } from "react";
 import { Pencil } from "lucide-react";
+import { MostUsefulInput } from "@/components/chances/MostUsefulInput";
 import NumbersForm from "@/components/planner/NumbersForm";
+import { PlanCoursesSheet } from "@/components/planner/PlanCoursesSheet";
 import { Term } from "@/components/ui/info-tip";
 import { TEST_LABEL } from "@/lib/planner/standing";
 import { gpaAsEntered } from "@/lib/student-profile";
@@ -32,6 +34,8 @@ export function PlanHeaderCard({
   color: string;
 }) {
   const [editing, setEditing] = useState(false);
+  const [coursesOpen, setCoursesOpen] = useState(false);
+  const courseCount = ctx.profile?.academics.courses.length ?? 0;
   const title = relation === "self" ? "Your plan" : `${firstName ?? "Their"}'s plan`;
   const initial = (relation === "self" ? "Y" : firstName?.[0]?.toUpperCase()) ?? "S";
   const gradYear = ctx.student?.grad_year ?? null;
@@ -79,6 +83,22 @@ export function PlanHeaderCard({
         </button>
       ) : (
         <p className="mt-4 flex flex-wrap items-center gap-2 rounded-2xl bg-muted/60 px-3 py-2 text-sm">{numbersLine}</p>
+      )}
+      {!editing && <MostUsefulInput estimates={view.estimates} className="mt-2 px-3" />}
+      {!editing && ctx.viewer.canEdit && (
+        <>
+          <button
+            type="button"
+            onClick={() => setCoursesOpen(true)}
+            className="mt-2 flex min-h-11 w-full flex-wrap items-center gap-x-2 rounded-2xl px-3 py-2 text-left text-sm hover:bg-muted/60"
+          >
+            <span className="font-semibold">
+              {courseCount > 0 ? `${relation === "self" ? "Your" : `${firstName ?? "Their"}'s`} courses (${courseCount})` : `Add ${relation === "self" ? "your" : `${firstName ?? "their"}'s`} courses (optional)`}
+            </span>
+            <span className="text-muted-foreground">{courseCount > 0 ? "Edit" : "Helps at colleges where most students have top GPAs."}</span>
+          </button>
+          <PlanCoursesSheet ctx={ctx} open={coursesOpen} onOpenChange={setCoursesOpen} name={relation === "self" ? null : firstName} />
+        </>
       )}
     </div>
   );

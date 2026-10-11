@@ -1,5 +1,5 @@
 import { getData } from "@/lib/data";
-import { admissionProfile, classRankSentence } from "@/lib/cds/admissions";
+import { admissionProfile, classRankSentence, IMPORTANCE_LABELS } from "@/lib/cds/admissions";
 import type { FieldPath } from "@/lib/fields";
 import { DOMAINS } from "@/lib/metrics";
 import { pct } from "@/lib/format";
@@ -8,6 +8,7 @@ import { Panel } from "@/components/profile/Panel";
 import { ShowMore } from "@/components/ui/show-more";
 import { MetricLabel, Term } from "@/components/ui/info-tip";
 import { GpaChecker } from "./GpaChecker";
+import { RigorLine } from "./RigorLine";
 
 /** The values this panel shows: its source footnote and the admissions page's TOPIC_FIELDS. */
 export const GPA_PANEL_FIELDS = [
@@ -20,6 +21,7 @@ export const GPA_PANEL_FIELDS = [
   "reported.admission_profile.class_rank.top_tenth",
   "reported.admission_profile.class_rank.top_quarter",
   "reported.admission_profile.class_rank.submitted_share",
+  "reported.admission_profile.factors.rigor",
 ] as const satisfies readonly FieldPath[];
 
 /**
@@ -41,6 +43,8 @@ export async function GpaPanel({ school, id }: { school: School; id?: string }) 
     : {};
   const hasBands = Object.keys(columns).length > 0;
   const rankLine = classRankSentence(rank);
+  // The college's own rating of course rigor (CDS C7), for the line under the checker that reads the visitor's courses.
+  const rigorRating = p?.factors?.rigor ?? null;
 
   return (
     <Panel
@@ -100,6 +104,10 @@ export async function GpaPanel({ school, id }: { school: School; id?: string }) 
             </p>
           </ShowMore>
         )}
+        <RigorLine
+          college={school.name}
+          rating={rigorRating ? { label: IMPORTANCE_LABELS[rigorRating].toLowerCase(), cited: cite("factors.rigor") } : null}
+        />
         {!gpa && (
           <p className="mt-2 text-xs text-muted-foreground">
             This college doesn&apos;t publish first-years&apos; <Term term="high-school-gpa">high school GPA</Term>.

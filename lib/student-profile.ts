@@ -89,6 +89,48 @@ export interface StudentProfileAcademics {
   courses: CourseEntry[];
   /** AP exam scores are the student's own: hidden from guardians unless the student shares them. Default true. */
   apExamsPrivate: boolean;
+  /**
+   * "Were your English, math, science, history, and language classes the most advanced your school offered?" for 11th
+   * and 12th grade (rigor-in-context.md "The core-subject question"). An unanswered cell is null and reads as the
+   * list suggests (checked where the list has an AP, IB, or dual-enrollment course in that subject and year); an
+   * answer the student gave, yes or no, is kept as given.
+   */
+  coreAtTopLevel: CoreAtTopLevel;
+}
+
+/** The five subjects the counselor's "most demanding" question asks about. */
+export type CoreSubject = "english" | "math" | "science" | "history" | "language";
+export const CORE_SUBJECT_KEYS: readonly CoreSubject[] = ["english", "math", "science", "history", "language"];
+/** The two years the question asks about. */
+export const CORE_YEARS = [11, 12] as const;
+export type CoreYear = (typeof CORE_YEARS)[number];
+export type CoreAnswers = Record<CoreSubject, boolean | null>;
+export type CoreAtTopLevel = Record<CoreYear, CoreAnswers>;
+
+/** Nothing answered yet. */
+export function emptyCoreAtTopLevel(): CoreAtTopLevel {
+  const blank = (): CoreAnswers => ({ english: null, math: null, science: null, history: null, language: null });
+  return { 11: blank(), 12: blank() };
+}
+
+/** Whether any cell has been answered (yes or no). */
+export function coreAnswered(core: CoreAtTopLevel): boolean {
+  return CORE_YEARS.some((y) => CORE_SUBJECT_KEYS.some((s) => core[y][s] !== null));
+}
+
+/** Untrusted input as CoreAtTopLevel: only true and false are kept as answers; anything else is unanswered. */
+export function sanitizeCoreAtTopLevel(input: unknown): CoreAtTopLevel {
+  const out = emptyCoreAtTopLevel();
+  if (!isObj(input)) return out;
+  for (const year of CORE_YEARS) {
+    const row = input[String(year)];
+    if (!isObj(row)) continue;
+    for (const subject of CORE_SUBJECT_KEYS) {
+      const v = row[subject];
+      if (v === true || v === false) out[year][subject] = v;
+    }
+  }
+  return out;
 }
 
 export interface StudentProfileTests {
@@ -176,7 +218,7 @@ export const LOCAL_PROFILE_KEY = "student-profile";
 export function emptyProfile(): StudentProfileData {
   return {
     basics: { gradYear: null, stateOfResidence: null, highSchool: null, highSchoolId: null, feeWaiverEligible: null },
-    academics: { gpa: null, gpaScale: "4.0", weightedGpa: null, classRankPercentile: null, courseRigorCount: null, courses: [], apExamsPrivate: true },
+    academics: { gpa: null, gpaScale: "4.0", weightedGpa: null, classRankPercentile: null, courseRigorCount: null, courses: [], apExamsPrivate: true, coreAtTopLevel: emptyCoreAtTopLevel() },
     tests: {
       satTotal: null,
       satReading: null,
@@ -288,6 +330,7 @@ export function sanitizeProfile(input: unknown): StudentProfileData {
     courseRigorCount: courses.length > 0 || countIn !== null ? courseRigorCountOf(courses) : null,
     courses,
     apExamsPrivate: ac.apExamsPrivate !== false,
+    coreAtTopLevel: sanitizeCoreAtTopLevel(ac.coreAtTopLevel),
   };
 
   const t = isObj(input.tests) ? input.tests : {};

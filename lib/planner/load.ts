@@ -14,7 +14,9 @@ import { myHome } from "@/lib/home-store";
 import { getOrCreateDefaultList, myLists } from "@/lib/lists";
 import { createServerSupabase } from "@/lib/supabase-server";
 import { profileFor } from "@/lib/student-profile-store";
-import { effectiveGradYear } from "@/lib/student-profile";
+import { coreAnswered, effectiveGradYear } from "@/lib/student-profile";
+import { gradeNow, withoutExams } from "@/lib/chances/courses";
+import { rigorViewFor } from "@/lib/chances/rigor-server";
 import { generatorInputFor, planContextFrom, PlannerSetupError, readItems, readPlan, readTasks, todayIso, writeAutoWrites, writeMerge } from "./context";
 import { autoWrites, planView, type PlanView } from "./plan-view";
 import { generateTasks, mergeTasks } from "./tasks";
@@ -94,7 +96,29 @@ export async function loadPlanFor(studentId: string, viewer?: StudentAccess | nu
     },
   });
   const view = planView({ items: ctx.items, schools: ctx.schools, profile: ctx.profile, today });
-  return { kind: "ready", ctx, view, access };
+  return { kind: "ready", ctx: await withRigor(ctx, relation, gradYear), view, access };
+}
+
+/**
+ * The context with the course list read against the student's high school (rigor-in-context.md). A guardian's copy
+ * has no AP exam scores while the student keeps them private: the profile the browser gets is stripped, and the
+ * reading's sentences are computed from the stripped list.
+ */
+async function withRigor(ctx: PlanContext, relation: "self" | "guardian", gradYear: number | null): Promise<PlanContext> {
+  const profile = ctx.profile;
+  if (!profile) return ctx;
+  const hidden = relation === "guardian" && profile.academics.apExamsPrivate;
+  const courses = hidden ? withoutExams(profile.academics.courses) : profile.academics.courses;
+  const safeProfile = hidden ? { ...profile, academics: { ...profile.academics, courses } } : profile;
+  const entered = courses.length > 0 || coreAnswered(profile.academics.coreAtTopLevel);
+  if (!entered) return { ...ctx, profile: safeProfile, rigor: null };
+  const rigor = await rigorViewFor({
+    courses,
+    coreAtTopLevel: profile.academics.coreAtTopLevel,
+    highSchoolId: profile.basics.highSchoolId,
+    grade: gradeNow(gradYear, ctx.today),
+  }).catch(() => null);
+  return { ...ctx, profile: safeProfile, rigor };
 }
 
 /** A child a parent can switch to (page.md "The child switcher"). */

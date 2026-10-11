@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Heart, Search } from "lucide-react";
 import { useLocalProfile } from "@/components/me/useLocalProfile";
 import { useNumbersDraft, NumbersFields } from "@/components/planner/NumbersForm";
+import { LocalCoursesSheet } from "@/components/profile/LocalCoursesSheet";
 import { Crest } from "@/components/school/Crest";
 import { Term, SourceTip } from "@/components/ui/info-tip";
 import { track } from "@/lib/analytics";
@@ -271,6 +272,7 @@ function LocalRow({
 export default function SignedOutPlan() {
   const { data: profile, save: saveProfile } = useLocalProfile();
   const draft = useNumbersDraft(profile);
+  const [coursesOpen, setCoursesOpen] = useState(false);
   const localPlan = useSyncExternalStore(subscribeLocalPlan, getLocalPlan, emptyLocalPlan);
   const [schools, setSchools] = useState<Record<string, PlanSchool>>({});
   const startedRef = useRef(false);
@@ -335,6 +337,18 @@ export default function SignedOutPlan() {
       </section>
 
       <NumbersFields draft={draft} />
+
+      <div>
+        <button
+          type="button"
+          onClick={() => setCoursesOpen(true)}
+          className="flex min-h-11 w-full flex-wrap items-center gap-x-2 rounded-2xl border bg-card px-4 py-2 text-left text-sm hover:bg-muted/60"
+        >
+          <span className="font-semibold">{profile.academics.courses.length > 0 ? `Your courses (${profile.academics.courses.length})` : "Add your courses (optional)"}</span>
+          <span className="text-muted-foreground">{profile.academics.courses.length > 0 ? "Edit" : "Helps at colleges where most students have top GPAs."}</span>
+        </button>
+        <LocalCoursesSheet open={coursesOpen} onOpenChange={setCoursesOpen} />
+      </div>
 
       <section className="space-y-4">
         {view.rows.length === 0 ? (

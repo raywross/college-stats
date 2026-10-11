@@ -17,6 +17,11 @@ export interface GuaranteedRule {
   resident: boolean;
   /** A curriculum the program requires, in its own words; null when none. */
   curriculum: string | null;
+  /**
+   * How a rank threshold and a GPA threshold combine when the program states both: "all" (the default) needs each,
+   * "any" needs one ("top 25% of the class, OR a 3.0 GPA"). Ignored with a single threshold.
+   */
+  match?: "all" | "any";
 }
 
 export interface GuaranteedProgram {
@@ -29,6 +34,8 @@ export interface GuaranteedProgram {
   rule: GuaranteedRule;
   /** "campus": admission to that college; "system": a place somewhere in the system, never a chosen campus. */
   scope: "campus" | "system";
+  /** For scope "system": the system's name as a sentence names it ("University of California"). */
+  system_name?: string;
   /** Whether admission includes the student's major; false for every program so far (UT Austin and Texas A&M say so). */
   major_guaranteed: boolean;
   /** The entering falls the rule is published for. */
@@ -93,6 +100,11 @@ export function isHttpsUrl(v: unknown): boolean {
   }
 }
 
+/** A GPA as a page prints it: 3 → "3.0", 2.25 → "2.25". */
+export function gpaText(gpa: number): string {
+  return Number.isInteger(gpa) ? gpa.toFixed(1) : String(gpa);
+}
+
 const ID_RE = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 const STATE_RE = /^[A-Z]{2}$/;
 
@@ -137,10 +149,13 @@ export function validateGuaranteed(input: GuaranteedFile, today: Date, knownUnit
       if (rank !== null && !(typeof rank === "number" && rank > 0 && rank <= 100)) errors.push(`${where}: class_rank_top_pct must be a number from 1 to 100, or null`);
       if (gpa !== null && !(typeof gpa === "number" && gpa > 0 && gpa <= 4)) errors.push(`${where}: gpa_min must be an unweighted GPA up to 4.0, or null`);
       if (rank === null && gpa === null) errors.push(`${where}: rule needs a class rank or GPA threshold`);
+      if (r.match !== undefined && r.match !== "all" && r.match !== "any") errors.push(`${where}: rule.match must be "all" or "any"`);
+      if (r.match === "any" && (rank === null || gpa === null)) errors.push(`${where}: rule.match "any" needs both a rank and a GPA threshold`);
       if (typeof r.resident !== "boolean") errors.push(`${where}: rule.resident must be true or false`);
       if (r.curriculum !== null && (typeof r.curriculum !== "string" || !r.curriculum.trim())) errors.push(`${where}: rule.curriculum must be words or null`);
     }
     if (p.scope !== "campus" && p.scope !== "system") errors.push(`${where}: scope must be "campus" or "system"`);
+    if (p.scope === "system" && (typeof p.system_name !== "string" || !p.system_name.trim())) errors.push(`${where}: a system-scope program names its system (system_name)`);
     if (typeof p.major_guaranteed !== "boolean") errors.push(`${where}: major_guaranteed must be true or false`);
     if (!Array.isArray(p.fall) || p.fall.length === 0 || p.fall.some((y) => !Number.isInteger(y))) errors.push(`${where}: fall must list entering years`);
     else if (Number.isInteger(input.cycle) && !p.fall.includes(input.cycle)) errors.push(`${where}: published for fall ${p.fall.join(", ")}, not the file's cycle (${input.cycle}); re-verify or remove it`);
@@ -155,6 +170,9 @@ export function validateGuaranteed(input: GuaranteedFile, today: Date, knownUnit
       // The threshold must appear in the quote, as the review queue requires for any number.
       if (r && typeof r.class_rank_top_pct === "number" && typeof s.quote === "string" && !s.quote.includes(`${r.class_rank_top_pct}`)) {
         errors.push(`${where}: the rank threshold (${r.class_rank_top_pct}) doesn't appear in the quote`);
+      }
+      if (r && typeof r.gpa_min === "number" && typeof s.quote === "string" && !s.quote.includes(gpaText(r.gpa_min))) {
+        errors.push(`${where}: the GPA threshold (${gpaText(r.gpa_min)}) doesn't appear in the quote`);
       }
     }
   });

@@ -5,8 +5,10 @@
   "programs": [
     {
       "id": "tx-auto-ut-austin-2027",
-      "name": "Texas automatic admission, UT Austin",
-      "unit_ids": ["228778"],
+      "name": "Texas automatic admission",
+      "unit_ids": [
+        "228778"
+      ],
       "state": "TX",
       "rule": {
         "class_rank_top_pct": 5,
@@ -16,12 +18,254 @@
       },
       "scope": "campus",
       "major_guaranteed": false,
-      "fall": [2027],
+      "fall": [
+        2027
+      ],
       "source": {
         "publisher": "Texas Education Agency (notice from The University of Texas at Austin)",
         "url": "https://tea.texas.gov/sites/default/files/taa-2025-12-18-the-university-of-texas-at-austin-automatic-admission-policy.pdf",
         "retrieved": "2026-10-11",
         "quote": "The University has determined that it will automatically admit all eligible summer/fall 2027 and spring 2028 freshman applicants who rank within the top 5% of their high school graduating classes.",
+        "verified_via": "search"
+      }
+    },
+    {
+      "id": "tx-auto-top10-2027",
+      "name": "Texas automatic admission",
+      "unit_ids": [
+        "222831",
+        "224554",
+        "226091",
+        "226833",
+        "227526",
+        "227881",
+        "228431",
+        "228501",
+        "228529",
+        "226152",
+        "224147",
+        "483036",
+        "228723",
+        "228705",
+        "459949",
+        "224545",
+        "225502",
+        "229063",
+        "228459",
+        "229115",
+        "229179",
+        "228769",
+        "228787",
+        "228796",
+        "229027",
+        "228802",
+        "229018",
+        "227368",
+        "225511",
+        "225414",
+        "225432",
+        "227216",
+        "484905",
+        "229814"
+      ],
+      "state": "TX",
+      "rule": {
+        "class_rank_top_pct": 10,
+        "gpa_min": null,
+        "resident": true,
+        "curriculum": "Distinguished level of achievement under the Foundation High School Program, or the ACT or SAT college readiness benchmarks; graduates of Texas public or accredited private high schools who apply within two years"
+      },
+      "scope": "campus",
+      "major_guaranteed": false,
+      "fall": [
+        2027
+      ],
+      "source": {
+        "publisher": "Texas Education Agency (Texas Education Code §51.803)",
+        "url": "https://tea.texas.gov/media/document/212092",
+        "retrieved": "2026-10-11",
+        "quote": "In accordance with Texas Education Code (TEC), §51.803, a student is eligible for automatic admission to a college or university as an undergraduate student if the applicant earned a grade point average in the top 10 percent of the student's high school graduating class.",
+        "verified_via": "search"
+      }
+    },
+    {
+      "id": "uc-elc-2027",
+      "name": "UC Eligibility in the Local Context",
+      "unit_ids": [
+        "110635",
+        "110644",
+        "110653",
+        "110662",
+        "445188",
+        "110671",
+        "110680",
+        "110705",
+        "110714"
+      ],
+      "state": "CA",
+      "rule": {
+        "class_rank_top_pct": 9,
+        "gpa_min": null,
+        "resident": true,
+        "curriculum": "Ranked by GPA in UC-approved (A–G) courses in 10th and 11th grade, at a high school that participates in ELC"
+      },
+      "scope": "system",
+      "system_name": "University of California",
+      "major_guaranteed": false,
+      "fall": [
+        2027
+      ],
+      "source": {
+        "publisher": "University of California",
+        "url": "https://admission.universityofcalifornia.edu/admission-requirements/first-year-requirements/california-residents/local-guarantee-elc.html",
+        "retrieved": "2026-10-11",
+        "quote": "It applies if you rank in the top 9 percent of your California high school class and your high school participates in the ELC program.",
+        "verified_via": "search"
+      }
+    },
+    {
+      "id": "wi-guarantee-madison-2027",
+      "name": "the Wisconsin Guarantee at UW–Madison",
+      "unit_ids": [
+        "240444"
+      ],
+      "state": "WI",
+      "rule": {
+        "class_rank_top_pct": 5,
+        "gpa_min": null,
+        "resident": true,
+        "curriculum": "Class rank at the end of 11th grade; apply by UW–Madison's early action deadline"
+      },
+      "scope": "campus",
+      "major_guaranteed": false,
+      "fall": [
+        2027
+      ],
+      "source": {
+        "publisher": "Universities of Wisconsin (2023 Wisconsin Act 95)",
+        "url": "https://www.wisconsin.edu/news/archive/universities-of-wisconsin-launch-the-wisconsin-guarantee-to-implement-new-law/",
+        "retrieved": "2026-10-11",
+        "quote": "students who rank in the top 5 percent of their class at the end of 11th grade will be eligible for automatic admission to UW-Madison while students who rank in the top 10 percent qualify for the other 12 public universities",
+        "verified_via": "search"
+      }
+    },
+    {
+      "id": "wi-guarantee-universities-2027",
+      "name": "the Wisconsin Guarantee",
+      "unit_ids": [
+        "240268",
+        "240277",
+        "240329",
+        "240453",
+        "240365",
+        "240374",
+        "240462",
+        "240471",
+        "240480",
+        "240417",
+        "240426",
+        "240189"
+      ],
+      "state": "WI",
+      "rule": {
+        "class_rank_top_pct": 10,
+        "gpa_min": null,
+        "resident": true,
+        "curriculum": "Class rank at the end of 11th grade"
+      },
+      "scope": "campus",
+      "major_guaranteed": false,
+      "fall": [
+        2027
+      ],
+      "source": {
+        "publisher": "Universities of Wisconsin (2023 Wisconsin Act 95)",
+        "url": "https://www.wisconsin.edu/news/archive/universities-of-wisconsin-launch-the-wisconsin-guarantee-to-implement-new-law/",
+        "retrieved": "2026-10-11",
+        "quote": "students who rank in the top 5 percent of their class at the end of 11th grade will be eligible for automatic admission to UW-Madison while students who rank in the top 10 percent qualify for the other 12 public universities",
+        "verified_via": "search"
+      }
+    },
+    {
+      "id": "az-assured-ua-2027",
+      "name": "University of Arizona assured admission",
+      "unit_ids": [
+        "104179"
+      ],
+      "state": "AZ",
+      "rule": {
+        "class_rank_top_pct": 25,
+        "gpa_min": 3,
+        "match": "any",
+        "resident": true,
+        "curriculum": "A regionally accredited high school and the Arizona Board of Regents core competency courses (the GPA is in those courses, through the sixth semester)"
+      },
+      "scope": "campus",
+      "major_guaranteed": false,
+      "fall": [
+        2027
+      ],
+      "source": {
+        "publisher": "The University of Arizona",
+        "url": "https://www.arizona.edu/admissions/resources/high-school-competency/",
+        "retrieved": "2026-10-11",
+        "quote": "Rank in the top 25% of your graduating class, OR Have a 3.0 unweighted GPA through your sixth semester in the core competency requirements.",
+        "verified_via": "search"
+      }
+    },
+    {
+      "id": "id-direct-admission-all-2027",
+      "name": "Idaho Direct Admissions",
+      "unit_ids": [
+        "142115",
+        "142285",
+        "142276",
+        "142328"
+      ],
+      "state": "ID",
+      "rule": {
+        "class_rank_top_pct": null,
+        "gpa_min": 3,
+        "resident": true,
+        "curriculum": "Idaho high school seniors; or ISAT Math and ELA/Literacy level 3 or higher"
+      },
+      "scope": "campus",
+      "major_guaranteed": false,
+      "fall": [
+        2027
+      ],
+      "source": {
+        "publisher": "Idaho State Board of Education (Board Policy III.Q)",
+        "url": "https://boardofed.idaho.gov/wp-content/uploads/2017/02/IIIQ-Admission-Standards-0624.pdf",
+        "retrieved": "2026-10-11",
+        "quote": "Unweighted GPA = 3.0 OR ISAT Math level ≥3 and ELA/Literacy level ≥3: Admission to all Idaho public institutions",
+        "verified_via": "search"
+      }
+    },
+    {
+      "id": "id-direct-admission-isu-lcsc-2027",
+      "name": "Idaho Direct Admissions",
+      "unit_ids": [
+        "142276",
+        "142328"
+      ],
+      "state": "ID",
+      "rule": {
+        "class_rank_top_pct": null,
+        "gpa_min": 2.25,
+        "resident": true,
+        "curriculum": "Idaho high school seniors"
+      },
+      "scope": "campus",
+      "major_guaranteed": false,
+      "fall": [
+        2027
+      ],
+      "source": {
+        "publisher": "Idaho State Board of Education (Board Policy III.Q)",
+        "url": "https://boardofed.idaho.gov/wp-content/uploads/2017/02/IIIQ-Admission-Standards-0624.pdf",
+        "retrieved": "2026-10-11",
+        "quote": "Unweighted GPA = 2.25 – 2.99: Admission to Idaho's public community colleges, Lewis-Clark State College and Idaho State University",
         "verified_via": "search"
       }
     }

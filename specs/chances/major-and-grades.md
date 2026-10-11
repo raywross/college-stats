@@ -121,6 +121,26 @@ required-course checking against the course list, subject GPAs, and the notes ab
 met, closed; a missing required course; "no" quoted; undecided; no review at all). How the estimate weighs these is
 tested with the model (`tests/chances-model.test.mts`).
 
+## As built (2026-10-11)
+- `lib/chances/major-review.ts` (pure, client-safe): `majorReviewFor(student, school, { testingClosed? })` returns
+  the unit and university statement that apply, `considered` (the unit's statement first, else the university's),
+  the emphasis with the student's `subjectGpas`, `requiredCourses` checks, a `gate` check, the public `notes`, the
+  `unitRequires` line for "What you'll need in high school", and `facts`. Helpers: `checkRequiredCourses`,
+  `meetsLevel` (catalog name or typed name; a later course meets an earlier level; "Pre-Calculus" isn't calculus; IB
+  Math AA HL/SL and AI HL meet calculus), `checkGate` (route statuses met / pending / below / absent), `majorMatters`,
+  `isStemFamily`, `UNDECIDED_MAJOR` (the value `majors[0]` holds for an undecided student; an empty list is no
+  major). A gate is "closed" only when the caller says testing is over; otherwise a section score can still be
+  retaken and it is "not yet". No alternate-major route is stored yet, so `major.gate_alternate` isn't emitted.
+- `data/major-admission.json`, first wave, 13 units: "the major doesn't affect admission" at William & Mary and
+  Georgia; university-level "compared within the college or major" at Illinois, Purdue, Cornell, and Cal Poly;
+  Illinois's Grainger Engineering and Gies Business printed first-choice admit rates (Fall 2025); UW's Allen School
+  (first-choice major only); UT Austin's calculus-readiness gate for engineering and computer science; Berkeley
+  Engineering's math and science emphasis; Cornell Engineering's required courses. All `verified_via: "search"`
+  (pages couldn't be fetched from the build container); recheck quotes on the pages at the next data run. Not found
+  in a quotable official form: Georgia Tech, Virginia Tech, Michigan, Carnegie Mellon, and other UC campuses' unit
+  rates.
+- Tests: `tests/chances-major-review.test.mts`.
+
 ## Open questions
 1. Should the math section score be shown as evidence where no math grades are entered? Recommendation: yes, beside
    the college's university-wide math range, saying so (the unit's own range is rarely published, and is usually

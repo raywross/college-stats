@@ -100,6 +100,8 @@ export interface ArchiveDocOptions {
   dataDir: string;
   archive: Archive;
   table: TemplateTable;
+  /** The entering fall of the federal graduation class (`federalGradYear`), for the B4–B21 comparisons. */
+  gradYear?: number | null;
   /** The college as in data/schools.json, for the checks that compare against federal values; null skips those. */
   school?: School | null;
   /** ISO date for the manifest's `updated` (default: retrieved). */
@@ -134,7 +136,7 @@ export async function archiveDoc(o: ArchiveDocOptions): Promise<ArchiveDocResult
     // The same read and the same per-item checks as scripts/cds-records-from-workbooks.mts, so a dropped file and a
     // fetched one produce identical records.
     const read = recordFromTemplate(sniffed.book!, { unit_id: o.unit_id, url: o.url, sha256: sha, retrieved, table: o.table, edition: o.edition });
-    record = applyChecks(read, { table: o.table, school: o.school ? restoreFederal(o.school) : null });
+    record = applyChecks(read, { table: o.table, school: o.school ? restoreFederal(o.school) : null, gradYear: o.gradYear ?? null });
     edition = record.edition;
     editionFrom = o.edition ? "manual" : workbookEdition(sniffed.book!) ? "workbook" : "items";
     upsertDocument(join(o.dataDir, "cds-records"), o.unit_id, record);

@@ -112,6 +112,8 @@ export interface Round3Options {
   schools: School[];
   /** Every college, for names, tiers, and federal baselines of colleges a collected batch names. Default `schools`. */
   allSchools?: School[];
+  /** The entering fall of the federal graduation class (`federalGradYear`): which B4–B21 grid the checks compare. */
+  gradYear?: number | null;
   /** Climb the ladder from step 0 for every college, ignoring stored recipes (the old recipe is kept for comparison). */
   rediscover?: boolean;
   /** Archive only: re-run deterministic readers and submit this call for every model-read document due it. */
@@ -450,7 +452,7 @@ export function createRound3(deps: Round3Deps) {
     /** Checks a document against the college's federal baseline and its other documents, then stores and queues it. */
     function judgeDoc(school: School | undefined, unitId: string, doc: DocumentRecord, o: { lines?: string[]; codes?: Iterable<CdsCode>; editionAssumed?: boolean } = {}): DocumentRecord {
       const others = docsOf(unitId).filter((d) => d.sha256 !== doc.sha256);
-      let checked = applyChecks(doc, { table, school: school ?? null, ...(o.lines ? { lines: o.lines } : {}), others, ...(o.editionAssumed ? { editionAssumed: true } : {}) });
+      let checked = applyChecks(doc, { table, school: school ?? null, gradYear: opts.gradYear ?? null, ...(o.lines ? { lines: o.lines } : {}), others, ...(o.editionAssumed ? { editionAssumed: true } : {}) });
       checked = failUnlocated(checked, table);
       upsertDoc(unitId, checked);
       countItems(checked, o.codes ?? Object.keys(checked.items));

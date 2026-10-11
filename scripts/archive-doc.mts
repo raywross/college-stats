@@ -16,6 +16,7 @@ import type { School } from "../lib/types";
 import { CDS_TEMPLATE } from "../lib/cds-template.ts";
 import { createArchive } from "./lib/college-reported/archive.mts";
 import { archiveDoc } from "./lib/college-reported/archive-doc.mts";
+import { federalGradYear } from "./lib/college-reported/files.mts";
 
 const ROOT = join(import.meta.dirname, "..");
 const USAGE =
@@ -60,6 +61,7 @@ const { entry, record, addedUrl } = await archiveDoc({
   addUrl: values["add-url"],
   note: values.note,
   dataDir: join(ROOT, "data"),
+  gradYear: federalGradYear(ROOT),
   archive,
   table: CDS_TEMPLATE,
   school,

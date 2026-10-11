@@ -14,7 +14,7 @@
  */
 import type { CdsCode, CollegeRecord, DocumentRecord, ItemResult } from "../cds-sections.ts";
 import { compareDocuments, editionFallYear, lineageFromItem } from "../cds-records.ts";
-import { MIN_GROUP_COHORT } from "../graduation-groups.ts";
+import { MIN_GROUP_COHORT, bachelorGrad } from "../graduation-groups.ts";
 import type { FieldPath } from "../fields";
 import type { FoundGroup, FoundValues, NewestGroupKey } from "../newest-groups.ts";
 import type { GradAidGroup, LineageRecord, School } from "../types";
@@ -353,17 +353,18 @@ export interface GridValues {
 const byCol = <T>(f: (i: number) => T) => Object.fromEntries(COLUMNS.map((c, i) => [c, f(i)])) as Record<GradAidGroup, T>;
 
 /** The federal graduation values a grid is compared with (the baseline school's IPEDS GR class). */
-type FederalGrad = Pick<NonNullable<School["outcomes"]>, "grad_rate_pell" | "grad_rate_loan_no_pell" | "grad_rate_no_pell_no_loan" | "grad_rate_ftft" | "grad_cohorts">;
-const federalRate = (f: FederalGrad | undefined, col: GradAidGroup) =>
-  col === "pell" ? f?.grad_rate_pell : col === "loan_no_pell" ? f?.grad_rate_loan_no_pell : col === "no_pell_no_loan" ? f?.grad_rate_no_pell_no_loan : f?.grad_rate_ftft;
+type FederalGrad = Pick<NonNullable<School["outcomes"]>, "grad_rate_pell" | "grad_rate_loan_no_pell" | "grad_rate_no_pell_no_loan" | "grad_rate_ftft" | "grad_cohorts" | "grad_bachelor">;
 
 /**
- * B4–B11, all or nothing: the arithmetic of both grids; the previous grid (where filled) against IPEDS GR's class
- * (cohorts within 2%, rates within 1 point: `previous-cohort-disagrees`); a current grid equal to the previous one or
- * to IPEDS GR's class is `holds-previous-cohort` (passed, but one class older, so not newer); and the current class
- * against federal one cohort older (rates ±5 points, cohorts ±10%, shown groups only: `federal-disagrees`).
+ * B4–B11, all or nothing: the arithmetic of both grids; the grid holding IPEDS GR's entering class (`gradYear`: the
+ * previous grid in a 2025–26 edition, the current grid in 2024–25) against that class's bachelor's-seeking subcohort
+ * (cohorts within 2%, rates within 1 point: `previous-cohort-disagrees` / `federal-disagrees`); a current grid equal
+ * to the previous one, or to IPEDS GR's class when that is one older, is `holds-previous-cohort` (passed, but one
+ * class older, so not newer); and, only when no previous grid was compared, the current class against federal one
+ * cohort older (rates ±5 points, cohorts ±10%, shown groups only: `federal-disagrees`). Without `gradYear` no grid is
+ * compared with federal data.
  */
-export function checkGrid(doc: DocumentRecord, federal?: FederalGrad): { value: GridValues | null; problems: StudentBodyProblem[] } {
+export function checkGrid(doc: DocumentRecord, federal?: FederalGrad, opts: { gradYear?: number | null } = {}): { value: GridValues | null; problems: StudentBodyProblem[] } {
   const problems: StudentBodyProblem[] = [];
   const start = editionFallYear(doc.edition);
   let cur: GridLines | null;
@@ -381,27 +382,39 @@ export function checkGrid(doc: DocumentRecord, federal?: FederalGrad): { value: 
   if (cur.C[COLUMNS.length - 1] <= 0) return { value: null, problems: [{ group: "graduation", check: "missing", detail: "current grid is empty (final cohort 0)" }] };
   problems.push(...gridArithmetic(cur, "current grid"));
   if (prev) problems.push(...gridArithmetic(prev, "previous grid"));
-  const fc = federal?.grad_cohorts ?? null;
-  if (prev && fc) {
+  // Federal comparisons, like with like (as in lib/cds-checks.ts checkGrid): the grid holding federal's entering class
+  // (`gradYear`; the previous grid in a 2025–26 edition, the current one in 2024–25) against IPEDS GR's bachelor's-
+  // seeking subcohort, tightly; the newer class against the older one only when no previous grid was compared.
+  const fg = bachelorGrad(federal);
+  const fy = opts.gradYear ?? null;
+  const curYear = start - 6;
+  const fc = fg?.cohorts ?? null;
+  const sameClass = (g: GridLines, label: string, check: StudentBodyProblem["check"]) =>
     COLUMNS.forEach((col, i) => {
-      const fcoh = fc[col];
-      if (fcoh != null && fcoh > 0 && Math.abs(prev.C[i] - fcoh) > fcoh * 0.02) problems.push({ group: "graduation", check: "previous-cohort-disagrees", detail: `${col}: previous grid cohort ${prev.C[i]}, IPEDS GR ${fcoh}` });
-      const fr = federalRate(federal, col);
-      if (fr != null && prev.C[i] > 0 && Math.abs(prev.G[i] / prev.C[i] - fr) > 0.01) problems.push({ group: "graduation", check: "previous-cohort-disagrees", detail: `${col}: previous grid rate ${round4(prev.G[i] / prev.C[i])}, IPEDS GR ${fr}` });
+      const fcoh = fc?.[col];
+      if (fcoh != null && fcoh > 0 && Math.abs(g.C[i] - fcoh) > fcoh * 0.02) problems.push({ group: "graduation", check, detail: `${col}: ${label} cohort ${g.C[i]}, IPEDS GR ${fcoh} (fall ${fy})` });
+      const fr = fg?.rates[col];
+      if (fr != null && g.C[i] > 0 && Math.abs(g.G[i] / g.C[i] - fr) > 0.01) problems.push({ group: "graduation", check, detail: `${col}: ${label} rate ${round4(g.G[i] / g.C[i])}, IPEDS GR ${fr} (fall ${fy})` });
     });
-  }
+  // A previous grid of zeros (a fillable form's computed totals) wasn't filled: nothing to compare.
+  const prevCompared = !!prev && prev.C.some((c) => c > 0) && !!fg && fy !== null && start - 7 === fy;
+  if (prevCompared) sameClass(prev!, "previous grid", "previous-cohort-disagrees");
   const sameAsPrevious = !!prev && COLUMNS.every((_, i) => cur.C[i] === prev.C[i] && cur.G[i] === prev.G[i]);
+  // A current grid equal to federal's class holds the previous cohort only when that class is one older than the grid
+  // should be (a 2025–26 edition); in a 2024–25 edition it is the grid's own class.
   const sameAsFederal =
     !!fc &&
+    curYear === (fy ?? NaN) + 1 &&
     COLUMNS.every((col, i) => {
-      const r = federalRate(federal, col);
+      const r = fg!.rates[col];
       return fc[col] === cur.C[i] && (r == null ? !shown(cur.C[i]) : rateOf(cur.G[i], cur.C[i]) === r);
     });
   const holdsPrevious = sameAsPrevious || sameAsFederal;
-  if (!holdsPrevious && federal) {
+  if (fg && fy !== null && curYear === fy) sameClass(cur, "current grid", "federal-disagrees");
+  else if (!holdsPrevious && fg && fy !== null && curYear === fy + 1 && !prevCompared) {
     COLUMNS.forEach((col, i) => {
       if (!shown(cur.C[i])) return;
-      const fr = federalRate(federal, col);
+      const fr = fg.rates[col];
       const r = cur.G[i] / cur.C[i];
       if (fr != null && Math.abs(r - fr) > 0.05) problems.push({ group: "graduation", check: "federal-disagrees", detail: `${col}: ${round4(r)} against federal ${fr} (over 5 points)` });
       const fcoh = fc?.[col];
@@ -452,7 +465,7 @@ export interface StudentBodyResult {
  * newest document where it passes), for `applyNewestGroups`. `federal` is the college's federal baseline
  * (`restoreFederal(school)`): every federal comparison is made against it.
  */
-export function studentBodyFromRecord(record: CollegeRecord, federal: School): StudentBodyResult {
+export function studentBodyFromRecord(record: CollegeRecord, federal: School, opts: { gradYear?: number | null } = {}): StudentBodyResult {
   const groups: FoundValues["groups"] = {};
   let graduation: FoundValues["graduation"];
   const problems: StudentBodyResult["problems"] = [];
@@ -522,7 +535,7 @@ export function studentBodyFromRecord(record: CollegeRecord, federal: School): S
     }
 
     if (!groups.graduation && fo) {
-      const g = checkGrid(doc, fo);
+      const g = checkGrid(doc, fo, opts);
       note(g.problems);
       const v = g.value;
       if (v) {

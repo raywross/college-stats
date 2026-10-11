@@ -127,3 +127,9 @@ history is ~80 Scorecard requests the first time; cached in `.cache/scorecard/` 
 - Mark the newest class provisional on the group charts (`provisional["gr-pell"]` is recorded but not passed to them).
 - A "Then & now" Compare row for the Pell gap.
 - Possible glossary collision: outcome-measures may also add an `adjusted-cohort` term; keep one.
+
+## As built: the bachelor's-seeking subcohort (2026-10-11)
+`outcomes.grad_bachelor` holds the same file's PSGRTYPE 2 rows (bachelor's-degree-seeking students) where they differ
+from the total cohort (502 of 1,767 colleges in GR2024_PELL_SSL). It isn't displayed: the CDS B4–B21 grid describes
+this population, so the CDS checks compare with it ([cds-student-body-and-outcomes.md](cds-student-body-and-outcomes.md),
+"As built / findings, 2026-10-11"). The site keeps showing the total cohort.

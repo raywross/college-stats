@@ -23,7 +23,7 @@ export function ApStep({
   const classYear = draft.classYear ?? Number(today.slice(0, 4));
 
   const isOpen = (id: string, course: IntakeDraft["courses"][number]) =>
-    course.status === null || courseSummary(course, today, { examsHidden }).incomplete || openIds.has(id);
+    course.year === null || courseSummary(course, classYear, today, { examsHidden }).incomplete || openIds.has(id);
 
   const toggleOpen = (id: string) => {
     setOpenIds((prev) => {
@@ -37,7 +37,7 @@ export function ApStep({
   const updateCourse = (id: string, next: IntakeDraft["courses"][number]) => {
     setDraft({ ...draft, courses: draft.courses.map((c) => (c.id === id ? next : c)) });
     // A completed pick collapses the card unless the student explicitly reopened it.
-    if (!courseSummary(next, today, { examsHidden }).incomplete) {
+    if (!courseSummary(next, classYear, today, { examsHidden }).incomplete) {
       setOpenIds((prev) => {
         if (!prev.has(id)) return prev;
         const copy = new Set(prev);
@@ -51,7 +51,7 @@ export function ApStep({
 
   const exclude = draft.courses.map((c) => c.key);
   const matches = searchAp(query, exclude);
-  const count = courseCount(draft.courses);
+  const count = courseCount(draft.courses, classYear, today);
 
   const addCourse = (key: string) => {
     const course = newIntakeCourse(key);
@@ -63,10 +63,9 @@ export function ApStep({
   return (
     <div className="space-y-6">
       <div className="space-y-1">
-        <Headline lead="Your" pop="AP" />
-        <h2 className="sr-only">courses</h2>
+        <Headline lead="Your" pop="AP" tail="courses" />
         <p className="text-sm text-muted-foreground">
-          Taken, taking now, or planned. <span className="hidden lg:inline">Took it asks for a score; anything else asks when.</span>
+          Taken, taking now, or planned. <span className="hidden lg:inline">Pick the year; we&apos;ll ask for a score if you&apos;ve taken the exam.</span>
           <span className="lg:hidden">Add as many as you like.</span>
         </p>
       </div>
@@ -79,6 +78,7 @@ export function ApStep({
               key={c.id}
               course={c}
               classYear={classYear}
+              rawClassYear={draft.classYear}
               today={today}
               open={isOpen(c.id, c)}
               examsHidden={examsHidden}
@@ -120,7 +120,7 @@ function SearchBox({
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder='Add a course — try "calc" or "apush"'
+          placeholder='Add a course — try "lit", "bio", or "apush"'
           className="h-12 w-full rounded-full border pl-9 pr-4 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
         />
         <span className="pointer-events-none absolute top-1/2 left-3.5 -translate-y-1/2 text-muted-foreground">+</span>

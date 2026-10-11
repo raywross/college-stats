@@ -5,7 +5,7 @@
  * (phone) and 2a (desktop) of the design handoff.
  */
 import { useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { ApStep } from "@/components/planner/intake/ApStep";
 import { DoneStep } from "@/components/planner/intake/DoneStep";
@@ -59,6 +59,11 @@ export default function PlanIntake({
 }) {
   void firstName;
   const router = useRouter();
+  // After a first-run save (below), the server stops rendering this component once `intakeNeeded` turns false
+  // (PlanFrame), so a plain `setStep(4)` never survives the refresh that follows: the whole tree unmounts under it.
+  // `&done=1` on the URL (alongside `&setup=1`, which keeps PlanFrame rendering the guide regardless) tells the next
+  // mount to open on Done directly, instead of edit mode's usual Review.
+  const done = useSearchParams().get("done") === "1";
   const today = ctx.today;
   const studentId = ctx.student?.id ?? null;
   const storedGradYear = ctx.student?.grad_year ?? null;
@@ -66,7 +71,7 @@ export default function PlanIntake({
   const examsHidden = relation === "guardian" && Boolean(ctx.profile?.academics.apExamsPrivate);
 
   const [draft, setDraft] = useState<IntakeDraft>(() => draftFromProfile(ctx.profile, storedGradYear, today));
-  const [step, setStep] = useState<IntakeStep>(mode === "edit" ? 3 : 0);
+  const [step, setStep] = useState<IntakeStep>(done ? 4 : mode === "edit" ? 3 : 0);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
@@ -130,6 +135,11 @@ export default function PlanIntake({
           router.refresh();
         } else {
           setStep(4);
+          // Numbers are set now, so the next server render stops treating this as "first" (intakeNeeded turns
+          // false); `setup=1` keeps it showing the guide anyway, and `done=1` tells that next mount to open on Done.
+          const href = planHref({ person, setup: true });
+          router.replace(`${href}${href.includes("?") ? "&" : "?"}done=1`);
+          router.refresh();
         }
       });
     }

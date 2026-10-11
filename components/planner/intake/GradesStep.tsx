@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { HighSchoolPicker } from "@/components/high-schools/HighSchoolPicker";
 import { Headline } from "@/components/planner/intake/Headline";
 import {
   classYearOptions,
@@ -124,6 +125,30 @@ export function GradesStep({
           </div>
         </div>
         <p className={cn("text-sm", check.tone === "amber" ? "text-amber-700 dark:text-amber-400" : "text-muted-foreground")}>{check.hint}</p>
+      </div>
+
+      <div className="space-y-2.5">
+        <label htmlFor="intake-highSchool" className="text-sm font-semibold">
+          High school · optional
+        </label>
+        {/* Delegated native "input" events (not React's onChange, which also fires for the picker's own programmatic
+            updates on a pick) catch only the student's own typing, so free text invalidates a previous pick the same
+            way the picker's own internal state does. */}
+        <div
+          onInput={(e) => {
+            const target = e.target as HTMLInputElement;
+            if (target.name !== "intake-highSchool") return;
+            setDraft({ ...draft, highSchool: target.value, highSchoolId: null });
+          }}
+        >
+          <HighSchoolPicker
+            idName="intake-highSchoolId"
+            nameName="intake-highSchool"
+            defaultId={draft.highSchoolId}
+            defaultName={draft.highSchool}
+            onSelect={(hit) => setDraft({ ...draft, highSchool: hit.name, highSchoolId: hit.id })}
+          />
+        </div>
       </div>
     </div>
   );

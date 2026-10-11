@@ -345,11 +345,13 @@ test("the major-admission file passes its check; Cornell Engineering's required 
   );
   assert.equal(majorUnitFor("190415", "14")?.unit_id, "190415:engineering");
   assert.equal(majorUnitFor("190415", "23"), null);
-  assert.equal(universityStatement("190415"), null);
+  // Cornell's university-level line (you apply to one college) is separate from its schools.
+  assert.equal(universityStatement("190415")?.review?.major_considered, "pool");
+  assert.equal(universityStatement("166027"), null);
 });
 
 test("the major-admission check refuses each broken rule", () => {
-  const unit = MAJOR.units[0];
+  const unit = MAJOR.units.find((u) => u.unit_id === "190415:engineering")!;
   const withGate = (any_of: unknown[], quote = "SAT Math 620 or ACT Math 26 or AP Calculus 3") => ({ ...clone(unit), review: { ...clone(unit.review!), quote, gate: { any_of } } });
   const broken = (units: unknown[]) => validateMajorAdmission({ checked: "2026-10-11", units } as MajorAdmissionFile, known);
   const cases: [string, unknown, RegExp][] = [
@@ -409,7 +411,7 @@ test("program and major-admission fields are registered; citing them resolves to
   assert.equal(sourcesForFields(MAJOR_PATHS, cornell, meta).length, 1);
   // Cornell publishes no engineering admit rate: nothing to cite. A college with no entries has nothing either.
   assert.deepEqual(sourcesForFields(["reported.major_admission.admit_rate"], cornell, meta), []);
-  const other = byId.get("145637")!;
+  const other = byId.get("166027")!;
   assert.deepEqual(sourcesForFields([...PROGRAM_PATHS, ...MAJOR_PATHS], other, meta), []);
 });
 

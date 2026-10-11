@@ -64,6 +64,13 @@ export const NOTES: Record<NoteKey, Note> = {
   "pool.kind.residency_in": () => "in-state rate",
   "pool.kind.residency_out": () => "out-of-state rate",
   "pool.kind.overall": () => "overall rate",
+  /* Added by the pool rate (lib/chances/pool-rate.ts): programs with a GPA rule, international applicants, an undated rate. */
+  "pool.may_qualify_gpa": (v) => `You may qualify for ${s(v, "program")} with a GPA of ${s(v, "gpa")} or higher.`,
+  "pool.may_qualify_rank_or_gpa": (v) => `You may qualify for ${s(v, "program")} if you're in the top ${s(v, "pct")} of your class or have a GPA of ${s(v, "gpa")} or higher.`,
+  "pool.may_qualify_rank_and_gpa": (v) => `You may qualify for ${s(v, "program")} if you're in the top ${s(v, "pct")} of your class with a GPA of ${s(v, "gpa")} or higher.`,
+  "pool.residency_international": (v) => `International applicants were admitted at ${s(v, "rate")} (${s(v, "year")}).`,
+  "pool.kind.residency_international": () => "international rate",
+  "pool.overall_undated": (v) => `${s(v, "rate")} of applicants were admitted.`,
 
   /* ---- The major (major-and-grades.md "What the estimate does with it") ---- */
   "major.not_considered": (v) => `The major you list doesn't affect admission here (${s(v, "college")} says so).`,
@@ -78,6 +85,8 @@ export const NOTES: Record<NoteKey, Note> = {
   "major.undecided": (v) => `You're undecided; at ${s(v, "college")} you'd apply to a specific college, and that choice is compared within its own pool.`,
   "major.add_grades": (v) => `Adding your math and science grades would help at ${s(v, "colleges")}.`,
   "major.unit_requires": (v) => `${s(v, "unit")} also requires: ${s(v, "courses")}.`,
+  /* Added by the major review (lib/chances/major-review.ts). */
+  "major.emphasis_no_grades": (v) => `${s(v, "unit")} applicants here get an extra look at ${s(v, "subjects")} grades; add yours to see them here.`,
   /* The Major line in "How this college reads a record" (how-colleges-read.md), for everyone. */
   "major.line.not_considered": () => "The major you list doesn't affect admission.",
   "major.line.pool": () => "Applicants are compared within the college or major they apply to.",

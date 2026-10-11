@@ -67,6 +67,17 @@ const GATE_RANGE: Record<MajorGateKind, [number, number]> = { sat_math: [200, 80
 /** Digits of a number as a page might print them: "1234" matches "1,234" and "1234". */
 const inQuote = (quote: string, n: number) => quote.replace(/(\d),(?=\d{3})/g, "$1").includes(String(n));
 
+/** A share as a page prints its percentage: 0.212 → "21.2%", 0.2 → "20%". */
+export function percentText(rate: number): string {
+  return `${Math.round(rate * 1000) / 10}%`;
+}
+
+/** A unit's published admit rate: from its counts when it prints them, else its printed percentage; null when neither. */
+export function unitAdmitRate(u: Pick<MajorAdmissionUnit, "admit_rate" | "published_rate">): { rate: number; year: string; quote: string; source_url: string } | null {
+  if (u.admit_rate) return { rate: u.admit_rate.admitted / u.admit_rate.applied, year: u.admit_rate.year, quote: u.admit_rate.quote, source_url: u.admit_rate.source_url };
+  return u.published_rate ?? null;
+}
+
 /**
  * Problems with the major-admission file, one line each (empty means sound). Every unit: a unique id of the right
  * shape for its kind (a university is its bare IPEDS id, a school or major adds ":slug"), a college in the dataset,
@@ -117,6 +128,19 @@ export function validateMajorAdmission(input: MajorAdmissionFile, knownUnitIds?:
         else if (counts && (!inQuote(a.quote, a.admitted) || !inQuote(a.quote, a.applied))) errors.push(`${where}: admit_rate's counts must appear in its quote`);
       }
     }
+    const pr = u.published_rate;
+    if (pr !== undefined && pr !== null) {
+      if (typeof pr !== "object") errors.push(`${where}: published_rate must be an object or null`);
+      else {
+        const ok = typeof pr.rate === "number" && pr.rate > 0 && pr.rate <= 1;
+        if (!ok) errors.push(`${where}: published_rate.rate must be a share from 0 to 1`);
+        if (typeof pr.year !== "string" || !pr.year.trim()) errors.push(`${where}: published_rate.year is required`);
+        if (!isHttpsUrl(pr.source_url)) errors.push(`${where}: published_rate.source_url must be an https page`);
+        if (typeof pr.quote !== "string" || !pr.quote.trim()) errors.push(`${where}: published_rate.quote is required`);
+        else if (ok && !pr.quote.includes(percentText(pr.rate))) errors.push(`${where}: published_rate's percentage (${percentText(pr.rate)}) must appear in its quote`);
+        if (a !== null) errors.push(`${where}: published_rate is for a college that prints no counts; drop it beside admit_rate`);
+      }
+    }
     const r = u.review;
     if (r !== null) {
       if (!r || typeof r !== "object") {
@@ -157,7 +181,7 @@ export function validateMajorAdmission(input: MajorAdmissionFile, knownUnitIds?:
       if (!isIsoDate(r.fetched)) errors.push(`${where}: review.fetched must be a real ISO date`);
       if (r.edition !== null && (typeof r.edition !== "string" || !r.edition.trim())) errors.push(`${where}: review.edition must be words or null`);
     }
-    if (u.admit_rate === null && u.review === null) errors.push(`${where}: needs a review or an admit rate quoting the college (direct_admit alone has no source)`);
+    if (u.admit_rate === null && !u.published_rate && u.review === null) errors.push(`${where}: needs a review or an admit rate quoting the college (direct_admit alone has no source)`);
   });
   return errors;
 }

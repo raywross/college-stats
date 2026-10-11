@@ -12,7 +12,7 @@ import { replacedTest, satTotalInputs, validateTests } from "./cds/test-blocks.t
 import { satTotal } from "./score-bands.ts";
 import { financialAidProblems } from "./cds/financial-aid.ts";
 import { aidPolicyFor, aidYearLabel } from "./aid-policies.ts";
-import { programsFor } from "./chances/guaranteed.ts";
+import { programsFor, type GuaranteedProgram } from "./chances/guaranteed.ts";
 import { majorUnitsFor, universityStatement, type CuratedMajorUnit } from "./chances/major-admission.ts";
 
 /** Any source key a citation can carry: a college source (lib/fields.ts) or a high school source (lib/hs-fields.ts). */
@@ -161,7 +161,16 @@ function aidPolicyCitation(path: FieldPath, school: School | undefined): CitedSo
 function guaranteedCitation(path: FieldPath, school: School | undefined): { source: CitedSource; quote: string } | null {
   if (!path.startsWith("reference.guaranteed_admission.") || !school) return null;
   const program = programsFor(school.unit_id)[0];
-  if (!program) return null;
+  return program ? guaranteedProgramCitation(path, program) : null;
+}
+
+/**
+ * The citation for one automatic-admission program (`reference.guaranteed_admission.*`): for a page that shows a
+ * particular program (the pool line names `PoolRate.programId`), call this with that program, since a college can
+ * have more than one (Idaho State has two Idaho Direct Admissions tiers).
+ */
+export function guaranteedProgramCitation(path: string, program: GuaranteedProgram): { source: CitedSource; quote: string } | null {
+  if (!path.startsWith("reference.guaranteed_admission.")) return null;
   const year = `Fall ${Math.min(...program.fall)}`;
   return {
     source: { key: "college-site", label: `${program.name} (${year})`, publisher: program.source.publisher, year, url: program.source.url, retrieved: program.source.retrieved },
@@ -171,8 +180,8 @@ function guaranteedCitation(path: FieldPath, school: School | undefined): { sour
 
 /** The part of a major-admission unit a field path cites: its admit rate, its review, or (direct admission) the review's page. */
 function majorUnitHas(path: string, u: CuratedMajorUnit): boolean {
-  if (path === "reported.major_admission.admit_rate") return u.admit_rate !== null;
-  if (path === "reported.major_admission.direct_admit") return u.direct_admit !== null && (u.review !== null || u.admit_rate !== null);
+  if (path === "reported.major_admission.admit_rate") return u.admit_rate !== null || !!u.published_rate;
+  if (path === "reported.major_admission.direct_admit") return u.direct_admit !== null && (u.review !== null || u.admit_rate !== null || !!u.published_rate);
   return u.review !== null;
 }
 
@@ -187,6 +196,11 @@ export function majorUnitCitation(path: string, unit: CuratedMajorUnit, school: 
   if ((path === "reported.major_admission.admit_rate" || !unit.review) && unit.admit_rate) {
     const a = unit.admit_rate;
     return { source: { key: "college-site", label: label(a.year), publisher: school.name, year: a.year, url: a.source_url, retrieved: unit.review?.fetched ?? a.year }, quote: a.quote };
+  }
+  // A rate the college prints only as a percentage (published_rate) is cited the same way.
+  if ((path === "reported.major_admission.admit_rate" || !unit.review) && unit.published_rate) {
+    const p = unit.published_rate;
+    return { source: { key: "college-site", label: label(p.year), publisher: school.name, year: p.year, url: p.source_url, retrieved: unit.review?.fetched ?? p.year }, quote: p.quote };
   }
   const r = unit.review!;
   return { source: { key: "college-site", label: label(r.edition), publisher: school.name, year: r.edition, url: r.source_url, retrieved: r.fetched }, quote: r.quote };

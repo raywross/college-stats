@@ -86,6 +86,11 @@ export interface MajorAdmissionUnit {
   cip_families: string[];
   direct_admit: boolean | "some" | null;
   admit_rate: { admitted: number; applied: number; year: string; quote: string; source_url: string } | null;
+  /**
+   * A rate the college prints as a percentage without counts (Illinois's admit rates by college), 0–1, with its
+   * percentage in the quote. Only where `admit_rate` is null. Optional: absent means none.
+   */
+  published_rate?: { rate: number; year: string; quote: string; source_url: string } | null;
   review: MajorReview | null;
 }
 

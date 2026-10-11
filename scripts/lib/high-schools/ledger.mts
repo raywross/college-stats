@@ -123,11 +123,15 @@ export function coreTokens(name: string): Set<string> {
   return new Set(core.length ? core : tokens);
 }
 
-/** The level words in a name ("junior", "middle"), sorted and joined; "" for a plain (senior) high school. */
+/**
+ * The level words in a name ("junior", "middle"), sorted and joined; "" for a plain (senior) high school. A
+ * "Junior Senior High" or a "Middle High" school is a high school too: those words don't count there.
+ */
 export function levelOf(name: string): string {
   const tokens = nameTokens(name);
   const levels = new Set(tokens.filter((t) => LEVEL.has(t)));
   if (levels.has("junior") && tokens.includes("senior")) levels.delete("junior");
+  if (levels.has("middle") && tokens.includes("high")) levels.delete("middle");
   return [...levels].sort().join(" ");
 }
 

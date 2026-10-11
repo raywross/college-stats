@@ -220,7 +220,8 @@ test("nameTokens and coreTokens: abbreviations spelled out, punctuation gone, 'H
   assert.equal(levelOf("Bryant Junior High School"), "junior");
   assert.equal(levelOf("Bryant High School"), "");
   assert.equal(levelOf("Des Arc Jr Sr High School"), "");
-  assert.equal(levelOf("Orange Beach Middle High School"), "middle");
+  assert.equal(levelOf("Orange Beach Middle High School"), "");
+  assert.equal(levelOf("Orange Beach Middle School"), "middle");
 });
 
 test("nameScore: the same school under two spellings scores 1; a sibling scores by its distinguishing words", () => {

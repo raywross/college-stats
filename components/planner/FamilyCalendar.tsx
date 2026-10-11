@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState, useTransition } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { CalendarPlus, ChevronLeft, ChevronRight, Printer } from "lucide-react";
 import { SegmentedControl } from "@/components/ui/segmented-control";
 import type { CalendarChild, CalendarTabProps } from "@/components/planner/tabs/types";
@@ -43,8 +44,10 @@ export default function FamilyCalendar({ children, viewer, everyone }: CalendarT
   const byChild = everyone && colorBy === "child";
   // The 8-weeks/Full-year toggle (calendar.md "Coming up"): a single child (the redesign's only case today, since
   // Everyone/family plan is deferred) opens on the 8-week dated list; the chart below is unchanged and reachable
-  // from "Full year". Everyone always shows the chart, as before.
-  const [calRange, setCalRange] = useState<CalendarRange>("weeks");
+  // from "Full year" (the desktop aside's "Full year" link opens it with `?range=year`). Everyone always shows the
+  // chart, as before.
+  const searchParams = useSearchParams();
+  const [calRange, setCalRange] = useState<CalendarRange>(searchParams?.get("range") === "year" ? "year" : "weeks");
 
   useEffect(() => {
     track("plan_calendar_opened", { everyone, color_by: byChild ? "child" : "round" });

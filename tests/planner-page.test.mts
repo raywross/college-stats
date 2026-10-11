@@ -14,11 +14,14 @@ import {
   daysBetween,
   firstTimeNeeded,
   hasDueSoon,
+  joinNames,
+  nextUpGroup,
   nextUpInfo,
   personPlanRedirectHref,
   resolveSelectedChild,
   seasonWords,
   shortSummaryLine,
+  weekdayLabel,
 } from "../lib/planner/plan-frame.ts";
 import type { PlanRowView, PlanView } from "../lib/planner/plan-view.ts";
 
@@ -29,13 +32,27 @@ const read = (rel: string) => readFileSync(join(ROOT, rel), "utf8");
 /* Route choice per viewer                                             */
 /* ------------------------------------------------------------------ */
 
-test("resolveSelectedChild: an explicit ?for= wins, a single child is picked for free, else Everyone", () => {
+test("resolveSelectedChild: ?for= wins, else the last viewed, else the soonest open deadline, else the first (decision 2026-10-11: no Everyone)", () => {
   const two = [{ studentId: "a" }, { studentId: "b" }];
   assert.equal(resolveSelectedChild({ forParam: "b", children: two }), "b");
-  assert.equal(resolveSelectedChild({ forParam: "nope", children: two }), null); // not a real child: Everyone
-  assert.equal(resolveSelectedChild({ forParam: null, children: two }), null); // two children, no pick: Everyone
+  assert.equal(resolveSelectedChild({ forParam: "nope", children: two }), "a"); // not a real child: falls through to the default
+  assert.equal(resolveSelectedChild({ forParam: "everyone", children: two }), "a"); // a legacy ?for=everyone link falls through too
+  assert.equal(resolveSelectedChild({ forParam: null, children: two }), "a"); // two children, no pick, no cookie, no deadline: the first
   assert.equal(resolveSelectedChild({ forParam: null, children: [{ studentId: "a" }] }), "a"); // one child: no switcher needed
   assert.equal(resolveSelectedChild({ forParam: "a", children: [] }), null); // no children at all
+
+  // The last-viewed cookie wins over the default, but never over an explicit, valid ?for=.
+  assert.equal(resolveSelectedChild({ forParam: null, children: two, lastViewed: "b" }), "b");
+  assert.equal(resolveSelectedChild({ forParam: "a", children: two, lastViewed: "b" }), "a");
+  assert.equal(resolveSelectedChild({ forParam: null, children: two, lastViewed: "nope" }), "a"); // an unknown cookie is ignored
+
+  // With no ?for= and no cookie, the child with the soonest open deadline wins.
+  const withDeadlines = [
+    { studentId: "a", nextDeadline: "2026-12-01" },
+    { studentId: "b", nextDeadline: "2026-11-01" },
+    { studentId: "c", nextDeadline: null },
+  ];
+  assert.equal(resolveSelectedChild({ forParam: null, children: withDeadlines }), "b");
 });
 
 test("personPlanRedirectHref: an old person-plan link becomes /plan?for=<id>, with ?stage= mapped to a tab", () => {
@@ -62,15 +79,22 @@ test("seasonWords: before senior fall it's building the list, then applying, the
 /* Next up                                                             */
 /* ------------------------------------------------------------------ */
 
-function row(overrides: { status?: string; withdrawn_on?: string | null; deadline?: { iso: string } | null; decision?: { iso: string } | null }): PlanRowView {
+function row(overrides: {
+  status?: string;
+  withdrawn_on?: string | null;
+  deadline?: { iso: string } | null;
+  decision?: { iso: string } | null;
+  name?: string;
+  round?: string;
+}): PlanRowView {
   return {
     item: { status: overrides.status ?? "considering", withdrawn_on: overrides.withdrawn_on ?? null },
-    school: null,
+    school: overrides.name ? { name: overrides.name } : null,
     dream: false,
     standing: null,
     group: "unsorted",
     groupAuto: true,
-    round: "rd",
+    round: overrides.round ?? "rd",
     roundAuto: true,
     roundWhy: "",
     pickable: ["rd"],
@@ -108,6 +132,49 @@ test("nextUpInfo: before the season, with nothing dated, says so", () => {
 test("nextUpInfo: in season with nothing dated left is just 'none'", () => {
   const info = nextUpInfo({ view: view(null), today: "2026-09-01", cycleStartYear: 2026 });
   assert.equal(info.kind, "none");
+});
+
+test("weekdayLabel formats an ISO date as 'Thu, Oct 15'", () => {
+  assert.equal(weekdayLabel("2026-10-15"), "Thu, Oct 15");
+  assert.equal(weekdayLabel("2027-01-01"), "Fri, Jan 1");
+});
+
+test("joinNames: one name as itself, two joined with 'and', three or more with a comma list and 'and'", () => {
+  assert.equal(joinNames([]), "A college");
+  assert.equal(joinNames(["Georgia"]), "Georgia");
+  assert.equal(joinNames(["Georgia", "South Carolina"]), "Georgia and South Carolina");
+  assert.equal(joinNames(["Georgia", "South Carolina", "Clemson"]), "Georgia, South Carolina, and Clemson");
+});
+
+test("nextUpGroup: every open row sharing Next up's exact deadline and round, for joining names", () => {
+  const ga = row({ name: "Georgia", round: "ea", deadline: { iso: "2026-10-15" } });
+  const sc = row({ name: "South Carolina", round: "ea", deadline: { iso: "2026-10-15" } });
+  const other = row({ name: "Elsewhere", round: "rd", deadline: { iso: "2026-10-15" } }); // same date, different round
+  const later = row({ name: "Later", round: "ea", deadline: { iso: "2026-11-01" } }); // same round, later date
+  const withdrawn = row({ name: "Withdrawn", round: "ea", deadline: { iso: "2026-10-15" }, withdrawn_on: "2026-09-01" });
+  const v = view(ga, [ga, sc, other, later, withdrawn]);
+  const info = nextUpInfo({ view: v, today: "2026-10-08", cycleStartYear: 2026 });
+  const group = nextUpGroup(v, info);
+  assert.deepEqual(
+    group.map((r) => r.school?.name),
+    ["Georgia", "South Carolina"],
+  );
+});
+
+test("nextUpGroup: for a decision, every applied row sharing the exact decision date", () => {
+  const a = row({ name: "A", status: "applied", decision: { iso: "2026-12-15" } });
+  const b = row({ name: "B", status: "applied", decision: { iso: "2026-12-15" } });
+  const v = view(a, [a, b]);
+  const info = nextUpInfo({ view: v, today: "2026-12-01", cycleStartYear: 2026 });
+  assert.deepEqual(
+    nextUpGroup(v, info).map((r) => r.school?.name),
+    ["A", "B"],
+  );
+});
+
+test("nextUpGroup: nothing to group before the season or with nothing dated", () => {
+  const info = nextUpInfo({ view: view(null), today: "2026-05-01", cycleStartYear: 2026 });
+  assert.deepEqual(nextUpGroup(view(null), info), []);
 });
 
 test("daysBetween counts whole days, and can go negative", () => {

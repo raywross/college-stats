@@ -81,6 +81,13 @@ From the linked high school's record ([high-school-data.md](../product/high-scho
    missing. *Change in this part:* `scripts/lib/high-schools/crdc.mts` stores an explicit `0` for a "No" (never for -9,
    which stays missing), so a school without AP reads "Your school doesn't offer AP courses" rather than nothing.
 
+*Proposed from the pilot (2026-10-11), as source 1.5 between the profile and CRDC:* **College Board's AP Course
+Ledger**, the courses each school is authorized to call AP this year, by name, public and private
+([apcourseaudit.inflexion.org/ledger/](https://apcourseaudit.inflexion.org/ledger/); the lookup is recorded in
+`data/high-schools/ap-ledger-pilot.json`). It listed 41 of the 42 CRDC pilot schools and 21 of the 33 private ones,
+and gives the picker a named list where CRDC gives a count. It is a record of renewals, so a school's list can drop in
+a year its coordinator missed; show it as "authorized to offer" and keep CRDC's count beside it. Proposal only; not built.
+
 ## The reading
 `rigorReading(student, highSchool)` in `lib/chances/rigor.ts` places the schedule against the school's offering and
 returns one of five readings, each with its sentence. Which schedules land in which reading (how many courses, the
@@ -136,10 +143,48 @@ taken or planned 6 of these." Nothing for anyone else.
 - The glossary's `course-rigor` term explains what the readings mean in words; their thresholds are not shown on the site.
 
 ## Pilot
-Before the reading is shown: take the pilot high schools that have a school profile (the 100 in
-`data/high-schools/profile-pilot.json`) and check that the CRDC count and the profile's AP list agree within two
-courses for at least 80% of them (they measure the same thing a year apart). How much the reading should count in the
-estimate is decided from outcomes ([method/outcomes.md](method/outcomes.md)).
+Before the reading is shown to everyone, the CRDC count is checked against a second source: the two must agree within
+two courses for at least 80% of the pilot schools. How much the reading should count in the estimate is decided from
+outcomes ([method/outcomes.md](method/outcomes.md)).
+
+**The second source is College Board's AP Course Ledger**, not the school profiles the plan first named. The profile
+run (`data/high-schools/profile-pilot.json`, `latest` 2026-10-06) was discover-only and published no AP list for any
+pilot school; CRDC covers public schools only (42 of the 100 pilot schools have a count, none of the 33 private ones),
+and the profiles found were mostly private, so the two overlap at three schools. The Ledger
+([apcourseaudit.inflexion.org/ledger/](https://apcourseaudit.inflexion.org/ledger/)) is the official list of the
+courses each school is authorized to call AP, public and private, by course name, republished each fall and updated
+weekly. It is read through the page's own JSON endpoints (search by state and city, then the school's subject-by-year
+list; the exact lookup is recorded in the results file), so it costs no extraction.
+
+**Measured 2026-10-11** (`data/high-schools/ap-ledger-pilot.json`): the 42 pilot schools with a CRDC 2023–24 count
+(18 Dallas–Fort Worth, 22 Los Angeles, 2 New York). 41 matched a Ledger school by name and address; KIPP Bronx Charter
+School III is ambiguous (NCES merges several KIPP NYC schools under it) and is not scored. A school's Ledger count is
+its distinct AP subjects authorized in the year: AP Seminar and AP Research count, Pre-AP doesn't, and a subject
+counts once however many teachers are authorized. The Ledger's newest year on the measurement date was 2025–26; the
+same lookup gives 2023–24, CRDC's own year.
+
+| Ledger year | Within two courses | Share | Median difference (Ledger − CRDC) |
+|---|---|---|---|
+| 2025–26 (current) | 24 of 41 | 59% | +1 (Ledger higher at 29 schools, lower at 10, equal at 2) |
+| 2023–24 (CRDC's year) | 27 of 41 | 66% | +1 |
+
+**Fail**, by about 21 points on the current year and 14 on the same year. Off by more than two (current year):
+Options for Youth San Gabriel (CRDC 9, Ledger 1), San Fernando (13, 21), Rosie Sorrells (18, 25), Gilliam Collegiate
+Academy (1, 8), Nogales (14, 19), School of Health Professions (20, 25), Herbert Hoover (21, 25), Judge Barefoot
+Sanders Law Magnet (21, 25), Rowlett (17, 21), Mansfield Timberview (24, 20), and seven more off by three. The sources
+disagree in both directions and the gaps shrink only a little on the same year, so the difference is mostly how each
+is made: CRDC is the school's own count of the AP courses it taught; the Ledger is what the school's AP coordinator
+renewed with College Board that year, and a school's list swings when a renewal is missed (Herbert Hoover shows 6
+subjects for 2023–24 and 25 for 2025–26; San Fernando 2 and 21).
+
+**What follows** (the reading's behavior is unchanged in this PR; the owner decides):
+- Read the count in the sentence as approximate: "about 14 AP courses" rather than "14", or lean the sentence on the
+  share ("most of what your school offers") and put the count behind the ⓘ with its source.
+- Prefer the Ledger's named list where the student picks courses (the proposal under "The school's offering"): the
+  picker opens on the school's authorized courses instead of a bare count, and the count becomes the length of a list
+  the student can see and correct.
+- Beyond CRDC, the Ledger lists 21 of the 33 private pilot schools (20 with at least one AP course; median 13) and 18
+  of the 25 public pilot schools CRDC left blank (15 with a course), so it would roughly double the pilot's coverage.
 
 ## Later: a recalculated GPA
 Some colleges recalculate GPA by a published method (the University of California's: 10th and 11th grade a–g
@@ -184,5 +229,8 @@ and exam sentences); the thresholds are tested with the model (`tests/chances-mo
   says "You've taken or planned 6 of these." for the student's own school.
 - **Parents** get the list and grades in the third person; the plan loader and the Numbers page strip AP exam scores
   while `apExamsPrivate` holds, and a parent's save puts the saved scores back and can't change the switch.
-- **Not done:** the pilot check (CRDC count against the profile AP list, 80% within two courses) before the reading is
-  shown to everyone; the college-tie line's first-year GPA share (`rigor.college_tie`) waits for `derived.gpa_top_share`.
+- **Pilot (2026-10-11): fail.** The CRDC count against College Board's AP Course Ledger: 24 of 41 matched pilot schools
+  within two courses (59%; 66% on the Ledger's 2023–24 year) against the 80% bar ("Pilot" above;
+  `data/high-schools/ap-ledger-pilot.json`). The reading's behavior is unchanged until the owner picks among the
+  options listed there.
+- **Not done:** the college-tie line's first-year GPA share (`rigor.college_tie`) waits for `derived.gpa_top_share`.

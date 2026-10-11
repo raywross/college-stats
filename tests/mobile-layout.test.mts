@@ -40,6 +40,28 @@ test("the page can't scroll sideways", () => {
   assert.match(rule("html, body") ?? "", /overflow-x:\s*clip/);
 });
 
+test("form fields are at least 16px on phones, so iOS Safari doesn't zoom in on focus and stay zoomed", () => {
+  // Unlayered (outside every @layer) so it outranks Tailwind's text-xs/text-sm utilities.
+  const at = CSS.lastIndexOf("@media (max-width: 767px)");
+  assert.ok(at >= 0, "the phone form-field rule is missing from app/globals.css");
+  const block = CSS.slice(at, at + 800);
+  assert.match(block, /select,\s*textarea/);
+  assert.match(block, /font-size:\s*max\(16px,\s*1em\)/);
+  const layered = [...CSS.matchAll(/@layer [a-z]+ \{/g)].map((m) => m.index ?? 0);
+  for (const start of layered) {
+    let depth = 0;
+    let end = start;
+    for (let i = CSS.indexOf("{", start); i < CSS.length; i++) {
+      if (CSS[i] === "{") depth++;
+      else if (CSS[i] === "}" && --depth === 0) {
+        end = i;
+        break;
+      }
+    }
+    assert.ok(at < start || at > end, "the form-field rule must sit outside every @layer");
+  }
+});
+
 test("sticky bars sit below the header via --header-h, not a hard-coded height", () => {
   // `top: "calc(env(safe-area-inset-top, 0px) + 4rem)"` or `top-[calc(env(safe-area-inset-top,0px)+4rem)]`
   const hardCoded = /\btop(?::\s*["'`]|-\[)calc\(env\(safe-area-inset-top[^)]*\)\s*\+\s*\d/;

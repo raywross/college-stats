@@ -29,7 +29,7 @@ A student opens Plan and sees their colleges; a parent opens Plan and sees the f
 | `/plan` | signed-in guardian | One child's plan (**changed 2026-10-11**: no more Everyone — see below), Colleges tab |
 | `/plan?for=[person]` | guardian | One child's plan; a legacy `?for=everyone` falls through to the default below |
 | `/plan?tab=scores` / `calendar` / `offers` | either | Opens a tab; tabs are links so back and forward work |
-| `/plan?setup=1` | the plan's own editor | The intake guide ([intake.md](intake.md)) in edit mode, prefilled, starting at Review — the ✎ on the numbers line |
+| `/plan?setup=1` | the plan's own editor | The intake guide ([intake.md](intake.md)) in edit mode, prefilled, starting at Review — the header's Edit button |
 | `/plan` | signed out | The pitch and the numbers step ([below](#signed-out)) |
 | `/plan/print` | either | The calendar's printable list (moves from `/household/[person]/plan/print`) |
 | ~~`/plan/preview`~~ | (deleted 2026-10-11) | The design preview with a sample family, used during review; removed once the owner approved the build |
@@ -61,11 +61,12 @@ Phone                                   Desktop (lg:)
 │ … the open tab …             │         │                                │ (one notice)      │
 └─────────────────────────────┘         └───────────────────────────────┴──────────────────┘
 ```
-- **Header**: "Your plan" (or "Maya's plan" for a parent), Bricolage 800. On a phone the numbers line sits right of
-  the title ("GPA 3.82 · SAT 1390 ✎"); on desktop it's below the title, after the class year and season in words
-  ("applying this fall", "building the list", "deciding"): "Class of 2027 · applying this fall · GPA 3.82 · SAT
-  1390 ✎". The whole line links to `planHref({person, setup: true})` — the intake guide in edit mode — when the
-  viewer can edit; a read-only viewer with no numbers yet sees "No numbers yet" with no edit affordance. No
+- **Header**: "Your plan" for a student; the student's first name for a parent ("Maya", **changed 2026-10-11**: the
+  owner dropped "'s plan" to make room for a clearer edit button), Bricolage 800. Beside the title (wrapping under it
+  on a narrow phone) the numbers are one bordered button, "GPA 3.82 · SAT 1390" with a purple "Edit ✎" chip, linking
+  to `planHref({person, setup: true})` — the intake guide in edit mode — when the viewer can edit (owner: the bare ✎
+  wasn't prominent enough). On desktop the class year and season in words ("applying this fall", "building the
+  list", "deciding") sit under the title. A read-only viewer sees the numbers as plain text, or "No numbers yet". No
   completeness meter, no courses button.
 - **Next up**: the single nearest deadline on the list in the round chosen, with days to go, in a dark ink card;
   when two or more colleges share that exact date and round their names are joined ("Georgia and South Carolina").

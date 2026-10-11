@@ -8,12 +8,11 @@ import type { PlanContext } from "@/lib/planner/types";
 import type { PlanView } from "@/lib/planner/plan-view";
 
 /**
- * The header (specs/planner/redesign/page.md "The page"): "Your plan" or "Maya's plan", and the numbers as one
- * line that opens the intake guide in edit mode (specs/planner/redesign/intake.md "Edit mode", `?setup=1`). On a
- * phone the numbers sit right of the title; on desktop they're below it, after the class year and season. No
- * completeness meter, no courses button (the intake and the Scores tab cover courses and numbers now), no inline
- * numbers form. A parent with edit access gets the same ✎; a read-only viewer with no numbers yet sees "No numbers
- * yet" instead, with no edit affordance.
+ * The header (specs/planner/redesign/page.md "The page"): "Your plan" for a student, the student's first name for a
+ * parent ("Maya", not "Maya's plan": owner, 2026-10-11), and the numbers as a button that opens the intake guide in
+ * edit mode (specs/planner/redesign/intake.md "Edit mode", `?setup=1`). The button is bordered with a purple "Edit"
+ * chip so it reads as the way to change the numbers (owner: the bare ✎ wasn't prominent enough). On desktop the class
+ * year and season sit under the title. A read-only viewer sees the numbers as plain text, or "No numbers yet".
  */
 export function PlanHeaderCard({
   ctx,
@@ -28,7 +27,7 @@ export function PlanHeaderCard({
   firstName: string | null;
   season: string;
 }) {
-  const title = relation === "self" ? "Your plan" : firstName ? `${firstName}'s plan` : "Their plan";
+  const title = relation === "self" ? <Term term="plan">Your plan</Term> : (firstName ?? "Their plan");
   const gradYear = ctx.student?.grad_year ?? null;
   // The GPA as entered ("4.4 weighted"), not the unweighted conversion the rules read.
   const enteredGpa = ctx.profile ? gpaAsEntered(ctx.profile.academics) : null;
@@ -36,38 +35,31 @@ export function PlanHeaderCard({
   const testText = view.student.test ? `${TEST_LABEL[view.student.test.kind]} ${view.student.test.score}` : null;
   const numbersText = !gpaText && !testText ? "No numbers yet" : `${gpaText ? `GPA ${gpaText}` : "No GPA yet"} · ${testText ?? "Not testing"}`;
   const href = planHref({ person: relation === "self" ? null : (ctx.student?.id ?? null), setup: true });
-  const canEdit = ctx.viewer.canEdit;
+  const whose = relation === "self" ? "your" : firstName ? `${firstName}'s` : "their";
 
   return (
     <div>
-      <div className="flex items-baseline justify-between gap-3">
-        <h1 className="font-display text-[26px] leading-tight font-extrabold tracking-[-0.025em] lg:text-[36px]">
-          <Term term="plan">{title}</Term>
-        </h1>
-        {canEdit ? (
+      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+        <h1 className="font-display text-[26px] leading-tight font-extrabold tracking-[-0.025em] lg:text-[36px]">{title}</h1>
+        {ctx.viewer.canEdit ? (
           <Link
             href={href}
-            className="flex min-h-11 shrink-0 items-center gap-1.5 self-center text-sm font-semibold text-muted-foreground hover:text-foreground lg:hidden"
+            aria-label={`Edit ${whose} grades, test, and AP courses (${numbersText})`}
+            className="inline-flex min-h-11 max-w-full items-center gap-2.5 rounded-full border bg-card py-1 pr-1 pl-4 text-sm font-semibold shadow-sm transition-colors hover:border-foreground/40"
           >
-            {numbersText}
-            <Pencil className="size-3.5 shrink-0" aria-hidden />
+            <span className="min-w-0 truncate">{numbersText}</span>
+            <span className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full bg-primary px-3.5 text-primary-foreground">
+              <Pencil className="size-3.5" aria-hidden />
+              Edit
+            </span>
           </Link>
         ) : (
-          <p className="shrink-0 self-center text-sm text-muted-foreground lg:hidden">{numbersText}</p>
+          <p className="text-sm font-semibold text-muted-foreground">{numbersText}</p>
         )}
       </div>
       <p className="mt-1 hidden text-sm text-muted-foreground lg:block">
         {gradYear ? `Class of ${gradYear} · ` : ""}
         {season}
-        {" · "}
-        {canEdit ? (
-          <Link href={href} className="inline-flex items-center gap-1.5 font-semibold text-foreground hover:underline">
-            {numbersText}
-            <Pencil className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />
-          </Link>
-        ) : (
-          numbersText
-        )}
       </p>
     </div>
   );

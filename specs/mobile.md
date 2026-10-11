@@ -106,6 +106,12 @@ under the compare band instead. The **Differences only** switch works identicall
 - Section gaps `space-y-14` (was 20), card padding `p-4` (was 5), takeaways `text-base`.
 - Descriptive intros that repeat what the UI shows are hidden below `sm` (Explore, Glossary counters).
 
+## Form fields
+- On phone widths (below `md`) every text field, select, and textarea is at least 16px (`app/globals.css`, an
+  unlayered rule that outranks `text-xs`/`text-sm`). iOS Safari zooms in when a smaller field is focused and stays
+  zoomed, so the page looks wider than the screen until the user pinches out (owner report, 2026-10-11). Don't
+  work around it with `maximum-scale=1` in the viewport: Android Chrome then blocks pinch-zoom, which people need.
+
 ## Checking a change
 `tests/mobile-layout.test.mts` (`npm test`) guards the CSS rules above and the `--header-h` offsets. For visual QA,
 run `PLAYWRIGHT_DIR=<a scratchpad with Playwright installed> npm run measure-profile` against a dev server: it loads

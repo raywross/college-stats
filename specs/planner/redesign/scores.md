@@ -11,9 +11,15 @@ number to aim for and the test dates whose scores arrive in time. Encouraging fi
 
 ## The tab
 ```
+Adding your class rank would sort 2 more colleges.           ← MostUsefulInput, moved here from the header card
+
 YOU'RE TAKING THE SAT
 1390
 🎉 In or above the middle 50% at 6 of 8 colleges on the list.
+
+┌ A 1450 would move one college up a group ──────────────────────────┐   ← target score (optional, from the intake)
+│ Wake Forest  [Reach] → [Target]  with 1420                          │
+└───────────────────────────────────────────────────────────────────┘
 
 ┌ WORTH ONE MORE TEST ─────────────────────────────────────────────┐
 │ A 1420 (+30) would move one college up a group                    │
@@ -54,6 +60,15 @@ needed among them ("a 1420 (+30)"). No move for:
 
 A move into "send it" at a test-optional college (from below the range into it) counts like any other: crossing the
 25th percentile changes both the advice and, usually, the group.
+
+## Target score (intake redesign, owner 2026-10-11)
+The intake's optional "score you're aiming for" (`tests.target`, `lib/student-profile.ts`) is the student's own
+guess, never Quad's: it's validated to the focus test's range and cleared when the test switches or the student
+isn't testing, but it never feeds `retakeSuggestion` or any estimate. It only drives one line on this tab, above the
+retake card: **"A {target} would move N colleges up a group"**, every row whose existing `moveUp` (the same
+move-up `scoreToMoveUp` already computed) needs no more than the target — `lib/planner/scores.ts`'s `targetMoves`.
+Shown nothing special when it moves none: **"A {target} wouldn't move any of these colleges to a new group."**
+Nothing is shown at all when the student hasn't set a target.
 
 ## Score timing
 A test date helps a college only if its scores can arrive by that college's deadline in the round chosen.

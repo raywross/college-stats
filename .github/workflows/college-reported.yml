@@ -42,6 +42,11 @@ on:
         description: Stop the run (keeping finished colleges) once its estimated cost reaches this many US dollars
         type: string
         default: "25"
+      reextract:
+        description: "After a schema bump: re-read one call from the archive, no fetch (none, C, or rest)"
+        type: choice
+        options: [none, C, rest]
+        default: none
   schedule:
     # Two entries because one cron line can't mix a weekly Aug–Nov cadence with a monthly Dec–Jul one (and GitHub's
     # schedule parser doesn't reliably support month ranges combined with a weekday filter); each fires on a plain,
@@ -101,6 +106,7 @@ jobs:
             echo "rediscover=false" >> "$GITHUB_OUTPUT"
             echo "max_discoveries=100" >> "$GITHUB_OUTPUT"
             echo "max_cost=150" >> "$GITHUB_OUTPUT"
+            echo "reextract=none" >> "$GITHUB_OUTPUT"
           else
             mode="${{ inputs.mode }}"
             college="${{ inputs.college }}"
@@ -113,6 +119,7 @@ jobs:
             echo "college=$college" >> "$GITHUB_OUTPUT"
             echo "rediscover=${{ inputs.rediscover }}" >> "$GITHUB_OUTPUT"
             echo "max_discoveries=${{ inputs.max_discoveries }}" >> "$GITHUB_OUTPUT"
+            echo "reextract=${{ inputs.reextract }}" >> "$GITHUB_OUTPUT"
             echo "max_cost=${{ inputs.max_cost }}" >> "$GITHUB_OUTPUT"
           fi
 
@@ -150,6 +157,10 @@ jobs:
           fi
           flags="$flags --max-discoveries ${{ steps.params.outputs.max_discoveries }}"
           flags="$flags --max-cost ${{ steps.params.outputs.max_cost }}"
+          # After a schema bump: re-read one call from the archive, no fetch (lib/cds-sections.ts SCHEMA_VERSIONS).
+          case "${{ steps.params.outputs.reextract }}" in
+            C|rest) flags="$flags --reextract --call ${{ steps.params.outputs.reextract }}" ;;
+          esac
           echo "flags=$flags" >> "$GITHUB_OUTPUT"
 
       - uses: actions/setup-node@v4

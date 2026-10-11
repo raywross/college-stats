@@ -605,11 +605,15 @@ export function typeFailure(item: Pick<TemplateItem, "value_type">, v: unknown):
 /* The model schema (Decision 4)                                       */
 /* ------------------------------------------------------------------ */
 
-/** Bump a call's version when its codes or labels change; records read at an older version are re-read from the archive. */
-export const SCHEMA_VERSIONS: Record<CallKey, number> = { C: 1, rest: 1 };
+/**
+ * Bump a call's version when its codes or labels change; records read at an older version are re-read from the archive.
+ * rest 2 and pdf-form 2 (2026-10-11, owner approved ~$10): re-read so graduation-grid rates printed as fractions
+ * (line H, B.2203; QUOTIENT_RATE_CODES) are stored as shares, not points (specs/data-expansion/cds-student-body-and-outcomes.md).
+ */
+export const SCHEMA_VERSIONS: Record<CallKey, number> = { C: 1, rest: 2 };
 
 /** Deterministic readers' versions: a bump re-runs them over the archive for $0. */
-export const READER_VERSIONS: Record<string, number> = { "xlsx-template": 1, "pdf-form": 1 };
+export const READER_VERSIONS: Record<string, number> = { "xlsx-template": 1, "pdf-form": 2 };
 
 /** About twice the expected output of each call (~4 K and ~8 K tokens with line ids). */
 export function maxTokensFor(call: CallKey): number {

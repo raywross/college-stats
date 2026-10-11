@@ -183,7 +183,7 @@ test("scoreDrawerLine reports a score move when there is one", () => {
 });
 
 test("scoreDrawerLine falls back to the optional-score advice, else null", () => {
-  const withheld = row("a", { standing: { fit: "target", reachForEveryone: false, test: null, gpa: null, gpaNote: null, send: "consider-not-sending", reasons: [] } });
+  const withheld = row("a", { standing: { fit: "target", reachForEveryone: false, label: null, test: null, gpaNote: null, send: "consider-not-sending", reasons: [] } });
   assert.equal(scoreDrawerLine(withheld), "Optional here: consider not sending.");
   assert.equal(scoreDrawerLine(row("a")), null);
 });

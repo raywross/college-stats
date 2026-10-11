@@ -3,6 +3,7 @@
 import { useMemo, useState, useTransition } from "react";
 import type { NumbersFormProps } from "@/components/planner/tabs/types";
 import { GroupChip } from "@/components/planner/GroupChip";
+import { useEstimates } from "@/components/planner/useEstimates";
 import { Input } from "@/components/ui/input";
 import { SegmentedControl } from "@/components/ui/segmented-control";
 import { Slider } from "@/components/ui/slider";
@@ -115,13 +116,16 @@ export function NumbersFields({ draft }: { draft: NumbersDraft }) {
 }
 
 /** The list, re-sorted live with the draft numbers (standing.md "The numbers": "the student watches the list
- * re-sort as they drag the slider"). Pure recomputation in the browser; nothing is written until Save. */
-export function LivePreview({ draft, ctx }: { draft: NumbersDraft; ctx: NumbersFormProps["ctx"] }) {
+ * re-sort as they drag the slider"). The estimate is asked of the server shortly after the numbers stop changing
+ * (useEstimates), and the previous groups stay on screen until the answer arrives; nothing is written until Save. */
+export function LivePreview({ draft, ctx, view }: { draft: NumbersDraft; ctx: NumbersFormProps["ctx"]; view: NumbersFormProps["view"] }) {
   const draftProfile = useMemo(() => (draft.parsed ? applyNumbers(ctx.profile ?? emptyProfile(), draft.parsed) : ctx.profile), [draft.parsed, ctx.profile]);
-  const preview = useMemo(() => planView({ items: ctx.items, schools: ctx.schools, profile: draftProfile, today: ctx.today }), [ctx.items, ctx.schools, ctx.today, draftProfile]);
+  const unitIds = useMemo(() => ctx.items.filter((i) => ctx.schools[i.unit_id]).map((i) => i.unit_id), [ctx.items, ctx.schools]);
+  const { results, loading } = useEstimates(draftProfile, unitIds, view.estimates);
+  const preview = useMemo(() => planView({ items: ctx.items, schools: ctx.schools, profile: draftProfile, estimates: results, today: ctx.today }), [ctx.items, ctx.schools, ctx.today, draftProfile, results]);
   if (preview.rows.length === 0) return null;
   return (
-    <div className="space-y-1.5 rounded-2xl border bg-muted/30 p-3">
+    <div className="space-y-1.5 rounded-2xl border bg-muted/30 p-3" aria-busy={loading}>
       <p className="text-xs font-bold tracking-wide text-muted-foreground uppercase">Your list, sorted by these numbers</p>
       <ul className="space-y-1">
         {preview.rows.map((r) => (
@@ -139,7 +143,7 @@ export function LivePreview({ draft, ctx }: { draft: NumbersDraft; ctx: NumbersF
  * The numbers form: GPA, which test, the score, practice (specs/planner/redesign/standing.md "The numbers"), in the
  * plan's header card (U2 renders it inline, passing `onClose`). Parents with edit access can use it too.
  */
-export default function NumbersForm({ ctx, onClose }: NumbersFormProps) {
+export default function NumbersForm({ ctx, view, onClose }: NumbersFormProps) {
   const draft = useNumbersDraft(ctx.profile);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -172,7 +176,7 @@ export default function NumbersForm({ ctx, onClose }: NumbersFormProps) {
         </p>
       </div>
       <NumbersFields draft={draft} />
-      <LivePreview draft={draft} ctx={ctx} />
+      <LivePreview draft={draft} ctx={ctx} view={view} />
       {error && <p className="text-sm text-destructive">{error}</p>}
       {canEdit && (
         <div className="flex items-center gap-2">

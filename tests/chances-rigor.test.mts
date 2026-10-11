@@ -466,9 +466,10 @@ function reachedFromClient(files: Map<string, string>, forbidden: string[]): str
   return found;
 }
 
-const SERVER_ONLY_FILES = ["lib/chances/rigor-rules.ts", "lib/chances/rigor.ts", "lib/chances/rigor-server.ts"];
+// Extended by the estimate core (U5): the method (model.ts) and the interface that runs it (estimate.ts) are server-only too.
+const SERVER_ONLY_FILES = ["lib/chances/rigor-rules.ts", "lib/chances/rigor.ts", "lib/chances/rigor-server.ts", "lib/chances/model.ts", "lib/chances/estimate.ts"];
 
-test("no client component reaches the rigor rules, the reading, or the code that builds it", () => {
+test("no client component reaches the rigor rules, the reading, the method, or the code that builds or runs them", () => {
   const files = new Map([...walk("components"), ...walk("app"), ...walk("lib")]);
   for (const f of SERVER_ONLY_FILES) assert.ok(files.has(f), f);
   assert.deepEqual(reachedFromClient(files, SERVER_ONLY_FILES), []);
@@ -491,12 +492,12 @@ test("the guard catches a client file that imports the rules, directly or throug
   assert.ok(!found.some((c) => c.includes("ViaAction")), "a Server Action's imports stay on the server");
 });
 
-test("the rules and the reading are server-only; only the reading imports the rules, and only the view builder imports the reading", () => {
+test("the rules and the reading are server-only; only the reading imports the rules, and only the view builder and the model import the reading", () => {
   for (const f of SERVER_ONLY_FILES) assert.match(read(f), /^import "server-only";/m, f);
   const users = [...walk("components"), ...walk("app"), ...walk("lib")].filter(([f, t]) => /rigor-rules/.test(t) && f !== "lib/chances/rigor-rules.ts" && !/tests\//.test(f)).map(([f]) => f);
   assert.deepEqual(users, ["lib/chances/rigor.ts"], "only the reading imports the rules");
   const consumers = [...walk("components"), ...walk("app"), ...walk("lib")].filter(([f, t]) => /chances\/rigor["'.]|\.\/rigor["'.]/.test(t) && f !== "lib/chances/rigor.ts").map(([f]) => f);
-  assert.deepEqual(consumers.sort(), ["lib/chances/rigor-server.ts"]);
+  assert.deepEqual(consumers.sort(), ["lib/chances/model.ts", "lib/chances/rigor-server.ts"]);
 });
 
 test("none of the rigor components or notes spells a threshold or a constant of the rules", () => {

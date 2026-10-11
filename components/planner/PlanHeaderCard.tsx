@@ -28,7 +28,7 @@ export function PlanHeaderCard({
   firstName: string | null;
   season: string;
 }) {
-  const title = relation === "self" ? "Your plan" : `${firstName ?? "Their"}'s plan`;
+  const title = relation === "self" ? "Your plan" : firstName ? `${firstName}'s plan` : "Their plan";
   const gradYear = ctx.student?.grad_year ?? null;
   // The GPA as entered ("4.4 weighted"), not the unweighted conversion the rules read.
   const enteredGpa = ctx.profile ? gpaAsEntered(ctx.profile.academics) : null;

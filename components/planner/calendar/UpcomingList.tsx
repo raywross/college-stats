@@ -12,6 +12,7 @@ import Link from "next/link";
 import { BookMarked, Heart } from "lucide-react";
 import type { PlanContext } from "@/lib/planner/types";
 import type { PlanView } from "@/lib/planner/plan-view";
+import { roundsPicked } from "@/lib/planner/list-row";
 import { daysBetween, eventsFor, laterSummary, monthLabel, upcomingDays, type CalendarCite, type CalendarEvent, type UpcomingDay } from "@/lib/planner/calendar";
 import { MONEY_VAR, ROUND_VAR, TEST_VAR } from "@/lib/planner/colors";
 import { ROUND_SHORT } from "@/lib/planner/rounds";
@@ -44,7 +45,9 @@ export function UpcomingList({
 }) {
   const [expanded, setExpanded] = useState(false);
   const today = ctx.today;
-  const events = eventsFor(ctx, view, today, studentId);
+  // Before senior year no round is picked yet (list.md "Round picked senior year"), so the starting rounds' college
+  // dates stay off the list; tests, money dates, and tasks still show.
+  const events = eventsFor(ctx, view, today, studentId).filter((e) => roundsPicked(ctx.grade) || e.round === undefined);
   const days = upcomingDays(events, today, expanded ? SHOW_ALL_WEEKS : 8);
   const later = variant === "tab" && !expanded ? laterSummary(events, today, 8) : null;
 

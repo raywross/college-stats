@@ -9,6 +9,7 @@ import { PlanNotice } from "@/components/planner/PlanNotice";
 import { PlanTabPills, PlanTabs } from "@/components/planner/PlanTabs";
 import { UpcomingList } from "@/components/planner/calendar/UpcomingList";
 import { intakeNeeded } from "@/lib/planner/intake";
+import { roundsPicked } from "@/lib/planner/list-row";
 import { nextUpInfo, seasonWords } from "@/lib/planner/plan-frame";
 import { defaultTab, planHref, tabsFor, type PlanTab } from "@/lib/planner/plan-tabs";
 import type { PlanView } from "@/lib/planner/plan-view";
@@ -50,7 +51,10 @@ export function PlanFrame({
   const studentId = ctx.student?.id ?? personId ?? "";
   const gradYear = ctx.student?.grad_year ?? null;
 
-  const anyOpenDeadline = view.rows.some(
+  // Before senior year the rows read "Round picked senior year" (list.md), so no deadline counts yet: the starting
+  // round's dates are a guess that would otherwise surface as Next up (QA 2026-10-11).
+  const roundsOpen = roundsPicked(ctx.grade);
+  const anyOpenDeadline = roundsOpen && view.rows.some(
     (r) => (r.item.status === "considering" || r.item.status === "applying") && !r.item.withdrawn_on && r.deadline !== null && r.deadline.iso >= today,
   );
   const anyApplied = ctx.items.some((i) => i.status === "applied" || i.status === "decided");
@@ -73,7 +77,7 @@ export function PlanFrame({
 
   // NothingDue instead of Next up (page.md "The page"): nothing dated to meet or hear back on yet.
   const nextKind = nextUpInfo({ view, today, cycleStartYear: ctx.cycle.startYear }).kind;
-  const hasNextUp = nextKind === "deadline" || nextKind === "decision";
+  const hasNextUp = roundsOpen && (nextKind === "deadline" || nextKind === "decision");
 
   const calendarHref = planHref({ person: personId, tab: "calendar" });
   const fullYearHref = `${calendarHref}${calendarHref.includes("?") ? "&" : "?"}range=year`;

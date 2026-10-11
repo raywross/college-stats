@@ -1,7 +1,7 @@
 /**
  * The redesigned plan's view model (specs/planner/redesign/build-plan.md "The view model"): everything the Colleges,
  * Scores, and Calendar tabs show for one student, worked out once from their stored rows, their numbers, and the
- * colleges' records. Generalizes the design preview's derive (components/plan-preview/derive.ts) over real rows.
+ * colleges' records.
  * Every tab reads this; nothing recomputes groups, rounds, notices, or the next deadline on its own.
  *
  * Pure (no server or browser APIs) so the server page, the numbers form's live re-sort in the browser, and the

@@ -242,15 +242,17 @@ shared rules for user data are in that README. All user data lives only in Supab
   [parents](planner/parents.md) (summary line, nudges, Your part, weekly summary). Owner questions in the README: the
   paid line, texts, photos, the letters pilot, Common App screenshot import.
 - [x] **The planner, redesigned** (built 2026-10-10 on feature/plan-redesign, [build plan](planner/redesign/build-plan.md); planned 2026-10-09 in [planner/redesign/](planner/redesign/README.md) from the
-  owner's review of the build and student feedback; preview at `/plan/preview`). Six units:
+  owner's review of the build and student feedback; merged and live 2026-10-11 as PR #105). Six units:
   [standing](planner/redesign/standing.md) (numbers first, one test, groups sorted for the student),
   [page](planner/redesign/page.md) (Plan in the main navigation, `/plan`, three tabs, the child switcher),
   [list](planner/redesign/list.md) (one row per college, ranking removed), [rounds](planner/redesign/rounds.md)
   (started from the Dream, one-line conflicts, ED II offer, parent cost check), [scores](planner/redesign/scores.md)
   (where the score stands, retake only when it would move a college), and [calendar](planner/redesign/calendar.md)
   (the family timeline). Owner decisions (2026-10-10): every recommendation accepted, including the phone tab bar, signed-out Plan,
-  and the retake threshold. Follow-ups: delete `/plan/preview` once approved; drop `list_items.priority` and
-  `lists.rounds_plan_accepted_at` once no release reads them; the share image; the old family dossier print.
+  and the retake threshold. Owner decisions (2026-10-11, after reviewing the build): the design preview is deleted; the
+  old family dossier print does not come back (its address redirects to the calendar print); no revoke button for the
+  calendar link; parent screens approved; a weighted GPA shows as entered (4.4, not 4.0). Still to do: drop
+  `list_items.priority` and `lists.rounds_plan_accepted_at` once no release reads them; the share image.
 - [ ] **Chances and fit** ([product/chances-and-fit.md](product/chances-and-fit.md)): rules-based standing with
   reasons (never a probability), fit against preferences, a pilot against real outcomes before the chip ships.
 - [ ] **Admission chances** (planned 2026-10-10 in [chances/](chances/README.md)). Quad's estimate is proprietary: these

@@ -5,8 +5,7 @@
  * and cycle file, and the Coming-up events. The components (FamilyCalendar, CalendarLane, ComingUp) only draw what
  * this module computes.
  *
- * The layout reference is the design preview's components/plan-preview/CalendarView.tsx; this module generalizes its
- * derivation over real rows (lib/planner/plan-view.ts), real tasks, and the real cycle file, with a round or a plain
+ * It works over real rows (lib/planner/plan-view.ts), real tasks, and the real cycle file, with a round or a plain
  * link citation on every mark so a tooltip or the Coming-up list can always say where a date comes from.
  */
 import { ROUND_LABELS, type ListRound } from "../list-rules.ts";

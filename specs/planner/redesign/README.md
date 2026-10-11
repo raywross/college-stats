@@ -85,6 +85,7 @@ students who tried it said (2026-10-09):
 | 4 | [rounds.md](rounds.md) | Starting rounds from the Dream; no ranking, no proposal table, no checklist; one-line conflicts; ED II as an offer; the cost check as a parent task | Medium |
 | 5 | [scores.md](scores.md) | Where the score stands, send or don't, and a retake suggestion only when a realistic gain moves a college up, with the test dates that land in time | Medium |
 | 6 | [calendar.md](calendar.md) | The family calendar: a color-coded timeline of the school year per child or for everyone, "Coming up" as a list, calendar feed and print | Medium |
+| 7 | [intake.md](intake.md) | **Intake guide** (2026-10-11 design): grades, test, AP courses, review in four steps, saved once; replaces the first-time setup. Groups become Quad's only (no override) | Medium |
 
 ## What stays, what goes
 | Built in PR #103 | In the redesign |
@@ -115,7 +116,8 @@ the `build-roadmap-section` skill, one unit per part.
 ## Shared rules
 In addition to the planner's [shared rules](../README.md#shared-rules):
 - **A suggestion is labeled as one** (a ✦ on the chip) until the student changes it; once changed, it is theirs and a
-  later change of numbers never overwrites it. "Use the suggestion" puts it back.
+  later change of numbers never overwrites it. "Use the suggestion" puts it back. **Changed 2026-10-11**: this now
+  applies to rounds only; groups are Quad's alone, with no override ([intake.md](intake.md#groups)).
 - **No admit rates, percentages, or statistics on the plan's first screen.** The college's profile is where those
   live; the plan links to it.
 - **Every date still names its source and edition** (ⓘ on each date), and a test date links to the official page.

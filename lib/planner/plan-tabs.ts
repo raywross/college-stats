@@ -33,11 +33,15 @@ export function tabForStage(stage: number): PlanTab {
   return "colleges";
 }
 
-/** "/plan", "/plan?for=<person>", "/plan?for=<person>&tab=scores" (the person is a student id). */
-export function planHref(opts: { person?: string | null; tab?: PlanTab | null }): string {
+/**
+ * "/plan", "/plan?for=<person>", "/plan?for=<person>&tab=scores" (the person is a student id). `setup` adds
+ * `&setup=1`: the intake guide in edit mode (specs/planner/redesign/intake.md "Edit mode").
+ */
+export function planHref(opts: { person?: string | null; tab?: PlanTab | null; setup?: boolean }): string {
   const q = new URLSearchParams();
   if (opts.person) q.set("for", opts.person);
   if (opts.tab) q.set("tab", opts.tab);
+  if (opts.setup) q.set("setup", "1");
   const s = q.toString();
   return s ? `/plan?${s}` : "/plan";
 }

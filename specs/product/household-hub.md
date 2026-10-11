@@ -127,6 +127,10 @@ two tabs:
 person's own page (and `/me/updates` becomes the **Updates** section on that page, under the list), so nothing linked
 from a digest email breaks. The `Add to list` button on profiles, Explore, and Compare is unchanged for a student; for
 a guardian it now adds to **their own** list (today a guardian has none and the button does nothing useful).
+*Changed 2026-10-11 (owner, testing the planner redesign):* a guardian with edit access saves to their **child's**
+list instead, since the plan shows only the child's: with one such child, straight to that list ("On Maya's list");
+with several, the button opens a menu with one toggle per child. A guardian without edit access still saves to their
+own list (`lib/lists.ts` `mySaveTargets`, `saveOwner`).
 
 ## One list per person
 ### Model

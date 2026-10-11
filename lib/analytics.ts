@@ -66,6 +66,7 @@ export interface AnalyticsEvents {
   plan_dream_set: { on: boolean };
   plan_round_changed: { from_auto: boolean; round: "ed" | "ed2" | "ea" | "rea" | "rd" | "rolling" };
   plan_drawer_opened: { in_season: boolean };
+  plan_college_removed: { dream: boolean };
   plan_ed2_offer_used: { dream_round: "ed" | "rea" };
   plan_round_problem_shown: { kind: string };
   plan_scores_opened: { suggestion: boolean };
@@ -150,6 +151,7 @@ export const EVENTS = {
   plan_dream_set: { properties: ["on"], side: "client", why: "Planner: Dreams marked" },
   plan_round_changed: { properties: ["from_auto", "round"], side: "client", why: "Planner: which rounds students pick over the starting round" },
   plan_drawer_opened: { properties: ["in_season"], side: "client", why: "Planner: do row details get opened" },
+  plan_college_removed: { properties: ["dream"], side: "client", why: "Planner: do students prune the list from the plan" },
   plan_ed2_offer_used: { properties: ["dream_round"], side: "client", why: "Planner: the ED II offer taken" },
   plan_round_problem_shown: { properties: ["kind"], side: "client", why: "Planner: which round conflicts come up" },
   plan_scores_opened: { properties: ["suggestion"], side: "client", why: "Planner: Scores tab opened, with or without a retake suggestion" },

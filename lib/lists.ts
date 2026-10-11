@@ -8,8 +8,9 @@
  * lib/list-rules.ts.
  *
  * Public pages (profile, Explore, compare tray) call addToMyDefaultList/removeFromMyLists/isOnAnyList from a client
- * component (AddToListButton); they never read cookies during render. "My" lists are the signed-in person's own:
- * their student record's, or, for someone without one (a guardian), the lists they own as a user.
+ * component (AddToListButton); they never read cookies during render. "My" lists are the save owner's: a guardian
+ * with edit access saves to their child's list (mySaveTargets), anyone else to their own: their student record's,
+ * or, for someone without one, the lists they own as a user.
  */
 import { cache } from "react";
 import { after } from "next/server";
@@ -80,6 +81,39 @@ async function myOwner(): Promise<ListOwner | null> {
   if (student) return { kind: "student", id: student.id };
   const user = await getUser();
   return user ? { kind: "user", id: user.id } : null;
+}
+
+/** A student whose list a guardian's "Add to list" saves to. */
+export type SaveTarget = { studentId: string; name: string | null };
+
+/**
+ * The students a guardian's "Add to list" saves to: every student they reach as a guardian with edit access, oldest
+ * record first (owner decision 2026-10-11, household-hub.md "One list per person": a parent saves to their child's
+ * list, not a list of their own the plan never shows). Empty for a student and for a guardian without edit access,
+ * who save to their own list as before.
+ */
+export async function mySaveTargets(): Promise<SaveTarget[]> {
+  if (!authConfigured() || !(await getUser())) return [];
+  const access = await studentsICanSee();
+  return access
+    .filter((a) => a.relation === "guardian" && a.canEdit)
+    .sort((a, b) => a.student.created.localeCompare(b.student.created) || a.student.id.localeCompare(b.student.id))
+    .map((a) => ({ studentId: a.student.id, name: a.student.display_name }));
+}
+
+/**
+ * Whose list "Add to list" reads and writes: `studentId` when it's one of the guardian's save targets; a guardian's
+ * only child when they have one; else the signed-in person's own (myOwner). A guardian of several children must say
+ * which (AddToListButton asks), so with none named that's an error rather than a guess.
+ */
+async function saveOwner(studentId?: string): Promise<ListOwner | { error: string } | null> {
+  const targets = await mySaveTargets();
+  if (studentId !== undefined) {
+    return targets.some((t) => t.studentId === studentId) ? { kind: "student", id: studentId } : { error: "You can't change that list." };
+  }
+  if (targets.length === 1) return { kind: "student", id: targets[0].studentId };
+  if (targets.length > 1) return { error: "Pick whose list to add it to." };
+  return myOwner();
 }
 
 /** The ids of every list `owner` has (the reader's RLS still applies). */
@@ -193,11 +227,11 @@ export async function namesFor(userIds: string[]): Promise<Record<string, string
   return Object.fromEntries((data as { id: string; display_name: string | null }[]).map((p) => [p.id, p.display_name]));
 }
 
-/** Whether the signed-in person's own college list(s) include `unitId` (for the Add-to-list button's initial state). */
-export async function isOnAnyList(unitId: string): Promise<boolean> {
+/** Whether the save owner's college list(s) include `unitId` (saveOwner; for the Add-to-list button's initial state). */
+export async function isOnAnyList(unitId: string, studentId?: string): Promise<boolean> {
   if (!isUnitId(unitId)) return false;
-  const owner = await myOwner();
-  if (!owner) return false;
+  const owner = await saveOwner(studentId);
+  if (!owner || "error" in owner) return false;
   const r = await ready();
   if (!r) return false;
   const lists = await listIdsOf(r.supabase, owner);
@@ -286,13 +320,14 @@ export async function addToList(listId: string, unitId: string): Promise<ListAct
 }
 
 /**
- * Adds one or more colleges to the signed-in person's own default list, creating it if needed: a student's on their
- * record, a guardian's as a list they own (household-hub.md: a guardian's "Add to list" goes to their own list).
- * For AddToListButton.
+ * Adds one or more colleges to the save owner's default list (saveOwner), creating it if needed: a student's on their
+ * record; a guardian with edit access, their child's (`studentId` when they have several); any other guardian, a
+ * list they own. For AddToListButton.
  */
-export async function addToMyDefaultList(unitIds: string[]): Promise<ListActionResult> {
-  const owner = await myOwner();
+export async function addToMyDefaultList(unitIds: string[], studentId?: string): Promise<ListActionResult> {
+  const owner = await saveOwner(studentId);
   if (!owner) return { ok: false, message: "Sign in to save colleges to a list." };
+  if ("error" in owner) return { ok: false, message: owner.error };
   const list = await getOrCreateDefaultList(owner);
   if (!list) return { ok: false, message: FAILED };
   for (const unitId of unitIds) {
@@ -302,11 +337,12 @@ export async function addToMyDefaultList(unitIds: string[]): Promise<ListActionR
   return { ok: true };
 }
 
-/** Removes a college from every one of the signed-in person's own lists that has it (the Add-to-list button's "remove"). */
-export async function removeFromMyLists(unitId: string): Promise<ListActionResult> {
+/** Removes a college from every one of the save owner's lists that has it (saveOwner; the Add-to-list button's "remove"). */
+export async function removeFromMyLists(unitId: string, studentId?: string): Promise<ListActionResult> {
   if (!isUnitId(unitId)) return { ok: false, message: "We couldn't find that college." };
-  const owner = await myOwner();
+  const owner = await saveOwner(studentId);
   if (!owner) return { ok: false, message: "Sign in first." };
+  if ("error" in owner) return { ok: false, message: owner.error };
   const r = await ready();
   if (!r) return { ok: false, message: "Sign in first." };
   const lists = await listIdsOf(r.supabase, owner);

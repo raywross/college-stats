@@ -26,6 +26,9 @@ summary: Every college page now says how that college reads an application, you 
   exam, and score dates are on the calendar.
 - **How well it did.** If you choose to share your results, they help check the estimate; the Data page will publish
   how well it did each season.
+- **Plan fixes.** You can take a college off your plan with the × at the end of its row. A parent's "Add to list" now
+  saves to their child's list (with more than one child, it asks which). A parent opening the empty list of a child
+  who hasn't joined the household yet is told why it's empty and how to send the invitation.
 
 ## Behind the scenes
 

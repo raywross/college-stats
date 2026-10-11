@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Heart, Info } from "lucide-react";
+import { Heart, Info, X } from "lucide-react";
 import { CollegeChip } from "@/components/planner/CollegeChip";
 import { GroupChip } from "@/components/planner/GroupChip";
 import { RoundChip } from "@/components/planner/RoundChip";
@@ -19,8 +19,8 @@ import { cn } from "@/lib/utils";
 
 /**
  * One college on the list (specs/planner/redesign/list.md "The row"): the Dream heart, the crest and name, the
- * group and round chips, the deadline with its citation, the status chip once the season starts, and (i) for the
- * drawer. Two lines on a phone; every tap is optimistic (the parent, PlanList, patches its own state and rolls back
+ * group and round chips, the deadline with its citation, the status chip once the season starts, (i) for the
+ * drawer, and × to take the college off the list (editors only, after a confirmation). Two lines on a phone; every tap is optimistic (the parent, PlanList, patches its own state and rolls back
  * on a refused write).
  */
 export function PlanRow({
@@ -31,6 +31,7 @@ export function PlanRow({
   onToggleDream,
   onGroup,
   onRound,
+  onRemove,
 }: {
   row: PlanRowView;
   ctx: PlanContext;
@@ -43,6 +44,8 @@ export function PlanRow({
   onGroup: (row: PlanRowView, group: PickedGroup | null) => void;
   /** A round the student picks, or null for "Use the starting round". */
   onRound: (row: PlanRowView, round: ListRound | null) => void;
+  /** Takes the college off the list (after the row's own confirmation). */
+  onRemove: (row: PlanRowView) => void;
 }) {
   const [open, setOpen] = useState(false);
   const { item, school, deadline } = row;
@@ -94,19 +97,34 @@ export function PlanRow({
           {row.seasonStatus !== null && (
             <span className="inline-flex h-6 items-center rounded-full border px-2 text-xs font-semibold text-muted-foreground">{SEASON_STATUS_LABEL[row.seasonStatus]}</span>
           )}
-          <button
-            type="button"
-            onClick={() => {
-              const next = !open;
-              setOpen(next);
-              if (next) track("plan_drawer_opened", { in_season: row.seasonStatus !== null });
-            }}
-            aria-expanded={open}
-            aria-label={`Details for ${name}`}
-            className="flex size-11 items-center justify-center rounded-full text-muted-foreground hover:bg-muted"
-          >
-            <Info className="size-4" aria-hidden />
-          </button>
+          <span className="inline-flex items-center">
+            <button
+              type="button"
+              onClick={() => {
+                const next = !open;
+                setOpen(next);
+                if (next) track("plan_drawer_opened", { in_season: row.seasonStatus !== null });
+              }}
+              aria-expanded={open}
+              aria-label={`Details for ${name}`}
+              className="flex size-11 items-center justify-center rounded-full text-muted-foreground hover:bg-muted"
+            >
+              <Info className="size-4" aria-hidden />
+            </button>
+            {canEdit && (
+              <button
+                type="button"
+                onClick={() => {
+                  if (window.confirm(`Remove ${name} from the list? Its notes, visits, and any offer go with it.`)) onRemove(row);
+                }}
+                aria-label={`Remove ${name} from the list`}
+                title="Remove from the list"
+                className="flex size-11 items-center justify-center rounded-full text-muted-foreground hover:bg-muted hover:text-destructive"
+              >
+                <X className="size-4" aria-hidden />
+              </button>
+            )}
+          </span>
         </div>
       </div>
       {error && <p className="px-4 pb-2 text-xs text-destructive sm:px-16">{error}</p>}

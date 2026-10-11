@@ -176,6 +176,19 @@
   --hero-glow-1: oklch(0.75 0.2 283 / 0.35);
   --hero-glow-2: oklch(0.8 0.17 350 / 0.28);
   --hero-glow-3: oklch(0.92 0.2 124 / 0.45);
+
+  /* The plan (specs/planner/redesign/calendar.md "Colors"; lib/planner/colors.ts): rounds, tests, money, children. */
+  --round-ed: #eb6834;
+  --round-ed2: #eb6834;
+  --round-ea: #1baf7a;
+  --round-rea: #1baf7a;
+  --round-rd: #2a78d6;
+  --round-rolling: #2a78d6;
+  --plan-test: #4a3aa7;
+  --plan-money: #008300;
+  --kid-1: #2a78d6;
+  --kid-2: #eb6834;
+  --kid-3: #1baf7a;
 }
 
 /* ============ DARK (deep indigo night + glowing accents) ============ */
@@ -243,6 +256,18 @@
   --hero-glow-1: oklch(0.55 0.25 283 / 0.45);
   --hero-glow-2: oklch(0.55 0.22 350 / 0.3);
   --hero-glow-3: oklch(0.85 0.2 124 / 0.14);
+
+  --round-ed: #d95926;
+  --round-ed2: #d95926;
+  --round-ea: #199e70;
+  --round-rea: #199e70;
+  --round-rd: #3987e5;
+  --round-rolling: #3987e5;
+  --plan-test: #9085e9;
+  --plan-money: #008300;
+  --kid-1: #3987e5;
+  --kid-2: #d95926;
+  --kid-3: #199e70;
 }
 
 @layer base {

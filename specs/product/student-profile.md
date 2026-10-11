@@ -22,7 +22,10 @@ profile and forgets it.
 | **Hooks** (optional, private by default) | first-generation; legacy at specific colleges; recruited athlete; Pell-likely | Chances wording only ("Colleges that consider legacy status: …"), never shown to guardians unless the student allows |
 
 **GPA normalization.** Weighted scales differ by high school, so chances use the **unweighted 4.0 GPA** only. A
-100-point or 5.0 GPA is converted with the student's scale and shown back as "about 3.7 unweighted (from 93/100)".
+100-point GPA is converted with the student's scale and shown back as "about 3.7 unweighted (from 93/100)". A
+**weighted** GPA (the "Weighted" scale, or a value above 4.0 on the 4.0 scale) is shown as entered, e.g. "4.4
+weighted", never converted down (owner, 2026-10-11); the planner reads it as an unweighted range
+([planner/redesign/gpa.md](../planner/redesign/gpa.md)), and the other tools still use their 4.0 conversion.
 When [high-school-data.md](high-school-data.md) has the school's own scale, that conversion is used and cited.
 
 ## Behavior

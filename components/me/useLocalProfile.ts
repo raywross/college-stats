@@ -13,15 +13,20 @@ const KEY = LOCAL_PROFILE_KEY;
 const EVENT = "student-profile-updated";
 const IMPORTED_FLAG_KEY = "student-profile-imported";
 
-let cache: { raw: string | null; data: StudentProfileData } = { raw: null, data: emptyProfile() };
+/** One empty profile for every "nothing stored" answer: useSyncExternalStore needs the same object each call, or
+ *  React warns of an infinite loop (seen on the signed-out /plan, 2026-10-10). */
+const EMPTY: StudentProfileData = emptyProfile();
+const emptySnapshot = (): StudentProfileData => EMPTY;
+
+let cache: { raw: string | null; data: StudentProfileData } = { raw: null, data: EMPTY };
 
 function read(): StudentProfileData {
-  if (typeof window === "undefined") return emptyProfile();
+  if (typeof window === "undefined") return EMPTY;
   let raw: string | null = null;
   try {
     raw = window.localStorage.getItem(KEY);
   } catch {
-    return emptyProfile();
+    return EMPTY;
   }
   if (raw === cache.raw) return cache.data;
   let data: StudentProfileData;
@@ -66,7 +71,7 @@ export function setLocalProfile(data: StudentProfileData) {
 
 /** The signed-out profile, and whether it holds anything worth offering to import. */
 export function useLocalProfile(): { data: StudentProfileData; save: (next: StudentProfileData) => void; hasAnyLocalData: boolean } {
-  const data = useSyncExternalStore(subscribe, read, emptyProfile);
+  const data = useSyncExternalStore(subscribe, read, emptySnapshot);
   return { data, save: write, hasAnyLocalData: !isEmpty(data) };
 }
 

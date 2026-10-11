@@ -3,7 +3,8 @@
 > Overview of the planner redesign (not a work item itself). Written 2026-10-09 from the owner's review of the built
 > planner ([../README.md](../README.md), built 2026-10-08 as PR #103), feedback from students who tried it, and new
 > research. Each part below is a separate work item on the [roadmap](../../roadmap.md). A clickable preview with a
-> sample family over real college records is at **`/plan/preview`** on preview deployments (not served in production).
+> sample family over real college records was at `/plan/preview` during review; it was deleted 2026-10-11 once the owner
+> approved the build.
 
 ## Why
 The planner is meant to be the site's main selling point: it takes everything Quad has collected about colleges and

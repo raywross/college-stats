@@ -1,6 +1,6 @@
 # Plan Page: A Top-Level Link, Three Tabs, and the Child Switcher
 
-> Status: **planned** 2026-10-09. Part 1 of the [planner redesign](README.md). Replaces the Plan tab's frame
+> Status: **built** 2026-10-10 on feature/plan-redesign ([build plan](build-plan.md)). Part 1 of the [planner redesign](README.md). Replaces the Plan tab's frame
 > ([../model.md](../model.md#where-it-lives)): the six-stage strip, the stage panels, and the route under the household
 > page. Builds on [household-hub.md](../../product/household-hub.md) and [parents.md](../parents.md).
 
@@ -28,7 +28,7 @@ A student opens Plan and sees their colleges; a parent opens Plan and sees the f
 | `/plan?tab=scores` / `calendar` / `offers` | either | Opens a tab; tabs are links so back and forward work |
 | `/plan` | signed out | The pitch and the numbers step ([below](#signed-out)) |
 | `/plan/print` | either | The calendar's printable list (moves from `/household/[person]/plan/print`) |
-| `/plan/preview` | anyone, preview deployments only | The design preview with a sample family (this spec's companion; deleted when the redesign ships) |
+| ~~`/plan/preview`~~ | (deleted 2026-10-11) | The design preview with a sample family, used during review; removed once the owner approved the build |
 
 A guardian with one child skips the switcher's Everyone pill. A student in two households (divorced parents each with
 an account) has one plan; both see it, as today.

@@ -282,8 +282,13 @@ export interface ManifestEntry {
   kind: "cds" | "class-profile";
   type: DocumentType;
   edition: string | null;
-  /** Where the edition came from: the cover, item text, the workbook's own cells, or a person. */
-  edition_from?: "cover" | "items" | "workbook" | "manual";
+  /**
+   * Where the edition came from: the cover, item text, the workbook's own cells, a person, or the file name (`url`).
+   * `assumed`: the document states none anywhere, so it is read once under the edition current when it was retrieved
+   * and its items publish only if their own text confirms that edition (lib/cds-checks.ts). `none`: looked for and not
+   * found, and too little text to read; with `edition: null`, the document is never sent to a model.
+   */
+  edition_from?: "cover" | "items" | "workbook" | "manual" | "url" | "assumed" | "none";
   retrieved: string;
   bytes: number;
   pages?: number;

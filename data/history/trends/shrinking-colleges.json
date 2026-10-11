@@ -196,9 +196,9 @@
           "n": 243,
           "values": {
             "shrank10": 0.3827,
-            "grew10": 0.3251,
-            "medianChange": -0.0056,
-            "totalChange": 0.0795
+            "grew10": 0.3292,
+            "medianChange": 0.0014,
+            "totalChange": 0.0823
           }
         },
         {
@@ -207,9 +207,9 @@
           "n": 1064,
           "values": {
             "shrank10": 0.5695,
-            "grew10": 0.1936,
+            "grew10": 0.1927,
             "medianChange": -0.1391,
-            "totalChange": -0.0349
+            "totalChange": -0.036
           }
         }
       ]
@@ -508,9 +508,9 @@
             "n": 245,
             "values": {
               "shrank10": 0.3143,
-              "grew10": 0.2245,
-              "medianChange": -0.0159,
-              "totalChange": 0.0308
+              "grew10": 0.2286,
+              "medianChange": -0.0119,
+              "totalChange": 0.0324
             }
           },
           {
@@ -519,9 +519,9 @@
             "n": 1062,
             "values": {
               "shrank10": 0.4661,
-              "grew10": 0.1394,
+              "grew10": 0.1384,
               "medianChange": -0.0887,
-              "totalChange": -0.0397
+              "totalChange": -0.0403
             }
           }
         ]

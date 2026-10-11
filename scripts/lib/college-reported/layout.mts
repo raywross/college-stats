@@ -22,7 +22,7 @@ import { join } from "node:path";
 import { normalizeValue, parseEdition, parseNumber, readMark, type CdsSection, type DocumentType } from "../../../lib/cds-sections.ts";
 import { joinSplitDigits, lineText, type LineId } from "../../../lib/cds-quotes.ts";
 import { classicSheetText, readWorkbook } from "../cds-xlsx.mts";
-import { htmlToText } from "./documents.mts";
+import { htmlToText, safeDecodeUri } from "./documents.mts";
 
 /* ------------------------------------------------------------------ */
 /* Rows from positioned text                                           */
@@ -168,6 +168,8 @@ export function repeatedLines(lines: readonly string[], pages: readonly number[]
 const COVER = [
   /common data set[\s,:–-]*(20\d{2})\s*[-–]\s*((?:20)?\d{2})(?!\d)/i,
   /(20\d{2})\s*[-–]\s*((?:20)?\d{2})(?!\d)\s+common data set/i,
+  // A cover whose "Common Data Set" is an image prints only the years as text (Marquette 2025–26: "2025-2026").
+  /^(20\d{2})\s*[-–]\s*((?:20)?\d{2})$/,
 ];
 /**
  * Item text naming the edition's own fall: C21/C22's "For the Fall 2025 entering class" and B22's "enrollment date in
@@ -177,7 +179,8 @@ const ITEM_FALL = [/fall (20\d{2}) entering class/i, /enrollment date in fall (2
 
 export interface EditionFound {
   edition: string;
-  from: "cover" | "items";
+  /** The cover or item text; `url` = the file name (editionFromUrl), used only when the body states none. */
+  from: "cover" | "items" | "url";
   /** When the cover and the item text disagree: what the other said. */
   conflict?: string;
 }
@@ -218,6 +221,39 @@ export function editionFromBody(lines: readonly string[], pages: readonly number
   const items = [...votes].sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
   if (cover) return items && items !== cover ? { edition: cover, from: "cover", conflict: items } : { edition: cover, from: "cover" };
   return items ? { edition: items, from: "items" } : null;
+}
+
+/**
+ * The edition a CDS file's name states, for a document whose body states none: "cds-2025-2026_final.pdf",
+ * "CDS_2024-25.pdf", "CDS-25-26.pdf", "cds2526.pdf", "CDS_202526.pdf", "2024-2025-Common-Data-Set.pdf". Only the file
+ * name (the last path segment) counts: folders often hold an upload date ("/2026/04/") that isn't the edition. The two
+ * years must be consecutive; a lone year ("common-data-set-2025") names no edition. Null when the name states none.
+ */
+export function editionFromUrl(url: string): EditionFound | null {
+  let path = url;
+  try {
+    path = new URL(url).pathname;
+  } catch {
+    // not a URL: read it as a path
+  }
+  const name = safeDecodeUri(path.replace(/\/+$/, "").split("/").pop() ?? "").toLowerCase();
+  const next = (a: number, b: number) => b === (a + 1) % 100 || b === a + 1;
+  const tries: [RegExp, (m: RegExpMatchArray) => number | null][] = [
+    // 2025-2026, 2025_26, 2025 – 26, 2025/26, "2025_-26"
+    [/(?<!\d)(20\d{2})[\s_–-]*[-–_/ ][\s_–-]*((?:20)?\d{2})(?!\d)/g, (m) => (next(Number(m[1]), Number(m[2])) ? Number(m[1]) : null)],
+    // 202526
+    [/(?<!\d)(20\d{2})(\d{2})(?!\d)/g, (m) => (next(Number(m[1]), Number(m[2])) ? Number(m[1]) : null)],
+    // CDS-25-26, cds_22-23, cds2526: two-digit years only right after "cds" ("cds2021" is a year, not 2020-21)
+    [/cds[\s_-]*(\d{2})([\s_-]?)(\d{2})(?!\d)/g, (m) => (next(Number(m[1]), Number(m[3])) && !(m[1] === "20" && !m[2]) ? 2000 + Number(m[1]) : null)],
+  ];
+  for (const [re, start] of tries) {
+    for (const m of name.matchAll(re)) {
+      const y = start(m);
+      const ed = y !== null ? parseEdition(`${y}-${y + 1}`) : null;
+      if (ed) return { edition: ed.key, from: "url" };
+    }
+  }
+  return null;
 }
 
 /** An inclusive range of 1-based line ids. */

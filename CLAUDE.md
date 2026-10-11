@@ -22,6 +22,14 @@ Higher Education Data Explorer - an interactive web app for visualizing U.S. col
 - Run `npm run verify` (typecheck, lint, tests incl. lineage guards, dataset lineage check) before committing; CI runs
   it plus `next build`
 
+### Quad's estimate is proprietary (see `specs/chances/README.md`)
+- How Quad computes Reach / Target / Likely is never shown on the site: pages, the glossary, release notes, and the
+  estimate's API responses describe its kinds of inputs and its outputs, not weights, thresholds, or rules
+- Until launch the method lives here, in `specs/chances/method/` and server-only code (`lib/chances/model.ts`); the
+  repository stays public for now (owner decision, 2026-10-10). At launch it moves to a private repository per the
+  checklist in `specs/chances/estimate.md`
+- The estimate runs on the server only, through `lib/chances/estimate.ts`, and its sentences come from the note catalog
+
 ### One worktree per session
 Several Claude chats work on this repo at once, so each works in its own git worktree, never in the main checkout
 (where one chat could switch branches or edit files under another).

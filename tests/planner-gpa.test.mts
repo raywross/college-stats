@@ -5,7 +5,7 @@
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { existsSync, readFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import {
   bandMean,
   bandMiddle,
@@ -168,17 +168,12 @@ test("the guard: fewer than 25 rows, or a 90th-percentile miss above 0.25, gives
 });
 
 /**
- * The newest college data (main's, after the 2026-10-11 data runs), saved outside the repo by the analysis behind
- * gpa.md's "Changed 2026-10-11" (or GPA_NEWEST_DATA). This branch doesn't carry main's data; the test is skipped
- * where the file is absent.
+ * The committed college data (after the 2026-10-11 data runs: 168 average / 154 curve training colleges). With scores
+ * and admit rate alone the average and p25 models failed their guards here (gpa.md "Changed 2026-10-11"); with
+ * graduation rate and test-submission share all three pass.
  */
-const NEWEST_DATA =
-  process.env.GPA_NEWEST_DATA ??
-  "/private/tmp/claude-501/-Users-raymondross-Projects-college-stats/12cbda7e-c170-482f-84d6-37befe448ef5/scratchpad/schools-main3.json";
-
-test("the newest data (168 average / 154 curve colleges): all three models pass their guards", { skip: !existsSync(NEWEST_DATA) && "the newest data isn't on this machine" }, () => {
-  const d = JSON.parse(readFileSync(NEWEST_DATA, "utf8"));
-  const schools = (Array.isArray(d) ? d : d.schools) as School[];
+test("the committed data: all three models pass their guards", () => {
+  const schools = JSON.parse(readFileSync(new URL("../data/schools.json", import.meta.url), "utf8")) as School[];
   const rows = trainingRows(schools);
   const curve = curveRows(schools);
   assert.ok(rows.length >= 150 && curve.p25.length >= 140, `${rows.length} / ${curve.p25.length} rows`);

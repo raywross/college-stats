@@ -1,0 +1,205 @@
+{
+  "description": "The cost curve's accuracy pilot (specs/product/cost-by-income.md \"The accuracy pilot\"; how to run it: specs/product/cost-by-income-pilot.md). Run each college's own net price calculator by hand for the reference family (two parents, two children, one in college, typical assets) at each income, record the yearly price in `results`, then `node scripts/score-cost-pilot.mts`. Set `passed` to true only when the script says the bar is met: that turns on estimated prices and break points in production (lib/cost-curve.ts estimatesShown).",
+  "passed": false,
+  "bar": {
+    "break_point_within": 30000,
+    "break_point_share": 0.8,
+    "price_within": 6000,
+    "price_share": 0.8,
+    "merit_scored_on": "need aid only (calculators mostly exclude merit)"
+  },
+  "incomes": [
+    125000,
+    150000,
+    200000,
+    250000,
+    300000,
+    350000,
+    400000
+  ],
+  "results_format": {
+    "checked": "ISO date the calculator was run",
+    "prices": {
+      "125000": "yearly price the calculator shows, whole dollars (null if it wouldn't give one)"
+    },
+    "zero_aid_income": "optional: the lowest income where the calculator shows no need-based grant, if found by trying more incomes",
+    "notes": "optional: anything odd (asked for home equity, required a CSS-style login, excluded merit)"
+  },
+  "colleges": [
+    {
+      "unit_id": "166027",
+      "name": "Harvard University",
+      "group": "need_only",
+      "npc_url": "https://college.harvard.edu/financial-aid/net-price-calculator",
+      "results": {}
+    },
+    {
+      "unit_id": "166683",
+      "name": "Massachusetts Institute of Technology",
+      "group": "need_only",
+      "npc_url": "https://npc.collegeboard.org/app/mit",
+      "results": {}
+    },
+    {
+      "unit_id": "186131",
+      "name": "Princeton University",
+      "group": "need_only",
+      "npc_url": "https://admission.princeton.edu/cost-aid/financial-aid-estimator",
+      "results": {}
+    },
+    {
+      "unit_id": "243744",
+      "name": "Stanford University",
+      "group": "need_only",
+      "npc_url": "https://financialaid.stanford.edu/undergrad/how/calculator/index.html?tab=net-price-calculator",
+      "results": {}
+    },
+    {
+      "unit_id": "215062",
+      "name": "University of Pennsylvania",
+      "group": "need_only",
+      "npc_url": "https://npc.collegeboard.org/student/app/upenn",
+      "results": {}
+    },
+    {
+      "unit_id": "130794",
+      "name": "Yale University",
+      "group": "need_only",
+      "npc_url": "https://admissions.yale.edu/estimate-your-cost",
+      "results": {}
+    },
+    {
+      "unit_id": "190150",
+      "name": "Columbia University in the City of New York",
+      "group": "need_only",
+      "npc_url": "https://cc-seas.financialaid.columbia.edu/estimate-cost",
+      "results": {}
+    },
+    {
+      "unit_id": "217156",
+      "name": "Brown University",
+      "group": "need_only",
+      "npc_url": "https://npc.collegeboard.org/app/brown",
+      "results": {}
+    },
+    {
+      "unit_id": "164465",
+      "name": "Amherst College",
+      "group": "need_only",
+      "npc_url": "https://npc.collegeboard.org/student/app/amherst",
+      "results": {}
+    },
+    {
+      "unit_id": "168342",
+      "name": "Williams College",
+      "group": "need_only",
+      "npc_url": "https://npc.collegeboard.org/app/williams",
+      "results": {}
+    },
+    {
+      "unit_id": "221999",
+      "name": "Vanderbilt University",
+      "group": "merit",
+      "npc_url": "https://www.vanderbilt.edu/financialaid/net-price-calculator.php",
+      "results": {}
+    },
+    {
+      "unit_id": "123961",
+      "name": "University of Southern California",
+      "group": "merit",
+      "npc_url": "https://financialaid.usc.edu/npc",
+      "results": {}
+    },
+    {
+      "unit_id": "139658",
+      "name": "Emory University",
+      "group": "merit",
+      "npc_url": "https://npc.collegeboard.org/app/emory",
+      "results": {}
+    },
+    {
+      "unit_id": "160755",
+      "name": "Tulane University of Louisiana",
+      "group": "merit",
+      "npc_url": "https://admission.tulane.edu/tuition-aid/net-price-calculator",
+      "results": {}
+    },
+    {
+      "unit_id": "199847",
+      "name": "Wake Forest University",
+      "group": "merit",
+      "npc_url": "https://npc.collegeboard.org/student/app/wfu",
+      "results": {}
+    },
+    {
+      "unit_id": "179867",
+      "name": "Washington University in St Louis",
+      "group": "merit",
+      "npc_url": "https://financialaid.washu.edu/costs/cost-calculators/net-price-calculator",
+      "results": {}
+    },
+    {
+      "unit_id": "135726",
+      "name": "University of Miami",
+      "group": "merit",
+      "npc_url": "https://npc.collegeboard.org/app/miami",
+      "results": {}
+    },
+    {
+      "unit_id": "201645",
+      "name": "Case Western Reserve University",
+      "group": "merit",
+      "npc_url": "https://case.edu/financialaid/resources/net-price-calculator/",
+      "results": {}
+    },
+    {
+      "unit_id": "100751",
+      "name": "The University of Alabama",
+      "group": "public",
+      "npc_url": "https://ua.aidcalc.cloud/netprice.htm",
+      "results": {}
+    },
+    {
+      "unit_id": "104151",
+      "name": "Arizona State University Campus Immersion",
+      "group": "public",
+      "npc_url": "https://app.meadowfi.com/asu",
+      "results": {}
+    },
+    {
+      "unit_id": "199120",
+      "name": "University of North Carolina at Chapel Hill",
+      "group": "public",
+      "npc_url": "https://studentaid.unc.edu/net-price-calculator/",
+      "results": {}
+    },
+    {
+      "unit_id": "170976",
+      "name": "University of Michigan-Ann Arbor",
+      "group": "public",
+      "npc_url": "https://npc.collegeboard.org/app/umich",
+      "results": {}
+    },
+    {
+      "unit_id": "134130",
+      "name": "University of Florida",
+      "group": "public",
+      "npc_url": "https://npc.collegeboard.org/app/ufl",
+      "results": {}
+    },
+    {
+      "unit_id": "139959",
+      "name": "University of Georgia",
+      "group": "public",
+      "npc_url": "https://osfa.uga.edu/sites/default/files/npcalc.htm",
+      "results": {}
+    },
+    {
+      "unit_id": "204796",
+      "name": "Ohio State University-Main Campus",
+      "group": "public",
+      "npc_url": "https://sfa.osu.edu/incoming-freshmen/about-aid/net-price-calculator",
+      "results": {}
+    }
+  ]
+}

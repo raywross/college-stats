@@ -14,6 +14,7 @@ import { ROUND3_MODELS, type BatchEntry, type BatchSummaryRow, type BatchesFile,
 import { maxTokensFor, type CallKey, type DocumentType } from "../../../lib/cds-sections.ts";
 import { buildExtractRequest, buildPickerRequest, escalationInput, type BuiltRequest, type EscalateInput, type ExtractCallInput, type PickerInput } from "./llm.mts";
 import { callLogRow, priceOf, roundUsd } from "./models.mts";
+import { toWellFormedDeep } from "./well-formed.mts";
 
 /* ------------------------------------------------------------------ */
 /* The API slice                                                       */
@@ -301,7 +302,9 @@ export async function submit(api: BatchApi, requests: readonly BatchRequest[], s
   const entries: BatchEntry[] = [];
   for (const [model, reqs] of byModel) {
     for (const chunk of splitBySize(reqs, opts.maxBytes)) {
-      const batch = await api.create({ requests: chunk.map((r) => ({ custom_id: r.custom_id, params: r.params })) });
+      // A lone surrogate anywhere in params (page text, link text) makes JSON.stringify emit invalid JSON the API
+      // rejects outright, failing the whole batch; well-form every string so that can't happen.
+      const batch = await api.create({ requests: chunk.map((r) => ({ custom_id: r.custom_id, params: toWellFormedDeep(r.params) })) });
       const resubmits = chunk.filter((r) => opts.resubmits?.has(r.custom_id)).map((r) => r.custom_id);
       const entry: BatchEntry = {
         id: batch.id,

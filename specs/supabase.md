@@ -55,6 +55,7 @@ into the deploy for that reason.
 | `dataset_publishes` | One row per recorded publish: time, college count, `retrieved`, git commit, who | Secret key only |
 | `dataset_changes` | One row per college × field × publish (lib/changes.ts); the What changed panel and the digest read it | Public read |
 | `dataset_change_staging` | Staged changes between `stage_dataset_changes()` and `publish_changes()` | Secret key only |
+| `college_data_failures` | Colleges where the college-reported pipeline failed, one row per college and reason code, with `resolved_at` ([college-data-failures.md](college-data-failures.md)) | Secret key only |
 | `high_schools`, `high_school_details`, `high_school_files`, `search_high_schools()` | The high-school dataset and its trigram search ([high-school-data.md](product/high-school-data.md)) | Public read |
 | Accounts, households, invitations, student profiles, lists, follows, notification prefs, digests, and the rest | [accounts.md](product/accounts.md), [household-hub.md](product/household-hub.md), [saved-lists.md](product/saved-lists.md), [follow-colleges.md](product/follow-colleges.md) | Per policy |
 
@@ -90,13 +91,20 @@ migration in order, so the end state is what the tests prove).
 `high_schools*` tables in batches and reads them back (not atomic, as before). Runs when a merge to `main` changes
 `data/high-schools/**`, or by hand. `--dry-run` checks only.
 
+### College data failures: `npm run publish-college-failures`
+`scripts/publish-college-failures.mts`: upserts `data/college-failures.json` into `college_data_failures` and sets
+`resolved_at` on open rows no longer in the file ([college-data-failures.md](college-data-failures.md)). Warns and
+exits 0 while the table's migration isn't applied. `--dry-run` counts only.
+
 ### The workflow: `.github/workflows/publish-changes.yml`
 - **`changes`** runs on each successful Vercel production deploy (`deployment_status`, environment `Production…`):
   checks out the deployed commit with full history, runs `publish-changes --head <sha>`. So a change is recorded
   only after the site shows it; a dropped push event means a missing digest line, never a broken site.
 - **`high-schools`** runs on a push to `main` that changes `data/high-schools/**`.
-- **Run workflow** by hand with `what: changes | high-schools | both`.
-- Both skip with a notice while `PROD_SUPABASE_URL` / `PROD_SUPABASE_SECRET_KEY` aren't set. CI's `verify` job
+- **`college-failures`** runs on the same trigger as `changes`: checks out the deployed commit and runs
+  `publish-college-failures`.
+- **Run workflow** by hand with `what: all | changes | high-schools | college-failures`.
+- All skip with a notice while `PROD_SUPABASE_URL` / `PROD_SUPABASE_SECRET_KEY` aren't set. CI's `verify` job
   needs no secrets.
 
 ## Revalidation

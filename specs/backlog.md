@@ -105,6 +105,7 @@ published at `/roadmap` ([roadmap.md](roadmap.md)): add each new one to `lib/roa
     into `matches.json`.
   - [ ] State laws (nine states built, Ohio, Tennessee, and North Carolina as general DEI bans): hand-read Indiana
     SEA 289; re-check after each legislative session and the Mississippi and New Hampshire injunctions.
+- [ ] Build "Known for: Big Greek life": the threshold (50 reporters) was met 2026-10-10 with 102.
 - [ ] **Watch ACTS** (IPEDS admissions supplement): adopt if NCES publishes institution-level files. See
   [data-page.md](data-page.md#watching-acts).
 - [ ] **Scheduled data refresh** (`chore/scheduled-data-sync`): monthly GitHub Action runs `npm run sync-all`
@@ -252,6 +253,18 @@ shared rules for user data are in that README. All user data lives only in Supab
   `lists.rounds_plan_accepted_at` once no release reads them; the share image; the old family dossier print.
 - [ ] **Chances and fit** ([product/chances-and-fit.md](product/chances-and-fit.md)): rules-based standing with
   reasons (never a probability), fit against preferences, a pilot against real outcomes before the chip ships.
+- [ ] **Admission chances** (planned 2026-10-10 in [chances/](chances/README.md)). Quad's estimate is proprietary: these
+  site shows inputs and outputs only; the method is in [chances/method/](chances/method/standing.md) until launch, then
+  moves private. Seven units:
+  [how colleges read a record](chances/how-colleges-read.md), [rigor in context](chances/rigor-in-context.md) (a course
+  list with grades), [the admit rate for your pool](chances/base-rates.md), [major and grades](chances/major-and-grades.md),
+  [the estimate](chances/estimate.md) (after PR #105), [outcomes and accuracy](chances/calibration.md), and the
+  [course plan](chances/course-plan.md). Never a percentage.
+- [x] **Cost by income** (built 2026-10-10; estimates gated until the pilot passes; [product/cost-by-income.md](product/cost-by-income.md)): each college's
+  cost as a curve over family income to $400K+, published to $110K and calibrated above it from the $110K+ band;
+  the break point where need-based aid ends; merit classes from CDS H2A or the IPEDS grants-without-federal-aid proxy;
+  curated published promises (`data/aid-policies.json`); a 25-college pilot against net price calculators gates every
+  estimate. Redesigns the Cost page, the overview card, Compare, and Explore.
 - [ ] **Net price estimator** ([product/net-price-estimator.md](product/net-price-estimator.md)): 2026–27 Student
   Aid Index and Pell as versioned reference data; per-college range from income-band net price, CDS need met, and
   H2A merit; 4-year projection from history; pilot of 20 colleges × 5 scenarios against their own calculators.

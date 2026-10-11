@@ -7,13 +7,15 @@ import { crestBrand } from "@/lib/brand";
 import { CompareButton } from "@/components/compare/CompareButton";
 import { AddToListButton } from "@/components/lists/AddToListButton";
 import { distanceFromHome, formatMiles, type NearHome } from "@/lib/home";
+import type { PriceLine } from "@/lib/cost-at-income";
 
 /**
  * Phone result row (Explore, below sm): one headline number and three facts in ~90px, so a screen shows
  * five or six schools instead of one card. The full SchoolCard (meters, trends, standouts) takes over from sm.
- * With Explore's distance filter set (`home`), the location line adds the straight-line miles.
+ * With Explore's distance filter set (`home`), the location line adds the straight-line miles. With a family income set
+ * (`priceAt`, specs/product/cost-by-income.md), "About $41K at $200K" replaces the average cost.
  */
-export function SchoolRow({ school, home = null }: { school: School; home?: NearHome | null }) {
+export function SchoolRow({ school, home = null, priceAt = null }: { school: School; home?: NearHome | null; priceAt?: PriceLine | null }) {
   const rate = school.admissions.acceptance_rate;
   const sat = satComposite(school);
   const cost = school.cost?.avg_paid_all ?? null;
@@ -21,7 +23,9 @@ export function SchoolRow({ school, home = null }: { school: School; home?: Near
   const facts = [
     { key: "sat", color: DOMAINS.scores.color, text: sat ? `SAT ${range(sat)}` : null },
     { key: "size", color: DOMAINS.size.color, text: `${compact(school.demographics.undergrad_enrollment)} undergrads` },
-    { key: "cost", color: DOMAINS.value.color, text: cost === null ? null : `${moneyCompact(cost)}/yr` },
+    priceAt
+      ? { key: "cost", color: DOMAINS.value.color, text: `${priceAt.text}${priceAt.estimate ? " · estimate" : ""}` }
+      : { key: "cost", color: DOMAINS.value.color, text: cost === null ? null : `${moneyCompact(cost)}/yr` },
   ].filter((f): f is { key: string; color: string; text: string } => f.text !== null);
 
   return (

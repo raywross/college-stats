@@ -281,13 +281,13 @@
           "label": "25–59% admitted",
           "n": 75,
           "values": {
-            "medianShare": [0.0876,0.1182],
-            "share30": [0.1467,0.2667],
-            "weightedShare": [0.1329,0.1885],
+            "medianShare": [0.0918,0.1223],
+            "share30": [0.16,0.28],
+            "weightedShare": [0.1423,0.1967],
             "lines": {
-              "medianShare": [0.0755,null,0.0628,null,0.0731,null,0.0743,null,0.0811,null,0.0876,null,0.092,null,0.0971,null,0.1028,null,0.103,null,0.1182],
-              "share30": [0.1918,null,0.1644,null,0.1644,null,0.1918,null,0.1644,null,0.1467,null,0.1733,null,0.2133,null,0.1867,null,0.24,null,0.2667],
-              "weightedShare": [null,null,0.1272,null,0.131,null,0.1323,null,0.1298,null,0.1329,null,0.1372,null,0.1506,null,0.1585,null,0.1886,null,0.1885]
+              "medianShare": [0.0788,null,0.0667,null,0.0742,null,0.0771,null,0.0891,null,0.0918,null,0.0956,null,0.1013,null,0.1092,null,0.1065,null,0.1223],
+              "share30": [0.1918,null,0.1781,null,0.1781,null,0.2055,null,0.1781,null,0.16,null,0.1867,null,0.2267,null,0.2,null,0.2533,null,0.28],
+              "weightedShare": [null,null,0.1329,null,0.1374,null,0.1389,null,0.1382,null,0.1423,null,0.1467,null,0.1596,null,0.1654,null,0.197,null,0.1967]
             }
           }
         },
@@ -296,13 +296,13 @@
           "label": "60% or more",
           "n": 397,
           "values": {
-            "medianShare": [0.1068,0.1326],
-            "share30": [0.1637,0.2116],
-            "weightedShare": [0.1756,0.2041],
+            "medianShare": [0.1049,0.1323],
+            "share30": [0.1612,0.2091],
+            "weightedShare": [0.1733,0.2016],
             "lines": {
-              "medianShare": [0.0853,null,0.0919,null,0.0938,null,0.0968,null,0.0991,null,0.1068,null,0.117,null,0.121,null,0.1137,null,0.1331,null,0.1326],
-              "share30": [0.1166,null,0.1388,null,0.1279,null,0.1403,null,0.1527,null,0.1637,null,0.1738,null,0.1763,null,0.1832,null,0.2116,null,0.2116],
-              "weightedShare": [0.1479,null,0.1536,null,0.159,null,0.1592,null,0.1718,null,0.1756,null,0.1835,null,0.1835,null,0.1831,null,0.2114,null,0.2041]
+              "medianShare": [0.085,null,0.0904,null,0.0937,null,0.0965,null,0.0974,null,0.1049,null,0.115,null,0.1168,null,0.1126,null,0.1327,null,0.1323],
+              "share30": [0.1166,null,0.1362,null,0.1253,null,0.1378,null,0.1501,null,0.1612,null,0.1713,null,0.1738,null,0.1806,null,0.2091,null,0.2091],
+              "weightedShare": [0.1469,null,0.152,null,0.1573,null,0.1575,null,0.1698,null,0.1733,null,0.1811,null,0.1811,null,0.181,null,0.209,null,0.2016]
             }
           }
         }

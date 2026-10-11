@@ -1,6 +1,9 @@
 /**
  * Polite HTTP for the college-reported pipeline: our code (not the model) fetches every recipe URL.
- * - Honors robots.txt (RFC 9309): disallowed URLs are skipped and logged, never fetched another way.
+ * - Honors robots.txt (RFC 9309): disallowed URLs are skipped and logged, never fetched another way. One exception
+ *   (owner decision 2026-10-10, specs/college-reported-data.md "Access rules"): a Common Data Set file itself, fetched
+ *   with `{ cdsDocument: true }`, is fetched even when robots.txt disallows it, since it is public data. Its Crawl-delay
+ *   still paces us, and every other rule below (honest user agent, no retry past a refusal) still applies.
  * - At least `minDelayMs` (1 s) between requests to one host, longer when robots.txt sets a Crawl-delay.
  * - Conditional GET (If-None-Match / If-Modified-Since); a 304 means the copy we processed is current.
  * - Identifies itself honestly and never retries with a different user agent to get past bot protection.
@@ -244,11 +247,20 @@ export class PoliteHttp {
   /**
    * GET `url` politely. Returns null (and logs) when robots.txt disallows it; otherwise the response, which may be a
    * 304 when `conditional` headers matched. Throws on a network error, the timeout, or the size cap.
+   *
+   * `cdsDocument: true` is for a recipe source of kind `cds` (the Common Data Set file itself, any format, first fetch
+   * or re-fetch) and nothing else: robots.txt's Allow/Disallow rules (and the disallow-all of an unreachable
+   * robots.txt) aren't consulted for it (owner decision 2026-10-10: "We're safe to ignore the robots.txt for the purpose
+   * of pulling a CDS file. It's public data per the law."). Its Crawl-delay and the per-host gap still apply, the user
+   * agent is the same, and a 401/403/429 or challenge answer is returned and recorded like any other, never retried.
+   * Index pages, sitemaps, class profiles, and discovery pages never pass it.
    */
-  async get(url: string, conditional: { etag?: string; last_modified?: string } = {}, extraHeaders: Record<string, string> = {}): Promise<Response | null> {
+  async get(url: string, conditional: { etag?: string; last_modified?: string } = {}, extraHeaders: Record<string, string> = {}, opts: { cdsDocument?: boolean } = {}): Promise<Response | null> {
     const u = new URL(url);
     const robots = await this.robotsFor(u.origin);
-    if (!robotsAllows(robots, url)) {
+    if (opts.cdsDocument && !robotsAllows(robots, url)) {
+      if (!robots.unreachable) this.deps.log(`  robots.txt disallows ${url}; fetched anyway: a CDS file is public data (owner decision 2026-10-10)`);
+    } else if (!robotsAllows(robots, url)) {
       // A probed host that doesn't exist (most IR-host guesses) is not a robots.txt refusal: say which it was, once per host.
       if (robots.unreachable === "no-response") {
         if (!this.unreachableLogged.has(u.host)) this.deps.log(`  ${u.host} didn't respond; skipped`);

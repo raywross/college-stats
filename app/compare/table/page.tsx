@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { shortName } from "@/lib/brand";
 import { compareAidRows } from "@/lib/cds/financial-aid-compare";
+import { costByIncomeRows } from "@/lib/compare-cost-rows";
+import { estimatesShown } from "@/lib/cost-curve";
 import { TABLE_GROUPS, compareTopicOf, type CompareTableGroup } from "@/lib/compare-topics";
 import { compareMetadata, loadComparison, requireComparison } from "@/lib/compare-data";
 import { Panel } from "@/components/profile/Panel";
@@ -27,7 +29,10 @@ export default async function CompareTablePage({ searchParams }: Props) {
   const { data, schools } = comparison;
   // CDS financial aid rows (specs/data-expansion/cds-financial-aid.md#compare) close Cost & aid; they need the federal aid year.
   const aidRows = compareAidRows(data.citeField("aid.cohort").year);
-  const groups: CompareTableGroup[] = TABLE_GROUPS.map((g) => (g.topic === "cost" ? { ...g, rows: [...g.rows, ...aidRows] } : g));
+  // Cost by income (specs/product/cost-by-income.md): where need-based aid ends, merit, and published promises. The table adds a
+  // cell's own year itself, so these rows leave the promise's award year out of the text. Estimates follow the pilot's gate.
+  const curveRows = costByIncomeRows(estimatesShown(), { withYear: false });
+  const groups: CompareTableGroup[] = TABLE_GROUPS.map((g) => (g.topic === "cost" ? { ...g, rows: [...g.rows, ...curveRows, ...aidRows] } : g));
   const names = new Intl.ListFormat("en", { style: "long", type: "conjunction" }).format(schools.map(shortName));
   const topic = compareTopicOf(TOPIC);
 

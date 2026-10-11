@@ -174,11 +174,17 @@ export function applyCccuMembership(schools: readonly School[], files: readonly 
   const file = files.find((f) => f.org === CCCU_ORG);
   if (!file) return schools.map(stripCccuMembership);
   const ids = new Set(file.entries.flatMap((e) => e.matches.map((m) => m.unit_id)));
-  const lineage: LineageRecord = { source: "directory", method: "derived", year: readLabel(file.crawled), retrieved: file.crawled };
+  const record: LineageRecord = { source: "directory", method: "derived", year: readLabel(file.crawled), retrieved: file.crawled };
   return schools.map((s) => {
     const clean = stripCccuMembership(s);
     if (!ids.has(s.unit_id) || !clean.religion) return clean;
-    return { ...clean, religion: { ...clean.religion, cccu_member: true }, lineage: { ...(clean.lineage ?? {}), "religion.cccu_member": lineage } };
+    // Key order is fixed, the same way applyDirectories fixes `directories`' lineage position (above): merge-reported
+    // re-appends `reported.*` lineage entries as a block at the end, so religion.cccu_member goes right before the
+    // first one (or at the end if there is none) — stable whichever of this step and merge-reported runs first.
+    const entries = Object.entries(clean.lineage ?? {});
+    const at = entries.findIndex(([k]) => k.startsWith("reported."));
+    entries.splice(at < 0 ? entries.length : at, 0, ["religion.cccu_member", record]);
+    return { ...clean, religion: { ...clean.religion, cccu_member: true }, lineage: Object.fromEntries(entries) };
   });
 }
 

@@ -15,6 +15,7 @@ import { FORM_SHORT } from "./finances.ts";
 import { money, num, pct, pctSmart } from "./format.ts";
 import { MIN_GROUP_COHORT, gradRateCell } from "./graduation-groups.ts";
 import { compareAidRows } from "./cds/financial-aid-compare.ts";
+import { COST_BY_INCOME_FIELDS, costByIncomeRows } from "./compare-cost-rows.ts";
 import { compareAdmitRates, compareYields } from "./cds/residency-display.ts";
 import { ADMISSION_PROFILE_ROWS, c7FactorCell } from "./cds/compare-rows.ts";
 import { compareClassesUnder20 } from "./cds/academics-display.ts";
@@ -311,6 +312,8 @@ const TABLE_FIELDS: readonly FieldPath[] = [
     ...TABLE_GROUPS.flatMap(tableGroupFields),
     // The CDS financial aid rows the table page appends to Cost & aid; their fields don't depend on the year passed.
     ...compareAidRows(null).map((r) => r[2]),
+    // Likewise the cost-by-income rows (lib/compare-cost-rows.ts), which take the pilot's gate.
+    ...costByIncomeRows(false).map((r) => r[2]),
     // "Website" closes the table as its own row (an actual link, not text), so its field isn't in a group.
     "links.website" as const,
   ]),
@@ -387,6 +390,8 @@ export const COMPARE_TOPIC_FIELDS: Record<CompareTopicKey, readonly FieldPath[]>
     "reported.aid.first_years",
     "derived.merit_dollar_share",
     "reported.aid.international",
+    // Cost by income (specs/product/cost-by-income.md): the price at an income, where need-based aid ends, merit, promises.
+    ...COST_BY_INCOME_FIELDS,
   ],
 
   // Outcomes: app/compare/outcomes/page.tsx.

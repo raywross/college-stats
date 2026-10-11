@@ -44,6 +44,7 @@ import { PoliteHttp, cacheDocument, isBlocked, sha256, type FetchFn } from "./ht
 import { guessNextEditionUrls } from "./guess.mts";
 import { discover, extract, type DocumentInput, type LlmContext } from "./llm.mts";
 import { emptyUsage, type Job, type ModelClient } from "./models.mts";
+import { toWellFormedDeep } from "./well-formed.mts";
 
 export interface PipelineDeps {
   client: ModelClient;
@@ -225,10 +226,12 @@ export function createPipeline(deps: PipelineDeps) {
         throw err;
       }
     }
+    // Well-form every string before it leaves this process (see well-formed.mts): a lone surrogate anywhere in the
+    // body breaks JSON.stringify's output and the API rejects the request outright.
     const client: ModelClient = {
       messages: {
-        create: (body) => guarded(() => deps.client.messages.create(body)),
-        stream: (body) => ({ finalMessage: () => guarded(() => deps.client.messages.stream(body).finalMessage()) }),
+        create: (body) => guarded(() => deps.client.messages.create(toWellFormedDeep(body))),
+        stream: (body) => ({ finalMessage: () => guarded(() => deps.client.messages.stream(toWellFormedDeep(body)).finalMessage()) }),
       },
     };
     const ctx: LlmContext = { client, usage, today, log };

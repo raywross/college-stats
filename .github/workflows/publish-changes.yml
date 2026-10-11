@@ -5,7 +5,10 @@
 #   digest never announce a change before the site shows it. Safe to re-run: a commit already recorded writes nothing.
 # - high-schools: when a push to main changes data/high-schools/**, publishes the high school tables
 #   (npm run publish-high-schools).
-# - Run workflow (by hand, from main): either or both.
+# - college-failures: after each successful Vercel production deploy (the same trigger as changes), loads the
+#   deployed commit's data/college-failures.json into college_data_failures (npm run publish-college-failures;
+#   specs/college-data-failures.md). Warns and succeeds while the table's migration isn't applied.
+# - Run workflow (by hand, from main): any one, or all.
 # Skips cleanly while the PROD_* repository secrets aren't set. See specs/supabase.md#production.
 name: Publish changes
 
@@ -19,8 +22,8 @@ on:
       what:
         description: What to publish
         type: choice
-        options: [both, changes, high-schools]
-        default: both
+        options: [all, changes, high-schools, college-failures]
+        default: all
 
 permissions:
   contents: read
@@ -33,7 +36,7 @@ jobs:
       (github.event_name == 'deployment_status' &&
        github.event.deployment_status.state == 'success' &&
        startsWith(github.event.deployment.environment, 'Production')) ||
-      (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && inputs.what != 'high-schools')
+      (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && (inputs.what == 'all' || inputs.what == 'changes'))
     runs-on: ubuntu-latest
     # One at a time. A newer queued run replacing an older queued one loses nothing: each run diffs from the last
     # recorded commit, so the newer one covers both.
@@ -75,7 +78,7 @@ jobs:
   high-schools:
     if: >-
       (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
-      (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && inputs.what != 'changes')
+      (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && (inputs.what == 'all' || inputs.what == 'high-schools'))
     runs-on: ubuntu-latest
     # Its own group, so a queued high school publish never replaces a queued change log (or the reverse).
     concurrency:
@@ -106,3 +109,46 @@ jobs:
       # File checks, batched writes, exact read-back. Re-run once after a minute on failure; safe to repeat (upserts).
       - if: steps.secrets.outputs.ready == 'true'
         run: npm run publish-high-schools || { echo "::warning::Publish failed; retrying once in 60 s."; sleep 60; npm run publish-high-schools; }
+
+  college-failures:
+    # The same trigger as changes: loads the deployed commit's file, which the data PRs keep current.
+    if: >-
+      (github.event_name == 'deployment_status' &&
+       github.event.deployment_status.state == 'success' &&
+       startsWith(github.event.deployment.environment, 'Production')) ||
+      (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && (inputs.what == 'all' || inputs.what == 'college-failures'))
+    runs-on: ubuntu-latest
+    # Its own group, so it never waits behind (or replaces) a queued change log. Each load is the whole file, so a
+    # newer queued run replacing an older one loses nothing.
+    concurrency:
+      group: publish-college-failures
+      cancel-in-progress: false
+    env:
+      SUPABASE_URL: ${{ secrets.PROD_SUPABASE_URL }}
+      SUPABASE_SECRET_KEY: ${{ secrets.PROD_SUPABASE_SECRET_KEY }}
+      SHA: ${{ github.event_name == 'deployment_status' && github.event.deployment.sha || github.sha }}
+    steps:
+      - name: Check for prod secrets
+        id: secrets
+        run: |
+          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_SECRET_KEY" ]; then
+            echo "::notice::PROD_SUPABASE_URL or PROD_SUPABASE_SECRET_KEY is not set; skipping the college data failures load."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+      - if: steps.secrets.outputs.ready == 'true'
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.SHA }}
+      - if: steps.secrets.outputs.ready == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - if: steps.secrets.outputs.ready == 'true'
+        run: npm ci
+      # A missing table (migration not applied) warns and exits 0. Other failures re-run once after a minute; safe to
+      # repeat (upserts, and resolving only rows still open).
+      - if: steps.secrets.outputs.ready == 'true'
+        run: npm run publish-college-failures || { echo "::warning::Loading college data failures failed; retrying once in 60 s."; sleep 60; npm run publish-college-failures; }

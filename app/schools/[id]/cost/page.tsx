@@ -13,6 +13,10 @@ import { HeadlineDelta } from "@/components/history/HeadlineDelta";
 import { ShowMore } from "@/components/ui/show-more";
 import { InfoTip, MetricLabel, Term } from "@/components/ui/info-tip";
 import { NetPriceByIncome } from "@/components/charts/NetPriceByIncome";
+import { FEDERAL_TOP, estimatesShown } from "@/lib/cost-curve";
+import { hasEstimate, incomeLabel } from "@/lib/cost-display";
+import { CostFacts } from "@/components/school/CostFacts";
+import { CostByIncome } from "@/components/school/CostByIncome";
 import { AidBreakdown } from "@/components/charts/AidBreakdown";
 import { WhatStudentsPay } from "@/components/school/WhatStudentsPay";
 import { LoansCard } from "@/components/school/LoansCard";
@@ -46,6 +50,10 @@ export default async function CostPage({ params }: Props) {
   const c = school.cost;
   const o = school.outcomes;
   const byIncomeYear = citeField("cost.net_price_by_income", school).year;
+  // The estimate and the break point show only once the accuracy pilot has passed (or off production): server-side.
+  const showEstimates = estimatesShown();
+  const curve = data.costCurveFor(school);
+  const curveShown = curve !== null;
   // Net price by income covers in-state students at publics, so the full-price column uses the in-state sticker.
   const stickerFull = c?.sticker?.in_state ?? c?.sticker?.in_district ?? null;
   const stickerCited = citeField("cost.sticker", school);
@@ -53,7 +61,7 @@ export default async function CostPage({ params }: Props) {
 
   const items = [
     { id: "price", label: "What students pay" },
-    { id: "by-income", label: "Price by family income" },
+    { id: "by-income", label: "Cost by family income" },
     { id: "debt", label: "Debt and payback" },
     { id: "loans", label: "Borrowing and repayment" },
     { id: "aid", label: "Who gets aid" },
@@ -74,6 +82,28 @@ export default async function CostPage({ params }: Props) {
         school={school}
         fields={TOPIC_FIELDS[TOPIC]}
       >
+        {curveShown && (
+          <div className="rounded-3xl border bg-card p-4 sm:p-6">
+            <CostFacts school={school} showEstimates={showEstimates} />
+          </div>
+        )}
+        <Block id="by-income" className="my-4">
+          <h3 className="mb-1 flex items-center gap-1 font-display text-lg font-bold">
+            Cost by family income <InfoTip term="cost-curve" cited={citeField("derived.cost_estimate", school)} />
+          </h3>
+          <p className="mb-5 text-xs text-muted-foreground">
+            Per year for a typical family of four with one child in college. Up to {incomeLabel(FEDERAL_TOP)} it is the average price federal aid recipients paid
+            {byIncomeYear ? ` (${byIncomeYear})` : ""}
+            {hasEstimate(curve, showEstimates) ? "; above, our estimate." : "."}
+          </p>
+          {curveShown ? (
+            <CostByIncome school={school} showEstimates={showEstimates} />
+          ) : byIncome ? (
+            <NetPriceByIncome values={byIncome} sticker={stickerFull} years={{ netPrice: byIncomeYear, sticker: stickerYear }} />
+          ) : (
+            <p className="text-sm text-muted-foreground">Net price by family income isn&apos;t reported.</p>
+          )}
+        </Block>
         {(school.links?.price_calculator || school.links?.financial_aid || school.links?.veterans) && (
           <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-stretch">
             {school.links?.price_calculator && (
@@ -87,10 +117,8 @@ export default async function CostPage({ params }: Props) {
                   <Calculator className="size-5" />
                 </span>
                 <span className="min-w-0 flex-1 text-sm">
-                  <b>Your family&apos;s price will differ.</b>{" "}
-                  <span className="text-muted-foreground">
-                    Get a personal estimate from {school.name}&apos;s official <Term term="net-price-calculator">net price calculator</Term>.
-                  </span>
+                  <b>For your family&apos;s real number, use {school.name}&apos;s <Term term="net-price-calculator">net price calculator</Term>.</b>{" "}
+                  <span className="text-muted-foreground">It takes about 15 minutes and uses your own income and savings.</span>
                 </span>
                 <ExternalLink className="size-4 shrink-0 text-muted-foreground group-hover:text-primary" />
               </a>
@@ -134,22 +162,7 @@ export default async function CostPage({ params }: Props) {
           </div>
         )}
 
-        <div className="mt-4 grid gap-4 lg:grid-cols-[1.2fr_1fr]">
-          <Block id="by-income">
-            <h3 className="mb-1 flex items-center gap-1 font-display text-lg font-bold">
-              What families at each income level pay <InfoTip term="net-price-by-income" cited={citeField("cost.net_price_by_income", school)} />
-            </h3>
-            <p className="mb-5 text-xs text-muted-foreground">
-              Average price after grants per year for students receiving federal aid
-              {byIncomeYear ? `, ${byIncomeYear}` : ""}.
-              {stickerFull !== null && <> Students with no grants pay the full {school.type === "public" ? "in-state " : ""}sticker price.</>}
-            </p>
-            {byIncome ? (
-              <NetPriceByIncome values={byIncome} sticker={stickerFull} years={{ netPrice: byIncomeYear, sticker: stickerYear }} />
-            ) : (
-              <p className="text-sm text-muted-foreground">Net price by family income isn&apos;t reported.</p>
-            )}
-          </Block>
+        <div className="mt-4 grid gap-4 lg:grid-cols-2">
           <div className="flex flex-col gap-4">
             {(o?.median_debt != null || payback !== null) && (
               <Block id="debt" className="grid grid-cols-2 gap-4">

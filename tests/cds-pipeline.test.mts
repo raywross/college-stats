@@ -19,7 +19,7 @@ import { createRound3, callLines, type Round3Options, type Round3State } from ".
 import { emptySummaryV3, memoryCallLogWriter, type ModelClient } from "../scripts/lib/college-reported/models.mts";
 import { parseCustomId } from "../scripts/lib/college-reported/batch.mts";
 import { pagesFromLayoutText } from "../scripts/lib/college-reported/layout.mts";
-import { sha256 } from "../scripts/lib/college-reported/http.mts";
+import { PoliteHttp, USER_AGENT, sha256 } from "../scripts/lib/college-reported/http.mts";
 import { fakeBatchApi, type FakeBatchOptions } from "./fixtures/fake-batch-api.mts";
 import { memoryArchive } from "./fixtures/memory-archive.mts";
 import { tinyPdf, type TinyText } from "./helpers/tiny-pdf.mts";
@@ -564,4 +564,168 @@ test("callLines: section C and the rest from the split, the whole body without o
   assert.deepEqual(callLines(arch, "C").map((l) => [l.id, l.page]), [[2, 1], [3, 2]]);
   assert.deepEqual(callLines(arch, "rest").map((l) => l.id), [1, 4, 5]);
   assert.deepEqual(callLines({ ...arch, split: null }, "C").map((l) => l.id), [1, 2, 3, 4, 5]);
+});
+
+/* ------------------------------------------------------------------ */
+/* Archived but never read (the 2026-10-05 sweep)                      */
+/* ------------------------------------------------------------------ */
+
+/**
+ * A run that fetched and archived a document but stopped before reading it (the 2026-10-05 sweep hit the job's time
+ * limit between prepare and submit): manifest entry and recipe validators written, no record, no extraction.
+ */
+async function archivedNotRead(recipes: Recipe[], routes: Record<string, Handler | Uint8Array | string>, schools: School[]) {
+  const archive = memoryArchive();
+  const state = freshState(recipes);
+  await pipeline({ fetch: fakeFetch(routes).fn, batches: batchApi(), archive }).run(state, runOpts(schools, { phase: "prepare" }));
+  state.summary = emptySummaryV3("r2", OCT.toISOString());
+  return { archive, state };
+}
+
+test("a known document that was archived but never read is read: fetched again when the archive lost its bytes", async () => {
+  const { state } = await archivedNotRead([recipe(PDF_ID, [{ kind: "cds", url: pdfUrl, format: "pdf" }])], { [pdfUrl]: pdfRoute }, [school(PDF_ID)]);
+  assert.equal(state.manifest.documents.length, 1);
+  assert.equal(state.records.size, 0, "archived, never read");
+  assert.equal(state.sources.recipes[0].sources[0].checked, OCT.toISOString().slice(0, 10), "checked this month, so needsFetch alone says no fetch");
+
+  // The next run, the same month, on a runner whose document cache doesn't hold the bytes.
+  const f = fakeFetch({ [pdfUrl]: pdfRoute });
+  const api = batchApi({ C: C_PLAN, rest: REST_PLAN });
+  const archive = memoryArchive();
+  const out = await pipeline({ fetch: f.fn, batches: api, archive }).run(state, runOpts([school(PDF_ID)], { run: "r2" }));
+  assert.equal(out.exit, 0);
+  const got = f.docs().filter((c) => c.url === pdfUrl);
+  assert.equal(got.length, 1, "fetched again");
+  assert.equal(got[0].headers["If-None-Match"], undefined, "in full: a 304 would bring no bytes");
+  assert.ok(archive.bytes.has(sha256(PDF)), "archived again for the submit and collect phases");
+  assert.deepEqual(api.created.flat().map((r) => parseCustomId(r.custom_id)!.call).sort(), ["C", "rest"]);
+  assert.equal(state.records.get(PDF_ID)!.documents[0].items["C.116"].v, 48000);
+  assert.equal(state.reported.entries[0].admissions.applicants, 48000);
+  assert.equal(state.manifest.documents.length, 1, "the same document, not a new entry");
+});
+
+test("a known template workbook never read is read from the archive, with no request to the college's site", async () => {
+  const { archive, state } = await archivedNotRead([recipe(XLSX_ID, [{ kind: "cds", url: xlsxUrl, format: "xlsx" }])], { [xlsxUrl]: XLSX }, [school(XLSX_ID)]);
+  state.records.clear(); // the read was lost: the manifest lists it, no record holds it
+  state.reported.entries = [];
+  const f = fakeFetch({ [xlsxUrl]: XLSX });
+  archive.gets.length = 0;
+  await pipeline({ fetch: f.fn, batches: batchApi(), archive }).run(state, runOpts([school(XLSX_ID)], { run: "r2" }));
+  assert.equal(f.docs().length, 0, "no fetch");
+  assert.ok(archive.gets.includes(sha256(XLSX)), "read from the archive");
+  assert.equal(state.records.get(XLSX_ID)!.documents[0].reads.deterministic?.read_by, "xlsx-template");
+  assert.equal(state.reported.entries[0].admissions.applicants, 45409);
+});
+
+test("a class profile fetched but never extracted is fetched again when the archive lost it, and extracted", async () => {
+  const ID = "190005";
+  const profile = `https://c${ID}.edu/admissions/class-profile`;
+  const page = "<h2>Class of 2029</h2><p>48,000 students applied</p>";
+  const { state } = await archivedNotRead([recipe(ID, [{ kind: "class-profile", url: profile, format: "html" }])], { [profile]: page }, [school(ID)]);
+  assert.equal(state.sources.recipes[0].sources[0].extraction, undefined);
+  assert.ok(state.sources.recipes[0].sources[0].sha256);
+  const f = fakeFetch({ [profile]: page });
+  const { client, calls } = fakeClient({ cohort: "first-year", scope: "all-rounds", entering_term: "Fall 2025", applicants: 48000, admitted: null, enrolled: null, acceptance_rate: null, quotes: { applicants: "48,000 students applied" }, page: null });
+  await pipeline({ fetch: f.fn, batches: batchApi(), archive: memoryArchive(), client }).run(state, runOpts([school(ID)], { run: "r2" }));
+  assert.equal(f.docs().filter((c) => c.url === profile).length, 1);
+  assert.equal(calls.length, 1, "round 2's extractor reads it");
+  const read = state.sources.recipes[0].sources[0].extraction as Extraction | null | undefined;
+  assert.equal(read?.applicants, 48000);
+});
+
+test("a known document read before and unchanged is still skipped, even when the archive lost its bytes", async () => {
+  const { state } = await pdfRun1();
+  assert.ok(state.records.get(PDF_ID)!.documents[0].reads.C);
+  const f = fakeFetch({ [pdfUrl]: pdfRoute, [pdfIndex]: indexHtml });
+  const api = batchApi({ C: C_PLAN, rest: REST_PLAN });
+  const archive = memoryArchive();
+  state.summary = emptySummaryV3("r2", OCT.toISOString());
+  await pipeline({ fetch: f.fn, batches: api, archive }).run(state, runOpts([school(PDF_ID)], { run: "r2" }));
+  assert.deepEqual(f.docs().map((c) => c.url), [pdfIndex], "only the index page");
+  assert.equal(archive.gets.length, 0, "nothing read from the archive");
+  assert.equal(api.created.length, 0);
+  assert.equal(state.summary.documents["pdf-flat"].unchanged, 1);
+});
+
+test("a known document that changed is read: new bytes, a new manifest entry, and its own extraction batch", async () => {
+  const { archive, state } = await pdfRun1();
+  const v2 = flatPdf({ c1: ["49,000", "1,990", "1,700"] });
+  const f = fakeFetch({ [pdfUrl]: (init) => ((init?.headers as Record<string, string>)?.["If-None-Match"] === '"v2"' ? new Response(null, { status: 304 }) : new Response(v2 as BodyInit, { status: 200, headers: { etag: '"v2"' } })) });
+  const api = batchApi({ C: { "C.116": [49000, /who applied/], "C.117": [1990, /were admitted/], "C.118": [1700, /who enrolled/] }, rest: REST_PLAN });
+  state.summary = emptySummaryV3("r2", OCT.toISOString());
+  await pipeline({ fetch: f.fn, batches: api, archive, now: new Date("2026-11-03T12:00:00Z") }).run(state, runOpts([school(PDF_ID)], { run: "r2" }));
+  assert.equal(f.docs().filter((c) => c.url === pdfUrl)[0].headers["If-None-Match"], '"v1"', "the monthly conditional GET");
+  assert.equal(state.manifest.documents.length, 2);
+  assert.deepEqual([...new Set(api.created.flat().map((r) => parseCustomId(r.custom_id)!.sha8))], [sha256(v2).slice(0, 8)]);
+  assert.equal(state.records.get(PDF_ID)!.documents.find((d) => d.sha256 === sha256(v2))!.items["C.116"].v, 49000);
+});
+
+test("the projection counts a known document that was never read (it is read this run)", async () => {
+  const { state } = await archivedNotRead([recipe(PDF_ID, [{ kind: "cds", url: pdfUrl, format: "pdf" }])], { [pdfUrl]: pdfRoute }, [school(PDF_ID)]);
+  const f = fakeFetch({ [pdfUrl]: pdfRoute });
+  const api = batchApi({ C: C_PLAN, rest: REST_PLAN });
+  const out = await pipeline({ fetch: f.fn, batches: api, archive: memoryArchive() }).run(state, runOpts([school(PDF_ID)], { run: "r2", maxCost: 0.04 }));
+  assert.match(state.summary.projection!.basis, /^1 pdf-flat × \$0\.05/);
+  assert.equal(out.exit, 3, "and the guard holds it to the cap");
+  assert.equal(api.created.length, 0);
+});
+
+/* ------------------------------------------------------------------ */
+/* robots.txt and the CDS file (owner decision 2026-10-10)             */
+/* ------------------------------------------------------------------ */
+
+const ROBOTS_ID = "190007";
+const robotsSite = `https://c${ROBOTS_ID}.edu`;
+const robotsTxt = { [`${robotsSite}/robots.txt`]: "User-agent: *\nDisallow: /ir/\n" };
+const robotsCds = `${robotsSite}/ir/CDS_2025-26.xlsx`;
+
+test("robots.txt: a CDS file it disallows is fetched (honest user agent) and read", async () => {
+  const f = fakeFetch({ ...robotsTxt, [robotsCds]: XLSX });
+  const lines: string[] = [];
+  const state = freshState([recipe(ROBOTS_ID, [{ kind: "cds", url: robotsCds, format: "xlsx" }])]);
+  await createRound3({ client: fakeClient().client, batches: batchApi(), fetch: f.fn, now: () => OCT, sleep: async () => {}, minDelayMs: 0, archive: memoryArchive(), table: CDS_TEMPLATE, callLog: memoryCallLogWriter(), log: (m) => lines.push(m), pollIntervalMs: 1 }).run(state, runOpts([school(ROBOTS_ID)]));
+  const got = f.docs().filter((c) => c.url === robotsCds);
+  assert.equal(got.length, 1, "the CDS file was requested once");
+  assert.equal(got[0].headers["User-Agent"], USER_AGENT);
+  assert.ok(lines.some((l) => l.includes(`robots.txt disallows ${robotsCds}; fetched anyway`)), "and the log says so");
+  assert.equal(state.records.get(ROBOTS_ID)!.documents[0].reads.deterministic?.read_by, "xlsx-template");
+  assert.equal(state.reported.entries[0].admissions.applicants, 45409);
+  assert.equal(state.queue.items.length, 0);
+});
+
+test("robots.txt: a class profile and an index page it disallows are still skipped", async () => {
+  const profile = `${robotsSite}/ir/class-profile`;
+  const index = `${robotsSite}/ir/cds`;
+  const f = fakeFetch({ ...robotsTxt, [robotsCds]: XLSX, [profile]: "<p>48,000 students applied</p>", [index]: `<a href="/ir/CDS_2026-27.pdf">Common Data Set 2026-2027</a>` });
+  const { client, calls } = fakeClient({ cohort: "first-year", scope: "all-rounds", entering_term: "Fall 2025", applicants: 48000, admitted: null, enrolled: null, acceptance_rate: null, quotes: { applicants: "48,000 students applied" }, page: null });
+  const state = freshState([recipe(ROBOTS_ID, [{ kind: "cds", url: robotsCds, format: "xlsx" }, { kind: "class-profile", url: profile, format: "html" }], [index])]);
+  await pipeline({ fetch: f.fn, batches: batchApi(), archive: memoryArchive(), client }).run(state, runOpts([school(ROBOTS_ID)]));
+  assert.deepEqual(f.docs().map((c) => c.url), [robotsCds], "only the CDS file: neither the class profile nor the index page");
+  assert.equal(calls.length, 0, "the class profile never reached the extractor");
+
+  // The client itself: without `cdsDocument`, a disallowed URL is still skipped with no request.
+  const f2 = fakeFetch({ ...robotsTxt, [robotsCds]: XLSX });
+  const http = new PoliteHttp({ fetch: f2.fn, now: () => 0, sleep: async () => {}, minDelayMs: 0, log: () => {} });
+  assert.equal(await http.get(robotsCds), null);
+  assert.equal(await http.get(index), null);
+  assert.equal(f2.docs().length, 0);
+});
+
+test("robots.txt: a CDS file that answers 403 is not worked around (one request, same user agent, queued unreachable)", async () => {
+  const f = fakeFetch({ ...robotsTxt, [robotsCds]: () => new Response("Forbidden", { status: 403 }) });
+  const state = freshState([recipe(ROBOTS_ID, [{ kind: "cds", url: robotsCds, format: "xlsx" }])]);
+  await pipeline({ fetch: f.fn, batches: batchApi(), archive: memoryArchive() }).run(state, runOpts([school(ROBOTS_ID)]));
+  const got = f.docs().filter((c) => c.url === robotsCds);
+  assert.equal(got.length, 1, "no retry");
+  assert.equal(got[0].headers["User-Agent"], USER_AGENT, "no other user agent");
+  assert.equal(state.records.get(ROBOTS_ID), undefined, "nothing read");
+  assert.equal(state.reported.entries.length, 0);
+  const q = state.queue.items.find((i) => i.unit_id === ROBOTS_ID);
+  assert.ok(q?.failures.some((x) => x.check === "unreachable" && x.detail === `HTTP 403 at ${robotsCds}`));
+
+  // The client records the refusal for data/reference/blocked-hosts.json, as for any other request.
+  const http = new PoliteHttp({ fetch: f.fn, now: () => 0, sleep: async () => {}, minDelayMs: 0, log: () => {} });
+  const res = await http.get(robotsCds, {}, {}, { cdsDocument: true });
+  assert.equal(res?.status, 403);
+  assert.deepEqual(http.blockedSeen().map((b) => [b.host, b.url]), [[`c${ROBOTS_ID}.edu`, robotsCds]]);
 });

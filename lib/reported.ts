@@ -72,6 +72,12 @@ export interface RecipeSource {
   /** The last extraction from this document, kept so a re-run can re-check without re-reading. */
   extraction?: Extraction | null;
   /**
+   * `pdf`: a class-profile PDF read as a PDF (its pages' text). Absent on a PDF profile read before 2026-10-10, when
+   * round 3 decoded every profile as HTML (a PDF's compressed bytes): such an extraction is not a read, and the profile
+   * is read again (lib/cds-reads.ts awaitingFirstRead).
+   */
+  read_as?: "pdf";
+  /**
    * Round 3: ISO date this URL was last requested (a 200 or a 304), so a known document gets its conditional GET at most
    * monthly (lib/cds-reads.ts needsFetch, Decision 10). Absent: the manifest's `retrieved` is used.
    */

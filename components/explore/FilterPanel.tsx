@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition, type ReactNode } from "react";
+import { useState, useSyncExternalStore, useTransition, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { RotateCcw } from "lucide-react";
 import { useMe } from "@/components/account/useMe";
@@ -8,6 +8,11 @@ import { SignInPrompt } from "@/components/account/SignInPrompt";
 import { myHome } from "@/lib/home-store";
 import { DEFAULT_WITHIN, WITHIN_OPTIONS, parseZip } from "@/lib/home";
 import { HistogramSlider } from "@/components/charts/HistogramSlider";
+import { Slider } from "@/components/ui/slider";
+import { FEDERAL_TOP } from "@/lib/cost-curve";
+import { INCOME_INPUT, MIN_AID_INCOME, PRICE_AT_SORT } from "@/lib/cost-explore";
+import { dollarsK, incomeLabel } from "@/lib/cost-at-income";
+import { readIncome, subscribeIncome } from "@/lib/income-memory";
 import { InfoTip } from "@/components/ui/info-tip";
 import type { TermKey } from "@/lib/glossary";
 import { DOMAINS, SIZE_BUCKETS } from "@/lib/metrics";
@@ -95,6 +100,8 @@ export interface FilterFacets {
   greekCouncils: Partial<Record<Council, number>>;
   /** Colleges matching the gap-year chip (lib/cds/application-logistics-display.ts). */
   logistics: Record<LogisticsFilterParam, number>;
+  /** Colleges that offer merit aid, reported or by the federal proxy (lib/merit.ts offersMerit). */
+  merit: number;
 }
 
 function Section({ title, term, children }: { title: string; term?: TermKey; children: ReactNode }) {
@@ -151,7 +158,11 @@ function Chip({
   );
 }
 
-export function FilterPanel({ facets, onDone }: { facets: FilterFacets; onDone?: () => void }) {
+/**
+ * `estimates`: whether estimated break points are shown (lib/cost-curve.ts estimatesShown(), decided on the server);
+ * closed, the "need-based aid reaches" control is replaced by a line saying why.
+ */
+export function FilterPanel({ facets, onDone, estimates = true }: { facets: FilterFacets; onDone?: () => void; estimates?: boolean }) {
   const router = useRouter();
   const { searchParams, update, getList, toggleInList } = useExploreParams();
 
@@ -180,7 +191,7 @@ export function FilterPanel({ facets, onDone }: { facets: FilterFacets; onDone?:
   const fieldOptions = MAJOR_FAMILY_CODES.filter((f) => (facets.fields[f]?.[0] ?? 0) > 0).sort((a, b) => MAJOR_FAMILIES[a].localeCompare(MAJOR_FAMILIES[b]));
 
   const hasFilters = [
-    ...["q", "types", "sizes", "regions", "states", "minAR", "maxAR", "minSAT", "maxSAT", "minCost", "maxCost", "minEnroll", "maxEnroll", "minApplicants", "minUndergrads", "balance", "fullTime", "fewLoans", "liveOn", "noFee", "guarantee", "noLegacy", "noEssay", "gpaRequired", "setting", "research", "designation", "opportunity", "division", "conference", "football", "rotc", "ugResearch", "studyAbroad", "maxRatio", "pellGap", "minFullTimeFaculty", "national", "field", "byRes", "oosEven", "gpa", "aidForms", "intlAid", "honors", "transfers", "minGreek", "gapYear", "faith", "faithGroup", "lgbtqCenter", "lgbtqHousing", "lgbtqNondiscrimination", "greekCouncils"],
+    ...["q", "types", "sizes", "regions", "states", "minAR", "maxAR", "minSAT", "maxSAT", "minCost", "maxCost", "minEnroll", "maxEnroll", "minApplicants", "minUndergrads", "balance", "fullTime", "fewLoans", "liveOn", "noFee", "guarantee", "noLegacy", "noEssay", "gpaRequired", "setting", "research", "designation", "opportunity", "division", "conference", "football", "rotc", "ugResearch", "studyAbroad", "maxRatio", "pellGap", "minFullTimeFaculty", "national", "field", "byRes", "oosEven", "gpa", "aidForms", "intlAid", "honors", "transfers", "minGreek", "gapYear", "faith", "faithGroup", "lgbtqCenter", "lgbtqHousing", "lgbtqNondiscrimination", "greekCouncils", "minAidIncome", "merit"],
     ...INDICATOR_KEYS.map((k) => INDICATORS[k].param),
     "policy",
     "near",
@@ -188,7 +199,7 @@ export function FilterPanel({ facets, onDone }: { facets: FilterFacets; onDone?:
 
   const clearAll = () => {
     const keep = new URLSearchParams();
-    for (const k of ["sortBy", "sortDir", "view"]) {
+    for (const k of ["sortBy", "sortDir", "view", "income"]) {
       const v = searchParams.get(k);
       if (v) keep.set(k, v);
     }
@@ -284,6 +295,8 @@ export function FilterPanel({ facets, onDone }: { facets: FilterFacets; onDone?:
           {Math.round(FEW_LOANS_MAX * 100)}% or fewer of undergrads take a federal loan.
         </p>
       </Section>
+
+      <CostByIncomeSection estimates={estimates} merit={facets.merit} />
 
       <Section title="Graduation" term="pell-graduation-gap">
         <div className="flex flex-wrap gap-1.5">
@@ -813,6 +826,120 @@ function DistanceSection() {
       ) : (
         note && <p className="text-[11px] text-muted-foreground">{note}</p>
       )}
+    </Section>
+  );
+}
+
+/** A slider's value while it is dragged, starting over when the URL changes it (Reset, a chip). */
+function useDraft<T>(value: T): [T, (v: T) => void] {
+  const [draft, setDraft] = useState(value);
+  const [synced, setSynced] = useState(value);
+  if (synced !== value) {
+    setSynced(value);
+    setDraft(value);
+  }
+  return [draft, setDraft];
+}
+
+/**
+ * "Cost by family income" (specs/product/cost-by-income.md "Explore"): where need-based aid ends (`minAidIncome`), merit
+ * aid (`merit`), and a family income that prices every card and offers the "Price at income" sort (`income`,
+ * `sortBy=price_at`). The break point is an estimate: while the accuracy pilot's gate is closed it filters nothing, so the
+ * control gives way to one line saying so.
+ */
+function CostByIncomeSection({ estimates, merit }: { estimates: boolean; merit: number }) {
+  const { searchParams, update } = useExploreParams();
+  const remembered = useSyncExternalStore(subscribeIncome, readIncome, () => null);
+  const aidParam = Number(searchParams.get("minAidIncome"));
+  const aid = aidParam > 0 ? Math.min(MIN_AID_INCOME.max, Math.max(MIN_AID_INCOME.min, aidParam)) : MIN_AID_INCOME.min;
+  const incomeParam = searchParams.get("income");
+  const income = incomeParam !== null && incomeParam !== "" && Number.isFinite(Number(incomeParam)) && Number(incomeParam) >= 0 ? Number(incomeParam) : null;
+  const [aidDraft, setAidDraft] = useDraft(aid);
+  const [incomeDraft, setIncomeDraft] = useDraft(income ?? remembered ?? INCOME_INPUT.default);
+  const sortingByPrice = searchParams.get("sortBy") === PRICE_AT_SORT;
+  const startIncome = remembered ?? INCOME_INPUT.default;
+
+  return (
+    <Section title="Cost by family income" term="cost-curve">
+      {estimates ? (
+        <div className="space-y-2">
+          <p className="flex items-center gap-1 text-xs font-semibold">
+            Need-based aid reaches families earning
+            <InfoTip term="break-point" />
+          </p>
+          <Slider
+            aria-label="Need-based aid reaches families earning at least"
+            min={MIN_AID_INCOME.min}
+            max={MIN_AID_INCOME.max}
+            step={MIN_AID_INCOME.step}
+            value={[aidDraft]}
+            onValueChange={(v) => Array.isArray(v) && setAidDraft(v[0])}
+            onValueCommitted={(v) => Array.isArray(v) && update({ minAidIncome: v[0] > MIN_AID_INCOME.min ? String(v[0]) : null })}
+          />
+          <p className="text-xs">
+            <span className="rounded-md bg-muted px-1.5 py-0.5 font-semibold tabular-nums">
+              {aidDraft <= MIN_AID_INCOME.min ? "Any" : `${dollarsK(aidDraft)} or more`}
+            </span>
+          </p>
+          <p className="text-[11px] text-muted-foreground">
+            Colleges where our estimate puts the end of need-based aid at this family income or higher. Colleges without an estimate are hidden while
+            this is set.
+          </p>
+        </div>
+      ) : (
+        <p className="text-[11px] text-muted-foreground">
+          Filtering by where need-based aid ends is off for now: that figure is an estimate, and it isn&apos;t shown until we&apos;ve checked it against
+          colleges&apos; own calculators.
+        </p>
+      )}
+
+      <div className="flex flex-wrap gap-1.5">
+        <Chip active={searchParams.get("merit") === "1"} onClick={() => update({ merit: searchParams.get("merit") === "1" ? null : "1" })} count={merit} term="merit-aid">
+          Offers merit aid
+        </Chip>
+      </div>
+      <p className="text-[11px] text-muted-foreground">Aid for students without financial need, from the college&apos;s own report or the federal proxy.</p>
+
+      <div className="space-y-2 border-t pt-3">
+        <p className="text-xs font-semibold">Show each college&apos;s price at a family income</p>
+        {income === null ? (
+          <div className="flex flex-wrap gap-1.5">
+            <Chip active={false} onClick={() => update({ income: String(startIncome) })}>
+              Show prices at {incomeLabel(startIncome)}
+              {remembered !== null ? " (from Compare)" : ""}
+            </Chip>
+          </div>
+        ) : (
+          <>
+            <Slider
+              aria-label="Family income per year"
+              min={INCOME_INPUT.min}
+              max={INCOME_INPUT.max}
+              step={INCOME_INPUT.step}
+              value={[incomeDraft]}
+              onValueChange={(v) => Array.isArray(v) && setIncomeDraft(v[0])}
+              onValueCommitted={(v) => Array.isArray(v) && update({ income: String(v[0]) })}
+            />
+            <p className="text-xs">
+              <span className="rounded-md bg-muted px-1.5 py-0.5 font-semibold tabular-nums">{incomeLabel(incomeDraft)}</span>
+            </p>
+            <div className="flex flex-wrap gap-1.5">
+              <Chip
+                active={sortingByPrice}
+                onClick={() => update(sortingByPrice ? { sortBy: null, sortDir: null } : { sortBy: PRICE_AT_SORT, sortDir: null })}
+              >
+                Lowest price first
+              </Chip>
+              <Chip active={false} onClick={() => update({ income: null, ...(sortingByPrice ? { sortBy: null, sortDir: null } : {}) })}>
+                Remove
+              </Chip>
+            </div>
+          </>
+        )}
+        <p className="text-[11px] text-muted-foreground">
+          Up to {dollarsK(FEDERAL_TOP)} it&apos;s the published average net price for students receiving federal aid; above it, {estimates ? "our estimate for a typical family" : "the published data end"}.
+        </p>
+      </div>
     </Section>
   );
 }

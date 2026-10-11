@@ -21,7 +21,7 @@ import type {
 } from "../../../lib/reported.ts";
 import type { School } from "../../../lib/types";
 import { onlyBlockedCandidates, recordBlocked } from "./blocked.mts";
-import { entryYearOf } from "./documents.mts";
+import { entryYearOf, linkKind, type FoundLink } from "./documents.mts";
 import { tierOf, type Tier } from "./pilot.mts";
 import type { Prefetched, ProbePage, StepFind } from "./probe.mts";
 
@@ -117,6 +117,28 @@ export function retireSuperseded(recipe: Pick<Recipe, "sources">, newSources: Re
   });
   const gone = new Set(retire.map((s) => s.url));
   return { keep: recipe.sources.filter((s) => !gone.has(s.url)), retire };
+}
+
+/**
+ * A recipe's CDS links that were never fetched (`fetched` says no) and that its index page doesn't list, replaced by the
+ * page's link to the same edition. A model can name a file with a mistyped path (Santa Clara 2025–26: ".../fampf/..."
+ * for ".../ff/..."), which answers 404 every run; the index page it found alongside lists the real one. Links the page
+ * lists, links fetched before, and links naming no edition are kept.
+ */
+export function replaceUnlisted(sources: readonly RecipeSource[], links: readonly FoundLink[], fetched: (url: string) => boolean): { sources: RecipeSource[]; replaced: [from: string, to: string][] } {
+  const listed = new Set(links.map((l) => l.url));
+  const replaced: [string, string][] = [];
+  const out = sources.map((s) => {
+    if (s.kind !== "cds" || fetched(s.url) || listed.has(s.url)) return s;
+    const year = entryYearOf(s.url);
+    if (year === null) return s;
+    const same = links.find((l) => linkKind(l) === "cds" && entryYearOf(`${l.url} ${l.text}`) === year && !sources.some((x) => x.url === l.url));
+    if (!same) return s;
+    replaced.push([s.url, same.url]);
+    const format = /\.xlsx($|\?)/i.test(same.url) ? "xlsx" : "pdf";
+    return { kind: "cds" as const, url: same.url, format, ...(s.anchor ? { anchor: s.anchor } : {}) } satisfies RecipeSource;
+  });
+  return { sources: out, replaced };
 }
 
 /**

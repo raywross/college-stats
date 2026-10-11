@@ -21,6 +21,7 @@ import { TRADITIONS, isCouncil, isTradition } from "@/lib/directories";
 import { isMajorFamily, majorFamilyName } from "@/lib/majors";
 import { typeLabel } from "@/lib/format";
 import { DEFAULT_WITHIN } from "@/lib/home";
+import { costFilterChips, priceAtSortOption } from "@/lib/cost-explore";
 import { useExploreParams } from "./useExploreParams";
 import { cn } from "@/lib/utils";
 
@@ -134,7 +135,12 @@ export function SortControl() {
   const { searchParams, update } = useExploreParams();
   const sortBy = searchParams.get("sortBy") ?? "applicants";
   const sortDir = searchParams.get("sortDir") ?? (sortBy === "applicants" ? "desc" : "asc");
-  const sorts = SORTS.filter((s) => s.value !== "distance" || searchParams.get("near"));
+  // Price at an income is offered only while an income is set (cost-by-income.md), like distance needs a ZIP.
+  const priceSort = priceAtSortOption(searchParams.get("income"));
+  const sorts: readonly { value: string; label: string; dir: "asc" | "desc" }[] = [
+    ...SORTS.filter((s) => s.value !== "distance" || searchParams.get("near")),
+    ...(priceSort ? [priceSort] : []),
+  ];
 
   return (
     <div className="flex h-10 min-w-0 items-center rounded-full border bg-card pr-1 pl-3.5">
@@ -142,9 +148,9 @@ export function SortControl() {
         <span className="hidden sm:inline">Sort</span>
         <select
           aria-label="Sort by"
-          value={sortBy}
+          value={sorts.some((s) => s.value === sortBy) ? sortBy : "applicants"}
           onChange={(e) => {
-            const opt = SORTS.find((s) => s.value === e.target.value)!;
+            const opt = sorts.find((s) => s.value === e.target.value)!;
             update({ sortBy: opt.value === "applicants" ? null : opt.value, sortDir: opt.dir === "desc" && opt.value !== "applicants" ? "desc" : null });
           }}
           className="w-full min-w-0 cursor-pointer truncate bg-transparent py-1 pr-1 text-sm font-semibold text-foreground outline-none sm:w-auto"
@@ -204,7 +210,8 @@ export function ViewToggle() {
 
 /* ---------------------------------------------------------------- */
 
-export function ActiveFilters() {
+/** `showEstimates`: the accuracy pilot's gate (lib/cost-curve.ts estimatesShown(), from the server); closed, the break-point filter has no chip. */
+export function ActiveFilters({ showEstimates = true }: { showEstimates?: boolean }) {
   const { searchParams, update, getList, toggleInList } = useExploreParams();
   const chips: { key: string; label: string; onRemove: () => void }[] = [];
 
@@ -249,6 +256,10 @@ export function ActiveFilters() {
       onRemove: () => update({ near: null, within: null, ...(searchParams.get("sortBy") === "distance" ? { sortBy: null, sortDir: null } : {}) }),
     });
   }
+
+  // Cost by income (specs/product/cost-by-income.md): the break-point filter, merit aid, and the income that prices cards.
+  for (const c of costFilterChips((k) => searchParams.get(k), showEstimates))
+    chips.push({ key: c.key, label: c.label, onRemove: () => update(Object.fromEntries(c.clears.map((k) => [k, null]))) });
 
   const minCost = searchParams.get("minCost");
   const maxCost = searchParams.get("maxCost");

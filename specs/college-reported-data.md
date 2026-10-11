@@ -5,6 +5,9 @@
 > is the next step ([college-reported-setup.md](college-reported-setup.md)). Decided 2026-09-28. Depends on
 > [data-lineage.md](data-lineage.md). Absorbs the backlog items "Read Common Data Set PDFs" and "Expand Common Data Set
 > coverage".
+>
+> Where it fails: [college-data-failures.md](college-data-failures.md) lists every college the pipeline tried without
+> reaching published figures, one row per college and reason code (built 2026-10-10).
 
 ## Why
 Federal data lags by design. As of 2026-09-28 the newest federal admissions data is **fall 2024** (IPEDS ADM2024, released
@@ -29,6 +32,19 @@ Dec 2025); fall 2025 arrives about Dec 2026. Colleges publish sooner:
 - **Never re-read a document we've already processed** unless it changed.
 - ~~Federal data remains the comparison baseline~~ Revised 2026-10-03: the newest figure a college has published is
   the value everywhere ([college-reported-round-2.md](college-reported-round-2.md), Decision 1).
+- **Access rules:** obey `robots.txt` and crawl delays, identify ourselves honestly, and never get around bot
+  protection. **Revised 2026-10-10 for the CDS file only.** Owner decision, in the owner's words: *"We're safe to
+  ignore the robots.txt for the purpose of pulling a CDS file. It's public data per the law."* This revises the
+  earlier "never bypass blocks" rule for this one case:
+  - A recipe source of kind `cds` (the Common Data Set file itself, any format, first fetch or re-fetch) is fetched
+    even when robots.txt disallows it (`PoliteHttp.get(url, …, { cdsDocument: true })` in
+    `scripts/lib/college-reported/http.mts`, passed by `acquireSource` in `phases.mts`). The log says
+    "robots.txt disallows … ; fetched anyway".
+  - robots.txt still governs everything else: discovery crawling, sitemaps and IR index pages, class profiles, and
+    any non-CDS page.
+  - Nothing else changes: the same honest user agent, the 1-second per-host gap and any Crawl-delay, and a 401, 403,
+    405, 429, or challenge page is never worked around (no other user agent, no retry past it); it is recorded for
+    `data/reference/blocked-hosts.json`, and hosts there stay blocked.
 
 ## How it works
 
@@ -151,6 +167,8 @@ supporting quote, and a human-review queue for conduct-code findings:
   ([round 3](college-reported-round-3.md), Decision 3).
 - **Access rules:** obey `robots.txt` and crawl delays, never get around bot protection, and ask organizations that
   cover many campuses for data directly ([religious-life.md](religious-life.md#access-rules-apply-to-both-specs)).
+  The one exception, the CDS file itself (owner decision 2026-10-10, see [Decisions](#decisions-2026-09-28)), doesn't
+  extend to campus-life pages.
 
 ### Campus-life pilot, as built (2026-10-04)
 Branch `feature/campus-life-2-pilot`. The per-college step that [religious-life.md](religious-life.md#phase-2-as-built-pilot)
@@ -506,7 +524,12 @@ on) is its own doc: [college-reported-setup.md](college-reported-setup.md).
 - **Data in the PR:** a step right after the pipeline runs (`npm run merge-reported`, `if: always()` so a stopped
   or cancelled run still merges what it kept) rewrites `data/schools.json` to match the fresh
   `data/college-reported.json`, before the PR's `git add data` — see "Data in the PR" under
-  [college-reported-round-2.md](college-reported-round-2.md)'s As built.
+  [college-reported-round-2.md](college-reported-round-2.md)'s As built. Then `npm run merge-directories` (no
+  network) re-merges `data/directories/` and `data/campus-pages.json` into the schools.json that
+  `merge-reported` just rewrote, so it stays exactly a fresh merge (the "merge: idempotent" check). Then
+  `npm run build-trends` (no network) rebuilds `data/history/trends/`: some national trends group colleges by the
+  current dataset, and `tests/trends-foundation.test.mts` fails a PR whose trend files aren't what the build makes.
+  The PR's `git add data` commits them; the collect job does the same after its merge.
 - **PR body and release note:** generated from the run summary, `data/review-queue.json`, `data/college-reported.json`,
   and `data/schools.json` (for college names) by `scripts/college-reported-pr-body.mts` (`prBody`, `releaseNote`;
   unit-tested against fixtures in `tests/college-reported-pr-body.test.mts`): counts, cost, circuit-breaker status,
@@ -588,7 +611,8 @@ Files, all under `scripts/lib/college-reported/` except the CLI:
   `save_recipe` tool, `pause_turn` resumed) and `extract()` (Haiku 4.5, or Sonnet 5 on escalation;
   `output_config.format` = `EXTRACTION_SCHEMA`, falling back to a strict forced tool if a model rejects structured
   outputs; system prompt marked for caching). `guess.mts`: `guessNextEditionUrls(url, federalYear)`.
-- `http.mts`: robots.txt (RFC 9309; disallowed URLs are skipped and logged; an unreachable robots.txt disallows),
+- `http.mts`: robots.txt (RFC 9309; disallowed URLs are skipped and logged; an unreachable robots.txt disallows;
+  since 2026-10-10 a `cds` source's file is fetched regardless, see [Decisions](#decisions-2026-09-28)),
   one request at a time per host at least 1 s apart (longer for a Crawl-delay), conditional GETs, sha256, the
   `.cache/college-docs/<sha256>` cache. 401/403/429 and challenge pages stop there; no user-agent switching.
 - `documents.mts`: HTML → text (headings as `##`, table cells joined with `|`), PDF text per page with pdf.js
@@ -620,7 +644,9 @@ Behaviour worth knowing:
   sent a document, a resumed `pause_turn` moves the cache breakpoint, a guessed URL that exists skips discovery, a
   failed check gets one Sonnet re-read from the cache and then the queue, a missing anchor gets one re-discovery at
   effort medium, blocked sites go to the queue as `unreachable` with no model call and don't trip the breaker,
-  robots.txt is obeyed, the cost cap stops the run, the breaker trips just past its limits, and the summary counts.
+  robots.txt is obeyed (`tests/cds-pipeline.test.mts` "robots.txt: …" covers the 2026-10-10 CDS exception: a
+  disallowed CDS file is fetched and read, a disallowed class profile and index page are still skipped, and a CDS file
+  answering 403 gets one request with our user agent and is queued `unreachable`), the cost cap stops the run, the breaker trips just past its limits, and the summary counts.
   `tests/college-reported-guess.test.mts` covers the pilot's real CDS URL shapes.
 
 ### Pilot set and answer key

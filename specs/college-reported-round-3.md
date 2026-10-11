@@ -496,7 +496,7 @@ deterministic reads (which say the college's file is wrong, not our pipeline). I
 |---|---|---|
 | Discovery | Ladder for every college without a working link | Only colleges with no link, a broken index page (404 or 410), or `next_attempt` reached; starts again at step 0 |
 | Index pages | Fetched and scanned | Conditional GET monthly, weekly Aug–Nov for class-profile pages. "Changed" means the **set of document links** changed, not the HTML; pages with timestamps would otherwise look new every time ([setup](college-reported-setup.md#7-reading-the-cost)). An index page that blocks us (Michigan, Baylor) falls back to next-edition guessing |
-| Known documents | Fetched, archived | Conditional GET only when their index changed or a month has passed; a 304 or the same sha256 ends it |
+| Known documents | Fetched, archived | Conditional GET only when their index changed or a month has passed; a 304 or the same sha256 ends it, but only for a document already read. One archived and never read (no record with its sha256; for a class profile, no extraction on its source) is read now: from the archive, or fetched in full when the archive lacks its bytes (fixed 2026-10-10; see As built) |
 | Next edition | — | Guessed from the file name in the college's usual publication month (from `retrieved` dates), `.xlsx` first |
 | Deterministic reads | Every template workbook and form PDF | Re-run from the archive for $0 whenever a reader changes |
 | Model extraction | Both calls of every model-read document | Only new sha256s, and calls whose `schema_version` went up, read from the archive |
@@ -794,7 +794,9 @@ Found while reading the current code and from the inventory.
 - The lineage guard on `data/schools.json` and `extracted` records.
 - `data/college-reported.json` as C1's published file.
 - `merge-reported`, and the data PR carrying `schools.json`.
-- robots.txt, the 1-second per-host gap, the honest user agent, and never getting around bot protection.
+- robots.txt, the 1-second per-host gap, the honest user agent, and never getting around bot protection. (Revised
+  2026-10-10 by owner decision: robots.txt is no longer consulted for the CDS file itself; see
+  [college-reported-data.md](college-reported-data.md#decisions-2026-09-28).)
 - The schedule: weekly Aug–Nov, monthly Dec–Jul.
 - Exit codes 0/1/2/3.
 - The PR body, release note, and auto-merge rules.
@@ -1676,10 +1678,83 @@ could not:
     workbook measured 201,379 tokens);
   - the instructions explain the tag words and how H.101's year is marked; a text value's digits found on its cited
     line count (the aid year read from a column heading).
-  - Ohio State's robots.txt disallows its CDS PDF: an owner's-list entry (`data/reference/cds-urls.json`).
+  - Ohio State's robots.txt disallows its CDS PDF: an owner's-list entry (`data/reference/cds-urls.json`). (Since
+    2026-10-10 a CDS file is fetched despite robots.txt; see college-reported-data.md "Decisions".)
 - **Fifth run (`20261004-011421-7`): the first run worth publishing.** Grid confusion was gone (UC San Diego 4 failures,
   Michigan State 3, Houston 1). A spot check against the colleges' published figures found one display bug: G.101/G.102
   are the private-college tuition cells but read only "Tuition", and the model filled them at Florida and UC San Diego
   too. `tuitionSector` now picks the G1 cells by the college's federal sector, and the code table labels G.101/G.102
   private-only. Found, not fixed: Washington University's search step returned its 2024–25 CDS though a 2025–26 one
   exists (the fourth run found it), so its "next year" price is 2025–26.
+
+### Documents archived but never read (2026-10-10, branch `fix/college-reported-unread-docs`)
+- **What happened.** The full run `20261005-211211-16` spent its 330-minute job limit in prepare: it fetched, archived,
+  typed, and laid out about 310 documents (the manifest, and each recipe source's `checked`, ETag, Last-Modified, and
+  sha256), submitted its picker batch, and was cancelled before the submit phase. No document of that run was read by
+  a model. A cancelled job doesn't save its `actions/cache` entry, so later runners don't hold those bytes either.
+- **Why later runs never read them.** `acquireSource` (`scripts/lib/college-reported/phases.mts`) asked
+  `needsFetch(known, …)` and, with no fetch due (checked this month), counted the document unchanged; after a month a
+  304 or the same sha256 ended it the same way. Nothing asked whether the document had ever been read. The submit
+  phase lists every model-read document with a call due (`pendingDocs`), but `pendingDocument` skips one whose bytes
+  aren't in the archive, and class profiles without archived bytes are skipped the same way; template workbooks and
+  forms are read only inside `acquireSource`. So a document archived on a runner whose cache was lost stayed unread.
+- **The rule now.** A known document counts as unchanged only once it has been read (`awaitingFirstRead` in
+  `lib/cds-reads.ts`). The tie to its read is the strongest one stored: for a CDS file, a record document in
+  `data/cds-records/<unit_id>.json` with the same sha256 and at least one read; for a class-profile page, the
+  recipe source's `extraction` (undefined until round 2's extractor ran; null when it ran and found nothing). A
+  model-read document with no edition and a scanned PDF are never awaiting a read (nothing reads them yet). A document
+  awaiting its first read is read from the archive when the bytes are there (no request to the college), otherwise
+  fetched in full (no conditional headers: a 304 brings no bytes) and archived again; then it goes the way a new
+  document does (`readKnown`): template workbooks and forms are read by code, a model-read document's lines are
+  archived for the submit phase, a class profile waits for the extractor. A document read before still costs nothing:
+  no request inside the month, a conditional GET after it. The projection already counted these documents (it lists
+  every model-read document with a call due, and every class profile with no extraction); now they are also submitted.
+- **Tests** (`tests/cds-pipeline.test.mts`): an archived, never-read PDF is fetched again and read when the archive
+  lost its bytes; a never-read template workbook is read from the archive with no request; a never-extracted class
+  profile is fetched again and extracted; a read, unchanged document is skipped even with its bytes gone; a changed
+  document is read; the projection counts the never-read document. With the guard broken (`unread` always false) the
+  first three fail. `tests/cds-archive.test.mts` covers `awaitingFirstRead`.
+- **Workflow.** Both jobs run `npm run build-trends` right after `npm run merge-reported`, so a data PR's
+  `data/history/trends/` matches the merged `data/schools.json` (`tests/trends-foundation.test.mts`).
+
+### Documents found but not read (2026-10-10, branch `fix/college-reported-reads`)
+From run `20261010-192937-41` (GitHub run 38080003159) and the committed manifest.
+- **A CDS with no detected edition was never read.** 41 flattened PDFs and 9 HTML pages in `data/college-docs.json`
+  had `edition: null`: `editionFromBody` takes the edition only from a first-page "Common Data Set 2025-2026" or the
+  item text, and `awaitingFirstRead` and `pendingDocs` skip a model-read document without one. Marquette's cover prints
+  only "2025-2026" (its "Common Data Set" is an image), and most of the rest name the edition only in the file name.
+  Now: a first-page line that is only a year range is the cover (`layout.mts` COVER); else `editionFromUrl` reads the
+  file name (`cds-2025-2026_final.pdf`, `CDS_2024-25`, `CDS-25-26`, `cds2526`, `CDS_202526`; consecutive years only,
+  never a folder date or a lone year; `edition_from: "url"`); else a document with at least 8,000 characters of body
+  text is read once under the edition current when it was retrieved (`editionCurrentOn`, 2025-26 in October 2026;
+  `edition_from: "assumed"`). An assumed edition's items fail `edition-mismatch` until an item's own text (B22's
+  falls, H4's class, I-2's fall) names the year it implies, and fail on any that names another (`applyChecks`'
+  `editionAssumed`), so nothing publishes under a wrong year. Too little text: `edition_from: "none"`, recorded so it is
+  never looked at again. Documents archived before the fix (edition null, no `edition_from`) are awaiting a read and go
+  through `readKnown`, which looks for the edition again from the archived lines.
+- **Class profiles.** Every profile the run fetched was read in the same run; the ones left without an extraction had
+  not been fetched: a model named a page that answered 404 (Missouri, Iowa, RIT, Hofstra, NJIT, Adelphi, Oneonta and
+  Baruch from the search step), 300 (North Florida), or robots.txt disallowed it. Two real faults: (1) the extractor
+  decoded every profile as HTML, so a PDF profile was sent as compressed bytes (UCLA's found nothing; Georgia Tech's
+  "figures" are not in its file's text). `profileInput` now reads a PDF's pages (a scanned one as the PDF), and the
+  source records `read_as: "pdf"`; a PDF profile without it is read again once (`profileMisread`). (2) Links a model
+  names (picker, search, full discovery) are now requested before they count (`checkLink`): a 404 or 410 is dropped,
+  so the ladder keeps climbing; a page that answers is handed on as prefetched bytes. Anything else (robots.txt, 403,
+  a timeout) is left to the fetch step as before.
+- **"URI malformed".** `linkKind` and `entryYearOf` called `decodeURIComponent` on every link; a template placeholder
+  (`{%=o.guid %}` on Western Carolina's home page) or a non-UTF-8 escape threw out of the whole probe step, failing
+  discovery for 38 colleges, which then backed off to 2027-02-01. `safeDecodeUri` reads such a link as written.
+- **Santa Clara.** Full discovery returned `.../fampf/common-data-set/rba13-Common_Data_Set_2025-2026.pdf`; the real
+  file is under `.../ff/...` on the index page it also returned. The typo answered 404 every run, and since the recipe
+  had sources it was never rediscovered. Now step 4's CDS links are checked, a dead one replaced from its index pages,
+  and on every run `replaceUnlisted` swaps a CDS link that was never fetched and that the index page doesn't list for
+  the page's link to the same edition.
+- **Re-runs.** `node scripts/college-reported-rerun-ids.mts --artifact <dir> --out <file>` lists the colleges these
+  fixes affect, by reason; `uri-malformed` ones carry a back-off date and need `--rediscover`.
+- **Tests** (`tests/college-reported-reads.test.mts`): editions from file names and from a years-only cover; a CDS
+  named by its file name is read in the run that finds it; a CDS stating no edition is read once, held, and not read
+  again; an assumed edition confirmed by I-2 publishes; a pre-fix no-edition entry is read from the archive; a short
+  one is left alone; a PDF profile is read as a PDF, and a misread one again once; a picker's profile is read in the
+  same run and a 404 one dropped; a malformed link doesn't fail discovery; Santa Clara's link is repaired. With the
+  edition fix off the four no-edition pipeline tests fail; with the PDF reader off the profile test fails; with the 404
+  check off the picker test fails.

@@ -38,6 +38,7 @@ import {
 import { STANDING, standingFor, type StandingSchool, type StandingStudent } from "../lib/planner/standing.ts";
 import { emptyProfile, planGpaLabel, planGpaRange, unweightedGpa4, type GpaScale } from "../lib/student-profile.ts";
 import type { GpaBands, School } from "../lib/types.ts";
+import { noteText } from "../lib/chances/notes.ts";
 
 /* Fixtures */
 
@@ -580,7 +581,7 @@ test("sentences against the middle 50%: exact, estimated, weighted, and can't te
   const e = standingFor(satStudent(3.82), at({ ...kindOf("estimated", [3.7, 3.9], 3.8), middle: est }));
   assert.equal(
     e.gpaNote?.text,
-    "Your GPA (3.82) is inside the middle 50% of first-years' GPAs here (3.8–4.0), estimated from colleges with similar test scores; this college doesn't publish its GPA spread.",
+    "Your GPA (3.82) is inside the middle 50% of first-years' GPAs here (3.78–3.96), estimated from colleges with similar test scores; this college doesn't publish its GPA spread.",
   );
   assert.equal(e.gpaNote?.cite, "derived.gpa_estimate");
   const w = standingFor(satStudent(3.82), at({ ...kindOf("estimated", [3.7, 3.9], 3.8, 4.17), middle: est }));
@@ -595,6 +596,25 @@ test("sentences against the middle 50%: exact, estimated, weighted, and can't te
   );
   const weightedIn = standingFor(satStudent(3.5, { gpaRange: [3.6, 4.0], gpaLabel: "about 3.6–4.0 unweighted (from a weighted 4.6)" }), elon);
   assert.equal(weightedIn.gpaNote?.text, "Your GPA, about 3.6–4.0 unweighted (from a weighted 4.6), is inside the middle 50% of first-years' GPAs here (3.62–4.00).");
+});
+
+test("an estimated middle is printed to two decimals; a GPA outside the printed span is never called inside it", () => {
+  // The Georgia Tech case: 3.85 against an estimated 3.91-3.99 (once printed "3.9–4.0") stays "in" by the estimate's
+  // uncertainty, but the sentence says "close to", not "inside".
+  const est = { p25: [3.7, 4.0] as [number, number], p75: [3.9, 4.0] as [number, number], shown: [3.91, 3.99] as [number, number], kind: "estimated" as const };
+  const school = at({ ...kindOf("estimated", [3.7, 4.0], 3.9), middle: est });
+  const near = standingFor(satStudent(3.85), school);
+  assert.equal(near.gpa, "in");
+  assert.match(near.gpaNote!.text, /^Your GPA \(3\.85\) is close to the middle 50% of first-years' GPAs here \(3\.91–3\.99\), estimated/);
+  assert.match(noteText(near.notes.find((n) => n.key === "estimate.gpa.middle_estimated")!), /is close to the middle 50% of first-years' GPAs here \(3\.91–3\.99\)/);
+  const within = standingFor(satStudent(3.95), school);
+  assert.match(within.gpaNote!.text, /^Your GPA \(3\.95\) is inside the middle 50% of first-years' GPAs here \(3\.91–3\.99\)/);
+  // Across the scale, "inside" is only ever said for a GPA within the printed span.
+  for (let i = 200; i <= 400; i++) {
+    const g = i / 100;
+    const r = standingFor(satStudent(g), school);
+    if (g < 3.91 || g > 3.99) assert.doesNotMatch(r.gpaNote?.text ?? "", / is inside the middle/, `GPA ${g}`);
+  }
 });
 
 test("gpaCites: an exact middle cites derived.gpa_middle_half; an estimated one names the percentile models", () => {

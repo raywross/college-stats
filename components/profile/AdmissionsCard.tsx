@@ -10,6 +10,7 @@ import { RangeBar } from "@/components/charts/RangeBar";
 import { InfoTip, MetricLabel, Term } from "@/components/ui/info-tip";
 import { CardHeadline, CardStat, CardStats, TopicCard } from "./TopicCard";
 import { TenYearLine } from "./TenYearLine";
+import { StandingChip } from "@/components/chances/StandingChip";
 import { admissionProfile } from "@/lib/cds/admissions";
 
 /**
@@ -64,6 +65,7 @@ export async function AdmissionsCard({ profile: p }: { profile: Profile }) {
           </p>
         </div>
       )}
+      <StandingChip unitId={school.unit_id} className="mt-3" />
       {counts && (
         <CardStats>
           <CardStat label="Applied" term="applicants" cited={citeField("admissions.applicants", school)} value={num(a.applicants!)} />

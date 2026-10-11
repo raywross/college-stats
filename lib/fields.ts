@@ -461,6 +461,16 @@ export const FIELDS = {
     computed: true,
     derived: { formula: "The GPA bands holding the 25th and 75th percentiles of the \"all\" column", inputs: ["reported.admission_profile.gpa.bands.all"] },
   },
+  // How this college reads a record (specs/chances/how-colleges-read.md; lib/chances/reading.ts gpaTopShare): never ranked.
+  "derived.gpa_top_share": {
+    ...reported("Share of first-years with a 3.75 or higher GPA"),
+    computed: true,
+    derived: {
+      formula:
+        "First-years in the top two GPA bands (4.0 and 3.75–3.99), added up from the college's reported bands: the \"all\" column, else the column for students who sent test scores, else the column for those who didn't",
+      inputs: ["reported.admission_profile.gpa.bands.all", "reported.admission_profile.gpa.bands.with_test", "reported.admission_profile.gpa.bands.without_test"],
+    },
+  },
   // The plan's GPA (specs/planner/redesign/gpa.md; lib/planner/gpa-model.ts): never ranked, shown only in the plan.
   "derived.gpa_band_mean": {
     ...reported("Average first-year GPA, figured from the GPA bands"),
@@ -543,6 +553,20 @@ export const FIELDS = {
   "aid_policy.need_only": reported("Whether the college gives no merit aid (all grants are need-based)", "aid"),
   "aid_policy.home_equity": reported("How the college treats home equity in its need analysis", "aid"),
   "aid_policy.siblings": reported("How the college adjusts for siblings in college", "aid"),
+  // Published automatic-admission programs (specs/chances/base-rates.md "Automatic admission"). They live in
+  // data/guaranteed-admission.json, not on the school record: lib/lineage.ts resolves the citation from the program's
+  // own source (its page or notice, the entering fall, and the date read), like aid_policy.*.
+  "reference.guaranteed_admission.rule": reported("Automatic admission rule (published program)"),
+  "reference.guaranteed_admission.scope": reported("Whether the program admits to the campus or only to the system"),
+  "reference.guaranteed_admission.major_guaranteed": reported("Whether automatic admission includes the major"),
+  // How the college admits by school or major (specs/chances/base-rates.md "Major", major-and-grades.md "Data"), from
+  // data/major-admission.json: each value quoted from the unit's own page; lib/lineage.ts resolves the citation to it.
+  "reported.major_admission.direct_admit": reported("Whether first-years are admitted directly to the school or major"),
+  "reported.major_admission.admit_rate": reported("Admit rate for the school or major (college-reported)"),
+  "reported.major_admission.review.major_considered": reported("Whether the intended major affects admission (college's statement)"),
+  "reported.major_admission.review.emphasis": reported("Subjects the school or major looks at more closely (college's statement)"),
+  "reported.major_admission.review.required_courses": reported("High school courses the school or major requires (college's statement)"),
+  "reported.major_admission.review.gate": reported("Score requirement for the school or major (college's statement)"),
   "derived.merit_dollar_share": {
     ...reported("College grant dollars given without regard to need", "aid"),
     computed: true,

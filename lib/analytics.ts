@@ -66,6 +66,7 @@ export interface AnalyticsEvents {
   plan_dream_set: { on: boolean };
   plan_round_changed: { from_auto: boolean; round: "ed" | "ed2" | "ea" | "rea" | "rd" | "rolling" };
   plan_drawer_opened: { in_season: boolean };
+  plan_college_removed: { dream: boolean };
   plan_ed2_offer_used: { dream_round: "ed" | "rea" };
   plan_round_problem_shown: { kind: string };
   plan_scores_opened: { suggestion: boolean };
@@ -73,6 +74,12 @@ export interface AnalyticsEvents {
   plan_calendar_opened: { everyone: boolean; color_by: "child" | "round" };
   plan_calendar_feed_added: { everyone: boolean };
   plan_calendar_printed: { everyone: boolean };
+  /* The course plan (specs/chances/course-plan.md "Rules"): which reasons were shown, never a course name, a grade, or a score. */
+  course_plan_shown: { reasons: string; guardrail: string };
+  course_plan_added: { reason: string };
+  course_plan_dismissed: { reason: string };
+  /** An estimate shown to a student (the profile's card, the planner's drawer): the group, the label, the model version; never an input. */
+  estimate_shown: { group: "reach" | "target" | "likely" | "none"; label: "reach-for-everyone" | "guaranteed" | "none"; model_version: string };
 }
 export type AnalyticsEvent = keyof AnalyticsEvents;
 /** Events sent from Server Actions and Route Handlers with `trackServer()` (lib/analytics-server.ts). */
@@ -144,6 +151,7 @@ export const EVENTS = {
   plan_dream_set: { properties: ["on"], side: "client", why: "Planner: Dreams marked" },
   plan_round_changed: { properties: ["from_auto", "round"], side: "client", why: "Planner: which rounds students pick over the starting round" },
   plan_drawer_opened: { properties: ["in_season"], side: "client", why: "Planner: do row details get opened" },
+  plan_college_removed: { properties: ["dream"], side: "client", why: "Planner: do students prune the list from the plan" },
   plan_ed2_offer_used: { properties: ["dream_round"], side: "client", why: "Planner: the ED II offer taken" },
   plan_round_problem_shown: { properties: ["kind"], side: "client", why: "Planner: which round conflicts come up" },
   plan_scores_opened: { properties: ["suggestion"], side: "client", why: "Planner: Scores tab opened, with or without a retake suggestion" },
@@ -151,6 +159,10 @@ export const EVENTS = {
   plan_calendar_opened: { properties: ["everyone", "color_by"], side: "client", why: "Planner: calendar views, per child or for everyone" },
   plan_calendar_feed_added: { properties: ["everyone"], side: "client", why: "Planner: calendar feeds added" },
   plan_calendar_printed: { properties: ["everyone"], side: "client", why: "Planner: calendars printed" },
+  course_plan_shown: { properties: ["reasons", "guardrail"], side: "client", why: "Course plan: which reasons and guardrails the Next year card shows" },
+  course_plan_added: { properties: ["reason"], side: "client", why: "Course plan: do suggestions get added, by reason" },
+  course_plan_dismissed: { properties: ["reason"], side: "client", why: "Course plan: do suggestions get set aside, by reason" },
+  estimate_shown: { properties: ["group", "label", "model_version"], side: "client", why: "Quad's estimate: how often it is shown and as which group and label, per model version (never the inputs)" },
 } as const satisfies { readonly [K in AnalyticsEvent]: EventSpec<K> };
 
 type AssertTrue<T extends true> = T;

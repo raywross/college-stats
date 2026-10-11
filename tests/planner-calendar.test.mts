@@ -124,6 +124,7 @@ function view(rows: PlanRowView[], over: Partial<PlanView> = {}): PlanView {
     problems: [],
     edTwo: null,
     retake: null,
+    estimates: {},
     next: null,
     inSeason: false,
     notices: [],

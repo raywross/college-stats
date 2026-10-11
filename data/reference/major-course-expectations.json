@@ -1,0 +1,80 @@
+{
+  "retrieved": "2026-10-11",
+  "editorial": "Editorial, not any college's requirement: for each major family (two-digit CIP, lib/majors.ts), the high school subjects that colleges and professional bodies commonly expect, written from the pages listed under `sources` and shown as \"commonly expected\", never as what a particular college requires (the colleges' own required courses are in data/major-admission.json). `top` is the catalog course (data/reference/ap-courses.json) that reaches the expected level in that subject; the course plan (specs/chances/course-plan.md) uses it for the path a 9th or 10th grader sees and for the \"your intended major\" reason. Reviewed in data PRs. The pages could not be opened from the build environment (the proxy blocks college sites); `verified_via: \"search\"` marks a statement read in a web search result from the page, to be re-read on the page itself at the next data run.",
+  "families": [
+    {
+      "family": "14",
+      "expects": [
+        { "subject": "math", "text": "math through calculus", "top": "ap_calculus_ab" },
+        { "subject": "science", "text": "physics and chemistry", "top": "ap_physics_1" }
+      ],
+      "sources": [
+        { "label": "Cornell Engineering: first-year applicants (calculus, physics, chemistry)", "url": "https://admissions.cornell.edu/first-year-duffield-engineering-applicants", "verified_via": "search" },
+        { "label": "UT Austin Cockrell School of Engineering: calculus readiness", "url": "https://cockrell.utexas.edu/admissions/undergraduate/calculus-readiness-requirement", "verified_via": "search" },
+        { "label": "MIT Admissions: how to prepare (math through calculus; physics, chemistry, biology)", "url": "https://mitadmissions.org/apply/prepare/", "verified_via": "search" }
+      ]
+    },
+    {
+      "family": "15",
+      "expects": [
+        { "subject": "math", "text": "math through calculus", "top": "ap_calculus_ab" },
+        { "subject": "science", "text": "physics", "top": "ap_physics_1" }
+      ],
+      "sources": [
+        { "label": "Cornell Engineering: first-year applicants (calculus, physics, chemistry)", "url": "https://admissions.cornell.edu/first-year-duffield-engineering-applicants", "verified_via": "search" }
+      ]
+    },
+    {
+      "family": "11",
+      "expects": [
+        { "subject": "math", "text": "math through calculus", "top": "ap_calculus_ab" },
+        { "subject": "cs", "text": "some computer science", "top": "ap_computer_science_a" }
+      ],
+      "sources": [
+        { "label": "UT Austin: high school prerequisites (math for Computer Science)", "url": "https://admissions.utexas.edu/apply/application-materials/high-school-prerequisites/", "verified_via": "search" },
+        { "label": "MIT Admissions: how to prepare (math through calculus)", "url": "https://mitadmissions.org/apply/prepare/", "verified_via": "search" }
+      ]
+    },
+    {
+      "family": "27",
+      "expects": [
+        { "subject": "math", "text": "math through calculus", "top": "ap_calculus_ab" }
+      ],
+      "sources": [
+        { "label": "MIT Admissions: how to prepare (math through calculus)", "url": "https://mitadmissions.org/apply/prepare/", "verified_via": "search" }
+      ]
+    },
+    {
+      "family": "40",
+      "expects": [
+        { "subject": "math", "text": "math through calculus", "top": "ap_calculus_ab" },
+        { "subject": "science", "text": "physics and chemistry", "top": "ap_physics_1" }
+      ],
+      "sources": [
+        { "label": "MIT Admissions: how to prepare (math through calculus; physics, chemistry, biology)", "url": "https://mitadmissions.org/apply/prepare/", "verified_via": "search" },
+        { "label": "Cornell Engineering: first-year applicants (calculus, physics, chemistry)", "url": "https://admissions.cornell.edu/first-year-duffield-engineering-applicants", "verified_via": "search" }
+      ]
+    },
+    {
+      "family": "26",
+      "expects": [
+        { "subject": "science", "text": "biology and chemistry", "top": "ap_biology" },
+        { "subject": "math", "text": "calculus or statistics", "top": "ap_calculus_ab" }
+      ],
+      "sources": [
+        { "label": "MIT Admissions: how to prepare (math through calculus; physics, chemistry, biology)", "url": "https://mitadmissions.org/apply/prepare/", "verified_via": "search" }
+      ]
+    },
+    {
+      "family": "51",
+      "expects": [
+        { "subject": "science", "text": "biology and chemistry", "top": "ap_biology" },
+        { "subject": "math", "text": "calculus and statistics", "top": "ap_statistics" }
+      ],
+      "sources": [
+        { "label": "Barnard College: pre-health coursework (biology, chemistry, physics, calculus and statistics)", "url": "https://barnard.edu/sites/default/files/inline-files/Prehealth%20Coursework%20Fall%202025.pdf", "verified_via": "search" },
+        { "label": "Hamilton College: academic preparation for medicine (calculus and statistics)", "url": "https://hamilton.edu/after/healthprofessions/medicine/academic-prep", "verified_via": "search" }
+      ]
+    }
+  ]
+}

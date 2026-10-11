@@ -9,6 +9,7 @@ import { GPA_SCALES, MAX_INTENDED_MAJORS, OUTSIDE_US, effectiveGradYear, gpaDisp
 import { saveStudentProfile, type ProfileSaveState } from "@/app/me/actions";
 import { Term } from "@/components/ui/info-tip";
 import { HighSchoolPicker } from "@/components/high-schools/HighSchoolPicker";
+import { CoursePickerField } from "@/components/profile/CoursePicker";
 
 const inputCls =
   "h-11 w-full rounded-xl border border-input bg-background px-3.5 text-base outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30 disabled:opacity-60";
@@ -119,10 +120,13 @@ export function ProfileForm({
   data,
   canEdit,
   studentGradYear,
+  relation = "self",
 }: {
   studentId: string;
   data: StudentProfileData;
   canEdit: boolean;
+  /** Whose profile this is to the viewer: a guardian never sees AP exam scores while they're private. */
+  relation?: "self" | "guardian";
   /** `students.grad_year` (set when the student was invited or added to the household): the default shown when
    * the profile itself has no graduation year yet. */
   studentGradYear: number | null;
@@ -135,6 +139,8 @@ export function ProfileForm({
   // still change it freely afterward, same as any other select.
   const [residenceState, setResidenceState] = useState(data.basics.stateOfResidence ?? "");
   const [residenceFromSchool, setResidenceFromSchool] = useState(false);
+  // The picked high school's id, so the course picker can start from its AP list.
+  const [highSchoolId, setHighSchoolId] = useState(data.basics.highSchoolId);
 
   return (
     <form action={action} className="space-y-4">
@@ -177,6 +183,7 @@ export function ProfileForm({
             defaultName={data.basics.highSchool}
             disabled={disabled}
             onSelect={(hit) => {
+              setHighSchoolId(hit.id);
               // Only fills a blank state; a student who already set one (or typed over it) keeps their own answer.
               if (!residenceState && hit.state) {
                 setResidenceState(hit.state);
@@ -206,9 +213,21 @@ export function ProfileForm({
         <Field label="Class rank percentile (optional)" htmlFor="classRankPercentile" hint='"Top 10%" is 10.'>
           <input id="classRankPercentile" name="classRankPercentile" type="number" min={1} max={100} disabled={disabled} defaultValue={data.academics.classRankPercentile ?? ""} className={`${inputCls} mt-1.5`} />
         </Field>
-        <Field label="AP/IB/dual-enrollment courses (optional)" htmlFor="courseRigorCount" hint="0–40">
-          <input id="courseRigorCount" name="courseRigorCount" type="number" min={0} max={40} disabled={disabled} defaultValue={data.academics.courseRigorCount ?? ""} className={`${inputCls} mt-1.5`} />
-        </Field>
+        <div className="sm:col-span-2">
+          <span className="block text-sm font-semibold">Courses (optional)</span>
+          <p className="mb-3 mt-0.5 text-xs text-muted-foreground">
+            Your advanced courses, one by one, with grades. Colleges read rigor against what your school offers, and the plan uses your list where most students have top GPAs.
+          </p>
+          <CoursePickerField
+            initial={{ courses: data.academics.courses, coreAtTopLevel: data.academics.coreAtTopLevel, apExamsPrivate: data.academics.apExamsPrivate }}
+            highSchoolId={highSchoolId}
+            gradYear={defaultGradYear}
+            majors={data.plans.intendedMajors}
+            showExams={relation === "self" || !data.academics.apExamsPrivate}
+            canSetPrivacy={relation === "self"}
+            disabled={disabled}
+          />
+        </div>
       </Group>
 
       <Group title="Tests">

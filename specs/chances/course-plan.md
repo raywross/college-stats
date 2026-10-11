@@ -1,6 +1,6 @@
 # Course Plan: Which Advanced Courses to Take Next
 
-> Status: **planned** 2026-10-10. Part 6 of [admission chances, revisited](README.md). After
+> Status: **built** 2026-10-11 on `feature/chances` (see [as built](#as-built); planned 2026-10-10). Part 6 of [admission chances, revisited](README.md). After
 > [rigor-in-context.md](rigor-in-context.md) (the course list with grades, the AP catalog, the reading); better with
 > [estimate.md](estimate.md) (whether a course would change the estimate). Planner first; one line on the college
 > profile. Asked for by the owner after reading the first draft: "make recommendations on adding APs as part of the
@@ -169,3 +169,41 @@ list; the three-student threshold; the path for a 10th grader; the what-it-chang
    names no one.
 4. Should IB diploma candidates get suggestions? Recommendation: no; the diploma fixes the schedule. They see the path
    and the AP-exam dates only if they also take APs.
+
+## As built (2026-10-11, unit U6 on feature/chances-course-plan)
+- **The plan:** `lib/chances/course-plan.ts` (`coursePlan(input)`, server-only) runs the reasons in the spec's order over the
+  candidates and the guardrails; the rules (grades test, yearly cap of five, two at once, how many colleges make a
+  recommendation count) are `lib/chances/course-plan-rules.ts` (server-only; the grades test reads the rigor reading's own
+  "strong" line, so that file imports `rigor-rules.ts`). `course-plan-server.ts` builds the card's data for the Plan loader
+  (`PlanContext.coursePlan`, from `lib/planner/load.ts`) and sends only sentences (`course-plan-view.ts`); the sentences are
+  `course_plan.*` notes. `tests/chances-course-plan.test.mts` fails if any client file reaches the rules.
+- **Candidates:** an AP course on the school's list that isn't on the student's, whose catalog prerequisites are on the list as
+  taken or in progress (a `level:…` prerequisite can't be checked and counts as met), whose usual grades include next year, and
+  whose usual successor in the subject isn't already listed. One suggestion per subject. Only a junior (grade 11) gets
+  suggestions; 9th and 10th graders get the path (from `major-course-expectations.json`'s `top` course and the catalog
+  prerequisites); a senior gets the "senior grades still count" message.
+- **Reasons as built:** a unit's `required_courses` and course-based `gate` (via `major-review.ts`; an SAT or ACT Math route
+  already met closes a gate); the C8 recommendation counts the years the list and core answers show (`youYears`, the same count as the
+  You column, so it is the years *listed*, not a transcript), firing when at least half the list's colleges, or the Dream alone,
+  recommend more; the top-level reason for a core subject with no advanced course next year; the major's expectations. Because
+  a core subject with no advanced course next year always gets "top level" first, the major reason mostly names non-core
+  courses (computer science, the arts) and courses in a subject that already has an advanced course next year.
+- **School's list:** profile, then pooled (`school_course_counts`, three or more students; the function returns keys only), then the
+  student's own marks (`academics.schoolOffers`, asked on the card when only a count is on record), then the CRDC count (a
+  subject-level suggestion with no "Add to my plan"). Wired into `offeringFor` (`rigor-server.ts`) so the reading, the picker, and
+  the plan agree. The migration `20261011120000_school_course_counts.sql` is written, not applied; every read tolerates it missing.
+- **Saves:** "Add to my plan" is the existing `saveCourses` with one more planned row; "Not for me" and "Next year's courses are
+  chosen" are `course-plan-store.ts` (profile `academics.coursePlan = { season, dismissed, done }`, lapsing each August).
+- **What it changes:** the card asks `POST /api/estimate` twice (the plan as it is, then with `counterfactual.addCourse`) and shows
+  `estimate.group_change` for the first college that moves up; it shows nothing when the endpoint is absent, limited, or fails. The
+  reading line ("It would make your schedule most of what your school offers") comes from the server's own reading before and after.
+- **Calendar:** `choose_courses_2027` / `choose_courses_2028` (February–April, "check your school's dates"), `ap_order_deadline`
+  (November 13, 2026; $40 more per exam through March 12, 2027), `ap_exams_2027` (May 3–14, 2027), `ap_scores_2027` (projected,
+  early July) in the 2026–27 to 2028–29 cycles; the 2029–30 cycle isn't in the file yet, so the class of 2030 gets none until it is. "Send
+  your AP scores to {college} for credit" is a `summer` task from the offers generator once the student commits to a college whose
+  `admissions.accepts_ap_credit` is true (not when the list shows no AP course was taken).
+- **Profile:** the You column's table in "What you'll need in high school" gains "Science: 4 recommended, you're on track for 3. See next
+  year's options in your plan." for a student in 9th to 11th grade.
+- **Not done:** parents' nudge about the card (parents see it read-only); the card for the signed-out plan; the 11th-grade choice for a 10th
+  grader (the spec gives them the path only); a lower yearly cap for 10th grade (open question 1). The major expectations' pages could not
+  be opened from the build environment (`verified_via: "search"`); re-read them at the next data run.

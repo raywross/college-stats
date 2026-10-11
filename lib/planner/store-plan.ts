@@ -19,6 +19,7 @@ import { effectiveGradYear } from "@/lib/student-profile";
 import type { ListRound } from "@/lib/list-rules";
 import { generatorInputFor, readPlan, todayIso, writeAutoWrites } from "./context";
 import { autoWrites, planView } from "./plan-view";
+import { planEstimates } from "./plan-estimates";
 import { applyNumbers, groupPatch, isUuid, parseNumbers, roundPatch, togglePlannedDate, type PickedGroup, type PlanNumbers } from "./plan-writes";
 import { regenerate, setDream } from "./store";
 
@@ -58,7 +59,8 @@ async function syncWith(supabase: Supabase, listId: string): Promise<number> {
   }
   const today = todayIso();
   const input = await generatorInputFor(plan, { gradYear, profile, home: await myHome(), today });
-  const writes = autoWrites(planView({ items: plan.items, schools: input.schools, profile, today }));
+  const estimates = await planEstimates(profile, plan.items.map((i) => i.unit_id), { gradYear, today });
+  const writes = autoWrites(planView({ items: plan.items, schools: input.schools, profile, estimates, today }));
   return writes.length > 0 ? writeAutoWrites(supabase, writes) : 0;
 }
 

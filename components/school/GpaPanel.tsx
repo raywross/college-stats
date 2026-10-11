@@ -1,5 +1,5 @@
 import { getData } from "@/lib/data";
-import { admissionProfile, classRankSentence } from "@/lib/cds/admissions";
+import { admissionProfile, classRankSentence, IMPORTANCE_LABELS } from "@/lib/cds/admissions";
 import type { FieldPath } from "@/lib/fields";
 import { DOMAINS } from "@/lib/metrics";
 import { pct } from "@/lib/format";
@@ -7,7 +7,9 @@ import type { GpaBands, School } from "@/lib/types";
 import { Panel } from "@/components/profile/Panel";
 import { ShowMore } from "@/components/ui/show-more";
 import { MetricLabel, Term } from "@/components/ui/info-tip";
+import { gpaTopShare, isWeightedReporter } from "@/lib/chances/reading";
 import { GpaChecker } from "./GpaChecker";
+import { RigorLine } from "./RigorLine";
 
 /** The values this panel shows: its source footnote and the admissions page's TOPIC_FIELDS. */
 export const GPA_PANEL_FIELDS = [
@@ -20,6 +22,8 @@ export const GPA_PANEL_FIELDS = [
   "reported.admission_profile.class_rank.top_tenth",
   "reported.admission_profile.class_rank.top_quarter",
   "reported.admission_profile.class_rank.submitted_share",
+  "reported.admission_profile.factors.rigor",
+  "derived.gpa_top_share",
 ] as const satisfies readonly FieldPath[];
 
 /**
@@ -41,6 +45,10 @@ export async function GpaPanel({ school, id }: { school: School; id?: string }) 
     : {};
   const hasBands = Object.keys(columns).length > 0;
   const rankLine = classRankSentence(rank);
+  // The college's own rating of course rigor (CDS C7), for the line under the checker that reads the visitor's courses.
+  const rigorRating = p?.factors?.rigor ?? null;
+  // How common a high GPA is there (derived.gpa_top_share): a weighted reporter's bands can't show it.
+  const topShare = isWeightedReporter(school) ? null : gpaTopShare(school);
 
   return (
     <Panel
@@ -100,6 +108,11 @@ export async function GpaPanel({ school, id }: { school: School; id?: string }) 
             </p>
           </ShowMore>
         )}
+        <RigorLine
+          college={school.name}
+          rating={rigorRating ? { label: IMPORTANCE_LABELS[rigorRating].toLowerCase(), cited: cite("factors.rigor") } : null}
+          gpaShare={topShare === null ? null : { value: pct(topShare), cited: citeField("derived.gpa_top_share", school) }}
+        />
         {!gpa && (
           <p className="mt-2 text-xs text-muted-foreground">
             This college doesn&apos;t publish first-years&apos; <Term term="high-school-gpa">high school GPA</Term>.

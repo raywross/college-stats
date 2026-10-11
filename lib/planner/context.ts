@@ -51,6 +51,7 @@ export {
 export const PLAN_CITE_PATHS = [
   "admissions.acceptance_rate",
   "admissions.application_fee",
+  "admissions.accepts_ap_credit",
   "admissions.test_policy",
   "cost.avg_paid_all",
   "cost.sticker",
@@ -171,6 +172,7 @@ export function planSchoolFor(
     aid: school.reported?.aid ?? null,
     testPolicy: school.reported?.test_policy ?? school.admissions?.test_policy ?? null,
     applicationFee: school.admissions?.application_fee ?? null,
+    acceptsApCredit: school.admissions?.accepts_ap_credit ?? null,
     cycleStartYear: opts.studentCycleStart,
     editionIsLastCycle: dataStart !== null && dataStart < opts.studentCycleStart,
     cites,

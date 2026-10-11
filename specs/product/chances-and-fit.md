@@ -73,6 +73,10 @@ cost $38K vs your $25K limit"), never as a score out of 100.
 - **Compare:** a "Where you stand" row.
 - **Glossary:** `standing`, `reach-target-likely`, `yield-protection`, `holistic-admission`.
 
+*As built (2026-10-11):* the chip, the `StandingCard` (admissions page, `#standing`), Compare's row, and the planner
+drawer's panel are described in [chances/estimate.md](../chances/estimate.md#as-built-2026-10-11-the-estimate-on-the-site).
+The caveats below are catalog sentences (`estimate.caveat.*`) shown under every card.
+
 ## Caveats shown every time
 - Colleges read essays, recommendations, courses, and context; numbers alone don't decide. "Target" means your
   numbers are typical of admitted students, not that you're likely to be admitted.

@@ -6,7 +6,9 @@
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { autoWrites, balanceLineFor, BALANCE_LINES, MAX_NOTICES, planView, type PlanView } from "../lib/planner/plan-view.ts";
+import { autoWrites, balanceLineFor, BALANCE_LINES, MAX_NOTICES, planView as planViewOf, type PlanView, type PlanViewInput } from "../lib/planner/plan-view.ts";
+import { baselineEstimates } from "../lib/chances/baseline.ts";
+import { estimateInputFromProfile } from "../lib/chances/snapshot.ts";
 import { withBackfillSources } from "../lib/planner/read-plan.ts";
 import { emptyProfile, type StudentProfileData } from "../lib/student-profile.ts";
 import type { PlanItem, PlanSchool } from "../lib/planner/types.ts";
@@ -126,6 +128,16 @@ function numbers(o: { gpa?: number | null; sat?: number; act?: number; focus?: "
     academics: { ...p.academics, gpa: o.gpa ?? null },
     tests: { ...p.tests, satTotal: o.sat ?? null, actComposite: o.act ?? null, focus: o.focus ?? null },
   };
+}
+
+/**
+ * planView with the open baseline's estimates, as the server would hand them over (the model behind the real
+ * estimates is pinned in tests/chances-model.test.mts; with no new inputs it gives the baseline's groups).
+ */
+function planView(input: Omit<PlanViewInput, "estimates">): PlanView {
+  const student = estimateInputFromProfile(input.profile, "", null).student;
+  const standing = Object.fromEntries(Object.entries(input.schools).map(([id, s]) => [id, s.standing]));
+  return planViewOf({ ...input, estimates: baselineEstimates(student, standing) });
 }
 
 const by = (schools: PlanSchool[]) => Object.fromEntries(schools.map((s) => [s.unit_id, s]));
@@ -382,4 +394,46 @@ test("the view's student comes from the profile through planStudent (one test, G
   assert.deepEqual(v.student, { gpa: 3.8, gpaRange: [3.82, 3.82], gpaLabel: "3.82", test: { kind: "act", score: 30 } });
   const rounds: ListRound[] = v.rows.map((r) => r.round);
   assert.deepEqual(rounds, []);
+});
+
+/* ------------------------------------------------------------------ */
+/* Estimates come from the server                                      */
+/* ------------------------------------------------------------------ */
+
+test("planView reads the estimates it's given: no estimate keeps the stored group, and autoWrites leaves the row alone", () => {
+  const s = ps("1", "A", { sat: [1200, 1400] });
+  const items = [item("1", { category: "target", category_source: "auto" })];
+  const none = planViewOf({ items, schools: by([s]), profile: numbers({ sat: 1450, focus: "sat" }), estimates: {}, today: TODAY });
+  assert.equal(none.rows[0].group, "target", "the stored group stays until an estimate arrives");
+  assert.equal(none.rows[0].standing, null);
+  assert.ok(!autoWrites(none).some((w) => w.category !== undefined));
+  const est = {
+    unitId: "1",
+    group: "likely" as const,
+    label: null,
+    used: [],
+    missing: [],
+    facts: [],
+    notes: [{ key: "estimate.score_position", values: { test: "SAT", score: 1450, where: "above", concorded: "" } }],
+    send: "send" as const,
+    moveUp: null,
+    modelVersion: "test",
+  };
+  const v = planViewOf({ items, schools: by([s]), profile: numbers({ sat: 1450, focus: "sat" }), estimates: { "1": est }, today: TODAY });
+  assert.equal(v.rows[0].group, "likely");
+  assert.deepEqual(v.rows[0].standing?.reasons, ["Your SAT 1450 is above the middle 50% of enrolled students."]);
+  assert.equal(v.rows[0].standing?.test?.position, "above", "the score's read against the published range");
+  assert.equal(autoWrites(v).find((w) => w.id === "item-1")?.category, "likely");
+});
+
+test("the retake card is built from the estimates' move-ups, within a common retake gain", () => {
+  const s1 = ps("1", "A", { sat: [1400, 1510], admitRate: 0.3 });
+  const s2 = ps("2", "B", { sat: [1500, 1560], admitRate: 0.3 });
+  const mk = (id: string, points: number) => ({
+    unitId: id, group: "reach" as const, label: null, used: [], missing: [], facts: [], notes: [], send: "send" as const,
+    moveUp: { points, to: "target" as const, score: 1390 + points }, modelVersion: "test",
+  });
+  const v = planViewOf({ items: [item("1"), item("2")], schools: by([s1, s2]), profile: numbers({ sat: 1390, focus: "sat" }), estimates: { "1": mk("1", 10), "2": mk("2", 110) }, today: TODAY });
+  assert.deepEqual(v.retake, { kind: "sat", delta: 10, target: 1400, moves: [{ id: "item-1", from: "reach", to: "target", needed: 10 }] });
+  assert.deepEqual(row(v, "2").moveUp, { score: 1500, delta: 110, from: "reach", to: "target" }, "the row still shows a move beyond the card's reach");
 });

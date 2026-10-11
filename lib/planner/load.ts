@@ -9,14 +9,18 @@ import "server-only";
  */
 import { currentStudent, getAccount, studentsICanSee } from "@/lib/auth";
 import type { StudentAccess } from "@/lib/accounts";
-import { myHouseholds, scheduleStudentReadLog } from "@/lib/households";
+import { householdChildren, scheduleStudentReadLog } from "@/lib/households";
 import { myHome } from "@/lib/home-store";
 import { getOrCreateDefaultList, myLists } from "@/lib/lists";
 import { createServerSupabase } from "@/lib/supabase-server";
 import { profileFor } from "@/lib/student-profile-store";
-import { effectiveGradYear } from "@/lib/student-profile";
+import { coreAnswered, effectiveGradYear } from "@/lib/student-profile";
+import { gradeNow, withoutExams } from "@/lib/chances/courses";
+import { rigorViewFor } from "@/lib/chances/rigor-server";
+import { coursePlanViewFor } from "@/lib/chances/course-plan-server";
 import { generatorInputFor, planContextFrom, PlannerSetupError, readItems, readPlan, readTasks, todayIso, writeAutoWrites, writeMerge } from "./context";
 import { autoWrites, planView, type PlanView } from "./plan-view";
+import { planEstimates, withFactCites } from "./plan-estimates";
 import { generateTasks, mergeTasks } from "./tasks";
 import type { PlanContext } from "./types";
 
@@ -65,11 +69,15 @@ export async function loadPlanFor(studentId: string, viewer?: StudentAccess | nu
   if (!plan) return { kind: "empty", access };
 
   let input = await generatorInputFor(plan, { gradYear, profile: profileData, home, today });
+  // Quad's estimate for every college, on the server (specs/chances/estimate.md "In the planner"). A guardian's copy
+  // never reads AP exam scores the student keeps private.
+  const hideExams = relation === "guardian" && profileData?.academics.apExamsPrivate === true;
+  const estimates = await planEstimates(profileData, plan.items.map((i) => i.unit_id), { gradYear, today, hideExams });
 
   // Suggested until changed: store the model's group and round on every `auto` row that differs (syncAuto).
   if (canEdit) {
     // Before the redesign migration the source columns don't exist: show the suggestions, write none of them.
-    const writes = plan.sourcesMissing ? [] : autoWrites(planView({ items: plan.items, schools: input.schools, profile: profileData, today }));
+    const writes = plan.sourcesMissing ? [] : autoWrites(planView({ items: plan.items, schools: input.schools, profile: profileData, estimates, today }));
     if (writes.length > 0 && (await writeAutoWrites(supabase, writes)) > 0) {
       const fresh = await readItems(supabase, listId);
       if (fresh.data) {
@@ -93,8 +101,43 @@ export async function loadPlanFor(studentId: string, viewer?: StudentAccess | nu
       isGuardian: relation === "guardian",
     },
   });
-  const view = planView({ items: ctx.items, schools: ctx.schools, profile: ctx.profile, today });
-  return { kind: "ready", ctx, view, access };
+  const view = planView({ items: ctx.items, schools: ctx.schools, profile: ctx.profile, estimates, today });
+  // The drawer's "What went into this estimate" cites the facts its estimate names.
+  const cited = { ...ctx, schools: await withFactCites(ctx.schools, estimates).catch(() => ctx.schools) };
+  return { kind: "ready", ctx: await withCoursePlan(await withRigor(cited, relation, gradYear), gradYear), view, access };
+}
+
+/**
+ * The context with the course list read against the student's high school (rigor-in-context.md). A guardian's copy
+ * has no AP exam scores while the student keeps them private: the profile the browser gets is stripped, and the
+ * reading's sentences are computed from the stripped list.
+ */
+async function withRigor(ctx: PlanContext, relation: "self" | "guardian", gradYear: number | null): Promise<PlanContext> {
+  const profile = ctx.profile;
+  if (!profile) return ctx;
+  const hidden = relation === "guardian" && profile.academics.apExamsPrivate;
+  const courses = hidden ? withoutExams(profile.academics.courses) : profile.academics.courses;
+  const safeProfile = hidden ? { ...profile, academics: { ...profile.academics, courses } } : profile;
+  const entered = courses.length > 0 || coreAnswered(profile.academics.coreAtTopLevel);
+  if (!entered) return { ...ctx, profile: safeProfile, rigor: null };
+  const rigor = await rigorViewFor({
+    courses,
+    coreAtTopLevel: profile.academics.coreAtTopLevel,
+    highSchoolId: profile.basics.highSchoolId,
+    grade: gradeNow(gradYear, ctx.today),
+    studentMarks: profile.academics.schoolOffers,
+  }).catch(() => null);
+  return { ...ctx, profile: safeProfile, rigor };
+}
+
+/**
+ * The context with next year's course suggestions (course-plan.md), computed from the profile the viewer may see (a
+ * guardian's copy has no exam scores while private, which the plan never reads). Never throws: a failure is no card.
+ */
+async function withCoursePlan(ctx: PlanContext, gradYear: number | null): Promise<PlanContext> {
+  if (!ctx.profile) return ctx;
+  const coursePlan = await coursePlanViewFor({ profile: ctx.profile, gradYear, items: ctx.items, today: ctx.today, canEdit: ctx.viewer.canEdit }).catch(() => null);
+  return { ...ctx, coursePlan };
 }
 
 /** A child a parent can switch to (page.md "The child switcher"). */
@@ -109,22 +152,13 @@ export interface PlanChild {
 }
 
 /**
- * The students the signed-in user can see as a guardian, in the order they were added to the household (the roster's
- * join date), each with a color slot. A student viewing their own plan gets none (they aren't anyone's guardian).
+ * The students the signed-in user can see as a guardian through their household (householdChildren: on its roster),
+ * in the order they were added to it (the roster's join date), each with a color slot. A student viewing their own plan gets none (they aren't anyone's guardian).
  */
 export async function myPlanChildren(): Promise<PlanChild[]> {
-  const [access, households] = await Promise.all([studentsICanSee(), myHouseholds()]);
-  const asGuardian = access.filter((a) => a.relation === "guardian");
-  if (asGuardian.length === 0) return [];
-  const joined = new Map<string, string>();
-  for (const m of households.flatMap((h) => h.members)) {
-    if (m.role === "student" && m.student_id && !joined.has(m.student_id)) joined.set(m.student_id, m.joined);
-  }
-  const sorted = [...asGuardian].sort((a, b) => {
-    const ja = joined.get(a.student.id) ?? a.student.created;
-    const jb = joined.get(b.student.id) ?? b.student.created;
-    return ja.localeCompare(jb) || a.student.id.localeCompare(b.student.id);
-  });
+  const sorted = (await householdChildren())
+    .sort((a, b) => a.joined.localeCompare(b.joined) || a.access.student.id.localeCompare(b.access.student.id))
+    .map((c) => c.access);
   return sorted.map((a, i) => ({
     studentId: a.student.id,
     name: a.student.display_name,

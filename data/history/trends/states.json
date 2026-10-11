@@ -7186,7 +7186,7 @@
         "acceptanceRate": 0.8389,
         "avgCost": 21464,
         "outOfState": 0.2328,
-        "testOptionalShare": 0.6
+        "testOptionalShare": 0.5
       },
       "all": {
         "key": "all",

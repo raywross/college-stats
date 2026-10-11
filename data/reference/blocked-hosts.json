@@ -292,7 +292,7 @@
       "host": "ie.usca.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-11",
       "unit_ids": [
         "218645"
       ]
@@ -1831,6 +1831,12 @@
       ]
     },
     {
+      "host": "www.letu.edu",
+      "status": 403,
+      "first_seen": "2026-10-11",
+      "last_seen": "2026-10-11"
+    },
+    {
       "host": "www.lsuhs.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
@@ -1864,6 +1870,15 @@
       "last_seen": "2026-10-05",
       "unit_ids": [
         "178208"
+      ]
+    },
+    {
+      "host": "www.mcneese.edu",
+      "status": 403,
+      "first_seen": "2026-10-11",
+      "last_seen": "2026-10-11",
+      "unit_ids": [
+        "159717"
       ]
     },
     {
@@ -1907,6 +1922,12 @@
       "unit_ids": [
         "157386"
       ]
+    },
+    {
+      "host": "www.msmc.edu",
+      "status": "challenge",
+      "first_seen": "2026-10-11",
+      "last_seen": "2026-10-11"
     },
     {
       "host": "www.mtholyoke.edu",
@@ -2173,7 +2194,7 @@
       "host": "www.thomasmore.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-11",
       "unit_ids": [
         "157809"
       ]

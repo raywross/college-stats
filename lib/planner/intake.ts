@@ -291,27 +291,60 @@ const SHORT_NAMES: Readonly<Record<string, string>> = {
 };
 
 /**
- * Search words students type that the catalog's aliases don't carry (the design's list). Kept here rather than in the
- * catalog file: several are ambiguous ("calc", "gov", "physics" name two or more courses), and the catalog's aliases
- * map a school profile's printed name to one course (apKeysForName), which these must never do.
+ * The names students actually type for each course ("lit", "apush", "bio", "calc", "e&m"), matched before anything
+ * else so a nickname finds its course without the full word. Kept here rather than in the catalog file: several are
+ * shared ("calc", "gov", "physics" name two or more courses), and the catalog's aliases map a school profile's printed
+ * name to one course (apKeysForName), which these must never do. Written already normalized (`normalizeQuery`).
  */
-const SEARCH_ALIASES: Readonly<Record<string, string>> = {
-  ap_us_history: "apush ush",
-  ap_us_government: "gov apgov",
-  ap_calculus_ab: "calc",
-  ap_calculus_bc: "calc",
-  ap_english_language: "lang english",
-  ap_english_literature: "lit english",
-  ap_computer_science_principles: "csp cs",
-  ap_computer_science_a: "csa cs",
-  ap_european_history: "euro",
-  ap_human_geography: "hug geo",
-  ap_world_history_modern: "whap",
-  ap_environmental_science: "apes enviro",
-  ap_physics_c_electricity_and_magnetism: "physics",
-  ap_physics_c_mechanics: "physics",
-  ap_comparative_government: "gov",
+const NICKNAMES: Readonly<Record<string, readonly string[]>> = {
+  ap_us_history: ["apush", "ush", "us hist", "american history", "history"],
+  ap_us_government: ["gov", "govt", "apgov", "us gov", "civics", "politics"],
+  ap_comparative_government: ["comp gov", "compgov", "gov", "govt", "politics"],
+  ap_calculus_ab: ["calc", "calc ab", "ab calc", "math"],
+  ap_calculus_bc: ["calc", "calc bc", "bc calc", "math"],
+  ap_precalculus: ["precalc", "pre calc", "math"],
+  ap_statistics: ["stats", "stat", "math"],
+  ap_english_language: ["lang", "eng lang", "english lang", "aplang", "english"],
+  ap_english_literature: ["lit", "eng lit", "english lit", "aplit", "english"],
+  ap_computer_science_principles: ["csp", "cs", "cs principles", "comp sci", "computer science"],
+  ap_computer_science_a: ["csa", "cs", "cs a", "java", "comp sci", "computer science"],
+  ap_cybersecurity: ["cyber"],
+  ap_european_history: ["euro", "apeuro", "history"],
+  ap_human_geography: ["hug", "aphug", "hgap", "geo", "geography"],
+  ap_world_history_modern: ["whap", "apwh", "world", "history"],
+  ap_african_american_studies: ["afam", "aas"],
+  ap_environmental_science: ["apes", "enviro", "es", "science"],
+  ap_psychology: ["psych", "appsych"],
+  ap_biology: ["bio", "apbio", "science"],
+  ap_chemistry: ["chem", "apchem", "science"],
+  ap_physics_1: ["phys 1", "p1", "physics", "physics 1", "science"],
+  ap_physics_2: ["phys 2", "p2", "physics", "physics 2", "science"],
+  ap_physics_c_mechanics: ["mech", "phys c", "physics c", "physics", "science"],
+  ap_physics_c_electricity_and_magnetism: ["e&m", "em", "phys c", "physics c", "physics", "science"],
+  ap_macroeconomics: ["macro", "econ", "economics"],
+  ap_microeconomics: ["micro", "econ", "economics"],
+  ap_art_history: ["art hist", "arth", "art"],
+  ap_music_theory: ["music"],
+  ap_2d_art_and_design: ["2d", "2d art", "studio art", "photo", "photography", "art"],
+  ap_3d_art_and_design: ["3d", "3d art", "studio art", "sculpture", "art"],
+  ap_drawing: ["draw", "studio art", "art"],
+  ap_spanish_language: ["spanish", "span", "span lang", "spanish lang"],
+  ap_spanish_literature: ["span lit", "spanish lit"],
+  ap_chinese: ["mandarin"],
+  ap_seminar: ["capstone"],
+  ap_research: ["capstone"],
+  ap_business_personal_finance: ["business", "finance", "personal finance"],
 };
+
+/** Lowercase, "AP " dropped from the front, punctuation other than & read as a space ("Physics C: E&M" → "physics c e&m"). */
+function normalizeQuery(v: string): string {
+  return v
+    .toLowerCase()
+    .replace(/[^a-z0-9&]+/g, " ")
+    .trim()
+    .replace(/^ap\s+/, "")
+    .replace(/\s+/g, " ");
+}
 
 /** "Calculus AB" (the UI shows "AP Calculus AB"); the key itself for one that isn't in the catalog. */
 export function apName(key: string): string {
@@ -337,28 +370,52 @@ const POPULAR_POOL: readonly string[] = [
 ];
 export const POPULAR_AP: readonly string[] = POPULAR_POOL.slice(0, 8);
 
-const SEARCH_INDEX: { key: string; name: string; haystack: string }[] = apCourses()
+const SEARCH_INDEX: { key: string; name: string; nicknames: readonly string[]; words: string[] }[] = apCourses()
   .map((c) => {
     const name = apName(c.key);
-    return { key: c.key, name, haystack: [name, c.name, ...(c.aliases ?? []), SEARCH_ALIASES[c.key] ?? ""].join(" ").toLowerCase() };
+    const words = normalizeQuery([name, c.name, ...(c.aliases ?? [])].join(" ")).split(" ");
+    return { key: c.key, name, nicknames: NICKNAMES[c.key] ?? [], words: [...new Set(words)] };
   })
   .sort((a, b) => a.name.localeCompare(b.name));
 
 /**
+ * How well a course matches a normalized query, best first, or null for no match: 0 a nickname exactly ("lit"), 1 a
+ * nickname that starts with it ("calc" for "cal"), 2 every word of the query starting a word of the course's names
+ * ("eng lit", "human geo"). Never the middle of a word, so "lit" doesn't find "Politics".
+ */
+function matchRank(c: (typeof SEARCH_INDEX)[number], q: string): number | null {
+  if (c.nicknames.includes(q)) return 0;
+  if (c.nicknames.some((n) => n.startsWith(q))) return 1;
+  const parts = q.split(" ");
+  if (parts.every((p) => c.words.some((w) => w.startsWith(p)))) return 2;
+  return null;
+}
+
+/**
  * The picker's chips: with no query, the popular courses (later ones fill in as earlier ones are added), up to 8;
- * with one, every course whose name or aliases contain it, A–Z, up to 10. Courses in `exclude` never appear.
+ * with one, the courses it names (matchRank), best match first, then popular courses, then A–Z, up to 10. Courses in
+ * `exclude` never appear.
  */
 export function searchAp(query: string, exclude: readonly string[], limit?: number): { key: string; name: string }[] {
-  const q = query.trim().toLowerCase();
+  const q = normalizeQuery(query);
   const skip = new Set(exclude);
   if (!q) {
     return POPULAR_POOL.filter((k) => !skip.has(k))
       .slice(0, limit ?? 8)
       .map((key) => ({ key, name: apName(key) }));
   }
-  return SEARCH_INDEX.filter((c) => !skip.has(c.key) && c.haystack.includes(q))
+  const popular = (key: string) => {
+    const i = POPULAR_POOL.indexOf(key);
+    return i === -1 ? POPULAR_POOL.length : i;
+  };
+  return SEARCH_INDEX.flatMap((c) => {
+    if (skip.has(c.key)) return [];
+    const rank = matchRank(c, q);
+    return rank === null ? [] : [{ c, rank }];
+  })
+    .sort((a, b) => a.rank - b.rank || popular(a.c.key) - popular(b.c.key) || a.c.name.localeCompare(b.c.name))
     .slice(0, limit ?? 10)
-    .map(({ key, name }) => ({ key, name }));
+    .map(({ c }) => ({ key: c.key, name: c.name }));
 }
 
 /** A course just added from the picker: open, nothing chosen yet. */

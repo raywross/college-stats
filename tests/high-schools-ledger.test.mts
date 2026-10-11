@@ -28,7 +28,7 @@ import {
   type LedgerSchoolRecord,
   type LedgerStateFile,
 } from "../scripts/lib/high-schools/ledger-fetch.mts";
-import { coreTokens, info, load, matchLedgerSchools, nameScore, nameTokens } from "../scripts/lib/high-schools/ledger.mts";
+import { coreTokens, info, levelOf, load, matchLedgerSchools, nameScore, nameTokens } from "../scripts/lib/high-schools/ledger.mts";
 
 const quiet = { log: () => {}, warn: () => {} };
 
@@ -215,6 +215,12 @@ test("nameTokens and coreTokens: abbreviations spelled out, punctuation gone, 'H
   assert.deepEqual([...coreTokens("Harmony Science Academy - Carrollton")], ["harmony", "science", "academy", "carrollton"]);
   // Nothing but stop words: the full name stands in.
   assert.deepEqual([...coreTokens("The High School")], ["the", "high", "school"]);
+  // Level words are set aside from the core and compared on their own; a junior-senior high is a high school.
+  assert.deepEqual([...coreTokens("Bryant Junior High School")], ["bryant"]);
+  assert.equal(levelOf("Bryant Junior High School"), "junior");
+  assert.equal(levelOf("Bryant High School"), "");
+  assert.equal(levelOf("Des Arc Jr Sr High School"), "");
+  assert.equal(levelOf("Orange Beach Middle High School"), "middle");
 });
 
 test("nameScore: the same school under two spellings scores 1; a sibling scores by its distinguishing words", () => {
@@ -234,6 +240,10 @@ test("matchLedgerSchools: exact by zip or city, weaker names need the zip, subse
     row("480000200005", "Lincoln High School", { city: "Dallas", zip: "75210" }),
     row("480000200006", "Nowhere High School", { city: "Nowhere", zip: null }),
     row("480000200007", "Harmony Science Academy Carrollton", { city: "Carrollton", zip: "75006" }),
+    row("480000200008", "Bryant High School", { city: "Bryant", zip: "72022" }),
+    row("480000200009", "Basis Tucson North", { city: "Tucson", zip: "85750" }),
+    row("480000200010", "Har-Ber High School", { city: "Springdale", zip: "72765" }),
+    row("480000200011", "Pea Ridge Junior High School", { city: "Pea Ridge", zip: "72751" }),
     row("A9900001", "Saint Anthony High School", { city: "Long Beach", zip: "90813" }),
     row("A9900002", "Jefferson Academy", { city: "Dallas", zip: "75201" }),
     row("A9900003", "Jefferson Academy", { city: "Dallas", zip: "75201" }),
@@ -250,6 +260,16 @@ test("matchLedgerSchools: exact by zip or city, weaker names need the zip, subse
     rec("000009", "Jefferson Academy", "Dallas", "75201"),
     rec("000010", "Unlisted Prep", "Austin", "78701"),
     rec("000011", "Harmony Science Academy of Carrollton North", "Carrollton", "75007"),
+    // A junior high beside the high school, same ZIP: the level word keeps them apart.
+    rec("000012", "Bryant Junior High School", "Bryant", "72022", ["ap_biology"]),
+    rec("000013", "Bryant High School", "Bryant", "72022", ["ap_biology", "ap_calculus_ab"]),
+    // The Ledger's old, empty record beside the live one: the live one wins the tie.
+    rec("000014", "BASIS Tucson North", "Tucson", "85750", []),
+    rec("000015", "Basis Tucson North School", "Tucson", "85750", ["ap_biology"]),
+    // One name inside the other, same city, different ZIP.
+    rec("000016", "Springdale Har Ber High School", "Springdale", "72762"),
+    // Only the high school is in the Ledger: the junior high row stays unmatched rather than taking it.
+    rec("000017", "Pea Ridge High School", "Pea Ridge", "72751"),
   ];
   const r = matchLedgerSchools(rows, ledger);
   assert.deepEqual(
@@ -260,13 +280,16 @@ test("matchLedgerSchools: exact by zip or city, weaker names need the zip, subse
       ["480000200003", "000004", "subset"],
       ["480000200004", "000005", "subset"],
       ["480000200007", "000011", "city"],
+      ["480000200008", "000013", "exact"],
+      ["480000200009", "000015", "exact"],
+      ["480000200010", "000016", "subset-city"],
       ["A9900001", "000008", "exact"],
     ],
   );
   // Two Lincoln High Schools in one zip tie; two private rows with one name claim one Ledger school equally.
   assert.deepEqual(r.ambiguousRows.map((a) => a.id), ["480000200005", "A9900002", "A9900003"]);
-  assert.deepEqual(r.unmatchedRows, ["480000200006"]);
-  assert.deepEqual(r.unusedLedger, ["000002", "000006", "000007", "000009", "000010"]);
+  assert.deepEqual(r.unmatchedRows, ["480000200006", "480000200011"]);
+  assert.deepEqual(r.unusedLedger, ["000002", "000006", "000007", "000009", "000010", "000012", "000014", "000017"]);
 });
 
 /* ------------------------------------------------------------------ */

@@ -62,6 +62,8 @@ export interface AnalyticsEvents {
   plan_signed_out_saved: { has_numbers: boolean };
   /** `test` is which test the plan uses (sat, act, none), never the score. */
   plan_numbers_set: { test: "sat" | "act" | "none"; practice: boolean };
+  /** The intake guide (specs/planner/redesign/intake.md): which step was completed, never the values entered. */
+  plan_intake_step: { step: 0 | 1 | 2 | 3; mode: "first" | "edit" };
   plan_group_changed: { from_auto: boolean };
   plan_dream_set: { on: boolean };
   plan_round_changed: { from_auto: boolean; round: "ed" | "ed2" | "ea" | "rea" | "rd" | "rolling" };
@@ -147,6 +149,7 @@ export const EVENTS = {
   plan_signed_out_started: { properties: ["from"], side: "client", why: "Planner: visitors who start a plan before signing up" },
   plan_signed_out_saved: { properties: ["has_numbers"], side: "client", why: "Planner: signed-out plans saved by signing up" },
   plan_numbers_set: { properties: ["test", "practice"], side: "client", why: "Planner: numbers entered, by test and practice" },
+  plan_intake_step: { properties: ["step", "mode"], side: "client", why: "Planner: progress through the intake guide" },
   plan_group_changed: { properties: ["from_auto"], side: "client", why: "Planner: how often a suggested group gets changed" },
   plan_dream_set: { properties: ["on"], side: "client", why: "Planner: Dreams marked" },
   plan_round_changed: { properties: ["from_auto", "round"], side: "client", why: "Planner: which rounds students pick over the starting round" },

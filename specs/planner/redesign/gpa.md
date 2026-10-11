@@ -1,11 +1,11 @@
 # GPA in the Plan: Weighted vs. Unweighted, Filling the Gaps, and Saying What We Used
 
-> Status: **built** 2026-10-10 on feature/plan-redesign (PR #105); predictor and guard changed 2026-10-11
-> ([below](#change-2026-10-11-the-test-submission-share-and-a-guard-against-a-flat-guess)). Fitted on the real data
-> of 2026-10-11: GPA ≈ 2.35 + 0.099 × (SAT midpoint ÷ 100) − 0.10 × admit rate + 0.26 × share sending scores, from
-> 114 colleges, typical miss 0.107 (90% under 0.236; a flat guess misses by 0.171). Sources: 123 colleges reported,
-> 2 band means, 885 estimated, 11 estimated within a weighted average's limits, 872 none. Extends
-> [standing.md](standing.md)'s GPA rule. Asked for by the owner after reviewing the preview: "we have commentary on ACT or SAT scores, but there is
+> Status: **built** 2026-10-10 on feature/plan-redesign (PR #105). Fitted on the real data that day:
+> GPA ≈ 3.10 + 0.057 × (SAT midpoint ÷ 100) − 0.32 × admit rate, from 32 colleges, typical miss 0.095 (90% under
+> 0.165). Sources: 36 colleges reported, 972 estimated, 4 estimated within a weighted average's limits, 881 none.
+> **Changed 2026-10-11:** every model also reads the graduation rate and the test-submission share (section 2, "Two
+> more predictors"). Extends [standing.md](standing.md)'s GPA
+> rule. Asked for by the owner after reviewing the preview: "we have commentary on ACT or SAT scores, but there is
 > nothing about GPAs".
 
 ## The problem
@@ -51,61 +51,55 @@ Two consequences for the plan:
 | 1 | Reported average (C12) | Scale unweighted, or not stated and ≤ 4.0 | The value (a point) |
 | 2 | Band mean (C11) | No usable C12 average, bands present, and C12 not marked weighted | Band mean ± 0.05 |
 | 3 | Estimate from similar colleges, bounded | C12 marked weighted (or above 4.0) | The estimate's range, cut to `[w − 1, min(4, w)]` |
-| 4 | Estimate from similar colleges | No usable CDS GPA; test scores and admit rate present | Estimate ± the model's 90th-percentile miss |
+| 4 | Estimate from similar colleges | No usable CDS GPA; test scores, admit rate, graduation rate, and test-submission share present | Estimate ± the model's 90th-percentile miss |
 | 5 | None | Otherwise | GPA not used, and the row says why |
 
 The result carries `kind: "reported" | "bands" | "estimated" | "none"`, the range, the point shown, and for an
 estimate the number of colleges it was fitted on.
 
 ### 2. The model (`lib/planner/gpa-model.ts`, pure; fitted on the server)
-- Least squares on `[1, SAT midpoint ÷ 100, admit rate]`. The SAT midpoint is the SAT total's midpoint, else the ACT
-  composite midpoint through the 2018 concordance (`actToSat`).
+- Least squares on `[1, SAT midpoint ÷ 100, admit rate, graduation rate, test-submission share]` (changed
+  2026-10-11; before, only the first three). The SAT midpoint is the SAT total's midpoint, else the ACT composite
+  midpoint through the 2018 concordance (`actToSat`). The graduation rate is `outcomes.graduation_rate`. The
+  test-submission share (`submissionShare`) is `admissions.test_submission_rate_sat + admissions.test_submission_rate_act`,
+  a missing one counting 0 when the other is present, and missing when both are. Rates and shares are fractions.
+- A college gets an estimate only when it has every predictor (`gpaPredictors`); otherwise its source is "none".
 - Training rows: colleges whose GPA comes from source 1 or 2 (never weighted reporters), with an SAT or ACT midpoint
-  and an admit rate. Each row's target is its band mean when bands exist, else its C12 average.
+  and every predictor. Each row's target is its band mean when bands exist, else its C12 average.
 - Fitted once per server instance from the dataset (`getData`), so it updates whenever the data does. There is no
   generated file to go stale and nothing for data PRs to rebuild.
 - It reports its own leave-one-out error. **Guard:** with fewer than 25 training rows, or a 90th-percentile miss
   above 0.25, the model returns nothing and only CDS sources are used. A test pins this, and breaking it fails.
-  *Since 2026-10-11* the model also reads the share of first-years who sent a score, and the guard also requires a
-  gain over a flat guess (below).
 - Predictions are clamped to `[2.0, 4.0]`.
 
-#### Change 2026-10-11: the test-submission share, and a guard against a flat guess
-When main's newer Common Data Sets reached the planner (the admission-chances build), the model trained on 114
-colleges instead of 32 and its guard refused it: leave-one-out 90th-percentile miss 0.256 against the 0.25 cap (the
-p25 curve model's was 0.374 against 0.30). With both refused, every estimated college fell back to "none".
+#### Two more predictors (changed 2026-10-11, owner: "please improve the model")
+**Why.** After the 2026-10-11 data runs, main's data has 168 colleges that train the average model and 154 that train
+the curve models (up from 32 and 30). On that larger data the two-predictor models failed their guards: the average
+model's 90th-percentile miss was 0.265 (guard 0.25) and the p25 model's 0.391 (guard 0.30), so every estimate would
+have disappeared. The test-submission share fixes most of it: at a test-optional college the SAT range describes
+only the students who sent scores, who are the stronger ones, so a low share means the SAT range flatters the class
+and its GPAs run lower than the SAT suggests. The graduation rate adds a measure of the students who enroll that
+doesn't depend on who sent scores.
 
-**Predictors tried** (leave-one-out on the 114 colleges, 90th-percentile miss / typical miss): the original three
-terms 0.256 / 0.116; adding public or private 0.256 / 0.117 (no help); SAT 25th in place of the midpoint 0.261 /
-0.115; a squared SAT term 0.239 / 0.109; **the test-submission share 0.236 / 0.107**; submission share with public or
-private 0.249 / 0.107; a flat guess 0.318 / 0.171. The submission share is the larger of the SAT and ACT submission
-shares (`testSubmitShare`, IPEDS or the newer CDS; every college with scores reports one). It is kept because it
-lowers the miss in all three models and has a reason: at a test-optional college where few send scores, the SAT range
-describes only those who chose to send them and overstates the class. The squared SAT term helped less and
-extrapolates badly at the ends; public/private added nothing.
+**Measured** on main's newest data, leave-one-out:
 
-| Model | Before (3 terms) | After (+ submission share) | Flat guess |
+| Model | Colleges | Scores and admit rate only: 90% of misses under | + graduation rate and test-submission share |
 |---|---|---|---|
-| Average (114 colleges) | 90% under 0.256, typical 0.116 | 90% under 0.236, typical 0.107 | 90% under 0.318, typical 0.171 |
-| p25 (106 colleges) | 0.374, 0.158 | 0.318, 0.145 | 0.488, 0.250 |
-| p75 (106 colleges) | 0.183, 0.089 | 0.163, 0.086 | 0.155, 0.103 |
+| Average | 168 | 0.265 (fails 0.25) | 0.214 (typical miss 0.102) |
+| 25th percentile | 154 | 0.391 (fails 0.30) | 0.280 (typical miss 0.137) |
+| 75th percentile | 154 | 0.189 | 0.174 (typical miss 0.086) |
 
-**The guard** (`GpaGuard`, `passesGuard`): at least 25 colleges; a leave-one-out 90th-percentile miss at most
-`maxP90` (0.25 for the average model, unchanged; **0.35** for the p25 and p75 models, was 0.30); and a leave-one-out
-typical miss at least 10% below a flat guess's (each college guessed as the mean of the others). The p25 model still
-missed the 0.30 cap with the better predictor, and a percentile of a college's spread varies more than its mean (a
-flat guess at the 25th percentile misses by 0.49 at the 90th percentile, against 0.32 for the average), so the cap
-is raised for the curve models only. The relative test is on the typical miss, not the 90th percentile, because the
-75th percentile is squashed against 4.0: its flat guess has a narrow 90th percentile (0.155) the model can't beat
-(0.163), though the model's typical miss is 17% lower. On the 90th percentile the p75 model would be refused and the
-896 estimated middles with it. The real fits gain 37% (average), 42% (p25), and 17% (p75). Tests show the guard
-still refuses a broken model: GPAs shuffled across colleges, noisy synthetic data, and data the predictors don't
-explain (small misses but no gain over the flat guess). Weighted reporters still never train any model.
+A strict holdout agrees: fitted on the 44 colleges that had a GPA before the runs and tested on the 124 that gained
+one since, the typical miss falls from 0.130 to 0.115 (average), 0.180 to 0.150 (p25), and 0.094 to 0.089 (p75).
+Coverage hardly changes, because colleges with test scores nearly all report a graduation rate and a submission share:
+on main's newest data 1,032 colleges get an average GPA (181 reported, 5 from bands, 846 estimated) and 1,016 a middle
+50% (170 exact, 846 estimated). Fitted there:
+`GPA ≈ 2.23 + 0.062 × (SAT midpoint ÷ 100) + 0.03 × admit rate + 0.65 × graduation rate + 0.29 × test-submission share`.
 
-Fitted on 2026-10-11: average as in the status line; `p25 ≈ 1.92 + 0.127 × (SAT 25th ÷ 100) − 0.17 × admit rate +
-0.36 × share` (typical miss 0.145, 90% under 0.318); `p75 ≈ 2.94 + 0.065 × (SAT 75th ÷ 100) + 0.08 × admit rate +
-0.15 × share` (typical miss 0.086, 90% under 0.163), from 106 colleges. 115 colleges get an exact middle 50%, 896 an
-estimated one.
+On this branch's own (older) data the new models fit 32 and 30 colleges: average 90% of misses under 0.171 (typical
+0.086), p25 0.243 (0.110), p75 0.190 (0.091); 1,011 colleges get an average GPA (36 reported, 975 estimated) and
+1,008 a middle 50% (33 exact, 975 estimated), one fewer each than before. A test fits all three models on main's
+newest data when that file is at hand and fails if any misses its guard; it fails with the old two-predictor models.
 
 ### 3. The student's GPA as a range (`planGpaRange(profile)`, pure)
 - Unweighted on a 4.0 scale: the value.
@@ -190,8 +184,19 @@ sentence, followed by "estimated from colleges with similar test scores; this co
 Exact percentiles cite `derived.gpa_middle_half`; estimated ones cite `derived.gpa_estimate`.
 
 The p25 and p75 models are fitted on the server alongside the average model, with the same guard: at least 25
-training colleges and a 90th-percentile miss of at most 0.30 (0.35 with a gain over a flat guess since 2026-10-11; see section 2). If either fails the guard, estimated colleges fall back
+training colleges and a 90th-percentile miss of at most 0.30. If either fails the guard, estimated colleges fall back
 to the average rule.
+
+*Changed 2026-10-11:* both curve models use the average model's predictors (section 2, "Two more predictors"):
+`[1, SAT 25th ÷ 100, admit rate, graduation rate, test-submission share]` for p25 and the same with the SAT 75th for
+p75. A college needs its SAT (or ACT) quartiles and every predictor to get an estimated middle 50%, and only such
+colleges train the models. On main's newest data (154 colleges) the two-predictor p25 model failed its guard (90% of
+misses under 0.391); the new one is under 0.280 (typical miss 0.137), and p75 improves from 0.189 to 0.174 (typical
+0.086). Fitted there:
+`p25 ≈ 1.62 + 0.087 × (SAT 25th ÷ 100) − 0.00 × admit rate + 0.84 × graduation rate + 0.43 × test-submission share` and
+`p75 ≈ 2.78 + 0.058 × (SAT 75th ÷ 100) + 0.18 × admit rate + 0.25 × graduation rate + 0.17 × test-submission share`.
+The low test-submission share pulls the 25th percentile down most, as expected: at a test-optional college the SAT
+25th describes the weaker of the students who sent scores, not the weaker students overall.
 
 *Built 2026-10-10* (`gpaPercentile`, `bandMiddle`, `curveRows`, `fitGpaCurve`, `gpaMiddle`, `compareGpaMiddle` in
 lib/planner/gpa-model.ts; `CollegeGpa.middle`; `gpaCurve()` in gpa-model-server.ts). Fitted on the real data that day,
@@ -200,18 +205,15 @@ from 30 colleges: `p25 ≈ 2.55 + 0.094 × (SAT 25th ÷ 100) − 0.42 × admit r
 exact middle 50%, 976 an estimated one. Details settled in the build:
 - An estimated middle applies only to colleges with no unweighted C12 average of their own (no CDS GPA, half-blank
   bands, or a weighted reporter, whose sentence names its weighted average instead of "doesn't publish its GPA spread").
-- Ends are shown to two decimals, exact ("3.62–4.00") or estimated ("3.78–3.96", the two predictions). *Changed
-  2026-10-11:* estimated ends were printed to one decimal, so a 3.85 read "inside 3.9–4.0" (the comparison uses the
-  unrounded ranges, which lean toward "in"). Now a GPA that is "in" by the estimate's range but outside the printed
-  span (compared at two decimals) reads "close to the middle 50%", never "inside" it.
+- Exact ends are shown to two decimals ("3.62–4.00"), estimated ones to one ("3.8–4.0"), the two predictions.
 - The plan cites `derived.gpa_middle_half` with its own method line (percentiles within the bands), because the
   college page's GPA checker still shows the bands holding the 25th and 75th percentiles.
 - With bands, the middle 50% replaces the band mean in the sentence, so `derived.gpa_band_mean` is cited only when no
   middle exists.
 
 ## Files
-- `lib/planner/gpa-model.ts` (pure): band midpoints, `bandMean`, `satMidpoint`, `fitGpaModel(rows)` with
-  leave-one-out error, `predictGpa`, `collegeGpa`, `compareGpaRanges`.
+- `lib/planner/gpa-model.ts` (pure): band midpoints, `bandMean`, `satMidpoint`, `submissionShare`, `gpaPredictors`,
+  `fitGpaModel(rows)` with leave-one-out error, `predictGpa`, `collegeGpa`, `compareGpaRanges`.
 - `lib/planner/gpa-model-server.ts` (server-only): `gpaModel()`, memoized from `getData()`.
 - `lib/planner/standing.ts`: `StandingStudent.gpaRange`, `StandingSchool.gpa` (the `collegeGpa` result), the range
   comparison, and the sentences above. `gpaAverage` stays for the pinned examples.
@@ -220,6 +222,10 @@ exact middle 50%, 976 an estimated one. Details settled in the build:
 - `lib/student-profile.ts`: `planGpaRange`, and the relabeled scale.
 - `lib/fields.ts`: `derived.gpa_band_mean` and `derived.gpa_estimate` with their formulas and inputs. Lineage and
   glossary terms: `weighted-gpa` and `unweighted-gpa` (plain-language rewrite), plus a new `gpa-estimate`.
+  `derived.gpa_estimate`'s inputs include `outcomes.graduation_rate` and both test-submission shares, and
+  `gpaEstimateInputs` in `lib/lineage.ts` cites them (2026-10-11).
 - `components/planner/NumbersForm.tsx`: the scale label and the hint.
-- Tests: the model fit and guard, `collegeGpa`'s order, the range comparison (two points equal today's rule), every
-  sentence, and the student's range.
+- Tests: the model fit (all five coefficients) and guard, the predictors (a college missing its graduation rate or
+  submission share gets no estimate), `collegeGpa`'s order, the range comparison (two points equal today's rule),
+  every sentence, the student's range, the real fit on the committed data, and all three guards on main's newest data
+  when that file is at hand.

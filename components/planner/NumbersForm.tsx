@@ -121,7 +121,7 @@ export function NumbersFields({ draft }: { draft: NumbersDraft }) {
 export function LivePreview({ draft, ctx, view }: { draft: NumbersDraft; ctx: NumbersFormProps["ctx"]; view: NumbersFormProps["view"] }) {
   const draftProfile = useMemo(() => (draft.parsed ? applyNumbers(ctx.profile ?? emptyProfile(), draft.parsed) : ctx.profile), [draft.parsed, ctx.profile]);
   const unitIds = useMemo(() => ctx.items.filter((i) => ctx.schools[i.unit_id]).map((i) => i.unit_id), [ctx.items, ctx.schools]);
-  const { results, loading } = useEstimates(draftProfile, unitIds, view.estimates);
+  const { results, loading } = useEstimates(draftProfile, unitIds, view.estimates, { gradYear: ctx.student?.grad_year ?? null });
   const preview = useMemo(() => planView({ items: ctx.items, schools: ctx.schools, profile: draftProfile, estimates: results, today: ctx.today }), [ctx.items, ctx.schools, ctx.today, draftProfile, results]);
   if (preview.rows.length === 0) return null;
   return (

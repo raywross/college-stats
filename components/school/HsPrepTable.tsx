@@ -4,8 +4,10 @@ import Link from "next/link";
 import { useState } from "react";
 import { useMyCourses } from "@/components/me/useMyCourses";
 import { LocalCoursesSheet } from "@/components/profile/LocalCoursesSheet";
-import { MetricLabel } from "@/components/ui/info-tip";
+import type { MajorCites } from "@/components/chances/MajorLines";
+import { MetricLabel, SourceTip } from "@/components/ui/info-tip";
 import { gradeNow, HS_ROW_SUBJECT, youText, youYears } from "@/lib/chances/courses";
+import { MAJOR_FIELDS, majorReviewFor } from "@/lib/chances/major-review";
 import { noteText } from "@/lib/chances/notes";
 import { HS_SUBJECT_ROWS } from "@/lib/cds/application-logistics-display";
 import type { AnyCited } from "@/lib/lineage";
@@ -58,7 +60,14 @@ export function HsPrepTable({
   recommended,
   citedRequired,
   citedRecommended,
+  unitId,
+  college,
+  majorCites,
 }: {
+  unitId: string;
+  college: string;
+  /** Citations for each major-admission unit's values (lib/chances/fact-cites.ts), for the unit's required courses. */
+  majorCites: MajorCites;
   rows: HsPrepTableRow[];
   showReq: boolean;
   showRec: boolean;
@@ -73,6 +82,10 @@ export function HsPrepTable({
   const hasList = mine.status === "ready" && (mine.courses.length > 0 || coreAnswered(core));
   const unknown = noteText({ key: "rigor.you_unknown", values: {} });
   const shortLines = hasList && showRec ? fallShort(rows, mine.courses, core, mine.gradYear) : [];
+  // The school or major the visitor's intended major would apply to may require courses of its own, beside these units.
+  const major = mine.status === "ready" && mine.majors[0] ? majorReviewFor({ majors: mine.majors, courses: mine.courses, satMath: null, actMath: null }, { unit_id: unitId, name: college }) : null;
+  const requiredCited = major?.unit ? majorCites[major.unit.unit_id]?.[MAJOR_FIELDS.required] : undefined;
+  const courseLines = hasList && major ? major.notes.filter((n) => n.key.startsWith("major.required_")) : [];
 
   return (
     <>
@@ -140,6 +153,21 @@ export function HsPrepTable({
         </tbody>
       </table>
       {hasList && <p className="mt-1 text-xs text-muted-foreground">You: the years your course list and core-subject answers show, not a transcript.</p>}
+      {major?.unitRequires && (
+        <div className="mt-3 space-y-1 text-sm">
+          <p className="font-medium">
+            {noteText(major.unitRequires)}
+            {requiredCited && <SourceTip cited={requiredCited} className="ml-1 align-middle" />}
+          </p>
+          {courseLines.length > 0 && (
+            <ul className="space-y-0.5 text-xs text-muted-foreground">
+              {courseLines.map((n, i) => (
+                <li key={`${n.key}-${i}`}>{noteText(n)}</li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
       {shortLines.length > 0 && (
         <ul className="mt-1.5 space-y-0.5 text-xs">
           {shortLines.map((l) => (

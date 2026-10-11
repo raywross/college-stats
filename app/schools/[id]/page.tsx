@@ -21,6 +21,7 @@ import { Panel } from "@/components/profile/Panel";
 import { TopicCards } from "@/components/profile/TopicCards";
 import { AnchorRedirect } from "@/components/profile/AnchorRedirect";
 import { HeroIdentity } from "@/components/school/HeroIdentity";
+import { StandingChip } from "@/components/chances/StandingChip";
 import { ProfileChanges } from "@/components/profile/ProfileChanges";
 import { MyHighSchoolLine } from "@/components/high-schools/MyHighSchoolLine";
 
@@ -103,6 +104,7 @@ export default async function SchoolPage({ params }: Props) {
                     {policy}
                   </Term>
                 )}
+                <StandingChip unitId={school.unit_id} />
                 {school.campus?.setting && <Term term="locale">{SETTING_SHORT[school.campus.setting.locale]}</Term>}
                 {school.campus?.carnegie?.research && (
                   <Term term="r1">{school.campus.carnegie.research === "RCU" ? "Research college" : school.campus.carnegie.research}</Term>

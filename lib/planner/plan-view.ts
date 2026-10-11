@@ -50,6 +50,8 @@ export interface PlanRowView {
   dream: boolean;
   /** Null when the college has no estimate (not in the dataset, or not answered yet). */
   standing: RowStanding | null;
+  /** The estimate behind `standing`, for the drawer's "What went into this estimate" (null when there is none). */
+  estimate?: EstimateResult | null;
   /** The group shown: the student's pick, else the model's suggestion ("unsorted" when the model has none). */
   group: ListCategory;
   /** True while the group is the suggestion (✦). */
@@ -243,6 +245,7 @@ export function planView(input: PlanViewInput): PlanView {
       school,
       dream: item.dream === true,
       standing,
+      estimate: school ? est : null,
       group,
       groupAuto,
       round: r.round,

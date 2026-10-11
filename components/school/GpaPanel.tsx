@@ -7,6 +7,7 @@ import type { GpaBands, School } from "@/lib/types";
 import { Panel } from "@/components/profile/Panel";
 import { ShowMore } from "@/components/ui/show-more";
 import { MetricLabel, Term } from "@/components/ui/info-tip";
+import { gpaTopShare, isWeightedReporter } from "@/lib/chances/reading";
 import { GpaChecker } from "./GpaChecker";
 import { RigorLine } from "./RigorLine";
 
@@ -22,6 +23,7 @@ export const GPA_PANEL_FIELDS = [
   "reported.admission_profile.class_rank.top_quarter",
   "reported.admission_profile.class_rank.submitted_share",
   "reported.admission_profile.factors.rigor",
+  "derived.gpa_top_share",
 ] as const satisfies readonly FieldPath[];
 
 /**
@@ -45,6 +47,8 @@ export async function GpaPanel({ school, id }: { school: School; id?: string }) 
   const rankLine = classRankSentence(rank);
   // The college's own rating of course rigor (CDS C7), for the line under the checker that reads the visitor's courses.
   const rigorRating = p?.factors?.rigor ?? null;
+  // How common a high GPA is there (derived.gpa_top_share): a weighted reporter's bands can't show it.
+  const topShare = isWeightedReporter(school) ? null : gpaTopShare(school);
 
   return (
     <Panel
@@ -107,6 +111,7 @@ export async function GpaPanel({ school, id }: { school: School; id?: string }) 
         <RigorLine
           college={school.name}
           rating={rigorRating ? { label: IMPORTANCE_LABELS[rigorRating].toLowerCase(), cited: cite("factors.rigor") } : null}
+          gpaShare={topShare === null ? null : { value: pct(topShare), cited: citeField("derived.gpa_top_share", school) }}
         />
         {!gpa && (
           <p className="mt-2 text-xs text-muted-foreground">

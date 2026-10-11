@@ -20,7 +20,7 @@ import { rigorViewFor } from "@/lib/chances/rigor-server";
 import { coursePlanViewFor } from "@/lib/chances/course-plan-server";
 import { generatorInputFor, planContextFrom, PlannerSetupError, readItems, readPlan, readTasks, todayIso, writeAutoWrites, writeMerge } from "./context";
 import { autoWrites, planView, type PlanView } from "./plan-view";
-import { planEstimates } from "./plan-estimates";
+import { planEstimates, withFactCites } from "./plan-estimates";
 import { generateTasks, mergeTasks } from "./tasks";
 import type { PlanContext } from "./types";
 
@@ -102,7 +102,9 @@ export async function loadPlanFor(studentId: string, viewer?: StudentAccess | nu
     },
   });
   const view = planView({ items: ctx.items, schools: ctx.schools, profile: ctx.profile, estimates, today });
-  return { kind: "ready", ctx: await withCoursePlan(await withRigor(ctx, relation, gradYear), gradYear), view, access };
+  // The drawer's "What went into this estimate" cites the facts its estimate names.
+  const cited = { ...ctx, schools: await withFactCites(ctx.schools, estimates).catch(() => ctx.schools) };
+  return { kind: "ready", ctx: await withCoursePlan(await withRigor(cited, relation, gradYear), gradYear), view, access };
 }
 
 /**

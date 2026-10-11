@@ -14,6 +14,7 @@ import { gpaCurve, gpaModel } from "@/lib/planner/gpa-model-server";
 import type { CoreAtTopLevel } from "@/lib/student-profile";
 import type { School } from "@/lib/types";
 import { baselineEstimate, standingSchoolFor, type StandingSchool } from "./baseline";
+import { likeYouCount } from "./like-you";
 import { modelEstimateWithDetail, MODEL_VERSION } from "./model";
 import { offeringFor } from "./rigor-server";
 import type { AppliedEstimate } from "./snapshot";
@@ -87,6 +88,21 @@ export function estimateWithDetail(input: EstimateInput, ctx: EstimateContext): 
     console.error(`estimate: the model failed for ${input.unitId}; serving the baseline: ${err instanceof Error ? err.message : String(err)}`);
     return { result: baselineEstimate(input.student, standing ?? ctx.standingFor(school), input.unitId), detail: null };
   }
+}
+
+/**
+ * The estimate for one college and "students like you" for it (calibration.md): what happened to students with numbers
+ * like theirs, a count and never a chance, or null until the data clears its thresholds. The method's details (the
+ * position, the kind of rate) pick the count here and go no further.
+ */
+export async function estimateWithLikeYou(
+  input: EstimateInput,
+  ctx: EstimateContext,
+): Promise<{ result: EstimateResult; likeYou: { n: number; admitted: number; seasons: [number, number]; residency: boolean } | null }> {
+  const { result, detail } = estimateWithDetail(input, ctx);
+  if (!detail?.position || !detail.baseRateKind) return { result, likeYou: null };
+  const count = await likeYouCount({ unitId: input.unitId, position: detail.position, baseRateKind: detail.baseRateKind, state: input.student.state });
+  return { result, likeYou: count ? { ...count, residency: detail.baseRateKind === "residency" } : null };
 }
 
 /** The estimate for one student at one college (the contract). */

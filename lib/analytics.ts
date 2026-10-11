@@ -77,6 +77,8 @@ export interface AnalyticsEvents {
   course_plan_shown: { reasons: string; guardrail: string };
   course_plan_added: { reason: string };
   course_plan_dismissed: { reason: string };
+  /** An estimate shown to a student (the profile's card, the planner's drawer): the group, the label, the model version; never an input. */
+  estimate_shown: { group: "reach" | "target" | "likely" | "none"; label: "reach-for-everyone" | "guaranteed" | "none"; model_version: string };
 }
 export type AnalyticsEvent = keyof AnalyticsEvents;
 /** Events sent from Server Actions and Route Handlers with `trackServer()` (lib/analytics-server.ts). */
@@ -158,6 +160,7 @@ export const EVENTS = {
   course_plan_shown: { properties: ["reasons", "guardrail"], side: "client", why: "Course plan: which reasons and guardrails the Next year card shows" },
   course_plan_added: { properties: ["reason"], side: "client", why: "Course plan: do suggestions get added, by reason" },
   course_plan_dismissed: { properties: ["reason"], side: "client", why: "Course plan: do suggestions get set aside, by reason" },
+  estimate_shown: { properties: ["group", "label", "model_version"], side: "client", why: "Quad's estimate: how often it is shown and as which group and label, per model version (never the inputs)" },
 } as const satisfies { readonly [K in AnalyticsEvent]: EventSpec<K> };
 
 type AssertTrue<T extends true> = T;

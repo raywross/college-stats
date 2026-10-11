@@ -1,9 +1,15 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { Lock, RotateCcw } from "lucide-react";
+import { WhatWentIn } from "@/components/chances/WhatWentIn";
 import { InfoTip, MetricLabel } from "@/components/ui/info-tip";
+import { track } from "@/lib/analytics";
+import { noteText } from "@/lib/chances/notes";
+import { estimateInputFromProfile } from "@/lib/chances/snapshot";
+import { panelParts, yourNumbersFrom } from "@/lib/chances/what-went-in";
+import { planGpaLabel } from "@/lib/student-profile";
 import ActionsRowControls from "@/components/planner/row/actions";
 import ApplyRowControls from "@/components/planner/row/apply";
 import type { RowControlProps } from "@/components/planner/row/props";
@@ -34,10 +40,20 @@ export function RowDrawer({
   onUseGroupSuggestion: () => void;
   onUseStartingRound: () => void;
 }) {
-  const { item, school, standing, group, groupAuto, roundWhy, roundAuto, decision } = row;
+  const { item, school, standing, estimate, group, groupAuto, roundWhy, roundAuto, decision } = row;
   const scoreLine = scoreDrawerLine(row);
   const cite = (field: string | null) => (school && field ? (school.cites[field] as AnyCited | undefined) : undefined);
   const gpaCited = cite(standing?.gpaNote?.cite ?? null);
+  // With an estimate, the first line is its label and two stage lines; the facts behind them are in "What went into
+  // this estimate" below. Without one (a college we can't estimate), the reasons the row had before.
+  const parts = estimate ? panelParts(estimate) : null;
+  const headline = parts ? [parts.label, ...parts.stages].filter((n): n is NonNullable<typeof n> => n !== null).map(noteText).join(" ") : "";
+  const yours = useMemo(() => (ctx.profile ? yourNumbersFrom(estimateInputFromProfile(ctx.profile, "", null).student, planGpaLabel(ctx.profile)) : null), [ctx.profile]);
+  useEffect(() => {
+    if (estimate) track("estimate_shown", { group: estimate.group ?? "none", label: estimate.label ?? "none", model_version: estimate.modelVersion });
+    // Once per opening of this row's drawer.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const controlProps: RowControlProps | null = school ? { item, school, canEdit: ctx.viewer.canEdit, today: ctx.today, viewerIsGuardian: ctx.viewer.isGuardian, profile: ctx.profile } : null;
   const interest = school?.profile?.factors?.interest ?? null;
@@ -50,9 +66,9 @@ export function RowDrawer({
       <div className="space-y-2">
         <p>
           <span className="font-semibold">{group === "unsorted" ? "No group yet" : `${group[0].toUpperCase()}${group.slice(1)}`}:</span>{" "}
-          {groupAuto || group === "unsorted" ? standing?.reasons.join(" ") || "Add a GPA or a score to sort this one." : "You picked this group."}
-          {/* The GPA sentence ends the reasons; its ⓘ cites the figure it used (gpa.md "Saying what was used"). */}
-          {(groupAuto || group === "unsorted") && gpaCited && <InfoTip term={standing!.gpaNote!.cite === "derived.gpa_estimate" ? "gpa-estimate" : "high-school-gpa"} cited={gpaCited} className="ml-1 align-middle" />}{" "}
+          {groupAuto || group === "unsorted" ? (headline || standing?.reasons.join(" ") || "Add a GPA or a score to sort this one.") : "You picked this group."}
+          {/* Without an estimate the GPA sentence ends the reasons; its ⓘ cites the figure it used (gpa.md "Saying what was used"). */}
+          {!estimate && (groupAuto || group === "unsorted") && gpaCited && <InfoTip term={standing!.gpaNote!.cite === "derived.gpa_estimate" ? "gpa-estimate" : "high-school-gpa"} cited={gpaCited} className="ml-1 align-middle" />}{" "}
           {!groupAuto && group !== "unsorted" && (
             <button type="button" onClick={onUseGroupSuggestion} disabled={!ctx.viewer.canEdit} className="inline-flex items-center gap-1 font-semibold text-primary hover:underline disabled:opacity-60">
               <RotateCcw className="size-3" aria-hidden /> Use the suggestion
@@ -70,6 +86,21 @@ export function RowDrawer({
         {decision && <p className="text-muted-foreground">Decision expected around {dayLabel(decision.iso)}.</p>}
         {scoreLine && <p className="text-muted-foreground">{scoreLine}</p>}
       </div>
+
+      {estimate && school && (
+        <div className="space-y-2">
+          {/* A group the student picked hides the suggestion's lines above; the estimate's stay here. */}
+          {!(groupAuto || group === "unsorted") && headline && (
+            <p>
+              <span className="font-semibold">{noteText({ key: "estimate.label", values: {} })}:</span> {headline}
+            </p>
+          )}
+          <WhatWentIn result={estimate} yours={yours} college={school.name} cite={cite} className="rounded-2xl bg-card/70 p-3" />
+          <Link href={`/schools/${school.unit_id}/admissions#factors`} className="inline-flex text-xs font-semibold text-primary hover:underline">
+            How {school.name} reads a record
+          </Link>
+        </div>
+      )}
 
       {school && (
         <div>

@@ -8,7 +8,7 @@
 import { isUnitId } from "../follow-state.ts";
 import { isHighSchoolId } from "../high-school-core.ts";
 import { isMajorFamily } from "../majors.ts";
-import { MAX_INTENDED_MAJORS, OUTSIDE_US, sanitizeCourses } from "../student-profile.ts";
+import { MAX_INTENDED_MAJORS, OUTSIDE_US, sanitizeCoreAtTopLevel, sanitizeCourses, type CoreAtTopLevel } from "../student-profile.ts";
 import { UNDECIDED_MAJOR } from "./major-review.ts";
 import { isNoteKey } from "./notes.ts";
 import type { CourseEntry, EstimateNote, EstimateResult, EstimateStudent, InputKind } from "./types.ts";
@@ -23,10 +23,23 @@ export interface Counterfactual {
   addCourse?: CourseEntry;
 }
 
+/**
+ * What the saved profile adds to the student for the estimate but the contract's student doesn't carry: the core-subject
+ * answers behind the course reading and the student's grade (the same two the server load passes,
+ * lib/planner/plan-estimates.ts), so a browser asking for a live preview gets the answer the server load would give.
+ */
+export interface EstimateContextInput {
+  coreAtTopLevel: CoreAtTopLevel | null;
+  grade: 9 | 10 | 11 | 12 | null;
+}
+
 export interface EstimateRequest {
   student: EstimateStudent;
   unitIds: string[];
   counterfactual: Counterfactual | null;
+  context: EstimateContextInput;
+  /** Also answer "students like you" for the one college asked about (the profile's card). */
+  likeYou: boolean;
 }
 
 export type ParseResult = { ok: true; request: EstimateRequest } | { ok: false; message: string };
@@ -101,7 +114,12 @@ export function parseEstimateRequest(body: unknown, opts: { signedIn: boolean })
     }
     if (cf.score !== undefined || cf.addCourse) counterfactual = cf;
   }
-  return { ok: true, request: { student, unitIds, counterfactual } };
+  const ctx = isObj(body.context) ? body.context : {};
+  const context: EstimateContextInput = {
+    coreAtTopLevel: ctx.coreAtTopLevel === undefined || ctx.coreAtTopLevel === null ? null : sanitizeCoreAtTopLevel(ctx.coreAtTopLevel),
+    grade: intIn(ctx.grade, 9, 12) as EstimateContextInput["grade"],
+  };
+  return { ok: true, request: { student, unitIds, counterfactual, context, likeYou: body.likeYou === true && unitIds.length === 1 } };
 }
 
 /** The student as the counterfactual describes them. */

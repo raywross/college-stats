@@ -1,6 +1,6 @@
 ---
 title: "Georgia Tech's fall 2025 admissions figures corrected"
-pr: 0
+pr: 129
 date: 2026-10-11
 kind: data
 summary: Georgia Tech now shows 66,912 applicants, 8,819 admitted, and 4,050 enrolled for fall 2025, taken from its own first-year class profile.

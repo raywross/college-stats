@@ -195,10 +195,10 @@
           "label": "25–59% admitted",
           "n": 243,
           "values": {
-            "shrank10": 0.3827,
+            "shrank10": 0.3786,
             "grew10": 0.3292,
             "medianChange": 0.0014,
-            "totalChange": 0.0823
+            "totalChange": 0.0841
           }
         },
         {
@@ -206,10 +206,10 @@
           "label": "60% or more",
           "n": 1064,
           "values": {
-            "shrank10": 0.5695,
+            "shrank10": 0.5705,
             "grew10": 0.1927,
-            "medianChange": -0.1391,
-            "totalChange": -0.036
+            "medianChange": -0.1395,
+            "totalChange": -0.0364
           }
         }
       ]
@@ -509,7 +509,7 @@
             "values": {
               "shrank10": 0.3143,
               "grew10": 0.2286,
-              "medianChange": -0.0119,
+              "medianChange": -0.0099,
               "totalChange": 0.0324
             }
           },
@@ -521,7 +521,7 @@
               "shrank10": 0.4661,
               "grew10": 0.1384,
               "medianChange": -0.0887,
-              "totalChange": -0.0403
+              "totalChange": -0.0404
             }
           }
         ]

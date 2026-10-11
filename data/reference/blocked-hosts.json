@@ -169,7 +169,7 @@
       "host": "brandywine.psu.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-11",
       "unit_ids": [
         "214731"
       ]
@@ -763,7 +763,7 @@
       "host": "obu.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-11",
       "unit_ids": [
         "107512"
       ]
@@ -1106,7 +1106,7 @@
       "host": "ripon.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-11",
       "unit_ids": [
         "239628"
       ]
@@ -1139,7 +1139,7 @@
       "host": "scranton.psu.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-11",
       "unit_ids": [
         "214652"
       ]
@@ -1268,7 +1268,7 @@
       "host": "uwahd.uwa.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-11",
       "unit_ids": [
         "101587"
       ]
@@ -1358,7 +1358,7 @@
       "host": "www.alc.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-11",
       "unit_ids": [
         "156189"
       ]
@@ -1403,7 +1403,7 @@
       "host": "www.aum.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-11",
       "unit_ids": [
         "100830"
       ]
@@ -1448,7 +1448,7 @@
       "host": "www.brandywine.psu.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-11",
       "unit_ids": [
         "214731"
       ]
@@ -1547,7 +1547,7 @@
       "host": "www.cornellcollege.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-11",
       "unit_ids": [
         "153162"
       ]
@@ -1592,7 +1592,7 @@
       "host": "www.delval.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-11",
       "unit_ids": [
         "211981"
       ]
@@ -1636,7 +1636,7 @@
       "host": "www.elmira.edu",
       "status": 403,
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-11",
       "unit_ids": [
         "190983"
       ]
@@ -1807,7 +1807,7 @@
       "host": "www.juniata.edu",
       "status": 403,
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-11",
       "unit_ids": [
         "213251"
       ]
@@ -1990,7 +1990,7 @@
       "host": "www.okcu.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-11",
       "unit_ids": [
         "207458"
       ]
@@ -2041,7 +2041,7 @@
       "host": "www.randolphcollege.edu",
       "status": 403,
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-11",
       "unit_ids": [
         "233301"
       ]
@@ -2086,7 +2086,7 @@
       "host": "www.ripon.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-11",
       "unit_ids": [
         "239628"
       ]
@@ -2344,7 +2344,7 @@
       "host": "www.wheaton.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-11",
       "unit_ids": [
         "149781"
       ]

@@ -40,7 +40,7 @@
       "host": "abpa.tcnj.edu",
       "status": 403,
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-10",
       "unit_ids": [
         "187134"
       ]
@@ -100,7 +100,7 @@
       "host": "apb.tcnj.edu",
       "status": 403,
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-10",
       "unit_ids": [
         "187134"
       ]
@@ -199,10 +199,16 @@
       "host": "dair.tcnj.edu",
       "status": 403,
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-10",
       "unit_ids": [
         "187134"
       ]
+    },
+    {
+      "host": "data.byu.edu",
+      "status": 403,
+      "first_seen": "2026-10-10",
+      "last_seen": "2026-10-10"
     },
     {
       "host": "dubois.psu.edu",
@@ -376,7 +382,7 @@
       "host": "ir.tcnj.edu",
       "status": 403,
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-10",
       "unit_ids": [
         "187134"
       ]
@@ -436,7 +442,7 @@
       "host": "ira.tcnj.edu",
       "status": 403,
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-10",
       "unit_ids": [
         "187134"
       ]
@@ -478,7 +484,7 @@
       "host": "irds.tcnj.edu",
       "status": 403,
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-10",
       "unit_ids": [
         "187134"
       ]
@@ -532,7 +538,7 @@
       "host": "iris.tcnj.edu",
       "status": 403,
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-10",
       "unit_ids": [
         "187134"
       ]
@@ -568,7 +574,7 @@
       "host": "irp.tcnj.edu",
       "status": 403,
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-10",
       "unit_ids": [
         "187134"
       ]
@@ -736,7 +742,7 @@
       "host": "obp.tcnj.edu",
       "status": 403,
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-10",
       "unit_ids": [
         "187134"
       ]
@@ -802,7 +808,7 @@
       "host": "oie.tcnj.edu",
       "status": 403,
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-10",
       "unit_ids": [
         "187134"
       ]
@@ -874,7 +880,7 @@
       "host": "oir.tcnj.edu",
       "status": 403,
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-10",
       "unit_ids": [
         "187134"
       ]
@@ -931,7 +937,7 @@
       "host": "oira.tcnj.edu",
       "status": 403,
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-10",
       "unit_ids": [
         "187134"
       ]
@@ -986,7 +992,7 @@
       "host": "oirds.tcnj.edu",
       "status": 403,
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-10",
       "unit_ids": [
         "187134"
       ]
@@ -1022,7 +1028,7 @@
       "host": "opa.tcnj.edu",
       "status": 403,
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-10",
       "unit_ids": [
         "187134"
       ]
@@ -1070,7 +1076,7 @@
       "host": "opir.tcnj.edu",
       "status": 403,
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-10",
       "unit_ids": [
         "187134"
       ]
@@ -1187,6 +1193,15 @@
       ]
     },
     {
+      "host": "tcnj.edu",
+      "status": 403,
+      "first_seen": "2026-10-10",
+      "last_seen": "2026-10-10",
+      "unit_ids": [
+        "187134"
+      ]
+    },
+    {
       "host": "tsbc.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
@@ -1208,7 +1223,7 @@
       "host": "umdearborn.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-10",
       "unit_ids": [
         "171137"
       ]
@@ -1268,7 +1283,7 @@
       "host": "wichita.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-10",
       "unit_ids": [
         "156125"
       ]
@@ -1349,7 +1364,7 @@
       "host": "www.amherst.edu",
       "status": 405,
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-10",
       "unit_ids": [
         "164465"
       ]
@@ -1403,7 +1418,7 @@
       "host": "www.brandeis.edu",
       "status": 403,
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-10",
       "unit_ids": [
         "165015"
       ]
@@ -1951,7 +1966,7 @@
       "host": "www.pba.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-10",
       "unit_ids": [
         "136330"
       ]
@@ -2077,7 +2092,7 @@
       "host": "www.stetson.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-10",
       "unit_ids": [
         "137546"
       ]
@@ -2113,7 +2128,7 @@
       "host": "www.tcnj.edu",
       "status": 403,
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-10",
       "unit_ids": [
         "187134"
       ]
@@ -2263,7 +2278,7 @@
       "host": "www.westpoint.edu",
       "status": 403,
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-10",
       "unit_ids": [
         "197036"
       ]
@@ -2281,7 +2296,7 @@
       "host": "www.wichita.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-10",
       "unit_ids": [
         "156125"
       ]

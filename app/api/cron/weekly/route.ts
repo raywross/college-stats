@@ -9,13 +9,14 @@ import { buildYourWeek, type WeekLine } from "@/lib/emails/your-week";
 import { buildParentSummary, type ParentSummaryStudent } from "@/lib/emails/parent-summary";
 import { gradeOf, loadCycle } from "@/lib/planner/cycle";
 import { NO_MONEY, stuckSignals, summaryLine } from "@/lib/planner/summary";
-import { PLAN_ITEM_COLUMNS, PLAN_TASK_COLUMNS, planCycleKey, todayIso } from "@/lib/planner/context";
+import { PLAN_TASK_COLUMNS, planCycleKey, readItems, todayIso } from "@/lib/planner/context";
 import { shortDay } from "@/lib/planner/generators/college";
 import { CONSENT_COLUMNS, deliverText, readListTasks, type ConsentRow, type ListTasks } from "@/lib/planner/reminders-server";
 import { addDays, stageOf } from "@/lib/planner/stage";
 import { dayLabel, isOpen, compareTasks, taskDate } from "@/lib/planner/tasks";
 import { dueSoon, firstOverdue, outsideTitle, yourWeekOn } from "@/lib/planner/timeline";
 import type { PlanItem, PlanTask } from "@/lib/planner/types";
+import { cleanupUnconsentedSnapshots } from "@/lib/chances/snapshot-write";
 
 /**
  * The weekly reminders job (specs/planner/timeline.md "Reminders"; build brief assumption 5): Vercel Cron calls it on
@@ -28,7 +29,8 @@ import type { PlanItem, PlanTask } from "@/lib/planner/types";
  *     the default by grade), with the tasks due in the next seven days and the first overdue one. Nothing due: nothing.
  *   - The week's text (lib/sms.ts composeWeekText) when the student's texts are on: the first three tasks; skipped
  *     when nothing is due; the first text is ever the confirmation; at most one a day; never at night.
- * Then the parent summary (U8's extension point below).
+ * Then the parent summary (U8's extension point below). First, with the secret key set, the season-end cleanup of
+ * unconsented application snapshots (delete_unconsented_snapshots(); specs/chances/calibration.md).
  *
  * Returns at once, touching nothing, when neither email nor texts are configured (the secret key isn't in Vercel
  * until then, as with the digest job).
@@ -37,11 +39,15 @@ async function run(request: NextRequest) {
   if (!isAuthorized(request.headers.get("authorization"), process.env.CRON_SECRET)) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
+  // Season-end cleanup of unconsented application snapshots (specs/chances/calibration.md): whatever else is
+  // configured, whenever the secret key is. A no-op until a season finishes; null when the migration isn't applied.
+  const snapshotsDeleted = process.env.SUPABASE_URL && process.env.SUPABASE_SECRET_KEY ? await cleanupUnconsentedSnapshots(supabaseClient("publish")) : null;
+
   const email = emailConfigured();
   const texts = smsConfigured();
   if (!email && !texts) {
     console.info("weekly: neither email nor texts are configured; nothing to do.");
-    return Response.json({ configured: false });
+    return Response.json({ configured: false, snapshotsDeleted });
   }
 
   const client = supabaseClient("publish");
@@ -92,7 +98,7 @@ async function run(request: NextRequest) {
     }
   }
 
-  return Response.json({ configured: true, emailConfigured: email, textsConfigured: texts, ...summary });
+  return Response.json({ configured: true, emailConfigured: email, textsConfigured: texts, ...summary, snapshotsDeleted });
 }
 
 export const GET = run;
@@ -198,7 +204,7 @@ async function parentSummaryStudent(client: SupabaseClient, s: { id: string; dis
   const listId = (list.data as { id: string } | null)?.id;
   if (!listId) return null;
   const [items, tasks] = await Promise.all([
-    client.from("list_items").select(PLAN_ITEM_COLUMNS).eq("list_id", listId),
+    readItems(client, listId),
     client.from("plan_tasks").select(PLAN_TASK_COLUMNS).eq("list_id", listId),
   ]);
   const itemRows = (items.data ?? []) as PlanItem[];

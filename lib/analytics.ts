@@ -42,7 +42,8 @@ export interface AnalyticsEvents {
   error_shown: { route: string; kind: "error" | "not_found" };
   /* The planner (specs/planner/model.md "Telemetry"): that a stage was used and which college, never a title, a
    * date, a phone number, a count, or a note. */
-  plan_opened: { stage: number };
+  /** The redesign (specs/planner/redesign/*.md "Telemetry"): which tab, whose view, and whether it's Everyone. */
+  plan_opened: { tab: "colleges" | "scores" | "calendar" | "offers"; viewer: "student" | "guardian"; everyone: boolean };
   plan_task_ticked: { kind: string; source: "college" | "cycle" | "stage" | "own"; assignee: "student" | "guardian" | "either" };
   plan_stage_done: { stage: number };
   plan_nudge_sent: { channel: "email" | "sms" | "app" };
@@ -53,6 +54,31 @@ export interface AnalyticsEvents {
   plan_rounds_accepted: { ed: boolean; ed2: boolean };
   plan_offer_added: { unit_id: string };
   plan_choice_made: { unit_id: string };
+  /* The planner redesign (specs/planner/redesign/{page,standing,list,rounds,scores,calendar}.md "Telemetry"): which
+   * parts get used, never a score, a GPA, a name, or a date. */
+  plan_tab: { tab: "colleges" | "scores" | "calendar" | "offers" };
+  plan_switch_child: { to: "child" | "everyone" };
+  plan_signed_out_started: { from: "numbers" | "college" };
+  plan_signed_out_saved: { has_numbers: boolean };
+  /** `test` is which test the plan uses (sat, act, none), never the score. */
+  plan_numbers_set: { test: "sat" | "act" | "none"; practice: boolean };
+  plan_group_changed: { from_auto: boolean };
+  plan_dream_set: { on: boolean };
+  plan_round_changed: { from_auto: boolean; round: "ed" | "ed2" | "ea" | "rea" | "rd" | "rolling" };
+  plan_drawer_opened: { in_season: boolean };
+  plan_ed2_offer_used: { dream_round: "ed" | "rea" };
+  plan_round_problem_shown: { kind: string };
+  plan_scores_opened: { suggestion: boolean };
+  plan_test_date_picked: { test: "sat" | "act" };
+  plan_calendar_opened: { everyone: boolean; color_by: "child" | "round" };
+  plan_calendar_feed_added: { everyone: boolean };
+  plan_calendar_printed: { everyone: boolean };
+  /* The course plan (specs/chances/course-plan.md "Rules"): which reasons were shown, never a course name, a grade, or a score. */
+  course_plan_shown: { reasons: string; guardrail: string };
+  course_plan_added: { reason: string };
+  course_plan_dismissed: { reason: string };
+  /** An estimate shown to a student (the profile's card, the planner's drawer): the group, the label, the model version; never an input. */
+  estimate_shown: { group: "reach" | "target" | "likely" | "none"; label: "reach-for-everyone" | "guaranteed" | "none"; model_version: string };
 }
 export type AnalyticsEvent = keyof AnalyticsEvents;
 /** Events sent from Server Actions and Route Handlers with `trackServer()` (lib/analytics-server.ts). */
@@ -106,7 +132,7 @@ export const EVENTS = {
     why: "Accounts: sign-ups confirmed",
   },
   error_shown: { properties: ["route", "kind"], side: "client", why: "Errors people see, by page" },
-  plan_opened: { properties: ["stage"], side: "client", why: "Planner: which stage the Plan tab opens on" },
+  plan_opened: { properties: ["tab", "viewer", "everyone"], side: "client", why: "Planner: which tab the plan opens on, for students and parents" },
   plan_task_ticked: { properties: ["kind", "source", "assignee"], side: "client", why: "Planner: which kinds of tasks get done, and by whom" },
   plan_stage_done: { properties: ["stage"], side: "client", why: "Planner: how far families get" },
   plan_nudge_sent: { properties: ["channel"], side: "client", why: "Planner: do parents nudge, and how" },
@@ -115,6 +141,26 @@ export const EVENTS = {
   plan_rounds_accepted: { properties: ["ed", "ed2"], side: "client", why: "Planner: rounds plans accepted, with or without a binding round" },
   plan_offer_added: { properties: ["unit_id"], side: "client", why: "Planner: offers entered, by college" },
   plan_choice_made: { properties: ["unit_id"], side: "client", why: "Planner: the college chosen" },
+  plan_tab: { properties: ["tab"], side: "client", why: "Planner: which tabs get opened" },
+  plan_switch_child: { properties: ["to"], side: "client", why: "Planner: do parents switch between children" },
+  plan_signed_out_started: { properties: ["from"], side: "client", why: "Planner: visitors who start a plan before signing up" },
+  plan_signed_out_saved: { properties: ["has_numbers"], side: "client", why: "Planner: signed-out plans saved by signing up" },
+  plan_numbers_set: { properties: ["test", "practice"], side: "client", why: "Planner: numbers entered, by test and practice" },
+  plan_group_changed: { properties: ["from_auto"], side: "client", why: "Planner: how often a suggested group gets changed" },
+  plan_dream_set: { properties: ["on"], side: "client", why: "Planner: Dreams marked" },
+  plan_round_changed: { properties: ["from_auto", "round"], side: "client", why: "Planner: which rounds students pick over the starting round" },
+  plan_drawer_opened: { properties: ["in_season"], side: "client", why: "Planner: do row details get opened" },
+  plan_ed2_offer_used: { properties: ["dream_round"], side: "client", why: "Planner: the ED II offer taken" },
+  plan_round_problem_shown: { properties: ["kind"], side: "client", why: "Planner: which round conflicts come up" },
+  plan_scores_opened: { properties: ["suggestion"], side: "client", why: "Planner: Scores tab opened, with or without a retake suggestion" },
+  plan_test_date_picked: { properties: ["test"], side: "client", why: "Planner: test dates picked, by test" },
+  plan_calendar_opened: { properties: ["everyone", "color_by"], side: "client", why: "Planner: calendar views, per child or for everyone" },
+  plan_calendar_feed_added: { properties: ["everyone"], side: "client", why: "Planner: calendar feeds added" },
+  plan_calendar_printed: { properties: ["everyone"], side: "client", why: "Planner: calendars printed" },
+  course_plan_shown: { properties: ["reasons", "guardrail"], side: "client", why: "Course plan: which reasons and guardrails the Next year card shows" },
+  course_plan_added: { properties: ["reason"], side: "client", why: "Course plan: do suggestions get added, by reason" },
+  course_plan_dismissed: { properties: ["reason"], side: "client", why: "Course plan: do suggestions get set aside, by reason" },
+  estimate_shown: { properties: ["group", "label", "model_version"], side: "client", why: "Quad's estimate: how often it is shown and as which group and label, per model version (never the inputs)" },
 } as const satisfies { readonly [K in AnalyticsEvent]: EventSpec<K> };
 
 type AssertTrue<T extends true> = T;

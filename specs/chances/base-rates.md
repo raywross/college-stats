@@ -1,6 +1,6 @@
 # The Admit Rate for Your Pool: Automatic Admission, Major, and Residency
 
-> Status: **planned** 2026-10-10. Part 3 of [admission chances](README.md). Builds on the residency grid
+> Status: **built** 2026-10-11 on `feature/chances` (see "As built"; planned 2026-10-10). Part 3 of [admission chances](README.md). Builds on the residency grid
 > ([cds-residency-admissions.md](../data-expansion/cds-residency-admissions.md), built: `rateForStudent`), early rounds
 > ([cds-admissions.md](../data-expansion/cds-admissions.md), built: C21/C22), and promotes part of the
 > [getting into the major](../ideas/getting-into-the-major.md) idea. An input to [Quad's estimate](estimate.md).
@@ -97,6 +97,30 @@ no admit counts in the CDS template; nothing is said about its rate.
 `lib/chances/pool-rate.ts` (pure), `data/guaranteed-admission.json` with its verify check, the first wave of
 `reported.major_admission` (agent recipe + review queue), `tests/chances-pool-rate.test.mts` (order of precedence, a
 program that applies and one missing a field, system vs campus scope, major + residency without a cross).
+
+## As built (2026-10-11)
+- `lib/chances/pool-rate.ts` (pure, client-safe): `poolRateFor(student, school, { overallYear? })` returns the
+  `PoolRate` contract plus `notes` (catalog keys with formatted values and the field each cites), `programs` (each
+  program at the college with `applies` / `may_qualify` / `not_met` / `not_eligible` and the missing inputs), and
+  `facts`. Also `programStatus`, `programLabel` ("Texas automatic admission (top 5%)"), `earlyDecisionNote` (the ED
+  fact for a student whose round is `ed` or `ed2`), `admitsSeparately`. A guarantee's curriculum isn't checked (the
+  profile doesn't record it); it travels with the program's source. With a campus guarantee in hand, other campus
+  programs' "may qualify" lines are dropped; programs sharing a name show one line, the easier tier.
+- `data/guaranteed-admission.json`, cycle 2027, 8 programs over 62 colleges: Texas top 10% (34 public universities
+  other than UT Austin; the health science centers don't admit first-years), UT Austin top 5%, UC ELC (system scope,
+  9 campuses), the Wisconsin Guarantee (top 5% for UW–Madison, top 10% for the other 12 universities), University of
+  Arizona assured admission (top 25% or a 3.0 core GPA), and Idaho Direct Admissions (3.0 for all four public
+  universities, 2.25 for Idaho State and Lewis-Clark State). Every source was read through search results
+  (`verified_via: "search"`): official pages couldn't be fetched from the build container, so each quote should be
+  checked on its page at the next data run. Not added: Iowa's Regent Admission Index (a formula, not a rank or GPA
+  threshold), Washington's guaranteed admissions program (participating districts only), Kansas, South Dakota, and
+  ASU (sources conflicted or state admission requirements rather than a guarantee).
+- Schema additions (additive): `rule.match` ("any" for "top 25% OR a 3.0"), `system_name` (required for system
+  scope), and the check now requires a GPA threshold to appear in the quote. `reported.major_admission` units may
+  carry `published_rate` (a percentage printed without counts, like Illinois's rates by college), cited like an admit
+  rate. `guaranteedProgramCitation(path, program)` in `lib/lineage.ts` cites the program a line names
+  (`PoolRate.programId`), since a college can have two.
+- Tests: `tests/chances-pool-rate.test.mts`.
 
 ## Open questions
 1. Should UC's ELC appear at all, given it guarantees the system but not a campus? Recommendation: yes, once, as a

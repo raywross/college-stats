@@ -327,3 +327,19 @@ export async function consentOutcomeShare(listId: string, consent: boolean): Pro
   refresh();
   return { ok: true };
 }
+
+/**
+ * Deletes the list's application snapshots (specs/chances/calibration.md "Privacy": a student can delete their
+ * snapshots): the numbers saved the day each college was marked applied. Row-level security lets only the student's
+ * own account (or an editing guardian of a student without one) delete them (20261011100000_application_snapshots.sql).
+ * Before that migration is applied there's nothing to delete.
+ */
+export async function deleteApplicationSnapshots(listId: string): Promise<OfferResult> {
+  if (!isUuid(listId)) return { ok: false, message: FAILED };
+  const r = await ready("planner.offers");
+  if (!("supabase" in r)) return r;
+  const { error } = await r.supabase.from("application_snapshots").delete().eq("list_id", listId);
+  if (error && !/does not exist|schema cache/i.test(error.message)) return fail(error, "deleteApplicationSnapshots");
+  refresh();
+  return { ok: true };
+}

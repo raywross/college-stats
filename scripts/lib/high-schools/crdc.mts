@@ -9,8 +9,10 @@
  * - Reserve codes are negative numbers: -9 not applicable / not reported, -10 nonbinary counts not collected, -5 and
  *   others missing; -11 and -12 are OCR's suppression codes (2023–24 publishes unsuppressed counts, but the codes are
  *   honored if a release uses them). Counts of students 1–4 are suppressed here (lib/high-school-core.ts `suppress`).
- * - `SCH_APENR_IND` / `SCH_IBENR_IND` are "Yes" or -9: -9 covers some large high schools that do offer AP, so it is
- *   "not reported", never zero. `SCH_DUAL_IND` is "Yes" or "No"; "No" means no students in dual enrollment (0).
+ * - `SCH_APENR_IND` / `SCH_IBENR_IND` are "Yes", "No", or -9: -9 covers some large high schools that do offer AP, so
+ *   it is "not reported", never zero; "No" means the school offers none, stored as an explicit 0 (courses and
+ *   students; 2026-10-11, specs/chances/rigor-in-context.md). `SCH_DUAL_IND` is "Yes" or "No"; "No" means no students
+ *   in dual enrollment (0). The stored shards pick up the "No" → 0 change at the next CRDC import.
  * - Totals are male + female (+ nonbinary when reported): if a part is missing, the total is missing.
  */
 import { statSync } from "node:fs";
@@ -121,8 +123,14 @@ export function buildCrdcPatch(id: string, s: CrdcSchool): HighSchoolPatch | nul
     // Courses aren't students: the small-cell rule doesn't apply (min 1).
     rigor.ap_courses = put("ap_courses", crdcCount(s.ap.SCH_APCOURSES, 1));
     rigor.ap_enrolled = put("ap_enrolled", total(s.ap, "TOT_APENR"));
+  } else if (s.ap?.SCH_APENR_IND === "No") {
+    // The school said it offers no AP courses (specs/chances/rigor-in-context.md "The school's offering"): an explicit
+    // 0, so it reads "doesn't offer AP courses" rather than nothing. -9 ("not reported") stays missing.
+    rigor.ap_courses = 0;
+    rigor.ap_enrolled = 0;
   }
   if (s.ib && s.ib.SCH_IBENR_IND === "Yes") rigor.ib_enrolled = put("ib_enrolled", total(s.ib, "TOT_IBENR"));
+  else if (s.ib?.SCH_IBENR_IND === "No") rigor.ib_enrolled = 0;
   if (s.dual?.SCH_DUAL_IND === "No") rigor.dual_enrolled = 0;
   else if (s.dual?.SCH_DUAL_IND === "Yes") rigor.dual_enrolled = put("dual_enrolled", total(s.dual, "TOT_DUALENR"));
   return { id, values: { rigor }, ...(suppressed.length ? { suppressed } : {}) };

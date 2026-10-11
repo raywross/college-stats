@@ -57,8 +57,10 @@ dates are published, with a schema check in `npm run verify`:
 }
 ```
 `applies` is a small vocabulary resolved against the student's list and profile (`all`, `has_css_college`,
-`has_common_app`, `plans_tests`, `uses_may1`, `has_ed`, `committed`, `international`, `noncustodial`); a key the
-code doesn't know fails the schema check. Windows become tasks with `window_start`/`window_end` and no hard due date.
+`has_common_app`, `plans_tests`, `uses_may1`, `has_ed`, `committed`, `international`, `noncustodial`, and, from the
+[course plan](../chances/course-plan.md), `ap_in_progress` (an AP course in progress) and `has_ap_course` (an AP course
+taken or in progress)); a key the code doesn't know fails the schema check. An entry's dates may fall from August two
+years before the cycle starts (a sophomore's AP ordering deadline) through December of the year it ends. Windows become tasks with `window_start`/`window_end` and no hard due date.
 
 ## Generators
 `generateTasks()` ([model.md](model.md#shared-code-contracts-for-the-stage-units)) composes four sources. Every task

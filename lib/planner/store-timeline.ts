@@ -90,6 +90,34 @@ export async function revokeCalendarToken(listId: string): Promise<TimelineResul
   return { ok: true };
 }
 
+/**
+ * A new calendar link for the signed-in person (specs/planner/redesign/calendar.md "Feed, print, share"): one feed
+ * with every child they can see under the household grants, evaluated when the calendar fetches it, so a child who
+ * joins or leaves the household shows up or drops out without a new link. Any earlier viewer link of theirs stops
+ * working. Returns the token once; the page builds `webcal://{host}/api/plan/feed/{token}.ics`. Only the hash is
+ * stored (plan_viewer_calendar_tokens, 20261010130000_plan_viewer_feed.sql).
+ */
+export async function createViewerCalendarToken(): Promise<{ ok: true; token: string } | { ok: false; message: string }> {
+  const r = await ready("planner.calendar");
+  if (!("supabase" in r)) return r;
+  const now = new Date().toISOString();
+  const revoked = await r.supabase.from("plan_viewer_calendar_tokens").update({ revoked_at: now }).eq("user_id", r.userId).is("revoked_at", null);
+  if (revoked.error) return fail(revoked.error, "createViewerCalendarToken (revoke earlier)");
+  const token = randomBytes(24).toString("base64url");
+  const { error } = await r.supabase.from("plan_viewer_calendar_tokens").insert({ user_id: r.userId, token_hash: await hashToken(token) });
+  if (error) return fail(error, "createViewerCalendarToken");
+  return { ok: true, token };
+}
+
+/** Stops every viewer calendar link the signed-in person made. */
+export async function revokeViewerCalendarToken(): Promise<TimelineResult> {
+  const r = await ready("planner.calendar");
+  if (!("supabase" in r)) return r;
+  const { error } = await r.supabase.from("plan_viewer_calendar_tokens").update({ revoked_at: new Date().toISOString() }).eq("user_id", r.userId).is("revoked_at", null);
+  if (error) return fail(error, "revokeViewerCalendarToken");
+  return { ok: true };
+}
+
 /** The same events as the feed, once, as a file's text (for people who don't want a subscription). */
 export async function planIcsOnce(listId: string): Promise<{ ok: true; ics: string; filename: string } | { ok: false; message: string }> {
   if (!isUuid(listId)) return { ok: false, message: FAILED };

@@ -11,6 +11,9 @@ import type { School, SchoolType, SettingGroup, SizeBucket } from "./types.ts";
 import { satTotal } from "./score-bands.ts";
 import { isMajorFamily, type MajorFamily } from "./majors.ts";
 import { isHighSchoolId } from "./high-school-core.ts";
+import type { StandingStudent } from "./planner/standing.ts";
+import type { CourseEntry, CourseKind, CourseStatus, CourseSubject, Mark } from "./chances/types.ts";
+import { catalogCourse, COURSE_SUBJECTS, isCatalogKeyFor } from "./chances/catalog.ts";
 
 /**
  * Same boundaries as lib/metrics.ts SIZE_BUCKETS, duplicated here rather than imported: that module pulls in
@@ -55,7 +58,8 @@ export interface StudentProfileBasics {
 export type GpaScale = "4.0" | "5.0" | "100";
 export const GPA_SCALES: { value: GpaScale; label: string }[] = [
   { value: "4.0", label: "4.0 scale" },
-  { value: "5.0", label: "5.0 scale" },
+  // Stored as "5.0" (unchanged); a weighted GPA, read as a range by the plan (planGpaRange; planner/redesign/gpa.md).
+  { value: "5.0", label: "Weighted (honors/AP count extra)" },
   { value: "100", label: "100-point scale" },
 ];
 
@@ -71,8 +75,99 @@ export interface StudentProfileAcademics {
   weightedGpa: number | null;
   /** 0–100; "top 10%" is stored as 10. */
   classRankPercentile: number | null;
-  /** Count of AP/IB/dual-enrollment courses taken. */
+  /**
+   * Count of AP/IB/dual-enrollment courses: derived from `courses` on every save (courseRigorCountOf), kept for the
+   * readers that predate the list. On input, a number that differs from the list's count adds or removes unnamed
+   * placeholder AP rows to match (the count-only entry, specs/chances/rigor-in-context.md); send null to leave the
+   * rows as they are.
+   */
   courseRigorCount: number | null;
+  /**
+   * The student's courses, at most COURSES_MAX (specs/chances/rigor-in-context.md "The student's courses"). A profile
+   * saved before the list existed (no `courses` key) turns its courseRigorCount into that many unnamed AP rows.
+   */
+  courses: CourseEntry[];
+  /** AP exam scores are the student's own: hidden from guardians unless the student shares them. Default true. */
+  apExamsPrivate: boolean;
+  /**
+   * "Were your English, math, science, history, and language classes the most advanced your school offered?" for 11th
+   * and 12th grade (rigor-in-context.md "The core-subject question"). An unanswered cell is null and reads as the
+   * list suggests (checked where the list has an AP, IB, or dual-enrollment course in that subject and year); an
+   * answer the student gave, yes or no, is kept as given.
+   */
+  coreAtTopLevel: CoreAtTopLevel;
+  /**
+   * The course plan's own state for this student (specs/chances/course-plan.md): the suggestions they dismissed for
+   * this season, and whether they marked next year's schedule done. Null until one is set.
+   */
+  coursePlan: CoursePlanState | null;
+  /**
+   * "Which of these does your school offer?": AP catalog keys the student marked, kept for a school whose course list
+   * isn't on record (course-plan.md "The school's course list" 3). Never shared with other students.
+   */
+  schoolOffers: string[];
+}
+
+/** The course plan's saved choices; `season` is the school year they were made in ("2026-27"), after which they lapse. */
+export interface CoursePlanState {
+  season: string;
+  /** Suggestion ids ("ap_calculus_ab", or "subject:science" for a suggestion that names no course). */
+  dismissed: string[];
+  done: boolean;
+}
+
+/** Most dismissed suggestions and school marks a profile keeps. */
+export const COURSE_PLAN_DISMISSED_MAX = 40;
+export const SCHOOL_OFFERS_MAX = 60;
+const SEASON_RE = /^\d{4}-\d{2}$/;
+const SUGGESTION_ID_RE = /^(ap|ib)_[a-z0-9_]{1,60}$|^subject:[a-z]{2,10}$/;
+
+/** Untrusted input as the course plan's state; null when it holds nothing worth keeping. */
+export function sanitizeCoursePlan(input: unknown): CoursePlanState | null {
+  if (!isObj(input) || typeof input.season !== "string" || !SEASON_RE.test(input.season)) return null;
+  const dismissed = arr(input.dismissed, (x) => (typeof x === "string" && SUGGESTION_ID_RE.test(x) ? x : null), COURSE_PLAN_DISMISSED_MAX);
+  const done = input.done === true;
+  return dismissed.length === 0 && !done ? null : { season: input.season, dismissed, done };
+}
+
+/** Untrusted input as marked AP course keys: only keys in the AP catalog, each once. */
+export function sanitizeSchoolOffers(input: unknown): string[] {
+  return arr(input, (x) => (typeof x === "string" && isCatalogKeyFor("ap", x) ? x : null), SCHOOL_OFFERS_MAX);
+}
+
+/** The five subjects the counselor's "most demanding" question asks about. */
+export type CoreSubject = "english" | "math" | "science" | "history" | "language";
+export const CORE_SUBJECT_KEYS: readonly CoreSubject[] = ["english", "math", "science", "history", "language"];
+/** The two years the question asks about. */
+export const CORE_YEARS = [11, 12] as const;
+export type CoreYear = (typeof CORE_YEARS)[number];
+export type CoreAnswers = Record<CoreSubject, boolean | null>;
+export type CoreAtTopLevel = Record<CoreYear, CoreAnswers>;
+
+/** Nothing answered yet. */
+export function emptyCoreAtTopLevel(): CoreAtTopLevel {
+  const blank = (): CoreAnswers => ({ english: null, math: null, science: null, history: null, language: null });
+  return { 11: blank(), 12: blank() };
+}
+
+/** Whether any cell has been answered (yes or no). */
+export function coreAnswered(core: CoreAtTopLevel): boolean {
+  return CORE_YEARS.some((y) => CORE_SUBJECT_KEYS.some((s) => core[y][s] !== null));
+}
+
+/** Untrusted input as CoreAtTopLevel: only true and false are kept as answers; anything else is unanswered. */
+export function sanitizeCoreAtTopLevel(input: unknown): CoreAtTopLevel {
+  const out = emptyCoreAtTopLevel();
+  if (!isObj(input)) return out;
+  for (const year of CORE_YEARS) {
+    const row = input[String(year)];
+    if (!isObj(row)) continue;
+    for (const subject of CORE_SUBJECT_KEYS) {
+      const v = row[subject];
+      if (v === true || v === false) out[year][subject] = v;
+    }
+  }
+  return out;
 }
 
 export interface StudentProfileTests {
@@ -88,6 +183,30 @@ export interface StudentProfileTests {
   superscore: boolean;
   /** "I plan to apply test-optional" even where scores are on file. */
   plansTestOptional: boolean;
+  /**
+   * The one test the plan uses (specs/planner/redesign/standing.md "The numbers"): SAT, ACT, "none" (not testing:
+   * the plan uses GPA alone), or null (not asked yet). Switching keeps both stored scores.
+   */
+  focus: TestFocus | null;
+  /** The score in the focus test is a practice score (a PSAT or practice test); shown once, in the plan's header card. */
+  practice: boolean;
+  /**
+   * Test dates the student picked with "I'll take it" (scores.md "Test dates"): cycle-file entry keys such as
+   * `sat_2026_10` (data/application-cycle.json); the cycle generator makes register and test-day tasks only for these.
+   */
+  plannedDates: string[];
+}
+
+export type TestFocus = "sat" | "act" | "none";
+const TEST_FOCUS_VALUES: TestFocus[] = ["sat", "act", "none"];
+/** Most test dates a student can pick at once. */
+export const PLANNED_DATES_MAX = 6;
+/** A test-date key in the cycle file: `sat_YYYY_MM` or `act_YYYY_MM` (tests/planner-redesign-profile.test.mts checks every test date in the cycle file has this shape). */
+const TEST_DATE_KEY = /^(sat|act)_\d{4}_(0[1-9]|1[0-2])$/;
+
+/** Whether a value is a cycle-file test-date key (`sat_2026_10`). */
+export function isTestDateKey(v: unknown): v is string {
+  return typeof v === "string" && TEST_DATE_KEY.test(v);
 }
 
 export type EarlyRoundInterest = "ed" | "ea" | "none";
@@ -136,7 +255,7 @@ export const LOCAL_PROFILE_KEY = "student-profile";
 export function emptyProfile(): StudentProfileData {
   return {
     basics: { gradYear: null, stateOfResidence: null, highSchool: null, highSchoolId: null, feeWaiverEligible: null },
-    academics: { gpa: null, gpaScale: "4.0", weightedGpa: null, classRankPercentile: null, courseRigorCount: null },
+    academics: { gpa: null, gpaScale: "4.0", weightedGpa: null, classRankPercentile: null, courseRigorCount: null, courses: [], apExamsPrivate: true, coreAtTopLevel: emptyCoreAtTopLevel(), coursePlan: null, schoolOffers: [] },
     tests: {
       satTotal: null,
       satReading: null,
@@ -148,6 +267,9 @@ export function emptyProfile(): StudentProfileData {
       actScience: null,
       superscore: false,
       plansTestOptional: false,
+      focus: null,
+      practice: false,
+      plannedDates: [],
     },
     plans: { intendedMajors: [], earlyRoundInterest: null },
     preferences: { sizes: [], settings: [], statesOrRegions: [], maxAverageCost: null, types: [] },
@@ -205,8 +327,12 @@ const SCHOOL_TYPE_VALUES: SchoolType[] = ["public", "private-nonprofit", "privat
 const EARLY_ROUND_VALUES: EarlyRoundInterest[] = ["ed", "ea", "none"];
 const GPA_SCALE_VALUES: GpaScale[] = ["4.0", "5.0", "100"];
 
-function gpaMaxFor(scale: GpaScale): number {
-  return scale === "4.0" ? 4.0 : scale === "5.0" ? 5.0 : 100;
+/**
+ * The highest GPA kept on each scale. A 4.0-scale GPA may run to 5.0: above 4.0 it is weighted by definition, and the
+ * plan reads it as a range (planGpaRange; specs/planner/redesign/gpa.md "The design" 3). unweightedGpa4 still caps it.
+ */
+export function gpaMaxFor(scale: GpaScale): number {
+  return scale === "100" ? 100 : 5.0;
 }
 
 /**
@@ -229,12 +355,21 @@ export function sanitizeProfile(input: unknown): StudentProfileData {
 
   const ac = isObj(input.academics) ? input.academics : {};
   const gpaScale = GPA_SCALE_VALUES.includes(ac.gpaScale as GpaScale) ? (ac.gpaScale as GpaScale) : "4.0";
+  const countIn = int(ac.courseRigorCount, 0, COURSES_MAX);
+  // A profile saved before the list existed: its count becomes that many unnamed AP rows (rigor-in-context.md).
+  const rows = Array.isArray(ac.courses) ? sanitizeCourses(ac.courses) : [];
+  const courses = countIn !== null ? reconcileCourseCount(rows, countIn) : rows;
   const academics: StudentProfileAcademics = {
     gpa: num(ac.gpa, 0, gpaMaxFor(gpaScale)),
     gpaScale,
     weightedGpa: num(ac.weightedGpa, 0, 120),
     classRankPercentile: int(ac.classRankPercentile, 1, 100),
-    courseRigorCount: int(ac.courseRigorCount, 0, 40),
+    courseRigorCount: courses.length > 0 || countIn !== null ? courseRigorCountOf(courses) : null,
+    courses,
+    apExamsPrivate: ac.apExamsPrivate !== false,
+    coreAtTopLevel: sanitizeCoreAtTopLevel(ac.coreAtTopLevel),
+    coursePlan: sanitizeCoursePlan(ac.coursePlan),
+    schoolOffers: sanitizeSchoolOffers(ac.schoolOffers),
   };
 
   const t = isObj(input.tests) ? input.tests : {};
@@ -249,6 +384,9 @@ export function sanitizeProfile(input: unknown): StudentProfileData {
     actScience: int(t.actScience, 1, 36),
     superscore: bool(t.superscore),
     plansTestOptional: bool(t.plansTestOptional),
+    focus: TEST_FOCUS_VALUES.includes(t.focus as TestFocus) ? (t.focus as TestFocus) : null,
+    practice: bool(t.practice),
+    plannedDates: arr(t.plannedDates, (x) => (isTestDateKey(x) ? x : null), PLANNED_DATES_MAX),
   };
 
   const pl = isObj(input.plans) ? input.plans : {};
@@ -267,6 +405,198 @@ export function sanitizeProfile(input: unknown): StudentProfileData {
   };
 
   return { basics, academics, tests, plans, preferences };
+}
+
+/* ------------------------------------------------------------------ */
+/* Courses (specs/chances/rigor-in-context.md "The student's courses")  */
+/* ------------------------------------------------------------------ */
+
+/** Most rows a course list keeps. */
+export const COURSES_MAX = 40;
+/** Longest name kept for a dual-enrollment, honors, or regular course. */
+export const COURSE_NAME_MAX = 60;
+export const COURSE_KINDS: readonly CourseKind[] = ["ap", "ib_hl", "ib_sl", "dual", "honors", "regular"];
+export const COURSE_STATUSES: readonly CourseStatus[] = ["taken", "in_progress", "planned"];
+export const MARKS: readonly Mark[] = ["A+", "A", "A-", "B+", "B", "B-", "C+", "C", "C-", "D+", "D", "D-", "F", "P"];
+/** The kinds that count as advanced: AP, IB, and dual enrollment (honors is listed, never counted). */
+export const ADVANCED_KINDS: readonly CourseKind[] = ["ap", "ib_hl", "ib_sl", "dual"];
+/** The year an unnamed placeholder row gets: the list doesn't know it, and 11th grade is the most common AP year. */
+const PLACEHOLDER_YEAR = 11;
+
+/** Unweighted 4.0-scale points for a mark: A+ and A 4.0, A− 3.7, B+ 3.3 … D− 0.7, F 0; P (pass) has none. */
+export const MARK_POINTS: Readonly<Record<Exclude<Mark, "P">, number>> = {
+  "A+": 4.0,
+  A: 4.0,
+  "A-": 3.7,
+  "B+": 3.3,
+  B: 3.0,
+  "B-": 2.7,
+  "C+": 2.3,
+  C: 2.0,
+  "C-": 1.7,
+  "D+": 1.3,
+  D: 1.0,
+  "D-": 0.7,
+  F: 0,
+};
+
+export function isMark(v: unknown): v is Mark {
+  return typeof v === "string" && (MARKS as readonly string[]).includes(v);
+}
+
+/** The points a mark is worth, or null for P (pass) and no mark. */
+export function markPoints(mark: Mark | null): number | null {
+  return mark === null || mark === "P" ? null : MARK_POINTS[mark];
+}
+
+/** The grade a course is read by: its final grade, else the latest semester's (s2, then s1); null when none. */
+export function courseMark(c: Pick<CourseEntry, "grades">): Mark | null {
+  return c.grades.final ?? c.grades.s2 ?? c.grades.s1 ?? null;
+}
+
+export function isAdvancedKind(kind: CourseKind): boolean {
+  return ADVANCED_KINDS.includes(kind);
+}
+
+/** An unnamed row from the count-only entry or a pre-list profile: AP with neither key nor name. */
+export function isPlaceholderCourse(c: Pick<CourseEntry, "kind" | "key" | "name">): boolean {
+  return c.kind === "ap" && c.key === null && c.name === null;
+}
+
+/** The derived `courseRigorCount`: AP, IB, and dual-enrollment rows, any status. */
+export function courseRigorCountOf(courses: readonly CourseEntry[]): number {
+  return courses.filter((c) => isAdvancedKind(c.kind)).length;
+}
+
+function average(points: number[]): number | null {
+  if (points.length === 0) return null;
+  return Math.round((points.reduce((a, b) => a + b, 0) / points.length) * 100) / 100;
+}
+
+/**
+ * `advancedGpa`: the unweighted 4.0-scale average of the AP, IB, and dual-enrollment rows' grades (courseMark: final,
+ * else the latest semester), P ignored, to two decimals. Null when none of them has a letter grade yet. Shown to the
+ * student, never compared with any college's figure.
+ */
+export function advancedGpa(courses: readonly CourseEntry[]): number | null {
+  return average(
+    courses
+      .filter((c) => isAdvancedKind(c.kind))
+      .map((c) => markPoints(courseMark(c)))
+      .filter((p): p is number => p !== null),
+  );
+}
+
+/**
+ * `subjectGpa` (specs/chances/major-and-grades.md "The student's side"): the unweighted average of every row in the
+ * subject, advanced, honors, and regular together, read the same way as advancedGpa. Null without a graded row.
+ */
+export function subjectGpa(courses: readonly CourseEntry[], subject: CourseSubject): number | null {
+  return average(
+    courses
+      .filter((c) => c.subject === subject)
+      .map((c) => markPoints(courseMark(c)))
+      .filter((p): p is number => p !== null),
+  );
+}
+
+/** An unnamed placeholder AP row (isPlaceholderCourse). */
+export function placeholderCourse(id: string): CourseEntry {
+  return { id, kind: "ap", key: null, name: null, subject: "other", year: PLACEHOLDER_YEAR, status: "taken", grades: { s1: null, s2: null, final: null }, exam: null };
+}
+
+/**
+ * The list matched to a count (the count-only entry): unnamed placeholder rows added, or removed from the end, until
+ * the advanced rows number `count` (capped at COURSES_MAX). Named rows are never removed, so a count below them leaves
+ * the named rows as they are.
+ */
+export function reconcileCourseCount(courses: readonly CourseEntry[], count: number): CourseEntry[] {
+  const out = [...courses];
+  let have = courseRigorCountOf(out);
+  for (let i = out.length - 1; i >= 0 && have > count; i--) {
+    if (isPlaceholderCourse(out[i])) {
+      out.splice(i, 1);
+      have--;
+    }
+  }
+  const ids = new Set(out.map((c) => c.id));
+  let n = 1;
+  while (have < count && out.length < COURSES_MAX) {
+    while (ids.has(`placeholder-${n}`)) n++;
+    ids.add(`placeholder-${n}`);
+    out.push(placeholderCourse(`placeholder-${n}`));
+    have++;
+  }
+  return out;
+}
+
+function markOrNull(v: unknown): Mark | null {
+  return isMark(v) ? v : null;
+}
+
+/**
+ * One untrusted course row as a CourseEntry, or null to drop it. AP and IB rows keep a key only when it is in the
+ * catalog for that kind (an unknown key drops the row; no key at all is an unnamed placeholder) and take the
+ * catalog's subject; dual, honors, and regular rows need a name of at most COURSE_NAME_MAX characters (regular: math
+ * or science only). A planned course has no final grade and no exam score; an exam score is for AP only.
+ */
+function sanitizeCourse(v: unknown, index: number): CourseEntry | null {
+  if (!isObj(v)) return null;
+  const kind = COURSE_KINDS.includes(v.kind as CourseKind) ? (v.kind as CourseKind) : null;
+  const year = int(v.year, 9, 12) as CourseEntry["year"] | null;
+  const status = COURSE_STATUSES.includes(v.status as CourseStatus) ? (v.status as CourseStatus) : null;
+  if (!kind || year === null || status === null) return null;
+  let key: string | null = null;
+  let name: string | null = null;
+  let subject: CourseSubject | null = COURSE_SUBJECTS.includes(v.subject as CourseSubject) ? (v.subject as CourseSubject) : null;
+  if (kind === "ap" || kind === "ib_hl" || kind === "ib_sl") {
+    if (v.key !== null && v.key !== undefined) {
+      if (typeof v.key !== "string" || !isCatalogKeyFor(kind, v.key)) return null;
+      key = v.key;
+      subject = catalogCourse(v.key)!.subject;
+    }
+  } else {
+    name = str(v.name, COURSE_NAME_MAX);
+    if (!name) return null;
+    if (kind === "regular" && subject !== "math" && subject !== "science") return null;
+  }
+  const g = isObj(v.grades) ? v.grades : {};
+  const planned = status === "planned";
+  const exam = kind === "ap" && !planned ? (int(v.exam, 1, 5) as CourseEntry["exam"]) : null;
+  const id = typeof v.id === "string" && v.id.trim() && v.id.length <= 40 ? v.id.trim() : `course-${index + 1}`;
+  return {
+    id,
+    kind,
+    key,
+    name,
+    subject: subject ?? "other",
+    year,
+    status,
+    grades: { s1: markOrNull(g.s1), s2: markOrNull(g.s2), final: planned ? null : markOrNull(g.final) },
+    exam,
+  };
+}
+
+/** A list of untrusted rows as at most COURSES_MAX CourseEntries: invalid rows dropped, a catalog course listed once, ids unique. */
+export function sanitizeCourses(input: unknown): CourseEntry[] {
+  if (!Array.isArray(input)) return [];
+  const out: CourseEntry[] = [];
+  const keys = new Set<string>();
+  const ids = new Set<string>();
+  input.forEach((raw, i) => {
+    if (out.length >= COURSES_MAX) return;
+    const c = sanitizeCourse(raw, i);
+    if (!c) return;
+    if (c.key !== null) {
+      if (keys.has(c.key)) return;
+      keys.add(c.key);
+    }
+    let id = c.id;
+    for (let n = 2; ids.has(id); n++) id = `${c.id}-${n}`;
+    ids.add(id);
+    out.push({ ...c, id });
+  });
+  return out;
 }
 
 /* ------------------------------------------------------------------ */
@@ -329,6 +659,66 @@ export function gpaDisplay(academics: Pick<StudentProfileAcademics, "gpa" | "gpa
 
 function trimTrailingZero(n: number): string {
   return Number(n.toFixed(2)).toString();
+}
+
+/* ------------------------------------------------------------------ */
+/* The plan's numbers (specs/planner/redesign/standing.md)             */
+/* ------------------------------------------------------------------ */
+
+/**
+ * The one test the plan uses (standing.md "The numbers"): the focus test's score when the student picked one; with
+ * no focus yet and exactly one score on file, that one; "Not testing", no score, or two scores and no pick: null.
+ */
+export function planTest(profile: Pick<StudentProfileData, "tests"> | null): { kind: "sat" | "act"; score: number } | null {
+  if (!profile) return null;
+  const t = profile.tests;
+  if (t.focus === "none") return null;
+  if (t.focus === "sat") return t.satTotal !== null ? { kind: "sat", score: t.satTotal } : null;
+  if (t.focus === "act") return t.actComposite !== null ? { kind: "act", score: t.actComposite } : null;
+  if (t.satTotal !== null && t.actComposite === null) return { kind: "sat", score: t.satTotal };
+  if (t.actComposite !== null && t.satTotal === null) return { kind: "act", score: t.actComposite };
+  return null;
+}
+
+/** The student as the standing model reads them: unweighted GPA on 4.0 (unweightedGpa4) and the one test. */
+export function planStudent(profile: Pick<StudentProfileData, "tests" | "academics"> | null): StandingStudent {
+  if (!profile) return { gpa: null, test: null };
+  return { gpa: unweightedGpa4(profile.academics.gpa, profile.academics.gpaScale), test: planTest(profile) };
+}
+
+/** A GPA is weighted when it's on the weighted scale, or on the 4.0 scale but above 4.0. */
+function isWeightedGpa(a: Pick<StudentProfileAcademics, "gpa" | "gpaScale">): boolean {
+  return a.gpa !== null && (a.gpaScale === "5.0" || (a.gpaScale === "4.0" && a.gpa > 4));
+}
+
+/**
+ * The unweighted range the plan reads the student's GPA as (specs/planner/redesign/gpa.md "The design" 3). An
+ * unweighted 4.0-scale GPA is itself; a weighted one (the weighted scale, or above 4.0 on the 4.0 scale) lies in
+ * [w − 1, min(4, w)], since weighting adds at most a point per class; a 100-point GPA is the band table's value.
+ * Null when no GPA is on file. Only the plan reads this; other tools keep unweightedGpa4.
+ */
+export function planGpaRange(profile: Pick<StudentProfileData, "academics"> | null): [number, number] | null {
+  const a = profile?.academics;
+  if (!a || a.gpa === null) return null;
+  if (isWeightedGpa(a)) return [Math.max(0, a.gpa - 1), Math.min(4, a.gpa)];
+  if (a.gpaScale === "100") {
+    const g = gpaFrom100(a.gpa);
+    return [g, g];
+  }
+  return [a.gpa, a.gpa];
+}
+
+/**
+ * How the plan's reasons show the student's GPA: "3.82"; "about 3.4–4.0 unweighted (from a weighted 4.4)"; "about 3.7
+ * unweighted (from 93/100)". Null when no GPA is on file.
+ */
+export function planGpaLabel(profile: Pick<StudentProfileData, "academics"> | null): string | null {
+  const a = profile?.academics;
+  const range = planGpaRange(profile ?? null);
+  if (!a || a.gpa === null || !range) return null;
+  if (isWeightedGpa(a)) return `about ${range[0].toFixed(1)}–${range[1].toFixed(1)} unweighted (from a weighted ${trimTrailingZero(a.gpa)})`;
+  if (a.gpaScale === "100") return `about ${range[0].toFixed(1)} unweighted (from ${trimTrailingZero(a.gpa)}/100)`;
+  return a.gpa.toFixed(2);
 }
 
 /* ------------------------------------------------------------------ */

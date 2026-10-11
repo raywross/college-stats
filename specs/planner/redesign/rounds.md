@@ -1,6 +1,6 @@
 # Rounds: Started from the Dream, Changed with One Tap
 
-> Status: **planned** 2026-10-09. Part 4 of the [planner redesign](README.md). Replaces stage 2's ranking, proposal
+> Status: **built** 2026-10-10 on feature/plan-redesign ([build plan](build-plan.md)). Part 4 of the [planner redesign](README.md). Replaces stage 2's ranking, proposal
 > table, binding checklist, and "Use this plan" ([../early-rounds.md](../early-rounds.md)). The rules are drafted in
 > `lib/planner/auto-rounds.ts` (tested in `tests/planner-standing.test.mts`); `lib/planner/rounds.ts` keeps the
 > facts it already computes (which rounds a college offers, their dates and editions).

@@ -459,6 +459,41 @@ export const FIELDS = {
     computed: true,
     derived: { formula: "The GPA bands holding the 25th and 75th percentiles of the \"all\" column", inputs: ["reported.admission_profile.gpa.bands.all"] },
   },
+  // How this college reads a record (specs/chances/how-colleges-read.md; lib/chances/reading.ts gpaTopShare): never ranked.
+  "derived.gpa_top_share": {
+    ...reported("Share of first-years with a 3.75 or higher GPA"),
+    computed: true,
+    derived: {
+      formula:
+        "First-years in the top two GPA bands (4.0 and 3.75–3.99), added up from the college's reported bands: the \"all\" column, else the column for students who sent test scores, else the column for those who didn't",
+      inputs: ["reported.admission_profile.gpa.bands.all", "reported.admission_profile.gpa.bands.with_test", "reported.admission_profile.gpa.bands.without_test"],
+    },
+  },
+  // The plan's GPA (specs/planner/redesign/gpa.md; lib/planner/gpa-model.ts): never ranked, shown only in the plan.
+  "derived.gpa_band_mean": {
+    ...reported("Average first-year GPA, figured from the GPA bands"),
+    computed: true,
+    derived: {
+      formula: "Each GPA band's share of first-years times the band's midpoint (4.0 for the top band), added up and divided by the shares' total; the \"all\" column, else the column for students who sent test scores",
+      inputs: ["reported.admission_profile.gpa.bands.all", "reported.admission_profile.gpa.bands.with_test"],
+    },
+  },
+  "derived.gpa_estimate": {
+    ...adm("Estimated unweighted first-year GPA"),
+    computed: true,
+    derived: {
+      formula:
+        "Estimated from colleges with similar test scores, admit rates, and shares sending scores: a least-squares fit of first-year GPA on the SAT midpoint (ACT through the 2018 concordance), the admit rate, and the share of first-years who sent a score, over colleges that publish an unweighted GPA; a college that publishes only a weighted average is kept between that average minus 1 and 4.0. Never the college's own figure",
+      inputs: [
+        "derived.sat_total",
+        "admissions.act_composite_25_75",
+        "admissions.acceptance_rate",
+        "admissions.test_submission_rate_sat",
+        "admissions.test_submission_rate_act",
+        "reported.admission_profile.gpa.average",
+      ],
+    },
+  },
   // CDS C8/C9 (specs/data-expansion/cds-test-scores-and-policy.md): records → school.reported (lib/cds/test-scores.ts).
   "reported.test_policy": reported("Test policy for the coming application cycle (CDS C8)"),
   "reported.test_policy_note": reported("Test policy note (CDS C8F)"),
@@ -515,6 +550,20 @@ export const FIELDS = {
   "aid_policy.need_only": reported("Whether the college gives no merit aid (all grants are need-based)", "aid"),
   "aid_policy.home_equity": reported("How the college treats home equity in its need analysis", "aid"),
   "aid_policy.siblings": reported("How the college adjusts for siblings in college", "aid"),
+  // Published automatic-admission programs (specs/chances/base-rates.md "Automatic admission"). They live in
+  // data/guaranteed-admission.json, not on the school record: lib/lineage.ts resolves the citation from the program's
+  // own source (its page or notice, the entering fall, and the date read), like aid_policy.*.
+  "reference.guaranteed_admission.rule": reported("Automatic admission rule (published program)"),
+  "reference.guaranteed_admission.scope": reported("Whether the program admits to the campus or only to the system"),
+  "reference.guaranteed_admission.major_guaranteed": reported("Whether automatic admission includes the major"),
+  // How the college admits by school or major (specs/chances/base-rates.md "Major", major-and-grades.md "Data"), from
+  // data/major-admission.json: each value quoted from the unit's own page; lib/lineage.ts resolves the citation to it.
+  "reported.major_admission.direct_admit": reported("Whether first-years are admitted directly to the school or major"),
+  "reported.major_admission.admit_rate": reported("Admit rate for the school or major (college-reported)"),
+  "reported.major_admission.review.major_considered": reported("Whether the intended major affects admission (college's statement)"),
+  "reported.major_admission.review.emphasis": reported("Subjects the school or major looks at more closely (college's statement)"),
+  "reported.major_admission.review.required_courses": reported("High school courses the school or major requires (college's statement)"),
+  "reported.major_admission.review.gate": reported("Score requirement for the school or major (college's statement)"),
   "derived.merit_dollar_share": {
     ...reported("College grant dollars given without regard to need", "aid"),
     computed: true,

@@ -16,6 +16,7 @@ export type TaskKind =
   | "fee" | "send_scores" | "transcript" | "recommendation" | "supplement" | "submit" | "portal_setup" | "portal_check"
   | "continued_interest" | "waitlist_accept" | "waitlist_deposit_elsewhere"                            // U6
   | "add_offer" | "deposit" | "withdraw" | "waitlist_decide" | "summer"                                // U7
+  | "cost_check" | "test_register" | "test_day"                                                         // redesign (U6)
   | "own";
 export interface PlanTask {
   id: string; list_id: string; item_id: string | null; key: string | null; kind: TaskKind;
@@ -41,7 +42,11 @@ export interface PlanLetter { id: string; item_id: string; kind: "admission" | "
 export interface PlanNudge { id: string; task_id: string; from_user: string; to_student: string; note: string | null; sent_at: string; channel: "email" | "sms" | "app"; reply: string | null; replied_at: string | null }
 export type SocialNetwork = import("../types").SocialNetwork;   // instagram | youtube | tiktok | x | facebook | linkedin
 /** list_items gains these columns (U1 migration); ListItem in lib/list-rules.ts gains them too (U1, additive). */
-export interface PlanItemColumns { dream: boolean; priority: number | null; followed_networks: SocialNetwork[]; info_requested_on: string | null; application_platform: "common_app" | "coalition" | "own" | "uc" | "apply_texas" | "other" | null; applied_on: string | null; complete_on: string | null; portal_url: string | null; committed_on: string | null; withdrawn_on: string | null; recommendations_count: number | null; supplements_count: number | null; transcript_shared: boolean }
+export interface PlanItemColumns { dream: boolean; priority: number | null; followed_networks: SocialNetwork[]; info_requested_on: string | null; application_platform: "common_app" | "coalition" | "own" | "uc" | "apply_texas" | "other" | null; applied_on: string | null; complete_on: string | null; portal_url: string | null; committed_on: string | null; withdrawn_on: string | null; recommendations_count: number | null; supplements_count: number | null; transcript_shared: boolean;
+  /** Redesign (20261010120000_plan_redesign.sql): whose group is stored. 'auto' = the standing model's suggestion, rewritten as it changes; 'student' = picked, never changed by the site. */
+  category_source: "auto" | "student";
+  /** Redesign: whose round is stored. 'auto' = the starting round (lib/planner/auto-rounds.ts); 'student' = picked. */
+  round_source: "auto" | "student" }
 export type PlanItem = import("../list-rules").ListItem & PlanItemColumns;
 /** lists gains: sort text null, rounds_plan_accepted_at timestamptz null. */
 export type ListSort = "mine" | "category" | "dream_priority" | "next_date" | "admit_rate" | "avg_cost" | "distance" | "standing";
@@ -62,6 +67,18 @@ export interface PlanContext {
   grade: import("./cycle").Grade;
   stages: Record<Stage, { state: StageState; count: string }>;
   current: Stage;
+  /**
+   * Chances (additive, rigor-in-context.md): the student's courses read against their high school, computed on the
+   * server by lib/planner/load.ts (the rules never reach the browser). Absent for a signed-out plan and when the
+   * student has entered nothing. A guardian's copy carries no AP exam scores while the student keeps them private.
+   */
+  rigor?: import("../chances/rigor-view").RigorView | null;
+  /**
+   * Chances (additive, course-plan.md): next year's course suggestions, guardrail messages, or the 9th–10th grade path,
+   * written on the server (lib/chances/course-plan-server.ts; the rules never reach the browser). Absent for a
+   * signed-out plan and when the student has no profile.
+   */
+  coursePlan?: import("../chances/course-plan-view").CoursePlanView | null;
 }
 /** The college facts stages read, cut from School on the server with citations already resolved
  *  (`citeField` → the serializable Citation the InfoTip takes). U1 defines and fills it; add fields additively. */
@@ -79,6 +96,15 @@ export interface PlanSchool { unit_id: string; name: string; city: string | null
   actRange?: [number, number] | null;
   /** Federal application fee (U5, additive): shown with the apply task. */
   applicationFee?: number | null;
+  /** Course plan (additive): the college gives credit for AP exams (`admissions.accepts_ap_credit`); cited at `cites["admissions.accepts_ap_credit"]` when true. */
+  acceptsApCredit?: boolean | null;
+  /**
+   * Redesign (additive): the average unweighted first-year GPA (CDS C12, `reported.admission_profile.gpa`), only when
+   * the college reports it on a 4.0 unweighted scale; else null. Cited at `cites["reported.admission_profile.gpa.average"]`.
+   */
+  gpaAverage: number | null;
+  /** Redesign: the standing model's inputs for this college (lib/planner/standing.ts), built by planSchoolFor. */
+  standing: import("./standing").StandingSchool;
 }
 
 /* ------------------------------------------------------------------ */

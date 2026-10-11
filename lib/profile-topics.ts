@@ -191,6 +191,15 @@ export const TOPIC_FIELDS: Readonly<Record<TopicKey, readonly FieldPath[]>> = {
     "reported.admission_profile.gpa.average",
     "reported.admission_profile.gpa.bands.all",
     "reported.admission_profile.class_rank.submitted_share",
+    // How this college reads a record (specs/chances/how-colleges-read.md): the block above the factor grid.
+    "derived.gpa_top_share",
+    "reported.admission_profile.factors.gpa",
+    "reported.admission_profile.factors.class_rank",
+    "reported.admission_profile.factors.test_scores",
+    "reported.admission_profile.class_rank.top_tenth",
+    "reported.admission_profile.class_rank.top_quarter",
+    "reported.major_admission.review.major_considered",
+    "reported.major_admission.review.emphasis",
     // CDS C8/C9 (specs/data-expansion/cds-test-scores-and-policy.md): the Test policy block, the SAT total, bands, counts.
     "derived.sat_total",
     "reported.test_policy",

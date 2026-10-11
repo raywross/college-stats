@@ -2,6 +2,7 @@ import { CompletenessMeter } from "@/components/me/CompletenessMeter";
 import { ImportLocalProfile } from "@/components/me/ImportLocalProfile";
 import { ProfileForm } from "@/components/me/ProfileForm";
 import type { ProfileAccess } from "@/lib/student-profile-store";
+import { withoutExams } from "@/lib/chances/courses";
 
 /**
  * A student's numbers (specs/product/student-profile.md "Display"): the completeness meter and the profile form, plus
@@ -12,6 +13,8 @@ import type { ProfileAccess } from "@/lib/student-profile-store";
  * "Changes (2026-10-06)"): the default the graduation-year field falls back to when the profile itself has none.
  */
 export function StudentNumbers({ profile }: { profile: ProfileAccess }) {
+  // A guardian never sees AP exam scores while the student keeps them private (rigor-in-context.md "In the planner").
+  const data = profile.relation === "guardian" && profile.data.academics.apExamsPrivate ? { ...profile.data, academics: { ...profile.data.academics, courses: withoutExams(profile.data.academics.courses) } } : profile.data;
   return (
     <div className="space-y-6">
       <p className="text-muted-foreground">
@@ -19,8 +22,8 @@ export function StudentNumbers({ profile }: { profile: ProfileAccess }) {
         Compare.
       </p>
       {profile.relation === "self" && <ImportLocalProfile studentId={profile.student.id} canEdit={profile.canEdit} />}
-      <CompletenessMeter data={profile.data} />
-      <ProfileForm studentId={profile.student.id} data={profile.data} canEdit={profile.canEdit} studentGradYear={profile.student.grad_year} />
+      <CompletenessMeter data={data} />
+      <ProfileForm studentId={profile.student.id} data={data} canEdit={profile.canEdit} studentGradYear={profile.student.grad_year} relation={profile.relation} />
     </div>
   );
 }

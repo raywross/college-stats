@@ -12,6 +12,8 @@ import { CompareTopicPage, COMPARE_BLOCK_SCROLL } from "@/components/compare/Com
 import { CompareMetric } from "@/components/compare/CompareMetric";
 import { ScoreCompare } from "@/components/compare/ScoreCompare";
 import { AdmissionFactorsGrid, anyAdmissionFactorReported } from "@/components/compare/AdmissionFactorsGrid";
+import { CompareReading, hasReading } from "@/components/compare/CompareReading";
+import { CompareStanding } from "@/components/compare/CompareStanding";
 import { InfoTip } from "@/components/ui/info-tip";
 
 type Props = { searchParams: Promise<Record<string, string | string[] | undefined>> };
@@ -61,6 +63,7 @@ export default async function CompareAdmissionsPage({ searchParams }: Props) {
         { id: "funnel", label: "The funnel" },
         { id: "by-sex", label: "Men and women" },
         { id: "scores", label: "Test scores" },
+        ...(hasReading(schools) ? [{ id: "reading", label: "How they read a record" }] : []),
         { id: "factors", label: "What they look at" },
       ]
     : [];
@@ -182,6 +185,15 @@ export default async function CompareAdmissionsPage({ searchParams }: Props) {
                 </div>
               </div>
             </Block>
+
+            {/* Quad's estimate for a signed-in student with numbers; absent for everyone else (fills in after mount). */}
+            <CompareStanding colleges={schools.map((s) => ({ id: s.unit_id, name: shortName(s) }))} className={COMPARE_BLOCK_SCROLL} />
+
+            {hasReading(schools) && (
+              <Block id="reading" title="How they read a record" className={COMPARE_BLOCK_SCROLL}>
+                <CompareReading schools={schools} citeField={citeField} />
+              </Block>
+            )}
 
             <Block id="factors" title="What they look at" className={COMPARE_BLOCK_SCROLL}>
               <AdmissionFactorsGrid schools={schools} citeField={citeField} />

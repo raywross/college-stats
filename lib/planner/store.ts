@@ -189,11 +189,6 @@ export async function setDream(itemId: string, dream: boolean): Promise<PlanActi
 }
 
 /** The student's own rank (1 = would go first), or null. */
-export async function setPriority(itemId: string, priority: number | null): Promise<PlanActionResult> {
-  if (priority !== null && (!Number.isInteger(priority) || priority < 1 || priority > 100)) return { ok: false, message: FAILED };
-  return updateItem(itemId, { priority }, "setPriority", "planner.rounds", false);
-}
-
 /** The application round; tasks follow the round, so the list regenerates. */
 export async function setRound(itemId: string, round: ListRound | null): Promise<PlanActionResult> {
   if (round !== null && !isListRound(round)) return { ok: false, message: FAILED };

@@ -37,7 +37,7 @@
     "check:lineage": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/check-lineage.mts",
     "test": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test \"tests/**/*.test.mts\"",
     "typecheck": "next typegen && tsc --noEmit",
-    "verify": "npm run typecheck && npm run lint && npm test && npm run check:lineage && npm run check:cycle && npm run check:aid-policies",
+    "verify": "npm run typecheck && npm run lint && npm test && npm run check:lineage && npm run check:cycle && npm run check:aid-policies && npm run check:course-catalog && npm run check:guaranteed-admission && npm run check:major-admission && npm run check:major-course-expectations",
     "build-cds-template": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/build-cds-template.mts",
     "cds-records-from-workbooks": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/cds-records-from-workbooks.mts",
     "archive-doc": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/archive-doc.mts",
@@ -46,9 +46,14 @@
     "purge-accounts": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --env-file-if-exists=.env.local scripts/purge-accounts.mts",
     "check-cds-records": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/check-cds-records.mts",
     "check:cycle": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/check-cycle.mts",
+    "check:major-course-expectations": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/check-major-course-expectations.mts",
     "check:aid-policies": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/check-aid-policies.mts",
+    "check:course-catalog": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/check-course-catalog.mts",
+    "check:guaranteed-admission": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/check-guaranteed-admission.mts",
+    "check:major-admission": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/check-major-admission.mts",
     "college-failures": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/college-failures.mts",
-    "publish-college-failures": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --env-file-if-exists=.env.local scripts/publish-college-failures.mts"
+    "publish-college-failures": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --env-file-if-exists=.env.local scripts/publish-college-failures.mts",
+    "chances-calibration": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --env-file-if-exists=.env.local scripts/chances-calibration.mts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.131.0",

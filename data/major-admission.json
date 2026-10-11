@@ -1,0 +1,342 @@
+{
+  "description": "How colleges admit by school or major and how they say the intended major is reviewed (specs/chances/base-rates.md \"Major\", major-and-grades.md \"Data\"). One entry per admitting unit: the university itself (unit_id is its IPEDS id) or a school or major within it (\"{unit_id}:{slug}\"). Every value is quoted from the college's own page; nothing is inferred, so a unit without a statement has major_considered null. verified_via says whether the page was read or quoted from it in a search result. Checked by scripts/check-major-admission.mts (npm run verify).",
+  "checked": "2026-10-11",
+  "units": [
+    {
+      "unit_id": "231624",
+      "unit": "university",
+      "name": "William & Mary",
+      "cip_families": [],
+      "direct_admit": null,
+      "admit_rate": null,
+      "review": {
+        "major_considered": "no",
+        "emphasis": [],
+        "required_courses": [],
+        "gate": null,
+        "fetched": "2026-10-11",
+        "edition": null,
+        "quote": "intended major plays no role in whether or not you are admitted",
+        "source_url": "https://wmblogs.wm.edu/?p=8620"
+      },
+      "verified_via": "search"
+    },
+    {
+      "unit_id": "139959",
+      "unit": "university",
+      "name": "University of Georgia",
+      "cip_families": [],
+      "direct_admit": null,
+      "admit_rate": null,
+      "review": {
+        "major_considered": "no",
+        "emphasis": [],
+        "required_courses": [],
+        "gate": null,
+        "fetched": "2026-10-11",
+        "edition": null,
+        "quote": "Within the admissions process, there are no separate reviews or groupings for different majors.",
+        "source_url": "https://www.admissions.uga.edu/blog/uga-admissions-and-majors/"
+      },
+      "verified_via": "search"
+    },
+    {
+      "unit_id": "145637",
+      "unit": "university",
+      "name": "University of Illinois Urbana-Champaign",
+      "cip_families": [],
+      "direct_admit": null,
+      "admit_rate": null,
+      "review": {
+        "major_considered": "pool",
+        "emphasis": [],
+        "required_courses": [],
+        "gate": null,
+        "fetched": "2026-10-11",
+        "edition": null,
+        "quote": "Each application gets a thorough review by admissions professionals from the office and by the academic community the applicant chose.",
+        "source_url": "https://admissions.illinois.edu/admission-review-policy/"
+      },
+      "verified_via": "search"
+    },
+    {
+      "unit_id": "243780",
+      "unit": "university",
+      "name": "Purdue University",
+      "cip_families": [],
+      "direct_admit": null,
+      "admit_rate": null,
+      "review": {
+        "major_considered": "pool",
+        "emphasis": [],
+        "required_courses": [],
+        "gate": null,
+        "fetched": "2026-10-11",
+        "edition": null,
+        "quote": "the faculty of each college or school set the threshold academic expectations for new freshman and transfer students in their programs",
+        "source_url": "https://purdue.edu/policies/west-lafayette/wl-6.html"
+      },
+      "verified_via": "search"
+    },
+    {
+      "unit_id": "190415",
+      "unit": "university",
+      "name": "Cornell University",
+      "cip_families": [],
+      "direct_admit": null,
+      "admit_rate": null,
+      "review": {
+        "major_considered": "pool",
+        "emphasis": [],
+        "required_courses": [],
+        "gate": null,
+        "fetched": "2026-10-11",
+        "edition": null,
+        "quote": "you will apply to only one undergraduate college or school at Cornell",
+        "source_url": "https://catalog.cornell.edu/general-information/admissions/"
+      },
+      "verified_via": "search"
+    },
+    {
+      "unit_id": "110422",
+      "unit": "university",
+      "name": "Cal Poly San Luis Obispo",
+      "cip_families": [],
+      "direct_admit": null,
+      "admit_rate": null,
+      "review": {
+        "major_considered": "pool",
+        "emphasis": [],
+        "required_courses": [],
+        "gate": null,
+        "fetched": "2026-10-11",
+        "edition": null,
+        "quote": "you will be evaluated against other first-year applicants applying to the same major",
+        "source_url": "https://www.calpoly.edu/admissions/first-year-student/application-guide-first-year"
+      },
+      "verified_via": "search"
+    },
+    {
+      "unit_id": "190415:engineering",
+      "unit": "school",
+      "name": "Cornell Duffield College of Engineering",
+      "cip_families": [
+        "14"
+      ],
+      "direct_admit": true,
+      "admit_rate": null,
+      "review": {
+        "major_considered": null,
+        "emphasis": [],
+        "required_courses": [
+          {
+            "subject": "math",
+            "level": "calculus",
+            "quote": "4 units of mathematics, including one of calculus"
+          },
+          {
+            "subject": "science",
+            "level": "physics",
+            "quote": "1 unit of physics"
+          },
+          {
+            "subject": "science",
+            "level": "chemistry",
+            "quote": "1 unit of chemistry"
+          }
+        ],
+        "gate": null,
+        "quote": "4 units of mathematics, including one of calculus",
+        "source_url": "https://admissions.cornell.edu/first-year-duffield-engineering-applicants",
+        "fetched": "2026-10-11",
+        "edition": null
+      },
+      "verified_via": "search"
+    },
+    {
+      "unit_id": "145637:engineering",
+      "unit": "school",
+      "name": "Grainger College of Engineering",
+      "cip_families": [
+        "14"
+      ],
+      "direct_admit": true,
+      "admit_rate": null,
+      "published_rate": {
+        "rate": 0.212,
+        "year": "Fall 2025",
+        "quote": "Grainger College of Engineering: 21.2%",
+        "source_url": "https://www.admissions.illinois.edu/Apply/Freshman/admit-rate"
+      },
+      "review": null,
+      "verified_via": "search"
+    },
+    {
+      "unit_id": "145637:business",
+      "unit": "school",
+      "name": "Gies College of Business",
+      "cip_families": [
+        "52"
+      ],
+      "direct_admit": true,
+      "admit_rate": null,
+      "published_rate": {
+        "rate": 0.209,
+        "year": "Fall 2025",
+        "quote": "Gies College of Business: 20.9%",
+        "source_url": "https://www.admissions.illinois.edu/Apply/Freshman/admit-rate"
+      },
+      "review": null,
+      "verified_via": "search"
+    },
+    {
+      "unit_id": "236948:computer-science",
+      "unit": "major",
+      "name": "Paul G. Allen School of Computer Science & Engineering",
+      "cip_families": [
+        "11"
+      ],
+      "direct_admit": true,
+      "admit_rate": null,
+      "review": {
+        "major_considered": "pool",
+        "emphasis": [],
+        "required_courses": [],
+        "gate": null,
+        "fetched": "2026-10-11",
+        "edition": null,
+        "quote": "you will not be considered if you only list computer science or computer engineering as your second-choice major",
+        "source_url": "https://admit.washington.edu/apply/admission-to-majors/"
+      },
+      "verified_via": "search"
+    },
+    {
+      "unit_id": "228778:engineering",
+      "unit": "school",
+      "name": "Cockrell School of Engineering",
+      "cip_families": [
+        "14"
+      ],
+      "direct_admit": true,
+      "admit_rate": null,
+      "review": {
+        "major_considered": null,
+        "emphasis": [],
+        "required_courses": [],
+        "gate": {
+          "any_of": [
+            {
+              "kind": "sat_math",
+              "min": 620
+            },
+            {
+              "kind": "act_math",
+              "min": 26
+            },
+            {
+              "kind": "ap",
+              "course": "ap_calculus_ab",
+              "min": 3
+            },
+            {
+              "kind": "ap",
+              "course": "ap_calculus_bc",
+              "min": 3
+            },
+            {
+              "kind": "ib_hl",
+              "course": "ib_math_aa_hl",
+              "min": 4
+            },
+            {
+              "kind": "ib_hl",
+              "course": "ib_math_ai_hl",
+              "min": 4
+            }
+          ]
+        },
+        "fetched": "2026-10-11",
+        "edition": null,
+        "quote": "SAT Math score of 620 or above, ACT Math score of 26 or above, Advanced Placement (AP) Calculus AB or BC test score of 3 or higher, International Baccalaureate (IB) HL Mathematics score of 4 or higher",
+        "source_url": "https://cockrell.utexas.edu/admissions/undergraduate/calculus-readiness-requirement"
+      },
+      "verified_via": "search"
+    },
+    {
+      "unit_id": "228778:computer-science",
+      "unit": "major",
+      "name": "Computer Science at UT Austin",
+      "cip_families": [
+        "11"
+      ],
+      "direct_admit": true,
+      "admit_rate": null,
+      "review": {
+        "major_considered": null,
+        "emphasis": [],
+        "required_courses": [],
+        "gate": {
+          "any_of": [
+            {
+              "kind": "sat_math",
+              "min": 620
+            },
+            {
+              "kind": "act_math",
+              "min": 26
+            },
+            {
+              "kind": "ap",
+              "course": "ap_calculus_ab",
+              "min": 3
+            },
+            {
+              "kind": "ap",
+              "course": "ap_calculus_bc",
+              "min": 3
+            },
+            {
+              "kind": "ib_hl",
+              "course": "ib_math_aa_hl",
+              "min": 4
+            },
+            {
+              "kind": "ib_hl",
+              "course": "ib_math_ai_hl",
+              "min": 4
+            }
+          ]
+        },
+        "fetched": "2026-10-11",
+        "edition": null,
+        "quote": "Freshman applicants must demonstrate calculus readiness to apply to the following majors: All majors in the Cockrell School of Engineering; Computer Science, Linguistics and Computer Science, Neuroscience and Computer Science and History and Computer Science majors in the College of Natural Sciences … SAT Math score of 620 or above, ACT Math score of 26 or above, Advanced Placement (AP) Calculus AB or BC test score of 3 or higher, International Baccalaureate (IB) HL Mathematics score of 4 or higher",
+        "source_url": "https://admissions.utexas.edu/apply/application-materials/high-school-prerequisites/"
+      },
+      "verified_via": "search"
+    },
+    {
+      "unit_id": "110635:engineering",
+      "unit": "school",
+      "name": "Berkeley College of Engineering",
+      "cip_families": [
+        "14"
+      ],
+      "direct_admit": true,
+      "admit_rate": null,
+      "review": {
+        "major_considered": "pool_and_emphasis",
+        "emphasis": [
+          "math",
+          "science"
+        ],
+        "required_courses": [],
+        "gate": null,
+        "fetched": "2026-10-11",
+        "edition": null,
+        "quote": "Common ways in which applicants demonstrate this aptitude include: Sustained academic achievement, especially in math and science; Four years of mathematics, especially including calculus; At least three years of laboratory science, especially if it includes physics when available at the applicant's home institution.",
+        "source_url": "https://engineering.berkeley.edu/admissions/undergraduate-admissions/"
+      },
+      "verified_via": "search"
+    }
+  ]
+}

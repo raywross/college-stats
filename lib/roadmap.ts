@@ -29,16 +29,17 @@ export const COMPLEXITY: Record<Complexity, { label: string; description: string
 // award-letter analyzer moved in as its last stage. The planner was built 2026-10-08 on feature/planner (eight units
 // on sub-branches), so the "planner" group is gone too; its overview page stays under ROADMAP_OVERVIEWS.
 // The planner came back on 2026-10-09 as group "planner": the owner's review of the build (too much on the screen,
-// buried in the profile menu, the ranking hated) became the redesign in specs/planner/redesign/, six parts.
+// buried in the profile menu, the ranking hated) became the redesign in specs/planner/redesign/, six parts, built
+// 2026-10-10 on feature/plan-redesign (nine units on sub-branches), so the group is gone again.
+// Admission chances (specs/chances/, seven parts) was built 2026-10-11 on feature/chances, so its group is gone; its
+// overview page stays under ROADMAP_OVERVIEWS.
 // The compare redesign, the only spec in "Design and usability" (group "design"), was built 2026-10-05 (#84), so that
 // group is gone until a new design spec.
 export type RoadmapGroupKey =
-  | "planner"
   | "national-trends"
   | "college-reported"
   | "campus-life"
   | "planning"
-  | "chances"
   | "high-school"
   | "business"
   | "apps"
@@ -46,12 +47,6 @@ export type RoadmapGroupKey =
   | "later";
 
 export const ROADMAP_GROUPS: { key: RoadmapGroupKey; title: string; description: string }[] = [
-  {
-    key: "planner",
-    title: "The planner, redesigned",
-    description:
-      "Plan in the main navigation; numbers first, with your colleges sorted and their rounds started for you; one row per college; a scores coach that says when another test would help; and a color-coded family calendar with a switch between children.",
-  },
   {
     key: "national-trends",
     title: "National trends",
@@ -63,14 +58,6 @@ export const ROADMAP_GROUPS: { key: RoadmapGroupKey; title: string; description:
     title: "Planning tools",
     description:
       "Where your numbers stand, what your family would pay, and whether applying early helps; the planner builds on all three.",
-  },
-  // Admission chances (specs/chances/, 2026-10-10): the inputs, displays, and outcome collection around Quad's estimate,
-  // whose method is proprietary (never shown on the site; in specs/chances/method/ until launch).
-  {
-    key: "chances",
-    title: "Admission chances",
-    description:
-      "When most admitted students have top GPAs: how each college reads a record, your courses against what your high school offers, which advanced courses to take next, the admit rate for your own pool, how your major is read, and Quad's own estimate of where you stand.",
   },
   {
     key: "high-school",
@@ -132,76 +119,6 @@ export interface RoadmapSpec {
 
 /** In build order within each group (the backlog's order, specs/backlog.md). */
 export const ROADMAP: RoadmapSpec[] = [
-  // The planner redesign (specs/planner/redesign/, 2026-10-09): standing first, the page alongside, then the rest.
-  {
-    slug: "plan-standing",
-    file: "specs/planner/redesign/standing.md",
-    group: "planner",
-    summary:
-      "Enter your GPA and the one test you're taking, and every college on your list is sorted into Reach, Target, or Likely for you, with the reasons a tap away; change any of them and it stays yours.",
-    complexity: 2,
-    complexityNote:
-      "A pure rules module (drafted and tested) with the ACT/SAT concordance, two new profile fields, a source column so suggestions never overwrite a choice, and the two-step first-time setup.",
-    status: "planned",
-  },
-  {
-    slug: "plan-page",
-    file: "specs/planner/redesign/page.md",
-    group: "planner",
-    summary:
-      "Plan becomes a main link beside Explore, with one page for students and parents: your numbers, the next deadline, and three tabs, plus a switch between children for parents.",
-    complexity: 2,
-    complexityNote:
-      "New routes and redirects, the header and phone tab bar, a frame that replaces the six-stage strip, the child switcher, and a signed-out start that saves on sign-up.",
-    status: "planned",
-  },
-  {
-    slug: "plan-list",
-    file: "specs/planner/redesign/list.md",
-    group: "planner",
-    summary:
-      "Your list is your plan: one row per college with the Dream, its group, its round, and its deadline; everything else one tap away, and the ranking gone.",
-    complexity: 1,
-    complexityNote: "A new row and drawer over data the planner already stores, absorbing the actions and applications controls.",
-    status: "planned",
-    after: ["plan-standing"],
-  },
-  {
-    slug: "plan-rounds",
-    file: "specs/planner/redesign/rounds.md",
-    group: "planner",
-    summary:
-      "Every college starts in a round chosen from your Dream (early decision there if it offers it, early action wherever it's free), with a one-tap change, conflicts in one sentence, and a cost check for parents before any binding round.",
-    complexity: 2,
-    complexityNote:
-      "Starting-round rules (drafted and tested), a source column, a cost-check task generator, and removing the ranking, proposal table, and checklist.",
-    status: "planned",
-    after: ["plan-list"],
-  },
-  {
-    slug: "plan-scores",
-    file: "specs/planner/redesign/scores.md",
-    group: "planner",
-    summary:
-      "Where your one test score stands at each college, whether to send it, and, only when a typical retake would move a college up a group, how many points and which test dates arrive in time.",
-    complexity: 2,
-    complexityNote:
-      "Score-to-move-up and retake rules on the standing model, score-timing against each round's deadline, a new tab, and test tasks generated only for a date the student picks.",
-    status: "planned",
-    after: ["plan-standing"],
-  },
-  {
-    slug: "plan-calendar",
-    file: "specs/planner/redesign/calendar.md",
-    group: "planner",
-    summary:
-      "A color-coded timeline of the school year for each child or the whole family: application bars ending in deadlines, decisions, test dates, and the money dates that are a parent's part, with a calendar feed and print.",
-    complexity: 2,
-    complexityNote:
-      "A pure lanes-and-marks module over the tasks and cycle file the planner already generates, a timeline component with a validated palette, a per-viewer feed, and a print view.",
-    status: "planned",
-    after: ["plan-rounds", "plan-page"],
-  },
   {
     slug: "online-share",
     file: "specs/data-expansion/online-share.md",
@@ -242,88 +159,6 @@ export const ROADMAP: RoadmapSpec[] = [
     complexityNote:
       "The federal aid formula as versioned data, three grant estimates combined, and a hand-checked pilot against colleges' own calculators.",
     status: "planned",
-  },
-  // Admission chances (specs/chances/): the method behind the estimate is in specs/chances/method/, which has no roadmap
-  // pages; it moves to a private repository at launch (specs/chances/README.md "Quad's estimate is proprietary").
-  {
-    slug: "chances-how-colleges-read",
-    file: "specs/chances/how-colleges-read.md",
-    group: "chances",
-    summary:
-      "A few plain sentences at the top of each college's admissions page saying how it reads a record: what it weighs most, how crowded its first-years' GPAs are, how many sent scores, and which courses it expects.",
-    complexity: 1,
-    complexityNote: "A pure module over CDS and IPEDS fields already stored, one derived field, a profile block, and a Compare row.",
-    status: "planned",
-  },
-  {
-    slug: "chances-rigor",
-    file: "specs/chances/rigor-in-context.md",
-    group: "chances",
-    summary:
-      "List your AP, IB, dual-enrollment, and honors courses with their grades, taken and planned, and see them read against what your own high school offers, the way a counselor rates them, on the college profile and in the planner.",
-    complexity: 2,
-    complexityNote:
-      "A course list in the student profile with a catalog-backed picker, a reading over the CRDC offering and school profiles, a CRDC import fix, and new planner and profile lines.",
-    status: "planned",
-  },
-  {
-    slug: "chances-base-rates",
-    file: "specs/chances/base-rates.md",
-    group: "chances",
-    summary:
-      "The admit rate for your own pool, from the college's own figures: automatic admission where a state program promises it, the major's rate where the college publishes one, and the in-state or out-of-state rate.",
-    complexity: 3,
-    complexityNote:
-      "A curated, verified automatic-admission file with its check, a first wave of major admit rates from the college-reported agent, and one pool-rate function.",
-    status: "planned",
-  },
-  {
-    slug: "chances-major-and-grades",
-    file: "specs/chances/major-and-grades.md",
-    group: "chances",
-    summary:
-      "Where a college says your intended major matters (you're compared within the college or major you apply to, math and science grades get an extra look, certain courses are required, or a score unlocks the major), the profile and planner say so and check your courses and scores against it.",
-    complexity: 2,
-    complexityNote:
-      "A quoted review object per unit in the agent's first wave, math and science grades in the course list, gate and required-course checks, and lines on the profile, planner, and Compare.",
-    status: "planned",
-    after: ["chances-base-rates", "chances-rigor"],
-  },
-  {
-    slug: "chances-estimate",
-    file: "specs/chances/estimate.md",
-    group: "chances",
-    summary:
-      "Quad's estimate of Reach, Target, or Likely, computed on the server by our own model from your numbers, your courses, your pool, and each college's filings, with a panel showing what went into it and never a percentage.",
-    complexity: 2,
-    complexityNote:
-      "A server-only interface and model, an open baseline, a rate-limited endpoint, a sentence catalog, the profile's standing card, and a short checklist to move the method private at launch.",
-    status: "planned",
-    after: ["chances-how-colleges-read", "chances-rigor", "chances-base-rates", "chances-major-and-grades"],
-  },
-  {
-    slug: "chances-calibration",
-    file: "specs/chances/calibration.md",
-    group: "chances",
-    summary:
-      "Admission results students choose to share, taken with the numbers they applied with, a published summary each season of how well the estimate did, and 'students like you' counts once there are enough.",
-    complexity: 3,
-    complexityNote:
-      "A consented snapshot table and its policies, a Data page section from a published summary, and suppressed counts.",
-    status: "planned",
-    after: ["chances-estimate"],
-  },
-  {
-    slug: "chances-course-plan",
-    file: "specs/chances/course-plan.md",
-    group: "chances",
-    summary:
-      "When it's time to choose next year's classes, the planner suggests up to two advanced courses your school offers, each with its reason (a subject your colleges recommend, your school's top level, your intended major), and says so plainly when your grades or schedule say not to add more.",
-    complexity: 2,
-    complexityNote:
-      "A rules module over the course list, an editorial course-sequence and major file, pooled course lists per high school behind a threshold, a planner card, and new calendar entries.",
-    status: "planned",
-    after: ["chances-rigor"],
   },
   // The award-letter analyzer moved into the planner on 2026-10-07 as its last stage (slug "offers").
   {

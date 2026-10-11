@@ -234,10 +234,15 @@ export function gpaStanding(student: StandingStudent, school: StandingSchool, te
   };
 }
 
-/** A middle 50% as shown: two decimals when exact ("3.62–4.00"), one when estimated ("3.4–3.9"). */
+/** A middle 50% as shown, to two decimals whether exact ("3.62–4.00") or estimated ("3.78–3.96"). */
 function middleSpan(m: GpaMiddle): string {
-  const digits = m.kind === "bands" ? 2 : 1;
-  return `${m.shown[0].toFixed(digits)}–${m.shown[1].toFixed(digits)}`;
+  return `${gpaPoint(m.shown[0])}–${gpaPoint(m.shown[1])}`;
+}
+
+/** True when the student's range sits wholly outside the span as printed (compared at the printed two decimals). */
+function outsideShown(own: [number, number], m: GpaMiddle): boolean {
+  const r = (n: number) => Number(n.toFixed(2));
+  return r(own[1]) < r(m.shown[0]) || r(own[0]) > r(m.shown[1]);
 }
 
 /**
@@ -261,7 +266,8 @@ function middleStanding(own: [number, number], yours: string, label: string, des
       catalog: note("estimate.gpa.cant_place_middle", { own: ownSpan(own), span, estimated, weighted: weightedText, test: testLabel ?? "" }, cite),
     };
   }
-  const where = position === "in" ? "inside" : position;
+  // An estimated middle leans toward "in" for a GPA within its uncertainty; one outside the printed span is never called inside it.
+  const where = position === "in" ? (estimated && outsideShown(own, middle) ? "close to" : "inside") : position;
   return {
     position,
     note: { text: `${yours} is ${where} the middle 50% of first-years' GPAs here (${span})${estimate}.`, cite },

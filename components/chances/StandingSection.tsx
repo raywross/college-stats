@@ -4,7 +4,7 @@ import { InfoTip } from "@/components/ui/info-tip";
 import { shortName } from "@/lib/brand";
 import { getData } from "@/lib/data";
 import { estimateFactCites, majorUnitCites } from "@/lib/chances/fact-cites";
-import { majorUnitsFor, universityStatement } from "@/lib/chances/major-admission";
+import { majorUnitsFor } from "@/lib/chances/major-admission";
 import { noteText } from "@/lib/chances/notes";
 import { majorFamilyName } from "@/lib/majors";
 import type { School } from "@/lib/types";
@@ -36,7 +36,6 @@ export async function StandingSection({ school, id, className }: { school: Schoo
         cites={estimateFactCites(school, citeField)}
         majorCites={majorUnitCites(school, citeField)}
         families={families}
-        hasStatement={universityStatement(school.unit_id) !== null}
       />
     </Block>
   );

@@ -450,6 +450,41 @@ test("the signed-out card keeps the save prompt and the major picker; the picker
   for (const k of ["holistic", "enrolled", "hooked", "afford"]) assert.ok(`estimate.caveat.${k}` in NOTES);
 });
 
+test("a college with only a university-level statement has no signed-out major block; the reading block carries its line once", async () => {
+  const { majorUnitsFor } = await import("../lib/chances/major-admission.ts");
+  const { majorLine } = await import("../lib/chances/reading-major.ts");
+  // The picker's families are the ones its schools or majors admit by (components/chances/StandingSection.tsx).
+  const families = (unitId: string) => [...new Set(majorUnitsFor(unitId).flatMap((u) => u.cip_families))];
+  assert.deepEqual(families(PURDUE), [], "Purdue has only a university-level statement: nothing to pick");
+  assert.ok(families("145637").length > 0, "Illinois keeps its picker and unit lines");
+  const card = read("components", "chances", "StandingCard.tsx");
+  assert.match(card, /export function SignedOutMajor\([\s\S]*?\) \{\s*const \{ data, save \} = useLocalProfile\(\);\s*if \(families\.length === 0\) return null;/);
+  assert.doesNotMatch(card, /hasStatement|major\.line\.pool|"52"/, "no stand-in line for a college with no picker");
+  // The line the standing section used to repeat is in the reading block.
+  assert.match(majorLine({ unit_id: PURDUE })?.text ?? "", /^Applicants are compared within the college they apply to/, "Purdue's reading block has the Major line");
+});
+
+test("the Data page's jump chip for the accuracy section reads as the section's heading", () => {
+  const page = read("app", "data", "page.tsx");
+  const chip = page.match(/\["estimate-accuracy", "([^"]+)"\]/)?.[1];
+  const heading = page.match(/<Section id="estimate-accuracy"[^>]*title="([^"]+)"/)?.[1];
+  assert.ok(chip && heading);
+  assert.equal(chip, heading);
+  assert.equal(chip, "How well Quad's estimate did");
+});
+
+test("a long college name in the signed-out plan row can shrink to an ellipsis on a phone", () => {
+  const src = read("components", "planner", "SignedOutPlan.tsx");
+  const row = src.slice(src.indexOf("function LocalRow"));
+  assert.match(row, /<li className="grid grid-cols-\[auto_minmax\(0,1fr\)\]/, "the phone grid's name column may shrink below its content");
+  assert.match(row, /<span className="flex min-w-0 max-w-full [^"]*">\s*\{school && <Crest[\s\S]*?<span className="min-w-0 truncate">\{name\}<\/span>/, "the wrapper may shrink so the name's truncate takes effect");
+});
+
+test("the core-subject legend is a heading inside its box, not a label on the border", () => {
+  const src = read("components", "profile", "CoreSubjects.tsx");
+  assert.match(src, /<legend className="[^"]*\bfloat-left\b[^"]*\bw-full\b/);
+});
+
 test("the row drawer shows the stage lines and the panel from the row's estimate and links to how the college reads a record", () => {
   const drawer = read("components", "planner", "RowDrawer.tsx");
   assert.match(drawer, /<WhatWentIn result=\{estimate\}/);

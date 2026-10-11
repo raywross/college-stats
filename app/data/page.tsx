@@ -226,7 +226,7 @@ export default async function DataPage() {
     ["upcoming", "Upcoming releases"],
     ["compare", "How we compare"],
     ["college-reported", "Newer figures from colleges"],
-    ["estimate-accuracy", "How well the estimate did"],
+    ["estimate-accuracy", "How well Quad's estimate did"],
     ["watching", "Watching"],
     ["sources", "Sources"],
     ["method", "How we calculate"],

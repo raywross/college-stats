@@ -200,7 +200,10 @@ from 30 colleges: `p25 ≈ 2.55 + 0.094 × (SAT 25th ÷ 100) − 0.42 × admit r
 exact middle 50%, 976 an estimated one. Details settled in the build:
 - An estimated middle applies only to colleges with no unweighted C12 average of their own (no CDS GPA, half-blank
   bands, or a weighted reporter, whose sentence names its weighted average instead of "doesn't publish its GPA spread").
-- Exact ends are shown to two decimals ("3.62–4.00"), estimated ones to one ("3.8–4.0"), the two predictions.
+- Ends are shown to two decimals, exact ("3.62–4.00") or estimated ("3.78–3.96", the two predictions). *Changed
+  2026-10-11:* estimated ends were printed to one decimal, so a 3.85 read "inside 3.9–4.0" (the comparison uses the
+  unrounded ranges, which lean toward "in"). Now a GPA that is "in" by the estimate's range but outside the printed
+  span (compared at two decimals) reads "close to the middle 50%", never "inside" it.
 - The plan cites `derived.gpa_middle_half` with its own method line (percentiles within the bands), because the
   college page's GPA checker still shows the bands holding the 25th and 75th percentiles.
 - With bands, the middle 50% replaces the band mean in the sentence, so `derived.gpa_band_mean` is cited only when no

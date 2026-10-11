@@ -1,6 +1,6 @@
 ---
 title: "Newer graduation rates by group for 28 more colleges"
-pr: 0
+pr: 130
 date: 2026-10-11
 kind: data
 summary: Twenty-eight more colleges now show graduation rates for Pell, loan, and other students from their own Common Data Set, after a re-check with the corrected graduation checks.

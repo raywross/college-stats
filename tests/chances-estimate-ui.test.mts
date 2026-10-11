@@ -345,12 +345,15 @@ test("the request carries the core answers and the grade, sanitized, and likeYou
   assert.ok(none.ok && none.request.context.grade === null && none.request.context.coreAtTopLevel === null && none.request.likeYou === false);
 });
 
-test("NumbersForm's live preview sends the core answers and the student's grade, as the server load does", () => {
+test("useEstimates sends the core answers and the student's grade, as the server load does", () => {
+  // The list redesign (2026-10-11) dropped NumbersForm's live preview (the design has no re-sort-as-you-type screen);
+  // `useEstimates`' `gradYear` option otherwise has no caller right now, but the wiring below — the hook's request
+  // shape, the API route, and the server loader using the same extras — stays load-bearing for whichever client
+  // asks with a grade next.
   const hook = read("components", "planner", "useEstimates.ts");
   assert.match(hook, /JSON\.stringify\(\{ student, unitIds, context \}\)/);
   assert.match(hook, /gradeNow\(gradYear/);
   assert.match(hook, /coreAtTopLevel: profile\?\.academics\.coreAtTopLevel/);
-  assert.match(read("components", "planner", "NumbersForm.tsx"), /useEstimates\(draftProfile, unitIds, view\.estimates, \{ gradYear: ctx\.student\?\.grad_year/);
   assert.match(read("app", "api", "estimate", "route.ts"), /estimateContext\(student, context\)/);
   // The route and the loader pass the same two extras to the same function.
   assert.match(read("lib", "planner", "plan-estimates.ts"), /estimateContext\(input, \{ coreAtTopLevel: profile\?\.academics\.coreAtTopLevel \?\? null, grade: gradeNow\(/);

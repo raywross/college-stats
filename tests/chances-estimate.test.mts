@@ -321,7 +321,9 @@ test("the planner reads estimates computed on the server or fetched from the end
   assert.doesNotMatch(view, /standingFor\(|scoreToMoveUp\(|chances\/model|chances\/estimate"/);
   assert.match(read("lib", "planner", "load.ts"), /planEstimates\(/);
   assert.match(read("lib", "planner", "store-plan.ts"), /planEstimates\(/);
-  for (const f of ["components/planner/NumbersForm.tsx", "components/planner/SignedOutPlan.tsx"]) assert.match(read(f), /useEstimates\(/, f);
+  // NumbersForm.tsx lost its live preview in the list redesign (2026-10-11, no re-sort-as-you-type screen in the
+  // design) and no longer calls useEstimates; SignedOutPlan still does, for its own live re-sort.
+  for (const f of ["components/planner/SignedOutPlan.tsx"]) assert.match(read(f), /useEstimates\(/, f);
   const hook = read("components", "planner", "useEstimates.ts");
   assert.match(hook, /fetch\("\/api\/estimate"/);
   assert.match(hook, /ESTIMATE_DEBOUNCE_MS = 400/);

@@ -31,5 +31,4 @@ summary: Every college page now says how that college reads an application, you 
 
 The estimate runs only on Quad's servers, and the site shows what it used, never how the pieces are combined. The
 admission-program and major-admission details were gathered from colleges' and states' published statements and will
-be re-checked against each live page before launch. The planner's GPA estimate was retuned for the larger set of
-colleges that now publish GPA data, so about 900 colleges have one again.
+be re-checked against each live page before launch.

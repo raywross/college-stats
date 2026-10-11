@@ -61,7 +61,7 @@
       "host": "allegheny.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-11",
       "unit_ids": [
         "210669"
       ]
@@ -160,7 +160,7 @@
       "host": "berks.psu.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-11",
       "unit_ids": [
         "214704"
       ]
@@ -694,7 +694,7 @@
       "host": "northcentralcollege.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-11",
       "unit_ids": [
         "147660"
       ]
@@ -823,7 +823,7 @@
       "host": "oie.uco.edu",
       "status": 403,
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-11",
       "unit_ids": [
         "206941"
       ]
@@ -1412,7 +1412,7 @@
       "host": "www.austincollege.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-11",
       "unit_ids": [
         "222983"
       ]
@@ -1909,6 +1909,12 @@
       ]
     },
     {
+      "host": "www.mtholyoke.edu",
+      "status": 403,
+      "first_seen": "2026-10-11",
+      "last_seen": "2026-10-11"
+    },
+    {
       "host": "www.ncad.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
@@ -2104,7 +2110,7 @@
       "host": "www.sjny.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-11",
       "unit_ids": [
         "195544"
       ]
@@ -2143,6 +2149,15 @@
       "last_seen": "2026-10-11",
       "unit_ids": [
         "160630"
+      ]
+    },
+    {
+      "host": "www.susqu.edu",
+      "status": "challenge",
+      "first_seen": "2026-10-11",
+      "last_seen": "2026-10-11",
+      "unit_ids": [
+        "216278"
       ]
     },
     {
@@ -2185,7 +2200,7 @@
       "host": "www.uco.edu",
       "status": 403,
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-11",
       "unit_ids": [
         "206941"
       ]
@@ -2263,7 +2278,7 @@
       "host": "www.utm.edu",
       "status": 403,
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-11",
       "unit_ids": [
         "221768"
       ]
@@ -2311,6 +2326,15 @@
       "last_seen": "2026-10-05",
       "unit_ids": [
         "149781"
+      ]
+    },
+    {
+      "host": "www.wheatoncollege.edu",
+      "status": "challenge",
+      "first_seen": "2026-10-11",
+      "last_seen": "2026-10-11",
+      "unit_ids": [
+        "168281"
       ]
     },
     {

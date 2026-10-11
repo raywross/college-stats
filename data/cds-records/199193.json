@@ -865,7 +865,7 @@
       "H.513": {"v":3666,"status":"passed","page":24,"line":1155,"quote":"C | Institutional loan programs. | 3 | 0% | $3,666"},
       "H.514": {"v":25717,"status":"passed","page":24,"line":1156,"quote":"D | State loan programs. | 23 | 0% | $25,717"},
       "H.515": {"v":29264,"status":"passed","page":24,"line":1157,"quote":"E | Private student loans made by a bank or lender. | 357 | 8% | $29,264"},
-      "H.601": {"v":true,"status":"failed","page":24,"line":1161,"quote":"Institutional need-based scholarship or grant aid is available | 2","failures":[{"check":"aid-year","detail":"H.101 is blank, which names no aid year"},{"check":"number-on-line","detail":"true isn't on line 1161: \"@83 Institutional need-based scholarship or grant aid is available | @399 2\""}]},
+      "H.601": {"v":true,"status":"failed","page":24,"line":1161,"quote":"Institutional need-based scholarship or grant aid is available | 2","failures":[{"check":"number-on-line","detail":"true isn't on line 1161: \"@83 Institutional need-based scholarship or grant aid is available | @399 2\""},{"check":"aid-year","detail":"H.101 is blank, which names no aid year"}]},
       "H.602": {"status":"not-found"},
       "H.603": {"status":"not-found"},
       "H.604": {"v":162,"status":"failed","page":24,"line":1166,"quote":"based aid: | 162","failures":[{"check":"aid-year","detail":"H.101 is blank, which names no aid year"}]},

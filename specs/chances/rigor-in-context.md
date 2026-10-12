@@ -86,8 +86,11 @@ Ledger** (`ap_ledger` on the row; [high-school-data.md](../product/high-school-d
 the courses each school is authorized to call AP this year, by name, public and private. It gives the picker a named
 list where CRDC gives a count, and covers private schools. It is a record of renewals, so a school's list can drop in
 a year its coordinator missed; the site says "authorized by College Board", keeps CRDC's count beside it, and reads
-a school the Ledger doesn't list as "not listed", never as "offers none". Order in `lib/chances/offering.ts`: profile,
-Ledger, pooled list, the student's marks, CRDC count.
+a school the Ledger doesn't list as "not listed", never as "offers none". Order in `lib/chances/offering.ts`: profile
+and Ledger together when the school has both (everything either lists, each once, source `record`, cited as
+`derived.ap_list`, the same list the school's page shows; owner, 2026-10-12: "superset should be on the picker as
+well"; shown as "Your school's profile and College Board together list 28 AP courses."), else profile, Ledger, pooled
+list, the student's marks, CRDC count.
 
 ## The reading
 `rigorReading(student, highSchool)` in `lib/chances/rigor.ts` places the schedule against the school's offering and

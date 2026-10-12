@@ -150,9 +150,9 @@ export const HS_FIELDS = {
   "detail.gpa_distribution": profile("GPA distribution", "grading"),
   "detail.ap_courses": profile("AP courses listed", "rigor"),
   /**
-   * The page's one AP list: every course the school's profile or the Ledger lists, each once (apCoursesOnRecord in
-   * lib/chances/offering.ts builds it, since it needs the profile detail). A list, not a number: HS_DERIVED has no
-   * value for it, and it has no median.
+   * The one AP list: every course the school's profile or the Ledger lists, each once (apCoursesOnRecord in
+   * lib/chances/offering.ts builds it, since it needs the profile detail); the page shows it and the offering takes
+   * it when the school has both. A list, not a number: HS_DERIVED has no value for it, and it has no median.
    */
   "derived.ap_list": {
     label: "AP courses on record",

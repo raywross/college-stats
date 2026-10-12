@@ -478,8 +478,17 @@ test("schoolOffering: the Ledger's list beats pooled, marks, and the CRDC count,
   assert.equal(none.source, "ledger");
   assert.equal(offeringLines(none)[0], "College Board lists no AP courses for your school this year.");
 
-  const profile = schoolOffering({ school, detail: { ap_courses: ["Calculus AB"], ib_courses: null } });
+  const profile = schoolOffering({ school: { ...school, ap_ledger: null }, detail: { ap_courses: ["Calculus AB"], ib_courses: null } });
   assert.equal(profile.source, "profile");
+  assert.equal(profile.field, "detail.ap_courses");
+
+  // Both on record: everything either lists, each once ("Physics 1 & 2" is two; the profile's unknown name counts).
+  const both = schoolOffering({ school, detail: { ap_courses: ["Calculus AB", "Physics 1 & 2", "AP Quantum Computing", "Seminar in Azle Studies"], ib_courses: null } });
+  assert.equal(both.source, "record");
+  assert.equal(both.field, "derived.ap_list");
+  assert.deepEqual(both.apKeys, ["ap_biology", "ap_calculus_ab", "ap_physics_1", "ap_physics_2"]);
+  assert.equal(both.apCount, 6);
+  assert.equal(offeringLines(both)[0], "Your school's profile and College Board together list 6 AP courses.");
 
   const crdc = schoolOffering({ school: { ...school, ap_ledger: null } });
   assert.equal(crdc.source, "crdc");

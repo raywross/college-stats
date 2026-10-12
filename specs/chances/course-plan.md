@@ -49,7 +49,9 @@ say it only when it is true and actionable, as one sentence with one button, and
 
 ### The school's course list
 The plan only suggests a course the student's school offers. Sources, best first:
-1. **The school profile's AP and IB list** (the pilot high schools; more as profiles are collected).
+1. **The school profile's AP and IB list** (the pilot high schools; more as profiles are collected) and **College
+   Board's AP Course Ledger** ([rigor-in-context.md](rigor-in-context.md#the-schools-offering)): everything either
+   lists when the school has both, else whichever it has.
 2. **Courses other students at the same school have listed**, once at least **three** students from that school have
    listed a course (the count is never shown below three, no student is ever named, and the list holds course names
    only). Shown as "Students at your school have listed these."

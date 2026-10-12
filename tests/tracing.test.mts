@@ -2,6 +2,7 @@
  * Guard for next.config.ts `outputFileTracingIncludes["/*"]` (specs/serving-architecture.md#4-fewer-bytes-per-function):
  * the deploy carries the dataset, so every data file the runtime reads must be traced into the server functions, and
  * nothing else (working files such as data/site-probe.json stay out). Reads next.config.ts as text. `npm test`.
+ * The admin console's health files have their own `"/admin/**"` list, checked the same way.
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -23,14 +24,30 @@ const EXPECTED = [
   "./data/reference/zcta-centroids.csv",
 ];
 
-/** The string entries of the `"/*": [ ... ]` list in next.config.ts, comments ignored. */
-function tracedForAllRoutes(): string[] {
+/**
+ * What only the admin console's routes read (lib/admin/health.ts; specs/product/admin.md "Files the deploy must carry").
+ * Kept off "/*" so the 42 MB of college-reported records and review queue ride with /admin only.
+ */
+const ADMIN_EXPECTED = [
+  "./data/college-docs.json",
+  "./data/cds-records/**/*.json",
+  "./data/college-failures.json",
+  "./data/review-queue.json",
+  "./data/link-issues.json",
+];
+
+/** The string entries of the `"<route>": [ ... ]` list in next.config.ts, comments ignored. */
+function tracedFor(route: string): string[] {
   const config = readFileSync(join(ROOT, "next.config.ts"), "utf8");
-  const list = config.match(/"\/\*":\s*\[([\s\S]*?)\]/);
-  assert.ok(list, 'next.config.ts has an outputFileTracingIncludes "/*" list');
+  const key = route.replace(/[.*+?^${}()|[\]\\/]/g, "\\$&");
+  const list = config.match(new RegExp(`"${key}":\\s*\\[([\\s\\S]*?)\\]`));
+  assert.ok(list, `next.config.ts has an outputFileTracingIncludes "${route}" list`);
   const body = list[1].replace(/\/\/.*$/gm, "");
   return [...body.matchAll(/"([^"]*)"|'([^']*)'/g)].map((m) => m[1] ?? m[2]);
 }
+
+const tracedForAllRoutes = () => tracedFor("/*");
+const tracedForAdmin = () => tracedFor("/admin/**");
 
 /** "./data/history/**\/*.json" → "data/history"; a plain path → itself without "./". */
 function rootOf(include: string): string {
@@ -88,8 +105,12 @@ test('outputFileTracingIncludes["/*"] is exactly the files the runtime reads', (
   assert.deepEqual(tracedForAllRoutes(), EXPECTED);
 });
 
+test('outputFileTracingIncludes["/admin/**"] is exactly the data health files', () => {
+  assert.deepEqual(tracedForAdmin(), ADMIN_EXPECTED);
+});
+
 test("every traced path exists (a glob's root is a directory holding matching files)", () => {
-  for (const include of tracedForAllRoutes()) {
+  for (const include of [...tracedForAllRoutes(), ...tracedForAdmin()]) {
     const root = rootOf(include);
     assert.ok(existsSync(join(ROOT, root)), `${include}: ${root} does not exist`);
     if (isGlob(include)) {
@@ -108,8 +129,8 @@ test("every read under data/ names its folder or file literally, so the bundler 
   assert.deepEqual(vague, [], 'spell out the folder or file after "data" at the read');
 });
 
-test("the list and the paths app code reads haven't drifted apart", () => {
-  const includes = tracedForAllRoutes();
+test("the lists and the paths app code reads haven't drifted apart", () => {
+  const includes = [...tracedForAllRoutes(), ...tracedForAdmin()];
   const reads = dataPathsRead().filter((r) => r.path !== "data");
   assert.ok(reads.some((r) => r.path === "data/schools.json"), "the scan finds lib/data.ts's reads (sanity check)");
   const untraced = reads.filter((r) => !includes.some((i) => covers(i, r.path)));

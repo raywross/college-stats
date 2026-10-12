@@ -46,7 +46,14 @@ export interface PlanItemColumns { dream: boolean; priority: number | null; foll
   /** Redesign (20261010120000_plan_redesign.sql): whose group is stored. 'auto' = the standing model's suggestion, rewritten as it changes; 'student' = picked, never changed by the site. */
   category_source: "auto" | "student";
   /** Redesign: whose round is stored. 'auto' = the starting round (lib/planner/auto-rounds.ts); 'student' = picked. */
-  round_source: "auto" | "student" }
+  round_source: "auto" | "student";
+  /**
+   * Admission chances, next (20261012100000_five_levels.sql; specs/chances/inputs-beyond-academics.md "Legacy",
+   * "Recruited athlete"): per-college, set from the drawer's "About you and {College}" line (U8), written by
+   * lib/planner/store-list.ts setItemLegacy/setItemRecruited.
+   */
+  legacy: boolean;
+  recruited: import("../chances/types").RecruitedPick }
 export type PlanItem = import("../list-rules").ListItem & PlanItemColumns;
 /** lists gains: sort text null, rounds_plan_accepted_at timestamptz null. */
 export type ListSort = "mine" | "category" | "dream_priority" | "next_date" | "admit_rate" | "avg_cost" | "distance" | "standing";
@@ -106,12 +113,11 @@ export interface PlanSchool { unit_id: string; name: string; city: string | null
   /** Redesign: the standing model's inputs for this college (lib/planner/standing.ts), built by planSchoolFor. */
   standing: import("./standing").StandingSchool;
   /**
-   * U8 (additive, levels.md carry-forward "the planner row drawer doesn't show the ComparedWith panel yet"): the
-   * college's own published rates, for the drawer's "Who you're compared with" panel (specs/chances/pool-explainer.md),
-   * the same slice StandingSection passes as `poolSchool` on the college profile. Optional until the server loader
-   * fills it (lib/planner/context.ts planSchoolFor); the drawer shows no panel without it.
+   * Admission chances, next (carry-forward from wave 1, brief "U7 + U8"): exactly what `comparedWith`
+   * (lib/chances/compared-with.ts) needs, so the row drawer can attach the ComparedWith panel (U8) from a plan row
+   * without a second dataset read. Built by planSchoolFor from the same School.
    */
-  poolSchool?: import("../chances/pool-rate").PoolSchool;
+  poolSchool: import("../chances/pool-rate").PoolSchool;
 }
 
 /* ------------------------------------------------------------------ */

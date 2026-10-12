@@ -5,20 +5,32 @@
  * (lib/lists.ts), and client components can all import it.
  */
 
-export type ListCategory = "reach" | "target" | "likely" | "unsorted";
+/**
+ * The five levels (specs/chances/levels.md "The levels") plus "unsorted" (no estimate yet): stored values, lowest
+ * first, then unsorted. Mirrors `StandingLevel` (lib/chances/types.ts) exactly on its five members — kept as its own
+ * type rather than `StandingLevel | "unsorted"` so this file (generic saved lists) doesn't have to import the chances
+ * module; `tests/lists-policies.test.mts` checks the database's check constraint against the same five values.
+ */
+export type ListCategory = "high_reach" | "reach" | "target" | "likely" | "safe" | "unsorted";
 export type ListStatus = "considering" | "applying" | "applied" | "decided";
 export type ListOutcome = "admitted" | "denied" | "waitlisted" | "deferred";
 export type ListRound = "ed" | "ed2" | "ea" | "rea" | "rd" | "rolling";
+/** The per-college Recruited pick (specs/chances/inputs-beyond-academics.md "Recruited athlete"); mirrors `RecruitedPick`. */
+export type ListItemRecruited = "none" | "contact" | "pre_read" | "likely_letter";
 
-export const LIST_CATEGORIES: ListCategory[] = ["reach", "target", "likely", "unsorted"];
+export const LIST_CATEGORIES: ListCategory[] = ["high_reach", "reach", "target", "likely", "safe", "unsorted"];
 export const LIST_STATUSES: ListStatus[] = ["considering", "applying", "applied", "decided"];
 export const LIST_OUTCOMES: ListOutcome[] = ["admitted", "denied", "waitlisted", "deferred"];
 export const LIST_ROUNDS: ListRound[] = ["ed", "ed2", "ea", "rea", "rd", "rolling"];
+export const LIST_ITEM_RECRUITED_PICKS: ListItemRecruited[] = ["none", "contact", "pre_read", "likely_letter"];
 
+/** levels.md "The levels": the words on top. Order everywhere is this table's order, then "Not sorted yet". */
 export const CATEGORY_LABELS: Record<ListCategory, string> = {
+  high_reach: "High reach",
   reach: "Reach",
   target: "Target",
   likely: "Likely",
+  safe: "Safe",
   unsorted: "Unsorted",
 };
 
@@ -47,6 +59,9 @@ export const ROUND_LABELS: Record<ListRound, string> = {
 
 export function isListCategory(v: unknown): v is ListCategory {
   return typeof v === "string" && (LIST_CATEGORIES as string[]).includes(v);
+}
+export function isListItemRecruited(v: unknown): v is ListItemRecruited {
+  return typeof v === "string" && (LIST_ITEM_RECRUITED_PICKS as string[]).includes(v);
 }
 export function isListStatus(v: unknown): v is ListStatus {
   return typeof v === "string" && (LIST_STATUSES as string[]).includes(v);
@@ -104,13 +119,12 @@ export interface ListItem {
   supplements_count?: number | null;
   transcript_shared?: boolean;
   /**
-   * U8/U7 (additive, specs/chances/inputs-beyond-academics.md "Legacy", "Recruited athlete"; levels.md's migration):
-   * the "About you and {College}" line's two inputs, per college because they're per list item, not the profile.
-   * Optional until the migration adds the columns (defaults `false` / `"none"`); U7's `setItemLegacy`/
-   * `setItemRecruited` (lib/planner/store-list.ts) write them, attributed like other list edits.
+   * Admission chances, next (20261012100000_five_levels.sql; specs/chances/inputs-beyond-academics.md "Legacy",
+   * "Recruited athlete"): per-college, not per profile. Optional here (older reads, CSV import, tests still
+   * type-check); `lib/planner/types.ts` PlanItem makes both required, as it does for `dream`/`priority`.
    */
   legacy?: boolean;
-  recruited?: import("./chances/types.ts").RecruitedPick;
+  recruited?: ListItemRecruited;
 }
 
 /**
@@ -259,14 +273,16 @@ export function trackingWrite(key: TrackingKey, turnOn: boolean, today: string):
 /* ------------------------------------------------------------------ */
 
 export interface BalanceCounts {
+  high_reach: number;
   reach: number;
   target: number;
   likely: number;
+  safe: number;
   unsorted: number;
 }
 
 export function countByCategory(items: Pick<ListItem, "category">[]): BalanceCounts {
-  const counts: BalanceCounts = { reach: 0, target: 0, likely: 0, unsorted: 0 };
+  const counts: BalanceCounts = { high_reach: 0, reach: 0, target: 0, likely: 0, safe: 0, unsorted: 0 };
   for (const item of items) counts[item.category]++;
   return counts;
 }
@@ -285,16 +301,21 @@ export function showCategoryHeaders(items: Pick<ListItem, "category">[]): boolea
   return items.some((i) => i.category !== "unsorted");
 }
 
+/**
+ * "3 Reach · 4 Target · 1 Likely", with counselor guidance appended when the balance looks off
+ * (specs/chances/levels.md "Where the levels show", "Balance line"): fewer than two Likely/Safe, three or more High
+ * reach, or Reach plus High reach outnumbering the rest.
+ */
 export function balanceLine(items: Pick<ListItem, "category">[]): string {
   const c = countByCategory(items);
-  const parts = (["reach", "target", "likely"] as const).filter((k) => c[k] > 0).map((k) => `${c[k]} ${CATEGORY_LABELS[k]}`);
+  const parts = (["high_reach", "reach", "target", "likely", "safe"] as const).filter((k) => c[k] > 0).map((k) => `${c[k]} ${CATEGORY_LABELS[k]}`);
   const tally = parts.length ? parts.join(" · ") : "No colleges sorted yet";
-  const placed = c.reach + c.target + c.likely;
+  const placed = c.high_reach + c.reach + c.target + c.likely + c.safe;
   if (placed === 0) return tally;
   let guidance: string | null = null;
-  if (c.likely === 0) guidance = "counselors suggest at least 1–2 Likely";
-  else if (c.likely === 1) guidance = "counselors suggest 2–3 Likely";
-  else if (c.reach > c.target + c.likely) guidance = "that's a lot of Reach relative to Target and Likely";
+  if (c.likely + c.safe < 2) guidance = "counselors suggest at least two that are Likely or Safe for you";
+  else if (c.high_reach >= 3) guidance = "one or two High reaches is fine; three or more crowd out colleges you'd get into";
+  else if (c.reach + c.high_reach > c.target + c.likely + c.safe) guidance = "a Target or two would balance the Reaches";
   return guidance ? `${tally}: ${guidance}` : tally;
 }
 

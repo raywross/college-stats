@@ -12,9 +12,9 @@ import { allowed, NOT_ALLOWED_MESSAGE, type Capability } from "@/lib/entitlement
 import { createServerSupabase } from "@/lib/supabase-server";
 import { getData } from "@/lib/data";
 import { isUnitId } from "@/lib/follow-state";
+import { isListItemRecruited } from "@/lib/list-rules";
 import { profileFor } from "@/lib/student-profile-store";
 import type { StudentProfileData } from "@/lib/student-profile";
-import { RECRUITED_PICKS } from "@/lib/chances/levels";
 import type { RecruitedPick } from "@/lib/chances/types";
 import { planSchoolFor, todayIso } from "./context";
 import { currentCycle, cycleStartOf } from "./cycle";
@@ -101,6 +101,41 @@ export async function acceptAllSuggestions(listId: string): Promise<PlanListActi
   return { ok: true, changed };
 }
 
+/* ------------------------------------------------------------------ */
+/* About you and {College} (inputs-beyond-academics.md "Legacy", "Recruited athlete")            */
+/* ------------------------------------------------------------------ */
+
+/**
+ * The Legacy toggle on the row drawer's "About you and {College}" line: "A parent or grandparent graduated from
+ * here." Per college, stored on the list item (not the profile); attributed like any other list edit — written with
+ * the caller's own session, so row-level security decides who may change it.
+ */
+export async function setItemLegacy(itemId: string, legacy: boolean): Promise<PlanListActionResult> {
+  if (!isUuid(itemId)) return { ok: false, message: FAILED };
+  const r = await ready("planner.tab");
+  if (!("supabase" in r)) return r;
+  const { data, error } = await r.supabase.from("list_items").update({ legacy: Boolean(legacy) }).eq("id", itemId).select("list_id");
+  if (error) return fail(error, "setItemLegacy");
+  if (!data?.length) return { ok: false, message: "Only someone who can edit this list can change it." };
+  refresh();
+  return { ok: true };
+}
+
+/**
+ * The Recruited pick on the same line: "A coach here is recruiting me" → none · contact · pre-read · likely letter.
+ * Per college, stored on the list item; attributed like any other list edit.
+ */
+export async function setItemRecruited(itemId: string, recruited: RecruitedPick): Promise<PlanListActionResult> {
+  if (!isUuid(itemId) || !isListItemRecruited(recruited)) return { ok: false, message: FAILED };
+  const r = await ready("planner.tab");
+  if (!("supabase" in r)) return r;
+  const { data, error } = await r.supabase.from("list_items").update({ recruited }).eq("id", itemId).select("list_id");
+  if (error) return fail(error, "setItemRecruited");
+  if (!data?.length) return { ok: false, message: "Only someone who can edit this list can change it." };
+  refresh();
+  return { ok: true };
+}
+
 /**
  * A view-only guardian's suggestion (list-building.md "Finding colleges to add"): adds the college unsorted with a
  * note "Suggested by {name}", through `suggest_college()` (supabase/migrations/20261008130000_planner_list.sql),
@@ -119,36 +154,6 @@ export async function suggestCollege(listId: string, unitId: string): Promise<Pl
     if (error.message?.includes("not_allowed") || error.message?.includes("not_signed_in")) return { ok: false, message: "Only someone who can see this list can suggest a college for it." };
     return fail(error, "suggestCollege");
   }
-  refresh();
-  return { ok: true };
-}
-
-/**
- * The drawer's "About you and {College}" line (specs/chances/inputs-beyond-academics.md "Legacy"): "A parent or
- * grandparent graduated from here", per list item because it's per college, not the profile. Attributed like other
- * list edits (RLS decides who may write it). Depends on `list_items.legacy` (the five-levels migration); until that
- * column exists the write fails quietly and the toggle's optimistic UI rolls back.
- */
-export async function setItemLegacy(itemId: string, legacy: boolean): Promise<PlanListActionResult> {
-  if (typeof legacy !== "boolean") return { ok: false, message: FAILED };
-  const r = await ready("planner.tab");
-  if (!("supabase" in r)) return r;
-  const { error } = await r.supabase.from("list_items").update({ legacy }).eq("id", itemId);
-  if (error) return fail(error, "setItemLegacy");
-  refresh();
-  return { ok: true };
-}
-
-/**
- * The drawer's "A coach here is recruiting me" pick (inputs-beyond-academics.md "Recruited athlete"). Depends on
- * `list_items.recruited` (the five-levels migration).
- */
-export async function setItemRecruited(itemId: string, recruited: RecruitedPick): Promise<PlanListActionResult> {
-  if (!(RECRUITED_PICKS as readonly string[]).includes(recruited)) return { ok: false, message: FAILED };
-  const r = await ready("planner.tab");
-  if (!("supabase" in r)) return r;
-  const { error } = await r.supabase.from("list_items").update({ recruited }).eq("id", itemId);
-  if (error) return fail(error, "setItemRecruited");
   refresh();
   return { ok: true };
 }

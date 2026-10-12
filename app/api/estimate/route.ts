@@ -34,7 +34,7 @@ export async function POST(request: Request) {
   const parsed = parseEstimateRequest(body, { signedIn: user !== null });
   if (!parsed.ok) return NextResponse.json({ error: parsed.message }, { status: 400 });
 
-  const { student: given, unitIds, counterfactual, context, likeYou } = parsed.request;
+  const { student: given, unitIds, counterfactual, context, likeYou, hooks } = parsed.request;
   const allowed = take(limiter, { ip: clientIp(request.headers), userId: user?.id ?? null }, requestCost(unitIds));
   if (!allowed.ok) {
     return NextResponse.json({ error: "Too many requests. Try again in a moment." }, { status: 429, headers: { "Retry-After": String(allowed.retryAfter) } });
@@ -45,11 +45,11 @@ export async function POST(request: Request) {
   let raw: Record<string, EstimateResult>;
   let like: Awaited<ReturnType<typeof estimateWithLikeYou>>["likeYou"] = null;
   if (likeYou && !counterfactual && ctx.schoolById(unitIds[0])) {
-    const answered = await estimateWithLikeYou({ student, unitId: unitIds[0] }, ctx);
+    const answered = await estimateWithLikeYou({ student, unitId: unitIds[0], hooks: hooks?.[unitIds[0]] }, ctx);
     raw = { [unitIds[0]]: answered.result };
     like = answered.likeYou;
   } else {
-    raw = estimateMany(student, unitIds, ctx);
+    raw = estimateMany(student, unitIds, ctx, hooks ?? undefined);
   }
   const results: Record<string, EstimateResult> = {};
   for (const [id, r] of Object.entries(raw)) results[id] = publicResult(r);

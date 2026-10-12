@@ -6,7 +6,7 @@
  * `retakeSuggestion`, `RETAKE_REACH`) already covers "when to suggest another test"; this module covers only the
  * dates and the target score, which never feeds the estimate itself (intake.md "Test").
  */
-import type { Fit } from "../chances/baseline.ts";
+import type { StandingLevel } from "../chances/types.ts";
 import type { ListRound } from "../list-rules.ts";
 import { ROUND_SHORT, roundDates } from "./rounds.ts";
 import type { Cycle, CycleEntry, Grade } from "./cycle.ts";
@@ -113,8 +113,8 @@ export function inTimeText(dateIso: string, rows: readonly InTimeRow[]): string 
 export interface TargetMove {
   id: string;
   name: string;
-  from: Fit;
-  to: Fit;
+  from: StandingLevel;
+  to: StandingLevel;
   needed: number;
 }
 

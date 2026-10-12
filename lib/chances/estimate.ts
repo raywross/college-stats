@@ -19,7 +19,7 @@ import { modelEstimateWithDetail, MODEL_VERSION } from "./model";
 import { offeringFor } from "./rigor-server";
 import type { AppliedEstimate } from "./snapshot";
 import type { AppliedEstimator } from "./snapshot-write";
-import type { EstimateInput, EstimateResult, EstimateStudent, SchoolOffering } from "./types";
+import type { CollegeHooks, EstimateInput, EstimateResult, EstimateStudent, SchoolOffering } from "./types";
 
 export { MODEL_VERSION };
 export { withCounterfactual, type Counterfactual } from "./estimate-request";
@@ -110,12 +110,16 @@ export function estimate(input: EstimateInput, ctx: EstimateContext): EstimateRe
   return estimateWithDetail(input, ctx).result;
 }
 
-/** The estimate at several colleges, by unit id; ids the dataset doesn't have are left out. */
-export function estimateMany(student: EstimateStudent, unitIds: readonly string[], ctx: EstimateContext): Record<string, EstimateResult> {
+/**
+ * The estimate at several colleges, by unit id; ids the dataset doesn't have are left out. `hooks` is the planner's
+ * per-college legacy/recruited/interest input (decision 5 "Hooks in requests"); a college missing from it reads as
+ * NO_HOOKS. The model (lib/chances/model.ts) reads `EstimateInput.hooks` once it wires the hook multipliers in.
+ */
+export function estimateMany(student: EstimateStudent, unitIds: readonly string[], ctx: EstimateContext, hooks?: Record<string, CollegeHooks>): Record<string, EstimateResult> {
   const out: Record<string, EstimateResult> = {};
   for (const unitId of new Set(unitIds)) {
     if (!ctx.schoolById(unitId)) continue;
-    out[unitId] = estimate({ student, unitId }, ctx);
+    out[unitId] = estimate({ student, unitId, hooks: hooks?.[unitId] }, ctx);
   }
   return out;
 }

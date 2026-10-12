@@ -182,9 +182,7 @@ export function planSchoolFor(
     actRange,
     gpaAverage,
     standing,
-    // U8 (additive, levels.md carry-forward): the slice the drawer's ComparedWith panel needs (pool-explainer.md),
-    // mirroring StandingSection's `poolSchool` on the college profile.
-    poolSchool: { unit_id: school.unit_id, name: school.name, location: school.location, admissions: school.admissions, reported: school.reported, lineage: school.lineage },
+    poolSchool: school,
   };
 }
 

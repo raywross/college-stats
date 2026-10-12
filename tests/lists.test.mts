@@ -48,18 +48,24 @@ test("setStatus: moving off 'decided' clears the outcome; moving to 'decided' ke
 
 const cat = (c: ListItem["category"]) => ({ category: c });
 
-test("balanceLine: tallies non-zero categories and adds counselor guidance", () => {
+test("balanceLine: tallies non-zero categories and adds counselor guidance (specs/chances/levels.md)", () => {
   assert.equal(balanceLine([]), "No colleges sorted yet");
   assert.equal(balanceLine([cat("unsorted"), cat("unsorted")]), "No colleges sorted yet");
   assert.equal(
     balanceLine([cat("reach"), cat("reach"), cat("reach"), cat("target"), cat("target"), cat("target"), cat("target"), cat("likely")]),
-    "3 Reach · 4 Target · 1 Likely: counselors suggest 2–3 Likely",
+    "3 Reach · 4 Target · 1 Likely: counselors suggest at least two that are Likely or Safe for you",
   );
   assert.equal(balanceLine([cat("target"), cat("likely"), cat("likely"), cat("likely")]), "1 Target · 3 Likely");
-  assert.equal(balanceLine([cat("reach"), cat("target")]), "1 Reach · 1 Target: counselors suggest at least 1–2 Likely");
+  assert.equal(balanceLine([cat("target"), cat("likely"), cat("safe")]), "1 Target · 1 Likely · 1 Safe", "Likely and Safe both count toward the guard");
+  assert.equal(balanceLine([cat("reach"), cat("target")]), "1 Reach · 1 Target: counselors suggest at least two that are Likely or Safe for you");
   assert.equal(
     balanceLine([cat("reach"), cat("reach"), cat("reach"), cat("reach"), cat("reach"), cat("target"), cat("likely"), cat("likely")]),
-    "5 Reach · 1 Target · 2 Likely: that's a lot of Reach relative to Target and Likely",
+    "5 Reach · 1 Target · 2 Likely: a Target or two would balance the Reaches",
+  );
+  assert.equal(
+    balanceLine([cat("high_reach"), cat("high_reach"), cat("high_reach"), cat("likely"), cat("likely")]),
+    "3 High reach · 2 Likely: one or two High reaches is fine; three or more crowd out colleges you'd get into",
+    "three or more High reach, even with enough Likely, still gets the High-reach guidance",
   );
 });
 

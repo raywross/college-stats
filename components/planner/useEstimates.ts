@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { gradeNow } from "@/lib/chances/courses";
 import type { EstimateContextInput } from "@/lib/chances/estimate-request";
 import { estimateInputFromProfile } from "@/lib/chances/snapshot";
-import type { EstimateResult, EstimateStudent } from "@/lib/chances/types";
+import type { CollegeHooks, EstimateResult, EstimateStudent } from "@/lib/chances/types";
 import { effectiveGradYear, type StudentProfileData } from "@/lib/student-profile";
 
 /** How long the numbers must sit still before the estimate is asked again (the slider moves in steps). */
@@ -13,11 +13,17 @@ export const ESTIMATE_DEBOUNCE_MS = 400;
 const CHUNK = 20;
 
 /** POST /api/estimate for one batch; null when it fails (the caller keeps what it had). */
-async function fetchEstimates(student: EstimateStudent, context: EstimateContextInput, unitIds: string[], signal: AbortSignal): Promise<Record<string, EstimateResult> | null> {
+async function fetchEstimates(
+  student: EstimateStudent,
+  context: EstimateContextInput,
+  unitIds: string[],
+  hooks: Record<string, CollegeHooks> | undefined,
+  signal: AbortSignal,
+): Promise<Record<string, EstimateResult> | null> {
   const res = await fetch("/api/estimate", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ student, unitIds, context }),
+    body: JSON.stringify({ student, unitIds, context, hooks }),
     signal,
   });
   if (!res.ok) return null;
@@ -33,7 +39,12 @@ async function fetchEstimates(student: EstimateStudent, context: EstimateContext
  * passes besides the student (the core-subject answers and the grade, from the profile's class year or `gradYear`), so
  * the live preview gives the answer the saved plan would.
  */
-export function useEstimates(profile: StudentProfileData | null, unitIds: readonly string[], initial: Record<string, EstimateResult> = {}, opts: { gradYear?: number | null } = {}) {
+export function useEstimates(
+  profile: StudentProfileData | null,
+  unitIds: readonly string[],
+  initial: Record<string, EstimateResult> = {},
+  opts: { gradYear?: number | null; hooks?: Record<string, CollegeHooks> } = {},
+) {
   const student = useMemo(() => estimateInputFromProfile(profile, "", null).student, [profile]);
   const gradYear = profile ? effectiveGradYear(profile.basics, opts.gradYear ?? null) : (opts.gradYear ?? null);
   const context = useMemo<EstimateContextInput>(
@@ -41,7 +52,8 @@ export function useEstimates(profile: StudentProfileData | null, unitIds: readon
     [profile?.academics.coreAtTopLevel, gradYear],
   );
   const ids = useMemo(() => [...new Set(unitIds)].sort(), [unitIds]);
-  const key = JSON.stringify({ student, context, ids });
+  const hooks = opts.hooks;
+  const key = JSON.stringify({ student, context, ids, hooks });
   const [results, setResults] = useState<Record<string, EstimateResult>>(initial);
   const [loading, setLoading] = useState(false);
   // The first render's numbers are the ones `initial` was computed for: no need to ask again until they change.
@@ -58,7 +70,7 @@ export function useEstimates(profile: StudentProfileData | null, unitIds: readon
       setLoading(true);
       const batches: string[][] = [];
       for (let i = 0; i < ids.length; i += CHUNK) batches.push(ids.slice(i, i + CHUNK));
-      Promise.all(batches.map((b) => fetchEstimates(student, context, b, controller.signal).catch(() => null)))
+      Promise.all(batches.map((b) => fetchEstimates(student, context, b, hooks, controller.signal).catch(() => null)))
         .then((answers) => {
           if (controller.signal.aborted) return;
           const merged = Object.assign({}, ...answers.filter((a): a is Record<string, EstimateResult> => a !== null));
@@ -73,7 +85,7 @@ export function useEstimates(profile: StudentProfileData | null, unitIds: readon
       clearTimeout(timer);
       controller.abort();
     };
-    // `key` stands for the student and the ids together.
+    // `key` stands for the student, the ids, and the hooks together.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key]);
 

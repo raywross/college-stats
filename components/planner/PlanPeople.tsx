@@ -180,10 +180,10 @@ export function PlanPeople({
                   <Link
                     href={shown.editHref}
                     aria-label={`Edit ${name}'s grades, test, and courses`}
-                    className="inline-flex size-11 shrink-0 items-center justify-center gap-1.5 rounded-full bg-primary text-sm font-semibold text-primary-foreground sm:h-9 sm:w-auto sm:px-3.5"
+                    className="inline-flex h-11 shrink-0 items-center justify-center gap-1.5 rounded-full bg-primary px-4 text-sm font-semibold text-primary-foreground sm:h-9 sm:px-3.5"
                   >
-                    <Pencil className="size-3.5" aria-hidden />
-                    <span className="hidden sm:inline">Edit</span>
+                    <Pencil className="hidden size-3.5 sm:block" aria-hidden />
+                    <span>Edit</span>
                   </Link>
                 )}
               </>

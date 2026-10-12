@@ -290,6 +290,9 @@ export const NOTES: Record<NoteKey, Note> = {
    * "test score"). Inputs and outcomes only: no sentence names a weight, a cutoff, or the odds behind a level. */
   "estimate.level.high_reach": (v) =>
     `Your record is below the students this college admits. It's fine to have one or two on the list; a higher ${v.test ? s(v, "test") : "test score"} or another year of grades would move it.`,
+  // High reach because parts of the record aren't on file (method/standing.md "Revision 1"), not because it's weak.
+  "estimate.level.high_reach_incomplete": () =>
+    "A high reach for now: part of your record isn't here yet, and at this college every part has to be strong. Add what's missing below to see where you stand.",
   "estimate.level.reach": () => "Possible. This college turns down most applicants like you.",
   "estimate.level.target": () => "Your record looks like the students they admit.",
   "estimate.level.likely": () => "More likely than not, from your record and how many applicants like you get in.",

@@ -61,7 +61,10 @@ export function RowDrawer({
   const testWord = yours?.test?.split(" ")[0] ?? "";
   // levels.md "The levels" table, read from the model's own catalog (lib/chances/notes.ts "Five levels") so this
   // line never drifts from what model.ts actually emits for each level.
-  const meaningLine = level ? noteText({ key: `estimate.level.${level}`, values: { test: testWord } }) : null;
+  // A High reach held there by missing inputs gets its own line: the record isn't weak, it's incomplete.
+  const incomplete = estimate?.notes.some((n) => n.key === "estimate.incomplete") ?? false;
+  const levelKey = level === "high_reach" && incomplete ? "estimate.level.high_reach_incomplete" : `estimate.level.${level}`;
+  const meaningLine = level ? noteText({ key: levelKey, values: { test: testWord } }) : null;
   const compared = useMemo(
     () => (school?.poolSchool && ctx.profile ? comparedWith(estimateInputFromProfile(ctx.profile, "", null).student, school.poolSchool) : null),
     [school, ctx.profile],

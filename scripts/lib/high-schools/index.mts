@@ -7,5 +7,6 @@ import * as ccd from "./ccd.mts";
 import * as pss from "./pss.mts";
 import * as edfacts from "./edfacts.mts";
 import * as crdc from "./crdc.mts";
+import * as ledger from "./ledger.mts";
 
-export const ADAPTERS: readonly HighSchoolAdapter[] = [ccd, pss, edfacts, crdc];
+export const ADAPTERS: readonly HighSchoolAdapter[] = [ccd, pss, edfacts, crdc, ledger];

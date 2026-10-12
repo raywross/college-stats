@@ -18,6 +18,7 @@ export type HsSourceKey =
   | "crdc"
   | "nces-pss"
   | "hs-profile"
+  | "ap-ledger"
   | "state-ca"
   | "state-tx"
   | "state-ny"
@@ -27,7 +28,7 @@ export type HsSourceKey =
   | "state-ct";
 
 /** Release years written by the sync to meta.json `vintages`. State report years live in each state file's sections. */
-export type HsVintageKey = "ccd-directory" | "ccd-enrollment" | "edfacts-acgr" | "edfacts-acgr-history" | "crdc" | "pss";
+export type HsVintageKey = "ccd-directory" | "ccd-enrollment" | "edfacts-acgr" | "edfacts-acgr-history" | "crdc" | "pss" | "ap-ledger";
 
 /** Page sections of a high school page; every registered field belongs to one. */
 export type HsTopic = "basics" | "enrollment" | "rigor" | "outcomes" | "grading" | "where-go";
@@ -97,6 +98,13 @@ export interface HighSchool {
     dual_enrolled: number | null;
     enrollment: number | null;
   } | null;
+  /**
+   * College Board's AP Course Ledger: the AP courses the school is authorized to offer in `year`, as catalog keys
+   * (data/reference/ap-courses.json; `other` names any the catalog lacks). An empty list is a school the Ledger lists
+   * with no AP course this year. Null when the school isn't matched in the Ledger (not "offers none"). `ledger_id` is
+   * the school's six-digit AI code, or "org-<id>" for the few the Ledger lists without one.
+   */
+  ap_ledger: { year: string; ledger_id: string; ledger_name: string; courses: string[]; other: string[] } | null;
   /** HsFieldPaths whose null means "suppressed for privacy" (or fewer than 5), not "missing". */
   suppressed?: string[];
   /** Only where a value's source or year differs from its HS_FIELDS default. Keys are registered HsFieldPaths. */

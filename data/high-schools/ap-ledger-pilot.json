@@ -1,0 +1,4287 @@
+{
+ "measured": "2026-10-11",
+ "purpose": "specs/chances/rigor-in-context.md \"Pilot\": check the CRDC 2023–24 AP course count (rigor.ap_courses, SCH_APCOURSES) against a second source before the rigor reading is shown to everyone.",
+ "ledger_year": "2025–2026",
+ "ledger_year_note": "The newest year the Ledger published on the measurement date; the 2025–26 ledger stays current until the 2026–27 one is released. The same lookups also give the 2023–24 list (the CRDC year), reported as same_year_2023_24.",
+ "ledger_url": "https://apcourseaudit.inflexion.org/ledger/",
+ "ledger_lookup": {
+  "search": "POST https://apcourseaudit.inflexion.org/api/ledger/search {\"institution\":\"S\",\"country\":\"US\",\"state\":\"TX\",\"city\":\"Azle\"} (or \"name\") → results[{ai, fullname, city, zip}]; needs the page's csrf-token meta and session cookie (X-CSRF-TOKEN, X-Requested-With: XMLHttpRequest)",
+  "school": "POST https://apcourseaudit.inflexion.org/api/ledger/school {\"type\":\"ai\",\"identifier\":\"<ai>\"} → {school, ap: {subject_id: {years: [{audit_year_id, authorized_count}]}}, preap}; page: https://apcourseaudit.inflexion.org/ledger/school/ai/<ai>",
+  "years": {
+   "19": "2025 - 2026",
+   "18": "2024 - 2025",
+   "17": "2023 - 2024",
+   "16": "2022 - 2023"
+  },
+  "bulk_download": "Only for a school's own AP coordinator (institution id + access code); no public download."
+ },
+ "rule": "within 2 courses, at least 80%",
+ "counting": "Distinct AP subjects with an authorization in the Ledger year (authorized_count counts teachers; a subject counts once). AP Seminar and AP Research (Capstone) count; Pre-AP (listed separately by the Ledger) does not. CRDC SCH_APCOURSES is \"the number of different AP courses\".",
+ "matching": "Searched by state and city, then by a distinctive name word statewide when needed; the school was matched by name and address by hand. No match or more than one plausible match is recorded as unmatched/ambiguous, not guessed.",
+ "course_keys": "ledger_courses[].key maps the Ledger subject to data/reference/ap-courses.json; null for retired subjects (Computer Science AB, French Literature, Latin Literature, Physics B), none of which appear in the current year.",
+ "summary": {
+  "schools": 42,
+  "matched": 41,
+  "unmatched": 0,
+  "ambiguous": 1,
+  "within_two": 24,
+  "share": 0.585,
+  "pass": false,
+  "median_diff": 1,
+  "mean_diff": 1.34,
+  "ledger_higher": 29,
+  "ledger_lower": 10,
+  "equal": 2,
+  "off_by_more_than_two": [
+   {
+    "id": "060239807165",
+    "name": "Options for Youth San Gabriel",
+    "crdc": 9,
+    "ledger": 1,
+    "diff": -8
+   },
+   {
+    "id": "062271003325",
+    "name": "San Fernando Senior High",
+    "crdc": 13,
+    "ledger": 21,
+    "diff": 8
+   },
+   {
+    "id": "481623005441",
+    "name": "Rosie Sorrells Education and Social Services High School",
+    "crdc": 18,
+    "ledger": 25,
+    "diff": 7
+   },
+   {
+    "id": "481623012028",
+    "name": "Kathlyn Joy Gilliam Collegiate Academy",
+    "crdc": 1,
+    "ledger": 8,
+    "diff": 7
+   },
+   {
+    "id": "063375005207",
+    "name": "Nogales High",
+    "crdc": 14,
+    "ledger": 19,
+    "diff": 5
+   },
+   {
+    "id": "481623001273",
+    "name": "School of Health Professions",
+    "crdc": 20,
+    "ledger": 25,
+    "diff": 5
+   },
+   {
+    "id": "061524001933",
+    "name": "Herbert Hoover High",
+    "crdc": 21,
+    "ledger": 25,
+    "diff": 4
+   },
+   {
+    "id": "481623005444",
+    "name": "Judge Barefoot Sanders Law Magnet",
+    "crdc": 21,
+    "ledger": 25,
+    "diff": 4
+   },
+   {
+    "id": "482034007256",
+    "name": "Rowlett High School",
+    "crdc": 17,
+    "ledger": 21,
+    "diff": 4
+   },
+   {
+    "id": "482892011022",
+    "name": "Mansfield Timberview High School",
+    "crdc": 24,
+    "ledger": 20,
+    "diff": -4
+   },
+   {
+    "id": "060153411628",
+    "name": "Los Angeles Academy of Arts and Enterprise",
+    "crdc": 7,
+    "ledger": 10,
+    "diff": 3
+   },
+   {
+    "id": "060179914104",
+    "name": "Ednovate - Brio College Prep",
+    "crdc": 11,
+    "ledger": 14,
+    "diff": 3
+   },
+   {
+    "id": "060191414083",
+    "name": "California School of the Arts - San Gabriel Valley",
+    "crdc": 18,
+    "ledger": 21,
+    "diff": 3
+   },
+   {
+    "id": "480920000382",
+    "name": "Azle High School",
+    "crdc": 16,
+    "ledger": 13,
+    "diff": -3
+   },
+   {
+    "id": "481305009190",
+    "name": "Ranchview High School",
+    "crdc": 17,
+    "ledger": 20,
+    "diff": 3
+   },
+   {
+    "id": "481970001830",
+    "name": "Arlington Heights High School",
+    "crdc": 25,
+    "ledger": 22,
+    "diff": -3
+   },
+   {
+    "id": "482034006552",
+    "name": "Naaman Forest High School",
+    "crdc": 14,
+    "ledger": 17,
+    "diff": 3
+   }
+  ],
+  "same_year_2023_24": {
+   "within_two": 27,
+   "share": 0.659,
+   "median_diff": 1,
+   "mean_diff": 0.2
+  }
+ },
+ "schools": [
+  {
+   "id": "060153411628",
+   "name": "Los Angeles Academy of Arts and Enterprise",
+   "city": "Los Angeles",
+   "state": "CA",
+   "metro": "los-angeles",
+   "ledger_ai": "054387",
+   "ledger_name": "Los Angeles Academy of Arts And Enterprise Charter School",
+   "ledger_city": "Los Angeles",
+   "crdc_ap_courses": 7,
+   "ledger_ap_courses": 10,
+   "ledger_ap_courses_2023_24": 8,
+   "ledger_courses": [
+    {
+     "ledger_subject": "2-D Art and Design",
+     "key": "ap_2d_art_and_design"
+    },
+    {
+     "ledger_subject": "Art History",
+     "key": "ap_art_history"
+    },
+    {
+     "ledger_subject": "Calculus AB",
+     "key": "ap_calculus_ab"
+    },
+    {
+     "ledger_subject": "English Language and Composition",
+     "key": "ap_english_language"
+    },
+    {
+     "ledger_subject": "English Literature and Composition",
+     "key": "ap_english_literature"
+    },
+    {
+     "ledger_subject": "Environmental Science",
+     "key": "ap_environmental_science"
+    },
+    {
+     "ledger_subject": "Precalculus",
+     "key": "ap_precalculus"
+    },
+    {
+     "ledger_subject": "Psychology",
+     "key": "ap_psychology"
+    },
+    {
+     "ledger_subject": "Spanish Language and Culture",
+     "key": "ap_spanish_language"
+    },
+    {
+     "ledger_subject": "Spanish Literature and Culture",
+     "key": "ap_spanish_literature"
+    }
+   ],
+   "diff": 3,
+   "status": "matched",
+   "note": null,
+   "diff_2023_24": 1
+  },
+  {
+   "id": "060168312119",
+   "name": "Lifeline Education Charter",
+   "city": "Compton",
+   "state": "CA",
+   "metro": "los-angeles",
+   "ledger_ai": "050899",
+   "ledger_name": "Lifeline Education Charter School",
+   "ledger_city": "Compton",
+   "crdc_ap_courses": 3,
+   "ledger_ap_courses": 4,
+   "ledger_ap_courses_2023_24": 3,
+   "ledger_courses": [
+    {
+     "ledger_subject": "Computer Science Principles",
+     "key": "ap_computer_science_principles"
+    },
+    {
+     "ledger_subject": "English Language and Composition",
+     "key": "ap_english_language"
+    },
+    {
+     "ledger_subject": "Spanish Language and Culture",
+     "key": "ap_spanish_language"
+    },
+    {
+     "ledger_subject": "U.S. Government and Politics",
+     "key": "ap_us_government"
+    }
+   ],
+   "diff": 1,
+   "status": "matched",
+   "note": null,
+   "diff_2023_24": 0
+  },
+  {
+   "id": "060179914104",
+   "name": "Ednovate - Brio College Prep",
+   "city": "Los Angeles",
+   "state": "CA",
+   "metro": "los-angeles",
+   "ledger_ai": "051668",
+   "ledger_name": "Brio College Preparatory",
+   "ledger_city": "Los Angeles",
+   "crdc_ap_courses": 11,
+   "ledger_ap_courses": 14,
+   "ledger_ap_courses_2023_24": 12,
+   "ledger_courses": [
+    {
+     "ledger_subject": "2-D Art and Design",
+     "key": "ap_2d_art_and_design"
+    },
+    {
+     "ledger_subject": "3-D Art and Design",
+     "key": "ap_3d_art_and_design"
+    },
+    {
+     "ledger_subject": "Calculus AB",
+     "key": "ap_calculus_ab"
+    },
+    {
+     "ledger_subject": "Drawing",
+     "key": "ap_drawing"
+    },
+    {
+     "ledger_subject": "Environmental Science",
+     "key": "ap_environmental_science"
+    },
+    {
+     "ledger_subject": "Physics 1",
+     "key": "ap_physics_1"
+    },
+    {
+     "ledger_subject": "Physics 2",
+     "key": "ap_physics_2"
+    },
+    {
+     "ledger_subject": "Research",
+     "key": "ap_research"
+    },
+    {
+     "ledger_subject": "Seminar",
+     "key": "ap_seminar"
+    },
+    {
+     "ledger_subject": "Spanish Language and Culture",
+     "key": "ap_spanish_language"
+    },
+    {
+     "ledger_subject": "Statistics",
+     "key": "ap_statistics"
+    },
+    {
+     "ledger_subject": "U.S. Government and Politics",
+     "key": "ap_us_government"
+    },
+    {
+     "ledger_subject": "United States History",
+     "key": "ap_us_history"
+    },
+    {
+     "ledger_subject": "World History: Modern",
+     "key": "ap_world_history_modern"
+    }
+   ],
+   "diff": 3,
+   "status": "matched",
+   "note": "Listed as \"Brio College Preparatory\" (Ednovate).",
+   "diff_2023_24": 1
+  },
+  {
+   "id": "060191414083",
+   "name": "California School of the Arts - San Gabriel Valley",
+   "city": "Duarte",
+   "state": "CA",
+   "metro": "los-angeles",
+   "ledger_ai": "052210",
+   "ledger_name": "California School of the Arts - San Gabriel Valley",
+   "ledger_city": "Duarte",
+   "crdc_ap_courses": 18,
+   "ledger_ap_courses": 21,
+   "ledger_ap_courses_2023_24": 20,
+   "ledger_courses": [
+    {
+     "ledger_subject": "2-D Art and Design",
+     "key": "ap_2d_art_and_design"
+    },
+    {
+     "ledger_subject": "African American Studies",
+     "key": "ap_african_american_studies"
+    },
+    {
+     "ledger_subject": "Art History",
+     "key": "ap_art_history"
+    },
+    {
+     "ledger_subject": "Biology",
+     "key": "ap_biology"
+    },
+    {
+     "ledger_subject": "Calculus AB",
+     "key": "ap_calculus_ab"
+    },
+    {
+     "ledger_subject": "Calculus BC",
+     "key": "ap_calculus_bc"
+    },
+    {
+     "ledger_subject": "Chemistry",
+     "key": "ap_chemistry"
+    },
+    {
+     "ledger_subject": "Chinese Language and Culture",
+     "key": "ap_chinese"
+    },
+    {
+     "ledger_subject": "Computer Science A",
+     "key": "ap_computer_science_a"
+    },
+    {
+     "ledger_subject": "Computer Science Principles",
+     "key": "ap_computer_science_principles"
+    },
+    {
+     "ledger_subject": "English Language and Composition",
+     "key": "ap_english_language"
+    },
+    {
+     "ledger_subject": "English Literature and Composition",
+     "key": "ap_english_literature"
+    },
+    {
+     "ledger_subject": "Environmental Science",
+     "key": "ap_environmental_science"
+    },
+    {
+     "ledger_subject": "Macroeconomics",
+     "key": "ap_macroeconomics"
+    },
+    {
+     "ledger_subject": "Physics 1",
+     "key": "ap_physics_1"
+    },
+    {
+     "ledger_subject": "Psychology",
+     "key": "ap_psychology"
+    },
+    {
+     "ledger_subject": "Spanish Language and Culture",
+     "key": "ap_spanish_language"
+    },
+    {
+     "ledger_subject": "Statistics",
+     "key": "ap_statistics"
+    },
+    {
+     "ledger_subject": "U.S. Government and Politics",
+     "key": "ap_us_government"
+    },
+    {
+     "ledger_subject": "United States History",
+     "key": "ap_us_history"
+    },
+    {
+     "ledger_subject": "World History: Modern",
+     "key": "ap_world_history_modern"
+    }
+   ],
+   "diff": 3,
+   "status": "matched",
+   "note": null,
+   "diff_2023_24": 2
+  },
+  {
+   "id": "060196813898",
+   "name": "Ednovate - East College Prep",
+   "city": "Los Angeles",
+   "state": "CA",
+   "metro": "los-angeles",
+   "ledger_ai": "050338",
+   "ledger_name": "East College Preparatory",
+   "ledger_city": "Los Angeles",
+   "crdc_ap_courses": 8,
+   "ledger_ap_courses": 6,
+   "ledger_ap_courses_2023_24": 3,
+   "ledger_courses": [
+    {
+     "ledger_subject": "Calculus AB",
+     "key": "ap_calculus_ab"
+    },
+    {
+     "ledger_subject": "Chemistry",
+     "key": "ap_chemistry"
+    },
+    {
+     "ledger_subject": "English Literature and Composition",
+     "key": "ap_english_literature"
+    },
+    {
+     "ledger_subject": "Physics 1",
+     "key": "ap_physics_1"
+    },
+    {
+     "ledger_subject": "Precalculus",
+     "key": "ap_precalculus"
+    },
+    {
+     "ledger_subject": "Statistics",
+     "key": "ap_statistics"
+    }
+   ],
+   "diff": -2,
+   "status": "matched",
+   "note": "Listed as \"East College Preparatory\" (Ednovate).",
+   "diff_2023_24": -5
+  },
+  {
+   "id": "060207608718",
+   "name": "Environmental Charter High - Lawndale",
+   "city": "Lawndale",
+   "state": "CA",
+   "metro": "los-angeles",
+   "ledger_ai": "051472",
+   "ledger_name": "Environmental Charter High School Lawndale",
+   "ledger_city": "Lawndale",
+   "crdc_ap_courses": 6,
+   "ledger_ap_courses": 8,
+   "ledger_ap_courses_2023_24": 7,
+   "ledger_courses": [
+    {
+     "ledger_subject": "African American Studies",
+     "key": "ap_african_american_studies"
+    },
+    {
+     "ledger_subject": "Calculus AB",
+     "key": "ap_calculus_ab"
+    },
+    {
+     "ledger_subject": "English Literature and Composition",
+     "key": "ap_english_literature"
+    },
+    {
+     "ledger_subject": "Environmental Science",
+     "key": "ap_environmental_science"
+    },
+    {
+     "ledger_subject": "Spanish Language and Culture",
+     "key": "ap_spanish_language"
+    },
+    {
+     "ledger_subject": "Spanish Literature and Culture",
+     "key": "ap_spanish_literature"
+    },
+    {
+     "ledger_subject": "United States History",
+     "key": "ap_us_history"
+    },
+    {
+     "ledger_subject": "World History: Modern",
+     "key": "ap_world_history_modern"
+    }
+   ],
+   "diff": 2,
+   "status": "matched",
+   "note": null,
+   "diff_2023_24": 1
+  },
+  {
+   "id": "060236211632",
+   "name": "Alliance Patti And Peter Neuwirth Leadership Academy",
+   "city": "Los Angeles",
+   "state": "CA",
+   "metro": "los-angeles",
+   "ledger_ai": "054218",
+   "ledger_name": "Alliance Neuwirth Leadership Academy",
+   "ledger_city": "Los Angeles",
+   "crdc_ap_courses": 11,
+   "ledger_ap_courses": 12,
+   "ledger_ap_courses_2023_24": 11,
+   "ledger_courses": [
+    {
+     "ledger_subject": "2-D Art and Design",
+     "key": "ap_2d_art_and_design"
+    },
+    {
+     "ledger_subject": "African American Studies",
+     "key": "ap_african_american_studies"
+    },
+    {
+     "ledger_subject": "Biology",
+     "key": "ap_biology"
+    },
+    {
+     "ledger_subject": "Calculus AB",
+     "key": "ap_calculus_ab"
+    },
+    {
+     "ledger_subject": "English Language and Composition",
+     "key": "ap_english_language"
+    },
+    {
+     "ledger_subject": "English Literature and Composition",
+     "key": "ap_english_literature"
+    },
+    {
+     "ledger_subject": "Physics 1",
+     "key": "ap_physics_1"
+    },
+    {
+     "ledger_subject": "Spanish Language and Culture",
+     "key": "ap_spanish_language"
+    },
+    {
+     "ledger_subject": "Spanish Literature and Culture",
+     "key": "ap_spanish_literature"
+    },
+    {
+     "ledger_subject": "U.S. Government and Politics",
+     "key": "ap_us_government"
+    },
+    {
+     "ledger_subject": "United States History",
+     "key": "ap_us_history"
+    },
+    {
+     "ledger_subject": "World History: Modern",
+     "key": "ap_world_history_modern"
+    }
+   ],
+   "diff": 1,
+   "status": "matched",
+   "note": "Listed as \"Alliance Neuwirth Leadership Academy\".",
+   "diff_2023_24": 0
+  },
+  {
+   "id": "060239807165",
+   "name": "Options for Youth San Gabriel",
+   "city": "San Gabriel",
+   "state": "CA",
+   "metro": "los-angeles",
+   "ledger_ai": "052432",
+   "ledger_name": "Options For Youth - San Gabriel",
+   "ledger_city": "San Gabriel",
+   "crdc_ap_courses": 9,
+   "ledger_ap_courses": 1,
+   "ledger_ap_courses_2023_24": 1,
+   "ledger_courses": [
+    {
+     "ledger_subject": "Spanish Language and Culture",
+     "key": "ap_spanish_language"
+    }
+   ],
+   "diff": -8,
+   "status": "matched",
+   "note": null,
+   "diff_2023_24": -8
+  },
+  {
+   "id": "060247013741",
+   "name": "TEACH Tech Charter High",
+   "city": "Los Angeles",
+   "state": "CA",
+   "metro": "los-angeles",
+   "ledger_ai": "054770",
+   "ledger_name": "Teach Technical Charter High School",
+   "ledger_city": "Los Angeles",
+   "crdc_ap_courses": 3,
+   "ledger_ap_courses": 5,
+   "ledger_ap_courses_2023_24": 6,
+   "ledger_courses": [
+    {
+     "ledger_subject": "English Language and Composition",
+     "key": "ap_english_language"
+    },
+    {
+     "ledger_subject": "English Literature and Composition",
+     "key": "ap_english_literature"
+    },
+    {
+     "ledger_subject": "Spanish Language and Culture",
+     "key": "ap_spanish_language"
+    },
+    {
+     "ledger_subject": "U.S. Government and Politics",
+     "key": "ap_us_government"
+    },
+    {
+     "ledger_subject": "United States History",
+     "key": "ap_us_history"
+    }
+   ],
+   "diff": 2,
+   "status": "matched",
+   "note": "Listed as \"Teach Technical Charter High School\".",
+   "diff_2023_24": 3
+  },
+  {
+   "id": "060297000223",
+   "name": "Arcadia High",
+   "city": "Arcadia",
+   "state": "CA",
+   "metro": "los-angeles",
+   "ledger_ai": "050130",
+   "ledger_name": "Arcadia High School",
+   "ledger_city": "Arcadia",
+   "crdc_ap_courses": 21,
+   "ledger_ap_courses": 22,
+   "ledger_ap_courses_2023_24": 22,
+   "ledger_courses": [
+    {
+     "ledger_subject": "Art History",
+     "key": "ap_art_history"
+    },
+    {
+     "ledger_subject": "Biology",
+     "key": "ap_biology"
+    },
+    {
+     "ledger_subject": "Calculus AB",
+     "key": "ap_calculus_ab"
+    },
+    {
+     "ledger_subject": "Calculus BC",
+     "key": "ap_calculus_bc"
+    },
+    {
+     "ledger_subject": "Chemistry",
+     "key": "ap_chemistry"
+    },
+    {
+     "ledger_subject": "Chinese Language and Culture",
+     "key": "ap_chinese"
+    },
+    {
+     "ledger_subject": "Comparative Government and Politics",
+     "key": "ap_comparative_government"
+    },
+    {
+     "ledger_subject": "Computer Science A",
+     "key": "ap_computer_science_a"
+    },
+    {
+     "ledger_subject": "Computer Science Principles",
+     "key": "ap_computer_science_principles"
+    },
+    {
+     "ledger_subject": "English Language and Composition",
+     "key": "ap_english_language"
+    },
+    {
+     "ledger_subject": "English Literature and Composition",
+     "key": "ap_english_literature"
+    },
+    {
+     "ledger_subject": "Environmental Science",
+     "key": "ap_environmental_science"
+    },
+    {
+     "ledger_subject": "French Language and Culture",
+     "key": "ap_french"
+    },
+    {
+     "ledger_subject": "Human Geography",
+     "key": "ap_human_geography"
+    },
+    {
+     "ledger_subject": "Japanese Language and Culture",
+     "key": "ap_japanese"
+    },
+    {
+     "ledger_subject": "Music Theory",
+     "key": "ap_music_theory"
+    },
+    {
+     "ledger_subject": "Physics C: Electricity and Magnetism",
+     "key": "ap_physics_c_electricity_and_magnetism"
+    },
+    {
+     "ledger_subject": "Physics C: Mechanics",
+     "key": "ap_physics_c_mechanics"
+    },
+    {
+     "ledger_subject": "Spanish Language and Culture",
+     "key": "ap_spanish_language"
+    },
+    {
+     "ledger_subject": "Statistics",
+     "key": "ap_statistics"
+    },
+    {
+     "ledger_subject": "U.S. Government and Politics",
+     "key": "ap_us_government"
+    },
+    {
+     "ledger_subject": "United States History",
+     "key": "ap_us_history"
+    }
+   ],
+   "diff": 1,
+   "status": "matched",
+   "note": null,
+   "diff_2023_24": 1
+  },
+  {
+   "id": "060819000801",
+   "name": "Charter Oak High",
+   "city": "Covina",
+   "state": "CA",
+   "metro": "los-angeles",
+   "ledger_ai": "050693",
+   "ledger_name": "Charter Oak High School",
+   "ledger_city": "Covina",
+   "crdc_ap_courses": 4,
+   "ledger_ap_courses": 3,
+   "ledger_ap_courses_2023_24": 5,
+   "ledger_courses": [
+    {
+     "ledger_subject": "Calculus AB",
+     "key": "ap_calculus_ab"
+    },
+    {
+     "ledger_subject": "Statistics",
+     "key": "ap_statistics"
+    },
+    {
+     "ledger_subject": "United States History",
+     "key": "ap_us_history"
+    }
+   ],
+   "diff": -1,
+   "status": "matched",
+   "note": null,
+   "diff_2023_24": 1
+  },
+  {
+   "id": "061524001933",
+   "name": "Herbert Hoover High",
+   "city": "Glendale",
+   "state": "CA",
+   "metro": "los-angeles",
+   "ledger_ai": "051060",
+   "ledger_name": "Herbert Hoover High School",
+   "ledger_city": "Glendale",
+   "crdc_ap_courses": 21,
+   "ledger_ap_courses": 25,
+   "ledger_ap_courses_2023_24": 6,
+   "ledger_courses": [
+    {
+     "ledger_subject": "2-D Art and Design",
+     "key": "ap_2d_art_and_design"
+    },
+    {
+     "ledger_subject": "Biology",
+     "key": "ap_biology"
+    },
+    {
+     "ledger_subject": "Calculus AB",
+     "key": "ap_calculus_ab"
+    },
+    {
+     "ledger_subject": "Calculus BC",
+     "key": "ap_calculus_bc"
+    },
+    {
+     "ledger_subject": "Chemistry",
+     "key": "ap_chemistry"
+    },
+    {
+     "ledger_subject": "Computer Science A",
+     "key": "ap_computer_science_a"
+    },
+    {
+     "ledger_subject": "Computer Science Principles",
+     "key": "ap_computer_science_principles"
+    },
+    {
+     "ledger_subject": "Drawing",
+     "key": "ap_drawing"
+    },
+    {
+     "ledger_subject": "English Language and Composition",
+     "key": "ap_english_language"
+    },
+    {
+     "ledger_subject": "English Literature and Composition",
+     "key": "ap_english_literature"
+    },
+    {
+     "ledger_subject": "French Language and Culture",
+     "key": "ap_french"
+    },
+    {
+     "ledger_subject": "Human Geography",
+     "key": "ap_human_geography"
+    },
+    {
+     "ledger_subject": "Italian Language and Culture",
+     "key": "ap_italian"
+    },
+    {
+     "ledger_subject": "Macroeconomics",
+     "key": "ap_macroeconomics"
+    },
+    {
+     "ledger_subject": "Physics 1",
+     "key": "ap_physics_1"
+    },
+    {
+     "ledger_subject": "Precalculus",
+     "key": "ap_precalculus"
+    },
+    {
+     "ledger_subject": "Psychology",
+     "key": "ap_psychology"
+    },
+    {
+     "ledger_subject": "Research",
+     "key": "ap_research"
+    },
+    {
+     "ledger_subject": "Seminar",
+     "key": "ap_seminar"
+    },
+    {
+     "ledger_subject": "Spanish Language and Culture",
+     "key": "ap_spanish_language"
+    },
+    {
+     "ledger_subject": "Spanish Literature and Culture",
+     "key": "ap_spanish_literature"
+    },
+    {
+     "ledger_subject": "Statistics",
+     "key": "ap_statistics"
+    },
+    {
+     "ledger_subject": "U.S. Government and Politics",
+     "key": "ap_us_government"
+    },
+    {
+     "ledger_subject": "United States History",
+     "key": "ap_us_history"
+    },
+    {
+     "ledger_subject": "World History: Modern",
+     "key": "ap_world_history_modern"
+    }
+   ],
+   "diff": 4,
+   "status": "matched",
+   "note": null,
+   "diff_2023_24": -15
+  },
+  {
+   "id": "061632502053",
+   "name": "Los Altos High",
+   "city": "Hacienda Heights",
+   "state": "CA",
+   "metro": "los-angeles",
+   "ledger_ai": "051360",
+   "ledger_name": "Los Altos High School",
+   "ledger_city": "Hacienda Heights",
+   "crdc_ap_courses": 23,
+   "ledger_ap_courses": 24,
+   "ledger_ap_courses_2023_24": 26,
+   "ledger_courses": [
+    {
+     "ledger_subject": "2-D Art and Design",
+     "key": "ap_2d_art_and_design"
+    },
+    {
+     "ledger_subject": "Biology",
+     "key": "ap_biology"
+    },
+    {
+     "ledger_subject": "Calculus AB",
+     "key": "ap_calculus_ab"
+    },
+    {
+     "ledger_subject": "Calculus BC",
+     "key": "ap_calculus_bc"
+    },
+    {
+     "ledger_subject": "Chemistry",
+     "key": "ap_chemistry"
+    },
+    {
+     "ledger_subject": "Chinese Language and Culture",
+     "key": "ap_chinese"
+    },
+    {
+     "ledger_subject": "Computer Science A",
+     "key": "ap_computer_science_a"
+    },
+    {
+     "ledger_subject": "Drawing",
+     "key": "ap_drawing"
+    },
+    {
+     "ledger_subject": "English Language and Composition",
+     "key": "ap_english_language"
+    },
+    {
+     "ledger_subject": "English Literature and Composition",
+     "key": "ap_english_literature"
+    },
+    {
+     "ledger_subject": "Human Geography",
+     "key": "ap_human_geography"
+    },
+    {
+     "ledger_subject": "Macroeconomics",
+     "key": "ap_macroeconomics"
+    },
+    {
+     "ledger_subject": "Microeconomics",
+     "key": "ap_microeconomics"
+    },
+    {
+     "ledger_subject": "Physics 1",
+     "key": "ap_physics_1"
+    },
+    {
+     "ledger_subject": "Physics C: Electricity and Magnetism",
+     "key": "ap_physics_c_electricity_and_magnetism"
+    },
+    {
+     "ledger_subject": "Precalculus",
+     "key": "ap_precalculus"
+    },
+    {
+     "ledger_subject": "Psychology",
+     "key": "ap_psychology"
+    },
+    {
+     "ledger_subject": "Research",
+     "key": "ap_research"
+    },
+    {
+     "ledger_subject": "Seminar",
+     "key": "ap_seminar"
+    },
+    {
+     "ledger_subject": "Spanish Language and Culture",
+     "key": "ap_spanish_language"
+    },
+    {
+     "ledger_subject": "Spanish Literature and Culture",
+     "key": "ap_spanish_literature"
+    },
+    {
+     "ledger_subject": "Statistics",
+     "key": "ap_statistics"
+    },
+    {
+     "ledger_subject": "U.S. Government and Politics",
+     "key": "ap_us_government"
+    },
+    {
+     "ledger_subject": "United States History",
+     "key": "ap_us_history"
+    }
+   ],
+   "diff": 1,
+   "status": "matched",
+   "note": null,
+   "diff_2023_24": 3
+  },
+  {
+   "id": "062250002745",
+   "name": "Millikan High",
+   "city": "Long Beach",
+   "state": "CA",
+   "metro": "los-angeles",
+   "ledger_ai": "051476",
+   "ledger_name": "Robert Millikan High School",
+   "ledger_city": "Long Beach",
+   "crdc_ap_courses": 27,
+   "ledger_ap_courses": 26,
+   "ledger_ap_courses_2023_24": 30,
+   "ledger_courses": [
+    {
+     "ledger_subject": "2-D Art and Design",
+     "key": "ap_2d_art_and_design"
+    },
+    {
+     "ledger_subject": "3-D Art and Design",
+     "key": "ap_3d_art_and_design"
+    },
+    {
+     "ledger_subject": "African American Studies",
+     "key": "ap_african_american_studies"
+    },
+    {
+     "ledger_subject": "Art History",
+     "key": "ap_art_history"
+    },
+    {
+     "ledger_subject": "Calculus AB",
+     "key": "ap_calculus_ab"
+    },
+    {
+     "ledger_subject": "Calculus BC",
+     "key": "ap_calculus_bc"
+    },
+    {
+     "ledger_subject": "Chemistry",
+     "key": "ap_chemistry"
+    },
+    {
+     "ledger_subject": "Computer Science Principles",
+     "key": "ap_computer_science_principles"
+    },
+    {
+     "ledger_subject": "English Language and Composition",
+     "key": "ap_english_language"
+    },
+    {
+     "ledger_subject": "English Literature and Composition",
+     "key": "ap_english_literature"
+    },
+    {
+     "ledger_subject": "Environmental Science",
+     "key": "ap_environmental_science"
+    },
+    {
+     "ledger_subject": "French Language and Culture",
+     "key": "ap_french"
+    },
+    {
+     "ledger_subject": "German Language and Culture",
+     "key": "ap_german"
+    },
+    {
+     "ledger_subject": "Human Geography",
+     "key": "ap_human_geography"
+    },
+    {
+     "ledger_subject": "Macroeconomics",
+     "key": "ap_macroeconomics"
+    },
+    {
+     "ledger_subject": "Physics 1",
+     "key": "ap_physics_1"
+    },
+    {
+     "ledger_subject": "Precalculus",
+     "key": "ap_precalculus"
+    },
+    {
+     "ledger_subject": "Psychology",
+     "key": "ap_psychology"
+    },
+    {
+     "ledger_subject": "Research",
+     "key": "ap_research"
+    },
+    {
+     "ledger_subject": "Seminar",
+     "key": "ap_seminar"
+    },
+    {
+     "ledger_subject": "Spanish Language and Culture",
+     "key": "ap_spanish_language"
+    },
+    {
+     "ledger_subject": "Spanish Literature and Culture",
+     "key": "ap_spanish_literature"
+    },
+    {
+     "ledger_subject": "Statistics",
+     "key": "ap_statistics"
+    },
+    {
+     "ledger_subject": "U.S. Government and Politics",
+     "key": "ap_us_government"
+    },
+    {
+     "ledger_subject": "United States History",
+     "key": "ap_us_history"
+    },
+    {
+     "ledger_subject": "World History: Modern",
+     "key": "ap_world_history_modern"
+    }
+   ],
+   "diff": -1,
+   "status": "matched",
+   "note": "Listed as \"Robert Millikan High School\".",
+   "diff_2023_24": 3
+  },
+  {
+   "id": "062271002998",
+   "name": "Fairfax Senior High",
+   "city": "Los Angeles",
+   "state": "CA",
+   "metro": "los-angeles",
+   "ledger_ai": "051590",
+   "ledger_name": "Fairfax High School",
+   "ledger_city": "Los Angeles",
+   "crdc_ap_courses": 22,
+   "ledger_ap_courses": 23,
+   "ledger_ap_courses_2023_24": 21,
+   "ledger_courses": [
+    {
+     "ledger_subject": "2-D Art and Design",
+     "key": "ap_2d_art_and_design"
+    },
+    {
+     "ledger_subject": "African American Studies",
+     "key": "ap_african_american_studies"
+    },
+    {
+     "ledger_subject": "Biology",
+     "key": "ap_biology"
+    },
+    {
+     "ledger_subject": "Calculus AB",
+     "key": "ap_calculus_ab"
+    },
+    {
+     "ledger_subject": "Calculus BC",
+     "key": "ap_calculus_bc"
+    },
+    {
+     "ledger_subject": "Chemistry",
+     "key": "ap_chemistry"
+    },
+    {
+     "ledger_subject": "Computer Science A",
+     "key": "ap_computer_science_a"
+    },
+    {
+     "ledger_subject": "Computer Science Principles",
+     "key": "ap_computer_science_principles"
+    },
+    {
+     "ledger_subject": "Drawing",
+     "key": "ap_drawing"
+    },
+    {
+     "ledger_subject": "English Language and Composition",
+     "key": "ap_english_language"
+    },
+    {
+     "ledger_subject": "English Literature and Composition",
+     "key": "ap_english_literature"
+    },
+    {
+     "ledger_subject": "Human Geography",
+     "key": "ap_human_geography"
+    },
+    {
+     "ledger_subject": "Macroeconomics",
+     "key": "ap_macroeconomics"
+    },
+    {
+     "ledger_subject": "Physics 1",
+     "key": "ap_physics_1"
+    },
+    {
+     "ledger_subject": "Precalculus",
+     "key": "ap_precalculus"
+    },
+    {
+     "ledger_subject": "Psychology",
+     "key": "ap_psychology"
+    },
+    {
+     "ledger_subject": "Seminar",
+     "key": "ap_seminar"
+    },
+    {
+     "ledger_subject": "Spanish Language and Culture",
+     "key": "ap_spanish_language"
+    },
+    {
+     "ledger_subject": "Spanish Literature and Culture",
+     "key": "ap_spanish_literature"
+    },
+    {
+     "ledger_subject": "Statistics",
+     "key": "ap_statistics"
+    },
+    {
+     "ledger_subject": "U.S. Government and Politics",
+     "key": "ap_us_government"
+    },
+    {
+     "ledger_subject": "United States History",
+     "key": "ap_us_history"
+    },
+    {
+     "ledger_subject": "World History: Modern",
+     "key": "ap_world_history_modern"
+    }
+   ],
+   "diff": 1,
+   "status": "matched",
+   "note": "Listed as \"Fairfax High School\".",
+   "diff_2023_24": -1
+  },
+  {
+   "id": "062271003325",
+   "name": "San Fernando Senior High",
+   "city": "San Fernando",
+   "state": "CA",
+   "metro": "los-angeles",
+   "ledger_ai": "052905",
+   "ledger_name": "San Fernando High School",
+   "ledger_city": "San Fernando",
+   "crdc_ap_courses": 13,
+   "ledger_ap_courses": 21,
+   "ledger_ap_courses_2023_24": 2,
+   "ledger_courses": [
+    {
+     "ledger_subject": "2-D Art and Design",
+     "key": "ap_2d_art_and_design"
+    },
+    {
+     "ledger_subject": "3-D Art and Design",
+     "key": "ap_3d_art_and_design"
+    },
+    {
+     "ledger_subject": "Biology",
+     "key": "ap_biology"
+    },
+    {
+     "ledger_subject": "Calculus AB",
+     "key": "ap_calculus_ab"
+    },
+    {
+     "ledger_subject": "Calculus BC",
+     "key": "ap_calculus_bc"
+    },
+    {
+     "ledger_subject": "Chemistry",
+     "key": "ap_chemistry"
+    },
+    {
+     "ledger_subject": "Computer Science A",
+     "key": "ap_computer_science_a"
+    },
+    {
+     "ledger_subject": "Computer Science Principles",
+     "key": "ap_computer_science_principles"
+    },
+    {
+     "ledger_subject": "English Language and Composition",
+     "key": "ap_english_language"
+    },
+    {
+     "ledger_subject": "English Literature and Composition",
+     "key": "ap_english_literature"
+    },
+    {
+     "ledger_subject": "Environmental Science",
+     "key": "ap_environmental_science"
+    },
+    {
+     "ledger_subject": "Macroeconomics",
+     "key": "ap_macroeconomics"
+    },
+    {
+     "ledger_subject": "Microeconomics",
+     "key": "ap_microeconomics"
+    },
+    {
+     "ledger_subject": "Physics 1",
+     "key": "ap_physics_1"
+    },
+    {
+     "ledger_subject": "Precalculus",
+     "key": "ap_precalculus"
+    },
+    {
+     "ledger_subject": "Seminar",
+     "key": "ap_seminar"
+    },
+    {
+     "ledger_subject": "Spanish Language and Culture",
+     "key": "ap_spanish_language"
+    },
+    {
+     "ledger_subject": "Spanish Literature and Culture",
+     "key": "ap_spanish_literature"
+    },
+    {
+     "ledger_subject": "U.S. Government and Politics",
+     "key": "ap_us_government"
+    },
+    {
+     "ledger_subject": "United States History",
+     "key": "ap_us_history"
+    },
+    {
+     "ledger_subject": "World History: Modern",
+     "key": "ap_world_history_modern"
+    }
+   ],
+   "diff": 8,
+   "status": "matched",
+   "note": "Listed as \"San Fernando High School\".",
+   "diff_2023_24": -11
+  },
+  {
+   "id": "062271011653",
+   "name": "Panorama High",
+   "city": "Panorama City",
+   "state": "CA",
+   "metro": "los-angeles",
+   "ledger_ai": "054081",
+   "ledger_name": "Panorama High School",
+   "ledger_city": "Panorama City",
+   "crdc_ap_courses": 12,
+   "ledger_ap_courses": 10,
+   "ledger_ap_courses_2023_24": 18,
+   "ledger_courses": [
+    {
+     "ledger_subject": "2-D Art and Design",
+     "key": "ap_2d_art_and_design"
+    },
+    {
+     "ledger_subject": "Calculus AB",
+     "key": "ap_calculus_ab"
+    },
+    {
+     "ledger_subject": "Drawing",
+     "key": "ap_drawing"
+    },
+    {
+     "ledger_subject": "English Language and Composition",
+     "key": "ap_english_language"
+    },
+    {
+     "ledger_subject": "English Literature and Composition",
+     "key": "ap_english_literature"
+    },
+    {
+     "ledger_subject": "Environmental Science",
+     "key": "ap_environmental_science"
+    },
+    {
+     "ledger_subject": "Precalculus",
+     "key": "ap_precalculus"
+    },
+    {
+     "ledger_subject": "Psychology",
+     "key": "ap_psychology"
+    },
+    {
+     "ledger_subject": "U.S. Government and Politics",
+     "key": "ap_us_government"
+    },
+    {
+     "ledger_subject": "United States History",
+     "key": "ap_us_history"
+    }
+   ],
+   "diff": -2,
+   "status": "matched",
+   "note": null,
+   "diff_2023_24": 6
+  },
+  {
+   "id": "062271012898",
+   "name": "Rancho Dominguez Preparatory",
+   "city": "Long Beach",
+   "state": "CA",
+   "metro": "los-angeles",
+   "ledger_ai": "054525",
+   "ledger_name": "Rancho Dominguez Preparatory School",
+   "ledger_city": "Long Beach",
+   "crdc_ap_courses": 6,
+   "ledger_ap_courses": 8,
+   "ledger_ap_courses_2023_24": 7,
+   "ledger_courses": [
+    {
+     "ledger_subject": "African American Studies",
+     "key": "ap_african_american_studies"
+    },
+    {
+     "ledger_subject": "Drawing",
+     "key": "ap_drawing"
+    },
+    {
+     "ledger_subject": "English Language and Composition",
+     "key": "ap_english_language"
+    },
+    {
+     "ledger_subject": "English Literature and Composition",
+     "key": "ap_english_literature"
+    },
+    {
+     "ledger_subject": "Macroeconomics",
+     "key": "ap_macroeconomics"
+    },
+    {
+     "ledger_subject": "U.S. Government and Politics",
+     "key": "ap_us_government"
+    },
+    {
+     "ledger_subject": "United States History",
+     "key": "ap_us_history"
+    },
+    {
+     "ledger_subject": "World History: Modern",
+     "key": "ap_world_history_modern"
+    }
+   ],
+   "diff": 2,
+   "status": "matched",
+   "note": null,
+   "diff_2023_24": 1
+  },
+  {
+   "id": "062271012937",
+   "name": "Diego Rivera Learning Complex Green Design STEAM Academy",
+   "city": "Los Angeles",
+   "state": "CA",
+   "metro": "los-angeles",
+   "ledger_ai": "051622",
+   "ledger_name": "Green Design Stem Academy",
+   "ledger_city": "Los Angeles",
+   "crdc_ap_courses": 10,
+   "ledger_ap_courses": 12,
+   "ledger_ap_courses_2023_24": 11,
+   "ledger_courses": [
+    {
+     "ledger_subject": "Calculus AB",
+     "key": "ap_calculus_ab"
+    },
+    {
+     "ledger_subject": "English Language and Composition",
+     "key": "ap_english_language"
+    },
+    {
+     "ledger_subject": "English Literature and Composition",
+     "key": "ap_english_literature"
+    },
+    {
+     "ledger_subject": "Environmental Science",
+     "key": "ap_environmental_science"
+    },
+    {
+     "ledger_subject": "Physics 1",
+     "key": "ap_physics_1"
+    },
+    {
+     "ledger_subject": "Precalculus",
+     "key": "ap_precalculus"
+    },
+    {
+     "ledger_subject": "Spanish Language and Culture",
+     "key": "ap_spanish_language"
+    },
+    {
+     "ledger_subject": "Spanish Literature and Culture",
+     "key": "ap_spanish_literature"
+    },
+    {
+     "ledger_subject": "Statistics",
+     "key": "ap_statistics"
+    },
+    {
+     "ledger_subject": "U.S. Government and Politics",
+     "key": "ap_us_government"
+    },
+    {
+     "ledger_subject": "United States History",
+     "key": "ap_us_history"
+    },
+    {
+     "ledger_subject": "World History: Modern",
+     "key": "ap_world_history_modern"
+    }
+   ],
+   "diff": 2,
+   "status": "matched",
+   "note": "The Ledger lists the Diego Rivera Learning Complex as four schools at 6100 S Central Ave; this one is \"Green Design Stem Academy\".",
+   "diff_2023_24": 1
+  },
+  {
+   "id": "063066004757",
+   "name": "El Dorado High",
+   "city": "Placentia",
+   "state": "CA",
+   "metro": "los-angeles",
+   "ledger_ai": "052478",
+   "ledger_name": "El Dorado High School",
+   "ledger_city": "Placentia",
+   "crdc_ap_courses": 20,
+   "ledger_ap_courses": 21,
+   "ledger_ap_courses_2023_24": 22,
+   "ledger_courses": [
+    {
+     "ledger_subject": "2-D Art and Design",
+     "key": "ap_2d_art_and_design"
+    },
+    {
+     "ledger_subject": "3-D Art and Design",
+     "key": "ap_3d_art_and_design"
+    },
+    {
+     "ledger_subject": "Biology",
+     "key": "ap_biology"
+    },
+    {
+     "ledger_subject": "Calculus AB",
+     "key": "ap_calculus_ab"
+    },
+    {
+     "ledger_subject": "Calculus BC",
+     "key": "ap_calculus_bc"
+    },
+    {
+     "ledger_subject": "Chemistry",
+     "key": "ap_chemistry"
+    },
+    {
+     "ledger_subject": "Computer Science Principles",
+     "key": "ap_computer_science_principles"
+    },
+    {
+     "ledger_subject": "Drawing",
+     "key": "ap_drawing"
+    },
+    {
+     "ledger_subject": "English Language and Composition",
+     "key": "ap_english_language"
+    },
+    {
+     "ledger_subject": "English Literature and Composition",
+     "key": "ap_english_literature"
+    },
+    {
+     "ledger_subject": "Environmental Science",
+     "key": "ap_environmental_science"
+    },
+    {
+     "ledger_subject": "European History",
+     "key": "ap_european_history"
+    },
+    {
+     "ledger_subject": "French Language and Culture",
+     "key": "ap_french"
+    },
+    {
+     "ledger_subject": "Japanese Language and Culture",
+     "key": "ap_japanese"
+    },
+    {
+     "ledger_subject": "Macroeconomics",
+     "key": "ap_macroeconomics"
+    },
+    {
+     "ledger_subject": "Physics 1",
+     "key": "ap_physics_1"
+    },
+    {
+     "ledger_subject": "Psychology",
+     "key": "ap_psychology"
+    },
+    {
+     "ledger_subject": "Spanish Language and Culture",
+     "key": "ap_spanish_language"
+    },
+    {
+     "ledger_subject": "Statistics",
+     "key": "ap_statistics"
+    },
+    {
+     "ledger_subject": "U.S. Government and Politics",
+     "key": "ap_us_government"
+    },
+    {
+     "ledger_subject": "United States History",
+     "key": "ap_us_history"
+    }
+   ],
+   "diff": 1,
+   "status": "matched",
+   "note": null,
+   "diff_2023_24": 2
+  },
+  {
+   "id": "063375005207",
+   "name": "Nogales High",
+   "city": "La Puente",
+   "state": "CA",
+   "metro": "los-angeles",
+   "ledger_ai": "051357",
+   "ledger_name": "Nogales High School",
+   "ledger_city": "La Puente",
+   "crdc_ap_courses": 14,
+   "ledger_ap_courses": 19,
+   "ledger_ap_courses_2023_24": 16,
+   "ledger_courses": [
+    {
+     "ledger_subject": "2-D Art and Design",
+     "key": "ap_2d_art_and_design"
+    },
+    {
+     "ledger_subject": "3-D Art and Design",
+     "key": "ap_3d_art_and_design"
+    },
+    {
+     "ledger_subject": "Calculus AB",
+     "key": "ap_calculus_ab"
+    },
+    {
+     "ledger_subject": "Calculus BC",
+     "key": "ap_calculus_bc"
+    },
+    {
+     "ledger_subject": "Drawing",
+     "key": "ap_drawing"
+    },
+    {
+     "ledger_subject": "English Language and Composition",
+     "key": "ap_english_language"
+    },
+    {
+     "ledger_subject": "English Literature and Composition",
+     "key": "ap_english_literature"
+    },
+    {
+     "ledger_subject": "Environmental Science",
+     "key": "ap_environmental_science"
+    },
+    {
+     "ledger_subject": "European History",
+     "key": "ap_european_history"
+    },
+    {
+     "ledger_subject": "French Language and Culture",
+     "key": "ap_french"
+    },
+    {
+     "ledger_subject": "Macroeconomics",
+     "key": "ap_macroeconomics"
+    },
+    {
+     "ledger_subject": "Physics 1",
+     "key": "ap_physics_1"
+    },
+    {
+     "ledger_subject": "Precalculus",
+     "key": "ap_precalculus"
+    },
+    {
+     "ledger_subject": "Psychology",
+     "key": "ap_psychology"
+    },
+    {
+     "ledger_subject": "Spanish Language and Culture",
+     "key": "ap_spanish_language"
+    },
+    {
+     "ledger_subject": "Spanish Literature and Culture",
+     "key": "ap_spanish_literature"
+    },
+    {
+     "ledger_subject": "Statistics",
+     "key": "ap_statistics"
+    },
+    {
+     "ledger_subject": "U.S. Government and Politics",
+     "key": "ap_us_government"
+    },
+    {
+     "ledger_subject": "United States History",
+     "key": "ap_us_history"
+    }
+   ],
+   "diff": 5,
+   "status": "matched",
+   "note": null,
+   "diff_2023_24": 2
+  },
+  {
+   "id": "063942006576",
+   "name": "Torrance High",
+   "city": "Torrance",
+   "state": "CA",
+   "metro": "los-angeles",
+   "ledger_ai": "053523",
+   "ledger_name": "Torrance High School",
+   "ledger_city": "Torrance",
+   "crdc_ap_courses": 18,
+   "ledger_ap_courses": 20,
+   "ledger_ap_courses_2023_24": 20,
+   "ledger_courses": [
+    {
+     "ledger_subject": "Biology",
+     "key": "ap_biology"
+    },
+    {
+     "ledger_subject": "Calculus AB",
+     "key": "ap_calculus_ab"
+    },
+    {
+     "ledger_subject": "Calculus BC",
+     "key": "ap_calculus_bc"
+    },
+    {
+     "ledger_subject": "Chemistry",
+     "key": "ap_chemistry"
+    },
+    {
+     "ledger_subject": "Computer Science Principles",
+     "key": "ap_computer_science_principles"
+    },
+    {
+     "ledger_subject": "English Language and Composition",
+     "key": "ap_english_language"
+    },
+    {
+     "ledger_subject": "English Literature and Composition",
+     "key": "ap_english_literature"
+    },
+    {
+     "ledger_subject": "Environmental Science",
+     "key": "ap_environmental_science"
+    },
+    {
+     "ledger_subject": "Human Geography",
+     "key": "ap_human_geography"
+    },
+    {
+     "ledger_subject": "Japanese Language and Culture",
+     "key": "ap_japanese"
+    },
+    {
+     "ledger_subject": "Macroeconomics",
+     "key": "ap_macroeconomics"
+    },
+    {
+     "ledger_subject": "Music Theory",
+     "key": "ap_music_theory"
+    },
+    {
+     "ledger_subject": "Physics 1",
+     "key": "ap_physics_1"
+    },
+    {
+     "ledger_subject": "Precalculus",
+     "key": "ap_precalculus"
+    },
+    {
+     "ledger_subject": "Psychology",
+     "key": "ap_psychology"
+    },
+    {
+     "ledger_subject": "Spanish Language and Culture",
+     "key": "ap_spanish_language"
+    },
+    {
+     "ledger_subject": "Statistics",
+     "key": "ap_statistics"
+    },
+    {
+     "ledger_subject": "U.S. Government and Politics",
+     "key": "ap_us_government"
+    },
+    {
+     "ledger_subject": "United States History",
+     "key": "ap_us_history"
+    },
+    {
+     "ledger_subject": "World History: Modern",
+     "key": "ap_world_history_modern"
+    }
+   ],
+   "diff": 2,
+   "status": "matched",
+   "note": null,
+   "diff_2023_24": 2
+  },
+  {
+   "id": "360014005777",
+   "name": "Harlem Children's Zone Promise Academy II Charter School",
+   "city": "New York",
+   "state": "NY",
+   "metro": "new-york",
+   "ledger_ai": "331161",
+   "ledger_name": "Harlem C Z Promise Academy High School II",
+   "ledger_city": "New York",
+   "crdc_ap_courses": 7,
+   "ledger_ap_courses": 9,
+   "ledger_ap_courses_2023_24": 6,
+   "ledger_courses": [
+    {
+     "ledger_subject": "African American Studies",
+     "key": "ap_african_american_studies"
+    },
+    {
+     "ledger_subject": "Biology",
+     "key": "ap_biology"
+    },
+    {
+     "ledger_subject": "English Language and Composition",
+     "key": "ap_english_language"
+    },
+    {
+     "ledger_subject": "English Literature and Composition",
+     "key": "ap_english_literature"
+    },
+    {
+     "ledger_subject": "Precalculus",
+     "key": "ap_precalculus"
+    },
+    {
+     "ledger_subject": "Psychology",
+     "key": "ap_psychology"
+    },
+    {
+     "ledger_subject": "U.S. Government and Politics",
+     "key": "ap_us_government"
+    },
+    {
+     "ledger_subject": "United States History",
+     "key": "ap_us_history"
+    },
+    {
+     "ledger_subject": "World History: Modern",
+     "key": "ap_world_history_modern"
+    }
+   ],
+   "diff": 2,
+   "status": "matched",
+   "note": "Listed as \"Harlem C Z Promise Academy High School II\".",
+   "diff_2023_24": -1
+  },
+  {
+   "id": "360120306678",
+   "name": "KIPP Bronx Charter School III",
+   "city": "Bronx",
+   "state": "NY",
+   "metro": "new-york",
+   "ledger_ai": null,
+   "ledger_name": null,
+   "ledger_city": null,
+   "crdc_ap_courses": 5,
+   "ledger_ap_courses": null,
+   "ledger_ap_courses_2023_24": null,
+   "ledger_courses": [],
+   "diff": null,
+   "status": "ambiguous",
+   "note": "No Ledger school by this name. NCES merges KIPP NYC schools under this charter (K–12, 2,390 students at 1504 Macombs Rd); the only KIPP high school in the Bronx Ledger is KIPP NYC College Preparatory High School (201 E 144th St; 19 AP courses in 2025–26, 17 in 2023–24), which may be one of its sites. Not scored rather than guessed."
+  },
+  {
+   "id": "480029213362",
+   "name": "Harmony Science Academy - Carrollton",
+   "city": "Carrollton",
+   "state": "TX",
+   "metro": "dallas-fort-worth",
+   "ledger_ai": "441134",
+   "ledger_name": "Harmony Science Academy - Carrollton",
+   "ledger_city": "Carrollton",
+   "crdc_ap_courses": 9,
+   "ledger_ap_courses": 11,
+   "ledger_ap_courses_2023_24": 13,
+   "ledger_courses": [
+    {
+     "ledger_subject": "Biology",
+     "key": "ap_biology"
+    },
+    {
+     "ledger_subject": "Calculus AB",
+     "key": "ap_calculus_ab"
+    },
+    {
+     "ledger_subject": "Chemistry",
+     "key": "ap_chemistry"
+    },
+    {
+     "ledger_subject": "Computer Science Principles",
+     "key": "ap_computer_science_principles"
+    },
+    {
+     "ledger_subject": "English Literature and Composition",
+     "key": "ap_english_literature"
+    },
+    {
+     "ledger_subject": "Human Geography",
+     "key": "ap_human_geography"
+    },
+    {
+     "ledger_subject": "Research",
+     "key": "ap_research"
+    },
+    {
+     "ledger_subject": "Spanish Language and Culture",
+     "key": "ap_spanish_language"
+    },
+    {
+     "ledger_subject": "Spanish Literature and Culture",
+     "key": "ap_spanish_literature"
+    },
+    {
+     "ledger_subject": "United States History",
+     "key": "ap_us_history"
+    },
+    {
+     "ledger_subject": "World History: Modern",
+     "key": "ap_world_history_modern"
+    }
+   ],
+   "diff": 2,
+   "status": "matched",
+   "note": null,
+   "diff_2023_24": 4
+  },
+  {
+   "id": "480920000382",
+   "name": "Azle High School",
+   "city": "Azle",
+   "state": "TX",
+   "metro": "dallas-fort-worth",
+   "ledger_ai": "440375",
+   "ledger_name": "Azle High School",
+   "ledger_city": "Azle",
+   "crdc_ap_courses": 16,
+   "ledger_ap_courses": 13,
+   "ledger_ap_courses_2023_24": 15,
+   "ledger_courses": [
+    {
+     "ledger_subject": "2-D Art and Design",
+     "key": "ap_2d_art_and_design"
+    },
+    {
+     "ledger_subject": "3-D Art and Design",
+     "key": "ap_3d_art_and_design"
+    },
+    {
+     "ledger_subject": "Calculus AB",
+     "key": "ap_calculus_ab"
+    },
+    {
+     "ledger_subject": "Chemistry",
+     "key": "ap_chemistry"
+    },
+    {
+     "ledger_subject": "Drawing",
+     "key": "ap_drawing"
+    },
+    {
+     "ledger_subject": "English Language and Composition",
+     "key": "ap_english_language"
+    },
+    {
+     "ledger_subject": "English Literature and Composition",
+     "key": "ap_english_literature"
+    },
+    {
+     "ledger_subject": "Environmental Science",
+     "key": "ap_environmental_science"
+    },
+    {
+     "ledger_subject": "Human Geography",
+     "key": "ap_human_geography"
+    },
+    {
+     "ledger_subject": "Music Theory",
+     "key": "ap_music_theory"
+    },
+    {
+     "ledger_subject": "Precalculus",
+     "key": "ap_precalculus"
+    },
+    {
+     "ledger_subject": "Spanish Language and Culture",
+     "key": "ap_spanish_language"
+    },
+    {
+     "ledger_subject": "World History: Modern",
+     "key": "ap_world_history_modern"
+    }
+   ],
+   "diff": -3,
+   "status": "matched",
+   "note": null,
+   "diff_2023_24": -1
+  },
+  {
+   "id": "481305009190",
+   "name": "Ranchview High School",
+   "city": "Irving",
+   "state": "TX",
+   "metro": "dallas-fort-worth",
+   "ledger_ai": "443572",
+   "ledger_name": "Ranchview High School",
+   "ledger_city": "Irving",
+   "crdc_ap_courses": 17,
+   "ledger_ap_courses": 20,
+   "ledger_ap_courses_2023_24": 16,
+   "ledger_courses": [
+    {
+     "ledger_subject": "2-D Art and Design",
+     "key": "ap_2d_art_and_design"
+    },
+    {
+     "ledger_subject": "Biology",
+     "key": "ap_biology"
+    },
+    {
+     "ledger_subject": "Calculus AB",
+     "key": "ap_calculus_ab"
+    },
+    {
+     "ledger_subject": "Computer Science A",
+     "key": "ap_computer_science_a"
+    },
+    {
+     "ledger_subject": "Computer Science Principles",
+     "key": "ap_computer_science_principles"
+    },
+    {
+     "ledger_subject": "English Language and Composition",
+     "key": "ap_english_language"
+    },
+    {
+     "ledger_subject": "English Literature and Composition",
+     "key": "ap_english_literature"
+    },
+    {
+     "ledger_subject": "Environmental Science",
+     "key": "ap_environmental_science"
+    },
+    {
+     "ledger_subject": "Human Geography",
+     "key": "ap_human_geography"
+    },
+    {
+     "ledger_subject": "Macroeconomics",
+     "key": "ap_macroeconomics"
+    },
+    {
+     "ledger_subject": "Music Theory",
+     "key": "ap_music_theory"
+    },
+    {
+     "ledger_subject": "Physics 1",
+     "key": "ap_physics_1"
+    },
+    {
+     "ledger_subject": "Physics C: Mechanics",
+     "key": "ap_physics_c_mechanics"
+    },
+    {
+     "ledger_subject": "Precalculus",
+     "key": "ap_precalculus"
+    },
+    {
+     "ledger_subject": "Psychology",
+     "key": "ap_psychology"
+    },
+    {
+     "ledger_subject": "Spanish Language and Culture",
+     "key": "ap_spanish_language"
+    },
+    {
+     "ledger_subject": "Statistics",
+     "key": "ap_statistics"
+    },
+    {
+     "ledger_subject": "U.S. Government and Politics",
+     "key": "ap_us_government"
+    },
+    {
+     "ledger_subject": "United States History",
+     "key": "ap_us_history"
+    },
+    {
+     "ledger_subject": "World History: Modern",
+     "key": "ap_world_history_modern"
+    }
+   ],
+   "diff": 3,
+   "status": "matched",
+   "note": null,
+   "diff_2023_24": -1
+  },
+  {
+   "id": "481317000817",
+   "name": "Castleberry High School",
+   "city": "Fort Worth",
+   "state": "TX",
+   "metro": "dallas-fort-worth",
+   "ledger_ai": "442512",
+   "ledger_name": "Castleberry High School",
+   "ledger_city": "River Oaks",
+   "crdc_ap_courses": 8,
+   "ledger_ap_courses": 8,
+   "ledger_ap_courses_2023_24": 9,
+   "ledger_courses": [
+    {
+     "ledger_subject": "2-D Art and Design",
+     "key": "ap_2d_art_and_design"
+    },
+    {
+     "ledger_subject": "Calculus AB",
+     "key": "ap_calculus_ab"
+    },
+    {
+     "ledger_subject": "Computer Science Principles",
+     "key": "ap_computer_science_principles"
+    },
+    {
+     "ledger_subject": "Drawing",
+     "key": "ap_drawing"
+    },
+    {
+     "ledger_subject": "Music Theory",
+     "key": "ap_music_theory"
+    },
+    {
+     "ledger_subject": "Spanish Language and Culture",
+     "key": "ap_spanish_language"
+    },
+    {
+     "ledger_subject": "Spanish Literature and Culture",
+     "key": "ap_spanish_literature"
+    },
+    {
+     "ledger_subject": "World History: Modern",
+     "key": "ap_world_history_modern"
+    }
+   ],
+   "diff": 0,
+   "status": "matched",
+   "note": "The Ledger places Castleberry High School in River Oaks (its own city inside Fort Worth; same Castleberry ISD).",
+   "diff_2023_24": 1
+  },
+  {
+   "id": "481623001204",
+   "name": "New Tech High School at B F Darrell High School",
+   "city": "Dallas",
+   "state": "TX",
+   "metro": "dallas-fort-worth",
+   "ledger_ai": "441742",
+   "ledger_name": "New Technical High School at BF Darrell",
+   "ledger_city": "Dallas",
+   "crdc_ap_courses": 10,
+   "ledger_ap_courses": 10,
+   "ledger_ap_courses_2023_24": 11,
+   "ledger_courses": [
+    {
+     "ledger_subject": "2-D Art and Design",
+     "key": "ap_2d_art_and_design"
+    },
+    {
+     "ledger_subject": "3-D Art and Design",
+     "key": "ap_3d_art_and_design"
+    },
+    {
+     "ledger_subject": "Computer Science Principles",
+     "key": "ap_computer_science_principles"
+    },
+    {
+     "ledger_subject": "Drawing",
+     "key": "ap_drawing"
+    },
+    {
+     "ledger_subject": "English Language and Composition",
+     "key": "ap_english_language"
+    },
+    {
+     "ledger_subject": "English Literature and Composition",
+     "key": "ap_english_literature"
+    },
+    {
+     "ledger_subject": "Environmental Science",
+     "key": "ap_environmental_science"
+    },
+    {
+     "ledger_subject": "Human Geography",
+     "key": "ap_human_geography"
+    },
+    {
+     "ledger_subject": "Statistics",
+     "key": "ap_statistics"
+    },
+    {
+     "ledger_subject": "United States History",
+     "key": "ap_us_history"
+    }
+   ],
+   "diff": 0,
+   "status": "matched",
+   "note": "Listed as \"New Technical High School at BF Darrell\".",
+   "diff_2023_24": 1
+  },
+  {
+   "id": "481623001273",
+   "name": "School of Health Professions",
+   "city": "Dallas",
+   "state": "TX",
+   "metro": "dallas-fort-worth",
+   "ledger_ai": "441739",
+   "ledger_name": "School of Health Professions Yvonne A Ewell Townview Center",
+   "ledger_city": "Dallas",
+   "crdc_ap_courses": 20,
+   "ledger_ap_courses": 25,
+   "ledger_ap_courses_2023_24": 24,
+   "ledger_courses": [
+    {
+     "ledger_subject": "2-D Art and Design",
+     "key": "ap_2d_art_and_design"
+    },
+    {
+     "ledger_subject": "3-D Art and Design",
+     "key": "ap_3d_art_and_design"
+    },
+    {
+     "ledger_subject": "African American Studies",
+     "key": "ap_african_american_studies"
+    },
+    {
+     "ledger_subject": "Biology",
+     "key": "ap_biology"
+    },
+    {
+     "ledger_subject": "Calculus AB",
+     "key": "ap_calculus_ab"
+    },
+    {
+     "ledger_subject": "Calculus BC",
+     "key": "ap_calculus_bc"
+    },
+    {
+     "ledger_subject": "Drawing",
+     "key": "ap_drawing"
+    },
+    {
+     "ledger_subject": "English Language and Composition",
+     "key": "ap_english_language"
+    },
+    {
+     "ledger_subject": "English Literature and Composition",
+     "key": "ap_english_literature"
+    },
+    {
+     "ledger_subject": "Environmental Science",
+     "key": "ap_environmental_science"
+    },
+    {
+     "ledger_subject": "European History",
+     "key": "ap_european_history"
+    },
+    {
+     "ledger_subject": "Human Geography",
+     "key": "ap_human_geography"
+    },
+    {
+     "ledger_subject": "Macroeconomics",
+     "key": "ap_macroeconomics"
+    },
+    {
+     "ledger_subject": "Microeconomics",
+     "key": "ap_microeconomics"
+    },
+    {
+     "ledger_subject": "Music Theory",
+     "key": "ap_music_theory"
+    },
+    {
+     "ledger_subject": "Physics 1",
+     "key": "ap_physics_1"
+    },
+    {
+     "ledger_subject": "Precalculus",
+     "key": "ap_precalculus"
+    },
+    {
+     "ledger_subject": "Psychology",
+     "key": "ap_psychology"
+    },
+    {
+     "ledger_subject": "Seminar",
+     "key": "ap_seminar"
+    },
+    {
+     "ledger_subject": "Spanish Language and Culture",
+     "key": "ap_spanish_language"
+    },
+    {
+     "ledger_subject": "Spanish Literature and Culture",
+     "key": "ap_spanish_literature"
+    },
+    {
+     "ledger_subject": "Statistics",
+     "key": "ap_statistics"
+    },
+    {
+     "ledger_subject": "U.S. Government and Politics",
+     "key": "ap_us_government"
+    },
+    {
+     "ledger_subject": "United States History",
+     "key": "ap_us_history"
+    },
+    {
+     "ledger_subject": "World History: Modern",
+     "key": "ap_world_history_modern"
+    }
+   ],
+   "diff": 5,
+   "status": "matched",
+   "note": "Listed as \"School of Health Professions Yvonne A Ewell Townview Center\".",
+   "diff_2023_24": 4
+  },
+  {
+   "id": "481623001367",
+   "name": "Sunset High School",
+   "city": "Dallas",
+   "state": "TX",
+   "metro": "dallas-fort-worth",
+   "ledger_ai": "441820",
+   "ledger_name": "Sunset High School",
+   "ledger_city": "Dallas",
+   "crdc_ap_courses": 22,
+   "ledger_ap_courses": 23,
+   "ledger_ap_courses_2023_24": 24,
+   "ledger_courses": [
+    {
+     "ledger_subject": "2-D Art and Design",
+     "key": "ap_2d_art_and_design"
+    },
+    {
+     "ledger_subject": "Art History",
+     "key": "ap_art_history"
+    },
+    {
+     "ledger_subject": "Biology",
+     "key": "ap_biology"
+    },
+    {
+     "ledger_subject": "Calculus AB",
+     "key": "ap_calculus_ab"
+    },
+    {
+     "ledger_subject": "Chemistry",
+     "key": "ap_chemistry"
+    },
+    {
+     "ledger_subject": "Computer Science A",
+     "key": "ap_computer_science_a"
+    },
+    {
+     "ledger_subject": "Computer Science Principles",
+     "key": "ap_computer_science_principles"
+    },
+    {
+     "ledger_subject": "Drawing",
+     "key": "ap_drawing"
+    },
+    {
+     "ledger_subject": "English Language and Composition",
+     "key": "ap_english_language"
+    },
+    {
+     "ledger_subject": "English Literature and Composition",
+     "key": "ap_english_literature"
+    },
+    {
+     "ledger_subject": "Environmental Science",
+     "key": "ap_environmental_science"
+    },
+    {
+     "ledger_subject": "European History",
+     "key": "ap_european_history"
+    },
+    {
+     "ledger_subject": "Human Geography",
+     "key": "ap_human_geography"
+    },
+    {
+     "ledger_subject": "Macroeconomics",
+     "key": "ap_macroeconomics"
+    },
+    {
+     "ledger_subject": "Precalculus",
+     "key": "ap_precalculus"
+    },
+    {
+     "ledger_subject": "Psychology",
+     "key": "ap_psychology"
+    },
+    {
+     "ledger_subject": "Seminar",
+     "key": "ap_seminar"
+    },
+    {
+     "ledger_subject": "Spanish Language and Culture",
+     "key": "ap_spanish_language"
+    },
+    {
+     "ledger_subject": "Spanish Literature and Culture",
+     "key": "ap_spanish_literature"
+    },
+    {
+     "ledger_subject": "Statistics",
+     "key": "ap_statistics"
+    },
+    {
+     "ledger_subject": "U.S. Government and Politics",
+     "key": "ap_us_government"
+    },
+    {
+     "ledger_subject": "United States History",
+     "key": "ap_us_history"
+    },
+    {
+     "ledger_subject": "World History: Modern",
+     "key": "ap_world_history_modern"
+    }
+   ],
+   "diff": 1,
+   "status": "matched",
+   "note": null,
+   "diff_2023_24": 2
+  },
+  {
+   "id": "481623005441",
+   "name": "Rosie Sorrells Education and Social Services High School",
+   "city": "Dallas",
+   "state": "TX",
+   "metro": "dallas-fort-worth",
+   "ledger_ai": "441751",
+   "ledger_name": "R M Sorrells School Education And Soc Srvs",
+   "ledger_city": "Dallas",
+   "crdc_ap_courses": 18,
+   "ledger_ap_courses": 25,
+   "ledger_ap_courses_2023_24": 24,
+   "ledger_courses": [
+    {
+     "ledger_subject": "2-D Art and Design",
+     "key": "ap_2d_art_and_design"
+    },
+    {
+     "ledger_subject": "3-D Art and Design",
+     "key": "ap_3d_art_and_design"
+    },
+    {
+     "ledger_subject": "African American Studies",
+     "key": "ap_african_american_studies"
+    },
+    {
+     "ledger_subject": "Biology",
+     "key": "ap_biology"
+    },
+    {
+     "ledger_subject": "Calculus AB",
+     "key": "ap_calculus_ab"
+    },
+    {
+     "ledger_subject": "Calculus BC",
+     "key": "ap_calculus_bc"
+    },
+    {
+     "ledger_subject": "Drawing",
+     "key": "ap_drawing"
+    },
+    {
+     "ledger_subject": "English Language and Composition",
+     "key": "ap_english_language"
+    },
+    {
+     "ledger_subject": "English Literature and Composition",
+     "key": "ap_english_literature"
+    },
+    {
+     "ledger_subject": "Environmental Science",
+     "key": "ap_environmental_science"
+    },
+    {
+     "ledger_subject": "European History",
+     "key": "ap_european_history"
+    },
+    {
+     "ledger_subject": "French Language and Culture",
+     "key": "ap_french"
+    },
+    {
+     "ledger_subject": "Human Geography",
+     "key": "ap_human_geography"
+    },
+    {
+     "ledger_subject": "Macroeconomics",
+     "key": "ap_macroeconomics"
+    },
+    {
+     "ledger_subject": "Music Theory",
+     "key": "ap_music_theory"
+    },
+    {
+     "ledger_subject": "Physics 1",
+     "key": "ap_physics_1"
+    },
+    {
+     "ledger_subject": "Precalculus",
+     "key": "ap_precalculus"
+    },
+    {
+     "ledger_subject": "Psychology",
+     "key": "ap_psychology"
+    },
+    {
+     "ledger_subject": "Seminar",
+     "key": "ap_seminar"
+    },
+    {
+     "ledger_subject": "Spanish Language and Culture",
+     "key": "ap_spanish_language"
+    },
+    {
+     "ledger_subject": "Spanish Literature and Culture",
+     "key": "ap_spanish_literature"
+    },
+    {
+     "ledger_subject": "Statistics",
+     "key": "ap_statistics"
+    },
+    {
+     "ledger_subject": "U.S. Government and Politics",
+     "key": "ap_us_government"
+    },
+    {
+     "ledger_subject": "United States History",
+     "key": "ap_us_history"
+    },
+    {
+     "ledger_subject": "World History: Modern",
+     "key": "ap_world_history_modern"
+    }
+   ],
+   "diff": 7,
+   "status": "matched",
+   "note": "Listed as \"R M Sorrells School Education And Soc Srvs\" at the Townview Center (1201 E 8th St).",
+   "diff_2023_24": 6
+  },
+  {
+   "id": "481623005444",
+   "name": "Judge Barefoot Sanders Law Magnet",
+   "city": "Dallas",
+   "state": "TX",
+   "metro": "dallas-fort-worth",
+   "ledger_ai": "441769",
+   "ledger_name": "Judge Barefoot Sanders Law Magnet",
+   "ledger_city": "Dallas",
+   "crdc_ap_courses": 21,
+   "ledger_ap_courses": 25,
+   "ledger_ap_courses_2023_24": 25,
+   "ledger_courses": [
+    {
+     "ledger_subject": "2-D Art and Design",
+     "key": "ap_2d_art_and_design"
+    },
+    {
+     "ledger_subject": "3-D Art and Design",
+     "key": "ap_3d_art_and_design"
+    },
+    {
+     "ledger_subject": "African American Studies",
+     "key": "ap_african_american_studies"
+    },
+    {
+     "ledger_subject": "Biology",
+     "key": "ap_biology"
+    },
+    {
+     "ledger_subject": "Calculus AB",
+     "key": "ap_calculus_ab"
+    },
+    {
+     "ledger_subject": "Calculus BC",
+     "key": "ap_calculus_bc"
+    },
+    {
+     "ledger_subject": "Drawing",
+     "key": "ap_drawing"
+    },
+    {
+     "ledger_subject": "English Language and Composition",
+     "key": "ap_english_language"
+    },
+    {
+     "ledger_subject": "English Literature and Composition",
+     "key": "ap_english_literature"
+    },
+    {
+     "ledger_subject": "Environmental Science",
+     "key": "ap_environmental_science"
+    },
+    {
+     "ledger_subject": "European History",
+     "key": "ap_european_history"
+    },
+    {
+     "ledger_subject": "French Language and Culture",
+     "key": "ap_french"
+    },
+    {
+     "ledger_subject": "Human Geography",
+     "key": "ap_human_geography"
+    },
+    {
+     "ledger_subject": "Macroeconomics",
+     "key": "ap_macroeconomics"
+    },
+    {
+     "ledger_subject": "Physics 1",
+     "key": "ap_physics_1"
+    },
+    {
+     "ledger_subject": "Precalculus",
+     "key": "ap_precalculus"
+    },
+    {
+     "ledger_subject": "Psychology",
+     "key": "ap_psychology"
+    },
+    {
+     "ledger_subject": "Research",
+     "key": "ap_research"
+    },
+    {
+     "ledger_subject": "Seminar",
+     "key": "ap_seminar"
+    },
+    {
+     "ledger_subject": "Spanish Language and Culture",
+     "key": "ap_spanish_language"
+    },
+    {
+     "ledger_subject": "Spanish Literature and Culture",
+     "key": "ap_spanish_literature"
+    },
+    {
+     "ledger_subject": "Statistics",
+     "key": "ap_statistics"
+    },
+    {
+     "ledger_subject": "U.S. Government and Politics",
+     "key": "ap_us_government"
+    },
+    {
+     "ledger_subject": "United States History",
+     "key": "ap_us_history"
+    },
+    {
+     "ledger_subject": "World History: Modern",
+     "key": "ap_world_history_modern"
+    }
+   ],
+   "diff": 4,
+   "status": "matched",
+   "note": null,
+   "diff_2023_24": 4
+  },
+  {
+   "id": "481623012028",
+   "name": "Kathlyn Joy Gilliam Collegiate Academy",
+   "city": "Dallas",
+   "state": "TX",
+   "metro": "dallas-fort-worth",
+   "ledger_ai": "441861",
+   "ledger_name": "Kathlyn Joy Gilliam Academy",
+   "ledger_city": "Dallas",
+   "crdc_ap_courses": 1,
+   "ledger_ap_courses": 8,
+   "ledger_ap_courses_2023_24": 2,
+   "ledger_courses": [
+    {
+     "ledger_subject": "2-D Art and Design",
+     "key": "ap_2d_art_and_design"
+    },
+    {
+     "ledger_subject": "African American Studies",
+     "key": "ap_african_american_studies"
+    },
+    {
+     "ledger_subject": "Drawing",
+     "key": "ap_drawing"
+    },
+    {
+     "ledger_subject": "English Language and Composition",
+     "key": "ap_english_language"
+    },
+    {
+     "ledger_subject": "Human Geography",
+     "key": "ap_human_geography"
+    },
+    {
+     "ledger_subject": "Precalculus",
+     "key": "ap_precalculus"
+    },
+    {
+     "ledger_subject": "United States History",
+     "key": "ap_us_history"
+    },
+    {
+     "ledger_subject": "World History: Modern",
+     "key": "ap_world_history_modern"
+    }
+   ],
+   "diff": 7,
+   "status": "matched",
+   "note": "Listed as \"Kathlyn Joy Gilliam Academy\".",
+   "diff_2023_24": 1
+  },
+  {
+   "id": "481970001830",
+   "name": "Arlington Heights High School",
+   "city": "Fort Worth",
+   "state": "TX",
+   "metro": "dallas-fort-worth",
+   "ledger_ai": "442505",
+   "ledger_name": "Arlington Heights High School",
+   "ledger_city": "Fort Worth",
+   "crdc_ap_courses": 25,
+   "ledger_ap_courses": 22,
+   "ledger_ap_courses_2023_24": 23,
+   "ledger_courses": [
+    {
+     "ledger_subject": "2-D Art and Design",
+     "key": "ap_2d_art_and_design"
+    },
+    {
+     "ledger_subject": "3-D Art and Design",
+     "key": "ap_3d_art_and_design"
+    },
+    {
+     "ledger_subject": "Biology",
+     "key": "ap_biology"
+    },
+    {
+     "ledger_subject": "Calculus AB",
+     "key": "ap_calculus_ab"
+    },
+    {
+     "ledger_subject": "Calculus BC",
+     "key": "ap_calculus_bc"
+    },
+    {
+     "ledger_subject": "Computer Science Principles",
+     "key": "ap_computer_science_principles"
+    },
+    {
+     "ledger_subject": "Drawing",
+     "key": "ap_drawing"
+    },
+    {
+     "ledger_subject": "English Language and Composition",
+     "key": "ap_english_language"
+    },
+    {
+     "ledger_subject": "English Literature and Composition",
+     "key": "ap_english_literature"
+    },
+    {
+     "ledger_subject": "Environmental Science",
+     "key": "ap_environmental_science"
+    },
+    {
+     "ledger_subject": "French Language and Culture",
+     "key": "ap_french"
+    },
+    {
+     "ledger_subject": "Human Geography",
+     "key": "ap_human_geography"
+    },
+    {
+     "ledger_subject": "Macroeconomics",
+     "key": "ap_macroeconomics"
+    },
+    {
+     "ledger_subject": "Music Theory",
+     "key": "ap_music_theory"
+    },
+    {
+     "ledger_subject": "Research",
+     "key": "ap_research"
+    },
+    {
+     "ledger_subject": "Seminar",
+     "key": "ap_seminar"
+    },
+    {
+     "ledger_subject": "Spanish Language and Culture",
+     "key": "ap_spanish_language"
+    },
+    {
+     "ledger_subject": "Spanish Literature and Culture",
+     "key": "ap_spanish_literature"
+    },
+    {
+     "ledger_subject": "Statistics",
+     "key": "ap_statistics"
+    },
+    {
+     "ledger_subject": "U.S. Government and Politics",
+     "key": "ap_us_government"
+    },
+    {
+     "ledger_subject": "United States History",
+     "key": "ap_us_history"
+    },
+    {
+     "ledger_subject": "World History: Modern",
+     "key": "ap_world_history_modern"
+    }
+   ],
+   "diff": -3,
+   "status": "matched",
+   "note": null,
+   "diff_2023_24": -2
+  },
+  {
+   "id": "481970001857",
+   "name": "Eastern Hills High School",
+   "city": "Fort Worth",
+   "state": "TX",
+   "metro": "dallas-fort-worth",
+   "ledger_ai": "442518",
+   "ledger_name": "Eastern Hills High School",
+   "ledger_city": "Fort Worth",
+   "crdc_ap_courses": 3,
+   "ledger_ap_courses": 4,
+   "ledger_ap_courses_2023_24": 3,
+   "ledger_courses": [
+    {
+     "ledger_subject": "English Literature and Composition",
+     "key": "ap_english_literature"
+    },
+    {
+     "ledger_subject": "Macroeconomics",
+     "key": "ap_macroeconomics"
+    },
+    {
+     "ledger_subject": "Physics 1",
+     "key": "ap_physics_1"
+    },
+    {
+     "ledger_subject": "U.S. Government and Politics",
+     "key": "ap_us_government"
+    }
+   ],
+   "diff": 1,
+   "status": "matched",
+   "note": null,
+   "diff_2023_24": 0
+  },
+  {
+   "id": "481970001913",
+   "name": "Southwest High School",
+   "city": "Fort Worth",
+   "state": "TX",
+   "metro": "dallas-fort-worth",
+   "ledger_ai": "442565",
+   "ledger_name": "Southwest High School",
+   "ledger_city": "Fort Worth",
+   "crdc_ap_courses": 8,
+   "ledger_ap_courses": 6,
+   "ledger_ap_courses_2023_24": 3,
+   "ledger_courses": [
+    {
+     "ledger_subject": "Calculus AB",
+     "key": "ap_calculus_ab"
+    },
+    {
+     "ledger_subject": "English Literature and Composition",
+     "key": "ap_english_literature"
+    },
+    {
+     "ledger_subject": "Human Geography",
+     "key": "ap_human_geography"
+    },
+    {
+     "ledger_subject": "Macroeconomics",
+     "key": "ap_macroeconomics"
+    },
+    {
+     "ledger_subject": "Precalculus",
+     "key": "ap_precalculus"
+    },
+    {
+     "ledger_subject": "Spanish Language and Culture",
+     "key": "ap_spanish_language"
+    }
+   ],
+   "diff": -2,
+   "status": "matched",
+   "note": null,
+   "diff_2023_24": -5
+  },
+  {
+   "id": "482001013003",
+   "name": "Reedy High School",
+   "city": "Frisco",
+   "state": "TX",
+   "metro": "dallas-fort-worth",
+   "ledger_ai": "442627",
+   "ledger_name": "Rick Reedy High School",
+   "ledger_city": "Frisco",
+   "crdc_ap_courses": 30,
+   "ledger_ap_courses": 31,
+   "ledger_ap_courses_2023_24": 31,
+   "ledger_courses": [
+    {
+     "ledger_subject": "2-D Art and Design",
+     "key": "ap_2d_art_and_design"
+    },
+    {
+     "ledger_subject": "3-D Art and Design",
+     "key": "ap_3d_art_and_design"
+    },
+    {
+     "ledger_subject": "Art History",
+     "key": "ap_art_history"
+    },
+    {
+     "ledger_subject": "Biology",
+     "key": "ap_biology"
+    },
+    {
+     "ledger_subject": "Calculus AB",
+     "key": "ap_calculus_ab"
+    },
+    {
+     "ledger_subject": "Calculus BC",
+     "key": "ap_calculus_bc"
+    },
+    {
+     "ledger_subject": "Chemistry",
+     "key": "ap_chemistry"
+    },
+    {
+     "ledger_subject": "Computer Science A",
+     "key": "ap_computer_science_a"
+    },
+    {
+     "ledger_subject": "Computer Science Principles",
+     "key": "ap_computer_science_principles"
+    },
+    {
+     "ledger_subject": "Drawing",
+     "key": "ap_drawing"
+    },
+    {
+     "ledger_subject": "English Language and Composition",
+     "key": "ap_english_language"
+    },
+    {
+     "ledger_subject": "English Literature and Composition",
+     "key": "ap_english_literature"
+    },
+    {
+     "ledger_subject": "Environmental Science",
+     "key": "ap_environmental_science"
+    },
+    {
+     "ledger_subject": "European History",
+     "key": "ap_european_history"
+    },
+    {
+     "ledger_subject": "Human Geography",
+     "key": "ap_human_geography"
+    },
+    {
+     "ledger_subject": "Macroeconomics",
+     "key": "ap_macroeconomics"
+    },
+    {
+     "ledger_subject": "Music Theory",
+     "key": "ap_music_theory"
+    },
+    {
+     "ledger_subject": "Physics 1",
+     "key": "ap_physics_1"
+    },
+    {
+     "ledger_subject": "Physics 2",
+     "key": "ap_physics_2"
+    },
+    {
+     "ledger_subject": "Physics C: Electricity and Magnetism",
+     "key": "ap_physics_c_electricity_and_magnetism"
+    },
+    {
+     "ledger_subject": "Physics C: Mechanics",
+     "key": "ap_physics_c_mechanics"
+    },
+    {
+     "ledger_subject": "Precalculus",
+     "key": "ap_precalculus"
+    },
+    {
+     "ledger_subject": "Psychology",
+     "key": "ap_psychology"
+    },
+    {
+     "ledger_subject": "Research",
+     "key": "ap_research"
+    },
+    {
+     "ledger_subject": "Seminar",
+     "key": "ap_seminar"
+    },
+    {
+     "ledger_subject": "Spanish Language and Culture",
+     "key": "ap_spanish_language"
+    },
+    {
+     "ledger_subject": "Spanish Literature and Culture",
+     "key": "ap_spanish_literature"
+    },
+    {
+     "ledger_subject": "Statistics",
+     "key": "ap_statistics"
+    },
+    {
+     "ledger_subject": "U.S. Government and Politics",
+     "key": "ap_us_government"
+    },
+    {
+     "ledger_subject": "United States History",
+     "key": "ap_us_history"
+    },
+    {
+     "ledger_subject": "World History: Modern",
+     "key": "ap_world_history_modern"
+    }
+   ],
+   "diff": 1,
+   "status": "matched",
+   "note": "Listed as \"Rick Reedy High School\".",
+   "diff_2023_24": 1
+  },
+  {
+   "id": "482034006552",
+   "name": "Naaman Forest High School",
+   "city": "Garland",
+   "state": "TX",
+   "metro": "dallas-fort-worth",
+   "ledger_ai": "442736",
+   "ledger_name": "Naaman Forest High School",
+   "ledger_city": "Garland",
+   "crdc_ap_courses": 14,
+   "ledger_ap_courses": 17,
+   "ledger_ap_courses_2023_24": 18,
+   "ledger_courses": [
+    {
+     "ledger_subject": "2-D Art and Design",
+     "key": "ap_2d_art_and_design"
+    },
+    {
+     "ledger_subject": "3-D Art and Design",
+     "key": "ap_3d_art_and_design"
+    },
+    {
+     "ledger_subject": "African American Studies",
+     "key": "ap_african_american_studies"
+    },
+    {
+     "ledger_subject": "Calculus AB",
+     "key": "ap_calculus_ab"
+    },
+    {
+     "ledger_subject": "Computer Science A",
+     "key": "ap_computer_science_a"
+    },
+    {
+     "ledger_subject": "Computer Science Principles",
+     "key": "ap_computer_science_principles"
+    },
+    {
+     "ledger_subject": "Drawing",
+     "key": "ap_drawing"
+    },
+    {
+     "ledger_subject": "English Language and Composition",
+     "key": "ap_english_language"
+    },
+    {
+     "ledger_subject": "English Literature and Composition",
+     "key": "ap_english_literature"
+    },
+    {
+     "ledger_subject": "Environmental Science",
+     "key": "ap_environmental_science"
+    },
+    {
+     "ledger_subject": "Macroeconomics",
+     "key": "ap_macroeconomics"
+    },
+    {
+     "ledger_subject": "Music Theory",
+     "key": "ap_music_theory"
+    },
+    {
+     "ledger_subject": "Precalculus",
+     "key": "ap_precalculus"
+    },
+    {
+     "ledger_subject": "Spanish Language and Culture",
+     "key": "ap_spanish_language"
+    },
+    {
+     "ledger_subject": "U.S. Government and Politics",
+     "key": "ap_us_government"
+    },
+    {
+     "ledger_subject": "United States History",
+     "key": "ap_us_history"
+    },
+    {
+     "ledger_subject": "World History: Modern",
+     "key": "ap_world_history_modern"
+    }
+   ],
+   "diff": 3,
+   "status": "matched",
+   "note": null,
+   "diff_2023_24": 4
+  },
+  {
+   "id": "482034007256",
+   "name": "Rowlett High School",
+   "city": "Rowlett",
+   "state": "TX",
+   "metro": "dallas-fort-worth",
+   "ledger_ai": "446017",
+   "ledger_name": "Rowlett High School",
+   "ledger_city": "Rowlett",
+   "crdc_ap_courses": 17,
+   "ledger_ap_courses": 21,
+   "ledger_ap_courses_2023_24": 18,
+   "ledger_courses": [
+    {
+     "ledger_subject": "2-D Art and Design",
+     "key": "ap_2d_art_and_design"
+    },
+    {
+     "ledger_subject": "African American Studies",
+     "key": "ap_african_american_studies"
+    },
+    {
+     "ledger_subject": "Biology",
+     "key": "ap_biology"
+    },
+    {
+     "ledger_subject": "Calculus AB",
+     "key": "ap_calculus_ab"
+    },
+    {
+     "ledger_subject": "Calculus BC",
+     "key": "ap_calculus_bc"
+    },
+    {
+     "ledger_subject": "Chemistry",
+     "key": "ap_chemistry"
+    },
+    {
+     "ledger_subject": "Computer Science Principles",
+     "key": "ap_computer_science_principles"
+    },
+    {
+     "ledger_subject": "Drawing",
+     "key": "ap_drawing"
+    },
+    {
+     "ledger_subject": "English Language and Composition",
+     "key": "ap_english_language"
+    },
+    {
+     "ledger_subject": "English Literature and Composition",
+     "key": "ap_english_literature"
+    },
+    {
+     "ledger_subject": "Environmental Science",
+     "key": "ap_environmental_science"
+    },
+    {
+     "ledger_subject": "European History",
+     "key": "ap_european_history"
+    },
+    {
+     "ledger_subject": "Human Geography",
+     "key": "ap_human_geography"
+    },
+    {
+     "ledger_subject": "Macroeconomics",
+     "key": "ap_macroeconomics"
+    },
+    {
+     "ledger_subject": "Physics 1",
+     "key": "ap_physics_1"
+    },
+    {
+     "ledger_subject": "Psychology",
+     "key": "ap_psychology"
+    },
+    {
+     "ledger_subject": "Spanish Language and Culture",
+     "key": "ap_spanish_language"
+    },
+    {
+     "ledger_subject": "Statistics",
+     "key": "ap_statistics"
+    },
+    {
+     "ledger_subject": "U.S. Government and Politics",
+     "key": "ap_us_government"
+    },
+    {
+     "ledger_subject": "United States History",
+     "key": "ap_us_history"
+    },
+    {
+     "ledger_subject": "World History: Modern",
+     "key": "ap_world_history_modern"
+    }
+   ],
+   "diff": 4,
+   "status": "matched",
+   "note": null,
+   "diff_2023_24": 1
+  },
+  {
+   "id": "482730008195",
+   "name": "Hebron High School",
+   "city": "Carrollton",
+   "state": "TX",
+   "metro": "dallas-fort-worth",
+   "ledger_ai": "441146",
+   "ledger_name": "Hebron High School",
+   "ledger_city": "Carrollton",
+   "crdc_ap_courses": 27,
+   "ledger_ap_courses": 26,
+   "ledger_ap_courses_2023_24": 26,
+   "ledger_courses": [
+    {
+     "ledger_subject": "2-D Art and Design",
+     "key": "ap_2d_art_and_design"
+    },
+    {
+     "ledger_subject": "3-D Art and Design",
+     "key": "ap_3d_art_and_design"
+    },
+    {
+     "ledger_subject": "Art History",
+     "key": "ap_art_history"
+    },
+    {
+     "ledger_subject": "Biology",
+     "key": "ap_biology"
+    },
+    {
+     "ledger_subject": "Calculus AB",
+     "key": "ap_calculus_ab"
+    },
+    {
+     "ledger_subject": "Calculus BC",
+     "key": "ap_calculus_bc"
+    },
+    {
+     "ledger_subject": "Chemistry",
+     "key": "ap_chemistry"
+    },
+    {
+     "ledger_subject": "Computer Science A",
+     "key": "ap_computer_science_a"
+    },
+    {
+     "ledger_subject": "Drawing",
+     "key": "ap_drawing"
+    },
+    {
+     "ledger_subject": "English Language and Composition",
+     "key": "ap_english_language"
+    },
+    {
+     "ledger_subject": "English Literature and Composition",
+     "key": "ap_english_literature"
+    },
+    {
+     "ledger_subject": "Environmental Science",
+     "key": "ap_environmental_science"
+    },
+    {
+     "ledger_subject": "European History",
+     "key": "ap_european_history"
+    },
+    {
+     "ledger_subject": "French Language and Culture",
+     "key": "ap_french"
+    },
+    {
+     "ledger_subject": "Macroeconomics",
+     "key": "ap_macroeconomics"
+    },
+    {
+     "ledger_subject": "Microeconomics",
+     "key": "ap_microeconomics"
+    },
+    {
+     "ledger_subject": "Physics 1",
+     "key": "ap_physics_1"
+    },
+    {
+     "ledger_subject": "Physics C: Electricity and Magnetism",
+     "key": "ap_physics_c_electricity_and_magnetism"
+    },
+    {
+     "ledger_subject": "Physics C: Mechanics",
+     "key": "ap_physics_c_mechanics"
+    },
+    {
+     "ledger_subject": "Precalculus",
+     "key": "ap_precalculus"
+    },
+    {
+     "ledger_subject": "Psychology",
+     "key": "ap_psychology"
+    },
+    {
+     "ledger_subject": "Spanish Language and Culture",
+     "key": "ap_spanish_language"
+    },
+    {
+     "ledger_subject": "Statistics",
+     "key": "ap_statistics"
+    },
+    {
+     "ledger_subject": "U.S. Government and Politics",
+     "key": "ap_us_government"
+    },
+    {
+     "ledger_subject": "United States History",
+     "key": "ap_us_history"
+    },
+    {
+     "ledger_subject": "World History: Modern",
+     "key": "ap_world_history_modern"
+    }
+   ],
+   "diff": -1,
+   "status": "matched",
+   "note": null,
+   "diff_2023_24": -1
+  },
+  {
+   "id": "482892011022",
+   "name": "Mansfield Timberview High School",
+   "city": "Arlington",
+   "state": "TX",
+   "metro": "dallas-fort-worth",
+   "ledger_ai": "440263",
+   "ledger_name": "Timberview High School",
+   "ledger_city": "Arlington",
+   "crdc_ap_courses": 24,
+   "ledger_ap_courses": 20,
+   "ledger_ap_courses_2023_24": 24,
+   "ledger_courses": [
+    {
+     "ledger_subject": "2-D Art and Design",
+     "key": "ap_2d_art_and_design"
+    },
+    {
+     "ledger_subject": "3-D Art and Design",
+     "key": "ap_3d_art_and_design"
+    },
+    {
+     "ledger_subject": "Biology",
+     "key": "ap_biology"
+    },
+    {
+     "ledger_subject": "Calculus AB",
+     "key": "ap_calculus_ab"
+    },
+    {
+     "ledger_subject": "Calculus BC",
+     "key": "ap_calculus_bc"
+    },
+    {
+     "ledger_subject": "Chemistry",
+     "key": "ap_chemistry"
+    },
+    {
+     "ledger_subject": "Drawing",
+     "key": "ap_drawing"
+    },
+    {
+     "ledger_subject": "English Language and Composition",
+     "key": "ap_english_language"
+    },
+    {
+     "ledger_subject": "English Literature and Composition",
+     "key": "ap_english_literature"
+    },
+    {
+     "ledger_subject": "Environmental Science",
+     "key": "ap_environmental_science"
+    },
+    {
+     "ledger_subject": "Human Geography",
+     "key": "ap_human_geography"
+    },
+    {
+     "ledger_subject": "Macroeconomics",
+     "key": "ap_macroeconomics"
+    },
+    {
+     "ledger_subject": "Physics 1",
+     "key": "ap_physics_1"
+    },
+    {
+     "ledger_subject": "Precalculus",
+     "key": "ap_precalculus"
+    },
+    {
+     "ledger_subject": "Psychology",
+     "key": "ap_psychology"
+    },
+    {
+     "ledger_subject": "Seminar",
+     "key": "ap_seminar"
+    },
+    {
+     "ledger_subject": "Spanish Language and Culture",
+     "key": "ap_spanish_language"
+    },
+    {
+     "ledger_subject": "U.S. Government and Politics",
+     "key": "ap_us_government"
+    },
+    {
+     "ledger_subject": "United States History",
+     "key": "ap_us_history"
+    },
+    {
+     "ledger_subject": "World History: Modern",
+     "key": "ap_world_history_modern"
+    }
+   ],
+   "diff": -4,
+   "status": "matched",
+   "note": "Listed as \"Timberview High School\" (Mansfield ISD, Arlington).",
+   "diff_2023_24": 0
+  }
+ ],
+ "coverage_beyond_crdc": {
+  "private": {
+   "schools": 33,
+   "in_ledger": 21,
+   "with_ap_courses": 20,
+   "median_ap_courses": 13
+  },
+  "public_without_crdc_count": {
+   "schools": 25,
+   "in_ledger": 18,
+   "with_ap_courses": 15
+  }
+ },
+ "unscored": [
+  {
+   "id": "060161114040",
+   "name": "Orange County Workforce Innovation High",
+   "city": "Anaheim",
+   "state": "CA",
+   "kind": "public",
+   "metro": "los-angeles",
+   "ledger_ai": null,
+   "ledger_name": null,
+   "ledger_city": null,
+   "ledger_ap_courses": null,
+   "status": "unmatched"
+  },
+  {
+   "id": "A1790055",
+   "name": "Fusion Academy Miracle Mile",
+   "city": "Los Angeles",
+   "state": "CA",
+   "kind": "private",
+   "metro": "los-angeles",
+   "ledger_ai": null,
+   "ledger_name": null,
+   "ledger_city": null,
+   "ledger_ap_courses": null,
+   "status": "unmatched"
+  },
+  {
+   "id": "A2300331",
+   "name": "Marianne Frostig Center of Educational Therapy",
+   "city": "Pasadena",
+   "state": "CA",
+   "kind": "private",
+   "metro": "los-angeles",
+   "ledger_ai": null,
+   "ledger_name": null,
+   "ledger_city": null,
+   "ledger_ap_courses": null,
+   "status": "unmatched"
+  },
+  {
+   "id": "00070985",
+   "name": "St Lucys Priory High School",
+   "city": "Glendora",
+   "state": "CA",
+   "kind": "private",
+   "metro": "los-angeles",
+   "ledger_ai": "051075",
+   "ledger_name": "Saint Lucy's Priory High School",
+   "ledger_city": "Glendora",
+   "ledger_ap_courses": 17,
+   "status": "matched"
+  },
+  {
+   "id": "A2370474",
+   "name": "Southlands Christian Schools",
+   "city": "Rolling Heights",
+   "state": "CA",
+   "kind": "private",
+   "metro": "los-angeles",
+   "ledger_ai": "053681",
+   "ledger_name": "Southlands Christian School",
+   "ledger_city": "Rowland Heights",
+   "ledger_ap_courses": 15,
+   "status": "matched"
+  },
+  {
+   "id": "A9100917",
+   "name": "Holy Martyrs Armenian Ferrahian School",
+   "city": "Encino",
+   "state": "CA",
+   "kind": "private",
+   "metro": "los-angeles",
+   "ledger_ai": "050869",
+   "ledger_name": "Holy Martyrs Armenian School",
+   "ledger_city": "Encino",
+   "ledger_ap_courses": 12,
+   "status": "matched"
+  },
+  {
+   "id": "01612759",
+   "name": "Calvary Chapel Christian School",
+   "city": "Downey",
+   "state": "CA",
+   "kind": "private",
+   "metro": "los-angeles",
+   "ledger_ai": "050768",
+   "ledger_name": "Calvary Chapel Christian School",
+   "ledger_city": "Downey",
+   "ledger_ap_courses": 3,
+   "status": "matched"
+  },
+  {
+   "id": "00070602",
+   "name": "St Anthony High School",
+   "city": "Long Beach",
+   "state": "CA",
+   "kind": "private",
+   "metro": "los-angeles",
+   "ledger_ai": "051500",
+   "ledger_name": "Saint Anthony High School",
+   "ledger_city": "Long Beach",
+   "ledger_ap_courses": 15,
+   "status": "matched"
+  },
+  {
+   "id": "A1500310",
+   "name": "Harvard-Westlake",
+   "city": "Los Angeles",
+   "state": "CA",
+   "kind": "private",
+   "metro": "los-angeles",
+   "ledger_ai": "052159",
+   "ledger_name": "Harvard Westlake Upper School",
+   "ledger_city": "Studio City",
+   "ledger_ap_courses": 9,
+   "status": "matched"
+  },
+  {
+   "id": "00083655",
+   "name": "Polytechnic School",
+   "city": "Pasadena",
+   "state": "CA",
+   "kind": "private",
+   "metro": "los-angeles",
+   "ledger_ai": "052402",
+   "ledger_name": "Polytechnic School",
+   "ledger_city": "Pasadena",
+   "ledger_ap_courses": 18,
+   "status": "matched"
+  },
+  {
+   "id": "00071446",
+   "name": "Notre Dame High School",
+   "city": "Sherman Oaks",
+   "state": "CA",
+   "kind": "private",
+   "metro": "los-angeles",
+   "ledger_ai": "053370",
+   "ledger_name": "Notre Dame High School",
+   "ledger_city": "Sherman Oaks",
+   "ledger_ap_courses": 30,
+   "status": "matched"
+  },
+  {
+   "id": "00081476",
+   "name": "Brentwood School",
+   "city": "Los Angeles",
+   "state": "CA",
+   "kind": "private",
+   "metro": "los-angeles",
+   "ledger_ai": "051555",
+   "ledger_name": "Brentwood School East",
+   "ledger_city": "Los Angeles",
+   "ledger_ap_courses": 25,
+   "status": "matched"
+  },
+  {
+   "id": "480003013197",
+   "name": "Uplift Luna Prep High School",
+   "city": "Dallas",
+   "state": "TX",
+   "kind": "public",
+   "metro": "dallas-fort-worth",
+   "ledger_ai": null,
+   "ledger_name": null,
+   "ledger_city": null,
+   "ledger_ap_courses": null,
+   "status": "unmatched"
+  },
+  {
+   "id": "483318012421",
+   "name": "James M Steele Early College High School",
+   "city": "Roanoke",
+   "state": "TX",
+   "kind": "public",
+   "metro": "dallas-fort-worth",
+   "ledger_ai": "445889",
+   "ledger_name": "James M Steele Early College High School",
+   "ledger_city": "Roanoke",
+   "ledger_ap_courses": 1,
+   "status": "matched"
+  },
+  {
+   "id": "480007008503",
+   "name": "Universal Academy - Coppell",
+   "city": "Coppell",
+   "state": "TX",
+   "kind": "public",
+   "metro": "dallas-fort-worth",
+   "ledger_ai": "441488",
+   "ledger_name": "Universal Academy Coppell",
+   "ledger_city": "Coppell",
+   "ledger_ap_courses": 0,
+   "status": "matched"
+  },
+  {
+   "id": "480144113888",
+   "name": "Great Hearts Irving Upper",
+   "city": "Irving",
+   "state": "TX",
+   "kind": "public",
+   "metro": "dallas-fort-worth",
+   "ledger_ai": null,
+   "ledger_name": null,
+   "ledger_city": null,
+   "ledger_ap_courses": null,
+   "status": "unmatched"
+  },
+  {
+   "id": "A1790494",
+   "name": "Fusion Academy Slk: Southlake",
+   "city": "Southlake",
+   "state": "TX",
+   "kind": "private",
+   "metro": "dallas-fort-worth",
+   "ledger_ai": null,
+   "ledger_name": null,
+   "ledger_city": null,
+   "ledger_ap_courses": null,
+   "status": "unmatched"
+  },
+  {
+   "id": "A2303025",
+   "name": "The Westwood School Corp",
+   "city": "Dallas",
+   "state": "TX",
+   "kind": "private",
+   "metro": "dallas-fort-worth",
+   "ledger_ai": null,
+   "ledger_name": null,
+   "ledger_city": null,
+   "ledger_ap_courses": null,
+   "status": "unmatched"
+  },
+  {
+   "id": "A1703584",
+   "name": "Texas Torah Institute",
+   "city": "Dallas",
+   "state": "TX",
+   "kind": "private",
+   "metro": "dallas-fort-worth",
+   "ledger_ai": null,
+   "ledger_name": null,
+   "ledger_city": null,
+   "ledger_ap_courses": null,
+   "status": "unmatched"
+  },
+  {
+   "id": "A9503982",
+   "name": "The Covenant School",
+   "city": "Dallas",
+   "state": "TX",
+   "kind": "private",
+   "metro": "dallas-fort-worth",
+   "ledger_ai": "441789",
+   "ledger_name": "Covenant School",
+   "ledger_city": "Dallas",
+   "ledger_ap_courses": 9,
+   "status": "matched"
+  },
+  {
+   "id": "A1399023",
+   "name": "Lakehill Preparatory School",
+   "city": "Dallas",
+   "state": "TX",
+   "kind": "private",
+   "metro": "dallas-fort-worth",
+   "ledger_ai": "441761",
+   "ledger_name": "Lakehill Preparatory School",
+   "ledger_city": "Dallas",
+   "ledger_ap_courses": 13,
+   "status": "matched"
+  },
+  {
+   "id": "A2400183",
+   "name": "The Covenant School of Dallas",
+   "city": "Dallas",
+   "state": "TX",
+   "kind": "private",
+   "metro": "dallas-fort-worth",
+   "ledger_ai": null,
+   "ledger_name": null,
+   "ledger_city": null,
+   "ledger_ap_courses": null,
+   "status": "ambiguous",
+   "note": "Same Ledger school as \"The Covenant School\" (A9503982); the pilot list carries it twice."
+  },
+  {
+   "id": "01635302",
+   "name": "Burton Adventist Academy",
+   "city": "Arlington",
+   "state": "TX",
+   "kind": "private",
+   "metro": "dallas-fort-worth",
+   "ledger_ai": "440234",
+   "ledger_name": "Burton Adventist Academy",
+   "ledger_city": "Arlington",
+   "ledger_ap_courses": 1,
+   "status": "matched"
+  },
+  {
+   "id": "Y1326178",
+   "name": "Episcopal School of Dallas PK-12",
+   "city": "Dallas",
+   "state": "TX",
+   "kind": "private",
+   "metro": "dallas-fort-worth",
+   "ledger_ai": "441734",
+   "ledger_name": "The Episcopal School of Dallas",
+   "ledger_city": "Dallas",
+   "ledger_ap_courses": 33,
+   "status": "matched"
+  },
+  {
+   "id": "A1904356",
+   "name": "Red Comet",
+   "city": "Frisco",
+   "state": "TX",
+   "kind": "private",
+   "metro": "dallas-fort-worth",
+   "ledger_ai": null,
+   "ledger_name": null,
+   "ledger_city": null,
+   "ledger_ap_courses": null,
+   "status": "unmatched"
+  },
+  {
+   "id": "A0109399",
+   "name": "The Hockaday School",
+   "city": "Dallas",
+   "state": "TX",
+   "kind": "private",
+   "metro": "dallas-fort-worth",
+   "ledger_ai": "441750",
+   "ledger_name": "Hockaday School",
+   "ledger_city": "Dallas",
+   "ledger_ap_courses": 19,
+   "status": "matched"
+  },
+  {
+   "id": "A0109338",
+   "name": "Fort Worth Country Day",
+   "city": "Fort Worth",
+   "state": "TX",
+   "kind": "private",
+   "metro": "dallas-fort-worth",
+   "ledger_ai": "442519",
+   "ledger_name": "Fort Worth Country Day School",
+   "ledger_city": "Fort Worth",
+   "ledger_ap_courses": 24,
+   "status": "matched"
+  },
+  {
+   "id": "360012205727",
+   "name": "Flushing International High School",
+   "city": "Flushing",
+   "state": "NY",
+   "kind": "public",
+   "metro": "new-york",
+   "ledger_ai": "331937",
+   "ledger_name": "Flushing International High School",
+   "ledger_city": "Flushing",
+   "ledger_ap_courses": 0,
+   "status": "matched"
+  },
+  {
+   "id": "360008605793",
+   "name": "Mott Hall Bronx High School",
+   "city": "Bronx",
+   "state": "NY",
+   "kind": "public",
+   "metro": "new-york",
+   "ledger_ai": null,
+   "ledger_name": null,
+   "ledger_city": null,
+   "ledger_ap_courses": null,
+   "status": "unmatched"
+  },
+  {
+   "id": "360008705676",
+   "name": "Bronx Engineering and Technology Academy",
+   "city": "Bronx",
+   "state": "NY",
+   "kind": "public",
+   "metro": "new-york",
+   "ledger_ai": "330763",
+   "ledger_name": "Bronx Engineering and Technology Academy",
+   "ledger_city": "Bronx",
+   "ledger_ap_courses": 6,
+   "status": "matched"
+  },
+  {
+   "id": "360008705183",
+   "name": "Fordham High School for the Arts",
+   "city": "Bronx",
+   "state": "NY",
+   "kind": "public",
+   "metro": "new-york",
+   "ledger_ai": "330591",
+   "ledger_name": "Fordham High School Of Arts",
+   "ledger_city": "Bronx",
+   "ledger_ap_courses": 10,
+   "status": "matched"
+  },
+  {
+   "id": "360009006030",
+   "name": "Pan American International High School at Monroe",
+   "city": "Bronx",
+   "state": "NY",
+   "kind": "public",
+   "metro": "new-york",
+   "ledger_ai": "331053",
+   "ledger_name": "Pan American International High School Monroe",
+   "ledger_city": "Bronx",
+   "ledger_ap_courses": 0,
+   "status": "matched"
+  },
+  {
+   "id": "360008705182",
+   "name": "Belmont Preparatory High School",
+   "city": "Bronx",
+   "state": "NY",
+   "kind": "public",
+   "metro": "new-york",
+   "ledger_ai": "330584",
+   "ledger_name": "Belmont Preparatory High School",
+   "ledger_city": "Bronx",
+   "ledger_ap_courses": 4,
+   "status": "matched"
+  },
+  {
+   "id": "360007606296",
+   "name": "Forsythe Satellite Academy",
+   "city": "New York",
+   "state": "NY",
+   "kind": "public",
+   "metro": "new-york",
+   "ledger_ai": null,
+   "ledger_name": null,
+   "ledger_city": null,
+   "ledger_ap_courses": null,
+   "status": "unmatched"
+  },
+  {
+   "id": "360012204485",
+   "name": "Townsend Harris High School",
+   "city": "Flushing",
+   "state": "NY",
+   "kind": "public",
+   "metro": "new-york",
+   "ledger_ai": "331934",
+   "ledger_name": "Townsend Harris High School",
+   "ledger_city": "Flushing",
+   "ledger_ap_courses": 25,
+   "status": "matched"
+  },
+  {
+   "id": "360009801791",
+   "name": "Robert F Wagner Jr Secondary School for Arts and Technology",
+   "city": "Long Island City",
+   "state": "NY",
+   "kind": "public",
+   "metro": "new-york",
+   "ledger_ai": null,
+   "ledger_name": null,
+   "ledger_city": null,
+   "ledger_ap_courses": null,
+   "status": "unmatched"
+  },
+  {
+   "id": "360007806547",
+   "name": "West End Secondary School",
+   "city": "New York",
+   "state": "NY",
+   "kind": "public",
+   "metro": "new-york",
+   "ledger_ai": "330404",
+   "ledger_name": "West End Secondary School",
+   "ledger_city": "New York",
+   "ledger_ap_courses": 19,
+   "status": "matched"
+  },
+  {
+   "id": "360008305909",
+   "name": "Washington Heights Expeditionary Learning School",
+   "city": "New York",
+   "state": "NY",
+   "kind": "public",
+   "metro": "new-york",
+   "ledger_ai": "334124",
+   "ledger_name": "Washington Heights Expeditionary Learning School",
+   "ledger_city": "New York",
+   "ledger_ap_courses": 6,
+   "status": "matched"
+  },
+  {
+   "id": "360096606069",
+   "name": "Brooklyn Ascend Charter School",
+   "city": "Brooklyn",
+   "state": "NY",
+   "kind": "public",
+   "metro": "new-york",
+   "ledger_ai": "331191",
+   "ledger_name": "Brooklyn Ascend High School",
+   "ledger_city": "Brooklyn",
+   "ledger_ap_courses": 6,
+   "status": "matched"
+  },
+  {
+   "id": "360010006283",
+   "name": "Jamaica Gateway to the Sciences",
+   "city": "Jamaica",
+   "state": "NY",
+   "kind": "public",
+   "metro": "new-york",
+   "ledger_ai": "334657",
+   "ledger_name": "Jamaica Gateway to Sciences",
+   "ledger_city": "Jamaica",
+   "ledger_ap_courses": 7,
+   "status": "matched"
+  },
+  {
+   "id": "360015302009",
+   "name": "James Madison High School",
+   "city": "Brooklyn",
+   "state": "NY",
+   "kind": "public",
+   "metro": "new-york",
+   "ledger_ai": "330745",
+   "ledger_name": "James Madison High School",
+   "ledger_city": "Brooklyn",
+   "ledger_ap_courses": 23,
+   "status": "matched"
+  },
+  {
+   "id": "360015101952",
+   "name": "Fort Hamilton High School",
+   "city": "Brooklyn",
+   "state": "NY",
+   "kind": "public",
+   "metro": "new-york",
+   "ledger_ai": "330710",
+   "ledger_name": "Fort Hamilton High School",
+   "ledger_city": "Brooklyn",
+   "ledger_ap_courses": 25,
+   "status": "matched"
+  },
+  {
+   "id": "360015302032",
+   "name": "Midwood High School",
+   "city": "Brooklyn",
+   "state": "NY",
+   "kind": "public",
+   "metro": "new-york",
+   "ledger_ai": "330775",
+   "ledger_name": "Midwood High School",
+   "ledger_city": "Brooklyn",
+   "ledger_ap_courses": 25,
+   "status": "matched"
+  },
+  {
+   "id": "360007804458",
+   "name": "Fiorello H Laguardia High School",
+   "city": "New York",
+   "state": "NY",
+   "kind": "public",
+   "metro": "new-york",
+   "ledger_ai": "333685",
+   "ledger_name": "Fiorello H Laguardia High School",
+   "ledger_city": "New York",
+   "ledger_ap_courses": 23,
+   "status": "matched"
+  },
+  {
+   "id": "360015102036",
+   "name": "New Utrecht High School",
+   "city": "Brooklyn",
+   "state": "NY",
+   "kind": "public",
+   "metro": "new-york",
+   "ledger_ai": "330785",
+   "ledger_name": "New Utrecht High School",
+   "ledger_city": "Brooklyn",
+   "ledger_ap_courses": 24,
+   "status": "matched"
+  },
+  {
+   "id": "360010202887",
+   "name": "William Cullen Bryant High School",
+   "city": "Long Island City",
+   "state": "NY",
+   "kind": "public",
+   "metro": "new-york",
+   "ledger_ai": null,
+   "ledger_name": null,
+   "ledger_city": null,
+   "ledger_ap_courses": null,
+   "status": "unmatched"
+  },
+  {
+   "id": "360015204312",
+   "name": "John Dewey High School",
+   "city": "Brooklyn",
+   "state": "NY",
+   "kind": "public",
+   "metro": "new-york",
+   "ledger_ai": "330746",
+   "ledger_name": "John Dewey High School",
+   "ledger_city": "Brooklyn",
+   "ledger_ap_courses": 20,
+   "status": "matched"
+  },
+  {
+   "id": "A2301720",
+   "name": "Mesivta Kesser Yisroel-Willowbrook",
+   "city": "Staten Island",
+   "state": "NY",
+   "kind": "private",
+   "metro": "new-york",
+   "ledger_ai": null,
+   "ledger_name": null,
+   "ledger_city": null,
+   "ledger_ap_courses": null,
+   "status": "unmatched"
+  },
+  {
+   "id": "A9300617",
+   "name": "Rambam Mesivta Maimonides High School",
+   "city": "Lawrence",
+   "state": "NY",
+   "kind": "private",
+   "metro": "new-york",
+   "ledger_ai": "332779",
+   "ledger_name": "Rambam Mesivta",
+   "ledger_city": "Lawrence",
+   "ledger_ap_courses": 13,
+   "status": "matched"
+  },
+  {
+   "id": "01657916",
+   "name": "Ezra Academy",
+   "city": "Forest Hills",
+   "state": "NY",
+   "kind": "private",
+   "metro": "new-york",
+   "ledger_ai": "334726",
+   "ledger_name": "Ezra Academy",
+   "ledger_city": "Forest Hills",
+   "ledger_ap_courses": 3,
+   "status": "matched"
+  },
+  {
+   "id": "A1502509",
+   "name": "Stella K. Abraham High School for Girls",
+   "city": "Hewlett",
+   "state": "NY",
+   "kind": "private",
+   "metro": "new-york",
+   "ledger_ai": "332362",
+   "ledger_name": "Hebrew Academy of Long Beach Stella K Abraham High School for Girls",
+   "ledger_city": "Hewlett",
+   "ledger_ap_courses": 13,
+   "status": "matched"
+  },
+  {
+   "id": "A1903096",
+   "name": "Nazareth Regional High School",
+   "city": "Brooklyn",
+   "state": "NY",
+   "kind": "private",
+   "metro": "new-york",
+   "ledger_ai": "330778",
+   "ledger_name": "Nazareth Regional High School",
+   "ledger_city": "Brooklyn",
+   "ledger_ap_courses": 8,
+   "status": "matched"
+  },
+  {
+   "id": "00920232",
+   "name": "Notre Dame Academy High School",
+   "city": "Staten Island",
+   "state": "NY",
+   "kind": "private",
+   "metro": "new-york",
+   "ledger_ai": "335360",
+   "ledger_name": "Notre Dame Academy High School",
+   "ledger_city": "Staten Island",
+   "ledger_ap_courses": 12,
+   "status": "matched"
+  },
+  {
+   "id": "A2301776",
+   "name": "Yeshiva Mesifta Vyoel Moshe",
+   "city": "Brooklyn",
+   "state": "NY",
+   "kind": "private",
+   "metro": "new-york",
+   "ledger_ai": null,
+   "ledger_name": null,
+   "ledger_city": null,
+   "ledger_ap_courses": null,
+   "status": "unmatched"
+  },
+  {
+   "id": "A9300620",
+   "name": "St Ann's School",
+   "city": "Brooklyn",
+   "state": "NY",
+   "kind": "private",
+   "metro": "new-york",
+   "ledger_ai": null,
+   "ledger_name": null,
+   "ledger_city": null,
+   "ledger_ap_courses": null,
+   "status": "unmatched"
+  },
+  {
+   "id": "00939094",
+   "name": "The Chapin School LTD",
+   "city": "New York",
+   "state": "NY",
+   "kind": "private",
+   "metro": "new-york",
+   "ledger_ai": "333540",
+   "ledger_name": "The Chapin School",
+   "ledger_city": "New York",
+   "ledger_ap_courses": 0,
+   "status": "matched"
+  },
+  {
+   "id": "BB161870",
+   "name": "Beth Rivhak School",
+   "city": "Brooklyn",
+   "state": "NY",
+   "kind": "private",
+   "metro": "new-york",
+   "ledger_ai": null,
+   "ledger_name": null,
+   "ledger_city": null,
+   "ledger_ap_courses": null,
+   "status": "unmatched"
+  },
+  {
+   "id": "A9903137",
+   "name": "Yeshiva Ateret Torah",
+   "city": "Brooklyn",
+   "state": "NY",
+   "kind": "private",
+   "metro": "new-york",
+   "ledger_ai": null,
+   "ledger_name": null,
+   "ledger_city": null,
+   "ledger_ap_courses": null,
+   "status": "unmatched"
+  }
+ ]
+}

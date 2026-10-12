@@ -1,6 +1,12 @@
 {
-  "generated": "2026-10-06",
+  "generated": "2026-10-12",
   "sources": {
+    "ap-ledger": {
+      "name": "AP Course Ledger, 2025–26 (the courses each school is authorized to offer as AP)",
+      "publisher": "College Board",
+      "url": "https://apcourseaudit.inflexion.org/ledger/",
+      "retrieved": "2026-10-11"
+    },
     "crdc": {
       "name": "Civil Rights Data Collection 2023–24, public-use file",
       "publisher": "U.S. Department of Education, Office for Civil Rights",
@@ -74,7 +80,8 @@
     "edfacts-acgr": "Class of 2021",
     "edfacts-acgr-history": "Class of 2021",
     "crdc": "2023–24",
-    "pss": "2023–24"
+    "pss": "2023–24",
+    "ap-ledger": "2025–26"
   },
   "counts": {
     "public": 27815,

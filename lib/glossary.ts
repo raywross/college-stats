@@ -1752,7 +1752,7 @@ const entries = {
   "ap-access": {
     term: "AP access",
     short: "How many Advanced Placement courses a high school offers, the share of its students taking at least one, and how many of those who took an AP exam passed one.",
-    long: "From the federal Civil Rights Data Collection (CRDC), which every public school answers every two years. Passing means a score of 3 or higher on at least one exam.",
+    long: "The count and the shares come from the federal Civil Rights Data Collection (CRDC), which every public school answers every two years; passing means a score of 3 or higher on at least one exam. The named list is every course the school's own profile or College Board's AP Course Ledger lists, each once; the Ledger is the courses a school (public or private) is authorized to call AP this year, and it can run short in a year the school missed renewing a course, so the sources can differ by a few.",
     why: "Colleges read a transcript against what the school offered: a student can only take the courses their school has.",
     category: "High schools",
     related: ["dual-enrollment", "ap-credit", "school-profile"],

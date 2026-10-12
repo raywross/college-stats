@@ -23,6 +23,7 @@ against them; Quad describes.
 | **1** | **EDFacts** via the same API | Adjusted cohort graduation rate per school | `schools/edfacts/grad-rates` | Annual, ~1 year lag |
 | **1** | **Civil Rights Data Collection (CRDC)** | AP course enrollment, AP exam takers and passers, IB enrollment, dual enrollment, by school; also discipline and staffing | Public-use file from civilrightsdata.ed.gov, or the API (`schools/crdc/…`) | Biennial (2021–22 latest at research time; 2023–24 expected) |
 | **1** | **NCES Private School Survey (PSS)** | Directory and enrollment for private schools | Bulk CSV | Biennial |
+| **1.5** | **College Board AP Course Ledger** (added 2026-10-11) | The AP courses each school, public or private, is authorized to call AP this year, by course name | The Ledger page's own JSON endpoints (no public download); `npm run sync-ap-ledger`; matched to rows by name and place, there being no NCES id | ~23,000 schools; republished each fall, updated weekly; fetched once a year |
 | **2** | **State report cards** | Test proficiency, AP pass rates, college-going rate, chronic absence; some states (e.g. California's CDE, Texas TEA, New York's NYSED, Florida) publish downloadable files | One adapter per state, bulk CSV/XLSX | Annual; start with 4–5 large states |
 | **2** | **National Student Clearinghouse** district reports | College enrollment, persistence, and completion by high school; the most complete source for "where graduates go" | Not public as data; districts receive StudentTracker reports and some post them (school board packets, state portals: South Carolina's EOC and Connecticut's EdSight publish them for every public high school) | Opportunistic; state-level adapters where a state publishes |
 | **3** | **School profile PDFs** | GPA scale and distribution, weighting, AP/IB courses offered, SAT/ACT ranges, college matriculation list, class size | Crawled from the school's site with the [college-reported engine](../college-reported-data.md#how-it-works) (a recipe per school, cheap re-extraction when the file changes) | Annual (Sept–Nov); the highest-value source and the hardest |
@@ -342,3 +343,76 @@ The first real profile on the site: **Roslyn High School** (`362505003470`), fro
   to `data/aliases-curated.json` ("Columbia University", "Rutgers University", "University of Maryland", …); "USC"
   and "RPI" stay ambiguous for the matcher (never a guess) and were resolved from the list's own context; McGill,
   the University of Amsterdam, and CUNY Macaulay Honors have no page.
+
+## As built (AP Course Ledger, 2026-10-11)
+A named list of AP courses for every high school College Board lists, public and private, from its **AP Course
+Ledger** ([apcourseaudit.inflexion.org/ledger/](https://apcourseaudit.inflexion.org/ledger/)): the courses each
+school is authorized to call AP in the current school year. Why: the rigor reading's pilot
+([../chances/rigor-in-context.md](../chances/rigor-in-context.md#pilot)) found CRDC's count and the Ledger within two
+courses at only 59% of schools, and the reading and the course picker want the names, not a count; the owner asked
+for the whole Ledger (2026-10-11).
+- **What the Ledger is:** a record of authorizations renewed with College Board, not of teaching. A school can be
+  authorized for a course it isn't running, and a school that missed a renewal drops that course for the year
+  (Herbert Hoover High in Glendale shows 6 subjects for 2023–24 and 25 for 2025–26). The site therefore says
+  "authorized by College Board", keeps CRDC's count beside it, and reads a school absent from the Ledger as "not
+  listed", never as "offers none"; a school listed with no course is an explicit empty list.
+- **Fetch** `npm run sync-ap-ledger -- --all` (`scripts/sync-ap-ledger.mts`, client `scripts/lib/high-schools/
+  ledger-fetch.mts`): the Ledger page is a Vue app over two JSON endpoints read from its source (there is no public
+  download; the bulk download needs a school's own coordinator code). A search returns a whole state's schools in one
+  call (`POST /api/ledger/search {institution:"S", country:"US", state}`); a school's AP subjects by audit year come
+  from `POST /api/ledger/school {type:"ai", identifier}` (or `type:"org"` for the few schools listed without an AI
+  code). Both need the page's `csrf-token` and session cookie. Two workers, 800 ms apart (the site allows 124
+  requests a minute, its `X-RateLimit-Limit`, and answers 429 above it; the client waits out the window), an
+  identifying User-Agent, retries with backoff and a session renewal on 419; about 23,000 requests in three to four
+  hours, and a rerun fetches only schools not yet in the file, so an interrupted run resumes. The site's robots.txt allows
+  `/ledger/` and disallows the rest, which covers the endpoints the page itself calls; the owner decided to run it
+  (2026-10-11) at this rate, once a year after the fall republish, and to stop if College Board objects.
+- **Files** `data/high-schools/ledger/{XX}.json` (one per state, one school per line: AI code, name, address, city,
+  ZIP, `courses` as catalog keys for the file's year, `other` for any AP subject the catalog lacks; `complete` says
+  every school in the directory has a record) and `ledger/report.json` (the merge's counts, the Ledger schools no row
+  matched, and the ambiguous rows, for review). Pre-AP is listed separately by the Ledger and left out; AP Seminar
+  and AP Research count; a subject counts once however many teachers are authorized.
+- **Merge** `npm run sync-ap-ledger -- --merge` (or `npm run sync-high-schools -- --only ap-ledger`): the adapter
+  `scripts/lib/high-schools/ledger.mts` (`key: "ap-ledger"`, enrichment, `rowKind: "any"`, a new kind for an adapter
+  that fills public and private rows alike) matches each state's Ledger schools to the shard's rows and writes
+  `ap_ledger: { year, ledger_id, ledger_name, courses, other }` (registered in `lib/hs-fields.ts` as source
+  `ap-ledger`, vintage `ap-ledger`; `HS_VINTAGE_KEYS` and meta.json gained the key). Matching, there being no NCES id:
+  names are normalized (abbreviations spelled out, "High School" and the like set aside, initials joined, the
+  city's own words set aside, a level word like "Junior" or "Middle" compared on its own, South Dakota's numbering
+  "- 01" and a K-12 grade span dropped), and a row matches a
+  Ledger school in its state when the names agree exactly and they share a ZIP or a city, when they agree at 0.75 or
+  better (Jaccard on the distinguishing words) and share the ZIP, when one name's words are a subset of the other's
+  at 0.5 or better with the ZIP (0.6 with only the city), at 0.75 with only the city, or, the weak rule, when the
+  row's words are all within the Ledger's at 0.25 or better in a ZIP that offers nothing else ("Taylor High School"
+  for "James E Taylor High School"), or when the Ledger lists a town's one K-12 school by the town's name alone
+  ("Belt School", "Hebron Public School") and the row is the town's high school in the same ZIP. Ties break toward the Ledger record with courses (the Ledger keeps an old empty
+  record beside the live one for some schools) and then the whole name; two directory rows that are one school
+  listed twice both take it; anything still tied is ambiguous and left unmatched (reported, never guessed). Rows
+  the Ledger doesn't list get `ap_ledger: null`.
+- **Where it shows:** the high school page's Rigor section lists "N AP courses offered" by name, one list that is
+  every course the school's own profile or the Ledger lists, each once (`apCoursesOnRecord`, field `derived.ap_list`; owner,
+  2026-10-12: "the super-set of everything"), beside CRDC's count. Its ⓘ names the sources and their years (the
+  profile's edition, the Ledger's year), never each course's source; the line under the list says the same in a
+  sentence. Private schools get a Rigor section for the first time. The rigor reading and the course picker take the Ledger's
+  list as the school's offering after the profile and before the pooled list, the student's marks, and CRDC's count
+  (`lib/chances/offering.ts`); the sentence reads "College Board lists 14 AP courses your school is authorized to
+  offer." The glossary's `ap-access` term explains both sources.
+- **Tests** `tests/high-schools-ledger.test.mts`: the page parser and counting rule, the state file's writer, a
+  resumable fetch against a fake site (online providers skipped, a failed school refetched, `--limit`, the org-id
+  route), name matching and each rule, the adapter's patches and report, the merge for an any-kind adapter, the row
+  validator, and the offering precedence.
+- **First run (2026-10-11, Ledger year 2025–26):** 22,785 schools in the Ledger across the 50 states and DC, fetched
+  in about four hours with no failures. Matched to 17,632 of the 35,390 rows (15,998 exact, 522 by ZIP, 961 one
+  name within the other by ZIP, 20 by city, 25 within by city, 106 by the weak rule); 13,655 have at least one AP
+  course. Public: 14,713 of 27,815 rows matched (11,507 with a course), 3,201 of them schools CRDC has no count for.
+  Private: 2,919 of 7,575 rows matched (2,148 with a course), the first AP data for private schools on the site.
+  Median list 7 courses at public schools and 6 at private ones (90th percentile 23 and 21). Of the 11,512 rows with
+  both a CRDC count and a Ledger list, 57% agree within two courses, median difference 0 (the pilot's finding holds
+  at scale). 10 rows are ambiguous (duplicate directory rows for one school with different spellings, and three
+  Texas schools where a ninth-grade campus shares the ZIP) and 5,259 Ledger schools matched no row (2,289 with a
+  course): charter campuses opened or grown to grade 12 since the 2023–24 directory (the Ledger has 63 IDEA schools
+  in Texas, the directory 39), private schools PSS doesn't list, programs inside a larger school, and names the
+  matcher can't bridge ("Nrthn Valley Regional Demarest", "Liberal Arts and Science Academy" for "LASA");
+  `ledger/report.json` lists them for an alias file later. The first merge matched 17,065; a second pass the next
+  day (2026-10-12) added 567 small-town schools whose Ledger name carries a level phrase ("Athens Junior Senior High
+  School" for "Athens High") or is the town's alone, and South Dakota's numbered names.

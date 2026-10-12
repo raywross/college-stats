@@ -602,6 +602,11 @@ test("applyProfileNewest: newer school figures replace older federal/state ones,
   // AP courses offered: the profile's list (its edition) over the CRDC count.
   assert.equal(view.school.rigor?.ap_courses, withSchoolFigures().ap_courses!.length);
   assert.equal(citeHsView("rigor.ap_courses", view).key, "hs-profile");
+  // The page's one AP list cites only the sources behind it: the profile alone here, the Ledger too once the row has it.
+  assert.deepEqual(citeHsView("derived.ap_list", view).inputs?.map((s) => s.key), ["hs-profile"]);
+  const ledgerRow = { ...view.school, ap_ledger: { year: "2025–26", ledger_id: "334920", ledger_name: view.school.name, courses: ["ap_biology"], other: [] } };
+  assert.deepEqual(citeHsView("derived.ap_list", { ...view, school: ledgerRow }).inputs?.map((s) => [s.key, s.year]), [["hs-profile", view.detail!.profile.edition], ["ap-ledger", view.meta.vintages["ap-ledger"] ?? null]]);
+  assert.deepEqual(citeHsView("derived.ap_list", { ...view, school: ledgerRow, detail: null }).inputs?.map((s) => s.key), ["ap-ledger"]);
 
   // The input row is untouched.
   assert.notEqual(school.enrollment.total, 1115);

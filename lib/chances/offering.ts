@@ -2,10 +2,13 @@
  * What a student's high school offers (specs/chances/rigor-in-context.md "The school's offering", course-plan.md
  * "The school's course list"), best source first:
  * 1. the school profile's AP list (`detail.ap_courses`, pilot schools), matched to catalog keys;
- * 2. courses other students at the school have listed (the pooled list, already held to the three-student threshold
+ * 2. College Board's AP Course Ledger (`ap_ledger`): the courses the school is authorized to offer this year, by
+ *    name, public and private; an empty list is a school listed with none. When the school has both, the offering
+ *    is everything either lists, each once (source "record", the page's list; owner, 2026-10-12);
+ * 3. courses other students at the school have listed (the pooled list, already held to the three-student threshold
  *    by the server; never shown below it);
- * 3. the student's own marks ("Which of these does your school offer?");
- * 4. the CRDC count (`rigor.ap_courses`): how many, not which; 0 when the school said it offers none.
+ * 4. the student's own marks ("Which of these does your school offer?");
+ * 5. the CRDC count (`rigor.ap_courses`): how many, not which; 0 when the school said it offers none.
  * IB and dual enrollment come from the profile's IB list, else CRDC's enrollment counts (> 0 offered, 0 not).
  * Pure and client-safe.
  */
@@ -14,8 +17,8 @@ import { apKeysForName, catalogCourse } from "./catalog.ts";
 import type { SchoolOffering } from "./types.ts";
 
 export interface OfferingInput {
-  /** The high school's row (CRDC counts in `rigor`); null when not on record. */
-  school: Pick<HighSchool, "rigor"> | null;
+  /** The high school's row (CRDC counts in `rigor`, the Ledger's list in `ap_ledger`); null when not on record. */
+  school: (Pick<HighSchool, "rigor"> & Partial<Pick<HighSchool, "ap_ledger">>) | null;
   /** The school's own profile, when collected (pilot schools). */
   detail?: Pick<HighSchoolDetail, "ap_courses" | "ib_courses"> | null;
   /** Catalog keys the student marked as offered at the school. */
@@ -42,6 +45,41 @@ export function profileApList(names: readonly string[]): { keys: string[]; count
   return { keys: [...keys], count: keys.size + unmatched.size };
 }
 
+type LedgerList = Pick<NonNullable<HighSchool["ap_ledger"]>, "courses" | "other">;
+
+/**
+ * Every AP course on record for a school, each once: catalog keys for the names the catalog knows (the profile's
+ * "Physics 1 & 2" is two), and `other` for the rest as printed (the Ledger's `other`, the profile's unrecognized
+ * names), never one that is a catalog course's own name.
+ */
+function apRecord(printed: readonly string[] | null | undefined, ledger: LedgerList | null | undefined): { keys: string[]; other: string[] } {
+  const keys = new Set<string>();
+  const other = new Map<string, string>();
+  const addOther = (name: string) => {
+    const n = name.trim();
+    const id = n.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+    if (id && !other.has(id)) other.set(id, n);
+  };
+  for (const k of ledger?.courses ?? []) if (catalogCourse(k)) keys.add(k);
+  for (const n of ledger?.other ?? []) addOther(n);
+  for (const n of printed ?? []) {
+    const k = apKeysForName(n);
+    if (k.length) k.forEach((x) => keys.add(x));
+    else addOther(n);
+  }
+  const names = new Set([...keys].map((k) => catalogCourse(k)!.name.toLowerCase()));
+  return { keys: [...keys], other: [...other.values()].filter((n) => !names.has(n.toLowerCase())) };
+}
+
+/**
+ * Every AP course on record for a school, by name, each once, in alphabetical order: the page's one list (field
+ * `derived.ap_list`) and, when the school has both a profile and a Ledger record, the offering's.
+ */
+export function apCoursesOnRecord(printed: readonly string[] | null | undefined, ledger: LedgerList | null | undefined): string[] {
+  const { keys, other } = apRecord(printed, ledger);
+  return [...keys.map((k) => catalogCourse(k)!.name), ...other].sort((a, b) => a.localeCompare(b, "en"));
+}
+
 /** The school's offering, best source first (see the module comment). `pooled` is the pooled list's catalog keys. */
 export function schoolOffering(highSchool: OfferingInput | null, pooled?: readonly string[] | null): SchoolOffering {
   if (!highSchool) return NOTHING;
@@ -52,9 +90,20 @@ export function schoolOffering(highSchool: OfferingInput | null, pooled?: readon
   const base = { ib, dual };
 
   const printed = highSchool.detail?.ap_courses;
+  const ledger = highSchool.school?.ap_ledger ?? null;
+  if (printed && printed.length > 0 && ledger) {
+    // Both on record: everything either lists, the same list the school's page shows.
+    const { keys, other } = apRecord(printed, ledger);
+    return { ...base, apCount: keys.length + other.length, apKeys: keys, source: "record", field: "derived.ap_list" };
+  }
   if (printed && printed.length > 0) {
     const { keys, count } = profileApList(printed);
     return { ...base, apCount: count, apKeys: keys, source: "profile", field: "detail.ap_courses" };
+  }
+  if (ledger) {
+    // Courses the catalog lacks (`other`) count but can't be picked; the keys are the pickable list.
+    const keys = apOnly(ledger.courses);
+    return { ...base, apCount: keys.length + ledger.other.length, apKeys: keys, source: "ledger", field: "ap_ledger" };
   }
   const pooledKeys = pooled ? apOnly(pooled) : [];
   if (pooledKeys.length > 0) return { ...base, apCount: pooledKeys.length, apKeys: pooledKeys, source: "pooled", field: null };

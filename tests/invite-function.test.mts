@@ -378,7 +378,7 @@ test("inviteUser: network errors and timeouts are { ok: false, reason: 'error' }
 });
 
 /* ------------------------------------------------------------------ */
-/* Guard: lib/invite-function.ts is the only caller                    */
+/* Guard: each Edge Function has exactly one caller in the site       */
 /* ------------------------------------------------------------------ */
 
 function sourceFiles(dir: string): string[] {
@@ -391,18 +391,37 @@ function sourceFiles(dir: string): string[] {
   return out;
 }
 
-/** Files under app/, lib/, components/ (or the given files) that call the function by hand. */
+/**
+ * The one module allowed to call each function (specs/supabase.md, "Edge Functions"): lib/invite-function.ts calls
+ * invite-user (and alone sends X-Invite-Secret), lib/admin/auth-function.ts calls admin-auth.
+ */
+const CALLERS: Record<string, string> = { "lib/invite-function.ts": "invite-user", "lib/admin/auth-function.ts": "admin-auth" };
+
+/** Files under app/, lib/, components/ (or the given files) that call a function they aren't the caller of. */
 function strayCallers(files: { path: string; text: string }[]): string[] {
-  return files.filter((f) => f.path !== "lib/invite-function.ts" && /functions\/v1\/|x-invite-secret/i.test(f.text)).map((f) => f.path);
+  return files
+    .filter((f) => {
+      const own = CALLERS[f.path];
+      const named = [...f.text.matchAll(/functions\/v1\/([a-z0-9-]*)/gi)].map((m) => m[1]);
+      // Building a function URL from a template (`functions/v1/${name}`) names no function, so it is caught too.
+      if (named.some((n) => !own || n !== own)) return true;
+      return /x-invite-secret/i.test(f.text) && own !== "invite-user";
+    })
+    .map((f) => f.path);
 }
 
-test("guard: only lib/invite-function.ts builds the function's URL or sends X-Invite-Secret", () => {
+test("guard: only lib/invite-function.ts calls invite-user (with X-Invite-Secret), only lib/admin/auth-function.ts calls admin-auth", () => {
   const files = ["app", "lib", "components"].flatMap((d) => sourceFiles(join(ROOT, d))).map((p) => ({ path: relative(ROOT, p), text: readFileSync(p, "utf8") }));
-  assert.ok(files.some((f) => f.path === "lib/invite-function.ts"), "the scan sees lib/invite-function.ts");
+  for (const caller of Object.keys(CALLERS)) assert.ok(files.some((f) => f.path === caller), `the scan sees ${caller}`);
   assert.deepEqual(strayCallers(files), []);
-  // The guard fails when broken: a second caller is caught.
+  // The guard fails when broken: a second caller of either function is caught, and so is a caller of the wrong one.
   assert.deepEqual(strayCallers([...files, { path: "app/household/actions.ts", text: 'fetch(`${url}/functions/v1/invite-user`, { headers: { "X-Invite-Secret": s } })' }]), ["app/household/actions.ts"]);
   assert.deepEqual(strayCallers([{ path: "lib/x.ts", text: 'headers["x-invite-secret"] = s' }]), ["lib/x.ts"]);
+  assert.deepEqual(strayCallers([{ path: "app/admin/people/[user]/actions.ts", text: "fetch(`${u}/functions/v1/admin-auth`)" }]), ["app/admin/people/[user]/actions.ts"]);
+  assert.deepEqual(strayCallers([{ path: "lib/invite-function.ts", text: "`${u}/functions/v1/admin-auth`" }]), ["lib/invite-function.ts"]);
+  assert.deepEqual(strayCallers([{ path: "lib/admin/auth-function.ts", text: "`${u}/functions/v1/invite-user`" }]), ["lib/admin/auth-function.ts"]);
+  assert.deepEqual(strayCallers([{ path: "lib/admin/auth-function.ts", text: 'h["X-Invite-Secret"] = s' }]), ["lib/admin/auth-function.ts"]);
+  assert.deepEqual(strayCallers([{ path: "lib/y.ts", text: "`${u}/functions/v1/${name}`" }]), ["lib/y.ts"]);
 });
 
 test("guard: the Deno function stays out of tsc and eslint, and keeps the gateway JWT check documented as off", () => {

@@ -6,3 +6,9 @@
 # isn't one. The function authorizes every request itself with X-Invite-Secret (supabase/functions/invite-user/index.ts,
 # specs/supabase.md "Edge Functions"). Deploy with --no-verify-jwt too.
 verify_jwt = false
+
+[functions.admin-auth]
+# On: the caller is a signed-in admin sending their own session JWT, so the gateway refuses anything else first. The
+# function also checks the token with Supabase Auth and is_admin() (aal2) itself (supabase/functions/admin-auth/index.ts,
+# specs/supabase.md "Edge Functions"), so it stays safe if it ever has to be deployed with --no-verify-jwt.
+verify_jwt = true

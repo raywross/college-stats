@@ -9,8 +9,10 @@ import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import type { School } from "../lib/types";
 import type { HistoryMeta, SchoolHistory } from "../lib/history.ts";
+import { campusExclusionOf, exclusionSets, isCampusBased, type MoverMember } from "../lib/movers.ts";
 import { GROUP_FLOOR } from "../lib/trend-groups.ts";
 import type { ShrinkingCollegesFile, ShrinkingValues } from "../lib/trends.ts";
+import { loadMoverExclusions } from "../scripts/trends/movers.mts";
 
 const ROOT = join(import.meta.dirname, "..");
 const HISTORY = join(ROOT, "data", "history");
@@ -122,4 +124,37 @@ test("the companion panel is a subset of the ten-year panel that shrank 10%+", (
   const shrunk = panel.filter((h) => (change(h, from, to) ?? 0) <= -T);
   assert.equal(file.companion.n, shrunk.length);
   assert.equal(file.companion.n, Math.round(file.national.values!.shrank10 * file.n));
+});
+
+/* ---- Campus-based toggle (specs/trends/shrinking-colleges.md "Data work needed") ---- */
+
+const campuses = exclusionSets(loadMoverExclusions(ROOT).campuses).campuses;
+const tenMembers: MoverMember[] = panel.map((h) => ({ school: byId.get(h.unit_id)!, h }));
+
+test("the campus-based ten-year panel has no college that fails isCampusBased, and is a subset of the all-colleges panel", () => {
+  const campusBasedPanel = tenMembers.filter((m) => isCampusBased(m, from, to, campuses));
+  assert.equal(file.campusBased.ten.n, campusBasedPanel.length);
+  assert.ok(file.campusBased.ten.n <= file.n, "campus-based panel can only be smaller than, or equal to, the all-colleges panel");
+  for (const m of campusBasedPanel) assert.equal(campusExclusionOf(m, from, to, campuses), null, `${m.school.unit_id} is excluded but appears in the campus-based panel`);
+});
+
+test("the excluded counts (onlineFirst, forProfit, campuses) add up to the difference between the two ten-year panels", () => {
+  const counts = { onlineFirst: 0, forProfit: 0, campuses: 0 };
+  for (const m of tenMembers) {
+    const reason = campusExclusionOf(m, from, to, campuses);
+    if (reason === "online-first") counts.onlineFirst++;
+    else if (reason === "for-profit") counts.forProfit++;
+    else if (reason === "closed-or-merged") counts.campuses++;
+  }
+  assert.deepEqual(file.campusBased.excluded, counts);
+  assert.equal(file.n - file.campusBased.ten.n, counts.onlineFirst + counts.forProfit + counts.campuses);
+});
+
+test("the five-year campus-based panel is also a subset of its all-colleges panel, with no excluded college", () => {
+  const fivePanel = shards.filter((h) => [file.five.from, file.five.to].every((y) => (val(h, "undergrads", y) ?? 0) >= MIN));
+  const fiveMembers: MoverMember[] = fivePanel.map((h) => ({ school: byId.get(h.unit_id)!, h }));
+  const campusBasedFive = fiveMembers.filter((m) => isCampusBased(m, file.five.from, file.five.to, campuses));
+  assert.equal(file.campusBased.five.n, campusBasedFive.length);
+  assert.ok(file.campusBased.five.n <= file.five.n);
+  for (const m of campusBasedFive) assert.equal(campusExclusionOf(m, file.five.from, file.five.to, campuses), null);
 });

@@ -8,6 +8,7 @@
     "faculty_salary": {"start":2023,"values":[63750,63500]},
     "transfer_in_count": {"start":2023,"values":[20,26]},
     "transfer_in_share": {"start":2023,"values":[1,1]},
+    "online_share": {"start":2023,"values":[0,0]},
     "athletic_association": {"start":2023,"values":[3,3,3]},
     "rotc": {"start":2023,"values":[2,2,2]},
     "promise": {"start":2023,"values":[2]},

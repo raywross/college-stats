@@ -1,5 +1,5 @@
 {
-  "built": "2026-10-02",
+  "built": "2026-10-12",
   "cards": [
     {
       "slug": "men-and-women",
@@ -158,7 +158,32 @@
       "from": 2010,
       "to": 2018,
       "n": 1103
+    },
+    {
+      "slug": "where-students-go",
+      "title": "Where the students went",
+      "headline": {
+        "value": 0.3485,
+        "format": "pct",
+        "caption": "of campus-based undergraduates attend a college with 20,000 or more students"
+      },
+      "sentence": "Across 1,406 campus-based colleges, the share of undergraduates at colleges with 20,000 or more students in fall 2014 rose from 31% to 35%, and R1 research universities went from 41% to 46% of students.",
+      "spark": {
+        "start": 2014,
+        "kind": "fall",
+        "format": "pct",
+        "series": [
+          {
+            "name": "At colleges with 20,000+ students",
+            "values": [0.3064,0.3112,0.3149,0.3182,0.3212,0.3288,0.3286,0.334,0.3421,0.3455,0.3485]
+          }
+        ]
+      },
+      "yearKind": "fall",
+      "from": 2014,
+      "to": 2024,
+      "n": 1406
     }
   ],
-  "files": ["conferences","men-and-women","movers","out-of-state","pell-gap","price-gap","shrinking-colleges","states","test-optional"]
+  "files": ["conferences","men-and-women","movers","out-of-state","pell-gap","price-gap","shrinking-colleges","states","test-optional","where-students-go"]
 }

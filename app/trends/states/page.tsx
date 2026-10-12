@@ -53,6 +53,14 @@ const TEST_OPTIONAL_RANGES: TileRange[] = [
   { lo: 0.9, hi: 0.99, label: "90–99%", bg: "var(--seq-4)", ink: "text-white dark:text-background" },
   { lo: 0.99, hi: Infinity, label: "~All", bg: "var(--seq-5)", ink: "text-white dark:text-background" },
 ];
+/** Diverging, centered on zero: net first-year inflow as a share of the state's colleges' first-years. */
+const NET_INFLOW_RANGES: TileRange[] = [
+  { lo: -Infinity, hi: -0.2, label: "Net exporter, 20%+", bg: "var(--div-1)", ink: "text-white dark:text-background" },
+  { lo: -0.2, hi: -0.05, label: "Net exporter", bg: "var(--div-2)", ink: "text-foreground" },
+  { lo: -0.05, hi: 0.05, label: "About even", bg: "var(--div-3)", ink: "text-foreground" },
+  { lo: 0.05, hi: 0.2, label: "Net importer", bg: "var(--div-4)", ink: "text-foreground" },
+  { lo: 0.2, hi: Infinity, label: "Net importer, 20%+", bg: "var(--div-5)", ink: "text-white dark:text-background" },
+];
 
 /**
  * /trends/states (specs/trends/states.md): the state tile map (segmented control over 5 measures) and a sortable
@@ -79,7 +87,7 @@ export default async function StatesIndexPage() {
   const territories = file.states.filter((s) => s.territory);
   const ordered = [...states, ...territories];
 
-  const valuesOf = (key: "undergradChange" | "acceptanceRate" | "avgCost" | "outOfState" | "testOptionalShare") =>
+  const valuesOf = (key: "undergradChange" | "acceptanceRate" | "avgCost" | "outOfState" | "testOptionalShare" | "netInflow") =>
     Object.fromEntries(file.states.map((s) => [s.postal, s.map[key]]));
 
   const measures: StateMapMeasureDef[] = [
@@ -128,6 +136,15 @@ export default async function StatesIndexPage() {
       format: "pctWhole",
       description: "of colleges don't require test scores",
     },
+    {
+      key: "netInflow",
+      label: "Net first-year inflow",
+      legendLabel: "Net first-year inflow, as a share of the state's colleges' first-years",
+      values: valuesOf("netInflow"),
+      ranges: NET_INFLOW_RANGES,
+      format: "signedPct",
+      description: "net first-year inflow as a share of its colleges' first-years",
+    },
   ];
 
   const rowOf = (s: (typeof file.states)[number]): StatesTableRow => ({
@@ -142,9 +159,13 @@ export default async function StatesIndexPage() {
     avgCost: s.map.avgCost,
     outOfState: s.map.outOfState,
     testOptionalShare: s.map.testOptionalShare,
+    inflow: s.flows?.inflow ?? null,
+    outflow: s.flows?.outflow ?? null,
+    net: s.flows?.net ?? null,
   });
 
   const fall = (y: number) => historyYearLabel(y, "fall").toLowerCase();
+  const flowsFall = file.flowsYear === null ? null : fall(file.flowsYear);
 
   return (
     <div className="mx-auto max-w-6xl px-4 pt-8 pb-12 sm:px-6 sm:pt-10">
@@ -202,6 +223,14 @@ export default async function StatesIndexPage() {
             <b className="text-foreground">No rankings by quality.</b> The map and table are descriptive; a bigger or smaller change isn&apos;t better or worse, and
             the site doesn&apos;t attribute a state&apos;s change to a policy.
           </li>
+          {flowsFall && (
+            <li>
+              <b className="text-foreground">Net first-year inflow and the inflow/outflow columns</b> are a single snapshot, {flowsFall} (the newest fall the
+              site&apos;s per-college home-state tables cover), over campus-based colleges: not <Term term="online-first">online-first</Term> that fall, not
+              for-profit, and not a campus that merged or split. They count only first-years at four-year colleges on this site, so a resident who starts at a
+              college not on the site is invisible on both sides.
+            </li>
+          )}
         </ul>
         <HistorySourceNote keys={["undergrads", "applicants", "acceptance_rate", "avg_paid_all", "out_of_state_share", "test_policy"]} files={files} className="mt-4" />
       </section>

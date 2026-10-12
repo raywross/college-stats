@@ -128,19 +128,21 @@ Built 2026-10-04 on `feature/national-trends`: the hub, Studies 1–6, movers, c
 build-trends` writes `data/history/trends/`). What's left:
 - [ ] `applicants_men`/`applicants_women` history series, so Study 1 can use the 200-per-sex rule and weight by
   applicants by sex (it uses a 1,000-total-applicant floor and total-applicant weighting today).
-- [ ] Distance-education share (`EF{Y}A_DIST`) as `demographics.online_share`, replacing the reviewed
+- [x] Distance-education share (`EF{Y}A_DIST`) as `demographics.online_share`, replacing the reviewed
   `data/trends/online-first.json` list the movers use. Specified 2026-10-05:
-  [online-share.md](data-expansion/online-share.md) (two fields, one history series, an Explore filter).
-- [ ] **Study 7: Where the students went** ([trends/where-students-go.md](trends/where-students-go.md), specified
+  [online-share.md](data-expansion/online-share.md) (two fields, one history series, an Explore filter). Built
+  2026-10-12: the field rule reproduced the reviewed list exactly for fall 2024, and the list is retired.
+- [x] **Study 7: Where the students went** ([trends/where-students-go.md](trends/where-students-go.md), specified
   2026-10-05): the students view, each kind of college's share of all undergraduates then and now, by size and
   selectivity as of the window start, research tier, public or private, region and state, and price, over a
   campus-based panel, with the pandemic as a question inside the ten years (before · pandemic · after periods and
   the pace of each shift). First look: 20,000+ campuses 30% → 34% of students, rising every year; R1s 40% → 46%; the
   colleges that cut prices most lost the most students; the pandemic sped every shift up and since 2022 they've
-  slowed to their old pace, not reversed.
-- [ ] **First-years crossing state lines** ([trends/states.md](trends/states.md), planned addition 2026-10-05): each
+  slowed to their old pace, not reversed. Built 2026-10-12 (`/trends/where-students-go`): 1,406 campus-based
+  colleges; 20,000+ 30.6% → 34.8%, R1 40.9% → 46.4%, low point fall 2022.
+- [x] **First-years crossing state lines** ([trends/states.md](trends/states.md), planned addition 2026-10-05): each
   state's inflow, outflow, and net of first-years from the residence tables, as a sixth measure on the states map and
-  an in/out block on state pages, over campus-based colleges; build with Study 7, after the online-share field.
+  an in/out block on state pages, over campus-based colleges. Built 2026-10-12 with Study 7, on the online-share field.
 - [ ] Per-conference movers lists, and an Explore conference-filter chip linking to the conference page.
 - [x] **Trends page and shared breakdowns:** `/trends` with a card per study, `/trends/{study}` pages, the standard
   breakdowns (region, type, size, selectivity) computed by `sync-history`, and a test that recomputes each study.

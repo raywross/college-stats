@@ -204,6 +204,19 @@ export interface ShrinkingWindow {
   groupings: GroupingResult<ShrinkingValues>[];
 }
 
+/**
+ * The "campus-based colleges only" toggle (specs/trends/shrinking-colleges.md "Data work needed"): both windows'
+ * measures recomputed over the campus-based cut of their panel (`isCampusBased`, lib/movers.ts), plus how many
+ * panel colleges were left out and why. `excluded` is over the ten-year panel (the primary window); the five-year
+ * panel has its own, smaller, implied exclusion count from its own `n`.
+ */
+export interface ShrinkingCampusBased {
+  ten: ShrinkingWindow;
+  five: ShrinkingWindow;
+  /** Ten-year panel colleges left out of `ten`, by reason (`campusExclusionOf`, lib/movers.ts). */
+  excluded: { onlineFirst: number; forProfit: number; campuses: number };
+}
+
 /** data/history/trends/shrinking-colleges.json: the ten-year window is the primary StudyFile; `five` is the owner-recommended second window (the segmented control on the page). */
 export interface ShrinkingCollegesFile extends StudyFile<ShrinkingValues> {
   slug: "shrinking-colleges";
@@ -219,6 +232,8 @@ export interface ShrinkingCollegesFile extends StudyFile<ShrinkingValues> {
   histogram: { binSize: number; min: number; max: number; counts: number[]; median: number; n: number };
   /** Companion: median applicants and enrolled first-years, by fall, over the colleges that shrank 10%+ (a sub-panel of the ten-year panel). */
   companion: { from: number; to: number; n: number; applicants: (number | null)[]; enrolled: (number | null)[] };
+  /** The "Campus-based only" method toggle: both windows over campus-based colleges, and why the rest were left out. */
+  campusBased: ShrinkingCampusBased;
 }
 
 /* ------------------------------------------------------------------ */
@@ -245,8 +260,9 @@ export interface MoversFile extends TrendEnvelope {
     stillOpenMinUndergrads: number;
     /** An endpoint this many times the year next to it is a reporting jump. */
     jumpFactor: number;
-    /** Entries in data/trends/online-first.json and data/trends/excluded-campuses.json. */
-    onlineFirst: number;
+    /** Growth lists leave out colleges where more than this share of undergraduates took every course online at either end of the window (its start or its last fall). */
+    onlineFirstShare: number;
+    /** Entries in data/trends/excluded-campuses.json. */
     excludedCampuses: number;
   };
   windows: MoversWindow[];
@@ -416,6 +432,31 @@ export interface StateTopSendingState {
   share: number;
 }
 
+/**
+ * First-years crossing state lines (specs/trends/states.md, "Planned addition"): a snapshot (one fall) summed from
+ * the residence detail's home-state tables over campus-based colleges (`isCampusBased`: not for-profit, not
+ * online-first at that fall, not a campus that merged or split). `inflow` is first-years at this state's colleges
+ * from elsewhere; `outflow` is this state's residents who started at colleges in other states; `firstYears` is
+ * in-state plus inflow (home codes that aren't states — foreign, unknown — are left out and tracked in `other`, not
+ * counted in `firstYears`). `receiving` is the five colleges in this state taking the most of the inflow, ordered,
+ * with their share of it. "Among four-year colleges on this site": a resident who starts at a college not on the
+ * site, or a community college, is invisible on both sides.
+ */
+export interface StateFlows {
+  year: number;
+  inflow: number;
+  outflow: number;
+  net: number;
+  firstYears: number;
+  /** net ÷ firstYears; the map's "Net first-year inflow" measure. */
+  netShare: number;
+  /** First-years at this state's colleges whose home code isn't a state (foreign, unknown): left out of the flows. */
+  other: number;
+  /** Campus-based colleges in this state with a home-state table, counted toward inflow. */
+  n: number;
+  receiving: { unit_id: string; name: string; count: number; share: number }[];
+}
+
 export interface StateResearchUni {
   unit_id: string;
   name: string;
@@ -433,6 +474,8 @@ export interface StateMapMeasures {
   avgCost: number | null;
   outOfState: number | null;
   testOptionalShare: number | null;
+  /** StateFlows.netShare; null when the state has no flows (no college table, per rule 5). */
+  netInflow: number | null;
 }
 
 export interface StateEntry {
@@ -455,6 +498,8 @@ export interface StateEntry {
   topSendingStates: StateTopSendingState[];
   researchUnis: StateResearchUni[];
   movers: MoversWindow[];
+  /** Absent when no college in the state has a home-state table (rule 5); present even for a tooFew state. */
+  flows?: StateFlows;
 }
 
 export interface StatesFile extends TrendEnvelope {
@@ -470,6 +515,10 @@ export interface StatesFile extends TrendEnvelope {
     sparkLines: StateSparkLines;
     outOfStatePublicLine: (number | null)[];
   };
+  /** The one fall the flows snapshot is for (the detail files' year); null when no detail file has a home-state table. */
+  flowsYear: number | null;
+  /** Colleges left out of the flows computation (specs/trends/states.md, flows rule 1), across every college on the site. */
+  flowsRule: { excluded: { onlineFirst: number; forProfit: number; campuses: number } };
   states: StateEntry[];
 }
 
@@ -614,6 +663,128 @@ export interface TestOptionalFile extends StudyFile<TestOptionalValues> {
 }
 
 /* ------------------------------------------------------------------ */
+/* Study 7: where the students went (where-students-go.json)           */
+/* specs/trends/where-students-go.md                                   */
+/* ------------------------------------------------------------------ */
+
+/** The three periods inside the ten-year window: before the pandemic, the pandemic (to the low point), and after. */
+export type StudentsPeriodKey = "before" | "pandemic" | "after";
+
+/** One group's change over one period (falls `from` → `to`). */
+export interface StudentsPeriod {
+  key: StudentsPeriodKey;
+  from: number;
+  to: number;
+  /** Total undergraduates' % change over the period, colleges reporting both falls. */
+  studentsChange: number;
+  /** Change in the group's share of all campus-based undergraduates, in percentage points per year: (share at `to` − share at `from`) × 100 ÷ (`to` − `from`). */
+  pacePerYear: number;
+  /** Median college's % change in undergraduates over the period. */
+  medianChange: number;
+  /** Share of the group's colleges that grew at all over the period. */
+  grewShare: number;
+}
+
+/** One group's (or the nation's) measures, students view: its share of the campus-based panel's undergraduates. */
+export interface WhereStudentsGoValues {
+  /** Share of all campus-based undergraduates in the panel, then and now. */
+  share: ThenNow;
+  /** Now − then, in share units (0.042 = 4.2 points). */
+  points: number;
+  /** Total undergraduates' % change in the group. */
+  totalChange: number;
+  /** Median college's % change. */
+  medianChange: number;
+  /** Share of the group's colleges that grew at all. */
+  grewShare: number;
+  n: number;
+  /** Yearly share of all campus-based undergraduates, `lineFrom` to `to` (null under 90% coverage). */
+  line: (number | null)[];
+  periods: StudentsPeriod[];
+  /** Share of the group's colleges at or above their `prePandemicFall` size in the newest fall. */
+  backToPrePandemic: number;
+}
+
+/** A kind of college in the whole 300-floor panel (the by-kind bar): campus-based, online-first, for-profit, merged or split. */
+export interface StudentsKindRow {
+  key: "campus-based" | "online-first" | "for-profit" | "merged-or-split";
+  label: string;
+  n: number;
+  /** Share of the whole panel's undergraduates, then and now. */
+  share: ThenNow;
+  totalChange: number;
+}
+
+/** One state's share of campus-based undergraduates (today's state), at or over STATE_FLOOR panel colleges. */
+export interface StudentsStateRow {
+  postal: string;
+  share: ThenNow;
+  points: number;
+  totalChange: number;
+  n: number;
+}
+
+/** One fifth of colleges, ordered by real price change (`byChange`, share units) or by price level (`byLevel`, dollars). */
+export interface PriceFifth {
+  /** The fifth's range of the ordering measure: % change after inflation, or `fromMoney` price in `toMoney` dollars. */
+  lo: number;
+  hi: number;
+  /** Median college's % change in undergraduates (fall `from` → `to`). */
+  medianChange: number;
+  /** Total undergraduates' % change. */
+  totalChange: number;
+  grewShare: number;
+  n: number;
+}
+
+export type PriceControl = "all" | "public" | "private-nonprofit";
+
+export interface WhereStudentsGoFile extends StudyFile<WhereStudentsGoValues> {
+  slug: "where-students-go";
+  /** Undergraduates a college needs in both falls (Study 3's floor). */
+  minUndergrads: number;
+  /** Colleges in the whole 300-floor panel, before the campus-based cut. */
+  allN: number;
+  /** The last fall before the pandemic (scripts/history/build.mts PRE_PANDEMIC_FALL): the before/pandemic boundary. */
+  prePandemicFall: number;
+  /** The fall after it with the smallest campus-based total (over falls clearing 90% coverage): the pandemic/after boundary. */
+  lowFall: number;
+  /** The campus-based panel's totals by fall (`lineFrom` → `to`) and each fall against `prePandemicFall` (0.01 = 1% above). */
+  campusBased: { n: number; totalByFall: (number | null)[]; indexToPrePandemic: (number | null)[] };
+  /** The whole panel, by kind: why the rest of the page is campus-based. */
+  byKind: StudentsKindRow[];
+  /** Share of campus-based undergraduates at the 50 and 100 biggest campuses, re-ranked each fall. */
+  concentration: { top50: (number | null)[]; top100: (number | null)[] };
+  /** The method note's comparison: the 20,000+ share with today's classification instead of the window start's. */
+  todayClassified: { xlShare: ThenNow };
+  /** States with at least `stateFloor` campus-based panel colleges (today's state). */
+  stateFloor: number;
+  states: StudentsStateRow[];
+  /** Share of all applications at the period boundaries that clear 90% coverage, over colleges reporting in every one of those falls. */
+  applications: {
+    falls: number[];
+    n: number;
+    byGrouping: { grouping: GroupingKey; groups: { key: string; label: string; n: number; shares: number[] }[] }[];
+  };
+  /**
+   * Price moved with enrollment: average cost paid (`avg_paid_all`, academic years `fromMoney` → `toMoney`, one behind
+   * the falls, in `toMoney` dollars) against the fall `from` → `to` change in undergraduates.
+   */
+  cost: {
+    fromMoney: number;
+    toMoney: number;
+    /** Campus-based colleges reporting average cost paid in both academic years. */
+    n: number;
+    byChange: { control: PriceControl; fifths: PriceFifth[] }[];
+    byLevel: { control: PriceControl; fifths: PriceFifth[] }[];
+    /** Spearman rank correlation of real price change and enrollment change, over the decade and within each period (price years one behind the falls), with the median college's real price change. */
+    correlations: { period: "decade" | StudentsPeriodKey; control: PriceControl; rho: number; medianPriceChange: number; n: number }[];
+    /** Students view: enrollment-weighted average paid each academic year `fromMoney` → `toMoney`, in `toMoney` dollars, over the `n` colleges (null under 90% coverage). */
+    students: { control: Exclude<PriceControl, "all">; line: (number | null)[] }[];
+  };
+}
+
+/* ------------------------------------------------------------------ */
 /* Every file, by name (one line per unit)                             */
 /* ------------------------------------------------------------------ */
 
@@ -628,6 +799,7 @@ export interface TrendFiles {
   "pell-gap": PellGapFile;
   "price-gap": PriceGapFile;
   "test-optional": TestOptionalFile;
+  "where-students-go": WhereStudentsGoFile;
 }
 
 export type TrendFileName = keyof TrendFiles;

@@ -98,6 +98,22 @@ What stands out, to confirm before publishing:
 None: every series exists. If the top-10 lists' online-share field is built, this study should offer "campus-based
 colleges only" as a method toggle, since online growth at a few colleges inflates the for-profit and 10,000+ rows.
 
+> Built 2026-10-12 (branch `feature/national-trends-2-shrinking-toggle`, part of the national-trends-2 roadmap wave).
+
+**As built.** `ShrinkingCollegesFile.campusBased` adds a `ten` and `five` window (same `ShrinkingWindow` shape as the
+primary windows) computed over each window's panel filtered to campus-based colleges only (`isCampusBased`,
+`lib/movers.ts`: not for-profit, not online-first at either end of the window, not a campus that merged or split
+inside it), plus `excluded: { onlineFirst, forProfit, campuses }` — how many of the ten-year panel's 1,537 colleges
+were left out and why (fall 2014 → fall 2024: 67 online-first, 37 for-profit, 27 merged-or-split campuses, leaving a
+1,406-college campus-based panel; the five-year panel is 1,416 of 1,552). The page (`/trends/shrinking-colleges`)
+gains a second segmented control next to the window switch, "All colleges / Campus-based only", with a one-line
+caption (shown only in that scope) naming what's left out and the counts; the method note gains a line saying the
+headline figures stay all-colleges. For-profit colleges drop out of the campus-based breakdowns entirely, by
+definition (0 of 50 remain), so the hypothesis about an inflated for-profit row doesn't apply — there's no
+campus-based for-profit row to compare. The 10,000+ row does shrink: its ten-year total undergraduate change falls
+from +10% (all colleges, 213) to +7% (campus-based, 198), confirmed in the takeaway as a factual read of the file,
+not a new claim.
+
 ## Open questions
 1. Five-year view (fall 2019 → 2024) as a second window? It isolates the pandemic drop and partial recovery.
    Recommendation: yes, as the same segmented control the Movers page uses.

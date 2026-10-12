@@ -10,6 +10,7 @@ import { shrinkingColleges } from "./studies/shrinking-colleges.mts";
 import { priceGap } from "./studies/price-gap.mts";
 import { outOfState } from "./studies/out-of-state.mts";
 import { pellGap } from "./studies/pell-gap.mts";
+import { whereStudentsGo } from "./studies/where-students-go.mts";
 import { movers } from "./movers.mts";
 import { conferences } from "./conferences.mts";
 
@@ -22,6 +23,7 @@ export const BUILDERS: readonly TrendBuilder[] = [
   priceGap,
   outOfState,
   pellGap,
+  whereStudentsGo,
   movers,
   conferences,
   states,

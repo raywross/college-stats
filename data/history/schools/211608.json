@@ -23,6 +23,7 @@
     "out_of_state_share": {"start":2004,"values":[0.26,null,0.2889,null,0.3522,null,0.2893,null,0.2753,null,0.4113,null,0.4751,null,0.1485,null,0.1651,null,0.1071,null,0.2095]},
     "transfer_in_count": {"start":2008,"values":[82,88,120,52,101,63,60,49,54,62,37,50,35,19,58,36,23]},
     "transfer_in_share": {"start":2008,"values":[0.2141,0.186,0.1987,0.2031,0.2422,0.154,0.2062,0.3267,0.2298,0.2246,0.2681,0.1901,0.1383,0.0833,0.2283,0.1369,0.1345]},
+    "online_share": {"start":2012,"values":[0,0.0025,0.002,0.0058,0,0.0083,0.0236,0.0179,0.0482,0.0421,0.122,0.0387,0.013]},
     "international_share": {"start":2004,"values":[0.0024,null,0.0045,null,0,null,0,null,0,null,0.0087,null,0,null,0,null,0,null,0.0051,null,0]},
     "conference": {"start":2014,"values":[158,158,158,158]},
     "football_conference": {"start":2014,"values":[158,158,158,158]},

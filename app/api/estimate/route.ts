@@ -13,7 +13,8 @@ const limiter = createLimiter();
  * colleges signed out or 25 signed in, optionally with a counterfactual ("this score", "this course added").
  *
  *   body:     { student: EstimateStudent, unitIds: string[], counterfactual?: { score?: number; addCourse?: CourseEntry },
- *               context?: { coreAtTopLevel?: CoreAtTopLevel; grade?: 9 | 10 | 11 | 12 }, likeYou?: boolean }
+ *               context?: { coreAtTopLevel?: CoreAtTopLevel; grade?: 9 | 10 | 11 | 12 }, likeYou?: boolean,
+ *               hooks?: Record<unitId, { legacy: boolean; recruited: RecruitedPick; interest: boolean }> }
  *   response: { results: Record<unitId, EstimateResult>, likeYou?: { n, admitted, seasons, residency } | null }
  *
  * The session is optional; the limiter is per IP and, signed in, per user. The response carries only the contract's
@@ -45,11 +46,11 @@ export async function POST(request: Request) {
   let raw: Record<string, EstimateResult>;
   let like: Awaited<ReturnType<typeof estimateWithLikeYou>>["likeYou"] = null;
   if (likeYou && !counterfactual && ctx.schoolById(unitIds[0])) {
-    const answered = await estimateWithLikeYou({ student, unitId: unitIds[0], hooks: hooks?.[unitIds[0]] }, ctx);
+    const answered = await estimateWithLikeYou({ student, unitId: unitIds[0], hooks: hooks[unitIds[0]] }, ctx);
     raw = { [unitIds[0]]: answered.result };
     like = answered.likeYou;
   } else {
-    raw = estimateMany(student, unitIds, ctx, hooks ?? undefined);
+    raw = estimateMany(student, unitIds, ctx, hooks);
   }
   const results: Record<string, EstimateResult> = {};
   for (const [id, r] of Object.entries(raw)) results[id] = publicResult(r);

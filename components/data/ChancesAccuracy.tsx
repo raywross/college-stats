@@ -8,12 +8,13 @@
 import type { ReactNode } from "react";
 import { Term } from "@/components/ui/info-tip";
 import { RATE_BANDS, type CellStats, type SummaryView } from "@/lib/chances/calibration";
-import type { Group } from "@/lib/chances/snapshot";
+import { STANDING_LEVEL_LABELS, STANDING_LEVELS } from "@/lib/chances/levels";
 import { num } from "@/lib/format";
 import { dateLabel } from "@/lib/releases";
 
-const GROUP_LABEL: Record<Group, string> = { reach: "Reach", target: "Target", likely: "Likely" };
-const GROUP_ORDER: Group[] = ["reach", "target", "likely"];
+// The five levels in their order (levels.md), words from the shared constants (never hard-coded here).
+const GROUP_LABEL = STANDING_LEVEL_LABELS;
+const GROUP_ORDER = STANDING_LEVELS;
 const pct = (x: number) => `${Math.round(x * 100)}%`;
 const NOT_ENOUGH = "Not enough outcomes yet";
 

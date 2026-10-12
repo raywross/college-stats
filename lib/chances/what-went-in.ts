@@ -7,6 +7,7 @@
  * inputs are combined, so nothing here can reveal it.
  */
 import { FIELDS, type FieldPath } from "../fields.ts";
+import { pctSmart } from "../format.ts";
 import { majorFamilyName } from "../majors.ts";
 import { stateName } from "../states.ts";
 import { courseRigorCountOf, OUTSIDE_US } from "../student-profile.ts";
@@ -56,6 +57,17 @@ export const ESTIMATE_FACT_PATHS = [
   "reference.guaranteed_admission.rule",
   "reference.guaranteed_admission.scope",
   "reference.guaranteed_admission.major_guaranteed",
+  // The third version (levels.md, depth.md, inputs-beyond-academics.md): the tier that caps a level, and the C7
+  // ratings that decide whether activities, work, legacy, interest, and first-generation status are read.
+  "selectivity.tier",
+  "selectivity.in_state",
+  "selectivity.out_of_state",
+  "reported.admission_profile.factors.extracurriculars",
+  "reported.admission_profile.factors.talent",
+  "reported.admission_profile.factors.work_experience",
+  "reported.admission_profile.factors.alumni_relation",
+  "reported.admission_profile.factors.interest",
+  "reported.admission_profile.factors.first_generation",
 ] as const satisfies readonly FieldPath[];
 
 const FACT_PATHS: ReadonlySet<string> = new Set(ESTIMATE_FACT_PATHS);
@@ -115,6 +127,13 @@ export function yourNumbersList(n: YourNumbers, used: readonly InputKind[]): str
   if (has("major") && n.majors.length > 0) out.push(`intended major ${n.majors[0].toLowerCase()}`);
   if (has("subject_grades")) out.push("math and science grades");
   if (has("sections")) out.push("section scores");
+  // The inputs beyond the numbers, named (never their values: those are in the sentences).
+  if (has("activities")) out.push("activities");
+  if (has("awards")) out.push("awards");
+  if (has("work")) out.push("work hours");
+  if (has("legacy")) out.push("legacy connection");
+  if (has("recruited")) out.push("recruiting");
+  if (has("interest")) out.push("interest shown");
   return out;
 }
 
@@ -122,13 +141,13 @@ export function yourNumbersList(n: YourNumbers, used: readonly InputKind[]): str
 /* Sorting a result's notes                                            */
 /* ------------------------------------------------------------------ */
 
-const LABEL_KEYS = new Set(["estimate.guaranteed", "estimate.reach_for_everyone", "estimate.open_admission"]);
+const LABEL_KEYS = new Set(["estimate.guaranteed", "estimate.reach_for_everyone", "estimate.elite", "estimate.recruited", "estimate.open_admission"]);
 const STAGE_KEYS = new Set(["estimate.academics", "estimate.pool"]);
 const PROMPT_KEYS = new Set(["estimate.missing_courses", "estimate.missing_input"]);
-const NOT_USED_KEY = "estimate.not_used";
+const NOT_USED_KEYS = new Set(["estimate.not_used", "estimate.not_said"]);
 
 export interface PanelParts {
-  /** "Reach for everyone: …" or "Guaranteed for you: …", or null. */
+  /** "Elite: a reach for everyone …", "Guaranteed for you: …", "Recruited: …", or null. */
   label: EstimateNote | null;
   /** "Your academics: …" and the stage-2 sentence ("Applicants like you — from Indiana — were admitted at …"). */
   stages: EstimateNote[];
@@ -145,7 +164,7 @@ export function panelParts(result: Pick<EstimateResult, "notes">): PanelParts {
   for (const n of result.notes) {
     if (LABEL_KEYS.has(n.key)) parts.label ??= n;
     else if (STAGE_KEYS.has(n.key)) parts.stages.push(n);
-    else if (n.key === NOT_USED_KEY) parts.notUsed.push(n);
+    else if (NOT_USED_KEYS.has(n.key)) parts.notUsed.push(n);
     else if (PROMPT_KEYS.has(n.key)) parts.prompt ??= n;
     else parts.reasons.push(n);
   }
@@ -178,42 +197,42 @@ const RATE_KIND_BY_FIELD: Record<string, string> = {
   "admissions.acceptance_rate": "pool.kind.overall",
 };
 
+/** The rate-kind word for each "who" phrase of the structured pool. */
+const RATE_KIND_BY_WHO: Record<string, string> = {
+  "pool.who.residency_in": "pool.kind.residency_in",
+  "pool.who.residency_out": "pool.kind.residency_out",
+  "pool.who.international": "pool.kind.residency_international",
+  "pool.who.major": "pool.kind.major",
+  "pool.who.overall": "pool.kind.overall",
+  "pool.who.guaranteed": "pool.kind.guaranteed",
+};
+
 /**
- * Which rate the estimate used, in words ("in-state rate", "guaranteed"), from the pool line's cited field; null when
- * the estimate has no pool line (no rate, or an open-admission college).
+ * Which rate the estimate used, in words ("in-state rate", "guaranteed"): from the result's structured `pool`, else
+ * (an older result) the pool line's cited field; null when the estimate has no published rate (open admission).
  */
-export function rateKindText(result: Pick<EstimateResult, "label" | "notes">): string | null {
+export function rateKindText(result: Pick<EstimateResult, "label" | "notes" | "pool">): string | null {
   if (result.label === "guaranteed") return noteText({ key: "pool.kind.guaranteed", values: {} });
-  const pool = result.notes.find((n) => n.key === "estimate.pool");
-  const key = pool?.cite ? RATE_KIND_BY_FIELD[pool.cite] : undefined;
+  const fromPool = result.pool ? RATE_KIND_BY_WHO[result.pool.whoKey] : undefined;
+  if (fromPool) return noteText({ key: fromPool, values: {} });
+  const line = result.notes.find((n) => n.key === "estimate.pool");
+  const key = line?.cite ? RATE_KIND_BY_FIELD[line.cite] : undefined;
   return key ? noteText({ key, values: {} }) : null;
 }
 
 /**
  * "from Indiana: 71%" / "from outside Indiana: 44%" / "international: 12%" / "to the College of Engineering: 23%" /
- * "everyone: 43%" / "guaranteed" (pool-explainer.md "Where it shows", Compare's sub-line): the stage-2 sentence's
- * short form, read from the sentence `estimate.pool` already carries (lib/chances/notes.ts) so Compare can never
- * show a different number than the sentence itself. Null when the estimate has no pool line to shorten.
+ * "everyone: 43%" / "guaranteed" (pool-explainer.md "Where it shows", Compare's sub-line), from the result's
+ * structured `pool`: the "who" phrase from the catalog and the college's published rate, formatted exactly as the
+ * stage-2 sentence formats it (pctSmart), so Compare never shows a different number than the sentence. Never the
+ * hidden odds (the field carries only the published rate). Null without a published rate to show.
  */
-export function compareShortLine(result: Pick<EstimateResult, "label" | "notes">): string | null {
-  if (result.label === "guaranteed") return noteText({ key: "pool.kind.guaranteed", values: {} });
-  const pool = result.notes.find((n) => n.key === "estimate.pool");
-  if (!pool) return null;
-  const text = noteText(pool);
-  const rate = text.match(/(\d+(?:\.\d+)?%)/)?.[1];
-  if (!rate) return null;
-  const kind = pool.cite ? RATE_KIND_BY_FIELD[pool.cite] : undefined;
-  if (kind === "pool.kind.residency_in" || kind === "pool.kind.residency_out") {
-    const who = text.match(/from (.+?) — were admitted/)?.[1];
-    return who ? `from ${who}: ${rate}` : null;
-  }
-  if (kind === "pool.kind.residency_international") return `international: ${rate}`;
-  if (kind === "pool.kind.major") {
-    const who = text.match(/^Applicants to (.+?) were admitted/)?.[1];
-    return who ? `to ${who}: ${rate}` : null;
-  }
-  if (kind === "pool.kind.overall") return `everyone: ${rate}`;
-  return null;
+export function compareShortLine(result: Pick<EstimateResult, "label" | "pool">): string | null {
+  if (result.label === "guaranteed" || result.pool?.kind === "guaranteed") return noteText({ key: "pool.kind.guaranteed", values: {} });
+  const pool = result.pool;
+  if (!pool || pool.rate === null || !pool.whoKey.startsWith("pool.who.")) return null;
+  const who = noteText({ key: pool.whoKey, values: pool.whoValues });
+  return who ? `${who}: ${pctSmart(pool.rate)}` : null;
 }
 
 /* ------------------------------------------------------------------ */
@@ -221,7 +240,7 @@ export function compareShortLine(result: Pick<EstimateResult, "label" | "notes">
 /* ------------------------------------------------------------------ */
 
 /** The order a tie between inputs breaks in: the one that helps at the most colleges first, then this order. */
-const INPUT_ORDER: readonly InputKind[] = ["courses", "class_rank", "subject_grades", "major", "state", "high_school"];
+const INPUT_ORDER: readonly InputKind[] = ["courses", "class_rank", "subject_grades", "major", "state", "high_school", "activities"];
 
 /** The input a result's prompt note names, or null when it has none. */
 export function promptedInput(result: Pick<EstimateResult, "notes">): InputKind | null {

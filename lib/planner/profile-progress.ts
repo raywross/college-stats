@@ -4,7 +4,7 @@
  * to do without overwhelming them"). A plain count of the student's own sections, nothing from the estimate (not the
  * model's completeness), plus the one most useful next step and where it's entered. Pure and client-safe.
  */
-import { activitiesIn } from "./activity-steps.ts";
+import { stepHasEntries } from "./activity-steps.ts";
 import type { IntakeStep } from "./intake.ts";
 import type { StudentProfileData } from "../student-profile.ts";
 
@@ -61,14 +61,13 @@ export function sectionDone(p: StudentProfileData, s: ProfileSection): boolean {
       return p.tests.focus === "none" || p.tests.satTotal !== null || p.tests.actComposite !== null || p.tests.target !== null;
     case "courses":
       return a.courses.length > 0;
+    // An activity step is done with an entry, or when the student answered "None" (owner, 2026-10-12); never just
+    // for having seen it.
     case "sports":
-      return activitiesIn(a.activities ?? [], "sports").length > 0;
     case "clubs":
-      return activitiesIn(a.activities ?? [], "clubs").length > 0;
     case "work":
-      return activitiesIn(a.activities ?? [], "work").length > 0;
     case "other":
-      return activitiesIn(a.activities ?? [], "other").length > 0 || (a.awards ?? []).length > 0;
+      return a.activitiesNone?.[s] === true || stepHasEntries(s, a.activities ?? [], a.awards ?? []);
     case "major":
       return p.plans.intendedMajors.length > 0;
     case "state":

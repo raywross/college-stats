@@ -1314,6 +1314,20 @@ test("Revision 2: activities of every kind count toward completeness (sports, cl
   assert.ok(none < 1);
 });
 
+test("owner 2026-10-12: 'None' on every activity step reads as answered for completeness, with no depth credit", async () => {
+  const { activitiesReading } = await import("../lib/chances/depth.ts");
+  const c = () => college("100654", { rate: 0.3, sat: [1200, 1400], gpa: middleGpa(3.4, 3.9), c7: { gpa: "very_important", test_scores: "important", extracurriculars: "important" } });
+  const base = { gpa: 3.8, test: sat(1300) };
+  const gap = readings(c(), student(base));
+  const answered = readings(c(), student({ ...base, activitiesAnswered: true }));
+  assert.ok(gap.completeness < 1, "unanswered steps are a gap");
+  near(answered.completeness, 1, 1e-9);
+  // No depth credit: the reading runs on the (empty) list, and the flag never reaches it.
+  assert.equal(activitiesReading([], []).reading, null);
+  // Guard: only a literal true counts; anything else is still a gap.
+  near(readings(c(), student({ ...base, activitiesAnswered: false })).completeness, gap.completeness, 1e-9);
+});
+
 /* ------------------------------------------------------------------ */
 /* The snapshot detail                                                 */
 /* ------------------------------------------------------------------ */

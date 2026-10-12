@@ -863,7 +863,8 @@ function fixedPart(input: ModelInput, student: StandingStudent, without: Without
     courses: rigorEntered(s, core),
     class_rank: rankAnswered,
     test: s.test !== null,
-    activities: activityList.length > 0 || (s.awards ?? []).length > 0,
+    // Owner, 2026-10-12: "None" on every activity step is an answer, not a gap (the reading stays empty: no depth).
+    activities: activityList.length > 0 || (s.awards ?? []).length > 0 || s.activitiesAnswered === true,
   };
   let expectedWeight = 0;
   let presentWeight = 0;
@@ -1313,7 +1314,7 @@ function explain(input: ModelInput, ev: Evaluation, ed: ReturnType<typeof edVerd
       if (acts.length > 0) used.add("activities");
       if (awards.length > 0) used.add("awards");
       fact(ratingFact);
-    } else if (f.depthRating !== "considered") {
+    } else if (f.depthRating !== "considered" && s.activitiesAnswered !== true) {
       missing.add("activities");
     }
   } else if (acts.length > 0 || awards.length > 0) {

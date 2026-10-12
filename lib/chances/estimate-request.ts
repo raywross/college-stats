@@ -121,6 +121,8 @@ export function sanitizeEstimateStudent(input: unknown): EstimateStudent {
     // Revision 3 (method/standing.md, rule 3): the focus test's target, in that test's range, and the graduation year.
     testTarget: sanitizeTestTarget(v.testTarget),
     gradYear: intIn(v.gradYear, GRAD_YEAR_RANGE[0], GRAD_YEAR_RANGE[1]),
+    // Owner, 2026-10-12: every activity step answered (entries or "None"); only a literal true counts.
+    activitiesAnswered: v.activitiesAnswered === true,
   };
 }
 

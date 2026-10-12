@@ -61,6 +61,7 @@ const draft = (over: Partial<IntakeDraft> = {}): IntakeDraft => ({
   courses: [],
   activities: [],
   awards: [],
+  activitiesNone: {},
   ...over,
 });
 
@@ -305,6 +306,7 @@ test("draftFromProfile: an empty profile opens empty; a saved one opens filled, 
     courses: [],
     activities: [],
     awards: [],
+    activitiesNone: {},
   });
   const d = draftFromProfile(sampleProfile(), 2027, TODAY);
   assert.equal(d.classYear, 2027);
@@ -328,10 +330,10 @@ test("draftFromProfile: an empty profile opens empty; a saved one opens filled, 
     { step: 0, label: "School", value: "Not set" },
     { step: 1, label: "Test", value: "SAT 1390 · aiming for 1450" },
     { step: 2, label: "AP courses", value: "1 taken · 1 taking or planned" },
-    { step: 3, label: "Sports", value: "None" },
-    { step: 4, label: "Clubs", value: "None" },
-    { step: 5, label: "Work", value: "None" },
-    { step: 6, label: "Other", value: "None" },
+    { step: 3, label: "Sports", value: "Not added" },
+    { step: 4, label: "Clubs", value: "Not added" },
+    { step: 5, label: "Work", value: "Not added" },
+    { step: 6, label: "Other", value: "Not added" },
   ]);
 });
 
@@ -547,6 +549,7 @@ test("applyIntake: status always derives from the picked year, the class, and to
       { id: "b", key: "ap_chemistry", year: 11, exam: null },
       { id: "c", key: "ap_human_geography", year: 9, exam: "3" },
     ],
+    activitiesNone: {},
     activities: [],
     awards: [],
   };
@@ -615,6 +618,7 @@ const GOOD: IntakeSave = {
   courses: [{ id: "c1", key: "ap_biology", year: 11, exam: "4" }],
   activities: [],
   awards: [],
+  activitiesNone: {},
 };
 
 test("intakeToSave: null while the grades or test step is invalid; testing fields cleared for Not testing", () => {

@@ -127,6 +127,16 @@ Modeled on the AP step: on desktop the list sits beside a search panel, on a pho
 - **Awards** (Other step): `searchAwards` over data/reference/awards.json (popular first; nicknames such as "nmsf",
   "eagle", "pvsa"); a catalog award carries its tier; a typed one starts at School and has a level pick; a one-tap
   year, optional.
+- **None** (owner, 2026-10-12): each of the four steps opens with a one-tap **None** chip, stored as
+  `academics.activitiesNone` (`{ sports?: true; clubs?: true; work?: true; other?: true }`, sanitized by
+  `sanitizeActivitiesNone`; a profile saved before it reads as `{}`, every step unanswered). Choosing None clears that
+  step's entries (and, on Other, its awards) after a confirm when there are any; tapping it again un-answers the step.
+  Adding an entry clears that step's None (`reconcileStepNone`, applied in the step and again in `intakeToSave` and
+  `parseIntakeSave`). Review and the desktop rail say "None" only when chosen; an empty, unanswered step reads "Not
+  added". Skipping a step is not None. The people line's progress ring counts a step done with an entry or None.
+  When all four steps are answered, entries or None, `estimateInputFromProfile` sends `activitiesAnswered: true` and
+  the estimate reads activities as answered for completeness (method/standing.md "Revision 1"), so a student with
+  truly no activities isn't counted as a gap; the activities list stays empty, so there's no depth credit.
 
 ### Review and saving
 - Review lists Class, GPA ("3.82 · 4.0 scale"), Test ("SAT 1390 (practice) · aiming for 1450" / "Not testing"),

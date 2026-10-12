@@ -19,7 +19,7 @@ import { modelEstimateWithDetail, MODEL_VERSION } from "./model";
 import { offeringFor } from "./rigor-server";
 import type { AppliedEstimate } from "./snapshot";
 import type { AppliedEstimator } from "./snapshot-write";
-import type { EstimateInput, EstimateResult, EstimateStudent, SchoolOffering } from "./types";
+import type { CollegeHooks, EstimateInput, EstimateResult, EstimateStudent, SchoolOffering } from "./types";
 
 export { MODEL_VERSION };
 export { withCounterfactual, type Counterfactual } from "./estimate-request";
@@ -83,6 +83,7 @@ export function estimateWithDetail(input: EstimateInput, ctx: EstimateContext): 
       overallYear: ctx.overallYearFor(school),
       coreAtTopLevel: ctx.coreAtTopLevel ?? null,
       grade: ctx.grade ?? null,
+      hooks: input.hooks ?? null,
     });
   } catch (err) {
     console.error(`estimate: the model failed for ${input.unitId}; serving the baseline: ${err instanceof Error ? err.message : String(err)}`);
@@ -110,12 +111,15 @@ export function estimate(input: EstimateInput, ctx: EstimateContext): EstimateRe
   return estimateWithDetail(input, ctx).result;
 }
 
-/** The estimate at several colleges, by unit id; ids the dataset doesn't have are left out. */
-export function estimateMany(student: EstimateStudent, unitIds: readonly string[], ctx: EstimateContext): Record<string, EstimateResult> {
+/**
+ * The estimate at several colleges, by unit id; ids the dataset doesn't have are left out. `hooks` carries each list
+ * row's legacy, recruited, and logged-interest inputs by unit id (decision 5); a college without an entry has none.
+ */
+export function estimateMany(student: EstimateStudent, unitIds: readonly string[], ctx: EstimateContext, hooks?: Readonly<Record<string, CollegeHooks>> | null): Record<string, EstimateResult> {
   const out: Record<string, EstimateResult> = {};
   for (const unitId of new Set(unitIds)) {
     if (!ctx.schoolById(unitId)) continue;
-    out[unitId] = estimate({ student, unitId }, ctx);
+    out[unitId] = estimate({ student, unitId, hooks: hooks?.[unitId] }, ctx);
   }
   return out;
 }

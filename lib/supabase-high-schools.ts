@@ -3,11 +3,13 @@
  * shared by the app (lib/high-schools.ts) and the publish step (scripts/lib/publish-high-schools.mts). Plain module, no
  * Next.js imports. The app reads by id and through the search function, never every row.
  */
+import { retryOnStatementTimeout } from "./supabase-retry.ts";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { HighSchoolDetail, HighSchoolHit, HighSchoolMeta, PublishedHighSchool, StateMedians } from "./high-school-types";
 import { clampLimit, hsSearchKey } from "./high-school-core.ts";
 
-const PAGE_SIZE = 1000;
+/** Rows per page: ~2–4 KB each with the AP Course Ledger's list on the row; a page retries on a statement timeout. */
+const PAGE_SIZE = 500;
 
 export type HighSchoolFileName = "meta" | "medians";
 
@@ -66,8 +68,7 @@ export async function searchHighSchoolsRpc(
 async function fetchAll<T>(client: SupabaseClient, table: string, key: string, columns: string): Promise<T[]> {
   const out: T[] = [];
   for (let from = 0; ; from += PAGE_SIZE) {
-    const { data, error } = await client.from(table).select(columns).order(key).range(from, from + PAGE_SIZE - 1);
-    if (error) throw new Error(`Supabase: reading ${table} failed: ${error.message}`);
+    const data = (await retryOnStatementTimeout(() => client.from(table).select(columns).order(key).range(from, from + PAGE_SIZE - 1), `Supabase: reading ${table} failed`)) ?? [];
     out.push(...(data as T[]));
     if (data.length < PAGE_SIZE) return out;
   }

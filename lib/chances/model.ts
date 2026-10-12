@@ -8,7 +8,9 @@ import "server-only";
  *
  * Three stages. Stage 1, how far in the pool: each measure the college says it weighs (CDS C7, else the federal
  * factors) becomes a distance `d` on the college's own range (0 at its 25th percentile, 1 at its 75th), combined so
- * the weakest measure carries most of the weight. Stage 2, the pool's odds: the student's own base rate
+ * the weakest measure carries most of the weight; the test checks the rest for consistency rather than joining it,
+ * and inputs the college weighs that the student hasn't entered draw the distance down (Revision 1, method/standing.md
+ * "Revision 1: consistency and completeness"). Stage 2, the pool's odds: the student's own base rate
  * (lib/chances/pool-rate.ts) times the academic multiplier and, where the college's C7 says it weighs them, depth,
  * work, legacy, interest, and a coach's contact. Stage 3, the level: the hidden odds against five cutoffs, capped by
  * the college's selectivity tier for the student's pool (lib/selectivity-tier.ts), floored by the college's own
@@ -25,6 +27,7 @@ import { emptyCoreAtTopLevel, type CoreAtTopLevel } from "../student-profile.ts"
 import {
   gpaStanding,
   isOptionalPolicy,
+  isRequiredPolicy,
   readScore,
   scoreField,
   scoreStanding,
@@ -43,7 +46,7 @@ import { activitiesReading, courseTracks, depthSnapshot, type ActivitiesResult, 
 import { interestMultiplier, legacyMultiplier, recruitedFloor, recruitMultiplier, type LegacyReading } from "./hooks.ts";
 import { NO_HOOKS, STANDING_LEVEL_LABELS } from "./levels.ts";
 import { majorMatters, majorReviewFor, type MajorReviewReading } from "./major-review.ts";
-import { noteText } from "./notes.ts";
+import { INPUT_WORDS, noteText } from "./notes.ts";
 import { poolRateFor, POOL_FIELDS, type PoolReading } from "./pool-rate.ts";
 import { gpaTopShare, isWeightedReporter } from "./reading.ts";
 import { rigorReading, type RigorResult } from "./rigor.ts";
@@ -64,7 +67,7 @@ import type {
 import type { AblationInput, SnapshotDetail } from "./snapshot.ts";
 
 /** Recorded with every result and every outcome snapshot (specs/chances/estimate.md "Changing the method"). */
-export const MODEL_VERSION = "20261012.1";
+export const MODEL_VERSION = "20261012.2";
 
 /**
  * The second version's reading constants that the third keeps: GPA crowding, which colleges' class-rank tiers count,
@@ -127,7 +130,26 @@ export const ODDS_V3 = {
   ] as readonly (readonly [number, number])[],
   /** `M_ed = 1 + share × (edRate / overallRate − 1)`, between 1 and `max`; for the ED sentence only. */
   ed: { share: 0.5, max: 2 },
+  /**
+   * Revision 1 (2026-10-12), the test as a consistency check: where the test is counted beside other measures,
+   * `d = d_core + clamp(testPull × (d_test − d_core), −testDown, +testUp)`, so a test in line with the record confirms
+   * it and one out of line moves it a little, never past the record.
+   */
+  testPull: 0.25,
+  testDown: 0.3,
+  testUp: 0.2,
+  /**
+   * Revision 1, completeness: each input the college weighs carries this weight; `completeness = present ÷ expected`
+   * and `d_eff = min(d, completeness × d + (1 − completeness) × gapPrior)` (an unknown reads as below the middle;
+   * a gap never raises a record already below it).
+   */
+  expectWeights: { gpa: 3, courses: 2, class_rank: 1, test: 1, activities: 1 } as Record<CompletenessKind, number>,
+  gapPrior: -0.5,
 } as const;
+
+/** The inputs a college can expect (Revision 1, completeness). */
+type CompletenessKind = "gpa" | "courses" | "class_rank" | "test" | "activities";
+const COMPLETENESS_KINDS: readonly CompletenessKind[] = ["gpa", "courses", "class_rank", "test", "activities"];
 
 /** What the model reads beyond the student and the college (built once per request by lib/chances/estimate.ts). */
 export interface ModelInput {
@@ -353,12 +375,13 @@ interface Placed {
 }
 
 /** The level from the odds, then the tier's cap and the Safe rule, then a recruited floor. */
-function place(odds: number, anyBelow: boolean, tier: SelectivityTier | null, rate: number, floor: StandingLevel | null): Placed {
+function place(odds: number, consistent: boolean, tier: SelectivityTier | null, rate: number, floor: StandingLevel | null): Placed {
   let level: StandingLevel;
   let set = false;
   if (tier === "elite") {
-    // The odds aren't used: in range is a Reach, any measure below the range a High reach.
-    level = anyBelow ? "high_reach" : "reach";
+    // The odds aren't used: Reach only when every signal is consistent with an excellent, well-rounded record
+    // (Revision 1); anything missing or short is a High reach.
+    level = consistent ? "reach" : "high_reach";
     set = true;
   } else {
     level = levelForOdds(odds);
@@ -446,6 +469,21 @@ interface Fixed {
   hooks: CollegeHooks;
   /** Whether the hooks are switched off (the floors with them). */
   hooksOff: boolean;
+  /** Revision 1: the share of the expected inputs' weight the student entered (1 when nothing is expected). */
+  completeness: number;
+  /** The expected inputs the student hasn't entered, in COMPLETENESS_KINDS order. */
+  gaps: CompletenessKind[];
+  /** Whether a test is expected here (required, or weighed and the student has one). */
+  testExpected: boolean;
+  /** The Ultra selective consistency check, apart from the test (which the score part reads). */
+  consistency: Consistency;
+}
+
+/** The Ultra selective rule's signals apart from the test: all met, and the ones the student hasn't entered. */
+interface Consistency {
+  pass: boolean;
+  /** Inputs the student hasn't entered that the rule needs (named in the incomplete sentence). */
+  missing: InputKind[];
 }
 
 function fixedPart(input: ModelInput, student: StandingStudent, without: Without): Fixed {
@@ -570,6 +608,55 @@ function fixedPart(input: ModelInput, student: StandingStudent, without: Without
   const mInterest = interest && !without.interest ? interest.multiplier : 1;
   const mRecruit = hooksOff ? 1 : recruitMultiplier(hooks.recruited);
 
+  // Revision 1, completeness: the inputs this college weighs (C7, else the federal factors, as read above), and which
+  // the student entered. A test is expected where the college requires one, or weighs one the student has; a test the
+  // student doesn't have at a test-optional college isn't a gap. "My school doesn't rank" counts as an answer.
+  const policy = input.standing.testPolicy;
+  const testExpected = policy !== "not-considered" && !testsUnweighed(school, input.standing) && f?.test_scores !== "not_considered" && (isRequiredPolicy(policy) || s.test !== null);
+  const expected: Record<CompletenessKind, boolean> = {
+    gpa: gpaWeighs.counts,
+    courses: rigorWeighs.counts,
+    class_rank: rankWeighs.counts,
+    test: testExpected,
+    activities: depthRating !== null && C7_AT_LEAST_CONSIDERED.has(depthRating),
+  };
+  const rankAnswered = s.classRankPercentile !== null || (s.classStanding ?? null) !== null;
+  const present: Record<CompletenessKind, boolean> = {
+    gpa: student.gpaRange !== null || s.gpa !== null,
+    courses: rigorEntered(s, core),
+    class_rank: rankAnswered,
+    test: s.test !== null,
+    activities: activityList.length > 0 || (s.awards ?? []).length > 0,
+  };
+  let expectedWeight = 0;
+  let presentWeight = 0;
+  const gaps: CompletenessKind[] = [];
+  for (const k of COMPLETENESS_KINDS) {
+    if (!expected[k]) continue;
+    expectedWeight += ODDS_V3.expectWeights[k];
+    if (present[k]) presentWeight += ODDS_V3.expectWeights[k];
+    else gaps.push(k);
+  }
+  const completeness = expectedWeight > 0 ? presentWeight / expectedWeight : 1;
+
+  // Revision 1, Ultra selective: Reach only when every signal is consistent with an excellent, well-rounded record
+  // (the test is checked with the score). Missing counts as short.
+  const cMissing: InputKind[] = [];
+  let cPass = true;
+  const check = (ok: boolean, missingKind: InputKind | null) => {
+    if (ok) return;
+    cPass = false;
+    if (missingKind) cMissing.push(missingKind);
+  };
+  check(gpaD !== null && gpaD >= 0, present.gpa ? null : "gpa");
+  const reading = rigor?.reading ?? null;
+  check(reading === "most" || reading === "much", reading === null ? "courses" : reading === "cant_place" ? "high_school" : null);
+  const standingPick = s.classStanding ?? null;
+  const topStanding = standingPick === "top1" || standingPick === "top5" || (s.classRankPercentile !== null && s.classRankPercentile <= ULTRA_RANK_TOP);
+  check(standingPick === "no_rank" || topStanding, rankAnswered ? null : "class_rank");
+  const rounded = activities.reading === "focused" || activities.reading === "building" || activities.recognition === 1 || activities.recognition === 2;
+  check(rounded, present.activities ? null : "activities");
+
   return {
     pool,
     tier,
@@ -611,8 +698,15 @@ function fixedPart(input: ModelInput, student: StandingStudent, without: Without
     mRecruit,
     hooks,
     hooksOff,
+    completeness,
+    gaps,
+    testExpected,
+    consistency: { pass: cPass, missing: cMissing },
   };
 }
+
+/** Class standing at or above this ("top X%") passes the Ultra selective rule where the school ranks (owner, 2026-10-12: top 5%). */
+const ULTRA_RANK_TOP = 5;
 
 /* ------------------------------------------------------------------ */
 /* The score                                                           */
@@ -646,10 +740,14 @@ const note = (key: string, values: EstimateNote["values"] = {}, cite?: string | 
 interface Decision {
   level: StandingLevel | null;
   label: StandingLabel | null;
-  /** The academic distance, or null with no counted measure. */
+  /** The academic distance (the test as a consistency check on the rest), or null with no counted measure. */
   d: number | null;
-  /** Any counted measure below the range (the Elite rule). */
-  anyBelow: boolean;
+  /** The distance the odds read: `d` drawn toward the gap prior by the missing inputs' share. */
+  dEff: number | null;
+  /** Every signal the Ultra selective rule reads is met (the test included). */
+  consistent: boolean;
+  /** Inputs the Ultra selective rule needs that the student hasn't entered (the test included). */
+  consistencyMissing: InputKind[];
   /** The hidden odds, before caps and floors; null without a rate or a distance. */
   odds: number | null;
   /** A cap or floor set the level, so `closeness` is null. */
@@ -658,38 +756,50 @@ interface Decision {
 }
 
 function decide(f: Fixed, score: ScorePart): Decision {
-  const ds: number[] = [];
-  if (score.read?.used && score.d !== null) ds.push(score.d);
-  if (f.gpaD !== null) ds.push(f.gpaD);
-  if (f.rankD !== null) ds.push(f.rankD);
+  // The core: every measure but the test (the GPA slot after crowding and rigor, class rank, the major's subjects).
+  const core: number[] = [];
+  if (f.gpaD !== null) core.push(f.gpaD);
+  if (f.rankD !== null) core.push(f.rankD);
   const subject = f.subjectPosition !== null ? ODDS_V3.position[f.subjectPosition] : null;
-  // A withheld score is still the only measure when nothing else can be placed (the second version's rule).
-  if (ds.length === 0 && subject === null && score.read && score.d !== null) ds.push(score.d);
-
-  const plain = subject !== null ? [...ds, subject] : ds;
-  let measures = plain;
-  let d = combine(plain);
+  let dCore = combine(subject !== null ? [...core, subject] : core);
   if (f.trackAbove) {
     // A deep track for the major fills the slot as above, and never lowers the distance (depth never lowers a level).
-    const withTrack = [...ds, ODDS_V3.position.above];
-    const dt = combine(withTrack);
-    if (dt !== null && (d === null || dt > d)) {
-      d = dt;
-      measures = withTrack;
-    }
+    const dt = combine([...core, ODDS_V3.position.above]);
+    if (dt !== null && (dCore === null || dt > dCore)) dCore = dt;
   }
-  const anyBelow = measures.some((m) => m < 0);
 
-  if (f.pool.kind === "guaranteed") return { level: "safe", label: "guaranteed", d, anyBelow, odds: null, set: true, open: false };
+  // The test as a consistency check (Revision 1): it moves the core a little toward itself, within limits; alone, it
+  // is the distance. A withheld score is still the only measure when nothing else can be placed.
+  const testCounted = !!score.read?.used && score.d !== null;
+  let d: number | null = null;
+  if (dCore !== null && testCounted) d = dCore + Math.min(ODDS_V3.testUp, Math.max(-ODDS_V3.testDown, ODDS_V3.testPull * (score.d! - dCore)));
+  else if (dCore !== null) d = dCore;
+  else if (score.read && score.d !== null) d = score.d;
+  // Completeness (Revision 1): the missing inputs' share of the weight reads as the gap prior. Gaps lower the distance
+  // and never raise it: a record already below the prior isn't helped by leaving inputs out.
+  const dEff = d === null ? null : Math.min(d, f.completeness * d + (1 - f.completeness) * ODDS_V3.gapPrior);
+
+  // The Ultra selective rule's test signal: in or above the range where counted; missing where one is expected.
+  const consistencyMissing = [...f.consistency.missing];
+  let consistent = f.consistency.pass;
+  if (testCounted) {
+    if (score.d! < 0) consistent = false;
+  } else if (f.gaps.includes("test")) {
+    consistent = false;
+    consistencyMissing.push("test");
+  }
+
+  const base = { d, dEff, consistent, consistencyMissing };
+  if (f.pool.kind === "guaranteed") return { ...base, level: "safe", label: "guaranteed", odds: null, set: true, open: false };
   const rate = f.pool.rate;
-  if (rate === null) return { level: "safe", label: null, d, anyBelow, odds: null, set: true, open: true };
+  if (rate === null) return { ...base, level: "safe", label: null, odds: null, set: true, open: true };
 
   const floor = f.hooksOff ? null : recruitedFloor(f.hooks.recruited, d, f.tier);
-  if (d === null) return floor ? { level: floor, label: "recruited", d, anyBelow, odds: null, set: true, open: false } : { level: null, label: null, d, anyBelow, odds: null, set: false, open: false };
+  if (d === null || dEff === null) return floor ? { ...base, level: floor, label: "recruited", odds: null, set: true, open: false } : { ...base, level: null, label: null, odds: null, set: false, open: false };
 
-  const odds = Math.min(ODDS_V3.maxOdds, rate * academicMultiplier(d) * f.mult);
-  const placed = place(odds, anyBelow, f.tier, rate, floor);
-  return { level: placed.level, label: placed.label, d, anyBelow, odds, set: placed.set, open: false };
+  const odds = Math.min(ODDS_V3.maxOdds, rate * academicMultiplier(dEff) * f.mult);
+  const placed = place(odds, consistent, f.tier, rate, floor);
+  return { ...base, level: placed.level, label: placed.label, odds, set: placed.set, open: false };
 }
 
 /** One college's full evaluation (with the switches the measurements use). */
@@ -734,10 +844,10 @@ function edVerdict(input: ModelInput, ev: Evaluation): { ed: EstimateResult["ed"
   const m = edMultiplier(input.school);
   if (m === null) return { ed: null, to: null };
   const rate = f.pool.rate;
-  if (dec.label === "guaranteed" || rate === null || dec.d === null) return { ed: "same", to: null };
-  const odds = Math.min(ODDS_V3.maxOdds, rate * academicMultiplier(dec.d) * f.mult * m);
+  if (dec.label === "guaranteed" || rate === null || dec.d === null || dec.dEff === null) return { ed: "same", to: null };
+  const odds = Math.min(ODDS_V3.maxOdds, rate * academicMultiplier(dec.dEff) * f.mult * m);
   const floor = f.hooksOff ? null : recruitedFloor(f.hooks.recruited, dec.d, f.tier);
-  const to = place(odds, dec.anyBelow, f.tier, rate, floor).level;
+  const to = place(odds, dec.consistent, f.tier, rate, floor).level;
   return LEVEL_RANK[to] > LEVEL_RANK[dec.level] ? { ed: "helps", to } : { ed: "same", to: null };
 }
 
@@ -964,27 +1074,53 @@ function explain(input: ModelInput, ev: Evaluation, ed: ReturnType<typeof edVerd
     used.add("round");
   }
 
-  // One prompt for the most useful new input that's missing, only where an input could still change the level (not a
-  // guarantee, a recruited floor, or open admission; at an Elite college only the state or major, which can change the pool).
+  // Revision 1: every input the college weighs that the student hasn't entered is missing, and at an Ultra selective
+  // college every input its rule reads (a guarantee, a recruited floor, or open admission asks for nothing more).
+  const settled = decision.open || decision.label === "guaranteed" || decision.label === "recruited";
+  const asks: InputKind[] = settled ? [] : [...f.gaps, ...(f.tier === "elite" ? decision.consistencyMissing : [])];
+  for (const k of asks) missing.add(k);
+
+  // One prompt for the most useful new input that's missing, only where an input could still change the level.
   for (const k of used) missing.delete(k);
-  const newMissing = (["courses", "class_rank", "state", "major", "subject_grades", "high_school", "activities"] as InputKind[]).filter(
-    (k) => missing.has(k) && !decision.open && (decision.label === null || (decision.label === "elite" && (k === "state" || k === "major"))),
-  );
+  const newMissing = PROMPT_ORDER.filter((k) => missing.has(k) && !decision.open && (decision.label === null || decision.label === "elite"));
   if (newMissing[0] === "courses") notes.push(note("estimate.missing_courses"));
   else if (newMissing[0]) notes.push(note("estimate.missing_input", { input: noteInput(newMissing[0]) }));
+  // And the gaps by name: what the estimate doesn't have yet (never how much they count).
+  const gapKinds = INCOMPLETE_ORDER.filter((k) => asks.includes(k) && !used.has(k));
+  if (gapKinds.length > 0) notes.push(note("estimate.incomplete", { inputs: listWords(gapKinds.map((k) => INCOMPLETE_WORDS[k] ?? k)) }));
 
   return { notes, facts: [...new Set(facts)], used: [...used], missing: [...missing] };
 }
 
-const INPUT_WORDS_FOR: Partial<Record<InputKind, string>> = {
-  class_rank: "class rank",
-  state: "state",
-  major: "intended major",
-  subject_grades: "math and science grades",
+const noteInput = (k: InputKind) => INPUT_WORDS[k] ?? k;
+
+/** The order the one prompt picks in: the inputs colleges weigh most first. */
+const PROMPT_ORDER: readonly InputKind[] = ["gpa", "courses", "class_rank", "state", "major", "subject_grades", "high_school", "activities", "test"];
+/** The incomplete sentence's kinds, in order, and their words. */
+const INCOMPLETE_ORDER: readonly InputKind[] = ["gpa", "courses", "high_school", "class_rank", "test", "activities"];
+const INCOMPLETE_WORDS: Partial<Record<InputKind, string>> = {
+  gpa: "GPA",
+  courses: "courses",
   high_school: "high school",
+  class_rank: "class standing",
+  test: "test score",
   activities: "activities",
 };
-const noteInput = (k: InputKind) => INPUT_WORDS_FOR[k] ?? k;
+/** "a", "a and b", "a, b, and c". */
+function listWords(words: string[]): string {
+  if (words.length <= 2) return words.join(" and ");
+  return `${words.slice(0, -1).join(", ")}, and ${words[words.length - 1]}`;
+}
+
+/**
+ * The method's Stage 1 readings for one college, for the method's own tests only (server-only, like everything here;
+ * never in a result, a sentence, a response, telemetry, or an export): the distance with the test as a consistency
+ * check, the distance the odds read after completeness, and completeness itself.
+ */
+export function stageOneReadings(input: ModelInput): { d: number | null; dEff: number | null; completeness: number } {
+  const ev = evaluate(input);
+  return { d: ev.decision.d, dEff: ev.decision.dEff, completeness: ev.fixed.completeness };
+}
 
 /** The estimate for one college (the contract's result; no internals). */
 export function modelEstimate(input: ModelInput): EstimateResult {

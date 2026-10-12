@@ -127,7 +127,7 @@ for everyone":
 
 | Tier | Highest level | Rule inside the tier |
 |---|---|---|
-| **Ultra selective** (key `elite`; "Elite" before 2026-10-12) | Reach | **Reach when no counted measure has `d < 0`; else High reach.** The odds are not used: at a 4% college the multiplier table alone would put even a top student under 5%, and the owner's rule is that an Elite college is a reach for everyone and a possibility for a student in its range |
+| **Ultra selective** (key `elite`; "Elite" before 2026-10-12) | Reach | **Reach when no counted measure has `d < 0`; else High reach** (replaced by [Revision 1](#revision-1-consistency-and-completeness-2026-10-12): Reach only when every signal is consistent). The odds are not used: at a 4% college the multiplier table alone would put even a top student under 5%, and the owner's rule is that an Elite college is a reach for everyone and a possibility for a student in its range |
 | **Highly selective** | Target | By the odds |
 | **Very selective** (added 2026-10-12) | Likely | By the odds |
 | **Selective** | Likely, or Safe when `rate ≥ 0.5` | By the odds |
@@ -164,7 +164,9 @@ Where the student's round is ED (or the planner asks "would ED help here?"), the
 ## Pinned examples
 `tests/chances-model.test.mts`. The second version's table must still hold within one level with every new input
 empty (a test runs it through and asserts the level is within one step and the direction of any change is up for
-students above range, down for students below). Fixtures copy the colleges' figures as fixed inputs.
+students above range, down for students below). Fixtures copy the colleges' figures as fixed inputs. This is the table
+as built at `20261012.1`; [Revision 1](#revision-1-consistency-and-completeness-2026-10-12) moves six rows and holds
+the within-one-level check on complete records.
 
 | Student | College | `d` | Rate | Odds | Level | Why |
 |---|---|---|---|---|---|---|
@@ -228,3 +230,118 @@ Built 2026-10-12 in `lib/chances/model.ts` (constants in `ODDS_V3`), `lib/chance
 - **Snapshots** record the hidden odds binned to 0.005, the tier, and the level with depth, hooks (legacy and
   recruited), and interest switched off. The Depth readings (`depthSnapshot`, no names) are in the method's detail;
   the table has no column for them yet.
+
+## Revision 1: consistency and completeness (2026-10-12)
+`MODEL_VERSION 20261012.2`, in `lib/chances/model.ts` (constants in `ODDS_V3`), pinned in
+`tests/chances-model.test.mts`. The owner's rules, as given:
+
+1. "A top tier student in terms of rigor and class rank with a great SAT score would be slightly better than that
+   same student with a worse score, but a better SAT score wouldn't make a top tier student worse than a non top tier
+   student with a better SAT. Standardized test scores fit into this consistency area: we expect great scores aligned
+   with other great data, but not overweighted."
+2. "For an Ultra selective school to be listed as Reach instead of High reach, all signals must be consistent that the
+   student is academically excellent and well rounded." The class-standing bar is **top 5%** (owner, 2026-10-12).
+3. "Only entering a standardized test score should harm our score. Gaps in data lower our confidence and therefore
+   lower our score. We should build such that we require more data."
+
+### The test as a consistency check (rule 1)
+The core distance is `d_core = combine(core)` over every measure but the test: the GPA slot after crowding and rigor,
+class rank, and the major's subjects (with the course track as before). Then:
+
+```
+d = d_core + clamp(testPull × (d_test − d_core), −testDown, +testUp)    where the test is counted and d_core exists
+d = d_test                                                              where the test is the only measure
+```
+
+| Constant | Value |
+|---|---|
+| `testPull` | 0.25 |
+| `testDown` | 0.30 |
+| `testUp` | 0.20 |
+
+The withheld and unused rules stay (test-optional and below the range → assumed withheld, the distance only when
+nothing else can be placed; tests not considered → unused). A test in line with the record confirms it; one out of
+line moves it at most 0.3 down or 0.2 up, so a strong record with a weak score stays ahead of a middling record with a
+top score at every tier (tested at every tier and five rates).
+
+### Ultra selective: Reach only on consistent excellence (rule 2)
+At tier `elite` the level is **Reach** only when all of these hold, else **High reach** (the odds still aren't used):
+
+| Signal | Passes | Missing (named to the student) |
+|---|---|---|
+| GPA slot | `d ≥ 0` after crowding and rigor | No GPA entered. A GPA the college's data can't place fails as short |
+| Rigor | Reading `most` or `much` | No courses entered; courses the reading can't place (no school offering) ask for the high school |
+| Class standing | `top1` or `top5`, or a typed rank in the top 5%; "My school doesn't rank" passes | No answer |
+| Test | Counted and `d_test ≥ 0`; not counted (withheld, unused, or none at a test-optional college) passes | None where the college requires one |
+| Well rounded | Activities reading Focused or Building, or recognition tier 1 or 2 from activities or awards | No activities or awards |
+
+This replaces "no counted measure below the range". Recruited floors and guarantees still beat it. The move-up at an
+Ultra selective college now finds a score only where every other signal already passes.
+
+### Completeness (rule 3)
+The inputs a college can expect are the ones it weighs, read as the measures are (C7, else the federal factors):
+
+| Input | Weight | Expected where | Present when |
+|---|---|---|---|
+| GPA | 3 | The GPA counts (`weighsGpa`) | A GPA is entered |
+| Courses (rigor) | 2 | Rigor counts (`weighsRigor`: C7 at least *important*, or IPEDS record *required*) | Courses or core answers are entered |
+| Class rank / standing | 1 | C7 class rank at least *considered* | A rank or any class-standing pick, `no_rank` included |
+| Test | 1 | Test policy required, required-some, or recommended; or the student has a test and the college weighs it. Never at test-blind colleges or where C7 says tests aren't considered | A test is entered |
+| Activities | 1 | C7 extracurriculars or talent at least *considered* | Any activity or award |
+
+```
+completeness = present weight ÷ expected weight        (1 when nothing is expected)
+d_eff        = min(d, completeness × d + (1 − completeness) × gapPrior)      gapPrior = −0.5
+odds         = rate × M_acad(d_eff) × the other multipliers
+```
+
+An unknown reads as below the middle of admitted students, so a score alone is mostly gap and reads low, and a GPA
+alone reads well under the full record. The `min` keeps a gap from ever raising a record already below the prior (the
+formula alone would lift a student below range who leaves inputs out, against rule 3); it is what makes "an
+incomplete record is never placed above the same record completed" hold.
+
+What the student sees: every expected input not entered joins `missing` (at an Ultra selective college, every input its
+rule needs too); the one prompt picks the heaviest gap first (GPA, courses, class rank, then the others, the test
+last); and a new catalog sentence names the gaps in words: "Not in this estimate yet: your courses, class standing,
+and activities. Adding what you have gives a fuller picture and could change where this college stands for you."
+(`estimate.incomplete`, shown in "What went into this estimate" above the prompt). Neither completeness, `d`, the
+prior, nor any number from this reaches a result, a sentence, an API response, an export, telemetry, or a client
+bundle; the leak guards check the new names. The summary sentence ("Your academics: in the middle of admitted
+students") reads the measured `d`, not `d_eff`: it describes the record entered, and the gaps are named separately.
+
+Snapshots: no column records completeness yet (follow-up: `completeness` binned to 0.05 in the snapshot detail once a
+column exists).
+
+### Pinned examples, Revision 1
+`d` is the measured distance (the test as a consistency check); `c` is completeness.
+
+| Student | College | `d` | `c` | Odds | Level | Change |
+|---|---|---|---|---|---|---|
+| SAT 1560, GPA 4.0, rigor *most*; no class standing, no activities | Harvard-like, Ultra selective, 3.5% | ≈ 1.1 | 1 | — | **High reach**, "Elite" | Was Reach: class standing and activities missing (rule 2). With top 5% and Focused: Reach; top 10%: High reach |
+| SAT 1100, GPA 2.6 | same | −0.8 | 0.67 | — | **High reach** | Same |
+| SAT 1500 only, Georgia resident | Georgia Tech in-state, Highly selective, 29% | 0.81 | 1/7 | 15% | **Reach** | Was Target: a score alone is mostly gap |
+| Same from Florida | Ultra selective out of state | 0.81 | 1/7 | — | **High reach**, "Elite" | Was Reach: no signal but the test |
+| SAT 1500 (0.83), GPA 3.7 (−0.3) | 15%, Highly selective | −0.3 + 0.2 = −0.10 | 1 | 10% | **Reach** | Same |
+| SAT 1100, GPA 2.6 | 15% | −2.0 | 1 | 1.2% | **High reach** | Same |
+| Indiana, SAT 1300, GPA 3.85 | Purdue, 71% in-state | 0.55 | 4/7 | 58% | **Likely** | Same (courses and class standing missing) |
+| Same from Ohio | 44% out-of-state | 0.55 | 4/7 | 36% | **Target** | Same |
+| SAT 1450 only | 45%, SAT 1280–1450 | 1.0 | 1/4 | 30% | **Target** | Was Likely: no GPA (Likely with one) |
+| ACT 24 only | 40%, ACT 28–33 | −0.8 | 1/4 | 10% | **Reach** | Same (a gap doesn't lift a record below the prior) |
+| SAT 1450 only | 78%, Accessible | 1.75 | 1/4 | 62% | **Likely** | Was Safe: no GPA (Safe with one) |
+| No test, GPA 3.9 | 35%, average 3.7, test-optional | 1.25 | 1 | 66% | **Likely** | Same (no test is no gap at a test-optional college) |
+| SAT 1200 (withheld), GPA 3.8 | test-optional 45% | 0.5 | 1 | 50% | **Target** | Same |
+| GPA 3.90, 8 of 9 APs, Focused | Elon, 63%, Selective | 1.25 | 6/7 | 97% | **Safe** | Same (class standing missing) |
+| GPA 3.90 only | Elon | 0.5 | 3/7 | 44% | **Target** | Was Likely: courses, class standing, activities missing |
+| Texas, top 4%, SAT 1350 | UT Austin | — | — | guarantee | **Safe**, "Guaranteed" | Same |
+| GPA 3.90, 2 of 14 APs (*some*) | crowded 45% | 0.5 | 5/7 | 41% | **Target** | Same |
+| SAT 1450, GPA 3.9, legacy | 12%, Massachusetts | 0.9 | 1 | 27% | **Target** | Same |
+| Same, Maryland | 12% | 0.9 | 1 | 18% | **Reach** | Same |
+| SAT 1300, GPA 3.6, likely letter | 6%, Ultra selective | 0.3 | 1 | — | **Likely**, "Recruited" | Same |
+
+The within-one-level check against the second version now runs on complete records (every expected input entered,
+activities Building); a separate test checks that leaving out courses, activities, or class standing never places a
+record above the same record completed.
+
+Across the 1,893 colleges (2026-10-12), against `20261012.1`: a student with only a GPA 3.8 and an SAT 1350 sees 336
+of 1,378 placed colleges move down a level (Safe → Likely mostly), 4 up; a complete record (GPA 3.9, SAT 1450, eight
+APs, top 10%, Building) sees 27 move, 13 of them Ultra selective colleges down to High reach for the top-5% bar.

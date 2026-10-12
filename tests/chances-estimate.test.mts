@@ -123,7 +123,9 @@ test("the snapshot's estimator returns the result and the method's detail", asyn
 /* ------------------------------------------------------------------ */
 
 test("counterfactual score: the move-up's score reaches the group it names", async () => {
-  const s = student({ gpa: 3.85, test: { kind: "sat", score: 1050 } });
+  // An Indiana resident (the in-state rate): with the test as a consistency check (method Revision 1) a retake moves
+  // Purdue only where the rest of the record is near the next level.
+  const s = student({ gpa: 3.85, test: { kind: "sat", score: 1050 }, state: "IN" });
   const ctx = await estimateContext(s);
   const now = estimate({ student: s, unitId: PURDUE }, ctx);
   assert.ok(now.moveUp, "a retake could move Purdue");

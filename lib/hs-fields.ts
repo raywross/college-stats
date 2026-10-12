@@ -101,6 +101,9 @@ export const HS_FIELDS = {
   "rigor.dual_enrolled": crdc("Students in dual enrollment"),
   "rigor.enrollment": crdc("Enrollment (CRDC)"),
 
+  // College Board's AP Course Ledger (the AP courses the school is authorized to offer this year, by name)
+  ap_ledger: { label: "AP courses authorized by College Board", topic: "rigor", source: "ap-ledger", vintage: "ap-ledger" },
+
   // Derived (computed at render time and for medians; never stored)
   "derived.ap_enrolled_share": {
     label: "Share of students in an AP course",
@@ -146,6 +149,18 @@ export const HS_FIELDS = {
   "detail.gpa_scale": profile("GPA scale", "grading"),
   "detail.gpa_distribution": profile("GPA distribution", "grading"),
   "detail.ap_courses": profile("AP courses listed", "rigor"),
+  /**
+   * The one AP list: every course the school's profile or the Ledger lists, each once (apCoursesOnRecord in
+   * lib/chances/offering.ts builds it, since it needs the profile detail); the page shows it and the offering takes
+   * it when the school has both. A list, not a number: HS_DERIVED has no value for it, and it has no median.
+   */
+  "derived.ap_list": {
+    label: "AP courses on record",
+    topic: "rigor",
+    source: "ap-ledger",
+    vintage: "ap-ledger",
+    derived: { formula: "Every AP course the school's own profile or College Board's AP Course Ledger lists, each counted once", inputs: ["detail.ap_courses", "ap_ledger"] },
+  },
   "detail.ib_courses": profile("IB courses listed", "rigor"),
   "detail.scores": profile("SAT/ACT scores", "outcomes"),
   "detail.matriculation": profile("Where graduates enrolled", "where-go"),
@@ -181,6 +196,7 @@ export const HS_SOURCE_VINTAGE: Record<HsSourceKey, HsVintageKey | null> = {
   crdc: "crdc",
   "nces-pss": "pss",
   "hs-profile": null,
+  "ap-ledger": "ap-ledger",
   "state-ca": null,
   "state-tx": null,
   "state-ny": null,
@@ -319,6 +335,8 @@ function inputSources(path: HsFieldPath, row: HighSchool, meta: HighSchoolMeta, 
   const out = new Map<string, HsCitedSource>();
   for (const input of def.derived.inputs) {
     if (!isHsFieldPath(input)) continue;
+    // An input the school has no value for contributed nothing (a list with no profile behind it).
+    if (hsValueAt(input, row, extras) === null && !isHsSuppressed(input, row, extras)) continue;
     for (const s of inputSources(input, row, meta, extras, seen)) out.set(sourceId(s), s);
   }
   return [...out.values()];
@@ -381,6 +399,7 @@ export const HS_DERIVED: Record<Extract<HsFieldPath, `derived.${string}`>, (row:
   "derived.ap_pass_share": (r) => share(r.rigor?.ap_passed_some, r.rigor?.ap_exam_takers),
   "derived.ib_enrolled_share": (r) => share(r.rigor?.ib_enrolled, r.rigor?.enrollment),
   "derived.dual_enrolled_share": (r) => share(r.rigor?.dual_enrolled, r.rigor?.enrollment),
+  "derived.ap_list": () => null,
 };
 
 /** The value at a path for one school (derived values computed), or undefined/null when it has none. */

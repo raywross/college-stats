@@ -225,6 +225,17 @@ export const ROADMAP: RoadmapSpec[] = [
     status: "planned",
   },
   {
+    slug: "admin-console",
+    file: "specs/product/admin.md",
+    group: "business",
+    summary:
+      "A console for the site's owner: find and fix any account or household, see the values the site computes but never shows, see which colleges have fresh data and which the pipeline keeps failing on, and start reruns or approve data changes without opening GitHub.",
+    complexity: 3,
+    complexityNote:
+      "Admin policies and functions on every people table, a second Edge Function for the Auth admin calls, a health model over the lineage and pipeline files, and a GitHub App client for workflow runs and data PRs.",
+    status: "planned",
+  },
+  {
     slug: "manual-collection",
     file: "specs/manual-collection.md",
     group: "business",

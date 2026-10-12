@@ -157,15 +157,18 @@ export interface PanelParts {
   notUsed: EstimateNote[];
   /** "Adding your courses could change this estimate", or null. */
   prompt: EstimateNote | null;
+  /** "Not in this estimate yet: your courses, class standing, and activities. …", or null. */
+  incomplete: EstimateNote | null;
 }
 
 export function panelParts(result: Pick<EstimateResult, "notes">): PanelParts {
-  const parts: PanelParts = { label: null, stages: [], reasons: [], notUsed: [], prompt: null };
+  const parts: PanelParts = { label: null, stages: [], reasons: [], notUsed: [], prompt: null, incomplete: null };
   for (const n of result.notes) {
     if (LABEL_KEYS.has(n.key)) parts.label ??= n;
     else if (STAGE_KEYS.has(n.key)) parts.stages.push(n);
     else if (NOT_USED_KEYS.has(n.key)) parts.notUsed.push(n);
     else if (PROMPT_KEYS.has(n.key)) parts.prompt ??= n;
+    else if (n.key === "estimate.incomplete") parts.incomplete ??= n;
     else parts.reasons.push(n);
   }
   return parts;
@@ -240,7 +243,7 @@ export function compareShortLine(result: Pick<EstimateResult, "label" | "pool">)
 /* ------------------------------------------------------------------ */
 
 /** The order a tie between inputs breaks in: the one that helps at the most colleges first, then this order. */
-const INPUT_ORDER: readonly InputKind[] = ["courses", "class_rank", "subject_grades", "major", "state", "high_school", "activities"];
+const INPUT_ORDER: readonly InputKind[] = ["gpa", "courses", "class_rank", "subject_grades", "major", "state", "high_school", "activities", "test"];
 
 /** The input a result's prompt note names, or null when it has none. */
 export function promptedInput(result: Pick<EstimateResult, "notes">): InputKind | null {

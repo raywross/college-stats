@@ -15,11 +15,15 @@ export const STANDING_LEVEL_LABELS: Record<StandingLevel, string> = {
   safe: "Safe",
 };
 
-/** Quad's selectivity tiers, hardest first (selectivity-index.md "Tiers"). */
-export const SELECTIVITY_TIERS: readonly SelectivityTier[] = ["elite", "highly_selective", "selective", "accessible", "open"];
+/**
+ * Quad's selectivity tiers, hardest first (selectivity-index.md "Tiers"). The top tier's key stays `elite` (stored in
+ * snapshots and the estimate label); its name on the site is "Ultra selective" (owner, 2026-10-12).
+ */
+export const SELECTIVITY_TIERS: readonly SelectivityTier[] = ["elite", "highly_selective", "very_selective", "selective", "accessible", "open"];
 export const SELECTIVITY_TIER_LABELS: Record<SelectivityTier, string> = {
-  elite: "Elite",
+  elite: "Ultra selective",
   highly_selective: "Highly selective",
+  very_selective: "Very selective",
   selective: "Selective",
   accessible: "Accessible",
   open: "Open",

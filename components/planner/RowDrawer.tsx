@@ -83,7 +83,7 @@ export function RowDrawer({
       <div className="space-y-2">
         {estimate && parts ? (
           <>
-            {/* The level's meaning line (levels.md "The levels"), then the label when the estimate has one ("Elite:
+            {/* The level's meaning line (levels.md "The levels"), then the label when the estimate has one ("Ultra selective:
                 a reach for everyone", "Guaranteed for you", "Recruited"). */}
             <p>
               <span className="font-semibold">{level ? GROUP_HEADING[level] : "No group yet"}:</span>{" "}

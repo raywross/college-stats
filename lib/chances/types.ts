@@ -191,7 +191,7 @@ export type StandingLevel = "high_reach" | "reach" | "target" | "likely" | "safe
 export type StandingLabel = "elite" | "guaranteed" | "recruited";
 
 /** Quad's selectivity tier (selectivity-index.md "Tiers"), hardest first. Stored values. */
-export type SelectivityTier = "elite" | "highly_selective" | "selective" | "accessible" | "open";
+export type SelectivityTier = "elite" | "highly_selective" | "very_selective" | "selective" | "accessible" | "open";
 /** Which applicants a tier describes: a public with residency rates has one per pool. */
 export type SelectivityPool = "all" | "in_state" | "out_of_state";
 

@@ -123,11 +123,14 @@ test("per pool, only the admit rate changes; pool rates don't move the scales", 
 
 /* ---- Tiers and hysteresis ---- */
 
-test("the tiers: Elite, then the cutoffs, from the score alone", () => {
-  const { highly_selective: hs, selective: se, accessible: ac } = TIER_CUTOFFS;
+test("the tiers: Ultra selective (key elite), then the cutoffs, from the score alone", () => {
+  const { highly_selective: hs, very_selective: vs, selective: se, accessible: ac } = TIER_CUTOFFS;
   assert.equal(selectivityTier(ELITE_INDEX), "elite");
   assert.equal(selectivityTier(ELITE_INDEX - 0.01), "highly_selective");
   assert.equal(selectivityTier(hs), "highly_selective");
+  assert.equal(selectivityTier(hs - 0.01), "very_selective");
+  assert.equal(selectivityTier(vs), "very_selective");
+  assert.equal(selectivityTier(vs - 0.01), "selective");
   assert.equal(selectivityTier(se), "selective");
   assert.equal(selectivityTier(ac), "accessible");
   assert.equal(selectivityTier(ac - 0.01), "open");
@@ -136,10 +139,10 @@ test("the tiers: Elite, then the cutoffs, from the score alone", () => {
 
 test("hysteresis: a tier moves only when the score crosses a cutoff by the band", () => {
   const hs = TIER_CUTOFFS.highly_selective;
-  assert.equal(selectivityTier(hs + HYSTERESIS - 0.1, "selective"), "selective");
-  assert.equal(selectivityTier(hs + HYSTERESIS, "selective"), "highly_selective");
+  assert.equal(selectivityTier(hs + HYSTERESIS - 0.1, "very_selective"), "very_selective");
+  assert.equal(selectivityTier(hs + HYSTERESIS, "very_selective"), "highly_selective");
   assert.equal(selectivityTier(hs - HYSTERESIS + 0.1, "highly_selective"), "highly_selective");
-  assert.equal(selectivityTier(hs - HYSTERESIS, "highly_selective"), "selective");
+  assert.equal(selectivityTier(hs - HYSTERESIS, "highly_selective"), "very_selective");
   assert.equal(selectivityTier(TIER_CUTOFFS.accessible - 5, "highly_selective"), "open", "two tiers at once when the score moved that far");
   assert.equal(selectivityTier(ELITE_INDEX + 1, "highly_selective"), "highly_selective");
   assert.equal(selectivityTier(ELITE_INDEX + HYSTERESIS, "highly_selective"), "elite");
@@ -167,7 +170,7 @@ test("chips: both pools where they differ, the shared pool tier where they agree
   );
   assert.deepEqual(chipTiers(school({ tier: "selective", in_state: "accessible", out_of_state: "accessible" })).map((t) => t.tier), ["accessible"]);
   assert.deepEqual(chipTiers(school(undefined)), []);
-  assert.equal(tierText(school({ tier: "highly_selective", in_state: "selective", out_of_state: "elite" })), "Selective in-state, Elite out of state");
+  assert.equal(tierText(school({ tier: "highly_selective", in_state: "selective", out_of_state: "elite" })), "Selective in-state, Ultra selective out of state");
   assert.equal(tierText(school({ tier: "open" })), "Open");
   assert.equal(tierRank("elite"), 0);
   assert.equal(tierRank(undefined), null);

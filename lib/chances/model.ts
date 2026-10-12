@@ -337,9 +337,10 @@ function quarterOf(odds: number, level: StandingLevel): 0 | 1 | 2 | 3 {
   return Math.min(3, Math.max(0, q)) as 0 | 1 | 2 | 3;
 }
 
-/** The highest level a tier allows (method/standing.md "Caps"); Elite has its own rule. */
+/** The highest level a tier allows (method/standing.md "Caps"); Ultra selective (`elite`) has its own rule. */
 function capFor(tier: SelectivityTier | null, rate: number): StandingLevel {
   if (tier === "highly_selective") return "target";
+  if (tier === "very_selective") return "likely";
   if (tier === "selective") return rate >= ODDS_V3.safeRateMin ? "safe" : "likely";
   return "safe";
 }

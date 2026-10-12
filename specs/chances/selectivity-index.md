@@ -183,3 +183,11 @@ Accessible 572, Open 453; 347 unrated.
 **Open for the owner.** Retention and graduation are new inputs (outcomes, read here as the strength of the admitted
 class); Minerva is Elite on a 3% admit rate and 98% retention; colleges for adult learners (Stanbridge: 10% admit
 rate, 72% of students 25 or older) still score in the 60s.
+
+**Six tiers and a new name (2026-10-12, owner).** The top tier is called **Ultra selective** on the site (its stored
+key stays `elite`, so snapshots and the estimate label keep their values), and the old Highly selective band (55–80)
+is split: **Highly selective** 68–80 (at the score gap near 68) and **Very selective** 52–68, which also takes the
+top of the old Selective band. Cutoffs: Ultra selective 80, Highly selective 68, Very selective 52, Selective 42,
+Accessible 33. Counts: 29, 44, 120, 328, 572, 453. Very selective caps the estimate at Likely
+([method/standing.md](method/standing.md) "Caps"). Migration `20261012110000_selectivity_six_tiers.sql` widens the
+snapshot column's check. Wherever this spec says Elite, read Ultra selective.

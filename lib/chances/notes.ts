@@ -292,11 +292,11 @@ export const NOTES: Record<NoteKey, Note> = {
   "estimate.level.likely": () => "More likely than not, from your record and how many applicants like you get in.",
   "estimate.level.safe": () => "A guarantee, open admission, or a record clearly above the students admitted at a college that admits most applicants like you.",
   /** The label line at a college Quad rates Elite (replaces estimate.reach_for_everyone, kept for old snapshots). */
-  "estimate.elite": () => "Elite: a reach for everyone. However strong the record, no student's admission here is predictable.",
+  "estimate.elite": () => "Ultra selective: a reach for everyone. However strong the record, no student's admission here is predictable.",
   /** The label line when a coach's likely letter or positive pre-read sets the level (inputs-beyond-academics.md "Recruited athlete"). */
   "estimate.recruited": () => "Recruited: this estimate rests on the coach's support.",
   /** The chips' words for the two new labels. */
-  "estimate.label.elite": () => "Elite: a reach for everyone",
+  "estimate.label.elite": () => "Ultra selective: a reach for everyone",
   "estimate.label.recruited": () => "Recruited",
   /** A per-college input the college doesn't rate in its Common Data Set at all (no C7): it doesn't say either way. */
   "estimate.not_said": (v) => `Not used here: ${s(v, "input")} (${s(v, "college")} doesn't say it weighs it).`,

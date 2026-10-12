@@ -56,15 +56,20 @@ export const SCORE_CENTER = 40;
 export const SCORE_SPREAD = 20;
 
 /**
- * Elite: score at or above this. Set 2026-10-12 at the gap below the 29th college (80.3, then 79.4); moved only by a
- * deliberate change here. No admit-rate condition: the score already weighs the rate, and a fixed 10% line put
- * colleges ranked above Cornell outside Elite.
+ * Ultra selective (key `elite`): score at or above this. Set 2026-10-12 at the gap below the 29th college (80.3, then
+ * 79.4); moved only by a deliberate change here. No admit-rate condition: the score already weighs the rate, and a fixed
+ * 10% line put colleges ranked above Cornell outside the top tier.
  */
 export const ELITE_INDEX = 80;
 
-/** The other cutoffs, hardest first; set so each tier holds about as many colleges as under the first version. */
+/**
+ * The other cutoffs, hardest first. Selective, Accessible and Open hold about as many colleges as under the first
+ * version; the old Highly selective band (55–80) was split on 2026-10-12 (owner) at the gap near 68, and Very selective
+ * reaches down to 52, taking the top of the old Selective band with it.
+ */
 export const TIER_CUTOFFS: Record<Exclude<SelectivityTier, "elite" | "open">, number> = {
-  highly_selective: 55,
+  highly_selective: 68,
+  very_selective: 52,
   selective: 42,
   accessible: 33,
 };
@@ -270,6 +275,7 @@ function tierAt(score: number, shift: number, strict = false): SelectivityTier {
   const clears = (cutoff: number) => (strict ? score > cutoff + shift : score >= cutoff + shift);
   if (clears(ELITE_INDEX)) return "elite";
   if (clears(TIER_CUTOFFS.highly_selective)) return "highly_selective";
+  if (clears(TIER_CUTOFFS.very_selective)) return "very_selective";
   if (clears(TIER_CUTOFFS.selective)) return "selective";
   if (clears(TIER_CUTOFFS.accessible)) return "accessible";
   return "open";

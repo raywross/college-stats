@@ -473,9 +473,10 @@ test("guard: the within-one-level check refuses a two-step jump and a wrong-way 
 /** A strong student at a college with this tier and rate: SAT at the top of the range. */
 const strong = (rate: number, tier: SelectivityTier | null) => run(college("100654", { rate, sat: [1200, 1350], c7: null, tier }), student({ test: sat(1600) }));
 
-test("caps: Highly selective stops at Target; Selective at Likely below 50% and Safe from 50%; Accessible and Open allow Safe", () => {
+test("caps: Highly selective stops at Target; Very selective at Likely; Selective at Likely below 50% and Safe from 50%; Accessible and Open allow Safe", () => {
   assert.equal(strong(0.45, "highly_selective").group, "target");
   assert.equal(strong(0.45, "highly_selective").closeness, null, "a cap set it");
+  assert.equal(strong(0.6, "very_selective").group, "likely", "never Safe, even with most applicants admitted");
   assert.equal(strong(0.45, "selective").group, "likely");
   assert.equal(strong(0.6, "selective").group, "safe");
   assert.equal(strong(0.6, "accessible").group, "safe");

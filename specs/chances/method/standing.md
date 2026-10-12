@@ -127,8 +127,9 @@ for everyone":
 
 | Tier | Highest level | Rule inside the tier |
 |---|---|---|
-| **Elite** | Reach | **Reach when no counted measure has `d < 0`; else High reach.** The odds are not used: at a 4% college the multiplier table alone would put even a top student under 5%, and the owner's rule is that an Elite college is a reach for everyone and a possibility for a student in its range |
+| **Ultra selective** (key `elite`; "Elite" before 2026-10-12) | Reach | **Reach when no counted measure has `d < 0`; else High reach.** The odds are not used: at a 4% college the multiplier table alone would put even a top student under 5%, and the owner's rule is that an Elite college is a reach for everyone and a possibility for a student in its range |
 | **Highly selective** | Target | By the odds |
+| **Very selective** (added 2026-10-12) | Likely | By the odds |
 | **Selective** | Likely, or Safe when `rate ≥ 0.5` | By the odds |
 | **Accessible**, **Open** | Safe | By the odds |
 

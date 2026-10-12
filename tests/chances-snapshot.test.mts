@@ -401,25 +401,25 @@ test("snapshotOnApplied: records the binned row through record_application_snaps
 test("snapshotOnApplied: the estimator gets the list row's legacy and recruited inputs and whether interest is logged", async () => {
   const db = fakeDb(
     tables({
-      list_items: { data: { list_id: "L", unit_id: "243780", round: "ed", category: "reach", category_source: "auto", applied_on: "2026-11-01", legacy: true, recruited: "contact" }, error: null },
+      list_items: { data: { list_id: "L", unit_id: "243780", round: "ed", category: "reach", category_source: "auto", applied_on: "2026-11-01", legacy: true, recruited: "contact", legacy_sibling: true }, error: null },
       plan_visits: { data: { id: "v1" }, error: null },
     }),
     { data: "id", error: null },
   );
   const seen: { hooks?: unknown }[] = [];
   assert.equal(await snapshotOnApplied(ITEM, deps(db, { estimate: (input) => (seen.push(input), { result: result() }) })), "written");
-  assert.deepEqual(seen[0].hooks, { legacy: true, recruited: "contact", interest: true });
+  assert.deepEqual(seen[0].hooks, { legacy: true, sibling: true, recruited: "contact", interest: true });
   const row = db.rpcCalls[0].args.p_snapshot as Record<string, unknown>;
   assert.ok(!("legacy" in row) && !("recruited" in row) && !("interest" in row), "the toggles themselves aren't columns");
 });
 
 test("hooksForItem: best-effort; a database without the columns, or a failing read, reads as nothing marked", async () => {
   const missing = fakeDb({ list_items: { data: null, error: { code: "42703", message: "column list_items.legacy does not exist" } } }, { data: null, error: null });
-  assert.deepEqual(await hooksForItem(missing as never, ITEM), { legacy: false, recruited: "none", interest: false });
+  assert.deepEqual(await hooksForItem(missing as never, ITEM), { legacy: false, sibling: false, recruited: "none", interest: false });
   const throwing = fakeDb({ list_items: () => { throw new Error("down"); }, plan_visits: () => { throw new Error("down"); }, plan_tasks: () => { throw new Error("down"); } }, { data: null, error: null });
-  assert.deepEqual(await hooksForItem(throwing as never, ITEM), { legacy: false, recruited: "none", interest: false });
+  assert.deepEqual(await hooksForItem(throwing as never, ITEM), { legacy: false, sibling: false, recruited: "none", interest: false });
   const junk = fakeDb({ list_items: { data: { legacy: "yes", recruited: "signed" }, error: null }, plan_tasks: { data: { id: "t1" }, error: null } }, { data: null, error: null });
-  assert.deepEqual(await hooksForItem(junk as never, ITEM), { legacy: false, recruited: "none", interest: true }, "a completed information request is interest");
+  assert.deepEqual(await hooksForItem(junk as never, ITEM), { legacy: false, sibling: false, recruited: "none", interest: true }, "a completed information request is interest");
 });
 
 test("snapshotOnApplied: an estimator that throws, or none at all, still records the inputs", async () => {

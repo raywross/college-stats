@@ -122,6 +122,22 @@ export async function setItemLegacy(itemId: string, legacy: boolean): Promise<Pl
 }
 
 /**
+ * The Sibling chip on the row's Connections line (owner, 2026-10-12): "A brother or sister went here." Per college,
+ * stored on the list item (`legacy_sibling`, 20261012130000_list_item_sibling.sql); attributed like setItemLegacy.
+ * Until the column exists the write fails and the chip rolls back with "That didn't work".
+ */
+export async function setItemSibling(itemId: string, sibling: boolean): Promise<PlanListActionResult> {
+  if (!isUuid(itemId)) return { ok: false, message: FAILED };
+  const r = await ready("planner.tab");
+  if (!("supabase" in r)) return r;
+  const { data, error } = await r.supabase.from("list_items").update({ legacy_sibling: Boolean(sibling) }).eq("id", itemId).select("list_id");
+  if (error) return fail(error, "setItemSibling");
+  if (!data?.length) return { ok: false, message: "Only someone who can edit this list can change it." };
+  refresh();
+  return { ok: true };
+}
+
+/**
  * The Recruited pick on the same line: "A coach here is recruiting me" → none · contact · pre-read · likely letter.
  * Per college, stored on the list item; attributed like any other list edit.
  */

@@ -24,8 +24,13 @@ test("a college with nothing set is left out of the map", () => {
 });
 
 test("legacy and recruited come from the row's toggles", () => {
-  assert.deepEqual(hooksFromPlan([item({ legacy: true })]), { "100": { legacy: true, recruited: "none", interest: false } });
-  assert.deepEqual(hooksFromPlan([item({ recruited: "pre_read" })]), { "100": { legacy: false, recruited: "pre_read", interest: false } });
+  assert.deepEqual(hooksFromPlan([item({ legacy: true })]), { "100": { legacy: true, sibling: false, recruited: "none", interest: false } });
+  assert.deepEqual(hooksFromPlan([item({ recruited: "pre_read" })]), { "100": { legacy: false, sibling: false, recruited: "pre_read", interest: false } });
+});
+
+test("a sibling who went here is its own hook (owner, 2026-10-12)", () => {
+  assert.deepEqual(hooksFromPlan([item({ legacy_sibling: true })]), { "100": { legacy: false, sibling: true, recruited: "none", interest: false } });
+  assert.deepEqual(hooksFromPlan([{ ...item(), legacy_sibling: undefined }]), {}, "a row read before the column exists");
 });
 
 test("interest: a visit date, a logged visit, an information request, or a follow each count", () => {
@@ -44,7 +49,7 @@ test("interest: a visit date, a logged visit, an information request, or a follo
 test("hooksFromPlan reads visits by item id and keys the map by unit id", () => {
   const items = [item(), item({ id: "i2", unit_id: "200" }), item({ id: "i3", unit_id: "300", followed_networks: ["x"] })];
   assert.deepEqual(hooksFromPlan(items, [{ item_id: "i2" }]), {
-    "200": { legacy: false, recruited: "none", interest: true },
-    "300": { legacy: false, recruited: "none", interest: true },
+    "200": { legacy: false, sibling: false, recruited: "none", interest: true },
+    "300": { legacy: false, sibling: false, recruited: "none", interest: true },
   });
 });

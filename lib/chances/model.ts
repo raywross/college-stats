@@ -43,7 +43,7 @@ import {
   type StandingStudent,
 } from "./baseline.ts";
 import { activitiesReading, courseThemes, courseTracks, depthSnapshot, type ActivitiesResult, type CourseTracks, type ThemesResult } from "./depth.ts";
-import { interestMultiplier, legacyMultiplier, recruitedFloor, recruitMultiplier, type LegacyReading } from "./hooks.ts";
+import { interestMultiplier, legacyMultiplier, recruitedFloor, recruitMultiplier, siblingMultiplier, type LegacyReading } from "./hooks.ts";
 import { NO_HOOKS, STANDING_LEVEL_LABELS } from "./levels.ts";
 import { majorMatters, majorReviewFor, type MajorReviewReading } from "./major-review.ts";
 import { INPUT_WORDS, noteText } from "./notes.ts";
@@ -68,7 +68,7 @@ import type {
 import type { AblationInput, SnapshotDetail } from "./snapshot.ts";
 
 /** Recorded with every result and every outcome snapshot (specs/chances/estimate.md "Changing the method"). */
-export const MODEL_VERSION = "20261012.5";
+export const MODEL_VERSION = "20261012.6";
 
 /**
  * The second version's reading constants that the third keeps: GPA crowding, which colleges' class-rank tiers count,
@@ -620,6 +620,9 @@ interface Fixed {
   mWork: number;
   legacy: LegacyReading | null;
   mLegacy: number;
+  /** A sibling connection (owner, 2026-10-12); the larger of mLegacy and mSibling enters the product. */
+  sibling: LegacyReading | null;
+  mSibling: number;
   interest: { multiplier: number; rating: Importance | null } | null;
   mInterest: number;
   mRecruit: number;
@@ -827,6 +830,9 @@ function fixedPart(input: ModelInput, student: StandingStudent, without: Without
   const hooksOff = !!without.hooks;
   const legacy = hooks.legacy ? legacyMultiplier(school) : null;
   const mLegacy = legacy && !hooksOff ? legacy.multiplier : 1;
+  // A sibling (owner, 2026-10-12): gated like legacy, a smaller weight, and never stacked on it (the larger counts).
+  const sibling = hooks.sibling ? siblingMultiplier(school) : null;
+  const mSibling = sibling && !hooksOff ? sibling.multiplier : 1;
   const interest = hooks.interest ? interestMultiplier(school) : null;
   const mInterest = interest && !without.interest ? interest.multiplier : 1;
   const mRecruit = hooksOff ? 1 : recruitMultiplier(hooks.recruited);
@@ -960,11 +966,13 @@ function fixedPart(input: ModelInput, student: StandingStudent, without: Without
     activities,
     depthRating,
     workRating,
-    mult: mDepth * mWork * mLegacy * mInterest * mRecruit * mRank * mWeighted * mTheme,
+    mult: mDepth * mWork * Math.max(mLegacy, mSibling) * mInterest * mRecruit * mRank * mWeighted * mTheme,
     mDepth,
     mWork,
     legacy,
     mLegacy,
+    sibling,
+    mSibling,
     interest,
     mInterest,
     mRecruit,
@@ -1349,6 +1357,23 @@ function explain(input: ModelInput, ev: Evaluation, ed: ReturnType<typeof edVerd
     } else {
       notes.push(note("hooks.legacy_not_weighed", { college: school.name }, f.legacy.rating ? factorPath("alumni_relation") : null));
       if (f.legacy.rating) fact(factorPath("alumni_relation"));
+    }
+  }
+  if (f.hooks.sibling && f.sibling) {
+    if (f.sibling.ban) {
+      // The ban sentence once, even with legacy marked too.
+      if (!(f.hooks.legacy && f.legacy?.ban)) {
+        const sectors = f.sibling.ban.sectors;
+        const scope = sectors.includes("public") && sectors.includes("private") ? "all" : sectors[0];
+        notes.push(note("hooks.legacy_banned", { state: stateName(f.sibling.ban.state), scope, law: f.sibling.ban.law }));
+      }
+    } else if (f.sibling.rating && f.sibling.rating !== "not_considered") {
+      notes.push(note("hooks.sibling_used", {}, factorPath("alumni_relation")));
+      used.add("legacy");
+      fact(factorPath("alumni_relation"));
+    } else if (!f.hooks.legacy) {
+      notes.push(note("hooks.legacy_not_weighed", { college: school.name }, f.sibling.rating ? factorPath("alumni_relation") : null));
+      if (f.sibling.rating) fact(factorPath("alumni_relation"));
     }
   }
   if (f.hooks.recruited !== "none") {

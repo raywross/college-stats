@@ -246,6 +246,35 @@ async function bootAll(): Promise<AuthDb> {
   return db;
 }
 
+test("sibling (20261012130000_list_item_sibling.sql): defaults false; the student and an edit-access guardian set it, a view-only guardian and an outsider can't", async () => {
+  const db = await bootAll();
+  const mom = await createUser(db, { email: "mom@example.com", birthYear: 1978, roleHint: "guardian" });
+  const dad = await createUser(db, { email: "dad@example.com", birthYear: 1976, roleHint: "guardian" });
+  const alice = await createUser(db, { email: "alice@example.com", birthYear: 2009, roleHint: "student" });
+  const eve = await createUser(db, { email: "eve@example.com", birthYear: 1980, roleHint: "guardian" });
+  const [{ household }] = await asUser<{ household: string }>(db, mom, "select public.create_household('The Smiths', 'guardian') as household");
+  for (const [who, email, side] of [[dad, "dad@example.com", "guardian"], [alice, "alice@example.com", "student"]] as const) {
+    const [{ inv }] = await asUser<{ inv: { token: string } }>(db, mom, "select public.create_invitation($1, $2, $3, null, false) as inv", [household, email, side]);
+    await asUser(db, who, "select public.accept_invitation($1)", [inv.token]);
+  }
+  const [momMember] = await asUser<{ id: string }>(db, alice, "select id from public.household_members where household_id = $1 and user_id = $2", [household, mom]);
+  await asUser(db, alice, "select public.set_member_can_edit($1, true)", [momMember.id]);
+  const [{ id: student }] = await asUser<{ id: string }>(db, alice, "select id from public.students where user_id = $1", [alice]);
+  const [{ id: list }] = await asUser<{ id: string }>(db, alice, "insert into public.lists (student_id, name, is_default) values ($1, 'My list', true) returning id", [student]);
+  const [item] = await asUser<{ id: string; legacy_sibling: boolean }>(db, alice, "insert into public.list_items (list_id, unit_id) values ($1, '243744') returning id, legacy_sibling", [list]);
+  assert.equal(item.legacy_sibling, false, "defaults false");
+
+  const set = "update public.list_items set legacy_sibling = true where id = $1";
+  assert.equal(await affectedAsUser(db, dad, set, [item.id]), 0, "a view-only guardian can't set it");
+  assert.equal(await affectedAsUser(db, eve, set, [item.id]), 0, "an outsider can't");
+  assert.equal(await affectedAsUser(db, mom, set, [item.id]), 1, "an edit-access guardian can");
+  assert.equal(await affectedAsUser(db, alice, "update public.list_items set legacy_sibling = false where id = $1", [item.id]), 1, "and so can the student");
+  const [seen] = await asUser<{ legacy_sibling: boolean }>(db, dad, "select legacy_sibling from public.list_items where id = $1", [item.id]);
+  assert.equal(seen.legacy_sibling, false, "the view-only guardian reads it");
+  assert.deepEqual(await asUser(db, eve, "select legacy_sibling from public.list_items where id = $1", [item.id]), [], "an outsider sees nothing");
+  await assert.rejects(asUser(db, alice, "update public.list_items set legacy_sibling = null where id = $1", [item.id]), /null value/);
+});
+
 test("tracking columns: defaults on a new item; the student and an edit-access guardian set them, a view-only guardian can't", async () => {
   const db = await bootAll();
   const mom = await createUser(db, { email: "mom@example.com", birthYear: 1978, roleHint: "guardian" });

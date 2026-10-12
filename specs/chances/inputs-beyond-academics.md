@@ -77,6 +77,10 @@ A toggle on the college's row in the planner, in the drawer under a new **About 
 **"A parent or grandparent graduated from here"**. Stored on the list item, not the profile, because it is per college.
 
 - `list_items.legacy boolean not null default false` (migration with the five-levels change or its own).
+- **Sibling (owner, 2026-10-12):** "Sibling went here" beside it on the row's Connections line, stored as
+  `list_items.legacy_sibling boolean not null default false` (`20261012130000_list_item_sibling.sql`). Read like
+  legacy, gated the same way (C7 alumni relation at least considered; never under a state ban), with a smaller weight,
+  never stacked on a parent's or grandparent's ([method/standing.md](method/standing.md#the-other-multipliers)).
 - Enters as `M_legacy` by the college's C7 alumni-relation rating; `1` with a sentence where no C7 or *not considered*.
 - **State bans → `1`.** `data/reference/legacy-bans.json`:
   ```

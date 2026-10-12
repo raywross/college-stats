@@ -43,4 +43,4 @@ export const CLASS_STANDING_PERCENTILE: Record<ClassStanding, number | null> = {
 
 export const RECRUITED_PICKS: readonly RecruitedPick[] = ["none", "contact", "pre_read", "likely_letter"];
 /** A college with nothing marked on its list row. */
-export const NO_HOOKS: CollegeHooks = { legacy: false, recruited: "none", interest: false };
+export const NO_HOOKS: CollegeHooks = { legacy: false, sibling: false, recruited: "none", interest: false };

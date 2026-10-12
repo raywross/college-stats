@@ -7,7 +7,8 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { followTargets, visitPageLink, visitedState } from "../lib/planner/capture.ts";
+import { followTargets, rowToDo, visitPageLink, visitedState } from "../lib/planner/capture.ts";
+import { entryCount, intakeScrollFor, scrollBehavior } from "../lib/planner/intake-scroll.ts";
 import type { PlanVisit } from "../lib/planner/types.ts";
 
 const ROOT = join(import.meta.dirname, "..");
@@ -82,4 +83,55 @@ test("the row's panel is the capture panel: legacy, recruited, visited, follows,
   assert.doesNotMatch(row, /RoundChip|SEASON_STATUS_LABEL|Round picked senior year|dayLabel/);
   const list = read("components", "planner", "PlanList.tsx");
   assert.doesNotMatch(list, /<span>Round<\/span>|<span>Deadline<\/span>|<span>Status<\/span>/);
+});
+
+test("row to-do: a visit or info request, and following an account the college has; gentle, never legacy or recruiting", () => {
+  const item = (o: Record<string, unknown> = {}) => ({ id: "i1", visited_on: null, info_requested_on: null, followed_networks: [], follows_social: false, ...o });
+  const social = { instagram: "college" };
+  assert.deepEqual(rowToDo(item(), [], social), ["interest", "follow"]);
+  assert.deepEqual(rowToDo(item({ visited_on: "2026-09-01" }), [], social), ["follow"]);
+  assert.deepEqual(rowToDo(item(), [{ item_id: "i1" }], social), ["follow"], "a logged visit, past or planned");
+  assert.deepEqual(rowToDo(item(), [{ item_id: "other" }], social), ["interest", "follow"]);
+  assert.deepEqual(rowToDo(item({ info_requested_on: "2026-09-01" }), [], social), ["follow"]);
+  assert.deepEqual(rowToDo(item({ followed_networks: ["instagram"] }), [], social), ["interest"]);
+  assert.deepEqual(rowToDo(item({ follows_social: true }), [], social), ["interest"], "the older tracking switch");
+  assert.deepEqual(rowToDo(item(), [], null), ["interest"], "no accounts on record: nothing to follow");
+  assert.deepEqual(rowToDo(item(), [], {}), ["interest"]);
+  assert.deepEqual(rowToDo(item({ visited_on: "2026-09-01", followed_networks: ["x"] }), [], social), [], "nothing left");
+});
+
+test("the row's control is an expand toggle with the accent and count when there's more to do", () => {
+  const row = read("components", "planner", "PlanRow.tsx");
+  assert.doesNotMatch(row, /\bInfo\b/, "no info icon");
+  assert.match(row, /ChevronDown/);
+  assert.match(row, /aria-expanded=\{open\}/);
+  assert.match(row, /rowToDo\(/);
+  assert.match(row, /todo\.length \? "bg-primary\/10 text-primary/);
+});
+
+test("Connections: one line of chips (parent or grandparent, sibling, Recruited) with the picks behind Recruited", () => {
+  const src = read("components", "planner", "AboutYouAndCollege.tsx");
+  assert.match(src, /Connections/);
+  assert.match(src, /Parent or grandparent went here/);
+  assert.match(src, /Sibling went here/);
+  assert.match(src, /setItemSibling\(item\.id, !sibling\)/);
+  assert.match(src, /aria-expanded=\{picking\}/);
+  assert.match(src, /\{picking && \(/, "the four picks show only when Recruited is tapped");
+  assert.match(src, /none: "No", contact: "Coach contact", pre_read: "Pre-read", likely_letter: "Likely letter"/);
+});
+
+test("intake scroll: page top on a step change, the step's top after an add, nothing on first render or a removal", () => {
+  assert.equal(intakeScrollFor(null, { step: 3, count: 2 }), null);
+  assert.equal(intakeScrollFor({ step: 3, count: 2 }, { step: 4, count: 2 }), "page-top");
+  assert.equal(intakeScrollFor({ step: 3, count: 2 }, { step: 4, count: 3 }), "page-top", "a step change wins");
+  assert.equal(intakeScrollFor({ step: 3, count: 2 }, { step: 3, count: 3 }), "step-top");
+  assert.equal(intakeScrollFor({ step: 3, count: 3 }, { step: 3, count: 2 }), null, "a removal doesn't scroll");
+  assert.equal(intakeScrollFor({ step: 3, count: 3 }, { step: 3, count: 3 }), null);
+  assert.equal(entryCount({ activities: [1, 2], awards: [1], courses: [1, 2, 3] }), 6);
+  assert.equal(scrollBehavior(true), "auto");
+  assert.equal(scrollBehavior(false), "smooth");
+  const intake = read("components", "planner", "intake", "PlanIntake.tsx");
+  assert.match(intake, /prefers-reduced-motion: reduce/);
+  assert.match(intake, /heading\.focus\(\{ preventScroll: true \}\)/);
+  assert.match(intake, /useIntakeScroll\(step, entryCount\(draft\)\)/);
 });

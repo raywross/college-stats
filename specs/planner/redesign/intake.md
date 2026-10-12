@@ -138,6 +138,14 @@ Modeled on the AP step: on desktop the list sits beside a search panel, on a pho
   the estimate reads activities as answered for completeness (method/standing.md "Revision 1"), so a student with
   truly no activities isn't counted as a gap; the activities list stays empty, so there's no depth credit.
 
+### Scrolling (owner, 2026-10-12)
+"When you move from step to step or if you add something like a sport or activity, it should bring you back to the
+top of the screen." A step change scrolls the page to the top and moves focus to the step's heading (for screen
+readers); adding an entry (a sport, club, work entry, other activity, award, or AP course) scrolls the step's top, its
+search box included, into view, at every width. Smooth, or instant under `prefers-reduced-motion`. Removing or editing
+an entry doesn't scroll, and neither does opening the guide (`lib/planner/intake-scroll.ts`; `useIntakeScroll` in
+`PlanIntake.tsx`).
+
 ### Review and saving
 - Review lists Class, GPA ("3.82 · 4.0 scale"), Test ("SAT 1390 (practice) · aiming for 1450" / "Not testing"),
   AP courses ("2 taken · 1 taking or planned" / "None"), and one line per activity step: Sports, Clubs, Work (the

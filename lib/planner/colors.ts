@@ -11,7 +11,6 @@
  * Reach never looks like a warning.
  */
 import type { ListCategory, ListRound } from "../list-rules.ts";
-import { STANDING_LEVEL_LABELS } from "../chances/levels.ts";
 import type { StandingLevel } from "../chances/types.ts";
 
 export const ROUND_VAR: Record<ListRound, string> = {
@@ -52,13 +51,3 @@ export const GROUP_CLASS: Record<ListCategory | StandingLevel, string> = {
   likely: "bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-200",
   unsorted: "bg-muted text-muted-foreground",
 };
-
-/** The level shown for a row: Quad's five-level estimate where there is one, else the stored (four-value) category
- * widened to the display set (list-rules.ts hasn't read five yet — levels.md, U7's carry-forward). */
-export type DisplayGroup = StandingLevel | "unsorted";
-export function displayGroup(category: ListCategory, estimateGroup?: StandingLevel | null): DisplayGroup {
-  return estimateGroup ?? category;
-}
-
-/** "Not sorted yet" for the empty group, the five words otherwise (levels.md "Where the levels show"). */
-export const GROUP_LABEL: Record<DisplayGroup, string> = { ...STANDING_LEVEL_LABELS, unsorted: "Not sorted yet" };

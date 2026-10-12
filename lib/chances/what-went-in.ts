@@ -130,7 +130,7 @@ const NOT_USED_KEY = "estimate.not_used";
 export interface PanelParts {
   /** "Reach for everyone: …" or "Guaranteed for you: …", or null. */
   label: EstimateNote | null;
-  /** "Your academics: …" and "Your pool: …". */
+  /** "Your academics: …" and the stage-2 sentence ("Applicants like you — from Indiana — were admitted at …"). */
   stages: EstimateNote[];
   /** The college's facts and what the estimate read in the student's record, in the estimate's order. */
   reasons: EstimateNote[];
@@ -187,6 +187,33 @@ export function rateKindText(result: Pick<EstimateResult, "label" | "notes">): s
   const pool = result.notes.find((n) => n.key === "estimate.pool");
   const key = pool?.cite ? RATE_KIND_BY_FIELD[pool.cite] : undefined;
   return key ? noteText({ key, values: {} }) : null;
+}
+
+/**
+ * "from Indiana: 71%" / "from outside Indiana: 44%" / "international: 12%" / "to the College of Engineering: 23%" /
+ * "everyone: 43%" / "guaranteed" (pool-explainer.md "Where it shows", Compare's sub-line): the stage-2 sentence's
+ * short form, read from the sentence `estimate.pool` already carries (lib/chances/notes.ts) so Compare can never
+ * show a different number than the sentence itself. Null when the estimate has no pool line to shorten.
+ */
+export function compareShortLine(result: Pick<EstimateResult, "label" | "notes">): string | null {
+  if (result.label === "guaranteed") return noteText({ key: "pool.kind.guaranteed", values: {} });
+  const pool = result.notes.find((n) => n.key === "estimate.pool");
+  if (!pool) return null;
+  const text = noteText(pool);
+  const rate = text.match(/(\d+(?:\.\d+)?%)/)?.[1];
+  if (!rate) return null;
+  const kind = pool.cite ? RATE_KIND_BY_FIELD[pool.cite] : undefined;
+  if (kind === "pool.kind.residency_in" || kind === "pool.kind.residency_out") {
+    const who = text.match(/from (.+?) — were admitted/)?.[1];
+    return who ? `from ${who}: ${rate}` : null;
+  }
+  if (kind === "pool.kind.residency_international") return `international: ${rate}`;
+  if (kind === "pool.kind.major") {
+    const who = text.match(/^Applicants to (.+?) were admitted/)?.[1];
+    return who ? `to ${who}: ${rate}` : null;
+  }
+  if (kind === "pool.kind.overall") return `everyone: ${rate}`;
+  return null;
 }
 
 /* ------------------------------------------------------------------ */

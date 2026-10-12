@@ -171,10 +171,12 @@ function summarize(positions: readonly Position[]): Position | null {
 
 const note = (key: string, values: EstimateNote["values"] = {}, cite?: string | null): EstimateNote => (cite ? { key, values, cite } : { key, values });
 
-/** The pool's sentence without its full stop and with a lowercase start, for "Your pool: …". */
+/**
+ * The pool's sentence, unchanged (pool-explainer.md "The sentence"): `estimate.pool` now carries this sentence
+ * verbatim rather than embedding it after "Your pool:", so it keeps its own capitalization and full stop.
+ */
 function poolPhrase(n: EstimateNote): string {
-  const t = noteText(n).replace(/\.$/, "");
-  return t.charAt(0).toLowerCase() + t.slice(1);
+  return noteText(n);
 }
 
 /** Everything Stage 1 and Stage 2 work out for one college, apart from the score (so a retake can be tried cheaply). */

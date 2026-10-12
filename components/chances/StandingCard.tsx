@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef } from "react";
+import { ComparedWithTip } from "@/components/chances/ComparedWith";
 import { MajorLines, type MajorCites } from "@/components/chances/MajorLines";
 import { StandingBadge } from "@/components/chances/StandingBadge";
 import { useStanding, type LikeYou } from "@/components/chances/useStanding";
@@ -10,9 +11,11 @@ import { useLocalProfile } from "@/components/me/useLocalProfile";
 import { InfoTip } from "@/components/ui/info-tip";
 import { track } from "@/lib/analytics";
 import { loginHref } from "@/lib/accounts";
+import { comparedWith } from "@/lib/chances/compared-with";
 import { majorReviewFor } from "@/lib/chances/major-review";
 import { isMajorFamily } from "@/lib/majors";
 import { noteText } from "@/lib/chances/notes";
+import type { PoolSchool } from "@/lib/chances/pool-rate";
 import { panelParts } from "@/lib/chances/what-went-in";
 import type { EstimateResult } from "@/lib/chances/types";
 import type { AnyCited } from "@/lib/lineage";
@@ -27,6 +30,8 @@ export interface StandingCardProps {
   majorCites: MajorCites;
   /** Families of majors the college admits by (its schools or majors), with their names. */
   families: { family: string; name: string }[];
+  /** The college's own published rates (pool-explainer.md), for the "Who you're compared with" panel. */
+  poolSchool: PoolSchool;
 }
 
 const CAVEATS = ["estimate.caveat.holistic", "estimate.caveat.enrolled", "estimate.caveat.hooked", "estimate.caveat.afford"] as const;
@@ -56,7 +61,7 @@ function useReportShown(result: EstimateResult | null) {
  * The numbers come from the signed-in profile, else the one kept in the browser; the college page is static, so the
  * estimate is asked of POST /api/estimate after mount. The existing score checker and GPA checker stay where they are.
  */
-export function StandingCard({ unitId, college, cites, majorCites, families }: StandingCardProps) {
+export function StandingCard({ unitId, college, cites, majorCites, families, poolSchool }: StandingCardProps) {
   const s = useStanding(unitId, { likeYou: true });
   useReportShown(s.status === "ready" ? s.result : null);
 
@@ -65,6 +70,9 @@ export function StandingCard({ unitId, college, cites, majorCites, families }: S
   if (s.status === "ready") {
     const { result, yours, student, likeYou } = s;
     const parts = panelParts(result);
+    // The stage-2 sentence's ⓘ (pool-explainer.md "Who you're compared with"): built from the same student the
+    // estimate used, so the panel never disagrees with the sentence beside it.
+    const compared = comparedWith({ state: student.state, classRankPercentile: student.classRankPercentile, gpa: student.gpa, majors: student.majors, round: student.round }, poolSchool);
     return (
       <div className="space-y-4">
         <div className="flex flex-wrap items-center gap-2">
@@ -77,7 +85,10 @@ export function StandingCard({ unitId, college, cites, majorCites, families }: S
         {parts.stages.length > 0 && (
           <ul className="space-y-1 text-sm">
             {parts.stages.map((n, i) => (
-              <li key={`${n.key}-${i}`}>{noteText(n)}</li>
+              <li key={`${n.key}-${i}`}>
+                {noteText(n)}
+                {n.key === "estimate.pool" && <ComparedWithTip data={compared} cite={(p) => cites[p]} className="ml-1" />}
+              </li>
             ))}
           </ul>
         )}

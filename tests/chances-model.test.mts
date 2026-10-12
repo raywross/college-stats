@@ -183,14 +183,14 @@ test("pinned: Indiana resident, SAT 1300, GPA 3.85 at Purdue (71% in-state) is L
   assert.ok(r.used.includes("state") && r.used.includes("test") && r.used.includes("gpa"));
   const t = texts(r);
   assert.equal(t[0], "Your academics: in the middle of admitted students.");
-  assert.equal(t[1], "Your pool: applicants from Indiana were admitted at 71% (Fall 2025).");
+  assert.equal(t[1], "Applicants like you — from Indiana — were admitted at 71% (Fall 2025).");
   assert.ok(t.includes("Your SAT 1300 is inside the middle 50% of enrolled students."));
 });
 
 test("pinned: an Ohio resident with the same numbers at Purdue (44% out-of-state) is a Target", () => {
   const r = run(PURDUE(), student({ state: "OH", test: sat(1300), gpa: 3.85 }));
   assert.equal(r.group, "target");
-  assert.equal(texts(r)[1], "Your pool: applicants from outside Indiana were admitted at 44% (Fall 2025).");
+  assert.equal(texts(r)[1], "Applicants like you — from outside Indiana — were admitted at 44% (Fall 2025).");
 });
 
 test("pinned: a Georgia resident, SAT 1500, GPA 3.95 at Georgia Tech (29% in-state) is a Target, not a Reach for everyone", () => {
@@ -235,7 +235,7 @@ test("pinned: a Texas resident in the top 4%, SAT 1350, at UT Austin: Likely, Gu
   assert.equal(r.group, "likely");
   assert.equal(r.label, "guaranteed");
   assert.equal(keys(r)[0], "estimate.guaranteed");
-  assert.match(texts(r)[0], /^Guaranteed for you: Texas automatic admission \(top 5%\)\.$/);
+  assert.match(texts(r)[0], /^Texas automatic admission \(top 5%\) applies to you: this college admits every applicant who qualifies\.$/);
   assert.ok(keys(r).includes("pool.major_not_guaranteed"));
   assert.ok(r.used.includes("state") && r.used.includes("class_rank"));
 });

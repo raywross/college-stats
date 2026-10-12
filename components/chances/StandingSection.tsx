@@ -20,6 +20,9 @@ export async function StandingSection({ school, id, className }: { school: Schoo
     .sort()
     .map((family) => ({ family, name: majorFamilyName(family) }))
     .filter((f): f is { family: string; name: string } => f.name !== null);
+  // The "Who you're compared with" panel (pool-explainer.md) is built client-side from the student's own numbers,
+  // so it needs the college's own published rates: a serializable slice of School, nothing the method computes.
+  const poolSchool = { unit_id: school.unit_id, name: school.name, location: school.location, admissions: school.admissions, reported: school.reported, lineage: school.lineage };
   return (
     <Block
       id={id}
@@ -36,6 +39,7 @@ export async function StandingSection({ school, id, className }: { school: Schoo
         cites={estimateFactCites(school, citeField)}
         majorCites={majorUnitCites(school, citeField)}
         families={families}
+        poolSchool={poolSchool}
       />
     </Block>
   );

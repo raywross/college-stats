@@ -48,6 +48,22 @@ const entries = {
     category: "Admissions",
     related: ["applicants", "admitted", "selectivity"],
   },
+  "applicants-like-you": {
+    term: "Applicants like you",
+    short:
+      "The group of applicants a college admits from in your situation: your state, your intended major, or a program you qualify for. Colleges often admit these groups at very different rates, so Quad's estimate uses the most specific rate the college publishes for you.",
+    long: "A college's overall admit rate can blend very different groups: in-state and out-of-state applicants at a public university, or applicants to a direct-admit engineering school and to the college of arts and sciences. Quad shows the most specific rate the college itself publishes for your situation, with its source, instead of the blended overall rate.",
+    why: "The overall admit rate can be misleading in either direction: it can look easier than your own group's rate, or harder. Counselors call this your pool.",
+    category: "Admissions",
+    related: ["acceptance-rate", "quads-estimate"],
+  },
+  /** Short alias (pool-explainer.md "Glossary"): the word "pool" leaves every student-facing sentence but stays findable here. */
+  "pool": {
+    term: "Pool",
+    short: "Another word for applicants like you.",
+    category: "Admissions",
+    related: ["applicants-like-you"],
+  },
   "admission-factor": {
     term: "Admission factors",
     short: "What a college looks at when deciding: whether each item, like GPA or an essay, is required, considered, or not considered at all.",

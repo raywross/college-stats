@@ -64,16 +64,22 @@ export const NOTES: Record<NoteKey, Note> = {
   "offering.unknown": () => "We don't have a course list for your school yet.",
   "offering.pick_prompt": (v) => `Your school offers these ${plural(v, "count", "AP course")}. Tap the ones you've taken, are taking, or plan to take.`,
 
-  /* ---- The pool's rate (base-rates.md) ---- */
+  /* ---- The admit rate for the student's pool (base-rates.md), reworded so no student-facing sentence says "pool"
+   * (specs/chances/pool-explainer.md "The sentence"): every kind names who the student is compared with, the share
+   * admitted, and the year. */
   "pool.guaranteed": (v) => `Guaranteed for you: ${s(v, "program")}.`,
   "pool.may_qualify": (v) => `You may qualify for ${s(v, "program")} if you're in the top ${s(v, "pct")} of your class.`,
   "pool.system_scope": (v) => `${s(v, "program")} guarantees a place in the ${s(v, "system")} system, not at a campus you choose.`,
   "pool.major_not_guaranteed": (v) => `Automatic admission to ${s(v, "college")} doesn't include a major; ${s(v, "unit")} admits separately.`,
-  "pool.residency_in": (v) => `Applicants from ${s(v, "state")} were admitted at ${s(v, "rate")} (${s(v, "year")}).`,
-  "pool.residency_out": (v) => `Applicants from outside ${s(v, "state")} were admitted at ${s(v, "rate")} (${s(v, "year")}).`,
-  "pool.major_rate": (v) => `${s(v, "unit")} admitted ${s(v, "rate")} of its applicants (${s(v, "year")}).`,
+  "pool.residency_in": (v) => `Applicants like you — from ${s(v, "state")} — were admitted at ${s(v, "rate")} (${s(v, "year")}).`,
+  "pool.residency_out": (v) => `Applicants like you — from outside ${s(v, "state")} — were admitted at ${s(v, "rate")} (${s(v, "year")}).`,
+  "pool.major_rate": (v) => `Applicants to ${s(v, "unit")} were admitted at ${s(v, "rate")} (${s(v, "year")}).`,
   "pool.major_separate": (v) => `${s(v, "unit")} admits separately here and is more selective than the university overall.`,
-  "pool.overall": (v) => `${s(v, "rate")} of applicants were admitted (${s(v, "year")}).`,
+  /** The overall rate, with the student's state known: a second sentence says the college publishes no rate for it. */
+  "pool.overall_state_known": (v) =>
+    `Applicants were admitted at ${s(v, "rate")}${v.year ? ` (${s(v, "year")})` : ""}. ${s(v, "college")} doesn't publish a rate for applicants from ${s(v, "state")}, so this is everyone.`,
+  /** The overall rate with no state on the household: invites adding one. */
+  "pool.overall_no_state": (v) => `Applicants were admitted at ${s(v, "rate")}${v.year ? ` (${s(v, "year")})` : ""}. Add your state to see the rate for applicants like you.`,
   "pool.ed_fact": (v) =>
     `Early decision admitted ${s(v, "ed")} here against ${s(v, "overall")} overall (${s(v, "year")}); much of that gap is recruited athletes and other students with an inside track.`,
   "pool.direct_admissions": () => "Some colleges admit students before they apply, through programs like Common App's Direct Admissions; it's one more way to find colleges.",
@@ -82,13 +88,19 @@ export const NOTES: Record<NoteKey, Note> = {
   "pool.kind.residency_in": () => "in-state rate",
   "pool.kind.residency_out": () => "out-of-state rate",
   "pool.kind.overall": () => "overall rate",
-  /* Added by the pool rate (lib/chances/pool-rate.ts): programs with a GPA rule, international applicants, an undated rate. */
+  /* Added by the pool rate (lib/chances/pool-rate.ts): programs with a GPA rule, international applicants. */
   "pool.may_qualify_gpa": (v) => `You may qualify for ${s(v, "program")} with a GPA of ${s(v, "gpa")} or higher.`,
   "pool.may_qualify_rank_or_gpa": (v) => `You may qualify for ${s(v, "program")} if you're in the top ${s(v, "pct")} of your class or have a GPA of ${s(v, "gpa")} or higher.`,
   "pool.may_qualify_rank_and_gpa": (v) => `You may qualify for ${s(v, "program")} if you're in the top ${s(v, "pct")} of your class with a GPA of ${s(v, "gpa")} or higher.`,
   "pool.residency_international": (v) => `International applicants were admitted at ${s(v, "rate")} (${s(v, "year")}).`,
   "pool.kind.residency_international": () => "international rate",
-  "pool.overall_undated": (v) => `${s(v, "rate")} of applicants were admitted.`,
+  /* Added by the pool explainer (pool-explainer.md "Who you're compared with"): the panel's fixed copy. */
+  "pool.panel_intro": (v) => `Colleges admit different groups at different rates, so we use the most specific rate ${s(v, "college")} publishes for applicants like you.`,
+  "pool.panel_change_state": () => "Change your state in Household to see another rate.",
+  "pool.panel_major_none": (v) => `${s(v, "college")} publishes no rate by major; ${s(v, "unit")} applicants are admitted to the university, then to the college.`,
+  "pool.panel_guaranteed_note": () => "admits every applicant who qualifies",
+  /** The signed-out plan (pool-explainer.md "Where it shows"): there's no household to add a state to without an account. */
+  "pool.add_state_prompt": () => "Add your state to see the admit rate for applicants like you at the colleges that publish one.",
 
   /* ---- The major (major-and-grades.md "What the estimate does with it") ---- */
   "major.not_considered": (v) => `The major you list doesn't affect admission here (${s(v, "college")} says so).`,
@@ -100,7 +112,7 @@ export const NOTES: Record<NoteKey, Note> = {
   "major.gate_not_yet": (v) => `To be considered for ${s(v, "major")} at ${s(v, "college")} you'll need one of: ${s(v, "routes")}.`,
   "major.gate_closed": (v) => `${s(v, "major")} at ${s(v, "college")} isn't open to this application.`,
   "major.gate_alternate": (v) => `${s(v, "college")} describes another route: ${s(v, "alternate")}`,
-  "major.undecided": (v) => `You're undecided; at ${s(v, "college")} you'd apply to a specific college, and that choice is compared within its own pool.`,
+  "major.undecided": (v) => `You're undecided; at ${s(v, "college")} you'd apply to a specific college, and that choice decides who you're compared with.`,
   "major.add_grades": (v) => `Adding your math and science grades would help at ${s(v, "colleges")}.`,
   "major.unit_requires": (v) => `${s(v, "unit")} also requires: ${s(v, "courses")}.`,
   /* Added by the major review (lib/chances/major-review.ts). */
@@ -116,10 +128,13 @@ export const NOTES: Record<NoteKey, Note> = {
   "estimate.disclaimer": (v) =>
     `Quad's estimate is our own assessment from these inputs and outcomes reported by students. It isn't a prediction from ${s(v, "college")}, and holistic admission weighs things no estimate can see: essays, recommendations, and the college's needs that year.`,
   "estimate.reach_for_everyone": () => "Reach for everyone: no student's numbers make this college predictable.",
-  "estimate.guaranteed": (v) => `Guaranteed for you: ${s(v, "program")}.`,
+  /** pool-explainer.md "The sentence": "{program} applies to you: this college admits every applicant who qualifies." */
+  "estimate.guaranteed": (v) => `${s(v, "program")} applies to you: this college admits every applicant who qualifies.`,
   "estimate.open_admission": () => "Admits everyone who applies.",
   "estimate.academics": (v) => `Your academics: ${s(v, "position")}.`,
-  "estimate.pool": (v) => `Your pool: ${s(v, "pool")}.`,
+  /** Stage 2 (pool-explainer.md "The sentence"): `pool` already carries the full, cited sentence for this college's
+   * pool kind (lib/chances/model.ts poolPhrase); this key only exists so model.ts keeps a stable place to write it. */
+  "estimate.pool": (v) => s(v, "pool"),
   "estimate.position.above": () => "above most admitted students",
   "estimate.position.in": () => "in the middle of admitted students",
   "estimate.position.below": () => "below most admitted students",

@@ -54,9 +54,9 @@ export function ChancesAccuracy({ view, seasonInProgress }: { view: SummaryView 
       <p className="max-w-3xl text-sm leading-relaxed text-muted-foreground">
         <Term term="quads-estimate">Quad&apos;s estimate</Term> puts each college on a student&apos;s list in a group: Reach,
         Target, or Likely. Students who choose to share their results tell us what happened, and after each admissions
-        season we publish how the groups held up: for each group and each band of the college&apos;s overall admit rate,
-        how many outcomes were shared and the share admitted, with a 90% range. A group with too few outcomes says so
-        rather than guess.
+        season we publish how the groups held up: for each group and each band of the admit rate for applicants like
+        the student, how many outcomes were shared and the share admitted, with a 90% range. A group with too few
+        outcomes says so rather than guess.
       </p>
       {!view ? (
         <Card title={NOT_ENOUGH}>
@@ -73,9 +73,10 @@ export function ChancesAccuracy({ view, seasonInProgress }: { view: SummaryView 
             {view.total === 1 ? "outcome" : "outcomes"}. Estimate version{view.modelVersions.length === 1 ? "" : "s"}{" "}
             {view.modelVersions.join(", ")}.{view.nextSummaryOn && ` Next summary ${dateLabel(view.nextSummaryOn)}.`}
           </p>
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">By the admit rate for applicants like the student</p>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {view.bands.map((b) => (
-              <Card key={b.band} title={<>Admit rate {b.label.toLowerCase()}</>}>
+              <Card key={b.band} title={b.label}>
                 <div className="mt-2">
                   {GROUP_ORDER.map((g) => (
                     <CellLine key={g} label={GROUP_LABEL[g]} cell={b.cells[g]} />

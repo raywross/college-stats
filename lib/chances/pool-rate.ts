@@ -71,7 +71,8 @@ export interface PoolOptions {
   overallYear?: string | null;
 }
 
-const isOutsideUs = (state: string) => state === PROFILE_OUTSIDE_US || state === GRID_OUTSIDE_US;
+/** A state value meaning "outside the U.S.": the profile's own marker or the residency grid's (lib/chances/compared-with.ts reuses this). */
+export const isOutsideUs = (state: string) => state === PROFILE_OUTSIDE_US || state === GRID_OUTSIDE_US;
 
 /**
  * A program's rule checked against the student's own fields. Residency first (a program for another state's students
@@ -155,13 +156,21 @@ function residencyPool(student: PoolStudent, school: PoolSchool): { rate: PoolRa
   return { rate: { kind: "residency", rate, label: label("pool.kind.residency_international"), field: POOL_FIELDS.international, edition: year }, note: { key: "pool.residency_international", values, cite: POOL_FIELDS.international } };
 }
 
-/** The overall rate and its line (no line when the college has no rate: open admission or not reported). */
-function overallPool(school: PoolSchool, opts: PoolOptions): { rate: PoolRate; note: EstimateNote | null } {
+/**
+ * The overall rate and its line (no line when the college has no rate: open admission or not reported). Reached
+ * only without a more specific rate, so the line says why (pool-explainer.md "The sentence"): with the student's
+ * state known, that this college doesn't publish one for it; without a state, an invitation to add one.
+ */
+function overallPool(student: PoolStudent, school: PoolSchool, opts: PoolOptions): { rate: PoolRate; note: EstimateNote | null } {
   const rate = school.admissions?.acceptance_rate ?? null;
   const year = school.lineage?.[POOL_FIELDS.overall]?.year ?? opts.overallYear ?? null;
   const pool: PoolRate = { kind: "overall", rate, label: label("pool.kind.overall"), field: POOL_FIELDS.overall, edition: year };
   if (rate === null) return { rate: pool, note: null };
-  const note: EstimateNote = year ? { key: "pool.overall", values: { rate: pctSmart(rate), year }, cite: POOL_FIELDS.overall } : { key: "pool.overall_undated", values: { rate: pctSmart(rate) }, cite: POOL_FIELDS.overall };
+  const values = { rate: pctSmart(rate), year: year ?? "" };
+  const note: EstimateNote =
+    student.state && !isOutsideUs(student.state)
+      ? { key: "pool.overall_state_known", values: { ...values, college: school.name, state: stateName(student.state) }, cite: POOL_FIELDS.overall }
+      : { key: "pool.overall_no_state", values, cite: POOL_FIELDS.overall };
   return { rate: pool, note };
 }
 
@@ -203,7 +212,7 @@ export function poolRateFor(student: PoolStudent, school: PoolSchool, opts: Pool
     pool = residency.rate;
     notes.push(residency.note);
   } else {
-    const overall = overallPool(school, opts);
+    const overall = overallPool(student, school, opts);
     pool = overall.rate;
     if (overall.note) notes.push(overall.note);
   }

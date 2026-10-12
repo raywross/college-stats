@@ -77,6 +77,24 @@ export const TIER_CUTOFFS: Record<Exclude<SelectivityTier, "elite" | "open">, nu
 /** A tier changes at a publish only when the score crosses the cutoff by this many points. */
 export const HYSTERESIS = 2;
 
+/**
+ * The top band of Ultra selective (method/standing.md "Revision 3", rule 8; owner, 2026-10-12): Ultra selective
+ * colleges whose score for all applicants is at least this. Seven on 2026-10-12 (Yale, Chicago, Harvard, Stanford, MIT,
+ * Princeton, Penn); Brown is next at 89.6. Stored on the college as the word `band: "top"`, never the score.
+ */
+export const TOP_BAND_SCORE = 90;
+
+/**
+ * Whether an Ultra selective college is in the top band: its score for all applicants at least TOP_BAND_SCORE to
+ * enter; once in (`previous` "top"), it leaves only when the score falls HYSTERESIS points below, as tiers do.
+ */
+export function topBand(score: number | null, tier: SelectivityTier | null, previous: "top" | null | undefined = null): "top" | null {
+  if (score === null || tier !== "elite") return null;
+  if (score >= TOP_BAND_SCORE) return "top";
+  if (previous === "top" && score > TOP_BAND_SCORE - HYSTERESIS) return "top";
+  return null;
+}
+
 /** The Elite count the verify guard holds the dataset to (an alarm band, not a target). */
 export const ELITE_COUNT_RANGE: readonly [number, number] = [20, 50];
 

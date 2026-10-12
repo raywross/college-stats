@@ -11,6 +11,7 @@
  * (lib/chances/depth-snapshot.ts binds the words and counts only).
  */
 import { activityByKey } from "./activity-catalog.ts";
+import { activityGroups, courseGroups, DEPTH_GROUP_KEYS, groupWords, relatedToMajor, type DepthGroup } from "./depth-groups.ts";
 import { catalogCourse } from "./catalog.ts";
 import { courseName, SUBJECT_LABELS } from "./courses.ts";
 import { expectationsFor, type ExpectedSubject } from "./major-course-expectations.ts";
@@ -75,14 +76,21 @@ function coreYearsFor(subject: CourseSubject, coreAtTopLevel: CoreAtTopLevel): C
 }
 
 /**
- * An activity's family match (depth.md "An activity marked `relatedToMajor` with 3+ years also counts as a year of
- * the major's course track where the family matches"): editorial, since `ActivityEntry` carries no subject of its
- * own. `research` matches the major's science family when it expects one (else its first expected family); a club
- * matches a STEM major's computer-science or science family. Anything else, or under 3 years, or not
- * `relatedToMajor`, matches nothing.
+ * An activity's family match (depth.md "An activity connected to the major with 3+ years also counts as a year of
+ * the major's course track where the family matches"). Whether it's connected is computed, never asked (method
+ * Revision 3, rule 6: `relatedToMajor` in depth-groups.ts; the stored checkbox is ignored). An activity whose family is
+ * a course family matches that family when the major expects it; business matches math (owner: "business has ties in
+ * with math, statistics, computer science"); otherwise, with no family or an engineering or health one, `research`
+ * matches the major's science family (else computer science, else its first expected family) and a club a STEM
+ * major's computer-science or science family. Under 3 years, or not connected, matches nothing.
  */
-export function activityFamilyMatch(a: ActivityEntry, expectedFamilies: readonly CourseSubject[]): CourseSubject | null {
-  if (!a.relatedToMajor || a.years.length < 3) return null;
+export function activityFamilyMatch(a: ActivityEntry, expectedFamilies: readonly CourseSubject[], majors: readonly string[] = []): CourseSubject | null {
+  if (a.years.length < 3) return null;
+  const fam = activityFamilyOf(a);
+  if (!relatedToMajor(fam, majors)) return null;
+  if (fam && (DEPTH_FAMILIES as readonly string[]).includes(fam)) return expectedFamilies.includes(fam as CourseSubject) ? (fam as CourseSubject) : null;
+  if (fam === "business") return expectedFamilies.includes("math") ? "math" : null;
+  if (fam !== null && fam !== "engineering" && fam !== "health" && fam !== "other") return null;
   if (a.kind === "research") return expectedFamilies.includes("science") ? "science" : expectedFamilies.includes("cs") ? "cs" : (expectedFamilies[0] ?? null);
   if (a.kind === "club") return expectedFamilies.includes("cs") ? "cs" : expectedFamilies.includes("science") ? "science" : null;
   return null;
@@ -141,7 +149,7 @@ function familyTrack(subject: CourseSubject, input: CourseTracksInput, expectedF
   for (const c of advanced) levelByYear.set(c.year, Math.max(levelByYear.get(c.year) ?? 0, TRACK_LEVEL[c.kind]));
   const rising = advancedYears.length > 0 && advancedYears.every((y, i) => i === 0 || (levelByYear.get(y) ?? 0) >= (levelByYear.get(advancedYears[i - 1]) ?? 0)) && (levelByYear.get(advancedYears[advancedYears.length - 1]) ?? 0) === 2;
 
-  const activityMatch = activities.filter((a) => activityFamilyMatch(a, expectedFamilies) === subject);
+  const activityMatch = activities.filter((a) => activityFamilyMatch(a, expectedFamilies, input.majors) === subject);
   const activityYears = new Set<number>(activityMatch.flatMap((a) => a.years));
 
   const yearsSet = new Set<number>([...advancedYears, ...coreYearsFor(subject, coreAtTopLevel), ...activityYears]);
@@ -306,25 +314,13 @@ export function activitiesReading(activities: readonly ActivityEntry[], awards: 
 }
 
 /* ------------------------------------------------------------------ */
-/* Themes: depth across what we track (method/standing.md Revision 2)  */
+/* Themes: depth across what we track (method/standing.md Revisions 2, 3) */
 /* ------------------------------------------------------------------ */
 
 /** Track readings that can anchor a theme. */
 export const THEME_TRACKS: readonly TrackReading[] = ["deep", "steady"];
 /** An activity joins a theme when it was kept up at least this many years. */
 export const THEME_ACTIVITY_YEARS = 2;
-
-/** A family in the words a theme sentence uses ("Your art courses and your art activities line up"). */
-const THEME_WORDS: Record<CourseSubject, string> = {
-  english: "English",
-  math: "math",
-  science: "science",
-  history: "history",
-  language: "world language",
-  cs: "computer science",
-  arts: "art",
-  other: "other",
-};
 
 /** "a", "a and b", "a, b, and c". */
 function listWords(words: readonly string[]): string {
@@ -339,19 +335,47 @@ export function activityFamilyOf(a: ActivityEntry): ActivityFamily | null {
   return a.family ?? activityByKey(a.catalogKey)?.family ?? null;
 }
 
-/** The course family an activity's family names, or null (athletics, service, leadership…, or none known). */
-function activityCourseFamily(a: ActivityEntry): CourseSubject | null {
-  const f = activityFamilyOf(a);
-  return f !== null && (DEPTH_FAMILIES as readonly string[]).includes(f) ? (f as CourseSubject) : null;
+export interface GroupTrack {
+  group: DepthGroup;
+  reading: Exclude<TrackReading, "not_offered">;
+  years: number;
+}
+
+/**
+ * A broad group's courses read together as one track (Revision 3, rule 2): the same rules as a family's track
+ * (years with an advanced or honors course, plus 11 and 12 where `coreAtTopLevel` is checked for a core subject in the
+ * group; Deep is three or more years, rising, with a senior-year course; Steady two or more years), over every course
+ * in the group (data/reference/depth-groups.json: a course's subject family, or its own entry).
+ */
+export function groupTrack(group: DepthGroup, courses: readonly CourseEntry[], coreAtTopLevel: CoreAtTopLevel): GroupTrack {
+  const inGroup = courses.filter((c) => courseGroups(c).includes(group));
+  const advanced = inGroup.filter(isDepthAdvanced);
+  const levelByYear = new Map<number, number>();
+  for (const c of advanced) levelByYear.set(c.year, Math.max(levelByYear.get(c.year) ?? 0, TRACK_LEVEL[c.kind]));
+  const advYears = [...levelByYear.keys()].sort((a, b) => a - b);
+  const rising = advYears.length > 0 && advYears.every((y, i) => i === 0 || (levelByYear.get(y) ?? 0) >= (levelByYear.get(advYears[i - 1]) ?? 0)) && (levelByYear.get(advYears[advYears.length - 1]) ?? 0) === 2;
+  const coreYears = CORE_SUBJECT_KEYS.filter((subject) => courseGroups({ key: null, subject }).includes(group)).flatMap((subject) => coreYearsFor(subject, coreAtTopLevel));
+  const years = new Set<number>([...advYears, ...coreYears]).size;
+  const senior = inGroup.some((c) => c.year === 12);
+  const reading = years >= 3 && rising && senior ? "deep" : years >= 2 ? "steady" : "light";
+  return { group, reading, years };
+}
+
+export interface ThemesInput {
+  courses: readonly CourseEntry[];
+  coreAtTopLevel: CoreAtTopLevel;
+  activities: readonly ActivityEntry[];
 }
 
 export interface ThemesResult {
-  /** Families where the course track reads Deep or Steady and an activity of two or more years shares the family. */
-  themes: CourseSubject[];
-  /** Deep or Steady tracks with no activity in the family. */
-  trackOnly: CourseSubject[];
-  /** Families of activities (two or more years) with no Deep or Steady track behind them. */
-  activityOnly: CourseSubject[];
+  /** Groups whose courses read Deep or Steady together and that an activity of two or more years belongs to. */
+  themes: DepthGroup[];
+  /** Each group's courses read together. */
+  groups: GroupTrack[];
+  /** Deep or Steady groups with no activity in them. */
+  trackOnly: DepthGroup[];
+  /** Groups of activities (two or more years) with no Deep or Steady courses behind them. */
+  activityOnly: DepthGroup[];
   /** Activities of two or more years with no family picked (they can't line up with anything). */
   unclassified: number;
   /** The theme sentence, then at most one suggestion of each kind (depth.theme.*). */
@@ -360,36 +384,34 @@ export interface ThemesResult {
 
 /**
  * Depth across what we track (owner, 2026-10-12: "someone taking a lot of art courses and doing art clubs would
- * increase depth"): a theme is a course family whose track reads Deep or Steady and that at least one activity of
- * two or more years shares through `ActivityEntry.family`. An activity without a family never counts. Words only
- * reach the sentences (the families' names), never the activities' names.
+ * increase depth"; Revision 3: "we should more loosely have concepts of STEM vs arts"): a theme is a broad group
+ * (data/reference/depth-groups.json) whose courses, taken together, read Deep or Steady and that at least one activity
+ * of two or more years belongs to, through `ActivityEntry.family` (else its catalog entry's). An activity without a
+ * family, or outside every group (athletics, service, faith), never makes one. Words only reach the sentences (the
+ * groups' names), never the activities' names. The per-family tracks stay for the major's checks.
  */
-export function courseThemes(tracks: CourseTracks, activities: readonly ActivityEntry[]): ThemesResult {
+export function courseThemes(input: ThemesInput): ThemesResult {
+  const { courses, coreAtTopLevel, activities } = input;
   const kept = activities.filter((a) => a.years.length >= THEME_ACTIVITY_YEARS);
-  const activityFamilies = new Set<CourseSubject>();
-  for (const a of kept) {
-    const f = activityCourseFamily(a);
-    if (f) activityFamilies.add(f);
-  }
-  const strong = tracks.families.filter((t) => THEME_TRACKS.includes(t.reading)).map((t) => t.family);
-  const themes = strong.filter((f) => activityFamilies.has(f));
-  const trackOnly = strong.filter((f) => !activityFamilies.has(f));
-  const activityOnly = [...activityFamilies].filter((f) => !strong.includes(f));
+  const activityGroupSet = new Set<DepthGroup>();
+  for (const a of kept) for (const g of activityGroups(activityFamilyOf(a)) ?? []) activityGroupSet.add(g);
+  const groups = DEPTH_GROUP_KEYS.map((g) => groupTrack(g, courses, coreAtTopLevel));
+  const strong = groups.filter((t) => THEME_TRACKS.includes(t.reading)).map((t) => t.group);
+  const themes = strong.filter((g) => activityGroupSet.has(g));
+  const trackOnly = strong.filter((g) => !activityGroupSet.has(g));
+  const activityOnly = DEPTH_GROUP_KEYS.filter((g) => activityGroupSet.has(g) && !strong.includes(g));
   const unclassified = kept.filter((a) => activityFamilyOf(a) === null).length;
 
   const notes: EstimateNote[] = [];
-  if (themes.length > 0) {
-    const words = listWords(themes.map((f) => THEME_WORDS[f]));
-    notes.push(note("depth.theme", { subjects: words }));
-  }
-  if (activityOnly.length > 0) notes.push(note("depth.theme.activity_only", { subject: THEME_WORDS[activityOnly[0]] }));
-  // A track with no activity beside it is suggested only while there's no theme at all (once one exists, asking for a
-  // club in every other subject would be noise), deepest track first.
-  const readingOf = (f: CourseSubject) => tracks.families.find((t) => t.family === f)?.reading;
-  const suggestTrack = [...trackOnly.filter((f) => readingOf(f) === "deep"), ...trackOnly.filter((f) => readingOf(f) !== "deep")][0];
-  if (suggestTrack && themes.length === 0 && activities.length > 0) notes.push(note("depth.theme.track_only", { subject: THEME_WORDS[suggestTrack] }));
+  if (themes.length > 0) notes.push(note("depth.theme", { subjects: listWords(themes.map(groupWords)) }));
+  if (activityOnly.length > 0) notes.push(note("depth.theme.activity_only", { subject: groupWords(activityOnly[0]) }));
+  // A group with no activity beside it is suggested only while there's no theme at all (once one exists, asking for a
+  // club in every other area would be noise), deepest first.
+  const readingOf = (g: DepthGroup) => groups.find((t) => t.group === g)?.reading;
+  const suggest = [...trackOnly.filter((g) => readingOf(g) === "deep"), ...trackOnly.filter((g) => readingOf(g) !== "deep")][0];
+  if (suggest && themes.length === 0 && activities.length > 0) notes.push(note("depth.theme.track_only", { subject: groupWords(suggest) }));
   if (themes.length === 0 && unclassified > 0) notes.push(note("depth.theme.add_family"));
-  return { themes, trackOnly, activityOnly, unclassified, notes };
+  return { themes, groups, trackOnly, activityOnly, unclassified, notes };
 }
 
 /* ------------------------------------------------------------------ */

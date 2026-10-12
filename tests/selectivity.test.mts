@@ -17,6 +17,7 @@ import {
   EVIDENCE_ADMITS,
   HYSTERESIS,
   TIER_CUTOFFS,
+  TOP_BAND_SCORE,
   filledReadings,
   inconsistent,
   leastSquares,
@@ -25,6 +26,7 @@ import {
   scales,
   selectivityScore,
   selectivityTier,
+  topBand,
   type RawInputs,
 } from "../lib/selectivity.ts";
 import { chipTiers, tierForStudent, tierRank, tierText } from "../lib/selectivity-tier.ts";
@@ -246,6 +248,37 @@ test("the guard fails an Elite count outside its band and an empty tier", () => 
   let extra = hi + 1;
   const tooMany = SCHOOLS.map((s) => (s.selectivity && s.selectivity.tier !== "elite" && extra-- > 0 ? { ...s, selectivity: { ...s.selectivity, tier: "elite" as const } } : s));
   assert.ok(selectivityProblems(tooMany, FILE, META).some((p) => p.startsWith("Elite holds")));
+});
+
+/* ---- The top band of Ultra selective (method/standing.md "Revision 3", rule 8) ---- */
+
+test("the top band: Ultra selective at TOP_BAND_SCORE or more to enter, leaving only the hysteresis band below", () => {
+  assert.equal(TOP_BAND_SCORE, 90);
+  assert.equal(topBand(90, "elite"), "top");
+  assert.equal(topBand(89.99, "elite"), null);
+  assert.equal(topBand(95, "highly_selective"), null, "Ultra selective only");
+  assert.equal(topBand(null, "elite"), null);
+  assert.equal(topBand(88.5, "elite", "top"), "top", "inside the band below: stays");
+  assert.equal(topBand(88, "elite", "top"), null, "exactly the band below: leaves");
+});
+
+test("the top band on the committed data: Yale, Chicago, Harvard, Stanford, MIT, Princeton, Penn; a word, never the score", () => {
+  const top = SCHOOLS.filter((x) => x.selectivity?.band === "top").map((x) => x.name).sort();
+  assert.deepEqual(top, ["Harvard University", "Massachusetts Institute of Technology", "Princeton University", "Stanford University", "University of Chicago", "University of Pennsylvania", "Yale University"]);
+  for (const x of SCHOOLS) if (x.selectivity?.band) assert.equal(x.selectivity.tier, "elite", x.name);
+  assert.equal(byName("Brown University").selectivity?.band, undefined, "Brown is just under");
+  assert.equal(byName("Vanderbilt University").selectivity?.band, undefined);
+  for (const x of SCHOOLS) if (x.selectivity) assert.deepEqual(Object.keys(x.selectivity).filter((k) => !["tier", "in_state", "out_of_state", "band", "year"].includes(k)), [], x.name);
+});
+
+test("the guard fails a top band the score doesn't support, and a missing one it does", () => {
+  // Columbia (87.5) sits more than the hysteresis band under the cutoff (Brown, at 89.6, could stay if it had been in).
+  const brown = SCHOOLS.findIndex((x) => x.name === "Columbia University in the City of New York");
+  const harvard = SCHOOLS.findIndex((x) => x.name === "Harvard University");
+  const added = SCHOOLS.map((x, j) => (j === brown ? { ...x, selectivity: { ...x.selectivity!, band: "top" as const } } : x));
+  assert.ok(selectivityProblems(added, FILE, META).some((p) => p.includes("Columbia University") && p.includes("top band")));
+  const dropped = SCHOOLS.map((x, j) => (j === harvard ? { ...x, selectivity: { tier: x.selectivity!.tier, year: x.selectivity!.year } } : x));
+  assert.ok(selectivityProblems(dropped, FILE, META).some((p) => p.includes("Harvard University") && p.includes("top band")));
 });
 
 test("the guard fails a stale index file", () => {

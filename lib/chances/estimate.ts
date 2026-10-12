@@ -10,6 +10,8 @@ import "server-only";
  *   const results = estimateMany(student, ["243780", "139755"], ctx);
  */
 import { getData } from "@/lib/data";
+import { stateOfHighSchoolId } from "@/lib/high-school-core";
+import { getHighSchool } from "@/lib/high-schools";
 import { gpaCurve, gpaModel } from "@/lib/planner/gpa-model-server";
 import type { CoreAtTopLevel } from "@/lib/student-profile";
 import type { School } from "@/lib/types";
@@ -36,15 +38,30 @@ export interface EstimateContext {
   linked: boolean;
   coreAtTopLevel?: CoreAtTopLevel | null;
   grade?: number | null;
+  /**
+   * The student's high school's state (USPS), from its record, else a public id's FIPS prefix; the estimate uses it
+   * when the student entered no state (method/standing.md "Revision 3", rule 7).
+   */
+  schoolState?: string | null;
+  /** The day the estimate is made (YYYY-MM-DD); today when absent. */
+  asOf?: string | null;
+}
+
+/** The high school's state: its record's, else the FIPS prefix of a public id; null for an unknown private school. */
+async function highSchoolState(id: string | null): Promise<string | null> {
+  if (!id) return null;
+  const hs = await getHighSchool(id).catch(() => null);
+  return hs?.school.state ?? stateOfHighSchoolId(id);
 }
 
 /** Builds the context for one student (one dataset read, the fitted GPA models, the high school's offering). */
-export async function estimateContext(student: Pick<EstimateStudent, "highSchoolId">, extra: { coreAtTopLevel?: CoreAtTopLevel | null; grade?: number | null } = {}): Promise<EstimateContext> {
-  const [{ getSchoolById, citeField }, model, curve, offering] = await Promise.all([
+export async function estimateContext(student: Pick<EstimateStudent, "highSchoolId">, extra: { coreAtTopLevel?: CoreAtTopLevel | null; grade?: number | null; asOf?: string | null } = {}): Promise<EstimateContext> {
+  const [{ getSchoolById, citeField }, model, curve, offering, schoolState] = await Promise.all([
     getData(),
     gpaModel(),
     gpaCurve(),
     student.highSchoolId ? offeringFor(student.highSchoolId).then((o) => (o.offering.source ? o.offering : null)).catch(() => null) : Promise.resolve(null),
+    highSchoolState(student.highSchoolId).catch(() => null),
   ]);
   const standingCache = new Map<string, StandingSchool>();
   return {
@@ -59,6 +76,8 @@ export async function estimateContext(student: Pick<EstimateStudent, "highSchool
     linked: student.highSchoolId !== null,
     coreAtTopLevel: extra.coreAtTopLevel ?? null,
     grade: extra.grade ?? null,
+    schoolState,
+    asOf: extra.asOf ?? null,
   };
 }
 
@@ -84,6 +103,8 @@ export function estimateWithDetail(input: EstimateInput, ctx: EstimateContext): 
       coreAtTopLevel: ctx.coreAtTopLevel ?? null,
       grade: ctx.grade ?? null,
       hooks: input.hooks ?? null,
+      schoolState: ctx.schoolState ?? null,
+      asOf: ctx.asOf ?? null,
     });
   } catch (err) {
     console.error(`estimate: the model failed for ${input.unitId}; serving the baseline: ${err instanceof Error ? err.message : String(err)}`);

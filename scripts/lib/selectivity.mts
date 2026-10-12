@@ -12,7 +12,7 @@ import type { DatasetMeta, School, SchoolSelectivity } from "../../lib/types";
 import type { SelectivityPool, SelectivityTier } from "../../lib/chances/types.ts";
 import { SELECTIVITY_TIERS } from "../../lib/chances/levels.ts";
 import { lineageFor } from "../../lib/lineage.ts";
-import { ELITE_COUNT_RANGE, ELITE_INDEX, collegeIndex, rawInputs, scales, selectivityScoreExact, selectivityTier } from "../../lib/selectivity.ts";
+import { ELITE_COUNT_RANGE, ELITE_INDEX, TOP_BAND_SCORE, collegeIndex, rawInputs, scales, selectivityScoreExact, selectivityTier, topBand } from "../../lib/selectivity.ts";
 
 /** The pools a college can have an index for, in the order the file and `school.selectivity` list them. */
 const POOLS = ["all", "in_state", "out_of_state"] as const satisfies readonly SelectivityPool[];
@@ -114,6 +114,9 @@ export function buildSelectivity(
       }
       if (prev && prev !== tier) moved[pool] = prev;
     }
+    // Rule 8 (method/standing.md "Revision 3"): the top band of Ultra selective, a word beside the tier.
+    const band = topBand(idx.all, sel.tier, before?.band);
+    if (band) sel.band = band;
     const year = lineageFor("admissions.acceptance_rate", school, meta).year;
     if (year) sel.year = year;
     if (Object.keys(moved).length) entry.changed_from = moved;
@@ -193,6 +196,11 @@ export function selectivityProblems(schools: readonly School[], file: Selectivit
       const want = selectivityTier(index, from);
       if (want !== tier) problems.push(`${where}: ${pool} is ${tier}${e.changed_from?.[pool] ? ` (from ${from})` : ""}, but index ${index} gives ${want} with the hysteresis band`);
     }
+    // The top band (rule 8): only Ultra selective colleges, entered at TOP_BAND_SCORE, left HYSTERESIS points below it.
+    const band = s.selectivity.band ?? null;
+    if (band !== null && band !== "top") problems.push(`${where}: band "${band}" isn't a band`);
+    if (band === "top" && s.selectivity.tier !== "elite") problems.push(`${where}: in the top band but not Ultra selective`);
+    if (topBand(e.all, s.selectivity.tier, band === "top" ? "top" : null) !== band) problems.push(`${where}: ${band ? "in" : "outside"} the top band, but index ${e.all} says otherwise (TOP_BAND_SCORE ${TOP_BAND_SCORE})`);
   }
   for (const id of Object.keys(file.colleges)) if (!schools.some((s) => s.unit_id === id)) problems.push(`data/selectivity-index.json: ${id} isn't in data/schools.json`);
 

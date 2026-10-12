@@ -191,3 +191,10 @@ top of the old Selective band. Cutoffs: Ultra selective 80, Highly selective 68,
 Accessible 33. Counts: 29, 44, 120, 328, 572, 453. Very selective caps the estimate at Likely
 ([method/standing.md](method/standing.md) "Caps"). Migration `20261012110000_selectivity_six_tiers.sql` widens the
 snapshot column's check. Wherever this spec says Elite, read Ultra selective.
+
+## The top band (2026-10-12)
+Ultra selective colleges with a score for all applicants of `TOP_BAND_SCORE` (90, `lib/selectivity.ts`) or more are
+stored with `selectivity.band: "top"` beside the tier (a word, never the score; enter at 90, leave 2 points below,
+like the tiers' hysteresis). Seven on 2026-10-12: Yale, Chicago, Harvard, Stanford, MIT, Princeton, Penn. Only the
+estimate reads it ([method Revision 3, rule 8](method/standing.md#rule-8-the-top-band-of-ultra-selective)); no page
+shows it. `npm run check:selectivity` checks each band against the index.

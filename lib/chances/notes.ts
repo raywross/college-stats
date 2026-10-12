@@ -285,14 +285,15 @@ export const NOTES: Record<NoteKey, Note> = {
   /** Where a college doesn't say it weighs activities (C7 not considered, or no C7). */
   "depth.activities.not_weighed": (v) => `${s(v, "college")} doesn't say it weighs activities; they're shown here for you, not for the estimate.`,
   /*
-   * Themes (method/standing.md "Revision 2"): a course track and an activity in the same family. `subjects` and
-   * `subject` are family words ("art", "science and math"), never an activity's or course's name.
+   * Themes (method/standing.md "Revisions 2 and 3"): a broad group's courses and an activity in the same group.
+   * `subjects` and `subject` are group words ("STEM", "the humanities and social sciences", "the arts";
+   * data/reference/depth-groups.json), never an activity's or course's name.
    */
-  "depth.theme": (v) => `Your ${s(v, "subjects")} courses and your ${s(v, "subjects")} activities line up: depth in one thing, in and out of class.`,
+  "depth.theme": (v) => `Your courses and activities line up in ${s(v, "subjects")}: depth in one area, in and out of class.`,
   "depth.theme.activity_only": (v) =>
-    `You keep up ${s(v, "subject")} outside class; an honors or advanced ${s(v, "subject")} course each year would tie it to your schedule.`,
+    `You keep up ${s(v, "subject")} outside class; an honors or advanced course in ${s(v, "subject")} each year would tie it to your schedule.`,
   "depth.theme.track_only": (v) =>
-    `Your ${s(v, "subject")} courses run through high school; a club, team, or program in ${s(v, "subject")} would tie them to what you do outside class.`,
+    `Your courses in ${s(v, "subject")} run through high school; a club, team, or program in ${s(v, "subject")} would tie them to what you do outside class.`,
   "depth.theme.add_family": () => "Pick what each activity is about (art, science, a sport…) so it can line up with your courses.",
 
   /* ---- Five levels (specs/chances/levels.md "The levels"), added by the levels model (lib/chances/model.ts) ----
@@ -325,6 +326,12 @@ export const NOTES: Record<NoteKey, Note> = {
    * Revision 1 (method/standing.md "Consistency and completeness"): the inputs this college reads that the student
    * hasn't entered, named in words ("courses, class standing, and activities"); never how much they count.
    */
+  /* Revision 3 (method/standing.md, owner 2026-10-12). `test` is "SAT" or "ACT"; `state` the state's name. */
+  "estimate.test_target": (v) => `Reading your target ${s(v, "test")} of ${s(v, "score")} until junior year ends; after that, your actual score.`,
+  "estimate.state_from_school": (v) => `Using your high school's state, ${s(v, "state")}; add yours if different.`,
+  /** Rule 8: at a college in the top band of Ultra selective, without one standout (words only). */
+  "estimate.top_band": () =>
+    "At the very top colleges, Reach also takes one standout: a test score at the top of their range, a state or national honor, or the top of your class.",
   "estimate.incomplete": (v) => `Not in this estimate yet: your ${s(v, "inputs")}. Adding what you have gives a fuller picture and could change where this college stands for you.`,
   /**
    * Revision 2 (method/standing.md): the class-standing nudges. An expectation is stated, not known, so its sentence

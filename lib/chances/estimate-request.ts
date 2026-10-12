@@ -66,6 +66,17 @@ const RANK_EXPECTATIONS: readonly RankExpectation[] = ["valedictorian", "salutat
 const ROUNDS = ["ed", "ed2", "ea", "rea", "rd", "rolling"] as const;
 export const TEST_RANGE = { sat: [400, 1600], act: [1, 36] } as const;
 
+/** A graduation year the estimate reads (the profile's own bounds are narrower; anything outside is dropped). */
+export const GRAD_YEAR_RANGE = [2000, 2100] as const;
+
+/** The focus test's target: an SAT or ACT score in that test's range, else null. */
+function sanitizeTestTarget(v: unknown): EstimateStudent["testTarget"] {
+  if (!isObj(v) || (v.kind !== "sat" && v.kind !== "act")) return null;
+  const [lo, hi] = TEST_RANGE[v.kind];
+  const score = intIn(v.score, lo, hi);
+  return score === null ? null : { kind: v.kind, score };
+}
+
 /** The student's numbers, as much as is valid; anything malformed is dropped (null or empty), never an error. */
 export function sanitizeEstimateStudent(input: unknown): EstimateStudent {
   const v = isObj(input) ? input : {};
@@ -107,6 +118,9 @@ export function sanitizeEstimateStudent(input: unknown): EstimateStudent {
     // (0–120: a 100-point scale weights above 100), and a valedictorian or salutatorian expectation.
     weightedGpa: numIn(v.weightedGpa, 0, 120),
     rankExpectation: RANK_EXPECTATIONS.includes(v.rankExpectation as RankExpectation) ? (v.rankExpectation as RankExpectation) : null,
+    // Revision 3 (method/standing.md, rule 3): the focus test's target, in that test's range, and the graduation year.
+    testTarget: sanitizeTestTarget(v.testTarget),
+    gradYear: intIn(v.gradYear, GRAD_YEAR_RANGE[0], GRAD_YEAR_RANGE[1]),
   };
 }
 

@@ -8,6 +8,7 @@
  * one row per school. Not atomic: mid-publish, readers can see a mix of old and new rows (accepted for history on
  * 2026-10-02; every row is complete either way).
  */
+import { retryOnStatementTimeout } from "../../lib/supabase-retry.ts";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { HighSchool, HighSchoolDetail, HighSchoolMeta, HighSchoolShard, HighSchoolStateFile, StateMedians } from "../../lib/high-school-types.ts";
 import { toPublishedRow, validateHighSchoolDetail, validateHighSchoolMeta, validateMedians, validateShard, validateStateFile } from "../../lib/high-school-core.ts";
@@ -16,8 +17,12 @@ import { readAllHsDetails, readAllShards, readHsMedians, readHsMeta, readStateFi
 import { fetchAllHighSchoolDetails, fetchAllHighSchoolFiles, fetchAllHighSchoolRows, toHighSchoolTableRow, type HighSchoolTableRow } from "../../lib/supabase-high-schools.ts";
 
 export const HIGH_SCHOOLS_MIGRATION = "supabase/migrations/20261005180000_high_schools.sql";
-/** Rows per upsert (~1–2 KB each). */
-const ROW_BATCH = 500;
+/**
+ * Rows per upsert: ~2–4 KB each since the AP Course Ledger's list joined the row (2026-10-12: 500 rows missed the
+ * API's statement timeout at the California block, and the read-back timed out on the retry while the cancelled
+ * write was still being undone). Each call retries on a statement timeout (lib/supabase-retry.ts).
+ */
+const ROW_BATCH = 200;
 const DETAIL_BATCH = 200;
 const PAGE = 1000;
 
@@ -79,9 +84,8 @@ export async function highSchoolTablesProblem(client: SupabaseClient): Promise<s
 async function allIds(client: SupabaseClient, table: string): Promise<string[]> {
   const ids: string[] = [];
   for (let from = 0; ; from += PAGE) {
-    const { data, error } = await client.from(table).select("id").order("id").range(from, from + PAGE - 1);
-    if (error) throw new Error(`${table}: listing rows: ${error.message}`);
-    ids.push(...(data as { id: string }[]).map((r) => r.id));
+    const data = ((await retryOnStatementTimeout(() => client.from(table).select("id").order("id").range(from, from + PAGE - 1), `${table}: listing rows`)) ?? []) as { id: string }[];
+    ids.push(...data.map((r) => r.id));
     if (data.length < PAGE) return ids;
   }
 }
@@ -91,14 +95,12 @@ async function replaceById(client: SupabaseClient, table: string, rows: readonly
   const publishedAt = new Date().toISOString();
   for (let i = 0; i < rows.length; i += batch) {
     const chunk = rows.slice(i, i + batch).map((r) => ({ ...r, published_at: publishedAt }));
-    const { error } = await client.from(table).upsert(chunk, { onConflict: "id" });
-    if (error) throw new Error(`${label}: writing ${i}–${i + chunk.length}: ${error.message}`);
+    await retryOnStatementTimeout(() => client.from(table).upsert(chunk, { onConflict: "id" }), `${label}: writing ${i}–${i + chunk.length}`);
   }
   const keep = new Set(rows.map((r) => r.id));
   const stale = (await allIds(client, table)).filter((id) => !keep.has(id));
   for (let i = 0; i < stale.length; i += batch) {
-    const { error } = await client.from(table).delete().in("id", stale.slice(i, i + batch));
-    if (error) throw new Error(`${label}: removing rows no longer in the files: ${error.message}`);
+    await retryOnStatementTimeout(() => client.from(table).delete().in("id", stale.slice(i, i + batch)), `${label}: removing rows no longer in the files`);
   }
   return stale.length;
 }

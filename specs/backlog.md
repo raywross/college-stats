@@ -132,13 +132,14 @@ build-trends` writes `data/history/trends/`). What's left:
   `data/trends/online-first.json` list the movers use. Specified 2026-10-05:
   [online-share.md](data-expansion/online-share.md) (two fields, one history series, an Explore filter). Built
   2026-10-12: the field rule reproduced the reviewed list exactly for fall 2024, and the list is retired.
-- [ ] **Study 7: Where the students went** ([trends/where-students-go.md](trends/where-students-go.md), specified
+- [x] **Study 7: Where the students went** ([trends/where-students-go.md](trends/where-students-go.md), specified
   2026-10-05): the students view, each kind of college's share of all undergraduates then and now, by size and
   selectivity as of the window start, research tier, public or private, region and state, and price, over a
   campus-based panel, with the pandemic as a question inside the ten years (before · pandemic · after periods and
   the pace of each shift). First look: 20,000+ campuses 30% → 34% of students, rising every year; R1s 40% → 46%; the
   colleges that cut prices most lost the most students; the pandemic sped every shift up and since 2022 they've
-  slowed to their old pace, not reversed.
+  slowed to their old pace, not reversed. Built 2026-10-12 (`/trends/where-students-go`): 1,406 campus-based
+  colleges; 20,000+ 30.6% → 34.8%, R1 40.9% → 46.4%, low point fall 2022.
 - [ ] **First-years crossing state lines** ([trends/states.md](trends/states.md), planned addition 2026-10-05): each
   state's inflow, outflow, and net of first-years from the residence tables, as a sixth measure on the states map and
   an in/out block on state pages, over campus-based colleges; build with Study 7, after the online-share field.

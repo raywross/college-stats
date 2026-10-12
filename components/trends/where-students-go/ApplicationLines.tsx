@@ -15,7 +15,7 @@ const COLORS = ["var(--demo-1)", "var(--demo-2)", "var(--demo-3)", "var(--demo-4
 function Panel({ panel, falls }: { panel: ApplicationPanel; falls: number[] }) {
   const [ref, width] = useWidth<HTMLDivElement>(300);
   const height = 140;
-  const m = { top: 10, right: 10, bottom: 22, left: 36 };
+  const m = { top: 10, right: 18, bottom: 22, left: 36 };
   const plotW = Math.max(40, width - m.left - m.right);
   const plotH = height - m.top - m.bottom;
   const all = panel.groups.flatMap((g) => g.shares);

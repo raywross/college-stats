@@ -40,7 +40,10 @@ const PERIOD_LABEL = { before: "Before", pandemic: "Pandemic", after: "After" } 
 const PERIOD_INK = { before: "var(--muted-foreground)", pandemic: "var(--d-size)", after: "var(--d-scores)" } as const;
 
 const signed = (v: number, digits = 2) => `${v > 0 ? "+" : v < 0 ? "−" : ""}${Math.abs(v).toFixed(digits)}`;
-const signedPct = (v: number) => `${v > 0 ? "+" : v < 0 ? "−" : ""}${pct(Math.abs(v), 1)}`;
+const signedPct = (v: number) => {
+  const r = Math.round(v * 1000) / 1000;
+  return `${r > 0 ? "+" : r < 0 ? "−" : ""}${pct(Math.abs(r), 1)}`;
+};
 
 /**
  * Study 7's pandemic section (specs/trends/where-students-go.md, section 5): for the grouping the switch selects, each
@@ -97,7 +100,7 @@ export function PeriodsByGroup({ groupings, from, to, pre, low }: { groupings: P
         </figcaption>
         <p className="mt-1 text-xs text-muted-foreground">
           Before ({fall(from)} to {fall(pre)}) · pandemic ({fall(pre)} to {fall(low)}) · after ({fall(low)} to {fall(to)}). A taller middle bar means the pandemic sped a
-          shift up; a bar that flips sign would mean a reversal. The after period is short: {periodAxis.after}.
+          shift up; a bar that flips sign would mean a reversal. The after period is {afterLen} {afterLen === 1 ? "fall" : "falls"} long so far.
         </p>
         <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground" aria-label="Legend">
           {(["before", "pandemic", "after"] as const).map((k) => (

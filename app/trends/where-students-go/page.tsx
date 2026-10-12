@@ -44,7 +44,10 @@ const STATE_RANGES: TileRange[] = [
   { lo: 0.004, hi: Infinity, label: "Gained 0.4+ pts", bg: "var(--div-5)", ink: "text-white dark:text-background" },
 ];
 
-const signedPct = (v: number, digits = 0) => `${v > 0 ? "+" : v < 0 ? "−" : ""}${pct(Math.abs(v), digits)}`;
+const signedPct = (v: number, digits = 0) => {
+  const r = Math.round(v * 10 ** (digits + 2)) / 10 ** (digits + 2);
+  return `${r > 0 ? "+" : r < 0 ? "−" : ""}${pct(Math.abs(r), digits)}`;
+};
 const pts = (v: number) => `${v > 0 ? "+" : v < 0 ? "−" : ""}${Math.abs(v).toFixed(2)}`;
 const tileValue = (v: number) => `${v > 0 ? "+" : v < 0 ? "−" : ""}${(Math.abs(v) * 100).toFixed(1)}`;
 

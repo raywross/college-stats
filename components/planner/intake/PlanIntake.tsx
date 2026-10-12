@@ -176,17 +176,17 @@ export default function PlanIntake({
     if (step === 1) return canContinue1 && go(1, 2);
     if (step < INTAKE_REVIEW) return go(step, (step + 1) as IntakeStep);
     if (step === INTAKE_REVIEW) {
+      // One navigation after the save, nothing more (U20 "real speed"): it fetches the page fresh (a plan page is never
+      // served from the browser's cache), so a router.refresh() on top only rendered the same page a second time.
       save(() => {
         if (mode === "edit") {
           router.push(planHref({ person, tab: null }));
-          router.refresh();
         } else {
           setStep(INTAKE_DONE);
           // Numbers are set now, so the next server render stops treating this as "first" (intakeNeeded turns
           // false); `setup=1` keeps it showing the guide anyway, and `done=1` tells that next mount to open on Done.
           const href = planHref({ person, setup: true });
           router.replace(`${href}${href.includes("?") ? "&" : "?"}done=1`);
-          router.refresh();
         }
       });
     }

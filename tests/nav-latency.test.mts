@@ -38,7 +38,13 @@ function fixedWideClasses(html: string): string[] {
 
 /** Renders a `.tsx` component with no props: TypeScript's JSX transform, then a plain import (no build step in tests). */
 async function renderLoading(rel: string): Promise<string> {
-  const { outputText } = ts.transpileModule(read(rel), {
+  // app/plan/loading.tsx wraps its header skeleton in PendingPeopleLine (a client component that shows its children
+  // when nothing is pending, as on every server render): stand it in here, since this renders the one file alone.
+  const src = read(rel).replace(
+    /^import \{ PendingPeopleLine \} from "@\/components\/planner\/PendingPeopleLine";$/m,
+    "const PendingPeopleLine = ({ children }: { children: React.ReactNode }) => children;",
+  );
+  const { outputText } = ts.transpileModule(src, {
     compilerOptions: { jsx: ts.JsxEmit.React, module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 },
   });
   const reactUrl = pathToFileURL(createRequire(import.meta.url).resolve("react")).href;

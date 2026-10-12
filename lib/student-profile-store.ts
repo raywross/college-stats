@@ -12,6 +12,10 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getAccount, getUser, studentsICanSee } from "@/lib/auth";
 import { createServerSupabase } from "@/lib/supabase-server";
+import { viewerBundle } from "@/lib/bundles";
+import { callBundle } from "@/lib/bundle-read";
+import { requestMemo } from "@/lib/request-memo";
+import { cache } from "react";
 import type { StudentAccess, StudentRecord } from "@/lib/accounts";
 import { coreAnswered, emptyProfile, sanitizeProfile, type StudentProfileData } from "@/lib/student-profile";
 import { getHighSchool } from "@/lib/high-schools";
@@ -30,17 +34,29 @@ export interface ProfileAccess {
   saved: boolean;
 }
 
+/**
+ * The profile rows the signed-in user can read, once per request: from the viewer bundle when it's installed
+ * (lib/bundles.ts), else one read of `student_profiles` that row-level security narrows (U20 "real speed": no longer
+ * filtered by the access list, so it runs alongside that read instead of after it; profilesICanSee keeps only the
+ * students the user can see, exactly as before).
+ */
+const readableProfiles = cache(
+  (): Promise<Map<string, unknown>> =>
+    requestMemo("student_profiles", async () => {
+      if (!(await getUser())) return new Map<string, unknown>();
+      const bundle = await viewerBundle();
+      if (bundle) return new Map(bundle.student_profiles.map((r) => [r.student_id, r.data]));
+      const supabase = await createServerSupabase();
+      const { data, error } = await supabase.from("student_profiles").select("student_id, data");
+      if (error && !isMissingTable(error)) throw new Error(`Reading student profiles failed: ${error.message}`);
+      return new Map((data ?? []).map((r: { student_id: string; data: unknown }) => [r.student_id, r.data]));
+    }),
+);
+
 /** Every student the signed-in user can see, each with their saved profile (or the empty shape if none yet). */
 export async function profilesICanSee(): Promise<ProfileAccess[]> {
-  const access = await studentsICanSee();
+  const [access, rows] = await Promise.all([studentsICanSee(), readableProfiles()]);
   if (access.length === 0) return [];
-  const supabase = await createServerSupabase();
-  const { data, error } = await supabase
-    .from("student_profiles")
-    .select("student_id, data")
-    .in("student_id", access.map((a) => a.student.id));
-  if (error && !isMissingTable(error)) throw new Error(`Reading student profiles failed: ${error.message}`);
-  const rows = new Map((data ?? []).map((r: { student_id: string; data: unknown }) => [r.student_id, r.data]));
   return access.map((a: StudentAccess) => {
     const raw = rows.get(a.student.id);
     return { student: a.student, relation: a.relation, canEdit: a.canEdit, data: sanitizeProfile(raw), saved: raw !== undefined };
@@ -85,12 +101,19 @@ export async function saveProfile(studentId: string, raw: unknown): Promise<Save
   if (!user) return { ok: false, message: "Sign in to save your profile." };
   const data = sanitizeProfile(raw);
   const supabase = await createServerSupabase();
-  const { error } = await supabase
-    .from("student_profiles")
-    .upsert({ student_id: studentId, data, updated_by: user.id, updated_at: new Date().toISOString() }, { onConflict: "student_id" });
+  // One call when save_student_profile() is installed (U20 "real speed"; the upsert and the grad-year sync below, in
+  // one transaction, through the same policies); else the two writes.
+  const rpc = await callBundle<null>(supabase, "save_student_profile", { p_student: studentId, p_data: data });
+  if (rpc.kind === "ok") return { ok: true };
+  const { error } =
+    rpc.kind === "error"
+      ? rpc
+      : await supabase
+          .from("student_profiles")
+          .upsert({ student_id: studentId, data, updated_by: user.id, updated_at: new Date().toISOString() }, { onConflict: "student_id" });
   if (error) {
     if (isMissingTable(error)) return { ok: false, message: "Profiles aren't set up on this deployment yet." };
-    if (error.code === "42501" || /row-level security/i.test(error.message)) return { ok: false, message: "You don't have permission to edit this profile." };
+    if (error.code === "42501" || /row-level security/i.test(error.message ?? "")) return { ok: false, message: "You don't have permission to edit this profile." };
     return { ok: false, message: "We couldn't save that. Try again in a moment." };
   }
   // Keep students.grad_year in step with what the student just saved (student-profile.md "Changes (2026-10-06)"):
@@ -103,12 +126,11 @@ export async function saveProfile(studentId: string, raw: unknown): Promise<Save
   return { ok: true };
 }
 
+/** One conditional update (it was a read, then the update): only a row whose year differs is touched. */
 async function syncStudentGradYear(supabase: SupabaseClient, studentId: string, gradYear: number): Promise<void> {
   try {
-    const { data: row } = await supabase.from("students").select("grad_year").eq("id", studentId).maybeSingle();
-    if (row && row.grad_year !== gradYear) {
-      await supabase.from("students").update({ grad_year: gradYear }).eq("id", studentId);
-    }
+    if (!Number.isInteger(gradYear)) return;
+    await supabase.from("students").update({ grad_year: gradYear }).eq("id", studentId).or(`grad_year.is.null,grad_year.neq.${gradYear}`);
   } catch {
     // Best-effort sync; see the call site's comment.
   }

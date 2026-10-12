@@ -276,7 +276,7 @@ test("sanitizeClassStanding: a pick sets the percentile from the table; a matchi
 });
 
 test("sanitizeActivities: caps at ACTIVITIES_MAX, drops unnamed/invalid rows, keeps names to 60 chars, years to 9–12, hours to 1–60, a role only for a checked year", () => {
-  const many = Array.from({ length: 10 }, (_, i) => ({ id: `a${i}`, name: `Club ${i}`, kind: "club", years: [10], roles: {}, hoursPerWeek: 2, recognition: null, relatedToMajor: false }));
+  const many = Array.from({ length: ACTIVITIES_MAX + 2 }, (_, i) => ({ id: `a${i}`, name: `Club ${i}`, kind: "club", years: [10], roles: {}, hoursPerWeek: 2, recognition: null, relatedToMajor: false }));
   assert.equal(sanitizeActivities(many).length, ACTIVITIES_MAX);
   assert.equal(sanitizeActivities([{ name: "" }]).length, 0, "an unnamed row is dropped");
   assert.equal(sanitizeActivities("nope" as unknown).length, 0);
@@ -295,6 +295,32 @@ test("sanitizeActivities: caps at ACTIVITIES_MAX, drops unnamed/invalid rows, ke
     { id: "dup", name: "B", kind: "club", years: [], roles: {}, hoursPerWeek: null, recognition: null, relatedToMajor: false },
   ]);
   assert.notEqual(x.id, y.id);
+});
+
+test("ACTIVITIES_MAX holds sports, clubs, work, and other together: at least the Common App's 10, at most 25", () => {
+  assert.ok(ACTIVITIES_MAX >= 10 && ACTIVITIES_MAX <= 25);
+});
+
+test("sanitizeActivities: a catalog key sets kind and family from the catalog; titles are kept per checked year when the kind offers them and set the role tier; old rows read back unchanged", () => {
+  const [soccer] = sanitizeActivities([
+    { id: "s", name: "Soccer", kind: "club", catalogKey: "soccer", family: "math", years: [9, 11, 12], roles: { "9": "leader" }, titles: { "9": "JV", "11": "Varsity", "12": "Captain", "10": "Captain" }, hoursPerWeek: 10, recognition: 2, relatedToMajor: false },
+  ]);
+  assert.equal(soccer.kind, "sport", "the catalog's kind wins over the client's");
+  assert.equal(soccer.family, "athletics", "the catalog's family wins over the client's");
+  assert.equal(soccer.catalogKey, "soccer");
+  assert.deepEqual(soccer.titles, { 9: "JV", 11: "Varsity", 12: "Captain" }, "an unchecked year's title is dropped");
+  assert.deepEqual(soccer.roles, { 9: "member", 11: "member", 12: "leader" }, "the role tier follows the title, not the client's role");
+  const [typed] = sanitizeActivities([
+    { id: "t", name: "Bee club", kind: "club", catalogKey: "no_such_club", family: "science", years: [10], roles: { "10": "officer" }, titles: { "10": "Captain" }, hoursPerWeek: null, recognition: null, relatedToMajor: false },
+  ]);
+  assert.equal(typed.catalogKey, undefined, "an unknown catalog key is dropped, the row stays as typed");
+  assert.equal(typed.family, "science");
+  assert.equal(typed.titles, undefined, "Captain isn't a club title");
+  assert.equal(typed.roles[10], "officer", "without a valid title, the sent role stands");
+  const [bad] = sanitizeActivities([{ id: "b", name: "X", kind: "club", family: "astrology", years: [], roles: {}, hoursPerWeek: null, recognition: null, relatedToMajor: false }]);
+  assert.equal(bad.family, undefined);
+  const old = { id: "o", name: "Robotics", kind: "club", years: [10], roles: { 10: "officer" }, hoursPerWeek: 4, recognition: null, relatedToMajor: false };
+  assert.deepEqual(sanitizeActivities([old]), [old], "a row saved before the catalogs reads back exactly");
 });
 
 test("sanitizeAwards: caps at AWARDS_MAX, a catalog key takes its name and tier from the catalog (never the client's), an unknown key drops the row, 'Something else' needs a name and a tier", () => {

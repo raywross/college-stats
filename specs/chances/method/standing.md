@@ -127,8 +127,9 @@ for everyone":
 
 | Tier | Highest level | Rule inside the tier |
 |---|---|---|
-| **Elite** | Reach | **Reach when no counted measure has `d < 0`; else High reach.** The odds are not used: at a 4% college the multiplier table alone would put even a top student under 5%, and the owner's rule is that an Elite college is a reach for everyone and a possibility for a student in its range |
+| **Ultra selective** (key `elite`; "Elite" before 2026-10-12) | Reach | **Reach when no counted measure has `d < 0`; else High reach.** The odds are not used: at a 4% college the multiplier table alone would put even a top student under 5%, and the owner's rule is that an Elite college is a reach for everyone and a possibility for a student in its range |
 | **Highly selective** | Target | By the odds |
+| **Very selective** (added 2026-10-12) | Likely | By the odds |
 | **Selective** | Likely, or Safe when `rate ≥ 0.5` | By the odds |
 | **Accessible**, **Open** | Safe | By the odds |
 
@@ -203,3 +204,27 @@ and per college on the list: legacy, recruited, and logged interest.
 | Rigor, rank, residency, major subjects | Plus depth (course tracks, activities), awards, work, legacy, recruited, interest | What colleges say they read, gated by their own C7 ratings |
 | No legacy, ever (public commitment) | Legacy as a per-college toggle, weighted where the college weighs it, zero where state law bars it | Owner decision 2026-10-11; the commitment now excludes race, ethnicity, sex, and religion, and anonymizes every individual |
 | No high school identity, ever | Not used in this version; reserved for a later season ("how many students does this college take from your school") once outcomes exist | Owner decision 2026-10-11 |
+
+## As built (third version, `MODEL_VERSION 20261012.1`)
+Built 2026-10-12 in `lib/chances/model.ts` (constants in `ODDS_V3`), `lib/chances/hooks.ts` (`HOOKS_V3`,
+`legacyMultiplier`, `interestMultiplier`, `recruitMultiplier`, `recruitedFloor`), pinned in
+`tests/chances-model.test.mts` and `tests/chances-hooks.test.mts`. Choices the rules above left open:
+- **GPA distance source order**: the C11 bands (share below, even spread in the student's band, half the 4.0 band below
+  a 4.0), else the middle 50% (exact or fitted; an uncertain end read at its midpoint), else the position's fixed
+  value. Where the second version's reading can't place the GPA (a weighted range spanning the college's), it isn't
+  a measure.
+- **The major-track slot** counts only where the unit says what it reads (math or science emphasis, required courses,
+  or a gate), and is taken only when it raises `d` (depth never lowers a level).
+- **`M_depth`'s gate** is the higher of the college's extracurriculars and talent ratings; `M_work` is 1 when the work
+  entry is one of the top two activities at a college that weighs activities at all.
+- **Elite with no counted measure**: no level ("Add a number"), like any college, unless a floor applies.
+- **Floors**: the recruited label is set whenever a floor applies (even when the level is already above it); a
+  pre-read without numbers that place the student is no floor.
+- **`closeness`** is null at Elite, and wherever a cap (including the Safe rule) or a floor (a guarantee, open
+  admission, a recruited floor) set the level.
+- **ED**: `M_ed` is held between 1 and 2 (ED never lowers); the verdict is computed for every result with a level
+  (the planner reads it), `not_advised` at High reach whatever the data, null without C21 counts; the sentence shows
+  only when the student's round is ED or ED II.
+- **Snapshots** record the hidden odds binned to 0.005, the tier, and the level with depth, hooks (legacy and
+  recruited), and interest switched off. The Depth readings (`depthSnapshot`, no names) are in the method's detail;
+  the table has no column for them yet.

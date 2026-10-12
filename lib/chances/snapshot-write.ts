@@ -10,11 +10,13 @@
  *   after(() => snapshotOnApplied(itemId, snapshotDeps(supabase)));
  *
  * The seam for the estimate: `deps.estimate`, an `AppliedEstimator` taking the same `EstimateInput` the snapshot bins
- * (built here from the saved profile by `estimateInputFromProfile`). With none, the snapshot records the inputs and
- * leaves the estimate's columns empty.
+ * (built here from the saved profile by `estimateInputFromProfile`, with the list row's legacy and recruited inputs and
+ * whether a visit or information request is logged for it). With none, the snapshot records the inputs and leaves the
+ * estimate's columns empty.
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { EstimateInput, SchoolOffering } from "./types.ts";
+import type { CollegeHooks, EstimateInput, RecruitedPick, SchoolOffering } from "./types.ts";
+import { NO_HOOKS, RECRUITED_PICKS } from "./levels.ts";
 import { buildSnapshot, estimateInputFromProfile, type AppliedEstimate } from "./snapshot.ts";
 import { sanitizeProfile } from "../student-profile.ts";
 
@@ -67,6 +69,36 @@ async function settle<T>(f: () => Promise<T> | T, fallback: T): Promise<T> {
   }
 }
 
+type Query = { select: (cols: string) => Query; eq: (col: string, v: unknown) => Query; limit?: (n: number) => Query; not?: (col: string, op: string, v: unknown) => Query; maybeSingle: () => PromiseLike<{ data: unknown; error: DbError }> };
+
+/**
+ * The list row's inputs for the estimate (inputs-beyond-academics.md): the legacy and recruited columns (read on their
+ * own, so a database without them yet still records the snapshot), and interest when a visit or a completed
+ * information request is logged for the item. Each part is best-effort; anything unreadable reads as nothing marked.
+ */
+export async function hooksForItem(supabase: Pick<SupabaseClient, "from">, itemId: string): Promise<CollegeHooks> {
+  const from = (t: string) => supabase.from(t) as unknown as Query;
+  const row = await settle(async () => {
+    const r = await from("list_items").select("legacy, recruited").eq("id", itemId).maybeSingle();
+    return r.error ? null : (r.data as { legacy?: unknown; recruited?: unknown } | null);
+  }, null);
+  const any = async (q: Query) => {
+    if (q.limit) q = q.limit(1);
+    const r = await q.maybeSingle();
+    return !r.error && !!r.data;
+  };
+  const visited = await settle(() => any(from("plan_visits").select("id").eq("item_id", itemId)), false);
+  const requested =
+    visited ||
+    (await settle(() => {
+      const q = from("plan_tasks").select("id").eq("item_id", itemId).eq("kind", "request_info");
+      // Only a request actually made (the task done), never one merely suggested.
+      return q.not ? any(q.not("done_at", "is", null)) : false;
+    }, false));
+  const recruited = RECRUITED_PICKS.includes(row?.recruited as RecruitedPick) ? (row!.recruited as RecruitedPick) : NO_HOOKS.recruited;
+  return { legacy: row?.legacy === true, recruited, interest: visited || requested };
+}
+
 /** Records the snapshot for an item just marked applied. Never throws. */
 export async function snapshotOnApplied(itemId: string, deps: SnapshotDeps): Promise<SnapshotOutcome> {
   try {
@@ -85,7 +117,7 @@ export async function snapshotOnApplied(itemId: string, deps: SnapshotDeps): Pro
     const raw = profileRes.error ? undefined : (profileRes.data as { data: unknown } | null)?.data;
     const profile = raw === undefined ? null : sanitizeProfile(raw);
 
-    const input = estimateInputFromProfile(profile, item.unit_id, item.round);
+    const input: EstimateInput = { ...estimateInputFromProfile(profile, item.unit_id, item.round), hooks: await hooksForItem(supabase, itemId) };
     const hsId = input.student.highSchoolId;
     const [offering, admitRate, estimate] = await Promise.all([
       hsId ? settle(() => deps.offeringFor(hsId), null) : Promise.resolve(null),

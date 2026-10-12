@@ -6,6 +6,7 @@ import { isDivisionFilter, isRotcBranch } from "./campus-services.ts";
 import { conferenceName } from "./conferences.ts";
 import { isMajorFamily } from "./majors.ts";
 import { isPolicyBucket } from "./test-policy.ts";
+import { isSelectivityTier } from "./selectivity-tier.ts";
 import { isFaithFilter } from "./religion.ts";
 import { isTradition } from "./directories.ts";
 import { isCouncil } from "./directories.ts";
@@ -30,7 +31,7 @@ const SORT_KEYS: SortKey[] = [
   "avg_cost_change", "admit_rate_change", "size_change", "apps_change", "diversity_change",
   "men_share", "part_time", "men_share_change", "admit_gap", "loan_rate", "loan_rate_change", "student_faculty", "completion_8yr", "completion_4yr",
   "pell_gap", "pell_gap_change", "full_time_faculty", "out_of_state", "transfer_share", "instruction_spending", "endowment_per_student", "bachelors",
-  "distance", "price_at",
+  "distance", "price_at", "selectivity",
 ];
 const VIEWS: ExploreView[] = ["grid", "table", "chart", "map"];
 
@@ -80,6 +81,8 @@ export function parseFilters(params: Params): SearchFilters {
       const b = list(params.policy)?.filter(isPolicyBucket);
       return b?.length ? [...new Set(b)] : undefined;
     })(),
+    // Quad's selectivity (specs/chances/selectivity-index.md): selectivity=elite,highly_selective; unknown tiers are dropped.
+    selectivity: uniq(list(params.selectivity)?.filter(isSelectivityTier)),
     fullTime: str(params.fullTime) === "1" || undefined,
     fewLoans: str(params.fewLoans) === "1" || undefined,
     pellGap: str(params.pellGap) === "1" || undefined,
@@ -196,6 +199,7 @@ export const FILTER_KEYS = [
   "oosEven",
   "gpa",
   "policy",
+  "selectivity",
   "aidForms",
   "intlAid",
   "honors",

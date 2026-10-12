@@ -13,6 +13,7 @@ import { METRICS, satTotal } from "./metrics.ts";
 import { changeText, indicatorOf, type IndicatorKey } from "./indicators.ts";
 import { sinceLabel } from "./profile-cards.ts";
 import { readingSummary } from "./chances/reading.ts";
+import { tierText } from "./selectivity-tier.ts";
 import { compact, moneyCompact, pct, pctSmart } from "./format.ts";
 
 /** A card per profile topic; "All the numbers" has its own link card on the overview. */
@@ -82,6 +83,8 @@ export interface TextRow extends RowBase {
   hint?: string;
   /** What a college without the line shows; "Not reported" by default. */
   fallback?: (s: School) => string;
+  /** Shows each college's selectivity chip (its tier pills and ⓘ) in place of the plain text. */
+  chip?: "selectivity";
 }
 
 export type CardRow = BarRow | RangeRow | TextRow;
@@ -182,10 +185,25 @@ export const READING_ROW: TextRow = {
   hint: "first-years at 3.75+",
 };
 
+/**
+ * Quad's selectivity (specs/chances/selectivity-index.md): each college's tier, both pools where a public's differ, with
+ * its ⓘ listing the figures read. A college that isn't rated says so.
+ */
+export const SELECTIVITY_ROW: TextRow = {
+  kind: "text",
+  label: "Quad's selectivity",
+  term: "selectivity-tier",
+  field: "selectivity.tier",
+  get: tierText,
+  chip: "selectivity",
+  fallback: () => "Not rated",
+};
+
 /** Every card's rows, before `cardRows` fits them to the colleges compared. Same labels, terms, and bars as the topic pages. */
 export const CARD_ROWS: Record<CardTopic, readonly CardRow[]> = {
   admissions: [
     { kind: "bar", label: "Acceptance rate", term: "acceptance-rate", field: "admissions.acceptance_rate", get: METRICS.acceptance.get, format: pctSmart, flag: { which: "min", text: "Most selective" } },
+    SELECTIVITY_ROW,
     SAT_ROW,
     READING_ROW,
   ],

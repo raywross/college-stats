@@ -66,7 +66,7 @@ function student(o: Partial<EstimateStudent> = {}): EstimateStudent {
 }
 const note = (key: string, values: EstimateNote["values"] = {}, cite?: string): EstimateNote => (cite ? { key, values, cite } : { key, values });
 function result(o: Partial<EstimateResult> = {}): EstimateResult {
-  return { unitId: "1", group: "target", label: null, used: [], missing: [], facts: [], notes: [], send: null, moveUp: null, modelVersion: "test", ...o };
+  return { unitId: "1", group: "target", label: null, used: [], missing: [], facts: [], notes: [], send: null, moveUp: null, closeness: null, ed: null, modelVersion: "test", ...o };
 }
 
 /* ------------------------------------------------------------------ */
@@ -279,7 +279,7 @@ test("Compare's row is a block on the admissions page for the signed-in student 
   assert.match(page, /<CompareStanding\b/);
   const comp = read("components", "compare", "CompareStanding.tsx");
   assert.match(comp, /!mine\.signedIn \|\| !mine\.hasNumbers/, "nothing for a visitor or a student without numbers");
-  assert.match(comp, /rateKindText\(/);
+  assert.match(comp, /compareShortLine\(/);
   assert.match(comp, /term="quads-estimate"/);
   assert.doesNotMatch(comp, /chances\/(model|estimate)["'.]/);
 });
@@ -350,7 +350,7 @@ test("the live-preview hook sends the core answers and the student's grade, as t
   // edited through the intake guide, which saves once rather than previewing the list client-side. SignedOutPlan is
   // the hook's one remaining caller.
   const hook = read("components", "planner", "useEstimates.ts");
-  assert.match(hook, /JSON\.stringify\(\{ student, unitIds, context \}\)/);
+  assert.match(hook, /JSON\.stringify\(\{ student, unitIds, context, hooks \}\)/);
   assert.match(hook, /gradeNow\(gradYear/);
   assert.match(hook, /coreAtTopLevel: profile\?\.academics\.coreAtTopLevel/);
   assert.match(read("components", "planner", "SignedOutPlan.tsx"), /useEstimates\(/);
@@ -525,6 +525,7 @@ test("What you'll need in high school adds the intended major's required courses
 /* ------------------------------------------------------------------ */
 
 const NEW_UI = [
+  "components/chances/ComparedWith.tsx",
   "components/chances/WhatWentIn.tsx",
   "components/chances/StandingCard.tsx",
   "components/chances/StandingChip.tsx",

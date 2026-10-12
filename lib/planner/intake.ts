@@ -8,13 +8,14 @@
  */
 import { apCourses, catalogCourse, isCatalogKeyFor } from "../chances/catalog.ts";
 import { newCourseId } from "../chances/courses.ts";
-import type { CourseEntry, CourseStatus } from "../chances/types.ts";
+import type { ActivityEntry, CourseEntry, CourseStatus } from "../chances/types.ts";
 import { isHighSchoolId } from "../high-school-core.ts";
 import {
   COURSES_MAX,
   GRAD_YEAR_MAX,
   GRAD_YEAR_MIN,
   planTest,
+  sanitizeActivities,
   sanitizeProfile,
   type GpaScale,
   type StudentProfileData,
@@ -55,10 +56,16 @@ export interface IntakeDraft {
   highSchool: string | null;
   highSchoolId: string | null;
   courses: IntakeCourse[];
+  /**
+   * The optional "More about you" step's activities (depth.md "What the student enters"), after the numbers: the
+   * guide invites two or three; `sanitizeActivities`'s own ACTIVITIES_MAX still caps it. Carried through unchanged
+   * when the step is skipped.
+   */
+  activities: ActivityEntry[];
 }
 
-/** 0 grades, 1 test, 2 AP courses, 3 review, 4 done. */
-export type IntakeStep = 0 | 1 | 2 | 3 | 4;
+/** 0 grades, 1 test, 2 AP courses, 3 more about you (optional), 4 review, 5 done. */
+export type IntakeStep = 0 | 1 | 2 | 3 | 4 | 5;
 
 /** What `saveIntake` takes: the draft, checked and converted. */
 export interface IntakeSave {
@@ -72,6 +79,7 @@ export interface IntakeSave {
   highSchool: string | null;
   highSchoolId: string | null;
   courses: IntakeCourse[];
+  activities: ActivityEntry[];
 }
 
 /* ------------------------------------------------------------------ */
@@ -186,7 +194,7 @@ export function targetCheck(test: "sat" | "act", score: string, target: string):
   return { ok: true, hint: `We'll show which colleges a ${t} would move.`, tone: "muted" };
 }
 
-/** Whether a step lets the student continue. The review step needs the first two; AP courses never block. */
+/** Whether a step lets the student continue. The review step needs the first two; AP courses and "More about you" never block. */
 export function stepValid(d: IntakeDraft, step: IntakeStep): boolean {
   if (step === 0) return d.classYear !== null && gpaCheck(d).ok;
   if (step === 1) {
@@ -194,7 +202,7 @@ export function stepValid(d: IntakeDraft, step: IntakeStep): boolean {
     if (d.test === "none") return true;
     return scoreCheck(d.test, d.score).ok && targetCheck(d.test, d.score, d.target).ok;
   }
-  if (step === 3) return stepValid(d, 0) && stepValid(d, 1);
+  if (step === 4) return stepValid(d, 0) && stepValid(d, 1);
   return true;
 }
 
@@ -440,6 +448,7 @@ export function draftFromProfile(profile: StudentProfileData | null, gradYear: n
     highSchool: null,
     highSchoolId: null,
     courses: [],
+    activities: [],
   };
   if (!profile) return empty;
   const a = profile.academics;
@@ -461,11 +470,12 @@ export function draftFromProfile(profile: StudentProfileData | null, gradYear: n
     highSchool: profile.basics.highSchool,
     highSchoolId: profile.basics.highSchoolId,
     courses: a.courses.filter(isIntakeRow).map(intakeCourseFrom),
+    activities: a.activities,
   };
 }
 
 /** The review card's rows: label, value, and the step its Edit link opens. */
-export function reviewLines(d: IntakeDraft, today: string): { step: 0 | 1 | 2; label: string; value: string }[] {
+export function reviewLines(d: IntakeDraft, today: string): { step: 0 | 1 | 2 | 3; label: string; value: string }[] {
   const test = d.test;
   let testValue = "Not set";
   if (test === "none") testValue = "Not testing";
@@ -481,6 +491,7 @@ export function reviewLines(d: IntakeDraft, today: string): { step: 0 | 1 | 2; l
     { step: 0, label: "School", value: d.highSchool ?? "Not set" },
     { step: 1, label: "Test", value: testValue },
     { step: 2, label: "AP courses", value: courseCount(d.courses, classYear, today) ?? "None" },
+    { step: 3, label: "Activities", value: d.activities.length === 0 ? "None" : `${d.activities.length} added` },
   ];
 }
 
@@ -508,6 +519,7 @@ export function intakeToSave(d: IntakeDraft): IntakeSave | null {
     highSchool: d.highSchool && d.highSchool.trim() !== "" ? d.highSchool.trim() : null,
     highSchoolId: d.highSchoolId,
     courses: d.courses.filter((c) => c.year !== null).map((c) => ({ id: c.id, key: c.key, year: c.year, exam: c.exam })),
+    activities: sanitizeActivities(d.activities),
   };
 }
 
@@ -583,7 +595,8 @@ export function parseIntakeSave(input: unknown): IntakeSave | null {
     ids.add(c.id);
     courses.push(c);
   }
-  return { classYear, gpa, gpaScale, focus, score, practice, target, highSchool, highSchoolId, courses };
+  const activities = sanitizeActivities(input.activities);
+  return { classYear, gpa, gpaScale, focus, score, practice, target, highSchool, highSchoolId, courses, activities };
 }
 
 /** The draft course a saved row would open as; an unchanged course keeps its saved row as it is. */
@@ -634,7 +647,7 @@ export function applyIntake(profile: StudentProfileData, s: IntakeSave, today: s
     ...profile,
     basics: { ...profile.basics, gradYear: s.classYear, highSchool: s.highSchool, highSchoolId: s.highSchoolId },
     // courseRigorCount null: the count follows the list, never re-adds placeholder rows for removed courses.
-    academics: { ...profile.academics, gpa: s.gpa, gpaScale: s.gpaScale, courses, courseRigorCount: null },
+    academics: { ...profile.academics, gpa: s.gpa, gpaScale: s.gpaScale, courses, courseRigorCount: null, activities: s.activities },
     tests,
   });
 }

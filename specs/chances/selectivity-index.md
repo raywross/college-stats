@@ -1,6 +1,6 @@
 # Quad's Selectivity: One Number per College, Five Tiers, Elite at the Top
 
-> Status: **planned** 2026-10-11 from the owner's review ("we should have a number behind the scenes… 5 levels with
+> Status: **built** 2026-10-12 on `feature/chances` (see "As built"; planned 2026-10-11) from the owner's review ("we should have a number behind the scenes… 5 levels with
 > the top being something like Elite"). Part 12 of [admission chances](README.md). Uses only data the site holds;
 > [levels.md](levels.md) reads the tier for its caps, so this ships first or with it.
 
@@ -13,6 +13,9 @@ hidden **selectivity index** (0–100) combines what the college publishes, and 
 guides, filters Explore, and sits on the profile with its inputs listed, not its weights, exactly as the estimate does.
 
 ## Inputs
+
+> The first version, below, was replaced on 2026-10-12 by the second version (see "Second version" at the end):
+> continuous scales instead of percentiles, retention and graduation added, the trend and the minor inputs dropped.
 Each input is turned into a **percentile among the colleges that report it** (0–100, higher = harder), then combined.
 Nothing is typed in; every input is a field with lineage.
 
@@ -37,6 +40,9 @@ Nothing is typed in; every input is a field with lineage.
   little; the tier hysteresis below absorbs that.
 
 ## Tiers
+
+> Second version cutoffs: Elite 80, Highly selective 55, Selective 42, Accessible 33 on the new score, with no
+> admit-rate condition for Elite (see "Second version").
 | Tier | Rule | About how many |
 |---|---|---|
 | **Elite** | index ≥ `ELITE_INDEX` **and** pool admit rate < 10% | 30–40 |
@@ -94,3 +100,94 @@ tiers, hysteresis, the Elite count guard on the real dataset, nothing in `search
 1. Weights are a first judgment (admit rate 45, class strength 20, yield 10, the rest 5 each). Revisit once with the
    first season's outcomes: the tier should order colleges by observed difficulty for students at the same distance.
 2. Should the Explore facet show counts per tier? Recommendation: yes, like other facets.
+
+## As built (2026-10-12, first version; superseded by "Second version" below)
+- **Storage:** tiers only, on each college as `school.selectivity: { tier, in_state?, out_of_state?, year? }` (type
+  `SchoolSelectivity`), not the `school.derived.selectivity_*` fields named under "Data and lineage". The 0–100 index
+  is written to `data/selectivity-index.json`, read only by the build (`npm run build-selectivity`, also run by
+  `sync-data`) and its check; it is never in `public/`, `search-index.json`, the data API, or client code
+  (`check:selectivity` in verify; tests/selectivity.test.mts).
+- **Code:** the method in `lib/selectivity.ts` (server and scripts); `tierForStudent` and the chip helpers in the
+  client-safe `lib/selectivity-tier.ts`. A test fails if a client file reaches the method or the panel's facts builder.
+- **`ELITE_INDEX` = 94:** Elite holds 33 colleges (2026-10-12), in effect "admit rate under 10%". Tier counts for all
+  applicants: Elite 33, Highly selective 134, Selective 348, Accessible 597, Open 435; 346 unrated (no admit rate).
+  Hysteresis moves a tier at exactly 2 points either way. Georgia Tech is Highly selective in both pools (out-of-state
+  admit rate 10.12%); 9 publics differ by pool (Purdue: Selective in-state, Highly selective out of state).
+- **Surfaces:** the chip and its panel on the profile hero and the Getting in card (the card's old admit-rate pill and
+  its "Most selective" summary give way to the tier where a college is rated); the Explore facet ("Quad's selectivity",
+  all-applicants tier) and sort (tier, then admit rate); Compare's "Quad's selectivity" row with per-pool tiers.
+- **Open for the owner:** a minimum-evidence rule for Elite (two very small colleges qualify on admit rate and yield
+  alone); yield's weight when a college reports only rate and yield (puts a few 26–38% colleges in Highly selective);
+  the index saturating at 100 (open question 1). `.github/workflows/college-reported.yml` needs a
+  `npm run build-selectivity` step after "Re-merge the directory listings into schools.json" in both jobs, or a
+  college-reported PR that changes admissions figures fails `check:selectivity`.
+
+## Second version (2026-10-12)
+
+The owner's review of the first build: 22 colleges tied at 100, NYU and Northeastern above MIT, Stanford, Yale and
+Columbia, and two tiny colleges in Elite. "We shouldn't have something that has so many tied at the top"; the goal is a
+better ranking of every college, not a particular Elite count.
+
+**What was wrong.** Percentiles squash the top (a 2.6% and a 9% admit rate are both above the 97th percentile), and
+the trend points were added after the mean and then capped at 100; nearly every top college's admit rate is falling,
+so nearly all of them hit the cap. Colleges that report only an admit rate and yield had yield's weight renormalized
+up, and nothing guarded against a tiny class or figures that can't describe one class.
+
+**The method now** (`lib/selectivity.ts`):
+- Five inputs, each on a continuous scale and standardized over the colleges that report it (higher = harder): the
+  admit rate (log-odds), the SAT 75th percentile (ACT through the concordance), yield, first-year retention, and the
+  six-year graduation rate (log-odds). Weights 45, 20, 10, 10, 5.
+- A missing SAT (test-blind and test-free colleges: Caltech, the UCs) is filled by a least-squares fit on the other
+  four, so a college that keeps and graduates its students reads stronger than one that doesn't. A missing yield,
+  retention, or graduation rate reads as the middle.
+- Evidence: the result is pulled toward the middle by admitted ÷ (admitted + 50), so a class of 26 or 30 can't top
+  the scale.
+- Figures that can't describe one class (more first-years enrolled than undergraduates) leave a college unrated
+  (UNT Health Science Center, the one such record).
+- Score = 40 + 20 × the weighted mean, held to 0–100, two decimals; no college reaches 100. The build also stores each
+  college's **rank** by the unrounded score, so every rated college has its own place.
+- Dropped: trend points, the early-decision share, the top-GPA share, the waitlist share, and the C7 count. Each was
+  tested as an addition and lowered the agreement with the benchmarks below (and the last four cover under 16% of
+  colleges).
+- Tiers from the score alone: Elite 80 (set at the gap below the 29th college), Highly selective 55, Selective 42,
+  Accessible 33, chosen so each tier holds about as many colleges as before. The 10% admit-rate condition for Elite
+  is gone: the score already weighs the rate, and the line put colleges ranked above Cornell outside Elite.
+  Hysteresis (2 points) is unchanged; `npm run build-selectivity -- --fresh` rebuilds without it after a method change.
+
+**Benchmark (2026-10-12).** Seven public rankings, collected to a local folder outside the repository (publishers'
+lists, not redistributed): U.S. News 2027 National Universities and Liberal Arts Colleges (top ~50 each, the free
+ceiling), Forbes 2027 (top 50), Niche 2027 Hardest Admissions (224) and Best Colleges (175), QS 2027 U.S. (100), and
+WSJ/College Pulse 2026 (100). Rank correlation with each list, first version → second:
+
+| List | Colleges | First | Second |
+|---|---|---|---|
+| U.S. News National | 51 | 0.74 | 0.92 |
+| U.S. News Liberal Arts | 53 | 0.75 | 0.91 |
+| Niche Hardest Admissions | 208 | 0.75 | 0.83 |
+| Niche Best | 174 | 0.75 | 0.79 |
+| Forbes | 50 | 0.25 | 0.80 |
+| QS U.S. | 100 | 0.61 | 0.70 |
+| WSJ | 100 | 0.31 | 0.41 |
+
+WSJ ranks mostly on outcomes and value, so a low agreement is expected. The weights were checked by tuning on five
+lists and testing on the sixth (held-out agreement 0.74–0.92); the average agreement moved by under 0.02 across
+nearby weightings, so round weights were kept over the best fit (0.841 against 0.845). Tuning on Niche's hardest list
+alone pushed the weights toward the admit rate only and lowered every other list, so no single list was fitted.
+
+**Results.** Elite holds 29 colleges: Yale, Chicago, Harvard, Stanford, MIT, Princeton, Penn, Brown, Duke, Columbia,
+Caltech, Dartmouth, Northwestern, Johns Hopkins, Vanderbilt, Notre Dame, Northeastern, Cornell, UCLA, Bowdoin, Pomona,
+Minerva, Rice, Williams, Barnard, Berkeley, Amherst, Carnegie Mellon, NYU. Curtis ranks about 130th, Washington
+University of Science and Technology about 230th. Tier counts: Elite 29, Highly selective 132, Selective 360,
+Accessible 572, Open 453; 347 unrated.
+
+**Open for the owner.** Retention and graduation are new inputs (outcomes, read here as the strength of the admitted
+class); Minerva is Elite on a 3% admit rate and 98% retention; colleges for adult learners (Stanbridge: 10% admit
+rate, 72% of students 25 or older) still score in the 60s.
+
+**Six tiers and a new name (2026-10-12, owner).** The top tier is called **Ultra selective** on the site (its stored
+key stays `elite`, so snapshots and the estimate label keep their values), and the old Highly selective band (55–80)
+is split: **Highly selective** 68–80 (at the score gap near 68) and **Very selective** 52–68, which also takes the
+top of the old Selective band. Cutoffs: Ultra selective 80, Highly selective 68, Very selective 52, Selective 42,
+Accessible 33. Counts: 29, 44, 120, 328, 572, 453. Very selective caps the estimate at Likely
+([method/standing.md](method/standing.md) "Caps"). Migration `20261012110000_selectivity_six_tiers.sql` widens the
+snapshot column's check. Wherever this spec says Elite, read Ultra selective.

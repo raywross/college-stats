@@ -78,6 +78,7 @@ function ps(id: string, name: string, o: SchoolOpts = {}): PlanSchool {
     type: o.type ?? "private-nonprofit",
     gpaAverage: o.gpaAverage ?? null,
     standing: { admitRate, sat: o.sat ?? null, act: o.act ?? null, gpaAverage: o.gpaAverage ?? null, testPolicy: o.testPolicy === undefined ? "considered" : o.testPolicy },
+    poolSchool: {} as PlanSchool["poolSchool"],
   };
 }
 
@@ -117,6 +118,8 @@ function item(unit_id: string, over: Partial<PlanItem> = {}): PlanItem {
     transcript_shared: false,
     category_source: "auto",
     round_source: "auto",
+    legacy: false,
+    recruited: "none",
     ...over,
   };
 }
@@ -347,7 +350,7 @@ test("problems: two EDs, and REA beside a private college's EA, each as one sent
 test("balance lines: too few Likely first, then the list's size, then too many Reaches; none when balanced", () => {
   const g = (r: number, t: number, l: number, u = 0): ListCategory[] => [...Array(r).fill("reach"), ...Array(t).fill("target"), ...Array(l).fill("likely"), ...Array(u).fill("unsorted")];
   assert.equal(balanceLineFor([]), null);
-  assert.equal(balanceLineFor(g(3, 3, 1)), BALANCE_LINES.likely);
+  assert.equal(balanceLineFor(g(3, 3, 1)), BALANCE_LINES.likelyOrSafe);
   assert.equal(balanceLineFor(g(1, 1, 2)), BALANCE_LINES.size);
   assert.equal(balanceLineFor(g(4, 5, 4)), BALANCE_LINES.size);
   assert.equal(balanceLineFor(g(5, 1, 2)), BALANCE_LINES.reach);
@@ -424,6 +427,8 @@ test("planView reads the estimates it's given: no estimate keeps the stored grou
     notes: [{ key: "estimate.score_position", values: { test: "SAT", score: 1450, where: "above", concorded: "" } }],
     send: "send" as const,
     moveUp: null,
+    closeness: null,
+    ed: null,
     modelVersion: "test",
   };
   const v = planViewOf({ items, schools: by([s]), profile: numbers({ sat: 1450, focus: "sat" }), estimates: { "1": est }, today: TODAY });
@@ -438,9 +443,64 @@ test("the retake card is built from the estimates' move-ups, within a common ret
   const s2 = ps("2", "B", { sat: [1500, 1560], admitRate: 0.3 });
   const mk = (id: string, points: number) => ({
     unitId: id, group: "reach" as const, label: null, used: [], missing: [], facts: [], notes: [], send: "send" as const,
-    moveUp: { points, to: "target" as const, score: 1390 + points }, modelVersion: "test",
+    moveUp: { points, to: "target" as const, score: 1390 + points }, closeness: null, ed: null, modelVersion: "test",
   });
   const v = planViewOf({ items: [item("1"), item("2")], schools: by([s1, s2]), profile: numbers({ sat: 1390, focus: "sat" }), estimates: { "1": mk("1", 10), "2": mk("2", 110) }, today: TODAY });
   assert.deepEqual(v.retake, { kind: "sat", delta: 10, target: 1400, moves: [{ id: "item-1", from: "reach", to: "target", needed: 10 }] });
   assert.deepEqual(row(v, "2").moveUp, { score: 1500, delta: 110, from: "reach", to: "target" }, "the row still shows a move beyond the card's reach");
+});
+
+/* ------------------------------------------------------------------ */
+/* Five levels: five sections, closest first within a section, the ED-helps notice (levels.md, rounds.md) */
+/* ------------------------------------------------------------------ */
+
+function est(unitId: string, group: "high_reach" | "reach" | "target" | "likely" | "safe" | null, over: Record<string, unknown> = {}) {
+  return { unitId, group, label: null, used: [], missing: [], facts: [], notes: [], send: null, moveUp: null, closeness: null, ed: null, modelVersion: "test", ...over };
+}
+
+test("five sections in order, Dream first overall, then closest first (closeness descending) within a section", () => {
+  const schools = by(["A", "B", "C", "D", "E"].map((id) => ps(id, id)));
+  const items = [item("A"), item("B"), item("C"), item("D"), item("E")];
+  const estimates = {
+    A: est("A", "reach", { closeness: 1 }),
+    B: est("B", "reach", { closeness: 3 }),
+    C: est("C", "high_reach", { closeness: 0 }),
+    D: est("D", "safe", { closeness: 2 }),
+    E: est("E", "reach", { closeness: 2 }),
+  };
+  const v = planViewOf({ items, schools, profile: null, estimates, today: TODAY });
+  assert.deepEqual(
+    v.rows.map((r) => r.item.unit_id),
+    ["C", "B", "E", "A", "D"],
+    "High reach before Reach before Safe; within Reach, closeness 3 then 2 then 1",
+  );
+});
+
+test("the Dream sorts first even ahead of a closer college in an earlier section", () => {
+  const schools = by(["A", "B"].map((id) => ps(id, id)));
+  const items = [item("A"), item("B", { dream: true })];
+  const estimates = { A: est("A", "high_reach", { closeness: 3 }), B: est("B", "safe", { closeness: 0 }) };
+  const v = planViewOf({ items, schools, profile: null, estimates, today: TODAY });
+  assert.deepEqual(v.rows.map((r) => r.item.unit_id), ["B", "A"]);
+});
+
+test("edHelps: with a High-reach Dream, names the highest level that offers ED and whose ed verdict helps", () => {
+  const schools = by([ps("dream", "Dream"), ps("target", "Target College", { ed: true }), ps("reach", "Reach College", { ed: true })]);
+  const items = [item("dream", { dream: true }), item("target"), item("reach")];
+  const estimates = {
+    dream: est("dream", "high_reach"),
+    target: est("target", "target", { ed: "helps" }),
+    reach: est("reach", "reach", { ed: "helps" }),
+  };
+  const v = planViewOf({ items, schools, profile: null, estimates, today: TODAY });
+  assert.deepEqual(v.edHelps, { itemId: "item-target", name: "Target College", level: "target" });
+  assert.ok(v.notices.includes("edHelps"));
+});
+
+test("edHelps is null once the Dream isn't at High reach", () => {
+  const schools = by([ps("dream", "Dream"), ps("target", "Target College", { ed: true })]);
+  const items = [item("dream", { dream: true }), item("target")];
+  const estimates = { dream: est("dream", "reach"), target: est("target", "target", { ed: "helps" }) };
+  const v = planViewOf({ items, schools, profile: null, estimates, today: TODAY });
+  assert.equal(v.edHelps, null);
 });

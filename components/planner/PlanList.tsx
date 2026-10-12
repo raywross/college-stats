@@ -184,8 +184,8 @@ export default function PlanList({ ctx, view }: PlanTabProps) {
   );
 }
 
-/** list.md "Grouped by Reach / Target / Likely": the section heading pill, Reach violet, Target sky, Likely
- * emerald, "Not sorted yet" muted — calm tints, never a warning, with the group's count. */
+/** list.md "Grouped by...": the section heading pill, High reach pink, Reach violet, Target sky, Likely emerald,
+ * Safe green, "Not sorted yet" muted — calm tints, never a warning, with the group's count. */
 function GroupHeading({ group, count }: { group: ListCategory; count: number }) {
   return (
     <p className={cn("inline-flex h-8 items-center rounded-full px-3 text-xs font-bold", GROUP_CLASS[group])}>

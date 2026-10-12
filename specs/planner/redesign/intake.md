@@ -21,15 +21,18 @@
   after saving.
 
 ## Steps
-One question per screen, four steps and a Done screen (`IntakeStep` 0–4). Nothing is written until the last step.
+One question per screen, five steps and a Done screen (`IntakeStep` 0–5). Nothing is written until the last step.
+Step 3 ("More about you") was added for [admission chances, next](../../chances/depth.md#what-the-student-enters)
+(U3, 2026-10-12): activities, after the numbers, optional, and never blocking.
 
 | Step | Headline | Asks |
 |---|---|---|
 | 0 Grades | "Start with your grades" | Class of (chips), GPA (one field, scale detected), high school (optional) |
 | 1 Test | "Your test score" | SAT or ACT or neither; the score; practice; an optional target |
-| 2 AP courses | "Your AP courses" | Which year for each AP course (a score once that year is over); Skip jumps to Review |
-| 3 Review | "Look right?" | One row per answer with Edit (jumps to its step); "Save and show my plan" |
-| 4 Done | "Your numbers are in." | First run only: "Add your first college" |
+| 2 AP courses | "Your AP courses" | Which year for each AP course (a score once that year is over); Skip jumps to the next step |
+| 3 More about you | "More about you" | Optional: two or three activities ([depth.md](../../chances/depth.md#what-the-student-enters)); never blocks Continue, and never shown before the numbers |
+| 4 Review | "Look right?" | One row per answer with Edit (jumps to its step); "Save and show my plan" |
+| 5 Done | "Your numbers are in." | First run only: "Add your first college" |
 
 ### Grades
 - **Class of**: four chips starting at the current senior class (`classYearOptions`: from July on, next year's

@@ -7,7 +7,7 @@ import { newCourse, thirdPerson } from "@/lib/chances/courses";
 import { dismissSuggestion, markScheduleDone, saveSchoolOffers } from "@/lib/chances/course-plan-store";
 import { endpointFetch, ESTIMATE_MAX_COLLEGES, whatItChanges } from "@/lib/chances/course-plan-estimate";
 import type { CoursePlanView, SuggestionView } from "@/lib/chances/course-plan-view";
-import { estimateInputFromProfile } from "@/lib/chances/snapshot";
+import { estimateInputFromProfile } from "@/lib/chances/estimate-input";
 import { track } from "@/lib/analytics";
 import type { PlanContext } from "@/lib/planner/types";
 import type { PlanView } from "@/lib/planner/plan-view";

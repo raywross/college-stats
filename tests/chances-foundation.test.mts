@@ -431,7 +431,8 @@ test("the note catalog: every sentence fills from its values, unknown keys give 
   assert.equal(noteText({ key: "offering.profile", values: { count: 1 } }), "Your school's profile lists 1 AP course.");
   assert.equal(noteText({ key: "no.such.key", values: {} }), "");
   assert.equal(isNoteKey("estimate.label"), true);
-  assert.ok(Object.keys(INPUT_WORDS).length === 10);
+  // Every input kind the estimate can name (lib/chances/types.ts InputKind), the five-level build's seven included.
+  assert.equal(Object.keys(INPUT_WORDS).length, 17);
 });
 
 /* ---- Glossary ---- */

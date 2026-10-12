@@ -158,7 +158,7 @@ test("undecided: at colleges where the major matters, the student is told it wil
   const il = majorReviewFor(student({ majors: [UNDECIDED_MAJOR] }), school("145637"));
   assert.equal(il.undecided, true);
   assert.equal(il.family, null);
-  assert.deepEqual(texts(il), ["You're undecided; at University of Illinois Urbana-Champaign you'd apply to a specific college, and that choice is compared within its own pool."]);
+  assert.deepEqual(texts(il), ["You're undecided; at University of Illinois Urbana-Champaign you'd apply to a specific college, and that choice decides who you're compared with."]);
   assert.deepEqual(majorReviewFor(student({ majors: [UNDECIDED_MAJOR] }), school("231624")).notes, []);
   assert.deepEqual(majorReviewFor(student({ majors: [UNDECIDED_MAJOR] }), school("166027")).notes, []);
   assert.equal(majorMatters("228778"), true);

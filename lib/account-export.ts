@@ -102,7 +102,7 @@ export const ACCOUNT_EXPORTERS: AccountExporter[] = [
   {
     key: "lists",
     description:
-      "Your saved college lists (your own, and those of the students you own or manage): categories, rounds, statuses, outcomes, deadlines, the tracking row (updates, visited, following on social), and notes.",
+      "Your saved college lists (your own, and those of the students you own or manage): categories, rounds, statuses, outcomes, deadlines, the tracking row (updates, visited, following on social), legacy and recruited-athlete marks, and notes.",
     run: async ({ supabase, studentIds, userId }) => {
       type ListRow = { id: string; student_id: string | null; user_id: string | null; name: string; is_default: boolean; created: string };
       const cols = "id, student_id, user_id, name, is_default, created";
@@ -114,11 +114,13 @@ export const ACCOUNT_EXPORTERS: AccountExporter[] = [
       const lists = [...studentLists, ...ownLists];
       return Promise.all(
         lists.map(async (list) => {
-          const items = await rows<{ id: string; unit_id: string; category: string; status: string; outcome: string | null; round: string | null; position: number; added_at: string; decision_date: string | null; deadline_text: string | null; deadline_date: string | null; enrolling: boolean; updates: boolean; visited_on: string | null; follows_social: boolean }>(
+          const items = await rows<{ id: string; unit_id: string; category: string; status: string; outcome: string | null; round: string | null; position: number; added_at: string; decision_date: string | null; deadline_text: string | null; deadline_date: string | null; enrolling: boolean; updates: boolean; visited_on: string | null; follows_social: boolean; legacy: boolean; recruited: string }>(
             "list_items",
             supabase
               .from("list_items")
-              .select("id, unit_id, category, status, outcome, round, position, added_at, decision_date, deadline_text, deadline_date, enrolling, updates, visited_on, follows_social")
+              .select(
+                "id, unit_id, category, status, outcome, round, position, added_at, decision_date, deadline_text, deadline_date, enrolling, updates, visited_on, follows_social, legacy, recruited",
+              )
               .eq("list_id", list.id),
           );
           const notes = await rows("list_notes", supabase.from("list_notes").select("item_id, body, private, created").in("item_id", inList(items.map((i) => i.id))));
@@ -137,6 +139,8 @@ export const ACCOUNT_EXPORTERS: AccountExporter[] = [
             updates: i.updates,
             visited_on: i.visited_on,
             follows_social: i.follows_social,
+            legacy: i.legacy,
+            recruited: i.recruited,
           }));
           return { ...list, items: itemsOut, notes };
         }),

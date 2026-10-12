@@ -255,6 +255,10 @@ function sourceFiles(dir: string): string[] {
 
 /** Fields the profile began showing after the single-page profile (cost by income, specs/product/cost-by-income.md). */
 const ADDED_FIELDS = [
+  // Quad's selectivity chip, hero and Getting in card (specs/chances/selectivity-index.md).
+  "selectivity.tier",
+  "selectivity.in_state",
+  "selectivity.out_of_state",
   "cost.breakdown",
   "cost.cost_of_attendance",
   "derived.need_aid_break_income",

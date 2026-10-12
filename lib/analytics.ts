@@ -11,6 +11,7 @@
  */
 import type { ExploreView } from "./types";
 import type { TopicKey } from "./profile-topics";
+import type { StandingLabel, StandingLevel } from "./chances/types";
 
 /** How someone reached a college's page (`school_viewed.from`; see the spec's "Attribution of a school view"). */
 export type NavigationSource = "search" | "explore" | "compare" | "home" | "similar" | "direct" | "other";
@@ -63,7 +64,7 @@ export interface AnalyticsEvents {
   /** `test` is which test the plan uses (sat, act, none), never the score. */
   plan_numbers_set: { test: "sat" | "act" | "none"; practice: boolean };
   /** The intake guide (specs/planner/redesign/intake.md): which step was completed, never the values entered. */
-  plan_intake_step: { step: 0 | 1 | 2 | 3; mode: "first" | "edit" };
+  plan_intake_step: { step: 0 | 1 | 2 | 3 | 4; mode: "first" | "edit" };
   plan_group_changed: { from_auto: boolean };
   plan_dream_set: { on: boolean };
   plan_round_changed: { from_auto: boolean; round: "ed" | "ed2" | "ea" | "rea" | "rd" | "rolling" };
@@ -81,7 +82,7 @@ export interface AnalyticsEvents {
   course_plan_added: { reason: string };
   course_plan_dismissed: { reason: string };
   /** An estimate shown to a student (the profile's card, the planner's drawer): the group, the label, the model version; never an input. */
-  estimate_shown: { group: "reach" | "target" | "likely" | "none"; label: "reach-for-everyone" | "guaranteed" | "none"; model_version: string };
+  estimate_shown: { group: StandingLevel | "none"; label: StandingLabel | "none"; model_version: string };
 }
 export type AnalyticsEvent = keyof AnalyticsEvents;
 /** Events sent from Server Actions and Route Handlers with `trackServer()` (lib/analytics-server.ts). */

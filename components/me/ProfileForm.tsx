@@ -10,6 +10,12 @@ import { saveStudentProfile, type ProfileSaveState } from "@/app/me/actions";
 import { Term } from "@/components/ui/info-tip";
 import { HighSchoolPicker } from "@/components/high-schools/HighSchoolPicker";
 import { CoursePickerField } from "@/components/profile/CoursePicker";
+import { ClassStandingPick } from "@/components/me/ClassStandingPick";
+import { ActivitiesForm } from "@/components/me/ActivitiesForm";
+import { AwardsForm } from "@/components/me/AwardsForm";
+import { CourseTracks } from "@/components/me/CourseTracks";
+import { activitiesReading, courseTracks } from "@/lib/chances/depth";
+import { noteText } from "@/lib/chances/notes";
 
 const inputCls =
   "h-11 w-full rounded-xl border border-input bg-background px-3.5 text-base outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30 disabled:opacity-60";
@@ -200,6 +206,23 @@ export function ProfileForm({
             <option value="no">No</option>
           </select>
         </Field>
+        <div className="sm:col-span-2">
+          <span className="block text-sm font-semibold">About you</span>
+          <p className="mb-2 mt-0.5 text-xs text-muted-foreground">Optional; many colleges consider it.</p>
+        </div>
+        <Field label="First generation?" htmlFor="firstGeneration" hint="Neither of my parents finished a four-year degree.">
+          <select
+            id="firstGeneration"
+            name="firstGeneration"
+            disabled={disabled}
+            defaultValue={data.academics.firstGeneration === null ? "" : data.academics.firstGeneration ? "yes" : "no"}
+            className={`${inputCls} mt-1.5`}
+          >
+            <option value="">Not set</option>
+            <option value="yes">Yes</option>
+            <option value="no">No</option>
+          </select>
+        </Field>
       </Group>
 
       <Group title="Academics">
@@ -207,9 +230,9 @@ export function ProfileForm({
         <Field label="Weighted GPA (optional)" htmlFor="weightedGpa" hint="0–120: some high schools weight courses above 100.">
           <input id="weightedGpa" name="weightedGpa" type="number" step="0.01" min={0} max={120} disabled={disabled} defaultValue={data.academics.weightedGpa ?? ""} className={`${inputCls} mt-1.5`} />
         </Field>
-        <Field label="Class rank percentile (optional)" htmlFor="classRankPercentile" hint='"Top 10%" is 10.'>
-          <input id="classRankPercentile" name="classRankPercentile" type="number" min={1} max={100} disabled={disabled} defaultValue={data.academics.classRankPercentile ?? ""} className={`${inputCls} mt-1.5`} />
-        </Field>
+        <div className="sm:col-span-2">
+          <ClassStandingPick classStanding={data.academics.classStanding} classRankPercentile={data.academics.classRankPercentile} disabled={disabled} />
+        </div>
         <div className="sm:col-span-2">
           <span className="block text-sm font-semibold">Courses (optional)</span>
           <p className="mb-3 mt-0.5 text-xs text-muted-foreground">
@@ -222,7 +245,39 @@ export function ProfileForm({
             majors={data.plans.intendedMajors}
             disabled={disabled}
           />
+          {/* depth.md "Where it shows": the per-family tracks under the rigor reading. Without the high school's
+              offering on hand here, a family only ever reads as Deep/Steady/Light, never "not offered" — that
+              distinction is left to the planner's Scores tab → Courses, which has the offering. */}
+          {data.academics.courses.length > 0 && (
+            <div className="mt-3">
+              <CourseTracks
+                tracks={courseTracks({
+                  courses: data.academics.courses,
+                  coreAtTopLevel: data.academics.coreAtTopLevel,
+                  offering: null,
+                  majors: data.plans.intendedMajors,
+                  activities: data.academics.activities,
+                })}
+              />
+            </div>
+          )}
         </div>
+      </Group>
+
+      <Group title="Activities">
+        <ActivitiesForm activities={data.academics.activities} disabled={disabled} />
+        {/* depth.md "The reading": the suggestion-first sentence, computed the same way the estimate reads it. */}
+        {data.academics.activities.length > 0 && (
+          <div className="sm:col-span-2 space-y-1 text-sm text-muted-foreground">
+            {activitiesReading(data.academics.activities, data.academics.awards).notes.map(noteText).map((t) => (
+              <p key={t}>{t}</p>
+            ))}
+          </div>
+        )}
+      </Group>
+
+      <Group title="Awards">
+        <AwardsForm awards={data.academics.awards} disabled={disabled} />
       </Group>
 
       <Group title="Tests">

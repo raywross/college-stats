@@ -1,6 +1,7 @@
 /**
  * The season measurements (lib/chances/calibration.ts; specs/chances/method/outcomes.md) on synthetic outcomes: Wilson
- * intervals, the band table, the order check and the Likely-miss flag, the ordinal AUC, Brier of implied frequencies,
+ * intervals, the band table, the order check across five levels and the miss rules (levels.md "Season measurements"),
+ * the ordinal AUC, Brier of implied frequencies, the calibration curve and Brier of the binned hidden odds,
  * the held-out-by-season split, inputs switched off, the rigor evidence, student overrides, the sharers' mix, the public
  * summary rows and the Data page's view of them, and the "students like you" suppression (lib/chances/like-you.ts).
  * Guards show each threshold refuses what it should. `npm test`.
@@ -14,7 +15,10 @@ import {
   decided,
   heldOutBySeason,
   impliedFrequencies,
-  likelyMissFlags,
+  calibrationCurve,
+  missFlags,
+  MISS_RULES,
+  oddsBrier,
   likeYouSeasons,
   likeYouVisible,
   LIKE_YOU_MIN,
@@ -120,7 +124,7 @@ test("decided outcomes: admitted, denied, wait-listed count; deferred and undeci
 
 test("cells: thin cells keep their count but no share; the order holds where the groups work", () => {
   const cells = allCells(decided(goodSeason(2026)));
-  assert.equal(cells.length, RATE_BANDS.length * 3);
+  assert.equal(cells.length, RATE_BANDS.length * 5, "five levels per band");
   const likelyLow = cells.find((c) => c.group === "likely" && c.band === "lt20")!;
   assert.equal(likelyLow.n, 40);
   assert.equal(likelyLow.share, 36 / 40);
@@ -140,20 +144,46 @@ test("guard: a cell one outcome short of the minimum reports no share", () => {
   assert.equal(enough.find((c) => c.group === "target" && c.band === "35-50")!.share, 0.5);
 });
 
-test("the order check flags a band where Target beats Likely; the Likely-miss flag fires above 15%", () => {
+test("the order check runs across five levels and flags a band where Target beats Likely", () => {
   const rows = [
+    ...cell(40, 0.03, { estimate_group: "high_reach", admit_rate: 0.3 }),
     ...cell(40, 0.2, { estimate_group: "reach", admit_rate: 0.3 }),
     ...cell(40, 0.8, { estimate_group: "target", admit_rate: 0.3 }),
     ...cell(40, 0.7, { estimate_group: "likely", admit_rate: 0.3 }),
+    ...cell(40, 0.95, { estimate_group: "safe", admit_rate: 0.3 }),
   ];
   const cells = allCells(decided(rows));
   assert.equal(orderChecks(cells).find((o) => o.band === "20-35")!.holds, false);
-  const misses = likelyMissFlags(cells);
-  assert.equal(misses.length, 1);
-  assert.equal(misses[0].band, "20-35");
-  assert.ok(Math.abs(misses[0].miss - 0.3) < 1e-9);
-  // 86% admitted (14% wrong) is within the rule.
-  assert.deepEqual(likelyMissFlags(allCells(decided(cell(50, 0.86, { estimate_group: "likely", admit_rate: 0.3 })))), []);
+  const fixed = allCells(decided(rows.filter((r) => r.estimate_group !== "target")));
+  assert.equal(orderChecks(fixed).find((o) => o.band === "20-35")!.holds, true, "High reach < Reach < Likely < Safe holds");
+  const swapped = allCells(decided(rows.filter((r) => r.estimate_group !== "target").map((r) => (r.estimate_group === "high_reach" ? { ...r, estimate_group: "safe" as const } : r.estimate_group === "safe" ? { ...r, estimate_group: "high_reach" as const } : r))));
+  assert.equal(orderChecks(swapped).find((o) => o.band === "20-35")!.holds, false, "guard: Safe below High reach breaks the order");
+});
+
+test("the miss rules: Safe wrong over 10% or Likely over 30% moves the cutoff up; High reach admitted over 15% moves it down", () => {
+  assert.deepEqual(
+    MISS_RULES.map((r) => [r.level, r.outcome, r.max, r.move]),
+    [
+      ["safe", "denied", 0.1, "up"],
+      ["likely", "denied", 0.3, "up"],
+      ["high_reach", "admitted", 0.15, "down"],
+    ],
+  );
+  const flags = (n: number, share: number, level: Group) => missFlags(allCells(decided(cell(n, share, { estimate_group: level, admit_rate: 0.3 }))));
+  // Safe: 88% admitted is 12% wrong (flagged); 90% admitted is exactly 10% (not).
+  assert.deepEqual(flags(50, 0.88, "safe").map((f) => [f.level, f.move]), [["safe", "up"]]);
+  assert.ok(Math.abs(flags(50, 0.88, "safe")[0].miss - 0.12) < 1e-9);
+  assert.deepEqual(flags(50, 0.9, "safe"), []);
+  // Likely: 68% admitted (32% wrong) flagged; 72% (28%) not.
+  assert.deepEqual(flags(50, 0.68, "likely").map((f) => f.level), ["likely"]);
+  assert.deepEqual(flags(50, 0.72, "likely"), []);
+  // High reach: 18% admitted flagged, moving the cutoff down; 14% not.
+  assert.deepEqual(flags(50, 0.18, "high_reach").map((f) => [f.level, f.move]), [["high_reach", "down"]]);
+  assert.deepEqual(flags(50, 0.14, "high_reach"), []);
+  // Reach and Target have no miss rule, and a thin cell never flags.
+  assert.deepEqual(flags(50, 0.99, "reach"), []);
+  assert.deepEqual(flags(50, 0.01, "target"), []);
+  assert.deepEqual(flags(MIN_CELL_OUTCOMES - 1, 0.5, "safe"), [], "guard: too few outcomes to judge");
 });
 
 /* ------------------------------------------------------------------ */
@@ -167,6 +197,9 @@ test("ordinal AUC: 1 when the groups separate perfectly, 0.5 with no signal, 0 r
     { group: "likely" as Group, admitted: true },
   ];
   assert.equal(ordinalAuc(perfect), 1);
+  // Five levels: High reach below Reach, Safe above Likely.
+  assert.equal(ordinalAuc([{ group: "high_reach", admitted: false }, { group: "reach", admitted: true }]), 1);
+  assert.equal(ordinalAuc([{ group: "safe", admitted: false }, { group: "likely", admitted: true }]), 0);
   assert.equal(ordinalAuc([{ group: "target", admitted: true }, { group: "target", admitted: false }]), 0.5);
   assert.equal(ordinalAuc([{ group: "reach", admitted: true }, { group: "likely", admitted: false }]), 0);
   assert.equal(ordinalAuc([{ group: "likely", admitted: true }]), null);
@@ -189,6 +222,34 @@ test("Brier of implied frequencies: last season's shares scored on this season's
   const flipped = decided(goodSeason(2026)).map((r) => ({ ...r, admitted: !r.admitted }));
   assert.ok(brierScore(implied, flipped)!.brier > same.brier + 0.3);
   assert.equal(brierScore(new Map(), decided(goodSeason(2026))), null);
+});
+
+test("calibration curve: the admitted share per decile of the hidden odds, shares only with enough outcomes", () => {
+  const rows = decided([
+    ...cell(40, 0.05, { hidden_odds: 0.04 }),
+    ...cell(40, 0.3, { hidden_odds: 0.3 }),
+    ...cell(40, 0.75, { hidden_odds: 0.72 }),
+    ...cell(10, 1, { hidden_odds: 0.97 }),
+    ...cell(5, 1, { hidden_odds: null }),
+  ]);
+  const curve = calibrationCurve(rows);
+  assert.equal(curve.length, 10);
+  assert.deepEqual(curve.map((p) => p.n), [40, 0, 0, 40, 0, 0, 0, 40, 0, 10]);
+  assert.equal(curve[0].share, 2 / 40);
+  assert.ok(Math.abs(curve[3].meanOdds! - 0.3) < 1e-9);
+  assert.equal(curve[7].share, 30 / 40);
+  assert.equal(curve[9].share, null, "a thin decile keeps its count but no share");
+  assert.equal(curve[1].meanOdds, null);
+  // 1.0 lands in the top decile, not an eleventh.
+  assert.equal(calibrationCurve(decided(cell(30, 1, { hidden_odds: 1 })))[9].n, 30);
+});
+
+test("Brier of the hidden odds: perfect odds score 0, the wrong way round 1, rows without odds left out", () => {
+  assert.deepEqual(oddsBrier(decided([row({ hidden_odds: 1, admitted: true }), row({ hidden_odds: 0, admitted: false })])), { n: 2, brier: 0 });
+  assert.deepEqual(oddsBrier(decided([row({ hidden_odds: 0, admitted: true }), row({ hidden_odds: null, admitted: false })])), { n: 1, brier: 1 });
+  assert.equal(oddsBrier(decided([row({})])), null);
+  const b = oddsBrier(decided(cell(100, 0.3, { hidden_odds: 0.3 })))!;
+  assert.ok(Math.abs(b.brier - 0.21) < 1e-9, "calibrated odds score p(1 − p)");
 });
 
 test("held out by season: trains on every earlier season and tests on the latest (never a random split)", () => {
@@ -223,6 +284,11 @@ test("ablations: an input that sharpens the groups shows a higher AUC with it th
   assert.equal(byInput.rank.changed, 0);
   assert.equal(byInput.rank.aucWith, byInput.rank.aucWithout);
   assert.equal(byInput.residency.n, 0);
+  // The third version's switches: depth, hooks (legacy and recruited), interest.
+  const hooked = decided([...cell(40, 0.6, { estimate_group: "target", without_hooks: "reach", without_depth: "target", without_interest: "target" })]);
+  const third = Object.fromEntries(ablations(hooked).map((a) => [a.input, a]));
+  assert.deepEqual([third.hooks.changed, third.depth.changed, third.interest.changed], [40, 0, 0]);
+  assert.equal(third.hooks.n, 40);
 });
 
 test("rigor may lower a group only on non-overlapping intervals at crowded colleges", () => {
@@ -286,7 +352,7 @@ test("summary rows: per model version, a total with the mix, every estimate cell
   assert.equal(total[0].n, 230, "rows without a group or a version don't count");
   assert.ok(total[0].sharers_mix && total[0].estimate_group === null && total[0].rate_band === null);
   const est = out.filter((r) => r.scope === "estimate");
-  assert.equal(est.length, 15);
+  assert.equal(est.length, 25, "five levels × five bands");
   const reachLow = est.find((r) => r.estimate_group === "reach" && r.rate_band === "lt20")!;
   assert.equal(reachLow.n, 45);
   assert.equal(reachLow.admitted, 5);

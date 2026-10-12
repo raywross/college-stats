@@ -1,6 +1,6 @@
 # Inputs Beyond the Numbers: Class Standing, Awards, Work, Legacy, Recruiting, Interest
 
-> Status: **planned** 2026-10-11 from the owner's review. Part 11 of [admission chances](README.md). Each input here
+> Status: **built** 2026-10-12 on `feature/chances` (see "As built"; planned 2026-10-11) from the owner's review. Part 11 of [admission chances](README.md). Each input here
 > is small on its own; together they are what colleges say they read beyond grades, courses, and scores (CDS C7), and
 > each one enters the estimate only at colleges that rate it. How each moves the level is the method's
 > ([method/standing.md](method/standing.md#the-other-multipliers)). After [levels.md](levels.md); the per-college
@@ -153,3 +153,17 @@ the toggles), `tests/lists-policies.test.mts` (the new columns under RLS).
    Recommendation: one toggle now, worded "parent or grandparent"; split if the first season shows the multiplier
    overstated.
 2. Awards catalog size: start at ~40, grow from "Something else" entries that recur.
+
+## As built (2026-10-12)
+- **Profile:** class standing (under GPA, setting the percentile), activities, awards, and first generation (under an
+  "About you" heading in Basics) on `/me` and the household Numbers page; the intake's optional "More about you" step
+  is step 3, after AP courses. All four reach `EstimateStudent`; the account export includes them; parents see them.
+- **Awards:** `data/reference/awards.json`, 40 awards, each checked against its giving body's page on 2026-10-12
+  (`check:awards-catalog`). The All-National Honor Ensemble was dropped (paused by NAfME since 2023). The President's
+  Volunteer Service Award is paused by AmeriCorps (since May 2025) and kept; the owner may drop it.
+- **Legacy bans:** `data/reference/legacy-bans.json`, five states verified on each legislature's site on 2026-10-12
+  (CA private; CO, IL, VA public; MD public and private); no other state had enacted one (Maine's bill died; New York
+  and Massachusetts pending). `banFor` in `lib/chances/legacy-bans.ts` (client-safe); `check:legacy-bans`.
+- **Per college:** "About you and {College}" in the planner row drawer (legacy toggle, recruited pick, the ban sentence
+  where one applies); the profile's standing card asks to add the college to the list first. Interest comes from
+  logged visits and info requests.

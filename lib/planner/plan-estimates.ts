@@ -7,24 +7,49 @@ import "server-only";
  */
 import { estimateContext, estimateMany } from "@/lib/chances/estimate";
 import { gradeNow } from "@/lib/chances/courses";
-import { estimateInputFromProfile } from "@/lib/chances/snapshot";
+import { NO_HOOKS } from "@/lib/chances/levels";
+import { estimateInputFromProfile } from "@/lib/chances/estimate-input";
+import type { CollegeHooks } from "@/lib/chances/types";
 import { citedPaths, isEstimateFactPath } from "@/lib/chances/what-went-in";
 import type { EstimateResult } from "@/lib/chances/types";
 import { getData } from "@/lib/data";
 import type { FieldPath } from "@/lib/fields";
 import type { StudentProfileData } from "@/lib/student-profile";
-import type { PlanSchool } from "./types";
+import type { PlanItem, PlanSchool, PlanVisit } from "./types";
+
+/** What hooksFromPlan reads of a list item: its id and unit id, the two per-college toggles, and the tracking row's own "logged" dates. */
+export type HooksItem = Pick<PlanItem, "id" | "unit_id" | "legacy" | "recruited" | "visited_on" | "info_requested_on">;
+
+/**
+ * The hooks estimateMany reads, built from the list (specs/chances/README.md decision 5 "Hooks in requests"):
+ * `legacy` and `recruited` are the row's own toggles (components/planner/AboutYouAndCollege.tsx, U8); `interest` is
+ * true once a visit, interview, or information request is logged for the college — the tracking row's own date
+ * fields, or an entry in `plan_visits` (lib/planner/types.ts PlanVisit, keyed by item id). A college with nothing
+ * set is left out of the map (estimateMany reads a missing entry as NO_HOOKS).
+ */
+export function hooksFromPlan(items: readonly HooksItem[], visits: readonly Pick<PlanVisit, "item_id">[] = []): Record<string, CollegeHooks> {
+  const visitedItemIds = new Set(visits.map((v) => v.item_id));
+  const out: Record<string, CollegeHooks> = {};
+  for (const item of items) {
+    const interest = item.visited_on !== null || item.info_requested_on !== null || visitedItemIds.has(item.id);
+    const hooks: CollegeHooks = { legacy: item.legacy === true, recruited: item.recruited ?? NO_HOOKS.recruited, interest };
+    if (hooks.legacy || hooks.recruited !== "none" || hooks.interest) out[item.unit_id] = hooks;
+  }
+  return out;
+}
 
 export async function planEstimates(
   profile: StudentProfileData | null,
-  unitIds: readonly string[],
-  opts: { gradYear: number | null; today: string },
+  items: readonly HooksItem[],
+  opts: { gradYear: number | null; today: string; visits?: readonly Pick<PlanVisit, "item_id">[] },
 ): Promise<Record<string, EstimateResult>> {
+  const unitIds = items.map((i) => i.unit_id);
   if (unitIds.length === 0) return {};
   try {
     const input = estimateInputFromProfile(profile, "", null).student;
     const ctx = await estimateContext(input, { coreAtTopLevel: profile?.academics.coreAtTopLevel ?? null, grade: gradeNow(opts.gradYear, opts.today) });
-    return estimateMany(input, unitIds, ctx);
+    const hooks = hooksFromPlan(items, opts.visits ?? []);
+    return estimateMany(input, unitIds, ctx, hooks);
   } catch (err) {
     console.error(`planner: estimates failed: ${err instanceof Error ? err.message : String(err)}`);
     return {};

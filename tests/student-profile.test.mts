@@ -14,10 +14,14 @@ import {
   fitsScores,
   gpaAsEntered,
   gpaDisplay,
+  sanitizeActivities,
+  sanitizeAwards,
+  sanitizeClassStanding,
   sanitizeProfile,
   unweightedGpa4,
   type StudentProfileData,
 } from "../lib/student-profile.ts";
+import { ACTIVITIES_MAX, AWARDS_MAX, CLASS_STANDING_PERCENTILE } from "../lib/chances/levels.ts";
 // lib/student-profile.ts: only type-only internal imports plus lib/score-bands.ts and lib/majors.ts, both of which
 // are themselves type-only internally, so this resolves under plain Node ESM (no bundler) just like those two.
 
@@ -245,4 +249,91 @@ test("fitsPreferences: max average cost compares against avg_paid_all", () => {
   const profile = { ...emptyProfile(), preferences: { ...emptyProfile().preferences, maxAverageCost: 20000 } };
   assert.equal(fitsPreferences(cheap, profile), "in");
   assert.equal(fitsPreferences(pricey, profile), "out");
+});
+
+/* ------------------------------------------------------------------ */
+/* Admission chances, next: class standing, activities, awards,        */
+/* first generation (specs/chances/depth.md, inputs-beyond-academics.md) */
+/* ------------------------------------------------------------------ */
+
+test("sanitizeClassStanding: a pick sets the percentile from the table; a matching percentile sets the pick back; anything else leaves classStanding null", () => {
+  assert.deepEqual(sanitizeClassStanding("top10", null), { classStanding: "top10", classRankPercentile: 10 });
+  // The pick wins even when a different percentile is also sent.
+  assert.deepEqual(sanitizeClassStanding("top5", 50), { classStanding: "top5", classRankPercentile: 5 });
+  assert.deepEqual(sanitizeClassStanding(null, 25), { classStanding: "top25", classRankPercentile: 25 });
+  assert.deepEqual(sanitizeClassStanding(null, 40), { classStanding: null, classRankPercentile: 40 });
+  assert.deepEqual(sanitizeClassStanding(null, null), { classStanding: null, classRankPercentile: null });
+  assert.deepEqual(sanitizeClassStanding("no_rank", null), { classStanding: "no_rank", classRankPercentile: null });
+  assert.deepEqual(sanitizeClassStanding("not-a-pick", null), { classStanding: null, classRankPercentile: null });
+  // Every CLASS_STANDING_PERCENTILE entry round-trips through the pick.
+  for (const [pick, pct] of Object.entries(CLASS_STANDING_PERCENTILE)) {
+    assert.equal(sanitizeClassStanding(pick, null).classRankPercentile, pct);
+    if (pct !== null) assert.equal(sanitizeClassStanding(null, pct).classStanding, pick);
+  }
+});
+
+test("sanitizeActivities: caps at ACTIVITIES_MAX, drops unnamed/invalid rows, keeps names to 60 chars, years to 9–12, hours to 1–60, a role only for a checked year", () => {
+  const many = Array.from({ length: 10 }, (_, i) => ({ id: `a${i}`, name: `Club ${i}`, kind: "club", years: [10], roles: {}, hoursPerWeek: 2, recognition: null, relatedToMajor: false }));
+  assert.equal(sanitizeActivities(many).length, ACTIVITIES_MAX);
+  assert.equal(sanitizeActivities([{ name: "" }]).length, 0, "an unnamed row is dropped");
+  assert.equal(sanitizeActivities("nope" as unknown).length, 0);
+  const long = sanitizeActivities([{ name: "x".repeat(90), kind: "club", years: [], roles: {}, hoursPerWeek: null, recognition: null, relatedToMajor: false }]);
+  assert.equal(long.length, 0, "a name over 60 characters is dropped, not truncated");
+  const [a] = sanitizeActivities([{ name: "Robotics", kind: "club", years: [9, 13, 10], roles: { "10": "leader" }, hoursPerWeek: 90, recognition: 9, relatedToMajor: true }]);
+  assert.deepEqual(a.years, [9, 10], "13 is outside 9–12");
+  assert.equal(a.roles[10], "leader");
+  assert.equal(a.roles[9], "member", "a checked year with no role sent defaults to member");
+  assert.equal(a.hoursPerWeek, null, "90 is outside 1–60");
+  assert.equal(a.recognition, null, "9 isn't one of the four tiers");
+  assert.equal(a.relatedToMajor, true);
+  // Duplicate ids are made unique rather than dropped.
+  const [x, y] = sanitizeActivities([
+    { id: "dup", name: "A", kind: "club", years: [], roles: {}, hoursPerWeek: null, recognition: null, relatedToMajor: false },
+    { id: "dup", name: "B", kind: "club", years: [], roles: {}, hoursPerWeek: null, recognition: null, relatedToMajor: false },
+  ]);
+  assert.notEqual(x.id, y.id);
+});
+
+test("sanitizeAwards: caps at AWARDS_MAX, a catalog key takes its name and tier from the catalog (never the client's), an unknown key drops the row, 'Something else' needs a name and a tier", () => {
+  const many = Array.from({ length: 8 }, (_, i) => ({ id: `w${i}`, key: null, name: `Award ${i}`, tier: 4, year: null }));
+  assert.equal(sanitizeAwards(many).length, AWARDS_MAX);
+  const [fromCatalog] = sanitizeAwards([{ key: "honor_roll", name: "Hacked name", tier: 1, year: 11 }]);
+  assert.equal(fromCatalog.name, "Honor roll", "the catalog's name wins over whatever the client sent");
+  assert.equal(fromCatalog.tier, 4, "the catalog's tier wins too");
+  assert.equal(sanitizeAwards([{ key: "not_a_real_award" }]).length, 0, "an unknown key drops the row");
+  assert.equal(sanitizeAwards([{ key: null, name: "", tier: 2 }]).length, 0, "'Something else' needs a name");
+  assert.equal(sanitizeAwards([{ key: null, name: "Science fair", tier: 9 }]).length, 0, "and a real tier");
+  const [other] = sanitizeAwards([{ key: null, name: "Science fair", tier: 2, year: 10 }]);
+  assert.deepEqual(other, { id: "award-1", key: null, name: "Science fair", tier: 2, year: 10 });
+});
+
+test("A profile saved before class standing, activities, awards, or first generation existed reads as the documented defaults", () => {
+  const old = sanitizeProfile({ academics: { gpa: 3.5 } });
+  assert.equal(old.academics.classStanding, null);
+  assert.equal(old.academics.classRankPercentile, null);
+  assert.deepEqual(old.academics.activities, []);
+  assert.deepEqual(old.academics.awards, []);
+  assert.equal(old.academics.firstGeneration, null);
+  assert.equal(emptyProfile().academics.firstGeneration, null);
+});
+
+test("firstGeneration: yes/no/not set, never coerced to false", () => {
+  assert.equal(sanitizeProfile({ academics: { firstGeneration: true } }).academics.firstGeneration, true);
+  assert.equal(sanitizeProfile({ academics: { firstGeneration: false } }).academics.firstGeneration, false);
+  assert.equal(sanitizeProfile({ academics: {} }).academics.firstGeneration, null);
+  assert.equal(sanitizeProfile({ academics: { firstGeneration: "yes" } }).academics.firstGeneration, true);
+});
+
+test("sanitizeProfile: classStanding and activities/awards round-trip through the whole profile", () => {
+  const p = sanitizeProfile({
+    academics: {
+      classStanding: "top10",
+      activities: [{ id: "a", name: "Soccer", kind: "sport", years: [11, 12], roles: { "11": "member", "12": "leader" }, hoursPerWeek: 10, recognition: 3, relatedToMajor: false }],
+      awards: [{ key: "ap_scholar", year: 12 }],
+    },
+  });
+  assert.equal(p.academics.classStanding, "top10");
+  assert.equal(p.academics.classRankPercentile, 10);
+  assert.equal(p.academics.activities.length, 1);
+  assert.equal(p.academics.awards[0]?.name, "AP Scholar");
 });

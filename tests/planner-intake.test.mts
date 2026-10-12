@@ -49,6 +49,7 @@ const draft = (over: Partial<IntakeDraft> = {}): IntakeDraft => ({
   highSchool: null,
   highSchoolId: null,
   courses: [],
+  activities: [],
   ...over,
 });
 
@@ -142,7 +143,7 @@ test("targetCheck: optional; out of range blocks; at or below the score is allow
   assert.deepEqual(targetCheck("act", "29", "37"), { ok: false, hint: "ACT scores run from 1 to 36.", tone: "amber" });
 });
 
-test("stepValid: grades need a class and a valid GPA; the test step a choice, a score, and a valid target; review both", () => {
+test("stepValid: grades need a class and a valid GPA; the test step a choice, a score, and a valid target; review both; AP courses and activities never block", () => {
   assert.equal(stepValid(draft(), 0), true);
   assert.equal(stepValid(draft({ classYear: null }), 0), false);
   assert.equal(stepValid(draft({ gpa: "" }), 0), false);
@@ -152,9 +153,10 @@ test("stepValid: grades need a class and a valid GPA; the test step a choice, a 
   assert.equal(stepValid(draft({ score: "" }), 1), false);
   assert.equal(stepValid(draft({ target: "1700" }), 1), false);
   assert.equal(stepValid(draft({ courses: [{ id: "x", key: "ap_biology", year: null, exam: null }] }), 2), true, "AP courses never block");
-  assert.equal(stepValid(draft(), 3), true);
-  assert.equal(stepValid(draft({ gpa: "" }), 3), false);
+  assert.equal(stepValid(draft({ gpa: "" }), 3), true, "the optional 'More about you' step never blocks, even with an invalid grades step");
   assert.equal(stepValid(draft(), 4), true);
+  assert.equal(stepValid(draft({ gpa: "" }), 4), false);
+  assert.equal(stepValid(draft(), 5), true);
 });
 
 /* ------------------------------------------------------------------ */
@@ -272,6 +274,7 @@ test("draftFromProfile: an empty profile opens empty; a saved one opens filled, 
     highSchool: null,
     highSchoolId: null,
     courses: [],
+    activities: [],
   });
   const d = draftFromProfile(sampleProfile(), 2027, TODAY);
   assert.equal(d.classYear, 2027);
@@ -292,6 +295,7 @@ test("draftFromProfile: an empty profile opens empty; a saved one opens filled, 
     { step: 0, label: "School", value: "Not set" },
     { step: 1, label: "Test", value: "SAT 1390 · aiming for 1450" },
     { step: 2, label: "AP courses", value: "1 taken · 1 taking or planned" },
+    { step: 3, label: "Activities", value: "None" },
   ]);
 });
 
@@ -387,6 +391,20 @@ test("applyIntake: the picked year and score land on the course list; the number
   assert.equal(out.academics.courses.length, 6);
 });
 
+test("the 'More about you' step's activities: carried from the profile, sanitized on save, written back, and never block a step", () => {
+  const p = sampleProfile();
+  p.academics.activities = [{ id: "soccer", name: "Varsity soccer", kind: "sport", years: [10, 11, 12], roles: { 10: "member", 11: "officer", 12: "leader" }, hoursPerWeek: 8, recognition: 3, relatedToMajor: false }];
+  const d = draftFromProfile(p, 2027, TODAY);
+  assert.deepEqual(d.activities, p.academics.activities);
+  // Invalid rows are dropped, not a reason to refuse the step or the whole save (sanitizeActivities' own rule).
+  d.activities = [...d.activities, { id: "bad", name: "", kind: "club", years: [], roles: {}, hoursPerWeek: null, recognition: null, relatedToMajor: false }];
+  const saved = intakeToSave(d)!;
+  assert.equal(saved.activities.length, 1, "the unnamed row was dropped");
+  assert.deepEqual(parseIntakeSave(saved)?.activities, saved.activities);
+  const out = applyIntake(p, saved, TODAY);
+  assert.deepEqual(out.academics.activities, p.academics.activities);
+});
+
 test("applyIntake: status always derives from the picked year, the class, and today — never stored, never inferred from 'taken'", () => {
   const p = emptyProfile();
   const save: IntakeSave = {
@@ -404,6 +422,7 @@ test("applyIntake: status always derives from the picked year, the class, and to
       { id: "b", key: "ap_chemistry", year: 11, exam: null },
       { id: "c", key: "ap_human_geography", year: 9, exam: "3" },
     ],
+    activities: [],
   };
   const out = applyIntake(p, save, TODAY);
   const by = Object.fromEntries(out.academics.courses.map((c) => [c.id, c]));
@@ -464,6 +483,7 @@ const GOOD: IntakeSave = {
   highSchool: "Lincoln High School",
   highSchoolId: "010000500870",
   courses: [{ id: "c1", key: "ap_biology", year: 11, exam: "4" }],
+  activities: [],
 };
 
 test("intakeToSave: null while the grades or test step is invalid; testing fields cleared for Not testing", () => {

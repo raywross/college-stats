@@ -12,8 +12,10 @@ import { satTotal } from "./score-bands.ts";
 import { isMajorFamily, type MajorFamily } from "./majors.ts";
 import { isHighSchoolId } from "./high-school-core.ts";
 import type { StandingStudent } from "./planner/standing.ts";
-import type { CourseEntry, CourseKind, CourseStatus, CourseSubject, CourseTerm, Mark } from "./chances/types.ts";
+import type { ActivityEntry, ActivityKind, ActivityRole, AwardEntry, ClassStanding, CourseEntry, CourseKind, CourseStatus, CourseSubject, CourseTerm, HsYear, Mark, RecognitionTier } from "./chances/types.ts";
+import { ACTIVITIES_MAX, AWARDS_MAX, CLASS_STANDING_PERCENTILE } from "./chances/levels.ts";
 import { catalogCourse, COURSE_SUBJECTS, isCatalogKeyFor } from "./chances/catalog.ts";
+import { awardByKey } from "./chances/awards-catalog.ts";
 
 /**
  * Same boundaries as lib/metrics.ts SIZE_BUCKETS, duplicated here rather than imported: that module pulls in
@@ -110,6 +112,27 @@ export interface StudentProfileAcademics {
    * isn't on record (course-plan.md "The school's course list" 3). Never shared with other students.
    */
   schoolOffers: string[];
+  /**
+   * The class-standing pick (inputs-beyond-academics.md "Class standing"), beside `classRankPercentile`: picking a
+   * value here sets the percentile from CLASS_STANDING_PERCENTILE; typing a percentile that matches one of those
+   * values sets the pick to match. Null until answered; a profile saved before this field existed reads as null.
+   */
+  classStanding: ClassStanding | null;
+  /**
+   * Admission chances, next (depth.md "What the student enters"): at most ACTIVITIES_MAX entries. A profile saved
+   * before this field existed reads as an empty list.
+   */
+  activities: ActivityEntry[];
+  /**
+   * Admission chances, next (inputs-beyond-academics.md "Awards"): at most AWARDS_MAX entries. A profile saved
+   * before this field existed reads as an empty list.
+   */
+  awards: AwardEntry[];
+  /**
+   * "Neither of my parents finished a four-year degree" (inputs-beyond-academics.md "First generation"). Optional;
+   * null until answered. Not used in the level in this version; shown as noted, not estimated.
+   */
+  firstGeneration: boolean | null;
 }
 
 /** The course plan's saved choices; `season` is the school year they were made in ("2026-27"), after which they lapse. */
@@ -137,6 +160,113 @@ export function sanitizeCoursePlan(input: unknown): CoursePlanState | null {
 /** Untrusted input as marked AP course keys: only keys in the AP catalog, each once. */
 export function sanitizeSchoolOffers(input: unknown): string[] {
   return arr(input, (x) => (typeof x === "string" && isCatalogKeyFor("ap", x) ? x : null), SCHOOL_OFFERS_MAX);
+}
+
+/* ------------------------------------------------------------------ */
+/* Admission chances, next: class standing, activities, awards         */
+/* (specs/chances/depth.md "What the student enters",                  */
+/*  specs/chances/inputs-beyond-academics.md "Class standing", "Awards") */
+/* ------------------------------------------------------------------ */
+
+const CLASS_STANDING_VALUES: readonly ClassStanding[] = ["top1", "top5", "top10", "top25", "top50", "lower", "no_rank"];
+
+/**
+ * The class-standing pick and `classRankPercentile` kept in sync (inputs-beyond-academics.md "Class standing"):
+ * picking a value sets the percentile from CLASS_STANDING_PERCENTILE (overriding any percentile also sent, since the
+ * pick is what the form shows); with no pick, a percentile that exactly matches one of the table's values sets the
+ * matching pick; any other percentile, or none, keeps `classStanding` null. "no_rank" stores a null percentile.
+ */
+export function sanitizeClassStanding(pickInput: unknown, percentileInput: unknown): { classStanding: ClassStanding | null; classRankPercentile: number | null } {
+  if (typeof pickInput === "string" && (CLASS_STANDING_VALUES as readonly string[]).includes(pickInput)) {
+    const pick = pickInput as ClassStanding;
+    return { classStanding: pick, classRankPercentile: CLASS_STANDING_PERCENTILE[pick] };
+  }
+  const percentile = int(percentileInput, 1, 100);
+  if (percentile === null) return { classStanding: null, classRankPercentile: null };
+  const matched = CLASS_STANDING_VALUES.find((c) => CLASS_STANDING_PERCENTILE[c] === percentile) ?? null;
+  return { classStanding: matched, classRankPercentile: percentile };
+}
+
+const ACTIVITY_KINDS: readonly ActivityKind[] = ["sport", "club", "arts", "service", "work", "research", "family", "other"];
+const ACTIVITY_ROLES: readonly ActivityRole[] = ["member", "officer", "leader"];
+const HS_YEARS: readonly HsYear[] = [9, 10, 11, 12];
+const RECOGNITION_TIERS: readonly RecognitionTier[] = [1, 2, 3, 4];
+/** Longest name kept for an activity (depth.md "What the student enters"). */
+export const ACTIVITY_NAME_MAX = 60;
+/** Longest name kept for a typed-in ("Something else") award. */
+export const AWARD_NAME_MAX = 60;
+
+function sanitizeActivity(v: unknown, index: number): ActivityEntry | null {
+  if (!isObj(v)) return null;
+  const name = str(v.name, ACTIVITY_NAME_MAX);
+  if (!name) return null;
+  const kind = ACTIVITY_KINDS.includes(v.kind as ActivityKind) ? (v.kind as ActivityKind) : "other";
+  const years = Array.from(new Set(arr(v.years, (y) => (HS_YEARS.includes(y as HsYear) ? (y as HsYear) : null), 4))).sort((a, b) => a - b) as HsYear[];
+  const rolesIn = isObj(v.roles) ? v.roles : {};
+  const roles: Partial<Record<HsYear, ActivityRole>> = {};
+  // A role only counts for a checked year; an unchecked year's role, if any was sent, is dropped.
+  for (const y of years) {
+    const r = rolesIn[String(y)];
+    roles[y] = ACTIVITY_ROLES.includes(r as ActivityRole) ? (r as ActivityRole) : "member";
+  }
+  const hoursPerWeek = int(v.hoursPerWeek, 1, 60);
+  const recognition = RECOGNITION_TIERS.includes(v.recognition as RecognitionTier) ? (v.recognition as RecognitionTier) : null;
+  const id = typeof v.id === "string" && v.id.trim() && v.id.length <= 40 ? v.id.trim() : `activity-${index + 1}`;
+  return { id, name, kind, years, roles, hoursPerWeek, recognition, relatedToMajor: bool(v.relatedToMajor) };
+}
+
+/** Untrusted input as at most ACTIVITIES_MAX ActivityEntries: invalid rows dropped, ids made unique. */
+export function sanitizeActivities(input: unknown): ActivityEntry[] {
+  if (!Array.isArray(input)) return [];
+  const out: ActivityEntry[] = [];
+  const ids = new Set<string>();
+  input.forEach((raw, i) => {
+    if (out.length >= ACTIVITIES_MAX) return;
+    const a = sanitizeActivity(raw, i);
+    if (!a) return;
+    let id = a.id;
+    for (let n = 2; ids.has(id); n++) id = `${a.id}-${n}`;
+    ids.add(id);
+    out.push({ ...a, id });
+  });
+  return out;
+}
+
+/**
+ * One untrusted award row: a catalog pick (`key` in data/reference/awards.json) takes its name and tier from the
+ * catalog, not whatever the client sent, so the two can't drift apart; "Something else" (`key` null) needs a typed
+ * name and a tier pick. An unknown key drops the row (a catalog entry the client no longer recognizes).
+ */
+function sanitizeAward(v: unknown, index: number): AwardEntry | null {
+  if (!isObj(v)) return null;
+  const id = typeof v.id === "string" && v.id.trim() && v.id.length <= 40 ? v.id.trim() : `award-${index + 1}`;
+  const year = int(v.year, 9, 12) as HsYear | null;
+  if (typeof v.key === "string" && v.key.trim()) {
+    const entry = awardByKey(v.key);
+    if (!entry) return null;
+    return { id, key: entry.key, name: entry.name, tier: entry.tier, year };
+  }
+  const name = str(v.name, AWARD_NAME_MAX);
+  const tier = RECOGNITION_TIERS.includes(v.tier as RecognitionTier) ? (v.tier as RecognitionTier) : null;
+  if (!name || tier === null) return null;
+  return { id, key: null, name, tier, year };
+}
+
+/** Untrusted input as at most AWARDS_MAX AwardEntries: invalid rows dropped, ids made unique. */
+export function sanitizeAwards(input: unknown): AwardEntry[] {
+  if (!Array.isArray(input)) return [];
+  const out: AwardEntry[] = [];
+  const ids = new Set<string>();
+  input.forEach((raw, i) => {
+    if (out.length >= AWARDS_MAX) return;
+    const a = sanitizeAward(raw, i);
+    if (!a) return;
+    let id = a.id;
+    for (let n = 2; ids.has(id); n++) id = `${a.id}-${n}`;
+    ids.add(id);
+    out.push({ ...a, id });
+  });
+  return out;
 }
 
 /** The five subjects the counselor's "most demanding" question asks about. */
@@ -265,7 +395,22 @@ export const LOCAL_PROFILE_KEY = "student-profile";
 export function emptyProfile(): StudentProfileData {
   return {
     basics: { gradYear: null, stateOfResidence: null, highSchool: null, highSchoolId: null, feeWaiverEligible: null },
-    academics: { gpa: null, gpaScale: "4.0", weightedGpa: null, classRankPercentile: null, courseRigorCount: null, courses: [], apExamsPrivate: true, coreAtTopLevel: emptyCoreAtTopLevel(), coursePlan: null, schoolOffers: [] },
+    academics: {
+      gpa: null,
+      gpaScale: "4.0",
+      weightedGpa: null,
+      classRankPercentile: null,
+      courseRigorCount: null,
+      courses: [],
+      apExamsPrivate: true,
+      coreAtTopLevel: emptyCoreAtTopLevel(),
+      coursePlan: null,
+      schoolOffers: [],
+      classStanding: null,
+      activities: [],
+      awards: [],
+      firstGeneration: null,
+    },
     tests: {
       satTotal: null,
       satReading: null,
@@ -372,17 +517,22 @@ export function sanitizeProfile(input: unknown): StudentProfileData {
   // A profile saved before the list existed: its count becomes that many unnamed AP rows (rigor-in-context.md).
   const rows = Array.isArray(ac.courses) ? sanitizeCourses(ac.courses) : [];
   const courses = countIn !== null ? reconcileCourseCount(rows, countIn) : rows;
+  const { classStanding, classRankPercentile } = sanitizeClassStanding(ac.classStanding, ac.classRankPercentile);
   const academics: StudentProfileAcademics = {
     gpa: num(ac.gpa, 0, gpaMaxFor(gpaScale)),
     gpaScale,
     weightedGpa: num(ac.weightedGpa, 0, 120),
-    classRankPercentile: int(ac.classRankPercentile, 1, 100),
+    classRankPercentile,
     courseRigorCount: courses.length > 0 || countIn !== null ? courseRigorCountOf(courses) : null,
     courses,
     apExamsPrivate: ac.apExamsPrivate !== false,
     coreAtTopLevel: sanitizeCoreAtTopLevel(ac.coreAtTopLevel),
     coursePlan: sanitizeCoursePlan(ac.coursePlan),
     schoolOffers: sanitizeSchoolOffers(ac.schoolOffers),
+    classStanding,
+    activities: sanitizeActivities(ac.activities),
+    awards: sanitizeAwards(ac.awards),
+    firstGeneration: nullableBool(ac.firstGeneration),
   };
 
   const t = isObj(input.tests) ? input.tests : {};

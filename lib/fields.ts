@@ -559,6 +559,10 @@ export const FIELDS = {
   "reference.guaranteed_admission.rule": reported("Automatic admission rule (published program)"),
   "reference.guaranteed_admission.scope": reported("Whether the program admits to the campus or only to the system"),
   "reference.guaranteed_admission.major_guaranteed": reported("Whether automatic admission includes the major"),
+  // The reviewed awards catalog the AwardsForm picker reads (specs/chances/inputs-beyond-academics.md "Awards"), from
+  // data/reference/awards.json: not per-college (no school record carries it), but registered here like the other
+  // curated reference files so it has a citeField-able path for the picker's "source" note beside each award.
+  "reference.awards.body": reported("The organization that gives the award, and its source page"),
   // How the college admits by school or major (specs/chances/base-rates.md "Major", major-and-grades.md "Data"), from
   // data/major-admission.json: each value quoted from the unit's own page; lib/lineage.ts resolves the citation to it.
   "reported.major_admission.direct_admit": reported("Whether first-years are admitted directly to the school or major"),

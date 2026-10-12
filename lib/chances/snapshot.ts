@@ -175,6 +175,12 @@ export function estimateInputFromProfile(profile: StudentProfileData | null, uni
       round,
       highSchoolId: b?.highSchoolId ?? null,
       practice: t?.practice ?? false,
+      // Admission chances, next (specs/chances/depth.md, inputs-beyond-academics.md): passed through for U5's model
+      // and U6's readings; this unit only wires them onto EstimateStudent, never scores them.
+      activities: a?.activities ?? [],
+      awards: a?.awards ?? [],
+      classStanding: a?.classStanding ?? null,
+      firstGeneration: a?.firstGeneration ?? null,
     },
   };
 }

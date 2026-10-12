@@ -63,7 +63,7 @@ export interface AnalyticsEvents {
   /** `test` is which test the plan uses (sat, act, none), never the score. */
   plan_numbers_set: { test: "sat" | "act" | "none"; practice: boolean };
   /** The intake guide (specs/planner/redesign/intake.md): which step was completed, never the values entered. */
-  plan_intake_step: { step: 0 | 1 | 2 | 3; mode: "first" | "edit" };
+  plan_intake_step: { step: 0 | 1 | 2 | 3 | 4; mode: "first" | "edit" };
   plan_group_changed: { from_auto: boolean };
   plan_dream_set: { on: boolean };
   plan_round_changed: { from_auto: boolean; round: "ed" | "ed2" | "ea" | "rea" | "rd" | "rolling" };

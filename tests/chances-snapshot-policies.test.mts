@@ -274,3 +274,33 @@ test("guard: a like-you function without the sub-count rule shows a cell with 9 
   const rows = await assertLikeYou(w, { admitted: 9, notAdmitted: 45 });
   assert.throws(() => assert.deepEqual(rows, []));
 });
+
+/* ------------------------------------------------------------------ */
+/* Five levels (20261012100000_five_levels.sql)                        */
+/* ------------------------------------------------------------------ */
+
+test("five levels: the write keeps the new columns (hidden odds, tier, the three new ablations)", async () => {
+  const w = await world();
+  const snap = { ...JSON.parse(SNAP), estimate_group: "high_reach", estimate_label: "elite", hidden_odds: 0.035, selectivity_tier: "elite", without_depth: "reach", without_hooks: "high_reach", without_interest: "target", inputs_used: ["gpa", "activities", "legacy"] };
+  await record(w, w.alice, w.item, JSON.stringify(snap));
+  const row = await one(asUser<Record<string, string>>(w.db, w.alice, "select estimate_group, estimate_label, hidden_odds::text, selectivity_tier, without_depth, without_hooks, without_interest from public.application_snapshots where item_id = $1", [w.item]));
+  assert.deepEqual(row, { estimate_group: "high_reach", estimate_label: "elite", hidden_odds: "0.035", selectivity_tier: "elite", without_depth: "reach", without_hooks: "high_reach", without_interest: "target" });
+  // Re-recording updates them too.
+  await record(w, w.alice, w.item, JSON.stringify({ ...snap, hidden_odds: 0.04, without_hooks: "reach" }));
+  const again = await one(asUser<Record<string, string>>(w.db, w.alice, "select hidden_odds::text, without_hooks from public.application_snapshots where item_id = $1", [w.item]));
+  assert.deepEqual(again, { hidden_odds: "0.040", without_hooks: "reach" });
+});
+
+test("five levels: the migration applies over a snapshot stored with the old 'reach-for-everyone' label", async () => {
+  const FIVE = "20261012100000_five_levels.sql";
+  const db = await PGlite.create({ extensions: { pg_trgm } });
+  await db.exec(AUTH_STUB_SQL);
+  for (const name of ALL.filter((n) => n < FIVE)) await db.exec(readFileSync(join(DIR, name), "utf8"));
+  await db.exec("alter table public.application_snapshots disable trigger user");
+  await db.exec("set session_replication_role = replica");
+  await db.exec("insert into public.application_snapshots (item_id, list_id, student_id, unit_id, season, applied_on, estimate_group, estimate_label) values (gen_random_uuid(), gen_random_uuid(), gen_random_uuid(), '243744', 2027, '2026-11-01', 'reach', 'reach-for-everyone')");
+  await db.exec("set session_replication_role = origin");
+  await db.exec(readFileSync(join(DIR, FIVE), "utf8"));
+  const rows = (await db.query<{ estimate_label: string }>("select estimate_label from public.application_snapshots")).rows;
+  assert.deepEqual(rows, [{ estimate_label: "reach-for-everyone" }]);
+});

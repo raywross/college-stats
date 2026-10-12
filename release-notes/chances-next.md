@@ -22,10 +22,20 @@ summary: Quad's estimate now reads on five levels from High reach to Safe, every
 - **Your plan orders itself.** Your Dream college comes first, then each level's colleges closest to the next level up.
   The planner no longer suggests early decision for a Dream that's a High reach, and it points out where applying
   early would help most.
-- **Beyond grades and scores.** Add where you stand in your class, up to eight activities with the years you did them
-  and your role each year, and awards from a reviewed list. Your courses now read as tracks by subject against your
-  intended major. Each of these counts only at colleges that say they weigh it. You can also say whether you're the
-  first in your family to go to college; the site shows it, but it doesn't change your level.
+- **More of your grades.** Add your weighted GPA if your school has one, where you stand in your class, and whether
+  you expect to be valedictorian or salutatorian. A weighted GPA above your unweighted one shows you're taking harder
+  classes and doing well in them, and it counts.
+- **Your activities, step by step.** The planner now asks about sports, clubs and organizations, work and
+  internships, and everything else (awards, volunteering, projects) on separate screens. Start typing and pick from
+  lists of high school sports and national organizations like DECA, HOSA, and Model UN; mark each year as JV, Varsity,
+  or Captain, Member, Treasurer, or President. Every screen is optional.
+- **Depth counts.** Years in the same few things count more than a long list, and when your courses and your
+  activities line up (art classes and the art club, science courses and Science Olympiad), the estimate notices. Each
+  of these counts only at colleges that say they weigh it. You can also say whether you're the first in your family to
+  go to college; the site shows it, but it doesn't change your level.
+- **The full picture.** At the most selective colleges, Reach now means every part of your record is strong and on
+  file: grades, the hardest courses with top grades in them, class rank, and activities that go deep. If something is
+  missing, the estimate says what to add.
 - **Legacy and recruiting, per college.** In the planner, mark a family connection or where you are in a coach's
   recruiting at a college on your list. In states that ban legacy preference, the site says so and names the law.
 

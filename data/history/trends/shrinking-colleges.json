@@ -645,5 +645,611 @@
     "n": 784,
     "applicants": [2582,2620,2893,2759,null,null,null,null,null,null,null],
     "enrolled": [476,453,464.5,455.5,null,null,null,null,null,null,null]
+  },
+  "campusBased": {
+    "ten": {
+      "from": 2014,
+      "to": 2024,
+      "n": 1406,
+      "national": {
+        "key": "all",
+        "label": "All colleges",
+        "n": 1406,
+        "values": {
+          "shrank10": 0.5199,
+          "grew10": 0.2112,
+          "medianChange": -0.1099,
+          "totalChange": -0.0354
+        }
+      },
+      "groupings": [
+        {
+          "grouping": "region",
+          "label": "Region",
+          "floor": 30,
+          "groups": [
+            {
+              "key": "Northeast",
+              "label": "Northeast",
+              "n": 391,
+              "values": {
+                "shrank10": 0.4859,
+                "grew10": 0.1918,
+                "medianChange": -0.0908,
+                "totalChange": -0.0575
+              }
+            },
+            {
+              "key": "Southeast",
+              "label": "Southeast",
+              "n": 351,
+              "values": {
+                "shrank10": 0.4815,
+                "grew10": 0.265,
+                "medianChange": -0.0748,
+                "totalChange": 0.0138
+              }
+            },
+            {
+              "key": "Midwest",
+              "label": "Midwest",
+              "n": 367,
+              "values": {
+                "shrank10": 0.6267,
+                "grew10": 0.1362,
+                "medianChange": -0.1612,
+                "totalChange": -0.1255
+              }
+            },
+            {
+              "key": "Southwest",
+              "label": "Southwest",
+              "n": 102,
+              "values": {
+                "shrank10": 0.4314,
+                "grew10": 0.3137,
+                "medianChange": -0.0417,
+                "totalChange": 0.0657
+              }
+            },
+            {
+              "key": "West",
+              "label": "West",
+              "n": 166,
+              "values": {
+                "shrank10": 0.4337,
+                "grew10": 0.2831,
+                "medianChange": -0.0494,
+                "totalChange": 0.0139
+              }
+            },
+            {
+              "key": "Territories",
+              "label": "Territories",
+              "n": 29,
+              "tooFew": true
+            }
+          ]
+        },
+        {
+          "grouping": "control",
+          "label": "Public or private",
+          "floor": 30,
+          "groups": [
+            {
+              "key": "public",
+              "label": "Public",
+              "n": 541,
+              "values": {
+                "shrank10": 0.5416,
+                "grew10": 0.2274,
+                "medianChange": -0.1271,
+                "totalChange": -0.0245
+              }
+            },
+            {
+              "key": "private-nonprofit",
+              "label": "Private nonprofit",
+              "n": 865,
+              "values": {
+                "shrank10": 0.5064,
+                "grew10": 0.2012,
+                "medianChange": -0.1037,
+                "totalChange": -0.0639
+              }
+            }
+          ]
+        },
+        {
+          "grouping": "size",
+          "label": "Size",
+          "floor": 30,
+          "groups": [
+            {
+              "key": "small",
+              "label": "Under 2,000 undergrads",
+              "n": 670,
+              "values": {
+                "shrank10": 0.6328,
+                "grew10": 0.1433,
+                "medianChange": -0.1813,
+                "totalChange": -0.2085
+              }
+            },
+            {
+              "key": "medium",
+              "label": "2,000–9,999",
+              "n": 538,
+              "values": {
+                "shrank10": 0.5,
+                "grew10": 0.21,
+                "medianChange": -0.0998,
+                "totalChange": -0.1253
+              }
+            },
+            {
+              "key": "large",
+              "label": "10,000+",
+              "n": 198,
+              "values": {
+                "shrank10": 0.1919,
+                "grew10": 0.4444,
+                "medianChange": 0.0736,
+                "totalChange": 0.0678
+              }
+            }
+          ]
+        },
+        {
+          "grouping": "selectivity",
+          "label": "Selectivity",
+          "floor": 30,
+          "groups": [
+            {
+              "key": "most",
+              "label": "Under 25% admitted",
+              "n": 80,
+              "values": {
+                "shrank10": 0.0125,
+                "grew10": 0.3875,
+                "medianChange": 0.0584,
+                "totalChange": 0.1162
+              }
+            },
+            {
+              "key": "more",
+              "label": "25–59% admitted",
+              "n": 231,
+              "values": {
+                "shrank10": 0.3723,
+                "grew10": 0.3247,
+                "medianChange": 0.0027,
+                "totalChange": 0.0854
+              }
+            },
+            {
+              "key": "less",
+              "label": "60% or more",
+              "n": 1007,
+              "values": {
+                "shrank10": 0.5829,
+                "grew10": 0.1768,
+                "medianChange": -0.144,
+                "totalChange": -0.0776
+              }
+            }
+          ]
+        },
+        {
+          "grouping": "setting",
+          "label": "Setting",
+          "floor": 30,
+          "groups": [
+            {
+              "key": "city",
+              "label": "City",
+              "n": 695,
+              "values": {
+                "shrank10": 0.4748,
+                "grew10": 0.2432,
+                "medianChange": -0.081,
+                "totalChange": -0.0035
+              }
+            },
+            {
+              "key": "suburb",
+              "label": "Suburb",
+              "n": 321,
+              "values": {
+                "shrank10": 0.4984,
+                "grew10": 0.2305,
+                "medianChange": -0.0996,
+                "totalChange": -0.0409
+              }
+            },
+            {
+              "key": "town",
+              "label": "Town",
+              "n": 284,
+              "values": {
+                "shrank10": 0.6092,
+                "grew10": 0.1408,
+                "medianChange": -0.1592,
+                "totalChange": -0.1464
+              }
+            },
+            {
+              "key": "rural",
+              "label": "Rural",
+              "n": 106,
+              "values": {
+                "shrank10": 0.6415,
+                "grew10": 0.1321,
+                "medianChange": -0.1902,
+                "totalChange": -0.151
+              }
+            }
+          ]
+        },
+        {
+          "grouping": "research",
+          "label": "Research",
+          "floor": 30,
+          "groups": [
+            {
+              "key": "R1",
+              "label": "R1 universities",
+              "n": 179,
+              "values": {
+                "shrank10": 0.1453,
+                "grew10": 0.486,
+                "medianChange": 0.0904,
+                "totalChange": 0.0937
+              }
+            },
+            {
+              "key": "R2",
+              "label": "R2 universities",
+              "n": 121,
+              "values": {
+                "shrank10": 0.3554,
+                "grew10": 0.2479,
+                "medianChange": -0.037,
+                "totalChange": -0.0474
+              }
+            },
+            {
+              "key": "RCU",
+              "label": "Research college or university",
+              "n": 180,
+              "values": {
+                "shrank10": 0.5222,
+                "grew10": 0.1833,
+                "medianChange": -0.1272,
+                "totalChange": -0.1223
+              }
+            },
+            {
+              "key": "other",
+              "label": "Other colleges",
+              "n": 926,
+              "values": {
+                "shrank10": 0.6134,
+                "grew10": 0.1587,
+                "medianChange": -0.1642,
+                "totalChange": -0.1695
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "five": {
+      "from": 2019,
+      "to": 2024,
+      "n": 1416,
+      "national": {
+        "key": "all",
+        "label": "All colleges",
+        "n": 1416,
+        "values": {
+          "shrank10": 0.423,
+          "grew10": 0.1427,
+          "medianChange": -0.0667,
+          "totalChange": -0.0328
+        }
+      },
+      "groupings": [
+        {
+          "grouping": "region",
+          "label": "Region",
+          "floor": 30,
+          "groups": [
+            {
+              "key": "Northeast",
+              "label": "Northeast",
+              "n": 378,
+              "values": {
+                "shrank10": 0.4048,
+                "grew10": 0.1243,
+                "medianChange": -0.0581,
+                "totalChange": -0.0572
+              }
+            },
+            {
+              "key": "Southeast",
+              "label": "Southeast",
+              "n": 359,
+              "values": {
+                "shrank10": 0.3788,
+                "grew10": 0.1866,
+                "medianChange": -0.0513,
+                "totalChange": 0.0042
+              }
+            },
+            {
+              "key": "Midwest",
+              "label": "Midwest",
+              "n": 375,
+              "values": {
+                "shrank10": 0.48,
+                "grew10": 0.1227,
+                "medianChange": -0.0918,
+                "totalChange": -0.0685
+              }
+            },
+            {
+              "key": "Southwest",
+              "label": "Southwest",
+              "n": 107,
+              "values": {
+                "shrank10": 0.3178,
+                "grew10": 0.243,
+                "medianChange": -0.0507,
+                "totalChange": 0.0251
+              }
+            },
+            {
+              "key": "West",
+              "label": "West",
+              "n": 167,
+              "values": {
+                "shrank10": 0.4192,
+                "grew10": 0.0898,
+                "medianChange": -0.0472,
+                "totalChange": -0.0307
+              }
+            },
+            {
+              "key": "Territories",
+              "label": "Territories",
+              "n": 30,
+              "values": {
+                "shrank10": 0.8667,
+                "grew10": 0.0333,
+                "medianChange": -0.2148,
+                "totalChange": -0.2378
+              }
+            }
+          ]
+        },
+        {
+          "grouping": "control",
+          "label": "Public or private",
+          "floor": 30,
+          "groups": [
+            {
+              "key": "public",
+              "label": "Public",
+              "n": 534,
+              "values": {
+                "shrank10": 0.4532,
+                "grew10": 0.1217,
+                "medianChange": -0.0807,
+                "totalChange": -0.0295
+              }
+            },
+            {
+              "key": "private-nonprofit",
+              "label": "Private nonprofit",
+              "n": 882,
+              "values": {
+                "shrank10": 0.4048,
+                "grew10": 0.1553,
+                "medianChange": -0.0538,
+                "totalChange": -0.0415
+              }
+            }
+          ]
+        },
+        {
+          "grouping": "size",
+          "label": "Size",
+          "floor": 30,
+          "groups": [
+            {
+              "key": "small",
+              "label": "Under 2,000 undergrads",
+              "n": 674,
+              "values": {
+                "shrank10": 0.4955,
+                "grew10": 0.1306,
+                "medianChange": -0.0985,
+                "totalChange": -0.1262
+              }
+            },
+            {
+              "key": "medium",
+              "label": "2,000–9,999",
+              "n": 542,
+              "values": {
+                "shrank10": 0.4262,
+                "grew10": 0.1347,
+                "medianChange": -0.069,
+                "totalChange": -0.0843
+              }
+            },
+            {
+              "key": "large",
+              "label": "10,000+",
+              "n": 200,
+              "values": {
+                "shrank10": 0.17,
+                "grew10": 0.205,
+                "medianChange": 0.015,
+                "totalChange": 0.0189
+              }
+            }
+          ]
+        },
+        {
+          "grouping": "selectivity",
+          "label": "Selectivity",
+          "floor": 30,
+          "groups": [
+            {
+              "key": "most",
+              "label": "Under 25% admitted",
+              "n": 81,
+              "values": {
+                "shrank10": 0.0123,
+                "grew10": 0.1605,
+                "medianChange": 0.0392,
+                "totalChange": 0.0625
+              }
+            },
+            {
+              "key": "more",
+              "label": "25–59% admitted",
+              "n": 233,
+              "values": {
+                "shrank10": 0.3004,
+                "grew10": 0.2232,
+                "medianChange": -0.0097,
+                "totalChange": 0.0335
+              }
+            },
+            {
+              "key": "less",
+              "label": "60% or more",
+              "n": 1010,
+              "values": {
+                "shrank10": 0.4733,
+                "grew10": 0.1228,
+                "medianChange": -0.0917,
+                "totalChange": -0.0601
+              }
+            }
+          ]
+        },
+        {
+          "grouping": "setting",
+          "label": "Setting",
+          "floor": 30,
+          "groups": [
+            {
+              "key": "city",
+              "label": "City",
+              "n": 711,
+              "values": {
+                "shrank10": 0.4093,
+                "grew10": 0.1547,
+                "medianChange": -0.0595,
+                "totalChange": -0.0167
+              }
+            },
+            {
+              "key": "suburb",
+              "label": "Suburb",
+              "n": 316,
+              "values": {
+                "shrank10": 0.4272,
+                "grew10": 0.1266,
+                "medianChange": -0.0592,
+                "totalChange": -0.0412
+              }
+            },
+            {
+              "key": "town",
+              "label": "Town",
+              "n": 285,
+              "values": {
+                "shrank10": 0.4386,
+                "grew10": 0.1263,
+                "medianChange": -0.0787,
+                "totalChange": -0.0843
+              }
+            },
+            {
+              "key": "rural",
+              "label": "Rural",
+              "n": 104,
+              "values": {
+                "shrank10": 0.4615,
+                "grew10": 0.1538,
+                "medianChange": -0.0745,
+                "totalChange": -0.09
+              }
+            }
+          ]
+        },
+        {
+          "grouping": "research",
+          "label": "Research",
+          "floor": 30,
+          "groups": [
+            {
+              "key": "R1",
+              "label": "R1 universities",
+              "n": 179,
+              "values": {
+                "shrank10": 0.095,
+                "grew10": 0.2402,
+                "medianChange": 0.0403,
+                "totalChange": 0.0386
+              }
+            },
+            {
+              "key": "R2",
+              "label": "R2 universities",
+              "n": 126,
+              "values": {
+                "shrank10": 0.2937,
+                "grew10": 0.1429,
+                "medianChange": -0.0279,
+                "totalChange": -0.0304
+              }
+            },
+            {
+              "key": "RCU",
+              "label": "Research college or university",
+              "n": 181,
+              "values": {
+                "shrank10": 0.4586,
+                "grew10": 0.0884,
+                "medianChange": -0.0795,
+                "totalChange": -0.0966
+              }
+            },
+            {
+              "key": "other",
+              "label": "Other colleges",
+              "n": 930,
+              "values": {
+                "shrank10": 0.4968,
+                "grew10": 0.1344,
+                "medianChange": -0.0987,
+                "totalChange": -0.1131
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "excluded": {
+      "onlineFirst": 67,
+      "forProfit": 37,
+      "campuses": 27
+    }
   }
 }

@@ -175,13 +175,20 @@ export function sanitizeSchoolOffers(input: unknown): string[] {
 /*  specs/chances/inputs-beyond-academics.md "Class standing", "Awards") */
 /* ------------------------------------------------------------------ */
 
-const CLASS_STANDING_VALUES: readonly ClassStanding[] = ["top1", "top5", "top10", "top25", "top50", "lower", "no_rank"];
+/**
+ * The picks the form offers and the sanitizer accepts. "no_rank" ("My school doesn't rank") is left out on purpose
+ * (owner, 2026-10-12: the question asks the student's own sense of where they stand, not whether their school
+ * ranks): a stored "no_rank" — from before this change, or any other untrusted input — falls through to the
+ * percentile check below, which finds no percentile on file either, so it reads as unanswered (null), not as a
+ * fourth kind of answer the form has to keep showing.
+ */
+const CLASS_STANDING_VALUES: readonly ClassStanding[] = ["top1", "top5", "top10", "top25", "top50", "lower"];
 
 /**
  * The class-standing pick and `classRankPercentile` kept in sync (inputs-beyond-academics.md "Class standing"):
  * picking a value sets the percentile from CLASS_STANDING_PERCENTILE (overriding any percentile also sent, since the
- * pick is what the form shows); with no pick, a percentile that exactly matches one of the table's values sets the
- * matching pick; any other percentile, or none, keeps `classStanding` null. "no_rank" stores a null percentile.
+ * pick is what the form shows); with no pick (including a stored "no_rank"), a percentile that exactly matches one
+ * of the table's values sets the matching pick; any other percentile, or none, keeps `classStanding` null.
  */
 export function sanitizeClassStanding(pickInput: unknown, percentileInput: unknown): { classStanding: ClassStanding | null; classRankPercentile: number | null } {
   if (typeof pickInput === "string" && (CLASS_STANDING_VALUES as readonly string[]).includes(pickInput)) {

@@ -183,6 +183,21 @@ export function gpaCheck(d: Pick<IntakeDraft, "gpa" | "scaleOverride">): { ok: b
   return { ok: false, hint, tone: "amber", caption };
 }
 
+/**
+ * The weighted-GPA field reads like the unweighted one (owner, 2026-10-12: "it doesn't use the same format as the
+ * non-weighted where it calculates the scale based on what's entered"): the scale is detected from what's typed
+ * (`detectScale`) and shown the same way ("Looks like a …"), but a weighted value is never flagged for running
+ * above its scale's top — weighting runs higher by design (a 4.0 school's weighted 4.6; a 100-point school's
+ * 104.3). Empty is valid; the field is optional.
+ */
+export function weightedGpaCheck(weightedGpa: string): { ok: boolean; hint: string; tone: "muted" | "amber" } {
+  const empty = weightedGpa.trim() === "";
+  if (empty) return { ok: true, hint: "Many schools weight honors and AP grades; if yours does, add it.", tone: "muted" };
+  const n = numberOf(weightedGpa);
+  if (!Number.isFinite(n) || n <= 0) return { ok: false, hint: "Enter a number, like 4.4 or 104.3.", tone: "amber" };
+  return { ok: true, hint: `Looks like a ${scaleLabel(detectScale(weightedGpa))}.`, tone: "muted" };
+}
+
 /* ------------------------------------------------------------------ */
 /* Step 2: test                                                        */
 /* ------------------------------------------------------------------ */
@@ -495,8 +510,10 @@ export function draftFromProfile(profile: StudentProfileData | null, gradYear: n
     gpa,
     scaleOverride,
     weightedGpa: a.weightedGpa === null ? "" : trimNumber(a.weightedGpa),
-    classStanding: a.classStanding,
-    classRankPercentile: a.classRankPercentile,
+    // A stored "no_rank" (from before the question was reworded, owner 2026-10-12) reads as unanswered, like
+    // sanitizeClassStanding treats it everywhere else.
+    classStanding: a.classStanding === "no_rank" ? null : a.classStanding,
+    classRankPercentile: a.classStanding === "no_rank" ? null : a.classRankPercentile,
     rankExpectation: a.rankExpectation,
     test,
     score: score === null ? "" : String(score),
@@ -629,9 +646,10 @@ export function parseIntakeSave(input: unknown): IntakeSave | null {
     if (typeof input.weightedGpa !== "number" || input.weightedGpa < 0 || input.weightedGpa > 120) return null;
     weightedGpa = input.weightedGpa;
   }
+  // An unrecognized pick (including a stored "no_rank" from before the question was reworded) reads as unanswered
+  // rather than refusing the whole save — matches sanitizeClassStanding's own leniency.
   let classStanding: ClassStanding | null = null;
-  if (input.classStanding !== null && input.classStanding !== undefined) {
-    if (!isClassStanding(input.classStanding)) return null;
+  if (input.classStanding !== null && input.classStanding !== undefined && isClassStanding(input.classStanding)) {
     classStanding = input.classStanding;
   }
   let classRankPercentile: number | null = null;

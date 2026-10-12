@@ -11,6 +11,7 @@ import {
   gpaCheck,
   INTAKE_SCALES,
   scaleLabel,
+  weightedGpaCheck,
   type IntakeDraft,
 } from "@/lib/planner/intake";
 import { weightedGpaHint, type GpaScale } from "@/lib/student-profile";
@@ -32,6 +33,7 @@ export function GradesStep({
   const years = classYearOptions(today, storedGradYear);
   const check = gpaCheck(draft);
   const scale = effectiveScale(draft);
+  const weightedCheck = weightedGpaCheck(draft.weightedGpa);
   const weightedHint = weightedGpaHint(Number(draft.gpa.trim()) || null, scale, draft.weightedGpa.trim() === "" ? null : Number(draft.weightedGpa.trim()));
 
   const pickScale = (s: GpaScale) => {
@@ -144,7 +146,7 @@ export function GradesStep({
           aria-label="Weighted GPA"
           className="h-12 w-full rounded-2xl border px-4 text-lg font-semibold outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 sm:w-40"
         />
-        <p className="text-sm text-muted-foreground">Many schools weight honors and AP grades; if yours does, add it.</p>
+        <p className={cn("text-sm", weightedCheck.tone === "amber" ? "text-amber-700 dark:text-amber-400" : "text-muted-foreground")}>{weightedCheck.hint}</p>
         {weightedHint && <p className="text-sm text-amber-700 dark:text-amber-400">{weightedHint}</p>}
       </div>
 

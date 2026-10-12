@@ -28,6 +28,7 @@ import {
   searchAp,
   stepValid,
   targetCheck,
+  weightedGpaCheck,
   yearOptions,
   yearStatus,
   type IntakeDraft,
@@ -123,6 +124,18 @@ test("gpaCheck: hints and captions for empty, detected, overridden, and out-of-r
   assert.deepEqual(four, { ok: false, hint: "On a 4.0 scale, GPA goes up to 4.0.", tone: "amber", caption: "Scale" });
   assert.equal(gpaCheck({ gpa: "4.3", scaleOverride: null }).ok, true, "4.3 is detected as 5.0 weighted");
   assert.equal(gpaCheck({ gpa: "92", scaleOverride: "5.0" }).ok, false);
+});
+
+test("weightedGpaCheck: reads like the unweighted GPA (detects and shows the scale), but a value above the scale's top is never flagged", () => {
+  assert.deepEqual(weightedGpaCheck(""), { ok: true, hint: "Many schools weight honors and AP grades; if yours does, add it.", tone: "muted" });
+  // A 4.0 school's weighted 4.6: above the 4.0 top, detected as the 5.0-weighted family, never an error.
+  assert.deepEqual(weightedGpaCheck("4.6"), { ok: true, hint: "Looks like a 5.0 weighted.", tone: "muted" });
+  // A 100-point school's weighted 104.3: above the 100 top, still a clean 100-point read.
+  assert.deepEqual(weightedGpaCheck("104.3"), { ok: true, hint: "Looks like a 100-point scale.", tone: "muted" });
+  assert.equal(weightedGpaCheck("3.9").hint, "Looks like a 4.0 scale.");
+  const bad = weightedGpaCheck("abc");
+  assert.equal(bad.ok, false);
+  assert.equal(bad.tone, "amber");
 });
 
 test("gpaMaxFor: a 100-point GPA may run to 120 everywhere the profile is sanitized", () => {
@@ -378,6 +391,15 @@ test("round trip: weighted GPA, class standing, and rank expectation save back o
   assert.deepEqual(draftFromProfile(out, 2027, TODAY).weightedGpa, "4.4");
   assert.equal(draftFromProfile(out, 2027, TODAY).classStanding, "top5");
   assert.equal(draftFromProfile(out, 2027, TODAY).rankExpectation, "salutatorian");
+});
+
+test("draftFromProfile: a stored 'no_rank' (the removed 'my school doesn't rank' pick) opens as unanswered", () => {
+  const p = sampleProfile();
+  p.academics.classStanding = "no_rank";
+  p.academics.classRankPercentile = null;
+  const d = draftFromProfile(p, 2027, TODAY);
+  assert.equal(d.classStanding, null);
+  assert.equal(d.classRankPercentile, null);
 });
 
 test("applyIntake: the picked year and score land on the course list; the numbers land on the profile", () => {
@@ -639,7 +661,6 @@ test("parseIntakeSave: accepts a good save and refuses anything off", () => {
     { ...GOOD, weightedGpa: 121 },
     { ...GOOD, weightedGpa: -1 },
     { ...GOOD, weightedGpa: "4.4" },
-    { ...GOOD, classStanding: "top2" },
     { ...GOOD, classRankPercentile: 0 },
     { ...GOOD, classRankPercentile: 101 },
     { ...GOOD, classRankPercentile: 10.5 },
@@ -657,6 +678,10 @@ test("parseIntakeSave: accepts a good save and refuses anything off", () => {
     parseIntakeSave({ ...GOOD, classStanding: "top5", classRankPercentile: 5, rankExpectation: "salutatorian" }),
     { ...GOOD, classStanding: "top5", classRankPercentile: 5, rankExpectation: "salutatorian" },
   );
+  // An unrecognized classStanding (including a stored "no_rank" from before the question was reworded) reads as
+  // unanswered rather than refusing the whole save — matches sanitizeClassStanding's own leniency (owner, 2026-10-12).
+  assert.equal(parseIntakeSave({ ...GOOD, classStanding: "top2" })?.classStanding, null);
+  assert.equal(parseIntakeSave({ ...GOOD, classStanding: "no_rank" })?.classStanding, null);
 });
 
 /* ------------------------------------------------------------------ */

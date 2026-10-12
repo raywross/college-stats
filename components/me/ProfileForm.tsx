@@ -6,6 +6,7 @@ import { SETTING_GROUPS } from "@/lib/campus-profile";
 import { SIZE_BUCKETS } from "@/lib/metrics";
 import { MAJOR_FAMILY_CODES, MAJOR_FAMILIES, type MajorFamily } from "@/lib/majors";
 import { GPA_SCALES, MAX_INTENDED_MAJORS, OUTSIDE_US, effectiveGradYear, gpaDisplay, weightedGpaHint, type GpaScale, type StudentProfileData } from "@/lib/student-profile";
+import { weightedGpaCheck } from "@/lib/planner/intake";
 import { saveStudentProfile, type ProfileSaveState } from "@/app/me/actions";
 import { Term } from "@/components/ui/info-tip";
 import { HighSchoolPicker } from "@/components/high-schools/HighSchoolPicker";
@@ -163,8 +164,10 @@ export function ProfileForm({
   const [gpaNum, setGpaNum] = useState(data.academics.gpa);
   const [gpaScaleNum, setGpaScaleNum] = useState(data.academics.gpaScale);
   const [weightedGpaNum, setWeightedGpaNum] = useState(data.academics.weightedGpa);
+  const [weightedGpaText, setWeightedGpaText] = useState(data.academics.weightedGpa === null ? "" : String(data.academics.weightedGpa));
   const [classStanding, setClassStanding] = useState(data.academics.classStanding);
   const weightedHint = weightedGpaHint(gpaNum, gpaScaleNum, weightedGpaNum);
+  const weightedCheck = weightedGpaCheck(weightedGpaText);
 
   return (
     <form action={action} className="space-y-4">
@@ -256,7 +259,7 @@ export function ProfileForm({
             setGpaScaleNum(s);
           }}
         />
-        <Field label="Weighted GPA (optional)" htmlFor="weightedGpa" hint="Many schools weight honors and AP grades; if yours does, add it. 0–120: some weight above 100.">
+        <Field label="Weighted GPA (optional)" htmlFor="weightedGpa">
           <input
             id="weightedGpa"
             name="weightedGpa"
@@ -266,9 +269,14 @@ export function ProfileForm({
             max={120}
             disabled={disabled}
             defaultValue={data.academics.weightedGpa ?? ""}
-            onChange={(e) => setWeightedGpaNum(e.currentTarget.value === "" ? null : Number(e.currentTarget.value))}
+            onChange={(e) => {
+              const text = e.currentTarget.value;
+              setWeightedGpaText(text);
+              setWeightedGpaNum(text === "" ? null : Number(text));
+            }}
             className={`${inputCls} mt-1.5`}
           />
+          <p className={`mt-1 text-xs ${weightedCheck.tone === "amber" ? "text-amber-700 dark:text-amber-400" : "text-muted-foreground"}`}>{weightedCheck.hint}</p>
           {weightedHint && <p className="mt-1 text-xs text-amber-700 dark:text-amber-400">{weightedHint}</p>}
         </Field>
         <div className="sm:col-span-2">

@@ -7,9 +7,8 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { datesFor, inTimeText, registerByText, targetMoves, type InTimeRow } from "../lib/planner/scores.ts";
 import type { Cycle, CycleEntry } from "../lib/planner/cycle.ts";
-import type { MoveUp } from "../lib/chances/baseline.ts";
 import type { PlanItem, PlanSchool } from "../lib/planner/types.ts";
-import type { PlanRowView } from "../lib/planner/plan-view.ts";
+import type { LevelMoveUp, PlanRowView } from "../lib/planner/plan-view.ts";
 
 const entry = (key: string, date: string, registerBy: string): CycleEntry => ({
   key,
@@ -115,7 +114,7 @@ test("registerByText: no registration date on file yet", () => {
 /* ------------------------------------------------------------------ */
 
 /** Just the fields `targetMoves` reads (`Pick<PlanRowView, "item" | "school" | "moveUp">`). */
-function targetRow(id: string, name: string, moveUp: MoveUp | null): Pick<PlanRowView, "item" | "school" | "moveUp"> {
+function targetRow(id: string, name: string, moveUp: LevelMoveUp | null): Pick<PlanRowView, "item" | "school" | "moveUp"> {
   return {
     item: { id } as PlanItem,
     school: name ? ({ name } as PlanSchool) : null,

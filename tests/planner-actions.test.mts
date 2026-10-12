@@ -205,6 +205,8 @@ const item = (over: Partial<PlanItem> = {}): PlanItem => ({
   transcript_shared: true,
   category_source: "auto",
   round_source: "auto",
+  legacy: false,
+  recruited: "none",
   ...over,
 });
 
@@ -230,6 +232,7 @@ const school = (over: Partial<PlanSchool> = {}): PlanSchool => ({
   cites: {},
   gpaAverage: null,
   standing: { admitRate: 0.2, sat: null, act: null, gpaAverage: null, testPolicy: null },
+  poolSchool: {} as PlanSchool["poolSchool"],
   ...over,
 });
 

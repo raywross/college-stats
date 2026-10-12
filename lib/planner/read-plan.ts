@@ -19,7 +19,9 @@ export const PLAN_ITEM_BASE_COLUMNS =
   "id, list_id, unit_id, category, status, outcome, round, position, added_by, added_at, decision_date, deadline_text, deadline_date, enrolling, updates, visited_on, follows_social, dream, priority, followed_networks, info_requested_on, application_platform, applied_on, complete_on, portal_url, committed_on, withdrawn_on, recommendations_count, supplements_count, transcript_shared";
 /** The redesign's two columns (20261010120000_plan_redesign.sql). */
 export const PLAN_ITEM_SOURCE_COLUMNS = "category_source, round_source";
-export const PLAN_ITEM_COLUMNS = `${PLAN_ITEM_BASE_COLUMNS}, ${PLAN_ITEM_SOURCE_COLUMNS}`;
+/** The five-levels migration's per-college hooks (20261012100000_five_levels.sql). */
+export const PLAN_ITEM_HOOKS_COLUMNS = "legacy, recruited";
+export const PLAN_ITEM_COLUMNS = `${PLAN_ITEM_BASE_COLUMNS}, ${PLAN_ITEM_SOURCE_COLUMNS}, ${PLAN_ITEM_HOOKS_COLUMNS}`;
 export const PLAN_TASK_COLUMNS =
   "id, list_id, item_id, key, kind, title, detail, due_on, window_start, window_end, assignee, source, source_field, source_edition, date_note, done_at, done_by, snoozed_until, dismissed, orphaned, position, created_by, created_at";
 const VISIT_COLUMNS = "id, item_id, kind, on_date, at_time, registered, registration_url, who, rating, notes, created_by, created_at, updated_at";
@@ -52,6 +54,11 @@ export function isMissingSourceColumn(error: PgError): boolean {
   return isMissing(error) && /category_source|round_source/.test(error.message ?? "");
 }
 
+/** The error is about the five-levels migration's hooks columns (not applied yet). */
+export function isMissingHooksColumn(error: PgError): boolean {
+  return isMissing(error) && /legacy|recruited/.test(error.message ?? "");
+}
+
 /** The planner's tables aren't in the database yet (the migration hasn't been applied). */
 export class PlannerSetupError extends Error {
   constructor(message: string) {
@@ -75,14 +82,25 @@ export function withBackfillSources(rows: Omit<PlanItem, "category_source" | "ro
   }));
 }
 
-/** The list's items, retrying without the redesign's columns when the database doesn't have them yet. */
+/** Rows read before the five-levels migration (20261012100000) has applied: legacy/recruited default like a fresh row. */
+function withBackfillHooks<T>(rows: T[]): (T & { legacy: boolean; recruited: "none" })[] {
+  return rows.map((r) => ({ ...r, legacy: false, recruited: "none" as const }));
+}
+
+/** The list's items, retrying without newer columns when the database doesn't have them yet. */
 export async function readItems(supabase: SupabaseClient, listId: string): Promise<{ data: PlanItem[] | null; error: PgError | null; sourcesMissing: boolean }> {
   const first = await supabase.from("list_items").select(PLAN_ITEM_COLUMNS).eq("list_id", listId).order("position");
   if (!first.error) return { data: (first.data ?? []) as unknown as PlanItem[], error: null, sourcesMissing: false };
-  if (!isMissingSourceColumn(first.error)) return { data: null, error: first.error, sourcesMissing: false };
+  if (isMissingHooksColumn(first.error)) {
+    const withoutHooks = await supabase.from("list_items").select(`${PLAN_ITEM_BASE_COLUMNS}, ${PLAN_ITEM_SOURCE_COLUMNS}`).eq("list_id", listId).order("position");
+    if (!withoutHooks.error) return { data: withBackfillHooks((withoutHooks.data ?? []) as unknown as Omit<PlanItem, "legacy" | "recruited">[]), error: null, sourcesMissing: false };
+    if (!isMissingSourceColumn(withoutHooks.error)) return { data: null, error: withoutHooks.error, sourcesMissing: false };
+  } else if (!isMissingSourceColumn(first.error)) {
+    return { data: null, error: first.error, sourcesMissing: false };
+  }
   const retry = await supabase.from("list_items").select(PLAN_ITEM_BASE_COLUMNS).eq("list_id", listId).order("position");
   if (retry.error) return { data: null, error: retry.error, sourcesMissing: true };
-  return { data: withBackfillSources((retry.data ?? []) as unknown as PlanItem[]), error: null, sourcesMissing: true };
+  return { data: withBackfillHooks(withBackfillSources((retry.data ?? []) as unknown as PlanItem[])), error: null, sourcesMissing: true };
 }
 
 /**

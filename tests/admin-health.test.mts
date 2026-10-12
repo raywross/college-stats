@@ -7,8 +7,10 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import nodeModule from "node:module";
-import { readdirSync, readFileSync, statSync } from "node:fs";
-import { join } from "node:path";
+import { mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { spawnSync } from "node:child_process";
+import { tmpdir } from "node:os";
+import { dirname, join } from "node:path";
 
 // lib/admin/health.ts starts with `import "server-only"`, which only Next.js resolves; stand in an empty module.
 // (module.registerHooks is in Node 24; the installed @types/node predates it.)
@@ -25,15 +27,18 @@ registerHooks({
 
 const health = await import("../lib/admin/health.ts");
 const rules = await import("../lib/admin/health-rules.ts");
-const { collegeHealth, healthCsv, familyListUnits, createHealthOverview, latestChanges, healthInputsFor, indexHealthFiles, summarizeRecord } = health;
+const { collegeHealth, healthCsv, familyListUnits, createHealthOverview, latestChanges } = health;
+const filesModule = await import("../lib/admin/health-files.ts");
+const { healthInputsFor, indexHealthFiles, summarizeRecord, missingCoreFields, newestLineageDate, compactHealth, inputsFromCompact, formatCompact, parseCompact, reduceReportedDocs } = filesModule;
+const collegeHealthScripts = await import("../scripts/lib/college-health.mts");
 const { HEALTH_RULES, CURRENT_CDS_EDITION, CORE_FEDERAL_FIELDS } = rules;
 const { editionCurrentOn } = await import("../lib/cds-reads.ts");
 const { isFieldPath } = await import("../lib/fields.ts");
 type HealthInputs = import("../lib/admin/health.ts").HealthInputs;
 type ReportedDoc = import("../lib/admin/health.ts").ReportedDoc;
 type CollegeHealth = import("../lib/admin/health.ts").CollegeHealth;
-type HealthFiles = import("../lib/admin/health.ts").HealthFiles;
-type HealthSchool = import("../lib/admin/health.ts").HealthSchool;
+type HealthFiles = import("../lib/admin/health-files.ts").HealthFiles;
+type HealthSchool = import("../lib/admin/health-files.ts").HealthSchool;
 type HealthStatus = import("../lib/admin/health-rules.ts").HealthStatus;
 
 const ROOT = join(import.meta.dirname, "..");
@@ -105,9 +110,9 @@ test("federal core fields are registered, and a field with two paths is present 
       cost: { avg_net_price: 1000 },
       outcomes: { graduation_rate: 0.6, median_earnings_10yr: 50000 },
     }) as unknown as HealthSchool;
-  assert.deepEqual(health.missingCoreFields(school()), []);
-  assert.deepEqual(health.missingCoreFields(school({ act_composite_25_75: null })), ["test ranges"]);
-  assert.deepEqual(health.missingCoreFields(school({ acceptance_rate: null, act_composite_25_75: null })), ["admit rate", "test ranges"]);
+  assert.deepEqual(missingCoreFields(school()), []);
+  assert.deepEqual(missingCoreFields(school({ act_composite_25_75: null })), ["test ranges"]);
+  assert.deepEqual(missingCoreFields(school({ acceptance_rate: null, act_composite_25_75: null })), ["admit rate", "test ranges"]);
 });
 
 /* ------------------------------------------------------------------ */
@@ -384,10 +389,10 @@ test("lineage dates: identity from links, social, brand; campus from directories
     "admissions.acceptance_rate": { retrieved: "2026-10-11" },
     religionless: { retrieved: "2026-10-11" },
   };
-  assert.equal(health.newestLineageDate(lineage, rules.IDENTITY_LINEAGE_PREFIXES), "2026-10-04");
-  assert.equal(health.newestLineageDate(lineage, rules.CAMPUS_LINEAGE_KEYS), "2026-06-01");
-  assert.equal(health.newestLineageDate({}, rules.CAMPUS_LINEAGE_KEYS), null);
-  assert.equal(health.newestLineageDate(undefined, rules.IDENTITY_LINEAGE_PREFIXES), null);
+  assert.equal(newestLineageDate(lineage, rules.IDENTITY_LINEAGE_PREFIXES), "2026-10-04");
+  assert.equal(newestLineageDate(lineage, rules.CAMPUS_LINEAGE_KEYS), "2026-06-01");
+  assert.equal(newestLineageDate({}, rules.CAMPUS_LINEAGE_KEYS), null);
+  assert.equal(newestLineageDate(undefined, rules.IDENTITY_LINEAGE_PREFIXES), null);
 });
 
 const manifest = (over: Record<string, unknown>) => ({ sha256: "s1", unit_id: "1", url: "https://c.example/a.pdf", kind: "cds", type: "pdf-flat", edition: null, retrieved: "2026-10-11", ...over });
@@ -524,16 +529,14 @@ test("the Supabase changes reader asks for the newest publish, then that publish
 /* ------------------------------------------------------------------ */
 
 function overviewDeps(over: Partial<Parameters<typeof createHealthOverview>[0]> = {}) {
-  const calls = { schools: 0, files: 0, changes: 0 };
+  const calls = { compact: 0, changes: 0 };
   let now = Date.parse("2026-10-12T12:00:00Z");
   const deps = {
-    schools: async () => {
-      calls.schools++;
-      return { schools: [school("1", { "links.visit": { retrieved: ago(8) }, directories: { retrieved: ago(30) } }), school("2"), school("3", { "links.visit": { retrieved: ago(8) }, directories: { retrieved: ago(30) } })], metaRetrieved: "2026-10-04" };
-    },
-    files: async () => {
-      calls.files++;
-      return files({ failures: [{ unit_id: "2", reason_code: "host_blocked", stage: "fetch", url: null, last_run: "2026-10-11" }] });
+    compact: async () => {
+      calls.compact++;
+      const schools = [school("1", { "links.visit": { retrieved: ago(8) }, directories: { retrieved: ago(30) } }), school("2"), school("3", { "links.visit": { retrieved: ago(8) }, directories: { retrieved: ago(30) } })];
+      const f = files({ failures: [{ unit_id: "2", reason_code: "host_blocked", stage: "fetch", url: null, last_run: "2026-10-11" }] });
+      return compactHealth(f, schools, { metaRetrieved: "2026-10-04", generated: "2026-10-11" });
     },
     changes: async () => {
       calls.changes++;
@@ -570,18 +573,18 @@ test("the overview is computed once per instance; the changes read is renewed af
   const overview = createHealthOverview(deps);
   await overview();
   await overview();
-  assert.deepEqual(calls, { schools: 1, files: 1, changes: 1 });
+  assert.deepEqual(calls, { compact: 1, changes: 1 });
   advance(rules.CHANGES_TTL_MS + 1);
   await overview();
-  assert.deepEqual(calls, { schools: 1, files: 1, changes: 2 }, "files stay cached; changes are read again");
+  assert.deepEqual(calls, { compact: 1, changes: 2 }, "the compact file stays cached; changes are read again");
 });
 
 test("a failed file read is not cached; a failed or absent changes read leaves what changed out", async () => {
   let attempts = 0;
   const { deps } = overviewDeps({
-    files: async () => {
+    compact: async () => {
       if (++attempts === 1) throw new Error("boom");
-      return files();
+      return overviewDeps().deps.compact();
     },
   });
   const overview = createHealthOverview(deps);
@@ -666,27 +669,143 @@ test("client components never import the server-only health module (health-rules
   }
   assert.deepEqual(offenders, []);
   assert.match(readFileSync(join(ROOT, "lib", "admin", "health.ts"), "utf8"), /^import "server-only";/m);
-  assert.doesNotMatch(readFileSync(join(ROOT, "lib", "admin", "health-rules.ts"), "utf8"), /server-only|node:fs/);
+  // The rules and the input gathering are pure: the script, its check, and client code load them without Next or fs.
+  for (const f of ["health-rules.ts", "health-files.ts"]) assert.doesNotMatch(readFileSync(join(ROOT, "lib", "admin", f), "utf8"), /server-only|node:fs/, f);
 });
 
-test("the real files: every college is judged, and the files agree with each other", async () => {
+/* ------------------------------------------------------------------ */
+/* The compact file: data/college-health.json                         */
+/* ------------------------------------------------------------------ */
+
+test("the compact file keeps only the documents the rules look at, and judges the same", () => {
+  const docs = [
+    doc({ edition: "2021-22", reads: ["C", "rest"] }),
+    doc({ edition: "2025-26", retrieved: "2026-09-01", reads: ["C"] }),
+    doc({ edition: "2025-26", retrieved: "2026-10-05", url: "https://c.example/second.pdf" }),
+    doc({ kind: "class-profile", edition: null, retrieved: "2026-08-01", url: "https://c.example/old-profile" }),
+    doc({ kind: "class-profile", edition: null, retrieved: "2026-09-15", url: "https://c.example/new-profile" }),
+  ];
+  const kept = reduceReportedDocs(docs);
+  assert.deepEqual(kept.map((d) => d.url), ["https://c.example/second.pdf", "https://c.example/new-profile"]);
+  // With no CDS that states an edition, one CDS stays so "no stated edition" still reads differently from "no document".
+  const unstated = [doc({ edition: null, reads: null, retrieved: "2026-08-01" }), doc({ edition: null, reads: null, retrieved: "2026-09-01", url: "https://c.example/b" })];
+  assert.deepEqual(reduceReportedDocs(unstated).map((d) => d.url), ["https://c.example/b"]);
+  for (const set of [docs, unstated, [], docs.slice(3), docs.slice(0, 1)]) {
+    assert.deepEqual(collegeHealth("1", reported(reduceReportedDocs(set))), collegeHealth("1", reported(set)));
+  }
+});
+
+test("the compact file round-trips: text to the same inputs, deterministic, in unit order", () => {
+  const schools = [school("20"), school("3", { "links.visit": { retrieved: ago(8) } }), school("100")];
+  const build = () => compactHealth(files(), schools, { metaRetrieved: "2026-10-04", generated: "2026-10-11" });
+  const compact = build();
+  const text = formatCompact(compact);
+  assert.equal(formatCompact(build()), text, "the same sources give the same bytes");
+  assert.deepEqual(parseCompact(text), compact);
+  assert.deepEqual(Object.keys(compact.colleges), ["3", "20", "100"], "numeric unit order, whatever the dataset's");
+  assert.ok(text.endsWith("}\n}\n") && text.split("\n").length === 5 + 3 + 3, "a header, one line per college, a footer");
+  const index = indexHealthFiles(files());
+  for (const s of schools) {
+    const direct = healthInputsFor(s, index, { today: TODAY, metaRetrieved: "2026-10-04", changes: CTX.changes });
+    assert.deepEqual(collegeHealth(s.unit_id, inputsFromCompact(parseCompact(text), s.unit_id, { today: TODAY, changes: CTX.changes })!), collegeHealth(s.unit_id, direct));
+  }
+  assert.equal(inputsFromCompact(compact, "999", { today: TODAY, changes: null }), null);
+});
+
+test("the compact file needs every source, and refuses a shape it does not know", () => {
+  const schools = [school("1")];
+  for (const key of ["manifest", "records", "failures", "queue", "linkIssues"] as const) {
+    assert.throws(() => compactHealth(files({ [key]: null }), schools, { metaRetrieved: null, generated: "2026-10-11" }), /every source file is required/, key);
+  }
+  assert.throws(() => parseCompact(JSON.stringify({ version: 2, generated: "2026-10-11", colleges: {} })), /npm run college-health/);
+  assert.throws(() => parseCompact("{}"), /npm run college-health/);
+});
+
+test("the overview needs the compact file: a deploy without it fails loudly, not as empty health", async () => {
+  const dir = join(ROOT, "lib", "admin", "health.ts");
+  assert.match(readFileSync(dir, "utf8"), /data\/college-health\.json is not in this deploy/);
+});
+
+/** A tiny data/ folder with every source `npm run college-health` reads, in a temp root. */
+function fixtureRoot(): string {
+  const root = mkdtempSync(join(tmpdir(), "college-health-"));
+  const write = (rel: string, data: unknown) => {
+    mkdirSync(dirname(join(root, rel)), { recursive: true });
+    writeFileSync(join(root, rel), JSON.stringify(data));
+  };
+  write("data/college-docs.json", { updated: "2026-10-11", documents: [manifest({ edition: "2025-26", sections: { C: [1, 2] } })] });
+  write("data/cds-records/1.json", { unit_id: "1", documents: [{ sha256: "s1", edition: "2025-26", reads: { C: { extracted: "2026-10-11" } } }] });
+  write("data/college-failures.json", { generated: "2026-10-11", rows: [] });
+  write("data/review-queue.json", { updated: "2026-10-11", items: [{ unit_id: "1" }] });
+  write("data/link-issues.json", []);
+  write("data/schools.json", [school("1", { "links.visit": { retrieved: "2026-10-04" } })]);
+  write("data/meta.json", { retrieved: "2026-10-04" });
+  return root;
+}
+
+function runScript(script: string, root: string) {
+  return spawnSync("node", ["--disable-warning=MODULE_TYPELESS_PACKAGE_JSON", join(ROOT, "scripts", script)], { env: { ...process.env, COLLEGE_HEALTH_ROOT: root }, encoding: "utf8" });
+}
+
+test("npm run college-health writes the file; check:college-health passes, then fails when a source changes", () => {
+  const root = fixtureRoot();
+  try {
+    const missing = runScript("check-college-health.mts", root);
+    assert.equal(missing.status, 1);
+    assert.match(missing.stderr, /does not exist.*npm run college-health/);
+
+    const wrote = runScript("college-health.mts", root);
+    assert.equal(wrote.status, 0, wrote.stderr);
+    const file = parseCompact(readFileSync(join(root, "data", "college-health.json"), "utf8"));
+    assert.equal(file.generated, "2026-10-11", "the newest date among the sources, not today");
+    assert.equal(file.colleges["1"].queue, 1);
+    assert.equal(runScript("check-college-health.mts", root).status, 0);
+
+    // A new queue item, a new failure, a dead link, and a later retrieval each make the committed file stale.
+    const queue = join(root, "data", "review-queue.json");
+    const original = readFileSync(queue, "utf8");
+    writeFileSync(queue, JSON.stringify({ updated: "2026-10-11", items: [{ unit_id: "1" }, { unit_id: "1" }] }));
+    const stale = runScript("check-college-health.mts", root);
+    assert.equal(stale.status, 1);
+    assert.match(stale.stderr, /stale/);
+    assert.match(stale.stderr, /1 college\(s\) differ, e\.g\. 1/);
+    assert.match(stale.stderr, /npm run college-health/);
+    writeFileSync(queue, original);
+    assert.equal(runScript("check-college-health.mts", root).status, 0);
+    writeFileSync(join(root, "data", "link-issues.json"), JSON.stringify([{ unit_id: "1", field: "apply", url: "https://c.example/a", last_status: 404 }]));
+    assert.equal(runScript("check-college-health.mts", root).status, 1);
+    rmSync(join(root, "data", "link-issues.json"));
+    const gone = runScript("check-college-health.mts", root);
+    assert.equal(gone.status, 1);
+    assert.match(gone.stderr, /missing data\/link-issues\.json/);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("the real data: the committed compact file is current, small, and judges every college as the five sources do", () => {
+  const built = collegeHealthScripts.buildCollegeHealth(ROOT);
+  assert.deepEqual(built.missing, []);
+  const committed = readFileSync(join(ROOT, "data", "college-health.json"), "utf8");
+  assert.equal(committed, built.text, "data/college-health.json is stale: run npm run college-health");
+  assert.ok(Buffer.byteLength(committed) < 1_500_000, "the compact file is well under the 16 MB-per-function guidance");
+
+  const onDisk = collegeHealthScripts.readHealthFilesFromDisk(ROOT);
+  assert.ok(onDisk.manifest && onDisk.records && onDisk.failures && onDisk.queue && onDisk.linkIssues, "all five files are present");
+  const queue = JSON.parse(readFileSync(join(ROOT, "data", "review-queue.json"), "utf8")) as { items: unknown[] };
+  assert.equal([...onDisk.queue!.values()].reduce((a, b) => a + b, 0), queue.items.length);
+  const shas = new Set(onDisk.manifest!.map((m) => m.sha256));
+  for (const docs of onDisk.records!.values()) for (const d of docs) assert.ok(shas.has(d.sha256), "a record document is in the manifest");
+
   const schools = JSON.parse(readFileSync(join(ROOT, "data", "schools.json"), "utf8")) as HealthSchool[];
   const meta = JSON.parse(readFileSync(join(ROOT, "data", "meta.json"), "utf8")) as { retrieved: string };
-  const real = process.cwd();
-  process.chdir(ROOT);
-  try {
-    const onDisk = health.readHealthFilesFromDisk();
-    assert.ok(onDisk.manifest && onDisk.records && onDisk.failures && onDisk.queue && onDisk.linkIssues, "all five files are present");
-    const queue = JSON.parse(readFileSync(join(ROOT, "data", "review-queue.json"), "utf8")) as { items: unknown[] };
-    assert.equal([...onDisk.queue!.values()].reduce((a, b) => a + b, 0), queue.items.length);
-    const overview = await createHealthOverview({ schools: async () => ({ schools, metaRetrieved: meta.retrieved }), files: async () => onDisk, changes: async () => null, now: () => Date.parse("2026-10-12T12:00:00Z") })();
-    assert.equal(overview.colleges.length, schools.length);
-    assert.equal(overview.counts.total, schools.length);
-    for (const c of overview.colleges) assert.ok(c.rows.every((r) => r.status !== null), `${c.unitId} has an unjudged group`);
-    // A record's reads and the manifest agree: every record document is in the manifest (the lineage check requires it too).
-    const shas = new Set(onDisk.manifest!.map((m) => m.sha256));
-    for (const docs of onDisk.records!.values()) for (const d of docs) assert.ok(shas.has(d.sha256));
-  } finally {
-    process.chdir(real);
+  const compact = parseCompact(committed);
+  assert.deepEqual(Object.keys(compact.colleges).sort(), schools.map((s) => s.unit_id).sort(), "every college, and only those");
+  const index = indexHealthFiles(onDisk);
+  const ctx = { today: "2026-10-12", metaRetrieved: meta.retrieved, changes: null };
+  for (const s of schools) {
+    const direct = collegeHealth(s.unit_id, healthInputsFor(s, index, ctx));
+    assert.ok(direct.rows.every((r) => r.status !== null), `${s.unit_id} has an unjudged group`);
+    assert.deepEqual(collegeHealth(s.unit_id, inputsFromCompact(compact, s.unit_id, ctx)!), direct, `${s.unit_id}: the compact file judges differently`);
   }
 });

@@ -9,33 +9,34 @@ import "server-only";
  *   - the link prober's findings (`data/link-issues.json`),
  *   - each publish's changed fields (`dataset_changes` in Supabase; informational).
  *
- * `collegeHealth()` is pure and takes its thresholds from lib/admin/health-rules.ts, so the tests pin both.
- * `healthOverview()` builds the inputs for every college once per server instance and caches them; the changes read is
- * kept for a few minutes only, since "Publish changes" writes it after the deploy that started the instance.
+ * The first five are 42 MB, so `npm run college-health` reduces them to `data/college-health.json` (lib/admin/
+ * health-files.ts) in each data PR, and the deployed page reads only that file. `collegeHealth()` is pure and takes
+ * its thresholds from lib/admin/health-rules.ts, so the tests pin both. `healthOverview()` builds the overview once
+ * per server instance and caches it; the changes read is kept for a few minutes only, since "Publish changes" writes
+ * it after the deploy that started the instance.
  *
- * Server only (reads files and, for `familyListUnits`, the admin's own Supabase session): never import this from a
+ * Server only (reads the file and, for `familyListUnits`, the admin's own Supabase session): never import this from a
  * client component. The types and rules a client may need are in health-rules.ts.
  */
-import { existsSync, readFileSync, readdirSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import type { School } from "../types";
 import {
-  CAMPUS_LINEAGE_KEYS,
   CHANGES_PUBLISHES_READ,
   CHANGES_TTL_MS,
   CORE_FEDERAL_FIELDS,
   HEALTH_GROUPS,
   HEALTH_RULES,
   HEALTH_STATUSES,
-  IDENTITY_LINEAGE_PREFIXES,
-  editionStart,
   statusRank,
+  editionStart,
   type HealthGroup,
   type HealthRules,
   type HealthStatus,
 } from "./health-rules.ts";
+import { inputsFromCompact, newer, parseCompact, pickReportedDocs, type CompactHealth, type HealthInputs, type ReportedDoc } from "./health-files.ts";
 
 export { HEALTH_GROUPS, HEALTH_STATUSES, type HealthGroup, type HealthStatus } from "./health-rules.ts";
+export type { FailureInput, HealthInputs, LinkIssueInput, ReportedDoc } from "./health-files.ts";
 
 /* ------------------------------------------------------------------ */
 /* Shapes                                                              */
@@ -66,48 +67,6 @@ export interface CollegeHealth {
   queueItems: number;
 }
 
-/** One document from the manifest, joined with what was read from it. */
-export interface ReportedDoc {
-  kind: "cds" | "class-profile";
-  /** "2025-26"; null when none was detected. */
-  edition: string | null;
-  type: string;
-  retrieved: string;
-  url: string;
-  /** Section letters the manifest says were archived; null when it lists none (an HTML page). */
-  archivedSections: string[] | null;
-  /** Keys of the record's reads ("C", "rest", "deterministic"); null when the document has no record (never read). */
-  reads: string[] | null;
-  /** The newest `extracted` date among the reads. */
-  extracted: string | null;
-}
-
-export interface FailureInput {
-  reason: string;
-  stage: string;
-  url: string | null;
-  lastRun: string | null;
-}
-
-export interface LinkIssueInput {
-  field: string;
-  url: string;
-  status: number | null;
-}
-
-/** Everything `collegeHealth()` judges from. Built by `healthInputsFor()`; tests write them by hand. */
-export interface HealthInputs {
-  /** ISO date "today" is measured from. */
-  today: string;
-  federal: { retrieved: string | null; missing: string[] };
-  /** Null when the college-reported files are not in this deploy. */
-  reported: { docs: ReportedDoc[]; failures: FailureInput[]; queueItems: number } | null;
-  /** `linkIssues` null when data/link-issues.json is not in this deploy. */
-  identity: { newest: string | null; linkIssues: LinkIssueInput[] | null };
-  campus: { newest: string | null };
-  changes: { at: string; fields: number } | null;
-}
-
 /* ------------------------------------------------------------------ */
 /* Dates                                                               */
 /* ------------------------------------------------------------------ */
@@ -116,8 +75,6 @@ export interface HealthInputs {
 export function daysBetween(from: string, to: string): number {
   return Math.round((Date.parse(to.slice(0, 10)) - Date.parse(from.slice(0, 10))) / 86_400_000);
 }
-
-const newer = (a: string | null, b: string | null): string | null => (a && b ? (a >= b ? a : b) : (a ?? b));
 
 const dayLabel = (iso: string, today: string) => {
   const age = daysBetween(iso, today);
@@ -157,11 +114,7 @@ function reportedRow(inputs: HealthInputs, rules: HealthRules["reported"]): Heal
   if (!r) {
     return { group: "reported", status: null, judgedBy: null, reason: "Not judged: the college-reported files (data/college-docs.json and the rest) are not in this deploy." };
   }
-  const cds = r.docs.filter((d) => d.kind === "cds");
-  const profiles = r.docs.filter((d) => d.kind === "class-profile");
-  const byNewest = (a: ReportedDoc, b: ReportedDoc) => (editionStart(b.edition) ?? 0) - (editionStart(a.edition) ?? 0) || b.retrieved.localeCompare(a.retrieved);
-  const edition = cds.filter((d) => editionStart(d.edition) !== null).sort(byNewest)[0] ?? null;
-  const profile = [...profiles].sort((a, b) => b.retrieved.localeCompare(a.retrieved))[0] ?? null;
+  const { edition, profile, cds } = pickReportedDocs(r.docs);
 
   // Failing: an open failure at fetch or read, or held values with a review-queue item to resolve.
   const deciding = r.failures.filter((f) => rules.failingStages.includes(f.stage) || (f.reason === rules.failingWithQueueReason && r.queueItems > 0));
@@ -245,178 +198,6 @@ export function collegeHealth(unitId: string, inputs: HealthInputs, rules: Healt
     changed: inputs.changes,
     failures: (inputs.reported?.failures ?? []).map((f) => ({ reason: f.reason, stage: f.stage })),
     queueItems: inputs.reported?.queueItems ?? 0,
-  };
-}
-
-/* ------------------------------------------------------------------ */
-/* Inputs from the files                                               */
-/* ------------------------------------------------------------------ */
-
-/** The slice of a school the health rules read. */
-export type HealthSchool = Pick<School, "unit_id" | "name" | "admissions" | "cost" | "outcomes" | "lineage">;
-
-function valueAt(obj: unknown, path: string): unknown {
-  return path.split(".").reduce<unknown>((o, k) => (o && typeof o === "object" ? (o as Record<string, unknown>)[k] : undefined), obj);
-}
-
-/** The core federal fields this college lacks, as their labels. */
-export function missingCoreFields(school: HealthSchool): string[] {
-  return CORE_FEDERAL_FIELDS.filter((f) => !f.paths.some((p) => valueAt(school, p) != null)).map((f) => f.label);
-}
-
-/** Whether a lineage key is one of `keys` or under one of them ("campus." matches "campus.housing"; "religion" matches "religion.cccu_member"). */
-function lineageKeyMatches(key: string, keys: readonly string[]): boolean {
-  return keys.some((k) => (k.endsWith(".") ? key.startsWith(k) : key === k || key.startsWith(`${k}.`)));
-}
-
-/** The newest `retrieved` date among the college's lineage records under `keys`; null when none is dated. */
-export function newestLineageDate(lineage: Readonly<Record<string, { retrieved?: string } | undefined>> | undefined, keys: readonly string[]): string | null {
-  let newest: string | null = null;
-  for (const [key, rec] of Object.entries(lineage ?? {})) {
-    const retrieved = rec?.retrieved;
-    if (retrieved && lineageKeyMatches(key, keys)) newest = newer(newest, retrieved);
-  }
-  return newest;
-}
-
-/** A manifest document, as data/college-docs.json lists it (only what health reads). */
-export interface ManifestDocLite {
-  sha256: string;
-  unit_id: string;
-  url: string;
-  kind: "cds" | "class-profile";
-  type: string;
-  edition: string | null;
-  retrieved: string;
-  sections?: Record<string, unknown>;
-}
-
-/** What health reads from one record document (data/cds-records/<unit>.json). */
-export interface RecordDocLite {
-  sha256: string;
-  edition: string | null;
-  reads: string[];
-  extracted: string | null;
-}
-
-/** A row of data/college-failures.json (only what health reads). */
-export interface FailureRowLite {
-  unit_id: string;
-  reason_code: string;
-  stage: string;
-  url: string | null;
-  last_run: string | null;
-}
-
-/** A row of data/link-issues.json. */
-export interface LinkIssueRowLite {
-  unit_id: string;
-  field: string;
-  url: string;
-  last_status: number | null;
-}
-
-/** The five files, reduced to what health reads. A null file was not in this deploy. */
-export interface HealthFiles {
-  manifest: ManifestDocLite[] | null;
-  /** Record documents by unit id. */
-  records: Map<string, RecordDocLite[]> | null;
-  failures: FailureRowLite[] | null;
-  /** Review-queue items per unit id. */
-  queue: Map<string, number> | null;
-  linkIssues: LinkIssueRowLite[] | null;
-}
-
-/** One record file reduced to the reads that were made and when. */
-export function summarizeRecord(record: { documents?: { sha256: string; edition?: string | null; reads?: Record<string, { extracted?: string } | undefined> }[] }): RecordDocLite[] {
-  return (record.documents ?? []).map((d) => {
-    const reads = Object.entries(d.reads ?? {}).filter(([, v]) => v);
-    return {
-      sha256: d.sha256,
-      edition: d.edition ?? null,
-      reads: reads.map(([k]) => k),
-      extracted: reads.reduce<string | null>((acc, [, v]) => newer(acc, v?.extracted ?? null), null),
-    };
-  });
-}
-
-/** The files grouped by college, built once. */
-export interface HealthIndex {
-  docs: Map<string, ReportedDoc[]> | null;
-  failures: Map<string, FailureInput[]> | null;
-  queue: Map<string, number> | null;
-  linkIssues: Map<string, LinkIssueInput[]> | null;
-}
-
-function groupBy<T, K>(items: readonly T[], key: (t: T) => K): Map<K, T[]> {
-  const out = new Map<K, T[]>();
-  for (const item of items) {
-    const k = key(item);
-    const list = out.get(k);
-    if (list) list.push(item);
-    else out.set(k, [item]);
-  }
-  return out;
-}
-
-function mapGroups<T, V>(items: readonly T[], key: (t: T) => string, value: (t: T) => V): Map<string, V[]> {
-  const out = new Map<string, V[]>();
-  for (const [k, list] of groupBy(items, key)) out.set(k, list.map(value));
-  return out;
-}
-
-export function indexHealthFiles(files: HealthFiles): HealthIndex {
-  let docs: HealthIndex["docs"] = null;
-  // Documents need the manifest; the records say what was read. Without the records every document reads as never read,
-  // which would mislead, so reported is judged only when both are present.
-  if (files.manifest && files.records && files.failures && files.queue) {
-    const records = files.records;
-    const recordBySha = new Map<string, RecordDocLite>();
-    for (const docsOfUnit of records.values()) for (const d of docsOfUnit) recordBySha.set(d.sha256, d);
-    docs = new Map();
-    for (const [unit, entries] of groupBy(files.manifest, (m) => m.unit_id)) {
-      docs.set(
-        unit,
-        entries.map((m) => {
-          const rec = recordBySha.get(m.sha256);
-          return {
-            kind: m.kind,
-            edition: rec?.edition ?? m.edition ?? null,
-            type: m.type,
-            retrieved: m.retrieved,
-            url: m.url,
-            archivedSections: m.sections ? Object.keys(m.sections) : null,
-            reads: rec ? rec.reads : null,
-            extracted: rec?.extracted ?? null,
-          };
-        })
-      );
-    }
-  }
-  return {
-    docs,
-    failures: files.failures
-      ? mapGroups(files.failures, (f) => f.unit_id, (f) => ({ reason: f.reason_code, stage: f.stage, url: f.url, lastRun: f.last_run }))
-      : null,
-    queue: files.queue,
-    linkIssues: files.linkIssues ? mapGroups(files.linkIssues, (l) => l.unit_id, (l) => ({ field: l.field, url: l.url, status: l.last_status })) : null,
-  };
-}
-
-/** The inputs for one college. `metaRetrieved` is `data/meta.json` `retrieved`: when the federal data was last pulled. */
-export function healthInputsFor(
-  school: HealthSchool,
-  index: HealthIndex,
-  ctx: { today: string; metaRetrieved: string | null; changes: ReadonlyMap<string, { at: string; fields: number }> | null }
-): HealthInputs {
-  const unit = school.unit_id;
-  return {
-    today: ctx.today,
-    federal: { retrieved: ctx.metaRetrieved, missing: missingCoreFields(school) },
-    reported: index.docs && index.failures && index.queue ? { docs: index.docs.get(unit) ?? [], failures: index.failures.get(unit) ?? [], queueItems: index.queue.get(unit) ?? 0 } : null,
-    identity: { newest: newestLineageDate(school.lineage, IDENTITY_LINEAGE_PREFIXES), linkIssues: index.linkIssues ? (index.linkIssues.get(unit) ?? []) : null },
-    campus: { newest: newestLineageDate(school.lineage, CAMPUS_LINEAGE_KEYS) },
-    changes: ctx.changes?.get(unit) ?? null,
   };
 }
 
@@ -546,6 +327,8 @@ export interface HealthOverview {
   counts: HealthCounts;
   /** ISO date the overview was measured on. */
   today: string;
+  /** The date of the compact file's sources (`generated` in data/college-health.json): how fresh the health inputs are. */
+  generated: string;
   /** False when `dataset_changes` could not be read (no Supabase configured, or the read failed): `changed` is null for every college. */
   changesAvailable: boolean;
 }
@@ -567,27 +350,27 @@ export function sortWorstFirst(colleges: CollegeHealth[]): CollegeHealth[] {
   return [...colleges].sort((a, b) => statusRank(b.overall) - statusRank(a.overall) || notFresh(b) - notFresh(a) || a.unitId.localeCompare(b.unitId, "en", { numeric: true }));
 }
 
-/** Everything the overview needs from outside, so tests can stand in for the files, the dataset, the clock, and Supabase. */
+/** Everything the overview needs from outside, so tests can stand in for the file, the clock, and Supabase. */
 export interface HealthDeps {
-  schools(): Promise<{ schools: readonly HealthSchool[]; metaRetrieved: string | null }>;
-  files(): Promise<HealthFiles>;
+  /** The compact health file (data/college-health.json). */
+  compact(): Promise<CompactHealth>;
   /** The newest change per college; null when `dataset_changes` is unavailable. */
   changes(): Promise<Map<string, { at: string; fields: number }> | null>;
   now(): number;
 }
 
 /**
- * An overview function over `deps` that reads the files and the dataset once (the first call; a failed read is not
- * kept) and `dataset_changes` again after CHANGES_TTL_MS. `healthOverview` below is this with the real dependencies.
+ * An overview function over `deps` that reads the compact file once (the first call; a failed read is not kept) and
+ * `dataset_changes` again after CHANGES_TTL_MS. `healthOverview` below is this with the real dependencies.
  */
 export function createHealthOverview(deps: HealthDeps): () => Promise<HealthOverview> {
-  let base: Promise<{ schools: readonly HealthSchool[]; metaRetrieved: string | null; index: HealthIndex }> | null = null;
+  let base: Promise<CompactHealth> | null = null;
   let changes: { at: number; value: Map<string, { at: string; fields: number }> | null } | null = null;
   return async function overview() {
-    base ??= Promise.all([deps.schools(), deps.files()]).then(([s, files]) => ({ ...s, index: indexHealthFiles(files) }));
-    let loaded;
+    base ??= deps.compact();
+    let compact: CompactHealth;
     try {
-      loaded = await base;
+      compact = await base;
     } catch (err) {
       base = null;
       throw err;
@@ -603,56 +386,23 @@ export function createHealthOverview(deps: HealthDeps): () => Promise<HealthOver
       changes = { at: now, value };
     }
     const today = new Date(now).toISOString().slice(0, 10);
-    const colleges = sortWorstFirst(loaded.schools.map((s) => collegeHealth(s.unit_id, healthInputsFor(s, loaded.index, { today, metaRetrieved: loaded.metaRetrieved, changes: changes!.value }))));
-    return { colleges, counts: countHealth(colleges), today, changesAvailable: changes.value !== null };
+    const colleges = sortWorstFirst(Object.keys(compact.colleges).map((unit) => collegeHealth(unit, inputsFromCompact(compact, unit, { today, changes: changes!.value })!)));
+    return { colleges, counts: countHealth(colleges), today, generated: compact.generated, changesAvailable: changes.value !== null };
   };
 }
 
-// The five files below are health-only inputs (specs/product/admin.md "Files the deploy must carry"), so they are read
-// here and not through getData(). Each path spells out its folder and file with literals so the tracer ships exactly
-// these (next.config.ts "/admin/**"; tests/tracing.test.mts).
-function readOptionalJson<T>(path: string): T | null {
-  return existsSync(path) ? (JSON.parse(readFileSync(path, "utf8")) as T) : null;
-}
-
-/** Reads the five files, reducing each CDS record as it goes so only one is in memory at a time. */
-export function readHealthFilesFromDisk(): HealthFiles {
-  const docs = readOptionalJson<{ documents: ManifestDocLite[] }>(join(process.cwd(), "data", "college-docs.json"));
-  const failures = readOptionalJson<{ rows: FailureRowLite[] }>(join(process.cwd(), "data", "college-failures.json"));
-  const queue = readOptionalJson<{ items: { unit_id: string }[] }>(join(process.cwd(), "data", "review-queue.json"));
-  const links = readOptionalJson<LinkIssueRowLite[]>(join(process.cwd(), "data", "link-issues.json"));
-  const recordsDir = join(process.cwd(), "data", "cds-records");
-  let records: Map<string, RecordDocLite[]> | null = null;
-  if (existsSync(recordsDir)) {
-    records = new Map();
-    for (const file of readdirSync(recordsDir).filter((f) => f.endsWith(".json"))) {
-      const rec = JSON.parse(readFileSync(join(recordsDir, file), "utf8")) as { unit_id: string; documents?: never };
-      records.set(rec.unit_id, summarizeRecord(rec as Parameters<typeof summarizeRecord>[0]));
-    }
-  }
-  return {
-    manifest: docs?.documents ?? null,
-    records,
-    failures: failures?.rows ?? null,
-    queue: queue ? groupCounts(queue.items.map((i) => i.unit_id)) : null,
-    linkIssues: links,
-  };
-}
-
-function groupCounts(units: readonly string[]): Map<string, number> {
-  const out = new Map<string, number>();
-  for (const u of units) out.set(u, (out.get(u) ?? 0) + 1);
-  return out;
+// The compact file is a health-only input (specs/product/admin.md "Files the deploy must carry"), so it is read here and
+// not through getData(). The path spells out its folder and file with literals so the tracer ships exactly this file
+// (next.config.ts "/admin/**"; tests/tracing.test.mts).
+function readCompactFromDisk(): CompactHealth {
+  const path = join(process.cwd(), "data", "college-health.json");
+  if (!existsSync(path)) throw new Error("data/college-health.json is not in this deploy; run npm run college-health and commit it");
+  return parseCompact(readFileSync(path, "utf8"));
 }
 
 const realDeps: HealthDeps = {
-  async schools() {
-    const { getData } = await import("../data");
-    const data = await getData();
-    return { schools: data.getAllSchools(), metaRetrieved: data.getMeta().retrieved ?? null };
-  },
-  async files() {
-    return readHealthFilesFromDisk();
+  async compact() {
+    return readCompactFromDisk();
   },
   async changes() {
     // Changes live only in Supabase, written after each deploy (lib/data.ts getSchoolChanges): without SUPABASE_URL there are none.

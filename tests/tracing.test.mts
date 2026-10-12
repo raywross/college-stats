@@ -25,16 +25,11 @@ const EXPECTED = [
 ];
 
 /**
- * What only the admin console's routes read (lib/admin/health.ts; specs/product/admin.md "Files the deploy must carry").
- * Kept off "/*" so the 42 MB of college-reported records and review queue ride with /admin only.
+ * What only the admin console's routes read (lib/admin/health.ts; specs/product/admin.md "Files the deploy must carry"):
+ * the compact health file. Its 42 MB of sources (college-docs, cds-records, college-failures, review-queue,
+ * link-issues) stay out of the deploy; `npm run college-health` reduces them (tests/admin-health.test.mts).
  */
-const ADMIN_EXPECTED = [
-  "./data/college-docs.json",
-  "./data/cds-records/**/*.json",
-  "./data/college-failures.json",
-  "./data/review-queue.json",
-  "./data/link-issues.json",
-];
+const ADMIN_EXPECTED = ["./data/college-health.json"];
 
 /** The string entries of the `"<route>": [ ... ]` list in next.config.ts, comments ignored. */
 function tracedFor(route: string): string[] {

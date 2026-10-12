@@ -584,6 +584,11 @@ export const FIELDS = {
   // data/reference/awards.json: not per-college (no school record carries it), but registered here like the other
   // curated reference files so it has a citeField-able path for the picker's "source" note beside each award.
   "reference.awards.body": reported("The organization that gives the award, and its source page"),
+  // The activity catalogs the ActivitiesForm picker reads (specs/chances/inputs-beyond-academics.md, depth.md "What
+  // the student enters", Wave 4 U12), from data/reference/sports.json, clubs.json, and activity-roles.json: not
+  // per-college, registered here like awards.json so each catalog entry's governing body has a citeField-able path.
+  "reference.activity_catalog.org": reported("The sport or club's governing body, and its source page"),
+  "reference.activity_catalog.role": reported("The title's role tier (member, officer, or leader)"),
   // How the college admits by school or major (specs/chances/base-rates.md "Major", major-and-grades.md "Data"), from
   // data/major-admission.json: each value quoted from the unit's own page; lib/lineage.ts resolves the citation to it.
   "reported.major_admission.direct_admit": reported("Whether first-years are admitted directly to the school or major"),

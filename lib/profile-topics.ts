@@ -95,6 +95,10 @@ export const OVERVIEW_FIELDS: readonly FieldPath[] = [
   // The card's SAT bar and the hero's test policy (cds-test-scores-and-policy.md).
   "derived.sat_total",
   "admissions.test_policy",
+  // Quad's selectivity chip on the hero and the Getting in card (specs/chances/selectivity-index.md).
+  "selectivity.tier",
+  "selectivity.in_state",
+  "selectivity.out_of_state",
   // Students & campus card.
   "demographics.undergrad_enrollment",
   "derived.diversity_index",

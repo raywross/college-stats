@@ -110,6 +110,30 @@ const wikipedia = (label: string): FieldDef => ({ label, topic: "institution", s
 /** Derived at sync time from the college's colors (lib/brand-colors.ts), so the app does no color math. */
 const brandDerived = (label: string, formula: string): FieldDef => ({ ...wikipedia(label), derived: { formula, inputs: ["brand.colors"] } });
 
+/** What Quad's selectivity reads (specs/chances/selectivity-index.md "Inputs"), in words: kinds, not weights. */
+const SELECTIVITY_FORMULA =
+  "Quad's own reading of figures the college publishes: its admit rate, its admitted students' scores and grades, how many admitted students enroll, how much of the class it fills in early decision, how its admit rate and applications have changed over ten years, how many things it rates very important, and how many applicants it offers a waitlist place. How they are combined is Quad's own and isn't published";
+const SELECTIVITY_INPUTS = [
+  "admissions.acceptance_rate",
+  "derived.sat_total",
+  "admissions.act_composite_25_75",
+  "derived.gpa_top_share",
+  "derived.yield",
+  "reported.admission_profile.early_decision.admitted",
+  "admissions.enrolled",
+  "trends",
+  "reported.admission_profile.factors.rigor",
+  "reported.admission_profile.factors.essay",
+  "reported.admission_profile.factors.recommendations",
+  "reported.admission_profile.factors.interview",
+  "reported.admission_profile.factors.extracurriculars",
+  "reported.admission_profile.factors.talent",
+  "reported.admission_profile.factors.character",
+  "admissions.test_policy",
+  "reported.admission_profile.wait_list.offered",
+  "admissions.admitted",
+] as const;
+
 export const FIELDS = {
   /* ---- Institution ---- */
   unit_id: scorecard("IPEDS unit ID", "institution"),
@@ -640,6 +664,32 @@ export const FIELDS = {
       inputs: ["cost.avg_paid_all", "cost.breakdown", "admissions.acceptance_rate", "admissions.applicants", "demographics.undergrad_enrollment", "demographics.racial_diversity", "demographics.men_share", "outcomes.federal_loan_rate", "aid.grant_pct", "outcomes.grad_rate_pell", "outcomes.grad_rate_no_pell_no_loan"],
     },
   },
+
+  /* ---- Quad's selectivity (specs/chances/selectivity-index.md; `npm run build-selectivity`) ---- */
+  // Stored tiers, never the index. The formula names the kinds of figures read, never weights or cutoffs (the method is
+  // Quad's own); citations expand to the inputs this college publishes.
+  "selectivity.tier": {
+    label: "Quad's selectivity",
+    topic: "admissions",
+    source: "ipeds-adm",
+    vintage: "ipeds-adm",
+    derived: { formula: SELECTIVITY_FORMULA, inputs: SELECTIVITY_INPUTS },
+  },
+  "selectivity.in_state": {
+    label: "Quad's selectivity, in-state applicants",
+    topic: "admissions",
+    source: "ipeds-adm",
+    vintage: "ipeds-adm",
+    derived: { formula: `${SELECTIVITY_FORMULA}; the admit rate is the college's own rate for applicants from its state`, inputs: ["derived.admit_rate_in_state", ...SELECTIVITY_INPUTS] },
+  },
+  "selectivity.out_of_state": {
+    label: "Quad's selectivity, out-of-state applicants",
+    topic: "admissions",
+    source: "ipeds-adm",
+    vintage: "ipeds-adm",
+    derived: { formula: `${SELECTIVITY_FORMULA}; the admit rate is the college's own rate for applicants from other states`, inputs: ["derived.admit_rate_out_of_state", ...SELECTIVITY_INPUTS] },
+  },
+  "selectivity.year": adm("Fall of the admit rate Quad's selectivity read"),
 
   /* ---- Computed at render time (lib/metrics.ts) ---- */
   "derived.sat_composite": {

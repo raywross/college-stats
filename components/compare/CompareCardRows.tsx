@@ -8,6 +8,7 @@ import { RangeBar } from "@/components/charts/RangeBar";
 import { MetricLabel } from "@/components/ui/info-tip";
 import { DirectionIcon } from "@/components/trends/TrendIndicators";
 import { CompareMetric } from "./CompareMetric";
+import { SelectivityChip } from "@/components/school/SelectivityChip";
 
 /** The label above a card row: cited, with an optional note on the right ("Axis 1200–1600", "share of graduates"). */
 function RowLabel({ row, cited, hint }: { row: CardRow; cited: Cited; hint?: string | null }) {
@@ -57,7 +58,7 @@ function RangeRows({ row, schools, cited }: { row: RangeRow; schools: School[]; 
 }
 
 /** A line per college beside its slot-color dot: the text (with a direction icon for a trend), a note, and a figure. */
-function TextRows({ row, schools, cited }: { row: TextRow; schools: School[]; cited: Cited }) {
+function TextRows({ row, schools, cited, citeField }: { row: TextRow; schools: School[]; cited: Cited; citeField: (path: FieldPath, s?: School) => Cited }) {
   return (
     <div>
       <RowLabel row={row} cited={cited} hint={row.hint} />
@@ -75,6 +76,8 @@ function TextRows({ row, schools, cited }: { row: TextRow; schools: School[]; ci
                 {indicator && <DirectionIcon indicator={indicator} className="size-5" />}
                 {text === null ? (
                   <span className="truncate text-muted-foreground">{row.fallback?.(s) ?? NOT_REPORTED}</span>
+                ) : row.chip === "selectivity" ? (
+                  <SelectivityChip school={s} citeField={citeField} label={false} />
                 ) : (
                   <span className="truncate font-semibold" title={text}>
                     {text}
@@ -101,7 +104,7 @@ export function CompareCardRows({ rows, schools, citeField }: { rows: readonly C
       {rows.map((row) => {
         const cited = citeField(row.field);
         if (row.kind === "range") return <RangeRows key={row.label} row={row} schools={schools} cited={cited} />;
-        if (row.kind === "text") return <TextRows key={row.label} row={row} schools={schools} cited={cited} />;
+        if (row.kind === "text") return <TextRows key={row.label} row={row} schools={schools} cited={cited} citeField={citeField} />;
         return (
           <CompareMetric
             key={row.label}
